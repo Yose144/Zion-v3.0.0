@@ -20,7 +20,6 @@ const t = {
     warp:       { cs: 'WARP',        en: 'WARP' },
     dao:        { cs: 'DAO',         en: 'DAO' },
     bridge:     { cs: 'Most',        en: 'Bridge' },
-    swap:       { cs: 'Swap',        en: 'Swap' },
     pool:       { cs: 'Pool',        en: 'Pool' },
     miner_stats: { cs: 'Statistiky minera', en: 'Miner Stats' },
     benchmarks: { cs: 'Benchmarky', en: 'Benchmarks' },

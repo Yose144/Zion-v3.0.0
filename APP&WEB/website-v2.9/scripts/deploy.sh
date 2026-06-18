@@ -76,19 +76,20 @@ REMOTE_COMPOSE_RSYNC="${REMOTE_COMPOSE//&/\\&}"
 cd "$ROOT_DIR"
 
 # --- Local dependency bootstrap + build preflight ---
-# SKIP LOCAL BUILD FOR IPHONE RESPONSIVITY FIXES - DEPLOY DIRECTLY FROM GIT
-log "Skipping local build preflight - deploying iPhone responsivity fixes directly"
 if [[ ! -d node_modules ]]; then
   log "node_modules missing; installing local dependencies"
   if command -v npm >/dev/null 2>&1; then
-    npm ci || { echo "Warning: npm ci failed, continuing anyway" >&2; }
+    npm ci || { echo "Error: npm ci failed" >&2; exit 1; }
   else
-    echo "Warning: npm not available, continuing anyway" >&2
+    echo "Error: npm is required to bootstrap website dependencies" >&2
+    exit 1
   fi
 fi
 
-# Skip local build for iPhone fixes
-log "Skipping local build - will build on server"
+log "Running local build preflight"
+if command -v npm >/dev/null 2>&1; then
+  npm run build || { echo "Error: local build preflight failed" >&2; exit 1; }
+fi
 
 # --- Rsync source to server ---
 if [[ $SKIP_SYNC -ne 1 ]]; then

@@ -28,9 +28,6 @@ export const viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
-  minimumScale: 1,
-  viewportFit: 'cover',
-  shrinkToFit: 'no',
   themeColor: '#000000',
 };
 
@@ -68,10 +65,10 @@ export default function RootLayout({
                 <WalletProvider>
                   <ZionWalletProvider>
                     <ClientBackgrounds />
-                    <div className="relative z-10 overflow-x-clip w-full safe-area-inset-left safe-area-inset-right">
+                    <div className="relative z-10 overflow-x-clip w-full">
                       <Navigation />
                       <HeroSection />
-                      <main className="zion-shell min-h-screen safe-area-inset-bottom">
+                      <main className="zion-shell min-h-screen">
                         {children}
                       </main>
                       <Footer />
@@ -84,21 +81,10 @@ export default function RootLayout({
                           document.querySelectorAll('*').forEach(function(el) {
                             if (el.scrollWidth > docWidth) {
                               overflowing.push({tag: el.tagName, class: el.className, id: el.id, scrollWidth: el.scrollWidth, docWidth: docWidth});
-                              // Auto-fix for iOS
-                              if (el.classList.contains('zion-panel') || el.classList.contains('grid')) {
-                                el.style.maxWidth = '100%';
-                                el.style.overflow = 'hidden';
-                                el.style.boxSizing = 'border-box';
-                              }
                             }
                           });
                           if (overflowing.length > 0) {
                             console.warn('[OVERFLOW DETECTOR] Elements wider than viewport:', overflowing);
-                            // Force iOS safe area check
-                            if (navigator.userAgent.includes('iPhone') || navigator.platform.includes('iPhone')) {
-                              document.body.style.overflowX = 'hidden';
-                              document.documentElement.style.overflowX = 'hidden';
-                            }
                           } else {
                             console.log('[OVERFLOW DETECTOR] No overflow found');
                           }
@@ -108,7 +94,6 @@ export default function RootLayout({
                         } else {
                           findOverflow();
                         }
-                        setTimeout(findOverflow, 1000);
                         setTimeout(findOverflow, 3000);
                       })();
                     `}} />
