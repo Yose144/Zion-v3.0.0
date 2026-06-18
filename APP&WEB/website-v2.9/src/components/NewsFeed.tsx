@@ -22,6 +22,21 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'hiran-v2.3-trained',
+    date: '2026-06-18',
+    tag: { cs: 'AI', en: 'AI' },
+    tagColor: 'text-purple-400',
+    title: {
+      cs: 'Hiran v2.3 úspěšně natrénován — QLoRA fine-tuning dokončen',
+      en: 'Hiran v2.3 successfully trained — QLoRA fine-tuning completed',
+    },
+    summary: {
+      cs: 'Hiran v2.3 AI model byl úspěšně natrénován pomocí QLoRA fine-tuning. Nový checkpoint modelu je připraven pro nasazení v L3 vrstvě. Vylepšené schopnosti inference a lepší výkon pro AI-native aplikace.',
+      en: 'Hiran v2.3 AI model was successfully trained using QLoRA fine-tuning. New model checkpoint is ready for deployment in L3 layer. Enhanced inference capabilities and improved performance for AI-native applications.',
+    },
+    href: '/l3-hiran',
+  },
+  {
     slug: 'terranova-genesis-3.0.1',
     date: '2026-06-11',
     tag: { cs: 'Genesis', en: 'Genesis' },
@@ -63,21 +78,6 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     summary: {
       cs: 'Deeksha Lite = malá spotřeba energie bez topení, ideální na léto. Deeksha Fire = plný výkon i s teplem, topení pro zimu. Dva režimy, jeden protokol.',
       en: 'Deeksha Lite = low energy consumption without heating, ideal for summer. Deeksha Fire = full power with heat output, winter heating mode. Two modes, one protocol.',
-    },
-    href: '/network',
-  },
-  {
-    slug: 'v3-mainnet-ready-countdown',
-    date: '2026-05-23',
-    tag: { cs: 'Mainnet', en: 'Mainnet' },
-    tagColor: 'text-amber-400',
-    title: {
-      cs: 'ZION 3.0.1 Genesis Launch — MainNet Genesis 11. 6. 2026',
-      en: 'ZION 3.0.1 Genesis Launch — MainNet Genesis 11 Jun 2026',
-    },
-    summary: {
-      cs: 'Website přešel na countdown mód — mainnet launch se přesunul na Silvestr 2026. Core + Edge topologie je stabilní, pool a miner běží. Dokumentace a roadmapa synchronizována.',
-      en: 'Website switched to countdown mode — mainnet launch moved to New Year\'s Eve 2026. Core + Edge topology is stable, pool and miner running. Docs and roadmap synchronized.',
     },
     href: '/network',
   },
