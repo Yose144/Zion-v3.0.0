@@ -1,4 +1,4 @@
-# ZION TerraNova v3.0.0 — Mainnet Ready
+# ZION TerraNova v3.0.2 — Mainnet Ready
 
 > **Proof of Work Layer 1 for the next 100 years.**
 >
@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Status:** Mainnet Ready · Edge primary + Core miner · Chain live · Launch: 31 December 2026
+**Status:** Mainnet Live · L1 Active · L2/L3 Ready · L4 Oasis in Prep · Launch: 31 December 2026
 
 [StatusV3.md](StatusV3.md) · [MAINNET_OPS_GUIDE.md](MAINNET_OPS_GUIDE.md) · [AGENTS.md](AGENTS.md) · [docs/GENESIS_REGENERATION_RUNBOOK.md](docs/GENESIS_REGENERATION_RUNBOOK.md)
 
