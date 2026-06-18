@@ -96,22 +96,19 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
 .tooltip:hover .tip{visibility:visible;opacity:1;}
 .tip{visibility:hidden;opacity:0;position:absolute;bottom:130%;left:50%;transform:translateX(-50%);background:rgba(7,10,20,0.95);border:1px solid rgba(255,255,255,0.15);padding:6px 10px;border-radius:6px;font-size:11px;white-space:nowrap;z-index:50;transition:opacity 0.2s;font-weight:500;color:#e5e7eb;}
 .hero-orb{position:absolute;border-radius:50%;filter:blur(60px);pointer-events:none;}
-/* ── Sidebar Layout ── */
-.dashboard-grid{display:grid;grid-template-columns:220px minmax(0,1fr);gap:1.5rem;align-items:start;}
-.dashboard-main{min-width:0;overflow-x:hidden;max-width:100%;}
+/* ── Top Navbar ── */
+.top-nav{display:flex;align-items:center;gap:0.25rem;flex-wrap:wrap;padding:0.5rem 1rem;margin-bottom:1rem;background:rgba(15,20,35,0.85);border:1px solid rgba(255,255,255,0.1);border-radius:1rem;backdrop-filter:blur(10px);position:sticky;top:0;z-index:50;}
+.nav-group{position:relative;}
+.nav-group>button{padding:0.4rem 0.7rem;font-size:0.78rem;font-weight:600;color:#9ca3af;background:transparent;border:1px solid transparent;border-radius:0.5rem;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.nav-group>button:hover{color:#fff;background:rgba(255,255,255,0.05);}
+.nav-group>button.tab-active{color:#fff;background:linear-gradient(135deg,rgba(255,215,0,0.12),rgba(147,51,234,0.12));border-color:rgba(255,215,0,0.3);box-shadow:0 4px 20px rgba(147,51,234,0.2);}
+.nav-dropdown{display:none;position:absolute;top:100%;left:0;min-width:200px;background:rgba(7,10,20,0.98);border:1px solid rgba(255,255,255,0.12);border-radius:0.75rem;padding:0.5rem;z-index:100;box-shadow:0 24px 60px rgba(0,0,0,0.5);}
+.nav-group:hover .nav-dropdown{display:block;}
+.nav-dropdown button{display:block;width:100%;text-align:left;padding:0.4rem 0.7rem;font-size:0.75rem;font-weight:500;color:#9ca3af;background:transparent;border:1px solid transparent;border-radius:0.4rem;cursor:pointer;transition:all .1s;white-space:nowrap;}
+.nav-dropdown button:hover{color:#fff;background:rgba(255,255,255,0.05);}
+.nav-dropdown button.tab-active{color:#fff;background:linear-gradient(135deg,rgba(255,215,0,0.08),rgba(147,51,234,0.08));}
 [id^="pane-"]{max-width:100%;}
-.dashboard-main>div[id^="pane-"]{display:block;width:100%;box-sizing:border-box;}
-@media(max-width:1024px){.dashboard-grid{grid-template-columns:1fr;}.sidebar{position:fixed;left:0;top:0;height:100vh;width:260px;transform:translateX(-100%);transition:transform .25s ease;z-index:60;background:rgba(7,10,20,0.98);border-right:1px solid rgba(255,255,255,0.1);padding:1.5rem;}.sidebar.open{transform:translateX(0);}}
-.sidebar{position:sticky;top:1.5rem;}
-.sidebar-group{margin-bottom:1rem;}
-.sidebar-title{font-size:0.6rem;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;color:#6b7280;padding:0 0.5rem;margin-bottom:0.35rem;}
-.sidebar-item{display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.45rem 0.6rem;border-radius:0.65rem;font-size:0.8rem;font-weight:600;color:#9ca3af;background:transparent;border:1px solid transparent;cursor:pointer;transition:all .15s;white-space:nowrap;}
-.sidebar-item:hover{color:#fff;background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.08);}
-.sidebar-item.tab-active{color:#fff;background:linear-gradient(135deg,rgba(255,215,0,0.08),rgba(147,51,234,0.08));border-color:rgba(255,215,0,0.3);box-shadow:0 4px 20px rgba(147,51,234,0.2);}
-#mobileMenuBtn{display:none;}
-@media(max-width:1024px){#mobileMenuBtn{display:inline-flex;}}
-#sidebarOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:55;}
-@media(max-width:1024px){#sidebarOverlay.open{display:block;}}
+@media(max-width:1024px){.top-nav{gap:0.15rem;padding:0.4rem;}.nav-group>button{font-size:0.7rem;padding:0.3rem 0.5rem;}}
 /* NCL Panel styles */
 .ncl-tab-btn{padding:0.5rem 0.85rem;font-size:0.75rem;font-weight:600;border-radius:0.65rem;cursor:pointer;transition:all 180ms;color:#9ca3af;background:transparent;border:1px solid transparent;}
 .ncl-tab-btn:hover{color:#fff;background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.08);}
@@ -268,76 +265,92 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     </div>
   </section>
 
-  <!-- Mobile menu toggle -->
-  <button id="mobileMenuBtn" onclick="toggleSidebar()" class="zion-button-secondary text-xs mb-4">☰ Menu</button>
-  <div id="sidebarOverlay" onclick="toggleSidebar()"></div>
+  <!-- Top Navbar -->
+  <nav class="top-nav">
+    <div class="nav-group">
+      <button onclick="switchTab('overview')" id="tab-overview" class="tab-active">📊 Overview</button>
+    </div>
+    <div class="nav-group">
+      <button>🖥️ Nodes ▾</button>
+      <div class="nav-dropdown">
+        <button onclick="switchTab('nodes')" id="tab-nodes">Nodes</button>
+        <button onclick="switchTab('orchestrator')" id="tab-orchestrator">Orchestrator</button>
+        <button onclick="switchTab('topology')" id="tab-topology">Topology</button>
+        <button onclick="switchTab('services')" id="tab-services">Services</button>
+      </div>
+    </div>
+    <div class="nav-group">
+      <button>🗳️ Governance ▾</button>
+      <div class="nav-dropdown">
+        <button onclick="switchTab('dao')" id="tab-dao">DAO Governance</button>
+        <button onclick="switchTab('payout')" id="tab-payout">💰 Payouts</button>
+        <button onclick="switchTab('wallets')" id="tab-wallets">💼 Wallets</button>
+        <button onclick="switchTab('explorer')" id="tab-explorer">🔍 Explorer</button>
+      </div>
+    </div>
+    <div class="nav-group">
+      <button>🔷 Layers ▾</button>
+      <div class="nav-dropdown">
+        <button onclick="switchTab('l1')" id="tab-l1">L1 Consensus</button>
+        <button onclick="switchTab('l2')" id="tab-l2">L2 Bridge / DAO</button>
+        <button onclick="switchTab('l3')" id="tab-l3">L3 Advanced</button>
+        <button onclick="switchTab('warp')" id="tab-warp">WARP Bridge</button>
+        <button onclick="switchTab('l4')" id="tab-l4">L4 OASIS</button>
+        <button onclick="switchTab('l5')" id="tab-l5">L5 Humanitarian</button>
+        <button onclick="switchTab('l6')" id="tab-l6">L6 Space</button>
+      </div>
+    </div>
+    <div class="nav-group">
+      <button>🧠 AI ▾</button>
+      <div class="nav-dropdown">
+        <button onclick="switchTab('ai-agents')" id="tab-ai-agents">AI Agents</button>
+        <button onclick="switchTab('hiran')" id="tab-hiran">Hiran AI</button>
+        <button onclick="switchTab('ncl-jobs')" id="tab-ncl-jobs">NCL Jobs</button>
+      </div>
+    </div>
+    <div class="nav-group">
+      <button>🌉 Bridge ▾</button>
+      <div class="nav-dropdown">
+        <button onclick="switchTab('bridge')" id="tab-bridge">Bridge Status</button>
+        <button onclick="switchTab('bridge-validators')" id="tab-bridge-validators">Validators</button>
+      </div>
+    </div>
+    <div class="nav-group">
+      <button>🔧 Ops ▾</button>
+      <div class="nav-dropdown">
+        <button onclick="switchTab('ops')" id="tab-ops">Ops / Backup / CLI</button>
+        <button onclick="switchTab('agent')" id="tab-agent">ZION Agent</button>
+        <button onclick="switchTab('launch-day')" id="tab-launch-day">Launch Day</button>
+        <button onclick="switchTab('wizard')" id="tab-wizard">Wizard</button>
+        <button onclick="switchTab('genesis')" id="tab-genesis">Genesis</button>
+        <button onclick="switchTab('blockers')" id="tab-blockers">Blockers</button>
+      </div>
+    </div>
+    <div class="nav-group">
+      <button>📊 Diagnostics ▾</button>
+      <div class="nav-dropdown">
+        <button onclick="switchTab('alerts')" id="tab-alerts">Alerts</button>
+        <button onclick="switchTab('charts')" id="tab-charts">Charts</button>
+        <button onclick="switchTab('events')" id="tab-events">Events</button>
+        <button onclick="switchTab('metrics')" id="tab-metrics">Metrics</button>
+        <button onclick="switchTab('miner-live')" id="tab-miner-live">Miner Live</button>
+        <button onclick="switchTab('logs')" id="tab-logs">Logs</button>
+        <button onclick="switchTab('database')" id="tab-database">Database</button>
+        <button onclick="switchTab('env')" id="tab-env">Environment</button>
+      </div>
+    </div>
+    <div class="nav-group">
+      <button>💾 Tools ▾</button>
+      <div class="nav-dropdown">
+        <button onclick="switchTab('backups')" id="tab-backups">Backups</button>
+        <button onclick="switchTab('fleet')" id="tab-fleet">Fleet</button>
+        <button onclick="switchTab('settings')" id="tab-settings">Settings</button>
+      </div>
+    </div>
+  </nav>
 
-  <div class="dashboard-grid">
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-group">
-        <div class="sidebar-title">Mission</div>
-        <button onclick="console.log('CLICK overview'); switchTab('overview')" id="tab-overview" class="sidebar-item tab-active">📊 Overview</button>
-        <button onclick="console.log('CLICK nodes'); switchTab('nodes')" id="tab-nodes" class="sidebar-item">🖥️ Nodes</button>
-        <button onclick="console.log('CLICK orchestrator'); switchTab('orchestrator')" id="tab-orchestrator" class="sidebar-item">🎛️ Orchestrator</button>
-      </div>
-      <div class="sidebar-group">
-        <div class="sidebar-title">Governance</div>
-        <button onclick="switchTab('dao')" id="tab-dao" class="sidebar-item">🗳️ DAO Governance</button>
-      </div>
-      <div class="sidebar-group">
-        <div class="sidebar-title">Layers</div>
-        <button onclick="switchTab('l1')" id="tab-l1" class="sidebar-item">🔷 L1 Consensus</button>
-        <button onclick="switchTab('l2')" id="tab-l2" class="sidebar-item">🌉 L2 Bridge / DAO</button>
-        <button onclick="switchTab('l3')" id="tab-l3" class="sidebar-item">🌀 L3 Advanced</button>
-        <button onclick="switchTab('warp')" id="tab-warp" class="sidebar-item">🌉 WARP Bridge</button>
-        <button onclick="switchTab('ai-agents')" id="tab-ai-agents" class="sidebar-item">🧠 AI Agents</button>
-        <button onclick="switchTab('ncl-jobs')" id="tab-ncl-jobs" class="sidebar-item">🧬 NCL Jobs</button>
-        <button onclick="switchTab('l4')" id="tab-l4" class="sidebar-item">🪷 L4 OASIS</button>
-        <button onclick="switchTab('l5')" id="tab-l5" class="sidebar-item">🕊️ L5 Humanitarian</button>
-        <button onclick="switchTab('l6')" id="tab-l6" class="sidebar-item">🚀 L6 Space</button>
-      </div>
-      <div class="sidebar-group">
-        <div class="sidebar-title">Cross-Chain</div>
-        <button onclick="switchTab('bridge')" id="tab-bridge" class="sidebar-item">🌉 Bridge</button>
-      </div>
-      <div class="sidebar-group">
-        <div class="sidebar-title">Operations</div>
-        <button onclick="switchTab('ops')" id="tab-ops" class="sidebar-item">🔧 Ops (Backup / CLI)</button>
-        <button onclick="switchTab('agent')" id="tab-agent" class="sidebar-item">🤖 ZION Agent</button>
-        <button onclick="switchTab('launch-day')" id="tab-launch-day" class="sidebar-item">🚀 Launch Day</button>
-        <button onclick="switchTab('wizard')" id="tab-wizard" class="sidebar-item">🧙 Wizard</button>
-        <button onclick="switchTab('hiran')" id="tab-hiran" class="sidebar-item">🤖 Hiran AI</button>
-        <button onclick="switchTab('genesis')" id="tab-genesis" class="sidebar-item">⚡ Genesis</button>
-        <button onclick="switchTab('blockers')" id="tab-blockers" class="sidebar-item">🚧 Blockers</button>
-      </div>
-      <div class="sidebar-group">
-        <div class="sidebar-title">Diagnostics</div>
-        <button onclick="switchTab('topology')" id="tab-topology" class="sidebar-item">🌐 Topology</button>
-        <button onclick="switchTab('services')" id="tab-services" class="sidebar-item">🧩 Services</button>
-        <button onclick="switchTab('alerts')" id="tab-alerts" class="sidebar-item">🚨 Alerts</button>
-        <button onclick="switchTab('charts')" id="tab-charts" class="sidebar-item">📈 Charts</button>
-        <button onclick="switchTab('events')" id="tab-events" class="sidebar-item">🧱 Events</button>
-        <button onclick="switchTab('metrics')" id="tab-metrics" class="sidebar-item">📊 Metrics</button>
-        <button onclick="switchTab('miner-live')" id="tab-miner-live" class="sidebar-item">⛏️ Miner Live</button>
-        <button onclick="switchTab('settings')" id="tab-settings" class="sidebar-item">⚙️ Settings</button>
-        <button onclick="switchTab('fleet')" id="tab-fleet" class="sidebar-item">🌐 Fleet</button>
-        <button onclick="switchTab('logs')" id="tab-logs" class="sidebar-item">📜 Logs</button>
-        <button onclick="switchTab('database')" id="tab-database" class="sidebar-item">🗄️ Database</button>
-        <button onclick="switchTab('env')" id="tab-env" class="sidebar-item">⚙️ Environment</button>
-      </div>
-      <div class="sidebar-group">
-        <div class="sidebar-title">Tools</div>
-        <button onclick="switchTab('payout')" id="tab-payout" class="sidebar-item">💰 Payouts</button>
-        <button onclick="switchTab('wallets')" id="tab-wallets" class="sidebar-item">💼 Wallets</button>
-        <button onclick="switchTab('explorer')" id="tab-explorer" class="sidebar-item">🔍 Explorer</button>
-        <button onclick="switchTab('backups')" id="tab-backups" class="sidebar-item">💾 Backups</button>
-        <button onclick="openSettingsModal()" class="sidebar-item">⚙️ Settings</button>
-      </div>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="dashboard-main">
+  <!-- Main Content -->
+  <main class="dashboard-main">
 
   <!-- ═════════ TAB: Overview ═════════ -->
   <div id="pane-overview" class="space-y-5">
