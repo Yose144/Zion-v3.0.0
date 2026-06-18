@@ -1177,6 +1177,7 @@ fn handle_client(
                 let result_message = PoolMessage::Result {
                     accepted: false,
                     status: "NoSolution".to_string(),
+                    block_found: false,
                 };
                 let result_line = write_wire_message(&mut writer, &result_message)?;
                 println!("share_status=NoSolution");
@@ -3233,7 +3234,8 @@ mod tests {
             messages[5],
             PoolMessage::Result {
                 accepted: false,
-                ref status
+                ref status,
+                ..
             } if status == "StaleJob"
         ));
         assert!(matches!(
@@ -3274,7 +3276,8 @@ mod tests {
             messages[3],
             PoolMessage::Result {
                 accepted: false,
-                ref status
+                ref status,
+                ..
             } if status == "UpstreamRejected"
         ));
         assert!(matches!(
