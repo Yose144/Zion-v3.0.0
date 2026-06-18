@@ -1465,9 +1465,12 @@ fn run_remote_session(
                 println!("wire_result={result_line_raw}");
             }
             match result_message {
-                PoolMessage::Result { accepted, status } => {
+                PoolMessage::Result { accepted, status, block_found } => {
                     if accepted {
                         accepted_iterations += 1;
+                    }
+                    if block_found {
+                        println!("BLOCK FOUND (pool confirmed)");
                     }
                     if VERBOSE.load(Ordering::Relaxed) {
                         println!("pool_status={status}");
@@ -1555,7 +1558,7 @@ fn run_remote_session(
         last_result_line = Some(result_line_raw.clone());
 
         let status = match result_message {
-            PoolMessage::Result { accepted, status } => {
+            PoolMessage::Result { accepted, status, block_found } => {
                 let latency_ms = submit_started_at.elapsed().as_millis();
                 if accepted {
                     accepted_iterations += 1;
@@ -1566,6 +1569,9 @@ fn run_remote_session(
                         log_timestamp(), job.job_id, job.height,
                         solution.candidate.nonce, current_algorithm, latency_ms,
                     );
+                    if block_found {
+                        println!("[{}] BLOCK FOUND (pool confirmed)", log_timestamp());
+                    }
                 } else {
                     rejected_iterations += 1;
                     hashrate.record_share(false);

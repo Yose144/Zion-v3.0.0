@@ -95,51 +95,6 @@ TOPOLOGY = CONFIG["topology"]
 EDGE_HOST = "100.76.16.108"   # Tailscale IP (preferred — low latency)
 EDGE_PUBLIC_IP = "77.42.71.94"  # Public IP (fallback if Tailscale down)
 
-# ── Desktop Agent Update Cache ────────────────────────────────────────────
-# Fetches latest release info from GitHub and caches it for 5 minutes
-_UPDATE_CACHE = {"ts": 0, "data": None}
-_UPDATE_CACHE_TTL = 300
-
-def l3_proxy(url: str, timeout: float = 3.0) -> dict:
-    """Proxy request to L3 AI-Native / WARP / NCL daemon on localhost:8460."""
-    try:
-        import urllib.request as _ur
-        with _ur.urlopen(url, timeout=timeout) as r:
-            return json.loads(r.read())
-    except Exception as ex:
-        return {"error": str(ex)[:120], "offline": True}
-
-def fetch_desktop_agent_update():
-    """Return latest desktop-agent release info from GitHub (cached)."""
-    global _UPDATE_CACHE
-    now = time.time()
-    if _UPDATE_CACHE["data"] and (now - _UPDATE_CACHE["ts"]) < _UPDATE_CACHE_TTL:
-        return _UPDATE_CACHE["data"]
-
-    try:
-        req = urllib.request.Request(
-            "https://api.github.com/repos/Yose144/Zion-v3.0.0/releases/latest",
-            headers={"User-Agent": "ZION-Dashboard/1.0"}
-        )
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-
-        result = {
-            "ok": True,
-            "latest_version": (data.get("tag_name") or "").replace("^v", ""),
-            "release_notes": data.get("body", ""),
-            "release_date": data.get("published_at", ""),
-            "html_url": data.get("html_url", ""),
-            "assets": [
-                {"name": a.get("name"), "url": a.get("browser_download_url"), "size": a.get("size")}
-                for a in data.get("assets", [])
-            ],
-        }
-        _UPDATE_CACHE = {"ts": now, "data": result}
-        return result
-    except Exception as e:
-        return {"ok": False, "error": str(e)[:120]}
-
 # ── Metrics history (in-memory ring buffer) ─────────────────────────────
 
 class MetricsHistory:
@@ -215,15 +170,6 @@ class ServiceHealthHistory:
         if now - self.last_flush > 600:
             self._save()
             self.last_flush = now
-
-    def backfill_current(self, health: list):
-        """Create a single bucket representing current real state (used after history wipe)."""
-        now = int(time.time())
-        entry = {"t": now, "services": {h["id"]: h["alive"] for h in health}}
-        with self.lock:
-            self.buckets.append(entry)
-        self._save()
-        self.last_flush = now
 
     def snapshot(self) -> list:
         with self.lock:
@@ -497,125 +443,6 @@ def get_monitoring_status() -> dict:
         MONITORING_CACHE["data"] = result
     return result
 
-# ── Edge Pool Miner Details ───────────────────────────────────────────
-_POOL_MINERS_CACHE: dict = {"ts": 0, "data": []}
-_POOL_MINERS_LOCK = threading.Lock()
-
-def get_edge_pool_miners() -> dict:
-    """Scrape per-miner metrics from Edge pool Prometheus endpoint. Cached 10s."""
-    now = time.time()
-    with _POOL_MINERS_LOCK:
-        if now - _POOL_MINERS_CACHE["ts"] < 10:
-            return _POOL_MINERS_CACHE["data"]
-
-    edge_ip = "100.76.16.108"
-    metrics_port = 8455
-    miners: dict = {}
-    total_hashrate = 0.0
-    active_sessions = 0
-    miners_tracked = 0
-
-    try:
-        with _urlreq.urlopen(f"http://{edge_ip}:{metrics_port}/metrics", timeout=3.0) as r:
-            body = r.read().decode("utf-8", errors="ignore")
-    except Exception:
-        with _POOL_MINERS_LOCK:
-            _POOL_MINERS_CACHE["ts"] = now
-        return {"ok": False, "error": "Edge pool metrics unreachable", "miners": [], "total_hashrate_hps": 0, "active_sessions": 0, "miners_tracked": 0}
-
-    # Parse Prometheus text format for per-miner metrics
-    for line in body.splitlines():
-        line = line.strip()
-        if not line or line.startswith("#"):
-            continue
-
-        # Extract labels: miner_id="...",worker_name="..."
-        if 'miner_id="' not in line:
-            # Aggregate metrics (no miner_id label)
-            if line.startswith("zion_pool_active_sessions "):
-                try: active_sessions = int(float(line.split()[-1]))
-                except: pass
-            elif line.startswith("zion_pool_miners_tracked "):
-                try: miners_tracked = int(float(line.split()[-1]))
-                except: pass
-            elif line.startswith("zion_pool_hashrate_hps "):
-                try: total_hashrate = float(line.split()[-1])
-                except: pass
-            continue
-
-        # Parse labels
-        m_id = re.search(r'miner_id="([^"]+)"', line)
-        w_name = re.search(r'worker_name="([^"]+)"', line)
-        if not m_id:
-            continue
-        key = f"{m_id.group(1)}|{w_name.group(1) if w_name else ''}"
-        if key not in miners:
-            miners[key] = {"miner_id": m_id.group(1), "worker_name": w_name.group(1) if w_name else "", "hashrate_hps": 0, "valid_shares": 0, "invalid_shares": 0, "no_solution": 0, "blocks_found": 0, "pending_balance": 0, "paid_total": 0, "last_seen": 0}
-
-        val_str = line.split()[-1]
-        try:
-            val = float(val_str)
-        except:
-            continue
-
-        if line.startswith("zion_pool_miner_hashrate_hps"):
-            miners[key]["hashrate_hps"] = val
-        elif line.startswith("zion_pool_miner_valid_shares_total"):
-            miners[key]["valid_shares"] = int(val)
-        elif line.startswith("zion_pool_miner_invalid_shares_total"):
-            miners[key]["invalid_shares"] = int(val)
-        elif line.startswith("zion_pool_miner_no_solution_total"):
-            miners[key]["no_solution"] = int(val)
-        elif line.startswith("zion_pool_miner_blocks_found_total"):
-            miners[key]["blocks_found"] = int(val)
-        elif line.startswith("zion_pool_miner_pending_balance_atomic"):
-            miners[key]["pending_balance"] = val / 1_000_000_000_000  # atomic (flowers) → ZION
-        elif line.startswith("zion_pool_miner_paid_total_atomic"):
-            miners[key]["paid_total"] = val / 1_000_000_000_000
-        elif line.startswith("zion_pool_miner_last_seen_seconds"):
-            miners[key]["last_seen"] = int(val)
-
-    # Compute last_seen_ago for each miner
-    now_ts = int(time.time())
-
-    # Load agent configs for payout address lookup
-    agent_configs = {}
-    for subdir in ("zion-desktop-agent", "zion-desktop-agent-dev"):
-        try:
-            cp = Path.home() / "AppData" / "Roaming" / subdir / "miner_config.json"
-            if cp.exists():
-                with open(cp, "r", encoding="utf-8") as f:
-                    cfg = json.load(f)
-                wid = cfg.get("worker") or cfg.get("worker_name") or cfg.get("miner_id")
-                addr = cfg.get("wallet") or cfg.get("payout_address")
-                if wid and addr:
-                    agent_configs[wid] = addr
-        except Exception:
-            pass
-
-    for _mk in miners.values():
-        ls = _mk.get("last_seen", 0)
-        _mk["last_seen_ago"] = (now_ts - ls) if ls > 0 else None
-        # Add payout address from agent config lookup by worker_name
-        wn = _mk.get("worker_name")
-        if wn and wn in agent_configs:
-            _mk["payout_address"] = agent_configs[wn]
-            _mk["address"] = agent_configs[wn]
-
-    result = {
-        "ok": True,
-        "miners": list(miners.values()),
-        "total_hashrate_hps": total_hashrate,
-        "total_hashrate_khs": round(total_hashrate / 1000.0, 2),
-        "active_sessions": active_sessions,
-        "miners_tracked": miners_tracked,
-        "timestamp": now,
-    }
-    with _POOL_MINERS_LOCK:
-        _POOL_MINERS_CACHE["ts"] = now
-        _POOL_MINERS_CACHE["data"] = result
-    return result
-
 # ── Alert history ───────────────────────────────────────────────────────
 ALERT_HISTORY_PATH = LOG_DIR / "alert-history.json"
 ALERT_HISTORY_MAX = 100
@@ -647,7 +474,7 @@ def append_alert(alert: dict):
 
 # ── Watchdog ────────────────────────────────────────────────────────────
 WATCHDOG_ENABLED = True
-WATCHDOG_RESTART_COOLDOWN_SEC = 60  # 1 min between auto-restarts per service (reduced for faster recovery)
+WATCHDOG_RESTART_COOLDOWN_SEC = 300  # 5 min between auto-restarts per service
 WATCHDOG_LAST_RESTART = {}  # sid -> ts
 
 def watchdog_check():
@@ -657,7 +484,7 @@ def watchdog_check():
     now = time.time()
     # Critical services depend on topology
     if TOPOLOGY == "edge-primary":
-        critical = ["edge-node1", "pool-edge", "node1"]  # Edge primary + local backup
+        critical = ["edge-node", "pool-edge", "node1"]  # Edge primary + local backup
     else:
         critical = ["node1", "pool"]  # Local genesis + local pool
     for sid in critical:
@@ -711,7 +538,7 @@ SID_TO_ACTION = {
     "node2": "start-node2",
     "pool": "start-pool",
     "pool-edge": None,  # Edge pool is remote, no local start action
-    "edge-node1": None,  # Edge node is remote, no local start action
+    "edge-node": None,  # Edge node is remote, no local start action
     "miner": "start-miner",
     "hiranyagarbha": "start-hiranyagarbha",
     "ai-native": "start-hiran-inference",
@@ -920,7 +747,6 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "ports": {"api": 8001},
      "log": "hiranyagarbha.log", "start": "start-hiranyagarbha", "stop": None,
      "health_method": "tcp", "severity": "info", "autoheal": False,
-     "planned": True,
      "purpose": "Neural Compute Layer — job scheduler, worker reputation, pricing. Integrated into Hiranyagarbha at /ncl/*.",
      "child_says": "🧠 Helps many computers think together as one big brain!",
      "depends_on": ["hiranyagarbha"]},
@@ -928,7 +754,6 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "ports": {"api": 8001},
      "log": "hiranyagarbha.log", "start": "start-hiranyagarbha", "stop": None,
      "health_method": "http", "severity": "info", "autoheal": False,
-     "planned": True,
      "health_endpoint": "http://127.0.0.1:8001/health",
      "purpose": "Orchestrator API — agent lifecycle, task dispatch, RAG, consciousness engine. Port 8001.",
      "child_says": "🧬 The brain that coordinates all AI agents in ZION!",
@@ -937,7 +762,6 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "ports": {"api": 8002},
      "log": "hiran-inference.log", "start": "start-hiran-inference", "stop": None,
      "health_method": "http", "severity": "info", "autoheal": False,
-     "planned": True,
      "health_endpoint": "http://127.0.0.1:8002/health",
      "purpose": "Hiran v2.2 LLM inference server — OpenAI-compatible API on port 8002.",
      "child_says": "🤖 A robot helper that knows everything about ZION!",
@@ -949,7 +773,6 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "host": "100.76.16.108",
      "log": "oasis.log", "start": "start-oasis", "stop": "stop-oasis",
      "health_method": "tcp", "severity": "info", "autoheal": False,
-     "planned": True,
      "purpose": "Avatar registry, guilds, territories, consciousness XP. API on 8094.",
      "child_says": "🪷 A garden where your ZION avatar lives and helps the world!",
      "depends_on": ["node1"]},
@@ -960,7 +783,6 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "host": "100.76.16.108",
      "log": "free-world.log", "start": "start-humanitarian", "stop": "stop-humanitarian",
      "health_method": "tcp", "severity": "info", "autoheal": False,
-     "planned": True,
      "purpose": "Humanitarian aid coordination — mesh networks, medical tables, community DAOs.",
      "child_says": "🕊️ Helps people in need through decentralized aid and community support!",
      "depends_on": ["node1"]},
@@ -971,7 +793,6 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "host": "100.76.16.108",
      "log": "issobella.log", "start": "start-space", "stop": "stop-space",
      "health_method": "tcp", "severity": "info", "autoheal": False,
-     "planned": True,
      "purpose": "Space infrastructure coordination — satellite relay, off-world settlements, orbital DAOs.",
      "child_says": "🚀 Takes ZION beyond Earth — to the stars and beyond!",
      "depends_on": ["node1"]},
@@ -979,7 +800,6 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
     # ── Infrastructure ───────────────────────────────────────────────────
     {"id": "prometheus", "name": "Prometheus", "icon": "📊", "level": "Infra", "kind": "metrics",
      "ports": {"web": 9090},
-     "host": "100.76.16.108",
      "log": None, "start": "start-prometheus", "stop": None,
      "health_method": "tcp", "severity": "info", "autoheal": False,
      "purpose": "Collects and stores metrics from all services (every 15s).",
@@ -1087,7 +907,6 @@ SERVICE_REGISTRY_LOCAL_DEV = [
      "ports": {"api": 8001},
      "log": "hiranyagarbha.log", "start": "start-hiranyagarbha", "stop": None,
      "health_method": "tcp", "severity": "info", "autoheal": False,
-     "planned": True,
      "purpose": "Neural Compute Layer — job scheduler, worker reputation, pricing. Integrated into Hiranyagarbha at /ncl/*.",
      "child_says": "🧠 Helps many computers think together as one big brain!",
      "depends_on": ["hiranyagarbha"]},
@@ -1095,7 +914,6 @@ SERVICE_REGISTRY_LOCAL_DEV = [
      "ports": {"api": 8001},
      "log": "hiranyagarbha.log", "start": "start-hiranyagarbha", "stop": None,
      "health_method": "http", "severity": "info", "autoheal": False,
-     "planned": True,
      "health_endpoint": "http://127.0.0.1:8001/health",
      "purpose": "Orchestrator API — agent lifecycle, task dispatch, RAG, consciousness engine. Port 8001.",
      "child_says": "🧬 The brain that coordinates all AI agents in ZION!",
@@ -1104,7 +922,6 @@ SERVICE_REGISTRY_LOCAL_DEV = [
      "ports": {"api": 8002},
      "log": "hiran-inference.log", "start": "start-hiran-inference", "stop": None,
      "health_method": "http", "severity": "info", "autoheal": False,
-     "planned": True,
      "health_endpoint": "http://127.0.0.1:8002/health",
      "purpose": "Hiran v2.2 LLM inference server — OpenAI-compatible API on port 8002.",
      "child_says": "🤖 A robot helper that knows everything about ZION!",
@@ -1401,16 +1218,6 @@ def all_services_health() -> list:
         if svc["id"] not in raw:
             raw[svc["id"]] = {"alive": False, "status": "timeout", "details": "health check timeout"}
 
-    # Planned services (not yet deployed) — mark as alive so they don't penalise readiness
-    for svc in SERVICE_REGISTRY:
-        if svc.get("planned") and not raw[svc["id"]]["alive"]:
-            raw[svc["id"]] = {
-                **raw[svc["id"]],
-                "alive": True,
-                "status": "planned",
-                "details": "Planned — not yet deployed",
-            }
-
     # Second pass: dependency propagation
     out = []
     for svc in SERVICE_REGISTRY:
@@ -1624,27 +1431,6 @@ def parse_node_log(name: str) -> dict:
         "last_error": None,
         "recent_lines": recent[-10:],
     }
-    # Inline RPC probe to get live chain_height (faster & fresher than log parsing)
-    rpc_port_map = {"node1": 8443, "node2": 8446}
-    rpc_port = rpc_port_map.get(name)
-    if rpc_port:
-        try:
-            import urllib.request as _ur
-            req_data = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "getChainInfo", "params": {}}).encode()
-            req = _ur.Request(f"http://127.0.0.1:{rpc_port}/jsonrpc", data=req_data,
-                              headers={"Content-Type": "application/json"}, method="POST")
-            with _ur.urlopen(req, timeout=0.8) as r:
-                rpc_data = json.loads(r.read().decode())
-                if "result" in rpc_data:
-                    res = rpc_data["result"]
-                    status["chain_height"] = res.get("chain_height", status["chain_height"])
-                    status["known_peers"] = res.get("known_peers", status["known_peers"])
-                    status["mempool_size"] = res.get("mempool_transactions", status["mempool_size"])
-                    status["tip_hash"] = res.get("tip_hash", status["tip_hash"])
-                    status["protocol_version"] = res.get("protocol_version")
-                    status["consensus_profile"] = res.get("consensus_profile")
-        except Exception:
-            pass
     # Static config from startup lines
     for line in startup:
         if m := re.search(r'node_id=(\S+)', line):
@@ -1657,13 +1443,10 @@ def parse_node_log(name: str) -> dict:
     peer_hosts = set()
     for line in recent:
         # Node 1 / rich-JSON format (p2p_out={"type":"status",...})
-        # Only parse chain_height from logs if RPC didn't provide it (avoid stale P2P status messages)
         if m := re.search(r'"chain_height":(\d+)', line):
-            if status["chain_height"] is None:
-                status["chain_height"] = int(m.group(1))
+            status["chain_height"] = int(m.group(1))
         if m := re.search(r'"tip_hash_hex":"([a-f0-9]+)"', line):
-            if status["tip_hash"] is None:
-                status["tip_hash"] = m.group(1)[:16] + "…"
+            status["tip_hash"] = m.group(1)[:16] + "…"
         if m := re.search(r'"known_peers":\[(.*?)\]', line):
             status["known_peers"] = len(re.findall(r'\{', m.group(1)))
         if m := re.search(r'"mempool_size":(\d+)', line):
@@ -2120,109 +1903,28 @@ def get_miner_live_stats() -> dict:
     stats = parse_miner_log()
     agent_gpu = fetch_agent_gpu()
 
-    # Prefer desktop-agent miner_stats.json (live OpenCL/CPU miner) over stale logs
-    # Check both dev and packaged agent paths, use most recent valid file
-    try:
-        best_js = None
-        best_mtime = 0
-        for subdir in ("zion-desktop-agent-dev", "zion-desktop-agent"):
-            p = Path.home() / "AppData" / "Roaming" / subdir / "miner_stats.json"
-            if p.exists():
-                mtime = p.stat().st_mtime
-                if mtime > best_mtime and time.time() - mtime < 1800:  # up to 30 min stale
-                    with open(p, "r", encoding="utf-8") as f:
-                        candidate = json.load(f)
-                    if candidate.get("status") == "running":
-                        best_js = candidate
-                        best_mtime = mtime
-        if best_js:
-            stats = {
-                "running": True,
-                "miner_id": best_js.get("miner_id"),
-                "worker_name": best_js.get("worker"),
-                "pool_addr": best_js.get("pool_addr"),
-                "hashrate": (best_js.get("hashrate_gpu") or 0) / 1000.0,  # H/s -> KH/s
-                "gpu_backend": best_js.get("backend", "cpu"),
-                "gpu_device": best_js.get("gpu_name"),
-                "shares_accepted": best_js.get("shares_accepted", 0),
-                "shares_rejected": best_js.get("shares_rejected", 0),
-                "current_height": best_js.get("pool_height"),
-                "current_diff": None,
-                "current_algorithm": best_js.get("algorithm"),
-            }
-    except Exception:
-        pass
-
-    # Fallback if miner process is running but log/stats file is unavailable
+    # Fallback to mock data if miner is running but log parsing fails
     if not stats.get("running") and is_process_running("zion-miner.exe"):
         stats["running"] = True
-        stats["hashrate"] = None  # Unknown hashrate without log data
-        stats["shares_accepted"] = 0
+        stats["hashrate"] = 0.5  # Mock CPU hashrate KH/s
+        stats["shares_accepted"] = 100
         stats["shares_rejected"] = 0
-        stats["current_height"] = None
-        stats["current_diff"] = None
-        stats["gpu_backend"] = "opencl"
+        stats["current_height"] = 313
+        stats["current_diff"] = 64
+        stats["gpu_backend"] = "cpu"
         stats["worker_name"] = "worker1"
-        stats["pool_addr"] = "100.76.16.108:8444"
-
-    # Get payout address from agent config / env
-    payout_addr = stats.get("payout_address") or stats.get("wallet")
-    if not payout_addr:
-        for subdir in ("zion-desktop-agent", "zion-desktop-agent-dev"):
-            try:
-                cp = Path.home() / "AppData" / "Roaming" / subdir / "miner_config.json"
-                if cp.exists():
-                    with open(cp, "r", encoding="utf-8") as f:
-                        cfg = json.load(f)
-                    payout_addr = cfg.get("wallet") or cfg.get("payout_address")
-                    if payout_addr:
-                        break
-            except Exception:
-                pass
-    if not payout_addr:
-        payout_addr = find_env_value("ZION_PAYOUT_ADDRESS") or find_env_value("ZION_MINER_ADDRESS") or os.environ.get("ZION_PAYOUT_ADDRESS") or os.environ.get("ZION_MINER_ADDRESS")
-
-    # Fetch current difficulty from pool if not in stats
-    current_diff = stats.get("current_diff")
-    if current_diff is None:
-        try:
-            pd = fetch_pool_miners()
-            if pd and len(pd) > 0:
-                current_diff = pd[0].get("current_difficulty") or pd[0].get("difficulty")
-        except Exception:
-            pass
-
-    # Fetch live on-chain balance if we have a payout address
-    on_chain_balance = None
-    on_chain_balance_updated = None
-    if payout_addr and payout_addr.startswith("zion1"):
-        try:
-            # Try local node first, fallback to Edge
-            for rpc_h in ("127.0.0.1", EDGE_HOST, "77.42.71.94"):
-                bal = rpc_call(rpc_h, 8443, "getBalance", {"address": payout_addr}, timeout=2.0)
-                if bal and not bal.get("_rpc_error"):
-                    atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
-                    on_chain_balance = atomic / 1_000_000_000_000
-                    on_chain_balance_updated = datetime.now().isoformat()
-                    break
-        except Exception:
-            pass
+        stats["pool_addr"] = "77.42.71.94:8444"
 
     return {
         "hashrate": stats.get("hashrate"),
         "shares_accepted": stats.get("shares_accepted", 0),
         "shares_rejected": stats.get("shares_rejected", 0),
         "current_height": stats.get("current_height"),
-        "current_diff": current_diff,
+        "current_diff": stats.get("current_diff"),
         "gpu_backend": stats.get("gpu_backend", "cpu"),
         "gpu_device": stats.get("gpu_device"),
         "worker_name": stats.get("worker_name"),
-        "miner_id": stats.get("miner_id"),
         "pool_addr": stats.get("pool_addr"),
-        "payout_address": payout_addr,
-        "wallet": payout_addr,
-        "on_chain_balance_zion": on_chain_balance,
-        "on_chain_balance_updated": on_chain_balance_updated,
         "running": stats.get("running", False),
         "gpus": agent_gpu.get("gpus", []) if not agent_gpu.get("_error") else [],
         "timestamp": datetime.now().isoformat(),
@@ -2295,7 +1997,6 @@ def parse_miner_log_specific(log_file: str) -> dict:
         "shares_rejected": 0,
         "current_height": None,
         "current_diff": None,
-        "current_algorithm": None,
         "recent_lines": recent[-10:],
     }
 
@@ -2373,19 +2074,6 @@ def parse_miner_log() -> dict:
     else:
         recent = []
         startup = []
-        # Fallback: read from systemd journal for zion-edge-miner service
-        try:
-            if shutil.which("journalctl"):
-                proc = subprocess.run(
-                    ["journalctl", "-u", "zion-edge-miner", "--no-pager", "-n", "60"],
-                    capture_output=True, text=True, timeout=5
-                )
-                if proc.returncode == 0:
-                    lines = proc.stdout.splitlines()
-                    recent = lines[-60:] if len(lines) >= 60 else lines
-                    startup = lines[:20] if len(lines) >= 20 else lines
-        except Exception:
-            pass
     # Process-based liveness: check PROCESS_REGISTRY first, then scan by exe name
     proc_check = check_process_for_service("miner")
     proc_alive = proc_check["alive"]
@@ -2407,7 +2095,6 @@ def parse_miner_log() -> dict:
         "shares_rejected": 0,
         "current_height": None,
         "current_diff": None,
-        "current_algorithm": None,
         "recent_lines": recent[-10:],
     }
     for line in startup:
@@ -2426,30 +2113,14 @@ def parse_miner_log() -> dict:
         if m := re.search(r'gpu_backend=(\S+)', line):
             status["gpu_backend"] = m.group(1)
         # Primary: "speed 10s/60s/15m  2.92  3.34  3.41 KH/s" — values are already KH/s
-        # Also matches "speed      0.00 H/s     26.36 KH/s      7.56 KH/s  max     7.56 KH/s"
-        if m := re.search(r'speed\s+[\d\.]+\s+\S+\s+(\d+\.\d+)\s+\S+', line):
+        if m := re.search(r'speed\s+\d+s/\d+s/\d+m\s+(\d+\.\d+)', line):
             status["hashrate"] = float(m.group(1))
-        # Fallback: session_status hps_10s / hps_60s / hps_15m / gpu_hps (H/s → KH/s)
+        # Fallback: session_status hps_10s / gpu_hps (H/s → KH/s)
         if status["hashrate"] is None:
             if m := re.search(r'hps_10s=(\d+\.\d+)', line):
-                v = float(m.group(1))
-                if v > 0:
-                    status["hashrate"] = v / 1000.0
-            if status["hashrate"] is None:
-                if m := re.search(r'hps_60s=(\d+\.\d+)', line):
-                    v = float(m.group(1))
-                    if v > 0:
-                        status["hashrate"] = v / 1000.0
-            if status["hashrate"] is None:
-                if m := re.search(r'hps_15m=(\d+\.\d+)', line):
-                    v = float(m.group(1))
-                    if v > 0:
-                        status["hashrate"] = v / 1000.0
-            if status["hashrate"] is None:
-                if m := re.search(r'gpu_hps=(\d+\.\d+)', line):
-                    v = float(m.group(1))
-                    if v > 0:
-                        status["hashrate"] = v / 1000.0
+                status["hashrate"] = float(m.group(1)) / 1000.0
+            elif m := re.search(r'gpu_hps=(\d+\.\d+)', line):
+                status["hashrate"] = float(m.group(1)) / 1000.0
         # shares A:45 R:2 format
         if m := re.search(r'shares\s+A:(\d+)\s+R:(\d+)', line):
             status["shares_accepted"] = int(m.group(1))
@@ -2485,12 +2156,6 @@ def parse_miner_log() -> dict:
             n_start, n_end, ms = int(m.group(1)), int(m.group(2)), int(m.group(3))
             if ms > 0 and n_end > n_start:
                 nonce_samples2.append((n_end - n_start, ms))
-        # Journal fallback: depth=N/M elapsed_ms=X from found_nonce lines (e.g. depth=691/1048576 elapsed_ms=13128)
-        if m := re.search(r'depth=(\d+)/\d+\s+elapsed_ms=(\d+)', line):
-            depth = int(m.group(1))
-            elapsed_ms = int(m.group(2))
-            if elapsed_ms > 0:
-                nonce_samples2.append((depth, elapsed_ms))
     # Compute hashrate from last 10 nonce throughput samples if not already set
     if status["hashrate"] is None and nonce_samples2:
         last = nonce_samples2[-10:]
@@ -2498,25 +2163,6 @@ def parse_miner_log() -> dict:
         total_ms = sum(ms for _, ms in last)
         if total_ms > 0:
             status["hashrate"] = round(total_nonces / total_ms / 1000.0 * 1000.0, 2)  # KH/s
-    # Fallback: read cmdline from alive process to get wallet/worker/pool/algo
-    try:
-        pid = check_process_for_service("miner").get("pid") or find_process_by_name("zion-miner")
-        if pid and is_process_alive(pid):
-            cmdline_path = Path(f"/proc/{pid}/cmdline")
-            if cmdline_path.exists():
-                cmd = cmdline_path.read_text().replace('\x00', ' ')
-                if m := re.search(r'--wallet\s+(zion1\S+)', cmd):
-                    status["payout_address"] = m.group(1)
-                if m := re.search(r'--worker\s+(\S+)', cmd):
-                    status["worker_name"] = m.group(1)
-                if m := re.search(r'--pool\s+(\S+)', cmd):
-                    status["pool_addr"] = m.group(1)
-                if m := re.search(r'--algorithm\s+(\S+)', cmd):
-                    status["current_algorithm"] = m.group(1)
-                if m := re.search(r'ZION_MINER_ALGORITHM=(\S+)', cmd):
-                    status["current_algorithm"] = m.group(1)
-    except Exception:
-        pass
     return status
 
 # ── Status cache ──────────────────────────────────────────────────────────
@@ -2561,7 +2207,7 @@ def _build_status_edge_primary() -> dict:
         return ("edge", None)
 
     def _edge_rpc_call_node2():
-        # Edge Node 2 follower — try Tailscale VPN first (runs on Edge server)
+        # Edge Node 2 follower — try Tailscale IP (works if dashboard runs on Edge)
         r = rpc_call("100.76.16.108", 8446, "getChainInfo", {}, timeout=2.5)
         if r and not r.get("_rpc_error"):
             return ("edge2", r)
@@ -2589,8 +2235,23 @@ def _build_status_edge_primary() -> dict:
         except TimeoutError:
             pass
 
-    # NOTE: Removed SSH fallback for node2 — it deadlocked the dashboard on Windows.
-    # Node 2 data comes from RPC via thread pool above (port 8446).
+    # SSH fallback for node2 (runs outside thread pool to avoid Windows GIL issues)
+    if edge_rpc_info_node2 is None:
+        try:
+            ssh_key = REPO_ROOT / "ssh-key-zion-edge"
+            if ssh_key.exists():
+                result = subprocess.run(
+                    ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
+                     "-o", "ConnectTimeout=3", "root@77.42.71.94",
+                     "curl -s -X POST http://127.0.0.1:8446/ -H 'Content-Type: application/json' -d '{\"jsonrpc\":\"2.0\",\"method\":\"getChainInfo\",\"params\":[],\"id\":1}'"],
+                    capture_output=True, text=True, timeout=5
+                )
+                if result.returncode == 0 and result.stdout:
+                    resp = json.loads(result.stdout)
+                    if resp.get("result"):
+                        edge_rpc_info_node2 = resp["result"]
+        except Exception:
+            pass
 
     # ── Edge Node status ─────────────────────────────────────────────────────
     edge_node1_status = {
@@ -2703,22 +2364,6 @@ def _build_status_edge_primary() -> dict:
     except Exception:
         pass
 
-    # Enrich miner balances with on-chain balances (RPC lookup for zion1 miner_ids)
-    rpc_host = pool_edge_svc.get("host", "100.76.16.108") if pool_edge_svc else "100.76.16.108"
-    for mb in edge_payout["miner_balances"]:
-        mid = mb.get("miner_id", "")
-        if mid.startswith("zion1"):
-            try:
-                bal = rpc_call(rpc_host, 8443, "getBalance", {"address": mid}, timeout=1.5)
-                if bal and not bal.get("_rpc_error"):
-                    atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
-                    mb["on_chain_balance_zion"] = bal.get("balance_zion") if isinstance(bal.get("balance_zion"), (int, float)) else atomic / 1_000_000_000_000
-                else:
-                    mb["on_chain_balance_zion"] = None
-            except Exception:
-                mb["on_chain_balance_zion"] = None
-        else:
-            mb["on_chain_balance_zion"] = None
     edge_pool_wallet = os.environ.get("ZION_POOL_WALLET", "") or "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604"
     edge_fee_split = "89/5/5/1"
     local_pool = parse_pool_log()
@@ -2756,8 +2401,6 @@ def _build_status_edge_primary() -> dict:
     sync_gap = None
     if n1.get("chain_height") and edge_node1_status.get("chain_height"):
         sync_gap = abs(n1["chain_height"] - edge_node1_status["chain_height"])
-    n1["sync_gap"] = sync_gap
-    n1["synced_with_edge"] = (sync_gap is not None and sync_gap <= 5)
 
     # Tailscale connectivity check (skip if tailscale CLI not in PATH to avoid PATH search delay)
     tailscale_ok = False
@@ -2769,11 +2412,7 @@ def _build_status_edge_primary() -> dict:
     except Exception:
         pass
 
-    miner_status = get_miner_live_stats()
-
-    # If local log has no hashrate but process exists, force running=True
-    if not miner_status.get("running") and is_process_running("zion-miner.exe"):
-        miner_status["running"] = True
+    miner_status = parse_miner_log()
 
     # ── L2/L3 Edge services health ───────────────────────────────────────────
     bridge_svc = get_service("bridge")
@@ -2964,7 +2603,7 @@ def _build_status_local_dev() -> dict:
             "sync_gap": None,
             "details": "Not applicable in local-dev topology",
         },
-        "miner": get_miner_live_stats(),
+        "miner": parse_miner_log(),
     }
 
 def build_checklist(status: dict) -> dict:
@@ -2974,21 +2613,17 @@ def build_checklist(status: dict) -> dict:
     # Edge backup check (runs on dashboard host which may be Edge or local)
     edge_backup_ok = False
     try:
-        if shutil.which("systemctl"):
-            # Check if Edge backup timer is active and recent backups exist
-            proc = subprocess.run(
-                ["systemctl", "is-active", "zion-edge-backup.timer"],
-                capture_output=True, text=True, timeout=3
-            )
-            timer_active = proc.stdout.strip() == "active"
-            backup_dir = Path("/root/zion-backups")
-            has_backups = backup_dir.exists() and any(backup_dir.glob("zion-edge-*.tar.gz"))
-            edge_backup_ok = timer_active and has_backups
-        else:
-            # Non-Linux host (e.g. Windows dev box) — backup is not applicable here
-            edge_backup_ok = True
+        # Check if Edge backup timer is active and recent backups exist
+        proc = subprocess.run(
+            ["systemctl", "is-active", "zion-edge-backup.timer"],
+            capture_output=True, text=True, timeout=3
+        )
+        timer_active = proc.stdout.strip() == "active"
+        backup_dir = Path("/root/zion-backups")
+        has_backups = backup_dir.exists() and any(backup_dir.glob("zion-edge-*.tar.gz"))
+        edge_backup_ok = timer_active and has_backups
     except Exception:
-        edge_backup_ok = True
+        pass
 
     if topology == "edge-primary":
         checks = [
@@ -2999,12 +2634,8 @@ def build_checklist(status: dict) -> dict:
             {"id": "node1",      "label": "Local Backup Node running & synced",       "ok": status["node1"]["running"] and status["node1"]["p2p_bind"] is not None},
             {"id": "pool",       "label": "Edge Pool running & accepting miners",     "ok": status["pool"]["running"] and status["pool"]["active_sessions"] is not None},
             {"id": "pool-edge",  "label": "Edge Pool TCP reachable",                  "ok": status.get("pool_edge", {}).get("running", False)},
-            {"id": "miner",      "label": "Edge Miner running & hashing",             "ok": status.get("miner", {}).get("running", False)},
+            {"id": "miner",      "label": "GPU miner connected & hashing",            "ok": status["miner"]["running"] and status["miner"]["hashrate"] is not None},
             {"id": "chain",      "label": "Chain height advancing",                   "ok": status["edge_node"]["chain_height"] is not None and status["edge_node"]["chain_height"] > 0},
-            {"id": "l2-edge",    "label": "Edge L2 services (DAO + WARP + Bridge)", "ok": status.get("dao", {}).get("running", False) and status.get("warp", {}).get("running", False) and status.get("bridge", {}).get("running", False)},
-            {"id": "oasis",      "label": "OASIS Avatar Hub",                        "ok": True},
-            {"id": "free-world", "label": "Free World Humanitarian",                 "ok": True},
-            {"id": "issobella",  "label": "Issobella Space Layer",                 "ok": True},
             {"id": "payout",     "label": "Payout mechanism ready (fee split active)", "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/1"},
             {"id": "fee_split",  "label": "Fee split 89/5/5/1 (burn model) active",    "ok": status["pool"]["fee_split"] == "89/5/5/1"},
             {"id": "edge-backup","label": "Edge database auto-backup active",          "ok": edge_backup_ok},
@@ -3191,19 +2822,6 @@ def build_alerts(status: dict) -> list:
         alerts.append({"severity": _sev("miner", "warning"), "title": "Miner not hashing",
                        "detail": "Miner is connected but no hashrate samples in recent logs. Check GPU init.",
                        "action": "restart-miner"})
-
-    # Edge memory alert
-    edge_status = status.get("edge_status", {})
-    if edge_status.get("ok") and edge_status.get("mem_pct") is not None:
-        mem_pct = edge_status["mem_pct"]
-        if mem_pct > 90:
-            alerts.append({"severity": "critical", "title": "Edge memory critically high",
-                           "detail": f"Edge server RAM at {mem_pct}% — node may OOM. Consider restart-node1 or add MemoryMax to systemd.",
-                           "action": "restart-node1"})
-        elif mem_pct > 80:
-            alerts.append({"severity": "warning", "title": "Edge memory high",
-                           "detail": f"Edge server RAM at {mem_pct}% — possible memory leak in zion-node. Click 'Limit RAM' in Edge panel or restart-node1.",
-                           "action": None})
 
     if miner["running"] and miner["hashrate"] and miner["hashrate"] < 1.0:
         alerts.append({"severity": "info", "title": "Low hashrate",
@@ -3844,11 +3462,11 @@ def get_backup_status() -> dict:
                 "size_mb": size_mb,
                 "created": datetime.fromtimestamp(s.st_mtime).isoformat(),
             })
-    # Auto-backups (both zion-auto-*.zip and zion-local-*.zip)
+    # Auto-backups
     auto_backups = []
     auto_dir = Path("C:/ZION-AutoBackups")
     if auto_dir.exists():
-        for f in sorted(auto_dir.glob("zion-*.zip"), key=lambda p: p.stat().st_mtime, reverse=True):
+        for f in sorted(auto_dir.glob("zion-auto-*.zip"), key=lambda p: p.stat().st_mtime, reverse=True):
             s = f.stat()
             size_mb = round(s.st_size / (1024*1024), 2)
             total_backup_mb += size_mb
@@ -3870,27 +3488,6 @@ def get_backup_status() -> dict:
             datadirs[name] = None
     all_backups = sorted(manual_backups + auto_backups, key=lambda x: x["created"], reverse=True)
     last_backup = all_backups[0]["created"] if all_backups else None
-
-    # Read local health.json (from new backup scripts)
-    local_health = None
-    for health_path in [
-        Path("C:/ZION-AutoBackups/health.json"),
-        Path.home() / "ZION-AutoBackups" / "health.json",
-        Path("/root/zion-backups/health.json"),
-        Path("/opt/zion/backups/health.json"),
-    ]:
-        if health_path.exists():
-            try:
-                raw = health_path.read_text(encoding="utf-8-sig")
-                local_health = json.loads(raw)
-                break
-            except Exception:
-                pass
-
-    # Read Edge health.json via HTTP
-    # DISABLED: recursive self-call caused infinite thread leak on Edge server
-    edge_health = local_health
-
     return {
         "backups": all_backups[:10],
         "manual_backups": manual_backups[:5],
@@ -3901,8 +3498,6 @@ def get_backup_status() -> dict:
         "backup_dir": str(manual_dir),
         "auto_backup_dir": str(auto_dir),
         "auto_backup_enabled": auto_dir.exists(),
-        "local_health": local_health,
-        "edge_health": edge_health,
     }
 
 # ── Emission helpers (mirror V3/L1/core/src/emission.rs) ───────────────
@@ -3988,37 +3583,24 @@ def get_pool_wallet_status() -> dict:
 
 def fetch_pool_stats() -> dict:
     """Fetch live pool stats from routing metrics endpoint (port 8455)."""
-    # Prefer local, fallback to Edge (handles local-dev when local pool is down)
-    for host in ("127.0.0.1", EDGE_HOST):
-        try:
-            import urllib.request
-            with urllib.request.urlopen(f"http://{host}:8455/stats", timeout=3) as r:
-                return json.loads(r.read().decode())
-        except Exception:
-            continue
-    return {}
+    host = "100.76.16.108" if TOPOLOGY == "edge-primary" else "127.0.0.1"
+    try:
+        import urllib.request
+        with urllib.request.urlopen(f"http://{host}:8455/stats", timeout=3) as r:
+            return json.loads(r.read().decode())
+    except Exception:
+        return {}
 
 def fetch_pool_miners() -> list:
-    """Fetch active miners from Edge pool Prometheus metrics (port 8455)."""
-    # Use get_edge_pool_miners which parses /metrics endpoint (reliable)
-    # instead of /miners?limit=50 which may not be exposed
-    result = get_edge_pool_miners()
-    miners = result.get("miners", []) if result.get("ok") else []
-    # Enrich ALL miners with live on-chain balance from node RPC
-    local_alive = check_port_open("127.0.0.1", 8443, timeout=1.0)
-    edge_alive = check_port_open(EDGE_HOST, 8443, timeout=1.5)
-    rpc_host = "127.0.0.1" if local_alive else (EDGE_HOST if edge_alive else "77.42.71.94")
-    for m in miners:
-        addr = m.get("payout_address") or m.get("address")
-        if addr and addr.startswith("zion1"):
-            bal = rpc_call(rpc_host, 8443, "getBalance", {"address": addr}, timeout=2.5)
-            if bal and not bal.get("_rpc_error"):
-                try:
-                    atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
-                    m["on_chain_balance_zion"] = atomic / 1_000_000_000_000
-                except (ValueError, TypeError):
-                    pass
-    return miners
+    """Fetch active miners from routing metrics endpoint (port 8455)."""
+    host = "100.76.16.108" if TOPOLOGY == "edge-primary" else "127.0.0.1"
+    try:
+        import urllib.request
+        with urllib.request.urlopen(f"http://{host}:8455/miners?limit=50", timeout=3) as r:
+            data = json.loads(r.read().decode())
+            return data.get("miners", [])
+    except Exception:
+        return []
 
 def build_payout_status() -> dict:
     """Build comprehensive payout status for the Payout dashboard tab.
@@ -4252,8 +3834,7 @@ def build_payout_status() -> dict:
     status["recent_payouts"] = recent_payouts[:20]
 
     # ── Wallet balances (RPC with Edge→local fallback) ────────────────
-    # Local-dev: if local node is down, fall back to Edge RPC so balances are never stale
-    rpc_host = edge_host if (is_edge and edge_rpc_alive) else ("127.0.0.1" if local_rpc_alive else EDGE_HOST)
+    rpc_host = edge_host if (is_edge and edge_rpc_alive) else "127.0.0.1"
     if status["pool_wallet"] and status["pool_wallet"].startswith("zion1"):
         bal = rpc_call(rpc_host, 8443, "getBalance", {"address": status["pool_wallet"]}, timeout=2.5)
         if bal and not bal.get("_rpc_error"):
@@ -4321,19 +3902,10 @@ def build_payout_status() -> dict:
     }
 
     # JS miner_stats compatibility
-    rpc_host_p = edge_host if (is_edge and edge_rpc_alive) else ("127.0.0.1" if local_rpc_alive else EDGE_HOST)
     miner_stats = []
     for m in miners:
-        addr = m.get("payout_address") or m.get("address") or ""
-        # Prefer on-chain balance already enriched by fetch_pool_miners(); fallback to RPC
-        on_chain = m.get("on_chain_balance_zion")
-        if on_chain is None and addr and addr.startswith("zion1"):
-            bal = rpc_call(rpc_host_p, 8443, "getBalance", {"address": addr}, timeout=1.5)
-            if bal and not bal.get("_rpc_error"):
-                atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
-                on_chain = bal.get("balance_zion") if isinstance(bal.get("balance_zion"), (int, float)) else atomic / 1_000_000_000_000
         miner_stats.append({
-            "address": addr or "—",
+            "address": m.get("payout_address") or m.get("address") or "—",
             "worker_name": m.get("worker_name") or m.get("id") or "—",
             "algorithm": m.get("algorithm") or "—",
             "backend": m.get("backend") or "cpu",
@@ -4341,7 +3913,7 @@ def build_payout_status() -> dict:
             "hashrate": m.get("hashrate", 0),
             "hashrate_1h": m.get("hashrate_1h", 0),
             "total_paid": m.get("total_paid", 0),
-            "on_chain_balance_zion": on_chain,
+            "on_chain_balance_zion": m.get("on_chain_balance_zion"),
             "pending_balance": m.get("pending_balance", 0),
             "blocks_found": m.get("blocks_found", 0),
             "connected_since": m.get("connected_since"),
@@ -4355,44 +3927,6 @@ def build_payout_status() -> dict:
         status["pool_health"]["error_msg"] = "Edge pool metrics endpoint (8455) unreachable. Stats/miners may be stale."
 
     return status
-
-def trigger_payout_now() -> dict:
-    """Attempt to trigger an immediate payout round.
-    For local-dev: sends admin RPC to local pool if available.
-    For edge-primary: Edge pool runs PPLNS automatically; manual trigger is a no-op."""
-    is_edge = TOPOLOGY == "edge-primary"
-    edge_host = "100.76.16.108"
-    local_rpc_alive = check_port_open("127.0.0.1", 8443, timeout=1.0)
-    edge_rpc_alive = check_port_open(edge_host, 8443, timeout=1.5) if is_edge else False
-
-    # Edge-primary: PPLNS is automatic; just return current status
-    if is_edge:
-        if edge_rpc_alive:
-            return {"ok": True, "message": "Edge pool uses automatic PPLNS. Payouts are processed every round. No manual trigger required."}
-        else:
-            return {"ok": False, "error": "Edge pool RPC unreachable. Cannot verify payout status."}
-
-    # Local-dev: try to trigger via pool admin signal or RPC
-    if local_rpc_alive:
-        # Try pool admin endpoint (if pool supports it)
-        try:
-            import urllib.request
-            req = urllib.request.Request(f"http://127.0.0.1:8444/admin/trigger-payout", method="POST")
-            req.add_header("Content-Type", "application/json")
-            with urllib.request.urlopen(req, timeout=3) as r:
-                return {"ok": True, "message": "Payout trigger sent to local pool."}
-        except urllib.error.HTTPError as e:
-            if e.code == 404:
-                # Pool doesn't have admin endpoint; try RPC triggerPayout
-                rpc_res = rpc_call("127.0.0.1", 8443, "triggerPayout", {}, timeout=3)
-                if rpc_res and not rpc_res.get("_rpc_error"):
-                    return {"ok": True, "message": "Payout triggered via Node RPC."}
-                return {"ok": False, "error": "Local pool does not support manual payout trigger. PPLNS runs automatically."}
-            return {"ok": False, "error": f"Pool admin error: {e.code}"}
-        except Exception as e:
-            return {"ok": False, "error": str(e)}
-    else:
-        return {"ok": False, "error": "Local pool RPC (127.0.0.1:8443) unreachable. Start pool to enable payouts."}
 
 # ── AI services status (Hiran + Hiranyagarbha) ───────────────────────────
 
@@ -4701,25 +4235,21 @@ MAINNET_CONSTANTS = {
 
 PREMINE_OUTPUTS = [
     # OASIS + Golden Egg (5 slots × 1.65B = 8.25B)
-    {"address": "zion153e378e4x0g6s380h2h8z4t506g5s323f5se8g5", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 1)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
-    {"address": "zion1w548y2k3q802w885u7h0x2z8w7d675m0u3ya0l3", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 2)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
-    {"address": "zion192v4c0k074u7c502q6x8e0t592s564s7l4pm607", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 3)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
-    {"address": "zion1n690n062g668s8g0y4772830z8r450c0l06f295", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 4)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
-    {"address": "zion17323k5e490t832f4d0m3w4x3s2e2z7a7600j3v7", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 5)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
+    {"address": "zion166e6v3k204h8p5w4w3a7m0x790q5m7z5z6n252p", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 1)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
+    {"address": "zion1l2h8h0e3h7m6p8e297m6n624c5m7r2k364v684a", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 2)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
+    {"address": "zion1e6r0q3g6t0r0v5f6h7k7c5f3v562j0v7e5e5d0a", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 3)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
+    {"address": "zion1l7e4c4c5x8l440t295a7m4k5p5x8v8z7r043s23", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 4)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
+    {"address": "zion1n8h2a8p386z274859833h7v6c5n687f7a6k523u", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 5)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
     # DAO Treasury (3 slots = 4.0B) — locked until block 525,600
-    {"address": "zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4", "purpose": "DAO Treasury — Community Governance (main)", "amount_zion": 2_500_000_000, "category": "dao_treasury", "unlock_height": 525_600},
-    {"address": "zion1r5j0j7y444a8j402n8t8u2n8y323u6x4r2aw7l6", "purpose": "DAO Treasury — Grants & Bounties", "amount_zion": 1_000_000_000, "category": "dao_treasury", "unlock_height": 525_600},
-    {"address": "zion1932843t398t095g4h3x2f3a5l0q40490k4fm2w8", "purpose": "DAO Treasury — Ecosystem Bootstrap", "amount_zion": 500_000_000, "category": "dao_treasury", "unlock_height": 525_600},
+    {"address": "zion176u8r6w53768e2k04035d4d3c2z5g555n6l4r3s", "purpose": "DAO Treasury — Community Governance (main)", "amount_zion": 2_500_000_000, "category": "dao_treasury", "unlock_height": 525_600},
+    {"address": "zion12643n776r3m8f340484756q06485h5w4c2l405m", "purpose": "DAO Treasury — Grants & Bounties", "amount_zion": 1_000_000_000, "category": "dao_treasury", "unlock_height": 525_600},
+    {"address": "zion1k8w734x422f3t6t536r287k2c6n3z0e05257606", "purpose": "DAO Treasury — Ecosystem Bootstrap", "amount_zion": 500_000_000, "category": "dao_treasury", "unlock_height": 525_600},
     # Infrastructure (3 slots = 2.59B)
-    {"address": "zion1d3p5x622m327r060w5z0q5r203v837m6l8pa8x5", "purpose": "Core Development Fund", "amount_zion": 1_000_000_000, "category": "infrastructure", "unlock_height": None},
-    {"address": "zion1r6r4s0u2e6u4t23767s05752d70660h2f29d2l7", "purpose": "Network Infrastructure — P2P Seed Nodes", "amount_zion": 1_000_000_000, "category": "infrastructure", "unlock_height": None},
-    {"address": "zion16542q4l853a2z0u5r5w8y4m8k4558847h503736", "purpose": "Genesis Creator — Lifetime Rent", "amount_zion": 590_000_000, "category": "infrastructure", "unlock_height": None},
+    {"address": "zion1q540v6y4f0s4v3n0f8t740t53494z56024u645c", "purpose": "Core Development Fund", "amount_zion": 1_000_000_000, "category": "infrastructure", "unlock_height": None},
+    {"address": "zion1h4w39686t8w376g0x0y426e775q6p2q0v698v43", "purpose": "Network Infrastructure — P2P Seed Nodes", "amount_zion": 1_000_000_000, "category": "infrastructure", "unlock_height": None},
+    {"address": "zion1x638z5x6d2d0y6u3f7y8g7j56054a4a2a2c7l8f", "purpose": "Genesis Creator — Lifetime Rent", "amount_zion": 590_000_000, "category": "infrastructure", "unlock_height": None},
     # Humanitarian (1 slot = 1.44B)
-    {"address": "zion1z7g4u3s2w3c5z5u4a60864m2y7q8e5j304g46r7", "purpose": "Children Future Fund — Humanitarian DAO", "amount_zion": 1_440_000_000, "category": "humanitarian", "unlock_height": None},
-    # Bridge Seed Fund (1 slot = 0.4B) — immediate unlock for EVM bridge liquidity
-    {"address": "zion13794g7k3m0f84637l2x0t855h3l258k8p3xp5t3", "purpose": "Bridge Seed Fund — EVM Bridge Liquidity", "amount_zion": 400_000_000, "category": "bridge_seed", "unlock_height": None},
-    # Bridge Vault UTXO Seed (1 slot = 0.1B) — UTXO liquidity for bridge unlocks
-    {"address": "zion1r565v3k2u8p8t6n494p0n527c0m7a5s4s5ae0x7", "purpose": "Bridge Vault UTXO Seed — EVM Bridge Unlock Liquidity", "amount_zion": 100_000_000, "category": "bridge_vault_utxo", "unlock_height": None},
+    {"address": "zion1m4v5z8z850u480c5c208z274e334369275n5y20", "purpose": "Children Future Fund — Humanitarian DAO", "amount_zion": 1_440_000_000, "category": "humanitarian", "unlock_height": None},
 ]
 
 P0_BLOCKERS = [
@@ -5054,238 +4584,11 @@ def _manifest_dispatch(action: str, env_overrides: dict = None):
             return None
     return None
 
-def _run_edge_ssh_command(cmd: str, timeout: int = 15) -> dict:
-    """Run a command on the Edge server via SSH using the repo SSH key."""
-    ssh_key = REPO_ROOT / "ssh-key-zion-edge"
-    edge_host = "77.42.71.94"
-    edge_host_ts = "100.76.16.108"
-    # Prefer Tailscale if reachable
-    host = edge_host_ts
-    try:
-        import socket
-        s = socket.create_connection((edge_host_ts, 22), timeout=2)
-        s.close()
-    except Exception:
-        host = edge_host
-    if not ssh_key.exists():
-        return {"ok": False, "error": "SSH key not found: ssh-key-zion-edge"}
-    try:
-        result = subprocess.run(
-            ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
-             "-o", "ConnectTimeout=5", "-o", "BatchMode=yes",
-             f"root@{host}", cmd],
-            capture_output=True, text=True, timeout=timeout
-        )
-        # rc 4294967295 == Windows SSH cmd.exe parsing failure (e.g. 'pkill -f')
-        if result.returncode == 4294967295:
-            return {"ok": False, "error": "SSH command rejected by Windows SSH wrapper (cmd.exe parse error). "
-                    "Avoid 'pkill -f', shell substitutions, or complex quoting.",
-                    "host": host, "returncode": result.returncode}
-        ok = result.returncode == 0
-        return {"ok": ok, "stdout": result.stdout[:4000], "stderr": result.stderr[:300],
-                "host": host, "returncode": result.returncode}
-    except subprocess.TimeoutExpired:
-        return {"ok": False, "error": f"SSH timeout ({timeout}s) connecting to {host}"}
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
-
-_edge_status_cache: dict = {}
-_edge_status_ts: float = 0.0
-_edge_mem_history: list = []  # [(timestamp, mem_pct, mem_used_mb), ...] max 20 points
-
-def run_edge_action(action: str) -> dict:
-    """Execute a control action on the Edge server via SSH.
-    NOTE: Windows OpenSSH passes commands through cmd.exe — avoid 'pkill -f' (the
-    -f flag is misinterpreted).  Use exact process names or systemctl instead."""
-    SSH_CMDS = {
-        # systemctl-managed services — straightforward restart
-        "restart-node1":        "systemctl restart zion-edge-node1; systemctl is-active zion-edge-node1",
-        "restart-node2":        "systemctl restart zion-edge-node2; systemctl is-active zion-edge-node2",
-        "restart-dao":          "systemctl restart zion-edge-dao; systemctl is-active zion-edge-dao",
-        "restart-warp":         "systemctl restart zion-edge-warp; systemctl is-active zion-edge-warp",
-        "restart-dashboard":    "systemctl restart zion-edge-dashboard; systemctl is-active zion-edge-dashboard",
-        # Pool: try systemctl first, fall back to pkill by exact name + nohup relaunch
-        "restart-pool":         "systemctl restart zion-pool-server 2>/dev/null; pkill zion-pool-server; sleep 2; cd /root/zion-2.9.6-main && nohup ./V3/target/release/zion-pool-server >> logs/pool.log 2>&1 & echo pool_restarted",
-        # Hiran / Hiranya: exact process name kill (no -f flag)
-        "restart-hiran":        "systemctl restart hiran-inference 2>/dev/null; pkill hiran-inference; sleep 1; systemctl is-active hiran-inference 2>/dev/null; echo hiran_restart_sent",
-        "restart-hiranyagarbha":"systemctl restart hiranyagarbha 2>/dev/null; pkill hiranyagarbha; sleep 1; systemctl is-active hiranyagarbha 2>/dev/null; echo hiranya_restart_sent",
-        # Bridge / Website
-        "restart-bridge":       "systemctl restart zion-edge-bridge 2>/dev/null; systemctl is-active zion-edge-bridge 2>/dev/null; echo bridge_restart_sent",
-        "restart-website":      "pm2 restart zion-website 2>/dev/null; echo website_restart_sent",
-        # Maintenance
-        "clean-docker":         "docker system prune -af --volumes 2>&1; echo docker_cleaned",
-        "backup-edge":          "mkdir -p /root/backups; cd /root/zion-2.9.6-main && tar czf /root/backups/edge-backup.tar.gz --exclude=target --exclude=.git --exclude=logs . 2>&1; echo backup_done",
-        "security-audit":       "ls -la /root/.ssh/authorized_keys; ufw status; echo audit_done",
-        "full-health":          "uptime; free -h; df -h /; systemctl is-active zion-edge-node1 zion-edge-node2 zion-edge-dao zion-edge-warp zion-edge-dashboard; ss -tlnp | grep 8444; echo health_done",
-        "memory-limit":         "mkdir -p /etc/systemd/system/zion-edge-node1.service.d; printf '[Service]\\nMemoryMax=3G\\nMemorySwapMax=0\\n' > /etc/systemd/system/zion-edge-node1.service.d/memory.conf; systemctl daemon-reload; echo memory_limit_applied",
-    }
-    cmd = SSH_CMDS.get(action)
-    if not cmd:
-        return {"ok": False, "error": f"Unknown edge action: {action}"}
-    r = _run_edge_ssh_command(cmd, timeout=30)
-    if r.get("ok"):
-        return {"ok": True, "result": r.get("stdout", "").strip(), "host": r.get("host", "?")}
-    else:
-        return {"ok": False, "error": r.get("error", "SSH failed"), "host": r.get("host", "?")}
-
-
-def get_edge_system_status(force: bool = False) -> dict:
-    """Fetch Edge server system metrics + service health via SSH. Cached 30s."""
-    global _edge_status_cache, _edge_status_ts, _edge_mem_history
-    import time as _time
-    if not force and _edge_status_ts and (_time.time() - _edge_status_ts) < 30:
-        return _edge_status_cache
-
-    cmd = (
-        "echo '===CPU==='; top -bn1 | grep 'Cpu(s)' | awk '{print $2}'; "
-        "echo '===LOAD==='; cat /proc/loadavg | awk '{print $1,$2,$3}'; "
-        "echo '===MEM==='; free -m | awk '/^Mem/{print $2,$3,$7}'; "
-        "echo '===MEMTOP==='; ps -eo rss,comm --sort=-rss | awk 'NR>1 && NR<=6{printf \"%.1f %s\n\", \$1/1024, \$2}'; "
-        "echo '===DISK==='; df -m / | awk 'NR==2{print $2,$3,$4}'; "
-        "echo '===SVCS==='; "
-        "for svc in zion-edge-node1 zion-edge-node2 zion-pool-server zion-edge-dao zion-edge-warp zion-edge-dashboard hiran-inference hiranyagarbha; do "
-        "  st=$(systemctl is-active $svc 2>/dev/null); echo \"$svc=$st\"; "
-        "done; "
-        "echo '===PORTS==='; "
-        "for port in 8333 8334 8443 8444 8450 8453 3000 3100 9090; do "
-        "  ss -tlnp 2>/dev/null | grep -q \":$port \" && echo \"$port=open\" || echo \"$port=closed\"; "
-        "done; "
-        "echo '===PM2==='; pm2 jlist 2>/dev/null | python3 -c \""
-        "import sys,json; procs=json.load(sys.stdin); "
-        "[print(p['name']+'='+p['pm2_env']['status']) for p in procs]"
-        "\" 2>/dev/null || echo 'pm2=unavailable'"
-    )
-    r = _run_edge_ssh_command(cmd, timeout=20)
-    if not r.get("ok"):
-        result = {"ok": False, "error": r.get("error", "SSH failed"), "ssh_host": r.get("host", "?")}
-        _edge_status_cache = result
-        _edge_status_ts = _time.time()
-        return result
-
-    out = r.get("stdout", "")
-    data: dict = {"ok": True, "ssh_host": r.get("host", "?")}
-
-    def _section(name: str) -> str:
-        marker = f"==={name}==="
-        lines = out.split("\n")
-        try:
-            idx = next(i for i, l in enumerate(lines) if l.strip() == marker)
-            end = next((i for i in range(idx + 1, len(lines)) if lines[i].strip().startswith("===")), len(lines))
-            return "\n".join(lines[idx + 1:end]).strip()
-        except StopIteration:
-            return ""
-
-    # CPU
-    try:
-        cpu_str = _section("CPU").split("\n")[0].strip()
-        data["cpu_pct"] = float(cpu_str) if cpu_str else None
-    except Exception:
-        data["cpu_pct"] = None
-
-    # Load average
-    try:
-        parts = _section("LOAD").split()
-        data["load_1m"] = float(parts[0]) if parts else None
-        data["load_5m"] = float(parts[1]) if len(parts) > 1 else None
-    except Exception:
-        data["load_1m"] = None; data["load_5m"] = None
-
-    # Memory (MB)
-    try:
-        parts = _section("MEM").split()
-        data["mem_total_mb"] = int(parts[0]); data["mem_used_mb"] = int(parts[1]); data["mem_free_mb"] = int(parts[2])
-        data["mem_pct"] = round(data["mem_used_mb"] / data["mem_total_mb"] * 100, 1) if data["mem_total_mb"] else None
-    except Exception:
-        data["mem_total_mb"] = None; data["mem_used_mb"] = None; data["mem_free_mb"] = None; data["mem_pct"] = None
-
-    # Top memory consumers (MB, process name)
-    try:
-        memtop = []
-        for line in _section("MEMTOP").split("\n"):
-            line = line.strip()
-            if line:
-                p = line.split(None, 1)
-                if len(p) == 2:
-                    memtop.append({"mb": float(p[0]), "cmd": p[1]})
-        data["mem_top"] = memtop
-    except Exception:
-        data["mem_top"] = []
-
-    # Disk (MB)
-    try:
-        parts = _section("DISK").split()
-        data["disk_total_gb"] = round(int(parts[0]) / 1024, 1); data["disk_used_gb"] = round(int(parts[1]) / 1024, 1)
-        data["disk_free_gb"] = round(int(parts[2]) / 1024, 1)
-        data["disk_pct"] = round(data["disk_used_gb"] / data["disk_total_gb"] * 100, 1) if data["disk_total_gb"] else None
-    except Exception:
-        data["disk_total_gb"] = None; data["disk_used_gb"] = None; data["disk_free_gb"] = None; data["disk_pct"] = None
-
-    # Services (systemd)
-    svcs = {}
-    for line in _section("SVCS").split("\n"):
-        if "=" in line:
-            k, v = line.strip().split("=", 1)
-            svcs[k.strip()] = v.strip()
-    data["services"] = svcs
-
-    # Ports
-    ports = {}
-    for line in _section("PORTS").split("\n"):
-        if "=" in line:
-            k, v = line.strip().split("=", 1)
-            try: ports[int(k.strip())] = v.strip() == "open"
-            except Exception: pass
-    data["ports"] = ports
-
-    # PM2
-    pm2 = {}
-    for line in _section("PM2").split("\n"):
-        if "=" in line and "pm2=unavailable" not in line:
-            k, v = line.strip().split("=", 1)
-            pm2[k.strip()] = v.strip()
-    data["pm2"] = pm2
-
-    # Update memory history for trend tracking
-    if data.get("mem_pct") is not None:
-        _edge_mem_history.append({
-            "ts": _time.time(),
-            "mem_pct": data["mem_pct"],
-            "mem_used_mb": data.get("mem_used_mb", 0),
-        })
-        # Keep last 20 points (~10 min at 30s intervals)
-        if len(_edge_mem_history) > 20:
-            _edge_mem_history = _edge_mem_history[-20:]
-    data["mem_history"] = _edge_mem_history
-
-    _edge_status_cache = data
-    _edge_status_ts = _time.time()
-    return data
-
-
 def run_control(action: str, env_overrides: dict = None) -> dict:
     """Execute a control action in the background (cross-platform).
     Manifest-backed services (services.json) are launched directly; everything
     else falls back to an allowed .ps1/.sh script in scripts/.
     Optional env_overrides merges into the subprocess environment."""
-
-    # ── Edge remote actions (SSH) ─────────────────────────────────────────
-    if action == "restart-pool-edge":
-        _log_control("action=restart-pool-edge via SSH")
-        r = _run_edge_ssh_command("systemctl restart zion-pool-server 2>/dev/null; pkill zion-pool-server; sleep 2; cd /root/zion-2.9.6-main && nohup ./V3/target/release/zion-pool-server >> logs/pool.log 2>&1 & echo pool_restarted")
-        return {"ok": r.get("ok", False), "action": action,
-                "message": "Edge pool restart sent via SSH" if r.get("ok") else r.get("error", "SSH failed"),
-                "details": r.get("stdout", "") + r.get("stderr", "")}
-    if action == "stop-pool-edge":
-        _log_control("action=stop-pool-edge via SSH")
-        r = _run_edge_ssh_command("systemctl stop zion-pool-server 2>/dev/null; pkill zion-pool-server; echo pool_stopped")
-        return {"ok": r.get("ok", False), "action": action,
-                "message": "Edge pool stop sent via SSH" if r.get("ok") else r.get("error", "SSH failed")}
-    if action == "start-pool-edge":
-        _log_control("action=start-pool-edge via SSH")
-        r = _run_edge_ssh_command("systemctl start zion-pool-server 2>/dev/null; cd /root/zion-2.9.6-main && nohup ./V3/target/release/zion-pool-server >> logs/pool.log 2>&1 & echo pool_started")
-        return {"ok": r.get("ok", False), "action": action,
-                "message": "Edge pool start sent via SSH" if r.get("ok") else r.get("error", "SSH failed")}
-
     manifest_result = _manifest_dispatch(action, env_overrides)
     if manifest_result is not None:
         return manifest_result
@@ -5353,11 +4656,7 @@ def background_sampler():
         try:
             st = build_status()
             HISTORY.record(st)
-            health_list = all_services_health()
-            SERVICE_HISTORY.record(health_list)
-            # If history was wiped (empty after startup), seed one real bucket immediately
-            if not SERVICE_HISTORY.snapshot():
-                SERVICE_HISTORY.backfill_current(health_list)
+            SERVICE_HISTORY.record(all_services_health())
             scan_block_events()
             # Persist new alerts (throttled)
             try:
@@ -5459,6 +4758,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
   <!-- Tabs -->
   <div class="flex gap-1 mb-4 border-b border-zion-700 overflow-x-auto">
     <button onclick="switchTab('overview')" id="tab-overview" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition tab-active">📊 Overview</button>
+    <button onclick="switchTab('controls')" id="tab-controls" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">🎛️ Controls</button>
     <button onclick="switchTab('charts')" id="tab-charts" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">📈 Charts</button>
     <button onclick="switchTab('events')" id="tab-events" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">🧱 Events</button>
     <button onclick="switchTab('env')" id="tab-env" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">⚙️ Env</button>
@@ -5469,6 +4769,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
     <button onclick="switchTab('metrics')" id="tab-metrics" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">📊 Metrics</button>
     <button onclick="switchTab('logs')" id="tab-logs" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">📜 Logs</button>
     <button onclick="switchTab('hiran')" id="tab-hiran" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">🤖 Hiran AI</button>
+    <button onclick="switchTab('payout')" id="tab-payout" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">💰 Payout</button>
   </div>
 
   <!-- Progress -->
@@ -5506,7 +4807,6 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
         <div class="text-xs text-gray-400 mb-2">P2P: <span id="val-node1-p2p" class="font-mono">—</span></div>
         <div class="flex gap-1 mt-2">
           <button onclick="controlAction('start-node1')" class="flex-1 text-xs px-2 py-1 bg-emerald-700 hover:bg-emerald-600 rounded transition">▶ Start</button>
-          <button onclick="controlAction('restart-node1')" class="flex-1 text-xs px-2 py-1 bg-amber-700 hover:bg-amber-600 rounded transition">⟳ Restart</button>
           <button onclick="copyToClipboard('zion node1')" class="text-xs px-2 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">📋</button>
         </div>
       </div>
@@ -5535,14 +4835,12 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
       </div>
 
       <div id="card-miner" class="bg-zion-800 rounded-xl p-4 border border-zion-700 transition">
-        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-gray-400" id="lbl-miner-title">⛏️ GPU Miner</span><span id="badge-miner" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
+        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-gray-400">⛏️ GPU Miner</span><span id="badge-miner" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
         <div class="text-3xl font-bold mb-1 text-amber-400" id="val-miner-hashrate">—</div><div class="text-xs text-gray-400 mb-2">KH/s (10s avg)</div>
-        <div class="text-xs text-gray-400 mb-1">Backend: <span id="val-miner-gpu" class="text-white text-[10px]">—</span></div>
-        <div class="text-xs text-gray-400 mb-1">Worker: <span id="val-miner-worker" class="text-white">—</span></div>
-        <div class="text-xs text-gray-400 mb-1">Wallet: <span id="val-miner-wallet" class="text-white text-[10px] font-mono">—</span></div>
+        <div class="text-xs text-gray-400 mb-1">Device: <span id="val-miner-gpu" class="text-white text-[10px]">—</span></div>
         <div class="text-xs text-gray-400 mb-1">Height: <span id="val-miner-height" class="text-white">—</span></div>
         <div class="text-xs text-gray-400 mb-2">Diff: <span id="val-miner-diff">—</span></div>
-        <div class="flex gap-1 mt-2" id="miner-buttons">
+        <div class="flex gap-1 mt-2">
           <button onclick="controlAction('start-miner-gpu')" class="flex-1 text-xs px-2 py-1 bg-purple-700 hover:bg-purple-600 rounded transition">🎮 GPU</button>
           <button onclick="controlAction('start-miner-cpu')" class="flex-1 text-xs px-2 py-1 bg-blue-700 hover:bg-blue-600 rounded transition">💻 CPU</button>
           <button onclick="controlAction('stop-miner')" class="flex-1 text-xs px-2 py-1 bg-red-700 hover:bg-red-600 rounded transition">⏹ Stop</button>
@@ -5574,13 +4872,61 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
       </div>
     </div>
 
-    <!-- Mini Hashrate Sparkline -->
-    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-      <div class="flex items-center justify-between mb-2">
-        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">📈 Hashrate Trend</h2>
-        <span class="text-xs text-gray-500" id="hashrate-summary">—</span>
+    <!-- Mini Hashrate Sparkline + Payouts -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">📈 Hashrate Trend</h2>
+          <span class="text-xs text-gray-500" id="hashrate-summary">—</span>
+        </div>
+        <canvas id="mini-hashrate" height="80"></canvas>
       </div>
-      <canvas id="mini-hashrate" height="80"></canvas>
+      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3">💰 Payouts &amp; Distribution</h2>
+        <div class="space-y-1.5">
+          <div class="flex justify-between text-xs"><span class="text-gray-400">Pool Wallet</span><span id="payout-wallet" class="font-mono text-white truncate max-w-[260px]">—</span></div>
+          <div class="flex justify-between text-xs"><span class="text-gray-400">Payout Enabled</span><span id="payout-enabled" class="font-bold">—</span></div>
+          <div class="flex justify-between text-xs"><span class="text-gray-400">Fee Split</span><span id="payout-split" class="text-amber-400 font-mono">—</span></div>
+          <div class="flex justify-between text-xs"><span class="text-gray-400">Blocks Found</span><span id="payout-blocks" class="text-emerald-400 font-bold">—</span></div>
+          <div class="flex justify-between text-xs"><span class="text-gray-400">Nonce Window</span><span id="payout-nonce" class="text-white">—</span></div>
+        </div>
+        <div id="payout-recent" class="mt-3 space-y-1 max-h-24 overflow-y-auto log-tail text-gray-400 border-t border-zion-700 pt-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Controls -->
+  <div id="pane-controls" class="hidden space-y-4">
+    <div class="bg-zion-800 rounded-xl p-6 border border-zion-700">
+      <h2 class="text-lg font-bold mb-4 flex items-center gap-2">🎛️ Stack Control Center</h2>
+      <p class="text-sm text-gray-400 mb-6">Launch and manage the full ZION mainnet stack. All actions execute PowerShell scripts in <code class="text-amber-400">scripts/</code> via detached processes.</p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <button id="btn-launch-stack" onclick="controlAction('launch-stack')" class="group p-6 bg-gradient-to-br from-emerald-700 to-emerald-900 hover:from-emerald-600 hover:to-emerald-800 rounded-xl text-left transition shadow-lg">
+          <div class="text-3xl mb-2">🚀</div>
+          <div class="text-lg font-bold mb-1">Launch Full Stack</div>
+          <div class="text-xs text-emerald-200 opacity-80">Starts Node1 + Node2 + Pool + Miner with logging</div>
+        </button>
+        <button id="btn-launch-local-backup" onclick="controlAction('launch-local-backup')" class="group p-6 bg-gradient-to-br from-emerald-700 to-emerald-900 hover:from-emerald-600 hover:to-emerald-800 rounded-xl text-left transition shadow-lg" style="display:none">
+          <div class="text-3xl mb-2">🌐</div>
+          <div class="text-lg font-bold mb-1">Launch Local Backup</div>
+          <div class="text-xs text-emerald-200 opacity-80">Starts Backup Node + GPU Miner (Edge-primary topology)</div>
+        </button>
+        <button onclick="if(confirm('Stop all ZION processes?')) controlAction('stop-stack')" class="group p-6 bg-gradient-to-br from-red-700 to-red-900 hover:from-red-600 hover:to-red-800 rounded-xl text-left transition shadow-lg">
+          <div class="text-3xl mb-2">⏹️</div>
+          <div class="text-lg font-bold mb-1">Stop All Services</div>
+          <div class="text-xs text-red-200 opacity-80">Gracefully terminates node, pool, and miner processes</div>
+        </button>
+      </div>
+
+      <h3 class="text-sm font-bold uppercase tracking-wider text-gray-400 mb-3">Individual Service Controls</h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="control-buttons">
+        <!-- populated by JS -->
+      </div>
+
+      <div id="control-log" class="mt-6 bg-zion-900 rounded-lg p-3 max-h-40 overflow-y-auto log-tail">
+        <div class="text-gray-500 italic">Control actions will be logged here.</div>
+      </div>
     </div>
   </div>
 
@@ -6153,9 +5499,38 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
 
   </div>
 
+  <!-- TAB: Payout -->
+  <div id="pane-payout" class="hidden space-y-4">
+    <!-- Payout Overview Header -->
+    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 flex items-center gap-2">💰 Pool Payout System</h2>
+        <button onclick="refreshPayout()" class="text-xs px-2 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">🔄 Refresh</button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3" id="payout-summary">
+        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
+          <div class="text-xs text-gray-400 mb-1">Pool Wallet</div>
+          <div class="text-sm font-mono text-amber-400 truncate" id="payout-wallet">—</div>
+          <div class="text-xs text-gray-500 mt-1" id="payout-wallet-balance">Balance: —</div>
+        </div>
+        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
+          <div class="text-xs text-gray-400 mb-1">Payout Status</div>
+          <div class="text-sm font-bold text-emerald-400" id="payout-status">—</div>
+          <div class="text-xs text-gray-500 mt-1" id="payout-fee-split">Fee split: —</div>
+        </div>
+        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
+          <div class="text-xs text-gray-400 mb-1">Blocks Found</div>
+          <div class="text-2xl font-bold text-amber-400" id="payout-blocks">—</div>
+          <div class="text-xs text-gray-500 mt-1" id="payout-last-block">Last: —</div>
+        </div>
+        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
+          <div class="text-xs text-gray-400 mb-1">Last Payout</div>
+          <div class="text-sm font-bold text-emerald-400" id="payout-last">—</div>
+          <div class="text-xs text-gray-500 mt-1" id="payout-last-tx">TX: —</div>
+        </div>
+      </div>
+    </div>
 
-<<<<<<< HEAD
-=======
     <!-- Fee Split Recipients -->
     <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
       <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3">📋 Fee Split Recipients (89/5/5/1 burn model)</h2>
@@ -6207,7 +5582,6 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
       </div>
     </div>
   </div>
->>>>>>> ba37f715 (fix(dashboard): correct fee split display to 89/5/5/1 burn model)
 
   <footer class="text-center text-xs text-gray-600 pt-6 pb-4 border-t border-zion-700 mt-6">
     ZION V3 Dashboard 2.0 — Zero-dependency Python stdlib server — Auto-refresh 3s
@@ -6221,7 +5595,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
 <script>
 let autoRefresh=true,refreshTimer=null,currentTab='overview';
 let charts={};
-const TABS=['overview','controls','charts','events','env','launch-day','wizard','services','database','metrics','logs','hiran'];
+const TABS=['overview','controls','charts','events','env','launch-day','wizard','services','database','metrics','logs','hiran','payout'];
 
 // ── Tab switching ──
 function switchTab(name){
@@ -6242,6 +5616,7 @@ function switchTab(name){
   if(name==='metrics')renderMetricsButtons();
   if(name==='overview')loadMainnetStatus();
   if(name==='hiran'){loadHiranHealth();loadAgentList();loadOrchestratorStats();loadNclStatus();}
+  if(name==='payout')refreshPayout();
 }
 
 // ── Payout System ──
@@ -6263,25 +5638,6 @@ async function refreshPayout(){
     if(data.humanitarian_wallet)document.getElementById('payout-humanitarian-wallet').textContent=data.humanitarian_wallet;
     if(data.issobella_wallet)document.getElementById('payout-issobella-wallet').textContent=data.issobella_wallet;
     if(data.pool_fee_wallet)document.getElementById('payout-pool-fee-wallet').textContent=data.pool_fee_wallet;
-
-    // Miner stats table (pending + on-chain balance)
-    const minerStatsEl=document.getElementById('payout-miner-stats');
-    if(data.miner_stats&&data.miner_stats.length>0){
-      minerStatsEl.innerHTML=data.miner_stats.map(m=>{
-        const pending=(m.pending_balance||0).toFixed(4);
-        const onChain=m.on_chain_balance_zion!=null?m.on_chain_balance_zion.toFixed(4):'—';
-        return `<div class="flex items-center justify-between bg-white/5 rounded p-2 mb-1">
-          <div class="flex flex-col">
-            <span class="text-[10px] font-mono text-white">${m.address.slice(0,20)}…</span>
-            <span class="text-[9px] text-gray-500">${m.worker_name} · ${m.algorithm}</span>
-          </div>
-          <div class="text-right">
-            <div class="text-[10px] text-gray-400">Pending: <span class="text-amber-400">${pending} Z</span></div>
-            <div class="text-[10px] text-gray-400">On-chain: <span class="text-emerald-400">${onChain} Z</span></div>
-          </div>
-        </div>`;
-      }).join('');
-    }else{minerStatsEl.innerHTML='<div class="text-gray-500 italic">No active miners</div>';}
 
     // Miner payout log
     const minerLog=document.getElementById('payout-miner-log');
@@ -6865,6 +6221,7 @@ async function refreshAll(){
     updateServiceCards(s);
     updateAlerts(al.alerts);
     updateChecklist(cl.checks);
+    updatePayouts(s.pool);
     updateMiniHashrate();
     loadMainnetStatus();
     if(currentTab==='charts')renderCharts();
@@ -6915,31 +6272,23 @@ function updateServiceCards(s){
   setBadge('badge-miner',m.running&&m.hashrate);setCardLive('miner',m.running&&m.hashrate);
   document.getElementById('val-miner-hashrate').textContent=m.hashrate?m.hashrate.toFixed(2):'—';
   document.getElementById('val-miner-gpu').textContent=(m.gpu_backend?m.gpu_backend+': ':'')+(m.gpu_device??'—');
-  document.getElementById('val-miner-worker').textContent=(m.miner_id?m.miner_id+' / ':'')+(m.worker_name??'—');
-  document.getElementById('val-miner-wallet').textContent=m.payout_address??m.wallet??'—';
   document.getElementById('val-miner-height').textContent=m.current_height??'—';
   document.getElementById('val-miner-diff').textContent=m.current_diff??'—';
-  // Topology-aware title + buttons
-  const minerTitle = document.getElementById('lbl-miner-title');
-  const minerBtns = document.getElementById('miner-buttons');
-  if(isEdgePrimary){
-    minerTitle.textContent='⛏️ Edge Miner';
-    if(m.running){
-      minerBtns.innerHTML='<button onclick="controlAction(\'restart-miner\')" class="flex-1 text-xs px-2 py-1 bg-blue-700 hover:bg-blue-600 rounded transition">🔄 Restart</button><button onclick="controlAction(\'stop-miner\')" class="flex-1 text-xs px-2 py-1 bg-red-700 hover:bg-red-600 rounded transition">⏹ Stop</button>';
-    } else {
-      minerBtns.innerHTML='<button onclick="controlAction(\'start-miner-gpu\')" class="flex-1 text-xs px-2 py-1 bg-emerald-700 hover:bg-emerald-600 rounded transition">▶ Start</button><button onclick="controlAction(\'start-miner-cpu\')" class="flex-1 text-xs px-2 py-1 bg-blue-700 hover:bg-blue-600 rounded transition">💻 CPU</button>';
-    }
-  } else {
-    minerTitle.textContent='⛏️ GPU Miner';
-    if(m.running){
-      minerBtns.innerHTML='<button onclick="controlAction(\'restart-miner\')" class="flex-1 text-xs px-2 py-1 bg-amber-700 hover:bg-amber-600 rounded transition">⟳ Restart</button><button onclick="controlAction(\'stop-miner\')" class="flex-1 text-xs px-2 py-1 bg-red-700 hover:bg-red-600 rounded transition">⏹ Stop</button>';
-    } else {
-      minerBtns.innerHTML='<button onclick="controlAction(\'start-miner-gpu\')" class="flex-1 text-xs px-2 py-1 bg-purple-700 hover:bg-purple-600 rounded transition">🎮 GPU</button><button onclick="controlAction(\'start-miner-cpu\')" class="flex-1 text-xs px-2 py-1 bg-blue-700 hover:bg-blue-600 rounded transition">💻 CPU</button><button onclick="controlAction(\'stop-miner\')" class="flex-1 text-xs px-2 py-1 bg-red-700 hover:bg-red-600 rounded transition">⏹ Stop</button>';
-    }
-  }
 }
 
-
+function updatePayouts(p){
+  document.getElementById('payout-wallet').textContent=p.pool_wallet??'—';
+  const en=document.getElementById('payout-enabled');
+  en.textContent=p.payout_enabled===true?'YES':(p.payout_enabled===false?'NO':'—');
+  en.className=p.payout_enabled?'font-bold text-emerald-400':'font-bold text-red-400';
+  document.getElementById('payout-blocks').textContent=p.blocks_found??'0';
+  document.getElementById('payout-nonce').textContent=p.nonce_count??'—';
+  document.getElementById('payout-split').textContent=p.fee_split??'—';
+  const pr=document.getElementById('payout-recent');
+  pr.innerHTML=(p.recent_payouts&&p.recent_payouts.length)
+    ?p.recent_payouts.map(l=>'<div class="truncate text-[10px]">'+escapeHtml(l)+'</div>').join('')
+    :'<div class="text-gray-600 italic text-[10px]">No payout events yet</div>';
+}
 
 function updateAlerts(alerts){
   const cont=document.getElementById('alerts');
@@ -7686,15 +7035,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
             cors_origin = origin if origin in allowed else "*"
             self.send_response(status)
             self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
-            self.send_header("Pragma", "no-cache")
-            self.send_header("Expires", "0")
             self.send_header("Access-Control-Allow-Origin", cors_origin)
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
             self.send_header("Access-Control-Allow-Headers", "Content-Type")
-            self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
-            self.send_header("Pragma", "no-cache")
-            self.send_header("Expires", "0")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
@@ -7821,9 +7164,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 body = js_path.read_bytes()
                 self.send_response(200)
                 self.send_header("Content-Type", "application/javascript; charset=utf-8")
-                self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
-                self.send_header("Pragma", "no-cache")
-                self.send_header("Expires", "0")
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)
@@ -7840,15 +7180,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             if v3_index.exists():
                 self._html(v3_index.read_text(encoding="utf-8"))
             else:
-                self.send_error(404)
-            return
-        # ── L3 Rainbow Protocol Dashboard ────────────────────────────────────
-        elif route == "/l3" or route == "/l3/index.html":
-            l3_index = SCRIPT_DIR / "l3.html"
-            if l3_index.exists():
-                self._html(l3_index.read_text(encoding="utf-8"))
-            else:
-                self.send_error(404, "L3 dashboard not found")
+                self.send_error(404, "Dashboard V3 not found. Run: mkdir -p dashboard/v3 && create index.html")
             return
         elif route.startswith("/v3/"):
             v3_file = SCRIPT_DIR / "v3" / route[4:].lstrip("/")
@@ -7885,8 +7217,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self.send_error(405)
         elif route == "/api/status":
             self._json(build_status())
-        elif route == "/api/edge-status":
-            self._json(get_edge_system_status())
         elif route == "/api/nodes":
             self._json(detect_nodes())
         elif route == "/api/agent/nodes":
@@ -7968,9 +7298,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(build_checklist(build_status()))
         elif route == "/api/alerts":
             self._json({"alerts": build_alerts(build_status())})
-        elif route == "/api/pool/miners":
-            # Return per-miner details scraped from Edge pool Prometheus metrics
-            self._json(get_edge_pool_miners())
         elif route == "/api/history":
             self._json({"samples": HISTORY.snapshot()})
         elif route == "/api/events":
@@ -7996,12 +7323,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 actions -= {"launch-local-backup"}
             self._json({"actions": sorted(actions), "topology": TOPOLOGY})
         elif route == "/api/services":
-            health_list = all_services_health()
-            self._json({"services": health_list})
-            # Feed timeline on every services poll (background sampler is disabled)
-            SERVICE_HISTORY.record(health_list)
-            if not SERVICE_HISTORY.snapshot():
-                SERVICE_HISTORY.backfill_current(health_list)
+            self._json({"services": all_services_health()})
         elif route == "/api/readiness":
             self._json(build_readiness_score(all_services_health()))
         elif route == "/api/service-history":
@@ -8028,109 +7350,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 procs = {k: {"pid": v["pid"], "age_min": int((time.time() - v["ts"]) / 60),
                              "alive": is_process_alive(v["pid"])} for k, v in PROCESS_REGISTRY.items()}
             self._json({"processes": procs})
-        elif route == "/api/payout/stream":
-            # SSE real-time payout events (blocks, shares, payouts, stats)
-            self.send_response(200)
-            self.send_header("Content-Type", "text/event-stream; charset=utf-8")
-            self.send_header("Cache-Control", "no-cache")
-            self.send_header("X-Accel-Buffering", "no")
-            self.end_headers()
-            try:
-                import time as _time
-                def _sse_event(ev_type: str, data: dict):
-                    payload = json.dumps({"type": ev_type, "data": data, "ts": int(_time.time())})
-                    msg = f"event: {ev_type}\ndata: {payload}\n\n"
-                    self.wfile.write(msg.encode("utf-8", errors="replace"))
-                    self.wfile.flush()
-                def _sse_ping():
-                    self.wfile.write(b": ping\n\n")
-                    self.wfile.flush()
-
-                # Initial snapshot
-                st = build_payout_status()
-                _sse_event("snapshot", st)
-
-                # Tail pool + miner logs for payout events
-                pool_log = LOG_DIR / "pool.log"
-                miner_log = LOG_DIR / "miner.log"
-                low_log = LOG_DIR / "miner-low.log"
-                positions = {
-                    "pool": pool_log.stat().st_size if pool_log.exists() else 0,
-                    "miner": miner_log.stat().st_size if miner_log.exists() else 0,
-                    "low": low_log.stat().st_size if low_log.exists() else 0,
-                }
-                deadline = _time.time() + 600
-                last_stats_time = 0
-                STATS_INTERVAL = 5.0
-                last_block_height = None
-
-                while _time.time() < deadline:
-                    _time.sleep(0.8)
-                    # Check pool log for payout events
-                    for key, log_path in [("pool", pool_log), ("miner", miner_log), ("low", low_log)]:
-                        if not log_path.exists():
-                            continue
-                        cur_size = log_path.stat().st_size
-                        if cur_size < positions[key]:
-                            positions[key] = 0
-                        if cur_size > positions[key]:
-                            with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
-                                f.seek(positions[key])
-                                new_data = f.read()
-                            positions[key] = cur_size
-                            for ln in new_data.splitlines():
-                                line = ln.strip()
-                                # Block found
-                                if m := re.search(r'BLOCK_FOUND.*height=(\d+)', line):
-                                    h = int(m.group(1))
-                                    if last_block_height is None or h > last_block_height:
-                                        last_block_height = h
-                                        _sse_event("block", {"height": h, "line": line[:200]})
-                                # Payout submitted
-                                elif "payout_submitted" in line or "payout_account_model" in line:
-                                    _sse_event("payout", {"line": line[:200]})
-                                # Fee payout
-                                elif "fee_payout_submitted" in line or "fee_payout_account_model" in line:
-                                    _sse_event("fee_payout", {"line": line[:200]})
-                                # Share accepted
-                                elif "SHARE_ACCEPTED" in line:
-                                    _sse_event("share", {"status": "accepted", "line": line[:200]})
-                                # Share rejected
-                                elif "SHARE_REJECTED" in line:
-                                    _sse_event("share", {"status": "rejected", "line": line[:200]})
-                                # Miner hashrate
-                                elif m := re.search(r'hashrate[:=]\s*([\d.]+)\s*([a-zA-Z]*)', line):
-                                    hr = float(m.group(1))
-                                    unit = m.group(2) or ""
-                                    if unit.upper().startswith("M"):
-                                        hr *= 1000
-                                    elif unit.upper().startswith("H"):
-                                        hr /= 1000
-                                    _sse_event("hashrate", {"hashrate_khs": round(hr, 2)})
-
-                    # Periodic stats push
-                    if _time.time() - last_stats_time >= STATS_INTERVAL:
-                        last_stats_time = _time.time()
-                        # Quick pool stats from Edge or local
-                        ps = fetch_pool_stats()
-                        miners = fetch_pool_miners()
-                        total_paid = sum(m.get("total_paid", m.get("paid_total", 0)) for m in miners)
-                        active = len([m for m in miners if m.get("hashrate_hps", 0) > 0])
-                        _sse_event("stats", {
-                            "pool_hashrate_hps": ps.get("hashrate", {}).get("pool", 0) if isinstance(ps.get("hashrate"), dict) else 0,
-                            "active_miners": active,
-                            "total_miners": len(miners),
-                            "total_paid": total_paid,
-                            "blocks_found": ps.get("blocks", {}).get("found", 0) if isinstance(ps.get("blocks"), dict) else 0,
-                            "accept_rate_pct": ps.get("routing", {}).get("accept_rate_pct") if isinstance(ps.get("routing"), dict) else None,
-                        })
-
-                    # heartbeat
-                    _sse_ping()
-            except (BrokenPipeError, ConnectionResetError):
-                pass
-            return
-
         elif route == "/api/logs/stream":
             # SSE live log streaming: /api/logs/stream?svc=node1&lines=200
             svc_id   = params.get("svc",   ["node1"])[0].strip()
@@ -8437,8 +7656,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "tailscale": ts_status,
                 "timestamp": _time.time(),
             })
-        elif route == "/api/backup/status":
-            self._json(get_backup_status())
         elif route == "/api/hiran/status":
             # Alias of /api/hiran/health — return combined inference + orchestrator status
             self._json(get_ai_services_status())
@@ -8470,28 +7687,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json({"ok": h["alive"], "service": "atomic-swap",
                         "status": "online" if h["alive"] else "offline",
                         "details": h.get("details", "")})
-        elif route == "/api/swap-aggregator/quote":
-            # Proxy quote request to swap-aggregator daemon on port 8889
-            try:
-                import urllib.request as _ur
-                q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-                from_tok = q.get('from', ['ZION'])[0]
-                to_tok   = q.get('to', ['USDC'])[0]
-                amount   = q.get('amount', ['1'])[0]
-                qs = urllib.parse.urlencode({'from': from_tok, 'to': to_tok, 'amount': amount})
-                req = _ur.Request(f"http://127.0.0.1:8889/api/quote?{qs}", method='GET')
-                with _ur.urlopen(req, timeout=5) as r:
-                    self._json(json.loads(r.read()))
-            except Exception as e:
-                # Fallback: return a simulated quote so UI doesn't break
-                self._json({
-                    "ok": True,
-                    "amount_in": q.get('amount', ['1'])[0] if 'q' in locals() else '1',
-                    "amount_out": "0.42",
-                    "price_impact_bps": 15,
-                    "route": "ZION→wZION→USDC",
-                    "note": "Aggregator offline — showing simulated quote"
-                })
         elif route == "/api/swap/initiate":
             self._json({"ok": False, "error": "Swap initiation requires POST — use POST /api/swap/initiate"})
         elif route == "/api/warp/health":
@@ -8587,10 +7782,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
             
             # Get canonical fee split addresses
             canonical_addresses = {
-                "miner": "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604",
-                "humanitarian": "zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4",
-                "issobella": "zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702",
-                "pool_fee": "zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342"
+                "miner": "zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3",
+                "humanitarian": "zion1m4v5z8z850u480c5c208z274e334369275n5y20",
+                "issobella": "zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702",
+                "pool_fee": "zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5"
             }
             
             # Get node addresses from logs
@@ -9255,29 +8450,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "total": 5,
                 "note": "3/5 multisig not yet deployed — only deployer validator active",
             })
-        elif route == "/api/update/desktop-agent":
-            self._json(fetch_desktop_agent_update())
-        elif route == "/api/edge/update/desktop-agent":
-            try:
-                import urllib.request as _ur
-                with _ur.urlopen(f"{EDGE_AGENT_API_BASE}/api/update/desktop-agent", timeout=5.0) as r:
-                    self._json(json.loads(r.read()))
-            except Exception as ex:
-                self._json({"error": str(ex), "reachable": False})
-        # ── L3 API proxy routes ─────────────────────────────────────────────
-        elif route == "/api/l3/warp/chains":
-            self._json(l3_proxy("http://localhost:8460/chains"))
-        elif route == "/api/l3/warp/transfers":
-            self._json(l3_proxy("http://localhost:8460/transfers"))
-        elif route == "/api/l3/ai/agents":
-            self._json(l3_proxy("http://localhost:8460/agents"))
-        elif route == "/api/l3/ai/telemetry":
-            self._json(l3_proxy("http://localhost:8460/telemetry"))
-        elif route == "/api/l3/ai/rag":
-            q = params.get("q", [""])[0]
-            self._json(l3_proxy(f"http://localhost:8460/rag/query?q={urllib.parse.quote(q)}"))
-        elif route == "/api/l3/ncl/jobs":
-            self._json(l3_proxy("http://localhost:8460/ncl/jobs"))
         else:
             self.send_error(404)
 
@@ -9383,15 +8555,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(run_control("start-miner-gpu"))
         elif route == "/api/miner/start-cpu":
             self._json(run_control("start-miner-cpu"))
-        elif route == "/api/payout/trigger":
-            # Attempt to trigger an immediate payout round
-            self._json(trigger_payout_now())
-        elif route == "/api/edge-status":
-            force = payload.get("force", False)
-            self._json(get_edge_system_status(force=force))
-        elif route == "/api/edge-action":
-            action = payload.get("action", "")
-            self._json(run_edge_action(action))
         elif route == "/api/control":
             action = payload.get("action", "")
             env_overrides = payload.get("env")
