@@ -4692,7 +4692,8 @@ ipcMain.handle('wallet-get-transaction', async (event, { rpcUrl, txId }) => {
     const id = (txId || '').toString().trim();
     if (!id) return { success: false, error: 'Transaction ID is required' };
 
-    const result = await zionRpcCall(rpcUrl, 'getTransaction', { txid: id });
+    const normalizedUrl = normalizeRpcUrl(rpcUrl);
+    const result = await zionRpcCall(normalizedUrl, 'getTransaction', { txid: id });
     if (result?.error) return { success: false, error: result.error };
     return { success: true, tx: result };
   } catch (error) {

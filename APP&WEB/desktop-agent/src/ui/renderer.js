@@ -1098,15 +1098,6 @@ function updateSettingsUI() {
   }
 }
 
-function escapeHtml(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
 let _streamLogWindowStart = 0;
 let _streamLogCount = 0;
 let _streamLogSuppressed = 0;
@@ -2524,6 +2515,10 @@ async function loadWalletsList() {
            <svg class="icon" aria-hidden="true"><use href="#i-copy"></use></svg>
            <span>Copy Address</span>
         </button>
+        <button class="btn" onclick="exportWalletPrompt('${safeAddr}')" style="width: auto; padding: 10px 16px; font-size: 13px; background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.5); color: #10b981;">
+           <svg class="icon" aria-hidden="true"><use href="#i-download"></use></svg>
+           <span>Export</span>
+        </button>
       </div>
     </div>
   `}).join('');
@@ -2603,6 +2598,29 @@ window.useWallet = async (address) => {
 window.copyWalletAddress = (address) => {
   navigator.clipboard.writeText(address);
   alert('Address copied to clipboard!');
+};
+
+window.exportWalletPrompt = async (address) => {
+  const password = prompt('Enter wallet password to export private key:');
+  if (!password) return;
+
+  const result = await window.electronAPI.exportWallet({ address, password });
+  if (!result?.success) {
+    alert('Export failed: ' + (result?.error || 'unknown error'));
+    return;
+  }
+
+  const wallet = result.wallet;
+  const exportText = `ZION Wallet Export
+Address: ${wallet.address}
+Public Key: ${wallet.publicKey}
+Private Key: ${wallet.privateKey}
+${wallet.mnemonic ? 'Mnemonic: ' + wallet.mnemonic : ''}
+
+Keep this safe — anyone with the private key controls the wallet.`;
+
+  navigator.clipboard.writeText(exportText);
+  alert('Wallet exported to clipboard!\n\nKeep this safe — anyone with the private key controls the wallet.');
 };
 
 // ============================================================================
