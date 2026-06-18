@@ -154,27 +154,25 @@ export default function Hero() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
-                <span className="text-sm font-bold text-white">Genesis 3.0.1 — 11 June 2026</span>
+                <span className="text-sm font-bold text-white">Bridge, Defi Run — 18 June 2026</span>
                 <span className="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> LIVE
                 </span>
-                <span className="text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full font-semibold">
-                  T-{Math.ceil((new Date('2026-12-31').getTime() - Date.now()) / (1000*60*60*24))}d public
+                <span className="text-xs bg-zion-purple/20 text-zion-purple-300 px-2 py-0.5 rounded-full font-semibold">
+                  v3.0.2
                 </span>
               </div>
               <p className="text-sm text-gray-400 leading-relaxed">
-                MainNet Genesis achieved on 11 June 2026. Public full launch countdown active for {SITE_LAUNCH_DATE_DISPLAY}.
-                Core + Edge topology live, mining active, bridge in preparation.
+                Bridge and DeFi protocols are now live on Base Mainnet. ZION L2 DeFi contracts deployed, wZION token trading, and atomic swap functionality active. Core + Edge topology running, mining active.
               </p>
-                </div>
-                <a
-                  href="#tree-of-life"
-                  className="flex-none sm:ml-auto text-xs text-emerald-300 hover:text-emerald-200 flex items-center gap-1 transition"
-                >
-                  {tr('hero', 'teaser_cta', lang)} <ArrowRight className="w-3.5 h-3.5" />
-                </a>
-              </div>
-            </motion.div>
+              <a
+                href="#tree-of-life"
+                className="flex-none sm:ml-auto text-xs text-emerald-300 hover:text-emerald-200 flex items-center gap-1 transition"
+              >
+                {tr('hero', 'teaser_cta', lang)} <ArrowRight className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          </motion.div>
 
             {/* metrics strip */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -304,7 +302,7 @@ export default function Hero() {
               <div className="flex items-center gap-2 pt-1">
                 <Rocket className="w-4 h-4 text-zion-gold" />
                 <span className="text-xs text-gray-400">
-                  {SITE_ENVIRONMENT_LABEL} · {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · Core + Edge topology
+                  {SITE_ENVIRONMENT_LABEL} · {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · Bridge, Defi Run
                 </span>
               </div>
             </div>
