@@ -512,15 +512,6 @@
       background: rgba(16,185,129,0.15);
       color: #6ee7b7;
     }
-    .update-actions .btn-gold {
-      background: rgba(234,179,8,0.15);
-      color: #fcd34d;
-      border-color: rgba(234,179,8,0.35);
-    }
-    .update-actions .btn-gold:hover {
-      background: rgba(234,179,8,0.25);
-      border-color: rgba(234,179,8,0.5);
-    }
     .update-actions .btn-success:hover {
       background: rgba(16,185,129,0.25);
       border-color: rgba(16,185,129,0.4);
@@ -1545,57 +1536,6 @@
       overflow-y: auto;
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-    }
-    .tx-history-list {
-      margin-top: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      max-height: 360px;
-      overflow-y: auto;
-    }
-    .tx-history-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 10px 12px;
-      background: rgba(0,0,0,0.18);
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.06);
-      font-size: 12px;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
-    .tx-history-meta { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
-    .tx-history-id {
-      font-family: monospace;
-      color: rgba(255,255,255,0.7);
-      font-size: 11px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .tx-history-time {
-      color: rgba(255,255,255,0.35);
-      font-size: 10px;
-    }
-    .tx-history-amount {
-      font-weight: 700;
-      font-family: monospace;
-      font-size: 13px;
-      white-space: nowrap;
-    }
-    .tx-history-amount.income { color: #4ade80; }
-    .tx-history-amount.outgoing { color: #f87171; }
-    .tx-history-amount.mined { color: #60a5fa; }
-    .tx-history-status {
-      font-size: 10px;
-      padding: 2px 8px;
-      border-radius: 99px;
-      background: rgba(255,255,255,0.08);
-      color: rgba(255,255,255,0.55);
-      white-space: nowrap;
     }
     .muted-note {
       margin-bottom: 18px;
@@ -3397,126 +3337,6 @@
     }
     .cli-line.error { color: #f87171; }
 
-    /* ═══ CLI ASCII Logo ═══ */
-    .cli-ascii-banner {
-      display: flex;
-      justify-content: center;
-      margin: 16px 0 8px;
-      padding: 18px 0;
-      background: rgba(0,0,0,0.35);
-      border: 1px solid rgba(255,215,0,0.08);
-      border-radius: 16px;
-      backdrop-filter: blur(20px);
-    }
-    .cli-ascii-logo {
-      font-family: 'JetBrains Mono', Menlo, 'Courier New', monospace;
-      font-size: 11px;
-      line-height: 1.35;
-      color: var(--zion-gold);
-      text-shadow: 0 0 12px rgba(255,215,0,0.2);
-      text-align: center;
-      margin: 0;
-      opacity: 0.85;
-      white-space: pre;
-    }
-    .cli-terminal-wrap {
-      border-top: 1px solid rgba(255,255,255,0.06);
-    }
-
-    /* ═══ Oasis Arcade ═══ */
-    .arcade-wrap {
-      position: relative;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .arcade-canvas {
-      background: #0a0a12;
-      border: 2px solid rgba(147,51,234,0.35);
-      border-radius: 10px;
-      box-shadow: 0 0 30px rgba(147,51,234,0.15), inset 0 0 60px rgba(0,0,0,0.5);
-      image-rendering: pixelated;
-    }
-    .arcade-overlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      background: rgba(10,10,18,0.88);
-      border-radius: 10px;
-      pointer-events: auto;
-    }
-    .arcade-overlay.hidden { display: none; }
-    .arcade-title {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 18px;
-      font-weight: 800;
-      color: var(--zion-gold);
-      text-shadow: 0 0 12px rgba(255,215,0,0.35);
-      letter-spacing: 2px;
-    }
-    .arcade-sub {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      color: rgba(255,255,255,0.45);
-    }
-    .arcade-start-btn {
-      margin-top: 8px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 13px;
-      letter-spacing: 1px;
-    }
-    .arcade-hud {
-      display: flex;
-      justify-content: center;
-      gap: 32px;
-      margin-top: 14px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
-      color: rgba(255,255,255,0.6);
-    }
-    .arcade-score { color: #6ee7b7; }
-    .arcade-high { color: #fcd34d; }
-    .arcade-level { color: #93c5fd; }
-
-    /* ═══ Toast Notifications ═══ */
-    .toast-container {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 9999;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      pointer-events: none;
-    }
-    .toast {
-      padding: 10px 16px;
-      border-radius: 12px;
-      font-size: 13px;
-      font-weight: 500;
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255,255,255,0.08);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-      color: #fff;
-      opacity: 0;
-      transform: translateX(40px);
-      transition: all 0.35s cubic-bezier(0.4,0,0.2,1);
-      max-width: 320px;
-      word-break: break-word;
-      pointer-events: auto;
-    }
-    .toast-in { opacity: 1; transform: translateX(0); }
-    .toast-out { opacity: 0; transform: translateX(40px); }
-    .toast-success { background: rgba(16,185,129,0.18); border-color: rgba(16,185,129,0.35); color: #6ee7b7; }
-    .toast-error { background: rgba(239,68,68,0.18); border-color: rgba(239,68,68,0.35); color: #f87171; }
-    .toast-info { background: rgba(59,130,246,0.18); border-color: rgba(59,130,246,0.35); color: #93c5fd; }
-    .toast-warn { background: rgba(234,179,8,0.18); border-color: rgba(234,179,8,0.35); color: #fcd34d; }
-
     /* ═══ Bridge Readiness ═══ */
     .bridge-readiness-row {
       display: flex;
@@ -3739,28 +3559,6 @@
     .algo-select:focus {
       border-color: rgba(255,215,0,0.4);
       box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
-    }
-
-    /* ═══ Seasonal Algorithm Badge ═══ */
-    .algo-season-badge {
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      padding: 3px 8px;
-      border-radius: 6px;
-      margin-left: 8px;
-      white-space: nowrap;
-    }
-    .algo-season-badge.summer {
-      color: #6ee7b7;
-      background: rgba(16,185,129,0.12);
-      border: 1px solid rgba(16,185,129,0.25);
-    }
-    .algo-season-badge.winter {
-      color: #f87171;
-      background: rgba(239,68,68,0.12);
-      border: 1px solid rgba(239,68,68,0.25);
     }
 
   </style>
@@ -4003,12 +3801,13 @@
                 <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-spark"></use></svg>
                 <span id="gpu-badge-text">Detecting GPU...</span>
               </div>
-              <select id="algo-select" class="algo-select" style="width:auto;min-width:260px;font-size:13px;padding:8px 36px 8px 12px">
-                <option value="deeksha_lite_v1">Lite v1 — Summer / Cooling</option>
-                <option value="deeksha_lite_fire" selected>Fire — Winter / Heating</option>
-                <option value="cosmic_harmony_ekam_deeksha_v2">Cosmic Harmony v2</option>
+              <select id="algo-select-dashboard" class="algo-select" style="width: auto; min-width: 180px; padding: 6px 32px 6px 12px; font-size: 11px;">
+                <option value="deeksha_lite_v1">Deeksha Lite v1</option>
+                <option value="cosmic_harmony_ekam_deeksha_v2">Cosmic Harmony Ekam v2</option>
+                <option value="deeksha_lite_fire">Deeksha Lite Fire</option>
               </select>
-              <span id="algo-season-badge" class="algo-season-badge" style="display:none;"></span>
+              <span id="algo-status" class="view-hidden"></span>
+              <span id="backend-pill" class="pill pill-compact">Backend: Auto</span>
             </div>
             <!-- Right: action buttons -->
             <div class="actions-row">
@@ -4074,6 +3873,13 @@
             </div>
           </div>
 
+          <!-- BLOCKS FOUND -->
+          <div class="stat-card" id="blocks-card">
+            <h3><svg class="icon icon-inline" aria-hidden="true"><use href="#i-trophy"></use></svg>Blocks Found</h3>
+            <div class="value" id="blocks-value">0</div>
+            <div class="label" id="blocks-label">Total blocks mined</div>
+          </div>
+
           <!-- HARDWARE -->
           <div class="stat-card">
             <h3><svg class="icon icon-inline" aria-hidden="true"><use href="#i-monitor"></use></svg>Hardware</h3>
@@ -4097,7 +3903,7 @@
             <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-bridge"></use></svg>Cross-chain</div>
             <div class="web29-title-row">
               <h1 class="web29-title text-gradient">ZION Bridge</h1>
-              <div class="web29-chip" id="bridge-status-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>Base Sepolia Testnet</div>
+              <div class="web29-chip" id="bridge-status-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>Base Mainnet</div>
             </div>
           </div>
         </div>
@@ -4177,61 +3983,6 @@
         </div>
       </div>
 
-      <!-- ═══════════════════════════════════════════════════ -->
-      <!-- WARP — L3 Cross-Chain Corridors                    -->
-      <!-- ═══════════════════════════════════════════════════ -->
-      <div id="warp-view" class="view-shell d-none">
-        <div class="web29-page-header">
-          <div class="web29-title-stack">
-            <div class="web29-kicker">
-              <svg class="icon icon-inline" aria-hidden="true"><use href="#i-link"></use></svg>
-              L3 Cross-Chain
-            </div>
-            <div class="web29-title-row">
-              <h1 class="web29-title text-gradient">WARP</h1>
-              <div class="web29-chip" id="warp-view-status-chip">Loading…</div>
-            </div>
-            <div class="web29-subtitle">Multi-chain relay corridors — Bitcoin, Ethereum, Solana, Cardano, Cosmos, Stellar, Tron.</div>
-          </div>
-        </div>
-
-        <div class="control-panel">
-          <h2 class="panel-header-title">
-            <svg class="icon" aria-hidden="true"><use href="#i-link"></use></svg>
-            <span>Live Dashboard</span>
-            <span class="muted-time" id="warp-view-updated">—</span>
-          </h2>
-
-          <div class="metric-grid panel-mt-20">
-            <div class="metric-card green">
-              <div class="metric-kicker">CONNECTED CHAINS</div>
-              <div class="metric-value green" id="warp-view-chains">—</div>
-            </div>
-            <div class="metric-card blue">
-              <div class="metric-kicker">TRANSFERS</div>
-              <div class="metric-value blue" id="warp-view-transfers">—</div>
-            </div>
-            <div class="metric-card purple">
-              <div class="metric-kicker">PENDING</div>
-              <div class="metric-value purple" id="warp-view-pending">—</div>
-            </div>
-            <div class="metric-card gold">
-              <div class="metric-kicker">DAILY VOLUME</div>
-              <div class="metric-value gold" id="warp-view-volume">—</div>
-            </div>
-          </div>
-
-          <div class="actions-row panel-mt-20">
-            <button class="btn btn-primary" id="warp-view-refresh">Refresh Data</button>
-            <button class="btn btn-primary btn-sm" id="warp-view-chains-btn">View Chains</button>
-            <button class="btn btn-primary btn-sm" id="warp-view-transfers-btn">View Transfers</button>
-            <button class="btn btn-primary btn-sm" id="warp-view-pending-btn">View Pending</button>
-          </div>
-
-          <div id="warp-view-detail" class="tx-lookup-result" style="margin-top:14px;display:none;max-height:320px;"></div>
-        </div>
-      </div><!-- /#warp-view -->
-
       <!-- Wallet View (hidden by default) -->
       <div id="wallet-view" class="view-shell view-hidden">
         <div class="web29-page-header">
@@ -4266,10 +4017,6 @@
           <div class="section-tab" data-section="wallet-payouts">
             <svg class="tab-icon icon" aria-hidden="true"><use href="#i-star"></use></svg>
             <span>Payouts</span>
-          </div>
-          <div class="section-tab" data-section="wallet-recovery">
-            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-key"></use></svg>
-            <span>Recovery</span>
           </div>
           <div class="section-tab" data-section="wallet-manage">
             <svg class="tab-icon icon" aria-hidden="true"><use href="#i-settings"></use></svg>
@@ -4481,26 +4228,7 @@
 
         <!-- ═══ SECTION: History ═══ -->
         <div id="wallet-history" class="section-panel">
-          <!-- Transaction History -->
           <div class="control-panel">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-              <h2 class="panel-title-row" style="margin:0">
-                <svg class="icon" aria-hidden="true"><use href="#i-list"></use></svg>
-                <span>Transaction History</span>
-              </h2>
-              <button class="btn btn-ghost btn-sm" id="tx-history-refresh-btn">
-                <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-refresh"></use></svg> Refresh
-              </button>
-            </div>
-            <div id="tx-history-list" class="tx-history-list" style="display:none">
-              <!-- items injected by renderer -->
-            </div>
-            <div id="tx-history-empty" class="muted-note" style="text-align:center;padding:24px 0">No transactions yet.</div>
-            <div id="tx-history-loading" class="muted-note" style="text-align:center;padding:24px 0;display:none">Loading…</div>
-          </div>
-
-          <!-- Transaction Lookup -->
-          <div class="control-panel" style="margin-top:16px">
             <h2 class="panel-title-row">
               <svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg>
               <span>Transaction Lookup</span>
@@ -4560,56 +4288,6 @@
           </div>
         </div>
 
-        <!-- ═══ SECTION: Recovery ═══ -->
-        <div id="wallet-recovery" class="section-panel">
-          <div class="control-panel">
-            <h2 class="panel-title-row">
-              <svg class="icon" aria-hidden="true"><use href="#i-key"></use></svg>
-              <span>Recover Wallet</span>
-            </h2>
-            <p class="muted-note">Restore your wallet from a 12 or 24-word backup recovery phrase.</p>
-            <div class="form-group">
-              <label>Recovery Phrase (12 or 24 words)</label>
-              <textarea id="import-mnemonic" rows="2" placeholder="word1 word2 ... word12 (or 24)" class="textarea-no-resize"></textarea>
-            </div>
-            <div class="form-two-col">
-              <div class="form-group form-group-no-margin">
-                <label>Wallet Name</label>
-                <input type="text" id="import-wallet-name" placeholder="Recovered Wallet" />
-              </div>
-              <div class="form-group form-group-no-margin">
-                <label>Password</label>
-                <input type="password" id="import-wallet-password" placeholder="Password to encrypt..." />
-              </div>
-            </div>
-            <div class="button-group button-group-mt-14">
-              <button class="btn btn-primary" id="import-wallet-btn">
-                <svg class="icon" aria-hidden="true"><use href="#i-key"></use></svg>
-                <span>Recover Wallet</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Import from Backup File -->
-          <div class="control-panel" style="margin-top: 16px;">
-            <h2 class="panel-title-row">
-              <svg class="icon" aria-hidden="true"><use href="#i-save"></use></svg>
-              <span>Import from Backup File</span>
-            </h2>
-            <p class="muted-note">Import a wallet from a .json backup file exported earlier.</p>
-            <div class="form-group">
-              <label>Password for new encryption</label>
-              <input type="password" id="import-file-password" placeholder="Password to encrypt imported wallet..." />
-            </div>
-            <div class="button-group button-group-mt-14">
-              <button class="btn btn-primary" id="import-file-btn">
-                <svg class="icon" aria-hidden="true"><use href="#i-save"></use></svg>
-                <span>Choose Backup File &amp; Import</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
         <!-- ═══ SECTION: Manage ═══ -->
         <div id="wallet-manage" class="section-panel">
 
@@ -4619,7 +4297,7 @@
               <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
               <span>Create New Wallet</span>
             </h2>
-            <p class="muted-note">Generate a new ZION wallet with Ed25519 keypair and a 12 or 24-word recovery phrase.</p>
+            <p class="muted-note">Generate a new ZION wallet with Ed25519 keypair and 12-word recovery phrase.</p>
 
             <div id="wallet-generator">
               <div class="form-group">
@@ -4635,13 +4313,6 @@
                   <label>Confirm Password</label>
                   <input type="password" id="new-wallet-password-confirm" placeholder="Repeat password..." />
                 </div>
-              </div>
-              <div class="form-group form-group-no-margin" style="margin-top:10px;">
-                <label>Recovery Phrase Length</label>
-                <select id="new-wallet-strength" class="wizard-input" style="width:auto; min-width:140px;">
-                  <option value="128">12 words</option>
-                  <option value="256">24 words</option>
-                </select>
               </div>
               <div class="button-group button-group-mt-14">
                 <button class="btn btn-primary" id="generate-wallet-btn">
@@ -4668,7 +4339,7 @@
                   </div>
                 </div>
                 <div class="wallet-display-section">
-                  <div class="wallet-display-kicker">RECOVERY PHRASE</div>
+                  <div class="wallet-display-kicker">RECOVERY PHRASE (12 WORDS)</div>
                   <textarea id="generated-mnemonic" readonly rows="2" class="wallet-display-mnemonic"></textarea>
                   <p class="wallet-warning">
                     <svg class="icon icon-sm" aria-hidden="true"><use href="#i-alert"></use></svg>
@@ -4689,6 +4360,35 @@
             </div>
           </div>
 
+          <!-- Import Wallet -->
+          <div class="section-divider">Import</div>
+          <div class="control-panel">
+            <h2 class="panel-title-row">
+              <svg class="icon" aria-hidden="true"><use href="#i-import"></use></svg>
+              <span>Import Wallet</span>
+            </h2>
+            <p class="muted-note">Restore wallet from 12-word recovery phrase.</p>
+            <div class="form-group">
+              <label>Recovery Phrase (12 words)</label>
+              <textarea id="import-mnemonic" rows="2" placeholder="word1 word2 word3 ... word12" class="textarea-no-resize"></textarea>
+            </div>
+            <div class="form-two-col">
+              <div class="form-group form-group-no-margin">
+                <label>Wallet Name</label>
+                <input type="text" id="import-wallet-name" placeholder="Imported Wallet" />
+              </div>
+              <div class="form-group form-group-no-margin">
+                <label>Password</label>
+                <input type="password" id="import-wallet-password" placeholder="Password to encrypt..." />
+              </div>
+            </div>
+            <div class="button-group button-group-mt-14">
+              <button class="btn btn-primary" id="import-wallet-btn">
+                <svg class="icon" aria-hidden="true"><use href="#i-import"></use></svg>
+                <span>Import Wallet</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -4853,7 +4553,13 @@
                   <h3>Algorithm</h3>
                 </div>
               </div>
-              <div class="slider-hint" id="settings-algo-display">Lite v1 — Summer / Cooling mode (4 KiB scratchpad)</div>
+              <label class="wizard-label-sm">Algorithm</label>
+              <select id="algo-select" class="algo-select">
+                <option value="deeksha_lite_v1" selected>Deeksha Lite v1 — Standard</option>
+                <option value="cosmic_harmony_ekam_deeksha_v2">Cosmic Harmony Ekam Deeksha v2</option>
+                <option value="deeksha_lite_fire">Deeksha Lite Fire — Thermal</option>
+              </select>
+              <div class="slider-hint">Standard 4 KiB scratchpad. Fire uses 512 KiB with higher power draw.</div>
 
               <div class="section-divider">Compute</div>
 
@@ -4972,489 +4678,6 @@
           </div>
         </div>
       </div>
-
-      <!-- ═══════════════════════════════════════════════════ -->
-      <!-- OASIS — L4 Consciousness Mining Game (UE5 MMORPG)   -->
-      <!-- ═══════════════════════════════════════════════════ -->
-      <div id="oasis-view" class="view-shell d-none">
-        <div class="web29-page-header">
-          <div class="web29-title-stack">
-            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>L4 Metaverse</div>
-            <div class="web29-title-row">
-              <h1 class="web29-title text-gradient">ZION Oasis</h1>
-              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>UE5 MMORPG</div>
-            </div>
-            <div class="web29-subtitle">AAA Spiritual MMORPG — consciousness mining, 51 avatars, guild DAOs & the Golden Egg.</div>
-          </div>
-        </div>
-
-        <!-- ── Oasis Section Tabs ───────────────────────────── -->
-        <div class="section-tabs" data-group="oasis">
-          <div class="section-tab active" data-section="oasis-overview">
-            <span class="tab-dot"></span>
-            <span>Overview</span>
-          </div>
-          <div class="section-tab" data-section="oasis-avatars">
-            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-star"></use></svg>
-            <span>Avatars</span>
-          </div>
-          <div class="section-tab" data-section="oasis-guilds">
-            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
-            <span>Guilds</span>
-          </div>
-          <div class="section-tab" data-section="oasis-quests">
-            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-spark"></use></svg>
-            <span>Quests</span>
-          </div>
-          <div class="section-tab" data-section="oasis-golden-egg">
-            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-info"></use></svg>
-            <span>Golden Egg</span>
-          </div>
-          <div class="section-tab" data-section="oasis-arcade">
-            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-terminal"></use></svg>
-            <span>Arcade</span>
-          </div>
-          <div class="section-tab" data-section="oasis-pong">
-            <svg class="tab-icon icon" aria-hidden="true">
-              <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" fill="none" stroke="currentColor" stroke-width="2"/>
-              <path d="M2 12h20" stroke="currentColor" stroke-width="1"/>
-            </svg>
-            <span>Pong</span>
-          </div>
-          <div class="section-tab" data-section="oasis-breakout">
-            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-cube"></use></svg>
-            <span>Breakout</span>
-          </div>
-        </div>
-
-        <!-- ═══ SECTION: Overview ═══ -->
-        <div id="oasis-overview" class="section-panel active">
-          <div class="info-cards-grid">
-            <div class="info-card version">
-              <div class="info-card-kicker"><svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-spark"></use></svg> ENGINE</div>
-              <div class="info-card-value version">UE5.4</div>
-              <div class="info-card-sub">Unreal Engine 5 + MetaHuman</div>
-            </div>
-            <div class="info-card algo">
-              <div class="info-card-kicker"><svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-star"></use></svg> AVATARS</div>
-              <div class="info-card-value algo">51+151</div>
-              <div class="info-card-sub">Core + Extended playable</div>
-            </div>
-            <div class="info-card network">
-              <div class="info-card-kicker"><svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg> QUESTS</div>
-              <div class="info-card-value network">~1 000</div>
-              <div class="info-card-sub">5 quests per avatar</div>
-            </div>
-            <div class="info-card engine">
-              <div class="info-card-kicker"><svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-wallet"></use></svg> PRIZE POOL</div>
-              <div class="info-card-value engine">8.25B</div>
-              <div class="info-card-sub">ZION Golden Egg</div>
-            </div>
-          </div>
-
-          <div class="control-panel panel-mt-20">
-            <h2 class="inline-heading">
-              <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
-              <span>Game Systems</span>
-            </h2>
-            <div class="about-grid panel-mt-20">
-              <div class="about-card">
-                <div class="about-kicker"><svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-spark"></use></svg> XP Economy</div>
-                <div class="about-value">Skill-Based</div>
-                <div class="about-meta">Game XP converts to ZION tokens via on-chain hooks.</div>
-              </div>
-              <div class="about-card">
-                <div class="about-kicker"><svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-star"></use></svg> Consciousness</div>
-                <div class="about-value">9 Sefirot</div>
-                <div class="about-meta">PHYSICAL → KETHER. Each level unlocks new skills & territory.</div>
-              </div>
-              <div class="about-card">
-                <div class="about-kicker"><svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-wallet"></use></svg> On-Chain Items</div>
-                <div class="about-value">NFT Inventory</div>
-                <div class="about-meta">All items are L1 NFTs — true ownership, marketplace trading.</div>
-              </div>
-              <div class="about-card">
-                <div class="about-kicker"><svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg> Territories</div>
-                <div class="about-value">8 Worlds</div>
-                <div class="about-meta">Open-world territories with guild claims & resource wars.</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="control-panel panel-mt-20">
-            <h2 class="inline-heading">
-              <svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg>
-              <span>Backend Status</span>
-            </h2>
-            <div class="info-cards-grid panel-mt-20" style="grid-template-columns: repeat(3, 1fr);">
-              <div class="info-card version">
-                <div class="info-card-kicker"><svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-terminal"></use></svg> REST API</div>
-                <div class="info-card-value version" id="oasis-rest-status">Unknown</div>
-                <div class="info-card-sub">localhost:8094</div>
-              </div>
-              <div class="info-card network">
-                <div class="info-card-kicker"><svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg> WebSocket</div>
-                <div class="info-card-value network" id="oasis-ws-status">Unknown</div>
-                <div class="info-card-sub">localhost:8095</div>
-              </div>
-              <div class="info-card engine">
-                <div class="info-card-kicker"><svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-info"></use></svg> Metrics</div>
-                <div class="info-card-value engine" id="oasis-metrics-status">Unknown</div>
-                <div class="info-card-sub">localhost:9101/metrics</div>
-              </div>
-            </div>
-            <div class="actions-row panel-mt-20">
-              <button class="btn btn-primary" id="oasis-btn-check">Check Status</button>
-              <button class="btn btn-primary" id="oasis-btn-play" disabled>Launch UE5</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- ═══ SECTION: Avatars ═══ -->
-        <div id="oasis-avatars" class="section-panel">
-          <div class="control-panel">
-            <h2 class="inline-heading">
-              <svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg>
-              <span>Sacred Avatars</span>
-            </h2>
-            <p class="about-lead panel-mt-20">
-              <strong>51 core avatars</strong> with full animation, skill trees and consciousness paths. <strong>151 extended avatars</strong> with unique traits and lore.
-            </p>
-            <div class="about-grid panel-mt-20">
-              <div class="about-card">
-                <div class="about-kicker">Core</div>
-                <div class="about-value">51</div>
-                <div class="about-meta">Fully animated, skill-tree, 5 quests each</div>
-              </div>
-              <div class="about-card">
-                <div class="about-kicker">Extended</div>
-                <div class="about-value">151</div>
-                <div class="about-meta">Unique traits, backstory, custom abilities</div>
-              </div>
-              <div class="about-card">
-                <div class="about-kicker">Total</div>
-                <div class="about-value">202</div>
-                <div class="about-meta">Playable characters at launch</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ═══ SECTION: Guilds ═══ -->
-        <div id="oasis-guilds" class="section-panel">
-          <div class="control-panel">
-            <h2 class="inline-heading">
-              <svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
-              <span>Guild DAO</span>
-            </h2>
-            <p class="about-lead panel-mt-20">
-              Player guilds function as <strong>on-chain DAOs</strong> — shared treasury, democratic voting on expansion, territory claims, and raid composition.
-            </p>
-            <div class="about-grid panel-mt-20">
-              <div class="about-card">
-                <div class="about-kicker">Treasury</div>
-                <div class="about-value">Shared</div>
-                <div class="about-meta">Guild ZION pool funded by member tithe & raid loot.</div>
-              </div>
-              <div class="about-card">
-                <div class="about-kicker">Voting</div>
-                <div class="about-value">On-Chain</div>
-                <div class="about-meta">1 wallet = 1 vote. Proposals: expansion, war, peace.</div>
-              </div>
-              <div class="about-card">
-                <div class="about-kicker">Territory</div>
-                <div class="about-value">8 Worlds</div>
-                <div class="about-meta">Claim, defend, and mine resources in open-world territories.</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ═══ SECTION: Quests ═══ -->
-        <div id="oasis-quests" class="section-panel">
-          <div class="control-panel">
-            <h2 class="inline-heading">
-              <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
-              <span>Quest Engine</span>
-            </h2>
-            <p class="about-lead panel-mt-20">
-              <strong>5 quest archetypes</strong> per avatar — PvE combat, world exploration, item crafting, social diplomacy, and consciousness meditation.
-            </p>
-            <div class="about-grid panel-mt-20">
-              <div class="about-card">
-                <div class="about-kicker">PvE</div>
-                <div class="about-value">Combat</div>
-                <div class="about-meta">Defeat spiritual guardians & shadow bosses.</div>
-              </div>
-              <div class="about-card">
-                <div class="about-kicker">Explore</div>
-                <div class="about-value">World</div>
-                <div class="about-meta">Discover hidden shrines, lore tablets, and ley lines.</div>
-              </div>
-              <div class="about-card">
-                <div class="about-kicker">Craft</div>
-                <div class="about-value">Items</div>
-                <div class="about-meta">Forge NFT gear from mined crystals & herbs.</div>
-              </div>
-              <div class="about-card">
-                <div class="about-kicker">Social</div>
-                <div class="about-value">Diplomacy</div>
-                <div class="about-meta">Guild alliances, trade routes, and peace treaties.</div>
-              </div>
-              <div class="about-card">
-                <div class="about-kicker">Meditate</div>
-                <div class="about-value">Mind</div>
-                <div class="about-meta">Consciousness-raising quests that boost Sefirot XP.</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ═══ SECTION: Golden Egg ═══ -->
-        <div id="oasis-golden-egg" class="section-panel">
-          <div class="control-panel">
-            <h2 class="inline-heading">
-              <svg class="icon" aria-hidden="true"><use href="#i-info"></use></svg>
-              <span>The Golden Egg</span>
-            </h2>
-            <p class="about-lead panel-mt-20">
-              A <strong>planet-wide treasure hunt</strong> with <strong>108 sacred clues</strong> hidden across all 8 territories. The first player to solve the riddle and find the Golden Egg wins the entire prize pool.
-            </p>
-            <div class="info-cards-grid panel-mt-20" style="grid-template-columns: repeat(3, 1fr);">
-              <div class="info-card version">
-                <div class="info-card-kicker">CLUES</div>
-                <div class="info-card-value version">108</div>
-                <div class="info-card-sub">Sacred riddles across territories</div>
-              </div>
-              <div class="info-card algo">
-                <div class="info-card-kicker">PRIZE</div>
-                <div class="info-card-value algo">8.25B</div>
-                <div class="info-card-sub">ZION tokens</div>
-              </div>
-              <div class="info-card network">
-                <div class="info-card-kicker">WINNER</div>
-                <div class="info-card-value network">1</div>
-                <div class="info-card-sub">First to find the Egg</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ═══ SECTION: Arcade ═══ -->
-        <div id="oasis-arcade" class="section-panel">
-          <div class="control-panel">
-            <h2 class="inline-heading">
-              <svg class="icon" aria-hidden="true"><use href="#i-terminal"></use></svg>
-              <span>Consciousness Snake</span>
-            </h2>
-            <p class="about-lead panel-mt-20">
-              <strong>Old-school arcade.</strong> Guide the Spirit Snake through the astral grid. Collect consciousness orbs, avoid shadow blocks. Reach the Golden Egg for a cosmic bonus.
-            </p>
-            <div class="arcade-wrap panel-mt-20">
-              <canvas id="oasis-arcade-canvas" width="400" height="400" class="arcade-canvas"></canvas>
-              <div class="arcade-overlay" id="oasis-arcade-overlay">
-                <div class="arcade-title">CONSCIOUSNESS SNAKE</div>
-                <div class="arcade-sub">WASD or Arrows to move</div>
-                <button class="btn btn-accent arcade-start-btn" id="oasis-arcade-start">Insert Coin</button>
-              </div>
-            </div>
-            <div class="arcade-hud">
-              <div class="arcade-score">XP: <span id="oasis-arcade-score">0</span></div>
-              <div class="arcade-high">Best: <span id="oasis-arcade-high">0</span></div>
-              <div class="arcade-level">Sefirot: <span id="oasis-arcade-level">1</span></div>
-            </div>
-            <div class="actions-row panel-mt-20">
-              <button class="btn btn-primary" id="oasis-arcade-pause">Pause</button>
-              <button class="btn btn-ghost" id="oasis-arcade-reset">Reset</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- ═══ SECTION: Pong ═══ -->
-        <div id="oasis-pong" class="section-panel">
-          <div class="control-panel">
-            <h2 class="inline-heading">
-              <svg class="icon" aria-hidden="true">
-                <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" fill="none" stroke="currentColor" stroke-width="2"/>
-                <path d="M2 12h20" stroke="currentColor" stroke-width="1"/>
-              </svg>
-              <span>Cosmic Pong</span>
-            </h2>
-            <p class="about-lead panel-mt-20">
-              <strong>Classic arcade reborn.</strong> Deflect the photon ball with your plasma paddle. First to 7 wins the cosmic rally. WASD / Arrow keys for left player; AI opponent adapts to your skill.
-            </p>
-            <div class="arcade-wrap panel-mt-20">
-              <canvas id="oasis-pong-canvas" width="500" height="300" class="arcade-canvas"></canvas>
-              <div class="arcade-overlay" id="oasis-pong-overlay">
-                <div class="arcade-title">COSMIC PONG</div>
-                <div class="arcade-sub">W / S or &uarr; / &darr; to move</div>
-                <button class="btn btn-accent arcade-start-btn" id="oasis-pong-start">Start Rally</button>
-              </div>
-            </div>
-            <div class="arcade-hud">
-              <div class="arcade-score">Player: <span id="oasis-pong-player">0</span></div>
-              <div class="arcade-high">AI: <span id="oasis-pong-ai">0</span></div>
-              <div class="arcade-level">Rallies: <span id="oasis-pong-rallies">0</span></div>
-            </div>
-            <div class="actions-row panel-mt-20">
-              <button class="btn btn-primary" id="oasis-pong-pause">Pause</button>
-              <button class="btn btn-ghost" id="oasis-pong-reset">Reset</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- ═══ SECTION: Breakout ═══ -->
-        <div id="oasis-breakout" class="section-panel">
-          <div class="control-panel">
-            <h2 class="inline-heading">
-              <svg class="icon" aria-hidden="true"><use href="#i-cube"></use></svg>
-              <span>Cosmic Breakout</span>
-            </h2>
-            <p class="about-lead panel-mt-20">
-              <strong>Brick by brick, ascension.</strong> Use your plasma paddle to shatter the crystalline wall. Catch power-ups, rack up combos, and clear the grid. Arrow keys or A/D to move. Space to launch / pause.
-            </p>
-            <div class="arcade-wrap panel-mt-20">
-              <canvas id="oasis-breakout-canvas" width="500" height="400" class="arcade-canvas"></canvas>
-              <div class="arcade-overlay" id="oasis-breakout-overlay">
-                <div class="arcade-title">COSMIC BREAKOUT</div>
-                <div class="arcade-sub">A / D or Arrows to move  |  Space to launch</div>
-                <button class="btn btn-accent arcade-start-btn" id="oasis-breakout-start">Launch Photon</button>
-              </div>
-            </div>
-            <div class="arcade-hud">
-              <div class="arcade-score">Score: <span id="oasis-breakout-score">0</span></div>
-              <div class="arcade-high">High: <span id="oasis-breakout-high">0</span></div>
-              <div class="arcade-level">Lives: <span id="oasis-breakout-lives">3</span></div>
-            </div>
-            <div class="actions-row panel-mt-20">
-              <button class="btn btn-primary" id="oasis-breakout-pause">Pause</button>
-              <button class="btn btn-ghost" id="oasis-breakout-reset">Reset</button>
-            </div>
-          </div>
-        </div>
-      </div><!-- /#oasis-view -->
-
-      <!-- ═══════════════════════════════════════════════════ -->
-      <!-- FREE WORLD — L5 Humanitarian Layer                   -->
-      <!-- ═══════════════════════════════════════════════════ -->
-      <div id="l5-view" class="view-shell d-none">
-        <div class="web29-page-header">
-          <div class="web29-title-stack">
-            <div class="web29-kicker">
-              <svg class="icon icon-inline" aria-hidden="true">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              L5 Humanitarian
-            </div>
-            <div class="web29-title-row">
-              <h1 class="web29-title text-gradient">Free World</h1>
-              <div class="web29-chip" id="l5-view-status-chip">Loading…</div>
-            </div>
-            <div class="web29-subtitle">Decentralized humanitarian aid, grants, and AI-powered project allocation.</div>
-          </div>
-        </div>
-
-        <div class="control-panel">
-          <h2 class="panel-header-title">
-            <svg class="icon" aria-hidden="true">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <span>Live Dashboard</span>
-            <span class="muted-time" id="l5-view-updated">—</span>
-          </h2>
-
-          <div class="metric-grid panel-mt-20">
-            <div class="metric-card green">
-              <div class="metric-kicker">FUND BALANCE</div>
-              <div class="metric-value green" id="l5-view-balance">—</div>
-            </div>
-            <div class="metric-card blue">
-              <div class="metric-kicker">GRANTS</div>
-              <div class="metric-value blue" id="l5-view-grants">—</div>
-            </div>
-            <div class="metric-card purple">
-              <div class="metric-kicker">PROJECTS</div>
-              <div class="metric-value purple" id="l5-view-projects">—</div>
-            </div>
-            <div class="metric-card gold">
-              <div class="metric-kicker">STATUS</div>
-              <div class="metric-value gold" id="l5-view-health">—</div>
-            </div>
-          </div>
-
-          <div class="actions-row panel-mt-20">
-            <button class="btn btn-primary" id="l5-view-refresh">Refresh Data</button>
-            <button class="btn btn-primary btn-sm" id="l5-view-grants-btn">View Grants</button>
-            <button class="btn btn-primary btn-sm" id="l5-view-projects-btn">View Projects</button>
-          </div>
-
-          <div id="l5-view-detail" class="tx-lookup-result" style="margin-top:14px;display:none;max-height:320px;"></div>
-        </div>
-      </div><!-- /#l5-view -->
-
-      <!-- ═══════════════════════════════════════════════════ -->
-      <!-- ISSOBELLA — L6 Space Station Layer                   -->
-      <!-- ═══════════════════════════════════════════════════ -->
-      <div id="l6-view" class="view-shell d-none">
-        <div class="web29-page-header">
-          <div class="web29-title-stack">
-            <div class="web29-kicker">
-              <svg class="icon icon-inline" aria-hidden="true">
-                <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              L6 Space Station
-            </div>
-            <div class="web29-title-row">
-              <h1 class="web29-title text-gradient">Issobella</h1>
-              <div class="web29-chip" id="l6-view-status-chip">Loading…</div>
-            </div>
-            <div class="web29-subtitle">Off-world mission funding, space governance, and AI mission evaluation.</div>
-          </div>
-        </div>
-
-        <div class="control-panel">
-          <h2 class="panel-header-title">
-            <svg class="icon" aria-hidden="true">
-              <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <span>Live Dashboard</span>
-            <span class="muted-time" id="l6-view-updated">—</span>
-          </h2>
-
-          <div class="metric-grid panel-mt-20">
-            <div class="metric-card green">
-              <div class="metric-kicker">FUND BALANCE</div>
-              <div class="metric-value green" id="l6-view-balance">—</div>
-            </div>
-            <div class="metric-card blue">
-              <div class="metric-kicker">MISSIONS</div>
-              <div class="metric-value blue" id="l6-view-missions">—</div>
-            </div>
-            <div class="metric-card purple">
-              <div class="metric-kicker">PROPOSALS</div>
-              <div class="metric-value purple" id="l6-view-proposals">—</div>
-            </div>
-            <div class="metric-card gold">
-              <div class="metric-kicker">STATUS</div>
-              <div class="metric-value gold" id="l6-view-health">—</div>
-            </div>
-          </div>
-
-          <div class="actions-row panel-mt-20">
-            <button class="btn btn-primary" id="l6-view-refresh">Refresh Data</button>
-            <button class="btn btn-primary btn-sm" id="l6-view-missions-btn">View Missions</button>
-            <button class="btn btn-primary btn-sm" id="l6-view-proposals-btn">View Proposals</button>
-          </div>
-
-          <div id="l6-view-detail" class="tx-lookup-result" style="margin-top:14px;display:none;max-height:320px;"></div>
-        </div>
-      </div><!-- /#l6-view -->
 
       <!-- Network View (hidden by default) -->
       <div id="network-view" class="view-shell d-none">
@@ -5680,7 +4903,7 @@
                 <div class="info-card-kicker">
                   <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-spark"></use></svg> ALGORITHM
                 </div>
-                <div class="info-card-value algo" id="about-algo-value">Deeksha Lite v1 — Standard 4 KiB scratchpad</div>
+                <div class="info-card-value algo">Cosmic Harmony Deeksha</div>
                 <div class="info-card-sub">ZION Proof-of-Work</div>
               </div>
               <div class="info-card network">
@@ -5739,53 +4962,15 @@
               <div class="update-progress-detail" id="update-progress-detail"></div>
             </div>
 
-            <!-- Miner update cards -->
-            <div class="info-cards-grid" style="grid-template-columns: repeat(2, 1fr); margin-top:18px;">
-              <div class="info-card version">
-                <div class="info-card-kicker">
-                  <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-spark"></use></svg> MINER VERSION
-                </div>
-                <div class="info-card-value version" id="miner-update-status-label">Ready</div>
-                <div class="info-card-sub" id="miner-update-status-sub">Click to check for miner updates</div>
-              </div>
-              <div class="info-card network">
-                <div class="info-card-kicker">
-                  <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg> MINER UPDATE STATUS
-                </div>
-                <div class="info-card-value network" id="miner-update-version">Unknown</div>
-                <div class="info-card-sub" id="miner-update-detail">Binary auto-updater</div>
-              </div>
-            </div>
-
-            <!-- Miner progress bar (hidden by default) -->
-            <div class="update-progress-wrap" id="miner-update-progress-wrap" style="display:none;">
-              <div class="update-progress-header">
-                <span id="miner-update-progress-title">Downloading miner...</span>
-                <span id="miner-update-progress-pct">0%</span>
-              </div>
-              <div class="update-progress-bar">
-                <div class="update-progress-fill" id="miner-update-progress-fill" style="width:0%"></div>
-              </div>
-              <div class="update-progress-detail" id="miner-update-progress-detail"></div>
-            </div>
-
             <!-- Action buttons -->
             <div class="update-actions">
               <button class="btn btn-primary" id="update-check-btn">
                 <svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
                 Check for Updates
               </button>
-              <button class="btn btn-primary" id="miner-update-check-btn" style="margin-left:8px;">
-                <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
-                Check Miner Update
-              </button>
               <button class="btn btn-success" id="update-install-btn" style="display:none;">
                 <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
                 Install &amp; Restart
-              </button>
-              <button class="btn btn-gold" id="update-all-btn" style="display:none;margin-left:8px;">
-                <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
-                Update All
               </button>
             </div>
 
@@ -6239,12 +5424,9 @@
                 <div class="metric-value green" id="ai-latency">—</div>
               </div>
             </div>
-            <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+            <div style="margin-top:16px;display:flex;gap:8px">
               <button class="btn btn-ghost btn-sm" id="ai-test-connection">Test Connection</button>
               <button class="btn btn-primary btn-sm" id="ai-start-service">▶ Start Hiran Inference</button>
-              <button class="btn btn-ghost btn-sm" id="ai-agent-monitor" title="Run zion-agent monitor">🤖 Monitor</button>
-              <button class="btn btn-ghost btn-sm" id="ai-agent-review" title="Run zion-agent review">📝 Review</button>
-              <button class="btn btn-ghost btn-sm" id="ai-agent-config" title="Show agent config">⚙️ Config</button>
             </div>
             <div id="ai-start-result" style="margin-top:8px;font-size:11px;color:rgba(255,255,255,0.45);min-height:14px"></div>
           </div>
@@ -6536,228 +5718,18 @@
           </div>
         </div>
 
-        <!-- ═══ ASCII Logo Banner ═══ -->
-        <div class="cli-ascii-banner">
-          <pre class="cli-ascii-logo">████████╗██╗ ██████╗███╗   ██╗
-╚══███╔╝██║██╔═══██╗████╗  ██║
-  ███╔╝ ██║██║   ██║██╔██╗ ██║
- ███╔╝  ██║██║   ██║██║╚██╗██║
-███████╗██║╚██████╔╝██║ ╚████║
-╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝
-        TerraNova  ·  v3.0.0 Mainnet</pre>
-        </div>
-
-        <!-- ── CLI Section Tabs ─────────────────────────────── -->
-        <div class="section-tabs" data-group="cli">
-          <div class="section-tab active" data-section="cli-terminal">
-            <span class="tab-dot"></span>
-            <span>Terminal</span>
-          </div>
-          <div class="section-tab" data-section="cli-wallet">
-            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
-            <span>Wallet</span>
-          </div>
-          <div class="section-tab" data-section="cli-mining">
-            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-spark"></use></svg>
-            <span>Mining</span>
-          </div>
-          <div class="section-tab" data-section="cli-bridge">
-            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-bridge"></use></svg>
-            <span>Bridge</span>
-          </div>
-          <div class="section-tab" data-section="cli-dao">
-            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-star"></use></svg>
-            <span>DAO</span>
-          </div>
-          <div class="section-tab" data-section="cli-swap">
-            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
-            <span>Swap</span>
-          </div>
-          <div class="section-tab" data-section="cli-pool">
-            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
-            <span>Pool</span>
-          </div>
-          <div class="section-tab" data-section="cli-warp">
-            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-link"></use></svg>
-            <span>Warp</span>
-          </div>
-          <div class="section-tab" data-section="cli-l5">
-            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-heart"></use></svg>
-            <span>Free World</span>
-          </div>
-          <div class="section-tab" data-section="cli-l6">
-            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-rocket"></use></svg>
-            <span>Issobela</span>
+        <div class="control-panel panel-tight">
+          <div class="actions-row">
+            <button class="btn btn-primary" id="cli-btn-version">Version</button>
+            <button class="btn btn-primary" id="cli-btn-mine-status">Mine Status</button>
+            <button class="btn btn-primary" id="cli-btn-wallet-list">Wallets</button>
+            <button class="btn btn-primary" id="cli-btn-wallet-balance">Balance</button>
+            <button class="btn btn-primary" id="cli-btn-config-get">Config</button>
+            <button class="btn btn-ghost btn-sm" id="cli-btn-clear">Clear</button>
           </div>
         </div>
 
-        <!-- ═══ Tab Panels (shared terminal below) ═══ -->
-        <div id="cli-terminal" class="section-panel active">
-          <div class="control-panel panel-tight">
-            <div class="actions-row">
-              <button class="btn btn-primary" id="cli-btn-version">Version</button>
-              <button class="btn btn-primary" id="cli-btn-mine-status">Mine Status</button>
-              <button class="btn btn-primary" id="cli-btn-wallet-list">Wallets</button>
-              <button class="btn btn-primary" id="cli-btn-wallet-balance">Balance</button>
-              <button class="btn btn-primary" id="cli-btn-config-get">Config</button>
-              <button class="btn btn-ghost btn-sm" id="cli-btn-clear">Clear</button>
-            </div>
-          </div>
-        </div>
-
-        <div id="cli-wallet" class="section-panel">
-          <div class="wallet-grid panel-mt-20">
-            <div class="control-panel">
-              <h2 class="panel-header-row">
-                <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg> Send ZION</span>
-              </h2>
-              <div class="stack-col panel-mt-20">
-                <input id="cli-send-wallet" class="wizard-input" type="text" placeholder="wallet file path (e.g. wallet.json)">
-                <input id="cli-send-to" class="wizard-input" type="text" placeholder="To address (zion1...)">
-                <input id="cli-send-amount" class="wizard-input" type="text" placeholder="Amount (e.g. 0.01)">
-                <button class="btn btn-accent" id="cli-btn-send">Send Transaction</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div id="cli-mining" class="section-panel">
-          <div class="wallet-grid panel-mt-20">
-            <div class="control-panel">
-              <h2 class="panel-header-row">
-                <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg> Mining</span>
-              </h2>
-              <div class="stack-col panel-mt-20">
-                <input id="cli-mine-wallet" class="wizard-input" type="text" placeholder="Wallet address (zion1...)">
-                <input id="cli-mine-pool" class="wizard-input" type="text" placeholder="Pool (default: 77.42.71.94:8444)">
-                <div class="actions-row">
-                  <button class="btn btn-accent" id="cli-btn-mine-start">Start Mining</button>
-                  <button class="btn btn-ghost" id="cli-btn-mine-stop">Stop</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div id="cli-bridge" class="section-panel">
-          <div class="pool-grid panel-mt-20">
-            <div class="control-panel">
-              <h2 class="panel-header-row">
-                <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-bridge"></use></svg> Bridge (L2)</span>
-              </h2>
-              <div class="actions-row panel-mt-20">
-                <button class="btn btn-primary btn-sm" id="cli-btn-bridge-status">Status</button>
-                <button class="btn btn-primary btn-sm" id="cli-btn-bridge-pending">Pending</button>
-                <button class="btn btn-primary btn-sm" id="cli-btn-bridge-chains">Chains</button>
-                <button class="btn btn-ghost btn-sm" id="cli-btn-bridge-history">History</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div id="cli-dao" class="section-panel">
-          <div class="pool-grid panel-mt-20">
-            <div class="control-panel">
-              <h2 class="panel-header-row">
-                <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg> DAO (L2)</span>
-              </h2>
-              <div class="actions-row panel-mt-20">
-                <button class="btn btn-primary btn-sm" id="cli-btn-dao-status">Status</button>
-                <button class="btn btn-primary btn-sm" id="cli-btn-dao-proposals">Proposals</button>
-                <button class="btn btn-primary btn-sm" id="cli-btn-dao-treasury">Treasury</button>
-                <button class="btn btn-ghost btn-sm" id="cli-btn-dao-params">Params</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div id="cli-swap" class="section-panel">
-          <div class="pool-grid panel-mt-20">
-            <div class="control-panel">
-              <h2 class="panel-header-row">
-                <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg> Swap Aggregator (L2)</span>
-              </h2>
-              <div class="actions-row panel-mt-20">
-                <button class="btn btn-primary btn-sm" id="cli-btn-swap-status">Status</button>
-                <button class="btn btn-primary btn-sm" id="cli-btn-swap-quote">Quote</button>
-                <button class="btn btn-ghost btn-sm" id="cli-btn-swap-history">History</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div id="cli-pool" class="section-panel">
-          <div class="pool-grid panel-mt-20">
-            <div class="control-panel">
-              <h2 class="panel-header-row">
-                <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg> Pool (L1)</span>
-              </h2>
-              <div class="actions-row panel-mt-20">
-                <button class="btn btn-primary btn-sm" id="cli-btn-pool-stats">Stats</button>
-                <button class="btn btn-primary btn-sm" id="cli-btn-pool-miners">Miners</button>
-                <button class="btn btn-primary btn-sm" id="cli-btn-pool-config">Config</button>
-                <button class="btn btn-ghost btn-sm" id="cli-btn-pool-earnings">Earnings</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div id="cli-warp" class="section-panel">
-          <div class="pool-grid panel-mt-20">
-            <div class="control-panel">
-              <h2 class="panel-header-row">
-                <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-link"></use></svg> Warp (L3)</span>
-              </h2>
-              <div class="actions-row panel-mt-20">
-                <button class="btn btn-primary btn-sm" id="cli-btn-warp-status">Status</button>
-                <button class="btn btn-primary btn-sm" id="cli-btn-warp-chains">Chains</button>
-                <button class="btn btn-primary btn-sm" id="cli-btn-warp-pending">Pending</button>
-                <button class="btn btn-ghost btn-sm" id="cli-btn-warp-stats">Stats</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ═══ L5 Free World ═══ -->
-        <div id="cli-l5" class="section-panel">
-          <div class="pool-grid panel-mt-20">
-            <div class="control-panel">
-              <h2 class="panel-header-row">
-                <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-heart"></use></svg> Free World (L5)</span>
-                <span class="web29-chip" id="l5-status-chip">Loading…</span>
-              </h2>
-              <div class="actions-row panel-mt-20">
-                <button class="btn btn-primary btn-sm" id="cli-btn-l5-status">Status</button>
-                <button class="btn btn-primary btn-sm" id="cli-btn-l5-balance">Fund Balance</button>
-                <button class="btn btn-primary btn-sm" id="cli-btn-l5-grants">Grants</button>
-                <button class="btn btn-primary btn-sm" id="cli-btn-l5-projects">Projects</button>
-              </div>
-              <div id="l5-data-display" class="tx-lookup-result" style="margin-top:14px;display:none;max-height:260px;"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ═══ L6 Issobela ═══ -->
-        <div id="cli-l6" class="section-panel">
-          <div class="pool-grid panel-mt-20">
-            <div class="control-panel">
-              <h2 class="panel-header-row">
-                <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-rocket"></use></svg> Issobela (L6)</span>
-                <span class="web29-chip" id="l6-status-chip">Loading…</span>
-              </h2>
-              <div class="actions-row panel-mt-20">
-                <button class="btn btn-primary btn-sm" id="cli-btn-l6-status">Status</button>
-                <button class="btn btn-primary btn-sm" id="cli-btn-l6-balance">Fund Balance</button>
-                <button class="btn btn-primary btn-sm" id="cli-btn-l6-missions">Missions</button>
-                <button class="btn btn-primary btn-sm" id="cli-btn-l6-proposals">Proposals</button>
-              </div>
-              <div id="l6-data-display" class="tx-lookup-result" style="margin-top:14px;display:none;max-height:260px;"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ═══ Shared CLI Terminal (always visible below tabs) ═══ -->
-        <div class="control-panel panel-mt-20 cli-terminal-wrap">
+        <div class="control-panel">
           <h2 class="panel-header-row">
             <span class="panel-header-title">
               <svg class="icon" aria-hidden="true"><use href="#i-terminal"></use></svg>
@@ -6767,7 +5739,87 @@
           </h2>
           <div id="cli-console" class="cli-terminal">
 — ZION CLI Terminal —
-Click a button in any tab to run a command. Output appears here.
+Click a button above to run a command.
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="wallet-grid panel-mt-20">
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg> Send ZION</span>
+            </h2>
+            <div class="stack-col panel-mt-20">
+              <input id="cli-send-wallet" class="wizard-input" type="text" placeholder="wallet file path (e.g. wallet.json)">
+              <input id="cli-send-to" class="wizard-input" type="text" placeholder="To address (zion1...)">
+              <input id="cli-send-amount" class="wizard-input" type="text" placeholder="Amount (e.g. 0.01)">
+              <button class="btn btn-accent" id="cli-btn-send">Send Transaction</button>
+            </div>
+          </div>
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg> Mining</span>
+            </h2>
+            <div class="stack-col panel-mt-20">
+              <input id="cli-mine-wallet" class="wizard-input" type="text" placeholder="Wallet address (zion1...)">
+              <input id="cli-mine-pool" class="wizard-input" type="text" placeholder="Pool (default: 77.42.71.94:8444)">
+              <div class="actions-row">
+                <button class="btn btn-accent" id="cli-btn-mine-start">Start Mining</button>
+                <button class="btn btn-ghost" id="cli-btn-mine-stop">Stop</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- L2 / L3 Commands -->
+        <div class="pool-grid panel-mt-20">
+          <!-- Bridge -->
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-bridge"></use></svg> Bridge (L2)</span>
+            </h2>
+            <div class="actions-row panel-mt-20">
+              <button class="btn btn-primary btn-sm" id="cli-btn-bridge-status">Status</button>
+              <button class="btn btn-primary btn-sm" id="cli-btn-bridge-pending">Pending</button>
+              <button class="btn btn-primary btn-sm" id="cli-btn-bridge-chains">Chains</button>
+              <button class="btn btn-ghost btn-sm" id="cli-btn-bridge-history">History</button>
+            </div>
+          </div>
+          <!-- DAO -->
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg> DAO (L2)</span>
+            </h2>
+            <div class="actions-row panel-mt-20">
+              <button class="btn btn-primary btn-sm" id="cli-btn-dao-status">Status</button>
+              <button class="btn btn-primary btn-sm" id="cli-btn-dao-proposals">Proposals</button>
+              <button class="btn btn-primary btn-sm" id="cli-btn-dao-treasury">Treasury</button>
+              <button class="btn btn-ghost btn-sm" id="cli-btn-dao-params">Params</button>
+            </div>
+          </div>
+          <!-- Pool -->
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg> Pool (L1)</span>
+            </h2>
+            <div class="actions-row panel-mt-20">
+              <button class="btn btn-primary btn-sm" id="cli-btn-pool-stats">Stats</button>
+              <button class="btn btn-primary btn-sm" id="cli-btn-pool-miners">Miners</button>
+              <button class="btn btn-primary btn-sm" id="cli-btn-pool-config">Config</button>
+              <button class="btn btn-ghost btn-sm" id="cli-btn-pool-earnings">Earnings</button>
+            </div>
+          </div>
+          <!-- Warp -->
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-terminal"></use></svg> Warp (L3)</span>
+            </h2>
+            <div class="actions-row panel-mt-20">
+              <button class="btn btn-primary btn-sm" id="cli-btn-warp-status">Status</button>
+              <button class="btn btn-primary btn-sm" id="cli-btn-warp-chains">Chains</button>
+              <button class="btn btn-primary btn-sm" id="cli-btn-warp-pending">Pending</button>
+              <button class="btn btn-ghost btn-sm" id="cli-btn-warp-stats">Stats</button>
+            </div>
           </div>
         </div>
       </div><!-- /#cli-view -->
@@ -6800,28 +5852,6 @@ Click a button in any tab to run a command. Output appears here.
       <div class="nav-item" data-view="bridge">
         <svg class="icon" aria-hidden="true"><use href="#i-bridge"></use></svg>
         <span>Bridge</span>
-      </div>
-      <div class="nav-item" data-view="warp">
-        <svg class="icon" aria-hidden="true"><use href="#i-link"></use></svg>
-        <span>Warp</span>
-      </div>
-      <div class="nav-item" data-view="oasis">
-        <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
-        <span>Oasis</span>
-      </div>
-      <div class="nav-item" data-view="l5">
-        <svg class="icon" aria-hidden="true">
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <span>Free World</span>
-      </div>
-      <div class="nav-item" data-view="l6">
-        <svg class="icon" aria-hidden="true">
-          <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <span>Issobela</span>
       </div>
       <div class="nav-item" data-view="network">
         <svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
@@ -6860,23 +5890,6 @@ Click a button in any tab to run a command. Output appears here.
         <span>About</span>
       </div>
     </nav>
-  </div>
-
-  <!-- Toast container -->
-  <div id="toast-container" class="toast-container"></div>
-
-  <!-- Export Backup Password Modal -->
-  <div id="export-password-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:10000; justify-content:center; align-items:center; backdrop-filter:blur(4px);">
-    <div style="background:#0f0f1a; border:1px solid rgba(147,51,234,0.35); border-radius:16px; padding:28px; width:360px; box-shadow:0 20px 60px rgba(0,0,0,0.6);">
-      <h3 style="color:var(--zion-gold); margin:0 0 6px; font-size:18px;">Export Wallet Backup</h3>
-      <p style="color:rgba(255,255,255,0.55); font-size:12px; margin:0 0 16px; word-break:break-all;"><span id="export-modal-address" style="color:rgba(255,255,255,0.8);"></span></p>
-      <label style="display:block; color:rgba(255,255,255,0.6); font-size:12px; margin-bottom:6px;">Wallet Password</label>
-      <input type="password" id="export-modal-password" placeholder="Enter password to decrypt…" style="width:100%; padding:10px 12px; background:rgba(0,0,0,0.45); border:1px solid rgba(147,51,234,0.25); border-radius:8px; color:#fff; font-size:14px; outline:none; margin-bottom:20px; box-sizing:border-box;" />
-      <div style="display:flex; gap:10px;">
-        <button id="export-modal-cancel" class="btn btn-ghost" style="flex:1; padding:10px; font-size:13px;">Cancel</button>
-        <button id="export-modal-confirm" class="btn btn-primary" style="flex:1; padding:10px; font-size:13px;">Export</button>
-      </div>
-    </div>
   </div>
 
   <script src="renderer.js"></script>
