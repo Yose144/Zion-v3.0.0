@@ -3747,15 +3747,32 @@ def fetch_pool_stats() -> dict:
         return {}
 
 def fetch_pool_miners() -> list:
-    """Fetch active miners from routing metrics endpoint (port 8455)."""
+    """Fetch active miners from Edge pool, enriched with paid_total from Prometheus metrics."""
     host = "100.76.16.108" if TOPOLOGY == "edge-primary" else "127.0.0.1"
+    miners = []
     try:
         import urllib.request
-        with urllib.request.urlopen(f"http://{host}:8455/miners?limit=50", timeout=3) as r:
+        with urllib.request.urlopen(f"http://{host}:8455/miners?limit=200", timeout=5) as r:
             data = json.loads(r.read().decode())
-            return data.get("miners", [])
+            miners = data.get("miners", [])
     except Exception:
-        return []
+        pass
+    # Enrich with paid_total from Prometheus metrics
+    paid_map = {}
+    try:
+        import urllib.request
+        with urllib.request.urlopen(f"http://{host}:8455/metrics", timeout=5) as r:
+            for line in r.read().decode("utf-8", errors="ignore").splitlines():
+                if line.startswith("zion_pool_miner_paid_total_atomic{"):
+                    m = re.search(r'miner_id="([^"]+)"', line)
+                    if m:
+                        paid_map[m.group(1)] = int(float(line.split()[-1]))
+    except Exception:
+        pass
+    for m in miners:
+        addr = m.get("address") or m.get("miner_id") or ""
+        m["paid_total"] = paid_map.get(addr, 0) / 1e12
+    return miners
 
 def build_payout_status() -> dict:
     """Build comprehensive payout status for the Payout dashboard tab.
@@ -4067,7 +4084,7 @@ def build_payout_status() -> dict:
             "valid_shares": m.get("valid_shares", 0),
             "hashrate": m.get("hashrate", 0),
             "hashrate_1h": m.get("hashrate_1h", 0),
-            "total_paid": m.get("total_paid", 0),
+            "total_paid": m.get("paid_total", 0),
             "on_chain_balance_zion": m.get("on_chain_balance_zion"),
             "pending_balance": m.get("pending_balance", 0),
             "blocks_found": m.get("blocks_found", 0),
