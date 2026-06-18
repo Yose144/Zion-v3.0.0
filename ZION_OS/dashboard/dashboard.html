@@ -98,6 +98,7 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
 .hero-orb{position:absolute;border-radius:50%;filter:blur(60px);pointer-events:none;}
 /* ── Sidebar Layout ── */
 .dashboard-grid{display:grid;grid-template-columns:220px 1fr;gap:1.5rem;align-items:start;}
+.dashboard-main{min-width:0;display:block;}
 @media(max-width:1024px){.dashboard-grid{grid-template-columns:1fr;}.sidebar{position:fixed;left:0;top:0;height:100vh;width:260px;transform:translateX(-100%);transition:transform .25s ease;z-index:60;background:rgba(7,10,20,0.98);border-right:1px solid rgba(255,255,255,0.1);padding:1.5rem;}.sidebar.open{transform:translateX(0);}}
 .sidebar{position:sticky;top:1.5rem;}
 .sidebar-group{margin-bottom:1rem;}
@@ -4437,6 +4438,9 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     </div>
   </div>
 
+  </main>
+  </div>
+
   <!-- ═════════ TAB: DAO Governance ═════════ --><!-- Block Detail Modal -->
 <div id="block-modal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 p-4" onclick="if(event.target===this)closeBlockModal()">
   <div class="zion-panel w-full max-w-2xl max-h-[80vh] overflow-y-auto p-6 relative">
@@ -4447,7 +4451,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     </div>
   </div>
 </div>
+</div>
 
-<script src="/dashboard.js?v=54"></script>
-</body>
-</html>
+<script src="/das
