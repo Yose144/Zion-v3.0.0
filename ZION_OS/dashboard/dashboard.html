@@ -97,8 +97,10 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
 .tip{visibility:hidden;opacity:0;position:absolute;bottom:130%;left:50%;transform:translateX(-50%);background:rgba(7,10,20,0.95);border:1px solid rgba(255,255,255,0.15);padding:6px 10px;border-radius:6px;font-size:11px;white-space:nowrap;z-index:50;transition:opacity 0.2s;font-weight:500;color:#e5e7eb;}
 .hero-orb{position:absolute;border-radius:50%;filter:blur(60px);pointer-events:none;}
 /* ── Sidebar Layout ── */
-.dashboard-grid{display:grid;grid-template-columns:220px 1fr;gap:1.5rem;align-items:start;}
-.dashboard-main{min-width:0;display:block;}
+.dashboard-grid{display:grid;grid-template-columns:220px minmax(0,1fr);gap:1.5rem;align-items:start;}
+.dashboard-main{min-width:0;overflow-x:hidden;max-width:100%;}
+[id^="pane-"]{max-width:100%;}
+.dashboard-main>div[id^="pane-"]{display:block;width:100%;box-sizing:border-box;}
 @media(max-width:1024px){.dashboard-grid{grid-template-columns:1fr;}.sidebar{position:fixed;left:0;top:0;height:100vh;width:260px;transform:translateX(-100%);transition:transform .25s ease;z-index:60;background:rgba(7,10,20,0.98);border-right:1px solid rgba(255,255,255,0.1);padding:1.5rem;}.sidebar.open{transform:translateX(0);}}
 .sidebar{position:sticky;top:1.5rem;}
 .sidebar-group{margin-bottom:1rem;}
