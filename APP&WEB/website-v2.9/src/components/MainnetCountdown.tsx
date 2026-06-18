@@ -8,6 +8,7 @@ import { tr } from '@/lib/translations';
 
 const LAUNCH_DATE = new Date('2026-12-31T00:00:00Z');
 const GENESIS_DATE = new Date('2026-06-11T00:00:00Z');
+const BRIDGE_DATE = new Date('2026-06-18T00:00:00Z');
 
 interface TimeLeft {
   days: number;
@@ -53,6 +54,11 @@ export default function MainnetCountdown() {
 
   const tMinus = time.total > 0 ? `T-${time.days}` : 'LIVE';
   const isLive = time.total <= 0;
+  const isBridgeLive = Date.now() >= BRIDGE_DATE.getTime();
+  
+  // Calculate time since Bridge launch
+  const bridgeTime = getTimeLeft(BRIDGE_DATE);
+  const bridgeDays = Math.floor(Math.abs(bridgeTime.total) / (1000 * 60 * 60 * 24));
 
   if (!mounted) {
     return (
@@ -64,7 +70,7 @@ export default function MainnetCountdown() {
     );
   }
 
-  if (isLive) {
+  if (isBridgeLive) {
     return (
       <section className="py-6 px-4">
         <div className="zion-container">
@@ -72,26 +78,26 @@ export default function MainnetCountdown() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="relative overflow-hidden rounded-[28px] border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 via-violet-500/8 to-transparent backdrop-blur-xl p-6 md:p-8"
+            className="relative overflow-hidden rounded-[28px] border border-zion-purple/20 bg-gradient-to-br from-zion-purple/10 via-zion-cyan/8 to-transparent backdrop-blur-xl p-6 md:p-8"
           >
             {/* ambient glow */}
-            <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-violet-500/10 blur-3xl pointer-events-none" />
+            <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-zion-purple/10 blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-zion-cyan/10 blur-3xl pointer-events-none" />
 
             <div className="relative flex flex-col lg:flex-row items-center justify-between gap-6">
               {/* left: title + date */}
               <div className="flex items-center gap-4">
-                <div className="flex-none w-12 h-12 rounded-2xl bg-emerald-500/15 flex items-center justify-center">
-                  <Rocket className="w-6 h-6 text-emerald-300 animate-pulse" />
+                <div className="flex-none w-12 h-12 rounded-2xl bg-zion-purple/15 flex items-center justify-center">
+                  <Rocket className="w-6 h-6 text-zion-purple-300 animate-pulse" />
                 </div>
                 <div>
                   <h2 className="text-xl md:text-2xl font-bold text-white">
-                    Mainnet LIVE
+                    Bridge, Defi Run
                   </h2>
                   <div className="flex items-center gap-2 mt-1 text-sm text-gray-400">
                     <Calendar className="w-4 h-4 text-zion-cyan" />
-                    <span>Target: 31 December 2026 (New Year's Eve)</span>
-                    <span className="text-emerald-400 font-semibold">GO</span>
+                    <span>Launch: 18 June 2026</span>
+                    <span className="text-zion-purple-400 font-semibold">LIVE</span>
                   </div>
                 </div>
               </div>
@@ -104,13 +110,13 @@ export default function MainnetCountdown() {
                   transition={{ duration: 0.4 }}
                   className="flex flex-col items-center"
                 >
-                  <div className="w-20 h-20 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 backdrop-blur-md flex items-center justify-center">
-                    <span className="text-2xl md:text-3xl font-bold text-emerald-300 tabular-nums">
+                  <div className="w-20 h-20 rounded-2xl border border-zion-purple/30 bg-zion-purple/10 backdrop-blur-md flex items-center justify-center">
+                    <span className="text-2xl md:text-3xl font-bold text-zion-purple-300 tabular-nums">
                       LIVE
                     </span>
                   </div>
-                  <span className="text-[10px] md:text-xs uppercase tracking-wider text-emerald-400 mt-2">
-                    Status
+                  <span className="text-[10px] md:text-xs uppercase tracking-wider text-zion-purple-400 mt-2">
+                    {cs ? `D+${bridgeDays}` : `D+${bridgeDays}`}
                   </span>
                 </motion.div>
               </div>
@@ -120,14 +126,14 @@ export default function MainnetCountdown() {
             <div className="relative mt-6">
               <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
                 <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-violet-500 to-zion-cyan"
+                  className="h-full rounded-full bg-gradient-to-r from-zion-purple via-zion-cyan to-zion-gold"
                   initial={{ width: 0 }}
                   animate={{ width: '100%' }}
                   transition={{ duration: 1.2, ease: 'easeOut' }}
                 />
               </div>
               <p className="text-[11px] text-gray-500 mt-2 text-center">
-                V3 Mainnet is operational · Core + Edge topology · Mining active · Bridge deployed
+                V3.0.2 Bridge, Defi Run · Core + Edge topology · Mining active · Bridge live on Base
               </p>
             </div>
           </motion.div>
