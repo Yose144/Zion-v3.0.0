@@ -154,160 +154,160 @@ export default function Hero() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
-                <span className="text-sm font-bold text-white">Bridge, Defi Run — 18 June 2026</span>
-                <span className="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> LIVE
-                </span>
-                <span className="text-xs bg-zion-purple/20 text-zion-purple-300 px-2 py-0.5 rounded-full font-semibold">
-                  v3.0.2
-                </span>
+                    <span className="text-sm font-bold text-white">Bridge, Defi Run — 18 June 2026</span>
+                    <span className="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> LIVE
+                    </span>
+                    <span className="text-xs bg-zion-purple/20 text-zion-purple-300 px-2 py-0.5 rounded-full font-semibold">
+                      v3.0.2
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-400 leading-relaxed">
+                    Bridge and DeFi protocols are now live on Base Mainnet. ZION L2 DeFi contracts deployed, wZION token trading, and atomic swap functionality active. Core + Edge topology running, mining active.
+                  </p>
+                  <a
+                    href="#tree-of-life"
+                    className="flex-none sm:ml-auto text-xs text-emerald-300 hover:text-emerald-200 flex items-center gap-1 transition"
+                  >
+                    {tr('hero', 'teaser_cta', lang)} <ArrowRight className="w-3.5 h-3.5" />
+                  </a>
+                </div>
               </div>
-              <p className="text-sm text-gray-400 leading-relaxed">
-                Bridge and DeFi protocols are now live on Base Mainnet. ZION L2 DeFi contracts deployed, wZION token trading, and atomic swap functionality active. Core + Edge topology running, mining active.
-              </p>
-              <a
-                href="#tree-of-life"
-                className="flex-none sm:ml-auto text-xs text-emerald-300 hover:text-emerald-200 flex items-center gap-1 transition"
-              >
-                {tr('hero', 'teaser_cta', lang)} <ArrowRight className="w-3.5 h-3.5" />
-              </a>
-            </div>
-          </motion.div>
+            </motion.div>
 
           {/* metrics strip */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {heroMetrics.map((metric, i) => (
-                <motion.div
-                  key={metric.label}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.5 + i * 0.1 }}
-                  className="zion-panel-soft zion-panel-hover group p-4 cursor-default"
+            {heroMetrics.map((metric, i) => (
+              <motion.div
+                key={metric.label}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.5 + i * 0.1 }}
+                className="zion-panel-soft zion-panel-hover group p-4 cursor-default"
+              >
+                <metric.icon className="w-4 h-4 text-zion-gold mb-2" />
+                <div className="text-xl font-bold text-white">{metric.value}</div>
+                <div className="text-xs uppercase tracking-wide text-gray-500 mt-0.5">{metric.label}</div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* ─── RIGHT col — Observatory HUD ─── */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.25 }}
+          className="relative hidden lg:block"
+        >
+          {/* outer halo glow */}
+          <div className="absolute -inset-6 rounded-[32px] bg-gradient-to-br from-violet-600/25 via-cyan-500/15 to-transparent blur-3xl pointer-events-none" />
+
+          <div className="mb-5 z-10 mx-auto flex w-full max-w-md justify-center lg:max-w-xl">
+            <HolographicEarth className="w-full shrink-0" />
+          </div>
+
+          {/* ── Hiran v2.2 Mini Chat ── */}
+          <div className="mb-4 z-10 mx-auto w-full max-w-md lg:max-w-xl px-2">
+            <HiranMiniChat lang={lang} />
+          </div>
+
+          {/* ── L3 Hiran link ── */}
+          <div className="mb-5 flex justify-center">
+            <a
+              href="https://www.zionterranova.com/l3-hiran"
+              className="group inline-flex items-center gap-2 text-xs font-medium text-purple-300 hover:text-purple-200 transition-colors"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>Full AI Layer — L3 Hiran v2.2</span>
+              <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
+            </a>
+          </div>
+
+          {/* ── Interactive Ticker ── */}
+          <div className="mb-5 mx-auto w-full max-w-md lg:max-w-xl px-2">
+            <ZionTicker />
+          </div>
+
+          <div className="zion-panel relative rounded-[28px] p-4 sm:p-6 space-y-5">
+            {/* HUD header */}
+            <header className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase text-gray-500 tracking-[0.3em] mb-1">{tr('hero', 'observatory_label', lang)}</p>
+                <h3 className="text-xl font-bold text-white">
+                  {active.label}
+                </h3>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-gray-500 mb-1">{tr('hero', 'observatory_focus_label', lang)}</p>
+                <p className="text-sm text-zion-cyan font-semibold">{active.focus}</p>
+              </div>
+            </header>
+
+            {/* scanline */}
+            <div className="zion-panel-soft rounded-xl p-4">
+              <p className="text-xs text-gray-500 mb-1">{tr('hero', 'observatory_scan_label', lang)}</p>
+              <p className="text-sm text-white">{active.signal}</p>
+            </div>
+
+            {/* mode buttons */}
+            <div className="grid grid-cols-1 gap-2">
+              {availableModes.map((availableMode) => (
+                <button
+                  key={availableMode.id}
+                  onClick={() => setMode(availableMode.id)}
+                  className={`group flex items-center justify-between rounded-xl border px-4 py-3 text-left transition-all ${
+                    mode === availableMode.id
+                      ? 'border-zion-gold/45 bg-white/10 shadow-[0_10px_35px_rgba(249,217,118,0.12)]'
+                      : 'border-white/8 hover:border-white/22 hover:bg-white/5'
+                  }`}
                 >
-                  <metric.icon className="w-4 h-4 text-zion-gold mb-2" />
-                  <div className="text-xl font-bold text-white">{metric.value}</div>
-                  <div className="text-xs uppercase tracking-wide text-gray-500 mt-0.5">{metric.label}</div>
-                </motion.div>
+                  <div>
+                    <p className="text-sm font-semibold text-white flex items-center gap-2">
+                      <span
+                        className={`inline-block h-1.5 w-1.5 rounded-full ${
+                          mode === availableMode.id ? 'bg-zion-gold animate-pulse' : 'bg-zion-cyan/50'
+                        }`}
+                      />
+                      {observatoryMeta[availableMode.id].label}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">{observatoryMeta[availableMode.id].description}</p>
+                  </div>
+                  <ArrowRight
+                    className={`w-4 h-4 transition-all ${
+                      mode === availableMode.id ? 'text-zion-gold translate-x-0.5' : 'text-gray-600 group-hover:text-white'
+                    }`}
+                  />
+                </button>
               ))}
             </div>
-          </motion.div>
 
-          {/* ─── RIGHT col — Observatory HUD ─── */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, delay: 0.25 }}
-            className="relative hidden lg:block"
-          >
-            {/* outer halo glow */}
-            <div className="absolute -inset-6 rounded-[32px] bg-gradient-to-br from-violet-600/25 via-cyan-500/15 to-transparent blur-3xl pointer-events-none" />
-
-            <div className="mb-5 z-10 mx-auto flex w-full max-w-md justify-center lg:max-w-xl">
-              <HolographicEarth className="w-full shrink-0" />
-            </div>
-
-            {/* ── Hiran v2.2 Mini Chat ── */}
-            <div className="mb-4 z-10 mx-auto w-full max-w-md lg:max-w-xl px-2">
-              <HiranMiniChat lang={lang} />
-            </div>
-
-            {/* ── L3 Hiran link ── */}
-            <div className="mb-5 flex justify-center">
-              <a
-                href="https://www.zionterranova.com/l3-hiran"
-                className="group inline-flex items-center gap-2 text-xs font-medium text-purple-300 hover:text-purple-200 transition-colors"
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                <span>Full AI Layer — L3 Hiran v2.2</span>
-                <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
-              </a>
-            </div>
-
-            {/* ── Interactive Ticker ── */}
-            <div className="mb-5 mx-auto w-full max-w-md lg:max-w-xl px-2">
-              <ZionTicker />
-            </div>
-
-            <div className="zion-panel relative rounded-[28px] p-4 sm:p-6 space-y-5">
-              {/* HUD header */}
-              <header className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs uppercase text-gray-500 tracking-[0.3em] mb-1">{tr('hero', 'observatory_label', lang)}</p>
-                  <h3 className="text-xl font-bold text-white">
-                    {active.label}
-                  </h3>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-gray-500 mb-1">{tr('hero', 'observatory_focus_label', lang)}</p>
-                  <p className="text-sm text-zion-cyan font-semibold">{active.focus}</p>
-                </div>
-              </header>
-
-              {/* scanline */}
-              <div className="zion-panel-soft rounded-xl p-4">
-                <p className="text-xs text-gray-500 mb-1">{tr('hero', 'observatory_scan_label', lang)}</p>
-                <p className="text-sm text-white">{active.signal}</p>
-              </div>
-
-              {/* mode buttons */}
-              <div className="grid grid-cols-1 gap-2">
-                {availableModes.map((availableMode) => (
-                  <button
-                    key={availableMode.id}
-                    onClick={() => setMode(availableMode.id)}
-                    className={`group flex items-center justify-between rounded-xl border px-4 py-3 text-left transition-all ${
-                      mode === availableMode.id
-                        ? 'border-zion-gold/45 bg-white/10 shadow-[0_10px_35px_rgba(249,217,118,0.12)]'
-                        : 'border-white/8 hover:border-white/22 hover:bg-white/5'
-                    }`}
-                  >
-                    <div>
-                      <p className="text-sm font-semibold text-white flex items-center gap-2">
-                        <span
-                          className={`inline-block h-1.5 w-1.5 rounded-full ${
-                            mode === availableMode.id ? 'bg-zion-gold animate-pulse' : 'bg-zion-cyan/50'
-                          }`}
-                        />
-                        {observatoryMeta[availableMode.id].label}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-0.5">{observatoryMeta[availableMode.id].description}</p>
-                    </div>
-                    <ArrowRight
-                      className={`w-4 h-4 transition-all ${
-                        mode === availableMode.id ? 'text-zion-gold translate-x-0.5' : 'text-gray-600 group-hover:text-white'
-                      }`}
-                    />
-                  </button>
-                ))}
-              </div>
-
-              {/* mission signals */}
-              <div className="space-y-2">
-                <p className="text-xs uppercase text-gray-600 tracking-[0.2em]">{tr('hero', 'section_signals', lang)}</p>
-                {missionSignals.map((signal) => (
-                  <div
-                    key={signal.title}
-                    className="flex items-center justify-between rounded-xl border border-white/8 bg-white/4 px-4 py-3"
-                  >
-                    <div>
-                      <p className="text-sm text-white font-medium">{signal.title}</p>
-                      <p className="text-xs text-gray-500">{signal.value}</p>
-                    </div>
-                    <span className={`text-xs font-semibold ${signal.accent}`}>{signal.status}</span>
+            {/* mission signals */}
+            <div className="space-y-2">
+              <p className="text-xs uppercase text-gray-600 tracking-[0.2em]">{tr('hero', 'section_signals', lang)}</p>
+              {missionSignals.map((signal) => (
+                <div
+                  key={signal.title}
+                  className="flex items-center justify-between rounded-xl border border-white/8 bg-white/4 px-4 py-3"
+                >
+                  <div>
+                    <p className="text-sm text-white font-medium">{signal.title}</p>
+                    <p className="text-xs text-gray-500">{signal.value}</p>
                   </div>
-                ))}
-              </div>
-
-              {/* version pill */}
-              <div className="flex items-center gap-2 pt-1">
-                <Rocket className="w-4 h-4 text-zion-gold" />
-                <span className="text-xs text-gray-400">
-                  {SITE_ENVIRONMENT_LABEL} · {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · Bridge, Defi Run
-                </span>
-              </div>
+                  <span className={`text-xs font-semibold ${signal.accent}`}>{signal.status}</span>
+                </div>
+              ))}
             </div>
-          </motion.div>
-        </div>
+
+            {/* version pill */}
+            <div className="flex items-center gap-2 pt-1">
+              <Rocket className="w-4 h-4 text-zion-gold" />
+              <span className="text-xs text-gray-400">
+                {SITE_ENVIRONMENT_LABEL} · {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · Bridge, Defi Run
+              </span>
+            </div>
+          </div>
+        </motion.div>
       </div>
     </section>
   );
