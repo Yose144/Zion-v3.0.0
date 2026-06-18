@@ -1,10 +1,11 @@
-# ZION v3.0.0 Roadmap
+# ZION v3.0.2 Roadmap
 
 > **From genesis to the stars.**
 >
-> This is the canonical roadmap for the v3.0.0 mainnet line.
+> This is the canonical roadmap for the v3.0.2 mainnet line (L1 Active, L2/L3 Ready, L4 Oasis in Prep).
 > Engineering details live in [`V3/ROADMAP.md`](V3/ROADMAP.md).
 > Current operational status: [`StatusV3.md`](StatusV3.md).
+> 3.0.2 Plan: [`ZION_3.0.2_PLAN.md`](ZION_3.0.2_PLAN.md).
 
 ---
 
@@ -91,6 +92,36 @@ Key steps:
 4. Activate monitoring (Prometheus + Grafana)
 5. Verify genesis hash consistency across all nodes
 6. Open public mining
+
+---
+
+## Phase 2.5 — L2/L3 Kanonizace + L4 Oasis Prep (Q2 2026) ✅ Complete
+
+### L2 — Bridge / DAO / Atomic Swap
+
+|| Feature | Status |
+|---------|--------|
+|| Bridge relay (L1 ↔ Base, 60-block finality) | ✅ Active |
+|| DAO governance daemon (65 tests) | ✅ Active |
+|| Atomic Swap HTLC (E2E tests + /swap web) | ✅ Active |
+|| 3/5 multisig validator threshold | ✅ Configured |
+
+### L3 — WARP + AI-Native + NCL
+
+|| Feature | Status |
+|---------|--------|
+|| 21 chain adapters (BTC Lightning, Sui, Aptos, Near, Ton, EVM) | ✅ Active |
+|| Swap agregátor (real EVM RPC quotes) | ✅ Active |
+|| AI-Native layer (safety guards, kill switch, audit log) | ✅ Active |
+|| NCL marketplace gateway | ✅ Active |
+
+### L4 — ZION Oasis (Příprava)
+
+|| Feature | Status | Target |
+|---------|--------|--------|
+|| UE5 základ (BP_Character, BP_HUD, territory) | ✅ Code ready | Q3 2026 |
+|| L4 → L1 bridge (OASIS token) | 🔄 In design | Q3 2026 |
+|| On-chain land registry | 🔵 Planned | Q4 2026 |
 
 ---
 

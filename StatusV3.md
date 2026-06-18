@@ -22,6 +22,51 @@
 
 ---
 
+## Co je nového 2026-06-18 (v3.0.2 Root Cleanup + L2/L3 Kanonizace + L4 Oasis Prep)
+
+> **Status:** COMPLETE — Git historie obnovena (254 ztracených commitů z 10.–16. června), root adresář vyčištěn, L2/L3 označeny jako kanonicky hotové, L4 Oasis příprava zahájena.
+
+### Git Historie Obnova
+
+| Krok | Popis | Výsledek |
+|------|-------|----------|
+| ** reflog scan** | Nalezeny ztracené commity z 10.–16. 6. | ✅ 254 commitů |
+| ** reset + cherry-pick** | Obnova hlavní větve s merge origin/main | ✅ Žádné konflikty |
+| ** force push** | Synchronizace origin/main s obnovenou historií | ✅ Origin aktuální |
+
+### Root Cleanup v3.0.2
+
+| Kategorie | Původní umístění | Nové umístění | Počet |
+|-----------|-----------------|---------------|-------|
+| MD dokumentace | root | `docs/3.0.1Genesis/` | 30+ |
+| Python deploy skripty | root | `scripts/` | 27 |
+| Log soubory | root | `logs/` | 5 |
+| Temp/test soubory | root | smazáno / archiv | 5 |
+
+**Ponecháno v rootu:** `.bat` soubory pro spuštění stacku, `README.md`, `ROADMAP.md`, `AGENTS.md`, `StatusV3.md`, `ZION_3.0.2_PLAN.md`.
+
+### L2/L3 Kanonizace
+
+| Layer | Stav | Detaily |
+|-------|------|---------|
+| **L2 Bridge** | ✅ Active | L1 ↔ Base, 60-block finality, relay daemon |
+| **L2 DAO** | ✅ Active | 65 tests, treasury + governance |
+| **L2 Atomic Swap** | ✅ Active | HTLC, E2E tests, `/swap` web |
+| **L3 WARP** | ✅ Active | 21 chain adapters, swap agregátor |
+| **L3 AI-Native** | ✅ Active | Safety guards, kill switch, audit log |
+| **L3 NCL** | ✅ Active | Marketplace gateway |
+
+### L4 Oasis Příprava
+
+| Položka | Stav | Target |
+|---------|------|--------|
+| UE5 základ | ✅ Code ready | Q3 2026 |
+| BP_Character, BP_HUD | ✅ Hotovo | — |
+| L4 → L1 bridge | 🔄 In design | Q3 2026 |
+| On-chain land registry | 🔵 Planned | Q4 2026 |
+
+---
+
 ## Co je nového 2026-06-15 (Edge Server Full Update + Dashboard Fixes)
 
 > **Status:** COMPLETE — Edge server aktualizován na nejnovější kód, V3 binárky rebuildovány, všechny služby restartovány. Dashboard restart tlačítka opravena.
