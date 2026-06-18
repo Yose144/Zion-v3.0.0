@@ -2282,8 +2282,9 @@ def _build_status_edge_primary() -> dict:
         edge_node1_status["known_peers"] = n1.get("known_peers", 0)
 
     # ── Edge Pool ────────────────────────────────────────────────────────────
+    # Skip slow local check_service_health — probe Edge pool metrics directly
     pool_edge_svc = get_service("pool-edge")
-    pool_edge_health = check_service_health(pool_edge_svc) if pool_edge_svc else {"alive": False}
+    pool_edge_health = {"alive": False}
     edge_metrics = {"active_miners": None, "hashrate": None, "hashrate_1h": None, "accept_rate_pct": None,
                     "shares_accepted": None, "shares_rejected": None, "miners_tracked": None,
                     "blocks_found": None, "total_hashes": None, "total_shares": None}
@@ -2291,64 +2292,65 @@ def _build_status_edge_primary() -> dict:
                    "fee_humanitarian": 0, "fee_issobella": 0, "fee_pool": 0, "fee_miner_pct": 89,
                    "miner_balances": []}
     try:
-        metrics_port = pool_edge_svc.get("ports", {}).get("metrics") if pool_edge_svc else None
-        if metrics_port and pool_edge_health.get("alive"):
-            url = f"http://{pool_edge_svc.get('host', '127.0.0.1')}:{metrics_port}/metrics"
-            with _urlreq.urlopen(url, timeout=1.0) as r:
-                body = r.read().decode("utf-8", errors="ignore")
-                for line in body.splitlines():
-                    if line.startswith("zion_pool_active_sessions "):
-                        edge_metrics["active_miners"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_pool_total_hashes "):
-                        edge_metrics["total_hashes"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_pool_total_shares "):
-                        edge_metrics["total_shares"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_pool_blocks_found ") or line.startswith("zion_pool_blocks_found_total "):
-                        edge_metrics["blocks_found"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_pool_hashrate_khs "):
-                        edge_metrics["hashrate"] = float(line.split()[-1])
-                    elif line.startswith("zion_pool_hashrate_hps "):
-                        # Pool exports H/s — convert to KH/s
-                        edge_metrics["hashrate"] = float(line.split()[-1]) / 1000.0
-                    elif line.startswith("zion_pool_hashrate_1h_hps "):
-                        edge_metrics["hashrate_1h"] = float(line.split()[-1]) / 1000.0
-                    elif line.startswith("zion_pool_accept_rate_pct "):
-                        edge_metrics["accept_rate_pct"] = float(line.split()[-1])
-                    elif line.startswith("zion_pool_accepted_total "):
-                        edge_metrics["shares_accepted"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_pool_rejected_total "):
-                        edge_metrics["shares_rejected"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_pool_miners_tracked "):
-                        edge_metrics["miners_tracked"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_pplns_payout_rounds "):
-                        edge_payout["pplns_rounds"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_pplns_total_paid_flowers "):
-                        edge_payout["pplns_total_paid"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_pplns_window_size "):
-                        edge_payout["pplns_window_size"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_pplns_window_used "):
-                        edge_payout["pplns_window_used"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_pplns_registered_miners "):
-                        edge_payout["pplns_registered_miners"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_fee_humanitarian_flowers "):
-                        edge_payout["fee_humanitarian"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_fee_issobella_flowers "):
-                        edge_payout["fee_issobella"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_fee_pool_flowers "):
-                        edge_payout["fee_pool"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_fee_miner_pct "):
-                        edge_payout["fee_miner_pct"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_pool_miner_pending_balance_atomic{"):
-                        # Parse miner pending balance: zion_pool_miner_pending_balance_atomic{miner_id="...",worker_name="..."} value
-                        if m := re.search(r'miner_id="([^"]+)",worker_name="([^"]+)"\} (\d+)', line):
-                            edge_payout["miner_balances"].append({
-                                "miner_id": m.group(1),
-                                "worker_name": m.group(2),
-                                "balance_atomic": int(m.group(3)),
-                                "balance_zion": int(m.group(3)) / 1_000_000_000_000,
-                            })
+        # Direct Edge pool metrics probe (Tailscale IP, port 8455)
+        url = "http://100.76.16.108:8455/metrics"
+        with _urlreq.urlopen(url, timeout=3.0) as r:
+            body = r.read().decode("utf-8", errors="ignore")
+            for line in body.splitlines():
+                if line.startswith("zion_pool_active_sessions "):
+                    edge_metrics["active_miners"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_pool_total_hashes "):
+                    edge_metrics["total_hashes"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_pool_total_shares "):
+                    edge_metrics["total_shares"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_pool_blocks_found ") or line.startswith("zion_pool_blocks_found_total "):
+                    edge_metrics["blocks_found"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_pool_hashrate_khs "):
+                    edge_metrics["hashrate"] = float(line.split()[-1])
+                elif line.startswith("zion_pool_hashrate_hps "):
+                    edge_metrics["hashrate"] = float(line.split()[-1]) / 1000.0
+                elif line.startswith("zion_pool_hashrate_1h_hps "):
+                    edge_metrics["hashrate_1h"] = float(line.split()[-1]) / 1000.0
+                elif line.startswith("zion_pool_accept_rate_pct "):
+                    edge_metrics["accept_rate_pct"] = float(line.split()[-1])
+                elif line.startswith("zion_pool_accepted_total "):
+                    edge_metrics["shares_accepted"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_pool_rejected_total "):
+                    edge_metrics["shares_rejected"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_pool_miners_tracked "):
+                    edge_metrics["miners_tracked"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_pplns_payout_rounds "):
+                    edge_payout["pplns_rounds"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_pplns_total_paid_flowers "):
+                    edge_payout["pplns_total_paid"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_pplns_window_size "):
+                    edge_payout["pplns_window_size"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_pplns_window_used "):
+                    edge_payout["pplns_window_used"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_pplns_registered_miners "):
+                    edge_payout["pplns_registered_miners"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_fee_humanitarian_flowers "):
+                    edge_payout["fee_humanitarian"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_fee_issobella_flowers "):
+                    edge_payout["fee_issobella"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_fee_pool_flowers "):
+                    edge_payout["fee_pool"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_fee_miner_pct "):
+                    edge_payout["fee_miner_pct"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_pool_miner_pending_balance_atomic{"):
+                    m = re.search(r'miner_id="([^"]+)",worker_name="([^"]+)"\} (\d+)', line)
+                    if m:
+                        edge_payout["miner_balances"].append({
+                            "miner_id": m.group(1),
+                            "worker_name": m.group(2),
+                            "balance_atomic": int(m.group(3)),
+                            "balance_zion": int(m.group(3)) / 1_000_000_000_000,
+                        })
     except Exception:
         pass
+    # Mark pool as alive if we successfully fetched metrics
+    if edge_metrics.get("active_miners") is not None:
+        pool_edge_health = {"alive": True}
 
 
     edge_pool_wallet = os.environ.get("ZION_POOL_WALLET", "") or "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604"
