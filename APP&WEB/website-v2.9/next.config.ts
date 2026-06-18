@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  // reactCompiler: true, // Disabled due to hydration issues with client components
+  reactCompiler: true,
   transpilePackages: ['zion-wallet-sdk', '@noble/ed25519', '@noble/hashes'],
   turbopack: {
     root: rootDir,
@@ -26,11 +26,6 @@ const nextConfig: NextConfig = {
       os: {
         browser: './src/lib/empty-module.ts',
       },
-      '@ledgerhq/hw-app-ada': './src/lib/empty-module.ts',
-      '@ledgerhq/hw-transport-webusb': './src/lib/empty-module.ts',
-      '@trezor/connect': './src/lib/empty-module.ts',
-      '@trezor/connect-mobile': './src/lib/empty-module.ts',
-      '@trezor/connect-web': './src/lib/empty-module.ts',
     },
   },
   // P1-33: Security headers — CSP, X-Frame-Options, HSTS, etc.
