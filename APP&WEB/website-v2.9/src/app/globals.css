@@ -428,7 +428,14 @@
 
 /* ═══ iPhone specific grid fixes ═══ */
 @media (max-width: 430px) {
-  /* Prevent large multi-column grids from overflowing on small iPhones */
+  /* Force single column for all grids on small iPhones */
+  .grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+    gap: clamp(0.5rem, 3vw, 1rem);
+  }
+  
+  /* Override any grid that might cause horizontal scroll */
+  .grid.grid-cols-2,
   .grid.grid-cols-3,
   .grid.grid-cols-4,
   .grid.grid-cols-5,
@@ -440,8 +447,10 @@
 /* ═══ iOS Safari scroll bounce prevention ═══ */
 @supports (-webkit-appearance: none) {
   body {
-    position: relative;
+    position: fixed;
     width: 100%;
+    height: 100%;
+    overflow: auto;
     -webkit-overflow-scrolling: touch;
   }
   
@@ -518,13 +527,8 @@ canvas.fixed {
 /* ═══ Mobile scroll lock (for nav overlay) ═══ */
 body.menu-open {
   overflow: hidden;
-}
-
-@media (max-width: 767px) {
-  body.menu-open {
-    position: fixed;
-    inset: 0;
-  }
+  position: fixed;
+  inset: 0;
 }
 
 /* ═══ Mobile menu slide-in animation ═══ */
