@@ -4428,11 +4428,12 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
     const utxoCount = rpcOk ? (result?.utxo_count ?? 0) : 0;
     const chainHeight = rpcOk ? (result?.chain_height ?? 0) : 0;
 
-    // Fetch pool mined balance — try all V3 pool servers.
-    const POOL_SERVER_PRIORITY = ['zion2', 'zion3', 'zion4'];
-    const POOL_API_SERVERS = POOL_SERVER_PRIORITY
-      .map(id => TESTNET_SERVERS.find(s => s.id === id))
-      .filter(Boolean);
+    // Fetch pool mined balance — try Edge pool API if available.
+    // V3 pool API runs on the Edge node (port 8080) for miner stats.
+    const POOL_API_SERVERS = [
+      { id: 'zion-edge', host: PRIMARY_MAINNET_HOST },
+      { id: 'zion-edge-vpn', host: EDGE_VPN_HOST },
+    ];
 
     const fetchPoolJson = async (url, timeoutMs = 3000) => {
       const ctrl = new AbortController();
