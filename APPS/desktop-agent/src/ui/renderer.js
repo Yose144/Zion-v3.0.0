@@ -611,13 +611,9 @@ function _getViewEls() {
 // Lazy-init dispatch table — avoids long if-else chain
 const _viewInitFns = {
   node:      () => initNodeView(),
-  about:     () => { initUpdateUI(); initMinerUpdateUI(); initSecurityUI(); },
+  about:     () => { initUpdateUI(); initSecurityUI(); },
   bridge:    () => initBridgeView(),
   cli:       () => initCliView(),
-  oasis:     () => initOasisView(),
-  warp:      () => initWarpView(),
-  l5:        () => initL5View(),
-  l6:        () => initL6View(),
 };
 
 function switchView(view) {
@@ -666,49 +662,30 @@ function switchView(view) {
       const refreshBtn = document.getElementById('refresh-balance-btn');
       if (refreshBtn && (config?.wallet || '').trim()) refreshBtn.click();
     }, 300);
+    // Start periodic balance auto-refresh while wallet tab is open (every 30s)
+    _startBalanceAutoRefresh();
+  } else {
+    // Stop auto-refresh when leaving wallet tab
+    _stopBalanceAutoRefresh();
   }
 }
 
-// Periodic balance auto-refresh (runs globally every 30s, not just on wallet tab)
+// Periodic balance auto-refresh (runs while wallet tab is open)
 let _balanceAutoRefreshTimer = null;
 function _startBalanceAutoRefresh() {
   _stopBalanceAutoRefresh();
   _balanceAutoRefreshTimer = setInterval(() => {
-    if (document.hidden) return; // Skip when browser tab is hidden
-    const addr = (config?.wallet || '').trim();
-    if (!addr) return;
-    // Trigger balance refresh via the refresh button if available, otherwise call directly
+    if (currentView !== 'wallet') { _stopBalanceAutoRefresh(); return; }
+    if (document.hidden) return;
     const refreshBtn = document.getElementById('refresh-balance-btn');
-    if (refreshBtn) {
-      refreshBtn.click();
-    } else {
-      // Fallback: call wallet-get-balance directly if button not in DOM yet
-      window.electronAPI.walletGetBalance({ address: addr }).then(r => {
-        if (r?.success) {
-          _lastBalanceResult = r;
-          const balEl = document.getElementById('wallet-balance');
-          if (balEl) balEl.textContent = (r.balance_zion || 0).toLocaleString('en-US', {maximumFractionDigits: 8}) + ' Z';
-        }
-      }).catch(() => {});
-    }
-  }, 30000); // 30s interval
+    const addr = (config?.wallet || '').trim();
+    if (refreshBtn && addr) refreshBtn.click();
+  }, 45000); // 45s interval
 }
 function _stopBalanceAutoRefresh() {
   if (_balanceAutoRefreshTimer) { clearInterval(_balanceAutoRefreshTimer); _balanceAutoRefreshTimer = null; }
 }
 window.addEventListener('beforeunload', _stopBalanceAutoRefresh);
-// Start background refresh on app load (if wallet configured)
-let _balanceInitTimer = null;
-function _initBackgroundBalanceRefresh() {
-  const addr = (config?.wallet || '').trim();
-  if (addr) {
-    _startBalanceAutoRefresh();
-  }
-}
-window.addEventListener('DOMContentLoaded', () => {
-  // Delay to ensure config is loaded
-  setTimeout(_initBackgroundBalanceRefresh, 2000);
-});
 
 // Control setup
 function setupControls() {
@@ -718,6 +695,9 @@ function setupControls() {
   const openLogsBtn = document.getElementById('open-logs-btn');
   const hashrateUnitEl = document.getElementById('hashrate-unit');
   const algoSelect = document.getElementById('algo-select');
+  const algoSelectDashboard = document.getElementById('algo-select-dashboard');
+  const algoSaveBtn = document.getElementById('algo-save-btn');
+  const algoStatusEl = document.getElementById('algo-status');
   const gpuCheckbox = document.getElementById('gpu-checkbox');
   const backendStatusEl = document.getElementById('backend-status');
 
@@ -770,68 +750,18 @@ function setupControls() {
   }
 
   const ALGO_LABELS = {
-    deeksha_lite_v1: 'Lite v1 — Summer / Cooling (4 KiB)',
+    deeksha_lite_v1: 'Deeksha Lite v1 — Standard 4 KiB scratchpad',
     cosmic_harmony_ekam_deeksha_v2: 'Cosmic Harmony Ekam Deeksha v2',
-    deeksha_lite_fire: 'Fire — Winter / Heating (512 KiB thermal)'
+    deeksha_lite_fire: 'Deeksha Lite Fire — 512 KiB thermal mode'
   };
 
   const syncAlgoUi = () => {
-    const algo = algoSelect?.value || config.algorithm || 'deeksha_lite_fire';
+    const algo = algoSelect?.value || config.algorithm || 'deeksha_lite_v1';
     const label = ALGO_LABELS[algo] || algo;
-    // update settings read-only display
-    const settingsDisplay = document.getElementById('settings-algo-display');
-    if (settingsDisplay) settingsDisplay.textContent = label;
-  };
-
-  const VALID_ALGO_KEYS = Object.keys(ALGO_LABELS);
-  const normalizeRendererAlgo = (raw) => {
-    const r = String(raw || '').trim().toLowerCase().replace(/-/g, '_');
-    if (['deeksha_lite_v1','lite','deeksha_lite','dlv1'].includes(r)) return 'deeksha_lite_v1';
-    if (['deeksha_lite_fire','fire','dlfire','thermal'].includes(r)) return 'deeksha_lite_fire';
-    if (['cosmic_harmony_ekam_deeksha_v2','ekam_v2','ch_ekam_v2','ekam_deeksha_v2','ch_ed_v2'].includes(r)) return 'cosmic_harmony_ekam_deeksha_v2';
-    // legacy aliases → default
-    if (['cosmic_harmony_v3','cosmic_harmony_v4','cosmic_harmony_v4_2','chv3','ch3','chv4','ch4','deeksha','cosmic_harmony_deeksha','ekam','ekam_deeksha','cosmic_harmony_ekam','cosmic_harmony','ch'].includes(r)) return 'deeksha_lite_v1';
-    return VALID_ALGO_KEYS.includes(r) ? r : 'deeksha_lite_fire';
-  };
-
-  // Sync ALL algorithm-related UI elements from a canonical value
-  const syncAlgoUiAll = (algo) => {
-    const canonical = normalizeRendererAlgo(algo || config.algorithm);
-    // Ensure config stays canonical
-    config.algorithm = canonical;
-    const label = ALGO_LABELS[canonical] || canonical;
-    // algo-select
-    if (algoSelect) {
-      if (algoSelect.querySelector(`option[value="${canonical}"]`)) {
-        algoSelect.value = canonical;
-      } else {
-        algoSelect.value = 'deeksha_lite_fire';
-      }
-    }
-    // settings display
-    const settingsDisplay = document.getElementById('settings-algo-display');
-    if (settingsDisplay) settingsDisplay.textContent = label;
-    // about-project algo card
-    const aboutAlgoValue = document.getElementById('about-algo-value');
-    if (aboutAlgoValue) aboutAlgoValue.textContent = label;
-    // dashboard active-algo (if not mining)
-    const activeAlgo = document.getElementById('active-algo');
-    if (activeAlgo && (!isRunning && !isStarting)) activeAlgo.textContent = shortAlgoName(canonical);
-    // seasonal badge next to algo-select
-    const seasonBadge = document.getElementById('algo-season-badge');
-    if (seasonBadge) {
-      if (canonical === 'deeksha_lite_v1') {
-        seasonBadge.textContent = 'Summer';
-        seasonBadge.className = 'algo-season-badge summer';
-        seasonBadge.style.display = '';
-      } else if (canonical === 'deeksha_lite_fire') {
-        seasonBadge.textContent = 'Winter';
-        seasonBadge.className = 'algo-season-badge winter';
-        seasonBadge.style.display = '';
-      } else {
-        seasonBadge.style.display = 'none';
-      }
-    }
+    if (algoStatusEl) algoStatusEl.textContent = label;
+    // update the display chip in the control panel
+    const algoDisplayChip = document.querySelector('#algo-display .font-semibold');
+    if (algoDisplayChip) algoDisplayChip.textContent = label;
   };
 
   const algoSupportsGpu = (algo) => {
@@ -851,36 +781,30 @@ function setupControls() {
 
   // Sync config.algorithm from the select whenever user changes it
   if (algoSelect) {
-    algoSelect.addEventListener('change', async () => {
-      const newAlgo = algoSelect.value;
-      const oldAlgo = config.algorithm;
-      config.algorithm = newAlgo;
-      syncAlgoUiAll(newAlgo);
+    algoSelect.addEventListener('change', () => {
+      config.algorithm = algoSelect.value;
+      syncAlgoUi();
+    });
+    // init from persisted config
+    if (config.algorithm && algoSelect.querySelector(`option[value="${config.algorithm}"]`)) {
+      algoSelect.value = config.algorithm;
+    }
+  }
 
-      // If mining is running and algorithm actually changed, restart miner
-      if (isRunning && newAlgo !== oldAlgo) {
-        addLogEntry(`Algorithm switched: ${shortAlgoName(oldAlgo)} -> ${shortAlgoName(newAlgo)}. Restarting miner...`, 'info');
-        try {
-          await window.electronAPI.stopMining();
-          isRunning = false;
-          updateControlButtons();
-          // Small delay to let process fully exit
-          await new Promise(r => setTimeout(r, 800));
-          const result = await window.electronAPI.startMining(config);
-          if (result?.success) {
-            isRunning = true;
-            updateControlButtons();
-            addLogEntry(`Miner restarted with ${shortAlgoName(newAlgo)}`, 'success');
-          } else {
-            addLogEntry(`Restart failed: ${result?.error || 'unknown'}`, 'error');
-          }
-        } catch (err) {
-          addLogEntry(`Restart error: ${err?.message || err}`, 'error');
-        }
+  // Dashboard algo select — sync with config and settings select
+  if (algoSelectDashboard) {
+    algoSelectDashboard.addEventListener('change', () => {
+      config.algorithm = algoSelectDashboard.value;
+      syncAlgoUi();
+      // Also sync with settings select if exists
+      if (algoSelect) {
+        algoSelect.value = algoSelectDashboard.value;
       }
     });
-    // init from persisted config (canonicalize everything)
-    syncAlgoUiAll(config.algorithm);
+    // init from persisted config
+    if (config.algorithm && algoSelectDashboard.querySelector(`option[value="${config.algorithm}"]`)) {
+      algoSelectDashboard.value = config.algorithm;
+    }
   }
 
   startBtn.addEventListener('click', async () => {
@@ -998,7 +922,7 @@ function setupControls() {
         port: poolPort
       },
       rpcUrl: document.getElementById('rpc-url')?.value || config.rpcUrl || DEFAULT_RPC_URL,
-      algorithm: config.algorithm || 'deeksha_lite_fire',
+      algorithm: config.algorithm || 'cosmic_harmony',
       wallet: document.getElementById('wallet-input').value,
       worker: document.getElementById('worker-input').value,
       threads: Math.min(
@@ -1024,7 +948,6 @@ function setupControls() {
     
     const result = await window.electronAPI.saveConfig(config);
     if (result) {
-      syncAlgoUiAll();
       alert('Settings saved successfully!');
     } else {
       alert('Failed to save settings.');
@@ -1162,6 +1085,17 @@ function updateSettingsUI() {
   renderBackendUi();
 
   // AI Afterburner toggle removed in V3 cleanup
+
+  // Dashboard quick controls — algorithm select init
+  const algoSelectInit = document.getElementById('algo-select');
+  if (algoSelectInit) {
+    const persistedAlgo = config.algorithm;
+    if (persistedAlgo && algoSelectInit.querySelector(`option[value="${persistedAlgo}"]`)) {
+      algoSelectInit.value = persistedAlgo;
+    } else {
+      algoSelectInit.value = 'deeksha_lite_v1';
+    }
+  }
 }
 
 function escapeHtml(s) {
@@ -1171,15 +1105,6 @@ function escapeHtml(s) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
-}
-
-// Shorten long algorithm names for clean log display
-function shortAlgoName(full) {
-  const raw = String(full || '').trim().toLowerCase();
-  if (raw === 'deeksha_lite_v1') return 'lite';
-  if (raw === 'deeksha_lite_fire') return 'fire';
-  if (raw === 'cosmic_harmony_ekam_deeksha_v2') return 'ekam';
-  return full;
 }
 
 let _streamLogWindowStart = 0;
@@ -1303,7 +1228,7 @@ function colorizeConsoleLine(raw) {
   // ── new job: "new job  height 1523  diff 256  algo cosmic_harmony" ──
   m = raw.match(/new job\s+height\s+(\d+)\s+diff\s+([\d.]+[TGMK]?)\s+algo\s+(\S+)/i);
   if (m) {
-    return { html: `${tsHtml}<span class="mc-job">new job</span> height <span class="mc-hr">${m[1]}</span> diff <span class="mc-diff">${m[2]}</span> algo <span class="mc-algo">${shortAlgoName(esc(m[3]))}</span>` };
+    return { html: `${tsHtml}<span class="mc-job">new job</span> height <span class="mc-hr">${m[1]}</span> diff <span class="mc-diff">${m[2]}</span> algo <span class="mc-algo">${esc(m[3])}</span>` };
   }
 
   // ── V3 shares summary: "shares A:5 R:0 (100.0%) | hashes 42000 | pool latency 38ms | uptime 0h 5m 12s" ──
@@ -1353,7 +1278,7 @@ function colorizeConsoleLine(raw) {
   // ── Stream switch ──
   m = raw.match(/Stream switch:\s*(\S+)\s*→\s*(\S+)/i);
   if (m) {
-    return { html: `${tsHtml}<span class="mc-warn">~&gt; Stream switch</span> <span class="mc-algo">${shortAlgoName(esc(m[1]))}</span> → <span class="mc-algo">${shortAlgoName(esc(m[2]))}</span>` };
+    return { html: `${tsHtml}<span class="mc-warn">~&gt; Stream switch</span> <span class="mc-algo">${esc(m[1])}</span> → <span class="mc-algo">${esc(m[2])}</span>` };
   }
 
   // ── [METRICS] compact GPU mining status ──
@@ -1452,8 +1377,8 @@ function updateStaticPanel(panelLines) {
     line = line.replace(/blocks:\s*(\d+)/g, 'blocks: <span class="sp-value">$1</span>');
     // Highlight height
     line = line.replace(/height:\s*(\d+)/g, 'height: <span class="sp-value">$1</span>');
-    // Highlight algo (shortened name)
-    line = line.replace(/algo:\s*(\S+)/g, (match, p1) => `algo: <span class="sp-value">${shortAlgoName(p1)}</span>`);
+    // Highlight algo
+    line = line.replace(/algo:\s*(\S+)/g, 'algo: <span class="sp-value">$1</span>');
     // Dim the │ border
     line = line.replace(/│/g, '<span class="sp-dim">│</span>');
     // Event text — green
@@ -1810,7 +1735,7 @@ function updateStats(stats) {
   // ═══ Difficulty ═══
   setText('difficulty-value', fmtDiff(stats.difficulty));
   setText('pool-height', stats.last_job_height || '—');
-  setText('active-algo', shortAlgoName(stats.stream_algorithm || stats.algorithm || '—'));
+  setText('active-algo', stats.stream_algorithm || stats.algorithm || '—');
 
   // ═══ Blocks Found ═══
   const blocks = Number(stats.blocks_found) || 0;
@@ -2007,23 +1932,6 @@ function addLogEntry(message, type = 'info') {
   });
 }
 
-// Toast notification — lightweight ephemeral popup
-function showToast(message, type = 'info', duration = 3000) {
-  const container = document.getElementById('toast-container');
-  if (!container) return;
-  const el = document.createElement('div');
-  el.className = `toast toast-${type}`;
-  el.textContent = message;
-  container.appendChild(el);
-  // trigger animation
-  requestAnimationFrame(() => el.classList.add('toast-in'));
-  setTimeout(() => {
-    el.classList.remove('toast-in');
-    el.classList.add('toast-out');
-    setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 300);
-  }, duration);
-}
-
 // Wallet management
 let generatedWallet = null;
 let lastPoolPaidAtomic = null;
@@ -2136,37 +2044,37 @@ function setupWalletControls() {
     const passwordConfirm = document.getElementById('new-wallet-password-confirm').value;
 
     if (!name) {
-      showToast('Please enter a wallet name', 'warn');
+      alert('Please enter a wallet name');
       return;
     }
 
     if (!password || password.length < 8) {
-      showToast('Password must be at least 8 characters', 'warn');
+      alert('Password must be at least 8 characters');
       return;
     }
 
     if (password !== passwordConfirm) {
-      showToast('Passwords do not match', 'warn');
+      alert('Passwords do not match');
       return;
     }
 
-    const strengthSelect = document.getElementById('new-wallet-strength');
-    const strength = strengthSelect ? parseInt(strengthSelect.value, 10) : 128;
-
-    if (generateBtn) { generateBtn.disabled = true; generateBtn.textContent = 'Generating…'; }
-    const result = await window.electronAPI.generateWallet({ strength });
-    if (generateBtn) { generateBtn.disabled = false; generateBtn.textContent = 'Generate'; }
-
+    // Generate wallet
+    const result = await window.electronAPI.generateWallet();
+    
     if (result.success) {
       generatedWallet = result.wallet;
+      
+      // Show wallet display
       document.getElementById('wallet-generator').style.display = 'none';
       document.getElementById('wallet-display').style.display = 'block';
+      
+      // Fill in generated data
       document.getElementById('generated-address').value = generatedWallet.address;
       document.getElementById('generated-mnemonic').value = generatedWallet.mnemonic;
-      showToast('Wallet generated — write down your recovery phrase!', 'success', 5000);
+      
       addLogEntry(`New wallet generated: ${generatedWallet.address}`, 'info');
     } else {
-      showToast(`Wallet generation failed: ${result.error}`, 'error');
+      alert(`Wallet generation failed: ${result.error}`);
     }
   });
 
@@ -2191,22 +2099,28 @@ function setupWalletControls() {
     const name = document.getElementById('new-wallet-name').value;
     const password = document.getElementById('new-wallet-password').value;
 
-    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; }
-    const result = await window.electronAPI.saveWallet({ wallet: generatedWallet, password, name });
-    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save'; }
+    const result = await window.electronAPI.saveWallet({
+      wallet: generatedWallet,
+      password,
+      name
+    });
 
     if (result.success) {
-      showToast('Wallet saved — recovery phrase written down?', 'success', 4000);
+      alert('Wallet saved successfully!\n\nMake sure you have written down your recovery phrase!');
+      
+      // Reset form
       document.getElementById('wallet-generator').style.display = 'block';
       document.getElementById('wallet-display').style.display = 'none';
       document.getElementById('new-wallet-name').value = 'My Wallet';
       document.getElementById('new-wallet-password').value = '';
       document.getElementById('new-wallet-password-confirm').value = '';
       generatedWallet = null;
+      
+      // Reload wallets list
       loadWalletsList();
       addLogEntry('Wallet saved successfully', 'info');
     } else {
-      showToast(`Save failed: ${result.error}`, 'error');
+      alert(`Failed to save wallet: ${result.error}`);
     }
   });
 
@@ -2224,49 +2138,27 @@ function setupWalletControls() {
     loadWalletsList();
   });
 
-  // Import wallet from mnemonic
+  // Import wallet
   importBtn?.addEventListener('click', async () => {
     const mnemonic = document.getElementById('import-mnemonic').value.trim();
     const name = document.getElementById('import-wallet-name').value;
     const password = document.getElementById('import-wallet-password').value;
 
     if (!mnemonic || !name || !password) {
-      showToast('Please fill in all fields', 'warn');
+      alert('Please fill in all fields');
       return;
     }
 
-    if (importBtn) { importBtn.disabled = true; importBtn.textContent = 'Importing…'; }
     const result = await window.electronAPI.importWallet({ mnemonic, name, password });
-    if (importBtn) { importBtn.disabled = false; importBtn.textContent = 'Import'; }
-
+    
     if (result.success) {
-      showToast('Wallet imported successfully', 'success');
+      alert('Wallet imported successfully!');
       document.getElementById('import-mnemonic').value = '';
       document.getElementById('import-wallet-name').value = '';
       document.getElementById('import-wallet-password').value = '';
       loadWalletsList();
     } else {
-      showToast(`Import failed: ${result.error}`, 'error');
-    }
-  });
-
-  // Import wallet from backup file
-  const importFileBtn = document.getElementById('import-file-btn');
-  importFileBtn?.addEventListener('click', async () => {
-    const password = document.getElementById('import-file-password').value;
-    if (!password) {
-      showToast('Please enter a password to encrypt the imported wallet', 'warn');
-      return;
-    }
-    if (importFileBtn) { importFileBtn.disabled = true; importFileBtn.textContent = 'Importing…'; }
-    const result = await window.electronAPI.importWalletFromFile({ password });
-    if (importFileBtn) { importFileBtn.disabled = false; importFileBtn.textContent = 'Choose Backup File & Import'; }
-    if (result?.success) {
-      showToast('Wallet imported from backup file', 'success');
-      document.getElementById('import-file-password').value = '';
-      loadWalletsList();
-    } else {
-      showToast(`Import failed: ${result?.error || 'Unknown error'}`, 'error');
+      alert(`Import failed: ${result.error}`);
     }
   });
 
@@ -2491,6 +2383,9 @@ function setupWalletControls() {
   sendTxBtn?.addEventListener('click', async () => {
     if (sendStatusEl) sendStatusEl.textContent = '';
 
+    // Refresh config + from-address display before sending
+    await refreshSendFrom();
+
     const from = getActiveAddress();
     const to = (sendToEl && 'value' in sendToEl ? sendToEl.value : '').toString().trim();
     const amountRaw = (sendAmountEl && 'value' in sendAmountEl ? sendAmountEl.value : '').toString().trim();
@@ -2498,44 +2393,56 @@ function setupWalletControls() {
     const memo = (sendMemoEl && 'value' in sendMemoEl ? sendMemoEl.value : '').toString().trim();
     const password = (sendPasswordEl && 'value' in sendPasswordEl ? sendPasswordEl.value : '').toString();
 
+    // Validate from
     if (!from || !from.startsWith('zion1')) {
-      showToast('No active wallet. Set wallet in Overview tab.', 'warn');
+      if (sendStatusEl) sendStatusEl.textContent = '⚠ No active wallet. Go to Overview tab → set your wallet address.';
       if (sendNoWalletWarn) sendNoWalletWarn.style.display = 'block';
       return;
     }
+
+    // Validate to
     if (!to || !to.startsWith('zion1')) {
-      showToast('Recipient must be a valid zion1... address.', 'warn');
-      return;
-    }
-    const parsedAmount = parseFloat(amountRaw.replace(',', '.'));
-    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-      showToast('Enter a valid amount greater than 0.', 'warn');
-      return;
-    }
-    if (from === to) {
-      showToast('Cannot send to yourself.', 'warn');
-      return;
-    }
-    if (!password) {
-      showToast('Wallet password is required to sign.', 'warn');
+      if (sendStatusEl) sendStatusEl.textContent = '⚠ Recipient address must be a valid zion1... address.';
       return;
     }
 
-    if (sendTxBtn) { sendTxBtn.disabled = true; sendTxBtn.textContent = 'Sending…'; }
+    // Validate amount
+    const parsedAmount = parseFloat(amountRaw.replace(',', '.'));
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      if (sendStatusEl) sendStatusEl.textContent = '⚠ Enter a valid amount greater than 0.';
+      return;
+    }
+
+    if (from === to) {
+      if (sendStatusEl) sendStatusEl.textContent = '⚠ Cannot send to yourself.';
+      return;
+    }
+
+    // Require password for UTXO signing
+    if (!password) {
+      if (sendStatusEl) sendStatusEl.textContent = '⚠ Wallet password is required to sign the transaction.';
+      return;
+    }
+
+    if (sendStatusEl) sendStatusEl.textContent = '⏳ Confirming…';
+
     const result = await window.electronAPI.walletSendTransaction({
-      rpcUrl: getRpcUrl(), from, to, amount: parsedAmount, purpose, memo: memo || undefined, password
+      rpcUrl: getRpcUrl(),
+      from,
+      to,
+      amount: parsedAmount,
+      purpose,
+      memo: memo || undefined,
+      password
     });
-    if (sendTxBtn) { sendTxBtn.disabled = false; sendTxBtn.textContent = 'Send Transaction'; }
 
     if (!result?.success) {
       const err = result?.error || 'send failed';
-      const hint = err.includes('Insufficient') ? ' (check balance)' : err.includes('RPC') ? ' (node unreachable)' : '';
-      showToast(`${err}${hint}`, 'error', 5000);
+      const hint = err.includes('Insufficient') ? ' (check your balance)' : err.includes('RPC') ? ' (node unreachable — try again)' : '';
       if (sendStatusEl) sendStatusEl.textContent = `❌ ${err}${hint}`;
       return;
     }
 
-    showToast(`Sent ${parsedAmount} ZION · TX: ${(result.txId || 'n/a').slice(0, 16)}…`, 'success', 5000);
     if (sendStatusEl) sendStatusEl.textContent = `✅ Sent! Status: ${result.status || 'submitted'} · TX: ${result.txId || 'n/a'}`;
     if (sendToEl) sendToEl.value = '';
     if (sendAmountEl) sendAmountEl.value = '';
@@ -2543,7 +2450,7 @@ function setupWalletControls() {
     if (sendMemoEl) sendMemoEl.value = '';
     if (sendPasswordEl) sendPasswordEl.value = '';
     // Refresh balance after successful send
-    setTimeout(refreshSendFrom, 1200);
+    setTimeout(refreshSendFrom, 1500);
   });
 
   // Transaction lookup
@@ -2573,94 +2480,6 @@ function setupWalletControls() {
     const tx = result.transaction || result;
     if (txLookupResultEl) txLookupResultEl.textContent = JSON.stringify(tx, null, 2);
   });
-
-  // Transaction History
-  const txHistoryRefreshBtn = document.getElementById('tx-history-refresh-btn');
-  const txHistoryList = document.getElementById('tx-history-list');
-  const txHistoryEmpty = document.getElementById('tx-history-empty');
-  const txHistoryLoading = document.getElementById('tx-history-loading');
-
-  async function loadTransactionHistory() {
-    const address = getActiveAddress();
-    if (!address || !address.startsWith('zion1')) {
-      if (txHistoryEmpty) txHistoryEmpty.textContent = 'Set an active wallet to view history.';
-      if (txHistoryEmpty) txHistoryEmpty.style.display = 'block';
-      if (txHistoryList) txHistoryList.style.display = 'none';
-      return;
-    }
-    if (txHistoryLoading) txHistoryLoading.style.display = 'block';
-    if (txHistoryEmpty) txHistoryEmpty.style.display = 'none';
-    if (txHistoryList) txHistoryList.style.display = 'none';
-
-    const result = await window.electronAPI.walletGetTransactions({
-      rpcUrl: getRpcUrl(),
-      address,
-      offset: 0,
-      limit: 50
-    });
-
-    if (txHistoryLoading) txHistoryLoading.style.display = 'none';
-
-    if (!result?.success) {
-      if (txHistoryEmpty) txHistoryEmpty.textContent = `Failed to load history: ${result?.error || 'unknown error'}`;
-      if (txHistoryEmpty) txHistoryEmpty.style.display = 'block';
-      return;
-    }
-
-    const txs = result.data?.transactions || [];
-    if (txs.length === 0) {
-      if (txHistoryEmpty) txHistoryEmpty.textContent = 'No transactions yet.';
-      if (txHistoryEmpty) txHistoryEmpty.style.display = 'block';
-      return;
-    }
-
-    if (txHistoryEmpty) txHistoryEmpty.style.display = 'none';
-    if (txHistoryList) txHistoryList.style.display = 'flex';
-
-    const html = txs.map(item => {
-      const tx = item.transaction || item;
-      const from = tx.from || '';
-      const to = tx.to || '';
-      const amount = tx.amount || 0;
-      const purpose = tx.purpose || '';
-      const memo = tx.memo || '';
-      const blockHeight = item.block_height || item.blockHeight || 0;
-      const timestamp = item.timestamp || 0;
-      const txId = tx.id || tx.hash || '';
-      const isIncoming = to === address;
-      const isMined = purpose === 'mining_reward' || purpose === 'block_reward';
-      const amountClass = isMined ? 'mined' : isIncoming ? 'income' : 'outgoing';
-      const sign = isIncoming ? '+' : '-';
-      const timeStr = timestamp ? new Date(timestamp * 1000).toLocaleString() : `Block ${blockHeight}`;
-      const purposeLabel = purpose ? String(purpose).replace(/_/g, ' ') : (isIncoming ? 'Receive' : 'Send');
-      return `
-        <div class="tx-history-item">
-          <div class="tx-history-meta">
-            <div class="tx-history-id" title="${escapeHtml(txId)}">${escapeHtml(txId.slice(0, 24))}…</div>
-            <div class="tx-history-time">${escapeHtml(timeStr)} · ${escapeHtml(purposeLabel)}${memo ? ' · ' + escapeHtml(String(memo).slice(0, 24)) : ''}</div>
-          </div>
-          <div class="tx-history-amount ${amountClass}">${sign}${Number(amount).toFixed(4)} ZION</div>
-          <div class="tx-history-status">${blockHeight ? 'Confirmed' : 'Pending'}</div>
-        </div>
-      `;
-    }).join('');
-
-    if (txHistoryList) txHistoryList.innerHTML = html;
-  }
-
-  txHistoryRefreshBtn?.addEventListener('click', () => {
-    loadTransactionHistory();
-  });
-
-  // Auto-load history when History tab becomes visible
-  const walletHistoryTab = document.querySelector('.section-tab[data-section="wallet-history"]');
-  walletHistoryTab?.addEventListener('click', () => {
-    loadTransactionHistory();
-  });
-  // Also load once on init if History is somehow already active
-  if (document.getElementById('wallet-history')?.classList.contains('active')) {
-    loadTransactionHistory();
-  }
 }
 
 async function loadWalletsList() {
@@ -2696,7 +2515,7 @@ async function loadWalletsList() {
         <span>•</span>
         <span>Last used: ${safeLastUsed}</span>
       </div>
-      <div style="margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
+      <div style="margin-top: 16px; display: flex; gap: 8px;">
         <button class="btn btn-primary" onclick="useWallet('${safeAddr}')" style="width: auto; padding: 10px 16px; font-size: 13px;">
            <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
            <span>Use for Mining</span>
@@ -2704,10 +2523,6 @@ async function loadWalletsList() {
         <button class="btn" onclick="copyWalletAddress('${safeAddr}')" style="width: auto; padding: 10px 16px; font-size: 13px; background: rgba(147,51,234,0.2); border: 1px solid var(--zion-purple);">
            <svg class="icon" aria-hidden="true"><use href="#i-copy"></use></svg>
            <span>Copy Address</span>
-        </button>
-        <button class="btn btn-ghost" onclick="exportWalletToFile('${safeAddr}')" style="width: auto; padding: 10px 16px; font-size: 13px; background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.4); color: #22c55e;">
-           <svg class="icon" aria-hidden="true"><use href="#i-save"></use></svg>
-           <span>Export Backup</span>
         </button>
       </div>
     </div>
@@ -2788,51 +2603,6 @@ window.useWallet = async (address) => {
 window.copyWalletAddress = (address) => {
   navigator.clipboard.writeText(address);
   alert('Address copied to clipboard!');
-};
-
-window.exportWalletToFile = async (address) => {
-  const modal = document.getElementById('export-password-modal');
-  const addrEl = document.getElementById('export-modal-address');
-  const input = document.getElementById('export-modal-password');
-  const cancelBtn = document.getElementById('export-modal-cancel');
-  const confirmBtn = document.getElementById('export-modal-confirm');
-
-  if (!modal || !input || !cancelBtn || !confirmBtn) {
-    showToast('Export modal not found in DOM', 'error');
-    return;
-  }
-
-  addrEl.textContent = address;
-  input.value = '';
-  modal.style.display = 'flex';
-  input.focus();
-
-  const password = await new Promise((resolve) => {
-    const cleanup = () => {
-      modal.style.display = 'none';
-      cancelBtn.removeEventListener('click', onCancel);
-      confirmBtn.removeEventListener('click', onConfirm);
-      input.removeEventListener('keydown', onKey);
-    };
-    const onCancel = () => { cleanup(); resolve(null); };
-    const onConfirm = () => { cleanup(); resolve(input.value); };
-    const onKey = (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); onConfirm(); }
-      if (e.key === 'Escape') { e.preventDefault(); onCancel(); }
-    };
-    cancelBtn.addEventListener('click', onCancel);
-    confirmBtn.addEventListener('click', onConfirm);
-    input.addEventListener('keydown', onKey);
-  });
-
-  if (!password) return;
-
-  const result = await window.electronAPI.exportWalletToFile({ address, password });
-  if (result?.success) {
-    showToast(`Backup saved to Desktop: ${result.filePath}`, 'success', 5000);
-  } else {
-    showToast(`Export failed: ${result?.error || 'Unknown error'}`, 'error');
-  }
 };
 
 // ============================================================================
@@ -3377,135 +3147,6 @@ function _showInstallBtn() {
   if (progressWrap) progressWrap.style.display = 'none';
 }
 
-// ── Miner Update UI ────────────────────────────────────────────────────────
-let _minerUpdateState = { checking: false, available: false, downloaded: false, asset: null };
-
-function initMinerUpdateUI() {
-  const checkBtn = document.getElementById('miner-update-check-btn');
-  const allBtn   = document.getElementById('update-all-btn');
-
-  if (checkBtn && !checkBtn._bound) {
-    checkBtn._bound = true;
-    checkBtn.addEventListener('click', async () => {
-      if (_minerUpdateState.checking) return;
-      _minerUpdateState.checking = true;
-      _setMinerUpdateStatus('Checking...', 'Contacting GitHub...', '#93c5fd');
-      checkBtn.disabled = true;
-      checkBtn.textContent = 'Checking...';
-      try {
-        const result = await window.electronAPI.checkMinerUpdate();
-        if (!result?.success) {
-          _setMinerUpdateStatus('Error', result?.error || 'Check failed', '#f87171');
-        } else if (result.updateAvailable) {
-          _minerUpdateState.available = true;
-          _minerUpdateState.asset = result;
-          _setMinerUpdateStatus('Update Available!', `${result.assetName} ready`, '#6ee7b7');
-          document.getElementById('miner-update-version').textContent = result.latestVersion;
-          document.getElementById('miner-update-detail').textContent = `${(result.assetSize/1024/1024).toFixed(1)} MB`;
-          checkBtn.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg> Download Miner';
-          checkBtn.onclick = async () => { await _downloadMinerUpdate(result); };
-          checkBtn.disabled = false;
-          // Also reveal "Update All" if app update is also available
-          if (_updateState.available) {
-            const allBtn = document.getElementById('update-all-btn');
-            if (allBtn) { allBtn.style.display = ''; allBtn.onclick = () => _updateAll(); }
-          }
-        } else {
-          _setMinerUpdateStatus('Up to Date', `v${result.latestVersion} is latest`, '#6ee7b7');
-          document.getElementById('miner-update-version').textContent = result.latestVersion;
-        }
-      } catch (err) {
-        _setMinerUpdateStatus('Error', err?.message || 'Check failed', '#f87171');
-      } finally {
-        _minerUpdateState.checking = false;
-        if (!checkBtn.onclick) {
-          checkBtn.disabled = false;
-          checkBtn.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg> Check Miner Update';
-        }
-      }
-    });
-  }
-
-  // Listen for miner download progress from main
-  if (!window._minerUpdateListenersBound) {
-    window._minerUpdateListenersBound = true;
-    window.electronAPI.onMinerUpdateProgress?.((progress) => {
-      _showMinerProgress(progress);
-    });
-  }
-}
-
-async function _downloadMinerUpdate(result) {
-  const checkBtn = document.getElementById('miner-update-check-btn');
-  if (checkBtn) { checkBtn.disabled = true; checkBtn.textContent = 'Downloading...'; }
-  _setMinerUpdateStatus('Downloading...', result.assetName, '#93c5fd');
-  try {
-    // Need release assets list to get URL
-    const release = await window.electronAPI.checkForUpdates(); // re-uses _checkGitHubRelease via fallback
-    if (!release?.success) {
-      _setMinerUpdateStatus('Error', 'Could not get release assets', '#f87171');
-      return;
-    }
-    const asset = release.assets?.find(a => a.name === result.assetName);
-    if (!asset) {
-      _setMinerUpdateStatus('Error', 'Asset not found in release', '#f87171');
-      return;
-    }
-    const dl = await window.electronAPI.downloadMinerUpdate({ url: asset.url, size: asset.size });
-    if (dl?.success) {
-      _minerUpdateState.downloaded = true;
-      _setMinerUpdateStatus('Ready', `Updated to ${result.latestVersion}`, '#6ee7b7');
-      if (checkBtn) checkBtn.textContent = 'Updated';
-    } else {
-      _setMinerUpdateStatus('Download Failed', dl?.error || 'Unknown error', '#f87171');
-      if (checkBtn) { checkBtn.disabled = false; checkBtn.textContent = 'Retry'; }
-    }
-  } catch (err) {
-    _setMinerUpdateStatus('Download Failed', err?.message || 'Unknown error', '#f87171');
-    if (checkBtn) { checkBtn.disabled = false; checkBtn.textContent = 'Retry'; }
-  }
-}
-
-async function _updateAll() {
-  const allBtn = document.getElementById('update-all-btn');
-  if (allBtn) { allBtn.disabled = true; allBtn.textContent = 'Updating...'; }
-  // Download miner first
-  if (_minerUpdateState.available && !_minerUpdateState.downloaded) {
-    await _downloadMinerUpdate(_minerUpdateState.asset);
-  }
-  // Then install app update
-  if (_updateState.available && _updateState.downloaded) {
-    await window.electronAPI.installUpdate();
-  } else if (_updateState.available) {
-    await window.electronAPI.downloadUpdate();
-    await window.electronAPI.installUpdate();
-  }
-}
-
-function _setMinerUpdateStatus(label, sub, color) {
-  const el = document.getElementById('miner-update-status-label');
-  const subEl = document.getElementById('miner-update-status-sub');
-  if (el) { el.textContent = label; el.style.color = color || ''; }
-  if (subEl) subEl.textContent = sub || '';
-}
-
-function _showMinerProgress(progress) {
-  const wrap = document.getElementById('miner-update-progress-wrap');
-  const fill = document.getElementById('miner-update-progress-fill');
-  const pct = document.getElementById('miner-update-progress-pct');
-  const detail = document.getElementById('miner-update-progress-detail');
-  const title = document.getElementById('miner-update-progress-title');
-  if (wrap) wrap.style.display = '';
-  if (fill) fill.style.width = progress.percent + '%';
-  if (pct) pct.textContent = progress.percent + '%';
-  if (title) title.textContent = 'Downloading miner binary...';
-  if (detail) {
-    const mb = (n) => (n / 1024 / 1024).toFixed(1);
-    detail.textContent = `${mb(progress.transferred)} / ${mb(progress.total)} MB`;
-  }
-}
-
-// ── App changelog ──────────────────────────────────────────────────────────
 function _showChangelog(notes, version) {
   const wrap = document.getElementById('update-changelog');
   const body = document.getElementById('update-changelog-body');
@@ -4273,59 +3914,6 @@ function initAiView() {
     });
   }
 
-  // ── ZION Agent CLI buttons ──────────────────────────────────────────
-  const agentMonitorBtn = document.getElementById('ai-agent-monitor');
-  const agentReviewBtn  = document.getElementById('ai-agent-review');
-  const agentConfigBtn  = document.getElementById('ai-agent-config');
-
-  if (agentMonitorBtn) {
-    agentMonitorBtn.addEventListener('click', async () => {
-      await appendMessage('user', '/monitor');
-      try {
-        const res = await window.electronAPI.agentMonitor({ watch: 'node,pool,miner' });
-        if (res?.success) {
-          await appendMessage('agent', res.output);
-        } else {
-          await appendMessage('system', 'Agent monitor failed: ' + (res?.error || 'unknown'));
-        }
-      } catch (e) {
-        await appendMessage('system', 'Error: ' + String(e));
-      }
-    });
-  }
-
-  if (agentReviewBtn) {
-    agentReviewBtn.addEventListener('click', async () => {
-      await appendMessage('user', '/review');
-      try {
-        const res = await window.electronAPI.agentReview({});
-        if (res?.success) {
-          await appendMessage('agent', res.output);
-        } else {
-          await appendMessage('system', 'Agent review failed: ' + (res?.error || 'unknown'));
-        }
-      } catch (e) {
-        await appendMessage('system', 'Error: ' + String(e));
-      }
-    });
-  }
-
-  if (agentConfigBtn) {
-    agentConfigBtn.addEventListener('click', async () => {
-      await appendMessage('user', '/config');
-      try {
-        const res = await window.electronAPI.agentConfigShow();
-        if (res?.success) {
-          await appendMessage('agent', res.output);
-        } else {
-          await appendMessage('system', 'Agent config failed: ' + (res?.error || 'unknown'));
-        }
-      } catch (e) {
-        await appendMessage('system', 'Error: ' + String(e));
-      }
-    });
-  }
-
   // Auto-check on view open
   checkAiStatus();
 }
@@ -4529,19 +4117,6 @@ function initCliView() {
   document.getElementById('cli-btn-dao-treasury')?.addEventListener('click', () => runCli('cliDaoTreasury', 'dao treasury'));
   document.getElementById('cli-btn-dao-params')?.addEventListener('click', () => runCli('cliDaoParams', 'dao params'));
 
-  // ── Swap ──────────────────────────────────────────────────────────
-  document.getElementById('cli-btn-swap-status')?.addEventListener('click', () => runCli('cliSwapStatus', 'swap status'));
-  document.getElementById('cli-btn-swap-quote')?.addEventListener('click', async () => {
-    const from = prompt('From token (default ZION):') || 'ZION';
-    const to = prompt('To token (default USDC):') || 'USDC';
-    const amount = prompt('Amount:') || '1';
-    await runCli('cliSwapQuote', `swap quote --from ${from} --to ${to} --amount ${amount}`, { from, to, amount: parseFloat(amount) || 1 });
-  });
-  document.getElementById('cli-btn-swap-history')?.addEventListener('click', async () => {
-    const n = prompt('Number of entries (default 10):') || '10';
-    await runCli('cliSwapHistory', `swap history ${n}`, { n: parseInt(n) || 10 });
-  });
-
   // ── Pool ──────────────────────────────────────────────────────────
   document.getElementById('cli-btn-pool-stats')?.addEventListener('click', () => runCli('cliPoolStats', 'pool stats edge', { target: 'edge' }));
   document.getElementById('cli-btn-pool-miners')?.addEventListener('click', () => runCli('cliPoolMiners', 'pool miners edge', { target: 'edge' }));
@@ -4556,993 +4131,4 @@ function initCliView() {
   document.getElementById('cli-btn-warp-chains')?.addEventListener('click', () => runCli('cliWarpChains', 'warp chains'));
   document.getElementById('cli-btn-warp-pending')?.addEventListener('click', () => runCli('cliWarpPending', 'warp pending'));
   document.getElementById('cli-btn-warp-stats')?.addEventListener('click', () => runCli('cliWarpStats', 'warp stats'));
-
-  // ── L5 Free World ─────────────────────────────────────────────────
-  const l5Display = document.getElementById('l5-data-display');
-  const l5Chip = document.getElementById('l5-status-chip');
-
-  async function refreshL5Status() {
-    const res = await window.electronAPI.l5Status();
-    if (l5Chip) {
-      l5Chip.textContent = res?.success ? (res?.data?.status === 'ok' ? 'Online' : 'Degraded') : 'Offline';
-      l5Chip.style.background = res?.success ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)';
-      l5Chip.style.color = res?.success ? '#4ade80' : '#f87171';
-    }
-  }
-  // Auto-check on tab open
-  document.querySelector('.section-tab[data-section="cli-l5"]')?.addEventListener('click', refreshL5Status);
-  refreshL5Status();
-
-  async function showL5Data(label, fetcher) {
-    if (l5Display) { l5Display.style.display = 'block'; l5Display.textContent = `Loading ${label}…`; }
-    try {
-      const res = await fetcher();
-      if (l5Display) l5Display.textContent = JSON.stringify(res, null, 2);
-      addLogEntry(`L5 ${label}: ${res?.success ? 'ok' : res?.error || 'failed'}`, res?.success ? 'info' : 'error');
-    } catch (err) {
-      if (l5Display) l5Display.textContent = `Error: ${err?.message || err}`;
-      addLogEntry(`L5 ${label} error: ${err?.message || err}`, 'error');
-    }
-  }
-
-  document.getElementById('cli-btn-l5-status')?.addEventListener('click', () => showL5Data('status', window.electronAPI.l5Status));
-  document.getElementById('cli-btn-l5-balance')?.addEventListener('click', () => showL5Data('fund balance', window.electronAPI.l5FundBalance));
-  document.getElementById('cli-btn-l5-grants')?.addEventListener('click', () => showL5Data('grants', window.electronAPI.l5Grants));
-  document.getElementById('cli-btn-l5-projects')?.addEventListener('click', () => showL5Data('projects', window.electronAPI.l5Projects));
-
-  // ── L6 Issobela ───────────────────────────────────────────────────
-  const l6Display = document.getElementById('l6-data-display');
-  const l6Chip = document.getElementById('l6-status-chip');
-
-  async function refreshL6Status() {
-    const res = await window.electronAPI.l6Status();
-    if (l6Chip) {
-      l6Chip.textContent = res?.success ? (res?.data?.status === 'ok' ? 'Online' : 'Degraded') : 'Offline';
-      l6Chip.style.background = res?.success ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)';
-      l6Chip.style.color = res?.success ? '#4ade80' : '#f87171';
-    }
-  }
-  document.querySelector('.section-tab[data-section="cli-l6"]')?.addEventListener('click', refreshL6Status);
-  refreshL6Status();
-
-  async function showL6Data(label, fetcher) {
-    if (l6Display) { l6Display.style.display = 'block'; l6Display.textContent = `Loading ${label}…`; }
-    try {
-      const res = await fetcher();
-      if (l6Display) l6Display.textContent = JSON.stringify(res, null, 2);
-      addLogEntry(`L6 ${label}: ${res?.success ? 'ok' : res?.error || 'failed'}`, res?.success ? 'info' : 'error');
-    } catch (err) {
-      if (l6Display) l6Display.textContent = `Error: ${err?.message || err}`;
-      addLogEntry(`L6 ${label} error: ${err?.message || err}`, 'error');
-    }
-  }
-
-  document.getElementById('cli-btn-l6-status')?.addEventListener('click', () => showL6Data('status', window.electronAPI.l6Status));
-  document.getElementById('cli-btn-l6-balance')?.addEventListener('click', () => showL6Data('fund balance', window.electronAPI.l6FundBalance));
-  document.getElementById('cli-btn-l6-missions')?.addEventListener('click', () => showL6Data('missions', window.electronAPI.l6Missions));
-  document.getElementById('cli-btn-l6-proposals')?.addEventListener('click', () => showL6Data('proposals', window.electronAPI.l6Proposals));
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// WARP View — L3 Cross-Chain Corridors
-// ═══════════════════════════════════════════════════════════════════════════════
-
-function initWarpView() {
-  const chip = document.getElementById('warp-view-status-chip');
-  const chainsEl = document.getElementById('warp-view-chains');
-  const transfersEl = document.getElementById('warp-view-transfers');
-  const pendingEl = document.getElementById('warp-view-pending');
-  const volumeEl = document.getElementById('warp-view-volume');
-  const updatedEl = document.getElementById('warp-view-updated');
-  const detailEl = document.getElementById('warp-view-detail');
-
-  async function refresh() {
-    const [statusRes, metricsRes, chainsRes, transfersRes, pendingRes] = await Promise.all([
-      window.electronAPI.warpStatus(),
-      window.electronAPI.warpMetrics(),
-      window.electronAPI.warpChains(),
-      window.electronAPI.warpTransfers(),
-      window.electronAPI.warpPending(),
-    ]);
-
-    const ok = statusRes?.success;
-    if (chip) {
-      chip.textContent = ok ? (statusRes?.data?.status === 'ok' ? 'Online' : 'Degraded') : 'Offline';
-      chip.style.background = ok ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)';
-      chip.style.color = ok ? '#4ade80' : '#f87171';
-    }
-    if (chainsEl) {
-      const chains = Array.isArray(chainsRes?.data?.chains) ? chainsRes.data.chains
-        : Array.isArray(chainsRes?.data) ? chainsRes.data : [];
-      chainsEl.textContent = chains.length;
-    }
-    if (transfersEl) {
-      const items = Array.isArray(transfersRes?.data?.transfers) ? transfersRes.data.transfers
-        : Array.isArray(transfersRes?.data) ? transfersRes.data : [];
-      transfersEl.textContent = items.length;
-    }
-    if (pendingEl) {
-      const items = Array.isArray(pendingRes?.data?.transfers) ? pendingRes.data.transfers
-        : Array.isArray(pendingRes?.data) ? pendingRes.data : [];
-      pendingEl.textContent = items.length;
-    }
-    if (volumeEl) {
-      const vol = metricsRes?.data?.daily_volume_zion ?? metricsRes?.data?.volume ?? '—';
-      volumeEl.textContent = typeof vol === 'number' ? `${vol.toLocaleString()} ZION` : String(vol);
-    }
-    if (updatedEl) updatedEl.textContent = new Date().toLocaleTimeString();
-  }
-
-  async function showDetail(label, fetcher) {
-    if (detailEl) { detailEl.style.display = 'block'; detailEl.textContent = `Loading ${label}…`; }
-    try {
-      const res = await fetcher();
-      if (detailEl) detailEl.textContent = JSON.stringify(res, null, 2);
-    } catch (err) {
-      if (detailEl) detailEl.textContent = `Error: ${err?.message || err}`;
-    }
-  }
-
-  document.getElementById('warp-view-refresh')?.addEventListener('click', refresh);
-  document.getElementById('warp-view-chains-btn')?.addEventListener('click', () => showDetail('chains', window.electronAPI.warpChains));
-  document.getElementById('warp-view-transfers-btn')?.addEventListener('click', () => showDetail('transfers', window.electronAPI.warpTransfers));
-  document.getElementById('warp-view-pending-btn')?.addEventListener('click', () => showDetail('pending', window.electronAPI.warpPending));
-
-  refresh();
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// L5 Free World View — Humanitarian Layer
-// ═══════════════════════════════════════════════════════════════════════════════
-
-function initL5View() {
-  const chip = document.getElementById('l5-view-status-chip');
-  const balanceEl = document.getElementById('l5-view-balance');
-  const grantsEl = document.getElementById('l5-view-grants');
-  const projectsEl = document.getElementById('l5-view-projects');
-  const healthEl = document.getElementById('l5-view-health');
-  const updatedEl = document.getElementById('l5-view-updated');
-  const detailEl = document.getElementById('l5-view-detail');
-
-  async function refresh() {
-    const [statusRes, balanceRes, grantsRes, projectsRes] = await Promise.all([
-      window.electronAPI.l5Status(),
-      window.electronAPI.l5FundBalance(),
-      window.electronAPI.l5Grants(),
-      window.electronAPI.l5Projects(),
-    ]);
-
-    const ok = statusRes?.success;
-    if (chip) {
-      chip.textContent = ok ? (statusRes?.data?.status === 'ok' ? 'Online' : 'Degraded') : 'Offline';
-      chip.style.background = ok ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)';
-      chip.style.color = ok ? '#4ade80' : '#f87171';
-    }
-    if (healthEl) healthEl.textContent = ok ? (statusRes?.data?.status === 'ok' ? 'Healthy' : 'Degraded') : 'Offline';
-    if (balanceEl) {
-      const bal = balanceRes?.data?.balance_zion ?? balanceRes?.data?.balance ?? '—';
-      balanceEl.textContent = typeof bal === 'number' ? `${bal.toLocaleString()} ZION` : String(bal);
-    }
-    if (grantsEl) {
-      const count = Array.isArray(grantsRes?.data?.grants) ? grantsRes.data.grants.length
-        : Array.isArray(grantsRes?.data) ? grantsRes.data.length : '—';
-      grantsEl.textContent = count;
-    }
-    if (projectsEl) {
-      const count = Array.isArray(projectsRes?.data?.projects) ? projectsRes.data.projects.length
-        : Array.isArray(projectsRes?.data) ? projectsRes.data.length : '—';
-      projectsEl.textContent = count;
-    }
-    if (updatedEl) updatedEl.textContent = new Date().toLocaleTimeString();
-  }
-
-  async function showDetail(label, fetcher) {
-    if (detailEl) { detailEl.style.display = 'block'; detailEl.textContent = `Loading ${label}…`; }
-    try {
-      const res = await fetcher();
-      if (detailEl) detailEl.textContent = JSON.stringify(res, null, 2);
-    } catch (err) {
-      if (detailEl) detailEl.textContent = `Error: ${err?.message || err}`;
-    }
-  }
-
-  document.getElementById('l5-view-refresh')?.addEventListener('click', refresh);
-  document.getElementById('l5-view-grants-btn')?.addEventListener('click', () => showDetail('grants', window.electronAPI.l5Grants));
-  document.getElementById('l5-view-projects-btn')?.addEventListener('click', () => showDetail('projects', window.electronAPI.l5Projects));
-
-  refresh();
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// L6 Issobela View — Space Station Layer
-// ═══════════════════════════════════════════════════════════════════════════════
-
-function initL6View() {
-  const chip = document.getElementById('l6-view-status-chip');
-  const balanceEl = document.getElementById('l6-view-balance');
-  const missionsEl = document.getElementById('l6-view-missions');
-  const proposalsEl = document.getElementById('l6-view-proposals');
-  const healthEl = document.getElementById('l6-view-health');
-  const updatedEl = document.getElementById('l6-view-updated');
-  const detailEl = document.getElementById('l6-view-detail');
-
-  async function refresh() {
-    const [statusRes, balanceRes, missionsRes, proposalsRes] = await Promise.all([
-      window.electronAPI.l6Status(),
-      window.electronAPI.l6FundBalance(),
-      window.electronAPI.l6Missions(),
-      window.electronAPI.l6Proposals(),
-    ]);
-
-    const ok = statusRes?.success;
-    if (chip) {
-      chip.textContent = ok ? (statusRes?.data?.status === 'ok' ? 'Online' : 'Degraded') : 'Offline';
-      chip.style.background = ok ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)';
-      chip.style.color = ok ? '#4ade80' : '#f87171';
-    }
-    if (healthEl) healthEl.textContent = ok ? (statusRes?.data?.status === 'ok' ? 'Healthy' : 'Degraded') : 'Offline';
-    if (balanceEl) {
-      const bal = balanceRes?.data?.balance_zion ?? balanceRes?.data?.balance ?? '—';
-      balanceEl.textContent = typeof bal === 'number' ? `${bal.toLocaleString()} ZION` : String(bal);
-    }
-    if (missionsEl) {
-      const count = Array.isArray(missionsRes?.data?.missions) ? missionsRes.data.missions.length
-        : Array.isArray(missionsRes?.data) ? missionsRes.data.length : '—';
-      missionsEl.textContent = count;
-    }
-    if (proposalsEl) {
-      const count = Array.isArray(proposalsRes?.data?.proposals) ? proposalsRes.data.proposals.length
-        : Array.isArray(proposalsRes?.data) ? proposalsRes.data.length : '—';
-      proposalsEl.textContent = count;
-    }
-    if (updatedEl) updatedEl.textContent = new Date().toLocaleTimeString();
-  }
-
-  async function showDetail(label, fetcher) {
-    if (detailEl) { detailEl.style.display = 'block'; detailEl.textContent = `Loading ${label}…`; }
-    try {
-      const res = await fetcher();
-      if (detailEl) detailEl.textContent = JSON.stringify(res, null, 2);
-    } catch (err) {
-      if (detailEl) detailEl.textContent = `Error: ${err?.message || err}`;
-    }
-  }
-
-  document.getElementById('l6-view-refresh')?.addEventListener('click', refresh);
-  document.getElementById('l6-view-missions-btn')?.addEventListener('click', () => showDetail('missions', window.electronAPI.l6Missions));
-  document.getElementById('l6-view-proposals-btn')?.addEventListener('click', () => showDetail('proposals', window.electronAPI.l6Proposals));
-
-  refresh();
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Oasis View — L4 Consciousness Mining Game
-// ═══════════════════════════════════════════════════════════════════════════════
-
-let _oasisInitialized = false;
-
-function initOasisView() {
-  if (_oasisInitialized) return;
-  _oasisInitialized = true;
-  dbg('[OASIS] Initializing Oasis view');
-
-  const setStatus = (id, status) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.textContent = status;
-    el.style.color =
-      status === 'Online' ? '#6ee7b7' :
-      status === 'Offline' ? '#f87171' :
-      status === 'Checking...' ? '#93c5fd' : '';
-  };
-
-  async function checkOasisBackend() {
-    setStatus('oasis-rest-status', 'Checking...');
-    setStatus('oasis-ws-status', 'Checking...');
-    setStatus('oasis-metrics-status', 'Checking...');
-
-    // Check REST API
-    try {
-      const resp = await fetch('http://localhost:8094/health', { method: 'GET', mode: 'no-cors', signal: AbortSignal.timeout(3000) });
-      setStatus('oasis-rest-status', resp.ok || resp.status === 0 ? 'Online' : 'Offline');
-    } catch {
-      setStatus('oasis-rest-status', 'Offline');
-    }
-
-    // Check Metrics
-    try {
-      const resp = await fetch('http://localhost:9101/metrics', { method: 'GET', mode: 'no-cors', signal: AbortSignal.timeout(3000) });
-      setStatus('oasis-metrics-status', resp.ok || resp.status === 0 ? 'Online' : 'Offline');
-    } catch {
-      setStatus('oasis-metrics-status', 'Offline');
-    }
-
-    // WebSocket: we can't easily test WS from fetch, mark based on REST
-    const restEl = document.getElementById('oasis-rest-status');
-    if (restEl && restEl.textContent === 'Online') {
-      setStatus('oasis-ws-status', 'Online');
-    } else {
-      setStatus('oasis-ws-status', 'Offline');
-    }
-  }
-
-  document.getElementById('oasis-btn-check')?.addEventListener('click', checkOasisBackend);
-
-  // ── Arcade: Consciousness Snake ───────────────────────────────────
-  initConsciousnessSnake();
-  // ── Arcade: Cosmic Pong ────────────────────────────────────────
-  initCosmicPong();
-  // ── Arcade: Cosmic Breakout ────────────────────────────────────
-  initCosmicBreakout();
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Consciousness Snake — Retro Canvas Arcade
-// ═══════════════════════════════════════════════════════════════════════════════
-
-function initConsciousnessSnake() {
-  const canvas = document.getElementById('oasis-arcade-canvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const overlay = document.getElementById('oasis-arcade-overlay');
-  const scoreEl = document.getElementById('oasis-arcade-score');
-  const highEl  = document.getElementById('oasis-arcade-high');
-  const levelEl = document.getElementById('oasis-arcade-level');
-
-  const GS = 20;               // grid size
-  const TC = canvas.width / GS;  // tile count
-  let snake = [{ x: 10, y: 10 }];
-  let food  = { x: 15, y: 15 };
-  let egg   = null;            // golden egg (bonus)
-  let dir   = { x: 0, y: 0 };
-  let nextDir = { x: 0, y: 0 };
-  let score = 0;
-  let high  = parseInt(localStorage.getItem('zion_snake_high') || '0', 10);
-  let level = 1;
-  let running = false;
-  let paused = false;
-  let loopId = null;
-  let tick = 0;
-
-  highEl.textContent = String(high);
-
-  function randCell() {
-    let pos;
-    do {
-      pos = { x: Math.floor(Math.random() * TC), y: Math.floor(Math.random() * TC) };
-    } while (snake.some(s => s.x === pos.x && s.y === pos.y));
-    return pos;
-  }
-
-  function spawnEgg() {
-    if (!egg && Math.random() < 0.08) egg = randCell();
-  }
-
-  function draw() {
-    ctx.fillStyle = '#0a0a12';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // subtle grid
-    ctx.strokeStyle = 'rgba(147,51,234,0.06)';
-    ctx.lineWidth = 1;
-    for (let i = 0; i <= TC; i++) {
-      ctx.beginPath(); ctx.moveTo(i * GS, 0); ctx.lineTo(i * GS, canvas.height); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, i * GS); ctx.lineTo(canvas.width, i * GS); ctx.stroke();
-    }
-
-    // snake
-    snake.forEach((seg, i) => {
-      const isHead = i === 0;
-      ctx.fillStyle = isHead ? 'rgba(110,231,183,0.95)' : 'rgba(110,231,183,0.55)';
-      ctx.shadowColor = '#6ee7b7';
-      ctx.shadowBlur = isHead ? 12 : 4;
-      ctx.fillRect(seg.x * GS + 1, seg.y * GS + 1, GS - 2, GS - 2);
-      ctx.shadowBlur = 0;
-    });
-
-    // food (consciousness orb)
-    ctx.fillStyle = 'rgba(255,215,0,0.9)';
-    ctx.shadowColor = '#fcd34d';
-    ctx.shadowBlur = 14;
-    ctx.beginPath();
-    ctx.arc(food.x * GS + GS/2, food.y * GS + GS/2, GS/2 - 3, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-
-    // golden egg
-    if (egg) {
-      ctx.fillStyle = 'rgba(255,100,100,0.95)';
-      ctx.shadowColor = '#ff6464';
-      ctx.shadowBlur = 16;
-      ctx.beginPath();
-      ctx.arc(egg.x * GS + GS/2, egg.y * GS + GS/2, GS/2 - 2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-    }
-  }
-
-  function update() {
-    if (!running || paused) return;
-    dir = nextDir;
-    if (dir.x === 0 && dir.y === 0) return;
-
-    const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
-
-    // wall collision
-    if (head.x < 0 || head.x >= TC || head.y < 0 || head.y >= TC) {
-      gameOver(); return;
-    }
-    // self collision
-    if (snake.some(s => s.x === head.x && s.y === head.y)) {
-      gameOver(); return;
-    }
-
-    snake.unshift(head);
-
-    // food
-    if (head.x === food.x && head.y === food.y) {
-      score += 10;
-      food = randCell();
-      spawnEgg();
-    } else if (egg && head.x === egg.x && head.y === egg.y) {
-      score += 50;
-      egg = null;
-    } else {
-      snake.pop();
-    }
-
-    // level up every 50 XP
-    level = 1 + Math.floor(score / 50);
-    scoreEl.textContent = String(score);
-    levelEl.textContent = String(level);
-
-    // speed increases with level
-    tick = Math.max(40, 140 - level * 12);
-  }
-
-  function gameOver() {
-    running = false;
-    if (score > high) {
-      high = score;
-      localStorage.setItem('zion_snake_high', String(high));
-      highEl.textContent = String(high);
-    }
-    overlay.style.display = 'flex';
-    const title = overlay.querySelector('.arcade-title');
-    if (title) title.textContent = 'CONSCIOUSNESS LOST';
-    const sub = overlay.querySelector('.arcade-sub');
-    if (sub) sub.textContent = `Final XP: ${score}  |  Sefirot: ${level}`;
-    const btn = overlay.querySelector('.arcade-start-btn');
-    if (btn) btn.textContent = 'Try Again';
-  }
-
-  function reset() {
-    snake = [{ x: 10, y: 10 }];
-    dir = { x: 0, y: 0 };
-    nextDir = { x: 0, y: 0 };
-    score = 0; level = 1; egg = null;
-    food = randCell();
-    scoreEl.textContent = '0';
-    levelEl.textContent = '1';
-    draw();
-  }
-
-  function start() {
-    reset();
-    running = true;
-    paused = false;
-    overlay.style.display = 'none';
-    tick = 140;
-    gameLoop();
-  }
-
-  function gameLoop() {
-    if (!running) return;
-    update();
-    draw();
-    loopId = setTimeout(() => requestAnimationFrame(gameLoop), tick);
-  }
-
-  function togglePause() {
-    if (!running) return;
-    paused = !paused;
-    document.getElementById('oasis-arcade-pause').textContent = paused ? 'Resume' : 'Pause';
-    if (!paused) gameLoop();
-  }
-
-  // Controls
-  document.addEventListener('keydown', (e) => {
-    if (!running) return;
-    const key = e.key.toLowerCase();
-    if (['arrowup','w'].includes(key) && dir.y !== 1)  nextDir = { x: 0, y: -1 };
-    if (['arrowdown','s'].includes(key) && dir.y !== -1) nextDir = { x: 0, y: 1 };
-    if (['arrowleft','a'].includes(key) && dir.x !== 1)  nextDir = { x: -1, y: 0 };
-    if (['arrowright','d'].includes(key) && dir.x !== -1) nextDir = { x: 1, y: 0 };
-    if (key === ' ') { e.preventDefault(); togglePause(); }
-  });
-
-  document.getElementById('oasis-arcade-start')?.addEventListener('click', start);
-  document.getElementById('oasis-arcade-pause')?.addEventListener('click', togglePause);
-  document.getElementById('oasis-arcade-reset')?.addEventListener('click', () => {
-    running = false;
-    if (loopId) clearTimeout(loopId);
-    reset();
-    overlay.style.display = 'flex';
-    const title = overlay.querySelector('.arcade-title');
-    if (title) title.textContent = 'CONSCIOUSNESS SNAKE';
-    const sub = overlay.querySelector('.arcade-sub');
-    if (sub) sub.textContent = 'WASD or Arrows to move';
-    const btn = overlay.querySelector('.arcade-start-btn');
-    if (btn) btn.textContent = 'Insert Coin';
-  });
-
-  // initial draw
-  draw();
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Cosmic Pong — Retro Canvas Arcade
-// ═══════════════════════════════════════════════════════════════════════════════
-
-function initCosmicPong() {
-  const canvas = document.getElementById('oasis-pong-canvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const overlay = document.getElementById('oasis-pong-overlay');
-  const playerEl = document.getElementById('oasis-pong-player');
-  const aiEl = document.getElementById('oasis-pong-ai');
-  const ralliesEl = document.getElementById('oasis-pong-rallies');
-
-  const WIN_SCORE = 7;
-  const W = canvas.width;
-  const H = canvas.height;
-
-  let playerScore = 0;
-  let aiScore = 0;
-  let rallyCount = 0;
-  let running = false;
-  let paused = false;
-  let loopId = null;
-
-  const paddleW = 10;
-  const paddleH = 60;
-  const ballR = 6;
-
-  let p = { x: 20, y: H / 2 - paddleH / 2, vy: 0 };
-  let ai = { x: W - 20 - paddleW, y: H / 2 - paddleH / 2, vy: 0 };
-  let b = { x: W / 2, y: H / 2, vx: 4, vy: 3 };
-
-  let keys = {};
-
-  function resetBall(side) {
-    b.x = W / 2;
-    b.y = H / 2;
-    const speed = 4 + Math.min(rallyCount * 0.15, 3);
-    const angle = (Math.random() * Math.PI / 3) - Math.PI / 6; // -30 to 30 deg
-    const dir = side === 'player' ? -1 : 1;
-    b.vx = dir * speed * Math.cos(angle);
-    b.vy = speed * Math.sin(angle);
-  }
-
-  function resetGame() {
-    playerScore = 0;
-    aiScore = 0;
-    rallyCount = 0;
-    p.y = H / 2 - paddleH / 2;
-    ai.y = H / 2 - paddleH / 2;
-    resetBall('player');
-    playerEl.textContent = '0';
-    aiEl.textContent = '0';
-    ralliesEl.textContent = '0';
-  }
-
-  function draw() {
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
-    ctx.fillRect(0, 0, W, H);
-
-    // center line
-    ctx.strokeStyle = 'rgba(148,163,184,0.25)';
-    ctx.setLineDash([8, 8]);
-    ctx.beginPath(); ctx.moveTo(W / 2, 0); ctx.lineTo(W / 2, H); ctx.stroke();
-    ctx.setLineDash([]);
-
-    // paddles
-    ctx.fillStyle = 'rgba(110,231,183,0.9)';
-    ctx.shadowColor = '#6ee7b7';
-    ctx.shadowBlur = 10;
-    ctx.fillRect(p.x, p.y, paddleW, paddleH);
-    ctx.fillRect(ai.x, ai.y, paddleW, paddleH);
-
-    // ball
-    ctx.fillStyle = '#fbbf24';
-    ctx.shadowColor = '#fbbf24';
-    ctx.shadowBlur = 12;
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, ballR, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.shadowBlur = 0;
-  }
-
-  function update() {
-    // player input
-    const speed = 5;
-    if (keys['w'] || keys['arrowup']) p.y -= speed;
-    if (keys['s'] || keys['arrowdown']) p.y += speed;
-    p.y = Math.max(0, Math.min(H - paddleH, p.y));
-
-    // AI follows ball with slight delay and imperfection
-    const aiCenter = ai.y + paddleH / 2;
-    const diff = b.y - aiCenter;
-    const aiSpeed = 3.2 + (rallyCount * 0.05);
-    if (Math.abs(diff) > 6) {
-      ai.y += Math.sign(diff) * aiSpeed;
-    }
-    ai.y = Math.max(0, Math.min(H - paddleH, ai.y));
-
-    // move ball
-    b.x += b.vx;
-    b.y += b.vy;
-
-    // wall bounce
-    if (b.y - ballR < 0) { b.y = ballR; b.vy = Math.abs(b.vy); }
-    if (b.y + ballR > H) { b.y = H - ballR; b.vy = -Math.abs(b.vy); }
-
-    // paddle collision
-    // player
-    if (b.vx < 0 && b.x - ballR < p.x + paddleW && b.x + ballR > p.x && b.y > p.y && b.y < p.y + paddleH) {
-      b.x = p.x + paddleW + ballR;
-      b.vx = Math.abs(b.vx) * 1.05;
-      const hitPos = (b.y - (p.y + paddleH / 2)) / (paddleH / 2);
-      b.vy += hitPos * 3;
-      rallyCount++;
-      ralliesEl.textContent = String(rallyCount);
-    }
-    // ai
-    if (b.vx > 0 && b.x + ballR > ai.x && b.x - ballR < ai.x + paddleW && b.y > ai.y && b.y < ai.y + paddleH) {
-      b.x = ai.x - ballR;
-      b.vx = -Math.abs(b.vx) * 1.05;
-      const hitPos = (b.y - (ai.y + paddleH / 2)) / (paddleH / 2);
-      b.vy += hitPos * 3;
-      rallyCount++;
-      ralliesEl.textContent = String(rallyCount);
-    }
-
-    // scoring
-    if (b.x + ballR < 0) {
-      aiScore++;
-      aiEl.textContent = String(aiScore);
-      if (aiScore >= WIN_SCORE) { gameOver(false); return; }
-      resetBall('player');
-    }
-    if (b.x - ballR > W) {
-      playerScore++;
-      playerEl.textContent = String(playerScore);
-      if (playerScore >= WIN_SCORE) { gameOver(true); return; }
-      resetBall('ai');
-    }
-  }
-
-  function gameOver(playerWon) {
-    running = false;
-    if (loopId) clearTimeout(loopId);
-    overlay.style.display = 'flex';
-    const title = overlay.querySelector('.arcade-title');
-    if (title) title.textContent = playerWon ? 'VICTORY!' : 'DEFEATED';
-    const sub = overlay.querySelector('.arcade-sub');
-    if (sub) sub.textContent = `Final: ${playerScore} — ${aiScore}  |  Rallies: ${rallyCount}`;
-    const btn = overlay.querySelector('.arcade-start-btn');
-    if (btn) btn.textContent = 'Play Again';
-  }
-
-  function step() {
-    if (!running || paused) return;
-    update();
-    draw();
-    loopId = requestAnimationFrame(step);
-  }
-
-  function start() {
-    if (running) return;
-    running = true;
-    paused = false;
-    overlay.style.display = 'none';
-    if (playerScore >= WIN_SCORE || aiScore >= WIN_SCORE) {
-      resetGame();
-    }
-    step();
-  }
-
-  function togglePause() {
-    if (!running) return;
-    paused = !paused;
-    document.getElementById('oasis-pong-pause').textContent = paused ? 'Resume' : 'Pause';
-    if (!paused) step();
-  }
-
-  window.addEventListener('keydown', (e) => {
-    const key = e.key.toLowerCase();
-    keys[key] = true;
-    if (key === 'w' || key === 's' || key.startsWith('arrow')) e.preventDefault();
-    if (key === ' ') { e.preventDefault(); togglePause(); }
-  });
-  window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
-
-  document.getElementById('oasis-pong-start')?.addEventListener('click', start);
-  document.getElementById('oasis-pong-pause')?.addEventListener('click', togglePause);
-  document.getElementById('oasis-pong-reset')?.addEventListener('click', () => {
-    running = false;
-    if (loopId) cancelAnimationFrame(loopId);
-    resetGame();
-    draw();
-    overlay.style.display = 'flex';
-    const title = overlay.querySelector('.arcade-title');
-    if (title) title.textContent = 'COSMIC PONG';
-    const sub = overlay.querySelector('.arcade-sub');
-    if (sub) sub.textContent = 'W / S or / to move';
-    const btn = overlay.querySelector('.arcade-start-btn');
-    if (btn) btn.textContent = 'Start Rally';
-  });
-
-  // initial draw
-  draw();
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Cosmic Breakout — Retro Canvas Arcade
-// ═══════════════════════════════════════════════════════════════════════════════
-
-function initCosmicBreakout() {
-  const canvas = document.getElementById('oasis-breakout-canvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const overlay = document.getElementById('oasis-breakout-overlay');
-  const scoreEl = document.getElementById('oasis-breakout-score');
-  const highEl  = document.getElementById('oasis-breakout-high');
-  const livesEl = document.getElementById('oasis-breakout-lives');
-
-  const W = canvas.width;
-  const H = canvas.height;
-  const paddleW = 80;
-  const paddleH = 10;
-  const ballR = 6;
-  const brickRows = 5;
-  const brickCols = 8;
-  const brickPad = 6;
-  const brickOffsetTop = 50;
-  const brickOffsetLeft = 30;
-  const brickW = (W - (brickOffsetLeft * 2) - (brickCols - 1) * brickPad) / brickCols;
-  const brickH = 18;
-
-  let score = 0;
-  let high  = parseInt(localStorage.getItem('zion_breakout_high') || '0', 10);
-  let lives = 3;
-  let running = false;
-  let paused = false;
-  let loopId = null;
-  let ballLaunched = false;
-
-  let paddle = { x: W / 2 - paddleW / 2, y: H - 30 };
-  let ball = { x: W / 2, y: H - 40, vx: 0, vy: 0 };
-  let bricks = [];
-  let keys = {};
-
-  const colors = ['#f87171','#fbbf24','#34d399','#60a5fa','#a78bfa'];
-
-  function buildBricks() {
-    bricks = [];
-    for (let r = 0; r < brickRows; r++) {
-      for (let c = 0; c < brickCols; c++) {
-        bricks.push({
-          x: brickOffsetLeft + c * (brickW + brickPad),
-          y: brickOffsetTop + r * (brickH + brickPad),
-          w: brickW,
-          h: brickH,
-          color: colors[r % colors.length],
-          active: true
-        });
-      }
-    }
-  }
-
-  function resetBall(onPaddle) {
-    ballLaunched = !onPaddle;
-    ball.x = paddle.x + paddleW / 2;
-    ball.y = paddle.y - ballR - 2;
-    if (onPaddle) {
-      ball.vx = 0; ball.vy = 0;
-    } else {
-      const speed = 4 + Math.min(score / 500, 3);
-      ball.vx = (Math.random() > 0.5 ? 1 : -1) * speed * 0.7;
-      ball.vy = -speed;
-    }
-  }
-
-  function resetGame() {
-    score = 0;
-    lives = 3;
-    paddle.x = W / 2 - paddleW / 2;
-    buildBricks();
-    resetBall(true);
-    scoreEl.textContent = '0';
-    livesEl.textContent = '3';
-    highEl.textContent = String(high);
-  }
-
-  function draw() {
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
-    ctx.fillRect(0, 0, W, H);
-
-    // bricks
-    bricks.forEach(b => {
-      if (!b.active) return;
-      ctx.fillStyle = b.color;
-      ctx.shadowColor = b.color;
-      ctx.shadowBlur = 8;
-      ctx.fillRect(b.x, b.y, b.w, b.h);
-    });
-    ctx.shadowBlur = 0;
-
-    // paddle
-    ctx.fillStyle = 'rgba(110,231,183,0.9)';
-    ctx.shadowColor = '#6ee7b7';
-    ctx.shadowBlur = 10;
-    ctx.fillRect(paddle.x, paddle.y, paddleW, paddleH);
-
-    // ball
-    ctx.fillStyle = '#fbbf24';
-    ctx.shadowColor = '#fbbf24';
-    ctx.shadowBlur = 12;
-    ctx.beginPath();
-    ctx.arc(ball.x, ball.y, ballR, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.shadowBlur = 0;
-  }
-
-  function update() {
-    // paddle movement
-    const speed = 6;
-    if (keys['a'] || keys['arrowleft']) paddle.x -= speed;
-    if (keys['d'] || keys['arrowright']) paddle.x += speed;
-    paddle.x = Math.max(0, Math.min(W - paddleW, paddle.x));
-
-    // ball stuck on paddle before launch
-    if (!ballLaunched) {
-      ball.x = paddle.x + paddleW / 2;
-      return;
-    }
-
-    ball.x += ball.vx;
-    ball.y += ball.vy;
-
-    // wall bounce
-    if (ball.x - ballR < 0) { ball.x = ballR; ball.vx = Math.abs(ball.vx); }
-    if (ball.x + ballR > W) { ball.x = W - ballR; ball.vx = -Math.abs(ball.vx); }
-    if (ball.y - ballR < 0) { ball.y = ballR; ball.vy = Math.abs(ball.vy); }
-
-    // paddle collision
-    if (ball.vy > 0 &&
-        ball.x > paddle.x && ball.x < paddle.x + paddleW &&
-        ball.y + ballR >= paddle.y && ball.y - ballR <= paddle.y + paddleH) {
-      ball.y = paddle.y - ballR;
-      ball.vy = -Math.abs(ball.vy);
-      // add english based on hit position
-      const hitPos = (ball.x - (paddle.x + paddleW / 2)) / (paddleW / 2);
-      ball.vx += hitPos * 2.5;
-    }
-
-    // brick collision
-    bricks.forEach(b => {
-      if (!b.active) return;
-      if (ball.x > b.x && ball.x < b.x + b.w && ball.y > b.y && ball.y < b.y + b.h) {
-        b.active = false;
-        ball.vy = -ball.vy;
-        score += 10;
-        scoreEl.textContent = String(score);
-      }
-    });
-
-    // all bricks cleared
-    if (bricks.every(b => !b.active)) {
-      gameOver(true);
-      return;
-    }
-
-    // floor miss
-    if (ball.y - ballR > H) {
-      lives--;
-      livesEl.textContent = String(lives);
-      if (lives <= 0) {
-        gameOver(false);
-        return;
-      }
-      resetBall(true);
-    }
-  }
-
-  function gameOver(won) {
-    running = false;
-    if (loopId) cancelAnimationFrame(loopId);
-    if (score > high) {
-      high = score;
-      localStorage.setItem('zion_breakout_high', String(high));
-      highEl.textContent = String(high);
-    }
-    overlay.style.display = 'flex';
-    const title = overlay.querySelector('.arcade-title');
-    if (title) title.textContent = won ? 'GRID CLEARED!' : 'PHOTON LOST';
-    const sub = overlay.querySelector('.arcade-sub');
-    if (sub) sub.textContent = `Score: ${score}  |  Lives: ${lives}`;
-    const btn = overlay.querySelector('.arcade-start-btn');
-    if (btn) btn.textContent = won ? 'Next Sector' : 'Try Again';
-  }
-
-  function step() {
-    if (!running || paused) return;
-    update();
-    draw();
-    loopId = requestAnimationFrame(step);
-  }
-
-  function start() {
-    if (running) return;
-    running = true;
-    paused = false;
-    overlay.style.display = 'none';
-    if (!bricks.length || bricks.every(b => !b.active) || lives <= 0) {
-      resetGame();
-    }
-    if (!ballLaunched) {
-      ball.vx = 4 * (Math.random() > 0.5 ? 1 : -1);
-      ball.vy = -4;
-      ballLaunched = true;
-    }
-    step();
-  }
-
-  function togglePause() {
-    if (!running) return;
-    paused = !paused;
-    document.getElementById('oasis-breakout-pause').textContent = paused ? 'Resume' : 'Pause';
-    if (!paused) step();
-  }
-
-  window.addEventListener('keydown', (e) => {
-    const key = e.key.toLowerCase();
-    keys[key] = true;
-    if (key === 'a' || key === 'd' || key.startsWith('arrow')) e.preventDefault();
-    if (key === ' ') {
-      e.preventDefault();
-      if (!running) { start(); return; }
-      if (!ballLaunched) {
-        ball.vx = 4 * (Math.random() > 0.5 ? 1 : -1);
-        ball.vy = -4;
-        ballLaunched = true;
-      } else {
-        togglePause();
-      }
-    }
-  });
-  window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
-
-  document.getElementById('oasis-breakout-start')?.addEventListener('click', start);
-  document.getElementById('oasis-breakout-pause')?.addEventListener('click', togglePause);
-  document.getElementById('oasis-breakout-reset')?.addEventListener('click', () => {
-    running = false;
-    if (loopId) cancelAnimationFrame(loopId);
-    resetGame();
-    draw();
-    overlay.style.display = 'flex';
-    const title = overlay.querySelector('.arcade-title');
-    if (title) title.textContent = 'COSMIC BREAKOUT';
-    const sub = overlay.querySelector('.arcade-sub');
-    if (sub) sub.textContent = 'A / D or Arrows to move  |  Space to launch';
-    const btn = overlay.querySelector('.arcade-start-btn');
-    if (btn) btn.textContent = 'Launch Photon';
-  });
-
-  // initial state
-  resetGame();
-  draw();
 }
