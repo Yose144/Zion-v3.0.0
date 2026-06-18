@@ -4532,12 +4532,16 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
 });
 
 ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amount, purpose, memo, password }) => {
+  console.log('[MAIN wallet-send-transaction] Starting send flow...');
   try {
     const fromAddr = (from || '').toString().trim();
     const toAddr = (to || '').toString().trim();
+    console.log('[MAIN wallet-send-transaction] from=', fromAddr.slice(0, 12) + '...', 'to=', toAddr.slice(0, 12) + '...', 'amount=', amount);
+
     const fromType = WalletGenerator.getAddressType(fromAddr);
     const toType = WalletGenerator.getAddressType(toAddr);
     if (fromType !== 'zion1' || toType !== 'zion1') {
+      console.warn('[MAIN wallet-send-transaction] Invalid address type:', { fromType, toType });
       return { success: false, error: 'Both from/to addresses must be zion1... addresses' };
     }
 
@@ -4551,6 +4555,7 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
     }
 
     // ── Step 1: Decrypt private key from wallet file ────────────────
+    console.log('[MAIN wallet-send-transaction] Looking for wallet file...');
     const files = fs.readdirSync(WALLETS_PATH).filter(f => f.endsWith('.json'));
     let walletData = null;
     for (const f of files) {
@@ -4560,8 +4565,10 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
       } catch { /* skip invalid */ }
     }
     if (!walletData) {
+      console.warn('[MAIN wallet-send-transaction] Wallet file not found for', fromAddr);
       return { success: false, error: 'Wallet file not found for sender address. Import or create the wallet first.' };
     }
+    console.log('[MAIN wallet-send-transaction] Wallet file found:', walletData.name);
 
     let privateKeyHex;
     try {
@@ -4569,24 +4576,34 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
     } catch {
       return { success: false, error: 'Wrong wallet password' };
     }
+    console.log('[MAIN wallet-send-transaction] Private key decrypted OK');
 
     const privateKeyDer = Buffer.from(privateKeyHex, 'hex');
 
     // Security: require user confirmation before sending
-    const confirmation = await dialog.showMessageBox(mainWindow, {
-      type: 'warning',
-      title: 'Confirm Transaction',
-      message: `Send ${amt} ZION?`,
-      detail: `From: ${fromAddr}\nTo: ${toAddr}${purpose ? '\nPurpose: ' + purpose : ''}${memo ? '\nMemo: ' + memo : ''}\n\nFee: 0.000001 ZION (minimum)\n\nThis action cannot be undone.`,
-      buttons: ['Send', 'Cancel'],
-      defaultId: 1,
-      cancelId: 1
-    });
-    if (confirmation.response !== 0) {
-      return { success: false, error: 'Transaction cancelled by user' };
+    console.log('[MAIN wallet-send-transaction] Showing confirmation dialog...');
+    try {
+      const confirmation = await dialog.showMessageBox(mainWindow || undefined, {
+        type: 'warning',
+        title: 'Confirm Transaction',
+        message: `Send ${amt} ZION?`,
+        detail: `From: ${fromAddr}\nTo: ${toAddr}${purpose ? '\nPurpose: ' + purpose : ''}${memo ? '\nMemo: ' + memo : ''}\n\nFee: 0.00001 ZION (minimum)\n\nThis action cannot be undone.`,
+        buttons: ['Send', 'Cancel'],
+        defaultId: 1,
+        cancelId: 1
+      });
+      if (confirmation.response !== 0) {
+        console.log('[MAIN wallet-send-transaction] User cancelled');
+        return { success: false, error: 'Transaction cancelled by user' };
+      }
+      console.log('[MAIN wallet-send-transaction] User confirmed');
+    } catch (dialogErr) {
+      // If dialog fails (e.g. window not available), proceed anyway
+      console.warn('[MAIN wallet-send-transaction] Dialog failed, proceeding:', dialogErr?.message);
     }
 
     // ── Step 2: Get UTXOs for the sender address ─────────────────────
+    console.log('[MAIN wallet-send-transaction] Fetching UTXOs...');
     const baseRpcUrl = normalizeRpcUrl(rpcUrl);
     const parsedBase = (() => {
       try { return new URL(baseRpcUrl); } catch { return null; }
@@ -4608,6 +4625,7 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
       seenRpc.add(url);
       return true;
     });
+    console.log('[MAIN wallet-send-transaction] RPC candidates:', uniqueRpcCandidates.length);
 
     let utxos = null;
     let utxoRpcUrl = '';
@@ -4619,6 +4637,7 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
         if (utxoRes && !utxoRes.error && Array.isArray(utxoRes.utxos)) {
           utxos = utxoRes.utxos;
           utxoRpcUrl = candidateUrl;
+          console.log('[MAIN wallet-send-transaction] UTXOs fetched from', candidateUrl, '- count:', utxos.length);
           break;
         }
         if (utxoRes?.error) {
@@ -4630,6 +4649,7 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
     }
 
     if (!utxos) {
+      console.warn('[MAIN wallet-send-transaction] No UTXOs available');
       return { success: false, error: `Cannot retrieve UTXOs: ${lastRpcError || 'no reachable endpoint'}` };
     }
 
@@ -4638,6 +4658,7 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
     }
 
     // ── Step 3: Build and sign UTXO transaction ──────────────────────
+    console.log('[MAIN wallet-send-transaction] Building transaction...');
     let signedTx;
     try {
       signedTx = UtxoBuilder.buildUtxoTransaction({
@@ -4648,20 +4669,25 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
         privateKeyDer,
         memo: memo || undefined
       });
+      console.log('[MAIN wallet-send-transaction] Transaction built, txId:', UtxoBuilder.bytesToHex(signedTx.id));
     } catch (buildErr) {
+      console.error('[MAIN wallet-send-transaction] Build failed:', buildErr);
       return { success: false, error: buildErr.message };
     }
 
     // ── Step 4: Submit via submitTransaction ─────────────────────────
+    console.log('[MAIN wallet-send-transaction] Submitting transaction...');
     let result = null;
     for (const candidateUrl of uniqueRpcCandidates) {
       try {
         const rpcRes = await zionRpcCall(candidateUrl, 'submitTransaction', signedTx);
         if (rpcRes && !rpcRes.error) {
           result = rpcRes;
+          console.log('[MAIN wallet-send-transaction] Transaction submitted to', candidateUrl);
           break;
         }
         if (rpcRes?.error) {
+          console.warn('[MAIN wallet-send-transaction] RPC error:', rpcRes.error);
           return { success: false, error: typeof rpcRes.error === 'string' ? rpcRes.error : JSON.stringify(rpcRes.error) };
         }
       } catch (err) {
@@ -4670,12 +4696,14 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
     }
 
     if (!result) {
+      console.warn('[MAIN wallet-send-transaction] All RPCs failed');
       return {
         success: false,
         error: `RPC unavailable — node unreachable on all servers. Last error: ${lastRpcError || 'no reachable endpoint'}`
       };
     }
 
+    console.log('[MAIN wallet-send-transaction] SUCCESS! txId:', result?.tx_id || result?.txid || UtxoBuilder.bytesToHex(signedTx.id));
     return {
       success: true,
       txId: result?.tx_id || result?.txid || UtxoBuilder.bytesToHex(signedTx.id),
@@ -4683,6 +4711,7 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
       amount_zion: amt
     };
   } catch (error) {
+    console.error('[MAIN wallet-send-transaction] UNEXPECTED ERROR:', error);
     return { success: false, error: error?.message || String(error) };
   }
 });
