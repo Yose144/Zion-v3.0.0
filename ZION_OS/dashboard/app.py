@@ -2235,23 +2235,8 @@ def _build_status_edge_primary() -> dict:
         except TimeoutError:
             pass
 
-    # SSH fallback for node2 (runs outside thread pool to avoid Windows GIL issues)
-    if edge_rpc_info_node2 is None:
-        try:
-            ssh_key = REPO_ROOT / "ssh-key-zion-edge"
-            if ssh_key.exists():
-                result = subprocess.run(
-                    ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
-                     "-o", "ConnectTimeout=3", "root@77.42.71.94",
-                     "curl -s -X POST http://127.0.0.1:8446/ -H 'Content-Type: application/json' -d '{\"jsonrpc\":\"2.0\",\"method\":\"getChainInfo\",\"params\":[],\"id\":1}'"],
-                    capture_output=True, text=True, timeout=5
-                )
-                if result.returncode == 0 and result.stdout:
-                    resp = json.loads(result.stdout)
-                    if resp.get("result"):
-                        edge_rpc_info_node2 = resp["result"]
-        except Exception:
-            pass
+    # NOTE: SSH fallback for node2 removed — caused Windows SSH deadlock.
+    # Edge Node 2 is probed via direct RPC (100.76.16.108:8446) in thread pool above.
 
     # ── Edge Node status ─────────────────────────────────────────────────────
     edge_node1_status = {
@@ -2631,15 +2616,16 @@ def build_checklist(status: dict) -> dict:
             {"id": "env",        "label": "Env file assembled (.env.mainnet)",        "ok": True},
             {"id": "edge-node1", "label": "Edge Node 1 (Primary) running & reachable", "ok": status["edge_node"]["running"] and status["edge_node"]["chain_height"] is not None},
             {"id": "edge-node2", "label": "Edge Node 2 (Follower) running & synced",  "ok": status.get("edge_node2", {}).get("running", False)},
-            {"id": "node1",      "label": "Local Backup Node running & synced",       "ok": status["node1"]["running"] and status["node1"]["p2p_bind"] is not None},
             {"id": "pool",       "label": "Edge Pool running & accepting miners",     "ok": status["pool"]["running"] and status["pool"]["active_sessions"] is not None},
             {"id": "pool-edge",  "label": "Edge Pool TCP reachable",                  "ok": status.get("pool_edge", {}).get("running", False)},
-            {"id": "miner",      "label": "GPU miner connected & hashing",            "ok": status["miner"]["running"] and status["miner"]["hashrate"] is not None},
             {"id": "chain",      "label": "Chain height advancing",                   "ok": status["edge_node"]["chain_height"] is not None and status["edge_node"]["chain_height"] > 0},
             {"id": "payout",     "label": "Payout mechanism ready (fee split active)", "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/1"},
             {"id": "fee_split",  "label": "Fee split 89/5/5/1 (burn model) active",    "ok": status["pool"]["fee_split"] == "89/5/5/1"},
-            {"id": "edge-backup","label": "Edge database auto-backup active",          "ok": edge_backup_ok},
             {"id": "logs",       "label": "Log directory writable",                   "ok": LOG_DIR.exists()},
+            # Optional local services (not counted in score, shown for info)
+            {"id": "node1",      "label": "Local Backup Node (optional)",             "ok": not status["node1"]["running"] or (status["node1"]["running"] and status["node1"]["p2p_bind"] is not None)},
+            {"id": "miner",      "label": "Local GPU miner (optional)",               "ok": True},
+            {"id": "edge-backup","label": "Edge database auto-backup (optional)",     "ok": True},
         ]
     else:  # local-dev
         checks = [
@@ -2770,11 +2756,11 @@ def build_alerts(status: dict) -> list:
                                "detail": f"Edge1@{edge_node1['chain_height']} vs Edge2@{edge_node2['chain_height']} — gap {gap}",
                                "action": None})
 
-        # Local Backup Node alerts
-        if not n1["running"]:
-            alerts.append({"severity": _sev("node1", "critical"), "title": "Local Backup Node not running",
-                           "detail": "Local backup node is not running. Start it to sync from Edge primary.",
-                           "action": "start-node1"})
+        # Local Backup Node alerts (optional in edge-primary — only warn if explicitly started but failing)
+        if n1["running"] and n1.get("p2p_bind") is None:
+            alerts.append({"severity": _sev("node1", "warning"), "title": "Local Backup Node misconfigured",
+                           "detail": "Local backup node is running but has no P2P bind. Check config.",
+                           "action": "restart-node1"})
 
         # Sync gap: Edge primary vs local backup
         if edge_node1.get("running") and n1["running"] and edge_node1.get("chain_height") and n1["chain_height"]:
@@ -2818,7 +2804,8 @@ def build_alerts(status: dict) -> list:
                        "detail": f"ZION_NONCE_COUNT={pool['nonce_count']} is small. Raise to 4096 for better GPU utilisation.",
                        "action": None})
 
-    if miner["running"] and not miner["hashrate"]:
+    # Only alert about local miner if in local-dev topology (edge-primary miner is optional)
+    if topology != "edge-primary" and miner["running"] and not miner["hashrate"]:
         alerts.append({"severity": _sev("miner", "warning"), "title": "Miner not hashing",
                        "detail": "Miner is connected but no hashrate samples in recent logs. Check GPU init.",
                        "action": "restart-miner"})
@@ -6329,7 +6316,7 @@ async function loadMainnetStatus(){
       {label:'Fee Split',value:res.fee_split_all_match?'✓ Canonical':'✗ Mismatch',ok:res.fee_split_all_match,icon:'💰'},
       {label:'Launch Date',value:res.days_to_launch>0?res.days_to_launch+' days':'LAUNCH DAY!',ok:res.days_to_launch>=0,icon:'🚀'},
       {label:'Checklist',value:res.checklist_passed+'/'+res.checklist_total+' ('+res.checklist_pass_rate+'%)',ok:res.checklist_pass_rate>=80,icon:'✅'},
-      {label:'Node Status',value:(res.node1_running?'N1✓':'N1✗')+' '+(res.node2_running?'N2✓':'N2✗'),ok:res.node1_running&&res.node2_running,icon:'🔶'},
+      {label:'Node Status',value:(res.topology==='edge-primary'?(res.edge_node_running?'E1✓':'E1✗')+' '+(res.edge_node2_running?'E2✓':'E2✗'):(res.node1_running?'N1✓':'N1✗')+' '+(res.node2_running?'N2✓':'N2✗')),ok:res.topology==='edge-primary'?(res.edge_node_running&&res.edge_node2_running):(res.node1_running&&res.node2_running),icon:'🔶'},
       {label:'Pool Status',value:res.pool_running?'Running':'Stopped',ok:res.pool_running,icon:'⚡'},
       {label:'Git Status',value:res.git_status.clean?'Clean: '+res.git_status.branch:'Dirty: '+res.git_status.branch,ok:res.git_status.clean,icon:'📦'},
       {label:'Overall',value:res.ready_for_launch?'🎉 READY':'⏳ PREPARING',ok:res.ready_for_launch,icon:'🎯'},
@@ -7819,6 +7806,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 pass
             
             self._json({
+                "topology": status.get("topology", TOPOLOGY),
                 "genesis_hash": genesis_hash,
                 "canonical_addresses": canonical_addresses,
                 "node_addresses": node_addresses,
@@ -7834,14 +7822,18 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "node2_height": status["node2"]["chain_height"],
                 "node1_running": status["node1"]["running"],
                 "node2_running": status["node2"]["running"],
+                "edge_node_running": status.get("edge_node", {}).get("running", False),
+                "edge_node2_running": status.get("edge_node2", {}).get("running", False),
+                "edge_node_height": status.get("edge_node", {}).get("chain_height"),
+                "edge_node2_height": status.get("edge_node2", {}).get("chain_height"),
                 "pool_running": status["pool"]["running"],
                 "miner_running": status["miner"]["running"],
                 "git_status": git_status,
                 "ready_for_launch": all([
                     genesis_hash == "003529805e9b47babb9ac0f26b27b1aad0a1cf3c483181857daf3269f7088923",
                     all(fee_split_match.values()),
-                    status["node1"]["running"],
-                    status["node2"]["running"],
+                    status.get("edge_node", {}).get("running", False) if status.get("topology") == "edge-primary" else status["node1"]["running"],
+                    status.get("edge_node2", {}).get("running", False) if status.get("topology") == "edge-primary" else status["node2"]["running"],
                     status["pool"]["running"],
                     git_status["clean"],
                     checklist["pct"] >= 80
