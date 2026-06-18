@@ -123,9 +123,6 @@ function switchTab(name){
     }
     if(btn) btn.classList.toggle('tab-active', t === name);
   });
-  // Close sidebar on mobile after tab selection
-  const sb = document.getElementById('sidebar');
-  if(sb && sb.classList.contains('open')) toggleSidebar();
 
   // ── Auto-refresh timers ─────────────────────────────────────────────
   if(name === 'alerts'){ clearTabTimers('alerts'); loadAlertHistory(); if(!_alertsTimer) _alertsTimer = setInterval(loadAlertHistory, 8000); }
