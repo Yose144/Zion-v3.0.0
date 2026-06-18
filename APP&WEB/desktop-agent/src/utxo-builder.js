@@ -107,7 +107,7 @@ function extractPublicKey(privateKeyDer) {
 }
 
 const FLOWERS_PER_ZION = 1_000_000_000_000n; // 1e12
-const MIN_FEE_FLOWERS = 1_000_000n; // 0.000001 ZION minimum fee
+const MIN_FEE_FLOWERS = 10_000_000n; // 0.00001 ZION minimum fee (10M flowers)
 
 /**
  * Build a signed UTXO transaction for V3.
@@ -122,7 +122,8 @@ const MIN_FEE_FLOWERS = 1_000_000n; // 0.000001 ZION minimum fee
  * @returns {Object} V3-compatible tx::Transaction for submitTransaction
  */
 function buildUtxoTransaction({ fromAddress, toAddress, amountZion, utxos, privateKeyDer, memo }) {
-  const amountFlowers = BigInt(Math.round(amountZion * 1e12));
+  // Convert ZION to flowers with precise decimal handling
+  const amountFlowers = BigInt(Math.floor(amountZion * 1e12));
   const feeFlowers = MIN_FEE_FLOWERS;
   const totalNeeded = amountFlowers + feeFlowers;
 
