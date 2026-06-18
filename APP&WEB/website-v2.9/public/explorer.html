@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZION TerraNova - Blockchain Explorer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1a3e 100%);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Cyber Grid Background */
+        .cyber-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 0;
+            animation: gridMove 20s linear infinite;
+        }
+        
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+        
+        /* Floating Bubbles */
+        .bubble {
+            position: fixed;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(0, 255, 255, 0.2), rgba(138, 43, 226, 0.1));
+            animation: float 15s infinite ease-in-out;
+            z-index: 1;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-50px) rotate(180deg); }
+        }
+        
+        .container {
+            position: relative;
+            z-index: 10;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            background: rgba(10, 14, 39, 0.6);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            margin-bottom: 40px;
+        }
+        
+        h1 {
+            font-size: 3em;
+            background: linear-gradient(90deg, #00ffff, #8a2be2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .search-box {
+            margin: 30px 0;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .search-box input {
+            flex: 1;
+            max-width: 600px;
+            padding: 15px 20px;
+            background: rgba(26, 26, 62, 0.8);
+            border: 2px solid rgba(0, 255, 255, 0.3);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .search-box input:focus {
+            outline: none;
+            border-color: #00ffff;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+        
+        .search-box button {
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #00ffff, #8a2be2);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .search-box button:hover {
+            transform: scale(1.05);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .stat-card {
+            background: rgba(26, 26, 62, 0.6);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: #00ffff;
+            box-shadow: 0 10px 30px rgba(0, 255, 255, 0.2);
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #8a8a8a;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            background: linear-gradient(90deg, #00ffff, #8a2be2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .data-section {
+            background: rgba(26, 26, 62, 0.6);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            color: #00ffff;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+        }
+        
+        th {
+            color: #00ffff;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.9em;
+        }
+        
+        tr:hover {
+            background: rgba(0, 255, 255, 0.05);
+        }
+        
+        a {
+            color: #00ffff;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        a:hover {
+            color: #8a2be2;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2em;
+            color: #00ffff;
+        }
+        
+        .error {
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid rgba(255, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            color: #ff6b6b;
+        }
+    </style>
+</head>
+<body>
+    <div class="cyber-grid"></div>
+    
+    <div class="container">
+        <header>
+            <h1>⛓️ ZION Blockchain Explorer</h1>
+            <p>Real-time blockchain data with consciousness-based rewards</p>
+            
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Hledat blok (výška/hash), transakci (hash) nebo adresu (ZION...)">
+                <button onclick="search()">🔍 Hledat</button>
+            </div>
+        </header>
+        
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="stat-label">Výška blockchainu</div>
+                <div class="stat-value" id="blockHeight">---</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Obtížnost</div>
+                <div class="stat-value" id="difficulty">---</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Hashrate</div>
+                <div class="stat-value" id="hashrate">---</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Průměrný čas bloku</div>
+                <div class="stat-value" id="avgBlockTime">---</div>
+            </div>
+        </div>
+        
+        <div class="data-section">
+            <h2 class="section-title">📦 Poslední bloky</h2>
+            <div id="blocksTable" class="loading">Načítám bloky...</div>
+        </div>
+        
+        <div class="data-section">
+            <h2 class="section-title">💸 Poslední transakce</h2>
+            <div id="txTable" class="loading">Načítám transakce...</div>
+        </div>
+    </div>
+    
+    <script>
+        // Generate floating bubbles
+        for (let i = 0; i < 5; i++) {
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            bubble.style.width = `${Math.random() * 100 + 50}px`;
+            bubble.style.height = bubble.style.width;
+            bubble.style.left = `${Math.random() * 100}%`;
+            bubble.style.top = `${Math.random() * 100}%`;
+            bubble.style.animationDelay = `${Math.random() * 5}s`;
+            document.body.appendChild(bubble);
+        }
+        
+        // Fetch blockchain stats
+        async function fetchStats() {
+            try {
+                const response = await fetch('http://77.42.31.72:18082/json_rpc', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        jsonrpc: '2.0',
+                        id: '0',
+                        method: 'get_info'
+                    })
+                });
+                const data = await response.json();
+                const info = data.result;
+                
+                document.getElementById('blockHeight').textContent = info.height.toLocaleString();
+                document.getElementById('difficulty').textContent = info.difficulty.toLocaleString();
+                
+                const hashrate = (info.difficulty / 60).toFixed(2);
+                document.getElementById('hashrate').textContent = hashrate + ' H/s';
+                document.getElementById('avgBlockTime').textContent = '~60s';
+            } catch (error) {
+                console.error('Error fetching stats:', error);
+                document.getElementById('blockHeight').textContent = 'Error';
+            }
+        }
+        
+        // Fetch recent blocks
+        async function fetchBlocks() {
+            try {
+                const infoRes = await fetch('http://77.42.31.72:18082/json_rpc', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        jsonrpc: '2.0',
+                        id: '0',
+                        method: 'get_info'
+                    })
+                });
+                const info = await infoRes.json();
+                const height = info.result.height;
+                
+                const blocksRes = await fetch('http://77.42.31.72:18082/json_rpc', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        jsonrpc: '2.0',
+                        id: '0',
+                        method: 'get_block_headers_range',
+                        params: {
+                            start_height: Math.max(0, height - 20),
+                            end_height: height - 1
+                        }
+                    })
+                });
+                const blocksData = await blocksRes.json();
+                const blocks = blocksData.result.headers.reverse();
+                
+                let html = '<table><thead><tr><th>Výška</th><th>Hash</th><th>Čas</th><th>Txs</th><th>Odměna</th></tr></thead><tbody>';
+                
+                blocks.forEach(block => {
+                    const time = new Date(block.timestamp * 1000).toLocaleString('cs-CZ');
+                    const reward = ((block.reward || 0) / 1e12).toLocaleString('cs-CZ', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
+                    html += `
+                        <tr>
+                            <td><a href="#block/${block.height}">${block.height}</a></td>
+                            <td><a href="#block/${block.hash}">${block.hash.substring(0, 16)}...</a></td>
+                            <td>${time}</td>
+                            <td>${block.num_txes || 1}</td>
+                            <td>${reward} ZION</td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+                document.getElementById('blocksTable').innerHTML = html;
+            } catch (error) {
+                console.error('Error fetching blocks:', error);
+                document.getElementById('blocksTable').innerHTML = '<div class="error">Chyba při načítání bloků</div>';
+            }
+        }
+        
+        // Fetch recent transactions
+        async function fetchTransactions() {
+            try {
+                document.getElementById('txTable').innerHTML = '<div class="loading">Načítám transakce z posledních bloků...</div>';
+                
+                const infoRes = await fetch('http://77.42.31.72:18082/json_rpc', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        jsonrpc: '2.0',
+                        id: '0',
+                        method: 'get_info'
+                    })
+                });
+                const info = await infoRes.json();
+                const height = info.result.height;
+                
+                const blocksRes = await fetch('http://77.42.31.72:18082/json_rpc', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        jsonrpc: '2.0',
+                        id: '0',
+                        method: 'get_block_headers_range',
+                        params: {
+                            start_height: Math.max(0, height - 10),
+                            end_height: height - 1
+                        }
+                    })
+                });
+                const blocksData = await blocksRes.json();
+                
+                let allTxs = [];
+                for (const block of blocksData.result.headers.reverse()) {
+                    if (block.tx_hashes && block.tx_hashes.length > 0) {
+                        block.tx_hashes.forEach(hash => {
+                            allTxs.push({
+                                hash: hash,
+                                blockHeight: block.height,
+                                timestamp: block.timestamp
+                            });
+                        });
+                    }
+                }
+                
+                let html = '<table><thead><tr><th>Hash</th><th>Blok</th><th>Čas</th></tr></thead><tbody>';
+                
+                allTxs.slice(0, 20).forEach(tx => {
+                    const time = new Date(tx.timestamp * 1000).toLocaleString('cs-CZ');
+                    html += `
+                        <tr>
+                            <td><a href="#tx/${tx.hash}">${tx.hash.substring(0, 24)}...</a></td>
+                            <td><a href="#block/${tx.blockHeight}">${tx.blockHeight}</a></td>
+                            <td>${time}</td>
+                        </tr>
+                    `;
+                });
+                
+                if (allTxs.length === 0) {
+                    html = '<div class="loading">Žádné transakce v posledních blocích</div>';
+                } else {
+                    html += '</tbody></table>';
+                }
+                
+                document.getElementById('txTable').innerHTML = html;
+            } catch (error) {
+                console.error('Error fetching transactions:', error);
+                document.getElementById('txTable').innerHTML = '<div class="error">Chyba při načítání transakcí</div>';
+            }
+        }
+        
+        // Search function
+        function search() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+            
+            if (/^\d+$/.test(query)) {
+                window.location.hash = `block/${query}`;
+            } else if (query.startsWith('ZION') || query.startsWith('zion')) {
+                window.location.hash = `address/${query}`;
+            } else {
+                // Assume it's a hash (block or transaction)
+                window.location.hash = `block/${query}`;
+            }
+        }
+        
+        // Enter key for search
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') search();
+        });
+        
+        // Initialize
+        fetchStats();
+        fetchBlocks();
+        fetchTransactions();
+        
+        // Auto-refresh every 60 seconds
+        setInterval(() => {
+            fetchStats();
+            fetchBlocks();
+            fetchTransactions();
+        }, 60000);
+    </script>
+</body>
+</html>
