@@ -235,9 +235,10 @@ dist/
 !L1/native-libs/all/libcosmic_harmony_v42.dylib
 # Desktop agent resource binaries (distributed with app)
 !APP&WEB/desktop-agent/resources/node.exe
-!APP&WEB/desktop-agent/resources/zion.exe
-!APP&WEB/desktop-agent/resources/zion-miner.exe
-!APP&WEB/desktop-agent/resources/zion-universal-miner.exe
+# Do NOT commit built binaries — use GitHub Releases
+APP&WEB/desktop-agent/resources/zion*
+APPS/desktop-agent/resources/zion*
+HiranV2.3/models/**
 
 # Build logs
 build-check.log
