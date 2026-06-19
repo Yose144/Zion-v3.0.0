@@ -41,7 +41,7 @@ finality_blocks         = 64         # higher finality for mainnet safety
 enabled                 = true       # L1 bridge vault operational (keyless address deployed)
 gas_strategy            = "eip1559"
 max_gas_gwei            = 5          # tight gas cap for mainnet
-# start_block           = 0          # set to contract deployment block
+start_block           = 0          # set to contract deployment block
 
 # ── Validator / Multisig ─────────────────────────────────────────────────────
 #
@@ -83,7 +83,7 @@ auto_pause_on_anomaly = true
 # ── Database ─────────────────────────────────────────────────────────────────
 
 [database]
-path                = "/data/bridge/bridge.db"
+path                = "/home/zionserver/2.9.6-main/V3/data/bridge.db"
 backup_interval_secs = 1800     # more frequent backups for mainnet
 
 # ── Metrics ──────────────────────────────────────────────────────────────────
