@@ -131,15 +131,22 @@ fn main() -> Result<()> {
         println!("state_path={state_path}");
     }
 
-    bootstrap_peer_sync(&runtime, config.sync_batch_limit)?;
-
-    // Persist peers after bootstrap (captures any new peers learned)
-    {
-        let rt = runtime.lock().expect("lock");
-        if let Err(e) = rt.persist_peers() {
-            eprintln!("peers_persist_err err={e}");
+    // Run bootstrap sync in background so the node opens its ports immediately
+    // while still attempting to catch up from seed peers.
+    let runtime_clone = Arc::clone(&runtime);
+    let batch_limit = config.sync_batch_limit;
+    std::thread::spawn(move || {
+        if let Err(e) = bootstrap_peer_sync(&runtime_clone, batch_limit) {
+            eprintln!("bootstrap_peer_sync_err err={e}");
         }
-    }
+        // Persist peers after bootstrap (captures any new peers learned)
+        {
+            let rt = runtime_clone.lock().expect("lock");
+            if let Err(e) = rt.persist_peers() {
+                eprintln!("peers_persist_err err={e}");
+            }
+        }
+    });
 
     // Shared propagation state
     let seen_blocks = Arc::new(Mutex::new(SeenBlocks::new()));
