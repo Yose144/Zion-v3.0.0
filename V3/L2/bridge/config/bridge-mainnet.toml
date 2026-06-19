@@ -95,7 +95,7 @@ auto_pause_on_anomaly = true
 # ── Database ─────────────────────────────────────────────────────────────────
 
 [database]
-path                = "/data/bridge/bridge.db"
+path                = "/home/zionserver/2.9.6-main/V3/data/bridge.db"
 backup_interval_secs = 1800     # more frequent backups for mainnet
 
 # ── Metrics ──────────────────────────────────────────────────────────────────
