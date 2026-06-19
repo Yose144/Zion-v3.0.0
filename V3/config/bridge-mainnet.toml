@@ -10,7 +10,7 @@
 
 [bridge]
 name    = "ZION Bridge Relay V3"
-version = "3.0.1"
+version = "3.0.2"
 network = "mainnet"
 
 # ── ZION L1 Connection ──────────────────────────────────────

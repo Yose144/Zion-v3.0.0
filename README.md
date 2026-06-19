@@ -16,7 +16,7 @@
 
 ZION is a decentralized **Layer 1 blockchain** built from scratch in **Rust**, running a canonical Proof-of-Work consensus with CPU and GPU acceleration.
 
-**v3.0.0** is the clean-room mainnet code line under [`V3/`](V3/). It features a 6-layer architecture, a **Decade Decay** emission schedule designed for **100+ years**, and dedicated funding for planetary-scale humanitarian and space projects.
+**v3.0.2** is the canonical mainnet code line under [`V3/`](V3/). It features a 6-layer architecture, a **Decade Decay** emission schedule designed for **100+ years**, and dedicated funding for planetary-scale humanitarian and space projects.
 
 ---
 
@@ -283,5 +283,5 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-*Last updated: 2026-06-14 · Genesis Hash: `7543004c76b11416ef32e2f1f5a4c72f0178f841d4559bf476e29e15a9602728` · Consensus: `deeksha_lite_v1` + `deeksha_lite_fire`*
-*Repository: `Yose144/Zion-v3.0.0` · Branch: `main` · Version: v3.0.1*
+*Last updated: 2026-06-19 · Genesis Hash: `7543004c76b11416ef32e2f1f5a4c72f0178f841d4559bf476e29e15a9602728` · Consensus: `deeksha_lite_v1` + `deeksha_lite_fire`*
+*Repository: `Yose144/Zion-v3.0.0` · Branch: `main` · Version: v3.0.2*
