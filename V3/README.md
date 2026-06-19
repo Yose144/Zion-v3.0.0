@@ -43,7 +43,7 @@ Out of scope for the bootstrap:
 
 ## Current Status
 
-- workspace version: `3.0.0`
+- workspace version: `3.0.2`
 - **Unified `zion` CLI operator baseline (2026-04-23):** top-level gateway now spans L1/L2/L3 plus deploy, explorer, monitor, guided workflows, and checksum-verified local CLI auto-update; canonical operator docs published in `V3/docs/CLI_GUIDE.md` and `V3/docs/CLI_FAQ.md`.
 - **Phase 18 UTXO coinbase + pool payout E2E deployed (2026-04-01):** `getBalance` combines account+UTXO for zion1 addresses (previously returned 0). `build_template()` generates UTXO coinbase with 4 outputs (89/5/5/1 split). Pool payout pipeline deployed with Ed25519 UTXO signing. Chain height 6801, miner balance 14.12B ZION.
 - **Humanitarian tithe verified on-chain (2026-04-01):** Per-block fee split is exact to the flower: 89% miner, 5% humanitarian ([12] zion1m4v5z...), 5% issobella ([13] zion170a37...), 1% pool_fee ([14] zion1y5u65...). Cumulative balances consistent across all tithe wallets.

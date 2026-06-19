@@ -224,5 +224,5 @@ Key steps:
 
 ---
 
-*Last updated: 2026-05-23*
-*Version: v3.0.0 · Status: Mainnet Ready*
+*Last updated: 2026-06-19*
+*Version: v3.0.2 · Status: Mainnet Ready (L1 Active, L2/L3 Ready, L4 Oasis in Prep)*
