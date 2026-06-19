@@ -22,7 +22,7 @@ poll_interval_secs = 5
 # ── Database ─────────────────────────────────────────────────────────────────
 
 [database]
-path = "/data/atomic-swap/swap.db"
+path = "/home/zionserver/2.9.6-main/V3/data/atomic-swap.db"
 
 # ── HTTP API ─────────────────────────────────────────────────────────────────
 
