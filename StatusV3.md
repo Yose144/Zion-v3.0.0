@@ -22,6 +22,34 @@
 
 ---
 
+## Co je nového 2026-06-19 (Automatizovaný re-audit V3 + Edge pool nález)
+
+> **Status:** AUDIT — workspace kompiluje, ale neprochází CI bránami; Edge pool má systemd/port konflikt. Detail viz [`/V3_AUDIT_SUMMARY.md`](./V3_AUDIT_SUMMARY.md).
+
+### Zjištění auditu (zdrojový strom)
+| Brána | Výsledek | Detail |
+|------|----------|--------|
+| `cargo check --workspace` | ✅ | jen warnings |
+| `cargo fmt --all --check` | ❌ | 431 diff bloků v 80 souborech (L1–L6 + CLI) |
+| `cargo clippy --workspace -D warnings` | ❌ | ≥ 92 chyb (L1 cosmic-harmony 31, L3 warp 28, L2 bridge 13, L4 oasis 10, L2 dao 7, L2 atomic-swap 2, L3 ncl 1) |
+| `cargo test --workspace` | ⚠️ | timeout v debug (PoW-heavy); zion-core unit testy běží |
+
+> L1 (`core`, `cosmic-harmony`) **nebyl auditem upravován** — viz `AGENTS.md` L1 protokol.
+
+### Kanonizace verze 3.0.2
+Git tag `v3.0.2` (→ `31d12f34`) je oficiální linie; `main` je napřed s další 3.0.2 prací. Verze sjednoceny na **3.0.2**:
+- `V3/Cargo.toml` + `V3/config/bridge-{mainnet,testnet}.toml`: 3.0.1 → **3.0.2**
+- `V3/README.md`, root `README.md`, `ROADMAP.md`: → **v3.0.2**
+
+### Zjištění Edge serveru (77.42.71.94)
+- **Pool konflikt:** `zion-edge-pool.service` = `inactive (dead)`; pool běží mimo systemd (PID 1152855) a drží port 8444 → systemd restart loop `Address already in use (os error 98)`. Pool funkční, ale **nepřežije reboot**.
+- Node1 (+follower) ✅ aktivní (8333/8443), DAO ✅ (8450), WARP ✅ (8453), dashboardy ✅ (8888 Rust + Python `app.py`).
+- `zion-edge-node2` inactive; dashboard `/api/health` na 8888 vrací chybu.
+- SSH port 22 začal mid-audit timeoutovat → autonomní oprava poolu zatím neprovedena.
+- **TODO oprava (až bude SSH):** `kill 1152855; systemctl reset-failed zion-edge-pool; systemctl restart zion-edge-pool; systemctl enable zion-edge-pool`.
+
+---
+
 ## Co je nového 2026-06-18 (v3.0.2 Root Cleanup + L2/L3 Kanonizace + L4 Oasis Prep)
 
 > **Status:** COMPLETE — Git historie obnovena (254 ztracených commitů z 10.–16. června), root adresář vyčištěn, L2/L3 označeny jako kanonicky hotové, L4 Oasis příprava zahájena.
