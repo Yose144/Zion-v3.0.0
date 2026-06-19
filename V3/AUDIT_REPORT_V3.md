@@ -4,6 +4,13 @@
 **Verze:** 3.0.1  
 **Status:** Mainnet Ready
 
+> ⚠️ **Korekce 2026-06-19 (automatizovaný re-audit):** Tento report popisuje architekturu správně, ale závěr "vynikající formě / Mainnet ready" **neodráží aktuální stav zdrojového stromu**. K 2026-06-19 workspace **neprochází CI bránami**:
+> - `cargo fmt --all --check` ❌ — 431 diff bloků v 80 souborech napříč L1–L6 + CLI.
+> - `cargo clippy --workspace -D warnings` ❌ — ≥ 92 chyb (31 v `L1/cosmic-harmony`, 28 v `L3/warp`, 13 v `L2/bridge`, atd.).
+> - Edge pool (`zion-edge-pool.service`) je `inactive`; pool běží mimo systemd a drží port 8444 (restart loop `Address already in use`).
+>
+> Aktuální a úplný stav viz **[`/V3_AUDIT_SUMMARY.md`](../V3_AUDIT_SUMMARY.md)** (root repa).
+
 ---
 
 ## Obsah
