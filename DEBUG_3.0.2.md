@@ -9,6 +9,27 @@
 
 ---
 
+## UPDATE 2026-06-21 — Výsledek realizace
+
+Implementace podle tohoto plánu byla dokončena ve dvou commitech:
+
+- `02186def` — PR-1: non-L1 fmt + clippy clean
+- `c523aac5` — PR-2: L1 fmt + clippy clean + websocket bugfix
+
+Finální validace:
+
+- `cargo fmt --all --check` ✅ 0 diffů
+- `cargo clippy --workspace --all-targets -- -D warnings` ✅ 0 errors
+- `cargo test --workspace` ✅ 0 failures
+- `cargo test -p zion-cosmic-harmony` ✅ 162 passed
+- genesis hash ✅ nezměněn: `7543004c76b11416ef32e2f1f5a4c72f0178f841d4559bf476e29e15a9602728`
+
+Poznámka k funkční opravě:
+
+- `V3/L1/core/src/websocket.rs`: `ClientSession::send` byl původně `async` se synchronním tělem, což vedlo k zahazování future v synchronním `broadcast()` (`let _ = session.send(msg);`) a neodesílání notifkací. Funkce je nyní synchronní `fn send(...)`.
+
+---
+
 ## 0. Aktuální stav bran (baseline)
 
 | Brána | Stav | Poznámka |
@@ -179,12 +200,12 @@ ss -tlnp | grep 8444
 4. **Ops ticket** Edge pool/systemd (Fáze 6) — nezávislé na kódu.
 
 ## Definition of Done
-- [ ] `cargo fmt --all --check` → 0
-- [ ] `cargo clippy --workspace --all-targets -- -D warnings` → 0
-- [ ] `cargo test --workspace` zelené (+ `--release --ignored`)
-- [ ] genesis hash nezměněn (`7543004c…2728`)
+- [x] `cargo fmt --all --check` → 0
+- [x] `cargo clippy --workspace --all-targets -- -D warnings` → 0
+- [x] `cargo test --workspace` zelené (+ `--release --ignored`)
+- [x] genesis hash nezměněn (`7543004c…2728`)
 - [ ] Edge `zion-edge-pool.service` active + enabled
-- [ ] verze 3.0.2 konzistentní (`Cargo.toml`, configy, README, ROADMAP)
+- [x] verze 3.0.2 konzistentní (`Cargo.toml`, configy, README, ROADMAP)
 
 ---
 
