@@ -8,6 +8,12 @@ use tracing::info;
 /// NEAR adapter — stub implementation.
 pub struct NearAdapter;
 
+impl Default for NearAdapter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl NearAdapter {
     pub fn new() -> Self {
         Self

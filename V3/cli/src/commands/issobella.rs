@@ -51,7 +51,11 @@ pub async fn run(_cfg: &Config, cmd: IssobellaCmd) -> Result<()> {
             }
         }
         IssobellaCmd::Proposals => {
-            match client.get(format!("{}/api/v1/proposals", base)).send().await {
+            match client
+                .get(format!("{}/api/v1/proposals", base))
+                .send()
+                .await
+            {
                 Ok(r) if r.status().is_success() => {
                     let json: serde_json::Value = r.json().await?;
                     if let Some(data) = json.get("data").and_then(|d| d.as_array()) {
@@ -71,7 +75,11 @@ pub async fn run(_cfg: &Config, cmd: IssobellaCmd) -> Result<()> {
             }
         }
         IssobellaCmd::Balance => {
-            match client.get(format!("{}/api/v1/fund/balance", base)).send().await {
+            match client
+                .get(format!("{}/api/v1/fund/balance", base))
+                .send()
+                .await
+            {
                 Ok(r) if r.status().is_success() => {
                     let json: serde_json::Value = r.json().await?;
                     if let Some(data) = json.get("data") {

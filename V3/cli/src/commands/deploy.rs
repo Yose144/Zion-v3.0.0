@@ -58,11 +58,11 @@ pub async fn run(cfg: &Config, cmd: DeployCmd) -> Result<()> {
         DeployCmd::Server { host, target } => {
             let h = host.unwrap_or_else(|| resolve_deploy_host(cfg, &target));
             ui::print_header(&format!("Deploying to {}", h));
-            run_local_script(SERVER_DEPLOY_SCRIPT, &cfg)
+            run_local_script(SERVER_DEPLOY_SCRIPT, cfg)
         }
         DeployCmd::Website => {
             ui::print_header("Deploying Website");
-            run_local_script("APP&WEB/website-v2.9/scripts/deploy.sh", &cfg)
+            run_local_script("APP&WEB/website-v2.9/scripts/deploy.sh", cfg)
         }
         DeployCmd::Update { target } => {
             let host = resolve_deploy_host(cfg, &target);

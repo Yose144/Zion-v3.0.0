@@ -46,6 +46,6 @@ pub mod metrics;
 
 // Re-exports
 pub use config::IssobellaConfig;
-pub use db::{IssobellaDb, MissionRecord, ResearchProposal, FundBalance};
+pub use db::{FundBalance, IssobellaDb, MissionRecord, ResearchProposal};
 pub use error::{IssobellaError, IssobellaResult};
 pub use l1_scanner::{L1Scanner, ScannerConfig};

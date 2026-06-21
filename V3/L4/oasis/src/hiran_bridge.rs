@@ -151,10 +151,7 @@ impl OasisHiranBridge {
         {
             Ok(r) => r,
             Err(e) => {
-                return Ok(format!(
-                    "Hiran nedosažitelný ({}). Pokračujte bez AI.",
-                    e
-                ));
+                return Ok(format!("Hiran nedosažitelný ({}). Pokračujte bez AI.", e));
             }
         };
 

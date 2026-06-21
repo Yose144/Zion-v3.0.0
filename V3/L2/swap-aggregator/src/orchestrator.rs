@@ -98,8 +98,8 @@ impl SwapOrchestrator {
             amount_in / 10_000
         };
 
-        let min_amount_out = estimated_out
-            .saturating_mul((10_000 - self.config.max_slippage_bps as u128) / 10_000);
+        let min_amount_out =
+            estimated_out.saturating_mul((10_000 - self.config.max_slippage_bps as u128) / 10_000);
 
         let fee_tier = price_info.fee_tier.unwrap_or(3000); // default 0.3%
 
@@ -162,13 +162,7 @@ impl SwapOrchestrator {
                 "target_chain": "base",
             });
 
-            match self
-                .client
-                .post(&bridge_url)
-                .json(&body)
-                .send()
-                .await
-            {
+            match self.client.post(&bridge_url).json(&body).send().await {
                 Ok(resp) => {
                     if resp.status().is_success() {
                         let json: serde_json::Value = resp.json().await.unwrap_or_default();
@@ -211,7 +205,11 @@ impl SwapOrchestrator {
                 match self.client.get(&status_url).send().await {
                     Ok(resp) => {
                         if let Ok(json) = resp.json::<serde_json::Value>().await {
-                            if json.get("minted").and_then(|v| v.as_bool()).unwrap_or(false) {
+                            if json
+                                .get("minted")
+                                .and_then(|v| v.as_bool())
+                                .unwrap_or(false)
+                            {
                                 if let Some(tx) = json.get("mint_tx").and_then(|v| v.as_str()) {
                                     record.bridge_mint_tx = Some(tx.to_string());
                                     info!(swap_id = %record.id, "Bridge mint confirmed: {}", tx);
@@ -229,7 +227,13 @@ impl SwapOrchestrator {
 
             if record.bridge_mint_tx.is_some() {
                 let db = self.db.lock().await;
-                db.update_txs(&record.id, None, record.bridge_mint_tx.as_deref(), None, None)?;
+                db.update_txs(
+                    &record.id,
+                    None,
+                    record.bridge_mint_tx.as_deref(),
+                    None,
+                    None,
+                )?;
             } else {
                 warn!(swap_id = %record.id, "Bridge mint not confirmed after 10 min — will retry later");
                 return Ok(()); // Exit early, next poll will pick up
@@ -312,13 +316,7 @@ impl SwapOrchestrator {
                 "source_chain": "base",
             });
 
-            match self
-                .client
-                .post(&bridge_url)
-                .json(&body)
-                .send()
-                .await
-            {
+            match self.client.post(&bridge_url).json(&body).send().await {
                 Ok(resp) => {
                     if resp.status().is_success() {
                         let json: serde_json::Value = resp.json().await.unwrap_or_default();
@@ -335,7 +333,13 @@ impl SwapOrchestrator {
 
             {
                 let db = self.db.lock().await;
-                db.update_txs(&record.id, None, record.bridge_mint_tx.as_deref(), None, None)?;
+                db.update_txs(
+                    &record.id,
+                    None,
+                    record.bridge_mint_tx.as_deref(),
+                    None,
+                    None,
+                )?;
             }
         }
 
@@ -352,8 +356,13 @@ impl SwapOrchestrator {
                     match self.client.get(&status_url).send().await {
                         Ok(resp) => {
                             if let Ok(json) = resp.json::<serde_json::Value>().await {
-                                if json.get("unlocked").and_then(|v| v.as_bool()).unwrap_or(false) {
-                                    if let Some(tx) = json.get("unlock_tx").and_then(|v| v.as_str()) {
+                                if json
+                                    .get("unlocked")
+                                    .and_then(|v| v.as_bool())
+                                    .unwrap_or(false)
+                                {
+                                    if let Some(tx) = json.get("unlock_tx").and_then(|v| v.as_str())
+                                    {
                                         record.l1_lock_tx = Some(tx.to_string());
                                         record.amount_out = Some(record.amount_in.clone());
                                         info!(swap_id = %record.id, "L1 unlock confirmed: {}", tx);

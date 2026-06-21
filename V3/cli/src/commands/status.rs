@@ -69,7 +69,10 @@ pub async fn run(cfg: &Config) -> Result<()> {
         } else {
             let diff = core_h.abs_diff(edge_h);
             let leader = if core_h > edge_h { "core" } else { "edge" };
-            ui::print_warn(&format!("Sync         core={} edge={} diff={} ({} ahead)", core_h, edge_h, diff, leader));
+            ui::print_warn(&format!(
+                "Sync         core={} edge={} diff={} ({} ahead)",
+                core_h, edge_h, diff, leader
+            ));
         }
     } else {
         ui::print_warn("Sync         cannot compare — one or both nodes unreachable");
@@ -77,7 +80,11 @@ pub async fn run(cfg: &Config) -> Result<()> {
 
     // ── Edge Pool ──────────────────────────────────────────────────
     let (edge_pool_host, edge_pool_port) = cfg.edge_pool();
-    let edge_pool_alive = tcp_probe(edge_pool_host, edge_pool_port, std::time::Duration::from_secs(3));
+    let edge_pool_alive = tcp_probe(
+        edge_pool_host,
+        edge_pool_port,
+        std::time::Duration::from_secs(3),
+    );
     if edge_pool_alive {
         ui::print_ok(&format!(
             "Edge pool    {}:{} accepting connections",

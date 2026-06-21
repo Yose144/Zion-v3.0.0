@@ -13,8 +13,16 @@ use tracing::{info, warn};
 ///
 /// Requires a connected Lightning node (LND, Core Lightning, or LDK).
 pub struct LightningAdapter {
+    #[allow(dead_code)]
     node_url: String,
+    #[allow(dead_code)]
     macaroon: Option<String>,
+}
+
+impl Default for LightningAdapter {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl LightningAdapter {
@@ -63,8 +71,8 @@ impl LightningAdapter {
         let invoice = format!(
             "lnbc{}n1p{}...{}",
             amount_sats,
-            &hex::encode(&sha256::digest(memo.as_bytes()))[..8],
-            &hex::encode(&sha256::digest(&amount_sats.to_le_bytes()))[..6]
+            &hex::encode(sha256::digest(memo.as_bytes()))[..8],
+            &hex::encode(sha256::digest(&amount_sats.to_le_bytes()))[..6]
         );
         Ok(invoice)
     }
@@ -113,9 +121,17 @@ impl ChainAdapter for LightningAdapter {
 
     async fn execute_mint(&self, instruction: &MintInstruction) -> WarpResult<String> {
         // For inbound: create an invoice, user pays it, we detect settlement
-        let amount_sats: u64 = instruction.amount_dest_atomic.try_into()
-            .map_err(|_| WarpError::DecimalOverflow { from_decimals: 18, to_decimals: 8 })?;
-        let invoice = self.create_invoice(amount_sats, &instruction.recipient).await?;
+        let amount_sats: u64 =
+            instruction
+                .amount_dest_atomic
+                .try_into()
+                .map_err(|_| WarpError::DecimalOverflow {
+                    from_decimals: 18,
+                    to_decimals: 8,
+                })?;
+        let invoice = self
+            .create_invoice(amount_sats, &instruction.recipient)
+            .await?;
         info!(invoice = %invoice, "Lightning invoice created for inbound transfer");
         Ok(invoice)
     }
@@ -159,12 +175,12 @@ fn parse_bolt11_amount(invoice: &str) -> WarpResult<u64> {
         address: invoice.into(),
     })?;
     // Find unit
-    let unit_ch = rest.chars().skip(digits.len()).next();
+    let unit_ch = rest.chars().nth(digits.len());
     let multiplier = match unit_ch {
-        Some('m') => 1_000_000u64,      // milli? actually modern uses 'm' for millisatoshi
-        Some('u') => 100u64,             // micro? 
-        Some('n') => 1u64,               // nano = satoshi in some encodings
-        Some('p') => 10u64,              // pico = 0.1 satoshi (sub-satoshi)
+        Some('m') => 1_000_000u64, // milli? actually modern uses 'm' for millisatoshi
+        Some('u') => 100u64,       // micro?
+        Some('n') => 1u64,         // nano = satoshi in some encodings
+        Some('p') => 10u64,        // pico = 0.1 satoshi (sub-satoshi)
         _ => 1u64,
     };
     Ok(num * multiplier)

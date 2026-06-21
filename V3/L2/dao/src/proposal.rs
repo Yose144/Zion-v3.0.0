@@ -95,10 +95,10 @@ impl ProposalType {
             ProposalType::Humanitarian { .. } => 10.0,
             // L5 governance uses consent model, not token-weighted quorum;
             // these values are used for hybrid proposals that combine both.
-            ProposalType::Admission { .. } => 60.0,     // 60% of Guardians
-            ProposalType::Bodhisattva { .. } => 60.0,    // 60% of Guardians
-            ProposalType::Expulsion { .. } => 75.0,      // 75% quadratic consent
-            ProposalType::CrossLayer { .. } => 15.0,     // Standard cross-layer
+            ProposalType::Admission { .. } => 60.0, // 60% of Guardians
+            ProposalType::Bodhisattva { .. } => 60.0, // 60% of Guardians
+            ProposalType::Expulsion { .. } => 75.0, // 75% quadratic consent
+            ProposalType::CrossLayer { .. } => 15.0, // Standard cross-layer
         }
     }
 
@@ -106,10 +106,10 @@ impl ProposalType {
     pub fn voting_period_secs(&self) -> u64 {
         match self {
             ProposalType::Emergency { .. } => 3 * 24 * 60 * 60, // 3 days
-            ProposalType::Expulsion { .. } => 7 * 24 * 60 * 60,  // 7 days
+            ProposalType::Expulsion { .. } => 7 * 24 * 60 * 60, // 7 days
             ProposalType::Bodhisattva { .. } => 7 * 24 * 60 * 60, // 7 days
             ProposalType::CrossLayer { .. } => 7 * 24 * 60 * 60, // 7 days
-            _ => 7 * 24 * 60 * 60,                                 // 7 days
+            _ => 7 * 24 * 60 * 60,                              // 7 days
         }
     }
 

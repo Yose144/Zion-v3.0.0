@@ -253,14 +253,27 @@ pub async fn run(cfg: &Config) -> Result<()> {
     }
 
     ui::print_header("VPN / Tailscale");
-    if let (Some(core_vpn), Some(edge_vpn)) = (&cfg.topology.core.vpn_ip, &cfg.topology.edge.vpn_ip) {
+    if let (Some(core_vpn), Some(edge_vpn)) = (&cfg.topology.core.vpn_ip, &cfg.topology.edge.vpn_ip)
+    {
         match tcp_probe(core_vpn, core_rpc_port, Duration::from_secs(5)) {
-            Ok(()) => ui::print_ok(&format!("Core VPN      {}:{} reachable", core_vpn, core_rpc_port)),
-            Err(err) => ui::print_warn(&format!("Core VPN      {}:{} — {}", core_vpn, core_rpc_port, err)),
+            Ok(()) => ui::print_ok(&format!(
+                "Core VPN      {}:{} reachable",
+                core_vpn, core_rpc_port
+            )),
+            Err(err) => ui::print_warn(&format!(
+                "Core VPN      {}:{} — {}",
+                core_vpn, core_rpc_port, err
+            )),
         }
         match tcp_probe(edge_vpn, edge_rpc_port, Duration::from_secs(5)) {
-            Ok(()) => ui::print_ok(&format!("Edge VPN      {}:{} reachable", edge_vpn, edge_rpc_port)),
-            Err(err) => ui::print_warn(&format!("Edge VPN      {}:{} — {}", edge_vpn, edge_rpc_port, err)),
+            Ok(()) => ui::print_ok(&format!(
+                "Edge VPN      {}:{} reachable",
+                edge_vpn, edge_rpc_port
+            )),
+            Err(err) => ui::print_warn(&format!(
+                "Edge VPN      {}:{} — {}",
+                edge_vpn, edge_rpc_port, err
+            )),
         }
     } else {
         ui::print_warn("VPN IPs not configured; skipping VPN probe");

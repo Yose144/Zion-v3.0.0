@@ -111,7 +111,7 @@ pub async fn run(cfg: &Config, cmd: AtomicSwapCmd) -> Result<()> {
             timeout,
         } => {
             ui::print_header("Create Atomic Swap");
-            
+
             // Generate or use preimage
             let (preimage_hex, hash_hex) = match preimage {
                 Some(p) => {
@@ -127,7 +127,7 @@ pub async fn run(cfg: &Config, cmd: AtomicSwapCmd) -> Result<()> {
                     let mut bytes = [0u8; 32];
                     rand::thread_rng().fill(&mut bytes);
                     let preimage_hex = hex::encode(bytes);
-                    let hash_bytes = sha2::Sha256::digest(&bytes);
+                    let hash_bytes = sha2::Sha256::digest(bytes);
                     let hash_hex = hex::encode(hash_bytes);
                     (preimage_hex, hash_hex)
                 }
@@ -146,8 +146,9 @@ pub async fn run(cfg: &Config, cmd: AtomicSwapCmd) -> Result<()> {
                 Ok(v) => {
                     if let Some(escrow_addr) = v["escrow_address"].as_str() {
                         ui::print_row("Escrow Address", escrow_addr);
-                        
-                        let memo = format!("SWAP:LOCK:{}:{}:{}:{}", hash_hex, timeout, chain, recipient);
+
+                        let memo =
+                            format!("SWAP:LOCK:{}:{}:{}:{}", hash_hex, timeout, chain, recipient);
                         println!();
                         ui::print_info("To lock funds, send ZION on L1 to the escrow address with this exact memo:");
                         println!("  Address: {}", escrow_addr);
@@ -156,7 +157,10 @@ pub async fn run(cfg: &Config, cmd: AtomicSwapCmd) -> Result<()> {
                     }
                 }
                 Err(e) => {
-                    ui::print_warn(&format!("Failed to retrieve escrow address from daemon: {}", e));
+                    ui::print_warn(&format!(
+                        "Failed to retrieve escrow address from daemon: {}",
+                        e
+                    ));
                 }
             }
             println!();
@@ -184,7 +188,9 @@ pub async fn run(cfg: &Config, cmd: AtomicSwapCmd) -> Result<()> {
 
             let bearer = token.or_else(|| std::env::var("ZION_ATOMIC_SWAP_TOKEN").ok());
             if bearer.is_none() {
-                ui::print_warn("No bearer token provided. Use --token or ZION_ATOMIC_SWAP_TOKEN env var.");
+                ui::print_warn(
+                    "No bearer token provided. Use --token or ZION_ATOMIC_SWAP_TOKEN env var.",
+                );
                 return Ok(());
             }
 
@@ -199,7 +205,10 @@ pub async fn run(cfg: &Config, cmd: AtomicSwapCmd) -> Result<()> {
                     if v["status"] == "ok" {
                         ui::print_ok("Claim submitted successfully");
                     } else {
-                        ui::print_warn(&format!("Claim failed: {}", v["message"].as_str().unwrap_or("unknown")));
+                        ui::print_warn(&format!(
+                            "Claim failed: {}",
+                            v["message"].as_str().unwrap_or("unknown")
+                        ));
                     }
                     println!("{}", serde_json::to_string_pretty(&v)?);
                 }
@@ -214,7 +223,9 @@ pub async fn run(cfg: &Config, cmd: AtomicSwapCmd) -> Result<()> {
 
             let bearer = token.or_else(|| std::env::var("ZION_ATOMIC_SWAP_TOKEN").ok());
             if bearer.is_none() {
-                ui::print_warn("No bearer token provided. Use --token or ZION_ATOMIC_SWAP_TOKEN env var.");
+                ui::print_warn(
+                    "No bearer token provided. Use --token or ZION_ATOMIC_SWAP_TOKEN env var.",
+                );
                 return Ok(());
             }
 
@@ -225,7 +236,10 @@ pub async fn run(cfg: &Config, cmd: AtomicSwapCmd) -> Result<()> {
                     if v["status"] == "ok" {
                         ui::print_ok("Refund submitted successfully");
                     } else {
-                        ui::print_warn(&format!("Refund failed: {}", v["message"].as_str().unwrap_or("unknown")));
+                        ui::print_warn(&format!(
+                            "Refund failed: {}",
+                            v["message"].as_str().unwrap_or("unknown")
+                        ));
                     }
                     println!("{}", serde_json::to_string_pretty(&v)?);
                 }

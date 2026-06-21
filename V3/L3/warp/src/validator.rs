@@ -110,7 +110,7 @@ mod tests {
     fn make_validator(id: &str) -> (WarpValidator, SigningKey) {
         // Deterministic key from test seed
         let mut seed = [0u8; 32];
-        seed[0] = id.as_bytes().get(0).copied().unwrap_or(0);
+        seed[0] = id.as_bytes().first().copied().unwrap_or(0);
         seed[1] = id.as_bytes().get(1).copied().unwrap_or(0);
         let sk = SigningKey::from_bytes(&seed);
         let pk = sk.verifying_key();

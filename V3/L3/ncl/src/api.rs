@@ -245,7 +245,7 @@ pub async fn get_job(
 
     Ok(Json(JobStatusResponse {
         job_id: job.id,
-        status: job.status.clone(),
+        status: job.status,
         worker_id: job.worker_id.clone(),
         output_hash: job.output_hash.clone(),
         completed_at: job.completed_at.map(|dt| dt.to_rfc3339()),

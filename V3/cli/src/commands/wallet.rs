@@ -410,8 +410,12 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
             if let Ok(ref v) = utxos_resp {
                 if let Some(utxo_array) = v.get("utxos").and_then(|u| u.as_array()) {
                     for item in utxo_array {
-                        let tx_hash_hex = item.get("tx_hash").and_then(|v| v.as_str()).unwrap_or("");
-                        let output_index = item.get("output_index").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
+                        let tx_hash_hex =
+                            item.get("tx_hash").and_then(|v| v.as_str()).unwrap_or("");
+                        let output_index = item
+                            .get("output_index")
+                            .and_then(|v| v.as_u64())
+                            .unwrap_or(0) as u32;
                         let amt = item.get("amount").and_then(|v| v.as_u64()).unwrap_or(0);
                         if let Some(hash_bytes) = zion_core::crypto::from_hex(tx_hash_hex) {
                             if hash_bytes.len() == 32 {
@@ -501,9 +505,7 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
 
             match result {
                 Ok(v) => {
-                    let txid = v.get("tx_id")
-                        .and_then(|t| t.as_str())
-                        .unwrap_or("?");
+                    let txid = v.get("tx_id").and_then(|t| t.as_str()).unwrap_or("?");
                     ui::print_ok(&format!("Submitted! txid: {}", txid));
                 }
                 Err(e) => ui::print_err(&format!("TX failed: {}", e)),

@@ -135,7 +135,11 @@ pub async fn run(cfg: &Config, cmd: NodeCmd) -> Result<()> {
             }
             Ok(())
         }
-        NodeCmd::Rpc { method, params, target } => {
+        NodeCmd::Rpc {
+            method,
+            params,
+            target,
+        } => {
             let (host, port) = cfg.target_rpc(&target);
             let params_val: serde_json::Value = serde_json::from_str(&params).unwrap_or(json!({}));
             let result = node_rpc::call(host, port, &method, params_val).await?;

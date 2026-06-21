@@ -18,6 +18,12 @@ pub struct DharmaAutotuner {
     pub last_report: Option<AutotuneReport>,
 }
 
+impl Default for DharmaAutotuner {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DharmaAutotuner {
     pub fn new() -> Self {
         Self { last_report: None }
@@ -75,7 +81,7 @@ impl DharmaAutotuner {
         memory.record(
             MemoryEntry::simple(
                 MemoryEventKind::Custom("autotune".to_string()),
-                format!("Autotuning complete. New system prompt generated."),
+                "Autotuning complete. New system prompt generated.".to_string(),
             )
             .with_importance(0.8),
         );

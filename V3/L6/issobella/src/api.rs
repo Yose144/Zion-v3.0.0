@@ -3,8 +3,8 @@
 use crate::dao_client::{DaoClient, DaoClientConfig, DaoProposalRequest};
 use crate::db::{IssobellaDb, MissionRecord, ResearchProposal};
 use crate::hiran_bridge::IssobellaHiranBridge;
-use crate::metrics::IssobellaMetrics;
 use crate::metrics::serve_metrics_text;
+use crate::metrics::IssobellaMetrics;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -57,8 +57,14 @@ pub fn issobella_router(state: AppState) -> Router {
         .route("/metrics", get(metrics_handler))
         .route("/api/v1/missions", get(list_missions).post(create_mission))
         .route("/api/v1/missions/:id/launch", post(launch_mission))
-        .route("/api/v1/missions/:id/submit-to-dao", post(submit_mission_to_dao))
-        .route("/api/v1/proposals", get(list_proposals).post(create_proposal))
+        .route(
+            "/api/v1/missions/:id/submit-to-dao",
+            post(submit_mission_to_dao),
+        )
+        .route(
+            "/api/v1/proposals",
+            get(list_proposals).post(create_proposal),
+        )
         .route("/api/v1/fund/balance", get(fund_balance))
         // ── Hiran AI endpoints ──────────────────────────────────────────────
         .route("/api/v1/ai/evaluate-mission", post(ai_evaluate_mission))
@@ -73,7 +79,10 @@ async fn health(State(state): State<AppState>) -> impl IntoResponse {
     let db = state.db.lock().unwrap();
     match db.get_fund_balance() {
         Ok(_) => (StatusCode::OK, Json(ApiResponse::ok("ok"))),
-        Err(e) => (StatusCode::SERVICE_UNAVAILABLE, Json(ApiResponse::err(&e.to_string()))),
+        Err(e) => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(ApiResponse::err(&e.to_string())),
+        ),
     }
 }
 
@@ -86,7 +95,10 @@ async fn list_missions(State(state): State<AppState>) -> impl IntoResponse {
     let db = state.db.lock().unwrap();
     match db.list_missions(None) {
         Ok(missions) => (StatusCode::OK, Json(ApiResponse::ok(missions))),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::err(&e.to_string()))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::err(&e.to_string())),
+        ),
     }
 }
 
@@ -100,7 +112,10 @@ pub struct CreateMissionRequest {
     pub target_launch_date: Option<String>,
 }
 
-async fn create_mission(State(state): State<AppState>, Json(req): Json<CreateMissionRequest>) -> impl IntoResponse {
+async fn create_mission(
+    State(state): State<AppState>,
+    Json(req): Json<CreateMissionRequest>,
+) -> impl IntoResponse {
     let mut mission = MissionRecord::new(&req.name, &req.mission_type, req.budget_zion);
     mission.description = req.description;
     mission.orbit_altitude_km = req.orbit_altitude_km;
@@ -109,31 +124,57 @@ async fn create_mission(State(state): State<AppState>, Json(req): Json<CreateMis
     let db = state.db.lock().unwrap();
     match db.insert_mission(&mission) {
         Ok(_) => {
-            state.metrics.missions_planning.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            state
+                .metrics
+                .missions_planning
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             (StatusCode::CREATED, Json(ApiResponse::ok(mission)))
         }
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::err(&e.to_string()))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::err(&e.to_string())),
+        ),
     }
 }
 
-async fn launch_mission(State(state): State<AppState>, Path(id): Path<String>) -> impl IntoResponse {
+async fn launch_mission(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> impl IntoResponse {
     let db = state.db.lock().unwrap();
     match db.update_mission_status(&id, "launched") {
         Ok(_) => {
-            state.metrics.missions_planning.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
-            state.metrics.missions_launched.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            state
+                .metrics
+                .missions_planning
+                .fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
+            state
+                .metrics
+                .missions_launched
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             (StatusCode::OK, Json(ApiResponse::ok("launched")))
         }
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::err(&e.to_string()))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::err(&e.to_string())),
+        ),
     }
 }
 
-async fn submit_mission_to_dao(State(state): State<AppState>, Path(id): Path<String>) -> (StatusCode, Json<ApiResponse>) {
+async fn submit_mission_to_dao(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> (StatusCode, Json<ApiResponse>) {
     let mission = {
         let db = state.db.lock().unwrap();
         match db.list_missions(None) {
             Ok(missions) => missions.into_iter().find(|m| m.id == id),
-            Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::err(&e.to_string()))),
+            Err(e) => {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(ApiResponse::err(&e.to_string())),
+                )
+            }
         }
     };
     match mission {
@@ -148,10 +189,16 @@ async fn submit_mission_to_dao(State(state): State<AppState>, Path(id): Path<Str
             };
             match client.submit_mission_proposal(&req).await {
                 Ok(resp) => (StatusCode::OK, Json(ApiResponse::ok(resp))),
-                Err(e) => (StatusCode::BAD_GATEWAY, Json(ApiResponse::err(&e.to_string()))),
+                Err(e) => (
+                    StatusCode::BAD_GATEWAY,
+                    Json(ApiResponse::err(&e.to_string())),
+                ),
             }
         }
-        None => (StatusCode::NOT_FOUND, Json(ApiResponse::err("Mission not found"))),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(ApiResponse::err("Mission not found")),
+        ),
     }
 }
 
@@ -159,7 +206,10 @@ async fn list_proposals(State(state): State<AppState>) -> impl IntoResponse {
     let db = state.db.lock().unwrap();
     match db.list_proposals(None) {
         Ok(proposals) => (StatusCode::OK, Json(ApiResponse::ok(proposals))),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::err(&e.to_string()))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::err(&e.to_string())),
+        ),
     }
 }
 
@@ -172,7 +222,10 @@ pub struct CreateProposalRequest {
     pub abstract_text: Option<String>,
 }
 
-async fn create_proposal(State(state): State<AppState>, Json(req): Json<CreateProposalRequest>) -> impl IntoResponse {
+async fn create_proposal(
+    State(state): State<AppState>,
+    Json(req): Json<CreateProposalRequest>,
+) -> impl IntoResponse {
     let mut proposal = ResearchProposal::new(&req.title, req.requested_budget);
     proposal.researcher = req.researcher;
     proposal.institution = req.institution;
@@ -181,10 +234,16 @@ async fn create_proposal(State(state): State<AppState>, Json(req): Json<CreatePr
     let db = state.db.lock().unwrap();
     match db.insert_proposal(&proposal) {
         Ok(_) => {
-            state.metrics.proposals_submitted.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            state
+                .metrics
+                .proposals_submitted
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             (StatusCode::CREATED, Json(ApiResponse::ok(proposal)))
         }
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::err(&e.to_string()))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::err(&e.to_string())),
+        ),
     }
 }
 
@@ -192,7 +251,10 @@ async fn fund_balance(State(state): State<AppState>) -> impl IntoResponse {
     let db = state.db.lock().unwrap();
     match db.get_fund_balance() {
         Ok(balance) => (StatusCode::OK, Json(ApiResponse::ok(balance))),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::err(&e.to_string()))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::err(&e.to_string())),
+        ),
     }
 }
 
@@ -219,7 +281,10 @@ async fn ai_evaluate_mission(
         .evaluate_mission_plan(&req.mission_name, &req.description, req.budget_zion)
         .await
     {
-        Ok(result) => (StatusCode::OK, Json(ApiResponse::ok(AiTextResponse { result }))),
+        Ok(result) => (
+            StatusCode::OK,
+            Json(ApiResponse::ok(AiTextResponse { result })),
+        ),
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(ApiResponse::err(&e.to_string())),
@@ -242,7 +307,10 @@ async fn ai_analyze_proposal(
         .summarize_research(&req.title, &req.abstract_text)
         .await
     {
-        Ok(result) => (StatusCode::OK, Json(ApiResponse::ok(AiTextResponse { result }))),
+        Ok(result) => (
+            StatusCode::OK,
+            Json(ApiResponse::ok(AiTextResponse { result })),
+        ),
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(ApiResponse::err(&e.to_string())),

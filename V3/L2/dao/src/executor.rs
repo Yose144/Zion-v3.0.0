@@ -296,11 +296,17 @@ pub fn execute_proposal(
             format!("Bodhisattva vow confirmed for Guardian {}", candidate_id)
         }
 
-        ProposalType::Expulsion { accused_id, tier, .. } => {
+        ProposalType::Expulsion {
+            accused_id, tier, ..
+        } => {
             format!("Expulsion executed for {} at tier {}", accused_id, tier)
         }
 
-        ProposalType::CrossLayer { target_layers, inner_proposal_id, .. } => {
+        ProposalType::CrossLayer {
+            target_layers,
+            inner_proposal_id,
+            ..
+        } => {
             format!(
                 "Cross-layer proposal {} consented by layers {:?}",
                 inner_proposal_id, target_layers

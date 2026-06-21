@@ -143,6 +143,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unnecessary_literal_unwrap)]
     fn test_warp_result_ok() {
         let r: WarpResult<u64> = Ok(42);
         assert_eq!(r.unwrap(), 42);

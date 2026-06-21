@@ -12,12 +12,14 @@ use tracing::{debug, info, warn};
 // HTLC watch address & OP_RETURN prefix
 // ─────────────────────────────────────────────────────────────────────────────
 const WARP_OP_RETURN_PREFIX: &str = "WARP_INBOUND:bitcoin:";
-/// OP_RETURN data is hex-encoded — we look for the prefix in decoded ASCII.
+// OP_RETURN data is hex-encoded — we look for the prefix in decoded ASCII.
 
 fn htlc_address(network: &str) -> Option<&'static str> {
     match network {
         "mainnet" => {
-            warn!("[WARP][bitcoin] mainnet HTLC address is a placeholder — update after deployment");
+            warn!(
+                "[WARP][bitcoin] mainnet HTLC address is a placeholder — update after deployment"
+            );
             Some("bc1qzionhtlcxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
         }
         "testnet" => {

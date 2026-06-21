@@ -432,6 +432,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::assertions_on_constants)]
     fn test_max_block_range_within_ankr_limit() {
         assert!(
             MAX_BLOCK_RANGE <= 3_500,
@@ -503,7 +504,7 @@ mod tests {
     fn encode_burn_data(amount: u128, l1_recipient: &str, timestamp: u64) -> String {
         let recipient_bytes = l1_recipient.as_bytes();
         let recipient_len = recipient_bytes.len();
-        let padded_len = (recipient_len + 31) / 32 * 32;
+        let padded_len = recipient_len.div_ceil(32) * 32;
         let mut data = Vec::<u8>::new();
         // [0..32]: amount
         data.extend_from_slice(&[0u8; 16]);
