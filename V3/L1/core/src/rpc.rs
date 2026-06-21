@@ -1265,7 +1265,7 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                     .or_else(|| params.get("to"))
                     .or_else(|| params.get(1))
                     .and_then(|v| v.as_u64())
-                    .unwrap_or_else(|| {
+                    .unwrap_or({
                         // Default to current chain height if not specified
                         // We'll get this after locking runtime
                         start_height
@@ -1625,7 +1625,7 @@ mod tests {
     fn dummy_sig_for_tx_id(tx_id: &str) -> (String, String) {
         let (sk, vk) = test_keypair();
         let sig = crypto::sign(&sk, tx_id.as_bytes());
-        (hex::encode(&sig), hex::encode(vk.as_bytes()))
+        (hex::encode(sig), hex::encode(vk.as_bytes()))
     }
 
     static BRIDGE_ENV_MUTEX: std::sync::Mutex<()> = std::sync::Mutex::new(());

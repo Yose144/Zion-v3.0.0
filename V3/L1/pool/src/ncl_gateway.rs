@@ -169,11 +169,7 @@ impl NclGatewayClient {
     /// The response is parsed as OpenAI-compat JSON; token counts are read
     /// from `usage.prompt_tokens` / `usage.completion_tokens` if present,
     /// otherwise fall back to whitespace word-count of the input/output.
-    pub async fn chat_completion(
-        &self,
-        prompt: &str,
-        max_tokens: u32,
-    ) -> Result<ChatCompletion> {
+    pub async fn chat_completion(&self, prompt: &str, max_tokens: u32) -> Result<ChatCompletion> {
         let body = json!({
             "model": "hiran-v2.2",
             "messages": [
@@ -298,8 +294,7 @@ impl Default for NclHeartbeatConfig {
 
 impl NclHeartbeatConfig {
     pub fn from_env() -> Self {
-        let enabled = std::env::var("ZION_NCL_HEARTBEAT").ok().as_deref()
-            == Some("true");
+        let enabled = std::env::var("ZION_NCL_HEARTBEAT").ok().as_deref() == Some("true");
         let interval = std::env::var("ZION_NCL_HEARTBEAT_SECS")
             .ok()
             .and_then(|s| s.parse::<u64>().ok())
@@ -328,11 +323,7 @@ pub struct NclDispatcher {
 }
 
 impl NclDispatcher {
-    pub fn new(
-        client: NclGatewayClient,
-        pricing: NclPricing,
-        revenue: RevenueCollector,
-    ) -> Self {
+    pub fn new(client: NclGatewayClient, pricing: NclPricing, revenue: RevenueCollector) -> Self {
         Self {
             client,
             pricing,
@@ -342,11 +333,7 @@ impl NclDispatcher {
 
     /// Spawn the dispatcher loop and (optionally) the heartbeat producer.
     /// Returns a sender handle the rest of the pool can use to enqueue tasks.
-    pub fn spawn(
-        self,
-        heartbeat: NclHeartbeatConfig,
-        queue_capacity: usize,
-    ) -> NclTaskSender {
+    pub fn spawn(self, heartbeat: NclHeartbeatConfig, queue_capacity: usize) -> NclTaskSender {
         let (tx, mut rx) = mpsc::channel::<NclTaskRequest>(queue_capacity.max(16));
 
         if heartbeat.enabled {
@@ -387,7 +374,10 @@ impl NclDispatcher {
                         debug!(
                             "ncl_task_ok origin={} prompt_tokens={} completion_tokens={} \
                              latency_ms={} value_usd={:.6}",
-                            r.origin, r.prompt_tokens, r.completion_tokens, r.latency_ms,
+                            r.origin,
+                            r.prompt_tokens,
+                            r.completion_tokens,
+                            r.latency_ms,
                             r.value_usd
                         );
                         revenue.track_ncl_task_detailed(
@@ -421,12 +411,10 @@ async fn dispatch_one(
     pricing: &NclPricing,
     req: &NclTaskRequest,
 ) -> Result<NclTaskResult> {
-    let completion = client
-        .chat_completion(&req.prompt, req.max_tokens)
-        .await?;
-    let value_usd = req
-        .value_usd_override
-        .unwrap_or_else(|| pricing.value_usd(completion.prompt_tokens, completion.completion_tokens));
+    let completion = client.chat_completion(&req.prompt, req.max_tokens).await?;
+    let value_usd = req.value_usd_override.unwrap_or_else(|| {
+        pricing.value_usd(completion.prompt_tokens, completion.completion_tokens)
+    });
     let digest = response_digest(&completion.content);
     Ok(NclTaskResult {
         origin: req.origin.clone(),
@@ -449,7 +437,11 @@ fn parse_authority(base_url: &str) -> Result<String> {
         .trim()
         .trim_start_matches("http://")
         .trim_start_matches("https://");
-    let host_port = trimmed.split('/').next().unwrap_or("").trim_end_matches('/');
+    let host_port = trimmed
+        .split('/')
+        .next()
+        .unwrap_or("")
+        .trim_end_matches('/');
     if host_port.is_empty() {
         return Err(anyhow!("ncl_gateway: empty base_url"));
     }
@@ -547,11 +539,20 @@ mod tests {
 
     #[test]
     fn authority_parsing_handles_schemes_and_ports() {
-        assert_eq!(parse_authority("http://127.0.0.1:8002").unwrap(), "127.0.0.1:8002");
+        assert_eq!(
+            parse_authority("http://127.0.0.1:8002").unwrap(),
+            "127.0.0.1:8002"
+        );
         assert_eq!(parse_authority("127.0.0.1:8002").unwrap(), "127.0.0.1:8002");
         assert_eq!(parse_authority("localhost").unwrap(), "localhost:8002");
-        assert_eq!(parse_authority("https://example.com/x").unwrap(), "example.com:8002");
-        assert_eq!(parse_authority("https://example.com:9999/x").unwrap(), "example.com:9999");
+        assert_eq!(
+            parse_authority("https://example.com/x").unwrap(),
+            "example.com:8002"
+        );
+        assert_eq!(
+            parse_authority("https://example.com:9999/x").unwrap(),
+            "example.com:9999"
+        );
         assert!(parse_authority("").is_err());
     }
 

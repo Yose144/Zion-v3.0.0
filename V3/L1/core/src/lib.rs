@@ -5,9 +5,10 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 use zion_cosmic_harmony::{
-    body_root_v2_active, cosmic_harmony_ekam_deeksha, cosmic_harmony_with_height, profile_name, profile_name_for_height,
-    tx_hash_v2_active, NclStats, RevenueCollector, RevenueEvent, RevenueStats,
-    CHV_EKAM_FORK_HEIGHT, EKAM_FUSION_ROUNDS, TX_HASH_V2_ACTIVATION_HEIGHT, FIRE_FORK_HEIGHT,
+    body_root_v2_active, cosmic_harmony_ekam_deeksha, cosmic_harmony_with_height, profile_name,
+    profile_name_for_height, tx_hash_v2_active, NclStats, RevenueCollector, RevenueEvent,
+    RevenueStats, CHV_EKAM_FORK_HEIGHT, EKAM_FUSION_ROUNDS, FIRE_FORK_HEIGHT,
+    TX_HASH_V2_ACTIVATION_HEIGHT,
 };
 
 pub use zion_cosmic_harmony::ExternalCoin;
@@ -56,8 +57,8 @@ pub(crate) use bridge::{
     bridge_unlock_memo, bridge_unlock_memo_with_proofs, bridge_unlock_replay_key,
     bridge_unlock_replay_key_from_transaction, load_bridge_validator_pubkey_allowlist,
     parse_bridge_proofs, parse_bridge_unlock_memo, required_bridge_validator_threshold,
-    validate_bridge_unlock_transaction_shape_with_utxos, verify_bridge_proofs,
-    BRIDGE_MAX_MEMO_LEN, BRIDGE_MAX_VALIDATOR_PROOFS,
+    validate_bridge_unlock_transaction_shape_with_utxos, verify_bridge_proofs, BRIDGE_MAX_MEMO_LEN,
+    BRIDGE_MAX_VALIDATOR_PROOFS,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -184,17 +185,12 @@ impl BlockCandidate {
     pub fn hash_with_algorithm(&self, algorithm: &str) -> [u8; 32] {
         match algorithm {
             "deeksha_lite_v1" => {
-                zion_cosmic_harmony::deeksha_lite::deeksha_lite(
-                    &self.header.to_bytes(),
-                    self.nonce,
-                )
+                zion_cosmic_harmony::deeksha_lite::deeksha_lite(&self.header.to_bytes(), self.nonce)
             }
-            "deeksha_lite_fire" => {
-                zion_cosmic_harmony::deeksha_lite_fire::deeksha_lite_fire(
-                    &self.header.to_bytes(),
-                    self.nonce,
-                )
-            }
+            "deeksha_lite_fire" => zion_cosmic_harmony::deeksha_lite_fire::deeksha_lite_fire(
+                &self.header.to_bytes(),
+                self.nonce,
+            ),
             _ => cosmic_harmony_with_height(&self.header.to_bytes(), self.nonce, self.height).data,
         }
     }
@@ -490,7 +486,9 @@ impl From<tx::Transaction> for RuntimeTransaction {
     }
 }
 
-fn default_deeksha_lite_v1() -> String { "deeksha_lite_v1".to_string() }
+fn default_deeksha_lite_v1() -> String {
+    "deeksha_lite_v1".to_string()
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AcceptedBlock {
@@ -691,6 +689,7 @@ struct ChainStore {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
+#[allow(clippy::large_enum_variant)] // boxing would change journal (de)serialization shape
 enum ChainJournalEntry {
     TransactionAccepted { transaction: RuntimeTransaction },
     BlockAccepted { block: AcceptedBlock },
@@ -1522,7 +1521,9 @@ impl NodeRuntime {
                 nonce,
                 target_hex,
                 algorithm,
-            } => self.submit_candidate_rpc(template_id, &header_hex, nonce, &target_hex, &algorithm),
+            } => {
+                self.submit_candidate_rpc(template_id, &header_hex, nonce, &target_hex, &algorithm)
+            }
         }
     }
 
@@ -1678,8 +1679,12 @@ impl NodeRuntime {
             nonce,
             height: active_template.height,
         };
-        let hash = self.core.hash_candidate_with_algorithm(candidate, algorithm);
-        let sealed = self.core.validate_candidate_with_algorithm(candidate, target, algorithm);
+        let hash = self
+            .core
+            .hash_candidate_with_algorithm(candidate, algorithm);
+        let sealed = self
+            .core
+            .validate_candidate_with_algorithm(candidate, target, algorithm);
         let accepted = sealed.is_some();
 
         if let Some(sealed_block) = sealed {
@@ -3763,6 +3768,7 @@ pub(crate) fn is_valid_account_id(value: &str) -> bool {
             .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '-' | '_' | '.'))
 }
 
+#[allow(dead_code)]
 fn looks_like_utxo_address(value: &str) -> bool {
     value.starts_with("zion1")
 }
@@ -4052,7 +4058,7 @@ mod tests {
             header_hex: template.header_hex.clone(),
             nonce,
             target_hex: template.target_hex.clone(),
-        algorithm: "deeksha_lite_v1".to_string(),
+            algorithm: "deeksha_lite_v1".to_string(),
         });
 
         match response {
@@ -4248,7 +4254,7 @@ mod tests {
             header_hex: first_template.header_hex.clone(),
             nonce,
             target_hex: first_template.target_hex.clone(),
-        algorithm: "deeksha_lite_v1".to_string(),
+            algorithm: "deeksha_lite_v1".to_string(),
         });
 
         assert!(matches!(
@@ -4287,7 +4293,7 @@ mod tests {
             header_hex: template.header_hex.clone(),
             nonce,
             target_hex: template.target_hex.clone(),
-        algorithm: "deeksha_lite_v1".to_string(),
+            algorithm: "deeksha_lite_v1".to_string(),
         });
 
         let stale_response = runtime.handle_rpc_request(RpcRequest::SubmitCandidate {
@@ -4295,7 +4301,7 @@ mod tests {
             header_hex: template.header_hex,
             nonce: 19,
             target_hex: template.target_hex,
-        algorithm: "deeksha_lite_v1".to_string(),
+            algorithm: "deeksha_lite_v1".to_string(),
         });
 
         match stale_response {
@@ -4362,7 +4368,7 @@ mod tests {
             header_hex: first_template.header_hex,
             nonce: nonce1,
             target_hex: first_template.target_hex,
-        algorithm: "deeksha_lite_v1".to_string(),
+            algorithm: "deeksha_lite_v1".to_string(),
         });
 
         let second_template = runtime.active_template();
@@ -4372,7 +4378,7 @@ mod tests {
             header_hex: second_template.header_hex,
             nonce: nonce2,
             target_hex: second_template.target_hex,
-        algorithm: "deeksha_lite_v1".to_string(),
+            algorithm: "deeksha_lite_v1".to_string(),
         });
 
         let response = runtime
@@ -4407,7 +4413,7 @@ mod tests {
             header_hex: template.header_hex,
             nonce,
             target_hex: template.target_hex,
-        algorithm: "deeksha_lite_v1".to_string(),
+            algorithm: "deeksha_lite_v1".to_string(),
         });
 
         let block = source.accepted_blocks()[1].clone(); // skip genesis
@@ -4439,7 +4445,7 @@ mod tests {
             header_hex: left_template.header_hex,
             nonce: left_nonce,
             target_hex: left_template.target_hex,
-        algorithm: "deeksha_lite_v1".to_string(),
+            algorithm: "deeksha_lite_v1".to_string(),
         });
 
         let mut right = NodeRuntime::new("node-right", NodeConfig::mainnet());
@@ -4450,7 +4456,7 @@ mod tests {
             header_hex: right_template.header_hex,
             nonce: right_nonce,
             target_hex: right_template.target_hex,
-        algorithm: "deeksha_lite_v1".to_string(),
+            algorithm: "deeksha_lite_v1".to_string(),
         });
 
         let error = right
@@ -4479,7 +4485,7 @@ mod tests {
             header_hex: first_template.header_hex,
             nonce: nonce1,
             target_hex: first_template.target_hex,
-        algorithm: "deeksha_lite_v1".to_string(),
+            algorithm: "deeksha_lite_v1".to_string(),
         });
         let _ = source.handle_rpc_request(RpcRequest::SubmitTransaction {
             transaction: second_tx.clone(),
@@ -4491,7 +4497,7 @@ mod tests {
             header_hex: second_template.header_hex,
             nonce: nonce2,
             target_hex: second_template.target_hex,
-        algorithm: "deeksha_lite_v1".to_string(),
+            algorithm: "deeksha_lite_v1".to_string(),
         });
 
         let mut target = NodeRuntime::new("node-batch-target", NodeConfig::mainnet());
@@ -4526,7 +4532,7 @@ mod tests {
             header_hex: first_template.header_hex,
             nonce: nonce1,
             target_hex: first_template.target_hex,
-        algorithm: "deeksha_lite_v1".to_string(),
+            algorithm: "deeksha_lite_v1".to_string(),
         });
         let second_template = source.active_template();
         let nonce2 = find_valid_nonce(&second_template);
@@ -4535,7 +4541,7 @@ mod tests {
             header_hex: second_template.header_hex,
             nonce: nonce2,
             target_hex: second_template.target_hex,
-        algorithm: "deeksha_lite_v1".to_string(),
+            algorithm: "deeksha_lite_v1".to_string(),
         });
 
         let mut target = NodeRuntime::new("node-gap-target", NodeConfig::mainnet());
@@ -4562,7 +4568,7 @@ mod tests {
             header_hex: template.header_hex,
             nonce,
             target_hex: template.target_hex,
-        algorithm: "deeksha_lite_v1".to_string(),
+            algorithm: "deeksha_lite_v1".to_string(),
         });
 
         assert!(matches!(
@@ -4602,7 +4608,7 @@ mod tests {
             header_hex: template.header_hex,
             nonce,
             target_hex: template.target_hex,
-        algorithm: "deeksha_lite_v1".to_string(),
+            algorithm: "deeksha_lite_v1".to_string(),
         });
         assert!(matches!(
             response,
@@ -4672,7 +4678,7 @@ mod tests {
                 transaction_ids: vec![tx_mined.tx_id.clone()],
                 transactions: vec![tx_mined.clone()],
                 total_fees_zion: 2,
-                body_hash_hex: body_hash_hex(&[tx_mined.clone()]),
+                body_hash_hex: body_hash_hex(std::slice::from_ref(&tx_mined)),
                 subsidy_zion: emission::block_subsidy(1),
                 miner_reward_zion: emission::block_subsidy(1),
                 miner_address: String::new(),
@@ -4696,16 +4702,13 @@ mod tests {
             NodeRuntime::with_chain_store("node-recovery", NodeConfig::mainnet(), &state_path)
                 .expect("restored runtime with sanitized state");
 
-        match restored.active_template() {
-            BlockTemplate {
-                transaction_ids,
-                transaction_count,
-                ..
-            } => {
-                assert_eq!(transaction_ids, vec![tx_dup.tx_id]);
-                assert_eq!(transaction_count, 1);
-            }
-        }
+        let BlockTemplate {
+            transaction_ids,
+            transaction_count,
+            ..
+        } = restored.active_template();
+        assert_eq!(transaction_ids, vec![tx_dup.tx_id]);
+        assert_eq!(transaction_count, 1);
 
         fs::remove_file(&state_path).ok();
     }
@@ -4731,7 +4734,7 @@ mod tests {
             transaction_ids: vec![tx.tx_id.clone()],
             transactions: vec![tx.clone()],
             total_fees_zion: 6,
-            body_hash_hex: body_hash_hex(&[tx.clone()]),
+            body_hash_hex: body_hash_hex(std::slice::from_ref(&tx)),
             subsidy_zion: emission::block_subsidy(1),
             miner_reward_zion: emission::block_subsidy(1),
             miner_address: String::new(),
@@ -4887,7 +4890,7 @@ mod tests {
             header_hex: template.header_hex.clone(),
             nonce,
             target_hex: template.target_hex.clone(),
-        algorithm: "deeksha_lite_v1".to_string(),
+            algorithm: "deeksha_lite_v1".to_string(),
         });
         assert!(
             matches!(response, RpcResponse::SubmitResult { accepted: true, .. }),
@@ -5333,7 +5336,10 @@ mod tests {
 
         // Minted total = 99% of subsidy; the 1% pool fee is burned.
         let minted: u128 = transactions.iter().map(|t| t.amount_zion).sum();
-        assert_eq!(minted, u128::from(emission::minted_subsidy(expected_subsidy)));
+        assert_eq!(
+            minted,
+            u128::from(emission::minted_subsidy(expected_subsidy))
+        );
     }
 
     #[test]
@@ -5433,7 +5439,7 @@ mod tests {
             header_hex: template.header_hex,
             nonce,
             target_hex: template.target_hex,
-        algorithm: "deeksha_lite_v1".to_string(),
+            algorithm: "deeksha_lite_v1".to_string(),
         });
 
         assert!(
@@ -5903,7 +5909,7 @@ mod tests {
             header_hex: template.header_hex.clone(),
             nonce,
             target_hex: template.target_hex.clone(),
-        algorithm: "deeksha_lite_v1".to_string(),
+            algorithm: "deeksha_lite_v1".to_string(),
         });
         match response {
             RpcResponse::SubmitResult {
@@ -6038,7 +6044,7 @@ mod tests {
         assert_eq!(node_b.chain_height(), 0);
 
         // Relay each mined block from A to B via AnnounceBlock
-        for block in node_a.accepted_blocks()[1..].to_vec() {
+        for block in node_a.accepted_blocks()[1..].iter().cloned() {
             let msg = P2pMessage::AnnounceBlock { block };
             let result = node_b.handle_p2p_message(msg);
             assert!(result.is_ok(), "block relay failed: {:?}", result.err());
@@ -6139,7 +6145,7 @@ mod tests {
         mine_one_block(&mut miner);
 
         // Miner -> Relay (AnnounceBlock)
-        for block in miner.accepted_blocks()[1..].to_vec() {
+        for block in miner.accepted_blocks()[1..].iter().cloned() {
             let msg = P2pMessage::AnnounceBlock { block };
             relay.handle_p2p_message(msg).expect("relay import");
         }

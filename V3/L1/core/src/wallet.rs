@@ -331,9 +331,9 @@ pub fn generate_account_tx_id(from: &str, to: &str, amount: u64, nonce: u64) -> 
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_nanos();
-    bytes[..16].copy_from_slice(&(ts as u128).to_le_bytes());
-    bytes[16..24].copy_from_slice(&(amount as u64).to_le_bytes());
-    bytes[24..32].copy_from_slice(&(nonce as u64).to_le_bytes());
+    bytes[..16].copy_from_slice(&ts.to_le_bytes());
+    bytes[16..24].copy_from_slice(&amount.to_le_bytes());
+    bytes[24..32].copy_from_slice(&nonce.to_le_bytes());
     // XOR-in sender and recipient for uniqueness
     for (i, b) in from.bytes().chain(to.bytes()).enumerate() {
         bytes[i % 32] ^= b;

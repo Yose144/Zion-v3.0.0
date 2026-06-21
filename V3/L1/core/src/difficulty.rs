@@ -461,7 +461,7 @@ mod tests {
 
         let final_diff = blocks.last().unwrap().difficulty;
         assert!(
-            final_diff >= 5_000 && final_diff <= 20_000,
+            (5_000..=20_000).contains(&final_diff),
             "after 200 varied blocks, difficulty {final_diff} should stabilize near 10k"
         );
     }

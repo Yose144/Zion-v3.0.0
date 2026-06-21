@@ -1163,6 +1163,7 @@ pub mod randomx {
 // ---------------------------------------------------------------------------
 
 /// Returns the list of native algorithm names compiled into this build.
+#[allow(unused_mut)] // mutated only when a native-* feature is enabled
 pub fn compiled_algorithms() -> Vec<&'static str> {
     let mut v = Vec::new();
     #[cfg(feature = "native-etchash")]
@@ -1221,6 +1222,7 @@ pub struct AlgoTestResult {
 ///
 /// Call this once at miner startup.  If any result has `passed == false`,
 /// the corresponding algorithm should not be used for real mining.
+#[allow(unused_mut)] // mutated only when a native-* feature is enabled
 pub fn runtime_self_test() -> Vec<AlgoTestResult> {
     let mut results = Vec::new();
 

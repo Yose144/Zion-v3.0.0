@@ -23,6 +23,9 @@
 // Author: ZION Core Team — CHv4 implementace, 2026
 // ============================================================================
 
+// INT8 MLP loops mirror the NPU/NEON memory layout; index-based access is intentional.
+#![allow(clippy::needless_range_loop)]
+
 use blake3;
 
 use std::collections::HashMap;
@@ -301,6 +304,7 @@ fn npu_mixing_cpu_int8(scratchpad: &[u8; 64]) -> [u8; 64] {
 }
 
 /// Linear Layer 1: h[i] = clamp(Σ W1[i][j] * input[j] + b1[i], -128, 127)
+#[allow(dead_code)]
 #[inline]
 fn layer1_scalar(input: &[i32; 64], w1: &[[i8; 64]; 128], b1: &[i8; 128], hidden: &mut [i32; 128]) {
     for i in 0..128 {
@@ -314,6 +318,7 @@ fn layer1_scalar(input: &[i32; 64], w1: &[[i8; 64]; 128], b1: &[i8; 128], hidden
 }
 
 /// Linear Layer 2: out[i] = clamp(Σ W2[i][j] * hidden[j] + b2[i], -128, 127)
+#[allow(dead_code)]
 #[inline]
 fn layer2_scalar(hidden: &[i32; 128], w2: &[[i8; 128]; 64], b2: &[i8; 64], output: &mut [i32; 64]) {
     for i in 0..64 {
@@ -333,6 +338,9 @@ use std::arch::aarch64::*;
 
 #[cfg(target_arch = "aarch64")]
 #[inline]
+/// # Safety
+/// Requires the `neon` target feature (always available on aarch64). All slice
+/// arguments are fixed-size arrays, so the internal pointer reads stay in bounds.
 pub unsafe fn layer1_neon(
     input: &[i32; 64],
     w1: &[[i8; 64]; 128],
@@ -372,6 +380,9 @@ pub unsafe fn layer1_neon(
 
 #[cfg(target_arch = "aarch64")]
 #[inline]
+/// # Safety
+/// Requires the `neon` target feature (always available on aarch64). All slice
+/// arguments are fixed-size arrays, so the internal pointer reads stay in bounds.
 pub unsafe fn layer2_neon(
     hidden: &[i32; 128],
     w2: &[[i8; 128]; 64],
@@ -603,7 +614,7 @@ pub struct EpochMlpWeights {
 
 /// Expand a 32-byte seed into deterministic pseudorandom bytes via Blake3 key derivation.
 fn expand_epoch_seed(seed: &[u8; 32], total_bytes: usize) -> Vec<u8> {
-    let chunks = (total_bytes + 31) / 32;
+    let chunks = total_bytes.div_ceil(32);
     let mut expanded = Vec::with_capacity(chunks * 32);
     let mut hasher = blake3::Hasher::new_keyed(seed);
     hasher.update(b"CHv4_epoch_mlp_v1");
@@ -1265,7 +1276,7 @@ mod tests {
         layer_norm_int8(&mut data, &scale);
         // Po normalizaci by data měla být v ±127
         for &v in &data {
-            assert!(v >= -128 && v <= 127);
+            assert!((-128..=127).contains(&v));
         }
     }
 

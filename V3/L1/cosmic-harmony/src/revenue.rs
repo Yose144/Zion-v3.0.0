@@ -430,7 +430,10 @@ impl RevenueCollector {
         // pool-fee share is configurable at call time.
         let humanitarian_pct = ZION_HUMANITARIAN_PCT;
         let issobella_pct = ZION_ISSOBELLA_PCT;
-        let miner_pct = 100u64.saturating_sub(humanitarian_pct).saturating_sub(issobella_pct).saturating_sub(pool_pct);
+        let miner_pct = 100u64
+            .saturating_sub(humanitarian_pct)
+            .saturating_sub(issobella_pct)
+            .saturating_sub(pool_pct);
 
         let miner_share = subsidy * miner_pct / 100;
         let humanitarian = subsidy * humanitarian_pct / 100;
@@ -606,7 +609,15 @@ impl RevenueCollector {
         issobella: u64,
         miner: u64,
     ) {
-        self.replay_zion_block_with_ts(height, subsidy, pool_fee, humanitarian, issobella, miner, None);
+        self.replay_zion_block_with_ts(
+            height,
+            subsidy,
+            pool_fee,
+            humanitarian,
+            issobella,
+            miner,
+            None,
+        );
     }
 
     /// Replay a Zion block while preserving the original journal timestamp.
@@ -780,7 +791,9 @@ impl RevenueCollector {
     /// Replay all persisted Zion blocks and events from the journal into
     /// this collector.  Called automatically by `CoreRuntime::new_with_journal_replay`.
     pub fn replay(&self) {
-        let Some(ref journal) = self.journal else { return };
+        let Some(ref journal) = self.journal else {
+            return;
+        };
         match journal.replay_zion_blocks() {
             Ok(blocks) => {
                 for block in &blocks {
@@ -968,11 +981,13 @@ mod tests {
 
         // Within the cooldown window the breaker must stay open.
         health.maybe_auto_reset();
-        assert!(health.circuit_open, "must not reset before cooldown elapses");
+        assert!(
+            health.circuit_open,
+            "must not reset before cooldown elapses"
+        );
 
         // Back-date the trip timestamp past the cooldown and verify reset.
-        let past = Utc::now()
-            - chrono::Duration::seconds(CIRCUIT_BREAKER_RESET_SECS as i64 + 5);
+        let past = Utc::now() - chrono::Duration::seconds(CIRCUIT_BREAKER_RESET_SECS as i64 + 5);
         health.circuit_opened_ts = Some(past.to_rfc3339());
         health.maybe_auto_reset();
         assert!(!health.circuit_open);
@@ -1006,9 +1021,11 @@ mod tests {
         assert_eq!(stats.humanitarian_zion, subsidy * 5 / 100); // 5% humanitarian
         assert_eq!(stats.issobella_zion, subsidy * 5 / 100); // 5% issobella
         assert_eq!(stats.miner_payout_zion, subsidy * 88 / 100); // 88% miner
-        // Total must equal subsidy.
+                                                                 // Total must equal subsidy.
         assert_eq!(
-            stats.miner_payout_zion + stats.humanitarian_zion + stats.issobella_zion
+            stats.miner_payout_zion
+                + stats.humanitarian_zion
+                + stats.issobella_zion
                 + stats.zion_fees_zion,
             subsidy
         );

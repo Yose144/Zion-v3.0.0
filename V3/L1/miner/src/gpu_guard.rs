@@ -11,7 +11,11 @@
 //! - `GpuAlgorithm`     (CosmicHarmony vs DeekshaLiteV1) selector
 //! - `GpuTuning`        per-family optimal work_size / local_ws / build flags
 
-use std::sync::atomic::{AtomicBool, Ordering};
+// This module is only fully exercised under the GPU feature builds; without a
+// GPU backend feature its types are unused. Integer tuning clamps mirror the
+// kernel limits and are written as max().min() pairs for readability.
+#![allow(dead_code)]
+#![allow(clippy::manual_clamp)]
 
 // ========================================================================
 // 1) Windows SEH Vectored Exception Handler (raw FFI, no extra crates)
@@ -186,7 +190,11 @@ impl GpuDeviceFamily {
             return Self::AmdGcn;
         }
         // NVIDIA
-        if lower.contains("nvidia") || lower.contains("geforce") || lower.contains("rtx") || lower.contains("gtx") || lower.contains("quadro")
+        if lower.contains("nvidia")
+            || lower.contains("geforce")
+            || lower.contains("rtx")
+            || lower.contains("gtx")
+            || lower.contains("quadro")
         {
             return Self::Nvidia;
         }

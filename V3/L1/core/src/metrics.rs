@@ -326,11 +326,7 @@ impl NodeMetrics {
         let ibd_pct = self.ibd_progress_pct.load(Ordering::Relaxed);
         let last_block = self.last_block_time_secs.load(Ordering::Relaxed);
 
-        let sync_lag = if best_peer > height {
-            best_peer - height
-        } else {
-            0
-        };
+        let sync_lag = best_peer.saturating_sub(height);
         let sync_status = if ibd_pct < 10_000 && sync_lag > 50 {
             "ibd"
         } else if sync_lag > 0 {

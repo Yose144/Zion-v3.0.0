@@ -703,9 +703,18 @@ mod tests {
         assert_eq!(cfg.window_size, 500_000);
         assert_eq!(cfg.min_payout_flowers, zion_core::wallet::MIN_PAYOUT_AMOUNT);
         // Guard against drift with zion_core::emission constants.
-        assert_eq!(cfg.fee_config.humanitarian_pct, zion_core::emission::HUMANITARIAN_PCT);
-        assert_eq!(cfg.fee_config.issobella_pct, zion_core::emission::ISSOBELLA_PCT);
-        assert_eq!(cfg.fee_config.pool_fee_pct, zion_core::emission::POOL_FEE_PCT);
+        assert_eq!(
+            cfg.fee_config.humanitarian_pct,
+            zion_core::emission::HUMANITARIAN_PCT
+        );
+        assert_eq!(
+            cfg.fee_config.issobella_pct,
+            zion_core::emission::ISSOBELLA_PCT
+        );
+        assert_eq!(
+            cfg.fee_config.pool_fee_pct,
+            zion_core::emission::POOL_FEE_PCT
+        );
         assert_eq!(cfg.fee_config.miner_pct(), zion_core::emission::MINER_PCT);
     }
 
@@ -892,11 +901,11 @@ mod tests {
             ("miner_09", 900),
             ("miner_10", 1000),
         ];
-        let total_simulated_hashrate: u64 = miners.iter().map(|(_, h)| h).sum();
+        let _total_simulated_hashrate: u64 = miners.iter().map(|(_, h)| h).sum();
 
         // Use a large window so all shares fit.
         let mut e = engine(1_000_000, 1);
-        for (id, diff) in &miners {
+        for (id, _diff) in &miners {
             e.register_address(id, &format!("zion1{id}"));
         }
 
@@ -917,9 +926,13 @@ mod tests {
         for (id, diff) in &miners {
             let miner_work = 100u128 * *diff as u128;
             let expected = (block_reward as u128 * miner_work / total_work) as u64;
-            let actual = payouts.iter().find(|p| p.miner_id == *id).map(|p| p.amount).unwrap_or(0);
+            let actual = payouts
+                .iter()
+                .find(|p| p.miner_id == *id)
+                .map(|p| p.amount)
+                .unwrap_or(0);
             // Allow up to N-1 flowers rounding error (dust handled by last-miner-gets-remainder).
-            let delta = if expected > actual { expected - actual } else { actual - expected };
+            let delta = expected.abs_diff(actual);
             assert!(
                 delta <= miners.len() as u64,
                 "miner {id}: expected ~{expected}, got {actual}, delta={delta}"
@@ -928,12 +941,19 @@ mod tests {
 
         // Total payouts must equal the block reward exactly (no dust lost).
         let total_payout: u64 = payouts.iter().map(|p| p.amount).sum();
-        assert_eq!(total_payout, block_reward, "total payout must equal block reward");
+        assert_eq!(
+            total_payout, block_reward,
+            "total payout must equal block reward"
+        );
 
         // Verify payout ratio per unit work is identical across miners (<0.1% deviation).
         let mut ratios = Vec::new();
         for (id, diff) in &miners {
-            let payout = payouts.iter().find(|p| p.miner_id == *id).map(|p| p.amount).unwrap_or(0);
+            let payout = payouts
+                .iter()
+                .find(|p| p.miner_id == *id)
+                .map(|p| p.amount)
+                .unwrap_or(0);
             let work = 100u128 * *diff as u128;
             let ratio = payout as f64 / work as f64;
             ratios.push(ratio);
