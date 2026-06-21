@@ -7,6 +7,27 @@
 
 ---
 
+## Update 2026-06-21 (post-audit remediation)
+
+Audit findings from 2026-06-19 were remediated in:
+
+- `02186def` — non-L1 fmt + clippy clean
+- `c523aac5` — L1 fmt + clippy clean + websocket send bugfix
+
+Current status after remediation:
+
+- `cargo fmt --all --check` ✅ clean
+- `cargo clippy --workspace --all-targets -- -D warnings` ✅ clean
+- `cargo test --workspace` ✅ pass
+- `cargo test -p zion-cosmic-harmony` ✅ 162 pass (KAT/reference)
+- genesis hash ✅ unchanged: `7543004c76b11416ef32e2f1f5a4c72f0178f841d4559bf476e29e15a9602728`
+
+Functional bug fixed during remediation:
+
+- `V3/L1/core/src/websocket.rs`: `ClientSession::send` changed from `async` to sync `fn`; previous code returned an unpolled future in sync broadcast path and could silently skip notifications.
+
+---
+
 ## TL;DR
 
 The `V3/` workspace compiles (`cargo check --workspace` passes), but it is **not CI-clean**:
