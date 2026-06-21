@@ -13,6 +13,8 @@
 //!   1-9 = set thread count
 //!   q / Esc = quit gracefully
 
+#![allow(dead_code)]
+
 use std::collections::VecDeque;
 use std::io::{self, stdout, Write};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -62,7 +64,11 @@ impl MinerControl {
         Self {
             pause: false,
             algorithm: algorithm.to_string(),
-            mode: if gpu { MiningMode::GpuOnly } else { MiningMode::CpuOnly },
+            mode: if gpu {
+                MiningMode::GpuOnly
+            } else {
+                MiningMode::CpuOnly
+            },
             cpu_enabled: !gpu,
             gpu_enabled: gpu,
             dual_mode: false,
@@ -144,7 +150,10 @@ struct Window {
 
 impl Window {
     fn new(max_age_secs: u64) -> Self {
-        Self { samples: VecDeque::new(), max_age_secs }
+        Self {
+            samples: VecDeque::new(),
+            max_age_secs,
+        }
     }
 
     fn push(&mut self, total: u64) {
@@ -152,7 +161,9 @@ impl Window {
         self.samples.push_back(Sample { ts: now, total });
         // Prune samples older than window
         while self.samples.len() > 1 {
-            let age = now.duration_since(self.samples.front().unwrap().ts).as_secs();
+            let age = now
+                .duration_since(self.samples.front().unwrap().ts)
+                .as_secs();
             if age > self.max_age_secs {
                 self.samples.pop_front();
             } else {
@@ -255,7 +266,7 @@ impl HashrateTracker {
             (0.0, 0.0, 0.0)
         };
         ComputedHashrates {
-            total_hps: r10,   // "current" = most recent 10s window
+            total_hps: r10, // "current" = most recent 10s window
             total_10s_hps: r10,
             total_60s_hps: r60,
             total_15m_hps: r15m,
@@ -307,70 +318,106 @@ pub fn draw_dashboard(
     let mut out = stdout();
 
     // Move to top-left; clear from cursor down so stale lines are wiped
-    queue!(out,
+    queue!(
+        out,
         cursor::MoveTo(0, 0),
         terminal::Clear(ClearType::FromCursorDown),
     )?;
 
     // ── Title bar ──
-    let title = format!(" ZION v3.0.1  GPU Miner  |  {}",
-        algo_display(&control.algorithm));
+    let title = format!(
+        " ZION v3.0.1  GPU Miner  |  {}",
+        algo_display(&control.algorithm)
+    );
     let title_padded = format!("{:<78}", title);
-    queue!(out,
-        SetBackgroundColor(Color::Rgb { r: 20, g: 20, b: 50 }),
+    queue!(
+        out,
+        SetBackgroundColor(Color::Rgb {
+            r: 20,
+            g: 20,
+            b: 50
+        }),
         SetForegroundColor(Color::Cyan),
         Print(format!(" {title_padded}\n")),
         ResetColor,
     )?;
 
     // ── Status line ──
-    let status_color = if control.pause { Color::Yellow } else { Color::Green };
+    let status_color = if control.pause {
+        Color::Yellow
+    } else {
+        Color::Green
+    };
     let status_text = if control.pause { "PAUSED " } else { "RUNNING" };
     let mode_str = match control.mode {
         MiningMode::CpuOnly => "CPU ",
         MiningMode::GpuOnly => "GPU ",
-        MiningMode::Dual    => "DUAL",
+        MiningMode::Dual => "DUAL",
     };
-    queue!(out,
+    queue!(
+        out,
         Print("  "),
         SetForegroundColor(status_color),
-        Print(format!("{status_text}")),
+        Print(status_text.to_string()),
         ResetColor,
-        Print(format!("  algo={:<32}  mode={mode_str}  threads={}\n",
+        Print(format!(
+            "  algo={:<32}  mode={mode_str}  threads={}\n",
             algo_display(&control.algorithm),
-            control.threads)),
+            control.threads
+        )),
     )?;
 
     // ── Separator ──
-    queue!(out, SetForegroundColor(Color::DarkGrey),
+    queue!(
+        out,
+        SetForegroundColor(Color::DarkGrey),
         Print("  ----------------------------------------------------------------\n"),
         ResetColor,
     )?;
 
     // ── Hashrate ──
-    let (v10,  u10)  = ui::fmt_hashrate(rates.total_10s_hps);
-    let (v60,  u60)  = ui::fmt_hashrate(rates.total_60s_hps);
+    let (v10, u10) = ui::fmt_hashrate(rates.total_10s_hps);
+    let (v60, u60) = ui::fmt_hashrate(rates.total_60s_hps);
     let (v15m, u15m) = ui::fmt_hashrate(rates.total_15m_hps);
-    queue!(out,
-        Print(format!("  Hashrate  10s {:>9}{:<4}  60s {:>9}{:<4}  15m {:>9}{:<4}\n",
-            v10, u10, v60, u60, v15m, u15m)),
+    queue!(
+        out,
+        Print(format!(
+            "  Hashrate  10s {:>9}{:<4}  60s {:>9}{:<4}  15m {:>9}{:<4}\n",
+            v10, u10, v60, u60, v15m, u15m
+        )),
     )?;
-    let cpu_hps = if uptime_secs > 0 { rates.cpu_total as f64 / uptime_secs as f64 } else { 0.0 };
-    let gpu_hps = if uptime_secs > 0 { rates.gpu_total as f64 / uptime_secs as f64 } else { 0.0 };
+    let cpu_hps = if uptime_secs > 0 {
+        rates.cpu_total as f64 / uptime_secs as f64
+    } else {
+        0.0
+    };
+    let gpu_hps = if uptime_secs > 0 {
+        rates.gpu_total as f64 / uptime_secs as f64
+    } else {
+        0.0
+    };
     let (vcpu_tot, ucpu_tot) = ui::fmt_hashrate(cpu_hps);
     let (vgpu_tot, ugpu_tot) = ui::fmt_hashrate(gpu_hps);
-    queue!(out,
-        Print(format!("  CPU total {:>9}{:<4}  GPU total {:>9}{:<4}\n",
-            vcpu_tot, ucpu_tot, vgpu_tot, ugpu_tot)),
+    queue!(
+        out,
+        Print(format!(
+            "  CPU total {:>9}{:<4}  GPU total {:>9}{:<4}\n",
+            vcpu_tot, ucpu_tot, vgpu_tot, ugpu_tot
+        )),
     )?;
 
     // ── Shares ──
     let acc = rates.accepted;
     let rej = rates.rejected;
     let total = acc + rej;
-    let pct = if total > 0 { acc as f64 * 100.0 / total as f64 } else { 100.0 };
+    let pct = if total > 0 {
+        acc as f64 * 100.0 / total as f64
+    } else {
+        100.0
+    };
     let rej_col = if rej > 0 { Color::Red } else { Color::DarkGrey };
-    queue!(out,
+    queue!(
+        out,
         Print("  Shares    "),
         SetForegroundColor(Color::Green),
         Print(format!("{acc} accepted")),
@@ -383,13 +430,18 @@ pub fn draw_dashboard(
     )?;
 
     // ── Pool info ──
-    queue!(out,
-        Print(format!("  Pool      height={pool_height}  uptime={}\n",
-            ui::fmt_uptime(uptime_secs))),
+    queue!(
+        out,
+        Print(format!(
+            "  Pool      height={pool_height}  uptime={}\n",
+            ui::fmt_uptime(uptime_secs)
+        )),
     )?;
 
     // ── Separator ──
-    queue!(out, SetForegroundColor(Color::DarkGrey),
+    queue!(
+        out,
+        SetForegroundColor(Color::DarkGrey),
         Print("  ----------------------------------------------------------------\n"),
         ResetColor,
     )?;
@@ -400,9 +452,7 @@ pub fn draw_dashboard(
         queue!(out, Print("\n"))?;
     } else {
         for g in gpu_info.iter().take(2) {
-            queue!(out,
-                Print(format!("  GPU #{:<2}   {}\n", g.index, g.info)),
-            )?;
+            queue!(out, Print(format!("  GPU #{:<2}   {}\n", g.index, g.info)),)?;
         }
         if gpu_info.len() == 1 {
             queue!(out, Print("\n"))?; // keep fixed height
@@ -410,13 +460,17 @@ pub fn draw_dashboard(
     }
 
     // ── Separator ──
-    queue!(out, SetForegroundColor(Color::DarkGrey),
+    queue!(
+        out,
+        SetForegroundColor(Color::DarkGrey),
         Print("  ----------------------------------------------------------------\n"),
         ResetColor,
     )?;
 
     // ── Hotkeys ──
-    queue!(out, SetForegroundColor(Color::DarkGrey),
+    queue!(
+        out,
+        SetForegroundColor(Color::DarkGrey),
         Print("  [a] algo  [c] CPU  [g] GPU  [p] pause  [r] reconnect  [v] verbose  [q] quit\n"),
         ResetColor,
     )?;
@@ -439,7 +493,10 @@ pub fn spawn_input_thread(control: Arc<Mutex<MinerControl>>) -> thread::JoinHand
     thread::spawn(move || {
         loop {
             if event::poll(Duration::from_millis(50)).unwrap_or(false) {
-                if let Ok(Event::Key(KeyEvent { code, modifiers, .. })) = event::read() {
+                if let Ok(Event::Key(KeyEvent {
+                    code, modifiers, ..
+                })) = event::read()
+                {
                     let mut c = control.lock().unwrap();
 
                     if c.requested_quit {
@@ -518,7 +575,8 @@ pub fn run_interactive(
 
     let dashboard_handle = thread::spawn(move || {
         // Initial full clear
-        let _ = execute!(io::stdout(),
+        let _ = execute!(
+            io::stdout(),
             cursor::MoveTo(0, 0),
             terminal::Clear(ClearType::All),
         );
@@ -546,7 +604,13 @@ pub fn run_interactive(
             let rates = dashboard_hashrate.compute_rates();
             let pool_height = dashboard_hashrate.pool_height.load(Ordering::Relaxed);
             let uptime = started_at.elapsed().as_secs();
-            let _ = draw_dashboard(&control_snapshot, &rates, uptime, pool_height, &cached_gpu_info);
+            let _ = draw_dashboard(
+                &control_snapshot,
+                &rates,
+                uptime,
+                pool_height,
+                &cached_gpu_info,
+            );
         }
     });
 

@@ -86,10 +86,7 @@ impl ExternalPoolClient {
             match self.connect_and_session().await {
                 Ok(_) => {
                     consecutive_failures = 0;
-                    warn!(
-                        "[{}] Connection finished, reconnecting in 5s...",
-                        self.name
-                    );
+                    warn!("[{}] Connection finished, reconnecting in 5s...", self.name);
                     sleep(Duration::from_secs(5)).await;
                 }
                 Err(e) => {
@@ -147,7 +144,10 @@ impl ExternalPoolClient {
 
         // Expect authorize response
         let _auth_resp = Self::recv_line(&mut lines).await?;
-        info!("[{}] Authorized as {}.{}", self.name, self.wallet, self.worker);
+        info!(
+            "[{}] Authorized as {}.{}",
+            self.name, self.wallet, self.worker
+        );
 
         // --- Main loop: read jobs, forward shares ---
         let mut submit_rx = self.submit_rx.lock().await;
@@ -236,8 +236,8 @@ impl ExternalPoolClient {
             .next_line()
             .await?
             .context("expected JSON line from pool, got EOF")?;
-        let val = serde_json::from_str(&line)
-            .with_context(|| format!("invalid JSON line: {line}"))?;
+        let val =
+            serde_json::from_str(&line).with_context(|| format!("invalid JSON line: {line}"))?;
         Ok(val)
     }
 }
@@ -339,7 +339,9 @@ impl ProxyListener {
                         if let Some(method) = msg.get("method").and_then(|m| m.as_str()) {
                             match method {
                                 "mining.authorize" => {
-                                    if let Some(params) = msg.get_mut("params").and_then(|p| p.as_array_mut()) {
+                                    if let Some(params) =
+                                        msg.get_mut("params").and_then(|p| p.as_array_mut())
+                                    {
                                         if !params.is_empty() {
                                             let user = format!("{}.{}", wallet, worker);
                                             params[0] = serde_json::Value::String(user);
@@ -349,17 +351,29 @@ impl ProxyListener {
                                 }
                                 "mining.subscribe" => {
                                     // Replace user-agent with ours.
-                                    if let Some(params) = msg.get_mut("params").and_then(|p| p.as_array_mut()) {
+                                    if let Some(params) =
+                                        msg.get_mut("params").and_then(|p| p.as_array_mut())
+                                    {
                                         if !params.is_empty() {
-                                            params[0] = serde_json::Value::String("zion_revenue_proxy/1.0".to_string());
+                                            params[0] = serde_json::Value::String(
+                                                "zion_revenue_proxy/1.0".to_string(),
+                                            );
                                         }
                                     }
                                 }
                                 "login" => {
                                     // CryptoNote stratum login.
-                                    if let Some(params) = msg.get_mut("params").and_then(|p| p.as_object_mut()) {
-                                        params.insert("login".to_string(), serde_json::Value::String(wallet.clone()));
-                                        params.insert("pass".to_string(), serde_json::Value::String(worker.clone()));
+                                    if let Some(params) =
+                                        msg.get_mut("params").and_then(|p| p.as_object_mut())
+                                    {
+                                        params.insert(
+                                            "login".to_string(),
+                                            serde_json::Value::String(wallet.clone()),
+                                        );
+                                        params.insert(
+                                            "pass".to_string(),
+                                            serde_json::Value::String(worker.clone()),
+                                        );
                                     }
                                     authorized = true;
                                 }

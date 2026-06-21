@@ -112,8 +112,7 @@ impl RevenueJournal {
 
     /// Delete `revenue_*.jsonl` files older than `retention_days`.
     pub fn prune_expired(&self) -> std::io::Result<()> {
-        let cutoff =
-            Utc::now().date_naive() - chrono::Duration::days(self.retention_days as i64);
+        let cutoff = Utc::now().date_naive() - chrono::Duration::days(self.retention_days as i64);
         for entry in fs::read_dir(&self.dir)? {
             let entry = entry?;
             let name = entry.file_name();

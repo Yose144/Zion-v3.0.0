@@ -32,10 +32,7 @@ fn main() {
 
     // Build a deterministic tx_id from the canonical pre-image.
     // The node accepts any 64-hex tx_id as long as the signature verifies.
-    let preimage = format!(
-        "account_tx:{}:{}:{}:{}:{}",
-        from, to, amount, fee, nonce
-    );
+    let preimage = format!("account_tx:{}:{}:{}:{}:{}", from, to, amount, fee, nonce);
     let tx_id_bytes = zion_core::crypto::blake3_hash(preimage.as_bytes());
     let tx_id = zion_core::crypto::to_hex(&tx_id_bytes);
 

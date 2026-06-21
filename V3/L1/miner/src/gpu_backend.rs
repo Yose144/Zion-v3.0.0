@@ -11,10 +11,7 @@
 #![allow(dead_code)]
 
 use anyhow::Result;
-use rayon::prelude::*;
 use zion_core::{DifficultyTarget, MiningHeader, MiningJob, MiningSolution};
-
-use crate::gpu_guard::{GpuAlgorithm, GpuDeviceFamily, GpuGuard, GpuTuning};
 
 /// Which GPU backend to use.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -173,7 +170,11 @@ pub type GpuBackend = GpuBackendManager;
 
 /// Try to create the best available GPU backend.
 /// Selects the appropriate OpenCL miner based on the algorithm.
-pub fn create_gpu_backend(kind: GpuBackendKind, work_size: usize, algorithm: &str) -> Result<Box<dyn GpuMiner>> {
+pub fn create_gpu_backend(
+    kind: GpuBackendKind,
+    _work_size: usize,
+    _algorithm: &str,
+) -> Result<Box<dyn GpuMiner>> {
     match kind {
         GpuBackendKind::Cpu => {
             anyhow::bail!("GPU backend requested but kind=cpu — use CPU mining path instead");
@@ -312,7 +313,7 @@ pub fn gpu_scan_job(gpu: &mut dyn GpuMiner, job: MiningJob, algorithm: &str) -> 
                 if is_mismatch && !gpu.suppress_mismatch_warnings() {
                     static MISMATCH_COUNT: AtomicU64 = AtomicU64::new(0);
                     let count = MISMATCH_COUNT.fetch_add(1, Ordering::Relaxed) + 1;
-                    if count <= 5 || count % 50 == 0 {
+                    if count <= 5 || count.is_multiple_of(50) {
                         let fmthex = |b: &[u8]| -> String {
                             b.iter().map(|x| format!("{:02x}", x)).collect()
                         };
@@ -337,7 +338,7 @@ pub fn gpu_scan_job(gpu: &mut dyn GpuMiner, job: MiningJob, algorithm: &str) -> 
                     // Log it and skip; this should not normally happen.
                     static FALSE_POS: AtomicU64 = AtomicU64::new(0);
                     let count = FALSE_POS.fetch_add(1, Ordering::Relaxed) + 1;
-                    if count <= 5 || count % 50 == 0 {
+                    if count <= 5 || count.is_multiple_of(50) {
                         println!(
                             "gpu_false_positive #{} nonce={} h={} algo={} gpu_above_target=true",
                             count, nonce, job.height, algorithm,
@@ -481,7 +482,11 @@ pub mod opencl_deeksha {
         };
 
         // env_cap (ZION_OCL_WORK_CAP) overrides VRAM limit if set
-        let final_cap = if env_cap < usize::MAX { env_cap } else { max_by_mem };
+        let final_cap = if env_cap < usize::MAX {
+            env_cap
+        } else {
+            max_by_mem
+        };
         requested.min(final_cap).min(gcn_cap).max(64)
     }
 
@@ -548,19 +553,24 @@ pub mod opencl_deeksha {
         if !opts.is_empty() {
             opts.push(' ');
         }
-        
+
         // Detect GCN for conditional workarounds in kernel
         // RDNA (gfx10+) should NOT use GCN workarounds
         let dev = device_name.to_ascii_lowercase();
-        let is_gcn = dev.contains("gfx6") || dev.contains("gfx7") || dev.contains("gfx8") || dev.contains("gfx9")
-            || dev.contains("vega") || dev.contains("polaris")
-            || dev.contains("fiji") || dev.contains("tonga")
+        let is_gcn = dev.contains("gfx6")
+            || dev.contains("gfx7")
+            || dev.contains("gfx8")
+            || dev.contains("gfx9")
+            || dev.contains("vega")
+            || dev.contains("polaris")
+            || dev.contains("fiji")
+            || dev.contains("tonga")
             || dev.contains("ellesmere");
-        
+
         if is_gcn {
             opts.push_str("-DZION_GCN_WORKAROUNDS ");
         }
-        
+
         opts.push_str(&format!(
             "-DNPU_MAX_DIM={} -DWGS={}",
             npu_max_dim, local_wgs
@@ -858,7 +868,9 @@ pub mod opencl_deeksha {
                     if std::env::var("ZION_IGNORE_GPU_SELF_TEST_FAIL").is_err() {
                         return Err(e);
                     }
-                    println!("GPU SELF-TEST FAILED BUT CONTINUING (ZION_IGNORE_GPU_SELF_TEST_FAIL set)");
+                    println!(
+                        "GPU SELF-TEST FAILED BUT CONTINUING (ZION_IGNORE_GPU_SELF_TEST_FAIL set)"
+                    );
                 }
             } else {
                 println!("GPU SELF-TEST SKIPPED (ZION_SKIP_GPU_SELF_TEST set)");
@@ -949,17 +961,20 @@ pub mod opencl_deeksha {
 
             let mut all_ok = true;
             let ignore_s4_mismatch = std::env::var("ZION_IGNORE_S4_MEMHARD_MISMATCH").is_ok();
-            
+
             for (name, g, c) in &stages {
                 let ok = *g == *c;
                 let is_s4 = *name == "s4_memhard";
-                
+
                 // Skip s4_memhard mismatch if flag is set (GPU uses different implementation)
                 if !ok && is_s4 && ignore_s4_mismatch {
-                    println!("SELF_TEST {}=IGNORED (ZION_IGNORE_S4_MEMHARD_MISMATCH set)", name);
+                    println!(
+                        "SELF_TEST {}=IGNORED (ZION_IGNORE_S4_MEMHARD_MISMATCH set)",
+                        name
+                    );
                     continue;
                 }
-                
+
                 println!("SELF_TEST {}={}", name, if ok { "OK" } else { "FAIL" });
                 if !ok {
                     all_ok = false;
@@ -1523,9 +1538,7 @@ pub mod opencl_deeksha_lite {
                     .name()
                     .unwrap_or_else(|_| "unknown-platform".to_string());
                 let gpus = Device::list(platform, Some(ocl::flags::DeviceType::GPU))
-                    .map_err(|e| {
-                        anyhow::anyhow!("OpenCL device list on {platform_name}: {e}")
-                    })?;
+                    .map_err(|e| anyhow::anyhow!("OpenCL device list on {platform_name}: {e}"))?;
                 for (didx, device) in gpus.into_iter().enumerate() {
                     let device_name = device
                         .name()
@@ -1542,14 +1555,23 @@ pub mod opencl_deeksha_lite {
                     if device_l.contains("vega") || device_l.contains("rx 5") {
                         score += 500;
                     }
-                    candidates.push((score, pidx, didx, *platform, device, platform_name.clone(), device_name));
+                    candidates.push((
+                        score,
+                        pidx,
+                        didx,
+                        *platform,
+                        device,
+                        platform_name.clone(),
+                        device_name,
+                    ));
                 }
             }
             if candidates.is_empty() {
                 anyhow::bail!("no OpenCL GPU devices found");
             }
             candidates.sort_by_key(|(s, _, _, _, _, _, _)| -*s);
-            let (_, pidx, didx, platform, device, platform_name, device_name) = candidates.swap_remove(0);
+            let (_, pidx, didx, platform, device, platform_name, device_name) =
+                candidates.swap_remove(0);
             println!(
                 "gpu_opencl_lite_pick platform_idx={pidx} device_idx={didx} platform=\"{platform_name}\" device=\"{device_name}\""
             );
@@ -1860,9 +1882,7 @@ pub mod opencl_deeksha_lite_fire {
                     .name()
                     .unwrap_or_else(|_| "unknown-platform".to_string());
                 let gpus = Device::list(platform, Some(ocl::flags::DeviceType::GPU))
-                    .map_err(|e| {
-                        anyhow::anyhow!("OpenCL device list on {platform_name}: {e}")
-                    })?;
+                    .map_err(|e| anyhow::anyhow!("OpenCL device list on {platform_name}: {e}"))?;
                 for (didx, device) in gpus.into_iter().enumerate() {
                     let device_name = device
                         .name()
@@ -1879,14 +1899,23 @@ pub mod opencl_deeksha_lite_fire {
                     if device_l.contains("vega") || device_l.contains("rx 5") {
                         score += 500;
                     }
-                    candidates.push((score, pidx, didx, *platform, device, platform_name.clone(), device_name));
+                    candidates.push((
+                        score,
+                        pidx,
+                        didx,
+                        *platform,
+                        device,
+                        platform_name.clone(),
+                        device_name,
+                    ));
                 }
             }
             if candidates.is_empty() {
                 anyhow::bail!("no OpenCL GPU devices found");
             }
             candidates.sort_by_key(|(s, _, _, _, _, _, _)| -*s);
-            let (_, pidx, didx, platform, device, platform_name, device_name) = candidates.swap_remove(0);
+            let (_, pidx, didx, platform, device, platform_name, device_name) =
+                candidates.swap_remove(0);
             println!(
                 "gpu_opencl_fire_pick platform_idx={pidx} device_idx={didx} platform=\"{platform_name}\" device=\"{device_name}\""
             );
@@ -2035,7 +2064,7 @@ pub mod opencl_deeksha_lite_fire {
                 let chunk = (left as usize).min(self.work_size);
                 let local_size = self.local_work_size.min(chunk);
                 let global_size = ((chunk + local_size - 1) / local_size) * local_size;
-                
+
                 // Set nonce parameters via scalar args (same as Lite miner)
                 {
                     let guard = GpuGuard::new();
@@ -2627,7 +2656,11 @@ pub mod metal_deeksha {
             })
         }
 
-        fn dispatch_batch_async(&mut self, nonce_start: u64, count: usize) -> std::sync::mpsc::Receiver<()> {
+        fn dispatch_batch_async(
+            &mut self,
+            nonce_start: u64,
+            count: usize,
+        ) -> std::sync::mpsc::Receiver<()> {
             // Write nonce base
             unsafe {
                 let ptr = self.nonce_base_buf.contents() as *mut u64;
@@ -2782,7 +2815,8 @@ pub mod metal_deeksha {
                 }
 
                 let rx = self.dispatch_batch_async(current_nonce, chunk);
-                rx.recv().map_err(|_| anyhow::anyhow!("Metal async wait failed"))?;
+                rx.recv()
+                    .map_err(|_| anyhow::anyhow!("Metal async wait failed"))?;
 
                 if let Some((nonce, hash)) = self.read_result() {
                     all_solutions.push((nonce, hash));
@@ -2971,7 +3005,11 @@ pub mod metal_deeksha_lite_fire {
             })
         }
 
-        fn dispatch_batch_async(&mut self, nonce_start: u64, count: usize) -> std::sync::mpsc::Receiver<()> {
+        fn dispatch_batch_async(
+            &mut self,
+            nonce_start: u64,
+            count: usize,
+        ) -> std::sync::mpsc::Receiver<()> {
             unsafe {
                 let ptr = self.nonce_base_buf.contents() as *mut u64;
                 *ptr = nonce_start;
@@ -3083,7 +3121,8 @@ pub mod metal_deeksha_lite_fire {
                 }
 
                 let rx = self.dispatch_batch_async(current_nonce, chunk);
-                rx.recv().map_err(|_| anyhow::anyhow!("Metal Fire async wait failed"))?;
+                rx.recv()
+                    .map_err(|_| anyhow::anyhow!("Metal Fire async wait failed"))?;
 
                 if let Some((nonce, hash)) = self.read_result() {
                     all_solutions.push((nonce, hash));

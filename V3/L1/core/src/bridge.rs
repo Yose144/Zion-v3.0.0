@@ -96,7 +96,11 @@ impl BridgeValidatorProof {
     }
 }
 
-pub(crate) fn bridge_unlock_replay_key(source_chain: &str, burn_id: &str, evm_tx_hash: &str) -> String {
+pub(crate) fn bridge_unlock_replay_key(
+    source_chain: &str,
+    burn_id: &str,
+    evm_tx_hash: &str,
+) -> String {
     format!("{source_chain}:{burn_id}:{evm_tx_hash}")
 }
 

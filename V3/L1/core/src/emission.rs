@@ -302,6 +302,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::identity_op)] // keep `* 1` to mirror the 89/5/5/1 split visually
     fn fee_split_percentages_correct() {
         let subsidy = BASE_REWARD;
         let (miner, humanitarian, issobella, pool_fee) = fee_split(subsidy);
