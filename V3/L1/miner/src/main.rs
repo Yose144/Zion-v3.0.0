@@ -1,3 +1,8 @@
+// Miner is the binary entry point; many session helpers take wide config tuples
+// and a few GPU-fallback flags are informational. These are non-consensus.
+#![allow(clippy::too_many_arguments)]
+#![allow(clippy::type_complexity)]
+
 use anyhow::{anyhow, Context, Result};
 use std::collections::VecDeque;
 use std::fmt::Write as _;
@@ -11,11 +16,11 @@ use zion_core::{CoreRuntime, DifficultyTarget, MiningHeader, MiningJob, RevenueS
 use zion_pool::{decode_message, encode_message, MiningPool, PoolMessage, ShareStatus};
 
 mod banner;
-mod ui;
 mod gpu_backend;
 mod gpu_guard;
-mod parallel;
 mod interactive;
+mod parallel;
+mod ui;
 
 use interactive::{HashrateTracker, MinerControl, TUI_ACTIVE};
 
@@ -589,8 +594,8 @@ fn main() -> Result<()> {
             .and_then(|v| v.parse().ok())
             .unwrap_or(10.0);
         let backend = gpu_backend::GpuBackendKind::from_env();
-        let bench_algorithm = std::env::var("ZION_MINER_ALGORITHM")
-            .unwrap_or_else(|_| "deeksha_lite_v1".to_string());
+        let bench_algorithm =
+            std::env::var("ZION_MINER_ALGORITHM").unwrap_or_else(|_| "deeksha_lite_v1".to_string());
 
         println!("--- {} GPU benchmark ---", bench_algorithm);
         let mut gpu = gpu_backend::create_gpu_backend(
@@ -730,18 +735,18 @@ fn main() -> Result<()> {
                                 println!("reconnect_attempt={attempt}");
                             }
                             run_remote_session(
-                                &mining_config, &pool_addr_owned, &mining_metrics,
-                                &mining_control, &mining_hashrate,
+                                &mining_config,
+                                &pool_addr_owned,
+                                &mining_metrics,
+                                &mining_control,
+                                &mining_hashrate,
                             )
                         },
                     );
                 });
 
                 // Run interactive TUI in main thread
-                let _ = interactive::run_interactive(
-                    Arc::clone(&control),
-                    Arc::clone(&hashrate),
-                );
+                let _ = interactive::run_interactive(Arc::clone(&control), Arc::clone(&hashrate));
 
                 // Signal quit and wait for mining thread
                 control.lock().unwrap().requested_quit = true;
@@ -830,6 +835,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+#[allow(unused_assignments)] // gpu_available is a fallback flag set on GPU-init failure
 fn run_local_session(
     config: &MinerConfig,
     metrics: &Arc<Mutex<MinerMetricsSnapshot>>,
@@ -854,10 +860,8 @@ fn run_local_session(
     };
 
     // ── GPU backend init (multi-algo manager — lazy per-algorithm) ──
-    let mut gpu_manager = gpu_backend::GpuBackendManager::new(
-        config.gpu_backend,
-        config.gpu_work_size,
-    );
+    let mut gpu_manager =
+        gpu_backend::GpuBackendManager::new(config.gpu_backend, config.gpu_work_size);
     let mut gpu_available = config.gpu_backend != gpu_backend::GpuBackendKind::Cpu;
     if gpu_available {
         match gpu_manager.ensure_algorithm(&initial_algorithm) {
@@ -873,14 +877,19 @@ fn run_local_session(
                 telemetry.gpu_infos = gpu_backend::query_gpu_details();
                 telemetry.algorithm = initial_algorithm.clone();
                 // Push GPU info to HashrateTracker for TUI dashboard
-                let gpu_lines: Vec<interactive::GpuInfoLine> = telemetry.gpu_infos
+                let gpu_lines: Vec<interactive::GpuInfoLine> = telemetry
+                    .gpu_infos
                     .iter()
                     .enumerate()
                     .map(|(i, info)| interactive::GpuInfoLine {
                         index: i,
-                        info: format!("{} | {} CUs | {} MHz | {} MiB VRAM",
-                            info.name, info.compute_units, info.max_clock_mhz,
-                            info.global_mem_bytes / (1024 * 1024)),
+                        info: format!(
+                            "{} | {} CUs | {} MHz | {} MiB VRAM",
+                            info.name,
+                            info.compute_units,
+                            info.max_clock_mhz,
+                            info.global_mem_bytes / (1024 * 1024)
+                        ),
                     })
                     .collect();
                 hashrate.set_gpu_info(gpu_lines);
@@ -906,7 +915,11 @@ fn run_local_session(
         "running",
     );
 
-    let hello_line = encode_message(&pool.hello_message(&config.miner_id, &config.worker_name, &config.payout_address))?;
+    let hello_line = encode_message(&pool.hello_message(
+        &config.miner_id,
+        &config.worker_name,
+        &config.payout_address,
+    ))?;
     let welcome_line = encode_message(&pool.welcome_message())?;
     if VERBOSE.load(Ordering::Relaxed) {
         println!("wire_hello={}", hello_line.trim());
@@ -983,7 +996,11 @@ fn run_local_session(
         hashrate.record_gpu_hashes(gpu_nonces_tested);
         hashrate.record_cpu_hashes(cpu_nonces_tested);
         let Some(solution) = scan_result else {
-            let tested = if can_gpu { gpu_nonces_tested } else { job.nonce_count };
+            let tested = if can_gpu {
+                gpu_nonces_tested
+            } else {
+                job.nonce_count
+            };
             attempted_hashes = attempted_hashes.saturating_add(tested);
             rejected_iterations += 1;
             telemetry.record_attempted_hashes(attempted_hashes);
@@ -1042,7 +1059,11 @@ fn run_local_session(
         };
 
         let search_depth = solution.candidate.nonce.saturating_sub(job.start_nonce) + 1;
-        let tested = if can_gpu { gpu_nonces_tested } else { search_depth };
+        let tested = if can_gpu {
+            gpu_nonces_tested
+        } else {
+            search_depth
+        };
         attempted_hashes = attempted_hashes.saturating_add(tested);
         telemetry.record_attempted_hashes(attempted_hashes);
 
@@ -1058,13 +1079,16 @@ fn run_local_session(
             config.revenue_value_usd,
             &current_algorithm,
         );
-        
+
         // Celebrate block found with ASCII art flag
         if decision.sealed_block.is_some() {
-            let hash_prefix: String = solution.hash[..6].iter().map(|x| format!("{:02x}", x)).collect();
+            let hash_prefix: String = solution.hash[..6]
+                .iter()
+                .map(|x| format!("{:02x}", x))
+                .collect();
             crate::ui::log_block_found(job.height, solution.candidate.nonce, &hash_prefix);
         }
-        
+
         if matches!(decision.status, ShareStatus::Accepted) {
             accepted_iterations += 1;
             hashrate.record_share(true);
@@ -1194,6 +1218,7 @@ fn run_local_session(
     })
 }
 
+#[allow(unused_assignments)] // gpu_available / current_algorithm carry fallback state
 fn run_remote_session(
     config: &MinerConfig,
     pool_addr: &str,
@@ -1218,10 +1243,8 @@ fn run_remote_session(
     };
 
     // ── GPU backend init (multi-algo manager — lazy per-algorithm) ──
-    let mut gpu_manager = gpu_backend::GpuBackendManager::new(
-        config.gpu_backend,
-        config.gpu_work_size,
-    );
+    let mut gpu_manager =
+        gpu_backend::GpuBackendManager::new(config.gpu_backend, config.gpu_work_size);
     let mut gpu_available = config.gpu_backend != gpu_backend::GpuBackendKind::Cpu;
     if gpu_available {
         match gpu_manager.ensure_algorithm(&initial_algorithm) {
@@ -1237,14 +1260,19 @@ fn run_remote_session(
                 telemetry.gpu_infos = gpu_backend::query_gpu_details();
                 telemetry.algorithm = initial_algorithm.clone();
                 // Push GPU info to HashrateTracker for TUI dashboard
-                let gpu_lines: Vec<interactive::GpuInfoLine> = telemetry.gpu_infos
+                let gpu_lines: Vec<interactive::GpuInfoLine> = telemetry
+                    .gpu_infos
                     .iter()
                     .enumerate()
                     .map(|(i, info)| interactive::GpuInfoLine {
                         index: i,
-                        info: format!("{} | {} CUs | {} MHz | {} MiB VRAM",
-                            info.name, info.compute_units, info.max_clock_mhz,
-                            info.global_mem_bytes / (1024 * 1024)),
+                        info: format!(
+                            "{} | {} CUs | {} MHz | {} MiB VRAM",
+                            info.name,
+                            info.compute_units,
+                            info.max_clock_mhz,
+                            info.global_mem_bytes / (1024 * 1024)
+                        ),
                     })
                     .collect();
                 hashrate.set_gpu_info(gpu_lines);
@@ -1282,9 +1310,7 @@ fn run_remote_session(
     let mut reader = BufReader::new(reader_stream);
     let mut writer = stream;
 
-    let backend_str = gpu_manager
-        .current_backend_name()
-        .unwrap_or("cpu");
+    let backend_str = gpu_manager.current_backend_name().unwrap_or("cpu");
     // BUG #2 fix: use current control.algorithm (user may have pressed 'a' to switch)
     let hello_algorithm = {
         let c = control.lock().unwrap();
@@ -1432,7 +1458,11 @@ fn run_remote_session(
             telemetry.best_batch_ms = batch_ms;
         }
         let Some(solution) = scan_result else {
-            let tested = if can_gpu { gpu_nonces_tested } else { job.nonce_count };
+            let tested = if can_gpu {
+                gpu_nonces_tested
+            } else {
+                job.nonce_count
+            };
             attempted_hashes = attempted_hashes.saturating_add(tested);
             telemetry.record_attempted_hashes(attempted_hashes);
             telemetry.record_no_solution();
@@ -1512,7 +1542,10 @@ fn run_remote_session(
         telemetry.record_attempted_hashes(attempted_hashes);
 
         // Always log found nonce for operational visibility
-        let hash_prefix: String = solution.hash[..6].iter().map(|x| format!("{:02x}", x)).collect();
+        let hash_prefix: String = solution.hash[..6]
+            .iter()
+            .map(|x| format!("{:02x}", x))
+            .collect();
         println!(
             "[{}] found_nonce={}  height={}  depth={}/{}  tested={}  elapsed_ms={}  algo={}  hash_prefix={}",
             log_timestamp(),
@@ -1560,16 +1593,31 @@ fn run_remote_session(
                 if accepted {
                     accepted_iterations += 1;
                     hashrate.record_share(true);
-                    ui::log_accepted(job.job_id, job.height, solution.candidate.nonce, latency_ms as u64);
+                    ui::log_accepted(
+                        job.job_id,
+                        job.height,
+                        solution.candidate.nonce,
+                        latency_ms as u64,
+                    );
                     println!(
                         "[{}] SHARE_ACCEPTED  job={}  height={}  nonce={}  algo={}  latency_ms={}",
-                        log_timestamp(), job.job_id, job.height,
-                        solution.candidate.nonce, current_algorithm, latency_ms,
+                        log_timestamp(),
+                        job.job_id,
+                        job.height,
+                        solution.candidate.nonce,
+                        current_algorithm,
+                        latency_ms,
                     );
                 } else {
                     rejected_iterations += 1;
                     hashrate.record_share(false);
-                    ui::log_rejected(job.job_id, job.height, solution.candidate.nonce, latency_ms as u64, &status);
+                    ui::log_rejected(
+                        job.job_id,
+                        job.height,
+                        solution.candidate.nonce,
+                        latency_ms as u64,
+                        &status,
+                    );
                     println!(
                         "[{}] SHARE_REJECTED  job={}  height={}  nonce={}  algo={}  reason=\"{}\"  hash={}",
                         log_timestamp(), job.job_id, job.height,
@@ -1875,7 +1923,7 @@ impl SessionTelemetry {
         let ttl_text = remote_job_ttl_ms
             .map(|ttl| ttl.to_string())
             .unwrap_or_else(|| "n/a".to_string());
-        let ts = log_timestamp();
+        let _ts = log_timestamp();
         let _backend_label = if self.gpu_backend_name.is_empty() {
             "cpu"
         } else {
@@ -2211,7 +2259,9 @@ impl MinerConfig {
                     println!();
                     println!("One-click mining:");
                     println!("  --pool HOST:PORT    Pool address (default: env ZION_POOL_ADDR)");
-                    println!("  --wallet ADDR       Payout wallet address (zion1…, default: miner_id)");
+                    println!(
+                        "  --wallet ADDR       Payout wallet address (zion1…, default: miner_id)"
+                    );
                     println!("  --worker NAME       Worker name (default: cpu-rig-0)");
                     println!("  --threads N         CPU thread count (default: auto-detect)");
                     println!("  --gpu BACKEND       GPU backend: auto, metal, opencl, cpu (default: auto)");
@@ -2332,7 +2382,9 @@ fn apply_profile_defaults() {
             ("ZION_SLEEP_MS", "0"),
         ],
         other => {
-            eprintln!("warning: unknown ZION_PROFILE={other:?}, ignoring (valid: pool, solo, benchmark)");
+            eprintln!(
+                "warning: unknown ZION_PROFILE={other:?}, ignoring (valid: pool, solo, benchmark)"
+            );
             return;
         }
     };
@@ -2412,6 +2464,37 @@ fn parse_revenue_source(value: &str) -> Result<RevenueSource> {
         "ncl" | "ncl_ai" => Ok(RevenueSource::NclAi),
         other => Err(anyhow!("unsupported revenue source: {other}")),
     }
+}
+
+fn parse_bool_env(key: &str, default: bool) -> bool {
+    match std::env::var(key) {
+        Ok(v) => {
+            let t = v.trim().to_ascii_lowercase();
+            !(t == "0" || t == "false" || t == "no" || t == "off")
+        }
+        Err(_) => default,
+    }
+}
+
+fn increase_nonce_window(current: u64, max: u64, adjust_percent: u64) -> u64 {
+    if current >= max {
+        return max;
+    }
+    let factor = 100u64.saturating_add(adjust_percent.max(1));
+    let grown = current
+        .saturating_mul(factor)
+        .saturating_div(100)
+        .max(current.saturating_add(1));
+    grown.min(max)
+}
+
+fn decrease_nonce_window(current: u64, min: u64, adjust_percent: u64) -> u64 {
+    if current <= min {
+        return min;
+    }
+    let factor = 100u64.saturating_sub(adjust_percent.min(90)).max(10);
+    let shrunk = current.saturating_mul(factor).saturating_div(100);
+    shrunk.max(min)
 }
 
 #[cfg(test)]
@@ -2734,7 +2817,10 @@ mod tests {
         std::env::set_var("ZION_PROFILE", "dual");
         apply_profile_defaults();
         // "dual" profile was removed with DCR backdoor; must set nothing.
-        assert!(std::env::var("ZION_LOOP_COUNT").is_err(), "dual profile must not set ZION_LOOP_COUNT");
+        assert!(
+            std::env::var("ZION_LOOP_COUNT").is_err(),
+            "dual profile must not set ZION_LOOP_COUNT"
+        );
         for k in ["ZION_PROFILE", "ZION_LOOP_COUNT"] {
             std::env::remove_var(k);
         }
@@ -2794,35 +2880,4 @@ mod tests {
             std::env::remove_var(k);
         }
     }
-}
-
-fn parse_bool_env(key: &str, default: bool) -> bool {
-    match std::env::var(key) {
-        Ok(v) => {
-            let t = v.trim().to_ascii_lowercase();
-            !(t == "0" || t == "false" || t == "no" || t == "off")
-        }
-        Err(_) => default,
-    }
-}
-
-fn increase_nonce_window(current: u64, max: u64, adjust_percent: u64) -> u64 {
-    if current >= max {
-        return max;
-    }
-    let factor = 100u64.saturating_add(adjust_percent.max(1));
-    let grown = current
-        .saturating_mul(factor)
-        .saturating_div(100)
-        .max(current.saturating_add(1));
-    grown.min(max)
-}
-
-fn decrease_nonce_window(current: u64, min: u64, adjust_percent: u64) -> u64 {
-    if current <= min {
-        return min;
-    }
-    let factor = 100u64.saturating_sub(adjust_percent.min(90)).max(10);
-    let shrunk = current.saturating_mul(factor).saturating_div(100);
-    shrunk.max(min)
 }

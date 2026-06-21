@@ -844,7 +844,7 @@ mod tests {
             tip_height: 2,
             total_work: 2000,
         };
-        db.save_block_and_apply_utxos(&block2, &undo2, &[], &[op.clone()], &meta2)
+        db.save_block_and_apply_utxos(&block2, &undo2, &[], std::slice::from_ref(&op), &meta2)
             .unwrap();
 
         // UTXO should be gone

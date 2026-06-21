@@ -3,6 +3,11 @@
 //! Uses ANSI escape codes for colors and cursor control.
 //! Windows Terminal, MINGW64, and most modern consoles support these.
 
+// Display-only helpers; several color codes / loggers are kept for completeness.
+#![allow(dead_code)]
+#![allow(clippy::too_many_arguments)]
+#![allow(clippy::type_complexity)]
+
 use std::io::{self, Write};
 
 /* ========================================================================= */
@@ -78,54 +83,65 @@ pub fn fmt_uptime(secs: u64) -> String {
 /* ========================================================================= */
 
 /// Print an accepted share line (green +)
-pub fn log_accepted(
-    job_id: u64,
-    height: u64,
-    nonce: u64,
-    latency_ms: u64,
-) {
+pub fn log_accepted(job_id: u64, height: u64, nonce: u64, latency_ms: u64) {
     let mut s = String::new();
-    s.push_str(GREEN); s.push('+'); s.push_str(RESET);
+    s.push_str(GREEN);
+    s.push('+');
+    s.push_str(RESET);
     s.push(' ');
-    s.push_str(CYAN); s.push_str("job="); s.push_str(RESET);
+    s.push_str(CYAN);
+    s.push_str("job=");
+    s.push_str(RESET);
     s.push_str(&job_id.to_string());
     s.push(' ');
-    s.push_str(YELLOW); s.push_str("height="); s.push_str(RESET);
+    s.push_str(YELLOW);
+    s.push_str("height=");
+    s.push_str(RESET);
     s.push_str(&height.to_string());
     s.push(' ');
-    s.push_str(GREEN); s.push_str("nonce="); s.push_str(RESET);
+    s.push_str(GREEN);
+    s.push_str("nonce=");
+    s.push_str(RESET);
     s.push_str(&nonce.to_string());
     s.push(' ');
-    s.push_str(MAGENTA); s.push_str("latency="); s.push_str(RESET);
+    s.push_str(MAGENTA);
+    s.push_str("latency=");
+    s.push_str(RESET);
     s.push_str(&latency_ms.to_string());
     s.push_str("ms\n");
     print_flush(&s);
 }
 
 /// Print a rejected share line (red -)
-pub fn log_rejected(
-    job_id: u64,
-    height: u64,
-    nonce: u64,
-    latency_ms: u64,
-    reason: &str,
-) {
+pub fn log_rejected(job_id: u64, height: u64, nonce: u64, latency_ms: u64, reason: &str) {
     let mut s = String::new();
-    s.push_str(RED); s.push('-'); s.push_str(RESET);
+    s.push_str(RED);
+    s.push('-');
+    s.push_str(RESET);
     s.push(' ');
-    s.push_str(CYAN); s.push_str("job="); s.push_str(RESET);
+    s.push_str(CYAN);
+    s.push_str("job=");
+    s.push_str(RESET);
     s.push_str(&job_id.to_string());
     s.push(' ');
-    s.push_str(YELLOW); s.push_str("height="); s.push_str(RESET);
+    s.push_str(YELLOW);
+    s.push_str("height=");
+    s.push_str(RESET);
     s.push_str(&height.to_string());
     s.push(' ');
-    s.push_str(RED); s.push_str("nonce="); s.push_str(RESET);
+    s.push_str(RED);
+    s.push_str("nonce=");
+    s.push_str(RESET);
     s.push_str(&nonce.to_string());
     s.push(' ');
-    s.push_str(MAGENTA); s.push_str("latency="); s.push_str(RESET);
+    s.push_str(MAGENTA);
+    s.push_str("latency=");
+    s.push_str(RESET);
     s.push_str(&latency_ms.to_string());
     s.push_str("ms ");
-    s.push_str(RED); s.push_str("reason="); s.push_str(RESET);
+    s.push_str(RED);
+    s.push_str("reason=");
+    s.push_str(RESET);
     s.push_str(reason);
     s.push('\n');
     print_flush(&s);
@@ -146,9 +162,9 @@ pub fn log_block_found(height: u64, nonce: u64, hash_prefix: &str) {
                                     ║  ════════════════════════════════════════════════════════════════ ║
                                     ║  Height: {}  Nonce: {}  Hash: {}...                      ║
                                     ╚══════════════════════════════════════════════════════════════════╝"#;
-    
+
     let flag_formatted = flag.replace("{}", &format!("{}  {}  {}", height, nonce, hash_prefix));
-    
+
     let mut s = String::new();
     s.push_str(BRIGHT_YELLOW);
     s.push_str(&flag_formatted);
@@ -160,20 +176,32 @@ pub fn log_block_found(height: u64, nonce: u64, hash_prefix: &str) {
 /// Print a new-job notification (blue arrow)
 pub fn log_new_job(job_id: u64, height: u64, algorithm: &str, difficulty: u64) {
     let mut s = String::new();
-    s.push_str(BLUE); s.push_str(">>"); s.push_str(RESET);
+    s.push_str(BLUE);
+    s.push_str(">>");
+    s.push_str(RESET);
     s.push(' ');
-    s.push_str(CYAN); s.push_str("new job"); s.push_str(RESET);
+    s.push_str(CYAN);
+    s.push_str("new job");
+    s.push_str(RESET);
     s.push(' ');
-    s.push_str(DIM); s.push('#'); s.push_str(RESET);
+    s.push_str(DIM);
+    s.push('#');
+    s.push_str(RESET);
     s.push_str(&job_id.to_string());
     s.push(' ');
-    s.push_str(YELLOW); s.push_str("height="); s.push_str(RESET);
+    s.push_str(YELLOW);
+    s.push_str("height=");
+    s.push_str(RESET);
     s.push_str(&height.to_string());
     s.push(' ');
-    s.push_str(BLUE); s.push_str("algo="); s.push_str(RESET);
+    s.push_str(BLUE);
+    s.push_str("algo=");
+    s.push_str(RESET);
     s.push_str(algorithm);
     s.push(' ');
-    s.push_str(MAGENTA); s.push_str("diff="); s.push_str(RESET);
+    s.push_str(MAGENTA);
+    s.push_str("diff=");
+    s.push_str(RESET);
     s.push_str(&difficulty.to_string());
     s.push('\n');
     print_flush(&s);
@@ -182,14 +210,22 @@ pub fn log_new_job(job_id: u64, height: u64, algorithm: &str, difficulty: u64) {
 /// Print GPU epoch update
 pub fn log_epoch_update(epoch: u64, height: u64) {
     let mut s = String::new();
-    s.push_str(YELLOW); s.push('!'); s.push_str(RESET);
+    s.push_str(YELLOW);
+    s.push('!');
+    s.push_str(RESET);
     s.push(' ');
-    s.push_str(DIM); s.push_str("epoch update"); s.push_str(RESET);
+    s.push_str(DIM);
+    s.push_str("epoch update");
+    s.push_str(RESET);
     s.push(' ');
-    s.push_str(YELLOW); s.push_str("epoch="); s.push_str(RESET);
+    s.push_str(YELLOW);
+    s.push_str("epoch=");
+    s.push_str(RESET);
     s.push_str(&epoch.to_string());
     s.push(' ');
-    s.push_str(YELLOW); s.push_str("height="); s.push_str(RESET);
+    s.push_str(YELLOW);
+    s.push_str("height=");
+    s.push_str(RESET);
     s.push_str(&height.to_string());
     s.push('\n');
     print_flush(&s);
@@ -198,9 +234,13 @@ pub fn log_epoch_update(epoch: u64, height: u64) {
 /// Print connection status
 pub fn log_connecting(pool: &str) {
     let mut s = String::new();
-    s.push_str(YELLOW); s.push('*'); s.push_str(RESET);
+    s.push_str(YELLOW);
+    s.push('*');
+    s.push_str(RESET);
     s.push(' ');
-    s.push_str(DIM); s.push_str("connecting to"); s.push_str(RESET);
+    s.push_str(DIM);
+    s.push_str("connecting to");
+    s.push_str(RESET);
     s.push(' ');
     s.push_str(pool);
     s.push_str(" …\n");
@@ -209,13 +249,19 @@ pub fn log_connecting(pool: &str) {
 
 pub fn log_connected(pool: &str, latency_ms: u64) {
     let mut s = String::new();
-    s.push_str(GREEN); s.push('*'); s.push_str(RESET);
+    s.push_str(GREEN);
+    s.push('*');
+    s.push_str(RESET);
     s.push(' ');
-    s.push_str(DIM); s.push_str("connected to"); s.push_str(RESET);
+    s.push_str(DIM);
+    s.push_str("connected to");
+    s.push_str(RESET);
     s.push(' ');
     s.push_str(pool);
     s.push(' ');
-    s.push_str(GREEN); s.push_str("latency="); s.push_str(RESET);
+    s.push_str(GREEN);
+    s.push_str("latency=");
+    s.push_str(RESET);
     s.push_str(&latency_ms.to_string());
     s.push_str("ms\n");
     print_flush(&s);
@@ -223,9 +269,13 @@ pub fn log_connected(pool: &str, latency_ms: u64) {
 
 pub fn log_disconnected(pool: &str) {
     let mut s = String::new();
-    s.push_str(RED); s.push('*'); s.push_str(RESET);
+    s.push_str(RED);
+    s.push('*');
+    s.push_str(RESET);
     s.push(' ');
-    s.push_str(DIM); s.push_str("disconnected from"); s.push_str(RESET);
+    s.push_str(DIM);
+    s.push_str("disconnected from");
+    s.push_str(RESET);
     s.push(' ');
     s.push_str(pool);
     s.push('\n');
@@ -270,40 +320,78 @@ pub fn print_speed_table(
 
     // ── Speed line ──
     let mut s = String::new();
-    s.push_str(BOLD); s.push_str(WHITE); s.push_str("speed"); s.push_str(RESET);
+    s.push_str(BOLD);
+    s.push_str(WHITE);
+    s.push_str("speed");
+    s.push_str(RESET);
     s.push_str("  ");
-    s.push_str(CYAN); s.push_str(&format!("{:>8}", v10)); s.push(' '); s.push_str(u10); s.push_str(RESET);
-    s.push_str("  ");
-    s.push_str(DIM); s.push_str(&format!("{:>8}", v60)); s.push(' '); s.push_str(u60); s.push_str(RESET);
-    s.push_str("  ");
-    s.push_str(DIM); s.push_str(&format!("{:>8}", v15)); s.push(' '); s.push_str(u15); s.push_str(RESET);
-    s.push_str("  ");
-    s.push_str(YELLOW); s.push_str("max"); s.push_str(RESET);
+    s.push_str(CYAN);
+    s.push_str(&format!("{:>8}", v10));
     s.push(' ');
-    s.push_str(GREEN); s.push_str(&format!("{:>8}", vmx)); s.push(' '); s.push_str(umx); s.push_str(RESET);
+    s.push_str(u10);
+    s.push_str(RESET);
+    s.push_str("  ");
+    s.push_str(DIM);
+    s.push_str(&format!("{:>8}", v60));
+    s.push(' ');
+    s.push_str(u60);
+    s.push_str(RESET);
+    s.push_str("  ");
+    s.push_str(DIM);
+    s.push_str(&format!("{:>8}", v15));
+    s.push(' ');
+    s.push_str(u15);
+    s.push_str(RESET);
+    s.push_str("  ");
+    s.push_str(YELLOW);
+    s.push_str("max");
+    s.push_str(RESET);
+    s.push(' ');
+    s.push_str(GREEN);
+    s.push_str(&format!("{:>8}", vmx));
+    s.push(' ');
+    s.push_str(umx);
+    s.push_str(RESET);
     s.push('\n');
     print_flush(&s);
 
     // ── Shares line ──
     let rej_col = if rejected > 0 { BRIGHT_RED } else { DIM };
     let mut s2 = String::new();
-    s2.push_str(BOLD); s2.push_str(WHITE); s2.push_str("shares"); s2.push_str(RESET);
+    s2.push_str(BOLD);
+    s2.push_str(WHITE);
+    s2.push_str("shares");
+    s2.push_str(RESET);
     s2.push(' ');
-    s2.push_str(GREEN); s2.push_str(&accepted.to_string()); s2.push_str(RESET);
+    s2.push_str(GREEN);
+    s2.push_str(&accepted.to_string());
+    s2.push_str(RESET);
     s2.push('/');
-    s2.push_str(rej_col); s2.push_str(&rejected.to_string()); s2.push_str(RESET);
+    s2.push_str(rej_col);
+    s2.push_str(&rejected.to_string());
+    s2.push_str(RESET);
     s2.push(' ');
-    s2.push_str(DIM); s2.push('('); s2.push_str(&format!("{:.1}", accept_pct)); s2.push_str("%)"); s2.push_str(RESET);
+    s2.push_str(DIM);
+    s2.push('(');
+    s2.push_str(&format!("{:.1}", accept_pct));
+    s2.push_str("%)");
+    s2.push_str(RESET);
     s2.push_str("  ");
-    s2.push_str(WHITE); s2.push_str("hashes"); s2.push_str(RESET);
+    s2.push_str(WHITE);
+    s2.push_str("hashes");
+    s2.push_str(RESET);
     s2.push(' ');
     s2.push_str(&attempted.to_string());
     s2.push_str("  ");
-    s2.push_str(MAGENTA); s2.push_str("pool latency"); s2.push_str(RESET);
+    s2.push_str(MAGENTA);
+    s2.push_str("pool latency");
+    s2.push_str(RESET);
     s2.push(' ');
     s2.push_str(&format!("{:.0} / {:.0} ms", submit_avg, submit_max));
     s2.push_str("  ");
-    s2.push_str(WHITE); s2.push_str("uptime"); s2.push_str(RESET);
+    s2.push_str(WHITE);
+    s2.push_str("uptime");
+    s2.push_str(RESET);
     s2.push(' ');
     s2.push_str(&uptime);
     s2.push('\n');
@@ -311,13 +399,19 @@ pub fn print_speed_table(
 
     // ── Algorithm / epoch / height ──
     let mut s3 = String::new();
-    s3.push_str(DIM); s3.push_str("algo="); s3.push_str(RESET);
+    s3.push_str(DIM);
+    s3.push_str("algo=");
+    s3.push_str(RESET);
     s3.push_str(algorithm);
     s3.push_str("  ");
-    s3.push_str(DIM); s3.push_str("epoch="); s3.push_str(RESET);
+    s3.push_str(DIM);
+    s3.push_str("epoch=");
+    s3.push_str(RESET);
     s3.push_str(&current_epoch.to_string());
     s3.push_str("  ");
-    s3.push_str(DIM); s3.push_str("height="); s3.push_str(RESET);
+    s3.push_str(DIM);
+    s3.push_str("height=");
+    s3.push_str(RESET);
     s3.push_str(&pool_height.to_string());
     s3.push('\n');
     print_flush(&s3);
@@ -325,7 +419,10 @@ pub fn print_speed_table(
     // ── GPU details ──
     if !gpu_infos.is_empty() {
         let mut s4 = String::new();
-        s4.push_str(BOLD); s4.push_str(WHITE); s4.push_str("gpu"); s4.push_str(RESET);
+        s4.push_str(BOLD);
+        s4.push_str(WHITE);
+        s4.push_str("gpu");
+        s4.push_str(RESET);
         s4.push('\n');
         print_flush(&s4);
         for (i, (name, cu, vram, clock, temp, power)) in gpu_infos.iter().enumerate() {
@@ -340,23 +437,36 @@ pub fn print_speed_table(
             };
             let mut s5 = String::new();
             s5.push_str("  ");
-            s5.push_str(GREEN); s5.push('#'); s5.push_str(&i.to_string()); s5.push_str(RESET);
+            s5.push_str(GREEN);
+            s5.push('#');
+            s5.push_str(&i.to_string());
+            s5.push_str(RESET);
             s5.push(' ');
             s5.push_str(name);
             s5.push_str("  ");
-            s5.push_str(DIM); s5.push_str("CU="); s5.push_str(RESET);
+            s5.push_str(DIM);
+            s5.push_str("CU=");
+            s5.push_str(RESET);
             s5.push_str(&cu.to_string());
             s5.push_str("  ");
-            s5.push_str(DIM); s5.push_str("VRAM="); s5.push_str(RESET);
+            s5.push_str(DIM);
+            s5.push_str("VRAM=");
+            s5.push_str(RESET);
             s5.push_str(&format!("{:.1} GiB", vram_gb));
             s5.push_str("  ");
-            s5.push_str(DIM); s5.push_str("clk="); s5.push_str(RESET);
+            s5.push_str(DIM);
+            s5.push_str("clk=");
+            s5.push_str(RESET);
             s5.push_str(&format!("{} MHz", clock));
             s5.push_str("  ");
-            s5.push_str(DIM); s5.push_str("temp="); s5.push_str(RESET);
+            s5.push_str(DIM);
+            s5.push_str("temp=");
+            s5.push_str(RESET);
             s5.push_str(&temp_str);
             s5.push_str("  ");
-            s5.push_str(DIM); s5.push_str("pwr="); s5.push_str(RESET);
+            s5.push_str(DIM);
+            s5.push_str("pwr=");
+            s5.push_str(RESET);
             s5.push_str(&power_str);
             s5.push('\n');
             print_flush(&s5);
@@ -372,11 +482,59 @@ pub fn print_fancy_banner(threads: usize, version: &str, backend: &str) {
     let mut s = String::new();
     s.push_str(CYAN);
     s.push_str("╔══════════════════════════════════════════════════════════════════╗\n");
-    s.push_str("║  "); s.push_str(BOLD); s.push_str(WHITE); s.push_str("  ███████╗██╗ ██████╗ ███╗   ██╗"); s.push_str(RESET); s.push_str("  "); s.push_str(YELLOW); s.push_str("v"); s.push_str(version); s.push_str(RESET); s.push_str("              ║\n");
-    s.push_str("║  "); s.push_str(BOLD); s.push_str(WHITE); s.push_str("  ╚══███╔╝██║██╔═══██╗████╗  ██║"); s.push_str(RESET); s.push_str("  "); s.push_str(DIM); s.push_str("GPU Miner"); s.push_str(RESET); s.push_str("           ║\n");
-    s.push_str("║  "); s.push_str(BOLD); s.push_str(WHITE); s.push_str("    ███╔╝ ██║██║   ██║██╔██╗ ██║"); s.push_str(RESET); s.push_str("  "); s.push_str(DIM); s.push_str("backend="); s.push_str(backend); s.push_str(RESET); s.push_str("        ║\n");
-    s.push_str("║  "); s.push_str(BOLD); s.push_str(WHITE); s.push_str("   ███╔╝  ██║██║   ██║██║╚██╗██║"); s.push_str(RESET); s.push_str("  "); s.push_str(DIM); s.push_str("threads="); s.push_str(&threads.to_string()); s.push_str(RESET); s.push_str("          ║\n");
-    s.push_str("║  "); s.push_str(BOLD); s.push_str(WHITE); s.push_str("  ███████╗██║╚██████╔╝██║ ╚████║"); s.push_str(RESET); s.push_str("  "); s.push_str(DIM); s.push_str("Ekam Deeksha"); s.push_str(RESET); s.push_str("       ║\n");
+    s.push_str("║  ");
+    s.push_str(BOLD);
+    s.push_str(WHITE);
+    s.push_str("  ███████╗██╗ ██████╗ ███╗   ██╗");
+    s.push_str(RESET);
+    s.push_str("  ");
+    s.push_str(YELLOW);
+    s.push('v');
+    s.push_str(version);
+    s.push_str(RESET);
+    s.push_str("              ║\n");
+    s.push_str("║  ");
+    s.push_str(BOLD);
+    s.push_str(WHITE);
+    s.push_str("  ╚══███╔╝██║██╔═══██╗████╗  ██║");
+    s.push_str(RESET);
+    s.push_str("  ");
+    s.push_str(DIM);
+    s.push_str("GPU Miner");
+    s.push_str(RESET);
+    s.push_str("           ║\n");
+    s.push_str("║  ");
+    s.push_str(BOLD);
+    s.push_str(WHITE);
+    s.push_str("    ███╔╝ ██║██║   ██║██╔██╗ ██║");
+    s.push_str(RESET);
+    s.push_str("  ");
+    s.push_str(DIM);
+    s.push_str("backend=");
+    s.push_str(backend);
+    s.push_str(RESET);
+    s.push_str("        ║\n");
+    s.push_str("║  ");
+    s.push_str(BOLD);
+    s.push_str(WHITE);
+    s.push_str("   ███╔╝  ██║██║   ██║██║╚██╗██║");
+    s.push_str(RESET);
+    s.push_str("  ");
+    s.push_str(DIM);
+    s.push_str("threads=");
+    s.push_str(&threads.to_string());
+    s.push_str(RESET);
+    s.push_str("          ║\n");
+    s.push_str("║  ");
+    s.push_str(BOLD);
+    s.push_str(WHITE);
+    s.push_str("  ███████╗██║╚██████╔╝██║ ╚████║");
+    s.push_str(RESET);
+    s.push_str("  ");
+    s.push_str(DIM);
+    s.push_str("Ekam Deeksha");
+    s.push_str(RESET);
+    s.push_str("       ║\n");
     s.push_str("╚══════════════════════════════════════════════════════════════════╝\n");
     s.push_str(RESET);
     print_flush(&s);

@@ -7,9 +7,20 @@ use zion_cosmic_harmony::{cosmic_harmony_with_height, deeksha_lite, deeksha_lite
 /// Hash function selector for dual-algo support.
 pub fn hash_candidate(candidate: &BlockCandidate, algorithm: &str) -> [u8; 32] {
     match algorithm {
-        "deeksha_lite_v1" => deeksha_lite::deeksha_lite(&candidate.header.to_bytes(), candidate.nonce),
-        "deeksha_lite_fire" => deeksha_lite_fire::deeksha_lite_fire(&candidate.header.to_bytes(), candidate.nonce),
-        _ => cosmic_harmony_with_height(&candidate.header.to_bytes(), candidate.nonce, candidate.height).data,
+        "deeksha_lite_v1" => {
+            deeksha_lite::deeksha_lite(&candidate.header.to_bytes(), candidate.nonce)
+        }
+        "deeksha_lite_fire" => {
+            deeksha_lite_fire::deeksha_lite_fire(&candidate.header.to_bytes(), candidate.nonce)
+        }
+        _ => {
+            cosmic_harmony_with_height(
+                &candidate.header.to_bytes(),
+                candidate.nonce,
+                candidate.height,
+            )
+            .data
+        }
     }
 }
 
@@ -18,7 +29,11 @@ pub fn hash_candidate(candidate: &BlockCandidate, algorithm: &str) -> [u8; 32] {
 /// Divides `job.nonce_count` into `threads` equal chunks, scans each in
 /// parallel, and returns the first solution found (cancelling others via
 /// an `AtomicBool` flag).
-pub fn parallel_scan_nonce_range(job: MiningJob, threads: usize, algorithm: &str) -> Option<MiningSolution> {
+pub fn parallel_scan_nonce_range(
+    job: MiningJob,
+    threads: usize,
+    algorithm: &str,
+) -> Option<MiningSolution> {
     let threads = threads.max(1);
     if threads == 1 {
         return sequential_scan(job, &AtomicBool::new(false), algorithm);
@@ -60,7 +75,11 @@ pub fn parallel_scan_nonce_range(job: MiningJob, threads: usize, algorithm: &str
 }
 
 /// Sequential single-thread scan respecting a cancellation flag.
-fn sequential_scan(job: MiningJob, cancelled: &AtomicBool, algorithm: &str) -> Option<MiningSolution> {
+fn sequential_scan(
+    job: MiningJob,
+    cancelled: &AtomicBool,
+    algorithm: &str,
+) -> Option<MiningSolution> {
     for offset in 0..job.nonce_count {
         if offset % 4096 == 0 && cancelled.load(Ordering::Relaxed) {
             return None;
@@ -117,7 +136,11 @@ mod tests {
             height: 0,
         };
 
-        let seq = sequential_scan(job, &AtomicBool::new(false), "cosmic_harmony_ekam_deeksha_v2");
+        let seq = sequential_scan(
+            job,
+            &AtomicBool::new(false),
+            "cosmic_harmony_ekam_deeksha_v2",
+        );
         let par = parallel_scan_nonce_range(job, 4, "cosmic_harmony_ekam_deeksha_v2");
 
         assert!(seq.is_some());
@@ -138,7 +161,11 @@ mod tests {
             height: 0,
         };
 
-        let seq = sequential_scan(job, &AtomicBool::new(false), "cosmic_harmony_ekam_deeksha_v2");
+        let seq = sequential_scan(
+            job,
+            &AtomicBool::new(false),
+            "cosmic_harmony_ekam_deeksha_v2",
+        );
         let par = parallel_scan_nonce_range(job, 1, "cosmic_harmony_ekam_deeksha_v2");
 
         assert_eq!(seq.unwrap().candidate.nonce, par.unwrap().candidate.nonce,);
@@ -166,9 +193,13 @@ mod tests {
         let header = test_header();
         let nonce = 42u64;
 
-        let hash_ekam = zion_cosmic_harmony::cosmic_harmony_ekam_deeksha_v3(&header.to_bytes(), nonce, 0).data;
+        let hash_ekam =
+            zion_cosmic_harmony::cosmic_harmony_ekam_deeksha_v3(&header.to_bytes(), nonce, 0).data;
         let hash_lite = deeksha_lite::deeksha_lite(&header.to_bytes(), nonce);
 
-        assert_ne!(hash_ekam, hash_lite, "DeekshaLite must produce different hashes than ekam_v3");
+        assert_ne!(
+            hash_ekam, hash_lite,
+            "DeekshaLite must produce different hashes than ekam_v3"
+        );
     }
 }

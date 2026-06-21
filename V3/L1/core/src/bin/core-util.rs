@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use zion_core::storage::{ChainDb, ChainMeta};
 
@@ -8,7 +8,7 @@ use zion_core::storage::{ChainDb, ChainMeta};
 #[command(
     name = "core-util",
     about = "ZION core offline chain state utility",
-    version,
+    version
 )]
 struct Cli {
     #[command(subcommand)]
@@ -24,9 +24,7 @@ enum Commands {
         out: Option<PathBuf>,
     },
     /// Verify LMDB integrity and metadata consistency
-    VerifyDb {
-        db_path: PathBuf,
-    },
+    VerifyDb { db_path: PathBuf },
     /// Dump blocks to JSON
     DumpBlocks {
         db_path: PathBuf,
@@ -36,14 +34,9 @@ enum Commands {
         out: Option<PathBuf>,
     },
     /// Print current tip height
-    TipHeight {
-        db_path: PathBuf,
-    },
+    TipHeight { db_path: PathBuf },
     /// Get a single block by height or hash
-    GetBlock {
-        db_path: PathBuf,
-        id: String,
-    },
+    GetBlock { db_path: PathBuf, id: String },
 }
 
 fn main() -> Result<()> {
@@ -61,7 +54,7 @@ fn main() -> Result<()> {
     }
 }
 
-fn open_db(path: &PathBuf) -> Result<ChainDb> {
+fn open_db(path: &Path) -> Result<ChainDb> {
     ChainDb::open(path).with_context(|| format!("Failed to open LMDB at {}", path.display()))
 }
 
@@ -75,7 +68,7 @@ fn cmd_export_state(db_path: PathBuf, out: Option<PathBuf>) -> Result<()> {
         "meta": meta_json(&meta),
         "tip_height": tip_height,
         "blocks_count": blocks.len(),
-        "blocks": blocks.iter().map(|b| block_json(b)).collect::<Vec<_>>(),
+        "blocks": blocks.iter().map(block_json).collect::<Vec<_>>(),
     });
 
     let json_str = serde_json::to_string_pretty(&export)?;
@@ -90,8 +83,10 @@ fn cmd_verify_db(db_path: PathBuf) -> Result<()> {
     print!("Checking meta database... ");
     match db.get_meta() {
         Ok(m) => {
-            println!("OK (schema={}, tip_height={}, total_work={})",
-                m.schema_version, m.tip_height, m.total_work);
+            println!(
+                "OK (schema={}, tip_height={}, total_work={})",
+                m.schema_version, m.tip_height, m.total_work
+            );
         }
         Err(e) => {
             println!("FAIL: {}", e);
@@ -102,14 +97,23 @@ fn cmd_verify_db(db_path: PathBuf) -> Result<()> {
     print!("Checking tip height... ");
     match db.tip_height() {
         Ok(h) => println!("OK (height={})", h),
-        Err(e) => { println!("FAIL: {}", e); ok = false; }
+        Err(e) => {
+            println!("FAIL: {}", e);
+            ok = false;
+        }
     }
 
     print!("Checking block at height 0 (genesis)... ");
     match db.get_block_by_height(0) {
         Ok(Some(_)) => println!("OK"),
-        Ok(None) => { println!("MISSING — genesis block not found"); ok = false; }
-        Err(e) => { println!("FAIL: {}", e); ok = false; }
+        Ok(None) => {
+            println!("MISSING — genesis block not found");
+            ok = false;
+        }
+        Err(e) => {
+            println!("FAIL: {}", e);
+            ok = false;
+        }
     }
 
     if ok {
@@ -127,7 +131,7 @@ fn cmd_dump_blocks(db_path: PathBuf, limit: Option<u64>, out: Option<PathBuf>) -
     let end = limit.map(|l| l.min(tip)).unwrap_or(tip);
     let blocks = db.export_blocks(0, end)?;
 
-    let export: Vec<_> = blocks.iter().map(|b| block_json(b)).collect();
+    let export: Vec<_> = blocks.iter().map(block_json).collect();
     let json_str = serde_json::to_string_pretty(&export)?;
     write_output(&json_str, out)?;
     Ok(())
@@ -195,7 +199,8 @@ fn block_json(block: &zion_core::storage::StoredBlock) -> serde_json::Value {
 fn write_output(text: &str, out: Option<PathBuf>) -> Result<()> {
     match out {
         Some(path) => {
-            std::fs::write(&path, text).with_context(|| format!("Failed to write {}", path.display()))?;
+            std::fs::write(&path, text)
+                .with_context(|| format!("Failed to write {}", path.display()))?;
             eprintln!("Wrote {}", path.display());
         }
         None => println!("{}", text),

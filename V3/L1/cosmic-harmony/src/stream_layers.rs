@@ -74,7 +74,9 @@ impl DeekshaStep {
         match self {
             Self::Keccak256 => RevenueSource::KeccakBonus,
             Self::Sha3_512 => RevenueSource::Sha3Bonus,
-            Self::GoldenMatrix | Self::MemoryHard | Self::CosmicFusion | Self::KeccakFinal => RevenueSource::Zion,
+            Self::GoldenMatrix | Self::MemoryHard | Self::CosmicFusion | Self::KeccakFinal => {
+                RevenueSource::Zion
+            }
             Self::NpuMix => RevenueSource::NclAi,
             Self::AesMix => RevenueSource::DeekshaLite,
             Self::ThermalLoop => RevenueSource::DeekshaLite,
@@ -437,13 +439,19 @@ mod tests {
         assert!(telemetry.total_work > 0);
 
         let thermal_pct = telemetry.pct_for(RevenueSource::ThermalBonus);
-        assert!(thermal_pct > 0.0, "Fire must attribute some work to ThermalBonus");
+        assert!(
+            thermal_pct > 0.0,
+            "Fire must attribute some work to ThermalBonus"
+        );
     }
 
     #[test]
     fn deeksha_lite_v1_revenue_is_deeksha_lite_stream() {
         let (_hash, telemetry) = deeksha_lite_v1_with_streams(b"lite revenue", 1);
         let lite_pct = telemetry.pct_for(RevenueSource::DeekshaLite);
-        assert!(lite_pct > 0.0, "Lite v1 must have DeekshaLite revenue stream");
+        assert!(
+            lite_pct > 0.0,
+            "Lite v1 must have DeekshaLite revenue stream"
+        );
     }
 }

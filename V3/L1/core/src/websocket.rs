@@ -103,7 +103,13 @@ impl ClientSession {
         self.subscriptions.remove(sub);
     }
 
-    async fn send(&self, msg: WsMessage) -> Result<()> {
+    /// Send a message to this client's outbound channel.
+    ///
+    /// The body is synchronous (`UnboundedSender::send` does not block), so this
+    /// is intentionally a plain `fn`. It was previously `async`, which meant
+    /// callers in synchronous contexts (e.g. `broadcast`) dropped the returned
+    /// future without polling it — silently sending nothing.
+    fn send(&self, msg: WsMessage) -> Result<()> {
         self.sender
             .send(msg)
             .context("failed to send message to client")?;

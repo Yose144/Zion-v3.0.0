@@ -13,9 +13,7 @@ use zion_core::{
     DifficultyTarget, MiningHeader, MiningSolution, RevenueSource, RpcRequest, RpcResponse,
     Transaction as AccountTransaction,
 };
-use zion_pool::ncl_gateway::{
-    NclDispatcher, NclGatewayClient, NclHeartbeatConfig, NclPricing,
-};
+use zion_pool::ncl_gateway::{NclDispatcher, NclGatewayClient, NclHeartbeatConfig, NclPricing};
 use zion_pool::pplns::{FeeConfig, PayoutEntry, PplnsConfig, PplnsEngine};
 use zion_pool::{
     decode_message, encode_message, MiningPool, PoolMessage, ShareDecision, ShareStatus,
@@ -212,8 +210,8 @@ fn main() -> Result<()> {
                         .revenue_handle();
                     let pricing = NclPricing::from_env();
                     let heartbeat = NclHeartbeatConfig::from_env();
-                    let queue_capacity = parse_env_u64("ZION_NCL_QUEUE_SIZE", 256)
-                        .unwrap_or(256) as usize;
+                    let queue_capacity =
+                        parse_env_u64("ZION_NCL_QUEUE_SIZE", 256).unwrap_or(256) as usize;
                     println!(
                         "ncl_gateway_enabled url={} heartbeat={} interval_secs={} \
                          price_in_per_1k={} price_out_per_1k={}",
@@ -244,10 +242,7 @@ fn main() -> Result<()> {
                     });
                 }
                 Err(e) => {
-                    eprintln!(
-                        "ncl_gateway_config_error url={} error={}",
-                        gateway_url, e
-                    );
+                    eprintln!("ncl_gateway_config_error url={} error={}", gateway_url, e);
                 }
             }
         }
@@ -489,6 +484,7 @@ impl VarDiff {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn handle_client(
     stream: TcpStream,
     pool: Arc<Mutex<MiningPool>>,
@@ -516,10 +512,20 @@ fn handle_client(
 
     // ── Inter-pool ShareRelay (Edge → Core) ─────────────────────────────
     // If the first message is a ShareRelay, record it in PPLNS and close.
-    if let PoolMessage::ShareRelay { miner_id, worker_name, height, difficulty, relay_origin } = &hello_message {
+    if let PoolMessage::ShareRelay {
+        miner_id,
+        worker_name,
+        height,
+        difficulty,
+        relay_origin,
+    } = &hello_message
+    {
         let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
         pplns.record_share_with_diff(miner_id, worker_name, *height, *difficulty);
-        println!("share_relay_accepted miner={} worker={} height={} diff={} origin={}", miner_id, worker_name, height, difficulty, relay_origin);
+        println!(
+            "share_relay_accepted miner={} worker={} height={} diff={} origin={}",
+            miner_id, worker_name, height, difficulty, relay_origin
+        );
         return Ok(());
     }
 
@@ -844,9 +850,15 @@ fn handle_client(
                             relay_origin: config.bind_addr.clone(),
                         };
                         if let Err(e) = relay_share_fire_and_forget(upstream, &relay) {
-                            println!("share_relay_failed miner={} upstream={} err={}", worker_name, upstream, e);
+                            println!(
+                                "share_relay_failed miner={} upstream={} err={}",
+                                worker_name, upstream, e
+                            );
                         } else {
-                            println!("share_relayed miner={} upstream={} diff={}", worker_name, upstream, share_difficulty);
+                            println!(
+                                "share_relayed miner={} upstream={} diff={}",
+                                worker_name, upstream, share_difficulty
+                            );
                         }
                     }
                     println!(
@@ -882,24 +894,27 @@ fn handle_client(
                         );
                         let node_rpc_addr = config.node_rpc_addr.clone();
                         let node_status = match node_rpc_addr.as_deref() {
-                            Some(addr) => match submit_candidate_to_node(addr, job, nonce, &session_algorithm) {
-                                Ok(RpcResponse::SubmitResult { accepted: true, .. }) => {
-                                    ShareStatus::Accepted
+                            Some(addr) => {
+                                match submit_candidate_to_node(addr, job, nonce, &session_algorithm)
+                                {
+                                    Ok(RpcResponse::SubmitResult { accepted: true, .. }) => {
+                                        ShareStatus::Accepted
+                                    }
+                                    Ok(RpcResponse::SubmitResult {
+                                        accepted: false,
+                                        reason,
+                                        ..
+                                    }) => map_node_rejection(reason.as_deref()),
+                                    Ok(other) => {
+                                        println!("node_rpc_unexpected={other:?}");
+                                        ShareStatus::UpstreamRejected
+                                    }
+                                    Err(error) => {
+                                        println!("node_rpc_error={error:#}");
+                                        ShareStatus::UpstreamRejected
+                                    }
                                 }
-                                Ok(RpcResponse::SubmitResult {
-                                    accepted: false,
-                                    reason,
-                                    ..
-                                }) => map_node_rejection(reason.as_deref()),
-                                Ok(other) => {
-                                    println!("node_rpc_unexpected={other:?}");
-                                    ShareStatus::UpstreamRejected
-                                }
-                                Err(error) => {
-                                    println!("node_rpc_error={error:#}");
-                                    ShareStatus::UpstreamRejected
-                                }
-                            },
+                            }
                             None => ShareStatus::Accepted,
                         };
 
@@ -2094,7 +2109,7 @@ impl RoutingStats {
                 self.source_accepted[source_index(source)].saturating_add(1);
         }
 
-        self.log_every > 0 && self.total_submits % self.log_every == 0
+        self.log_every > 0 && self.total_submits.is_multiple_of(self.log_every)
     }
 
     fn snapshot_line(&self) -> String {
@@ -2109,7 +2124,11 @@ impl RoutingStats {
         let _ = write!(
             out,
             "submits={} accepted={} rejected={} stale={} accept_rate={:.2}%",
-            self.total_submits, self.total_accepted, total_rejected, self.total_stale, total_accept_rate
+            self.total_submits,
+            self.total_accepted,
+            total_rejected,
+            self.total_stale,
+            total_accept_rate
         );
 
         for group in [
@@ -4016,7 +4035,7 @@ fn parse_pool_signing_key() -> Option<ed25519_dalek::SigningKey> {
 }
 
 fn parse_hex_bytes(hex_str: &str) -> Option<Vec<u8>> {
-    if hex_str.len() % 2 != 0 {
+    if !hex_str.len().is_multiple_of(2) {
         return None;
     }
     let mut bytes = Vec::with_capacity(hex_str.len() / 2);
@@ -4026,8 +4045,6 @@ fn parse_hex_bytes(hex_str: &str) -> Option<Vec<u8>> {
     }
     Some(bytes)
 }
-
-
 
 /// Fetch pool wallet's account balance (flowers) from the node via getBalance RPC.
 fn fetch_pool_account_balance(node_rpc_addr: &str, address: &str) -> Result<u128> {
@@ -4049,8 +4066,8 @@ fn fetch_pool_account_balance(node_rpc_addr: &str, address: &str) -> Result<u128
     let mut response_line = String::new();
     reader.read_line(&mut response_line)?;
 
-    let response: serde_json::Value = serde_json::from_str(&response_line)
-        .context("failed to parse getBalance response")?;
+    let response: serde_json::Value =
+        serde_json::from_str(&response_line).context("failed to parse getBalance response")?;
 
     if let Some(error) = response.get("error") {
         if !error.is_null() {
@@ -4300,7 +4317,9 @@ fn execute_pool_payout(
         if account_balance < total_needed {
             return Err(anyhow!(
                 "pool payout wallet {} account balance {} < total payout {} (deferring)",
-                pool_wallet_addr, account_balance, total_needed,
+                pool_wallet_addr,
+                account_balance,
+                total_needed,
             ));
         }
 
@@ -4321,7 +4340,12 @@ fn execute_pool_payout(
             if net_amount == 0 {
                 continue;
             }
-            let tx_id = zion_core::wallet::generate_account_tx_id(pool_wallet_addr, &payout.address, net_amount as u64, nonce);
+            let tx_id = zion_core::wallet::generate_account_tx_id(
+                pool_wallet_addr,
+                &payout.address,
+                net_amount as u64,
+                nonce,
+            );
             let sig = zion_core::crypto::sign(signing_key, tx_id.as_bytes());
             let tx = AccountTransaction {
                 tx_id: tx_id.clone(),
@@ -4330,7 +4354,7 @@ fn execute_pool_payout(
                 amount_zion: net_amount,
                 fee_zion: zion_core::fee::MIN_TX_FEE,
                 nonce,
-                signature: hex::encode(&sig),
+                signature: hex::encode(sig),
                 public_key: pk_hex.clone(),
             };
             match submit_account_transaction(node_rpc_addr, &tx) {
@@ -4343,8 +4367,11 @@ fn execute_pool_payout(
                 Err(err) => {
                     return Err(anyhow!(
                         "account payout failed for miner {} ({}): {}. executed={} deferred={}",
-                        payout.miner_id, payout.address, err,
-                        executed.len(), payouts.len() - executed.len(),
+                        payout.miner_id,
+                        payout.address,
+                        err,
+                        executed.len(),
+                        payouts.len() - executed.len(),
                     ));
                 }
             }
@@ -4352,7 +4379,10 @@ fn execute_pool_payout(
 
         println!(
             "payout_account_model height={} recipients={} wallet={} tx_id={}",
-            height, executed.len(), pool_wallet_addr, first_tx_id,
+            height,
+            executed.len(),
+            pool_wallet_addr,
+            first_tx_id,
         );
 
         let deferred: Vec<PayoutEntry> = payouts
@@ -4630,7 +4660,9 @@ fn execute_fee_payout(
         if account_balance < total_needed {
             return Err(anyhow!(
                 "pool payout wallet {} account balance {} < fee payout {} (deferring)",
-                pool_wallet_addr, account_balance, total_needed,
+                pool_wallet_addr,
+                account_balance,
+                total_needed,
             ));
         }
 
@@ -4643,7 +4675,12 @@ fn execute_fee_payout(
         let pk_hex = hex::encode(signing_key.verifying_key().as_bytes());
         for (i, recipient) in recipients.iter().enumerate() {
             let nonce = base_nonce + i as u64;
-            let tx_id = zion_core::wallet::generate_account_tx_id(pool_wallet_addr, &recipient.address, recipient.amount, nonce);
+            let tx_id = zion_core::wallet::generate_account_tx_id(
+                pool_wallet_addr,
+                &recipient.address,
+                recipient.amount,
+                nonce,
+            );
             let sig = zion_core::crypto::sign(signing_key, tx_id.as_bytes());
             let tx = AccountTransaction {
                 tx_id: tx_id.clone(),
@@ -4652,7 +4689,7 @@ fn execute_fee_payout(
                 amount_zion: recipient.amount as u128,
                 fee_zion: zion_core::fee::MIN_TX_FEE,
                 nonce,
-                signature: hex::encode(&sig),
+                signature: hex::encode(sig),
                 public_key: pk_hex.clone(),
             };
             match submit_account_transaction(node_rpc_addr, &tx) {
@@ -4664,8 +4701,10 @@ fn execute_fee_payout(
                 Err(err) => {
                     return Err(anyhow!(
                         "account fee payout failed for {}: {}. executed={}/{}",
-                        recipient.address, err,
-                        i, recipients.len(),
+                        recipient.address,
+                        err,
+                        i,
+                        recipients.len(),
                     ));
                 }
             }
@@ -4673,7 +4712,10 @@ fn execute_fee_payout(
 
         println!(
             "fee_payout_account_model height={} recipients={} wallet={} tx_id={}",
-            height, recipients.len(), pool_wallet_addr, first_tx_id,
+            height,
+            recipients.len(),
+            pool_wallet_addr,
+            first_tx_id,
         );
 
         return Ok(first_tx_id);

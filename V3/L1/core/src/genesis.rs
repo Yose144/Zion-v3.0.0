@@ -12,8 +12,8 @@
 
 //! Source: `PREMINE_ADDRESSES_PUBLIC.txt` + `L1/core/src/blockchain/premine.rs`
 
-use crate::{difficulty, AcceptedBlock, MiningHeader, Transaction};
 use crate::tx::{self, TxOutput};
+use crate::{difficulty, AcceptedBlock, MiningHeader, Transaction};
 use zion_cosmic_harmony::{cosmic_harmony_ekam_deeksha, cosmic_harmony_with_height};
 
 // ---------------------------------------------------------------------------
@@ -265,7 +265,10 @@ pub fn genesis_block() -> AcceptedBlock {
         } else {
             // Standard account-model genesis transaction
             let tag = if i == 0 {
-                format!("genesis-premine-{i:02}:{}:{}", output.address, GENESIS_MESSAGE)
+                format!(
+                    "genesis-premine-{i:02}:{}:{}",
+                    output.address, GENESIS_MESSAGE
+                )
             } else {
                 format!("genesis-premine-{i:02}:{}", output.address)
             };
@@ -390,9 +393,7 @@ pub fn validate_premine() -> Result<(), String> {
         .map(|o| o.amount_flowers)
         .sum();
     if bridge_seed != 400_000_000_000_000_000_000 {
-        return Err(format!(
-            "Bridge Seed total {bridge_seed} != 0.4B flowers"
-        ));
+        return Err(format!("Bridge Seed total {bridge_seed} != 0.4B flowers"));
     }
 
     let bridge_vault_utxo: u128 = PREMINE_OUTPUTS
@@ -443,6 +444,7 @@ fn genesis_tx_id(tag: &str, nonce: u64) -> String {
 }
 
 /// Merkle root for genesis transactions (same derivation as regular blocks).
+#[allow(dead_code)]
 fn genesis_merkle_root(transactions: &[Transaction]) -> [u8; 32] {
     let mut seed = [0u8; 32];
     for tx in transactions {
@@ -603,7 +605,10 @@ mod tests {
         for output in PREMINE_OUTPUTS.iter() {
             if output.category == "bridge_vault_utxo" {
                 // UTXO premine output is in utxo_transactions, not transactions
-                let utxo_tx = block.utxo_transactions.first().expect("bridge vault utxo should exist");
+                let utxo_tx = block
+                    .utxo_transactions
+                    .first()
+                    .expect("bridge vault utxo should exist");
                 let total_utxo: u128 = utxo_tx.outputs.iter().map(|o| o.amount as u128).sum();
                 assert_eq!(total_utxo, output.amount_flowers);
                 assert!(utxo_tx.outputs.iter().all(|o| o.address == output.address));
@@ -622,9 +627,15 @@ mod tests {
     #[test]
     fn genesis_vault_utxo_has_six_outputs() {
         let block = genesis_block();
-        let utxo_tx = block.utxo_transactions.first().expect("vault utxo should exist");
+        let utxo_tx = block
+            .utxo_transactions
+            .first()
+            .expect("vault utxo should exist");
         assert_eq!(utxo_tx.outputs.len(), 6);
-        assert!(utxo_tx.inputs.is_empty(), "genesis UTXO should be coinbase (no inputs)");
+        assert!(
+            utxo_tx.inputs.is_empty(),
+            "genesis UTXO should be coinbase (no inputs)"
+        );
         assert_eq!(utxo_tx.fee, 0);
         let total: u128 = utxo_tx.outputs.iter().map(|o| o.amount as u128).sum();
         assert_eq!(total, 100_000_000_000_000_000_000_u128);

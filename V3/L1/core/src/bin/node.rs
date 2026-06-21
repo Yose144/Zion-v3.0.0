@@ -59,10 +59,8 @@ fn main() -> Result<()> {
     // no longer required or used for the coinbase. Only humanitarian + issobella
     // need addresses; an empty string is passed for the (burned) pool-fee slot.
     let pool_fee_address = String::new();
-    let has_any_fee_address =
-        !humanitarian_address.is_empty() || !issobella_address.is_empty();
-    let has_all_fee_addresses =
-        !humanitarian_address.is_empty() && !issobella_address.is_empty();
+    let has_any_fee_address = !humanitarian_address.is_empty() || !issobella_address.is_empty();
+    let has_all_fee_addresses = !humanitarian_address.is_empty() && !issobella_address.is_empty();
     if has_any_fee_address && !has_all_fee_addresses {
         return Err(anyhow!(
             "ZION_HUMANITARIAN_WALLET and ZION_ISSOBELLA_WALLET must both be set together"
@@ -366,7 +364,7 @@ fn handle_p2p_stream(
         // Rate limiting per message
         {
             let now_epoch = epoch_secs();
-            let mut sec = lock_peer_sec(&peer_sec);
+            let mut sec = lock_peer_sec(peer_sec);
             if let Err(_reason) = sec.record_message(source_ip, now_epoch) {
                 eprintln!("p2p_rate_limited ip={source_ip}");
                 break;
@@ -379,7 +377,7 @@ fn handle_p2p_stream(
             Err(e) => {
                 eprintln!("p2p_decode_err source={source_addr} err={e}");
                 // Punish for protocol violation
-                lock_peer_sec(&peer_sec).punish(
+                lock_peer_sec(peer_sec).punish(
                     source_ip,
                     epoch_secs(),
                     zion_core::p2p_security::BanReason::ProtocolViolation,
@@ -398,7 +396,7 @@ fn handle_p2p_stream(
             let now = Instant::now();
             if let Some((host, port_str)) = listen_addr.rsplit_once(':') {
                 if let (Ok(ip), Ok(port)) = (host.parse::<IpAddr>(), port_str.parse::<u16>()) {
-                    lock_peer_mgr(&peer_mgr).register_peer(
+                    lock_peer_mgr(peer_mgr).register_peer(
                         node_id,
                         ip,
                         port,
@@ -413,7 +411,7 @@ fn handle_p2p_stream(
         // Update last_seen in PeerManager
         if let Some(ref pid) = peer_id {
             let now = Instant::now();
-            lock_peer_mgr(&peer_mgr).record_message(pid, line.len() as u64, now);
+            lock_peer_mgr(peer_mgr).record_message(pid, line.len() as u64, now);
         }
 
         // Detect AnnounceBlock / AnnounceTx for relay
@@ -434,7 +432,7 @@ fn handle_p2p_stream(
             Err(reason) => {
                 eprintln!("p2p_handle_err source={source_addr} reason={reason}");
                 if let Some(ref pid) = peer_id {
-                    lock_peer_mgr(&peer_mgr)
+                    lock_peer_mgr(peer_mgr)
                         .penalize(pid, zion_core::peer_manager::PENALTY_PROTOCOL_VIOLATION);
                 }
                 break;
@@ -444,7 +442,7 @@ fn handle_p2p_stream(
         // Reward valid block imports
         if is_announce {
             if let Some(ref pid) = peer_id {
-                lock_peer_mgr(&peer_mgr).reward(pid, zion_core::peer_manager::REWARD_VALID_BLOCK);
+                lock_peer_mgr(peer_mgr).reward(pid, zion_core::peer_manager::REWARD_VALID_BLOCK);
             }
         }
 
@@ -484,7 +482,7 @@ fn handle_p2p_stream(
 
     // Unregister peer when connection ends
     if let Some(ref pid) = peer_id {
-        lock_peer_mgr(&peer_mgr).unregister_peer(pid);
+        lock_peer_mgr(peer_mgr).unregister_peer(pid);
     }
     println!("p2p_disconnected source={source_addr}");
 
@@ -716,7 +714,10 @@ fn handle_rpc_http(
     // Check if this is a submitTransaction request to extract the transaction for relay
     let submit_tx = if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&body_str) {
         if let Some(method) = parsed.get("method").and_then(|m| m.as_str()) {
-            if method == "submitTransaction" || method == "sendRawTransaction" || method == "submitAccountTransaction" {
+            if method == "submitTransaction"
+                || method == "sendRawTransaction"
+                || method == "submitAccountTransaction"
+            {
                 if let Some(params) = parsed.get("params") {
                     let tx_value = params
                         .get("transaction")
@@ -755,7 +756,11 @@ fn handle_rpc_http(
     if let Some(submitted) = submit_tx {
         if let Ok(response) = serde_json::from_str::<serde_json::Value>(&resp_str) {
             if let Some(result) = response.get("result") {
-                if result.get("accepted").and_then(|a| a.as_bool()).unwrap_or(false) {
+                if result
+                    .get("accepted")
+                    .and_then(|a| a.as_bool())
+                    .unwrap_or(false)
+                {
                     if let Some(tx_id) = result.get("tx_id").and_then(|t| t.as_str()) {
                         let peers = runtime.lock().expect("lock").known_peers().to_vec();
                         relay_tx_to_peers(tx_id, submitted, &peers, None, seen_txs, stats);
@@ -875,23 +880,6 @@ fn parse_seed_peers_env(value: &str) -> Result<Vec<PeerEndpoint>> {
         .filter(|entry| !entry.is_empty())
         .map(|entry| parse_endpoint_env(entry, "ZION_SEED_PEERS"))
         .collect::<Result<Vec<_>>>()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn parse_network_name_accepts_testnet() {
-        let network = parse_network_name("testnet").expect("network");
-        assert_eq!(network, zion_core::NetworkId::Testnet);
-    }
-
-    #[test]
-    fn parse_network_name_rejects_unknown_network() {
-        let error = parse_network_name("weirdnet").unwrap_err();
-        assert!(error.to_string().contains("invalid ZION_NETWORK"));
-    }
 }
 
 fn bootstrap_peer_sync(runtime: &Arc<Mutex<NodeRuntime>>, batch_limit: u16) -> Result<()> {
@@ -1235,9 +1223,8 @@ fn outbound_peer_loop(
         }
     }
     // Optional: bind UDP socket for announcements (non-blocking, best-effort)
-    let udp_socket = UdpSocket::bind("0.0.0.0:0").ok().map(|s| {
+    let udp_socket = UdpSocket::bind("0.0.0.0:0").ok().inspect(|s| {
         s.set_nonblocking(true).ok();
-        s
     });
 
     // ── IBD engine setup ───────────────────────────────────────────────
@@ -1253,7 +1240,7 @@ fn outbound_peer_loop(
             let now = Instant::now();
             if now.duration_since(last_heartbeat) >= Duration::from_secs(60) {
                 last_heartbeat = now;
-                lock_peer_mgr(&peer_mgr).heartbeat(now)
+                lock_peer_mgr(peer_mgr).heartbeat(now)
             } else {
                 Vec::new()
             }
@@ -1389,7 +1376,7 @@ fn outbound_peer_loop(
         }
 
         // ── Peer discovery: ask a peer for its known peers ─────────────
-        if cycle_count % DISCOVERY_EVERY_N_CYCLES == 0 && !peers.is_empty() {
+        if cycle_count.is_multiple_of(DISCOVERY_EVERY_N_CYCLES) && !peers.is_empty() {
             let idx = (cycle_count / DISCOVERY_EVERY_N_CYCLES) as usize % peers.len();
             let target = &peers[idx];
             match p2p_roundtrip(target, &P2pMessage::GetPeers) {
@@ -1419,7 +1406,7 @@ fn outbound_peer_loop(
                                     })
                                 })
                                 .collect();
-                            lock_peer_mgr(&peer_mgr).add_seeds(&new_seeds);
+                            lock_peer_mgr(peer_mgr).add_seeds(&new_seeds);
                         }
                     }
                 }
@@ -1431,7 +1418,7 @@ fn outbound_peer_loop(
         }
 
         // ── Persist known_peers to disk ────────────────────────────────
-        if cycle_count % PERSIST_PEERS_EVERY_N_CYCLES == 0 {
+        if cycle_count.is_multiple_of(PERSIST_PEERS_EVERY_N_CYCLES) {
             let rt = runtime.lock().expect("lock");
             if let Err(e) = rt.persist_peers() {
                 eprintln!("peers_persist_err err={e}");
@@ -1489,7 +1476,7 @@ fn outbound_peer_loop(
                             if let Some((host, port_str)) = bind.rsplit_once(':') {
                                 if let Ok(p) = port_str.parse::<u16>() {
                                     let data = discovery
-                                        .build_announcement(host, p, &version, height, now_secs);
+                                        .build_announcement(host, p, version, height, now_secs);
                                     let _ = sock.send_to(&data, (addr, port));
                                 }
                             }
@@ -1650,7 +1637,7 @@ fn serve_node_metrics(bind_addr: &str, runtime: Arc<Mutex<NodeRuntime>>) -> Resu
                 );
                 ("200 OK", "application/json", body)
             }
-            "/metrics" | _ => {
+            _ => {
                 let mut out = String::with_capacity(2048);
                 let _ = writeln!(out, "# HELP zion_chain_height Current chain tip height.");
                 let _ = writeln!(out, "# TYPE zion_chain_height gauge");
@@ -1724,4 +1711,21 @@ fn serve_node_metrics(bind_addr: &str, runtime: Arc<Mutex<NodeRuntime>>) -> Resu
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_network_name_accepts_testnet() {
+        let network = parse_network_name("testnet").expect("network");
+        assert_eq!(network, zion_core::NetworkId::Testnet);
+    }
+
+    #[test]
+    fn parse_network_name_rejects_unknown_network() {
+        let error = parse_network_name("weirdnet").unwrap_err();
+        assert!(error.to_string().contains("invalid ZION_NETWORK"));
+    }
 }

@@ -67,7 +67,11 @@ pub(crate) fn validate_accepted_peer_block(
             nonce: block.nonce,
             height: block.height,
         };
-        let algorithm = if block.algorithm.is_empty() { "deeksha_lite_v1" } else { &block.algorithm };
+        let algorithm = if block.algorithm.is_empty() {
+            "deeksha_lite_v1"
+        } else {
+            &block.algorithm
+        };
         let computed_hash = candidate.hash_with_algorithm(algorithm);
         if computed_hash != block_hash {
             return Err(
