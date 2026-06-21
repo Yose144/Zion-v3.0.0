@@ -288,7 +288,12 @@ impl MiningPool {
         }
     }
 
-    pub fn hello_message(&self, miner_id: &str, worker_name: &str, payout_address: &str) -> PoolMessage {
+    pub fn hello_message(
+        &self,
+        miner_id: &str,
+        worker_name: &str,
+        payout_address: &str,
+    ) -> PoolMessage {
         PoolMessage::Hello {
             miner_id: miner_id.to_string(),
             worker_name: worker_name.to_string(),
@@ -324,10 +329,11 @@ impl MiningPool {
         } else {
             submission.algorithm.as_str()
         };
-        match self
-            .runtime
-            .validate_candidate_with_algorithm(submission.candidate, submission.target, algo)
-        {
+        match self.runtime.validate_candidate_with_algorithm(
+            submission.candidate,
+            submission.target,
+            algo,
+        ) {
             Some(sealed_block) => {
                 self.accepted_shares += 1;
                 self.runtime.record_revenue(
@@ -370,6 +376,7 @@ impl MiningPool {
         )
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn submit_solution_with<F>(
         &mut self,
         miner_id: String,

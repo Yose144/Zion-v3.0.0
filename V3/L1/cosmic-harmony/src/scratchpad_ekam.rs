@@ -19,6 +19,9 @@
 //! - Blake3 XOF for init is cryptographically sound (domain-separated)
 //! - AES cascade is data-dependent and hardware-accelerated
 
+// Memory-hard loops intentionally use index-based access for explicit offset math.
+#![allow(clippy::needless_range_loop)]
+
 use sha3::{Digest, Keccak256};
 
 use crate::algorithms_opt::Hash64;
@@ -466,7 +469,9 @@ fn mix_block_sha3(pad: &mut [u8], index: usize, pass: u64, forward: bool) {
     let mut rand_arr = [0u8; BLOCK_SIZE];
     rand_arr.copy_from_slice(&pad[rand_off..rand_off + BLOCK_SIZE]);
     let mixed = sha3_fast::sha3_512_64_64_64_8_8(
-        &cur_arr, &prev_arr, &rand_arr,
+        &cur_arr,
+        &prev_arr,
+        &rand_arr,
         &pass.to_le_bytes(),
         &(index as u64).to_le_bytes(),
     );
@@ -574,7 +579,6 @@ fn xor_block_in_place(dest: &mut [u8], src: &[u8]) {
     #[cfg(target_arch = "aarch64")]
     unsafe {
         xor_neon(dest.as_mut_ptr(), src.as_ptr());
-        return;
     }
 
     #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]

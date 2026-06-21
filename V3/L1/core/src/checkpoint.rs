@@ -139,7 +139,7 @@ impl CheckpointRegistry {
     /// Returns the verification result.
     pub fn add_checkpoint(&mut self, cp: SignedCheckpoint) -> CheckpointVerification {
         // Validate height is on checkpoint interval (except genesis)
-        if cp.height != 0 && cp.height % CHECKPOINT_INTERVAL != 0 {
+        if cp.height != 0 && !cp.height.is_multiple_of(CHECKPOINT_INTERVAL) {
             return CheckpointVerification::InvalidHeight;
         }
 
@@ -252,7 +252,7 @@ impl CheckpointRegistry {
 // ── Hex helpers ────────────────────────────────────────────────────────
 
 fn hex_decode(hex: &str) -> Option<Vec<u8>> {
-    if hex.len() % 2 != 0 {
+    if !hex.len().is_multiple_of(2) {
         return None;
     }
     (0..hex.len())

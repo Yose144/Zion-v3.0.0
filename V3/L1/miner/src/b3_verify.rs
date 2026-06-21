@@ -1,26 +1,27 @@
-/// Blake3 GPU kernel verification test.
-///
-/// Simulates the GPU's Blake3 implementation in Rust and compares against the
-/// blake3 crate to find divergence between GPU and CPU hash paths.
-///
-/// Run: cargo run --bin b3-verify
+//! Blake3 GPU kernel verification test.
+//!
+//! Simulates the GPU's Blake3 implementation in Rust and compares against the
+//! blake3 crate to find divergence between GPU and CPU hash paths.
+//!
+//! Run: cargo run --bin b3-verify
+
+#![allow(clippy::needless_range_loop)] // loops mirror the GPU Blake3 kernel layout
 
 // ──── Blake3 constants ────────────────────────────────────────────────────
 const IV: [u32; 8] = [
-    0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
-    0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,
+    0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A, 0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,
 ];
 
 const MSG_PERM: [usize; 16] = [2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8];
 
 const CHUNK_START: u32 = 1;
-const CHUNK_END: u32   = 2;
-const ROOT: u32        = 8;
+const CHUNK_END: u32 = 2;
+const ROOT: u32 = 8;
 
 // ──── GPU-equivalent Blake3 in Rust ───────────────────────────────────────
 
 fn rotr32(x: u32, n: u32) -> u32 {
-    (x >> n) | (x << (32 - n))
+    x.rotate_right(n)
 }
 
 fn b3_g(st: &mut [u32; 16], a: usize, b: usize, c: usize, d: usize, mx: u32, my: u32) {
@@ -35,14 +36,14 @@ fn b3_g(st: &mut [u32; 16], a: usize, b: usize, c: usize, d: usize, mx: u32, my:
 }
 
 fn b3_round(st: &mut [u32; 16], msg: &[u32; 16]) {
-    b3_g(st, 0, 4,  8, 12, msg[0],  msg[1]);
-    b3_g(st, 1, 5,  9, 13, msg[2],  msg[3]);
-    b3_g(st, 2, 6, 10, 14, msg[4],  msg[5]);
-    b3_g(st, 3, 7, 11, 15, msg[6],  msg[7]);
-    b3_g(st, 0, 5, 10, 15, msg[8],  msg[9]);
+    b3_g(st, 0, 4, 8, 12, msg[0], msg[1]);
+    b3_g(st, 1, 5, 9, 13, msg[2], msg[3]);
+    b3_g(st, 2, 6, 10, 14, msg[4], msg[5]);
+    b3_g(st, 3, 7, 11, 15, msg[6], msg[7]);
+    b3_g(st, 0, 5, 10, 15, msg[8], msg[9]);
     b3_g(st, 1, 6, 11, 12, msg[10], msg[11]);
-    b3_g(st, 2, 7,  8, 13, msg[12], msg[13]);
-    b3_g(st, 3, 4,  9, 14, msg[14], msg[15]);
+    b3_g(st, 2, 7, 8, 13, msg[12], msg[13]);
+    b3_g(st, 3, 4, 9, 14, msg[14], msg[15]);
 }
 
 fn b3_permute(msg: &mut [u32; 16]) {
@@ -52,11 +53,26 @@ fn b3_permute(msg: &mut [u32; 16]) {
     }
 }
 
-fn b3_compress(cv: &[u32; 8], bw: &[u32; 16], counter: u64, block_len: u32, flags: u32) -> [u32; 16] {
+fn b3_compress(
+    cv: &[u32; 8],
+    bw: &[u32; 16],
+    counter: u64,
+    block_len: u32,
+    flags: u32,
+) -> [u32; 16] {
     let mut st: [u32; 16] = [
-        cv[0], cv[1], cv[2], cv[3],
-        cv[4], cv[5], cv[6], cv[7],
-        IV[0], IV[1], IV[2], IV[3],
+        cv[0],
+        cv[1],
+        cv[2],
+        cv[3],
+        cv[4],
+        cv[5],
+        cv[6],
+        cv[7],
+        IV[0],
+        IV[1],
+        IV[2],
+        IV[3],
         (counter & 0xFFFFFFFF) as u32,
         (counter >> 32) as u32,
         block_len,
@@ -65,7 +81,7 @@ fn b3_compress(cv: &[u32; 8], bw: &[u32; 16], counter: u64, block_len: u32, flag
     let mut msg = *bw;
 
     // 7 rounds, 6 permutations
-    for i in 0..6 {
+    for _i in 0..6 {
         b3_round(&mut st, &msg);
         b3_permute(&mut msg);
     }
@@ -79,7 +95,13 @@ fn b3_compress(cv: &[u32; 8], bw: &[u32; 16], counter: u64, block_len: u32, flag
     st
 }
 
-fn b3_compress_cv(cv: &[u32; 8], bw: &[u32; 16], counter: u64, block_len: u32, flags: u32) -> [u32; 8] {
+fn b3_compress_cv(
+    cv: &[u32; 8],
+    bw: &[u32; 16],
+    counter: u64,
+    block_len: u32,
+    flags: u32,
+) -> [u32; 8] {
     let full = b3_compress(cv, bw, counter, block_len, flags);
     let mut out = [0u32; 8];
     out.copy_from_slice(&full[..8]);
@@ -112,8 +134,12 @@ fn b3_hash_single_chunk(input: &[u8]) -> B3ChunkOut {
         let is_first = offset == 0;
         let is_last = offset + this_len >= input_len;
         let mut fl = 0u32;
-        if is_first { fl |= CHUNK_START; }
-        if is_last  { fl |= CHUNK_END; }
+        if is_first {
+            fl |= CHUNK_START;
+        }
+        if is_last {
+            fl |= CHUNK_END;
+        }
 
         let bw = load_words(&input[offset..offset + this_len]);
         if is_last {
@@ -184,7 +210,10 @@ fn test_init_scratchpad() {
         // Find first diverging byte
         for i in 0..64 {
             if cpu_first_64[i] != gpu_first_64[i] {
-                println!("  First divergence at byte {}: cpu=0x{:02x} gpu=0x{:02x}", i, cpu_first_64[i], gpu_first_64[i]);
+                println!(
+                    "  First divergence at byte {}: cpu=0x{:02x} gpu=0x{:02x}",
+                    i, cpu_first_64[i], gpu_first_64[i]
+                );
                 break;
             }
         }
@@ -245,7 +274,10 @@ fn test_mix_block_blake3() {
         println!("✗ Mix block Blake3: MISMATCH\n");
         for i in 0..64 {
             if cpu_out[i] != gpu_out[i] {
-                println!("  First divergence at byte {}: cpu=0x{:02x} gpu=0x{:02x}", i, cpu_out[i], gpu_out[i]);
+                println!(
+                    "  First divergence at byte {}: cpu=0x{:02x} gpu=0x{:02x}",
+                    i, cpu_out[i], gpu_out[i]
+                );
                 break;
             }
         }
@@ -257,7 +289,9 @@ fn test_keccak256() {
 
     // Simulate: header(80) || nonce(8) = 88 bytes
     let mut input = [0u8; 88];
-    for i in 0..80 { input[i] = (i as u8).wrapping_mul(7); }
+    for i in 0..80 {
+        input[i] = (i as u8).wrapping_mul(7);
+    }
     input[80..88].copy_from_slice(&42u64.to_le_bytes());
 
     // CPU path: use the cosmic-harmony crate's keccak
@@ -280,12 +314,20 @@ fn test_full_pipeline_cpu() {
     let nonce = 12345u64;
     let height = 2583u64;
 
-    let candidate = zion_core::BlockCandidate { header, nonce, height };
+    let candidate = zion_core::BlockCandidate {
+        header,
+        nonce,
+        height,
+    };
     let hash = candidate.hash();
     println!("Height {}: hash = {:02x?}", height, &hash[..16]);
 
     // Same with height 0 (epoch 0 — what GPU always uses)
-    let candidate0 = zion_core::BlockCandidate { header, nonce, height: 0 };
+    let candidate0 = zion_core::BlockCandidate {
+        header,
+        nonce,
+        height: 0,
+    };
     let hash0 = candidate0.hash();
     println!("Height 0 : hash = {:02x?}", &hash0[..16]);
 
@@ -308,7 +350,7 @@ fn test_s4_memhard_exact() {
 
     // Exact same input as in gpu_backend.rs self_test
     use zion_cosmic_harmony::algorithms_opt::{golden_matrix_opt, keccak256_opt, sha3_512_opt};
-    use zion_cosmic_harmony::algorithms_npu::epoch_from_height;
+
     use zion_cosmic_harmony::scratchpad_ekam::memory_hard_transform_ekam_light_v2;
 
     let header = zion_core::MiningHeader {
@@ -321,7 +363,7 @@ fn test_s4_memhard_exact() {
 
     let header_bytes = bincode::serialize(&header).unwrap();
     let test_nonce = 42u64;
-    let test_height = 0u64;
+    let _test_height = 0u64;
 
     let mut input = [0u8; 88];
     input[..80].copy_from_slice(&header_bytes);

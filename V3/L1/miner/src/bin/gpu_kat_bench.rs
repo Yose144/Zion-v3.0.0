@@ -24,7 +24,9 @@ const SCRATCHPAD_BYTES: usize = 256 * 1024; // 256 KiB per thread
 fn hex_to_bytes(hex: &str) -> [u8; 32] {
     let mut out = [0u8; 32];
     for (i, chunk) in hex.as_bytes().chunks(2).enumerate() {
-        if i >= 32 { break; }
+        if i >= 32 {
+            break;
+        }
         out[i] = u8::from_str_radix(std::str::from_utf8(chunk).unwrap(), 16).unwrap();
     }
     out
@@ -86,7 +88,10 @@ fn run_gpu_kat(
             };
         }
     };
-    let device_name = pro_que.device().name().unwrap_or_else(|_| "unknown".to_string());
+    let device_name = pro_que
+        .device()
+        .name()
+        .unwrap_or_else(|_| "unknown".to_string());
     println!("  Device: {}", device_name);
 
     // ── Prepare 80-byte header + precomputed Keccak state ──
@@ -129,7 +134,9 @@ fn run_gpu_kat(
             .build()
             .unwrap();
 
-        unsafe { kernel.enq().unwrap(); }
+        unsafe {
+            kernel.enq().unwrap();
+        }
         pro_que.queue().finish().unwrap();
 
         let mut hash = vec![0u8; 32];
@@ -145,7 +152,10 @@ fn run_gpu_kat(
             println!("    nonce={:>20}: FAIL", nonce);
             println!("      expected: {}", expected_hex);
             println!("      got:      {}", got_hex);
-            mismatches.push(format!("nonce={}: expected {} got {}", nonce, expected_hex, got_hex));
+            mismatches.push(format!(
+                "nonce={}: expected {} got {}",
+                nonce, expected_hex, got_hex
+            ));
         }
     }
 
@@ -177,17 +187,27 @@ fn run_gpu_kat(
         .unwrap();
 
     // Warm-up
-    unsafe { bench_kernel.enq().unwrap(); }
+    unsafe {
+        bench_kernel.enq().unwrap();
+    }
     pro_que.queue().finish().unwrap();
 
     let t0 = Instant::now();
-    unsafe { bench_kernel.enq().unwrap(); }
+    unsafe {
+        bench_kernel.enq().unwrap();
+    }
     pro_que.queue().finish().unwrap();
     let elapsed_ms = t0.elapsed().as_millis() as f64;
     let hps = (bench_count as f64) / (elapsed_ms / 1000.0);
 
-    println!("    {} nonces in {:.1} ms = {:.0} H/s", bench_count, elapsed_ms, hps);
-    println!("    Effective (80% pool overhead est): {:.0} H/s", hps * 0.8);
+    println!(
+        "    {} nonces in {:.1} ms = {:.0} H/s",
+        bench_count, elapsed_ms, hps
+    );
+    println!(
+        "    Effective (80% pool overhead est): {:.0} H/s",
+        hps * 0.8
+    );
 
     KatResult {
         algo_name: algo_name.to_string(),
