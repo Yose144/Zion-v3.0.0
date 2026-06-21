@@ -279,7 +279,7 @@ impl GoldenEggTracker {
     /// Global leaderboard by most clues discovered
     pub fn leaderboard_by_clues(&self, limit: usize) -> Vec<&GoldenEggProgress> {
         let mut sorted: Vec<&GoldenEggProgress> = self.players.values().collect();
-        sorted.sort_by(|a, b| b.total_clues().cmp(&a.total_clues()));
+        sorted.sort_by_key(|b| std::cmp::Reverse(b.total_clues()));
         sorted.truncate(limit);
         sorted
     }

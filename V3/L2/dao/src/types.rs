@@ -126,18 +126,18 @@ pub type LayerId = u8;
 /// Role of a Co-Admin within a specific layer
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CoAdminRole {
-    Validator,   // L1: consensus node operator
-    CoreDev,     // L1: protocol developer
-    Security,    // L1: emergency response
-    Treasury,    // L2: treasury guardian
-    Bridge,      // L2/L3: bridge guardian
-    Relayer,     // L3: WARP cross-chain relayer
-    Auditor,     // L3: cross-chain auditor
-    Curator,     // L4: OASIS quest/avatar curator
-    Moderator,   // L4: content moderator
-    Community,   // L5: physical community guardian
-    Network,     // L5: L5 network council delegate
-    Steward,     // L6: Issobella space steward
+    Validator, // L1: consensus node operator
+    CoreDev,   // L1: protocol developer
+    Security,  // L1: emergency response
+    Treasury,  // L2: treasury guardian
+    Bridge,    // L2/L3: bridge guardian
+    Relayer,   // L3: WARP cross-chain relayer
+    Auditor,   // L3: cross-chain auditor
+    Curator,   // L4: OASIS quest/avatar curator
+    Moderator, // L4: content moderator
+    Community, // L5: physical community guardian
+    Network,   // L5: L5 network council delegate
+    Steward,   // L6: Issobella space steward
 }
 
 impl CoAdminRole {
@@ -180,10 +180,10 @@ pub struct CoAdmin {
     pub public_key: String,
     pub role: CoAdminRole,
     pub layer: LayerId,
-    pub bonded: u64,         // staked/bonded amount in flowers
-    pub reputation: u64,     // governance reputation score
+    pub bonded: u64,     // staked/bonded amount in flowers
+    pub reputation: u64, // governance reputation score
     pub is_active: bool,
-    pub appointed_at: u64,   // block height
+    pub appointed_at: u64,     // block height
     pub term_end: Option<u64>, // block height, None = indefinite
 }
 
@@ -198,7 +198,10 @@ impl CoAdmin {
         // Only roles with explicit cross-layer permission
         matches!(
             self.role,
-            CoAdminRole::Treasury | CoAdminRole::Bridge | CoAdminRole::Network | CoAdminRole::Steward
+            CoAdminRole::Treasury
+                | CoAdminRole::Bridge
+                | CoAdminRole::Network
+                | CoAdminRole::Steward
         )
     }
 }

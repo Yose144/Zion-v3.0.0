@@ -35,10 +35,16 @@ async fn main() {
         .with(EnvFilter::from_default_env().add_directive("zion_issobella=info".parse().unwrap()))
         .init();
 
-    info!("🔭 ZION Issobella Daemon v{} starting...", env!("CARGO_PKG_VERSION"));
+    info!(
+        "🔭 ZION Issobella Daemon v{} starting...",
+        env!("CARGO_PKG_VERSION")
+    );
 
     let cfg = IssobellaConfig::load(None);
-    info!("Config: name={} api_port={} db={}", cfg.name, cfg.port, cfg.db_path);
+    info!(
+        "Config: name={} api_port={} db={}",
+        cfg.name, cfg.port, cfg.db_path
+    );
 
     let iss_db = match IssobellaDb::open(&cfg.db_path) {
         Ok(db) => {

@@ -140,6 +140,12 @@ pub struct Topics {
     pub refunded: String, // Refunded(bytes32,address)
 }
 
+impl Default for Topics {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Topics {
     pub fn new() -> Self {
         Self {

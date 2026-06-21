@@ -391,6 +391,7 @@ impl Orchestrator {
     // ─── AI Safety limits (L3bigupdate.md §8.2) ────────────────────────────
     const AI_MAX_TRANSFER_FLOWERS: u64 = 1_000_000_000_000_000; // 1000 ZION
     const AI_TIMELOCK_THRESHOLD_FLOWERS: u64 = 100_000_000_000_000; // 100 ZION
+    #[allow(dead_code)]
     const AI_TIMELOCK_HOLD_HOURS: i64 = 24;
 
     /// Initiate automated cross-chain bridge operation via AI agent.
@@ -551,7 +552,9 @@ impl Orchestrator {
         };
 
         let job_id = job.id;
-        scheduler.submit_job(job).map_err(|e| AiError::MessageFailed(format!("NCL submit failed: {}", e)))?;
+        scheduler
+            .submit_job(job)
+            .map_err(|e| AiError::MessageFailed(format!("NCL submit failed: {}", e)))?;
 
         tracing::info!(
             job_id = %job_id,
@@ -593,19 +596,31 @@ impl Orchestrator {
     ) {
         let ts = chrono::Utc::now().to_rfc3339();
         let entry = match operation {
-            BridgeOperation::LockToEvm { amount_flowers, target_chain, evm_recipient } => {
+            BridgeOperation::LockToEvm {
+                amount_flowers,
+                target_chain,
+                evm_recipient,
+            } => {
                 format!(
                     "[{}] {} agent={}({}) op=lock_to_evm amount={} target={} recipient={} timelock={}\n",
                     ts, operation_id, agent_name, agent_id, amount_flowers, target_chain, evm_recipient, timelock
                 )
             }
-            BridgeOperation::BurnToL1 { amount_wzion, l1_recipient } => {
+            BridgeOperation::BurnToL1 {
+                amount_wzion,
+                l1_recipient,
+            } => {
                 format!(
                     "[{}] {} agent={}({}) op=burn_to_l1 amount={} recipient={} timelock={}\n",
                     ts, operation_id, agent_name, agent_id, amount_wzion, l1_recipient, timelock
                 )
             }
-            BridgeOperation::ComputeJob { model_id, backend, reward_flowers, .. } => {
+            BridgeOperation::ComputeJob {
+                model_id,
+                backend,
+                reward_flowers,
+                ..
+            } => {
                 format!(
                     "[{}] {} agent={}({}) op=compute_job model={} backend={:?} reward={} timelock={}\n",
                     ts, operation_id, agent_name, agent_id, model_id, backend, reward_flowers, timelock
@@ -619,7 +634,12 @@ impl Orchestrator {
                 tracing::error!("audit mkdir failed: {}", e);
                 return;
             }
-            if let Err(e) = std::fs::OpenOptions::new().create(true).append(true).open(&file).and_then(|mut f| f.write_all(entry.as_bytes())) {
+            if let Err(e) = std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(&file)
+                .and_then(|mut f| f.write_all(entry.as_bytes()))
+            {
                 tracing::error!("audit write failed: {}", e);
             }
         } else {

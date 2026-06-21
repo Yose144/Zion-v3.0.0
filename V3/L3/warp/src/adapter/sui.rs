@@ -8,6 +8,12 @@ use tracing::info;
 /// Sui adapter (MoveVM) — stub implementation.
 pub struct SuiAdapter;
 
+impl Default for SuiAdapter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SuiAdapter {
     pub fn new() -> Self {
         Self

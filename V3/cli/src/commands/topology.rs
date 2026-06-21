@@ -49,16 +49,25 @@ async fn topology_status(cfg: &Config) -> Result<()> {
                 .and_then(|n| n["known_peers"].as_u64())
                 .unwrap_or(0);
             let short = if hash.len() > 12 { &hash[..12] } else { hash };
-            ui::print_ok(&format!("  RPC {}:{} height={} peers={} tip={}...", core_host, core_rpc_port, height, peers, short));
+            ui::print_ok(&format!(
+                "  RPC {}:{} height={} peers={} tip={}...",
+                core_host, core_rpc_port, height, peers, short
+            ));
         }
         Err(e) => ui::print_err(&format!("  RPC {}:{} — {}", core_host, core_rpc_port, e)),
     }
 
     let core_pool_alive = tcp_probe(core_host, core_pool_port, Duration::from_secs(3));
     if core_pool_alive {
-        ui::print_ok(&format!("  Pool  {}:{} accepting connections", core_host, core_pool_port));
+        ui::print_ok(&format!(
+            "  Pool  {}:{} accepting connections",
+            core_host, core_pool_port
+        ));
     } else {
-        ui::print_warn(&format!("  Pool  {}:{} not reachable", core_host, core_pool_port));
+        ui::print_warn(&format!(
+            "  Pool  {}:{} not reachable",
+            core_host, core_pool_port
+        ));
     }
 
     if let Some(vpn) = &cfg.topology.core.vpn_ip {
@@ -79,16 +88,25 @@ async fn topology_status(cfg: &Config) -> Result<()> {
                 .and_then(|n| n["known_peers"].as_u64())
                 .unwrap_or(0);
             let short = if hash.len() > 12 { &hash[..12] } else { hash };
-            ui::print_ok(&format!("  RPC {}:{} height={} peers={} tip={}...", edge_host, edge_rpc_port, height, peers, short));
+            ui::print_ok(&format!(
+                "  RPC {}:{} height={} peers={} tip={}...",
+                edge_host, edge_rpc_port, height, peers, short
+            ));
         }
         Err(e) => ui::print_err(&format!("  RPC {}:{} — {}", edge_host, edge_rpc_port, e)),
     }
 
     let edge_pool_alive = tcp_probe(edge_pool_host, edge_pool_port, Duration::from_secs(3));
     if edge_pool_alive {
-        ui::print_ok(&format!("  Pool  {}:{} accepting connections", edge_pool_host, edge_pool_port));
+        ui::print_ok(&format!(
+            "  Pool  {}:{} accepting connections",
+            edge_pool_host, edge_pool_port
+        ));
     } else {
-        ui::print_warn(&format!("  Pool  {}:{} not reachable", edge_pool_host, edge_pool_port));
+        ui::print_warn(&format!(
+            "  Pool  {}:{} not reachable",
+            edge_pool_host, edge_pool_port
+        ));
     }
 
     if let Some(vpn) = &cfg.topology.edge.vpn_ip {
@@ -104,7 +122,10 @@ async fn topology_status(cfg: &Config) -> Result<()> {
         } else {
             let diff = core_h.abs_diff(edge_h);
             let leader = if core_h > edge_h { "core" } else { "edge" };
-            ui::print_warn(&format!("Sync   core={} edge={} diff={} ({} ahead)", core_h, edge_h, diff, leader));
+            ui::print_warn(&format!(
+                "Sync   core={} edge={} diff={} ({} ahead)",
+                core_h, edge_h, diff, leader
+            ));
         }
     } else {
         ui::print_warn("Sync   cannot compare — one or both nodes unreachable");
@@ -170,19 +191,32 @@ async fn topology_e2e(cfg: &Config) -> Result<()> {
     }
 
     // 5. VPN probe (Tailscale IPs)
-    if let (Some(core_vpn), Some(edge_vpn)) = (&cfg.topology.core.vpn_ip, &cfg.topology.edge.vpn_ip) {
+    if let (Some(core_vpn), Some(edge_vpn)) = (&cfg.topology.core.vpn_ip, &cfg.topology.edge.vpn_ip)
+    {
         print_step("VPN (Tailscale)");
         let core_vpn_alive = tcp_probe(core_vpn, core_rpc_port, Duration::from_secs(5));
         let edge_vpn_alive = tcp_probe(edge_vpn, edge_rpc_port, Duration::from_secs(5));
         if core_vpn_alive {
-            pass(&format!("core VPN {}:{} reachable", core_vpn, core_rpc_port));
+            pass(&format!(
+                "core VPN {}:{} reachable",
+                core_vpn, core_rpc_port
+            ));
         } else {
-            warn(&format!("core VPN {}:{} not reachable", core_vpn, core_rpc_port));
+            warn(&format!(
+                "core VPN {}:{} not reachable",
+                core_vpn, core_rpc_port
+            ));
         }
         if edge_vpn_alive {
-            pass(&format!("edge VPN {}:{} reachable", edge_vpn, edge_rpc_port));
+            pass(&format!(
+                "edge VPN {}:{} reachable",
+                edge_vpn, edge_rpc_port
+            ));
         } else {
-            warn(&format!("edge VPN {}:{} not reachable", edge_vpn, edge_rpc_port));
+            warn(&format!(
+                "edge VPN {}:{} not reachable",
+                edge_vpn, edge_rpc_port
+            ));
         }
     } else {
         print_step("VPN (Tailscale)");
@@ -192,8 +226,12 @@ async fn topology_e2e(cfg: &Config) -> Result<()> {
     // 6. Genesis hash consistency
     print_step("Genesis Hash");
     let genesis_hash = "003529805e9b47babb9ac0f26b27b1aad0a1cf3c483181857daf3269f7088923";
-    let core_genesis = node_rpc::call0(core_host, core_rpc_port, "getBlockByHeight").await.ok();
-    let edge_genesis = node_rpc::call0(edge_host, edge_rpc_port, "getBlockByHeight").await.ok();
+    let core_genesis = node_rpc::call0(core_host, core_rpc_port, "getBlockByHeight")
+        .await
+        .ok();
+    let edge_genesis = node_rpc::call0(edge_host, edge_rpc_port, "getBlockByHeight")
+        .await
+        .ok();
     match (core_genesis, edge_genesis) {
         (Some(c), Some(e)) => {
             let ch = c["hash_hex"].as_str().unwrap_or("?");
@@ -201,9 +239,16 @@ async fn topology_e2e(cfg: &Config) -> Result<()> {
             if ch == eh && ch == genesis_hash {
                 pass(&format!("core=edge=canonical {}...", &genesis_hash[..16]));
             } else if ch == eh {
-                pass(&format!("core=edge={}... (non-canonical)", &ch[..ch.len().min(16)]));
+                pass(&format!(
+                    "core=edge={}... (non-canonical)",
+                    &ch[..ch.len().min(16)]
+                ));
             } else {
-                fail(&format!("core={}... edge={}... MISMATCH", &ch[..ch.len().min(12)], &eh[..eh.len().min(12)]));
+                fail(&format!(
+                    "core={}... edge={}... MISMATCH",
+                    &ch[..ch.len().min(12)],
+                    &eh[..eh.len().min(12)]
+                ));
                 failures += 1;
             }
         }
@@ -216,7 +261,10 @@ async fn topology_e2e(cfg: &Config) -> Result<()> {
     if failures == 0 {
         ui::print_ok("E2E topology test passed");
     } else {
-        ui::print_err(&format!("E2E topology test failed with {} failure(s)", failures));
+        ui::print_err(&format!(
+            "E2E topology test failed with {} failure(s)",
+            failures
+        ));
     }
     println!();
     Ok(())
@@ -231,7 +279,10 @@ fn topology_config(cfg: &Config) -> Result<()> {
     ui::print_row("  P2P port", &cfg.topology.core.p2p_port.to_string());
     ui::print_row("  Pool host", &cfg.topology.core.pool_host);
     ui::print_row("  Pool port", &cfg.topology.core.pool_port.to_string());
-    ui::print_row("  VPN IP", cfg.topology.core.vpn_ip.as_deref().unwrap_or("(not set)"));
+    ui::print_row(
+        "  VPN IP",
+        cfg.topology.core.vpn_ip.as_deref().unwrap_or("(not set)"),
+    );
 
     ui::print_info("Edge");
     ui::print_row("  RPC host", &cfg.topology.edge.rpc_host);
@@ -239,7 +290,10 @@ fn topology_config(cfg: &Config) -> Result<()> {
     ui::print_row("  P2P port", &cfg.topology.edge.p2p_port.to_string());
     ui::print_row("  Pool host", &cfg.topology.edge.pool_host);
     ui::print_row("  Pool port", &cfg.topology.edge.pool_port.to_string());
-    ui::print_row("  VPN IP", cfg.topology.edge.vpn_ip.as_deref().unwrap_or("(not set)"));
+    ui::print_row(
+        "  VPN IP",
+        cfg.topology.edge.vpn_ip.as_deref().unwrap_or("(not set)"),
+    );
 
     ui::print_info("Legacy defaults");
     ui::print_row("  node.rpc_host", &cfg.node.rpc_host);

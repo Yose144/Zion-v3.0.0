@@ -401,6 +401,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::field_reassign_with_default)]
     fn test_active_chains_filter() {
         let mut cfg = BridgeConfig::default();
         cfg.evm_chains = vec![

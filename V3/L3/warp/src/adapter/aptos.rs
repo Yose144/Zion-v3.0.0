@@ -8,6 +8,12 @@ use tracing::info;
 /// Aptos adapter (MoveVM) — stub implementation.
 pub struct AptosAdapter;
 
+impl Default for AptosAdapter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AptosAdapter {
     pub fn new() -> Self {
         Self

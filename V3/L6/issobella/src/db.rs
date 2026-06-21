@@ -98,7 +98,11 @@ impl IssobellaDb {
     }
 
     pub fn update_mission_status(&self, id: &str, status: &str) -> IssobellaResult<()> {
-        let completed = if status == "completed" { Some(Utc::now().to_rfc3339()) } else { None };
+        let completed = if status == "completed" {
+            Some(Utc::now().to_rfc3339())
+        } else {
+            None
+        };
         self.conn.execute(
             "UPDATE missions SET status = ?1, completed_at = ?2 WHERE id = ?3",
             (status, &completed, id),
@@ -136,14 +140,16 @@ impl IssobellaDb {
         let mut stmt = self.conn.prepare(
             "SELECT total_accumulated, total_disbursed, last_block_height, updated_at FROM fund_balance WHERE id = 1"
         )?;
-        let row = stmt.query_row([], |row| {
-            Ok(FundBalance {
-                total_accumulated: row.get(0)?,
-                total_disbursed: row.get(1)?,
-                last_block_height: row.get(2)?,
-                updated_at: row.get(3)?,
+        let row = stmt
+            .query_row([], |row| {
+                Ok(FundBalance {
+                    total_accumulated: row.get(0)?,
+                    total_disbursed: row.get(1)?,
+                    last_block_height: row.get(2)?,
+                    updated_at: row.get(3)?,
+                })
             })
-        }).optional()?;
+            .optional()?;
         Ok(row.unwrap_or_default())
     }
 
@@ -166,8 +172,14 @@ fn row_to_mission(row: &rusqlite::Row) -> Result<MissionRecord, rusqlite::Error>
         spent_zion: row.get(5)?,
         status: row.get(6)?,
         target_launch_date: row.get(7)?,
-        started_at: row.get::<_, Option<String>>(8)?.and_then(|s| DateTime::parse_from_rfc3339(&s).ok()).map(|dt| dt.with_timezone(&Utc)),
-        completed_at: row.get::<_, Option<String>>(9)?.and_then(|s| DateTime::parse_from_rfc3339(&s).ok()).map(|dt| dt.with_timezone(&Utc)),
+        started_at: row
+            .get::<_, Option<String>>(8)?
+            .and_then(|s| DateTime::parse_from_rfc3339(&s).ok())
+            .map(|dt| dt.with_timezone(&Utc)),
+        completed_at: row
+            .get::<_, Option<String>>(9)?
+            .and_then(|s| DateTime::parse_from_rfc3339(&s).ok())
+            .map(|dt| dt.with_timezone(&Utc)),
         orbit_altitude_km: row.get(10)?,
         satellite_count: row.get(11)?,
     })
@@ -182,8 +194,13 @@ fn row_to_proposal(row: &rusqlite::Row) -> Result<ResearchProposal, rusqlite::Er
         abstract_text: row.get(4)?,
         requested_budget: row.get(5)?,
         status: row.get(6)?,
-        submitted_at: DateTime::parse_from_rfc3339(&row.get::<_, String>(7)?).map(|dt| dt.with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
-        reviewed_at: row.get::<_, Option<String>>(8)?.and_then(|s| DateTime::parse_from_rfc3339(&s).ok()).map(|dt| dt.with_timezone(&Utc)),
+        submitted_at: DateTime::parse_from_rfc3339(&row.get::<_, String>(7)?)
+            .map(|dt| dt.with_timezone(&Utc))
+            .unwrap_or_else(|_| Utc::now()),
+        reviewed_at: row
+            .get::<_, Option<String>>(8)?
+            .and_then(|s| DateTime::parse_from_rfc3339(&s).ok())
+            .map(|dt| dt.with_timezone(&Utc)),
         reviewer_notes: row.get(9)?,
     })
 }

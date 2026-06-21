@@ -469,6 +469,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::field_reassign_with_default)]
     fn test_in_context_backend_system_prompt_merge() {
         let mut backend = InContextBackend::new(EchoBackend::new("merge-test"), "TestAgent");
         let mut snap = ContextSnapshot::default();

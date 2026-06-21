@@ -3,8 +3,8 @@
 use crate::dao_client::{DaoClient, DaoClientConfig, DaoProposalRequest};
 use crate::db::{FreeWorldDb, GrantRecord, ProjectRecord};
 use crate::hiran_bridge::FreeWorldHiranBridge;
-use crate::metrics::FreeWorldMetrics;
 use crate::metrics::serve_metrics_text;
+use crate::metrics::FreeWorldMetrics;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -57,7 +57,10 @@ pub fn free_world_router(state: AppState) -> Router {
         .route("/metrics", get(metrics_handler))
         .route("/api/v1/grants", get(list_grants).post(create_grant))
         .route("/api/v1/grants/:id/approve", post(approve_grant))
-        .route("/api/v1/grants/:id/submit-to-dao", post(submit_grant_to_dao))
+        .route(
+            "/api/v1/grants/:id/submit-to-dao",
+            post(submit_grant_to_dao),
+        )
         .route("/api/v1/projects", get(list_projects).post(create_project))
         .route("/api/v1/fund/balance", get(fund_balance))
         .route("/ai/analyze-grant", post(ai_analyze_grant))
@@ -71,7 +74,10 @@ async fn health(State(state): State<AppState>) -> impl IntoResponse {
     let db = state.db.lock().unwrap();
     match db.get_fund_balance() {
         Ok(_) => (StatusCode::OK, Json(ApiResponse::ok("ok"))),
-        Err(e) => (StatusCode::SERVICE_UNAVAILABLE, Json(ApiResponse::err(&e.to_string()))),
+        Err(e) => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(ApiResponse::err(&e.to_string())),
+        ),
     }
 }
 
@@ -84,7 +90,10 @@ async fn list_grants(State(state): State<AppState>) -> impl IntoResponse {
     let db = state.db.lock().unwrap();
     match db.list_grants(None) {
         Ok(grants) => (StatusCode::OK, Json(ApiResponse::ok(grants))),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::err(&e.to_string()))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::err(&e.to_string())),
+        ),
     }
 }
 
@@ -98,7 +107,10 @@ pub struct CreateGrantRequest {
     pub applicant_address: Option<String>,
 }
 
-async fn create_grant(State(state): State<AppState>, Json(req): Json<CreateGrantRequest>) -> impl IntoResponse {
+async fn create_grant(
+    State(state): State<AppState>,
+    Json(req): Json<CreateGrantRequest>,
+) -> impl IntoResponse {
     let mut grant = GrantRecord::new(&req.title, &req.category, req.amount_zion);
     grant.description = req.description;
     grant.applicant_name = req.applicant_name;
@@ -107,10 +119,16 @@ async fn create_grant(State(state): State<AppState>, Json(req): Json<CreateGrant
     let db = state.db.lock().unwrap();
     match db.insert_grant(&grant) {
         Ok(_) => {
-            state.metrics.grants_pending.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            state
+                .metrics
+                .grants_pending
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             (StatusCode::CREATED, Json(ApiResponse::ok(grant)))
         }
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::err(&e.to_string()))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::err(&e.to_string())),
+        ),
     }
 }
 
@@ -119,24 +137,45 @@ pub struct ApproveGrantRequest {
     pub notes: Option<String>,
 }
 
-async fn approve_grant(State(state): State<AppState>, Path(id): Path<String>, Json(req): Json<ApproveGrantRequest>) -> impl IntoResponse {
+async fn approve_grant(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(req): Json<ApproveGrantRequest>,
+) -> impl IntoResponse {
     let db = state.db.lock().unwrap();
     match db.update_grant_status(&id, "approved", req.notes.as_deref()) {
         Ok(_) => {
-            state.metrics.grants_pending.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
-            state.metrics.grants_approved.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            state
+                .metrics
+                .grants_pending
+                .fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
+            state
+                .metrics
+                .grants_approved
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             (StatusCode::OK, Json(ApiResponse::ok("approved")))
         }
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::err(&e.to_string()))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::err(&e.to_string())),
+        ),
     }
 }
 
-async fn submit_grant_to_dao(State(state): State<AppState>, Path(id): Path<String>) -> (StatusCode, Json<ApiResponse>) {
+async fn submit_grant_to_dao(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> (StatusCode, Json<ApiResponse>) {
     let grant = {
         let db = state.db.lock().unwrap();
         match db.list_grants(None) {
             Ok(grants) => grants.into_iter().find(|g| g.id == id),
-            Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::err(&e.to_string()))),
+            Err(e) => {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(ApiResponse::err(&e.to_string())),
+                )
+            }
         }
     };
     match grant {
@@ -151,10 +190,16 @@ async fn submit_grant_to_dao(State(state): State<AppState>, Path(id): Path<Strin
             };
             match client.submit_grant_proposal(&req).await {
                 Ok(resp) => (StatusCode::OK, Json(ApiResponse::ok(resp))),
-                Err(e) => (StatusCode::BAD_GATEWAY, Json(ApiResponse::err(&e.to_string()))),
+                Err(e) => (
+                    StatusCode::BAD_GATEWAY,
+                    Json(ApiResponse::err(&e.to_string())),
+                ),
             }
         }
-        None => (StatusCode::NOT_FOUND, Json(ApiResponse::err("Grant not found"))),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(ApiResponse::err("Grant not found")),
+        ),
     }
 }
 
@@ -162,7 +207,10 @@ async fn list_projects(State(state): State<AppState>) -> impl IntoResponse {
     let db = state.db.lock().unwrap();
     match db.list_projects(None) {
         Ok(projects) => (StatusCode::OK, Json(ApiResponse::ok(projects))),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::err(&e.to_string()))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::err(&e.to_string())),
+        ),
     }
 }
 
@@ -175,7 +223,10 @@ pub struct CreateProjectRequest {
     pub location: Option<String>,
 }
 
-async fn create_project(State(state): State<AppState>, Json(req): Json<CreateProjectRequest>) -> impl IntoResponse {
+async fn create_project(
+    State(state): State<AppState>,
+    Json(req): Json<CreateProjectRequest>,
+) -> impl IntoResponse {
     let mut project = ProjectRecord::new(&req.name, &req.category, req.budget_zion);
     project.description = req.description;
     project.location = req.location;
@@ -183,10 +234,16 @@ async fn create_project(State(state): State<AppState>, Json(req): Json<CreatePro
     let db = state.db.lock().unwrap();
     match db.insert_project(&project) {
         Ok(_) => {
-            state.metrics.projects_active.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            state
+                .metrics
+                .projects_active
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             (StatusCode::CREATED, Json(ApiResponse::ok(project)))
         }
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::err(&e.to_string()))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::err(&e.to_string())),
+        ),
     }
 }
 
@@ -194,7 +251,10 @@ async fn fund_balance(State(state): State<AppState>) -> impl IntoResponse {
     let db = state.db.lock().unwrap();
     match db.get_fund_balance() {
         Ok(balance) => (StatusCode::OK, Json(ApiResponse::ok(balance))),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::err(&e.to_string()))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::err(&e.to_string())),
+        ),
     }
 }
 

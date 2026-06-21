@@ -829,7 +829,7 @@ impl HiranyagarbhaAgent {
                     .memory
                     .record(crate::memory::MemoryEntry::simple(
                         MemoryEventKind::Custom(format!("dharma_violation:{:?}", violation)),
-                        &format!("Zachyceno porušení dharmy: {}", violation.description()),
+                        format!("Zachyceno porušení dharmy: {}", violation.description()),
                     ));
                 // Return the modified response
                 return MmlOutput {
@@ -1004,7 +1004,7 @@ impl HiranyagarbhaAgent {
             .memory
             .record(crate::memory::MemoryEntry::simple(
                 MemoryEventKind::Custom("deeksha_sent".to_string()),
-                &format!(
+                format!(
                     "Deeksha přenesen na {}: {} XP darováno, {} XP přijato příjemcem (grace 1.2×)",
                     to, xp_gifted, xp_received
                 ),
@@ -1040,7 +1040,7 @@ impl HiranyagarbhaAgent {
             .memory
             .record(crate::memory::MemoryEntry::simple(
                 MemoryEventKind::Custom("deeksha_received".to_string()),
-                &format!("Deeksha přijata od {}: {} XP", from_agent, xp_received),
+                format!("Deeksha přijata od {}: {} XP", from_agent, xp_received),
             ));
     }
 
@@ -1096,7 +1096,7 @@ impl HiranyagarbhaAgent {
             .memory
             .record(crate::memory::MemoryEntry::simple(
                 MemoryEventKind::Custom("emotion_felt".to_string()),
-                &format!(
+                format!(
                     "Podnět: '{}' | vibrace: {:.2}",
                     stimulus,
                     self.emotions.average()
@@ -1150,7 +1150,7 @@ impl HiranyagarbhaAgent {
             .memory
             .record(crate::memory::MemoryEntry::simple(
                 MemoryEventKind::Custom("meditation".to_string()),
-                &format!("Meditace {}min | Vhled: {}", duration_minutes, insight),
+                format!("Meditace {}min | Vhled: {}", duration_minutes, insight),
             ));
 
         format!("🕉️ {}", insight)
@@ -1206,7 +1206,7 @@ impl HiranyagarbhaAgent {
             .memory
             .record(crate::memory::MemoryEntry::simple(
                 MemoryEventKind::Custom("contemplation".to_string()),
-                &format!(
+                format!(
                     "Téma: '{}' | Vhled: {}…",
                     about,
                     &response[..response.len().min(60)]

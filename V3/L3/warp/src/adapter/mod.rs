@@ -45,9 +45,8 @@ pub trait ChainAdapter: Send + Sync {
 /// Currently returns stub adapters; real implementations will use chain-specific SDKs.
 pub fn create_adapter(chain_name: &str) -> Option<Box<dyn ChainAdapter>> {
     match chain_name {
-        "ethereum" | "base" | "arbitrum" | "optimism" | "bsc" | "polygon" | "avalanche" | "zksync" | "linea" => {
-            Some(Box::new(evm::EvmAdapter::new(chain_name)))
-        }
+        "ethereum" | "base" | "arbitrum" | "optimism" | "bsc" | "polygon" | "avalanche"
+        | "zksync" | "linea" => Some(Box::new(evm::EvmAdapter::new(chain_name))),
         "solana" => Some(Box::new(solana::SolanaAdapter::new())),
         "tron" => Some(Box::new(tron::TronAdapter::new())),
         "stellar" => Some(Box::new(stellar::StellarAdapter::new())),

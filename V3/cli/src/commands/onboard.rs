@@ -28,9 +28,27 @@ pub async fn run(_cfg: &Config) -> Result<()> {
     if topo_idx == 0 {
         // Defaults already set in Config::default()
         ui::print_ok("Using standard topology:");
-        ui::print_row("      Core RPC", &format!("{}:{}", cfg.topology.core.rpc_host, cfg.topology.core.rpc_port));
-        ui::print_row("      Edge RPC", &format!("{}:{}", cfg.topology.edge.rpc_host, cfg.topology.edge.rpc_port));
-        ui::print_row("      Edge Pool", &format!("{}:{}", cfg.topology.edge.pool_host, cfg.topology.edge.pool_port));
+        ui::print_row(
+            "      Core RPC",
+            &format!(
+                "{}:{}",
+                cfg.topology.core.rpc_host, cfg.topology.core.rpc_port
+            ),
+        );
+        ui::print_row(
+            "      Edge RPC",
+            &format!(
+                "{}:{}",
+                cfg.topology.edge.rpc_host, cfg.topology.edge.rpc_port
+            ),
+        );
+        ui::print_row(
+            "      Edge Pool",
+            &format!(
+                "{}:{}",
+                cfg.topology.edge.pool_host, cfg.topology.edge.pool_port
+            ),
+        );
     } else {
         let core_host: String = Input::new()
             .with_prompt("    Core RPC host")
@@ -39,7 +57,9 @@ pub async fn run(_cfg: &Config) -> Result<()> {
         let core_port: u16 = Input::new()
             .with_prompt("    Core RPC port")
             .default(cfg.topology.core.rpc_port.to_string())
-            .interact_text()?.parse().unwrap_or(8443);
+            .interact_text()?
+            .parse()
+            .unwrap_or(8443);
         let edge_host: String = Input::new()
             .with_prompt("    Edge RPC host")
             .default(cfg.topology.edge.rpc_host.clone())
@@ -47,7 +67,9 @@ pub async fn run(_cfg: &Config) -> Result<()> {
         let edge_port: u16 = Input::new()
             .with_prompt("    Edge RPC port")
             .default(cfg.topology.edge.rpc_port.to_string())
-            .interact_text()?.parse().unwrap_or(8443);
+            .interact_text()?
+            .parse()
+            .unwrap_or(8443);
         let edge_pool_host: String = Input::new()
             .with_prompt("    Edge pool host")
             .default(cfg.topology.edge.pool_host.clone())
@@ -55,7 +77,9 @@ pub async fn run(_cfg: &Config) -> Result<()> {
         let edge_pool_port: u16 = Input::new()
             .with_prompt("    Edge pool port")
             .default(cfg.topology.edge.pool_port.to_string())
-            .interact_text()?.parse().unwrap_or(8444);
+            .interact_text()?
+            .parse()
+            .unwrap_or(8444);
         cfg.topology.core.rpc_host = core_host.clone();
         cfg.topology.core.rpc_port = core_port;
         cfg.topology.edge.rpc_host = edge_host.clone();
@@ -69,7 +93,12 @@ pub async fn run(_cfg: &Config) -> Result<()> {
     }
 
     print!("    Core connecting... ");
-    let result = node_rpc::call0(&cfg.topology.core.rpc_host, cfg.topology.core.rpc_port, "getChainInfo").await;
+    let result = node_rpc::call0(
+        &cfg.topology.core.rpc_host,
+        cfg.topology.core.rpc_port,
+        "getChainInfo",
+    )
+    .await;
     match result {
         Ok(v) => {
             let h = v["chain_height"].as_u64().unwrap_or(0);
@@ -78,7 +107,12 @@ pub async fn run(_cfg: &Config) -> Result<()> {
         Err(e) => println!("⚠ {}", e),
     }
     print!("    Edge connecting... ");
-    let result = node_rpc::call0(&cfg.topology.edge.rpc_host, cfg.topology.edge.rpc_port, "getChainInfo").await;
+    let result = node_rpc::call0(
+        &cfg.topology.edge.rpc_host,
+        cfg.topology.edge.rpc_port,
+        "getChainInfo",
+    )
+    .await;
     match result {
         Ok(v) => {
             let h = v["chain_height"].as_u64().unwrap_or(0);
@@ -196,10 +230,26 @@ pub async fn run(_cfg: &Config) -> Result<()> {
 
     // Step 5: Confirm & save
     println!("  Step 5/5  Save Configuration");
-    ui::print_info(&format!("Core RPC: {}:{}", cfg.topology.core.rpc_host, cfg.topology.core.rpc_port));
-    ui::print_info(&format!("Edge RPC: {}:{}", cfg.topology.edge.rpc_host, cfg.topology.edge.rpc_port));
-    ui::print_info(&format!("Edge Pool: {}:{}", cfg.topology.edge.pool_host, cfg.topology.edge.pool_port));
-    ui::print_info(&format!("Mining wallet: {}", if cfg.miner.wallet.is_empty() { "(not set)" } else { &cfg.miner.wallet }));
+    ui::print_info(&format!(
+        "Core RPC: {}:{}",
+        cfg.topology.core.rpc_host, cfg.topology.core.rpc_port
+    ));
+    ui::print_info(&format!(
+        "Edge RPC: {}:{}",
+        cfg.topology.edge.rpc_host, cfg.topology.edge.rpc_port
+    ));
+    ui::print_info(&format!(
+        "Edge Pool: {}:{}",
+        cfg.topology.edge.pool_host, cfg.topology.edge.pool_port
+    ));
+    ui::print_info(&format!(
+        "Mining wallet: {}",
+        if cfg.miner.wallet.is_empty() {
+            "(not set)"
+        } else {
+            &cfg.miner.wallet
+        }
+    ));
     println!();
 
     config::save(&cfg)?;

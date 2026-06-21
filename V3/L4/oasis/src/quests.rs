@@ -32,13 +32,41 @@ impl AvatarDef {
         Some(Self {
             id: val.get("id")?.as_u64()? as u16,
             name: val.get("name")?.as_str()?.to_string(),
-            subtitle: val.get("subtitle").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-            ray: val.get("ray").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-            role: val.get("role").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-            location: val.get("location").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-            quest_line: val.get("quest_line").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-            teaching: val.get("teaching").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-            ability: val.get("ability").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+            subtitle: val
+                .get("subtitle")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            ray: val
+                .get("ray")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            role: val
+                .get("role")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            location: val
+                .get("location")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            quest_line: val
+                .get("quest_line")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            teaching: val
+                .get("teaching")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            ability: val
+                .get("ability")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
             consciousness_level_required: val
                 .get("consciousness_level_required")
                 .and_then(|v| v.as_u64())
@@ -48,8 +76,16 @@ impl AvatarDef {
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string(),
-            key: val.get("key").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-            rarity: val.get("rarity").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+            key: val
+                .get("key")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            rarity: val
+                .get("rarity")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
         })
     }
 }
@@ -157,9 +193,9 @@ impl QuestRegistry {
     ) -> Vec<&AvatarDef> {
         self.avatars
             .iter()
-            .filter(|a| ray.map_or(true, |r| a.ray.eq_ignore_ascii_case(r)))
-            .filter(|a| min_cl.map_or(true, |c| a.consciousness_level_required >= c))
-            .filter(|a| rarity.map_or(true, |r| a.rarity.eq_ignore_ascii_case(r)))
+            .filter(|a| ray.is_none_or(|r| a.ray.eq_ignore_ascii_case(r)))
+            .filter(|a| min_cl.is_none_or(|c| a.consciousness_level_required >= c))
+            .filter(|a| rarity.is_none_or(|r| a.rarity.eq_ignore_ascii_case(r)))
             .collect()
     }
 
@@ -323,14 +359,19 @@ mod tests {
     fn test_load_real_avatars_json() {
         let data = include_str!("../data/avatars.json");
         let reg = QuestRegistry::from_avatars_json(data).unwrap();
-        assert!(reg.all_avatars().len() >= 49, "expected at least 49 core avatars");
+        assert!(
+            reg.all_avatars().len() >= 49,
+            "expected at least 49 core avatars"
+        );
         // Verify Krishna-Maitreya exists
         let km = reg.get_avatar(0).expect("Krishna-Maitreya should exist");
         assert_eq!(km.name, "Krishna-Maitreya");
         assert_eq!(km.consciousness_level_required, 9);
         // Verify all core avatars have quests
-        let core_with_quests: Vec<_> = reg.all_avatars().iter()
-            .filter(|a| a.id <= 51 && reg.by_avatar(a.id).len() > 0)
+        let core_with_quests: Vec<_> = reg
+            .all_avatars()
+            .iter()
+            .filter(|a| a.id <= 51 && !reg.by_avatar(a.id).is_empty())
             .collect();
         assert!(
             core_with_quests.len() >= 49,

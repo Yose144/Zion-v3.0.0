@@ -224,7 +224,7 @@ impl StellarSigner {
         sig_payload.raw(&network_id);
         sig_payload.u32(ENVELOPE_TYPE_TX);
         sig_payload.raw(&tx_xdr);
-        let sig_hash: [u8; 32] = Sha256::digest(&sig_payload.into_bytes()).into();
+        let sig_hash: [u8; 32] = Sha256::digest(sig_payload.into_bytes()).into();
 
         // 5. Sign
         let signature = self.signing_key.sign(&sig_hash);
@@ -240,7 +240,7 @@ impl StellarSigner {
         env.raw(&self.pub_key_bytes[28..32]); // fixed opaque[4] — no length prefix
         env.var(&sig_bytes); // variable opaque sig
 
-        let envelope_b64 = B64.encode(&env.into_bytes());
+        let envelope_b64 = B64.encode(env.into_bytes());
 
         info!(
             "[WARP][stellar] Submitting payment: {} stroops → {} (relay: {})",
@@ -259,6 +259,7 @@ impl StellarSigner {
 // XDR builder for Transaction (no signatures yet)
 // ─────────────────────────────────────────────────────────────────────────────
 
+#[allow(clippy::too_many_arguments)]
 fn build_payment_tx(
     source_pk: &[u8; 32],
     dest_pk: &[u8; 32],
@@ -552,14 +553,14 @@ mod tests {
             p.raw(&network_id);
             p.u32(ENVELOPE_TYPE_TX);
             p.raw(&tx);
-            Sha256::digest(&p.into_bytes())
+            Sha256::digest(p.into_bytes())
         };
         let hash2 = {
             let mut p = Xdr::new();
             p.raw(&network_id);
             p.u32(ENVELOPE_TYPE_TX);
             p.raw(&tx);
-            Sha256::digest(&p.into_bytes())
+            Sha256::digest(p.into_bytes())
         };
         assert_eq!(hash1, hash2);
 
@@ -589,7 +590,7 @@ mod tests {
         p.raw(&network_id);
         p.u32(ENVELOPE_TYPE_TX);
         p.raw(&tx);
-        let sig_hash = Sha256::digest(&p.into_bytes());
+        let sig_hash = Sha256::digest(p.into_bytes());
         let sig = s.signing_key.sign(sig_hash.as_slice());
 
         let mut env = Xdr::new();
@@ -599,7 +600,7 @@ mod tests {
         env.raw(&s.pub_key_bytes[28..32]);
         env.var(&sig.to_bytes());
 
-        let b64 = B64.encode(&env.into_bytes());
+        let b64 = B64.encode(env.into_bytes());
         assert!(!b64.is_empty());
         assert!(B64.decode(&b64).is_ok());
     }

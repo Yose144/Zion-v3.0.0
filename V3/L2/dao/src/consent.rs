@@ -20,9 +20,9 @@ use crate::error::{DaoError, DaoResult};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Attestation {
-    Witness,  // "I have no reasoned objection"
-    Object,   // "I have an objection"
-    Abstain,  // "I choose not to participate"
+    Witness, // "I have no reasoned objection"
+    Object,  // "I have an objection"
+    Abstain, // "I choose not to participate"
 }
 
 // ---------------------------------------------------------------------------
@@ -107,7 +107,11 @@ impl ConsentEngine {
         eligible_voters: &[String],
         required_quorum_percent: f64,
     ) -> (bool, usize, usize, usize, usize) {
-        let records = self.records.get(&proposal_id).map(|r| r.as_slice()).unwrap_or(&[]);
+        let records = self
+            .records
+            .get(&proposal_id)
+            .map(|r| r.as_slice())
+            .unwrap_or(&[]);
 
         let witnesses = records
             .iter()
@@ -123,7 +127,8 @@ impl ConsentEngine {
             .count();
 
         let total_eligible = eligible_voters.len();
-        let required = ((total_eligible as f64) * (required_quorum_percent / 100.0)).ceil() as usize;
+        let required =
+            ((total_eligible as f64) * (required_quorum_percent / 100.0)).ceil() as usize;
 
         // Consent = quorum met (witnesses >= required) AND zero objections
         let quorum_met = witnesses >= required;
@@ -131,7 +136,13 @@ impl ConsentEngine {
 
         let missing = total_eligible.saturating_sub(witnesses + objections + abstentions);
 
-        (consent_achieved, witnesses, objections, abstentions, missing)
+        (
+            consent_achieved,
+            witnesses,
+            objections,
+            abstentions,
+            missing,
+        )
     }
 
     /// Get all attestations for a proposal.
@@ -164,10 +175,7 @@ impl ConsentEngine {
 
     /// Count unique attestors for a proposal.
     pub fn attestation_count(&self, proposal_id: u64) -> usize {
-        self.records
-            .get(&proposal_id)
-            .map(|r| r.len())
-            .unwrap_or(0)
+        self.records.get(&proposal_id).map(|r| r.len()).unwrap_or(0)
     }
 }
 
@@ -224,7 +232,9 @@ mod tests {
 
         // 5 voters, 60% quorum = need 3 witnesses
         for v in &voters[0..3] {
-            engine.attest(1, v.clone(), Attestation::Witness, None).unwrap();
+            engine
+                .attest(1, v.clone(), Attestation::Witness, None)
+                .unwrap();
         }
 
         let (ok, w, o, a, m) = engine.check_consent(1, &voters, 60.0);
@@ -240,13 +250,17 @@ mod tests {
         let mut engine = ConsentEngine::new();
         let voters = test_voters();
 
-        engine.attest(1, "v1".into(), Attestation::Witness, None).unwrap();
-        engine.attest(1, "v2".into(), Attestation::Witness, None).unwrap();
+        engine
+            .attest(1, "v1".into(), Attestation::Witness, None)
+            .unwrap();
+        engine
+            .attest(1, "v2".into(), Attestation::Witness, None)
+            .unwrap();
         engine
             .attest(1, "v3".into(), Attestation::Object, Some("hash123".into()))
             .unwrap();
 
-        let (ok, w, o, a, m) = engine.check_consent(1, &voters, 60.0);
+        let (ok, w, o, _a, _m) = engine.check_consent(1, &voters, 60.0);
         assert!(!ok); // blocked by objection
         assert_eq!(w, 2);
         assert_eq!(o, 1);
@@ -257,9 +271,11 @@ mod tests {
         let mut engine = ConsentEngine::new();
         let voters = test_voters();
 
-        engine.attest(1, "v1".into(), Attestation::Witness, None).unwrap();
+        engine
+            .attest(1, "v1".into(), Attestation::Witness, None)
+            .unwrap();
 
-        let (ok, w, o, a, m) = engine.check_consent(1, &voters, 60.0);
+        let (ok, w, _o, _a, _m) = engine.check_consent(1, &voters, 60.0);
         assert!(!ok); // only 1 witness, need 3
         assert_eq!(w, 1);
     }
@@ -267,7 +283,9 @@ mod tests {
     #[test]
     fn test_double_attestation_rejected() {
         let mut engine = ConsentEngine::new();
-        engine.attest(1, "v1".into(), Attestation::Witness, None).unwrap();
+        engine
+            .attest(1, "v1".into(), Attestation::Witness, None)
+            .unwrap();
 
         let result = engine.attest(1, "v1".into(), Attestation::Object, Some("h".into()));
         assert!(result.is_err());
