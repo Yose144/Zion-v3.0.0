@@ -12,6 +12,9 @@
 //!
 //! Run: cargo test --test mainnet_readiness -- --nocapture
 
+#![allow(clippy::field_reassign_with_default)]
+#![allow(clippy::int_plus_one)]
+
 use chrono::Utc;
 use tempfile::TempDir;
 use zion_bridge::config::{BridgeConfig, BridgeIdentity, EvmChainConfig};

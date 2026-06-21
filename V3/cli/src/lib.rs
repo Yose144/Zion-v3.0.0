@@ -6,12 +6,12 @@ pub mod ui;
 
 use clap::{Parser, Subcommand};
 use clap_complete::Shell;
-use commands::{
-    agent, atomic_swap, bridge, compose, dao, free_world, hiran,
-    issobella, mine, ncl, node, pool, swap, topology, wallet, warp,
-};
 #[cfg(feature = "admin")]
 use commands::deploy;
+use commands::{
+    agent, atomic_swap, bridge, compose, dao, free_world, hiran, issobella, mine, ncl, node, pool,
+    swap, topology, wallet, warp,
+};
 
 #[derive(Parser)]
 #[command(

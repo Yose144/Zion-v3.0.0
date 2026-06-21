@@ -238,7 +238,7 @@ fn draw(f: &mut Frame, s: &MonitorState) {
             Style::default().fg(node_color),
         )),
         Line::from(Span::styled(
-            format!("  ● L1 Seed Node   (p2p connected)"),
+            "  ● L1 Seed Node   (p2p connected)".to_string(),
             Style::default().fg(Color::DarkGray),
         )),
     ];

@@ -45,6 +45,6 @@ pub mod metrics;
 
 // Re-exports
 pub use config::FreeWorldConfig;
-pub use db::{FreeWorldDb, GrantRecord, ProjectRecord, FundBalance};
+pub use db::{FreeWorldDb, FundBalance, GrantRecord, ProjectRecord};
 pub use error::{FreeWorldError, FreeWorldResult};
 pub use l1_scanner::{L1Scanner, ScannerConfig};

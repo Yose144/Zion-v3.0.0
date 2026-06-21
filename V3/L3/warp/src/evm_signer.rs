@@ -159,6 +159,7 @@ impl EvmSigner {
 
     /// Sign and broadcast a call to `to` with `calldata`.
     /// `value` is ETH in wei (0 for contract calls).
+    #[allow(clippy::too_many_arguments)]
     pub async fn send_tx(
         &self,
         client: &reqwest::Client,
@@ -185,6 +186,7 @@ impl EvmSigner {
     }
 
     /// Produce raw signed transaction bytes (EIP-155 legacy).
+    #[allow(clippy::too_many_arguments)]
     fn sign_legacy_tx(
         &self,
         chain_id: u64,
@@ -254,6 +256,7 @@ fn encode_legacy_pre_sign(
 }
 
 /// Encode [nonce, gasPrice, gasLimit, to, value, data, v, r, s] — final signed TX.
+#[allow(clippy::too_many_arguments)]
 fn encode_legacy_signed(
     nonce: u64,
     gas_price: u64,

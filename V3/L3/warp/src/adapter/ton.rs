@@ -8,6 +8,12 @@ use tracing::info;
 /// TON adapter (TVM) — stub implementation.
 pub struct TonAdapter;
 
+impl Default for TonAdapter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TonAdapter {
     pub fn new() -> Self {
         Self

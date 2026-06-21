@@ -527,10 +527,24 @@ pub fn validate(cfg: &Config) -> ValidationReport {
     if cfg.topology.edge.pool_port == 0 {
         errors.push("topology.edge.pool_port must be greater than 0".to_string());
     }
-    if cfg.topology.core.vpn_ip.as_ref().map(|s| s.trim().is_empty()).unwrap_or(false) {
+    if cfg
+        .topology
+        .core
+        .vpn_ip
+        .as_ref()
+        .map(|s| s.trim().is_empty())
+        .unwrap_or(false)
+    {
         warnings.push("topology.core.vpn_ip is empty".to_string());
     }
-    if cfg.topology.edge.vpn_ip.as_ref().map(|s| s.trim().is_empty()).unwrap_or(false) {
+    if cfg
+        .topology
+        .edge
+        .vpn_ip
+        .as_ref()
+        .map(|s| s.trim().is_empty())
+        .unwrap_or(false)
+    {
         warnings.push("topology.edge.vpn_ip is empty".to_string());
     }
 

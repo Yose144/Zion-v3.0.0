@@ -559,6 +559,7 @@ fn extract_rust_docs(content: &str) -> String {
 }
 
 /// Extract docstrings from a Python file.
+#[allow(clippy::manual_strip)]
 fn extract_python_docs(content: &str) -> String {
     let mut docs = Vec::new();
     let mut in_docstring = false;
@@ -620,7 +621,8 @@ mod tests {
     #[test]
     fn test_add_text() {
         let mut kb = test_kb();
-        kb.add_text("test1", "ZION blockchain is a PoW network.").unwrap();
+        kb.add_text("test1", "ZION blockchain is a PoW network.")
+            .unwrap();
         assert_eq!(kb.document_count(), 1);
         assert_eq!(kb.total_chunks(), 1);
     }
@@ -655,7 +657,7 @@ mod tests {
         let chunks = chunk_text(&text, 800, 100);
         assert!(chunks.len() >= 2);
         // First chunk should end at paragraph break
-        assert!(chunks[0].trim().ends_with(|c: char| c == 'A'));
+        assert!(chunks[0].trim().ends_with('A'));
     }
 
     #[test]
@@ -794,6 +796,7 @@ def foo():
     }
 
     #[test]
+    #[allow(clippy::field_reassign_with_default)]
     fn test_collect_markdown_chunks_from_relative_roots() {
         let root = make_temp_dir("kb-md-chunks");
         let gen = root.join("HiranV2.1/data/rag/buddhism-classical/generated");

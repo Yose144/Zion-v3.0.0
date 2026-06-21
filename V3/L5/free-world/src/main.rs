@@ -35,10 +35,16 @@ async fn main() {
         .with(EnvFilter::from_default_env().add_directive("zion_free_world=info".parse().unwrap()))
         .init();
 
-    info!("🌍 ZION Free World Daemon v{} starting...", env!("CARGO_PKG_VERSION"));
+    info!(
+        "🌍 ZION Free World Daemon v{} starting...",
+        env!("CARGO_PKG_VERSION")
+    );
 
     let cfg = FreeWorldConfig::load(None);
-    info!("Config: name={} api_port={} db={}", cfg.name, cfg.port, cfg.db_path);
+    info!(
+        "Config: name={} api_port={} db={}",
+        cfg.name, cfg.port, cfg.db_path
+    );
 
     let fw_db = match FreeWorldDb::open(&cfg.db_path) {
         Ok(db) => {

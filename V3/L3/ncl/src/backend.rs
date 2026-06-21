@@ -84,7 +84,9 @@ impl BackendRunner for OnnxBackend {
         {
             // Unreachable because is_available()==false when feature is off,
             // but kept for exhaustiveness.
-            Err(NclError::UnsupportedBackend("ONNX feature not compiled".into()))
+            Err(NclError::UnsupportedBackend(
+                "ONNX feature not compiled".into(),
+            ))
         }
     }
 }

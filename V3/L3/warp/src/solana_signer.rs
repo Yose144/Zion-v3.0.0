@@ -612,7 +612,7 @@ mod tests {
         // Find [7u8] followed by the amount bytes in the message
         let pos = msg
             .windows(9)
-            .position(|w| w[0] == 7 && &w[1..9] == expected_amount);
+            .position(|w| w[0] == 7 && w[1..9] == expected_amount);
         assert!(
             pos.is_some(),
             "mintTo discriminator + amount not found in message"

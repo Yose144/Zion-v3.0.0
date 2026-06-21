@@ -138,7 +138,7 @@ mod tests {
         let ev = WarpXpEvent::from_transfer(&t);
         assert!(ev.is_cross_family());
         let xp = WarpXpReward::for_transfer(&ev);
-        assert_eq!(xp, 50 + 0 + 25);
+        assert_eq!(xp, 50 + 25);
     }
 
     #[test]

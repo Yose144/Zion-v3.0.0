@@ -67,7 +67,7 @@ impl MempoolUtxo {
 fn estimate_vbytes(n_in: usize, n_out: usize) -> u64 {
     let base = 10u64 + 41 * n_in as u64 + 31 * n_out as u64;
     let witness = 109u64 * n_in as u64; // flags(2) + items(1+73+1+33) per input
-    base + (witness + 3) / 4
+    base + witness.div_ceil(4)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -426,7 +426,7 @@ mod tests {
         // 1 P2WPKH input, 2 outputs: ~189 vbytes
         let v = estimate_vbytes(1, 2);
         assert!(
-            v >= 140 && v <= 200,
+            (140..=200).contains(&v),
             "vbytes={} out of expected range 140-200",
             v
         );

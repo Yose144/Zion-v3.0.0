@@ -95,7 +95,7 @@ impl RateLimiter {
         let mut inner = self.inner();
 
         // Prune expired entries — global
-        while inner.global.front().map_or(false, |&t| t < cutoff) {
+        while inner.global.front().is_some_and(|&t| t < cutoff) {
             inner.global.pop_front();
         }
 
@@ -110,7 +110,7 @@ impl RateLimiter {
         // Prune and check per-address limit
         {
             let addr_queue = inner.per_address.entry(addr_key.clone()).or_default();
-            while addr_queue.front().map_or(false, |&t| t < cutoff) {
+            while addr_queue.front().is_some_and(|&t| t < cutoff) {
                 addr_queue.pop_front();
             }
             if addr_queue.len() as u32 >= self.max_per_address {
@@ -138,7 +138,7 @@ impl RateLimiter {
         let now = SystemTime::now();
         let cutoff = now - self.window;
         let mut inner = self.inner();
-        while inner.global.front().map_or(false, |&t| t < cutoff) {
+        while inner.global.front().is_some_and(|&t| t < cutoff) {
             inner.global.pop_front();
         }
         inner.global.len() as u32

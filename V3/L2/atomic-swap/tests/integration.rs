@@ -50,7 +50,10 @@ async fn test_full_htlc_claim_flow() {
     assert_eq!(pending[0].hash_hex, hash);
 
     // 4. Claim with correct preimage
-    executor.execute_claim(&db, &hash, &preimage, "zion1bob").await.unwrap();
+    executor
+        .execute_claim(&db, &hash, &preimage, "zion1bob")
+        .await
+        .unwrap();
 
     // 5. Verify it is claimed
     let fetched = db.get_htlc(&hash).unwrap().unwrap();
@@ -71,7 +74,9 @@ async fn test_htlc_claim_preimage_mismatch() {
     db.insert_htlc(&rec).unwrap();
 
     // Claim with bad preimage should fail
-    let res = executor.execute_claim(&db, &hash, &bad_preimage, "zion1bob").await;
+    let res = executor
+        .execute_claim(&db, &hash, &bad_preimage, "zion1bob")
+        .await;
     assert!(res.is_err());
 }
 

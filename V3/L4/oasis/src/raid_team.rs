@@ -310,7 +310,7 @@ impl RaidRegistry {
     /// Global leaderboard by total damage
     pub fn leaderboard_by_damage(&self, limit: usize) -> Vec<&RaidTeam> {
         let mut completed: Vec<&RaidTeam> = self.list_completed();
-        completed.sort_by(|a, b| b.total_damage().cmp(&a.total_damage()));
+        completed.sort_by_key(|b| std::cmp::Reverse(b.total_damage()));
         completed.truncate(limit);
         completed
     }

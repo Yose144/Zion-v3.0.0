@@ -30,7 +30,7 @@ pub async fn post(base_url: &str, path: &str, body: Value) -> Result<Value> {
 
 pub async fn health(base_url: &str) -> Result<bool> {
     let resp = Client::new()
-        .get(&format!("{}/health", base_url.trim_end_matches('/')))
+        .get(format!("{}/health", base_url.trim_end_matches('/')))
         .timeout(std::time::Duration::from_secs(5))
         .send()
         .await;

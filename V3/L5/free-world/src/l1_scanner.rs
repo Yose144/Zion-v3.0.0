@@ -165,7 +165,10 @@ impl L1Scanner {
             .map_err(|e| crate::error::FreeWorldError::L1Rpc(format!("parse: {}", e)))?;
 
         if let Some(err) = rpc_resp.error {
-            return Err(crate::error::FreeWorldError::L1Rpc(format!("rpc error: {}", err)));
+            return Err(crate::error::FreeWorldError::L1Rpc(format!(
+                "rpc error: {}",
+                err
+            )));
         }
 
         rpc_resp

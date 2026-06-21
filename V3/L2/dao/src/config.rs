@@ -82,8 +82,8 @@ pub struct GuardianConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CoAdminConfig {
-    pub layer: u8,        // 1–6
-    pub role: String,     // e.g. "validator", "guardian", "relayer", "curator", "community", "steward"
+    pub layer: u8,    // 1–6
+    pub role: String, // e.g. "validator", "guardian", "relayer", "curator", "community", "steward"
     pub name: String,
     pub address: String,
     pub public_key: String,

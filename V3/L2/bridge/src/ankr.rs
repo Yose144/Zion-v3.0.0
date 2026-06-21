@@ -648,6 +648,7 @@ mod tests {
     // ── LogFilter / chunk behaviour ─────────────────────────────────────────
 
     #[test]
+    #[allow(clippy::assertions_on_constants)]
     fn test_log_filter_chunk_size_constant() {
         // Ensure free-tier chunk is ≤ Ankr's stated limit of 3500 blocks
         assert!(

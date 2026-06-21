@@ -137,7 +137,10 @@ fn config_roundtrip_with_topology_sections() {
 
     assert_eq!(parsed.topology.core.rpc_host, "10.0.0.1");
     assert_eq!(parsed.topology.core.rpc_port, 9000);
-    assert_eq!(parsed.topology.core.vpn_ip.as_deref(), Some("100.100.100.1"));
+    assert_eq!(
+        parsed.topology.core.vpn_ip.as_deref(),
+        Some("100.100.100.1")
+    );
 
     assert_eq!(parsed.topology.edge.rpc_host, "edge.zion.dev");
     assert_eq!(parsed.topology.edge.pool_host, "pool.zion.dev");
@@ -148,7 +151,11 @@ fn config_roundtrip_with_topology_sections() {
 fn topology_validation_accepts_valid_config() {
     let cfg = Config::default();
     let report = config::validate(&cfg);
-    assert!(report.is_ok(), "Default config should validate: {:?}", report.errors);
+    assert!(
+        report.is_ok(),
+        "Default config should validate: {:?}",
+        report.errors
+    );
 }
 
 #[test]
@@ -157,7 +164,10 @@ fn topology_validation_rejects_empty_rpc_host() {
     cfg.topology.core.rpc_host = "   ".into();
     let report = config::validate(&cfg);
     assert!(!report.is_ok());
-    assert!(report.errors.iter().any(|e| e.contains("topology.core.rpc_host")));
+    assert!(report
+        .errors
+        .iter()
+        .any(|e| e.contains("topology.core.rpc_host")));
 }
 
 #[test]
@@ -166,7 +176,10 @@ fn topology_validation_rejects_zero_port() {
     cfg.topology.edge.rpc_port = 0;
     let report = config::validate(&cfg);
     assert!(!report.is_ok());
-    assert!(report.errors.iter().any(|e| e.contains("topology.edge.rpc_port")));
+    assert!(report
+        .errors
+        .iter()
+        .any(|e| e.contains("topology.edge.rpc_port")));
 }
 
 #[test]
@@ -175,7 +188,10 @@ fn topology_validation_warns_empty_vpn_ip() {
     cfg.topology.core.vpn_ip = Some("   ".into());
     let report = config::validate(&cfg);
     assert!(report.is_ok());
-    assert!(report.warnings.iter().any(|w| w.contains("topology.core.vpn_ip")));
+    assert!(report
+        .warnings
+        .iter()
+        .any(|w| w.contains("topology.core.vpn_ip")));
 }
 
 #[test]
