@@ -192,7 +192,7 @@ fn quick_status_menu() -> Result<Option<Vec<String>>> {
             return Ok(None);
         };
 
-        return Ok(match choice {
+        Ok(match choice {
             0 => Some(args(&["status"])),
             1 => Some(args(&["doctor"])),
             2 => Some(args(&["node", "status"])),
@@ -203,7 +203,7 @@ fn quick_status_menu() -> Result<Option<Vec<String>>> {
             7 => Some(args(&["warp", "status"])),
             8 => Some(args(&["ncl", "status"])),
             _ => None,
-        });
+        })
     }
 }
 
@@ -260,23 +260,23 @@ fn node_menu() -> Result<Option<Vec<String>>> {
         };
 
         match choice {
-            0 => return Ok(Some(args(&["node", "status"]))),
-            1 => return Ok(Some(args(&["node", "peers"]))),
-            2 => return Ok(Some(args(&["node", "blocks", "10"]))),
+            0 => Ok(Some(args(&["node", "status"]))),
+            1 => Ok(Some(args(&["node", "peers"]))),
+            2 => Ok(Some(args(&["node", "blocks", "10"]))),
             3 => {
                 let n = required_input("How many recent blocks?", Some("25"))?;
-                return Ok(Some(args_owned(vec!["node".into(), "blocks".into(), n])));
+                Ok(Some(args_owned(vec!["node".into(), "blocks".into(), n])))
             }
             4 => {
                 let id = required_input("Block height or hash", None)?;
-                return Ok(Some(args_owned(vec!["node".into(), "block".into(), id])));
+                Ok(Some(args_owned(vec!["node".into(), "block".into(), id])))
             }
             5 => {
                 let txid = required_input("Transaction ID", None)?;
-                return Ok(Some(args_owned(vec!["node".into(), "tx".into(), txid])));
+                Ok(Some(args_owned(vec!["node".into(), "tx".into(), txid])))
             }
-            6 => return Ok(Some(args(&["node", "mempool"]))),
-            7 => return Ok(Some(args(&["node", "sync"]))),
+            6 => Ok(Some(args(&["node", "mempool"]))),
+            7 => Ok(Some(args(&["node", "sync"]))),
             8 => {
                 let method = required_input("RPC method", Some("getChainInfo"))?;
                 let params = optional_input("Params JSON (blank = {})", Some("{}"))?;
@@ -285,14 +285,14 @@ fn node_menu() -> Result<Option<Vec<String>>> {
                 } else {
                     params
                 };
-                return Ok(Some(args_owned(vec![
+                Ok(Some(args_owned(vec![
                     "node".into(),
                     "rpc".into(),
                     method,
                     params,
-                ])));
+                ])))
             }
-            _ => return Ok(None),
+            _ => Ok(None),
         }
     }
 }
@@ -312,20 +312,20 @@ fn pool_menu() -> Result<Option<Vec<String>>> {
         };
 
         match choice {
-            0 => return Ok(Some(args(&["pool", "stats"]))),
-            1 => return Ok(Some(args(&["pool", "miners"]))),
-            2 => return Ok(Some(args(&["pool", "config"]))),
-            3 => return Ok(Some(args(&["pool", "earnings"]))),
+            0 => Ok(Some(args(&["pool", "stats"]))),
+            1 => Ok(Some(args(&["pool", "miners"]))),
+            2 => Ok(Some(args(&["pool", "config"]))),
+            3 => Ok(Some(args(&["pool", "earnings"]))),
             4 => {
                 let address = required_input("Wallet address", None)?;
-                return Ok(Some(args_owned(vec![
+                Ok(Some(args_owned(vec![
                     "pool".into(),
                     "earnings".into(),
                     "--address".into(),
                     address,
-                ])));
+                ])))
             }
-            _ => return Ok(None),
+            _ => Ok(None),
         }
     }
 }
@@ -351,10 +351,10 @@ fn mine_menu() -> Result<Option<Vec<String>>> {
         };
 
         match choice {
-            0 => return Ok(Some(args(&["mine", "start"]))),
-            1 => return Ok(Some(guided_mine_start()?)),
-            2 => return Ok(Some(args(&["mine", "status"]))),
-            3 => return Ok(Some(args(&["mine", "bench"]))),
+            0 => Ok(Some(args(&["mine", "start"]))),
+            1 => Ok(Some(guided_mine_start()?)),
+            2 => Ok(Some(args(&["mine", "status"]))),
+            3 => Ok(Some(args(&["mine", "bench"]))),
             4 => {
                 let mut argv = args(&["mine", "bench", "--gpu"]);
                 apply_backend_flag(&mut argv, choose_gpu_backend(false)?);
@@ -368,7 +368,7 @@ fn mine_menu() -> Result<Option<Vec<String>>> {
                     "--secs",
                     optional_input("Duration seconds (blank = 5)", Some("5"))?,
                 );
-                return Ok(Some(argv));
+                Ok(Some(argv))
             }
             5 => {
                 let mut argv = args(&["mine", "bench", "--ekam"]);
@@ -383,13 +383,13 @@ fn mine_menu() -> Result<Option<Vec<String>>> {
                     "--secs",
                     optional_input("Duration seconds (blank = 5)", Some("5"))?,
                 );
-                return Ok(Some(argv));
+                Ok(Some(argv))
             }
-            6 => return Ok(Some(args(&["mine", "stop"]))),
-            7 => return Ok(Some(args(&["mine", "dcr", "status"]))),
-            8 => return Ok(Some(args(&["mine", "dcr", "start"]))),
-            9 => return Ok(Some(args(&["mine", "dcr", "stop"]))),
-            _ => return Ok(None),
+            6 => Ok(Some(args(&["mine", "stop"]))),
+            7 => Ok(Some(args(&["mine", "dcr", "status"]))),
+            8 => Ok(Some(args(&["mine", "dcr", "start"]))),
+            9 => Ok(Some(args(&["mine", "dcr", "stop"]))),
+            _ => Ok(None),
         }
     }
 }
@@ -410,21 +410,21 @@ fn wallet_menu() -> Result<Option<Vec<String>>> {
         };
 
         match choice {
-            0 => return Ok(Some(args(&["wallet", "address"]))),
-            1 => return Ok(Some(args(&["wallet", "balance"]))),
+            0 => Ok(Some(args(&["wallet", "address"]))),
+            1 => Ok(Some(args(&["wallet", "balance"]))),
             2 => {
                 let address = required_input("Address", None)?;
-                return Ok(Some(args_owned(vec![
+                Ok(Some(args_owned(vec![
                     "wallet".into(),
                     "balance".into(),
                     "--address".into(),
                     address,
-                ])));
+                ])))
             }
-            3 => return Ok(Some(guided_wallet_send()?)),
-            4 => return Ok(Some(args(&["wallet", "new"]))),
-            5 => return Ok(Some(args(&["wallet", "tithe"]))),
-            _ => return Ok(None),
+            3 => Ok(Some(guided_wallet_send()?)),
+            4 => Ok(Some(args(&["wallet", "new"]))),
+            5 => Ok(Some(args(&["wallet", "tithe"]))),
+            _ => Ok(None),
         }
     }
 }
@@ -452,35 +452,35 @@ fn agent_menu() -> Result<Option<Vec<String>>> {
         };
 
         match choice {
-            0 => return Ok(Some(args(&["agent", "status"]))),
-            1 => return Ok(Some(args(&["agent", "chat"]))),
+            0 => Ok(Some(args(&["agent", "status"]))),
+            1 => Ok(Some(args(&["agent", "chat"]))),
             2 => {
                 let question = required_input("Question", None)?;
-                return Ok(Some(args_owned(vec![
+                Ok(Some(args_owned(vec![
                     "agent".into(),
                     "ask".into(),
                     question,
-                ])));
+                ])))
             }
-            3 => return Ok(Some(args(&["agent", "logs"]))),
-            4 => return Ok(Some(args(&["agent", "config"]))),
-            5 => return Ok(Some(args(&["agent", "tasks"]))),
-            6 => return Ok(Some(args(&["agent", "memory", "ls"]))),
-            7 => return Ok(Some(args(&["agent", "memory", "flush"]))),
-            8 => return Ok(Some(args(&["agent", "rag", "index"]))),
+            3 => Ok(Some(args(&["agent", "logs"]))),
+            4 => Ok(Some(args(&["agent", "config"]))),
+            5 => Ok(Some(args(&["agent", "tasks"]))),
+            6 => Ok(Some(args(&["agent", "memory", "ls"]))),
+            7 => Ok(Some(args(&["agent", "memory", "flush"]))),
+            8 => Ok(Some(args(&["agent", "rag", "index"]))),
             9 => {
                 let question = required_input("RAG query", None)?;
-                return Ok(Some(args_owned(vec![
+                Ok(Some(args_owned(vec![
                     "agent".into(),
                     "rag".into(),
                     "query".into(),
                     question,
-                ])));
+                ])))
             }
-            10 => return Ok(Some(args(&["agent", "warp"]))),
-            11 => return Ok(Some(args(&["agent", "ncl"]))),
-            12 => return Ok(Some(args(&["agent", "oasis"]))),
-            _ => return Ok(None),
+            10 => Ok(Some(args(&["agent", "warp"]))),
+            11 => Ok(Some(args(&["agent", "ncl"]))),
+            12 => Ok(Some(args(&["agent", "oasis"]))),
+            _ => Ok(None),
         }
     }
 }
@@ -502,20 +502,20 @@ fn bridge_menu() -> Result<Option<Vec<String>>> {
         };
 
         match choice {
-            0 => return Ok(Some(args(&["bridge", "status"]))),
-            1 => return Ok(Some(args(&["bridge", "pending"]))),
-            2 => return Ok(Some(args(&["bridge", "history", "10"]))),
+            0 => Ok(Some(args(&["bridge", "status"]))),
+            1 => Ok(Some(args(&["bridge", "pending"]))),
+            2 => Ok(Some(args(&["bridge", "history", "10"]))),
             3 => {
                 let n = required_input("History limit", Some("25"))?;
-                return Ok(Some(args_owned(vec!["bridge".into(), "history".into(), n])));
+                Ok(Some(args_owned(vec!["bridge".into(), "history".into(), n])))
             }
             4 => {
                 let id = required_input("Transfer ID", None)?;
-                return Ok(Some(args_owned(vec!["bridge".into(), "get".into(), id])));
+                Ok(Some(args_owned(vec!["bridge".into(), "get".into(), id])))
             }
-            5 => return Ok(Some(args(&["bridge", "chains"]))),
-            6 => return Ok(Some(guided_bridge_transfer()?)),
-            _ => return Ok(None),
+            5 => Ok(Some(args(&["bridge", "chains"]))),
+            6 => Ok(Some(guided_bridge_transfer()?)),
+            _ => Ok(None),
         }
     }
 }
@@ -536,16 +536,16 @@ fn dao_menu() -> Result<Option<Vec<String>>> {
         };
 
         match choice {
-            0 => return Ok(Some(args(&["dao", "status"]))),
-            1 => return Ok(Some(args(&["dao", "proposals"]))),
+            0 => Ok(Some(args(&["dao", "status"]))),
+            1 => Ok(Some(args(&["dao", "proposals"]))),
             2 => {
                 let id = required_input("Proposal ID", None)?;
-                return Ok(Some(args_owned(vec!["dao".into(), "proposal".into(), id])));
+                Ok(Some(args_owned(vec!["dao".into(), "proposal".into(), id])))
             }
-            3 => return Ok(Some(args(&["dao", "treasury"]))),
-            4 => return Ok(Some(args(&["dao", "params"]))),
-            5 => return Ok(Some(guided_dao_vote()?)),
-            _ => return Ok(None),
+            3 => Ok(Some(args(&["dao", "treasury"]))),
+            4 => Ok(Some(args(&["dao", "params"]))),
+            5 => Ok(Some(guided_dao_vote()?)),
+            _ => Ok(None),
         }
     }
 }
@@ -567,31 +567,31 @@ fn warp_menu() -> Result<Option<Vec<String>>> {
         };
 
         match choice {
-            0 => return Ok(Some(args(&["warp", "status"]))),
-            1 => return Ok(Some(args(&["warp", "chains"]))),
+            0 => Ok(Some(args(&["warp", "status"]))),
+            1 => Ok(Some(args(&["warp", "chains"]))),
             2 => {
                 let chain_id = required_input("Chain ID", None)?;
-                return Ok(Some(args_owned(vec![
+                Ok(Some(args_owned(vec![
                     "warp".into(),
                     "chain".into(),
                     chain_id,
-                ])));
+                ])))
             }
-            3 => return Ok(Some(args(&["warp", "pending"]))),
+            3 => Ok(Some(args(&["warp", "pending"]))),
             4 => {
                 let id = required_input("Message ID", None)?;
-                return Ok(Some(args_owned(vec!["warp".into(), "get".into(), id])));
+                Ok(Some(args_owned(vec!["warp".into(), "get".into(), id])))
             }
-            5 => return Ok(Some(args(&["warp", "stats"]))),
+            5 => Ok(Some(args(&["warp", "stats"]))),
             6 => {
                 let chain_id = required_input("Chain ID", None)?;
-                return Ok(Some(args_owned(vec![
+                Ok(Some(args_owned(vec![
                     "warp".into(),
                     "validators".into(),
                     chain_id,
-                ])));
+                ])))
             }
-            _ => return Ok(None),
+            _ => Ok(None),
         }
     }
 }
@@ -614,21 +614,21 @@ fn ncl_menu() -> Result<Option<Vec<String>>> {
         };
 
         match choice {
-            0 => return Ok(Some(args(&["ncl", "status"]))),
-            1 => return Ok(Some(args(&["ncl", "jobs"]))),
+            0 => Ok(Some(args(&["ncl", "status"]))),
+            1 => Ok(Some(args(&["ncl", "jobs"]))),
             2 => {
                 let id = required_input("Job ID", None)?;
-                return Ok(Some(args_owned(vec!["ncl".into(), "job".into(), id])));
+                Ok(Some(args_owned(vec!["ncl".into(), "job".into(), id])))
             }
-            3 => return Ok(Some(args(&["ncl", "workers"]))),
-            4 => return Ok(Some(args(&["ncl", "leaderboard"]))),
-            5 => return Ok(Some(args(&["ncl", "schedule"]))),
+            3 => Ok(Some(args(&["ncl", "workers"]))),
+            4 => Ok(Some(args(&["ncl", "leaderboard"]))),
+            5 => Ok(Some(args(&["ncl", "schedule"]))),
             6 => {
                 let model = required_input("Model name", None)?;
-                return Ok(Some(args_owned(vec!["ncl".into(), "price".into(), model])));
+                Ok(Some(args_owned(vec!["ncl".into(), "price".into(), model])))
             }
-            7 => return Ok(Some(guided_ncl_submit()?)),
-            _ => return Ok(None),
+            7 => Ok(Some(guided_ncl_submit()?)),
+            _ => Ok(None),
         }
     }
 }
@@ -648,21 +648,21 @@ fn config_menu() -> Result<Option<Vec<String>>> {
         };
 
         match choice {
-            0 => return Ok(Some(args(&["config", "show"]))),
-            1 => return Ok(Some(args(&["config", "path"]))),
-            2 => return Ok(Some(args(&["config", "validate"]))),
-            3 => return Ok(Some(args(&["config", "init"]))),
+            0 => Ok(Some(args(&["config", "show"]))),
+            1 => Ok(Some(args(&["config", "path"]))),
+            2 => Ok(Some(args(&["config", "validate"]))),
+            3 => Ok(Some(args(&["config", "init"]))),
             4 => {
                 let key = required_input("Config key", None)?;
                 let value = required_input("Config value", None)?;
-                return Ok(Some(args_owned(vec![
+                Ok(Some(args_owned(vec![
                     "config".into(),
                     "set".into(),
                     key,
                     value,
-                ])));
+                ])))
             }
-            _ => return Ok(None),
+            _ => Ok(None),
         }
     }
 }
@@ -684,14 +684,14 @@ fn views_menu() -> Result<Option<Vec<String>>> {
         };
 
         match choice {
-            0 => return Ok(Some(args(&["dashboard"]))),
-            1 => return Ok(Some(args(&["explorer"]))),
-            2 => return Ok(Some(args(&["monitor"]))),
-            3 => return Ok(Some(args(&["deploy", "status"]))),
-            4 => return Ok(Some(args(&["deploy", "server"]))),
-            5 => return Ok(Some(args(&["deploy", "website"]))),
-            6 => return Ok(Some(args(&["deploy", "update"]))),
-            _ => return Ok(None),
+            0 => Ok(Some(args(&["dashboard"]))),
+            1 => Ok(Some(args(&["explorer"]))),
+            2 => Ok(Some(args(&["monitor"]))),
+            3 => Ok(Some(args(&["deploy", "status"]))),
+            4 => Ok(Some(args(&["deploy", "server"]))),
+            5 => Ok(Some(args(&["deploy", "website"]))),
+            6 => Ok(Some(args(&["deploy", "update"]))),
+            _ => Ok(None),
         }
     }
 }

@@ -150,7 +150,7 @@ impl CoAdminRegistry {
         admin.reputation = admin
             .reputation
             .saturating_add(delta.max(0) as u64)
-            .saturating_sub(delta.min(0).abs() as u64);
+            .saturating_sub(delta.min(0).unsigned_abs());
         Ok(())
     }
 }
@@ -200,9 +200,17 @@ mod tests {
     #[test]
     fn test_layer_and_role_queries() {
         let mut reg = CoAdminRegistry::new();
-        reg.register(sample_admin("Alice", "zion1alice", CoAdminRole::Treasury, 2)).unwrap();
-        reg.register(sample_admin("Bob", "zion1bob", CoAdminRole::Bridge, 2)).unwrap();
-        reg.register(sample_admin("Carol", "zion1carol", CoAdminRole::Relayer, 3)).unwrap();
+        reg.register(sample_admin(
+            "Alice",
+            "zion1alice",
+            CoAdminRole::Treasury,
+            2,
+        ))
+        .unwrap();
+        reg.register(sample_admin("Bob", "zion1bob", CoAdminRole::Bridge, 2))
+            .unwrap();
+        reg.register(sample_admin("Carol", "zion1carol", CoAdminRole::Relayer, 3))
+            .unwrap();
 
         assert_eq!(reg.layer_admins(2).len(), 2);
         assert_eq!(reg.role_admins(2, CoAdminRole::Treasury).len(), 1);
@@ -213,7 +221,13 @@ mod tests {
     #[test]
     fn test_deactivate_reactivate() {
         let mut reg = CoAdminRegistry::new();
-        reg.register(sample_admin("Alice", "zion1alice", CoAdminRole::Treasury, 2)).unwrap();
+        reg.register(sample_admin(
+            "Alice",
+            "zion1alice",
+            CoAdminRole::Treasury,
+            2,
+        ))
+        .unwrap();
 
         reg.deactivate("zion1alice").unwrap();
         assert_eq!(reg.active_count(2), 0);
@@ -225,7 +239,13 @@ mod tests {
     #[test]
     fn test_slash() {
         let mut reg = CoAdminRegistry::new();
-        reg.register(sample_admin("Alice", "zion1alice", CoAdminRole::Treasury, 2)).unwrap();
+        reg.register(sample_admin(
+            "Alice",
+            "zion1alice",
+            CoAdminRole::Treasury,
+            2,
+        ))
+        .unwrap();
 
         reg.slash("zion1alice", true).unwrap();
         let a = reg.get("zion1alice").unwrap();
@@ -237,7 +257,13 @@ mod tests {
     #[test]
     fn test_reputation_change() {
         let mut reg = CoAdminRegistry::new();
-        reg.register(sample_admin("Alice", "zion1alice", CoAdminRole::Treasury, 2)).unwrap();
+        reg.register(sample_admin(
+            "Alice",
+            "zion1alice",
+            CoAdminRole::Treasury,
+            2,
+        ))
+        .unwrap();
 
         reg.add_reputation("zion1alice", 100).unwrap();
         assert_eq!(reg.get("zion1alice").unwrap().reputation, 600);

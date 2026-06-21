@@ -29,26 +29,24 @@ pub async fn run(_cfg: &Config, cmd: FreeWorldCmd) -> Result<()> {
                 Err(e) => ui::print_err(&format!("Free World unreachable: {}", e)),
             }
         }
-        FreeWorldCmd::Grants => {
-            match client.get(format!("{}/api/v1/grants", base)).send().await {
-                Ok(r) if r.status().is_success() => {
-                    let json: serde_json::Value = r.json().await?;
-                    if let Some(data) = json.get("data").and_then(|d| d.as_array()) {
-                        ui::print_header(&format!("Grants ({})", data.len()));
-                        for g in data.iter().take(20) {
-                            let title = g["title"].as_str().unwrap_or("?");
-                            let status = g["status"].as_str().unwrap_or("?");
-                            let amount = g["amount_zion"].as_u64().unwrap_or(0);
-                            println!("  [{}] {} — {} ZION", status, title, amount);
-                        }
-                    } else {
-                        ui::print_info("No grants found");
+        FreeWorldCmd::Grants => match client.get(format!("{}/api/v1/grants", base)).send().await {
+            Ok(r) if r.status().is_success() => {
+                let json: serde_json::Value = r.json().await?;
+                if let Some(data) = json.get("data").and_then(|d| d.as_array()) {
+                    ui::print_header(&format!("Grants ({})", data.len()));
+                    for g in data.iter().take(20) {
+                        let title = g["title"].as_str().unwrap_or("?");
+                        let status = g["status"].as_str().unwrap_or("?");
+                        let amount = g["amount_zion"].as_u64().unwrap_or(0);
+                        println!("  [{}] {} — {} ZION", status, title, amount);
                     }
+                } else {
+                    ui::print_info("No grants found");
                 }
-                Ok(r) => ui::print_err(&format!("HTTP error: {}", r.status())),
-                Err(e) => ui::print_err(&format!("Connection error: {}", e)),
             }
-        }
+            Ok(r) => ui::print_err(&format!("HTTP error: {}", r.status())),
+            Err(e) => ui::print_err(&format!("Connection error: {}", e)),
+        },
         FreeWorldCmd::Projects => {
             match client.get(format!("{}/api/v1/projects", base)).send().await {
                 Ok(r) if r.status().is_success() => {
@@ -70,7 +68,11 @@ pub async fn run(_cfg: &Config, cmd: FreeWorldCmd) -> Result<()> {
             }
         }
         FreeWorldCmd::Balance => {
-            match client.get(format!("{}/api/v1/fund/balance", base)).send().await {
+            match client
+                .get(format!("{}/api/v1/fund/balance", base))
+                .send()
+                .await
+            {
                 Ok(r) if r.status().is_success() => {
                     let json: serde_json::Value = r.json().await?;
                     if let Some(data) = json.get("data") {

@@ -98,7 +98,8 @@ impl CrossLayerState {
 
     /// Which layers have vetoed? (sorted for determinism)
     pub fn vetoed_layers(&self) -> Vec<LayerId> {
-        let mut v: Vec<_> = self.layer_status
+        let mut v: Vec<_> = self
+            .layer_status
             .iter()
             .filter(|(_, s)| matches!(s, LayerConsent::Vetoed))
             .map(|(l, _)| *l)
@@ -109,7 +110,8 @@ impl CrossLayerState {
 
     /// Which layers are still pending? (sorted for determinism)
     pub fn pending_layers(&self) -> Vec<LayerId> {
-        let mut v: Vec<_> = self.layer_status
+        let mut v: Vec<_> = self
+            .layer_status
             .iter()
             .filter(|(_, s)| matches!(s, LayerConsent::Pending))
             .map(|(l, _)| *l)
@@ -146,8 +148,10 @@ impl CrossLayerRegistry {
 
     /// Register a proposal as cross-layer.
     pub fn register(&mut self, proposal_id: u64, required_layers: Vec<LayerId>) {
-        self.states
-            .insert(proposal_id, CrossLayerState::new(proposal_id, required_layers));
+        self.states.insert(
+            proposal_id,
+            CrossLayerState::new(proposal_id, required_layers),
+        );
     }
 
     /// Get mutable state for a proposal.
@@ -164,7 +168,9 @@ impl CrossLayerRegistry {
     pub fn layer_consent(&mut self, proposal_id: u64, layer: LayerId) -> DaoResult<()> {
         self.states
             .get_mut(&proposal_id)
-            .ok_or_else(|| DaoError::Internal(format!("No cross-layer state for proposal {}", proposal_id)))?
+            .ok_or_else(|| {
+                DaoError::Internal(format!("No cross-layer state for proposal {}", proposal_id))
+            })?
             .consent(layer)
     }
 
@@ -177,7 +183,9 @@ impl CrossLayerRegistry {
     ) -> DaoResult<()> {
         self.states
             .get_mut(&proposal_id)
-            .ok_or_else(|| DaoError::Internal(format!("No cross-layer state for proposal {}", proposal_id)))?
+            .ok_or_else(|| {
+                DaoError::Internal(format!("No cross-layer state for proposal {}", proposal_id))
+            })?
             .veto(layer, reason_hash)
     }
 

@@ -145,10 +145,15 @@ pub async fn run(cfg: &Config, cmd: BridgeCmd) -> Result<()> {
                 ui::print_info("DRY-RUN mode — no transactions will be submitted.");
             }
             ui::print_info("Deployment workflow:");
-            println!("  1. Ensure Foundry is installed:  curl -L https://foundry.paradigm.xyz | bash");
+            println!(
+                "  1. Ensure Foundry is installed:  curl -L https://foundry.paradigm.xyz | bash"
+            );
             println!("  2. Set RPC URL:  export BASE_RPC=https://base-mainnet.publicnode.com");
             println!("  3. Set deployer key:  export PRIVATE_KEY=0x...");
-            println!("  4. Run deploy script:  ./scripts/deploy-bridge-base.sh {}", network);
+            println!(
+                "  4. Run deploy script:  ./scripts/deploy-bridge-base.sh {}",
+                network
+            );
             println!();
             ui::print_info("Contracts to deploy:");
             println!("  - wZION ERC-20 (wrapped ZION)");

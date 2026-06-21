@@ -28,7 +28,9 @@ use zion_ai_native::{
     EchoBackend, EmbeddingBackend, LlmBackend, LlmRequest, MemoryEntry, MemoryEventKind,
     MmlModality, MockEmbeddingBackend, RagDocument, VectorStore,
 };
-use zion_ncl::{create_router as ncl_router, NclAppState, JobScheduler, PricingEngine, ReputationRegistry};
+use zion_ncl::{
+    create_router as ncl_router, JobScheduler, NclAppState, PricingEngine, ReputationRegistry,
+};
 
 struct RagIndexState {
     store: VectorStore,
@@ -101,9 +103,15 @@ struct DispatchTaskRequest {
     required_consciousness: u8,
 }
 
-fn default_reward() -> u64 { 1_000 }
-fn default_priority() -> u8 { 5 }
-fn default_consciousness() -> u8 { 1 }
+fn default_reward() -> u64 {
+    1_000
+}
+fn default_priority() -> u8 {
+    5
+}
+fn default_consciousness() -> u8 {
+    1
+}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -167,7 +175,10 @@ async fn main() -> anyhow::Result<()> {
         .route("/agents", get(agents_list).post(agents_register))
         .route("/agents/:id", get(agents_get).delete(agents_terminate))
         .route("/agents/:id/capabilities", post(agents_grant_capability))
-        .route("/agents/:id/consciousness", get(agents_get_consciousness).post(agents_elevate_consciousness))
+        .route(
+            "/agents/:id/consciousness",
+            get(agents_get_consciousness).post(agents_elevate_consciousness),
+        )
         .route("/agents/:id/messages", get(agents_get_messages))
         // ── Orchestrator: status ──────────────────────────────────────────
         .route("/orchestrator/status", get(orchestrator_status))
@@ -387,7 +398,7 @@ fn load_docs_from_disk() -> anyhow::Result<Vec<(String, String)>> {
     for entry in walkdir::WalkDir::new(base_path)
         .into_iter()
         .filter_map(|e| e.ok())
-        .filter(|e| e.path().extension().map_or(false, |ext| ext == "md"))
+        .filter(|e| e.path().extension().is_some_and(|ext| ext == "md"))
     {
         let path = entry.path();
         let content = std::fs::read_to_string(path)?;
@@ -503,7 +514,7 @@ fn generate_answer(
 
     let request = LlmRequest::new(MmlModality::Text, final_prompt)
         .with_system_prompt(system_prompt)
-        .with_consciousness(consciousness.level.clone())
+        .with_consciousness(consciousness.level)
         .with_max_tokens(450)
         .with_temperature(0.2);
 
@@ -722,7 +733,10 @@ async fn tasks(State(state): State<Arc<AppState>>) -> Json<Value> {
 // ─── Orchestrator handlers ─────────────────────────────────────────────────
 
 async fn orchestrator_status(State(state): State<Arc<AppState>>) -> Json<Value> {
-    let orch = state.orchestrator.lock().expect("orchestrator lock poisoned");
+    let orch = state
+        .orchestrator
+        .lock()
+        .expect("orchestrator lock poisoned");
     let status = orch.coordinate();
     let q = state.task_queue.lock().expect("task_queue lock poisoned");
     Json(json!({
@@ -742,7 +756,10 @@ async fn orchestrator_status(State(state): State<Arc<AppState>>) -> Json<Value> 
 }
 
 async fn agents_list(State(state): State<Arc<AppState>>) -> Json<Value> {
-    let orch = state.orchestrator.lock().expect("orchestrator lock poisoned");
+    let orch = state
+        .orchestrator
+        .lock()
+        .expect("orchestrator lock poisoned");
     let status = orch.coordinate();
     Json(json!({
         "total": orch.total_count(),
@@ -758,7 +775,10 @@ async fn agents_register(
 ) -> Json<Value> {
     let mut agent = Agent::new(req.name, req.owner, req.wallet_address);
     agent.staked_zion = req.staked_zion;
-    let mut orch = state.orchestrator.lock().expect("orchestrator lock poisoned");
+    let mut orch = state
+        .orchestrator
+        .lock()
+        .expect("orchestrator lock poisoned");
     match orch.register_agent(agent) {
         Ok(id) => {
             tracing::info!(%id, "agent_registered");
@@ -768,15 +788,15 @@ async fn agents_register(
     }
 }
 
-async fn agents_get(
-    State(state): State<Arc<AppState>>,
-    Path(id_str): Path<String>,
-) -> Json<Value> {
+async fn agents_get(State(state): State<Arc<AppState>>, Path(id_str): Path<String>) -> Json<Value> {
     let id = match Uuid::parse_str(&id_str) {
         Ok(v) => v,
         Err(_) => return Json(json!({ "error": "invalid UUID" })),
     };
-    let orch = state.orchestrator.lock().expect("orchestrator lock poisoned");
+    let orch = state
+        .orchestrator
+        .lock()
+        .expect("orchestrator lock poisoned");
     match orch.get_agent(&id) {
         Some(agent) => Json(json!(agent)),
         None => Json(json!({ "error": "agent not found" })),
@@ -791,7 +811,10 @@ async fn agents_terminate(
         Ok(v) => v,
         Err(_) => return Json(json!({ "error": "invalid UUID" })),
     };
-    let mut orch = state.orchestrator.lock().expect("orchestrator lock poisoned");
+    let mut orch = state
+        .orchestrator
+        .lock()
+        .expect("orchestrator lock poisoned");
     match orch.terminate_agent(id) {
         Ok(()) => {
             tracing::info!(%id, "agent_terminated");
@@ -817,7 +840,10 @@ async fn agents_grant_capability(
         "bridge" => AgentCapability::Bridge,
         other => AgentCapability::Custom(other.to_string()),
     };
-    let mut orch = state.orchestrator.lock().expect("orchestrator lock poisoned");
+    let mut orch = state
+        .orchestrator
+        .lock()
+        .expect("orchestrator lock poisoned");
     match orch.grant_capability(id, cap) {
         Ok(()) => Json(json!({ "ok": true })),
         Err(e) => Json(json!({ "ok": false, "error": e.to_string() })),
@@ -833,7 +859,10 @@ async fn agents_elevate_consciousness(
         Ok(v) => v,
         Err(_) => return Json(json!({ "error": "invalid UUID" })),
     };
-    let mut orch = state.orchestrator.lock().expect("orchestrator lock poisoned");
+    let mut orch = state
+        .orchestrator
+        .lock()
+        .expect("orchestrator lock poisoned");
     match orch.elevate_consciousness(id, req.level) {
         Ok(()) => Json(json!({ "ok": true, "new_level": req.level })),
         Err(e) => Json(json!({ "ok": false, "error": e.to_string() })),
@@ -848,7 +877,10 @@ async fn agents_get_messages(
         Ok(v) => v,
         Err(_) => return Json(json!({ "error": "invalid UUID" })),
     };
-    let mut orch = state.orchestrator.lock().expect("orchestrator lock poisoned");
+    let mut orch = state
+        .orchestrator
+        .lock()
+        .expect("orchestrator lock poisoned");
     let msgs = orch.get_messages(id);
     let count = msgs.len();
     Json(json!({ "agent_id": id.to_string(), "messages": msgs, "count": count }))
@@ -870,14 +902,23 @@ async fn tasks_dispatch(
     Json(req): Json<DispatchTaskRequest>,
 ) -> Json<Value> {
     let task_type = parse_task_type(&req.task_type);
-    let mut task = AiTask::new(task_type, req.model_id, req.submitter, req.input, req.reward_flowers)
-        .with_priority(req.priority)
-        .with_consciousness(req.required_consciousness);
+    let mut task = AiTask::new(
+        task_type,
+        req.model_id,
+        req.submitter,
+        req.input,
+        req.reward_flowers,
+    )
+    .with_priority(req.priority)
+    .with_consciousness(req.required_consciousness);
 
     let task_id = task.id;
 
     // Try to dispatch to a registered agent
-    let mut orch = state.orchestrator.lock().expect("orchestrator lock poisoned");
+    let mut orch = state
+        .orchestrator
+        .lock()
+        .expect("orchestrator lock poisoned");
     match orch.dispatch_task(&mut task) {
         Ok(agent_id) => {
             tracing::info!(%task_id, %agent_id, "task_dispatched");
@@ -915,8 +956,16 @@ async fn warp_status(State(state): State<Arc<AppState>>) -> Json<Value> {
 }
 
 async fn ncl_status(State(state): State<Arc<AppState>>) -> Json<Value> {
-    let sched = state.ncl_state.scheduler.lock().expect("ncl scheduler lock");
-    let rep = state.ncl_state.reputation.lock().expect("ncl reputation lock");
+    let sched = state
+        .ncl_state
+        .scheduler
+        .lock()
+        .expect("ncl scheduler lock");
+    let rep = state
+        .ncl_state
+        .reputation
+        .lock()
+        .expect("ncl reputation lock");
     Json(json!({
         "layer": "L3",
         "service": "ncl",
@@ -938,7 +987,10 @@ async fn ncl_price(
     State(state): State<Arc<AppState>>,
     axum::extract::Query(params): axum::extract::Query<HashMap<String, String>>,
 ) -> Json<Value> {
-    let model = params.get("model").cloned().unwrap_or_else(|| "default".to_string());
+    let model = params
+        .get("model")
+        .cloned()
+        .unwrap_or_else(|| "default".to_string());
     let backend = match model.to_lowercase().as_str() {
         m if m.contains("onnx") => zion_ncl::ComputeBackend::OnnxRuntime,
         m if m.contains("wasm") => zion_ncl::ComputeBackend::Wasm,
@@ -995,7 +1047,9 @@ async fn agents_get_consciousness(
 async fn telemetry_handler(State(state): State<Arc<AppState>>) -> Json<Value> {
     // Fetch from node RPC (best effort)
     let node_height = fetch_node_height(&state.node_rpc_addr).await.unwrap_or(0);
-    let (pool_hashrate, active_miners) = fetch_pool_stats(&state.pool_api_url).await.unwrap_or((0.0, 0));
+    let (pool_hashrate, active_miners) = fetch_pool_stats(&state.pool_api_url)
+        .await
+        .unwrap_or((0.0, 0));
     let pending = state.task_queue.lock().expect("lock poisoned").len();
 
     Json(json!({

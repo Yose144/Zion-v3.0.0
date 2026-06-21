@@ -46,7 +46,10 @@ pub async fn run(cfg: &Config, cmd: PoolCmd) -> Result<()> {
             ui::print_header("Pool Config");
             ui::print_row("Host", host);
             ui::print_row("Port", &port.to_string());
-            ui::print_row("Algorithm", "multi-algo (deeksha_lite_v1, deeksha_lite_fire, cosmic_harmony_ekam_deeksha_v2)");
+            ui::print_row(
+                "Algorithm",
+                "multi-algo (deeksha_lite_v1, deeksha_lite_fire, cosmic_harmony_ekam_deeksha_v2)",
+            );
             println!();
             Ok(())
         }
@@ -99,8 +102,7 @@ async fn pool_stats(cfg: &Config, target: &str) -> Result<()> {
 
     // Pull chain context from node to show block template info
     let (rpc_host, rpc_port) = cfg.target_rpc(target);
-    let node_result =
-        node_rpc::call0(rpc_host, rpc_port, "getMempoolInfo").await;
+    let node_result = node_rpc::call0(rpc_host, rpc_port, "getMempoolInfo").await;
     if let Ok(v) = node_result {
         let size = v["size"].as_u64().unwrap_or(0);
         let tmpl_txs = v["template_transactions"].as_u64().unwrap_or(0);
@@ -118,16 +120,9 @@ async fn pool_miners(cfg: &Config, target: &str) -> Result<()> {
     ui::print_header("Active Workers");
 
     // Pool is stratum-only; get template info from node as proxy indicator
-    ui::print_info(&format!(
-        "Pool stratum: {}:{}",
-        host, port
-    ));
+    ui::print_info(&format!("Pool stratum: {}:{}", host, port));
 
-    let alive = tcp_probe(
-        host,
-        port,
-        std::time::Duration::from_secs(3),
-    );
+    let alive = tcp_probe(host, port, std::time::Duration::from_secs(3));
     if !alive {
         ui::print_warn("Pool stratum not reachable — cannot query worker sessions");
         println!();

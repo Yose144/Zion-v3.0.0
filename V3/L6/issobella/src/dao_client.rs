@@ -50,9 +50,13 @@ impl DaoClient {
     }
 
     /// Submit a mission/research funding request to the DAO treasury.
-    pub async fn submit_mission_proposal(&self, req: &DaoProposalRequest) -> anyhow::Result<DaoProposalResponse> {
+    pub async fn submit_mission_proposal(
+        &self,
+        req: &DaoProposalRequest,
+    ) -> anyhow::Result<DaoProposalResponse> {
         let url = format!("{}/api/v1/proposals", self.config.dao_api_url);
-        let resp = self.http
+        let resp = self
+            .http
             .post(&url)
             .header("x-api-key", &self.config.api_key)
             .json(req)
@@ -64,7 +68,9 @@ impl DaoClient {
             return Err(anyhow::anyhow!("DAO API returned {}", resp.status()));
         }
 
-        let body = resp.json::<DaoProposalResponse>().await
+        let body = resp
+            .json::<DaoProposalResponse>()
+            .await
             .map_err(|e| anyhow::anyhow!("DAO parse error: {}", e))?;
 
         Ok(body)

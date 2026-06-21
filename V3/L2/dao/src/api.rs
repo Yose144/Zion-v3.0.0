@@ -112,14 +112,20 @@ pub fn dao_router(state: AppState) -> Router {
         .route("/api/dao/proposals/:id/votes", get(get_votes))
         .route("/api/dao/proposals/:id/vote", post(cast_vote))
         // Consent endpoints (L5 governance)
-        .route("/api/dao/proposals/:id/consent", get(get_consent_status).post(post_consent))
+        .route(
+            "/api/dao/proposals/:id/consent",
+            get(get_consent_status).post(post_consent),
+        )
         // Co-Admin endpoints
         .route("/api/dao/co-admins", get(list_co_admins))
         .route("/api/dao/co-admins/:layer", get(list_co_admins_by_layer))
         // Cross-layer endpoints
         .route("/api/dao/cross-layer/:id", get(get_cross_layer_state))
         .route("/api/dao/cross-layer/:id/veto", post(post_cross_layer_veto))
-        .route("/api/dao/cross-layer/:id/consent", post(post_cross_layer_consent))
+        .route(
+            "/api/dao/cross-layer/:id/consent",
+            post(post_cross_layer_consent),
+        )
         // Treasury
         .route("/api/dao/treasury", get(treasury_overview))
         .route("/api/dao/treasury/submit", post(treasury_submit))
@@ -655,7 +661,10 @@ async fn post_consent(
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
     // In production: load proposal, verify it uses consent model, store attestation
     if !check_api_key(&headers, &_state.config.api_key) {
-        return Err(err("Missing or invalid X-DAO-Key", StatusCode::UNAUTHORIZED));
+        return Err(err(
+            "Missing or invalid X-DAO-Key",
+            StatusCode::UNAUTHORIZED,
+        ));
     }
 
     let _attestation = match req.attestation.as_str() {
@@ -664,7 +673,10 @@ async fn post_consent(
         "abstain" => crate::consent::Attestation::Abstain,
         other => {
             return Err(err(
-                format!("Invalid attestation '{}' — use witness/object/abstain", other),
+                format!(
+                    "Invalid attestation '{}' — use witness/object/abstain",
+                    other
+                ),
                 StatusCode::BAD_REQUEST,
             ))
         }
@@ -712,7 +724,10 @@ async fn post_cross_layer_veto(
     Json(req): Json<CrossLayerVetoRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
     if !check_api_key(&headers, &_state.config.api_key) {
-        return Err(err("Missing or invalid X-DAO-Key", StatusCode::UNAUTHORIZED));
+        return Err(err(
+            "Missing or invalid X-DAO-Key",
+            StatusCode::UNAUTHORIZED,
+        ));
     }
     Ok(ok(serde_json::json!({
         "proposal_id": id,
@@ -737,7 +752,10 @@ async fn post_cross_layer_consent(
     Json(req): Json<CrossLayerConsentRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
     if !check_api_key(&headers, &_state.config.api_key) {
-        return Err(err("Missing or invalid X-DAO-Key", StatusCode::UNAUTHORIZED));
+        return Err(err(
+            "Missing or invalid X-DAO-Key",
+            StatusCode::UNAUTHORIZED,
+        ));
     }
     Ok(ok(serde_json::json!({
         "proposal_id": id,
@@ -781,6 +799,7 @@ mod tests {
     use crate::metrics::DaoMetrics;
     use crate::types::Guardian;
 
+    #[allow(clippy::field_reassign_with_default)]
     fn test_state() -> AppState {
         let mut cfg = DaoConfig::default();
         cfg.api_key = "test-key".to_string();

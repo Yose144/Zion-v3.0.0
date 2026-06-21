@@ -728,27 +728,20 @@ async fn list_avatars(
         .requests_total
         .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     let ray = params.get("ray").map(|s| s.as_str());
-    let min_cl = params
-        .get("min_cl")
-        .and_then(|s| s.parse::<u8>().ok());
+    let min_cl = params.get("min_cl").and_then(|s| s.parse::<u8>().ok());
     let rarity = params.get("rarity").map(|s| s.as_str());
     let filtered = state.quest_mgr.registry.filter_avatars(ray, min_cl, rarity);
     (StatusCode::OK, Json(ApiResponse::ok(filtered))).into_response()
 }
 
 /// GET /api/v1/oasis/avatars/:id
-async fn get_avatar(
-    State(state): State<OasisState>,
-    Path(id): Path<u16>,
-) -> impl IntoResponse {
+async fn get_avatar(State(state): State<OasisState>, Path(id): Path<u16>) -> impl IntoResponse {
     state
         .metrics
         .requests_total
         .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     match state.quest_mgr.registry.get_avatar(id) {
-        Some(avatar) => {
-            (StatusCode::OK, Json(ApiResponse::ok(avatar))).into_response()
-        }
+        Some(avatar) => (StatusCode::OK, Json(ApiResponse::ok(avatar))).into_response(),
         None => (
             StatusCode::NOT_FOUND,
             Json(ApiResponse::<()>::error("avatar not found")),
@@ -758,10 +751,7 @@ async fn get_avatar(
 }
 
 /// GET /api/v1/oasis/avatars/:id/quests
-async fn avatar_quests(
-    State(state): State<OasisState>,
-    Path(id): Path<u16>,
-) -> impl IntoResponse {
+async fn avatar_quests(State(state): State<OasisState>, Path(id): Path<u16>) -> impl IntoResponse {
     state
         .metrics
         .requests_total
@@ -894,7 +884,11 @@ async fn ai_quest_narrative(
 ) -> impl IntoResponse {
     match state
         .hiran
-        .generate_quest_narrative(&req.player_address, &req.consciousness_level, &req.quest_theme)
+        .generate_quest_narrative(
+            &req.player_address,
+            &req.consciousness_level,
+            &req.quest_theme,
+        )
         .await
     {
         Ok(result) => (

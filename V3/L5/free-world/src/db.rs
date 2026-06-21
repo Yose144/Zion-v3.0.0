@@ -98,7 +98,12 @@ impl FreeWorldDb {
         rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
     }
 
-    pub fn update_grant_status(&self, id: &str, status: &str, notes: Option<&str>) -> FreeWorldResult<()> {
+    pub fn update_grant_status(
+        &self,
+        id: &str,
+        status: &str,
+        notes: Option<&str>,
+    ) -> FreeWorldResult<()> {
         let reviewed = Utc::now().to_rfc3339();
         self.conn.execute(
             "UPDATE grants SET status = ?1, reviewed_at = ?2, reviewer_notes = ?3 WHERE id = ?4",
@@ -137,14 +142,16 @@ impl FreeWorldDb {
         let mut stmt = self.conn.prepare(
             "SELECT total_accumulated, total_disbursed, last_block_height, updated_at FROM fund_balance WHERE id = 1"
         )?;
-        let row = stmt.query_row([], |row| {
-            Ok(FundBalance {
-                total_accumulated: row.get(0)?,
-                total_disbursed: row.get(1)?,
-                last_block_height: row.get(2)?,
-                updated_at: row.get(3)?,
+        let row = stmt
+            .query_row([], |row| {
+                Ok(FundBalance {
+                    total_accumulated: row.get(0)?,
+                    total_disbursed: row.get(1)?,
+                    last_block_height: row.get(2)?,
+                    updated_at: row.get(3)?,
+                })
             })
-        }).optional()?;
+            .optional()?;
         Ok(row.unwrap_or_default())
     }
 
@@ -167,8 +174,13 @@ fn row_to_grant(row: &rusqlite::Row) -> Result<GrantRecord, rusqlite::Error> {
         category: row.get(5)?,
         amount_zion: row.get(6)?,
         status: row.get(7)?,
-        created_at: DateTime::parse_from_rfc3339(&row.get::<_, String>(8)?).map(|dt| dt.with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
-        reviewed_at: row.get::<_, Option<String>>(9)?.and_then(|s| DateTime::parse_from_rfc3339(&s).ok()).map(|dt| dt.with_timezone(&Utc)),
+        created_at: DateTime::parse_from_rfc3339(&row.get::<_, String>(8)?)
+            .map(|dt| dt.with_timezone(&Utc))
+            .unwrap_or_else(|_| Utc::now()),
+        reviewed_at: row
+            .get::<_, Option<String>>(9)?
+            .and_then(|s| DateTime::parse_from_rfc3339(&s).ok())
+            .map(|dt| dt.with_timezone(&Utc)),
         reviewer_notes: row.get(10)?,
     })
 }
@@ -183,8 +195,14 @@ fn row_to_project(row: &rusqlite::Row) -> Result<ProjectRecord, rusqlite::Error>
         budget_zion: row.get(5)?,
         spent_zion: row.get(6)?,
         status: row.get(7)?,
-        started_at: row.get::<_, Option<String>>(8)?.and_then(|s| DateTime::parse_from_rfc3339(&s).ok()).map(|dt| dt.with_timezone(&Utc)),
-        completed_at: row.get::<_, Option<String>>(9)?.and_then(|s| DateTime::parse_from_rfc3339(&s).ok()).map(|dt| dt.with_timezone(&Utc)),
+        started_at: row
+            .get::<_, Option<String>>(8)?
+            .and_then(|s| DateTime::parse_from_rfc3339(&s).ok())
+            .map(|dt| dt.with_timezone(&Utc)),
+        completed_at: row
+            .get::<_, Option<String>>(9)?
+            .and_then(|s| DateTime::parse_from_rfc3339(&s).ok())
+            .map(|dt| dt.with_timezone(&Utc)),
         impact_metrics: row.get(10)?,
     })
 }
@@ -198,7 +216,7 @@ pub struct GrantRecord {
     pub applicant_address: Option<String>,
     pub category: String, // humanitarian | energy | education | community
     pub amount_zion: u64,
-    pub status: String,   // pending | approved | rejected | disbursed
+    pub status: String, // pending | approved | rejected | disbursed
     pub created_at: DateTime<Utc>,
     pub reviewed_at: Option<DateTime<Utc>>,
     pub reviewer_notes: Option<String>,

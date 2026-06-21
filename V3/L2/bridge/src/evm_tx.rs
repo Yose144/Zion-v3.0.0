@@ -77,7 +77,7 @@ pub fn encode_submit_lock_proof(
 
     // Static part (5 slots × 32 bytes) + dynamic string
     let l1_sender_bytes = l1_sender.as_bytes();
-    let padded_len = (l1_sender_bytes.len() + 31) / 32 * 32;
+    let padded_len = l1_sender_bytes.len().div_ceil(32) * 32;
 
     let mut data = Vec::with_capacity(4 + 5 * 32 + 32 + padded_len);
 
@@ -114,7 +114,7 @@ pub fn encode_submit_lock_proof(
     data.extend_from_slice(&len_slot);
     data.extend_from_slice(l1_sender_bytes);
     if l1_sender_bytes.len() < padded_len {
-        data.extend(std::iter::repeat(0u8).take(padded_len - l1_sender_bytes.len()));
+        data.extend(std::iter::repeat_n(0u8, padded_len - l1_sender_bytes.len()));
     }
 
     Ok(data)
@@ -160,7 +160,7 @@ pub fn encode_confirm_burn_release(
 
     // Static part (4 slots × 32 bytes) + dynamic string
     let l1_recipient_bytes = l1_recipient.as_bytes();
-    let padded_len = (l1_recipient_bytes.len() + 31) / 32 * 32;
+    let padded_len = l1_recipient_bytes.len().div_ceil(32) * 32;
 
     let mut data = Vec::with_capacity(4 + 4 * 32 + 32 + padded_len);
 
@@ -192,7 +192,10 @@ pub fn encode_confirm_burn_release(
     data.extend_from_slice(&len_slot);
     data.extend_from_slice(l1_recipient_bytes);
     if l1_recipient_bytes.len() < padded_len {
-        data.extend(std::iter::repeat(0u8).take(padded_len - l1_recipient_bytes.len()));
+        data.extend(std::iter::repeat_n(
+            0u8,
+            padded_len - l1_recipient_bytes.len(),
+        ));
     }
 
     Ok(data)
@@ -297,6 +300,7 @@ fn rlp_list(items: &[Vec<u8>]) -> Vec<u8> {
 /// - `to`                       — target contract address "0x..."
 /// - `calldata`                 — ABI-encoded call bytes
 /// - `private_key_hex`          — 32-byte hex private key (with or without 0x prefix)
+#[allow(clippy::too_many_arguments)]
 pub fn build_and_sign_eip1559_tx(
     chain_id: u64,
     nonce: u64,
@@ -382,6 +386,7 @@ pub fn build_and_sign_eip1559_tx(
 
 /// Build the list of RLP items for a type-0x02 transaction.
 /// If `sig` is Some((y_parity, r, s)), appends signature fields.
+#[allow(clippy::too_many_arguments)]
 fn build_tx_rlp_items(
     chain_id: u64,
     nonce: u64,
