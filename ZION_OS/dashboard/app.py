@@ -4180,15 +4180,6 @@ def build_payout_status() -> dict:
                 balances[key] = {"atomic": atomic, "zion": atomic / 1_000_000_000_000}
     status["balances"] = balances
 
-    # ── Burned total ──────────────────────────────────────────────────
-    total_blocks = status["blocks_found"]
-    last_height = status["last_block_height"] or 1
-    if total_blocks > 0:
-        per_block_burned_zion = block_subsidy(last_height) / 100 / 1_000_000_000_000
-        status["burned_total"] = total_blocks * per_block_burned_zion
-    else:
-        status["burned_total"] = 0.0
-
     # ── Pool stats / miners from Edge or local ──────────────────────────
     pool_stats = fetch_pool_stats()
     miners = fetch_pool_miners()
@@ -4201,6 +4192,29 @@ def build_payout_status() -> dict:
         edge_blocks = pool_stats.get("blocks", {}).get("found") if isinstance(pool_stats.get("blocks"), dict) else None
         if edge_blocks is not None and status["blocks_found"] == 0:
             status["blocks_found"] = edge_blocks
+
+    # ── Burned total (after edge block fallback so total_blocks is accurate) ─
+    total_blocks = status["blocks_found"]
+    last_height = status["last_block_height"] or 1
+    if total_blocks > 0:
+        per_block_burned_zion = block_subsidy(last_height) / 100 / 1_000_000_000_000
+        status["burned_total"] = total_blocks * per_block_burned_zion
+    else:
+        status["burned_total"] = 0.0
+
+    # ── On-chain balances for each miner payout address ───────────────────
+    for m in miners:
+        addr = m.get("payout_address")
+        if addr and addr.startswith("zion1"):
+            bal = rpc_call(rpc_host, 8443, "getBalance", {"address": addr}, timeout=2.0)
+            if bal and not bal.get("_rpc_error"):
+                atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
+                m["on_chain_balance_zion"] = atomic / 1_000_000_000_000
+            elif is_edge and local_rpc_alive:
+                bal = rpc_call("127.0.0.1", 8443, "getBalance", {"address": addr}, timeout=2.0)
+                if bal and not bal.get("_rpc_error"):
+                    atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
+                    m["on_chain_balance_zion"] = atomic / 1_000_000_000_000
 
     # Session stats
     active_sessions = pool_stats.get("miners", {}).get("active", len(miners)) if isinstance(pool_stats.get("miners"), dict) else len(miners)
