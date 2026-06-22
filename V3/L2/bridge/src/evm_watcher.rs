@@ -162,6 +162,7 @@ impl EvmWatcher {
     ///
     /// Tries `self.direct_rpc` (chain's configured `rpc_url`) first.
     /// Falls back to Ankr on any error.
+    /// Processes in chunks of `MAX_BLOCK_RANGE` to respect RPC limits (Ankr ≤ 3500).
     async fn poll_burns(
         &mut self,
         ankr: &AnkrClient,
@@ -188,79 +189,87 @@ impl EvmWatcher {
             return Ok(0);
         }
 
-        let from_block = self.last_processed_block + 1;
-        let to_block = finalized_block.min(from_block + MAX_BLOCK_RANGE * 10 - 1);
+        let mut from_block = self.last_processed_block + 1;
+        let mut total_events = 0usize;
 
-        debug!(
-            "[{}] Scanning blocks {} → {} (current: {}, finalized: {})",
-            self.config.name, from_block, to_block, current_block, finalized_block
-        );
+        // Chunk scan to stay within RPC block-range limits.
+        while from_block <= finalized_block {
+            let to_block = finalized_block.min(from_block + MAX_BLOCK_RANGE - 1);
 
-        // ── eth_getLogs: direct RPC → Ankr fallback ───────────────────────
-        let topics_ref: Vec<Option<&str>> = vec![Some(BRIDGE_BURN_TOPIC)];
-        let logs: Vec<AnkrLog> = match self
-            .direct_rpc
-            .get_logs(
-                &self.config.wzion_address,
-                from_block,
-                to_block,
-                &topics_ref,
-            )
-            .await
-        {
-            Ok(l) => l,
-            Err(e) => {
-                debug!(
-                    "[{}] Direct RPC get_logs failed ({}) — trying Ankr",
-                    self.config.name, e
-                );
-                let filter = LogFilter {
+            debug!(
+                "[{}] Scanning blocks {} → {} (current: {}, finalized: {})",
+                self.config.name, from_block, to_block, current_block, finalized_block
+            );
+
+            // ── eth_getLogs: direct RPC → Ankr fallback ───────────────────────
+            let topics_ref: Vec<Option<&str>> = vec![Some(BRIDGE_BURN_TOPIC)];
+            let logs: Vec<AnkrLog> = match self
+                .direct_rpc
+                .get_logs(
+                    &self.config.wzion_address,
                     from_block,
                     to_block,
-                    address: self.config.wzion_address.clone(),
-                    topics: vec![Some(BRIDGE_BURN_TOPIC.to_string())],
-                };
-                ankr.get_logs(&self.config.chain_id, &filter).await?
-            }
-        };
-
-        let count = logs.len();
-
-        for log in logs {
-            // Skip removed logs (chain reorg)
-            if log.removed == Some(true) {
-                warn!(
-                    "[{}] Skipping removed log (chain reorg) in block {}",
-                    self.config.name,
-                    log.block_number_u64()
-                );
-                continue;
-            }
-
-            match parse_bridge_burn_log(&log, &self.config.chain_id) {
-                Ok(burn) => {
-                    info!(
-                        "🔥 BridgeBurn on {}: {} wZION → {} (burn_id: {})",
-                        self.config.name, burn.amount_wzion_wei, burn.l1_recipient, burn.burn_id,
+                    &topics_ref,
+                )
+                .await
+            {
+                Ok(l) => l,
+                Err(e) => {
+                    debug!(
+                        "[{}] Direct RPC get_logs failed ({}) — trying Ankr",
+                        self.config.name, e
                     );
-                    if let Err(e) = burn_tx.send(burn).await {
-                        error!(
-                            "[{}] Failed to send burn event to channel: {:?}",
+                    let filter = LogFilter {
+                        from_block,
+                        to_block,
+                        address: self.config.wzion_address.clone(),
+                        topics: vec![Some(BRIDGE_BURN_TOPIC.to_string())],
+                    };
+                    ankr.get_logs(&self.config.chain_id, &filter).await?
+                }
+            };
+
+            let count = logs.len();
+            total_events += count;
+
+            for log in logs {
+                // Skip removed logs (chain reorg)
+                if log.removed == Some(true) {
+                    warn!(
+                        "[{}] Skipping removed log (chain reorg) in block {}",
+                        self.config.name,
+                        log.block_number_u64()
+                    );
+                    continue;
+                }
+
+                match parse_bridge_burn_log(&log, &self.config.chain_id) {
+                    Ok(burn) => {
+                        info!(
+                            "🔥 BridgeBurn on {}: {} wZION → {} (burn_id: {})",
+                            self.config.name, burn.amount_wzion_wei, burn.l1_recipient, burn.burn_id,
+                        );
+                        if let Err(e) = burn_tx.send(burn).await {
+                            error!(
+                                "[{}] Failed to send burn event to channel: {:?}",
+                                self.config.name, e
+                            );
+                        }
+                    }
+                    Err(e) => {
+                        warn!(
+                            "[{}] Failed to parse BridgeBurn log: {}",
                             self.config.name, e
                         );
                     }
                 }
-                Err(e) => {
-                    warn!(
-                        "[{}] Failed to parse BridgeBurn log: {}",
-                        self.config.name, e
-                    );
-                }
             }
+
+            self.last_processed_block = to_block;
+            from_block = to_block + 1;
         }
 
-        self.last_processed_block = to_block;
-        Ok(count)
+        Ok(total_events)
     }
 }
 

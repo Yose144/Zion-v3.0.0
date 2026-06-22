@@ -278,15 +278,16 @@ impl Relayer {
         // ── Get gas params ────────────────────────────────────────────
         let base_fee = evm.get_gas_price().await.unwrap_or(2_000_000_000); // 2 gwei default
         let priority_fee = evm.get_max_priority_fee().await.unwrap_or(1_500_000_000); // 1.5 gwei default
-                                                                                      // max_fee = 2 * base_fee + priority_fee (common formula), capped at MAX_GAS_GWEI
-        let max_fee_cap = MAX_GAS_GWEI * 1_000_000_000;
+        let max_gas_gwei = chain_config.max_gas_gwei;
+        let max_fee_cap = max_gas_gwei * 1_000_000_000;
         let max_fee = (2 * base_fee + priority_fee).min(max_fee_cap);
         let max_priority = priority_fee.min(max_fee);
         info!(
-            "   Gas: base_fee={} gwei, priority={} gwei, max_fee={} gwei",
+            "   Gas: base_fee={} gwei, priority={} gwei, max_fee={} gwei (cap={} gwei)",
             base_fee / 1_000_000_000,
             priority_fee / 1_000_000_000,
-            max_fee / 1_000_000_000
+            max_fee / 1_000_000_000,
+            max_gas_gwei,
         );
 
         // ── Estimate gas ──────────────────────────────────────────────
@@ -560,12 +561,9 @@ impl Relayer {
             chain_config.bridge_contract_address
         );
 
-        // EVM HTTP client
-        let rpc_url = chain_config
-            .rpc_url
-            .as_deref()
-            .unwrap_or("https://base-sepolia.publicnode.com");
-        let evm = EvmHttpClient::from_rpc_url(rpc_url);
+        // EVM HTTP client — use the chain's effective RPC (config override or Ankr fallback).
+        let rpc_url = chain_config.effective_rpc_url(&self.config.ankr);
+        let evm = EvmHttpClient::from_rpc_url(&rpc_url);
 
         // Get nonce + gas params
         let nonce = evm
@@ -574,7 +572,8 @@ impl Relayer {
             .map_err(|e| anyhow::anyhow!("confirmBurnRelease: get_nonce failed: {}", e))?;
         let base_fee = evm.get_gas_price().await.unwrap_or(2_000_000_000);
         let priority_fee = evm.get_max_priority_fee().await.unwrap_or(1_500_000_000);
-        let max_fee_cap = MAX_GAS_GWEI * 1_000_000_000;
+        let max_gas_gwei = chain_config.max_gas_gwei;
+        let max_fee_cap = max_gas_gwei * 1_000_000_000;
         let max_fee = (2 * base_fee + priority_fee).min(max_fee_cap);
         let max_priority = priority_fee.min(max_fee);
 
@@ -589,10 +588,11 @@ impl Relayer {
         let gas_limit = gas_estimate * GAS_MARGIN_NUM / GAS_MARGIN_DEN;
 
         info!(
-            "   Gas: nonce={} base_fee={} gwei priority={} gwei estimate={} limit={}",
+            "   Gas: nonce={} base_fee={} gwei priority={} gwei cap={} gwei estimate={} limit={}",
             nonce,
             base_fee / 1_000_000_000,
             priority_fee / 1_000_000_000,
+            max_gas_gwei,
             gas_estimate,
             gas_limit,
         );
@@ -677,7 +677,7 @@ impl Relayer {
         burn: &EvmBurnEvent,
         amount_flowers: u64,
     ) -> Result<Vec<Value>> {
-        let threshold = usize::from(self.config.validator.threshold.max(3));
+        let threshold = usize::from(self.config.validator.threshold);
 
         let operation_message = format!(
             "unlock|recipient={}|amount={}|chain={}|burn_id={}|evm_tx={}",
