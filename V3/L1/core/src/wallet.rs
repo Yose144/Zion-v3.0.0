@@ -54,6 +54,9 @@ pub struct SendParams {
     pub to_address: String,
     pub amount: u64,
     pub fee: u64,
+    /// Optional memo attached to the primary output (e.g. `BRIDGE:base:0x...`).
+    /// Change outputs never carry a memo.
+    pub memo: Option<String>,
 }
 
 /// Result of building a transaction.
@@ -172,7 +175,7 @@ pub fn build_and_sign(
     let mut outputs = vec![TxOutput {
         amount: params.amount,
         address: params.to_address.clone(),
-        memo: None,
+        memo: params.memo.clone(),
     }];
     if change > 0 {
         outputs.push(TxOutput {
@@ -424,6 +427,7 @@ mod tests {
             to_address: derive_address(&[99u8; 32]),
             amount: 2_000_000_000_000, // 2 ZION
             fee: 1_000,
+            memo: None,
         };
 
         let result = build_and_sign(&sk, &addr, &params, &utxos, 0).unwrap();
@@ -445,6 +449,7 @@ mod tests {
             to_address: derive_address(&[99u8; 32]),
             amount: 1_000_000,
             fee: 1_000,
+            memo: None,
         };
 
         let result = build_and_sign(&sk, &addr, &params, &utxos, 0).unwrap();
@@ -462,6 +467,7 @@ mod tests {
             to_address: derive_address(&[99u8; 32]),
             amount: 1_000_000,
             fee: 1_000,
+            memo: None,
         };
 
         let err = build_and_sign(&sk, &addr, &params, &utxos, 0).unwrap_err();
@@ -477,6 +483,7 @@ mod tests {
             to_address: derive_address(&[99u8; 32]),
             amount: 1_000,
             fee: 1_000,
+            memo: None,
         };
 
         let err = build_and_sign(&sk, &addr, &params, &[], 0).unwrap_err();
@@ -493,6 +500,7 @@ mod tests {
             to_address: "invalid_address".to_string(),
             amount: 1_000,
             fee: 1_000,
+            memo: None,
         };
 
         let err = build_and_sign(&sk, &addr, &params, &utxos, 0).unwrap_err();
@@ -510,6 +518,7 @@ mod tests {
             to_address: derive_address(&[99u8; 32]),
             amount: 400_000,
             fee: 1_000,
+            memo: None,
         };
 
         let result = build_and_sign(&sk, &addr, &params, &utxos, 0).unwrap();
@@ -565,6 +574,7 @@ mod tests {
             to_address: derive_address(&[42u8; 32]),
             amount: 2_500_000,
             fee: 1_000,
+            memo: None,
         };
 
         let result = build_and_sign(&sk, &addr, &params, &utxos, 0).unwrap();
