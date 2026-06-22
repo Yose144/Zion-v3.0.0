@@ -455,7 +455,7 @@ PowerShell `ConvertTo-Json` emits Czech decimal commas on Czech Windows. Fix: wr
 - DAO Treasury - Bootstrap (Slot 8): 0.5B (LOCKED height 525,600)
 - Core Development Fund (Slot 9): 1B
 - Network Infrastructure (Slot 10): 1B
-- Genesis Creator (Slot 11): 0.59B
+- Genesis Creator (Slot 11): 590M (0.59B)
 - Bridge Seed Fund (Slot 12): 0.4B
 - Humanitarian (Slot 13): 1.44B
 
@@ -465,6 +465,7 @@ PowerShell `ConvertTo-Json` emits Czech decimal commas on Czech Windows. Fix: wr
 - Pool Fee: `zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342`
 - Default Miner: `zion1w523a76830x2t5m7f3j023w265e8g5c400a4790`
 - Pool Payout: `zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604`
+- Genesis Creator: `zion16542q4l853a2z0u5r5w8y4m8k4558847h503736` (590M ZION, account model)
 - Bridge Vault: `zion106v7v0v0k3d500v0h7l636w0j4f5l4v044mh4a6` (100M ZION)
 - Bridge Seed Fund: `zion13794g7k3m0f84637l2x0t855h3l258k8p3xp5t3` (400M ZION)
 
@@ -473,6 +474,33 @@ PowerShell `ConvertTo-Json` emits Czech decimal commas on Czech Windows. Fix: wr
 - Humanitarian: 5%
 - ISSOBELLA: 5%
 - Pool Fee: 1%
+
+**Canonical Units (FLOWERS_PER_ZION):**
+
+> **⚠️ CRITICAL: All amounts in L1 core, RPC, wallet code, and on-chain transactions are in FLOWERS (10^-12 ZION), not ZION.**
+
+- **1 ZION = 1,000,000,000,000 flowers** (10^12, one trillion)
+- Canonical constant: `FLOWERS_PER_ZION = 1_000_000_000_000` (Rust) / `1000000000000` (JS/TS)
+- Defined in: `V3/L1/core/src/emission.rs:11` (canonical source), `wallet.rs:156`, `blockchain.js:17`
+- RPC returns amounts in flowers: `balance_flowers`, `amount_flowers`, `fee_zion` (confusingly named but contains flowers)
+- UI/dashboard converts: `flowers / 1_000_000_000_000` → ZION for display
+- Account transactions: `amount_zion` field contains flowers (1000000000 = 0.001 ZION)
+- UTXO transactions: `amount` field contains flowers (same unit)
+
+**Conversion examples:**
+- 0.001 ZION = `1_000_000_000` flowers (1 billion)
+- 1 ZION = `1_000_000_000_000` flowers (1 trillion)
+- 1000 ZION = `1_000_000_000_000_000` flowers (1 quadrillion)
+- Genesis Creator (Slot 11): 590 million ZION = `590_000_000_000_000_000_000` flowers (590 quintillion)
+
+**Verification:**
+```javascript
+const FLOWERS_PER_ZION = 1_000_000_000_000n;
+const flowers = 590_000_000_000_000_000_000n; // Genesis Creator balance
+const zion = flowers / FLOWERS_PER_ZION; // = 590_000_000 ZION = 590 million
+```
+
+**⚠️ Common mistake:** RPC returns `balance_flowers: "590000000000000000000"` which is 590 **million** ZION, not 590 billion. Always divide by 10^12 to get ZION.
 
 ### Genesis Backup/Restore (Dashboard Integration)
 

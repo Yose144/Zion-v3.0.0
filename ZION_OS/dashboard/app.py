@@ -90,6 +90,7 @@ CONFIG = load_config()
 HOST = CONFIG["host"]
 PORT = CONFIG["port"]
 TOPOLOGY = CONFIG["topology"]
+PAYOUT_HIGHWATER_FILE = DATA_DIR / "dashboard-payout-highwater.json"
 
 # Edge server addresses (Hetzner VPS — always-on)
 EDGE_HOST = "100.76.16.108"   # Tailscale IP (preferred — low latency)
@@ -3560,6 +3561,7 @@ def get_pool_miners() -> dict:
     active_sessions = 0
     miners_tracked = 0
     total_hashrate_hps = 0.0
+    u64_max = (1 << 64) - 1
 
     for line in body.splitlines():
         line = line.strip()
@@ -3581,6 +3583,8 @@ def get_pool_miners() -> dict:
                     "valid_shares": 0,
                     "invalid_shares": 0,
                     "paid_total": 0,
+                    "paid_total_atomic": 0,
+                    "blocks_found": 0,
                     "last_seen": 0,
                 }
                 total_hashrate_hps += val
@@ -3596,8 +3600,9 @@ def get_pool_miners() -> dict:
                 miners[m_id.group(1)]["invalid_shares"] = val
         elif line.startswith("zion_pool_miner_paid_total_atomic{"):
             m_id = re.search(r'miner_id="([^"]+)"', line)
-            val = int(float(line.split()[-1]))
+            val = int(line.split()[-1])
             if m_id and m_id.group(1) in miners:
+                miners[m_id.group(1)]["paid_total_atomic"] = val
                 miners[m_id.group(1)]["paid_total"] = val / 1e12  # convert atomic flowers to ZION
         elif line.startswith("zion_pool_miner_last_seen_seconds{"):
             m_id = re.search(r'miner_id="([^"]+)"', line)
@@ -3606,6 +3611,44 @@ def get_pool_miners() -> dict:
                 miners[m_id.group(1)]["last_seen"] = val
 
     miner_list = list(miners.values())
+
+    # Merge with the sanitized payout view so UI consumers don't inherit stale
+    # per-miner counters from older pool binaries.
+    try:
+        payout_miners = fetch_pool_miners()
+        payout_by_key = {}
+        for payout_miner in payout_miners:
+            for key in (
+                payout_miner.get("worker_name"),
+                payout_miner.get("address"),
+                payout_miner.get("miner_id"),
+            ):
+                if key:
+                    payout_by_key[key] = payout_miner
+        for miner in miner_list:
+            payout_miner = (
+                payout_by_key.get(miner.get("worker_name"))
+                or payout_by_key.get(miner.get("miner_id"))
+            )
+            if not payout_miner:
+                continue
+            payout_atomic = int(payout_miner.get("paid_total_atomic") or 0)
+            if payout_atomic and (
+                int(miner.get("paid_total_atomic") or 0) == u64_max
+                or int(miner.get("paid_total_atomic") or 0) == 0
+            ):
+                miner["paid_total_atomic"] = payout_atomic
+                miner["paid_total"] = payout_atomic / 1e12
+            miner["blocks_found"] = payout_miner.get("blocks_found", miner.get("blocks_found", 0))
+            if payout_miner.get("pending_balance") is not None:
+                miner["pending_balance"] = payout_miner.get("pending_balance")
+            if payout_miner.get("on_chain_balance_zion") is not None:
+                miner["on_chain_balance_zion"] = payout_miner.get("on_chain_balance_zion")
+            if payout_miner.get("address"):
+                miner["payout_address"] = payout_miner.get("address")
+    except Exception:
+        pass
+
     return {
         "ok": True,
         "miners": miner_list,
@@ -3799,6 +3842,20 @@ def sanitize_pool_stats(pool_stats: dict, miners: list) -> dict:
     u64_max = (1 << 64) - 1
     miners_total_atomic = sum(int(m.get("paid_total_atomic") or 0) for m in miners)
 
+    highwater_atomic = 0
+    try:
+        if PAYOUT_HIGHWATER_FILE.exists():
+            with open(PAYOUT_HIGHWATER_FILE, "r", encoding="utf-8") as f:
+                highwater_atomic = int((json.load(f) or {}).get("total_paid_atomic") or 0)
+    except Exception:
+        highwater_atomic = 0
+    try:
+        env_floor = int(os.environ.get("ZION_PAYOUT_HIGHWATER_ATOMIC", "0") or 0)
+        if env_floor > highwater_atomic:
+            highwater_atomic = env_floor
+    except Exception:
+        pass
+
     pplns = pool_stats.get("pplns") if isinstance(pool_stats.get("pplns"), dict) else None
     payouts = pool_stats.get("payouts") if isinstance(pool_stats.get("payouts"), dict) else None
 
@@ -3806,6 +3863,24 @@ def sanitize_pool_stats(pool_stats: dict, miners: list) -> dict:
         pplns["total_paid_flowers"] = miners_total_atomic or None
     if payouts and int(payouts.get("total_paid_atomic") or 0) == u64_max:
         payouts["total_paid_atomic"] = miners_total_atomic or None
+
+    # New pool process instances can expose smaller in-memory lifetime counters
+    # right after restart. Keep dashboard totals monotonic using the best source.
+    pplns_total = int(pplns.get("total_paid_flowers") or 0) if pplns else 0
+    payouts_total = int(payouts.get("total_paid_atomic") or 0) if payouts else 0
+    monotonic_total = max(pplns_total, payouts_total, miners_total_atomic, highwater_atomic)
+    if pplns and monotonic_total:
+        pplns["total_paid_flowers"] = monotonic_total
+    if payouts and monotonic_total:
+        payouts["total_paid_atomic"] = monotonic_total
+
+    if monotonic_total > highwater_atomic:
+        try:
+            PAYOUT_HIGHWATER_FILE.parent.mkdir(parents=True, exist_ok=True)
+            with open(PAYOUT_HIGHWATER_FILE, "w", encoding="utf-8") as f:
+                json.dump({"total_paid_atomic": monotonic_total, "updated_at": int(time.time())}, f)
+        except Exception:
+            pass
 
     return pool_stats
 
