@@ -78,21 +78,21 @@ if [ ! -d "$CONTRACTS_DIR" ]; then
 fi
 
 echo "Building contracts..."
-forge build --contracts "$CONTRACTS_DIR"
+forge build --root "$CONTRACTS_DIR"
 
 echo ""
 echo "Deploying wZION..."
-WZION_ADDR=$(forge create --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY" "$CONTRACTS_DIR/wZION.sol:wZION" --json | jq -r '.deployedTo')
+WZION_ADDR=$(forge create --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY" --root "$CONTRACTS_DIR" "src/wZION.sol:wZION" --json | jq -r '.deployedTo')
 echo "  wZION deployed at: $WZION_ADDR"
 
 echo ""
 echo "Deploying ZIONBridge..."
-BRIDGE_ADDR=$(forge create --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY" "$CONTRACTS_DIR/ZIONBridge.sol:ZIONBridge" --constructor-args "$WZION_ADDR" --json | jq -r '.deployedTo')
+BRIDGE_ADDR=$(forge create --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY" --root "$CONTRACTS_DIR" "src/ZIONBridge.sol:ZIONBridge" --constructor-args "$WZION_ADDR" --json | jq -r '.deployedTo')
 echo "  ZIONBridge deployed at: $BRIDGE_ADDR"
 
 echo ""
-echo "Deploying BridgeValidator (3/5 multisig)..."
-VALIDATOR_ADDR=$(forge create --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY" "$CONTRACTS_DIR/BridgeValidator.sol:BridgeValidator" --constructor-args 3 5 --json | jq -r '.deployedTo')
+echo "Deploying BridgeValidator (5/5 multisig)..."
+VALIDATOR_ADDR=$(forge create --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY" --root "$CONTRACTS_DIR" "src/BridgeValidator.sol:BridgeValidator" --constructor-args 5 5 --json | jq -r '.deployedTo')
 echo "  BridgeValidator deployed at: $VALIDATOR_ADDR"
 
 echo ""
