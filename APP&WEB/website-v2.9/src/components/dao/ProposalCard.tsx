@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ThumbsUp, ThumbsDown, Clock, Users, TrendingUp } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, Minus, Clock, Users, Calendar } from 'lucide-react';
 import { useState } from 'react';
 import { GovernanceProposal } from '@/lib/dao-api';
 
@@ -13,24 +13,17 @@ interface ProposalCardProps {
 export default function ProposalCard({ proposal, onVote }: ProposalCardProps) {
   const [isVoting, setIsVoting] = useState(false);
 
-  // GovernanceProposal stores votes as strings
-  const votesFor = BigInt(Math.floor(Number(proposal.for_votes || 0)));
-  const votesAgainst = BigInt(Math.floor(Number(proposal.against_votes || 0)));
-  const votesAbstain = 0n; // Not in GovernanceProposal yet
-
+  const votesFor = Number(proposal.for_votes || 0);
+  const votesAgainst = Number(proposal.against_votes || 0);
+  const votesAbstain = Number(proposal.abstain_votes || 0);
   const totalVotes = votesFor + votesAgainst + votesAbstain;
-  
-  const forPercent = totalVotes > 0n 
-    ? Number((votesFor * 100n) / totalVotes) 
-    : 0;
-  
-  const againstPercent = totalVotes > 0n 
-    ? Number((votesAgainst * 100n) / totalVotes) 
-    : 0;
+
+  const forPercent = totalVotes > 0 ? (votesFor / totalVotes) * 100 : 0;
+  const againstPercent = totalVotes > 0 ? (votesAgainst / totalVotes) * 100 : 0;
+  const abstainPercent = totalVotes > 0 ? (votesAbstain / totalVotes) * 100 : 0;
 
   const handleVote = async (voteType: string) => {
     if (!onVote) return;
-    
     setIsVoting(true);
     try {
       await onVote(String(proposal.id), voteType);
@@ -39,130 +32,132 @@ export default function ProposalCard({ proposal, onVote }: ProposalCardProps) {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch(status.toUpperCase()) {
-      case 'ACTIVE': return 'text-green-400 bg-green-400/10 border-green-400/20';
-      case 'PENDING': return 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20';
-      case 'PASSED': return 'text-blue-400 bg-blue-400/10 border-blue-400/20';
-      case 'REJECTED': return 'text-red-400 bg-red-400/10 border-red-400/20';
-      case 'EXECUTED': return 'text-purple-400 bg-purple-400/10 border-purple-400/20';
-      default: return 'text-gray-400 bg-gray-400/10 border-gray-400/20';
-    }
-  };
+  const status = proposal.state.toUpperCase();
+  const isActive = status === 'ACTIVE';
 
-  const formatVotes = (value: bigint) => {
-    return value ? value.toLocaleString() : '—';
-  };
+  const statusClass =
+    status === 'ACTIVE'
+      ? 'text-emerald-400 border-emerald-500/20 bg-emerald-500/10'
+      : status === 'PASSED' || status === 'EXECUTED'
+      ? 'text-zion-gold border-zion-gold/20 bg-zion-gold/10'
+      : status === 'REJECTED'
+      ? 'text-red-400 border-red-500/20 bg-red-500/10'
+      : 'text-gray-400 border-white/10 bg-white/5';
+
+  const formatNumber = (n: number) => (n ? n.toLocaleString() : '—');
+  const endDate = proposal.voting_ends_at
+    ? new Date(proposal.voting_ends_at).toISOString().split('T')[0]
+    : '—';
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-3xl border border-white/10 bg-black/40 p-6 backdrop-blur-xl hover:border-zion-gold/30 transition-all"
+      className="rounded-2xl border border-white/8 bg-white/[0.03] p-5 hover:border-white/15 transition-colors"
     >
       {/* Header */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-2xl font-bold text-zion-gold">#{proposal.id}</span>
-            <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wider ${getStatusColor(proposal.state)}`}>
+      <div className="flex items-start gap-3 mb-4">
+        <span className="text-xs font-mono text-gray-500 mt-1">#{proposal.id}</span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider ${statusClass}`}>
               <Clock className="h-3 w-3" />
               {proposal.state}
             </span>
           </div>
-          <h3 className="text-xl font-semibold text-white mb-2">{proposal.title}</h3>
-          <p className="text-sm text-gray-400 line-clamp-2">{proposal.description}</p>
+          <h3 className="text-base font-medium text-white leading-snug">{proposal.title}</h3>
         </div>
       </div>
 
-      {/* Proposer */}
-      <div className="flex items-center gap-2 mb-4 text-sm text-gray-400">
-        <Users className="h-4 w-4" />
-        <span>Proposer: <span className="text-gray-300 font-mono">{proposal.proposer.slice(0, 12)}...</span></span>
-      </div>
+      <p className="text-sm text-gray-400 mb-4 line-clamp-2">{proposal.description}</p>
 
-      {/* Voting Stats */}
-      <div className="space-y-3 mb-6">
-        {/* Progress Bar */}
-        <div className="relative h-8 rounded-full bg-white/5 overflow-hidden">
-          <div 
-            className="absolute inset-y-0 left-0 bg-gradient-to-r from-green-500 to-green-400 transition-all"
-            style={{ width: `${forPercent}%` }}
-          />
-          <div 
-            className="absolute inset-y-0 bg-gradient-to-r from-red-500 to-red-400 transition-all"
-            style={{ left: `${forPercent}%`, width: `${againstPercent}%` }}
-          />
-          <div className="absolute inset-0 flex items-center justify-center gap-4 text-xs font-semibold">
-            <span className="text-green-400">{forPercent.toFixed(1)}% FOR</span>
-            <span className="text-gray-400">•</span>
-            <span className="text-red-400">{againstPercent.toFixed(1)}% AGAINST</span>
+      {/* Vote bars */}
+      <div className="space-y-3 mb-4">
+        <div>
+          <div className="flex justify-between text-[10px] mb-1">
+            <span className="text-emerald-400">For</span>
+            <span className="text-gray-400">{forPercent.toFixed(1)}%</span>
+          </div>
+          <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+            <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${forPercent}%` }} />
           </div>
         </div>
-
-        {/* Vote Counts */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="rounded-xl bg-green-500/10 border border-green-500/20 p-3">
-            <div className="flex items-center gap-2 text-green-400 mb-1">
-              <ThumbsUp className="h-4 w-4" />
-              <span className="text-xs font-semibold uppercase tracking-wider">For</span>
-            </div>
-            <p className="text-lg font-bold text-white">{formatVotes(votesFor)}</p>
-            <p className="text-xs text-gray-400">Votes</p>
+        <div>
+          <div className="flex justify-between text-[10px] mb-1">
+            <span className="text-red-400">Against</span>
+            <span className="text-gray-400">{againstPercent.toFixed(1)}%</span>
           </div>
-
-          <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-3">
-            <div className="flex items-center gap-2 text-red-400 mb-1">
-              <ThumbsDown className="h-4 w-4" />
-              <span className="text-xs font-semibold uppercase tracking-wider">Against</span>
-            </div>
-            <p className="text-lg font-bold text-white">{formatVotes(votesAgainst)}</p>
-            <p className="text-xs text-gray-400">Votes</p>
+          <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+            <div className="h-full bg-red-500 rounded-full" style={{ width: `${againstPercent}%` }} />
           </div>
-
-          <div className="rounded-xl bg-gray-500/10 border border-gray-500/20 p-3">
-            <div className="flex items-center gap-2 text-gray-400 mb-1">
-              <TrendingUp className="h-4 w-4" />
-              <span className="text-xs font-semibold uppercase tracking-wider">Abstain</span>
-            </div>
-            <p className="text-lg font-bold text-white">{formatVotes(votesAbstain)}</p>
-            <p className="text-xs text-gray-400">Votes</p>
+        </div>
+        <div>
+          <div className="flex justify-between text-[10px] mb-1">
+            <span className="text-gray-400">Abstain</span>
+            <span className="text-gray-400">{abstainPercent.toFixed(1)}%</span>
+          </div>
+          <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+            <div className="h-full bg-gray-500 rounded-full" style={{ width: `${abstainPercent}%` }} />
           </div>
         </div>
       </div>
 
-      {/* Voting Buttons */}
-      {proposal.state.toUpperCase() === 'ACTIVE' && onVote && (
-        <div className="flex gap-3">
+      {/* Vote counts */}
+      <div className="grid grid-cols-3 gap-2 mb-4 text-center">
+        <div className="rounded-xl border border-white/6 bg-white/[0.02] p-2">
+          <p className="text-xs font-semibold text-emerald-400">{formatNumber(votesFor)}</p>
+          <p className="text-[10px] text-gray-500">For</p>
+        </div>
+        <div className="rounded-xl border border-white/6 bg-white/[0.02] p-2">
+          <p className="text-xs font-semibold text-red-400">{formatNumber(votesAgainst)}</p>
+          <p className="text-[10px] text-gray-500">Against</p>
+        </div>
+        <div className="rounded-xl border border-white/6 bg-white/[0.02] p-2">
+          <p className="text-xs font-semibold text-gray-400">{formatNumber(votesAbstain)}</p>
+          <p className="text-[10px] text-gray-500">Abstain</p>
+        </div>
+      </div>
+
+      {/* Voting buttons */}
+      {isActive && onVote && (
+        <div className="flex gap-2 mb-4">
           <button
             onClick={() => handleVote('for')}
             disabled={isVoting}
-            className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-green-500 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed px-4 py-3 text-sm font-semibold text-white transition-colors"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-50 transition-colors"
           >
-            <ThumbsUp className="h-4 w-4" />
-            Vote FOR
+            <ThumbsUp className="h-3.5 w-3.5" />
+            For
           </button>
           <button
             onClick={() => handleVote('against')}
             disabled={isVoting}
-            className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed px-4 py-3 text-sm font-semibold text-white transition-colors"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-400 hover:bg-red-500/20 disabled:opacity-50 transition-colors"
           >
-            <ThumbsDown className="h-4 w-4" />
-            Vote AGAINST
+            <ThumbsDown className="h-3.5 w-3.5" />
+            Against
           </button>
           <button
             onClick={() => handleVote('abstain')}
             disabled={isVoting}
-            className="flex items-center justify-center gap-2 rounded-xl bg-gray-600 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed px-4 py-3 text-sm font-semibold text-white transition-colors"
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-gray-400 hover:bg-white/10 disabled:opacity-50 transition-colors"
           >
+            <Minus className="h-3.5 w-3.5" />
             Abstain
           </button>
         </div>
       )}
 
-      {/* Timestamp */}
-      <div className="mt-4 pt-4 border-t border-white/10 text-xs text-gray-500">
-        Created: {proposal.created_at ? new Date(proposal.created_at).toLocaleString() : '—'}
+      {/* Footer */}
+      <div className="flex flex-wrap gap-3 text-[10px] text-gray-500 border-t border-white/6 pt-3">
+        <span className="inline-flex items-center gap-1">
+          <Users className="h-3 w-3" />
+          Proposer: <span className="text-gray-400 font-mono">{proposal.proposer}</span>
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <Calendar className="h-3 w-3" />
+          Ends: <span className="text-gray-400">{endDate}</span>
+        </span>
       </div>
     </motion.div>
   );

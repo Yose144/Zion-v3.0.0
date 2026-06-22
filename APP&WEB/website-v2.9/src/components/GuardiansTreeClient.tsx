@@ -61,11 +61,14 @@ export default function GuardiansTreeClient() {
 
   if (error && !data) {
     return (
-      <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-8 text-center">
-        <p className="text-red-400">Error: {error}</p>
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
+        <p className="text-sm text-gray-400 mb-2">{error}</p>
+        <p className="text-xs text-gray-500">
+          The 144k Guardians registry is under development. Live data will appear once the registry contract is deployed.
+        </p>
         <button
           onClick={fetchGuardianStats}
-          className="mt-4 rounded-lg bg-red-500/20 px-4 py-2 text-sm text-red-300 hover:bg-red-500/30"
+          className="mt-4 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-gray-300 hover:bg-white/10"
         >
           Retry
         </button>
