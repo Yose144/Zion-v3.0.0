@@ -9,8 +9,8 @@ export interface RpcConfig {
 }
 
 const DEFAULT_NODES = [
-  'https://rpc.zionterranova.com',
-  'http://77.42.71.94:8443',      // Edge primary (Hetzner VPS)
+  'https://zionterranova.com',    // Edge primary (Caddy HTTPS proxy → 127.0.0.1:8443)
+  'http://77.42.71.94:8443',      // Edge direct (Hetzner VPS)
   'http://100.76.16.108:8443',    // Edge VPN (Tailscale fallback)
 ];
 
@@ -106,14 +106,57 @@ export class ZionRPC {
   async getBalance(address: string): Promise<number> {
     const result = await this.call<Record<string, unknown>>('getBalance', { address });
 
+    // V3 returns balance_flowers, account_balance_flowers, utxo_balance_flowers as STRINGS (u128)
+    // Sum account + UTXO balances for total (hybrid model)
+    const accountBal = result?.account_balance_flowers;
+    const utxoBal = result?.utxo_balance_flowers;
+    if (accountBal !== undefined || utxoBal !== undefined) {
+      const acct = BigInt(String(accountBal ?? '0'));
+      const utxo = BigInt(String(utxoBal ?? '0'));
+      const total = acct + utxo;
+      return Number(total) / 1_000_000_000_000;
+    }
+    // Legacy: balance_flowers as string or number
     if (result?.balance_flowers !== undefined) {
-      return (result.balance_flowers as number) / 1_000_000_000_000;
+      const raw = result.balance_flowers;
+      if (typeof raw === 'string') {
+        return Number(BigInt(raw)) / 1_000_000_000_000;
+      }
+      return (raw as number) / 1_000_000_000_000;
     }
     if (result?.balance_zion !== undefined) {
       return parseFloat(String(result.balance_zion)) || 0;
     }
     const raw = (result?.balance ?? result ?? 0) as number | string;
     return typeof raw === 'number' ? raw : parseFloat(String(raw)) || 0;
+  }
+
+  /**
+   * Get detailed balance breakdown (account + UTXO) for hybrid model.
+   */
+  async getBalanceBreakdown(address: string): Promise<{
+    total_zion: number;
+    account_zion: number;
+    utxo_zion: number;
+    account_flowers: string;
+    utxo_flowers: string;
+    utxo_count: number;
+  }> {
+    const result = await this.call<Record<string, unknown>>('getBalance', { address });
+    const acctStr = String(result?.account_balance_flowers ?? '0');
+    const utxoStr = String(result?.utxo_balance_flowers ?? '0');
+    const utxoCount = Number(result?.utxo_count ?? 0);
+    const acct = BigInt(acctStr);
+    const utxo = BigInt(utxoStr);
+    const total = acct + utxo;
+    return {
+      total_zion: Number(total) / 1_000_000_000_000,
+      account_zion: Number(acct) / 1_000_000_000_000,
+      utxo_zion: Number(utxo) / 1_000_000_000_000,
+      account_flowers: acctStr,
+      utxo_flowers: utxoStr,
+      utxo_count: utxoCount,
+    };
   }
 
   async getUtxos(address: string): Promise<Array<Record<string, unknown>>> {
@@ -137,6 +180,29 @@ export class ZionRPC {
 
     if (!result?.accepted && !result?.tx_id) {
       throw new Error((result?.error as string) || 'Failed to broadcast transaction');
+    }
+
+    return (result.tx_id ?? result.txid) as string;
+  }
+
+  /**
+   * Broadcast an account-model transaction via submitAccountTransaction.
+   * Used for premine wallets with balance in the account ledger.
+   */
+  async broadcastAccountTransaction(txPayload: Record<string, unknown>): Promise<string> {
+    const result = await this.call<Record<string, unknown>>('submitAccountTransaction', txPayload);
+
+    if (!result?.accepted && !result?.tx_id) {
+      // Fallback to generic submitTransaction
+      try {
+        const fallback = await this.call<Record<string, unknown>>('submitTransaction', { transaction: txPayload });
+        if (fallback?.accepted || fallback?.tx_id) {
+          return (fallback.tx_id ?? fallback.txid) as string;
+        }
+      } catch {
+        // ignore fallback error
+      }
+      throw new Error((result?.error as string) || 'Failed to broadcast account transaction');
     }
 
     return (result.tx_id ?? result.txid) as string;
