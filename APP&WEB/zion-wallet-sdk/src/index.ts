@@ -34,10 +34,13 @@ export {
 
 export {
   buildUtxoTransaction,
+  buildAccountTransaction,
+  generateAccountTxId,
   calculateTxHash,
   transactionToRpcPayload,
   FLOWERS_PER_ZION,
   MIN_FEE_FLOWERS,
+  ACCOUNT_DEFAULT_FEE_FLOWERS,
 } from './core/transaction.js';
 
 export type {
@@ -45,6 +48,7 @@ export type {
   TxInput,
   TxOutput,
   Transaction,
+  AccountTransaction,
 } from './core/transaction.js';
 
 // RPC
