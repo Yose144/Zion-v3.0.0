@@ -79,9 +79,31 @@ Testnet configs were raised to 2/2, matching the two known validators, so the `t
 
 `BridgeValidator.sol` now tracks an enumerable guardian list and `resetSignatures` clears `hasSigned[opHash][guardian]` for all guardians.
 
-### 3.7 Mainnet Config Claims Deployment That Is Not Verified ✅ FIXED
+### 3.7 Mainnet Config Claims Deployment That Is Not Verified ❌ RE-OPENED
 
-Both mainnet configs now use zero placeholders and `enabled = false`, and `BRIDGE_MAINNET_DEPLOY.md` is marked as pre-deployment.
+The production website `https://zionterranova.com/defi` advertises live **Base Mainnet** contracts:
+
+| Contract | Address |
+|----------|---------|
+| wZION | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` |
+| ZIONBridge | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` |
+| UniV3Pool | `0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB` |
+| UniV3Router | `0x2626664c2603336E57B271c5C0b26F421741e481` |
+| QuoterV2 | `0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a` |
+| PositionManager | `0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1` |
+
+On-chain verification (Base mainnet RPC, 2026-06-22):
+- `wZION.totalSupply()` returns a non-zero value — contract exists and has supply.
+- `ZIONBridge.threshold()` returns `1` — **the mainnet bridge is currently configured as 1-of-1 single-sig**.
+
+This contradicts the repo configs (which still use zero placeholders / `enabled=false`) and is a **critical mainnet security risk**.
+
+**Fix required:**
+1. Treat the existing mainnet bridge as emergency-only / pause it.
+2. Deploy a new `ZIONBridge` with the intended 5/5 validator threshold.
+3. Migrate wZION ownership/minter rights to the new bridge.
+4. Update `V3/config/bridge-mainnet.toml`, `V3/L2/bridge/config/bridge-mainnet.toml`, and `APP&WEB/website-v2.9/src/lib/bridge-api.ts` with the new mainnet bridge address.
+5. Update `V3/docs/BRIDGE_MAINNET_DEPLOY.md` and `L2audit.md` to reflect the real deployed state.
 
 ### 3.8 Website Points to Zero-Address Mainnet Contracts ✅ FIXED
 

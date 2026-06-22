@@ -1044,6 +1044,14 @@ fn test_parse_bridge_mainnet_toml() {
         !base.enabled,
         "mainnet Base chain should be disabled until validators are live (5/5 provisioning pending)"
     );
+    assert_eq!(
+        base.wzion_address,
+        "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+    );
+    assert_eq!(
+        base.bridge_contract_address,
+        "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721"
+    );
     assert_eq!(cfg.metrics.log_level, "info");
     assert_eq!(cfg.validator.threshold, 5);
     assert_eq!(cfg.validator.total_validators, 5);

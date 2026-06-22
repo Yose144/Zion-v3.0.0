@@ -27,17 +27,18 @@ poll_interval_secs  = 15
 
 # ── EVM Chains ──────────────────────────────────────────────
 
-# -- Base Mainnet — NOT DEPLOYED. Replace placeholder addresses after deploy. --
+# -- Base Mainnet — LIVE BUT UNSAFE. ⚠️ ZIONBridge.threshold() == 1 (single-sig).
+#    Keep enabled=false until a new 5/5 bridge is deployed and ownership migrated.
 [[evm_chains]]
 chain_id                = "base"
 name                    = "Base (Mainnet)"
 evm_chain_id            = 8453
-rpc_url                 = "https://base-rpc.publicnode.com"
-rpc_url_backup          = "https://mainnet.base.org"
-wzion_address           = "0x0000000000000000000000000000000000000000"  # TODO: replace after deploy
-bridge_contract_address = "0x0000000000000000000000000000000000000000"  # TODO: replace after deploy
+rpc_url                 = "https://mainnet.base.org"
+rpc_url_backup          = "https://base-rpc.publicnode.com"
+wzion_address           = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+bridge_contract_address = "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721"  # ⚠️ single-sig threshold
 finality_blocks         = 64
-enabled                 = false
+enabled                 = false  # ⚠️ DO NOT enable until 5/5 bridge is deployed
 gas_strategy            = "eip1559"
 max_gas_gwei            = 50
 start_block             = 0  # TODO: set to deployment block height
