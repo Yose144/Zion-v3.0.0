@@ -2079,6 +2079,9 @@ async function loadPayoutTab(){
     }
     set('payout-val-error', val.last_error || 'No validation errors');
 
+    // Network-wide emission totals (consensus schedule, block 0 → current height)
+    updateNetworkEmission(d.network_emission);
+
   } catch(e){
     console.error('Payout tab load error:', e);
     const container = document.getElementById('pane-payout');
@@ -2373,7 +2376,8 @@ function updatePayoutSnapshot(d){
   set('payout-pplns-used', pplns.window_used ?? '—');
   set('payout-pplns-registered', pplns.miners_registered ?? miners.length ?? 0);
   set('payout-pplns-rounds', pplns.rounds_completed ?? '—');
-  set('payout-pplns-total', d.burned_total != null ? _zionFmt(d.burned_total) + ' ZION' : '—');
+  const pplnsTotalZion = pplns.total_paid_flowers ? pplns.total_paid_flowers / 1_000_000_000_000 : null;
+  set('payout-pplns-total', pplnsTotalZion != null ? _zionFmt(pplnsTotalZion) + ' ZION' : (d.burned_total != null ? _zionFmt(d.burned_total) + ' ZION' : '—'));
 
   set('payout-last-time', d.last_payout_time || '—');
   const txEl = document.getElementById('payout-last-tx');
@@ -2383,6 +2387,9 @@ function updatePayoutSnapshot(d){
     txEl.onclick = d.last_payout_tx ? () => openTxInExplorer(d.last_payout_tx) : null;
     txEl.style.cursor = d.last_payout_tx ? 'pointer' : 'default';
   }
+
+  // Network-wide emission totals (consensus schedule, block 0 → current height)
+  updateNetworkEmission(d.network_emission);
 }
 
 // ─────────────────────────────────────────────────────────────────────
