@@ -28,7 +28,7 @@ Each Guardian MUST:
 | 4 | Operator #4 | `0x8E644b3E9FaBf52eE321DC5B3D5AA06d6e3E66C6` | TBD | TBD |
 | 5 | Operator #5 | `0x7e0D2eD71d78B9CFB5034A83333e82e304bc4CB2` | TBD | TBD |
 
-> **Status:** Testnet guardians 1–2 are active. Mainnet addresses are provisioned but **not yet funded** (0 ETH on addresses 2–5). Mainnet requires funding + redeployment of a 5/5 `ZIONBridge` before activation.
+> **Status:** Testnet guardians 1–2 are active. Mainnet addresses are **provisioned and funded with minimum ETH** (~0.0061 ETH total). Mainnet requires redeployment of a 5/5 `ZIONBridge` before activation; recommended to top up each address to ≥0.01 ETH.
 
 ## Multisig Contract: `BridgeValidator.sol`
 

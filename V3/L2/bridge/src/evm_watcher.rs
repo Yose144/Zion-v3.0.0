@@ -16,6 +16,7 @@ use crate::evm_rpc::EvmHttpClient;
 use crate::types::{BridgeStatus, EvmBurnEvent};
 use anyhow::Result;
 use chrono::Utc;
+use std::sync::Arc;
 use tokio::sync::mpsc;
 use tracing::{debug, error, info, warn};
 
@@ -32,8 +33,10 @@ const BACKOFF_BASE_SECS: u64 = 5;
 /// Poll interval between `eth_getLogs` calls.
 const POLL_INTERVAL_SECS: u64 = 12;
 
-/// Maximum block range per `eth_getLogs` chunk (Ankr free-tier limit ≤ 3500).
-const MAX_BLOCK_RANGE: u64 = 3_000;
+/// Maximum block range per `eth_getLogs` chunk.
+/// Base public RPC limit is ~2000 blocks but returns errors at exactly 2000;
+/// Ankr free-tier is 3500. We use 1500 to stay safely under all known limits.
+const MAX_BLOCK_RANGE: u64 = 1_500;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // EvmWatcher
@@ -75,7 +78,11 @@ impl EvmWatcher {
     ///
     /// Sends confirmed burn events to `burn_tx`.  Returns `Err` only after
     /// exhausting all retries (the bridge daemon should then restart this task).
-    pub async fn run(&mut self, burn_tx: mpsc::Sender<EvmBurnEvent>) -> Result<()> {
+    pub async fn run(
+        &mut self,
+        burn_tx: mpsc::Sender<EvmBurnEvent>,
+        metrics: Arc<crate::metrics::BridgeMetrics>,
+    ) -> Result<()> {
         info!(
             "👁️  EVM Watcher started — chain: {} (EVM ID {}), wZION: {}, finality: {} blocks",
             self.config.name,
@@ -94,7 +101,7 @@ impl EvmWatcher {
         let mut retry_count = 0u32;
 
         loop {
-            match self.poll_loop(&ankr, &burn_tx).await {
+            match self.poll_loop(&ankr, &burn_tx, &metrics).await {
                 Ok(()) => {
                     info!("[{}] Watcher loop exited cleanly", self.config.name);
                     return Ok(());
@@ -125,6 +132,7 @@ impl EvmWatcher {
         &mut self,
         ankr: &AnkrClient,
         burn_tx: &mpsc::Sender<EvmBurnEvent>,
+        metrics: &Arc<crate::metrics::BridgeMetrics>,
     ) -> Result<()> {
         let mut interval =
             tokio::time::interval(std::time::Duration::from_secs(POLL_INTERVAL_SECS));
@@ -136,6 +144,7 @@ impl EvmWatcher {
             match self.poll_burns(ankr, burn_tx).await {
                 Ok(count) => {
                     consecutive_errors = 0;
+                    self.update_metrics(metrics);
                     if count > 0 {
                         info!("[{}] Processed {} burn event(s)", self.config.name, count);
                     }
@@ -270,6 +279,13 @@ impl EvmWatcher {
         }
 
         Ok(total_events)
+    }
+
+    /// Update the shared metrics gauge with the latest processed EVM block.
+    pub fn update_metrics(&self, metrics: &crate::metrics::BridgeMetrics) {
+        metrics
+            .last_evm_block
+            .store(self.last_processed_block, std::sync::atomic::Ordering::Relaxed);
     }
 }
 

@@ -186,7 +186,7 @@ fn base_testnet_chain() -> EvmChainConfig {
         enabled: true,
         gas_strategy: "eip1559".into(),
         max_gas_gwei: 50,
-        start_block: Some(38_057_800), // Bridge deployed 23.2.2026
+        start_block: Some(43_197_000), // Updated to current Base Sepolia block
     }
 }
 
@@ -204,8 +204,8 @@ fn base_mainnet_chain() -> EvmChainConfig {
         finality_blocks: 12, // Base mainnet: 12 blocks ≈ 24s
         enabled: false,      // NOT enabled until contracts deployed
         gas_strategy: "eip1559".into(),
-        max_gas_gwei: 200, // Higher gas limit for mainnet
-        start_block: None, // Will be set after mainnet deployment
+        max_gas_gwei: 100, // Higher gas limit for mainnet
+        start_block: Some(47_687_000), // Set to ~current Base mainnet block
     }
 }
 
@@ -219,7 +219,7 @@ fn test_testnet_chain_id() {
         chain.start_block.is_some(),
         "Start block must be set to skip genesis scan"
     );
-    assert_eq!(chain.start_block.unwrap(), 38_057_800);
+    assert_eq!(chain.start_block.unwrap(), 43_197_000);
 }
 
 #[test]
@@ -397,9 +397,9 @@ fn test_evm_chunking_large_range_no_gaps_or_overlaps() {
 
 #[test]
 fn test_evm_chunking_start_block_skips_genesis() {
-    // With start_block = 38_057_800, we skip the 38M genesis blocks
-    let start = 38_057_800u64;
-    let current = 38_059_022u64;
+    // With start_block = 43_197_000, we skip the 43M genesis blocks
+    let start = 43_197_000u64;
+    let current = 43_198_500u64;
     let finalized = current - 12; // 12 block finality on Base
 
     let chunks = simulate_chunks(start + 1, finalized);
