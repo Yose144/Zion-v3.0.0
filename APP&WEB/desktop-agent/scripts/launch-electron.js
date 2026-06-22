@@ -11,11 +11,16 @@ const path = require('path');
 const electronPath = require('electron');
 const appRoot = path.join(__dirname, '..');
 
+// Clean environment variables that break normal Electron GUI mode.
+const env = { ...process.env };
+delete env.ELECTRON_RUN_AS_NODE;
+delete env.ELECTRON_NO_ATTACH_CONSOLE;
+
 try {
   execFileSync(electronPath, [appRoot], {
     stdio: 'inherit',
     cwd: appRoot,
-    env: { ...process.env }
+    env
   });
 } catch (err) {
   if (err.status) process.exit(err.status);
