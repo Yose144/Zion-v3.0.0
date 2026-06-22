@@ -24,7 +24,7 @@ poll_interval_secs  = 15
 
 # -- Base Sepolia (Testnet) — LIVE --
 [[evm_chains]]
-chain_id                = "base-sepolia"
+chain_id                = "base_sepolia"
 name                    = "Base Sepolia (TestNet)"
 evm_chain_id            = 84532
 rpc_url                 = "wss://base-sepolia.publicnode.com"
@@ -39,7 +39,7 @@ start_block             = 38057800
 
 # -- Arbitrum Sepolia (Testnet) — NOT DEPLOYED --
 [[evm_chains]]
-chain_id                = "arbitrum-sepolia"
+chain_id                = "arbitrum_sepolia"
 name                    = "Arbitrum Sepolia (TestNet)"
 evm_chain_id            = 421614
 rpc_url                 = "wss://arb-sepolia.g.alchemy.com/v2/YOUR_KEY"
