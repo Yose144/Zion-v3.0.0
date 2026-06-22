@@ -99,7 +99,22 @@ cd ..
 ```bash
 # Start the app (hot-reload enabled)
 npm start
+
+# Quick wallet-only dev mode (does not build Rust miner/node binaries)
+npm run dev:wallet
 ```
+
+> **Windows / PowerShell note:** If your shell has `ELECTRON_RUN_AS_NODE=1` set globally, unset it before running Electron or the GUI will fail to load (`app is undefined`). The launcher script unsets it automatically, but a manual launch needs:
+> ```powershell
+> $env:ELECTRON_RUN_AS_NODE = $null
+> npm start
+> ```
+
+**Wallet transaction smoke test (headless):**
+```bash
+npm run test:wallet
+```
+This exercises wallet generation, deterministic mnemonic recovery, encryption, balance/UTXO RPC lookup, v2 transaction building, and Ed25519 signature verification.
 
 **First-time setup:**
 1. Enter your ZION wallet address
