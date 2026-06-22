@@ -1056,4 +1056,14 @@ fn test_parse_bridge_mainnet_toml() {
     assert_eq!(cfg.validator.threshold, 5);
     assert_eq!(cfg.validator.total_validators, 5);
     assert_eq!(cfg.validator.validator_addresses.len(), 5);
+    assert_eq!(
+        cfg.validator.validator_addresses,
+        vec![
+            "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186",
+            "0x24d986841E56e5571489B25951eE8C1Ae761FA82",
+            "0x665c55eDCF25c2c5A1dfF1B20eE950cBDC58d3d0",
+            "0x8E644b3E9FaBf52eE321DC5B3D5AA06d6e3E66C6",
+            "0x7e0D2eD71d78B9CFB5034A83333e82e304bc4CB2",
+        ]
+    );
 }
