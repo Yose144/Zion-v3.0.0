@@ -32,27 +32,31 @@ export async function GET(request: NextRequest) {
         const txs = await rpc.getTransactions([txHash]);
         if (txs.length > 0) {
           const tx = txs[0];
-          const totalOut = tx.vout.reduce((sum, out) => sum + (out.amount || 0), 0);
+          // V3 account-model: amount_zion is string (flowers), fee_zion is number (flowers)
+          const amountZion = tx.amount_zion ? Number(tx.amount_zion) / ATOMIC_UNITS_PER_ZION : 0;
+          const feeZion = (tx.fee_zion ?? tx.fee ?? 0) / ATOMIC_UNITS_PER_ZION;
           return NextResponse.json({
             tx_hash: tx.tx_hash,
+            tx_id: tx.tx_id ?? tx.tx_hash,
             block_height: tx.block_height,
             block_timestamp: tx.block_timestamp,
             in_pool: tx.in_pool,
-            fee: tx.fee / ATOMIC_UNITS_PER_ZION,
-            amount: totalOut / ATOMIC_UNITS_PER_ZION,
+            // V3 account-model fields
+            from: tx.from ?? '',
+            to: tx.to ?? '',
+            amount: amountZion,
+            amount_zion: tx.amount_zion ?? '',
+            fee: feeZion,
+            fee_zion: tx.fee_zion ?? 0,
+            nonce: tx.nonce ?? 0,
+            signature: tx.signature ?? '',
+            public_key: tx.public_key ?? '',
+            transaction_model: tx.transaction_model ?? 'hybrid',
+            // Legacy fields for backward compat
             version: tx.version,
             unlock_time: tx.unlock_time,
-            inputs: tx.vin.map((input: any) => ({
-              type: input.key ? 'key' : 'coinbase',
-              amount: input.key?.amount ? input.key.amount / ATOMIC_UNITS_PER_ZION : 0,
-              key_image: input.key?.k_image || '',
-              key_offsets: input.key?.key_offsets || [],
-            })),
-            outputs: tx.vout.map((out: any, i: number) => ({
-              amount: out.amount / ATOMIC_UNITS_PER_ZION,
-              key: out.target?.key || '',
-              index: tx.output_indices?.[i] || i,
-            })),
+            inputs: [],
+            outputs: [],
             extra: tx.extra,
             confirmations: tx.block_height > 0 ? (await rpc.getInfo().catch(() => ({ height: 0 }))).height - tx.block_height : 0,
             status: tx.in_pool ? 'pending' : 'confirmed',
@@ -96,16 +100,38 @@ export async function GET(request: NextRequest) {
     const info = await rpc.getInfo();
     const chainHeight = info.height;
 
-    // Scan recent blocks for transactions
-    const endHeight = Math.max(0, chainHeight - 1);
-    const startHeight = Math.max(0, endHeight - 49); // Scan last 50 blocks
-    const headers = await rpc.getBlockHeaders(startHeight, endHeight);
+    // Get V3 account-model transactions (non-coinbase) from recent blocks
+    const v3Txs = await rpc.getRecentV3Transactions(limit).catch(() => []);
 
     const allTxs: any[] = [];
 
-    // Collect all transaction hashes from recent blocks
+    // Add V3 account-model transactions first (most interesting to users)
+    for (const tx of v3Txs) {
+      allTxs.push({
+        tx_hash: tx.tx_id,
+        type: 'transfer',
+        from: tx.from,
+        to: tx.to,
+        amount: Number(tx.amount_zion) / ATOMIC_UNITS_PER_ZION,
+        amount_zion: tx.amount_zion,
+        fee: tx.fee_zion / ATOMIC_UNITS_PER_ZION,
+        fee_zion: tx.fee_zion,
+        nonce: tx.nonce,
+        block_height: tx.block_height,
+        timestamp: tx.timestamp,
+        status: 'confirmed',
+        confirmations: chainHeight - tx.block_height,
+        transaction_model: 'account',
+      });
+      if (allTxs.length >= limit) break;
+    }
+
+    // Add coinbase transactions from recent blocks
+    const endHeight = Math.max(0, chainHeight - 1);
+    const startHeight = Math.max(0, endHeight - 9); // Scan last 10 blocks for coinbase
+    const headers = await rpc.getBlockHeaders(startHeight, endHeight);
+
     for (const header of headers.reverse()) {
-      // Coinbase TX for every block
       allTxs.push({
         tx_hash: `coinbase_${header.height}`,
         type: 'coinbase',
@@ -116,12 +142,8 @@ export async function GET(request: NextRequest) {
         status: 'confirmed',
         confirmations: chainHeight - header.height,
       });
-
       if (allTxs.length >= limit) break;
     }
-
-    // If blocks had non-coinbase TXs, we could fetch them here
-    // For now, most blocks only have coinbase
 
     return NextResponse.json({
       count: allTxs.length,
