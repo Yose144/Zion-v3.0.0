@@ -24,6 +24,7 @@ rpc_url_backup = "http://77.42.71.94:8443"
 bridge_address = "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0"
 finality_blocks     = 60
 poll_interval_secs  = 15
+start_block_height  = 11300
 
 # ── EVM Chains ──────────────────────────────────────────────
 
