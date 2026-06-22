@@ -1,4 +1,4 @@
-// ZION V3 Mainnet Ready v3.0.0 - Main Process
+// ZION V3 Mainnet Ready v3.0.2 - Main Process
 // Electron main process with system tray, auto-start, GPU mining, IPC
 
 const { app, BrowserWindow, Tray, Menu, ipcMain, dialog } = require('electron');

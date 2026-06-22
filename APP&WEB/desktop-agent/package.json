@@ -1,16 +1,18 @@
 {
   "name": "zion-desktop-agent",
-  "version": "3.0.0",
-  "description": "ZION V3 Mainnet v3.0.0 Desktop Agent - Plug-and-play miner + full node + unified CLI. One-click install with all binaries bundled.",
+  "version": "3.0.2",
+  "description": "ZION V3 Mainnet v3.0.2 Desktop Agent - Plug-and-play miner + full node + unified CLI. One-click install with all binaries bundled.",
   "homepage": "https://zionterranova.com",
   "main": "src/main.js",
   "scripts": {
     "prestart": "node scripts/prepare-rust-miner.js --no-build --require || node scripts/prepare-rust-miner.js --auto",
     "start": "node scripts/launch-electron.js",
     "dev": "node scripts/launch-electron.js",
+    "dev:wallet": "node scripts/launch-electron.js",
     "test": "node test/test_mining_modes.js && python test_deeksha_revenue.py",
     "test:e2e": "node scripts/test_e2e_mining_flow.js",
     "test:revenue": "node scripts/test_revenue_system_e2e.js",
+    "test:wallet": "node scripts/test-wallet-e2e.js",
     "prepare:rust-miner": "node scripts/prepare-rust-miner.js --auto",
     "build": "npm run prepare:rust-miner && electron-builder",
     "build:win": "npm run prepare:rust-miner && electron-builder --win nsis --x64",
@@ -39,8 +41,7 @@
     "bip39": "^3.1.0",
     "electron-updater": "^6.8.3",
     "ethers": "^5.8.0",
-    "qrcode": "^1.5.4",
-    "zion-wallet-sdk": "file:../zion-wallet-sdk"
+    "qrcode": "^1.5.4"
   },
   "devDependencies": {
     "electron": "^39.2.7",

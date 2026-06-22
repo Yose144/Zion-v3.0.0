@@ -5,6 +5,11 @@ const crypto = require('crypto');
 const bip39 = require('bip39');
 const { sha256 } = require('@noble/hashes/sha2');
 const { ripemd160 } = require('@noble/hashes/legacy');
+const ed25519 = require('@noble/ed25519');
+const { sha512 } = require('@noble/hashes/sha512');
+
+// Wire up sync SHA-512 for @noble/ed25519 v3
+ed25519.hashes.sha512 = sha512;
 
 const { randomBytes } = crypto;
 
@@ -65,6 +70,45 @@ function getAddressType(address) {
   return 'invalid';
 }
 
+/**
+ * Derive an Ed25519 keypair deterministically from a 32-byte seed.
+ *
+ * Uses @noble/ed25519 for the scalar→public-key math, then imports the
+ * (seed, pubkey) pair into Node.js crypto as a JWK and exports the canonical
+ * PKCS8 DER that the rest of the app expects.
+ *
+ * @param {Uint8Array} seed - 32-byte Ed25519 private seed
+ * @returns {{privateKey: Buffer, publicKey: Buffer, publicKeyRaw: Buffer}}
+ */
+function keypairFromSeed(seed) {
+  const seedBytes = new Uint8Array(seed);
+  if (seedBytes.length !== 32) {
+    throw new Error(`Invalid Ed25519 seed length: expected 32, got ${seedBytes.length}`);
+  }
+
+  const publicKeyRaw = ed25519.getPublicKey(seedBytes);
+
+  function b64url(buf) {
+    return Buffer.from(buf).toString('base64url');
+  }
+
+  const jwk = {
+    kty: 'OKP',
+    crv: 'Ed25519',
+    d: b64url(seedBytes),
+    x: b64url(publicKeyRaw)
+  };
+
+  const privateKeyObj = crypto.createPrivateKey({ key: jwk, format: 'jwk' });
+  const publicKeyObj = crypto.createPublicKey(privateKeyObj);
+
+  return {
+    privateKey: privateKeyObj.export({ type: 'pkcs8', format: 'der' }),
+    publicKey: publicKeyObj.export({ type: 'spki', format: 'der' }),
+    publicKeyRaw: Buffer.from(publicKeyRaw)
+  };
+}
+
 class ZionWalletGenerator {
   /**
    * Generate new ZION wallet
@@ -73,29 +117,20 @@ class ZionWalletGenerator {
   static generateWallet() {
     // Generate BIP39 mnemonic (12 words)
     const mnemonic = bip39.generateMnemonic(128);
-    
-    // Derive seed from mnemonic
-    const seed = bip39.mnemonicToSeedSync(mnemonic);
-    
-    // Generate Ed25519 keypair from seed (using first 32 bytes as private key seed)
-    // Note: In production, use SLIP-0010 or similar for proper HD derivation
-    const privateKeySeed = seed.slice(0, 32);
-    const { publicKey, privateKey } = crypto.generateKeyPairSync('ed25519', {
-      privateKeyEncoding: { type: 'pkcs8', format: 'der' },
-      publicKeyEncoding: { type: 'spki', format: 'der' },
-      seed: privateKeySeed
-    });
 
-    // Extract raw public key (last 32 bytes of DER encoding)
-    const pubKeyRaw = publicKey.slice(-32);
-    
+    // Derive seed from mnemonic and use the first 32 bytes as Ed25519 seed
+    const seed = bip39.mnemonicToSeedSync(mnemonic);
+    const privateKeySeed = seed.slice(0, 32);
+
+    const { privateKey, publicKeyRaw } = keypairFromSeed(privateKeySeed);
+
     // Derive canonical ZION address
-    const address = this.deriveAddress(pubKeyRaw);
-    
+    const address = this.deriveAddress(publicKeyRaw);
+
     // Export keys as hex
     const privateKeyHex = privateKey.toString('hex');
-    const publicKeyHex = pubKeyRaw.toString('hex');
-    
+    const publicKeyHex = publicKeyRaw.toString('hex');
+
     return {
       address,
       publicKey: publicKeyHex,
@@ -115,27 +150,19 @@ class ZionWalletGenerator {
       throw new Error('Invalid mnemonic phrase');
     }
 
-    // Derive seed from mnemonic
+    // Derive seed from mnemonic and use the first 32 bytes as Ed25519 seed
     const seed = bip39.mnemonicToSeedSync(mnemonic);
-    
-    // Generate Ed25519 keypair from seed (using first 32 bytes as private key seed)
     const privateKeySeed = seed.slice(0, 32);
-    const { publicKey, privateKey } = crypto.generateKeyPairSync('ed25519', {
-      privateKeyEncoding: { type: 'pkcs8', format: 'der' },
-      publicKeyEncoding: { type: 'spki', format: 'der' },
-      seed: privateKeySeed
-    });
 
-    // Extract raw public key (last 32 bytes of DER encoding)
-    const pubKeyRaw = publicKey.slice(-32);
-    
+    const { privateKey, publicKeyRaw } = keypairFromSeed(privateKeySeed);
+
     // Derive canonical ZION address
-    const address = this.deriveAddress(pubKeyRaw);
-    
+    const address = this.deriveAddress(publicKeyRaw);
+
     // Export keys as hex
     const privateKeyHex = privateKey.toString('hex');
-    const publicKeyHex = pubKeyRaw.toString('hex');
-    
+    const publicKeyHex = publicKeyRaw.toString('hex');
+
     return {
       address,
       publicKey: publicKeyHex,
