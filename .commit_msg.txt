@@ -1,0 +1,21 @@
+feat(bridge): add default_evm_recipient fallback for locks without memo
+
+UTXO locks sent without a `BRIDGE:chain:0xaddr` memo were silently
+skipped by the relay, trapping funds on the L1 bridge vault.  Add a
+config-level `default_evm_recipient` so the relay can recover these
+locks by minting wZION to a configured default address (deployer).
+
+- Add `default_evm_recipient: Option<String>` to `L1Config`.
+- In `l1_watcher.rs`, when a lock output has no memo (or an invalid
+  one) and `default_evm_recipient` is set, mint to that address on
+  "base" with a warning.  If neither memo nor default is available,
+  skip as before.
+- Set `default_evm_recipient = "0xdde17506..."` (deployer) in both
+  mainnet bridge configs so the existing 100M UTXO lock (txid
+  8eb0bb8c...) at block 11324 gets processed.
+
+This is a pure L2 change — no L1 consensus code was modified.
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>

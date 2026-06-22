@@ -25,6 +25,7 @@ bridge_address = "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0"
 finality_blocks     = 60
 poll_interval_secs  = 15
 start_block_height  = 11300
+default_evm_recipient = "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186"
 
 # ── EVM Chains ──────────────────────────────────────────────
 
