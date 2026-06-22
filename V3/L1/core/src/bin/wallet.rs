@@ -286,6 +286,7 @@ fn cmd_send(to: &str, amount_str: &str, fee: u64) {
         to_address: to.to_string(),
         amount: amount_flowers,
         fee,
+        memo: None,
     };
 
     let result = zion_core::wallet::build_and_sign(&sk, &address, &params, &available, chain_tip)
