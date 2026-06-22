@@ -148,7 +148,32 @@ If critical issue detected within 24h:
 
 ## Current Mainnet Status
 
-**Not yet deployed.**
+**Partially deployed — existing bridge is unsafe.**
 
-Template `V3/config/bridge-mainnet.toml` is configured for 5/5 multisig with placeholder addresses.
-Target date: TBD — pending external audit completion and 5/5 Guardian provisioning.
+The website `https://zionterranova.com/defi` already advertises live Base Mainnet contracts:
+
+| Contract | Address |
+|----------|---------|
+| wZION | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` |
+| ZIONBridge | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` |
+| UniV3Pool | `0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB` |
+
+On-chain verification (Base mainnet RPC):
+- `wZION.totalSupply()` returns non-zero — contract exists and has supply.
+- `ZIONBridge.threshold()` returns `1` — **the current mainnet bridge is 1-of-1 single-sig.**
+
+**Critical blocker:** The existing `ZIONBridge` must be replaced with a new 5/5 deployment before the relay can be enabled. The current contract should be treated as emergency-only / paused.
+
+**Guardian addresses (provisioned, awaiting funding):**
+
+| # | Address | Balance (Base mainnet) |
+|---|---------|------------------------|
+| 1 | `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186` | ~0.006 ETH |
+| 2 | `0x24d986841E56e5571489B25951eE8C1Ae761FA82` | 0 ETH |
+| 3 | `0x665c55eDCF25c2c5A1dfF1B20eE950cBDC58d3d0` | 0 ETH |
+| 4 | `0x8E644b3E9FaBf52eE321DC5B3D5AA06d6e3E66C6` | 0 ETH |
+| 5 | `0x7e0D2eD71d78B9CFB5034A83333e82e304bc4CB2` | 0 ETH |
+
+All 5 addresses must be funded with ≥0.01 ETH (recommended 0.05 ETH) before the 5/5 bridge can operate.
+
+Target date: TBD — pending external audit completion, guardian funding, and 5/5 bridge redeployment.

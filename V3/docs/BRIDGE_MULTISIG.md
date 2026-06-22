@@ -8,6 +8,7 @@ The ZIONBridge contract uses a **5-of-5 Guardian multisig** for critical operati
 - Treasury / emergency pause
 
 > For testnet a 2-of-2 configuration is used. Mainnet is configured for 5-of-5 maximum security.
+> **Mainnet blocker:** The current `ZIONBridge` at `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` has `threshold() == 1` (single-sig). A new 5/5 bridge must be deployed and guardian addresses funded before mainnet activation.
 
 ## Guardian Wallet Requirements
 
@@ -22,12 +23,12 @@ Each Guardian MUST:
 | # | Role | Address | Location | Hardware |
 |---|------|---------|----------|----------|
 | 1 | Core Deployer | `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186` | Local | Ledger Nano S |
-| 2 | Edge Operator | `0x8cc6F931edDAf5F14D0071727Ed1640752B5c787` | Hetzner / Edge | Ledger Nano X |
-| 3 | Community Rep | TBD | Community-elected | TBD |
-| 4 | Backup Guardian | TBD | Cold storage | Air-gapped |
-| 5 | Audit Partner | TBD | External security firm | TBD |
+| 2 | Operator #2 | `0x24d986841E56e5571489B25951eE8C1Ae761FA82` | TBD | TBD |
+| 3 | Operator #3 | `0x665c55eDCF25c2c5A1dfF1B20eE950cBDC58d3d0` | TBD | TBD |
+| 4 | Operator #4 | `0x8E644b3E9FaBf52eE321DC5B3D5AA06d6e3E66C6` | TBD | TBD |
+| 5 | Operator #5 | `0x7e0D2eD71d78B9CFB5034A83333e82e304bc4CB2` | TBD | TBD |
 
-> **Status:** Testnet guardians 1–2 are active. Mainnet slots 3–5 are pending provisioning. Mainnet requires all 5 slots filled before activation.
+> **Status:** Testnet guardians 1–2 are active. Mainnet addresses are provisioned but **not yet funded** (0 ETH on addresses 2–5). Mainnet requires funding + redeployment of a 5/5 `ZIONBridge` before activation.
 
 ## Multisig Contract: `BridgeValidator.sol`
 

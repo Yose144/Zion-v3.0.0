@@ -44,7 +44,10 @@ Verze 3.0.2 představuje přechod z čistého L1 mainnetu k **plně integrované
 - [x] Audit L2 bridge — `L2audit.md` v rootu
 - [x] Sjednotit testnet konfigurace na 2/2 multisig
 - [x] Připravit mainnet konfiguraci pro 5/5 multisig
-- [ ] Nasadit mainnet 5/5 kontrakty a nahradit placeholder adresy
+- [x] Nahradit mainnet placeholder adresy reálnými adresami z webu
+- [ ] Zafundovat 5 mainnet validator adresy ETH na Base
+- [ ] Nasadit nový 5/5 `ZIONBridge` (stávající mainnet bridge má threshold 1 — single-sig)
+- [ ] Převést wZION ownership na nový 5/5 bridge
 - [ ] Přesunout `L2bigupgrade.md` → `docs/3.0.1Genesis/L2bigupgrade.md` (již hotovo)
 
 ---
