@@ -323,7 +323,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     config = await window.electronAPI.getConfig();
     dbg('Config loaded');
-    
+
+    // ── Auto-detect wallet: if config.wallet is empty, pick the first wallet file ──
+    if (!config.wallet) {
+      try {
+        const wl = await window.electronAPI.listWallets();
+        const wallets = Array.isArray(wl?.wallets) ? wl.wallets : [];
+        if (wallets.length > 0 && wallets[0].address) {
+          config.wallet = wallets[0].address;
+          await window.electronAPI.saveConfig(config);
+          dbg('Auto-detected wallet:', config.wallet);
+        }
+      } catch (e) {
+        dbg('Auto-detect wallet failed:', e?.message || e);
+      }
+    }
+
     await loadSystemLimits();
     updateSettingsUI();
     setupThreadsControl();
@@ -1968,7 +1983,7 @@ function setupWalletControls() {
   };
   const getActiveAddress = () => {
     const v = activeWalletInput && 'value' in activeWalletInput ? activeWalletInput.value : '';
-    return (v || config.wallet || '').toString().trim();
+    return (v || config.wallet || config.address || '').toString().trim();
   };
 
   // ── Refresh "from" address display + balance in the Send tab ──
@@ -2026,12 +2041,13 @@ function setupWalletControls() {
     ?.addEventListener('click', () => { setTimeout(refreshSendFrom, 80); });
 
   const syncActiveWallet = () => {
+    const addr = (config.wallet || config.address || '').toString();
     if (activeWalletInput && 'value' in activeWalletInput) {
-      activeWalletInput.value = (config.wallet || '').toString();
+      activeWalletInput.value = addr;
     }
     // Also sync into the Receive section tab
     const recvAddr = document.getElementById('receive-wallet-address');
-    if (recvAddr) recvAddr.value = (config.wallet || '').toString();
+    if (recvAddr) recvAddr.value = addr;
   };
 
   // Generate wallet

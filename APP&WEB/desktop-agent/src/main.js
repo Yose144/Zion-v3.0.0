@@ -1257,6 +1257,10 @@ function loadConfig() {
       }
       merged.algorithm = normalizeAlgorithmName(merged.algorithm || DEFAULT_CONFIG.algorithm);
       merged.desktopPureZionDefault = DESKTOP_PURE_ZION_DEFAULT;
+      // Migrate legacy 'address' field to 'wallet' if wallet is empty
+      if (!merged.wallet && merged.address) {
+        merged.wallet = merged.address;
+      }
       return merged;
     }
   } catch (err) {
@@ -4417,15 +4421,19 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
       rpcOk = false;
     }
 
-    // V3 returns: balance_flowers (u64 in flowers), chain_height, transaction_model
+    // V3 returns: balance_flowers (string, u128 in flowers), chain_height, transaction_model
     // 1 ZION = 1_000_000_000_000 flowers (1e12)
-    const balanceFlowers = rpcOk ? (result?.balance_flowers ?? 0) : 0;
-    const balanceZion = rpcOk
-      ? (balanceFlowers > 0
-          ? balanceFlowers / 1_000_000_000_000
-          : (typeof result?.balance_zion === 'string' ? parseFloat(result.balance_zion) : (result?.balance_zion ?? result?.balance ?? 0)))
-      : 0;
-    const balanceAtomic = rpcOk ? (balanceFlowers || result?.balance_atomic || 0) : 0;
+    // Use BigInt for precision with large u128 values, then convert to Number for display
+    const balanceFlowersStr = rpcOk ? (result?.balance_flowers ?? '0') : '0';
+    const utxoBalanceFlowersStr = rpcOk ? (result?.utxo_balance_flowers ?? '0') : '0';
+    const accountBalanceFlowersStr = rpcOk ? (result?.account_balance_flowers ?? '0') : '0';
+    let balanceZion = 0;
+    try {
+      balanceZion = Number(BigInt(balanceFlowersStr)) / 1_000_000_000_000;
+    } catch {
+      balanceZion = Number(balanceFlowersStr) / 1_000_000_000_000;
+    }
+    const balanceAtomic = balanceFlowersStr;
     const utxoCount = rpcOk ? (result?.utxo_count ?? 0) : 0;
     const chainHeight = rpcOk ? (result?.chain_height ?? 0) : 0;
 
@@ -4502,6 +4510,8 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
       success: true,
       balance: balanceZion,
       balance_atomic: balanceAtomic,
+      utxo_balance_flowers: utxoBalanceFlowersStr,
+      account_balance_flowers: accountBalanceFlowersStr,
       utxo_count: utxoCount,
       chain_height: chainHeight,
       transaction_model: rpcOk ? (result?.transaction_model ?? 'account') : 'unknown',
