@@ -87,9 +87,10 @@ async fn main() -> Result<()> {
         let start_block = chain_config.start_block;
         let ankr_config = config.ankr.clone();
         let burn_tx = burn_tx.clone();
+        let evm_metrics = Arc::clone(&metrics);
         let handle = tokio::spawn(async move {
             let mut watcher = EvmWatcher::new(chain_config, ankr_config, start_block);
-            if let Err(e) = watcher.run(burn_tx).await {
+            if let Err(e) = watcher.run(burn_tx, evm_metrics).await {
                 error!("EVM watcher crashed: {:?}", e);
             }
         });

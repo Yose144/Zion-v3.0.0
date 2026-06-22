@@ -168,12 +168,12 @@ On-chain verification (Base mainnet RPC):
 
 | # | Address | Balance (Base mainnet) |
 |---|---------|------------------------|
-| 1 | `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186` | ~0.006 ETH |
-| 2 | `0x24d986841E56e5571489B25951eE8C1Ae761FA82` | 0 ETH |
-| 3 | `0x665c55eDCF25c2c5A1dfF1B20eE950cBDC58d3d0` | 0 ETH |
-| 4 | `0x8E644b3E9FaBf52eE321DC5B3D5AA06d6e3E66C6` | 0 ETH |
-| 5 | `0x7e0D2eD71d78B9CFB5034A83333e82e304bc4CB2` | 0 ETH |
+| 1 | `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186` | 0.002102 ETH |
+| 2 | `0x24d986841E56e5571489B25951eE8C1Ae761FA82` | 0.001000 ETH |
+| 3 | `0x665c55eDCF25c2c5A1dfF1B20eE950cBDC58d3d0` | 0.001000 ETH |
+| 4 | `0x8E644b3E9FaBf52eE321DC5B3D5AA06d6e3E66C6` | 0.001000 ETH |
+| 5 | `0x7e0D2eD71d78B9CFB5034A83333e82e304bc4CB2` | 0.001000 ETH |
 
-All 5 addresses must be funded with ≥0.01 ETH (recommended 0.05 ETH) before the 5/5 bridge can operate.
+All 5 addresses are funded with minimum operational ETH (~0.0061 ETH total). Recommended: top up to ≥0.01 ETH each before high-volume operations.
 
 Target date: TBD — pending external audit completion, guardian funding, and 5/5 bridge redeployment.
