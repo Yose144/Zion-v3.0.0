@@ -100,23 +100,37 @@ try {
   console.log('  📂 Filename:', filename);
   console.log('');
 
-  // Step 4: Update config
-  console.log('[4/4] Updating config...');
-  const CONFIG_PATH = path.join(USER_DATA_PATH, 'config.json');
-  let config = {};
-  if (fs.existsSync(CONFIG_PATH)) {
-    try {
-      config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
-    } catch (e) {
-      console.log('  ⚠️  Config file corrupted, creating new one');
+  // Step 4: Save to miner_config.json
+  console.log('[4/4] Saving miner_config.json...');
+  const CONFIG_PATH = path.join(USER_DATA_PATH, 'miner_config.json');
+  
+  const minerConfig = {
+    name: 'Genesis Creator',
+    address: wallet.address,
+    publicKey: wallet.publicKey,
+    privateKey: wallet.privateKey,
+    importedAt: wallet.importedAt,
+    // Standard config fields for desktop agent
+    worker: 'desktop-agent',
+    rpcUrl: 'http://77.42.71.94:8443/jsonrpc',
+    algorithm: 'cosmic_harmony',
+    threads: Math.max(1, (require('os').cpus().length - 1)),
+    gpu: true,
+    gpuCpuThreads: 5,
+    gpuBatchSize: 16000000,
+    minerBackend: 'rust',
+    autoStart: false,
+    autoSelectPool: true,
+    minimizeToTray: true,
+    startMinimized: false,
+    pool: {
+      host: '77.42.71.94',
+      port: 8444
     }
-  }
+  };
 
-  config.wallet = wallet.address;
-  config.lastUpdated = new Date().toISOString();
-
-  fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
-  console.log('  ✅ Config updated with wallet address');
+  fs.writeFileSync(CONFIG_PATH, JSON.stringify(minerConfig, null, 2));
+  console.log('  ✅ Config updated with Genesis Creator wallet');
   console.log('');
 
   // Success summary
