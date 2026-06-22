@@ -7785,8 +7785,7 @@ async function refreshAgentRewards(){
 
 async function loadEdgeBackupStatus() {
   try {
-    // Query Edge server directly for backup status
-    const res = await fetch('http://100.76.16.108:8766/api/backup/status', { mode: 'cors', cache: 'no-store' });
+    const res = await fetch('/api/backup/status', { cache: 'no-store' });
     const data = await res.json();
     const hasBackups = data.backups && data.backups.length > 0;
     const lastBackup = data.last_backup ? new Date(data.last_backup).toLocaleString() : 'None';
@@ -7851,11 +7850,10 @@ async function triggerEdgeBackup() {
   btn.textContent = '⏳ Running…';
   if (log) { log.classList.remove('hidden'); log.textContent = 'Triggering Edge backup…\n'; }
   try {
-    const res = await fetch('http://100.76.16.108:8766/api/backup/create', {
+    const res = await fetch('/api/backup/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'manual-dashboard-' + new Date().toISOString().slice(0,19).replace(/:/g,'-') }),
-      mode: 'cors'
+      body: JSON.stringify({ name: 'manual-dashboard-' + new Date().toISOString().slice(0,19).replace(/:/g,'-') })
     });
     const data = await res.json();
     if (log) {
