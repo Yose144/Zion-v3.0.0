@@ -127,6 +127,97 @@ npm run test:wallet
 
 ---
 
+## Pokus o reálný E2E UTXO send (2026-06-22)
+
+Cíl: rozjet skutečný UTXO send na živém nodu. Postup a výsledky:
+
+### 1. Build V3 binárek z zdrojáku
+
+```powershell
+$env:CARGO_TARGET_DIR = "V3\target_e2e"
+cargo build --release --manifest-path V3/Cargo.toml -p zion-core -p zion-miner -p zion-pool
+```
+
+✅ Hotovo za cca 3 minuty. Vygenerované binárky:
+- `V3\target_e2e\release\node.exe` (node + wallet CLI + utilities)
+- `V3\target_e2e\release\zion-miner.exe`
+- `V3\target_e2e\release\server.exe` (pool)
+
+`V3\target_e2e\` je v `.gitignore` (build artefakty).
+
+### 2. Start lokálního standalone nodu
+
+```powershell
+cmd.exe /c "set ZION_NODE_ID=e2e-local& set ZION_P2P_BIND=127.0.0.1:18333& set ZION_RPC_BIND=127.0.0.1:18443& set ZION_NODE_STATE_PATH=V3\data\e2e\node\state.db& set ZION_MINER_ADDRESS=zion193n2t2z348z2q4u0r7k655z2v694j5n345ry0w6& set ZION_HUMANITARIAN_WALLET=zion193n2t2z348z2q4u0r7k655z2v694j5n345ry0w6& set ZION_ISSOBELLA_WALLET=zion193n2t2z348z2q4u0r7k655z2v694j5n345ry0w6& set ZION_SEED_PEERS=127.0.0.1:65530& set ZION_METRICS_BIND=& V3\target_e2e\release\node.exe"
+```
+
+**Důležité:** `ZION_SEED_PEERS` musí být nastaven na **nedosažitelnou adresu** (např. `127.0.0.1:65530`). Prázdná hodnota nestačí — fallback na hardcoded seznam (77.42.71.94:8333 Edge + 100.76.16.108 + 127.0.0.1:8333). S nedosažitelným peerem se node nespustí vůbec (vyžaduje ≥1 seed peer), takže ideální je nastavit jeden seed na `127.0.0.1:65530` a nechat handshake vyhnít.
+
+✅ Node nastartoval, genesis block načten, `getNodeInfo` ukazuje `chain_height: 0`, `peers: 1` (ten nedosažitelný).
+
+### 3. Generování testovacího walletu + ověření přes wallet CLI
+
+```powershell
+# Desktop agent generuje wallet (deterministicky z BIP39)
+node -e "const w = require('./src/wallet-generator').generateWallet(); console.log(w.address); console.log(Buffer.from(w.privateKey,'hex').slice(-32).toString('hex'));"
+# → address: zion193n2t2z348z2q4u0r7k655z2v694j5n345ry0w6
+# → raw 32-byte Ed25519 seed: 6db26fda05657de8f6415b342964a8826a70fe11a910a0de52d4bb33a5758bd3
+
+# Wallet CLI (V3 nativní binárka) — používá raw 32-byte seed (ne PKCS8 DER)
+$env:ZION_WALLET_SK_HEX = "6db26fda05657de8f6415b342964a8826a70fe11a910a0de52d4bb33a5758bd3"
+$env:ZION_RPC_ADDR = "127.0.0.1:18443"
+.\V3\target_e2e\release\wallet.exe info
+# → address: zion193n2t2z348z2q4u0r7k655z2v694j5n345ry0w6
+# → public_key: cb8c4ef583f1a020a14b4764129d7a5c444d6f893118e2e4a2b3cb6f31705a61
+
+.\V3\target_e2e\release\wallet.exe balance
+# → account: 0 ZION
+# → utxo: 0 ZION
+```
+
+✅ **Adresa generovaná desktop agentem a V3 wallet CLI se shoduje.** Wallet workflow je skutečně interoperabilní napříč oběma implementacemi.
+
+### 4. Mining 100+ bloků pro získání zralých UTXO
+
+**Problém:** Coinbase výstup je v ZION nespendable po dobu `COINBASE_MATURITY = 100` bloků (viz `V3/L1/core/src/emission.rs:48`). Pro získání spendable UTXO z coinbase rewardu je potřeba vytěžit **≥100 bloků**, kde první coinbase (z bloku 1) dozraje po 100 dalších blocích.
+
+**Setup:**
+```powershell
+# Pool (propojuje miner a node)
+cmd.exe /c "set ZION_POOL_BIND=127.0.0.1:18444& set ZION_NODE_RPC_ADDR=127.0.0.1:18443& set ZION_POOL_LOOP_COUNT=1000000& set ZION_NONCE_COUNT=4096& V3\target_e2e\release\server.exe"
+
+# Miner (CPU, 4 vlákna, deeksha_lite_v1)
+cmd.exe /c "set ZION_POOL_ADDR=127.0.0.1:18444& set ZION_WORKER_NAME=e2e-miner& set ZION_MINER_ID=e2e-miner-01& set ZION_LOOP_COUNT=1000000& set ZION_PAYOUT_ADDRESS=zion193n2t2z348z2q4u0r7k655z2v694j5n345ry0w6& set ZION_MINER_ALGORITHM=deeksha_lite_v1& set ZION_THREADS=4& set ZION_INTERACTIVE=false& V3\target_e2e\release\zion-miner.exe"
+```
+
+**Pozorované chování:**
+- Miner se připojil k poolu (`wire_hello` handshake OK)
+- Pool posílá `job` s `target_hex: ffffff...` (max target = share difficulty 1)
+- Miner opakovaně hlásí `no_solution` pro každý batch 4096 nonců
+- `elapsed_ms=0` pro každý batch — podezřelé, memory-hard PoW by měl trvat déle
+- Pool validuje share a odmítá s `status: "NoSolution"`
+- Chain height zůstává na 0
+
+**Možné příčiny:**
+1. CPU `deeksha_lite_v1` implementace v mineru neprodukuje stejný hash jako očekává pool
+2. Header formát (verze, nonce pozice) nesedí mezi minerem a node
+3. `ZION_THREADS=4` se neaplikuje a miner jede na 1 vlákně, ale `elapsed_ms=0` ukazuje, že se nic nepočítá
+4. Bug v pool share validaci (pool odmítá i platné share)
+
+**Status:** Mining se v této relaci nepodařilo rozjet. Chain height zůstal 0. UTXO send přes desktop agenta tedy **stále vyžaduje zafundovanou adresu z externího zdroje**.
+
+### 5. Konverze PKCS8 DER ↔ raw Ed25519 seed
+
+Desktop agent ukládá privátní klíč jako **PKCS8 DER** (48 bytů), V3 wallet CLI očekává **raw 32-byte Ed25519 seed**. Konverze je triviální:
+
+```
+raw_seed = PKCS8_DER[48 bytes].slice(-32)  // posledních 32 bytů DER
+```
+
+Ověřeno: adresa odvozená z raw seed matchuje adresu z PKCS8 DER.
+
+---
+
 ## Aktuální omezení
 
 Desktop agent podporuje pouze **UTXO transakce**. Aby šla opravdu odeslat transakce, musí mít odesílací adresa UTXO. To znamená:

@@ -177,6 +177,7 @@ ssh_keys_info.txt
 # Wallet exports (Ed25519 secret_key_hex / mnemonic must NEVER be committed)
 zion-wallet.json
 **/zion-wallet*.json
+**/e2e-wallet.json
 *.wallet.json
 *.wallet
 *.keystore
@@ -311,6 +312,7 @@ V3/target5/
 V3/target6/
 V3/target7/
 V3/target8/
+V3/target_e2e/
 V3/test_results.txt
 zion-sm3042c-fire-*.zip
 zion-sm3042c-fire-*/
