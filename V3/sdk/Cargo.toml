@@ -16,6 +16,9 @@ serde_json.workspace = true
 thiserror.workspace = true
 tokio = { version = "1", default-features = false, features = ["net", "io-util", "rt", "macros", "time"] }
 tracing = { version = "0.1", optional = true }
+zion-core = { path = "../L1/core" }
+ed25519-dalek = { workspace = true }
+bip39 = { version = "2", features = ["rand"] }
 
 [dev-dependencies]
 tokio = { version = "1", default-features = false, features = ["macros", "rt", "rt-multi-thread"] }

@@ -352,12 +352,23 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
             .await;
             match result {
                 Ok(v) => {
-                    let balance = v["balance_flowers"]
+                    // V3 returns account_balance_flowers + utxo_balance_flowers as strings (u128)
+                    let account = v["account_balance_flowers"]
                         .as_str()
-                        .and_then(|s| s.parse::<f64>().ok())
-                        .map(|f| f / 1_000_000.0)
-                        .unwrap_or(0.0);
-                    ui::print_row("Balance", &format!("{:.6} ZION", balance));
+                        .and_then(|s| s.parse::<u128>().ok())
+                        .unwrap_or(0);
+                    let utxo = v["utxo_balance_flowers"]
+                        .as_str()
+                        .and_then(|s| s.parse::<u128>().ok())
+                        .unwrap_or(0);
+                    let total = account + utxo;
+                    let flowers_per_zion = zion_core::emission::FLOWERS_PER_ZION as u128;
+                    let total_zion = total as f64 / flowers_per_zion as f64;
+                    let account_zion = account as f64 / flowers_per_zion as f64;
+                    let utxo_zion = utxo as f64 / flowers_per_zion as f64;
+                    ui::print_row("Total", &format!("{:.6} ZION", total_zion));
+                    ui::print_row("Account", &format!("{:.6} ZION", account_zion));
+                    ui::print_row("UTXO", &format!("{:.6} ZION", utxo_zion));
                 }
                 Err(e) => ui::print_warn(&format!("Cannot fetch balance: {}", e)),
             }
@@ -393,8 +404,8 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
                 .map_err(|_| anyhow!("secret key must be 32 bytes"))?;
             let signing_key = SigningKey::from_bytes(&sk_bytes);
 
-            // Convert ZION → flowers
-            let amount_flowers = (amount * 1_000_000.0) as u64;
+            // Convert ZION → flowers (1 ZION = 1e12 flowers)
+            let amount_flowers = (amount * 1_000_000_000_000.0) as u64;
             let fee = zion_core::fee::MIN_TX_FEE;
 
             // ── Check UTXOs ────────────────────────────────────────────────
@@ -416,7 +427,15 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
                             .get("output_index")
                             .and_then(|v| v.as_u64())
                             .unwrap_or(0) as u32;
-                        let amt = item.get("amount").and_then(|v| v.as_u64()).unwrap_or(0);
+                        // V3 returns amount as string (u128) or number
+                        let amt = item
+                            .get("amount")
+                            .and_then(|v| {
+                                v.as_u64().or_else(|| {
+                                    v.as_str().and_then(|s| s.parse::<u64>().ok())
+                                })
+                            })
+                            .unwrap_or(0);
                         if let Some(hash_bytes) = zion_core::crypto::from_hex(tx_hash_hex) {
                             if hash_bytes.len() == 32 {
                                 let mut tx_hash = [0u8; 32];
@@ -465,8 +484,8 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
                     serde_json::json!({ "address": &cfg.miner.wallet }),
                 )
                 .await;
-                let total_balance = if let Ok(ref v) = balance_resp {
-                    v.get("balance_flowers")
+                let account_balance = if let Ok(ref v) = balance_resp {
+                    v.get("account_balance_flowers")
                         .and_then(|b| b.as_str())
                         .and_then(|s| s.parse::<u128>().ok())
                         .unwrap_or(0)
@@ -474,10 +493,10 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
                     0
                 };
                 let total_needed = (amount_flowers as u128).saturating_add(fee as u128);
-                if total_balance < total_needed {
+                if account_balance < total_needed {
                     return Err(anyhow!(
-                        "insufficient funds: balance {} flowers, need {} flowers",
-                        total_balance,
+                        "insufficient funds: account balance {} flowers, need {} flowers",
+                        account_balance,
                         total_needed
                     ));
                 }
