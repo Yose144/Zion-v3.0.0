@@ -2313,13 +2313,13 @@ def _build_status_edge_primary() -> dict:
             body = r.read().decode("utf-8", errors="ignore")
             for line in body.splitlines():
                 if line.startswith("zion_pool_active_sessions "):
-                    edge_metrics["active_miners"] = int(float(line.split()[-1]))
+                    edge_metrics["active_miners"] = int(line.split()[-1])
                 elif line.startswith("zion_pool_total_hashes "):
-                    edge_metrics["total_hashes"] = int(float(line.split()[-1]))
+                    edge_metrics["total_hashes"] = int(line.split()[-1])
                 elif line.startswith("zion_pool_total_shares "):
-                    edge_metrics["total_shares"] = int(float(line.split()[-1]))
+                    edge_metrics["total_shares"] = int(line.split()[-1])
                 elif line.startswith("zion_pool_blocks_found ") or line.startswith("zion_pool_blocks_found_total "):
-                    edge_metrics["blocks_found"] = int(float(line.split()[-1]))
+                    edge_metrics["blocks_found"] = int(line.split()[-1])
                 elif line.startswith("zion_pool_hashrate_khs "):
                     edge_metrics["hashrate"] = float(line.split()[-1])
                 elif line.startswith("zion_pool_hashrate_hps "):
@@ -2329,29 +2329,29 @@ def _build_status_edge_primary() -> dict:
                 elif line.startswith("zion_pool_accept_rate_pct "):
                     edge_metrics["accept_rate_pct"] = float(line.split()[-1])
                 elif line.startswith("zion_pool_accepted_total "):
-                    edge_metrics["shares_accepted"] = int(float(line.split()[-1]))
+                    edge_metrics["shares_accepted"] = int(line.split()[-1])
                 elif line.startswith("zion_pool_rejected_total "):
-                    edge_metrics["shares_rejected"] = int(float(line.split()[-1]))
+                    edge_metrics["shares_rejected"] = int(line.split()[-1])
                 elif line.startswith("zion_pool_miners_tracked "):
-                    edge_metrics["miners_tracked"] = int(float(line.split()[-1]))
+                    edge_metrics["miners_tracked"] = int(line.split()[-1])
                 elif line.startswith("zion_pplns_payout_rounds "):
-                    edge_payout["pplns_rounds"] = int(float(line.split()[-1]))
+                    edge_payout["pplns_rounds"] = int(line.split()[-1])
                 elif line.startswith("zion_pplns_total_paid_flowers "):
-                    edge_payout["pplns_total_paid"] = int(float(line.split()[-1]))
+                    edge_payout["pplns_total_paid"] = int(line.split()[-1])
                 elif line.startswith("zion_pplns_window_size "):
-                    edge_payout["pplns_window_size"] = int(float(line.split()[-1]))
+                    edge_payout["pplns_window_size"] = int(line.split()[-1])
                 elif line.startswith("zion_pplns_window_used "):
-                    edge_payout["pplns_window_used"] = int(float(line.split()[-1]))
+                    edge_payout["pplns_window_used"] = int(line.split()[-1])
                 elif line.startswith("zion_pplns_registered_miners "):
-                    edge_payout["pplns_registered_miners"] = int(float(line.split()[-1]))
+                    edge_payout["pplns_registered_miners"] = int(line.split()[-1])
                 elif line.startswith("zion_fee_humanitarian_flowers "):
-                    edge_payout["fee_humanitarian"] = int(float(line.split()[-1]))
+                    edge_payout["fee_humanitarian"] = int(line.split()[-1])
                 elif line.startswith("zion_fee_issobella_flowers "):
-                    edge_payout["fee_issobella"] = int(float(line.split()[-1]))
+                    edge_payout["fee_issobella"] = int(line.split()[-1])
                 elif line.startswith("zion_fee_pool_flowers "):
-                    edge_payout["fee_pool"] = int(float(line.split()[-1]))
+                    edge_payout["fee_pool"] = int(line.split()[-1])
                 elif line.startswith("zion_fee_miner_pct "):
-                    edge_payout["fee_miner_pct"] = int(float(line.split()[-1]))
+                    edge_payout["fee_miner_pct"] = int(line.split()[-1])
                 elif line.startswith("zion_pool_miner_pending_balance_atomic{"):
                     m = re.search(r'miner_id="([^"]+)",worker_name="([^"]+)"\} (\d+)', line)
                     if m:
@@ -3781,13 +3781,33 @@ def fetch_pool_miners() -> list:
                 if line.startswith("zion_pool_miner_paid_total_atomic{"):
                     m = re.search(r'miner_id="([^"]+)"', line)
                     if m:
-                        paid_map[m.group(1)] = int(float(line.split()[-1]))
+                        paid_map[m.group(1)] = int(line.split()[-1])
     except Exception:
         pass
     for m in miners:
         addr = m.get("address") or m.get("miner_id") or ""
-        m["paid_total"] = paid_map.get(addr, 0) / 1e12
+        paid_total_atomic = paid_map.get(addr, 0)
+        m["paid_total_atomic"] = paid_total_atomic
+        m["paid_total"] = paid_total_atomic / 1e12
     return miners
+
+def sanitize_pool_stats(pool_stats: dict, miners: list) -> dict:
+    """Patch old pool `/stats` payloads that saturated lifetime payout counters at u64 max."""
+    if not isinstance(pool_stats, dict):
+        return {}
+
+    u64_max = (1 << 64) - 1
+    miners_total_atomic = sum(int(m.get("paid_total_atomic") or 0) for m in miners)
+
+    pplns = pool_stats.get("pplns") if isinstance(pool_stats.get("pplns"), dict) else None
+    payouts = pool_stats.get("payouts") if isinstance(pool_stats.get("payouts"), dict) else None
+
+    if pplns and int(pplns.get("total_paid_flowers") or 0) == u64_max:
+        pplns["total_paid_flowers"] = miners_total_atomic or None
+    if payouts and int(payouts.get("total_paid_atomic") or 0) == u64_max:
+        payouts["total_paid_atomic"] = miners_total_atomic or None
+
+    return pool_stats
 
 def build_payout_status() -> dict:
     """Build comprehensive payout status for the Payout dashboard tab.
@@ -4057,6 +4077,7 @@ def build_payout_status() -> dict:
     # ── Pool stats / miners from Edge or local ──────────────────────────
     pool_stats = fetch_pool_stats()
     miners = fetch_pool_miners()
+    pool_stats = sanitize_pool_stats(pool_stats, miners)
     status["pool_stats"] = pool_stats
     status["miners"] = miners
 

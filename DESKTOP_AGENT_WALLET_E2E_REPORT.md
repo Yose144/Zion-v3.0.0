@@ -17,6 +17,8 @@
 - ✅ BLAKE3 v2 transaction hash
 - ✅ @noble/ed25519 v3.1.0 (same as desktop)
 - ✅ V3 tx build + sign + verify verified
+- ✅ **Account model** integrated (auto-detect UTXO→account fallback)
+- ✅ Edge mainnet ACCEPTED mobile account transaction (live verification)
 
 **Struktura:**
 - ✅ Jeden zdroj pravdy v `APP&WEB/` (APPS/ smazáno, commit `ba9fac6c`)
@@ -36,6 +38,9 @@
 | **NOVÉ:** Chyběl account model (premine send) | `src/account-builder.js` | **Nový modul** pro account-model txs |
 | **NOVÉ:** Auto-detect tx modelu | `src/main.js` | UTXO/Account fallback podle balancu adresy |
 | **NOVÉ:** Balance breakdown v Send tab | `src/ui/renderer.js` | UTXO + Account breakdown + model label |
+| **NOVÉ:** Mobile Account model | `mobile-app/src/services/AccountBuilder.js` | Identický s desktop account-builder |
+| **NOVÉ:** Mobile auto-detect send | `mobile-app/src/context/WalletContext.js` | UTXO → account fallback bez UI zásahu |
+| **NOVÉ:** Mobile broadcastAccountTransaction | `mobile-app/src/services/BlockchainRPC.js` | Submit via `submitAccountTransaction` |
 
 ---
 
@@ -302,6 +307,77 @@ SUCCESS: V3 mobile tx build matches desktop
 
 ---
 
+## Mobile App — Account Model Upgrade
+
+### Co bylo opraveno
+
+V mobile app byla pouze UTXO podpora. Nyní je přidána **account model podpora** analogicky k desktop agentovi:
+
+**`src/services/AccountBuilder.js`:**
+- ✅ `buildAccountTransaction` — identická logika s desktop account-builder.js
+- ✅ `verifyAccountTransaction` — ověření Ed25519 signature
+- ✅ `generateAccountTxId` — deterministic tx_id (SHA256-free, byte-identický s Rust core)
+- ✅ `preferTxModel` — detekce nejlepšího modelu podle balance
+
+**`src/context/WalletContext.js`:**
+- ✅ `sendZion` funkce auto-detectuje:
+  - Pokud UTXO count > 0 → UTXO transaction (v2 BLAKE3)
+  - Jinak → Account transaction (confirmed v nejbližším bloku)
+- ✅ Funguje transparentně pro uživatele (žádné UI změny pro přepínání)
+
+**`src/services/BlockchainRPC.js`:**
+- ✅ `broadcastAccountTransaction()` — submit přes `submitAccountTransaction` RPC
+- ✅ Fallback na `submitTransaction` pokud primární metoda selže
+- ✅ Zpětná kompatibilita — existující `broadcastTransaction` zůstává
+
+### Verifikace
+
+```bash
+node test_account_builder_standalone.js
+```
+
+**Výstup (live Edge RPC 77.42.71.94:8443):**
+
+```
+= Mobile AccountBuilder — Standalone E2E Test =
+
+[1/4] Generating Ed25519 keypair...
+  address: zion1...
+  pubkey length: 32 ✅
+
+[2/4] Building account transaction...
+  tx_id: 64 chars ✅
+  signature: 128 chars ✅
+  public_key: 64 chars ✅
+  amount_zion: 1000000000 flowers ✅
+  fee_zion: 1000 flowers ✅
+  nonce safe: true ✅
+
+[3/4] Verifying Ed25519 signature...
+  ✅ local verify OK
+
+[4/4] Submitting to Edge RPC (77.42.71.94:8443)...
+  ✅ Edge ACCEPTED! tx_id: 6823b84b3433b51e0f6d7f7f7636756a...
+
+= Summary =
+Field sizes: ✅
+Ed25519 sync signature: ✅
+tx_id deterministic: ✅
+Edge format accept: ✅
+```
+
+### Rozdíly mezi desktop a mobile AccountBuilder
+
+| Vlastnost | Desktop (`src/account-builder.js`) | Mobile (`src/services/AccountBuilder.js`) |
+|---|---|---|
+| Module system | CommonJS (`module.exports`) | ES Module (`export`) |
+| Key input | PKCS8 DER (48 bytes) | Raw Ed25519 seed (32 bytes) |
+| Signature | Node.js crypto (async) | @noble/ed25519 v3 (sync after sha512 setup) |
+| Address derivation | wallet-generator.js | CryptoService.js |
+| Identická logika | ✅ tx_id, amount, fee, nonce | ✅ stejné |
+
+---
+
 ## Struktura repozitáře
 
 ### Kanonický adresář: `APP&WEB/`
@@ -361,11 +437,16 @@ Pokud máš prázdnou adresu, potřebuješ nějakým způsobem získat UTXO:
 | Komponenta | Path | Stav |
 |---|---|---|
 | Desktop agent | `APP&WEB/desktop-agent/` | ✅ v3.0.2 |
-| Account builder | `desktop-agent/src/account-builder.js` | ✅ |
+| Desktop Account builder | `desktop-agent/src/account-builder.js` | ✅ |
 | UTXO builder (desktop) | `desktop-agent/src/utxo-builder.js` | ✅ v2 BLAKE3 |
 | UTXO builder (mobile) | `mobile-app/src/services/TransactionBuilder.js` | ✅ v2 BLAKE3 |
+| **Mobile Account builder** | `mobile-app/src/services/AccountBuilder.js` | ✅ **NEW** |
+| Mobile sendZion (auto-detect) | `mobile-app/src/context/WalletContext.js` | ✅ |
+| Mobile broadcastAccountTransaction | `mobile-app/src/services/BlockchainRPC.js` | ✅ |
 | Wallet generator | `desktop-agent/src/wallet-generator.js` | ✅ |
+| Mobile CryptoService | `mobile-app/src/services/CryptoService.js` | ✅ |
 | E2E smoke test (desktop) | `desktop-agent/scripts/test-wallet-e2e.js` | ✅ 9 kroků |
+| E2E test (mobile account) | `mobile-app/test_account_builder_standalone.js` | ✅ |
 | Wallet SDK | `APP&WEB/zion-wallet-sdk/` | ✅ TS shared lib |
 | Mobile app | `APP&WEB/mobile-app/` | ✅ v3.0.2 |
 | V3 node binaries | `V3/target_e2e/release/` | ✅ |
@@ -375,11 +456,19 @@ Pokud máš prázdnou adresu, potřebuješ nějakým způsobem získat UTXO:
 
 ## Další kroky (budoucí iterace)
 
+### Hotovo
+
+- [x] **Mobile Account model** — `AccountBuilder.js` + auto-detect v `sendZion()` ✅
+- [x] **Edge live acceptance** — mobile account tx akceptován (tx_id: `6823b84b...`) ✅
+- [x] Desktop Account model (commit `8c30fe49`) ✅
+- [x] Mobile V3 wallet (commit `36309404`) ✅
+- [x] Jeden zdroj pravdy APP&WEB/ (commit `ba9fac6c`) ✅
+
 ### Krátkodobě
 
-- [ ] **Mobilní Account model** — přidat `account-builder.js` analogicky do mobile app
 - [ ] **Build mobile app** na Android zařízení — ověřit React Native build
 - [ ] **E2E test mobile wallet** na zařízení s fyzickým signováním
+- [ ] **Funding test** — poslat skutečnou transakci (send + receive obousměrně)
 - [ ] Otestovat desktop Account model s **premine wallet** (Humanitarian, ISSOBELLA)
 
 ### Střednědobě
