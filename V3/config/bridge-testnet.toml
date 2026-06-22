@@ -54,9 +54,13 @@ max_gas_gwei            = 2
 [validator]
 private_key_file = "keys/validator.key"
 validator_id     = "validator-1"
-# Testnet: 1-of-1 (deployer). Mainnet: upgrade to 3-of-5.
-threshold        = 1
-total_validators = 1
+# Testnet: 2-of-2 (deployer + server relay). Mainnet: upgrade to 5-of-5.
+threshold        = 2
+total_validators = 2
+validator_addresses = [
+    "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186",  # validator-1 (deployer)
+    "0x8cc6F931edDAf5F14D0071727Ed1640752B5c787",  # validator-2 (server relay)
+]
 
 # ── Security ──────────────────────────────────────────────
 [security]

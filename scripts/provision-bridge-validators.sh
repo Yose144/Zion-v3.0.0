@@ -124,13 +124,13 @@ echo ""
 CONTRACTS_DIR="V3/L2/bridge/contracts"
 if [ -d "${REPO_ROOT}/${CONTRACTS_DIR}" ]; then
     echo "   forge create --rpc-url \$RPC_URL --private-key \$PRIVATE_KEY \\"
-    echo "     ${CONTRACTS_DIR}/BridgeValidator.sol:BridgeValidator \\"
+    echo "     --root ${CONTRACTS_DIR} src/BridgeValidator.sol:BridgeValidator \\"
     echo "     --constructor-args 3 5"
 else
     echo "   # BridgeValidator.sol not found at ${CONTRACTS_DIR}"
     echo "   # Deploy manually or copy source from archive, then:"
     echo "   # forge create --rpc-url \$RPC_URL --private-key \$PRIVATE_KEY \\"
-    echo "   #   src/BridgeValidator.sol:BridgeValidator --constructor-args 3 5"
+    echo "   #   --root ${CONTRACTS_DIR} src/BridgeValidator.sol:BridgeValidator --constructor-args 3 5"
 fi
 
 echo ""

@@ -1,5 +1,8 @@
 # ZION Bridge — Base Mainnet Deployment Runbook
 
+> **Status:** Pre-deployment — contracts not yet deployed on Base Mainnet.
+> **Mainnet guardian model:** 5-of-5 multisig.
+
 ## Pre-Flight Checklist
 
 Before deploying to Base Mainnet, ALL items must be checked:
@@ -7,12 +10,12 @@ Before deploying to Base Mainnet, ALL items must be checked:
 | # | Item | Status |
 |---|------|--------|
 | 1 | Contracts audited by external firm | ☐ |
-| 2 | 3/5 Guardian multisig provisioned | ☐ |
+| 2 | 5/5 Guardian multisig provisioned | ☐ |
 | 3 | BaseScan API key ready | ☐ |
 | 4 | Deployer wallet funded with ≥0.05 ETH on Base | ☐ |
 | 5 | Guardian wallets funded with ≥0.01 ETH each (relay gas) | ☐ |
-| 6 | Testnet deployment verified and battle-tested | ✅ |
-| 7 | `bridge-mainnet.toml` configured | ☐ |
+| 6 | Testnet 2/2 deployment verified and battle-tested | ✅ |
+| 7 | `bridge-mainnet.toml` configured with 5/5 placeholders | ✅ |
 | 8 | Relay Docker image built and tested | ☐ |
 | 9 | Website bridge page updated with mainnet addresses | ☐ |
 | 10 | Alertmanager Discord webhook configured | ☐ |
@@ -53,7 +56,7 @@ export VALIDATOR_ADDRESS=0x...
 ./scripts/verify-bridge-base.sh base
 ```
 
-## Step 4: Configure 3/5 Multisig
+## Step 4: Configure 5/5 Multisig
 
 ```bash
 cast send $VALIDATOR_ADDRESS \
@@ -61,6 +64,7 @@ cast send $VALIDATOR_ADDRESS \
   --private-key $PRIVATE_KEY --rpc-url $BASE_RPC
 
 # Repeat for Guardian 3, 4, 5
+
 cast send $VALIDATOR_ADDRESS \
   "addGuardian(address)" 0xGuardian3 \
   --private-key $PRIVATE_KEY --rpc-url $BASE_RPC
@@ -72,30 +76,32 @@ cast call $VALIDATOR_ADDRESS "guardianCount()" --rpc-url $BASE_RPC
 
 ## Step 5: Configure Relay
 
-Create `V3/config/bridge-mainnet.toml`:
+Edit `V3/config/bridge-mainnet.toml`:
 
 ```toml
 [bridge]
-enabled = true
-network = "base-mainnet"
-chain_id = 8453
+name = "ZION Bridge Relay V3"
+version = "3.0.2"
+network = "mainnet"
+
+[[evm_chains]]
+chain_id = "base"
+evm_chain_id = 8453
 wzion_address = "0x..."
 bridge_contract_address = "0x..."
-validator_contract_address = "0x..."
+enabled = true
+start_block = 0  # set to deployment block
 
-[guardian]
-threshold = 3
-guardian_addresses = [
+[validator]
+threshold = 5
+total_validators = 5
+validator_addresses = [
   "0xGuardian1",
   "0xGuardian2",
   "0xGuardian3",
   "0xGuardian4",
   "0xGuardian5",
 ]
-
-[finality]
-l1_block_confirmations = 60
-evm_block_confirmations = 64
 ```
 
 ## Step 6: Start Relay
@@ -144,4 +150,5 @@ If critical issue detected within 24h:
 
 **Not yet deployed.**
 
-Target date: TBD — pending external audit completion and 3/5 Guardian provisioning.
+Template `V3/config/bridge-mainnet.toml` is configured for 5/5 multisig with placeholder addresses.
+Target date: TBD — pending external audit completion and 5/5 Guardian provisioning.
