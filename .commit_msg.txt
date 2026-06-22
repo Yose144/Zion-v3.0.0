@@ -1,13 +1,13 @@
-docs: add ZION_MAINNET_DEFI_ROADMAP.md with mainnet + DeFi/DEX completion plan
+build(website): make mainnet site buildable with new bridge contracts
 
-- Add comprehensive root-level roadmap covering:
-  - Mainnet 5/5 bridge deployment summary and contract addresses
-  - Validator/guardian balances and deployment transactions
-  - DeFi / DEX L2 completion checklist (bridge, swap, staking, farming)
-  - Immediate 48h action plan (relay funding, start, website deploy)
-  - Website deployment instructions for Edge server (77.42.71.94)
-  - Risk register, useful commands, links, and decision log
-- Remove leftover .commit_msg.txt file from previous commit.
+- Update next.config.ts with webpack/turbopack aliases for optional
+  hardware-wallet peer deps (@trezor/*, @ledgerhq/*) so they do not
+  block the build on Windows / Node 24.
+- Rebuild zion-wallet-sdk tarball (zion-wallet-sdk-1.0.0.tgz) to match
+  the latest dist so npm install works from a clean lockfile.
+- Regenerate package-lock.json after dependency refresh.
+- Website now builds successfully with mainnet bridge address
+  0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88.
 
 Generated with [Devin](https://devin.ai)
 
