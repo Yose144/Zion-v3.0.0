@@ -24,18 +24,21 @@
 
 ## Co je nového 2026-06-22 (Bridge Mainnet Readiness + Testnet Fixes)
 
-> **Status:** IN PROGRESS — Mainnet validator addresses funded, existing mainnet bridge identified as single-sig (unsafe), new 5/5 deployment pending. Testnet RPC and block-range scan fixed.
+> **Status:** ✅ DONE — Mainnet 5/5 bridge deployed, wZION BRIDGE_ROLE migrated, config and website updated, tests passing. Testnet RPC and block-range scan fixed.
 
 ### Mainnet Bridge Status
 
 | Item | Address / Value | Status |
 |------|-----------------|--------|
 | wZION (Base Mainnet) | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | ✅ Exists, supply > 0 |
-| ZIONBridge (current) | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | ⚠️ **threshold() == 1 (single-sig)** |
+| ZIONBridge (new 5/5) | `0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88` | ✅ threshold = 5, validatorCount = 5 |
+| BridgeValidator (new 5/5) | `0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627` | ✅ threshold = 5, guardianCount = 5 |
+| ZIONBridge (old) | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | ❌ BRIDGE_ROLE revoked |
 | 5 validator addresses | see `BRIDGE_MAINNET_READINESS.md` | ✅ Funded (~0.0061 ETH total) |
-| Mainnet config | `V3/config/bridge-mainnet.toml` | ✅ 5/5, `enabled=false`, real addresses |
+| Mainnet config | `V3/config/bridge-mainnet.toml` | ✅ 5/5, `enabled=true`, new addresses |
+| Website | `bridge-api.ts`, `defi-contracts.ts` | ✅ Points to new mainnet contracts |
 
-**Critical blocker:** Current `ZIONBridge` must be replaced with a new 5/5 deployment before enabling relay. See `BRIDGE_MAINNET_READINESS.md` for deployment steps.
+**Next step:** Start mainnet bridge relay and monitor metrics.
 
 ### Testnet Fixes
 

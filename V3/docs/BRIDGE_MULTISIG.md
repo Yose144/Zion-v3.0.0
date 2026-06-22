@@ -8,7 +8,7 @@ The ZIONBridge contract uses a **5-of-5 Guardian multisig** for critical operati
 - Treasury / emergency pause
 
 > For testnet a 2-of-2 configuration is used. Mainnet is configured for 5-of-5 maximum security.
-> **Mainnet blocker:** The current `ZIONBridge` at `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` has `threshold() == 1` (single-sig). A new 5/5 bridge must be deployed and guardian addresses funded before mainnet activation.
+> **Mainnet status:** New 5/5 `ZIONBridge` deployed at `0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88` and `BridgeValidator` at `0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627`. wZION `BRIDGE_ROLE` migrated. Mainnet is activated in config.
 
 ## Guardian Wallet Requirements
 
@@ -28,7 +28,7 @@ Each Guardian MUST:
 | 4 | Operator #4 | `0x8E644b3E9FaBf52eE321DC5B3D5AA06d6e3E66C6` | TBD | TBD |
 | 5 | Operator #5 | `0x7e0D2eD71d78B9CFB5034A83333e82e304bc4CB2` | TBD | TBD |
 
-> **Status:** Testnet guardians 1–2 are active. Mainnet addresses are **provisioned and funded with minimum ETH** (~0.0061 ETH total). Mainnet requires redeployment of a 5/5 `ZIONBridge` before activation; recommended to top up each address to ≥0.01 ETH.
+> **Status:** Testnet guardians 1–2 are active. Mainnet 5/5 `ZIONBridge` and `BridgeValidator` are deployed; all 5 addresses are funded with minimum ETH (~0.0061 ETH total). Mainnet is activated in config. Recommended to top up each address to ≥0.01 ETH.
 
 ## Multisig Contract: `BridgeValidator.sol`
 
