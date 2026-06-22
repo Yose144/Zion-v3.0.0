@@ -199,10 +199,10 @@ fn base_mainnet_chain() -> EvmChainConfig {
         rpc_url_backup: Some("wss://base.llamarpc.com".into()),
         // Placeholder — update after T1 bridge deploy via:
         //   ./scripts/deploy-bridge-base.sh base
-        wzion_address: "0x0000000000000000000000000000000000000000".into(),
-        bridge_contract_address: "0x0000000000000000000000000000000000000000".into(),
-        finality_blocks: 12, // Base mainnet: 12 blocks ≈ 24s
-        enabled: false,      // NOT enabled until contracts deployed
+        wzion_address: "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6".into(),
+        bridge_contract_address: "0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88".into(),
+        finality_blocks: 64, // Base mainnet: 64 blocks ≈ 128s
+        enabled: true,       // 5/5 bridge deployed and migrated
         gas_strategy: "eip1559".into(),
         max_gas_gwei: 100, // Higher gas limit for mainnet
         start_block: Some(47_687_000), // Set to ~current Base mainnet block
@@ -228,13 +228,13 @@ fn test_mainnet_chain_id() {
     assert_eq!(chain.evm_chain_id, 8453, "Base mainnet chain ID");
     assert_eq!(chain.chain_id, "base");
     assert!(
-        !chain.enabled,
-        "Mainnet chain must be DISABLED until contracts deployed"
+        chain.enabled,
+        "Mainnet chain must be ENABLED after 5/5 bridge deployment"
     );
-    // Contracts not yet deployed
+    // 5/5 bridge deployed
     assert_eq!(
-        chain.bridge_contract_address, "0x0000000000000000000000000000000000000000",
-        "Mainnet bridge contract not yet deployed — must be zero address"
+        chain.bridge_contract_address, "0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88",
+        "Mainnet bridge contract must be the deployed 5/5 bridge"
     );
 }
 
@@ -266,10 +266,11 @@ fn test_mainnet_config_structure() {
         base_mainnet_chain(), // disabled until live
     ];
 
-    // Only testnet is active
+    // Both testnet and mainnet are active
     let active = cfg.active_chains();
-    assert_eq!(active.len(), 1);
-    assert_eq!(active[0].chain_id, "base-sepolia");
+    assert_eq!(active.len(), 2);
+    assert!(active.iter().any(|c| c.chain_id == "base-sepolia"));
+    assert!(active.iter().any(|c| c.chain_id == "base"));
 
     assert_eq!(cfg.bridge.network, "mainnet");
 }
@@ -822,8 +823,10 @@ fn test_multi_chain_routing_exact_match() {
 
 #[test]
 fn test_chain_lookup_disabled_chain() {
+    let mut disabled = base_mainnet_chain();
+    disabled.enabled = false; // explicitly disabled for this test
     let mut cfg = BridgeConfig::default();
-    cfg.evm_chains = vec![base_mainnet_chain()]; // disabled!
+    cfg.evm_chains = vec![disabled];
 
     // Routing must skip disabled chains
     let matched = cfg
@@ -971,10 +974,10 @@ fn test_mainnet_deployment_checklist() {
         "Base mainnet chain ID = 8453"
     );
 
-    // 7. Mainnet chain must start disabled until contracts deployed
+    // 7. Mainnet chain must be enabled after 5/5 bridge deployed
     assert!(
-        !base_mainnet.enabled,
-        "Mainnet chain disabled until contracts deployed"
+        base_mainnet.enabled,
+        "Mainnet chain must be enabled after 5/5 bridge deployment"
     );
 
     println!("✅ Mainnet deployment checklist PASSED");
@@ -1025,13 +1028,13 @@ fn test_parse_bridge_testnet_toml() {
     assert_eq!(cfg.validator.validator_addresses.len(), 2);
 }
 
-/// Verify bridge-mainnet.toml parses correctly — Base mainnet, disabled until validators live.
+/// Verify bridge-mainnet.toml parses correctly — Base mainnet, 5/5 bridge live.
 #[test]
 fn test_parse_bridge_mainnet_toml() {
     let path = concat!(env!("CARGO_MANIFEST_DIR"), "/config/bridge-mainnet.toml");
     let cfg = BridgeConfig::load(path).expect("bridge-mainnet.toml must parse");
     assert_eq!(cfg.bridge.network, "mainnet");
-    // Base + Arbitrum entries, both disabled until deployed
+    // Base + Arbitrum entries; Base enabled now that 5/5 bridge is deployed
     assert_eq!(cfg.evm_chains.len(), 2);
     let base = cfg
         .evm_chains
@@ -1039,10 +1042,10 @@ fn test_parse_bridge_mainnet_toml() {
         .find(|c| c.chain_id == "base")
         .expect("base chain must be present");
     assert_eq!(base.evm_chain_id, 8453);
-    // Base chain disabled until 5/5 validators are live (bridge provisioning blocker)
+    // Base chain enabled after 5/5 bridge deployment and migration
     assert!(
-        !base.enabled,
-        "mainnet Base chain should be disabled until validators are live (5/5 provisioning pending)"
+        base.enabled,
+        "mainnet Base chain should be enabled after 5/5 bridge deployment"
     );
     assert_eq!(
         base.wzion_address,
@@ -1050,7 +1053,7 @@ fn test_parse_bridge_mainnet_toml() {
     );
     assert_eq!(
         base.bridge_contract_address,
-        "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721"
+        "0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88"
     );
     assert_eq!(cfg.metrics.log_level, "info");
     assert_eq!(cfg.validator.threshold, 5);

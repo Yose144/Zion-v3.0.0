@@ -36,20 +36,17 @@ export const BRIDGE_CONTRACTS_SEPOLIA: BridgeContractInfo = {
   explorer_base: 'https://sepolia.basescan.org/address/',
 };
 
-/** Base Mainnet contracts — PLACEHOLDERS.
- *  Run `scripts/deploy-bridge-base.sh base` and update these addresses
- *  before enabling the burn widget on mainnet.
- */
+/** Base Mainnet contracts — 5/5 ZIONBridge deployed and wZION BRIDGE_ROLE migrated. */
 export const BRIDGE_CONTRACTS_MAINNET: BridgeContractInfo = {
-  wzion_address: '0x0000000000000000000000000000000000000000',
-  bridge_address: '0x0000000000000000000000000000000000000000',
+  wzion_address: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
+  bridge_address: '0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88',
   network: 'Base Mainnet',
   chain_id: 8453,
   explorer_base: 'https://basescan.org/address/',
 };
 
-/** Active contract set — change to BRIDGE_CONTRACTS_MAINNET after deploy */
-export const BRIDGE_CONTRACTS = BRIDGE_CONTRACTS_SEPOLIA;
+/** Active contract set — mainnet 5/5 bridge is live */
+export const BRIDGE_CONTRACTS = BRIDGE_CONTRACTS_MAINNET;
 
 const defaultStatus: BridgeStatus = {
   online: false,

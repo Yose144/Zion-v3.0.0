@@ -1,9 +1,9 @@
 # ZION Bridge — Base Mainnet Launch Checklist
 
-> **Status:** Pre-launch (existing bridge is unsafe)  
+> **Status:** ✅ Live — 5/5 bridge deployed and migrated  
 > **Target:** Base Mainnet (chain ID 8453)  
 > **Guardian model:** 5-of-5 multisig
-> **Blocker:** Current `ZIONBridge` at `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` has `threshold() == 1` (single-sig). Must be redeployed as 5/5.
+> **New contracts:** `ZIONBridge` at `0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88`, `BridgeValidator` at `0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627`
 
 ## Phase 0 — Pre-Deploy (Done)
 
@@ -62,14 +62,14 @@ After deploy, update these files with **real mainnet addresses**:
 | # | Item | Status |
 |---|------|--------|
 | 1 | Verify wZION on BaseScan | `scripts/verify-bridge-base.sh base` |
-| 2 | Verify ZIONBridge on BaseScan | ☐ |
-| 3 | Verify BridgeValidator on BaseScan | ☐ |
+| 2 | Verify ZIONBridge on BaseScan | ✅ Deployed at `0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88` |
+| 3 | Verify BridgeValidator on BaseScan | ✅ Deployed at `0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627` |
 | 4 | Update `bridge-mainnet.toml` with real addresses | ✅ |
 | 5 | Configure validator threshold = 5, total = 5 | ✅ |
 | 6 | Fund all 5 validator addresses with ≥0.001 ETH (minimum done) | ✅ |
 | 7 | Top up validator addresses to ≥0.01 ETH for operational headroom | ❌ |
-| 8 | Deploy new 5/5 `ZIONBridge` and migrate wZION ownership | ❌ |
-| 9 | Set `enabled = true` for `base` chain in TOML | ❌ |
+| 8 | Deploy new 5/5 `ZIONBridge` and migrate wZION ownership | ✅ |
+| 9 | Set `enabled = true` for `base` chain in TOML | ✅ |
 | 10 | Start relay: `docker compose --profile mainnet up -d bridge` | ❌ |
 | 11 | Check relay metrics: `curl localhost:9102/metrics` | ❌ |
 

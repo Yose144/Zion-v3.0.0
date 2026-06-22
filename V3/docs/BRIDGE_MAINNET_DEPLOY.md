@@ -148,32 +148,28 @@ If critical issue detected within 24h:
 
 ## Current Mainnet Status
 
-**Partially deployed — existing bridge is unsafe.**
+**✅ Deployed — 5/5 bridge is live.**
 
-The website `https://zionterranova.com/defi` already advertises live Base Mainnet contracts:
+The website `https://zionterranova.com/defi` already advertises live Base Mainnet contracts. A new 5/5 bridge has been deployed and wZION `BRIDGE_ROLE` migrated.
 
-| Contract | Address |
-|----------|---------|
-| wZION | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` |
-| ZIONBridge | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` |
-| UniV3Pool | `0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB` |
+| Contract | Address | Status |
+|----------|---------|--------|
+| wZION | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | ✅ Exists, totalSupply > 0 |
+| ZIONBridge (new, 5/5) | `0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88` | ✅ threshold = 5, validatorCount = 5 |
+| BridgeValidator (new, 5/5) | `0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627` | ✅ threshold = 5, guardianCount = 5 |
+| ZIONBridge (old, single-sig) | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | ❌ BRIDGE_ROLE revoked |
+| UniV3Pool | `0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB` | ✅ Listed on website |
 
-On-chain verification (Base mainnet RPC):
-- `wZION.totalSupply()` returns non-zero — contract exists and has supply.
-- `ZIONBridge.threshold()` returns `1` — **the current mainnet bridge is 1-of-1 single-sig.**
+**Guardian / validator addresses (funded):**
 
-**Critical blocker:** The existing `ZIONBridge` must be replaced with a new 5/5 deployment before the relay can be enabled. The current contract should be treated as emergency-only / paused.
-
-**Guardian addresses (provisioned, awaiting funding):**
-
-| # | Address | Balance (Base mainnet) |
-|---|---------|------------------------|
-| 1 | `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186` | 0.002102 ETH |
-| 2 | `0x24d986841E56e5571489B25951eE8C1Ae761FA82` | 0.001000 ETH |
-| 3 | `0x665c55eDCF25c2c5A1dfF1B20eE950cBDC58d3d0` | 0.001000 ETH |
-| 4 | `0x8E644b3E9FaBf52eE321DC5B3D5AA06d6e3E66C6` | 0.001000 ETH |
-| 5 | `0x7e0D2eD71d78B9CFB5034A83333e82e304bc4CB2` | 0.001000 ETH |
+| # | Address | Balance (Base mainnet) | Role |
+|---|---------|------------------------|------|
+| 1 | `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186` | 0.002102 ETH | Deployer + Guardian + Validator |
+| 2 | `0x24d986841E56e5571489B25951eE8C1Ae761FA82` | 0.001000 ETH | Guardian + Validator |
+| 3 | `0x665c55eDCF25c2c5A1dfF1B20eE950cBDC58d3d0` | 0.001000 ETH | Guardian + Validator |
+| 4 | `0x8E644b3E9FaBf52eE321DC5B3D5AA06d6e3E66C6` | 0.001000 ETH | Guardian + Validator |
+| 5 | `0x7e0D2eD71d78B9CFB5034A83333e82e304bc4CB2` | 0.001000 ETH | Guardian + Validator |
 
 All 5 addresses are funded with minimum operational ETH (~0.0061 ETH total). Recommended: top up to ≥0.01 ETH each before high-volume operations.
 
-Target date: TBD — pending external audit completion, guardian funding, and 5/5 bridge redeployment.
+Target date: **DONE** — 2026-06-22. Next step: start mainnet relay and monitor.
