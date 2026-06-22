@@ -19,8 +19,8 @@ network = "mainnet"
 
 # ── ZION L1 Connection ──────────────────────────────────────
 [l1]
-rpc_url        = "http://77.42.71.94:8443"
-rpc_url_backup = "http://100.76.16.108:8443"
+rpc_url        = "http://127.0.0.1:8443"
+rpc_url_backup = "http://77.42.71.94:8443"
 bridge_address = "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0"
 finality_blocks     = 60
 poll_interval_secs  = 15
