@@ -1,21 +1,26 @@
-# ZION Desktop Agent — Wallet E2E Report
+# ZION Desktop Agent + Mobile App — Wallet E2E Report
 
 **Datum:** 2026-06-22  
 **Branch:** `main`  
-**Poslední commit:** `8c30fe49`  
-**Cíl:** Rozjet desktop agenta end-to-end a hlavně umožnit posílání transakcí z GUI.
+**Poslední commit:** `36309404`  
+**Cíl:** Rozjet desktop agenta + mobile app end-to-end s posíláním transakcí.
 
 ## 🔥 Status: **E2E WALLET WORKFLOW FUNGUJE**
 
-Desktop agent (`APP&WEB/desktop-agent`) byl úspěšně uveden do provozuschopného stavu. Obě transakční metody fungují proti živému mainnetu:
+**Desktop agent** (`APP&WEB/desktop-agent/`):
+- ✅ Edge mainnet ACCEPTED live account transaction (commit `8c30fe49`)
+- ✅ UTXO + Account model auto-detect
+- ✅ V2 preimage hash (BLAKE3) od genesis
 
-- ✅ **UTXO transakce** — Edge node přijal format (code -32004 = validní structure)
-- ✅ **Account transakce** — Edge node **ACCEPTED** živou transakci na mainnetu
-- ✅ **GUI startuje** po vyřešení `ELECTRON_RUN_AS_NODE` env var
-- ✅ **Mnemonic recovery** je deterministický (opraveno přes `@noble/ed25519` + JWK)
-- ✅ **V2 preimage** od genesis (upgrade z malleable v1)
-- ✅ **Auto-detect** UTXO vs Account — GUI si vybere podle balancu adresy
-- ✅ **Dashboard integrace** — UTXO/Account balance breakdown
+**Mobile app** (`APP&WEB/mobile-app/`):
+- ✅ V3 compatible wallet (commit `36309404`)
+- ✅ BLAKE3 v2 transaction hash
+- ✅ @noble/ed25519 v3.1.0 (same as desktop)
+- ✅ V3 tx build + sign + verify verified
+
+**Struktura:**
+- ✅ Jeden zdroj pravdy v `APP&WEB/` (APPS/ smazáno, commit `ba9fac6c`)
+- ✅ `zion-wallet-sdk` sjednocen do `APP&WEB/` (commit `de20b079`)
 
 ---
 
@@ -245,26 +250,109 @@ Zobrazení v Send tab:
 
 ---
 
+## Mobile App Wallet V3 Upgrade
+
+**Cesta k mobile wallet:**
+- ✅ Obnovena z git historie (commit `c4390ab8` → `de20b079`)
+- ✅ Verze 3.0.0 → 3.0.2 (commit `de20b079`)
+
+### Co bylo opraveno (commit `36309404`)
+
+`APP&WEB/mobile-app/src/services/TransactionBuilder.js` byl kompletně přepsán:
+
+| Původní (v3.0.0) | Opraveno (v3.0.2) |
+|---|---|
+| **SHA256 canonical JSON** hash | **BLAKE3 binary v2** preimage hash |
+| `version: 1` | `version: 2` |
+| `CryptoJS.SHA256` | `@noble/hashes/blake3` |
+| `sendrawtransaction` RPC | `submitTransaction` RPC |
+| `MIN_FEE_PER_BYTE * bytes` | `MIN_FEE_FLOWERS = 1000n` bigint |
+
+**Domain-separated v2 preimage** (stejný formát jako desktop agent):
+```
+ZION_TX_V2\x00
+version (u32 LE)
+fee (u64 LE)
+timestamp (u64 LE)
+inputs_count (u32 LE)
+for each input: prev_tx_hash(32B) + output_index(u32 LE) + pk_len(u32 LE) + public_key
+outputs_count (u32 LE)
+for each output: amount(u64 LE) + addr_len(u32 LE) + address + memo_tag(0/1) + [memo_len + memo]
+```
+
+**@noble libraries upgrade:**
+- `@noble/ed25519`: 2.3.0 → 3.1.0 (sync sign/verify, `hashes.sha512` API)
+- `@noble/hashes`: ^1.8.0 (CJS-compatible s ed25519 v3)
+
+**BlockchainRPC.getUTXOs** normalize na V3 formát:
+```js
+{ tx_hash, output_index, amount: BigInt, address, height }
+// + legacy aliases: { txid, vout }
+```
+
+**Verifikace:**
+```
+$ cd APP&WEB/mobile-app && node -e "..."
+pubKey len: 32
+blake3 hash: e7e584cc7b25ac316b05a1738a809a0d...
+version: 2
+signature valid: true
+SUCCESS: V3 mobile tx build matches desktop
+```
+
+---
+
+## Struktura repozitáře
+
+### Kanonický adresář: `APP&WEB/`
+
+```
+APP&WEB/
+├── desktop-agent/          ← v3.0.2 (Electron, wallet E2E ✅)
+├── mobile-app/             ← v3.0.2 (React Native + Expo, wallet V3 ✅)
+├── website-v2.9/           ← v3.0.0 (Next.js produkční)
+├── website-v3.0-concept/   ← raný koncept (archiv)
+└── zion-wallet-sdk/        ← v1.0.0 (sdílená TS knihovna)
+```
+
+### Smazané duplicitní adresáře
+
+| Cesta | Stav | Uvolněno |
+|---|---|---|
+| `APPS/desktop-agent/` (v3.0.0 stale) | ❌ smazáno | ~684 MB |
+| `APPS/website-v2.9/` (s node_modules) | ❌ smazáno | ~896 MB |
+| `APPS/public_html/` (staré statické HTML) | ❌ smazáno | ~681 MB |
+| `APPS/Websites/` (IntuitivSpace) | ❌ smazáno | ~8.5 MB |
+| `APPS/desktop-dashboard/` (prázdný cache) | ❌ smazáno | ~0.2 KB |
+| `APPS/website-v3.0-concept/` | ❌ smazáno | ~0.3 MB |
+| `APPS/zion-wallet-sdk/` | ❌ smazáno (přesunut do APP&WEB) | ~0.3 MB |
+
+**Celkem uvolněno: ~2.2 GB duplicit.**
+
+---
+
 ## Aktuální omezení
 
-Desktop agent podporuje **oba modely** (UTXO + Account). Hlavní požadavek:
+**Desktop agent** podporuje **oba modely** (UTXO + Account).
+**Mobile app** nyní podporuje **UTXO model** (Account model přidán v desktop, chybí v mobile).
 
+Hlavní požadavek pro live send:
 **Adresa musí mít nějaký balance** — buď UTXO (mining rewards) nebo Account (premine).
 
 - ✅ Generovat wallet, ukládat, obnovovat z mnemonic — funguje
-- ✅ Stavit a podepisovat transakce obou modelů — funguje
-- ✅ Komunikovat s RPC a odesílat přes `submitTransaction` / `submitAccountTransaction` — funguje
-- ✅ **Edge mainnet přijal transaction** (live acceptance ověřeno 2026-06-22)
+- ✅ Stavit a podepisovat transakce (UTXO) — funguje
+- ✅ Komunikovat s RPC a odesílat přes `submitTransaction` — funguje
+- ✅ **Edge mainnet přijal account transaction** (desktop, live acceptance ověřeno 2026-06-22)
 - ✅ Edge RPC `getBalance` + `getUtxos` fungují proti živému 77.42.71.94:8443
+- ⚠️ Mobile app **neotevřený na živém zařízení** — build/test na Android/iOS chybí
+- ⚠️ Account model **chybí v mobile app** — pouze UTXO
 
-### Mining / UTXO funding workaround
+### Funding workaround
 
-Pokud máš prázdnou adresu, potřebuješ nějakým způsobem získat UTXO nebo převést z account balance:
-- **Varianta A:** Mine na Edge pool `77.42.71.94:8444` s desktop agent nastaveným na payout address
-- **Varianta B:** Import premine walletu (Humanitarian, ISSOBELLA, DAO treasury — pokud máš privátní klíč)
-- **Varianta C:** Bridge transfer z L2 → L1 (pokud máš L2 ZION)
-
-Pro testovací účely — E2E smoke test ověřuje **account submission** přímo proti Edge.
+Pokud máš prázdnou adresu, potřebuješ nějakým způsobem získat UTXO:
+- **Varianta A:** Mine na Edge pool `77.42.71.94:8444` s payout address
+- **Varianta B:** Import premine walletu (Humanitarian, ISSOBELLA, DAO treasury)
+- **Varianta C:** Bridge transfer z L2 → L1
 
 ---
 
@@ -272,14 +360,16 @@ Pro testovací účely — E2E smoke test ověřuje **account submission** pří
 
 | Komponenta | Path | Stav |
 |---|---|---|
-| Desktop agent | `APP&WEB/desktop-agent/` | ✅ |
-| Account builder | `src/account-builder.js` | ✅ NEW |
-| UTXO builder (v2) | `src/utxo-builder.js` | ✅ |
-| Wallet generator (PKCS8) | `src/wallet-generator.js` | ✅ |
-| E2E smoke test (9 kroků) | `scripts/test-wallet-e2e.js` | ✅ |
+| Desktop agent | `APP&WEB/desktop-agent/` | ✅ v3.0.2 |
+| Account builder | `desktop-agent/src/account-builder.js` | ✅ |
+| UTXO builder (desktop) | `desktop-agent/src/utxo-builder.js` | ✅ v2 BLAKE3 |
+| UTXO builder (mobile) | `mobile-app/src/services/TransactionBuilder.js` | ✅ v2 BLAKE3 |
+| Wallet generator | `desktop-agent/src/wallet-generator.js` | ✅ |
+| E2E smoke test (desktop) | `desktop-agent/scripts/test-wallet-e2e.js` | ✅ 9 kroků |
+| Wallet SDK | `APP&WEB/zion-wallet-sdk/` | ✅ TS shared lib |
+| Mobile app | `APP&WEB/mobile-app/` | ✅ v3.0.2 |
 | V3 node binaries | `V3/target_e2e/release/` | ✅ |
 | Edge RPC (live) | `77.42.71.94:8443` | ✅ |
-| Edge wallet CLI | `V3/target_e2e/release/wallet.exe` | ✅ |
 
 ---
 
@@ -287,23 +377,25 @@ Pro testovací účely — E2E smoke test ověřuje **account submission** pří
 
 ### Krátkodobě
 
-- [ ] Přidat `npm run start` do `package.json` s automatickým unsetem `ELECTRON_RUN_AS_NODE`
-- [ ] Otestovat Account model s **premine wallet** (Humanitarian, ISSOBELLA)
-- [ ] Přidat UI checkbox pro forced model (UTXO/Account/automatic)
-- [ ] Logging: zobrazit v console.log který model se použil
+- [ ] **Mobilní Account model** — přidat `account-builder.js` analogicky do mobile app
+- [ ] **Build mobile app** na Android zařízení — ověřit React Native build
+- [ ] **E2E test mobile wallet** na zařízení s fyzickým signováním
+- [ ] Otestovat desktop Account model s **premine wallet** (Humanitarian, ISSOBELLA)
 
 ### Střednědobě
 
 - [ ] **Mining fix** — zprovoznit mining proti lokálnímu nodu (header format mismatch)
-- [ ] **Coinbase maturity** — dokumentovat nebo implementovat bypass pro testing
+- [ ] **Coinbase maturity** — implementovat dev bypass pro regtest/testing
 - [ ] Wallet history view (account + UTXO txs)
+- [ ] HD derivation (BIP-44) místo single-key wallets
 
 ### Dlouhodobě
 
-- [ ] Přechod na **Tauri v2** (`ZION_OS/desktop`) místo Electron
+- [ ] Sjednotit desktop agent + mobile pod **sdílený wallet core** (TypeScript → native binding)
 - [ ] **Multi-signature** support pro treasury operace
-- [ ] **HD derivation** místo single-key wallets
+- [ ] **Hardware wallet** integration (Trezor/Ledger via zion-wallet-sdk)
+- [ ] Přechod desktop z Electron na **Tauri v2** (`ZION_OS/desktop`)
 
 ---
 
-*Report vygenerován 2026-06-22. Poslední commit s opravami: `8c30fe49`.*
+*Report vygenerován 2026-06-22. Poslední commit s opravami: `36309404`.*
