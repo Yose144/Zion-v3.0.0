@@ -362,11 +362,8 @@ class ZionWalletGenerator {
     if (!a) return 'invalid';
 
     if (a.startsWith('zion1')) {
-      if (a.length !== 44) return 'invalid';
-      const data = a.slice(5);
-      // ZION_BASE32: 023456789acdefghjklmnpqrstuvwxyz
-      if (!/^[0-3a-df-np-z]{39}$/.test(data)) return 'invalid';
-      return 'zion1';
+      // Use isValidAddress which checks format + checksum (matches V3 core is_valid_address)
+      return isValidAddress(a) ? 'zion1' : 'invalid';
     }
 
     // Legacy format (kept only for compatibility display)
