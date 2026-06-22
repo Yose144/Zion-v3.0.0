@@ -1562,7 +1562,7 @@ async function updateConnectedMiners(){
         : '—';
       const hashrate = m.hashrate_hps > 0 ? (m.hashrate_hps/1000).toFixed(2) + ' KH/s' : '—';
       const paidZion = payoutMiner?.paid_total ?? (payoutMiner?.paid_total_atomic != null ? payoutMiner.paid_total_atomic / 1_000_000_000_000 : null) ?? m.paid_total ?? 0;
-      const paid = paidZion > 0 ? _zionFmt(paidZion) : '0';
+      const paid = paidZion > 0 ? _zionFmt(paidZion) + ' ZION' : '0 ZION';
       const blocks = payoutMiner?.blocks_found ?? m.blocks_found ?? '—';
       const minerIdShort = m.miner_id.length > 28 ? m.miner_id.slice(0,14)+'…'+m.miner_id.slice(-12) : m.miner_id;
       const rowCls = isActive ? '' : (isRecent ? 'opacity-75' : 'opacity-40');
