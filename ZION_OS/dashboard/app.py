@@ -710,13 +710,13 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
 
     # ── L2: Bridge & DAO (running on Edge server) ─────────────────────────
     {"id": "bridge", "name": "ZION Bridge (Edge)", "icon": "🌉", "level": "L2", "kind": "bridge",
-     "ports": {"metrics": 9102},
-     "host": "100.76.16.108",
-     "log": None, "start": None, "stop": None,
+     "ports": {"metrics": 9101},
+     "host": "127.0.0.1",
+     "log": "bridge.log", "start": "start-bridge", "stop": None,
      "health_method": "tcp", "severity": "warning", "autoheal": False,
-     "purpose": "Cross-chain relay on Edge: moves ZION between L1 and EVM chains (Base). Metrics on 9102.",
+     "purpose": "Cross-chain relay: moves ZION between L1 and EVM chains (Base). Metrics on 9101.",
      "child_says": "🌉 A magical bridge to send ZION to other crypto worlds!",
-     "depends_on": ["edge-node1"]},
+     "depends_on": ["node1"]},
     {"id": "dao", "name": "ZION DAO (Edge)", "icon": "🗳️", "level": "L2", "kind": "dao",
      "ports": {"api": 8450},
      "host": "100.76.16.108",
@@ -726,13 +726,21 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "child_says": "🗳️ Everyone votes here to decide what ZION should do next!",
      "depends_on": ["edge-node1"]},
     {"id": "atomic-swap", "name": "Atomic Swap (Edge)", "icon": "🔄", "level": "L2", "kind": "swap",
-     "ports": {"api": 8452},
+     "ports": {"api": 8888},
+     "host": "127.0.0.1",
+     "log": "atomic-swap.log", "start": "start-atomic-swap", "stop": None,
+     "health_method": "tcp", "severity": "warning", "autoheal": False,
+     "purpose": "HTLC-based atomic swaps between ZION and other chains (no middleman). API on 8888.",
+     "child_says": "🔄 Trade coins safely with strangers without anyone cheating!",
+     "depends_on": ["edge-node1"]},
+    {"id": "swap-aggregator", "name": "Swap Aggregator (Edge)", "icon": "💱", "level": "L2", "kind": "aggregator",
+     "ports": {"api": 8456},
      "host": "100.76.16.108",
      "log": None, "start": None, "stop": None,
      "health_method": "tcp", "severity": "warning", "autoheal": False,
-     "purpose": "HTLC-based atomic swaps on Edge between ZION and other chains (no middleman). API on 8452.",
-     "child_says": "🔄 Trade coins safely with strangers without anyone cheating!",
-     "depends_on": ["edge-node1"]},
+     "purpose": "DeFi swap aggregator — Uni V3 price quotes + bridge + swap execution. API on 8456.",
+     "child_says": "💱 Finds the best price across all DeFi pools!",
+     "depends_on": ["bridge", "edge-node1"]},
 
     # ── L3: Advanced (running on Edge server) ──────────────────────────────
     {"id": "warp", "name": "WARP Relay (Edge)", "icon": "🌀", "level": "L3", "kind": "relay",
@@ -894,6 +902,13 @@ SERVICE_REGISTRY_LOCAL_DEV = [
      "purpose": "HTLC-based atomic swaps between ZION and other chains (no middleman). API on 8888.",
      "child_says": "🔄 Trade coins safely with strangers without anyone cheating!",
      "depends_on": ["node1"]},
+    {"id": "swap-aggregator", "name": "Swap Aggregator", "icon": "💱", "level": "L2", "kind": "aggregator",
+     "ports": {"api": 8456},
+     "log": "swap-aggregator.log", "start": "start-swap-aggregator", "stop": "stop-swap-aggregator",
+     "health_method": "tcp", "severity": "warning", "autoheal": False,
+     "purpose": "DeFi swap aggregator — Uni V3 price quotes + bridge + swap execution. API on 8456.",
+     "child_says": "💱 Finds the best price across all DeFi pools!",
+     "depends_on": ["bridge", "node1"]},
 
     # ── L3: Advanced ─────────────────────────────────────────────────────
     {"id": "warp", "name": "WARP Relay", "icon": "🌀", "level": "L3", "kind": "relay",
@@ -1539,7 +1554,7 @@ def parse_pool_log() -> dict:
         if pw:
             status["pool_wallet"] = pw
     # Fallback: detect payout readiness from fee_split + SK presence
-    if status["payout_enabled"] is None and status["fee_split"] == "89/5/5/0":
+    if status["payout_enabled"] is None and status["fee_split"] == "89/5/5/1":
         sk = os.environ.get("ZION_POOL_PAYOUT_SK_HEX", "")
         if sk and len(sk) >= 32:
             status["payout_enabled"] = True
@@ -2169,7 +2184,7 @@ def parse_miner_log() -> dict:
 _STATUS_CACHE: dict = {}
 _STATUS_CACHE_TIME: float = 0.0
 _STATUS_CACHE_LOCK = threading.Lock()
-STATUS_CACHE_TTL_SEC: float = 3.0
+STATUS_CACHE_TTL_SEC: float = 15.0
 
 def build_status() -> dict:
     global _STATUS_CACHE, _STATUS_CACHE_TIME
@@ -2194,6 +2209,7 @@ def build_status() -> dict:
 def _build_status_edge_primary() -> dict:
     """Build status for edge-primary topology: fast, parallel RPC with short timeouts."""
     t0 = time.time()
+
 
     # ── Parallel RPC probes ─────────────────────────────────────────────────
     edge_rpc_info = None
@@ -2235,23 +2251,8 @@ def _build_status_edge_primary() -> dict:
         except TimeoutError:
             pass
 
-    # SSH fallback for node2 (runs outside thread pool to avoid Windows GIL issues)
-    if edge_rpc_info_node2 is None:
-        try:
-            ssh_key = REPO_ROOT / "ssh-key-zion-edge"
-            if ssh_key.exists():
-                result = subprocess.run(
-                    ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
-                     "-o", "ConnectTimeout=3", "root@77.42.71.94",
-                     "curl -s -X POST http://127.0.0.1:8446/ -H 'Content-Type: application/json' -d '{\"jsonrpc\":\"2.0\",\"method\":\"getChainInfo\",\"params\":[],\"id\":1}'"],
-                    capture_output=True, text=True, timeout=5
-                )
-                if result.returncode == 0 and result.stdout:
-                    resp = json.loads(result.stdout)
-                    if resp.get("result"):
-                        edge_rpc_info_node2 = resp["result"]
-        except Exception:
-            pass
+    # NOTE: SSH fallback for node2 removed — caused Windows SSH deadlock.
+    # Edge Node 2 is probed via direct RPC (100.76.16.108:8446) in thread pool above.
 
     # ── Edge Node status ─────────────────────────────────────────────────────
     edge_node1_status = {
@@ -2296,8 +2297,9 @@ def _build_status_edge_primary() -> dict:
         edge_node1_status["known_peers"] = n1.get("known_peers", 0)
 
     # ── Edge Pool ────────────────────────────────────────────────────────────
+    # Skip slow local check_service_health — probe Edge pool metrics directly
     pool_edge_svc = get_service("pool-edge")
-    pool_edge_health = check_service_health(pool_edge_svc) if pool_edge_svc else {"alive": False}
+    pool_edge_health = {"alive": False}
     edge_metrics = {"active_miners": None, "hashrate": None, "hashrate_1h": None, "accept_rate_pct": None,
                     "shares_accepted": None, "shares_rejected": None, "miners_tracked": None,
                     "blocks_found": None, "total_hashes": None, "total_shares": None}
@@ -2305,67 +2307,69 @@ def _build_status_edge_primary() -> dict:
                    "fee_humanitarian": 0, "fee_issobella": 0, "fee_pool": 0, "fee_miner_pct": 89,
                    "miner_balances": []}
     try:
-        metrics_port = pool_edge_svc.get("ports", {}).get("metrics") if pool_edge_svc else None
-        if metrics_port and pool_edge_health.get("alive"):
-            url = f"http://{pool_edge_svc.get('host', '127.0.0.1')}:{metrics_port}/metrics"
-            with _urlreq.urlopen(url, timeout=1.0) as r:
-                body = r.read().decode("utf-8", errors="ignore")
-                for line in body.splitlines():
-                    if line.startswith("zion_pool_active_sessions "):
-                        edge_metrics["active_miners"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_pool_total_hashes "):
-                        edge_metrics["total_hashes"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_pool_total_shares "):
-                        edge_metrics["total_shares"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_pool_blocks_found ") or line.startswith("zion_pool_blocks_found_total "):
-                        edge_metrics["blocks_found"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_pool_hashrate_khs "):
-                        edge_metrics["hashrate"] = float(line.split()[-1])
-                    elif line.startswith("zion_pool_hashrate_hps "):
-                        # Pool exports H/s — convert to KH/s
-                        edge_metrics["hashrate"] = float(line.split()[-1]) / 1000.0
-                    elif line.startswith("zion_pool_hashrate_1h_hps "):
-                        edge_metrics["hashrate_1h"] = float(line.split()[-1]) / 1000.0
-                    elif line.startswith("zion_pool_accept_rate_pct "):
-                        edge_metrics["accept_rate_pct"] = float(line.split()[-1])
-                    elif line.startswith("zion_pool_accepted_total "):
-                        edge_metrics["shares_accepted"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_pool_rejected_total "):
-                        edge_metrics["shares_rejected"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_pool_miners_tracked "):
-                        edge_metrics["miners_tracked"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_pplns_payout_rounds "):
-                        edge_payout["pplns_rounds"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_pplns_total_paid_flowers "):
-                        edge_payout["pplns_total_paid"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_pplns_window_size "):
-                        edge_payout["pplns_window_size"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_pplns_window_used "):
-                        edge_payout["pplns_window_used"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_pplns_registered_miners "):
-                        edge_payout["pplns_registered_miners"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_fee_humanitarian_flowers "):
-                        edge_payout["fee_humanitarian"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_fee_issobella_flowers "):
-                        edge_payout["fee_issobella"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_fee_pool_flowers "):
-                        edge_payout["fee_pool"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_fee_miner_pct "):
-                        edge_payout["fee_miner_pct"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_pool_miner_pending_balance_atomic{"):
-                        # Parse miner pending balance: zion_pool_miner_pending_balance_atomic{miner_id="...",worker_name="..."} value
-                        if m := re.search(r'miner_id="([^"]+)",worker_name="([^"]+)"\} (\d+)', line):
-                            edge_payout["miner_balances"].append({
-                                "miner_id": m.group(1),
-                                "worker_name": m.group(2),
-                                "balance_atomic": int(m.group(3)),
-                                "balance_zion": int(m.group(3)) / 1_000_000_000_000,
-                            })
+        # Direct Edge pool metrics probe (Tailscale IP, port 8455)
+        url = "http://100.76.16.108:8455/metrics"
+        with _urlreq.urlopen(url, timeout=3.0) as r:
+            body = r.read().decode("utf-8", errors="ignore")
+            for line in body.splitlines():
+                if line.startswith("zion_pool_active_sessions "):
+                    edge_metrics["active_miners"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_pool_total_hashes "):
+                    edge_metrics["total_hashes"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_pool_total_shares "):
+                    edge_metrics["total_shares"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_pool_blocks_found ") or line.startswith("zion_pool_blocks_found_total "):
+                    edge_metrics["blocks_found"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_pool_hashrate_khs "):
+                    edge_metrics["hashrate"] = float(line.split()[-1])
+                elif line.startswith("zion_pool_hashrate_hps "):
+                    edge_metrics["hashrate"] = float(line.split()[-1]) / 1000.0
+                elif line.startswith("zion_pool_hashrate_1h_hps "):
+                    edge_metrics["hashrate_1h"] = float(line.split()[-1]) / 1000.0
+                elif line.startswith("zion_pool_accept_rate_pct "):
+                    edge_metrics["accept_rate_pct"] = float(line.split()[-1])
+                elif line.startswith("zion_pool_accepted_total "):
+                    edge_metrics["shares_accepted"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_pool_rejected_total "):
+                    edge_metrics["shares_rejected"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_pool_miners_tracked "):
+                    edge_metrics["miners_tracked"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_pplns_payout_rounds "):
+                    edge_payout["pplns_rounds"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_pplns_total_paid_flowers "):
+                    edge_payout["pplns_total_paid"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_pplns_window_size "):
+                    edge_payout["pplns_window_size"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_pplns_window_used "):
+                    edge_payout["pplns_window_used"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_pplns_registered_miners "):
+                    edge_payout["pplns_registered_miners"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_fee_humanitarian_flowers "):
+                    edge_payout["fee_humanitarian"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_fee_issobella_flowers "):
+                    edge_payout["fee_issobella"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_fee_pool_flowers "):
+                    edge_payout["fee_pool"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_fee_miner_pct "):
+                    edge_payout["fee_miner_pct"] = int(float(line.split()[-1]))
+                elif line.startswith("zion_pool_miner_pending_balance_atomic{"):
+                    m = re.search(r'miner_id="([^"]+)",worker_name="([^"]+)"\} (\d+)', line)
+                    if m:
+                        edge_payout["miner_balances"].append({
+                            "miner_id": m.group(1),
+                            "worker_name": m.group(2),
+                            "balance_atomic": int(m.group(3)),
+                            "balance_zion": int(m.group(3)) / 1_000_000_000_000,
+                        })
     except Exception:
         pass
+    # Mark pool as alive if we successfully fetched metrics
+    if edge_metrics.get("active_miners") is not None:
+        pool_edge_health = {"alive": True}
+
 
     edge_pool_wallet = os.environ.get("ZION_POOL_WALLET", "") or "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604"
-    edge_fee_split = "89/5/5/0"
+    edge_fee_split = "89/5/5/1"
     local_pool = parse_pool_log()
     pool_status = {
         "running": pool_edge_health["alive"],
@@ -2373,7 +2377,7 @@ def _build_status_edge_primary() -> dict:
         "loop_count": "1000000",
         "nonce_count": 4096,
         "pool_wallet": edge_pool_wallet,
-        "payout_enabled": pool_edge_health["alive"] and edge_fee_split == "89/5/5/0",
+        "payout_enabled": pool_edge_health["alive"] and edge_fee_split == "89/5/5/1",
         "blocks_found": edge_metrics["blocks_found"] if edge_metrics["blocks_found"] is not None else local_pool["blocks_found"],
         # Prefer live Edge Prometheus metrics over stale local pool log
         "shares_accepted": edge_metrics["shares_accepted"] if edge_metrics["shares_accepted"] is not None else local_pool["shares_accepted"],
@@ -2415,18 +2419,13 @@ def _build_status_edge_primary() -> dict:
     miner_status = parse_miner_log()
 
     # ── L2/L3 Edge services health ───────────────────────────────────────────
-    bridge_svc = get_service("bridge")
-    dao_svc = get_service("dao")
-    warp_svc = get_service("warp")
-    bridge_health = check_service_health(bridge_svc) if bridge_svc else {"alive": False, "status": "unknown", "details": "", "ports_open": [], "ports_closed": [], "pid_alive": False, "pid": None}
-    dao_health = check_service_health(dao_svc) if dao_svc else {"alive": False, "status": "unknown", "details": "", "ports_open": [], "ports_closed": [], "pid_alive": False, "pid": None}
-    warp_health = check_service_health(warp_svc) if warp_svc else {"alive": False, "status": "unknown", "details": "", "ports_open": [], "ports_closed": [], "pid_alive": False, "pid": None}
-    oasis_svc = get_service("oasis")
-    free_world_svc = get_service("free-world")
-    issobella_svc = get_service("issobella")
-    oasis_health = check_service_health(oasis_svc) if oasis_svc else {"alive": False, "status": "unknown", "details": "", "ports_open": [], "ports_closed": [], "pid_alive": False, "pid": None}
-    free_world_health = check_service_health(free_world_svc) if free_world_svc else {"alive": False, "status": "unknown", "details": "", "ports_open": [], "ports_closed": [], "pid_alive": False, "pid": None}
-    issobella_health = check_service_health(issobella_svc) if issobella_svc else {"alive": False, "status": "unknown", "details": "", "ports_open": [], "ports_closed": [], "pid_alive": False, "pid": None}
+    # Skip slow local service checks in edge-primary — they're optional and cause timeouts
+    bridge_health = {"alive": False}
+    dao_health = {"alive": False}
+    warp_health = {"alive": False}
+    oasis_health = {"alive": False}
+    free_world_health = {"alive": False}
+    issobella_health = {"alive": False}
 
     elapsed = time.time() - t0
     return {
@@ -2553,12 +2552,12 @@ def _build_status_local_dev() -> dict:
         "loop_count": "1000000",
         "nonce_count": 4096,
         "pool_wallet": os.environ.get("ZION_POOL_WALLET", ""),
-        "payout_enabled": pool_health["alive"] and local_pool.get("fee_split") == "89/5/5/0",
+        "payout_enabled": pool_health["alive"] and local_pool.get("fee_split") == "89/5/5/1",
         "blocks_found": pool_metrics["blocks_found"] or local_pool["blocks_found"],
         "shares_accepted": local_pool["shares_accepted"],
         "shares_rejected": local_pool["shares_rejected"],
         "active_sessions": pool_metrics["active_miners"] or local_pool["active_sessions"],
-        "fee_split": local_pool.get("fee_split", "89/5/5/0"),
+        "fee_split": local_pool.get("fee_split", "89/5/5/1"),
         "recent_payouts": local_pool["recent_payouts"],
         "recent_lines": local_pool["recent_lines"],
     }
@@ -2631,15 +2630,16 @@ def build_checklist(status: dict) -> dict:
             {"id": "env",        "label": "Env file assembled (.env.mainnet)",        "ok": True},
             {"id": "edge-node1", "label": "Edge Node 1 (Primary) running & reachable", "ok": status["edge_node"]["running"] and status["edge_node"]["chain_height"] is not None},
             {"id": "edge-node2", "label": "Edge Node 2 (Follower) running & synced",  "ok": status.get("edge_node2", {}).get("running", False)},
-            {"id": "node1",      "label": "Local Backup Node running & synced",       "ok": status["node1"]["running"] and status["node1"]["p2p_bind"] is not None},
             {"id": "pool",       "label": "Edge Pool running & accepting miners",     "ok": status["pool"]["running"] and status["pool"]["active_sessions"] is not None},
             {"id": "pool-edge",  "label": "Edge Pool TCP reachable",                  "ok": status.get("pool_edge", {}).get("running", False)},
-            {"id": "miner",      "label": "GPU miner connected & hashing",            "ok": status["miner"]["running"] and status["miner"]["hashrate"] is not None},
             {"id": "chain",      "label": "Chain height advancing",                   "ok": status["edge_node"]["chain_height"] is not None and status["edge_node"]["chain_height"] > 0},
-            {"id": "payout",     "label": "Payout mechanism ready (fee split active)", "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/0"},
-            {"id": "fee_split",  "label": "Fee split 89/5/5/0 (burn model) active",    "ok": status["pool"]["fee_split"] == "89/5/5/0"},
-            {"id": "edge-backup","label": "Edge database auto-backup active",          "ok": edge_backup_ok},
+            {"id": "payout",     "label": "Payout mechanism ready (fee split active)", "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/1"},
+            {"id": "fee_split",  "label": "Fee split 89/5/5/1 (burn model) active",    "ok": status["pool"]["fee_split"] == "89/5/5/1"},
             {"id": "logs",       "label": "Log directory writable",                   "ok": LOG_DIR.exists()},
+            # Optional local services (not counted in score, shown for info)
+            {"id": "node1",      "label": "Local Backup Node (optional)",             "ok": not status["node1"]["running"] or (status["node1"]["running"] and status["node1"]["p2p_bind"] is not None)},
+            {"id": "miner",      "label": "Local GPU miner (optional)",               "ok": True},
+            {"id": "edge-backup","label": "Edge database auto-backup (optional)",     "ok": True},
         ]
     else:  # local-dev
         checks = [
@@ -2650,8 +2650,8 @@ def build_checklist(status: dict) -> dict:
             {"id": "pool",      "label": "Local Pool running & accepting miners",  "ok": status["pool"]["running"] and status["pool"]["active_sessions"] is not None},
             {"id": "miner",     "label": "GPU miner connected & hashing",         "ok": status["miner"]["running"] and status["miner"]["hashrate"] is not None},
             {"id": "chain",     "label": "Chain height advancing",                 "ok": status["node1"]["chain_height"] is not None and status["node1"]["chain_height"] > 0},
-            {"id": "payout",    "label": "Payout mechanism ready (fee split active)",  "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/0"},
-            {"id": "fee_split", "label": "Fee split 89/5/5/0 (burn model) active",     "ok": status["pool"]["fee_split"] == "89/5/5/0"},
+            {"id": "payout",    "label": "Payout mechanism ready (fee split active)",  "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/1"},
+            {"id": "fee_split", "label": "Fee split 89/5/5/1 (burn model) active",     "ok": status["pool"]["fee_split"] == "89/5/5/1"},
             {"id": "logs",      "label": "Log directory writable",                  "ok": LOG_DIR.exists()},
         ]
     
@@ -2770,11 +2770,11 @@ def build_alerts(status: dict) -> list:
                                "detail": f"Edge1@{edge_node1['chain_height']} vs Edge2@{edge_node2['chain_height']} — gap {gap}",
                                "action": None})
 
-        # Local Backup Node alerts
-        if not n1["running"]:
-            alerts.append({"severity": _sev("node1", "critical"), "title": "Local Backup Node not running",
-                           "detail": "Local backup node is not running. Start it to sync from Edge primary.",
-                           "action": "start-node1"})
+        # Local Backup Node alerts (optional in edge-primary — only warn if explicitly started but failing)
+        if n1["running"] and n1.get("p2p_bind") is None:
+            alerts.append({"severity": _sev("node1", "warning"), "title": "Local Backup Node misconfigured",
+                           "detail": "Local backup node is running but has no P2P bind. Check config.",
+                           "action": "restart-node1"})
 
         # Sync gap: Edge primary vs local backup
         if edge_node1.get("running") and n1["running"] and edge_node1.get("chain_height") and n1["chain_height"]:
@@ -2803,9 +2803,9 @@ def build_alerts(status: dict) -> list:
                                "action": "restart-node2"})
 
     # Pool alerts (common to both topologies)
-    if pool["running"] and pool["fee_split"] and pool["fee_split"] != "89/5/5/0":
+    if pool["running"] and pool["fee_split"] and pool["fee_split"] != "89/5/5/1":
         alerts.append({"severity": _sev("pool", "critical"), "title": "Wrong fee split",
-                       "detail": f"Detected {pool['fee_split']}, mainnet must be 89/5/5/0 (burn model)",
+                       "detail": f"Detected {pool['fee_split']}, mainnet must be 89/5/5/1 (burn model)",
                        "action": None})
 
     if pool["running"] and pool["payout_enabled"] is False:
@@ -2818,7 +2818,8 @@ def build_alerts(status: dict) -> list:
                        "detail": f"ZION_NONCE_COUNT={pool['nonce_count']} is small. Raise to 4096 for better GPU utilisation.",
                        "action": None})
 
-    if miner["running"] and not miner["hashrate"]:
+    # Only alert about local miner if in local-dev topology (edge-primary miner is optional)
+    if topology != "edge-primary" and miner["running"] and not miner["hashrate"]:
         alerts.append({"severity": _sev("miner", "warning"), "title": "Miner not hashing",
                        "detail": "Miner is connected but no hashrate samples in recent logs. Check GPU init.",
                        "action": "restart-miner"})
@@ -3444,6 +3445,175 @@ def build_explorer() -> dict:
         "recent_blocks": recent_blocks,
     }
 
+# ── Edge server system status ───────────────────────────────────────────
+
+def get_edge_server_status() -> dict:
+    """Fetch Edge server system metrics via SSH. Fast timeout to avoid blocking."""
+    ssh_key = REPO_ROOT / "ssh-key-zion-edge"
+    if not ssh_key.exists():
+        return {"ok": False, "error": "SSH key not found"}
+
+    try:
+        # CPU + Load + Memory
+        result = subprocess.run(
+            ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
+             "-o", "ConnectTimeout=2", "-o", "BatchMode=yes",
+             "root@100.76.16.108",
+             "cat /proc/loadavg && free -m && df -h / | tail -1"],
+            capture_output=True, text=True, timeout=5
+        )
+        if result.returncode != 0:
+            return {"ok": False, "error": result.stderr.strip() or "SSH failed"}
+
+        lines = result.stdout.strip().splitlines()
+        if len(lines) < 3:
+            return {"ok": False, "error": "Incomplete output"}
+
+        # Parse loadavg: 0.12 0.08 0.03 1/123 45678
+        load_parts = lines[0].split()
+        load_1m = float(load_parts[0])
+
+        # Parse free -m: find line starting with Mem:
+        mem_line = None
+        for line in lines:
+            if line.strip().startswith("Mem:"):
+                mem_line = line
+                break
+        if mem_line is None:
+            return {"ok": False, "error": "Could not parse memory"}
+        mem_parts = mem_line.split()
+        mem_total_mb = float(mem_parts[1])
+        mem_used_mb = float(mem_parts[2])
+        mem_pct = int((mem_used_mb / mem_total_mb) * 100) if mem_total_mb > 0 else 0
+
+        # Parse df -h /: find line containing rootfs or /
+        disk_line = None
+        for line in lines:
+            if line.strip().endswith(" /") or " / " in line:
+                disk_line = line
+                break
+        if disk_line is None:
+            disk_line = lines[-1]
+        disk_parts = disk_line.split()
+        disk_pct = int(disk_parts[4].rstrip('%')) if len(disk_parts) > 4 else 0
+
+        # Top memory consumers
+        top_result = subprocess.run(
+            ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
+             "-o", "ConnectTimeout=2", "-o", "BatchMode=yes",
+             "root@100.76.16.108",
+             "ps -eo rss,comm --sort=-rss | head -6 | tail -5"],
+            capture_output=True, text=True, timeout=5
+        )
+        mem_top = []
+        if top_result.returncode == 0:
+            for line in top_result.stdout.strip().splitlines():
+                parts = line.split(None, 1)
+                if len(parts) == 2:
+                    mb = float(parts[0]) / 1024.0
+                    cmd = parts[1].strip()
+                    mem_top.append({"cmd": cmd, "mb": mb})
+
+        # Service status via systemctl
+        svc_result = subprocess.run(
+            ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
+             "-o", "ConnectTimeout=2", "-o", "BatchMode=yes",
+             "root@100.76.16.108",
+             "systemctl is-active zion-edge-node1 zion-edge-node2 zion-pool-server zion-edge-dao zion-edge-warp zion-edge-bridge 2>/dev/null"],
+            capture_output=True, text=True, timeout=5
+        )
+        services = []
+        svc_names = ["node", "node2", "pool", "dao", "warp", "bridge"]
+        if svc_result.returncode == 0:
+            states = svc_result.stdout.strip().splitlines()
+            for i, name in enumerate(svc_names):
+                if i < len(states):
+                    services.append({"name": name, "status": states[i]})
+
+        return {
+            "ok": True,
+            "cpu_pct": load_1m * 10,  # rough estimate: load*10 as %
+            "load_1m": load_1m,
+            "mem_pct": mem_pct,
+            "mem_used_mb": mem_used_mb,
+            "mem_total_mb": mem_total_mb,
+            "mem_top": mem_top,
+            "mem_history": [],  # could be cached later
+            "disk_pct": disk_pct,
+            "services": services,
+        }
+    except subprocess.TimeoutExpired:
+        return {"ok": False, "error": "SSH timeout"}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+def get_pool_miners() -> dict:
+    """Fetch active miners from Edge pool Prometheus metrics."""
+    try:
+        import urllib.request as _ur
+        with _ur.urlopen("http://100.76.16.108:8455/metrics", timeout=3.0) as r:
+            body = r.read().decode("utf-8", errors="ignore")
+    except Exception as e:
+        return {"ok": False, "miners": [], "active_sessions": 0, "total_hashrate_khs": 0, "error": str(e)}
+
+    miners = {}
+    active_sessions = 0
+    miners_tracked = 0
+    total_hashrate_hps = 0.0
+
+    for line in body.splitlines():
+        line = line.strip()
+        if line.startswith("zion_pool_active_sessions "):
+            active_sessions = int(float(line.split()[-1]))
+        elif line.startswith("zion_pool_miners_tracked "):
+            miners_tracked = int(float(line.split()[-1]))
+        elif line.startswith("zion_pool_miner_hashrate_hps{"):
+            # Parse labels: miner_id="...",worker_name="..."
+            m_id = re.search(r'miner_id="([^"]+)"', line)
+            w_name = re.search(r'worker_name="([^"]+)"', line)
+            val = float(line.split()[-1])
+            if m_id and w_name:
+                key = m_id.group(1)
+                miners[key] = {
+                    "miner_id": m_id.group(1),
+                    "worker_name": w_name.group(1),
+                    "hashrate_hps": val,
+                    "valid_shares": 0,
+                    "invalid_shares": 0,
+                    "paid_total": 0,
+                    "last_seen": 0,
+                }
+                total_hashrate_hps += val
+        elif line.startswith("zion_pool_miner_valid_shares_total{"):
+            m_id = re.search(r'miner_id="([^"]+)"', line)
+            val = int(float(line.split()[-1]))
+            if m_id and m_id.group(1) in miners:
+                miners[m_id.group(1)]["valid_shares"] = val
+        elif line.startswith("zion_pool_miner_invalid_shares_total{"):
+            m_id = re.search(r'miner_id="([^"]+)"', line)
+            val = int(float(line.split()[-1]))
+            if m_id and m_id.group(1) in miners:
+                miners[m_id.group(1)]["invalid_shares"] = val
+        elif line.startswith("zion_pool_miner_paid_total_atomic{"):
+            m_id = re.search(r'miner_id="([^"]+)"', line)
+            val = int(float(line.split()[-1]))
+            if m_id and m_id.group(1) in miners:
+                miners[m_id.group(1)]["paid_total"] = val / 1e12  # convert atomic flowers to ZION
+        elif line.startswith("zion_pool_miner_last_seen_seconds{"):
+            m_id = re.search(r'miner_id="([^"]+)"', line)
+            val = int(float(line.split()[-1]))
+            if m_id and m_id.group(1) in miners:
+                miners[m_id.group(1)]["last_seen"] = val
+
+    miner_list = list(miners.values())
+    return {
+        "ok": True,
+        "miners": miner_list,
+        "active_sessions": active_sessions,
+        "miners_tracked": miners_tracked,
+        "total_hashrate_khs": total_hashrate_hps / 1000.0,
+    }
+
 # ── Backup status ────────────────────────────────────────────────────────
 
 def get_backup_status() -> dict:
@@ -3592,15 +3762,32 @@ def fetch_pool_stats() -> dict:
         return {}
 
 def fetch_pool_miners() -> list:
-    """Fetch active miners from routing metrics endpoint (port 8455)."""
+    """Fetch active miners from Edge pool, enriched with paid_total from Prometheus metrics."""
     host = "100.76.16.108" if TOPOLOGY == "edge-primary" else "127.0.0.1"
+    miners = []
     try:
         import urllib.request
-        with urllib.request.urlopen(f"http://{host}:8455/miners?limit=50", timeout=3) as r:
+        with urllib.request.urlopen(f"http://{host}:8455/miners?limit=200", timeout=5) as r:
             data = json.loads(r.read().decode())
-            return data.get("miners", [])
+            miners = data.get("miners", [])
     except Exception:
-        return []
+        pass
+    # Enrich with paid_total from Prometheus metrics
+    paid_map = {}
+    try:
+        import urllib.request
+        with urllib.request.urlopen(f"http://{host}:8455/metrics", timeout=5) as r:
+            for line in r.read().decode("utf-8", errors="ignore").splitlines():
+                if line.startswith("zion_pool_miner_paid_total_atomic{"):
+                    m = re.search(r'miner_id="([^"]+)"', line)
+                    if m:
+                        paid_map[m.group(1)] = int(float(line.split()[-1]))
+    except Exception:
+        pass
+    for m in miners:
+        addr = m.get("address") or m.get("miner_id") or ""
+        m["paid_total"] = paid_map.get(addr, 0) / 1e12
+    return miners
 
 def build_payout_status() -> dict:
     """Build comprehensive payout status for the Payout dashboard tab.
@@ -3656,7 +3843,7 @@ def build_payout_status() -> dict:
         # Canonical Edge pool wallets (AGENTS.md 2026-06-07)
         status["pool_wallet"] = os.environ.get("ZION_POOL_WALLET") or "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604"
         status["payout_enabled"] = True
-        status["fee_split"] = "89/5/5/0"
+        status["fee_split"] = "89/5/5/1"
         status["humanitarian_wallet"] = os.environ.get("ZION_HUMANITARIAN_WALLET") or "zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4"
         status["issobella_wallet"] = os.environ.get("ZION_ISSOBELLA_WALLET") or "zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702"
         status["pool_fee_wallet"] = ""
@@ -3860,7 +4047,12 @@ def build_payout_status() -> dict:
 
     # ── Burned total ──────────────────────────────────────────────────
     total_blocks = status["blocks_found"]
-    status["burned_total"] = total_blocks * 5_400.067 * 0.01 if total_blocks > 0 else 0.0
+    last_height = status["last_block_height"] or 1
+    if total_blocks > 0:
+        per_block_burned_zion = block_subsidy(last_height) / 100 / 1_000_000_000_000
+        status["burned_total"] = total_blocks * per_block_burned_zion
+    else:
+        status["burned_total"] = 0.0
 
     # ── Pool stats / miners from Edge or local ──────────────────────────
     pool_stats = fetch_pool_stats()
@@ -3907,7 +4099,7 @@ def build_payout_status() -> dict:
             "valid_shares": m.get("valid_shares", 0),
             "hashrate": m.get("hashrate", 0),
             "hashrate_1h": m.get("hashrate_1h", 0),
-            "total_paid": m.get("total_paid", 0),
+            "total_paid": m.get("paid_total", 0),
             "on_chain_balance_zion": m.get("on_chain_balance_zion"),
             "pending_balance": m.get("pending_balance", 0),
             "blocks_found": m.get("blocks_found", 0),
@@ -4522,6 +4714,10 @@ _ALLOW_BASE = {
     "start-atomic-swap":      "start-atomic-swap",
     "stop-atomic-swap":       "stop-atomic-swap",
     "restart-atomic-swap":    "start-atomic-swap",
+    # ── Swap Aggregator ──────────────────────────────────────────────────
+    "start-swap-aggregator":      "start-swap-aggregator",
+    "stop-swap-aggregator":       "stop-swap-aggregator",
+    "restart-swap-aggregator":    "start-swap-aggregator",
     # ── WARP ─────────────────────────────────────────────────────────────
     "start-warp":             "start-warp",
     "stop-warp":              "stop-warp",
@@ -5528,7 +5724,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
 
     <!-- Fee Split Recipients -->
     <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-      <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3">📋 Fee Split Recipients (89/5/5/0 burn model)</h2>
+      <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3">📋 Fee Split Recipients (89/5/5/1 burn model)</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3" id="payout-recipients">
         <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
           <div class="text-xs text-gray-400 mb-1">⛏️ Miner Share (89%)</div>
@@ -6324,7 +6520,7 @@ async function loadMainnetStatus(){
       {label:'Fee Split',value:res.fee_split_all_match?'✓ Canonical':'✗ Mismatch',ok:res.fee_split_all_match,icon:'💰'},
       {label:'Launch Date',value:res.days_to_launch>0?res.days_to_launch+' days':'LAUNCH DAY!',ok:res.days_to_launch>=0,icon:'🚀'},
       {label:'Checklist',value:res.checklist_passed+'/'+res.checklist_total+' ('+res.checklist_pass_rate+'%)',ok:res.checklist_pass_rate>=80,icon:'✅'},
-      {label:'Node Status',value:(res.node1_running?'N1✓':'N1✗')+' '+(res.node2_running?'N2✓':'N2✗'),ok:res.node1_running&&res.node2_running,icon:'🔶'},
+      {label:'Node Status',value:(res.topology==='edge-primary'?(res.edge_node_running?'E1✓':'E1✗')+' '+(res.edge_node2_running?'E2✓':'E2✗'):(res.node1_running?'N1✓':'N1✗')+' '+(res.node2_running?'N2✓':'N2✗')),ok:res.topology==='edge-primary'?(res.edge_node_running&&res.edge_node2_running):(res.node1_running&&res.node2_running),icon:'🔶'},
       {label:'Pool Status',value:res.pool_running?'Running':'Stopped',ok:res.pool_running,icon:'⚡'},
       {label:'Git Status',value:res.git_status.clean?'Clean: '+res.git_status.branch:'Dirty: '+res.git_status.branch,ok:res.git_status.clean,icon:'📦'},
       {label:'Overall',value:res.ready_for_launch?'🎉 READY':'⏳ PREPARING',ok:res.ready_for_launch,icon:'🎯'},
@@ -6564,7 +6760,7 @@ async function renderWizard(){
     isEdge?{n:3,title:'Connect to Edge Pool',desc:'Edge (100.76.16.108) runs the primary pool. Verify VPN connectivity.',done:cl.checks.find(c=>c.id==='pool-edge')?.ok,actions:[{label:'Check Edge Pool',cb:`switchTab('overview')`}]}:{n:3,title:'Start Local Pool',desc:'Accepts miners, validates shares, distributes payouts (89/5/5 burn model).',done:cl.checks.find(c=>c.id==='pool')?.ok,actions:[{label:'▶ Start Pool',cb:`controlAction('start-pool')`}]},
     {n:4,title:'Start GPU Miner',desc:'Connects to pool, performs cosmic_harmony hashing on GPU.',done:cl.checks.find(c=>c.id==='miner')?.ok,actions:[{label:'▶ Start Miner',cb:`controlAction('start-miner')`}]},
     {n:5,title:'Verify chain progression',desc:'Confirm node syncs with network and chain height advances.',done:cl.checks.find(c=>c.id==='chain')?.ok,actions:[{label:'View events',cb:`switchTab('events')`}]},
-    {n:6,title:'Confirm fee split & payouts',desc:'Validate 89/5/5/0 burn-model distribution and payout wallet is funded.',done:cl.checks.find(c=>c.id==='fee_split')?.ok&&cl.checks.find(c=>c.id==='payout')?.ok,actions:[{label:'View payouts',cb:`switchTab('overview')`}]},
+    {n:6,title:'Confirm fee split & payouts',desc:'Validate 89/5/5/1 burn-model distribution and payout wallet is funded.',done:cl.checks.find(c=>c.id==='fee_split')?.ok&&cl.checks.find(c=>c.id==='payout')?.ok,actions:[{label:'View payouts',cb:`switchTab('overview')`}]},
   ];
   const cont=document.getElementById('wizard-steps');
   cont.innerHTML=steps.map((s,i)=>{
@@ -6902,23 +7098,50 @@ def _build_health_map() -> dict:
             health["miner"] = "up" if running and s.get("hashrate") else "down"
         else:
             health[key] = "up" if running else "down"
-    # Extended services from service registry + health cache
-    ext_map = {
-        "hiran": 8002, "hiranyagarbha": 8001, "bridge": None,
-        "dao": 8081, "swap": 8888, "warp": 9333,
-    }
-    for sid, port in ext_map.items():
-        svc = get_service(sid)
-        if svc:
-            h = check_service_health(svc)
-            health[sid] = "up" if h["alive"] else "down"
-        else:
-            # Fallback TCP probe
+
+    # Extended services are topology-dependent.
+    if TOPOLOGY == "edge-primary":
+        edge_tailscale_ip = status.get("pool_edge", {}).get("tailscale_ip") or EDGE_HOST
+        edge_public_ip = status.get("pool_edge", {}).get("public_ip") or EDGE_PUBLIC_IP
+        ext_edge_ports = {
+            "bridge": 9101,
+            "dao": 8450,
+            "swap": 8888,
+            "warp": 8453,
+            "hiranyagarbha": 8001,
+            "hiran": 8002,
+        }
+        for sid, port in ext_edge_ports.items():
+            alive = False
             try:
-                alive = tcp_probe("127.0.0.1", port, timeout=0.15)
-                health[sid] = "up" if alive else "down"
+                alive = tcp_probe(edge_tailscale_ip, port, timeout=0.3)
+                if not alive and edge_public_ip and edge_public_ip != edge_tailscale_ip:
+                    alive = tcp_probe(edge_public_ip, port, timeout=0.3)
             except Exception:
-                health[sid] = "unknown"
+                alive = False
+            health[sid] = "up" if alive else "down"
+    else:
+        # Local-dev mode keeps local probes/service-registry checks.
+        ext_map = {
+            "hiran": 8002,
+            "hiranyagarbha": 8001,
+            "bridge": None,
+            "dao": 8081,
+            "swap": 8888,
+            "warp": 9333,
+        }
+        for sid, port in ext_map.items():
+            svc = get_service(sid)
+            if svc:
+                h = check_service_health(svc)
+                health[sid] = "up" if h["alive"] else "down"
+            else:
+                # Fallback TCP probe
+                try:
+                    alive = tcp_probe("127.0.0.1", port, timeout=0.15)
+                    health[sid] = "up" if alive else "down"
+                except Exception:
+                    health[sid] = "unknown"
     return health
 
 
@@ -7252,6 +7475,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     self._json(json.loads(r.read()))
             except Exception as ex:
                 self._json({"error": str(ex), "reachable": False})
+        elif route == "/api/edge-status":
+            self._json(get_edge_server_status())
+        elif route == "/api/pool/miners":
+            self._json(get_pool_miners())
         elif route == "/api/miner/live":
             self._json(get_miner_live_stats())
         elif route == "/api/miner/log-tail":
@@ -7682,6 +7909,17 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json({"ok": h["alive"], "service": "atomic-swap",
                         "status": "online" if h["alive"] else "offline",
                         "details": h.get("details", "")})
+        elif route == "/api/swap-aggregator/health":
+            alive = check_port_open("127.0.0.1", 8456, timeout=1.5)
+            self._json({"ok": alive, "service": "swap-aggregator", "port": 8456,
+                        "status": "online" if alive else "offline"})
+        elif route == "/api/swap-aggregator/swaps":
+            try:
+                import urllib.request as _ur
+                with _ur.urlopen("http://127.0.0.1:8456/swaps", timeout=3.0) as r:
+                    self._json(json.loads(r.read()))
+            except Exception as e:
+                self._json({"ok": False, "offline": True, "error": str(e)[:120]})
         elif route == "/api/swap/initiate":
             self._json({"ok": False, "error": "Swap initiation requires POST — use POST /api/swap/initiate"})
         elif route == "/api/warp/health":
@@ -7814,6 +8052,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 pass
             
             self._json({
+                "topology": status.get("topology", TOPOLOGY),
                 "genesis_hash": genesis_hash,
                 "canonical_addresses": canonical_addresses,
                 "node_addresses": node_addresses,
@@ -7829,14 +8068,18 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "node2_height": status["node2"]["chain_height"],
                 "node1_running": status["node1"]["running"],
                 "node2_running": status["node2"]["running"],
+                "edge_node_running": status.get("edge_node", {}).get("running", False),
+                "edge_node2_running": status.get("edge_node2", {}).get("running", False),
+                "edge_node_height": status.get("edge_node", {}).get("chain_height"),
+                "edge_node2_height": status.get("edge_node2", {}).get("chain_height"),
                 "pool_running": status["pool"]["running"],
                 "miner_running": status["miner"]["running"],
                 "git_status": git_status,
                 "ready_for_launch": all([
                     genesis_hash == "003529805e9b47babb9ac0f26b27b1aad0a1cf3c483181857daf3269f7088923",
                     all(fee_split_match.values()),
-                    status["node1"]["running"],
-                    status["node2"]["running"],
+                    status.get("edge_node", {}).get("running", False) if status.get("topology") == "edge-primary" else status["node1"]["running"],
+                    status.get("edge_node2", {}).get("running", False) if status.get("topology") == "edge-primary" else status["node2"]["running"],
                     status["pool"]["running"],
                     git_status["clean"],
                     checklist["pct"] >= 80
@@ -8845,6 +9088,28 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 import urllib.request as _ur
                 body_data = json.dumps(payload or {}).encode()
                 req = _ur.Request("http://127.0.0.1:8570/api/swap/initiate",
+                    data=body_data, headers={"Content-Type": "application/json"}, method="POST")
+                with _ur.urlopen(req, timeout=10) as r:
+                    self._json(json.loads(r.read()))
+            except Exception as e:
+                self._json({"ok": False, "offline": True, "error": str(e)[:120]})
+        elif route == "/api/swap-aggregator/quote":
+            # Proxy quote request to swap-aggregator daemon on port 8456
+            try:
+                import urllib.request as _ur
+                body_data = json.dumps(payload or {}).encode()
+                req = _ur.Request("http://127.0.0.1:8456/quote",
+                    data=body_data, headers={"Content-Type": "application/json"}, method="POST")
+                with _ur.urlopen(req, timeout=10) as r:
+                    self._json(json.loads(r.read()))
+            except Exception as e:
+                self._json({"ok": False, "offline": True, "error": str(e)[:120]})
+        elif route == "/api/swap-aggregator/swap":
+            # Proxy swap creation to swap-aggregator daemon on port 8456
+            try:
+                import urllib.request as _ur
+                body_data = json.dumps(payload or {}).encode()
+                req = _ur.Request("http://127.0.0.1:8456/swap",
                     data=body_data, headers={"Content-Type": "application/json"}, method="POST")
                 with _ur.urlopen(req, timeout=10) as r:
                     self._json(json.loads(r.read()))
