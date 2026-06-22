@@ -25,6 +25,10 @@ interface Transaction {
   fee: number; amount: number; version: number; unlock_time: number;
   inputs: TxInput[]; outputs: TxOutput[]; extra: number[];
   confirmations: number; status: string;
+  // V3 account-model fields
+  from?: string; to?: string; amount_zion?: string; fee_zion?: number;
+  nonce?: number; signature?: string; public_key?: string; tx_id?: string;
+  transaction_model?: string;
 }
 
 const fmtDate = (ts: number, locale: string) => ts ? new Date(ts * 1000).toLocaleString(locale) : "—";
@@ -126,6 +130,7 @@ export default function TxDetailClient() {
   const totalInput = tx.inputs.reduce((s, inp) => s + inp.amount, 0);
   const totalOutput = tx.outputs.reduce((s, out) => s + out.amount, 0);
   const isCoinbase = tx.inputs.some((inp) => inp.type === "coinbase");
+  const isV3Account = !!(tx.from && tx.to);
 
   return (
     <div className="zion-shell min-h-screen">
@@ -169,7 +174,12 @@ export default function TxDetailClient() {
 
         {/* Summary cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
+          {isV3Account ? [
+            { label: cs ? "Castka" : "Amount", value: `${tx.amount.toFixed(4)} ZION`, color: "text-white" },
+            { label: "Fee", value: `${tx.fee.toFixed(6)} ZION`, color: "text-amber-400" },
+            { label: "Nonce", value: `${tx.nonce ?? 0}`, color: "text-zion-cyan" },
+            { label: cs ? "Model" : "Model", value: (tx.transaction_model ?? 'hybrid').toUpperCase(), color: "text-emerald-400" },
+          ] : [
             { label: cs ? "Castka" : "Amount", value: `${tx.amount.toFixed(4)} ZION`, color: "text-white" },
             { label: "Fee", value: `${tx.fee.toFixed(6)} ZION`, color: "text-amber-400" },
             { label: cs ? "Vstupy" : "Inputs", value: `${tx.inputs.length}`, color: "text-zion-cyan" },
@@ -201,11 +211,25 @@ export default function TxDetailClient() {
           <InfoRow label={cs ? 'Cas' : 'Timestamp'} value={`${fmtDate(tx.block_timestamp, locale)} (${fmtAge(tx.block_timestamp, cs)})`} />
           <InfoRow label={cs ? 'Castka' : 'Amount'} value={`${tx.amount.toFixed(6)} ZION`} color="text-zion-gold" />
           <InfoRow label="Fee" value={`${tx.fee.toFixed(6)} ZION`} color="text-amber-400" />
-          <InfoRow label={cs ? 'Verze' : 'Version'} value={tx.version.toString()} />
-          {tx.unlock_time > 0 && <InfoRow label={cs ? 'Cas odemceni' : 'Unlock Time'} value={tx.unlock_time.toString()} />}
+          {isV3Account ? (
+            <>
+              <InfoRow label="From" value={tx.from ?? '—'} mono copyable link={`/explorer/address?id=${tx.from}`} />
+              <InfoRow label="To" value={tx.to ?? '—'} mono copyable link={`/explorer/address?id=${tx.to}`} />
+              <InfoRow label="Nonce" value={`${tx.nonce ?? 0}`} />
+              <InfoRow label={cs ? 'Model' : 'Model'} value={(tx.transaction_model ?? 'hybrid').toUpperCase()} color="text-emerald-400" />
+              {tx.public_key && <InfoRow label={cs ? 'Verejny klic' : 'Public Key'} value={tx.public_key} mono copyable />}
+              {tx.signature && <InfoRow label={cs ? 'Podpis' : 'Signature'} value={truncHash(tx.signature, 16)} mono copyable />}
+            </>
+          ) : (
+            <>
+              <InfoRow label={cs ? 'Verze' : 'Version'} value={tx.version.toString()} />
+              {tx.unlock_time > 0 && <InfoRow label={cs ? 'Cas odemceni' : 'Unlock Time'} value={tx.unlock_time.toString()} />}
+            </>
+          )}
         </motion.div>
 
-        {/* Inputs & Outputs */}
+        {/* Inputs & Outputs — only for legacy UTXO-style txs */}
+        {!isV3Account && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Inputs */}
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
@@ -282,6 +306,7 @@ export default function TxDetailClient() {
             </div>
           </motion.div>
         </div>
+        )}
 
         {/* TX Extra */}
         {tx.extra && tx.extra.length > 0 && (
