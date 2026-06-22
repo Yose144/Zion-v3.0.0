@@ -1,0 +1,17 @@
+docs(status): document bridge vault liquidity and UTXO memo blocker
+
+- Update StatusV3.md mainnet bridge status table:
+  - L1 bridge vault holds 200M ZION (100M unlock liquidity + 100M UTXO
+    lock pending memo fix).
+  - Document UTXO lock txid and relay "no valid EVM recipient in memo"
+    blocker.
+  - Next steps: L1 wallet memo fix, re-send UTXO lock, top up ETH,
+    run E2E test.
+- Update BRIDGE_MAINNET_READINESS.md with bridge vault liquidity status
+  and next actions.
+- Reserve the original 100M account-model ZION on the bridge vault as
+  L1 unlock liquidity for burn→unlock flows.
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>
