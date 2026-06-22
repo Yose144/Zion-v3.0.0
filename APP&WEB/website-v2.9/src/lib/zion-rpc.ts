@@ -80,6 +80,16 @@ export interface ZionTransaction {
   extra: number[];
   fee: number;
   humanitarian_tithe?: number;
+  // ── V3 account-model fields ──
+  from?: string;
+  to?: string;
+  amount_zion?: string;
+  fee_zion?: number;
+  nonce?: number;
+  signature?: string;
+  public_key?: string;
+  tx_id?: string;
+  transaction_model?: string;
 }
 
 export interface ZionNetworkInfo {
@@ -598,6 +608,44 @@ class ZionRpcClient {
     return mapV3BlockToFull(block);
   }
 
+  /** Get recent V3 account-model transactions from latest blocks.
+   *  Scans blocks and returns non-coinbase transactions with from/to/amount fields. */
+  async getRecentV3Transactions(limit: number = 20): Promise<Array<{
+    tx_id: string; from: string; to: string; amount_zion: string;
+    fee_zion: number; nonce: number; block_height: number; timestamp: number;
+    public_key: string; signature: string;
+  }>> {
+    const info = await this.getInfo();
+    const chainHeight = info.height;
+    const txs: any[] = [];
+    // Scan last 20 blocks for non-coinbase transactions
+    const startHeight = Math.max(0, chainHeight - 19);
+    for (let h = chainHeight; h >= startHeight && txs.length < limit; h--) {
+      try {
+        const block = await this.rpcCall<any>('getBlockByHeight', { height: h });
+        const blockTxs = block?.transactions ?? [];
+        for (const tx of blockTxs) {
+          if (tx.from && tx.from !== 'coinbase') {
+            txs.push({
+              tx_id: tx.tx_id,
+              from: tx.from,
+              to: tx.to,
+              amount_zion: tx.amount_zion,
+              fee_zion: tx.fee_zion ?? 0,
+              nonce: tx.nonce ?? 0,
+              block_height: h,
+              timestamp: block?.timestamp ?? 0,
+              public_key: tx.public_key ?? '',
+              signature: tx.signature ?? '',
+            });
+            if (txs.length >= limit) break;
+          }
+        }
+      } catch { /* skip unavailable block */ }
+    }
+    return txs;
+  }
+
   /** Get chain height */
   async getBlockCount(): Promise<number> {
     const chainInfo = await this.rpcCall<any>('getChainInfo');
@@ -610,10 +658,14 @@ class ZionRpcClient {
     const results: ZionTransaction[] = [];
     for (const txid of txHashes) {
       try {
-        const res = await this.rpcCall<any>('getTransaction', { hash: txid });
+        // V3 RPC expects { txid: ... } not { hash: ... }
+        const res = await this.rpcCall<any>('getTransaction', { txid });
         const tx = res?.transaction ?? res ?? {};
+        // V3 account-model response: { from, to, amount_zion, fee_zion, nonce, signature, public_key, tx_id }
+        const amountAtomic = Number(tx.amount_zion ?? 0);
+        const feeAtomic = Number(tx.fee_zion ?? 0);
         results.push({
-          tx_hash: txid,
+          tx_hash: tx.tx_id ?? txid,
           block_height: res?.block_height ?? tx.block_height ?? 0,
           block_timestamp: tx.timestamp ?? 0,
           in_pool: !(res?.confirmed ?? true),
@@ -621,10 +673,20 @@ class ZionRpcClient {
           output_indices: [],
           version: tx.version ?? 1,
           unlock_time: 0,
-          vin: tx.inputs ?? [],
-          vout: tx.outputs ?? [],
+          vin: [],
+          vout: [],
           extra: [],
-          fee: tx.fee ?? 0,
+          fee: feeAtomic,
+          // V3 account-model fields
+          from: tx.from,
+          to: tx.to,
+          amount_zion: tx.amount_zion,
+          fee_zion: feeAtomic,
+          nonce: tx.nonce,
+          signature: tx.signature,
+          public_key: tx.public_key,
+          tx_id: tx.tx_id,
+          transaction_model: res?.transaction_model ?? 'hybrid',
         });
       } catch { /* skip unavailable tx */ }
     }
