@@ -135,7 +135,7 @@ pub struct PplnsEngine {
     /// Accumulated unpaid balance per miner_id (flowers).
     unpaid: HashMap<String, u64>,
     /// Total block rewards distributed via this engine (flowers).
-    total_paid_flowers: u64,
+    total_paid_flowers: u128,
     /// Number of payout rounds executed.
     payout_rounds: u64,
     /// Accumulated humanitarian tithe obligation (flowers).
@@ -370,7 +370,9 @@ impl PplnsEngine {
 
         if !payouts.is_empty() {
             self.payout_rounds = self.payout_rounds.saturating_add(1);
-            let round_total: u64 = payouts.iter().map(|p| p.amount).sum();
+            let round_total: u128 = payouts
+                .iter()
+                .fold(0u128, |acc, p| acc.saturating_add(p.amount as u128));
             self.total_paid_flowers = self.total_paid_flowers.saturating_add(round_total);
         }
 
@@ -394,7 +396,9 @@ impl PplnsEngine {
             );
         }
 
-        let round_total: u64 = payouts.iter().map(|p| p.amount).sum();
+        let round_total: u128 = payouts
+            .iter()
+            .fold(0u128, |acc, p| acc.saturating_add(p.amount as u128));
         self.total_paid_flowers = self.total_paid_flowers.saturating_sub(round_total);
         if self.payout_rounds > 0 {
             self.payout_rounds -= 1;
@@ -413,7 +417,10 @@ impl PplnsEngine {
             window_used: self.window.len(),
             registered_miners: self.addresses.len(),
             miners_with_unpaid: self.unpaid.len(),
-            total_unpaid_flowers: self.unpaid.values().sum(),
+            total_unpaid_flowers: self
+                .unpaid
+                .values()
+                .fold(0u128, |acc, &v| acc.saturating_add(v as u128)),
             total_paid_flowers: self.total_paid_flowers,
             payout_rounds: self.payout_rounds,
         }
@@ -463,8 +470,8 @@ pub struct PplnsStats {
     pub window_used: usize,
     pub registered_miners: usize,
     pub miners_with_unpaid: usize,
-    pub total_unpaid_flowers: u64,
-    pub total_paid_flowers: u64,
+    pub total_unpaid_flowers: u128,
+    pub total_paid_flowers: u128,
     pub payout_rounds: u64,
 }
 
@@ -881,6 +888,20 @@ mod tests {
         e.fee_humanitarian_flowers = u64::MAX;
         e.restore_fees(1, 0, 0);
         assert_eq!(e.fee_stats().humanitarian_accumulated_flowers, u64::MAX);
+    }
+
+    #[test]
+    fn total_paid_flowers_can_grow_past_u64_max() {
+        let mut e = engine(100, 1);
+        e.register_address("alice", "zion1alice");
+        e.record_share_at("alice", "rig1", 1, 1000);
+        e.total_paid_flowers = u64::MAX as u128;
+
+        let payouts = e.compute_miner_payouts(10);
+
+        assert_eq!(payouts.len(), 1);
+        assert_eq!(payouts[0].amount, 10);
+        assert_eq!(e.stats().total_paid_flowers, u64::MAX as u128 + 10);
     }
 
     /// Ten miners with different hashrates (simulated via difficulty).
