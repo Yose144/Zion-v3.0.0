@@ -43,6 +43,27 @@ Poznámka k dashboard health mapě (`/api/health`):
 - V `edge-primary` topologii jsou některé L2/L3 služby v health mapě hodnoceny lokálním probe fallbackem, proto se může objevovat `down`, i když služba na Edge běží.
 - Jako zdroj pravdy pro Edge provoz ber `build_status()` + `edge_node`/`pool_edge` metriky, ne samotný zploštěný health fallback.
 
+## UPDATE 2026-06-22B — Autonomní rollout dokončen
+
+Provedené kroky:
+
+- Lokálně nasazen fix health mapy pro `edge-primary` v dashboard backendu (`/api/health` už nehlásí false down pro Edge bridge/dao/warp/swap).
+- Lokální dashboard restartován a ověřen (`bridge=up`, `dao=up`, `warp=up`, `swap=up`).
+- Na Edge vytvořen bezpečnostní snapshot: branch `edge-snapshot-2026-06-22`, tag `edge-pre-sync-2026-06-22`.
+- Na Edge připravena čistá integrační větev `edge-sync-clean-2026-06-22` s konsolidovanými dashboard+bridge změnami.
+- Edge dashboard service (`zion-python-dashboard.service`) po restartu běží a `/api/health` vrací konzistentní stav (`bridge=up`).
+
+Git výstupy (2026-06-22):
+
+- Lokální commit: `f87d8a7b` — `fix(dashboard): edge-primary health probes + debug plan update`.
+- Edge clean sync commit: `a329075b` — `sync(edge): merge dashboard+bridge deltas from edge runtime`.
+- Edge dashboard health commit: `9e7bfc67` — `fix(dashboard): topology-aware edge-primary health probes`.
+
+Poznámka k L1/miner/pool synchronizaci:
+
+- Pokus o přenos části historických Edge L1 miner/pool změn byl zastaven, protože nebyl kompatibilní s audited `main` (chybějící `dcr_*` moduly).
+- Tyto změny nebyly promítnuty do clean sync větve, aby se nerozbil build/runtime.
+
 ---
 
 ## 0. Aktuální stav bran (baseline)
@@ -220,8 +241,9 @@ Tím zůstane síť stabilní, ale zároveň se odstraní drift mezi produkcí a
 - [x] `cargo clippy --workspace --all-targets -- -D warnings` → 0
 - [x] `cargo test --workspace` zelené (+ `--release --ignored`)
 - [x] genesis hash nezměněn (`7543004c…2728`)
-- [ ] Edge `zion-edge-pool.service` active + enabled
-- [ ] Edge codebase synchronizována s audited `main` bez ztráty runtime fixů
+- [x] Edge pool service active (`zion-pool-server.service`)
+- [x] Edge dashboard service active (`zion-python-dashboard.service`) + health endpoint ověřen
+- [~] Edge codebase synchronizována s audited `main` bez ztráty runtime fixů (clean sync větev připravena: `edge-sync-clean-2026-06-22`)
 - [x] verze 3.0.2 konzistentní (`Cargo.toml`, configy, README, ROADMAP)
 
 ---
