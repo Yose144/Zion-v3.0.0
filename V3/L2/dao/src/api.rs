@@ -453,9 +453,9 @@ async fn cast_vote(
 async fn treasury_overview(State(state): State<AppState>) -> Json<serde_json::Value> {
     let treasury = state.treasury.lock().await;
     ok(serde_json::json!({
-        "total_zion": DAO_TREASURY_TOTAL / FLOWERS_PER_ZION as u128,
-        "available_flowers": treasury.balance(),
-        "available_zion": treasury.balance() / FLOWERS_PER_ZION as u128,
+        "total_zion": (DAO_TREASURY_TOTAL / FLOWERS_PER_ZION as u128) as u64,
+        "available_flowers": treasury.balance().to_string(),
+        "available_zion": (treasury.balance() / FLOWERS_PER_ZION as u128) as u64,
         "addresses": [
             "zion1dao0treasury0main000000000000000000001",
             "zion1dao0treasury0main000000000000000000002",

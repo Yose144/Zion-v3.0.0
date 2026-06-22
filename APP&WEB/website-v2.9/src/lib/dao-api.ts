@@ -104,7 +104,7 @@ export interface DAOHealth {
 
 export interface DAOTreasuryOverview {
   total_zion: number;
-  available_atomic: number;
+  available_atomic: string;
   available_zion: number;
   addresses: string[];
   multisig: string;
