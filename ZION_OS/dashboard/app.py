@@ -7098,23 +7098,50 @@ def _build_health_map() -> dict:
             health["miner"] = "up" if running and s.get("hashrate") else "down"
         else:
             health[key] = "up" if running else "down"
-    # Extended services from service registry + health cache
-    ext_map = {
-        "hiran": 8002, "hiranyagarbha": 8001, "bridge": None,
-        "dao": 8081, "swap": 8888, "warp": 9333,
-    }
-    for sid, port in ext_map.items():
-        svc = get_service(sid)
-        if svc:
-            h = check_service_health(svc)
-            health[sid] = "up" if h["alive"] else "down"
-        else:
-            # Fallback TCP probe
+
+    # Extended services are topology-dependent.
+    if TOPOLOGY == "edge-primary":
+        edge_tailscale_ip = status.get("pool_edge", {}).get("tailscale_ip") or EDGE_HOST
+        edge_public_ip = status.get("pool_edge", {}).get("public_ip") or EDGE_PUBLIC_IP
+        ext_edge_ports = {
+            "bridge": 9101,
+            "dao": 8450,
+            "swap": 8888,
+            "warp": 8453,
+            "hiranyagarbha": 8001,
+            "hiran": 8002,
+        }
+        for sid, port in ext_edge_ports.items():
+            alive = False
             try:
-                alive = tcp_probe("127.0.0.1", port, timeout=0.15)
-                health[sid] = "up" if alive else "down"
+                alive = tcp_probe(edge_tailscale_ip, port, timeout=0.3)
+                if not alive and edge_public_ip and edge_public_ip != edge_tailscale_ip:
+                    alive = tcp_probe(edge_public_ip, port, timeout=0.3)
             except Exception:
-                health[sid] = "unknown"
+                alive = False
+            health[sid] = "up" if alive else "down"
+    else:
+        # Local-dev mode keeps local probes/service-registry checks.
+        ext_map = {
+            "hiran": 8002,
+            "hiranyagarbha": 8001,
+            "bridge": None,
+            "dao": 8081,
+            "swap": 8888,
+            "warp": 9333,
+        }
+        for sid, port in ext_map.items():
+            svc = get_service(sid)
+            if svc:
+                h = check_service_health(svc)
+                health[sid] = "up" if h["alive"] else "down"
+            else:
+                # Fallback TCP probe
+                try:
+                    alive = tcp_probe("127.0.0.1", port, timeout=0.15)
+                    health[sid] = "up" if alive else "down"
+                except Exception:
+                    health[sid] = "unknown"
     return health
 
 

@@ -28,6 +28,21 @@ Poznámka k funkční opravě:
 
 - `V3/L1/core/src/websocket.rs`: `ClientSession::send` byl původně `async` se synchronním tělem, což vedlo k zahazování future v synchronním `broadcast()` (`let _ = session.send(msg);`) a neodesílání notifkací. Funkce je nyní synchronní `fn send(...)`.
 
+## UPDATE 2026-06-22 — Lokální node + dashboard + Edge provoz
+
+Snapshot 2026-06-22:
+
+- Lokální backup node běží na `0.0.0.0:8333` a `0.0.0.0:8443` (RPC healthy).
+- Lokální dashboard běží na `127.0.0.1:8766`.
+- Lokální i Edge chain tip jsou synchronní (`chain_height` 10240 v čase kontroly).
+- Edge pool je funkční (`zion-pool-server.service` active, accepted shares, port 8444 listen).
+- Edge repo je divergentní vůči `origin/main` (Edge má vlastní commity + je behind oproti audited `main`).
+
+Poznámka k dashboard health mapě (`/api/health`):
+
+- V `edge-primary` topologii jsou některé L2/L3 služby v health mapě hodnoceny lokálním probe fallbackem, proto se může objevovat `down`, i když služba na Edge běží.
+- Jako zdroj pravdy pro Edge provoz ber `build_status()` + `edge_node`/`pool_edge` metriky, ne samotný zploštěný health fallback.
+
 ---
 
 ## 0. Aktuální stav bran (baseline)
@@ -173,22 +188,23 @@ Pozn.: v debug jsou PoW E2E testy `#[ignore]` (záměrně). `zion-core` má ~500
 
 ---
 
-## FÁZE 6 — Edge server oprava (77.42.71.94)
+## FÁZE 6 — Edge + dashboard konsolidace (77.42.71.94)
 
-**Problém:** `zion-edge-pool.service` = `inactive`; manuální `zion-pool-server` (PID 1152855) drží port 8444 → systemd restart loop `Address already in use (os error 98)`. Pool funkční, ale nepřežije reboot. `zion-edge-node2` inactive. Dashboard `/api/health` (8888) vrací chybu. SSH port 22 občas timeoutuje.
+Aktuální stav (2026-06-22):
 
-**Postup (až bude SSH dostupné):**
-```bash
-ssh -i ssh-key-zion-edge root@77.42.71.94
-pkill -x zion-pool-server         # uvolnit 8444
-systemctl reset-failed zion-edge-pool
-systemctl enable --now zion-edge-pool
-systemctl status zion-edge-pool   # ověřit bind 0.0.0.0:8444
-ss -tlnp | grep 8444
-# volitelně: systemctl status zion-edge-node2 (rozhodnout, zda spustit)
-```
-- Prošetřit SSH timeout (firewall/fail2ban/UFW na portu 22).
-- Opravit dashboard route `/api/health` na 8888.
+- `zion-pool-server.service` je `active` a stabilně přijímá shares.
+- Historické chyby `Address already in use (8444)` jsou ve starším unitu `zion-edge-pool.service` a nejsou indikátorem aktuálního pool procesu.
+- Edge runtime je zdravý, ale codebase na Edge není na audited tipu `main` a obsahuje lokální commity + dirty state (`ZION_OS/dashboard/dashboard/data/state.json`).
+
+**Nejlepší řešení (bez výpadku provozu):**
+
+1. Vzít Edge runtime jako produkční baseline, nevynucovat hard reset.
+2. Na Edge vytvořit bezpečnostní branch/tag (snapshot aktuálního stavu) před jakoukoli synchronizací.
+3. Divergentní Edge commity zrevidovat a cíleně přenést do audited `main` (cherry-pick / patchset), hlavně runtime fixy pool/miner/bridge.
+4. Až po sloučení spustit controlled deploy na Edge (service-by-service restart, ne plošný restart všeho).
+5. V dashboardu sjednotit health logiku pro `edge-primary`: L2/L3 status brát primárně z Edge endpointů (`build_status`) a ne z lokálního fallback probe.
+
+Tím zůstane síť stabilní, ale zároveň se odstraní drift mezi produkcí a auditovanou větví.
 
 ---
 
@@ -205,6 +221,7 @@ ss -tlnp | grep 8444
 - [x] `cargo test --workspace` zelené (+ `--release --ignored`)
 - [x] genesis hash nezměněn (`7543004c…2728`)
 - [ ] Edge `zion-edge-pool.service` active + enabled
+- [ ] Edge codebase synchronizována s audited `main` bez ztráty runtime fixů
 - [x] verze 3.0.2 konzistentní (`Cargo.toml`, configy, README, ROADMAP)
 
 ---
