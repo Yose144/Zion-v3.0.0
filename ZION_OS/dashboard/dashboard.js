@@ -1984,8 +1984,10 @@ async function loadPayoutTab(){
           const pendingZion = (m.pending_balance != null && m.pending_balance > 1_000_000)
             ? m.pending_balance / 1_000_000_000_000
             : (m.pending_balance ?? 0);
+          const pendingStr = pendingZion > 0 ? _zionFmt(pendingZion) + ' ZION' : '—';
           const paidZion = m.paid_total ?? m.total_paid ?? 0;
-          const onChain = m.on_chain_balance_zion != null ? _zionFmt(m.on_chain_balance_zion) + ' Z' : '—';
+          const paidStr = paidZion > 0 ? _zionFmt(paidZion) + ' ZION' : '—';
+          const onChain = m.on_chain_balance_zion != null ? _zionFmt(m.on_chain_balance_zion) + ' ZION' : '—';
           // Merge hashrate from pool metrics (payout API has null hashrate)
           const poolM = poolMetrics.get(name);
           const hr = poolM?.hashrate_hps ?? m.hashrate ?? 0;
@@ -1996,6 +1998,8 @@ async function loadPayoutTab(){
             <td class="py-2 px-2 text-right text-emerald-400">${fmtNum(valid)}</td>
             <td class="py-2 px-2 text-right ${invalid>0?'text-red-400':'text-gray-500'}">${fmtNum(invalid)}</td>
             <td class="py-2 px-2 text-right text-amber-400">${hrStr}</td>
+            <td class="py-2 px-2 text-right text-yellow-400 font-mono">${pendingStr}</td>
+            <td class="py-2 px-2 text-right text-cyan-400 font-mono">${paidStr}</td>
             <td class="py-2 px-2 text-right text-zion-gold font-mono">${onChain}</td>
           </tr>`;
         }).join('');
