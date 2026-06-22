@@ -241,6 +241,35 @@ class BlockchainRPC {
   }
 
   /**
+   * Broadcast an Account-model transaction.
+   * Uses submitAccountTransaction RPC method.
+   * @param {Object} accountTx - Signed AccountTransaction payload
+   * @returns {Promise<string>} Transaction hash
+   */
+  async broadcastAccountTransaction(accountTx) {
+    const result = await this.rpcCall('submitAccountTransaction', {
+      transaction: accountTx
+    });
+
+    if (!result?.accepted && !result?.tx_id) {
+      // Fallback: generic submitTransaction also accepts account txs
+      const fallbackResult = await this.rpcCall('submitTransaction', {
+        transaction: accountTx
+      });
+      if (fallbackResult?.accepted || fallbackResult?.tx_id) {
+        const txId = fallbackResult.tx_id || fallbackResult.txid;
+        console.log(`✅ Account tx broadcast (via submitTransaction): ${txId}`);
+        return txId;
+      }
+      throw new Error(result?.error || 'Failed to broadcast account transaction');
+    }
+
+    const txId = result.tx_id || result.txid;
+    console.log(`✅ Account tx broadcast: ${txId}`);
+    return txId;
+  }
+
+  /**
    * Create and broadcast a transaction
    * This is a high-level method that:
    * 1. Gets UTXOs
