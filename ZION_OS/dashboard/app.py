@@ -5950,9 +5950,7 @@ async function refreshPayout(){
 function formatFlowers(v){
   if(!v&&v!==0)return'—';
   const zion=v/1_000_000_000_000;
-  if(zion>=1_000_000)return(zion/1_000_000).toFixed(2)+' MZION';
-  if(zion>=1_000)return(zion/1_000).toFixed(2)+' KZION';
-  return zion.toFixed(4)+' ZION';
+    return zion.toLocaleString('en-US',{minimumFractionDigits:4,maximumFractionDigits:4})+' ZION';
 }
 
 // ── Hiran AI ──
