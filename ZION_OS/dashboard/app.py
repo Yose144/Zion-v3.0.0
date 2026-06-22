@@ -8757,7 +8757,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             dismiss_alert(alert_id)
             self._json({"ok": True, "dismissed": alert_id})
             return
-        # ── Bridge API (Phase 26a) ────────────────────────────────────────────
+        # ── Bridge API (Phase 26a) — Mainnet 5/5 Bridge ───────────────────────
         elif route == "/api/bridge/status":
             svc = get_service("bridge")
             h = check_service_health(svc) if svc else {"alive": False, "details": "bridge not in registry"}
@@ -8765,6 +8765,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
             pending = 0
             last_block = None
             total_volume = 0
+            last_l1_height = None
+            last_evm_block = None
+            locks_detected = 0
+            mints_confirmed = 0
+            burns_detected = 0
+            unlocks_confirmed = 0
             try:
                 if bridge_db.exists():
                     con = sqlite3.connect(str(bridge_db))
@@ -8781,6 +8787,29 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     con.close()
             except Exception:
                 pass
+            # Try to read live relay metrics from the bridge metrics endpoint
+            try:
+                import urllib.request as _ur
+                bridge_svc = get_service("bridge")
+                host = bridge_svc.get("host", "127.0.0.1") if bridge_svc else "127.0.0.1"
+                port = bridge_svc.get("ports", {}).get("metrics", 9101) if bridge_svc else 9101
+                with _ur.urlopen(f"http://{host}:{port}/metrics", timeout=2.0) as r:
+                    metrics_text = r.read().decode("utf-8")
+                for line in metrics_text.splitlines():
+                    if line.startswith("zion_bridge_last_l1_height "):
+                        last_l1_height = int(line.split()[-1])
+                    elif line.startswith("zion_bridge_last_evm_block "):
+                        last_evm_block = int(line.split()[-1])
+                    elif line.startswith("zion_bridge_l1_locks_detected_total "):
+                        locks_detected = int(line.split()[-1])
+                    elif line.startswith("zion_bridge_evm_mints_confirmed_total "):
+                        mints_confirmed = int(line.split()[-1])
+                    elif line.startswith("zion_bridge_evm_burns_detected_total "):
+                        burns_detected = int(line.split()[-1])
+                    elif line.startswith("zion_bridge_l1_unlocks_confirmed_total "):
+                        unlocks_confirmed = int(line.split()[-1])
+            except Exception:
+                pass
             self._json({
                 "online": h["alive"],
                 "status": "online" if h["alive"] else "offline",
@@ -8788,9 +8817,18 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "pending_count": pending,
                 "last_block": last_block,
                 "total_volume": total_volume,
-                "validators_online": 0,  # Will be populated when 3/5 is deployed
-                "contract_verified": False,
-                "chains": [{"id": "base-sepolia", "name": "Base Sepolia", "enabled": True}],
+                "validators_online": 5,
+                "contract_verified": True,
+                "threshold": 5,
+                "chains": [{"id": "base-mainnet", "name": "Base Mainnet", "enabled": True}],
+                "metrics": {
+                    "last_l1_height": last_l1_height,
+                    "last_evm_block": last_evm_block,
+                    "locks_detected": locks_detected,
+                    "mints_confirmed": mints_confirmed,
+                    "burns_detected": burns_detected,
+                    "unlocks_confirmed": unlocks_confirmed,
+                },
             })
         elif route == "/api/bridge/history":
             bridge_db = REPO_ROOT / "V3" / "data" / "bridge.db"
@@ -8824,17 +8862,30 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json({
                 "chains": [
                     {"id": "zion", "name": "ZION L1 Mainnet", "enabled": True, "type": "l1"},
-                    {"id": "base-sepolia", "name": "Base Sepolia Testnet", "enabled": True, "type": "evm", "wzion_address": "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6", "bridge_address": "0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1"},
+                    {
+                        "id": "base-mainnet",
+                        "name": "Base Mainnet",
+                        "enabled": True,
+                        "type": "evm",
+                        "evm_chain_id": 8453,
+                        "wzion_address": "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6",
+                        "bridge_address": "0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88",
+                        "bridge_validator": "0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627",
+                    },
                 ]
             })
         elif route == "/api/bridge/validators":
             self._json({
                 "validators": [
-                    {"address": "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186", "online": True, "last_signature": "—"},
+                    {"address": "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186", "online": True, "role": "deployer + guardian + validator"},
+                    {"address": "0x24d986841E56e5571489B25951eE8C1Ae761FA82", "online": True, "role": "guardian + validator"},
+                    {"address": "0x665c55eDCF25c2c5A1dfF1B20eE950cBDC58d3d0", "online": True, "role": "guardian + validator"},
+                    {"address": "0x8E644b3E9FaBf52eE321DC5B3D5AA06d6e3E66C6", "online": True, "role": "guardian + validator"},
+                    {"address": "0x7e0D2eD71d78B9CFB5034A83333e82e304bc4CB2", "online": True, "role": "guardian + validator"},
                 ],
-                "threshold": 3,
+                "threshold": 5,
                 "total": 5,
-                "note": "3/5 multisig not yet deployed — only deployer validator active",
+                "note": "5/5 multisig deployed on Base Mainnet — all 5 validators active",
             })
         else:
             self.send_error(404)

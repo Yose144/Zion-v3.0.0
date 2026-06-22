@@ -13,6 +13,7 @@ import {
   getDAOTreasuryOverview,
   getGovernanceProposals,
   castGovernanceVote,
+  createGovernanceProposal,
   type GovernanceProposal,
   type DAOStats as DAOStatsType,
   type DAOTreasuryOverview,
@@ -55,6 +56,13 @@ export default function DaoPage() {
   const [loading, setLoading] = useState(true);
   const [daemonOnline, setDaemonOnline] = useState<boolean | null>(null);
 
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createTitle, setCreateTitle] = useState('');
+  const [createDesc, setCreateDesc] = useState('');
+  const [createProposer, setCreateProposer] = useState('');
+  const [createBusy, setCreateBusy] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+
   const phases = getPhases(cs);
   const quickLinks = getQuickLinks(cs);
 
@@ -86,6 +94,33 @@ export default function DaoPage() {
       await loadDAOData();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Vote failed');
+    }
+  }
+
+  async function handleCreateProposal(e: React.FormEvent) {
+    e.preventDefault();
+    setCreateError(null);
+    if (!createTitle.trim() || !createDesc.trim()) {
+      setCreateError(cs ? 'Vyplňte název a popis.' : 'Please enter a title and description.');
+      return;
+    }
+    setCreateBusy(true);
+    try {
+      const proposer = createProposer.trim() || 'zion1demo' + Math.random().toString(36).substring(2, 10);
+      await createGovernanceProposal({
+        proposer,
+        title: createTitle.trim(),
+        description: createDesc.trim(),
+      });
+      setCreateOpen(false);
+      setCreateTitle('');
+      setCreateDesc('');
+      setCreateProposer('');
+      await loadDAOData();
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : (cs ? 'Nepodařilo se vytvořit návrh.' : 'Failed to create proposal.'));
+    } finally {
+      setCreateBusy(false);
     }
   }
 
@@ -205,7 +240,10 @@ export default function DaoPage() {
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Governance návrhy' : 'Governance proposals'}</p>
               <h2 className="text-3xl font-semibold text-white">{cs ? 'Hlasuj o rozhodnutích' : 'Vote on protocol decisions'}</h2>
             </div>
-            <button className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10 transition-colors">
+            <button
+              onClick={() => setCreateOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
+            >
               <Plus className="h-4 w-4" />
               {cs ? 'Vytvořit návrh' : 'Create Proposal'}
             </button>
@@ -443,6 +481,71 @@ export default function DaoPage() {
             ))}
           </div>
         </motion.section>
+
+        {/* ── Create Proposal Modal ── */}
+        {createOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-black/90 p-6 shadow-2xl">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-xl font-semibold text-white">{cs ? 'Nový governance návrh' : 'New governance proposal'}</h3>
+                <button onClick={() => setCreateOpen(false)} className="text-gray-400 hover:text-white">✕</button>
+              </div>
+              <form onSubmit={handleCreateProposal} className="space-y-4">
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-gray-400 mb-1">{cs ? 'Název' : 'Title'}</label>
+                  <input
+                    type="text"
+                    value={createTitle}
+                    onChange={(e) => setCreateTitle(e.target.value)}
+                    placeholder={cs ? 'Např. Zvýšit bridge validator threshold' : 'e.g. Increase bridge validator threshold'}
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-gray-400 mb-1">{cs ? 'Popis' : 'Description'}</label>
+                  <textarea
+                    value={createDesc}
+                    onChange={(e) => setCreateDesc(e.target.value)}
+                    rows={4}
+                    placeholder={cs ? 'Detailní popis návrhu a očekávaného dopadu...' : 'Detailed description of the proposal and expected impact...'}
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-gray-400 mb-1">{cs ? 'Proposer (zion1...)' : 'Proposer (zion1...)'}</label>
+                  <input
+                    type="text"
+                    value={createProposer}
+                    onChange={(e) => setCreateProposer(e.target.value)}
+                    placeholder={cs ? 'Volitelně — jinak se použije demo adresa' : 'Optional — otherwise a demo address is used'}
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none"
+                  />
+                </div>
+                {createError && (
+                  <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">
+                    {createError}
+                  </div>
+                )}
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setCreateOpen(false)}
+                    className="flex-1 rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
+                  >
+                    {cs ? 'Zrušit' : 'Cancel'}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={createBusy}
+                    className="flex-1 rounded-xl bg-gradient-to-r from-zion-gold via-zion-purple to-zion-cyan px-4 py-2 text-sm font-semibold text-black disabled:opacity-50"
+                  >
+                    {createBusy ? (cs ? 'Vytvářím…' : 'Creating…') : (cs ? 'Vytvořit návrh' : 'Create Proposal')}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
