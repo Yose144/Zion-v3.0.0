@@ -96,19 +96,19 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
 .tooltip:hover .tip{visibility:visible;opacity:1;}
 .tip{visibility:hidden;opacity:0;position:absolute;bottom:130%;left:50%;transform:translateX(-50%);background:rgba(7,10,20,0.95);border:1px solid rgba(255,255,255,0.15);padding:6px 10px;border-radius:6px;font-size:11px;white-space:nowrap;z-index:50;transition:opacity 0.2s;font-weight:500;color:#e5e7eb;}
 .hero-orb{position:absolute;border-radius:50%;filter:blur(60px);pointer-events:none;}
-/* ── Top Navbar ── */
-.top-nav{display:flex;align-items:center;gap:0.25rem;flex-wrap:wrap;padding:0.5rem 1rem;margin-bottom:1rem;background:rgba(15,20,35,0.85);border:1px solid rgba(255,255,255,0.1);border-radius:1rem;backdrop-filter:blur(10px);position:sticky;top:0;z-index:50;}
-.nav-group{position:relative;}
-.nav-group>button{padding:0.4rem 0.7rem;font-size:0.78rem;font-weight:600;color:#9ca3af;background:transparent;border:1px solid transparent;border-radius:0.5rem;cursor:pointer;transition:all .15s;white-space:nowrap;}
-.nav-group>button:hover{color:#fff;background:rgba(255,255,255,0.05);}
-.nav-group>button.tab-active{color:#fff;background:linear-gradient(135deg,rgba(255,215,0,0.12),rgba(147,51,234,0.12));border-color:rgba(255,215,0,0.3);box-shadow:0 4px 20px rgba(147,51,234,0.2);}
-.nav-dropdown{display:none;position:absolute;top:100%;left:0;min-width:200px;background:rgba(7,10,20,0.98);border:1px solid rgba(255,255,255,0.12);border-radius:0.75rem;padding:0.5rem;z-index:100;box-shadow:0 24px 60px rgba(0,0,0,0.5);}
-.nav-group:hover .nav-dropdown{display:block;}
-.nav-dropdown button{display:block;width:100%;text-align:left;padding:0.4rem 0.7rem;font-size:0.75rem;font-weight:500;color:#9ca3af;background:transparent;border:1px solid transparent;border-radius:0.4rem;cursor:pointer;transition:all .1s;white-space:nowrap;}
-.nav-dropdown button:hover{color:#fff;background:rgba(255,255,255,0.05);}
-.nav-dropdown button.tab-active{color:#fff;background:linear-gradient(135deg,rgba(255,215,0,0.08),rgba(147,51,234,0.08));}
-[id^="pane-"]{max-width:100%;}
-@media(max-width:1024px){.top-nav{gap:0.15rem;padding:0.4rem;}.nav-group>button{font-size:0.7rem;padding:0.3rem 0.5rem;}}
+/* ── Sidebar Layout ── */
+.dashboard-grid{display:grid;grid-template-columns:220px 1fr;gap:1.5rem;align-items:start;}
+@media(max-width:1024px){.dashboard-grid{grid-template-columns:1fr;}.sidebar{position:fixed;left:0;top:0;height:100vh;width:260px;transform:translateX(-100%);transition:transform .25s ease;z-index:60;background:rgba(7,10,20,0.98);border-right:1px solid rgba(255,255,255,0.1);padding:1.5rem;}.sidebar.open{transform:translateX(0);}}
+.sidebar{position:sticky;top:1.5rem;}
+.sidebar-group{margin-bottom:1rem;}
+.sidebar-title{font-size:0.6rem;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;color:#6b7280;padding:0 0.5rem;margin-bottom:0.35rem;}
+.sidebar-item{display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.45rem 0.6rem;border-radius:0.65rem;font-size:0.8rem;font-weight:600;color:#9ca3af;background:transparent;border:1px solid transparent;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.sidebar-item:hover{color:#fff;background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.08);}
+.sidebar-item.tab-active{color:#fff;background:linear-gradient(135deg,rgba(255,215,0,0.08),rgba(147,51,234,0.08));border-color:rgba(255,215,0,0.3);box-shadow:0 4px 20px rgba(147,51,234,0.2);}
+#mobileMenuBtn{display:none;}
+@media(max-width:1024px){#mobileMenuBtn{display:inline-flex;}}
+#sidebarOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:55;}
+@media(max-width:1024px){#sidebarOverlay.open{display:block;}}
 /* NCL Panel styles */
 .ncl-tab-btn{padding:0.5rem 0.85rem;font-size:0.75rem;font-weight:600;border-radius:0.65rem;cursor:pointer;transition:all 180ms;color:#9ca3af;background:transparent;border:1px solid transparent;}
 .ncl-tab-btn:hover{color:#fff;background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.08);}
@@ -197,16 +197,19 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         </h2>
         <p class="text-sm md:text-base text-gray-400 mb-5 max-w-2xl">
           Launches <strong class="text-zion-gold">Local Backup Node</strong> (syncs from Edge primary via Tailscale),
-          connects to <strong class="text-zion-purple">Edge Pool</strong> (89/5/5/1 burn model),
+          connects to <strong class="text-zion-purple">Edge Pool</strong> (89/5/5/0 burn model),
           starts the <strong class="text-zion-cyan">GPU Miner</strong>, plus <strong class="text-amber-300">Prometheus + Grafana</strong> monitoring.
           Edge (Hetzner) runs the primary 24/7 node + pool.
         </p>
         <div class="flex flex-wrap gap-3">
-          <button onclick="switchTab('services')" class="zion-button-primary">
-            🧩 Services
+          <button onclick="controlAction('launch-full')" class="zion-button-primary">
+            🚀 Launch Full Stack
           </button>
-          <button onclick="switchTab('wizard')" class="zion-button-secondary">
-            🧙 Launch Wizard
+          <button onclick="controlAction('launch-stack')" class="zion-button-secondary">
+            ⚡ Core Only
+          </button>
+          <button onclick="if(confirm('Stop ALL services?')) controlAction('stop-all')" class="zion-button-secondary" style="color:#fca5a5;">
+            ⏹ Stop All
           </button>
         </div>
       </div>
@@ -265,92 +268,73 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     </div>
   </section>
 
-  <!-- Top Navbar -->
-  <nav class="top-nav">
-    <div class="nav-group">
-      <button onclick="switchTab('overview')" id="tab-overview" class="tab-active">📊 Overview</button>
-    </div>
-    <div class="nav-group">
-      <button>🖥️ Nodes ▾</button>
-      <div class="nav-dropdown">
-        <button onclick="switchTab('nodes')" id="tab-nodes">Nodes</button>
-        <button onclick="switchTab('orchestrator')" id="tab-orchestrator">Orchestrator</button>
-        <button onclick="switchTab('topology')" id="tab-topology">Topology</button>
-        <button onclick="switchTab('services')" id="tab-services">Services</button>
-      </div>
-    </div>
-    <div class="nav-group">
-      <button>🗳️ Governance ▾</button>
-      <div class="nav-dropdown">
-        <button onclick="switchTab('dao')" id="tab-dao">DAO Governance</button>
-        <button onclick="switchTab('payout')" id="tab-payout">💰 Payouts</button>
-        <button onclick="switchTab('wallets')" id="tab-wallets">💼 Wallets</button>
-        <button onclick="switchTab('explorer')" id="tab-explorer">🔍 Explorer</button>
-      </div>
-    </div>
-    <div class="nav-group">
-      <button>🔷 Layers ▾</button>
-      <div class="nav-dropdown">
-        <button onclick="switchTab('l1')" id="tab-l1">L1 Consensus</button>
-        <button onclick="switchTab('l2')" id="tab-l2">L2 Bridge / DAO</button>
-        <button onclick="switchTab('l3')" id="tab-l3">L3 Advanced</button>
-        <button onclick="switchTab('warp')" id="tab-warp">WARP Bridge</button>
-        <button onclick="switchTab('l4')" id="tab-l4">L4 OASIS</button>
-        <button onclick="switchTab('l5')" id="tab-l5">L5 Humanitarian</button>
-        <button onclick="switchTab('l6')" id="tab-l6">L6 Space</button>
-      </div>
-    </div>
-    <div class="nav-group">
-      <button>🧠 AI ▾</button>
-      <div class="nav-dropdown">
-        <button onclick="switchTab('ai-agents')" id="tab-ai-agents">AI Agents</button>
-        <button onclick="switchTab('hiran')" id="tab-hiran">Hiran AI</button>
-        <button onclick="switchTab('ncl-jobs')" id="tab-ncl-jobs">NCL Jobs</button>
-      </div>
-    </div>
-    <div class="nav-group">
-      <button>🌉 Bridge ▾</button>
-      <div class="nav-dropdown">
-        <button onclick="switchTab('bridge')" id="tab-bridge">Bridge Status</button>
-        <button onclick="switchTab('bridge-validators')" id="tab-bridge-validators">Validators</button>
-      </div>
-    </div>
-    <div class="nav-group">
-      <button>🔧 Ops ▾</button>
-      <div class="nav-dropdown">
-        <button onclick="switchTab('ops')" id="tab-ops">Ops / Backup / CLI</button>
-        <button onclick="switchTab('agent')" id="tab-agent">ZION Agent</button>
-        <button onclick="switchTab('launch-day')" id="tab-launch-day">Launch Day</button>
-        <button onclick="switchTab('wizard')" id="tab-wizard">Wizard</button>
-        <button onclick="switchTab('genesis')" id="tab-genesis">Genesis</button>
-        <button onclick="switchTab('blockers')" id="tab-blockers">Blockers</button>
-      </div>
-    </div>
-    <div class="nav-group">
-      <button>📊 Diagnostics ▾</button>
-      <div class="nav-dropdown">
-        <button onclick="switchTab('alerts')" id="tab-alerts">Alerts</button>
-        <button onclick="switchTab('charts')" id="tab-charts">Charts</button>
-        <button onclick="switchTab('events')" id="tab-events">Events</button>
-        <button onclick="switchTab('metrics')" id="tab-metrics">Metrics</button>
-        <button onclick="switchTab('miner-live')" id="tab-miner-live">Miner Live</button>
-        <button onclick="switchTab('logs')" id="tab-logs">Logs</button>
-        <button onclick="switchTab('database')" id="tab-database">Database</button>
-        <button onclick="switchTab('env')" id="tab-env">Environment</button>
-      </div>
-    </div>
-    <div class="nav-group">
-      <button>💾 Tools ▾</button>
-      <div class="nav-dropdown">
-        <button onclick="switchTab('backups')" id="tab-backups">Backups</button>
-        <button onclick="switchTab('fleet')" id="tab-fleet">Fleet</button>
-        <button onclick="switchTab('settings')" id="tab-settings">Settings</button>
-      </div>
-    </div>
-  </nav>
+  <!-- Mobile menu toggle -->
+  <button id="mobileMenuBtn" onclick="toggleSidebar()" class="zion-button-secondary text-xs mb-4">☰ Menu</button>
+  <div id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-  <!-- Main Content -->
-  <main class="dashboard-main">
+  <div class="dashboard-grid">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-group">
+        <div class="sidebar-title">Mission</div>
+        <button onclick="switchTab('overview')" id="tab-overview" class="sidebar-item tab-active">📊 Overview</button>
+        <button onclick="switchTab('nodes')" id="tab-nodes" class="sidebar-item">🖥️ Nodes</button>
+        <button onclick="switchTab('orchestrator')" id="tab-orchestrator" class="sidebar-item">🎛️ Orchestrator</button>
+      </div>
+      <div class="sidebar-group">
+        <div class="sidebar-title">Governance</div>
+        <button onclick="switchTab('dao')" id="tab-dao" class="sidebar-item">🗳️ DAO Governance</button>
+      </div>
+      <div class="sidebar-group">
+        <div class="sidebar-title">Layers</div>
+        <button onclick="switchTab('l1')" id="tab-l1" class="sidebar-item">🔷 L1 Consensus</button>
+        <button onclick="switchTab('l2')" id="tab-l2" class="sidebar-item">🌉 L2 Bridge / DAO</button>
+        <button onclick="switchTab('l3')" id="tab-l3" class="sidebar-item">🌀 L3 Advanced</button>
+        <button onclick="switchTab('l4')" id="tab-l4" class="sidebar-item">🪷 L4 OASIS</button>
+        <button onclick="switchTab('l5')" id="tab-l5" class="sidebar-item">🕊️ L5 Humanitarian</button>
+        <button onclick="switchTab('l6')" id="tab-l6" class="sidebar-item">🚀 L6 Space</button>
+      </div>
+      <div class="sidebar-group">
+        <div class="sidebar-title">Cross-Chain</div>
+        <button onclick="switchTab('bridge')" id="tab-bridge" class="sidebar-item">🌉 Bridge</button>
+      </div>
+      <div class="sidebar-group">
+        <div class="sidebar-title">Operations</div>
+        <button onclick="switchTab('controls')" id="tab-controls" class="sidebar-item">🎛️ Controls</button>
+        <button onclick="switchTab('ops')" id="tab-ops" class="sidebar-item">🔧 Ops (Backup / CLI)</button>
+        <button onclick="switchTab('agent')" id="tab-agent" class="sidebar-item">🤖 ZION Agent</button>
+        <button onclick="switchTab('launch-day')" id="tab-launch-day" class="sidebar-item">🚀 Launch Day</button>
+        <button onclick="switchTab('wizard')" id="tab-wizard" class="sidebar-item">🧙 Wizard</button>
+        <button onclick="switchTab('hiran')" id="tab-hiran" class="sidebar-item">🤖 Hiran AI</button>
+        <button onclick="switchTab('payout')" id="tab-payout" class="sidebar-item">💰 Payout</button>
+        <button onclick="switchTab('genesis')" id="tab-genesis" class="sidebar-item">⚡ Genesis</button>
+        <button onclick="switchTab('blockers')" id="tab-blockers" class="sidebar-item">🚧 Blockers</button>
+      </div>
+      <div class="sidebar-group">
+        <div class="sidebar-title">Diagnostics</div>
+        <button onclick="switchTab('topology')" id="tab-topology" class="sidebar-item">🌐 Topology</button>
+        <button onclick="switchTab('services')" id="tab-services" class="sidebar-item">🧩 Services</button>
+        <button onclick="switchTab('alerts')" id="tab-alerts" class="sidebar-item">🚨 Alerts</button>
+        <button onclick="switchTab('charts')" id="tab-charts" class="sidebar-item">📈 Charts</button>
+        <button onclick="switchTab('events')" id="tab-events" class="sidebar-item">🧱 Events</button>
+        <button onclick="switchTab('metrics')" id="tab-metrics" class="sidebar-item">📊 Metrics</button>
+        <button onclick="switchTab('miner-live')" id="tab-miner-live" class="sidebar-item">⛏️ Miner Live</button>
+        <button onclick="switchTab('settings')" id="tab-settings" class="sidebar-item">⚙️ Settings</button>
+        <button onclick="switchTab('fleet')" id="tab-fleet" class="sidebar-item">🌐 Fleet</button>
+        <button onclick="switchTab('logs')" id="tab-logs" class="sidebar-item">📜 Logs</button>
+        <button onclick="switchTab('database')" id="tab-database" class="sidebar-item">🗄️ Database</button>
+        <button onclick="switchTab('env')" id="tab-env" class="sidebar-item">⚙️ Environment</button>
+      </div>
+      <div class="sidebar-group">
+        <div class="sidebar-title">Tools</div>
+        <button onclick="switchTab('wallets')" id="tab-wallets" class="sidebar-item">💼 Wallets</button>
+        <button onclick="switchTab('explorer')" id="tab-explorer" class="sidebar-item">🔍 Explorer</button>
+        <button onclick="openSettingsModal()" class="sidebar-item">⚙️ Settings</button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="dashboard-main">
 
   <!-- ═════════ TAB: Overview ═════════ -->
   <div id="pane-overview" class="space-y-5">
@@ -396,11 +380,9 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <div class="text-xs text-gray-400 mb-1 relative z-10">Peers: <span id="val-node1-peers" class="text-white font-semibold">—</span></div>
         <div class="text-xs text-gray-400 mb-1 relative z-10">P2P: <span id="val-node1-p2p" class="font-mono">—</span></div>
         <div class="text-xs text-gray-400 mb-1 relative z-10">Mempool: <span id="val-node1-mempool" class="text-amber-400 font-semibold">—</span></div>
-        <div class="text-xs text-gray-400 mb-1 relative z-10">Sync: <span id="val-node1-sync" class="text-gray-400">—</span></div>
         <div class="text-xs text-gray-400 mb-3 relative z-10">Uptime: <span id="val-node1-uptime" class="text-emerald-400 font-mono">—</span></div>
         <div class="flex gap-1.5 relative z-10">
           <button onclick="controlAction('start-node1')" class="text-[10px] px-2.5 py-1 bg-emerald-700/50 hover:bg-emerald-600 rounded-md font-semibold transition">▶ Start</button>
-          <button onclick="controlAction('restart-node1')" class="text-[10px] px-2.5 py-1 bg-amber-700/50 hover:bg-amber-600 rounded-md font-semibold transition">⟳ Restart</button>
         </div>
       </div>
 
@@ -454,98 +436,10 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
     </div>
 
-    <!-- Edge Server System Health Panel -->
-    <div id="card-edge-server" class="zion-panel svc-card p-5 mt-4">
-      <div class="flex items-center justify-between mb-4 relative z-10">
-        <div class="flex items-center gap-3">
-          <span class="zion-kicker">🌍 Edge Server</span>
-          <span class="text-[10px] font-mono text-gray-500">77.42.71.94 · 100.76.16.108</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <span id="badge-edge-server" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
-          <button onclick="refreshEdgeServerCard(true)" class="text-[10px] px-2.5 py-1 bg-zinc-700/50 hover:bg-zinc-600 rounded-md font-semibold transition" title="Force refresh (SSH)">⟳</button>
-          <a href="http://77.42.71.94:3100" target="_blank" class="text-[10px] px-2.5 py-1 bg-purple-700/40 hover:bg-purple-600/60 rounded-md font-semibold transition text-purple-300">📊 Grafana</a>
-        </div>
-      </div>
-
-      <!-- System metrics row -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 relative z-10">
-        <div class="bg-black/30 rounded-xl p-3 text-center">
-          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">CPU</div>
-          <div id="edge-cpu" class="text-xl font-bold text-amber-400">—</div>
-          <div id="edge-load" class="text-[10px] text-gray-500 mt-0.5">load —</div>
-        </div>
-        <div class="bg-black/30 rounded-xl p-3 text-center">
-          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Memory</div>
-          <div id="edge-mem-pct" class="text-xl font-bold text-blue-400">—</div>
-          <div id="edge-mem-detail" class="text-[10px] text-gray-500 mt-0.5">— / — GB</div>
-          <div id="edge-mem-trend" class="text-[9px] font-mono mt-1"></div>
-          <div id="edge-mem-top" class="text-left mt-2 space-y-0.5"></div>
-          <button id="btn-edge-mem-limit" onclick="applyEdgeMemoryLimit()" class="mt-2 text-[9px] px-2 py-1 bg-amber-700/40 hover:bg-amber-600/60 rounded text-amber-300 font-semibold transition hidden" title="Add MemoryMax=3G to systemd">🔒 Limit RAM</button>
-        </div>
-        <div class="bg-black/30 rounded-xl p-3 text-center">
-          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Disk</div>
-          <div id="edge-disk-pct" class="text-xl font-bold text-emerald-400">—</div>
-          <div id="edge-disk-detail" class="text-[10px] text-gray-500 mt-0.5">— GB free</div>
-        </div>
-        <div class="bg-black/30 rounded-xl p-3 text-center">
-          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Services</div>
-          <div id="edge-svcs-ok" class="text-xl font-bold text-emerald-400">—</div>
-          <div class="text-[10px] text-gray-500 mt-0.5">active</div>
-        </div>
-      </div>
-
-      <!-- Services grid -->
-      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 relative z-10" id="edge-services-grid">
-        <!-- filled by JS -->
-        <div class="col-span-full text-xs text-gray-500 text-center py-2">Loading edge services…</div>
-      </div>
-
-      <!-- Port health bar -->
-      <div class="mt-3 relative z-10">
-        <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1.5">Key Ports</div>
-        <div class="flex flex-wrap gap-1.5" id="edge-ports-row">
-          <!-- filled by JS -->
-        </div>
-      </div>
-
-      <!-- Edge Operations -->
-      <div class="mt-4 space-y-3 relative z-10">
-        <div class="text-[10px] text-gray-500 uppercase tracking-wider">Service Control</div>
-        <div class="flex flex-wrap gap-2">
-          <button onclick="edgeAction('restart-node1')" class="text-[10px] px-2.5 py-1.5 bg-emerald-700/40 hover:bg-emerald-600/60 border border-emerald-500/30 rounded-md font-semibold transition">⟳ Node 1</button>
-          <button onclick="edgeAction('restart-node2')" class="text-[10px] px-2.5 py-1.5 bg-emerald-700/40 hover:bg-emerald-600/60 border border-emerald-500/30 rounded-md font-semibold transition">⟳ Node 2</button>
-          <button onclick="edgeAction('restart-pool')" class="text-[10px] px-2.5 py-1.5 bg-amber-700/40 hover:bg-amber-600/60 border border-amber-500/30 rounded-md font-semibold transition">⟳ Pool</button>
-          <button onclick="edgeAction('restart-dao')" class="text-[10px] px-2.5 py-1.5 bg-purple-700/40 hover:bg-purple-600/60 border border-purple-500/30 rounded-md font-semibold transition">⟳ DAO</button>
-          <button onclick="edgeAction('restart-warp')" class="text-[10px] px-2.5 py-1.5 bg-cyan-700/40 hover:bg-cyan-600/60 border border-cyan-500/30 rounded-md font-semibold transition">⟳ WARP</button>
-          <button onclick="edgeAction('restart-dashboard')" class="text-[10px] px-2.5 py-1.5 bg-blue-700/40 hover:bg-blue-600/60 border border-blue-500/30 rounded-md font-semibold transition">⟳ Rust DB</button>
-          <button onclick="edgeAction('restart-hiran')" class="text-[10px] px-2.5 py-1.5 bg-pink-700/40 hover:bg-pink-600/60 border border-pink-500/30 rounded-md font-semibold transition">⟳ Hiran</button>
-          <button onclick="edgeAction('restart-hiranyagarbha')" class="text-[10px] px-2.5 py-1.5 bg-indigo-700/40 hover:bg-indigo-600/60 border border-indigo-500/30 rounded-md font-semibold transition">⟳ Hiranya</button>
-          <button onclick="edgeAction('restart-bridge')" class="text-[10px] px-2.5 py-1.5 bg-teal-700/40 hover:bg-teal-600/60 border border-teal-500/30 rounded-md font-semibold transition">⟳ Bridge</button>
-          <button onclick="edgeAction('restart-website')" class="text-[10px] px-2.5 py-1.5 bg-lime-700/40 hover:bg-lime-600/60 border border-lime-500/30 rounded-md font-semibold transition">⟳ Website</button>
-        </div>
-
-        <div class="text-[10px] text-gray-500 uppercase tracking-wider">Maintenance & Security</div>
-        <div class="flex flex-wrap gap-2">
-          <button onclick="edgeAction('clean-docker')" class="text-[10px] px-2.5 py-1.5 bg-red-700/40 hover:bg-red-600/60 border border-red-500/30 rounded-md font-semibold transition">🧹 Clean Docker</button>
-          <button onclick="edgeAction('backup-edge')" class="text-[10px] px-2.5 py-1.5 bg-blue-700/40 hover:bg-blue-600/60 border border-blue-500/30 rounded-md font-semibold transition">💾 Backup Edge</button>
-          <button onclick="edgeAction('security-audit')" class="text-[10px] px-2.5 py-1.5 bg-amber-700/40 hover:bg-amber-600/60 border border-amber-500/30 rounded-md font-semibold transition">🔒 Security Audit</button>
-          <button onclick="edgeAction('full-health')" class="text-[10px] px-2.5 py-1.5 bg-zinc-700/50 hover:bg-zinc-600 border border-white/10 rounded-md font-semibold transition">📊 Full Health</button>
-        </div>
-
-        <div class="text-[10px] text-gray-500 uppercase tracking-wider">External Links</div>
-        <div class="flex flex-wrap gap-2">
-          <a href="http://77.42.71.94:9090" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-orange-700/40 hover:bg-orange-600/60 border border-orange-500/30 rounded-md font-semibold transition text-orange-300">🔥 Prometheus</a>
-          <a href="https://zionterranova.com" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-indigo-700/40 hover:bg-indigo-600/60 border border-indigo-500/30 rounded-md font-semibold transition text-indigo-300">🌐 Website</a>
-          <a href="http://77.42.71.94:8455" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-teal-700/40 hover:bg-teal-600/60 border border-teal-500/30 rounded-md font-semibold transition text-teal-300">📈 Pool Metrics</a>
-        </div>
-      </div>
-    </div>
-
     <!-- Miner Control Panel (full width) -->
     <div id="card-miner" class="zion-panel zion-panel-hover svc-card p-5 mt-4">
       <div class="flex items-center justify-between mb-4">
-        <span class="zion-kicker" id="lbl-miner-title">⛏️ Edge Miner</span>
+        <span class="zion-kicker">⛏️ Miner Control Center</span>
         <span id="badge-miner" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
       </div>
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -563,19 +457,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
             <div class="p-2 bg-white/5 rounded-lg">
               <div class="text-gray-400 mb-0.5">Backend</div>
               <div class="text-white font-mono truncate" id="val-miner-backend">—</div>
-            </div>
-            <div class="p-2 bg-white/5 rounded-lg">
-              <div class="text-gray-400 mb-0.5">Worker</div>
-              <div class="text-white font-mono truncate" id="val-miner-worker">—</div>
-            </div>
-            <div class="p-2 bg-white/5 rounded-lg">
-              <div class="text-gray-400 mb-0.5">Wallet</div>
-              <div class="text-white font-mono truncate text-[10px]" id="val-miner-wallet">—</div>
-            </div>
-            <div class="p-2 bg-white/5 rounded-lg">
-              <div class="text-gray-400 mb-0.5">On-Chain <span class="text-[8px] text-gray-500">(RPC)</span></div>
-              <div class="text-emerald-400 font-bold font-mono text-[10px]" id="val-miner-onchain">—</div>
-              <div class="text-[8px] text-gray-500 font-mono" id="val-miner-onchain-ts"></div>
             </div>
             <div class="p-2 bg-white/5 rounded-lg">
               <div class="text-gray-400 mb-0.5">Height</div>
@@ -601,53 +482,83 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           <div id="miner-status-msg" class="text-xs p-2 rounded-lg hidden"></div>
         </div>
 
-        <!-- Info / Actions Column -->
+        <!-- Config Column -->
         <div class="lg:col-span-2 space-y-3">
-          <h3 class="text-sm font-semibold text-gray-300 mb-2">⚙️ Actions</h3>
-          <div class="flex gap-2 flex-wrap" id="miner-buttons">
+          <h3 class="text-sm font-semibold text-gray-300 mb-2">⚙️ Configuration</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="text-[10px] text-gray-400 uppercase tracking-wider">Pool Address</label>
+              <input type="text" id="miner-cfg-pool" value="127.0.0.1:8444" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition">
+            </div>
+            <div>
+              <label class="text-[10px] text-gray-400 uppercase tracking-wider">Worker Name</label>
+              <input type="text" id="miner-cfg-worker" value="worker1" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition">
+            </div>
+            <div>
+              <label class="text-[10px] text-gray-400 uppercase tracking-wider">Backend</label>
+              <select id="miner-cfg-backend" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition">
+                <option value="gpu-opencl">🎮 GPU (OpenCL)</option>
+                <option value="gpu-cuda">🎮 GPU (CUDA)</option>
+                <option value="cpu">💻 CPU Only</option>
+                <option value="dual">🔀 Dual (CPU+GPU)</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[10px] text-gray-400 uppercase tracking-wider">CPU Threads</label>
+              <div class="flex items-center gap-2 mt-1">
+                <input type="range" id="miner-cfg-threads-range" min="1" max="16" value="4" class="flex-1 accent-purple-500" oninput="document.getElementById('miner-cfg-threads').value=this.value">
+                <input type="number" id="miner-cfg-threads" value="4" min="1" max="16" class="w-14 px-2 py-1 bg-white/5 border border-white/10 rounded-lg text-sm text-white text-center focus:border-purple-500 focus:outline-none transition" oninput="document.getElementById('miner-cfg-threads-range').value=this.value">
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] text-gray-400 uppercase tracking-wider">GPU Work Size</label>
+              <select id="miner-cfg-worksize" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition">
+                <option value="1024">1024 (Low VRAM)</option>
+                <option value="2048">2048</option>
+                <option value="4096" selected>4096 (Recommended)</option>
+                <option value="8192">8192 (High Perf)</option>
+                <option value="16384">16384 (Max)</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[10px] text-gray-400 uppercase tracking-wider">Loop Count</label>
+              <select id="miner-cfg-loops" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition">
+                <option value="10000">10K (Test)</option>
+                <option value="100000">100K</option>
+                <option value="1000000" selected>1M (Sustained)</option>
+                <option value="10000000">10M (Max)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- GPU Layers (for Hiran inference when miner is idle) -->
+          <div class="pt-2 border-t border-white/10">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs text-gray-400">Hiran GPU Layers (when idle)</span>
+              <span class="text-xs text-purple-300 font-mono" id="hiran-gpu-layers-val">33</span>
+            </div>
+            <input type="range" id="miner-cfg-hiran-layers" min="0" max="50" value="33" class="w-full accent-purple-500" oninput="document.getElementById('hiran-gpu-layers-val').textContent=this.value">
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex gap-2 pt-2 flex-wrap">
+            <button onclick="startMiner('gpu')" class="flex-1 min-w-[120px] px-4 py-2.5 bg-gradient-to-r from-purple-700 to-purple-900 hover:from-purple-600 hover:to-purple-800 rounded-lg text-sm font-semibold transition shadow-lg">
+              🎮 Start GPU
+            </button>
+            <button onclick="startMiner('cpu')" class="flex-1 min-w-[120px] px-4 py-2.5 bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-600 hover:to-blue-800 rounded-lg text-sm font-semibold transition shadow-lg">
+              💻 Start CPU
+            </button>
+            <button onclick="startMiner('dual')" class="flex-1 min-w-[120px] px-4 py-2.5 bg-gradient-to-r from-cyan-700 to-cyan-900 hover:from-cyan-600 hover:to-cyan-800 rounded-lg text-sm font-semibold transition shadow-lg">
+              🔀 Dual Mode
+            </button>
             <button onclick="controlAction('restart-miner')" class="px-4 py-2.5 bg-gradient-to-r from-amber-700 to-amber-900 hover:from-amber-600 hover:to-amber-800 rounded-lg text-sm font-semibold transition shadow-lg">
-              🔄 Restart
+              ⟳ Restart
             </button>
             <button onclick="controlAction('stop-miner')" class="px-4 py-2.5 bg-gradient-to-r from-red-700 to-red-900 hover:from-red-600 hover:to-red-800 rounded-lg text-sm font-semibold transition shadow-lg">
               ⏹ Stop
             </button>
           </div>
-          <p class="text-xs text-gray-500 mt-2">Miner is managed by the Edge node systemd service. Use Restart if it hangs, Stop to pause.</p>
         </div>
-      </div>
-    </div>
-
-    <!-- Connected Miners (Edge Pool) -->
-    <div id="card-connected-miners" class="zion-panel p-5 mb-4">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-base font-bold flex items-center gap-2">
-          ⛏️ Connected Miners
-          <span id="connected-miners-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-600/20 text-emerald-300">—</span>
-        </h2>
-        <div class="flex gap-3 text-xs text-gray-400">
-          <span>Hashrate: <strong id="cm-total-hashrate" class="text-amber-400">—</strong></span>
-          <span>Active: <strong id="cm-active-count" class="text-emerald-400">—</strong></span>
-          <span>Tracked: <strong id="cm-tracked-count" class="text-gray-300">—</strong></span>
-        </div>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-xs text-left">
-          <thead>
-            <tr class="text-gray-500 border-b border-white/10">
-              <th class="py-2 px-2">Miner ID</th>
-              <th class="py-2 px-2">Worker</th>
-              <th class="py-2 px-2 text-right">Hashrate</th>
-              <th class="py-2 px-2 text-right">Valid</th>
-              <th class="py-2 px-2 text-right">Invalid</th>
-              <th class="py-2 px-2 text-right">Blocks</th>
-              <th class="py-2 px-2 text-right">Paid (ZION)</th>
-              <th class="py-2 px-2 text-right">Status / Last Seen</th>
-            </tr>
-          </thead>
-          <tbody id="connected-miners-tbody">
-            <tr><td colspan="8" class="text-gray-500 text-center py-4">Loading miners from Edge pool…</td></tr>
-          </tbody>
-        </table>
       </div>
     </div>
 
@@ -900,7 +811,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <canvas id="mini-hashrate" height="80"></canvas>
       </div>
       <div class="zion-panel p-5">
-        <h2 class="text-base font-bold mb-3">💰 Payouts &amp; Fee Split <span class="text-xs text-gray-500 font-normal">(89/5/5/1 burn model)</span></h2>
+        <h2 class="text-base font-bold mb-3">💰 Payouts &amp; Fee Split <span class="text-xs text-gray-500 font-normal">(89/5/5/0 burn model)</span></h2>
         <div class="space-y-2">
           <div class="flex justify-between text-xs"><span class="text-gray-400">Pool Wallet</span><span id="payout-wallet" class="font-mono text-white truncate max-w-[260px]">—</span></div>
           <div class="flex justify-between text-xs"><span class="text-gray-400">Pool Balance</span><span id="payout-balance" class="text-amber-400 font-bold">—</span></div>
@@ -1037,7 +948,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
     </div>
   </div>
-</div>
 
   <!-- ═════════ TAB: Nodes ═════════ -->
   <div id="pane-nodes" class="hidden space-y-4">
@@ -1097,228 +1007,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     </div>
   </div>
 
-  <!-- ═════════ TAB: Payouts ═════════ -->
-  <div id="pane-payout" class="hidden space-y-4">
-    <div id="payout-loading-indicator" class="hidden p-3 bg-blue-900/30 border border-blue-500/30 rounded text-blue-300 text-xs text-center">Loading payout data...</div>
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gradient">💰 Payout System</h1>
-        <p class="text-xs text-gray-400 mt-1">Fee split · PPLNS · Payout history · Miner balances</p>
-      </div>
-      <button onclick="loadPayoutTab()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
-    </div>
-
-    <!-- KPI Row -->
-    <div class="flex items-center justify-end gap-2 flex-wrap">
-      <div id="payout-sse-indicator" class="hidden items-center gap-1.5 text-[10px] text-emerald-400 mr-2">
-        <span class="relative flex h-2 w-2">
-          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-          <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-        </span>
-        LIVE
-      </div>
-      <button onclick="restartEdgePool()" id="btn-restart-pool-edge" class="text-xs px-3 py-1.5 bg-orange-700 hover:bg-orange-600 text-white border border-orange-500/50 rounded-lg transition font-semibold">🔄 Restart Edge Pool</button>
-      <button onclick="triggerPayoutNow()" class="text-xs px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500/50 rounded-lg transition font-semibold">💸 Trigger Payout Now</button>
-      <button onclick="loadPayoutTab()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
-    </div>
-    <div id="payout-kpi" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-      <div class="zion-panel p-4 text-center">
-        <div class="text-xl font-bold text-emerald-400" id="payout-kpi-status">—</div>
-        <div class="text-[10px] text-gray-400 mt-1">Status</div>
-      </div>
-      <div class="zion-panel p-4 text-center">
-        <div class="text-xl font-bold text-zion-gold" id="payout-kpi-blocks">—</div>
-        <div class="text-[10px] text-gray-400 mt-1">Blocks Found</div>
-      </div>
-      <div class="zion-panel p-4 text-center">
-        <div class="text-xl font-bold text-amber-400" id="payout-kpi-hashrate">—</div>
-        <div class="text-[10px] text-gray-400 mt-1">Pool Hashrate</div>
-      </div>
-      <div class="zion-panel p-4 text-center">
-        <div class="text-xl font-bold text-cyan-400" id="payout-kpi-miners">—</div>
-        <div class="text-[10px] text-gray-400 mt-1">Active Miners</div>
-      </div>
-      <div class="zion-panel p-4 text-center">
-        <div class="text-xl font-bold text-purple-400" id="payout-kpi-total-paid">—</div>
-        <div class="text-[10px] text-gray-400 mt-1">Total Paid (ZION)</div>
-      </div>
-      <div class="zion-panel p-4 text-center">
-        <div class="text-xl font-bold text-emerald-400" id="payout-kpi-accept-rate">—</div>
-        <div class="text-[10px] text-gray-400 mt-1">Accept Rate</div>
-      </div>
-    </div>
-
-    <!-- Fee Split Vizualization -->
-    <div class="zion-panel p-5">
-      <h3 class="text-sm font-bold mb-4">Fee Split Distribution (89/5/5/1)</h3>
-      <div class="space-y-3">
-        <!-- Miner -->
-        <div>
-          <div class="flex justify-between text-xs mb-1">
-            <span class="text-emerald-400 font-semibold">⛏️ Miner (89%)</span>
-            <span class="text-gray-400" id="payout-fee-miner-pct">89%</span>
-          </div>
-          <div class="h-3 bg-black/40 rounded-full overflow-hidden">
-            <div class="h-full bg-emerald-500 rounded-full" style="width:89%"></div>
-          </div>
-          <div class="text-[10px] text-gray-500 mt-0.5" id="payout-fee-miner-addr">—</div>
-        </div>
-        <!-- Humanitarian -->
-        <div>
-          <div class="flex justify-between text-xs mb-1">
-            <span class="text-pink-400 font-semibold">💝 Humanitarian (5%)</span>
-            <span class="text-gray-400" id="payout-fee-human-pct">5%</span>
-          </div>
-          <div class="h-3 bg-black/40 rounded-full overflow-hidden">
-            <div class="h-full bg-pink-500 rounded-full" style="width:5%"></div>
-          </div>
-          <div class="text-[10px] text-gray-500 mt-0.5" id="payout-fee-human-addr">—</div>
-        </div>
-        <!-- Issobella -->
-        <div>
-          <div class="flex justify-between text-xs mb-1">
-            <span class="text-purple-400 font-semibold">🚀 Issobella Space (5%)</span>
-            <span class="text-gray-400" id="payout-fee-isso-pct">5%</span>
-          </div>
-          <div class="h-3 bg-black/40 rounded-full overflow-hidden">
-            <div class="h-full bg-purple-500 rounded-full" style="width:5%"></div>
-          </div>
-          <div class="text-[10px] text-gray-500 mt-0.5" id="payout-fee-isso-addr">—</div>
-        </div>
-        <!-- Pool Fee (burn) -->
-        <div>
-          <div class="flex justify-between text-xs mb-1">
-            <span class="text-amber-400 font-semibold">🔥 Pool Fee / Burn (1%)</span>
-            <span class="text-gray-400" id="payout-fee-pool-pct">1%</span>
-          </div>
-          <div class="h-3 bg-black/40 rounded-full overflow-hidden">
-            <div class="h-full bg-amber-500 rounded-full" style="width:1%"></div>
-          </div>
-          <div class="text-[10px] text-gray-500 mt-0.5" id="payout-fee-pool-addr">—</div>
-        </div>
-      </div>
-      <!-- Fee split formula -->
-      <div class="mt-4 p-3 bg-black/30 rounded-lg text-xs font-mono text-gray-400">
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="text-emerald-400">Miner: 89%</span><span>+</span>
-          <span class="text-pink-400">Humanitarian: 5%</span><span>+</span>
-          <span class="text-purple-400">Issobella: 5%</span><span>+</span>
-          <span class="text-amber-400">Pool Fee: 1%</span><span>=</span>
-          <span class="text-white font-bold">100%</span>
-        </div>
-        <div class="text-[10px] text-gray-500 mt-1">Every block subsidy is split using this ratio. Pool fee is burned.</div>
-      </div>
-    </div>
-
-    <!-- PPLNS Status + Miner Balances -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <!-- PPLNS Status -->
-      <div class="zion-panel p-5">
-        <h3 class="text-sm font-bold mb-3">PPLNS Round Status</h3>
-        <div class="space-y-2 text-xs">
-          <div class="flex justify-between">
-            <span class="text-gray-400">Window Size</span>
-            <span class="text-white font-mono" id="payout-pplns-window">—</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-400">Window Used</span>
-            <span class="text-white font-mono" id="payout-pplns-used">—</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-400">Registered Miners</span>
-            <span class="text-white font-mono" id="payout-pplns-registered">—</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-400">Rounds Completed</span>
-            <span class="text-emerald-400 font-mono" id="payout-pplns-rounds">—</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-400">Total Paid</span>
-            <span class="text-zion-gold font-mono" id="payout-pplns-total">—</span>
-          </div>
-        </div>
-        <hr class="border-white/10 my-3">
-        <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Last Payout</h4>
-        <div class="space-y-1 text-xs">
-          <div class="flex justify-between">
-            <span class="text-gray-400">Time</span>
-            <span class="text-white font-mono" id="payout-last-time">—</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-400">TX Hash</span>
-            <span class="text-cyan-400 font-mono text-[10px] truncate max-w-[200px]" id="payout-last-tx">—</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-400">Miners Paid</span>
-            <span class="text-emerald-400 font-mono" id="payout-last-miners">—</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Miner Pending Balances -->
-      <div class="zion-panel p-5">
-        <h3 class="text-sm font-bold mb-3">Miner Pending Balances</h3>
-        <div class="overflow-x-auto">
-          <table class="w-full text-xs text-left">
-            <thead>
-              <tr class="text-gray-500 border-b border-white/10">
-                <th class="py-2 px-2">Worker</th>
-                <th class="py-2 px-2 text-gray-600">Address</th>
-                <th class="py-2 px-2 text-right">Valid</th>
-                <th class="py-2 px-2 text-right">Invalid</th>
-                <th class="py-2 px-2 text-right">Hashrate</th>
-                <th class="py-2 px-2 text-right">On-Chain ZION</th>
-              </tr>
-            </thead>
-            <tbody id="payout-miner-balances">
-              <tr><td colspan="6" class="text-gray-500 text-center py-4">Loading…</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- Charts Row -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <div class="zion-panel p-5">
-        <h3 class="text-sm font-bold mb-3">Pool Hashrate Trend (10 min)</h3>
-        <div class="h-48"><canvas id="payout-chart-hashrate"></canvas></div>
-      </div>
-      <div class="zion-panel p-5">
-        <h3 class="text-sm font-bold mb-3">Blocks & Shares Trend</h3>
-        <div class="h-48"><canvas id="payout-chart-blocks"></canvas></div>
-      </div>
-    </div>
-
-    <!-- Payout History Timeline -->
-    <div class="zion-panel p-5">
-      <h3 class="text-sm font-bold mb-3">Payout History</h3>
-      <div id="payout-history-container" class="space-y-2 max-h-80 overflow-y-auto">
-        <div class="text-gray-500 italic text-xs">Loading payout history…</div>
-      </div>
-    </div>
-
-    <!-- Pool Health -->
-    <div class="zion-panel p-5">
-      <h3 class="text-sm font-bold mb-3">Pool Health & Validation</h3>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-        <div class="p-3 bg-black/30 rounded-lg">
-          <div class="text-gray-400 mb-1">Valid Addresses</div>
-          <div class="text-emerald-400 font-bold text-lg" id="payout-val-valid">—</div>
-        </div>
-        <div class="p-3 bg-black/30 rounded-lg">
-          <div class="text-gray-400 mb-1">Invalid Addresses</div>
-          <div class="text-red-400 font-bold text-lg" id="payout-val-invalid">—</div>
-        </div>
-        <div class="p-3 bg-black/30 rounded-lg">
-          <div class="text-gray-400 mb-1">Safe to Payout</div>
-          <div class="text-emerald-400 font-bold text-lg" id="payout-val-safe">—</div>
-        </div>
-      </div>
-      <div class="mt-3 text-[10px] text-gray-500" id="payout-val-error">—</div>
-    </div>
-  </div>
-
   <!-- ═════════ TAB: Wallets ═════════ -->
   <div id="pane-wallets" class="hidden space-y-4">
     <!-- Wallets header -->
@@ -1375,54 +1063,14 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <!-- JS populates progress bars here -->
       </div>
     </div>
-    <!-- Online Miners -->
+    <!-- Known Addresses (static) -->
     <div class="zion-panel p-5">
-      <div class="flex items-center justify-between mb-3">
-        <h3 class="text-sm font-bold">⛏️ Online Miners</h3>
-        <button onclick="refreshMinerBalances()" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs">
-          <thead>
-            <tr class="text-gray-400 border-b border-white/10">
-              <th class="py-2 px-2">Worker</th>
-              <th class="py-2 px-2">Address</th>
-              <th class="py-2 px-2 text-right">Hashrate</th>
-              <th class="py-2 px-2 text-right">Valid</th>
-              <th class="py-2 px-2 text-right">Invalid</th>
-              <th class="py-2 px-2 text-right">Blocks</th>
-              <th class="py-2 px-2 text-right">Pending</th>
-              <th class="py-2 px-2 text-right">Paid Total</th>
-              <th class="py-2 px-2 text-right">On-Chain</th>
-            </tr>
-          </thead>
-          <tbody id="miner-balances-table" class="font-mono">
-            <tr><td colspan="9" class="py-4 text-gray-500 italic text-center">Loading miners…</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div id="miner-balances-summary" class="mt-2 text-[10px] text-gray-500"></div>
-    </div>
-
-    <!-- Fee-Split & Pool Wallets (dynamic from API) -->
-    <div class="zion-panel p-5">
-      <h3 class="text-sm font-bold mb-3">Fee-Split &amp; Pool Wallets</h3>
-      <div id="wallets-fee-split" class="space-y-2 text-xs">
-        <div class="text-gray-500 italic">Loading fee-split configuration…</div>
-      </div>
-      <hr class="border-white/10 my-3">
-      <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Pool Wallet Status</h4>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-        <div class="p-3 bg-black/30 rounded-lg">
-          <div class="text-gray-400 mb-1">Pool Wallet Address</div>
-          <div class="font-mono text-white text-[10px] break-all" id="wallet-pool-address">—</div>
-          <div class="mt-1 text-[10px] text-gray-500" id="wallet-pool-balance">Balance: —</div>
-        </div>
-        <div class="p-3 bg-black/30 rounded-lg">
-          <div class="text-gray-400 mb-1">Payout Execution</div>
-          <div class="font-bold text-lg" id="wallet-pool-enabled">—</div>
-          <div class="mt-1 text-[10px] text-gray-500" id="wallet-pool-fee-split">Fee split: —</div>
-        </div>
+      <h3 class="text-sm font-bold mb-3">Known Addresses</h3>
+      <div class="space-y-2 text-xs">
+        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2"><span class="text-gray-400">Miner (89%)</span><span class="font-mono text-white text-[10px]">zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3</span><button onclick="copyToClipboard('zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3')" class="text-[10px] text-gray-500 hover:text-white ml-2">Copy</button></div>
+        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2"><span class="text-gray-400">Humanitarian (5%)</span><span class="font-mono text-white text-[10px]">zion1m4v5z8z850u480c5c208z274e334369275n5y20</span><button onclick="copyToClipboard('zion1m4v5z8z850u480c5c208z274e334369275n5y20')" class="text-[10px] text-gray-500 hover:text-white ml-2">Copy</button></div>
+        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2"><span class="text-gray-400">Issobella (5%)</span><span class="font-mono text-white text-[10px]">zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702</span><button onclick="copyToClipboard('zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702')" class="text-[10px] text-gray-500 hover:text-white ml-2">Copy</button></div>
+        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2"><span class="text-gray-400">Pool Fee (1%)</span><span class="font-mono text-white text-[10px]">zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5</span><button onclick="copyToClipboard('zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5')" class="text-[10px] text-gray-500 hover:text-white ml-2">Copy</button></div>
       </div>
     </div>
   </div>
@@ -1544,14 +1192,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: Alerts ═════════ -->
   <div id="pane-alerts" class="hidden space-y-4">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gradient">🚨 Alert History</h1>
-        <p class="text-xs text-gray-400 mt-1">Auto-detected issues across all layers</p>
-      </div>
-      <button onclick="loadAlertHistory()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
-    </div>
-
     <!-- Alert summary cards -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
       <div class="zion-panel p-4 text-center" style="border-color:rgba(239,68,68,0.3)">
@@ -1574,7 +1214,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     <!-- Alert history with filters -->
     <div class="zion-panel p-6">
       <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
-        <h2 class="text-lg font-bold">Alert Feed</h2>
+        <h2 class="text-xl font-bold flex items-center gap-2">🚨 Alert History</h2>
         <div class="flex items-center gap-2">
           <div class="flex gap-1">
             <button onclick="filterAlerts('all')" class="alert-filter-btn text-[10px] px-2.5 py-1 rounded bg-emerald-900/30 text-emerald-300 border border-emerald-500/30" data-filter="all">All</button>
@@ -1582,6 +1222,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
             <button onclick="filterAlerts('warning')" class="alert-filter-btn text-[10px] px-2.5 py-1 rounded bg-black/30 text-gray-400 hover:text-amber-300" data-filter="warning">Warning</button>
             <button onclick="filterAlerts('info')" class="alert-filter-btn text-[10px] px-2.5 py-1 rounded bg-black/30 text-gray-400 hover:text-blue-300" data-filter="info">Info</button>
           </div>
+          <button onclick="loadAlertHistory()" class="text-[10px] px-2.5 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">Refresh</button>
         </div>
       </div>
       <div id="alert-history-list" class="space-y-2 max-h-[500px] overflow-y-auto">
@@ -1592,19 +1233,11 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: Services ═════════ -->
   <div id="pane-services" class="hidden space-y-4">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gradient">🧩 All Mainnet Services</h1>
-        <p class="text-xs text-gray-400 mt-1">L1 Consensus · L2 Bridge/DAO · L3 Advanced · L4 Apps · Infrastructure</p>
-      </div>
-      <button onclick="loadServices()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
-    </div>
-
     <div class="zion-panel p-6">
       <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
         <div>
-          <h2 class="text-lg font-bold flex items-center gap-2">Service Grid</h2>
-          <p class="text-xs text-gray-400 mt-1">Click Start / Stop / Restart on any service. Filter by layer below.</p>
+          <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">🧩 All Mainnet Services</span></h2>
+          <p class="text-xs text-gray-400 mt-1">L1 Consensus · L2 Bridge/DAO · L3 Advanced · L4 Apps · Infrastructure — 21 services</p>
         </div>
         <div class="flex gap-2">
           <button onclick="controlAction('launch-full')" class="zion-button-primary text-sm">🚀 Launch ALL</button>
@@ -1639,113 +1272,8 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     </div>
   </div>
 
-  <!-- ═════════ TAB: Backups ═════════ -->
-  <div id="pane-backups" class="hidden space-y-4">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gradient">💾 Backup Status</h1>
-        <p class="text-xs text-gray-400 mt-1">Local core & Edge database backups · health monitoring</p>
-      </div>
-      <div class="flex gap-2">
-        <button onclick="triggerBackupNow()" class="text-xs px-3 py-1.5 bg-emerald-700/50 hover:bg-emerald-600 rounded-lg transition">▶ Backup Now</button>
-        <button onclick="loadBackups()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
-      </div>
-    </div>
-
-    <!-- Local Backup Card -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <div class="zion-panel p-5">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-base font-bold flex items-center gap-2">🖥️ Local Core</h2>
-          <span id="local-backup-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Checking…</span>
-        </div>
-        <div class="grid grid-cols-2 gap-3 mb-4">
-          <div class="zion-panel-soft p-3 text-center">
-            <div class="text-lg font-bold text-gradient" id="local-last-backup">—</div>
-            <div class="text-[10px] text-gray-400">Last Backup</div>
-          </div>
-          <div class="zion-panel-soft p-3 text-center">
-            <div class="text-lg font-bold text-emerald-400" id="local-backup-size">—</div>
-            <div class="text-[10px] text-gray-400">Size</div>
-          </div>
-          <div class="zion-panel-soft p-3 text-center">
-            <div class="text-lg font-bold text-amber-400" id="local-files-backed">—</div>
-            <div class="text-[10px] text-gray-400">Files</div>
-          </div>
-          <div class="zion-panel-soft p-3 text-center">
-            <div class="text-lg font-bold text-zion-cyan" id="local-disk-usage">—</div>
-            <div class="text-[10px] text-gray-400">Disk Usage</div>
-          </div>
-        </div>
-        <div class="text-[10px] text-gray-500 font-mono" id="local-backup-file">—</div>
-      </div>
-
-      <!-- Edge Backup Card -->
-      <div class="zion-panel p-5">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-base font-bold flex items-center gap-2">🌐 Edge Server</h2>
-          <span id="edge-backup-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Checking…</span>
-        </div>
-        <div class="grid grid-cols-2 gap-3 mb-4">
-          <div class="zion-panel-soft p-3 text-center">
-            <div class="text-lg font-bold text-gradient" id="edge-last-backup">—</div>
-            <div class="text-[10px] text-gray-400">Last Backup</div>
-          </div>
-          <div class="zion-panel-soft p-3 text-center">
-            <div class="text-lg font-bold text-emerald-400" id="edge-backup-size">—</div>
-            <div class="text-[10px] text-gray-400">Size</div>
-          </div>
-          <div class="zion-panel-soft p-3 text-center">
-            <div class="text-lg font-bold text-amber-400" id="edge-files-backed">—</div>
-            <div class="text-[10px] text-gray-400">Files</div>
-          </div>
-          <div class="zion-panel-soft p-3 text-center">
-            <div class="text-lg font-bold text-zion-cyan" id="edge-disk-usage">—</div>
-            <div class="text-[10px] text-gray-400">Disk Usage</div>
-          </div>
-        </div>
-        <div class="text-[10px] text-gray-500 font-mono" id="edge-backup-file">—</div>
-      </div>
-    </div>
-
-    <!-- Backup Detail Tables -->
-    <div class="zion-panel p-5">
-      <h3 class="text-sm font-bold mb-3 zion-kicker">What's Backed Up</h3>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-[11px] text-gray-400">
-        <div>
-          <h4 class="text-xs font-semibold text-gray-300 mb-2">Local Core</h4>
-          <ul class="space-y-1 list-disc list-inside">
-            <li>Node state DBs (edge-state.db, edge2-state.db)</li>
-            <li>Dashboard metrics DB</li>
-            <li>peers.json & revenue journal</li>
-            <li>Bridge / DAO / WARP configs</li>
-            <li>Git reference & environment files</li>
-          </ul>
-        </div>
-        <div>
-          <h4 class="text-xs font-semibold text-gray-300 mb-2">Edge Server</h4>
-          <ul class="space-y-1 list-disc list-inside">
-            <li>Node state DBs (edge-state.db, edge2-state.db)</li>
-            <li>DAO DB with WAL (dao.db + shm + wal)</li>
-            <li>Service DBs (free_world, issobella, oasis)</li>
-            <li>Pool logs & systemd unit files</li>
-            <li>Environment config & git reference</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- ═════════ TAB: Genesis & Premine ═════════ -->
   <div id="pane-genesis" class="hidden space-y-4">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gradient">⚡ Genesis & Premine</h1>
-        <p class="text-xs text-gray-400 mt-1">Block #0 · 144B supply cap · Decade Decay</p>
-      </div>
-      <button onclick="loadGenesis()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
-    </div>
-
     <!-- Hero -->
     <div class="zion-panel p-6 md:p-8 relative overflow-hidden">
       <div class="zion-kicker mb-3 relative z-10">⚡ Genesis · Block #0 · Eternal</div>
@@ -1799,22 +1327,180 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: P0 Blockers ═════════ -->
   <div id="pane-blockers" class="hidden space-y-4">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gradient">🚧 P0 Launch Blockers</h1>
-        <p class="text-xs text-gray-400 mt-1">Critical issues that MUST be resolved before T-0</p>
-      </div>
-      <button onclick="loadBlockers()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
-    </div>
     <div class="zion-panel p-6">
       <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
         <div>
-          <h2 class="text-lg font-bold">Current Blockers</h2>
-          <p class="text-xs text-gray-400 mt-1">Status overview and action items</p>
+          <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">🚧 P0 Launch Blockers</span></h2>
+          <p class="text-xs text-gray-400 mt-1">Critical issues that MUST be resolved before T-0 (genesis ceremony)</p>
         </div>
         <div id="blockers-summary" class="text-xs"></div>
       </div>
       <div id="blockers-list" class="space-y-3"></div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: Controls ═════════ -->
+  <div id="pane-controls" class="hidden space-y-4">
+    <div class="zion-panel p-6">
+      <h2 class="text-xl font-bold mb-2 flex items-center gap-2"><span class="text-gradient">🎛️ Stack Control Center</span></h2>
+      <p class="text-sm text-gray-400 mb-6">All actions execute whitelisted PowerShell scripts via detached subprocess. Logs appear below.</p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <button onclick="startDependencyLaunch('stack')" class="zion-panel zion-panel-hover p-6 text-left relative overflow-hidden"
+                style="background:linear-gradient(135deg,rgba(16,185,129,0.35),rgba(16,185,129,0.12));border-color:rgba(16,185,129,0.65);">
+          <div class="text-4xl mb-3">🚀</div>
+          <div class="text-lg font-bold mb-1">Launch Core Stack</div>
+          <div class="text-xs text-emerald-300/80">Sequential: node1 → node2 → pool → miner</div>
+        </button>
+        <button onclick="startDependencyLaunch('full')" class="zion-panel zion-panel-hover p-6 text-left relative overflow-hidden"
+                style="background:linear-gradient(135deg,rgba(6,182,212,0.35),rgba(6,182,212,0.12));border-color:rgba(6,182,212,0.65);">
+          <div class="text-4xl mb-3">🔀</div>
+          <div class="text-lg font-bold mb-1">Launch Full Stack</div>
+          <div class="text-xs text-cyan-300/80">All services with deps resolved</div>
+        </button>
+        <button onclick="if(confirm('Run dependency check and build? This may take several minutes.')) controlAction('install-deps')" class="zion-panel zion-panel-hover p-6 text-left relative overflow-hidden"
+                style="background:linear-gradient(135deg,rgba(245,158,11,0.35),rgba(245,158,11,0.12));border-color:rgba(245,158,11,0.65);">
+          <div class="text-4xl mb-3">📦</div>
+          <div class="text-lg font-bold mb-1">Install / Build</div>
+          <div class="text-xs text-amber-300/80">Check Rust, build V3, npm, Docker</div>
+        </button>
+        <button onclick="if(confirm('Stop ALL services?')) controlAction('stop-all')" class="zion-panel zion-panel-hover p-6 text-left relative overflow-hidden"
+                style="background:linear-gradient(135deg,rgba(239,68,68,0.35),rgba(239,68,68,0.12));border-color:rgba(239,68,68,0.65);">
+          <div class="text-4xl mb-3">⏹️</div>
+          <div class="text-lg font-bold mb-1">Stop All Services</div>
+          <div class="text-xs text-red-300/80">Terminates everything</div>
+        </button>
+      </div>
+
+      <!-- Dependency Launch Progress -->
+      <div id="launch-progress-panel" class="zion-panel p-4 mb-6 hidden">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-semibold" id="launch-progress-title">Stack Launch</span>
+          <span class="text-xs font-mono text-gray-400" id="launch-progress-pct">0%</span>
+        </div>
+        <div class="w-full h-2 bg-white/5 rounded-full overflow-hidden mb-2">
+          <div id="launch-progress-bar" class="h-full rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 transition-all" style="width:0%"></div>
+        </div>
+        <div class="text-xs text-gray-400" id="launch-progress-step">Waiting…</div>
+        <div class="mt-2 space-y-1" id="launch-progress-results"></div>
+      </div>
+
+      <h3 class="zion-kicker mb-3">Individual Services</h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6" id="control-buttons"></div>
+
+      <h3 class="zion-kicker mb-3 flex items-center gap-2">💾 Backup & Recovery <button onclick="loadBackupList()" class="text-[10px] px-2 py-0.5 bg-white/10 hover:bg-white/20 rounded transition">🔄 Refresh</button></h3>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        <div class="lg:col-span-1">
+          <div class="zion-panel p-4 mb-3">
+            <div class="text-sm font-bold mb-2">Create Backup</div>
+            <div class="text-xs text-gray-400 mb-3">Zips V3/data (chain state + LMDB). Optionally include logs and env files.</div>
+            <div class="flex gap-2 mb-3">
+              <label class="flex items-center gap-1 text-xs text-gray-300"><input type="checkbox" id="backup-logs" class="accent-zion-gold"> Logs</label>
+              <label class="flex items-center gap-1 text-xs text-gray-300"><input type="checkbox" id="backup-env" class="accent-zion-gold"> Env</label>
+            </div>
+            <button onclick="createBackup()" class="zion-button-primary text-sm w-full">💾 Create Backup</button>
+          </div>
+          <div class="zion-panel p-4 mb-3">
+            <div class="text-sm font-bold mb-2">Verify Integrity</div>
+            <div class="text-xs text-gray-400 mb-3">Check snapshot JSON, journal, and LMDB files for corruption.</div>
+            <button onclick="verifyBackup()" class="zion-button-secondary text-sm w-full">🔍 Verify Chain State</button>
+          </div>
+          <div class="zion-panel p-4">
+            <div class="text-sm font-bold mb-2">Core Utility (Offline LMDB)</div>
+            <div class="text-xs text-gray-400 mb-3">Deep verify, export state, and dump blocks directly from LMDB without running a node.</div>
+            <div class="flex flex-col gap-2">
+              <button onclick="runCoreUtil('verify-db')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition text-left">🔍 Deep Verify (LMDB)</button>
+              <button onclick="runCoreUtil('export-state')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition text-left">📤 Export State (JSON)</button>
+              <button onclick="runCoreUtil('dump-blocks')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition text-left">🧱 Dump Blocks</button>
+              <button onclick="runCoreUtil('tip-height')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition text-left">📏 Tip Height</button>
+            </div>
+          </div>
+        </div>
+        <div class="lg:col-span-2">
+          <div id="backup-list" class="space-y-2 max-h-64 overflow-y-auto">
+            <div class="text-gray-500 italic text-sm">Click refresh to load backups.</div>
+          </div>
+          <div id="backup-log" class="bg-black/40 rounded-xl p-3 max-h-32 overflow-y-auto log-tail text-gray-300 mt-3">
+            <div class="text-gray-500 italic text-sm">Backup operations will be logged here.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div>
+          <h3 class="zion-kicker mb-3">Action Log</h3>
+          <div id="control-log" class="bg-black/40 rounded-xl p-3 max-h-48 overflow-y-auto log-tail">
+            <div class="text-gray-500 italic">Control actions will be logged here.</div>
+          </div>
+        </div>
+        <div>
+          <h3 class="zion-kicker mb-3 flex items-center gap-2">📦 Install Log <button onclick="loadInstallLog()" class="text-[10px] px-2 py-0.5 bg-white/10 hover:bg-white/20 rounded transition">🔄 Refresh</button></h3>
+          <div id="install-log" class="bg-black/40 rounded-xl p-3 max-h-48 overflow-y-auto log-tail text-gray-300">
+            <div class="text-gray-500 italic">Run Install / Build to see progress.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CLI Console -->
+      <h3 class="zion-kicker mb-3">🖥️ CLI Console (zion-cli)</h3>
+      <div class="zion-panel p-4 mb-6">
+        <div class="flex gap-2 mb-3">
+          <input id="cli-input" type="text" placeholder="node status" class="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-zion-gold/50">
+          <button onclick="runCliCommand()" class="zion-button-primary text-sm px-4">▶ Run</button>
+        </div>
+        <div class="flex flex-wrap gap-1.5 mb-3">
+          <button onclick="runCliQuick('node status')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition">node status</button>
+          <button onclick="runCliQuick('node blocks 10')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition">node blocks 10</button>
+          <button onclick="runCliQuick('node mempool')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition">node mempool</button>
+          <button onclick="runCliQuick('wallet balance')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition">wallet balance</button>
+          <button onclick="runCliQuick('pool status')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition">pool status</button>
+          <button onclick="runCliQuick('doctor')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition">doctor</button>
+          <button onclick="runCliQuick('status')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition">status</button>
+        </div>
+        <div id="cli-output" class="bg-black/40 rounded-xl p-3 max-h-64 overflow-y-auto log-tail text-gray-300 font-mono text-xs">
+          <div class="text-gray-500 italic">Type a command and press Run, or click a quick command.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Miner Performance -->
+    <div class="zion-panel p-6 mb-4">
+      <h2 class="text-lg font-bold mb-3 flex items-center gap-2">⛏️ Miner Performance</h2>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div>
+          <div class="text-xs text-gray-400 mb-2">Shares Accepted / Rejected Trend (last 50)</div>
+          <canvas id="miner-shares-chart" height="120"></canvas>
+        </div>
+        <div>
+          <div class="text-xs text-gray-400 mb-2">Session Stats</div>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-2" id="miner-session-stats">
+            <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Iterations</div><div id="perf-iterations" class="text-sm font-bold text-white">—</div></div>
+            <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Accepted</div><div id="perf-accepted" class="text-sm font-bold text-emerald-400">—</div></div>
+            <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Rejected</div><div id="perf-rejected" class="text-sm font-bold text-red-400">—</div></div>
+            <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Best Batch</div><div id="perf-best-batch" class="text-sm font-bold text-white">—</div></div>
+            <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">GPU HPS</div><div id="perf-gpu-hps" class="text-sm font-bold text-amber-400">—</div></div>
+            <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Epoch</div><div id="perf-epoch" class="text-sm font-bold text-white">—</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dependency Graph -->
+    <div class="zion-panel p-6 mb-4">
+      <h2 class="text-lg font-bold mb-3 flex items-center gap-2">🕸️ Service Dependency Graph</h2>
+      <div id="dep-graph-container" class="bg-black/30 rounded-xl p-4 min-h-[200px] overflow-auto">
+        <div class="text-sm text-gray-400 mb-2">Green = alive, Red = dead, arrows = depends_on</div>
+        <div id="dep-graph-viz" class="flex flex-wrap gap-3"></div>
+      </div>
+    </div>
+
+    <!-- Process Registry -->
+    <div class="zion-panel p-6 mb-4">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-bold flex items-center gap-2">🖥️ Process Registry</h2>
+        <button onclick="loadProcessRegistry()" class="text-[10px] px-2 py-1 bg-white/10 hover:bg-white/20 rounded transition">🔄 Refresh</button>
+      </div>
+      <div id="process-registry" class="text-xs"></div>
     </div>
   </div>
 
@@ -2016,74 +1702,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       <div class="text-[10px] text-gray-500 uppercase mb-2">Active HTLCs</div>
       <div id="l2-htlc-list" class="space-y-1.5 max-h-40 overflow-y-auto">
         <div class="text-gray-600 text-xs italic">No active HTLCs — swap daemon offline</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Swap Aggregator Panel -->
-  <div class="zion-panel p-5">
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-base font-bold flex items-center gap-2">💱 Swap Aggregator (Uni V3)</h2>
-      <span id="l2-agg-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Offline</span>
-    </div>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-      <!-- Quote Form -->
-      <div class="md:col-span-2 space-y-3">
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="text-[10px] text-gray-400 uppercase tracking-wider">From</label>
-            <select id="l2-agg-from" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white focus:border-emerald-500 focus:outline-none transition">
-              <option value="ZION">ZION (L1)</option>
-              <option value="wZION">wZION (Base)</option>
-              <option value="ETH">ETH (Base)</option>
-              <option value="USDC">USDC (Base)</option>
-            </select>
-          </div>
-          <div>
-            <label class="text-[10px] text-gray-400 uppercase tracking-wider">To</label>
-            <select id="l2-agg-to" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white focus:border-emerald-500 focus:outline-none transition">
-              <option value="USDC">USDC (Base)</option>
-              <option value="ETH">ETH (Base)</option>
-              <option value="wZION">wZION (Base)</option>
-            </select>
-          </div>
-          <div>
-            <label class="text-[10px] text-gray-400 uppercase tracking-wider">Amount</label>
-            <input type="number" id="l2-agg-amount" placeholder="100" min="1" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white focus:border-emerald-500 focus:outline-none transition">
-          </div>
-          <div>
-            <label class="text-[10px] text-gray-400 uppercase tracking-wider">Slippage</label>
-            <select id="l2-agg-slippage" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white focus:border-emerald-500 focus:outline-none transition">
-              <option value="50">0.5%</option>
-              <option value="100" selected>1.0%</option>
-              <option value="200">2.0%</option>
-              <option value="500">5.0%</option>
-            </select>
-          </div>
-        </div>
-        <div id="l2-agg-quote-result" class="hidden bg-black/30 rounded-lg p-3 text-xs">
-          <div class="flex justify-between"><span class="text-gray-400">Estimated out</span><span class="text-emerald-400 font-bold" id="l2-agg-est-out">—</span></div>
-          <div class="flex justify-between mt-1"><span class="text-gray-400">Price impact</span><span class="text-white" id="l2-agg-impact">—</span></div>
-          <div class="flex justify-between mt-1"><span class="text-gray-400">Route</span><span class="text-white font-mono" id="l2-agg-route">—</span></div>
-        </div>
-        <div class="flex gap-2">
-          <button onclick="getAggregatorQuote()" class="flex-1 text-xs px-4 py-2 bg-emerald-700/50 hover:bg-emerald-600 rounded-lg font-semibold transition">📊 Get Quote</button>
-          <button onclick="controlAction('start-swap-aggregator')" class="text-xs px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg font-semibold transition">▶ Start</button>
-          <button onclick="controlAction('stop-swap-aggregator')" class="text-xs px-3 py-2 bg-red-700/50 hover:bg-red-600 rounded-lg font-semibold transition">⏹</button>
-        </div>
-      </div>
-      <!-- Aggregator Stats -->
-      <div class="space-y-3">
-        <div class="bg-black/30 rounded-xl p-4 text-center">
-          <div class="text-2xl font-bold text-emerald-400" id="l2-agg-pairs">—</div>
-          <div class="text-[10px] text-gray-400 mt-1">Supported Pairs</div>
-        </div>
-        <div class="grid grid-cols-2 gap-2 text-xs">
-          <div class="bg-black/30 rounded-lg p-2"><div class="text-gray-400 mb-0.5">24h Volume</div><div class="text-white font-bold" id="l2-agg-vol">—</div></div>
-          <div class="bg-black/30 rounded-lg p-2"><div class="text-gray-400 mb-0.5">Quotes</div><div class="text-white font-bold" id="l2-agg-quotes">—</div></div>
-          <div class="bg-black/30 rounded-lg p-2"><div class="text-gray-400 mb-0.5">API Port</div><div class="text-white font-mono">8889</div></div>
-          <div class="bg-black/30 rounded-lg p-2"><div class="text-gray-400 mb-0.5">Router</div><div class="text-white font-mono text-[9px] truncate">Uni V3</div></div>
-        </div>
       </div>
     </div>
   </div>
@@ -2840,13 +2458,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: Charts ═════════ -->
   <div id="pane-charts" class="hidden space-y-4">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gradient">📈 Charts</h1>
-        <p class="text-xs text-gray-400 mt-1">Live metrics history · Hashrate · Blocks · Shares</p>
-      </div>
-      <button onclick="renderCharts()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
-    </div>
     <!-- Timeframe selector & controls -->
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2">
@@ -2905,7 +2516,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       <p class="text-xs text-gray-400 mt-1">Block found · Peer connected · TX confirmed · Alerts</p>
     </div>
     <div class="flex gap-2">
-      <button onclick="loadEvents()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
       <select id="event-type-filter" class="text-xs px-2 py-1.5 bg-black/40 border border-white/10 rounded-lg text-white" onchange="loadEvents()">
         <option value="">All events</option>
         <option value="block">Block</option>
@@ -2956,13 +2566,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: Metrics ═════════ -->
   <div id="pane-metrics" class="hidden">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gradient">📊 Metrics</h1>
-        <p class="text-xs text-gray-400 mt-1">Prometheus · Grafana · Service endpoints</p>
-      </div>
-      <button onclick="renderMetricsButtons()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
-    </div>
     <div class="zion-panel p-6">
       <h2 class="text-lg font-bold mb-2 flex items-center gap-2">📊 Prometheus Metrics &amp; Grafana</h2>
       <p class="text-xs text-gray-400 mb-5">Live scraped metrics from each service. Open Grafana for full dashboards.</p>
@@ -2990,18 +2593,11 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: Launch Day ═════════ -->
   <div id="pane-launch-day" class="hidden space-y-4">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gradient">🚀 Launch Day Automation</h1>
-        <p class="text-xs text-gray-400 mt-1">31.12.2026 12:00 UTC · Genesis backup · Premine rotation</p>
-      </div>
-      <div class="flex items-center gap-2">
-        <span id="launch-day-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-white/10 text-gray-300">Checking...</span>
-        <button onclick="loadLaunchDayStatus()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
-      </div>
-    </div>
-
     <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold flex items-center gap-2"><span class="text-gradient">🚀 Launch Day Automation</span> <span class="text-xs font-normal text-gray-500">(31.12.2026 12:00 UTC)</span></h2>
+        <span id="launch-day-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-white/10 text-gray-300">Checking...</span>
+      </div>
       <p class="text-xs text-gray-400 mb-5">Automatická záloha genesis, premine rotace a uložení vše na lokální PC. Po PC restartu stačí znovu spustit dashboard.</p>
 
       <!-- Status karty -->
@@ -3074,13 +2670,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: Wizard ═════════ -->
   <div id="pane-wizard" class="hidden">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gradient">🧙 Launch Wizard</h1>
-        <p class="text-xs text-gray-400 mt-1">Step-by-step mainnet launch sequence</p>
-      </div>
-      <button onclick="renderWizard()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
-    </div>
     <div class="zion-panel p-6">
       <h2 class="text-xl font-bold mb-2 flex items-center gap-2"><span class="text-gradient">🧙 Mainnet Launch Wizard</span></h2>
       <p class="text-sm text-gray-400 mb-6">Step-by-step guided launch sequence. Each step shows current status &amp; quick actions.</p>
@@ -3090,23 +2679,12 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: Miner Live ═════════ -->
   <div id="pane-miner-live" class="hidden space-y-4">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gradient">⛏️ Miner Live Dashboard</h1>
-        <p class="text-xs text-gray-400 mt-1">Real-time GPU/CPU mining telemetry</p>
-      </div>
-      <div class="flex items-center gap-2">
-        <span id="miner-live-badge" class="text-xs px-2 py-1 rounded bg-gray-700 text-gray-300">Checking…</span>
-        <button onclick="refreshMinerLive()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
-      </div>
-    </div>
-
     <div class="zion-panel p-5">
       <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <h2 class="text-lg font-bold">Performance Metrics</h2>
+        <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">⛏️ Miner Live Dashboard</span> <span class="text-xs text-gray-500 font-normal">Real-time GPU/CPU mining telemetry</span></h2>
         <div class="flex gap-2">
-          <button onclick="controlAction('start-miner')" class="text-xs px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded transition">▶ Start</button>
-          <button onclick="controlAction('stop-miner')" class="text-xs px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded transition">⏹ Stop</button>
+          <button onclick="refreshMinerLive()" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded">🔄 Refresh</button>
+          <span id="miner-live-badge" class="text-xs px-2 py-1 rounded bg-gray-700 text-gray-300">Checking…</span>
         </div>
       </div>
       <!-- KPIs -->
@@ -3354,9 +2932,8 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <h1 class="text-2xl font-bold text-gradient">🌉 ZION Bridge</h1>
         <p class="text-xs text-gray-400 mt-1">Cross-chain relay — L1 ↔ Base Sepolia Testnet (mainnet soon)</p>
       </div>
-      <div class="flex items-center gap-2">
+      <div class="flex gap-2">
         <div id="bridge-status-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-700/50 text-gray-300 border border-white/10">● Checking…</div>
-        <button onclick="loadBridgeStatus()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
       </div>
     </div>
 
@@ -3490,16 +3067,9 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: Hiran AI ═════════ -->
   <div id="pane-hiran" class="hidden space-y-4">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gradient">🤖 Hiran AI</h1>
-        <p class="text-xs text-gray-400 mt-1">v2.2 inference + Hiranyagarbha orchestrator (port 8001)</p>
-      </div>
-      <button onclick="loadAgentList(); checkAiStatus();" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
-    </div>
-
     <div class="zion-panel p-6">
-      <!-- Status row -->
+      <h2 class="text-xl font-bold mb-2 flex items-center gap-2"><span class="text-gradient">🤖 Hiran AI — Agent Management</span></h2>
+      <p class="text-sm text-gray-400 mb-4">Hiran v2.2 inference + Hiranyagarbha orchestrator (port 8001).</p>
 
       <!-- Status row -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
@@ -3815,13 +3385,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: Ops (Backup / CLI / Alerts) ═════════ -->
   <div id="pane-ops" class="hidden space-y-4">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gradient">🔧 Ops</h1>
-        <p class="text-xs text-gray-400 mt-1">Backup · Chain verification · CLI</p>
-      </div>
-      <button onclick="loadOps()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
-    </div>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <!-- Backup Panel -->
       <div class="zion-panel p-5">
@@ -3888,13 +3451,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: Topology ═════════ -->
   <div id="pane-topology" class="hidden space-y-4">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gradient">🌐 Topology</h1>
-        <p class="text-xs text-gray-400 mt-1">Core vs Edge · Latency · Service mesh</p>
-      </div>
-      <button onclick="loadTopology()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
-    </div>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <!-- Core vs Edge -->
       <div class="zion-panel p-5">
@@ -4033,14 +3589,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: ZION Agent ═════════ -->
   <div id="pane-agent" class="hidden space-y-4">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gradient">🤖 ZION Agent</h1>
-        <p class="text-xs text-gray-400 mt-1">Rig Lifecycle Manager · Telemetry · Watchdog</p>
-      </div>
-      <button onclick="refreshAgentPanel()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
-    </div>
-
     <!-- Agent Status Header -->
     <div class="zion-panel p-5">
       <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
@@ -4113,13 +3661,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: DAO Governance (inside main) ═════════ -->
 <div id="pane-dao" class="hidden space-y-5">
-  <div class="flex items-center justify-between">
-    <div>
-      <h1 class="text-2xl font-bold text-gradient">🏛️ DAO Governance</h1>
-      <p class="text-xs text-gray-400 mt-1">Proposals · Treasury · Co-admins · Voting</p>
-    </div>
-    <button onclick="loadDaoAll()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
-  </div>
 
   <!-- Header -->
   <div class="flex items-center justify-between">
@@ -4384,79 +3925,429 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-  <!-- ═════════ TAB: WARP Relay ═════════ -->
-  <div id="pane-warp" class="hidden space-y-4">
-    <div class="flex items-center justify-between">
+  <!-- ═════════ TAB: Pool & Payouts (Robust) ═════════ -->
+  <div id="pane-payout" class="hidden space-y-4">
+    <!-- Header -->
+    <div class="flex items-center justify-between flex-wrap gap-3">
       <div>
-        <h1 class="text-2xl font-bold text-gradient">🌉 WARP Cross-Chain Relay</h1>
-        <p class="text-xs text-gray-400 mt-1">21 chains · Lightning · AI-secured bridge</p>
+        <h1 class="text-2xl font-bold text-gradient">⛏️ Pool Command Center</h1>
+        <p class="text-xs text-gray-400 mt-1">Live telemetry, payout health, miner roster, and validation status</p>
       </div>
-      <button onclick="loadWarpPanel()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
-    </div>
-    <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
-      <div class="zion-panel p-5">
-        <h2 class="text-base font-bold mb-3">Connected Chains</h2>
-        <div class="overflow-x-auto">
-          <table class="w-full text-xs text-left">
-            <thead><tr class="text-gray-500 border-b border-white/10"><th class="py-2 px-2">Chain</th><th class="py-2 px-2">Family</th><th class="py-2 px-2 text-right">Status</th></tr></thead>
-            <tbody id="warp-chains-body"><tr><td colspan="3" class="py-4 text-gray-500 italic text-center">Loading…</td></tr></tbody>
-          </table>
-        </div>
-      </div>
-      <div class="zion-panel p-5">
-        <h2 class="text-base font-bold mb-3">Recent Transfers</h2>
-        <div class="overflow-x-auto">
-          <table class="w-full text-xs text-left">
-            <thead><tr class="text-gray-500 border-b border-white/10"><th class="py-2 px-2">TX</th><th class="py-2 px-2">From</th><th class="py-2 px-2">To</th><th class="py-2 px-2 text-right">Amount</th><th class="py-2 px-2 text-center">Status</th></tr></thead>
-            <tbody id="warp-transfers-body"><tr><td colspan="5" class="py-4 text-gray-500 italic text-center">Loading…</td></tr></tbody>
-          </table>
-        </div>
+      <div class="flex items-center gap-2">
+        <span id="payout-last-update" class="text-[10px] text-gray-500 font-mono">—</span>
+        <button onclick="refreshPayout()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">🔄 Refresh</button>
       </div>
     </div>
-  </div>
 
-  <!-- ═════════ TAB: AI Agents ═════════ -->
-  <div id="pane-ai-agents" class="hidden space-y-4">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gradient">🧠 AI Agents</h1>
-        <p class="text-xs text-gray-400 mt-1">Agent registry and consciousness levels</p>
+    <!-- Pool Health Banner -->
+    <div id="pool-health-banner" class="zion-panel p-4 border-l-4 border-emerald-500">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div class="flex items-center gap-3">
+          <span id="pool-health-dot" class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span id="pool-health-text" class="text-sm font-semibold text-emerald-400">Pool Healthy</span>
+        </div>
+        <div class="flex gap-3 text-[10px] font-mono text-gray-400">
+          <span id="health-edge-rpc">Edge RPC: —</span>
+          <span id="health-edge-stats">Edge Stats: —</span>
+          <span id="health-tailscale">Tailscale: —</span>
+          <span id="health-local-rpc">Local RPC: —</span>
+        </div>
       </div>
-      <button onclick="loadAiAgentsPanel()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+      <div id="pool-health-error" class="mt-2 text-xs text-amber-300 hidden"></div>
     </div>
+
+    <!-- Fee Split Visual Bar -->
+    <div class="zion-panel p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-semibold text-gray-300">Fee Split Visualization</span>
+        <span id="fee-split-label" class="text-[10px] font-mono text-gray-500">—</span>
+      </div>
+      <div class="w-full h-3 rounded-full overflow-hidden flex" id="fee-split-bar">
+        <div class="h-full bg-amber-400" style="width:0%" id="fee-bar-miner"></div>
+        <div class="h-full bg-emerald-400" style="width:0%" id="fee-bar-charity"></div>
+        <div class="h-full bg-purple-400" style="width:0%" id="fee-bar-dev"></div>
+        <div class="h-full bg-red-400" style="width:0%" id="fee-bar-pool"></div>
+      </div>
+      <div class="flex flex-wrap gap-3 mt-2 text-[10px]">
+        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-400"></span> Miner <span id="fee-pct-miner">—</span></span>
+        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> Humanitarian <span id="fee-pct-charity">—</span></span>
+        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-purple-400"></span> Issobella <span id="fee-pct-dev">—</span></span>
+        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-400"></span> Burn <span id="fee-pct-pool">—</span></span>
+      </div>
+    </div>
+
+    <!-- Primary KPIs -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="zion-panel p-4 text-center relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-16 h-16 bg-amber-500/5 rounded-bl-full"></div>
+        <div class="text-xl font-bold text-amber-400" id="payout-tab-blocks">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Blocks Found</div>
+      </div>
+      <div class="zion-panel p-4 text-center relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-16 h-16 bg-emerald-500/5 rounded-bl-full"></div>
+        <div class="text-xl font-bold text-emerald-400" id="payout-tab-status">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Payout Status</div>
+      </div>
+      <div class="zion-panel p-4 text-center relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-16 h-16 bg-purple-500/5 rounded-bl-full"></div>
+        <div class="text-xl font-bold text-purple-400" id="payout-tab-pending">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Pending Payouts</div>
+      </div>
+      <div class="zion-panel p-4 text-center relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-16 h-16 bg-blue-500/5 rounded-bl-full"></div>
+        <div class="text-xl font-bold text-blue-400" id="pool-stat-accept-rate">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Accept Rate %</div>
+      </div>
+    </div>
+
+    <!-- Secondary KPIs -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="zion-panel p-4 text-center relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-16 h-16 bg-amber-500/5 rounded-bl-full"></div>
+        <div class="text-xl font-bold text-amber-400" id="pool-stat-hashrate">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Pool Hashrate (KH/s)</div>
+      </div>
+      <div class="zion-panel p-4 text-center relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-16 h-16 bg-emerald-500/5 rounded-bl-full"></div>
+        <div class="text-xl font-bold text-emerald-400" id="pool-stat-miners">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Active Miners</div>
+      </div>
+      <div class="zion-panel p-4 text-center relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-16 h-16 bg-zion-gold/5 rounded-bl-full"></div>
+        <div class="text-xl font-bold text-zion-gold" id="payout-tab-total-paid">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Total Paid Out</div>
+      </div>
+      <div class="zion-panel p-4 text-center relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-16 h-16 bg-zion-cyan/5 rounded-bl-full"></div>
+        <div class="text-xl font-bold text-zion-cyan" id="pool-stat-pplns">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">PPLNS Window</div>
+      </div>
+    </div>
+
+    <!-- Wallet / Last Payout / Validation -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div class="zion-panel p-4">
+        <div class="text-[10px] text-gray-400 mb-1">Pool Wallet</div>
+        <div class="text-sm font-mono text-amber-400 truncate" id="payout-tab-wallet">—</div>
+        <div class="text-xs text-gray-500 mt-1" id="payout-tab-balance">Balance: —</div>
+      </div>
+      <div class="zion-panel p-4">
+        <div class="text-[10px] text-gray-400 mb-1">Last Payout</div>
+        <div class="text-sm font-bold text-emerald-400" id="payout-tab-last">—</div>
+        <div class="text-xs text-gray-500 mt-1 truncate" id="payout-tab-last-tx">TX: —</div>
+      </div>
+      <div class="zion-panel p-4">
+        <div class="text-[10px] text-gray-400 mb-1">Payout Validation</div>
+        <div class="flex items-center gap-2 mb-1">
+          <span id="validation-dot" class="w-2 h-2 rounded-full bg-gray-500"></span>
+          <span id="validation-status" class="text-sm font-bold text-gray-400">Unknown</span>
+        </div>
+        <div class="text-xs text-gray-500" id="validation-detail">—</div>
+      </div>
+    </div>
+
+    <!-- Active Miners (Robust) -->
     <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-bold">⛏️ Active Miners</h3>
+        <span id="miners-count-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-gray-400">0 miners</span>
+      </div>
       <div class="overflow-x-auto">
-        <table class="w-full text-xs text-left">
-          <thead><tr class="text-gray-500 border-b border-white/10"><th class="py-2 px-2">Agent</th><th class="py-2 px-2">Name</th><th class="py-2 px-2">Consciousness</th><th class="py-2 px-2 text-right">Status</th></tr></thead>
-          <tbody id="ai-agents-body"><tr><td colspan="4" class="py-4 text-gray-500 italic text-center">Loading…</td></tr></tbody>
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="text-gray-400 border-b border-white/10">
+              <th class="py-2 px-2">Address</th>
+              <th class="py-2 px-2">Worker</th>
+              <th class="py-2 px-2">Algorithm</th>
+              <th class="py-2 px-2">Backend</th>
+              <th class="py-2 px-2 text-right">Valid Shares</th>
+              <th class="py-2 px-2 text-right">Hashrate</th>
+              <th class="py-2 px-2 text-right">Total Paid</th>
+              <th class="py-2 px-2 text-right">On-Chain</th>
+              <th class="py-2 px-2 text-right">Pending</th>
+              <th class="py-2 px-2 text-right">Blocks</th>
+            </tr>
+          </thead>
+          <tbody id="payout-miners-table" class="font-mono">
+            <tr><td colspan="10" class="py-2 px-2 text-gray-500 italic">No miners connected</td></tr>
+          </tbody>
         </table>
       </div>
     </div>
-  </div>
 
-  <!-- ═════════ TAB: NCL Jobs ═════════ -->
-  <div id="pane-ncl-jobs" class="hidden space-y-4">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gradient">🧬 NCL Compute Jobs</h1>
-        <p class="text-xs text-gray-400 mt-1">Neural Compute Layer job queue</p>
-      </div>
-      <button onclick="loadNclJobsPanel()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
-    </div>
+    <!-- Recent Payouts Timeline -->
     <div class="zion-panel p-5">
+      <h3 class="text-sm font-bold mb-3">📜 Recent Payouts Timeline</h3>
       <div class="overflow-x-auto">
-        <table class="w-full text-xs text-left">
-          <thead><tr class="text-gray-500 border-b border-white/10"><th class="py-2 px-2">Job</th><th class="py-2 px-2">Type</th><th class="py-2 px-2">Worker</th><th class="py-2 px-2 text-center">Status</th><th class="py-2 px-2 text-right">Progress</th></tr></thead>
-          <tbody id="ncl-jobs-body"><tr><td colspan="5" class="py-4 text-gray-500 italic text-center">Loading…</td></tr></tbody>
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="text-gray-400 border-b border-white/10">
+              <th class="py-2 px-2">Block</th>
+              <th class="py-2 px-2 text-right">Amount</th>
+              <th class="py-2 px-2 text-right">Recipients</th>
+              <th class="py-2 px-2">Status</th>
+              <th class="py-2 px-2">TX ID</th>
+              <th class="py-2 px-2">Time</th>
+            </tr>
+          </thead>
+          <tbody id="payout-detail-table" class="font-mono">
+            <tr><td colspan="6" class="py-2 px-2 text-gray-500 italic">No payouts yet</td></tr>
+          </tbody>
         </table>
       </div>
     </div>
+
+    <!-- On-chain Balances -->
+    <h3 class="text-sm font-bold text-gray-300 mb-3">💎 On-chain Balances</h3>
+    <p class="text-xs text-gray-500 mb-3">Coinbase mints 89/5/5 (miner/humanitarian/issobella); the 1% pool fee is burned. Humanitarian balance also includes the 1.44B ZION genesis premine.</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+      <div class="zion-panel p-4 text-center">
+        <div class="text-[10px] text-gray-400 mb-1">⛏️ Pool / Miner Wallet</div>
+        <div class="text-sm font-mono text-white truncate" id="fs-bal-miner-addr">—</div>
+        <div class="text-xl font-bold text-amber-400 mt-1" id="fs-bal-miner">—</div>
+        <div class="text-[10px] text-gray-500">ZION</div>
+      </div>
+      <div class="zion-panel p-4 text-center">
+        <div class="text-[10px] text-gray-400 mb-1">🌍 Humanitarian</div>
+        <div class="text-sm font-mono text-white truncate" id="fs-bal-charity-addr">—</div>
+        <div class="text-xl font-bold text-emerald-400 mt-1" id="fs-bal-charity">—</div>
+        <div class="text-[10px] text-gray-500">ZION</div>
+      </div>
+      <div class="zion-panel p-4 text-center">
+        <div class="text-[10px] text-gray-400 mb-1">🚀 Issobella</div>
+        <div class="text-sm font-mono text-white truncate" id="fs-bal-dev-addr">—</div>
+        <div class="text-xl font-bold text-purple-400 mt-1" id="fs-bal-dev">—</div>
+        <div class="text-[10px] text-gray-500">ZION</div>
+      </div>
+      <div class="zion-panel p-4 text-center">
+        <div class="text-[10px] text-gray-400 mb-1">🔥 Burned (1%)</div>
+        <div class="text-sm font-mono text-gray-500 truncate">never minted</div>
+        <div class="text-xl font-bold text-red-400 mt-1" id="fs-burned-total">—</div>
+        <div class="text-[10px] text-gray-500">ZION removed from supply</div>
+      </div>
+    </div>
+
+    <!-- Fee Split Breakdown -->
+    <div class="zion-panel p-5">
+      <h3 class="text-sm font-bold mb-3">📋 Fee Split Breakdown</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="text-gray-400 border-b border-white/10">
+              <th class="py-2 px-2">Recipient</th>
+              <th class="py-2 px-2 text-right">%</th>
+              <th class="py-2 px-2 text-right">Per Block</th>
+              <th class="py-2 px-2">Address</th>
+              <th class="py-2 px-2 text-right">Balance</th>
+              <th class="py-2 px-2">Purpose</th>
+            </tr>
+          </thead>
+          <tbody class="font-mono">
+            <tr class="border-b border-white/5">
+              <td class="py-2 px-2 text-amber-400">⛏️ Pool / Miner</td>
+              <td class="py-2 px-2 text-right text-white">89%</td>
+              <td class="py-2 px-2 text-right text-amber-400" id="payout-breakdown-miner-amount">—</td>
+              <td class="py-2 px-2 text-gray-300 truncate max-w-[200px]" id="payout-breakdown-miner-addr">—</td>
+              <td class="py-2 px-2 text-right text-gray-300" id="payout-breakdown-miner-bal">—</td>
+              <td class="py-2 px-2 text-gray-500">PPLNS redistribution</td>
+            </tr>
+            <tr class="border-b border-white/5">
+              <td class="py-2 px-2 text-emerald-400">🌍 Humanitarian</td>
+              <td class="py-2 px-2 text-right text-white">5%</td>
+              <td class="py-2 px-2 text-right text-emerald-400" id="payout-breakdown-charity-amount">—</td>
+              <td class="py-2 px-2 text-gray-300 truncate max-w-[200px]" id="payout-breakdown-charity-addr">—</td>
+              <td class="py-2 px-2 text-right text-gray-300" id="payout-breakdown-charity-bal">—</td>
+              <td class="py-2 px-2 text-gray-500">Children Future Fund</td>
+            </tr>
+            <tr class="border-b border-white/5">
+              <td class="py-2 px-2 text-purple-400">🚀 Issobella</td>
+              <td class="py-2 px-2 text-right text-white">5%</td>
+              <td class="py-2 px-2 text-right text-purple-400" id="payout-breakdown-dev-amount">—</td>
+              <td class="py-2 px-2 text-gray-300 truncate max-w-[200px]" id="payout-breakdown-dev-addr">—</td>
+              <td class="py-2 px-2 text-right text-gray-300" id="payout-breakdown-dev-bal">—</td>
+              <td class="py-2 px-2 text-gray-500">L5/L6 Space Layer</td>
+            </tr>
+            <tr>
+              <td class="py-2 px-2 text-red-400">🔥 Burned</td>
+              <td class="py-2 px-2 text-right text-white">1%</td>
+              <td class="py-2 px-2 text-right text-red-400" id="payout-breakdown-pool-amount">—</td>
+              <td class="py-2 px-2 text-gray-500 truncate max-w-[200px]">never minted</td>
+              <td class="py-2 px-2 text-right text-red-400" id="payout-breakdown-pool-bal">—</td>
+              <td class="py-2 px-2 text-gray-500">Deflationary burn</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Payout Visualizations -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="zion-panel p-5">
+        <h3 class="text-sm font-bold mb-3">🍩 Fee Split Distribution</h3>
+        <div style="position:relative;height:200px;"><canvas id="chart-payout-donut"></canvas></div>
+      </div>
+      <div class="zion-panel p-5">
+        <h3 class="text-sm font-bold mb-3">📈 Blocks & Payouts Over Time</h3>
+        <div style="position:relative;height:200px;"><canvas id="chart-payout-history"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Payout History Table -->
+    <div class="zion-panel p-5">
+      <h3 class="text-sm font-bold mb-3">📜 Payout History</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="text-gray-400 border-b border-white/10">
+              <th class="py-2 px-2">Block</th>
+              <th class="py-2 px-2 text-right">Subsidy</th>
+              <th class="py-2 px-2 text-right">Miner (89%)</th>
+              <th class="py-2 px-2 text-right">Charity (5%)</th>
+              <th class="py-2 px-2 text-right">Dev (5%)</th>
+              <th class="py-2 px-2 text-right">Pool (1%)</th>
+            </tr>
+          </thead>
+          <tbody id="payout-history-table" class="font-mono">
+            <tr><td colspan="6" class="py-2 px-2 text-gray-500 italic">No payout history yet</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Logs grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="zion-panel p-5">
+        <h3 class="text-sm font-bold mb-3">📝 Recent Miner Payouts</h3>
+        <div id="payout-tab-miner-log" class="space-y-2 text-xs text-gray-300 max-h-64 overflow-y-auto log-tail">
+          <div class="text-gray-500 italic">Loading...</div>
+        </div>
+      </div>
+      <div class="zion-panel p-5">
+        <h3 class="text-sm font-bold mb-3">📝 Recent Fee Payouts</h3>
+        <div id="payout-tab-fee-log" class="space-y-2 text-xs text-gray-300 max-h-64 overflow-y-auto log-tail">
+          <div class="text-gray-500 italic">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Miner Performance -->
+    <div class="zion-panel p-5">
+      <h3 class="text-sm font-bold mb-3">⛏️ Miner Performance</h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="zion-panel p-3 text-center">
+          <div class="text-xl font-bold text-amber-400" id="miner-perf-hashrate">—</div>
+          <div class="text-[10px] text-gray-400 mt-1">Hashrate (KH/s)</div>
+        </div>
+        <div class="zion-panel p-3 text-center">
+          <div class="text-xl font-bold text-emerald-400" id="miner-perf-accepted">—</div>
+          <div class="text-[10px] text-gray-400 mt-1">Shares Accepted</div>
+        </div>
+        <div class="zion-panel p-3 text-center">
+          <div class="text-xl font-bold text-rose-400" id="miner-perf-rejected">—</div>
+          <div class="text-[10px] text-gray-400 mt-1">Shares Rejected</div>
+        </div>
+        <div class="zion-panel p-3 text-center">
+          <div class="text-xl font-bold text-blue-400" id="miner-perf-height">—</div>
+          <div class="text-[10px] text-gray-400 mt-1">Current Height</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Errors -->
+    <div class="zion-panel p-5">
+      <h3 class="text-sm font-bold mb-3">⚠️ Payout Errors (if any)</h3>
+      <div id="payout-tab-error-log" class="space-y-2 text-xs text-gray-300 max-h-48 overflow-y-auto log-tail">
+        <div class="text-gray-500 italic">No errors detected</div>
+      </div>
+    </div>
   </div>
 
-  </main>
+    </main>
   </div>
 
-  <!-- ═════════ TAB: DAO Governance ═════════ --><!-- Block Detail Modal -->
+  <!-- Footer -->
+  <footer class="text-center text-xs text-gray-600 pt-8 pb-4">
+    <hr class="zion-divider mb-4">
+    <span class="text-gradient font-semibold">ZION TerraNova V3</span> · Mainnet Command Center · Zero-dep Python stdlib server
+    <span class="text-gray-500"> · </span>
+    <a href="../MAINNETREADYrun.md" target="_blank" class="text-zion-gold hover:underline">Runbook</a>
+    <span class="text-gray-500"> · </span>
+    <a href="../V3/docs/MAINNET_CONSTANTS.md" target="_blank" class="text-zion-gold hover:underline">Constants</a>
+    <span class="text-gray-500"> · </span>
+    <a href="../MainnetLaunch.md" target="_blank" class="text-zion-gold hover:underline">Playbook</a>
+    <div class="mt-2 italic">"In code we trust. 144 billion ZION. Not one satoshi more."</div>
+  </footer>
+</div>
+
+<!-- Settings Modal -->
+<div id="settings-modal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 p-4" onclick="if(event.target===this)closeSettingsModal()">
+  <div class="zion-panel w-full max-w-lg max-h-[80vh] overflow-y-auto p-6 relative">
+    <button onclick="closeSettingsModal()" class="absolute top-3 right-3 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h2 class="text-xl font-bold mb-4 text-gradient">⚙️ Settings</h2>
+    <div class="space-y-4">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Theme</label>
+          <select id="settings-theme" class="w-full bg-black/30 border border-zion-700 rounded-md px-2 py-2 text-xs text-white focus:outline-none focus:border-zion-gold">
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Default Tab</label>
+          <select id="settings-default-tab" class="w-full bg-black/30 border border-zion-700 rounded-md px-2 py-2 text-xs text-white focus:outline-none focus:border-zion-gold">
+            <option value="overview">Overview</option>
+            <option value="controls">Controls</option>
+            <option value="explorer">Explorer</option>
+            <option value="topology">Topology</option>
+            <option value="ops">Ops</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="text-xs text-gray-400 block mb-1">Topology Mode</label>
+        <select id="settings-topology" class="w-full bg-black/30 border border-zion-700 rounded-md px-2 py-2 text-xs text-white focus:outline-none focus:border-zion-gold">
+          <option value="edge-primary">🌍 Edge-Primary (Production)</option>
+          <option value="local-dev">🔷 Local-Dev (Testing)</option>
+        </select>
+        <p class="text-[10px] text-gray-500 mt-1">Edge-primary: Edge server runs node+pool, local PC is backup. Local-dev: All services run locally for testing.</p>
+      </div>
+      <div class="flex items-center justify-between pt-2">
+        <span class="text-xs text-gray-400">Requires dashboard restart to apply topology change</span>
+        <button onclick="saveSettings()" class="zion-button-primary text-xs px-3 py-1.5">Save & Restart</button>
+      </div>
+      <div>
+        <label class="text-xs text-gray-400 block mb-1">Refresh Interval (ms)</label>
+        <input id="settings-refresh" type="number" min="1000" max="30000" step="500" class="w-full bg-black/30 border border-zion-700 rounded-md px-2 py-2 text-xs text-white focus:outline-none focus:border-zion-gold">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Hashrate Alert Threshold (KH/s)</label>
+          <input id="settings-hashrate-th" type="number" min="0" max="100" step="0.1" class="w-full bg-black/30 border border-zion-700 rounded-md px-2 py-2 text-xs text-white focus:outline-none focus:border-zion-gold">
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Sync Gap Alert Threshold (blocks)</label>
+          <input id="settings-sync-th" type="number" min="1" max="100" step="1" class="w-full bg-black/30 border border-zion-700 rounded-md px-2 py-2 text-xs text-white focus:outline-none focus:border-zion-gold">
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
+          <input id="settings-watchdog" type="checkbox" class="accent-zion-gold"> Auto-launch watchdog
+        </label>
+        <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
+          <input id="settings-tooltips" type="checkbox" class="accent-zion-gold"> Show tooltips
+        </label>
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button onclick="saveSettings()" class="text-xs px-3 py-1.5 bg-emerald-700/50 hover:bg-emerald-600 rounded-md font-semibold transition">💾 Save</button>
+        <button onclick="resetSettings()" class="text-xs px-3 py-1.5 bg-gray-700/50 hover:bg-gray-600 rounded-md font-semibold transition">↺ Reset</button>
+        <span id="settings-save-status" class="text-xs text-emerald-400 self-center"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════ TAB: DAO Governance ═════════ --><!-- Block Detail Modal -->
 <div id="block-modal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 p-4" onclick="if(event.target===this)closeBlockModal()">
   <div class="zion-panel w-full max-w-2xl max-h-[80vh] overflow-y-auto p-6 relative">
     <button onclick="closeBlockModal()" class="absolute top-3 right-3 text-gray-400 hover:text-white text-xl">&times;</button>
@@ -4467,6 +4358,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=56"></script>
+<script src="/dashboard.js?v=23"></script>
 </body>
 </html>

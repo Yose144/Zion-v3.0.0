@@ -1,21 +1,11 @@
 # ──────────────────────────────────────────────────────────────────────────────
-# ZION Bridge Relay — MAINNET Configuration TEMPLATE
-# Target: Base Mainnet (EVM chain ID 8453) ↔ ZION L1 mainnet
+# ZION Bridge Relay — Mainnet Configuration
+# Target: Base (EVM chain ID 8453) ↔ ZION L1 mainnet
 # ──────────────────────────────────────────────────────────────────────────────
 #
-# ⚠️  STATUS: NOT YET DEPLOYED  ⚠️
-# This file is a TEMPLATE. Mainnet contracts have NOT been deployed yet.
-# All contract addresses below are PLACEHOLDERS.
-#
-# To activate mainnet:
-#   1. Deploy wZION + ZIONBridge + BridgeValidator on Base Mainnet
-#   2. Fill in real contract addresses below
-#   3. Provision 5 validator keys on separate hosts
-#   4. Replace validator_addresses with real addresses
-#   5. Set enabled = true
-#   6. See: V3/docs/BRIDGE_MAINNET_LAUNCH_CHECKLIST.md
-#
-# For current testnet operations, use: bridge-testnet.toml
+# NOTE: Bridge vault address is now operational (keyless derivation from
+# "ZION Bridge Vault V3 Mainnet" seed). Validator proofs with secp256k1
+# signatures are required for unlock operations.
 
 [bridge]
 name    = "ZION Bridge Relay"
@@ -41,18 +31,17 @@ enabled = true
 
 [[evm_chains]]
 chain_id                = "base"
-name                    = "Base Mainnet"
+name                    = "Base"
 evm_chain_id            = 8453
 rpc_url                 = "https://base-rpc.publicnode.com"
 rpc_url_backup          = "https://mainnet.base.org"
-# TODO: Replace with real mainnet addresses after deployment
-wzion_address           = "0x0000000000000000000000000000000000000000"
-bridge_contract_address = "0x0000000000000000000000000000000000000000"
+wzion_address           = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+bridge_contract_address = "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721"
 finality_blocks         = 64         # higher finality for mainnet safety
-enabled                 = false      # DO NOT enable until real contracts are deployed
+enabled                 = true       # L1 bridge vault operational (keyless address deployed)
 gas_strategy            = "eip1559"
 max_gas_gwei            = 5          # tight gas cap for mainnet
-start_block           = 1
+start_block             = 25000000  # Base mainnet approximate block
 
 # ── Validator / Multisig ─────────────────────────────────────────────────────
 #
@@ -70,11 +59,10 @@ start_block           = 1
 [validator]
 private_key_file    = "/etc/zion/bridge-validator.key"
 validator_id        = "validator-1"
-# 5-of-5 requires ALL validators to sign. Change to 3 for 3-of-5.
-threshold           = 5
+threshold           = 3
 total_validators    = 5
 validator_addresses = [
-    "0x0000000000000000000000000000000000000001",  # validator-1 (deployer)
+    "0x0000000000000000000000000000000000000001",  # validator-1
     "0x0000000000000000000000000000000000000002",  # validator-2
     "0x0000000000000000000000000000000000000003",  # validator-3
     "0x0000000000000000000000000000000000000004",  # validator-4
@@ -95,7 +83,7 @@ auto_pause_on_anomaly = true
 # ── Database ─────────────────────────────────────────────────────────────────
 
 [database]
-path                = "/home/zionserver/2.9.6-main/V3/data/bridge.db"
+path                = "/data/bridge/bridge.db"
 backup_interval_secs = 1800     # more frequent backups for mainnet
 
 # ── Metrics ──────────────────────────────────────────────────────────────────

@@ -72,6 +72,7 @@ pub enum PoolMessage {
     Result {
         accepted: bool,
         status: String,
+        block_found: bool,
     },
     Stale {
         job_id: u64,
@@ -161,7 +162,6 @@ pub struct ShareDecision {
 pub struct PoolStats {
     pub accepted_shares: u64,
     pub rejected_shares: u64,
-    pub stale_shares: u64,
     pub active_jobs: usize,
     pub revenue: RevenueSnapshot,
 }
@@ -176,7 +176,6 @@ pub struct MiningPool {
     runtime: CoreRuntime,
     accepted_shares: u64,
     rejected_shares: u64,
-    stale_shares: u64,
     next_job_id: u64,
     job_ttl_ms: u64,
     active_jobs: HashMap<u64, TrackedJob>,
@@ -198,7 +197,6 @@ impl MiningPool {
             runtime,
             accepted_shares: 0,
             rejected_shares: 0,
-            stale_shares: 0,
             next_job_id: 1,
             job_ttl_ms,
             active_jobs: HashMap::new(),
@@ -288,12 +286,7 @@ impl MiningPool {
         }
     }
 
-    pub fn hello_message(
-        &self,
-        miner_id: &str,
-        worker_name: &str,
-        payout_address: &str,
-    ) -> PoolMessage {
+    pub fn hello_message(&self, miner_id: &str, worker_name: &str, payout_address: &str) -> PoolMessage {
         PoolMessage::Hello {
             miner_id: miner_id.to_string(),
             worker_name: worker_name.to_string(),
@@ -329,11 +322,10 @@ impl MiningPool {
         } else {
             submission.algorithm.as_str()
         };
-        match self.runtime.validate_candidate_with_algorithm(
-            submission.candidate,
-            submission.target,
-            algo,
-        ) {
+        match self
+            .runtime
+            .validate_candidate_with_algorithm(submission.candidate, submission.target, algo)
+        {
             Some(sealed_block) => {
                 self.accepted_shares += 1;
                 self.runtime.record_revenue(
@@ -376,7 +368,6 @@ impl MiningPool {
         )
     }
 
-    #[allow(clippy::too_many_arguments)]
     pub fn submit_solution_with<F>(
         &mut self,
         miner_id: String,
@@ -427,27 +418,15 @@ impl MiningPool {
             algorithm: algorithm.to_string(),
         };
 
-        // Use miner-submitted hash for validation (trust GPU for target check).
-        // CPU hash is computed for audit/mismatch detection only.
-        let computed_hash = solution.candidate.hash_with_algorithm(algorithm);
-        if computed_hash != solution.hash {
-            // GPU/CPU mismatch: miner logs GPU_CPU_MISMATCH; we accept the
-            // submitted hash so that valid GPU-found shares aren't rejected
-            // due to minor kernel drift between CPU and OpenCL paths.
-        }
-
-        if !job.target.allows(&solution.hash) {
+        let Some(sealed_block) = self
+            .runtime
+            .validate_candidate_with_algorithm(submission.candidate, submission.target, algorithm)
+        else {
             self.rejected_shares += 1;
             return ShareDecision {
                 status: ShareStatus::RejectedLowDifficulty,
                 sealed_block: None,
             };
-        }
-
-        let sealed_block = SealedBlock {
-            header: solution.candidate.header,
-            nonce: solution.candidate.nonce,
-            hash: solution.hash,
         };
 
         let final_status = finalize(job, solution, sealed_block);
@@ -503,6 +482,7 @@ impl MiningPool {
         PoolMessage::Result {
             accepted: matches!(decision.status, ShareStatus::Accepted),
             status: format!("{:?}", decision.status),
+            block_found: decision.sealed_block.is_some(),
         }
     }
 
@@ -534,7 +514,6 @@ impl MiningPool {
         PoolStats {
             accepted_shares: self.accepted_shares,
             rejected_shares: self.rejected_shares,
-            stale_shares: self.stale_shares,
             active_jobs: self.active_jobs.len(),
             revenue: self.runtime.revenue_snapshot(),
         }
@@ -558,11 +537,6 @@ impl MiningPool {
     /// Increment the rejected-share counter.
     pub fn record_rejected_share(&mut self) {
         self.rejected_shares += 1;
-    }
-
-    /// Increment the stale-share counter.
-    pub fn record_stale_share(&mut self) {
-        self.stale_shares += 1;
     }
 }
 
@@ -969,6 +943,7 @@ mod tests {
             PoolMessage::Result {
                 accepted: true,
                 status: "Accepted".to_string(),
+                block_found: false,
             },
             PoolMessage::Stale { job_id: 1 },
             PoolMessage::Cancel {
