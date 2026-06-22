@@ -21,7 +21,7 @@ async function proxyDao(request: Request, path: string[]) {
   const headers = new Headers();
   const accept = request.headers.get('accept');
   const contentType = request.headers.get('content-type');
-  const apiKey = request.headers.get('x-dao-key');
+  const apiKey = request.headers.get('x-dao-key') ?? process.env.ZION_DAO_API_KEY;
 
   if (accept) headers.set('accept', accept);
   if (contentType) headers.set('content-type', contentType);

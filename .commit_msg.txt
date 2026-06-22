@@ -1,0 +1,15 @@
+feat(dashboard,dao): sync dashboard bridge status and DAO API for mainnet
+
+- Update ZION_OS/dashboard/app.py bridge API endpoints for mainnet 5/5:
+  - /api/bridge/status: live metrics from bridge relay (L1 height, EVM block,
+    locks/mints/burns/unlocks), 5/5 validators, Base Mainnet chain.
+  - /api/bridge/chains: Base Mainnet with real wZION and ZIONBridge addresses.
+  - /api/bridge/validators: all 5 mainnet validator/guardian addresses.
+- Update DAO website integration:
+  - Use process.env.ZION_DAO_API_KEY as fallback in route.ts proxy.
+  - Remove empty X-DAO-Key from dao-api.ts createGovernanceProposal.
+  - Load real governance proposals in DAO page.
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>
