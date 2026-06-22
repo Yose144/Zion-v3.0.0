@@ -2,6 +2,7 @@ import React, {createContext, useState, useEffect, useContext, useCallback, useR
 import WalletService from '../services/WalletService';
 import BlockchainRPC from '../services/BlockchainRPC';
 import {createSignedTransaction} from '../services/TransactionBuilder';
+import {buildAccountTransaction} from '../services/AccountBuilder';
 import {CONFIG} from '../constants/config';
 
 const WalletContext = createContext();
@@ -160,43 +161,63 @@ export const WalletProvider = ({children}) => {
   };
 
   /**
-   * Send ZION using UTXO transaction builder
-   * @param {string} recipientAddress - Destination address
-   * @param {number} amountZion - Amount in ZION (not atomic)
+   * Send ZION with automatic model detection:
+   * - If address has UTXOs → use UTXO transaction (v2 BLAKE3)
+   * - Otherwise → fall back to Account transaction (no coinbase maturity)
+   * @param {string} recipientAddress - Destination zion1 address
+   * @param {number} amountZion - Amount in ZION (human units)
    * @param {string} password - Wallet password for key decryption
-   * @returns {Promise<{txId: string}>}
+   * @returns {Promise<{txId: string, model: string}>}
    */
   const sendZion = async (recipientAddress, amountZion, password) => {
     if (locked) throw new Error('Wallet is locked');
     if (!activeWallet) throw new Error('No active wallet');
     bumpActivity();
 
-    // Get private key from keychain
+    // Get private key from keychain (32-byte Ed25519 seed, hex string)
     const {privateKey} = await WalletService.exportWallet(activeWallet.id, password);
     if (!privateKey) throw new Error('Failed to decrypt wallet');
 
-    // Fetch fresh UTXOs
+    // Fetch balance + UTXOs to detect which model to use
+    const balance = await BlockchainRPC.getBalance(activeWallet.address);
     const freshUtxos = await BlockchainRPC.getUTXOs(activeWallet.address);
-    if (!freshUtxos || freshUtxos.length === 0) {
-      throw new Error('No unspent outputs available');
+    const utxoCount = balance?.utxo_count ?? freshUtxos.length ?? 0;
+    const accountBalanceFlowers = BigInt(balance?.account_balance_flowers || '0');
+
+    let txId;
+    let model;
+
+    if (utxoCount > 0) {
+      // ── UTXO model ─────────────────────────────────────────────
+      model = 'utxo';
+      const {tx, txHash} = await createSignedTransaction({
+        from: activeWallet.address,
+        to: recipientAddress,
+        amountZion,
+        utxos: freshUtxos,
+        privateKey: Buffer.from(privateKey, 'hex'),
+      });
+      txId = await BlockchainRPC.broadcastTransaction(tx);
+      txId = txId || (txHash instanceof Buffer ? txHash.toString('hex') : txHash);
+    } else if (accountBalanceFlowers > 0n) {
+      // ── Account model ──────────────────────────────────────────
+      model = 'account';
+      const accountTx = await buildAccountTransaction({
+        from: activeWallet.address,
+        to: recipientAddress,
+        amountZion,
+        privateKey: Buffer.from(privateKey, 'hex'),
+      });
+      txId = await BlockchainRPC.broadcastAccountTransaction(accountTx);
+      if (!txId) txId = accountTx.tx_id;
+    } else {
+      throw new Error('Insufficient balance: address has neither UTXOs nor account balance');
     }
-
-    // Build, sign & serialize transaction
-    const {tx, txHash} = await createSignedTransaction({
-      from: activeWallet.address,
-      to: recipientAddress,
-      amountZion,
-      utxos: freshUtxos,
-      privateKey: Buffer.from(privateKey, 'hex'),
-    });
-
-    // Broadcast signed transaction object to network
-    const txId = await BlockchainRPC.broadcastTransaction(tx);
 
     // Refresh balance after send
     setTimeout(() => refreshBalance(), 2000);
 
-    return {txId: txId || txHash};
+    return {txId, model};
   };
 
   const value = {

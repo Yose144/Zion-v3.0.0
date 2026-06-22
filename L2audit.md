@@ -39,7 +39,7 @@ There are **four different bridge configs** in the repo, each with different con
 | File | Network | Threshold | Contract Address | wZION Address | Notes |
 |------|---------|-----------|-------------------|---------------|-------|
 | `V3/L2/bridge/config/bridge-testnet.toml` | testnet | 3/5 | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | Placeholder validator addresses; contract address mismatches website |
-| `V3/config/bridge-testnet.toml` | testnet | 1/1 | `0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1` | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | Matches website, but threshold 1 is unsafe and runtime validation fails (threshold < 2) |
+| `V3/config/bridge-testnet.toml` | testnet | 1/1 | `0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1` | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | Matches website, but **threshold 1 is unsafe**, `validator_addresses` field is missing, and runtime validation fails (threshold < 2) |
 | `scripts/bridge-testnet-fixed.toml` | testnet | 1/2 | `0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1` | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | Uses real validator addresses `0xdde17506...` and `0x8cc6...`; but hardcodes old Praha RPC |
 | `V3/L2/bridge/config/bridge-mainnet.toml` | mainnet | 3/5 | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | **Enabled=true** with placeholder validators; claims mainnet deployed 2026-04-01 |
 | `V3/config/bridge-mainnet.toml` | mainnet | 3/5 | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | `enabled=false`, `start_block=0` |
@@ -135,6 +135,21 @@ export const BRIDGE_CONTRACTS = BRIDGE_CONTRACTS_MAINNET;
 **Impact:** Website bridge functionality is non-functional for both testnet and mainnet users.
 
 **Fix:** Set `BRIDGE_CONTRACTS = BRIDGE_CONTRACTS_SEPOLIA` for testnet phase, or add an environment-based switch.
+
+### 3.9 `V3/config/bridge-testnet.toml` Is Missing `validator_addresses`
+
+Runtime verification:
+```text
+Error: TOML parse error at line 54, column 1
+   |
+54 | [validator]
+   | ^^^^^^^^^^^^
+missing field `validator_addresses`
+```
+
+The `V3/config/bridge-testnet.toml` config cannot be loaded by the `zion-bridge` daemon at all.
+
+**Fix:** Add the `validator_addresses` array and reconcile the threshold with the runtime minimum (§3.2).
 
 ---
 
