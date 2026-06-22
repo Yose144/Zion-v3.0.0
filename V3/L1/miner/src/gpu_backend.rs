@@ -11,10 +11,7 @@
 #![allow(dead_code)]
 
 use anyhow::Result;
-use rayon::prelude::*;
 use zion_core::{DifficultyTarget, MiningHeader, MiningJob, MiningSolution};
-
-use crate::gpu_guard::{GpuAlgorithm, GpuDeviceFamily, GpuGuard, GpuTuning};
 
 /// Which GPU backend to use.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -173,7 +170,11 @@ pub type GpuBackend = GpuBackendManager;
 
 /// Try to create the best available GPU backend.
 /// Selects the appropriate OpenCL miner based on the algorithm.
-pub fn create_gpu_backend(kind: GpuBackendKind, work_size: usize, algorithm: &str) -> Result<Box<dyn GpuMiner>> {
+pub fn create_gpu_backend(
+    kind: GpuBackendKind,
+    _work_size: usize,
+    _algorithm: &str,
+) -> Result<Box<dyn GpuMiner>> {
     match kind {
         GpuBackendKind::Cpu => {
             anyhow::bail!("GPU backend requested but kind=cpu — use CPU mining path instead");
@@ -258,8 +259,13 @@ pub fn create_gpu_backend(kind: GpuBackendKind, work_size: usize, algorithm: &st
         GpuBackendKind::Metal => {
             #[cfg(feature = "gpu-metal")]
             {
-                let miner = metal_deeksha::MetalDeekshaMiner::new(work_size)?;
-                return Ok(Box::new(miner));
+                if algorithm == "deeksha_lite_fire" {
+                    let miner = metal_deeksha_lite_fire::MetalDeekshaLiteFireMiner::new(work_size)?;
+                    return Ok(Box::new(miner));
+                } else {
+                    let miner = metal_deeksha::MetalDeekshaMiner::new(work_size)?;
+                    return Ok(Box::new(miner));
+                }
             }
             #[cfg(not(feature = "gpu-metal"))]
             anyhow::bail!("Metal support not compiled — rebuild with --features gpu-metal");
@@ -307,7 +313,7 @@ pub fn gpu_scan_job(gpu: &mut dyn GpuMiner, job: MiningJob, algorithm: &str) -> 
                 if is_mismatch && !gpu.suppress_mismatch_warnings() {
                     static MISMATCH_COUNT: AtomicU64 = AtomicU64::new(0);
                     let count = MISMATCH_COUNT.fetch_add(1, Ordering::Relaxed) + 1;
-                    if count <= 5 || count % 50 == 0 {
+                    if count <= 5 || count.is_multiple_of(50) {
                         let fmthex = |b: &[u8]| -> String {
                             b.iter().map(|x| format!("{:02x}", x)).collect()
                         };
@@ -332,7 +338,7 @@ pub fn gpu_scan_job(gpu: &mut dyn GpuMiner, job: MiningJob, algorithm: &str) -> 
                     // Log it and skip; this should not normally happen.
                     static FALSE_POS: AtomicU64 = AtomicU64::new(0);
                     let count = FALSE_POS.fetch_add(1, Ordering::Relaxed) + 1;
-                    if count <= 5 || count % 50 == 0 {
+                    if count <= 5 || count.is_multiple_of(50) {
                         println!(
                             "gpu_false_positive #{} nonce={} h={} algo={} gpu_above_target=true",
                             count, nonce, job.height, algorithm,
@@ -439,11 +445,13 @@ pub mod opencl_deeksha {
             })
             .unwrap_or(2_000_000_000); // fallback 2 GB
 
-        // Use configurable % of VRAM for scratchpad (default 25%)
+        // Use configurable % of VRAM for scratchpad (default 65%)
+        // Mining-only rigs (SMOS) can safely use most VRAM; 65% leaves
+        // headroom for NPU buffers and driver overhead.
         let vram_pct: usize = std::env::var("ZION_OCL_VRAM_PCT")
             .ok()
             .and_then(|v| v.trim().parse().ok())
-            .unwrap_or(25)
+            .unwrap_or(65)
             .clamp(10, 90);
         let usable = (global_mem * vram_pct) / 100;
         let max_by_mem = usable / SCRATCHPAD_BYTES;
@@ -454,9 +462,10 @@ pub mod opencl_deeksha {
             .and_then(|v| v.trim().parse::<usize>().ok())
             .unwrap_or(usize::MAX);
 
-        // GCN devices (Vega, Polaris, gfx6-9) cap at 4096 work items.
-        // RDNA (gfx10+) scales better with larger work_size thanks to
-        // ulong-width volatile scratchpad accesses.
+        // GCN devices (Vega, Polaris, gfx6-9) cap at 16384 work items.
+        // Previous 4096 cap was overly conservative — GCN wave64 handles
+        // memory-bound scratchpad workloads well when VRAM allows.
+        // RDNA (gfx10+) can scale even higher via ulong-width accesses.
         let dev = device.name().unwrap_or_default().to_ascii_lowercase();
         let gcn_cap = if dev.contains("vega")
             || dev.contains("polaris")
@@ -467,13 +476,17 @@ pub mod opencl_deeksha {
             || dev.contains("gfx8")
             || dev.contains("gfx9")
         {
-            4096
+            16384
         } else {
             usize::MAX
         };
 
         // env_cap (ZION_OCL_WORK_CAP) overrides VRAM limit if set
-        let final_cap = if env_cap < usize::MAX { env_cap } else { max_by_mem };
+        let final_cap = if env_cap < usize::MAX {
+            env_cap
+        } else {
+            max_by_mem
+        };
         requested.min(final_cap).min(gcn_cap).max(64)
     }
 
@@ -540,19 +553,24 @@ pub mod opencl_deeksha {
         if !opts.is_empty() {
             opts.push(' ');
         }
-        
+
         // Detect GCN for conditional workarounds in kernel
         // RDNA (gfx10+) should NOT use GCN workarounds
         let dev = device_name.to_ascii_lowercase();
-        let is_gcn = dev.contains("gfx6") || dev.contains("gfx7") || dev.contains("gfx8") || dev.contains("gfx9")
-            || dev.contains("vega") || dev.contains("polaris")
-            || dev.contains("fiji") || dev.contains("tonga")
+        let is_gcn = dev.contains("gfx6")
+            || dev.contains("gfx7")
+            || dev.contains("gfx8")
+            || dev.contains("gfx9")
+            || dev.contains("vega")
+            || dev.contains("polaris")
+            || dev.contains("fiji")
+            || dev.contains("tonga")
             || dev.contains("ellesmere");
-        
+
         if is_gcn {
             opts.push_str("-DZION_GCN_WORKAROUNDS ");
         }
-        
+
         opts.push_str(&format!(
             "-DNPU_MAX_DIM={} -DWGS={}",
             npu_max_dim, local_wgs
@@ -850,7 +868,9 @@ pub mod opencl_deeksha {
                     if std::env::var("ZION_IGNORE_GPU_SELF_TEST_FAIL").is_err() {
                         return Err(e);
                     }
-                    println!("GPU SELF-TEST FAILED BUT CONTINUING (ZION_IGNORE_GPU_SELF_TEST_FAIL set)");
+                    println!(
+                        "GPU SELF-TEST FAILED BUT CONTINUING (ZION_IGNORE_GPU_SELF_TEST_FAIL set)"
+                    );
                 }
             } else {
                 println!("GPU SELF-TEST SKIPPED (ZION_SKIP_GPU_SELF_TEST set)");
@@ -941,17 +961,20 @@ pub mod opencl_deeksha {
 
             let mut all_ok = true;
             let ignore_s4_mismatch = std::env::var("ZION_IGNORE_S4_MEMHARD_MISMATCH").is_ok();
-            
+
             for (name, g, c) in &stages {
                 let ok = *g == *c;
                 let is_s4 = *name == "s4_memhard";
-                
+
                 // Skip s4_memhard mismatch if flag is set (GPU uses different implementation)
                 if !ok && is_s4 && ignore_s4_mismatch {
-                    println!("SELF_TEST {}=IGNORED (ZION_IGNORE_S4_MEMHARD_MISMATCH set)", name);
+                    println!(
+                        "SELF_TEST {}=IGNORED (ZION_IGNORE_S4_MEMHARD_MISMATCH set)",
+                        name
+                    );
                     continue;
                 }
-                
+
                 println!("SELF_TEST {}={}", name, if ok { "OK" } else { "FAIL" });
                 if !ok {
                     all_ok = false;
@@ -1515,9 +1538,7 @@ pub mod opencl_deeksha_lite {
                     .name()
                     .unwrap_or_else(|_| "unknown-platform".to_string());
                 let gpus = Device::list(platform, Some(ocl::flags::DeviceType::GPU))
-                    .map_err(|e| {
-                        anyhow::anyhow!("OpenCL device list on {platform_name}: {e}")
-                    })?;
+                    .map_err(|e| anyhow::anyhow!("OpenCL device list on {platform_name}: {e}"))?;
                 for (didx, device) in gpus.into_iter().enumerate() {
                     let device_name = device
                         .name()
@@ -1534,14 +1555,23 @@ pub mod opencl_deeksha_lite {
                     if device_l.contains("vega") || device_l.contains("rx 5") {
                         score += 500;
                     }
-                    candidates.push((score, pidx, didx, *platform, device, platform_name.clone(), device_name));
+                    candidates.push((
+                        score,
+                        pidx,
+                        didx,
+                        *platform,
+                        device,
+                        platform_name.clone(),
+                        device_name,
+                    ));
                 }
             }
             if candidates.is_empty() {
                 anyhow::bail!("no OpenCL GPU devices found");
             }
             candidates.sort_by_key(|(s, _, _, _, _, _, _)| -*s);
-            let (_, pidx, didx, platform, device, platform_name, device_name) = candidates.swap_remove(0);
+            let (_, pidx, didx, platform, device, platform_name, device_name) =
+                candidates.swap_remove(0);
             println!(
                 "gpu_opencl_lite_pick platform_idx={pidx} device_idx={didx} platform=\"{platform_name}\" device=\"{device_name}\""
             );
@@ -1852,9 +1882,7 @@ pub mod opencl_deeksha_lite_fire {
                     .name()
                     .unwrap_or_else(|_| "unknown-platform".to_string());
                 let gpus = Device::list(platform, Some(ocl::flags::DeviceType::GPU))
-                    .map_err(|e| {
-                        anyhow::anyhow!("OpenCL device list on {platform_name}: {e}")
-                    })?;
+                    .map_err(|e| anyhow::anyhow!("OpenCL device list on {platform_name}: {e}"))?;
                 for (didx, device) in gpus.into_iter().enumerate() {
                     let device_name = device
                         .name()
@@ -1871,14 +1899,23 @@ pub mod opencl_deeksha_lite_fire {
                     if device_l.contains("vega") || device_l.contains("rx 5") {
                         score += 500;
                     }
-                    candidates.push((score, pidx, didx, *platform, device, platform_name.clone(), device_name));
+                    candidates.push((
+                        score,
+                        pidx,
+                        didx,
+                        *platform,
+                        device,
+                        platform_name.clone(),
+                        device_name,
+                    ));
                 }
             }
             if candidates.is_empty() {
                 anyhow::bail!("no OpenCL GPU devices found");
             }
             candidates.sort_by_key(|(s, _, _, _, _, _, _)| -*s);
-            let (_, pidx, didx, platform, device, platform_name, device_name) = candidates.swap_remove(0);
+            let (_, pidx, didx, platform, device, platform_name, device_name) =
+                candidates.swap_remove(0);
             println!(
                 "gpu_opencl_fire_pick platform_idx={pidx} device_idx={didx} platform=\"{platform_name}\" device=\"{device_name}\""
             );
@@ -2027,8 +2064,21 @@ pub mod opencl_deeksha_lite_fire {
                 let chunk = (left as usize).min(self.work_size);
                 let local_size = self.local_work_size.min(chunk);
                 let global_size = ((chunk + local_size - 1) / local_size) * local_size;
-                self.kernel.set_arg(1, current_nonce)?;
-                self.kernel.set_arg(2, chunk as u32)?;
+
+                // Set nonce parameters via scalar args (same as Lite miner)
+                {
+                    let guard = GpuGuard::new();
+                    self.kernel.set_arg(1, current_nonce)?;
+                    self.kernel.set_arg(2, chunk as u32)?;
+                    if guard.was_caught() {
+                        self.recovery_attempts += 1;
+                        anyhow::bail!(
+                            "GPU access violation during nonce arg set (attempt {}/{}).",
+                            self.recovery_attempts,
+                            self.max_recovery_attempts
+                        );
+                    }
+                }
 
                 {
                     let guard = GpuGuard::new();
@@ -2488,17 +2538,17 @@ pub mod metal_deeksha {
                 .map_err(|e| anyhow::anyhow!("Metal pipeline creation failed: {:?}", e))?;
 
             let max_tpg = pipeline.max_total_threads_per_threadgroup() as usize;
-            // Memory-hard workloads (256 KiB scratchpad) benefit from smaller
-            // threadgroups to reduce L2 pressure.  Use 64 on M1 and let the
-            // GPU schedule many concurrent threadgroups across its cores.
-            // On M2+/Pro/Max larger threadgroups help hide latency.
-            let threads_per_tg = if device_name.contains("M1") {
-                64
-            } else if device_name.contains("Pro")
+            // Memory-hard workloads (256 KiB scratchpad) benefit from larger
+            // threadgroups on Apple Silicon to saturate GPU cores.
+            // M1 has 8 GPU cores; 128 or 256 threads per TG hides latency better
+            // than 64 when each thread touches 256 KiB scratchpad.
+            let threads_per_tg = if device_name.contains("Pro")
                 || device_name.contains("Max")
                 || device_name.contains("Ultra")
             {
                 256
+            } else if device_name.contains("M1") {
+                128
             } else {
                 128
             }
@@ -2506,13 +2556,15 @@ pub mod metal_deeksha {
 
             // Auto-cap batch_size based on device memory.
             // Each thread needs 256 KiB scratchpad.
-            // M1 (8 GB shared): ~58% optimal to avoid memory pressure.
-            // Pro/Max/Ultra (16-192 GB): can use more.
+            // Apple Silicon uses unified memory — we can be more aggressive than
+            // the old 58% limit, but must leave headroom for OS + other apps.
+            // Pro/Max/Ultra (16-192 GB): can use 75%+.
+            // M1/M2 base (8 GB): 65% is safe and still 2× the old default.
             let recommended = device.recommended_max_working_set_size();
             let pct = if recommended > 12_000_000_000 {
-                75 // Pro/Max/Ultra: plenty of GPU memory
+                75 // Pro/Max/Ultra: plenty of unified memory
             } else {
-                58 // M1/M2 base: avoid memory pressure on shared RAM
+                65 // M1/M2 base: unified memory, but stay safe
             };
             let max_scratch_bytes = (recommended / 100) * pct;
             let max_threads_by_mem = (max_scratch_bytes / 262_144) as usize;
@@ -2529,15 +2581,25 @@ pub mod metal_deeksha {
             let result_hash_buf = device.new_buffer(32, opts); // hash output
 
             // Scratchpad: batch_size × 256 KiB per thread
-            let scratch_bytes = (batch_size as u64) * 262_144u64;
-            let scratchpad_buf = device.new_buffer(scratch_bytes, opts);
-            if scratchpad_buf.length() < scratch_bytes {
-                anyhow::bail!(
-                    "scratchpad allocation failed: need {} MiB, got {} bytes (device recommended {} MiB)",
-                    scratch_bytes / (1024 * 1024),
-                    scratchpad_buf.length(),
-                    recommended / (1024 * 1024),
-                );
+            // Retry with progressively smaller batch_size if allocation fails.
+            let mut batch_size = batch_size;
+            let mut scratchpad_buf;
+            let mut scratch_bytes = 0u64;
+            loop {
+                scratch_bytes = (batch_size as u64) * 262_144u64;
+                scratchpad_buf = device.new_buffer(scratch_bytes, opts);
+                if scratchpad_buf.length() >= scratch_bytes {
+                    break;
+                }
+                if batch_size <= threads_per_tg {
+                    anyhow::bail!(
+                        "scratchpad allocation failed: need {} MiB, got {} bytes (device recommended {} MiB)",
+                        scratch_bytes / (1024 * 1024),
+                        scratchpad_buf.length(),
+                        recommended / (1024 * 1024),
+                    );
+                }
+                batch_size = (batch_size * 9 / 10).max(threads_per_tg);
             }
 
             // NPU weights — packed variable-topology format for all epochs
@@ -2594,7 +2656,11 @@ pub mod metal_deeksha {
             })
         }
 
-        fn dispatch_batch(&mut self, nonce_start: u64, count: usize) {
+        fn dispatch_batch_async(
+            &mut self,
+            nonce_start: u64,
+            count: usize,
+        ) -> std::sync::mpsc::Receiver<()> {
             // Write nonce base
             unsafe {
                 let ptr = self.nonce_base_buf.contents() as *mut u64;
@@ -2626,8 +2692,14 @@ pub mod metal_deeksha {
             enc.dispatch_threads(grid, tg);
             enc.end_encoding();
 
+            let (tx, rx) = std::sync::mpsc::channel();
+            let block = block::ConcreteBlock::new(move |_buffer: &metal::CommandBufferRef| {
+                let _ = tx.send(());
+            })
+            .copy();
+            cb.add_completed_handler(&block);
             cb.commit();
-            cb.wait_until_completed();
+            rx
         }
 
         fn read_result(&self) -> Option<(u64, [u8; 32])> {
@@ -2657,6 +2729,10 @@ pub mod metal_deeksha {
 
         fn backend_kind(&self) -> GpuBackendKind {
             GpuBackendKind::Metal
+        }
+
+        fn algorithm(&self) -> String {
+            "cosmic_harmony_ekam_deeksha_v2".to_string()
         }
 
         fn update_epoch(&mut self, height: u64) -> Result<()> {
@@ -2738,12 +2814,21 @@ pub mod metal_deeksha {
                     *ptr.add(2) = target_u32; // target
                 }
 
-                self.dispatch_batch(current_nonce, chunk);
+                let rx = self.dispatch_batch_async(current_nonce, chunk);
+                rx.recv()
+                    .map_err(|_| anyhow::anyhow!("Metal async wait failed"))?;
 
                 if let Some((nonce, hash)) = self.read_result() {
                     all_solutions.push((nonce, hash));
                     total_tested += (nonce.saturating_sub(current_nonce) + 1).min(chunk as u64);
-                    break; // Early termination: submit solution immediately
+                    // Phase-3 optimization: do NOT break on first solution.
+                    // With pool diff=1 we find a share after ~200-500 nonces,
+                    // but the job TTL is 60s.  Continuing to scan the rest of
+                    // the batch keeps the GPU busy and dramatically raises the
+                    // effective hashrate (nonces_tested / total_time).
+                    // We still return the first solution so the miner can
+                    // submit it, but we count all tested nonces for accurate
+                    // hashrate reporting.
                 }
 
                 total_tested += chunk as u64;
@@ -2785,7 +2870,304 @@ pub mod metal_deeksha {
             let mut nonce = 0u64;
 
             while start.elapsed().as_secs_f64() < secs {
-                self.dispatch_batch(nonce, self.batch_size);
+                let rx = self.dispatch_batch_async(nonce, self.batch_size);
+                let _ = rx.recv();
+                total += self.batch_size as u64;
+                nonce = nonce.wrapping_add(self.batch_size as u64);
+            }
+
+            let elapsed = start.elapsed().as_secs_f64();
+            let khps = if elapsed > 0.0 {
+                total as f64 / elapsed / 1_000.0
+            } else {
+                0.0
+            };
+            Ok((total, elapsed, khps))
+        }
+    }
+}
+
+// ─── Metal Backend: DeekshaLite Fire ─────────────────────────────────────────
+
+#[cfg(feature = "gpu-metal")]
+pub mod metal_deeksha_lite_fire {
+    use super::*;
+    use metal::{Device, MTLResourceOptions, MTLSize};
+    use std::time::Instant;
+
+    const SENTINEL: u64 = 0xFFFF_FFFF_FFFF_FFFF;
+    const SENTINEL_U32: u32 = 0xFFFF_FFFF;
+
+    pub struct MetalDeekshaLiteFireMiner {
+        device: Device,
+        queue: metal::CommandQueue,
+        pipeline: metal::ComputePipelineState,
+        header_buf: metal::Buffer,
+        params_buf: metal::Buffer,
+        nonce_base_buf: metal::Buffer,
+        scratchpad_buf: metal::Buffer,
+        result_nonce_buf: metal::Buffer,
+        result_hash_buf: metal::Buffer,
+        batch_size: usize,
+        threads_per_tg: usize,
+        device_name_cached: String,
+    }
+
+    impl MetalDeekshaLiteFireMiner {
+        pub fn new(work_size: usize) -> Result<Self> {
+            let device =
+                Device::system_default().ok_or_else(|| anyhow::anyhow!("no Metal device found"))?;
+            let device_name = device.name().to_string();
+            let queue = device.new_command_queue();
+
+            let shader_src = include_str!("deeksha_lite_fire.metal");
+            let options = metal::CompileOptions::new();
+            let library = device
+                .new_library_with_source(shader_src, &options)
+                .map_err(|e| anyhow::anyhow!("Metal Fire shader compilation failed: {:?}", e))?;
+
+            let func = library
+                .get_function("deeksha_lite_fire_mine", None)
+                .map_err(|e| anyhow::anyhow!("Fire kernel function not found: {:?}", e))?;
+
+            let pipeline = device
+                .new_compute_pipeline_state_with_function(&func)
+                .map_err(|e| anyhow::anyhow!("Metal Fire pipeline creation failed: {:?}", e))?;
+
+            let max_tpg = pipeline.max_total_threads_per_threadgroup() as usize;
+            let threads_per_tg = if device_name.contains("Pro")
+                || device_name.contains("Max")
+                || device_name.contains("Ultra")
+            {
+                256
+            } else if device_name.contains("M1") {
+                128
+            } else {
+                128
+            }
+            .min(max_tpg);
+
+            let recommended = device.recommended_max_working_set_size();
+            let pct = if recommended > 12_000_000_000 { 75 } else { 65 };
+            let max_scratch_bytes = (recommended / 100) * pct;
+            let max_threads_by_mem = (max_scratch_bytes / 262_144) as usize;
+            let batch_size = work_size
+                .max(threads_per_tg)
+                .min(max_threads_by_mem.max(threads_per_tg));
+            let opts = MTLResourceOptions::StorageModeShared;
+
+            let header_buf = device.new_buffer(80, opts);
+            let params_buf = device.new_buffer(12, opts);
+            let nonce_base_buf = device.new_buffer(8, opts);
+            let result_nonce_buf = device.new_buffer(12, opts);
+            let result_hash_buf = device.new_buffer(32, opts);
+
+            let mut batch_size = batch_size;
+            let mut scratchpad_buf;
+            let mut scratch_bytes = 0u64;
+            loop {
+                scratch_bytes = (batch_size as u64) * 262_144u64;
+                scratchpad_buf = device.new_buffer(scratch_bytes, opts);
+                if scratchpad_buf.length() >= scratch_bytes {
+                    break;
+                }
+                if batch_size <= threads_per_tg {
+                    anyhow::bail!(
+                        "Fire scratchpad allocation failed: need {} MiB, got {} bytes",
+                        scratch_bytes / (1024 * 1024),
+                        scratchpad_buf.length(),
+                    );
+                }
+                batch_size = (batch_size * 9 / 10).max(threads_per_tg);
+            }
+
+            println!(
+                "gpu_metal_fire_init device=\"{}\" batch_size={} threads_per_tg={} scratchpad_mib={}",
+                device_name,
+                batch_size,
+                threads_per_tg,
+                scratch_bytes / (1024 * 1024)
+            );
+
+            Ok(Self {
+                device,
+                queue,
+                pipeline,
+                header_buf,
+                params_buf,
+                nonce_base_buf,
+                scratchpad_buf,
+                result_nonce_buf,
+                result_hash_buf,
+                batch_size,
+                threads_per_tg,
+                device_name_cached: device_name,
+            })
+        }
+
+        fn dispatch_batch_async(
+            &mut self,
+            nonce_start: u64,
+            count: usize,
+        ) -> std::sync::mpsc::Receiver<()> {
+            unsafe {
+                let ptr = self.nonce_base_buf.contents() as *mut u64;
+                *ptr = nonce_start;
+            }
+            unsafe {
+                let ptr = self.result_nonce_buf.contents() as *mut u32;
+                *ptr = SENTINEL_U32;
+            }
+
+            let cb = self.queue.new_command_buffer();
+            let enc = cb.new_compute_command_encoder();
+            enc.set_compute_pipeline_state(&self.pipeline);
+            enc.set_buffer(0, Some(&self.header_buf), 0);
+            enc.set_buffer(1, Some(&self.params_buf), 0);
+            enc.set_buffer(2, Some(&self.nonce_base_buf), 0);
+            enc.set_buffer(3, Some(&self.scratchpad_buf), 0);
+            enc.set_buffer(4, Some(&self.result_nonce_buf), 0);
+            enc.set_buffer(5, Some(&self.result_hash_buf), 0);
+
+            let grid = MTLSize::new(count as u64, 1, 1);
+            let tg = MTLSize::new(self.threads_per_tg as u64, 1, 1);
+            enc.dispatch_threads(grid, tg);
+            enc.end_encoding();
+
+            let (tx, rx) = std::sync::mpsc::channel();
+            let block = block::ConcreteBlock::new(move |_buffer: &metal::CommandBufferRef| {
+                let _ = tx.send(());
+            })
+            .copy();
+            cb.add_completed_handler(&block);
+            cb.commit();
+            rx
+        }
+
+        fn read_result(&self) -> Option<(u64, [u8; 32])> {
+            let flag = unsafe { *(self.result_nonce_buf.contents() as *const u32) };
+            if flag == SENTINEL_U32 {
+                return None;
+            }
+            let nonce_lo =
+                unsafe { *(self.result_nonce_buf.contents().add(4) as *const u32) } as u64;
+            let nonce_hi =
+                unsafe { *(self.result_nonce_buf.contents().add(8) as *const u32) } as u64;
+            let nonce = nonce_lo | (nonce_hi << 32);
+            let mut hash = [0u8; 32];
+            unsafe {
+                let ptr = self.result_hash_buf.contents() as *const u8;
+                std::ptr::copy_nonoverlapping(ptr, hash.as_mut_ptr(), 32);
+            }
+            Some((nonce, hash))
+        }
+    }
+
+    impl GpuMiner for MetalDeekshaLiteFireMiner {
+        fn device_name(&self) -> String {
+            self.device_name_cached.clone()
+        }
+
+        fn backend_kind(&self) -> GpuBackendKind {
+            GpuBackendKind::Metal
+        }
+
+        fn algorithm(&self) -> String {
+            "deeksha_lite_fire".to_string()
+        }
+
+        fn update_epoch(&mut self, _height: u64) -> Result<()> {
+            Ok(()) // Fire has no NPU epoch updates
+        }
+
+        fn mine_batch(
+            &mut self,
+            header: MiningHeader,
+            target: DifficultyTarget,
+            nonce_start: u64,
+            batch_size: u64,
+        ) -> Result<GpuBatchResult> {
+            let header_bytes = header.to_bytes();
+
+            unsafe {
+                let ptr = self.header_buf.contents() as *mut u8;
+                std::ptr::copy_nonoverlapping(
+                    header_bytes.as_ptr(),
+                    ptr,
+                    header_bytes.len().min(80),
+                );
+            }
+
+            let target_u32 = u32::from_be_bytes([
+                target.bytes[0],
+                target.bytes[1],
+                target.bytes[2],
+                target.bytes[3],
+            ]);
+
+            let mut all_solutions = Vec::new();
+            let mut total_tested = 0u64;
+            let mut current_nonce = nonce_start;
+            let mut left = batch_size;
+
+            while left > 0 {
+                let chunk = (left as usize).min(self.batch_size);
+
+                unsafe {
+                    let ptr = self.params_buf.contents() as *mut u32;
+                    *ptr = 80u32;
+                    *ptr.add(1) = chunk as u32;
+                    *ptr.add(2) = target_u32;
+                }
+
+                let rx = self.dispatch_batch_async(current_nonce, chunk);
+                rx.recv()
+                    .map_err(|_| anyhow::anyhow!("Metal Fire async wait failed"))?;
+
+                if let Some((nonce, hash)) = self.read_result() {
+                    all_solutions.push((nonce, hash));
+                    total_tested += (nonce.saturating_sub(current_nonce) + 1).min(chunk as u64);
+                }
+
+                total_tested += chunk as u64;
+                current_nonce = current_nonce.wrapping_add(chunk as u64);
+                left = left.saturating_sub(chunk as u64);
+            }
+
+            Ok(GpuBatchResult {
+                solutions: all_solutions,
+                nonces_tested: total_tested,
+            })
+        }
+
+        fn benchmark(&mut self, secs: f64) -> Result<(u64, f64, f64)> {
+            let header = MiningHeader {
+                version: 3,
+                previous_hash: [0xAA; 32],
+                merkle_root: [0xBB; 32],
+                timestamp: 1_762_000_200,
+                difficulty_bits: 0x1f00ffff,
+            };
+
+            let header_bytes = header.to_bytes();
+            unsafe {
+                let ptr = self.header_buf.contents() as *mut u8;
+                std::ptr::copy_nonoverlapping(header_bytes.as_ptr(), ptr, 80);
+            }
+            unsafe {
+                let ptr = self.params_buf.contents() as *mut u32;
+                *ptr = 80u32;
+                *ptr.add(1) = self.batch_size as u32;
+                *ptr.add(2) = 0u32;
+            }
+
+            let start = Instant::now();
+            let mut total = 0u64;
+            let mut nonce = 0u64;
+
+            while start.elapsed().as_secs_f64() < secs {
+                let rx = self.dispatch_batch_async(nonce, self.batch_size);
+                let _ = rx.recv();
                 total += self.batch_size as u64;
                 nonce = nonce.wrapping_add(self.batch_size as u64);
             }
