@@ -266,6 +266,7 @@ async function refreshAll(){
     if(currentTab === 'overview') { loadMempool(); loadMonitoringStatus(); }
     if(currentTab === 'controls') { loadMinerPerformance(); loadDepGraphControls(); }
     updateMainnetMetrics(statusData);
+    updatePayouts(statusData.pool, statusData.topology);
     updateConnectionStatus(true);
     loadEdgeBackupStatus();
     console.log('[REFRESH] refreshAll completed successfully');
@@ -2039,7 +2040,7 @@ async function loadPayoutTab(){
           items.push({
             type: 'block',
             height: p.block_height,
-            text: `Block #${p.block_height} — Subsidy ${formatFlowers(Math.round((p.subsidy_flowers||0)))} — Miner ${(fs.miner||0).toFixed(2)} ZION / Humanitarian ${(fs.charity||0).toFixed(2)} ZION / Issobella ${(fs.dev||0).toFixed(2)} ZION / Burn ${(fs.pool||0).toFixed(2)} ZION`,
+            text: `Block #${p.block_height} — Subsidy ${formatFlowers(p.subsidy_flowers||0)} — Miner ${_zionFmt(fs.miner||0)} ZION / Humanitarian ${_zionFmt(fs.charity||0)} ZION / Issobella ${_zionFmt(fs.dev||0)} ZION / Burn ${_zionFmt(fs.pool||0)} ZION`,
             cls: 'text-emerald-300'
           });
         });
@@ -2349,7 +2350,7 @@ function updatePayoutSnapshot(d){
 
   let totalPaid = 0;
   miners.forEach(m => { totalPaid += (m.total_paid || m.paid_total || 0); });
-  set('payout-kpi-total-paid', formatFlowers(totalPaid));
+  set('payout-kpi-total-paid', totalPaid > 0 ? _zionFmt(totalPaid) + ' ZION' : '—');
 
   const ar = ss.accept_rate_pct;
   const kpiAR = document.getElementById('payout-kpi-accept-rate');
@@ -2369,7 +2370,7 @@ function updatePayoutSnapshot(d){
   set('payout-pplns-used', pplns.window_used ?? '—');
   set('payout-pplns-registered', pplns.miners_registered ?? miners.length ?? 0);
   set('payout-pplns-rounds', pplns.rounds_completed ?? '—');
-  set('payout-pplns-total', d.burned_total != null ? formatFlowers(Math.round(d.burned_total*1e12)) : '—');
+  set('payout-pplns-total', d.burned_total != null ? _zionFmt(d.burned_total) + ' ZION' : '—');
 
   set('payout-last-time', d.last_payout_time || '—');
   const txEl = document.getElementById('payout-last-tx');
