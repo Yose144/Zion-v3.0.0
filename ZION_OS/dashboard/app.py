@@ -705,6 +705,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "ports": {},
      "log": "miner.log", "start": "start-miner", "stop": None,
      "health_method": "log", "severity": "warning", "autoheal": True,
+     "health_endpoint": "http://100.76.16.108:8455/miners",
      "purpose": "Performs cosmic_harmony PoW hashing on GPU to find new blocks. Connects to Edge pool.",
      "child_says": "⛏️ The miner is like a digger — it digs for new gold (ZION coins)!",
      "depends_on": ["pool-edge"]},
@@ -712,12 +713,12 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
     # ── L2: Bridge & DAO (running on Edge server) ─────────────────────────
     {"id": "bridge", "name": "ZION Bridge (Edge)", "icon": "🌉", "level": "L2", "kind": "bridge",
      "ports": {"metrics": 9101},
-     "host": "127.0.0.1",
+     "host": "100.76.16.108",
      "log": "bridge.log", "start": "start-bridge", "stop": None,
      "health_method": "tcp", "severity": "warning", "autoheal": False,
      "purpose": "Cross-chain relay: moves ZION between L1 and EVM chains (Base). Metrics on 9101.",
      "child_says": "🌉 A magical bridge to send ZION to other crypto worlds!",
-     "depends_on": ["node1"]},
+     "depends_on": ["edge-node1"]},
     {"id": "dao", "name": "ZION DAO (Edge)", "icon": "🗳️", "level": "L2", "kind": "dao",
      "ports": {"api": 8450},
      "host": "100.76.16.108",
@@ -727,11 +728,11 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "child_says": "🗳️ Everyone votes here to decide what ZION should do next!",
      "depends_on": ["edge-node1"]},
     {"id": "atomic-swap", "name": "Atomic Swap (Edge)", "icon": "🔄", "level": "L2", "kind": "swap",
-     "ports": {"api": 8888},
-     "host": "127.0.0.1",
+     "ports": {"api": 8452},
+     "host": "100.76.16.108",
      "log": "atomic-swap.log", "start": "start-atomic-swap", "stop": None,
      "health_method": "tcp", "severity": "warning", "autoheal": False,
-     "purpose": "HTLC-based atomic swaps between ZION and other chains (no middleman). API on 8888.",
+     "purpose": "HTLC-based atomic swaps between ZION and other chains (no middleman). API on 8452.",
      "child_says": "🔄 Trade coins safely with strangers without anyone cheating!",
      "depends_on": ["edge-node1"]},
     {"id": "swap-aggregator", "name": "Swap Aggregator (Edge)", "icon": "💱", "level": "L2", "kind": "aggregator",
@@ -1118,6 +1119,25 @@ def check_service_health(svc: dict) -> dict:
             proc_info = {"has_pid": True, "alive": True, "pid": miner_pid}
             register_process("miner", miner_pid, image="zion-miner")
 
+    # Miner edge-primary: check Edge pool /miners endpoint for active miners
+    if sid == "miner" and TOPOLOGY == "edge-primary" and svc.get("health_endpoint"):
+        try:
+            import urllib.request as _ur, json as _json
+            with _ur.urlopen(svc["health_endpoint"], timeout=2.0) as _r:
+                _md = _json.loads(_r.read().decode("utf-8"))
+                _active = _md.get("count", 0) if isinstance(_md, dict) else 0
+                if _active > 0:
+                    log_alive = True
+                    log_age = 0
+                    proc_info = {"has_pid": True, "alive": True, "pid": -1}
+                    details_parts_preview = f"Edge pool: {_active} active miner(s)"
+                else:
+                    details_parts_preview = f"Edge pool: 0 active miners"
+        except Exception as _e:
+            details_parts_preview = f"Edge pool check failed: {str(_e)[:40]}"
+    else:
+        details_parts_preview = None
+
     # ── Determine status based on health_method ────────────────────────────
     alive = False
     status = "unknown"
@@ -1171,7 +1191,9 @@ def check_service_health(svc: dict) -> dict:
     else:  # log fallback
         alive = log_alive or proc_info["alive"] or bool(open_ports)
         status = "running" if alive else "stopped"
-        if log_alive:
+        if details_parts_preview:
+            details_parts.append(details_parts_preview)
+        if log_alive and log_age is not None and log_age < 120:
             details_parts.append(f"log {log_age}s ago")
         elif log_age is not None:
             details_parts.append(f"log stale ({log_age}s)")
