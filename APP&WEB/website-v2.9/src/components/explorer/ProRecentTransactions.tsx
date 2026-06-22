@@ -17,6 +17,9 @@ interface Transaction {
   timestamp: number;
   status: string;
   confirmations: number;
+  from?: string;
+  to?: string;
+  transaction_model?: string;
 }
 
 const fmtAge = (ts: number, cs: boolean): string => {
