@@ -999,22 +999,30 @@ fn test_parse_bridge_testnet_toml() {
     let path = concat!(env!("CARGO_MANIFEST_DIR"), "/config/bridge-testnet.toml");
     let cfg = BridgeConfig::load(path).expect("bridge-testnet.toml must parse");
     assert_eq!(cfg.bridge.network, "testnet");
-    assert_eq!(cfg.evm_chains.len(), 1);
-    assert_eq!(cfg.evm_chains[0].chain_id, "base_sepolia");
-    assert_eq!(cfg.evm_chains[0].evm_chain_id, 84532);
-    assert!(cfg.evm_chains[0].enabled);
+    // Base Sepolia is enabled; Arbitrum Sepolia is disabled
+    assert_eq!(cfg.evm_chains.len(), 2);
+    let base = cfg
+        .evm_chains
+        .iter()
+        .find(|c| c.chain_id == "base_sepolia")
+        .expect("base_sepolia chain must be present");
+    assert_eq!(base.evm_chain_id, 84532);
+    assert!(base.enabled);
     assert_eq!(
-        cfg.evm_chains[0].wzion_address,
+        base.wzion_address,
         "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
     );
     assert_eq!(
-        cfg.evm_chains[0].bridge_contract_address,
-        "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721"
+        base.bridge_contract_address,
+        "0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1"
     );
-    assert_eq!(cfg.l1.rpc_url, "127.0.0.1:8443");
+    assert_eq!(cfg.l1.rpc_url, "http://127.0.0.1:8443");
     assert_eq!(cfg.l1.finality_blocks, 60);
     assert!(cfg.ankr.enabled);
     assert!(cfg.security.auto_pause_on_anomaly);
+    assert_eq!(cfg.validator.threshold, 2);
+    assert_eq!(cfg.validator.total_validators, 2);
+    assert_eq!(cfg.validator.validator_addresses.len(), 2);
 }
 
 /// Verify bridge-mainnet.toml parses correctly — Base mainnet, disabled until validators live.
@@ -1023,13 +1031,21 @@ fn test_parse_bridge_mainnet_toml() {
     let path = concat!(env!("CARGO_MANIFEST_DIR"), "/config/bridge-mainnet.toml");
     let cfg = BridgeConfig::load(path).expect("bridge-mainnet.toml must parse");
     assert_eq!(cfg.bridge.network, "mainnet");
-    assert_eq!(cfg.evm_chains.len(), 1);
-    assert_eq!(cfg.evm_chains[0].chain_id, "base");
-    assert_eq!(cfg.evm_chains[0].evm_chain_id, 8453);
-    // Base chain disabled until 3/5 validators are live (bridge provisioning blocker)
+    // Base + Arbitrum entries, both disabled until deployed
+    assert_eq!(cfg.evm_chains.len(), 2);
+    let base = cfg
+        .evm_chains
+        .iter()
+        .find(|c| c.chain_id == "base")
+        .expect("base chain must be present");
+    assert_eq!(base.evm_chain_id, 8453);
+    // Base chain disabled until 5/5 validators are live (bridge provisioning blocker)
     assert!(
-        !cfg.evm_chains[0].enabled,
-        "mainnet Base chain should be disabled until validators are live (3/5 provisioning pending)"
+        !base.enabled,
+        "mainnet Base chain should be disabled until validators are live (5/5 provisioning pending)"
     );
     assert_eq!(cfg.metrics.log_level, "info");
+    assert_eq!(cfg.validator.threshold, 5);
+    assert_eq!(cfg.validator.total_validators, 5);
+    assert_eq!(cfg.validator.validator_addresses.len(), 5);
 }
