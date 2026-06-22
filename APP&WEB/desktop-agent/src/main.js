@@ -8,6 +8,7 @@ const fs = require('fs');
 const os = require('os');
 const WalletGenerator = require('./wallet-generator');
 const UtxoBuilder = require('./utxo-builder');
+const AccountBuilder = require('./account-builder');
 const QRCode = require('qrcode');
 const crypto = require('crypto');
 
@@ -4653,41 +4654,100 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
       return { success: false, error: `Cannot retrieve UTXOs: ${lastRpcError || 'no reachable endpoint'}` };
     }
 
-    if (utxos.length === 0) {
-      return { success: false, error: 'No spendable UTXOs found for this address (balance is 0)' };
+    // ── Step 3: Decide transaction model (UTXO vs Account) ───────────
+    let txPayload = null;
+    let txModel = '';
+    let txIdStr = '';
+
+    if (utxos.length > 0) {
+      // ── UTXO model ──────────────────────────────────────────────────
+      txModel = 'utxo';
+      console.log('[MAIN wallet-send-transaction] Using UTXO model (', utxos.length, 'UTXOs)');
+      let signedTx;
+      try {
+        signedTx = UtxoBuilder.buildUtxoTransaction({
+          fromAddress: fromAddr,
+          toAddress: toAddr,
+          amountZion: amt,
+          utxos,
+          privateKeyDer,
+          memo: memo || undefined
+        });
+        txPayload = signedTx;
+        txIdStr = UtxoBuilder.bytesToHex(signedTx.id);
+        console.log('[MAIN wallet-send-transaction] UTXO tx built, txId:', txIdStr);
+      } catch (buildErr) {
+        console.error('[MAIN wallet-send-transaction] Build failed:', buildErr);
+        return { success: false, error: buildErr.message };
+      }
+    } else {
+      // ── Account model fallback ──────────────────────────────────────
+      console.log('[MAIN wallet-send-transaction] No UTXOs, checking account balance...');
+      let balanceRes = null;
+      for (const candidateUrl of uniqueRpcCandidates) {
+        try {
+          const balRes = await zionRpcCall(candidateUrl, 'getBalance', { address: fromAddr });
+          if (balRes && !balRes.error) {
+            balanceRes = balRes;
+            break;
+          }
+        } catch { /* try next */ }
+      }
+
+      const accountBalanceFlowers = BigInt(balanceRes?.account_balance_flowers || '0');
+      const amountFlowers = BigInt(Math.floor(amt * 1e12));
+      const feeFlowers = AccountBuilder.DEFAULT_FEE_FLOWERS;
+      const totalNeeded = amountFlowers + feeFlowers;
+
+      if (accountBalanceFlowers < totalNeeded) {
+        console.warn('[MAIN wallet-send-transaction] Insufficient account balance');
+        return {
+          success: false,
+          error: `Insufficient balance: need ${amt} + fee ZION, have ${(Number(accountBalanceFlowers) / 1e12).toFixed(6)} ZION`
+        };
+      }
+
+      console.log('[MAIN wallet-send-transaction] Using Account model (balance:', accountBalanceFlowers.toString(), 'flowers)');
+      txModel = 'account';
+      try {
+        const accountTx = AccountBuilder.buildAccountTransaction({
+          fromAddress: fromAddr,
+          toAddress: toAddr,
+          amountZion: amt,
+          privateKeyDer
+        });
+        txPayload = accountTx;
+        txIdStr = accountTx.tx_id;
+        console.log('[MAIN wallet-send-transaction] Account tx built, txId:', txIdStr);
+      } catch (buildErr) {
+        console.error('[MAIN wallet-send-transaction] Account build failed:', buildErr);
+        return { success: false, error: buildErr.message };
+      }
     }
 
-    // ── Step 3: Build and sign UTXO transaction ──────────────────────
-    console.log('[MAIN wallet-send-transaction] Building transaction...');
-    let signedTx;
-    try {
-      signedTx = UtxoBuilder.buildUtxoTransaction({
-        fromAddress: fromAddr,
-        toAddress: toAddr,
-        amountZion: amt,
-        utxos,
-        privateKeyDer,
-        memo: memo || undefined
-      });
-      console.log('[MAIN wallet-send-transaction] Transaction built, txId:', UtxoBuilder.bytesToHex(signedTx.id));
-    } catch (buildErr) {
-      console.error('[MAIN wallet-send-transaction] Build failed:', buildErr);
-      return { success: false, error: buildErr.message };
-    }
-
-    // ── Step 4: Submit via submitTransaction ─────────────────────────
-    console.log('[MAIN wallet-send-transaction] Submitting transaction...');
+    // ── Step 4: Submit transaction ──────────────────────────────────
+    console.log('[MAIN wallet-send-transaction] Submitting', txModel, 'transaction...');
     let result = null;
+    const submitMethod = txModel === 'account' ? 'submitAccountTransaction' : 'submitTransaction';
     for (const candidateUrl of uniqueRpcCandidates) {
       try {
-        const rpcRes = await zionRpcCall(candidateUrl, 'submitTransaction', signedTx);
+        const rpcRes = await zionRpcCall(candidateUrl, submitMethod, txPayload);
         if (rpcRes && !rpcRes.error) {
           result = rpcRes;
-          console.log('[MAIN wallet-send-transaction] Transaction submitted to', candidateUrl);
+          console.log('[MAIN wallet-send-transaction] Transaction submitted to', candidateUrl, 'via', submitMethod);
           break;
         }
         if (rpcRes?.error) {
           console.warn('[MAIN wallet-send-transaction] RPC error:', rpcRes.error);
+          // If it fails with one method, try the generic one as last resort
+          if (txModel === 'account') {
+            const fallbackRes = await zionRpcCall(candidateUrl, 'submitTransaction', txPayload);
+            if (fallbackRes && !fallbackRes.error) {
+              result = fallbackRes;
+              console.log('[MAIN wallet-send-transaction] Account tx submitted via generic submitTransaction');
+              break;
+            }
+          }
           return { success: false, error: typeof rpcRes.error === 'string' ? rpcRes.error : JSON.stringify(rpcRes.error) };
         }
       } catch (err) {
@@ -4703,12 +4763,14 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
       };
     }
 
-    console.log('[MAIN wallet-send-transaction] SUCCESS! txId:', result?.tx_id || result?.txid || UtxoBuilder.bytesToHex(signedTx.id));
+    const finalTxId = result?.tx_id || result?.txid || txIdStr;
+    console.log('[MAIN wallet-send-transaction] SUCCESS! model:', txModel, 'txId:', finalTxId);
     return {
       success: true,
-      txId: result?.tx_id || result?.txid || UtxoBuilder.bytesToHex(signedTx.id),
+      txId: finalTxId,
       status: result?.status || 'submitted',
-      amount_zion: amt
+      amount_zion: amt,
+      model: txModel
     };
   } catch (error) {
     console.error('[MAIN wallet-send-transaction] UNEXPECTED ERROR:', error);
