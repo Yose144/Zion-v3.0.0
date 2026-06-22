@@ -13,9 +13,7 @@ use zion_core::{
     DifficultyTarget, MiningHeader, MiningSolution, RevenueSource, RpcRequest, RpcResponse,
     Transaction as AccountTransaction,
 };
-use zion_pool::ncl_gateway::{
-    NclDispatcher, NclGatewayClient, NclHeartbeatConfig, NclPricing,
-};
+use zion_pool::ncl_gateway::{NclDispatcher, NclGatewayClient, NclHeartbeatConfig, NclPricing};
 use zion_pool::pplns::{FeeConfig, PayoutEntry, PplnsConfig, PplnsEngine};
 use zion_pool::{
     decode_message, encode_message, MiningPool, PoolMessage, ShareDecision, ShareStatus,
@@ -212,8 +210,8 @@ fn main() -> Result<()> {
                         .revenue_handle();
                     let pricing = NclPricing::from_env();
                     let heartbeat = NclHeartbeatConfig::from_env();
-                    let queue_capacity = parse_env_u64("ZION_NCL_QUEUE_SIZE", 256)
-                        .unwrap_or(256) as usize;
+                    let queue_capacity =
+                        parse_env_u64("ZION_NCL_QUEUE_SIZE", 256).unwrap_or(256) as usize;
                     println!(
                         "ncl_gateway_enabled url={} heartbeat={} interval_secs={} \
                          price_in_per_1k={} price_out_per_1k={}",
@@ -244,10 +242,7 @@ fn main() -> Result<()> {
                     });
                 }
                 Err(e) => {
-                    eprintln!(
-                        "ncl_gateway_config_error url={} error={}",
-                        gateway_url, e
-                    );
+                    eprintln!("ncl_gateway_config_error url={} error={}", gateway_url, e);
                 }
             }
         }
@@ -489,6 +484,7 @@ impl VarDiff {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn handle_client(
     stream: TcpStream,
     pool: Arc<Mutex<MiningPool>>,
@@ -516,10 +512,20 @@ fn handle_client(
 
     // ── Inter-pool ShareRelay (Edge → Core) ─────────────────────────────
     // If the first message is a ShareRelay, record it in PPLNS and close.
-    if let PoolMessage::ShareRelay { miner_id, worker_name, height, difficulty, relay_origin } = &hello_message {
+    if let PoolMessage::ShareRelay {
+        miner_id,
+        worker_name,
+        height,
+        difficulty,
+        relay_origin,
+    } = &hello_message
+    {
         let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
         pplns.record_share_with_diff(miner_id, worker_name, *height, *difficulty);
-        println!("share_relay_accepted miner={} worker={} height={} diff={} origin={}", miner_id, worker_name, height, difficulty, relay_origin);
+        println!(
+            "share_relay_accepted miner={} worker={} height={} diff={} origin={}",
+            miner_id, worker_name, height, difficulty, relay_origin
+        );
         return Ok(());
     }
 
@@ -769,7 +775,39 @@ fn handle_client(
                 // computed_hash is used for audit/mismatch detection only.
                 let target_hash = &submitted_hash;
 
-                if !share_target.allows(target_hash) {
+                // ── Stale-job check ──────────────────────────────────────
+                // If the miner submits a share for an old job (different job_id or expired TTL),
+                // reject it as StaleJob so it doesn't count against RejectedLowDifficulty.
+                let is_stale = {
+                    let p = pool.lock().expect("pool lock poisoned");
+                    job_id != job.job_id || p.is_job_stale(job_id)
+                };
+                if is_stale {
+                    let reason = if job_id != job.job_id {
+                        "wrong-iteration"
+                    } else {
+                        "ttl-expired"
+                    };
+                    println!(
+                        "share_stale miner={} submitted_job={} current_job={} reason={}",
+                        worker_name, job_id, job.job_id, reason
+                    );
+                    pool.lock()
+                        .expect("pool lock poisoned")
+                        .record_stale_share();
+                    let decision = ShareDecision {
+                        status: ShareStatus::StaleJob,
+                        sealed_block: None,
+                    };
+                    JobCompletion::Submitted {
+                        decision,
+                        routed_source: RevenueSource::Zion,
+                        attempted_hashes: attempted_hashes
+                            .unwrap_or_else(|| nonce.saturating_sub(job.start_nonce) + 1),
+                        elapsed_ms: elapsed_ms
+                            .unwrap_or_else(|| job_issued_at.elapsed().as_millis() as u64),
+                    }
+                } else if !share_target.allows(target_hash) {
                     // Hash does not meet even the (easier) share target → reject.
                     println!(
                         "share_below_target miner={} job={} diff={}",
@@ -812,9 +850,15 @@ fn handle_client(
                             relay_origin: config.bind_addr.clone(),
                         };
                         if let Err(e) = relay_share_fire_and_forget(upstream, &relay) {
-                            println!("share_relay_failed miner={} upstream={} err={}", worker_name, upstream, e);
+                            println!(
+                                "share_relay_failed miner={} upstream={} err={}",
+                                worker_name, upstream, e
+                            );
                         } else {
-                            println!("share_relayed miner={} upstream={} diff={}", worker_name, upstream, share_difficulty);
+                            println!(
+                                "share_relayed miner={} upstream={} diff={}",
+                                worker_name, upstream, share_difficulty
+                            );
                         }
                     }
                     println!(
@@ -850,24 +894,27 @@ fn handle_client(
                         );
                         let node_rpc_addr = config.node_rpc_addr.clone();
                         let node_status = match node_rpc_addr.as_deref() {
-                            Some(addr) => match submit_candidate_to_node(addr, job, nonce, &session_algorithm) {
-                                Ok(RpcResponse::SubmitResult { accepted: true, .. }) => {
-                                    ShareStatus::Accepted
+                            Some(addr) => {
+                                match submit_candidate_to_node(addr, job, nonce, &session_algorithm)
+                                {
+                                    Ok(RpcResponse::SubmitResult { accepted: true, .. }) => {
+                                        ShareStatus::Accepted
+                                    }
+                                    Ok(RpcResponse::SubmitResult {
+                                        accepted: false,
+                                        reason,
+                                        ..
+                                    }) => map_node_rejection(reason.as_deref()),
+                                    Ok(other) => {
+                                        println!("node_rpc_unexpected={other:?}");
+                                        ShareStatus::UpstreamRejected
+                                    }
+                                    Err(error) => {
+                                        println!("node_rpc_error={error:#}");
+                                        ShareStatus::UpstreamRejected
+                                    }
                                 }
-                                Ok(RpcResponse::SubmitResult {
-                                    accepted: false,
-                                    reason,
-                                    ..
-                                }) => map_node_rejection(reason.as_deref()),
-                                Ok(other) => {
-                                    println!("node_rpc_unexpected={other:?}");
-                                    ShareStatus::UpstreamRejected
-                                }
-                                Err(error) => {
-                                    println!("node_rpc_error={error:#}");
-                                    ShareStatus::UpstreamRejected
-                                }
-                            },
+                            }
                             None => ShareStatus::Accepted,
                         };
 
@@ -989,6 +1036,7 @@ fn handle_client(
                 elapsed_ms,
             } => {
                 let accepted = matches!(decision.status, ShareStatus::Accepted);
+                let stale = matches!(decision.status, ShareStatus::StaleJob);
                 // PPLNS share was already recorded in the submit handler above
                 // (with difficulty weight).  Trigger payout only when a block
                 // was actually found (sealed_block is present).
@@ -1118,6 +1166,9 @@ fn handle_client(
                 }
                 {
                     let mut stats = routing_stats.lock().expect("routing stats lock poisoned");
+                    if stale {
+                        stats.record_stale();
+                    }
                     let should_log = stats.record(session_group, routed_source, accepted);
                     if should_log {
                         println!("routing_snapshot {}", stats.snapshot_line());
@@ -1177,7 +1228,6 @@ fn handle_client(
                 let result_message = PoolMessage::Result {
                     accepted: false,
                     status: "NoSolution".to_string(),
-                    block_found: false,
                 };
                 let result_line = write_wire_message(&mut writer, &result_message)?;
                 println!("share_status=NoSolution");
@@ -1407,6 +1457,7 @@ struct RoutingStats {
     log_every: u64,
     total_submits: u64,
     total_accepted: u64,
+    total_stale: u64,
     group_submits: [u64; 4],
     group_accepted: [u64; 4],
     source_submits: [u64; 14],
@@ -2031,11 +2082,16 @@ impl RoutingStats {
             log_every,
             total_submits: 0,
             total_accepted: 0,
+            total_stale: 0,
             group_submits: [0; 4],
             group_accepted: [0; 4],
             source_submits: [0; 14],
             source_accepted: [0; 14],
         }
+    }
+
+    fn record_stale(&mut self) {
+        self.total_stale = self.total_stale.saturating_add(1);
     }
 
     fn record(&mut self, group: SessionGroup, source: RevenueSource, accepted: bool) -> bool {
@@ -2053,19 +2109,26 @@ impl RoutingStats {
                 self.source_accepted[source_index(source)].saturating_add(1);
         }
 
-        self.log_every > 0 && self.total_submits % self.log_every == 0
+        self.log_every > 0 && self.total_submits.is_multiple_of(self.log_every)
     }
 
     fn snapshot_line(&self) -> String {
         let total = self.total_submits.max(1);
-        let total_rejected = self.total_submits.saturating_sub(self.total_accepted);
+        let total_rejected = self
+            .total_submits
+            .saturating_sub(self.total_accepted)
+            .saturating_sub(self.total_stale);
         let total_accept_rate = self.total_accepted as f64 * 100.0 / total as f64;
 
         let mut out = String::new();
         let _ = write!(
             out,
-            "submits={} accepted={} rejected={} accept_rate={:.2}%",
-            self.total_submits, self.total_accepted, total_rejected, total_accept_rate
+            "submits={} accepted={} rejected={} stale={} accept_rate={:.2}%",
+            self.total_submits,
+            self.total_accepted,
+            total_rejected,
+            self.total_stale,
+            total_accept_rate
         );
 
         for group in [
@@ -2120,7 +2183,10 @@ impl RoutingStats {
 
     #[allow(dead_code)]
     fn snapshot_json(&self) -> String {
-        let total_rejected = self.total_submits.saturating_sub(self.total_accepted);
+        let total_rejected = self
+            .total_submits
+            .saturating_sub(self.total_accepted)
+            .saturating_sub(self.total_stale);
         let accept_rate = if self.total_submits == 0 {
             0.0
         } else {
@@ -2128,10 +2194,11 @@ impl RoutingStats {
         };
 
         format!(
-            "{{\"submits\":{},\"accepted\":{},\"rejected\":{},\"accept_rate_pct\":{:.2},\"groups\":{{\"zion\":{{\"submits\":{},\"accepted\":{}}},\"revenue\":{{\"submits\":{},\"accepted\":{}}},\"ncl\":{{\"submits\":{},\"accepted\":{}}},\"auto\":{{\"submits\":{},\"accepted\":{}}}}},\"sources\":{{\"zion\":{{\"submits\":{},\"accepted\":{}}},\"blake3\":{{\"submits\":{},\"accepted\":{}}},\"ncl\":{{\"submits\":{},\"accepted\":{}}}}}}}",
+            "{{\"submits\":{},\"accepted\":{},\"rejected\":{},\"stale\":{},\"accept_rate_pct\":{:.2},\"groups\":{{\"zion\":{{\"submits\":{},\"accepted\":{}}},\"revenue\":{{\"submits\":{},\"accepted\":{}}},\"ncl\":{{\"submits\":{},\"accepted\":{}}},\"auto\":{{\"submits\":{},\"accepted\":{}}}}},\"sources\":{{\"zion\":{{\"submits\":{},\"accepted\":{}}},\"blake3\":{{\"submits\":{},\"accepted\":{}}},\"ncl\":{{\"submits\":{},\"accepted\":{}}}}}}}",
             self.total_submits,
             self.total_accepted,
             total_rejected,
+            self.total_stale,
             accept_rate,
             self.group_submits[group_index(SessionGroup::Zion)],
             self.group_accepted[group_index(SessionGroup::Zion)],
@@ -2166,8 +2233,13 @@ impl RoutingStats {
         let _ = writeln!(
             out,
             "zion_pool_rejected_total {}",
-            self.total_submits.saturating_sub(self.total_accepted)
+            self.total_submits
+                .saturating_sub(self.total_accepted)
+                .saturating_sub(self.total_stale)
         );
+        let _ = writeln!(out, "# HELP zion_pool_stale_total Stale shares.");
+        let _ = writeln!(out, "# TYPE zion_pool_stale_total counter");
+        let _ = writeln!(out, "zion_pool_stale_total {}", self.total_stale);
         let accept_rate = if self.total_submits == 0 {
             0.0
         } else {
@@ -2202,7 +2274,10 @@ impl RoutingStats {
 
     #[allow(dead_code)]
     fn snapshot_json_ext(&self, active_sessions: u64, uptime_s: u64) -> String {
-        let total_rejected = self.total_submits.saturating_sub(self.total_accepted);
+        let total_rejected = self
+            .total_submits
+            .saturating_sub(self.total_accepted)
+            .saturating_sub(self.total_stale);
         let accept_rate = if self.total_submits == 0 {
             0.0
         } else {
@@ -2210,10 +2285,11 @@ impl RoutingStats {
         };
 
         format!(
-            "{{\"submits\":{},\"accepted\":{},\"rejected\":{},\"accept_rate_pct\":{:.2},\"active_sessions\":{},\"uptime_s\":{},\"groups\":{{\"zion\":{{\"submits\":{},\"accepted\":{}}},\"revenue\":{{\"submits\":{},\"accepted\":{}}},\"ncl\":{{\"submits\":{},\"accepted\":{}}},\"auto\":{{\"submits\":{},\"accepted\":{}}}}},\"sources\":{{\"zion\":{{\"submits\":{},\"accepted\":{}}},\"blake3\":{{\"submits\":{},\"accepted\":{}}},\"ncl\":{{\"submits\":{},\"accepted\":{}}}}}}}",
+            "{{\"submits\":{},\"accepted\":{},\"rejected\":{},\"stale\":{},\"accept_rate_pct\":{:.2},\"active_sessions\":{},\"uptime_s\":{},\"groups\":{{\"zion\":{{\"submits\":{},\"accepted\":{}}},\"revenue\":{{\"submits\":{},\"accepted\":{}}},\"ncl\":{{\"submits\":{},\"accepted\":{}}},\"auto\":{{\"submits\":{},\"accepted\":{}}}}},\"sources\":{{\"zion\":{{\"submits\":{},\"accepted\":{}}},\"blake3\":{{\"submits\":{},\"accepted\":{}}},\"ncl\":{{\"submits\":{},\"accepted\":{}}}}}}}",
             self.total_submits,
             self.total_accepted,
             total_rejected,
+            self.total_stale,
             accept_rate,
             active_sessions,
             uptime_s,
@@ -2478,7 +2554,8 @@ fn build_stats_payload(
         },
         "shares": {
             "valid": stats.total_accepted,
-            "invalid": stats.total_submits.saturating_sub(stats.total_accepted),
+            "invalid": stats.total_submits.saturating_sub(stats.total_accepted).saturating_sub(stats.total_stale),
+            "stale": stats.total_stale,
             "total": stats.total_submits,
             "no_solution": telemetry.miners.values().map(|miner| miner.no_solution_jobs).sum::<u64>()
         },
@@ -2507,7 +2584,8 @@ fn build_stats_payload(
         "routing": {
             "submits": stats.total_submits,
             "accepted": stats.total_accepted,
-            "rejected": stats.total_submits.saturating_sub(stats.total_accepted),
+            "rejected": stats.total_submits.saturating_sub(stats.total_accepted).saturating_sub(stats.total_stale),
+            "stale": stats.total_stale,
             "accept_rate_pct": if stats.total_submits == 0 { 0.0 } else { stats.total_accepted as f64 * 100.0 / stats.total_submits as f64 },
             "groups": {
                 "zion": {
@@ -3156,7 +3234,7 @@ mod tests {
                 miner_id: "test-miner".to_string(),
                 worker_name: "rig-test".to_string(),
                 algorithm: zion_core::consensus_profile().to_string(),
-                payout_address: "zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3".to_string(),
+                payout_address: "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604".to_string(),
                 backend: "cpu".to_string(),
             },
         )?;
@@ -3234,8 +3312,7 @@ mod tests {
             messages[5],
             PoolMessage::Result {
                 accepted: false,
-                ref status,
-                ..
+                ref status
             } if status == "StaleJob"
         ));
         assert!(matches!(
@@ -3276,8 +3353,7 @@ mod tests {
             messages[3],
             PoolMessage::Result {
                 accepted: false,
-                ref status,
-                ..
+                ref status
             } if status == "UpstreamRejected"
         ));
         assert!(matches!(
@@ -3959,7 +4035,7 @@ fn parse_pool_signing_key() -> Option<ed25519_dalek::SigningKey> {
 }
 
 fn parse_hex_bytes(hex_str: &str) -> Option<Vec<u8>> {
-    if hex_str.len() % 2 != 0 {
+    if !hex_str.len().is_multiple_of(2) {
         return None;
     }
     let mut bytes = Vec::with_capacity(hex_str.len() / 2);
@@ -3969,8 +4045,6 @@ fn parse_hex_bytes(hex_str: &str) -> Option<Vec<u8>> {
     }
     Some(bytes)
 }
-
-
 
 /// Fetch pool wallet's account balance (flowers) from the node via getBalance RPC.
 fn fetch_pool_account_balance(node_rpc_addr: &str, address: &str) -> Result<u128> {
@@ -3992,8 +4066,8 @@ fn fetch_pool_account_balance(node_rpc_addr: &str, address: &str) -> Result<u128
     let mut response_line = String::new();
     reader.read_line(&mut response_line)?;
 
-    let response: serde_json::Value = serde_json::from_str(&response_line)
-        .context("failed to parse getBalance response")?;
+    let response: serde_json::Value =
+        serde_json::from_str(&response_line).context("failed to parse getBalance response")?;
 
     if let Some(error) = response.get("error") {
         if !error.is_null() {
@@ -4243,7 +4317,9 @@ fn execute_pool_payout(
         if account_balance < total_needed {
             return Err(anyhow!(
                 "pool payout wallet {} account balance {} < total payout {} (deferring)",
-                pool_wallet_addr, account_balance, total_needed,
+                pool_wallet_addr,
+                account_balance,
+                total_needed,
             ));
         }
 
@@ -4264,7 +4340,12 @@ fn execute_pool_payout(
             if net_amount == 0 {
                 continue;
             }
-            let tx_id = zion_core::wallet::generate_account_tx_id(pool_wallet_addr, &payout.address, net_amount as u64, nonce);
+            let tx_id = zion_core::wallet::generate_account_tx_id(
+                pool_wallet_addr,
+                &payout.address,
+                net_amount as u64,
+                nonce,
+            );
             let sig = zion_core::crypto::sign(signing_key, tx_id.as_bytes());
             let tx = AccountTransaction {
                 tx_id: tx_id.clone(),
@@ -4273,7 +4354,7 @@ fn execute_pool_payout(
                 amount_zion: net_amount,
                 fee_zion: zion_core::fee::MIN_TX_FEE,
                 nonce,
-                signature: hex::encode(&sig),
+                signature: hex::encode(sig),
                 public_key: pk_hex.clone(),
             };
             match submit_account_transaction(node_rpc_addr, &tx) {
@@ -4286,8 +4367,11 @@ fn execute_pool_payout(
                 Err(err) => {
                     return Err(anyhow!(
                         "account payout failed for miner {} ({}): {}. executed={} deferred={}",
-                        payout.miner_id, payout.address, err,
-                        executed.len(), payouts.len() - executed.len(),
+                        payout.miner_id,
+                        payout.address,
+                        err,
+                        executed.len(),
+                        payouts.len() - executed.len(),
                     ));
                 }
             }
@@ -4295,7 +4379,10 @@ fn execute_pool_payout(
 
         println!(
             "payout_account_model height={} recipients={} wallet={} tx_id={}",
-            height, executed.len(), pool_wallet_addr, first_tx_id,
+            height,
+            executed.len(),
+            pool_wallet_addr,
+            first_tx_id,
         );
 
         let deferred: Vec<PayoutEntry> = payouts
@@ -4573,7 +4660,9 @@ fn execute_fee_payout(
         if account_balance < total_needed {
             return Err(anyhow!(
                 "pool payout wallet {} account balance {} < fee payout {} (deferring)",
-                pool_wallet_addr, account_balance, total_needed,
+                pool_wallet_addr,
+                account_balance,
+                total_needed,
             ));
         }
 
@@ -4586,7 +4675,12 @@ fn execute_fee_payout(
         let pk_hex = hex::encode(signing_key.verifying_key().as_bytes());
         for (i, recipient) in recipients.iter().enumerate() {
             let nonce = base_nonce + i as u64;
-            let tx_id = zion_core::wallet::generate_account_tx_id(pool_wallet_addr, &recipient.address, recipient.amount, nonce);
+            let tx_id = zion_core::wallet::generate_account_tx_id(
+                pool_wallet_addr,
+                &recipient.address,
+                recipient.amount,
+                nonce,
+            );
             let sig = zion_core::crypto::sign(signing_key, tx_id.as_bytes());
             let tx = AccountTransaction {
                 tx_id: tx_id.clone(),
@@ -4595,7 +4689,7 @@ fn execute_fee_payout(
                 amount_zion: recipient.amount as u128,
                 fee_zion: zion_core::fee::MIN_TX_FEE,
                 nonce,
-                signature: hex::encode(&sig),
+                signature: hex::encode(sig),
                 public_key: pk_hex.clone(),
             };
             match submit_account_transaction(node_rpc_addr, &tx) {
@@ -4607,8 +4701,10 @@ fn execute_fee_payout(
                 Err(err) => {
                     return Err(anyhow!(
                         "account fee payout failed for {}: {}. executed={}/{}",
-                        recipient.address, err,
-                        i, recipients.len(),
+                        recipient.address,
+                        err,
+                        i,
+                        recipients.len(),
                     ));
                 }
             }
@@ -4616,7 +4712,10 @@ fn execute_fee_payout(
 
         println!(
             "fee_payout_account_model height={} recipients={} wallet={} tx_id={}",
-            height, recipients.len(), pool_wallet_addr, first_tx_id,
+            height,
+            recipients.len(),
+            pool_wallet_addr,
+            first_tx_id,
         );
 
         return Ok(first_tx_id);
