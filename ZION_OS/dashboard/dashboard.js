@@ -1999,10 +1999,10 @@ async function loadPayoutTab(){
           const addr = escapeHtml((m.payout_address || m.address || m.miner_id || '').slice(0, 20) + (((m.payout_address || m.address || m.miner_id || '').length > 20) ? '…' : ''));
           const valid = m.valid_shares ?? 0;
           const invalid = m.invalid_shares ?? m.no_solution ?? 0;
-          // pending_balance: payout API may be atomic flowers → convert to ZION
-          const pendingZion = (m.pending_balance != null && m.pending_balance > 1_000_000)
+          // pending_balance from pool/payout APIs is always in atomic flowers
+          const pendingZion = (m.pending_balance != null && m.pending_balance > 0)
             ? m.pending_balance / 1_000_000_000_000
-            : (m.pending_balance ?? 0);
+            : 0;
           const pendingStr = pendingZion > 0 ? _zionFmt(pendingZion) + ' ZION' : '—';
           const paidZion = m.paid_total ?? m.total_paid ?? 0;
           const paidStr = paidZion > 0 ? _zionFmt(paidZion) + ' ZION' : '—';
@@ -2050,7 +2050,7 @@ async function loadPayoutTab(){
         recent.forEach(rp => {
           if(seen.has(rp.block_height)) return;
           seen.add(rp.block_height);
-          const amt = rp.amount_zion != null ? ` — ${rp.amount_zion.toFixed(2)} ZION` : '';
+          const amt = rp.amount_zion != null ? ` — ${_zionFmt(rp.amount_zion)} ZION` : '';
           items.push({
             type: 'payout',
             height: rp.block_height,
