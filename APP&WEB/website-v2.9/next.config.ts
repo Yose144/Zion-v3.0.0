@@ -26,7 +26,37 @@ const nextConfig: NextConfig = {
       os: {
         browser: './src/lib/empty-module.ts',
       },
+      '@trezor/connect-web': {
+        browser: './src/lib/empty-module.ts',
+      },
+      '@trezor/connect': {
+        browser: './src/lib/empty-module.ts',
+      },
+      '@ledgerhq/hw-transport-webusb': {
+        browser: './src/lib/empty-module.ts',
+      },
+      '@ledgerhq/hw-transport-webhid': {
+        browser: './src/lib/empty-module.ts',
+      },
+      '@ledgerhq/hw-app-ada': {
+        browser: './src/lib/empty-module.ts',
+      },
+      '@trezor/connect-mobile': {
+        browser: './src/lib/empty-module.ts',
+      },
     },
+  },
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@trezor/connect-web': './src/lib/empty-module.ts',
+      '@trezor/connect': './src/lib/empty-module.ts',
+      '@ledgerhq/hw-transport-webusb': './src/lib/empty-module.ts',
+      '@ledgerhq/hw-transport-webhid': './src/lib/empty-module.ts',
+      '@ledgerhq/hw-app-ada': './src/lib/empty-module.ts',
+      '@trezor/connect-mobile': './src/lib/empty-module.ts',
+    };
+    return config;
   },
   // P1-33: Security headers — CSP, X-Frame-Options, HSTS, etc.
   async headers() {
