@@ -1,13 +1,20 @@
 /**
- * ZION V3 UTXO Transaction Builder
+ * ZION V3 UTXO + Account Transaction Builder
  * Matches V3/L1/core/src/tx.rs Transaction::calculate_hash()
+ * Matches V3/L1/core/src/wallet.rs build_and_sign_account
  */
 
 import { blake3 } from '@noble/hashes/blake3.js';
 import { signMessage } from './keypair.js';
+import * as ed from '@noble/ed25519';
+import { sha512 } from '@noble/hashes/sha2.js';
+
+// Enable sync sha512 for @noble/ed25519
+ed.etc.sha512Sync = (...m: Uint8Array[]) => sha512(ed.etc.concatBytes(...m));
 
 export const FLOWERS_PER_ZION = 1_000_000_000_000n;
-export const MIN_FEE_FLOWERS = 1_000_000n; // 0.000001 ZION minimum fee
+export const MIN_FEE_FLOWERS = 1_000_000n; // 0.000001 ZION minimum fee (UTXO)
+export const ACCOUNT_DEFAULT_FEE_FLOWERS = 1_000n; // Minimum fee for account-model (matches V3 fee::MIN_TX_FEE)
 
 export interface UTXO {
   tx_hash: string;
@@ -229,5 +236,128 @@ export function transactionToRpcPayload(tx: Transaction): Record<string, unknown
     outputs: tx.outputs,
     fee: tx.fee,
     timestamp: tx.timestamp,
+  };
+}
+
+// ─── Account-Model Transaction Builder ───────────────────────────────
+// Matches V3/L1/core/src/wallet.rs build_and_sign_account + lib.rs Transaction struct
+// Used for premine wallets (Humanitarian, ISSOBELLA, DAO treasury, Genesis Creator)
+// that have balance in the account ledger (not UTXO).
+
+function bytesToHex(bytes: Uint8Array | Buffer | number[]): string {
+  return Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Generate a deterministic tx_id for an account transaction.
+ * Matches V3/L1/core/src/wallet.rs generate_account_tx_id.
+ *
+ * Layout:
+ *   bytes[0..16]  = timestamp nanos (two u64 LE: low + high)
+ *   bytes[16..24] = amount (u64 LE)
+ *   bytes[24..32] = nonce (u64 LE)
+ *   XOR from + to address bytes cyclically into all 32 bytes
+ */
+export function generateAccountTxId(from: string, to: string, amount: bigint, nonce: bigint): string {
+  const bytes = Buffer.alloc(32);
+
+  // Timestamp nanos (16 bytes = two u64 LE)
+  const tsNanos = BigInt(Date.now()) * 1_000_000n;
+  bytes.writeBigUInt64LE(tsNanos & 0xFFFFFFFFFFFFFFFFn, 0);
+  bytes.writeBigUInt64LE((tsNanos >> 64n) & 0xFFFFFFFFFFFFFFFFn, 8);
+
+  // Amount (8 bytes LE)
+  bytes.writeBigUInt64LE(amount & 0xFFFFFFFFFFFFFFFFn, 16);
+
+  // Nonce (8 bytes LE)
+  bytes.writeBigUInt64LE(nonce & 0xFFFFFFFFFFFFFFFFn, 24);
+
+  // XOR-in sender and recipient address bytes cyclically
+  const fromBytes = Buffer.from(from, 'utf8');
+  const toBytes = Buffer.from(to, 'utf8');
+  const allAddrBytes = Buffer.concat([fromBytes, toBytes]);
+  for (let i = 0; i < allAddrBytes.length; i++) {
+    bytes[i % 32] ^= allAddrBytes[i];
+  }
+
+  return bytesToHex(bytes);
+}
+
+export interface AccountTransaction {
+  tx_id: string;
+  from: string;
+  to: string;
+  amount_zion: string; // u128 serialized as STRING in JSON
+  fee_zion: number;
+  nonce: number;
+  signature: string; // 64-byte Ed25519 signature hex
+  public_key: string; // 32-byte raw Ed25519 public key hex
+}
+
+/**
+ * Build and sign an account-model transaction.
+ * Uses raw 32-byte Ed25519 private key (web SDK format).
+ *
+ * @param fromAddress Sender zion1 address
+ * @param toAddress Recipient zion1 address
+ * @param amountZion Amount in ZION (float) or flowers (bigint)
+ * @param privateKey Raw 32-byte Ed25519 private key
+ * @param nonce Unique nonce (default: Date.now() ms)
+ * @param fee Fee in flowers (default: 1000)
+ */
+export async function buildAccountTransaction({
+  fromAddress,
+  toAddress,
+  amountZion,
+  privateKey,
+  nonce,
+  fee,
+}: {
+  fromAddress: string;
+  toAddress: string;
+  amountZion: number | string | bigint;
+  privateKey: Uint8Array;
+  nonce?: bigint;
+  fee?: bigint;
+}): Promise<AccountTransaction> {
+  // Parse amount to flowers (bigint)
+  let amountFlowers: bigint;
+  if (typeof amountZion === 'bigint') {
+    amountFlowers = amountZion;
+  } else if (typeof amountZion === 'string') {
+    const num = parseFloat(amountZion);
+    if (amountZion.includes('.') || num < 1e12) {
+      amountFlowers = BigInt(Math.floor(num * 1e12));
+    } else {
+      amountFlowers = BigInt(amountZion);
+    }
+  } else {
+    amountFlowers = BigInt(Math.floor(Number(amountZion) * 1e12));
+  }
+
+  const feeFlowers = fee != null ? fee : ACCOUNT_DEFAULT_FEE_FLOWERS;
+  const txNonce = nonce != null ? nonce : BigInt(Date.now());
+
+  // Generate tx_id
+  const txId = generateAccountTxId(fromAddress, toAddress, amountFlowers, txNonce);
+
+  // Derive public key from private key
+  const publicKey = await ed.getPublicKey(privateKey);
+  const pubKeyHex = bytesToHex(publicKey);
+
+  // Sign the tx_id (as UTF-8 bytes) with Ed25519
+  const txIdBytes = Buffer.from(txId, 'utf8');
+  const signature = await ed.sign(txIdBytes, privateKey);
+  const signatureHex = bytesToHex(signature);
+
+  return {
+    tx_id: txId,
+    from: fromAddress,
+    to: toAddress,
+    amount_zion: amountFlowers.toString(),
+    fee_zion: Number(feeFlowers),
+    nonce: Number(txNonce),
+    signature: signatureHex,
+    public_key: pubKeyHex,
   };
 }
