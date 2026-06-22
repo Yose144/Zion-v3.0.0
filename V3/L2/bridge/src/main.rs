@@ -59,6 +59,11 @@ async fn main() -> Result<()> {
     // Open database
     let db = BridgeDb::open(&config.database.path)?;
     let last_l1_height = db.get_last_l1_height()?;
+    let last_l1_height = if last_l1_height == 0 {
+        config.l1.start_block_height.unwrap_or(0)
+    } else {
+        last_l1_height
+    };
 
     // Initialize metrics
     let metrics = BridgeMetrics::new();

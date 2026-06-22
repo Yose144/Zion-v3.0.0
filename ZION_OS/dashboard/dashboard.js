@@ -6470,6 +6470,22 @@ function _zionFmt(n) {
   return whole + '.' + parts[1];
 }
 
+function setText(id, text) {
+  const el = document.getElementById(id);
+  if(el) el.textContent = text;
+}
+
+function updateNetworkEmission(em){
+  if(!em) return;
+  const fmt = (v) => v > 0 ? _zionFmt(v) + ' ZION' : '—';
+  setText('emission-total', em.total_emitted_zion != null ? fmt(em.total_emitted_zion) : '—');
+  setText('emission-miner', em.miner_rewards_zion != null ? fmt(em.miner_rewards_zion) : '—');
+  setText('emission-humanitarian', em.humanitarian_zion != null ? fmt(em.humanitarian_zion) : '—');
+  setText('emission-issobella', em.issobella_zion != null ? fmt(em.issobella_zion) : '—');
+  setText('emission-pool-fee', em.pool_fees_zion != null ? fmt(em.pool_fees_zion) : '—');
+  setText('emission-burned', em.burned_zion != null ? fmt(em.burned_zion) : '—');
+}
+
 function renderPayoutDonut(payouts) {
   const ctx = document.getElementById('chart-payout-donut')?.getContext('2d');
   if (!ctx) return;
