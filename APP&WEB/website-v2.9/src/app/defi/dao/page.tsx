@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { CONTRACTS_SEPOLIA } from '@/lib/defi-contracts';
+import { getGovernanceProposals, type GovernanceProposal } from '@/lib/dao-api';
+import { useEffect, useState } from 'react';
 
 interface Proposal {
   id: number;
@@ -28,7 +30,7 @@ interface Proposal {
   proposer: string;
 }
 
-const MOCK_PROPOSALS: Proposal[] = [
+const FALLBACK_PROPOSALS: Proposal[] = [
   {
     id: 1,
     title: 'Increase bridge validator threshold to 3/5',
@@ -40,29 +42,28 @@ const MOCK_PROPOSALS: Proposal[] = [
     endDate: '2026-06-15',
     proposer: '0xdde1...3D186',
   },
-  {
-    id: 2,
-    title: 'Fund humanitarian tithe pool with 50M ZION',
-    titleCs: 'Fundovat humanitární desátek 50M ZION',
-    status: 'passed',
-    votesFor: 2_500_000_000,
-    votesAgainst: 50_000_000,
-    quorum: 2_000_000_000,
-    endDate: '2026-04-20',
-    proposer: '0x8cc6...5c787',
-  },
-  {
-    id: 3,
-    title: 'Add wZION/WETH 0.05% fee tier to DEX',
-    titleCs: 'Přidat wZION/WETH 0.05% fee tier do DEX',
-    status: 'rejected',
-    votesFor: 800_000_000,
-    votesAgainst: 1_500_000_000,
-    quorum: 2_000_000_000,
-    endDate: '2026-03-10',
-    proposer: '0x039F...290a1',
-  },
 ];
+
+function mapProposal(p: GovernanceProposal): Proposal {
+  const state = (p.state ?? '').toLowerCase();
+  const status: Proposal['status'] =
+    state === 'active' ? 'active' : state === 'passed' ? 'passed' : state === 'executed' ? 'passed' : state === 'rejected' ? 'rejected' : 'pending';
+  const date = new Date(p.voting_ends_at || p.created_at || Date.now());
+  const endDate = isNaN(date.getTime()) ? '-' : date.toISOString().split('T')[0];
+  const forVotes = Number(p.for_votes || 0);
+  const againstVotes = Number(p.against_votes || 0);
+  return {
+    id: p.id,
+    title: p.title || (status === 'active' ? 'Active proposal' : 'Governance proposal'),
+    titleCs: p.title || (status === 'active' ? 'Aktivní návrh' : 'Governance návrh'),
+    status,
+    votesFor: forVotes,
+    votesAgainst: againstVotes,
+    quorum: 2_000_000_000,
+    endDate,
+    proposer: p.proposer || '-',
+  };
+}
 
 function statusBadge(status: Proposal['status'], cs: boolean) {
   switch (status) {
@@ -97,9 +98,29 @@ export default function DaoPage() {
   const { lang } = useLang();
   const cs = lang === 'cs';
 
-  const totalProposals = MOCK_PROPOSALS.length;
-  const activeCount = MOCK_PROPOSALS.filter((p) => p.status === 'active').length;
-  const passedCount = MOCK_PROPOSALS.filter((p) => p.status === 'passed').length;
+  const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    getGovernanceProposals()
+      .then((rows) => {
+        if (cancelled) return;
+        const mapped = rows.map(mapProposal);
+        setProposals(mapped.length > 0 ? mapped : FALLBACK_PROPOSALS);
+      })
+      .catch(() => {
+        if (!cancelled) setProposals(FALLBACK_PROPOSALS);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const totalProposals = proposals.length;
+  const activeCount = proposals.filter((p) => p.status === 'active').length;
+  const passedCount = proposals.filter((p) => p.status === 'passed').length;
 
   return (
     <div className="pt-28 md:pt-32 pb-24 overflow-x-hidden">
@@ -169,8 +190,14 @@ export default function DaoPage() {
             <Vote className="h-6 w-6 text-emerald-400" />
             {cs ? 'Návrhy' : 'Proposals'}
           </h2>
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-zion-gold border-r-transparent" />
+              <p className="mt-4 text-gray-400">{cs ? 'Načítám návrhy…' : 'Loading proposals…'}</p>
+            </div>
+          ) : (
           <div className="space-y-3">
-            {MOCK_PROPOSALS.map((p) => {
+            {proposals.map((p) => {
               const totalVotes = p.votesFor + p.votesAgainst;
               const forPct = totalVotes > 0 ? (p.votesFor / totalVotes) * 100 : 0;
               const againstPct = totalVotes > 0 ? (p.votesAgainst / totalVotes) * 100 : 0;
@@ -222,6 +249,7 @@ export default function DaoPage() {
               );
             })}
           </div>
+          )}
         </motion.section>
 
         {/* Contract */}
