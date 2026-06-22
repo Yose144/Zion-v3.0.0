@@ -411,7 +411,7 @@ function updateServiceCards(s){
   const mwl = document.getElementById('val-miner-wallet');
   if(mwl) mwl.textContent = m.payout_address ?? m.wallet ?? '—';
   const mon = document.getElementById('val-miner-onchain');
-  if(mon) mon.textContent = m.on_chain_balance_zion != null ? _zionFmt(m.on_chain_balance_zion) + ' Z' : '—';
+  if(mon) mon.textContent = m.on_chain_balance_zion != null ? _zionFmt(m.on_chain_balance_zion) + ' ZION' : '—';
   const monts = document.getElementById('val-miner-onchain-ts');
   if(monts) {
     const ts = m.on_chain_balance_updated;
@@ -1107,18 +1107,18 @@ async function refreshPayout(){
     if (data.payouts && data.payouts.length) {
       const latest = data.payouts[data.payouts.length - 1];
       const s = latest.fee_split || {};
-      set('payout-breakdown-miner-amount', _zionFmt(s.miner || 0) + ' Z');
-      set('payout-breakdown-charity-amount', _zionFmt(s.charity || 0) + ' Z');
-      set('payout-breakdown-dev-amount', _zionFmt(s.dev || 0) + ' Z');
-      set('payout-breakdown-pool-amount', _zionFmt(s.pool || 0) + ' Z');
+      set('payout-breakdown-miner-amount', _zionFmt(s.miner || 0) + ' ZION');
+      set('payout-breakdown-charity-amount', _zionFmt(s.charity || 0) + ' ZION');
+      set('payout-breakdown-dev-amount', _zionFmt(s.dev || 0) + ' ZION');
+      set('payout-breakdown-pool-amount', _zionFmt(s.pool || 0) + ' ZION');
     }
 
     // ── On-chain balances ─────────────────────────────────────────
     const bals = data.balances || {};
-    set('payout-breakdown-miner-bal',  bals.miner ? _zionFmt(bals.miner.zion) + ' Z' : '—');
-    set('payout-breakdown-charity-bal', bals.humanitarian ? _zionFmt(bals.humanitarian.zion) + ' Z' : '—');
-    set('payout-breakdown-dev-bal',    bals.issobella ? _zionFmt(bals.issobella.zion) + ' Z' : '—');
-    set('payout-breakdown-pool-bal',   data.burned_total != null ? _zionFmt(data.burned_total) + ' Z' : '—');
+    set('payout-breakdown-miner-bal',  bals.miner ? _zionFmt(bals.miner.zion) + ' ZION' : '—');
+    set('payout-breakdown-charity-bal', bals.humanitarian ? _zionFmt(bals.humanitarian.zion) + ' ZION' : '—');
+    set('payout-breakdown-dev-bal',    bals.issobella ? _zionFmt(bals.issobella.zion) + ' ZION' : '—');
+    set('payout-breakdown-pool-bal',   data.burned_total != null ? _zionFmt(data.burned_total) + ' ZION' : '—');
     if (data.miner_wallet) set('fs-bal-miner-addr', data.miner_wallet);
     if (data.humanitarian_wallet) set('fs-bal-charity-addr', data.humanitarian_wallet);
     if (data.issobella_wallet) set('fs-bal-dev-addr', data.issobella_wallet);
@@ -1155,8 +1155,8 @@ async function refreshPayout(){
             <td class="py-2 px-2 text-gray-400 text-[10px]">${be}</td>
             <td class="py-2 px-2 text-right text-emerald-400">${m.valid_shares != null ? fmtNum(m.valid_shares) : '—'}</td>
             <td class="py-2 px-2 text-right text-amber-400 font-mono">${hr}</td>
-            <td class="py-2 px-2 text-right text-cyan-400 font-mono">${onChain} Z</td>
-            <td class="py-2 px-2 text-right text-purple-400 font-mono">${pending} Z</td>
+            <td class="py-2 px-2 text-right text-cyan-400 font-mono">${onChain} ZION</td>
+            <td class="py-2 px-2 text-right text-purple-400 font-mono">${pending} ZION</td>
             <td class="py-2 px-2 text-right text-zion-gold">${m.blocks_found ?? '—'}</td>
           </tr>`;
         }).join('');
@@ -1176,7 +1176,7 @@ async function refreshPayout(){
           const timeStr = p.timestamp ? p.timestamp.substring(11,19) : '—';
           return `<tr class="border-b border-white/5 hover:bg-white/5 transition">
             <td class="py-2 px-2 text-white">#${p.block_height}</td>
-            <td class="py-2 px-2 text-right text-emerald-400">${p.amount_zion != null ? _zionFmt(p.amount_zion) : '—'} Z</td>
+            <td class="py-2 px-2 text-right text-emerald-400">${p.amount_zion != null ? _zionFmt(p.amount_zion) : '—'} ZION</td>
             <td class="py-2 px-2 text-right text-gray-300">${p.recipients ?? '—'}</td>
             <td class="py-2 px-2 ${statusClass}">${p.status || '—'}</td>
             <td class="py-2 px-2">${txLink}</td>
@@ -1196,7 +1196,7 @@ async function refreshPayout(){
           const s = p.fee_split || {};
           return `<tr class="border-b border-white/5 hover:bg-white/5 transition">
             <td class="py-2 px-2 text-white">#${p.block_height}</td>
-            <td class="py-2 px-2 text-right text-gray-300">${_zionFmt(p.subsidy_flowers / 1e12)} Z</td>
+            <td class="py-2 px-2 text-right text-gray-300">${_zionFmt(p.subsidy_flowers / 1e12)} ZION</td>
             <td class="py-2 px-2 text-right text-amber-400">${_zionFmt(s.miner || 0)}</td>
             <td class="py-2 px-2 text-right text-emerald-400">${_zionFmt(s.charity || 0)}</td>
             <td class="py-2 px-2 text-right text-purple-400">${_zionFmt(s.dev || 0)}</td>
@@ -1514,7 +1514,13 @@ async function updateConnectedMiners(){
   const badge = document.getElementById('connected-miners-badge');
   if(!tbody) return;
   try {
-    const d = await fetch('/api/pool/miners').then(r => r.json());
+    const [poolRes, payoutRes] = await Promise.allSettled([
+      fetch('/api/pool/miners').then(r => r.json()),
+      fetch('/api/payout').then(r => r.json()),
+    ]);
+    const d = poolRes.status === 'fulfilled' ? poolRes.value : { ok:false, miners:[] };
+    const payoutData = payoutRes.status === 'fulfilled' ? payoutRes.value : {};
+    const payoutMiners = payoutData.miners || [];
     if(!d.ok || !d.miners || d.miners.length === 0){
       tbody.innerHTML = '<tr><td colspan="8" class="text-gray-500 text-center py-4">No miners connected to Edge pool.</td></tr>';
       if(badge) badge.textContent = '0';
@@ -1534,7 +1540,15 @@ async function updateConnectedMiners(){
       return b.valid_shares - a.valid_shares;
     });
 
+    const payoutByKey = new Map();
+    payoutMiners.forEach(m => {
+      [m.worker_name, m.address, m.miner_id].forEach(key => {
+        if(key) payoutByKey.set(key, m);
+      });
+    });
+
     tbody.innerHTML = sorted.map(m => {
+      const payoutMiner = payoutByKey.get(m.worker_name) || payoutByKey.get(m.miner_id) || null;
       const isActive = m.hashrate_hps > 0;
       const nowSec = Math.floor(Date.now() / 1000);
       const lastSeenAgo = (m.last_seen > 0) ? (nowSec - m.last_seen) : null;
@@ -1548,7 +1562,9 @@ async function updateConnectedMiners(){
         ? (lastSeenAgo < 60 ? lastSeenAgo + 's' : Math.floor(lastSeenAgo/60) + 'm') + ' ago'
         : '—';
       const hashrate = m.hashrate_hps > 0 ? (m.hashrate_hps/1000).toFixed(2) + ' KH/s' : '—';
-      const paid = m.paid_total > 0 ? m.paid_total.toLocaleString('en-US',{maximumFractionDigits:4}) : '0';
+      const paidZion = payoutMiner?.paid_total ?? (payoutMiner?.paid_total_atomic != null ? payoutMiner.paid_total_atomic / 1_000_000_000_000 : null) ?? m.paid_total ?? 0;
+      const paid = paidZion > 0 ? _zionFmt(paidZion) : '0';
+      const blocks = payoutMiner?.blocks_found ?? m.blocks_found ?? '—';
       const minerIdShort = m.miner_id.length > 28 ? m.miner_id.slice(0,14)+'…'+m.miner_id.slice(-12) : m.miner_id;
       const rowCls = isActive ? '' : (isRecent ? 'opacity-75' : 'opacity-40');
       return `<tr class="border-b border-white/5 hover:bg-white/5 transition ${rowCls}">
@@ -1557,7 +1573,7 @@ async function updateConnectedMiners(){
         <td class="py-2 px-2 text-right font-mono ${isActive?'text-amber-400':'text-gray-500'}">${hashrate}</td>
         <td class="py-2 px-2 text-right font-mono text-emerald-400">${m.valid_shares.toLocaleString()}</td>
         <td class="py-2 px-2 text-right font-mono text-red-400">${m.invalid_shares.toLocaleString()}</td>
-        <td class="py-2 px-2 text-right font-mono text-zion-gold">${m.blocks_found}</td>
+        <td class="py-2 px-2 text-right font-mono text-zion-gold">${blocks}</td>
         <td class="py-2 px-2 text-right font-mono text-gray-300">${paid}</td>
         <td class="py-2 px-2 text-right text-[10px]">${statusDot}<br><span class="text-gray-500">${lastSeenStr}</span></td>
       </tr>`;
@@ -2767,7 +2783,7 @@ async function loadWalletStatus(){
     if(!container) return;
 
     const poolWallet = w.pool_wallet || '—';
-    const bal = w.pool_wallet_balance != null ? formatFlowers(w.pool_wallet_balance) : (w.balance_zion != null ? w.balance_zion.toFixed(4) + ' Z' : '—');
+    const bal = w.pool_wallet_balance != null ? formatFlowers(w.pool_wallet_balance) : (w.balance_zion != null ? w.balance_zion.toFixed(4) + ' ZION' : '—');
     const blocks = w.blocks_found ?? '—';
     const enabled = w.payout_enabled === true ? 'Yes' : (w.payout_enabled === false ? 'No' : '—');
     const enabledClass = w.payout_enabled === true ? 'text-emerald-400' : (w.payout_enabled === false ? 'text-red-400' : 'text-gray-400');

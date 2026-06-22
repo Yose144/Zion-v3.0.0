@@ -173,6 +173,51 @@ class ZionWalletGenerator {
   }
 
   /**
+   * Import ZION wallet from raw Ed25519 secret key (32 bytes).
+   *
+   * For premine/canonical wallets where you have the raw secret_key_hex
+   * (e.g., Genesis Creator slot). Converts to PKCS8 DER format used by
+   * the rest of the desktop agent.
+   *
+   * @param {string} secretKeyHex - 64-char hex string (32 bytes raw Ed25519 seed)
+   * @returns {Object} Wallet with address, publicKey, privateKey (PKCS8 DER hex), importedAt
+   */
+  static importPrivateKey(secretKeyHex) {
+    if (!secretKeyHex || typeof secretKeyHex !== 'string') {
+      throw new Error('Secret key hex is required');
+    }
+
+    const cleanHex = secretKeyHex.trim().replace(/^0x/, '');
+    if (cleanHex.length !== 64) {
+      throw new Error(`Invalid secret key length: expected 64 hex chars (32 bytes), got ${cleanHex.length}`);
+    }
+
+    // Validate hex format
+    if (!/^[0-9a-fA-F]+$/.test(cleanHex)) {
+      throw new Error('Invalid secret key format: must be hex string');
+    }
+
+    const seedBytes = new Uint8Array(Buffer.from(cleanHex, 'hex'));
+
+    // Derive keypair using the same method as recoverWallet
+    const { privateKey, publicKeyRaw } = keypairFromSeed(seedBytes);
+
+    // Derive canonical ZION address
+    const address = this.deriveAddress(publicKeyRaw);
+
+    // Export keys as hex
+    const privateKeyHex = privateKey.toString('hex');
+    const publicKeyHex = publicKeyRaw.toString('hex');
+
+    return {
+      address,
+      publicKey: publicKeyHex,
+      privateKey: privateKeyHex,
+      importedAt: new Date().toISOString()
+    };
+  }
+
+  /**
    * Derive ZION address from public key (V3-compatible).
    *
    * Must match V3/L1/core/src/crypto.rs derive_address():
