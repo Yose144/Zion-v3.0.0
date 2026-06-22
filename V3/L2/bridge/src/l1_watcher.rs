@@ -172,13 +172,25 @@ impl L1Watcher {
                     .parse_bridge_memo(output.memo.as_deref())
                     .unwrap_or(("base".into(), String::new()));
 
-                if evm_recipient.is_empty() {
-                    warn!(
-                        "L1: Lock TX {} has no valid EVM recipient in memo, skipping",
-                        hex::encode(tx.id)
-                    );
-                    continue;
-                }
+                let evm_recipient = if evm_recipient.is_empty() {
+                    // Fallback: use configured default recipient for locks without memo
+                    if let Some(ref default) = self.config.default_evm_recipient {
+                        warn!(
+                            "L1: Lock TX {} has no memo, using default EVM recipient: {}",
+                            hex::encode(tx.id),
+                            default,
+                        );
+                        default.clone()
+                    } else {
+                        warn!(
+                            "L1: Lock TX {} has no valid EVM recipient in memo and no default configured, skipping",
+                            hex::encode(tx.id),
+                        );
+                        continue;
+                    }
+                } else {
+                    evm_recipient
+                };
 
                 let sender = tx
                     .inputs
@@ -326,6 +338,7 @@ mod tests {
             poll_interval_secs: 15,
             start_block_height: None,
             l1_rpc_token: None,
+            default_evm_recipient: None,
         };
         L1Watcher::new(config, None)
     }
@@ -429,6 +442,7 @@ mod tests {
             poll_interval_secs: 15,
             start_block_height: None,
             l1_rpc_token: None,
+            default_evm_recipient: None,
         };
         let watcher = L1Watcher::new(config, Some(12345));
         assert_eq!(watcher.last_processed_height, 12345);
