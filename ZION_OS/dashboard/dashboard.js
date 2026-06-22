@@ -986,9 +986,7 @@ function updatePayouts(p, topology){
 function formatFlowers(v){
   if(!v && v !== 0) return '—';
   const zion = v / 1_000_000_000_000;
-  if(zion >= 1_000_000) return (zion / 1_000_000).toFixed(2) + ' MZION';
-  if(zion >= 1_000) return (zion / 1_000).toFixed(2) + ' KZION';
-  return zion.toFixed(4) + ' ZION';
+  return _zionFmt(zion) + ' ZION';
 }
 
 async function refreshPayout(){
@@ -1686,10 +1684,7 @@ async function loadWallets(){
         const balV = w.balance_zion;
         const bal = balV !== null && balV !== undefined
           ? (typeof balV === 'number'
-              ? (balV >= 1e9 ? (balV/1e9).toFixed(3)+' BZION'
-                : balV >= 1e6 ? (balV/1e6).toFixed(2)+' MZION'
-                : balV >= 1e3 ? (balV/1e3).toFixed(2)+' KZION'
-                : balV.toFixed(4)+' ZION')
+              ? (_zionFmt(balV) + ' ZION')
               : balV)
           : (w.rpc_ok === false ? '<span class="text-gray-600">unavailable</span>' : '—');
         const balClass = balV !== null && balV !== undefined ? 'text-emerald-400 font-bold' : 'text-gray-500';
@@ -2840,7 +2835,7 @@ async function loadMempool(){
     if(badge){ badge.textContent = mp.rpc_reachable ? 'Live' : 'RPC Unreachable'; badge.className = 'text-xs px-2 py-0.5 rounded-full ' + (mp.rpc_reachable ? 'bg-emerald-700 text-emerald-300' : 'bg-red-700 text-red-300'); }
     document.getElementById('mempool-tx-count').textContent = mp.tx_count ?? '—';
     document.getElementById('mempool-template-count').textContent = mp.template_tx_count ?? '—';
-    document.getElementById('mempool-total-fees').textContent = mp.total_fees_zion != null ? mp.total_fees_zion.toFixed(4) + ' Z' : '—';
+    document.getElementById('mempool-total-fees').textContent = mp.total_fees_zion != null ? mp.total_fees_zion.toFixed(4) + ' ZION' : '—';
     const tbody = document.getElementById('mempool-tx-table');
     if(tbody){
       if(!mp.transactions || !mp.transactions.length){
@@ -2851,8 +2846,8 @@ async function loadMempool(){
             <td class="py-1 px-2 text-gray-300 truncate max-w-[120px]" title="${escapeHtml(tx.tx_id)}">${escapeHtml(tx.tx_id.slice(0,12))}…</td>
             <td class="py-1 px-2 text-gray-400 truncate max-w-[100px]">${escapeHtml(tx.from?.slice(0,10)||'—')}…</td>
             <td class="py-1 px-2 text-gray-400 truncate max-w-[100px]">${escapeHtml(tx.to?.slice(0,10)||'—')}…</td>
-            <td class="py-1 px-2 text-right text-emerald-300">${tx.amount_zion ? tx.amount_zion.toFixed(4) : '—'}</td>
-            <td class="py-1 px-2 text-right text-gray-400">${tx.fee_zion != null ? tx.fee_zion.toFixed(6) : '—'}</td>
+            <td class="py-1 px-2 text-right text-emerald-300">${tx.amount_zion ? tx.amount_zion.toFixed(4) + ' ZION' : '—'}</td>
+            <td class="py-1 px-2 text-right text-gray-400">${tx.fee_zion != null ? tx.fee_zion.toFixed(6) + ' ZION' : '—'}</td>
           </tr>
         `).join('');
       }
@@ -2994,8 +2989,8 @@ async function openBlockModal(height){
           <div class="bg-black/30 rounded-lg p-3 col-span-2"><div class="text-gray-400">Hash</div><div class="text-sm font-mono text-zion-gold break-all">${escapeHtml(b.hash)}</div></div>
           <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400">Miner</div><div class="text-sm font-mono text-white truncate">${escapeHtml(b.miner)}</div></div>
           <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400">Difficulty</div><div class="text-sm font-bold text-white">${b.difficulty != null ? b.difficulty.toLocaleString() : '—'}</div></div>
-          <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400">Reward</div><div class="text-sm font-bold text-emerald-400">${b.reward_zion != null ? b.reward_zion.toFixed(4) + ' Z' : '—'}</div></div>
-          <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400">Total Fees</div><div class="text-sm font-bold text-amber-400">${b.total_fees_zion != null ? b.total_fees_zion.toFixed(4) + ' Z' : '—'}</div></div>
+          <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400">Reward</div><div class="text-sm font-bold text-emerald-400">${b.reward_zion != null ? b.reward_zion.toFixed(4) + ' ZION' : '—'}</div></div>
+          <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400">Total Fees</div><div class="text-sm font-bold text-amber-400">${b.total_fees_zion != null ? b.total_fees_zion.toFixed(4) + ' ZION' : '—'}</div></div>
           <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400">Nonce</div><div class="text-sm font-mono text-white">${b.nonce ?? '—'}</div></div>
           <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400">TX Count</div><div class="text-sm font-bold text-white">${b.tx_count ?? 0}</div></div>
           <div class="bg-black/30 rounded-lg p-3 col-span-2"><div class="text-gray-400">Prev Hash</div><div class="text-sm font-mono text-gray-300 break-all">${escapeHtml(b.prev_hash)}</div></div>
@@ -3011,8 +3006,8 @@ async function openBlockModal(height){
                   <td class="py-1 px-2 text-gray-400">${escapeHtml(tx.type)}</td>
                   <td class="py-1 px-2 text-gray-400 truncate max-w-[100px]">${escapeHtml(tx.from?.slice(0,10)||'—')}…</td>
                   <td class="py-1 px-2 text-gray-400 truncate max-w-[100px]">${escapeHtml(tx.to?.slice(0,10)||'—')}…</td>
-                  <td class="py-1 px-2 text-right text-emerald-300">${tx.amount_zion != null ? tx.amount_zion.toFixed(4) : '—'}</td>
-                  <td class="py-1 px-2 text-right text-gray-400">${tx.fee_zion != null ? tx.fee_zion.toFixed(6) : '—'}</td>
+                  <td class="py-1 px-2 text-right text-emerald-300">${tx.amount_zion != null ? tx.amount_zion.toFixed(4) + ' ZION' : '—'}</td>
+                  <td class="py-1 px-2 text-right text-gray-400">${tx.fee_zion != null ? tx.fee_zion.toFixed(6) + ' ZION' : '—'}</td>
                 </tr>
               `).join('')}</tbody>
             </table>
