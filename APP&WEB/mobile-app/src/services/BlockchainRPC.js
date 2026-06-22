@@ -161,20 +161,25 @@ class BlockchainRPC {
 
   /**
    * Get spendable UTXOs for an address.
-   * Normalized to TransactionBuilder format: { txid, vout, amount }.
+   * Returns V3-compatible format: { tx_hash, output_index, amount, address }.
+   * Also includes legacy aliases (txid, vout) for backward compat.
    * @param {string} address - ZION address
-   * @returns {Promise<Array<{txid:string, vout:number, amount:number}>>}
+   * @returns {Promise<Array<{tx_hash:string, output_index:number, amount:bigint, address:string}>>}
    */
   async getUTXOs(address) {
     try {
       const result = await this.rpcCall('getUtxos', { address });
       const raw = result?.utxos || [];
       return raw.map(u => ({
-        txid: u.tx_hash || u.txid,
-        vout: u.output_index !== undefined ? u.output_index : u.vout,
-        amount: Number(u.amount),
-        address: u.address,
-        height: u.height,
+        // V3 canonical fields
+        tx_hash: u.tx_hash || u.txid || '',
+        output_index: u.output_index !== undefined ? u.output_index : (u.vout || 0),
+        amount: BigInt(u.amount || 0),
+        address: u.address || '',
+        height: u.height || 0,
+        // Legacy aliases (backward compat)
+        txid: u.tx_hash || u.txid || '',
+        vout: u.output_index !== undefined ? u.output_index : (u.vout || 0),
       }));
     } catch (error) {
       console.error('getUTXOs error:', error);

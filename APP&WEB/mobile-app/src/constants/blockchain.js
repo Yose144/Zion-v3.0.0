@@ -174,6 +174,9 @@ export const SIGNATURE_SCHEME = 'Ed25519';
 /** Minimum fee per byte (atomic units) */
 export const MIN_FEE_PER_BYTE = 1;
 
+/** Minimum transaction fee in flowers (matches V3 fee::MIN_TX_FEE = 1000) */
+export const MIN_FEE_FLOWERS = 1000n;
+
 /** Fee policy: all transaction fees are destroyed (deflationary) */
 export const FEE_POLICY = 'burn';
 
