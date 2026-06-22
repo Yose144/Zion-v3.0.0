@@ -1,11 +1,13 @@
-# ZION Bridge — 3/5 Guardian Multisig Specification
+# ZION Bridge — 5/5 Guardian Multisig Specification
 
 ## Overview
 
-The ZIONBridge contract uses a **3-of-5 Guardian multisig** for critical operations:
+The ZIONBridge contract uses a **5-of-5 Guardian multisig** for critical operations:
 - Minting wZION after L1 lock confirmation
 - Unlocking ZION after EVM burn confirmation
 - Treasury / emergency pause
+
+> For testnet a 2-of-2 configuration is used. Mainnet is configured for 5-of-5 maximum security.
 
 ## Guardian Wallet Requirements
 
@@ -15,17 +17,17 @@ Each Guardian MUST:
 3. **Be geographically distributed** — minimum 3 time zones
 4. **Run an independent relay node** for double-signing detection
 
-## Guardian Set (v3.0.1)
+## Guardian Set (v3.0.2)
 
 | # | Role | Address | Location | Hardware |
 |---|------|---------|----------|----------|
 | 1 | Core Deployer | `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186` | Local | Ledger Nano S |
-| 2 | Edge Operator | TBD | Hetzner / Edge | Ledger Nano X |
+| 2 | Edge Operator | `0x8cc6F931edDAf5F14D0071727Ed1640752B5c787` | Hetzner / Edge | Ledger Nano X |
 | 3 | Community Rep | TBD | Community-elected | TBD |
 | 4 | Backup Guardian | TBD | Cold storage | Air-gapped |
 | 5 | Audit Partner | TBD | External security firm | TBD |
 
-> **Status:** Only Guardian #1 (deployer) is active. Slots 2–5 are pending provisioning. The bridge currently operates with deployer single-sig on testnet; mainnet requires all 5 slots filled before activation.
+> **Status:** Testnet guardians 1–2 are active. Mainnet slots 3–5 are pending provisioning. Mainnet requires all 5 slots filled before activation.
 
 ## Multisig Contract: `BridgeValidator.sol`
 
@@ -50,7 +52,7 @@ contract BridgeValidator {
     constructor(uint256 _threshold, uint256 _guardianCount) {
         threshold = _threshold;
         guardianCount = _guardianCount;
-        // Initial guardian is deployer; remaining added via `addGuardian`
+        // Initial guardian is deployer; remaining 4 added via `addGuardian`
         isGuardian[msg.sender] = true;
         emit GuardianAdded(msg.sender);
     }
@@ -77,12 +79,12 @@ contract BridgeValidator {
 
 - [ ] Generate 5 new EVM addresses on hardware wallets
 - [ ] Store public addresses in `V3/config/guardians.json` (NEVER commit private keys)
-- [ ] Deploy `BridgeValidator` with constructor args `(3, 5)`
+- [ ] Deploy `BridgeValidator` with constructor args `(5, 5)`
 - [ ] Call `addGuardian(addr)` 4x from deployer wallet
 - [ ] Verify contract on BaseScan
 - [ ] Update `V3/config/bridge-mainnet.toml` with validator address
-- [ ] Update relay config: `guardian_threshold = 3`, `guardian_addresses = ["0x...", ...]`
-- [ ] Test 3/5 signing flow on Base Sepolia before mainnet
+- [ ] Update relay config: `threshold = 5`, `total_validators = 5`, `validator_addresses = ["0x...", ...]`
+- [ ] Test 5/5 signing flow on Base Sepolia before mainnet
 
 ## Emergency Procedures
 

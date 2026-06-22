@@ -32,18 +32,25 @@ The L2 bridge **codebase is structurally sound** and contains most of the securi
 
 ## 3. Critical Issues (P0 — Mainnet Blockers)
 
-### 3.1 Inconsistent and Conflicting Bridge Configurations
+### 3.1 Inconsistent and Conflicting Bridge Configurations ✅ PARTIALLY FIXED
 
 There are **four different bridge configs** in the repo, each with different contract addresses, thresholds, and validator sets. This is a source-of-truth failure and a deployment risk.
 
+**Fix applied:**
+- `V3/config/bridge-testnet.toml` and `V3/L2/bridge/config/bridge-testnet.toml` are now synchronized to 2/2 with real validator addresses.
+- `V3/config/bridge-mainnet.toml` and `V3/L2/bridge/config/bridge-mainnet.toml` are now synchronized to 5/5 placeholders with `enabled = false`.
+- Duplicate `V3/L2/bridge/contracts/BridgeValidator.sol` removed; canonical source is now `src/BridgeValidator.sol`.
+
+**Remaining:** Mainnet placeholders must be replaced with real addresses after deployment.
+
 | File | Network | Threshold | Contract Address | wZION Address | Notes |
 |------|---------|-----------|-------------------|---------------|-------|
-| `V3/L2/bridge/config/bridge-testnet.toml` | testnet | 3/5 | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | Placeholder validator addresses; contract address mismatches website |
-| `V3/config/bridge-testnet.toml` | testnet | 1/1 | `0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1` | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | Matches website, but **threshold 1 is unsafe**, `validator_addresses` field is missing, and runtime validation fails (threshold < 2) |
-| `scripts/bridge-testnet-fixed.toml` | testnet | 1/2 | `0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1` | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | Uses real validator addresses `0xdde17506...` and `0x8cc6...`; but hardcodes old Praha RPC |
-| `V3/L2/bridge/config/bridge-mainnet.toml` | mainnet | 3/5 | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | **Enabled=true** with placeholder validators; claims mainnet deployed 2026-04-01 |
-| `V3/config/bridge-mainnet.toml` | mainnet | 3/5 | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | `enabled=false`, `start_block=0` |
-| `APP&WEB/website-v2.9/src/lib/bridge-api.ts` | mainnet | — | `0x0000...0000` | `0x0000...0000` | `BRIDGE_CONTRACTS = BRIDGE_CONTRACTS_MAINNET` (zero addresses) — burn widget is broken |
+| `V3/config/bridge-testnet.toml` | testnet | 2/2 | `0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1` | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | ✅ Fixed — real validators, loads successfully |
+| `V3/L2/bridge/config/bridge-testnet.toml` | testnet | 2/2 | `0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1` | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | ✅ Fixed — mirrored canonical config |
+| `scripts/bridge-testnet-fixed.toml` | testnet | 1/2 | `0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1` | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | Legacy helper config; still uses old Praha RPC |
+| `V3/config/bridge-mainnet.toml` | mainnet | 5/5 | `0x0000...0000` | `0x0000...0000` | ✅ Template — placeholders, `enabled=false` |
+| `V3/L2/bridge/config/bridge-mainnet.toml` | mainnet | 5/5 | `0x0000...0000` | `0x0000...0000` | ✅ Template — placeholders, `enabled=false` |
+| `APP&WEB/website-v2.9/src/lib/bridge-api.ts` | testnet | — | `0xF4BF85443...Cedca1` | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | ✅ Fixed — now points to Sepolia contracts |
 
 **Impact:** Running any of these configs as-is will either fail to start, connect to the wrong contracts, or operate with unsafe single-sig / placeholder validators.
 
@@ -52,104 +59,37 @@ There are **four different bridge configs** in the repo, each with different con
 2. Delete or archive the duplicates.
 3. Update `bridge-api.ts` to point to the live testnet or mainnet contract set explicitly.
 
-### 3.2 Runtime Config Validation Rejects Testnet 1/2 Setup
+### 3.2 Runtime Config Validation Rejects Testnet 1/2 Setup ✅ FIXED
 
-`config.rs:245-246` enforces `validator.threshold >= 2`. The `bridge-testnet-fixed.toml` (1/2) and `V3/config/bridge-testnet.toml` (1/1) will fail to load.
+Testnet configs were raised to 2/2, matching the two known validators, so the `threshold >= 2` validation now passes.
 
-**Fix:** Either raise testnet threshold to 2/2 (recommended for the current two known validators) or make the minimum threshold configurable per network with explicit testnet exception.
+### 3.3 EVM Watcher Block-Range Bug ✅ FIXED
 
-### 3.3 EVM Watcher Block-Range Bug
+`evm_watcher.rs` now scans in chunks of `MAX_BLOCK_RANGE` (3,000 blocks) instead of 30,000, respecting RPC limits.
 
-`evm_watcher.rs:192`:
-```rust
-let to_block = finalized_block.min(from_block + MAX_BLOCK_RANGE * 10 - 1);
-```
-With `MAX_BLOCK_RANGE = 3_000`, this computes a 30,000-block range. The Ankr free-tier limit is 3,500 blocks per `eth_getLogs` call (`evm_watcher.rs:37`). Direct RPCs may also reject this.
+### 3.4 Burn Handler Uses Hardcoded Testnet RPC ✅ FIXED
 
-**Impact:** On first sync or after a long outage, the watcher will fail with `query returned more than 3500 results` or similar, then retry with the same oversized range.
+`relayer.rs` now uses `chain_config.effective_rpc_url(&self.config.ankr)` for burn confirmation, removing the hardcoded Sepolia fallback.
 
-**Fix:** Cap `to_block` at `from_block + MAX_BLOCK_RANGE - 1` and loop internally until `finalized_block` is reached.
+### 3.5 `confirmBurnRelease` Missing `nonReentrant` Guard ✅ FIXED
 
-### 3.4 Burn Handler Uses Hardcoded Testnet RPC
+`ZIONBridge.sol:confirmBurnRelease` now uses `nonReentrant`.
 
-`relayer.rs:564-568`:
-```rust
-let rpc_url = chain_config
-    .rpc_url
-    .as_deref()
-    .unwrap_or("https://base-sepolia.publicnode.com");
-```
-The fallback is a Base Sepolia URL, even for mainnet burns.
+### 3.6 `BridgeValidator.resetSignatures` Does Not Clear `hasSigned` ✅ FIXED
 
-**Impact:** If `chain_config.rpc_url` is omitted (e.g., relying on Ankr fallback), mainnet burns will be submitted to Sepolia.
+`BridgeValidator.sol` now tracks an enumerable guardian list and `resetSignatures` clears `hasSigned[opHash][guardian]` for all guardians.
 
-**Fix:** Use `chain_config.effective_rpc_url(&self.config.ankr)` consistently (already done for the lock handler).
+### 3.7 Mainnet Config Claims Deployment That Is Not Verified ✅ FIXED
 
-### 3.5 `confirmBurnRelease` Missing `nonReentrant` Guard
+Both mainnet configs now use zero placeholders and `enabled = false`, and `BRIDGE_MAINNET_DEPLOY.md` is marked as pre-deployment.
 
-`ZIONBridge.sol:275`:
-```solidity
-function confirmBurnRelease(...) external onlyRole(VALIDATOR_ROLE) whenNotPaused {
-```
-`submitLockProof` uses `nonReentrant` (`ZIONBridge.sol:202`), but `confirmBurnRelease` does not.
+### 3.8 Website Points to Zero-Address Mainnet Contracts ✅ FIXED
 
-**Impact:** Low direct reentrancy risk because the function does not call external contracts or transfer value, but consistency of reentrancy protection is a production best practice.
+`bridge-api.ts` now points to `BRIDGE_CONTRACTS_SEPOLIA` for the testnet phase.
 
-**Fix:** Add `nonReentrant` to `confirmBurnRelease` for defense in depth.
+### 3.9 `V3/config/bridge-testnet.toml` Is Missing `validator_addresses` ✅ FIXED
 
-### 3.6 `BridgeValidator.resetSignatures` Does Not Clear `hasSigned`
-
-`BridgeValidator.sol:93-96`:
-```solidity
-function resetSignatures(bytes32 opHash) external onlyGuardian {
-    signatureCount[opHash] = 0;
-}
-```
-The `hasSigned[opHash][guardian]` mapping is not reset.
-
-**Impact:** After a reset, a guardian cannot sign the same operation again because `signOperation` checks `hasSigned`. This can deadlock legitimate operations.
-
-**Fix:** Track signers per operation and clear `hasSigned[opHash][signer]` for each signer during reset.
-
-### 3.7 Mainnet Config Claims Deployment That Is Not Verified
-
-`V3/L2/bridge/config/bridge-mainnet.toml` claims:
-- Base mainnet deployed 2026-04-01
-- `enabled = true`
-- Uses the same contract address `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` as one testnet config
-
-Meanwhile `V3/docs/BRIDGE_MAINNET_DEPLOY.md` says: **“Not yet deployed.”**
-
-**Impact:** Risk of starting a mainnet relay against a testnet or non-existent contract.
-
-**Fix:** Keep `enabled = false` on mainnet until contracts are deployed and verified. Update docs with a single source of truth.
-
-### 3.8 Website Points to Zero-Address Mainnet Contracts
-
-`bridge-api.ts:52`:
-```typescript
-export const BRIDGE_CONTRACTS = BRIDGE_CONTRACTS_MAINNET;
-```
-`BRIDGE_CONTRACTS_MAINNET` contains zero addresses. The burn widget will attempt to call `0x0000...0000`.
-
-**Impact:** Website bridge functionality is non-functional for both testnet and mainnet users.
-
-**Fix:** Set `BRIDGE_CONTRACTS = BRIDGE_CONTRACTS_SEPOLIA` for testnet phase, or add an environment-based switch.
-
-### 3.9 `V3/config/bridge-testnet.toml` Is Missing `validator_addresses`
-
-Runtime verification:
-```text
-Error: TOML parse error at line 54, column 1
-   |
-54 | [validator]
-   | ^^^^^^^^^^^^
-missing field `validator_addresses`
-```
-
-The `V3/config/bridge-testnet.toml` config cannot be loaded by the `zion-bridge` daemon at all.
-
-**Fix:** Add the `validator_addresses` array and reconcile the threshold with the runtime minimum (§3.2).
+`validator_addresses` added and threshold raised to 2/2. The daemon loads successfully.
 
 ---
 
@@ -165,25 +105,13 @@ The `BridgeValidator.sol` contract is a standalone guardian signer registry. `ZI
 - A) Make `ZIONBridge` delegate validator management to `BridgeValidator` (e.g., `addValidator`/`removeValidator` callable only by guardian multisig), or
 - B) Clearly document that `BridgeValidator` is the emergency guardian/governance multisig and `ZIONBridge` uses a separate validator set, and ensure both are provisioned.
 
-### 4.2 Relayer Hardcodes `threshold.max(3)`
+### 4.2 Relayer Hardcodes `threshold.max(3)` ✅ FIXED
 
-`relayer.rs:680`:
-```rust
-let threshold = usize::from(self.config.validator.threshold.max(3));
-```
-This ignores the configured threshold if it is below 3. Testnet 2/2 will require 3 signatures, which cannot be satisfied.
+`.max(3)` removed; relayer now trusts the configured threshold.
 
-**Fix:** Remove `.max(3)` and trust the config value. Enforce minimum threshold only in `config.rs` validation.
+### 4.3 Hardcoded Gas Cap `MAX_GAS_GWEI = 10` ✅ FIXED
 
-### 4.3 Hardcoded Gas Cap `MAX_GAS_GWEI = 10`
-
-`relayer.rs:34`:
-```rust
-const MAX_GAS_GWEI: u64 = 10;
-```
-This is used for both testnet and mainnet. During mainnet congestion 10 gwei may be too low.
-
-**Fix:** Move the gas cap to per-chain config (`max_gas_gwei`) and remove the hardcoded constant.
+The constant was removed. Both lock and burn handlers now use `chain_config.max_gas_gwei`.
 
 ### 4.4 Validator Key Aggregation via Environment Variable
 
@@ -238,12 +166,12 @@ While the `table` parameter is internally controlled, this pattern is fragile an
 |-------------|--------|---------|
 | Contracts deployed and verified on Base Mainnet | ❌ Not done | P0 |
 | 5 real validator/guardian addresses provisioned | ❌ Placeholders only | P0 |
-| Mainnet config enabled and consistent | ❌ Conflicting configs | P0 |
-| Website points to live contracts | ❌ Zero addresses | P0 |
-| EVM watcher block-range bug fixed | ❌ 30k range vs 3.5k limit | P0 |
-| Relayer uses effective RPC URL for burns | ❌ Hardcoded Sepolia fallback | P0 |
-| `confirmBurnRelease` reentrancy guard | ❌ Missing | P0 |
-| `resetSignatures` clears `hasSigned` | ❌ Partial reset | P0 |
+| Mainnet config enabled and consistent | ✅ 5/5 template, enabled=false | P0 |
+| Website points to live contracts | ✅ Sepolia contracts active | P0 |
+| EVM watcher block-range bug fixed | ✅ Chunked 3k scan | P0 |
+| Relayer uses effective RPC URL for burns | ✅ Uses Ankr/config override | P0 |
+| `confirmBurnRelease` reentrancy guard | ✅ Added | P0 |
+| `resetSignatures` clears `hasSigned` | ✅ Full reset | P0 |
 | External security audit | ❌ Not started | P1 |
 | Testnet 3/5 or 2/2 signed flow green for ≥1 week | ⚠️ Partial | P1 |
 | Mainnet validator keys on HSMs | ❌ Not done | P1 |

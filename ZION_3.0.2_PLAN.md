@@ -2,7 +2,7 @@
 
 > **Jedna vize, jeden zdroj pravdy, šest vrstev.**
 > 
-> Datum: 2026-06-18 | Verze: 3.0.2-alpha | Autor: ZION Core Team
+> Datum: 2026-06-22 | Verze: 3.0.2-beta | Autor: ZION Core Team
 
 ---
 
@@ -41,8 +41,11 @@ Verze 3.0.2 představuje přechod z čistého L1 mainnetu k **plně integrované
 ### 1.4 L2 Kanonizace Úkoly
 - [ ] Aktualizace `StatusV3.md` — označit L2 jako "Live"
 - [ ] Dokončit L2 dokumentaci v `V3/L2/README.md`
+- [x] Audit L2 bridge — `L2audit.md` v rootu
+- [x] Sjednotit testnet konfigurace na 2/2 multisig
+- [x] Připravit mainnet konfiguraci pro 5/5 multisig
+- [ ] Nasadit mainnet 5/5 kontrakty a nahradit placeholder adresy
 - [ ] Přesunout `L2bigupgrade.md` → `docs/3.0.1Genesis/L2bigupgrade.md` (již hotovo)
-- [ ] Validátor provize — 3/5 multisig na bridge
 
 ---
 
