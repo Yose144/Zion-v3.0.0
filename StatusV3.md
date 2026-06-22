@@ -37,8 +37,10 @@
 | 5 validator addresses | see `BRIDGE_MAINNET_READINESS.md` | ✅ Funded (~0.0061 ETH total) |
 | Mainnet config | `V3/config/bridge-mainnet.toml` | ✅ 5/5, `enabled=true`, new addresses |
 | Website | `bridge-api.ts`, `defi-contracts.ts` | ✅ Points to new mainnet contracts |
+| Bridge relay | Edge server | ✅ v3.0.2 running with L1 node + EVM watcher |
+| wZION totalSupply | Base Mainnet | 300 wZION (54 in UniV3 pool, 0 on bridge, ~246 held by users/treasury) |
 
-**Next step:** Start mainnet bridge relay and monitor metrics.
+**Next steps:** Top up validator ETH, run E2E lock→mint→burn→unlock test.
 
 ### Testnet Fixes
 

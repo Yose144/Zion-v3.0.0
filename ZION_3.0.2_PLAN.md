@@ -38,8 +38,19 @@ Verze 3.0.2 představuje přechod z čistého L1 mainnetu k **plně integrované
 - [x] `/swap` web stránka
 - [x] E2E integrační testy
 
-### 1.4 L2 Kanonizace Úkoly
-- [ ] Aktualizace `StatusV3.md` — označit L2 jako "Live"
+### 1.4 L2 Mainnet Snapshot (2026-06-22)
+
+| Metrika | Hodnota |
+|---------|---------|
+| wZION totalSupply (Base) | **300 wZION** |
+| wZION v `UniV3Pool` | **54 wZION** + 0.000463 WETH |
+| wZION na `ZIONBridge` | **0 wZION** (bridge vault na Base je prázdný, L1 lock mintuje on-demand) |
+| Zbytek wZION | ~246 wZION drží uživatelé/treasury |
+
+> **Poznámka:** 300 wZION jsou tedy **celkový oběh**, nikoliv zásoba na bridge. Na bridge se ZION dostává až locknutím na L1 (vytvoří se wZION na Base). Pro DeFi swap je 54 wZION v UniV3 poolu.
+
+### 1.5 L2 Kanonizace Úkoly
+- [x] Aktualizace `StatusV3.md` — označit L2 jako "Live"
 - [ ] Dokončit L2 dokumentaci v `V3/L2/README.md`
 - [x] Audit L2 bridge — `L2audit.md` v rootu
 - [x] Sjednotit testnet konfigurace na 2/2 multisig
@@ -49,7 +60,10 @@ Verze 3.0.2 představuje přechod z čistého L1 mainnetu k **plně integrované
 - [x] Nasadit nový 5/5 `ZIONBridge` na 0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88
 - [x] Nasadit nový 5/5 `BridgeValidator` na 0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627
 - [x] Převést wZION BRIDGE_ROLE na nový 5/5 bridge
-- [ ] Spustit mainnet bridge relay a ověřit metriky
+- [x] Spustit mainnet bridge relay v3.0.2 na Edge serveru (L1 node + EVM watcher aktivní)
+- [x] Deploynout web v3.0.2 na `zionterranova.com/defi` s novou bridge adresou
+- [ ] Dofundovat validator adresy na ≥0.01 ETH pro provozní rezervu
+- [ ] Provést E2E test: L1 lock → Base mint a Base burn → L1 unlock
 - [ ] Přesunout `L2bigupgrade.md` → `docs/3.0.1Genesis/L2bigupgrade.md` (již hotovo)
 
 ---
@@ -164,12 +178,11 @@ docs/3.0.1Genesis/         — Všechny 3.0.0–3.0.1 dokumenty
 
 ## 7. Okamžité Akce (Next Steps)
 
-1. **Commit cleanup** — `git add -A && git commit`
-2. **Push** — `git push origin main`
-3. **Edge sync** — `git pull origin main` na Edge serveru
-4. **L2 deploy** — Spustit bridge, DAO, atomic-swap na Edge
-5. **L3 verify** — Testovat WARP registry, swap agregátor
-6. **L4 kickoff** — UE5 build pipeline, L4 → L1 bridge návrh
+1. **Validator funding** — Dofundovat 5 mainnet validator adres na ≥0.01 ETH (deployer má jen ~0.002 ETH, potřeba externí ETH).
+2. **E2E bridge test** — Lock ZION na L1 bridge vault `zion1w0r0...` → ověřit mint wZION na Base → burn wZION → ověřit unlock na L1.
+3. **Push aktualizace** — `git push origin main` pro ZION_3.0.2_PLAN.md.
+4. **L3 verify** — Testovat WARP registry, swap agregátor.
+5. **L4 kickoff** — UE5 build pipeline, L4 → L1 bridge návrh.
 
 ---
 
