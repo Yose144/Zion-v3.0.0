@@ -1999,8 +1999,14 @@ function setupWalletControls() {
           if (sendFromBalanceStatus) sendFromBalanceStatus.textContent = 'on-chain RPC offline';
         } else {
           const bal = result.balance ?? (result.balance_atomic != null ? result.balance_atomic / 1e12 : null);
+          const utxoBal = result.utxo_balance_flowers ? Number(result.utxo_balance_flowers) / 1e12 : 0;
+          const acctBal = result.account_balance_flowers ? Number(result.account_balance_flowers) / 1e12 : 0;
           if (sendFromBalance) sendFromBalance.textContent = bal != null ? `${bal.toFixed(6)} ZION` : 'n/a';
-          if (sendFromBalanceStatus) sendFromBalanceStatus.textContent = '';
+          // Show breakdown when both models have balance
+          const parts = [];
+          if (utxoBal > 0) parts.push(`UTXO: ${utxoBal.toFixed(6)}`);
+          if (acctBal > 0) parts.push(`Account: ${acctBal.toFixed(6)}`);
+          if (sendFromBalanceStatus) sendFromBalanceStatus.textContent = parts.length > 0 ? parts.join(' · ') : '';
         }
       } else {
         if (sendFromBalance) sendFromBalance.textContent = '—';
@@ -2447,8 +2453,8 @@ function setupWalletControls() {
         return;
       }
 
-      console.log('[WALLET-SEND] Success! txId=', result.txId);
-      if (sendStatusEl) sendStatusEl.textContent = `✅ Sent! Status: ${result.status || 'submitted'} · TX: ${result.txId || 'n/a'}`;
+      console.log('[WALLET-SEND] Success! model:', result.model, 'txId=', result.txId);
+      if (sendStatusEl) sendStatusEl.textContent = `✅ Sent! ${result.model ? `[${result.model.toUpperCase()}]` : ''} Status: ${result.status || 'submitted'} · TX: ${result.txId || 'n/a'}`;
       if (sendToEl) sendToEl.value = '';
       if (sendAmountEl) sendAmountEl.value = '';
       if (sendPurposeEl) sendPurposeEl.value = '';
