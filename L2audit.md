@@ -187,7 +187,8 @@ While the `table` parameter is internally controlled, this pattern is fragile an
 | Requirement | Status | Blocker |
 |-------------|--------|---------|
 | Contracts deployed and verified on Base Mainnet | ❌ Not done | P0 |
-| 5 real validator/guardian addresses provisioned | ❌ Placeholders only | P0 |
+| 5 real validator/guardian addresses provisioned | ✅ Added to config | P0 |
+| Mainnet validator addresses funded (≥0.01 ETH each) | ❌ 4 of 5 have 0 ETH | P0 |
 | Mainnet config enabled and consistent | ✅ 5/5 template, enabled=false | P0 |
 | Website points to live contracts | ✅ Sepolia contracts active | P0 |
 | EVM watcher block-range bug fixed | ✅ Chunked 3k scan | P0 |
