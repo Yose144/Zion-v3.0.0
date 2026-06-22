@@ -1,20 +1,29 @@
-feat(bridge): add default_evm_recipient fallback for locks without memo
+feat(L1): add memo support to UTXO SendParams + build_and_sign
 
-UTXO locks sent without a `BRIDGE:chain:0xaddr` memo were silently
-skipped by the relay, trapping funds on the L1 bridge vault.  Add a
-config-level `default_evm_recipient` so the relay can recover these
-locks by minting wZION to a configured default address (deployer).
+Previously `zion wallet send --memo` accepted the flag but silently
+dropped the memo for UTXO transactions, because `SendParams` had no
+`memo` field and `build_and_sign` hardcoded `memo: None` on every
+output.  This trapped 100M ZION on the bridge vault: the relay
+detected the lock but could not mint wZION because the EVM recipient
+was missing.
 
-- Add `default_evm_recipient: Option<String>` to `L1Config`.
-- In `l1_watcher.rs`, when a lock output has no memo (or an invalid
-  one) and `default_evm_recipient` is set, mint to that address on
-  "base" with a warning.  If neither memo nor default is available,
-  skip as before.
-- Set `default_evm_recipient = "0xdde17506..."` (deployer) in both
-  mainnet bridge configs so the existing 100M UTXO lock (txid
-  8eb0bb8c...) at block 11324 gets processed.
+User-approved L1 change (per AGENTS.md security protocol).
 
-This is a pure L2 change — no L1 consensus code was modified.
+Changes:
+- `V3/L1/core/src/wallet.rs`: add `memo: Option<String>` to
+  `SendParams`; thread it into the primary output of `build_and_sign`.
+  Change outputs still carry `memo: None` (consensus rule: change
+  outputs must not carry memos).
+- `V3/cli/src/commands/wallet.rs`: pass `--memo` into `SendParams`.
+- `V3/sdk/src/wallet.rs`: default `memo: None` in existing helper.
+- `V3/L1/core/src/bin/wallet.rs`: default `memo: None` in `cmd_send`
+  (the dedicated `bridge-lock` subcommand already builds memo-carrying
+  outputs manually).
+- All unit tests in `wallet::tests` updated to construct `SendParams`
+  with `memo: None`.
+
+Verification: `cargo test -p zion-core --lib wallet` → 14 passed, 0
+failed.
 
 Generated with [Devin](https://devin.ai)
 

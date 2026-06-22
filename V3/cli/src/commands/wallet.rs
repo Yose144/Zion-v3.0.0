@@ -458,6 +458,7 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
                     to_address: to.clone(),
                     amount: amount_flowers,
                     fee,
+                    memo: memo.clone(),
                 };
                 let built = zion_core::wallet::build_and_sign(
                     &signing_key,

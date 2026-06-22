@@ -217,6 +217,7 @@ impl WalletClient {
             to_address: to_address.to_string(),
             amount: amount_flowers,
             fee,
+            memo: None,
         };
         let built = wallet::build_and_sign(signing_key, from_address, &params, utxos, 0)
             .map_err(|e| ZionSdkError::Other(format!("UTXO build failed: {e}")))?;
