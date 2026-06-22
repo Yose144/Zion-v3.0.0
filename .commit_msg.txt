@@ -1,0 +1,12 @@
+chore(status): update ZION_3.0.2_PLAN and StatusV3 for live mainnet bridge
+
+- Mark mainnet bridge relay as running (v3.0.2 on Edge server).
+- Mark website v3.0.2 deployed to zionterranova.com/defi.
+- Add wZION mainnet distribution snapshot:
+  totalSupply 300, UniV3Pool 54 + 0.000463 WETH, bridge 0, rest held by users/treasury.
+- Add next steps: validator ETH top-up and E2E lock->mint->burn->unlock test.
+- Update immediate actions in ZION_3.0.2_PLAN.md.
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>
