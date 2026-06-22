@@ -1,6 +1,9 @@
 # Dependencies / build artifacts
-node_modules
-.next
+# NOTE: node_modules and .next are intentionally kept in the build context
+# because the production Docker image is built from host artifacts on the
+# Edge server (npm install inside Docker fails for the local .tgz dependency).
+!node_modules
+!.next
 
 # VCS
 .git
