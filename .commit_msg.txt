@@ -1,0 +1,15 @@
+docs(bridge): document mainnet status, funding blocker, and 5/5 addresses
+
+- Update BRIDGE_MAINNET_DEPLOY.md with real Base Mainnet contract addresses,
+  on-chain verification (wZION exists, current bridge threshold == 1),
+  guardian address balance table, and funding requirements.
+- Update BRIDGE_MAINNET_LAUNCH_CHECKLIST.md to reflect real addresses,
+  5/5 config, funding blocker, and new 5/5 redeployment step.
+- Update BRIDGE_MULTISIG.md with all 5 mainnet addresses and funding status.
+- Update L2audit.md readiness checklist to show addresses provisioned but
+  4 of 5 addresses unfunded.
+- Update ZION_3.0.2_PLAN.md with funding and 5/5 redeployment tasks.
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>
