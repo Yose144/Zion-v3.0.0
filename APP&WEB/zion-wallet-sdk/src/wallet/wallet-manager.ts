@@ -13,7 +13,7 @@ import { encrypt, decrypt } from '../core/crypto.js';
 import type { StorageInterface } from '../storage/storage-interface.js';
 import type { Wallet, WalletPublicView } from './wallet.js';
 import { toPublicView } from './wallet.js';
-import { buildUtxoTransaction, transactionToRpcPayload } from '../core/transaction.js';
+import { buildUtxoTransaction, buildAccountTransaction, transactionToRpcPayload, ACCOUNT_DEFAULT_FEE_FLOWERS } from '../core/transaction.js';
 import { ZionRPC } from '../rpc/zion-rpc.js';
 import type { RpcConfig } from '../rpc/zion-rpc.js';
 import { TrezorWallet } from '../hardware/trezor-wallet.js';
@@ -391,27 +391,53 @@ export class WalletManager {
     const privateKeyHex = await this.exportPrivateKey(options.walletId, options.password);
     const privateKey = Buffer.from(privateKeyHex, 'hex');
 
+    // ── Try UTXO model first ──
     const utxos = await this.rpc.getUtxos(wallet.address);
-    if (!utxos.length) {
-      throw new Error('No spendable UTXOs available');
+    if (utxos.length > 0) {
+      try {
+        const tx = await buildUtxoTransaction({
+          fromAddress: wallet.address,
+          toAddress: options.toAddress,
+          amountZion: options.amountZion,
+          utxos: utxos.map((u) => ({
+            tx_hash: String(u.tx_hash ?? u.txid ?? ''),
+            output_index: Number(u.output_index ?? u.vout ?? 0),
+            amount: String(u.amount ?? 0),
+            address: String(u.address ?? ''),
+          })),
+          privateKey,
+          memo: options.memo,
+        });
+        const payload = transactionToRpcPayload(tx);
+        return this.rpc.broadcastTransaction(payload);
+      } catch (err) {
+        // UTXO build failed (e.g. insufficient UTXO balance) — fall through to account model
+      }
     }
 
-    const tx = await buildUtxoTransaction({
+    // ── Account model fallback (for premine/hybrid wallets) ──
+    const breakdown = await this.rpc.getBalanceBreakdown(wallet.address).catch(() => null);
+    const accountFlowers = breakdown ? BigInt(breakdown.account_flowers) : 0n;
+    const amountFlowers = BigInt(Math.floor(options.amountZion * 1e12));
+    const feeFlowers = ACCOUNT_DEFAULT_FEE_FLOWERS;
+    const totalNeeded = amountFlowers + feeFlowers;
+
+    if (accountFlowers < totalNeeded) {
+      const haveZion = (Number(accountFlowers) / 1e12).toFixed(6);
+      throw new Error(
+        `Insufficient balance: need ${options.amountZion} + fee ZION, have ${haveZion} ZION ` +
+        `(account: ${breakdown?.account_zion.toFixed(6) ?? '0'} ZION, utxo: ${breakdown?.utxo_zion.toFixed(6) ?? '0'} ZION)`
+      );
+    }
+
+    const accountTx = await buildAccountTransaction({
       fromAddress: wallet.address,
       toAddress: options.toAddress,
       amountZion: options.amountZion,
-      utxos: utxos.map((u) => ({
-        tx_hash: String(u.tx_hash ?? u.txid ?? ''),
-        output_index: Number(u.output_index ?? u.vout ?? 0),
-        amount: String(u.amount ?? 0),
-        address: String(u.address ?? ''),
-      })),
       privateKey,
-      memo: options.memo,
     });
 
-    const payload = transactionToRpcPayload(tx);
-    return this.rpc.broadcastTransaction(payload);
+    return this.rpc.broadcastAccountTransaction(accountTx as unknown as Record<string, unknown>);
   }
 
   // ─── RPC Proxy ──────────────────────────────────────────────────────
