@@ -186,12 +186,14 @@ While the `table` parameter is internally controlled, this pattern is fragile an
 
 | Requirement | Status | Blocker |
 |-------------|--------|---------|
-| Contracts deployed and verified on Base Mainnet | ❌ Not done | P0 |
+| New 5/5 ZIONBridge deployed on Base Mainnet | ✅ Deployed at 0x89504D... | P0 |
+| New 5/5 BridgeValidator deployed on Base Mainnet | ✅ Deployed at 0x9C138d... | P0 |
 | 5 real validator/guardian addresses provisioned | ✅ Added to config | P0 |
 | Mainnet validator addresses funded (≥0.001 ETH each) | ✅ Funded with minimum ETH | P0 |
 | Mainnet validator addresses topped up to ≥0.01 ETH each | ❌ Needs more headroom | P1 |
-| Mainnet config enabled and consistent | ✅ 5/5 template, enabled=false | P0 |
-| Website points to live contracts | ✅ Sepolia contracts active | P0 |
+| wZION BRIDGE_ROLE migrated to new 5/5 bridge | ✅ New bridge has BRIDGE_ROLE, old revoked | P0 |
+| Mainnet config enabled and consistent | ✅ 5/5, enabled=true, new addresses | P0 |
+| Website points to new mainnet contracts | ✅ Updated to 0x89504D... | P0 |
 | EVM watcher block-range bug fixed | ✅ Chunked 1.5k scan | P0 |
 | Relayer uses effective RPC URL for burns | ✅ Uses Ankr/config override | P0 |
 | `confirmBurnRelease` reentrancy guard | ✅ Added | P0 |

@@ -1,0 +1,21 @@
+feat(bridge): deploy mainnet 5/5 ZIONBridge and migrate wZION BRIDGE_ROLE
+
+- Deploy new 5/5 ZIONBridge at 0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88
+  with 5 validators and threshold=5.
+- Deploy new 5/5 BridgeValidator at 0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627
+  with 5 guardians and threshold=5.
+- Grant wZION BRIDGE_ROLE to new bridge and revoke it from old single-sig bridge
+  (0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721).
+- Update both mainnet configs (V3/config and V3/L2/bridge/config):
+  new bridge address, enabled=true, current start_block.
+- Update website bridge-api.ts and defi-contracts.ts to point to new mainnet
+  contracts.
+- Update mainnet_readiness.rs tests to reflect live 5/5 mainnet bridge.
+- Update docs: BRIDGE_MAINNET_READINESS.md, BRIDGE_MAINNET_DEPLOY.md,
+  BRIDGE_MAINNET_LAUNCH_CHECKLIST.md, BRIDGE_MULTISIG.md, L2audit.md,
+  StatusV3.md, ZION_3.0.2_PLAN.md.
+- Smoke test: mainnet config loads with Validator threshold: 5/5.
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>
