@@ -23,6 +23,7 @@
 | BridgeValidator (new, 5/5) | `0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627` | ✅ threshold = 5, guardianCount = 5 |
 | ZIONBridge (old, single-sig) | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | ❌ BRIDGE_ROLE revoked |
 | UniV3Pool | `0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB` | ✅ Listed on website |
+| L1 bridge vault | `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0` | ✅ 200M ZION (100M unlock liquidity + 100M UTXO lock pending memo fix) |
 
 ## Deployment transactions
 
@@ -66,7 +67,12 @@
 
 ## Next action
 
-Start the mainnet bridge relay with the updated config and monitor metrics.
+1. **L1 wallet memo fix (requires explicit approval):** Add `memo` to `V3/L1/core/src/wallet.rs` `SendParams`/`build_and_sign` and pass `--memo` from `V3/cli/src/commands/wallet.rs` for UTXO sends. Without this, bridge locks cannot carry the `BRIDGE:base:<addr>` memo required by the relay.
+2. **Re-send UTXO lock:** After the memo fix, send a new 100M ZION UTXO lock from `zion1r565...` (Slot 14) to the bridge vault with memo `BRIDGE:base:0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186` so the relay can mint 100M wZION on Base.
+3. **Top up validator ETH:** Send ~0.05 ETH to the 5 validator addresses for relay gas.
+4. **Run E2E test:** Lock L1 ZION → mint wZION on Base → add liquidity / swap → burn wZION → unlock L1 ZION.
+
+The 100M account-model ZION already on the bridge vault is reserved as **L1 unlock liquidity** for the burn→unlock side of the bridge.
 
 ```powershell
 $env:ZION_BRIDGE_CONFIG = 'V3/config/bridge-mainnet.toml'

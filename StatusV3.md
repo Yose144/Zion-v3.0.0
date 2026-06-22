@@ -38,9 +38,11 @@
 | Mainnet config | `V3/config/bridge-mainnet.toml` | ✅ 5/5, `enabled=true`, new addresses |
 | Website | `bridge-api.ts`, `defi-contracts.ts` | ✅ Points to new mainnet contracts |
 | Bridge relay | Edge server | ✅ v3.0.2 running with L1 node + EVM watcher |
+| L1 bridge vault | `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0` | ✅ 200M ZION (100M unlock liquidity + 100M UTXO lock pending memo fix) |
+| L1 UTXO lock (memo test) | txid `8eb0bb8c...` | ⚠️ Relay detected lock but UTXO output lacks memo; fix `wallet.rs`/`CLI` memo for UTXO |
 | wZION totalSupply | Base Mainnet | 300 wZION (54 in UniV3 pool, 0 on bridge, ~246 held by users/treasury) |
 
-**Next steps:** Top up validator ETH, run E2E lock→mint→burn→unlock test.
+**Next steps:** Fix UTXO memo propagation in `V3/L1/core/src/wallet.rs` + `V3/cli/src/commands/wallet.rs` (requires L1 approval). Re-send 100M UTXO lock with valid `BRIDGE:base:<addr>` memo to mint wZION on Base. Top up validator ETH to ~0.05 ETH. Run E2E lock→mint→burn→unlock test.
 
 ### Testnet Fixes
 
@@ -53,6 +55,8 @@
 
 - `V3/L2/bridge/src/evm_watcher.rs`, `V3/L2/bridge/src/main.rs`
 - `V3/config/bridge-{mainnet,testnet}.toml`, `V3/L2/bridge/config/bridge-{mainnet,testnet}.toml`
+- `V3/L1/core/src/wallet.rs` (pending L1 approval: add memo to UTXO `SendParams`/`build_and_sign`)
+- `V3/cli/src/commands/wallet.rs` (pending: pass `--memo` into UTXO send)
 - `V3/L2/bridge/tests/mainnet_readiness.rs`
 - `V3/docs/BRIDGE_MAINNET_DEPLOY.md`, `BRIDGE_MAINNET_LAUNCH_CHECKLIST.md`, `BRIDGE_MULTISIG.md`
 - `L2audit.md`, `ZION_3.0.2_PLAN.md`, `BRIDGE_MAINNET_READINESS.md` (new)
