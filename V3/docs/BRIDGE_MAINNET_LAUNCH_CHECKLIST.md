@@ -2,7 +2,7 @@
 
 > **Status:** Pre-launch (contracts not yet deployed)  
 > **Target:** Base Mainnet (chain ID 8453)  
-> **Guardian model:** 3-of-5 multisig
+> **Guardian model:** 5-of-5 multisig
 
 ## Phase 0 — Pre-Deploy (Done)
 
@@ -36,9 +36,9 @@
 | # | Item | Command / Script |
 |---|------|-----------------|
 | 1 | Set env vars | `export PRIVATE_KEY=0x...; export BASE_RPC=https://base-mainnet.publicnode.com` |
-| 2 | Deploy wZION | `forge create --rpc-url $BASE_RPC --private-key $PRIVATE_KEY V3/L2/bridge/contracts/wZION.sol:wZION` |
-| 3 | Deploy ZIONBridge | `forge create --rpc-url $BASE_RPC --private-key $PRIVATE_KEY V3/L2/bridge/contracts/ZIONBridge.sol:ZIONBridge --constructor-args <WZION_ADDR>` |
-| 4 | Deploy BridgeValidator (3/5) | `forge create --rpc-url $BASE_RPC --private-key $PRIVATE_KEY V3/L2/bridge/contracts/BridgeValidator.sol:BridgeValidator --constructor-args 3 5` |
+| 2 | Deploy wZION | `forge create --rpc-url $BASE_RPC --private-key $PRIVATE_KEY --root V3/L2/bridge/contracts src/wZION.sol:wZION` |
+| 3 | Deploy ZIONBridge | `forge create --rpc-url $BASE_RPC --private-key $PRIVATE_KEY --root V3/L2/bridge/contracts src/ZIONBridge.sol:ZIONBridge --constructor-args <WZION_ADDR>` |
+| 4 | Deploy BridgeValidator (5/5) | `forge create --rpc-url $BASE_RPC --private-key $PRIVATE_KEY --root V3/L2/bridge/contracts src/BridgeValidator.sol:BridgeValidator --constructor-args 5 5` |
 | 5 | Add Guardian 2-5 | `cast send <VALIDATOR_ADDR> "addGuardian(address)" <ADDR> --private-key $PRIVATE_KEY --rpc-url $BASE_RPC` |
 | 6 | Record addresses | Update ALL files in Step 3 |
 
@@ -65,7 +65,7 @@ After deploy, update these files with **real mainnet addresses**:
 | 3 | Verify BridgeValidator on BaseScan | ☐ |
 | 4 | Update `bridge-mainnet.toml` with real addresses | ☐ |
 | 5 | Set `enabled = true` for `base` chain in TOML | ☐ |
-| 6 | Configure guardian threshold = 3, total = 5 | ☐ |
+| 6 | Configure validator threshold = 5, total = 5 | ☐ |
 | 7 | Start relay: `docker compose --profile mainnet up -d bridge` | ☐ |
 | 8 | Check relay metrics: `curl localhost:9102/metrics` | ☐ |
 

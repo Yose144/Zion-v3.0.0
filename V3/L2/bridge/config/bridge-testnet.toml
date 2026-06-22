@@ -1,81 +1,84 @@
-# ──────────────────────────────────────────────────────────────────────────────
-# ZION Bridge Relay — Testnet Configuration
-# Target: Base Sepolia (EVM chain ID 84532) ↔ ZION L1 mainnet
-# ──────────────────────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────
+#  ZION Bridge Relay Configuration — V3 TestNet (Base Sepolia)
+# ──────────────────────────────────────────────────────────────
+#
+#  Canonical config: also mirrored in V3/config/bridge-testnet.toml.
+#  Base Sepolia deploy: 21.2.2026 (wZION), 23.2.2026 (ZIONBridge)
+#
+#  Usage: ZION_BRIDGE_CONFIG=V3/L2/bridge/config/bridge-testnet.toml cargo run -p zion-bridge
 
 [bridge]
-name    = "ZION Bridge Relay"
-version = "0.1.0"
+name    = "ZION Bridge Relay V3"
+version = "3.0.2"
 network = "testnet"
 
-# ── ZION L1 ──────────────────────────────────────────────────────────────────
-
+# ── ZION L1 Connection ──────────────────────────────────────
 [l1]
-rpc_url            = "127.0.0.1:8443"           # colocated with Core node
-rpc_url_backup     = "100.76.16.108:8443"       # Edge fallback (Tailscale VPN)
-bridge_address     = "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0"
-finality_blocks    = 60
-poll_interval_secs = 15
+rpc_url        = "http://127.0.0.1:8443"
+rpc_url_backup = "http://100.76.16.108:8443"
+bridge_address = "zion1s6y6h7k6l033f2n7e0y0r8t6a8h474t0x5398d0"
+finality_blocks     = 60
+poll_interval_secs  = 15
 
-# ── Ankr Multi-Chain RPC ─────────────────────────────────────────────────────
+# ── EVM Chains ──────────────────────────────────────────────
 
-[ankr]
-enabled = true
-# api_key = ""   # set ANKR_API_KEY env var for premium tier; free tier works for testnet
-
-# ── EVM Chains ───────────────────────────────────────────────────────────────
-
+# -- Base Sepolia (Testnet) — LIVE --
 [[evm_chains]]
-chain_id                = "base_sepolia"
-name                    = "Base Sepolia"
+chain_id                = "base-sepolia"
+name                    = "Base Sepolia (TestNet)"
 evm_chain_id            = 84532
-rpc_url                 = "https://base-sepolia-rpc.publicnode.com"
-rpc_url_backup          = "https://sepolia.base.org"
+rpc_url                 = "wss://base-sepolia.publicnode.com"
+rpc_url_backup          = "wss://base-sepolia.g.alchemy.com/v2/YOUR_KEY"
 wzion_address           = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
-bridge_contract_address = "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721"
+bridge_contract_address = "0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1"
 finality_blocks         = 12
 enabled                 = true
 gas_strategy            = "eip1559"
-max_gas_gwei            = 10
-# start_block           = 0   # set to contract deployment block for faster initial sync
+max_gas_gwei            = 5
+start_block             = 38057800
 
-# ── Validator / Multisig ─────────────────────────────────────────────────────
+# -- Arbitrum Sepolia (Testnet) — NOT DEPLOYED --
+[[evm_chains]]
+chain_id                = "arbitrum-sepolia"
+name                    = "Arbitrum Sepolia (TestNet)"
+evm_chain_id            = 421614
+rpc_url                 = "wss://arb-sepolia.g.alchemy.com/v2/YOUR_KEY"
+wzion_address           = "0x0000000000000000000000000000000000000000"
+bridge_contract_address = "0x0000000000000000000000000000000000000000"
+finality_blocks         = 10
+enabled                 = false
+gas_strategy            = "eip1559"
+max_gas_gwei            = 2
 
+# ── Validator Config ────────────────────────────────────────
 [validator]
-private_key_file    = "/etc/zion/bridge-validator.key"
-validator_id        = "validator-1"
-# 3-of-5 for testnet (practical); 5-of-5 for mainnet (maximum security)
-threshold           = 3
-total_validators    = 5
-# Testnet validator addresses — REPLACE with real keys before mainnet
+private_key_file = "keys/validator.key"
+validator_id     = "validator-1"
+# Testnet: 2-of-2 (deployer + server relay). Mainnet: upgrade to 5-of-5.
+threshold        = 2
+total_validators = 2
 validator_addresses = [
-    "0x36ff91fc3847d2de17f6f51e0e5c47469c5a2e93",  # validator-1
-    "0x9e7c0707f51d5fd49b9dc5b133187e2c10396edd",  # validator-2
-    "0xe28a502f9d5191faa2b565afedd37a2841b89102",  # validator-3
-    "0xa0488097fad69c824695532a52d8e3acb0db63b3",  # validator-4
-    "0xa98a38f8d664c6a2757e5079e97ae31291fc65d7",  # validator-5
+    "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186",  # validator-1 (deployer)
+    "0x8cc6F931edDAf5F14D0071727Ed1640752B5c787",  # validator-2 (server relay)
 ]
 
-# ── Security ─────────────────────────────────────────────────────────────────
-
+# ── Security ──────────────────────────────────────────────
 [security]
-max_single_amount     = "5000000000000000000000000"    # 5 M wZION
-daily_limit           = "10000000000000000000000000"   # 10 M wZION
-min_bridge_amount     = "100000000000000000000"        # 100 wZION
-timelock_threshold    = "1000000000000000000000000"    # 1 M wZION
-max_ops_per_hour      = 100
+max_single_amount   = "5000000000000000000000000"
+daily_limit         = "10000000000000000000000000"
+min_bridge_amount   = "100000000000000000000"
+timelock_threshold  = "1000000000000000000000000"
+max_ops_per_hour    = 100
 l1_block_timeout_secs = 300
 auto_pause_on_anomaly = true
 
-# ── Database ─────────────────────────────────────────────────────────────────
-
+# ── Database ──────────────────────────────────────────────
 [database]
-path                = "V3/data/bridge/bridge.db"
+path = "data/bridge-testnet.db"
 backup_interval_secs = 3600
 
-# ── Metrics ──────────────────────────────────────────────────────────────────
-
+# ── Metrics ───────────────────────────────────────────────
 [metrics]
 enabled   = true
-port      = 9102          # 9101 occupied by zion-oasis; 9100 by node-exporter
-log_level = "debug"      # verbose for testnet; use "info" in production
+port      = 9101
+log_level = "info"

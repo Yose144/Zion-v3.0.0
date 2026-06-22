@@ -1,93 +1,93 @@
-# ──────────────────────────────────────────────────────────────────────────────
-# ZION Bridge Relay — Mainnet Configuration
-# Target: Base (EVM chain ID 8453) ↔ ZION L1 mainnet
-# ──────────────────────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────
+#  ZION Bridge Relay Configuration — V3 Mainnet (Base)
+# ──────────────────────────────────────────────────────────────
 #
-# NOTE: Bridge vault address is now operational (keyless derivation from
-# "ZION Bridge Vault V3 Mainnet" seed). Validator proofs with secp256k1
-# signatures are required for unlock operations.
+#  WARNING: Mainnet contracts are NOT deployed yet.
+#  This template is configured for 5-of-5 validator multisig.
+#  Canonical config: also mirrored in V3/config/bridge-mainnet.toml.
+#  Set `enabled = true` only after:
+#    - wZION, ZIONBridge, and BridgeValidator are deployed and verified
+#    - 5 mainnet validator addresses are provisioned
+#    - L1 bridge vault is funded and derivation verified
+#
+#  Usage: ZION_BRIDGE_CONFIG=V3/L2/bridge/config/bridge-mainnet.toml cargo run -p zion-bridge
 
 [bridge]
-name    = "ZION Bridge Relay"
-version = "0.1.0"
+name    = "ZION Bridge Relay V3"
+version = "3.0.2"
 network = "mainnet"
 
-# ── ZION L1 ──────────────────────────────────────────────────────────────────
-
+# ── ZION L1 Connection ──────────────────────────────────────
 [l1]
-rpc_url            = "77.42.71.94:8443"        # Primary L1 JSON-RPC — Edge (Hetzner VPS)
-rpc_url_backup     = "100.76.16.108:8443"       # Tailscale VPN fallback
-bridge_address     = "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0"
-finality_blocks    = 60
-poll_interval_secs = 15
+rpc_url        = "http://77.42.71.94:8443"
+rpc_url_backup = "http://100.76.16.108:8443"
+bridge_address = "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0"
+finality_blocks     = 60
+poll_interval_secs  = 15
 
-# ── Ankr Multi-Chain RPC ─────────────────────────────────────────────────────
+# ── EVM Chains ──────────────────────────────────────────────
 
-[ankr]
-enabled = true
-# api_key = ""   # REQUIRED for mainnet — set ANKR_API_KEY env var (premium tier recommended)
-
-# ── EVM Chains ───────────────────────────────────────────────────────────────
-
+# -- Base Mainnet — NOT DEPLOYED. Replace placeholder addresses after deploy. --
 [[evm_chains]]
 chain_id                = "base"
-name                    = "Base"
+name                    = "Base (Mainnet)"
 evm_chain_id            = 8453
 rpc_url                 = "https://base-rpc.publicnode.com"
 rpc_url_backup          = "https://mainnet.base.org"
-wzion_address           = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
-bridge_contract_address = "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721"
-finality_blocks         = 64         # higher finality for mainnet safety
-enabled                 = true       # L1 bridge vault operational (keyless address deployed)
+wzion_address           = "0x0000000000000000000000000000000000000000"  # TODO: replace after deploy
+bridge_contract_address = "0x0000000000000000000000000000000000000000"  # TODO: replace after deploy
+finality_blocks         = 64
+enabled                 = false
 gas_strategy            = "eip1559"
-max_gas_gwei            = 5          # tight gas cap for mainnet
-start_block             = 25000000  # Base mainnet approximate block
+max_gas_gwei            = 50
+start_block             = 0  # TODO: set to deployment block height
 
-# ── Validator / Multisig ─────────────────────────────────────────────────────
-#
-# Production: 3-of-5 multisig for all mint/unlock operations.
-# Replace placeholder addresses with real secp256k1 operator addresses before
-# mainnet launch. Each operator keeps their private key in a separate HSM.
-#
-# Checklist:
-#   1. Provision five validator key files on five separate hosts.
-#   2. Replace the five addresses below with real operator addresses.
-#   3. Each operator sets their own `validator_id` (validator-1 … validator-5).
-#   4. ≥1 week testnet green on metrics.bridge_relayer_missing_signers == 0.
-#   5. See `V3/docs/operational/AUDIT_CLOSEOUT_1_THROUGH_6.md` §3.
+# -- Arbitrum One (Mainnet) — NOT DEPLOYED --
+[[evm_chains]]
+chain_id                = "arbitrum"
+name                    = "Arbitrum One (Mainnet)"
+evm_chain_id            = 42161
+rpc_url                 = "wss://arb-mainnet.g.alchemy.com/v2/YOUR_KEY"
+wzion_address           = "0x0000000000000000000000000000000000000000"
+bridge_contract_address = "0x0000000000000000000000000000000000000000"
+finality_blocks         = 10
+enabled                 = false
+gas_strategy            = "eip1559"
+max_gas_gwei            = 20
 
+# ── Validator Config ────────────────────────────────────────
 [validator]
-private_key_file    = "/etc/zion/bridge-validator.key"
-validator_id        = "validator-1"
-threshold           = 3
-total_validators    = 5
+# 5/5 Guardian multisig — see V3/docs/BRIDGE_MULTISIG.md
+# After BridgeValidator.sol deploy, replace the five placeholder addresses
+# with real operator addresses and distribute one key per host.
+private_key_file = "keys/validator.key"
+validator_id     = "validator-1"
+threshold        = 5
+total_validators = 5
 validator_addresses = [
-    "0x0000000000000000000000000000000000000001",  # validator-1
-    "0x0000000000000000000000000000000000000002",  # validator-2
-    "0x0000000000000000000000000000000000000003",  # validator-3
-    "0x0000000000000000000000000000000000000004",  # validator-4
-    "0x0000000000000000000000000000000000000005",  # validator-5
-]   # TODO: replace with real operator addresses before mainnet launch
+    "0x0000000000000000000000000000000000000001",  # validator-1 (deployer) — REPLACE
+    "0x0000000000000000000000000000000000000002",  # validator-2 — REPLACE
+    "0x0000000000000000000000000000000000000003",  # validator-3 — REPLACE
+    "0x0000000000000000000000000000000000000004",  # validator-4 — REPLACE
+    "0x0000000000000000000000000000000000000005",  # validator-5 — REPLACE
+]
 
-# ── Security ─────────────────────────────────────────────────────────────────
-
+# ── Security ──────────────────────────────────────────────
 [security]
-max_single_amount     = "5000000000000000000000000"    # 5 M wZION
-daily_limit           = "10000000000000000000000000"   # 10 M wZION
-min_bridge_amount     = "100000000000000000000"        # 100 wZION
-timelock_threshold    = "1000000000000000000000000"    # 1 M wZION
-max_ops_per_hour      = 100
+max_single_amount   = "5000000000000000000000000"
+daily_limit         = "10000000000000000000000000"
+min_bridge_amount   = "100000000000000000000"
+timelock_threshold  = "1000000000000000000000000"
+max_ops_per_hour    = 100
 l1_block_timeout_secs = 300
 auto_pause_on_anomaly = true
 
-# ── Database ─────────────────────────────────────────────────────────────────
-
+# ── Database ──────────────────────────────────────────────
 [database]
-path                = "/data/bridge/bridge.db"
-backup_interval_secs = 1800     # more frequent backups for mainnet
+path = "data/bridge-mainnet.db"
+backup_interval_secs = 1800
 
-# ── Metrics ──────────────────────────────────────────────────────────────────
-
+# ── Metrics ───────────────────────────────────────────────
 [metrics]
 enabled   = true
 port      = 9101

@@ -30,9 +30,6 @@ use zeroize::Zeroizing;
 const GAS_MARGIN_NUM: u64 = 130; // 130%
 const GAS_MARGIN_DEN: u64 = 100;
 
-/// Maximum gas price override (10 gwei safety cap for testnet).
-const MAX_GAS_GWEI: u64 = 10;
-
 #[derive(Debug, Deserialize)]
 struct RpcResponse<T> {
     result: Option<T>,

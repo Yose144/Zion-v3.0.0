@@ -12,6 +12,7 @@ target-fire/
 *.swp
 *.swo
 *~
+.kilo/
 !tools/vscode-devin-chat/.vscode/
 !tools/vscode-devin-chat/.vscode/launch.json
 !tools/vscode-devin-chat/.vscode/tasks.json
@@ -279,9 +280,9 @@ KeyforLaunch.md
 
 # Genesis regeneration encrypted backups (contain private keys)
 *ENCRYPTED_2026-06-03.txt
-PREMINE/
-POOL/
-BRIDGE/
+/PREMINE/
+/POOL/
+/BRIDGE/
 
 # Temporary directories and test files
 .pids/

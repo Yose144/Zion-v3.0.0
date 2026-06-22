@@ -49,7 +49,7 @@ export const BRIDGE_CONTRACTS_MAINNET: BridgeContractInfo = {
 };
 
 /** Active contract set — change to BRIDGE_CONTRACTS_MAINNET after deploy */
-export const BRIDGE_CONTRACTS = BRIDGE_CONTRACTS_MAINNET;
+export const BRIDGE_CONTRACTS = BRIDGE_CONTRACTS_SEPOLIA;
 
 const defaultStatus: BridgeStatus = {
   online: false,
