@@ -30,6 +30,7 @@ pub mod error;
 pub mod node;
 pub mod rpc_codes;
 pub mod types;
+pub mod wallet;
 
 /// Crate version (`CARGO_PKG_VERSION`).
 pub const SDK_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -41,6 +42,7 @@ pub use types::{
     ChainInfo, MempoolInfo, NodeInfo, PeerEndpoint, PeerInfo, SubmitAccepted, SubmitBlockParams,
     SubmitCandidateResult, SupplyInfo,
 };
+pub use wallet::{BalanceBreakdown, KeyPair, SendResult, TxModel, WalletClient};
 
 /// Common imports for application code.
 pub mod prelude {
@@ -51,4 +53,5 @@ pub mod prelude {
         ChainInfo, MempoolInfo, NodeInfo, PeerEndpoint, PeerInfo, SubmitAccepted,
         SubmitBlockParams, SubmitCandidateResult, SupplyInfo,
     };
+    pub use crate::wallet::{BalanceBreakdown, KeyPair, SendResult, TxModel, WalletClient};
 }
