@@ -1,6 +1,6 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** **2026-06-18** (Git historie obnovena, root cleanup v3.0.2, L2/L3 kanonizace, L4 Oasis příprava); **2026-06-15** (Edge server full update — Rust + V3 rebuild + služby restart, bridge port fix, dashboard restart tlačítka fix); **2026-06-14** (Dashboard all-tabs fix, Payout/Wallets sekce, Restart Edge Pool SSH, UFW 8444 oprava — viz sekce níže); **2026-06-13** (Fire algorithm hard fork deployment — viz sekce níže); **2026-06-13** (Hiran v2.3 documentation cleanup — viz sekce níže); **2026-06-11** (Hard Genesis Reset #0 completed — viz sekce níže); **2026-06-11** (Pool stale share detection + dashboard tab fix — viz sekce níže); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
+> **Datum:** **2026-06-22** (Bridge mainnet readiness — 5/5 validators funded, single-sig bridge blocker documented, testnet RPC + block-range fixes); **2026-06-18** (Git historie obnovena, root cleanup v3.0.2, L2/L3 kanonizace, L4 Oasis příprava); **2026-06-15** (Edge server full update — Rust + V3 rebuild + služby restart, bridge port fix, dashboard restart tlačítka fix); **2026-06-14** (Dashboard all-tabs fix, Payout/Wallets sekce, Restart Edge Pool SSH, UFW 8444 oprava — viz sekce níže); **2026-06-13** (Fire algorithm hard fork deployment — viz sekce níže); **2026-06-13** (Hiran v2.3 documentation cleanup — viz sekce níže); **2026-06-11** (Hard Genesis Reset #0 completed — viz sekce níže); **2026-06-11** (Pool stale share detection + dashboard tab fix — viz sekce níže); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
 > (sjednocení `StatusV3.md` ↔ `StatusV3-Part2.md` — TL;DR, roadmap §6, §8, §5
 > pyramida, odkazy).
 > **Předchozí update:** 2026-05-03 (genesis konsensus — merged na `main`)
@@ -19,6 +19,38 @@
 > starý Praha server (`91.98.122.165`) nebo historickou multi-server topologii
 > (Prague, SG, Helsinki, US) jsou **archivní / historické**, pokud není explicitně
 > uvedeno jinak. Aktuální živá topologie je **Core + Edge** (viz sekce Infrastruktura).
+
+---
+
+## Co je nového 2026-06-22 (Bridge Mainnet Readiness + Testnet Fixes)
+
+> **Status:** IN PROGRESS — Mainnet validator addresses funded, existing mainnet bridge identified as single-sig (unsafe), new 5/5 deployment pending. Testnet RPC and block-range scan fixed.
+
+### Mainnet Bridge Status
+
+| Item | Address / Value | Status |
+|------|-----------------|--------|
+| wZION (Base Mainnet) | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | ✅ Exists, supply > 0 |
+| ZIONBridge (current) | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | ⚠️ **threshold() == 1 (single-sig)** |
+| 5 validator addresses | see `BRIDGE_MAINNET_READINESS.md` | ✅ Funded (~0.0061 ETH total) |
+| Mainnet config | `V3/config/bridge-mainnet.toml` | ✅ 5/5, `enabled=false`, real addresses |
+
+**Critical blocker:** Current `ZIONBridge` must be replaced with a new 5/5 deployment before enabling relay. See `BRIDGE_MAINNET_READINESS.md` for deployment steps.
+
+### Testnet Fixes
+
+- Switched Base Sepolia RPC from `wss://base-sepolia.publicnode.com` to `https://sepolia.base.org` (WSS not supported by HTTP client).
+- Reduced `MAX_BLOCK_RANGE` in `evm_watcher.rs` from 3,000 to 1,500 to stay under Base public RPC limit (~2,000 blocks).
+- Added `last_evm_block` metrics update in `evm_watcher.rs`.
+- Updated testnet `start_block` from 38,057,800 to 43,197,000 to avoid scanning 5M blocks of history.
+
+### Files Changed
+
+- `V3/L2/bridge/src/evm_watcher.rs`, `V3/L2/bridge/src/main.rs`
+- `V3/config/bridge-{mainnet,testnet}.toml`, `V3/L2/bridge/config/bridge-{mainnet,testnet}.toml`
+- `V3/L2/bridge/tests/mainnet_readiness.rs`
+- `V3/docs/BRIDGE_MAINNET_DEPLOY.md`, `BRIDGE_MAINNET_LAUNCH_CHECKLIST.md`, `BRIDGE_MULTISIG.md`
+- `L2audit.md`, `ZION_3.0.2_PLAN.md`, `BRIDGE_MAINNET_READINESS.md` (new)
 
 ---
 

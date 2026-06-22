@@ -66,11 +66,12 @@ After deploy, update these files with **real mainnet addresses**:
 | 3 | Verify BridgeValidator on BaseScan | ☐ |
 | 4 | Update `bridge-mainnet.toml` with real addresses | ✅ |
 | 5 | Configure validator threshold = 5, total = 5 | ✅ |
-| 6 | Fund all 5 validator addresses with ≥0.01 ETH (recommended 0.05 ETH) | ❌ |
-| 7 | Deploy new 5/5 `ZIONBridge` and migrate wZION ownership | ❌ |
-| 8 | Set `enabled = true` for `base` chain in TOML | ❌ |
-| 9 | Start relay: `docker compose --profile mainnet up -d bridge` | ❌ |
-| 10 | Check relay metrics: `curl localhost:9102/metrics` | ❌ |
+| 6 | Fund all 5 validator addresses with ≥0.001 ETH (minimum done) | ✅ |
+| 7 | Top up validator addresses to ≥0.01 ETH for operational headroom | ❌ |
+| 8 | Deploy new 5/5 `ZIONBridge` and migrate wZION ownership | ❌ |
+| 9 | Set `enabled = true` for `base` chain in TOML | ❌ |
+| 10 | Start relay: `docker compose --profile mainnet up -d bridge` | ❌ |
+| 11 | Check relay metrics: `curl localhost:9102/metrics` | ❌ |
 
 ## Phase 5 — UI Activation
 
