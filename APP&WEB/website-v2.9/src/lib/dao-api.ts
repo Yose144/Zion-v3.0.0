@@ -393,7 +393,7 @@ export async function createGovernanceProposal(proposal: {
 }): Promise<GovernanceProposal> {
   const res = await daoFetch('/api/dao/proposals', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-DAO-Key': '' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       proposer: proposal.proposer,
       title: proposal.title,
