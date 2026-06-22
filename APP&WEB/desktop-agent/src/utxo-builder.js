@@ -22,44 +22,40 @@ function blake3Hash(data) {
 
 /**
  * Compute the canonical SegWit-style transaction hash.
- * Matches V3/L1/core/src/tx.rs Transaction::calculate_hash().
+ * Matches V3/L1/core/src/tx.rs Transaction::calculate_hash_v2()
+ * (active from genesis for TX_HASH_V2_VERSION = 2).
  *
- * Data layout:
+ * v2 preimage (length-prefixed, domain-separated):
+ *   DOMAIN = b"ZION_TX_V2\x00"
  *   version (u32 LE)
- *   for each input: prev_tx_hash (32B) + output_index (u32 LE) + public_key (32B)
- *   for each output: amount (u64 LE) + address bytes + optional memo bytes
  *   fee (u64 LE)
  *   timestamp (u64 LE)
+ *   inputs count (u32 LE)
+ *   for each input:
+ *     prev_tx_hash (32B)
+ *     output_index (u32 LE)
+ *     public_key len (u32 LE)
+ *     public_key bytes
+ *   outputs count (u32 LE)
+ *   for each output:
+ *     amount (u64 LE)
+ *     address len (u32 LE)
+ *     address bytes
+ *     memo tag: 0 = absent, 1 = present
+ *     if present: memo len (u32 LE) + memo bytes
  *
  * Signatures are excluded (SegWit-style immutable ID).
  */
 function calculateTxHash(tx) {
   const parts = [];
 
+  // Domain-separation tag
+  parts.push(Buffer.from('ZION_TX_V2\x00', 'binary'));
+
   // version: u32 LE
   const versionBuf = Buffer.alloc(4);
   versionBuf.writeUInt32LE(tx.version);
   parts.push(versionBuf);
-
-  // inputs (exclude signature — SegWit-style)
-  for (const input of tx.inputs) {
-    parts.push(Buffer.from(input.prev_tx_hash)); // 32 bytes
-    const idxBuf = Buffer.alloc(4);
-    idxBuf.writeUInt32LE(input.output_index);
-    parts.push(idxBuf);
-    parts.push(Buffer.from(input.public_key)); // 32 bytes
-  }
-
-  // outputs
-  for (const output of tx.outputs) {
-    const amtBuf = Buffer.alloc(8);
-    amtBuf.writeBigUInt64LE(BigInt(output.amount));
-    parts.push(amtBuf);
-    parts.push(Buffer.from(output.address, 'utf8'));
-    if (output.memo) {
-      parts.push(Buffer.from(output.memo, 'utf8'));
-    }
-  }
 
   // fee: u64 LE
   const feeBuf = Buffer.alloc(8);
@@ -71,6 +67,85 @@ function calculateTxHash(tx) {
   tsBuf.writeBigUInt64LE(BigInt(tx.timestamp));
   parts.push(tsBuf);
 
+  // inputs count: u32 LE
+  const inputCountBuf = Buffer.alloc(4);
+  inputCountBuf.writeUInt32LE(tx.inputs.length);
+  parts.push(inputCountBuf);
+
+  // inputs (exclude signature — SegWit-style)
+  for (const input of tx.inputs) {
+    parts.push(Buffer.from(input.prev_tx_hash)); // 32 bytes
+    const idxBuf = Buffer.alloc(4);
+    idxBuf.writeUInt32LE(input.output_index);
+    parts.push(idxBuf);
+    const pubKey = Buffer.from(input.public_key);
+    const pkLenBuf = Buffer.alloc(4);
+    pkLenBuf.writeUInt32LE(pubKey.length);
+    parts.push(pkLenBuf);
+    parts.push(pubKey);
+  }
+
+  // outputs count: u32 LE
+  const outputCountBuf = Buffer.alloc(4);
+  outputCountBuf.writeUInt32LE(tx.outputs.length);
+  parts.push(outputCountBuf);
+
+  // outputs
+  for (const output of tx.outputs) {
+    const amtBuf = Buffer.alloc(8);
+    amtBuf.writeBigUInt64LE(BigInt(output.amount));
+    parts.push(amtBuf);
+    const addrBytes = Buffer.from(output.address, 'utf8');
+    const addrLenBuf = Buffer.alloc(4);
+    addrLenBuf.writeUInt32LE(addrBytes.length);
+    parts.push(addrLenBuf);
+    parts.push(addrBytes);
+    if (output.memo) {
+      const memoBytes = Buffer.from(output.memo, 'utf8');
+      const memoLenBuf = Buffer.alloc(4);
+      memoLenBuf.writeUInt32LE(memoBytes.length);
+      parts.push(Buffer.from([1]));
+      parts.push(memoLenBuf);
+      parts.push(memoBytes);
+    } else {
+      parts.push(Buffer.from([0]));
+    }
+  }
+
+  return blake3Hash(Buffer.concat(parts));
+}
+
+/**
+ * Legacy v1 preimage kept only for reference/tests.
+ * Do not use for new mainnet transactions — v2 is required from genesis.
+ */
+function calculateTxHashV1(tx) {
+  const parts = [];
+  const versionBuf = Buffer.alloc(4);
+  versionBuf.writeUInt32LE(tx.version);
+  parts.push(versionBuf);
+  for (const input of tx.inputs) {
+    parts.push(Buffer.from(input.prev_tx_hash));
+    const idxBuf = Buffer.alloc(4);
+    idxBuf.writeUInt32LE(input.output_index);
+    parts.push(idxBuf);
+    parts.push(Buffer.from(input.public_key));
+  }
+  for (const output of tx.outputs) {
+    const amtBuf = Buffer.alloc(8);
+    amtBuf.writeBigUInt64LE(BigInt(output.amount));
+    parts.push(amtBuf);
+    parts.push(Buffer.from(output.address, 'utf8'));
+    if (output.memo) {
+      parts.push(Buffer.from(output.memo, 'utf8'));
+    }
+  }
+  const feeBuf = Buffer.alloc(8);
+  feeBuf.writeBigUInt64LE(BigInt(tx.fee));
+  parts.push(feeBuf);
+  const tsBuf = Buffer.alloc(8);
+  tsBuf.writeBigUInt64LE(BigInt(tx.timestamp));
+  parts.push(tsBuf);
   return blake3Hash(Buffer.concat(parts));
 }
 
@@ -176,10 +251,10 @@ function buildUtxoTransaction({ fromAddress, toAddress, amountZion, utxos, priva
     public_key: Array.from(pubKeyRaw)
   }));
 
-  // Build transaction structure
+  // Build transaction structure (v2 required from genesis for TX_HASH_V2)
   const tx = {
     id: new Uint8Array(32), // placeholder
-    version: 1,
+    version: 2,
     inputs,
     outputs,
     fee: Number(feeFlowers),
