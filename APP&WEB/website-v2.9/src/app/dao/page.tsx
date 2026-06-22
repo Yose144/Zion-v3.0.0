@@ -446,20 +446,20 @@ export default function DaoPage() {
         </motion.section>
 
         {/* ── Kabbalah Tree ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-white/10 bg-gradient-to-b from-zion-purple/10 to-black/80 p-8">
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-white/10 bg-white/5 p-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
             <div>
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Consciousness Mining</p>
-              <h2 className="text-3xl font-semibold text-white">Kabbalah Tree of Life · 144k Guardians</h2>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'DAO' : 'DAO'}</p>
+              <h2 className="text-3xl font-semibold text-white">{cs ? 'Kabbalah Tree of Life · 144k Guardians' : 'Kabbalah Tree of Life · 144k Guardians'}</h2>
               <p className="text-gray-300 max-w-2xl mt-2">
                 {cs
                   ? '9 vědomostních levelů namapovaných na 10 Sefirot. Každý DAO circle odpovídá různým consciousness levelům.'
                   : '9 consciousness levels mapped to 10 Sefirot. Each DAO circle corresponds to different consciousness levels.'}
               </p>
             </div>
-            <div className="flex items-center gap-3 rounded-2xl border border-zion-gold/30 bg-zion-gold/10 px-4 py-2 text-sm">
+            <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/60 px-4 py-2 text-sm">
               <Star className="h-5 w-5 text-zion-gold" />
-              <span className="text-white">{cs ? 'Real-time DAO tracking' : 'Real-time DAO tracking'}</span>
+              <span className="text-gray-300">{cs ? 'Real-time DAO tracking' : 'Real-time DAO tracking'}</span>
             </div>
           </div>
           <GuardiansTreeClient />
