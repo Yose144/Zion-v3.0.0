@@ -3146,7 +3146,10 @@ def build_wallets() -> dict:
     # 2. Operational wallets — prefer node startup log (actual running addresses),
     #    fallback to .env files
     node_addrs = parse_node_startup_addresses()
+    # Canonical Edge pool wallet (AGENTS.md) — always include
+    canonical_pool = "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604"
     op_sources = [
+        (canonical_pool, "Pool Canonical (Main Payout)", "canonical"),
         (node_addrs.get("miner") or find_env_value("ZION_MINER_ADDRESS"), "Miner Payout", "node"),
         (node_addrs.get("humanitarian") or find_env_value("ZION_HUMANITARIAN_WALLET"), "Humanitarian Tithe", "node"),
         (node_addrs.get("issobella") or find_env_value("ZION_ISSOBELLA_WALLET"), "Issobella Fund", "node"),

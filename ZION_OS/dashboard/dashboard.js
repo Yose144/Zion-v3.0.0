@@ -6460,9 +6460,10 @@ let payoutHistoryChart = null;
 
 function _zionFmt(n) {
   const v = parseFloat(n) || 0;
-  if (v >= 1e6) return (v/1e6).toFixed(2) + 'M';
-  if (v >= 1e3) return (v/1e3).toFixed(2) + 'K';
-  return v.toFixed(4);
+  // Show full number with commas, never M/K abbreviations
+  const parts = v.toFixed(4).split('.');
+  const whole = parseInt(parts[0], 10).toLocaleString('en-US');
+  return whole + '.' + parts[1];
 }
 
 function renderPayoutDonut(payouts) {
