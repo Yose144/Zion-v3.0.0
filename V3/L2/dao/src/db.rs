@@ -272,18 +272,36 @@ impl DaoDb {
             VoteChoice::Abstain => "abstain",
         };
 
-        let result = self.conn.execute(
+        let tx = self.conn.unchecked_transaction()?;
+        let result = tx.execute(
             r#"INSERT OR IGNORE INTO votes
                (proposal_id, voter, choice, weight, l1_tx_hash, voted_at)
                VALUES (?1,?2,?3,?4,?5, datetime('now'))"#,
             params![proposal_id, voter, choice_str, weight, l1_tx_hash],
         );
 
-        match result {
-            Ok(0) => Ok(false), // OR IGNORE hit — duplicate
-            Ok(_) => Ok(true),
-            Err(e) => Err(DaoError::Internal(e.to_string())),
+        let inserted = match result {
+            Ok(0) => false, // OR IGNORE hit — duplicate
+            Ok(_) => true,
+            Err(e) => return Err(DaoError::Internal(e.to_string())),
+        };
+
+        if inserted {
+            let col = match choice {
+                VoteChoice::Yes => "votes_yes",
+                VoteChoice::No => "votes_no",
+                VoteChoice::Abstain => "votes_abstain",
+            };
+            tx.execute(
+                &format!("UPDATE proposals SET {col} = {col} + ?1 WHERE id = ?2"),
+                params![weight, proposal_id],
+            )
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
         }
+
+        tx.commit()
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        Ok(inserted)
     }
 
     /// Count votes for a proposal (by choice).

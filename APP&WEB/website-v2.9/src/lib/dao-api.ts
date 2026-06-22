@@ -367,12 +367,14 @@ export async function castGovernanceVote(
   proposalId: number,
   voter: string,
   voteType: 'for' | 'against' | 'abstain',
+  weightFlowers?: number,
 ): Promise<{ success: boolean; message: string }> {
   const rustChoice = voteType === 'for' ? 'yes' : voteType === 'against' ? 'no' : 'abstain';
+  const weight = weightFlowers ?? 1_000_000; // default 1 ZION if no balance provided
   const res = await daoFetch(`/api/dao/proposals/${proposalId}/vote`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-DAO-Key': '' },
-    body: JSON.stringify({ voter, choice: rustChoice }),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ voter, choice: rustChoice, weight }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
