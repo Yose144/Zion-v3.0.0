@@ -2984,7 +2984,15 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           <button onclick="controlAction('start-monitoring')" class="zion-button-secondary text-xs" style="color:#86efac;">▶ Start Monitoring</button>
         </div>
       </div>
-      <iframe src="http://100.76.16.108:3100" id="grafana-iframe" class="w-full bg-black/40 rounded-xl border border-white/10" style="height:600px;" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+      <div class="rounded-xl border border-white/10 bg-black/40 p-4 text-sm text-gray-400">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <div class="font-semibold text-gray-200">Grafana embedding is unavailable here</div>
+            <div class="text-xs text-gray-500 mt-1">This host blocks inline frames for Grafana, so the dashboard uses a safe fallback instead.</div>
+          </div>
+          <a href="http://100.76.16.108:3100" target="_blank" class="zion-button-secondary text-xs">Open Grafana ↗</a>
+        </div>
+      </div>
     </div>
   </div>
 
