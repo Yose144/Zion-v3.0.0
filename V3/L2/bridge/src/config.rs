@@ -113,6 +113,12 @@ pub struct L1Config {
 
     /// Reserved for future authenticated bridge RPC gateways.
     pub l1_rpc_token: Option<String>,
+
+    /// Default EVM recipient address used when a lock UTXO has no memo.
+    /// Enables recovery of locks sent without `BRIDGE:chain:0xaddr` memo.
+    /// When set, locks without memo mint wZION to this address on "base".
+    #[serde(default)]
+    pub default_evm_recipient: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -335,6 +341,7 @@ impl Default for BridgeConfig {
                 poll_interval_secs: 15,
                 start_block_height: None,
                 l1_rpc_token: None,
+                default_evm_recipient: None,
             },
             ankr: AnkrConfig::default(),
             evm_chains: vec![],
