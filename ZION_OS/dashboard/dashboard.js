@@ -1835,7 +1835,9 @@ async function refreshMinerBalances(){
       const blocks = m.blocks_found ?? 0;
       const pending = m.pending_balance ?? 0;
       const paid = m.paid_total ?? 0;
-      const onChain = onChainMap.get(name) != null ? _zionFmt(onChainMap.get(name)) + ' Z' : '—';
+      const pendingStr = pending > 0 ? _zionFmt(pending) + ' ZION' : '—';
+      const paidStr = paid > 0 ? _zionFmt(paid) + ' ZION' : '—';
+      const onChain = onChainMap.get(name) != null ? _zionFmt(onChainMap.get(name)) + ' ZION' : '—';
 
       totalHashrate += hr;
       totalPaid += paid;
@@ -1850,8 +1852,8 @@ async function refreshMinerBalances(){
         <td class="py-2 px-2 text-right text-emerald-400">${fmtNum(valid)}</td>
         <td class="py-2 px-2 text-right ${invalid>0?'text-red-400':'text-gray-500'}">${fmtNum(invalid)}</td>
         <td class="py-2 px-2 text-right text-zion-gold">${fmtNum(blocks)}</td>
-        <td class="py-2 px-2 text-right text-amber-400">${pending.toFixed(4)} Z</td>
-        <td class="py-2 px-2 text-right text-cyan-400">${paid.toFixed(4)} Z</td>
+        <td class="py-2 px-2 text-right text-amber-400">${pendingStr}</td>
+        <td class="py-2 px-2 text-right text-cyan-400">${paidStr}</td>
         <td class="py-2 px-2 text-right text-purple-400">${onChain}</td>
       </tr>`;
     }).join('');
@@ -1859,7 +1861,9 @@ async function refreshMinerBalances(){
     if(summary){
       const hr = poolStats.hashrate?.pool ?? poolStats.pool_hashrate ?? totalHashrate;
       const thr = hr >= 1000 ? (hr/1000).toFixed(2) + ' KH/s' : hr.toFixed(1) + ' H/s';
-      summary.innerHTML = `<span class="text-emerald-400 font-semibold">${poolMiners.length} miners</span> · Pool hashrate: <span class="text-amber-400">${thr}</span> · Valid shares: <span class="text-emerald-400">${fmtNum(totalValid)}</span> · Paid: <span class="text-cyan-400">${totalPaid.toFixed(4)} Z</span> · Pending: <span class="text-amber-400">${totalPending.toFixed(4)} Z</span>`;
+      const totalPaidStr = totalPaid > 0 ? _zionFmt(totalPaid) + ' ZION' : '—';
+      const totalPendingStr = totalPending > 0 ? _zionFmt(totalPending) + ' ZION' : '—';
+      summary.innerHTML = `<span class="text-emerald-400 font-semibold">${poolMiners.length} miners</span> · Pool hashrate: <span class="text-amber-400">${thr}</span> · Valid shares: <span class="text-emerald-400">${fmtNum(totalValid)}</span> · Paid: <span class="text-cyan-400">${totalPaidStr}</span> · Pending: <span class="text-amber-400">${totalPendingStr}</span>`;
     }
   } catch(e) {
     console.error('refreshMinerBalances error:', e);
