@@ -188,10 +188,11 @@ While the `table` parameter is internally controlled, this pattern is fragile an
 |-------------|--------|---------|
 | Contracts deployed and verified on Base Mainnet | ❌ Not done | P0 |
 | 5 real validator/guardian addresses provisioned | ✅ Added to config | P0 |
-| Mainnet validator addresses funded (≥0.01 ETH each) | ❌ 4 of 5 have 0 ETH | P0 |
+| Mainnet validator addresses funded (≥0.001 ETH each) | ✅ Funded with minimum ETH | P0 |
+| Mainnet validator addresses topped up to ≥0.01 ETH each | ❌ Needs more headroom | P1 |
 | Mainnet config enabled and consistent | ✅ 5/5 template, enabled=false | P0 |
 | Website points to live contracts | ✅ Sepolia contracts active | P0 |
-| EVM watcher block-range bug fixed | ✅ Chunked 3k scan | P0 |
+| EVM watcher block-range bug fixed | ✅ Chunked 1.5k scan | P0 |
 | Relayer uses effective RPC URL for burns | ✅ Uses Ankr/config override | P0 |
 | `confirmBurnRelease` reentrancy guard | ✅ Added | P0 |
 | `resetSignatures` clears `hasSigned` | ✅ Full reset | P0 |

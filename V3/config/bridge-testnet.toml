@@ -27,15 +27,15 @@ poll_interval_secs  = 15
 chain_id                = "base_sepolia"
 name                    = "Base Sepolia (TestNet)"
 evm_chain_id            = 84532
-rpc_url                 = "wss://base-sepolia.publicnode.com"
-rpc_url_backup          = "wss://base-sepolia.g.alchemy.com/v2/YOUR_KEY"
+rpc_url                 = "https://sepolia.base.org"
+rpc_url_backup          = "https://base-sepolia.g.alchemy.com/v2/YOUR_KEY"
 wzion_address           = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
 bridge_contract_address = "0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1"
 finality_blocks         = 12
 enabled                 = true
 gas_strategy            = "eip1559"
 max_gas_gwei            = 5
-start_block             = 38057800
+start_block             = 43197000  # Updated to current Base Sepolia block; old start was 5M blocks behind
 
 # -- Arbitrum Sepolia (Testnet) — NOT DEPLOYED --
 [[evm_chains]]

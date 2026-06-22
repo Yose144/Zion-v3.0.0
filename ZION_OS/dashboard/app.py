@@ -2407,26 +2407,41 @@ def _build_status_edge_primary() -> dict:
     if n1.get("chain_height") and edge_node1_status.get("chain_height"):
         sync_gap = abs(n1["chain_height"] - edge_node1_status["chain_height"])
 
-    # Tailscale connectivity check (skip if tailscale CLI not in PATH to avoid PATH search delay)
+    # Tailscale connectivity check — use `tailscale status` (fast, reliable)
+    # instead of `tailscale ping` (slow via DERP relay, causes false negatives)
     tailscale_ok = False
     try:
-        if shutil.which("tailscale"):
-            result = subprocess.run(["tailscale", "ping", "-c", "1", "-timeout", "1s", "100.76.16.108"],
-                                      capture_output=True, text=True, timeout=1)
-            tailscale_ok = result.returncode == 0 or "pong from" in result.stdout
+        result = subprocess.run(["tailscale", "status", "--json"],
+                                  capture_output=True, text=True, timeout=3)
+        if result.returncode == 0:
+            import json as _json
+            _ts = _json.loads(result.stdout)
+            tailscale_ok = _ts.get("BackendState") == "Running"
     except Exception:
         pass
 
     miner_status = parse_miner_log()
 
-    # ── L2/L3 Edge services health ───────────────────────────────────────────
-    # Skip slow local service checks in edge-primary — they're optional and cause timeouts
-    bridge_health = {"alive": False}
-    dao_health = {"alive": False}
-    warp_health = {"alive": False}
-    oasis_health = {"alive": False}
-    free_world_health = {"alive": False}
-    issobella_health = {"alive": False}
+    # ── L2/L3 Edge services health — TCP port check on Edge (fast, 0.5s) ────
+    _edge = "100.76.16.108"
+    _edge_ports = {
+        "bridge":     9101,
+        "dao":        8450,
+        "warp":       8453,
+        "oasis":      8094,
+        "free_world": 8095,
+        "issobella":  8096,
+    }
+    _health_map = {}
+    for _sid, _port in _edge_ports.items():
+        _open = check_port_open(_edge, _port, 0.5)
+        _health_map[_sid] = {"alive": _open, "status": "ok" if _open else "down", "ports_open": [_port] if _open else []}
+    bridge_health     = _health_map["bridge"]
+    dao_health        = _health_map["dao"]
+    warp_health       = _health_map["warp"]
+    oasis_health      = _health_map["oasis"]
+    free_world_health = _health_map["free_world"]
+    issobella_health  = _health_map["issobella"]
 
     elapsed = time.time() - t0
     return {
