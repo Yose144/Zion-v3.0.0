@@ -3783,6 +3783,58 @@ def fee_split(subsidy: int) -> tuple:
     return (miner, humanitarian, issobella, pool_fee)
 
 
+def calculate_emission_totals(height: int) -> dict:
+    """Calculate theoretical network-wide totals from block 1 to height.
+
+    Uses the consensus emission schedule and 89/5/5/1 fee split. This is
+    independent of the pool's local logs/counters and shows the global
+    picture from genesis.
+    """
+    if height <= 0:
+        return {
+            "total_emitted_flowers": 0,
+            "miner_rewards_flowers": 0,
+            "humanitarian_flowers": 0,
+            "issobella_flowers": 0,
+            "pool_fees_flowers": 0,
+            "total_emitted_zion": 0.0,
+            "miner_rewards_zion": 0.0,
+            "humanitarian_zion": 0.0,
+            "issobella_zion": 0.0,
+            "pool_fees_zion": 0.0,
+            "burned_zion": 0.0,
+        }
+    total_flowers = 0
+    miner_flowers = 0
+    humanitarian_flowers = 0
+    issobella_flowers = 0
+    pool_fees_flowers = 0
+    for h in range(1, height + 1):
+        subsidy = block_subsidy(h)
+        if subsidy <= 0:
+            continue
+        total_flowers += subsidy
+        miner, humanitarian, issobella, pool_fee = fee_split(subsidy)
+        miner_flowers += miner
+        humanitarian_flowers += humanitarian
+        issobella_flowers += issobella
+        pool_fees_flowers += pool_fee
+    divisor = 1_000_000_000_000
+    return {
+        "total_emitted_flowers": total_flowers,
+        "miner_rewards_flowers": miner_flowers,
+        "humanitarian_flowers": humanitarian_flowers,
+        "issobella_flowers": issobella_flowers,
+        "pool_fees_flowers": pool_fees_flowers,
+        "total_emitted_zion": total_flowers / divisor,
+        "miner_rewards_zion": miner_flowers / divisor,
+        "humanitarian_zion": humanitarian_flowers / divisor,
+        "issobella_zion": issobella_flowers / divisor,
+        "pool_fees_zion": pool_fees_flowers / divisor,
+        "burned_zion": pool_fees_flowers / divisor,
+    }
+
+
 # ── Pool wallet / UTXO / payout status ───────────────────────────────────
 
 def get_pool_wallet_status() -> dict:
@@ -4215,6 +4267,18 @@ def build_payout_status() -> dict:
                 if bal and not bal.get("_rpc_error"):
                     atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
                     m["on_chain_balance_zion"] = atomic / 1_000_000_000_000
+
+    # ── Network-wide emission totals from block 0 (consensus schedule) ──
+    try:
+        chain_info = rpc_call(rpc_host, 8443, "getChainInfo", {}, timeout=2.0)
+        if not chain_info or chain_info.get("_rpc_error"):
+            chain_info = rpc_call("127.0.0.1", 8443, "getChainInfo", {}, timeout=2.0) if (is_edge and local_rpc_alive) else None
+        if chain_info and not chain_info.get("_rpc_error"):
+            status["network_emission"] = calculate_emission_totals(chain_info.get("chain_height", 0))
+        else:
+            status["network_emission"] = None
+    except Exception:
+        status["network_emission"] = None
 
     # Session stats
     active_sessions = pool_stats.get("miners", {}).get("active", len(miners)) if isinstance(pool_stats.get("miners"), dict) else len(miners)

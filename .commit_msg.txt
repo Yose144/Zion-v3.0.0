@@ -1,0 +1,12 @@
+fix(bridge): start L1 scan from recent block and wire config start_block_height
+
+- Bridge relay was crashing on old blocks (connection reset fetching
+  block 5906) because it always rescanned from 0 and DB height was 0.
+- Respect `l1.start_block_height` in main.rs when DB height is 0.
+- Set `start_block_height = 11300` in mainnet configs so the relay only
+  scans from near the live bridge deployment height.
+- Keep 127.0.0.1 as primary L1 RPC on Edge.
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>
