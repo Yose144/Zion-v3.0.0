@@ -174,7 +174,7 @@ export default function TxDetailClient() {
 
         {/* Summary cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {isV3Account ? [
+          {(isV3Account ? [
             { label: cs ? "Castka" : "Amount", value: `${tx.amount.toFixed(4)} ZION`, color: "text-white" },
             { label: "Fee", value: `${tx.fee.toFixed(6)} ZION`, color: "text-amber-400" },
             { label: "Nonce", value: `${tx.nonce ?? 0}`, color: "text-zion-cyan" },
@@ -184,7 +184,7 @@ export default function TxDetailClient() {
             { label: "Fee", value: `${tx.fee.toFixed(6)} ZION`, color: "text-amber-400" },
             { label: cs ? "Vstupy" : "Inputs", value: `${tx.inputs.length}`, color: "text-zion-cyan" },
             { label: cs ? "Vystupy" : "Outputs", value: `${tx.outputs.length}`, color: "text-emerald-400" },
-          ].map((item) => (
+          ]).map((item) => (
             <div key={item.label} className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
               <p className="text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium mb-1">{item.label}</p>
               <p className={`text-lg font-bold tabular-nums ${item.color}`}>{item.value}</p>
