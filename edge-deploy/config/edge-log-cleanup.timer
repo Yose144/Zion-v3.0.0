@@ -1,0 +1,12 @@
+[Unit]
+Description=ZION Edge Log Cleanup Timer (every 6 hours)
+Requires=edge-log-cleanup.service
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=6h
+AccuracySec=1min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

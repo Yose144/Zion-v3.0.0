@@ -1,0 +1,71 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# ZION Edge Server — Log Rotation Configuration
+# Mainnet production: safe rotation, no data loss, automatic cleanup.
+#
+# Installed to: /etc/logrotate.d/zion-edge
+# Runs via: logrotate (daily cron + systemd timer)
+# ──────────────────────────────────────────────────────────────────────────────
+
+# ── /var/log/syslog — the main culprit (76GB+ when uncontrolled) ─────────────
+/var/log/syslog
+{
+    daily
+    rotate 7
+    maxsize 2G
+    missingok
+    notifempty
+    compress
+    delaycompress
+    sharedscripts
+    postrotate
+        /usr/lib/rsyslog/rsyslog-rotate 2>/dev/null || true
+    endscript
+}
+
+# ── Other rsyslog-managed logs ───────────────────────────────────────────────
+/var/log/auth.log
+/var/log/kern.log
+/var/log/mail.log
+/var/log/mail.err
+{
+    weekly
+    rotate 4
+    missingok
+    notifempty
+    compress
+    delaycompress
+    sharedscripts
+    postrotate
+        /usr/lib/rsyslog/rsyslog-rotate 2>/dev/null || true
+    endscript
+}
+
+# ── ZION application logs ────────────────────────────────────────────────────
+/var/log/zion-edge-miner.log
+/var/log/zion-edge-watchdog.log
+/var/log/zion-miner.log
+/var/log/zion-pool-current.log
+/var/log/zion-pool-live.log
+/var/log/zion-pool.log
+{
+    daily
+    rotate 14
+    maxsize 500M
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+}
+
+# ── ZION backup logs ─────────────────────────────────────────────────────────
+/var/log/zion-backup.log
+{
+    weekly
+    rotate 8
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+}
