@@ -1,7 +1,7 @@
 # fixL1bridge100m.md — L1 Bridge 100M ZION Recovery Report
 
-> **Datum:** 2026-06-23 (aktualizováno)
-> **Status:** ✅ UTXO locky odeslány — 100M ZION na vaultu s memo. ⚠️ Relay čeká na validator privátní klíč pro mint.
+> **Datum:** 2026-06-23 (finalizováno — dokumentace kompletní)
+> **Status:** ✅ 100M ZION UTXO locks potvrzeny (6 TX, bloky 11611–11612). ✅ Memo bug opraven. ⚠️ Zbývá: validator privátní klíč pro mint ~100M wZION na Base.
 > **Autor:** Devin (user-approved L1 change per AGENTS.md)
 
 ---
@@ -244,6 +244,7 @@ Failed to handle L1 lock: Cannot stat key file "keys/validator.key": No such fil
 ## 10. Commity
 
 ```
+35b05e43 docs: update bridge status — 100M UTXO locks sent, validator key blocker
 50dbb7ba fix(cli): block memo sends from falling back to account-model
 0bbba50e docs: add fixL1bridge100m.md — full L1 bridge 100M recovery report
 20379ec4 feat(L1): add memo support to UTXO SendParams + build_and_sign

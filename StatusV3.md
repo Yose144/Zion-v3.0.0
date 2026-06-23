@@ -1,6 +1,6 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** **2026-06-22** (Bridge mainnet readiness — 5/5 validators funded, single-sig bridge blocker documented, testnet RPC + block-range fixes); **2026-06-18** (Git historie obnovena, root cleanup v3.0.2, L2/L3 kanonizace, L4 Oasis příprava); **2026-06-15** (Edge server full update — Rust + V3 rebuild + služby restart, bridge port fix, dashboard restart tlačítka fix); **2026-06-14** (Dashboard all-tabs fix, Payout/Wallets sekce, Restart Edge Pool SSH, UFW 8444 oprava — viz sekce níže); **2026-06-13** (Fire algorithm hard fork deployment — viz sekce níže); **2026-06-13** (Hiran v2.3 documentation cleanup — viz sekce níže); **2026-06-11** (Hard Genesis Reset #0 completed — viz sekce níže); **2026-06-11** (Pool stale share detection + dashboard tab fix — viz sekce níže); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
+> **Datum:** **2026-06-23** (100M ZION UTXO locks potvrzeno, memo bug opraven, relay čeká na validator key); **2026-06-22** (Bridge mainnet readiness — 5/5 validators funded, single-sig bridge blocker documented, testnet RPC + block-range fixes); **2026-06-18** (Git historie obnovena, root cleanup v3.0.2, L2/L3 kanonizace, L4 Oasis příprava); **2026-06-15** (Edge server full update — Rust + V3 rebuild + služby restart, bridge port fix, dashboard restart tlačítka fix); **2026-06-14** (Dashboard all-tabs fix, Payout/Wallets sekce, Restart Edge Pool SSH, UFW 8444 oprava — viz sekce níže); **2026-06-13** (Fire algorithm hard fork deployment — viz sekce níže); **2026-06-13** (Hiran v2.3 documentation cleanup — viz sekce níže); **2026-06-11** (Hard Genesis Reset #0 completed — viz sekce níže); **2026-06-11** (Pool stale share detection + dashboard tab fix — viz sekce níže); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
 > (sjednocení `StatusV3.md` ↔ `StatusV3-Part2.md` — TL;DR, roadmap §6, §8, §5
 > pyramida, odkazy).
 > **Předchozí update:** 2026-05-03 (genesis konsensus — merged na `main`)
@@ -19,6 +19,76 @@
 > starý Praha server (`91.98.122.165`) nebo historickou multi-server topologii
 > (Prague, SG, Helsinki, US) jsou **archivní / historické**, pokud není explicitně
 > uvedeno jinak. Aktuální živá topologie je **Core + Edge** (viz sekce Infrastruktura).
+
+---
+
+## Co je nového 2026-06-23 (100M ZION — UTXO Locks Potvrzeny, Memo Bug Opraven)
+
+> **Status:** ✅ HOTOVO — 100M ZION úspěšně přesunuto z genesis slotu 14 na bridge vault jako 6 UTXO locks s memo. Relay detekoval všechny TX. ⚠️ Bloker: validator privátní klíč pro mint wZION na Base.
+
+### TL;DR
+
+**Žádných 100M ZION NEBYLO ztraceno.** Původní předpoklad o ztrátě byl chybný — testovací transfery z předchozích sessions byly po **100 ZION**, ne 100M. Všech 100M ZION z genesis slotu 14 (`zion1r565...`) bylo intact a bylo úspěšně odesláno jako 6 UTXO locků s memo na bridge vault.
+
+### Provedené práce
+
+| Krok | Popis | Status |
+|------|-------|--------|
+| Root cause analýza | Identifikován bug: `--memo` flag v `zion wallet send` byl přijat CLI ale silently zahozen pro UTXO TX | ✅ |
+| Fix A: memo support (L1) | `SendParams.memo`, `build_and_sign()`, CLI `--memo` passthrough | ✅ commit `20379ec4` |
+| Fix B: account-model fallback block | CLI odmítne account-model fallback pokud `--memo` je použito | ✅ commit `50dbb7ba` |
+| Fix C: default_evm_recipient relay | Relay mintne na default adresu pokud lock nemá memo | ✅ commit `89873dfb` |
+| 6× UTXO lock TX odesláno | 5× 16,666,666 + 1× 16,666,569 ZION s memo, bloky 11611–11612 | ✅ |
+| Relay detekce | Všech 6 locků detekováno, čeká 60-block finality + validator key | ✅ |
+| Dokumentace | `fixL1bridge100m.md` vytvořen, `BRIDGE_MAINNET_READINESS.md` aktualizován | ✅ |
+
+### 6 UTXO Lock TX (2026-06-23, bloky 11611–11612)
+
+| TxID | Částka | Blok |
+|------|--------|------|
+| `6bc2aa3e...` | 16,666,666 ZION | 11611 |
+| `d9ddb3c7...` | 16,666,666 ZION | 11611 |
+| `09fc9abb...` | 16,666,666 ZION | 11611 |
+| `2cd12d90...` | 16,666,666 ZION | 11611 |
+| `4b43e7a3...` | 16,666,666 ZION | 11612 |
+| `035c761d...` | 16,666,569 ZION | 11612 |
+| **Celkem** | **~100,000,000 ZION** | — |
+
+- **Z:** `zion1r565v3k2u8p8t6n494p0n527c0m7a5s4s5ae0x7` (Bridge Vault UTXO Seed, genesis slot 14)
+- **Na:** `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0` (Bridge vault, keyless)
+- **Memo:** `BRIDGE:base:0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186`
+
+### Aktuální stav bridge vaultu
+
+| Typ | Částka | Stav |
+|-----|--------|------|
+| Account-model (2× testovací) | ~200 ZION | ❌ Trvale uvízlý (zanedbatelné) |
+| UTXO lock bez memo (testovací) | 100 ZION | ✅ Relay zpracovává (`default_evm_recipient`) |
+| **6× UTXO lock s memo** | **~100M ZION** | ✅ Relay detekoval, čeká na finality + validator key |
+
+### Zbývající bloker
+
+⚠️ **Validator privátní klíč pro `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186`** — relay hlásí:
+```
+Failed to handle L1 lock: Cannot stat key file "keys/validator.key": No such file or directory
+```
+Poskytnout přes env var `ZION_VALIDATOR_PRIVATE_KEY=0x...` nebo soubor `keys/validator.key` na Edge serveru.
+
+Po poskytnutí klíče + restart relay → ~100M wZION mintnut na Base mainnet.
+
+### Commity
+
+```
+35b05e43  docs: update bridge status — 100M UTXO locks sent, validator key blocker
+50dbb7ba  fix(cli): block memo sends from falling back to account-model
+0bbba50e  docs: add fixL1bridge100m.md — full L1 bridge 100M recovery report
+20379ec4  feat(L1): add memo support to UTXO SendParams + build_and_sign
+89873dfb  feat(bridge): add default_evm_recipient fallback for locks without memo
+```
+
+### Detailní zpráva
+
+Viz [`fixL1bridge100m.md`](./fixL1bridge100m.md) pro kompletní chronologii, root cause analýzu a technické detaily.
 
 ---
 
@@ -42,7 +112,7 @@
 | L1 UTXO lock (memo test) | txid `8eb0bb8c...` | ✅ Relay detected, `default_evm_recipient` fallback active |
 | wZION totalSupply | Base Mainnet | 300 wZION (54 in UniV3 pool, 0 on bridge, ~246 held by users/treasury) |
 
-**Next steps:** ~~Fix UTXO memo propagation~~ ✅ Done (commit `20379ec4`). ~~Re-send 100M UTXO lock~~ ✅ Done (2026-06-23, 6 TX s memo, bloky 11611–11612). **⚠️ Bloker: poskytnout validator privátní klíč** pro `0xdde17506...` (`ZION_VALIDATOR_PRIVATE_KEY` env var nebo `keys/validator.key`). Top up validator ETH to ~0.05 ETH. Run E2E lock→mint→burn→unlock test.
+**Next steps:** ~~Fix UTXO memo propagation~~ ✅ Done (`20379ec4`). ~~Re-send 100M UTXO lock~~ ✅ Done (6 TX s memo, bloky 11611–11612). **⚠️ Bloker #1: poskytnout validator privátní klíč** pro `0xdde17506...` (`ZION_VALIDATOR_PRIVATE_KEY` env var nebo `keys/validator.key`) → restart relay → mint ~100M wZION. **Bloker #2:** Top up validator ETH to ~0.05 ETH. **Bloker #3:** Run E2E lock→mint→burn→unlock test. **Bloker #4:** Přidat wZION + WETH likviditu na UniV3Pool (`0xa88C4C89...`).
 
 ### Testnet Fixes
 
@@ -55,8 +125,8 @@
 
 - `V3/L2/bridge/src/evm_watcher.rs`, `V3/L2/bridge/src/main.rs`
 - `V3/config/bridge-{mainnet,testnet}.toml`, `V3/L2/bridge/config/bridge-{mainnet,testnet}.toml`
-- `V3/L1/core/src/wallet.rs` (pending L1 approval: add memo to UTXO `SendParams`/`build_and_sign`)
-- `V3/cli/src/commands/wallet.rs` (pending: pass `--memo` into UTXO send)
+- `V3/L1/core/src/wallet.rs` ✅ Done — memo přidán do `SendParams`/`build_and_sign` (commit `20379ec4`)
+- `V3/cli/src/commands/wallet.rs` ✅ Done — `--memo` propojen do `SendParams` (commit `20379ec4`)
 - `V3/L2/bridge/tests/mainnet_readiness.rs`
 - `V3/docs/BRIDGE_MAINNET_DEPLOY.md`, `BRIDGE_MAINNET_LAUNCH_CHECKLIST.md`, `BRIDGE_MULTISIG.md`
 - `L2audit.md`, `ZION_3.0.2_PLAN.md`, `BRIDGE_MAINNET_READINESS.md` (new)
