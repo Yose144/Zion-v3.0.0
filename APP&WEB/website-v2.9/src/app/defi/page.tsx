@@ -13,6 +13,9 @@ import {
   Flame,
   Wifi,
   WifiOff,
+  Link2,
+  Lock,
+  CheckCircle2,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { useWallet } from '@/contexts/WalletContext';
@@ -41,6 +44,14 @@ export default function DefiPage() {
   const [tab, setTab] = useState<Tab>('swap');
   const [wZIONSupply, setWZIONSupply] = useState<string | null>(null);
   const [wZIONPrice, setWZIONPrice] = useState<{ wzion_per_weth: number; usd_per_wzion: number } | null>(null);
+  const [bridgeStatus, setBridgeStatus] = useState<{
+    online: boolean;
+    l1_locks_detected: number;
+    l1_locks_finalized: number;
+    evm_mints_confirmed: number;
+    last_l1_height: number;
+    errors_total: number;
+  } | null>(null);
 
   // ── WebSocket subscription for real-time network status ─────────────────────
   const { data: networkStatus, isConnected: wsConnected } = useNetworkStatus(true);
@@ -82,9 +93,21 @@ export default function DefiPage() {
 
     void refreshSupply();
     void refreshPrice();
+
+    const refreshBridge = async () => {
+      try {
+        const res = await fetch('/api/bridge/status', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled) setBridgeStatus(data);
+      } catch { /* ignore */ }
+    };
+    void refreshBridge();
+
     const interval = setInterval(() => {
       void refreshSupply();
       void refreshPrice();
+      void refreshBridge();
     }, 60_000);
 
     return () => {
@@ -245,42 +268,105 @@ export default function DefiPage() {
           )}
 
           {tab === 'bridge' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl">
-              <BridgeBurnWidget />
-              <div className="rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Flame className="h-5 w-5 text-cyan-400" />
+            <div className="space-y-6 max-w-5xl">
+              {/* Bridge Vault Status */}
+              <div className="rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Lock className="h-5 w-5 text-zion-gold" />
                   <h3 className="font-semibold text-white text-sm">
-                    {cs ? 'Jak Bridge funguje' : 'How Bridge Works'}
+                    {cs ? 'Bridge Vault · 100M ZION' : 'Bridge Vault · 100M ZION'}
                   </h3>
+                  <span className={`ml-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-semibold ${
+                    bridgeStatus?.online
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      : 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
+                  }`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${bridgeStatus?.online ? 'bg-emerald-400 animate-pulse' : 'bg-gray-500'}`} />
+                    {bridgeStatus?.online ? (cs ? 'Relay Online' : 'Relay Online') : (cs ? 'Relay Offline' : 'Relay Offline')}
+                  </span>
                 </div>
-                <div className="space-y-3 text-xs text-gray-300 leading-relaxed">
-                  <div className="flex gap-3">
-                    <span className="shrink-0 rounded-lg bg-cyan-500/10 border border-cyan-500/20 px-2 py-1 text-cyan-400 font-mono text-[10px]">L1→L2</span>
-                    <p>{cs ? 'Zamkni ZION na L1 → relay mintne wZION na Base (1:1 peg)' : 'Lock ZION on L1 → relay mints wZION on Base (1:1 peg)'}</p>
+                <p className="text-xs text-gray-400 mb-4">
+                  {cs
+                    ? '6 UTXO lock transakcí (~16.67M ZION každá) odesláno na bridge vault v blocích 11611–11612. Relay mintne wZION na Base po dosažení finality (60 bloků).'
+                    : '6 UTXO lock transactions (~16.67M ZION each) sent to the bridge vault in blocks 11611–11612. Relay mints wZION on Base after finality (60 blocks).'}
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                    <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Zamčeno' : 'Locked'}</p>
+                    <p className="text-base font-semibold text-white mt-1">~100M</p>
+                    <p className="text-[10px] text-gray-500">ZION</p>
                   </div>
-                  <div className="flex gap-3">
-                    <span className="shrink-0 rounded-lg bg-orange-500/10 border border-orange-500/20 px-2 py-1 text-orange-400 font-mono text-[10px]">L2→L1</span>
-                    <p>{cs ? 'Spal wZION na Base → relay odemkne ZION na L1 (do ~5 min)' : 'Burn wZION on Base → relay unlocks ZION on L1 (within ~5 min)'}</p>
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                    <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Lock TX' : 'Lock TXs'}</p>
+                    <p className="text-base font-semibold text-white mt-1">6</p>
+                    <p className="text-[10px] text-gray-500">UTXO</p>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                    <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'wZION Mints' : 'wZION Mints'}</p>
+                    <p className="text-base font-semibold text-white mt-1 flex items-center gap-1">
+                      {bridgeStatus?.evm_mints_confirmed ?? '—'}
+                      {bridgeStatus && bridgeStatus.evm_mints_confirmed > 0 && (
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                      )}
+                    </p>
+                    <p className="text-[10px] text-gray-500">{cs ? 'potvrzeno' : 'confirmed'}</p>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                    <p className="text-[10px] uppercase tracking-wider text-gray-500">L1 {cs ? 'blok' : 'block'}</p>
+                    <p className="text-base font-semibold text-white mt-1">{bridgeStatus?.last_l1_height ?? '—'}</p>
+                    <p className="text-[10px] text-gray-500">{cs ? 'poslední scan' : 'last scan'}</p>
                   </div>
                 </div>
-                <div className="pt-2 flex flex-wrap gap-2">
-                  <a
-                    href={`https://basescan.org/address/${CONTRACTS.ZIONBridge}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
-                  >
-                    Bridge Contract <ExternalLink className="h-2.5 w-2.5" />
-                  </a>
-                  <a
-                    href={`https://basescan.org/token/${CONTRACTS.wZION}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
-                  >
-                    wZION Token <ExternalLink className="h-2.5 w-2.5" />
-                  </a>
+                <div className="mt-4 flex flex-wrap items-center gap-3 text-[10px] text-gray-500">
+                  <span className="inline-flex items-center gap-1">
+                    <Link2 className="h-3 w-3" />
+                    wZION: <span className="text-gray-400 font-mono">{CONTRACTS.wZION?.slice(0, 8)}…{CONTRACTS.wZION?.slice(-4)}</span>
+                  </span>
+                  <span className="text-gray-600">·</span>
+                  <span>{cs ? 'Vault' : 'Vault'}: <span className="text-gray-400 font-mono">zion1w0r0…w0t0</span></span>
+                  <span className="text-gray-600">·</span>
+                  <span>{cs ? 'Finality: 60 bloků' : 'Finality: 60 blocks'}</span>
+                </div>
+              </div>
+
+              {/* Burn widget + How it works */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <BridgeBurnWidget />
+                <div className="rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Flame className="h-5 w-5 text-cyan-400" />
+                    <h3 className="font-semibold text-white text-sm">
+                      {cs ? 'Jak Bridge funguje' : 'How Bridge Works'}
+                    </h3>
+                  </div>
+                  <div className="space-y-3 text-xs text-gray-300 leading-relaxed">
+                    <div className="flex gap-3">
+                      <span className="shrink-0 rounded-lg bg-cyan-500/10 border border-cyan-500/20 px-2 py-1 text-cyan-400 font-mono text-[10px]">L1→L2</span>
+                      <p>{cs ? 'Zamkni ZION na L1 → relay mintne wZION na Base (1:1 peg)' : 'Lock ZION on L1 → relay mints wZION on Base (1:1 peg)'}</p>
+                    </div>
+                    <div className="flex gap-3">
+                      <span className="shrink-0 rounded-lg bg-orange-500/10 border border-orange-500/20 px-2 py-1 text-orange-400 font-mono text-[10px]">L2→L1</span>
+                      <p>{cs ? 'Spal wZION na Base → relay odemkne ZION na L1 (do ~5 min)' : 'Burn wZION on Base → relay unlocks ZION on L1 (within ~5 min)'}</p>
+                    </div>
+                  </div>
+                  <div className="pt-2 flex flex-wrap gap-2">
+                    <a
+                      href={`https://basescan.org/address/${CONTRACTS.ZIONBridge}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+                    >
+                      Bridge Contract <ExternalLink className="h-2.5 w-2.5" />
+                    </a>
+                    <a
+                      href={`https://basescan.org/token/${CONTRACTS.wZION}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+                    >
+                      wZION Token <ExternalLink className="h-2.5 w-2.5" />
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
