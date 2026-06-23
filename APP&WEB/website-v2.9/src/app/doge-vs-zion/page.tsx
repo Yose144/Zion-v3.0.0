@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { LucideIcon } from 'lucide-react';
+import StargatePortal from '@/components/StargatePortal';
 import {
   ArrowLeft,
   Trophy,
@@ -231,7 +232,7 @@ export default function DogeVsZionPage() {
             </div>
 
             <ClickAvatar
-              emoji="🚀"
+              portal
               label="ZION"
               sublabel={cs ? `5 sigs / klik (combo ${combo})` : `5 sigs / click (combo ${combo})`}
               color="emerald"
@@ -390,7 +391,7 @@ function PowerUpOrb({ data, onClick }: { data: { id: number; x: number; type: st
   );
 }
 
-function ClickAvatar({ src, emoji, alt, label, sublabel, color, onClick }: { src?: string; emoji?: string; alt?: string; label: string; sublabel: string; color: 'amber' | 'emerald'; onClick: (e: React.MouseEvent) => void }) {
+function ClickAvatar({ src, emoji, alt, portal, label, sublabel, color, onClick }: { src?: string; emoji?: string; alt?: string; portal?: boolean; label: string; sublabel: string; color: 'amber' | 'emerald'; onClick: (e: React.MouseEvent) => void }) {
   const glow = color === 'amber' ? 'shadow-amber-500/30 hover:shadow-amber-500/50' : 'shadow-emerald-500/30 hover:shadow-emerald-500/50';
   const border = color === 'amber' ? 'border-amber-400/30' : 'border-emerald-400/30';
   const bg = color === 'amber' ? 'from-amber-500/20 to-amber-700/20' : 'from-emerald-500/20 to-zion-cyan/20';
@@ -403,7 +404,7 @@ function ClickAvatar({ src, emoji, alt, label, sublabel, color, onClick }: { src
       whileTap={{ scale: 0.92, rotate: color === 'amber' ? -5 : 5 }}
       className={`relative flex h-36 w-36 md:h-44 md:w-44 flex-col items-center justify-center rounded-full border-4 ${border} bg-gradient-to-br ${bg} shadow-[0_20px_80px_rgba(0,0,0,0.3)] ${glow} transition-all active:scale-95`}
     >
-      {src ? <Image src={src} alt={alt ?? label} width={100} height={100} className="h-20 w-20 md:h-24 md:w-24 object-contain drop-shadow-2xl" /> : <span className="text-6xl md:text-7xl drop-shadow-2xl">{emoji}</span>}
+      {src ? <Image src={src} alt={alt ?? label} width={100} height={100} className="h-20 w-20 md:h-24 md:w-24 object-contain drop-shadow-2xl" /> : portal ? <StargatePortal size={80} active /> : <span className="text-6xl md:text-7xl drop-shadow-2xl">{emoji}</span>}
       <span className={`absolute -bottom-2 rounded-full border border-white/10 bg-black/80 px-3 py-0.5 text-xs font-bold ${text}`}>{label}</span>
       <span className="absolute -bottom-7 text-[10px] text-white/40">{sublabel}</span>
     </motion.button>
