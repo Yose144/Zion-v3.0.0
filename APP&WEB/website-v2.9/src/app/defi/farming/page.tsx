@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ArrowLeft,
   Flame,
@@ -14,6 +14,8 @@ import {
   Unlock,
   Wallet,
   Zap,
+  FlaskConical,
+  ArrowLeftRight,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { CONTRACTS_SEPOLIA, FARM_ABI } from '@/lib/defi-contracts';
@@ -61,9 +63,17 @@ export default function FarmingPage() {
 
   const [amount, setAmount] = useState('');
   const [selectedPool, setSelectedPool] = useState(0);
+  const [bridgeOnline, setBridgeOnline] = useState(false);
 
   const rewardPerSecond = 3; // wZION/s from docs
   const pool = MOCK_POOLS[selectedPool];
+
+  useEffect(() => {
+    fetch('/api/bridge/status', { cache: 'no-store' })
+      .then(r => r.json())
+      .then(d => setBridgeOnline(d.online ?? false))
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="pt-28 md:pt-32 pb-24 overflow-x-hidden">
@@ -85,6 +95,10 @@ export default function FarmingPage() {
             <Sprout className="h-4 w-4" />
             {cs ? 'DeFi' : 'DeFi'} · Farming
           </div>
+          <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-[10px] font-semibold tracking-wider text-amber-300 uppercase mb-4 ml-2">
+            <FlaskConical className="h-3 w-3" />
+            {cs ? 'Testnet' : 'Testnet'}
+          </div>
           <h1 className="text-3xl sm:text-5xl font-semibold text-gradient leading-tight">
             {cs ? 'Yield Farming' : 'Yield Farming'}
           </h1>
@@ -93,6 +107,27 @@ export default function FarmingPage() {
               ? 'Vložte LP tokeny do ZIONFarm a získávejte odměny ve wZION. MasterChef-style distribuce s dynamickým allocPoint.'
               : 'Deposit LP tokens into ZIONFarm and earn wZION rewards. MasterChef-style distribution with dynamic allocPoint.'}
           </p>
+
+          {/* Coming to Mainnet banner */}
+          <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 flex items-center gap-3">
+            <ArrowLeftRight className="h-5 w-5 text-zion-gold shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm text-gray-300">
+                {cs
+                  ? 'Farming kontrakt je na Base Sepolia (testnet). Po seed likviditě na UniV3Pool (Base Mainnet) bude farming dostupný na mainnetu.'
+                  : 'Farming contract is on Base Sepolia (testnet). After seed liquidity on UniV3Pool (Base Mainnet), farming will be available on mainnet.'}
+              </p>
+              <div className="mt-1.5 flex items-center gap-2 text-[10px]">
+                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${bridgeOnline ? 'bg-emerald-500/10 text-emerald-400' : 'bg-gray-500/10 text-gray-400'}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${bridgeOnline ? 'bg-emerald-400 animate-pulse' : 'bg-gray-500'}`} />
+                  {cs ? 'Bridge Relay' : 'Bridge Relay'} {bridgeOnline ? 'Online' : 'Offline'}
+                </span>
+                <Link href="/defi" className="text-zion-gold hover:underline">
+                  {cs ? 'Zpět do DeFi Hub →' : 'Back to DeFi Hub →'}
+                </Link>
+              </div>
+            </div>
+          </div>
 
           <div className="mt-6 flex flex-wrap gap-3 text-xs">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
