@@ -439,11 +439,12 @@ const BridgeScreen = ({ navigation }) => {
   }
 
   function renderReadiness() {
+    const isMainnet = !__DEV__;
     const items = [
       { label: 'wZION contract', done: true },
       { label: 'ZIONBridge contract', done: true },
-      { label: 'BaseScan verified', done: false },
-      { label: '3/5 Guardian multisig', done: false },
+      { label: 'BaseScan verified', done: isMainnet },
+      { label: '5/5 Guardian multisig', done: isMainnet },
       { label: 'Relay metrics', done: true },
       { label: 'Burn widget (live)', done: true },
       { label: 'L1 → Base (mint)', done: true },
@@ -465,6 +466,39 @@ const BridgeScreen = ({ navigation }) => {
             </View>
           ))}
         </View>
+      </GlassCard>
+    );
+  }
+
+  function renderVaultStatus() {
+    const vault = CONFIG.BRIDGE.L1_VAULT_ADDRESS;
+    const threshold = NET.THRESHOLD || 1;
+    const validatorCount = NET.VALIDATOR_COUNT || 1;
+    return (
+      <GlassCard style={styles.contractCard}>
+        <Text style={styles.statsTitle}>Vault & Validator</Text>
+        <View style={styles.contractRow}>
+          <Text style={styles.contractLabel}>L1 Vault</Text>
+          <TouchableOpacity onPress={() => { Clipboard.setString(vault); Alert.alert('Copied', 'L1 vault address copied'); }}>
+            <Text style={styles.contractAddr}>{vault.slice(0, 14)}…{vault.slice(-10)}</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.contractRow}>
+          <Text style={styles.contractLabel}>Threshold</Text>
+          <Text style={styles.contractVal}>{threshold}/{validatorCount} (fail-closed)</Text>
+        </View>
+        <View style={styles.contractRow}>
+          <Text style={styles.contractLabel}>Locked</Text>
+          <Text style={styles.contractVal}>~100M ZION</Text>
+        </View>
+        {NET.BRIDGE_VALIDATOR_ADDRESS && NET.BRIDGE_VALIDATOR_ADDRESS !== '0x0000000000000000000000000000000000000000' && (
+          <View style={styles.contractRow}>
+            <Text style={styles.contractLabel}>Validator</Text>
+            <TouchableOpacity onPress={() => { Clipboard.setString(NET.BRIDGE_VALIDATOR_ADDRESS); Alert.alert('Copied', 'Validator address copied'); }}>
+              <Text style={styles.contractAddr}>{NET.BRIDGE_VALIDATOR_ADDRESS.slice(0, 14)}…{NET.BRIDGE_VALIDATOR_ADDRESS.slice(-10)}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </GlassCard>
     );
   }
@@ -506,6 +540,7 @@ const BridgeScreen = ({ navigation }) => {
       {renderBalances()}
       {direction === DIRECTION.TO_EVM ? renderL1toEVM() : renderEVMtoL1()}
       {renderStats()}
+      {renderVaultStatus()}
       {renderReadiness()}
       {renderContracts()}
 
@@ -808,6 +843,11 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontFamily: 'monospace',
     textDecorationLine: 'underline',
+  },
+  contractVal: {
+    ...typography.caption,
+    color: colors.text,
+    fontWeight: '600',
   },
   footer: {
     flexDirection: 'row',

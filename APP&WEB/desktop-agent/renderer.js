@@ -3552,7 +3552,7 @@ function bridgeCopyText(text) {
   });
 
   on('bridge-open-basescan', 'click', () => {
-    window.open('https://sepolia.basescan.org/address/0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1#writeContract', '_blank');
+    window.open('https://basescan.org/address/0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88#writeContract', '_blank');
   });
 
   // DEX tab
@@ -3571,8 +3571,8 @@ function bridgeCopyText(text) {
 
   // Stats tab — copy buttons
   on('stats-copy-wzion',  'click', () => bridgeCopyText('0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6'));
-  on('stats-copy-bridge', 'click', () => bridgeCopyText('0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1'));
-  on('stats-copy-vault',  'click', () => bridgeCopyText('zion1s6y6h7k6l033f2n7e0y0r8t6a8h474t0x5398d0'));
+  on('stats-copy-bridge', 'click', () => bridgeCopyText('0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88'));
+  on('stats-copy-vault',  'click', () => bridgeCopyText('zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0'));
 })();
 
 // Hook into switchView to initialize bridge when tab is opened
