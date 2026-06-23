@@ -427,7 +427,7 @@ function PongGame() {
   const ballRef = useRef({ x: 200, y: 125, vx: 4, vy: 3 });
   const pRef = useRef(100);
   const aiRef = useRef(100);
-  const reqRef = useRef<number>();
+  const reqRef = useRef<number>(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -481,7 +481,7 @@ function BreakoutGame() {
   const ballRef = useRef({ x: 200, y: 200, vx: 3, vy: -3 });
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
-  const reqRef = useRef<number>();
+  const reqRef = useRef<number>(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const reset = () => {
@@ -553,7 +553,7 @@ function SnakeGame() {
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const dirRef = useRef(dir);
-  const reqRef = useRef<number>();
+  const reqRef = useRef<number>(0);
 
   useEffect(() => { dirRef.current = dir; }, [dir]);
 
