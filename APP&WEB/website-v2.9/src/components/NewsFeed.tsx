@@ -22,6 +22,36 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'from-genesis-on-the-star',
+    date: '2026-06-23',
+    tag: { cs: 'Genesis', en: 'Genesis' },
+    tagColor: 'text-zion-gold',
+    title: {
+      cs: 'From Genesis on the Star 🌟 — 100M ZION letí na Base, taková akce nebyla od Doge éry!',
+      en: 'From Genesis on the Star 🌟 — 100M ZION flying to Base, the likes of which haven\'t been seen since the Doge era!',
+    },
+    summary: {
+      cs: 'Much bridge. Very mainnet. Such 5/5. WOW. 🐕→🚀 100 000 000 ZION zamčeno v vaultu, pět validatorů potvrdilo on-chain, relay běží, timelock tiká. ZION vznikl na hvězdě — a teď letí na Base Mainnet přes 5/5 multisig bridge. Když Doge šel na měsíc, šel s jedním podpisem. My jdeme s pěti. To je upgrade. Such security. Very PoW. Many layers. Welcome to Terra Nova — from genesis on the star, to DeFi on Base. To the moon? Ne. To the stars. 🌟',
+      en: 'Much bridge. Very mainnet. Such 5/5. WOW. 🐕→🚀 100,000,000 ZION locked in the vault, five validators confirmed on-chain, relay is running, timelock is ticking. ZION was born on a star — and now it\'s flying to Base Mainnet via a 5/5 multisig bridge. When Doge went to the moon, it went with one signature. We\'re going with five. That\'s an upgrade. Such security. Very PoW. Many layers. Welcome to Terra Nova — from genesis on the star, to DeFi on Base. To the moon? No. To the stars. 🌟',
+    },
+    href: '/bridge',
+  },
+  {
+    slug: 'liquidity-price-set',
+    date: '2026-06-23',
+    tag: { cs: 'Likvidita', en: 'Liquidity' },
+    tagColor: 'text-zion-gold',
+    title: {
+      cs: 'Počáteční cena wZION stanovena — $0.00002/ZION, FDV ≈ $2.9M',
+      en: 'Initial wZION price set — $0.00002/ZION, FDV ≈ $2.9M',
+    },
+    summary: {
+      cs: 'Počáteční seed cena pro UniV3Pool (wZION/WETH) byla stanovena na $0.00002/ZION (≈ 0.0000000121 ETH). Cílový FDV ~$2.9M na 144B max supply — věrohodný mikro-cap vstup mezi Dynex ($1.1M) a Ergo ($18M), na úrovni Zephyr. Reálný obchodovatelný float na startu ~100–200M wZION. Seed likvidita 60M wZION (60%) + odpovídající ETH.',
+      en: 'Initial seed price for UniV3Pool (wZION/WETH) has been set at $0.00002/ZION (≈ 0.0000000121 ETH). Target FDV ~$2.9M on 144B max supply — credible micro-cap entry between Dynex ($1.1M) and Ergo ($18M), on par with Zephyr. Real tradeable float at launch ~100–200M wZION. Seed liquidity 60M wZION (60%) + corresponding ETH.',
+    },
+    href: '/defi',
+  },
+  {
     slug: 'bridge-100m-live',
     date: '2026-06-23',
     tag: { cs: 'Bridge', en: 'Bridge' },
@@ -306,6 +336,8 @@ const CARD_ACCENT: Record<string, { from: string; to: string; glow: string }> = 
   Mining:    { from: 'from-cyan-500/20', to: 'to-sky-500/5', glow: 'shadow-cyan-500/10' },
   DeFi:      { from: 'from-gold-500/20', to: 'to-yellow-500/5', glow: 'shadow-yellow-500/10' },
   Bridge:    { from: 'from-emerald-500/20', to: 'to-teal-500/5', glow: 'shadow-emerald-500/10' },
+  Likvidita: { from: 'from-amber-500/20', to: 'to-yellow-500/5', glow: 'shadow-amber-500/10' },
+  Liquidity: { from: 'from-amber-500/20', to: 'to-yellow-500/5', glow: 'shadow-amber-500/10' },
   Listing:   { from: 'from-green-500/20', to: 'to-emerald-500/5', glow: 'shadow-green-500/10' },
   'Hard Fork': { from: 'from-rose-500/20', to: 'to-red-500/5', glow: 'shadow-rose-500/10' },
 };
