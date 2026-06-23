@@ -22,6 +22,21 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'bridge-100m-live',
+    date: '2026-06-23',
+    tag: { cs: 'Bridge', en: 'Bridge' },
+    tagColor: 'text-emerald-400',
+    title: {
+      cs: '100M ZION zamčeno na Base Mainnet — 5/5 bridge potvrzeno, relay online',
+      en: '100M ZION locked on Base Mainnet — 5/5 bridge confirmed, relay online',
+    },
+    summary: {
+      cs: '100 000 000 ZION je zamčeno v bridge vaultu na L1, 5/5 validatorů potvrdilo všechny 6 lock transakcí on-chain. Nový ZIONBridge 5/5 multisig (0x8950...eF88) je nasazen na Base Mainnet. Multi-validator relay běží s 24h timelockem. wZION mint proběhne po timelock expiry.',
+      en: '100,000,000 ZION is locked in the bridge vault on L1, 5/5 validators confirmed all 6 lock transactions on-chain. New ZIONBridge 5/5 multisig (0x8950...eF88) is deployed on Base Mainnet. Multi-validator relay is running with 24h timelock. wZION mint will occur after timelock expiry.',
+    },
+    href: '/bridge',
+  },
+  {
     slug: 'hiran-v2.3-trained',
     date: '2026-06-18',
     tag: { cs: 'AI', en: 'AI' },
@@ -290,6 +305,7 @@ const CARD_ACCENT: Record<string, { from: string; to: string; glow: string }> = 
   Book:      { from: 'from-yellow-500/20', to: 'to-amber-500/5', glow: 'shadow-yellow-500/10' },
   Mining:    { from: 'from-cyan-500/20', to: 'to-sky-500/5', glow: 'shadow-cyan-500/10' },
   DeFi:      { from: 'from-gold-500/20', to: 'to-yellow-500/5', glow: 'shadow-yellow-500/10' },
+  Bridge:    { from: 'from-emerald-500/20', to: 'to-teal-500/5', glow: 'shadow-emerald-500/10' },
   Listing:   { from: 'from-green-500/20', to: 'to-emerald-500/5', glow: 'shadow-green-500/10' },
   'Hard Fork': { from: 'from-rose-500/20', to: 'to-red-500/5', glow: 'shadow-rose-500/10' },
 };
