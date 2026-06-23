@@ -395,6 +395,149 @@ def get_resource_usage() -> dict:
 MONITORING_CACHE = {"ts": 0, "data": {}}
 MONITORING_LOCK = threading.Lock()
 
+# ── Edge Server Health (SSH probe for system metrics + log status) ────────
+EDGE_HEALTH_CACHE = {"ts": 0, "data": {}}
+EDGE_HEALTH_LOCK = threading.Lock()
+
+def get_edge_server_health() -> dict:
+    """Probe Edge server system health via SSH. Cached 30s.
+
+    Returns disk, CPU, memory, log sizes, systemd service status, and
+    cleanup timer status. Uses SSH (subprocess) to run a compact one-liner
+    on the Edge server.
+    """
+    now = time.time()
+    with EDGE_HEALTH_LOCK:
+        if now - EDGE_HEALTH_CACHE["ts"] < 30:
+            return EDGE_HEALTH_CACHE["data"]
+
+    result = {
+        "reachable": False,
+        "disk": {"total_gb": None, "used_gb": None, "avail_gb": None, "percent": None},
+        "memory": {"total_gb": None, "used_gb": None, "avail_gb": None, "percent": None},
+        "cpu": {"load_1m": None, "load_5m": None, "load_15m": None, "cores": None},
+        "uptime_seconds": None,
+        "logs": {
+            "syslog_mb": None,
+            "journal_mb": None,
+            "zion_edge_miner_mb": None,
+        },
+        "services": {},
+        "cleanup_timer": {"active": False, "last_trigger": None},
+        "docker": [],
+    }
+
+    # SSH to Edge server and run the health probe script
+    ssh_cmd = (
+        f'ssh -o ConnectTimeout=3 -o StrictHostKeyChecking=no -o BatchMode=yes '
+        f'root@{EDGE_HOST} /usr/local/bin/edge-health-probe.sh'
+    )
+
+    try:
+        import subprocess as _sp
+        out = _sp.run(ssh_cmd, shell=True, capture_output=True, text=True, timeout=8)
+        if out.returncode != 0 or not out.stdout.strip():
+            result["error"] = out.stderr.strip()[:200] if out.stderr else "SSH failed"
+            with EDGE_HEALTH_LOCK:
+                EDGE_HEALTH_CACHE["ts"] = now
+                EDGE_HEALTH_CACHE["data"] = result
+            return result
+
+        line = out.stdout.strip()
+        result["reachable"] = True
+
+        # Parse key=value pairs (values may contain commas)
+        parts = {}
+        for token in line.split():
+            if "=" in token:
+                k, v = token.split("=", 1)
+                parts[k] = v
+
+        # Disk: total,used,avail,percent (in KB)
+        if "DISK" in parts:
+            d = parts["DISK"].split(",")
+            if len(d) >= 4:
+                total_kb = int(d[0])
+                used_kb = int(d[1])
+                avail_kb = int(d[2])
+                pct = int(d[3].replace("%", ""))
+                result["disk"] = {
+                    "total_gb": round(total_kb / (1024**2), 1),
+                    "used_gb": round(used_kb / (1024**2), 1),
+                    "avail_gb": round(avail_kb / (1024**2), 1),
+                    "percent": pct,
+                }
+
+        # Memory: total,used,avail (in MB)
+        if "MEM" in parts:
+            m = parts["MEM"].split(",")
+            if len(m) >= 3:
+                total_mb = int(m[0])
+                used_mb = int(m[1])
+                avail_mb = int(m[2])
+                result["memory"] = {
+                    "total_gb": round(total_mb / 1024, 1),
+                    "used_gb": round(used_mb / 1024, 1),
+                    "avail_gb": round(avail_mb / 1024, 1),
+                    "percent": round((total_mb - avail_mb) / total_mb * 100, 1) if total_mb > 0 else 0,
+                }
+
+        # CPU load
+        if "LOAD" in parts:
+            l = parts["LOAD"].split(",")
+            if len(l) >= 3:
+                result["cpu"] = {
+                    "load_1m": float(l[0]),
+                    "load_5m": float(l[1]),
+                    "load_15m": float(l[2]),
+                    "cores": int(parts.get("CORES", 0)),
+                }
+
+        # Uptime
+        if "UPTIME" in parts:
+            try:
+                result["uptime_seconds"] = float(parts["UPTIME"])
+            except Exception:
+                pass
+
+        # Log sizes
+        result["logs"] = {
+            "syslog_mb": int(parts.get("SYSLOG", 0) or 0),
+            "journal_mb": int(parts.get("JOURNAL", 0) or 0),
+            "zion_edge_miner_mb": int(parts.get("ZIONMINER", 0) or 0),
+        }
+
+        # Cleanup timer
+        result["cleanup_timer"] = {
+            "active": parts.get("TIMER_ACTIVE", "").strip() == "active",
+            "last_trigger": parts.get("TIMER_TRIGGER", "").strip() if parts.get("TIMER_TRIGGER", "").strip() != "n/a" else None,
+        }
+
+        # Services
+        svc_names = ["zion-edge-node1", "zion-edge-pool", "zion-edge-bridge",
+                     "zion-edge-dao", "zion-edge-atomic-swap", "zion-edge-warp",
+                     "zion-edge-watchdog"]
+        svc_states = parts.get("SVCS", "").split(",")
+        for i, name in enumerate(svc_names):
+            if i < len(svc_states):
+                result["services"][name] = svc_states[i].strip()
+
+        # Docker containers (format: name::status|name::status)
+        if "DOCKER" in parts and parts["DOCKER"]:
+            for item in parts["DOCKER"].split("|"):
+                if "::" in item:
+                    cname, cstatus = item.split("::", 1)
+                    result["docker"].append({"name": cname, "status": cstatus})
+
+    except Exception as e:
+        result["error"] = str(e)[:200]
+
+    with EDGE_HEALTH_LOCK:
+        EDGE_HEALTH_CACHE["ts"] = now
+        EDGE_HEALTH_CACHE["data"] = result
+    return result
+
+
 def get_monitoring_status() -> dict:
     """Probe Edge Prometheus + Grafana APIs. Cached 15 s."""
     now = time.time()
@@ -7766,6 +7909,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(get_resource_usage())
         elif route in ("/api/monitoring", "/api/monitoring/status"):
             self._json(get_monitoring_status())
+        elif route in ("/api/edge/health", "/api/edge-health"):
+            self._json(get_edge_server_health())
         elif route == "/api/alerts/history":
             self._json({"alerts": load_alert_history()})
         elif route == "/api/watchdog/toggle":
