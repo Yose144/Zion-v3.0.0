@@ -1,3 +1,10 @@
+# Sensitive key files — NEVER commit
+5ELMWallets.md
+secrets/
+keys/
+*.key
+zion-validator-key.env
+
 # Build artifacts
 /target/
 **/target/
