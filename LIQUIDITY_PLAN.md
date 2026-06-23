@@ -36,21 +36,72 @@
 
 Toto je zásadní rozhodnutí — nastavit příliš nízko = nedoceněno, příliš vysoko = nenakoupí nikdo.
 
-**Referenční výpočet (příklad):**
-```
-Pokud chceme market cap = $1M USD při ceně ETH = $2500:
-  wZION price = $1M / 144B ZION total supply = $0.0000069/ZION
-  wZION/ETH price = $0.0000069 / $2500 = 0.00000000276 ETH/wZION
-  = 1 ETH = ~362 000 000 wZION
+> **Pozn.:** Dřívější verze počítala s ETH = $2 500. Aktuální kurz (2026-06-23) je **ETH = $1 656**;
+> všechny přepočty níže ho zohledňují.
 
-Pokud chceme market cap = $10M USD:
-  wZION price = $0.000069/ZION
-  = 1 ETH = ~36 200 000 wZION
+#### Srovnání s trhem (live, 2026-06-23)
 
-Doporučení pro seed: začít konzervativně s ~$1–5M FDV
-```
+| Coin | Cena | Market cap | Supply | Poznámka |
+|------|------|-----------|--------|----------|
+| Monero (XMR) | $317.36 | $5.95B | 18.8M | PoW etalon, nízká supply |
+| Litecoin | $42.03 | $3.25B | 77M | — |
+| Kaspa (KAS) | $0.0286 | $787M | ~27.5B | **nejlepší srovnání — vysoká supply** |
+| Zano | $9.82 | $151M | 15M | privacy PoW |
+| Ergo | $0.2205 | $18.4M | 83M | fair-launch PoW |
+| Zephyr | $0.3649 | $4.57M | 12.5M | malý PoW |
+| Dynex | $0.0105 | $1.12M | 107M | mikro-cap |
 
-> **Akce potřebná od uživatele:** Rozhodnutí o počáteční ceně (FDV) před přidáním likvidity.
+#### Klíč: FDV vs. reálný float
+
+ZION má **144B max supply** (kategorie Kaspy/Nexy), ale k likviditě je jen **~100M wZION
+(0,069 % supply)**; většina premine je v programových/locked peněženkách (4B DAO locked, 8,25B
+OASIS, dev/infra). Reálný obchodovatelný float na startu je řádově **~100–200M ZION**, ne 144B.
+
+- **FDV** = cena × 144B → číslo, které ukáže CoinGecko/CMC.
+- **Reálný market cap** = cena × skutečný float → realita dne 1.
+
+Cenu nastav tak, aby **FDV vypadalo věrohodně (miliony, ne miliardy)**, jinak to působí jako
+nafouknutý projekt.
+
+#### Cenová pásma (podle cílového FDV na 144B max supply)
+
+| Cílové FDV | Cena / ZION | Pozice vs. trh |
+|-----------|-------------|----------------|
+| $1M | $0.0000069 | pod Dynexem — moc nízko |
+| **$2–3M** | **$0.0000139–0.0000208** | **úroveň Zephyr/Dynex — doporučeno** |
+| $5M | $0.0000347 | částečně nad Ergem — agresivní |
+| $10M+ | $0.0000694+ | nereálné pro den 1 bez historie |
+
+#### ✅ DOPORUČENÍ
+
+**Počáteční cena: `$0.00002 / ZION` (≈ `0.0000000121 ETH`), FDV ≈ $2,9M.**
+
+- Věrohodný mikro-cap vstup mezi Dynex ($1,1M) a Ergo ($18M), na úrovni Zephyr.
+- Na reálném floatu (~100–200M) je skutečný day-1 market cap jen ~$2–4k — poctivé pro fair launch.
+- Nechává obrovský prostor pro organický růst; nevypadá nafouknutě.
+
+#### Seed poolu — ETH je úzké hrdlo
+
+Hloubku poolu určuje **ETH strana**, ne wZION. Při ceně $0.00002 a ETH $1 656 platí
+**1 ETH = 82,8M wZION**. S 1–2 ETH bude pool extrémně mělký.
+
+| wZION v poolu | ETH potřeba (@ $0.00002) | Hloubka (TVL ~2× ETH) |
+|---------------|--------------------------|------------------------|
+| 20M | 0,24 ETH (~$400) | ~$800 — velmi mělké |
+| 40M | 0,48 ETH (~$800) | ~$1 600 |
+| 60M | 0,72 ETH (~$1 200) | ~$2 400 |
+
+**Praktická pravidla:**
+1. **Neseeduj celých 60M.** Do poolu dej jen **20–30M wZION**, zbytek drž na pozdější dolévání
+   během cenové objevitelnosti — chrání to depth/token.
+2. **Sežeň víc ETH** — ideálně **≥ 2–3 ETH** ($3 300–5 000). Bez toho je jakákoli cena kosmetická,
+   protože pár stovek dolarů pool slippne.
+3. Při minimálním ETH použij **úzký (concentrated) tick range** místo full-range, ať z mála ETH
+   vytěžíš víc hloubky kolem startovní ceny.
+4. **Neinzeruj FDV $2,9M jako „market cap"** — komunikuj reálný circulating market cap.
+
+> **Akce potřebná od uživatele:** Potvrdit cenu **$0.00002/ZION** (nebo zvolit jiné FDV pásmo)
+> a zajistit ETH (cíl ≥ 2–3 ETH) před přidáním likvidity.
 
 ### 2C. Postup přidání likvidity (po mint)
 
@@ -82,9 +133,13 @@ cast send 0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f8 \
 
 ### 2D. Rozdělení 100M wZION
 
+> **Pozn.:** Tabulka níže je *max alokace* na DeFi. Pro **počáteční seed** UniV3 poolu doporučujeme
+> dle sekce 2B nasadit jen **20–30M wZION** a zbytek z LP alokace dolévat postupně podle hloubky
+> ETH a cenové objevitelnosti (ne celých 60M najednou).
+
 | Použití | Množství | % |
 |---------|----------|---|
-| UniV3Pool seed liquidity | 60,000,000 wZION | 60% |
+| UniV3Pool LP (seed 20–30M + postupné dolévání) | 60,000,000 wZION | 60% |
 | ZIONStaking rewards pool | 20,000,000 wZION | 20% |
 | ZIONFarm rewards pool | 10,000,000 wZION | 10% |
 | Reserve (bridge operations, treasury) | 10,000,000 wZION | 10% |
