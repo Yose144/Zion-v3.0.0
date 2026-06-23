@@ -1,568 +1,427 @@
-# ZION L2 DeFi — Kompletní Roadmapa k Veřejnému Launchi
+# ZION L2 DeFi + DAO — Kompletní Roadmapa k Veřejnému Launchi
 
-> **Datum:** 4. dubna 2026  
-> **Verze:** 1.1  
-> **Status:** Bridge LIVE na Base Mainnet, bridge hardening (rate limiter, security enforcement, metrics) dokončen  
-> **Cíl:** Plnohodnotný DeFi ekosystém — DEX, Swap, DAO, Explorer, Desktop Agent, Mobile App, Web — připraveno pro veřejné oznámení (BitcoinTalk, Crypto Twitter, Reddit)
+> **Datum:** 2026-06-23 (aktualizováno — 5/5 bridge confirmací, timelock aktivní, wZION mint pending)
+> **Verze:** 2.0
+> **Status:** Bridge fully confirmed on-chain, 24h timelock, liquidity plan ready
+> **Cíl:** Plnohodnotný DeFi + DAO ekosystém — DEX, Swap, Staking, Farming, DAO Governance, Explorer, Desktop, Mobile, Web
 
 ---
 
-## 📊 Aktuální Stav (Duben 2026)
+## Aktuální Stav (2026-06-23)
 
 ```
 CORE CHAIN (L1)
-  ✅ V3 mainnet běží — 3 servery (Praha, USA, Singapur)
-  ✅ Chain height: ~6960+, bloky každých ~3-4 min
-  ✅ Cosmic Harmony Ekam Deeksha v2 PoW (ASIC-hardened)
+  ✅ V3 mainnet běží — Core + Edge (77.42.71.94 + 100.76.16.108)
+  ✅ Chain height: ~12 400+, bloky každých ~60s (LWMA DAA)
+  ✅ Cosmic Harmony Ekam Deeksha v2 PoW (ASIC + NPU hardened)
   ✅ Coinbase fee-split: miners 89% | humanitarian 5% | issobella 5% | pool 1%
-  ✅ UTXO + Account dual model, 157 bridge testů, 1300+ celkem
-  ✅ JSON-RPC 2.0: 17 live metod (getBalance, getBlock, sendRawTransaction...)
+  ✅ UTXO + Account dual model
+  ✅ ~1 300 testů, 0 failures
 
 BRIDGE (L2)
-  ✅ wZION na Base Mainnet: 0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6
-  ✅ ZIONBridge kontrakt: 0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721
-  ✅ 200 wZION úspěšně zmintováno (první 2 test TX)
-  ✅ 3. test TX v procesu (správný příjemce 0xdde175...)
-  ✅ Relayer běží na Praze, 60-bloková finalita
-  ✅ Rate limiter (sliding-window, global + per-address) — enforced
-  ✅ Amount security enforcement (min/max single, anti-dust)
-  ✅ Recipient address validation (EVM + L1 format, zero-address rejection)
-  ✅ Metrics wired into relayer (mints/unlocks submitted/confirmed, errors)
-  ✅ EVM watcher auto-reconnect (exponential backoff 5→80s)
-  ⚠️  Zatím 1/2 validator threshold (produkce potřebuje 3/5)
+  ✅ ZIONBridge 5/5 multisig: 0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88
+  ✅ 100M ZION locked on L1 (6 UTXO TX, bloky 11611–11612)
+  ✅ 5/5 on-chain confirmací pro všech 6 locků (30 submitLockProof TX)
+  ✅ Multi-validator relay: 5 klíčů na jedné instanci (commit c4a4841)
+  ✅ 24h timelock aktivní — expiry 2026-06-24 16:52 UTC
+  ⏳ ~100M wZION mintováno po timelock expiry
+  ⏳ Burn→Unlock (reverse) E2E test
 
-SMART KONTRAKTY (Base)
-  ✅ Verified na BaseScan: wZION, ZIONBridge, ZIONAtomicSwap
-  ✅ ZIONStaking (APR 12%, 7-day cooldown)
-  ✅ ZIONGovernance (stake-weighted voting)
-  ✅ ZIONTreasury (multi-sig)
-  ✅ ZIONFarm (MasterChef yield farming)
-  ⬜ Uniswap V3 pool (inicializován, seed likvidita pending)
+SMART KONTRAKTY (Base Mainnet)
+  ✅ wZION ERC-20: 0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6
+  ✅ ZIONBridge 5/5: 0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88
+  ✅ BridgeValidator 5/5: 0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627
+  ✅ ZIONStaking (APR 12%, 7-day cooldown) — deployed
+  ✅ ZIONGovernance (stake-weighted voting) — deployed
+  ✅ ZIONTreasury (multi-sig) — deployed
+  ✅ ZIONFarm (MasterChef yield farming) — deployed
+  ⏳ UniV3Pool: 0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB — seed liquidity pending
 
 FRONTEND
-  ✅ Website s Next.js 16 + React 19 + Spline 3D
-  ✅ Explorer (bloky, transakce, adresy, richlist)
-  ✅ Desktop Agent (Electron 39, mining GUI, wallet)
-  ✅ Mobile App (React Native + Expo 54)
-  ⚠️  Většina DeFi stránek je placeholder/mockup
+  ✅ Website: Next.js 16 + React 19 + Spline 3D (live na zionterranova.com)
+  ✅ Explorer: bloky, TX, adresy, richlist (7 stránek)
+  ✅ Desktop Agent: Electron, mining GUI, wallet
+  ✅ Mobile App: React Native + Expo 54
+  ⚠️  DeFi stránky jsou placeholder — bridge, swap, staking, DAO potřebují real UI
+
+DAO (L2)
+  ✅ zion-dao crate: proposal engine, voting, treasury, timelock, humanitarian modul
+  ✅ 5-of-7 multi-sig treasury (4B ZION z genesis premine)
+  ✅ CLI: zion-cli dao subcommandy
+  ⏳ On-chain governance aktivace (treasury cliff ~1 rok od genesis = červen 2027)
+  ⏳ Web UI pro DAO voting
+  ⏳ First community proposals
 ```
 
 ---
 
-## 🎯 Cíl: Co Potřebujeme Pro Veřejný Launch
+## Roadmapa — 8 Fází
 
-### Kritéria "Release Ready"
+### Fáze 0: wZION Mint + Likvidita Seed ⏳ (aktuální — 2026-06-24)
 
-| Oblast | Minimum Viable | Ideální |
-|--------|---------------|---------|
-| **Bridge** | L1→Base mint funguje, Base→L1 burn funguje | 3/5 multisig, rate limiter, monitoring |
-| **Swap** | wZION/ETH swap přes Uniswap V3 | Vlastní swap UI s best-price routing |
-| **Explorer** | Bloky, TX, adresy, bridge TX | Live mempool, bridge tracker, staking dashboard |
-| **Desktop** | One-click mine, send/receive, bridge | Integrated swap, staking, DAO voting |
-| **Mobile** | Wallet, send/receive, bridge status | Swap, staking, push notifikace |
-| **Web** | Landing, explorer, bridge UI, docs | Full DeFi dashboard, live stats, API docs |
-| **Docs** | Whitepaper, mining guide, node setup | API reference, bridge guide, DeFi tutorial |
+**Cíl:** ~100M wZION mintováno a seed likvidita na UniV3Pool.
 
----
+| # | Úkol | Stav | ETA |
+|---|------|------|-----|
+| 0.1 | executeTimelockedMint automaticky relay | ⏳ | 2026-06-24 16:52 UTC |
+| 0.2 | Ověřit ~100M wZION balance na `0xdde17506...` | ⏳ | Po expiry |
+| 0.3 | Top-up validator ETH (0.01 ETH × 5) | ⏳ | Souběžně |
+| 0.4 | Seed UniV3Pool: wZION/WETH, fee 0.3%, full range | ⏳ | Po mint |
+| 0.5 | E2E reverse bridge test: burn wZION → unlock L1 | ⏳ | Po mint |
+| 0.6 | Dokumentovat ZION/ETH počáteční cenu a tick range | ⏳ | Po mint |
 
-## 🗺️ Roadmapa — 6 Fází
-
-### Fáze 0: Bridge Hardening (Aktuálně — 1-2 týdny)
-
-**Cíl:** Bridge je production-ready, E2E ověřený s reálnými wZION tokeny.
-
-| # | Úkol | Priorita | Stav |
-|---|------|----------|------|
-| 0.1 | Ověřit 3. test TX (správný příjemce na MetaMask) | P0 | ⏳ Čeká na 60 bloků finality |
-| 0.2 | Přebuildit bridge image s recipient safety guard | P0 | ✅ Recipient validation (EVM + L1 format, zero-addr, contract-addr rejection) |
-| 0.3 | Burn→Unlock směr (Base→L1): E2E test | P0 | ⬜ |
-| 0.4 | Zvýšit validator threshold na 3/5 | P1 | ⬜ |
-| 0.5 | Rate limiter pro bridge requests | P1 | ✅ Sliding-window limiter (global + per-address), enforced v relayeru |
-| 0.6 | EVM WebSocket auto-reconnect | P1 | ✅ Exponential backoff 5→10→20→40→80s, 5 retries |
-| 0.7 | Bridge monitoring dashboard (Grafana) | P2 | ✅ Základní existuje |
-| 0.8 | Amount security enforcement (min/max/anti-dust) | P1 | ✅ min_bridge_amount + max_single_amount enforced |
-| 0.9 | Metrics wiring do relayeru | P1 | ✅ mints/unlocks submitted/confirmed, errors counter |
-
-**Výstup:** Bridge spolehlivě funguje oběma směry, validator bezpečnost, monitoring.
-
-> **Aktualizace 04/2026:** Rate limiter, amount enforcement, recipient validation, EVM auto-reconnect a metrics wiring dokončeny. 47 testů prošlo. Zbývá: validator 3/5 threshold, Burn→Unlock E2E test, timelock pro velké částky.
+**Výstup:** Live DEX likvidita, první swap možný. Viz [`LIQUIDITY_PLAN.md`](../LIQUIDITY_PLAN.md) pro detaily.
 
 ---
 
-### Fáze 1: RPC Robustnost + Wallet Infrastructure (2-3 týdny)
+### Fáze 1: Bridge UI + Swap Frontend (1–2 týdny po mint)
 
-**Cíl:** Node RPC je dostatečně robustní pro všechny DeFi operace. Wallet infra pro desktop/mobile/web.
+**Cíl:** Uživatel může bridgovat a swapovat z webu i desktopu.
 
-#### 1A. Node RPC Rozšíření
+| # | Úkol | Priorita |
+|---|------|----------|
+| 1.1 | Web `/bridge` — real wallet connect (MetaMask + zion-cli) | P0 |
+| 1.2 | Bridge status tracker (lock → confirm → mint progress bar) | P0 |
+| 1.3 | Web `/defi/swap` — wZION↔ETH přes UniV3 | P0 |
+| 1.4 | Swap price quote (UniV3 TWAP oracle) | P0 |
+| 1.5 | Slippage protection + deadline | P1 |
+| 1.6 | Desktop Agent bridge UI (Electron) | P1 |
+| 1.7 | Desktop Agent swap UI | P1 |
+| 1.8 | Mobile bridge screen (real, ne mockup) | P1 |
+| 1.9 | Swap history (lokální DB + web) | P2 |
 
-Aktuální RPC metody:
+**Swap flow (ZION → ETH):**
 ```
-✅ getBalance, getAccountBalance, getBlock, getBlockByHeight
-✅ getTransaction, getAccountTransaction, getUtxos
-✅ sendRawTransaction, submitTransaction, submitAccountTransaction
-✅ getBlockTemplate, getMempoolInfo, getPeerInfo, getChainInfo
-✅ getNodeInfo, submitBlock, getSupplyInfo, getBalanceAtHeight
-✅ getBridgeLocks, getBridgeVaultBalance, submitBridgeUnlock
-```
-
-Chybí pro plný DeFi:
-
-| # | Nová RPC Metoda | Účel | Složitost |
-|---|----------------|------|-----------|
-| 1.1 | `getTransactionHistory` | Seznam TX pro adresu (stránkování) | Střední |
-| 1.2 | `getAddressInfo` | Kompletní info: balance, tx count, first/last seen | Nízká |
-| 1.3 | `estimateFee` | Odhad fee pro novou TX | Nízká |
-| 1.4 | `getBlockRange` | Vrátit N bloků najednou (pro explorer sync) | Nízká |
-| 1.5 | `getNetworkStats` | Hashrate, difficulty history, block time avg | Střední |
-| 1.6 | `subscribeNewBlocks` (WS) | WebSocket stream nových bloků | Střední |
-| 1.7 | `subscribePendingTx` (WS) | WebSocket stream nových mempool TX | Střední |
-| 1.8 | `getTokenInfo` | wZION bridge stats, total locked/minted | Nízká |
-| 1.9 | HTTP REST wrapper | Curl-friendly `/api/v1/` REST nad TCP JSON-RPC | Střední |
-
-#### 1B. Wallet SDK / Library
-
-| # | Úkol | Účel | Platforma |
-|---|------|------|-----------|
-| 1.10 | `zion-wallet-core` Rust lib | Sdílená wallet logika (keygen, sign, UTXO select) | Všechny |
-| 1.11 | TypeScript/JS wallet SDK | Pro web + desktop + mobile | npm balíček |
-| 1.12 | Wallet Create/Import/Export | Mnemonic (BIP-39), keystore JSON, raw key | Desktop + Mobile |
-| 1.13 | Multi-wallet management | Přepínání peněženek, labeling | Desktop + Mobile |
-| 1.14 | Transaction builder | Compose + sign + broadcast z UI | Všechny |
-
-**Výstup:** API schopné obsluhovat libovolného klienta. Wallet SDK pro všechny platformy.
-
----
-
-### Fáze 2: DEX & Swap (2-3 týdny)
-
-**Cíl:** Uživatel může swapovat ZION↔ETH/USDC jedním kliknutím.
-
-#### Architektura Swap Flow
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    ZION SWAP FLOW                            │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  Uživatel chce: 1000 ZION → ETH                            │
-│                                                             │
-│  1. Desktop/Mobile/Web: Klik "Swap"                         │
-│     └─ Zadá: 1000 ZION, vybere ETH                         │
-│                                                             │
-│  2. Frontend sestaví Bridge Lock TX:                        │
-│     └─ Send 1000 ZION → vault (zion1w0r0a5...)             │
-│     └─ Memo: BRIDGE:base:<user_evm_wallet>                  │
-│     └─ Podepíše lokálním klíčem                             │
-│                                                             │
-│  3. Bridge relay (automaticky, ~60 bloků):                  │
-│     └─ Detekuje lock → submitLockProof na Base              │
-│     └─ Mintne 1000 wZION na uživatelův EVM wallet          │
-│                                                             │
-│  4. Swap na Uniswap V3 (automaticky):                       │
-│     └─ approve(wZION, Uniswap Router)                       │
-│     └─ exactInputSingle(wZION → WETH → ETH)                │
-│     └─ ETH přistane na uživatelově EVM wallet               │
-│                                                             │
-│  Alternativy:                                               │
-│  - wZION → USDC (přes Uni V3 multi-hop)                    │
-│  - wZION → wBTC (přes Uni V3 multi-hop)                    │
-│  - ETH → wZION → ZION (reverse bridge: burn→unlock)        │
-│                                                             │
-│  ZJEDNODUŠENÍ (One-Click cíl):                              │
-│  - Backend service "Swap Aggregator" orchestruje kroky 2-4   │
-│  - Uživatel jen zadá amount + pair, podepíše 1 TX           │
-│  - Status tracking: "Locking..." → "Bridging..." → "Done!" │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-#### Implementační Kroky
-
-| # | Úkol | Detail | Odhad |
-|---|------|--------|-------|
-| 2.1 | Seed Uniswap V3 likviditu | 100+ wZION + ETH, nastavit fee tier 0.3% | 1 den |
-| 2.2 | Swap Aggregator backend | Rust service: orchestruje bridge+swap, tracking | 5 dní |
-| 2.3 | Price feed / oracle | Čte Uni V3 TWAP, poskytuje ZION/USD, ZION/ETH | 3 dny |
-| 2.4 | Swap UI komponent | React: amount input, pair selector, price quote, progress | 3 dny |
-| 2.5 | EVM wallet connect | MetaMask/WalletConnect integrace pro web | 2 dny |
-| 2.6 | Reverse swap (ETH→ZION) | Burn wZION na Base → unlock na L1 | 3 dny |
-| 2.7 | Slippage protection | Max slippage setting, deadline, min output | 1 den |
-| 2.8 | Swap history | Uložit a zobrazit historii swapů | 1 den |
-
-**Výstup:** Funkční swap ZION↔ETH/USDC. One-click flow z desktop/mobile/web.
-
----
-
-### Fáze 3: Explorer & Dashboard Upgrade (2-3 týdny)
-
-**Cíl:** Explorer na úrovni Etherscan/Blockchair — plnohodnotný, profesionální.
-
-#### Aktuální Explorer Stránky
-```
-✅ /explorer             — Dashboard (bloky, TX)
-✅ /explorer/blocks      — Seznam bloků
-✅ /explorer/block/[id]  — Detail bloku
-✅ /explorer/tx/[id]     — Detail transakce
-✅ /explorer/address/[a] — Detail adresy
-✅ /explorer/richlist     — Top adresy
-✅ /explorer/transactions — Seznam TX
-```
-
-#### Nové Explorer Funkce
-
-| # | Funkce | Popis | Priorita |
-|---|--------|-------|----------|
-| 3.1 | Bridge Tracker | Live view: lock TX → bridge processing → mint na Base | P0 |
-| 3.2 | Mempool Viewer | Pending TX, fee-sorted, live updates | P1 |
-| 3.3 | Network Stats | Hashrate graf, difficulty historie, block time chart | P0 |
-| 3.4 | Supply Dashboard | Circulating, mined, locked in bridge, staked, burned | P0 |
-| 3.5 | Address TX History | Stránkovaný list všech TX pro adresu | P0 |
-| 3.6 | UTXO Set View | Unspent outputs pro adresu | P1 |
-| 3.7 | Coinbase Tracker | Vizualizace fee-split payoutů (miner/humanitarian/etc) | P1 |
-| 3.8 | Search Upgrade | Hledat bloky, TX, adresy z jednoho search baru | P0 |
-| 3.9 | API Documentation | Interactive API docs (Swagger/OpenAPI style) | P1 |
-| 3.10 | Validator Status | Bridge validator health, relay latence | P2 |
-| 3.11 | Staking Dashboard | Staked wZION, APR, rewards history | P1 |
-| 3.12 | DAO Proposals | Aktivní návrhy, hlasování, výsledky | P2 |
-| 3.13 | Charts & Graphs | TradingView-style price chart (po Uni V3 pool) | P2 |
-
-**Výstup:** Explorer srovnatelný s Etherscan/Blockchair. Profesionální dojem pro návštěvníky.
-
----
-
-### Fáze 4: Desktop Agent & Mobile App (3-4 týdny)
-
-**Cíl:** One-click DeFi z desktopu i mobilu. Plná integrace všech L2 služeb.
-
-#### 4A. Desktop Agent (Electron)
-
-Aktuální funkce:
-```
-✅ Mining GUI (start/stop/config)
-✅ Wallet (generate, backup)
-✅ Basic send/receive
-```
-
-Nové funkce:
-
-| # | Funkce | Detail | Priorita |
-|---|--------|-------|----------|
-| 4.1 | Bridge UI | Lock ZION→wZION, Burn wZION→ZION, live status | P0 |
-| 4.2 | Swap UI | One-click ZION↔ETH/USDC, price quote, history | P0 |
-| 4.3 | Staking UI | Stake wZION, claim rewards, unstake + cooldown | P1 |
-| 4.4 | DAO Voting UI | Zobrazit proposals, hlasovat, delegate | P2 |
-| 4.5 | Portfolio Dashboard | Celkový přehled: ZION + wZION + staked + LP | P0 |
-| 4.6 | Transaction History | Filtrovaný seznam TX (send/receive/bridge/swap) | P0 |
-| 4.7 | EVM Wallet | Integrovaná EVM peněženka (nebo MetaMask connect) | P0 |
-| 4.8 | Auto-update | Stahovat novou verzi node/miner/bridge binaries | P1 |
-| 4.9 | Node Status | Dashboard s peer count, chain height, sync status | P1 |
-| 4.10 | Yield Farming | Zobrazit farmy, deposit LP tokeny, claim rewards | P2 |
-
-#### 4B. Mobile App (React Native)
-
-Aktuální obrazovky:
-```
-✅ DashboardScreen, WalletScreen, SendScreen, ReceiveScreen
-✅ MiningScreen, BridgeScreen, NetworkScreen, SettingsScreen
-✅ TransactionHistoryScreen
-```
-
-Nové funkce:
-
-| # | Funkce | Detail | Priorita |
-|---|--------|-------|----------|
-| 4.11 | Real Bridge Integration | Funkční bridge (ne mockup), status tracking | P0 |
-| 4.12 | Swap Screen | ZION↔ETH/USDC s price feed | P0 |
-| 4.13 | Staking Screen | Stake/unstake/claim | P1 |
-| 4.14 | Push Notifications | TX přijata, bridge dokončen, block nalezen | P1 |
-| 4.15 | QR Scan Improvements | Skenovat ZION adresu + EVM adresu + amount | P1 |
-| 4.16 | Biometric Auth | FaceID/TouchID pro podepisování TX | P0 |
-| 4.17 | WalletConnect | Connect s DeFi dApps na Base | P2 |
-| 4.18 | Portfolio View | ZION + wZION + staked shrnutí | P0 |
-
-**Výstup:** Desktop i mobilní klient s plnou DeFi funkcionalitou. UX na úrovni Trust Wallet / Exodus.
-
----
-
-### Fáze 5: Website & Marketing Ready (2-3 týdny)
-
-**Cíl:** Web je profesionální landing page + plný DeFi hub. Připraveno pro Bitcoin Talk, Crypto Twitter.
-
-#### 5A. Website Upgrade
-
-| # | Stránka / Funkce | Stav | Akce |
-|---|-------------------|------|------|
-| 5.1 | `/` Landing Page | ✅ Existuje | Refresh: live stats, price feed, recent blocks |
-| 5.2 | `/bridge` | ✅ 798 LOC | → Funkční bridge UI s real wallet connect |
-| 5.3 | `/defi` | ⚠️ 446 LOC | → Plná DeFi stránka: swap, staking, farm, DAO |
-| 5.4 | `/defi/swap` | ⬜ Nová | Swap interface s Uniswap V3 integrací |
-| 5.5 | `/defi/staking` | ⬜ Nová | Staking dashboard + APR kalkulačka |
-| 5.6 | `/defi/farming` | ⬜ Nová | Yield farming pools |
-| 5.7 | `/defi/dao` | ⬜ Nová | DAO governance: proposals, voting, treasury |
-| 5.8 | `/explorer` | ✅ Existuje | Vylepšit: bridge tracker, network stats, charts |
-| 5.9 | `/docs` | ✅ Existuje | Rozšířit: API reference, bridge guide, tutorials |
-| 5.10 | `/api-reference` | ⬜ Nová | Interactive JSON-RPC API dokumentace |
-| 5.11 | `/download` | ✅ Existuje | Přidat: release binaries, checksums, install guide |
-| 5.12 | `/roadmap` | ✅ Existuje | Aktualizovat s tímto plánem |
-| 5.13 | `/whitepaper` | ⬜ Nová | Technický whitepaper (PDF + web verze) |
-
-#### 5B. Marketing Materiály
-
-| # | Materiál | Formát | Účel |
-|---|----------|--------|------|
-| 5.14 | BitcoinTalk ANN | Forum post | Oficiální oznámení + diskuze |
-| 5.15 | One-pager | PDF | Rychlý přehled projektu pro investory |
-| 5.16 | Technical Whitepaper | PDF + Web | Kompletní technická dokumentace |
-| 5.17 | DeFi Guide | Web | Tutorial: jak swapovat, stakovat, farmat |
-| 5.18 | Mining Guide | Web | ✅ Existuje, aktualizovat pro desktop agent |
-| 5.19 | Social media assets | Obrázky | Logo, banery, OG images pro sdílení |
-| 5.20 | Tokenomics infographic | Obrázek | Supply breakdown, emission schedule chart |
-
-**Výstup:** Profesionální web + kompletní marketingové materiály pro launch.
-
----
-
-## 📐 Technická Architektura — Cílový Stav
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         UŽIVATELSKÉ ROZHRANÍ                        │
-│                                                                     │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────────┐   │
-│  │ Desktop  │  │ Mobile   │  │ Website  │  │ CLI (zion-wallet)│   │
-│  │ Agent    │  │ App      │  │ (Next.js)│  │                  │   │
-│  │ Electron │  │ RN+Expo  │  │ React 19 │  │ Rust binary      │   │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────────┬─────────┘   │
-│       │              │              │                 │             │
-│       └──────┬───────┴──────┬───────┘                 │             │
-│              │              │                         │             │
-│       ┌──────▼──────┐ ┌────▼──────┐                   │             │
-│       │ zion-wallet │ │ EVM Wallet│                   │             │
-│       │ SDK (TS/JS) │ │ (MetaMask)│                   │             │
-│       └──────┬──────┘ └────┬──────┘                   │             │
-└──────────────┼─────────────┼──────────────────────────┼─────────────┘
-               │             │                          │
-┌──────────────▼─────────────▼──────────────────────────▼─────────────┐
-│                         BACKEND SERVICES                             │
-│                                                                     │
-│  ┌───────────────┐  ┌───────────────┐  ┌───────────────────────┐   │
-│  │ ZION Node     │  │ Bridge Relay  │  │ Swap Aggregator       │   │
-│  │ (RPC :8443)   │  │ (L1↔Base)     │  │ (bridge+Uni routing)  │   │
-│  │               │  │               │  │                       │   │
-│  │ • getBalance  │  │ • L1 watcher  │  │ • Price oracle        │   │
-│  │ • sendTx      │  │ • EVM watcher │  │ • Best route calc     │   │
-│  │ • getBlock    │  │ • Relayer     │  │ • Status tracking     │   │
-│  │ • getUtxos    │  │ • Validator   │  │ • Slippage protect    │   │
-│  │ • WS subs     │  │ • Metrics     │  │                       │   │
-│  └───────┬───────┘  └───────┬───────┘  └───────┬───────────────┘   │
-│          │                  │                   │                   │
-└──────────┼──────────────────┼───────────────────┼───────────────────┘
-           │                  │                   │
-┌──────────▼──────────────────▼───────────────────▼───────────────────┐
-│                         BLOCKCHAINS                                  │
-│                                                                     │
-│  ┌─────────────────────┐         ┌─────────────────────────────┐   │
-│  │ ZION L1             │         │ Base (L2 EVM)                │   │
-│  │                     │  bridge │                              │   │
-│  │ • PoW Ekam Deeksha  │ ◄─────►│ • wZION (ERC-20)            │   │
-│  │ • UTXO + Account    │         │ • ZIONBridge                 │   │
-│  │ • Fee-split coinbase│         │ • ZIONStaking (APR 12%)     │   │
-│  │ • Bridge vault addr │         │ • ZIONGovernance             │   │
-│  │                     │         │ • ZIONFarm (yield farming)   │   │
-│  │                     │         │ • Uniswap V3 (wZION/WETH)   │   │
-│  └─────────────────────┘         └─────────────────────────────┘   │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
+User zadá: "1000 ZION → ETH"
+  1. App sestaví UTXO lock TX (memo: BRIDGE:base:<user_evm>)
+  2. Bridge relay: lock → 60 bloků finality → mint 1000 wZION
+  3. Swap aggregator: approve(wZION) → exactInputSingle(wZION→WETH)
+  4. unwrapWETH → ETH na uživatelův wallet
+UI: "Locking..." → "Bridging (12/60)..." → "Swapping..." → "✅ 0.XX ETH"
 ```
 
 ---
 
-## 🔄 Swap Flow — Detailní Implementace
+### Fáze 2: Staking + Farming (2–3 týdny)
 
-### A) ZION → ETH (One-Click)
+**Cíl:** Uživatel může stakovat wZION a farmovat LP tokeny.
 
-```
-Uživatel v Desktop/Mobile/Web:
-  1. Vybere: "Swap 1000 ZION → ETH"
-  2. App zobrazí: ~0.XX ETH (z Uni V3 oracle), fee ~0.X ZION
-  3. Uživatel potvrdí → App podepíše lokálním klíčem
+| # | Úkol | Detail | Priorita |
+|---|------|--------|----------|
+| 2.1 | ZIONStaking seed | Vložit wZION jako staking rewards pool | P0 |
+| 2.2 | Web `/defi/staking` | Stake/unstake/claim UI, APR kalkulačka | P0 |
+| 2.3 | Desktop staking UI | Electron panel pro staking | P1 |
+| 2.4 | UniV3 LP token farming | Deposit LP → earn ZION rewards | P1 |
+| 2.5 | Web `/defi/farming` | Farming pool dashboard | P1 |
+| 2.6 | Mobile staking screen | Stake/claim z mobilu | P1 |
+| 2.7 | APR oracle | Real-time APR based on pool TVL | P2 |
+| 2.8 | Compound strategie | Auto-compound stake rewards | P2 |
 
-Backend:
-  4. Odešle lock TX na L1: 1000 ZION → bridge vault
-     memo: BRIDGE:base:<user_evm_addr>
-  5. Bridge detekuje lock → čeká 60 bloků
-  6. Bridge mintne 1000 wZION na user_evm_addr
-  7. Swap Aggregator:
-     a. approve(wZION, UniswapRouter)
-     b. exactInputSingle(wZION → WETH, user_evm_addr)
-     c. unwrapWETH → ETH na user_evm_addr
-
-UI status:
-  "Locking ZION..." → "Waiting for confirmations (12/60)..."
-  → "Bridging to Base..." → "Swapping on Uniswap..."
-  → "✅ 0.XX ETH received!"
-
-Celkový čas: ~60 bloků × 60s = ~60 min (s optimalizací: ~20-30 min)
-```
-
-### B) ETH → ZION (Reverse)
-
-```
-Uživatel:
-  1. Vybere: "Swap 0.1 ETH → ZION"
-  2. Připojí MetaMask (nebo integrovaná EVM peněženka)
-
-Backend:
-  3. Swap ETH → wZION na Uni V3
-  4. Burn wZION na ZIONBridge kontraktu (recipient = L1 adresa)
-  5. Bridge detekuje Burn event → čeká na Base finality
-  6. Bridge odešle unlock TX na L1 → ZION přistane na L1 adrese
-
-UI status:
-  "Swapping ETH → wZION..." → "Burning wZION..."
-  → "Bridging to ZION L1..." → "✅ XXXX ZION received!"
-```
-
-### C) Optimalizace — Snížení Čekací Doby
-
-| Vylepšení | Efekt | Složitost |
-|-----------|-------|-----------|
-| Snížit finality z 60 na 20 bloků (pro malé TX) | 3× rychlejší | Nízká |
-| Tiered finality: <100 ZION = 10 bloků, >10K = 60 | Rychlé malé swapy | Střední |
-| "Fast bridge" — pre-fund wZION pool pro instant mint | Téměř okamžitý | Vysoká |
-| Liquidity pool pre-funding (LP provozovaný námi) | Instant swaps | Vysoká |
+**Staking parametry (ZIONStaking.sol):**
+- APR: 12% (konfigurovatelné governance)
+- Cooldown: 7 dní po unstake
+- Minimální stake: TBD
 
 ---
 
-## 🧑‍💻 Implementační Pořadí (Priority Queue)
+### Fáze 3: Explorer Upgrade (2–3 týdny)
+
+**Cíl:** Explorer na úrovni Etherscan — bridge tracker, live stats, charts.
+
+| # | Funkce | Priorita |
+|---|--------|----------|
+| 3.1 | Bridge Tracker — lock TX → confirmations → mint (live) | P0 |
+| 3.2 | Network Stats — hashrate, difficulty, block time chart | P0 |
+| 3.3 | Supply Dashboard — circulating, mined, bridged, staked, burned | P0 |
+| 3.4 | Address TX History — stránkovaný seznam TX pro adresu | P0 |
+| 3.5 | Mempool Viewer — pending TX, fee-sorted | P1 |
+| 3.6 | Coinbase Tracker — fee-split vizualizace | P1 |
+| 3.7 | Staking Dashboard — TVL, APR, rewards history | P1 |
+| 3.8 | DAO Proposals — aktivní návrhy, hlasování | P2 |
+| 3.9 | Price Chart — TradingView-style (po pool launch) | P2 |
+| 3.10 | Validator Status — bridge relay health, latence | P2 |
+
+---
+
+### Fáze 4: RPC + Wallet Infrastructure (3–4 týdny)
+
+**Cíl:** Robustní API pro všechny klienty, wallet SDK pro web/desktop/mobile.
+
+#### Nové RPC metody
+
+| # | Metoda | Účel |
+|---|--------|------|
+| 4.1 | `getTransactionHistory` | TX history pro adresu (stránkování) |
+| 4.2 | `getAddressInfo` | Balance, tx count, first/last seen |
+| 4.3 | `estimateFee` | Fee estimation pro novou TX |
+| 4.4 | `getBlockRange` | N bloků najednou (explorer sync) |
+| 4.5 | `getNetworkStats` | Hashrate, difficulty, block time avg |
+| 4.6 | `subscribeNewBlocks` (WS) | WebSocket stream nových bloků |
+| 4.7 | `subscribePendingTx` (WS) | WebSocket stream mempool TX |
+| 4.8 | `getTokenInfo` | wZION bridge stats — locked/minted total |
+| 4.9 | HTTP REST wrapper | `/api/v1/` REST nad JSON-RPC |
+
+#### Wallet SDK
+
+| # | Úkol | Platforma |
+|---|------|-----------|
+| 4.10 | `zion-wallet-core` Rust lib | Všechny |
+| 4.11 | TypeScript/JS wallet SDK (npm) | Web + Desktop + Mobile |
+| 4.12 | Wallet Create/Import/Export (BIP-39, keystore JSON) | Desktop + Mobile |
+| 4.13 | Multi-wallet management | Desktop + Mobile |
+| 4.14 | EVM wallet (MetaMask / integrovaná) | Web + Desktop |
+| 4.15 | WalletConnect v2 | Web + Mobile |
+
+---
+
+### Fáze 5: DAO Governance Aktivace (2026–2027)
+
+**Cíl:** Plně funkční on-chain DAO s real treasury a community governance.
+
+#### 5A. Technická Aktivace
+
+| # | Úkol | Detail | ETA |
+|---|------|--------|-----|
+| 5.1 | Treasury cliff verification | DAO_TREASURY_LOCK_HEIGHT ověřit (~525 600 bloků) | 2027-06 |
+| 5.2 | First governance proposal | Navrhnout první alokaci grantů z treasury | 2027-06 |
+| 5.3 | Web DAO dashboard `/defi/dao` | Proposals, voting, treasury view | 2027-Q1 |
+| 5.4 | `zion-cli dao propose` | Submit proposal z CLI | ✅ hotovo |
+| 5.5 | `zion-cli dao vote` | Hlasovat z CLI | ✅ hotovo |
+| 5.6 | Snapshot integration | Off-chain voting (před on-chain) | 2026-Q3 |
+| 5.7 | Multi-sig treasury UI | 5/7 signatáři pro velké výdaje | 2026-Q4 |
+| 5.8 | Grant program | Formální grantový proces | 2027 |
+
+#### 5B. DAO Hierarchie a Governance Struktura
 
 ```
-WAVE 1 — Bridge Production (TEĎ, 1-2 týdny)
-├── 0.1  Ověřit 3. test TX na MetaMask
-├── 0.2  Rebuild bridge s safety guard
-├── 0.3  Burn→Unlock E2E (reverse bridge)
-├── 2.1  Seed Uni V3 likviditu
-└── 1.9  HTTP REST wrapper pro node RPC
+                    ⭐ CENTRUM ⭐
+          Co-Admins: Maitreya Buddha + Sarah Issabela
+              (Supreme Authority — 50/50)
+                       │
+    ┌──────────────────┼──────────────────┐
+    │                  │                  │
+┌───▼────┐      ┌──────▼──────┐     ┌────▼──────┐
+│Koncil 9│      │Round Table  │     │ Sacred    │
+│(2+7)   │      │(12 AI Adv.) │     │ Trinity   │
+└────────┘      └─────────────┘     └───────────┘
+```
 
-WAVE 2 — Core Infrastructure (2-3 týdny)
-├── 1.1  getTransactionHistory RPC
-├── 1.2  getAddressInfo RPC
-├── 1.5  getNetworkStats RPC
-├── 1.11 TypeScript wallet SDK
-├── 1.12 Wallet Create/Import/Export
-└── 1.14 Transaction builder
+**20-Year Transition Plan:**
 
-WAVE 3 — DEX & Swap (2-3 týdny)
-├── 2.2  Swap Aggregator backend
-├── 2.3  Price feed / oracle
-├── 2.4  Swap UI komponent
-├── 2.5  EVM wallet connect (MetaMask)
-├── 2.6  Reverse swap (ETH→ZION)
-└── 2.7  Slippage protection
+| Fáze | Roky | Maitreya kontrola | DAO kontrola |
+|------|------|-------------------|--------------|
+| Centralizovaná stabilita | 2025–2030 | 100 % | 0 % |
+| Hybridní governance | 2030–2037 | 70 % | 30 % |
+| Přechod | 2037–2045 | 25–50 % | 50–75 % |
+| Plné DAO | 2045+ | 0 % (honorary) | 100 % |
 
-WAVE 4 — Explorer & Dashboard (2-3 týdny)
-├── 3.1  Bridge Tracker
-├── 3.3  Network Stats
-├── 3.4  Supply Dashboard
-├── 3.5  Address TX History
-├── 3.8  Search Upgrade
-└── 3.11 Staking Dashboard
+#### 5C. DAO Treasury Parametry
 
-WAVE 5 — Desktop & Mobile (3-4 týdny)
-├── 4.1  Desktop Bridge UI
-├── 4.2  Desktop Swap UI
-├── 4.5  Desktop Portfolio Dashboard
-├── 4.7  Desktop EVM Wallet
-├── 4.11 Mobile Real Bridge
-├── 4.12 Mobile Swap Screen
-├── 4.16 Mobile Biometric Auth
-└── 4.18 Mobile Portfolio View
+| Parametr | Hodnota |
+|----------|---------|
+| Treasury total | 4,000,000,000 ZION |
+| Multi-sig | 5 z 7 signatářů |
+| Denní limit výdajů | 100,000,000 ZION |
+| Práh pro návrh | 1,000,000 ZION |
+| Hlasovací období | 7 dní |
+| Timelock pro velké výdaje | 48 hodin |
+| Quorum | 10 % oběžného množství |
+| Treasury cliff | ~525,600 bloků (~1 rok od genesis) |
 
-WAVE 6 — Website & Launch (2-3 týdny)
-├── 5.2  Funkční bridge page
-├── 5.4  Swap page
-├── 5.5  Staking page
-├── 5.9  API documentation
-├── 5.13 Whitepaper
-├── 5.14 BitcoinTalk ANN
-└── 5.15 One-pager
+---
+
+### Fáze 6: NCL + AI-Native + Warp (L3 — 2026–2027)
+
+**Cíl:** Plnohodnotné L3 — AI compute marketplace, cross-chain bridges, autonomous agents.
+
+#### 6A. NCL (Neural Consciousness Layer)
+
+| # | Úkol | Status |
+|---|------|--------|
+| 6.1 | ONNX compute backend (inference tasks) | ⏳ stub → implementovat |
+| 6.2 | Pricing engine aktivace | ✅ crate hotov |
+| 6.3 | Worker reputation systém | ✅ crate hotov |
+| 6.4 | REST API endpointy | ⏳ scaffold → live |
+| 6.5 | Hiran v2.3 integrace do NCL | ⏳ plánováno |
+| 6.6 | NCL billing přes ZION/wZION | ⏳ design fáze |
+
+#### 6B. WARP (Cross-Chain Bridge)
+
+| # | Úkol | Chains | Status |
+|---|------|--------|--------|
+| 6.7 | EVM adapter live (Base) | Base ✅ | aktivní přes bridge relay |
+| 6.8 | Bitcoin adapter | BTC | ⏳ stub → implementovat HTLC |
+| 6.9 | Solana adapter | SOL | ⏳ stub |
+| 6.10 | Cosmos adapter | ATOM, OSMO | ⏳ stub |
+| 6.11 | Atomic swap UI | Web + Desktop | ⏳ |
+
+#### 6C. AI-Native (Autonomous Agent Framework)
+
+| # | Úkol | Status |
+|---|------|--------|
+| 6.12 | Pool Optimizer agent (live mining data) | ⏳ stub → živá data |
+| 6.13 | Warp Agent (cross-chain routing) | ⏳ stub |
+| 6.14 | Consciousness Engine (Hiran integrace) | ⏳ plánováno |
+| 6.15 | Agent marketplace | ⏳ design fáze |
+
+---
+
+### Fáze 7: Desktop Agent + Mobile App — Full DeFi (3–4 týdny)
+
+**Cíl:** One-click DeFi z desktopu i mobilu. UX na úrovni Trust Wallet / Exodus.
+
+#### Desktop Agent (Electron) — nové funkce
+
+| # | Funkce | Priorita |
+|---|--------|----------|
+| 7.1 | Portfolio Dashboard (ZION + wZION + staked + LP) | P0 |
+| 7.2 | EVM Wallet (integrovaná nebo MetaMask) | P0 |
+| 7.3 | Bridge UI (lock/burn, live status) | P0 |
+| 7.4 | Swap UI (ZION↔ETH/USDC) | P0 |
+| 7.5 | TX History (filtrovaný, všechny typy) | P0 |
+| 7.6 | Staking UI | P1 |
+| 7.7 | DAO Voting UI | P2 |
+| 7.8 | Node Status Panel | P1 |
+| 7.9 | Auto-update node/miner/bridge binaries | P1 |
+| 7.10 | Yield Farming dashboard | P2 |
+
+#### Mobile App (React Native) — nové funkce
+
+| # | Funkce | Priorita |
+|---|--------|----------|
+| 7.11 | Biometric Auth (FaceID/TouchID pro TX) | P0 |
+| 7.12 | Portfolio View (ZION + wZION + staked) | P0 |
+| 7.13 | Bridge Screen (real, ne mockup) | P0 |
+| 7.14 | Swap Screen | P0 |
+| 7.15 | Staking Screen | P1 |
+| 7.16 | Push Notifications (TX, bridge done, block) | P1 |
+| 7.17 | WalletConnect v2 | P2 |
+| 7.18 | QR Scan (ZION + EVM adresa + amount) | P1 |
+
+---
+
+### Fáze 8: Web + Marketing + Public Launch (2026-Q4)
+
+**Cíl:** Profesionální web + kompletní materiály pro BitcoinTalk, CT, Reddit.
+
+#### Website stránky
+
+| Stránka | Stav | Akce |
+|---------|------|------|
+| `/` Landing | ✅ Existuje | Refresh: live price, stats, recent blocks |
+| `/bridge` | ✅ 798 LOC | Real wallet connect, progress tracker |
+| `/defi` | ⚠️ Placeholder | Full DeFi hub: swap, staking, farming |
+| `/defi/swap` | ⬜ Nová | Swap interface + UniV3 integracion |
+| `/defi/staking` | ⬜ Nová | Staking + APR kalkulačka |
+| `/defi/farming` | ⬜ Nová | Yield farming pools |
+| `/defi/dao` | ⬜ Nová | Proposals, voting, treasury |
+| `/explorer` | ✅ Existuje | Bridge tracker, network stats, charts |
+| `/docs` | ✅ Existuje | API reference, bridge guide, tutorials |
+| `/whitepaper` | ⬜ Nová | Technický whitepaper (PDF + web) |
+| `/roadmap` | ✅ Existuje | Aktualizovat dle tohoto dokumentu |
+
+#### Marketing materiály
+
+| # | Materiál | Status |
+|---|----------|--------|
+| 8.1 | BitcoinTalk ANN thread | ⏳ |
+| 8.2 | Technical Whitepaper (PDF + web) | ⏳ `V3/docs/ZION_Mainnet_Whitepaper_v3.0_Canonical.md` existuje |
+| 8.3 | DeFi Guide (jak swapovat, stakovat, farmat) | ⏳ |
+| 8.4 | Mining Guide (update pro desktop agent) | ✅ existuje, update needed |
+| 8.5 | Tokenomics Infographic | ⏳ |
+| 8.6 | Social media assets (logo, banery, OG images) | ⏳ |
+| 8.7 | CoinGecko listing | ⏳ `docs/listings/COINGECKO.md` připraveno |
+| 8.8 | CoinMarketCap listing | ⏳ `docs/listings/COINMARKETCAP.md` připraveno |
+
+---
+
+## Technická Architektura — Cílový Stav
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│                        UŽIVATELSKÉ ROZHRANÍ                        │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────────────┐    │
+│  │ Desktop  │  │  Mobile  │  │ Website  │  │ CLI (zion-cli) │    │
+│  │ Electron │  │ RN+Expo  │  │ Next.js  │  │ Rust binary    │    │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └───────┬────────┘    │
+│       └──────┬───────┴──────┬──────┘                │             │
+│       ┌──────▼──────┐ ┌─────▼──────┐                │             │
+│       │ zion-wallet │ │ EVM Wallet │                │             │
+│       │ SDK (TS/JS) │ │  MetaMask  │                │             │
+│       └──────┬──────┘ └─────┬──────┘                │             │
+└──────────────┼──────────────┼───────────────────────┼─────────────┘
+               │              │                       │
+┌──────────────▼──────────────▼───────────────────────▼─────────────┐
+│                          BACKEND SERVICES                          │
+│  ┌────────────────┐ ┌─────────────────┐ ┌───────────────────────┐ │
+│  │ ZION Node      │ │ Bridge Relay    │ │ Swap Aggregator       │ │
+│  │ (RPC :8443)    │ │ (L1↔Base, 5/5) │ │ (bridge+UniV3 route)  │ │
+│  └───────┬────────┘ └────────┬────────┘ └───────────────────────┘ │
+│  ┌───────▼────────┐ ┌────────▼────────┐ ┌───────────────────────┐ │
+│  │ Pool (:8444)   │ │ DAO Daemon      │ │ NCL (AI Compute)      │ │
+│  │ Mining Pool    │ │ Governance      │ │ ONNX / WASM           │ │
+│  └────────────────┘ └─────────────────┘ └───────────────────────┘ │
+└──────────────────────────────────────────────────────────────────┘
+                              │
+┌─────────────────────────────▼──────────────────────────────────────┐
+│                           BLOCKCHAINS                              │
+│  ┌────────────────────────────┐   ┌──────────────────────────────┐ │
+│  │ ZION L1 (mainnet)          │   │ Base (L2 EVM)                │ │
+│  │ • PoW Ekam Deeksha v2      │◄─►│ • wZION ERC-20              │ │
+│  │ • UTXO + Account dual      │   │ • ZIONBridge 5/5 multisig   │ │
+│  │ • Fee-split 89/5/5/1       │   │ • ZIONStaking (12% APR)     │ │
+│  │ • Bridge vault (keyless)   │   │ • ZIONFarm (yield farming)  │ │
+│  │ • DAO treasury lock        │   │ • ZIONGovernance            │ │
+│  └────────────────────────────┘   │ • UniV3Pool (wZION/WETH)   │ │
+│                                   └──────────────────────────────┘ │
+└────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 📊 Souhrnný Odhad
+## Klíčové Metriky pro Launch Readiness
 
-| Wave | Oblast | Odhad | LOC | Testů |
-|------|--------|-------|-----|-------|
-| 1 | Bridge Production | 1-2 týdny | +500 | +20 |
-| 2 | Core Infrastructure | 2-3 týdny | +3,000 | +80 |
-| 3 | DEX & Swap | 2-3 týdny | +4,000 | +60 |
-| 4 | Explorer & Dashboard | 2-3 týdny | +5,000 | +40 |
-| 5 | Desktop & Mobile | 3-4 týdny | +8,000 | +50 |
-| 6 | Website & Launch | 2-3 týdny | +3,000 | — |
-| **CELKEM** | | **12-18 týdnů** | **+23,500 LOC** | **+250** |
-
----
-
-## 🔐 Bezpečnostní Checklist Pro Launch
-
-| # | Oblast | Požadavek | Stav |
-|---|--------|----------|------|
-| S1 | Bridge klíče | 3/5 multisig, HSM nebo encrypted at rest | ⬜ |
-| S2 | Smart kontrakty | Audit (alespoň interní + 1 external review) | ⬜ |
-| S3 | Node RPC | Rate limiting, auth pro write metody | ⬜ |
-| S4 | Wallet encryption | AES-256, platform keychain, biometric | Částečně ✅ |
-| S5 | PREMINE klíče | Scrub z git historie (BFG) před public repo | ⬜ KRITICKÉ |
-| S6 | Frontend CORS | Omezit na vlastní domény | ⬜ |
-| S7 | SSL/TLS | HTTPS pro web + RPC endpoint | ⬜ |
-| S8 | Monitoring | Alerting na anomálie (velké bridgy, neznámé peery) | Částečně ✅ |
-| S9 | Bug bounty | Program po public launch | ⬜ |
-| S10 | Backup & DR | Chain state backup, bridge state backup, key backup | ⬜ |
+| Metrika | Minimum | Ideální | Status |
+|---------|---------|---------|--------|
+| Bridge L1→Base (mint) | ✅ funguje | 5/5 threshold | ✅ **5/5 confirmed** |
+| Bridge Base→L1 (burn) | E2E test | ≥ 3 úspěšné | ⏳ pending |
+| UniV3Pool TVL | ≥ $10K | ≥ $100K | ⏳ seed pending |
+| Swap UI | web funguje | desktop + mobile | ⏳ |
+| Explorer | live bloky | bridge tracker | ✅ částečně |
+| Staking | kontrakt live | web UI | ⏳ |
+| DAO | crate hotov | web UI + proposals | ⏳ UI chybí |
+| Desktop Agent | mining + wallet | full DeFi | ⏳ |
+| Mobile App | wallet + send | bridge + swap | ⏳ |
+| Dokumentace | whitepaper | full API reference | ✅ částečně |
 
 ---
 
-## 🎯 Milníky & Go/No-Go Gates
+## Prioritní seznam pro nejbližší dny
 
-### Milestone 1: "Bridge Complete" ✅→⏳
-- [x] L1→Base mint funguje
-- [ ] Base→L1 unlock funguje
-- [ ] 3/5 validator threshold
-- [ ] Rate limiter + monitoring
+### Dnes–zítra (2026-06-24)
+1. ⏳ Ověřit `executeTimelockedMint` — ~100M wZION mintováno
+2. ⏳ Přidat seed likviditu na UniV3Pool (viz `LIQUIDITY_PLAN.md`)
+3. ⏳ Top-up validator ETH na ≥ 0.01 ETH každý
+4. ⏳ E2E burn→unlock test
 
-### Milestone 2: "DeFi MVP"
-- [ ] wZION/ETH swap funguje (Uniswap)
-- [ ] Wallet SDK (TS) published
-- [ ] Explorer bridge tracker live
-- [ ] Staking funkční na mainnetu
+### Tento týden (2026-06-25 – 06-30)
+5. Web `/bridge` real wallet connect
+6. Web `/defi/swap` — první real swap UI
+7. Explorer bridge tracker
+8. Dokumentovat počáteční ZION/ETH cenu
 
-### Milestone 3: "App Ready"
-- [ ] Desktop Agent: mine + send + bridge + swap
-- [ ] Mobile App: wallet + bridge + swap
-- [ ] Web: full DeFi dashboard
-
-### Milestone 4: "Launch Ready" 🚀
-- [ ] Whitepaper published
-- [ ] API docs complete
-- [ ] Security audit passed
-- [ ] PREMINE keys scrubbed from git
-- [ ] BitcoinTalk ANN posted
-- [ ] Social media presence (Twitter/X, Telegram, Discord)
+### Příští 2–4 týdny
+9. Staking UI web + desktop
+10. Mining guide update
+11. BitcoinTalk ANN příprava
+12. CoinGecko / CMC listing podání
 
 ---
 
-## 📝 Reference & Existující Docs
+*Viz také:*
+- [`LIQUIDITY_PLAN.md`](../LIQUIDITY_PLAN.md) — detailní plán UniV3 likvidity
+- [`BRIDGE_MAINNET_READINESS.md`](../BRIDGE_MAINNET_READINESS.md) — bridge stav
+- [`V3/L2/dao/docs/README.md`](../V3/L2/dao/docs/README.md) — DAO governance dokumentace
+- [`V3/ROADMAP.md`](../V3/ROADMAP.md) — technická roadmapa L1/L2/L3
 
-| Dokument | Stav | Relevance |
-|----------|------|-----------|
-| [docs/L2_DEFI_PLAN.md](L2_DEFI_PLAN.md) | Aktuální | Detailní L2 implementace |
-| [docs/L2_WZION_BRIDGE.md](L2_WZION_BRIDGE.md) | Aktuální | Bridge architektura + testnet info |
-| [docs/L1-L4_ROADMAP.md](L1-L4_ROADMAP.md) | Aktuální | Master roadmapa celého stacku |
-| [V3/ROADMAP.md](../V3/ROADMAP.md) | Aktuální | V3 mainnet track detail |
-| [V3/docs/MINING_GUIDE.md](../V3/docs/MINING_GUIDE.md) | Published | Veřejný mining guide |
-| [V3/docs/NODE_OPERATOR_GUIDE.md](../V3/docs/NODE_OPERATOR_GUIDE.md) | Published | Node operator dokumentace |
-| [docs/WARP_ARCHITECTURE.md](WARP_ARCHITECTURE.md) | Design | 7-chain universal bridge (budoucí) |
-
----
-
-*ZION L2 DeFi Roadmap v1.0 — 2. dubna 2026*  
-*Bridge LIVE → DEX → Explorer → Desktop → Mobile → Web → Launch 🚀*
+*Generated with [Devin](https://devin.ai)*

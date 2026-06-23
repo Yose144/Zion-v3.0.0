@@ -1,9 +1,41 @@
 # ZION v3 Mainnet Roadmap
 
-Status date: **2026-06-11** (supplement below; narrative body reflects Sprint 8 / March snapshot + June 2026 hot fixes)
+Status date: **2026-06-23** (supplement below; narrative body reflects Sprint 8 / March snapshot + June 2026 hot fixes + bridge 5/5 milestone)
 
 This file is the active source-of-truth for the clean `V3/` mainnet line.
 `V3/` is intentionally separated from the legacy root workspace. The legacy root remains migration source material and audit evidence, but new mainnet-track runtime work should land in `V3/`.
+
+## Supplement — 2026-06-23 (Bridge 5/5 Milestone + DeFi Liquidity Plan)
+
+### Bridge 100M ZION → wZION — FINALIZOVÁNO
+
+- **Multi-validator relay** (`c4a4841`): `load_all_validator_keys()` čte `ZION_VALIDATOR_PRIVATE_KEY` + `_2..5` env vars. `handle_l1_lock()` iteruje všemi 5 klíči — 5 `submitLockProof` TX / lock.
+- **30 TX odesláno** (5 validátorů × 6 locků) — všechny confirmed on-chain.
+- **5/5 on-chain confirmací** pro všech 6 locků (~100M ZION total). `getLockProofStatus()` → `confirmations=5, executed=false, timelocked=true`.
+- **24h timelock** aktivní — vyprší **2026-06-24 16:52 UTC** → relay automaticky zavolá `executeTimelockedMint()` → ~100M wZION mintováno na `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186`.
+- **Security**: `5ELMWallets.md` odstraněn z gitu (`14dd686`), přidán do `.gitignore`.
+
+### DeFi + DAO — Zbývající práce
+
+Viz [`docs/DEFI_FULL_ROADMAP.md`](../docs/DEFI_FULL_ROADMAP.md) pro kompletní roadmapu. Klíčové zbývající milestony:
+
+| Oblast | Status | Popis |
+|--------|--------|-------|
+| ~100M wZION mint | ⏳ 2026-06-24 | Automaticky po timelock expiry |
+| UniV3Pool seed liquidity | ⏳ | wZION + WETH, fee 0.3% |
+| Burn→Unlock E2E | ⏳ | Reverse bridge test |
+| Bridge UI (web) | ⏳ | MetaMask + zion-cli integrace |
+| Swap UI (web/desktop) | ⏳ | wZION↔ETH přes UniV3 |
+| Staking UI | ⏳ | ZIONStaking web + desktop |
+| DAO web dashboard | ⏳ | Proposals, voting, treasury |
+| DAO treasury cliff | ⏳ 2027-06 | ~525,600 bloků od genesis |
+| Explorer bridge tracker | ⏳ | Live lock→confirm→mint |
+| NCL ONNX backend | ⏳ | AI compute marketplace live |
+| WARP Bitcoin adapter | ⏳ | Cross-chain BTC bridge |
+| CoinGecko / CMC listing | ⏳ | `docs/listings/` připraveno |
+| Public launch | 2026-12-31 | New Year's Eve |
+
+---
 
 ## Supplement — 2026-06-11 (MainNet Genesis + June hot fixes)
 
