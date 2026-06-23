@@ -22,10 +22,19 @@ export default function Navigation() {
     pathname === href || (href === '/terranova' && pathname.startsWith('/terranova')) || (href === '/wiki' && pathname === '/wiki');
   const navGroups: NavGroup[] = [
     {
-      title: tr('nav', 'info_group', lang),
+      title: tr('nav', 'mission_group', lang),
       items: [
         { href: '/', label: tr('nav', 'home', lang) },
         { href: '/news', label: tr('nav', 'news', lang) },
+        { href: '/roadmap', label: tr('nav', 'roadmap', lang) },
+        { href: '/terranova', label: tr('nav', 'terranova', lang) },
+        { href: '/genesis', label: tr('nav', 'genesis', lang) },
+        { href: '/docs', label: tr('nav', 'docs', lang) },
+      ],
+    },
+    {
+      title: tr('nav', 'network_group', lang),
+      items: [
         { href: '/network', label: tr('nav', 'network', lang) },
         { href: '/explorer', label: tr('nav', 'explorer', lang) },
         { href: '/dashboard', label: tr('nav', 'dashboard', lang) },
@@ -36,61 +45,37 @@ export default function Navigation() {
         { href: '/benchmarks', label: tr('nav', 'benchmarks', lang) },
         { href: '/miner-stats', label: tr('nav', 'miner_stats', lang) },
         { href: '/download', label: tr('nav', 'download', lang) },
-        { href: '/roadmap', label: tr('nav', 'roadmap', lang) },
         { href: '/api-reference', label: tr('nav', 'api', lang) },
+      ],
+    },
+    {
+      title: tr('nav', 'defi_group', lang),
+      items: [
+        { href: '/defi', label: tr('nav', 'defi', lang) },
+        { href: '/bridge', label: tr('nav', 'bridge', lang) },
+        { href: '/dao', label: tr('nav', 'dao', lang) },
+        { href: '/wallet', label: tr('nav', 'wallet', lang) },
       ],
     },
     {
       title: tr('nav', 'layers_group', lang),
       items: [
-        {
-          href: '/defi',
-          label: tr('nav', 'l2', lang),
-          children: [
-            { href: '/defi', label: tr('nav', 'defi', lang) },
-            { href: '/wallet', label: tr('nav', 'wallet', lang) },
-            { href: '/dao', label: tr('nav', 'dao', lang) },
-            { href: '/bridge', label: tr('nav', 'bridge', lang) },
-          ],
-        },
-        {
-          href: '/l3-hiran',
-          label: tr('nav', 'l3', lang),
-          children: [
-            { href: '/l3-hiran', label: tr('nav', 'l3_hiran', lang) },
-            { href: '/warp', label: tr('nav', 'warp', lang) },
-            { href: '/ai-native', label: tr('nav', 'ai_native', lang) },
-          ],
-        },
+        { href: '/l3-hiran', label: tr('nav', 'l3_hiran', lang) },
+        { href: '/warp', label: tr('nav', 'warp', lang) },
+        { href: '/ai-native', label: tr('nav', 'ai_native', lang) },
         { href: '/l4-oasis', label: tr('nav', 'l4_oasis', lang) },
         { href: '/l5-free-world', label: tr('nav', 'l5_free_world', lang) },
         { href: '/l6-issobella', label: tr('nav', 'l6_issobella', lang) },
-      ],
-    },
-    {
-      title: tr('nav', 'wiki_group', lang),
-      items: [
-        { href: '/wiki', label: tr('nav', 'wiki_group', lang) },
-        {
-          href: '/terranova',
-          label: tr('nav', 'terranova', lang),
-          children: [
-            { href: '/terranova/genesis', label: tr('nav', 'terra_garden_genesis', lang) },
-            { href: '/terranova/dharma-temple', label: tr('nav', 'dharma_temple', lang) },
-            { href: '/terranova/te-piko-ora', label: tr('nav', 'te_piko_ora', lang) },
-          ],
-        },
-        { href: '/genesis', label: tr('nav', 'genesis', lang) },
-        { href: '/docs', label: tr('nav', 'docs', lang) },
       ],
     },
   ];
 
   const activeGroup = navGroups.find((group) => group.title === openGroup);
   const groupLabels: Record<string, string> = {
-    Info: tr('nav', 'info_group', lang),
-    Vrstvy: tr('nav', 'layers_group', lang),
-    Wiki: tr('nav', 'wiki_group', lang),
+    [tr('nav', 'mission_group', lang)]: tr('nav', 'mission_group', lang),
+    [tr('nav', 'network_group', lang)]: tr('nav', 'network_group', lang),
+    [tr('nav', 'defi_group', lang)]: tr('nav', 'defi_group', lang),
+    [tr('nav', 'layers_group', lang)]: tr('nav', 'layers_group', lang),
   };
 
   /* Close mobile menu on route change */
