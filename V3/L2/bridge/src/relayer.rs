@@ -78,6 +78,31 @@ fn load_validator_key(config: &ValidatorConfig) -> anyhow::Result<Zeroizing<Stri
     Ok(Zeroizing::new(raw.trim().to_string()))
 }
 
+/// Load all available validator private keys.
+///
+/// Reads `ZION_VALIDATOR_PRIVATE_KEY` (validator-1) plus optional
+/// `ZION_VALIDATOR_PRIVATE_KEY_2` … `ZION_VALIDATOR_PRIVATE_KEY_5`.
+/// The primary key is always first.  Additional keys are only used when
+/// submitting multi-validator `submitLockProof` calls so a single relay
+/// instance can satisfy a 5/5 threshold when all keys are co-located.
+fn load_all_validator_keys(config: &ValidatorConfig) -> Vec<Zeroizing<String>> {
+    let mut keys = Vec::new();
+    if let Ok(k) = load_validator_key(config) {
+        keys.push(k);
+    }
+    for n in 2..=5u8 {
+        let var = format!("ZION_VALIDATOR_PRIVATE_KEY_{}", n);
+        if let Ok(k) = std::env::var(&var) {
+            let k = k.trim().to_string();
+            if !k.is_empty() {
+                tracing::info!("🔑 Additional validator key loaded from {} env var", var);
+                keys.push(Zeroizing::new(k));
+            }
+        }
+    }
+    keys
+}
+
 /// Bridge relayer that processes lock and burn events.
 pub struct Relayer {
     config: Arc<BridgeConfig>,
@@ -239,12 +264,14 @@ impl Relayer {
             );
         }
 
-        // ── Load validator key ────────────────────────────────────────
-        let key = load_validator_key(&self.config.validator)?;
-        let validator_address = derive_evm_address(key.as_str())?;
-        info!("   Validator address: {}", validator_address);
+        // ── Load all available validator keys (multi-validator support) ──
+        let all_keys = load_all_validator_keys(&self.config.validator);
+        if all_keys.is_empty() {
+            anyhow::bail!("No validator keys available — set ZION_VALIDATOR_PRIVATE_KEY");
+        }
+        info!("   Submitting with {} validator key(s)", all_keys.len());
 
-        // ── Build calldata ────────────────────────────────────────────
+        // ── Build calldata (same for all validators) ──────────────────
         let l1_tx_hash_bytes = hash_to_bytes32(&lock.l1_tx_hash);
         let calldata = encode_submit_lock_proof(
             &l1_tx_hash_bytes,
@@ -265,16 +292,9 @@ impl Relayer {
         let rpc_url = chain_config.effective_rpc_url(&self.config.ankr);
         let evm = EvmHttpClient::from_rpc_url(&rpc_url);
 
-        // ── Get nonce ─────────────────────────────────────────────────
-        let nonce = evm
-            .get_nonce(&validator_address)
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to get nonce: {}", e))?;
-        info!("   Nonce: {}", nonce);
-
-        // ── Get gas params ────────────────────────────────────────────
-        let base_fee = evm.get_gas_price().await.unwrap_or(2_000_000_000); // 2 gwei default
-        let priority_fee = evm.get_max_priority_fee().await.unwrap_or(1_500_000_000); // 1.5 gwei default
+        // ── Get gas params once (shared across all validator TXs) ────
+        let base_fee = evm.get_gas_price().await.unwrap_or(2_000_000_000);
+        let priority_fee = evm.get_max_priority_fee().await.unwrap_or(1_500_000_000);
         let max_gas_gwei = chain_config.max_gas_gwei;
         let max_fee_cap = max_gas_gwei * 1_000_000_000;
         let max_fee = (2 * base_fee + priority_fee).min(max_fee_cap);
@@ -287,47 +307,74 @@ impl Relayer {
             max_gas_gwei,
         );
 
-        // ── Estimate gas ──────────────────────────────────────────────
-        let gas_estimate = evm
-            .estimate_gas(
-                &validator_address,
+        // ── Submit submitLockProof for each validator key ─────────────
+        let mut last_tx_hash = String::new();
+        for (idx, key) in all_keys.iter().enumerate() {
+            let validator_address = match derive_evm_address(key.as_str()) {
+                Ok(a) => a,
+                Err(e) => {
+                    warn!("   Validator key {} — failed to derive address: {}", idx + 1, e);
+                    continue;
+                }
+            };
+            info!("   Validator-{} address: {}", idx + 1, validator_address);
+
+            let nonce = match evm.get_nonce(&validator_address).await {
+                Ok(n) => n,
+                Err(e) => {
+                    warn!("   Validator-{} — failed to get nonce: {}", idx + 1, e);
+                    continue;
+                }
+            };
+            info!("   Validator-{} nonce: {}", idx + 1, nonce);
+
+            let gas_estimate = evm
+                .estimate_gas(&validator_address, &chain_config.bridge_contract_address, &calldata_hex)
+                .await
+                .unwrap_or(200_000);
+            let gas_limit = gas_estimate * GAS_MARGIN_NUM / GAS_MARGIN_DEN;
+
+            let raw_tx = match build_and_sign_eip1559_tx(
+                chain_config.evm_chain_id,
+                nonce,
+                max_priority,
+                max_fee,
+                gas_limit,
                 &chain_config.bridge_contract_address,
-                &calldata_hex,
-            )
-            .await
-            .unwrap_or(200_000); // fallback to 200k gas if estimation fails
-        let gas_limit = gas_estimate * GAS_MARGIN_NUM / GAS_MARGIN_DEN;
-        info!(
-            "   Gas estimate: {} → limit with margin: {}",
-            gas_estimate, gas_limit
-        );
+                &calldata,
+                key.as_str(),
+            ) {
+                Ok(t) => t,
+                Err(e) => {
+                    warn!("   Validator-{} — failed to sign TX: {}", idx + 1, e);
+                    continue;
+                }
+            };
 
-        // ── Build + sign EIP-1559 TX ──────────────────────────────────
-        let raw_tx = build_and_sign_eip1559_tx(
-            chain_config.evm_chain_id,
-            nonce,
-            max_priority,
-            max_fee,
-            gas_limit,
-            &chain_config.bridge_contract_address,
-            &calldata,
-            key.as_str(),
-        )?;
-        info!("   Signed TX: {} bytes (0x02...)", raw_tx.len() / 2);
+            match evm.send_raw_transaction(&raw_tx).await {
+                Ok(tx_hash) => {
+                    info!(
+                        "   ✅ submitLockProof TX submitted! hash: {} | validator-{} | chain: {} | bridge: {}",
+                        tx_hash, idx + 1, chain_config.name, chain_config.bridge_contract_address,
+                    );
+                    last_tx_hash = tx_hash;
+                    self.metrics.evm_mints_submitted.fetch_add(1, Ordering::Relaxed);
+                }
+                Err(e) => {
+                    warn!("   Validator-{} — submitLockProof failed: {}", idx + 1, e);
+                }
+            }
 
-        // ── Submit TX ─────────────────────────────────────────────────
-        let tx_hash = evm
-            .send_raw_transaction(&raw_tx)
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to submit submitLockProof TX: {}", e))?;
+            // Small delay between submissions to avoid nonce races
+            if idx + 1 < all_keys.len() {
+                tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+            }
+        }
 
-        info!(
-            "   ✅ submitLockProof TX submitted! hash: {} | chain: {} | bridge: {}",
-            tx_hash, chain_config.name, chain_config.bridge_contract_address,
-        );
-        self.metrics
-            .evm_mints_submitted
-            .fetch_add(1, Ordering::Relaxed);
+        if last_tx_hash.is_empty() {
+            anyhow::bail!("All validator key submissions failed for TX: {}", lock.l1_tx_hash);
+        }
+        let tx_hash = last_tx_hash;
 
         // ── Poll for receipt ──────────────────────────────────────────
         tokio::spawn({
