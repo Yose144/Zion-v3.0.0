@@ -3926,6 +3926,45 @@
         <div id="bridge-status" class="section-panel active">
           <div class="control-panel">
             <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg> Vault & Validator Status</span>
+            </h2>
+            <div class="stack-col panel-mt-20">
+              <!-- Bridge Vault -->
+              <div class="control-panel panel-tight" style="border-left:3px solid rgba(16,185,129,0.6)">
+                <div class="stack-col" style="gap:6px">
+                  <span style="font-size:12px;color:rgba(255,255,255,0.5)">L1 Bridge Vault (keyless)</span>
+                  <div class="inline-row" style="gap:8px;align-items:center">
+                    <code style="background:rgba(0,0,0,0.3);padding:4px 8px;border-radius:6px;font-size:12px;color:#6ee7b7">zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0</code>
+                    <button class="btn btn-primary btn-sm" onclick="copyToClipboard('zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0', 'bridge-vault-copied')">Copy</button>
+                  </div>
+                  <span class="status-note hidden" id="bridge-vault-copied">Copied!</span>
+                  <div class="stack-col" style="gap:4px;margin-top:4px">
+                    <div class="bridge-readiness-row status-done">
+                      <span class="bridge-readiness-label">Vault balance: <span id="bridge-vault-balance">~100M ZION</span></div>
+                    <div class="bridge-readiness-row status-done">
+                      <span class="bridge-readiness-label">UTXO locks: <span id="bridge-vault-locks">6 TX (blocks 11611–11612)</span></div>
+                  </div>
+                </div>
+              </div>
+              <!-- Validator Multisig -->
+              <div class="control-panel panel-tight" style="border-left:3px solid rgba(99,102,241,0.6)">
+                <div class="stack-col" style="gap:6px">
+                  <span style="font-size:12px;color:rgba(255,255,255,0.5)">Bridge Validator Multisig</span>
+                  <div class="bridge-readiness-row status-done">
+                    <span class="bridge-readiness-label">Threshold: 5/5 (fail-closed)</span>
+                  </div>
+                  <div class="bridge-readiness-row status-done">
+                    <span class="bridge-readiness-label">Validator count: 5 guardians</span>
+                  </div>
+                  <div class="bridge-readiness-row status-done">
+                    <span class="bridge-readiness-label">Contract: 0x9C138dC6...a835627</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="control-panel" style="margin-top:16px">
+            <h2 class="panel-header-row">
               <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg> Readiness <span id="bridge-readiness-count" style="font-size:11px;color:rgba(255,255,255,0.35);margin-left:6px">0/8</span></span>
             </h2>
             <div class="stack-col panel-mt-20" id="bridge-readiness-grid">
@@ -3949,12 +3988,20 @@
                 <span class="status-note hidden" id="bridge-wzion-copied">Copied!</span>
               </div>
               <div class="form-group">
-                <label>ZIONBridge</label>
+                <label>ZIONBridge (5/5 multisig)</label>
                 <div class="inline-row">
-                  <input type="text" id="bridge-addr" value="0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1" readonly class="input-flex-mono" />
-                  <button class="btn btn-primary btn-sm" onclick="copyToClipboard('0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1', 'bridge-copied')">Copy</button>
+                  <input type="text" id="bridge-addr" value="0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88" readonly class="input-flex-mono" />
+                  <button class="btn btn-primary btn-sm" onclick="copyToClipboard('0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88', 'bridge-copied')">Copy</button>
                 </div>
                 <span class="status-note hidden" id="bridge-copied">Copied!</span>
+              </div>
+              <div class="form-group">
+                <label>BridgeValidator (5/5 guardian multisig)</label>
+                <div class="inline-row">
+                  <input type="text" id="bridge-validator-addr" value="0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627" readonly class="input-flex-mono" />
+                  <button class="btn btn-primary btn-sm" onclick="copyToClipboard('0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627', 'bridge-validator-copied')">Copy</button>
+                </div>
+                <span class="status-note hidden" id="bridge-validator-copied">Copied!</span>
               </div>
             </div>
           </div>
@@ -5795,6 +5842,17 @@ Click a button above to run a command.
               <button class="btn btn-primary btn-sm" id="cli-btn-dao-proposals">Proposals</button>
               <button class="btn btn-primary btn-sm" id="cli-btn-dao-treasury">Treasury</button>
               <button class="btn btn-ghost btn-sm" id="cli-btn-dao-params">Params</button>
+            </div>
+            <div class="stack-col" style="gap:6px;margin-top:12px">
+              <div class="bridge-readiness-row status-done">
+                <span class="bridge-readiness-label">Bridge Vault: 100M ZION locked for Base</span>
+              </div>
+              <div class="bridge-readiness-row status-done">
+                <span class="bridge-readiness-label">DAO Treasury: active (guardian multisig)</span>
+              </div>
+              <div class="bridge-readiness-row status-done">
+                <span class="bridge-readiness-label">Governance: 65 tests passing</span>
+              </div>
             </div>
           </div>
           <!-- Pool -->

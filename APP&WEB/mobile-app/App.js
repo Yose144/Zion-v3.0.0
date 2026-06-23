@@ -14,6 +14,7 @@ import DashboardScreen from './src/screens/DashboardScreen';
 import MiningScreen from './src/screens/MiningScreen';
 import NetworkScreen from './src/screens/NetworkScreen';
 import BridgeScreen from './src/screens/BridgeScreen';
+import DAOScreen from './src/screens/DAOScreen';
 import AIScreen from './src/screens/AIScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import {WalletProvider} from './src/context/WalletContext';
@@ -91,6 +92,9 @@ const MainTabs = () => (
           case 'Bridge':
             iconName = 'swap-horizontal';
             break;
+          case 'DAO':
+            iconName = 'vote-outline';
+            break;
           case 'AI':
             iconName = 'brain';
             break;
@@ -152,6 +156,11 @@ const MainTabs = () => (
       name="Bridge"
       component={BridgeScreen}
       options={{title: 'wZION Bridge'}}
+    />
+    <Tab.Screen
+      name="DAO"
+      component={DAOScreen}
+      options={{title: 'DAO'}}
     />
     <Tab.Screen
       name="AI"
