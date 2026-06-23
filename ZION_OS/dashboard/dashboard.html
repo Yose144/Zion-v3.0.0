@@ -652,6 +652,94 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
     </div>
 
+    <!-- Edge Server Health -->
+    <div class="zion-panel p-5 mb-4" id="edge-health-widget">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold flex items-center gap-2">
+          🖥️ Edge Server Health
+          <span id="edge-health-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Loading…</span>
+        </h2>
+        <button onclick="updateEdgeHealth()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+      </div>
+
+      <!-- System Metrics Row -->
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
+        <div class="text-center p-3 bg-white/5 rounded-xl">
+          <div class="text-xl font-bold" id="edge-disk-percent">—</div>
+          <div class="text-[10px] text-gray-400 mt-1">Disk Usage</div>
+          <div class="text-[10px] text-gray-500" id="edge-disk-detail">— / —</div>
+        </div>
+        <div class="text-center p-3 bg-white/5 rounded-xl">
+          <div class="text-xl font-bold" id="edge-mem-percent">—</div>
+          <div class="text-[10px] text-gray-400 mt-1">Memory</div>
+          <div class="text-[10px] text-gray-500" id="edge-mem-detail">— / —</div>
+        </div>
+        <div class="text-center p-3 bg-white/5 rounded-xl">
+          <div class="text-xl font-bold" id="edge-cpu-load">—</div>
+          <div class="text-[10px] text-gray-400 mt-1">CPU Load (1m)</div>
+          <div class="text-[10px] text-gray-500" id="edge-cpu-cores">— cores</div>
+        </div>
+        <div class="text-center p-3 bg-white/5 rounded-xl">
+          <div class="text-xl font-bold text-cyan-400" id="edge-uptime">—</div>
+          <div class="text-[10px] text-gray-400 mt-1">Uptime</div>
+        </div>
+        <div class="text-center p-3 bg-white/5 rounded-xl">
+          <div class="text-xl font-bold text-amber-400" id="edge-syslog-size">—</div>
+          <div class="text-[10px] text-gray-400 mt-1">Syslog Size</div>
+        </div>
+        <div class="text-center p-3 bg-white/5 rounded-xl">
+          <div class="text-xl font-bold text-purple-400" id="edge-journal-size">—</div>
+          <div class="text-[10px] text-gray-400 mt-1">Journal Size</div>
+        </div>
+      </div>
+
+      <!-- Disk Usage Bar -->
+      <div class="mb-4">
+        <div class="flex justify-between text-[10px] text-gray-400 mb-1">
+          <span>Disk</span>
+          <span id="edge-disk-bar-label">—</span>
+        </div>
+        <div class="w-full h-3 bg-white/5 rounded-full overflow-hidden">
+          <div id="edge-disk-bar" class="h-full rounded-full transition-all duration-500" style="width: 0%; background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444);"></div>
+        </div>
+      </div>
+
+      <!-- Services Grid -->
+      <div class="mb-3">
+        <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Systemd Services</h3>
+        <div id="edge-services-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+          <div class="text-gray-500 text-xs text-center py-2">Loading…</div>
+        </div>
+      </div>
+
+      <!-- Log Automation + Docker -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div>
+          <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Log Automation</h3>
+          <div class="space-y-1 text-xs">
+            <div class="flex justify-between">
+              <span class="text-gray-400">Cleanup Timer</span>
+              <span id="edge-cleanup-timer" class="font-mono">—</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-400">Last Trigger</span>
+              <span id="edge-cleanup-last" class="font-mono text-gray-300">—</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-400">Zion Miner Log</span>
+              <span id="edge-zion-miner-log" class="font-mono text-gray-300">—</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Docker Containers</h3>
+          <div id="edge-docker-list" class="space-y-1 text-xs">
+            <div class="text-gray-500">Loading…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- CLI Node Status (zion-cli data source) -->
     <div class="zion-panel p-5 mb-4" id="cli-status-widget">
       <div class="flex items-center justify-between mb-3">
@@ -4509,6 +4597,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=62"></script>
+<script src="/dashboard.js?v=63"></script>
 </body>
 </html>
