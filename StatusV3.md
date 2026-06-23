@@ -1,6 +1,6 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** **2026-06-23** (100M ZION UTXO locks potvrzeno, memo bug opraven, relay čeká na validator key); **2026-06-22** (Bridge mainnet readiness — 5/5 validators funded, single-sig bridge blocker documented, testnet RPC + block-range fixes); **2026-06-18** (Git historie obnovena, root cleanup v3.0.2, L2/L3 kanonizace, L4 Oasis příprava); **2026-06-15** (Edge server full update — Rust + V3 rebuild + služby restart, bridge port fix, dashboard restart tlačítka fix); **2026-06-14** (Dashboard all-tabs fix, Payout/Wallets sekce, Restart Edge Pool SSH, UFW 8444 oprava — viz sekce níže); **2026-06-13** (Fire algorithm hard fork deployment — viz sekce níže); **2026-06-13** (Hiran v2.3 documentation cleanup — viz sekce níže); **2026-06-11** (Hard Genesis Reset #0 completed — viz sekce níže); **2026-06-11** (Pool stale share detection + dashboard tab fix — viz sekce níže); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
+> **Datum:** **2026-06-23** (Multi-validator relay nasazen — 5/5 confirmací pro všech 6 locků, 24h timelock aktivní, wZION mintování čeká na expiry 2026-06-24 16:52 UTC); **2026-06-23** (100M ZION UTXO locks potvrzeno, memo bug opraven, relay čeká na validator key); **2026-06-22** (Bridge mainnet readiness — 5/5 validators funded, single-sig bridge blocker documented, testnet RPC + block-range fixes); **2026-06-18** (Git historie obnovena, root cleanup v3.0.2, L2/L3 kanonizace, L4 Oasis příprava); **2026-06-15** (Edge server full update — Rust + V3 rebuild + služby restart, bridge port fix, dashboard restart tlačítka fix); **2026-06-14** (Dashboard all-tabs fix, Payout/Wallets sekce, Restart Edge Pool SSH, UFW 8444 oprava — viz sekce níže); **2026-06-13** (Fire algorithm hard fork deployment — viz sekce níže); **2026-06-13** (Hiran v2.3 documentation cleanup — viz sekce níže); **2026-06-11** (Hard Genesis Reset #0 completed — viz sekce níže); **2026-06-11** (Pool stale share detection + dashboard tab fix — viz sekce níže); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
 > (sjednocení `StatusV3.md` ↔ `StatusV3-Part2.md` — TL;DR, roadmap §6, §8, §5
 > pyramida, odkazy).
 > **Předchozí update:** 2026-05-03 (genesis konsensus — merged na `main`)
@@ -19,6 +19,66 @@
 > starý Praha server (`91.98.122.165`) nebo historickou multi-server topologii
 > (Prague, SG, Helsinki, US) jsou **archivní / historické**, pokud není explicitně
 > uvedeno jinak. Aktuální živá topologie je **Core + Edge** (viz sekce Infrastruktura).
+
+---
+
+## Co je nového 2026-06-23 — FINÁL (Multi-Validator Relay, 5/5 Confirmací, Timelock Aktivní)
+
+> **Status:** ✅ DOKONČENO — Relay upraven pro 5 validátorů, všech 6 locků má 5/5 on-chain confirmací. ⏳ 24h timelock vyprší **2026-06-24 16:52 UTC** — poté relay automaticky mintne ~100M wZION.
+
+### TL;DR
+
+Relay na Edge serveru byl rozšířen o podporu všech 5 validator klíčů najednou. Pro každý ze 6 L1 locků bylo odesláno 5 `submitLockProof` TX (po jedné od každého validátora = 30 TX celkem). Všechny TX potvrzeny on-chain. Bridge contract hlásí `confirmations=5/5` pro všech 6 locků. Mint blokuje pouze 24h timelock (bezpečnostní mechanismus pro částky >1M ZION) — vyprší **2026-06-24 16:52 UTC**.
+
+### Provedené práce
+
+| Krok | Popis | Status |
+|------|-------|--------|
+| Validator klíče (5/5) | Klíče z `5ELMWallets.md` ověřeny přes `cast wallet address`, uloženy do `/root/zion-validator-key.env` (mode 600) | ✅ |
+| `load_all_validator_keys()` | Nová Rust funkce čte `ZION_VALIDATOR_PRIVATE_KEY` + `_2..5` env vars | ✅ commit `c4a4841` |
+| `handle_l1_lock()` multi-key smyčka | Pro každý lock → 5 TX od 5 různých validátorů, 500ms delay mezi TX | ✅ commit `c4a4841` |
+| Binary rebuild + deploy na Edge | 56s incremental build, stop→copy→start relay | ✅ |
+| 30× `submitLockProof` TX | 5 validátorů × 6 locků = 30 TX, všechny CONFIRMED on-chain | ✅ |
+| On-chain verifikace | `getLockProofStatus()` → `confirmations=5/5, executed=false, timelocked=true` pro všech 6 | ✅ |
+| Bezpečnost: `.gitignore` | `5ELMWallets.md` odstraněn z gitu, přidán do `.gitignore` | ✅ commit `14dd686` |
+
+### Stav 6 locků na Base Mainnet (2026-06-23 17:20 UTC)
+
+| L1 TX Hash | Částka | Confirmations | Executed | Timelocked | Expiry |
+|-----------|--------|---------------|----------|------------|--------|
+| `2cd12d90...` | 16,666,666 ZION | **5/5** ✅ | false | true | 2026-06-24 16:52 UTC |
+| `d9ddb3c7...` | 16,666,666 ZION | **5/5** ✅ | false | true | 2026-06-24 16:52 UTC |
+| `6bc2aa3e...` | 16,666,666 ZION | **5/5** ✅ | false | true | 2026-06-24 16:52 UTC |
+| `4b43e7a3...` | 16,666,666 ZION | **5/5** ✅ | false | true | 2026-06-24 16:52 UTC |
+| `09fc9abb...` | 16,666,666 ZION | **5/5** ✅ | false | true | 2026-06-24 16:52 UTC |
+| `035c761d...` | 16,666,569 ZION | **5/5** ✅ | false | true | 2026-06-24 16:52 UTC |
+| **Celkem** | **~100,000,000 ZION** | ✅ | — | ⏳ | **-24h** |
+
+### Proč 24h timelock?
+
+Bridge contract `ZIONBridge.sol` obsahuje bezpečnostní mechanismus: částky ≥ 1M ZION jsou automaticky timelocknuty na 24 hodin. Po expiry může kdokoli zavolat `executeTimelockedMint()` — relay to dělá automaticky.
+
+```solidity
+if (amount >= TIMELOCK_THRESHOLD) {  // 1_000_000 * 1e18
+    proof.timelocked = true;
+    proof.timelockExpiry = block.timestamp + TIMELOCK_DELAY;  // +24h
+}
+```
+
+### Další kroky po expiry timelocku (2026-06-24 16:52 UTC)
+
+1. ✅ Relay zavolá `executeTimelockedMint()` automaticky
+2. ⏳ ~100M wZION mintováno na `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186`
+3. ⏳ Přidat wZION + WETH likviditu na UniV3Pool (`0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB`)
+4. ⏳ E2E test: swap ZION→ETH a zpět
+5. ⏳ Veřejné oznámení DEX likvidity
+
+### Commity
+
+```
+14dd686  security: add 5ELMWallets.md and key files to .gitignore
+c4a4841  feat(bridge): multi-validator key support — relay submits all 5 keys per lock
+```
 
 ---
 
