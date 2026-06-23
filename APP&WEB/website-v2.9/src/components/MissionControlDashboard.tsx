@@ -13,6 +13,7 @@ import {
 import { useLang } from '@/contexts/LanguageContext';
 import { usePolling } from '@/hooks/usePolling';
 import { SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL, SITE_VERSION } from '@/lib/site';
+import { SEED_PRICE_USD } from '@/lib/defi-contracts';
 
 /* ═══════════════════════ TYPES ═══════════════════════ */
 interface NodeStats {
@@ -1545,6 +1546,29 @@ export default function MissionControlDashboard() {
   const [walletTxResult, setWalletTxResult] = useState<WalletBroadcastResult | null>(null);
   const [walletTxError, setWalletTxError] = useState<string | null>(null);
 
+  // wZION live price (falls back to seed price $0.00002 when pool not seeded)
+  const [wZIONPriceUsd, setWZIONPriceUsd] = useState<number | null>(null);
+  const [wZIONPriceSource, setWZIONPriceSource] = useState<'live' | 'seed'>('seed');
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchPrice = async () => {
+      try {
+        const res = await fetch('/api/defi/price');
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        if (!cancelled && data.ok) {
+          const usd = data.price?.usd_per_wzion ?? 0;
+          setWZIONPriceUsd(usd > 0 ? usd : SEED_PRICE_USD);
+          setWZIONPriceSource(data.source === 'live' && usd > 0 ? 'live' : 'seed');
+        }
+      } catch { /* keep seed default */ }
+    };
+    void fetchPrice();
+    const iv = setInterval(fetchPrice, 60_000);
+    return () => { cancelled = true; clearInterval(iv); };
+  }, []);
+
   const loadWalletDiagnostics = useCallback(async (address?: string) => {
     setWalletLoading(true);
     setWalletError(null);
@@ -1820,6 +1844,25 @@ export default function MissionControlDashboard() {
                   <p className="text-sm text-gray-300">{chip.descriptor}</p>
                 </div>
               ))}
+              {/* wZION price chip — always visible, shows seed price until pool is seeded */}
+              <div className="col-span-2 rounded-2xl border border-zion-gold/20 bg-zion-gold/5 px-5 py-4 backdrop-blur">
+                <p className="text-xs uppercase tracking-[0.3em] text-zion-gold/70">wZION Price</p>
+                <div className="flex items-baseline gap-3 mt-2">
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white font-mono">
+                    ${(wZIONPriceUsd ?? SEED_PRICE_USD).toFixed(5)}
+                  </p>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-semibold border ${
+                    wZIONPriceSource === 'live'
+                      ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+                      : 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+                  }`}>
+                    {wZIONPriceSource === 'live' ? 'LIVE' : 'SEED'}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-400 mt-1">
+                  {wZIONPriceSource === 'live' ? 'Uniswap V3 wZION/WETH · Base' : 'Seed price · $0.00002 / ZION · FDV ~$2.9M'}
+                </p>
+              </div>
             </div>
           </div>
         </motion.section>

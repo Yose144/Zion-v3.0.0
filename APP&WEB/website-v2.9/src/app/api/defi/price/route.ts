@@ -1,9 +1,19 @@
 /**
- * ZION DeFi — Price Feed API (Uni V3 TWAP spot)
+ * ZION DeFi — Price Feed API (Uni V3 spot)
  *
  * Reads slot0 from the wZION/WETH Uni V3 pool and computes
  * the implied wZION price in WETH. Falls back to a cached
- * WETH/USD rate to provide an approximate USD price.
+ * WETH/USD rate from Chainlink to provide an approximate USD price.
+ *
+ * Seed-price fallback ($0.00002 / ZION):
+ *   When the pool sqrtPriceX96 is 0 (pool not yet seeded) or the pool call
+ *   fails entirely, the API returns the official seed price so that the UI
+ *   always has a sensible starting number to display.
+ *
+ * Seed price derivation (2026-06-24, ETH = $1 656):
+ *   sqrtPriceX96 = 8_706_917_217_488_994_866_036_736
+ *   tick         = -182_328
+ *   usd_per_wzion = 0.000020
  */
 
 export const dynamic = 'force-dynamic';
@@ -17,6 +27,15 @@ const POOL = '0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB';      // wZION/WETH 0.
 const WETH = '0x4200000000000000000000000000000000000006';       // WETH
 const WZION = '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6';      // wZION
 const CHAINLINK_WETH_USD = '0x71041dddad3595F9CEdDCDcF2012034b68dF6aFA'; // Base Mainnet
+
+// ── Seed price constants (single source of truth) ─────────────────────────────
+// If the pool has not been initialised yet, we serve the intended seed price
+// so that all UIs show a consistent, correct starting value.
+const SEED_PRICE_USD       = 0.00002;          // $0.00002 / wZION
+const SEED_ETH_USD         = 1656;             // ETH/USD at derivation time
+const SEED_PRICE_ETH       = SEED_PRICE_USD / SEED_ETH_USD; // ≈ 1.2077e-8
+const SEED_SQRT_PRICE_X96  = '8706917217488994866036736';
+const SEED_TICK            = -182328;
 
 // slot0() selector
 const SLOT0 = '0x3850c7bd';
@@ -71,59 +90,78 @@ function decodeChainlinkAnswer(hex: string): number {
   return Number(signed) / 1e8; // Chainlink prices have 8 decimals
 }
 
-export async function GET() {
-  try {
-    const [slot0Hex, wethUsdHex] = await Promise.all([
-      ethCall(POOL, SLOT0),
-      ethCall(CHAINLINK_WETH_USD, LATEST_ROUND_DATA),
-    ]);
+/** Build a seed-price response (pool not yet seeded or call failed). */
+function seedPriceResponse(wethUsd: number, source: 'seed-uninitialized' | 'seed-fallback') {
+  // At seed time wZION is token0, WETH is token1 → weth_per_wzion = SEED_PRICE_ETH
+  const ethUsd = wethUsd > 0 ? wethUsd : SEED_ETH_USD;
+  return NextResponse.json({
+    ok: true,
+    network: 'base-mainnet',
+    chainId: 8453,
+    pool: POOL,
+    source,
+    price: {
+      wzion_per_weth: 1 / SEED_PRICE_ETH,         // ≈ 82,788,000 wZION per WETH
+      weth_per_wzion: SEED_PRICE_ETH,              // ≈ 1.2077e-8
+      usd_per_wzion:  SEED_PRICE_USD,              // $0.00002
+      weth_usd:       ethUsd,
+      tick:           SEED_TICK,                   // -182328
+      sqrtPriceX96:   SEED_SQRT_PRICE_X96,
+    },
+    fetchedAt: Date.now(),
+  }, {
+    headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120' },
+  });
+}
 
-    if (!slot0Hex) {
-      return NextResponse.json({ ok: false, error: 'Pool slot0 call failed' }, { status: 502 });
+export async function GET() {
+  // Always fetch Chainlink WETH/USD in parallel with pool slot0
+  const [slot0Hex, wethUsdHex] = await Promise.all([
+    ethCall(POOL, SLOT0),
+    ethCall(CHAINLINK_WETH_USD, LATEST_ROUND_DATA),
+  ]);
+
+  // Parse Chainlink ETH/USD — fall back to seed reference rate if unavailable
+  let wethUsd = SEED_ETH_USD;
+  if (wethUsdHex) {
+    try { wethUsd = decodeChainlinkAnswer(wethUsdHex); } catch { /* keep seed ref */ }
+  }
+
+  // If the pool slot0 call failed entirely, serve seed price
+  if (!slot0Hex) {
+    return seedPriceResponse(wethUsd, 'seed-fallback');
+  }
+
+  try {
+    const { sqrtPriceX96, tick } = decodeSlot0(slot0Hex);
+
+    // Pool not yet initialised (sqrtPriceX96 == 0) → serve seed price
+    if (sqrtPriceX96 === 0n) {
+      return seedPriceResponse(wethUsd, 'seed-uninitialized');
     }
 
-    const { sqrtPriceX96, tick } = decodeSlot0(slot0Hex);
     const Q96 = 2n ** 96n;
 
-    // Determine token ordering
-    // In Uni V3, token0 is the one with lower address
-    const wzionIsToken0 = WZION.toLowerCase() < WETH.toLowerCase();
-
-    // price = (sqrtPriceX96 / Q96) ^ 2
-    // If wzion is token0, price = token1/token0 = WETH/wZION
-    // We want wZION/WETH = 1 / price
-    const priceRatioNum = Number(sqrtPriceX96) / Number(Q96);
-    const priceToken1PerToken0 = priceRatioNum * priceRatioNum;
-
-    let priceWZionPerWeth: number;
-    if (wzionIsToken0) {
-      // priceToken1PerToken0 = WETH per wZION
-      priceWZionPerWeth = priceToken1PerToken0 > 0 ? 1 / priceToken1PerToken0 : 0;
-    } else {
-      // priceToken1PerToken0 = wZION per WETH
-      priceWZionPerWeth = priceToken1PerToken0;
-    }
-
-    // WETH/USD from Chainlink
-    let wethUsd = 0;
-    if (wethUsdHex) {
-      try { wethUsd = decodeChainlinkAnswer(wethUsdHex); } catch { /* ignore */ }
-    }
-
-    const priceUsd = wethUsd > 0 ? priceWZionPerWeth * wethUsd : 0;
+    // wZION (token0) < WETH (token1) by address
+    // price = (sqrtPriceX96 / Q96)^2  →  WETH per wZION
+    const sqrtNum = Number(sqrtPriceX96) / Number(Q96);
+    const wethPerWzion = sqrtNum * sqrtNum;
+    const wzionPerWeth = wethPerWzion > 0 ? 1 / wethPerWzion : 0;
+    const usdPerWzion  = wethPerWzion * wethUsd;
 
     return NextResponse.json({
       ok: true,
       network: 'base-mainnet',
       chainId: 8453,
       pool: POOL,
+      source: 'live',
       price: {
-        wzion_per_weth: priceWZionPerWeth,
-        weth_per_wzion: priceToken1PerToken0,
-        usd_per_wzion: priceUsd,
-        weth_usd: wethUsd,
+        wzion_per_weth: wzionPerWeth,
+        weth_per_wzion: wethPerWzion,
+        usd_per_wzion:  usdPerWzion,
+        weth_usd:       wethUsd,
         tick,
-        sqrtPriceX96: sqrtPriceX96.toString(),
+        sqrtPriceX96:   sqrtPriceX96.toString(),
       },
       fetchedAt: Date.now(),
     }, {
@@ -131,7 +169,7 @@ export async function GET() {
     });
   } catch (error) {
     return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : 'Price fetch failed' },
+      { ok: false, error: error instanceof Error ? error.message : 'Price decode failed' },
       { status: 502 },
     );
   }

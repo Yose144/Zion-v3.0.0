@@ -69,6 +69,47 @@ export const CONTRACTS = {
 export const DEPLOYER = '0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186';
 export const VALIDATOR2 = '0x8cc6F931edDAf5F14D0071727Ed1640752B5c787';
 
+// ─── Seed price constants ($0.00002 / ZION) ──────────────────────────────────
+//
+// These are used as fallback values while the Uni V3 pool has no liquidity yet,
+// or while ETH/USD Chainlink data is temporarily unavailable.
+//
+// Derivation (2026-06-24, ETH = $1 656):
+//   price_eth_per_wzion = $0.00002 / $1656  ≈ 1.20773e-8 ETH/wZION
+//   sqrtPriceX96 = floor(sqrt(price_eth_per_wzion) × 2^96)
+//               = 8_706_917_217_488_994_866_036_736
+//   tick         = floor(log(price_eth_per_wzion) / log(1.0001))
+//               = -182_328
+//
+// wZION (token0) < WETH (token1) by address — so price = WETH per wZION.
+//
+// To seed the Uni V3 pool at this price call:
+//   IUniswapV3Pool(pool).initialize(SEED_SQRT_PRICE_X96)
+// or set it via NonfungiblePositionManager.mint().
+
+/** Seed price in USD for 1 wZION = 1 ZION on the L2 */
+export const SEED_PRICE_USD = 0.00002;
+
+/** ETH/USD reference rate used to derive SEED_SQRT_PRICE_X96 */
+export const SEED_ETH_USD = 1656;
+
+/** Seed price expressed in ETH (WETH per wZION) */
+export const SEED_PRICE_ETH = SEED_PRICE_USD / SEED_ETH_USD; // ≈ 1.2077e-8
+
+/** sqrtPriceX96 for the Uni V3 wZION/WETH 0.3% pool at seed price */
+export const SEED_SQRT_PRICE_X96 = '8706917217488994866036736';
+
+/** Tick corresponding to the seed price (wZION is token0, WETH is token1) */
+export const SEED_TICK = -182328;
+
+/** Full-range tick bounds for the 0.3% pool (tickSpacing = 60) */
+export const TICK_LOWER_FULL = -887220;
+export const TICK_UPPER_FULL = 887220;
+
+/** Concentrated-range tick bounds (±600 ticks ≈ ±6% around seed price) */
+export const TICK_LOWER_CONC = -182940; // SEED_TICK - 612, snapped to tickSpacing=60
+export const TICK_UPPER_CONC = -181740; // SEED_TICK + 588, snapped to tickSpacing=60
+
 // ─── Minimal ABIs ────────────────────────────────────────────────────────────
 
 export const WZION_ABI = [

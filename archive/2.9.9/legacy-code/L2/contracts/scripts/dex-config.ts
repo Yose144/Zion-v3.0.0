@@ -46,6 +46,13 @@ export const BASE_SEPOLIA_CONFIG: DexChainConfig = {
 /**
  * Base Mainnet — production deployment
  * wZION deployed and verified on BaseScan.
+ *
+ * Seed price (confirmed 2026-06-24):
+ *   $0.00002 / ZION  @  ETH = $1 656
+ *   → price_eth = 0.00002 / 1656 ≈ 1.2077e-8 ETH per wZION
+ *   → in wei (18 decimals): 12_077_000 (≈ 1.2077e-8 × 1e18 = 12_077_000 wei)
+ *   → sqrtPriceX96 = 8_706_917_217_488_994_866_036_736
+ *   → tick = -182_328
  */
 export const BASE_MAINNET_CONFIG: DexChainConfig = {
   name: "base",
@@ -56,8 +63,10 @@ export const BASE_MAINNET_CONFIG: DexChainConfig = {
   uniswapV3NonfungiblePositionManager: "0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1",
   uniswapV3SwapRouter: "0x2626664c2603336E57B271c5C0b26F421741e481",
   feeTier: 3000,
-  // 1 ZION = 0.00001 ETH (~$0.035 at ETH $3500)
-  initialPriceWethPerWzion: 10_000_000_000_000n, // 1e13 wei = 0.00001 ETH
+  // 1 ZION = $0.00002 @ ETH $1 656 → ≈ 1.2077e-8 ETH = 12_077 wei (rounded)
+  // sqrtPriceX96 = 8_706_917_217_488_994_866_036_736
+  // tick = -182_328
+  initialPriceWethPerWzion: 12_077n, // 1.2077e-8 ETH × 1e18 ≈ 12_077 wei per wZION
 };
 
 /** Select config by network name */
