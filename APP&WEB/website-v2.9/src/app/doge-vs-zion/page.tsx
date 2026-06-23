@@ -32,6 +32,7 @@ import {
   PICKAXES,
   FORTUNES,
   RARITY_CONFIG,
+  ACHIEVEMENTS,
   helperCost,
   helperDps,
   generateLoot,
@@ -39,12 +40,14 @@ import {
   fmt,
   fmtTime,
   DOGE_RIVAL_QUOTES,
+  DOGE_REACTIONS,
   type Helper,
   type Pickaxe as PickaxeType,
   type Fortune,
   type Stats,
   type LootDrop,
   type Rarity,
+  type Achievement,
 } from './gameData';
 
 // ─── Sound Manager ────────────────────────────────────────────────────────────
@@ -145,11 +148,16 @@ export default function DogeVsZionPage() {
   const [floating, setFloating] = useState<{ id: number; x: number; y: number; text: string; color: string }[]>([]);
   const [groundLoot, setGroundLoot] = useState<LootDrop[]>([]);
   const [showLootModal, setShowLootModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'helpers' | 'shop' | 'inventory' | 'map'>('helpers');
+  const [activeTab, setActiveTab] = useState<'helpers' | 'shop' | 'inventory' | 'map' | 'achievements'>('helpers');
   const [dogeQuote, setDogeQuote] = useState(DOGE_RIVAL_QUOTES[0]);
   const [shake, setShake] = useState(0);
   const [rockHit, setRockHit] = useState(false);
+  const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
+  const [achievementPopup, setAchievementPopup] = useState<Achievement | null>(null);
+  const [dogeReaction, setDogeReaction] = useState<string | null>(null);
+  const [confetti, setConfetti] = useState<{ id: number; emoji: string; x: number; y: number; vx: number; vy: number; rot: number }[]>([]);
   const floatIdRef = useRef(0);
+  const confettiIdRef = useRef(0);
   const stateRef = useRef(state);
   const statsRef = useRef<Stats>({ dpc: 1, dps: 0, critChance: 0, luck: 0, lootFind: 0, wow: 0 });
   useEffect(() => { stateRef.current = state; }, [state]);
@@ -187,6 +195,36 @@ export default function DogeVsZionPage() {
       });
     }, 5000);
     return () => clearInterval(interval);
+  }, []);
+
+  // ─── Doge reaction trigger ──────────────────────────────────────────────────
+
+  const triggerDogeReaction = useCallback((reaction: keyof typeof DOGE_REACTIONS) => {
+    setDogeReaction(DOGE_REACTIONS[reaction]);
+    setTimeout(() => setDogeReaction(null), 4000);
+  }, []);
+
+  // ─── Confetti for legendary loot ────────────────────────────────────────────
+
+  const spawnConfetti = useCallback((count: number = 30) => {
+    const emojis = ['🎉', '✨', '⭐', '🌟', '💫', '🟨', '💎', '🔥'];
+    const newConfetti: { id: number; emoji: string; x: number; y: number; vx: number; vy: number; rot: number }[] = [];
+    for (let i = 0; i < count; i++) {
+      const id = confettiIdRef.current++;
+      newConfetti.push({
+        id,
+        emoji: emojis[Math.floor(Math.random() * emojis.length)],
+        x: 50 + (Math.random() - 0.5) * 20,
+        y: 50,
+        vx: (Math.random() - 0.5) * 60,
+        vy: -30 - Math.random() * 40,
+        rot: Math.random() * 360,
+      });
+    }
+    setConfetti((prev) => [...prev, ...newConfetti]);
+    setTimeout(() => {
+      setConfetti((prev) => prev.filter((c) => !newConfetti.find((nc) => nc.id === c.id)));
+    }, 2000);
   }, []);
 
   // ─── Rock break + loot processing ───────────────────────────────────────────
@@ -234,8 +272,19 @@ export default function DogeVsZionPage() {
       setShowLootModal(true);
       if (loot.some((l) => l.type === 'diamonds')) sfx.diamond();
       else sfx.loot();
+      // Legendary loot → confetti + Doge reaction
+      if (loot.some((l) => l.rarity === 'legendary')) {
+        spawnConfetti(40);
+        setDogeReaction(DOGE_REACTIONS.legendaryLoot);
+        setTimeout(() => setDogeReaction(null), 5000);
+      }
     }
-  }, []);
+    // Doge reacts to rock break
+    if (Math.random() < 0.15) {
+      setDogeReaction(DOGE_REACTIONS.rockBreak);
+      setTimeout(() => setDogeReaction(null), 3000);
+    }
+  }, [spawnConfetti]);
 
   const checkLootThresholds = useCallback(() => {
     const s = stateRef.current;
@@ -351,6 +400,30 @@ export default function DogeVsZionPage() {
     setTimeout(() => setFloating((prev) => prev.filter((f) => f.id !== id)), 800);
   }, []);
 
+  // ─── Achievement checker ────────────────────────────────────────────────────
+
+  const checkAchievements = useCallback(() => {
+    const s = stateRef.current;
+    for (const ach of ACHIEVEMENTS) {
+      if (unlockedAchievements.includes(ach.id)) continue;
+      if (ach.check(s)) {
+        setUnlockedAchievements((prev) => [...prev, ach.id]);
+        setAchievementPopup(ach);
+        sfx.unlock();
+        setTimeout(() => setAchievementPopup(null), 4000);
+        // Doge reacts to achievements
+        setDogeReaction(DOGE_REACTIONS.bigMilestone);
+        setTimeout(() => setDogeReaction(null), 5000);
+        break; // one at a time
+      }
+    }
+  }, [unlockedAchievements]);
+
+  // Check achievements on state change
+  useEffect(() => {
+    checkAchievements();
+  }, [state, checkAchievements]);
+
   const handleRockClick = (e: React.MouseEvent | React.TouchEvent) => {
     sfx.init();
     const isCrit = Math.random() < stats.critChance;
@@ -392,6 +465,7 @@ export default function DogeVsZionPage() {
   };
 
   const buyHelper = (helper: Helper) => {
+    const wasFirst = !stateRef.current.helpers[helper.id] || stateRef.current.helpers[helper.id].count === 0;
     setState((s) => {
       const owned = s.helpers[helper.id] ?? { count: 0, upgrades: [] };
       const cost = helperCost(helper, owned.count);
@@ -406,6 +480,9 @@ export default function DogeVsZionPage() {
         },
       };
     });
+    if (wasFirst) {
+      triggerDogeReaction('firstHelper');
+    }
   };
 
   const buyUpgrade = (helper: Helper, upgradeIdx: number) => {
@@ -446,6 +523,8 @@ export default function DogeVsZionPage() {
       lootThresholdsHit: [false, false, false, false, false],
     }));
     sfx.unlock();
+    spawnConfetti(20);
+    triggerDogeReaction('newLocation');
   };
 
   const collectLoot = () => {
@@ -536,10 +615,17 @@ export default function DogeVsZionPage() {
         <div className={`rounded-2xl border p-3 ${dogeAhead ? 'border-amber-400/30 bg-amber-500/5' : 'border-emerald-400/20 bg-emerald-500/5'}`}>
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <Image src="/dogecoin-logo.png" alt="Doge" width={28} height={28} className="h-7 w-7 object-contain" />
+              <motion.div
+                animate={dogeReaction ? { rotate: [0, -10, 10, -10, 0], scale: [1, 1.2, 1] } : {}}
+                transition={{ duration: 0.5 }}
+              >
+                <Image src="/dogecoin-logo.png" alt="Doge" width={28} height={28} className="h-7 w-7 object-contain" />
+              </motion.div>
               <div>
-                <p className="text-xs font-bold text-amber-300">🐕 Doge {dogeAhead ? (cs ? 'vede!' : 'leads!') : (cs ? 'zaostává' : 'trailing')}</p>
-                <p className="text-[10px] text-gray-500">{dogeQuote}</p>
+                <p className="text-xs font-bold text-amber-300">
+                  🐕 Doge {dogeAhead ? (cs ? 'vede! Much fast!' : 'leads! Much fast!') : (cs ? 'zaostává. Very sad.' : 'trailing. Very sad.')}
+                </p>
+                <p className="text-[10px] text-gray-500">{dogeReaction ?? dogeQuote}</p>
               </div>
             </div>
             <div className="text-right">
@@ -556,9 +642,10 @@ export default function DogeVsZionPage() {
               <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                 <PickaxeIcon className="h-5 w-5 text-zion-gold" />
                 {cs ? `Skála #${state.rockNumber}` : `Rock #${state.rockNumber}`}
+                <span className="text-[10px] text-gray-600">Much rock. Very break.</span>
               </h2>
               <p className="text-xs text-gray-500">
-                {cs ? `DPC: ${fmt(stats.dpc)} | Crit: ${(stats.critChance * 100).toFixed(1)}% | Luck: ${(stats.luck * 100).toFixed(0)}%` : `DPC: ${fmt(stats.dpc)} | Crit: ${(stats.critChance * 100).toFixed(1)}% | Luck: ${(stats.luck * 100).toFixed(0)}%`}
+                {cs ? `DPC: ${fmt(stats.dpc)} | Crit: ${(stats.critChance * 100).toFixed(1)}% | Luck: ${(stats.luck * 100).toFixed(0)}%` : `Much DPC: ${fmt(stats.dpc)} | Very Crit: ${(stats.critChance * 100).toFixed(1)}% | Such Luck: ${(stats.luck * 100).toFixed(0)}%`}
               </p>
             </div>
             <div className="text-right">
@@ -646,6 +733,7 @@ export default function DogeVsZionPage() {
           <TabButton active={activeTab === 'shop'} onClick={() => setActiveTab('shop')} icon={PickaxeIcon} label={cs ? 'Pickaxes' : 'Pickaxes'} />
           <TabButton active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} icon={Backpack} label={cs ? 'Inventář' : 'Inventory'} />
           <TabButton active={activeTab === 'map'} onClick={() => setActiveTab('map')} icon={MapPin} label={cs ? 'Mapa' : 'Map'} />
+          <TabButton active={activeTab === 'achievements'} onClick={() => setActiveTab('achievements')} icon={Trophy} label={cs ? 'Achievements' : 'Achievements'} badge={unlockedAchievements.length} />
         </div>
 
         {/* Tab content */}
@@ -681,19 +769,23 @@ export default function DogeVsZionPage() {
           />
         )}
 
+        {activeTab === 'achievements' && (
+          <AchievementsTab cs={cs} unlocked={unlockedAchievements} />
+        )}
+
         {/* Stats footer */}
         <section className="rounded-3xl border border-white/10 bg-black/60 p-6">
           <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-white/80">
             <Trophy className="h-4 w-4 text-zion-gold" />
-            {cs ? 'Statistiky' : 'Stats'}
+            {cs ? 'Statistiky' : 'Stats'} <span className="text-[10px] text-gray-600">Much data. Very number.</span>
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <StatBox label={cs ? 'Celkem vyděláno' : 'Total earned'} value={fmt(state.totalEarned)} color="text-emerald-300" />
-            <StatBox label={cs ? 'Kliky' : 'Clicks'} value={state.clicks.toLocaleString()} color="text-zion-gold" />
-            <StatBox label={cs ? 'DPC' : 'DPC'} value={fmt(stats.dpc)} color="text-cyan-300" />
-            <StatBox label={cs ? 'DPS' : 'DPS'} value={fmt(totalDps)} color="text-orange-300" />
-            <StatBox label={cs ? 'Crit šance' : 'Crit chance'} value={`${(stats.critChance * 100).toFixed(1)}%`} color="text-yellow-300" />
-            <StatBox label={cs ? 'Luck' : 'Luck'} value={`${(stats.luck * 100).toFixed(0)}%`} color="text-purple-300" />
+            <StatBox label={cs ? 'Kliky' : 'Much clicks'} value={state.clicks.toLocaleString()} color="text-zion-gold" />
+            <StatBox label={cs ? 'DPC' : 'Very DPC'} value={fmt(stats.dpc)} color="text-cyan-300" />
+            <StatBox label={cs ? 'DPS' : 'Such DPS'} value={fmt(totalDps)} color="text-orange-300" />
+            <StatBox label={cs ? 'Crit šance' : 'Very Crit'} value={`${(stats.critChance * 100).toFixed(1)}%`} color="text-yellow-300" />
+            <StatBox label={cs ? 'Luck' : 'Such Luck'} value={`${(stats.luck * 100).toFixed(0)}%`} color="text-purple-300" />
             <StatBox label={cs ? 'Loot Find' : 'Loot Find'} value={`${(stats.lootFind * 100).toFixed(0)}%`} color="text-blue-300" />
             <StatBox label={cs ? 'Wow' : 'Wow'} value={`${(stats.wow * 100).toFixed(0)}%`} color="text-pink-300" />
           </div>
@@ -719,7 +811,7 @@ export default function DogeVsZionPage() {
             >
               <h3 className="mb-4 flex items-center gap-2 text-xl font-bold text-zion-gold">
                 <Sparkles className="h-5 w-5" />
-                {cs ? 'Loot!' : 'Loot!'}
+                {cs ? 'Loot! Much shiny!' : 'Loot! Much shiny!'}
               </h3>
               <div className="space-y-2">
                 {groundLoot.map((drop, i) => (
@@ -730,9 +822,52 @@ export default function DogeVsZionPage() {
                 onClick={collectLoot}
                 className="mt-4 w-full rounded-xl bg-zion-gold/20 border border-zion-gold/30 px-4 py-2.5 text-sm font-semibold text-zion-gold hover:bg-zion-gold/30 transition-colors"
               >
-                {cs ? 'Sebrat vše' : 'Collect all'}
+                {cs ? 'Sebrat vše! Much take!' : 'Collect all! Much take!'}
               </button>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Confetti */}
+      <AnimatePresence>
+        {confetti.map((c) => (
+          <motion.div
+            key={c.id}
+            initial={{ x: `${c.x}vw`, y: `${c.y}vh`, opacity: 1, rotate: 0 }}
+            animate={{ x: `${c.x + c.vx}vw`, y: `${c.y + c.vy + 80}vh`, opacity: 0, rotate: c.rot }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 2, ease: 'easeOut' }}
+            className="pointer-events-none fixed z-50 text-2xl"
+          >
+            {c.emoji}
+          </motion.div>
+        ))}
+      </AnimatePresence>
+
+      {/* Achievement popup */}
+      <AnimatePresence>
+        {achievementPopup && (
+          <motion.div
+            initial={{ opacity: 0, x: 100 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 100 }}
+            className="fixed right-4 top-24 z-50 max-w-xs rounded-2xl border border-zion-gold/40 bg-gradient-to-br from-black/90 to-zion-gold/20 p-4 shadow-2xl"
+          >
+            <div className="flex items-center gap-3">
+              <motion.div
+                animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.2, 1] }}
+                transition={{ duration: 0.5, repeat: 2 }}
+                className="text-3xl"
+              >
+                {achievementPopup.emoji}
+              </motion.div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-zion-gold">Achievement! Wow!</p>
+                <p className="text-sm font-bold text-white">{achievementPopup.name}</p>
+                <p className="text-[10px] text-gray-400">{achievementPopup.description}</p>
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -796,7 +931,7 @@ function ResourceDisplay({ icon: Icon, label, value, color }: { icon: any; label
   );
 }
 
-function TabButton({ active, onClick, icon: Icon, label }: { active: boolean; onClick: () => void; icon: any; label: string }) {
+function TabButton({ active, onClick, icon: Icon, label, badge }: { active: boolean; onClick: () => void; icon: any; label: string; badge?: number }) {
   return (
     <button
       onClick={onClick}
@@ -806,6 +941,9 @@ function TabButton({ active, onClick, icon: Icon, label }: { active: boolean; on
     >
       <Icon className="h-4 w-4" />
       {label}
+      {badge !== undefined && badge > 0 && (
+        <span className="ml-1 rounded-full bg-zion-gold/30 px-1.5 py-0.5 text-[9px] font-bold text-zion-gold">{badge}</span>
+      )}
     </button>
   );
 }
@@ -1185,6 +1323,61 @@ function MapTab({ cs, state, unlockedLocations, onTravel }: {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// ─── Achievements Tab ─────────────────────────────────────────────────────────
+
+function AchievementsTab({ cs, unlocked }: { cs: boolean; unlocked: string[] }) {
+  const unlockedCount = unlocked.length;
+  const totalCount = ACHIEVEMENTS.length;
+  const percent = Math.round((unlockedCount / totalCount) * 100);
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-zion-gold/20 bg-zion-gold/5 p-4 text-center">
+        <p className="text-sm font-bold text-zion-gold">
+          {cs ? `Odemčeno ${unlockedCount}/${totalCount}` : `Unlocked ${unlockedCount}/${totalCount}`} — {percent}%
+        </p>
+        <p className="text-[10px] text-gray-500 mt-1">
+          {cs ? 'Much achieve. Very progress. Such completion.' : 'Much achieve. Very progress. Such completion.'}
+        </p>
+        <div className="mt-2 h-2 rounded-full bg-white/5 overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-zion-gold to-amber-500" style={{ width: `${percent}%` }} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        {ACHIEVEMENTS.map((ach) => {
+          const isUnlocked = unlocked.includes(ach.id);
+          return (
+            <div
+              key={ach.id}
+              className={`rounded-xl border p-3 transition-all ${
+                isUnlocked
+                  ? 'border-zion-gold/30 bg-zion-gold/10'
+                  : 'border-white/5 bg-white/3 opacity-50'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`text-2xl ${isUnlocked ? '' : 'grayscale'}`}>
+                  {isUnlocked ? ach.emoji : '🔒'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className={`text-xs font-bold ${isUnlocked ? 'text-zion-gold' : 'text-gray-500'}`}>
+                      {ach.name}
+                    </p>
+                    {isUnlocked && <Check className="h-3 w-3 text-emerald-400" />}
+                  </div>
+                  <p className="text-[10px] text-gray-500">{ach.description}</p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
