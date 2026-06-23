@@ -574,6 +574,57 @@ If Edge server becomes unresponsive:
 5. Verify network connectivity and VPN status
 6. Check Hetzner snapshot if complete recovery needed
 
+### Edge Server Log Management (CRITICAL — 2026-06-23)
+
+The Edge server (150GB disk) experienced a **100% disk full** incident on 2026-06-23 caused by unbounded syslog growth (76GB). Root cause: `zion-node` logs every RPC request/response to journald→rsyslog→/var/log/syslog, and the dashboard's 10-second refresh cycle generates hundreds of RPC calls per minute.
+
+**Automated log management is deployed via `edge-deploy/`:**
+
+| Component | Path on Edge | Purpose |
+|-----------|-------------|---------|
+| logrotate config | `/etc/logrotate.d/zion-edge` | Daily rotation of syslog (max 2G, keep 7), zion logs (max 500M, keep 14) |
+| journald limits | `/etc/systemd/journald.conf.d/zion-edge.conf` | SystemMaxUse=1G, SystemKeepFree=2G, MaxRetentionSec=14day |
+| rsyslog RPC filter | `/etc/rsyslog.d/10-zion-edge.conf` | Drops `rpc_in=`, `rpc_out=`, `jsonrpc_out=`, `rpc_client_addr=` lines from zion-node (keeps BLOCK_FOUND, errors, warnings) |
+| cleanup script | `/usr/local/bin/edge-log-cleanup.sh` | Runs every 6h via systemd timer; checks disk, vacuums journal, rotates runaway logs, truncates Docker logs |
+| systemd timer | `/etc/systemd/system/edge-log-cleanup.timer` | OnBootSec=5min, OnUnitActiveSec=6h |
+
+**Agent rules for Edge log management:**
+1. **NEVER `rm -rf /var/log/*`** — always use logrotate or the cleanup script.
+2. **NEVER truncate `/var/log/syslog` without rotating first** — use `logrotate --force /etc/logrotate.d/zion-edge` or the cleanup script.
+3. **Before deploying new services to Edge**, verify they don't log to syslog at INFO/DEBUG level without rate limiting. Set `RUST_LOG=warn` for production services unless debugging.
+4. **If disk is >90% full**, run `edge-log-cleanup.sh` manually and investigate the cause.
+5. **The rsyslog filter (`10-zion-edge.conf`) is critical** — if removed, syslog will fill the disk again within hours. Never delete it.
+6. **Deploy/update log automation**: `bash edge-deploy/scripts/deploy-edge-log-automation.sh` (run on Edge server).
+7. **Monitor disk via dashboard**: `/api/monitoring` shows Prometheus/Grafana status. If Prometheus targets are all `down`, node-exporter may have crashed due to disk pressure.
+8. **After Edge server reboot**, verify: `systemctl status edge-log-cleanup.timer` (should be active), `df -h /` (should be <80%), `journalctl --disk-usage` (should be <1G).
+
+### Edge Server Service Management
+
+All ZION services on Edge run as systemd units:
+
+| Service | Unit file | Port | Depends on |
+|---------|-----------|------|------------|
+| Node (primary) | `zion-edge-node1.service` | 8443 (RPC), 8333 (P2P) | network, tailscale |
+| Pool | `zion-edge-pool.service` | 8444, 8455 (metrics) | zion-edge-node1 |
+| Bridge | `zion-edge-bridge.service` | 8451 | zion-edge-node1 |
+| DAO | `zion-edge-dao.service` | 8450 | zion-edge-node1 |
+| Atomic Swap | `zion-edge-atomic-swap.service` | 8452 | zion-edge-node1 |
+| WARP | `zion-edge-warp.service` | 8449 | zion-edge-node1 |
+| Watchdog | `zion-edge-watchdog.service` | — | — |
+| Log Cleanup | `edge-log-cleanup.timer` | — | — |
+
+**If a service shows red/down on dashboard:**
+1. SSH to Edge: `ssh root@100.76.16.108`
+2. Check: `systemctl status <service-name>`
+3. Check logs: `journalctl -u <service-name> -n 50 --no-pager`
+4. Restart: `systemctl restart <service-name>`
+5. Verify: `systemctl status <service-name>` and check the port is listening
+
+**Common Edge service issues:**
+- Service `inactive (dead)` after reboot despite `enabled`: start manually with `systemctl start <service>`, check `Requires=` dependencies.
+- Service crashes on startup: check if disk is full (`df -h /`), check if required port is already in use (`ss -tlnp | grep <port>`).
+- Atomic Swap uses older binary in `/usr/local/bin/` — update from `V3/target/release/` after rebuilds.
+
 ### Pool Issues
 
 If pool stops accepting connections:

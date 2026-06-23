@@ -1,0 +1,10 @@
+[Unit]
+Description=ZION Edge Log Cleanup Service
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/local/bin/edge-log-cleanup.sh
+StandardOutput=journal
+StandardError=journal
