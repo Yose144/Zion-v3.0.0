@@ -476,6 +476,12 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
                 )
                 .await
             } else {
+                if memo.is_some() {
+                    return Err(anyhow!(
+                        "no spendable UTXOs for {} and --memo was provided; refusing account-model fallback to avoid accidental non-bridgeable transfer",
+                        cfg.miner.wallet
+                    ));
+                }
                 // ── Account-model fallback ───────────────────────────────
                 ui::print_info("No spendable UTXOs; falling back to account-model send.");
                 let balance_resp = crate::rpc::node_rpc::call(
