@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Newspaper, ArrowRight, Calendar, Sparkles } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import DogeVsZionBanner from '@/components/DogeVsZionBanner';
 
 // ─── Article type ─────────────────────────────────────────────────────────────
 
@@ -16,6 +17,7 @@ export interface NewsArticle {
   summary: { cs: string; en: string };
   href: string;            // internal or external link
   external?: boolean;
+  banner?: 'doge-vs-zion'; // special visual banner
 }
 
 // ─── Articles data ────────────────────────────────────────────────────────────
@@ -35,6 +37,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       en: 'Much bridge. Very mainnet. Such 5/5. WOW. 🐕 100M ZION locked on L1, 5/5 validators confirmed on-chain, relay is live. Initial UniV3Pool price: $0.00002/ZION (FDV ~$2.9M). When Doge went to the Moon, it had one signature. We\'re flying to Base with five. To the moon? No. To the stars. 🌟',
     },
     href: '/defi',
+    banner: 'doge-vs-zion',
   },
   {
     slug: 'hiran-v2.3-trained',
@@ -410,6 +413,13 @@ export default function NewsFeed() {
                         {article.date}
                       </span>
                     </div>
+
+                    {/* Special banner */}
+                    {article.banner === 'doge-vs-zion' && (
+                      <div className="mb-4">
+                        <DogeVsZionBanner cs={cs} />
+                      </div>
+                    )}
 
                     {/* Title */}
                     <h3 className="text-lg font-semibold text-white group-hover:text-zion-gold transition-colors mb-3 leading-snug">
