@@ -39,6 +39,15 @@ pub struct BridgeMetrics {
     // Last processed heights
     pub last_l1_height: AtomicU64,
     pub last_evm_block: AtomicU64,
+
+    // Alias — watchdog uses this name for clarity
+    pub last_l1_block: AtomicU64,
+
+    // Watchdog / health
+    /// Number of times the watchdog detected a L1 block stall.
+    pub watchdog_stalls: AtomicU64,
+    /// 0 = running, 1 = paused (auto_pause_on_anomaly triggered).
+    pub bridge_paused: AtomicU64,
 }
 
 impl BridgeMetrics {
@@ -57,7 +66,32 @@ impl BridgeMetrics {
             evm_poll_count: AtomicU64::new(0),
             last_l1_height: AtomicU64::new(0),
             last_evm_block: AtomicU64::new(0),
+            last_l1_block: AtomicU64::new(0),
+            watchdog_stalls: AtomicU64::new(0),
+            bridge_paused: AtomicU64::new(0),
         })
+    }
+
+    /// Update `last_l1_block` (and alias `last_l1_height`) to the given height.
+    pub fn update_l1_block(&self, height: u64) {
+        self.last_l1_height.store(height, Ordering::Relaxed);
+        self.last_l1_block.store(height, Ordering::Relaxed);
+    }
+
+    /// Watchdog: mark L1 as healthy (clear stall state).
+    pub fn set_watchdog_ok(&self) {
+        // No dedicated "ok" counter — just a no-op marker for future extension.
+        // Callers can read `watchdog_stalls` to know if a stall occurred.
+    }
+
+    /// Set bridge paused state (1 = paused, 0 = running).
+    pub fn set_bridge_paused(&self, paused: bool) {
+        self.bridge_paused.store(if paused { 1 } else { 0 }, Ordering::SeqCst);
+    }
+
+    /// Returns true if the bridge is currently paused by the watchdog.
+    pub fn is_paused(&self) -> bool {
+        self.bridge_paused.load(Ordering::Relaxed) == 1
     }
 
     pub fn uptime_secs(&self) -> u64 {
@@ -77,6 +111,8 @@ impl BridgeMetrics {
             errors: self.errors.load(Ordering::Relaxed),
             last_l1_height: self.last_l1_height.load(Ordering::Relaxed),
             last_evm_block: self.last_evm_block.load(Ordering::Relaxed),
+            watchdog_stalls: self.watchdog_stalls.load(Ordering::Relaxed),
+            bridge_paused: self.bridge_paused.load(Ordering::Relaxed),
         }
     }
 
@@ -154,6 +190,18 @@ impl BridgeMetrics {
                 "Last processed EVM block number",
                 snap.last_evm_block,
             ),
+            (
+                "counter",
+                "zion_bridge_watchdog_stalls_total",
+                "Number of L1 block stall events detected by the watchdog",
+                snap.watchdog_stalls,
+            ),
+            (
+                "gauge",
+                "zion_bridge_paused",
+                "1 if the bridge is paused by the watchdog (auto_pause_on_anomaly), 0 otherwise",
+                snap.bridge_paused,
+            ),
         ];
 
         for (kind, name, help, value) in metrics {
@@ -225,6 +273,8 @@ pub struct MetricsSnapshot {
     pub errors: u64,
     pub last_l1_height: u64,
     pub last_evm_block: u64,
+    pub watchdog_stalls: u64,
+    pub bridge_paused: u64,
 }
 
 #[cfg(test)]

@@ -2,6 +2,7 @@
 //!
 //! Provides:
 //! - `encode_submit_lock_proof(...)` — ABI-encode calldata for ZIONBridge.submitLockProof()
+//! - `encode_execute_timelocked_mint(...)` — ABI-encode calldata for ZIONBridge.executeTimelockedMint()
 //! - `build_and_sign_eip1559_tx(...)` — build + sign a raw EIP-1559 transaction
 //! - `derive_evm_address(...)` — derive EVM address from secp256k1 private key
 //!
@@ -24,6 +25,28 @@ pub fn submit_lock_proof_selector() -> [u8; 4] {
     h.update(b"submitLockProof(bytes32,address,uint256,uint256,string)");
     let digest = h.finalize();
     [digest[0], digest[1], digest[2], digest[3]]
+}
+
+/// ABI-encode `executeTimelockedMint(bytes32)`.
+///
+/// Called after the 24-hour timelock on a large-amount lock has expired.
+/// The `l1_tx_hash_bytes` must be the same bytes32 originally passed to
+/// `submitLockProof` for the given lock.
+///
+/// Calldata layout:
+/// - `[0..4]`   — function selector for `executeTimelockedMint(bytes32)`
+/// - `[4..36]`  — `l1TxHash` (bytes32, big-endian)
+pub fn encode_execute_timelocked_mint(l1_tx_hash_bytes: &[u8; 32]) -> Vec<u8> {
+    // keccak256("executeTimelockedMint(bytes32)") → first 4 bytes
+    let mut h = Keccak256::new();
+    h.update(b"executeTimelockedMint(bytes32)");
+    let digest = h.finalize();
+    let selector = [digest[0], digest[1], digest[2], digest[3]];
+
+    let mut calldata = Vec::with_capacity(36);
+    calldata.extend_from_slice(&selector);
+    calldata.extend_from_slice(l1_tx_hash_bytes);
+    calldata
 }
 
 /// Derive a deterministic bytes32 for any string (e.g. UTXO key or tx hash).
@@ -502,5 +525,50 @@ mod tests {
         // 128 = 0x80: needs length prefix
         let encoded = rlp_uint(128);
         assert_eq!(encoded, vec![0x81, 0x80]); // 0x81 = string of len 1; 0x80 = value
+    }
+
+    // ── executeTimelockedMint encoding tests ─────────────────────────────────
+
+    #[test]
+    fn test_execute_timelocked_mint_length() {
+        // encode_execute_timelocked_mint(bytes32) → 4 (selector) + 32 (bytes32) = 36 bytes
+        let hex_input = format!("0x{}", "ab".repeat(32));
+        let hash = hash_to_bytes32(&hex_input);
+        let calldata = encode_execute_timelocked_mint(&hash);
+        assert_eq!(calldata.len(), 36, "executeTimelockedMint calldata must be exactly 36 bytes");
+    }
+
+    #[test]
+    fn test_execute_timelocked_mint_contains_hash() {
+        let mut input = [0u8; 32];
+        input[31] = 0xcc; // last byte marker
+        let calldata = encode_execute_timelocked_mint(&input);
+        // First 4 bytes are selector, bytes 4..36 are the hash
+        assert_eq!(&calldata[4..36], &input);
+    }
+
+    #[test]
+    fn test_execute_timelocked_mint_selector_stable() {
+        // Verify the selector is the keccak256("executeTimelockedMint(bytes32)")[0:4]
+        // We check it is always the same (deterministic) across calls
+        let hash = [0u8; 32];
+        let call1 = encode_execute_timelocked_mint(&hash);
+        let call2 = encode_execute_timelocked_mint(&hash);
+        assert_eq!(&call1[0..4], &call2[0..4], "Selector must be deterministic");
+        // Print for audit
+        println!("executeTimelockedMint selector: 0x{}", hex::encode(&call1[0..4]));
+    }
+
+    #[test]
+    fn test_execute_timelocked_mint_selector_differs_from_submit_lock_proof() {
+        // Sanity check: different functions must have different selectors
+        let submit = submit_lock_proof_selector();
+        let hash = [0u8; 32];
+        let execute = encode_execute_timelocked_mint(&hash);
+        assert_ne!(
+            &submit[..],
+            &execute[0..4],
+            "executeTimelockedMint and submitLockProof must have different selectors"
+        );
     }
 }

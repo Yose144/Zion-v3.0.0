@@ -5,14 +5,15 @@
 
 use crate::config::BridgeConfig;
 use crate::config::ValidatorConfig;
+use crate::db::BridgeDb;
 use crate::evm_rpc::EvmHttpClient;
 use crate::evm_tx::{
     build_and_sign_eip1559_tx, derive_evm_address, encode_confirm_burn_release,
-    encode_submit_lock_proof, hash_to_bytes32,
+    encode_execute_timelocked_mint, encode_submit_lock_proof, hash_to_bytes32,
 };
 use crate::metrics::BridgeMetrics;
 use crate::rate_limiter::{RateLimitResult, RateLimiter};
-use crate::types::{EvmBurnEvent, L1LockEvent};
+use crate::types::{BridgeStatus, EvmBurnEvent, L1LockEvent};
 use anyhow::Result;
 use k256::ecdsa::{signature::Signer, Signature, SigningKey};
 use serde::de::DeserializeOwned;
@@ -103,30 +104,42 @@ fn load_all_validator_keys(config: &ValidatorConfig) -> Vec<Zeroizing<String>> {
     keys
 }
 
+/// Max relay retries before a lock/burn is permanently marked Failed.
+const MAX_RELAY_RETRIES: u32 = 5;
+
 /// Bridge relayer that processes lock and burn events.
 pub struct Relayer {
     config: Arc<BridgeConfig>,
     rate_limiter: RateLimiter,
     metrics: Arc<BridgeMetrics>,
+    db: Arc<BridgeDb>,
 }
 
 impl Relayer {
-    pub fn new(config: Arc<BridgeConfig>, metrics: Arc<BridgeMetrics>) -> Self {
+    pub fn new(config: Arc<BridgeConfig>, metrics: Arc<BridgeMetrics>, db: Arc<BridgeDb>) -> Self {
         let rate_limiter = RateLimiter::new(config.security.max_ops_per_hour);
         Self {
             config,
             rate_limiter,
             metrics,
+            db,
         }
     }
 
     /// Start the relayer — listens for events from both watchers and submits proofs.
+    ///
+    /// Also runs a periodic `executeTimelockedMint` poller every 5 minutes.
     pub async fn run(
         &self,
         mut lock_rx: mpsc::Receiver<L1LockEvent>,
         mut burn_rx: mpsc::Receiver<EvmBurnEvent>,
     ) -> Result<()> {
         info!("🔗 Bridge Relayer started — processing lock and burn events");
+
+        // Timelock poller: fires every 5 minutes
+        let mut timelock_interval = tokio::time::interval(std::time::Duration::from_secs(5 * 60));
+        // Skip the first (immediate) tick so we don't fire before DB is warm
+        timelock_interval.tick().await;
 
         loop {
             tokio::select! {
@@ -143,6 +156,13 @@ impl Relayer {
                     match self.handle_evm_burn(burn).await {
                         Ok(()) => {}
                         Err(e) => error!("Failed to handle EVM burn: {:?}", e),
+                    }
+                }
+
+                // Periodic timelock poller
+                _ = timelock_interval.tick() => {
+                    if let Err(e) = self.poll_timelocked_ops().await {
+                        error!("Timelock poller error: {:?}", e);
                     }
                 }
 
@@ -165,6 +185,12 @@ impl Relayer {
             lock.target_chain,
             lock.l1_tx_hash,
         );
+
+        // Persist lock to DB so it survives restarts (INSERT OR IGNORE — safe to call again)
+        if let Err(e) = self.db.insert_lock(&lock) {
+            warn!("DB: failed to persist lock {}: {}", lock.l1_tx_hash, e);
+        }
+        let _ = self.db.update_lock_status(&lock.l1_tx_hash, BridgeStatus::Executing);
 
         // ── Rate limit ────────────────────────────────────────────────
         match self.rate_limiter.check_and_record(&lock.l1_sender) {
@@ -372,8 +398,23 @@ impl Relayer {
         }
 
         if last_tx_hash.is_empty() {
-            anyhow::bail!("All validator key submissions failed for TX: {}", lock.l1_tx_hash);
+            let err_msg = format!("All validator key submissions failed for TX: {}", lock.l1_tx_hash);
+            // Persist failure so recovery loop can retry
+            let retry_count = self.db.increment_lock_retry(&lock.l1_tx_hash, &err_msg).unwrap_or(0);
+            if retry_count >= MAX_RELAY_RETRIES {
+                error!("   ☠️ Lock {} permanently failed after {} retries — manual intervention required",
+                    lock.l1_tx_hash, retry_count);
+                let _ = self.db.update_lock_status(&lock.l1_tx_hash, BridgeStatus::Failed);
+            } else {
+                warn!("   ⚠️ Lock {} failed (retry {}/{}), will be retried on next startup",
+                    lock.l1_tx_hash, retry_count, MAX_RELAY_RETRIES);
+                let _ = self.db.update_lock_status(&lock.l1_tx_hash, BridgeStatus::Failed);
+            }
+            self.metrics.errors.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            anyhow::bail!("{}", err_msg);
         }
+        // Mark as executing (confirmed submission)
+        let _ = self.db.update_lock_status(&lock.l1_tx_hash, BridgeStatus::Executing);
         let tx_hash = last_tx_hash;
 
         // ── Poll for receipt ──────────────────────────────────────────
@@ -382,6 +423,8 @@ impl Relayer {
             let tx = tx_hash.clone();
             let chain_name = chain_config.name.clone();
             let metrics = Arc::clone(&self.metrics);
+            let db = Arc::clone(&self.db);
+            let l1_tx_hash = lock.l1_tx_hash.clone();
             async move {
                 let evm2 = EvmHttpClient::from_rpc_url(&evm_url);
                 for attempt in 1..=20 {
@@ -395,12 +438,14 @@ impl Relayer {
                                     chain_name, attempt, tx
                                 );
                                 metrics.evm_mints_confirmed.fetch_add(1, Ordering::Relaxed);
+                                let _ = db.update_lock_status(&l1_tx_hash, BridgeStatus::Completed);
                             } else {
                                 error!(
                                     "   🔴 submitLockProof REVERTED on {} (attempt {}) — tx: {}",
                                     chain_name, attempt, tx
                                 );
                                 metrics.errors.fetch_add(1, Ordering::Relaxed);
+                                let _ = db.update_lock_status(&l1_tx_hash, BridgeStatus::Failed);
                             }
                             return;
                         }
@@ -409,6 +454,7 @@ impl Relayer {
                                 continue; // not mined yet
                             }
                             warn!("   ⏱️ submitLockProof receipt not found after 20 attempts — tx: {}", tx);
+                            let _ = db.update_lock_status(&l1_tx_hash, BridgeStatus::Failed);
                         }
                         Err(e) => {
                             warn!("   Receipt poll error (attempt {}): {}", attempt, e);
@@ -427,6 +473,12 @@ impl Relayer {
             "📤 Processing EVM→L1 burn: {} wZION → {} on L1 (chain: {}, burn_id: {})",
             burn.amount_wzion_wei, burn.l1_recipient, burn.evm_chain, burn.burn_id,
         );
+
+        // Persist burn to DB (INSERT OR IGNORE — safe to call multiple times)
+        if let Err(e) = self.db.insert_burn(&burn) {
+            warn!("DB: failed to persist burn {}: {}", burn.burn_id, e);
+        }
+        let _ = self.db.update_burn_status(&burn.burn_id, BridgeStatus::Executing);
 
         // ── Rate limit ────────────────────────────────────────────────
         match self.rate_limiter.check_and_record(&burn.evm_burner) {
@@ -670,6 +722,7 @@ impl Relayer {
             let chain_name = chain_config.name.clone();
             let burn_id = burn.burn_id.clone();
             let metrics = Arc::clone(&self.metrics);
+            let db = Arc::clone(&self.db);
             async move {
                 let evm2 = EvmHttpClient::from_rpc_url(&evm_url);
                 for attempt in 1..=20 {
@@ -681,10 +734,12 @@ impl Relayer {
                                 info!("   🟢 confirmBurnRelease CONFIRMED on {} (attempt {}) — burn_id: {} tx: {}",
                                     chain_name, attempt, burn_id, tx);
                                 metrics.l1_unlocks_confirmed.fetch_add(1, Ordering::Relaxed);
+                                let _ = db.update_burn_status(&burn_id, BridgeStatus::Completed);
                             } else {
                                 error!("   🔴 confirmBurnRelease REVERTED on {} (attempt {}) — burn_id: {} tx: {}",
                                     chain_name, attempt, burn_id, tx);
                                 metrics.errors.fetch_add(1, Ordering::Relaxed);
+                                let _ = db.update_burn_status(&burn_id, BridgeStatus::Failed);
                             }
                             return;
                         }
@@ -693,6 +748,7 @@ impl Relayer {
                                 continue;
                             }
                             warn!("   ⏱️ confirmBurnRelease receipt not found after 20 attempts — tx: {}", tx);
+                            let _ = db.update_burn_status(&burn_id, BridgeStatus::Failed);
                         }
                         Err(e) => {
                             warn!("   Receipt poll error (attempt {}): {}", attempt, e);
@@ -701,6 +757,125 @@ impl Relayer {
                 }
             }
         });
+
+        Ok(())
+    }
+
+    /// Poll the `timelocked_ops` table and execute any that have passed their expiry.
+    ///
+    /// Should be called periodically (e.g. from a background task every 5 minutes).
+    /// For each expired-but-pending timelocked op, this submits `executeTimelockedMint(bytes32)`
+    /// to the ZIONBridge contract using validator-1's key.
+    pub async fn poll_timelocked_ops(&self) -> Result<()> {
+        let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
+        let expired = self.db.get_expired_timelocked_ops(&now)?;
+
+        if expired.is_empty() {
+            return Ok(());
+        }
+
+        info!("⏰ Timelock poller: {} expired op(s) ready for executeTimelockedMint", expired.len());
+
+        for op in expired {
+            info!(
+                "⏰ Executing timelocked mint — l1_tx: {} chain: {} amount: {} recipient: {}",
+                op.l1_tx_hash, op.evm_chain, op.amount_wzion_wei, op.evm_recipient,
+            );
+
+            // Find EVM chain config
+            let chain_config = match self
+                .config
+                .evm_chains
+                .iter()
+                .find(|c| c.chain_id == op.evm_chain && c.enabled)
+            {
+                Some(c) => c,
+                None => {
+                    let e = format!("Chain '{}' not configured for timelocked op", op.evm_chain);
+                    error!("   ⚠️ {}", e);
+                    let _ = self.db.mark_timelocked_failed(&op.l1_tx_hash, &e);
+                    continue;
+                }
+            };
+
+            // Load validator-1 key
+            let key = match load_validator_key(&self.config.validator) {
+                Ok(k) => k,
+                Err(e) => {
+                    let msg = format!("Failed to load validator key: {}", e);
+                    error!("   ⚠️ {}", msg);
+                    let _ = self.db.mark_timelocked_failed(&op.l1_tx_hash, &msg);
+                    continue;
+                }
+            };
+            let validator_addr = match derive_evm_address(key.as_str()) {
+                Ok(a) => a,
+                Err(e) => {
+                    error!("   ⚠️ Failed to derive validator address: {}", e);
+                    continue;
+                }
+            };
+
+            // Encode calldata: executeTimelockedMint(bytes32)
+            let l1_hash_bytes = hash_to_bytes32(&op.l1_tx_hash);
+            let calldata = encode_execute_timelocked_mint(&l1_hash_bytes);
+            let calldata_hex = format!("0x{}", hex::encode(&calldata));
+
+            let rpc_url = chain_config.effective_rpc_url(&self.config.ankr);
+            let evm = EvmHttpClient::from_rpc_url(&rpc_url);
+
+            let nonce = match evm.get_nonce(&validator_addr).await {
+                Ok(n) => n,
+                Err(e) => {
+                    error!("   ⚠️ get_nonce failed for timelocked mint: {}", e);
+                    continue;
+                }
+            };
+            let base_fee = evm.get_gas_price().await.unwrap_or(2_000_000_000);
+            let priority_fee = evm.get_max_priority_fee().await.unwrap_or(1_500_000_000);
+            let max_fee_cap = chain_config.max_gas_gwei * 1_000_000_000;
+            let max_fee = (2 * base_fee + priority_fee).min(max_fee_cap);
+            let max_priority = priority_fee.min(max_fee);
+            let gas_estimate = evm
+                .estimate_gas(&validator_addr, &chain_config.bridge_contract_address, &calldata_hex)
+                .await
+                .unwrap_or(120_000);
+            let gas_limit = gas_estimate * GAS_MARGIN_NUM / GAS_MARGIN_DEN;
+
+            let raw_tx = match build_and_sign_eip1559_tx(
+                chain_config.evm_chain_id,
+                nonce,
+                max_priority,
+                max_fee,
+                gas_limit,
+                &chain_config.bridge_contract_address,
+                &calldata,
+                key.as_str(),
+            ) {
+                Ok(t) => t,
+                Err(e) => {
+                    error!("   ⚠️ Failed to sign executeTimelockedMint TX: {}", e);
+                    continue;
+                }
+            };
+
+            match evm.send_raw_transaction(&raw_tx).await {
+                Ok(tx_hash) => {
+                    info!(
+                        "   ✅ executeTimelockedMint submitted! hash: {} | l1_tx: {} | chain: {}",
+                        tx_hash, op.l1_tx_hash, op.evm_chain,
+                    );
+                    let _ = self.db.mark_timelocked_executed(&op.l1_tx_hash, &tx_hash);
+                    self.metrics.evm_mints_submitted.fetch_add(1, Ordering::Relaxed);
+                }
+                Err(e) => {
+                    let msg = format!("executeTimelockedMint TX submit failed: {}", e);
+                    error!("   ⚠️ {}", msg);
+                    let _ = self.db.mark_timelocked_failed(&op.l1_tx_hash, &msg);
+                    self.metrics.errors.fetch_add(1, Ordering::Relaxed);
+                }
+            }
+        }
 
         Ok(())
     }
