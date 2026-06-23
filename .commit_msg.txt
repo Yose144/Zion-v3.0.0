@@ -1,29 +1,13 @@
-feat(L1): add memo support to UTXO SendParams + build_and_sign
+docs: update bridge status — 100M UTXO locks sent, validator key blocker
 
-Previously `zion wallet send --memo` accepted the flag but silently
-dropped the memo for UTXO transactions, because `SendParams` had no
-`memo` field and `build_and_sign` hardcoded `memo: None` on every
-output.  This trapped 100M ZION on the bridge vault: the relay
-detected the lock but could not mint wZION because the EVM recipient
-was missing.
-
-User-approved L1 change (per AGENTS.md security protocol).
-
-Changes:
-- `V3/L1/core/src/wallet.rs`: add `memo: Option<String>` to
-  `SendParams`; thread it into the primary output of `build_and_sign`.
-  Change outputs still carry `memo: None` (consensus rule: change
-  outputs must not carry memos).
-- `V3/cli/src/commands/wallet.rs`: pass `--memo` into `SendParams`.
-- `V3/sdk/src/wallet.rs`: default `memo: None` in existing helper.
-- `V3/L1/core/src/bin/wallet.rs`: default `memo: None` in `cmd_send`
-  (the dedicated `bridge-lock` subcommand already builds memo-carrying
-  outputs manually).
-- All unit tests in `wallet::tests` updated to construct `SendParams`
-  with `memo: None`.
-
-Verification: `cargo test -p zion-core --lib wallet` → 14 passed, 0
-failed.
+- 6 UTXO lock TX (total ~100M ZION) sent from slot 14 to bridge vault
+  with memo BRIDGE:base:0xdde17506... in blocks 11611-11612
+- Relay detected all 6 locks, waiting for finality
+- Blocker: validator private key for 0xdde17506... not persisted from
+  deploy session — relay cannot mint wZION without it
+- Corrected earlier assumption: only ~316 ZION lost (test transfers),
+  not 100M — all genesis funds intact
+- Cleaned up 18 diagnostic scripts
 
 Generated with [Devin](https://devin.ai)
 
