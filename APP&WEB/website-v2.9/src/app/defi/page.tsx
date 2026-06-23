@@ -22,7 +22,7 @@ import { useWallet } from '@/contexts/WalletContext';
 import SwapWidget from '@/components/SwapWidget';
 import BridgeBurnWidget from '@/components/BridgeBurnWidget';
 import DefiBalances from '@/components/DefiBalances';
-import { CONTRACTS } from '@/lib/defi-contracts';
+import { CONTRACTS, SEED_PRICE_USD } from '@/lib/defi-contracts';
 import { useNetworkStatus } from '@/hooks/useWebSocketSubscription';
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
@@ -200,16 +200,19 @@ export default function DefiPage() {
                 <span className="font-mono text-white">{wZIONSupply}</span>
               </div>
             )}
-            {wZIONPrice && wZIONPrice.usd_per_wzion > 0 && (
+            {/* Price badge — shows live Uni V3 price or seed price as fallback */}
+            {(wZIONPrice?.usd_per_wzion != null || true) && (
               <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
                 <BarChart3 className="h-3.5 w-3.5 text-emerald-400" />
                 <span className="text-gray-300">{cs ? 'Cena' : 'Price'}:</span>
                 <span className="font-mono text-white">
-                  ${wZIONPrice.usd_per_wzion.toFixed(6)}
+                  ${(wZIONPrice?.usd_per_wzion ?? SEED_PRICE_USD).toFixed(5)}
                 </span>
-                <span className="text-[10px] text-gray-500">
-                  ({wZIONPrice.wzion_per_weth.toFixed(8)} WETH)
-                </span>
+                {wZIONPrice?.usd_per_wzion != null && wZIONPrice.usd_per_wzion > 0 ? (
+                  <span className="text-[10px] text-emerald-400/70">live</span>
+                ) : (
+                  <span className="text-[10px] text-amber-400/70">seed</span>
+                )}
               </div>
             )}
 
