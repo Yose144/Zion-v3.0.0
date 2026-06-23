@@ -1,6 +1,6 @@
 # ZION Bridge — Mainnet Deployment Report
 
-> Generated: 2026-06-22, updated 2026-06-23
+> Generated: 2026-06-22, updated 2026-06-23 (100M ZION UTXO locks potvrzeny, validator key bloker)
 > Scope: Base Mainnet 5/5 multisig bridge deployment
 
 ## Executive Summary
@@ -65,15 +65,30 @@
 - EVM watcher block-range bug fixed (chunked to 1500 blocks to respect Base RPC limits).
 - Testnet ZIONBridge also has `threshold() == 1` on-chain, but config is 2/2 — testnet bridge should be redeployed with threshold 2 or config lowered to match reality.
 
+## 100M ZION — Stav (2026-06-23)
+
+> **Žádných 100M ZION NEBYLO ztraceno.** Testovací transfery z předchozích sessions byly po **100 ZION**, ne 100M. Všech 100M ZION z genesis slotu 14 (`zion1r565...`) bylo intact a úspěšně odesláno jako 6 UTXO locků s memo na bridge vault.
+
+| TxID | Částka | Blok | Memo |
+|------|--------|------|------|
+| `6bc2aa3e2879dfb3d98b35b1a09d7abee8fa9e5f3092a464c0679e84d6519ef4` | 16,666,666 ZION | 11611 | ✅ |
+| `d9ddb3c7aaf2ad3a320c2878a1822298ec438240d9a9ffdbca95d256ec637cdb` | 16,666,666 ZION | 11611 | ✅ |
+| `09fc9abb00c5b95e797709259731313afca5e0cc4a14f6687351e9295c1c6bc1` | 16,666,666 ZION | 11611 | ✅ |
+| `2cd12d90b10b3ce7218a17dd804d36ad9c8d5870f42e27132c91c33e92f8458e` | 16,666,666 ZION | 11611 | ✅ |
+| `4b43e7a3623ec3d4c007c134bd831a21d6628195643c1d6a33a889324fecfe59` | 16,666,666 ZION | 11612 | ✅ |
+| `035c761db8a7e9d847ff56a8d8f8d7b37703631fac2b64453fb02fb20a1ef691` | 16,666,569 ZION | 11612 | ✅ |
+| **Celkem** | **~100,000,000 ZION** | — | ✅ Relay detekoval |
+
+Viz [`fixL1bridge100m.md`](./fixL1bridge100m.md) pro kompletní chronologii a root cause analýzu.
+
 ## Next action
 
 1. ~~**L1 wallet memo fix:**~~ ✅ Done (commit `20379ec4`) — `SendParams.memo` + `build_and_sign()` + CLI `--memo` passthrough.
 2. ~~**Re-send UTXO lock:**~~ ✅ Done (2026-06-23) — 6 UTXO lock TX odeslány z `zion1r565...` (Slot 14) na bridge vault s memo `BRIDGE:base:0xdde17506...`, bloky 11611–11612, celkem ~100M ZION. Relay detekoval všech 6 locků.
-3. **⚠️ Validator privátní klíč (BLOKER):** Relay nemůže mintnout wZION — chybí `keys/validator.key` nebo env var `ZION_VALIDATOR_PRIVATE_KEY` pro `0xdde17506...`. Klíč nebyl persistován z předchozí deploy session. Uživatel musí poskytnout klíč nebo vygenerovat nový a aktualizovat `BridgeValidator.sol`.
-4. **Top up validator ETH:** Send ~0.05 ETH to the 5 validator addresses for relay gas (current: ~0.002 ETH each).
-5. **Run E2E test:** Lock L1 ZION → mint wZION on Base → add liquidity / swap → burn wZION → unlock L1 ZION.
-
-> **Note:** Původní předpoklad o ztrátě 100M ZION byl chybný. Testovací transfery byly po 100 ZION, ne 100M. Všech 100M ZION z genesis slotu 14 bylo úspěšně odesláno jako 6 UTXO locků s memo. Ztraceno pouze ~316 ZION (testovací account-model transfery).
+3. **⚠️ Validator privátní klíč (BLOKER #1):** Relay nemůže mintnout wZION — chybí `keys/validator.key` nebo env var `ZION_VALIDATOR_PRIVATE_KEY` pro `0xdde17506...`. Poskytnout klíč a restartovat relay → ~100M wZION mintnut na `0xdde17506...`.
+4. **Top up validator ETH (BLOKER #2):** Poslat ~0.05 ETH na všech 5 validátor adres pro relay gas (aktuálně: ~0.002 ETH každý).
+5. **E2E test (BLOKER #3):** Lock L1 ZION → mint wZION na Base → přidat likviditu / swap → burn wZION → unlock L1 ZION.
+6. **DEX likvidita (BLOKER #4):** Přidat ~100M wZION + WETH na UniV3Pool (`0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB`).
 
 ```powershell
 $env:ZION_BRIDGE_CONFIG = 'V3/config/bridge-mainnet.toml'
