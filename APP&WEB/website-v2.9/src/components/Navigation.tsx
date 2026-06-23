@@ -55,6 +55,7 @@ export default function Navigation() {
         { href: '/bridge', label: tr('nav', 'bridge', lang) },
         { href: '/dao', label: tr('nav', 'dao', lang) },
         { href: '/wallet', label: tr('nav', 'wallet', lang) },
+        { href: '/doge-vs-zion', label: tr('nav', 'meme_lab', lang) },
       ],
     },
     {
