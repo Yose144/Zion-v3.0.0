@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { ArrowRight, Crown, ShieldCheck, Plus, Heart, TreeDeciduous, Star, Sparkles, Users, Info } from 'lucide-react';
+import { ArrowRight, Crown, ShieldCheck, Plus, Heart, TreeDeciduous, Star, Sparkles, Users, Info, Link2, ArrowLeftRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useLang } from '@/contexts/LanguageContext';
 import DAOStats from '@/components/dao/DAOStats';
@@ -62,6 +62,14 @@ export default function DaoPage() {
   const [createProposer, setCreateProposer] = useState('');
   const [createBusy, setCreateBusy] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [bridgeStatus, setBridgeStatus] = useState<{
+    online: boolean;
+    l1_locks_detected: number;
+    l1_locks_finalized: number;
+    evm_mints_confirmed: number;
+    last_l1_height: number;
+    errors_total: number;
+  } | null>(null);
 
   const phases = getPhases(cs);
   const quickLinks = getQuickLinks(cs);
@@ -71,15 +79,17 @@ export default function DaoPage() {
   async function loadDAOData() {
     try {
       setLoading(true);
-      const [statsData, proposalsData, treasuryData] = await Promise.all([
+      const [statsData, proposalsData, treasuryData, bridgeData] = await Promise.all([
         getDAOStats(),
         getGovernanceProposals(),
         getDAOTreasuryOverview(),
+        fetch('/api/bridge/status', { cache: 'no-store' }).then(r => r.json()).catch(() => null),
       ]);
       setStats(statsData);
       setProposals(proposalsData);
       setTreasury(treasuryData);
       setDaemonOnline(proposalsData.length > 0 || statsData.governance.total_proposals > 0);
+      if (bridgeData) setBridgeStatus(bridgeData);
     } catch {
       setDaemonOnline(false);
     } finally {
@@ -209,6 +219,66 @@ export default function DaoPage() {
             </div>
           </motion.section>
         )}
+
+        {/* ── Bridge Vault ── */}
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-white/10 bg-white/5 p-8">
+          <div className="flex flex-col gap-2 mb-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Bridge Vault' : 'Bridge Vault'}</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <ArrowLeftRight className="h-7 w-7 text-zion-gold" />
+              {cs ? '100M ZION → Base Mainnet' : '100M ZION → Base Mainnet'}
+            </h2>
+            <p className="text-gray-300 max-w-2xl mt-2">
+              {cs
+                ? '6 UTXO lock transakcí (~16.67M ZION každá) odesláno na bridge vault v blocích 11611–11612. Bridge relay mintne wZION na Base mainnet po dosažení finality.'
+                : '6 UTXO lock transactions (~16.67M ZION each) sent to the bridge vault in blocks 11611–11612. The bridge relay will mint wZION on Base mainnet after finality.'}
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <p className="text-xs uppercase tracking-wider text-gray-400">{cs ? 'Zamčeno ZION' : 'Locked ZION'}</p>
+              <p className="text-lg font-semibold text-white mt-1">~100,000,000</p>
+              <p className="text-xs text-gray-500">6 UTXO locks</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <p className="text-xs uppercase tracking-wider text-gray-400">{cs ? 'Relay status' : 'Relay status'}</p>
+              <p className="text-lg font-semibold mt-1 flex items-center gap-2">
+                {bridgeStatus?.online ? (
+                  <>
+                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-emerald-400">Online</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="h-2 w-2 rounded-full bg-gray-500" />
+                    <span className="text-gray-400">Offline</span>
+                  </>
+                )}
+              </p>
+              <p className="text-xs text-gray-500">{cs ? 'L2 Cross-Chain Relay' : 'L2 Cross-Chain Relay'}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <p className="text-xs uppercase tracking-wider text-gray-400">{cs ? 'wZION mints' : 'wZION mints'}</p>
+              <p className="text-lg font-semibold text-white mt-1">{bridgeStatus?.evm_mints_confirmed ?? '—'}</p>
+              <p className="text-xs text-gray-500">{cs ? 'potvrzeno na Base' : 'confirmed on Base'}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <p className="text-xs uppercase tracking-wider text-gray-400">{cs ? 'L1 blok' : 'L1 block'}</p>
+              <p className="text-lg font-semibold text-white mt-1">{bridgeStatus?.last_l1_height ?? '—'}</p>
+              <p className="text-xs text-gray-500">{cs ? 'poslední scan' : 'last scan'}</p>
+            </div>
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-gray-500">
+            <span className="inline-flex items-center gap-1.5">
+              <Link2 className="h-3.5 w-3.5" />
+              wZION: <span className="text-gray-400 font-mono">0x0c49…2bb6</span>
+            </span>
+            <span className="text-gray-600">·</span>
+            <span>{cs ? 'Vault:' : 'Vault:'} <span className="text-gray-400 font-mono">zion1w0r0…w0t0</span></span>
+            <span className="text-gray-600">·</span>
+            <span>{cs ? 'Finality: 60 bloků' : 'Finality: 60 blocks'}</span>
+          </div>
+        </motion.section>
 
         {/* ── Governance phases ── */}
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-white/10 bg-white/5 p-8">

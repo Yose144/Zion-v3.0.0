@@ -22,8 +22,8 @@ export const CORE = {
   /** Prometheus metrics scraper — runs locally on Edge (port 9090) */
   prometheus: `http://127.0.0.1:9090`,
 
-  /** Bridge relay Prometheus metrics — runs locally on Edge (port 9102) */
-  bridgeMetrics: `http://127.0.0.1:9102`,
+  /** Bridge relay Prometheus metrics — runs locally on Edge (port 9101) */
+  bridgeMetrics: `http://127.0.0.1:9101`,
 
   /** Dashboard Python Flask — runs locally on Edge (port 8766) */
   dashboard: `http://127.0.0.1:8766`,
