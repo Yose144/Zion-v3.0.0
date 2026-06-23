@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
+import StargatePortal from '@/components/StargatePortal';
 
 interface DogeVsZionBannerProps {
   cs?: boolean;
@@ -81,13 +82,13 @@ export default function DogeVsZionBanner({ cs = true }: DogeVsZionBannerProps) {
           </p>
         </div>
 
-        {/* ZION rocket */}
+        {/* ZION stargate portal */}
         <motion.div
-          animate={hover ? { rotate: [0, 8, -8, 0], scale: 1.05 } : { rotate: [0, 3, -3, 0] }}
+          animate={hover ? { scale: 1.05 } : { scale: 1 }}
           transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
-          className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-2 border-emerald-400/30 bg-gradient-to-br from-emerald-500/20 to-zion-cyan/20 text-4xl shadow-[0_12px_40px_rgba(16,185,129,0.25)]"
+          className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-2 border-emerald-400/30 bg-gradient-to-br from-emerald-500/20 to-zion-cyan/20 shadow-[0_12px_40px_rgba(16,185,129,0.25)]"
         >
-          🚀
+          <StargatePortal size={64} active={hover} />
           <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full border border-white/10 bg-black/70 px-2 py-0.5 text-[8px] font-bold text-emerald-300">
             ZION
           </span>
