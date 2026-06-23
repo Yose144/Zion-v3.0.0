@@ -24,47 +24,17 @@ export const NEWS_ARTICLES: NewsArticle[] = [
   {
     slug: 'from-genesis-on-the-star',
     date: '2026-06-23',
-    tag: { cs: 'Genesis', en: 'Genesis' },
+    tag: { cs: 'Launch', en: 'Launch' },
     tagColor: 'text-zion-gold',
     title: {
-      cs: 'From Genesis on the Star 🌟 — 100M ZION letí na Base, taková akce nebyla od Doge éry!',
-      en: 'From Genesis on the Star 🌟 — 100M ZION flying to Base, the likes of which haven\'t been seen since the Doge era!',
+      cs: 'From Genesis on the Star 🚀 100M ZION letí na Base za $0.00002 — such DeFi, much wow!',
+      en: 'From Genesis on the Star 🚀 100M ZION flying to Base at $0.00002 — such DeFi, much wow!',
     },
     summary: {
-      cs: 'Much bridge. Very mainnet. Such 5/5. WOW. 🐕→🚀 100 000 000 ZION zamčeno v vaultu, pět validatorů potvrdilo on-chain, relay běží, timelock tiká. ZION vznikl na hvězdě — a teď letí na Base Mainnet přes 5/5 multisig bridge. Když Doge šel na měsíc, šel s jedním podpisem. My jdeme s pěti. To je upgrade. Such security. Very PoW. Many layers. Welcome to Terra Nova — from genesis on the star, to DeFi on Base. To the moon? Ne. To the stars. 🌟',
-      en: 'Much bridge. Very mainnet. Such 5/5. WOW. 🐕→🚀 100,000,000 ZION locked in the vault, five validators confirmed on-chain, relay is running, timelock is ticking. ZION was born on a star — and now it\'s flying to Base Mainnet via a 5/5 multisig bridge. When Doge went to the moon, it went with one signature. We\'re going with five. That\'s an upgrade. Such security. Very PoW. Many layers. Welcome to Terra Nova — from genesis on the star, to DeFi on Base. To the moon? No. To the stars. 🌟',
-    },
-    href: '/bridge',
-  },
-  {
-    slug: 'liquidity-price-set',
-    date: '2026-06-23',
-    tag: { cs: 'Likvidita', en: 'Liquidity' },
-    tagColor: 'text-zion-gold',
-    title: {
-      cs: 'Počáteční cena wZION stanovena — $0.00002/ZION, FDV ≈ $2.9M',
-      en: 'Initial wZION price set — $0.00002/ZION, FDV ≈ $2.9M',
-    },
-    summary: {
-      cs: 'Počáteční seed cena pro UniV3Pool (wZION/WETH) byla stanovena na $0.00002/ZION (≈ 0.0000000121 ETH). Cílový FDV ~$2.9M na 144B max supply — věrohodný mikro-cap vstup mezi Dynex ($1.1M) a Ergo ($18M), na úrovni Zephyr. Reálný obchodovatelný float na startu ~100–200M wZION. Seed likvidita 60M wZION (60%) + odpovídající ETH.',
-      en: 'Initial seed price for UniV3Pool (wZION/WETH) has been set at $0.00002/ZION (≈ 0.0000000121 ETH). Target FDV ~$2.9M on 144B max supply — credible micro-cap entry between Dynex ($1.1M) and Ergo ($18M), on par with Zephyr. Real tradeable float at launch ~100–200M wZION. Seed liquidity 60M wZION (60%) + corresponding ETH.',
+      cs: 'Much bridge. Very mainnet. Such 5/5. WOW. 🐕 100M ZION zamčeno na L1, 5/5 validátorů potvrdilo on-chain, relay běží. Počáteční cena na UniV3Pool: $0.00002/ZION (FDV ~$2.9M). Když Doge šel na Měsíc, měl jeden podpis. My letíme na Base s pěti. To the moon? Ne. To the stars. 🌟',
+      en: 'Much bridge. Very mainnet. Such 5/5. WOW. 🐕 100M ZION locked on L1, 5/5 validators confirmed on-chain, relay is live. Initial UniV3Pool price: $0.00002/ZION (FDV ~$2.9M). When Doge went to the Moon, it had one signature. We\'re flying to Base with five. To the moon? No. To the stars. 🌟',
     },
     href: '/defi',
-  },
-  {
-    slug: 'bridge-100m-live',
-    date: '2026-06-23',
-    tag: { cs: 'Bridge', en: 'Bridge' },
-    tagColor: 'text-emerald-400',
-    title: {
-      cs: '100M ZION zamčeno na Base Mainnet — 5/5 bridge potvrzeno, relay online',
-      en: '100M ZION locked on Base Mainnet — 5/5 bridge confirmed, relay online',
-    },
-    summary: {
-      cs: '100 000 000 ZION je zamčeno v bridge vaultu na L1, 5/5 validatorů potvrdilo všechny 6 lock transakcí on-chain. Nový ZIONBridge 5/5 multisig (0x8950...eF88) je nasazen na Base Mainnet. Multi-validator relay běží s 24h timelockem. wZION mint proběhne po timelock expiry.',
-      en: '100,000,000 ZION is locked in the bridge vault on L1, 5/5 validators confirmed all 6 lock transactions on-chain. New ZIONBridge 5/5 multisig (0x8950...eF88) is deployed on Base Mainnet. Multi-validator relay is running with 24h timelock. wZION mint will occur after timelock expiry.',
-    },
-    href: '/bridge',
   },
   {
     slug: 'hiran-v2.3-trained',
@@ -335,9 +305,7 @@ const CARD_ACCENT: Record<string, { from: string; to: string; glow: string }> = 
   Book:      { from: 'from-yellow-500/20', to: 'to-amber-500/5', glow: 'shadow-yellow-500/10' },
   Mining:    { from: 'from-cyan-500/20', to: 'to-sky-500/5', glow: 'shadow-cyan-500/10' },
   DeFi:      { from: 'from-gold-500/20', to: 'to-yellow-500/5', glow: 'shadow-yellow-500/10' },
-  Bridge:    { from: 'from-emerald-500/20', to: 'to-teal-500/5', glow: 'shadow-emerald-500/10' },
-  Likvidita: { from: 'from-amber-500/20', to: 'to-yellow-500/5', glow: 'shadow-amber-500/10' },
-  Liquidity: { from: 'from-amber-500/20', to: 'to-yellow-500/5', glow: 'shadow-amber-500/10' },
+  Launch:    { from: 'from-amber-500/20', to: 'to-yellow-500/5', glow: 'shadow-amber-500/10' },
   Listing:   { from: 'from-green-500/20', to: 'to-emerald-500/5', glow: 'shadow-green-500/10' },
   'Hard Fork': { from: 'from-rose-500/20', to: 'to-red-500/5', glow: 'shadow-rose-500/10' },
 };
