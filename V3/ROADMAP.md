@@ -5,6 +5,34 @@ Status date: **2026-06-23** (supplement below; narrative body reflects Sprint 8 
 This file is the active source-of-truth for the clean `V3/` mainnet line.
 `V3/` is intentionally separated from the legacy root workspace. The legacy root remains migration source material and audit evidence, but new mainnet-track runtime work should land in `V3/`.
 
+## Supplement — 2026-06-24 (Full L2 Realistický Plán + Pool Seeding)
+
+### Stav L2 — Co funguje, co chybí
+
+Viz [`docs/DEFI_FULL_ROADMAP.md`](../docs/DEFI_FULL_ROADMAP.md) pro kompletní realistickou analýzu.
+TL;DR stav:
+- **Bridge L1→EVM (mint):** ✅ 100% ověřeno v produkci (5/5, 30 TX, 100M wZION)
+- **Bridge EVM→L1 (burn):** ⚠️ kód hotov, nikdy netestováno E2E — P0 blocker
+- **UniV3Pool:** ⏳ deployed, neinicializovaný — seed ETH ≥ 0.80 ETH potřeba
+- **Staking/Farm:** ⚠️ deployed, ale `notifyRewardAmount()` / `addPool()` nezavolány
+- **Swap UI:** ⚠️ kód hotov, čeká jen na pool seeding
+- **Wallet SDK:** ❌ neexistuje — blocker pro mobile integrace
+- **TX history RPC:** ❌ chybí v L1 node — blocker pro explorer
+
+### Seed price konstanty (potvrzeno 2026-06-24)
+
+```
+Seed cena:   $0.00002 / ZION  @  ETH $1 656
+sqrtPriceX96: 8_706_917_217_488_994_866_036_736
+tick:         -182_328
+ETH potřeba (doporučeno 60M wZION):  ≥ 0.80 ETH (~$1 300)
+```
+
+Konstanty jsou v `APP&WEB/website-v2.9/src/lib/defi-contracts.ts` jako
+`SEED_PRICE_USD`, `SEED_SQRT_PRICE_X96`, `SEED_TICK`.
+
+---
+
 ## Supplement — 2026-06-23 (Bridge 5/5 Milestone + DeFi Liquidity Plan)
 
 ### Bridge 100M ZION → wZION — FINALIZOVÁNO
