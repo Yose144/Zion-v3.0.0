@@ -107,10 +107,10 @@ export default function DaoPage() {
       .then((rows) => {
         if (cancelled) return;
         const mapped = rows.map(mapProposal);
-        setProposals(mapped.length > 0 ? mapped : FALLBACK_PROPOSALS);
+        setProposals(mapped);
       })
       .catch(() => {
-        if (!cancelled) setProposals(FALLBACK_PROPOSALS);
+        if (!cancelled) setProposals([]);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -150,6 +150,21 @@ export default function DaoPage() {
               ? 'On-chain hlasování váhou tokenů. Navrhujte, hlasujte a exekvujte rozhodnutí komunity. Decentralizovaná governance pro Terra Nova ekosystém.'
               : 'On-chain token-weighted voting. Propose, vote, and execute community decisions. Decentralized governance for the Terra Nova ecosystem.'}
           </p>
+
+          {/* Link to full DAO page */}
+          <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 flex items-center gap-3">
+            <Vote className="h-5 w-5 text-zion-gold shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm text-gray-300">
+                {cs
+                  ? 'Plná DAO stránka s treasury, návrhy a hlasováním je dostupná na /dao.'
+                  : 'The full DAO page with treasury, proposals, and voting is available at /dao.'}
+              </p>
+            </div>
+            <Link href="/dao" className="text-zion-gold hover:underline text-sm whitespace-nowrap">
+              {cs ? 'Otevřít DAO →' : 'Open DAO →'}
+            </Link>
+          </div>
 
           <div className="mt-6 flex flex-wrap gap-3 text-xs">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
