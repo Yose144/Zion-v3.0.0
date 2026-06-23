@@ -3482,11 +3482,11 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-gradient">🌉 ZION Bridge</h1>
-        <p class="text-xs text-gray-400 mt-1">Cross-chain relay — L1 ↔ Base Sepolia Testnet (mainnet soon)</p>
+        <p class="text-xs text-gray-400 mt-1">Cross-chain relay — L1 ↔ Base Mainnet (5/5 multisig, ~100M ZION locked)</p>
       </div>
       <div class="flex items-center gap-2">
         <div id="bridge-status-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-700/50 text-gray-300 border border-white/10">● Checking…</div>
-        <button onclick="loadBridgeStatus()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+        <button onclick="loadBridgeStats()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
       </div>
     </div>
 
@@ -3494,95 +3494,146 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
       <div class="zion-panel p-4 text-center">
         <div class="text-xl font-bold text-emerald-400" id="bridge-last-block">—</div>
-        <div class="text-[10px] text-gray-400 mt-1">Last Scanned Block</div>
+        <div class="text-[10px] text-gray-400 mt-1">Last L1 Height</div>
       </div>
       <div class="zion-panel p-4 text-center">
         <div class="text-xl font-bold text-blue-400" id="bridge-total-volume">—</div>
-        <div class="text-[10px] text-gray-400 mt-1">Total Volume (wZION)</div>
+        <div class="text-[10px] text-gray-400 mt-1">Total Volume (ZION)</div>
       </div>
       <div class="zion-panel p-4 text-center">
         <div class="text-xl font-bold text-amber-400" id="bridge-pending">—</div>
-        <div class="text-[10px] text-gray-400 mt-1">Pending Transfers</div>
+        <div class="text-[10px] text-gray-400 mt-1">Pending Locks</div>
       </div>
       <div class="zion-panel p-4 text-center">
-        <div class="text-xl font-bold text-purple-400" id="bridge-chains">1</div>
-        <div class="text-[10px] text-gray-400 mt-1">Active Chains</div>
+        <div class="text-xl font-bold text-purple-400" id="bridge-locks-detected">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Locks Detected</div>
       </div>
       <div class="zion-panel p-4 text-center">
-        <div class="text-xl font-bold text-cyan-400" id="bridge-validators">—</div>
-        <div class="text-[10px] text-gray-400 mt-1">Validators Online</div>
+        <div class="text-xl font-bold text-cyan-400" id="bridge-validators">5/5</div>
+        <div class="text-[10px] text-gray-400 mt-1">Validators (5/5 threshold)</div>
       </div>
       <div class="zion-panel p-4 text-center">
-        <div class="text-xl font-bold text-zion-gold" id="bridge-contract">—</div>
-        <div class="text-[10px] text-gray-400 mt-1">Contract Verified</div>
+        <div class="text-xl font-bold text-zion-gold" id="bridge-mints">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Mints Confirmed</div>
       </div>
     </div>
 
-    <!-- Bridge Contracts -->
+    <!-- 100M ZION Lock Status -->
     <div class="zion-panel p-5">
       <div class="flex items-center justify-between mb-3">
-        <h3 class="text-sm font-bold">Base Sepolia Contracts (Verified)</h3>
-        <span class="text-[10px] px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded">Testnet LIVE</span>
+        <h3 class="text-sm font-bold">100M ZION Bridge Vault — Lock Status</h3>
+        <span class="text-[10px] px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded">5/5 Confirmed</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+        <div class="bg-black/30 rounded-lg p-3 border border-white/5">
+          <div class="text-[10px] text-gray-400 mb-1">L1 Bridge Vault</div>
+          <div class="text-xs font-mono text-emerald-400 break-all">zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 border border-white/5">
+          <div class="text-[10px] text-gray-400 mb-1">Total Locked</div>
+          <div class="text-lg font-bold text-zion-gold">~100,000,000 ZION</div>
+          <div class="text-[10px] text-gray-500">6 UTXO locks (blocks 11611–11612)</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 border border-white/5">
+          <div class="text-[10px] text-gray-400 mb-1">Timelock Expiry</div>
+          <div class="text-sm font-bold text-amber-400" id="bridge-timelock">2026-06-24 16:52 UTC</div>
+          <div class="text-[10px] text-gray-500" id="bridge-timelock-countdown">—</div>
+        </div>
+      </div>
+      <!-- UTXO Lock Table -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead><tr class="text-gray-400 border-b border-white/10">
+            <th class="py-2 px-2 text-left">TxID</th>
+            <th class="py-2 px-2 text-right">Amount</th>
+            <th class="py-2 px-2 text-center">Block</th>
+            <th class="py-2 px-2 text-center">Memo</th>
+            <th class="py-2 px-2 text-center">Confirmations</th>
+          </tr></thead>
+          <tbody id="bridge-utxo-locks">
+            <tr><td colspan="5" class="py-3 text-gray-500 text-center">Loading UTXO locks…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Bridge Contracts (Mainnet) -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-bold">Base Mainnet Contracts (5/5 Multisig)</h3>
+        <span class="text-[10px] px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded">Mainnet LIVE</span>
       </div>
       <div class="space-y-2 text-xs font-mono">
         <div class="flex items-center justify-between p-2 bg-black/30 rounded-lg border border-white/5">
           <div>
             <span class="text-gray-400">wZION ERC-20</span>
-            <a href="https://sepolia.basescan.org/address/0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6" target="_blank" class="text-blue-400 hover:text-blue-300 ml-2">0x0c49…2bb6 ↗</a>
+            <a href="https://basescan.org/address/0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6" target="_blank" class="text-blue-400 hover:text-blue-300 ml-2">0x0c49…2bb6 ↗</a>
           </div>
-          <span class="text-emerald-400">● LIVE (11 tx)</span>
+          <span class="text-emerald-400">● Deployed</span>
         </div>
         <div class="flex items-center justify-between p-2 bg-black/30 rounded-lg border border-white/5">
           <div>
-            <span class="text-gray-400">ZIONBridge</span>
-            <a href="https://sepolia.basescan.org/address/0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1" target="_blank" class="text-blue-400 hover:text-blue-300 ml-2">0xF4BF…edca1 ↗</a>
+            <span class="text-gray-400">ZIONBridge (5/5)</span>
+            <a href="https://basescan.org/address/0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88" target="_blank" class="text-blue-400 hover:text-blue-300 ml-2">0x8950…0eF88 ↗</a>
           </div>
-          <span class="text-emerald-400">● LIVE (3 tx)</span>
+          <span class="text-emerald-400">● threshold=5, 5 validators</span>
         </div>
         <div class="flex items-center justify-between p-2 bg-black/30 rounded-lg border border-white/5">
           <div>
-            <span class="text-gray-400">Deployer / Validator</span>
-            <a href="https://sepolia.basescan.org/address/0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186" target="_blank" class="text-blue-400 hover:text-blue-300 ml-2">0xdde1…9D186 ↗</a>
+            <span class="text-gray-400">BridgeValidator (5/5)</span>
+            <a href="https://basescan.org/address/0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627" target="_blank" class="text-blue-400 hover:text-blue-300 ml-2">0x9C13…5627 ↗</a>
           </div>
-          <span class="text-gray-400">50 wZION + UNI-V3-POS</span>
+          <span class="text-emerald-400">● threshold=5, 5 guardians</span>
+        </div>
+        <div class="flex items-center justify-between p-2 bg-black/30 rounded-lg border border-white/5">
+          <div>
+            <span class="text-gray-400">ZIONBridge (old, single-sig)</span>
+            <a href="https://basescan.org/address/0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721" target="_blank" class="text-blue-400 hover:text-blue-300 ml-2">0xa5a0…1721 ↗</a>
+          </div>
+          <span class="text-red-400">● BRIDGE_ROLE revoked</span>
+        </div>
+        <div class="flex items-center justify-between p-2 bg-black/30 rounded-lg border border-white/5">
+          <div>
+            <span class="text-gray-400">UniV3Pool (wZION/WETH)</span>
+            <a href="https://basescan.org/address/0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB" target="_blank" class="text-blue-400 hover:text-blue-300 ml-2">0xa88C…4FBB ↗</a>
+          </div>
+          <span class="text-amber-400">● Listed, seed liquidity pending</span>
         </div>
       </div>
     </div>
 
-    <!-- Bridge Transfer Form -->
+    <!-- Relay Metrics -->
     <div class="zion-panel p-5">
       <div class="flex items-center justify-between mb-3">
-        <h3 class="text-sm font-bold">Cross-Chain Transfer</h3>
-        <span class="text-[10px] text-gray-500">Coming in Phase 26b</span>
+        <h3 class="text-sm font-bold">Relay Metrics (Edge Server)</h3>
+        <span class="text-[10px] text-gray-500" id="bridge-relay-host">100.76.16.108:8451</span>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-        <div>
-          <label class="text-[10px] text-gray-400 block mb-1">From Chain</label>
-          <select id="bridge-from" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-zion-gold/50">
-            <option value="zion">ZION L1 Mainnet</option>
-          </select>
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-lg font-bold text-emerald-400" id="bridge-metric-l1-height">—</div>
+          <div class="text-[10px] text-gray-400">L1 Height Scanned</div>
         </div>
-        <div>
-          <label class="text-[10px] text-gray-400 block mb-1">To Chain</label>
-          <select id="bridge-to" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-zion-gold/50">
-            <option value="base-sepolia">Base Sepolia Testnet</option>
-          </select>
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-lg font-bold text-blue-400" id="bridge-metric-evm-block">—</div>
+          <div class="text-[10px] text-gray-400">EVM Block Scanned</div>
         </div>
-        <div>
-          <label class="text-[10px] text-gray-400 block mb-1">Amount (ZION)</label>
-          <div class="flex gap-2">
-            <input type="number" id="bridge-amount" placeholder="0.0" min="0" step="0.01" class="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-zion-gold/50" disabled>
-            <button class="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-gray-400" disabled>MAX</button>
-          </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-lg font-bold text-amber-400" id="bridge-metric-locks">—</div>
+          <div class="text-[10px] text-gray-400">L1 Locks Detected</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-lg font-bold text-cyan-400" id="bridge-metric-mints">—</div>
+          <div class="text-[10px] text-gray-400">EVM Mints Confirmed</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-lg font-bold text-purple-400" id="bridge-metric-burns">—</div>
+          <div class="text-[10px] text-gray-400">EVM Burns Detected</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-lg font-bold text-zion-gold" id="bridge-metric-unlocks">—</div>
+          <div class="text-[10px] text-gray-400">L1 Unlocks Confirmed</div>
         </div>
       </div>
-      <div class="flex items-center justify-between p-3 bg-black/30 rounded-lg border border-white/5 mb-3">
-        <div class="text-xs text-gray-400">Estimated fee: <span class="text-white font-mono">—</span></div>
-        <div class="text-xs text-gray-400">ETA: <span class="text-white font-mono">—</span></div>
-      </div>
-      <button class="w-full py-2.5 bg-gradient-to-r from-zion-gold/20 to-purple-500/20 border border-zion-gold/30 rounded-lg text-sm font-semibold text-gray-400 cursor-not-allowed" disabled>
-        🚧 Bridge UI coming in 3.1.0 — use CLI: zion bridge transfer
-      </button>
     </div>
 
     <!-- Bridge Transaction History -->
@@ -3602,18 +3653,164 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     <!-- Bridge Readiness -->
     <div class="zion-panel p-5">
       <div class="flex items-center justify-between mb-3">
-        <h3 class="text-sm font-bold">Readiness Checklist</h3>
-        <a href="https://github.com/Yose144/Zion-v3.0.0/blob/main/V3/docs/BRIDGE_READINESS_100.md" target="_blank" class="text-[10px] px-2 py-0.5 bg-purple-700/30 hover:bg-purple-700/50 border border-purple-500/20 rounded-lg font-semibold transition">Full Plan ↗</a>
+        <h3 class="text-sm font-bold">Readiness Checklist — Mainnet 5/5</h3>
+        <a href="https://github.com/Yose144/Zion-v3.0.0/blob/main/BRIDGE_MAINNET_READINESS.md" target="_blank" class="text-[10px] px-2 py-0.5 bg-purple-700/30 hover:bg-purple-700/50 border border-purple-500/20 rounded-lg font-semibold transition">Full Report ↗</a>
       </div>
       <div class="space-y-1.5 text-xs">
-        <div class="flex items-center gap-2"><span class="text-emerald-400">✓</span> <span>wZION ERC-20 deployed on Base Sepolia</span></div>
-        <div class="flex items-center gap-2"><span class="text-emerald-400">✓</span> <span>ZIONBridge deployed on Base Sepolia</span></div>
-        <div class="flex items-center gap-2"><span class="text-emerald-400">✓</span> <span>Deployer wallet holds wZION + tested on Uniswap V3</span></div>
-        <div class="flex items-center gap-2"><span class="text-gray-500">○</span> <span class="text-gray-400">Contract source verified on BaseScan</span></div>
-        <div class="flex items-center gap-2"><span class="text-gray-500">○</span> <span class="text-gray-400">BridgeValidator (3/5 multisig) deployed</span></div>
-        <div class="flex items-center gap-2"><span class="text-gray-500">○</span> <span class="text-gray-400">End-to-end transfer test passed</span></div>
-        <div class="flex items-center gap-2"><span class="text-gray-500">○</span> <span class="text-gray-400">Base Mainnet deploy</span></div>
+        <div class="flex items-center gap-2"><span class="text-emerald-400">✓</span> <span>wZION ERC-20 deployed on Base Mainnet</span></div>
+        <div class="flex items-center gap-2"><span class="text-emerald-400">✓</span> <span>ZIONBridge (5/5 multisig) deployed — threshold=5, 5 validators</span></div>
+        <div class="flex items-center gap-2"><span class="text-emerald-400">✓</span> <span>BridgeValidator (5/5 multisig) deployed — threshold=5, 5 guardians</span></div>
+        <div class="flex items-center gap-2"><span class="text-emerald-400">✓</span> <span>wZION BRIDGE_ROLE migrated from old single-sig to new 5/5 bridge</span></div>
+        <div class="flex items-center gap-2"><span class="text-emerald-400">✓</span> <span>Multi-validator relay — all 5 keys on one instance (commit c4a4841)</span></div>
+        <div class="flex items-center gap-2"><span class="text-emerald-400">✓</span> <span>100M ZION sent as 6 UTXO locks with memo (blocks 11611–11612)</span></div>
+        <div class="flex items-center gap-2"><span class="text-emerald-400">✓</span> <span>All 6 locks have 5/5 on-chain confirmations</span></div>
+        <div class="flex items-center gap-2"><span class="text-emerald-400">✓</span> <span>Default EVM recipient fallback for locks without memo (commit 89873df)</span></div>
+        <div class="flex items-center gap-2"><span class="text-emerald-400">✓</span> <span>L1 scan starts from recent block (commit f87adc9)</span></div>
+        <div class="flex items-center gap-2"><span class="text-amber-400">⏳</span> <span class="text-amber-300">24h timelock — expires 2026-06-24 16:52 UTC → auto-mint ~100M wZION</span></div>
+        <div class="flex items-center gap-2"><span class="text-gray-500">○</span> <span class="text-gray-400">Top up validators ETH (≥0.01 ETH × 5 = 0.05 ETH)</span></div>
+        <div class="flex items-center gap-2"><span class="text-gray-500">○</span> <span class="text-gray-400">UniV3Pool seed liquidity (wZION + WETH)</span></div>
+        <div class="flex items-center gap-2"><span class="text-gray-500">○</span> <span class="text-gray-400">E2E burn→unlock test (reverse bridge direction)</span></div>
+        <div class="flex items-center gap-2"><span class="text-gray-500">○</span> <span class="text-gray-400">Bridge UI on website (/bridge with MetaMask)</span></div>
         <div class="flex items-center gap-2"><span class="text-gray-500">○</span> <span class="text-gray-400">Contract audit (Certik/SlowMist)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: Bridge Validators ═════════ -->
+  <div id="pane-bridge-validators" class="hidden space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">🔑 Bridge Validators</h1>
+        <p class="text-xs text-gray-400 mt-1">5/5 multisig — ZIONBridge + BridgeValidator on Base Mainnet</p>
+      </div>
+      <button onclick="loadBridgeValidators()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+    </div>
+
+    <!-- Threshold Summary -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="zion-panel p-4 text-center">
+        <div class="text-xl font-bold text-emerald-400">5/5</div>
+        <div class="text-[10px] text-gray-400 mt-1">Bridge Threshold</div>
+      </div>
+      <div class="zion-panel p-4 text-center">
+        <div class="text-xl font-bold text-emerald-400">5/5</div>
+        <div class="text-[10px] text-gray-400 mt-1">Guardian Threshold</div>
+      </div>
+      <div class="zion-panel p-4 text-center">
+        <div class="text-xl font-bold text-cyan-400" id="val-total-confirmed">6/6</div>
+        <div class="text-[10px] text-gray-400 mt-1">Locks 5/5 Confirmed</div>
+      </div>
+      <div class="zion-panel p-4 text-center">
+        <div class="text-xl font-bold text-amber-400" id="val-relay-status">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Relay Status</div>
+      </div>
+    </div>
+
+    <!-- Validator Table -->
+    <div class="zion-panel p-5">
+      <h3 class="text-sm font-bold mb-3">Validator Addresses (Base Mainnet)</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead><tr class="text-gray-400 border-b border-white/10">
+            <th class="py-2 px-2 text-center">#</th>
+            <th class="py-2 px-2 text-left">Address</th>
+            <th class="py-2 px-2 text-center">Role</th>
+            <th class="py-2 px-2 text-right">ETH Balance</th>
+            <th class="py-2 px-2 text-center">Status</th>
+            <th class="py-2 px-2 text-center">BaseScan</th>
+          </tr></thead>
+          <tbody id="validators-table-body">
+            <tr><td colspan="6" class="py-4 text-gray-500 text-center">Loading validators…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mt-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs text-amber-300">
+        ⚠️ Doporučení: Top-up všech 5 validátorů na ≥ 0.01 ETH pro stabilní provoz při vyšším objemu bridge operací.
+      </div>
+    </div>
+
+    <!-- Multi-Validator Relay Architecture -->
+    <div class="zion-panel p-5">
+      <h3 class="text-sm font-bold mb-3">Multi-Validator Relay Architecture</h3>
+      <div class="bg-black/30 rounded-lg p-4 border border-white/5">
+        <p class="text-xs text-gray-300 mb-3">
+          Relay běžící na Edge serveru (<span class="font-mono text-cyan-400">100.76.16.108</span>) podporuje 5 privátních klíčů najednou.
+          Pro každý L1 lock relay automaticky odešle <code class="text-zion-gold">submitLockProof</code> od všech 5 validátorů (500ms delay mezi TX).
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs font-mono">
+          <div class="flex items-center gap-2 p-2 bg-black/40 rounded border border-white/5">
+            <span class="text-emerald-400">●</span>
+            <span class="text-gray-400">ZION_VALIDATOR_PRIVATE_KEY</span>
+            <span class="text-gray-500">→</span>
+            <span class="text-blue-400">validator-1 (0xdde1…)</span>
+          </div>
+          <div class="flex items-center gap-2 p-2 bg-black/40 rounded border border-white/5">
+            <span class="text-emerald-400">●</span>
+            <span class="text-gray-400">ZION_VALIDATOR_PRIVATE_KEY_2</span>
+            <span class="text-gray-500">→</span>
+            <span class="text-blue-400">validator-2 (0x24d9…)</span>
+          </div>
+          <div class="flex items-center gap-2 p-2 bg-black/40 rounded border border-white/5">
+            <span class="text-emerald-400">●</span>
+            <span class="text-gray-400">ZION_VALIDATOR_PRIVATE_KEY_3</span>
+            <span class="text-gray-500">→</span>
+            <span class="text-blue-400">validator-3 (0x665c…)</span>
+          </div>
+          <div class="flex items-center gap-2 p-2 bg-black/40 rounded border border-white/5">
+            <span class="text-emerald-400">●</span>
+            <span class="text-gray-400">ZION_VALIDATOR_PRIVATE_KEY_4</span>
+            <span class="text-gray-500">→</span>
+            <span class="text-blue-400">validator-4 (0x8E64…)</span>
+          </div>
+          <div class="flex items-center gap-2 p-2 bg-black/40 rounded border border-white/5">
+            <span class="text-emerald-400">●</span>
+            <span class="text-gray-400">ZION_VALIDATOR_PRIVATE_KEY_5</span>
+            <span class="text-gray-500">→</span>
+            <span class="text-blue-400">validator-5 (0x7e0D…)</span>
+          </div>
+        </div>
+        <div class="mt-3 text-[10px] text-gray-500">
+          Klíče uloženy v <code>/root/zion-validator-key.env</code> (mode 600, mimo git). Commit: <code class="text-purple-400">c4a4841</code>
+        </div>
+      </div>
+    </div>
+
+    <!-- Deployment Transactions -->
+    <div class="zion-panel p-5">
+      <h3 class="text-sm font-bold mb-3">Deployment Transactions (Base Mainnet)</h3>
+      <div class="space-y-1.5 text-xs font-mono">
+        <div class="flex items-center justify-between p-2 bg-black/30 rounded-lg border border-white/5">
+          <span class="text-gray-400">Deploy BridgeValidator (5/5)</span>
+          <a href="https://basescan.org/tx/0xaf4df777b36598d5ce7d2c7640a019140f1dae3dbe9c622db333891a6b7168db" target="_blank" class="text-blue-400 hover:text-blue-300">0xaf4d…68db ↗</a>
+        </div>
+        <div class="flex items-center justify-between p-2 bg-black/30 rounded-lg border border-white/5">
+          <span class="text-gray-400">Deploy ZIONBridge (5/5)</span>
+          <a href="https://basescan.org/tx/0x885d8e582b2534eb744cec3b42e49a6ad4c05784d21aa4f1c529c8ea13fd886f" target="_blank" class="text-blue-400 hover:text-blue-300">0x885d…886f ↗</a>
+        </div>
+        <div class="flex items-center justify-between p-2 bg-black/30 rounded-lg border border-white/5">
+          <span class="text-gray-400">Grant BRIDGE_ROLE to new bridge</span>
+          <a href="https://basescan.org/tx/0x37629a36939449dc75e4f9c2a532cd44aced9df5c6049920c86720b7a1e3a122" target="_blank" class="text-blue-400 hover:text-blue-300">0x3762…a122 ↗</a>
+        </div>
+        <div class="flex items-center justify-between p-2 bg-black/30 rounded-lg border border-white/5">
+          <span class="text-gray-400">Revoke BRIDGE_ROLE from old bridge</span>
+          <a href="https://basescan.org/tx/0x9375eda2c17565e6e89aabff38f04ca8910a76276cdd55f2294de414479afc9f" target="_blank" class="text-blue-400 hover:text-blue-300">0x9375…fc9f ↗</a>
+        </div>
+        <div class="flex items-center justify-between p-2 bg-black/30 rounded-lg border border-white/5">
+          <span class="text-gray-400">Add guardian 2</span>
+          <a href="https://basescan.org/tx/0x96ea2b37a821f705eaef7ee6d0982c10b6b9c1418ef81cf1f5096a2072af2474" target="_blank" class="text-blue-400 hover:text-blue-300">0x96ea…2474 ↗</a>
+        </div>
+        <div class="flex items-center justify-between p-2 bg-black/30 rounded-lg border border-white/5">
+          <span class="text-gray-400">Add guardian 3</span>
+          <a href="https://basescan.org/tx/0xc303d4e09853131236cb6392a2b5094e3f4e2a403d7514d576ca3446e2ff1756" target="_blank" class="text-blue-400 hover:text-blue-300">0xc303…1756 ↗</a>
+        </div>
+        <div class="flex items-center justify-between p-2 bg-black/30 rounded-lg border border-white/5">
+          <span class="text-gray-400">Add guardian 4</span>
+          <a href="https://basescan.org/tx/0xe149193a9b37881c52c8af596521e1c91e088fbfa5d341a52a8c27b8f26512be" target="_blank" class="text-blue-400 hover:text-blue-300">0xe149…12be ↗</a>
+        </div>
+        <div class="flex items-center justify-between p-2 bg-black/30 rounded-lg border border-white/5">
+          <span class="text-gray-400">Add guardian 5</span>
+          <a href="https://basescan.org/tx/0x70b2f439f40933c4f8b94cd8d67bad79bdea9f8d39032a773f118b29bd71303f" target="_blank" class="text-blue-400 hover:text-blue-300">0x70b2…303f ↗</a>
+        </div>
       </div>
     </div>
   </div>
@@ -4597,6 +4794,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=63"></script>
+<script src="/dashboard.js?v=64"></script>
 </body>
 </html>

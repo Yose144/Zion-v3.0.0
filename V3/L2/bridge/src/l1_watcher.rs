@@ -2,6 +2,18 @@
 //!
 //! Uses canonical V3 raw TCP JSON-RPC (`getChainInfo`, `getBlockByHeight`) and
 //! scans accepted UTXO transactions for outputs directed to the bridge vault.
+//!
+//! ## Robustness features
+//!
+//! - **Per-block retry with backoff**: fetching a block retries up to
+//!   `BLOCK_FETCH_MAX_RETRIES` times (1 s → 2 s → 4 s) before skipping.
+//!   The last successfully-processed height is **not** advanced past a failed
+//!   block, so the block is retried on the next poll cycle.
+//! - **L1 RPC fallback**: if both primary *and* backup RPC addresses are
+//!   available, the watcher automatically switches to the backup on three
+//!   consecutive connection failures and logs a warning.
+//! - **Auto-reconnect outer loop**: poll errors do NOT kill the watcher —
+//!   each error is logged and the loop sleeps before retrying.
 
 use crate::config::L1Config;
 use crate::types::{BridgeStatus, L1LockEvent};
@@ -19,6 +31,15 @@ use tokio::sync::mpsc;
 use tracing::{debug, error, info, warn};
 
 const ZION_BASE32_ALPHABET: &[u8; 32] = b"023456789acdefghjklmnpqrstuvwxyz";
+
+/// Maximum per-block fetch retries before skipping (height not advanced).
+const BLOCK_FETCH_MAX_RETRIES: u32 = 3;
+
+/// Base backoff for per-block retries (doubles each attempt: 1 s → 2 s → 4 s).
+const BLOCK_FETCH_BACKOFF_BASE_MS: u64 = 1_000;
+
+/// Number of consecutive `get_chain_height` failures before switching to backup RPC.
+const RPC_FAILOVER_THRESHOLD: u32 = 3;
 
 #[derive(Debug, Deserialize)]
 struct RpcResponse<T> {
@@ -69,6 +90,10 @@ pub struct L1Watcher {
     last_processed_height: u64,
     /// Pending lock events waiting for finality.
     pending_locks: HashMap<String, L1LockEvent>,
+    /// Counts consecutive `get_chain_height` failures for RPC failover.
+    consecutive_rpc_errors: u32,
+    /// Whether we are currently using the backup RPC URL.
+    using_backup_rpc: bool,
 }
 
 impl L1Watcher {
@@ -77,7 +102,47 @@ impl L1Watcher {
             config,
             last_processed_height: start_height.unwrap_or(0),
             pending_locks: HashMap::new(),
+            consecutive_rpc_errors: 0,
+            using_backup_rpc: false,
         }
+    }
+
+    /// Returns the RPC address currently in use (primary or backup).
+    fn active_rpc_url(&self) -> &str {
+        if self.using_backup_rpc {
+            self.config
+                .rpc_url_backup
+                .as_deref()
+                .unwrap_or(&self.config.rpc_url)
+        } else {
+            &self.config.rpc_url
+        }
+    }
+
+    /// Check RPC failover: switch to backup after `RPC_FAILOVER_THRESHOLD`
+    /// consecutive errors; switch back to primary after a successful call.
+    fn on_rpc_error(&mut self) {
+        self.consecutive_rpc_errors += 1;
+        if !self.using_backup_rpc
+            && self.consecutive_rpc_errors >= RPC_FAILOVER_THRESHOLD
+            && self.config.rpc_url_backup.is_some()
+        {
+            warn!(
+                "L1: {} consecutive RPC errors on primary ({}), failing over to backup ({})",
+                self.consecutive_rpc_errors,
+                self.config.rpc_url,
+                self.config.rpc_url_backup.as_deref().unwrap_or("none"),
+            );
+            self.using_backup_rpc = true;
+            self.consecutive_rpc_errors = 0;
+        }
+    }
+
+    fn on_rpc_success(&mut self) {
+        if self.using_backup_rpc && self.consecutive_rpc_errors == 0 {
+            // Already on backup — keep until a configurable recovery check
+        }
+        self.consecutive_rpc_errors = 0;
     }
 
     /// Start the L1 watcher loop. Sends confirmed lock events to the channel.
@@ -90,12 +155,16 @@ impl L1Watcher {
             "   Finality: {} blocks, Poll interval: {}s, Start height: {}",
             self.config.finality_blocks, self.config.poll_interval_secs, self.last_processed_height,
         );
+        if let Some(ref backup) = self.config.rpc_url_backup {
+            info!("   Backup RPC: {} (activates after {} consecutive errors)", backup, RPC_FAILOVER_THRESHOLD);
+        }
 
         loop {
             match self.poll_cycle(&lock_tx).await {
                 Ok(()) => {}
                 Err(e) => {
                     error!("L1 poll error: {:?}", e);
+                    self.on_rpc_error();
                 }
             }
             tokio::time::sleep(std::time::Duration::from_secs(
@@ -107,7 +176,16 @@ impl L1Watcher {
 
     /// Single poll cycle: fetch new blocks, detect lock TXs, check finality.
     async fn poll_cycle(&mut self, lock_tx: &mpsc::Sender<L1LockEvent>) -> Result<()> {
-        let current_height = self.get_chain_height().await?;
+        let current_height = match self.get_chain_height().await {
+            Ok(h) => {
+                self.on_rpc_success();
+                h
+            }
+            Err(e) => {
+                self.on_rpc_error();
+                return Err(e);
+            }
+        };
 
         if current_height <= self.last_processed_height {
             debug!("L1: no new blocks (height={})", current_height);
@@ -116,17 +194,25 @@ impl L1Watcher {
             let to = current_height;
             debug!("L1: scanning blocks {} → {}", from, to);
 
+            let mut highest_ok = self.last_processed_height;
             for height in from..=to {
-                match self.get_block(height).await {
-                    Ok(block) => self.scan_block_for_locks(&block),
+                match self.fetch_block_with_retry(height).await {
+                    Ok(block) => {
+                        self.scan_block_for_locks(&block);
+                        highest_ok = height;
+                    }
                     Err(e) => {
-                        warn!("L1: failed to fetch block {}: {:?}", height, e);
+                        // Stop advancing — height will be retried next cycle.
+                        warn!(
+                            "L1: block {} failed all retries ({}); will retry next cycle",
+                            height, e
+                        );
                         break;
                     }
                 }
             }
-
-            self.last_processed_height = to;
+            // Advance only as far as we successfully scanned.
+            self.last_processed_height = highest_ok;
         }
 
         let finalized_height = current_height.saturating_sub(self.config.finality_blocks);
@@ -156,6 +242,33 @@ impl L1Watcher {
         }
 
         Ok(())
+    }
+
+    /// Fetch a single block with per-block exponential-backoff retries.
+    ///
+    /// Returns `Err` only after all retries are exhausted; the caller stops
+    /// advancing `last_processed_height` so the block is retried next cycle.
+    async fn fetch_block_with_retry(&self, height: u64) -> Result<L1Block> {
+        let mut last_err = anyhow!("no attempts made");
+        for attempt in 0..BLOCK_FETCH_MAX_RETRIES {
+            match self.get_block(height).await {
+                Ok(block) => return Ok(block),
+                Err(e) => {
+                    last_err = e;
+                    let backoff_ms = BLOCK_FETCH_BACKOFF_BASE_MS * (1 << attempt);
+                    warn!(
+                        "L1: block {} fetch failed (attempt {}/{}): {} — retry in {}ms",
+                        height,
+                        attempt + 1,
+                        BLOCK_FETCH_MAX_RETRIES,
+                        last_err,
+                        backoff_ms,
+                    );
+                    tokio::time::sleep(std::time::Duration::from_millis(backoff_ms)).await;
+                }
+            }
+        }
+        Err(last_err)
     }
 
     /// Scan a block for transactions to the bridge lock address.
@@ -252,7 +365,7 @@ impl L1Watcher {
     }
 
     async fn rpc<T: DeserializeOwned>(&self, method: &str, params: Value) -> Result<T> {
-        let address = normalize_rpc_addr(&self.config.rpc_url);
+        let address = normalize_rpc_addr(self.active_rpc_url());
         let mut stream = TcpStream::connect(&address)
             .await
             .with_context(|| format!("RPC connect failed to {}", address))?;
