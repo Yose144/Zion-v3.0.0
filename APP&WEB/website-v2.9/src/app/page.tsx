@@ -1,5 +1,6 @@
 import dynamicImport from 'next/dynamic';
 import Hero from '@/components/Hero';
+import BridgeStatusBanner from '@/components/BridgeStatusBanner';
 import MainnetCountdown from '@/components/MainnetCountdown';
 import GenesisPreview from '@/components/GenesisPreview';
 import QuantumRevolution from '@/components/QuantumRevolution';
@@ -21,6 +22,7 @@ export default function Home() {
   return (
     <>
       <Hero />
+      <BridgeStatusBanner />
       <MainnetCountdown />
       <HomeQuickLinks />
       <NewsFeed />
