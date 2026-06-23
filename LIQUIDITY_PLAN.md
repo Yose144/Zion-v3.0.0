@@ -1,7 +1,7 @@
 # ZION — Real Liquidity Plan
 
-> **Datum:** 2026-06-23
-> **Status:** ~100M wZION pending mint (timelock expiry 2026-06-24 16:52 UTC)
+> **Datum:** 2026-06-24 (aktualizováno)
+> **Status:** Cena potvrzena — **$0.00002 / ZION**. sqrtPriceX96 + tick parametry vypočítány a nastaveny ve všech systémech.
 > **Cíl:** Seed likvidita na Uniswap V3, staking pool, DAO treasury aktivace, plná DeFi roadmapa
 
 ---
@@ -26,11 +26,16 @@
 | Parametr | Hodnota | Zdůvodnění |
 |----------|---------|------------|
 | Pair | wZION / WETH | Hlavní trading pair |
-| Fee tier | 0.3% | Standard pro volatile pairs (1% pro málo likvidní) |
-| Počáteční cena | TBD — doporučení níže | Dle tržní kapitalizace |
-| Tick range | Full range (-887272 → 887272) | Maximální likvidita pro seed |
-| Seed wZION | 50,000,000 – 80,000,000 wZION | 50–80% z available 100M |
-| Seed ETH | dle počáteční ceny | V poměru k wZION |
+| Fee tier | 0.3% (3000) | Standard pro volatile pairs |
+| **Počáteční cena** | **$0.00002 / ZION** | ✅ POTVRZENO — FDV ~$2,9M |
+| token0 / token1 | wZION (token0) / WETH (token1) | wZION addr < WETH addr |
+| **sqrtPriceX96** | **`8706917217488994866036736`** | `sqrt(1.2077e-8) × 2^96` |
+| **Tick seed** | **`-182328`** | `floor(log(1.2077e-8) / log(1.0001))` |
+| Tick spacing | 60 | Pro 0.3% pool |
+| Tick range (full) | `-887220` → `887220` | Maximální likvidita pro seed |
+| Tick range (conc.) | `-182940` → `-181740` | ±600 ticků ≈ ±6% kolem seed ceny |
+| Seed wZION | 20,000,000 – 30,000,000 wZION | Doporučeno: nespotřebuj vše najednou |
+| Seed ETH | ~0.24–0.36 ETH (@ $0.00002 seed) | ETH strana = úzké hrdlo hloubky |
 
 ### 2B. Doporučení počáteční ceny
 
@@ -100,36 +105,59 @@ Hloubku poolu určuje **ETH strana**, ne wZION. Při ceně $0.00002 a ETH $1 656
    vytěžíš víc hloubky kolem startovní ceny.
 4. **Neinzeruj FDV $2,9M jako „market cap"** — komunikuj reálný circulating market cap.
 
-> **Akce potřebná od uživatele:** Potvrdit cenu **$0.00002/ZION** (nebo zvolit jiné FDV pásmo)
-> a zajistit ETH (cíl ≥ 2–3 ETH) před přidáním likvidity.
+> ✅ **Cena potvrzena: $0.00002/ZION** — sqrtPriceX96 a tick parametry vypočítány a zapsány do kódu.
+> Zbývá: zajistit ≥ 2–3 ETH na deployer peněžence a spustit `initialize()` + `mint()` na NonfungiblePositionManager.
 
 ### 2C. Postup přidání likvidity (po mint)
 
+**Klíčové konstanty (verified 2026-06-24):**
+
+| Konstanta | Hodnota |
+|-----------|---------|
+| Seed cena | `$0.00002 / ZION` |
+| sqrtPriceX96 | `8706917217488994866036736` |
+| Seed tick | `-182328` |
+| Tick range (full) | `-887220` → `887220` |
+| Tick range (concentrated ±6%) | `-182940` → `-181740` |
+| Pool fee | `3000` (0.3%) |
+| token0 | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` (wZION) |
+| token1 | `0x4200000000000000000000000000000000000006` (WETH) |
+| NonfungiblePositionManager | `0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f8` |
+
 ```bash
-# 1. Ověřit wZION balance
+# 1. Ověřit wZION balance (mělo by být ~100M po timelock executeTimelockedMint)
 cast call 0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6 \
   "balanceOf(address)(uint256)" 0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186 \
   --rpc-url https://mainnet.base.org
 
-# 2. Approve wZION pro NonfungiblePositionManager
+# 2. Ověřit stav poolu (sqrtPriceX96 == 0 → pool ještě neinicializovaný)
+cast call 0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB \
+  "slot0()(uint160,int24,uint16,uint16,uint16,uint8,bool)" \
+  --rpc-url https://mainnet.base.org
+
+# 3. Approve wZION pro NonfungiblePositionManager (~25M wZION seed)
 cast send 0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6 \
   "approve(address,uint256)(bool)" \
   0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f8 \
-  50000000000000000000000000 \
+  25000000000000000000000000 \
   --private-key $VALIDATOR_KEY \
   --rpc-url https://mainnet.base.org
 
-# 3. Mint pozice (NonfungiblePositionManager na Base)
-# Uniswap V3 NonfungiblePositionManager: 0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f8
+# 4. Mint pozice s full-range tick bounds (@$0.00002 seed price)
+#    amount0Desired = 25_000_000 wZION (25M × 1e18)
+#    amount1Desired = ~302_000_000_000_000_000 WETH (0.302 ETH @ $0.00002)
+#    sqrtPriceX96 a ticky jsou vypočítané výše
 cast send 0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f8 \
-  "mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256))" \
-  "(0x0c493763..., 0x4200...0006, 3000, -887272, 887272, 50000000000000000000000000, ETH_AMOUNT, 0, 0, 0xdde17506..., DEADLINE)" \
-  --value ETH_AMOUNT_WEI \
+  "mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256))(uint256,uint128,uint256,uint256)" \
+  "(0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6,0x4200000000000000000000000000000000000006,3000,-887220,887220,25000000000000000000000000,302000000000000000,0,0,0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186,$(date -d '+30 min' +%s))" \
+  --value 302000000000000000 \
   --private-key $VALIDATOR_KEY \
   --rpc-url https://mainnet.base.org
 ```
 
-> Doporučení: Použít Uniswap V3 web UI (`app.uniswap.org`) nebo vlastní Next.js script pro bezpečnější přidání likvidity.
+> **Doporučení:** Pro větší bezpečnost použij [Uniswap V3 web UI](https://app.uniswap.org) nebo
+> připravený Next.js script (`V3/scripts/seed-liquidity.ts`). Vždy ověř transakci na Base Scan
+> před finálním potvrzením.
 
 ### 2D. Rozdělení 100M wZION
 

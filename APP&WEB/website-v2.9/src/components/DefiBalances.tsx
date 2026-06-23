@@ -10,7 +10,7 @@ import { ethers } from 'ethers';
 import { Wallet, RefreshCw, ExternalLink, Copy, CheckCircle2 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { useWallet } from '@/contexts/WalletContext';
-import { CONTRACTS, WZION_ABI, POOL_V3_ABI } from '@/lib/defi-contracts';
+import { CONTRACTS, WZION_ABI, POOL_V3_ABI, SEED_PRICE_USD, SEED_ETH_USD } from '@/lib/defi-contracts';
 
 interface Balances {
   eth: string;
@@ -41,6 +41,18 @@ export default function DefiBalances() {
 
   const fetchPoolInfo = useCallback(async () => {
     try {
+      // Fetch live ETH/USD from our price API (which uses Chainlink under the hood)
+      let ethUsd = SEED_ETH_USD;
+      try {
+        const priceRes = await fetch('/api/defi/price');
+        if (priceRes.ok) {
+          const priceData = await priceRes.json();
+          if (priceData.ok && priceData.price?.weth_usd > 0) {
+            ethUsd = priceData.price.weth_usd;
+          }
+        }
+      } catch { /* keep seed ref rate */ }
+
       const provider = new ethers.providers.JsonRpcProvider(RPC);
       const pool = new ethers.Contract(CONTRACTS.UniV3Pool, POOL_V3_ABI, provider);
 
@@ -52,21 +64,32 @@ export default function DefiBalances() {
       const sqrtPriceX96 = slot0.sqrtPriceX96;
       const tick = Number(slot0.tick);
 
+      // Pool not seeded yet → show seed price
+      if (sqrtPriceX96.isZero()) {
+        setPoolInfo({
+          liquidity: liq.toString(),
+          tick,
+          priceWzionInEth: (SEED_PRICE_USD / ethUsd).toFixed(10),
+          priceWzionInUsd: SEED_PRICE_USD.toFixed(6),
+        });
+        return;
+      }
+
       // price = (sqrtPriceX96 / 2^96)^2
-      // token0 = wZION, token1 = WETH → price = WETH per wZION
+      // wZION is token0, WETH is token1 → price = WETH per wZION
       const q96 = ethers.BigNumber.from(2).pow(96);
       const priceNum = Number(sqrtPriceX96.toString()) / Number(q96.toString());
-      const priceEth = priceNum * priceNum;
-      const priceUsd = priceEth * 3500; // approximate ETH price
+      const priceEth = priceNum * priceNum; // WETH per wZION
+      const priceUsd = priceEth * ethUsd;   // USD per wZION (live ETH/USD)
 
       setPoolInfo({
         liquidity: liq.toString(),
         tick,
-        priceWzionInEth: priceEth.toFixed(8),
-        priceWzionInUsd: priceUsd.toFixed(4),
+        priceWzionInEth: priceEth.toFixed(10),
+        priceWzionInUsd: priceUsd.toFixed(6),
       });
     } catch {
-      // silent
+      // silent — keep previous state
     }
   }, []);
 
