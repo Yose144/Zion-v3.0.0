@@ -6,6 +6,27 @@
 
 ---
 
+## ⚡ TL;DR — Kolik ETH potřebuješ
+
+> Referenční kurz: **ETH = $1 656** (2026-06-24) · Seed cena: **$0.00002 / ZION** · 1 ETH = 82,8M wZION
+
+| Scénář | wZION do poolu | ETH CELKEM | USD celkem | TVL |
+|--------|---------------|-----------|------------|-----|
+| Minimum | 20M | **0.30 ETH** | ~$495 | ~$800 |
+| Konzervativní | 30M | **0.41 ETH** | ~$685 | ~$1 200 |
+| ✅ **Doporučeno** | **60M** | **≈ 0.80 ETH** | **~$1 300** | **~$2 400** |
+| Agresivní | 80M | **≈ 1.02 ETH** | ~$1 700 | ~$3 200 |
+| Vše | 100M | **≈ 1.26 ETH** | ~$2 085 | ~$4 000 |
+
+> **Číslo které si zapamatuj:** Připrav si **≥ 0.80 ETH** (~$1 300) na deployer peněžence
+> `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186`. To pokryje 60M wZION do full-range poolu
+> + gas na všechny operace + top-up 5 validátorů.
+>
+> Pokud máš méně ETH — použij **concentrated tick range** (`-182940 → -181740`):
+> z 0.41 ETH (30M wZION) dostaneš pool hluboký ~5× víc než za stejné ETH v full-range.
+
+---
+
 ## 1. Přehled — Co Máme k Dispozici
 
 | Asset | Množství | Adresa / Kontrakt | Status |
@@ -85,28 +106,63 @@ nafouknutý projekt.
 - Na reálném floatu (~100–200M) je skutečný day-1 market cap jen ~$2–4k — poctivé pro fair launch.
 - Nechává obrovský prostor pro organický růst; nevypadá nafouknutě.
 
-#### Seed poolu — ETH je úzké hrdlo
+#### Seed poolu — kolik ETH skutečně potřebuješ
 
-Hloubku poolu určuje **ETH strana**, ne wZION. Při ceně $0.00002 a ETH $1 656 platí
-**1 ETH = 82,8M wZION**. S 1–2 ETH bude pool extrémně mělký.
+> **Klíčový vzorec:** `ETH_potřeba = wZION_v_poolu × (0.00002 / 1656) = wZION × 0.00000001208`
+> Neboli: **1 ETH = 82 800 000 wZION** při seed ceně.
 
-| wZION v poolu | ETH potřeba (@ $0.00002) | Hloubka (TVL ~2× ETH) |
-|---------------|--------------------------|------------------------|
-| 20M | 0,24 ETH (~$400) | ~$800 — velmi mělké |
-| 40M | 0,48 ETH (~$800) | ~$1 600 |
-| 60M | 0,72 ETH (~$1 200) | ~$2 400 |
+##### Tabulka scénářů — likvidita (samotný pool)
+
+| Scénář | wZION do poolu | ETH pro likviditu | Hodnota v USD | TVL celkem |
+|--------|---------------|-------------------|---------------|------------|
+| Minimum (živý pool) | 20 000 000 | **0.2415 ETH** | ~$400 | ~$800 |
+| Konzervativní start | 30 000 000 | **0.3623 ETH** | ~$600 | ~$1 200 |
+| Dobrá hloubka | 50 000 000 | **0.6039 ETH** | ~$1 000 | ~$2 000 |
+| ✅ Plný pool (doporučeno) | 60 000 000 | **0.7246 ETH** | ~$1 200 | ~$2 400 |
+| Agresivní | 80 000 000 | **0.9662 ETH** | ~$1 600 | ~$3 200 |
+| Vše do poolu | 100 000 000 | **1.2077 ETH** | ~$2 000 | ~$4 000 |
+
+> **Proč TVL = ~2× ETH?** V Uni V3 full-range dává 1 ETH (strana token1) ~stejnou USD hodnotu
+> jako wZION strana token0. TVL = ETH_hodnota + wZION_hodnota ≈ 2 × ETH_hodnota.
+
+##### Tabulka scénářů — KOMPLETNÍ budget (likvidita + plyn + operace)
+
+Operace mimo samotnou likviditu vyžadují ETH na gas Base Mainnet + seed validátorů:
+
+| Položka | ETH | USD |
+|---------|-----|-----|
+| wZION approve (NonfungiblePositionManager) | ~0.0001 | ~$0.17 |
+| UniV3Pool initialize (pokud pool neinicializovaný) | ~0.0002 | ~$0.33 |
+| NonfungiblePositionManager.mint (pozice) | ~0.0005 | ~$0.83 |
+| ZIONStaking.notifyRewardAmount seed | ~0.0001 | ~$0.17 |
+| ZIONFarm seed pool | ~0.0002 | ~$0.33 |
+| Validator ETH top-up (5× validátor × 0.01 ETH) | **0.0500** | ~$82.8 |
+| **Gas + operace celkem** | **~0.0511 ETH** | **~$85** |
+
+##### ✅ KOMPLETNÍ ETH BUDGET — CO POTŘEBUJEŠ MÍT NA PENĚŽENCE
+
+| Scénář | Likvidita | + Gas/ops | = **CELKEM potřeba** | USD celkem |
+|--------|-----------|-----------|----------------------|------------|
+| Minimum (20M wZION) | 0.2415 ETH | 0.0511 ETH | **0.30 ETH** | ~$495 |
+| Konzervativní (30M) | 0.3623 ETH | 0.0511 ETH | **0.41 ETH** | ~$685 |
+| Dobrá hloubka (50M) | 0.6039 ETH | 0.0511 ETH | **0.66 ETH** | ~$1 085 |
+| ✅ **Plný pool (60M)** | 0.7246 ETH | 0.0511 ETH | **≈ 0.78 ETH** | ~$1 285 |
+| Agresivní (80M) | 0.9662 ETH | 0.0511 ETH | **≈ 1.02 ETH** | ~$1 685 |
+| Vše do poolu (100M) | 1.2077 ETH | 0.0511 ETH | **≈ 1.26 ETH** | ~$2 085 |
+
+> **Doporučení pro první launch:**
+> Připrav si na peněžence **≥ 0.80 ETH** (~$1 300). Umožní ti plný pool (60M wZION)
+> s bezpečnou rezervou na gas a top-up validátorů. Koncentrovaný tick range
+> (místo full-range) ti z těchto ETH vytěží ~5–10× hlubší pool kolem seed ceny.
 
 **Praktická pravidla:**
-1. **Neseeduj celých 60M.** Do poolu dej jen **20–30M wZION**, zbytek drž na pozdější dolévání
-   během cenové objevitelnosti — chrání to depth/token.
-2. **Sežeň víc ETH** — ideálně **≥ 2–3 ETH** ($3 300–5 000). Bez toho je jakákoli cena kosmetická,
-   protože pár stovek dolarů pool slippne.
-3. Při minimálním ETH použij **úzký (concentrated) tick range** místo full-range, ať z mála ETH
-   vytěžíš víc hloubky kolem startovní ceny.
-4. **Neinzeruj FDV $2,9M jako „market cap"** — komunikuj reálný circulating market cap.
+1. **Neseeduj celých 100M najednou.** Do poolu dej **60M wZION**, zbytek (40M) drž pro postupné dolévání.
+2. **Kritický minimum:** 0.30 ETH nestačí na nic smysluplného — pool o $800 TVL se slippne při prvním obchodu za $50.
+3. Při méně než 0.50 ETH použij **concentrated tick range** (`-182940` → `-181740`) místo full-range — z 0.36 ETH vytěžíš pool hluboký jako za 3 ETH full-range.
+4. **Neinzeruj FDV $2,9M jako „market cap"** — kommunikuj reálný circulating market cap (~$2–4k na startu).
 
 > ✅ **Cena potvrzena: $0.00002/ZION** — sqrtPriceX96 a tick parametry vypočítány a zapsány do kódu.
-> Zbývá: zajistit ≥ 2–3 ETH na deployer peněžence a spustit `initialize()` + `mint()` na NonfungiblePositionManager.
+> **Akce:** Zajisti **≥ 0.80 ETH** na deployer peněžence `0xdde17506...` a spusť pool seeding dle sekce 2C.
 
 ### 2C. Postup přidání likvidity (po mint)
 
@@ -258,7 +314,8 @@ Každý validátor potřebuje ETH pro gas. Aktuální stav (~0.001–0.002 ETH/v
 
 ```
 Doporučení: 0.01 ETH × 5 validátorů = 0.05 ETH celkem
-Při ceně ETH $2500 = $125 USD — zanedbatelná částka pro bezpečný provoz
+Při ceně ETH $1 656 (2026-06-24) = $83 USD — zanedbatelná částka pro bezpečný provoz
+Tento gas budget je zahrnut v kompletním ETH budget (sekce 2B výše).
 ```
 
 | Adresa | Aktuální | Cílový zůstatek |
