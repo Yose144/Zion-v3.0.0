@@ -28,6 +28,7 @@ const t = {
     ai_native:  { cs: 'AI Native',   en: 'AI Native' },
     monitoring: { cs: 'Monitoring',  en: 'Monitoring' },
     defi:       { cs: 'DeFi Hub',    en: 'DeFi Hub' },
+    meme_lab:   { cs: 'Meme Lab',    en: 'Meme Lab' },
     kompas:     { cs: 'Zlatý Kompas', en: 'Golden Compass' },
     info_group: { cs: 'Info', en: 'Info' },
     layers_group: { cs: 'Vrstvy', en: 'Layers' },
