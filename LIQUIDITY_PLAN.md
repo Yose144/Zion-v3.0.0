@@ -9,21 +9,22 @@
 ## ⚡ TL;DR — Kolik ETH potřebuješ
 
 > Referenční kurz: **ETH = $1 656** (2026-06-24) · Seed cena: **$0.00002 / ZION** · 1 ETH = 82,8M wZION
+> **Bridge může přenést až 500M wZION** — tohle je základ pro skutečně hluboký DEX start.
 
 | Scénář | wZION do poolu | ETH CELKEM | USD celkem | TVL |
 |--------|---------------|-----------|------------|-----|
 | Minimum | 20M | **0.30 ETH** | ~$495 | ~$800 |
 | Konzervativní | 30M | **0.41 ETH** | ~$685 | ~$1 200 |
-| ✅ **Doporučeno** | **60M** | **≈ 0.80 ETH** | **~$1 300** | **~$2 400** |
+| ✅ **Doporučeno (první start)** | **60M** | **≈ 0.80 ETH** | **~$1 300** | **~$2 400** |
 | Agresivní | 80M | **≈ 1.02 ETH** | ~$1 700 | ~$3 200 |
-| Vše | 100M | **≈ 1.26 ETH** | ~$2 085 | ~$4 000 |
+| Vše z 1. batch | 100M | **≈ 1.26 ETH** | ~$2 085 | ~$4 000 |
+| 🎯 **Cíl — full DEX (500M bridge)** | **500M** | **≈ 6.09 ETH** | **~$10 000** | **~$20 000** |
 
-> **Číslo které si zapamatuj:** Připrav si **≥ 0.80 ETH** (~$1 300) na deployer peněžence
-> `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186`. To pokryje 60M wZION do full-range poolu
-> + gas na všechny operace + top-up 5 validátorů.
+> **Realistický plán:** Start s **60M wZION + ≈ 0.80 ETH** jakmile budeš mít ETH.
+> Postupně dobridgovat zbývajících 440M a dolit ETH → cílový stav **500M + 6.1 ETH = TVL ~$20 000**.
 >
-> Pokud máš méně ETH — použij **concentrated tick range** (`-182940 → -181740`):
-> z 0.41 ETH (30M wZION) dostaneš pool hluboký ~5× víc než za stejné ETH v full-range.
+> TVL $20 000 znamená: cena 2× vyžaduje nakoupit ~$10 000 ETH do poolu — reálná odolnost.
+> Srovnání: DOGE launch MC byl ~$2 000 000. Začínáš skromně a poctivě, prostor pro růst obrovský.
 
 ---
 
@@ -31,7 +32,9 @@
 
 | Asset | Množství | Adresa / Kontrakt | Status |
 |-------|----------|-------------------|--------|
-| wZION (pending mint) | ~100,000,000 wZION | `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186` | ⏳ po timelock 2026-06-24 |
+| wZION (1. batch — mintováno) | ~100,000,000 wZION | `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186` | ✅ mintováno 2026-06-24 |
+| wZION (2.–5. batch — bridge) | až 400,000,000 wZION | bridge dalších 4× 100M ZION z L1 vaultu | ⏳ spustit po pool seeding |
+| **wZION celkem dostupné** | **až 500,000,000 wZION** | součet všech bridgovaných dávek | ⏳ cíl pro full DEX start |
 | ETH (pro likviditu) | dle aktuálního zůstatku | `0xdde17506...` | potřeba doplnit |
 | UniV3Pool | wZION/WETH 0.3% | `0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB` | ✅ deployed, seed pending |
 | ZIONStaking | 12% APR | deployed na Base | ✅ deployed, seed pending |
@@ -215,19 +218,33 @@ cast send 0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f8 \
 > připravený Next.js script (`V3/scripts/seed-liquidity.ts`). Vždy ověř transakci na Base Scan
 > před finálním potvrzením.
 
-### 2D. Rozdělení 100M wZION
+### 2D. Rozdělení wZION — 1. batch (100M) a cílový stav (500M)
 
-> **Pozn.:** Tabulka níže je *max alokace* na DeFi. Pro **počáteční seed** UniV3 poolu doporučujeme
-> dle sekce 2B nasadit jen **20–30M wZION** a zbytek z LP alokace dolévat postupně podle hloubky
-> ETH a cenové objevitelnosti (ne celých 60M najednou).
+> **Realistický postup:** Začínáme s 1. batch 100M wZION (mintováno 2026-06-24).
+> Jakmile bude pool živý a bude dost ETH, bridgujeme dalších 400M (4× 100M) → cílový stav 500M.
+
+#### Fáze 1 — první start (100M wZION k dispozici nyní)
 
 | Použití | Množství | % |
 |---------|----------|---|
-| UniV3Pool LP (seed 20–30M + postupné dolévání) | 60,000,000 wZION | 60% |
+| UniV3Pool LP (seed 60M + postupné dolévání) | 60,000,000 wZION | 60% |
 | ZIONStaking rewards pool | 20,000,000 wZION | 20% |
 | ZIONFarm rewards pool | 10,000,000 wZION | 10% |
-| Reserve (bridge operations, treasury) | 10,000,000 wZION | 10% |
+| Reserve (bridge operations, buffer) | 10,000,000 wZION | 10% |
 | **Celkem** | **100,000,000 wZION** | 100% |
+
+#### Fáze 2 — full DEX start (cíl: 500M wZION po dalším bridgování)
+
+| Použití | Množství | % |
+|---------|----------|---|
+| UniV3Pool LP celkem (postupné dolévání) | 300,000,000 wZION | 60% |
+| ZIONStaking rewards pool (rozšíření) | 100,000,000 wZION | 20% |
+| ZIONFarm rewards pool (rozšíření) | 50,000,000 wZION | 10% |
+| Reserve + budoucí likvidita | 50,000,000 wZION | 10% |
+| **Celkem** | **500,000,000 wZION** | 100% |
+
+> Při 300M wZION v poolu a odpovídajícím ETH (≈ 3.6 ETH) = TVL ~$12 000.
+> Při 500M wZION + 6.1 ETH = TVL **~$20 000** — srovnatelné s Dogecoin den-1 market capem ($2M... ne, ZION startuje skromněji, ale to je správně).
 
 ---
 
