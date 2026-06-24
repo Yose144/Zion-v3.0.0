@@ -1,19 +1,21 @@
 //! Local miner control — start, stop, status.
 //!
-//! The public CLI does NOT bundle a miner binary. Instead it manages a
-//! `zion-miner` process that the user downloads separately from the download page.
-//! If the miner binary is not found, the user gets a clear download link.
+//! Manages the `zion-miner` process via PID file `~/.zion/miner.pid`. The
+//! miner can connect to the public Edge pool (default) or to a local pool.
 //!
-//! PID tracking file: ~/.zion/miner.pid
+//! Autonomous mode: when `miner.auto_start_node` is true in config, the CLI
+//! will start the local node first if it's not running, then start the miner.
 
 use anyhow::Result;
 use clap::Subcommand;
-use std::fs;
 use std::path::PathBuf;
-use std::process::Command;
+use std::time::Duration;
 
-use crate::config::Config;
+use crate::config::{self, Config};
+use crate::process;
 use crate::ui;
+use crate::commands::node;
+use crate::commands::pool;
 
 #[derive(Subcommand)]
 pub enum MineCmd {
@@ -34,6 +36,15 @@ pub enum MineCmd {
         /// Override worker name
         #[arg(long)]
         worker: Option<String>,
+        /// Start a local node first if not running
+        #[arg(long)]
+        auto_node: bool,
+        /// Start a local pool first if not running
+        #[arg(long)]
+        auto_pool: bool,
+        /// Run miner in a visible console window
+        #[arg(long)]
+        console: bool,
     },
     /// Stop the running miner
     Stop,
@@ -44,8 +55,8 @@ pub enum MineCmd {
 pub async fn run(cfg: &Config, cmd: MineCmd) -> Result<()> {
     match cmd {
         MineCmd::Start {
-            pool, wallet, algorithm, backend, worker,
-        } => start_mining(cfg, pool, wallet, algorithm, backend, worker).await,
+            pool, wallet, algorithm, backend, worker, auto_node, auto_pool, console,
+        } => start_mining(cfg, pool, wallet, algorithm, backend, worker, auto_node, auto_pool, console).await,
         MineCmd::Stop => stop_mining(),
         MineCmd::Status => miner_status(),
     }
@@ -58,6 +69,9 @@ async fn start_mining(
     algo_override: Option<String>,
     backend_override: Option<String>,
     worker_override: Option<String>,
+    auto_node: bool,
+    auto_pool: bool,
+    console: bool,
 ) -> Result<()> {
     ui::print_header("Start Mining");
 
@@ -69,32 +83,61 @@ async fn start_mining(
         return Ok(());
     }
 
-    let pool_addr = pool_override.unwrap_or_else(|| format!("{}:{}", cfg.pool.host, cfg.pool.port));
+    // ── Autonomous dependency startup ─────────────────────────────────────────
+    if auto_node || cfg.miner.auto_start_node {
+        if process::status("node").is_none() {
+            ui::print_info("Local node not running — starting it automatically...");
+            node::run(cfg, node::NodeCmd::Start {
+                p2p_bind: None,
+                rpc_bind: None,
+                seed_peers: None,
+                state_path: None,
+                console: false,
+            }).await?;
+            // Give the node a few seconds to open RPC.
+            tokio::time::sleep(Duration::from_secs(3)).await;
+        } else {
+            ui::print_info("Local node is already running.");
+        }
+    }
+
+    if auto_pool || cfg.miner.auto_start_pool {
+        if process::status("pool").is_none() {
+            ui::print_info("Local pool not running — starting it automatically...");
+            pool::run(cfg, pool::PoolCmd::Start {
+                bind: None,
+                node_rpc: None,
+                wallet: None,
+                console: false,
+            }).await?;
+            tokio::time::sleep(Duration::from_secs(2)).await;
+        } else {
+            ui::print_info("Local pool is already running.");
+        }
+    }
+
+    // ── Resolve pool address ────────────────────────────────────────────────
+    let pool_addr = pool_override.unwrap_or_else(|| {
+        if cfg.miner.auto_start_pool || auto_pool {
+            cfg.pool.bind.clone()
+        } else {
+            format!("{}:{}", cfg.pool.host, cfg.pool.port)
+        }
+    });
     let algorithm = algo_override.unwrap_or_else(|| cfg.miner.algorithm.clone());
     let backend = backend_override.unwrap_or_else(|| cfg.miner.backend.clone());
     let worker = worker_override.unwrap_or_else(|| cfg.miner.worker_name.clone());
 
     // Check if already running
-    if let Some(pid) = read_pid() {
-        if is_process_alive(pid) {
-            ui::print_warn(&format!("Miner already running (PID {}). Run 'zion mine stop' first.", pid));
-            return Ok(());
-        }
+    if let Some(pid) = process::status("miner") {
+        ui::print_warn(&format!("Miner already running (PID {}). Run 'zion mine stop' first.", pid));
+        return Ok(());
     }
 
     // Find the miner binary
-    let miner_bin = find_miner_binary();
-    let miner_bin = match miner_bin {
-        Some(p) => p,
-        None => {
-            ui::print_err("zion-miner binary not found.");
-            ui::print_info("Download it from: https://zionterranova.com/download");
-            ui::print_info("Or build from source: cargo build --release -p zion-miner (in V3/)");
-            return Ok(());
-        }
-    };
+    let bin = find_miner_binary()?;
 
-    ui::print_row("Miner binary", &miner_bin.display().to_string());
+    ui::print_row("Miner binary", &bin.display().to_string());
     ui::print_row("Pool", &pool_addr);
     ui::print_row("Wallet", &wallet);
     ui::print_row("Worker", &worker);
@@ -102,205 +145,84 @@ async fn start_mining(
     ui::print_row("Backend", &backend);
     println!();
 
-    let mut cmd = Command::new(&miner_bin);
-    cmd.env("ZION_POOL_ADDR", &pool_addr);
-    cmd.env("ZION_WORKER_NAME", &worker);
-    cmd.env("ZION_MINER_ALGORITHM", &algorithm);
-    cmd.env("ZION_PAYOUT_ADDRESS", &wallet);
-    cmd.env("ZION_LOOP_COUNT", "1000000");
+    let mut envs: Vec<(&str, String)> = Vec::new();
+    envs.push(("ZION_POOL_ADDR", pool_addr));
+    envs.push(("ZION_WORKER_NAME", worker));
+    envs.push(("ZION_MINER_ALGORITHM", algorithm));
+    envs.push(("ZION_PAYOUT_ADDRESS", wallet));
+    envs.push(("ZION_LOOP_COUNT", "1000000".into()));
 
     match backend.as_str() {
         "opencl" => {
-            cmd.env("ZION_GPU_BACKEND", "opencl");
-            cmd.env("ZION_NONCE_COUNT_GPU", "262144");
+            envs.push(("ZION_GPU_BACKEND", "opencl".into()));
+            envs.push(("ZION_NONCE_COUNT_GPU", "262144".into()));
         }
         "cuda" => {
-            cmd.env("ZION_GPU_BACKEND", "cuda");
-            cmd.env("ZION_NONCE_COUNT_GPU", "262144");
+            envs.push(("ZION_GPU_BACKEND", "cuda".into()));
+            envs.push(("ZION_NONCE_COUNT_GPU", "262144".into()));
         }
         "metal" => {
-            cmd.env("ZION_GPU_BACKEND", "metal");
-            cmd.env("ZION_NONCE_COUNT_GPU", "262144");
+            envs.push(("ZION_GPU_BACKEND", "metal".into()));
+            envs.push(("ZION_NONCE_COUNT_GPU", "262144".into()));
         }
         _ => {
-            cmd.env("ZION_NONCE_COUNT", "4096");
+            envs.push(("ZION_NONCE_COUNT", "4096".into()));
         }
     }
 
-    // Spawn in background
-    let child = match cmd.spawn() {
-        Ok(c) => c,
-        Err(e) => {
-            ui::print_err(&format!("Failed to start miner: {}", e));
-            return Ok(());
-        }
-    };
-
-    let pid = child.id();
-    write_pid(pid)?;
+    let pid = process::start("miner", &bin, &[], &envs, console)?;
 
     ui::print_ok(&format!("Miner started (PID {})", pid));
-    ui::print_info("Watch output: the miner prints to its own console window.");
     ui::print_info("Stop with: zion mine stop");
     ui::print_info("Check status: zion mine status");
     println!();
-
-    // Detach: we don't wait for the child
-    std::mem::forget(child);
 
     Ok(())
 }
 
 fn stop_mining() -> Result<()> {
     ui::print_header("Stop Mining");
-
-    let pid = match read_pid() {
-        Some(p) => p,
-        None => {
-            ui::print_warn("No miner PID file found. Is the miner running?");
-            return Ok(());
-        }
-    };
-
-    if !is_process_alive(pid) {
-        ui::print_warn(&format!("Process {} is not running (stale PID file).", pid));
-        clear_pid();
-        return Ok(());
+    match process::stop("miner")? {
+        true => ui::print_ok("Miner stopped."),
+        false => ui::print_warn("Miner was not running."),
     }
-
-    #[cfg(windows)]
-    {
-        let result = Command::new("taskkill")
-            .args(["/PID", &pid.to_string(), "/T", "/F"])
-            .output();
-        match result {
-            Ok(_) => {
-                ui::print_ok(&format!("Miner stopped (PID {})", pid));
-                clear_pid();
-            }
-            Err(e) => ui::print_err(&format!("Failed to kill process: {}", e)),
-        }
-    }
-    #[cfg(unix)]
-    {
-        let result = Command::new("kill").arg(pid.to_string()).output();
-        match result {
-            Ok(_) => {
-                ui::print_ok(&format!("Miner stopped (PID {})", pid));
-                clear_pid();
-            }
-            Err(e) => ui::print_err(&format!("Failed to kill process: {}", e)),
-        }
-    }
-
     println!();
     Ok(())
 }
 
 fn miner_status() -> Result<()> {
     ui::print_header("Miner Status");
-
-    let pid = match read_pid() {
-        Some(p) => p,
+    match process::status("miner") {
+        Some(pid) => ui::print_ok(&format!("Miner is running (PID {})", pid)),
         None => {
-            ui::print_warn("No miner running (no PID file).");
+            ui::print_warn("Miner is not running.");
             ui::print_info("Start with: zion mine start");
-            return Ok(());
         }
-    };
-
-    if is_process_alive(pid) {
-        ui::print_ok(&format!("Miner is running (PID {})", pid));
-    } else {
-        ui::print_warn(&format!("Miner PID {} is not running (stale PID file).", pid));
-        clear_pid();
     }
-
     println!();
     Ok(())
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-fn pid_file_path() -> Result<PathBuf> {
-    let home = std::env::var("HOME")
-        .or_else(|_| std::env::var("USERPROFILE"))
-        .map_err(|_| anyhow::anyhow!("cannot determine home directory"))?;
-    let dir = PathBuf::from(home).join(".zion");
-    Ok(dir.join("miner.pid"))
-}
-
-fn read_pid() -> Option<u32> {
-    let path = pid_file_path().ok()?;
-    let raw = fs::read_to_string(&path).ok()?;
-    raw.trim().parse::<u32>().ok()
-}
-
-fn write_pid(pid: u32) -> Result<()> {
-    let path = pid_file_path()?;
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-    fs::write(&path, pid.to_string())?;
-    Ok(())
-}
-
-fn clear_pid() {
-    if let Ok(path) = pid_file_path() {
-        let _ = fs::remove_file(&path);
-    }
-}
-
-fn is_process_alive(pid: u32) -> bool {
-    #[cfg(windows)]
-    {
-        let output = Command::new("tasklist")
-            .args(["/FI", &format!("PID eq {}", pid), "/NH"])
-            .output();
-        match output {
-            Ok(o) => {
-                let stdout = String::from_utf8_lossy(&o.stdout);
-                stdout.contains(&pid.to_string())
-            }
-            Err(_) => false,
-        }
-    }
-    #[cfg(unix)]
-    {
-        Command::new("kill")
-            .arg("-0")
-            .arg(pid.to_string())
-            .output()
-            .map(|o| o.status.success())
-            .unwrap_or(false)
-    }
-}
-
-fn find_miner_binary() -> Option<PathBuf> {
-    // 1. Check PATH
-    let bin_name = if cfg!(windows) { "zion-miner.exe" } else { "zion-miner" };
-    if let Ok(path_var) = std::env::var("PATH") {
-        for dir in path_var.split(if cfg!(windows) { ';' } else { ':' }) {
-            let candidate = PathBuf::from(dir).join(bin_name);
-            if candidate.exists() {
-                return Some(candidate);
-            }
+fn find_miner_binary() -> Result<PathBuf> {
+    if let Some(path) = config::load(None).ok().and_then(|c| c.binaries.miner) {
+        let p = PathBuf::from(path);
+        if p.exists() {
+            return Ok(p);
         }
     }
 
-    // 2. Check ~/.zion/
-    if let Ok(home) = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")) {
-        let candidate = PathBuf::from(home).join(".zion").join(bin_name);
-        if candidate.exists() {
-            return Some(candidate);
+    for c in ["zion-miner-windows-x86_64", "zion-miner"] {
+        if let Some(p) = process::find_binary(c) {
+            return Ok(p);
         }
     }
 
-    // 3. Check current directory
-    let candidate = PathBuf::from(".").join(bin_name);
-    if candidate.exists() {
-        return Some(candidate);
+    // Bare `miner` is generic; search only safe locations.
+    if let Some(p) = process::find_binary_safely("miner") {
+        return Ok(p);
     }
 
-    None
+    Err(anyhow::anyhow!(
+        "miner binary not found. Download zion-miner-windows-x86_64.exe from https://zionterranova.com/download or build: cargo build --release -p zion-miner"
+    ))
 }
