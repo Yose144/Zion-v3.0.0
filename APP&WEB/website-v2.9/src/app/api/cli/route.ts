@@ -168,7 +168,7 @@ async function handleStatus(): Promise<CliResponse> {
   // Pool
   lines.push('', '── Mining Pool ──');
   try {
-    const poolUrl = coreUrl('poolApi', 'http://127.0.0.1:8455');
+    const poolUrl = 'http://127.0.0.1:8455';
     const res = await fetch(`${poolUrl}/api/pool`, { signal: AbortSignal.timeout(5000) });
     if (res.ok) {
       lines.push(`  ✓ Online — ${poolUrl}`);
