@@ -31,6 +31,7 @@ import {
 } from '@/lib/bridge-api';
 import { useLang } from '@/contexts/LanguageContext';
 import BridgeBurnWidget from '@/components/BridgeBurnWidget';
+import BridgeTracker from '@/components/BridgeTracker';
 import { usePolling } from '@/hooks/usePolling';
 
 // ─── Steps data ───────────────────────────────────────────────────────────────
@@ -306,6 +307,12 @@ export default function BridgePage() {
         </div>
 
         {/* ── TRY IT LIVE ── */}
+        {/* Bridge Pipeline Tracker */}
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+          <BridgeTracker />
+        </motion.section>
+
+        {/* Burn section */}
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[28px] border border-orange-500/20 bg-gradient-to-b from-orange-500/5 to-black/60 p-6 md:p-10">
           <div className="flex items-center gap-3 mb-2">
             <Flame className="h-5 w-5 text-orange-400" />
