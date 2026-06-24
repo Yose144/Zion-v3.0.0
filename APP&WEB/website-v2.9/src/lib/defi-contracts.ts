@@ -64,7 +64,18 @@ export const CONTRACTS = {
   UniV3Router:    '0x2626664c2603336E57B271c5C0b26F421741e481',
   QuoterV2:       '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a',
   PositionManager:'0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1',
+  // DeFi contracts — deployed via deploy-defi.ts + deploy-farm.ts on Base Mainnet
+  // Addresses will be filled after deployment. Until then, pages show "deploying" state.
+  ZIONStaking:    '0x0000000000000000000000000000000000000000', // TODO: fill after deploy
+  ZIONFarm:       '0x0000000000000000000000000000000000000000', // TODO: fill after deploy
+  ZIONGovernance: '0x0000000000000000000000000000000000000000', // TODO: fill after deploy
+  ZIONTreasury:   '0x0000000000000000000000000000000000000000', // TODO: fill after deploy
 } as const;
+
+/** Helper: check if a DeFi contract is deployed on mainnet */
+export const STAKING_DEPLOYED = CONTRACTS.ZIONStaking !== '0x0000000000000000000000000000000000000000';
+export const FARM_DEPLOYED = CONTRACTS.ZIONFarm !== '0x0000000000000000000000000000000000000000';
+export const GOVERNANCE_DEPLOYED = CONTRACTS.ZIONGovernance !== '0x0000000000000000000000000000000000000000';
 
 export const DEPLOYER = '0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186';
 export const VALIDATOR2 = '0x8cc6F931edDAf5F14D0071727Ed1640752B5c787';
@@ -120,6 +131,8 @@ export const WZION_ABI = [
   'function balanceOf(address) view returns (uint256)',
   'function mintableSupply() view returns (uint256)',
   'function bridgeStats() view returns (uint256 totalMinted, uint256 totalBurned, uint256 netSupply)',
+  'function approve(address spender, uint256 amount) returns (bool)',
+  'function allowance(address owner, address spender) view returns (uint256)',
 ] as const;
 
 export const STAKING_ABI = [
@@ -129,6 +142,14 @@ export const STAKING_ABI = [
   'function cooldownPeriod() view returns (uint256)',
   'function paused() view returns (bool)',
   'function stakeInfo(address) view returns (uint256 amount, uint256 rewardDebt, uint256 lastStakeTime, uint256 unstakeRequestTime)',
+  'function earned(address) view returns (uint256)',
+  'function balanceOf(address) view returns (uint256)',
+  // Write functions
+  'function stake(uint256 amount)',
+  'function requestUnstake()',
+  'function withdraw()',
+  'function claimRewards()',
+  'function emergencyWithdraw()',
 ] as const;
 
 export const FARM_ABI = [
@@ -137,6 +158,13 @@ export const FARM_ABI = [
   'function totalAllocPoint() view returns (uint256)',
   'function poolInfo(uint256) view returns (address lpToken, uint256 allocPoint, uint256 lastRewardTime, uint256 accRewardPerShare)',
   'function paused() view returns (bool)',
+  'function userInfo(uint256, address) view returns (uint256 amount, uint256 rewardDebt)',
+  'function pendingReward(uint256, address) view returns (uint256)',
+  // Write functions
+  'function deposit(uint256 pid, uint256 amount)',
+  'function withdraw(uint256 pid, uint256 amount)',
+  'function claimReward(uint256 pid)',
+  'function emergencyWithdraw(uint256 pid)',
 ] as const;
 
 export const SWAP_ABI = [
@@ -188,7 +216,7 @@ export interface DefiProduct {
   descriptionCs: string;
   contract: string;
   href: string;
-  status: 'live' | 'testnet' | 'planned';
+  status: 'live' | 'testnet' | 'planned' | 'pending';
   icon: string;
   color: string;
   tags: string[];
@@ -227,9 +255,9 @@ export const DEFI_PRODUCTS: DefiProduct[] = [
     nameCs: 'ZION Farm',
     description: 'MasterChef v2 LP farming. Deposit LP tokens, earn wZION rewards. 90-day halving schedule per pool with dynamic allocPoint rebalancing.',
     descriptionCs: 'MasterChef v2 LP farming. Vlož LP tokeny, získej wZION odměny. 90denní halving schedule na pool s dynamickým allocPoint.',
-    contract: CONTRACTS_SEPOLIA.ZIONFarm,
+    contract: CONTRACTS.ZIONFarm,
     href: '/defi/farming',
-    status: 'testnet',
+    status: FARM_DEPLOYED ? 'live' : 'pending',
     icon: 'farm',
     color: 'from-green-500 to-emerald-500',
     tags: ['MasterChef v2', 'LP Rewards', '90d Halving'],
@@ -238,14 +266,14 @@ export const DEFI_PRODUCTS: DefiProduct[] = [
     id: 'staking',
     name: 'ZION Staking',
     nameCs: 'ZION Staking',
-    description: 'Stake wZION for fixed 12% APR. 7-day cooldown period. Rewards funded from bridge fees and ecosystem allocation.',
-    descriptionCs: 'Stakuj wZION za fixních 12% APR. 7denní cooldown. Odměny z bridge poplatků a ekosystémové alokace.',
-    contract: CONTRACTS_SEPOLIA.ZIONStaking,
+    description: 'Stake wZION for fixed APR. Cooldown period for safe unstaking. Rewards funded from bridge fees and ecosystem allocation.',
+    descriptionCs: 'Stakuj wZION za fixní APR. Cooldown pro bezpečný unstake. Odměny z bridge poplatků a ekosystémové alokace.',
+    contract: CONTRACTS.ZIONStaking,
     href: '/defi/staking',
-    status: 'testnet',
+    status: STAKING_DEPLOYED ? 'live' : 'pending',
     icon: 'staking',
     color: 'from-emerald-500 to-green-500',
-    tags: ['12% APR', '7d Cooldown', 'Reward Pool'],
+    tags: ['APR', 'Cooldown', 'Reward Pool'],
   },
   {
     id: 'governance',
@@ -253,9 +281,9 @@ export const DEFI_PRODUCTS: DefiProduct[] = [
     nameCs: 'Governance',
     description: 'Token-weighted on-chain voting. Create proposals, vote, execute via timelock. Quorum-based decision making.',
     descriptionCs: 'On-chain hlasování váhou tokenů. Vytváření návrhů, hlasování, exekuce přes timelock. Rozhodování na kvórum.',
-    contract: CONTRACTS_SEPOLIA.ZIONGovernance,
+    contract: CONTRACTS.ZIONGovernance,
     href: '/defi/dao',
-    status: 'testnet',
+    status: GOVERNANCE_DEPLOYED ? 'live' : 'pending',
     icon: 'governance',
     color: 'from-rose-500 to-red-500',
     tags: ['Proposals', 'Voting', 'Timelock', 'Quorum'],
