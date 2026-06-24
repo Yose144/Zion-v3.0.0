@@ -59,15 +59,21 @@ BRIDGE REVERSE (EVM → L1)
   ⚠️ BridgeBurnWidget na webu — kód existuje, ale burn→unlock flow nebyl E2E ověřen
 
 STAKING (ZIONStaking.sol)
-  ⚠️ Kontrakt deployed, ABI správné, web UI existuje
+  ⚠️ Kontrakt zatím jen na Base Sepolia — deploy na Base Mainnet čeká
      Problém: notifyRewardAmount() NEBYL nikdy zavolán → rewards pool = 0
      Uživatel může stakovat, ale dostane 0 rewards (bez chyby!)
      Musí se zavolat: wZION.approve(stakingContract, 20M×1e18)
                       stakingContract.notifyRewardAmount(20M×1e18)
+  ✅ Web UI mainnet-ready: wallet connect, stake/unstake/claim, cooldown tracking,
+     live APR z kontraktu, approve+stake flow, TX status s basescan linky
+     (commit 107a121, 2026-06-24)
 
 YIELD FARMING (ZIONFarm.sol)
-  ⚠️ Kontrakt deployed, ale žádný pool nebyl přidán (addPool() nebylo voláno)
+  ⚠️ Kontrakt zatím jen na Base Sepolia — deploy na Base Mainnet čeká
   ⚠️ Rewards seed nebyl vložen (rewardPerSecond = 0)
+  ✅ Web UI mainnet-ready: wallet connect, pool list s APR odhadem,
+     deposit/withdraw/claim, per-user positions, approve+deposit flow
+     (commit 107a121, 2026-06-24)
 
 SWAP (UniV3 SwapWidget)
   ⚠️ Kód správný — QuoterV2 + SwapRouter02 + approve flow
@@ -76,8 +82,10 @@ SWAP (UniV3 SwapWidget)
      Po pool seeding bude IHNED fungovat (kód je připraven)
 
 EXPLORER BRIDGE TRACKER
-  ⚠️ Existuje API endpoint /api/bridge/status — vrací základní čítače
-     Chybí: live lock → confirmation progress bar, TX hash links, finality countdown
+  ✅ BridgeTracker komponenta na /bridge — live pipeline:
+     L1→L2 (lock→confirm→mint) + L2→L1 (burn→submit→unlock)
+     s Prometheus metrics, 10s polling, refresh button
+     (commit 107a121, 2026-06-24)
 ```
 
 ### ❌ Chybí / není implementováno
@@ -123,7 +131,7 @@ EXPLORER BRIDGE TRACKER
 |---|------|----------|-------|
 | 1.1 | **E2E reverse bridge debug** | P0 | Burn 100 wZION na testovacím wallettu, sledovat relay logy, ověřit L1 unlock. Opravit `handle_evm_burn()` pokud selhává. |
 | 1.2 | L1 RPC: ověřit `send_raw_tx` endpoint | P0 | Relay ho volá pro L1 unlock — ověřit že L1 node ho má implementovaný (`V3/L1/core/src/rpc.rs`). |
-| 1.3 | Bridge tracker na Exploreru | P0 | Live progress bar: lock TX → confirmations (X/5) → mint/unlock. Endpoint `/api/bridge/locks` s TX hash linky. |
+| 1.3 | Bridge tracker na webu | ✅ DONE | BridgeTracker komponenta na /bridge — live L1→L2 + L2→L1 pipeline s Prometheus metrics (107a121). |
 | 1.4 | Bridge status bannery na webu | P1 | Homepage + /defi: "Bridge online · 5/5 validators · last mint: Xm ago" |
 | 1.5 | BridgeBurnWidget E2E fix | P1 | Opravit frontend flow po reverse bridge debug. |
 
@@ -131,15 +139,15 @@ EXPLORER BRIDGE TRACKER
 
 ### Fáze 2 — Swap + Staking UI (týden 2–3)
 
-> Po pool seeding bude SwapWidget fungovat okamžitě. Staking UI existuje, potřebuje napojení na live data.
+> Po pool seeding bude SwapWidget fungovat okamžitě. Staking/Farming UI je mainnet-ready (commit 107a121).
 
 | # | Úkol | Priorita | Popis |
 |---|------|----------|-------|
 | 2.1 | Ověřit SwapWidget po pool seeding | P0 | QuoterV2 quote, approve wZION, SwapRouter02.exactInputSingle. |
 | 2.2 | Swap price display — live z UniV3 slot0 | P0 | `/api/defi/price` seed fallback → live po pool init (HOTOVO v kódu). |
-| 2.3 | Staking UI — live APR, stake/unstake/claim | P0 | ZIONStaking.sol ABI + web UI (existuje kostra). |
-| 2.4 | Staking APR kalkulačka | P1 | `annualRateBps()` z kontraktu + live TVL. |
-| 2.5 | Farming UI `/defi/farming` | P1 | LP deposit, živé APR, pending rewards. |
+| 2.3 | Staking UI — live APR, stake/unstake/claim | ✅ DONE | Mainnet-ready: wallet connect, stake/unstake/claim, cooldown, TX status (107a121). |
+| 2.4 | Staking APR kalkulačka | ✅ DONE | `annualRateBps()` z kontraktu + live TVL zobrazení (107a121). |
+| 2.5 | Farming UI `/defi/farming` | ✅ DONE | Mainnet-ready: pool list, deposit/withdraw/claim, APR odhad, per-user positions (107a121). |
 | 2.6 | Portfolio panel — ZION + wZION + staked + LP | P1 | DefiBalances.tsx rozšíření. |
 | 2.7 | Price chart (základní) | P2 | TradingView lightweight chart napojený na `/api/defi/price` historii (ukládat do Redis/SQLite). |
 
@@ -308,10 +316,10 @@ Q4 2026:  BitcoinTalk ANN, CoinGecko, public launch
 | Bridge L1→EVM (mint) | **95%** | — funguje |
 | Bridge EVM→L1 (burn) | **60%** | E2E test neproběhl |
 | UniV3Pool (DEX) | **70%** | Čeká na seed ETH |
-| Staking | **65%** | notifyRewardAmount() nezavoláno |
-| Farming | **50%** | addPool() + seed nezavoláno |
+| Staking (web UI) | **90%** | Deploy kontraktu na mainnet + notifyRewardAmount() |
+| Farming (web UI) | **85%** | Deploy kontraktu na mainnet + addPool() + seed |
 | Swap UI (web) | **85%** | Funguje po pool seeding |
-| Explorer | **70%** | Chybí TX history, bridge tracker |
+| Explorer | **75%** | Chybí TX history; bridge tracker ✅ hotovo |
 | Desktop Agent | **60%** | DeFi UI placeholder |
 | Mobile App | **40%** | DeFi screens placeholder |
 | DAO (on-chain) | **30%** | Cliff červen 2027 |
