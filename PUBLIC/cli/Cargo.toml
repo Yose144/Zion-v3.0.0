@@ -36,6 +36,7 @@ rand.workspace = true
 hex.workspace = true
 sha2.workspace = true
 chrono.workspace = true
+dirs = "5"
 
 # Link the same L1 core + SDK as the operator CLI — byte-exact crypto compatibility.
 zion-core = { path = "../../V3/L1/core" }
