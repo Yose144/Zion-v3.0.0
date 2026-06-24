@@ -81,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     // 2. Derive public key
-    const { default: ed } = await import('@noble/ed25519');
+    const ed = await import('@noble/ed25519');
     const publicKeyBytes = await ed.getPublicKey(privateKeyBytes);
     const publicKeyHex = Array.from(publicKeyBytes)
       .map((b) => b.toString(16).padStart(2, '0'))
