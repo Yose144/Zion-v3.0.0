@@ -217,7 +217,7 @@ async function handleAi(sub?: string, args?: string[]): Promise<CliResponse> {
   }
 
   if (sub === 'ask') {
-    const question = args.join(' ');
+    const question = (args ?? []).join(' ');
     if (!question) {
       return { ok: false, output: '', error: 'Usage: ai ask "your question"' };
     }
@@ -247,7 +247,7 @@ async function handleAi(sub?: string, args?: string[]): Promise<CliResponse> {
 
 async function handleWallet(sub?: string, args?: string[]): Promise<CliResponse> {
   if (sub === 'balance') {
-    const address = args[0];
+    const address = (args ?? [])[0];
     if (!address || !address.startsWith('zion1')) {
       return { ok: false, output: '', error: 'Usage: wallet balance <zion1...address>' };
     }
