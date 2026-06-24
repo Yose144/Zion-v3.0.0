@@ -1588,13 +1588,11 @@ async function updateConnectedMiners(){
 }
 
 async function updateEdgeHealth(){
-  const badge = document.getElementById('edge-health-badge');
+  const badge = document.getElementById('edge-h-badge');
   try {
     const d = await fetch('/api/edge/health').then(r => r.json());
     if(!d.reachable){
       if(badge){ badge.textContent = 'Unreachable'; badge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-red-600/20 text-red-300'; }
-      setText('edge-disk-percent', '—');
-      setText('edge-health-badge', 'Unreachable');
       return;
     }
 
@@ -1607,87 +1605,39 @@ async function updateEdgeHealth(){
       badge.className = 'text-[10px] px-2 py-0.5 rounded-full ' + (healthy ? 'bg-emerald-600/20 text-emerald-300' : diskPct >= 90 ? 'bg-red-600/20 text-red-300' : 'bg-amber-600/20 text-amber-300');
     }
 
-    // Disk
-    const diskPctEl = document.getElementById('edge-disk-percent');
-    if(diskPctEl){
-      diskPctEl.textContent = (d.disk?.percent ?? '—') + '%';
-      diskPctEl.className = 'text-xl font-bold ' + (diskPct >= 90 ? 'text-red-400' : diskPct >= 80 ? 'text-amber-400' : 'text-emerald-400');
-    }
-    setText('edge-disk-detail', d.disk ? `${d.disk.used_gb} / ${d.disk.total_gb} GB` : '—');
-
-    // Disk bar
-    const diskBar = document.getElementById('edge-disk-bar');
+    // Disk bar (supplements edge-disk-pct from refreshEdgeServerCard)
+    const diskBar = document.getElementById('edge-h-disk-bar');
     if(diskBar) diskBar.style.width = (diskPct || 0) + '%';
-    setText('edge-disk-bar-label', d.disk ? `${d.disk.avail_gb} GB free` : '—');
 
-    // Memory
-    const memPct = d.memory?.percent ?? 0;
-    const memEl = document.getElementById('edge-mem-percent');
-    if(memEl){
-      memEl.textContent = (d.memory?.percent ?? '—') + '%';
-      memEl.className = 'text-xl font-bold ' + (memPct >= 90 ? 'text-red-400' : memPct >= 80 ? 'text-amber-400' : 'text-emerald-400');
-    }
-    setText('edge-mem-detail', d.memory ? `${d.memory.used_gb} / ${d.memory.total_gb} GB` : '—');
-
-    // CPU
-    const load1m = d.cpu?.load_1m;
+    // CPU cores (supplements edge-cpu/edge-load from refreshEdgeServerCard)
     const cores = d.cpu?.cores ?? 0;
-    const cpuEl = document.getElementById('edge-cpu-load');
-    if(cpuEl){
-      cpuEl.textContent = load1m != null ? load1m.toFixed(2) : '—';
-      const loadRatio = cores > 0 ? load1m / cores : 0;
-      cpuEl.className = 'text-xl font-bold ' + (loadRatio >= 1.0 ? 'text-red-400' : loadRatio >= 0.7 ? 'text-amber-400' : 'text-emerald-400');
-    }
-    setText('edge-cpu-cores', cores + ' cores');
+    setText('edge-h-cpu-cores', cores + ' cores');
 
     // Uptime
     if(d.uptime_seconds){
       const days = Math.floor(d.uptime_seconds / 86400);
       const hours = Math.floor((d.uptime_seconds % 86400) / 3600);
-      setText('edge-uptime', days + 'd ' + hours + 'h');
+      setText('edge-h-uptime', days + 'd ' + hours + 'h');
     } else {
-      setText('edge-uptime', '—');
+      setText('edge-h-uptime', '—');
     }
 
     // Log sizes
-    setText('edge-syslog-size', d.logs?.syslog_mb != null ? d.logs.syslog_mb + ' MB' : '—');
-    setText('edge-journal-size', d.logs?.journal_mb != null ? d.logs.journal_mb + ' MB' : '—');
-    setText('edge-zion-miner-log', d.logs?.zion_edge_miner_mb != null ? d.logs.zion_edge_miner_mb + ' MB' : '—');
-
-    // Services grid
-    const svcGrid = document.getElementById('edge-services-grid');
-    if(svcGrid && d.services){
-      const svcLabels = {
-        'zion-edge-node1': 'Node',
-        'zion-edge-pool': 'Pool',
-        'zion-edge-bridge': 'Bridge',
-        'zion-edge-dao': 'DAO',
-        'zion-edge-atomic-swap': 'Swap',
-        'zion-edge-warp': 'WARP',
-        'zion-edge-watchdog': 'Watchdog',
-      };
-      svcGrid.innerHTML = Object.entries(d.services).map(([name, state]) => {
-        const label = svcLabels[name] || name.replace('zion-edge-', '');
-        const isActive = state === 'active';
-        const color = isActive ? 'bg-emerald-600/20 text-emerald-300 border-emerald-600/30' : 'bg-red-600/20 text-red-300 border-red-600/30';
-        return `<div class="text-center p-2 rounded-lg border ${color}">
-          <div class="text-xs font-bold">${escapeHtml(label)}</div>
-          <div class="text-[9px] mt-0.5">${isActive ? '● Active' : '○ ' + escapeHtml(state)}</div>
-        </div>`;
-      }).join('');
-    }
+    setText('edge-h-syslog', 'Syslog: ' + (d.logs?.syslog_mb != null ? d.logs.syslog_mb + ' MB' : '—'));
+    setText('edge-h-journal', 'Journal: ' + (d.logs?.journal_mb != null ? d.logs.journal_mb + ' MB' : '—'));
+    setText('edge-h-zion-miner-log', 'Miner log: ' + (d.logs?.zion_edge_miner_mb != null ? d.logs.zion_edge_miner_mb + ' MB' : '—'));
 
     // Log automation
-    const timerEl = document.getElementById('edge-cleanup-timer');
+    const timerEl = document.getElementById('edge-h-cleanup-timer');
     if(timerEl){
       const active = d.cleanup_timer?.active;
       timerEl.textContent = active ? '● Active (6h)' : '○ Inactive';
       timerEl.className = 'font-mono ' + (active ? 'text-emerald-400' : 'text-red-400');
     }
-    setText('edge-cleanup-last', d.cleanup_timer?.last_trigger || '—');
+    setText('edge-h-cleanup-last', d.cleanup_timer?.last_trigger || '—');
 
     // Docker
-    const dockerEl = document.getElementById('edge-docker-list');
+    const dockerEl = document.getElementById('edge-h-docker-list');
     if(dockerEl){
       if(d.docker && d.docker.length > 0){
         dockerEl.innerHTML = d.docker.map(c => {
@@ -5836,7 +5786,7 @@ refreshTimer = setInterval(refreshAll, REFRESH_INTERVAL_OK);
 setTimeout(loadMinerConfig, 500);
 // Load overview widgets on startup
 setTimeout(() => { loadNclOverview(); loadHiranOverview(); }, 1500);
-setTimeout(() => { refreshEdgeServerCard(); }, 3000); // initial edge server load
+setTimeout(() => { refreshEdgeServerCard(); updateEdgeHealth(); }, 3000); // initial edge server load
 if(_overviewWidgetTimer) clearInterval(_overviewWidgetTimer);
 _overviewWidgetTimer = setInterval(() => { loadNclOverview(); loadHiranOverview(); }, 15000);
 // ─────────────────────────────────────────────────────────────────────
