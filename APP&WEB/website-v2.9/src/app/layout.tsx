@@ -9,6 +9,7 @@ import { ObservatoryProvider } from "@/contexts/ObservatoryContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { WalletProvider } from "@/contexts/WalletContext";
 import { ZionWalletProvider } from "@/contexts/ZionWalletContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import ClientBackgrounds from "@/components/ClientBackgrounds";
 import HeroSection from "@/components/HeroSection";
 import { SITE_NETWORK_TOPOLOGY, SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL, SITE_VERSION } from '@/lib/site';
@@ -64,6 +65,7 @@ export default function RootLayout({
               <LanguageProvider>
                 <WalletProvider>
                   <ZionWalletProvider>
+                    <AuthProvider>
                     <ClientBackgrounds />
                     <div className="relative z-10 overflow-x-clip w-full">
                       <Navigation />
@@ -97,6 +99,7 @@ export default function RootLayout({
                         setTimeout(findOverflow, 3000);
                       })();
                     `}} />
+                    </AuthProvider>
                   </ZionWalletProvider>
                 </WalletProvider>
               </LanguageProvider>
