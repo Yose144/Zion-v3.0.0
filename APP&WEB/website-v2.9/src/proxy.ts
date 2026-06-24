@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { jwtVerify } from 'jose';
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 120;
@@ -39,9 +40,38 @@ function unauthorizedResponse(): Response {
   });
 }
 
-export function proxy(request: NextRequest) {
+/** Get JWT secret for session verification */
+function getJwtSecret(): Uint8Array {
+  const secret = process.env.ZION_JWT_SECRET;
+  if (!secret) {
+    return new TextEncoder().encode('zion-dev-secret-ephemeral');
+  }
+  return new TextEncoder().encode(secret);
+}
+
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // ── /account protection (Zion Wallet auth) ───────────────────────
+  if (pathname.startsWith('/account')) {
+    const token = request.cookies.get('zion_session')?.value;
+    if (!token) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    try {
+      const secret = getJwtSecret();
+      await jwtVerify(token, secret);
+    } catch {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    return NextResponse.next();
+  }
+
+  // ── API rate limiting ────────────────────────────────────────────
   if (pathname.startsWith('/api/')) {
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
       || request.headers.get('x-real-ip')
@@ -69,6 +99,7 @@ export function proxy(request: NextRequest) {
     return response;
   }
 
+  // ── /admin protection (Basic Auth) ───────────────────────────────
   const adminPassword = process.env.ADMIN_PASSWORD;
   const adminUser = process.env.ADMIN_USER || 'admin';
 
@@ -103,5 +134,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/:path*'],
+  matcher: ['/admin/:path*', '/api/:path*', '/account/:path*'],
 };
