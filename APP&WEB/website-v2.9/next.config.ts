@@ -59,6 +59,20 @@ const nextConfig: NextConfig = {
       '@ledgerhq/hw-transport-webhid': emptyModule,
       '@ledgerhq/hw-app-ada': emptyModule,
     };
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      net: false,
+      fs: false,
+      path: false,
+      os: false,
+      tls: false,
+      child_process: false,
+      http: false,
+      https: false,
+      crypto: false,
+      stream: false,
+      zlib: false,
+    };
     return config;
   },
   // P1-33: Security headers — CSP, X-Frame-Options, HSTS, etc.
