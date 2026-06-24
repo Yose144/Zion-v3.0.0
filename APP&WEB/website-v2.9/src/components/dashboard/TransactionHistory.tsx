@@ -93,7 +93,6 @@ export default function TransactionHistory({ address }: TransactionHistoryProps)
           <p className="text-xs text-gray-600 mt-1">Your transaction history will appear here</p>
         </div>
       ) : (
-        {/* Transaction list */}
         <div className="space-y-2">
           {txs.map((tx) => {
             const isIn = tx.direction === 'in' || tx.to === address;

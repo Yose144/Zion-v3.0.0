@@ -20,8 +20,8 @@ export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
 import * as ed from '@noble/ed25519';
-import { sha256 } from '@noble/hashes/sha2';
-import { ripemd160 } from '@noble/hashes/legacy';
+import { sha256 } from '@noble/hashes/sha2.js';
+import { ripemd160 } from '@noble/hashes/legacy.js';
 import { consumeNonce, upsertUser } from '@/lib/auth-storage';
 import { createSession, AUTH_COOKIE, COOKIE_OPTIONS } from '@/lib/auth';
 
