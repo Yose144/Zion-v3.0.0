@@ -17,7 +17,7 @@ interface SpotifyBannerProps {
  * Defaultně collapsed (jen barek), po kliknutí se rozbalí iframe embed.
  */
 export default function SpotifyBanner({
-  playlistId = '37i9dQZF1DX4sWSpwq3LiO', // default: lo-fi gaming — uživatel může přepsat
+  playlistId = '4HvwefPlEhGlLM1LOpKlnV', // ZION Arcade Radio — uživatelský playlist
   title,
   cs,
 }: SpotifyBannerProps) {
