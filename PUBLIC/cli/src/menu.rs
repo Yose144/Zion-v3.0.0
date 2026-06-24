@@ -1,39 +1,44 @@
 //! Interactive arrow-key menu — autonomous E2E workflow for public users.
 //!
-//! Natural progression:
-//!   1. Create / import / backup wallet
-//!   2. Start local node (or check public node)
-//!   3. Start local pool (optional)
-//!   4. Start miner
-//!   5. Monitor everything
-//!
-//! All actions return `Vec<String>` args that are fed back into `Cli::try_parse_from`.
+//! Features:
+//! - Live dashboard at the top (node, miner, pool, wallet)
+//! - Custom command input (type any `zion` subcommand)
+//! - Help / Start Guide screen
+//! - Guided setup: wallet → node → pool → miner → monitor
 
 use anyhow::Result;
 use colored::Colorize;
 use dialoguer::{theme::ColorfulTheme, Input, Select};
 
+use crate::commands::stats;
+use crate::config::Config;
 use crate::ui;
 
 const BACK: &str = "← Back";
 const EXIT: &str = "Exit";
 
 /// Run the interactive menu. Returns `Some(args)` to dispatch, or `None` to exit.
-pub fn run(show_genesis: bool) -> Result<Option<Vec<String>>> {
+pub async fn run(show_genesis: bool, cfg: &Config) -> Result<Option<Vec<String>>> {
     print_intro(show_genesis);
 
     loop {
+        // Fetch live stats before each menu render.
+        let s = stats::collect(cfg).await;
+        ui::print_dashboard(&s);
+
         let items = [
             "🚀 Guided Setup — wallet → node → pool → miner",
             "Wallet — create, import, backup, balance, send",
             "Node — start, stop, status, query",
             "Pool — start, stop, status (solo/local mining)",
             "Mine — start, stop, status (auto-node mode)",
-            "Monitor — node + miner + pool health",
+            "Monitor — detailed live view",
             "AI — chat with Hiran",
             "Status — network health check",
             "Doctor — preflight diagnostics",
             "Config — view / set values",
+            "📖 Help / Start Guide",
+            "⌨️  Run custom command (type it)",
             "Version",
             EXIT,
         ];
@@ -53,8 +58,14 @@ pub fn run(show_genesis: bool) -> Result<Option<Vec<String>>> {
             7 => Some(args(&["status"])),
             8 => Some(args(&["doctor"])),
             9 => config_menu()?,
-            10 => Some(args(&["version"])),
-            11 => return Ok(None),
+            10 => {
+                ui::print_start_guide();
+                wait_enter("Press Enter to return to the menu...")?;
+                None
+            }
+            11 => Some(custom_command_input()?),
+            12 => Some(args(&["version"])),
+            13 => return Ok(None),
             _ => None,
         };
 
@@ -71,7 +82,55 @@ fn print_intro(show_genesis: bool) {
         ui::print_compact_banner();
     }
     ui::print_info("Arrow keys navigate · Enter runs · Esc goes back");
+    ui::print_info("Choose 'Help / Start Guide' if you're new · Choose 'Run command' to type any command");
     println!();
+}
+
+// ─── Custom Command Input ─────────────────────────────────────────────────────
+
+fn custom_command_input() -> Result<Vec<String>> {
+    ui::print_header("Run Custom Command");
+    println!("  Type any zion command (without the 'zion' prefix).");
+    println!("  Examples:");
+    println!("    {}  wallet balance", "›".cyan());
+    println!("    {}  node chain", "›".cyan());
+    println!("    {}  mine start --auto-node --backend cpu", "›".cyan());
+    println!("    {}  config set miner.wallet zion1...", "›".cyan());
+    println!();
+
+    let input = required_input("Command", None)?;
+    let input = input.trim();
+    if input.is_empty() {
+        return Ok(args(&["menu"]));
+    }
+
+    // Split the input into args, handling quoted strings simply.
+    let parts: Vec<String> = shell_split(input);
+    let mut argv = vec!["zion".to_string()];
+    argv.extend(parts);
+    Ok(argv)
+}
+
+/// Simple shell-like splitting (handles double-quoted strings).
+fn shell_split(s: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut current = String::new();
+    let mut in_quotes = false;
+    for ch in s.chars() {
+        match ch {
+            '"' => in_quotes = !in_quotes,
+            ' ' | '\t' if !in_quotes => {
+                if !current.is_empty() {
+                    out.push(std::mem::take(&mut current));
+                }
+            }
+            _ => current.push(ch),
+        }
+    }
+    if !current.is_empty() {
+        out.push(current);
+    }
+    out
 }
 
 // ─── Guided Setup ─────────────────────────────────────────────────────────────

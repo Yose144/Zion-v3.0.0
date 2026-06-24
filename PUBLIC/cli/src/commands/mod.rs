@@ -4,5 +4,6 @@ pub mod mine;
 pub mod monitor;
 pub mod node;
 pub mod pool;
+pub mod stats;
 pub mod status;
 pub mod wallet;
