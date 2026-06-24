@@ -382,10 +382,8 @@ function updateServiceCards(s){
     poolEdgeStatus.className = 'text-3xl font-bold mb-1 ' + (pe.running ? 'text-emerald-400' : 'text-red-400');
     const hostEl = document.getElementById('val-pool-edge-host');
     const portEl = document.getElementById('val-pool-edge-port');
-    const detailEl = document.getElementById('val-pool-edge-detail');
     if(hostEl) hostEl.textContent = pe.host ?? '—';
     if(portEl) portEl.textContent = pe.ports_open?.[0]?.split(':')[1] ?? '8444';
-    if(detailEl) detailEl.textContent = pe.running ? 'Tailscale + Public ready' : 'Unreachable';
   }
   // Extended Edge Pool details
   const peMiners = document.getElementById('val-pool-edge-miners');
@@ -407,24 +405,10 @@ function updateServiceCards(s){
   if(mh) mh.textContent = m.hashrate ? m.hashrate.toFixed(2) : '—';
   const mg = document.getElementById('val-miner-gpu');
   if(mg) mg.textContent = (m.gpu_backend ? m.gpu_backend + ': ' : '') + (m.gpu_device ?? '—');
-  const mb = document.getElementById('val-miner-backend');
-  if(mb) mb.textContent = m.gpu_backend ?? 'cpu';
   const mw = document.getElementById('val-miner-worker');
   if(mw) mw.textContent = (m.miner_id ? m.miner_id + ' / ' : '') + (m.worker_name ?? '—');
-  const mwl = document.getElementById('val-miner-wallet');
-  if(mwl) mwl.textContent = m.payout_address ?? m.wallet ?? '—';
   const mon = document.getElementById('val-miner-onchain');
   if(mon) mon.textContent = m.on_chain_balance_zion != null ? _zionFmt(m.on_chain_balance_zion) + ' ZION' : '—';
-  const monts = document.getElementById('val-miner-onchain-ts');
-  if(monts) {
-    const ts = m.on_chain_balance_updated;
-    if(ts) {
-      const d = new Date(ts);
-      monts.textContent = d.toLocaleTimeString();
-    } else {
-      monts.textContent = '';
-    }
-  }
   const mnh = document.getElementById('val-miner-height');
   if(mnh) mnh.textContent = m.current_height ?? '—';
   const md = document.getElementById('val-miner-diff');
@@ -901,50 +885,8 @@ async function updateLayerServices(){
 // ── Mainnet Overview Metrics ──
 function updateMainnetMetrics(s){
   if(!s) return;
-  const isEdge = s.topology === 'edge-primary';
-  const en = s.edge_node || {};
-  const pe = s.pool_edge || {};
-  const tailscale = s.tailscale || {};
-
-  // Tailscale VPN badge
-  const tsEl = document.getElementById('val-tailscale-status');
-  if(tsEl){
-    const ok = tailscale.vpn_ok;
-    tsEl.textContent = ok ? '● VPN OK' : '○ VPN Down';
-    tsEl.className = 'text-[10px] font-bold ' + (ok ? 'text-emerald-400' : 'text-red-400');
-  }
-
-  // Edge Node extra metrics
-  const enNet = document.getElementById('val-edge-node-network');
-  if(enNet) enNet.textContent = en.network || '—';
-  const enProto = document.getElementById('val-edge-node-protocol');
-  if(enProto) enProto.textContent = en.protocol_version || '—';
-  const enCons = document.getElementById('val-edge-node-consensus');
-  if(enCons) enCons.textContent = en.consensus_profile || '—';
-  const enBlocks = document.getElementById('val-edge-node-accepted-blocks');
-  if(enBlocks) enBlocks.textContent = en.accepted_blocks ?? '—';
-
-  // Sync gap
-  const syncEl = document.getElementById('val-sync-gap');
-  if(syncEl){
-    const gap = pe.sync_gap;
-    if(gap != null){
-      syncEl.textContent = gap === 0 ? '✓ Synced' : gap + ' blocks behind';
-      syncEl.className = 'text-xs font-bold ' + (gap === 0 ? 'text-emerald-400' : 'text-amber-400');
-    } else {
-      syncEl.textContent = '—';
-      syncEl.className = 'text-xs text-gray-500';
-    }
-  }
-
-  // Pool extra metrics
-  const p = s.pool || {};
-  const ph = document.getElementById('val-pool-total-hashes');
-  if(ph) ph.textContent = p.total_hashes != null ? fmtNum(p.total_hashes) : '—';
-  const ps = document.getElementById('val-pool-total-shares');
-  if(ps) ps.textContent = p.total_shares != null ? fmtNum(p.total_shares) : '—';
-  const phr = document.getElementById('val-pool-hashrate');
-  if(phr) phr.textContent = p.hashrate_khs != null ? p.hashrate_khs.toFixed(2) + ' KH/s' : '—';
+  // Edge Node extra metrics — populated in Service Telemetry Details, not Overview cards
+  // Pool extra metrics — populated via updateServiceCards / updatePayouts
 }
 
 function updatePayouts(p, topology){
