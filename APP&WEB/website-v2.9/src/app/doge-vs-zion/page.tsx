@@ -233,67 +233,107 @@ export default function DogeVsZionPage() {
 
         {/* Game cards grid */}
         <div>
-          <div className="mb-3 flex items-center gap-2">
-            <Gamepad2 className="h-5 w-5 text-zion-purple" />
-            <h2 className="text-lg font-bold text-white">
-              {cs ? 'Vyber si hru' : 'Pick a game'}
-            </h2>
+          <div className="mb-4 flex items-center gap-3">
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-zion-purple/40 to-transparent" />
+            <div className="flex items-center gap-2">
+              <Gamepad2 className="h-5 w-5 text-zion-purple" />
+              <h2 className="text-lg font-bold text-white tracking-wide">
+                {cs ? 'Vyber si hru' : 'Pick a game'}
+              </h2>
+            </div>
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-zion-purple/40 to-transparent" />
           </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {GAMES.map((game) => {
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {GAMES.map((game, idx) => {
             const score = highScores[game.id] ?? 0;
             return (
-              <button
+              <motion.button
                 key={game.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + idx * 0.1, duration: 0.4 }}
                 onClick={() => setActiveGame(game.id)}
-                className="group relative overflow-hidden rounded-2xl border border-white/10 bg-black/60 p-6 text-left transition-all hover:border-white/20 hover:bg-white/5"
+                className="group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-black/80 to-black/40 p-6 text-left transition-all hover:border-white/20 hover:scale-[1.02]"
+                style={{ boxShadow: `0 0 0 0 ${game.color}00` }}
+                whileHover={{ boxShadow: `0 8px 40px ${game.glowColor}20` }}
               >
-                {/* Glow effect */}
+                {/* Animated gradient border glow */}
                 <div
-                  className="absolute -right-8 -top-8 h-32 w-32 rounded-full opacity-10 blur-2xl transition-opacity group-hover:opacity-20"
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                  style={{
+                    background: `radial-gradient(circle at 50% 0%, ${game.color}15, transparent 70%)`,
+                  }}
+                />
+
+                {/* Corner glow */}
+                <div
+                  className="absolute -right-12 -top-12 h-40 w-40 rounded-full opacity-10 blur-3xl transition-all duration-500 group-hover:opacity-30 group-hover:scale-125"
                   style={{ backgroundColor: game.color }}
                 />
 
-                <div className="relative flex items-start gap-4">
-                  {/* Game icon */}
+                {/* Bottom gradient line */}
+                <div
+                  className="absolute bottom-0 left-0 right-0 h-0.5 opacity-30 group-hover:opacity-80 transition-opacity"
+                  style={{ background: `linear-gradient(to right, transparent, ${game.color}, transparent)` }}
+                />
+
+                <div className="relative flex items-start gap-5">
+                  {/* Game icon — larger, richer */}
                   <div
-                    className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-3xl"
+                    className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl text-4xl transition-transform group-hover:scale-110 group-hover:rotate-3"
                     style={{
-                      backgroundColor: `${game.color}20`,
-                      border: `1px solid ${game.color}40`,
-                      boxShadow: `0 0 20px ${game.glowColor}30`,
+                      backgroundColor: `${game.color}15`,
+                      border: `1px solid ${game.color}50`,
+                      boxShadow: `0 0 30px ${game.glowColor}25, inset 0 0 20px ${game.color}10`,
                     }}
                   >
                     {game.emoji}
+                    {/* Pulse ring on hover */}
+                    <div
+                      className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 group-hover:animate-ping"
+                      style={{ border: `1px solid ${game.color}40` }}
+                    />
                   </div>
 
                   {/* Game info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-bold text-white">{game.title}</h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-xl font-bold text-white tracking-tight">{game.title}</h3>
                       {game.badge && (
                         <span
-                          className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
-                          style={{ backgroundColor: `${game.color}30`, color: game.color }}
+                          className="rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider border"
+                          style={{
+                            backgroundColor: `${game.color}20`,
+                            color: game.color,
+                            borderColor: `${game.color}40`,
+                          }}
                         >
                           {game.badge}
                         </span>
                       )}
                     </div>
-                    <p className="text-[10px] uppercase tracking-wider text-gray-600 mt-0.5">{game.genre}</p>
-                    <p className="mt-2 text-xs text-gray-400">{cs ? game.descriptionCs : game.description}</p>
+                    <p className="text-[10px] uppercase tracking-[0.15em] text-gray-500 mt-1">{game.genre}</p>
+                    <p className="mt-2.5 text-xs text-gray-400 leading-relaxed">{cs ? game.descriptionCs : game.description}</p>
 
                     {/* Score + play */}
-                    <div className="mt-3 flex items-center justify-between">
+                    <div className="mt-4 flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <Trophy className="h-3.5 w-3.5 text-gray-600" />
                         <span className="text-xs text-gray-500">
-                          {score > 0 ? `${score} ${cs ? 'bodů' : 'pts'}` : (cs ? 'Ještě nehráno' : 'Not played yet')}
+                          {score > 0
+                            ? <span style={{ color: game.color }}>{score} {cs ? 'bodů' : 'pts'}</span>
+                            : (cs ? 'Ještě nehráno' : 'Not played yet')}
                         </span>
                       </div>
                       <div
-                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all group-hover:gap-2.5"
-                        style={{ backgroundColor: `${game.color}20`, color: game.color }}
+                        className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all group-hover:gap-3 group-hover:scale-105"
+                        style={{
+                          backgroundColor: `${game.color}25`,
+                          color: game.color,
+                          border: `1px solid ${game.color}40`,
+                          boxShadow: `0 0 15px ${game.glowColor}20`,
+                        }}
                       >
                         <Play className="h-3.5 w-3.5" />
                         {cs ? 'Hrát' : 'Play'}
@@ -301,18 +341,42 @@ export default function DogeVsZionPage() {
                     </div>
                   </div>
                 </div>
-              </button>
+
+                {/* Floating particles on hover */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                  {[0, 1, 2, 3].map((i) => (
+                    <motion.div
+                      key={i}
+                      className="absolute rounded-full"
+                      style={{
+                        width: 2 + (i % 2),
+                        height: 2 + (i % 2),
+                        backgroundColor: game.glowColor,
+                        left: `${20 + i * 25}%`,
+                        bottom: 0,
+                        opacity: 0,
+                      }}
+                      whileHover={{
+                        y: -60 - i * 20,
+                        opacity: [0, 0.8, 0],
+                      }}
+                      transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
+                    />
+                  ))}
+                </div>
+              </motion.button>
             );
           })}
         </div>
         </div>
 
         {/* Coming soon teaser */}
-        <div className="rounded-2xl border border-dashed border-white/10 bg-white/3 p-6 text-center">
-          <p className="text-sm text-gray-600">
+        <div className="relative overflow-hidden rounded-2xl border border-dashed border-zion-purple/20 bg-gradient-to-r from-zion-purple/5 via-black/40 to-zion-cyan/5 p-6 text-center">
+          <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(circle at 30% 50%, #8b5cf6, transparent 50%), radial-gradient(circle at 70% 50%, #06b6d4, transparent 50%)' }} />
+          <p className="relative text-sm text-gray-400">
             {cs ? 'Další hry brzy... 🎮' : 'More games coming soon... 🎮'}
           </p>
-          <p className="mt-1 text-[10px] text-gray-700">
+          <p className="relative mt-1 text-[10px] text-gray-600">
             {cs ? 'Cosmic Tetris · Space Invaders · 2048 · a více' : 'Cosmic Tetris · Space Invaders · 2048 · and more'}
           </p>
         </div>
