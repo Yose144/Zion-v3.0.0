@@ -150,7 +150,7 @@ fn node_status() -> Result<()> {
 }
 
 fn find_node_binary() -> Result<PathBuf> {
-    // Prefer configured path.
+    // 1. Prefer configured path.
     if let Some(path) = config::load(None).ok().and_then(|c| c.binaries.node) {
         let p = PathBuf::from(path);
         if p.exists() {
@@ -158,14 +158,21 @@ fn find_node_binary() -> Result<PathBuf> {
         }
     }
 
-    // Try known public-CLI download names.
+    // 2. Try known public-CLI download names next to the CLI or in ~/.zion.
     for c in ["zion-node-windows-x86_64", "zion-node"] {
         if let Some(p) = process::find_binary(c) {
             return Ok(p);
         }
     }
 
-    // Last resort: look for the bare `node` binary only in safe locations
+    // 3. Self-contained bundle: extract from the zion binary itself.
+    if let Ok(p) = crate::bundle::ensure_binary("node") {
+        if p.exists() {
+            return Ok(p);
+        }
+    }
+
+    // 4. Last resort: look for the bare `node` binary only in safe locations
     // (current dir, exe dir, ~/.zion), never in PATH, to avoid picking up Node.js.
     if let Some(p) = process::find_binary_safely("node") {
         return Ok(p);
