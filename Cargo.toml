@@ -21,6 +21,7 @@ members = [
     "V3/sdk",
     "V3/cli",
     "DeekshaDebug",
+    "PUBLIC/cli",
 ]
 resolver = "2"
 
