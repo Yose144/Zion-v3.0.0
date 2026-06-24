@@ -383,6 +383,130 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
     </div>
 
+    <!-- Edge Server (unified health + services + control) -->
+    <div id="card-edge-server" class="zion-panel svc-card p-5">
+      <div class="flex items-center justify-between mb-4 relative z-10">
+        <div class="flex items-center gap-3">
+          <span class="zion-kicker">🌍 Edge Server</span>
+          <span class="text-[10px] font-mono text-gray-500">77.42.71.94 · 100.76.16.108</span>
+          <span id="edge-h-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Loading…</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span id="badge-edge-server" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
+          <button onclick="refreshEdgeServerCard(true); updateEdgeHealth();" class="text-[10px] px-2.5 py-1 bg-zinc-700/50 hover:bg-zinc-600 rounded-md font-semibold transition" title="Force refresh">⟳</button>
+          <a href="http://77.42.71.94:3100" target="_blank" class="text-[10px] px-2.5 py-1 bg-purple-700/40 hover:bg-purple-600/60 rounded-md font-semibold transition text-purple-300">📊 Grafana</a>
+        </div>
+      </div>
+
+      <!-- System metrics row (6 cards) -->
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4 relative z-10">
+        <div class="bg-black/30 rounded-xl p-3 text-center">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">CPU</div>
+          <div id="edge-cpu" class="text-xl font-bold text-amber-400">—</div>
+          <div id="edge-load" class="text-[10px] text-gray-500 mt-0.5">load —</div>
+          <div id="edge-h-cpu-cores" class="text-[9px] text-gray-600 mt-0.5">— cores</div>
+        </div>
+        <div class="bg-black/30 rounded-xl p-3 text-center">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Memory</div>
+          <div id="edge-mem-pct" class="text-xl font-bold text-blue-400">—</div>
+          <div id="edge-mem-detail" class="text-[10px] text-gray-500 mt-0.5">— / — GB</div>
+          <div id="edge-mem-trend" class="text-[9px] font-mono mt-1"></div>
+          <div id="edge-mem-top" class="text-left mt-2 space-y-0.5"></div>
+          <button id="btn-edge-mem-limit" onclick="applyEdgeMemoryLimit()" class="mt-2 text-[9px] px-2 py-1 bg-amber-700/40 hover:bg-amber-600/60 rounded text-amber-300 font-semibold transition hidden" title="Add MemoryMax=3G to systemd">🔒 Limit RAM</button>
+        </div>
+        <div class="bg-black/30 rounded-xl p-3 text-center">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Disk</div>
+          <div id="edge-disk-pct" class="text-xl font-bold text-emerald-400">—</div>
+          <div id="edge-disk-detail" class="text-[10px] text-gray-500 mt-0.5">— GB free</div>
+          <!-- Disk usage bar -->
+          <div class="mt-2 w-full h-2 bg-white/5 rounded-full overflow-hidden">
+            <div id="edge-h-disk-bar" class="h-full rounded-full transition-all duration-500" style="width: 0%; background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444);"></div>
+          </div>
+        </div>
+        <div class="bg-black/30 rounded-xl p-3 text-center">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Uptime</div>
+          <div id="edge-h-uptime" class="text-xl font-bold text-cyan-400">—</div>
+          <div class="text-[10px] text-gray-500 mt-0.5" id="edge-h-syslog">Syslog: —</div>
+        </div>
+        <div class="bg-black/30 rounded-xl p-3 text-center">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Services</div>
+          <div id="edge-svcs-ok" class="text-xl font-bold text-emerald-400">—</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">active</div>
+        </div>
+        <div class="bg-black/30 rounded-xl p-3 text-center">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Logs</div>
+          <div class="text-sm font-bold text-purple-400" id="edge-h-journal">Journal: —</div>
+          <div class="text-[10px] text-gray-500 mt-0.5" id="edge-h-zion-miner-log">Miner log: —</div>
+        </div>
+      </div>
+
+      <!-- Services grid -->
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 relative z-10" id="edge-services-grid">
+        <div class="col-span-full text-xs text-gray-500 text-center py-2">Loading edge services…</div>
+      </div>
+
+      <!-- Port health bar -->
+      <div class="mt-3 relative z-10">
+        <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1.5">Key Ports</div>
+        <div class="flex flex-wrap gap-1.5" id="edge-ports-row"></div>
+      </div>
+
+      <!-- Log Automation + Docker (compact row) -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-3 relative z-10">
+        <div>
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1.5">Log Automation</div>
+          <div class="space-y-0.5 text-xs">
+            <div class="flex justify-between">
+              <span class="text-gray-400">Cleanup Timer</span>
+              <span id="edge-h-cleanup-timer" class="font-mono">—</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-400">Last Trigger</span>
+              <span id="edge-h-cleanup-last" class="font-mono text-gray-300">—</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1.5">Docker</div>
+          <div id="edge-h-docker-list" class="space-y-0.5 text-xs">
+            <div class="text-gray-500">Loading…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edge Operations -->
+      <div class="mt-4 space-y-3 relative z-10">
+        <div class="text-[10px] text-gray-500 uppercase tracking-wider">Service Control</div>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="edgeAction('restart-node1')" class="text-[10px] px-2.5 py-1.5 bg-emerald-700/40 hover:bg-emerald-600/60 border border-emerald-500/30 rounded-md font-semibold transition">⟳ Node 1</button>
+          <button onclick="edgeAction('restart-node2')" class="text-[10px] px-2.5 py-1.5 bg-emerald-700/40 hover:bg-emerald-600/60 border border-emerald-500/30 rounded-md font-semibold transition">⟳ Node 2</button>
+          <button onclick="edgeAction('restart-pool')" class="text-[10px] px-2.5 py-1.5 bg-amber-700/40 hover:bg-amber-600/60 border border-amber-500/30 rounded-md font-semibold transition">⟳ Pool</button>
+          <button onclick="edgeAction('restart-dao')" class="text-[10px] px-2.5 py-1.5 bg-purple-700/40 hover:bg-purple-600/60 border border-purple-500/30 rounded-md font-semibold transition">⟳ DAO</button>
+          <button onclick="edgeAction('restart-warp')" class="text-[10px] px-2.5 py-1.5 bg-cyan-700/40 hover:bg-cyan-600/60 border border-cyan-500/30 rounded-md font-semibold transition">⟳ WARP</button>
+          <button onclick="edgeAction('restart-dashboard')" class="text-[10px] px-2.5 py-1.5 bg-blue-700/40 hover:bg-blue-600/60 border border-blue-500/30 rounded-md font-semibold transition">⟳ Rust DB</button>
+          <button onclick="edgeAction('restart-hiran')" class="text-[10px] px-2.5 py-1.5 bg-pink-700/40 hover:bg-pink-600/60 border border-pink-500/30 rounded-md font-semibold transition">⟳ Hiran</button>
+          <button onclick="edgeAction('restart-hiranyagarbha')" class="text-[10px] px-2.5 py-1.5 bg-indigo-700/40 hover:bg-indigo-600/60 border border-indigo-500/30 rounded-md font-semibold transition">⟳ Hiranya</button>
+          <button onclick="edgeAction('restart-bridge')" class="text-[10px] px-2.5 py-1.5 bg-teal-700/40 hover:bg-teal-600/60 border border-teal-500/30 rounded-md font-semibold transition">⟳ Bridge</button>
+          <button onclick="edgeAction('restart-website')" class="text-[10px] px-2.5 py-1.5 bg-lime-700/40 hover:bg-lime-600/60 border border-lime-500/30 rounded-md font-semibold transition">⟳ Website</button>
+        </div>
+
+        <div class="text-[10px] text-gray-500 uppercase tracking-wider">Maintenance & Security</div>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="edgeAction('clean-docker')" class="text-[10px] px-2.5 py-1.5 bg-red-700/40 hover:bg-red-600/60 border border-red-500/30 rounded-md font-semibold transition">🧹 Clean Docker</button>
+          <button onclick="edgeAction('backup-edge')" class="text-[10px] px-2.5 py-1.5 bg-blue-700/40 hover:bg-blue-600/60 border border-blue-500/30 rounded-md font-semibold transition">💾 Backup Edge</button>
+          <button onclick="edgeAction('security-audit')" class="text-[10px] px-2.5 py-1.5 bg-amber-700/40 hover:bg-amber-600/60 border border-amber-500/30 rounded-md font-semibold transition">🔒 Security Audit</button>
+          <button onclick="edgeAction('full-health')" class="text-[10px] px-2.5 py-1.5 bg-zinc-700/50 hover:bg-zinc-600 border border-white/10 rounded-md font-semibold transition">📊 Full Health</button>
+        </div>
+
+        <div class="text-[10px] text-gray-500 uppercase tracking-wider">External Links</div>
+        <div class="flex flex-wrap gap-2">
+          <a href="http://77.42.71.94:9090" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-orange-700/40 hover:bg-orange-600/60 border border-orange-500/30 rounded-md font-semibold transition text-orange-300">🔥 Prometheus</a>
+          <a href="https://zionterranova.com" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-indigo-700/40 hover:bg-indigo-600/60 border border-indigo-500/30 rounded-md font-semibold transition text-indigo-300">🌐 Website</a>
+          <a href="http://77.42.71.94:8455" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-teal-700/40 hover:bg-teal-600/60 border border-teal-500/30 rounded-md font-semibold transition text-teal-300">📈 Pool Metrics</a>
+        </div>
+      </div>
+    </div>
+
     <!-- Service Cards (top 4) -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <div id="card-node1" class="zion-panel zion-panel-hover svc-card p-5">
@@ -452,94 +576,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         </div>
       </div>
 
-    </div>
-
-    <!-- Edge Server System Health Panel -->
-    <div id="card-edge-server" class="zion-panel svc-card p-5 mt-4">
-      <div class="flex items-center justify-between mb-4 relative z-10">
-        <div class="flex items-center gap-3">
-          <span class="zion-kicker">🌍 Edge Server</span>
-          <span class="text-[10px] font-mono text-gray-500">77.42.71.94 · 100.76.16.108</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <span id="badge-edge-server" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
-          <button onclick="refreshEdgeServerCard(true)" class="text-[10px] px-2.5 py-1 bg-zinc-700/50 hover:bg-zinc-600 rounded-md font-semibold transition" title="Force refresh (SSH)">⟳</button>
-          <a href="http://77.42.71.94:3100" target="_blank" class="text-[10px] px-2.5 py-1 bg-purple-700/40 hover:bg-purple-600/60 rounded-md font-semibold transition text-purple-300">📊 Grafana</a>
-        </div>
-      </div>
-
-      <!-- System metrics row -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 relative z-10">
-        <div class="bg-black/30 rounded-xl p-3 text-center">
-          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">CPU</div>
-          <div id="edge-cpu" class="text-xl font-bold text-amber-400">—</div>
-          <div id="edge-load" class="text-[10px] text-gray-500 mt-0.5">load —</div>
-        </div>
-        <div class="bg-black/30 rounded-xl p-3 text-center">
-          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Memory</div>
-          <div id="edge-mem-pct" class="text-xl font-bold text-blue-400">—</div>
-          <div id="edge-mem-detail" class="text-[10px] text-gray-500 mt-0.5">— / — GB</div>
-          <div id="edge-mem-trend" class="text-[9px] font-mono mt-1"></div>
-          <div id="edge-mem-top" class="text-left mt-2 space-y-0.5"></div>
-          <button id="btn-edge-mem-limit" onclick="applyEdgeMemoryLimit()" class="mt-2 text-[9px] px-2 py-1 bg-amber-700/40 hover:bg-amber-600/60 rounded text-amber-300 font-semibold transition hidden" title="Add MemoryMax=3G to systemd">🔒 Limit RAM</button>
-        </div>
-        <div class="bg-black/30 rounded-xl p-3 text-center">
-          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Disk</div>
-          <div id="edge-disk-pct" class="text-xl font-bold text-emerald-400">—</div>
-          <div id="edge-disk-detail" class="text-[10px] text-gray-500 mt-0.5">— GB free</div>
-        </div>
-        <div class="bg-black/30 rounded-xl p-3 text-center">
-          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Services</div>
-          <div id="edge-svcs-ok" class="text-xl font-bold text-emerald-400">—</div>
-          <div class="text-[10px] text-gray-500 mt-0.5">active</div>
-        </div>
-      </div>
-
-      <!-- Services grid -->
-      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 relative z-10" id="edge-services-grid">
-        <!-- filled by JS -->
-        <div class="col-span-full text-xs text-gray-500 text-center py-2">Loading edge services…</div>
-      </div>
-
-      <!-- Port health bar -->
-      <div class="mt-3 relative z-10">
-        <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1.5">Key Ports</div>
-        <div class="flex flex-wrap gap-1.5" id="edge-ports-row">
-          <!-- filled by JS -->
-        </div>
-      </div>
-
-      <!-- Edge Operations -->
-      <div class="mt-4 space-y-3 relative z-10">
-        <div class="text-[10px] text-gray-500 uppercase tracking-wider">Service Control</div>
-        <div class="flex flex-wrap gap-2">
-          <button onclick="edgeAction('restart-node1')" class="text-[10px] px-2.5 py-1.5 bg-emerald-700/40 hover:bg-emerald-600/60 border border-emerald-500/30 rounded-md font-semibold transition">⟳ Node 1</button>
-          <button onclick="edgeAction('restart-node2')" class="text-[10px] px-2.5 py-1.5 bg-emerald-700/40 hover:bg-emerald-600/60 border border-emerald-500/30 rounded-md font-semibold transition">⟳ Node 2</button>
-          <button onclick="edgeAction('restart-pool')" class="text-[10px] px-2.5 py-1.5 bg-amber-700/40 hover:bg-amber-600/60 border border-amber-500/30 rounded-md font-semibold transition">⟳ Pool</button>
-          <button onclick="edgeAction('restart-dao')" class="text-[10px] px-2.5 py-1.5 bg-purple-700/40 hover:bg-purple-600/60 border border-purple-500/30 rounded-md font-semibold transition">⟳ DAO</button>
-          <button onclick="edgeAction('restart-warp')" class="text-[10px] px-2.5 py-1.5 bg-cyan-700/40 hover:bg-cyan-600/60 border border-cyan-500/30 rounded-md font-semibold transition">⟳ WARP</button>
-          <button onclick="edgeAction('restart-dashboard')" class="text-[10px] px-2.5 py-1.5 bg-blue-700/40 hover:bg-blue-600/60 border border-blue-500/30 rounded-md font-semibold transition">⟳ Rust DB</button>
-          <button onclick="edgeAction('restart-hiran')" class="text-[10px] px-2.5 py-1.5 bg-pink-700/40 hover:bg-pink-600/60 border border-pink-500/30 rounded-md font-semibold transition">⟳ Hiran</button>
-          <button onclick="edgeAction('restart-hiranyagarbha')" class="text-[10px] px-2.5 py-1.5 bg-indigo-700/40 hover:bg-indigo-600/60 border border-indigo-500/30 rounded-md font-semibold transition">⟳ Hiranya</button>
-          <button onclick="edgeAction('restart-bridge')" class="text-[10px] px-2.5 py-1.5 bg-teal-700/40 hover:bg-teal-600/60 border border-teal-500/30 rounded-md font-semibold transition">⟳ Bridge</button>
-          <button onclick="edgeAction('restart-website')" class="text-[10px] px-2.5 py-1.5 bg-lime-700/40 hover:bg-lime-600/60 border border-lime-500/30 rounded-md font-semibold transition">⟳ Website</button>
-        </div>
-
-        <div class="text-[10px] text-gray-500 uppercase tracking-wider">Maintenance & Security</div>
-        <div class="flex flex-wrap gap-2">
-          <button onclick="edgeAction('clean-docker')" class="text-[10px] px-2.5 py-1.5 bg-red-700/40 hover:bg-red-600/60 border border-red-500/30 rounded-md font-semibold transition">🧹 Clean Docker</button>
-          <button onclick="edgeAction('backup-edge')" class="text-[10px] px-2.5 py-1.5 bg-blue-700/40 hover:bg-blue-600/60 border border-blue-500/30 rounded-md font-semibold transition">💾 Backup Edge</button>
-          <button onclick="edgeAction('security-audit')" class="text-[10px] px-2.5 py-1.5 bg-amber-700/40 hover:bg-amber-600/60 border border-amber-500/30 rounded-md font-semibold transition">🔒 Security Audit</button>
-          <button onclick="edgeAction('full-health')" class="text-[10px] px-2.5 py-1.5 bg-zinc-700/50 hover:bg-zinc-600 border border-white/10 rounded-md font-semibold transition">📊 Full Health</button>
-        </div>
-
-        <div class="text-[10px] text-gray-500 uppercase tracking-wider">External Links</div>
-        <div class="flex flex-wrap gap-2">
-          <a href="http://77.42.71.94:9090" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-orange-700/40 hover:bg-orange-600/60 border border-orange-500/30 rounded-md font-semibold transition text-orange-300">🔥 Prometheus</a>
-          <a href="https://zionterranova.com" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-indigo-700/40 hover:bg-indigo-600/60 border border-indigo-500/30 rounded-md font-semibold transition text-indigo-300">🌐 Website</a>
-          <a href="http://77.42.71.94:8455" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-teal-700/40 hover:bg-teal-600/60 border border-teal-500/30 rounded-md font-semibold transition text-teal-300">📈 Pool Metrics</a>
-        </div>
-      </div>
     </div>
 
     <!-- Miner Control Panel (full width) -->
@@ -649,94 +685,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
             <tr><td colspan="9" class="text-gray-500 text-center py-4">Loading miners from Edge pool…</td></tr>
           </tbody>
         </table>
-      </div>
-    </div>
-
-    <!-- Edge Server Health -->
-    <div class="zion-panel p-5 mb-4" id="edge-health-widget">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-base font-bold flex items-center gap-2">
-          🖥️ Edge Server Health
-          <span id="edge-health-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Loading…</span>
-        </h2>
-        <button onclick="updateEdgeHealth()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
-      </div>
-
-      <!-- System Metrics Row -->
-      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
-        <div class="text-center p-3 bg-white/5 rounded-xl">
-          <div class="text-xl font-bold" id="edge-disk-percent">—</div>
-          <div class="text-[10px] text-gray-400 mt-1">Disk Usage</div>
-          <div class="text-[10px] text-gray-500" id="edge-disk-detail">— / —</div>
-        </div>
-        <div class="text-center p-3 bg-white/5 rounded-xl">
-          <div class="text-xl font-bold" id="edge-mem-percent">—</div>
-          <div class="text-[10px] text-gray-400 mt-1">Memory</div>
-          <div class="text-[10px] text-gray-500" id="edge-mem-detail">— / —</div>
-        </div>
-        <div class="text-center p-3 bg-white/5 rounded-xl">
-          <div class="text-xl font-bold" id="edge-cpu-load">—</div>
-          <div class="text-[10px] text-gray-400 mt-1">CPU Load (1m)</div>
-          <div class="text-[10px] text-gray-500" id="edge-cpu-cores">— cores</div>
-        </div>
-        <div class="text-center p-3 bg-white/5 rounded-xl">
-          <div class="text-xl font-bold text-cyan-400" id="edge-uptime">—</div>
-          <div class="text-[10px] text-gray-400 mt-1">Uptime</div>
-        </div>
-        <div class="text-center p-3 bg-white/5 rounded-xl">
-          <div class="text-xl font-bold text-amber-400" id="edge-syslog-size">—</div>
-          <div class="text-[10px] text-gray-400 mt-1">Syslog Size</div>
-        </div>
-        <div class="text-center p-3 bg-white/5 rounded-xl">
-          <div class="text-xl font-bold text-purple-400" id="edge-journal-size">—</div>
-          <div class="text-[10px] text-gray-400 mt-1">Journal Size</div>
-        </div>
-      </div>
-
-      <!-- Disk Usage Bar -->
-      <div class="mb-4">
-        <div class="flex justify-between text-[10px] text-gray-400 mb-1">
-          <span>Disk</span>
-          <span id="edge-disk-bar-label">—</span>
-        </div>
-        <div class="w-full h-3 bg-white/5 rounded-full overflow-hidden">
-          <div id="edge-disk-bar" class="h-full rounded-full transition-all duration-500" style="width: 0%; background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444);"></div>
-        </div>
-      </div>
-
-      <!-- Services Grid -->
-      <div class="mb-3">
-        <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Systemd Services</h3>
-        <div id="edge-services-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
-          <div class="text-gray-500 text-xs text-center py-2">Loading…</div>
-        </div>
-      </div>
-
-      <!-- Log Automation + Docker -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div>
-          <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Log Automation</h3>
-          <div class="space-y-1 text-xs">
-            <div class="flex justify-between">
-              <span class="text-gray-400">Cleanup Timer</span>
-              <span id="edge-cleanup-timer" class="font-mono">—</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-400">Last Trigger</span>
-              <span id="edge-cleanup-last" class="font-mono text-gray-300">—</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-400">Zion Miner Log</span>
-              <span id="edge-zion-miner-log" class="font-mono text-gray-300">—</span>
-            </div>
-          </div>
-        </div>
-        <div>
-          <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Docker Containers</h3>
-          <div id="edge-docker-list" class="space-y-1 text-xs">
-            <div class="text-gray-500">Loading…</div>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -4794,6 +4742,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=64"></script>
+<script src="/dashboard.js?v=65"></script>
 </body>
 </html>
