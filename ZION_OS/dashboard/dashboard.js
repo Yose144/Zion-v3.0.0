@@ -229,7 +229,7 @@ async function refreshAll(){
     // Hero stats (topology-aware)
     const isEdge = statusData.topology === 'edge-primary';
     const live = isEdge
-      ? [statusData.node1, statusData.edge_node, statusData.pool, statusData.miner].filter(x => x && x.running).length
+      ? [statusData.node1, statusData.edge_node, statusData.edge_node2, statusData.pool, statusData.miner].filter(x => x && x.running).length
       : [statusData.node1, statusData.node2, statusData.pool, statusData.miner].filter(x => x && x.running).length;
     document.getElementById('hero-services-up').textContent = live;
     document.getElementById('hero-blockers-open').textContent = blockersData.open;
@@ -290,10 +290,13 @@ function formatUptime(sec){
 
 function updateServiceCards(s){
   const en = s.edge_node, n1 = s.node1, n2 = s.node2, p = s.pool, m = s.miner;
+  const en2 = s.edge_node2;
   const isEdgePrimary = s.topology === 'edge-primary';
-  // Topology-aware visibility
+  // Node2 data source: edge_node2 in edge-primary, legacy node2 otherwise
+  const n2data = isEdgePrimary ? (en2 || n2) : n2;
+  // Topology-aware visibility: show both edge-node and node2 in edge-primary
   const node2Card = document.getElementById('card-node2');
-  if(node2Card) node2Card.classList.toggle('hidden', isEdgePrimary);
+  if(node2Card) node2Card.classList.toggle('hidden', false);
   const edgeNodeCard = document.getElementById('card-edge-node');
   if(edgeNodeCard) edgeNodeCard.classList.toggle('hidden', !isEdgePrimary);
 
@@ -341,26 +344,28 @@ function updateServiceCards(s){
     }
   }
 
-  // Node 2 (Dev / Optional)
-  if(!isEdgePrimary){
-    setBadge('badge-node2', n2.running); setCardLive('node2', n2.running);
-    const n2h = document.getElementById('val-node2-height');
-    if(n2h) n2h.textContent = n2.chain_height ?? '—';
-    const n2id = document.getElementById('val-node2-id');
-    if(n2id) n2id.textContent = n2.node_id ?? '—';
-    const n2p = document.getElementById('val-node2-peers');
-    if(n2p) n2p.textContent = n2.known_peers ?? '—';
-    const synced = en && en.chain_height && n1.chain_height && n1.chain_height >= en.chain_height - 5;
-    const syncEl = document.getElementById('val-node2-sync');
-    if(syncEl){
-      syncEl.textContent = synced ? '✓ Synced' : (n2.known_peers > 0 ? 'Syncing…' : 'No peers');
-      syncEl.className = synced ? 'text-emerald-400 font-bold' : 'text-amber-400';
-    }
-    const n2m = document.getElementById('val-node2-mempool');
-    if(n2m) n2m.textContent = n2.mempool_size ?? '—';
-    const n2u = document.getElementById('val-node2-uptime');
-    if(n2u) n2u.textContent = formatUptime(n2.uptime_seconds);
+  // Node 2 / Edge Node 2
+  const n2label = isEdgePrimary ? 'Edge Node 2' : 'Node 2';
+  const n2kicker = node2Card ? node2Card.querySelector('.zion-kicker') : null;
+  if(n2kicker) n2kicker.textContent = isEdgePrimary ? '🔶 ' + n2label : '🔶 Node 2';
+  setBadge('badge-node2', n2data && n2data.running); setCardLive('node2', n2data && n2data.running);
+  const n2h = document.getElementById('val-node2-height');
+  if(n2h) n2h.textContent = n2data ? (n2data.chain_height ?? '—') : '—';
+  const n2id = document.getElementById('val-node2-id');
+  if(n2id) n2id.textContent = n2data ? (n2data.node_id ?? '—') : '—';
+  const n2p = document.getElementById('val-node2-peers');
+  if(n2p) n2p.textContent = n2data ? (n2data.known_peers ?? '—') : '—';
+  const n2ref = isEdgePrimary ? en : n1;
+  const synced = n2ref && n2ref.chain_height && n2data && n2data.chain_height && n2data.chain_height >= n2ref.chain_height - 5;
+  const syncEl = document.getElementById('val-node2-sync');
+  if(syncEl){
+    syncEl.textContent = synced ? '✓ Synced' : (n2data && n2data.known_peers > 0 ? 'Syncing…' : 'No peers');
+    syncEl.className = synced ? 'text-emerald-400 font-bold' : 'text-amber-400';
   }
+  const n2m = document.getElementById('val-node2-mempool');
+  if(n2m) n2m.textContent = n2data ? (n2data.mempool_size ?? '—') : '—';
+  const n2u = document.getElementById('val-node2-uptime');
+  if(n2u) n2u.textContent = formatUptime(n2data ? n2data.uptime_seconds : null);
 
   setBadge('badge-pool', p.running); setCardLive('pool', p.running);
   const ps = document.getElementById('val-pool-sessions');
