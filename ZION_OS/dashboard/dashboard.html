@@ -578,81 +578,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
     </div>
 
-    <!-- Miner Control Panel (full width) -->
-    <div id="card-miner" class="zion-panel zion-panel-hover svc-card p-5 mt-4">
-      <div class="flex items-center justify-between mb-4">
-        <span class="zion-kicker" id="lbl-miner-title">⛏️ Edge Miner</span>
-        <span id="badge-miner" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
-      </div>
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <!-- Stats Column -->
-        <div class="space-y-3">
-          <div class="text-center p-3 bg-white/5 rounded-xl">
-            <div class="text-4xl font-bold text-gradient" id="val-miner-hashrate">—</div>
-            <div class="text-xs text-gray-400 mt-1">KH/s (10s avg)</div>
-          </div>
-          <div class="grid grid-cols-2 gap-2 text-xs">
-            <div class="p-2 bg-white/5 rounded-lg">
-              <div class="text-gray-400 mb-0.5">Device</div>
-              <div class="text-white font-mono truncate" id="val-miner-gpu">—</div>
-            </div>
-            <div class="p-2 bg-white/5 rounded-lg">
-              <div class="text-gray-400 mb-0.5">Backend</div>
-              <div class="text-white font-mono truncate" id="val-miner-backend">—</div>
-            </div>
-            <div class="p-2 bg-white/5 rounded-lg">
-              <div class="text-gray-400 mb-0.5">Worker</div>
-              <div class="text-white font-mono truncate" id="val-miner-worker">—</div>
-            </div>
-            <div class="p-2 bg-white/5 rounded-lg">
-              <div class="text-gray-400 mb-0.5">Wallet</div>
-              <div class="text-white font-mono truncate text-[10px]" id="val-miner-wallet">—</div>
-            </div>
-            <div class="p-2 bg-white/5 rounded-lg">
-              <div class="text-gray-400 mb-0.5">On-Chain <span class="text-[8px] text-gray-500">(RPC)</span></div>
-              <div class="text-emerald-400 font-bold font-mono text-[10px]" id="val-miner-onchain">—</div>
-              <div class="text-[8px] text-gray-500 font-mono" id="val-miner-onchain-ts"></div>
-            </div>
-            <div class="p-2 bg-white/5 rounded-lg">
-              <div class="text-gray-400 mb-0.5">Height</div>
-              <div class="text-white font-mono" id="val-miner-height">—</div>
-            </div>
-            <div class="p-2 bg-white/5 rounded-lg">
-              <div class="text-gray-400 mb-0.5">Diff</div>
-              <div class="text-white font-mono" id="val-miner-diff">—</div>
-            </div>
-            <div class="p-2 bg-white/5 rounded-lg">
-              <div class="text-gray-400 mb-0.5">Shares OK</div>
-              <div class="text-emerald-400 font-bold" id="val-miner-shares-ok">—</div>
-            </div>
-            <div class="p-2 bg-white/5 rounded-lg">
-              <div class="text-gray-400 mb-0.5">Shares Rej</div>
-              <div class="text-red-400 font-bold" id="val-miner-shares-rej">—</div>
-            </div>
-            <div class="p-2 bg-white/5 rounded-lg col-span-2">
-              <div class="text-gray-400 mb-0.5">Pool</div>
-              <div class="text-white font-mono truncate" id="val-miner-pool">—</div>
-            </div>
-          </div>
-          <div id="miner-status-msg" class="text-xs p-2 rounded-lg hidden"></div>
-        </div>
-
-        <!-- Info / Actions Column -->
-        <div class="lg:col-span-2 space-y-3">
-          <h3 class="text-sm font-semibold text-gray-300 mb-2">⚙️ Actions</h3>
-          <div class="flex gap-2 flex-wrap" id="miner-buttons">
-            <button onclick="controlAction('restart-miner')" class="px-4 py-2.5 bg-gradient-to-r from-amber-700 to-amber-900 hover:from-amber-600 hover:to-amber-800 rounded-lg text-sm font-semibold transition shadow-lg">
-              🔄 Restart
-            </button>
-            <button onclick="controlAction('stop-miner')" class="px-4 py-2.5 bg-gradient-to-r from-red-700 to-red-900 hover:from-red-600 hover:to-red-800 rounded-lg text-sm font-semibold transition shadow-lg">
-              ⏹ Stop
-            </button>
-          </div>
-          <p class="text-xs text-gray-500 mt-2">Miner is managed by the Edge node systemd service. Use Restart if it hangs, Stop to pause.</p>
-        </div>
-      </div>
-    </div>
-
     <!-- Connected Miners (Edge Pool) -->
     <div id="card-connected-miners" class="zion-panel p-5 mb-4">
       <div class="flex items-center justify-between mb-3">
@@ -1061,6 +986,58 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         </svg>
         <div id="topology-tooltip" class="absolute hidden bg-gray-900 border border-white/10 rounded-lg px-2 py-1 text-[10px] text-gray-200 shadow-lg pointer-events-none z-50" style="transform:translate(-50%,-120%);"></div>
       </div>
+    </div>
+
+    <!-- ═══════ Edge Miner (compact) ═══════ -->
+    <div id="card-miner" class="zion-panel zion-panel-hover svc-card p-4">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-3">
+          <span class="zion-kicker" id="lbl-miner-title">⛏️ Edge Miner</span>
+          <span id="badge-miner" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="controlAction('restart-miner')" class="text-[10px] px-2.5 py-1 bg-amber-700/50 hover:bg-amber-600 rounded-md font-semibold transition">⟳ Restart</button>
+          <button onclick="controlAction('stop-miner')" class="text-[10px] px-2.5 py-1 bg-red-700/50 hover:bg-red-600 rounded-md font-semibold transition">⏹ Stop</button>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs">
+        <div class="flex items-center gap-2">
+          <span class="text-gray-400">Hashrate</span>
+          <span class="text-xl font-bold text-gradient" id="val-miner-hashrate">—</span>
+          <span class="text-gray-500 text-[10px]">KH/s</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="text-gray-400">Device</span>
+          <span class="text-white font-mono" id="val-miner-gpu">—</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="text-gray-400">Worker</span>
+          <span class="text-white font-mono" id="val-miner-worker">—</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="text-gray-400">Height</span>
+          <span class="text-white font-mono" id="val-miner-height">—</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="text-gray-400">Diff</span>
+          <span class="text-white font-mono" id="val-miner-diff">—</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="text-gray-400">Shares</span>
+          <span class="text-emerald-400 font-bold" id="val-miner-shares-ok">—</span>
+          <span class="text-gray-500">/</span>
+          <span class="text-red-400 font-bold" id="val-miner-shares-rej">—</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="text-gray-400">On-Chain</span>
+          <span class="text-emerald-400 font-mono text-[10px]" id="val-miner-onchain">—</span>
+        </div>
+        <div class="flex items-center gap-1.5 min-w-0">
+          <span class="text-gray-400">Pool</span>
+          <span class="text-white font-mono truncate text-[10px]" id="val-miner-pool">—</span>
+        </div>
+      </div>
+      <div id="miner-status-msg" class="text-xs p-2 rounded-lg hidden mt-2"></div>
     </div>
 
     <!-- ═══════ Service Telemetry Details ═══════ -->
@@ -4742,6 +4719,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=65"></script>
+<script src="/dashboard.js?v=66"></script>
 </body>
 </html>
