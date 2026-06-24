@@ -127,6 +127,13 @@ fn find_pool_binary() -> Result<PathBuf> {
         }
     }
 
+    // Self-contained bundle.
+    if let Ok(p) = crate::bundle::ensure_binary("pool") {
+        if p.exists() {
+            return Ok(p);
+        }
+    }
+
     // Bare `server` is too generic; search only safe locations.
     if let Some(p) = process::find_binary_safely("server") {
         return Ok(p);

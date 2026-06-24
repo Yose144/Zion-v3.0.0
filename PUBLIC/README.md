@@ -155,14 +155,36 @@ Binaries are discovered automatically in this order:
 
 The CLI never picks a generic name like `node` from PATH — this avoids accidentally starting Node.js.
 
-## Download bundle
+## Download — single executable
 
-For a fully standalone setup, download all four Windows binaries into the same folder:
+The public CLI is distributed as **one self-contained executable**. The first time you run `zion node start`, `zion pool start`, or `zion mine start`, the required node/pool/miner binaries are extracted automatically to `~/.zion/bin/`.
 
-- `zion-windows-x86_64.exe` — the CLI
+- `zion-windows-x86_64.exe` (~12 MB) — includes CLI + node + pool + miner
+
+You can also run `zion doctor` to extract all bundled binaries in advance.
+
+For power users who prefer separate files, the same folder also contains:
+
 - `zion-node-windows-x86_64.exe` — local node
 - `zion-pool-windows-x86_64.exe` — local pool
 - `zion-miner-windows-x86_64.exe` — miner
+
+## Build instructions for the single binary
+
+The single binary embeds the Windows x86_64 node/pool/miner executables from `PUBLIC/download/`. Build them first, then the CLI:
+
+```bash
+cargo build --release -p zion-core --bin node
+cargo build --release -p zion-pool --bin server
+cargo build --release -p zion-miner
+copy target\release\node.exe          PUBLIC\download\zion-node-windows-x86_64.exe
+copy target\release\server.exe        PUBLIC\download\zion-pool-windows-x86_64.exe
+copy target\release\zion-miner.exe     PUBLIC\download\zion-miner-windows-x86_64.exe
+
+cargo build --release -p zion-public
+```
+
+Result: `target/release/zion.exe` is a single ~12 MB file containing the whole stack.
 
 ## What's NOT in the public CLI
 
