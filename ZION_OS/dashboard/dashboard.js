@@ -41,11 +41,17 @@ function copyToClipboard(text){
   navigator.clipboard.writeText(text).then(() => toast('Copied!', 'success'));
 }
 
-// Safe fetch wrapper: checks .ok, throws on HTTP error, parses JSON
-async function apiFetch(url, opts={}){
-  const res = await fetch(url, opts);
-  if(!res.ok) throw new Error('HTTP ' + res.status + ' on ' + url);
-  return res.json();
+// Safe fetch wrapper: checks .ok, throws on HTTP error, parses JSON, with timeout
+async function apiFetch(url, opts={}, timeoutMs=8000){
+  const ctrl = new AbortController();
+  const tid = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...opts, signal: ctrl.signal });
+    if(!res.ok) throw new Error('HTTP ' + res.status + ' on ' + url);
+    return await res.json();
+  } finally {
+    clearTimeout(tid);
+  }
 }
 
 // Debounce utility for expensive refresh calls
@@ -451,11 +457,15 @@ async function refreshEdgeServerCard(force = false) {
     if (!force && (now - _edgeServerLastFetch) < 30000) return; // cache 30s
     _edgeServerLastFetch = now;
 
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 10000); // 10s timeout for SSH-backed endpoint
     const res = await fetch('/api/edge-status' + (force ? '?force=1' : ''), {
       method: force ? 'POST' : 'GET',
       headers: force ? {'Content-Type':'application/json'} : undefined,
       body: force ? JSON.stringify({force: true}) : undefined,
+      signal: ctrl.signal,
     });
+    clearTimeout(tid);
     const d = await res.json();
     _renderEdgeServerCard(d);
   } catch(e) {
@@ -644,10 +654,13 @@ async function updateServiceTelemetryDetails(s){
   let infra = null;
   let overview = null;
   try {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 5000);
     const [infraRes, ovRes] = await Promise.all([
-      fetch('http://100.76.16.108:8888/api/infra').then(r => r.json()).catch(() => null),
-      fetch('http://100.76.16.108:8888/api/overview').then(r => r.json()).catch(() => null),
+      fetch('http://100.76.16.108:8888/api/infra', { signal: ctrl.signal }).then(r => r.json()).catch(() => null),
+      fetch('http://100.76.16.108:8888/api/overview', { signal: ctrl.signal }).then(r => r.json()).catch(() => null),
     ]);
+    clearTimeout(tid);
     infra = infraRes;
     overview = ovRes;
   } catch(e) {
@@ -1537,7 +1550,10 @@ async function updateConnectedMiners(){
 async function updateEdgeHealth(){
   const badge = document.getElementById('edge-h-badge');
   try {
-    const d = await fetch('/api/edge/health').then(r => r.json());
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 8000);
+    const d = await fetch('/api/edge/health', { signal: ctrl.signal }).then(r => r.json());
+    clearTimeout(tid);
     if(!d.reachable){
       if(badge){ badge.textContent = 'Unreachable'; badge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-red-600/20 text-red-300'; }
       return;
@@ -1610,7 +1626,7 @@ async function loadCliNodeStatus(){
   if(!badge) return;
   try {
     // First try CLI endpoint
-    const data = await fetch('/api/cli/node-status').then(r => r.json());
+    const data = await apiFetch('/api/cli/node-status');
     if(data.ok && data.cli_connected){
       badge.className = 'text-xs px-2 py-0.5 rounded-md bg-emerald-700 text-emerald-300';
       badge.textContent = 'CLI Connected';
@@ -2861,7 +2877,7 @@ async function loadAiStatus(){
 
 async function loadMempool(){
   try {
-    const mp = await fetch('/api/mempool').then(r => r.json());
+    const mp = await apiFetch('/api/mempool');
     const badge = document.getElementById('mempool-badge');
     if(badge){ badge.textContent = mp.rpc_reachable ? 'Live' : 'RPC Unreachable'; badge.className = 'text-xs px-2 py-0.5 rounded-full ' + (mp.rpc_reachable ? 'bg-emerald-700 text-emerald-300' : 'bg-red-700 text-red-300'); }
     document.getElementById('mempool-tx-count').textContent = mp.tx_count ?? '—';
@@ -2890,7 +2906,7 @@ async function loadMempool(){
 
 async function loadMonitoringStatus(){
   try {
-    const data = await fetch('/api/monitoring/status').then(r => r.json());
+    const data = await apiFetch('/api/monitoring/status');
     const prom = data.prometheus || {};
     const graf = data.grafana || {};
 
@@ -6326,7 +6342,7 @@ let lastReadinessData = null;
 
 async function refreshReadiness() {
   try {
-    const r = await fetch('/api/readiness').then(r => r.json());
+    const r = await apiFetch('/api/readiness');
     lastReadinessData = r;
     renderReadiness(r);
   } catch(e) { /* silent */ }
@@ -6373,7 +6389,7 @@ let _lastServicesForTimeline = null; // cache from /api/services
 
 async function refreshServiceHealth() {
   try {
-    const r = await fetch('/api/service-history').then(r => r.json());
+    const r = await apiFetch('/api/service-history');
     serviceHealthData = r.buckets || [];
   } catch(e) { /* silent */ }
 }
@@ -7124,41 +7140,42 @@ async function startProfile(){
 
 // ── Wire new features into refreshAll ─────────────────────────────────────
 const _origRefreshAll = refreshAll;
+let _refreshInFlight = false;
 refreshAll = async function() {
-  await _origRefreshAll.apply(this, arguments);
-  // R: Readiness score
-  await refreshReadiness();
-  // C: Service health
-  await refreshServiceHealth();
-  // N: Nodes panel
-  if(currentTab === 'nodes') await refreshNodes();
-  // O: Orchestrator panel
-  if(currentTab === 'orchestrator') await refreshOrchestrator();
-  // F: Topology + service ordering
-  let services = [];
+  // Prevent overlapping refresh cycles (main cause of dashboard freeze)
+  if(_refreshInFlight) {
+    console.log('[REFRESH] Skipped — previous cycle still running');
+    return;
+  }
+  _refreshInFlight = true;
   try {
-    const svc = await fetch('/api/services').then(r => r.json());
-    services = svc.services || [];
-    _lastServicesForTimeline = services;
-    renderTopology(services);
-  } catch(e) { /* silent */ }
-  try {
-    renderServiceHealthTimeline(services.length ? services : _lastServicesForTimeline);
-  } catch(e) { /* silent */ }
-  // E: Mempool sparkline (read from existing mempool counter)
-  const mpEl = document.getElementById('mempool-tx-count');
-  const mpSize = mpEl ? parseInt(mpEl.textContent, 10) || 0 : 0;
-  try {
-    renderMempoolSparkline(mpSize);
-  } catch(e) { console.error('renderMempoolSparkline error:', e); }
-  // D: Payout charts (if on payouts tab or always refresh)
-  try {
-    const pay = await fetch('/api/payout').then(r => r.json());
-    if (pay && pay.payouts) {
-      renderPayoutDonut(pay.payouts);
-      renderPayoutHistory(pay.payouts);
-    }
-  } catch(e) { /* silent */ }
+    await _origRefreshAll.apply(this, arguments);
+    // Run secondary refreshes in parallel (non-blocking, fire-and-forget)
+    refreshReadiness().catch(() => {});
+    refreshServiceHealth().catch(() => {});
+    if(currentTab === 'nodes') refreshNodes().catch(() => {});
+    if(currentTab === 'orchestrator') refreshOrchestrator().catch(() => {});
+    // Topology + service ordering (parallel, non-blocking)
+    fetch('/api/services').then(r => r.json()).then(svc => {
+      const services = svc.services || [];
+      _lastServicesForTimeline = services;
+      renderTopology(services);
+      renderServiceHealthTimeline(services);
+    }).catch(() => {});
+    // Payout charts (non-blocking)
+    fetch('/api/payout').then(r => r.json()).then(pay => {
+      if (pay && pay.payouts) {
+        renderPayoutDonut(pay.payouts);
+        renderPayoutHistory(pay.payouts);
+      }
+    }).catch(() => {});
+    // Mempool sparkline (from existing DOM, no API call)
+    const mpEl = document.getElementById('mempool-tx-count');
+    const mpSize = mpEl ? parseInt(mpEl.textContent, 10) || 0 : 0;
+    try { renderMempoolSparkline(mpSize); } catch(e) {}
+  } finally {
+    _refreshInFlight = false;
+  }
 };
 
 // ════════════════════════════════════════════════════════════════════════
@@ -7948,8 +7965,7 @@ async function refreshAgentRewards(){
 
 async function loadEdgeBackupStatus() {
   try {
-    const res = await fetch('/api/backup/status', { cache: 'no-store' });
-    const data = await res.json();
+    const data = await apiFetch('/api/backup/status');
     const hasBackups = data.backups && data.backups.length > 0;
     const lastBackup = data.last_backup ? new Date(data.last_backup).toLocaleString() : 'None';
     const totalSize = data.total_backup_mb || 0;
