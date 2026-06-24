@@ -217,6 +217,13 @@ fn find_miner_binary() -> Result<PathBuf> {
         }
     }
 
+    // Self-contained bundle.
+    if let Ok(p) = crate::bundle::ensure_binary("miner") {
+        if p.exists() {
+            return Ok(p);
+        }
+    }
+
     // Bare `miner` is generic; search only safe locations.
     if let Some(p) = process::find_binary_safely("miner") {
         return Ok(p);
