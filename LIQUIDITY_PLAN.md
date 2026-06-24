@@ -1,8 +1,9 @@
 # ZION — Real Liquidity Plan
 
 > **Datum:** 2026-06-24 (aktualizováno)
-> **Status:** Cena potvrzena — **$0.00002 / ZION**. sqrtPriceX96 + tick parametry vypočítány a nastaveny ve všech systémech.
+> **Status:** 100M wZION mintováno (emergency mint). Pool seed **pending** — potřeba ETH. Aktuální pool cena ~$0.0142 (historický proof-of-concept), plánovaná seed cena byla $0.00002.
 > **Cíl:** Seed likvidita na Uniswap V3, staking pool, DAO treasury aktivace, plná DeFi roadmapa
+> **wZION totalSupply:** 100,000,199 | **Deployer ETH:** 0.001869 | **Deployer wZION:** 100,000,045
 
 ---
 
@@ -181,7 +182,7 @@ Operace mimo samotnou likviditu vyžadují ETH na gas Base Mainnet + seed valid�
 | Pool fee | `3000` (0.3%) |
 | token0 | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` (wZION) |
 | token1 | `0x4200000000000000000000000000000000000006` (WETH) |
-| NonfungiblePositionManager | `0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f8` |
+| NonfungiblePositionManager | `0x03a520b32C04BF3bEef7BEB72E919cf822Ed34f1` |
 
 ```bash
 # 1. Ověřit wZION balance (mělo by být ~100M po timelock executeTimelockedMint)
@@ -197,7 +198,7 @@ cast call 0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB \
 # 3. Approve wZION pro NonfungiblePositionManager (~25M wZION seed)
 cast send 0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6 \
   "approve(address,uint256)(bool)" \
-  0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f8 \
+  0x03a520b32C04BF3bEef7BEB72E919cf822Ed34f1 \
   25000000000000000000000000 \
   --private-key $VALIDATOR_KEY \
   --rpc-url https://mainnet.base.org
@@ -206,7 +207,7 @@ cast send 0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6 \
 #    amount0Desired = 25_000_000 wZION (25M × 1e18)
 #    amount1Desired = ~302_000_000_000_000_000 WETH (0.302 ETH @ $0.00002)
 #    sqrtPriceX96 a ticky jsou vypočítané výše
-cast send 0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f8 \
+cast send 0x03a520b32C04BF3bEef7BEB72E919cf822Ed34f1 \
   "mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256))(uint256,uint128,uint256,uint256)" \
   "(0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6,0x4200000000000000000000000000000000000006,3000,-887220,887220,25000000000000000000000000,302000000000000000,0,0,0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186,$(date -d '+30 min' +%s))" \
   --value 302000000000000000 \
@@ -462,7 +463,7 @@ Fáze 3 (2027-Q2): Odemknutí + First Proposals
 | ZIONFarm | TBD — ověřit deployment |
 | ZIONGovernance | TBD — ověřit deployment |
 | ZIONTreasury | TBD — ověřit deployment |
-| UniV3 NonfungiblePositionManager | `0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f8` |
+| UniV3 NonfungiblePositionManager | `0x03a520b32C04BF3bEef7BEB72E919cf822Ed34f1` |
 | UniV3 SwapRouter | `0x2626664c2603336E57B271c5C0b26F421741e481` |
 | WETH9 (Base) | `0x4200000000000000000000000000000000000006` |
 
