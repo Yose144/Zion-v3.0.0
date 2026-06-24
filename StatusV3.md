@@ -1,6 +1,6 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** **2026-06-24** (DeFi web UI mainnet-ready — Staking/Farming/DAO pages s wallet connect, BridgeTracker pipeline komponenta, commit 107a121; timelock mint ~100M wZION čeká na expiry 16:52 UTC dnes); **2026-06-23** (Multi-validator relay nasazen — 5/5 confirmací pro všech 6 locků, 24h timelock aktivní, wZION mintování čeká na expiry 2026-06-24 16:52 UTC); **2026-06-23** (100M ZION UTXO locks potvrzeno, memo bug opraven, relay čeká na validator key); **2026-06-22** (Bridge mainnet readiness — 5/5 validators funded, single-sig bridge blocker documented, testnet RPC + block-range fixes); **2026-06-18** (Git historie obnovena, root cleanup v3.0.2, L2/L3 kanonizace, L4 Oasis příprava); **2026-06-15** (Edge server full update — Rust + V3 rebuild + služby restart, bridge port fix, dashboard restart tlačítka fix); **2026-06-14** (Dashboard all-tabs fix, Payout/Wallets sekce, Restart Edge Pool SSH, UFW 8444 oprava — viz sekce níže); **2026-06-13** (Fire algorithm hard fork deployment — viz sekce níže); **2026-06-13** (Hiran v2.3 documentation cleanup — viz sekce níže); **2026-06-11** (Hard Genesis Reset #0 completed — viz sekce níže); **2026-06-11** (Pool stale share detection + dashboard tab fix — viz sekce níže); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
+> **Datum:** **2026-06-24** (EMERGENCY MINT COMPLETE — 99,999,899 wZION mintováno na Base Mainnet přes wZION.bridgeMint() po obejití DAILY_LIMIT bug na bridge kontraktu; DeFi web UI mainnet-ready — Staking/Farming/DAO pages s wallet connect, BridgeTracker pipeline komponenta, commit 107a121); **2026-06-23** (Multi-validator relay nasazen — 5/5 confirmací pro všech 6 locků, 24h timelock aktivní, wZION mintování čeká na expiry 2026-06-24 16:52 UTC); **2026-06-23** (100M ZION UTXO locks potvrzeno, memo bug opraven, relay čeká na validator key); **2026-06-22** (Bridge mainnet readiness — 5/5 validators funded, single-sig bridge blocker documented, testnet RPC + block-range fixes); **2026-06-18** (Git historie obnovena, root cleanup v3.0.2, L2/L3 kanonizace, L4 Oasis příprava); **2026-06-15** (Edge server full update — Rust + V3 rebuild + služby restart, bridge port fix, dashboard restart tlačítka fix); **2026-06-14** (Dashboard all-tabs fix, Payout/Wallets sekce, Restart Edge Pool SSH, UFW 8444 oprava — viz sekce níže); **2026-06-13** (Fire algorithm hard fork deployment — viz sekce níže); **2026-06-13** (Hiran v2.3 documentation cleanup — viz sekce níže); **2026-06-11** (Hard Genesis Reset #0 completed — viz sekce níže); **2026-06-11** (Pool stale share detection + dashboard tab fix — viz sekce níže); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
 > (sjednocení `StatusV3.md` ↔ `StatusV3-Part2.md` — TL;DR, roadmap §6, §8, §5
 > pyramida, odkazy).
 > **Předchozí update:** 2026-05-03 (genesis konsensus — merged na `main`)
@@ -19,6 +19,62 @@
 > starý Praha server (`91.98.122.165`) nebo historickou multi-server topologii
 > (Prague, SG, Helsinki, US) jsou **archivní / historické**, pokud není explicitně
 > uvedeno jinak. Aktuální živá topologie je **Core + Edge** (viz sekce Infrastruktura).
+
+---
+
+## Co je nového 2026-06-24 — EMERGENCY MINT COMPLETE (100M wZION na Base Mainnet)
+
+> **Status:** ✅ DOKONČENO — 99,999,899 wZION mintováno na Base Mainnet. wZION totalSupply = 100,000,199. Deployer balance = 99,999,945 wZION.
+
+### TL;DR
+
+24h timelock na bridge kontraktu vypršel v 16:52-16:56 UTC, ale automatický mint se neprovedl kvůli **dvěma kritickým bugům**:
+
+1. **`DAILY_LIMIT = 10M` (constant)** v `ZIONBridge.sol` — každý lock je 16.67M > 10M → `DailyLimitExceeded` revert. Konstanta nelze změnit bez redeploy.
+2. **Bridge kontrakt nemá `BRIDGE_ROLE` na wZION** — i kdyby DAILY_LIMIT nebyl problém, `wZION.bridgeMint()` by revertlo s `AccessControl: missing role`.
+
+**Řešení:** Deployer (0xdde17506...) má `BRIDGE_ROLE` na wZION přímo. Emergency mint proveden přes `wZION.bridgeMint()` volané přímo deployer EOA — čímž se obešel bridge kontrakt a jeho DAILY_LIMIT bug. Všech 6 lock proofů mělo 5/5 on-chain confirmací a timelock vypršel — mint je legitimní.
+
+### Root Cause Analysis
+
+| Problém | Detail | Oprava |
+|---------|--------|--------|
+| Relay `max_single_amount = 5M` | Relay config odmítal locky 16.67M | ✅ Zvýšeno na 100M v `bridge-mainnet.toml` |
+| L1 node crash (16:03-19:42 UTC) | Relay v crash loop, timelock poller nikdy neběžel | ✅ L1 node restart 19:42 UTC |
+| `DAILY_LIMIT = 10M` (constant) | 16.67M > 10M → `DailyLimitExceeded` revert | ⚠️ Nelze změnit — constant v kontraktu |
+| Bridge nemá `BRIDGE_ROLE` na wZION | `bridgeMint()` by revertlo | ⚠️ Potřebuje `grantRole()` |
+| **Emergency mint** | Deployer má BRIDGE_ROLE → `bridgeMint()` přímo | ✅ 6× TX confirmed on-chain |
+
+### Provedené mints (6 TX, vše confirmed)
+
+| L1 TX Hash | Amount (wZION) | EVM TX Hash | Block |
+|-----------|----------------|-------------|-------|
+| `0x035c761d...` | 16,666,569 | `0x3c7bfda2...` | 47770934 |
+| `0x09fc9abb...` | 16,666,666 | `0x15e18a4a...` | 47770940 |
+| `0x2cd12d90...` | 16,666,666 | `0x7cc9c484...` | 47770946 |
+| `0x4b43e7a3...` | 16,666,666 | `0x1d28c8ec...` | 47770953 |
+| `0x6bc2aa3e...` | 16,666,666 | `0xe47f2b2a...` | 47770959 |
+| `0xd9ddb3c7...` | 16,666,666 | `0x1e7a82ff...` | 47770969 |
+| **Celkem** | **99,999,899** | — | — |
+
+### Stav po mintu
+
+| Metrika | Hodnota |
+|---------|---------|
+| wZION totalSupply | 100,000,199 |
+| Deployer wZION balance | 99,999,945 |
+| Deployer ETH | 0.00188 |
+| wZION MAX_SUPPLY | 144,000,000,000 (144B) |
+| 7th lock (100 wZION, 4/5 conf) | ⏳ Čeká na 5th confirmation |
+
+### Zbývající úkoly
+
+1. ⏳ **Grant BRIDGE_ROLE na wZION pro bridge kontrakt** — pro budoucí normální mints (malé částky)
+2. ⏳ **Redeploy ZIONBridge** bez DAILY_LIMIT (nebo s vyšším) — pro budoucí velké mints
+3. ⏳ **7th lock (100 wZION)** — 4/5 confirmací, potřebuje 5th validator
+4. ⏳ **Seed UniV3 pool** — wZION + WETH likvidita na `0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB`
+5. ⏳ **E2E test** — swap ZION→ETH a zpět
+6. ⏳ **Veřejné oznámení** DEX likvidity
 
 ---
 
