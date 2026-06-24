@@ -428,8 +428,15 @@ def get_edge_server_health() -> dict:
     }
 
     # SSH to Edge server and run the health probe script
+    ssh_key = REPO_ROOT / "ssh-key-zion-edge"
+    if not ssh_key.exists():
+        result["error"] = "SSH key not found"
+        with EDGE_HEALTH_LOCK:
+            EDGE_HEALTH_CACHE["ts"] = now
+            EDGE_HEALTH_CACHE["data"] = result
+        return result
     ssh_cmd = (
-        f'ssh -o ConnectTimeout=3 -o StrictHostKeyChecking=no -o BatchMode=yes '
+        f'ssh -i "{ssh_key}" -o ConnectTimeout=3 -o StrictHostKeyChecking=no -o BatchMode=yes '
         f'root@{EDGE_HOST} /usr/local/bin/edge-health-probe.sh'
     )
 
@@ -3631,25 +3638,41 @@ def build_explorer() -> dict:
 
 # ── Edge server system status ───────────────────────────────────────────
 
+_edge_status_cache = {"data": None, "ts": 0}
+_EDGE_CACHE_TTL = 15  # seconds
+
 def get_edge_server_status() -> dict:
-    """Fetch Edge server system metrics via SSH. Fast timeout to avoid blocking."""
+    """Fetch Edge server system metrics via SSH. Server-side cached for 15s."""
+    import time as _time
+    now = _time.time()
+    if _edge_status_cache["data"] is not None and (now - _edge_status_cache["ts"]) < _EDGE_CACHE_TTL:
+        return _edge_status_cache["data"]
+
     ssh_key = REPO_ROOT / "ssh-key-zion-edge"
     if not ssh_key.exists():
         return {"ok": False, "error": "SSH key not found"}
 
     try:
-        # CPU + Load + Memory
+        # Single SSH call: combine all commands to avoid 3x SSH overhead
+        combined_cmd = "cat /proc/loadavg && free -m && df -h / | tail -1 && echo '===TOP===' && ps -eo rss,comm --sort=-rss | head -6 | tail -5 && echo '===SVC===' && systemctl is-active zion-edge-node1 zion-edge-node2 zion-pool-server zion-edge-dao zion-edge-warp zion-edge-bridge 2>/dev/null"
         result = subprocess.run(
             ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
              "-o", "ConnectTimeout=2", "-o", "BatchMode=yes",
              "root@100.76.16.108",
-             "cat /proc/loadavg && free -m && df -h / | tail -1"],
-            capture_output=True, text=True, timeout=5
+             combined_cmd],
+            capture_output=True, text=True, timeout=8
         )
         if result.returncode != 0:
             return {"ok": False, "error": result.stderr.strip() or "SSH failed"}
 
-        lines = result.stdout.strip().splitlines()
+        output = result.stdout.strip()
+        # Split output by markers
+        parts = output.split("===TOP===")
+        main_part = parts[0].strip() if parts else output
+        top_part = parts[1].split("===SVC===")[0].strip() if len(parts) > 1 else ""
+        svc_part = parts[1].split("===SVC===")[1].strip() if len(parts) > 1 and "===SVC===" in parts[1] else ""
+
+        lines = main_part.splitlines()
         if len(lines) < 3:
             return {"ok": False, "error": "Incomplete output"}
 
@@ -3682,39 +3705,23 @@ def get_edge_server_status() -> dict:
         disk_pct = int(disk_parts[4].rstrip('%')) if len(disk_parts) > 4 else 0
 
         # Top memory consumers
-        top_result = subprocess.run(
-            ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
-             "-o", "ConnectTimeout=2", "-o", "BatchMode=yes",
-             "root@100.76.16.108",
-             "ps -eo rss,comm --sort=-rss | head -6 | tail -5"],
-            capture_output=True, text=True, timeout=5
-        )
         mem_top = []
-        if top_result.returncode == 0:
-            for line in top_result.stdout.strip().splitlines():
-                parts = line.split(None, 1)
-                if len(parts) == 2:
-                    mb = float(parts[0]) / 1024.0
-                    cmd = parts[1].strip()
-                    mem_top.append({"cmd": cmd, "mb": mb})
+        for line in top_part.splitlines():
+            parts = line.split(None, 1)
+            if len(parts) == 2:
+                mb = float(parts[0]) / 1024.0
+                cmd = parts[1].strip()
+                mem_top.append({"cmd": cmd, "mb": mb})
 
-        # Service status via systemctl
-        svc_result = subprocess.run(
-            ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
-             "-o", "ConnectTimeout=2", "-o", "BatchMode=yes",
-             "root@100.76.16.108",
-             "systemctl is-active zion-edge-node1 zion-edge-node2 zion-pool-server zion-edge-dao zion-edge-warp zion-edge-bridge 2>/dev/null"],
-            capture_output=True, text=True, timeout=5
-        )
+        # Service status
         services = []
         svc_names = ["node", "node2", "pool", "dao", "warp", "bridge"]
-        if svc_result.returncode == 0:
-            states = svc_result.stdout.strip().splitlines()
-            for i, name in enumerate(svc_names):
-                if i < len(states):
-                    services.append({"name": name, "status": states[i]})
+        states = svc_part.splitlines() if svc_part else []
+        for i, name in enumerate(svc_names):
+            if i < len(states):
+                services.append({"name": name, "status": states[i]})
 
-        return {
+        data = {
             "ok": True,
             "cpu_pct": load_1m * 10,  # rough estimate: load*10 as %
             "load_1m": load_1m,
@@ -3722,10 +3729,14 @@ def get_edge_server_status() -> dict:
             "mem_used_mb": mem_used_mb,
             "mem_total_mb": mem_total_mb,
             "mem_top": mem_top,
-            "mem_history": [],  # could be cached later
+            "mem_history": [],
             "disk_pct": disk_pct,
             "services": services,
         }
+        # Cache the result
+        _edge_status_cache["data"] = data
+        _edge_status_cache["ts"] = now
+        return data
     except subprocess.TimeoutExpired:
         return {"ok": False, "error": "SSH timeout"}
     except Exception as e:
