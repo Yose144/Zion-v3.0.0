@@ -4,6 +4,7 @@
 use anyhow::Result;
 use std::path::PathBuf;
 
+use crate::bundle;
 use crate::config::{self, Config};
 use crate::ui;
 
@@ -78,14 +79,27 @@ pub async fn run(cfg: &Config) -> Result<()> {
         errors += 1;
     }
 
-    // ── 4. Miner binary ──────────────────────────────────────────────
+    // ── 4. Bundled binaries ───────────────────────────────────────────
+    ui::print_section("Bundled Binaries");
+    match bundle::extract_all() {
+        Ok(binaries) => {
+            for (name, path) in binaries {
+                ui::print_ok(&format!("{} extracted: {}", name, path.display()));
+            }
+        }
+        Err(e) => {
+            ui::print_warn(&format!("Could not extract all bundled binaries: {}", e));
+            warnings += 1;
+        }
+    }
+
+    // ── 5. Miner binary availability ──────────────────────────────────
     ui::print_section("Miner Binary");
-    let bin_name = if cfg!(windows) { "zion-miner.exe" } else { "zion-miner" };
     let mut miner_found = false;
 
     if let Ok(path_var) = std::env::var("PATH") {
         for dir in path_var.split(if cfg!(windows) { ';' } else { ':' }) {
-            let candidate = PathBuf::from(dir).join(bin_name);
+            let candidate = PathBuf::from(dir).join("zion-miner.exe");
             if candidate.exists() {
                 ui::print_ok(&format!("Miner found: {}", candidate.display()));
                 miner_found = true;
@@ -96,21 +110,25 @@ pub async fn run(cfg: &Config) -> Result<()> {
 
     if !miner_found {
         if let Ok(home) = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")) {
-            let candidate = PathBuf::from(home).join(".zion").join(bin_name);
-            if candidate.exists() {
-                ui::print_ok(&format!("Miner found: {}", candidate.display()));
-                miner_found = true;
+            let home = PathBuf::from(home);
+            for name in ["zion-miner.exe", "miner.exe"] {
+                let candidate = home.join(".zion").join("bin").join(name);
+                if candidate.exists() {
+                    ui::print_ok(&format!("Miner found: {}", candidate.display()));
+                    miner_found = true;
+                    break;
+                }
             }
         }
     }
 
     if !miner_found {
-        ui::print_warn("zion-miner binary not found in PATH or ~/.zion/");
-        ui::print_info("Download from: https://zionterranova.com/download");
+        ui::print_warn("zion-miner binary not found in PATH or ~/.zion/bin/");
+        ui::print_info("The bundled miner will be extracted on first `zion mine start`.");
         warnings += 1;
     }
 
-    // ── 5. Pool connectivity ─────────────────────────────────────────
+    // ── 6. Pool connectivity ─────────────────────────────────────────
     ui::print_section("Pool Connectivity");
     ui::print_row("Pool endpoint", &format!("{}:{}", cfg.pool.host, cfg.pool.port));
 
@@ -123,7 +141,7 @@ pub async fn run(cfg: &Config) -> Result<()> {
         }
     }
 
-    // ── 6. AI endpoint ───────────────────────────────────────────────
+    // ── 7. AI endpoint ───────────────────────────────────────────────
     ui::print_section("Hiran AI");
     ui::print_row("Endpoint", &cfg.ai.url);
     let health_url = format!("{}/health", cfg.ai.url.trim_end_matches('/'));

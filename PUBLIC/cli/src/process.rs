@@ -229,7 +229,15 @@ pub fn find_binary(name: &str) -> Option<PathBuf> {
         }
     }
 
-    // 3. ~/.zion/
+    // 3. ~/.zion/bin/ (extracted bundled binaries)
+    if let Ok(home) = env::var("HOME").or_else(|_| env::var("USERPROFILE")) {
+        let candidate = PathBuf::from(home).join(".zion").join("bin").join(&bin_name);
+        if candidate.exists() {
+            return Some(candidate);
+        }
+    }
+
+    // 4. ~/.zion/
     if let Ok(home) = env::var("HOME").or_else(|_| env::var("USERPROFILE")) {
         let candidate = PathBuf::from(home).join(".zion").join(&bin_name);
         if candidate.exists() {
@@ -237,7 +245,7 @@ pub fn find_binary(name: &str) -> Option<PathBuf> {
         }
     }
 
-    // 4. PATH (lowest priority — avoid matching generic names like `node` from Node.js)
+    // 5. PATH (lowest priority — avoid matching generic names like `node` from Node.js)
     if let Ok(path_var) = env::var("PATH") {
         for dir in path_var.split(if cfg!(windows) { ';' } else { ':' }) {
             let candidate = PathBuf::from(dir).join(&bin_name);
@@ -282,7 +290,15 @@ pub fn find_binary_safely(name: &str) -> Option<PathBuf> {
         }
     }
 
-    // 3. ~/.zion/
+    // 3. ~/.zion/bin/
+    if let Ok(home) = env::var("HOME").or_else(|_| env::var("USERPROFILE")) {
+        let candidate = PathBuf::from(home).join(".zion").join("bin").join(&bin_name);
+        if candidate.exists() {
+            return Some(candidate);
+        }
+    }
+
+    // 4. ~/.zion/
     if let Ok(home) = env::var("HOME").or_else(|_| env::var("USERPROFILE")) {
         let candidate = PathBuf::from(home).join(".zion").join(&bin_name);
         if candidate.exists() {

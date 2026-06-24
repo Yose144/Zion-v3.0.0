@@ -10,6 +10,7 @@
 //!
 //! **No deploy, no DAO, no bridge, no swap, no topology, no internal services.**
 
+pub mod bundle;
 pub mod commands;
 pub mod config;
 pub mod menu;
