@@ -35,7 +35,10 @@ async fn run_menu_session(default_config: Option<String>) -> Result<()> {
     let mut show_genesis = true;
 
     loop {
-        let args = match menu::run(show_genesis)? {
+        // Load config fresh each time so stats reflect any changes.
+        let cfg = config::load(default_config.as_deref())?;
+
+        let args = match menu::run(show_genesis, &cfg).await? {
             Some(args) => args,
             None => return Ok(()),
         };
