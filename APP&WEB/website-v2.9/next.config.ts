@@ -1,8 +1,9 @@
 import type { NextConfig } from "next";
-import { dirname } from "path";
+import { dirname, resolve } from "path";
 import { fileURLToPath } from "url";
 
 const rootDir = dirname(fileURLToPath(import.meta.url));
+const emptyModule = resolve(rootDir, 'src/lib/empty-module.ts');
 
 const nextConfig: NextConfig = {
   // output: "standalone", // Disabled for local build on Windows (Next.js 16 bug with client-only)
@@ -15,46 +16,48 @@ const nextConfig: NextConfig = {
     root: rootDir,
     resolveAlias: {
       net: {
-        browser: './src/lib/empty-module.ts',
+        browser: emptyModule,
       },
       fs: {
-        browser: './src/lib/empty-module.ts',
+        browser: emptyModule,
       },
       path: {
-        browser: './src/lib/empty-module.ts',
+        browser: emptyModule,
       },
       os: {
-        browser: './src/lib/empty-module.ts',
+        browser: emptyModule,
       },
       '@trezor/connect-web': {
-        browser: './src/lib/empty-module.ts',
+        browser: emptyModule,
       },
       '@trezor/connect': {
-        browser: './src/lib/empty-module.ts',
-      },
-      '@ledgerhq/hw-transport-webusb': {
-        browser: './src/lib/empty-module.ts',
-      },
-      '@ledgerhq/hw-transport-webhid': {
-        browser: './src/lib/empty-module.ts',
-      },
-      '@ledgerhq/hw-app-ada': {
-        browser: './src/lib/empty-module.ts',
+        browser: emptyModule,
       },
       '@trezor/connect-mobile': {
-        browser: './src/lib/empty-module.ts',
+        browser: emptyModule,
+      },
+      '@ledgerhq/hw-transport-webusb': {
+        browser: emptyModule,
+      },
+      '@ledgerhq/hw-transport-webhid': {
+        browser: emptyModule,
+      },
+      '@ledgerhq/hw-app-ada': {
+        browser: emptyModule,
       },
     },
   },
   webpack: (config) => {
+    const path = require('path');
+    const emptyModule = path.resolve(__dirname, 'src/lib/empty-module.ts');
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@trezor/connect-web': './src/lib/empty-module.ts',
-      '@trezor/connect': './src/lib/empty-module.ts',
-      '@ledgerhq/hw-transport-webusb': './src/lib/empty-module.ts',
-      '@ledgerhq/hw-transport-webhid': './src/lib/empty-module.ts',
-      '@ledgerhq/hw-app-ada': './src/lib/empty-module.ts',
-      '@trezor/connect-mobile': './src/lib/empty-module.ts',
+      '@trezor/connect-web': emptyModule,
+      '@trezor/connect': emptyModule,
+      '@trezor/connect-mobile': emptyModule,
+      '@ledgerhq/hw-transport-webusb': emptyModule,
+      '@ledgerhq/hw-transport-webhid': emptyModule,
+      '@ledgerhq/hw-app-ada': emptyModule,
     };
     return config;
   },
