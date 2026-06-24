@@ -14,7 +14,7 @@ import {
   Vote,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
-import { CONTRACTS_SEPOLIA } from '@/lib/defi-contracts';
+import { CONTRACTS, GOVERNANCE_DEPLOYED } from '@/lib/defi-contracts';
 import { getGovernanceProposals, type GovernanceProposal } from '@/lib/dao-api';
 import { useEffect, useState } from 'react';
 
@@ -177,6 +177,17 @@ export default function DaoPage() {
               <Clock className="h-3 w-3 text-zion-gold" /> {cs ? 'Timelock exekuce' : 'Timelock execution'}
             </span>
           </div>
+
+          {!GOVERNANCE_DEPLOYED && (
+            <div className="mt-6 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 flex items-center gap-3">
+              <Clock className="h-5 w-5 text-amber-400 shrink-0" />
+              <p className="text-sm text-gray-300">
+                {cs
+                  ? 'Governance kontrakt čeká na deploy na Base Mainnet. DAO treasury cliff ~červen 2027.'
+                  : 'Governance contract awaiting deployment on Base Mainnet. DAO treasury cliff ~June 2027.'}
+              </p>
+            </div>
+          )}
         </motion.section>
 
         {/* Stats */}
@@ -273,8 +284,10 @@ export default function DaoPage() {
             <Layers className="h-4 w-4 text-gray-400" />
             <span className="text-xs text-gray-400 uppercase tracking-wider">{cs ? 'Kontrakt' : 'Contract'}</span>
           </div>
-          <p className="font-mono text-sm text-gray-300 break-all">{CONTRACTS_SEPOLIA.ZIONGovernance}</p>
-          <p className="text-[10px] text-gray-500 mt-1">Base Sepolia · ZIONGovernance.sol</p>
+          <p className="font-mono text-sm text-gray-300 break-all">
+            {GOVERNANCE_DEPLOYED ? CONTRACTS.ZIONGovernance : (cs ? 'Čeká na deploy' : 'Awaiting deployment')}
+          </p>
+          <p className="text-[10px] text-gray-500 mt-1">Base Mainnet · ZIONGovernance.sol</p>
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
