@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { Menu, X, SignalHigh, Orbit, ChevronDown, LayoutDashboard, Pickaxe, Shield } from 'lucide-react';
+import NavAuthButton from './NavAuthButton';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 import { SITE_RELEASE_LABEL } from '@/lib/site';
@@ -252,6 +253,7 @@ export default function Navigation() {
             >
               {lang === 'cs' ? tr('nav', 'language_toggle_desktop_cs', lang) : tr('nav', 'language_toggle_desktop_en', lang)}
             </button>
+            <NavAuthButton />
           </div>
 
           <button
