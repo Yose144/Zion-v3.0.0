@@ -1,11 +1,11 @@
-//! Interactive arrow-key menu — autonomous guided workflow for public users.
+//! Interactive arrow-key menu — autonomous E2E workflow for public users.
 //!
-//! Design philosophy: walk the user through a natural progression:
+//! Natural progression:
 //!   1. Create / import / backup wallet
-//!   2. Check node connectivity
-//!   3. Start mining
-//!   4. Check balance / send
-//!   5. Chat with AI
+//!   2. Start local node (or check public node)
+//!   3. Start local pool (optional)
+//!   4. Start miner
+//!   5. Monitor everything
 //!
 //! All actions return `Vec<String>` args that are fed back into `Cli::try_parse_from`.
 
@@ -24,10 +24,12 @@ pub fn run(show_genesis: bool) -> Result<Option<Vec<String>>> {
 
     loop {
         let items = [
-            "🚀 Guided Setup (recommended for new users)",
+            "🚀 Guided Setup — wallet → node → pool → miner",
             "Wallet — create, import, backup, balance, send",
-            "Node — info, chain, peers, supply",
-            "Mine — start, stop, status",
+            "Node — start, stop, status, query",
+            "Pool — start, stop, status (solo/local mining)",
+            "Mine — start, stop, status (auto-node mode)",
+            "Monitor — node + miner + pool health",
             "AI — chat with Hiran",
             "Status — network health check",
             "Doctor — preflight diagnostics",
@@ -44,13 +46,15 @@ pub fn run(show_genesis: bool) -> Result<Option<Vec<String>>> {
             0 => Some(guided_setup_workflow()?),
             1 => wallet_menu()?,
             2 => node_menu()?,
-            3 => mine_menu()?,
-            4 => ai_menu()?,
-            5 => Some(args(&["status"])),
-            6 => Some(args(&["doctor"])),
-            7 => config_menu()?,
-            8 => Some(args(&["version"])),
-            9 => return Ok(None),
+            3 => pool_menu()?,
+            4 => mine_menu()?,
+            5 => Some(args(&["monitor"])),
+            6 => ai_menu()?,
+            7 => Some(args(&["status"])),
+            8 => Some(args(&["doctor"])),
+            9 => config_menu()?,
+            10 => Some(args(&["version"])),
+            11 => return Ok(None),
             _ => None,
         };
 
@@ -72,15 +76,16 @@ fn print_intro(show_genesis: bool) {
 
 // ─── Guided Setup ─────────────────────────────────────────────────────────────
 
-/// The flagship workflow — walks a new user from zero to mining in 4 steps.
 fn guided_setup_workflow() -> Result<Vec<String>> {
     ui::print_header("🚀 Guided Setup — Zero to Mining");
 
     let steps = [
         "Step 1: Create or import your wallet",
         "Step 2: Back up your mnemonic (CRITICAL)",
-        "Step 3: Verify node connectivity",
-        "Step 4: Start mining",
+        "Step 3: Start local node",
+        "Step 4: Start local pool (optional)",
+        "Step 5: Start mining",
+        "Step 6: Monitor everything",
         "Skip — back to main menu",
     ];
 
@@ -92,17 +97,16 @@ fn guided_setup_workflow() -> Result<Vec<String>> {
         let argv = match choice {
             0 => guided_step_wallet()?,
             1 => guided_step_backup()?,
-            2 => guided_step_node()?,
-            3 => guided_step_mine()?,
+            2 => guided_step_start_node()?,
+            3 => guided_step_start_pool()?,
+            4 => guided_step_mine()?,
+            5 => args(&["monitor"]),
             _ => return Ok(args(&["menu"])),
         };
 
-        // If the step produced args, return them for dispatch.
-        // After dispatch, the user returns to this menu.
         if !argv.is_empty() {
             return Ok(argv);
         }
-        // Empty argv = step was informational, loop back to step selection.
     }
 }
 
@@ -125,75 +129,62 @@ fn guided_step_wallet() -> Result<Vec<String>> {
     };
 
     Ok(match choice {
-        0 => {
-            let out = optional_input(
-                "Output file path (blank = zion-wallet.json)",
-                Some("zion-wallet.json"),
-            )?;
-            args_owned(vec![
-                "wallet".into(),
-                "new".into(),
-                "--mnemonic".into(),
-                "--out".into(),
-                out,
-                "--set-default".into(),
-                "--print".into(),
-            ])
-        }
-        1 => {
-            let out = optional_input(
-                "Output file path (blank = zion-wallet.json)",
-                Some("zion-wallet.json"),
-            )?;
-            args_owned(vec![
-                "wallet".into(),
-                "new".into(),
-                "--out".into(),
-                out,
-                "--set-default".into(),
-                "--print".into(),
-            ])
-        }
-        2 => {
-            let mnemonic = required_input("Enter your mnemonic words", None)?;
-            let out = optional_input(
-                "Output file path (blank = zion-wallet.json)",
-                Some("zion-wallet.json"),
-            )?;
-            args_owned(vec![
-                "wallet".into(),
-                "import-mnemonic".into(),
-                "--mnemonic".into(),
-                mnemonic,
-                "--out".into(),
-                out,
-                "--set-default".into(),
-                "--print".into(),
-            ])
-        }
-        3 => {
-            let sk = required_input("Enter 32-byte secret key (64 hex chars)", None)?;
-            let out = optional_input(
-                "Output file path (blank = zion-wallet.json)",
-                Some("zion-wallet.json"),
-            )?;
-            args_owned(vec![
-                "wallet".into(),
-                "import-secret-key".into(),
-                "--secret-key-hex".into(),
-                sk,
-                "--out".into(),
-                out,
-                "--set-default".into(),
-                "--print".into(),
-            ])
-        }
+        0 => wallet_new_args(true),
+        1 => wallet_new_args(false),
+        2 => wallet_import_mnemonic_args()?,
+        3 => wallet_import_secret_key_args()?,
         4 => {
             ui::print_ok("Wallet already configured — proceeding to next step.");
             vec![]
         }
         _ => vec![],
     })
+}
+
+fn wallet_new_args(mnemonic: bool) -> Vec<String> {
+    let out = optional_input("Output file path (blank = zion-wallet.json)", Some("zion-wallet.json")).unwrap_or_default();
+    let mut argv = vec![
+        "wallet".into(),
+        "new".into(),
+        "--out".into(),
+        out,
+        "--set-default".into(),
+        "--print".into(),
+    ];
+    if mnemonic {
+        argv.insert(2, "--mnemonic".into());
+    }
+    argv
+}
+
+fn wallet_import_mnemonic_args() -> Result<Vec<String>> {
+    let mnemonic = required_input("Enter your mnemonic words", None)?;
+    let out = optional_input("Output file path (blank = zion-wallet.json)", Some("zion-wallet.json"))?;
+    Ok(args_owned(vec![
+        "wallet".into(),
+        "import-mnemonic".into(),
+        "--mnemonic".into(),
+        mnemonic,
+        "--out".into(),
+        out,
+        "--set-default".into(),
+        "--print".into(),
+    ]))
+}
+
+fn wallet_import_secret_key_args() -> Result<Vec<String>> {
+    let sk = required_input("Enter 32-byte secret key (64 hex chars)", None)?;
+    let out = optional_input("Output file path (blank = zion-wallet.json)", Some("zion-wallet.json"))?;
+    Ok(args_owned(vec![
+        "wallet".into(),
+        "import-secret-key".into(),
+        "--secret-key-hex".into(),
+        sk,
+        "--out".into(),
+        out,
+        "--set-default".into(),
+        "--print".into(),
+    ]))
 }
 
 fn guided_step_backup() -> Result<Vec<String>> {
@@ -206,36 +197,54 @@ fn guided_step_backup() -> Result<Vec<String>> {
     println!("  {} Never share them. Never type them into a website.", "⚠".red().bold());
     println!("  {} Never store them digitally (photo, cloud, email).", "⚠".red().bold());
     println!();
-    println!("  To view your wallet info later:");
+    println!("  Commands:");
     println!("    zion wallet info --wallet zion-wallet.json");
-    println!();
-    println!("  To reveal your mnemonic (requires password if encrypted):");
     println!("    zion wallet reveal --wallet zion-wallet.json");
     println!();
 
     wait_enter("Press Enter when you've written down your mnemonic...")?;
-    ui::print_ok("Backup confirmed. Proceeding to node check.");
+    ui::print_ok("Backup confirmed. Proceeding to start node.");
     Ok(vec![])
 }
 
-fn guided_step_node() -> Result<Vec<String>> {
-    ui::print_header("Step 3: Verify Node Connectivity");
-    println!("  Checking if the ZION node is reachable...");
+fn guided_step_start_node() -> Result<Vec<String>> {
+    ui::print_header("Step 3: Start Local Node");
+    println!("  The node connects to the ZION network and lets your miner submit blocks.");
+    println!("  You need the zion-node binary in the same folder or in ~/.zion/");
+    println!();
+    Ok(args(&["node", "start"]))
+}
+
+fn guided_step_start_pool() -> Result<Vec<String>> {
+    ui::print_header("Step 4: Start Local Pool (Optional)");
+    println!("  Most users should connect to the public pool (default).");
+    println!("  Only run a local pool if you want solo/local mining.");
     println!();
 
-    // Return the node chain command — it will show height + tip
-    Ok(args(&["node", "chain"]))
+    let items = ["Connect to public pool (skip)", "Start local pool", BACK];
+    let Some(choice) = select("Pool", &items)? else {
+        return Ok(vec![]);
+    };
+
+    Ok(match choice {
+        0 => {
+            ui::print_ok("Using public pool — proceed to Step 5.");
+            vec![]
+        }
+        1 => args(&["pool", "start"]),
+        _ => vec![],
+    })
 }
 
 fn guided_step_mine() -> Result<Vec<String>> {
-    ui::print_header("Step 4: Start Mining");
-    println!("  Almost there! Let's configure and start your miner.");
+    ui::print_header("Step 5: Start Mining");
+    println!("  Autonomous mode will start the local node first if needed, then the miner.");
     println!();
 
     let items = [
-        "Start mining with default settings (CPU, pool mode)",
-        "Start mining with GPU (guided)",
-        "Start mining with custom settings (guided)",
+        "Autonomous: start node (if needed) + miner",
+        "Start mining with GPU (auto-node)",
+        "Start mining with custom settings (auto-node)",
         "Just show miner status",
         BACK,
     ];
@@ -245,9 +254,17 @@ fn guided_step_mine() -> Result<Vec<String>> {
     };
 
     Ok(match choice {
-        0 => args(&["mine", "start"]),
-        1 => guided_gpu_mine_start()?,
-        2 => guided_custom_mine_start()?,
+        0 => args(&["mine", "start", "--auto-node"]),
+        1 => {
+            let mut argv = guided_gpu_mine_start()?;
+            argv.push("--auto-node".into());
+            argv
+        }
+        2 => {
+            let mut argv = guided_custom_mine_start()?;
+            argv.push("--auto-node".into());
+            argv
+        }
         3 => args(&["mine", "status"]),
         _ => vec![],
     })
@@ -353,35 +370,21 @@ fn wallet_menu() -> Result<Option<Vec<String>>> {
 
         let argv = match choice {
             0 => {
-                let out = optional_input("Output file (blank = zion-wallet.json)", Some("zion-wallet.json"))?;
+                let _ = optional_input("Output file (blank = zion-wallet.json)", Some("zion-wallet.json"))?;
                 let set_default = confirm("Set as default miner wallet?")?;
-                let mut argv = args_owned(vec!["wallet".into(), "new".into(), "--mnemonic".into(), "--out".into(), out, "--print".into()]);
-                if set_default { argv.push("--set-default".into()); }
+                let mut argv = wallet_new_args(true);
+                if !set_default { argv.retain(|x| x != "--set-default"); }
                 Some(argv)
             }
             1 => {
-                let out = optional_input("Output file (blank = zion-wallet.json)", Some("zion-wallet.json"))?;
+                let _ = optional_input("Output file (blank = zion-wallet.json)", Some("zion-wallet.json"))?;
                 let set_default = confirm("Set as default miner wallet?")?;
-                let mut argv = args_owned(vec!["wallet".into(), "new".into(), "--out".into(), out, "--print".into()]);
-                if set_default { argv.push("--set-default".into()); }
+                let mut argv = wallet_new_args(false);
+                if !set_default { argv.retain(|x| x != "--set-default"); }
                 Some(argv)
             }
-            2 => {
-                let mnemonic = required_input("Mnemonic words", None)?;
-                let out = optional_input("Output file (blank = zion-wallet.json)", Some("zion-wallet.json"))?;
-                let set_default = confirm("Set as default miner wallet?")?;
-                let mut argv = args_owned(vec!["wallet".into(), "import-mnemonic".into(), "--mnemonic".into(), mnemonic, "--out".into(), out, "--print".into()]);
-                if set_default { argv.push("--set-default".into()); }
-                Some(argv)
-            }
-            3 => {
-                let sk = required_input("Secret key hex (64 chars)", None)?;
-                let out = optional_input("Output file (blank = zion-wallet.json)", Some("zion-wallet.json"))?;
-                let set_default = confirm("Set as default miner wallet?")?;
-                let mut argv = args_owned(vec!["wallet".into(), "import-secret-key".into(), "--secret-key-hex".into(), sk, "--out".into(), out, "--print".into()]);
-                if set_default { argv.push("--set-default".into()); }
-                Some(argv)
-            }
+            2 => Some(wallet_import_mnemonic_args()?),
+            3 => Some(wallet_import_secret_key_args()?),
             4 => Some(args(&["wallet", "address"])),
             5 => Some(args(&["wallet", "balance"])),
             6 => {
@@ -419,7 +422,7 @@ fn wallet_menu() -> Result<Option<Vec<String>>> {
 fn guided_wallet_send() -> Result<Option<Vec<String>>> {
     let to = required_input("Recipient address (zion1...)", None)?;
     let amount = required_input("Amount in ZION", None)?;
-    let memo = optional_input("Memo (optional, blank = none)", None)?;
+    let memo = optional_input("Memo (optional)", None)?;
     let wallet = optional_input("Wallet file (blank = zion-wallet.json)", Some("zion-wallet.json"))?;
 
     let mut argv = args_owned(vec![
@@ -439,11 +442,14 @@ fn guided_wallet_send() -> Result<Option<Vec<String>>> {
     Ok(Some(argv))
 }
 
-// ─── Node Menu ────────────────────────────────────────────────────────────────
+// ─── Node Menu ──────────────────────────────────────────────────────────────────
 
 fn node_menu() -> Result<Option<Vec<String>>> {
     let items = [
-        "Node info (version, network, peers)",
+        "Start local node",
+        "Stop local node",
+        "Local node process status",
+        "Node info (RPC query)",
         "Chain info (height, tip, mempool)",
         "Connected peers",
         "Supply info (total, mined, remaining)",
@@ -451,28 +457,54 @@ fn node_menu() -> Result<Option<Vec<String>>> {
         BACK,
     ];
 
-    let Some(choice) = select("Node (read-only)", &items)? else {
+    let Some(choice) = select("Node", &items)? else {
         return Ok(None);
     };
 
     Ok(match choice {
-        0 => Some(args(&["node", "info"])),
-        1 => Some(args(&["node", "chain"])),
-        2 => Some(args(&["node", "peers"])),
-        3 => Some(args(&["node", "supply"])),
-        4 => Some(args(&["node", "mempool"])),
+        0 => Some(args(&["node", "start"])),
+        1 => Some(args(&["node", "stop"])),
+        2 => Some(args(&["node", "status"])),
+        3 => Some(args(&["node", "info"])),
+        4 => Some(args(&["node", "chain"])),
+        5 => Some(args(&["node", "peers"])),
+        6 => Some(args(&["node", "supply"])),
+        7 => Some(args(&["node", "mempool"])),
         _ => None,
     })
 }
 
-// ─── Mine Menu ────────────────────────────────────────────────────────────────
+// ─── Pool Menu ──────────────────────────────────────────────────────────────────
+
+fn pool_menu() -> Result<Option<Vec<String>>> {
+    let items = [
+        "Start local pool",
+        "Stop local pool",
+        "Local pool process status",
+        BACK,
+    ];
+
+    let Some(choice) = select("Pool", &items)? else {
+        return Ok(None);
+    };
+
+    Ok(match choice {
+        0 => Some(args(&["pool", "start"])),
+        1 => Some(args(&["pool", "stop"])),
+        2 => Some(args(&["pool", "status"])),
+        _ => None,
+    })
+}
+
+// ─── Mine Menu ──────────────────────────────────────────────────────────────────
 
 fn mine_menu() -> Result<Option<Vec<String>>> {
     loop {
         let items = [
-            "Start mining (quick — CPU, pool mode)",
-            "Start mining (GPU guided)",
-            "Start mining (custom guided)",
+            "Start autonomous mining (auto-starts node)",
+            "Start mining (GPU guided, auto-node)",
+            "Start mining (custom guided, auto-node)",
+            "Start mining (public pool only)",
             "Miner status",
             "Stop miner",
             BACK,
@@ -483,11 +515,20 @@ fn mine_menu() -> Result<Option<Vec<String>>> {
         };
 
         let argv = match choice {
-            0 => Some(args(&["mine", "start"])),
-            1 => Some(guided_gpu_mine_start()?),
-            2 => Some(guided_custom_mine_start()?),
-            3 => Some(args(&["mine", "status"])),
-            4 => Some(args(&["mine", "stop"])),
+            0 => Some(args(&["mine", "start", "--auto-node"])),
+            1 => {
+                let mut argv = guided_gpu_mine_start()?;
+                argv.push("--auto-node".into());
+                Some(argv)
+            }
+            2 => {
+                let mut argv = guided_custom_mine_start()?;
+                argv.push("--auto-node".into());
+                Some(argv)
+            }
+            3 => Some(args(&["mine", "start"])),
+            4 => Some(args(&["mine", "status"])),
+            5 => Some(args(&["mine", "stop"])),
             _ => return Ok(None),
         };
 
@@ -529,11 +570,17 @@ fn config_menu() -> Result<Option<Vec<String>>> {
         let items = [
             "Set miner wallet address",
             "Set node RPC endpoint",
+            "Set node P2P bind",
+            "Set node seed peers",
             "Set pool endpoint",
+            "Set pool bind (local)",
             "Set AI endpoint",
             "Set miner algorithm",
             "Set miner backend",
             "Set worker name",
+            "Toggle auto-start node for miner",
+            "Toggle auto-start pool for miner",
+            "Set binary paths",
             "Show config file path",
             BACK,
         ];
@@ -548,36 +595,53 @@ fn config_menu() -> Result<Option<Vec<String>>> {
                 Some(args_owned(vec!["config".into(), "set".into(), "miner.wallet".into(), val]))
             }
             1 => {
-                let host = required_input("RPC host", Some("77.42.71.94"))?;
+                let host = required_input("RPC host", Some("127.0.0.1"))?;
                 Some(args_owned(vec!["config".into(), "set".into(), "node.rpc_host".into(), host]))
             }
             2 => {
+                let val = required_input("P2P bind", Some("0.0.0.0:8333"))?;
+                Some(args_owned(vec!["config".into(), "set".into(), "node.p2p_bind".into(), val]))
+            }
+            3 => {
+                let val = required_input("Seed peers", Some("77.42.71.94:8333"))?;
+                Some(args_owned(vec!["config".into(), "set".into(), "node.seed_peers".into(), val]))
+            }
+            4 => {
                 let host = required_input("Pool host", Some("77.42.71.94"))?;
                 Some(args_owned(vec!["config".into(), "set".into(), "pool.host".into(), host]))
             }
-            3 => {
+            5 => {
+                let val = required_input("Pool bind", Some("0.0.0.0:8444"))?;
+                Some(args_owned(vec!["config".into(), "set".into(), "pool.bind".into(), val]))
+            }
+            6 => {
                 let url = required_input("AI endpoint URL", Some("http://77.42.71.94:8080"))?;
                 Some(args_owned(vec!["config".into(), "set".into(), "ai.url".into(), url]))
             }
-            4 => {
+            7 => {
                 let algos = ["deeksha_lite_v1", "cosmic_harmony_ekam_deeksha_v2", "deeksha_lite_fire"];
-                let Some(idx) = select("Algorithm", &algos)? else {
-                    return Ok(None);
-                };
+                let Some(idx) = select("Algorithm", &algos)? else { return Ok(None); };
                 Some(args_owned(vec!["config".into(), "set".into(), "miner.algorithm".into(), algos[idx].into()]))
             }
-            5 => {
+            8 => {
                 let backends = ["cpu", "opencl", "cuda", "metal"];
-                let Some(idx) = select("Backend", &backends)? else {
-                    return Ok(None);
-                };
+                let Some(idx) = select("Backend", &backends)? else { return Ok(None); };
                 Some(args_owned(vec!["config".into(), "set".into(), "miner.backend".into(), backends[idx].into()]))
             }
-            6 => {
+            9 => {
                 let name = required_input("Worker name", Some("worker-1"))?;
                 Some(args_owned(vec!["config".into(), "set".into(), "miner.worker_name".into(), name]))
             }
-            7 => Some(args(&["config", "path"])),
+            10 => {
+                let val = if confirm("Auto-start node when miner starts?")? { "true" } else { "false" };
+                Some(args_owned(vec!["config".into(), "set".into(), "miner.auto_start_node".into(), val.into()]))
+            }
+            11 => {
+                let val = if confirm("Auto-start pool when miner starts?")? { "true" } else { "false" };
+                Some(args_owned(vec!["config".into(), "set".into(), "miner.auto_start_pool".into(), val.into()]))
+            }
+            12 => binary_paths_menu()?,
+            13 => Some(args(&["config", "path"])),
             _ => return Ok(None),
         };
 
@@ -587,7 +651,35 @@ fn config_menu() -> Result<Option<Vec<String>>> {
     }
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+fn binary_paths_menu() -> Result<Option<Vec<String>>> {
+    let items = [
+        "Set node binary path",
+        "Set pool binary path",
+        "Set miner binary path",
+        BACK,
+    ];
+    let Some(choice) = select("Binary Paths", &items)? else {
+        return Ok(None);
+    };
+
+    Ok(match choice {
+        0 => {
+            let path = required_input("Path to node binary", Some("zion-node-windows-x86_64.exe"))?;
+            Some(args_owned(vec!["config".into(), "set".into(), "binaries.node".into(), path]))
+        }
+        1 => {
+            let path = required_input("Path to pool binary", Some("zion-pool-windows-x86_64.exe"))?;
+            Some(args_owned(vec!["config".into(), "set".into(), "binaries.pool".into(), path]))
+        }
+        2 => {
+            let path = required_input("Path to miner binary", Some("zion-miner-windows-x86_64.exe"))?;
+            Some(args_owned(vec!["config".into(), "set".into(), "binaries.miner".into(), path]))
+        }
+        _ => None,
+    })
+}
+
+// ─── Helpers ────────────────────────────────────────────────────────────────────
 
 fn select(prompt: &str, items: &[&str]) -> Result<Option<usize>> {
     Ok(Select::with_theme(&ColorfulTheme::default())

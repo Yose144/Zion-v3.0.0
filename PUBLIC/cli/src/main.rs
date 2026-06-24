@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::{CommandFactory, Parser};
 use std::io::{self, IsTerminal};
 
-use zion_public::commands::{ai, doctor, mine, node, status, wallet};
+use zion_public::commands::{ai, doctor, mine, monitor, node, pool, status, wallet};
 use zion_public::config;
 use zion_public::menu;
 use zion_public::ui;
@@ -85,9 +85,11 @@ async fn dispatch(cli: Cli) -> Result<()> {
         Commands::Wallet { cmd } => wallet::run(&cfg, cmd).await,
         Commands::Node { cmd } => node::run(&cfg, cmd).await,
         Commands::Mine { cmd } => mine::run(&cfg, cmd).await,
+        Commands::Pool { cmd } => pool::run(&cfg, cmd).await,
         Commands::Ai { cmd } => ai::run(&cfg, cmd).await,
         Commands::Status => status::run(&cfg).await,
         Commands::Doctor => doctor::run(&cfg).await,
+        Commands::Monitor => monitor::run(&cfg).await,
         Commands::Config { cmd } => match cmd {
             ConfigCmd::Set { key, value } => config::set_value(&key, &value),
             ConfigCmd::Path => {

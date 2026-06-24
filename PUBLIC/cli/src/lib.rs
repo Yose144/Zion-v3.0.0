@@ -13,11 +13,12 @@
 pub mod commands;
 pub mod config;
 pub mod menu;
+pub mod process;
 pub mod ui;
 
 use clap::{Parser, Subcommand};
 use clap_complete::Shell;
-use commands::{ai, mine, node, wallet};
+use commands::{ai, mine, node, pool, wallet};
 
 /// ZION Public CLI — community edition.
 #[derive(Parser)]
@@ -63,6 +64,12 @@ pub enum Commands {
         cmd: mine::MineCmd,
     },
 
+    /// Local mining pool control: start, stop, status
+    Pool {
+        #[command(subcommand)]
+        cmd: pool::PoolCmd,
+    },
+
     /// Hiran AI — chat and status
     Ai {
         #[command(subcommand)]
@@ -74,6 +81,9 @@ pub enum Commands {
 
     /// Preflight diagnostics for local environment
     Doctor,
+
+    /// Live monitor — node, pool, miner + chain height
+    Monitor,
 
     /// Config management
     Config {
