@@ -104,7 +104,8 @@ export default function HomeQuickLinks() {
             >
               <Link
                 href={link.href}
-                className={`group relative flex min-h-[168px] flex-col justify-between overflow-hidden rounded-2xl border ${link.border} bg-black/35 p-5 shadow-[0_16px_46px_rgba(0,0,0,0.18)] transition duration-200 hover:-translate-y-0.5 hover:bg-white/6 hover:shadow-[0_20px_58px_rgba(0,0,0,0.28)]`}
+                className={`zion-rainbow-sub group relative flex min-h-[168px] flex-col justify-between overflow-hidden p-5`}
+                style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
               >
                 <div className={`pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br ${link.accent} opacity-90`} />
                 <div className="relative flex items-start justify-between gap-4">

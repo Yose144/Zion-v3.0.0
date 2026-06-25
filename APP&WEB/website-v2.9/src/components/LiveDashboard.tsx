@@ -137,7 +137,8 @@ export default function LiveDashboard() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="rounded-[28px] border border-white/10 bg-white/5 backdrop-blur-xl p-6 space-y-6"
+            className="zion-rainbow-card backdrop-blur-xl p-6 space-y-6"
+            style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
           >
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
@@ -200,7 +201,8 @@ export default function LiveDashboard() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="rounded-[28px] border border-white/10 bg-black/60 backdrop-blur-xl p-6 flex flex-col gap-6"
+            className="zion-rainbow-card backdrop-blur-xl p-6 flex flex-col gap-6"
+            style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
           >
             <div>
               <p className="text-xs uppercase text-gray-500 tracking-[0.3em]">{cs ? 'Posledni blok' : 'Latest block'}</p>
