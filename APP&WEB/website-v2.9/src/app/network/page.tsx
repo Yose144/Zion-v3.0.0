@@ -414,10 +414,13 @@ export default function NetworkPage() {
       <div className="relative z-10 zion-container max-w-7xl space-y-14">
 
         {/* ═══════ HERO ═══════ */}
-        <section className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 md:p-10 shadow-[0_30px_120px_rgba(0,0,0,0.45)]">
+        <section
+          className="zion-rainbow-card p-6 md:p-10"
+          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+        >
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-5">
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-emerald-300 uppercase">
+              <div className="zion-kicker border-cyan-400/35 bg-cyan-400/10 text-cyan-200">
                 <Radio className="h-4 w-4" />
                 {SITE_RELEASE_LABEL} · {cs ? 'Sit' : 'Network'}
               </div>
@@ -433,20 +436,24 @@ export default function NetworkPage() {
                   : 'Real-time telemetry from the current public runtime on Zion2. Earlier multi-host validation remains preserved in archived 2.9.8 deploy and March status reports, but is no longer the live topology.'}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200 backdrop-blur-sm">
                   <Sparkles className="h-3 w-3 text-zion-gold" /> {cs ? 'Nativni Rust' : 'Native Rust'}
                 </span>
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200 backdrop-blur-sm">
                   <Orbit className="h-3 w-3 text-zion-cyan" /> Runtime: {SITE_RUNTIME_LABEL}
                 </span>
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200 backdrop-blur-sm">
                   <ShieldCheck className="h-3 w-3 text-emerald-400" /> {cs ? '1 verejny host · 2 interni seedy' : '1 Public Host · 2 Internal Seeds'}
                 </span>
               </div>
             </div>
             <div className="grid w-full gap-4 sm:grid-cols-2 lg:w-auto">
               {heroStats.map((chip) => (
-                <div key={chip.label} className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur">
+                <div
+                  key={chip.label}
+                  className="zion-rainbow-sub px-5 py-4 backdrop-blur"
+                  style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+                >
                   <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{chip.label}</p>
                   <p className="text-3xl font-semibold text-white mt-2">{chip.value}</p>
                   <p className="text-sm text-gray-300">{chip.descriptor}</p>

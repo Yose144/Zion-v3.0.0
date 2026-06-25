@@ -524,8 +524,11 @@ export default function DocsPage() {
       {/* Hero Section */}
       <div className="relative overflow-hidden border-b border-white/10 bg-linear-to-b from-zion-cyan/10 via-transparent to-transparent">
         <div className="zion-container py-20 relative">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/5 mb-6">
+          <div
+            className="zion-rainbow-card max-w-4xl mx-auto p-8 md:p-10 text-center"
+            style={{ '--rc': '59, 130, 246' } as React.CSSProperties}
+          >
+            <div className="zion-kicker mx-auto mb-6 w-fit border-cyan-400/30 bg-cyan-400/10 text-cyan-200">
               <BookOpen className="w-4 h-4 text-zion-cyan" />
               <span className="text-sm text-zion-cyan font-semibold">{tx(docsPageCopy.badge, currentLang)}</span>
             </div>
@@ -535,7 +538,10 @@ export default function DocsPage() {
             <p className="text-xl text-gray-400 mb-4">
               {tr('docs', 'subtitle', lang)}
             </p>
-            <div className="mx-auto mb-8 max-w-3xl rounded-2xl border border-emerald-400/20 bg-emerald-400/5 px-5 py-4 text-left text-sm text-gray-300">
+            <div
+              className="zion-rainbow-sub mx-auto mb-8 max-w-3xl px-5 py-4 text-left text-sm text-gray-300"
+              style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+            >
               {tx(docsPageCopy.overviewNotice, currentLang)}
             </div>
             <div className="flex items-center justify-center gap-3 mb-8">
@@ -572,7 +578,7 @@ export default function DocsPage() {
                 href="https://github.com/Zion-TerraNova"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-white/20 bg-white/5 text-white hover:border-zion-gold/50 transition-all"
+                className="zion-button-secondary"
               >
                 <Github className="w-5 h-5" />
                 {tx(docsPageCopy.githubLabel, currentLang)}
@@ -582,7 +588,7 @@ export default function DocsPage() {
                 href="/health"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-white/20 bg-white/5 text-white hover:border-zion-cyan/50 transition-all"
+                className="zion-button-primary"
               >
                 <Zap className="w-5 h-5 text-zion-cyan" />
                 {tx(docsPageCopy.apiHealthLabel, currentLang)}
