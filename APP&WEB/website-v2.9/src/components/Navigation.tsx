@@ -4,7 +4,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { Menu, X, SignalHigh, Orbit, ChevronDown, LayoutDashboard, Pickaxe, Shield } from 'lucide-react';
+import {
+  Menu, X, SignalHigh, Orbit, ChevronDown, LayoutDashboard, Pickaxe, Shield,
+  HardHat, Download, Coins, ArrowLeftRight, Landmark, Wallet, BookOpen,
+  Newspaper, Map, Sparkles, Rocket, Brain, Flower2, Globe2, Zap,
+} from 'lucide-react';
 import NavAuthButton from './NavAuthButton';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
@@ -65,6 +69,26 @@ export default function Navigation() {
   ];
 
   const activeGroup = navGroups.find((group) => group.title === openGroup);
+
+  // Mini icon row — secondary quick navigation
+  const miniLinks = [
+    { href: '/mining', icon: HardHat, color: '245, 158, 11', label: tr('nav', 'mining', lang) },
+    { href: '/download', icon: Download, color: '6, 182, 212', label: tr('nav', 'download', lang) },
+    { href: '/defi', icon: Coins, color: '16, 185, 129', label: tr('nav', 'defi', lang) },
+    { href: '/bridge', icon: ArrowLeftRight, color: '59, 130, 246', label: tr('nav', 'bridge', lang) },
+    { href: '/dao', icon: Landmark, color: '147, 51, 234', label: tr('nav', 'dao', lang) },
+    { href: '/wallet', icon: Wallet, color: '236, 72, 153', label: tr('nav', 'wallet', lang) },
+    { href: '/docs', icon: BookOpen, color: '20, 184, 166', label: tr('nav', 'docs', lang) },
+    { href: '/news', icon: Newspaper, color: '249, 115, 22', label: tr('nav', 'news', lang) },
+    { href: '/roadmap', icon: Map, color: '99, 102, 241', label: tr('nav', 'roadmap', lang) },
+    { href: '/genesis', icon: Sparkles, color: '251, 191, 36', label: tr('nav', 'genesis', lang) },
+    { href: '/terranova', icon: Globe2, color: '34, 197, 94', label: tr('nav', 'terranova', lang) },
+    { href: '/l3-hiran', icon: Brain, color: '139, 92, 246', label: tr('nav', 'l3_hiran', lang) },
+    { href: '/l4-oasis', icon: Flower2, color: '217, 70, 239', label: tr('nav', 'l4_oasis', lang) },
+    { href: '/l5-free-world', icon: Rocket, color: '14, 165, 233', label: tr('nav', 'l5_free_world', lang) },
+    { href: '/l6-issobella', icon: Zap, color: '244, 63, 94', label: tr('nav', 'l6_issobella', lang) },
+    { href: '/warp', icon: Orbit, color: '168, 85, 247', label: tr('nav', 'warp', lang) },
+  ];
   const groupLabels: Record<string, string> = {
     [tr('nav', 'network_group', lang)]: tr('nav', 'network_group', lang),
     [tr('nav', 'defi_group', lang)]: tr('nav', 'defi_group', lang),
@@ -258,11 +282,32 @@ export default function Navigation() {
           </button>
         </div>
 
-        <div className="mt-3 hidden sm:flex items-center justify-end text-xs text-gray-400">
-          <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-gray-500">
-            <Orbit className="w-3 h-3 text-zion-cyan" />
-            {tr('nav', 'warp_status', lang)} · {tr('nav', 'status_online', lang)}
-          </div>
+        {/* ═══ SECOND ROW — mini icon quick nav ═══ */}
+        <div className="mt-2 hidden md:flex items-center justify-center gap-1 flex-wrap">
+          {miniLinks.map((ml) => {
+            const isActive = navItemMatches(ml.href);
+            return (
+              <Link
+                key={ml.href}
+                href={ml.href}
+                title={ml.label}
+                className="group relative p-1.5 rounded-lg border transition-all hover:scale-110"
+                style={{
+                  borderColor: isActive ? `rgba(${ml.color}, 0.5)` : 'rgba(255,255,255,0.08)',
+                  backgroundColor: isActive ? `rgba(${ml.color}, 0.12)` : 'rgba(0,0,0,0.5)',
+                }}
+              >
+                <ml.icon
+                  className="w-3.5 h-3.5"
+                  style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.5)' }}
+                />
+                {/* Tooltip */}
+                <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[9px] bg-black/95 border border-white/10 rounded px-1.5 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                  {ml.label}
+                </span>
+              </Link>
+            );
+          })}
         </div>
 
         {/* ═══ MOBILE OVERLAY + MENU ═══ */}
