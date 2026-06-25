@@ -64,7 +64,7 @@ export default function TerraNovaHomeMilestones() {
 
         {/* ── Hiranyagarbha Terminal ── */}
         <div className="mb-10 max-w-2xl mx-auto lg:mx-0">
-          <div className="rounded-xl overflow-hidden border border-white/10 shadow-2xl shadow-black/60 backdrop-blur-sm bg-black/60">
+          <div className="zion-rainbow-card shadow-2xl shadow-black/60 backdrop-blur-sm" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
             {/* Title bar */}
             <div className="flex items-center gap-2 px-4 py-2.5 bg-white/5 border-b border-white/10">
               <span className="h-3 w-3 rounded-full bg-red-500/80" />

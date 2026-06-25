@@ -134,6 +134,83 @@
     box-shadow: var(--zion-shadow-panel), var(--zion-shadow-glow);
   }
 
+  /* ─── Rainbow Card (Bridge Status Banner style, color-parameterized) ─── */
+  .zion-rainbow-card {
+    --rc: 16, 185, 129; /* default emerald */
+    position: relative;
+    overflow: hidden;
+    border-radius: 1.5rem;
+    border: 1px solid rgba(var(--rc), 0.2);
+    background: linear-gradient(to right, rgba(var(--rc), 0.08), rgba(var(--rc), 0.04), transparent);
+    transition: border-color 250ms ease, box-shadow 250ms ease, transform 250ms ease;
+  }
+
+  /* Top glow line */
+  .zion-rainbow-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(var(--rc), 0.4), transparent);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Hover state */
+  .zion-rainbow-card:hover {
+    border-color: rgba(var(--rc), 0.4);
+    box-shadow: 0 18px 60px rgba(var(--rc), 0.15);
+  }
+
+  /* Corner glow accent */
+  .zion-rainbow-card::after {
+    content: '';
+    position: absolute;
+    top: -3rem;
+    right: -3rem;
+    width: 10rem;
+    height: 10rem;
+    border-radius: 9999px;
+    background: rgba(var(--rc), 0.06);
+    filter: blur(60px);
+    pointer-events: none;
+    transition: opacity 250ms ease;
+  }
+
+  .zion-rainbow-card:hover::after {
+    background: rgba(var(--rc), 0.12);
+  }
+
+  /* Inner sub-card variant — smaller, for grid items inside a section */
+  .zion-rainbow-sub {
+    --rc: 16, 185, 129;
+    position: relative;
+    overflow: hidden;
+    border-radius: 1rem;
+    border: 1px solid rgba(var(--rc), 0.15);
+    background: linear-gradient(135deg, rgba(var(--rc), 0.06), rgba(var(--rc), 0.02));
+    transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+  }
+
+  .zion-rainbow-sub::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(var(--rc), 0.3), transparent);
+    pointer-events: none;
+  }
+
+  .zion-rainbow-sub:hover {
+    border-color: rgba(var(--rc), 0.35);
+    box-shadow: 0 8px 30px rgba(var(--rc), 0.12);
+    transform: translateY(-2px);
+  }
+
   .zion-glass {
     border: 1px solid var(--zion-border-subtle);
     background:

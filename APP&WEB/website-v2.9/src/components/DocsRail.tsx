@@ -67,7 +67,8 @@ export default function DocsRail() {
           {resources.map((resource) => (
             <div
               key={resource.title}
-              className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur relative overflow-hidden"
+              className="zion-rainbow-card p-6 backdrop-blur relative overflow-hidden"
+              style={{ '--rc': '59, 130, 246' } as React.CSSProperties}
             >
               <div className={`absolute inset-0 bg-linear-to-br ${resource.accent} opacity-80 pointer-events-none`} />
               <div className="relative space-y-4">
@@ -92,7 +93,8 @@ export default function DocsRail() {
               href={cta.href}
               target={cta.external ? '_blank' : undefined}
               rel={cta.external ? 'noreferrer' : undefined}
-              className="rounded-3xl border border-white/10 bg-black/40 p-6 flex items-center gap-4 hover:border-white/30 transition"
+              className="zion-rainbow-card p-6 flex items-center gap-4"
+              style={{ '--rc': '59, 130, 246' } as React.CSSProperties}
             >
               <cta.icon className="w-6 h-6 text-zion-cyan" />
               <div>

@@ -40,7 +40,7 @@ export default function GoldenEggHaraniagharba() {
           </div>
         </div>
 
-        <div className="relative overflow-hidden rounded-3xl border border-amber-300/20 bg-[radial-gradient(circle_at_top,rgba(255,214,102,0.18),rgba(18,12,6,0.94)_55%,rgba(4,4,8,0.98)_100%)] p-6 shadow-[0_24px_120px_rgba(0,0,0,0.45)] md:p-8">
+        <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
           <div className="absolute -right-10 top-[-60px] h-44 w-44 rounded-full bg-amber-300/15 blur-3xl" />
           <div className="absolute -bottom-20 -left-5 h-52 w-52 rounded-full bg-zion-purple/10 blur-3xl" />
 
