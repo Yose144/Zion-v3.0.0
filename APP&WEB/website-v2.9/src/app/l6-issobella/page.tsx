@@ -93,7 +93,7 @@ export default function L6IssobellaPage() {
       <div className="zion-container max-w-7xl space-y-16">
 
         {/* ── HERO ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl border border-rose-500/30 bg-gradient-to-br from-rose-500/10 via-black/60 to-purple-500/10 p-6 md:p-10 backdrop-blur-xl">
+        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
           <div className="space-y-5 max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-rose-500/40 bg-rose-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-rose-300 uppercase">
               <Rocket className="h-4 w-4" />
@@ -211,7 +211,7 @@ export default function L6IssobellaPage() {
         </motion.section>
 
         {/* ── Hiranyagarbha connection ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-purple-500/30 bg-gradient-to-r from-purple-500/10 via-black/40 to-rose-500/10 p-5 sm:p-8 md:p-10 text-center">
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-cta-banner" style={{ borderColor: 'rgba(147, 51, 234, 0.35)', background: 'linear-gradient(90deg, rgba(147, 51, 234, 0.22), rgba(244, 63, 94, 0.12) 50%, rgba(147, 51, 234, 0.22))', boxShadow: '0 24px 80px rgba(147, 51, 234, 0.18)' }}>
           <Sparkles className="h-12 w-12 text-purple-400 mx-auto mb-4" />
           <h2 className="text-3xl font-semibold text-white mb-4">Hiranyagarbha · {cs ? 'Zlatý zárodek' : 'Golden Egg'}</h2>
           <p className="text-gray-300 max-w-2xl mx-auto text-lg">
@@ -225,7 +225,7 @@ export default function L6IssobellaPage() {
         </motion.section>
 
         {/* ── Links ── */}
-        <motion.section initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="rounded-[32px] border border-rose-500/30 bg-gradient-to-r from-rose-500/10 via-transparent to-purple-500/10 p-5 sm:p-8 md:p-10">
+        <motion.section initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="zion-cta-banner" style={{ borderColor: 'rgba(244, 63, 94, 0.35)', background: 'linear-gradient(90deg, rgba(244, 63, 94, 0.22), rgba(147, 51, 234, 0.12) 50%, rgba(244, 63, 94, 0.22))', boxShadow: '0 24px 80px rgba(244, 63, 94, 0.18)' }}>
           <h2 className="text-2xl font-semibold text-white text-center mb-6">{cs ? 'Více o L6 a ekosystému' : 'Learn more about L6 and the ecosystem'}</h2>
           <div className="flex flex-wrap justify-center gap-4">
             <Link href="/dao" className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors">

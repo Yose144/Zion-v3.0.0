@@ -464,7 +464,7 @@ export default function NetworkPage() {
         </section>
 
         {/* ═══════ RUNTIME SNAPSHOT ═══════ */}
-        <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
+        <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Runtime prehled' : 'Runtime Snapshot'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -493,7 +493,7 @@ export default function NetworkPage() {
 
         {/* ═══════ NETWORK HEALTH SCORE ═══════ */}
         {chainStats && (
-        <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
+        <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Zdraví' : 'Health'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -563,7 +563,7 @@ export default function NetworkPage() {
 
         {/* ═══════ CHAIN PERFORMANCE ═══════ */}
         {chainStats && (
-        <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
+        <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Výkon' : 'Performance'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -621,7 +621,7 @@ export default function NetworkPage() {
 
         {/* ═══════ CHAIN STATISTICS ═══════ */}
         {chainStats && (
-        <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
+        <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Statistika' : 'Statistics'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -660,7 +660,7 @@ export default function NetworkPage() {
 
         {/* ═══════ EMISSION PROGRESS ═══════ */}
         {chainStats && (
-        <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
+        <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Emise' : 'Emission'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -708,7 +708,7 @@ export default function NetworkPage() {
         )}
 
         {/* ═══════ INFRASTRUCTURE ═══════ */}
-        <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
+        <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Infrastruktura' : 'Infrastructure'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -765,7 +765,7 @@ export default function NetworkPage() {
         <NetworkRewardDistribution cs={cs} />
 
         {/* ═══════ LIVE TELEMETRY ═══════ */}
-        <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
+        <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Ziva telemetrie' : 'Live Telemetry'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -794,7 +794,7 @@ export default function NetworkPage() {
             <p className="text-sm text-gray-400">{cs ? 'Vizualizujte aktualni topologii a porovnejte ji s archivovanym multi-host rolloutem zachovanym v release dokumentaci.' : 'Visualize the current topology and compare it with the archived multi-host rollout preserved in release documentation.'}</p>
           </div>
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-            <div className="rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+            <div className="rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
               <NetworkMap />
             </div>
             <PoolFinder />
@@ -802,7 +802,7 @@ export default function NetworkPage() {
         </section>
 
         {/* ═══════ CONNECTION GUIDES ═══════ */}
-        <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
+        <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Pripojeni' : 'Connect'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -833,7 +833,7 @@ export default function NetworkPage() {
         </section>
 
         {/* ═══════ NETWORK CHECKLIST ═══════ */}
-        <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
+        <section className="zion-section">
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Stav' : 'Status'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -864,7 +864,7 @@ export default function NetworkPage() {
         <NetworkOperatorToolkit cs={cs} primaryPool={primaryPool} />
 
         {/* ═══════ NETWORK FAQ ═══════ */}
-        <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
+        <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">FAQ</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -877,7 +877,15 @@ export default function NetworkPage() {
         </section>
 
         {/* ═══════ CTA ═══════ */}
-        <section className="rounded-4xl border border-emerald-400/30 bg-linear-to-r from-emerald-500/20 via-zion-cyan/10 to-emerald-500/20 p-5 sm:p-8 md:p-10 text-center">
+        <section
+          className="zion-cta-banner"
+          style={{
+            borderColor: 'rgba(52, 211, 153, 0.35)',
+            background:
+              'linear-gradient(90deg, rgba(16, 185, 129, 0.25), rgba(6, 182, 212, 0.14) 50%, rgba(16, 185, 129, 0.25))',
+            boxShadow: '0 24px 80px rgba(16, 185, 129, 0.18)',
+          }}
+        >
           <Radio className="mx-auto h-12 w-12 text-emerald-400" />
           <h2 className="mt-6 text-3xl font-semibold text-white">{cs ? 'Pripojte se k siti ZION' : 'Join the ZION Network'}</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
