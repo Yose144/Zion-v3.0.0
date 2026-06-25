@@ -31,7 +31,7 @@ function pad(n: number) {
   return n.toString().padStart(2, '0');
 }
 
-export default function MainnetCountdown() {
+export default function MainnetCountdown({ embedded = false }: { embedded?: boolean }) {
   const { lang } = useLang();
   const cs = lang === 'cs';
   const [time, setTime] = useState<TimeLeft>(getTimeLeft(LAUNCH_DATE));
@@ -55,8 +55,18 @@ export default function MainnetCountdown() {
   const tMinus = time.total > 0 ? `T-${time.days}` : 'LIVE';
   const isLive = time.total <= 0;
 
+  // Wrapper: skip section/container when embedded in Hero
+  const Wrap = ({ children }: { children: React.ReactNode }) =>
+    embedded ? <>{children}</> : (
+      <section className="py-6 px-4">
+        <div className="zion-container">{children}</div>
+      </section>
+    );
+
   if (!mounted) {
-    return (
+    return embedded ? (
+      <div className="zion-panel-soft zion-panel-hover p-6 min-h-[140px]" />
+    ) : (
       <section className="py-8 px-4">
         <div className="zion-container">
           <div className="zion-panel-soft zion-panel-hover p-6 min-h-[140px]" />
@@ -67,15 +77,14 @@ export default function MainnetCountdown() {
 
   if (isLive) {
     return (
-      <section className="py-6 px-4">
-        <div className="zion-container">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="zion-rainbow-card relative overflow-hidden backdrop-blur-xl p-6 md:p-8"
-            style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
-          >
+      <Wrap>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="zion-rainbow-card relative overflow-hidden backdrop-blur-xl p-6 md:p-8"
+          style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
+        >
             {/* ambient glow */}
             <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
             <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-violet-500/10 blur-3xl pointer-events-none" />
@@ -133,21 +142,19 @@ export default function MainnetCountdown() {
               </p>
             </div>
           </motion.div>
-        </div>
-      </section>
+      </Wrap>
     );
   }
 
   return (
-    <section className="py-6 px-4">
-      <div className="zion-container">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="zion-rainbow-card relative overflow-hidden backdrop-blur-xl p-6 md:p-8"
-          style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
-        >
+    <Wrap>
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="zion-rainbow-card relative overflow-hidden backdrop-blur-xl p-6 md:p-8"
+        style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
+      >
           {/* ambient glow */}
           <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-zion-gold/10 blur-3xl pointer-events-none" />
           <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-zion-purple/10 blur-3xl pointer-events-none" />
@@ -225,8 +232,7 @@ export default function MainnetCountdown() {
               {tr('countdown', 'subtitle', lang)}
             </p>
           </div>
-        </motion.div>
-      </div>
-    </section>
+      </motion.div>
+    </Wrap>
   );
 }

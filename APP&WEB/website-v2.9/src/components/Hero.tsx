@@ -14,9 +14,9 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
-import { SITE_LAUNCH_DATE_DISPLAY } from '@/lib/site';
 import CosmicFlowers from './CosmicFlowers';
 import HolographicEarth from './HolographicEarth';
+import MainnetCountdown from './MainnetCountdown';
 
 export default function Hero() {
   const { lang } = useLang();
@@ -140,38 +140,8 @@ export default function Hero() {
               <HolographicEarth className="w-full shrink-0" />
             </div>
 
-            {/* Launch Countdown panel */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="zion-panel-soft zion-panel-hover relative overflow-hidden border-emerald-500/25 bg-gradient-to-br from-emerald-500/10 via-violet-500/8 to-transparent p-5"
-            >
-              <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-emerald-500/15 to-violet-600/10 blur-sm pointer-events-none" />
-              <div className="relative flex items-start gap-4">
-                <div className="flex-none w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center">
-                  <BrainCircuit className="w-5 h-5 text-emerald-300" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-bold text-white">Launch Countdown — 31 December 2026</span>
-                    <span className="text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full font-semibold">
-                        T-{Math.ceil((new Date('2026-12-31').getTime() - Date.now()) / (1000*60*60*24))}d
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-400 leading-relaxed">
-                    Network status, explorer, pool, downloads, and documentation — preparing for mainnet launch on {SITE_LAUNCH_DATE_DISPLAY}.
-                      Core + Edge topology in testing, mining test active, bridge in preparation.
-                  </p>
-                </div>
-                <a
-                  href="#tree-of-life"
-                  className="flex-none ml-auto text-xs text-emerald-300 hover:text-emerald-200 flex items-center gap-1 transition"
-                >
-                  {tr('hero', 'teaser_cta', lang)} <ArrowRight className="w-3.5 h-3.5" />
-                </a>
-              </div>
-            </motion.div>
+            {/* Mainnet Countdown panel */}
+            <MainnetCountdown embedded />
           </motion.div>
         </div>
       </div>
