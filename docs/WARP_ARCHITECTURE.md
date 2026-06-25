@@ -159,17 +159,26 @@ Guardian role can pause any chain adapter independently.
 
 ## 🔢 Decimal Conversion Table
 
-ZION L1 uses **6 decimals** (1 ZION = 1,000,000 atomic units).
+ZION L1 uses **12 decimals** — 1 ZION = `1,000,000,000,000` flowers
+(`FLOWERS_PER_ZION = 10¹²`). The sub-unit is called **flowers**
+(canonical name per `docs/CANONICAL_UNITS_AUDIT.md` and `AGENTS.md`).
+All columns below convert **from L1 flowers** to the destination chain's
+native integer unit.
 
-| Destination | Decimals | Multiplier | 1 ZION =              |
-|-------------|----------|------------|-----------------------|
-| EVM         | 18       | × 10¹²    | 1,000,000,000,000,000,000 wei |
-| Solana      | 9        | × 10³     | 1,000,000,000 lamports |
-| Tron        | 18       | × 10¹²    | 1,000,000,000,000,000,000 sun |
-| Stellar     | 7        | × 10¹     | 10,000,000 stroops    |
-| Cardano     | 6        | × 1       | 1,000,000 lovelace    |
-| Cosmos      | 6        | × 1       | 1,000,000 uatom-equiv |
-| Bitcoin     | 8        | × 10²     | 100,000,000 satoshis  |
+| Destination | Decimals | flowers → native | 1 ZION =              |
+|-------------|----------|-----------------|-----------------------|
+| EVM (wZION) | 18       | × 10⁶           | 1,000,000,000,000,000,000 wei |
+| Solana      | 9        | ÷ 10³           | 1,000,000,000 lamports |
+| Tron        | 18       | × 10⁶           | 1,000,000,000,000,000,000 sun |
+| Stellar     | 7        | ÷ 10⁵           | 10,000,000 stroops    |
+| Cardano     | 6        | ÷ 10⁶           | 1,000,000 lovelace    |
+| Cosmos      | 6        | ÷ 10⁶           | 1,000,000 uatom-equiv |
+| Bitcoin     | 8        | ÷ 10⁴           | 100,000,000 satoshis  |
+
+> **Bridge code reference:** `V3/L2/bridge/src/types.rs` exposes
+> `l1_flowers_to_wzion_wei()` (×10⁶) and `wzion_wei_to_l1_flowers()`
+> (÷10⁶). Legacy aliases `l1_atomic_to_wzion_wei` are kept for
+> backward compatibility but new code should use the `flowers` names.
 
 ---
 
