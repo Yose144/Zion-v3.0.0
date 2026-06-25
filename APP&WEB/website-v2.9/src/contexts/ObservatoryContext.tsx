@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useMemo, useState } from "react";
 
-export type ObservatoryMode = "deep-space" | "planet-orbit" | "galactic-core";
+export type ObservatoryMode = "deep-space" | "planet-orbit" | "galactic-core" | "nebula-drift";
 
 type ObservatoryContextType = {
   mode: ObservatoryMode;
@@ -16,6 +16,7 @@ const MODES: ObservatoryContextType["availableModes"] = [
   { id: "deep-space", label: "Deep Space", description: "Flight through the cosmos" },
   { id: "planet-orbit", label: "Planet Orbit", description: "AI / Mining deck" },
   { id: "galactic-core", label: "Command Nexus", description: "WARP & DAO view" },
+  { id: "nebula-drift", label: "Nebula Drift", description: "Desktop agent vibe" },
 ];
 
 export function ObservatoryProvider({ children }: { children: React.ReactNode }) {
