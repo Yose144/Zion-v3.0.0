@@ -140,8 +140,10 @@ export default function Hero() {
               <HolographicEarth className="w-full shrink-0" />
             </div>
 
-            {/* Mainnet Countdown panel */}
-            <MainnetCountdown embedded />
+            {/* Mainnet Countdown panel — sized to match HolographicEarth */}
+            <div className="mx-auto w-full max-w-sm lg:mx-0 lg:max-w-md">
+              <MainnetCountdown embedded />
+            </div>
           </motion.div>
         </div>
       </div>
