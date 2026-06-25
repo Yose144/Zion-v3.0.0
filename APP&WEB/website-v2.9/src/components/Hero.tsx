@@ -7,44 +7,56 @@ import {
   BrainCircuit,
   CircuitBoard,
   Gauge,
+  MessageSquareQuote,
   Rocket,
   Satellite,
   ShieldHalf,
   Sparkles,
   Zap,
 } from 'lucide-react';
-import { useObservatory } from '@/contexts/ObservatoryContext';
-import type { ObservatoryMode } from '@/contexts/ObservatoryContext';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
-import { SITE_ENVIRONMENT_LABEL, SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL, SITE_LAUNCH_DATE_DISPLAY } from '@/lib/site';
+import { SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL, SITE_LAUNCH_DATE_DISPLAY } from '@/lib/site';
 import CosmicFlowers from './CosmicFlowers';
 import HolographicEarth from './HolographicEarth';
 
 export default function Hero() {
-  const { mode, setMode, availableModes } = useObservatory();
   const { lang } = useLang();
-  const observatoryMeta: Record<ObservatoryMode, { label: string; description: string; signal: string; focus: string }> = {
-    'deep-space': {
-      label: tr('hero', 'mode_deep_space_label', lang),
-      description: tr('hero', 'mode_deep_space_desc', lang),
-      signal: tr('hero', 'mode_deep_space_signal', lang),
-      focus: tr('hero', 'mode_deep_space_focus', lang),
-    },
-    'planet-orbit': {
-      label: tr('hero', 'mode_planet_orbit_label', lang),
-      description: tr('hero', 'mode_planet_orbit_desc', lang),
-      signal: tr('hero', 'mode_planet_orbit_signal', lang),
-      focus: tr('hero', 'mode_planet_orbit_focus', lang),
-    },
-    'galactic-core': {
-      label: tr('hero', 'mode_galactic_core_label', lang),
-      description: tr('hero', 'mode_galactic_core_desc', lang),
-      signal: tr('hero', 'mode_galactic_core_signal', lang),
-      focus: tr('hero', 'mode_galactic_core_focus', lang),
-    },
-  };
-  const active = observatoryMeta[mode];
+  const hiranNotes = lang === 'cs'
+    ? [
+        {
+          title: 'Hiran v2.3 live stack',
+          value: 'Inference, orchestrace a AI-native workflow pro ekosystém.',
+          accent: 'text-zion-cyan',
+        },
+        {
+          title: 'Hiranyagarbha vrstva',
+          value: 'Most mezi knihou, CLI, dokumentací a budoucí inteligentní ekonomikou.',
+          accent: 'text-violet-300',
+        },
+        {
+          title: 'Veřejný vstup',
+          value: 'Homepage má vést od Terra Nova k Hiran, Genesis a dalším vrstvám bez vizuálního šumu.',
+          accent: 'text-emerald-300',
+        },
+      ]
+    : [
+        {
+          title: 'Hiran v2.3 live stack',
+          value: 'Inference, orchestration, and AI-native workflow for the ecosystem.',
+          accent: 'text-zion-cyan',
+        },
+        {
+          title: 'Hiranyagarbha layer',
+          value: 'A bridge between the book, CLI, docs, and the future intelligent economy.',
+          accent: 'text-violet-300',
+        },
+        {
+          title: 'Public entrypoint',
+          value: 'The homepage should lead from Terra Nova to Hiran, Genesis, and the next layers without visual noise.',
+          accent: 'text-emerald-300',
+        },
+      ];
 
   const missionSignals = [
     { title: tr('hero', 'signal_l1', lang),      status: tr('hero', 'signal_status_l1', lang),      value: '52 590 LOC · 780+ tests · Rust', accent: 'text-emerald-300' },
@@ -58,7 +70,7 @@ export default function Hero() {
   ];
 
   return (
-    <section className="relative px-4 pt-32 pb-28 overflow-hidden">
+    <section className="relative px-4 pt-24 pb-16 sm:pt-28 sm:pb-20 md:pt-32 md:pb-28 overflow-hidden">
       {/* ── ambient gradients ── */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute -top-40 -left-40 w-[700px] h-[700px] rounded-full bg-violet-700/12 blur-3xl" />
@@ -87,7 +99,7 @@ export default function Hero() {
           </div>
         </motion.div>
 
-        <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-14 xl:gap-24 items-start">
+        <div className="grid lg:grid-cols-[1.08fr_0.92fr] gap-12 xl:gap-20 items-start">
           {/* ─── LEFT col ─── */}
           <motion.div
             initial={{ opacity: 0, y: 32 }}
@@ -100,10 +112,10 @@ export default function Hero() {
               <p className="text-lg md:text-xl text-zion-cyan font-semibold mb-3 tracking-wide">
                 {tr('hero', 'tagline', lang)}
               </p>
-              <h1 className="text-5xl md:text-6xl xl:text-7xl font-extrabold leading-[1.06] tracking-tight">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl xl:text-7xl font-extrabold leading-[1.06] tracking-tight">
                 <span className="text-gradient-soft">ZION</span>
                 <span className="block text-white mt-1">Terra Nova</span>
-                <span className="block text-2xl md:text-3xl xl:text-4xl font-semibold text-white/60 mt-2 tracking-normal">
+                <span className="block text-xl sm:text-2xl md:text-3xl xl:text-4xl font-semibold text-white/60 mt-2 tracking-normal">
                   {tr('hero', 'title_sub', lang)}
                 </span>
               </h1>
@@ -118,21 +130,21 @@ export default function Hero() {
             <div className="flex flex-col sm:flex-row flex-wrap gap-3">
               <Link
                 href="/network"
-                className="zion-button-primary group"
+                className="zion-button-primary group w-full sm:w-auto justify-center"
               >
                 {tr('hero', 'btn_warp', lang)}
                 <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
               </Link>
               <Link
                 href="/docs"
-                className="zion-button-secondary"
+                className="zion-button-secondary w-full sm:w-auto justify-center"
               >
                 <ShieldHalf className="w-5 h-5 text-zion-cyan" />
                 {tr('hero', 'btn_guardian_docs', lang)}
               </Link>
               <Link
                 href="/download"
-                className="zion-button-secondary hover:border-zion-gold/60"
+                className="zion-button-secondary hover:border-zion-gold/60 w-full sm:w-auto justify-center"
               >
                 <CircuitBoard className="w-5 h-5 text-zion-gold" />
                 {tr('hero', 'btn_native_miner', lang)}
@@ -190,7 +202,7 @@ export default function Hero() {
             </div>
           </motion.div>
 
-          {/* ─── RIGHT col — Observatory HUD ─── */}
+          {/* ─── RIGHT col — Hiran / Hiranyagarbha ─── */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
@@ -200,64 +212,60 @@ export default function Hero() {
             {/* outer halo glow */}
             <div className="absolute -inset-6 rounded-[32px] bg-gradient-to-br from-violet-600/25 via-cyan-500/15 to-transparent blur-3xl pointer-events-none" />
 
-            <div className="mb-5 z-10 mx-auto flex w-full max-w-md justify-center lg:max-w-xl">
+            <div className="mb-4 z-10 mx-auto flex w-full max-w-sm justify-center lg:mx-0 lg:max-w-md">
               <HolographicEarth className="w-full shrink-0" />
             </div>
 
-            <div className="zion-panel relative rounded-[28px] p-6 space-y-5">
-              {/* HUD header */}
-              <header className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs uppercase text-gray-500 tracking-[0.3em] mb-1">{tr('hero', 'observatory_label', lang)}</p>
-                  <h3 className="text-xl font-bold text-white">
-                    {active.label}
-                  </h3>
+            <div className="zion-panel relative rounded-[28px] p-5 md:p-6 space-y-4">
+              <header className="space-y-3">
+                <div className="inline-flex items-center gap-2 rounded-full border border-violet-400/25 bg-violet-400/8 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-violet-200">
+                  <BrainCircuit className="h-3.5 w-3.5" />
+                  {lang === 'cs' ? 'AI vstupní vrstva' : 'AI entry layer'}
                 </div>
-                <div className="text-right">
-                  <p className="text-xs text-gray-500 mb-1">{tr('hero', 'observatory_focus_label', lang)}</p>
-                  <p className="text-sm text-zion-cyan font-semibold">{active.focus}</p>
+                <div className="space-y-2">
+                  <p className="text-[11px] uppercase text-gray-500 tracking-[0.28em]">
+                    {lang === 'cs' ? 'Hiran / Hiranyagarbha' : 'Hiran / Hiranyagarbha'}
+                  </p>
+                  <h3 className="text-xl font-semibold leading-tight text-white md:text-2xl">
+                    {lang === 'cs' ? 'AI s duší pro ZION Terra Nova' : 'Soul-aligned AI for ZION Terra Nova'}
+                  </h3>
+                  <p className="max-w-lg text-sm leading-relaxed text-gray-300">
+                    {lang === 'cs'
+                      ? 'Místo režimu observatoře sem patří Hiran: vstup do AI-native vrstvy, inference, knihovny znalostí a budoucí orchestrace celé sítě.'
+                      : 'Instead of the observatory mode, this space belongs to Hiran: the entrypoint to the AI-native layer, inference, knowledge library, and future network orchestration.'}
+                  </p>
                 </div>
               </header>
 
-              {/* scanline */}
-              <div className="zion-panel-soft rounded-xl p-4">
-                <p className="text-xs text-gray-500 mb-1">{tr('hero', 'observatory_scan_label', lang)}</p>
-                <p className="text-sm text-white">{active.signal}</p>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div className="flex items-center gap-2 text-zion-gold">
+                  <MessageSquareQuote className="h-4 w-4" />
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em]">
+                    {lang === 'cs' ? 'Současný směr' : 'Current direction'}
+                  </p>
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-white/82">
+                  {lang === 'cs'
+                    ? 'Jedna vstupní stránka, jeden vizuální jazyk: Terra Nova, Hiran, Kvantová revoluce a Genesis musí působit jako kapitoly stejného světa.'
+                    : 'One entry page, one visual language: Terra Nova, Hiran, Quantum Revolution, and Genesis should feel like chapters of the same world.'}
+                </p>
               </div>
 
-              {/* mode buttons */}
-              <div className="grid grid-cols-1 gap-2">
-                {availableModes.map((availableMode) => (
-                  <button
-                    key={availableMode.id}
-                    onClick={() => setMode(availableMode.id)}
-                    className={`group flex items-center justify-between rounded-xl border px-4 py-3 text-left transition-all ${
-                      mode === availableMode.id
-                        ? 'border-zion-gold/45 bg-white/10 shadow-[0_10px_35px_rgba(249,217,118,0.12)]'
-                        : 'border-white/8 hover:border-white/22 hover:bg-white/5'
-                    }`}
+              <div className="grid gap-3">
+                {hiranNotes.map((note) => (
+                  <div
+                    key={note.title}
+                    className="flex items-start justify-between gap-4 rounded-xl border border-white/8 bg-white/4 px-4 py-3"
                   >
                     <div>
-                      <p className="text-sm font-semibold text-white flex items-center gap-2">
-                        <span
-                          className={`inline-block h-1.5 w-1.5 rounded-full ${
-                            mode === availableMode.id ? 'bg-zion-gold animate-pulse' : 'bg-zion-cyan/50'
-                          }`}
-                        />
-                        {observatoryMeta[availableMode.id].label}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-0.5">{observatoryMeta[availableMode.id].description}</p>
+                      <p className="text-[13px] font-semibold text-white">{note.title}</p>
+                      <p className="mt-1 text-xs leading-relaxed text-gray-400">{note.value}</p>
                     </div>
-                    <ArrowRight
-                      className={`w-4 h-4 transition-all ${
-                        mode === availableMode.id ? 'text-zion-gold translate-x-0.5' : 'text-gray-600 group-hover:text-white'
-                      }`}
-                    />
-                  </button>
+                    <span className={`text-xs font-semibold ${note.accent}`}>LIVE</span>
+                  </div>
                 ))}
               </div>
 
-              {/* mission signals */}
               <div className="space-y-2">
                 <p className="text-xs uppercase text-gray-600 tracking-[0.2em]">{tr('hero', 'section_signals', lang)}</p>
                 {missionSignals.map((signal) => (
@@ -274,11 +282,27 @@ export default function Hero() {
                 ))}
               </div>
 
-              {/* version pill */}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Link
+                  href="/l3-hiran"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-violet-600 to-zion-cyan px-4 py-3 text-sm font-semibold text-white"
+                >
+                  <BrainCircuit className="h-4 w-4" />
+                  {lang === 'cs' ? 'Otevřít Hiran' : 'Open Hiran'}
+                </Link>
+                <Link
+                  href="/docs#book-ekam-full"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-semibold text-white hover:border-white/30"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                  {lang === 'cs' ? 'Knihovna a dokumentace' : 'Library & docs'}
+                </Link>
+              </div>
+
               <div className="flex items-center gap-2 pt-1">
                 <Rocket className="w-4 h-4 text-zion-gold" />
                 <span className="text-xs text-gray-400">
-                  {SITE_ENVIRONMENT_LABEL} · {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · Core + Edge topology
+                  {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · Hiran + Core + Edge
                 </span>
               </div>
             </div>

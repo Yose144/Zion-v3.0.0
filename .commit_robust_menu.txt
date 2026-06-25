@@ -1,0 +1,18 @@
+feat(public-cli): robust interactive menu with live dashboard, help, custom commands
+
+Major UX overhaul of the interactive menu:
+
+- Live dashboard at the top of every menu render:
+  Node (running? height, peers), Miner (running? hashrate, shares),
+  Pool (running?), Wallet (address, balance)
+- New `stats` module fetches all data in one async pass before menu render
+- Help / Start Guide screen for new users (5-step quick start)
+- Custom command input: type any `zion` subcommand directly from the menu
+  (e.g. "wallet balance", "node chain", "mine start --auto-node")
+- Menu is now async — loads fresh config + stats each iteration
+- Monitor command now uses shared stats module + shows miner hashrate/shares
+- Miner stats read from `~/.zion/miner-stats.json` (written by miner)
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>

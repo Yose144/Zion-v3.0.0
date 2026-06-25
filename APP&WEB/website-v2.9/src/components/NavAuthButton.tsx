@@ -18,7 +18,7 @@ export default function NavAuthButton() {
 
   if (loading) {
     return (
-      <div className="h-8 w-8 rounded-xl border border-white/10 bg-white/5 animate-pulse" />
+      <div className="h-8 w-8 rounded-xl border border-white/10 bg-black/75 animate-pulse" />
     );
   }
 
@@ -27,14 +27,14 @@ export default function NavAuthButton() {
       <>
         <button
           onClick={() => setShowLogin(true)}
-          className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-zion-cyan/30 bg-zion-cyan/10 text-xs font-semibold text-zion-cyan hover:bg-zion-cyan/20 transition-colors"
+          className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/15 bg-black/85 text-xs font-semibold text-white hover:border-zion-cyan/40 hover:text-zion-cyan transition-colors"
         >
           <LogIn className="w-3.5 h-3.5" />
           Login
         </button>
         <button
           onClick={() => setShowLogin(true)}
-          className="md:hidden p-2 rounded-xl border border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan"
+          className="md:hidden p-2 rounded-xl border border-white/15 bg-black/85 text-white"
         >
           <LogIn className="w-4 h-4" />
         </button>
@@ -52,7 +52,7 @@ export default function NavAuthButton() {
       <div className="relative">
         <button
           onClick={() => setShowMenu(!showMenu)}
-          className="flex items-center gap-2 px-2 py-1.5 rounded-xl border border-white/15 bg-white/5 hover:border-white/25 transition-colors"
+          className="flex items-center gap-2 px-2 py-1.5 rounded-xl border border-white/15 bg-black/75 hover:border-white/25 transition-colors"
         >
           <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-zion-gold to-zion-purple flex items-center justify-center text-[10px] font-bold text-white">
             {initial}

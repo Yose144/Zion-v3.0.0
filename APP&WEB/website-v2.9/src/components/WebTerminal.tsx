@@ -21,19 +21,55 @@ const QUICK_COMMANDS = [
 
 const COMMAND_HISTORY_KEY = 'zion-cli-history';
 
+const GENESIS_BANNER = String.raw`
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⣀⢂⣁⣧⣖⡖⠠⢠⠀⠀⢤⡀⢀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢼⣶⡭⣛⠫⡞⠡⠀⡤⢦⠆⠨⠀⠀⢸⠋⠬⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⠀⠒⢈⠀⢭⣉⠂⡄⢠⠖⣸⠑⣆⡦⠊⢀⠀⡂⢉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠍⠚⣁⣀⡀⣤⣰⢶⢷⢼⣿⠏⡡⢠⢗⡙⣶⣞⠛⣍⣪⣼⡠⠠⢶⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠀⠀⠀⢄⣎⡠⢠⠉⠋⠓⠉⠋⢨⠘⠚⢉⡄⠁⢾⡌⣗⢿⠛⠲⠛⠋⡝⠑⠀⠌⡤⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠘⠥⠄⡚⣜⢣⣴⡨⢁⡀⣈⡅⠀⣀⠀⠈⣄⣀⢿⣯⡔⢊⢺⣷⠆⣷⠶⠂⠀⠀⠀⢀⡀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠘⢁⣨⡅⠨⣤⣭⣵⣿⢿⢏⠿⠯⡁⠹⣿⡯⡜⠫⢯⢿⡾⣻⡅⣠⣆⣄⣰⡐⠲⠼⢶⠒⠯⠅⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠂⢈⠙⡋⣟⡛⣷⠴⢼⠓⠋⣺⣴⣷⣷⢾⣿⡿⣡⣠⣸⠗⠻⠹⠿⣟⢥⠯⣿⠻⢅⢴⢎⠄⠀⡄⢠⣀⠀⡀⠀⢄⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⢘⠳⠋⣤⣶⡿⢜⣳⢦⢶⣌⣩⠶⢠⣤⣯⠷⠈⠬⡉⠎⠎⣀⡌⠟⣝⣿⠇⡚⠒⠔⢀⣴⣍⣾⢲⠋⠟⠈⠙⠑⠉⢀⠄⠀
+⠀⠀⠀⡀⣽⠿⠻⡈⠱⢻⣽⡟⣶⣚⡻⢏⢹⡋⠁⣀⣂⣤⣴⠄⢤⣐⣴⡾⣶⠯⣄⣉⢓⡭⢍⡆⡀⣈⣿⣷⡷⠶⠒⢂⣠⣠⢶⣾⣳⣯⣵⡄
+⠀⠀⠀⠰⠴⠀⢘⢉⣧⣥⣏⠳⢈⣫⠞⣿⣷⢤⣤⣿⣿⣾⣧⣾⣿⣿⣿⣗⣿⣿⣿⠋⣚⡃⠿⡭⠹⣷⣿⠾⡿⢤⣤⣜⢿⣯⡿⣷⠯⣽⣿⡾
+⠀⠀⠀⠀⠀⠐⠞⠻⣿⢟⣿⢿⠷⠥⣼⣷⢷⣯⠟⠻⠙⢉⡿⣿⢻⣹⣿⣿⢉⢳⣿⣿⣯⡶⡄⡶⢦⣷⣶⣿⡬⢥⠨⣭⣹⠏⠁⡘⢫⠉⠈⠀
+⠀⠀⠔⣼⢂⠬⢌⠧⢋⡛⢡⣮⡡⠈⠓⣃⢀⣒⣊⣽⠻⣛⠟⢿⢸⣯⣿⣓⣿⡟⣷⣟⣿⣿⣿⣿⣻⣷⣟⣒⡺⠏⢰⡿⠿⣶⣶⡻⠒⡿⠦⡀
+⠀⢆⣀⣆⣸⣿⠋⡴⢲⡁⡋⠀⢴⣮⣷⠟⠫⠿⣿⢶⢅⢴⣇⣸⣷⣿⣿⣧⣾⣿⣿⣿⣿⣿⣿⣿⣿⢿⢿⣟⣲⢦⠦⢋⡀⢿⣾⣷⣶⣤⠋⠆
+⠈⠘⠛⠼⠿⡝⣻⠛⠻⠀⠀⠐⠛⢹⣱⣟⣽⣯⣿⡟⡊⣿⣷⣖⢽⣿⣿⣿⢿⣿⠀⠀⠘⠋⠃⠁⠀⠀⠨⠟⠿⡷⣥⣉⠁⠘⠉⠊⠚⠚⠓⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠋⠀⠀⠀⠀⠈⠋⠹⣎⢻⣿⠟⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠛⢳⡕⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣾⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣹⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠚⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+
+████████╗██╗ ██████╗███╗   ██╗
+╚══███╔╝██║██╔═══██╗████╗  ██║
+  ███╔╝ ██║██║   ██║██╔██╗ ██║
+ ███╔╝  ██║██║   ██║██║╚██╗██║
+███████╗██║╚██████╔╝██║ ╚████║
+╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝  "Mainnet Launch v3"
+
+Gate, Gate, Paragate, Parasamgate, Bodhi Swaha
+The Golden Age begins. Peace & One Love 4ever.
+`;
+
 export default function WebTerminal() {
   const [lines, setLines] = useState<TerminalLine[]>([
     {
       id: 0,
       type: 'system',
-      text: 'ZION Web CLI v1.0.0 — community edition\nConnected to: ZION V3 Mainnet\nType "help" for available commands.',
+      text: `${GENESIS_BANNER}\nZION Web CLI v1.0.0 — community edition\nConnected to: ZION V3 Mainnet\nType "help" for available commands.`,
     },
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
   const [historyIdx, setHistoryIdx] = useState(-1);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const lineIdRef = useRef(1);
@@ -128,50 +164,53 @@ export default function WebTerminal() {
   // Collapsed view — just a button
   if (!expanded) {
     return (
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-       whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        className="relative overflow-hidden rounded-2xl border border-zion-cyan/20 bg-gradient-to-br from-black/80 to-zion-purple/5"
-      >
-        <div className="absolute -left-10 -top-10 h-32 w-32 rounded-full bg-zion-cyan/10 blur-3xl" />
-        <button
-          onClick={() => setExpanded(true)}
-          className="relative flex w-full items-center justify-between px-5 py-4 transition-colors hover:bg-zion-cyan/5"
+      <section className="px-4 py-6 md:py-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="relative mx-auto max-w-6xl overflow-hidden rounded-[28px] border border-zion-cyan/20 bg-gradient-to-br from-black/85 via-[#081019] to-zion-purple/10 shadow-[0_24px_80px_rgba(6,182,212,0.12)]"
         >
-          <div className="flex items-center gap-3">
-            <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-zion-cyan/20 border border-zion-cyan/30">
-              <motion.div
-                className="absolute inset-0 rounded-full bg-zion-cyan/40"
-                animate={{ scale: [1, 1.4, 1], opacity: [0.3, 0, 0.3] }}
-                transition={{ duration: 2, repeat: Infinity, ease: 'easeOut' }}
-              />
-              <Terminal className="h-5 w-5 text-zion-cyan relative z-10" />
+          <div className="absolute -left-10 -top-10 h-32 w-32 rounded-full bg-zion-cyan/10 blur-3xl" />
+          <button
+            onClick={() => setExpanded(true)}
+            className="relative flex w-full items-center justify-between gap-4 px-4 py-4 text-left transition-colors hover:bg-zion-cyan/5 sm:px-5"
+          >
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zion-cyan/20 border border-zion-cyan/30">
+                <motion.div
+                  className="absolute inset-0 rounded-full bg-zion-cyan/40"
+                  animate={{ scale: [1, 1.4, 1], opacity: [0.3, 0, 0.3] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeOut' }}
+                />
+                <Terminal className="h-5 w-5 text-zion-cyan relative z-10" />
+              </div>
+              <div className="min-w-0 text-left">
+                <p className="flex flex-wrap items-center gap-2 text-sm font-bold text-white">
+                  ZION Terminal
+                  <span className="inline-flex items-center gap-1 rounded-full bg-zion-cyan/15 px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider text-zion-cyan">
+                    <Activity className="h-2.5 w-2.5" /> Interactive
+                  </span>
+                </p>
+                <p className="truncate text-[10px] text-gray-500 sm:text-xs">
+                  Genesis CLI · node info · status · ai ask · wallet balance
+                </p>
+              </div>
             </div>
-            <div className="text-left">
-              <p className="text-sm font-bold text-white flex items-center gap-2">
-                ZION Terminal
-                <span className="inline-flex items-center gap-1 rounded-full bg-zion-cyan/15 px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider text-zion-cyan">
-                  <Activity className="h-2.5 w-2.5" /> Interactive
-                </span>
-              </p>
-              <p className="text-[10px] text-gray-500">
-                Try: node info · status · ai ask · wallet balance
-              </p>
-            </div>
-          </div>
-          <ChevronRight className="h-5 w-5 text-gray-400" />
-        </button>
-      </motion.section>
+            <ChevronRight className="h-5 w-5 shrink-0 text-gray-400" />
+          </button>
+        </motion.div>
+      </section>
     );
   }
 
   // Expanded terminal
   return (
-    <motion.section
+    <section className="px-4 py-6 md:py-8">
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative overflow-hidden rounded-2xl border border-zion-cyan/30 bg-black/90 shadow-[0_20px_60px_rgba(6,182,212,0.1)]"
+      className="relative mx-auto max-w-6xl overflow-hidden rounded-[28px] border border-zion-cyan/30 bg-black/92 shadow-[0_24px_80px_rgba(6,182,212,0.14)]"
     >
       {/* Title bar */}
       <div className="flex items-center justify-between border-b border-white/10 bg-gradient-to-r from-zion-purple/10 to-zion-cyan/10 px-4 py-2.5">
@@ -219,24 +258,24 @@ export default function WebTerminal() {
       <div
         ref={scrollRef}
         onClick={() => inputRef.current?.focus()}
-        className="h-[300px] overflow-y-auto px-4 py-3 font-mono text-xs leading-relaxed cursor-text"
+        className="h-[420px] overflow-y-auto px-3 py-3 font-mono text-xs leading-relaxed cursor-text sm:px-4 md:h-[520px]"
       >
         {lines.map((line) => (
-          <div key={line.id} className="mb-1 whitespace-pre-wrap break-all">
+          <div key={line.id} className="mb-1">
             {line.type === 'input' && (
               <div className="flex items-start gap-2">
                 <span className="text-zion-gold shrink-0">zion@terranova:~$</span>
-                <span className="text-white">{line.text}</span>
+                <span className="break-words text-white">{line.text}</span>
               </div>
             )}
             {line.type === 'output' && (
-              <div className="text-gray-300 pl-0">{line.text}</div>
+              <div className="whitespace-pre-wrap break-words pl-0 text-gray-300">{line.text}</div>
             )}
             {line.type === 'error' && (
-              <div className="text-red-400">✗ {line.text}</div>
+              <div className="whitespace-pre-wrap break-words text-red-400">x {line.text}</div>
             )}
             {line.type === 'system' && (
-              <div className="text-zion-cyan/70">{line.text}</div>
+              <pre className="overflow-x-auto whitespace-pre text-[9px] leading-snug text-zion-cyan/70 sm:text-[10px] md:text-xs">{line.text}</pre>
             )}
           </div>
         ))}
@@ -254,7 +293,7 @@ export default function WebTerminal() {
 
       {/* Input line */}
       <form onSubmit={handleSubmit} className="flex items-center gap-2 border-t border-white/10 bg-black/60 px-4 py-3">
-        <span className="font-mono text-xs text-zion-gold shrink-0">zion@terranova:~$</span>
+        <span className="hidden font-mono text-xs text-zion-gold shrink-0 sm:inline">zion@terranova:~$</span>
         <input
           ref={inputRef}
           type="text"
@@ -276,6 +315,7 @@ export default function WebTerminal() {
           <Send className="h-3.5 w-3.5" />
         </button>
       </form>
-    </motion.section>
+    </motion.div>
+    </section>
   );
 }
