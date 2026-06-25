@@ -1,14 +1,12 @@
 import dynamicImport from 'next/dynamic';
 import Hero from '@/components/Hero';
 import BridgeStatusBanner from '@/components/BridgeStatusBanner';
-import GenesisPreview from '@/components/GenesisPreview';
-import QuantumRevolution from '@/components/QuantumRevolution';
 import HomeQuickLinks from '@/components/HomeQuickLinks';
 import WebTerminal from '@/components/WebTerminal';
+import StoryTriptych from '@/components/StoryTriptych';
 
 const NewsFeed = dynamicImport(() => import('@/components/NewsFeed'));
 const LiveDashboard = dynamicImport(() => import('@/components/LiveDashboard'));
-const TerraNovaHomeMilestones = dynamicImport(() => import('@/components/TerraNovaHomeMilestones'));
 const GoldenEggHaraniagharba = dynamicImport(() => import('@/components/GoldenEggHaraniagharba'));
 const Features = dynamicImport(() => import('@/components/Features'));
 const RoadmapPulse = dynamicImport(() => import('@/components/RoadmapPulse'));
@@ -27,10 +25,8 @@ export default function Home() {
       <HomeQuickLinks />
       <NewsFeed />
       <LiveDashboard />
-      <TerraNovaHomeMilestones />
+      <StoryTriptych />
       <GoldenEggHaraniagharba />
-      <QuantumRevolution />
-      <GenesisPreview />
       <Features />
       <RoadmapPulse />
       <DocsRail />
