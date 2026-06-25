@@ -5,7 +5,6 @@ import MainnetCountdown from '@/components/MainnetCountdown';
 import GenesisPreview from '@/components/GenesisPreview';
 import QuantumRevolution from '@/components/QuantumRevolution';
 import HomeQuickLinks from '@/components/HomeQuickLinks';
-import WebTerminal from '@/components/WebTerminal';
 
 const NewsFeed = dynamicImport(() => import('@/components/NewsFeed'));
 const LiveDashboard = dynamicImport(() => import('@/components/LiveDashboard'));
@@ -23,7 +22,6 @@ export default function Home() {
   return (
     <>
       <Hero />
-      <WebTerminal />
       <BridgeStatusBanner />
       <MainnetCountdown />
       <HomeQuickLinks />
