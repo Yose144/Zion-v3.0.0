@@ -393,7 +393,7 @@ export default function DefiPage() {
           <h2 className="mb-6 text-2xl font-bold">
             {cs ? 'Kontrakty na Base Mainnet' : 'Base Mainnet Contracts'}
           </h2>
-          <div className="overflow-hidden rounded-3xl border border-white/10 bg-black/45 backdrop-blur-xl">
+          <div className="overflow-hidden zion-section">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>

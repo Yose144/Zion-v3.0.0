@@ -179,7 +179,8 @@ export default function WalletPage() {
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl border border-zion-gold/30 bg-gradient-to-br from-zion-gold/10 via-black/60 to-cyan-500/10 p-6 md:p-10 backdrop-blur-xl"
+          className="zion-rainbow-card p-6 md:p-10"
+          style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
         >
           <div className="space-y-5 max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-amber-300 uppercase">
@@ -218,7 +219,7 @@ export default function WalletPage() {
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="rounded-[32px] border border-white/10 bg-black/40 p-8"
+          className="rounded-[32px] zion-section"
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Vlastnosti' : 'Features'}</p>
@@ -229,7 +230,7 @@ export default function WalletPage() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             {features.map((f) => (
-              <div key={f.title} className="rounded-2xl border border-white/10 bg-black/30 p-5">
+              <div key={f.title} className="zion-tile">
                 <f.icon className={`h-8 w-8 ${f.color} mb-3`} />
                 <h3 className="font-semibold text-white mb-2">{f.title}</h3>
                 <p className="text-sm text-gray-400">{f.desc}</p>
@@ -607,7 +608,7 @@ export default function WalletPage() {
           initial={{ opacity: 0, scale: 0.98 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
-          className="rounded-[32px] border border-zion-gold/30 bg-gradient-to-r from-zion-gold/10 via-transparent to-cyan-500/10 p-5 sm:p-8 md:p-10"
+          className="zion-cta-banner"
         >
           <h2 className="text-2xl font-semibold text-white text-center mb-6">
             {cs ? 'Více o ZION Wallet' : 'Learn more about ZION Wallet'}

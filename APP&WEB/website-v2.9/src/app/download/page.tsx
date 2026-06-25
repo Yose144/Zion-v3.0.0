@@ -215,14 +215,14 @@ export default function DownloadPage() {
         </section>
 
         {/* ─── 3-step onboarding ─── */}
-        <section className="rounded-4xl border border-white/10 bg-white/5 p-8">
+        <section className="zion-section">
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Rychly start' : 'Quick Start'}</p>
             <h2 className="text-3xl font-semibold text-white">{cs ? '3 kroky k tezbe' : '3 steps to mining'}</h2>
           </div>
           <div className="grid gap-6 md:grid-cols-3">
             {cliQuickstartSteps.map((step) => (
-              <div key={step.title} className="rounded-3xl border border-white/10 bg-black/30 p-6">
+              <div key={step.title} className="zion-tile p-6">
                 <div className="flex items-center gap-3">
                   <Shield className="h-5 w-5 text-zion-cyan" />
                   <p className="text-xs uppercase tracking-[0.35em] text-gray-400">{cs ? 'Krok' : 'Step'}</p>
@@ -242,7 +242,7 @@ export default function DownloadPage() {
         </section>
 
         {/* ─── Requirements ─── */}
-        <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
+        <section className="zion-section">
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Hardware' : 'Hardware'}</p>
             <h2 className="text-3xl font-semibold text-white">{cs ? 'Systemove pozadavky' : 'System Requirements'}</h2>
@@ -268,7 +268,7 @@ export default function DownloadPage() {
         <DownloadFaq cs={cs} />
 
         {/* ─── CTA ─── */}
-        <section className="rounded-4xl border border-zion-gold/30 bg-linear-to-r from-zion-purple/30 via-zion-gold/15 to-zion-purple/30 p-5 sm:p-8 md:p-10 text-center">
+        <section className="zion-cta-banner">
           <TerminalSquare className="mx-auto h-12 w-12 text-zion-gold" />
           <h2 className="mt-6 text-3xl font-semibold text-white">{cs ? 'Pripraven tezit?' : 'Ready to mine?'}</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
