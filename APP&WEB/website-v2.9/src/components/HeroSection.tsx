@@ -10,7 +10,7 @@ export default function HeroSection() {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="relative z-20 pt-20 sm:pt-28 pb-2 flex flex-col items-center overflow-hidden">
+    <div className="relative z-15 pt-32 sm:pt-36 md:pt-40 pb-2 flex flex-col items-center overflow-hidden">
       <TahitiFlower
         className="mb-1"
         expanded={expanded}
