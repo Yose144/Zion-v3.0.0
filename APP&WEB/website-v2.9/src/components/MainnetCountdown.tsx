@@ -82,54 +82,26 @@ export default function MainnetCountdown({ embedded = false }: { embedded?: bool
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="zion-rainbow-card relative overflow-hidden backdrop-blur-xl p-6 md:p-8"
-          style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
+          className={`zion-rainbow-card relative overflow-hidden backdrop-blur-xl ${embedded ? 'p-4' : 'p-6 md:p-8'}`}
+          style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
         >
-            {/* ambient glow */}
-            <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-violet-500/10 blur-3xl pointer-events-none" />
+            <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
 
-            <div className="relative flex flex-col lg:flex-row items-center justify-between gap-6">
-              {/* left: title + date */}
-              <div className="flex items-center gap-4">
-                <div className="flex-none w-12 h-12 rounded-2xl bg-emerald-500/15 flex items-center justify-center">
-                  <Rocket className="w-6 h-6 text-emerald-300 animate-pulse" />
-                </div>
-                <div>
-                  <h2 className="text-xl md:text-2xl font-bold text-white">
-                    Mainnet LIVE
-                  </h2>
-                  <div className="flex items-center gap-2 mt-1 text-sm text-gray-400">
-                    <Calendar className="w-4 h-4 text-zion-cyan" />
-                    <span>Target: 31 December 2026 (New Year's Eve)</span>
-                    <span className="text-emerald-400 font-semibold">GO</span>
-                  </div>
-                </div>
+            <div className="relative flex items-center gap-3">
+              <div className="flex-none w-10 h-10 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+                <Rocket className="w-5 h-5 text-emerald-300 animate-pulse" />
               </div>
-
-              {/* right: LIVE badge */}
-              <div className="flex items-center gap-3">
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.4 }}
-                  className="flex flex-col items-center"
-                >
-                  <div className="w-20 h-20 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 backdrop-blur-md flex items-center justify-center">
-                    <span className="text-2xl md:text-3xl font-bold text-emerald-300 tabular-nums">
-                      LIVE
-                    </span>
-                  </div>
-                  <span className="text-[10px] md:text-xs uppercase tracking-wider text-emerald-400 mt-2">
-                    Status
-                  </span>
-                </motion.div>
+              <div className="flex-1">
+                <h2 className="text-sm font-bold text-white">Mainnet LIVE</h2>
+                <p className="text-[11px] text-gray-400">Core + Edge · Mining · Bridge</p>
               </div>
+              <span className="text-xs font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2.5 py-1">
+                GO
+              </span>
             </div>
 
-            {/* progress bar */}
-            <div className="relative mt-6">
-              <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+            <div className="relative mt-3">
+              <div className="h-1 rounded-full bg-white/5 overflow-hidden">
                 <motion.div
                   className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-violet-500 to-zion-cyan"
                   initial={{ width: 0 }}
@@ -137,9 +109,6 @@ export default function MainnetCountdown({ embedded = false }: { embedded?: bool
                   transition={{ duration: 1.2, ease: 'easeOut' }}
                 />
               </div>
-              <p className="text-[11px] text-gray-500 mt-2 text-center">
-                V3 Mainnet is operational · Core + Edge topology · Mining active · Bridge deployed
-              </p>
             </div>
           </motion.div>
       </Wrap>
@@ -152,85 +121,73 @@ export default function MainnetCountdown({ embedded = false }: { embedded?: bool
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="zion-rainbow-card relative overflow-hidden backdrop-blur-xl p-6 md:p-8"
+        className={`zion-rainbow-card relative overflow-hidden backdrop-blur-xl ${embedded ? 'p-4' : 'p-6 md:p-8'}`}
         style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
       >
           {/* ambient glow */}
-          <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-zion-gold/10 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-zion-purple/10 blur-3xl pointer-events-none" />
+          <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-zion-gold/10 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-16 -left-16 w-40 h-40 rounded-full bg-zion-purple/10 blur-3xl pointer-events-none" />
 
-          <div className="relative flex flex-col gap-6">
-            {/* Top: Current phase banner */}
-            <div className="flex flex-col sm:flex-row items-center gap-4 rounded-2xl border border-zion-purple/20 bg-zion-purple/5 px-5 py-3">
-              <div className="flex items-center gap-3">
-                <div className="flex-none w-10 h-10 rounded-xl bg-zion-purple/15 flex items-center justify-center">
-                  <Rocket className="w-5 h-5 text-zion-purple-300" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-white">{cs ? 'Aktuální fáze: L2, L3 Run' : 'Current Phase: L2, L3 Run'}</h2>
-                  <p className="text-xs text-gray-400">{cs ? 'Bridge a DeFi na Base Mainnet, Hiran v2.3 natrénován' : 'Bridge and DeFi on Base Mainnet, Hiran v2.3 trained'}</p>
-                </div>
+          <div className="relative flex flex-col gap-3">
+            {/* Phase badge — compact */}
+            <div className="flex items-center gap-2 text-[10px] text-violet-300 bg-violet-500/10 border border-violet-500/20 rounded-full px-2.5 py-1 self-start">
+              <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
+              {cs ? 'L2 Bridge · L3 AI · DeFi' : 'L2 Bridge · L3 AI · DeFi'}
+            </div>
+
+            {/* Title row */}
+            <div className="flex items-center gap-2.5">
+              <div className="flex-none w-8 h-8 rounded-lg bg-zion-gold/15 flex items-center justify-center">
+                <Rocket className="w-4 h-4 text-zion-gold animate-pulse" />
               </div>
-              <div className="sm:ml-auto flex items-center gap-2 text-xs text-zion-purple-300 bg-zion-purple/10 border border-zion-purple/20 rounded-full px-3 py-1">
-                <span className="w-2 h-2 rounded-full bg-zion-purple-400 animate-pulse" />
-                {cs ? 'L2 Bridge Live · L3 AI Ready · DeFi Active' : 'L2 Bridge Live · L3 AI Ready · DeFi Active'}
+              <div className="flex-1 min-w-0">
+                <h2 className="text-sm font-bold text-white leading-tight">
+                  {cs ? 'Odpočet launchu' : 'Launch Countdown'}
+                </h2>
+                <div className="flex items-center gap-1.5 text-[11px] text-gray-400">
+                  <Calendar className="w-3 h-3 text-zion-cyan shrink-0" />
+                  <span className="truncate">31 Dec 2026</span>
+                  <span className="text-zion-gold font-semibold shrink-0">{tMinus}</span>
+                </div>
               </div>
             </div>
 
-            {/* Bottom: countdown to public launch */}
-            <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
-              <div className="flex items-center gap-4">
-                <div className="flex-none w-12 h-12 rounded-2xl bg-zion-gold/15 flex items-center justify-center">
-                  <Rocket className="w-6 h-6 text-zion-gold animate-pulse" />
-                </div>
-                <div>
-                  <h2 className="text-xl md:text-2xl font-bold text-white">
-                    {cs ? 'Odpočet veřejného launchu' : 'Public Launch Countdown'}
-                  </h2>
-                  <div className="flex items-center gap-2 mt-1 text-sm text-gray-400">
-                    <Calendar className="w-4 h-4 text-zion-cyan" />
-                    <span>{tr('countdown', 'target_date', lang)}</span>
-                    <span className="text-zion-gold font-semibold">{tMinus}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
-                {units.map((unit, i) => (
-                  <motion.div
-                    key={unit.label}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.4, delay: i * 0.08 }}
-                    className="flex flex-col items-center"
-                  >
-                    <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md flex items-center justify-center">
-                      <span className="text-xl sm:text-2xl md:text-3xl font-bold text-gradient tabular-nums">
-                        {pad(unit.value)}
-                      </span>
-                    </div>
-                    <span className="text-[10px] md:text-xs uppercase tracking-wider text-gray-500 mt-2">
-                      {unit.label}
+            {/* Countdown digits — compact row */}
+            <div className="flex items-center justify-center gap-1.5">
+              {units.map((unit, i) => (
+                <motion.div
+                  key={unit.label}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.4, delay: i * 0.06 }}
+                  className="flex flex-col items-center"
+                >
+                  <div className="w-12 h-12 rounded-lg border border-white/10 bg-white/5 backdrop-blur-md flex items-center justify-center">
+                    <span className="text-base font-bold text-gradient tabular-nums">
+                      {pad(unit.value)}
                     </span>
-                  </motion.div>
-                ))}
-              </div>
+                  </div>
+                  <span className="text-[8px] uppercase tracking-wider text-gray-500 mt-1">
+                    {unit.label}
+                  </span>
+                </motion.div>
+              ))}
             </div>
-          </div>
 
-          {/* progress bar */}
-          <div className="relative mt-6">
-            <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
-              <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-zion-gold via-zion-purple to-zion-cyan"
-                initial={{ width: 0 }}
-                animate={{ width: `${Math.min(100, (29 - time.days) / 29 * 100)}%` }}
-                transition={{ duration: 1.2, ease: 'easeOut' }}
-              />
+            {/* Progress bar */}
+            <div className="relative">
+              <div className="h-1 rounded-full bg-white/5 overflow-hidden">
+                <motion.div
+                  className="h-full rounded-full bg-gradient-to-r from-zion-gold via-zion-purple to-zion-cyan"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${Math.min(100, (29 - time.days) / 29 * 100)}%` }}
+                  transition={{ duration: 1.2, ease: 'easeOut' }}
+                />
+              </div>
+              <p className="text-[9px] text-gray-500 mt-1.5 text-center leading-tight">
+                {tr('countdown', 'subtitle', lang)}
+              </p>
             </div>
-            <p className="text-[11px] text-gray-500 mt-2 text-center">
-              {tr('countdown', 'subtitle', lang)}
-            </p>
           </div>
       </motion.div>
     </Wrap>
