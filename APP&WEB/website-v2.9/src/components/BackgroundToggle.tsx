@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Palette, Check, Sparkles, Globe, Radio, Cloud } from 'lucide-react';
+import { Palette, Check, Sparkles, Globe, Radio, Cloud, Orbit } from 'lucide-react';
 import { useObservatory, type ObservatoryMode } from '@/contexts/ObservatoryContext';
 
 const backgroundConfig: Record<ObservatoryMode, { icon: typeof Sparkles; label: string; description: string; color: string }> = {
@@ -10,6 +10,7 @@ const backgroundConfig: Record<ObservatoryMode, { icon: typeof Sparkles; label: 
   'planet-orbit': { icon: Globe, label: 'Planet Orbit', description: 'Orbital view', color: '6, 182, 212' },
   'galactic-core': { icon: Radio, label: 'Galactic Core', description: 'Command nexus', color: '147, 51, 234' },
   'nebula-drift': { icon: Cloud, label: 'Nebula Drift', description: 'Desktop agent vibe', color: '180, 140, 255' },
+  'galaxy-core': { icon: Orbit, label: 'Galaxy Core', description: 'Contact approach', color: '180, 220, 255' },
 };
 
 export default function BackgroundToggle() {
