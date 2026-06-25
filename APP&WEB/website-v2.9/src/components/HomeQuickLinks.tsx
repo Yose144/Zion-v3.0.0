@@ -21,56 +21,44 @@ export default function HomeQuickLinks() {
     {
       href: '/explorer',
       label: cs ? 'Explorer' : 'Explorer',
-      eyebrow: '01 / L1',
-      desc: cs ? 'Bloky, transakce, adresy a hashrate v reálném čase.' : 'Blocks, transactions, addresses, and live hashrate.',
+      desc: cs ? 'Bloky, tx, adresy' : 'Blocks, tx, addresses',
       icon: Blocks,
-      accent: 'from-zion-gold/18 via-white/5 to-transparent',
-      border: 'border-zion-gold/25',
+      rc: '251, 191, 36', // gold
     },
     {
       href: '/network',
       label: cs ? 'Síť' : 'Network',
-      eyebrow: '02 / LIVE',
-      desc: cs ? 'Uzly, latence, algoritmy a stav Core + Edge topologie.' : 'Nodes, latency, algorithms, and Core + Edge topology.',
+      desc: cs ? 'Uzly, latence' : 'Nodes, latency',
       icon: Globe,
-      accent: 'from-zion-cyan/18 via-white/5 to-transparent',
-      border: 'border-zion-cyan/25',
+      rc: '6, 182, 212', // cyan
     },
     {
       href: '/pool',
       label: cs ? 'Pool' : 'Pool',
-      eyebrow: '03 / POW',
-      desc: cs ? 'Hashrate, mineri, odměny a základní těžební přehled.' : 'Hashrate, miners, rewards, and mining overview.',
+      desc: cs ? 'Hashrate, mineri' : 'Hashrate, miners',
       icon: HardHat,
-      accent: 'from-zion-purple/18 via-white/5 to-transparent',
-      border: 'border-zion-purple/25',
+      rc: '147, 51, 234', // purple
     },
     {
       href: '/docs',
-      label: cs ? 'Dokumentace' : 'Documentation',
-      eyebrow: '04 / KNOW',
-      desc: cs ? 'Guardian guide, API reference, runbooky a technické poznámky.' : 'Guardian guide, API reference, runbooks, and technical notes.',
+      label: cs ? 'Dokumentace' : 'Docs',
+      desc: cs ? 'Guides, API' : 'Guides, API',
       icon: ScrollText,
-      accent: 'from-emerald-500/18 via-white/5 to-transparent',
-      border: 'border-emerald-500/25',
+      rc: '16, 185, 129', // emerald
     },
     {
       href: '/roadmap',
       label: cs ? 'Roadmapa' : 'Roadmap',
-      eyebrow: '05 / PLAN',
-      desc: cs ? 'L1-L6 vize, milníky a praktická časová osa.' : 'L1-L6 vision, milestones, and practical timeline.',
+      desc: cs ? 'L1-L6 vize' : 'L1-L6 vision',
       icon: LayoutDashboard,
-      accent: 'from-pink-500/18 via-white/5 to-transparent',
-      border: 'border-pink-500/25',
+      rc: '236, 72, 153', // pink
     },
     {
       href: '/terranova',
-      label: cs ? 'Terranova & Golden Egg' : 'Terranova & Golden Egg',
-      eyebrow: '06 / STORY',
-      desc: cs ? 'Kniha, hologram, ekonomika a veřejná vize Terra Nova.' : 'Book, hologram, economy, and Terra Nova public vision.',
+      label: cs ? 'Terra Nova' : 'Terra Nova',
+      desc: cs ? 'Kniha, příběh' : 'Book, story',
       icon: Sparkles,
-      accent: 'from-amber-500/18 via-white/5 to-transparent',
-      border: 'border-amber-500/25',
+      rc: '245, 158, 11', // amber
     },
   ];
 
@@ -93,7 +81,7 @@ export default function HomeQuickLinks() {
           </p>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {links.map((link, i) => (
             <motion.div
               key={link.href}
@@ -104,23 +92,23 @@ export default function HomeQuickLinks() {
             >
               <Link
                 href={link.href}
-                className={`zion-rainbow-sub group relative flex min-h-[168px] flex-col justify-between overflow-hidden p-5`}
-                style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+                className="zion-rainbow-sub group relative flex flex-col items-center gap-3 overflow-hidden p-4 text-center"
+                style={{ '--rc': link.rc } as React.CSSProperties}
               >
-                <div className={`pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br ${link.accent} opacity-90`} />
-                <div className="relative flex items-start justify-between gap-4">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/45">{link.eyebrow}</span>
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/8">
-                    <link.icon className="h-5 w-5 text-white/85" />
-                  </div>
+                <div
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border transition-transform group-hover:scale-110"
+                  style={{
+                    borderColor: `rgba(${link.rc}, 0.4)`,
+                    backgroundColor: `rgba(${link.rc}, 0.12)`,
+                  }}
+                >
+                  <link.icon className="h-6 w-6" style={{ color: `rgb(${link.rc})` }} />
                 </div>
-                <div className="relative mt-8 space-y-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <h3 className="text-xl font-semibold text-white">{link.label}</h3>
-                    <ArrowRight className="h-5 w-5 shrink-0 text-white/40 transition-all group-hover:translate-x-1 group-hover:text-white/80" />
-                  </div>
-                  <p className="text-sm leading-relaxed text-gray-300">{link.desc}</p>
+                <div className="space-y-1">
+                  <h3 className="text-sm font-bold text-white">{link.label}</h3>
+                  <p className="text-[11px] leading-tight text-gray-400">{link.desc}</p>
                 </div>
+                <ArrowRight className="h-4 w-4 shrink-0 text-white/30 transition-all group-hover:translate-x-1 group-hover:text-white/70" />
               </Link>
             </motion.div>
           ))}
