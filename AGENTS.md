@@ -502,6 +502,32 @@ const zion = flowers / FLOWERS_PER_ZION; // = 590_000_000 ZION = 590 million
 
 **⚠️ Common mistake:** RPC returns `balance_flowers: "590000000000000000000"` which is 590 **million** ZION, not 590 billion. Always divide by 10^12 to get ZION.
 
+**⚠️ Live RPC contract drift (verified 2026-06-25 against `http://77.42.71.94:8443/jsonrpc`):**
+
+The L1 wire format currently uses **three coexisting suffix conventions**.
+Until the next non-breaking contract bump lands, agents and clients MUST
+be aware of all three. Full per-method JSON samples are documented in
+[`docs/CANONICAL_UNITS_AUDIT.md`](./docs/CANONICAL_UNITS_AUDIT.md) §3b.
+
+| Convention | Where it appears | How to consume |
+|------------|------------------|----------------|
+| `_flowers` ✅ canonical | `getBalance` (`balance_flowers`, `account_balance_flowers`, `utxo_balance_flowers`), pool metrics, wallet endpoints | Divide by `FLOWERS_PER_ZION` for display ZION |
+| `_atomic` ⚠️ naming drift | `getSupplyInfo` (`block_reward_atomic`, `circulating_supply_atomic`, `mined_so_far_atomic`, `total_supply_atomic`, etc.), DAO daemon (`available_atomic`, `amount_atomic`) | **Treat as flowers** — same math, only the suffix is non-canonical |
+| `_zion` containing flowers ❌ BUG | `getBlockTemplate` (`reward_zion`, `estimated_miner_reward_zion`, `total_fees_zion`) | **Treat as flowers** — DO NOT render directly as ZION; the field is mis-named. Divide by `FLOWERS_PER_ZION` first |
+
+**Rule for new RPC methods:** Use only `_flowers` (on-the-wire) and
+`_zion` (genuine display floats, ≤ 12 decimal places). Never overload
+`_zion` with raw flowers values. Cross-chain bridge code adds `_wei`
+for EVM-side amounts (18 decimals; `flowers × 10⁶ = wei`).
+
+**Authoritative docs for unit work:**
+- [`docs/CANONICAL_UNITS_AUDIT.md`](./docs/CANONICAL_UNITS_AUDIT.md) —
+  full audit, live JSON samples, recommended L1 contract bump (§3b.5),
+  backend endpoint matrix, explorer endpoint canon.
+- [`docs/WARP_ARCHITECTURE.md`](./docs/WARP_ARCHITECTURE.md) —
+  cross-chain decimal table (corrected 2026-06-25: L1 = 12 decimals,
+  not 6).
+
 ### Genesis Backup/Restore (Dashboard Integration)
 
 **New Feature (2026-06-03):**
