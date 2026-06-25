@@ -15,12 +15,27 @@ This file provides operating guidance to Devin, WARP, Copilot, and future automa
 ## Existing guidance files to know
 
 - Root guidance baseline: `.github/copilot-instructions.md` (applies repo-wide).
+- **How to work with Copilot efficiently (cost + capability map):** [`COPILOT_COLLAB_PLAYBOOK.md`](./COPILOT_COLLAB_PLAYBOOK.md) — Tier S/A/B/D capability map, 7 credit-saving habits, anti-patterns, quick reference card. Read this BEFORE starting a new Copilot session to scope the task correctly.
+- **Active 3.0.3 decimal fork plan (executable handoff):** [`ZION_3.0.3_DECIMAL_FORK_PLAN.md`](./ZION_3.0.3_DECIMAL_FORK_PLAN.md) — Option E (in-place fork via migration block at H+1, preserves block hashes 0..H). Per-file/per-line change matrix, cutover runbook, rollback. Awaiting owner sign-off + execution.
+- Canonical units state-of-the-world: [`docs/CANONICAL_UNITS_AUDIT.md`](./docs/CANONICAL_UNITS_AUDIT.md) — three coexisting RPC suffix conventions (`_flowers` ✅, `_atomic` ⚠️, mis-named `_zion` ❌) and recommended contract bump (§3b.5). To be closed at 3.0.3 cutover.
 - Current status and launch blockers: [`StatusV3.md`](./StatusV3.md) + [`StatusV3-Part2.md`](./StatusV3-Part2.md) (independent audit + 2026-05-07 cleanup).
 - Current V3 planning/status references: `V3/README.md`, `V3/ROADMAP.md`, and `V3/docs/**`.
 - Hiran **v2.2** local inference setup (GGUF ready, llama-server.exe ready): [`HIRAN_LOCAL_SETUP.md`](./HIRAN_LOCAL_SETUP.md) — canonical guide for running inference locally. Use this, not v2.1 docs, for current runtime.
 - Hiranyagarbha / Hiran **v2.1** roadmap (historical): [`HiranV2.1/Hiran_v2.1.md`](./HiranV2.1/Hiran_v2.1.md); upgrade context: [`HIRANYAGARBHA_UPGRADE_PLAN.md`](./HIRANYAGARBHA_UPGRADE_PLAN.md).
 - Historical archive exists at `docs/2.9.9/archive/WARP.md`; treat it as legacy context, not current source of truth for V3 runtime behavior.
 - Genesis Regeneration Runbook: [`GENESIS_REGENERATION_RUNBOOK.md`](./GENESIS_REGENERATION_RUNBOOK.md) — complete guide for genesis key rotation and recovery procedures.
+
+## Copilot agent quick-start (per-session checklist)
+
+When a new Copilot/Kimi/Devin session opens against this repo:
+
+1. **Read [`COPILOT_COLLAB_PLAYBOOK.md`](./COPILOT_COLLAB_PLAYBOOK.md) §3 (Capability Map)** to know what kind of task you're being asked for and what tier it belongs to.
+2. **Scope the task to one folder** (e.g. `V3/L1/pool/`, `APP&WEB/website-v2.9/`). Do not start with a workspace-wide `semantic_search` unless the task is genuinely cross-cutting.
+3. **Check `/memories/repo/` first** — canonical ports, build commands, edge services facts are seeded there to avoid re-grepping AGENTS.md every session.
+4. **Use the `Explore` subagent** for read-heavy investigation (≥ 5 files to open). Main thread stays focused; you get back one summary.
+5. **Never edit L1 consensus code** (`V3/L1/core/src/consensus.rs`, `genesis.rs`, `emission.rs`, `fee.rs`, `crypto.rs`, `cosmic-harmony/**`) without explicit human approval — see L1 Protocol section below.
+6. **Long builds and tail logs are owner's job.** You propose code → owner runs `cargo` → owner pastes only the failing tail back.
+7. **End the session when the task is done.** Don't keep exploring "for completeness" — every extra tool call is credits.
 
 ## Agent operating rules
 
