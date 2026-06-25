@@ -182,7 +182,7 @@ export default function WarpPage() {
           </div>
           <div className="mt-6 grid gap-6 md:grid-cols-3">
             {onboarding.map((block, idx) => (
-              <div key={block.title} className="rounded-3xl border border-white/10 bg-black/30 p-6">
+              <div key={block.title} className="zion-section">
                 <div className="flex items-center gap-3">
                   <CircuitBoard className="h-5 w-5 text-zion-cyan" />
                   <p className="text-xs uppercase tracking-[0.35em] text-gray-400">{cs ? 'Fáze' : 'Stage'} {idx + 1}</p>
@@ -202,7 +202,7 @@ export default function WarpPage() {
         </motion.section>
 
         {/* ── Institutional CTA ── */}
-        <motion.section initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="rounded-[32px] border border-zion-gold/30 bg-gradient-to-r from-zion-purple/30 via-zion-gold/10 to-zion-purple/30 p-5 sm:p-8 md:p-10 text-center">
+        <motion.section initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="zion-cta-banner">
           <Activity className="mx-auto h-12 w-12 text-zion-gold" />
           <h2 className="mt-6 text-3xl font-semibold text-white">{cs ? 'Potřebujete vlastní routing nebo institucionální onboarding?' : 'Need custom routing or institutional onboarding?'}</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">

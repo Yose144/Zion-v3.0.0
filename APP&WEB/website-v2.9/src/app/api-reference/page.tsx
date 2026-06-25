@@ -43,7 +43,7 @@ function ApiQuickstartPanels({ cs }: { cs: boolean }) {
   ] as const;
 
   return (
-    <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
+    <section className="zion-section">
       <h3 className="text-2xl font-semibold text-white">
         {cs ? 'Quickstart' : 'Quickstart'}
       </h3>
@@ -245,7 +245,7 @@ export default function ApiReferencePage() {
           {endpointGroups.map((group) => {
             const Icon = group.icon;
             return (
-              <div key={group.title} className="rounded-4xl border border-white/10 bg-black/50 p-6 backdrop-blur">
+              <div key={group.title} className="zion-section">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div>
                     <div className="flex items-center gap-3">
@@ -282,7 +282,7 @@ export default function ApiReferencePage() {
 
         <ApiQuickstartPanels cs={cs} />
 
-        <section className="rounded-[36px] border border-zion-gold/30 bg-linear-to-r from-zion-purple/30 via-zion-gold/15 to-zion-purple/30 p-8 text-center">
+        <section className="zion-cta-banner">
           <h3 className="text-3xl font-semibold text-white">{cs ? 'Připraven zapojit mesh?' : 'Ready to wire the mesh?'}</h3>
           <p className="mt-3 text-gray-50">
             {cs ? 'Nasaďte SDK z GitHubu, sledujte živé health a ozvěte se týmu v docs, pokud potřebujete další scopes.' : 'Deploy the SDKs from GitHub, watch live health, and ping the team in docs if you need additional scopes.'}

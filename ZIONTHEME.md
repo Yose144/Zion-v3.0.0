@@ -274,3 +274,75 @@ image + Caddy reverse proxy. Production URL: `zionterranova.com`.
 | `src/contexts/ObservatoryContext.tsx` | Background mode state |
 | `src/app/globals.css` | `.zion-rainbow-card` / `.zion-rainbow-sub` classes |
 | `GALAXY_CORE_BG_CONCEPT.md` | Galaxy Core visual concept + tuning notes |
+
+---
+
+## 11. Site-wide Theme Rollout (2026-06-25)
+
+**Goal:** Propagate the rainbow-card / panel theme system across every
+page of the website (`zionterranova.com`), not just the homepage.
+
+### New CSS utilities (`src/app/globals.css`)
+
+| Class | Purpose |
+|-------|---------|
+| `.zion-section` | Standard content panel — replaces ad-hoc `rounded-4xl border border-white/10 bg-black/40 p-8 backdrop-blur` |
+| `.zion-tile` | Soft inner tile for grids — replaces `rounded-2xl border border-white/10 bg-white/5 p-5` |
+| `.zion-cta-banner` | Bottom CTA banner — replaces the per-page `bg-gradient-to-r from-zion-purple/30 via-zion-gold/15 to-zion-purple/30` pattern |
+
+`.zion-rainbow-card` and `.zion-rainbow-sub` from §1 remain canonical
+for hero / feature cards that need a per-color accent (set `--rc`
+inline as an RGB triplet).
+
+### Pages converted
+
+| Page | Sections themed | Accent `--rc` |
+|------|----------------|--------------|
+| Homepage | (unchanged — already canonical, see §1) | — |
+| `/network` | Hero + 11 sections + CTA | Cyan `6, 182, 212` |
+| `/download` | Hero + 3 sections + CTA | Blue `59, 130, 246` |
+| `/wallet` | Hero + features + CTA | Gold `251, 191, 36` |
+| `/dao` | Hero + CTA | Purple `147, 51, 234` |
+| `/bridge` | CTA | Gold/Purple (default) |
+| `/warp` | Strategy blocks + CTA | Purple `147, 51, 234` |
+| `/defi` | Bridge embed panel | Emerald `16, 185, 129` |
+| `/roadmap` | Capability matrix + CTA | Orange `249, 115, 22` |
+| `/explorer` | Footer CTA | Cyan/Purple |
+| `/api-reference` | Hero + per-group panels + CTA | Indigo `99, 102, 241` |
+| `/l3-hiran` | Hero | Violet `139, 92, 246` |
+| `/l4-oasis` | Hero | Orange `249, 115, 22` |
+| `/l5-free-world` | Hero + CTA | Amber `245, 158, 11` |
+| `/l6-issobella` | Hero + 2× CTA | Rose `244, 63, 94` |
+
+### Patterns
+
+```tsx
+// Hero / feature card
+<section
+  className="zion-rainbow-card p-8"
+  style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
+>
+
+// Standard dark panel
+<section className="zion-section">
+
+// Inner tile in a grid
+<div className="zion-tile">
+
+// Bottom call-to-action banner
+<section className="zion-cta-banner">
+```
+
+### Validation
+
+- All edited pages pass `get_errors` cleanly; remaining lint warnings
+  (e.g. `rounded-[32px]` → `rounded-4xl`) are pre-existing Tailwind v4
+  shorthand suggestions, not new regressions.
+- Telemetry-503 UX bug from the previous session (`LiveDashboard.tsx`)
+  remains fixed (preserves last good snapshot on transient error).
+
+### Files touched
+
+- `src/app/globals.css` (added 3 new utilities)
+- `src/app/{network,download,wallet,dao,bridge,warp,defi,roadmap,explorer,api-reference,l3-hiran,l4-oasis,l5-free-world,l6-issobella}/page.tsx`
+

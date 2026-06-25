@@ -222,7 +222,8 @@ export default function L3HiranPage() {
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl border border-purple-500/30 bg-gradient-to-br from-purple-500/10 via-black/60 to-cyan-500/10 p-6 md:p-10 backdrop-blur-xl"
+          className="zion-rainbow-card p-6 md:p-10"
+          style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
         >
           <div className="space-y-5 max-w-3xl">
             <div className="flex flex-wrap items-center gap-3">
@@ -334,7 +335,7 @@ export default function L3HiranPage() {
           </div>
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
             {phases.map((phase) => (
-              <div key={phase.phase} className="rounded-2xl border border-white/10 bg-black/30 p-5">
+              <div key={phase.phase} className="zion-tile">
                 <div className="mb-3 flex items-center justify-between">
                   <span className="text-sm font-bold text-white">{phase.phase}</span>
                   <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-300 border border-emerald-500/20">

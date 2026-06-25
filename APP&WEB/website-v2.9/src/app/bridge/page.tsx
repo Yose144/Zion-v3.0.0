@@ -623,7 +623,7 @@ export default function BridgePage() {
         </motion.section>
 
         {/* ── RESOURCES ── */}
-        <motion.section initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="rounded-[28px] border border-zion-gold/30 bg-gradient-to-r from-zion-purple/20 via-zion-gold/10 to-zion-purple/20 p-8">
+        <motion.section initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="zion-cta-banner">
           <h2 className="text-2xl font-semibold text-white mb-6 text-center">{cs ? 'Zdroje' : 'Resources'}</h2>
           <div className="grid gap-4 md:grid-cols-3">
             {[

@@ -367,7 +367,7 @@ export default function DaoPage() {
         </motion.section>
 
         {/* ── Co-Admin Governance + Sacred Trinity ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-zion-gold/30 bg-gradient-to-br from-zion-gold/10 via-zion-purple/10 to-transparent p-8">
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Vícevrstvá správa' : 'Multi-Layer Governance'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -536,7 +536,7 @@ export default function DaoPage() {
         </motion.section>
 
         {/* ── Quick links ── */}
-        <motion.section initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="rounded-[32px] border border-zion-gold/30 bg-gradient-to-r from-zion-purple/30 via-zion-gold/15 to-zion-purple/30 p-10">
+        <motion.section initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="zion-cta-banner p-10">
           <h2 className="text-3xl font-semibold text-white text-center mb-8">{cs ? 'Užitečné odkazy' : 'Helpful links'}</h2>
           <div className="grid gap-4 md:grid-cols-3">
             {quickLinks.map((link) => (
