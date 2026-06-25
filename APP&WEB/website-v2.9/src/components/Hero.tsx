@@ -108,7 +108,39 @@ export default function Hero() {
               </Link>
             </div>
 
-            {/* Release teaser card */}
+            {/* metrics strip */}
+            <div className="grid grid-cols-3 gap-3">
+              {heroMetrics.map((metric, i) => (
+                <motion.div
+                  key={metric.label}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.5 + i * 0.1 }}
+                  className="zion-panel-soft zion-panel-hover group p-4 cursor-default"
+                >
+                  <metric.icon className="w-4 h-4 text-zion-gold mb-2" />
+                  <div className="text-xl font-bold text-white">{metric.value}</div>
+                  <div className="text-xs uppercase tracking-wide text-gray-500 mt-0.5">{metric.label}</div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* ─── RIGHT col — HolographicEarth + Launch Countdown ─── */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.25 }}
+            className="relative"
+          >
+            {/* outer halo glow */}
+            <div className="absolute -inset-6 rounded-[32px] bg-gradient-to-br from-violet-600/25 via-cyan-500/15 to-transparent blur-3xl pointer-events-none" />
+
+            <div className="mb-4 z-10 mx-auto flex w-full max-w-sm justify-center lg:mx-0 lg:max-w-md">
+              <HolographicEarth className="w-full shrink-0" />
+            </div>
+
+            {/* Launch Countdown panel */}
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -140,38 +172,6 @@ export default function Hero() {
                 </a>
               </div>
             </motion.div>
-
-            {/* metrics strip */}
-            <div className="grid grid-cols-3 gap-3">
-              {heroMetrics.map((metric, i) => (
-                <motion.div
-                  key={metric.label}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.5 + i * 0.1 }}
-                  className="zion-panel-soft zion-panel-hover group p-4 cursor-default"
-                >
-                  <metric.icon className="w-4 h-4 text-zion-gold mb-2" />
-                  <div className="text-xl font-bold text-white">{metric.value}</div>
-                  <div className="text-xs uppercase tracking-wide text-gray-500 mt-0.5">{metric.label}</div>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* ─── RIGHT col — Hiran / Hiranyagarbha ─── */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, delay: 0.25 }}
-            className="relative"
-          >
-            {/* outer halo glow */}
-            <div className="absolute -inset-6 rounded-[32px] bg-gradient-to-br from-violet-600/25 via-cyan-500/15 to-transparent blur-3xl pointer-events-none" />
-
-            <div className="mb-4 z-10 mx-auto flex w-full max-w-sm justify-center lg:mx-0 lg:max-w-md">
-              <HolographicEarth className="w-full shrink-0" />
-            </div>
           </motion.div>
         </div>
       </div>
