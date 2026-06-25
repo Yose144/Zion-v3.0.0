@@ -40,6 +40,10 @@ const BUBBLE_PRESETS: Record<ObservatoryMode, Bubble[]> = {
     { id: "nd-4", size: 260, x: 75, y: 65, color: "rgba(200,100,255,0.16)", blur: 75 },
     { id: "nd-5", size: 200, x: 20, y: 75, color: "rgba(255,120,200,0.1)", blur: 65 },
   ],
+  "galaxy-core": [
+    { id: "gx-1", size: 600, x: 42, y: 42, color: "rgba(180,220,255,0.22)", blur: 120 },
+    { id: "gx-2", size: 400, x: 47, y: 47, color: "rgba(120,180,255,0.18)", blur: 100 },
+  ],
 };
 
 interface QuantumBubblesProps {

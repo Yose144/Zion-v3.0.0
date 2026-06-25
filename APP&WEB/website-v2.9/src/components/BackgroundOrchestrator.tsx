@@ -54,6 +54,17 @@ const OBSERVATORY_PRESETS = {
     },
     bubbleDensity: 'high' as const,
   },
+  'galaxy-core': {
+    starfield: {
+      starColor: [200, 230, 255] as [number, number, number],
+      density: 420,
+      speed: 7,
+      trailOpacity: 0.03,
+      backgroundGradient:
+        'radial-gradient(circle at 50% 50%, rgba(20,40,80,0.85), rgba(4,6,16,0.97))',
+    },
+    bubbleDensity: 'low' as const,
+  },
 };
 
 export default function BackgroundOrchestrator({ variant = 'default' }: { variant?: BackgroundOrchestratorVariant }) {
