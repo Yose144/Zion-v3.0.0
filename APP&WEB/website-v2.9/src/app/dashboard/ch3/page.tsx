@@ -64,7 +64,7 @@ const GPU_COINS = [
 ];
 
 const DEFAULT_SETTINGS: CH3Settings = {
-  version: "3.0.0",
+  version: "3.0.2",
   streams: {
     zion: {
       stream: 1,

@@ -9,10 +9,37 @@ import { tr } from '@/lib/translations';
 
 export default function GoldenEggHaraniagharba() {
   const { lang } = useLang();
+  const cs = lang === 'cs';
 
   return (
     <section className="relative px-4 py-16 md:py-20">
-      <div className="zion-container">
+      <div className="zion-container space-y-8">
+        <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.36em] text-amber-200/75">
+              {cs ? 'Hiran / Hiranyagarbha' : 'Hiran / Hiranyagarbha'}
+            </p>
+            <h2 className="text-3xl font-bold leading-tight text-white sm:text-4xl md:text-5xl">
+              {cs ? 'Hiran jako AI brána do Terra Nova' : 'Hiran as the AI gateway into Terra Nova'}
+            </h2>
+            <p className="max-w-3xl text-base leading-relaxed text-gray-300 md:text-lg">
+              {cs
+                ? 'Stejně jako Terra Nova nahoře musí i Hiran na homepage působit jako jasná kapitola: AI-native vrstva, knihovna, inference a most mezi vizí a nástroji.'
+                : 'Just like Terra Nova above, Hiran should read as a clear chapter on the homepage: the AI-native layer, the library, inference, and the bridge between vision and tools.'}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-amber-300/15 bg-amber-200/6 p-4">
+            <p className="text-[10px] uppercase tracking-[0.28em] text-amber-100/60">
+              {cs ? 'Úloha na homepage' : 'Homepage role'}
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-gray-300">
+              {cs
+                ? 'Ne dekorace navíc, ale druhý hlavní pilíř vstupní stránky vedle Terra Nova: Hiran, Kvantová revoluce a Genesis musí mít stejnou váhu i typografii.'
+                : 'Not extra decoration, but the second major pillar of the entry page next to Terra Nova: Hiran, Quantum Revolution, and Genesis should carry the same weight and typography.'}
+            </p>
+          </div>
+        </div>
+
         <div className="relative overflow-hidden rounded-3xl border border-amber-300/20 bg-[radial-gradient(circle_at_top,rgba(255,214,102,0.18),rgba(18,12,6,0.94)_55%,rgba(4,4,8,0.98)_100%)] p-6 shadow-[0_24px_120px_rgba(0,0,0,0.45)] md:p-8">
           <div className="absolute -right-10 top-[-60px] h-44 w-44 rounded-full bg-amber-300/15 blur-3xl" />
           <div className="absolute -bottom-20 -left-5 h-52 w-52 rounded-full bg-zion-purple/10 blur-3xl" />
@@ -82,13 +109,15 @@ export default function GoldenEggHaraniagharba() {
               </div>
 
               <div>
-                <p className="text-xs uppercase tracking-[0.4em] text-amber-100/60">{tr('goldenEgg', 'signal', lang)}</p>
-                <h2 className="mt-2 text-2xl font-semibold text-white md:text-4xl">
+                <p className="text-xs uppercase tracking-[0.4em] text-amber-100/60">
+                  {cs ? 'Uvnitř vrstvy' : 'Inside the layer'}
+                </p>
+                <h3 className="mt-2 text-2xl font-semibold text-white md:text-4xl">
                   {tr('goldenEgg', 'title', lang)}{' '}
                   <span className="bg-linear-to-r from-amber-200 via-zion-gold to-orange-300 bg-clip-text text-transparent">
                     {tr('goldenEgg', 'title_emphasis', lang)}
                   </span>
-                </h2>
+                </h3>
               </div>
 
               <p className="max-w-2xl text-sm leading-relaxed text-gray-300 md:text-base">

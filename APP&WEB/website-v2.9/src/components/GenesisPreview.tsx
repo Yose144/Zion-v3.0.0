@@ -16,7 +16,25 @@ const chapters = [
 export default function GenesisPreview() {
   return (
     <section id="genesis" className="px-4 py-16 md:py-20 scroll-mt-28">
-      <div className="zion-container">
+      <div className="zion-container space-y-8">
+        <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-gold/80">ZION Genesis</p>
+            <h2 className="text-3xl font-bold leading-tight text-white sm:text-4xl md:text-5xl">
+              Posvátný příběh stejného světa
+            </h2>
+            <p className="max-w-3xl text-base leading-relaxed text-gray-300 md:text-lg">
+              Genesis na homepage nemá být jiný ostrov. Musí navazovat na Terra Nova, Hiran i Kvantovou revoluci stejnou strukturou: jasný nadpis, silný lead a okamžitý vstup do příběhu.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-zion-gold/15 bg-zion-gold/6 p-4">
+            <p className="text-[10px] uppercase tracking-[0.28em] text-zion-gold/70">Role sekce</p>
+            <p className="mt-2 text-sm leading-relaxed text-gray-300">
+              Tady se technická vize mění v mýtus a narativ. Proto potřebuje stejnou důstojnost a stejný layoutový rytmus jako ostatní hlavní bloky homepage.
+            </p>
+          </div>
+        </div>
+
         <div className="relative overflow-hidden rounded-3xl border border-zion-gold/20 bg-[radial-gradient(circle_at_top,rgba(251,191,36,0.12),rgba(10,8,4,0.96)_60%,rgba(4,4,8,0.98)_100%)] p-6 shadow-[0_24px_120px_rgba(0,0,0,0.45)] md:p-8">
           {/* Ambient glow */}
           <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-zion-gold/10 blur-3xl" />
@@ -30,9 +48,9 @@ export default function GenesisPreview() {
                 <span className="text-zion-gold font-semibold">Posvátný text</span>
               </div>
 
-              <h2 className="text-3xl font-bold text-white md:text-5xl">
+              <h3 className="text-3xl font-bold text-white md:text-5xl">
                 <span className="text-gradient">ZION Genesis</span>
-              </h2>
+              </h3>
 
               <p className="text-lg leading-relaxed text-gray-300">
                 Vzpomínka na budoucnost. Příběh <strong className="text-zion-gold">144 000 duší</strong>,
