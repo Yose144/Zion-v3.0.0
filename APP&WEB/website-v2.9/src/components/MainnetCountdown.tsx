@@ -73,7 +73,8 @@ export default function MainnetCountdown() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="relative overflow-hidden rounded-[28px] border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 via-violet-500/8 to-transparent backdrop-blur-xl p-6 md:p-8"
+            className="zion-rainbow-card relative overflow-hidden backdrop-blur-xl p-6 md:p-8"
+            style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
           >
             {/* ambient glow */}
             <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
@@ -144,7 +145,8 @@ export default function MainnetCountdown() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="relative overflow-hidden rounded-[28px] border border-zion-gold/20 bg-gradient-to-br from-zion-gold/10 via-zion-purple/8 to-transparent backdrop-blur-xl p-6 md:p-8"
+          className="zion-rainbow-card relative overflow-hidden backdrop-blur-xl p-6 md:p-8"
+          style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
         >
           {/* ambient glow */}
           <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-zion-gold/10 blur-3xl pointer-events-none" />

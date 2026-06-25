@@ -86,7 +86,8 @@ export default function Features() {
             {continuumTracks.map((track) => (
               <div
                 key={track.title}
-                className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur hover:border-white/30 transition relative overflow-hidden"
+                className="zion-rainbow-card p-6 backdrop-blur relative overflow-hidden"
+                style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
               >
                 <div className={`absolute inset-0 bg-linear-to-br ${track.spectrum} opacity-70 pointer-events-none`} />
                 <div className="relative space-y-3">
@@ -103,7 +104,7 @@ export default function Features() {
             ))}
           </div>
 
-          <div className="rounded-3xl border border-white/10 bg-black/50 backdrop-blur-xl p-6 sm:p-8 space-y-6">
+          <div className="zion-rainbow-card backdrop-blur-xl p-6 sm:p-8 space-y-6" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
             <div className="flex items-center gap-3 text-sm text-gray-400">
               <Zap className="w-5 h-5 text-zion-gold" />
               {tr('features', 'upgrade_heading', lang)}
@@ -111,7 +112,7 @@ export default function Features() {
 
             <div className="space-y-5">
               {timeline.map((item) => (
-                <div key={item.phase} className="rounded-2xl border border-white/10 p-5">
+                <div key={item.phase} className="zion-rainbow-sub p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
                   <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{item.phase}</p>
                   <p className="text-base text-white mt-2">{item.detail}</p>
                 </div>

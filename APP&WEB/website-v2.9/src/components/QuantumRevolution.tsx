@@ -84,7 +84,8 @@ export default function QuantumRevolution() {
             return (
               <div
                 key={insight.title}
-                className={`rounded-2xl border ${insight.border} ${insight.bg} p-5 backdrop-blur-sm transition-all hover:scale-[1.02] hover:shadow-lg`}
+                className={`zion-rainbow-sub p-5 backdrop-blur-sm transition-all hover:scale-[1.02] hover:shadow-lg`}
+                style={{ '--rc': '217, 70, 239' } as React.CSSProperties}
               >
                 <Icon className={`h-7 w-7 ${insight.color} mb-3`} />
                 <h3 className="text-sm font-semibold text-white mb-2">{insight.title}</h3>
@@ -95,7 +96,7 @@ export default function QuantumRevolution() {
         </div>
 
         {/* Ten Chapters */}
-        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/40 p-6 md:p-8">
+        <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '217, 70, 239' } as React.CSSProperties}>
           <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-violet-400/40 to-transparent" />
 
           <div className="space-y-5">

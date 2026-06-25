@@ -141,7 +141,8 @@ export default function RoadmapPulse() {
           {phaseCards.map((phase, idx) => (
             <div
               key={phase.name}
-              className="rounded-3xl border border-white/10 bg-black/50 p-6 space-y-4 backdrop-blur"
+              className="zion-rainbow-card p-6 space-y-4 backdrop-blur"
+              style={{ '--rc': '249, 115, 22' } as React.CSSProperties}
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -170,7 +171,7 @@ export default function RoadmapPulse() {
           ))}
         </div>
 
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+        <div className="zion-rainbow-card p-6" style={{ '--rc': '249, 115, 22' } as React.CSSProperties}>
           <div className="flex items-center gap-3 mb-6">
             <Rocket className="w-6 h-6 text-zion-cyan" />
             <div>
@@ -181,7 +182,7 @@ export default function RoadmapPulse() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {timeline.map((entry) => (
-              <div key={entry.title} className="rounded-2xl border border-white/10 bg-black/40 p-4">
+              <div key={entry.title} className="zion-rainbow-sub p-4" style={{ '--rc': '249, 115, 22' } as React.CSSProperties}>
                 <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{entry.title}</p>
                 <p className="text-sm text-gray-200 mt-3 leading-relaxed">{entry.focus}</p>
               </div>
