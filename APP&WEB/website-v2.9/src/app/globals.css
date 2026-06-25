@@ -389,6 +389,31 @@ body.menu-open {
   to   { transform: translateX(0); }
 }
 
+/* ═══ Mobile-only: tighter spacing for stacked homepage sections ═══ */
+@media (max-width: 640px) {
+  /* Reduce vertical padding on common section wrappers */
+  section {
+    padding-top: clamp(2.5rem, 8vw, 4rem);
+    padding-bottom: clamp(2.5rem, 8vw, 4rem);
+  }
+  /* Hero overrides its own padding (pt-24 pb-16) — don't double-up */
+  section.relative:first-of-type {
+    padding-top: unset;
+    padding-bottom: unset;
+  }
+  /* Prevent oversized headings overflowing on small viewports */
+  h1, h2 {
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+  }
+  /* Tighten panel inner padding on mobile */
+  .zion-panel,
+  .zion-panel-soft {
+    padding: clamp(1rem, 4vw, 1.5rem);
+  }
+}
+
 /* ═══════════════════════════════════════════════════════════════
    ZION DOCS — Premium Documentation Typography
    Inspired by: Stripe Docs, NEAR Protocol, Tailwind Docs

@@ -1,43 +1,10 @@
-bridge: robustness pass — retry, recovery, watchdog, timelock poller
+docs: update DEFI_FULL_ROADMAP + StatusV3 for mainnet-ready DeFi UI
 
-## L1Watcher (l1_watcher.rs)
-- Per-block exponential backoff retry (1s/2s/4s, 3 attempts) instead of `break`
-- `last_processed_height` advances only as far as successfully scanned
-- L1 RPC fallback: switches to `rpc_url_backup` after 3 consecutive failures
-- `active_rpc_url()` helper used in all `rpc()` calls
-
-## DB (db.rs)
-- New columns: `l1_locks.retry_count`, `l1_locks.last_error`
-- New columns: `evm_burns.retry_count`, `evm_burns.last_error`
-- New table: `timelocked_ops` (tracks large locks pending executeTimelockedMint)
-- Schema migration runs on open (try-and-ignore ALTER TABLE)
-- Thread-safe: `Connection` wrapped in `Mutex` — `BridgeDb` is now `Send+Sync`
-- New methods: increment_lock_retry, increment_burn_retry, get_retryable_locks/burns
-- New methods: insert_timelocked_op, get_expired_timelocked_ops, mark_timelocked_executed/failed
-
-## Relayer (relayer.rs)
-- `Relayer::new()` now accepts `Arc<BridgeDb>`
-- `handle_l1_lock`: persists lock immediately, updates status Executing/Completed/Failed
-- `handle_evm_burn`: persists burn immediately, updates status Executing/Completed/Failed
-- Failed TX: increment_lock_retry + sets BridgeStatus::Failed
-- New `poll_timelocked_ops()`: every 5 min submits `executeTimelockedMint(bytes32)` for expired ops
-- Timelock poller integrated into `run()` via tokio::select!
-
-## main.rs
-- Startup recovery: re-injects Pending+Confirmed locks/burns from DB into channels
-- Startup recovery: re-injects Failed retryable locks/burns (< MAX_RELAY_RETRIES=5)
-- Watchdog task: checks L1 block progress every 60s, detects stalls
-- Graceful shutdown: handles SIGTERM (Unix) + Ctrl-C; waits 30s for in-flight ops
-
-## Metrics (metrics.rs)
-- New fields: last_l1_block, watchdog_stalls, bridge_paused
-- New Prometheus metrics: zion_bridge_watchdog_stalls_total, zion_bridge_paused
-
-## evm_tx.rs
-- New `encode_execute_timelocked_mint(bytes32)` ABI encoder
-
-## Tests
-- 206 tests pass (was 195): +11 new tests for retry, timelocked_ops, timelock encoding
+- DEFI_FULL_ROADMAP.md: Staking/Farming UI marked as mainnet-ready
+  (commit 107a121), BridgeTracker done, percentages updated
+  (Staking 65%→90%, Farming 50%→85%, Explorer 70%→75%)
+- StatusV3.md: 2026-06-24 date entry, Staking/Farming/DAO/BridgeTracker
+  table rows updated to reflect mainnet-ready status
 
 Generated with [Devin](https://devin.ai)
 
