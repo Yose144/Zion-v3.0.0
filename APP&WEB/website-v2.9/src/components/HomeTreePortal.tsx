@@ -46,7 +46,7 @@ export default function HomeTreePortal() {
         </div>
 
         {!revealed ? (
-          <div className="relative overflow-hidden rounded-4xl border border-white/10 bg-[radial-gradient(circle_at_top,rgba(18,25,52,0.75),rgba(3,4,10,0.96)_62%)] p-6 md:p-8">
+          <div className="zion-rainbow-card relative overflow-hidden p-6 md:p-8" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
             <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/30 to-transparent" />
             <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
               <div className="space-y-4">
@@ -60,15 +60,15 @@ export default function HomeTreePortal() {
                     : 'This is an intentionally lightweight preview state. The interactive Tree of Life launches only after clicking, so the first render is not blocked by canvases, dynamic scenes, or excessive effects.'}
                 </p>
                 <div className="grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div className="zion-rainbow-sub p-4" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
                     <p className="text-xs uppercase tracking-[0.3em] text-gray-500">{cs ? 'Režim' : 'Mode'}</p>
                     <p className="mt-2 text-lg font-semibold text-white">{cs ? 'Na vyžádání' : 'On demand'}</p>
                   </div>
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div className="zion-rainbow-sub p-4" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
                     <p className="text-xs uppercase tracking-[0.3em] text-gray-500">{cs ? 'Cíl' : 'Goal'}</p>
                     <p className="mt-2 text-lg font-semibold text-white">{cs ? 'Rychlé první vykreslení' : 'Fast first paint'}</p>
                   </div>
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div className="zion-rainbow-sub p-4" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
                     <p className="text-xs uppercase tracking-[0.3em] text-gray-500">{cs ? 'Fallback' : 'Fallback'}</p>
                     <p className="mt-2 text-lg font-semibold text-white">{cs ? 'Klasický dotaz připraven' : 'Classic query ready'}</p>
                   </div>
