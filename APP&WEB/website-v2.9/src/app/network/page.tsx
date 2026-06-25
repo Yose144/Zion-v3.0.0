@@ -112,8 +112,8 @@ const getHeroStats = (cs: boolean) => [
     label: cs ? 'Síť' : 'Network',
     value: 'V3 Mainnet',
     descriptor: cs
-      ? 'Mainnet launch countdown v2.9.9 · runtime v2.9.8'
-      : 'Mainnet launch countdown v2.9.9 · runtime v2.9.8',
+      ? 'Mainnet launch countdown v3.0.2 · runtime v3.0.2'
+      : 'Mainnet launch countdown v3.0.2 · runtime v3.0.2',
   },
 ];
 

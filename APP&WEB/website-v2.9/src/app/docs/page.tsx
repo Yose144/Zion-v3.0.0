@@ -42,17 +42,17 @@ type LocalizedText = { cs: string; en: string };
 const docsPageCopy = {
   badge: { cs: 'Znalostní báze', en: 'Knowledge Base' },
   overviewNotice: {
-    cs: 'MainNet Genesis 11. 6. 2026 úspěšný — public line 3.0.1 Genesis Launch nad kanonickou runtime v3.0.1 Deeksha/Ekam. Core + Edge topologie běží, pool aktivní, mining live. Veřejný launch zůstává na 31. prosince 2026 (Silvestr). Live Index na /docs#live-index je kanonický vstup pro síťový snapshot, baseline repa 2.9.6 a mapu release/runtime.',
-    en: 'MainNet Genesis 11 Jun 2026 successful — public line 3.0.1 Genesis Launch over the canonical v3.0.1 Deeksha/Ekam runtime. Core + Edge topology running, pool active, mining live. Public launch remains 31 December 2026 (New Year\'s Eve). Live Index at /docs#live-index is the canonical entry for the network snapshot, 2.9.6 repo baseline, and release/runtime map.',
+    cs: 'MainNet Genesis 11. 6. 2026 úspěšný — aktuální public line je 3.0.2 From Genesis to the Star nad kanonickou runtime v3.0.2 Deeksha/Ekam. Core + Edge topologie běží, pool aktivní, mining live. Veřejný launch zůstává na 31. prosince 2026 (Silvestr). Live Index na /docs#live-index je kanonický vstup pro síťový snapshot, baseline repa 2.9.6 a mapu release/runtime.',
+    en: 'MainNet Genesis 11 Jun 2026 successful — the current public line is 3.0.2 From Genesis to the Star over the canonical v3.0.2 Deeksha/Ekam runtime. Core + Edge topology is running, the pool is active, and mining is live. Public launch remains 31 December 2026 (New Year\'s Eve). Live Index at /docs#live-index is the canonical entry for the network snapshot, 2.9.6 repo baseline, and release/runtime map.',
   },
   githubLabel: { cs: 'GitHub', en: 'GitHub' },
   apiHealthLabel: { cs: 'Zdraví API', en: 'API Health' },
 } as const satisfies Record<string, LocalizedText>;
 
 const versionText: Record<string, { tag?: LocalizedText; description?: LocalizedText }> = {
-  'v3.0.1': {
+  'v3.0.2': {
     tag: { cs: 'AKTUÁLNÍ', en: 'CURRENT' },
-    description: { cs: 'Genesis Launch — MainNet Core + Edge live, pool aktivní, mining běží', en: 'Genesis Launch — MainNet Core + Edge live, pool active, mining running' },
+    description: { cs: 'Current public line — MainNet Core + Edge live, pool aktivní, mining běží', en: 'Current public line — MainNet Core + Edge live, pool active, mining running' },
   },
   'v3.0.0': {
     tag: { cs: 'MAINNET READY', en: 'MAINNET READY' },
@@ -206,21 +206,21 @@ function resolveMappedLabel<T extends string>(mapping: Record<string, LocalizedT
 
 const versions: Version[] = [
   {
-    id: 'v3.0.1',
-    label: 'v3.0.1',
+    id: 'v3.0.2',
+    label: 'v3.0.2',
     tag: 'CURRENT',
     tagColor: 'text-zion-gold border-zion-gold/30 bg-zion-gold/10',
-    description: 'Genesis Launch — MainNet Core + Edge live, pool active, mining running',
+    description: 'Current public line — MainNet Core + Edge live, pool active, mining running',
     categories: [
       {
         id: 'v301-overview',
         title: 'Overview',
         icon: Rocket,
         docs: [
-          { id: 'v301-readme', title: 'v3.0.1 Genesis Overview', file: 'v3.0.1/README.md' },
+          { id: 'v301-readme', title: 'v3.0.2 Current Line Overview', file: 'v3.0.1/README.md' },
           { id: 'v301-launch-sequence', title: 'MainNet Launch Sequence', file: 'v3.0.1/MAINNET_LAUNCH_SEQUENCE.md' },
-          { id: 'v301-status', title: 'v3.0.1 Status & KAT Vectors', file: 'v3.0.1/StatusV3.md' },
-          { id: 'v301-roadmap', title: 'v3.0.1 Roadmap', file: 'v3.0.1/ROADMAP.md' },
+          { id: 'v301-status', title: 'v3.0.2 Status & Runtime Track', file: 'v3.0.1/StatusV3.md' },
+          { id: 'v301-roadmap', title: 'v3.0.2 Roadmap Track', file: 'v3.0.1/ROADMAP.md' },
         ]
       },
     ]
@@ -268,7 +268,7 @@ const sections: Section[] = [
     accentBorder: 'border-emerald-400/30',
     docs: [
       { id: 'live-index', title: 'Live Index: snapshot + verze', file: 'index.md' },
-      { id: 'live-mainnet', title: 'Genesis 3.0.1 Status', file: 'mainnet/README.md' },
+      { id: 'live-mainnet', title: 'Genesis 3.0.2 Status', file: 'mainnet/README.md' },
       { id: 'v301-launch-sequence', title: 'MainNet Launch Sequence', file: 'v3.0.1/MAINNET_LAUNCH_SEQUENCE.md' },
     ],
   },
@@ -279,7 +279,7 @@ const sections: Section[] = [
     accentText: 'text-zion-gold',
     accentBorder: 'border-zion-gold/30',
     docs: [
-      { id: 'v301-genesis', title: 'v3.0.1 — Genesis Launch', file: 'v3.0.1/README.md' },
+      { id: 'v301-genesis', title: 'v3.0.2 — Current Public Line', file: 'v3.0.1/README.md' },
       { id: 'v300-readiness', title: 'v3.0.0 — MainNet Ready', file: 'v3.0.0/README.md' },
       { id: 'v299-purecode', title: 'v2.9.9 — Pure Code line', file: 'v2.9.9/README.md' },
       { id: 'v298-canonical', title: 'v2.9.8 — Ekam canonical runtime', file: 'v2.9.8/README.md' },
@@ -317,7 +317,7 @@ const sections: Section[] = [
     docs: [
       { id: 'mainnet-plan', title: 'Public Launch Plan 2026', file: 'mainnet/README.md' },
       { id: 'mainnet-genesis-book', title: 'Genesis Book of Awakening', file: 'mainnet/genesis-book.md' },
-      { id: 'v301-status', title: 'v3.0.1 Status & KAT Vectors', file: 'v3.0.1/StatusV3.md' },
+      { id: 'v301-status', title: 'v3.0.2 Status & Runtime Track', file: 'v3.0.1/StatusV3.md' },
     ],
   },
   {
@@ -380,17 +380,17 @@ function findCategoryIdByDoc(docId: string): string | null {
 }
 
 export default function DocsPage() {
-  const [activeVersion, setActiveVersion] = useState('v3.0.1');
+  const [activeVersion, setActiveVersion] = useState('v3.0.2');
   const [selectedDoc, setSelectedDoc] = useState('live-index');
   const [activeCategory, setActiveCategory] = useState('live-ops');
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>({ 'v3.0.1': true, 'v3.0.0': false, 'v2.9.9': false, 'v2.9.8': false, 'v2.9.7': false, 'v2.9.6': false, 'v2.9.5': false, 'v2.9': false, 'v2.8.x': false, 'live-ops': true, 'ai-native': true, 'whitepaper': false, 'architecture': false, 'mainnet': false, 'listing': false, 'legal': false, 'lumi-language': false });
+  const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>({ 'v3.0.2': true, 'v3.0.0': false, 'v2.9.9': false, 'v2.9.8': false, 'v2.9.7': false, 'v2.9.6': false, 'v2.9.5': false, 'v2.9': false, 'v2.8.x': false, 'live-ops': true, 'ai-native': true, 'whitepaper': false, 'architecture': false, 'mainnet': false, 'listing': false, 'legal': false, 'lumi-language': false });
   const [sidebarTab, setSidebarTab] = useState<'resources' | 'history'>('resources');
   const { lang } = useLang();
   const currentLang = lang === 'cs' ? 'cs' : 'en';
-  const primaryVersions = versions.filter((version) => version.id === 'v3.0.1');
+  const primaryVersions = versions.filter((version) => version.id === 'v3.0.2');
 
   // Get current version data
   const currentVersion = versions.find(v => v.id === activeVersion) || versions[0];

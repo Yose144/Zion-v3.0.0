@@ -56,22 +56,25 @@ export default function QuantumRevolution() {
   return (
     <section id="quantum-revolution" className="px-4 py-16 md:py-20 scroll-mt-28">
       <div className="zion-container space-y-8">
-        {/* Header */}
-        <div className="text-center space-y-4 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 rounded-full border border-violet-400/30 bg-violet-400/5 px-4 py-2 text-xs uppercase tracking-[0.3em]">
-            <Atom className="h-4 w-4 text-violet-400" />
-            <span className="text-violet-400 font-semibold">Kniha, ktera to cele odstartovala</span>
+        <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.36em] text-violet-300">
+              Kniha, která to celé odstartovala
+            </p>
+            <h2 className="text-3xl font-bold leading-tight text-white sm:text-4xl md:text-5xl">
+              Kvantová <span className="text-gradient">Revoluce</span>
+            </h2>
+            <p className="max-w-3xl text-base leading-relaxed text-gray-300 md:text-lg">
+              Příběh u ohně o Nové Zemi, kde kvantová fyzika potkává duši,
+              blockchain je meditace a každý z nás je Guardian probouzející Golden Age.
+            </p>
           </div>
-          <h2 className="text-3xl font-bold text-white md:text-5xl">
-            Kvantová <span className="text-gradient">Revoluce</span>
-          </h2>
-          <p className="text-lg text-gray-300 leading-relaxed">
-            Příběh u ohně o Nové Zemi — kde kvantová fyzika potkává duši,
-            blockchain je meditace a každý z nás je Guardian probouzející Golden Age.
-          </p>
-          <p className="text-sm text-gray-500">
-            Publikováno v {editions.length} jazycích · Zdarma v Amenti Library
-          </p>
+          <div className="rounded-2xl border border-violet-400/20 bg-violet-400/6 p-4">
+            <p className="text-[10px] uppercase tracking-[0.28em] text-violet-200/70">Vstup do světa</p>
+            <p className="mt-2 text-sm leading-relaxed text-gray-300">
+              Publikováno v {editions.length} jazycích. Tahle sekce má na homepage vysvětlit duchovní a filozofický základ stejně čitelně, jako Terra Nova vysvětluje síť a Hiran AI vrstvu.
+            </p>
+          </div>
         </div>
 
         {/* Core Insights from the Book */}
@@ -99,9 +102,8 @@ export default function QuantumRevolution() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <BookOpen className="h-5 w-5 text-zion-gold" />
-                <h3 className="text-lg font-semibold text-white">10 Kapitol Povídky u Ohně</h3>
+                <h3 className="text-lg font-semibold text-white">10 kapitol povídky u ohně</h3>
               </div>
-              <span className="text-xs text-gray-500 uppercase tracking-wider hidden sm:block">12 stran · vypraveci edice 2026</span>
               <span className="text-xs text-gray-500 uppercase tracking-wider hidden sm:block">12 stran · vyprávěcí edice 2026</span>
             </div>
 

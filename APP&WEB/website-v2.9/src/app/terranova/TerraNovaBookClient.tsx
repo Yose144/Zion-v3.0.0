@@ -620,8 +620,8 @@ const CLI_PRESET = [
 const BOOT_SEQUENCE = [
   {
     command: 'zion version',
-    responseCs: 'zion v2.9.8 "Deeksha" · mainnet · build 2026-04-01',
-    responseEn: 'zion v2.9.8 "Deeksha" · mainnet · build 2026-04-01',
+    responseCs: 'zion v3.0.2 "from genesis to the star" · mainnet · build 2026-06-25',
+    responseEn: 'zion v3.0.2 "from genesis to the star" · mainnet · build 2026-06-25',
   },
   {
     command: 'zion status --layer all',

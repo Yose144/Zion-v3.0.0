@@ -23,10 +23,10 @@ export default function Home() {
   return (
     <>
       <Hero />
+      <WebTerminal />
       <BridgeStatusBanner />
       <MainnetCountdown />
       <HomeQuickLinks />
-      <WebTerminal />
       <NewsFeed />
       <LiveDashboard />
       <TerraNovaHomeMilestones />

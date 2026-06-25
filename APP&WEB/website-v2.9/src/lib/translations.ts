@@ -34,8 +34,10 @@ const t = {
     layers_group: { cs: 'Vrstvy', en: 'Layers' },
     wiki_group: { cs: 'Wiki', en: 'Wiki' },
     mission_group: { cs: 'Mise', en: 'Mission' },
-    network_group: { cs: 'Síť', en: 'Network' },
+    network_group: { cs: 'Síť & Mining', en: 'Network & Mining' },
+    operator_group: { cs: 'Operátor', en: 'Operator' },
     defi_group: { cs: 'DeFi', en: 'DeFi' },
+    learn_group: { cs: 'Učení', en: 'Learn' },
     l3_hiran:   { cs: 'L3 Hiran', en: 'L3 Hiran' },
     l4_oasis:   { cs: 'L4 Oasis', en: 'L4 Oasis' },
     l5_free_world: { cs: 'L5 Free World', en: 'L5 Free World' },
@@ -66,10 +68,10 @@ const t = {
 
   /* ─── Hero ─── */
   hero: {
-    badge_version:  { cs: 'V3 Mainnet · 3.0.1 Genesis Launch', en: 'V3 Mainnet · 3.0.1 Genesis Launch' },
+    badge_version:  { cs: 'V3 Mainnet · 3.0.2 From Genesis to the Star', en: 'V3 Mainnet · 3.0.2 From Genesis to the Star' },
     badge_chv4:     { cs: 'Core + Edge topologie', en: 'Core + Edge topology' },
     tagline:        { cs: 'Nativní Rust blockchain s Proof-of-Work konsensem', en: 'Native Rust blockchain with Proof-of-Work consensus' },
-    title_sub:      { cs: 'Genesis Live · Core + Edge · canonical runtime v3.0.1 Ekam Deeksha', en: 'Genesis Live · Core + Edge · canonical runtime v3.0.1 Ekam Deeksha' },
+    title_sub:      { cs: 'Genesis Live · Core + Edge · canonical runtime v3.0.2 Ekam Deeksha', en: 'Genesis Live · Core + Edge · canonical runtime v3.0.2 Ekam Deeksha' },
     description:    {
       cs: 'ZION TerraNova mainnet launch countdown — 31. prosinec 2026 (Silvestr). Příprava V3 mainnet v Core + Edge topologii (Core PC + Hetzner Edge VPS), s veřejným poolem, mining binárkami a provozní telemetrií.',
       en: 'ZION TerraNova mainnet launch countdown — 31 December 2026 (New Year\'s Eve). Preparing V3 mainnet in Core + Edge topology (Core PC + Hetzner Edge VPS), with public pool, mining binaries, and operational telemetry.',
@@ -82,7 +84,7 @@ const t = {
     signal_mainnet: { cs: 'Launch Countdown', en: 'Launch Countdown' },
     signal_loc:     { cs: 'Core PC + Edge VPS · ShareRelay', en: 'Core PC + Edge VPS · ShareRelay' },
     signal_target:  { cs: '31. prosince 2026', en: '31 December 2026' },
-    signal_status_l1: { cs: 'Genesis Launch active · runtime v3.0.1', en: 'Genesis Launch active · runtime v3.0.1' },
+    signal_status_l1: { cs: 'Genesis Launch active · runtime v3.0.2', en: 'Genesis Launch active · runtime v3.0.2' },
     signal_status_nodes: { cs: 'Core + Edge online', en: 'Core + Edge online' },
     signal_status_mainnet: { cs: 'Launch Countdown · 31. prosince 2026', en: 'Launch Countdown · 31 December 2026' },
     metric_loc:     { cs: 'Řádků kódu (Rust)', en: 'Rust LOC' },

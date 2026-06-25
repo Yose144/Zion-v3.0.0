@@ -1,0 +1,24 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+COPY .next ./.next
+COPY node_modules ./node_modules
+COPY public ./public
+COPY package.json ./
+COPY next.config.ts ./
+COPY tsconfig.json ./
+COPY src ./src
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+RUN chown -R nextjs:nodejs /app
+
+USER nextjs
+
+EXPOSE 3000
+
+CMD ["node_modules/.bin/next", "start"]
