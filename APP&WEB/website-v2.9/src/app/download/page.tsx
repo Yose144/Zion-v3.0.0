@@ -71,9 +71,12 @@ export default function DownloadPage() {
       <div className="zion-container max-w-5xl space-y-16">
 
         {/* ─── Hero ─── */}
-        <section className="rounded-4xl border border-white/10 bg-black/60 p-5 sm:p-8 md:p-10 backdrop-blur-xl">
+        <section
+          className="zion-rainbow-card p-5 sm:p-8 md:p-10"
+          style={{ '--rc': '59, 130, 246' } as React.CSSProperties}
+        >
           <div className="flex flex-col gap-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-gold uppercase">
+            <div className="zion-kicker border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan">
               <ArrowDownToLine className="h-4 w-4" />
               {SITE_RELEASE_LABEL}
             </div>
@@ -95,7 +98,7 @@ export default function DownloadPage() {
             <div className="flex flex-wrap gap-3">
               <Link
                 href="#downloads"
-                className="inline-flex items-center gap-2 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 px-5 py-2.5 text-sm font-semibold text-white transition-colors"
+                className="zion-button-primary text-sm"
               >
                 <ArrowDownToLine className="h-4 w-4" />
                 {cs ? 'Verejne downloady' : 'Public Downloads'}
@@ -104,7 +107,7 @@ export default function DownloadPage() {
                 href={DOCS_URL}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 px-5 py-2.5 text-sm font-semibold text-gray-300 transition-colors"
+                className="zion-button-secondary text-sm text-gray-300"
               >
                 📖 {cs ? 'Kompletni pruvodce (CZ/EN)' : 'Complete Guide (CZ/EN)'}
                 <ExternalLink className="h-3 w-3" />
