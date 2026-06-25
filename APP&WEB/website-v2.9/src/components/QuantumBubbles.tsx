@@ -33,6 +33,13 @@ const BUBBLE_PRESETS: Record<ObservatoryMode, Bubble[]> = {
     { id: "gc-3", size: 220, x: 78, y: 68, color: "rgba(155,92,255,0.16)", blur: 70 },
     { id: "gc-4", size: 180, x: 32, y: 80, color: "rgba(255,128,229,0.1)", blur: 60 },
   ],
+  "nebula-drift": [
+    { id: "nd-1", size: 420, x: 10, y: 15, color: "rgba(140,80,255,0.18)", blur: 100 },
+    { id: "nd-2", size: 380, x: 65, y: 20, color: "rgba(255,180,80,0.12)", blur: 95 },
+    { id: "nd-3", size: 300, x: 35, y: 55, color: "rgba(80,200,255,0.14)", blur: 85 },
+    { id: "nd-4", size: 260, x: 75, y: 65, color: "rgba(200,100,255,0.16)", blur: 75 },
+    { id: "nd-5", size: 200, x: 20, y: 75, color: "rgba(255,120,200,0.1)", blur: 65 },
+  ],
 };
 
 interface QuantumBubblesProps {

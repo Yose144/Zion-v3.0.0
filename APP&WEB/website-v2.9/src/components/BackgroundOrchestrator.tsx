@@ -43,6 +43,17 @@ const OBSERVATORY_PRESETS = {
     },
     bubbleDensity: 'medium' as const,
   },
+  'nebula-drift': {
+    starfield: {
+      starColor: [180, 140, 255] as [number, number, number],
+      density: 180,
+      speed: 1.6,
+      trailOpacity: 0.12,
+      backgroundGradient:
+        'radial-gradient(ellipse at 30% 40%, rgba(30,12,50,0.92), rgba(8,4,20,0.97))',
+    },
+    bubbleDensity: 'high' as const,
+  },
 };
 
 export default function BackgroundOrchestrator({ variant = 'default' }: { variant?: BackgroundOrchestratorVariant }) {
