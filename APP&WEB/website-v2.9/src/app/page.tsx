@@ -1,7 +1,6 @@
 import dynamicImport from 'next/dynamic';
 import Hero from '@/components/Hero';
 import BridgeStatusBanner from '@/components/BridgeStatusBanner';
-import MainnetCountdown from '@/components/MainnetCountdown';
 import GenesisPreview from '@/components/GenesisPreview';
 import QuantumRevolution from '@/components/QuantumRevolution';
 import HomeQuickLinks from '@/components/HomeQuickLinks';
@@ -25,7 +24,6 @@ export default function Home() {
       <Hero />
       <WebTerminal />
       <BridgeStatusBanner />
-      <MainnetCountdown />
       <HomeQuickLinks />
       <NewsFeed />
       <LiveDashboard />
