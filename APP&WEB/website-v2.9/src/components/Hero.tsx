@@ -7,8 +7,6 @@ import {
   BrainCircuit,
   CircuitBoard,
   Gauge,
-  MessageSquareQuote,
-  Rocket,
   Satellite,
   ShieldHalf,
   Sparkles,
@@ -16,53 +14,12 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
-import { SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL, SITE_LAUNCH_DATE_DISPLAY } from '@/lib/site';
+import { SITE_LAUNCH_DATE_DISPLAY } from '@/lib/site';
 import CosmicFlowers from './CosmicFlowers';
 import HolographicEarth from './HolographicEarth';
 
 export default function Hero() {
   const { lang } = useLang();
-  const hiranNotes = lang === 'cs'
-    ? [
-        {
-          title: 'Hiran v2.3 live stack',
-          value: 'Inference, orchestrace a AI-native workflow pro ekosystém.',
-          accent: 'text-zion-cyan',
-        },
-        {
-          title: 'Hiranyagarbha vrstva',
-          value: 'Most mezi knihou, CLI, dokumentací a budoucí inteligentní ekonomikou.',
-          accent: 'text-violet-300',
-        },
-        {
-          title: 'Veřejný vstup',
-          value: 'Homepage má vést od Terra Nova k Hiran, Genesis a dalším vrstvám bez vizuálního šumu.',
-          accent: 'text-emerald-300',
-        },
-      ]
-    : [
-        {
-          title: 'Hiran v2.3 live stack',
-          value: 'Inference, orchestration, and AI-native workflow for the ecosystem.',
-          accent: 'text-zion-cyan',
-        },
-        {
-          title: 'Hiranyagarbha layer',
-          value: 'A bridge between the book, CLI, docs, and the future intelligent economy.',
-          accent: 'text-violet-300',
-        },
-        {
-          title: 'Public entrypoint',
-          value: 'The homepage should lead from Terra Nova to Hiran, Genesis, and the next layers without visual noise.',
-          accent: 'text-emerald-300',
-        },
-      ];
-
-  const missionSignals = [
-    { title: tr('hero', 'signal_l1', lang),      status: tr('hero', 'signal_status_l1', lang),      value: '52 590 LOC · 780+ tests · Rust', accent: 'text-emerald-300' },
-    { title: tr('hero', 'signal_nodes', lang),   status: tr('hero', 'signal_status_nodes', lang),   value: 'Core + Edge topology',        accent: 'text-zion-cyan' },
-    { title: tr('hero', 'signal_mainnet', lang), status: tr('hero', 'signal_status_mainnet', lang), value: tr('hero', 'signal_target', lang),  accent: 'text-zion-purple' },
-  ];
   const heroMetrics = [
     { label: tr('hero', 'metric_loc', lang),   value: '52 590', icon: Zap },
     { label: tr('hero', 'metric_nodes', lang), value: '2 / 2',   icon: Satellite },
@@ -214,97 +171,6 @@ export default function Hero() {
 
             <div className="mb-4 z-10 mx-auto flex w-full max-w-sm justify-center lg:mx-0 lg:max-w-md">
               <HolographicEarth className="w-full shrink-0" />
-            </div>
-
-            <div className="zion-panel relative rounded-[28px] p-5 md:p-6 space-y-4">
-              <header className="space-y-3">
-                <div className="inline-flex items-center gap-2 rounded-full border border-violet-400/25 bg-violet-400/8 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-violet-200">
-                  <BrainCircuit className="h-3.5 w-3.5" />
-                  {lang === 'cs' ? 'AI vstupní vrstva' : 'AI entry layer'}
-                </div>
-                <div className="space-y-2">
-                  <p className="text-[11px] uppercase text-gray-500 tracking-[0.28em]">
-                    {lang === 'cs' ? 'Hiran / Hiranyagarbha' : 'Hiran / Hiranyagarbha'}
-                  </p>
-                  <h3 className="text-xl font-semibold leading-tight text-white md:text-2xl">
-                    {lang === 'cs' ? 'AI s duší pro ZION Terra Nova' : 'Soul-aligned AI for ZION Terra Nova'}
-                  </h3>
-                  <p className="max-w-lg text-sm leading-relaxed text-gray-300">
-                    {lang === 'cs'
-                      ? 'Místo režimu observatoře sem patří Hiran: vstup do AI-native vrstvy, inference, knihovny znalostí a budoucí orchestrace celé sítě.'
-                      : 'Instead of the observatory mode, this space belongs to Hiran: the entrypoint to the AI-native layer, inference, knowledge library, and future network orchestration.'}
-                  </p>
-                </div>
-              </header>
-
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <div className="flex items-center gap-2 text-zion-gold">
-                  <MessageSquareQuote className="h-4 w-4" />
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em]">
-                    {lang === 'cs' ? 'Současný směr' : 'Current direction'}
-                  </p>
-                </div>
-                <p className="mt-2 text-sm leading-relaxed text-white/82">
-                  {lang === 'cs'
-                    ? 'Jedna vstupní stránka, jeden vizuální jazyk: Terra Nova, Hiran, Kvantová revoluce a Genesis musí působit jako kapitoly stejného světa.'
-                    : 'One entry page, one visual language: Terra Nova, Hiran, Quantum Revolution, and Genesis should feel like chapters of the same world.'}
-                </p>
-              </div>
-
-              <div className="grid gap-3">
-                {hiranNotes.map((note) => (
-                  <div
-                    key={note.title}
-                    className="flex items-start justify-between gap-4 rounded-xl border border-white/8 bg-white/4 px-4 py-3"
-                  >
-                    <div>
-                      <p className="text-[13px] font-semibold text-white">{note.title}</p>
-                      <p className="mt-1 text-xs leading-relaxed text-gray-400">{note.value}</p>
-                    </div>
-                    <span className={`text-xs font-semibold ${note.accent}`}>LIVE</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-xs uppercase text-gray-600 tracking-[0.2em]">{tr('hero', 'section_signals', lang)}</p>
-                {missionSignals.map((signal) => (
-                  <div
-                    key={signal.title}
-                    className="flex items-center justify-between rounded-xl border border-white/8 bg-white/4 px-4 py-3"
-                  >
-                    <div>
-                      <p className="text-sm text-white font-medium">{signal.title}</p>
-                      <p className="text-xs text-gray-500">{signal.value}</p>
-                    </div>
-                    <span className={`text-xs font-semibold ${signal.accent}`}>{signal.status}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Link
-                  href="/l3-hiran"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-violet-600 to-zion-cyan px-4 py-3 text-sm font-semibold text-white"
-                >
-                  <BrainCircuit className="h-4 w-4" />
-                  {lang === 'cs' ? 'Otevřít Hiran' : 'Open Hiran'}
-                </Link>
-                <Link
-                  href="/docs#book-ekam-full"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-semibold text-white hover:border-white/30"
-                >
-                  <ArrowRight className="h-4 w-4" />
-                  {lang === 'cs' ? 'Knihovna a dokumentace' : 'Library & docs'}
-                </Link>
-              </div>
-
-              <div className="flex items-center gap-2 pt-1">
-                <Rocket className="w-4 h-4 text-zion-gold" />
-                <span className="text-xs text-gray-400">
-                  {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · Hiran + Core + Edge
-                </span>
-              </div>
             </div>
           </motion.div>
         </div>
