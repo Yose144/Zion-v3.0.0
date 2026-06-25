@@ -248,7 +248,8 @@ export default function L4OasisPage() {
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="rounded-[32px] border border-zion-gold/30 bg-gradient-to-br from-zion-gold/10 via-black/40 to-orange-500/10 p-8"
+          className="zion-rainbow-card p-8"
+          style={{ '--rc': '249, 115, 22' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Poklad' : 'Treasure'}</p>

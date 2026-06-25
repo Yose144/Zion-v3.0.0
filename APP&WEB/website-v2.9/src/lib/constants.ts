@@ -13,17 +13,39 @@
 
 // ─── Unit Conversion ─────────────────────────────────────────────────────────
 
-/** 1 ZION = 1,000,000,000,000 flowers (12 decimal places) — WP3.0 spec. */
-export const ATOMIC_UNITS_PER_ZION = 1_000_000_000_000;
+/**
+ * 1 ZION = 1,000,000,000,000 flowers (12 decimal places) — WP3.0 spec.
+ *
+ * "Flowers" is the canonical sub-unit name used across L1 core (Rust),
+ * RPC payloads (`balance_flowers`, `amount_flowers`, `fee_flowers`),
+ * pool payouts, wallets and bridges. See `docs/CANONICAL_UNITS_AUDIT.md`.
+ *
+ * `ATOMIC_UNITS_PER_ZION` is preserved as a backward-compatible alias for
+ * older website code; new code should use `FLOWERS_PER_ZION`.
+ */
+export const FLOWERS_PER_ZION = 1_000_000_000_000;
 
-/** Convert atomic units to ZION */
-export function atomicToZion(atomic: number): number {
-  return atomic / ATOMIC_UNITS_PER_ZION;
+/** @deprecated Use `FLOWERS_PER_ZION` — kept for backward compatibility. */
+export const ATOMIC_UNITS_PER_ZION = FLOWERS_PER_ZION;
+
+/** Convert flowers (atomic units) to ZION. */
+export function flowersToZion(flowers: number): number {
+  return flowers / FLOWERS_PER_ZION;
 }
 
-/** Convert ZION to atomic units */
+/** Convert ZION to flowers (atomic units), rounded to the nearest integer. */
+export function zionToFlowers(zion: number): number {
+  return Math.round(zion * FLOWERS_PER_ZION);
+}
+
+/** @deprecated Use `flowersToZion` — kept for backward compatibility. */
+export function atomicToZion(atomic: number): number {
+  return flowersToZion(atomic);
+}
+
+/** @deprecated Use `zionToFlowers` — kept for backward compatibility. */
 export function zionToAtomic(zion: number): number {
-  return Math.round(zion * ATOMIC_UNITS_PER_ZION);
+  return zionToFlowers(zion);
 }
 
 // ─── Emission Parameters (Decade Decay — Model A) ───────────────────────────

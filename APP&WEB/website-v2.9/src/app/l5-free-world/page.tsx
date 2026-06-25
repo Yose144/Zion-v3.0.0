@@ -92,7 +92,7 @@ export default function L5FreeWorldPage() {
       <div className="zion-container max-w-7xl space-y-16">
 
         {/* ── HERO ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-black/60 to-emerald-500/10 p-6 md:p-10 backdrop-blur-xl">
+        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
           <div className="space-y-5 max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-amber-300 uppercase">
               <Globe2 className="h-4 w-4" />
@@ -251,7 +251,7 @@ export default function L5FreeWorldPage() {
         </motion.section>
 
         {/* ── Links ── */}
-        <motion.section initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="rounded-[32px] border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-transparent to-emerald-500/10 p-5 sm:p-8 md:p-10">
+        <motion.section initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="zion-cta-banner" style={{ borderColor: 'rgba(245, 158, 11, 0.35)', background: 'linear-gradient(90deg, rgba(245, 158, 11, 0.22), rgba(16, 185, 129, 0.12) 50%, rgba(245, 158, 11, 0.22))', boxShadow: '0 24px 80px rgba(245, 158, 11, 0.18)' }}>
           <h2 className="text-2xl font-semibold text-white text-center mb-6">{cs ? 'Více o L5' : 'Learn more about L5'}</h2>
           <div className="flex flex-wrap justify-center gap-4">
             <Link href="/dao" className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors">
