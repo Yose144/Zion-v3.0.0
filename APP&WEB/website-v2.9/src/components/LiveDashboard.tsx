@@ -49,6 +49,7 @@ export default function LiveDashboard() {
   const locale = cs ? 'cs-CZ' : 'en-US';
   const [stats, setStats] = useState<BlockchainStats>(placeholderStats);
   const [loadedAtLeastOnce, setLoadedAtLeastOnce] = useState(false);
+  const [lastSuccessAt, setLastSuccessAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const fetchStats = useCallback(async () => {
@@ -61,6 +62,7 @@ export default function LiveDashboard() {
 
       setStats(data);
       setLoadedAtLeastOnce(true);
+      setLastSuccessAt(Date.now());
       setError(null);
     } catch (err) {
       if (process.env.NODE_ENV === 'development') {
@@ -68,9 +70,12 @@ export default function LiveDashboard() {
         setLoadedAtLeastOnce(true);
         return;
       }
-      setError(err instanceof Error ? err.message : 'Unknown error');
+
+      if (!loadedAtLeastOnce) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      }
     }
-  }, []);
+  }, [loadedAtLeastOnce]);
 
   usePolling(fetchStats, 30_000);
 
@@ -85,6 +90,7 @@ export default function LiveDashboard() {
     ? new Date(latestBlock.timestamp * 1000).toLocaleString(locale)
     : '—';
   const mempoolSize = stats.mempool_size ?? stats.tx_pool_size ?? 0;
+  const staleTelemetry = loadedAtLeastOnce && !!error;
 
   const highlightCards = [
     {
@@ -124,6 +130,11 @@ export default function LiveDashboard() {
             <span className="text-sm tracking-wide uppercase text-gray-300">{cs ? 'Mise console' : 'Mission Console'}</span>
           </div>
           <div className="text-xl sm:text-2xl md:text-3xl font-semibold text-gradient">{SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · Mainnet Launch Countdown Telemetry</div>
+          {staleTelemetry && (
+            <span className="text-xs text-cyan-200 bg-cyan-500/10 rounded-full px-3 py-1 border border-cyan-500/30">
+              {cs ? 'Poslední validní snapshot · čekám na obnovu telemetrie' : 'Last valid snapshot · waiting for telemetry recovery'}
+            </span>
+          )}
           {error && (
             <span className="text-xs text-amber-300 bg-amber-500/10 rounded-full px-3 py-1 border border-amber-500/30">
               ⚠️ {error}
@@ -146,8 +157,15 @@ export default function LiveDashboard() {
                 <h3 className="text-2xl font-semibold text-white">{cs ? 'Synchronizace galakticke site' : 'Galactic network sync'}</h3>
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-400">
-                <span className="inline-flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                {cs ? 'Aktualizace' : 'Updated'} {loadedAtLeastOnce ? (cs ? 'zive' : 'live') : (cs ? 'spousteni' : 'initializing')}
+                <span className={`inline-flex h-2 w-2 rounded-full ${staleTelemetry ? 'bg-amber-300' : 'bg-emerald-400'} animate-pulse`} />
+                {staleTelemetry
+                  ? (cs ? 'Snapshot aktivni' : 'Snapshot active')
+                  : `${cs ? 'Aktualizace' : 'Updated'} ${loadedAtLeastOnce ? (cs ? 'zive' : 'live') : (cs ? 'spousteni' : 'initializing')}`}
+                {lastSuccessAt && (
+                  <span>
+                    · {new Date(lastSuccessAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                  </span>
+                )}
               </div>
             </div>
 
