@@ -9,7 +9,7 @@ pub struct RouteFee {
     pub chain_name: String,
     /// Fee percentage (e.g. 0.001 = 0.1%)
     pub fee_rate: f64,
-    /// Minimum fee in ZION flowers (12 decimals)
+    /// Minimum fee in ZION flowers (6 decimals)
     pub min_fee: u64,
     /// Maximum fee in ZION flowers
     pub max_fee: u64,
@@ -58,8 +58,8 @@ impl FeeEngine {
             engine.add_route(RouteFee {
                 chain_name: chain.to_string(),
                 fee_rate: 0.001,
-                min_fee: 100_000_000_000,        // 0.1 ZION
-                max_fee: 10_000_000_000_000_000, // 10,000 ZION
+                min_fee: 100_000,        // 0.1 ZION
+                max_fee: 10_000_000_000_000, // 10,000 ZION
             });
         }
 
@@ -67,48 +67,48 @@ impl FeeEngine {
         engine.add_route(RouteFee {
             chain_name: "solana".into(),
             fee_rate: 0.0015,
-            min_fee: 100_000_000_000,
-            max_fee: 15_000_000_000_000_000,
+            min_fee: 100_000,
+            max_fee: 15_000_000_000_000,
         });
 
         // Tron: 0.1%
         engine.add_route(RouteFee {
             chain_name: "tron".into(),
             fee_rate: 0.001,
-            min_fee: 100_000_000_000,
-            max_fee: 10_000_000_000_000_000,
+            min_fee: 100_000,
+            max_fee: 10_000_000_000_000,
         });
 
         // Stellar: 0.1%
         engine.add_route(RouteFee {
             chain_name: "stellar".into(),
             fee_rate: 0.001,
-            min_fee: 100_000_000_000,
-            max_fee: 10_000_000_000_000_000,
+            min_fee: 100_000,
+            max_fee: 10_000_000_000_000,
         });
 
         // Cardano: 0.2%
         engine.add_route(RouteFee {
             chain_name: "cardano".into(),
             fee_rate: 0.002,
-            min_fee: 200_000_000_000,
-            max_fee: 20_000_000_000_000_000,
+            min_fee: 200_000,
+            max_fee: 20_000_000_000_000,
         });
 
         // Cosmos: 0.15%
         engine.add_route(RouteFee {
             chain_name: "cosmos".into(),
             fee_rate: 0.0015,
-            min_fee: 100_000_000_000,
-            max_fee: 15_000_000_000_000_000,
+            min_fee: 100_000,
+            max_fee: 15_000_000_000_000,
         });
 
         // Bitcoin: 0.25%
         engine.add_route(RouteFee {
             chain_name: "bitcoin".into(),
             fee_rate: 0.0025,
-            min_fee: 500_000_000_000,
-            max_fee: 25_000_000_000_000_000,
+            min_fee: 500_000,
+            max_fee: 25_000_000_000_000,
         });
 
         engine
@@ -159,17 +159,17 @@ mod tests {
     #[test]
     fn test_fee_evm_basic() {
         let engine = FeeEngine::with_defaults();
-        // 1000 ZION = 1_000_000_000_000_000 flowers → 0.1% = 1_000_000_000_000 (1 ZION)
-        let fee = engine.calculate_fee("base", 1_000_000_000_000_000).unwrap();
-        assert_eq!(fee, 1_000_000_000_000);
+        // 1000 ZION = 1_000_000_000 flowers → 0.1% = 1_000_000 (1 ZION)
+        let fee = engine.calculate_fee("base", 1_000_000_000).unwrap();
+        assert_eq!(fee, 1_000_000);
     }
 
     #[test]
     fn test_fee_minimum_enforced() {
         let engine = FeeEngine::with_defaults();
-        // 0.01 ZION = 10_000_000_000 flowers → 0.1% = 10_000_000 → clamped to min 100_000_000_000
-        let fee = engine.calculate_fee("base", 10_000_000_000).unwrap();
-        assert_eq!(fee, 100_000_000_000);
+        // 0.01 ZION = 10_000 flowers → 0.1% = 10 → clamped to min 100_000
+        let fee = engine.calculate_fee("base", 10_000).unwrap();
+        assert_eq!(fee, 100_000);
     }
 
     #[test]
@@ -177,29 +177,29 @@ mod tests {
         let engine = FeeEngine::with_defaults();
         // 15M ZION → 0.1% = 15,000 ZION → clamped to max 10,000 ZION
         let fee = engine
-            .calculate_fee("base", 15_000_000_000_000_000_000)
+            .calculate_fee("base", 15_000_000_000_000_000)
             .unwrap();
-        assert_eq!(fee, 10_000_000_000_000_000);
+        assert_eq!(fee, 10_000_000_000_000);
     }
 
     #[test]
     fn test_fee_bitcoin_higher_rate() {
         let engine = FeeEngine::with_defaults();
-        // 10,000 ZION = 10_000_000_000_000_000 flowers → 0.25% = 25_000_000_000_000
+        // 10,000 ZION = 10_000_000_000_000 flowers → 0.25% = 25_000_000_000
         let fee = engine
-            .calculate_fee("bitcoin", 10_000_000_000_000_000)
+            .calculate_fee("bitcoin", 10_000_000_000_000)
             .unwrap();
-        assert_eq!(fee, 25_000_000_000_000);
+        assert_eq!(fee, 25_000_000_000);
     }
 
     #[test]
     fn test_fee_cardano_rate() {
         let engine = FeeEngine::with_defaults();
-        // 10,000 ZION = 10_000_000_000_000_000 flowers → 0.2% = 20_000_000_000_000
+        // 10,000 ZION = 10_000_000_000_000 flowers → 0.2% = 20_000_000_000
         let fee = engine
-            .calculate_fee("cardano", 10_000_000_000_000_000)
+            .calculate_fee("cardano", 10_000_000_000_000)
             .unwrap();
-        assert_eq!(fee, 20_000_000_000_000);
+        assert_eq!(fee, 20_000_000_000);
     }
 
     #[test]
@@ -244,12 +244,12 @@ mod tests {
         engine.add_route(RouteFee {
             chain_name: "optimism".into(),
             fee_rate: 0.001,
-            min_fee: 100_000_000_000,
-            max_fee: 10_000_000_000_000_000,
+            min_fee: 100_000,
+            max_fee: 10_000_000_000_000,
         });
         let fee = engine
-            .calculate_fee("optimism", 1_000_000_000_000_000)
+            .calculate_fee("optimism", 1_000_000_000)
             .unwrap();
-        assert_eq!(fee, 1_000_000_000_000);
+        assert_eq!(fee, 1_000_000);
     }
 }

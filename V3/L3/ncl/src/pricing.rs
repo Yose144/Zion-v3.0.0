@@ -75,9 +75,9 @@ mod tests {
     #[test]
     fn test_split_reward() {
         let engine = PricingEngine::with_defaults();
-        let (worker, protocol) = engine.split_reward(1_000_000_000_000); // 1 ZION
-        assert_eq!(worker, 900_000_000_000);
-        assert_eq!(protocol, 100_000_000_000);
+        let (worker, protocol) = engine.split_reward(1_000_000); // 1 ZION (6-decimal)
+        assert_eq!(worker, 900_000);
+        assert_eq!(protocol, 100_000);
     }
 
     #[test]

@@ -16,6 +16,8 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::types::FLOWERS_PER_ZION;
+
 // ---------------------------------------------------------------------------
 // Categories
 // ---------------------------------------------------------------------------
@@ -73,8 +75,8 @@ impl HumanitarianCategory {
 // Humanitarian Fund
 // ---------------------------------------------------------------------------
 
-/// Genesis humanitarian allocation: 1.44B ZION (u128 required at 12-decimal)
-pub const HUMANITARIAN_GENESIS: u128 = 1_440_000_000_u128 * 1_000_000_000_000;
+/// Genesis humanitarian allocation: 1.44B ZION (u128 required at 6-decimal)
+pub const HUMANITARIAN_GENESIS: u128 = 1_440_000_000_u128 * FLOWERS_PER_ZION as u128;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HumanitarianFund {

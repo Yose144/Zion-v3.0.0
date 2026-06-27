@@ -5640,11 +5640,11 @@ mod tests {
                 public_key: vk.as_bytes().to_vec(),
             }],
             outputs: vec![tx::TxOutput {
-                amount: 1_000_000_000_000,
+                amount: 1_000_000,
                 address: addr,
                 memo: None,
             }],
-            fee: 1_000,
+            fee: 1,
             timestamp: 1_700_000_000,
         };
         utxo.finalize_id();
@@ -5656,11 +5656,11 @@ mod tests {
     #[test]
     fn utxo_transaction_submits_to_mempool() {
         let mut runtime = NodeRuntime::new("node-utxo-mempool", NodeConfig::mainnet());
-        let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000_000_000);
+        let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000);
         let utxo = make_signed_utxo_tx_spending(
             fund_id,
             0,
-            1_000_000_000_000,
+            1_000_000,
             &sk,
             &vk,
             "zion1destmempool",
@@ -5679,9 +5679,9 @@ mod tests {
     #[test]
     fn utxo_transaction_appears_in_template() {
         let mut runtime = NodeRuntime::new("node-utxo-tmpl", NodeConfig::mainnet());
-        let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000_000_000);
+        let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000);
         let utxo =
-            make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1desttmpl");
+            make_signed_utxo_tx_spending(fund_id, 0, 1_000_000, &sk, &vk, "zion1desttmpl");
         let tx_id = hex(&utxo.id);
 
         runtime.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo));
@@ -5695,9 +5695,9 @@ mod tests {
     #[test]
     fn utxo_transaction_mined_in_block() {
         let mut runtime = NodeRuntime::new("node-utxo-mine", NodeConfig::mainnet());
-        let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000_000_000);
+        let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000);
         let utxo =
-            make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1destmine");
+            make_signed_utxo_tx_spending(fund_id, 0, 1_000_000, &sk, &vk, "zion1destmine");
         let tx_id = hex(&utxo.id);
 
         runtime.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo.clone()));
@@ -5749,9 +5749,9 @@ mod tests {
     #[test]
     fn utxo_transaction_rejects_duplicate_id() {
         let mut runtime = NodeRuntime::new("node-utxo-dup", NodeConfig::mainnet());
-        let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000_000_000);
+        let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000);
         let utxo =
-            make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1destdup");
+            make_signed_utxo_tx_spending(fund_id, 0, 1_000_000, &sk, &vk, "zion1destdup");
 
         let first = runtime.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo.clone()));
         assert!(matches!(
@@ -5773,11 +5773,11 @@ mod tests {
     #[test]
     fn utxo_transaction_rejects_double_spend() {
         let mut runtime = NodeRuntime::new("node-utxo-dblspend", NodeConfig::mainnet());
-        let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000_000_000);
+        let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000);
         let tx1 =
-            make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1destdbl1");
+            make_signed_utxo_tx_spending(fund_id, 0, 1_000_000, &sk, &vk, "zion1destdbl1");
         let tx2 =
-            make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1destdbl2"); // same input
+            make_signed_utxo_tx_spending(fund_id, 0, 1_000_000, &sk, &vk, "zion1destdbl2"); // same input
 
         let first = runtime.submit_submitted_transaction(SubmittedTransaction::Utxo(tx1));
         assert!(matches!(
@@ -5800,11 +5800,11 @@ mod tests {
     fn utxo_and_account_transactions_coexist_in_template() {
         let mut runtime = NodeRuntime::new("node-utxo-coexist", NodeConfig::mainnet());
         let account_tx = sample_transaction("tx-coexist", 5, 1);
-        let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000_000_000);
+        let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000);
         let utxo = make_signed_utxo_tx_spending(
             fund_id,
             0,
-            1_000_000_000_000,
+            1_000_000,
             &sk,
             &vk,
             "zion1destcoexist",
@@ -5843,9 +5843,9 @@ mod tests {
     #[test]
     fn utxo_mined_block_passes_peer_import() {
         let mut source = NodeRuntime::new("node-utxo-src", NodeConfig::mainnet());
-        let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut source, 1_000_000_000_000);
+        let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut source, 1_000_000);
         let utxo =
-            make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1destpeer");
+            make_signed_utxo_tx_spending(fund_id, 0, 1_000_000, &sk, &vk, "zion1destpeer");
 
         source.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo.clone()));
         mine_one_block(&mut source);
@@ -5939,11 +5939,11 @@ mod tests {
     #[test]
     fn peer_import_rejects_utxo_with_bad_signature() {
         let mut source = NodeRuntime::new("node-utxo-badsig-src", NodeConfig::mainnet());
-        let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut source, 1_000_000_000_000);
+        let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut source, 1_000_000);
         let utxo = make_signed_utxo_tx_spending(
             fund_id,
             0,
-            1_000_000_000_000,
+            1_000_000,
             &sk,
             &vk,
             "zion1destbadsig",
@@ -6310,7 +6310,7 @@ mod tests {
     fn f4_memo_with_proofs_round_trips_through_parser() {
         let (keys, _allowlist) = f4_make_signing_keys(3);
         let recipient = crypto::derive_address(&[0xAA; 32]);
-        let amount: u64 = 1_000_000_000_000;
+        let amount: u64 = 1_000_000;
         let op = bridge_operation_message(&recipient, amount, "base", "burn-7", "0xfeed");
         let proofs = f4_make_proofs(&keys, &op);
         let memo = bridge_unlock_memo_with_proofs("base", "burn-7", "0xfeed", &proofs);

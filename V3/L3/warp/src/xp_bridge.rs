@@ -9,7 +9,7 @@
 //!
 //! ```text
 //! base_xp     = 50
-//! volume_xp   = min(amount_flowers / 1_000_000_000_000, 200)   ← up to 200 XP for large transfer
+//! volume_xp   = min(amount_flowers / 1_000_000, 200)   ← up to 200 XP for large transfer
 //! cross_bonus = if source != dest family { 25 } else { 0 }
 //! total_xp    = base_xp + volume_xp + cross_bonus      ← max 275 per transfer
 //! ```
@@ -46,7 +46,7 @@ pub struct WarpXpEvent {
     pub source_family: ChainFamily,
     /// Destination chain family (e.g. Evm, Solana, …).
     pub dest_family: ChainFamily,
-    /// Amount bridged (flowers, 12 decimals).
+    /// Amount bridged (flowers, 6 decimals).
     pub amount_flowers: u64,
     /// Timestamp when the transfer completed.
     pub completed_at: DateTime<Utc>,
@@ -84,7 +84,7 @@ impl WarpXpReward {
     /// Returns `u64` so it can be passed directly to `ConsciousnessEngine::add_xp()`.
     pub fn for_transfer(ev: &WarpXpEvent) -> u64 {
         let base: u64 = 50;
-        let volume: u64 = (ev.amount_flowers / 1_000_000_000_000).min(200);
+        let volume: u64 = (ev.amount_flowers / 1_000_000).min(200);
         let cross: u64 = if ev.is_cross_family() { 25 } else { 0 };
         base + volume + cross
     }
@@ -151,7 +151,7 @@ mod tests {
 
     #[test]
     fn test_xp_volume_cap() {
-        let t = make_transfer(1_000_000_000_000_000_000, base_chain());
+        let t = make_transfer(1_000_000_000_000, base_chain());
         let ev = WarpXpEvent::from_transfer(&t);
         let xp = WarpXpReward::for_transfer(&ev);
         assert_eq!(xp, WarpXpReward::MAX_XP);

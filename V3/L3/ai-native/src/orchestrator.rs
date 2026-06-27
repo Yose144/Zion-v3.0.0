@@ -389,8 +389,8 @@ impl Orchestrator {
     }
 
     // ─── AI Safety limits (L3bigupdate.md §8.2) ────────────────────────────
-    const AI_MAX_TRANSFER_FLOWERS: u64 = 1_000_000_000_000_000; // 1000 ZION
-    const AI_TIMELOCK_THRESHOLD_FLOWERS: u64 = 100_000_000_000_000; // 100 ZION
+    const AI_MAX_TRANSFER_FLOWERS: u64 = 1_000_000_000; // 1000 ZION (6-decimal)
+    const AI_TIMELOCK_THRESHOLD_FLOWERS: u64 = 100_000_000; // 100 ZION (6-decimal)
     #[allow(dead_code)]
     const AI_TIMELOCK_HOLD_HOURS: i64 = 24;
 

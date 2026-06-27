@@ -2403,7 +2403,7 @@ mod tests {
         let recipient = crate::crypto::derive_address(&[7u8; 32]);
         let (validator_proofs, allowlist) = make_bridge_validator_proofs(
             &recipient,
-            1_000_000_000_000u64,
+            1_000_000u64,
             "base-sepolia",
             "burn-empty",
             "0xempty",
@@ -2415,7 +2415,7 @@ mod tests {
             "submitBridgeUnlock",
             json!({
                 "recipient": recipient,
-                "amount_flowers": 1_000_000_000_000u64,
+                "amount_flowers": 1_000_000u64,
                 "burn_id": "burn-empty",
                 "evm_chain": "base-sepolia",
                 "evm_tx_hash": "0xempty",
@@ -2437,7 +2437,7 @@ mod tests {
         let recipient = crate::crypto::derive_address(&[9u8; 32]);
         let (validator_proofs, allowlist) = make_bridge_validator_proofs(
             &recipient,
-            1_000_000_000_000u64,
+            1_000_000u64,
             "base-sepolia",
             "burn-1",
             "0xabc123",
@@ -2449,7 +2449,7 @@ mod tests {
             "submitBridgeUnlock",
             json!({
                 "recipient": recipient,
-                "amount_flowers": 1_000_000_000_000u64,
+                "amount_flowers": 1_000_000u64,
                 "burn_id": "burn-1",
                 "evm_chain": "base-sepolia",
                 "evm_tx_hash": "0xabc123",
@@ -2475,7 +2475,7 @@ mod tests {
         let recipient = crate::crypto::derive_address(&[11u8; 32]);
         let (validator_proofs, allowlist) = make_bridge_validator_proofs(
             &recipient,
-            1_000_000_000_000u64,
+            1_000_000u64,
             "base-sepolia",
             "burn-replay",
             "0xreplay",
@@ -2484,7 +2484,7 @@ mod tests {
         std::env::set_var("ZION_BRIDGE_VALIDATOR_THRESHOLD", "3");
         let params = json!({
             "recipient": recipient,
-            "amount_flowers": 1_000_000_000_000u64,
+            "amount_flowers": 1_000_000u64,
             "burn_id": "burn-replay",
             "evm_chain": "base-sepolia",
             "evm_tx_hash": "0xreplay",
@@ -2516,7 +2516,7 @@ mod tests {
         let recipient = crate::crypto::derive_address(&[13u8; 32]);
         let (mut validator_proofs, allowlist) = make_bridge_validator_proofs(
             &recipient,
-            1_000_000_000_000u64,
+            1_000_000u64,
             "base-sepolia",
             "burn-synth",
             "0xsynth",
@@ -2533,7 +2533,7 @@ mod tests {
             "submitBridgeUnlock",
             json!({
                 "recipient": recipient,
-                "amount_flowers": 1_000_000_000_000u64,
+                "amount_flowers": 1_000_000u64,
                 "burn_id": "burn-synth",
                 "evm_chain": "base-sepolia",
                 "evm_tx_hash": "0xsynth",
@@ -2558,7 +2558,7 @@ mod tests {
         let router = bridge_unlock_ready_router(5_000_000_000_000);
         let recipient = crate::crypto::derive_address(&[15u8; 32]);
         // Build proofs that sign for amount = 1 trillion flowers …
-        let signed_amount: u64 = 1_000_000_000_000;
+        let signed_amount: u64 = 1_000_000;
         let (validator_proofs, allowlist) = make_bridge_validator_proofs(
             &recipient,
             signed_amount,

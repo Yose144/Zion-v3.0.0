@@ -30,7 +30,7 @@ pub struct PplnsShare {
 pub struct PayoutEntry {
     pub miner_id: String,
     pub address: String,
-    /// Amount in flowers (1 ZION = 1_000_000_000_000 flowers).
+    /// Amount in flowers (1 ZION = 1_000_000 flowers, post-3.0.3).
     pub amount: u64,
     pub share_count: u64,
 }
@@ -769,17 +769,17 @@ mod tests {
 
     #[test]
     fn fee_split_with_real_block_reward() {
-        // 5,400,067,000,000,000 flowers = 5,400.067 ZION (V3 base reward)
-        let block_reward: u64 = 5_400_067_000_000_000;
+        // 5,400,067,000 flowers = 5,400.067 ZION (V3 base reward, 6-decimal)
+        let block_reward: u64 = 5_400_067_000;
         let mut e = engine_with_fees(100, 1);
         e.register_address("miner1", "zion1miner1");
         e.record_share_at("miner1", "rig1", 1, 1000);
         let payouts = e.compute_payouts(block_reward);
 
         let fs = e.fee_stats();
-        let humanitarian = 5_400_067_000_000_000u64 * 5 / 100; // 270,003,350,000,000
-        let issobella = 5_400_067_000_000_000u64 * 5 / 100;
-        let pool_fee = 5_400_067_000_000_000u64 / 100; // 54,000,670,000,000
+        let humanitarian = 5_400_067_000u64 * 5 / 100; // 270,003,350
+        let issobella = 5_400_067_000u64 * 5 / 100;
+        let pool_fee = 5_400_067_000u64 / 100; // 54,000,670
         let miner_share = block_reward - humanitarian - issobella - pool_fee;
 
         assert_eq!(fs.humanitarian_accumulated_flowers, humanitarian);
