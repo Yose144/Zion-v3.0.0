@@ -26,6 +26,7 @@ pub mod genesis;
 pub mod ibd;
 pub mod launch;
 pub mod mempool_v2;
+pub mod migration;
 pub mod metrics;
 pub mod node_builder;
 pub mod orphan;
