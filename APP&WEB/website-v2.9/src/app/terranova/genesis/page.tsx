@@ -161,7 +161,7 @@ export default function ZahradaGenesisPage() {
           transition={{ duration: 0.7 }}
           className="mb-20 relative"
         >
-          <div className="relative zion-panel rounded-3xl md:rounded-[32px] p-6 md:p-10 overflow-hidden border border-white/10 bg-black/60 backdrop-blur-xl">
+          <div className="relative zion-rainbow-card rounded-3xl md:rounded-[32px] p-6 md:p-10 overflow-hidden border border-white/10 bg-black/60 backdrop-blur-xl" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-8">
               {/* Icon column */}
               <div className="shrink-0">
@@ -450,7 +450,7 @@ export default function ZahradaGenesisPage() {
             </h2>
           </div>
 
-          <div className="zion-panel rounded-3xl p-6 md:p-8 border border-white/10 relative overflow-hidden">
+          <div className="zion-rainbow-card rounded-3xl p-6 md:p-8 border border-white/10 relative overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="relative z-10 grid md:grid-cols-2 gap-8">
               <div className="space-y-4">
                 <h3 className="text-zion-cyan font-bold text-sm uppercase tracking-widest">
@@ -499,7 +499,7 @@ export default function ZahradaGenesisPage() {
           transition={{ delay: 0.39, duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-panel rounded-3xl p-6 md:p-10 border border-white/10 relative overflow-hidden">
+          <div className="zion-rainbow-card rounded-3xl p-6 md:p-10 border border-white/10 relative overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="relative z-10 max-w-2xl space-y-4">
               <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500">
                 {cs ? 'Charakter místa' : 'Character of Place'}
@@ -547,7 +547,7 @@ export default function ZahradaGenesisPage() {
             <h2 className="text-2xl font-bold text-white">ZION Network</h2>
           </div>
 
-          <div className="zion-panel rounded-3xl p-6 md:p-8 border border-white/10 relative overflow-hidden">
+          <div className="zion-rainbow-card rounded-3xl p-6 md:p-8 border border-white/10 relative overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="relative z-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {ZION_ITEMS.map((item) => (
                 <div
@@ -580,7 +580,7 @@ export default function ZahradaGenesisPage() {
           transition={{ delay: 0.5, duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-panel rounded-3xl p-6 md:p-8 border border-white/10 space-y-4">
+          <div className="zion-rainbow-card rounded-3xl p-6 md:p-8 border border-white/10 space-y-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <h3 className="text-lg font-bold text-zion-gold">
               {cs ? 'Zdroje a kontakt' : 'Resources & Contact'}
             </h3>

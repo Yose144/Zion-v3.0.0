@@ -194,7 +194,7 @@ export default function TxDetailClient() {
 
         {/* TX Details */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-          className="zion-panel rounded-[28px] bg-black/60 p-6">
+          className="zion-rainbow-card rounded-[28px] bg-black/60 p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
           <div className="flex items-center gap-3 mb-5">
             <div className="h-8 w-8 rounded-xl bg-zion-cyan/10 flex items-center justify-center">
               <Layers className="h-4 w-4 text-zion-cyan" />
@@ -233,7 +233,7 @@ export default function TxDetailClient() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Inputs */}
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-            className="zion-panel rounded-[28px] bg-black/60 p-6">
+            className="zion-rainbow-sub rounded-[28px] bg-black/60 p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
             <div className="flex items-center gap-3 mb-5">
               <div className="h-8 w-8 rounded-xl bg-blue-500/10 flex items-center justify-center">
                 <ArrowRight className="h-4 w-4 text-blue-400 rotate-180" />

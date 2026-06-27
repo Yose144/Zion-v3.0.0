@@ -131,7 +131,7 @@ export default function ExplorerPage() {
       <div className="relative z-10 zion-container max-w-7xl space-y-14">
 
         {/* ── Live network ticker ── */}
-        <div className="zion-panel overflow-hidden">
+        <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
           <NetworkTicker />
         </div>
 
@@ -139,7 +139,8 @@ export default function ExplorerPage() {
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          className="zion-panel rounded-3xl md:rounded-4xl bg-black/60 p-6 md:p-10 shadow-[0_30px_120px_rgba(0,0,0,0.45)]"
+          className="zion-rainbow-card p-6 md:p-10"
+          style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-5">
@@ -194,7 +195,7 @@ export default function ExplorerPage() {
             fallback={
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
                 {[...Array(12)].map((_, i) => (
-                  <div key={i} className="rounded-2xl border border-white/8 bg-white/3 p-4 animate-pulse">
+                  <div key={i} className="zion-rainbow-sub p-4 animate-pulse" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                     <div className="h-8 w-8 bg-white/5 rounded-xl mb-3" />
                     <div className="h-3 w-16 bg-white/5 rounded mb-2" />
                     <div className="h-6 w-20 bg-white/5 rounded" />
@@ -241,7 +242,7 @@ export default function ExplorerPage() {
               </Suspense>
 
               {/* Quick Navigator */}
-              <div className="zion-panel rounded-4xl bg-black/60 p-6">
+              <div className="zion-rainbow-card p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                 <div className="flex items-center gap-3 mb-5">
                   <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-zion-gold/10">
                     <Compass className="h-4.5 w-4.5 text-zion-gold" />
@@ -256,7 +257,8 @@ export default function ExplorerPage() {
                     <Link
                       key={link.title}
                       href={link.href}
-                      className="group flex items-center gap-3 rounded-xl border border-white/6 bg-white/2 p-3 transition-all duration-200 hover:border-white/15 hover:bg-white/4"
+                      className="group flex items-center gap-3 zion-rainbow-sub p-3 transition-all duration-200"
+                      style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
                     >
                       <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br ${link.accent}
                         opacity-80 transition group-hover:opacity-100`}>

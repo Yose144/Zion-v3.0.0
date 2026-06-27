@@ -276,7 +276,8 @@ export default function L3HiranPage() {
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="rounded-[32px] border border-white/10 bg-black/40 p-8"
+          className="zion-rainbow-card p-8"
+          style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Modely' : 'Models'}</p>
@@ -287,7 +288,7 @@ export default function L3HiranPage() {
           </div>
           <div className="grid md:grid-cols-2 gap-5">
             {modelCards.map((model) => (
-              <div key={model.name} className={`rounded-2xl border p-6 ${model.color}`}>
+              <div key={model.name} className="zion-rainbow-sub p-6" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h3 className="text-lg font-bold text-white">{model.name}</h3>
@@ -324,7 +325,8 @@ export default function L3HiranPage() {
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="rounded-[32px] border border-white/10 bg-white/5 p-8"
+          className="zion-rainbow-card p-8"
+          style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Trénink' : 'Training'}</p>
@@ -335,7 +337,7 @@ export default function L3HiranPage() {
           </div>
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
             {phases.map((phase) => (
-              <div key={phase.phase} className="zion-tile">
+              <div key={phase.phase} className="zion-rainbow-sub p-5" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
                 <div className="mb-3 flex items-center justify-between">
                   <span className="text-sm font-bold text-white">{phase.phase}</span>
                   <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-300 border border-emerald-500/20">
@@ -362,7 +364,8 @@ export default function L3HiranPage() {
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="rounded-[32px] border border-white/10 bg-black/40 p-8"
+          className="zion-rainbow-card p-8"
+          style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Architektura' : 'Architecture'}</p>
@@ -376,7 +379,7 @@ export default function L3HiranPage() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             {ragArch.map((item) => (
-              <div key={item.title} className="rounded-2xl border border-white/10 bg-black/30 p-5">
+              <div key={item.title} className="zion-rainbow-sub p-5" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
                 <item.icon className={`h-6 w-6 ${item.color} mb-3`} />
                 <h3 className="font-semibold text-white mb-2">{item.title}</h3>
                 <p className="text-sm text-gray-400">{item.desc}</p>
@@ -390,7 +393,8 @@ export default function L3HiranPage() {
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="rounded-[32px] border border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 via-black/40 to-purple-500/10 p-8"
+          className="zion-rainbow-card p-8"
+          style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
         >
           <div className="mx-auto max-w-3xl text-center mb-8">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-cyan-300">
@@ -416,7 +420,8 @@ export default function L3HiranPage() {
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="rounded-[32px] border border-white/10 bg-black/40 p-8"
+          className="zion-rainbow-card p-8"
+          style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Marketplace' : 'Marketplace'}</p>
@@ -427,7 +432,7 @@ export default function L3HiranPage() {
           </div>
           <div className="grid gap-5 md:grid-cols-3">
             {marketplace.map((item) => (
-              <div key={item.name} className={`rounded-2xl border p-5 ${item.color}`}>
+              <div key={item.name} className="zion-rainbow-sub p-5" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
                 <div className="mb-4 flex items-center justify-between">
                   <span className="text-lg font-bold text-white">{item.name}</span>
                   <span className={`rounded-full px-2.5 py-1 text-xs font-semibold border ${
@@ -455,7 +460,8 @@ export default function L3HiranPage() {
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="rounded-[32px] border border-white/10 bg-white/5 p-8"
+          className="zion-rainbow-card p-8"
+          style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Operace' : 'Operations'}</p>
@@ -466,7 +472,7 @@ export default function L3HiranPage() {
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {orchestration.map((item) => (
-              <div key={item.title} className="rounded-2xl border border-white/10 bg-black/30 p-5">
+              <div key={item.title} className="zion-rainbow-sub p-5" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
                 <item.icon className={`h-6 w-6 ${item.color} mb-3`} />
                 <h3 className="font-semibold text-white mb-2">{item.title}</h3>
                 <p className="text-sm text-gray-400">{item.desc}</p>
@@ -480,7 +486,8 @@ export default function L3HiranPage() {
           initial={{ opacity: 0, scale: 0.98 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
-          className="rounded-[32px] border border-purple-500/30 bg-gradient-to-r from-purple-500/10 via-transparent to-cyan-500/10 p-5 sm:p-8 md:p-10"
+          className="zion-rainbow-card p-5 sm:p-8 md:p-10"
+          style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
         >
           <h2 className="text-2xl font-semibold text-white text-center mb-6">
             {cs ? 'Více o L3 a ekosystému' : 'Learn more about L3 and the ecosystem'}

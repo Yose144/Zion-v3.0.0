@@ -54,7 +54,7 @@ export default function GeographyRegionPage({ data }: { data: RegionData }) {
           transition={{ duration: 0.7 }}
           className="mb-16"
         >
-          <div className="zion-panel rounded-3xl md:rounded-4xl p-8 md:p-12 border border-violet-500/20 relative overflow-hidden">
+          <div className="zion-rainbow-card rounded-3xl md:rounded-4xl p-8 md:p-12 border border-violet-500/20 relative overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="absolute inset-0 bg-gradient-to-br from-violet-900/30 via-purple-900/10 to-transparent" />
             <div className="absolute -top-24 -left-24 w-64 h-64 rounded-full blur-[100px] bg-violet-500/15" />
             <div className="absolute -bottom-16 -right-16 w-48 h-48 rounded-full blur-[80px] bg-purple-500/10" />

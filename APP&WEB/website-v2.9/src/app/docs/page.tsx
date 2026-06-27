@@ -526,7 +526,7 @@ export default function DocsPage() {
         <div className="zion-container py-20 relative">
           <div
             className="zion-rainbow-card max-w-4xl mx-auto p-8 md:p-10 text-center"
-            style={{ '--rc': '59, 130, 246' } as React.CSSProperties}
+            style={{ '--rc': '20, 184, 166' } as React.CSSProperties}
           >
             <div className="zion-kicker mx-auto mb-6 w-fit border-cyan-400/30 bg-cyan-400/10 text-cyan-200">
               <BookOpen className="w-4 h-4 text-zion-cyan" />
@@ -540,7 +540,7 @@ export default function DocsPage() {
             </p>
             <div
               className="zion-rainbow-sub mx-auto mb-8 max-w-3xl px-5 py-4 text-left text-sm text-gray-300"
-              style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+              style={{ '--rc': '20, 184, 166' } as React.CSSProperties}
             >
               {tx(docsPageCopy.overviewNotice, currentLang)}
             </div>
@@ -616,7 +616,7 @@ export default function DocsPage() {
 
           {/* Mobile Navigation Dropdown */}
           {mobileMenuOpen && (
-            <div className="mt-4 border border-white/10 rounded-2xl p-4 bg-black/80 backdrop-blur-xl space-y-3">
+            <div className="mt-4 zion-rainbow-card p-4 space-y-3" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
               {versions.map(version => (
                 <div key={version.id}>
                   <button
@@ -673,7 +673,7 @@ export default function DocsPage() {
         <div className="flex gap-8">
           {/* ═══ Sidebar — Version Tree ═══ */}
           <aside className="hidden lg:block w-72 shrink-0">
-            <div className="sticky top-24 border border-white/10 rounded-2xl bg-black/60 backdrop-blur-xl overflow-hidden">
+            <div className="sticky top-24 zion-rainbow-card overflow-hidden" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
               {/* Sidebar Tab Switcher */}
               <div className="flex border-b border-white/10">
                 <button

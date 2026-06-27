@@ -911,7 +911,7 @@ export function ZionDefense() {
         </div>
 
         {/* Game info bar */}
-        <div className="zion-panel rounded-2xl bg-black/60 p-3 flex items-center justify-between gap-4 flex-wrap">
+        <div style={{ '--rc': '245, 158, 11' } as React.CSSProperties} className="zion-rainbow-card rounded-2xl bg-black/60 p-3 flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <span className="text-xl">{level.emoji}</span>
             <div>

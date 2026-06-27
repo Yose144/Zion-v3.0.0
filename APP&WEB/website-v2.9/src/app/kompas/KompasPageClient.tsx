@@ -104,7 +104,7 @@ export default function KompasPageClient() {
         >
           <div className="grid lg:grid-cols-[1fr_340px] gap-6 items-start">
             {/* Compass panel */}
-            <div className="zion-panel rounded-3xl md:rounded-4xl p-6 md:p-8 relative overflow-hidden">
+            <div style={{ '--rc': '251, 191, 36' } as React.CSSProperties} className="zion-rainbow-card rounded-3xl md:rounded-4xl p-6 md:p-8 relative overflow-hidden">
               <div className="absolute inset-0 pointer-events-none opacity-[0.03]">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,215,0,0.15),transparent_70%)]" />
               </div>
@@ -271,7 +271,8 @@ export default function KompasPageClient() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="zion-panel rounded-3xl p-6 md:p-10 text-center"
+          style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
+          className="zion-rainbow-card rounded-3xl p-6 md:p-10 text-center"
         >
           <div className="inline-flex items-center gap-2 text-zion-gold mb-4">
             <Sparkles className="w-5 h-5" />
@@ -292,7 +293,8 @@ export default function KompasPageClient() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="zion-panel rounded-2xl p-6 space-y-4"
+            style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
+            className="zion-rainbow-sub rounded-2xl p-6 space-y-4"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-zion-purple/15 border border-zion-purple/30 flex items-center justify-center">
@@ -313,7 +315,8 @@ export default function KompasPageClient() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="zion-panel rounded-2xl p-6 space-y-4"
+            style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
+            className="zion-rainbow-sub rounded-2xl p-6 space-y-4"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-zion-cyan/15 border border-zion-cyan/30 flex items-center justify-center">
@@ -335,7 +338,8 @@ export default function KompasPageClient() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="zion-panel rounded-3xl p-6 md:p-10"
+          style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
+          className="zion-rainbow-card rounded-3xl p-6 md:p-10"
         >
           <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-3">
             <Compass className="w-5 h-5 text-zion-gold" />

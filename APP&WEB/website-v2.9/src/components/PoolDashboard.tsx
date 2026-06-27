@@ -348,7 +348,8 @@ export default function PoolDashboard() {
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 md:p-10 shadow-[0_30px_120px_rgba(0,0,0,0.45)]"
+          className="zion-rainbow-card p-6 md:p-10"
+          style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-5">
@@ -381,11 +382,11 @@ export default function PoolDashboard() {
             </div>
             {/* Stratum quick connect */}
             <div className="w-full lg:max-w-md space-y-3">
-              <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
+              <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{cs ? 'Rychlé připojení' : 'Quick Connect'}</p>
                 <div className="space-y-2">
                   {(data?.servers ?? []).filter(s => s.online).map(s => (
-                    <div key={s.id} className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                    <div key={s.id} className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                       <div className="flex items-center gap-2">
                         <span>{s.flag}</span>
                         <code className="text-sm text-zion-cyan font-mono">{s.host}:{s.stratum}</code>
@@ -420,7 +421,8 @@ export default function PoolDashboard() {
               setSearchError("");
               router.push(`/pool/miner/${addr}`);
             }}
-            className="rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl p-4 md:p-6"
+            className="zion-rainbow-card p-4 md:p-6"
+            style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
           >
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1 relative">
@@ -464,7 +466,7 @@ export default function PoolDashboard() {
           {loading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
               {[...Array(12)].map((_, i) => (
-                <div key={i} className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 animate-pulse">
+                <div key={i} className="zion-rainbow-sub p-4 animate-pulse" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                   <div className="h-8 w-8 bg-white/5 rounded-xl mb-3" />
                   <div className="h-3 w-16 bg-white/5 rounded mb-2" />
                   <div className="h-6 w-20 bg-white/5 rounded" />
@@ -533,7 +535,7 @@ export default function PoolDashboard() {
 
           <div className="grid gap-5 lg:grid-cols-[2fr_1fr]">
             {/* Hashrate Chart */}
-            <div className="rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+            <div className="zion-rainbow-sub p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-xs text-gray-500 uppercase tracking-wider">{cs ? 'Hashrate poolu (poslední hodina)' : 'Pool Hashrate (last hour)'}</p>
@@ -550,7 +552,7 @@ export default function PoolDashboard() {
             {/* Right column: Network share + Luck + Pending */}
             <div className="space-y-4">
               {/* Network Share */}
-              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
+              <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{cs ? 'Podíl na síti' : 'Network Share'}</p>
                 {(() => {
                   const netHash = data.runtime.network_hashrate ?? 0;
@@ -572,7 +574,7 @@ export default function PoolDashboard() {
               </div>
 
               {/* Pool Luck */}
-              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
+              <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">{cs ? 'Štěstí poolu' : 'Pool Luck'}</p>
                 {(() => {
                   const netHash = data.runtime.network_hashrate ?? 0;
@@ -594,7 +596,7 @@ export default function PoolDashboard() {
               </div>
 
               {/* Pending Payouts */}
-              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
+              <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">{cs ? 'Čekající výplaty' : 'Pending Payouts'}</p>
                 {(() => {
                   const srv = data.servers.find(s => s.stats?.payouts);
@@ -638,7 +640,7 @@ export default function PoolDashboard() {
           </div>
 
           <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+            <div className="zion-rainbow-sub p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <div className="flex items-center justify-between gap-4 mb-5">
                 <div>
                   <p className="text-xs text-gray-500 uppercase tracking-wider">Routing Flow</p>
@@ -653,7 +655,7 @@ export default function PoolDashboard() {
                 {(routingGroups.length > 0 ? routingGroups : Object.entries(data?.routing?.groups ?? {})).map(([name, group]) => {
                   const groupRate = group.submits > 0 ? (group.accepted / group.submits) * 100 : 0;
                   return (
-                    <div key={name} className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
+                    <div key={name} className="zion-rainbow-sub p-4" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                       <p className="text-[11px] uppercase tracking-[0.3em] text-gray-500">{name}</p>
                       <p className="mt-2 text-2xl font-semibold text-white font-mono">{fmtNum(group.accepted)}</p>
                       <p className="text-xs text-gray-500">{cs ? 'přijaté shares' : 'accepted shares'}</p>
@@ -667,7 +669,7 @@ export default function PoolDashboard() {
               </div>
             </div>
 
-            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+            <div className="zion-rainbow-sub p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <p className="text-xs text-gray-500 uppercase tracking-wider mb-4">PPLNS Engine</p>
               <div className="space-y-4">
                 <div>
@@ -684,20 +686,20 @@ export default function PoolDashboard() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
+                  <div className="zion-rainbow-sub p-4" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                     <p className="text-xs text-gray-500">{cs ? 'Registrovaní mineři' : 'Registered miners'}</p>
                     <p className="mt-1 text-xl font-semibold text-white font-mono">{fmtNum(data?.pplns?.registered_miners)}</p>
                   </div>
-                  <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
+                  <div className="zion-rainbow-sub p-4" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                     <p className="text-xs text-gray-500">{cs ? 'Payout kola' : 'Payout rounds'}</p>
                     <p className="mt-1 text-xl font-semibold text-white font-mono">{fmtNum(data?.pplns?.payout_rounds)}</p>
                   </div>
-                  <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
+                  <div className="zion-rainbow-sub p-4" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                     <p className="text-xs text-gray-500">{cs ? 'Celkem vyplaceno' : 'Total paid'}</p>
                     <p className="mt-1 text-xl font-semibold text-white font-mono">{(data?.pplns?.total_paid_zion ?? 0).toFixed(4)}</p>
                     <p className="text-xs text-gray-500">ZION</p>
                   </div>
-                  <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
+                  <div className="zion-rainbow-sub p-4" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                     <p className="text-xs text-gray-500">{cs ? 'Uptime poolu' : 'Pool uptime'}</p>
                     <p className="mt-1 text-xl font-semibold text-white font-mono">{fmtUptime(data?.runtime?.pool_uptime_seconds)}</p>
                   </div>
@@ -741,7 +743,7 @@ export default function PoolDashboard() {
               const connected = srv.stats?.blockchain?.connected;
               const active = (srv.stats?.miners?.active ?? 0) > 0;
               return (
-                <div key={srv.id} className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+                <div key={srv.id} className="zion-rainbow-sub p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                   <div className="flex items-center justify-between mb-5">
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">{srv.flag}</span>
@@ -836,7 +838,7 @@ export default function PoolDashboard() {
             </div>
           </div>
 
-          <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl overflow-hidden">
+          <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -901,7 +903,7 @@ export default function PoolDashboard() {
             <p className="text-sm text-gray-400">{cs ? 'Nejnovější potvrzené chain bloky z aktuálního runtime. Veřejná atribuce vítěze poolu zatím není vystavena samostatně.' : 'Latest confirmed chain blocks from the current runtime. Public pool winner attribution is not exposed separately yet.'}</p>
           </div>
 
-          <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl overflow-hidden">
+          <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -963,7 +965,7 @@ export default function PoolDashboard() {
 
           <div className="grid gap-5 md:grid-cols-2">
             {/* Step 1 */}
-            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+            <div className="zion-rainbow-sub p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br from-purple-500/80 to-indigo-600/80">
                   <Wallet className="h-5 w-5 text-white" />
@@ -980,7 +982,7 @@ export default function PoolDashboard() {
             </div>
 
             {/* Step 2 */}
-            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+            <div className="zion-rainbow-sub p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br from-zion-cyan/80 to-blue-600/80">
                   <Cpu className="h-5 w-5 text-white" />
@@ -991,11 +993,11 @@ export default function PoolDashboard() {
                 </div>
               </div>
               <div className="space-y-2">
-                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                <div className="zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                   <p className="text-sm font-medium text-white flex items-center gap-2"><Sparkles className="h-3.5 w-3.5 text-purple-400" /> ZION Native Miner</p>
                   <p className="text-xs text-gray-400 mt-1">{cs ? 'Oficiální — algoritmus Cosmic Harmony · Python/Rust' : 'Official — Cosmic Harmony algorithm · Python/Rust'}</p>
                 </div>
-                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                <div className="zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                   <p className="text-sm font-medium text-white flex items-center gap-2"><Zap className="h-3.5 w-3.5 text-orange-400" /> XMRig</p>
                   <p className="text-xs text-gray-400 mt-1">{cs ? 'Průmyslový standard · optimalizovaný pro CPU' : 'Industry-standard · CPU optimized'}</p>
                 </div>
@@ -1003,7 +1005,7 @@ export default function PoolDashboard() {
             </div>
 
             {/* Step 3 */}
-            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+            <div className="zion-rainbow-sub p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br from-emerald-500/80 to-teal-600/80">
                   <Terminal className="h-5 w-5 text-white" />
@@ -1033,7 +1035,7 @@ export default function PoolDashboard() {
             </div>
 
             {/* Step 4 */}
-            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+            <div className="zion-rainbow-sub p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br from-zion-gold/80 to-amber-600/80">
                   <TrendingUp className="h-5 w-5 text-white" />
@@ -1045,11 +1047,11 @@ export default function PoolDashboard() {
               </div>
               <p className="text-sm text-gray-300 mb-3">{cs ? 'Po připojení sledujte své těžební statistiky přímo zde. Výplaty probíhají automaticky po dosažení minimálního prahu.' : 'Once connected, monitor your mining stats right here. Payouts are automatic when you reach the minimum threshold.'}</p>
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                <div className="zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                   <p className="text-[11px] text-gray-500">{cs ? 'Min. payout' : 'Min Payout'}</p>
                   <p className="text-lg font-bold text-white font-mono">0.1 ZION</p>
                 </div>
-                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                <div className="zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                   <p className="text-[11px] text-gray-500">{cs ? 'Metoda odměn' : 'Reward Method'}</p>
                   <p className="text-lg font-bold text-white">PPLNS</p>
                 </div>
@@ -1082,7 +1084,7 @@ export default function PoolDashboard() {
               { icon: <Signal className="h-5 w-5 text-white" />, color: "from-orange-500/80 to-amber-600/80", title: cs ? 'Monitoring v reálném čase' : 'Real-Time Monitoring', desc: cs ? 'Živý přehled hashratu, shares a výdělků přes webový dashboard.' : 'Live hashrate, shares, and earnings tracking via web dashboard.' },
               { icon: <Cpu className="h-5 w-5 text-white" />, color: "from-zion-cyan/80 to-blue-600/80", title: cs ? 'Kompatibilní s XMRig' : 'XMRig Compatible', desc: cs ? 'Použijte standardní těžební software. Není potřeba nic speciálního.' : 'Use standard mining software. No special tools required.' },
             ].map((f) => (
-              <div key={f.title} className="group rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-5 hover:border-white/15 transition-all duration-200">
+              <div key={f.title} className="group zion-rainbow-sub p-5 transition-all duration-200" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                 <div className={`flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br ${f.color} opacity-80 group-hover:opacity-100 transition mb-4`}>
                   {f.icon}
                 </div>
@@ -1109,7 +1111,7 @@ export default function PoolDashboard() {
           </div>
 
           <div className="grid gap-5 lg:grid-cols-3">
-            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+            <div className="zion-rainbow-sub p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{cs ? 'Odhad výnosu' : 'Profit Estimator'}</p>
               <label className="text-xs text-gray-400">{cs ? 'Váš hashrate (podporuje K/M/G/T)' : 'Your hashrate (supports K/M/G/T)'}</label>
               <input
@@ -1130,15 +1132,15 @@ export default function PoolDashboard() {
               </div>
             </div>
 
-            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+            <div className="zion-rainbow-sub p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{cs ? 'Failover konfigurace' : 'Failover Config'}</p>
               <div className="space-y-3">
-                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                <div className="zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                   <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">{cs ? 'XMRig (primární + záložní)' : 'XMRig (primary + backup)'}</p>
                   <code className="block text-xs text-zion-cyan break-all">{xmrigFailoverCmd}</code>
                   <div className="mt-2"><CopyButton text={xmrigFailoverCmd} /></div>
                 </div>
-                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                <div className="zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                   <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">Native Miner failover</p>
                   <code className="block text-xs text-zion-cyan break-all">{nativeFailoverCmd}</code>
                   <div className="mt-2"><CopyButton text={nativeFailoverCmd} /></div>
@@ -1146,18 +1148,18 @@ export default function PoolDashboard() {
               </div>
             </div>
 
-            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+            <div className="zion-rainbow-sub p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{cs ? 'Automatizace a export' : 'Automation & Export'}</p>
               <div className="space-y-2.5 text-sm">
-                <a href="/api/pool/stats" target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2 hover:bg-white/[0.05] transition">
+                <a href="/api/pool/stats" target="_blank" rel="noreferrer" className="flex items-center justify-between zion-rainbow-sub px-3 py-2 transition" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                   <span className="text-gray-200 font-mono text-xs">/api/pool/stats</span>
                   <Download className="h-3.5 w-3.5 text-zion-gold" />
                 </a>
-                <a href="/api/pool/miner/YOUR_ZION_ADDRESS" target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2 hover:bg-white/[0.05] transition">
+                <a href="/api/pool/miner/YOUR_ZION_ADDRESS" target="_blank" rel="noreferrer" className="flex items-center justify-between zion-rainbow-sub px-3 py-2 transition" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                   <span className="text-gray-200 font-mono text-xs">/api/pool/miner/&lt;address&gt;</span>
                   <Download className="h-3.5 w-3.5 text-zion-gold" />
                 </a>
-                <a href="/monitoring" className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2 hover:bg-white/[0.05] transition">
+                <a href="/monitoring" className="flex items-center justify-between zion-rainbow-sub px-3 py-2 transition" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                   <span className="text-gray-200">Mission control</span>
                   <ExternalLink className="h-3.5 w-3.5 text-zion-gold" />
                 </a>
@@ -1248,7 +1250,7 @@ export default function PoolDashboard() {
 /* ═══════════════════════ STAT CARD ═══════════════════════ */
 function StatCard({ icon, color, bg, label, value, sub, tip }: { icon: React.ReactNode; color: string; bg: string; label: string; value: string; sub?: string; tip?: string }) {
   return (
-    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 hover:border-white/[0.12] transition-colors">
+    <div className="zion-rainbow-sub p-4 transition-colors" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
       <div className={`flex items-center justify-center h-8 w-8 rounded-xl ${bg} mb-3 [&>svg]:h-4 [&>svg]:w-4 ${color}`}>
         {icon}
       </div>
@@ -1326,7 +1328,7 @@ function HashrateSpark({ data, height = 100 }: { data: {ts: number; value: numbe
 function FAQItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] overflow-hidden">
+    <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
       <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/[0.02] transition-colors">
         <span className="text-sm font-medium text-white">{question}</span>
         <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform flex-shrink-0 ml-4 ${open ? 'rotate-180' : ''}`} />

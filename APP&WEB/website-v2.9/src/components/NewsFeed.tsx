@@ -41,17 +41,17 @@ export const NEWS_ARTICLES: NewsArticle[] = [
   {
     slug: 'doge-vs-zion-legendary-price',
     date: '2026-06-26',
-    tag: { cs: 'Launch', en: 'Launch' },
+    tag: { cs: 'Historie', en: 'History' },
     tagColor: 'text-zion-gold',
     title: {
-      cs: 'Doge vs ZION 🐕 Nová cena: $0.0002 — jako legendární Dogecoin, much wow!',
-      en: 'Doge vs ZION 🐕 New price: $0.0002 — like legendary Dogecoin, much wow!',
+      cs: 'Historická paměť 🐕 Když Dogecoin stál $0.0002 — a proč ZION kráčí stejnou cestou',
+      en: 'Historic memory 🐕 When Dogecoin was $0.0002 — and why ZION walks the same path',
     },
     summary: {
-      cs: 'Much price. Very legendary. Such wow. 🐕 ZION dostává novou seed cenu $0.0002/ZION — přesně jako Dogecoin v legendárních raných dnech. FDV ~$28.8M při 144B zásobě. 100M ZION zamčeno na L1, 5/5 validátorů potvrdilo, bridge běží na Base. Když Doge šel z $0.0002 na $0.70, byl to 3500× skok. My máme 5 podpisů, AI vrstvu a Strom života. To the moon? Ne. To the stars. 🌟 Hraj Doge vs ZION click battle!',
-      en: 'Much price. Very legendary. Such wow. 🐕 ZION gets a new seed price of $0.0002/ZION — exactly like Dogecoin in the legendary early days. FDV ~$28.8M at 144B supply. 100M ZION locked on L1, 5/5 validators confirmed, bridge running on Base. When Doge went from $0.0002 to $0.70, that was a 3500× jump. We have 5 signatures, an AI layer, and the Tree of Life. To the moon? No. To the stars. 🌟 Play the Doge vs ZION click battle!',
+      cs: 'V prosinci 2013 stál jeden Dogecoin $0.0002. Nikdo nevěděl, že za dva roky dosáhne $0.70 — 3500× skok, který zapsal memecoin do historie. Dnes ZION nastavuje seed cenu na stejných $0.0002/ZION. Ne proto, že bychom chtěli zopakovat Doge. Ale proto, že každá legenda začíná stejně — s malým číslem a velkým příběhem. 144B zásoba, 5/5 validátorů, AI vrstva, Strom života. FDV ~$28.8M. ZION není memecoin. Je to vzpomínka na budoucnost.',
+      en: 'In December 2013, one Dogecoin cost $0.0002. Nobody knew that within two years it would reach $0.70 — a 3500× jump that wrote memecoins into history. Today ZION sets its seed price at the same $0.0002/ZION. Not because we want to repeat Doge. But because every legend starts the same way — with a small number and a big story. 144B supply, 5/5 validators, AI layer, Tree of Life. FDV ~$28.8M. ZION is not a memecoin. It is a memory of the future.',
     },
-    href: '/doge-vs-zion',
+    href: '/defi',
     banner: 'doge-vs-zion',
   },
   {
@@ -326,6 +326,7 @@ const CARD_ACCENT: Record<string, { from: string; to: string; glow: string }> = 
   Launch:    { from: 'from-amber-500/20', to: 'to-yellow-500/5', glow: 'shadow-amber-500/10' },
   Listing:   { from: 'from-green-500/20', to: 'to-emerald-500/5', glow: 'shadow-green-500/10' },
   'Hard Fork': { from: 'from-rose-500/20', to: 'to-red-500/5', glow: 'shadow-rose-500/10' },
+  History:    { from: 'from-amber-500/20', to: 'to-yellow-500/5', glow: 'shadow-amber-500/10' },
 };
 
 function getAccent(tag: string) {
