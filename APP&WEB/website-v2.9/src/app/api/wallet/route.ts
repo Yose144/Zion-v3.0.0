@@ -5,7 +5,7 @@ import { getZionRpc } from '@/lib/zion-rpc';
 
 const HEADERS = { 'Cache-Control': 'no-store, max-age=0' };
 const ALLOWED_METHODS = new Set(['submitTransaction', 'submitAccountTransaction', 'sendRawTransaction']);
-const FLOWERS_PER_ZION = 1_000_000_000_000;
+const FLOWERS_PER_ZION = 1_000_000;
 
 function asNumber(value: unknown, fallback = 0): number {
   if (typeof value === 'number' && Number.isFinite(value)) {
