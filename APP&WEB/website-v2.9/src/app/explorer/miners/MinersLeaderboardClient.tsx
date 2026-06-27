@@ -80,7 +80,7 @@ export default function MinersLeaderboardClient() {
 
         {/* HERO */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
-          className="zion-panel rounded-3xl md:rounded-4xl bg-black/60 p-6 md:p-10 shadow-[0_30px_120px_rgba(0,0,0,0.45)]">
+          className="zion-rainbow-card rounded-3xl md:rounded-4xl bg-black/60 p-6 md:p-10 shadow-[0_30px_120px_rgba(0,0,0,0.45)]" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
           <div className="space-y-5">
             <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-amber-300 uppercase">
               <Pickaxe className="h-4 w-4" />
@@ -130,7 +130,7 @@ export default function MinersLeaderboardClient() {
             </h2>
           </div>
 
-          <div className="zion-panel rounded-[28px] bg-black/60 overflow-hidden">
+          <div className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>

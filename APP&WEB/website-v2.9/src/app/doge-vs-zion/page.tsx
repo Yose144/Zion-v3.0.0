@@ -158,7 +158,8 @@ export default function DogeVsZionPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="relative overflow-hidden rounded-3xl border border-white/10"
+          className="relative overflow-hidden zion-rainbow-card"
+          style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
         >
           {/* Oasis ambient scene jako background */}
           <OasisAmbientScene className="absolute inset-0 h-full w-full" />
@@ -254,8 +255,8 @@ export default function DogeVsZionPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 + idx * 0.1, duration: 0.4 }}
                 onClick={() => setActiveGame(game.id)}
-                className="group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-black/80 to-black/40 p-6 text-left transition-all hover:border-white/20 hover:scale-[1.02]"
-                style={{ boxShadow: `0 0 0 0 ${game.color}00` }}
+                className="group relative overflow-hidden zion-rainbow-sub p-6 text-left transition-all hover:scale-[1.02]"
+                style={{ '--rc': '245, 158, 11', boxShadow: `0 0 0 0 ${game.color}00` } as React.CSSProperties}
                 whileHover={{ boxShadow: `0 8px 40px ${game.glowColor}20` }}
               >
                 {/* Animated gradient border glow */}
@@ -371,7 +372,7 @@ export default function DogeVsZionPage() {
         </div>
 
         {/* Coming soon teaser */}
-        <div className="relative overflow-hidden rounded-2xl border border-dashed border-zion-purple/20 bg-gradient-to-r from-zion-purple/5 via-black/40 to-zion-cyan/5 p-6 text-center">
+        <div className="relative overflow-hidden zion-rainbow-sub p-6 text-center" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
           <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(circle at 30% 50%, #8b5cf6, transparent 50%), radial-gradient(circle at 70% 50%, #06b6d4, transparent 50%)' }} />
           <p className="relative text-sm text-gray-400">
             {cs ? 'Další hry brzy... 🎮' : 'More games coming soon... 🎮'}

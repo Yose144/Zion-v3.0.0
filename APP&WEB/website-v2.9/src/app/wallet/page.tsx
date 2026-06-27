@@ -219,7 +219,8 @@ export default function WalletPage() {
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="rounded-[32px] zion-section"
+          className="zion-rainbow-card"
+          style={{ '--rc': '236, 72, 153' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Vlastnosti' : 'Features'}</p>
@@ -230,7 +231,7 @@ export default function WalletPage() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             {features.map((f) => (
-              <div key={f.title} className="zion-tile">
+              <div key={f.title} className="zion-rainbow-sub" style={{ '--rc': '236, 72, 153' } as React.CSSProperties}>
                 <f.icon className={`h-8 w-8 ${f.color} mb-3`} />
                 <h3 className="font-semibold text-white mb-2">{f.title}</h3>
                 <p className="text-sm text-gray-400">{f.desc}</p>
@@ -252,7 +253,8 @@ export default function WalletPage() {
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-[32px] border border-zion-gold/30 bg-gradient-to-br from-zion-gold/10 via-black/40 to-cyan-500/10 p-6 backdrop-blur-sm"
+              className="zion-rainbow-card p-6"
+              style={{ '--rc': '236, 72, 153' } as React.CSSProperties}
             >
               <div className="flex items-center justify-between mb-4">
                 <div>
@@ -298,7 +300,8 @@ export default function WalletPage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="rounded-[32px] border border-white/10 bg-black/40 p-6"
+              className="zion-rainbow-card p-6"
+              style={{ '--rc': '236, 72, 153' } as React.CSSProperties}
             >
               <h2 className="text-lg font-semibold text-white mb-4">{cs ? 'Vaše peněženky' : 'Your Wallets'} ({wallets.length})</h2>
               <div className="space-y-2">
@@ -333,7 +336,8 @@ export default function WalletPage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            className="rounded-[32px] border border-white/10 bg-black/40 p-6"
+            className="zion-rainbow-card p-6"
+            style={{ '--rc': '236, 72, 153' } as React.CSSProperties}
           >
             <div className="flex gap-2 mb-6 border-b border-white/10 pb-1 overflow-x-auto">
               {(['create', 'import', 'send', 'export'] as const).map((t) => (
@@ -398,7 +402,7 @@ export default function WalletPage() {
                   <Import className="w-5 h-5 text-zion-gold" /> {cs ? 'Importovat peněženku' : 'Import Wallet'}
                 </h3>
                 <div className="space-y-6">
-                  <div className="rounded-2xl border border-white/10 bg-black/30 p-5">
+                  <div className="zion-rainbow-sub p-5" style={{ '--rc': '236, 72, 153' } as React.CSSProperties}>
                     <p className="text-sm font-medium text-gray-300 mb-3">{cs ? 'Z Mnemonic (BIP39)' : 'From Mnemonic (BIP39)'}</p>
                     <textarea
                       value={mnemonic}
@@ -423,7 +427,7 @@ export default function WalletPage() {
                       </button>
                     </div>
                   </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/30 p-5">
+                  <div className="zion-rainbow-sub p-5" style={{ '--rc': '236, 72, 153' } as React.CSSProperties}>
                     <p className="text-sm font-medium text-gray-300 mb-3">{cs ? 'Z Private Key (hex)' : 'From Private Key (hex)'}</p>
                     <input
                       type="text"
@@ -449,7 +453,7 @@ export default function WalletPage() {
                       </button>
                     </div>
                   </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/30 p-5">
+                  <div className="zion-rainbow-sub p-5" style={{ '--rc': '236, 72, 153' } as React.CSSProperties}>
                     <p className="text-sm font-medium text-gray-300 mb-3">{cs ? 'Hardware peněženka (Watch-only)' : 'Hardware Wallet (Watch-only)'}</p>
                     <p className="text-xs text-gray-400 mb-3">{cs ? 'Importujte veřejný klíč z Trezoru nebo Ledgeru.' : 'Import public key from Trezor or Ledger.'}</p>
                     <div className="flex flex-wrap gap-3">

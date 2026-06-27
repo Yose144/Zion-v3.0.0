@@ -103,7 +103,7 @@ export default function NetworkPeers() {
       {/* Stats Cards */}
       <div className="grid gap-4 sm:grid-cols-3">
         {stats.map((stat) => (
-          <div key={stat.label} className="zion-panel p-4">
+          <div key={stat.label} className="zion-rainbow-sub p-4" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
             <div className="flex items-center gap-2 text-gray-400 text-xs uppercase tracking-[0.35em]">
               <stat.icon className="h-4 w-4 text-zion-cyan" />
               {stat.label}
@@ -114,7 +114,7 @@ export default function NetworkPeers() {
       </div>
 
       {/* Peer Directory */}
-      <div className="zion-panel rounded-[24px] bg-black/40 p-5">
+      <div className="zion-rainbow-card rounded-[24px] bg-black/40 p-5" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm text-gray-300">
             <Power className="h-4 w-4 text-emerald-300" />

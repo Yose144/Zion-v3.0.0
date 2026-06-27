@@ -48,7 +48,8 @@ export default function NewsArchive() {
                 href={article.href}
                 target={article.external ? '_blank' : undefined}
                 rel={article.external ? 'noopener noreferrer' : undefined}
-                className="group relative block h-full rounded-3xl border border-white/10 bg-white/3 hover:bg-white/6 transition-all duration-300 overflow-hidden"
+                className="group relative block h-full zion-rainbow-sub transition-all duration-300 overflow-hidden"
+                style={{ '--rc': '56, 189, 248' } as React.CSSProperties}
               >
                 {/* Gradient accent top */}
                 <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-zion-gold/30 to-transparent" />

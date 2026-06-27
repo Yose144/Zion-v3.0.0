@@ -64,7 +64,7 @@ function copy(text: string) { navigator.clipboard.writeText(text); }
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={"rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 shadow-[0_30px_120px_rgba(0,0,0,0.45)] " + className}>
+    <div className={"zion-rainbow-sub rounded-3xl p-6 " + className} style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
       {children}
     </div>
   );
@@ -93,7 +93,7 @@ function Stat({ label, value, unit, icon: Icon, color }: {
 
 function MiniStat({ label, value, icon: Icon, color }: { label: string; value: string | number; icon: React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>; color: string }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+    <div className="zion-rainbow-sub rounded-xl p-3" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
       <div className="flex items-center gap-2 mb-1.5">
         <Icon size={12} style={{ color }} />
         <span className="text-[10px] text-gray-400 uppercase tracking-wider">{label}</span>
@@ -132,7 +132,7 @@ function WalletGate({ onEnter }: { onEnter: () => void }) {
   return (
     <div className="min-h-[40vh] flex items-center justify-center p-6">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
-        <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-md p-8">
+        <div className="zion-rainbow-card rounded-2xl p-8" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-xl bg-zion-gold/15 flex items-center justify-center">
               <LayoutDashboard size={18} className="text-zion-gold" />
@@ -779,7 +779,8 @@ export default function DashboardMain() {
       <motion.section
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 md:p-10 shadow-[0_30px_120px_rgba(0,0,0,0.45)]"
+        className="zion-rainbow-card rounded-3xl md:rounded-4xl p-6 md:p-10"
+        style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
       >
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div className="space-y-4">

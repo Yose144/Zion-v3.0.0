@@ -156,7 +156,7 @@ export default function AddressDetailClient() {
             <ChevronRight className="w-3 h-3" />
             <span className="text-white/70">{cs ? 'Adresa' : 'Address'}</span>
           </nav>
-          <div className="zion-panel rounded-[28px] bg-black/60 border border-red-500/20 p-5 sm:p-8 md:p-10 text-center">
+          <div className="zion-rainbow-card rounded-[28px] bg-black/60 border border-red-500/20 p-5 sm:p-8 md:p-10 text-center" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
             <XCircle className="h-10 w-10 text-red-400/60 mx-auto mb-4" />
             <h1 className="text-xl font-bold text-white mb-2">{cs ? 'Adresa nenalezena' : 'Address Not Found'}</h1>
             <p className="text-white/40 text-sm mb-6 font-mono break-all">{error || addr}</p>
@@ -225,7 +225,7 @@ export default function AddressDetailClient() {
             { label: cs ? "Pool (ceka)" : "Pool (Pending)", value: `${data.balance.pool_pending.toFixed(4)} ZION`, color: "text-amber-400" },
             { label: cs ? "Pool (vyplaceno)" : "Pool (Paid)", value: `${data.balance.pool_paid.toFixed(2)} ZION`, color: "text-zion-gold" },
           ].map((s) => (
-            <div key={s.label} className="zion-panel rounded-[20px] bg-black/60 p-5">
+            <div key={s.label} className="zion-rainbow-sub rounded-[20px] bg-black/60 p-5" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
               <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-1.5">{s.label}</p>
               <p className={`text-xl font-bold tabular-nums ${s.color}`}>{s.value}</p>
             </div>
@@ -235,7 +235,7 @@ export default function AddressDetailClient() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
 
           {/* ── Address Details card ─────────────────────────── */}
-          <div className="zion-panel rounded-[28px] bg-black/60 p-6">
+          <div className="zion-rainbow-sub rounded-[28px] bg-black/60 p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
             <h2 className="text-sm font-semibold text-white/70 mb-4 flex items-center gap-2">
               <Wallet className="w-4 h-4 text-purple-400" />
               {cs ? 'Detaily adresy' : 'Address Details'}
@@ -252,7 +252,7 @@ export default function AddressDetailClient() {
 
           {/* ── Mining Stats card (or placeholder) ──────────── */}
           {data.is_miner && data.mining_stats ? (
-            <div className="zion-panel rounded-[28px] bg-black/60 p-6">
+            <div className="zion-rainbow-sub rounded-[28px] bg-black/60 p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
               <h2 className="text-sm font-semibold text-white/70 mb-4 flex items-center gap-2">
                 <Pickaxe className="w-4 h-4 text-emerald-400" />
                 {cs ? 'Statistiky tezby' : 'Mining Stats'}
@@ -279,7 +279,7 @@ export default function AddressDetailClient() {
               </div>
             </div>
           ) : (
-            <div className="zion-panel rounded-[28px] bg-black/60 p-6 flex flex-col items-center justify-center text-center">
+            <div className="zion-rainbow-sub rounded-[28px] bg-black/60 p-6 flex flex-col items-center justify-center text-center" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
               <Pickaxe className="w-8 h-8 text-white/10 mb-3" />
               <p className="text-white/30 text-sm">{cs ? 'Neni to aktivni miner' : 'Not an active miner'}</p>
               <p className="text-white/15 text-xs mt-1">{cs ? 'Statistiky tezby se objevi, jakmile tato adresa zacne tezit.' : 'Mining stats will appear once this address starts mining.'}</p>
@@ -288,7 +288,7 @@ export default function AddressDetailClient() {
         </div>
 
         {/* ── Transaction history table ──────────────────────── */}
-        <div className="zion-panel rounded-[28px] bg-black/60 overflow-hidden">
+        <div className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
           <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
             <h2 className="text-sm font-semibold text-white/70">
               {cs ? 'Transakce' : 'Transactions'} ({data.transactions.length})
@@ -360,7 +360,7 @@ export default function AddressDetailClient() {
 
         {/* ── UTXO list (only for UTXO-model addresses) ────── */}
         {data.transaction_model === 'utxo' && (
-          <div className="zion-panel rounded-[28px] bg-black/60 overflow-hidden mt-6">
+          <div className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden mt-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
             <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
               <h2 className="text-sm font-semibold text-white/70 flex items-center gap-2">
                 <Layers className="w-4 h-4 text-zion-cyan" />

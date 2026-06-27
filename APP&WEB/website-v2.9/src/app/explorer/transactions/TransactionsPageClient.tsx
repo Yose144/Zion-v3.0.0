@@ -157,7 +157,7 @@ export default function TransactionsPageClient() {
         )}
 
         {/* table card */}
-        <div className="mt-6 zion-panel rounded-[28px] bg-black/60 overflow-hidden">
+        <div className="mt-6 zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
           {/* table header */}
           <div className="grid grid-cols-[32px_1fr_90px_80px_100px_80px_110px] md:grid-cols-[32px_1fr_90px_80px_100px_80px_110px] gap-3 px-5 py-3 border-b border-white/6">
             <span />

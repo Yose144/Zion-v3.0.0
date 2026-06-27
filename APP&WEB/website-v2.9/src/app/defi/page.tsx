@@ -273,7 +273,7 @@ export default function DefiPage() {
           {tab === 'bridge' && (
             <div className="space-y-6 max-w-5xl">
               {/* Bridge Vault Status */}
-              <div className="rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+              <div className="zion-rainbow-card p-6" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                 <div className="flex items-center gap-2 mb-4">
                   <Lock className="h-5 w-5 text-zion-gold" />
                   <h3 className="font-semibold text-white text-sm">
@@ -294,17 +294,17 @@ export default function DefiPage() {
                     : '6 UTXO lock transactions (~16.67M ZION each) sent to the bridge vault in blocks 11611–11612. Relay mints wZION on Base after finality (60 blocks).'}
                 </p>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                  <div className="zion-rainbow-sub p-3" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                     <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Zamčeno' : 'Locked'}</p>
                     <p className="text-base font-semibold text-white mt-1">~100M</p>
                     <p className="text-[10px] text-gray-500">ZION</p>
                   </div>
-                  <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                  <div className="zion-rainbow-sub p-3" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                     <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Lock TX' : 'Lock TXs'}</p>
                     <p className="text-base font-semibold text-white mt-1">6</p>
                     <p className="text-[10px] text-gray-500">UTXO</p>
                   </div>
-                  <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                  <div className="zion-rainbow-sub p-3" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                     <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'wZION Mints' : 'wZION Mints'}</p>
                     <p className="text-base font-semibold text-white mt-1 flex items-center gap-1">
                       {bridgeStatus?.evm_mints_confirmed ?? '—'}
@@ -314,7 +314,7 @@ export default function DefiPage() {
                     </p>
                     <p className="text-[10px] text-gray-500">{cs ? 'potvrzeno' : 'confirmed'}</p>
                   </div>
-                  <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                  <div className="zion-rainbow-sub p-3" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                     <p className="text-[10px] uppercase tracking-wider text-gray-500">L1 {cs ? 'blok' : 'block'}</p>
                     <p className="text-base font-semibold text-white mt-1">{bridgeStatus?.last_l1_height ?? '—'}</p>
                     <p className="text-[10px] text-gray-500">{cs ? 'poslední scan' : 'last scan'}</p>
@@ -335,7 +335,7 @@ export default function DefiPage() {
               {/* Burn widget + How it works */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <BridgeBurnWidget />
-                <div className="rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 space-y-4">
+                <div className="zion-rainbow-card p-6 space-y-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                   <div className="flex items-center gap-2 mb-2">
                     <Flame className="h-5 w-5 text-cyan-400" />
                     <h3 className="font-semibold text-white text-sm">
@@ -393,7 +393,7 @@ export default function DefiPage() {
           <h2 className="mb-6 text-2xl font-bold">
             {cs ? 'Kontrakty na Base Mainnet' : 'Base Mainnet Contracts'}
           </h2>
-          <div className="overflow-hidden zion-section">
+          <div className="overflow-hidden zion-rainbow-card" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -432,7 +432,8 @@ export default function DefiPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="rounded-2xl border border-zion-gold/25 bg-linear-to-br from-zion-gold/10 via-zion-purple/10 to-zion-cyan/10 p-8"
+          className="zion-rainbow-card p-8"
+          style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
         >
           <h2 className="text-2xl font-bold mb-3">
             {cs ? 'Obchoduj wZION' : 'Trade wZION'}

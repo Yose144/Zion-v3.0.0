@@ -141,7 +141,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
   return (
     <div className="zion-shell min-h-screen pt-32 pb-20">
       <div className="zion-container max-w-7xl space-y-12">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="zion-panel rounded-4xl bg-black/60 p-10 backdrop-blur-xl">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ '--rc': '99, 102, 241' } as React.CSSProperties} className="zion-rainbow-card rounded-4xl bg-black/60 p-10 backdrop-blur-xl">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Mission control</p>
@@ -152,7 +152,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               {missionMetrics.map((metric) => (
-                <div key={metric.label} className="zion-panel p-5">
+                <div key={metric.label} style={{ '--rc': '99, 102, 241' } as React.CSSProperties} className="zion-rainbow-sub p-5">
                   <metric.icon className="h-6 w-6 text-zion-gold" />
                   <p className="mt-3 text-xs uppercase tracking-[0.3em] text-gray-400">{metric.label}</p>
                   <p className="text-3xl font-semibold text-white">{metric.value}</p>
@@ -190,7 +190,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
         {/* ═══════ OVERVIEW ═══════ */}
         <div className="grid gap-6 lg:grid-cols-2">
           {(activeTab === 'overview' || activeTab === 'health') && (
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-panel rounded-[28px] bg-black/50 p-6">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ '--rc': '99, 102, 241' } as React.CSSProperties} className="zion-rainbow-card rounded-[28px] bg-black/50 p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Activity className={`w-6 h-6 ${
@@ -217,7 +217,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
               </div>
             </div>
             <div className="mt-6 grid grid-cols-2 gap-4">
-              <div className="zion-panel p-4">
+              <div style={{ '--rc': '99, 102, 241' } as React.CSSProperties} className="zion-rainbow-sub p-4">
                 <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Status</p>
                 <p className={`mt-2 text-2xl font-semibold ${
                   health?.status === 'ok' || health?.status === 'operational' || health?.status === 'healthy' 
@@ -232,15 +232,15 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
                    '○ Checking...'}
                 </p>
               </div>
-              <div className="zion-panel p-4">
+              <div style={{ '--rc': '99, 102, 241' } as React.CSSProperties} className="zion-rainbow-sub p-4">
                 <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Version</p>
                 <p className="mt-2 text-2xl font-semibold text-white">{health?.version || SITE_VERSION}</p>
               </div>
-              <div className="zion-panel p-4">
+              <div style={{ '--rc': '99, 102, 241' } as React.CSSProperties} className="zion-rainbow-sub p-4">
                 <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Uptime</p>
                 <p className="mt-2 text-2xl font-semibold text-white">{computedUptime}</p>
               </div>
-              <div className="zion-panel p-4">
+              <div style={{ '--rc': '99, 102, 241' } as React.CSSProperties} className="zion-rainbow-sub p-4">
                 <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Services</p>
                 <div className="mt-2 space-y-1 text-sm text-gray-300">
                   <p>
@@ -274,7 +274,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
           )}
 
           {(activeTab === 'overview' || activeTab === 'blockchain') && (
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-panel rounded-[28px] bg-black/50 p-6">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ '--rc': '99, 102, 241' } as React.CSSProperties} className="zion-rainbow-card rounded-[28px] bg-black/50 p-6">
             <div className="flex items-center gap-3 mb-4">
               <TrendingUp className="w-6 h-6 text-zion-gold" />
               <h2 className="text-2xl font-semibold text-white">Blockchain vitals</h2>
@@ -289,7 +289,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
                   <MetricCard label="Difficulty" value={stats.difficulty || '—'} />
                 </div>
                 {stats.latest_block && (
-                  <div className="zion-panel p-4">
+                  <div style={{ '--rc': '99, 102, 241' } as React.CSSProperties} className="zion-rainbow-sub p-4">
                     <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{cs ? 'Posledni blok' : 'Latest block'}</p>
                     <div className="mt-3 grid gap-3 text-sm">
                       <div className="flex justify-between text-gray-300">
@@ -320,7 +320,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
         </div>
 
         {(activeTab === 'overview' || activeTab === 'pool') && (
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-panel rounded-[28px] bg-black/50 p-6">
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ '--rc': '99, 102, 241' } as React.CSSProperties} className="zion-rainbow-card rounded-[28px] bg-black/50 p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Activity className="w-6 h-6 text-zion-purple" />
@@ -355,7 +355,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="zion-panel p-4">
+                <div style={{ '--rc': '99, 102, 241' } as React.CSSProperties} className="zion-rainbow-sub p-4">
                   <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{cs ? 'Konfigurace poolu' : 'Pool configuration'}</p>
                   <div className="mt-3 space-y-2 text-sm text-gray-300">
                     <div className="flex justify-between">
@@ -376,7 +376,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
                     </div>
                   </div>
                 </div>
-                <div className="zion-panel p-4">
+                <div style={{ '--rc': '99, 102, 241' } as React.CSSProperties} className="zion-rainbow-sub p-4">
                   <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{cs ? 'Sitove statistiky' : 'Network stats'}</p>
                   <div className="mt-3 space-y-2 text-sm text-gray-300">
                     <div className="flex justify-between">
@@ -412,7 +412,8 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="zion-panel rounded-[28px] bg-black/50 p-6"
+          style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
+          className="zion-rainbow-card rounded-[28px] bg-black/50 p-6"
         >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
@@ -438,7 +439,8 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
               <Link
                 key={card.title}
                 href={card.href}
-                className="group zion-panel p-5 hover:border-zion-cyan/60 hover:bg-black/60 transition-all"
+                className="group zion-rainbow-sub p-5 hover:border-zion-cyan/60 hover:bg-black/60 transition-all"
+                style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
               >
                 <div className="flex items-center gap-3">
                   <card.icon className={`w-6 h-6 ${card.accent}`} />
@@ -499,7 +501,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
         )}
 
         {(activeTab === 'overview' || activeTab === 'blockchain') && (
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-panel rounded-[28px] p-6">
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ '--rc': '99, 102, 241' } as React.CSSProperties} className="zion-rainbow-card rounded-[28px] p-6">
           <div className="flex items-center gap-3 mb-4">
             <Cpu className="w-6 h-6 text-zion-gold" />
             <h2 className="text-2xl font-semibold text-white">{cs ? 'Posledni bloky' : 'Recent blocks'}</h2>
@@ -529,7 +531,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
         )}
 
         {(activeTab === 'overview' || activeTab === 'roadmap') && (
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-panel rounded-4xl border-zion-gold/30 bg-linear-to-r from-zion-purple/20 via-zion-gold/10 to-zion-cyan/20 p-8">
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ '--rc': '99, 102, 241' } as React.CSSProperties} className="zion-rainbow-card rounded-4xl border-zion-gold/30 bg-linear-to-r from-zion-purple/20 via-zion-gold/10 to-zion-cyan/20 p-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.4em] text-gray-200">{cs ? 'Co dal' : 'What\'s next'}</p>
