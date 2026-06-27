@@ -12,6 +12,15 @@
 /// 1 ZION = 1_000_000 flowers (6 decimal places, post-3.0.3 fork).
 pub const FLOWERS_PER_ZION: u64 = 1_000_000;
 
+/// Legacy: 1 ZION = 1_000_000_000_000 flowers (12 decimals, pre-3.0.3).
+/// Used for genesis block values which are preserved on-disk (block hash continuity).
+/// The migration block at H+1 divides all legacy values by 10⁶ to convert to new flowers.
+pub const LEGACY_FLOWERS_PER_ZION: u64 = 1_000_000_000_000;
+
+/// Legacy genesis premine in old-flower scale (12 decimals).
+/// Genesis block bytes use this scale; post-migration it equals GENESIS_PREMINE.
+pub const LEGACY_GENESIS_PREMINE: u128 = 16_780_000_000_u128 * LEGACY_FLOWERS_PER_ZION as u128;
+
 /// Total supply: 144,000,000,000 ZION in flowers (u128 required).
 pub const TOTAL_SUPPLY: u128 = 144_000_000_000_u128 * FLOWERS_PER_ZION as u128;
 

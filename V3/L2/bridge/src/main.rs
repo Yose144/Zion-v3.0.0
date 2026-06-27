@@ -59,6 +59,17 @@ async fn main() -> Result<()> {
     info!("🌉 ZION Bridge Relay v{}", env!("CARGO_PKG_VERSION"));
     info!("   L1 ↔ EVM cross-chain bridge");
 
+    // Post-3.0.3 safety: crash loud if old binary (12-decimal) is loaded
+    assert!(
+        zion_bridge::types::FLOWERS_PER_ZION == 1_000_000,
+        "FATAL: FLOWERS_PER_ZION != 1_000_000 — old pre-3.0.3 binary detected. \
+         Update to v3.0.3+ before running bridge relay."
+    );
+    assert!(
+        zion_bridge::types::FLOWERS_TO_WEI_FACTOR == 1_000_000_000_000,
+        "FATAL: FLOWERS_TO_WEI_FACTOR != 1e12 — old pre-3.0.3 binary detected."
+    );
+
     // Load config
     let config_path = std::env::var("ZION_BRIDGE_CONFIG").unwrap_or_else(|_| {
         std::env::args()

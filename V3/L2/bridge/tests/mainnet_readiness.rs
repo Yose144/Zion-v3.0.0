@@ -30,7 +30,7 @@ fn open_db() -> (BridgeDb, TempDir) {
 }
 
 fn lock(tx_hash: &str, zion: u64, chain: &str, recipient: &str) -> L1LockEvent {
-    let atomic = zion * 1_000_000_000_000; // V3: 12-decimal flowers
+    let atomic = zion * 1_000_000; // V3 post-3.0.3: 6-decimal flowers
     L1LockEvent {
         l1_tx_hash: tx_hash.into(),
         l1_block_height: 1000,
@@ -46,7 +46,7 @@ fn lock(tx_hash: &str, zion: u64, chain: &str, recipient: &str) -> L1LockEvent {
 }
 
 fn burn(burn_id: &str, wzion_zion: u64, l1_recipient: &str) -> EvmBurnEvent {
-    let atomic = wzion_zion * 1_000_000_000_000; // V3: 12-decimal flowers
+    let atomic = wzion_zion * 1_000_000; // V3 post-3.0.3: 6-decimal flowers
     EvmBurnEvent {
         evm_tx_hash: format!("0x{:064x}", burn_id.len()),
         evm_block_number: 38_000_000,
@@ -77,12 +77,12 @@ fn burn(burn_id: &str, wzion_zion: u64, l1_recipient: &str) -> EvmBurnEvent {
 
 #[test]
 fn test_api_block_format_basic_conversion() {
-    // Verify that 12-decimal L1 flowers ↔ 18-decimal EVM wei conversion is correct
-    // At L1 block height 4574, a lock TX output pays 5_400_000_000_000 flowers = 5.4 ZION
-    let amount_flowers: u64 = 5_400_000_000_000;
+    // Verify that 6-decimal L1 flowers ↔ 18-decimal EVM wei conversion is correct
+    // At L1 block height 4574, a lock TX output pays 5_400_000 flowers = 5.4 ZION (post-3.0.3)
+    let amount_flowers: u64 = 5_400_000;
     let wzion_wei = flowers_to_wzion_wei(amount_flowers);
 
-    // 5_400_000_000_000 × 1e6 = 5_400_000_000_000_000_000 = 5.4 × 1e18
+    // 5_400_000 × 1e12 = 5_400_000_000_000_000_000 = 5.4 × 1e18
     assert_eq!(wzion_wei, "5400000000000000000");
 
     // Recovered by EVM watcher from burn event
@@ -660,8 +660,8 @@ fn test_amount_below_minimum() {
     let cfg = BridgeConfig::default();
     let min: u128 = cfg.security.min_bridge_amount.parse().unwrap();
 
-    // 99 ZION < 100 ZION minimum
-    let small = flowers_to_wzion_wei(99_000_000_000_000); // 99 ZION
+    // 99 ZION < 100 ZION minimum — post-3.0.3: 99 × 1e6 flowers
+    let small = flowers_to_wzion_wei(99_000_000); // 99 ZION
     let small_wei: u128 = small.parse().unwrap();
     assert!(small_wei < min, "99 ZION should be below 100 wZION minimum");
 }
@@ -671,8 +671,8 @@ fn test_amount_exactly_at_minimum() {
     let cfg = BridgeConfig::default();
     let min: u128 = cfg.security.min_bridge_amount.parse().unwrap();
 
-    // Exactly 100 ZION = minimum
-    let exact = flowers_to_wzion_wei(100_000_000_000_000); // 100 ZION
+    // Exactly 100 ZION = minimum — post-3.0.3: 100 × 1e6 flowers
+    let exact = flowers_to_wzion_wei(100_000_000); // 100 ZION
     let exact_wei: u128 = exact.parse().unwrap();
     assert_eq!(exact_wei, min, "100 ZION should equal exactly the minimum");
 }
@@ -682,8 +682,8 @@ fn test_amount_just_below_timelock() {
     let cfg = BridgeConfig::default();
     let threshold: u128 = cfg.security.timelock_threshold.parse().unwrap();
 
-    // 999_999 ZION (1 below 1M timelock threshold)
-    let just_under = flowers_to_wzion_wei(999_999_000_000_000_000); // 999,999 ZION
+    // 999_999 ZION (1 below 1M timelock threshold) — post-3.0.3: 999_999 × 1e6 flowers
+    let just_under = flowers_to_wzion_wei(999_999_000_000); // 999,999 ZION
     let wei: u128 = just_under.parse().unwrap();
     assert!(
         wei < threshold,
@@ -696,8 +696,8 @@ fn test_amount_exactly_at_timelock() {
     let cfg = BridgeConfig::default();
     let threshold: u128 = cfg.security.timelock_threshold.parse().unwrap();
 
-    // 1M ZION = timelock threshold
-    let exactly = flowers_to_wzion_wei(1_000_000_000_000_000_000); // 1M ZION
+    // 1M ZION = timelock threshold — post-3.0.3: 1M × 1e6 flowers
+    let exactly = flowers_to_wzion_wei(1_000_000_000_000); // 1M ZION
     let wei: u128 = exactly.parse().unwrap();
     assert_eq!(
         wei, threshold,
@@ -710,8 +710,8 @@ fn test_amount_exceeds_single_limit() {
     let cfg = BridgeConfig::default();
     let max: u128 = cfg.security.max_single_amount.parse().unwrap();
 
-    // 5_000_001 ZION > 5M max single
-    let too_big = flowers_to_wzion_wei(5_000_001_000_000_000_000); // 5M+1 ZION
+    // 5_000_001 ZION > 5M max single — post-3.0.3: 5_000_001 × 1e6 flowers
+    let too_big = flowers_to_wzion_wei(5_000_001_000_000); // 5M+1 ZION
     let wei: u128 = too_big.parse().unwrap();
     assert!(wei > max, "5M+1 ZION should exceed single operation limit");
 }
@@ -917,7 +917,7 @@ fn test_supply_invariant_conversion_precision() {
     let amounts_zion: &[u64] = &[1, 10, 100, 1000, 10_000, 100_000, 1_000_000, 5_000_000];
 
     for &zion in amounts_zion {
-        let atomic = zion * 1_000_000_000_000; // V3: 12-decimal flowers
+        let atomic = zion * 1_000_000; // V3 post-3.0.3: 6-decimal flowers
         let wzion = flowers_to_wzion_wei(atomic);
         let recovered = wzion_wei_to_flowers(&wzion).unwrap();
         assert_eq!(

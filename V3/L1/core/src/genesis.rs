@@ -408,10 +408,12 @@ pub fn validate_premine() -> Result<(), String> {
     }
 
     let grand_total: u128 = PREMINE_OUTPUTS.iter().map(|o| o.amount_flowers).sum();
-    if grand_total != crate::emission::GENESIS_PREMINE {
+    // Premine amounts are in LEGACY flower scale (10¹²); compare to LEGACY_GENESIS_PREMINE.
+    // Post-migration (block H+1), these get divided by 10⁶ to match new GENESIS_PREMINE.
+    if grand_total != crate::emission::LEGACY_GENESIS_PREMINE {
         return Err(format!(
-            "Grand total {grand_total} != GENESIS_PREMINE {}",
-            crate::emission::GENESIS_PREMINE
+            "Grand total {grand_total} != LEGACY_GENESIS_PREMINE {}",
+            crate::emission::LEGACY_GENESIS_PREMINE
         ));
     }
 
@@ -469,9 +471,10 @@ fn genesis_body_hash(transactions: &[Transaction]) -> [u8; 32] {
 }
 
 /// Verify flower amounts are consistent with ZION amounts.
+/// Uses LEGACY_FLOWERS_PER_ZION because PREMINE_OUTPUTS store old-scale (10¹²) values.
 #[cfg(test)]
 fn amounts_consistent(zion: u64, flowers: u128) -> bool {
-    flowers == zion as u128 * crate::emission::FLOWERS_PER_ZION as u128
+    flowers == zion as u128 * crate::emission::LEGACY_FLOWERS_PER_ZION as u128
 }
 
 // ---------------------------------------------------------------------------
@@ -500,8 +503,10 @@ mod tests {
 
     #[test]
     fn premine_total_flowers_matches_emission_constant() {
+        // PREMINE_OUTPUTS store amounts in LEGACY flower scale (10¹², pre-3.0.3).
+        // Compare to LEGACY_GENESIS_PREMINE, not the new-scale GENESIS_PREMINE.
         let total_flowers: u128 = PREMINE_OUTPUTS.iter().map(|o| o.amount_flowers).sum();
-        assert_eq!(total_flowers, crate::emission::GENESIS_PREMINE);
+        assert_eq!(total_flowers, crate::emission::LEGACY_GENESIS_PREMINE);
     }
 
     #[test]
