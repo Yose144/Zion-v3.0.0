@@ -404,8 +404,8 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
                 .map_err(|_| anyhow!("secret key must be 32 bytes"))?;
             let signing_key = SigningKey::from_bytes(&sk_bytes);
 
-            // Convert ZION → flowers (1 ZION = 1e12 flowers)
-            let amount_flowers = (amount * 1_000_000_000_000.0) as u64;
+            // Convert ZION → flowers (post-3.0.3: 1 ZION = 1e6 flowers)
+            let amount_flowers = (amount * zion_core::emission::FLOWERS_PER_ZION as f64) as u64;
             let fee = zion_core::fee::MIN_TX_FEE;
 
             // ── Check UTXOs ────────────────────────────────────────────────
