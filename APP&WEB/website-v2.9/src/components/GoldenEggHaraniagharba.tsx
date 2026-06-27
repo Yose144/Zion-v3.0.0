@@ -44,13 +44,12 @@ export default function GoldenEggHaraniagharba() {
           <div className="absolute -bottom-20 -left-5 h-52 w-52 rounded-full bg-zion-purple/10 blur-3xl" />
 
           <div className="relative grid gap-6 lg:grid-cols-[0.4fr_1fr] lg:items-start">
-            {/* ── Left: Interactive Golden Orb ── */}
+            {/* ── Left: Interactive Golden Orb in cosmic space ── */}
             <div className="space-y-2">
-              <div className="relative overflow-hidden zion-rainbow-sub shadow-[0_18px_60px_rgba(0,0,0,0.35)]" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+              <div className="relative overflow-hidden zion-rainbow-sub shadow-[0_18px_60px_rgba(0,0,0,0.45)]" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                 <GoldenOrb className="aspect-square w-full" />
-                <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
-                <div className="absolute inset-x-0 bottom-0 p-4 pointer-events-none">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/35 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-amber-100">
+                <div className="absolute inset-x-0 bottom-0 p-4 pointer-events-none z-10">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/45 backdrop-blur-sm px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-amber-100">
                     <Sparkles className="h-3 w-3 text-zion-gold" />
                     {tr('goldenEgg', 'visual_badge', lang)}
                   </div>
