@@ -444,7 +444,7 @@ class ZionRpcClient {
           humanitarian_tithe: 5,
           issobella_fund: 5,
           miner_share: 89,
-          version: '3.0.2',
+          version: '3.0.3',
           uptime_secs: payload.uptime_s ?? 0,
         },
         uptime_s: payload.uptime_s ?? 0,

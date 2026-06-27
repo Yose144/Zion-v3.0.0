@@ -42,17 +42,21 @@ type LocalizedText = { cs: string; en: string };
 const docsPageCopy = {
   badge: { cs: 'Znalostní báze', en: 'Knowledge Base' },
   overviewNotice: {
-    cs: 'MainNet Genesis 11. 6. 2026 úspěšný — aktuální public line je 3.0.2 From Genesis to the Star nad kanonickou runtime v3.0.2 Deeksha/Ekam. Core + Edge topologie běží, pool aktivní, mining live. Veřejný launch zůstává na 31. prosince 2026 (Silvestr). Live Index na /docs#live-index je kanonický vstup pro síťový snapshot, baseline repa 2.9.6 a mapu release/runtime.',
-    en: 'MainNet Genesis 11 Jun 2026 successful — the current public line is 3.0.2 From Genesis to the Star over the canonical v3.0.2 Deeksha/Ekam runtime. Core + Edge topology is running, the pool is active, and mining is live. Public launch remains 31 December 2026 (New Year\'s Eve). Live Index at /docs#live-index is the canonical entry for the network snapshot, 2.9.6 repo baseline, and release/runtime map.',
+    cs: 'MainNet Genesis 11. 6. 2026 úspěšný — aktuální public line je 3.0.3 From Genesis to the Star nad kanonickou runtime v3.0.3 Deeksha/Ekam. Decimal fork 1e12→1e6 (6-decimal flowers) dokončen. Core + Edge topologie běží, pool aktivní, mining live. Veřejný launch zůstává na 31. prosince 2026 (Silvestr). Live Index na /docs#live-index je kanonický vstup pro síťový snapshot, baseline repa 2.9.6 a mapu release/runtime.',
+    en: 'MainNet Genesis 11 Jun 2026 successful — the current public line is 3.0.3 From Genesis to the Star over the canonical v3.0.3 Deeksha/Ekam runtime. Decimal fork 1e12→1e6 (6-decimal flowers) complete. Core + Edge topology is running, the pool is active, and mining is live. Public launch remains 31 December 2026 (New Year\'s Eve). Live Index at /docs#live-index is the canonical entry for the network snapshot, 2.9.6 repo baseline, and release/runtime map.',
   },
   githubLabel: { cs: 'GitHub', en: 'GitHub' },
   apiHealthLabel: { cs: 'Zdraví API', en: 'API Health' },
 } as const satisfies Record<string, LocalizedText>;
 
 const versionText: Record<string, { tag?: LocalizedText; description?: LocalizedText }> = {
-  'v3.0.2': {
+  'v3.0.3': {
     tag: { cs: 'AKTUÁLNÍ', en: 'CURRENT' },
-    description: { cs: 'Current public line — MainNet Core + Edge live, pool aktivní, mining běží', en: 'Current public line — MainNet Core + Edge live, pool active, mining running' },
+    description: { cs: 'Current public line — decimal fork 1e12→1e6 (6-decimal flowers), MainNet Core + Edge live, pool aktivní, mining běží', en: 'Current public line — decimal fork 1e12→1e6 (6-decimal flowers), MainNet Core + Edge live, pool active, mining running' },
+  },
+  'v3.0.2': {
+    tag: { cs: 'PŘEDCHOZÍ', en: 'PREVIOUS' },
+    description: { cs: 'Bridge, DeFi Run — L2 bridge na Base Mainnet, wZION token live', en: 'Bridge, DeFi Run — L2 bridge on Base Mainnet, wZION token live' },
   },
   'v3.0.0': {
     tag: { cs: 'MAINNET READY', en: 'MAINNET READY' },
