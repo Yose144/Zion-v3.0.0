@@ -126,7 +126,7 @@ export default function KompasPageClient() {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 10 }}
                     transition={{ duration: 0.3 }}
-                    className="sticky top-32 rounded-3xl border bg-black/70 backdrop-blur-xl p-6 space-y-5 shadow-[0_20px_80px_rgba(0,0,0,0.5)]"
+                    className="sticky top-32 zion-section p-6 space-y-5 shadow-[0_20px_80px_rgba(0,0,0,0.5)]"
                     style={{ borderColor: `rgba(${dir.rgb},0.2)` }}
                   >
                     <button
@@ -162,7 +162,7 @@ export default function KompasPageClient() {
                       {cs ? dir.descCs : dir.descEn}
                     </p>
 
-                    <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-4">
+                    <div className="zion-tile p-4">
                       <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-1">
                         {cs ? 'Otázka' : 'Question'}
                       </p>
@@ -200,7 +200,7 @@ export default function KompasPageClient() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 8 }}
                   transition={{ duration: 0.25 }}
-                  className="rounded-2xl border bg-black/80 backdrop-blur-xl p-5 shadow-[0_20px_60px_rgba(0,0,0,0.5)]"
+                  className="zion-section p-5 shadow-[0_20px_60px_rgba(0,0,0,0.5)]"
                   style={{ borderColor: `rgba(${dir.rgb},0.2)` }}
                 >
                   <div className="flex items-center justify-between mb-3">
@@ -346,7 +346,7 @@ export default function KompasPageClient() {
             {t('movement_title', lang)}
           </h2>
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="rounded-2xl border border-zion-gold/20 bg-zion-gold/5 p-5">
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-[0.3em] text-zion-gold mb-2 font-semibold">
                 {cs ? 'Vnitřní' : 'Inner'}
               </p>
@@ -354,7 +354,7 @@ export default function KompasPageClient() {
                 {t('movement_inner', lang)}
               </p>
             </div>
-            <div className="rounded-2xl border border-zion-cyan/20 bg-zion-cyan/5 p-5">
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-[0.3em] text-zion-cyan mb-2 font-semibold">
                 {cs ? 'Vnější' : 'Outer'}
               </p>

@@ -669,7 +669,7 @@ function getServiceSortRank(service: ServiceStatus): number {
 /* ═══════════════════════ SUB-COMPONENTS ═══════════════════════ */
 function Stat({ label, value, sub, color = 'text-white', mono }: { label: string; value: string; sub?: string; color?: string; mono?: boolean }) {
   return (
-    <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 sm:px-5 py-3 sm:py-4 backdrop-blur">
+    <div className="zion-rainbow-sub px-3 sm:px-5 py-3 sm:py-4" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
       <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] sm:tracking-[0.3em] text-gray-400">{label}</p>
       <p className={`mt-1 sm:mt-2 text-lg sm:text-2xl font-semibold ${color} ${mono ? 'font-mono' : ''}`}>{value}</p>
       {sub && <p className="text-xs sm:text-sm text-gray-300">{sub}</p>}
@@ -698,7 +698,7 @@ function BigProgress({ run }: { run?: StabilityRun }) {
         <span>Start: {run?.start ? new Date(run.start).toLocaleString() : '—'}</span>
         <span>End: {run?.start && run?.duration_secs ? new Date(new Date(run.start).getTime() + run.duration_secs * 1000).toLocaleString() : '—'}</span>
       </div>
-      <div className="relative h-9 rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
+      <div className="relative h-9 zion-section overflow-hidden">
         <motion.div
           className="absolute inset-y-0 left-0 rounded-2xl bg-linear-to-r from-cyan-400 via-purple-400 to-pink-400"
           initial={{ width: 0 }}
@@ -749,7 +749,7 @@ function ServerCard({ node, name, flag, ip }: { node?: ServerNode; name: string;
   const borderStyle = isHealthy ? 'border-cyan-500/30 bg-cyan-500/5' : isSyncing ? 'border-blue-500/30 bg-blue-500/5' : 'border-yellow-500/30 bg-yellow-500/5';
 
   return (
-    <div className={`rounded-2xl sm:rounded-3xl border backdrop-blur-sm p-4 sm:p-6 ${borderStyle}`}>
+    <div className="zion-rainbow-card p-4 sm:p-6" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
       <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-5 flex-wrap">
         <span className="text-xl sm:text-2xl">{flag}</span>
         <div className="min-w-0">
@@ -767,14 +767,14 @@ function ServerCard({ node, name, flag, ip }: { node?: ServerNode; name: string;
         <MiniMetric label="Mempool" value={fmt(s?.mempool_size)} />
         <MiniMetric label={cs ? 'Posledni blok' : 'Last Block'} value={fmtLastBlock(s?.time_since_last_block)} color={isStale ? 'text-yellow-400' : 'text-white'} />
         <MiniMetric label={cs ? 'Kontejnery' : 'Containers'} value={containersLabel} />
-        <div className="rounded-2xl bg-white/5 p-3 border border-white/10">
+        <div className="zion-tile p-3">
           <p className="text-[9px] uppercase tracking-[0.5px] text-gray-400">{cs ? 'Pamet' : 'Memory'}</p>
           <p className={`text-base font-bold font-mono ${valColor(memPct)}`}>{memPct == null ? '—' : `${memPct}%`}</p>
           <div className="mt-1.5 h-1.5 rounded-full bg-white/10 overflow-hidden">
             <div className={`h-full rounded-full ${barColor(memPct)}`} style={{ width: `${memPct ?? 0}%` }} />
           </div>
         </div>
-        <div className="rounded-2xl bg-white/5 p-3 border border-white/10">
+        <div className="zion-tile p-3">
           <p className="text-[9px] uppercase tracking-[0.5px] text-gray-400">{cs ? 'Disk' : 'Disk'}</p>
           <p className={`text-base font-bold font-mono ${valColor(diskPct)}`}>{diskPct == null ? '—' : `${diskPct}%`}</p>
           <div className="mt-1.5 h-1.5 rounded-full bg-white/10 overflow-hidden">
@@ -789,7 +789,7 @@ function ServerCard({ node, name, flag, ip }: { node?: ServerNode; name: string;
 
 function MiniMetric({ label, value, color = 'text-white' }: { label: string; value: string; color?: string }) {
   return (
-    <div className="rounded-xl sm:rounded-2xl bg-white/5 p-2.5 sm:p-3 border border-white/10 min-w-0">
+    <div className="zion-tile p-2.5 sm:p-3 min-w-0">
       <p className="text-[8px] sm:text-[9px] uppercase tracking-[0.15em] sm:tracking-[0.2em] text-gray-400 truncate">{label}</p>
       <p className={`text-sm sm:text-base font-bold font-mono truncate ${color}`}>{value}</p>
     </div>
@@ -809,7 +809,7 @@ function OpsServiceCard({ service, onOpen }: { service: ServiceStatus; onOpen: (
   const dotClass = service.up === true ? 'bg-emerald-400' : service.up === false ? 'bg-red-400' : 'bg-gray-500';
   const statusLabel = service.up === true ? 'UP' : service.up === false ? 'DOWN' : 'N/A';
   return (
-    <button onClick={() => onOpen(service)} className="w-full text-left rounded-xl border border-white/10 bg-black/30 p-3 space-y-3 hover:border-cyan-500/30 hover:bg-cyan-500/5 transition-colors">
+    <button onClick={() => onOpen(service)} className="zion-rainbow-sub w-full text-left p-3 space-y-3 transition-colors" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
       <div className="flex items-start gap-3">
         <span className={`mt-1 h-2.5 w-2.5 rounded-full ${dotClass} ${service.up === true ? 'animate-pulse' : ''}`} />
         <div className="min-w-0 flex-1">
@@ -837,11 +837,11 @@ function OpsServiceCard({ service, onOpen }: { service: ServiceStatus; onOpen: (
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2 text-[10px]">
-        <div className="rounded-lg border border-white/10 bg-white/5 p-2">
+        <div className="zion-tile p-2">
           <div className="uppercase tracking-[0.2em] text-gray-500 mb-1">{cs ? 'Porty' : 'Ports'}</div>
           <div className="font-mono text-gray-300 break-all">{service.ports}</div>
         </div>
-        <div className="rounded-lg border border-white/10 bg-white/5 p-2">
+        <div className="zion-tile p-2">
           <div className="uppercase tracking-[0.2em] text-gray-500 mb-1">Meta</div>
           <div className="text-gray-300 wrap-break-word">{service.note ?? (service.job ? `job: ${service.job}` : 'local service')}</div>
         </div>
@@ -871,7 +871,7 @@ function ServiceDetailDrawer({ service, onClose }: { service: ServiceStatus; onC
             <h3 className="text-2xl font-semibold text-white mt-2">{service.name}</h3>
             <p className="text-xs text-gray-500 font-mono mt-1">{service.image}</p>
           </div>
-          <button onClick={onClose} className="rounded-xl border border-white/10 bg-white/5 p-2 text-gray-300 hover:text-white hover:border-white/20 transition-colors">
+          <button onClick={onClose} className="zion-tile p-2 text-gray-300 hover:text-white transition-colors">
             <XCircle className="h-5 w-5" />
           </button>
         </div>
@@ -884,11 +884,11 @@ function ServiceDetailDrawer({ service, onClose }: { service: ServiceStatus; onC
           <MiniMetric label={cs ? 'Porty' : 'Ports'} value={service.ports} color="text-cyan-400" />
           <MiniMetric label={cs ? 'Stav' : 'Status'} value={statusLabel} color={service.up === true ? 'text-emerald-400' : service.up === false ? 'text-red-400' : 'text-gray-300'} />
         </div>
-        <div className="rounded-2xl border border-white/10 bg-black/30 p-4 mb-5">
+        <div className="zion-section p-4 mb-5">
           <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-2">{cs ? 'Provozni kontext' : 'Operational Context'}</div>
           <div className="text-sm text-gray-300 leading-relaxed">{service.note ?? (service.job ? (cs ? `Prometheus target je propojen pres job ${service.job}.` : `Prometheus target linked through job ${service.job}.`) : (cs ? 'Lokalni sluzba bez primeho Prometheus scrape targetu.' : 'Local service without a direct Prometheus scrape target.'))}</div>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-black/30 p-4 mb-5">
+        <div className="zion-section p-4 mb-5">
           <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-3">{cs ? 'Rychle akce' : 'Quick Actions'}</div>
           <div className="flex flex-wrap gap-2">
             {actions.map(action => (
@@ -899,7 +899,7 @@ function ServiceDetailDrawer({ service, onClose }: { service: ServiceStatus; onC
             ))}
           </div>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+        <div className="zion-section p-4">
           <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-3">{cs ? 'Poznamky operatora' : 'Operator Notes'}</div>
           <ul className="space-y-2 text-sm text-gray-300">
             <li>{cs ? 'Stav DOWN znamena scrape fail nebo nedostupny target.' : 'Status DOWN means a scrape failure or an unreachable target.'}</li>
@@ -940,7 +940,7 @@ function AreaChart({ data: d, timestamps, label, color = '#10b981', unit = '', h
   const { lang } = useLang();
   const cs = lang === 'cs';
   const locale = cs ? 'cs-CZ' : 'en-US';
-  if (d.length < 2) return <div className="rounded-xl bg-black/40 border border-white/10 p-4"><div className="text-[10px] text-gray-500 mb-1">{label}</div><div className="h-20 flex items-center justify-center text-[10px] text-gray-600">{cs ? 'cekam na data' : 'awaiting data'}</div></div>;
+  if (d.length < 2) return <div className="zion-tile p-4"><div className="text-[10px] text-gray-500 mb-1">{label}</div><div className="h-20 flex items-center justify-center text-[10px] text-gray-600">{cs ? 'cekam na data' : 'awaiting data'}</div></div>;
   const min = Math.min(...d), max = Math.max(...d), range = max - min || 1;
   const w = 600, h = height, pad = 2;
   const pts = d.map((v, i) => `${(i / (d.length - 1)) * w},${h - ((v - min) / range) * (h - pad * 2) - pad}`);
@@ -964,7 +964,7 @@ function AreaChart({ data: d, timestamps, label, color = '#10b981', unit = '', h
   const latest = d[d.length - 1] ?? 0;
   const latestStr = latest >= 1000 ? `${(latest / 1000).toFixed(1)}k` : latest.toFixed(latest < 10 ? 1 : 0);
   return (
-    <div className="rounded-xl bg-black/40 border border-white/10 p-4">
+    <div className="zion-tile p-4">
       <div className="flex items-center justify-between mb-2">
         <div className="text-xs text-gray-400">{label}</div>
         <div className="text-sm font-mono font-bold" style={{ color }}>{latestStr}{unit}</div>
@@ -1002,7 +1002,7 @@ function AreaChart({ data: d, timestamps, label, color = '#10b981', unit = '', h
 function PoolGroupRow({ name, submits, accepted, dot }: { name: string; submits: number | null | undefined; accepted: number | null | undefined; dot: string }) {
   const s = submits ?? 0, a = accepted ?? 0, rate = s > 0 ? ((a / s) * 100) : 0;
   return (
-    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
+    <div className="zion-rainbow-sub flex items-center gap-3 p-3" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
       <div className={`h-2.5 w-2.5 rounded-full ${dot}`} />
       <div className="flex-1">
         <div className="flex items-center justify-between mb-1">
@@ -1040,7 +1040,8 @@ function V3MetricsSection({
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.26 }}
-      className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-emerald-500/30 bg-black/40 p-4 sm:p-6 lg:p-8 space-y-6"
+      className="zion-rainbow-card p-4 sm:p-6 lg:p-8 space-y-6"
+      style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
     >
       {/* Header */}
       <div className="flex flex-col gap-2">
@@ -1077,7 +1078,7 @@ function V3MetricsSection({
           <MiniMetric label={cs ? 'Fee sablony' : 'Tmpl Fees'} value={m.templateFees != null ? `${m.templateFees}` : '—'} color="text-amber-300" />
         </div>
         {sparks.chainHeight.length > 1 && (
-          <div className="mt-2 rounded-xl bg-black/40 border border-white/10 p-3">
+          <div className="mt-2 zion-tile p-3">
             <div className="text-[10px] text-gray-500 mb-1">{cs ? 'Vyska chainu — 1h' : 'Chain Height — 1h'}</div>
             <MiniSparkline data={sparks.chainHeight} color="#FFD700" height={32} />
           </div>
@@ -1098,8 +1099,8 @@ function V3MetricsSection({
         </div>
         {(sparks.poolSessions.length > 1 || sparks.shares.length > 1) && (
           <div className="mt-2 grid md:grid-cols-2 gap-2.5">
-            {sparks.poolSessions.length > 1 && (<div className="rounded-xl bg-black/40 border border-white/10 p-3"><div className="text-[10px] text-gray-500 mb-1">{cs ? 'Aktivni mineri — 1h' : 'Active Miners — 1h'}</div><MiniSparkline data={sparks.poolSessions} color="#FFD700" /></div>)}
-            {sparks.shares.length > 1 && (<div className="rounded-xl bg-black/40 border border-white/10 p-3"><div className="text-[10px] text-gray-500 mb-1">{cs ? 'Prijate shares — 1h' : 'Accepted Shares — 1h'}</div><MiniSparkline data={sparks.shares} color="#10b981" /></div>)}
+            {sparks.poolSessions.length > 1 && (<div className="zion-tile p-3"><div className="text-[10px] text-gray-500 mb-1">{cs ? 'Aktivni mineri — 1h' : 'Active Miners — 1h'}</div><MiniSparkline data={sparks.poolSessions} color="#FFD700" /></div>)}
+            {sparks.shares.length > 1 && (<div className="zion-tile p-3"><div className="text-[10px] text-gray-500 mb-1">{cs ? 'Prijate shares — 1h' : 'Accepted Shares — 1h'}</div><MiniSparkline data={sparks.shares} color="#10b981" /></div>)}
           </div>
         )}
       </div>
@@ -1119,7 +1120,7 @@ function V3MetricsSection({
           <MiniMetric label={cs ? 'Vyska poolu' : 'Pool Height'} value={fmt(m.minerPoolHeight)} color="text-zion-gold" />
         </div>
         {sparks.minerHashrate.length > 1 && (
-          <div className="mt-2 rounded-xl bg-black/40 border border-white/10 p-3">
+          <div className="mt-2 zion-tile p-3">
             <div className="text-[10px] text-gray-500 mb-1">{cs ? 'Hashrate minera — 1 h' : 'Miner Hashrate — 1h'}</div>
             <MiniSparkline data={sparks.minerHashrate} color="#10b981" height={32} />
           </div>
@@ -1170,24 +1171,24 @@ function V3MetricsSection({
       <div>
         <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><HardDrive className="h-4 w-4 text-cyan-400" /> Server Infrastructure <span className="text-[10px] text-gray-500 font-normal">Edge VPS · Hetzner</span></h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="rounded-xl bg-white/5 border border-white/10 p-3">
+          <div className="zion-tile p-3">
             <p className="text-[9px] uppercase tracking-wider text-gray-400 flex items-center gap-1"><Flame className="h-3 w-3" /> {cs ? 'CPU zatez' : 'CPU Load'}</p>
             <p className="text-lg font-mono font-bold text-cyan-400">{m.serverLoad1?.toFixed(1) ?? '—'}</p>
             <p className="text-[10px] text-gray-500">{m.serverLoad5?.toFixed(1) ?? '—'} / {m.serverLoad15?.toFixed(1) ?? '—'} (5m/15m)</p>
           </div>
-          <div className="rounded-xl bg-white/5 border border-white/10 p-3">
+          <div className="zion-tile p-3">
             <p className="text-[9px] uppercase tracking-wider text-gray-400">{cs ? 'Pamet' : 'Memory'}</p>
             <p className={`text-lg font-mono font-bold ${memPct != null && memPct > 85 ? 'text-red-400' : 'text-purple-400'}`}>{memPct != null ? `${memPct.toFixed(1)}%` : '—'}</p>
             {m.memTotal && m.memAvail && <MetricBar value={m.memTotal - m.memAvail} max={m.memTotal} color={memPct != null && memPct > 85 ? 'bg-red-500' : 'bg-purple-500'} />}
             <p className="text-[10px] text-gray-500">{cs ? `${fmtBytes(m.memAvail)} volne / ${fmtBytes(m.memTotal)}` : `${fmtBytes(m.memAvail)} free / ${fmtBytes(m.memTotal)}`}</p>
           </div>
-          <div className="rounded-xl bg-white/5 border border-white/10 p-3">
+          <div className="zion-tile p-3">
             <p className="text-[9px] uppercase tracking-wider text-gray-400">Disk</p>
             <p className={`text-lg font-mono font-bold ${diskPct != null && diskPct > 85 ? 'text-red-400' : 'text-amber-400'}`}>{diskPct != null ? `${diskPct.toFixed(1)}%` : '—'}</p>
             {m.diskTotal && m.diskAvail && <MetricBar value={m.diskTotal - m.diskAvail} max={m.diskTotal} color={diskPct != null && diskPct > 85 ? 'bg-red-500' : 'bg-amber-500'} />}
             <p className="text-[10px] text-gray-500">{cs ? `${fmtBytes(m.diskAvail)} volne / ${fmtBytes(m.diskTotal)}` : `${fmtBytes(m.diskAvail)} free / ${fmtBytes(m.diskTotal)}`}</p>
           </div>
-          <div className="rounded-xl bg-white/5 border border-white/10 p-3">
+          <div className="zion-tile p-3">
             <p className="text-[9px] uppercase tracking-wider text-gray-400">{cs ? 'Uptime serveru' : 'Server Uptime'}</p>
             <p className="text-lg font-mono font-bold text-emerald-400">{fmtUptime(uptime)}</p>
             <p className="text-[10px] text-gray-500">{cs ? 'od' : 'since'} {m.bootTime ? new Date(m.bootTime * 1000).toLocaleDateString(locale) : '—'}</p>
@@ -1256,7 +1257,8 @@ function WalletDiagnosticsSection({
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.14 }}
-      className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-emerald-500/30 bg-black/40 p-4 sm:p-6 lg:p-8 space-y-6"
+      className="zion-rainbow-card p-4 sm:p-6 lg:p-8 space-y-6"
+      style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
     >
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-3">
@@ -1279,7 +1281,7 @@ function WalletDiagnosticsSection({
         <Stat label={cs ? 'Verze RPC' : 'RPC Version'} value={rpc?.version ?? '—'} color="text-gray-200" mono />
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5 space-y-4">
+      <div className="zion-rainbow-sub p-4 sm:p-5 space-y-4" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
           <div className="flex-1 min-w-0">
             <label className="block text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-2">{cs ? 'Adresa walletu nebo ucet' : 'Wallet Address Or Account'}</label>
@@ -1318,7 +1320,7 @@ function WalletDiagnosticsSection({
         </div>
 
         <div className="grid lg:grid-cols-2 gap-4">
-          <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+          <div className="zion-section p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="text-xs uppercase tracking-[0.25em] text-gray-500">{cs ? 'Posledni UTXO' : 'Recent UTXOs'}</div>
               <div className="text-[10px] text-gray-500">{cs ? 'top 20 z RPC' : 'top 20 from RPC'}</div>
@@ -1326,7 +1328,7 @@ function WalletDiagnosticsSection({
             {wallet?.utxos?.length ? (
               <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                 {wallet.utxos.slice(0, 6).map((utxo) => (
-                  <div key={`${utxo.tx_hash}_${utxo.output_index}`} className="rounded-xl border border-white/10 bg-white/5 p-3 text-xs">
+                  <div key={`${utxo.tx_hash}_${utxo.output_index}`} className="zion-tile p-3 text-xs">
                     <div className="flex items-center justify-between gap-3">
                       <span className="font-mono text-cyan-300 truncate">{utxo.tx_hash.slice(0, 12)}…:{utxo.output_index}</span>
                       <span className="font-mono text-emerald-300">{fmtZion(utxo.amount / 1_000_000_000_000)}</span>
@@ -1340,7 +1342,7 @@ function WalletDiagnosticsSection({
             )}
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+          <div className="zion-section p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="text-xs uppercase tracking-[0.25em] text-gray-500">{cs ? 'RPC tester odeslani' : 'RPC Submit Tester'}</div>
               <div className="text-[10px] text-gray-500">{cs ? 'jen podepsany payload' : 'signed payload only'}</div>
@@ -1408,7 +1410,8 @@ function PoolSection({ primary }: { primary?: PoolData }) {
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.12 }}
-      className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-purple-500/30 bg-black/40 p-4 sm:p-6 lg:p-8"
+      className="zion-rainbow-card p-4 sm:p-6 lg:p-8"
+      style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
     >
       <div className="flex flex-col gap-2 mb-6">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Mining</p>
@@ -1432,7 +1435,7 @@ function PoolSection({ primary }: { primary?: PoolData }) {
 
 function PoolNodeCard({ name, flag, pool }: { name: string; flag: string; pool?: PoolData }) {
   if (!pool?.ok && !pool?.miners) return (
-    <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-white/5 p-3 sm:p-5">
+    <div className="zion-rainbow-sub p-3 sm:p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
       <div className="flex items-center gap-2 mb-3"><span>{flag}</span><span className="font-semibold text-sm text-white">{name}</span><span className="ml-auto inline-flex items-center gap-1 text-[9px] sm:text-[10px] text-red-200 border border-red-400/30 bg-red-400/10 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 uppercase tracking-widest"><XCircle className="h-3 w-3" /> Offline</span></div>
     </div>
   );
@@ -1441,7 +1444,7 @@ function PoolNodeCard({ name, flag, pool }: { name: string; flag: string; pool?:
   const sh = pool.shares ?? {};
   const p = pool.pool ?? {};
   return (
-    <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-white/5 p-3 sm:p-5 backdrop-blur">
+    <div className="zion-rainbow-sub p-3 sm:p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
       <div className="flex items-center gap-2 mb-3 sm:mb-4 flex-wrap">
         <span className="text-lg sm:text-xl">{flag}</span><span className="font-semibold text-sm sm:text-base text-white">{name}</span>
         <span className={`ml-auto inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-semibold border rounded-full px-2 sm:px-3 py-0.5 sm:py-1 uppercase tracking-widest ${pool.blockchain?.connected ? 'text-emerald-200 bg-emerald-400/10 border-emerald-400/30' : 'text-red-200 bg-red-400/10 border-red-400/30'}`}>
@@ -1466,7 +1469,7 @@ function PhaseAccordion({ icon, title, pct, status, statusColor, children, defau
   const pctColor = pct >= 100 ? 'text-emerald-400' : pct > 0 ? 'text-cyan-400' : 'text-gray-500';
   const barCls = pct >= 100 ? 'bg-emerald-400' : pct > 0 ? 'bg-linear-to-r from-cyan-400 via-purple-400 to-pink-400' : 'bg-gray-700';
   return (
-    <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-black/30 backdrop-blur-sm overflow-hidden">
+    <div className="zion-section overflow-hidden">
       <button onClick={() => setOpen(!open)} className="w-full flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-4 p-4 sm:p-6 hover:bg-white/5 transition-colors text-left">
         <span className="shrink-0">{icon}</span>
         <span className="font-semibold text-sm sm:text-lg text-white flex-1 min-w-0 truncate sm:whitespace-normal sm:overflow-visible">{title}</span>
@@ -1504,7 +1507,7 @@ function LogConsole({ logTail }: { logTail?: string }) {
   if (!logTail) return <div className="text-gray-500 text-center py-8 text-sm">No log data</div>;
   const lines = logTail.split('\\n').filter(l => l.trim());
   return (
-    <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-black/60 p-3 sm:p-4 max-h-64 overflow-y-auto overflow-x-auto font-mono text-[10px] sm:text-[11px] leading-relaxed text-gray-500 whitespace-pre">
+    <div className="zion-section p-3 sm:p-4 max-h-64 overflow-y-auto overflow-x-auto font-mono text-[10px] sm:text-[11px] leading-relaxed text-gray-500 whitespace-pre">
       {lines.map((line, i) => (
         <div key={i} className={line.includes('[') && !line.includes('| OK') ? 'text-red-400 font-semibold' : line.includes('OK') ? '' : ''}>
           {line.includes('OK') ? <>{line.replace('OK', '')}<span className="text-emerald-400">OK</span></> : line}
@@ -1796,7 +1799,8 @@ export default function MissionControlDashboard() {
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl sm:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-5 sm:p-8 lg:p-10 shadow-[0_30px_120px_rgba(0,0,0,0.45)]"
+          className="zion-rainbow-card p-5 sm:p-8 lg:p-10"
+          style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-5">
@@ -1838,14 +1842,14 @@ export default function MissionControlDashboard() {
                 { label: 'Network Peers', value: fmt(primaryStats?.peers_connected ?? 0), descriptor: 'public node peers' },
                 { label: 'Mainnet Status', value: 'TBD', descriptor: 'target 31 December 2026' },
               ].map((chip) => (
-                <div key={chip.label} className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur">
+                <div key={chip.label} className="zion-rainbow-sub px-5 py-4" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
                   <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{chip.label}</p>
                   <p className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white mt-2">{chip.value}</p>
                   <p className="text-sm text-gray-300">{chip.descriptor}</p>
                 </div>
               ))}
               {/* wZION price chip — always visible, shows seed price until pool is seeded */}
-              <div className="col-span-2 rounded-2xl border border-zion-gold/20 bg-zion-gold/5 px-5 py-4 backdrop-blur">
+              <div className="col-span-2 zion-rainbow-sub px-5 py-4" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
                 <p className="text-xs uppercase tracking-[0.3em] text-zion-gold/70">wZION Price</p>
                 <div className="flex items-baseline gap-3 mt-2">
                   <p className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white font-mono">
@@ -1872,7 +1876,7 @@ export default function MissionControlDashboard() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.04 }}
-          className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl p-2"
+          className="zion-section p-2"
         >
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <Zap className="h-4 w-4 text-cyan-400 mx-2 sm:mx-3 shrink-0" />
@@ -1902,7 +1906,7 @@ export default function MissionControlDashboard() {
 
         {/* ══════════════ API OFFLINE FALLBACK ══════════════ */}
         {!loading && !data && (
-          <div className="text-center py-16 text-gray-500 rounded-2xl border border-orange-500/20 bg-orange-500/5">
+          <div className="text-center py-16 text-gray-500 zion-section border-orange-500/20 bg-orange-500/5">
             <Radio className="h-8 w-8 text-orange-400 mx-auto mb-3" />
             <p className="text-orange-300 font-semibold">{cs ? 'Ziva telemetrie neni dostupna' : 'Live telemetry unavailable'}</p>
             <p className="text-sm mt-1">{cs ? 'Node API je docasne nedostupne - zalozky roadmapy a ustavy stale funguji.' : 'Node API temporarily unreachable - roadmap & constitution tabs still work.'}</p>
@@ -1920,7 +1924,8 @@ export default function MissionControlDashboard() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.08 }}
-              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-emerald-500/20 bg-black/40 p-4 sm:p-6 lg:p-8"
+              className="zion-rainbow-card p-4 sm:p-6 lg:p-8"
+              style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-6">
                 <div className="flex items-center gap-3">
@@ -1945,7 +1950,7 @@ export default function MissionControlDashboard() {
                 <Stat label="Security Gate" value="PASS" color="text-emerald-400" sub="all blockers resolved" />
                 <Stat label="Launch Gate" value="TBD" color="text-amber-400" sub="31 December 2026" />
               </div>
-              <div className="mt-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-5 py-4 text-sm text-gray-300">
+              <div className="mt-4 zion-tile px-5 py-4 text-sm text-gray-300">
                 <span className="font-semibold text-amber-300">Mainnet TBD</span> — BFG scrub v přípravě, genesis artefakty + checksumy se finalizují, exit criteria se shromažďují, stability closure report se sestavuje. Core + Edge v testování.
               </div>
             </motion.section>
@@ -1955,7 +1960,8 @@ export default function MissionControlDashboard() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.12 }}
-              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
+              className="zion-rainbow-card p-4 sm:p-6 lg:p-8"
+              style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-6">
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Production Runtime</p>
@@ -1974,7 +1980,7 @@ export default function MissionControlDashboard() {
                 <ServerCard node={primaryNode} name="Edge VPS (Hetzner)" flag="🌐" ip="77.42.71.94 · pool :8444 + web + relay" />
                 <ServerCard node={data?.primary} name="Core PC (private VPN)" flag="🏠" ip="Private · consensus + RPC :8443" />
               </div>
-              <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-gray-300">
+              <div className="mt-5 zion-tile px-5 py-4 text-sm text-gray-300">
                 Core + Edge topologie: Edge VPS (Hetzner, 77.42.71.94) jako veřejný relay a pool, Core PC (privátní VPN) jako primární konsenzus uzel. Peer spojení přes privátní VPN tunel.
               </div>
             </motion.section>
@@ -2006,7 +2012,8 @@ export default function MissionControlDashboard() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.16 }}
-              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
+              className="zion-rainbow-card p-4 sm:p-6 lg:p-8"
+              style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-6">
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Build & Gate</p>
@@ -2028,7 +2035,8 @@ export default function MissionControlDashboard() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.18 }}
-              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
+              className="zion-rainbow-card p-4 sm:p-6 lg:p-8"
+              style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-6">
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Launch Gate</p>
@@ -2044,7 +2052,7 @@ export default function MissionControlDashboard() {
               </div>
               <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
                 {readinessPanels.map((panel) => (
-                  <div key={panel.key} className={`rounded-2xl border p-4 sm:p-5 ${panel.cardClass}`}>
+                  <div key={panel.key} className="zion-rainbow-sub p-4 sm:p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
                     <div className="flex items-center gap-2 mb-4">
                       <panel.Icon className={`h-5 w-5 ${panel.iconClass}`} />
                       <h3 className="font-semibold text-white text-sm">{panel.title}</h3>
@@ -2078,7 +2086,8 @@ export default function MissionControlDashboard() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
+              className="zion-rainbow-card p-4 sm:p-6 lg:p-8"
+              style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-6">
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Readiness</p>
@@ -2132,7 +2141,8 @@ export default function MissionControlDashboard() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.24 }}
-              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
+              className="zion-rainbow-card p-4 sm:p-6 lg:p-8"
+              style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-6">
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Logs</p>
@@ -2149,7 +2159,8 @@ export default function MissionControlDashboard() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.28 }}
-              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-zion-gold/20 bg-linear-to-br from-zion-gold/5 via-transparent to-zion-purple/5 p-4 sm:p-6 lg:p-8"
+              className="zion-rainbow-card p-4 sm:p-6 lg:p-8"
+              style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <a href="/terranova" className="flex flex-col sm:flex-row items-start sm:items-center gap-5 group">
                 <div className="w-14 h-14 rounded-2xl bg-zion-gold/10 border border-zion-gold/30 flex items-center justify-center shrink-0 group-hover:border-zion-gold/60 transition-colors">
@@ -2177,7 +2188,7 @@ export default function MissionControlDashboard() {
           <div className="space-y-8">
 
             {/* ── TEST METRICS BANNER ── */}
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 sm:p-4 flex items-center gap-3">
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="zion-section border-amber-500/40 bg-amber-500/10 p-3 sm:p-4 flex items-center gap-3">
               <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0" />
               <div>
                 <p className="text-sm font-semibold text-amber-300">Testovací metriky / Test Metrics</p>
@@ -2186,7 +2197,7 @@ export default function MissionControlDashboard() {
             </motion.div>
 
             {stackSummary && (
-              <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }} className="rounded-2xl sm:rounded-3xl border border-white/10 bg-linear-to-br from-cyan-500/10 via-transparent to-emerald-500/10 p-4 sm:p-6 lg:p-8">
+              <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }} className="zion-rainbow-card p-4 sm:p-6 lg:p-8" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
                 <div className="flex flex-col gap-2 mb-5">
                   <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Ops Summary</p>
                   <h2 className="text-xl sm:text-2xl font-semibold text-white flex items-center gap-2 sm:gap-3">
@@ -2204,7 +2215,7 @@ export default function MissionControlDashboard() {
                   <MiniMetric label="Core Node" value={stackSummary.coreNodeUp === 1 ? 'UP' : stackSummary.coreNodeUp === 0 ? 'DOWN' : '—'} color={stackSummary.coreNodeUp === 1 ? 'text-emerald-400' : 'text-red-400'} />
                 </div>
                 <div className="grid md:grid-cols-2 gap-3 mt-4">
-                  <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+                  <div className="zion-section p-4">
                     <div className="flex items-center justify-between text-xs mb-2">
                       <span className="uppercase tracking-[0.25em] text-gray-500">Scrape Coverage</span>
                       <span className="font-mono text-gray-300">{services.filter(s => s.up !== null).filter(s => s.up).length}/{services.filter(s => s.up !== null).length}</span>
@@ -2216,14 +2227,14 @@ export default function MissionControlDashboard() {
                       <span>Redis exporter: {stackSummary.redisExporterUp === 1 ? 'up' : 'down'}</span>
                     </div>
                   </div>
-                  <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+                  <div className="zion-section p-4">
                     <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-2">Host Kernel</div>
                     <div className="text-sm text-gray-200 font-mono break-all">{stackSummary.hostKernel ?? '—'}</div>
                     <div className="mt-2 text-[10px] text-gray-500">Redis memory cap: {fmtBytes(stackSummary.redisMemoryMax)}</div>
                   </div>
                 </div>
                 <div className="grid md:grid-cols-3 gap-3 mt-4">
-                  <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+                  <div className="zion-section p-4">
                     <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-2">Prometheus Runtime</div>
                     <div className="grid grid-cols-2 gap-2">
                       <MiniMetric label="Version" value={stackSummary.prometheusVersion ?? '—'} color="text-cyan-400" />
@@ -2232,7 +2243,7 @@ export default function MissionControlDashboard() {
                       <MiniMetric label="Head Chunks" value={fmt(stackSummary.prometheusHeadChunks)} color="text-amber-400" />
                     </div>
                   </div>
-                  <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+                  <div className="zion-section p-4">
                     <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-2">Alert Pipeline</div>
                     <div className="grid grid-cols-2 gap-2">
                       <MiniMetric label="Alertmanagers" value={fmt(stackSummary.alertmanagersDiscovered)} color="text-emerald-400" />
@@ -2240,7 +2251,7 @@ export default function MissionControlDashboard() {
                     </div>
                     <div className="mt-2 text-[10px] text-gray-500">Alertmanager není scrape target v tomto stacku, stav se čte přes Prometheus notification pipeline.</div>
                   </div>
-                  <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+                  <div className="zion-section p-4">
                     <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-2">Remote Coverage</div>
                     <div className="grid grid-cols-2 gap-2">
                       <MiniMetric label="Core Pool" value={stackSummary.corePoolUp === 1 ? 'UP' : stackSummary.corePoolUp === 0 ? 'DOWN' : '—'} color={stackSummary.corePoolUp === 1 ? 'text-emerald-400' : 'text-red-400'} />
@@ -2250,7 +2261,7 @@ export default function MissionControlDashboard() {
                   </div>
                 </div>
                 {opsAlerts.length > 0 && (
-                  <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
+                  <div className="mt-4 zion-section border-amber-500/30 bg-amber-500/10 p-4">
                     <div className="flex items-center gap-2 mb-2 text-amber-300 text-xs uppercase tracking-[0.25em] font-semibold">
                       <AlertTriangle className="h-4 w-4" />
                       Ops Alerts
@@ -2275,7 +2286,7 @@ export default function MissionControlDashboard() {
             )}
 
             {/* ── SERVICE STATUS GRID ── */}
-            <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }} className="rounded-2xl sm:rounded-3xl border border-emerald-500/30 bg-black/40 p-4 sm:p-6 lg:p-8">
+            <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }} className="zion-rainbow-card p-4 sm:p-6 lg:p-8" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
               <div className="flex flex-col gap-2 mb-5">
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Docker Stack</p>
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -2321,7 +2332,7 @@ export default function MissionControlDashboard() {
 
             {/* ── 6H CHARTS ── */}
             {v3Charts && (
-              <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }} className="rounded-2xl sm:rounded-3xl border border-purple-500/30 bg-black/40 p-4 sm:p-6 lg:p-8">
+              <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }} className="zion-rainbow-card p-4 sm:p-6 lg:p-8" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
                 <div className="flex flex-col gap-3 mb-5 lg:flex-row lg:items-center lg:justify-between">
                   <div className="flex flex-col gap-2">
                     <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Time Series</p>
@@ -2331,7 +2342,7 @@ export default function MissionControlDashboard() {
                     </h2>
                     <p className="text-xs text-gray-500">Prometheus range queries · auto-refresh 60s · adaptive step by selected range</p>
                   </div>
-                  <div className="inline-flex rounded-xl border border-white/10 bg-black/30 p-1 self-start">
+                  <div className="inline-flex zion-section p-1 self-start">
                     {CHART_RANGES.map(option => (
                       <button
                         key={option.value}
@@ -2356,7 +2367,7 @@ export default function MissionControlDashboard() {
             )}
 
             {/* ── DOCKER STACK ARCHITECTURE ── */}
-            <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }} className="rounded-2xl sm:rounded-3xl border border-cyan-500/30 bg-black/40 p-4 sm:p-6 lg:p-8">
+            <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }} className="zion-rainbow-card p-4 sm:p-6 lg:p-8" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
               <div className="flex flex-col gap-2 mb-5">
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Infrastructure</p>
                 <h2 className="text-xl sm:text-2xl font-semibold text-white flex items-center gap-2 sm:gap-3">
@@ -2366,7 +2377,7 @@ export default function MissionControlDashboard() {
               </div>
               <div className="grid md:grid-cols-3 gap-4">
                 {/* Core Layer */}
-                <div className="rounded-xl bg-white/5 border border-white/10 p-4 space-y-3">
+                <div className="zion-rainbow-sub p-4 space-y-3" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
                   <h3 className="text-sm font-semibold text-cyan-400 flex items-center gap-2"><Database className="h-4 w-4" /> Core Layer</h3>
                   <div className="space-y-2 text-xs">
                     <div className="flex justify-between"><span className="text-gray-300">zion-core</span><span className="text-gray-500 font-mono">:8333 :8443 :9115</span></div>
@@ -2377,7 +2388,7 @@ export default function MissionControlDashboard() {
                   <p className="text-[10px] text-gray-500">Blockchain consensus + P2P + RPC · read-only rootfs · no-new-privileges</p>
                 </div>
                 {/* Mining Layer */}
-                <div className="rounded-xl bg-white/5 border border-white/10 p-4 space-y-3">
+                <div className="zion-rainbow-sub p-4 space-y-3" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
                   <h3 className="text-sm font-semibold text-purple-400 flex items-center gap-2"><Pickaxe className="h-4 w-4" /> Mining Layer</h3>
                   <div className="space-y-2 text-xs">
                     <div className="flex justify-between"><span className="text-gray-300">zion-pool</span><span className="text-gray-500 font-mono">:8444 :8080</span></div>
@@ -2386,7 +2397,7 @@ export default function MissionControlDashboard() {
                   <p className="text-[10px] text-gray-500">Stratum pool · PPLNS engine · Cosmic Harmony PoW · internal miner</p>
                 </div>
                 {/* Monitoring Layer */}
-                <div className="rounded-xl bg-white/5 border border-white/10 p-4 space-y-3">
+                <div className="zion-rainbow-sub p-4 space-y-3" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
                   <h3 className="text-sm font-semibold text-emerald-400 flex items-center gap-2"><Activity className="h-4 w-4" /> Monitoring Layer</h3>
                   <div className="space-y-2 text-xs">
                     <div className="flex justify-between"><span className="text-gray-300">prometheus</span><span className="text-gray-500 font-mono">:9090</span></div>
@@ -2399,7 +2410,7 @@ export default function MissionControlDashboard() {
                   <p className="text-[10px] text-gray-500">Prometheus 90d retention · Grafana dashboards · alert rules</p>
                 </div>
               </div>
-              <div className="mt-4 rounded-xl bg-white/5 border border-white/10 p-4">
+              <div className="mt-4 zion-tile p-4">
                 <h3 className="text-sm font-semibold text-gray-300 mb-2 flex items-center gap-2"><Globe className="h-4 w-4 text-gray-400" /> Network Topology</h3>
                 <div className="grid md:grid-cols-2 gap-3 text-xs">
                   <div>
@@ -2442,7 +2453,8 @@ export default function MissionControlDashboard() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.08 }}
-              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-zion-gold/30 bg-linear-to-br from-zion-gold/10 via-transparent to-zion-purple/10 p-4 sm:p-6 lg:p-8"
+              className="zion-rainbow-card p-4 sm:p-6 lg:p-8"
+              style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-6">
                 <div className="flex items-center gap-3">
@@ -2474,7 +2486,8 @@ export default function MissionControlDashboard() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.12 }}
-              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
+              className="zion-rainbow-card p-4 sm:p-6 lg:p-8"
+              style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-6">
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Implementation</p>
@@ -2485,7 +2498,7 @@ export default function MissionControlDashboard() {
               </div>
               <div className="grid gap-5 md:grid-cols-2">
                 {/* Tier 1 */}
-                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-5">
+                <div className="zion-rainbow-sub p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                       <CheckCheck className="h-5 w-5 text-emerald-400" />
@@ -2510,7 +2523,7 @@ export default function MissionControlDashboard() {
                   </div>
                 </div>
                 {/* Tier 2 */}
-                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-5">
+                <div className="zion-rainbow-sub p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                       <CheckCheck className="h-5 w-5 text-emerald-400" />
@@ -2542,7 +2555,8 @@ export default function MissionControlDashboard() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.16 }}
-              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
+              className="zion-rainbow-card p-4 sm:p-6 lg:p-8"
+              style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-6">
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Deploy & Verify</p>
@@ -2593,7 +2607,8 @@ export default function MissionControlDashboard() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
+              className="zion-rainbow-card p-4 sm:p-6 lg:p-8"
+              style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-6">
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Technical</p>
@@ -2603,7 +2618,7 @@ export default function MissionControlDashboard() {
                 </h2>
               </div>
               <div className="grid gap-5 md:grid-cols-2">
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                <div className="zion-rainbow-sub p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
                   <h3 className="text-base font-semibold text-white mb-4">Scratchpad Ekam (Tier 1)</h3>
                   <div className="space-y-2">
                     {[
@@ -2621,7 +2636,7 @@ export default function MissionControlDashboard() {
                     ))}
                   </div>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                <div className="zion-rainbow-sub p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
                   <h3 className="text-base font-semibold text-white mb-4">Epoch NPU (Tier 2)</h3>
                   <div className="space-y-2">
                     {[
@@ -2647,7 +2662,8 @@ export default function MissionControlDashboard() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.24 }}
-              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
+              className="zion-rainbow-card p-4 sm:p-6 lg:p-8"
+              style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-6">
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Changed Files</p>
@@ -2669,7 +2685,7 @@ export default function MissionControlDashboard() {
                   { file: 'docker/Dockerfile.{core,pool,miner}', change: 'FEATURES build arg + testnet', type: 'mod' },
                   { file: 'docker/docker-compose.testnet.yml', change: 'Testnet feature flag v2.9.8', type: 'mod' },
                 ].map(f => (
-                  <div key={f.file} className="flex items-center gap-3 text-sm py-2.5 px-4 rounded-xl bg-white/5 border border-white/10">
+                  <div key={f.file} className="flex items-center gap-3 text-sm py-2.5 px-4 zion-tile">
                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${f.type === 'new' ? 'bg-emerald-400/20 text-emerald-300' : 'bg-blue-400/20 text-blue-300'}`}>
                       {f.type === 'new' ? 'NEW' : 'MOD'}
                     </span>
@@ -2687,7 +2703,8 @@ export default function MissionControlDashboard() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.28 }}
-              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
+              className="zion-rainbow-card p-4 sm:p-6 lg:p-8"
+              style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-6">
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Git Log</p>
@@ -2703,7 +2720,7 @@ export default function MissionControlDashboard() {
                   { hash: '605cd38', msg: 'feat: testnet feature flag — conditional NPU_EPOCH_LENGTH, Docker FEATURES build arg', date: '2026-03-17' },
                   { hash: '8f40f73', msg: 'chore: deploy scripts + testnet compose alignment', date: '2026-03-17' },
                 ].map(c => (
-                  <div key={c.hash} className="flex items-center gap-3 text-sm py-2 px-4 rounded-xl bg-white/5 border border-white/10">
+                  <div key={c.hash} className="flex items-center gap-3 text-sm py-2 px-4 zion-tile">
                     <span className="font-mono text-xs text-zion-gold bg-zion-gold/10 px-2 py-1 rounded">{c.hash}</span>
                     <span className="text-gray-300 flex-1">{c.msg}</span>
                     <span className="text-xs text-gray-500 shrink-0">{c.date}</span>
@@ -2724,7 +2741,8 @@ export default function MissionControlDashboard() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.08 }}
-              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
+              className="zion-rainbow-card p-4 sm:p-6 lg:p-8"
+              style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-6">
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Postup' : 'Progress'}</p>
@@ -2734,7 +2752,7 @@ export default function MissionControlDashboard() {
                 </h2>
                 <p className="text-sm text-gray-400">Fáze 0–4 hotové, fáze 5 v přípravě. V3 Mainnet target 31. prosince 2026 (Silvestr). Core + Edge topology v testování.</p>
               </div>
-              <div className="relative h-9 rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
+              <div className="relative h-9 zion-section overflow-hidden">
                 <motion.div className="absolute inset-y-0 left-0 rounded-2xl bg-linear-to-r from-amber-400 via-cyan-400 to-purple-400" initial={{ width: 0 }} animate={{ width: '65%' }} transition={{ duration: 1.2 }} />
                 <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow-md z-10">{SITE_RELEASE_LABEL} · V3 MAINNET · COUNTDOWN · 31 DEC 2026</span>
               </div>
@@ -2838,7 +2856,8 @@ export default function MissionControlDashboard() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.08 }}
-              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
+              className="zion-rainbow-card p-4 sm:p-6 lg:p-8"
+              style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-8">
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Architektura' : 'Architecture'}</p>
@@ -2889,7 +2908,7 @@ export default function MissionControlDashboard() {
               className="grid gap-6 lg:grid-cols-2"
             >
               {/* Constitution */}
-              <div className="rounded-2xl sm:rounded-3xl border border-zion-gold/30 bg-linear-to-br from-zion-gold/10 via-transparent to-zion-purple/10 p-4 sm:p-6 lg:p-8">
+              <div className="zion-rainbow-card p-4 sm:p-6 lg:p-8" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
                 <div className="flex items-center gap-3 mb-6">
                   <Lock className="h-6 w-6 text-zion-gold" />
                   <div>
@@ -2929,7 +2948,7 @@ export default function MissionControlDashboard() {
               </div>
 
               {/* Premine Allocation */}
-              <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8">
+              <div className="zion-rainbow-card p-4 sm:p-6 lg:p-8" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
                 <div className="flex items-center gap-3 mb-6">
                   <Scale className="h-6 w-6 text-zion-purple" />
                   <div>
@@ -2944,7 +2963,7 @@ export default function MissionControlDashboard() {
                     { cat: cs ? 'Infrastruktura a vyvoj' : 'Infrastructure & Dev', Icon: Wrench, amount: '2,500,000,000', pct: 15.4, lock: cs ? 'Okamzite dostupne' : 'Immediately available', lockColor: 'text-emerald-400' },
                     { cat: cs ? 'Humanitarni fond' : 'Humanitarian Fund', Icon: Heart, amount: '1,530,000,000', pct: 9.4, lock: cs ? 'Okamzite dostupne' : 'Immediately available', lockColor: 'text-emerald-400' },
                   ].map(p => (
-                    <div key={p.cat} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <div key={p.cat} className="zion-rainbow-sub p-4" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
                       <div className="flex items-center justify-between">
                         <h4 className="text-sm font-semibold text-white flex items-center gap-2"><p.Icon className="h-4 w-4 text-gray-400" />{p.cat}</h4>
                         <span className="text-xs text-zion-gold font-mono">{p.pct}%</span>
@@ -2976,7 +2995,8 @@ export default function MissionControlDashboard() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.08 }}
-              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
+              className="zion-rainbow-card p-4 sm:p-6 lg:p-8"
+              style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-6">
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Target Economics</p>
@@ -2998,7 +3018,8 @@ export default function MissionControlDashboard() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.20 }}
-              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
+              className="zion-rainbow-card p-4 sm:p-6 lg:p-8"
+              style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-6">
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'L5 / L6 Pokladna' : 'L5 / L6 Treasury'}</p>
@@ -3009,7 +3030,7 @@ export default function MissionControlDashboard() {
                 <p className="text-sm text-gray-400">{cs ? '5 % každého blokového odměny putuje na L5 humanitární fond a 5 % na L6 Issobella vesmírný fond.' : '5% of every block reward goes to the L5 humanitarian fund and 5% to the L6 Issobella space fund.'}</p>
               </div>
               <div className="grid md:grid-cols-2 gap-4">
-                <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 sm:p-5">
+                <div className="zion-rainbow-sub p-4 sm:p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
                   <div className="flex items-center gap-3 mb-3">
                     <Globe2 className="h-6 w-6 text-amber-400" />
                     <div>
@@ -3023,7 +3044,7 @@ export default function MissionControlDashboard() {
                     <p className="text-amber-400">~15,000 ZION / měsíc · DAO řízeno · L5 Radou</p>
                   </div>
                 </div>
-                <div className="rounded-2xl border border-rose-500/30 bg-rose-500/5 p-4 sm:p-5">
+                <div className="zion-rainbow-sub p-4 sm:p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
                   <div className="flex items-center gap-3 mb-3">
                     <Rocket className="h-6 w-6 text-rose-400" />
                     <div>
@@ -3044,7 +3065,7 @@ export default function MissionControlDashboard() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.24 }}
-              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-red-500/20 bg-red-500/5 p-4 sm:p-6 lg:p-8 flex items-center gap-3 sm:gap-6"
+              className="zion-cta-banner p-4 sm:p-6 lg:p-8 flex items-center gap-3 sm:gap-6"
             >
               <Flame className="h-8 w-8 sm:h-10 sm:w-10 text-red-400 shrink-0" />
               <div>
@@ -3064,7 +3085,8 @@ export default function MissionControlDashboard() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.08 }}
-              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
+              className="zion-rainbow-card p-4 sm:p-6 lg:p-8"
+              style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-6">
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Bezpecnost' : 'Security'}</p>
@@ -3092,22 +3114,22 @@ export default function MissionControlDashboard() {
                   'Backup/restore rehearsal',
                   'Alert routing confirmation',
                 ].map((text) => (
-                  <div key={text} className="flex items-center gap-3 text-sm py-2.5 px-4 rounded-2xl bg-white/5 border border-white/10">
+                  <div key={text} className="flex items-center gap-3 text-sm py-2.5 px-4 zion-tile">
                     <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
                     <span className="text-gray-300">{text}</span>
                   </div>
                 ))}
               </div>
               <div className="mt-6 grid gap-3 lg:grid-cols-3">
-                <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-gray-300">
+                <div className="zion-rainbow-sub p-4 text-sm text-gray-300" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
                   <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-300">Core + Edge Active</p>
                   <p className="mt-2">Consensus, reward split, metrics a deploy docs jsou potvrzeny pro production mainnet běh.</p>
                 </div>
-                <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-gray-300">
+                <div className="zion-rainbow-sub p-4 text-sm text-gray-300" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
                   <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-300">Launch Gate · PASS</p>
                   <p className="mt-2">Všechny P0 blokatoři jsou uzavřeni. BFG scrub, genesis artefakty, exit criteria a closure report kompletní.</p>
                 </div>
-                <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-4 text-sm text-gray-300">
+                <div className="zion-rainbow-sub p-4 text-sm text-gray-300" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
                   <p className="text-xs font-semibold uppercase tracking-[0.3em] text-cyan-300">Post-Launch</p>
                   <p className="mt-2">Externí audit, exchange onboarding a L2/L3 bridge jsou prioritou po veřejném launchi.</p>
                 </div>
@@ -3125,7 +3147,8 @@ export default function MissionControlDashboard() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.08 }}
-              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
+              className="zion-rainbow-card p-4 sm:p-6 lg:p-8"
+              style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-8">
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Casova osa' : 'Timeline'}</p>
@@ -3135,7 +3158,7 @@ export default function MissionControlDashboard() {
                 </h2>
               </div>
               <div className="grid lg:grid-cols-2 gap-6">
-                <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-6">
+                <div className="zion-rainbow-sub p-4 sm:p-6" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
                   <h3 className="font-semibold text-white text-base sm:text-lg mb-4 sm:mb-5 flex items-center gap-2"><CalendarDays className="h-5 w-5 text-zion-gold" /> 2026 — V3 Mainnet & Launch</h3>
                   <div className="relative pl-6 sm:pl-8 border-l-2 border-white/20 space-y-4 sm:space-y-6">
                     {[
@@ -3153,7 +3176,7 @@ export default function MissionControlDashboard() {
                     ))}
                   </div>
                 </div>
-                <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-6">
+                <div className="zion-rainbow-sub p-4 sm:p-6" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
                   <h3 className="font-semibold text-white text-base sm:text-lg mb-4 sm:mb-5 flex items-center gap-2"><CalendarDays className="h-5 w-5 text-zion-gold" /> Post-Launch Queue — Not Blocking Today</h3>
                   <div className="relative pl-6 sm:pl-8 border-l-2 border-gray-700 space-y-4 sm:space-y-6">
                     {[
@@ -3181,7 +3204,8 @@ export default function MissionControlDashboard() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.12 }}
-              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
+              className="zion-rainbow-card p-4 sm:p-6 lg:p-8"
+              style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <div className="space-y-3 sm:space-y-4 overflow-x-auto">
                 {[
@@ -3229,7 +3253,8 @@ export default function MissionControlDashboard() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.08 }}
-              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
+              className="zion-rainbow-card p-4 sm:p-6 lg:p-8"
+              style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-6">
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Priority' : 'Priorities'}</p>

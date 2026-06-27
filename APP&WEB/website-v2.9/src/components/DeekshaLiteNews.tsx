@@ -41,7 +41,8 @@ export default function DeekshaLiteNews() {
               href={article.href}
               target={article.external ? '_blank' : undefined}
               rel={article.external ? 'noopener noreferrer' : undefined}
-              className="group flex items-start gap-4 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] transition-colors p-4"
+              className="group flex items-start gap-4 zion-rainbow-sub hover:bg-white/[0.05] transition-colors p-4"
+              style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
             >
               {/* Date block */}
               <div className="flex-none w-14 text-center">

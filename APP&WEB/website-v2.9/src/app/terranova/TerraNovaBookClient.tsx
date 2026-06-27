@@ -1042,7 +1042,7 @@ export default function TerraNovaBookClient() {
               </div>
 
               <div className="space-y-4">
-                <div className="overflow-hidden rounded-[1.75rem] border border-zion-cyan/20 bg-[#06080d]/90 shadow-[0_20px_80px_rgba(2,8,18,0.6)]">
+                <div className="overflow-hidden zion-rainbow-sub shadow-[0_20px_80px_rgba(2,8,18,0.6)]" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
                   <div className="flex items-center justify-between border-b border-white/8 px-4 py-3">
                     <div className="flex items-center gap-2">
                       <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
@@ -1168,7 +1168,7 @@ export default function TerraNovaBookClient() {
           </div>
 
           <div className="flex flex-col gap-4">
-            <div className="relative min-h-[300px] overflow-hidden rounded-4xl border border-[#1e293b] bg-[#02040a] p-5 shadow-[0_0_80px_rgba(0,0,0,0.8)_inset,0_24px_90px_rgba(0,0,0,0.45)] md:p-6 md:min-h-[340px]">
+            <div className="relative min-h-[300px] overflow-hidden zion-rainbow-sub p-5 shadow-[0_0_80px_rgba(0,0,0,0.8)_inset,0_24px_90px_rgba(0,0,0,0.45)] md:p-6 md:min-h-[340px]" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
               <div className="pointer-events-none absolute inset-0">
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(56,189,248,0.04)_0%,rgba(0,0,0,0)_100%)]" />
                 {STARFIELD_POINTS.map((star, i) => (
@@ -2060,7 +2060,8 @@ export default function TerraNovaBookClient() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 16, scale: 0.98 }}
               transition={{ duration: 0.24 }}
-              className="fixed inset-x-3 top-[6vh] z-70 mx-auto max-h-[88vh] w-full max-w-4xl overflow-hidden rounded-4xl border border-white/10 bg-[#04060b]/95 shadow-[0_30px_120px_rgba(0,0,0,0.58)] sm:inset-x-4 sm:top-[8vh] sm:max-h-[84vh]"
+              className="fixed inset-x-3 top-[6vh] z-70 mx-auto max-h-[88vh] w-full max-w-4xl overflow-hidden zion-rainbow-card shadow-[0_30px_120px_rgba(0,0,0,0.58)] sm:inset-x-4 sm:top-[8vh] sm:max-h-[84vh]"
+              style={{ '--rc': '244, 63, 94' } as React.CSSProperties}
             >
               <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/8 px-4 py-4 sm:px-6">
                 <div>
@@ -2179,7 +2180,7 @@ export default function TerraNovaBookClient() {
                   </div>
                 ) : (
                   <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
-                    <div className="overflow-hidden rounded-3xl border border-zion-cyan/20 bg-[#050910]">
+                    <div className="overflow-hidden zion-rainbow-sub" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
                       <div className="flex items-center justify-between border-b border-white/8 px-4 py-3">
                         <div className="flex items-center gap-2">
                           <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />

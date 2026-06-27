@@ -128,7 +128,8 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
         {subcommands.map((sub) => (
           <div
             key={sub.id}
-            className="rounded-2xl border border-white/10 bg-white/5 p-4 hover:bg-white/10 transition-colors"
+            className="zion-rainbow-sub p-4 transition-colors"
+            style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
           >
             <div className="flex items-center gap-2 mb-2">
               <span className="text-zion-gold">{sub.icon}</span>
@@ -151,11 +152,8 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
           return (
             <div
               key={pf.suffix}
-              className={`rounded-3xl border p-5 transition-colors ${
-                pf.available
-                  ? 'border-white/10 bg-black/40 hover:border-white/20'
-                  : 'border-white/5 bg-white/[0.02]'
-              }`}
+              className={`zion-rainbow-sub p-5 transition-colors ${pf.available ? '' : 'opacity-50'}`}
+              style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
@@ -220,7 +218,7 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
       </div>
 
       {/* Verification note */}
-      <div className="rounded-2xl border border-zion-cyan/20 bg-zion-cyan/5 p-5">
+      <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
         <p className="text-sm text-gray-300">
           <span className="text-zion-cyan font-semibold">{cs ? 'Verifikace:' : 'Verification:'}</span>{' '}
           {cs

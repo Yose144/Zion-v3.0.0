@@ -250,7 +250,7 @@ export default function NetworkStatsClient() {
           {loading && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
               {[...Array(8)].map((_, i) => (
-                <div key={i} className="rounded-3xl border border-white/8 bg-black/60 p-6 h-36" />
+                <div key={i} className="zion-rainbow-sub p-6 h-36" style={{ '--rc': '251, 191, 36' } as React.CSSProperties} />
               ))}
             </div>
           )}
@@ -258,7 +258,7 @@ export default function NetworkStatsClient() {
           {!loading && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {statCards.map((card) => (
-                <div key={card.label} className="rounded-3xl border border-white/8 bg-black/60 backdrop-blur-xl p-5 hover:border-white/12 transition-colors flex flex-col">
+                <div key={card.label} className="zion-rainbow-sub p-5 flex flex-col" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                   <div className="flex items-center gap-2 mb-2">
                     <card.icon className={`h-4 w-4 ${card.color}`} />
                     <span className="text-[10px] uppercase tracking-[0.2em] text-gray-500">{card.label}</span>
@@ -293,7 +293,7 @@ export default function NetworkStatsClient() {
               const max = c.data.length ? Math.max(...c.data) : 0;
               const trend = c.data.length >= 2 ? c.data[c.data.length - 1] - c.data[0] : 0;
               return (
-                <div key={c.key} className="rounded-4xl border border-white/8 bg-black/60 backdrop-blur-xl p-5 md:p-6">
+                <div key={c.key} className="zion-section p-5 md:p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <c.icon className="h-4 w-4" style={{ color: c.color }} />
@@ -336,7 +336,7 @@ export default function NetworkStatsClient() {
         </motion.section>
 
         {/* ═══════ CTA ═══════ */}
-        <motion.section initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.14 }} className="rounded-4xl border border-zion-cyan/30 bg-linear-to-r from-zion-cyan/20 via-zion-purple/10 to-zion-cyan/20 p-10 text-center">
+        <motion.section initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.14 }} className="zion-cta-banner p-10 text-center">
           <Network className="mx-auto h-12 w-12 text-zion-cyan" />
           <h2 className="mt-6 text-3xl font-semibold text-white">ZION Network</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">

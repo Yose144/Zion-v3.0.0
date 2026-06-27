@@ -132,7 +132,7 @@ export default function NetworkPeers() {
           {loading && (
             <div className="space-y-3">
               {[...Array(4)].map((_, idx) => (
-                <div key={idx} className="animate-pulse rounded-2xl border border-white/5 bg-white/5 p-4">
+                <div key={idx} className="animate-pulse zion-rainbow-sub p-4" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                   <div className="mb-2 h-4 rounded bg-white/10" />
                   <div className="h-3 rounded bg-white/10" />
                 </div>
@@ -157,11 +157,12 @@ export default function NetworkPeers() {
                 key={peer.address}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                className={`rounded-2xl border p-4 transition-colors ${
+                className={`zion-rainbow-sub p-4 transition-colors ${
                   peer.connected
                     ? 'border-emerald-500/20 bg-emerald-500/5'
-                    : 'border-white/10 bg-white/5'
+                    : ''
                 }`}
+                style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">

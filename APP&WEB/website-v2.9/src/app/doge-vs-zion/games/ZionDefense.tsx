@@ -911,7 +911,7 @@ export function ZionDefense() {
         </div>
 
         {/* Game info bar */}
-        <div style={{ '--rc': '245, 158, 11' } as React.CSSProperties} className="zion-rainbow-card rounded-2xl bg-black/60 p-3 flex items-center justify-between gap-4 flex-wrap">
+        <div style={{ '--rc': '245, 158, 11' } as React.CSSProperties} className="zion-rainbow-card p-3 flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <span className="text-xl">{level.emoji}</span>
             <div>
@@ -938,7 +938,7 @@ export function ZionDefense() {
         {/* Canvas + side panel */}
         <div className="flex flex-col lg:flex-row gap-3">
           {/* Canvas */}
-          <div className="flex-1 overflow-auto rounded-2xl border border-white/10 bg-black/60">
+          <div className="flex-1 overflow-auto zion-rainbow-card" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
             <canvas
               ref={canvasRef}
               onClick={handleCanvasClick}
@@ -1027,7 +1027,7 @@ export function ZionDefense() {
 
         {s.status === 'paused' && (
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="rounded-2xl border border-white/20 bg-black/90 p-6 text-center">
+            <div className="zion-rainbow-card p-6 text-center" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <p className="text-lg font-bold text-white mb-4">{cs ? 'Pauza' : 'Paused'}</p>
               <button onClick={togglePause} className="rounded-xl bg-white/10 border border-white/20 px-6 py-2.5 text-sm font-bold text-white hover:bg-white/20 transition-colors">
                 {cs ? 'Pokračovat' : 'Resume'}
@@ -1094,11 +1094,12 @@ function LevelSelect({ cs, saveData, onStart, muted, setMuted }: {
                 key={level.id}
                 onClick={() => unlocked && onStart(level.id)}
                 disabled={!unlocked}
-                className={`text-left rounded-2xl border p-5 transition-all ${
+                className={`text-left zion-rainbow-sub p-5 transition-all ${
                   unlocked
-                    ? 'border-white/10 bg-black/60 hover:border-zion-gold/30 hover:bg-zion-gold/5 cursor-pointer'
-                    : 'border-white/5 bg-white/3 opacity-50 cursor-not-allowed'
+                    ? 'cursor-pointer'
+                    : 'opacity-50 cursor-not-allowed'
                 }`}
+                style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
@@ -1127,11 +1128,11 @@ function LevelSelect({ cs, saveData, onStart, muted, setMuted }: {
         </div>
 
         {/* Tower reference */}
-        <div className="rounded-2xl border border-white/10 bg-black/60 p-5">
+        <div className="zion-rainbow-card p-5" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
           <h3 className="mb-3 text-sm font-bold text-white">{cs ? 'Věže' : 'Towers'}</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {Object.values(TOWERS).map((tower: TowerDef) => (
-              <div key={tower.type} className="rounded-xl border border-white/5 bg-white/3 p-3 text-center">
+              <div key={tower.type} className="zion-tile p-3 text-center">
                 <div className="text-2xl mb-1">{tower.emoji}</div>
                 <p className="text-xs font-bold text-white">{tower.name}</p>
                 <p className="text-[9px] text-gray-500 mt-1 line-clamp-2">{tower.description}</p>
@@ -1154,7 +1155,7 @@ function TowerShop({ cs, zion, selected, onSelect }: {
   onSelect: (t: TowerType) => void;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/60 p-3">
+    <div className="zion-rainbow-card p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
       <p className="mb-2 text-xs font-bold text-white/80">{cs ? 'Postavit věž' : 'Build Tower'}</p>
       <div className="space-y-2">
         {Object.values(TOWERS).map((tower: TowerDef) => {
@@ -1203,7 +1204,7 @@ function UpgradePanel({ cs, tower, def, stats, zion, onUpgrade, onSell, onClose 
   onClose: () => void;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/60 p-3">
+    <div className="zion-rainbow-card p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="text-2xl">{def.emoji}</span>

@@ -170,7 +170,7 @@ export default function DaoPage() {
 
         {/* ── Daemon status ── */}
         {!loading && daemonOnline === false && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-6">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="zion-section p-6">
             <div className="flex items-start gap-3">
               <Info className="h-6 w-6 text-blue-400 mt-0.5 shrink-0" />
               <div>
@@ -382,7 +382,7 @@ export default function DaoPage() {
           </div>
           <div className="grid md:grid-cols-2 gap-6 mb-6">
             {/* Co-Admin system */}
-            <div className="rounded-2xl border border-white/10 bg-black/40 p-5">
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-3">
                 <ShieldCheck className="h-5 w-5 text-cyan-400" />
                 <h3 className="font-semibold text-white">{cs ? 'Co-Admin systém' : 'Co-Admin System'}</h3>
@@ -394,7 +394,7 @@ export default function DaoPage() {
               </p>
               <div className="space-y-1.5 text-xs">
                 {(['L1 Consensus', 'L2 DAO/Bridge', 'L3 WARP', 'L4 Oasis', 'L5 Free World', 'L6 Issobella'] as const).map((layer) => (
-                  <div key={layer} className="flex items-center justify-between rounded-lg border border-white/5 bg-white/5 px-3 py-1.5">
+                  <div key={layer} className="flex items-center justify-between zion-tile px-3 py-1.5">
                     <span className="text-gray-300 font-mono">{layer}</span>
                     <span className="text-gray-500">{cs ? 'Co-Admin' : 'Co-Admin'} · {cs ? 'DAO autorita' : 'DAO authority'}</span>
                   </div>
@@ -402,7 +402,7 @@ export default function DaoPage() {
               </div>
             </div>
             {/* Sacred Trinity */}
-            <div className="rounded-2xl border border-zion-gold/20 bg-zion-gold/5 p-5">
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-3">
                 <Star className="h-5 w-5 text-zion-gold" />
                 <h3 className="font-semibold text-white">{cs ? 'Posvátná trojice' : 'Sacred Trinity'}</h3>
@@ -418,7 +418,7 @@ export default function DaoPage() {
                   { name: 'Síta', role: cs ? 'Srdce · Komunita · L5' : 'Heart · Community · L5', color: 'text-rose-300', desc: cs ? 'Humanitární fond, fyzické komunity, péče' : 'Humanitarian fund, physical communities, care' },
                   { name: 'Hanuman', role: cs ? 'Ochránce · Bridge · L2' : 'Guardian · Bridge · L2', color: 'text-amber-300', desc: cs ? 'Přemostění světů, ochrana, věrná služba' : 'Bridging worlds, protection, faithful service' },
                 ].map((archetype) => (
-                  <div key={archetype.name} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                  <div key={archetype.name} className="zion-tile p-3">
                     <div className="flex items-center gap-2 mb-1">
                       <span className={`font-bold text-sm ${archetype.color}`}>{archetype.name}</span>
                       <span className="text-[10px] text-gray-500 uppercase tracking-wider">{archetype.role}</span>
@@ -430,7 +430,7 @@ export default function DaoPage() {
             </div>
           </div>
           {/* Consent Engine */}
-          <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-5">
+          <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
             <div className="flex items-center gap-3 mb-3">
               <Sparkles className="h-5 w-5 text-cyan-400" />
               <h3 className="font-semibold text-white">{cs ? 'Consent Engine' : 'Consent Engine'}</h3>
@@ -448,7 +448,7 @@ export default function DaoPage() {
                 { label: cs ? 'Veto okno' : 'Veto window', detail: '72h' },
                 { label: cs ? 'Provedení' : 'Execute', detail: cs ? 'Po souhlasu' : 'After consent' },
               ].map((step) => (
-                <div key={step.label} className="rounded-lg border border-white/10 bg-white/5 p-2.5 text-center">
+                <div key={step.label} className="zion-tile p-2.5 text-center">
                   <p className="font-semibold text-cyan-300 text-xs">{step.label}</p>
                   <p className="text-gray-500 mt-0.5">{step.detail}</p>
                 </div>
@@ -469,7 +469,7 @@ export default function DaoPage() {
                   : 'Tree of Life serves as a living DAO ledger. Roots represent community guilds, the heart development circles, and the crown governance guardians.'}
               </p>
             </div>
-            <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/60 px-4 py-2 text-sm">
+            <div className="flex items-center gap-3 zion-tile px-4 py-2 text-sm">
               <TreeDeciduous className="h-5 w-5 text-emerald-300" />
               <span className="text-gray-300">{cs ? 'Živá topologie' : 'Live topology'}</span>
             </div>
@@ -501,7 +501,7 @@ export default function DaoPage() {
                 iconColor: 'text-amber-200',
               },
             ].map((node) => (
-              <div key={node.level} className={`rounded-2xl border border-white/10 bg-gradient-to-b ${node.color} p-5`}>
+              <div key={node.level} className={`zion-rainbow-sub p-5`} style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
                 <div className="flex items-center gap-3">
                   <node.Icon className={`h-5 w-5 ${node.iconColor}`} />
                   <div>
@@ -527,7 +527,7 @@ export default function DaoPage() {
                   : '9 consciousness levels mapped to 10 Sefirot. Each DAO circle corresponds to different consciousness levels.'}
               </p>
             </div>
-            <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/60 px-4 py-2 text-sm">
+            <div className="flex items-center gap-3 zion-tile px-4 py-2 text-sm">
               <Star className="h-5 w-5 text-zion-gold" />
               <span className="text-gray-300">{cs ? 'Real-time DAO tracking' : 'Real-time DAO tracking'}</span>
             </div>
@@ -555,7 +555,7 @@ export default function DaoPage() {
         {/* ── Create Proposal Modal ── */}
         {createOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-black/90 p-6 shadow-2xl">
+            <div className="w-full max-w-lg zion-section p-6 shadow-2xl">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-xl font-semibold text-white">{cs ? 'Nový governance návrh' : 'New governance proposal'}</h3>
                 <button onClick={() => setCreateOpen(false)} className="text-gray-400 hover:text-white">✕</button>

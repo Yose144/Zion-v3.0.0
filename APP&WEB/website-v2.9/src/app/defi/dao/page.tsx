@@ -152,7 +152,7 @@ export default function DaoPage() {
           </p>
 
           {/* Link to full DAO page */}
-          <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 flex items-center gap-3">
+          <div className="mt-6 zion-rainbow-sub p-4 flex items-center gap-3" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
             <Vote className="h-5 w-5 text-zion-gold shrink-0" />
             <div className="flex-1">
               <p className="text-sm text-gray-300">
@@ -199,7 +199,7 @@ export default function DaoPage() {
               { label: cs ? 'Schváleno' : 'Passed', value: passedCount.toString(), icon: CheckCircle2, color: 'text-zion-gold' },
               { label: cs ? 'Quorum' : 'Quorum', value: '2B', icon: Users, color: 'text-purple-400' },
             ].map((card) => (
-              <div key={card.label} className="rounded-3xl border border-white/8 bg-black/60 backdrop-blur-xl p-5">
+              <div key={card.label} className="zion-rainbow-sub p-5" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
                 <div className="flex items-center gap-2 mb-2">
                   <card.icon className={`h-4 w-4 ${card.color}`} />
                   <span className="text-[10px] uppercase tracking-[0.2em] text-gray-500">{card.label}</span>
@@ -229,7 +229,7 @@ export default function DaoPage() {
               const againstPct = totalVotes > 0 ? (p.votesAgainst / totalVotes) * 100 : 0;
               const quorumPct = p.quorum > 0 ? Math.min((totalVotes / p.quorum) * 100, 100) : 0;
               return (
-                <div key={p.id} className="rounded-2xl border border-white/6 bg-white/3 p-5 hover:border-white/12 transition-colors">
+                <div key={p.id} className="zion-rainbow-sub p-5" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-4">
                     <span className="text-xs font-mono text-gray-500">#{p.id}</span>
                     <h3 className="text-sm font-medium text-white flex-1">{cs ? p.titleCs : p.title}</h3>
@@ -279,7 +279,7 @@ export default function DaoPage() {
         </motion.section>
 
         {/* Contract */}
-        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }} className="rounded-2xl border border-white/8 bg-black/60 p-5">
+        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }} className="zion-section p-5">
           <div className="flex items-center gap-2 mb-2">
             <Layers className="h-4 w-4 text-gray-400" />
             <span className="text-xs text-gray-400 uppercase tracking-wider">{cs ? 'Kontrakt' : 'Contract'}</span>

@@ -225,19 +225,19 @@ export default function ExplorerPage() {
 
           <div className="grid gap-6 xl:grid-cols-3">
             <div className="xl:col-span-2 space-y-6">
-              <Suspense fallback={<div className="rounded-4xl border border-white/8 bg-black/60 animate-pulse h-[500px]" />}>
+              <Suspense fallback={<div className="zion-section animate-pulse h-[500px]" />}>
                 <ProRecentBlocks />
               </Suspense>
-              <Suspense fallback={<div className="rounded-4xl border border-white/8 bg-black/60 animate-pulse h-[500px]" />}>
+              <Suspense fallback={<div className="zion-section animate-pulse h-[500px]" />}>
                 <ProRecentTransactions />
               </Suspense>
             </div>
 
             <div className="space-y-6">
-              <Suspense fallback={<div className="rounded-4xl border border-white/8 bg-black/60 animate-pulse h-80" />}>
+              <Suspense fallback={<div className="zion-section animate-pulse h-80" />}>
                 <ExplorerDashboard />
               </Suspense>
-              <Suspense fallback={<div className="rounded-4xl border border-white/8 bg-black/60 animate-pulse h-[280px]" />}>
+              <Suspense fallback={<div className="zion-section animate-pulse h-[280px]" />}>
                 <MempoolFeed />
               </Suspense>
 
@@ -291,7 +291,7 @@ export default function ExplorerPage() {
             </h2>
             <p className="text-sm text-gray-400">{cs ? 'Historicke trendy obtiznosti, hashrate, emise a velikosti bloku.' : 'Historical difficulty, hashrate, emission, and block size trends.'}</p>
           </div>
-          <Suspense fallback={<div className="rounded-4xl border border-white/8 bg-black/60 animate-pulse h-[400px]" />}>
+          <Suspense fallback={<div className="zion-section animate-pulse h-[400px]" />}>
             <ExplorerCharts />
           </Suspense>
         </motion.section>
@@ -310,7 +310,7 @@ export default function ExplorerPage() {
             </h2>
             <p className="text-sm text-gray-400">{cs ? 'Sledujte postup tezby - Decade Decay: 5,400 -> 724 ZION/blok, 100+ let + tail ∞.' : 'Track mining progress - Decade Decay: 5,400 -> 724 ZION/block, 100+ years + tail ∞.'}</p>
           </div>
-          <Suspense fallback={<div className="rounded-4xl border border-white/8 bg-black/60 animate-pulse h-[280px]" />}>
+          <Suspense fallback={<div className="zion-section animate-pulse h-[280px]" />}>
             <EmissionMonitor />
           </Suspense>
         </motion.section>
@@ -330,7 +330,7 @@ export default function ExplorerPage() {
             </h2>
             <p className="text-sm text-gray-400">{cs ? 'Konektivita aktualniho verejneho hostu s archivovanou historii multi-host validace.' : 'Current public host connectivity with archived multi-host validation history.'}</p>
           </div>
-          <Suspense fallback={<div className="rounded-4xl border border-white/8 bg-black/60 animate-pulse h-[280px]" />}>
+          <Suspense fallback={<div className="zion-section animate-pulse h-[280px]" />}>
             <NetworkPeers />
           </Suspense>
         </motion.section>
@@ -351,7 +351,7 @@ export default function ExplorerPage() {
             </h2>
             <p className="text-sm text-gray-400">{cs ? 'Top drzitele ZION podle zustatku - premine alokace, tezebni odmeny a ekonomika site.' : 'Top ZION holders by balance - premine allocations, mining rewards, and network economics.'}</p>
           </div>
-          <Suspense fallback={<div className="rounded-4xl border border-white/8 bg-black/60 animate-pulse h-[400px]" />}>
+          <Suspense fallback={<div className="zion-section animate-pulse h-[400px]" />}>
             <RichListClient embedded />
           </Suspense>
         </motion.section>

@@ -64,7 +64,7 @@ export default function MiningClient() {
   return (
     <div className="zion-shell min-h-screen pt-32 pb-20 overflow-x-hidden">
       <div className="zion-container max-w-5xl space-y-10">
-  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-4xl border border-white/10 bg-black/60 p-10 backdrop-blur-xl text-center">
+  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="zion-rainbow-card p-10 backdrop-blur-xl text-center" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
           <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Quantum Leap mining stack</p>
           <h1 className="text-5xl md:text-6xl font-semibold text-gradient mt-4">Universal miner + ML orchestrator</h1>
           <p className="mt-6 text-lg text-gray-300">
@@ -79,7 +79,8 @@ export default function MiningClient() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="rounded-3xl border border-white/10 bg-linear-to-br from-zion-gold/10 via-zion-purple/5 to-zion-cyan/10 p-6"
+              className="zion-rainbow-sub p-6"
+              style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
             >
               <protocol.icon className="h-10 w-10 text-zion-gold" />
               <h3 className="mt-4 text-xl font-semibold text-white">{protocol.title}</h3>
@@ -88,18 +89,18 @@ export default function MiningClient() {
           ))}
         </div>
 
-        <motion.section initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[28px] border border-white/10 bg-black/50 p-8">
+        <motion.section initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Pool access</p>
               <h2 className="text-3xl font-semibold text-white">Stratum endpoints</h2>
               <p className="text-sm text-gray-400">Auto-detect or pin a specific algorithm port.</p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-mono text-zion-cyan">stratum+tcp://{SITE_POOL_PRIMARY}</div>
+            <div className="zion-tile px-4 py-2 text-sm font-mono text-zion-cyan">stratum+tcp://{SITE_POOL_PRIMARY}</div>
           </div>
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             {supportedAlgorithms.map((algo) => (
-              <div key={algo.name} className="rounded-2xl border border-white/10 bg-white/5 p-5">
+              <div key={algo.name} className="zion-rainbow-sub p-5" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-lg font-semibold text-white">{algo.name}</p>
@@ -114,7 +115,7 @@ export default function MiningClient() {
           </div>
         </motion.section>
 
-        <motion.section initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[28px] border border-white/10 bg-black/50 p-8">
+        <motion.section initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
           <div className="flex items-center gap-3">
             <Zap className="h-6 w-6 text-zion-gold" />
             <h2 className="text-3xl font-semibold text-white">Command center</h2>
@@ -122,10 +123,10 @@ export default function MiningClient() {
           <p className="mt-2 text-sm text-gray-400">Universal miner rotates algorithms, streams telemetry to the AI orchestrator, and feeds consciousness multipliers.</p>
           <div className="mt-6 grid gap-4">
             {minerSteps.map((step, idx) => (
-              <div key={step.title} className="rounded-2xl border border-white/10 bg-white/5 p-6">
+              <div key={step.title} className="zion-rainbow-sub p-6" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Step {idx + 1}</p>
                 <h3 className="mt-2 text-xl font-semibold text-white">{step.title}</h3>
-                <pre className="mt-4 rounded-2xl border border-white/10 bg-black/60 p-4 text-sm text-gray-200 overflow-x-auto">
+                <pre className="mt-4 zion-tile p-4 text-sm text-gray-200 overflow-x-auto">
 {step.code}
                 </pre>
               </div>
@@ -136,14 +137,14 @@ export default function MiningClient() {
           </div>
         </motion.section>
 
-        <motion.section initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[28px] border border-white/10 bg-black/50 p-8">
+        <motion.section initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
           <div className="flex items-center gap-3 mb-4">
             <Gauge className="h-6 w-6 text-zion-gold" />
             <h2 className="text-3xl font-semibold text-white">Alternative stacks</h2>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             {alternativeStacks.map((stack) => (
-              <div key={stack.name} className="rounded-2xl border border-white/10 bg-white/5 p-5 flex flex-col">
+              <div key={stack.name} className="zion-rainbow-sub p-5 flex flex-col" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <div className="flex items-center gap-3">
                   <Network className="h-5 w-5 text-zion-cyan" />
                   <div>
@@ -160,7 +161,7 @@ export default function MiningClient() {
           </div>
         </motion.section>
 
-  <motion.section initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-4xl border border-white/10 bg-linear-to-r from-zion-gold/10 via-zion-purple/10 to-zion-cyan/10 p-10 text-center">
+  <motion.section initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-cta-banner p-10 text-center" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
           <BookOpen className="mx-auto h-12 w-12 text-zion-gold" />
           <h2 className="mt-4 text-3xl font-semibold text-white">Need full playbooks?</h2>
           <p className="mt-3 text-base text-gray-200 max-w-3xl mx-auto">

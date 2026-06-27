@@ -546,7 +546,7 @@ export default function NetworkPage() {
                 {/* Check items */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {checks.map((c) => (
-                    <div key={c.label} className={`rounded-2xl border p-4 ${c.ok ? 'border-emerald-400/20 bg-emerald-400/5' : 'border-red-400/20 bg-red-400/5'}`}>
+                    <div key={c.label} className="zion-rainbow-sub p-4" style={{ '--rc': c.ok ? '52, 211, 153' : '248, 113, 113' } as React.CSSProperties}>
                       <div className="flex items-center gap-2 mb-2">
                         <div className={`w-2 h-2 rounded-full ${c.ok ? 'bg-emerald-400' : 'bg-red-400'}`} />
                         <span className="text-[11px] text-gray-400 uppercase tracking-wider">{c.label}</span>
@@ -692,7 +692,7 @@ export default function NetworkPage() {
               const isCurrent = i === currentDecade;
               const isPast = i < currentDecade;
               return (
-                <div key={i} className={`rounded-2xl border p-4 ${isCurrent ? 'border-zion-gold/40 bg-zion-gold/10' : isPast ? 'border-emerald-400/20 bg-emerald-400/5' : 'border-white/[0.08] bg-white/[0.03]'}`}>
+                <div key={i} className="zion-rainbow-sub p-4" style={{ '--rc': isCurrent ? '251, 191, 36' : isPast ? '52, 211, 153' : '255, 255, 255' } as React.CSSProperties}>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[11px] uppercase tracking-wider text-gray-500">{cs ? 'Dekáda' : 'Decade'} {i + 1}</span>
                     {isCurrent && <span className="text-[9px] font-bold uppercase tracking-widest text-zion-gold bg-zion-gold/20 px-2 py-0.5 rounded-full">{cs ? 'Nyní' : 'Now'}</span>}
@@ -984,7 +984,7 @@ function ChainStatCard({ label, value, sub, color, tip }: { label: string; value
         {tip && (
           <div className="relative group/tooltip">
             <HelpCircle className="h-3 w-3 text-gray-600 cursor-help" />
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/tooltip:block w-44 rounded-lg border border-white/10 bg-black/90 backdrop-blur-xl px-2 py-1.5 text-[10px] text-gray-300 shadow-xl z-20">
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/tooltip:block w-44 zion-tile px-2 py-1.5 text-[10px] text-gray-300 shadow-xl z-20">
               {tip}
             </div>
           </div>

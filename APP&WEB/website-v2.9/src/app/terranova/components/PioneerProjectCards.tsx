@@ -121,7 +121,7 @@ export default function PioneerProjectCards({ cs }: { cs: boolean }) {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/5 border border-white/10">
+        <div className="flex h-10 w-10 items-center justify-center zion-tile">
           <Compass className="h-5 w-5 text-zion-gold" />
         </div>
         <div>
@@ -167,7 +167,7 @@ export default function PioneerProjectCards({ cs }: { cs: boolean }) {
                   return (
                     <div
                       key={feature.labelCs}
-                      className="flex items-center gap-2 rounded-lg border border-white/5 bg-white/5 px-3 py-2 text-xs text-gray-400"
+                      className="flex items-center gap-2 zion-tile px-3 py-2 text-xs text-gray-400"
                     >
                       <Icon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
                       <span>{cs ? feature.labelCs : feature.labelEn}</span>
@@ -180,7 +180,7 @@ export default function PioneerProjectCards({ cs }: { cs: boolean }) {
                 {project.metrics.map((metric) => (
                   <div
                     key={metric.labelCs}
-                    className="rounded-lg border border-white/5 bg-white/5 px-3 py-2 text-center"
+                    className="zion-tile px-3 py-2 text-center"
                   >
                     <p className="text-sm font-semibold text-white">{metric.value}</p>
                     <p className="mt-0.5 text-[10px] uppercase tracking-[0.16em] text-gray-500">
@@ -201,7 +201,8 @@ export default function PioneerProjectCards({ cs }: { cs: boolean }) {
             return (
               <div
                 key={project.title}
-                className="rounded-2xl border border-white/10 bg-black/20 p-5 opacity-60"
+                className="zion-rainbow-sub p-5 opacity-60"
+                style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
                 aria-disabled="true"
               >
                 {CardContent}
@@ -213,7 +214,8 @@ export default function PioneerProjectCards({ cs }: { cs: boolean }) {
             <Link
               key={project.title}
               href={project.href}
-              className="group rounded-2xl border border-white/10 bg-black/20 p-5 transition-colors hover:border-white/20 hover:bg-black/30"
+              className="group zion-rainbow-sub p-5 transition-colors hover:border-white/20 hover:bg-black/30"
+              style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
             >
               {CardContent}
             </Link>
