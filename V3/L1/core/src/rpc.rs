@@ -521,17 +521,69 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
 
                 let mut transactions = Vec::new();
                 for block in rt.accepted_blocks() {
+                    // 1. Account-model transactions (from/to fields)
                     for tx in &block.transactions {
                         // Check if address is involved (from or to)
                         if tx.from == address || tx.to == address {
                             transactions.push(json!({
                                 "transaction": tx,
+                                "tx_model": "account",
                                 "block_height": block.height,
                                 "block_hash": block.hash_hex,
                                 "timestamp": block.timestamp,
                                 "confirmed": true,
                             }));
                         }
+                    }
+
+                    // 2. UTXO transactions (inputs/outputs)
+                    // Match by output address (recipient) or by derived input address (sender)
+                    for utxo_tx in &block.utxo_transactions {
+                        let is_recipient = utxo_tx.outputs.iter().any(|o| o.address == address);
+                        let is_sender = utxo_tx.inputs.iter().any(|input| {
+                            crate::crypto::derive_address(&input.public_key) == address
+                        });
+
+                        if is_recipient || is_sender {
+                            // Calculate total amount sent to this address
+                            let received: u64 = utxo_tx.outputs.iter()
+                                .filter(|o| o.address == address)
+                                .map(|o| o.amount)
+                                .sum();
+
+                            transactions.push(json!({
+                                "transaction": utxo_tx,
+                                "tx_model": "utxo",
+                                "tx_hash": hex::encode(utxo_tx.id),
+                                "block_height": block.height,
+                                "block_hash": block.hash_hex,
+                                "timestamp": block.timestamp,
+                                "confirmed": true,
+                                "is_sender": is_sender,
+                                "is_recipient": is_recipient,
+                                "received_amount_flowers": received,
+                            }));
+                        }
+                    }
+
+                    // 3. Coinbase / miner reward — check if address is the miner
+                    if !block.miner_address.is_empty() && block.miner_address == address {
+                        transactions.push(json!({
+                            "transaction": {
+                                "type": "coinbase",
+                                "miner_address": block.miner_address,
+                                "subsidy_zion": block.subsidy_zion,
+                                "miner_reward_zion": block.miner_reward_zion,
+                                "humanitarian_address": block.humanitarian_address,
+                                "issobella_address": block.issobella_address,
+                                "pool_fee_address": block.pool_fee_address,
+                            },
+                            "tx_model": "coinbase",
+                            "block_height": block.height,
+                            "block_hash": block.hash_hex,
+                            "timestamp": block.timestamp,
+                            "confirmed": true,
+                        }));
                     }
                 }
 
@@ -2329,6 +2381,66 @@ mod tests {
         assert_eq!(result["count"], 0);
         assert_eq!(result["total_amount"], 0);
         assert!(result["utxos"].as_array().unwrap().is_empty());
+    }
+
+    #[test]
+    fn live_get_transaction_history_returns_empty_for_unknown_address() {
+        let router = live_router();
+        let resp = rpc_call(
+            &router,
+            "getTransactionHistory",
+            json!({"address": "zion1nobody000000000000000000000000000000000"}),
+        );
+        assert!(
+            resp.error.is_none(),
+            "getTransactionHistory failed: {:?}",
+            resp.error
+        );
+        let result = resp.result.unwrap();
+        assert_eq!(result["total"], 0);
+        assert!(result["transactions"].as_array().unwrap().is_empty());
+        assert_eq!(result["has_more"], false);
+    }
+
+    #[test]
+    fn live_get_transaction_history_includes_genesis_premine() {
+        let router = live_router();
+        // Genesis block has account-model premine transactions
+        // Use the first premine address from genesis.rs
+        let resp = rpc_call(
+            &router,
+            "getTransactionHistory",
+            json!({"address": "zion153e378e4x0g6s380h2h8z4t506g5s323f5se8g5", "limit": 100}),
+        );
+        assert!(
+            resp.error.is_none(),
+            "getTransactionHistory failed: {:?}",
+            resp.error
+        );
+        let result = resp.result.unwrap();
+        let txs = result["transactions"].as_array().unwrap();
+        // Genesis premine should appear in history
+        assert!(!txs.is_empty(), "expected genesis premine txs in history");
+        // All should be from block 0 (genesis)
+        for tx in txs {
+            assert_eq!(tx["block_height"], 0);
+            assert_eq!(tx["confirmed"], true);
+        }
+    }
+
+    #[test]
+    fn live_get_transaction_history_pagination_works() {
+        let router = live_router();
+        let resp = rpc_call(
+            &router,
+            "getTransactionHistory",
+            json!({"address": "zion153e378e4x0g6s380h2h8z4t506g5s323f5se8g5", "limit": 1, "offset": 0}),
+        );
+        assert!(resp.error.is_none());
+        let result = resp.result.unwrap();
+        let txs = result["transactions"].as_array().unwrap();
+        assert!(txs.len() <= 1);
+        assert_eq!(result["limit"], 1);
     }
 
     #[test]

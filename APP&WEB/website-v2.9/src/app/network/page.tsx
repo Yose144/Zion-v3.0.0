@@ -79,6 +79,15 @@ const Network24hCharts = dynamic(() => import('@/components/network/Network24hCh
 const NetworkLatencyPanel = dynamic(() => import('@/components/network/NetworkLatencyPanel'), {
   loading: () => <SurfaceSkeleton lines={3} />,
 });
+const NetworkTopology = dynamic(() => import('@/components/network/NetworkTopology'), {
+  loading: () => <SurfaceSkeleton lines={5} />,
+});
+const NetworkHistoricalCharts = dynamic(() => import('@/components/network/NetworkHistoricalCharts'), {
+  loading: () => <SurfaceSkeleton lines={5} />,
+});
+const NetworkConsensusMetrics = dynamic(() => import('@/components/network/NetworkConsensusMetrics'), {
+  loading: () => <SurfaceSkeleton lines={5} />,
+});
 const LiveToast = dynamic(() => import('@/components/explorer/LiveToast'));
 
 /* ═══════════════════════════════════════════════════════════
@@ -620,6 +629,9 @@ export default function NetworkPage() {
           blockTimeData={blockTimeHistory.map((p) => p.value)}
         />
 
+        {/* ═══════ HISTORICAL TRENDS (extended) ═══════ */}
+        <NetworkHistoricalCharts />
+
         {/* ═══════ CHAIN STATISTICS ═══════ */}
         {chainStats && (
         <section className="zion-section">
@@ -658,6 +670,9 @@ export default function NetworkPage() {
           </div>
         </section>
         )}
+
+        {/* ═══════ CONSENSUS HEALTH ═══════ */}
+        <NetworkConsensusMetrics />
 
         {/* ═══════ EMISSION PROGRESS ═══════ */}
         {chainStats && (
@@ -796,12 +811,15 @@ export default function NetworkPage() {
             <p className="text-sm text-gray-400">{cs ? 'Vizualizujte aktualni topologii a porovnejte ji s archivovanym multi-host rolloutem zachovanym v release dokumentaci.' : 'Visualize the current topology and compare it with the archived multi-host rollout preserved in release documentation.'}</p>
           </div>
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-            <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+            <div className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <NetworkMap />
             </div>
             <PoolFinder />
           </div>
         </section>
+
+        {/* ═══════ P2P MESH TOPOLOGY ═══════ */}
+        <NetworkTopology />
 
         {/* ═══════ CONNECTION GUIDES ═══════ */}
         <section className="zion-section">
