@@ -153,7 +153,7 @@ fn rpc_chain_tip_height() -> u64 {
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
-const FLOWERS_PER_ZION: u64 = 1_000_000_000_000;
+const FLOWERS_PER_ZION: u64 = zion_core::emission::FLOWERS_PER_ZION;
 
 fn parse_zion_amount(s: &str) -> u64 {
     if let Some((whole, frac)) = s.split_once('.') {
@@ -161,11 +161,11 @@ fn parse_zion_amount(s: &str) -> u64 {
             .parse::<u64>()
             .unwrap_or_else(|_| die("invalid amount"))
             * FLOWERS_PER_ZION;
-        let padded = format!("{:0<12}", frac);
-        if padded.len() > 12 {
-            die("amount has too many decimal places (max 12)");
+        let padded = format!("{:0<6}", frac);
+        if padded.len() > 6 {
+            die("amount has too many decimal places (max 6)");
         }
-        let frac_flowers: u64 = padded[..12]
+        let frac_flowers: u64 = padded[..6]
             .parse()
             .unwrap_or_else(|_| die("invalid fractional amount"));
         whole_flowers + frac_flowers
@@ -180,7 +180,7 @@ fn format_zion(flowers: u64) -> String {
     if frac == 0 {
         format!("{whole}")
     } else {
-        let s = format!("{whole}.{frac:012}");
+        let s = format!("{whole}.{frac:06}");
         s.trim_end_matches('0').to_string()
     }
 }

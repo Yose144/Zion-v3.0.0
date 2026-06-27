@@ -94,7 +94,7 @@ pub struct ScannerConfig {
     pub rpc_url: String,
     /// Poll interval (how often to ask for new blocks)
     pub poll_interval: Duration,
-    /// Minimum ZION balance to count a vote (1 ZION = 1_000_000_000_000 flowers)
+    /// Minimum ZION balance to count a vote (1 ZION = 1_000_000 flowers)
     pub min_vote_weight: u64,
     /// Number of blocks to confirm before accepting TX (finality)
     pub finality_blocks: u64,
@@ -105,7 +105,7 @@ impl Default for ScannerConfig {
         Self {
             rpc_url: "204.168.245.175:8443".to_string(),
             poll_interval: Duration::from_secs(30),
-            min_vote_weight: 1_000_000_000_000, // 1 ZION in flowers
+            min_vote_weight: 1_000_000, // 1 ZION in flowers (6-decimal)
             finality_blocks: 6,
         }
     }
@@ -451,6 +451,6 @@ mod tests {
     fn test_config_defaults() {
         let cfg = ScannerConfig::default();
         assert_eq!(cfg.finality_blocks, 6);
-        assert_eq!(cfg.min_vote_weight, 1_000_000_000_000); // 1 ZION in flowers
+        assert_eq!(cfg.min_vote_weight, 1_000_000); // 1 ZION in flowers (6-decimal)
     }
 }

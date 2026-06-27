@@ -259,7 +259,7 @@ mod tests {
 
     #[test]
     fn test_submit_and_sign() {
-        let mut treasury = Treasury::new(test_guardians(), 1_000_000_000_000_000_000u128);
+        let mut treasury = Treasury::new(test_guardians(), 1_000_000_000_000u128);
 
         treasury
             .submit_operation(
@@ -293,7 +293,7 @@ mod tests {
 
     #[test]
     fn test_insufficient_signatures() {
-        let mut treasury = Treasury::new(test_guardians(), 1_000_000_000_000_000_000u128);
+        let mut treasury = Treasury::new(test_guardians(), 1_000_000_000_000u128);
 
         treasury
             .submit_operation(
@@ -318,7 +318,7 @@ mod tests {
 
     #[test]
     fn test_non_guardian_rejected() {
-        let mut treasury = Treasury::new(test_guardians(), 1_000_000_000_000_000_000u128);
+        let mut treasury = Treasury::new(test_guardians(), 1_000_000_000_000u128);
 
         let result = treasury.submit_operation(
             "op1".into(),
