@@ -37,6 +37,11 @@ pub enum WsEvent {
         amount: u64,
         total_xp: u64,
     },
+    LevelUp {
+        address: String,
+        new_level: u32,
+        level_name: String,
+    },
     QuestComplete {
         address: String,
         quest_id: String,
@@ -44,6 +49,47 @@ pub enum WsEvent {
     GuildCreate {
         guild_id: String,
         name: String,
+    },
+    GuildJoin {
+        guild_id: String,
+        address: String,
+    },
+    TerritoryClaim {
+        territory_id: u32,
+        guild_id: Option<String>,
+        address: String,
+    },
+    RaidTeamCreate {
+        raid_team_id: String,
+        leader: String,
+    },
+    RaidTeamJoin {
+        raid_team_id: String,
+        address: String,
+    },
+    CombatResult {
+        winner: String,
+        loser: String,
+        xp_awarded: u64,
+    },
+    ClueDiscovered {
+        address: String,
+        clue_id: u32,
+        category: String,
+    },
+    Tithe {
+        address: String,
+        amount_flowers: u64,
+    },
+    ChallengeComplete {
+        address: String,
+        challenge_id: String,
+        score: u32,
+    },
+    BlockMined {
+        block_height: u64,
+        miner_address: String,
+        subsidy_flowers: u64,
     },
     System {
         msg: String,
@@ -224,5 +270,52 @@ mod tests {
         let json = serde_json::to_string(&ev).unwrap();
         assert!(json.contains("xp_award"));
         assert!(json.contains("zion1test"));
+    }
+
+    #[test]
+    fn test_level_up_event_serialization() {
+        let ev = WsEvent::LevelUp {
+            address: "zion1test".into(),
+            new_level: 5,
+            level_name: "Seeker".into(),
+        };
+        let json = serde_json::to_string(&ev).unwrap();
+        assert!(json.contains("level_up"));
+        assert!(json.contains("Seeker"));
+    }
+
+    #[test]
+    fn test_combat_result_event_serialization() {
+        let ev = WsEvent::CombatResult {
+            winner: "zion1winner".into(),
+            loser: "zion1loser".into(),
+            xp_awarded: 250,
+        };
+        let json = serde_json::to_string(&ev).unwrap();
+        assert!(json.contains("combat_result"));
+        assert!(json.contains("zion1winner"));
+    }
+
+    #[test]
+    fn test_block_mined_event_serialization() {
+        let ev = WsEvent::BlockMined {
+            block_height: 18071,
+            miner_address: "zion1miner".into(),
+            subsidy_flowers: 5400067000,
+        };
+        let json = serde_json::to_string(&ev).unwrap();
+        assert!(json.contains("block_mined"));
+        assert!(json.contains("18071"));
+    }
+
+    #[test]
+    fn test_guild_join_event_serialization() {
+        let ev = WsEvent::GuildJoin {
+            guild_id: "guild-1".into(),
+            address: "zion1member".into(),
+        };
+        let json = serde_json::to_string(&ev).unwrap();
+        assert!(json.contains("guild_join"));
+        assert!(json.contains("guild-1"));
     }
 }

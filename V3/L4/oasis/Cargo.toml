@@ -37,9 +37,16 @@ tower-http = { version = "0.5", features = ["cors", "trace"] }
 # HTTP client (Hiran AI bridge)
 reqwest = { version = "0.12", features = ["json"] }
 
+# Wallet signature auth (Ed25519)
+ed25519-dalek = { workspace = true }
+hex = { workspace = true }
+sha2 = { workspace = true }
+ripemd = { workspace = true }
+
 [dev-dependencies]
 tokio-test = "0.4"
 tempfile = "3"
+rand = { workspace = true }
 
 [[bin]]
 name = "zion-oasis"
