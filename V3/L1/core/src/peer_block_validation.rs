@@ -305,11 +305,25 @@ pub(crate) fn validate_accepted_peer_block(
             block.miner_reward_zion, expected_block_miner_reward
         ));
     }
-    let expected_subsidy = emission::block_subsidy(block.height);
+    let expected_subsidy = if crate::migration::is_post_migration(block.height) {
+        // Post-3.0.3: subsidy in new 6-decimal flowers
+        emission::block_subsidy(block.height)
+    } else {
+        // Pre-3.0.3: subsidy in legacy 12-decimal flowers
+        // block_subsidy returns new-scale; multiply back to legacy for comparison
+        emission::block_subsidy(block.height) * crate::migration::MIGRATION_DIVISOR
+    };
     if block.subsidy_zion != expected_subsidy {
         return Err(format!(
-            "peer block subsidy {} does not match emission schedule {} at height {}",
-            block.subsidy_zion, expected_subsidy, block.height
+            "peer block subsidy {} does not match emission schedule {} at height {} ({})",
+            block.subsidy_zion,
+            expected_subsidy,
+            block.height,
+            if crate::migration::is_post_migration(block.height) {
+                "post-migration"
+            } else {
+                "pre-migration (legacy scale)"
+            }
         ));
     }
     // Validate difficulty against LWMA

@@ -357,6 +357,7 @@ pub fn validate_coinbase_maturity(
 pub fn validate_fees(
     transactions: &[Transaction],
     estimated_sizes: &[usize],
+    block_height: u64,
 ) -> Result<(), ValidationError> {
     for (i, (tx, &size)) in transactions
         .iter()
@@ -364,7 +365,21 @@ pub fn validate_fees(
         .enumerate()
         .skip(1)
     {
-        if fee::validate_fee(tx.fee, size).is_err() {
+        // Height-conditional: pre-migration txs have fees in legacy 12-decimal
+        // flowers (min 1000), post-migration in new 6-decimal flowers (min 1).
+        let valid = if crate::migration::is_post_migration(block_height) {
+            fee::validate_fee(tx.fee, size).is_ok()
+        } else {
+            // Pre-migration: scale the fee check to legacy units
+            // MIN_TX_FEE=1 in new scale → 1000 in legacy scale (× MIGRATION_DIVISOR)
+            // MIN_FEE_RATE=1 in new scale → 1000000 in legacy scale
+            let legacy_min_fee = fee::MIN_TX_FEE * crate::migration::MIGRATION_DIVISOR;
+            let legacy_min_rate = fee::MIN_FEE_RATE * crate::migration::MIGRATION_DIVISOR;
+            let rate_based = size as u64 * legacy_min_rate;
+            let min_for_size = rate_based.max(legacy_min_fee);
+            tx.fee >= min_for_size
+        };
+        if !valid {
             return Err(ValidationError::FeeTooLow { tx_index: i });
         }
     }
@@ -377,7 +392,14 @@ pub fn validate_subsidy(coinbase: &Transaction, block_height: u64) -> Result<(),
         return Err(ValidationError::CoinbaseHasInputs);
     }
     let total_output = coinbase.total_output();
-    let max_reward = fee::max_coinbase_output(block_height);
+    // Height-conditional: pre-migration blocks use legacy 12-decimal flowers,
+    // post-migration blocks use new 6-decimal flowers.
+    let max_reward = if crate::migration::is_post_migration(block_height) {
+        fee::max_coinbase_output(block_height)
+    } else {
+        // Pre-migration: scale up to legacy flowers for comparison
+        fee::max_coinbase_output(block_height) * crate::migration::MIGRATION_DIVISOR
+    };
     if total_output > max_reward {
         return Err(ValidationError::SubsidyExceeded {
             coinbase_output: total_output,
@@ -562,7 +584,7 @@ pub fn validate_block(
     validate_coinbase_maturity(transactions, ctx.height, utxo_lookup)?;
 
     // Step 9: Fees
-    validate_fees(transactions, estimated_tx_sizes)?;
+    validate_fees(transactions, estimated_tx_sizes, ctx.height)?;
 
     // Step 10: Subsidy
     if let Some(coinbase) = transactions.first() {

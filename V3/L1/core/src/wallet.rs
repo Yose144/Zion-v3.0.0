@@ -34,8 +34,9 @@ pub fn pending_utxo_tx_version(chain_tip_height: u64) -> u32 {
 /// Maximum recipients in a single batch payout transaction.
 pub const MAX_BATCH_RECIPIENTS: usize = 200;
 
-/// Minimum payout amount: 10 ZION in flowers.
-pub const MIN_PAYOUT_AMOUNT: u64 = 10_000_000_000_000;
+/// Minimum payout amount: 10 ZION in flowers (post-3.0.3: 6-decimal).
+/// Pre-3.0.3: was 10_000_000_000_000 (10 ZION × 1e12).
+pub const MIN_PAYOUT_AMOUNT: u64 = 10_000_000;
 
 // ── Types ──────────────────────────────────────────────────────────────
 
