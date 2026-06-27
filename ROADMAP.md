@@ -1,11 +1,12 @@
-# ZION v3.0.2 Roadmap
+# ZION v3.0.3 Roadmap
 
 > **From genesis to the stars.**
 >
-> This is the canonical roadmap for the v3.0.2 mainnet line (L1 Active, L2/L3 Ready, L4 Oasis in Prep).
+> This is the canonical roadmap for the v3.0.3 mainnet line (L1 Active, L2/L3 Ready, L4 Oasis in Prep).
 > Engineering details live in [`V3/ROADMAP.md`](V3/ROADMAP.md).
 > Current operational status: [`StatusV3.md`](StatusV3.md).
-> 3.0.2 Plan: [`ZION_3.0.2_PLAN.md`](ZION_3.0.2_PLAN.md).
+> 3.0.3 Decimal Fork Plan: [`ZION_3.0.3_DECIMAL_FORK_PLAN.md`](ZION_3.0.3_DECIMAL_FORK_PLAN.md).
+> Web upgrade guide: [`WEB_V2.9_TO_V3.0.3_UPGRADE.md`](WEB_V2.9_TO_V3.0.3_UPGRADE.md).
 
 ---
 
@@ -13,8 +14,29 @@
 
 | Milestone | Target | Status |
 |-----------|--------|--------|
+| **3.0.3 Decimal Fork** | 27 June 2026 | ✅ **DEPLOYED** (Edge, MIGRATION_HEIGHT=17995) |
 | **Mainnet Genesis #0** | 31 December 2026 | Ready for launch |
 | **Summer Solstice rehearsal** | 20 June 2026 | Completed (internal) |
+
+---
+
+## Phase 1.5 — 3.0.3 Decimal Fork (2026-06-27) ✅ Complete
+
+| Feature | Status |
+|---------|--------|
+| FLOWERS_PER_ZION 1e12→1e6 (12-decimal→6-decimal) | ✅ Deployed |
+| migration.rs module (height-conditional consensus) | ✅ Active |
+| RPC contract bump (_flowers canonical, _zion/_atomic aliases) | ✅ Active |
+| protocol_version=zion-v3-node/3.0.3, protocol_version_numeric=2 | ✅ Active |
+| L2 Bridge (FLOWERS_TO_WEI_FACTOR 1e6→1e12) | ✅ Active |
+| L2 DAO (FLOWERS_PER_ZION, thresholds, treasury) | ✅ Active |
+| L3 WARP (ChainId decimals, fees, router, xp_bridge) | ✅ Active |
+| L3 NCL + AI-Native (pricing, orchestrator, transfer limits) | ✅ Active |
+| ZION_OS Dashboard (app.py, dashboard.js, l3.html) | ✅ Active |
+| Web v2.9 (constants.ts, zion-rpc.ts, 10 .tsx files) | ✅ Updated |
+| Edge deployment (DB preserved, 13/13 services active) | ✅ Deployed |
+| Documentation (27 files + StatusV3 + AGENTS.md) | ✅ Updated |
+| Price decision: $0.0002/ZION (Doge legend) | ✅ Documented |
 
 ---
 
@@ -224,5 +246,5 @@ Key steps:
 
 ---
 
-*Last updated: 2026-06-19*
-*Version: v3.0.2 · Status: Mainnet Ready (L1 Active, L2/L3 Ready, L4 Oasis in Prep)*
+*Last updated: 2026-06-27*
+*Version: v3.0.3 · Status: Mainnet Ready (L1 Active, L2/L3 Ready, L4 Oasis in Prep, 3.0.3 Decimal Fork Deployed)*

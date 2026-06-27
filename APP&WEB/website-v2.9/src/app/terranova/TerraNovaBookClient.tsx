@@ -620,8 +620,8 @@ const CLI_PRESET = [
 const BOOT_SEQUENCE = [
   {
     command: 'zion version',
-    responseCs: 'zion v3.0.2 "from genesis to the star" · mainnet · build 2026-06-25',
-    responseEn: 'zion v3.0.2 "from genesis to the star" · mainnet · build 2026-06-25',
+    responseCs: 'zion v3.0.3 "from genesis to the star" · mainnet · 6-decimal flowers · build 2026-06-27',
+    responseEn: 'zion v3.0.3 "from genesis to the star" · mainnet · 6-decimal flowers · build 2026-06-27',
   },
   {
     command: 'zion status --layer all',
