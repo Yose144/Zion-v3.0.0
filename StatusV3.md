@@ -1,6 +1,6 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** **2026-06-24** (EMERGENCY MINT COMPLETE — 99,999,899 wZION mintováno na Base Mainnet přes wZION.bridgeMint() po obejití DAILY_LIMIT bug na bridge kontraktu; DeFi web UI mainnet-ready — Staking/Farming/DAO pages s wallet connect, BridgeTracker pipeline komponenta, commit 107a121); **2026-06-23** (Multi-validator relay nasazen — 5/5 confirmací pro všech 6 locků, 24h timelock aktivní, wZION mintování čeká na expiry 2026-06-24 16:52 UTC); **2026-06-23** (100M ZION UTXO locks potvrzeno, memo bug opraven, relay čeká na validator key); **2026-06-22** (Bridge mainnet readiness — 5/5 validators funded, single-sig bridge blocker documented, testnet RPC + block-range fixes); **2026-06-18** (Git historie obnovena, root cleanup v3.0.2, L2/L3 kanonizace, L4 Oasis příprava); **2026-06-15** (Edge server full update — Rust + V3 rebuild + služby restart, bridge port fix, dashboard restart tlačítka fix); **2026-06-14** (Dashboard all-tabs fix, Payout/Wallets sekce, Restart Edge Pool SSH, UFW 8444 oprava — viz sekce níže); **2026-06-13** (Fire algorithm hard fork deployment — viz sekce níže); **2026-06-13** (Hiran v2.3 documentation cleanup — viz sekce níže); **2026-06-11** (Hard Genesis Reset #0 completed — viz sekce níže); **2026-06-11** (Pool stale share detection + dashboard tab fix — viz sekce níže); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
+> **Datum:** **2026-06-27** (**3.0.3 DECIMAL FORK DEPLOYED ON EDGE** — kompletní ekosystém migrován z 12-decimal na 6-decimal flowers, DB preserved, MIGRATION_HEIGHT=17995, všechny 13 Edge services aktivní, chain height 18003+, protocol_version=zion-v3-node/3.0.3, flowers_per_zion=1,000,000); **2026-06-24** (EMERGENCY MINT COMPLETE — 99,999,899 wZION mintováno na Base Mainnet přes wZION.bridgeMint() po obejití DAILY_LIMIT bug na bridge kontraktu; DeFi web UI mainnet-ready — Staking/Farming/DAO pages s wallet connect, BridgeTracker pipeline komponenta, commit 107a121); **2026-06-23** (Multi-validator relay nasazen — 5/5 confirmací pro všech 6 locků, 24h timelock aktivní, wZION mintování čeká na expiry 2026-06-24 16:52 UTC); **2026-06-23** (100M ZION UTXO locks potvrzeno, memo bug opraven, relay čeká na validator key); **2026-06-22** (Bridge mainnet readiness — 5/5 validators funded, single-sig bridge blocker documented, testnet RPC + block-range fixes); **2026-06-18** (Git historie obnovena, root cleanup v3.0.2, L2/L3 kanonizace, L4 Oasis příprava); **2026-06-15** (Edge server full update — Rust + V3 rebuild + služby restart, bridge port fix, dashboard restart tlačítka fix); **2026-06-14** (Dashboard all-tabs fix, Payout/Wallets sekce, Restart Edge Pool SSH, UFW 8444 oprava — viz sekce níže); **2026-06-13** (Fire algorithm hard fork deployment — viz sekce níže); **2026-06-13** (Hiran v2.3 documentation cleanup — viz sekce níže); **2026-06-11** (Hard Genesis Reset #0 completed — viz sekce níže); **2026-06-11** (Pool stale share detection + dashboard tab fix — viz sekce níže); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
 > (sjednocení `StatusV3.md` ↔ `StatusV3-Part2.md` — TL;DR, roadmap §6, §8, §5
 > pyramida, odkazy).
 > **Předchozí update:** 2026-05-03 (genesis konsensus — merged na `main`)
@@ -19,6 +19,148 @@
 > starý Praha server (`91.98.122.165`) nebo historickou multi-server topologii
 > (Prague, SG, Helsinki, US) jsou **archivní / historické**, pokud není explicitně
 > uvedeno jinak. Aktuální živá topologie je **Core + Edge** (viz sekce Infrastruktura).
+
+---
+
+## Co je nového 2026-06-27 — 3.0.3 DECIMAL FORK DEPLOYED ON EDGE ✅
+
+> **Status:** ✅ DOKONČENO — Kompletní ekosystém ZION migrován z 12-decimal (1e12) na 6-decimal (1e6) flowers per ZION. Edge server nasazen s preserved DB, MIGRATION_HEIGHT=17995.
+
+### TL;DR
+
+- **FLOWERS_PER_ZION:** `1_000_000_000_000` (1e12, 12 decimals) → `1_000_000` (1e6, 6 decimals)
+- **Edge deployment:** DB preserved (nikdy nemažáno), binary swap, `ZION_MIGRATION_HEIGHT=17995`
+- **Chain height:** 17995 (pre-fork) → 18003+ (post-fork, těžba běží)
+- **Protocol:** `zion-v3-node/3.0.3`, `protocol_version_numeric=2`, `flowers_per_zion=1000000`
+- **All 13 Edge services:** active (node1, node2, pool, bridge, dao, warp, atomic-swap, oasis, free-world, issobella, agent, dashboard, python-dashboard)
+- **Test results:** ~1,223 workspace tests, 0 failures
+- **DB backups:** `edge-state.db.bak-3.0.3-cutover` (63MB) + `edge2-state.db.bak-3.0.3-cutover`
+
+### Co bylo změněno (kompletní seznam)
+
+#### L1 Core (commit `3482078c`)
+- `migration.rs` — nový module: MIGRATION_DIVISOR, is_post_migration(), set_migration_height(), migrate_snapshot(), build_migration_transactions(), validate_migration_block() (11 tests)
+- `peer_block_validation.rs` — height-conditional subsidy validation (legacy vs new scale)
+- `validation.rs` — validate_fees() + validate_subsidy() berou block_height, scale podle is_post_migration()
+- `rpc.rs` — _flowers canonical, _zion/_atomic aliases, protocol_version_numeric, flowers_per_zion, format_flowers_as_zion {:06}
+- `wallet.rs` — MIN_PAYOUT_AMOUNT 10e12→10e6
+- `emission.rs` — FLOWERS_PER_ZION=1e6, LEGACY_FLOWERS_PER_ZION=1e12, LEGACY_GENESIS_PREMINE
+- `genesis.rs` — verify_premine_output() používá LEGACY_FLOWERS_PER_ZION
+
+#### L1 Pool (commit `83063666`)
+- `pplns.rs` — fee_split_with_real_block_reward test 5.4e15→5.4e9
+
+#### CLI (commit `3482078c`)
+- `wallet.rs` — send command používá FLOWERS_PER_ZION constant místo hardcoded 1e12
+- `node.rs` — nový `zion node snapshot` subcommand pro migration snapshot export
+
+#### L2 Bridge (commit `3482078c`)
+- `types.rs` — FLOWERS_PER_ZION=1e6, FLOWERS_TO_WEI_FACTOR=1e12 (18-6=12), MIN_BRIDGE_AMOUNT
+- `main.rs` — startup check FLOWERS_PER_ZION==1e6 + FLOWERS_TO_WEI_FACTOR==1e12
+
+#### L2 DAO (commit `83063666`)
+- `types.rs` — FLOWERS_PER_ZION=1e6, DAO_TREASURY_TOTAL, PROPOSAL_THRESHOLD, DAILY_SPEND_LIMIT
+- `config.rs` — min_vote_weight 1e12→1e6, proposal_threshold 1e18→1e12
+- `l1_scanner.rs` — min_vote_weight 1e12→1e6
+- `humanitarian.rs` — HUMANITARIAN_GENESIS uses FLOWERS_PER_ZION constant
+- `treasury.rs` tests — 1e18→1e12
+- `quorum.rs` tests — circulating, vote weights updated
+
+#### L3 WARP (commit `83063666`)
+- `config.rs` — daily_limit/timelock multipliers 1e12→1e6
+- `xp_bridge.rs` — volume divisor 1e12→1e6
+- `router.rs` — daily_limit/timelock_threshold 1e18→1e12
+- `types.rs` — ChainId::zion_l1() decimals 12→6, all convert_decimals tests
+- `fees.rs` — all min_fee/max_fee values + tests 12-dec→6-dec
+
+#### L3 NCL (commit `83063666`)
+- `pricing.rs` — split_reward test 1e12→1e6
+
+#### L3 AI-Native (commit `83063666`)
+- `orchestrator.rs` — AI_MAX_TRANSFER_FLOWERS 1e15→1e9, AI_TIMELOCK_THRESHOLD 1e14→1e8
+- `zion-ai-native-api.rs` — price divisor 1e12→1e6
+
+#### L1 Core bin (commit `83063666`)
+- `bin/wallet.rs` — FLOWERS_PER_ZION import z emission (was hardcoded 1e12), 6-decimal padding
+
+#### L1 Core tests (commit `83063666`)
+- `lib.rs` — all "1 ZION" test amounts 1e12→1e6, fee 1000→1
+- `rpc.rs` — all test amounts 1e12→1e6
+
+#### ZION_OS Dashboard (commit `631429a3`)
+- `app.py` — 21 replacements (balance_zion, amount_zion, divisor, paid_total, revenue journal, flowers_per_zion constant)
+- `dashboard.js` — 11 replacements (pending_balance, subsidy_flowers, paid_total, pplns totals, bonded, weight conversion)
+- `l3.html` — 2 replacements (amount_flowers, reward_flowers display)
+
+#### Dokumentace (commit `58661943`)
+- 27 dokumentů aktualizováno: AGENTS.md, MAINNET_CONSTANTS.md, ROADMAP.md, README.md, PLAN.md, L2_L3_MAINNET_PLAN.md, WHITEPAPER.md, CANONICAL_UNITS_AUDIT.md, WARP_ARCHITECTURE.md, COINGECKO.md, audity, whitepapy
+- `scripts/deploy-3.0.3-edge.sh` — automated Edge deployment script (backup, build, cutover, verify, rollback)
+
+#### ZION_3.0.3_DECIMAL_FORK_PLAN.md
+- §1-14: fork plan, Option E (in-place fork via migration block at H+1)
+- §15: Edge deployment runbook (preserve DB cutover)
+- Price decision: $0.0002/ZION (Doge legend)
+
+### Edge deployment postup (2026-06-27)
+
+1. **T-24h: Pre-cutover**
+   - DB backup: `edge-state.db.bak-3.0.3-cutover` (63MB) + `edge2-state.db.bak-3.0.3-cutover`
+   - Chain height recorded: 17995
+   - Tip hash: `00001aa4a23efb8e42e8f98a1966bd02a5ce6ca41f636761f48ab84e2fdb1c56`
+
+2. **T-0: Cutover**
+   - Stop all services (node1, node2, pool, bridge, dao, warp, swap, oasis, free-world, issobella, agent, dashboard, python-dashboard)
+   - Kill stale processes (port conflicts)
+   - Swap binaries: `/usr/local/bin/zion-node` + `/usr/local/bin/zion-pool-server`
+   - Set `ZION_MIGRATION_HEIGHT=17995` in `zion-edge-node1.service` + `zion-edge-node2.service`
+   - `systemctl daemon-reload`
+   - Start node1 → verify RPC → start node2 → start pool → start all dependent services
+
+3. **T+5min: Verification**
+   - `protocol_version: zion-v3-node/3.0.3` ✅
+   - `protocol_version_numeric: 2` ✅
+   - `flowers_per_zion: 1000000` ✅
+   - `chain_height: 18002` (preserved, +7 blocks mined post-fork) ✅
+   - `total_supply: 144B ZION × 1e6 = 144e15 flowers` ✅
+   - No errors in node logs ✅
+   - All 13 services active ✅
+
+### Rollback (pokud needed)
+
+```bash
+ssh root@100.76.16.108
+systemctl stop zion-edge-node1 zion-edge-node2
+cp /root/zion-2.9.6-main/data/edge-state.db.bak-3.0.3-cutover /root/zion-2.9.6-main/data/edge-state.db
+# Rebuild old binary from pre-3.0.3 commit
+cd /root/zion-2.9.6-main && git log --oneline -10
+git checkout <pre-3.0.3-commit>
+cargo build --release --manifest-path V3/Cargo.toml -p zion-core --bin node
+cp target/release/node /usr/local/bin/zion-node
+systemctl start zion-edge-node1
+```
+
+### Kanonické konstanty (post-3.0.3)
+
+| Constant | Value | Note |
+|----------|-------|------|
+| `FLOWERS_PER_ZION` | `1_000_000` (1e6) | 6 decimals — NEW canonical |
+| `LEGACY_FLOWERS_PER_ZION` | `1_000_000_000_000` (1e12) | 12 decimals — pre-3.0.3 |
+| `TOTAL_SUPPLY` | `144_000_000_000 × 1e6` | 144B ZION = 144e15 flowers |
+| `GENESIS_PREMINE` | `16_780_000_000 × 1e6` | 16.78B ZION |
+| `FLOWERS_TO_WEI_FACTOR` | `1_000_000_000_000` (1e12) | EVM bridge: 18-6=12 |
+| `MIGRATION_HEIGHT` | `17995` | Edge server, set via env var |
+| `protocol_version` | `zion-v3-node/3.0.3` | |
+| `protocol_version_numeric` | `2` | |
+
+### Commity (2026-06-27)
+
+| Commit | Popis |
+|--------|-------|
+| `3482078c` | Backend: migration module + height-conditional consensus + RPC + CLI |
+| `c0c477cb` | Docs: §15 Edge deployment runbook |
+| `83063666` | Ecosystem: 18 files, L1+L2+L3 1e12→1e6 |
+| `58661943` | Docs: 27 files + deploy script |
+| `631429a3` | Dashboard: app.py + dashboard.js + l3.html |
 
 ---
 
