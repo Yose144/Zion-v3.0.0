@@ -203,15 +203,34 @@ Viz [`ZION_3.0.3_DECIMAL_FORK_PLAN.md`](ZION_3.0.3_DECIMAL_FORK_PLAN.md) pro kom
 
 ### 🔄 Další na plánu (3.1.0 — Q4 2026)
 
-1. **DeFi Liquidity Seeding** — UniV3Pool inicializace (≥0.80 ETH), Staking/Farm reward activation
-2. **E2E Bridge test (burn direction)** — Base burn → L1 unlock (P0 blocker)
-3. **Validator funding** — Dofundovat 5 mainnet validator adres na ≥0.01 ETH
-4. **Wallet SDK** — pro mobile integrace (blocker pro mobilní app)
-5. **TX history RPC** — L1 node rozšíření pro explorer
-6. **L4 Oasis alpha** — UE5 build pipeline, L4→L1 bridge návrh, territory systém
-7. **Mobilní companion app** — React Native základ
-8. **L3 verify** — Testovat WARP registry, swap agregátor E2E
-9. **Hardware wallet** — Ledger/Trezor integrace (Phase 4)
+> **Audit:** Viz [`AUDIT_3.1.0_EXISTING_CODE.md`](AUDIT_3.1.0_EXISTING_CODE.md) — všechny 4 komponenty už existují, potřebují 3.0.3 fix + completion (žádné duplikace).
+
+#### Fáze 1 — 3.0.3 Compatibility Fix (rychlé)
+1. **Wallet SDK 3.0.3 fix** — `1e12`→`1e6` v 6 souborech, build, testy
+2. **Mobile App 3.0.3 fix** — `1e12`→`1e6` v 3 souborech (blockchain.js, AccountBuilder.js, BlockchainRPC.js)
+
+#### Fáze 2 — TX History RPC (střední)
+3. **getTransactionHistory UTXO fix** — přidat scan `block.utxo_transactions` (aktuálně jen account-model)
+4. **Address index** — `HashMap<String, Vec<(height, tx_hash)>>` v ChainState pro O(1) lookup
+
+#### Fáze 3 — L4 Oasis Backend Completion (větší)
+5. **WebSocket events** — wire event broadcasting logic
+6. **Data files** — doplnit data/avatars.json, data/golden_egg.json
+7. **L1 blockchain listener** — real-time block-mined XP hooks
+8. **Wallet signature auth** — API endpoint auth
+9. **E2E test** — UE5 → Rust → L1 flow
+
+#### Fáze 4 — Mobile App Polish (větší)
+10. **QR code** scan/generate
+11. **Biometric auth** (FaceID/TouchID)
+12. **Deep linking** (Universal Links / App Links)
+13. **Build + test** na device
+
+#### Ostatní (paralelně)
+14. **DeFi Liquidity Seeding** — UniV3Pool inicializace (≥0.80 ETH), Staking/Farm reward activation
+15. **E2E Bridge test (burn direction)** — Base burn → L1 unlock (P0 blocker)
+16. **Validator funding** — 5 mainnet validator adres na ≥0.01 ETH
+17. **L3 verify** — WARP registry, swap agregátor E2E
 
 ---
 
