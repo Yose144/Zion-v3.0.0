@@ -712,3 +712,210 @@ Starting at $0.0002 honours that lineage.
 
 > *"We start where Doge started. Where we go is up to the community.*
 > *One Love."* — Owner, 2026-06-27
+
+---
+
+## 15. Edge Deployment Runbook — 3.0.3 Cutover (Preserve DB)
+
+**Goal:** Swap the Edge node binary from 3.0.2 → 3.0.3 without losing the
+existing chain database. The DB stays on disk; only the binary changes.
+
+### 15.1 Edge server facts
+
+| Item | Value |
+|------|-------|
+| **Public IP** | `77.42.71.94` |
+| **Tailscale IP** | `100.76.16.108` (preferred for SSH) |
+| **Repo path** | `/root/zion-2.9.6-main` |
+| **DB path** | `/root/zion-2.9.6-main/data/edge-state.db` |
+| **Binary path** | `/usr/local/bin/zion-node` |
+| **Pool binary** | `/usr/local/bin/zion-pool-server` |
+| **P2P port** | 8333 |
+| **RPC port** | 8443 |
+| **Pool port** | 8444 |
+| **systemd services** | `zion-node.service`, `zion-pool.service` |
+| **Current chain height** | ~2028 (as of 2026-06-13) |
+
+### 15.2 Pre-cutover checklist (T-24h)
+
+```bash
+# 1. SSH to Edge
+ssh root@100.76.16.108
+
+# 2. Backup the DB (CRITICAL — this is our rollback)
+cd /root/zion-2.9.6-main/data
+cp edge-state.db edge-state.db.bak-3.0.3-cutover
+ls -lh edge-state.db.bak-3.0.3-cutover  # verify size matches
+
+# 3. Export a snapshot for migration verification
+cd /root/zion-2.9.6-main
+./target/release/zion-cli node snapshot --output snapshot_pre_fork.json
+# (or use the new binary after build — see below)
+
+# 4. Record current tip height + hash
+curl -s http://127.0.0.1:8443 -d '{"jsonrpc":"2.0","method":"getChainInfo","params":{},"id":1}' | jq .
+# Save the height + tip_hash_hex — needed for migration_height setting
+
+# 5. Hetzner snapshot (if Edge is on Hetzner) — full VM backup
+# Do this from the Hetzner Cloud console, name it "pre-3.0.3-fork"
+```
+
+### 15.3 Build 3.0.3 binaries on Edge (T-1h)
+
+```bash
+ssh root@100.76.16.108
+source /root/.cargo/env
+cd /root/zion-2.9.6-main
+
+# Pull latest code (3.0.3 branch / main)
+git pull origin main
+
+# Build release binaries
+cargo build --release --manifest-path V3/Cargo.toml -p zion-core --bin node
+cargo build --release --manifest-path V3/Cargo.toml -p zion-pool --bin server
+cargo build --release --manifest-path V3/Cargo.toml -p zion-cli
+
+# Verify the new binary reports 3.0.3
+./target/release/zion-cli version
+# Should show: zion-cli 3.0.3, protocol_version=2, flowers_per_zion=1000000
+```
+
+### 15.4 Cutover sequence (T-0)
+
+```bash
+ssh root@100.76.16.108
+
+# 1. Stop services
+systemctl stop zion-pool.service zion-node.service
+
+# 2. Verify stopped
+systemctl status zion-node.service | grep Active
+# Should show: inactive (dead)
+
+# 3. Swap binaries
+cp /root/zion-2.9.6-main/V3/target/release/node /usr/local/bin/zion-node
+cp /root/zion-2.9.6-main/V3/target/release/server /usr/local/bin/zion-pool-server
+
+# 4. Verify binary version
+/usr/local/bin/zion-node --version
+# Should show 3.0.3
+
+# 5. DO NOT DELETE THE DB — this is the key difference from genesis regen!
+# The DB at /root/zion-2.9.6-main/data/edge-state.db stays as-is.
+# The new binary reads it with legacy-scale interpretation for blocks 0..H
+# and new-scale for blocks H+1 onward.
+
+# 6. Set migration height (H = current tip, migration block = H+1)
+# Add to zion-node.service Environment or .env:
+#   ZION_MIGRATION_HEIGHT=<current_tip_height>
+# The node will treat blocks 0..H as legacy (12-decimal) and H+1+ as new (6-decimal).
+
+# 7. Start node first
+systemctl daemon-reload
+systemctl start zion-node.service
+
+# 8. Wait for node to sync + verify
+sleep 5
+curl -s http://127.0.0.1:8443 -d '{"jsonrpc":"2.0","method":"getNodeInfo","params":{},"id":1}' | jq .
+# Verify: protocol_version_numeric=2, flowers_per_zion=1000000, chain_height=<same as before>
+
+# 9. Start pool
+systemctl start zion-pool.service
+
+# 10. Verify pool connected to node
+systemctl status zion-pool.service | grep Active
+# Should show: active (running)
+```
+
+### 15.5 Post-cutover verification (T+5min)
+
+```bash
+# 1. Check chain height unchanged (DB preserved)
+curl -s http://127.0.0.1:8443 -d '{"jsonrpc":"2.0","method":"getChainInfo","params":{},"id":1}' | jq .height
+# Must match pre-cutover height
+
+# 2. Check supply info shows new scale
+curl -s http://127.0.0.1:8443 -d '{"jsonrpc":"2.0","method":"getSupplyInfo","params":{},"id":1}' | jq .
+# Verify: flowers_per_zion=1000000, total_supply_flowers present, _atomic aliases present
+
+# 3. Check node logs for errors
+journalctl -u zion-node.service --since "5 min ago" | grep -i error
+# Should be empty
+
+# 4. Check pool logs
+journalctl -u zion-pool.service --since "5 min ago" | grep -i error
+# Should be empty
+
+# 5. Verify P2P peers reconnected
+curl -s http://127.0.0.1:8443 -d '{"jsonrpc":"2.0","method":"getPeerInfo","params":{},"id":1}' | jq .peers | length
+# Should show >0 peers
+```
+
+### 15.6 Rollback (if something goes wrong)
+
+```bash
+ssh root@100.76.16.108
+
+# 1. Stop services
+systemctl stop zion-pool.service zion-node.service
+
+# 2. Restore old binary (if still available)
+# The old binary was at /usr/local/bin/zion-node before we overwrote it.
+# If not backed up, rebuild from the pre-3.0.3 git commit:
+cd /root/zion-2.9.6-main
+git log --oneline -5  # find the pre-3.0.3 commit
+git checkout <pre-3.0.3-commit>
+cargo build --release --manifest-path V3/Cargo.toml -p zion-core --bin node
+cp target/release/node /usr/local/bin/zion-node
+
+# 3. Restore DB backup (if DB was corrupted)
+cp /root/zion-2.9.6-main/data/edge-state.db.bak-3.0.3-cutover \
+   /root/zion-2.9.6-main/data/edge-state.db
+
+# 4. Restart
+systemctl daemon-reload
+systemctl start zion-node.service zion-pool.service
+
+# 5. Or: restore from Hetzner snapshot (nuclear option)
+# This reverts the entire VM to T-24h state.
+```
+
+### 15.7 What NOT to do
+
+- **DO NOT delete `edge-state.db`** — this is not a genesis regen.
+  The whole point of the migration block approach (Option E) is to
+  preserve block history 0..H.
+- **DO NOT run `rm -f data/*.db`** — the GENESIS_REGENERATION_RUNBOOK
+  Phase 5 commands are for a full reset, NOT for 3.0.3.
+- **DO NOT change `GENESIS_TIMESTAMP` or genesis block** — the genesis
+  block bytes stay identical. Only the *interpretation* of amounts
+  changes at H+1.
+- **DO NOT start the node without setting `ZION_MIGRATION_HEIGHT`** —
+  if migration_height=0, the node treats all blocks as post-migration
+  (new-scale), which would reject pre-migration blocks during IBD.
+  Set it to the current tip height before starting.
+
+### 15.8 Migration height setting
+
+The `ZION_MIGRATION_HEIGHT` env var tells the node where the legacy/new
+boundary is. Set it to the **current tip height** at cutover time.
+
+Example: if tip is at height 2028:
+```
+ZION_MIGRATION_HEIGHT=2028
+```
+
+This means:
+- Blocks 0..2028: interpreted as legacy 12-decimal flowers
+- Block 2029 (= H+1): the migration block (if building one)
+- Blocks 2030+: interpreted as new 6-decimal flowers
+
+For a **soft fork** (no migration block, just unit change), set
+`ZION_MIGRATION_HEIGHT=2028` and the node simply starts interpreting
+new blocks at 2029+ in 6-decimal scale. No migration block needed
+if all balances are already correct in the DB.
+
+For a **hard fork with migration block** (Option E), build the
+migration block at height 2029 using `migration::build_migration_transactions()`,
+submit it, and the node processes it as a special block that credits
+all addresses with converted balances.
