@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Box, ChevronDown, Copy, Check, ArrowLeft } from "lucide-react";
+import { Box, ChevronDown, Copy, Check, ArrowLeft, Download } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
 import { useLang } from '@/contexts/LanguageContext';
 import { usePolling } from "@/hooks/usePolling";
+import { exportToCsv } from "@/lib/csv-export";
 
 interface Block {
   height: number;
@@ -16,6 +17,7 @@ interface Block {
   reward: number;
   difficulty: number;
   block_size: number;
+  miner?: string;
 }
 
 const fmtAge = (ts: number, cs: boolean): string => {
@@ -75,6 +77,21 @@ export default function BlocksPage() {
   useEffect(() => { loadBlocks(1, false); }, [loadBlocks]);
 
   usePolling(() => setTick((tick) => tick + 1), 1000);
+
+  const handleExportCsv = () => {
+    const headers = ["height", "timestamp", "hash", "txs", "size", "difficulty", "reward", "miner"];
+    const rows = blocks.map((b) => [
+      b.height,
+      b.timestamp,
+      b.hash,
+      (b.num_txes || 0) + 1,
+      b.block_size || 0,
+      b.difficulty,
+      b.reward,
+      b.miner || "",
+    ]);
+    exportToCsv(`zion-blocks-page-${page}.csv`, headers, rows);
+  };
 
   return (
     <div className="">
@@ -167,24 +184,34 @@ export default function BlocksPage() {
           </div>
 
           {/* Footer / Load More */}
-          <div className="px-6 py-4 border-t border-white/4 flex items-center justify-between">
+          <div className="px-6 py-4 border-t border-white/4 flex items-center justify-between flex-wrap gap-3">
             <p className="text-[11px] text-gray-600">
               {cs ? `Zobrazeno ${blocks.length} bloku` : `Showing ${blocks.length} blocks`}
             </p>
-            {hasMore && (
+            <div className="flex items-center gap-2">
               <button
-                onClick={() => { const np = page + 1; setPage(np); loadBlocks(np, true); }}
-                disabled={loadingMore}
+                onClick={handleExportCsv}
+                disabled={blocks.length === 0}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white hover:bg-white/10 disabled:opacity-50 transition"
               >
-                {loadingMore ? (
-                  <span className="animate-spin h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full" />
-                ) : (
-                  <ChevronDown className="h-3.5 w-3.5" />
-                )}
-                {cs ? 'Nacist dalsi' : 'Load More'}
+                <Download className="h-3.5 w-3.5" />
+                {cs ? 'Export CSV' : 'Export CSV'}
               </button>
-            )}
+              {hasMore && (
+                <button
+                  onClick={() => { const np = page + 1; setPage(np); loadBlocks(np, true); }}
+                  disabled={loadingMore}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white hover:bg-white/10 disabled:opacity-50 transition"
+                >
+                  {loadingMore ? (
+                    <span className="animate-spin h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full" />
+                  ) : (
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  )}
+                  {cs ? 'Nacist dalsi' : 'Load More'}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>

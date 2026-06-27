@@ -95,25 +95,29 @@ function CopyBtn({ text }: { text: string }) {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   Fee histogram (8 buckets, log-spaced by max fee)
+   Fee histogram — SVG bar chart, fee rate in flowers/byte
    ───────────────────────────────────────────────────────────────── */
 function FeeHistogram({ txs, cs }: { txs: MempoolTx[]; cs: boolean }) {
+  const [hovered, setHovered] = useState<number | null>(null);
+
   const buckets = useMemo(() => {
-    if (!txs.length) return [];
-    const fees = txs.map((t) => t.fee).filter((f) => f >= 0);
-    if (!fees.length) return [];
-    const max = Math.max(...fees);
-    const min = Math.min(...fees);
-    const numBuckets = 8;
-    const span = Math.max(max - min, 0.000001);
+    if (!txs.length) return [] as { lo: number; hi: number; count: number }[];
+    const rates = txs
+      .map((t) => (t.size > 0 ? (t.fee * 1_000_000) / t.size : 0))
+      .filter((r) => r >= 0);
+    if (!rates.length) return [] as { lo: number; hi: number; count: number }[];
+    const max = Math.max(...rates);
+    const min = Math.min(...rates);
+    const numBuckets = 10;
+    const span = Math.max(max - min, 0.001);
     const step = span / numBuckets;
     const out = Array.from({ length: numBuckets }, (_, i) => ({
       lo: min + step * i,
       hi: min + step * (i + 1),
       count: 0,
     }));
-    for (const f of fees) {
-      const idx = Math.min(numBuckets - 1, Math.max(0, Math.floor((f - min) / step)));
+    for (const r of rates) {
+      const idx = Math.min(numBuckets - 1, Math.max(0, Math.floor((r - min) / step)));
       out[idx].count++;
     }
     return out;
@@ -122,37 +126,79 @@ function FeeHistogram({ txs, cs }: { txs: MempoolTx[]; cs: boolean }) {
   const peak = buckets.reduce((m, b) => Math.max(m, b.count), 0);
   if (!buckets.length) return null;
 
+  const W = 400, H = 160;
+  const PAD = { top: 12, right: 12, bottom: 28, left: 40 };
+  const chartW = W - PAD.left - PAD.right;
+  const chartH = H - PAD.top - PAD.bottom;
+  const slot = chartW / buckets.length;
+  const barW = slot * 0.72;
+
   return (
-    <div className="zion-rainbow-sub p-4" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+    <div className="zion-rainbow-sub p-4" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
       <div className="flex items-center justify-between mb-3">
         <p className="text-[10px] uppercase tracking-[0.3em] text-white/40">
-          {cs ? "Distribuce poplatků" : "Fee distribution"}
+          {cs ? "Distribuce poplatků" : "Fee Distribution"}
         </p>
-        <span className="text-[10px] text-white/30">{cs ? "ZION za TX" : "ZION per TX"}</span>
+        <span className="text-[10px] text-white/30">{cs ? "flowers / byte" : "flowers / byte"}</span>
       </div>
-      <div className="flex items-end gap-1 h-24">
-        {buckets.map((b, i) => {
-          const heightPct = peak > 0 ? (b.count / peak) * 100 : 0;
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-32" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="feeBarGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#9333ea" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="#9333ea" stopOpacity="0.15" />
+          </linearGradient>
+        </defs>
+        {/* Grid lines */}
+        {[0, 0.5, 1].map((pct, i) => {
+          const y = PAD.top + chartH - pct * chartH;
           return (
-            <div
-              key={i}
-              className="flex-1 flex flex-col items-center gap-1 group"
-              title={`${b.lo.toFixed(6)} – ${b.hi.toFixed(6)} ZION (${b.count})`}
-            >
-              <div className="text-[9px] text-white/40 tabular-nums">
-                {b.count > 0 ? b.count : ""}
-              </div>
-              <div
-                className="w-full rounded-t bg-linear-to-t from-amber-500/40 to-amber-400/80 group-hover:from-amber-400/60 group-hover:to-amber-300 transition-all"
-                style={{ height: `${heightPct}%`, minHeight: b.count > 0 ? 4 : 0 }}
-              />
-            </div>
+            <g key={i}>
+              <line x1={PAD.left} x2={W - PAD.right} y1={y} y2={y} stroke="rgba(255,255,255,0.05)" strokeDasharray="3" />
+              <text x={PAD.left - 4} y={y + 3} textAnchor="end" fill="rgba(255,255,255,0.2)" fontSize="7" fontFamily="monospace">
+                {Math.round(peak * pct)}
+              </text>
+            </g>
           );
         })}
-      </div>
+        {/* Bars */}
+        {buckets.map((b, i) => {
+          const h = peak > 0 ? (b.count / peak) * chartH : 0;
+          const x = PAD.left + i * slot + (slot - barW) / 2;
+          const y = PAD.top + chartH - h;
+          return (
+            <g key={i}>
+              <rect
+                x={x} y={y} width={barW} height={Math.max(h, b.count > 0 ? 2 : 0)}
+                fill="url(#feeBarGrad)" rx="1.5"
+                onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}
+                className="transition-opacity"
+                opacity={hovered === null || hovered === i ? 1 : 0.35}
+              />
+              {hovered === i && b.count > 0 && (
+                <>
+                  <rect x={Math.min(x + barW / 2 - 48, W - 100)} y={Math.max(y - 26, 2)} width="96" height="20" rx="5" fill="rgba(0,0,0,0.9)" stroke="#9333ea" strokeWidth="0.5" />
+                  <text x={Math.min(x + barW / 2, W - 52)} y={Math.max(y - 12, 13)} textAnchor="middle" fill="white" fontSize="7" fontWeight="600" fontFamily="monospace">
+                    {b.count} tx · {b.lo.toFixed(1)}–{b.hi.toFixed(1)}
+                  </text>
+                </>
+              )}
+            </g>
+          );
+        })}
+        {/* X-axis labels (every other bucket) */}
+        {buckets.map((b, i) => {
+          if (i % 2 !== 0 && i !== buckets.length - 1) return null;
+          const x = PAD.left + i * slot + slot / 2;
+          return (
+            <text key={i} x={x} y={H - 8} textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize="7" fontFamily="monospace">
+              {b.lo.toFixed(0)}
+            </text>
+          );
+        })}
+      </svg>
       <div className="flex justify-between text-[9px] text-white/30 mt-1 tabular-nums">
-        <span>{buckets[0]?.lo.toFixed(6)}</span>
-        <span>{buckets[buckets.length - 1]?.hi.toFixed(6)}</span>
+        <span>{buckets[0]?.lo.toFixed(1)} fl/B</span>
+        <span>{buckets[buckets.length - 1]?.hi.toFixed(1)} fl/B</span>
       </div>
     </div>
   );

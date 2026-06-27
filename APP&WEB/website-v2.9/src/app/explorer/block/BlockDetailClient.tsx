@@ -15,6 +15,7 @@ import {
   Shield,
   Cpu,
   Box,
+  Code,
 } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
@@ -54,6 +55,9 @@ interface BlockDetail {
   tx_hashes: string[];
   total_fees: number;
   total_output: number;
+  merkle_root?: string;
+  tx_hash_list_merkle_root?: string;
+  [key: string]: any;
 }
 
 const fmtDate = (ts: number, locale: string) => ts ? new Date(ts * 1000).toLocaleString(locale) : "—";
@@ -119,18 +123,22 @@ export default function BlockDetailClient() {
   }, [searchParams]);
 
   const [block, setBlock] = useState<BlockDetail | null>(null);
+  const [rawJson, setRawJson] = useState<string | null>(null);
+  const [showRaw, setShowRaw] = useState(false);
+  const [chainHeight, setChainHeight] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
-        setError(null); setLoading(true); setBlock(null);
+        setError(null); setLoading(true); setBlock(null); setRawJson(null);
         if (!id) { setError(cs ? "Chybi id nebo vyska bloku" : "Missing block id/height"); return; }
         const isHash = /^[a-f0-9]{64}$/i.test(id);
         const query = isHash ? `/blockchain/block?hash=${id}` : `/blockchain/block?height=${id}`;
         const data = await apiClient<BlockDetail>(query);
         setBlock(data);
+        try { setRawJson(JSON.stringify(data, null, 2)); } catch { setRawJson(null); }
       } catch (err) {
         setError(cs ? `Nepodarilo se nacist blok: ${err}` : `Failed to load block: ${err}`);
       } finally {
@@ -138,6 +146,20 @@ export default function BlockDetailClient() {
       }
     })();
   }, [id, cs]);
+
+  // Fetch current chain height for next-block disable logic
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const stats = await apiClient<{ block_height: number }>("/blockchain/stats");
+        if (!cancelled && typeof stats?.block_height === "number") setChainHeight(stats.block_height);
+      } catch {
+        /* non-critical — next button stays enabled */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   if (loading) {
     return (
@@ -209,6 +231,64 @@ export default function BlockDetailClient() {
           </div>
         </motion.div>
 
+        {/* Prev / Next Block Navigation + Raw JSON toggle */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => router.push(`/explorer/block?id=${block.height - 1}`)}
+              disabled={block.height <= 1}
+              className="zion-rainbow-sub flex items-center gap-2 px-4 py-2 rounded-full text-sm text-white
+                hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span className="hidden sm:inline">{cs ? 'Predchozi blok' : 'Previous Block'}</span>
+              <span className="sm:hidden">#{(block.height - 1).toLocaleString(locale)}</span>
+              <span className="hidden sm:inline tabular-nums text-gray-400">#{(block.height - 1).toLocaleString(locale)}</span>
+            </button>
+            <button
+              onClick={() => router.push(`/explorer/block?id=${block.height + 1}`)}
+              disabled={chainHeight !== null && block.height >= chainHeight}
+              className="zion-rainbow-sub flex items-center gap-2 px-4 py-2 rounded-full text-sm text-white
+                hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+            >
+              <span className="hidden sm:inline tabular-nums text-gray-400">#{(block.height + 1).toLocaleString(locale)}</span>
+              <span className="sm:hidden">#{(block.height + 1).toLocaleString(locale)}</span>
+              <span className="hidden sm:inline">{cs ? 'Dalsi blok' : 'Next Block'}</span>
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+          <button
+            onClick={() => setShowRaw((v) => !v)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm transition border ${
+              showRaw
+                ? "bg-purple-500/15 text-purple-300 border-purple-500/30"
+                : "bg-white/5 text-white/60 border-white/10 hover:bg-white/10"
+            }`}
+          >
+            <Code className="h-4 w-4" />
+            {showRaw ? (cs ? 'Skrýt Raw JSON' : 'Hide Raw JSON') : (cs ? 'Zobrazit Raw JSON' : 'Show Raw JSON')}
+          </button>
+        </div>
+
+        {/* Raw JSON View */}
+        {showRaw && rawJson && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
+            className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+              <div className="flex items-center gap-2">
+                <Code className="h-4 w-4 text-purple-400" />
+                <span className="text-sm font-semibold text-white">Raw JSON</span>
+              </div>
+              <CopyBtn text={rawJson} label="JSON" />
+            </div>
+            <pre className="bg-black/60 border border-white/10 rounded-xl p-4 m-4 overflow-x-auto text-[12px] leading-relaxed font-mono text-gray-300 max-h-[600px]">
+              {rawJson}
+            </pre>
+          </motion.div>
+        )}
+
         {/* Block Info Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Block Details */}
@@ -225,6 +305,18 @@ export default function BlockDetailClient() {
             <InfoRow label="Hash" value={block.hash} mono copyable />
             <InfoRow label={cs ? 'Predchozi hash' : 'Previous Hash'} value={truncHash(block.prev_hash, 16)} mono copyable
               link={block.prev_hash ? `/explorer/block?id=${block.height - 1}` : undefined} />
+            <InfoRow
+              label={cs ? 'Merkleho koren' : 'Merkle Root'}
+              value={block.merkle_root || block.tx_hash_list_merkle_root || "—"}
+              mono
+              copyable={!!(block.merkle_root || block.tx_hash_list_merkle_root)}
+              color={!(block.merkle_root || block.tx_hash_list_merkle_root) ? "text-gray-600" : undefined}
+              badge={!(block.merkle_root || block.tx_hash_list_merkle_root) ? (
+                <span title={cs ? 'Merkleho koren neni vystaven aktualnim RPC' : 'Merkle root is not exposed by the current RPC'} className="text-gray-600 cursor-help">
+                  ⓘ
+                </span>
+              ) : undefined}
+            />
             <InfoRow label={cs ? 'Velikost bloku' : 'Block Size'} value={`${fmtSize(block.block_size)} (${block.block_size.toLocaleString(locale)} ${cs ? 'bajtu' : 'bytes'})`} />
             <InfoRow label={cs ? 'Verze' : 'Version'} value={`${block.major_version}.${block.minor_version}`} />
           </motion.div>
@@ -341,29 +433,12 @@ export default function BlockDetailClient() {
           </div>
         </motion.div>
 
-        {/* Block Navigation */}
-        <div className="flex items-center justify-between pt-2">
-          <button
-            onClick={() => router.push(`/explorer/block?id=${block.height - 1}`)}
-            disabled={block.height === 0}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white 
-              hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">{cs ? 'Blok' : 'Block'}</span> #{(block.height - 1).toLocaleString(locale)}
-          </button>
+        {/* All Blocks link */}
+        <div className="flex items-center justify-center pt-2">
           <Link href="/explorer/blocks"
             className="text-xs text-gray-500 hover:text-white transition font-medium">
             {cs ? 'Vsechny bloky' : 'All Blocks'}
           </Link>
-          <button
-            onClick={() => router.push(`/explorer/block?id=${block.height + 1}`)}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white 
-              hover:bg-white/10 transition"
-          >
-            <span className="hidden sm:inline">{cs ? 'Blok' : 'Block'}</span> #{(block.height + 1).toLocaleString(locale)}
-            <ArrowRight className="h-4 w-4" />
-          </button>
         </div>
       </div>
     </div>

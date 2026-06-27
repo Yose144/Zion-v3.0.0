@@ -1,12 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ArrowRightLeft, ChevronRight, Copy, Check, Loader2, X } from "lucide-react";
+import { ArrowRightLeft, ChevronRight, Copy, Check, Loader2, X, Download } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { apiClient } from "@/lib/api";
 import { useLang } from '@/contexts/LanguageContext';
 import { usePolling } from "@/hooks/usePolling";
+import { exportToCsv } from "@/lib/csv-export";
 
 /* ── helpers ─────────────────────────────────────────────────── */
 
@@ -120,6 +121,20 @@ export default function TransactionsPageClient() {
 
   const loadMore = () => { const next = page + 1; setPage(next); loadTransactions(next, true); };
 
+  const handleExportCsv = () => {
+    const headers = ["hash", "type", "block", "timestamp", "fee", "amount", "status"];
+    const rows = transactions.map((tx) => [
+      tx.hash,
+      tx.type || "transfer",
+      tx.block_height ?? "",
+      tx.timestamp,
+      tx.fee,
+      tx.amount,
+      tx.status,
+    ]);
+    exportToCsv(`zion-transactions-page-${page}.csv`, headers, rows);
+  };
+
   /* ── render ──────────────────────────────────────────────── */
 
   return (
@@ -146,6 +161,14 @@ export default function TransactionsPageClient() {
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight">{cs ? 'Transakce' : 'Transactions'}</h1>
           <span className="text-[11px] text-white/30 font-mono tabular-nums ml-1">{transactions.length} {cs ? 'nacteno' : 'loaded'}</span>
+          <button
+            onClick={handleExportCsv}
+            disabled={transactions.length === 0}
+            className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white/70 hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            <Download className="w-3.5 h-3.5" />
+            {cs ? 'Export CSV' : 'Export CSV'}
+          </button>
         </div>
 
         {addressFilter && (
