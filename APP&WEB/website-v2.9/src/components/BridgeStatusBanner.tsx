@@ -2,34 +2,68 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowRight, Lock, Shield, Activity, Zap } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { ArrowRight, Lock, Shield, Activity, Zap, RefreshCw } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
 import { useLang } from '@/contexts/LanguageContext';
 
 interface BridgeStatus {
   online: boolean;
-  locked_total?: string;
-  minted_total?: string;
-  validator_threshold?: string;
-  l1_height?: number;
   uptime_seconds?: number;
+  last_l1_height?: number;
+  last_evm_block?: number;
+  l1_locks_detected?: number;
+  l1_locks_finalized?: number;
+  evm_mints_submitted?: number;
+  evm_mints_confirmed?: number;
+  evm_burns_detected?: number;
+  l1_unlocks_submitted?: number;
+  l1_unlocks_confirmed?: number;
+  errors_total?: number;
+  fetched_at?: number;
 }
 
 export default function BridgeStatusBanner() {
   const { lang } = useLang();
   const cs = lang === 'cs';
   const [status, setStatus] = useState<BridgeStatus | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetch('/api/bridge/status', { cache: 'no-store' })
-      .then(r => r.json())
-      .then(d => setStatus(d))
-      .catch(() => {});
+  const fetchStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/bridge/status', { cache: 'no-store' });
+      if (res.ok) {
+        const d = await res.json();
+        setStatus(d);
+      }
+    } catch {
+      // keep last known status
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
+  useEffect(() => {
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 30000);
+    return () => clearInterval(interval);
+  }, [fetchStatus]);
+
   const online = status?.online ?? false;
-  const locked = status?.locked_total ?? '100,000,000';
-  const threshold = status?.validator_threshold ?? '5/5';
+  // 100M ZION locked in bridge vault (6 UTXO locks from genesis slot 14)
+  const locked = '100,000,000';
+  const threshold = '5/5';
+  const locks = status?.l1_locks_finalized ?? 0;
+  const mints = status?.evm_mints_confirmed ?? 0;
+  const uptime = status?.uptime_seconds ?? 0;
+
+  const formatUptime = (s: number) => {
+    if (s <= 0) return '—';
+    const d = Math.floor(s / 86400);
+    const h = Math.floor((s % 86400) / 3600);
+    if (d > 0) return `${d}d ${h}h`;
+    if (h > 0) return `${h}h`;
+    return `${Math.floor((s % 3600) / 60)}m`;
+  };
 
   return (
     <section className="relative px-4 -mt-2 pb-6">
@@ -84,6 +118,24 @@ export default function BridgeStatusBanner() {
                   <p className="text-sm font-bold text-white tabular-nums">{threshold}</p>
                 </div>
               </div>
+              {online && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <Activity className="h-4 w-4 text-emerald-400 shrink-0" />
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Locks/Mints' : 'Locks/Mints'}</p>
+                      <p className="text-sm font-bold text-white tabular-nums">{locks} / {mints}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-emerald-400 shrink-0" />
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Uptime' : 'Uptime'}</p>
+                      <p className="text-sm font-bold text-white tabular-nums">{formatUptime(uptime)}</p>
+                    </div>
+                  </div>
+                </>
+              )}
               <div className="flex items-center gap-2">
                 <Zap className="h-4 w-4 text-emerald-400 shrink-0" />
                 <div>
