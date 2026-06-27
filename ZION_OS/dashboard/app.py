@@ -3742,6 +3742,127 @@ def get_edge_server_status() -> dict:
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
+def clear_edge_disk(aggressive: bool = False) -> dict:
+    """Run edge-log-cleanup.sh on Edge server via SSH, plus Docker prune.
+    Returns disk usage before/after and freed space."""
+    ssh_key = REPO_ROOT / "ssh-key-zion-edge"
+    if not ssh_key.exists():
+        return {"ok": False, "error": "SSH key not found"}
+
+    try:
+        # Get disk usage before
+        result = subprocess.run(
+            ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
+             "-o", "ConnectTimeout=3", "-o", "BatchMode=yes",
+             "root@100.76.16.108",
+             "df -h / | tail -1 | awk '{print $5\" \"$4}'"],
+            capture_output=True, text=True, timeout=8
+        )
+        if result.returncode != 0:
+            return {"ok": False, "error": result.stderr.strip() or "SSH failed"}
+        before_parts = result.stdout.strip().split()
+        disk_before_pct = before_parts[0].rstrip('%') if before_parts else "?"
+        disk_before_avail = before_parts[1] if len(before_parts) > 1 else "?"
+
+        # Run cleanup script
+        cleanup_cmd = "/usr/local/bin/edge-log-cleanup.sh 2>&1"
+        if aggressive:
+            cleanup_cmd = (
+                "docker builder prune -af 2>&1; "
+                "docker image prune -af 2>&1; "
+                "docker container prune -f 2>&1; "
+                "docker volume prune -f 2>&1; "
+                "journalctl --vacuum-size=200M 2>&1; "
+                "/usr/local/bin/edge-log-cleanup.sh 2>&1"
+            )
+
+        result = subprocess.run(
+            ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
+             "-o", "ConnectTimeout=3", "-o", "BatchMode=yes",
+             "root@100.76.16.108",
+             cleanup_cmd],
+            capture_output=True, text=True, timeout=60
+        )
+        cleanup_output = result.stdout.strip()
+
+        # Get disk usage after
+        result = subprocess.run(
+            ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
+             "-o", "ConnectTimeout=3", "-o", "BatchMode=yes",
+             "root@100.76.16.108",
+             "df -h / | tail -1 | awk '{print $5\" \"$4}'"],
+            capture_output=True, text=True, timeout=8
+        )
+        after_parts = result.stdout.strip().split()
+        disk_after_pct = after_parts[0].rstrip('%') if after_parts else "?"
+        disk_after_avail = after_parts[1] if len(after_parts) > 1 else "?"
+
+        # Invalidate edge status cache so next refresh shows new disk
+        _edge_status_cache["data"] = None
+        _edge_status_cache["ts"] = 0
+
+        return {
+            "ok": True,
+            "disk_before": f"{disk_before_pct}% ({disk_before_avail} avail)",
+            "disk_after": f"{disk_after_pct}% ({disk_after_avail} avail)",
+            "aggressive": aggressive,
+            "output": cleanup_output[-500:] if cleanup_output else "",
+        }
+    except subprocess.TimeoutExpired:
+        return {"ok": False, "error": "SSH timeout — cleanup may still be running on edge"}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def run_edge_action(action: str) -> dict:
+    """Run an action on the Edge server via SSH (service restart, docker clean, etc.)."""
+    ssh_key = REPO_ROOT / "ssh-key-zion-edge"
+    if not ssh_key.exists():
+        return {"ok": False, "error": "SSH key not found"}
+
+    # Map action → SSH command
+    ACTION_MAP = {
+        "restart-node1":          "systemctl restart zion-edge-node1",
+        "restart-node2":          "systemctl restart zion-edge-node2",
+        "restart-pool":           "systemctl restart zion-pool-server",
+        "restart-dao":            "systemctl restart zion-edge-dao",
+        "restart-warp":           "systemctl restart zion-edge-warp",
+        "restart-dashboard":      "systemctl restart zion-edge-dashboard",
+        "restart-hiran":          "systemctl restart zion-edge-hiran",
+        "restart-hiranyagarbha":  "systemctl restart zion-edge-hiranyagarbha",
+        "restart-bridge":         "systemctl restart zion-edge-bridge",
+        "restart-website":        "systemctl restart zion-website",
+        "clean-docker":           "docker builder prune -af 2>&1; docker image prune -af 2>&1; docker container prune -f 2>&1",
+        "security-audit":         "echo 'Security audit placeholder — run manually'",
+        "full-health":            "/usr/local/bin/edge-health-probe.sh 2>&1",
+        "memory-limit":           "sed -i '/^MemoryMax=/d' /etc/systemd/system/zion-edge-node1.service; echo 'MemoryMax=3G' >> /etc/systemd/system/zion-edge-node1.service; systemctl daemon-reload; systemctl restart zion-edge-node1",
+    }
+
+    cmd = ACTION_MAP.get(action)
+    if not cmd:
+        return {"ok": False, "error": f"Unknown action: {action}"}
+
+    try:
+        result = subprocess.run(
+            ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
+             "-o", "ConnectTimeout=5", "-o", "BatchMode=yes",
+             "root@100.76.16.108",
+             cmd],
+            capture_output=True, text=True, timeout=30
+        )
+        output = (result.stdout + "\n" + result.stderr).strip()
+        ok = result.returncode == 0
+        # Invalidate edge status cache after restarts
+        if action.startswith("restart-") or action == "clean-docker":
+            _edge_status_cache["data"] = None
+            _edge_status_cache["ts"] = 0
+        return {"ok": ok, "result": output[-300:] if output else "OK", "action": action}
+    except subprocess.TimeoutExpired:
+        return {"ok": False, "error": "SSH timeout", "action": action}
+    except Exception as e:
+        return {"ok": False, "error": str(e), "action": action}
+
+
 def get_pool_miners() -> dict:
     """Fetch active miners from Edge pool Prometheus metrics."""
     try:
@@ -9268,6 +9389,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     self._json({"ok": False, "error": f"Failed to update config: {str(e)}"})
             except Exception as e:
                 self._json({"ok": False, "error": f"Invalid request: {str(e)}"})
+        elif route == "/api/edge/clear-disk":
+            aggressive = payload.get("aggressive", False)
+            self._json(clear_edge_disk(aggressive=aggressive))
+        elif route == "/api/edge-action":
+            self._json(run_edge_action(payload.get("action", "")))
         elif route == "/api/settings/save":
             # Save mining/node settings to a JSON file
             try:
