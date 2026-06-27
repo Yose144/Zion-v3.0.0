@@ -1,10 +1,11 @@
-import React from 'react';
+import React, {useEffect, useRef} from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createStackNavigator} from '@react-navigation/stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import {StatusBar} from 'react-native';
+import {Linking, StatusBar} from 'react-native';
 
+import {parseZionUri} from './src/utils/zionUri';
 import GalacticBackground from './src/components/common/GalacticBackground';
 import OnboardingScreen from './src/screens/OnboardingScreen';
 import WalletScreen from './src/screens/WalletScreen';
@@ -175,12 +176,109 @@ const MainTabs = () => (
   </Tab.Navigator>
 );
 
+/**
+ * Handle a ZION deep link URL.
+ *
+ * Supported URI types:
+ *  - zion:<address>?amount=X&memo=Y   → Send screen with pre-filled amount/memo
+ *  - zion://import?mnemonic=...        → Onboarding with import data
+ *  - zion://wallet?address=...         → Wallet screen
+ *
+ * @param {string|null} url - The deep link URL to process.
+ * @param {Object} navigationRef - React ref to the NavigationContainer.
+ */
+const handleDeepLink = (url, navigationRef) => {
+  if (!url || typeof url !== 'string') return;
+  const nav = navigationRef.current;
+  if (!nav) {
+    console.warn('[DeepLink] Navigation ref not ready yet, skipping:', url);
+    return;
+  }
+
+  try {
+    // ── zion:<address>?amount=X&memo=Y (single-colon payment URI) ──
+    // parseZionUri handles zion://import and zion://wallet, but the
+    // single-colon address form is parsed here to match SendScreen's QR logic.
+    if (url.startsWith('zion:') && !url.startsWith('zion://')) {
+      const stripped = url.replace('zion:', '');
+      const [address, query] = stripped.split('?');
+      let amount = null;
+      let memo = null;
+      if (query) {
+        const params = new URLSearchParams(query);
+        amount = params.get('amount');
+        memo = params.get('memo');
+      }
+      nav.navigate('Main', {
+        screen: 'Wallet',
+        params: {
+          screen: 'Send',
+          params: { recipient: address, amount, memo },
+        },
+      });
+      return;
+    }
+
+    const parsed = parseZionUri(url);
+
+    switch (parsed.type) {
+      case 'import':
+      case 'mnemonic':
+      case 'privateKey':
+        // Navigate to Onboarding with import data so the user can complete import.
+        nav.navigate('Onboarding', {
+          importMnemonic: parsed.mnemonic || parsed.privateKey,
+          network: parsed.network,
+        });
+        break;
+
+      case 'wallet':
+        // Navigate to the Wallet tab (optionally with a target address).
+        nav.navigate('Main', {
+          screen: 'Wallet',
+          params: { address: parsed.address, tokens: parsed.tokens },
+        });
+        break;
+
+      default:
+        console.log('[DeepLink] Unrecognized ZION URI, ignoring:', url, parsed);
+    }
+  } catch (error) {
+    console.error('[DeepLink] Failed to handle URL:', url, error);
+  }
+};
+
 const App = () => {
+  const navigationRef = useRef(null);
+
+  // ── Deep linking: cold-start + warm-start ──────────────────────────
+  useEffect(() => {
+    // Cold-start: the app was launched via a deep link.
+    Linking.getInitialURL()
+      .then((url) => {
+        if (url) handleDeepLink(url, navigationRef);
+      })
+      .catch((err) => console.warn('[DeepLink] getInitialURL failed:', err));
+
+    // Warm-start: the app is already running and receives a new link.
+    // RN 0.65+ exposes addEventListener with a subscription object; older
+    // versions return the Linking module itself. Handle both shapes.
+    const subscription = Linking.addEventListener('url', ({url}) => {
+      handleDeepLink(url, navigationRef);
+    });
+
+    return () => {
+      if (subscription && typeof subscription.remove === 'function') {
+        subscription.remove();
+      }
+    };
+  }, []);
+
   return (
     <WalletProvider>
       <MiningProvider>
         <GalacticBackground>
-          <NavigationContainer theme={navTheme}>
+          <NavigationContainer ref={navigationRef} theme={navTheme}>
             <StatusBar
               barStyle="light-content"
               backgroundColor="transparent"
