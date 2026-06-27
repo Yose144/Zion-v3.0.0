@@ -393,7 +393,7 @@ mod tests {
     #[test]
     fn test_fee_too_low_rejected() {
         let mut pool = HardenedMempool::new();
-        let tx = make_tx(1, 500, vec![(10, 0)], 5000); // below MIN_TX_FEE=1000
+        let tx = make_tx(1, 0, vec![(10, 0)], 5000); // below MIN_TX_FEE=1
         let err = pool.add_transaction(tx).unwrap_err();
         assert!(matches!(err, MempoolError::FeeTooLow { .. }));
     }
