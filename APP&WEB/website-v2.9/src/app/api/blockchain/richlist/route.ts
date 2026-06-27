@@ -54,7 +54,7 @@ export async function GET(request: Request) {
       // RPC returned real data
       richList = utxoResult.map((entry: any, idx: number) => {
         const addr = entry.address || entry.addr || '';
-        const balance = Number(entry.balance || 0) / 1_000_000_000_000; // atomic → ZION (12 decimals)
+        const balance = Number(entry.balance || 0) / 1_000_000; // flowers → ZION (6 decimals)
         const known = KNOWN_ADDRESSES[addr];
         return {
           rank: idx + 1,
@@ -79,7 +79,7 @@ export async function GET(request: Request) {
       const minerEntries: RichListEntry[] = Object.entries(poolMiners)
         .filter(([_, info]) => info.paid > 0 || info.pending > 0)
         .map(([addr, info]) => {
-          const balance = (info.paid + info.pending) / 1_000_000_000_000;
+          const balance = (info.paid + info.pending) / 1_000_000;
           return {
             rank: 0,
             address: addr,
