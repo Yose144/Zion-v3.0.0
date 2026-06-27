@@ -533,7 +533,7 @@ export default function SwapPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500">Amount:</span>
-                    <span className="text-white">{(searchResult.amount_flowers / 1_000_000_000_000).toLocaleString()} ZION</span>
+                    <span className="text-white">{(searchResult.amount_flowers / 1_000_000).toLocaleString()} ZION</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500">Timeout:</span>
@@ -609,7 +609,7 @@ export default function SwapPage() {
                   pendingHtlcs.map(rec => (
                     <tr key={String(rec.hash_hex)} className="border-b border-white/5 hover:bg-white/[0.02] transition">
                       <td className="py-3 px-4 font-mono text-gray-400 break-all max-w-[120px]">{rec.hash_hex}</td>
-                      <td className="py-3 px-4 font-bold">{(rec.amount_flowers / 1_000_000_000_000).toLocaleString()} ZION</td>
+                      <td className="py-3 px-4 font-bold">{(rec.amount_flowers / 1_000_000).toLocaleString()} ZION</td>
                       <td className="py-3 px-4 uppercase font-semibold text-gray-300">{rec.target_chain}</td>
                       <td className="py-3 px-4 font-mono text-gray-400 break-all max-w-[150px]">{rec.recipient_addr}</td>
                       <td className="py-3 px-4 text-gray-400">{rec.timeout_mins} mins</td>

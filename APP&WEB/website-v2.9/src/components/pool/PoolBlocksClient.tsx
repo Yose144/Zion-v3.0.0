@@ -151,7 +151,7 @@ function timeAgo(ts: number, cs = false): string {
 }
 
 function atomicToZion(atomic: number): string {
-  return (atomic / 1e12).toFixed(4);
+  return (atomic / 1e6).toFixed(4);
 }
 
 function shortAddr(addr: string): string {
@@ -515,7 +515,7 @@ function RewardChart({ data, height = 220 }: { data: DayBucket[]; height?: numbe
       </div>
     );
   }
-  const values = data.map((d) => d.rewards / 1e12); // ZION
+  const values = data.map((d) => d.rewards / 1e6); // ZION
   const max = Math.max(...values, 1);
   const w = 900;
   const h = height;

@@ -1331,7 +1331,7 @@ function WalletDiagnosticsSection({
                   <div key={`${utxo.tx_hash}_${utxo.output_index}`} className="zion-tile p-3 text-xs">
                     <div className="flex items-center justify-between gap-3">
                       <span className="font-mono text-cyan-300 truncate">{utxo.tx_hash.slice(0, 12)}…:{utxo.output_index}</span>
-                      <span className="font-mono text-emerald-300">{fmtZion(utxo.amount / 1_000_000_000_000)}</span>
+                      <span className="font-mono text-emerald-300">{fmtZion(utxo.amount / 1_000_000)}</span>
                     </div>
                     <div className="mt-1 text-gray-500">{cs ? 'vyska' : 'height'} {fmt(utxo.height)} · {utxo.address}</div>
                   </div>

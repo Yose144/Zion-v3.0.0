@@ -293,7 +293,7 @@ export default function PoolBenchmarksClient() {
       if (json.ok) {
         const hr = json.aggregate?.hashrate ?? 50000;
         const reward = json.recent_blocks?.[0]?.reward
-          ? json.recent_blocks[0].reward / 1e12
+          ? json.recent_blocks[0].reward / 1e6
           : 5400;
         const bpd = estimateBlocksPerDay(json.recent_blocks ?? []);
         const ms = json.fee?.miner_share ?? 89;
