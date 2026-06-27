@@ -9,7 +9,7 @@
 
 | Constant | Value | Description |
 |----------|-------|-------------|
-| `FLOWERS_PER_ZION` | `1_000_000_000_000` | 1 ZION = 10^12 flowers (12 decimals) |
+| `FLOWERS_PER_ZION` | `1_000_000` | 1 ZION = 10^6 flowers (6 decimals) (updated to 6-decimal in 3.0.3 fork) |
 | `TOTAL_SUPPLY` | `144_000_000_000 * FLOWERS_PER_ZION` | Hard cap in flowers (~1.44e23) |
 | `GENESIS_PREMINE` | `16_780_000_000 * FLOWERS_PER_ZION` | Genesis reserve in flowers |
 | `MINING_EMISSION` | `TOTAL_SUPPLY - GENESIS_PREMINE` | ~127.22B ZION |

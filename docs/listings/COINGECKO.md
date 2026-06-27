@@ -40,7 +40,7 @@
 | Maximum supply | **144,000,000,000 ZION** (hard cap, immutable) |
 | Mining emission | 127,220,000,000 ZION (88.35 %) |
 | Genesis premine | 16,780,000,000 ZION (11.65 %), 14 transparent outputs |
-| Atomic unit | 1 ZION = 1,000,000,000,000 flowers (12 decimals) |
+| Atomic unit | 1 ZION = 1,000,000 flowers (6 decimals) *(updated to 6-decimal in 3.0.3 fork)* |
 | Initial block reward | 5,400.067 ZION |
 | Block time | 60 seconds |
 | Emission schedule | Decade Decay: −20 % every 10 years (5,256,000 blocks) |

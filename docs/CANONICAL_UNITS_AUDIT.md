@@ -20,12 +20,19 @@ and dashboards consume, so cross-layer integrations stay coherent.
 
 ## 1. Canonical Definitions
 
+> **⚠️ 3.0.3 fork note:** The 3.0.3 decimal fork changed `FLOWERS_PER_ZION`
+> from 1e12 to 1e6. This audit was originally written for the pre-3.0.3
+> state (12 decimals). Values below have been updated to reflect the
+> 6-decimal post-fork reality. See
+> [`ZION_3.0.3_DECIMAL_FORK_PLAN.md`](../ZION_3.0.3_DECIMAL_FORK_PLAN.md)
+> for the cutover details.
+
 | Concept | Canonical name | Value |
 |---------|----------------|-------|
 | ZION (display unit) | `ZION` | 1 ZION |
-| Sub-unit (on-chain) | `flowers` | 1 ZION = **10¹² flowers** |
-| Conversion constant | `FLOWERS_PER_ZION` | `1_000_000_000_000` |
-| Decimal places | 12 | — |
+| Sub-unit (on-chain) | `flowers` | 1 ZION = **10⁶ flowers** |
+| Conversion constant | `FLOWERS_PER_ZION` | `1_000_000` |
+| Decimal places | 6 | — |
 
 **Rule:** Anything that crosses the network (RPC payload, P2P message,
 DB row, ledger entry) **MUST** be in flowers and the field name **MUST**
@@ -35,7 +42,7 @@ end with `_flowers`. UI/dashboard converts at the rendering boundary.
 
 | Layer | File | Constant |
 |-------|------|----------|
-| L1 core | `V3/L1/core/src/emission.rs:11` | `FLOWERS_PER_ZION: u64 = 1_000_000_000_000` |
+| L1 core | `V3/L1/core/src/emission.rs:11` | `FLOWERS_PER_ZION: u64 = 1_000_000` |
 | L1 wallet | `V3/L1/core/src/wallet.rs:156` | `FLOWERS_PER_ZION` |
 | Pool | `V3/L1/pool/src/payout.rs` | `FLOWERS_PER_ZION` |
 | Website | `APP&WEB/website-v2.9/src/lib/constants.ts` | `FLOWERS_PER_ZION` (added 2026-06-25); `ATOMIC_UNITS_PER_ZION` retained as deprecated alias |
@@ -64,7 +71,7 @@ existing call sites keep building during the migration.
 | Field suffix | Type | Meaning |
 |--------------|------|---------|
 | `_flowers` | integer (u64 / string for large values) | On-chain amount in flowers |
-| `_zion` | float (max 12 fractional digits) | Pre-converted display amount in ZION |
+| `_zion` | float (max 6 fractional digits) | Pre-converted display amount in ZION |
 | `_pct` | integer 0..100 or float 0..1 | Percentage |
 | `_h` / `_hashrate` | integer | Hashes per second |
 
@@ -100,13 +107,13 @@ existing call sites keep building during the migration.
 | `src/lib/zion-rpc.ts:282` | local `ATOMIC_PER_ZION` | Duplicates the constant; should import canonical | Follow-up: import from `constants.ts` |
 | `src/lib/dao-api.ts` | `available_atomic`, `amount_atomic` | Mixed with `weightFlowers` in same file | Follow-up: align with DAO daemon's next contract bump (rename to `_flowers`) |
 | `src/lib/swap-api.ts:8` | `amount_flowers` | ✅ Already canonical | — |
-| `src/components/MinerDashboard.tsx:103,116,452` | raw `1e12` divisions | Magic number forbidden per file header in `constants.ts` | Follow-up: import `FLOWERS_PER_ZION` |
+| `src/components/MinerDashboard.tsx:103,116,452` | raw `1e6` divisions | Magic number forbidden per file header in `constants.ts` | Follow-up: import `FLOWERS_PER_ZION` |
 | `src/components/NetworkStatus.tsx:335` | raw `1e12` for hashrate `TH/s` | Different domain (hashrate, not flowers); kept as-is | — |
 
 Search command to find remaining offenders:
 
 ```sh
-grep -nE "atomic|/\\s*1e12|\\* 1e12|FLOWERS_PER_ZION|ATOMIC" \
+grep -nE "atomic|/\\s*1e6|\\* 1e6|FLOWERS_PER_ZION|ATOMIC" \
   -r APP\&WEB/website-v2.9/src
 ```
 
@@ -156,8 +163,8 @@ should follow this naming.
 ```
 
 **Severity:** medium. The values are correct, only the suffix is
-non-canonical. Conversion `atomic / 10¹² = ZION` is identical to
-`flowers / 10¹² = ZION`, so this is a naming problem, not a math
+non-canonical. Conversion `atomic / 10⁶ = ZION` is identical to
+`flowers / 10⁶ = ZION`, so this is a naming problem, not a math
 problem.
 
 ### 3b.3 `getBlockTemplate` — uses `_zion` for flowers ❌❌
@@ -178,11 +185,11 @@ problem.
 ```
 
 **Severity: HIGH.** The `_zion` suffix promises a converted display
-value (≤ 12 decimal places), but the value `5400067000000000` is the
+value (≤ 6 decimal places), but the value `5400067000000000` is the
 flowers form of `5400.067 ZION`. Any UI consumer doing
 `displayValue = data.reward_zion` would render `5.4 × 10¹⁵ ZION`
 instead of `5400.067 ZION`. The only consumer that gets this right
-today is the Rust pool, which knows to divide by 10¹² regardless of
+today is the Rust pool, which knows to divide by 10⁶ regardless of
 the suffix.
 
 **Action:** In the next non-breaking RPC version, add
@@ -363,10 +370,10 @@ suffix (until §3b.5 contract bump lands).
 | WARP relay packet | varies per chain | native unit | Each chain (BTC sats, ETH wei, SOL lamports) keeps its native unit |
 
 **Cross-chain conversion gotcha:** wZION on EVM uses 18 decimals (the
-ERC-20 standard), while native ZION uses 12 (flowers). Bridge code at
-`V3/L2/bridge/src/relay.rs` performs `flowers × 10⁶` when minting and
-`wei / 10⁶` when burning. Any UI showing wZION must NOT use
-`flowersToZion()` — it must use `wei / 10¹⁸`.
+ERC-20 standard), while native ZION uses 6 (flowers). Bridge code at
+`V3/L2/bridge/src/relay.rs` performs `flowers × 10¹²` when minting and
+`wei / 10¹²` when burning. Any UI showing wZION must NOT use
+`flowersToZion()` — it must use `wei / 10¹⁸`. *(updated to 6-decimal in 3.0.3 fork)*
 
 ---
 
@@ -376,7 +383,7 @@ ERC-20 standard), while native ZION uses 12 (flowers). Bridge code at
 
 - [ ] Replace local `ATOMIC_PER_ZION` in `zion-rpc.ts` with import from
       `constants.ts` (`FLOWERS_PER_ZION`).
-- [ ] Replace raw `1e12` divisions in `MinerDashboard.tsx`,
+- [ ] Replace raw `1e6` divisions in `MinerDashboard.tsx`,
       `Pool24hCharts.tsx`, etc. with `flowersToZion()`.
 - [ ] Add a type-narrowing helper for `getBlockTemplate` responses
       that treats `reward_zion` / `estimated_miner_reward_zion` /
@@ -393,7 +400,7 @@ ERC-20 standard), while native ZION uses 12 (flowers). Bridge code at
       `amount_atomic` → `*_flowers` in the next API version, and
       update `dao-api.ts` types in lockstep.
 - [ ] Lock the canonical unit name in a new test:
-      `cargo test -p zion-core flowers_per_zion_is_1e12` (already
+      `cargo test -p zion-core flowers_per_zion_is_1e6` (already
       covered in `emission.rs` consts, add explicit assertion).
 
 ### Edge runtime probes (live)

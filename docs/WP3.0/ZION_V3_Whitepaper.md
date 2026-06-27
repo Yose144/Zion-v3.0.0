@@ -413,7 +413,7 @@ wZION    --[burn]-->  Bridge Contract  --[unlock]-->  ZION L1
 
 ### 10.4 L2 Smart Contracts
 
-The wider ecosystem has Base Sepolia contract deployments in the current 2.9 line. In V3 codebase, L2 is represented by bridge/DAO/atomic-swap daemons and 12-decimal (flowers) accounting migration.
+The wider ecosystem has Base Sepolia contract deployments in the current 2.9 line. In V3 codebase, L2 is represented by bridge/DAO/atomic-swap daemons and 6-decimal (flowers) accounting migration *(updated to 6-decimal in 3.0.3 fork)*.
 
 | Contract | Description |
 |----------|-------------|

@@ -58,7 +58,7 @@ Critically, **10 % of every block reward is automatically and immutably allocate
 | General hashing | BLAKE3 |
 | Address format | Bech32 (`zion1…`) |
 | Transaction model | UTXO |
-| Atomic unit | 1 ZION = 1,000,000,000,000 flowers (12 decimals) |
+| Atomic unit | 1 ZION = 1,000,000 flowers (6 decimals) *(updated to 6-decimal in 3.0.3 fork)* |
 | L2 wrapped token | wZION (ERC-20 on Base) |
 | Codebase language | Rust |
 

@@ -157,15 +157,15 @@ node scripts/import-genesis-creator.js
 **Commit:** `d0f1c5d4` - Canonical units documentation
 
 **FLOWERS_PER_ZION:**
-- **1 ZION = 10^12 flowers** (1 trillion)
-- Canonical constant: `FLOWERS_PER_ZION = 1_000_000_000_000`
+- **1 ZION = 10^6 flowers** (1 million) *(updated to 6-decimal in 3.0.3 fork)*
+- Canonical constant: `FLOWERS_PER_ZION = 1_000_000`
 - Defined in: `V3/L1/core/src/emission.rs:11`
 
 **Převod příklady:**
-- 0.001 ZION = 1,000,000,000 flowers (1 billion)
-- 1 ZION = 1,000,000,000,000 flowers (1 trillion)
-- 1000 ZION = 1,000,000,000,000,000 flowers (1 quadrillion)
-- 590M ZION = 590,000,000,000,000,000,000 flowers (590 quintillion)
+- 0.001 ZION = 1,000 flowers (1 thousand)
+- 1 ZION = 1,000,000 flowers (1 million)
+- 1000 ZION = 1,000,000,000 flowers (1 billion)
+- 590M ZION = 590,000,000,000,000 flowers (590 trillion)
 
 **Documented in:**
 - `AGENTS.md` - Complete section on canonical units
