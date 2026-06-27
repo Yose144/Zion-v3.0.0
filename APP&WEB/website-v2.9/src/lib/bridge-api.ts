@@ -1,6 +1,6 @@
 /**
  * ZION Bridge API Client
- * Fetches bridge status from Next.js proxy → Prometheus metrics endpoint (port 9100)
+ * Fetches bridge status from Next.js proxy → Prometheus metrics endpoint (port 9101)
  */
 
 export interface BridgeStatus {
