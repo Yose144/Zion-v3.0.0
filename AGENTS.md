@@ -185,13 +185,17 @@ docker compose -f V3/docker/docker-compose.v3-mainnet.yml up -d
 - Website:
   - `npm --prefix "APP&WEB/website-v2.9" install`
   - `npm --prefix "APP&WEB/website-v2.9" run dev`
-  - `npm --prefix "APP&WEB/website-v2.9" run build`
   - `npm --prefix "APP&WEB/website-v2.9" run lint`
+  - **Production build:** `npx next build --webpack` (MUST use `--webpack` — Next.js 16 Turbopack cannot resolve local `.tgz` deps)
+  - **Theme system:** `.zion-rainbow-card` / `.zion-rainbow-sub` CSS classes with inline `style={{ '--rc': 'R, G, B' } as React.CSSProperties}`. Each page has its own accent color. See `APP&WEB/website-v2.9/README.md` for the full color map.
   - **Edge deployment (production):**
+    - SSH via Tailscale: `ssh root@mainnetedge` (or `ssh -i ~/.ssh/ssh-key-zion-edge root@77.42.71.94`)
     - Build runs on Edge server (`77.42.71.94`) inside `/root/zion-2.9.6-main/APP&WEB/website-v2.9`
     - Docker image is built from host artifacts (`.next` + `node_modules` copied into `node:20-alpine` runner) — `npm install` inside Docker fails due to local `.tgz` dependency, so use the host-built artifacts
-    - Production compose file: `/root/zion-web/docker-compose.yml` uses `image: zion-website:<version>`
+    - Production compose file: `/root/zion-web/docker-compose.yml` uses `image: zion-website:<version>`, `network_mode: host`
     - Caddy reverse proxies to `localhost:3000`
+    - Automated script: `bash scripts/deploy-edge-web.sh <version>` (pull, build, docker, restart, caddy reload)
+    - Full guide: `APP&WEB/website-v2.9/DEPLOYMENT.md`
 - Mobile app:
   - `npm --prefix "APP&WEB/mobile-app" install`
   - `npm --prefix "APP&WEB/mobile-app" run test`
@@ -349,7 +353,7 @@ Public Pool: 8444
 | Node Exporter | 9100 | HTTP | Edge host system metrics (Docker host network) |
 | Dashboard | 8766 | HTTP | Python Mainnet Launch dashboard (local PC) |
 | Infra Dashboard | 8888 | HTTP | Rust unified infrastructure dashboard (Edge) |
-| Website | 3000 | HTTP | Next.js website (PM2, Edge) |
+| Website | 3000 | HTTP | Next.js website (Docker `zion-website`, Edge) |
 | Pool API Proxy | 8080 | HTTP | Edge pool REST proxy |
 | **OASIS** | **8094** | HTTP | L4 Consciousness Mining Game API (Edge) |
 | **Free World** | **8095** | HTTP | L5 Humanitarian Fund Scanner API (Edge) |
@@ -685,7 +689,7 @@ If pool stops accepting connections:
 - ✅ Edge DAO: Running (port 8450)
 - ✅ Edge WARP: Running (port 8453)
 - ✅ Edge Server: Operational (77.42.71.94)
-- ✅ Website: Running (PM2, port 3000)
+- ✅ Website: Running (Docker `zion-website`, port 3000)
 - ✅ Pool Metrics: Running on port 8455
 - ✅ Genesis Hash: `7543004c76b11416ef32e2f1f5a4c72f0178f841d4559bf476e29e15a9602728`
 - ✅ P2P Sync: Local ↔ Edge synced (height 33+), both active
