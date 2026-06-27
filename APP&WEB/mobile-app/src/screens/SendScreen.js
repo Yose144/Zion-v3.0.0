@@ -39,7 +39,7 @@ const FEE_TIERS = [
   { label: 'Fast',   inputs: 4, sizeKB: 1.00 },
 ];
 
-const SendScreen = ({ navigation }) => {
+const SendScreen = ({ navigation, route }) => {
   const { activeWallet, balance, sendZion, refreshBalance } = useWallet();
   
   // Form state
@@ -54,6 +54,15 @@ const SendScreen = ({ navigation }) => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [password, setPassword] = useState('');
   const [txResult, setTxResult] = useState(null);
+
+  // Consume deep-link / navigation params (zion:address?amount=X&memo=Y)
+  useEffect(() => {
+    const params = route?.params;
+    if (!params) return;
+    if (params.recipient) setRecipient(params.recipient);
+    if (params.amount) setAmount(String(params.amount));
+    if (params.memo) setMemo(params.memo);
+  }, [route?.params]);
 
   // Compute fee from blockchain constants
   const fee = estimateFee(FEE_TIERS[feeTier].sizeKB);
