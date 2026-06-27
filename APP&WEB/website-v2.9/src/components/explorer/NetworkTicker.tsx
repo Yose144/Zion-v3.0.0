@@ -103,7 +103,7 @@ export default function NetworkTicker() {
   }
 
   const pendingZion = data.pool_pending_payouts_atomic
-    ? (data.pool_pending_payouts_atomic / 1e12).toFixed(2)
+    ? (data.pool_pending_payouts_atomic / 1e6).toFixed(2)
     : "0";
 
   const items = [
