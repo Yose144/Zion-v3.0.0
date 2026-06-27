@@ -1,212 +1,171 @@
-# ZION Web v3.0.0 — Deployment Guide
+# ZION Web v3.7 — Deployment Guide
 
-> Last verified production deploy: 20. dubna 2026
+> Last verified production deploy: 27 June 2026 (v3.7.5-quantum-revolution)
 
 ## Current Production Status
 
-- Local `npm run build` passes cleanly on the current tree.
-- Production deploy target is **Edge** (Hetzner VPS): `77.42.71.94`.
-- Canonical remote paths:
-  - source: `/root/zion-2.9.6-main/APP&WEB/website-v2.9`
-  - compose: `/root/zion-2.9.6-main/docker`
-- Website bridge status now reaches the host-networked bridge via `host.docker.internal:9101` from `docker-compose.website.yml`.
-- Verified live after deploy on 2026-04-20:
-  - `https://zionterranova.com/api/health`
-  - `https://zionterranova.com/api/bridge/status`
+- **Live URL:** https://zionterranova.com
+- **Host:** Edge server (Hetzner VPS) — `77.42.71.94` / Tailscale: `mainnetedge`
+- **Runtime:** Docker container `zion-website` (host network mode, port 3000)
+- **Reverse proxy:** Caddy → `localhost:3000`
+- **Source on server:** `/root/zion-2.9.6-main/APP&WEB/website-v2.9`
+- **Compose file:** `/root/zion-web/docker-compose.yml`
+- **Current image:** `zion-website:v3.7.5-quantum-revolution`
 
-## 📦 Build Summary
+## Build Requirements
 
-- **Build Size:** 1.8 MB
-- **Pages:** 7 total
-  - Homepage (/)
-  - Dashboard (/dashboard)
-  - Mining (/mining)
-  - Documentation (/docs)
-  - Roadmap (/roadmap)
-  - 404 page
-  
-- **Documentation:** 19 markdown files from webv3.3
-- **Build Time:** ~3-4 seconds
-- **Status:** ✅ Buildable and deployed on Edge (Hetzner)
+> **CRITICAL:** Next.js 16 defaults to Turbopack, which cannot resolve the local `zion-wallet-sdk` `.tgz` dependency. **Always use `--webpack` flag** for production builds:
 
-## 🚀 Deployment Commands
-
-### Automated Deploy (recommended)
 ```bash
-cd APP\&WEB/website-v2.9
-bash ./scripts/deploy.sh --host 77.42.71.94 --user root
+npx next build --webpack
 ```
 
-Default production paths are now:
+The `package-lock.json` references `file:/zion-wallet-sdk/zion-wallet-sdk-1.0.0.tgz` — this path only exists on the host after `npm install`, not inside Docker. Therefore the Docker image is built from **host-built artifacts** (`.next` + `node_modules` copied into `node:20-alpine`).
 
-- remote source: /root/zion-2.9.6-main/APP&WEB/website-v2.9
-- remote compose: /root/zion-2.9.6-main/docker
+## Deployment Steps
 
-If you need a different remote layout, use:
+### Method 1: Automated script
 
 ```bash
-bash ./scripts/deploy.sh \
-  --host your-host \
-  --user root \
-  --remote-src /absolute/remote/source/path \
-  --remote-compose /absolute/remote/compose/path
+ssh root@mainnetedge
+cd /root/zion-2.9.6-main
+bash scripts/deploy-edge-web.sh <version-tag>
 ```
 
-### Manual Deploy to Main Domain
+The script (`scripts/deploy-edge-web.sh`):
+1. `git pull origin main`
+2. `npm install` on host
+3. `npm run build` on host (NOTE: script uses `npm run build` — may need `--webpack` flag if Turbopack fails)
+4. Builds Docker image from host artifacts
+5. Restarts container via docker compose
+6. Reloads Caddy
+
+### Method 2: Manual deploy (recommended for control)
+
 ```bash
-rsync -avz --delete \
-  -e "ssh -i ~/.ssh/ssh-key-zion-edge" \
-  ./ root@77.42.71.94:/root/zion-2.9.6-main/APP\&WEB/website-v2.9/ \
-  --exclude node_modules --exclude .next --exclude out --exclude .env.local
+# 1. SSH to Edge via Tailscale
+ssh root@mainnetedge
 
-rsync -avz \
-  -e "ssh -i ~/.ssh/ssh-key-zion-edge" \
-  ./docker/docker-compose.website.yml \
-  root@77.42.71.94:/root/zion-2.9.6-main/docker/
+# 2. Pull latest code
+cd /root/zion-2.9.6-main
+git pull origin main
 
-ssh -i ~/.ssh/ssh-key-zion-edge root@77.42.71.94 \
-  "cd /root/zion-2.9.6-main/docker && docker compose -f docker-compose.website.yml build --no-cache website && docker compose -f docker-compose.website.yml up -d website"
+# 3. Install deps + build with webpack
+cd APP&WEB/website-v2.9
+npm install
+npx next build --webpack
+
+# 4. Build Docker image from host artifacts
+cd /root/zion-2.9.6-main
+docker build -t zion-website:<version> -f - APP\&WEB/website-v2.9 <<'EOF'
+FROM node:20-alpine
+WORKDIR /app
+COPY .next .next
+COPY node_modules node_modules
+COPY package.json package.json
+COPY public public
+ENV NODE_ENV=production
+ENV PORT=3000
+EXPOSE 3000
+CMD ["node", "node_modules/.bin/next", "start"]
+EOF
+
+# 5. Update compose file with new image tag
+sed -i 's|zion-website:OLD_TAG|zion-website:NEW_TAG|' /root/zion-web/docker-compose.yml
+
+# 6. Restart container
+docker compose -f /root/zion-web/docker-compose.yml up -d
+
+# 7. Verify
+sleep 3
+curl -s http://127.0.0.1:3000/api/health | jq
 ```
 
-## 📋 Pre-Deployment Checklist
+### Docker Compose File
 
-- [x] Next.js build successful
-- [x] Static export generated (out/ directory)
-- [x] All pages rendering correctly
-- [x] Live API integration working
-- [x] Documentation files included
-- [x] Navigation links functional
-- [x] Responsive design tested
-- [x] Tailwind CSS optimized
-- [x] Framer Motion animations working
-- [x] React Markdown rendering docs
+`/root/zion-web/docker-compose.yml`:
 
-## 🌐 Live Features
+```yaml
+services:
+  zion-website:
+    image: zion-website:<version>
+    container_name: zion-website
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - NODE_ENV=production
+      - ZION_DAO_API_KEY=zion-dao-edge-key-2026
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+```
 
-### API Integration
-- **Endpoint:** https://zionterranova.com (API mounted under `/api`, health at `/health`)
-- **Auto-refresh:**
-  - Dashboard stats: 10s
-  - System health: 5s
-  - Recent blocks: 15s
+## Verification
 
-### Pages
-
-#### Homepage (/)
-- Hero section with CTA
-- Live network statistics (4 metrics)
-- Feature showcase (6 cards)
-- Animated starfield background
-
-#### Dashboard (/dashboard)
-- Real-time blockchain stats
-- System health monitoring
-- Recent blocks explorer
-- Dependency status
-
-#### Mining (/mining)
-- Quick start guide
-- Pool connection info
-- Algorithm selection
-- Links to full documentation
-
-#### Documentation (/docs)
-- Interactive sidebar navigation
-- 12 documentation topics
-- Markdown rendering with syntax highlighting
-- Responsive layout
-
-#### Roadmap (/roadmap)
-- Full v2.9.0 roadmap
-- Budget breakdown
-- Timeline visualization
-- Success metrics
-
-## 🎨 Design Features
-
-### Components
-- StarfieldBackground (Canvas animation)
-- Navigation (responsive with mobile menu)
-- LiveDashboard (real-time API data)
-- SystemHealth (health monitoring)
-- RecentBlocks (block explorer)
-- Features (feature cards)
-- Footer (site links)
-
-### Styling
-- **Colors:** Gold (#FFD700), Purple (#9333EA), Cyan (#06B6D4)
-- **Typography:** Inter font family
-- **Effects:** Gradient text, glow, card shadows
-- **Animations:** Framer Motion (fade, slide, scale)
-- **Theme:** Dark mode optimized
-
-## 📊 Performance
-
-- **Bundle Size:** Optimized with Next.js 16
-- **Images:** Unoptimized (static export compatible)
-- **Fonts:** Preloaded Google Fonts
-- **CSS:** Tailwind CSS 4 (minimal output)
-- **JavaScript:** React 19 with automatic runtime
-
-## 🔧 Post-Deployment
-
-### Verify Deployment
 ```bash
+# Health check
+curl -s http://127.0.0.1:3000/api/health | jq
+
+# Container status
+docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}' | grep zion-website
+
+# Public URL
 curl -I https://zionterranova.com/
-curl -I https://zionterranova.com/dashboard/
-curl -I https://zionterranova.com/docs/
-curl -s https://zionterranova.com/api/health | jq
-curl -s https://zionterranova.com/api/bridge/status | jq
+
+# Specific page
+curl -s https://zionterranova.com/quantum-revolution | head -5
 ```
 
-### Test API Integration
+## Rollback
+
 ```bash
-curl -s https://zionterranova.com/api/health | jq
-curl -s https://zionterranova.com/api/bridge/status | jq
+# List available images
+docker images | grep zion-website
 
-# Or from the browser console:
-fetch('https://zionterranova.com/api/health')
-  .then(r => r.json())
-  .then(console.log)
+# Update compose to previous tag
+sed -i 's|zion-website:CURRENT|zion-website:PREVIOUS|' /root/zion-web/docker-compose.yml
+docker compose -f /root/zion-web/docker-compose.yml up -d
 ```
 
-### Monitor
-- Check browser console for errors
-- Verify all navigation links work
-- Test responsive design on mobile
-- Confirm API auto-refresh working
+## Dockerfiles
 
-## 📝 Notes
+| File | Purpose |
+|---|---|
+| `Dockerfile` | Legacy — uses `COPY ../zion-wallet-sdk` (broken with normal build context) |
+| `Dockerfile.production` | Self-contained — `npm ci` inside Docker (fails on `.tgz` path) |
+| Inline Dockerfile | Used by `deploy-edge-web.sh` — copies host-built `.next` + `node_modules` |
 
-### From websitev3-next
-- ✅ Next.js 16 + React 19
-- ✅ Framer Motion animations
-- ✅ 3D starfield background
-- ✅ Tailwind CSS 4
-- ✅ Modern component architecture
+The **inline Dockerfile** approach (copying host artifacts) is the only working method due to the local `.tgz` dependency issue.
 
-### From webv3.3
-- ✅ Roadmap Lite (full markdown)
-- ✅ 12 documentation files
-- ✅ Clean dashboard layout
-- ✅ Simple navigation structure
+## Connecting to Edge Server
 
-### New Features
-- ✅ Live API integration
-- ✅ Real-time metrics
-- ✅ System health monitoring
-- ✅ Interactive documentation browser
-- ✅ Mining quick start guide
+### Via Tailscale (recommended)
 
-## 🔗 Links
+```bash
+ssh root@mainnetedge
+```
 
-- **Main Site:** https://zionterranova.com
-- **API:** https://zionterranova.com/api
-- **GitHub:** https://github.com/Zion-TerraNova
-- **Production Host:** 77.42.71.94 (Edge · Hetzner)
+Tailscale SSH authenticates via Tailscale identity — no SSH key needed.
+
+### Via direct SSH (if Tailscale is down)
+
+```bash
+ssh -i ~/.ssh/ssh-key-zion-edge root@77.42.71.94
+```
+
+## Deployment History
+
+| Date | Version | Changes |
+|---|---|---|
+| 2026-06-27 | v3.7.5-quantum-revolution | New /quantum-revolution page + gold StoryTriptych card |
+| 2026-06-27 | v3.7.4-doge-fix | Fix Doge ATH timeline (7.5 years, not 2) |
+| 2026-06-27 | v3.7.3-rainbow-theme | ZION rainbow-card theme across all 53 pages |
+| 2026-06-26 | v3.7.2-doge-price-fork | Doge vs ZION $0.0002 seed price + 3.0.3 fork news |
 
 ---
 
-**Version:** v3.0.0  
-**Build Date:** 20. dubna 2026  
+**Version:** v3.7.5  
+**Last updated:** 27 June 2026  
 **Status:** ✅ Deployed and verified on Edge
