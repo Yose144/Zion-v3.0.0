@@ -1,203 +1,191 @@
-# ZION Web v3.0.0 — Core+Edge Dashboard
+# ZION Web v3.7 — TerraNova Website
 
-Modern Next.js 16 website combining the best features from websitev3-next and webv3.3, with live API integration for real-time blockchain metrics.
+Next.js 16 website for the ZION blockchain project. Live at **https://zionterranova.com**.
 
-## 🚀 Features
+## Tech Stack
 
-### From websitev3-next
-- ⚡ Next.js 16 with React 19
-- 🎨 Framer Motion animations
-- 🌌 3D Starfield background (Canvas API)
-- 📱 Responsive design with Tailwind CSS 4
-- 🎭 Modern component architecture
-
-### From webv3.3
-- 📋 Roadmap Lite (Markdown-based)
-- 📊 Clean dashboard layout
-- 🎯 Focused content presentation
-
-### New Features
-- 🔴 **Live API Integration**
-  - Real-time blockchain stats
-  - Recent blocks explorer
-  - System health monitoring
-  - Auto-refresh every 5-15s
-
-- 🎨 **Beautiful Design**
-  - Gradient text effects
-  - Card glow animations
-  - Smooth transitions
-  - Dark theme optimized
-
-- 📈 **Real-Time Metrics**
-  - Total blocks & supply
-  - Transaction count
-  - Mining difficulty
-  - Latest block info
-  - Network uptime
-  - Dependency health
-
-## 🛠️ Tech Stack
-
-- **Framework:** Next.js 16.0.1
-- **React:** 19.2.0
+- **Framework:** Next.js 16.2.9 (webpack build mode — Turbopack has path resolution issues with local `.tgz` deps)
+- **React:** 19
 - **TypeScript:** 5.x
-- **Styling:** Tailwind CSS 4
-- **Animations:** Framer Motion 12.23.24
+- **Styling:** Tailwind CSS 4 + custom ZION theme classes
+- **Animations:** Framer Motion
 - **Icons:** Lucide React
 - **Markdown:** react-markdown + remark-gfm
 
-## 📦 Installation
+## Build
 
 ```bash
 npm install
+npm run build          # uses Turbopack by default (may fail on local .tgz deps)
+npx next build --webpack   # ← use this for production builds
 ```
 
-## 🚀 Development
+> **Important:** Next.js 16 defaults to Turbopack which cannot resolve the local `zion-wallet-sdk` `.tgz` dependency. Always use `--webpack` flag for production builds.
+
+## Development
 
 ```bash
+npm install
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000)
 
-## 🏗️ Build
+## Theme System
 
-```bash
-npm run build
+### ZION Rainbow Card
+
+Two CSS classes defined in `src/app/globals.css`:
+
+- `.zion-rainbow-card` — main section cards. Set `style={{ '--rc': 'R, G, B' } as React.CSSProperties}` inline. Features: top glow line, hover border glow, corner accent.
+- `.zion-rainbow-sub` — sub-cards inside a section. Same `--rc` pattern, smaller.
+
+Each page has its own accent color:
+
+| Page group | Color | RGB |
+|---|---|---|
+| Network, Explorer | cyan / gold | `6, 182, 212` / `251, 191, 36` |
+| DeFi | emerald / green / lime / violet | `16, 185, 129` / `34, 197, 94` / `132, 204, 22` / `139, 92, 246` |
+| Terranova | emerald / rose | `16, 185, 129` / `244, 63, 94` |
+| Quantum Revolution | gold | `251, 191, 36` |
+| Genesis | gold | `251, 191, 36` |
+| L3 Hiran | violet | `139, 92, 246` |
+| L4 Oasis | orange | `249, 115, 22` |
+| L5 Free World | sky | `14, 165, 233` |
+| L6 Issobella | rose | `244, 63, 94` |
+| Bridge | blue | `59, 130, 246` |
+| Wallet | pink | `236, 72, 153` |
+| Dashboard | indigo | `99, 102, 241` |
+| Warp | fuchsia | `217, 70, 239` |
+| DAO | violet | `139, 92, 246` |
+| Mining | amber | `245, 158, 11` |
+| Docs | teal | `20, 184, 166` |
+| Roadmap | indigo | `99, 102, 241` |
+| Download | cyan | `6, 182, 212` |
+| News | sky | `56, 189, 248` |
+| Resonance | fuchsia | `217, 70, 239` |
+| Wiki | emerald | `16, 185, 129` |
+| Monitoring | rose | `244, 63, 94` |
+
+## Pages
+
+50+ pages including:
+
+- `/` — Homepage (Hero, MainnetCountdown, HolographicEarth, HomeQuickLinks, StoryTriptych)
+- `/network` — Network status, charts, infrastructure
+- `/explorer` — Block explorer (blocks, tx, addresses, miners, supply, mempool, richlist, consensus, bridge tracker)
+- `/pool` — Mining pool dashboard
+- `/mining` — Mining unified client (CPU/GPU/Pool/Solo guides)
+- `/defi` — DeFi hub (bridge vault, staking, farming, DAO)
+- `/bridge` — Bridge documentation
+- `/wallet` — Wallet interface
+- `/dao` — DAO governance
+- `/docs` — Documentation reader
+- `/roadmap` — Full roadmap with timeline
+- `/download` — Desktop agent download
+- `/news` — News archive
+- `/genesis` — Genesis book (9 chapters)
+- `/terranova` — Terra Nova book reader (17 chapters + appendices)
+- `/quantum-revolution` — Quantum Revolution book page (mock — data pending)
+- `/l3-hiran` — AI Native layer
+- `/l4-oasis` — OASIS game layer
+- `/l5-free-world` — Free World humanitarian fund
+- `/l6-issobella` — Issobella orbital station
+- `/warp` — WARP bridges
+- `/dashboard` — User dashboard
+- `/monitoring` — Infrastructure monitoring
+- `/kompas` — Golden Compass (redirects to /terranova)
+- `/resonance` — Resonance frequencies
+- `/wiki` — Wiki
+- `/doge-vs-zion` — Doge vs ZION mini-games
+
+## Project Structure
+
 ```
-
-Static export to `out/` directory (ready for deployment)
-
-## 📁 Project Structure
-
-```
-website-v3.0.0/
+website-v2.9/
 ├── src/
 │   ├── app/
-│   │   ├── layout.tsx           # Root layout with navigation
-│   │   ├── page.tsx              # Homepage (Hero + Dashboard + Features)
-│   │   ├── dashboard/
-│   │   │   └── page.tsx          # Full dashboard with live stats
-│   │   ├── roadmap/
-│   │   │   └── page.tsx          # Roadmap Lite (Markdown)
-│   │   └── globals.css           # Global styles + Tailwind
-│   └── components/
-│       ├── StarfieldBackground.tsx   # 3D starfield animation
-│       ├── Navigation.tsx            # Header navigation
-│       ├── Footer.tsx                # Footer with links
-│       ├── Hero.tsx                  # Homepage hero section
-│       ├── LiveDashboard.tsx         # Real-time blockchain stats
-│       ├── SystemHealth.tsx          # API health monitoring
-│       ├── RecentBlocks.tsx          # Recent blocks list
-│       └── Features.tsx              # Feature cards
-├── package.json
-├── tsconfig.json
-├── tailwind.config.ts
-├── next.config.ts
-└── postcss.config.mjs
+│   │   ├── layout.tsx              # Root layout
+│   │   ├── page.tsx                # Homepage
+│   │   ├── globals.css             # Global styles + ZION theme classes
+│   │   ├── quantum-revolution/     # Quantum Revolution page
+│   │   ├── terranova/              # Terra Nova book reader
+│   │   ├── genesis/                # Genesis book
+│   │   ├── explorer/               # Block explorer + subpages
+│   │   ├── defi/                   # DeFi hub + subpages
+│   │   ├── network/                # Network status
+│   │   ├── ...                     # 40+ more pages
+│   ├── components/
+│   │   ├── Navigation.tsx          # Two-tier nav with mini icons
+│   │   ├── Hero.tsx                # Homepage hero
+│   │   ├── StoryTriptych.tsx       # 3-card story portal
+│   │   ├── MainnetCountdown.tsx    # Countdown timer
+│   │   ├── HomeQuickLinks.tsx      # 6 quick link cards
+│   │   ├── NewsFeed.tsx            # News data + articles
+│   │   ├── ...                     # 30+ more components
+│   ├── lib/
+│   │   ├── translations.ts         # CS/EN translations
+│   │   ├── defi-contracts.ts       # Seed price, bridge contracts
+│   │   ├── constants.ts            # Network constants
+│   │   └── ...
+│   └── contexts/
+│       ├── LanguageContext.tsx     # CS/EN language toggle
+│       └── ...
+├── Dockerfile                      # Legacy (uses ../zion-wallet-sdk COPY)
+├── Dockerfile.production           # Self-contained (npm ci)
+├── next.config.ts                  # Webpack + Turbopack config
+└── package.json
 ```
 
-## 🌐 API Integration
+## Deployment
 
-### Endpoints Used
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for the full guide.
 
-- `GET /api/blockchain/stats` - Total blocks, supply, transactions, difficulty
-- `GET /api/blockchain/blocks?limit=5` - Recent blocks with metadata
-- `GET /health` - System health, version, uptime, dependencies
+Quick summary:
 
-### Base URL
-```
-https://zionterranova.com
-```
-
-### Auto-Refresh Intervals
-- Dashboard stats: 10 seconds
-- System health: 5 seconds
-- Recent blocks: 15 seconds
-
-## 🎨 Design System
-
-### Colors
-- **Gold:** `#FFD700` - Primary accent
-- **Purple:** `#9333EA` - Secondary accent
-- **Cyan:** `#06B6D4` - Tertiary accent
-- **Background:** Black with starfield
-
-### Typography
-- **Font:** Inter (Google Fonts)
-- **Headings:** Bold with gradient text
-- **Body:** Gray-300 for readability
-
-### Components
-- Card glow effects
-- Smooth hover animations
-- Responsive grid layouts
-- Gradient borders
-
-## 📝 Pages
-
-### Homepage (`/`)
-- Hero section with CTA buttons
-- Live network stats (4 key metrics)
-- Feature showcase (6 cards)
-
-### Dashboard (`/dashboard`)
-- Comprehensive blockchain statistics
-- System health monitoring
-- Recent blocks explorer
-- Real-time updates
-
-### Roadmap (`/roadmap`)
-- Markdown-rendered roadmap
-- Budget breakdown
-- Timeline visualization
-- Success metrics
-
-## 🚢 Deployment
-
-Build static export:
 ```bash
-npm run build
+# On Edge server (77.42.71.94 via Tailscale SSH):
+ssh root@mainnetedge
+cd /root/zion-2.9.6-main
+git pull origin main
+cd APP&WEB/website-v2.9
+npx next build --webpack          # ← MUST use --webpack
+# Build Docker image from host artifacts:
+cd /root/zion-2.9.6-main
+docker build -t zion-website:<version> -f - APP\&WEB/website-v2.9 <<'EOF'
+FROM node:20-alpine
+WORKDIR /app
+COPY .next .next
+COPY node_modules node_modules
+COPY package.json package.json
+COPY public public
+ENV NODE_ENV=production
+ENV PORT=3000
+EXPOSE 3000
+CMD ["node", "node_modules/.bin/next", "start"]
+EOF
+# Restart container:
+docker compose -f /root/zion-web/docker-compose.yml up -d
 ```
 
-Deploy to server:
+Or use the automated script:
+
 ```bash
-rsync -avz --delete out/ root@www.zionterranova.com:/var/www/zionterranova.com/
+bash scripts/deploy-edge-web.sh <version>
 ```
 
-## 📊 Performance
+## License
 
-- **Build time:** ~30-60s
-- **Bundle size:** Optimized with Next.js 16
-- **Images:** Unoptimized (static export)
-- **Fonts:** Preloaded (Inter)
+Part of ZION Blockchain v3.0 project
 
-## 🔧 Configuration
+## Links
 
-### next.config.ts
-- Static export enabled
-- Trailing slash for compatibility
-- React Compiler (experimental)
-
-### tailwind.config.ts
-- Custom ZION color palette
-- Typography plugin
-- Custom animations
-
-## 📄 License
-
-Part of ZION Blockchain v3.0.0 project
-
-## 🔗 Links
-
-- **Main Site:** https://zionterranova.com
-- **API:** https://zionterranova.com/api
-- **GitHub:** https://github.com/Zion-TerraNova
-- **Dashboard:** https://zionterranova.com/dashboard
+- **Live Site:** https://zionterranova.com
+- **GitHub:** https://github.com/Yose144/Zion-v3.0.0
+- **Production Host:** 77.42.71.94 (Edge · Hetzner) via Tailscale
 
 ---
 
-**Version:** v3.0.0  
-**Built with:** Next.js 16 + React 19 + TypeScript  
+**Version:** v3.7.5  
+**Last updated:** 27 June 2026  
 **Status:** Production Ready ✅
