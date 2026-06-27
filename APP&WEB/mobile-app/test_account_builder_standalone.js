@@ -23,7 +23,7 @@ const { Buffer } = require('buffer');
 // Wire up sync sha512 for @noble/ed25519 v3 (same as mobile app AccountBuilder)
 ed25519.hashes.sha512 = sha512;
 
-const FLOWERS_PER_ZION = 1_000_000_000_000n;
+const FLOWERS_PER_ZION = 1_000_000n;
 const MIN_FEE_FLOWERS = 1_000n;
 
 const EDGE_RPC_HOST = process.env.ZION_RPC_HOST || '77.42.71.94';

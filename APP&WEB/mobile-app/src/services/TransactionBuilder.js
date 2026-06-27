@@ -217,9 +217,9 @@ export async function buildTransaction({
   if (!from || !to) throw new Error('from/to required');
   if (amountZion <= 0) throw new Error('Amount positive');
 
-  const amountFlowers = BigInt(Math.round(amountZion * 1e12));
+  const amountFlowers = BigInt(Math.round(amountZion * 1e6));
   const feeFlowers = feeZion
-    ? BigInt(Math.round(feeZion * 1e12))
+    ? BigInt(Math.round(feeZion * 1e6))
     : BigInt(MIN_FEE_FLOWERS);
 
   // Select UTXOs

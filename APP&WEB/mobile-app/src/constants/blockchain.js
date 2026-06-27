@@ -4,7 +4,7 @@
  * Mirror of Rust core: V3/L1/core/src/emission.rs + genesis.rs
  * These values are IMMUTABLE after MainNet genesis.
  *
- * 1 ZION = 1_000_000_000_000 flowers (12 decimal places)
+ * 1 ZION = 1_000_000 flowers (6 decimal places)
  *
  * Synchronizováno s AGENTS.md (V3 mainnet, CHv4, revenue split 89/5/5/1)
  */
@@ -14,7 +14,7 @@
 // ---------------------------------------------------------------------------
 
 /** Atomic units per 1 ZION (6 decimals) */
-export const ATOMIC_UNITS_PER_ZION = 1_000_000_000_000; // 1 ZION = 1e12 flowers (12 des. míst) — WP3.0 spec
+export const ATOMIC_UNITS_PER_ZION = 1_000_000; // 1 ZION = 1e6 flowers (6 des. míst) — WP3.0.3 spec
 
 /** Total supply: 144,000,000,000 ZION */
 export const TOTAL_SUPPLY = 144_000_000_000;
@@ -49,11 +49,11 @@ export const TOTAL_MINING_BLOCKS = MINING_YEARS * BLOCKS_PER_YEAR;
 
 /** Base block reward (Decade 1): 5,400.067 ZION */
 export const BLOCK_REWARD_ZION = 5400.067;
-export const BLOCK_REWARD_ATOMIC = 5_400_067_000_000_000; // 5400.067 ZION × 1e12 flowers — WP3.0 Decade 1
+export const BLOCK_REWARD_ATOMIC = 5_400_067_000; // 5400.067 ZION × 1e6 flowers — WP3.0.3 Decade 1
 
 /** Tail emission reward (~724.785 ZION) after decade 10 */
 export const TAIL_REWARD_ZION = 724.784723787776;
-export const TAIL_REWARD_ATOMIC = 724_784_723_787_776;
+export const TAIL_REWARD_ATOMIC = 724_784_724; // 724.784724 ZION × 1e6 flowers — WP3.0.3
 
 /** Daily emission (Decade 1): 5,400.067 × 1440 blocks = ~7,776,096.48 ZION/day */
 export const DAILY_EMISSION = BLOCK_REWARD_ZION * 1440;

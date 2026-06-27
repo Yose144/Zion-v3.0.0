@@ -318,7 +318,7 @@ mod tests {
     #[test]
     fn test_add_votes() {
         let mut p = sample_proposal();
-        p.add_vote(VoteChoice::Yes, 1_000_000_000_000); // 1M ZION
+        p.add_vote(VoteChoice::Yes, 1_000_000_000_000); // 1M ZION (6-dec: 1e6 ZION × 1e6 flowers)
         p.add_vote(VoteChoice::No, 500_000_000_000); // 500K ZION
         p.add_vote(VoteChoice::Abstain, 100_000_000_000); // 100K ZION
 

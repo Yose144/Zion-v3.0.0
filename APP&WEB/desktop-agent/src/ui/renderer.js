@@ -2013,9 +2013,9 @@ function setupWalletControls() {
           if (sendFromBalance) sendFromBalance.textContent = '— (node offline)';
           if (sendFromBalanceStatus) sendFromBalanceStatus.textContent = 'on-chain RPC offline';
         } else {
-          const bal = result.balance ?? (result.balance_atomic != null ? result.balance_atomic / 1e12 : null);
-          const utxoBal = result.utxo_balance_flowers ? Number(result.utxo_balance_flowers) / 1e12 : 0;
-          const acctBal = result.account_balance_flowers ? Number(result.account_balance_flowers) / 1e12 : 0;
+          const bal = result.balance ?? (result.balance_atomic != null ? result.balance_atomic / 1e6 : null);
+          const utxoBal = result.utxo_balance_flowers ? Number(result.utxo_balance_flowers) / 1e6 : 0;
+          const acctBal = result.account_balance_flowers ? Number(result.account_balance_flowers) / 1e6 : 0;
           if (sendFromBalance) sendFromBalance.textContent = bal != null ? `${bal.toFixed(6)} ZION` : 'n/a';
           // Show breakdown when both models have balance
           const parts = [];
@@ -2296,7 +2296,7 @@ function setupWalletControls() {
     const currentPaidAtomic = Number(result.pool_paid_atomic ?? 0);
     if (Number.isFinite(currentPaidAtomic) && currentPaidAtomic >= 0) {
       if (Number.isFinite(lastPoolPaidAtomic) && currentPaidAtomic > lastPoolPaidAtomic) {
-        const delta = (currentPaidAtomic - lastPoolPaidAtomic) / 1_000_000_000_000;
+        const delta = (currentPaidAtomic - lastPoolPaidAtomic) / 1_000_000;
         payoutDeltaText = ` · payout +${delta.toFixed(4)} ZION`;
       }
       lastPoolPaidAtomic = currentPaidAtomic;
@@ -2306,7 +2306,7 @@ function setupWalletControls() {
     const pendingStatsAtomic = Number(result.pool_pending_stats_atomic ?? 0);
     const pendingPayoutsAtomic = Number(result.pool_pending_payouts_atomic ?? 0);
     if (Number.isFinite(pendingStatsAtomic) && Number.isFinite(pendingPayoutsAtomic) && pendingStatsAtomic !== pendingPayoutsAtomic) {
-      pendingDriftText = ` · pending drift ${(pendingStatsAtomic / 1_000_000_000_000).toFixed(4)}↔${(pendingPayoutsAtomic / 1_000_000_000_000).toFixed(4)}`;
+      pendingDriftText = ` · pending drift ${(pendingStatsAtomic / 1_000_000).toFixed(4)}↔${(pendingPayoutsAtomic / 1_000_000).toFixed(4)}`;
     }
 
     const rpcSourceText = (() => {

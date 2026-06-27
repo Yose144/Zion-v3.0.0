@@ -418,12 +418,12 @@ export class WalletManager {
     // ── Account model fallback (for premine/hybrid wallets) ──
     const breakdown = await this.rpc.getBalanceBreakdown(wallet.address).catch(() => null);
     const accountFlowers = breakdown ? BigInt(breakdown.account_flowers) : 0n;
-    const amountFlowers = BigInt(Math.floor(options.amountZion * 1e12));
+    const amountFlowers = BigInt(Math.floor(options.amountZion * 1e6));
     const feeFlowers = ACCOUNT_DEFAULT_FEE_FLOWERS;
     const totalNeeded = amountFlowers + feeFlowers;
 
     if (accountFlowers < totalNeeded) {
-      const haveZion = (Number(accountFlowers) / 1e12).toFixed(6);
+      const haveZion = (Number(accountFlowers) / 1e6).toFixed(6);
       throw new Error(
         `Insufficient balance: need ${options.amountZion} + fee ZION, have ${haveZion} ZION ` +
         `(account: ${breakdown?.account_zion.toFixed(6) ?? '0'} ZION, utxo: ${breakdown?.utxo_zion.toFixed(6) ?? '0'} ZION)`

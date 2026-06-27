@@ -114,15 +114,15 @@ export class ZionRPC {
       const acct = BigInt(String(accountBal ?? '0'));
       const utxo = BigInt(String(utxoBal ?? '0'));
       const total = acct + utxo;
-      return Number(total) / 1_000_000_000_000;
+      return Number(total) / 1_000_000;
     }
     // Legacy: balance_flowers as string or number
     if (result?.balance_flowers !== undefined) {
       const raw = result.balance_flowers;
       if (typeof raw === 'string') {
-        return Number(BigInt(raw)) / 1_000_000_000_000;
+        return Number(BigInt(raw)) / 1_000_000;
       }
-      return (raw as number) / 1_000_000_000_000;
+      return (raw as number) / 1_000_000;
     }
     if (result?.balance_zion !== undefined) {
       return parseFloat(String(result.balance_zion)) || 0;
@@ -150,9 +150,9 @@ export class ZionRPC {
     const utxo = BigInt(utxoStr);
     const total = acct + utxo;
     return {
-      total_zion: Number(total) / 1_000_000_000_000,
-      account_zion: Number(acct) / 1_000_000_000_000,
-      utxo_zion: Number(utxo) / 1_000_000_000_000,
+      total_zion: Number(total) / 1_000_000,
+      account_zion: Number(acct) / 1_000_000,
+      utxo_zion: Number(utxo) / 1_000_000,
       account_flowers: acctStr,
       utxo_flowers: utxoStr,
       utxo_count: utxoCount,

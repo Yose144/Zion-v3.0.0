@@ -33,7 +33,7 @@ impl Default for OrchestratorConfig {
             quoter_v2_address: "0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a".into(),
             weth_address: "0x4200000000000000000000000000000000000006".into(),
             usdc_address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913".into(),
-            min_amount_atomic: 1_000_000_000_000, // 1 ZION
+            min_amount_atomic: 1_000_000, // 1 ZION (6-decimal, 3.0.3)
             max_slippage_bps: 500,                // 5%
         }
     }

@@ -138,13 +138,13 @@ class BlockchainRPC {
     try {
       const result = await this.rpcCall('getBalance', { address });
       // V3 returns: { balance_flowers: "...", utxo_balance_flowers, chain_height, ... }
-      // balance_flowers is a string in atomic flowers (1 ZION = 1e12 flowers)
+      // balance_flowers is a string in atomic flowers (1 ZION = 1e6 flowers)
       const flowers = result?.balance_flowers !== undefined
         ? (typeof result.balance_flowers === 'string'
             ? BigInt(result.balance_flowers)
             : BigInt(result.balance_flowers))
         : 0n;
-      const zion = Number(flowers) / 1_000_000_000_000;
+      const zion = Number(flowers) / 1_000_000;
 
       return {
         zion,
