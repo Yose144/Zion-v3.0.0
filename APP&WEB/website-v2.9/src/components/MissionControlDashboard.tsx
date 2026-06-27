@@ -1546,7 +1546,7 @@ export default function MissionControlDashboard() {
   const [walletTxResult, setWalletTxResult] = useState<WalletBroadcastResult | null>(null);
   const [walletTxError, setWalletTxError] = useState<string | null>(null);
 
-  // wZION live price (falls back to seed price $0.00002 when pool not seeded)
+  // wZION live price (falls back to seed price $0.0002 when pool not seeded)
   const [wZIONPriceUsd, setWZIONPriceUsd] = useState<number | null>(null);
   const [wZIONPriceSource, setWZIONPriceSource] = useState<'live' | 'seed'>('seed');
 
@@ -1860,7 +1860,7 @@ export default function MissionControlDashboard() {
                   </span>
                 </div>
                 <p className="text-sm text-gray-400 mt-1">
-                  {wZIONPriceSource === 'live' ? 'Uniswap V3 wZION/WETH · Base' : 'Seed price · $0.00002 / ZION · FDV ~$2.9M'}
+                  {wZIONPriceSource === 'live' ? 'Uniswap V3 wZION/WETH · Base' : 'Seed price · $0.0002 / ZION · FDV ~$28.8M'}
                 </p>
               </div>
             </div>

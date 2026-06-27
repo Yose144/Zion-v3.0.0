@@ -177,7 +177,7 @@ pub fn launch_readiness() -> Vec<ReadinessCheck> {
     });
 
     // 6. DAO treasury lock height
-    let lock_ok = genesis::DAO_TREASURY_LOCK_HEIGHT == 525_600;
+    let lock_ok = genesis::DAO_TREASURY_LOCK_HEIGHT == 144_000;
     checks.push(ReadinessCheck {
         name: "dao_treasury_lock",
         passed: lock_ok,
