@@ -16,10 +16,10 @@ pub const DAO_TREASURY_ADDRESSES: &[&str] = &[
     "zion1dao0treasury0main000000000000000000003",
 ];
 
-/// Flowers per ZION — V3 canonical 12-decimal precision.
-pub const FLOWERS_PER_ZION: u64 = 1_000_000_000_000;
+/// Flowers per ZION — V3 canonical 6-decimal precision (post-3.0.3 fork).
+pub const FLOWERS_PER_ZION: u64 = 1_000_000;
 
-/// Total DAO treasury in flowers (4B ZION × 10¹²) — u128 required.
+/// Total DAO treasury in flowers (4B ZION × 10⁶) — u128 required.
 pub const DAO_TREASURY_TOTAL: u128 = 4_000_000_000_u128 * FLOWERS_PER_ZION as u128;
 
 /// Minimum ZION balance to create a proposal (1M ZION in flowers)
@@ -310,14 +310,14 @@ mod tests {
 
     #[test]
     fn test_constants() {
-        // 1 ZION = 10¹² flowers
-        assert_eq!(FLOWERS_PER_ZION, 1_000_000_000_000);
-        // 4B ZION = 4_000_000_000 × 10¹² flowers
-        assert_eq!(DAO_TREASURY_TOTAL, 4_000_000_000_000_000_000_000_u128);
+        // 1 ZION = 10⁶ flowers (post-3.0.3)
+        assert_eq!(FLOWERS_PER_ZION, 1_000_000);
+        // 4B ZION = 4_000_000_000 × 10⁶ flowers
+        assert_eq!(DAO_TREASURY_TOTAL, 4_000_000_000_000_000_u128);
         // 1M ZION threshold
-        assert_eq!(PROPOSAL_THRESHOLD, 1_000_000_000_000_000_000);
+        assert_eq!(PROPOSAL_THRESHOLD, 1_000_000_000_000);
         // 100M ZION daily limit
-        assert_eq!(DAILY_SPEND_LIMIT, 100_000_000_000_000_000_000_u128);
+        assert_eq!(DAILY_SPEND_LIMIT, 100_000_000_000_000_u128);
         // 7 days
         assert_eq!(VOTING_PERIOD_SECS, 604_800);
         // 48 hours

@@ -86,7 +86,7 @@ impl ChainId {
             family: ChainFamily::ZionL1,
             name: "zion-l1".to_string(),
             chain_id_numeric: None,
-            decimals: 12,
+            decimals: 6,
             finality_blocks: 60,
         }
     }
@@ -274,7 +274,7 @@ impl WarpTransfer {
 }
 
 /// Convert amount between chains with different decimal places.
-/// ZION L1 = 12 decimals, EVM = 18, Solana = 9, Bitcoin = 8, etc.
+/// ZION L1 = 6 decimals, EVM = 18, Solana = 9, Bitcoin = 8, etc.
 pub fn convert_decimals(amount: u64, from_decimals: u8, to_decimals: u8) -> Option<u128> {
     let amount = amount as u128;
     if to_decimals >= from_decimals {
@@ -315,7 +315,7 @@ mod tests {
     #[test]
     fn test_chain_id_zion() {
         let zion = ChainId::zion_l1();
-        assert_eq!(zion.decimals, 12);
+        assert_eq!(zion.decimals, 6);
         assert_eq!(zion.finality_blocks, 60);
     }
 
@@ -351,30 +351,30 @@ mod tests {
 
     #[test]
     fn test_convert_decimals_zion_to_evm() {
-        // 1 ZION (12 dec) → EVM (18 dec)
-        let result = convert_decimals(1_000_000_000_000, 12, 18).unwrap();
+        // 1 ZION (6 dec) → EVM (18 dec)
+        let result = convert_decimals(1_000_000, 6, 18).unwrap();
         assert_eq!(result, 1_000_000_000_000_000_000);
     }
 
     #[test]
     fn test_convert_decimals_zion_to_solana() {
-        // 1 ZION (12 dec) → Solana (9 dec)
-        let result = convert_decimals(1_000_000_000_000, 12, 9).unwrap();
+        // 1 ZION (6 dec) → Solana (9 dec)
+        let result = convert_decimals(1_000_000, 6, 9).unwrap();
         assert_eq!(result, 1_000_000_000);
     }
 
     #[test]
     fn test_convert_decimals_zion_to_bitcoin() {
-        // 1 ZION (12 dec) → Bitcoin (8 dec)
-        let result = convert_decimals(1_000_000_000_000, 12, 8).unwrap();
+        // 1 ZION (6 dec) → Bitcoin (8 dec)
+        let result = convert_decimals(1_000_000, 6, 8).unwrap();
         assert_eq!(result, 100_000_000);
     }
 
     #[test]
     fn test_convert_decimals_evm_to_zion() {
-        // 1 wZION (18 dec) → ZION L1 (12 dec)
-        let result = convert_decimals(1_000_000_000_000_000_000, 18, 12).unwrap();
-        assert_eq!(result, 1_000_000_000_000);
+        // 1 wZION (18 dec) → ZION L1 (6 dec)
+        let result = convert_decimals(1_000_000_000_000_000_000, 18, 6).unwrap();
+        assert_eq!(result, 1_000_000);
     }
 
     #[test]
@@ -386,8 +386,8 @@ mod tests {
 
     #[test]
     fn test_convert_decimals_zion_to_stellar() {
-        // 1 ZION (12 dec) → Stellar (7 dec)
-        let result = convert_decimals(1_000_000_000_000, 12, 7).unwrap();
+        // 1 ZION (6 dec) → Stellar (7 dec)
+        let result = convert_decimals(1_000_000, 6, 7).unwrap();
         assert_eq!(result, 10_000_000);
     }
 

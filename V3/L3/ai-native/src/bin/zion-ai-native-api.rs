@@ -999,8 +999,8 @@ async fn ncl_price(
     };
     let price_per_unit = state.ncl_pricing.calculate_price(backend, 1);
     let (worker_share, protocol_fee) = state.ncl_pricing.split_reward(price_per_unit);
-    // Convert from flowers (12 decimals) to ZION
-    let price_zion = price_per_unit as f64 / 1_000_000_000_000.0;
+    // Convert from flowers (6 decimals) to ZION
+    let price_zion = price_per_unit as f64 / 1_000_000.0;
     Json(json!({
         "model": model,
         "price_per_token": price_zion / 1000.0,

@@ -44,8 +44,8 @@ impl WarpRouter {
             transfers: HashMap::new(),
             state_machines: HashMap::new(),
             daily_volume: HashMap::new(),
-            daily_limit: 10_000_000_000_000_000_000,
-            timelock_threshold: 1_000_000_000_000_000_000,
+            daily_limit: 10_000_000_000_000,
+            timelock_threshold: 1_000_000_000_000,
             xp_events: Vec::new(),
         }
     }
@@ -258,8 +258,8 @@ mod tests {
     #[test]
     fn test_outbound_transfer_timelock() {
         let mut router = test_router();
-        router.timelock_threshold = 500_000_000_000; // 0.5 ZION
-        let proof = test_deposit(1_000_000_000_000, "WARP:1:base:0xRecipient");
+        router.timelock_threshold = 500_000; // 0.5 ZION
+        let proof = test_deposit(1_000_000, "WARP:1:base:0xRecipient");
         let id = router.initiate_outbound(proof).unwrap();
         let t = router.get_transfer(&id).unwrap();
         assert_eq!(t.status, WarpStatus::TimelockHold);

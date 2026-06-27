@@ -69,13 +69,13 @@ impl WarpConfig {
         toml::from_str(toml_str)
     }
 
-    /// Convert ZION whole units to flowers (12 decimals).
+    /// Convert ZION whole units to flowers (6 decimals).
     pub fn daily_limit_flowers(&self) -> u64 {
-        self.daily_limit_zion * 1_000_000_000_000
+        self.daily_limit_zion * 1_000_000
     }
 
     pub fn timelock_threshold_flowers(&self) -> u64 {
-        self.timelock_threshold_zion * 1_000_000_000_000
+        self.timelock_threshold_zion * 1_000_000
     }
 }
 
@@ -94,7 +94,7 @@ mod tests {
     #[test]
     fn test_daily_limit_flowers() {
         let config = WarpConfig::default();
-        assert_eq!(config.daily_limit_flowers(), 10_000_000_000_000_000_000);
+        assert_eq!(config.daily_limit_flowers(), 10_000_000_000_000);
     }
 
     #[test]
@@ -102,7 +102,7 @@ mod tests {
         let config = WarpConfig::default();
         assert_eq!(
             config.timelock_threshold_flowers(),
-            1_000_000_000_000_000_000
+            1_000_000_000_000
         );
     }
 
