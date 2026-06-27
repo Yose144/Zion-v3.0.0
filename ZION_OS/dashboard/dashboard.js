@@ -980,7 +980,7 @@ function updatePayouts(p, topology){
 
 function formatFlowers(v){
   if(!v && v !== 0) return '—';
-  const zion = v / 1_000_000_000_000;
+  const zion = v / 1_000_000;
   return _zionFmt(zion) + ' ZION';
 }
 
@@ -1133,7 +1133,7 @@ async function refreshPayout(){
           const hrRaw = m.hashrate_1h || m.hashrate || 0;
           const hr = hrRaw >= 1000 ? (hrRaw/1000).toFixed(2)+' KH/s' : hrRaw.toFixed(2)+' H/s';
           // pending_balance = atomic flowers
-          const pending = m.pending_balance != null ? _zionFmt(m.pending_balance / 1_000_000_000_000) : '—';
+          const pending = m.pending_balance != null ? _zionFmt(m.pending_balance / 1_000_000) : '—';
           const onChain = m.on_chain_balance_zion != null ? _zionFmt(m.on_chain_balance_zion) : '—';
           const addr = escapeHtml(m.address || m.miner_id || '—');
           const shortAddr = addr.length > 22 ? addr.slice(0,14)+'…'+addr.slice(-6) : addr;
@@ -1189,7 +1189,7 @@ async function refreshPayout(){
           const s = p.fee_split || {};
           return `<tr class="border-b border-white/5 hover:bg-white/5 transition">
             <td class="py-2 px-2 text-white">#${p.block_height}</td>
-            <td class="py-2 px-2 text-right text-gray-300">${_zionFmt(p.subsidy_flowers / 1e12)} ZION</td>
+            <td class="py-2 px-2 text-right text-gray-300">${_zionFmt(p.subsidy_flowers / 1e6)} ZION</td>
             <td class="py-2 px-2 text-right text-amber-400">${_zionFmt(s.miner || 0)}</td>
             <td class="py-2 px-2 text-right text-emerald-400">${_zionFmt(s.charity || 0)}</td>
             <td class="py-2 px-2 text-right text-purple-400">${_zionFmt(s.dev || 0)}</td>
@@ -1555,7 +1555,7 @@ async function updateConnectedMiners(){
         ? (lastSeenAgo < 60 ? lastSeenAgo + 's' : Math.floor(lastSeenAgo/60) + 'm') + ' ago'
         : '—';
       const hashrate = m.hashrate_hps > 0 ? (m.hashrate_hps/1000).toFixed(2) + ' KH/s' : '—';
-      const paidZion = payoutMiner?.paid_total ?? (payoutMiner?.paid_total_atomic != null ? payoutMiner.paid_total_atomic / 1_000_000_000_000 : null) ?? m.paid_total ?? 0;
+      const paidZion = payoutMiner?.paid_total ?? (payoutMiner?.paid_total_atomic != null ? payoutMiner.paid_total_atomic / 1_000_000 : null) ?? m.paid_total ?? 0;
       const paid = paidZion > 0 ? _zionFmt(paidZion) + ' ZION' : '0 ZION';
       const onChainZion = payoutMiner?.on_chain_balance_zion;
       const onChain = onChainZion != null ? _zionFmt(onChainZion) + ' ZION' : '—';
@@ -2005,7 +2005,7 @@ async function loadPayoutTab(){
     miners.forEach(m => { totalPaidZion += (m.paid_total ?? 0); });
     // Also try pool_stats pplns total_paid_flowers
     if(totalPaidZion === 0 && ps.pplns?.total_paid_flowers){
-      totalPaidZion = ps.pplns.total_paid_flowers / 1_000_000_000_000;
+      totalPaidZion = ps.pplns.total_paid_flowers / 1_000_000;
     }
     set('payout-kpi-total-paid', totalPaidZion > 0 ? _zionFmt(totalPaidZion) + ' ZION' : '—');
 
@@ -2030,7 +2030,7 @@ async function loadPayoutTab(){
     set('payout-pplns-registered', pplns.registered_miners ?? pplns.miners_registered ?? miners.length ?? 0);
     set('payout-pplns-rounds', pplns.payout_rounds ?? pplns.rounds_completed ?? '—');
     // total paid: pplns.total_paid_flowers (atomic) → ZION
-    const pplnsTotalZion = pplns.total_paid_flowers ? pplns.total_paid_flowers / 1_000_000_000_000 : null;
+    const pplnsTotalZion = pplns.total_paid_flowers ? pplns.total_paid_flowers / 1_000_000 : null;
     set('payout-pplns-total', pplnsTotalZion != null ? _zionFmt(pplnsTotalZion) + ' ZION' : (d.burned_total != null ? _zionFmt(d.burned_total) + ' ZION' : '—'));
 
     const lastTime = d.last_payout_time;
@@ -2069,7 +2069,7 @@ async function loadPayoutTab(){
           const invalid = m.invalid_shares ?? m.no_solution ?? 0;
           // pending_balance from pool/payout APIs is always in atomic flowers
           const pendingZion = (m.pending_balance != null && m.pending_balance > 0)
-            ? m.pending_balance / 1_000_000_000_000
+            ? m.pending_balance / 1_000_000
             : 0;
           const pendingStr = pendingZion > 0 ? _zionFmt(pendingZion) + ' ZION' : '—';
           const paidZion = m.paid_total ?? m.total_paid ?? 0;
@@ -2444,7 +2444,7 @@ function updatePayoutSnapshot(d){
   set('payout-pplns-used', pplns.window_used ?? '—');
   set('payout-pplns-registered', pplns.miners_registered ?? miners.length ?? 0);
   set('payout-pplns-rounds', pplns.rounds_completed ?? '—');
-  const pplnsTotalZion = pplns.total_paid_flowers ? pplns.total_paid_flowers / 1_000_000_000_000 : null;
+  const pplnsTotalZion = pplns.total_paid_flowers ? pplns.total_paid_flowers / 1_000_000 : null;
   set('payout-pplns-total', pplnsTotalZion != null ? _zionFmt(pplnsTotalZion) + ' ZION' : (d.burned_total != null ? _zionFmt(d.burned_total) + ' ZION' : '—'));
 
   set('payout-last-time', d.last_payout_time || '—');
@@ -5636,7 +5636,7 @@ async function loadDaoCoAdmins() {
     const roleColor = { Validator:'text-blue-400', CoreDev:'text-purple-400', Treasury:'text-yellow-400', Bridge:'text-cyan-400', Security:'text-red-400', Steward:'text-pink-400' };
     tbody.innerHTML = admins.map(a => {
       const rc = roleColor[a.role] || 'text-gray-300';
-      const bonded = a.bonded ? (a.bonded / 1e12).toFixed(0) + ' ZION' : '—';
+      const bonded = a.bonded ? (a.bonded / 1e6).toFixed(0) + ' ZION' : '—';
       return `<tr class="border-b border-white/5 hover:bg-white/2 transition">
         <td class="py-2 pr-3 font-semibold text-white">${escapeHtml(a.name || '—')}</td>
         <td class="py-2 pr-3 text-gray-300">L${a.layer}</td>
@@ -5743,8 +5743,8 @@ async function submitDaoVote(choice) {
   if(weight <= 0) return setStatus('Vote weight (ZION balance) must be > 0.', false);
   if(!apiKey) return setStatus('DAO API Key required.', false);
 
-  // Convert ZION to flowers (× 10^12)
-  const weightFlowers = weight * 1_000_000_000_000;
+  // Convert ZION to flowers (× 10^6)
+  const weightFlowers = weight * 1_000_000;
 
   try {
     const r = await fetch(`/api/dao/proposals/${id}/vote`, {

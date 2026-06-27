@@ -2532,7 +2532,7 @@ def _build_status_edge_primary() -> dict:
                             "miner_id": m.group(1),
                             "worker_name": m.group(2),
                             "balance_atomic": int(m.group(3)),
-                            "balance_zion": int(m.group(3)) / 1_000_000_000_000,
+                            "balance_zion": int(m.group(3)) / 1_000_000,
                         })
     except Exception:
         pass
@@ -3235,7 +3235,7 @@ def parse_premine_from_genesis(rpc_host: str = "127.0.0.1", rpc_port: int = 8443
             "index": i + 1,
             "address": addr,
             "label": labels[i] if i < len(labels) else f"Premine Output {i+1}",
-            "amount_zion": amount / 1_000_000_000_000,  # flowers -> ZION
+            "amount_zion": amount / 1_000_000,  # flowers -> ZION
             "source": "genesis",
             "category": "premine",
         })
@@ -3403,7 +3403,7 @@ def build_wallets() -> dict:
             bal = rpc_call(rpc_host, rpc_port, "getBalance", {"address": addr})
             if bal and not bal.get("_rpc_error"):
                 atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
-                w["balance_zion"] = bal.get("balance_zion") if isinstance(bal.get("balance_zion"), (int, float)) else atomic / 1_000_000_000_000
+                w["balance_zion"] = bal.get("balance_zion") if isinstance(bal.get("balance_zion"), (int, float)) else atomic / 1_000_000
                 w["balance_atomic"] = atomic
                 w["rpc_ok"] = True
             else:
@@ -3918,7 +3918,7 @@ def get_pool_miners() -> dict:
             val = int(line.split()[-1])
             if m_id and m_id.group(1) in miners:
                 miners[m_id.group(1)]["paid_total_atomic"] = val
-                miners[m_id.group(1)]["paid_total"] = val / 1e12  # convert atomic flowers to ZION
+                miners[m_id.group(1)]["paid_total"] = val / 1e6  # convert atomic flowers to ZION
         elif line.startswith("zion_pool_miner_last_seen_seconds{"):
             m_id = re.search(r'miner_id="([^"]+)"', line)
             val = int(float(line.split()[-1]))
@@ -3953,7 +3953,7 @@ def get_pool_miners() -> dict:
                 or int(miner.get("paid_total_atomic") or 0) == 0
             ):
                 miner["paid_total_atomic"] = payout_atomic
-                miner["paid_total"] = payout_atomic / 1e12
+                miner["paid_total"] = payout_atomic / 1e6
             miner["blocks_found"] = payout_miner.get("blocks_found", miner.get("blocks_found", 0))
             if payout_miner.get("pending_balance") is not None:
                 miner["pending_balance"] = payout_miner.get("pending_balance")
@@ -4094,7 +4094,7 @@ def calculate_emission_totals(height: int) -> dict:
         humanitarian_flowers += humanitarian
         issobella_flowers += issobella
         pool_fees_flowers += pool_fee
-    divisor = 1_000_000_000_000
+    divisor = 1_000_000
     return {
         "total_emitted_flowers": total_flowers,
         "miner_rewards_flowers": miner_flowers,
@@ -4156,7 +4156,7 @@ def get_pool_wallet_status() -> dict:
         bal = rpc_call("127.0.0.1", 8443, "getBalance", {"address": wallet})
         if bal and not bal.get("_rpc_error"):
             atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
-            status["balance_zion"] = bal.get("balance_zion") if isinstance(bal.get("balance_zion"), (int, float)) else atomic / 1_000_000_000_000
+            status["balance_zion"] = bal.get("balance_zion") if isinstance(bal.get("balance_zion"), (int, float)) else atomic / 1_000_000
     return status
 
 # ── Payout System Status Builder ─────────────────────────────────────────
@@ -4198,7 +4198,7 @@ def fetch_pool_miners() -> list:
         addr = m.get("address") or m.get("miner_id") or ""
         paid_total_atomic = paid_map.get(addr, 0)
         m["paid_total_atomic"] = paid_total_atomic
-        m["paid_total"] = paid_total_atomic / 1e12
+        m["paid_total"] = paid_total_atomic / 1e6
     return miners
 
 def sanitize_pool_stats(pool_stats: dict, miners: list) -> dict:
@@ -4466,16 +4466,16 @@ def build_payout_status() -> dict:
                     "block_height": h,
                     "subsidy_flowers": subsidy,
                     "fee_split": {
-                        "miner": miner / 1_000_000_000_000,
-                        "charity": humanitarian / 1_000_000_000_000,
-                        "dev": issobella / 1_000_000_000_000,
-                        "pool": pool_fee / 1_000_000_000_000,
+                        "miner": miner / 1_000_000,
+                        "charity": humanitarian / 1_000_000,
+                        "dev": issobella / 1_000_000,
+                        "pool": pool_fee / 1_000_000,
                     }
                 })
                 # Enrich recent_payouts with amount if block matches
                 for rp in recent_payouts:
                     if rp["block_height"] == h and rp["amount_zion"] is None:
-                        rp["amount_zion"] = miner / 1_000_000_000_000
+                        rp["amount_zion"] = miner / 1_000_000
                 break
     payouts.sort(key=lambda x: x["block_height"])
     status["payouts"] = payouts[-20:]
@@ -4504,7 +4504,7 @@ def build_payout_status() -> dict:
             bal = rpc_call(rpc_host, 8443, "getBalance", {"address": addr}, timeout=2.5)
             if bal and not bal.get("_rpc_error"):
                 atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
-                balances[key] = {"atomic": atomic, "zion": atomic / 1_000_000_000_000}
+                balances[key] = {"atomic": atomic, "zion": atomic / 1_000_000}
     status["balances"] = balances
 
     # ── Pool stats / miners from Edge or local ──────────────────────────
@@ -4524,7 +4524,7 @@ def build_payout_status() -> dict:
     total_blocks = status["blocks_found"]
     last_height = status["last_block_height"] or 1
     if total_blocks > 0:
-        per_block_burned_zion = block_subsidy(last_height) / 100 / 1_000_000_000_000
+        per_block_burned_zion = block_subsidy(last_height) / 100 / 1_000_000
         status["burned_total"] = total_blocks * per_block_burned_zion
     else:
         status["burned_total"] = 0.0
@@ -4536,12 +4536,12 @@ def build_payout_status() -> dict:
             bal = rpc_call(rpc_host, 8443, "getBalance", {"address": addr}, timeout=2.0)
             if bal and not bal.get("_rpc_error"):
                 atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
-                m["on_chain_balance_zion"] = atomic / 1_000_000_000_000
+                m["on_chain_balance_zion"] = atomic / 1_000_000
             elif is_edge and local_rpc_alive:
                 bal = rpc_call("127.0.0.1", 8443, "getBalance", {"address": addr}, timeout=2.0)
                 if bal and not bal.get("_rpc_error"):
                     atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
-                    m["on_chain_balance_zion"] = atomic / 1_000_000_000_000
+                    m["on_chain_balance_zion"] = atomic / 1_000_000
 
     # ── Network-wide emission totals from block 0 (consensus schedule) ──
     try:
@@ -4869,7 +4869,7 @@ MAINNET_CONSTANTS = {
         "total_zion": 144_000_000_000,
         "genesis_premine_zion": 16_280_000_000,
         "mining_emission_zion": 127_720_000_000,
-        "flowers_per_zion": 1_000_000_000_000,
+        "flowers_per_zion": 1_000_000,
     },
     "block": {
         "time_seconds": 60,
@@ -6342,7 +6342,7 @@ async function refreshPayout(){
 }
 function formatFlowers(v){
   if(!v&&v!==0)return'—';
-  const zion=v/1_000_000_000_000;
+  const zion=v/1_000_000;
     return zion.toLocaleString('en-US',{minimumFractionDigits:4,maximumFractionDigits:4})+' ZION';
 }
 
@@ -9124,7 +9124,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     cur.execute("SELECT SUM(amount_flowers) FROM transfers WHERE status = 'completed'")
                     row = cur.fetchone()
                     if row and row[0]:
-                        total_volume = round(row[0] / 1_000_000_000_000, 2)
+                        total_volume = round(row[0] / 1_000_000, 2)
                     con.close()
             except Exception:
                 pass
@@ -9188,7 +9188,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                             "tx_hash": tx_hash,
                             "from_chain": from_chain or "zion",
                             "to_chain": to_chain or "base-sepolia",
-                            "amount": round(amt / 1_000_000_000_000, 4) if amt else 0,
+                            "amount": round(amt / 1_000_000, 4) if amt else 0,
                             "status": status or "unknown",
                             "timestamp": created or "—",
                             "block_height": block,
