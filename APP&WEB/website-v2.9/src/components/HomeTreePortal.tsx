@@ -9,7 +9,7 @@ import { useLang } from '@/contexts/LanguageContext';
 const TreeOfLifeSwitch = dynamic(() => import('@/components/TreeOfLifeSwitch'), {
   ssr: false,
   loading: () => (
-    <div className="flex min-h-[420px] items-center justify-center rounded-4xl border border-white/10 bg-black/40 text-gray-400">
+    <div className="flex min-h-[420px] items-center justify-center zion-rainbow-card text-gray-400" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
       <LoaderCircle className="h-5 w-5 animate-spin text-zion-gold" />
     </div>
   ),

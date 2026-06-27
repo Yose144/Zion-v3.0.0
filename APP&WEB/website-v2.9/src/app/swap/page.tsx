@@ -241,7 +241,8 @@ export default function SwapPage() {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="rounded-[28px] border border-white/10 bg-black/40 p-6 md:p-8 space-y-6 backdrop-blur-xl"
+            className="zion-rainbow-card p-6 md:p-8 space-y-6"
+            style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
           >
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
@@ -311,7 +312,7 @@ export default function SwapPage() {
               </div>
 
               {/* Preimage Generator */}
-              <div className="rounded-2xl border border-white/5 bg-white/5 p-4 space-y-3">
+              <div className="zion-tile p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-gray-300">
                     {cs ? '1. Vygenerovat hash klíče' : '1. Generate Hash Keys'}
@@ -326,7 +327,7 @@ export default function SwapPage() {
 
                 {generatedPreimage && (
                   <div className="space-y-2 text-xs font-mono">
-                    <div className="p-2 bg-black/40 rounded-lg border border-white/5 relative">
+                    <div className="zion-tile p-2 relative">
                       <div className="text-[9px] text-gray-500 uppercase">Preimage (SAVE THIS!)</div>
                       <div className="text-white break-all pr-8 mt-1">{generatedPreimage}</div>
                       <button
@@ -337,7 +338,7 @@ export default function SwapPage() {
                       </button>
                     </div>
 
-                    <div className="p-2 bg-black/40 rounded-lg border border-white/5 relative">
+                    <div className="zion-tile p-2 relative">
                       <div className="text-[9px] text-gray-500 uppercase">Hashlock (SHA-256)</div>
                       <div className="text-amber-400 break-all pr-8 mt-1">{generatedHash}</div>
                       <button
@@ -353,7 +354,7 @@ export default function SwapPage() {
 
               {/* Memo Builder */}
               {generatedHash && initRecipient && (
-                <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 space-y-2 text-xs">
+                <div className="zion-rainbow-sub p-4 space-y-2 text-xs" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                   <div className="flex items-center gap-1.5 text-amber-400 font-semibold mb-1">
                     <Info className="h-4 w-4" />
                     {cs ? '2. Odeslat transakci na ZION L1' : '2. Send Transaction on ZION L1'}
@@ -363,7 +364,7 @@ export default function SwapPage() {
                       ? 'Pošli nativní ZION na escrow adresu se zadaným memo. Daemon automaticky detekuje lock.'
                       : 'Send native ZION to the escrow address with this exact memo. Daemon will auto-detect the lock.'}
                   </p>
-                  <div className="space-y-1.5 font-mono bg-black/50 p-3 rounded-lg border border-white/10 relative">
+                  <div className="space-y-1.5 font-mono zion-tile p-3 relative">
                     <div><span className="text-gray-500">Escrow:</span> <span className="text-white break-all">{escrowLoading ? 'Loading…' : (escrowAddress || 'Unavailable')}</span></div>
                     <div><span className="text-gray-500">Amount:</span> <span className="text-white">{initAmt} ZION</span></div>
                     <div><span className="text-gray-500">Memo:</span> <span className="text-amber-400 break-all">{getSwapMemo()}</span></div>
@@ -386,7 +387,7 @@ export default function SwapPage() {
             className="flex flex-col gap-8"
           >
             {/* Action panel (Claim & Refund) */}
-            <div className="rounded-[28px] border border-white/10 bg-black/40 p-6 md:p-8 space-y-6 backdrop-blur-xl">
+            <div className="zion-rainbow-card p-6 md:p-8 space-y-6" style={{ '--rc': '168, 85, 247' } as React.CSSProperties}>
               <div className="flex items-center gap-3">
                 <div className="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
                   <Key className="h-6 w-6" />
@@ -490,7 +491,7 @@ export default function SwapPage() {
             </div>
 
             {/* Query / Search lock panel */}
-            <div className="rounded-[28px] border border-white/10 bg-black/40 p-6 md:p-8 space-y-4 backdrop-blur-xl">
+            <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
               <h3 className="text-base font-bold flex items-center gap-2">
                 <Search className="h-4 w-4 text-amber-400" />
                 {cs ? 'Vyhledat HTLC Lock' : 'Track HTLC Lock'}
@@ -515,7 +516,7 @@ export default function SwapPage() {
               {searchError && <div className="text-xs text-red-400 font-medium">{searchError}</div>}
 
               {searchResult && (
-                <div className="rounded-xl border border-white/5 bg-black/50 p-4 space-y-2 text-xs font-mono relative">
+                <div className="zion-tile p-4 space-y-2 text-xs font-mono relative">
                   <div className="flex justify-between">
                     <span className="text-gray-500">State:</span>
                     <span
@@ -559,7 +560,7 @@ export default function SwapPage() {
         </div>
 
         {/* ── Active pending locks table ── */}
-        <div className="rounded-[28px] border border-white/10 bg-black/40 p-6 md:p-8 space-y-4 backdrop-blur-xl">
+        <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '52, 211, 153' } as React.CSSProperties}>
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-bold flex items-center gap-2">

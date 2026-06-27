@@ -101,10 +101,10 @@ export default function TxDetailClient() {
           <div className="animate-pulse space-y-6">
             <div className="h-8 w-48 bg-white/5 rounded" />
             <div className="h-12 w-96 bg-white/5 rounded" />
-            <div className="h-[300px] bg-white/[0.03] rounded-[28px] border border-white/[0.06]" />
+            <div className="h-[300px] zion-section" />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="h-[250px] bg-white/[0.03] rounded-[28px] border border-white/[0.06]" />
-              <div className="h-[250px] bg-white/[0.03] rounded-[28px] border border-white/[0.06]" />
+              <div className="h-[250px] zion-section" />
+              <div className="h-[250px] zion-section" />
             </div>
           </div>
         </div>
@@ -185,7 +185,7 @@ export default function TxDetailClient() {
             { label: cs ? "Vstupy" : "Inputs", value: `${tx.inputs.length}`, color: "text-zion-cyan" },
             { label: cs ? "Vystupy" : "Outputs", value: `${tx.outputs.length}`, color: "text-emerald-400" },
           ]).map((item) => (
-            <div key={item.label} className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
+            <div key={item.label} className="zion-tile p-4">
               <p className="text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium mb-1">{item.label}</p>
               <p className={`text-lg font-bold tabular-nums ${item.color}`}>{item.value}</p>
             </div>
@@ -276,7 +276,7 @@ export default function TxDetailClient() {
 
           {/* Outputs */}
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-            className="rounded-[28px] border border-white/[0.08] bg-black/60 backdrop-blur-2xl p-6">
+            className="zion-rainbow-sub p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
             <div className="flex items-center gap-3 mb-5">
               <div className="h-8 w-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
                 <ArrowRight className="h-4 w-4 text-emerald-400" />
@@ -311,7 +311,7 @@ export default function TxDetailClient() {
         {/* TX Extra */}
         {tx.extra && tx.extra.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-            className="rounded-[28px] border border-white/[0.08] bg-black/60 backdrop-blur-2xl p-6">
+            className="zion-rainbow-sub p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
             <div className="flex items-center gap-3 mb-4">
               <div className="h-8 w-8 rounded-xl bg-gray-500/10 flex items-center justify-center">
                 <Hash className="h-4 w-4 text-gray-400" />

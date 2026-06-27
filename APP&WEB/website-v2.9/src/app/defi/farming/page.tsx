@@ -398,7 +398,7 @@ export default function FarmingPage() {
               { label: cs ? 'Celkem alloc' : 'Total Alloc', value: totalAllocPoint.toLocaleString(), icon: TrendingUp, color: 'text-zion-gold' },
               { label: cs ? 'Stav kontraktu' : 'Contract', value: paused ? (cs ? 'Pozastaveno' : 'Paused') : (cs ? 'Aktivní' : 'Active'), icon: Shield, color: paused ? 'text-red-400' : 'text-emerald-400' },
             ].map((card) => (
-              <div key={card.label} className="rounded-3xl border border-white/8 bg-black/60 backdrop-blur-xl p-5">
+              <div key={card.label} className="zion-rainbow-sub p-5" style={{ '--rc': '132, 204, 22' } as React.CSSProperties}>
                 <div className="flex items-center gap-2 mb-2">
                   <card.icon className={`h-4 w-4 ${card.color}`} />
                   <span className="text-[10px] uppercase tracking-[0.2em] text-gray-500">{card.label}</span>
@@ -413,17 +413,17 @@ export default function FarmingPage() {
         {connected && FARM_DEPLOYED && selectedPool && (
           <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
             <div className="grid grid-cols-3 gap-4">
-              <div className="rounded-2xl border border-white/8 bg-black/60 p-4">
+              <div className="zion-rainbow-sub p-4" style={{ '--rc': '132, 204, 22' } as React.CSSProperties}>
                 <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">
                   {cs ? 'Vloženo' : 'Deposited'} · {selectedPool.name}
                 </p>
                 <p className="text-xl font-bold text-green-400">{fmt(selectedPool.userDeposited, 4)} LP</p>
               </div>
-              <div className="rounded-2xl border border-white/8 bg-black/60 p-4">
+              <div className="zion-rainbow-sub p-4" style={{ '--rc': '132, 204, 22' } as React.CSSProperties}>
                 <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Čekající odměna' : 'Pending Reward'}</p>
                 <p className="text-xl font-bold text-zion-gold">{fmt(selectedPool.userPending, 6)} wZION</p>
               </div>
-              <div className="rounded-2xl border border-white/8 bg-black/60 p-4">
+              <div className="zion-rainbow-sub p-4" style={{ '--rc': '132, 204, 22' } as React.CSSProperties}>
                 <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Wallet balance' : 'Wallet'}</p>
                 <p className="text-xl font-bold text-white">{fmt(userBalance, 2)} wZION</p>
               </div>
@@ -439,7 +439,7 @@ export default function FarmingPage() {
               {cs ? 'Farm pooly' : 'Farm Pools'}
             </h2>
             {pools.length === 0 ? (
-              <div className="rounded-2xl border border-white/8 bg-black/60 p-6 text-center text-gray-500 text-sm">
+              <div className="zion-section p-6 text-center text-gray-500 text-sm">
                 {cs ? 'Žádné pooly nebyly nalezeny.' : 'No pools found.'}
               </div>
             ) : (
@@ -448,8 +448,9 @@ export default function FarmingPage() {
                   <div
                     key={p.pid}
                     onClick={() => setSelectedPid(p.pid)}
-                    className={`cursor-pointer rounded-2xl border p-5 transition-colors ${
-                      selectedPid === p.pid ? 'border-green-500/30 bg-green-500/5' : 'border-white/6 bg-white/3 hover:border-white/12'
+                    style={{ '--rc': '132, 204, 22' } as React.CSSProperties}
+                    className={`cursor-pointer zion-rainbow-sub p-5 ${
+                      selectedPid === p.pid ? '!border-green-500/40 !bg-green-500/5' : ''
                     }`}
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
@@ -494,7 +495,7 @@ export default function FarmingPage() {
         )}
 
         {/* Wallet connect / Farm UI */}
-        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} className="rounded-4xl border border-white/8 bg-black/60 backdrop-blur-xl p-6 md:p-8">
+        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} style={{ '--rc': '132, 204, 22' } as React.CSSProperties} className="zion-rainbow-card p-6 md:p-8">
           {!connected ? (
             <div className="text-center py-8">
               <Wallet className="h-12 w-12 text-gray-600 mx-auto mb-4" />
@@ -545,7 +546,7 @@ export default function FarmingPage() {
               </div>
 
               {/* Deposit */}
-              <div className="rounded-2xl border border-white/8 bg-white/3 p-5">
+              <div className="zion-rainbow-sub p-5" style={{ '--rc': '132, 204, 22' } as React.CSSProperties}>
                 <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
                   <Lock className="h-4 w-4 text-green-400" />
                   {cs ? 'Vložit LP tokeny' : 'Deposit LP Tokens'}
@@ -581,7 +582,7 @@ export default function FarmingPage() {
               </div>
 
               {/* Withdraw */}
-              <div className="rounded-2xl border border-white/8 bg-white/3 p-5">
+              <div className="zion-rainbow-sub p-5" style={{ '--rc': '132, 204, 22' } as React.CSSProperties}>
                 <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
                   <Unlock className="h-4 w-4 text-amber-400" />
                   {cs ? 'Vybrat LP tokeny' : 'Withdraw LP Tokens'}
@@ -626,7 +627,7 @@ export default function FarmingPage() {
               </div>
 
               {/* Claim */}
-              <div className="rounded-2xl border border-white/8 bg-white/3 p-5">
+              <div className="zion-rainbow-sub p-5" style={{ '--rc': '132, 204, 22' } as React.CSSProperties}>
                 <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
                   <PiggyBank className="h-4 w-4 text-zion-gold" />
                   {cs ? 'Nárokovat odměnu' : 'Claim Reward'}
@@ -649,7 +650,7 @@ export default function FarmingPage() {
 
               {/* TX status */}
               {txHash && (txPhase === 'success' || busy) && (
-                <div className="rounded-xl border border-white/10 bg-white/5 p-3 flex items-center gap-2 text-xs">
+                <div className="zion-tile p-3 flex items-center gap-2 text-xs">
                   {txPhase === 'success' ? <CheckCircle2 className="h-4 w-4 text-emerald-400" /> : <Loader2 className="h-4 w-4 animate-spin text-zion-gold" />}
                   <a href={`${EXPLORER}/tx/${txHash}`} target="_blank" rel="noopener" className="text-zion-gold hover:underline flex items-center gap-1">
                     {txHash.slice(0, 10)}...{txHash.slice(-8)} <ExternalLink className="h-3 w-3" />
@@ -678,7 +679,7 @@ export default function FarmingPage() {
               { step: '2', title: cs ? 'Sbírej odměny' : 'Earn Rewards', desc: cs ? 'Odměny ve wZION narůstají automaticky podle allocPoint poolu.' : 'wZION rewards accrue automatically based on the pool allocPoint.', icon: Coins },
               { step: '3', title: cs ? 'Claim & Withdraw' : 'Claim & Withdraw', desc: cs ? 'Nárokovuj odměny kdykoliv. Vyber LP tokeny nebo použij emergency withdraw.' : 'Claim rewards anytime. Withdraw LP tokens or use emergency withdraw.', icon: Unlock },
             ].map((s) => (
-              <div key={s.step} className="rounded-2xl border border-white/6 bg-white/3 p-5">
+              <div key={s.step} className="zion-rainbow-sub p-5" style={{ '--rc': '132, 204, 22' } as React.CSSProperties}>
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-xs font-bold text-zion-gold">{s.step}</span>
                   <s.icon className="h-4 w-4 text-gray-400" />
@@ -691,7 +692,7 @@ export default function FarmingPage() {
         </motion.section>
 
         {/* Contract */}
-        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="rounded-2xl border border-white/8 bg-black/60 p-5">
+        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="zion-section p-5">
           <div className="flex items-center gap-2 mb-2">
             <Layers className="h-4 w-4 text-gray-400" />
             <span className="text-xs text-gray-400 uppercase tracking-wider">{cs ? 'Kontrakt' : 'Contract'}</span>

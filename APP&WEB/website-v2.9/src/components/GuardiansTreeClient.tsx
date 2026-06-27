@@ -61,7 +61,7 @@ export default function GuardiansTreeClient() {
 
   if (error && !data) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
+      <div className="zion-rainbow-card p-8 text-center" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
         <p className="text-sm text-gray-400 mb-2">{error}</p>
         <p className="text-xs text-gray-500">
           The 144k Guardians registry is under development. Live data will appear once the registry contract is deployed.
@@ -79,7 +79,7 @@ export default function GuardiansTreeClient() {
   return (
     <div className="space-y-4">
       {/* Refresh Status Bar */}
-      <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black/40 px-4 py-3">
+      <div className="flex items-center justify-between zion-section px-4 py-3">
         <div className="flex items-center gap-2 text-sm text-gray-400">
           <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
           <span>Live data · Auto-refresh 60s</span>

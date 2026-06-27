@@ -323,7 +323,7 @@ export default function SupplyPageClient() {
           {loading && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
               {[...Array(8)].map((_, i) => (
-                <div key={i} className="rounded-3xl border border-white/8 bg-black/60 p-6 h-32" />
+                <div key={i} className="zion-rainbow-sub p-6 h-32" style={{ '--rc': '251, 191, 36' } as React.CSSProperties} />
               ))}
             </div>
           )}
@@ -342,7 +342,8 @@ export default function SupplyPageClient() {
               ].map((card) => (
                 <div
                   key={card.label}
-                  className="rounded-3xl border border-white/8 bg-black/60 backdrop-blur-xl p-6 hover:border-white/12 transition-colors"
+                  className="zion-rainbow-sub p-6"
+                  style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
                 >
                   <div className="flex items-center gap-2 mb-3">
                     <card.icon className={`h-4 w-4 ${card.accent}`} />
@@ -361,7 +362,7 @@ export default function SupplyPageClient() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="rounded-4xl border border-white/8 bg-black/60 backdrop-blur-xl p-6 md:p-10"
+          className="zion-section p-6 md:p-10"
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? "Průběh" : "Progress"}</p>
@@ -419,7 +420,7 @@ export default function SupplyPageClient() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.14 }}
-          className="rounded-4xl border border-white/8 bg-black/60 backdrop-blur-xl p-6 md:p-10"
+          className="zion-section p-6 md:p-10"
         >
           <div className="flex flex-col gap-2 mb-8">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? "Distribuce" : "Distribution"}</p>
@@ -441,7 +442,7 @@ export default function SupplyPageClient() {
               { label: "Issobella Fund", pct: issobellaPct, perBlock: 0, color: "bg-purple-500", text: "text-purple-400", icon: Layers },
               { label: cs ? "Pool fee" : "Pool Fee", pct: rewardDist.pool_fee_pct, perBlock: rewardDist.pool_fee_per_block, color: "bg-zion-cyan", text: "text-zion-cyan", icon: Wallet },
             ].map((d) => (
-              <div key={d.label} className="rounded-2xl border border-white/6 bg-white/3 p-5">
+              <div key={d.label} className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                 <div className="flex items-center gap-2 mb-3">
                   <d.icon className={`h-4 w-4 ${d.text}`} />
                   <span className="text-xs text-gray-400">{d.label}</span>
@@ -463,7 +464,7 @@ export default function SupplyPageClient() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.18 }}
-          className="rounded-4xl border border-white/8 bg-black/60 backdrop-blur-xl p-6 md:p-10"
+          className="zion-section p-6 md:p-10"
         >
           <div className="flex flex-col gap-2 mb-8">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? "Harmonogram" : "Schedule"}</p>
@@ -535,7 +536,7 @@ export default function SupplyPageClient() {
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.22 }}
-          className="rounded-4xl border border-zion-cyan/30 bg-linear-to-r from-zion-cyan/20 via-zion-purple/10 to-zion-cyan/20 p-10 text-center"
+          className="zion-cta-banner p-10 text-center"
         >
           <Coins className="mx-auto h-12 w-12 text-zion-gold" />
           <h2 className="mt-6 text-3xl font-semibold text-white">ZION Supply</h2>

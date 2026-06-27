@@ -191,7 +191,7 @@ export default function NetworkStatus({ className }: { className?: string }) {
 
       {/* Latency Panel */}
       {status.nodes.some((n) => n.online && (n.rpcLatencyMs != null || n.poolLatencyMs != null)) && (
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+        <div className="zion-rainbow-card p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
           <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-4">
             <Zap className="w-4 h-4 text-yellow-400" />
             {cs ? 'Latence uzlů' : 'Node Latency'}

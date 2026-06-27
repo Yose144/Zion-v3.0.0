@@ -60,7 +60,7 @@ export default function NetworkAlgorithmPanel({ cs }: { cs: boolean }) {
   ];
 
   return (
-    <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
+    <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-6">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Algoritmus' : 'Algorithm'}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -78,14 +78,11 @@ export default function NetworkAlgorithmPanel({ cs }: { cs: boolean }) {
         {algorithms.map((algo) => (
           <div
             key={algo.id}
-            className={`rounded-3xl border p-6 transition-all ${
-              algo.active
-                ? 'border-emerald-400/30 bg-emerald-500/5'
-                : 'border-white/10 bg-white/5 hover:border-white/20'
-            }`}
+            className={`zion-rainbow-sub p-6 transition-all ${algo.active ? 'border-emerald-400/30' : 'hover:border-white/20'}`}
+            style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
           >
             <div className="flex items-center gap-3 mb-4">
-              <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-black/40 border border-white/10">
+              <div className="inline-flex h-10 w-10 items-center justify-center zion-tile">
                 {algo.icon}
               </div>
               <div>
@@ -104,15 +101,15 @@ export default function NetworkAlgorithmPanel({ cs }: { cs: boolean }) {
             </div>
             <p className="text-sm text-gray-400 mb-4">{cs ? algo.descCs : algo.desc}</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-              <div className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-center">
+              <div className="zion-tile px-3 py-2 text-center">
                 <p className="text-gray-500 mb-0.5">{cs ? 'Scratchpad' : 'Scratchpad'}</p>
                 <p className="text-white font-mono">{algo.scratchpad}</p>
               </div>
-              <div className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-center">
+              <div className="zion-tile px-3 py-2 text-center">
                 <p className="text-gray-500 mb-0.5">AES</p>
                 <p className="text-white font-mono">{algo.aesRounds}</p>
               </div>
-              <div className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-center">
+              <div className="zion-tile px-3 py-2 text-center">
                 <p className="text-gray-500 mb-0.5">{cs ? 'Teplo' : 'Thermal'}</p>
                 <p className={`font-mono ${algo.thermal === 'High' ? 'text-orange-400' : algo.thermal === 'Low' ? 'text-cyan-400' : 'text-yellow-400'}`}>
                   {algo.thermal}
@@ -123,7 +120,7 @@ export default function NetworkAlgorithmPanel({ cs }: { cs: boolean }) {
         ))}
       </div>
 
-      <div className="mt-6 rounded-2xl border border-white/10 bg-black/30 p-4">
+      <div className="mt-6 zion-tile p-4">
         <button
           onClick={() => setOpen(!open)}
           className="flex items-center gap-2 text-sm text-gray-300 hover:text-white transition w-full"

@@ -231,7 +231,7 @@ export default function DefiPage() {
 
       {/* ── Tab Navigation ── */}
       <section className="zion-container relative z-10 mb-8">
-        <div className="flex gap-1 rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl p-1 w-fit">
+        <div className="flex gap-1 zion-tile p-1 w-fit">
           {TABS.map((t) => {
             const Icon = t.icon;
             const active = tab === t.key;

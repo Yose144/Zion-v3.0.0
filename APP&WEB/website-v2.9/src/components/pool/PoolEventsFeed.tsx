@@ -123,7 +123,7 @@ export default function PoolEventsFeed({ cs }: { cs: boolean }) {
   const { events, refresh } = usePoolEvents(cs);
 
   return (
-    <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
+    <section className="zion-rainbow-card p-8" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
       <div className="flex items-center justify-between mb-6">
         <div className="flex flex-col gap-2">
           <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Události' : 'Events'}</p>
@@ -149,7 +149,8 @@ export default function PoolEventsFeed({ cs }: { cs: boolean }) {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 10 }}
               transition={{ delay: index * 0.03 }}
-              className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-3 hover:bg-white/[0.07] transition-colors"
+              className="flex items-start gap-3 zion-rainbow-sub p-3 transition-colors"
+              style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
             >
               <div className="mt-0.5 shrink-0">{typeIcons[event.type]}</div>
               <div className="flex-1 min-w-0">
