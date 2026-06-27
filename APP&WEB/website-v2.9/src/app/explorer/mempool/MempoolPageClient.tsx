@@ -123,7 +123,7 @@ function FeeHistogram({ txs, cs }: { txs: MempoolTx[]; cs: boolean }) {
   if (!buckets.length) return null;
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/40 p-4">
+    <div className="zion-rainbow-sub p-4" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
       <div className="flex items-center justify-between mb-3">
         <p className="text-[10px] uppercase tracking-[0.3em] text-white/40">
           {cs ? "Distribuce poplatků" : "Fee distribution"}
@@ -298,7 +298,7 @@ export default function MempoolPageClient() {
         {/* histogram + fee stats */}
         <div className="grid md:grid-cols-2 gap-4 mb-6">
           <FeeHistogram txs={data?.transactions ?? []} cs={cs} />
-          <div className="rounded-2xl border border-white/10 bg-black/40 p-4">
+          <div className="zion-rainbow-sub p-4" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
             <p className="text-[10px] uppercase tracking-[0.3em] text-white/40 mb-3">
               {cs ? "Statistika poplatků" : "Fee statistics"}
             </p>
@@ -481,7 +481,7 @@ function StatCard({
     emerald: "border-emerald-500/20 bg-emerald-500/5",
   } as const;
   return (
-    <div className={`rounded-2xl border p-4 ${accentMap[accent]}`}>
+    <div className="zion-rainbow-sub p-4" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
       <div className="flex items-center gap-2 mb-2">
         {icon}
         <p className="text-[10px] uppercase tracking-[0.3em] text-white/40">{label}</p>

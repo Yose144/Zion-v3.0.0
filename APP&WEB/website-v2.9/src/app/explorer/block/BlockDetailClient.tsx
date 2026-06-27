@@ -147,8 +147,8 @@ export default function BlockDetailClient() {
             <div className="h-8 w-48 bg-white/5 rounded" />
             <div className="h-12 w-80 bg-white/5 rounded" />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="h-[400px] bg-white/[0.03] rounded-[28px] border border-white/[0.06]" />
-              <div className="h-[400px] bg-white/[0.03] rounded-[28px] border border-white/[0.06]" />
+              <div className="h-[400px] zion-section" />
+              <div className="h-[400px] zion-section" />
             </div>
           </div>
         </div>
@@ -270,7 +270,7 @@ export default function BlockDetailClient() {
             { label: cs ? "Odmena bloku" : "Block Reward", value: `${block.reward.toFixed(4)} ZION`, color: "text-zion-gold" },
             { label: cs ? "Pocet tx" : "Tx Count", value: `${block.tx_count}`, color: "text-zion-cyan" },
           ].map((item) => (
-            <div key={item.label} className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
+            <div key={item.label} className="zion-tile p-4">
               <p className="text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium mb-1">{item.label}</p>
               <p className={`text-lg font-bold tabular-nums ${item.color}`}>{item.value}</p>
             </div>

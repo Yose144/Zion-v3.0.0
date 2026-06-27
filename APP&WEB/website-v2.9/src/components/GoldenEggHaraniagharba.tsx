@@ -47,7 +47,7 @@ export default function GoldenEggHaraniagharba() {
           <div className="relative grid gap-6 lg:grid-cols-[0.4fr_1fr] lg:items-start">
             {/* ── Left: Compact Image ── */}
             <div className="space-y-2">
-              <div className="relative overflow-hidden rounded-2xl border border-amber-200/20 bg-black/30 shadow-[0_18px_60px_rgba(0,0,0,0.35)]">
+              <div className="relative overflow-hidden zion-rainbow-sub shadow-[0_18px_60px_rgba(0,0,0,0.35)]" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                 <Image
                   src={EKAM_GOLDEN_EGG_IMAGE}
                   alt="Ekam visual used as Golden Egg inspiration"
@@ -84,7 +84,7 @@ export default function GoldenEggHaraniagharba() {
                 {tr('goldenEgg', 'badge', lang)}
               </div>
 
-              <div className="relative overflow-hidden rounded-2xl border border-zion-gold/35 bg-linear-to-r from-zion-gold/15 via-amber-200/10 to-zion-cyan/10 p-4">
+              <div className="relative overflow-hidden zion-rainbow-sub p-4" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                 <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-zion-gold/20 blur-2xl" />
                 <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
@@ -126,14 +126,14 @@ export default function GoldenEggHaraniagharba() {
 
               {/* ── Compact knowledge row ── */}
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-white/10 bg-black/20 p-4 backdrop-blur-sm">
+                <div className="zion-rainbow-sub p-4 backdrop-blur-sm" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                   <p className="text-[10px] uppercase tracking-[0.28em] text-amber-100/60">{tr('goldenEgg', 'what_title', lang)}</p>
                   <p className="mt-1.5 text-sm font-semibold text-white">{tr('goldenEgg', 'what_head', lang)}</p>
                   <p className="mt-1 text-xs leading-relaxed text-gray-400">
                     {tr('goldenEgg', 'what_body', lang)}
                   </p>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-black/20 p-4 backdrop-blur-sm">
+                <div className="zion-rainbow-sub p-4 backdrop-blur-sm" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                   <p className="text-[10px] uppercase tracking-[0.28em] text-amber-100/60">{tr('goldenEgg', 'ekam_title', lang)}</p>
                   <p className="mt-1.5 text-sm font-semibold text-white">{tr('goldenEgg', 'ekam_head', lang)}</p>
                   <p className="mt-1 text-xs leading-relaxed text-gray-400">

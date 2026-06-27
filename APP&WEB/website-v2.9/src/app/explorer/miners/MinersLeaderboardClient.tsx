@@ -109,7 +109,7 @@ export default function MinersLeaderboardClient() {
               { label: cs ? "Pooly" : "Pools", value: miners.filter((m) => m.known_type === "pool").length, icon: Crown, color: "text-amber-400" },
               { label: cs ? "Solo mineři" : "Solo Miners", value: miners.filter((m) => m.known_type !== "pool").length, icon: Activity, color: "text-zion-cyan" },
             ].map((s) => (
-              <div key={s.label} className="rounded-3xl border border-white/8 bg-black/60 backdrop-blur-xl p-6">
+              <div key={s.label} className="zion-rainbow-sub p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                 <div className="flex items-center gap-2 mb-3">
                   <s.icon className={`h-4 w-4 ${s.color}`} />
                   <span className="text-[10px] uppercase tracking-[0.2em] text-gray-500">{s.label}</span>

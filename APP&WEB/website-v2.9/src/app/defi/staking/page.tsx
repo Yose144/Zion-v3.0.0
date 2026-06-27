@@ -281,7 +281,7 @@ export default function StakingPage() {
               { label: 'APR', value: `${apy}%`, icon: TrendingUp, color: 'text-emerald-400' },
               { label: cs ? 'Cooldown' : 'Cooldown', value: `${cooldownDays}d`, icon: Calendar, color: 'text-zion-cyan' },
             ].map((card) => (
-              <div key={card.label} className="rounded-3xl border border-white/8 bg-black/60 backdrop-blur-xl p-5">
+              <div key={card.label} className="zion-rainbow-sub p-5" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
                 <div className="flex items-center gap-2 mb-2">
                   <card.icon className={`h-4 w-4 ${card.color}`} />
                   <span className="text-[10px] uppercase tracking-[0.2em] text-gray-500">{card.label}</span>
@@ -296,15 +296,15 @@ export default function StakingPage() {
         {connected && STAKING_DEPLOYED && (
           <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
             <div className="grid grid-cols-3 gap-4">
-              <div className="rounded-2xl border border-white/8 bg-black/60 p-4">
+              <div className="zion-rainbow-sub p-4" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
                 <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Můj stake' : 'My Stake'}</p>
                 <p className="text-xl font-bold text-emerald-400">{parseFloat(userStaked).toFixed(2)} wZION</p>
               </div>
-              <div className="rounded-2xl border border-white/8 bg-black/60 p-4">
+              <div className="zion-rainbow-sub p-4" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
                 <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Odměny' : 'Earned'}</p>
                 <p className="text-xl font-bold text-zion-gold">{parseFloat(userEarned).toFixed(4)} wZION</p>
               </div>
-              <div className="rounded-2xl border border-white/8 bg-black/60 p-4">
+              <div className="zion-rainbow-sub p-4" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
                 <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Wallet balance' : 'Wallet'}</p>
                 <p className="text-xl font-bold text-white">{parseFloat(userBalance).toFixed(2)} wZION</p>
               </div>
@@ -313,7 +313,7 @@ export default function StakingPage() {
         )}
 
         {/* Wallet connect / Stake UI */}
-        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="rounded-4xl border border-white/8 bg-black/60 backdrop-blur-xl p-6 md:p-8">
+        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} style={{ '--rc': '34, 197, 94' } as React.CSSProperties} className="zion-rainbow-card p-6 md:p-8">
           {!connected ? (
             <div className="text-center py-8">
               <Wallet className="h-12 w-12 text-gray-600 mx-auto mb-4" />
@@ -349,7 +349,7 @@ export default function StakingPage() {
             </div>
           ) : (
             <>
-              <div className="flex gap-1 rounded-2xl border border-white/10 bg-white/5 p-1 w-fit mb-6">
+              <div className="flex gap-1 zion-tile p-1 w-fit mb-6">
                 {([
                   { key: 'stake', label: cs ? 'Stake' : 'Stake', icon: Lock },
                   { key: 'unstake', label: cs ? 'Unstake' : 'Unstake', icon: Unlock },
@@ -406,7 +406,7 @@ export default function StakingPage() {
               {/* Unstake tab */}
               {tab === 'unstake' && (
                 <div className="space-y-4 max-w-md">
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div className="zion-rainbow-sub p-4" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
                     <p className="text-xs text-gray-500 mb-1">{cs ? 'Váš stake' : 'Your stake'}</p>
                     <p className="text-2xl font-bold text-emerald-400">{parseFloat(userStaked).toFixed(2)} wZION</p>
                   </div>
@@ -448,7 +448,7 @@ export default function StakingPage() {
               {/* Claim tab */}
               {tab === 'claim' && (
                 <div className="space-y-4 max-w-md">
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div className="zion-rainbow-sub p-4" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
                     <p className="text-xs text-gray-500 mb-1">{cs ? 'Nasbíráno odměn' : 'Earned rewards'}</p>
                     <p className="text-2xl font-bold text-zion-gold">{parseFloat(userEarned).toFixed(4)} wZION</p>
                   </div>
@@ -465,7 +465,7 @@ export default function StakingPage() {
 
               {/* TX status */}
               {txHash && (txPhase === 'success' || busy) && (
-                <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3 flex items-center gap-2 text-xs">
+                <div className="mt-4 zion-tile p-3 flex items-center gap-2 text-xs">
                   {txPhase === 'success' ? <CheckCircle2 className="h-4 w-4 text-emerald-400" /> : <Loader2 className="h-4 w-4 animate-spin text-zion-gold" />}
                   <a href={`https://basescan.org/tx/${txHash}`} target="_blank" rel="noopener" className="text-zion-gold hover:underline flex items-center gap-1">
                     {txHash.slice(0, 10)}...{txHash.slice(-8)} <ExternalLink className="h-3 w-3" />
@@ -494,7 +494,7 @@ export default function StakingPage() {
               { step: '2', title: cs ? 'Sbírej odměny' : 'Earn Rewards', desc: cs ? 'Automaticky narůstající odměny s fixním APR.' : 'Auto-compounding rewards at fixed APR.', icon: Flame },
               { step: '3', title: cs ? 'Unstake' : 'Unstake', desc: cs ? 'Požádej o unstake, počkej cooldown a vybírej.' : 'Request unstake, wait cooldown, withdraw.', icon: Unlock },
             ].map((s) => (
-              <div key={s.step} className="rounded-2xl border border-white/6 bg-white/3 p-5">
+              <div key={s.step} className="zion-rainbow-sub p-5" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-xs font-bold text-zion-gold">{s.step}</span>
                   <s.icon className="h-4 w-4 text-gray-400" />
@@ -507,7 +507,7 @@ export default function StakingPage() {
         </motion.section>
 
         {/* Contract */}
-        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }} className="rounded-2xl border border-white/8 bg-black/60 p-5">
+        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }} className="zion-section p-5">
           <div className="flex items-center gap-2 mb-2">
             <Layers className="h-4 w-4 text-gray-400" />
             <span className="text-xs text-gray-400 uppercase tracking-wider">{cs ? 'Kontrakt' : 'Contract'}</span>

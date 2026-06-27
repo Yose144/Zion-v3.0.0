@@ -100,7 +100,7 @@ export default function AlgoManagerPage() {
   return (
     <div className="pt-28 pb-20 overflow-x-hidden">
       <div className="zion-container max-w-7xl space-y-12">
-        <div className="rounded-[32px] border border-white/10 bg-black/60 p-5 sm:p-8 md:p-10 backdrop-blur-xl">
+        <div className="zion-rainbow-card p-5 sm:p-8 md:p-10" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{lang === 'cs' ? 'Mining routing' : 'Mining routing'}</p>
@@ -113,7 +113,7 @@ export default function AlgoManagerPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-gray-300">
+              <div className="zion-tile px-4 py-3 text-sm text-gray-300">
                 {lang === 'cs' ? 'Auto-přepínání' : 'Auto-switch'}
               </div>
               <button
@@ -128,7 +128,7 @@ export default function AlgoManagerPage() {
               </button>
               <Link
                 href="/admin"
-                className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-black/40 px-6 py-3 text-sm font-semibold hover:border-white/30"
+                className="zion-section inline-flex items-center justify-center px-6 py-3 text-sm font-semibold hover:border-white/30"
               >
                 {lang === 'cs' ? 'Zpět' : 'Back'}
               </Link>
@@ -136,22 +136,22 @@ export default function AlgoManagerPage() {
           </div>
 
           <div className="mt-10 grid gap-4 md:grid-cols-4">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? 'Režim' : 'Mode'}</p>
               <p className="mt-2 text-3xl font-semibold text-white">{status.mode.toUpperCase()}</p>
               <p className="text-sm text-gray-300">{status.mode === 'auto' ? (lang === 'cs' ? 'založeno na ziskovosti' : 'profitability based') : (lang === 'cs' ? 'řízeno operátorem' : 'operator controlled')}</p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? 'Aktivní' : 'Active'}</p>
               <p className="mt-2 text-3xl font-semibold text-white">{status.activeAlgo.toUpperCase()}</p>
               <p className="text-sm text-gray-300">{status.activeCoin}</p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? 'Zisk/den' : 'Profit/day'}</p>
               <p className="mt-2 text-3xl font-semibold text-white">${status.profitPerDay.toFixed(2)}</p>
               <p className="text-sm text-gray-300">{lang === 'cs' ? 'na GPU baseline' : 'per GPU baseline'}</p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? 'Další kontrola' : 'Next check'}</p>
               <p className="mt-2 text-3xl font-semibold text-white">{formatTime(countdown)}</p>
               <p className="text-sm text-gray-300">{lang === 'cs' ? 'scheduler tick' : 'scheduler tick'}</p>
@@ -159,16 +159,16 @@ export default function AlgoManagerPage() {
           </div>
 
           <div className="mt-6 flex flex-wrap gap-4 text-sm text-gray-300">
-            <div className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3">
+            <div className="zion-tile px-4 py-3">
               {lang === 'cs' ? 'Připojení mineři' : 'Connected miners'}: <span className="text-white font-semibold">{status.connectedMiners}</span>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3">
+            <div className="zion-tile px-4 py-3">
               {lang === 'cs' ? 'Celkový hashrate' : 'Total hashrate'}: <span className="text-white font-semibold">{status.totalHashrate}</span>
             </div>
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-white/10 bg-black/50 p-6">
+        <div className="zion-rainbow-card p-6" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
           <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? 'Ziskovost' : 'Profitability'}</p>
@@ -177,7 +177,7 @@ export default function AlgoManagerPage() {
             </div>
             <Link
               href="/admin/pool-config"
-              className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold hover:border-white/30"
+              className="zion-tile inline-flex items-center justify-center px-6 py-3 text-sm font-semibold hover:border-white/30"
             >
               {lang === 'cs' ? 'Pool konfigurace →' : 'Pool configuration →'}
             </Link>
@@ -226,7 +226,7 @@ export default function AlgoManagerPage() {
                         ) : (
                           <button
                             onClick={() => handleSwitch(algo.algo)}
-                            className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold text-white hover:border-white/30"
+                            className="zion-tile inline-flex items-center justify-center px-4 py-2 text-xs font-semibold text-white hover:border-white/30"
                           >
                             {lang === 'cs' ? 'Přepnout' : 'Switch'}
                           </button>
@@ -239,12 +239,12 @@ export default function AlgoManagerPage() {
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-white/10 bg-black/50 p-6">
+        <div className="zion-rainbow-card p-6" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
           <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? 'Ladění' : 'Tuning'}</p>
           <h2 className="mt-2 text-2xl font-semibold text-white">{lang === 'cs' ? 'Nastavení' : 'Settings'}</h2>
 
           <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? 'Práh přepnutí' : 'Switch threshold'}</p>
               <p className="mt-2 text-3xl font-semibold text-white">{settings.switchThreshold}%</p>
               <input
@@ -258,7 +258,7 @@ export default function AlgoManagerPage() {
               <p className="mt-2 text-sm text-gray-300">{lang === 'cs' ? 'min rozdíl zisku pro přepnutí' : 'min profit diff for switch'}</p>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? 'Interval kontroly' : 'Check interval'}</p>
               <p className="mt-2 text-3xl font-semibold text-white">{settings.checkInterval} min</p>
               <input
@@ -272,7 +272,7 @@ export default function AlgoManagerPage() {
               <p className="mt-2 text-sm text-gray-300">{lang === 'cs' ? 'perioda přepočtu' : 'recalc period'}</p>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? 'Min čas na algoritmu' : 'Min time on algo'}</p>
               <p className="mt-2 text-3xl font-semibold text-white">{settings.minTimeOnAlgo} min</p>
               <input

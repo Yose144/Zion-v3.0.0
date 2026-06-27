@@ -173,7 +173,7 @@ export default function FeeEstimatorClient() {
           {loading && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="rounded-3xl border border-white/8 bg-black/60 p-6 h-40" />
+                <div key={i} className="zion-rainbow-sub p-6 h-40" style={{ '--rc': '251, 191, 36' } as React.CSSProperties} />
               ))}
             </div>
           )}
@@ -181,7 +181,7 @@ export default function FeeEstimatorClient() {
           {!loading && fees && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {tiers.map((t) => (
-                <div key={t.key} className={`rounded-3xl border ${t.border} ${t.bg} backdrop-blur-xl p-6 hover:border-white/20 transition-colors`}>
+                <div key={t.key} className="zion-rainbow-sub p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                   <div className="flex items-center gap-2 mb-3">
                     <t.icon className={`h-4 w-4 ${t.color}`} />
                     <span className="text-[10px] uppercase tracking-[0.2em] text-gray-500">{t.label}</span>
@@ -194,7 +194,7 @@ export default function FeeEstimatorClient() {
           )}
 
           {!loading && !fees && (
-            <div className="rounded-3xl border border-white/8 bg-black/60 p-10 text-center">
+            <div className="zion-section p-10 text-center">
               <Flame className="h-10 w-10 text-white/10 mx-auto mb-3" />
               <p className="text-white/30 text-sm">{cs ? "Mempool je prázdný — není třeba fee" : "Mempool is empty — no fee needed"}</p>
             </div>
@@ -203,7 +203,7 @@ export default function FeeEstimatorClient() {
 
         {/* STATS */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="rounded-4xl border border-white/8 bg-black/60 backdrop-blur-xl p-6 md:p-10">
+          className="zion-section p-6 md:p-10">
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? "Statistiky" : "Statistics"}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -222,7 +222,7 @@ export default function FeeEstimatorClient() {
               { label: cs ? "50. percentil" : "50th %ile", value: formatFee(fees?.medium ?? 0) + " ZION", color: "text-purple-400" },
               { label: cs ? "90. percentil" : "90th %ile", value: formatFee(fees?.urgent ?? 0) + " ZION", color: "text-rose-400" },
             ].map((s) => (
-              <div key={s.label} className="rounded-2xl border border-white/8 bg-white/3 p-4">
+              <div key={s.label} className="zion-tile p-4">
                 <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-1">{s.label}</p>
                 <p className={`text-lg font-bold tabular-nums ${s.color}`}>{s.value}</p>
               </div>

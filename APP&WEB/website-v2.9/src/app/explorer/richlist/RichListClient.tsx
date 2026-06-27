@@ -184,7 +184,8 @@ export default function RichListClient({ embedded = false }: RichListClientProps
             ].map((stat, i) => (
               <div
                 key={i}
-                className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm p-5"
+                className="zion-rainbow-sub p-5"
+                style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
               >
                 <div className="flex items-center gap-2 mb-2">
                   <stat.icon className={`w-4 h-4 ${stat.accent}`} />
@@ -206,7 +207,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.15 }}
-            className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm p-6"
+            className="zion-section p-6"
           >
             <h2 className="text-sm font-medium text-white/60 mb-4 flex items-center gap-2">
               <Gem className="w-4 h-4 text-zion-gold" />
@@ -282,7 +283,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="rounded-3xl border border-white/10 bg-black/40 backdrop-blur-sm overflow-hidden"
+          className="zion-section overflow-hidden"
         >
           {/* Table header */}
           <div className="grid grid-cols-[60px_1fr_1fr_120px_100px] md:grid-cols-[60px_2fr_1fr_160px_120px] gap-2 px-6 py-3 border-b border-white/10 bg-white/[0.02]">

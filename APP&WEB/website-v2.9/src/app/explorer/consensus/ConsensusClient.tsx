@@ -134,7 +134,7 @@ export default function ConsensusClient() {
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             {sections.map((s) => (
-              <div key={s.title} className={`rounded-3xl border ${s.border} ${s.bg} backdrop-blur-xl p-6 hover:border-white/20 transition-colors`}>
+              <div key={s.title} className="zion-rainbow-sub p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                 <div className="flex items-center gap-2 mb-3">
                   <s.icon className={`h-5 w-5 ${s.color}`} />
                   <h3 className="text-base font-semibold text-white">{s.title}</h3>
@@ -147,7 +147,7 @@ export default function ConsensusClient() {
 
         {/* DECADE TABLE */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="rounded-4xl border border-white/8 bg-black/60 backdrop-blur-xl p-6 md:p-10">
+          className="zion-section p-6 md:p-10">
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? "Emise" : "Emission"}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">

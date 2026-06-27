@@ -278,7 +278,7 @@ export default function TePikoOraPage() {
                   {SIGNALS.map((signal) => {
                     const Icon = signal.icon;
                     return (
-                      <div key={signal.labelCs} className="rounded-2xl border border-white/10 bg-black/60 px-3 py-3 backdrop-blur-sm">
+                      <div key={signal.labelCs} className="zion-rainbow-sub px-3 py-3" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                         <div className="flex items-center gap-2 text-zion-gold">
                           <Icon className="h-4 w-4" />
                           <span className="text-sm font-semibold">{signal.value}</span>
@@ -326,7 +326,7 @@ export default function TePikoOraPage() {
                   { label: cs ? 'Oceán' : 'Ocean', val: '4M km²' },
                   { label: cs ? 'Kultura' : 'Culture', val: cs ? 'Polynésie' : 'Polynesia' },
                 ].map((s) => (
-                  <div key={s.label} className="text-center p-3 rounded-xl bg-black/60 border border-white/10">
+                  <div key={s.label} className="text-center p-3 zion-tile">
                     <p className="text-gray-300 font-bold text-xs">{s.val}</p>
                     <p className="text-gray-600 text-[10px]">{s.label}</p>
                   </div>
@@ -352,7 +352,7 @@ export default function TePikoOraPage() {
             </h2>
           </div>
 
-          <div className="rounded-2xl border border-white/10 overflow-hidden">
+          <div className="zion-section overflow-hidden">
             <div className="grid grid-cols-1 sm:grid-cols-3 text-center text-[10px] uppercase tracking-[0.3em] font-semibold bg-white/5 border-b border-white/10">
               <div className="p-3 text-gray-500">{cs ? 'Polynésie' : 'Polynesia'}</div>
               <div className="p-3 text-gray-300 sm:border-l border-white/10">{cs ? 'Princip' : 'Principle'}</div>
@@ -415,14 +415,15 @@ export default function TePikoOraPage() {
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 + i * 0.07, duration: 0.5 }}
-                  className="relative rounded-[32px] border border-white/10 bg-black/60 backdrop-blur-xl p-5 space-y-3 overflow-hidden group hover:scale-[1.02] transition-transform duration-300"
+                  className="relative zion-rainbow-sub p-5 space-y-3 overflow-hidden group hover:scale-[1.02] transition-transform duration-300"
+                  style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
                 >
                   <div
                     className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-[50px] opacity-20 group-hover:opacity-35 transition-opacity duration-500"
                     
                   />
                   <div className="flex items-start justify-between relative z-10 gap-3">
-                    <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-black/20">
+                    <span className="inline-flex h-11 w-11 items-center justify-center zion-tile">
                       <Icon className="h-5 w-5 text-zion-gold" />
                     </span>
                     <span
@@ -574,9 +575,9 @@ export default function TePikoOraPage() {
               {ZION_ITEMS.map((item) => (
                 <div
                   key={item.label}
-                  className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/60 p-3"
+                  className="flex items-center gap-3 zion-rainbow-sub p-3" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
                 >
-                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-cyan-400/12 bg-cyan-400/8">
+                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center zion-tile">
                     <item.icon className="h-4 w-4 text-cyan-200" />
                   </span>
                   <div>
