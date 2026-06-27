@@ -91,6 +91,70 @@ export default function GoldenOrb({ className = '' }: { className?: string }) {
         }}
       />
 
+      {/* ════════ SRI YANTRA (subtle sacred geometry) ════════ */}
+      <svg
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[85%] w-[85%] -translate-x-1/2 -translate-y-1/2 animate-[spin_180s_linear_infinite]"
+        viewBox="0 0 200 200"
+        fill="none"
+        style={{ opacity: hovered ? 0.14 : 0.08, transition: 'opacity 1s' }}
+      >
+        <g stroke="rgba(251,191,36,0.9)" strokeWidth="0.4" strokeLinejoin="round">
+          {/* ── Outer square with 4 gates (Bhupura) ── */}
+          <rect x="14" y="14" width="172" height="172" rx="1" />
+          <rect x="18" y="18" width="164" height="164" rx="1" />
+          {/* T-gates on each side */}
+          <line x1="100" y1="14" x2="100" y2="6" />
+          <line x1="94" y1="10" x2="106" y2="10" />
+          <line x1="100" y1="186" x2="100" y2="194" />
+          <line x1="94" y1="190" x2="106" y2="190" />
+          <line x1="14" y1="100" x2="6" y2="100" />
+          <line x1="10" y1="94" x2="10" y2="106" />
+          <line x1="186" y1="100" x2="194" y2="100" />
+          <line x1="190" y1="94" x2="190" y2="106" />
+
+          {/* ── 16-petal lotus ── */}
+          <circle cx="100" cy="100" r="78" />
+          {Array.from({ length: 16 }).map((_, i) => {
+            const a = (i * 22.5 * Math.PI) / 180;
+            const x1 = 100 + Math.cos(a) * 62;
+            const y1 = 100 + Math.sin(a) * 62;
+            const x2 = 100 + Math.cos(a) * 78;
+            const y2 = 100 + Math.sin(a) * 78;
+            return <line key={`p16-${i}`} x1={x1} y1={y1} x2={x2} y2={y2} />;
+          })}
+          <circle cx="100" cy="100" r="62" />
+
+          {/* ── 8-petal lotus ── */}
+          <circle cx="100" cy="100" r="56" />
+          {Array.from({ length: 8 }).map((_, i) => {
+            const a = (i * 45 * Math.PI) / 180;
+            const x1 = 100 + Math.cos(a) * 44;
+            const y1 = 100 + Math.sin(a) * 44;
+            const x2 = 100 + Math.cos(a) * 56;
+            const y2 = 100 + Math.sin(a) * 56;
+            return <line key={`p8-${i}`} x1={x1} y1={y1} x2={x2} y2={y2} />;
+          })}
+          <circle cx="100" cy="100" r="44" />
+
+          {/* ── 9 interlocking triangles ── */}
+          {/* Upward (Shiva) — 4 triangles, apex up */}
+          <polygon points="100,16 22,146 178,146" />
+          <polygon points="100,34 38,138 162,138" />
+          <polygon points="100,52 54,130 146,130" />
+          <polygon points="100,70 70,122 130,122" />
+
+          {/* Downward (Shakti) — 5 triangles, apex down */}
+          <polygon points="100,184 22,54 178,54" />
+          <polygon points="100,166 38,62 162,62" />
+          <polygon points="100,148 54,70 146,70" />
+          <polygon points="100,130 70,78 130,78" />
+          <polygon points="100,112 82,86 118,86" />
+
+          {/* ── Bindu (central point) ── */}
+          <circle cx="100" cy="100" r="1.5" fill="rgba(255,251,230,0.8)" stroke="none" />
+        </g>
+      </svg>
+
       {/* Starfield */}
       <div className="pointer-events-none absolute inset-0">
         {stars.map((s) => (
