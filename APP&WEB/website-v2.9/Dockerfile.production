@@ -1,16 +1,22 @@
 FROM node:22-alpine AS base
 
-# Build stage — builds Next.js inside Docker (node_modules from host)
-# The .dockerignore includes node_modules so the local zion-wallet-sdk
-# .tgz dependency (outside Docker context) is already resolved.
+# Install dependencies only when needed
+FROM base AS deps
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+COPY package.json package-lock.json* ./
+COPY zion-wallet-sdk-1.0.0.tgz ./
+RUN npm ci
+
+# Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
-# Production image — full Next.js (non-standalone) with next start
+# Production image, copy all the files and run next
 FROM base AS runner
 WORKDIR /app
 
@@ -22,7 +28,6 @@ ENV HOSTNAME="0.0.0.0"
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy built artifacts
 COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
