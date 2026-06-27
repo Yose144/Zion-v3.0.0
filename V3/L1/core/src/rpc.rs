@@ -247,7 +247,7 @@ fn looks_like_utxo_address(value: &str) -> bool {
 
 fn format_flowers_as_zion(amount: u128) -> String {
     format!(
-        "{}.{:012}",
+        "{}.{:06}",
         amount / emission::FLOWERS_PER_ZION as u128,
         amount % emission::FLOWERS_PER_ZION as u128
     )
@@ -387,6 +387,8 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                 Ok(json!({
                     "node_id": status.node_id,
                     "protocol_version": status.protocol_version,
+                    "protocol_version_numeric": crate::PROTOCOL_VERSION,
+                    "flowers_per_zion": emission::FLOWERS_PER_ZION,
                     "network": status.network,
                     "chain_height": status.chain_height,
                     "p2p_bind": status.p2p_bind.address(),
@@ -1524,22 +1526,33 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
             };
 
             Ok(json!({
-                "total_supply_atomic": emission::TOTAL_SUPPLY.to_string(),
+                // Canonical (post-3.0.3): _flowers suffix = raw atomic units
+                "total_supply_flowers": emission::TOTAL_SUPPLY.to_string(),
+                "premine_flowers": emission::GENESIS_PREMINE.to_string(),
+                "mining_emission_flowers": emission::MINING_EMISSION.to_string(),
+                "mined_so_far_flowers": mined_flowers.to_string(),
+                "circulating_supply_flowers": circulating_flowers.to_string(),
+                "remaining_supply_flowers": remaining_flowers.to_string(),
+                "block_reward_flowers": block_reward,
+                // Human-readable ZION (decimal)
                 "total_supply_zion": (emission::TOTAL_SUPPLY / emission::FLOWERS_PER_ZION as u128) as u64,
-                "premine_atomic": emission::GENESIS_PREMINE.to_string(),
                 "premine_zion": (emission::GENESIS_PREMINE / emission::FLOWERS_PER_ZION as u128) as u64,
-                "mining_emission_atomic": emission::MINING_EMISSION.to_string(),
                 "mining_emission_zion": (emission::MINING_EMISSION / emission::FLOWERS_PER_ZION as u128) as u64,
-                "mined_so_far_atomic": mined_flowers.to_string(),
                 "mined_so_far_zion": (mined_flowers / emission::FLOWERS_PER_ZION as u128) as u64,
-                "supply_mined_percent": format!("{:.6}", supply_mined_pct),
-                "circulating_supply_atomic": circulating_flowers.to_string(),
                 "circulating_supply_zion": (circulating_flowers / emission::FLOWERS_PER_ZION as u128) as u64,
-                "remaining_supply_atomic": remaining_flowers.to_string(),
                 "remaining_supply_zion": (remaining_flowers / emission::FLOWERS_PER_ZION as u128) as u64,
-                "block_reward_atomic": block_reward,
                 "block_reward_zion": block_reward as f64 / emission::FLOWERS_PER_ZION as f64,
+                // Legacy aliases (deprecated 3.0.3, drop in 3.0.4)
+                "total_supply_atomic": emission::TOTAL_SUPPLY.to_string(),
+                "premine_atomic": emission::GENESIS_PREMINE.to_string(),
+                "mining_emission_atomic": emission::MINING_EMISSION.to_string(),
+                "mined_so_far_atomic": mined_flowers.to_string(),
+                "circulating_supply_atomic": circulating_flowers.to_string(),
+                "remaining_supply_atomic": remaining_flowers.to_string(),
+                "block_reward_atomic": block_reward,
+                "supply_mined_percent": format!("{:.6}", supply_mined_pct),
                 "height": height,
+                "protocol_version": crate::PROTOCOL_VERSION,
             }))
         }));
     }

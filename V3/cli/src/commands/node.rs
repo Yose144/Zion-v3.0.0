@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use clap::Subcommand;
 use serde_json::json;
 
@@ -67,6 +67,15 @@ pub enum NodeCmd {
     Websocket {
         #[command(subcommand)]
         ws_cmd: WebSocketCmd,
+    },
+    /// Export chain snapshot for 3.0.3 decimal fork migration
+    Snapshot {
+        /// Output file path (default: snapshot_<height>.json)
+        #[arg(short, long)]
+        output: Option<String>,
+        /// Target node: core | edge | local | vpn (default: core)
+        #[arg(default_value = "core")]
+        target: String,
     },
 }
 
@@ -147,7 +156,70 @@ pub async fn run(cfg: &Config, cmd: NodeCmd) -> Result<()> {
             Ok(())
         }
         NodeCmd::Websocket { ws_cmd } => websocket_command(cfg, ws_cmd).await,
+        NodeCmd::Snapshot { output, target } => {
+            snapshot_command(cfg, output, &target).await
+        }
     }
+}
+
+/// Export a chain snapshot for the 3.0.3 decimal fork migration.
+///
+/// Calls `getChainInfo` to get the current tip height, then calls `getSupplyInfo`
+/// and `getBlockByHeight` for the tip. Writes a JSON file containing:
+/// - height, hash, timestamp
+/// - total supply, premine, mined so far (in legacy flowers)
+/// - flowers_per_zion (legacy = 1e12, new = 1e6)
+///
+/// This snapshot is used by the migration block builder to verify that
+/// all on-chain balances are accounted for before the decimal cutover.
+async fn snapshot_command(
+    cfg: &Config,
+    output: Option<String>,
+    target: &str,
+) -> Result<()> {
+    let (host, port) = cfg.target_rpc(target);
+    ui::print_info(&format!("Exporting snapshot from {}:{}...", host, port));
+
+    // 1. Get chain info (tip height + hash)
+    let chain_info = node_rpc::call(host, port, "getChainInfo", json!({})).await?;
+    let height = chain_info["height"]
+        .as_u64()
+        .ok_or_else(|| anyhow!("chain info missing height"))?;
+    let tip_hash = chain_info["tip_hash_hex"]
+        .as_str()
+        .unwrap_or("unknown")
+        .to_string();
+
+    // 2. Get supply info
+    let supply_info = node_rpc::call(host, port, "getSupplyInfo", json!({})).await?;
+
+    // 3. Get tip block
+    let tip_block = node_rpc::call(host, port, "getBlockByHeight", json!({"height": height})).await?;
+
+    // 4. Build snapshot JSON
+    let snapshot = json!({
+        "snapshot_height": height,
+        "tip_hash": tip_hash,
+        "tip_block": tip_block,
+        "supply_info": supply_info,
+        "legacy_flowers_per_zion": 1_000_000_000_000u64,
+        "new_flowers_per_zion": 1_000_000u64,
+        "migration_divisor": 1_000_000u64,
+        "exported_at": chrono::Utc::now().to_rfc3339(),
+        "purpose": "ZION 3.0.3 decimal fork migration snapshot",
+    });
+
+    // 5. Write to file
+    let filename = output.unwrap_or_else(|| format!("snapshot_{}.json", height));
+    let json_str = serde_json::to_string_pretty(&snapshot)?;
+    std::fs::write(&filename, json_str)?;
+
+    ui::print_ok(&format!("Snapshot written to {}", filename));
+    ui::print_info(&format!("Height: {}, Hash: {}...", height, &tip_hash[..20.min(tip_hash.len())]));
+    ui::print_info("Use this snapshot with the migration block builder to verify");
+    ui::print_info("balance conservation before the 3.0.3 decimal cutover.");
+
+    Ok(())
 }
 
 async fn node_status(host: &str, port: u16) -> Result<()> {
