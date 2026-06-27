@@ -279,7 +279,7 @@ async function tcpPoolMetrics(host: string, port: number, timeoutMs = POOL_TIMEO
 
 // ─── Block Mapping Helpers ───────────────────────────────────────────────────
 
-const ATOMIC_PER_ZION = 1_000_000_000_000;
+const ATOMIC_PER_ZION = 1_000_000;
 
 function normalizeRewardZion(rawReward: unknown): number {
   if (typeof rawReward !== 'number' || !Number.isFinite(rawReward) || rawReward <= 0) {
@@ -810,9 +810,9 @@ class ZionRpcClient {
       return {
         address,
         balance: {
-          pending: (minerStats.pending_balance ?? 0) / 1e12,
+          pending: (minerStats.pending_balance ?? 0) / 1e6,
           locked: 0,
-          paid: (minerStats.total_paid ?? 0) / 1e12,
+          paid: (minerStats.total_paid ?? 0) / 1e6,
         },
         recent_payouts: pendingPayouts.map((payout: any) => ({
           amount: payout.amount ?? payout.amount_atomic ?? 0,

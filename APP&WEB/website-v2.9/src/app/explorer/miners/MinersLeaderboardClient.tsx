@@ -105,7 +105,7 @@ export default function MinersLeaderboardClient() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { label: cs ? "Celkem minerů" : "Total Miners", value: stats?.total_miners ?? 0, icon: Users, color: "text-emerald-400" },
-              { label: cs ? "Těžební zásoba" : "Miner Supply", value: `${((stats?.miner_supply ?? 0) / 1e12).toFixed(2)} ZION`, icon: TrendingUp, color: "text-zion-gold" },
+              { label: cs ? "Těžební zásoba" : "Miner Supply", value: `${((stats?.miner_supply ?? 0) / 1e6).toFixed(2)} ZION`, icon: TrendingUp, color: "text-zion-gold" },
               { label: cs ? "Pooly" : "Pools", value: miners.filter((m) => m.known_type === "pool").length, icon: Crown, color: "text-amber-400" },
               { label: cs ? "Solo mineři" : "Solo Miners", value: miners.filter((m) => m.known_type !== "pool").length, icon: Activity, color: "text-zion-cyan" },
             ].map((s) => (
@@ -176,7 +176,7 @@ export default function MinersLeaderboardClient() {
                           </td>
                           <td className="px-6 py-3 text-right">
                             <span className="text-white text-xs font-semibold tabular-nums">
-                              {(m.balance / 1e12).toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+                              {(m.balance / 1e6).toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
                             </span>
                             <span className="text-gray-600 text-[10px] ml-1">ZION</span>
                           </td>
