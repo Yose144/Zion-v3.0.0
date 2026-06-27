@@ -181,8 +181,10 @@ mod tests {
 
     #[test]
     fn minimum_fee_for_size_small_tx() {
-        assert_eq!(minimum_fee_for_size(100), MIN_TX_FEE);
-        assert_eq!(minimum_fee_for_size(500), MIN_TX_FEE);
+        // With MIN_TX_FEE=1 and MIN_FEE_RATE=1, rate-based fee dominates for any size >= 1.
+        // minimum_fee_for_size(n) = max(MIN_TX_FEE, n * MIN_FEE_RATE) = max(1, n)
+        assert_eq!(minimum_fee_for_size(100), 100);
+        assert_eq!(minimum_fee_for_size(500), 500);
     }
 
     #[test]

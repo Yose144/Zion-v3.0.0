@@ -14,12 +14,12 @@ use serde::{Deserialize, Serialize};
 
 // ── V3 Constants ──────────────────────────────────────────────────────────────
 
-/// V3 canonical: 1 ZION = 1e12 flowers (12 decimals).
-pub const FLOWERS_PER_ZION: u64 = 1_000_000_000_000;
+/// V3 canonical: 1 ZION = 1e6 flowers (6 decimals, post-3.0.3 fork).
+pub const FLOWERS_PER_ZION: u64 = 1_000_000;
 
-/// Conversion factor between L1 flowers (12 dec) and EVM wei (18 dec).
-/// 18 - 12 = 6 → multiply/divide by 1e6.
-pub const FLOWERS_TO_WEI_FACTOR: u128 = 1_000_000;
+/// Conversion factor between L1 flowers (6 dec) and EVM wei (18 dec).
+/// 18 - 6 = 12 → multiply/divide by 1e12.
+pub const FLOWERS_TO_WEI_FACTOR: u128 = 1_000_000_000_000;
 
 /// Minimum bridge amount: 100 ZION in flowers.
 pub const MIN_BRIDGE_AMOUNT: u64 = 100 * FLOWERS_PER_ZION;
@@ -70,7 +70,7 @@ pub struct L1LockEvent {
     /// L1 sender address (zion1...)
     pub l1_sender: String,
 
-    /// Amount locked in flowers (1 ZION = 1e12 flowers)
+    /// Amount locked in flowers (1 ZION = 1e6 flowers, post-3.0.3)
     pub amount_flowers: u64,
 
     /// Amount in wZION wei (18 decimals) — converted by relay
@@ -168,29 +168,29 @@ pub struct ChainBridgeStats {
     pub operations: u64,
 }
 
-// ── Decimal conversion helpers (V3: 12 decimals) ─────────────────────────────
+// ── Decimal conversion helpers (V3: 6 decimals, post-3.0.3) ───────────────────
 
 pub mod conversion {
     use super::{FLOWERS_PER_ZION, FLOWERS_TO_WEI_FACTOR};
 
-    /// Convert L1 flowers (12 decimals) to wZION wei string (18 decimals).
+    /// Convert L1 flowers (6 decimals) to wZION wei string (18 decimals).
     ///
-    /// V3: 1 ZION = 1e12 flowers. EVM: 1 wZION = 1e18 wei.
-    /// Factor = 1e6 (18 - 12 = 6).
+    /// V3 post-3.0.3: 1 ZION = 1e6 flowers. EVM: 1 wZION = 1e18 wei.
+    /// Factor = 1e12 (18 - 6 = 12).
     ///
-    /// Example: 1e12 flowers (1 ZION) → "1000000000000000000" (1e18 wei)
+    /// Example: 1e6 flowers (1 ZION) → "1000000000000000000" (1e18 wei)
     pub fn flowers_to_wzion_wei(flowers: u64) -> String {
-        let wei = (flowers as u128) * FLOWERS_TO_WEI_FACTOR; // × 1e6
+        let wei = (flowers as u128) * FLOWERS_TO_WEI_FACTOR; // × 1e12
         wei.to_string()
     }
 
-    /// Convert wZION wei string (18 decimals) to L1 flowers (12 decimals).
+    /// Convert wZION wei string (18 decimals) to L1 flowers (6 decimals).
     /// Rounds down (truncates sub-flower dust).
     pub fn wzion_wei_to_flowers(wei_str: &str) -> Result<u64, String> {
         let wei: u128 = wei_str
             .parse()
             .map_err(|e| format!("Invalid wei amount: {}", e))?;
-        let flowers = wei / FLOWERS_TO_WEI_FACTOR; // ÷ 1e6
+        let flowers = wei / FLOWERS_TO_WEI_FACTOR; // ÷ 1e12
         if flowers > u64::MAX as u128 {
             return Err("Amount exceeds u64 max".into());
         }
@@ -198,14 +198,14 @@ pub mod conversion {
     }
 
     /// Format flowers to human-readable ZION.
-    /// Example: 5_400_067_000_000_000 flowers → "5400.067"
+    /// Example: 5_400_067_000 flowers → "5400.067" (post-3.0.3, 6 decimals)
     pub fn flowers_to_zion_display(flowers: u64) -> String {
         let whole = flowers / FLOWERS_PER_ZION;
         let frac = flowers % FLOWERS_PER_ZION;
         if frac == 0 {
             format!("{}", whole)
         } else {
-            format!("{}.{:012}", whole, frac)
+            format!("{}.{:06}", whole, frac)
                 .trim_end_matches('0')
                 .to_string()
         }
@@ -217,43 +217,43 @@ pub mod conversion {
 
         #[test]
         fn test_flowers_to_wzion_1_zion() {
-            // 1 ZION = 1e12 flowers → 1e18 wei
+            // 1 ZION = 1e6 flowers → 1e18 wei (post-3.0.3)
             assert_eq!(
-                flowers_to_wzion_wei(1_000_000_000_000),
+                flowers_to_wzion_wei(1_000_000),
                 "1000000000000000000" // 1e18
             );
         }
 
         #[test]
         fn test_flowers_to_wzion_block_reward() {
-            // 5400.067 ZION = 5_400_067_000_000_000 flowers → × 1e6 = 5400067000000000000000
+            // 5400.067 ZION = 5_400_067_000 flowers → × 1e12 = 5400067000000000000000
             assert_eq!(
-                flowers_to_wzion_wei(5_400_067_000_000_000),
+                flowers_to_wzion_wei(5_400_067_000),
                 "5400067000000000000000" // 5400.067 × 1e18
             );
         }
 
         #[test]
         fn test_wzion_to_flowers_1_zion() {
-            // 1e18 wei → 1e12 flowers (1 ZION)
+            // 1e18 wei → 1e6 flowers (1 ZION, post-3.0.3)
             assert_eq!(
                 wzion_wei_to_flowers("1000000000000000000").unwrap(),
-                1_000_000_000_000
+                1_000_000
             );
         }
 
         #[test]
         fn test_wzion_to_flowers_100_zion() {
-            // 100 wZION = 100e18 wei → 100e12 flowers
+            // 100 wZION = 100e18 wei → 100e6 flowers
             assert_eq!(
                 wzion_wei_to_flowers("100000000000000000000").unwrap(),
-                100_000_000_000_000
+                100_000_000
             );
         }
 
         #[test]
         fn test_roundtrip_lossless() {
-            let original_flowers = 1_000_000_000_000_000u64; // 1000 ZION
+            let original_flowers = 1_000_000_000u64; // 1000 ZION in new flowers
             let wzion_wei = flowers_to_wzion_wei(original_flowers);
             let recovered = wzion_wei_to_flowers(&wzion_wei).unwrap();
             assert_eq!(original_flowers, recovered, "Roundtrip must be lossless");
@@ -268,41 +268,41 @@ pub mod conversion {
 
         #[test]
         fn test_dust_truncation() {
-            // Sub-flower dust: 999_999 wei < 1 flower (1e6 wei), truncated to 0
-            assert_eq!(wzion_wei_to_flowers("999999").unwrap(), 0);
-            // Exactly 1 flower = 1e6 wei
-            assert_eq!(wzion_wei_to_flowers("1000000").unwrap(), 1);
+            // Sub-flower dust: 999_999_999_999 wei < 1 flower (1e12 wei), truncated to 0
+            assert_eq!(wzion_wei_to_flowers("999999999999").unwrap(), 0);
+            // Exactly 1 flower = 1e12 wei
+            assert_eq!(wzion_wei_to_flowers("1000000000000").unwrap(), 1);
         }
 
         #[test]
         fn test_display_whole() {
-            assert_eq!(flowers_to_zion_display(1_000_000_000_000), "1");
+            assert_eq!(flowers_to_zion_display(1_000_000), "1");
         }
 
         #[test]
         fn test_display_fractional() {
-            assert_eq!(flowers_to_zion_display(5_400_067_000_000_000), "5400.067");
+            assert_eq!(flowers_to_zion_display(5_400_067_000), "5400.067");
         }
 
         #[test]
         fn test_display_sub_zion() {
-            assert_eq!(flowers_to_zion_display(500_000_000_000), "0.5");
-            assert_eq!(flowers_to_zion_display(100_000_000_000), "0.1");
-            assert_eq!(flowers_to_zion_display(1), "0.000000000001");
+            assert_eq!(flowers_to_zion_display(500_000), "0.5");
+            assert_eq!(flowers_to_zion_display(100_000), "0.1");
+            assert_eq!(flowers_to_zion_display(1), "0.000001");
         }
 
         #[test]
         fn test_min_bridge_amount() {
-            // 100 ZION = 100e12 flowers
-            let min = 100_000_000_000_000u64;
+            // 100 ZION = 100e6 flowers (post-3.0.3)
+            let min = 100_000_000u64;
             let wzion = flowers_to_wzion_wei(min);
             assert_eq!(wzion, "100000000000000000000"); // 100 × 1e18
         }
 
         #[test]
         fn test_large_amount() {
-            // 10M ZION = 10_000_000e12 flowers
-            let amount = 10_000_000_000_000_000_000u64;
+            // 10M ZION = 10_000_000e6 flowers
+            let amount = 10_000_000_000_000u64;
             let wzion = flowers_to_wzion_wei(amount);
             assert_eq!(wzion_wei_to_flowers(&wzion).unwrap(), amount);
         }
@@ -316,13 +316,13 @@ pub mod conversion {
 
         #[test]
         fn test_flowers_per_zion_constant() {
-            assert_eq!(super::FLOWERS_PER_ZION, 1_000_000_000_000);
+            assert_eq!(super::FLOWERS_PER_ZION, 1_000_000);
         }
 
         #[test]
         fn test_conversion_factor() {
-            // 18 (EVM) - 12 (L1) = 6 → factor is 1e6
-            assert_eq!(super::FLOWERS_TO_WEI_FACTOR, 1_000_000);
+            // 18 (EVM) - 6 (L1) = 12 → factor is 1e12
+            assert_eq!(super::FLOWERS_TO_WEI_FACTOR, 1_000_000_000_000);
         }
     }
 }
@@ -395,7 +395,7 @@ mod type_tests {
             evm_chain: "base".into(),
             evm_burner: "0xaaa".into(),
             amount_wzion_wei: "1000000000000000000".into(),
-            amount_flowers: 1_000_000_000_000, // 1 ZION
+            amount_flowers: 1_000_000, // 1 ZION (post-3.0.3)
             l1_recipient: "zion1qrecipient".into(),
             burn_id: "burn001".into(),
             detected_at: chrono::Utc::now(),
