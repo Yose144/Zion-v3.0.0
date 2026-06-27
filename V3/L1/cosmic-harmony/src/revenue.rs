@@ -928,7 +928,7 @@ mod tests {
     #[test]
     fn track_zion_block_zero_pool_fee_gives_all_to_miner() {
         let collector = RevenueCollector::new();
-        let subsidy = 1_000_000_000_000_u64;
+        let subsidy = 1_000_000_u64;
         collector.track_zion_block(1, subsidy, 0, None);
 
         let stats = collector.get_stats();
@@ -1012,7 +1012,7 @@ mod tests {
     #[test]
     fn pool_fee_pct_is_used_when_nonzero() {
         let collector = RevenueCollector::new();
-        let subsidy = 1_000_000_000_000_u64;
+        let subsidy = 1_000_000_u64;
         // Pass pool_fee_pct=2 instead of default 1.
         collector.track_zion_block(200, subsidy, 2, None);
 

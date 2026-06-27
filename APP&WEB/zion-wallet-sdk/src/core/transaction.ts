@@ -12,9 +12,9 @@ import { sha512 } from '@noble/hashes/sha2.js';
 // Enable sync sha512 for @noble/ed25519
 ed.etc.sha512Sync = (...m: Uint8Array[]) => sha512(ed.etc.concatBytes(...m));
 
-export const FLOWERS_PER_ZION = 1_000_000_000_000n;
-export const MIN_FEE_FLOWERS = 1_000_000n; // 0.000001 ZION minimum fee (UTXO)
-export const ACCOUNT_DEFAULT_FEE_FLOWERS = 1_000n; // Minimum fee for account-model (matches V3 fee::MIN_TX_FEE)
+export const FLOWERS_PER_ZION = 1_000_000n;
+export const MIN_FEE_FLOWERS = 1n; // 1 flower minimum fee (L1 fee::MIN_TX_FEE=1, 3.0.3)
+export const ACCOUNT_DEFAULT_FEE_FLOWERS = 1n; // 1 flower for account-model (L1 fee::MIN_TX_FEE=1, 3.0.3)
 
 export interface UTXO {
   tx_hash: string;
@@ -142,7 +142,7 @@ export async function buildUtxoTransaction({
   privateKey: Uint8Array;
   memo?: string;
 }): Promise<Transaction> {
-  const amountFlowers = BigInt(Math.round(amountZion * 1e12));
+  const amountFlowers = BigInt(Math.round(amountZion * 1e6));
   const feeFlowers = MIN_FEE_FLOWERS;
   const totalNeeded = amountFlowers + feeFlowers;
 
@@ -161,7 +161,7 @@ export async function buildUtxoTransaction({
   }
 
   if (inputSum < totalNeeded) {
-    const balanceZion = Number(inputSum) / 1e12;
+    const balanceZion = Number(inputSum) / 1e6;
     throw new Error(
       `Insufficient balance: need ${amountZion} + fee ZION, have ${balanceZion.toFixed(6)} ZION spendable`
     );
@@ -303,7 +303,7 @@ export interface AccountTransaction {
  * @param amountZion Amount in ZION (float) or flowers (bigint)
  * @param privateKey Raw 32-byte Ed25519 private key
  * @param nonce Unique nonce (default: Date.now() ms)
- * @param fee Fee in flowers (default: 1000)
+ * @param fee Fee in flowers (default: 1, L1 MIN_TX_FEE)
  */
 export async function buildAccountTransaction({
   fromAddress,
@@ -326,13 +326,13 @@ export async function buildAccountTransaction({
     amountFlowers = amountZion;
   } else if (typeof amountZion === 'string') {
     const num = parseFloat(amountZion);
-    if (amountZion.includes('.') || num < 1e12) {
-      amountFlowers = BigInt(Math.floor(num * 1e12));
+    if (amountZion.includes('.') || num < 1e6) {
+      amountFlowers = BigInt(Math.floor(num * 1e6));
     } else {
       amountFlowers = BigInt(amountZion);
     }
   } else {
-    amountFlowers = BigInt(Math.floor(Number(amountZion) * 1e12));
+    amountFlowers = BigInt(Math.floor(Number(amountZion) * 1e6));
   }
 
   const feeFlowers = fee != null ? fee : ACCOUNT_DEFAULT_FEE_FLOWERS;

@@ -7,8 +7,8 @@
 
 const crypto = require('crypto');
 
-const FLOWERS_PER_ZION_BIGINT = 1_000_000_000_000n; // 1 ZION = 1e12 flowers
-const DEFAULT_FEE_FLOWERS = 1_000n; // Minimum fee (matches V3 fee::MIN_TX_FEE)
+const FLOWERS_PER_ZION_BIGINT = 1_000_000n; // 1 ZION = 1e6 flowers (3.0.3 decimal fork)
+const DEFAULT_FEE_FLOWERS = 1n; // Minimum fee (matches V3 fee::MIN_TX_FEE=1, 3.0.3)
 
 /**
  * Sign a message with an Ed25519 private key (DER PKCS8 format).
@@ -113,13 +113,13 @@ function buildAccountTransaction({ fromAddress, toAddress, amountZion, nonce, fe
     // String could be ZION (e.g. "1.5") or flowers (e.g. "1500000000000")
     // Treat as ZION if it contains a decimal point or is a small number
     const num = parseFloat(amountZion);
-    if (amountZion.includes('.') || num < 1e12) {
-      amountFlowers = BigInt(Math.floor(num * 1e12));
+    if (amountZion.includes('.') || num < 1e6) {
+      amountFlowers = BigInt(Math.floor(num * 1e6));
     } else {
       amountFlowers = BigInt(amountZion);
     }
   } else {
-    amountFlowers = BigInt(Math.floor(Number(amountZion) * 1e12));
+    amountFlowers = BigInt(Math.floor(Number(amountZion) * 1e6));
   }
 
   const feeFlowers = fee != null ? BigInt(fee) : DEFAULT_FEE_FLOWERS;
