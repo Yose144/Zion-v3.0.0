@@ -5,7 +5,7 @@
  * the implied wZION price in WETH. Falls back to a cached
  * WETH/USD rate from Chainlink to provide an approximate USD price.
  *
- * Seed-price fallback ($0.00002 / ZION):
+ * Seed-price fallback ($0.0002 / ZION):
  *   When the pool sqrtPriceX96 is 0 (pool not yet seeded) or the pool call
  *   fails entirely, the API returns the official seed price so that the UI
  *   always has a sensible starting number to display.
@@ -13,7 +13,7 @@
  * Seed price derivation (2026-06-24, ETH = $1 656):
  *   sqrtPriceX96 = 8_706_917_217_488_994_866_036_736
  *   tick         = -182_328
- *   usd_per_wzion = 0.000020
+ *   usd_per_wzion = 0.000200
  */
 
 export const dynamic = 'force-dynamic';
@@ -31,11 +31,11 @@ const CHAINLINK_WETH_USD = '0x71041dddad3595F9CEdDCDcF2012034b68dF6aFA'; // Base
 // ── Seed price constants (single source of truth) ─────────────────────────────
 // If the pool has not been initialised yet, we serve the intended seed price
 // so that all UIs show a consistent, correct starting value.
-const SEED_PRICE_USD       = 0.00002;          // $0.00002 / wZION
+const SEED_PRICE_USD       = 0.0002;          // $0.0002 / wZION
 const SEED_ETH_USD         = 1656;             // ETH/USD at derivation time
-const SEED_PRICE_ETH       = SEED_PRICE_USD / SEED_ETH_USD; // ≈ 1.2077e-8
-const SEED_SQRT_PRICE_X96  = '8706917217488994866036736';
-const SEED_TICK            = -182328;
+const SEED_PRICE_ETH       = SEED_PRICE_USD / SEED_ETH_USD; // ≈ 1.20773e-7
+const SEED_SQRT_PRICE_X96  = '27533654715549841774536704';
+const SEED_TICK            = -161368;
 
 // slot0() selector
 const SLOT0 = '0x3850c7bd';
@@ -103,7 +103,7 @@ function seedPriceResponse(wethUsd: number, source: 'seed-uninitialized' | 'seed
     price: {
       wzion_per_weth: 1 / SEED_PRICE_ETH,         // ≈ 82,788,000 wZION per WETH
       weth_per_wzion: SEED_PRICE_ETH,              // ≈ 1.2077e-8
-      usd_per_wzion:  SEED_PRICE_USD,              // $0.00002
+      usd_per_wzion:  SEED_PRICE_USD,              // $0.0002
       weth_usd:       ethUsd,
       tick:           SEED_TICK,                   // -182328
       sqrtPriceX96:   SEED_SQRT_PRICE_X96,

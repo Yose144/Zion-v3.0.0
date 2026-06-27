@@ -58,8 +58,8 @@ pub const MAINNET_CANONICAL_POOL_PAYOUT_WALLET: &str =
 // ---------------------------------------------------------------------------
 
 /// Block height at which DAO Treasury addresses unlock.
-/// 525,600 blocks ≈ 1 year at 60 s/block.
-pub const DAO_TREASURY_LOCK_HEIGHT: u64 = 525_600;
+/// 144,000 blocks ≈ 100 days at 60 s/block (post-3.0.3 fork, was 525,600).
+pub const DAO_TREASURY_LOCK_HEIGHT: u64 = 144_000;
 
 /// Genesis timestamp (seconds since UNIX epoch).
 /// 2026-01-01 00:00:00 UTC — frozen, all nodes must agree.
@@ -540,7 +540,7 @@ mod tests {
     }
 
     #[test]
-    fn dao_treasury_locked_until_525600() {
+    fn dao_treasury_locked_until_144000() {
         for output in PREMINE_OUTPUTS
             .iter()
             .filter(|o| o.category == "dao_treasury")
@@ -567,8 +567,8 @@ mod tests {
             .unwrap()
             .address;
         assert!(is_premine_transfer_allowed(dao_addr, 0).is_err());
-        assert!(is_premine_transfer_allowed(dao_addr, 525_599).is_err());
-        assert!(is_premine_transfer_allowed(dao_addr, 525_600).is_ok());
+        assert!(is_premine_transfer_allowed(dao_addr, 143_999).is_err());
+        assert!(is_premine_transfer_allowed(dao_addr, 144_000).is_ok());
     }
 
     #[test]

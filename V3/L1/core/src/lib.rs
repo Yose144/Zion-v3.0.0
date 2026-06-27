@@ -42,7 +42,11 @@ pub mod websocket;
 mod peer_block_validation;
 
 pub const HEADER_SIZE: usize = 80;
-pub const NODE_PROTOCOL_VERSION: &str = "zion-v3-node/0.1";
+pub const NODE_PROTOCOL_VERSION: &str = "zion-v3-node/3.0.3";
+/// Numeric protocol version — bumped to 2 at 3.0.3 decimal fork (block H+1).
+/// Pre-3.0.3 blocks (0..H) use legacy 12-decimal flowers; post-3.0.3 uses 6-decimal.
+pub const PROTOCOL_VERSION: u32 = 2;
+pub const LEGACY_PROTOCOL_VERSION: u32 = 1;
 pub const MAX_TEMPLATE_TRANSACTIONS: usize = 16;
 pub const MAX_MEMPOOL_TRANSACTIONS: usize = 4_096;
 pub const MAX_TEMPLATE_UTXO_TRANSACTIONS: usize = 16;
