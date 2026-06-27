@@ -1,9 +1,64 @@
 # ZION v3 Mainnet Roadmap
 
-Status date: **2026-06-23** (supplement below; narrative body reflects Sprint 8 / March snapshot + June 2026 hot fixes + bridge 5/5 milestone)
+Status date: **2026-06-27** (3.0.3 Decimal Fork DEPLOYED; supplements below; narrative body reflects Sprint 8 / March snapshot + June 2026 hot fixes + bridge 5/5 milestone)
 
 This file is the active source-of-truth for the clean `V3/` mainnet line.
 `V3/` is intentionally separated from the legacy root workspace. The legacy root remains migration source material and audit evidence, but new mainnet-track runtime work should land in `V3/`.
+
+## Supplement — 2026-06-27 (3.0.3 Decimal Fork — DEPLOYED ✅)
+
+### Co se stalo
+
+**3.0.3 Decimal Fork** byl nasazen na Edge server (2026-06-27):
+- **FLOWERS_PER_ZION:** 1e12 (12-decimal) → 1e6 (6-decimal)
+- **MIGRATION_HEIGHT:** 17995 (in-place fork, DB preserved)
+- **protocol_version:** zion-v3-node/3.0.3, protocol_version_numeric=2
+- **All 13 Edge services:** active
+- **Chain height:** 18014+ (těžba běží)
+- **Tests:** ~1,223 workspace tests, 0 failures
+
+### Co bylo změněno
+
+| Vrstva | Soubory | Co |
+|--------|---------|----|
+| L1 Core | migration.rs, validation.rs, peer_block_validation.rs, rpc.rs, emission.rs, genesis.rs, wallet.rs | Height-conditional consensus, RPC contract bump, LEGACY constants |
+| L1 Pool | pplns.rs | Test values |
+| CLI | wallet.rs, node.rs | FLOWERS_PER_ZION import, snapshot subcommand |
+| L2 Bridge | types.rs, main.rs | FLOWERS_TO_WEI_FACTOR 1e12 (18-6=12) |
+| L2 DAO | types.rs, config.rs, l1_scanner.rs, humanitarian.rs, treasury.rs, quorum.rs | FLOWERS_PER_ZION, thresholds, vote weights |
+| L3 WARP | config.rs, xp_bridge.rs, router.rs, types.rs, fees.rs | Decimals, fees, multipliers, divisors |
+| L3 NCL | pricing.rs | split_reward test |
+| L3 AI-Native | orchestrator.rs, zion-ai-native-api.rs | Transfer limits, price divisor |
+| ZION_OS Dashboard | app.py, dashboard.js, l3.html | 34 replacements (1e12→1e6) |
+| Web v2.9 | constants.ts, zion-rpc.ts, 10 .tsx files | 16 amount conversions |
+| Docs | 27+ files | StatusV3, AGENTS, ROADMAP, WHITEPAPER, etc. |
+
+### Commity (2026-06-27)
+
+| Commit | Popis |
+|--------|-------|
+| `3482078c` | Backend: migration + consensus + RPC + CLI |
+| `c0c477cb` | Docs: §15 Edge runbook |
+| `83063666` | Ecosystem: 18 files L1+L2+L3 |
+| `58661943` | Docs: 27 files + deploy script |
+| `631429a3` | Dashboard: app.py + dashboard.js + l3.html |
+| `b666e265` | StatusV3.md + AGENTS.md |
+| `4d6c4118` | Web v2.9: constants + .tsx + upgrade doc |
+
+### Kanonické konstanty (post-3.0.3)
+
+| Constant | Value |
+|----------|-------|
+| `FLOWERS_PER_ZION` | `1_000_000` (1e6) |
+| `LEGACY_FLOWERS_PER_ZION` | `1_000_000_000_000` (1e12) |
+| `FLOWERS_TO_WEI_FACTOR` | `1_000_000_000_000` (1e12, EVM 18-6=12) |
+| `BLOCK_REWARD_ATOMIC` | `5_400_067_000` (5400.067 ZION × 1e6) |
+| `MIGRATION_HEIGHT` | `17995` (Edge) |
+| `protocol_version` | `zion-v3-node/3.0.3` |
+
+Viz [`ZION_3.0.3_DECIMAL_FORK_PLAN.md`](../ZION_3.0.3_DECIMAL_FORK_PLAN.md) pro kompletní plán a [`StatusV3.md`](../StatusV3.md) pro deployment detaily.
+
+---
 
 ## Supplement — 2026-06-24 (Full L2 Realistický Plán + Pool Seeding)
 

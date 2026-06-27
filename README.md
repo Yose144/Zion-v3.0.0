@@ -1,4 +1,4 @@
-# ZION TerraNova v3.0.2 — Mainnet Ready
+# ZION TerraNova v3.0.3 — Mainnet Ready
 
 > **Proof of Work Layer 1 for the next 100 years.**
 >
@@ -16,7 +16,7 @@
 
 ZION is a decentralized **Layer 1 blockchain** built from scratch in **Rust**, running a canonical Proof-of-Work consensus with CPU and GPU acceleration.
 
-**v3.0.2** is the canonical mainnet code line under [`V3/`](V3/). It features a 6-layer architecture, a **Decade Decay** emission schedule designed for **100+ years**, and dedicated funding for planetary-scale humanitarian and space projects.
+**v3.0.3** is the canonical mainnet code line under [`V3/`](V3/). It features a 6-layer architecture, a **Decade Decay** emission schedule designed for **100+ years**, and dedicated funding for planetary-scale humanitarian and space projects. The 3.0.3 decimal fork (2026-06-27) migrated FLOWERS_PER_ZION from 1e12 (12-decimal) to 1e6 (6-decimal) across the entire ecosystem.
 
 ---
 
@@ -283,5 +283,5 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-*Last updated: 2026-06-19 · Genesis Hash: `7543004c76b11416ef32e2f1f5a4c72f0178f841d4559bf476e29e15a9602728` · Consensus: `deeksha_lite_v1` + `deeksha_lite_fire`*
-*Repository: `Yose144/Zion-v3.0.0` · Branch: `main` · Version: v3.0.2*
+*Last updated: 2026-06-27 · Genesis Hash: `7543004c76b11416ef32e2f1f5a4c72f0178f841d4559bf476e29e15a9602728` · Consensus: `deeksha_lite_v1` + `deeksha_lite_fire` · 3.0.3 Decimal Fork Deployed*
+*Repository: `Yose144/Zion-v3.0.0` · Branch: `main` · Version: v3.0.3*
