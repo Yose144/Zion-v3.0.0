@@ -3,12 +3,21 @@
  *
  * Proxy endpoint for the interactive web terminal on the homepage.
  * Supports read-only commands that mirror the public zion-cli:
- *   - node info / chain / peers / supply / mempool
- *   - status (health check)
- *   - ai ask "question"
- *   - wallet balance <address>
+ *
+ *   Node       — info / chain / peers / supply / mempool
+ *   Pool       — stats / miners / blocks / servers
+ *   Explorer   — block / tx / address / search / richlist / supply / stats
+ *   DeFi       — price / status
+ *   Mining     — start / calc / benchmarks
+ *   Network    — stats / peers
+ *   DAO        — proposals
+ *   Bridge     — status
+ *   Wallet     — balance
+ *   AI         — ask / status
+ *   Meta       — help / version / status / about / docs / links / clear
  *
  * No write operations, no private keys, no admin commands.
+ * All outbound fetches use AbortSignal.timeout(8000) for robustness.
  */
 
 export const dynamic = 'force-dynamic';
@@ -16,6 +25,30 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
 import { coreUrl } from '@/lib/core-endpoints';
+import {
+  FLOWERS_PER_ZION,
+  ATOMIC_UNITS_PER_ZION,
+  BLOCK_REWARD_ZION,
+  TOTAL_SUPPLY_ZION,
+  GENESIS_PREMINE_ZION,
+  POOL_FEE_PCT,
+  HUMANITARIAN_TITHE_PCT,
+  ISSOBELLA_FUND_PCT,
+  MINER_SHARE_PCT,
+} from '@/lib/constants';
+import {
+  SITE_VERSION,
+  SITE_RUNTIME_VERSION,
+  SITE_ENVIRONMENT_LABEL,
+  SITE_PRIMARY_HOST,
+  SITE_POOL_PRIMARY,
+} from '@/lib/site';
+
+// ─── Constants ──────────────────────────────────────────────────────────────
+
+const FETCH_TIMEOUT = 8000;
+const CLEAR_MARKER = '__CLEAR__';
+const WEB_CLI_VERSION = 'v2.0.0';
 
 interface CliResponse {
   ok: boolean;
@@ -23,84 +56,301 @@ interface CliResponse {
   error?: string;
 }
 
+// ─── Entry point ────────────────────────────────────────────────────────────
+
 export async function POST(req: NextRequest) {
   try {
     const { command } = await req.json();
     if (!command || typeof command !== 'string') {
-      return NextResponse.json<CliResponse>({ ok: false, output: '', error: 'No command provided' }, { status: 400 });
+      return NextResponse.json<CliResponse>(
+        { ok: false, output: '', error: 'No command provided. Type "help" for available commands.' },
+        { status: 400 },
+      );
     }
 
     const result = await executeCommand(command.trim());
     return NextResponse.json<CliResponse>(result);
   } catch (err: any) {
-    return NextResponse.json<CliResponse>({
-      ok: false,
-      output: '',
-      error: err?.message ?? 'Internal error',
-    }, { status: 500 });
+    return NextResponse.json<CliResponse>(
+      { ok: false, output: '', error: err?.message ?? 'Internal error' },
+      { status: 500 },
+    );
   }
 }
 
+// ─── Command dispatcher ─────────────────────────────────────────────────────
+
 async function executeCommand(input: string): Promise<CliResponse> {
+  if (!input) {
+    return { ok: true, output: formatHelp() };
+  }
+
   const parts = input.split(/\s+/);
-  const cmd = parts[0]?.toLowerCase();
+  const rawCmd = parts[0] ?? '';
+  const cmd = rawCmd.toLowerCase();
   const sub = parts[1]?.toLowerCase();
   const args = parts.slice(2);
 
-  // ─── help ─────────────────────────────────────────────────────
-  if (cmd === 'help' || cmd === '?' || cmd === '') {
-    return {
-      ok: true,
-      output: formatHelp(),
-    };
+  // ─── Aliases ──────────────────────────────────────────────────────────────
+  if (cmd === 'ls' || cmd === 'h' || cmd === '?' || cmd === 'commands') {
+    return { ok: true, output: formatHelp() };
+  }
+  if (cmd === 'whoami' || cmd === 'ver') {
+    return await handleVersion();
+  }
+  if (cmd === 'clr' || cmd === 'cls') {
+    return { ok: true, output: CLEAR_MARKER };
   }
 
-  // ─── version ──────────────────────────────────────────────────
-  if (cmd === 'version' || cmd === 'v') {
-    return {
-      ok: true,
-      output: 'zion web-cli v1.0.0 — community edition\nConnected to: ZION V3 Mainnet',
-    };
-  }
+  // ─── Meta ─────────────────────────────────────────────────────────────────
+  if (cmd === 'help') return { ok: true, output: formatHelp() };
+  if (cmd === 'version' || cmd === 'v') return await handleVersion();
+  if (cmd === 'status') return await handleStatus();
+  if (cmd === 'about') return { ok: true, output: formatAbout() };
+  if (cmd === 'docs') return { ok: true, output: formatDocs() };
+  if (cmd === 'links') return { ok: true, output: formatLinks() };
+  if (cmd === 'clear') return { ok: true, output: CLEAR_MARKER };
 
-  // ─── node ─────────────────────────────────────────────────────
-  if (cmd === 'node') {
-    return await handleNode(sub);
-  }
+  // ─── Node ─────────────────────────────────────────────────────────────────
+  if (cmd === 'node') return await handleNode(sub);
 
-  // ─── status ───────────────────────────────────────────────────
-  if (cmd === 'status') {
-    return await handleStatus();
-  }
+  // ─── Pool ─────────────────────────────────────────────────────────────────
+  if (cmd === 'pool') return await handlePool(sub);
 
-  // ─── ai ───────────────────────────────────────────────────────
-  if (cmd === 'ai') {
-    return await handleAi(sub, args);
-  }
+  // ─── Explorer ─────────────────────────────────────────────────────────────
+  if (cmd === 'explorer' || cmd === 'ex') return await handleExplorer(sub, args);
 
-  // ─── wallet ───────────────────────────────────────────────────
-  if (cmd === 'wallet') {
-    return await handleWallet(sub, args);
-  }
+  // ─── DeFi ─────────────────────────────────────────────────────────────────
+  if (cmd === 'defi') return await handleDefi(sub);
+
+  // ─── Mining ───────────────────────────────────────────────────────────────
+  if (cmd === 'mine' || cmd === 'mining') return await handleMine(sub, args);
+
+  // ─── Network ──────────────────────────────────────────────────────────────
+  if (cmd === 'network' || cmd === 'net') return await handleNetwork(sub);
+
+  // ─── DAO ──────────────────────────────────────────────────────────────────
+  if (cmd === 'dao') return await handleDao(sub);
+
+  // ─── Bridge ───────────────────────────────────────────────────────────────
+  if (cmd === 'bridge') return await handleBridge();
+
+  // ─── AI ───────────────────────────────────────────────────────────────────
+  if (cmd === 'ai') return await handleAi(sub, args);
+
+  // ─── Wallet ───────────────────────────────────────────────────────────────
+  if (cmd === 'wallet') return await handleWallet(sub, args);
 
   return {
     ok: false,
     output: '',
-    error: `Unknown command: ${cmd}. Type 'help' for available commands.`,
+    error: `Unknown command: "${rawCmd}". Type 'help' for available commands.`,
   };
 }
 
-// ─── Command handlers ─────────────────────────────────────────────────────
+// ─── Fetch helpers ──────────────────────────────────────────────────────────
+
+async function fetchJson<T = any>(url: string, init?: RequestInit): Promise<{ ok: boolean; status: number; data: T | null }> {
+  try {
+    const res = await fetch(url, {
+      ...init,
+      signal: AbortSignal.timeout(FETCH_TIMEOUT),
+    });
+    if (!res.ok) return { ok: false, status: res.status, data: null };
+    const data = (await res.json()) as T;
+    return { ok: true, status: res.status, data };
+  } catch (e: any) {
+    return { ok: false, status: 0, data: null };
+  }
+}
+
+function isValidAddress(addr?: string): boolean {
+  return !!addr && addr.startsWith('zion1') && addr.length >= 44;
+}
+
+function formatHashrate(h: number): string {
+  if (!h || h <= 0) return '0 H/s';
+  if (h >= 1e12) return `${(h / 1e12).toFixed(2)} TH/s`;
+  if (h >= 1e9) return `${(h / 1e9).toFixed(2)} GH/s`;
+  if (h >= 1e6) return `${(h / 1e6).toFixed(2)} MH/s`;
+  if (h >= 1e3) return `${(h / 1e3).toFixed(2)} kH/s`;
+  return `${h.toFixed(0)} H/s`;
+}
+
+function formatNum(n: number | undefined | null, digits = 2): string {
+  if (n == null || isNaN(n)) return '—';
+  return n.toLocaleString(undefined, { maximumFractionDigits: digits });
+}
+
+function formatTimeAgo(unixSeconds: number): string {
+  if (!unixSeconds) return '—';
+  const diff = Math.floor(Date.now() / 1000 - unixSeconds);
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
+function formatDuration(seconds: number): string {
+  if (!seconds) return '—';
+  const d = Math.floor(seconds / 86400);
+  const h = Math.floor((seconds % 86400) / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (d > 0) return `${d}d ${h}h ${m}m`;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
+
+// ─── Meta handlers ──────────────────────────────────────────────────────────
+
+async function handleVersion(): Promise<CliResponse> {
+  let nodeProtocol = '—';
+  try {
+    const rpc = getZionRpc();
+    const info = await rpc.getInfo();
+    nodeProtocol = info.version || '—';
+  } catch {
+    nodeProtocol = '(node unreachable)';
+  }
+
+  return {
+    ok: true,
+    output: [
+      'ZION Web CLI',
+      '',
+      `  web-cli version:     ${WEB_CLI_VERSION}`,
+      `  site version:        ${SITE_VERSION}`,
+      `  runtime version:     ${SITE_RUNTIME_VERSION}`,
+      `  node protocol:       ${nodeProtocol}`,
+      `  environment:         ${SITE_ENVIRONMENT_LABEL}`,
+      `  flowers_per_zion:    ${FLOWERS_PER_ZION.toLocaleString()} (1 ZION = 1,000,000 flowers)`,
+      `  total supply cap:    ${TOTAL_SUPPLY_ZION.toLocaleString()} ZION`,
+      `  genesis premine:     ${GENESIS_PREMINE_ZION.toLocaleString()} ZION`,
+      `  block reward:        ${BLOCK_REWARD_ZION} ZION (Decade 1)`,
+      '',
+      'Type "help" for all commands.',
+    ].join('\n'),
+  };
+}
+
+async function handleStatus(): Promise<CliResponse> {
+  const lines: string[] = ['ZION Network Status', ''];
+
+  // Node RPC
+  lines.push('── Node RPC ──');
+  let nodeOnline = false;
+  try {
+    const rpc = getZionRpc();
+    const info = await rpc.getInfo();
+    nodeOnline = true;
+    lines.push(`  ✓ Online — height ${info.height}, ${info.tx_pool_size} mempool txs`);
+    lines.push(`    Network:    ${info.nettype}`);
+    lines.push(`    Protocol:   ${info.version ?? '—'}`);
+    lines.push(`    Tip:        ${info.top_block_hash?.slice(0, 24) ?? '—'}...`);
+    lines.push(`    Peers:      ${info.outgoing_connections_count}`);
+    lines.push(`    Difficulty: ${formatNum(info.difficulty, 0)}`);
+  } catch (e: any) {
+    lines.push(`  ✗ Offline — ${e.message}`);
+  }
+
+  // Pool
+  lines.push('', '── Mining Pool ──');
+  let poolOnline = false;
+  try {
+    const { ok, data } = await fetchJson<any>('/api/pool/stats');
+    if (ok && data) {
+      poolOnline = true;
+      const agg = data.aggregate ?? {};
+      const runtime = data.runtime ?? {};
+      lines.push(`  ✓ Online — ${SITE_POOL_PRIMARY}`);
+      lines.push(`    Hashrate:       ${formatHashrate(agg.hashrate ?? runtime.network_hashrate ?? 0)}`);
+      lines.push(`    Active miners: ${agg.active_miners ?? 0}`);
+      lines.push(`    Blocks found:  ${agg.blocks_found ?? 0}`);
+      lines.push(`    Share eff:     ${agg.share_efficiency ?? '—'}%`);
+    } else {
+      lines.push(`  ⚠ Pool stats unavailable (stratum on ${SITE_POOL_PRIMARY})`);
+    }
+  } catch {
+    lines.push(`  ⚠ Pool probe failed — stratum on ${SITE_POOL_PRIMARY}`);
+  }
+
+  // DeFi
+  lines.push('', '── DeFi ──');
+  try {
+    const { ok, data } = await fetchJson<any>('/api/defi/price');
+    if (ok && data?.price) {
+      lines.push(`  ✓ Price feed online — ${data.source ?? 'live'}`);
+      lines.push(`    ZION/USD: $${formatNum(data.price.usd_per_wzion, 6)}`);
+      lines.push(`    ZION/ETH: ${formatNum(data.price.weth_per_wzion, 8)}`);
+    } else {
+      lines.push('  ⚠ Price feed unavailable');
+    }
+  } catch {
+    lines.push('  ⚠ Price feed unavailable');
+  }
+
+  // Bridge
+  lines.push('', '── Bridge ──');
+  try {
+    const { ok, data } = await fetchJson<any>('/api/bridge/status');
+    if (ok && data) {
+      lines.push(`  ${data.online ? '✓' : '✗'} ${data.online ? 'Online' : 'Offline'}`);
+      if (data.online) {
+        lines.push(`    Uptime:        ${formatDuration(data.uptime_seconds)}`);
+        lines.push(`    L1 locks:      ${data.l1_locks_detected ?? 0}`);
+        lines.push(`    EVM mints:     ${data.evm_mints_confirmed ?? 0}`);
+      }
+    } else {
+      lines.push('  ⚠ Bridge status unavailable');
+    }
+  } catch {
+    lines.push('  ⚠ Bridge status unavailable');
+  }
+
+  // AI (Hiran)
+  lines.push('', '── Hiran AI ──');
+  try {
+    const aiUrl = coreUrl('hiranInference', 'http://127.0.0.1:8002');
+    const res = await fetch(`${aiUrl}/health`, { signal: AbortSignal.timeout(FETCH_TIMEOUT) });
+    if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      lines.push(`  ✓ Online — ${aiUrl}`);
+      lines.push(`    Model: ${data.model ?? 'hiran-v2.2'}`);
+    } else {
+      lines.push(`  ⚠ Responded HTTP ${res.status}`);
+    }
+  } catch (e: any) {
+    lines.push(`  ✗ Offline — ${e.message}`);
+  }
+
+  // Website
+  lines.push('', '── Website ──');
+  lines.push(`  ✓ Online — https://zionterranova.com`);
+  lines.push(`    Version: ${SITE_VERSION}`);
+
+  lines.push('');
+  return { ok: true, output: lines.join('\n') };
+}
+
+// ─── Node handlers ──────────────────────────────────────────────────────────
 
 async function handleNode(sub?: string): Promise<CliResponse> {
   const rpc = getZionRpc();
+
+  if (!sub) {
+    return {
+      ok: false,
+      output: '',
+      error: 'Usage: node <subcommand>. Try: info, chain, peers, supply, mempool',
+    };
+  }
 
   if (sub === 'info') {
     try {
       const info = await rpc.getInfo();
       return { ok: true, output: formatNodeInfo(info) };
     } catch (e: any) {
-      return { ok: false, output: '', error: `Cannot reach node: ${e.message}` };
+      return { ok: false, output: '', error: `Cannot reach node: ${e.message}. Try 'status' for a full health check.` };
     }
   }
 
@@ -145,70 +395,348 @@ async function handleNode(sub?: string): Promise<CliResponse> {
   return {
     ok: false,
     output: '',
-    error: `Unknown node subcommand: ${sub}. Try: info, chain, peers, supply, mempool`,
+    error: `Unknown node subcommand: "${sub}". Try: info, chain, peers, supply, mempool`,
   };
 }
 
-async function handleStatus(): Promise<CliResponse> {
-  const lines: string[] = ['ZION Network Status', ''];
+// ─── Pool handlers ──────────────────────────────────────────────────────────
 
-  // Node RPC
-  lines.push('── Node RPC ──');
-  try {
-    const rpc = getZionRpc();
-    const info = await rpc.getInfo();
-    lines.push(`  ✓ Online — height ${info.height}, ${info.tx_pool_size} mempool txs`);
-    lines.push(`    Network: ${info.nettype}`);
-    lines.push(`    Tip: ${info.top_block_hash?.slice(0, 24) ?? '—'}...`);
-    lines.push(`    Peers: ${info.outgoing_connections_count}`);
-  } catch (e: any) {
-    lines.push(`  ✗ Offline — ${e.message}`);
+async function handlePool(sub?: string): Promise<CliResponse> {
+  if (!sub) {
+    return {
+      ok: false,
+      output: '',
+      error: 'Usage: pool <subcommand>. Try: stats, miners, blocks, servers',
+    };
   }
 
-  // Pool
-  lines.push('', '── Mining Pool ──');
-  try {
-    const poolUrl = 'http://127.0.0.1:8455';
-    const res = await fetch(`${poolUrl}/api/pool`, { signal: AbortSignal.timeout(5000) });
-    if (res.ok) {
-      lines.push(`  ✓ Online — ${poolUrl}`);
-    } else {
-      lines.push(`  ⚠ Responded HTTP ${res.status}`);
+  const { ok, data, status } = await fetchJson<any>('/api/pool/stats');
+  if (!ok || !data) {
+    return {
+      ok: false,
+      output: '',
+      error: `Cannot fetch pool stats${status ? ` (HTTP ${status})` : ''}. The pool may be offline. Try 'status' for a health check.`,
+    };
+  }
+
+  if (sub === 'stats') return { ok: true, output: formatPoolStats(data) };
+  if (sub === 'miners') return { ok: true, output: formatPoolMiners(data) };
+  if (sub === 'blocks') return { ok: true, output: formatPoolBlocks(data) };
+  if (sub === 'servers') return { ok: true, output: formatPoolServers(data) };
+
+  return {
+    ok: false,
+    output: '',
+    error: `Unknown pool subcommand: "${sub}". Try: stats, miners, blocks, servers`,
+  };
+}
+
+// ─── Explorer handlers ──────────────────────────────────────────────────────
+
+async function handleExplorer(sub?: string, args?: string[]): Promise<CliResponse> {
+  if (!sub) {
+    return {
+      ok: false,
+      output: '',
+      error: 'Usage: explorer <subcommand>. Try: block <height>, tx <hash>, address <zion1...>, search <query>, richlist, supply, stats',
+    };
+  }
+
+  if (sub === 'block') {
+    const heightOrHash = args?.[0];
+    if (!heightOrHash) {
+      return { ok: false, output: '', error: 'Usage: explorer block <height|hash>' };
     }
-  } catch {
-    lines.push(`  ⚠ HTTP probe failed — pool may accept stratum on port 8444`);
-  }
-
-  // AI (Hiran)
-  lines.push('', '── Hiran AI ──');
-  try {
-    const aiUrl = coreUrl('hiranInference', 'http://127.0.0.1:8002');
-    const res = await fetch(`${aiUrl}/health`, { signal: AbortSignal.timeout(5000) });
-    if (res.ok) {
-      lines.push(`  ✓ Online — ${aiUrl}`);
-    } else {
-      lines.push(`  ⚠ Responded HTTP ${res.status}`);
+    const param = /^\d+$/.test(heightOrHash) ? `height=${heightOrHash}` : `hash=${encodeURIComponent(heightOrHash)}`;
+    const { ok: okRes, data, status } = await fetchJson<any>(`/api/blockchain/block?${param}`);
+    if (!okRes || !data) {
+      return { ok: false, output: '', error: `Block not found${status ? ` (HTTP ${status})` : ''}. Check the height/hash and try again.` };
     }
-  } catch (e: any) {
-    lines.push(`  ✗ Offline — ${e.message}`);
+    return { ok: true, output: formatBlock(data) };
   }
 
-  // Website
-  lines.push('', '── Website ──');
-  lines.push(`  ✓ Online — https://zionterranova.com`);
+  if (sub === 'tx' || sub === 'transaction') {
+    const hash = args?.[0];
+    if (!hash) {
+      return { ok: false, output: '', error: 'Usage: explorer tx <tx_hash>' };
+    }
+    const { ok: okRes, data, status } = await fetchJson<any>(`/api/blockchain/transactions?tx_hash=${encodeURIComponent(hash)}`);
+    if (!okRes || !data) {
+      return { ok: false, output: '', error: `Transaction not found${status ? ` (HTTP ${status})` : ''}. Verify the hash (64 hex chars).` };
+    }
+    return { ok: true, output: formatTx(data) };
+  }
 
-  lines.push('');
+  if (sub === 'address' || sub === 'addr') {
+    const addr = args?.[0];
+    if (!isValidAddress(addr)) {
+      return { ok: false, output: '', error: 'Usage: explorer address <zion1...>. Address must start with "zion1" and be at least 44 chars.' };
+    }
+    const { ok: okRes, data, status } = await fetchJson<any>(`/api/blockchain/address?address=${encodeURIComponent(addr!)}`);
+    if (!okRes || !data) {
+      return { ok: false, output: '', error: `Address lookup failed${status ? ` (HTTP ${status})` : ''}.` };
+    }
+    return { ok: true, output: formatAddress(data) };
+  }
+
+  if (sub === 'search') {
+    const query = (args ?? []).join(' ');
+    if (!query) {
+      return { ok: false, output: '', error: 'Usage: explorer search <query>. Query can be a block height, hash, tx hash, or address.' };
+    }
+    const { ok: okRes, data } = await fetchJson<any>(`/api/blockchain/search?q=${encodeURIComponent(query)}`);
+    if (!okRes || !data) {
+      return { ok: false, output: '', error: 'Search failed. Try a block height, hash, tx hash, or zion1 address.' };
+    }
+    return { ok: true, output: formatSearch(data, query) };
+  }
+
+  if (sub === 'richlist') {
+    const { ok: okRes, data, status } = await fetchJson<any>(`/api/blockchain/richlist?limit=10`);
+    if (!okRes || !data) {
+      return { ok: false, output: '', error: `Rich list unavailable${status ? ` (HTTP ${status})` : ''}.` };
+    }
+    return { ok: true, output: formatRichlist(data) };
+  }
+
+  if (sub === 'supply') {
+    const { ok: okRes, data, status } = await fetchJson<any>(`/api/blockchain/stats`);
+    if (!okRes || !data) {
+      return { ok: false, output: '', error: `Supply info unavailable${status ? ` (HTTP ${status})` : ''}. Try 'node supply' instead.` };
+    }
+    return { ok: true, output: formatSupplyStats(data) };
+  }
+
+  if (sub === 'stats') {
+    const { ok: okRes, data, status } = await fetchJson<any>(`/api/blockchain/stats`);
+    if (!okRes || !data) {
+      return { ok: false, output: '', error: `Blockchain stats unavailable${status ? ` (HTTP ${status})` : ''}.` };
+    }
+    return { ok: true, output: formatBlockchainStats(data) };
+  }
+
+  return {
+    ok: false,
+    output: '',
+    error: `Unknown explorer subcommand: "${sub}". Try: block, tx, address, search, richlist, supply, stats`,
+  };
+}
+
+// ─── DeFi handlers ──────────────────────────────────────────────────────────
+
+async function handleDefi(sub?: string): Promise<CliResponse> {
+  if (!sub) {
+    return {
+      ok: false,
+      output: '',
+      error: 'Usage: defi <subcommand>. Try: price, status',
+    };
+  }
+
+  if (sub === 'price') {
+    const { ok, data, status } = await fetchJson<any>('/api/defi/price');
+    if (!ok || !data) {
+      return { ok: false, output: '', error: `Price feed unavailable${status ? ` (HTTP ${status})` : ''}.` };
+    }
+    return { ok: true, output: formatDefiPrice(data) };
+  }
+
+  if (sub === 'status') {
+    const { ok, data, status } = await fetchJson<any>('/api/defi/status');
+    if (!ok || !data) {
+      return { ok: false, output: '', error: `DeFi status unavailable${status ? ` (HTTP ${status})` : ''}.` };
+    }
+    return { ok: true, output: formatDefiStatus(data) };
+  }
+
+  return {
+    ok: false,
+    output: '',
+    error: `Unknown defi subcommand: "${sub}". Try: price, status`,
+  };
+}
+
+// ─── Mining handlers ────────────────────────────────────────────────────────
+
+async function handleMine(sub?: string, args?: string[]): Promise<CliResponse> {
+  if (!sub) {
+    return {
+      ok: false,
+      output: '',
+      error: 'Usage: mine <subcommand>. Try: start, calc <hashrate>, benchmarks',
+    };
+  }
+
+  if (sub === 'start') return { ok: true, output: formatMineStart() };
+
+  if (sub === 'calc' || sub === 'calculator') {
+    const hashrateInput = args?.[0];
+    if (!hashrateInput) {
+      return { ok: false, output: '', error: 'Usage: mine calc <hashrate>. Examples: "mine calc 100M", "mine calc 18KH", "mine calc 500"' };
+    }
+    return await handleMineCalc(hashrateInput);
+  }
+
+  if (sub === 'benchmarks' || sub === 'bench') return { ok: true, output: formatBenchmarks() };
+
+  return {
+    ok: false,
+    output: '',
+    error: `Unknown mine subcommand: "${sub}". Try: start, calc <hashrate>, benchmarks`,
+  };
+}
+
+function parseHashrate(input: string): number | null {
+  const m = input.trim().toLowerCase().match(/^([\d.]+)\s*([kmgt]?h?s?\/?)?$/);
+  if (!m) return null;
+  const value = parseFloat(m[1]);
+  if (isNaN(value)) return null;
+  const unit = (m[2] ?? '').replace(/h?s?\/?$/, '').replace('h', '');
+  switch (unit) {
+    case '': return value;
+    case 'k': return value * 1e3;
+    case 'm': return value * 1e6;
+    case 'g': return value * 1e9;
+    case 't': return value * 1e12;
+    default: return null;
+  }
+}
+
+async function handleMineCalc(hashrateInput: string): Promise<CliResponse> {
+  const userHashrate = parseHashrate(hashrateInput);
+  if (userHashrate == null || userHashrate <= 0) {
+    return {
+      ok: false,
+      output: '',
+      error: `Could not parse hashrate "${hashrateInput}". Try formats like "100M", "18KH", "2.5GH", or "500".`,
+    };
+  }
+
+  // Fetch pool stats (for pool hashrate + blocks) and price in parallel
+  const [poolRes, priceRes] = await Promise.all([
+    fetchJson<any>('/api/pool/stats'),
+    fetchJson<any>('/api/defi/price'),
+  ]);
+
+  const poolHashrate = poolRes.data?.aggregate?.hashrate ?? poolRes.data?.runtime?.network_hashrate ?? 0;
+  const networkHashrate = poolRes.data?.runtime?.network_hashrate ?? poolHashrate ?? 0;
+  const blocksPerDay = 86400 / 60; // 60s target block time → 1440 blocks/day
+  const blockReward = BLOCK_REWARD_ZION;
+  const dailyRewardZion = blocksPerDay * blockReward;
+
+  // Share of network hashrate
+  const effectiveHashrate = networkHashrate > 0 ? networkHashrate : poolHashrate;
+  const userShare = effectiveHashrate > 0 ? userHashrate / effectiveHashrate : 0;
+  const dailyZion = userShare * dailyRewardZion;
+  const monthlyZion = dailyZion * 30;
+  const yearlyZion = dailyZion * 365;
+
+  const usdPerZion = priceRes.data?.price?.usd_per_wzion ?? 0;
+  const dailyUsd = dailyZion * usdPerZion;
+  const monthlyUsd = monthlyZion * usdPerZion;
+
+  const lines: string[] = [
+    'Mining Reward Calculator',
+    '',
+    `  Your hashrate:        ${formatHashrate(userHashrate)}`,
+    `  Network hashrate:     ${formatHashrate(effectiveHashrate)}`,
+    `  Your share:           ${(userShare * 100).toFixed(6)}%`,
+    `  Block reward:         ${blockReward} ZION`,
+    `  Blocks/day:           ${blocksPerDay.toFixed(0)} (60s target)`,
+    '',
+    '── Estimated Rewards ──',
+    `  Daily:     ${formatNum(dailyZion, 6)} ZION  ($${formatNum(dailyUsd, 2)})`,
+    `  Monthly:   ${formatNum(monthlyZion, 4)} ZION  ($${formatNum(monthlyUsd, 2)})`,
+    `  Yearly:    ${formatNum(yearlyZion, 2)} ZION  ($${formatNum(yearlyZion * usdPerZion, 2)})`,
+    '',
+    `  ZION/USD used:  $${formatNum(usdPerZion, 6)}`,
+    '',
+    'Note: Estimates assume constant network hashrate and 100% uptime.',
+    'Pool fees and PPLNS variance will reduce actual rewards.',
+  ];
+
   return { ok: true, output: lines.join('\n') };
 }
+
+// ─── Network handlers ───────────────────────────────────────────────────────
+
+async function handleNetwork(sub?: string): Promise<CliResponse> {
+  if (!sub || sub === 'stats' || sub === 'overview') {
+    const { ok, data, status } = await fetchJson<any>('/api/network');
+    if (!ok || !data) {
+      return { ok: false, output: '', error: `Network status unavailable${status ? ` (HTTP ${status})` : ''}.` };
+    }
+    return { ok: true, output: formatNetworkStats(data) };
+  }
+
+  if (sub === 'peers') {
+    try {
+      const rpc = getZionRpc();
+      const peers = await rpc.getConnections();
+      return { ok: true, output: formatNetworkPeers(peers) };
+    } catch (e: any) {
+      return { ok: false, output: '', error: `Cannot reach node: ${e.message}` };
+    }
+  }
+
+  return {
+    ok: false,
+    output: '',
+    error: `Unknown network subcommand: "${sub}". Try: stats, peers`,
+  };
+}
+
+// ─── DAO handlers ───────────────────────────────────────────────────────────
+
+async function handleDao(sub?: string): Promise<CliResponse> {
+  if (!sub || sub === 'proposals' || sub === 'list') {
+    const { ok, data, status } = await fetchJson<any>('/api/dao/proposals?limit=20&status=Active');
+    if (!ok || data == null) {
+      // The DAO proxy returns 503 with a fallback payload when offline
+      if (data && data.note) {
+        return { ok: false, output: '', error: `DAO API offline: ${data.note}` };
+      }
+      return { ok: false, output: '', error: `DAO proposals unavailable${status ? ` (HTTP ${status})` : ''}.` };
+    }
+    const proposals = data?.proposals ?? data?.data?.proposals ?? (Array.isArray(data) ? data : []);
+    return { ok: true, output: formatDaoProposals(proposals) };
+  }
+
+  return {
+    ok: false,
+    output: '',
+    error: `Unknown dao subcommand: "${sub}". Try: proposals`,
+  };
+}
+
+// ─── Bridge handler ─────────────────────────────────────────────────────────
+
+async function handleBridge(): Promise<CliResponse> {
+  const { ok, data, status } = await fetchJson<any>('/api/bridge/status');
+  if (!ok || !data) {
+    return { ok: false, output: '', error: `Bridge status unavailable${status ? ` (HTTP ${status})` : ''}.` };
+  }
+  return { ok: true, output: formatBridge(data) };
+}
+
+// ─── AI handlers ────────────────────────────────────────────────────────────
 
 async function handleAi(sub?: string, args?: string[]): Promise<CliResponse> {
   if (sub === 'status') {
     try {
       const aiUrl = coreUrl('hiranInference', 'http://127.0.0.1:8002');
-      const res = await fetch(`${aiUrl}/health`, { signal: AbortSignal.timeout(5000) });
+      const res = await fetch(`${aiUrl}/health`, { signal: AbortSignal.timeout(FETCH_TIMEOUT) });
       if (res.ok) {
         const data = await res.json().catch(() => ({}));
-        return { ok: true, output: `Hiran AI: Online\nModel: ${data.model ?? 'hiran-v2.2'}\nEndpoint: ${aiUrl}` };
+        return {
+          ok: true,
+          output: [
+            'Hiran AI Status',
+            `  Endpoint: ${aiUrl}`,
+            `  Status:   Online`,
+            `  Model:    ${data.model ?? 'hiran-v2.2'}`,
+          ].join('\n'),
+        };
       }
       return { ok: false, output: '', error: `Hiran AI responded HTTP ${res.status}` };
     } catch (e: any) {
@@ -219,10 +747,9 @@ async function handleAi(sub?: string, args?: string[]): Promise<CliResponse> {
   if (sub === 'ask') {
     const question = (args ?? []).join(' ');
     if (!question) {
-      return { ok: false, output: '', error: 'Usage: ai ask "your question"' };
+      return { ok: false, output: '', error: 'Usage: ai ask "your question". Example: ai ask "What is the ZION consensus algorithm?"' };
     }
     try {
-      // Use the existing ai-chat API route internally
       const res = await fetch('http://127.0.0.1:3000/api/ai-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -234,26 +761,32 @@ async function handleAi(sub?: string, args?: string[]): Promise<CliResponse> {
       const answer = data.response ?? data.answer ?? data.content ?? 'No response';
       return { ok: true, output: `Hiran: ${answer}` };
     } catch (e: any) {
-      return { ok: false, output: '', error: `AI request failed: ${e.message}` };
+      return { ok: false, output: '', error: `AI request failed: ${e.message}. Try 'ai status' to check the endpoint.` };
     }
   }
 
   return {
     ok: false,
     output: '',
-    error: `Unknown ai subcommand: ${sub}. Try: ask "question", status`,
+    error: `Unknown ai subcommand: "${sub}". Try: ask "question", status`,
   };
 }
+
+// ─── Wallet handlers ────────────────────────────────────────────────────────
 
 async function handleWallet(sub?: string, args?: string[]): Promise<CliResponse> {
   if (sub === 'balance') {
     const address = (args ?? [])[0];
-    if (!address || !address.startsWith('zion1')) {
-      return { ok: false, output: '', error: 'Usage: wallet balance <zion1...address>' };
+    if (!isValidAddress(address)) {
+      return {
+        ok: false,
+        output: '',
+        error: 'Usage: wallet balance <zion1...address>. Address must start with "zion1" and be at least 44 chars.',
+      };
     }
     try {
       const rpc = getZionRpc();
-      const balance = await rpc.getAddressBalance(address);
+      const balance = await rpc.getAddressBalance(address!);
       return {
         ok: true,
         output: [
@@ -268,57 +801,239 @@ async function handleWallet(sub?: string, args?: string[]): Promise<CliResponse>
     }
   }
 
-  if (sub === 'address' || sub === 'info') {
+  if (sub === 'address' || sub === 'info' || sub === 'new' || sub === 'import') {
     return {
       ok: true,
-      output: 'Wallet operations requiring private keys are not available in the web terminal.\nUse the desktop CLI (zion wallet new/import) for full wallet management.',
+      output: [
+        'Wallet operations requiring private keys are not available in the web terminal.',
+        'Use the desktop CLI for full wallet management:',
+        '  zion wallet new       Create a new wallet',
+        '  zion wallet import    Import a wallet from seed',
+        '  zion wallet balance   Check balance (also available here: wallet balance <addr>)',
+      ].join('\n'),
     };
   }
 
   return {
     ok: false,
     output: '',
-    error: `Unknown wallet subcommand: ${sub}. Try: balance <zion1...address>`,
+    error: `Unknown wallet subcommand: "${sub}". Try: balance <zion1...address>`,
   };
 }
 
-// ─── Formatters ───────────────────────────────────────────────────────────
+// ─── Formatters: Meta ───────────────────────────────────────────────────────
 
 function formatHelp(): string {
-  return [
+  const groups: Array<{ name: string; cmds: Array<[string, string]> }> = [
+    {
+      name: 'Node',
+      cmds: [
+        ['node info', 'Node info (version, network, peers, difficulty)'],
+        ['node chain', 'Chain info (height, tip, mempool)'],
+        ['node peers', 'Connected peers'],
+        ['node supply', 'Supply info (emission, block reward)'],
+        ['node mempool', 'Mempool transactions'],
+      ],
+    },
+    {
+      name: 'Pool',
+      cmds: [
+        ['pool stats', 'Pool hashrate, miners, blocks, PPLNS, fees'],
+        ['pool miners', 'Top 10 active miners'],
+        ['pool blocks', 'Recent 10 blocks found'],
+        ['pool servers', 'Pool servers and online status'],
+      ],
+    },
+    {
+      name: 'Explorer',
+      cmds: [
+        ['explorer block <height>', 'Block details by height or hash'],
+        ['explorer tx <hash>', 'Transaction details by hash'],
+        ['explorer address <zion1...>', 'Address balance and txs'],
+        ['explorer search <query>', 'Search block/tx/address'],
+        ['explorer richlist', 'Top 10 richest addresses'],
+        ['explorer supply', 'Circulating/total/mined supply'],
+        ['explorer stats', 'Network statistics'],
+      ],
+    },
+    {
+      name: 'DeFi',
+      cmds: [
+        ['defi price', 'ZION price in USD/ETH/BTC'],
+        ['defi status', 'DeFi protocol status (wZION, bridge, staking)'],
+      ],
+    },
+    {
+      name: 'Mining',
+      cmds: [
+        ['mine start', 'Quick-start mining guide'],
+        ['mine calc <hashrate>', 'Mining reward calculator (e.g. "100M")'],
+        ['mine benchmarks', 'Hardware benchmark table'],
+      ],
+    },
+    {
+      name: 'Network',
+      cmds: [
+        ['network stats', 'Network overview (nodes, hashrate, sync)'],
+        ['network peers', 'Detailed peer list'],
+      ],
+    },
+    {
+      name: 'DAO & Bridge',
+      cmds: [
+        ['dao proposals', 'Active governance proposals'],
+        ['bridge status', 'L1↔EVM bridge relay status'],
+      ],
+    },
+    {
+      name: 'Wallet',
+      cmds: [
+        ['wallet balance <zion1...>', 'Check address balance'],
+      ],
+    },
+    {
+      name: 'AI',
+      cmds: [
+        ['ai ask "..."', 'Ask Hiran AI a question'],
+        ['ai status', 'Check Hiran AI endpoint health'],
+      ],
+    },
+    {
+      name: 'Meta',
+      cmds: [
+        ['help', 'Show this help (aliases: ls, h, ?)'],
+        ['version', 'Show CLI/site/node versions (alias: whoami)'],
+        ['status', 'Full network health check'],
+        ['about', 'ZION project info'],
+        ['docs', 'Documentation links'],
+        ['links', 'Useful links (explorer, pool, github...)'],
+        ['clear', 'Clear the terminal (alias: clr, cls)'],
+      ],
+    },
+  ];
+
+  const lines: string[] = [
     'ZION Web CLI — Available Commands',
+    '═══════════════════════════════════════════════════════════════',
     '',
-    '  node info       Show node info (version, network, peers)',
-    '  node chain      Show chain info (height, tip, mempool)',
-    '  node peers      Show connected peers',
-    '  node supply     Show supply info (total, mined, remaining)',
-    '  node mempool    Show mempool info',
+  ];
+
+  for (const group of groups) {
+    lines.push(`── ${group.name} ──`);
+    const colWidth = Math.max(...group.cmds.map((c) => c[0].length)) + 4;
+    for (const [cmdName, desc] of group.cmds) {
+      lines.push(`  ${cmdName.padEnd(colWidth)}${desc}`);
+    }
+    lines.push('');
+  }
+
+  lines.push('Aliases: ls/h/? = help · v/whoami = version · clr/cls = clear · ex = explorer');
+  lines.push('Tip: Use ↑/↓ for command history, Tab for autocomplete.');
+  return lines.join('\n');
+}
+
+function formatAbout(): string {
+  return [
+    'ZION — TerraNova',
+    '═══════════════════════════════════════════════════════════',
     '',
-    '  status          Network health check (node, pool, AI, website)',
+    'Mission:',
+    '  A humanitarian proof-of-work blockchain where mining rewards fund',
+    '  global humanitarian causes (89% miner share, 5% humanitarian tithe,',
+    '  5% Issobella Fund, 1% pool fee).',
     '',
-    '  ai ask "..."    Ask Hiran AI a question',
-    '  ai status       Check Hiran AI endpoint health',
+    'Consensus Algorithm:',
+    '  Cosmic Harmony (Deeksha/Ekam) — multi-algorithm PoW with',
+    '  deeksha_lite_v1, cosmic_harmony_ekam_deeksha_v2, and deeksha_lite_fire.',
     '',
-    '  wallet balance <zion1...>   Check balance of an address',
+    'Reward Distribution (per block):',
+    `  Miner share:        ${MINER_SHARE_PCT}%`,
+    `  Humanitarian tithe: ${HUMANITARIAN_TITHE_PCT}%`,
+    `  Issobella Fund:     ${ISSOBELLA_FUND_PCT}%`,
+    `  Pool fee:           ${POOL_FEE_PCT}%`,
     '',
-    '  help            Show this help',
-    '  version         Show CLI version',
+    'Emission Schedule:',
+    '  Decade Decay — block reward starts at 5,400.067 ZION and decays',
+    '  by 20% per decade. Tail emission ~724.785 ZION/block after decade 10.',
     '',
-    'Type a command and press Enter. Use the quick buttons above for common commands.',
+    'Supply:',
+    `  Total supply cap:   ${TOTAL_SUPPLY_ZION.toLocaleString()} ZION`,
+    `  Genesis premine:    ${GENESIS_PREMINE_ZION.toLocaleString()} ZION`,
+    `  Sub-unit:           1 ZION = ${FLOWERS_PER_ZION.toLocaleString()} flowers (6 decimals)`,
+    '',
+    'Launch:',
+    `  Site version:       ${SITE_VERSION}`,
+    `  Environment:        ${SITE_ENVIRONMENT_LABEL}`,
+    '',
+    'Gate, Gate, Paragate, Parasamgate, Bodhi Swaha.',
+    'The Golden Age begins. Peace & One Love 4ever.',
   ].join('\n');
 }
 
+function formatDocs(): string {
+  return [
+    'ZION Documentation',
+    '═══════════════════════════════════════════════════════════',
+    '',
+    '  Whitepaper:        https://zionterranova.com/whitepaper',
+    '  Docs (main):       https://zionterranova.com/docs',
+    '  Mining guide:      https://zionterranova.com/mining',
+    '  Explorer:          https://zionterranova.com/explorer',
+    '  Pool:              https://zionterranova.com/pool',
+    '  DeFi:              https://zionterranova.com/defi',
+    '  DAO:               https://zionterranova.com/dao',
+    '  Bridge:            https://zionterranova.com/bridge',
+    '  Downloads:         https://zionterranova.com/downloads',
+    '',
+    'Type "links" for a quick reference of all useful URLs.',
+  ].join('\n');
+}
+
+function formatLinks(): string {
+  return [
+    'Useful Links',
+    '═══════════════════════════════════════════════════════════',
+    '',
+    '  Website:           https://zionterranova.com',
+    '  Explorer:          https://zionterranova.com/explorer',
+    '  Pool:              https://zionterranova.com/pool',
+    '  DeFi:              https://zionterranova.com/defi',
+    '  DAO:               https://zionterranova.com/dao',
+    '  Bridge:            https://zionterranova.com/bridge',
+    '  Downloads:         https://zionterranova.com/downloads',
+    '  GitHub:            https://github.com/zionterranova',
+    '  Whitepaper:        https://zionterranova.com/whitepaper',
+    '  Pool stratum:      ' + SITE_POOL_PRIMARY,
+    '  Node RPC:          ' + SITE_PRIMARY_HOST + ':8443',
+    '',
+    'Type "docs" for documentation pages.',
+  ].join('\n');
+}
+
+// ─── Formatters: Node ───────────────────────────────────────────────────────
+
 function formatNodeInfo(info: any): string {
+  const protocolNumeric = info.version ? info.version.replace(/[^0-9.]/g, '') : '—';
   return [
     'Node Info',
-    `  Network:          ${info.nettype ?? '—'}`,
-    `  Chain height:     ${info.height ?? '—'}`,
-    `  Protocol:         ${info.version ?? '—'}`,
-    `  Tip hash:         ${info.top_block_hash?.slice(0, 32) ?? '—'}`,
-    `  Difficulty:       ${info.difficulty ?? '—'}`,
-    `  Peers:            ${info.outgoing_connections_count ?? '—'}`,
-    `  Mempool txs:      ${info.tx_pool_size ?? '—'}`,
-    `  Status:           ${info.status ?? 'OK'}`,
+    `  Network:                ${info.nettype ?? '—'}`,
+    `  Chain height:           ${info.height ?? '—'}`,
+    `  Protocol:               ${info.version ?? '—'}`,
+    `  Protocol (numeric):     ${protocolNumeric}`,
+    `  Tip hash:               ${info.top_block_hash?.slice(0, 32) ?? '—'}`,
+    `  Difficulty:             ${formatNum(info.difficulty, 0)}`,
+    `  Cumulative difficulty:  ${formatNum(info.cumulative_difficulty, 0)}`,
+    `  Peers (outgoing):       ${info.outgoing_connections_count ?? '—'}`,
+    `  Peers (incoming):       ${info.incoming_connections_count ?? '—'}`,
+    `  White peerlist:         ${info.white_peerlist_size ?? '—'}`,
+    `  Grey peerlist:          ${info.grey_peerlist_size ?? '—'}`,
+    `  Mempool txs:            ${info.tx_pool_size ?? '—'}`,
+    `  Total txs:              ${info.tx_count ?? '—'}`,
+    `  Alt blocks:             ${info.alt_blocks_count ?? '—'}`,
+    `  Block size median:      ${info.block_size_median ?? '—'}`,
+    `  Status:                 ${info.status ?? 'OK'}`,
+    `  FLOWERS_PER_ZION:       ${FLOWERS_PER_ZION.toLocaleString()}`,
+    `  ATOMIC_UNITS_PER_ZION:  ${ATOMIC_UNITS_PER_ZION.toLocaleString()}`,
   ].join('\n');
 }
 
@@ -332,6 +1047,7 @@ function formatChainInfo(info: any, lastBlock: any): string {
     `  Mempool txs:      ${info.tx_pool_size ?? '—'}`,
     `  Protocol:         ${info.version ?? '—'}`,
     lastBlock ? `  Last block time:  ${new Date(lastBlock.timestamp * 1000).toISOString()}` : '',
+    lastBlock ? `  Last block reward:${lastBlock.reward ? ' ' + (lastBlock.reward / ATOMIC_UNITS_PER_ZION) + ' ZION' : ' —'}` : '',
   ].filter(Boolean).join('\n');
 }
 
@@ -348,13 +1064,15 @@ function formatPeers(peers: any): string {
 function formatSupply(info: any, summary: any): string {
   const height = info?.height ?? summary?.info?.height ?? '—';
   const emission = summary?.emission?.total ?? '—';
-  const blockReward = 5400.067;
+  const blockReward = BLOCK_REWARD_ZION;
   return [
     'Supply Info',
     `  Chain height:     ${height}`,
     `  Total emission:   ${typeof emission === 'number' ? emission.toFixed(2) : emission} ZION`,
-    `  Block reward:     ${blockReward} ZION`,
+    `  Block reward:     ${blockReward} ZION (Decade 1)`,
     `  Mempool txs:      ${info?.tx_pool_size ?? '—'}`,
+    `  Total supply cap: ${TOTAL_SUPPLY_ZION.toLocaleString()} ZION`,
+    `  Genesis premine:  ${GENESIS_PREMINE_ZION.toLocaleString()} ZION`,
   ].join('\n');
 }
 
@@ -365,4 +1083,483 @@ function formatMempool(mempool: any): string {
     `  Transactions:     ${list.length}`,
     list.length > 0 ? `  Latest:           ${list.slice(0, 5).map((t: any) => t.tx_hash?.slice(0, 16) ?? '—').join(', ')}` : '  (empty)',
   ].filter(Boolean).join('\n');
+}
+
+// ─── Formatters: Pool ───────────────────────────────────────────────────────
+
+function formatPoolStats(data: any): string {
+  const agg = data.aggregate ?? {};
+  const fee = data.fee ?? {};
+  const pplns = data.pplns ?? {};
+  const runtime = data.runtime ?? {};
+  const servers = data.servers ?? [];
+
+  return [
+    'Pool Stats',
+    '═══════════════════════════════════════════════════════════',
+    '',
+    '── Hashrate & Miners ──',
+    `  Pool hashrate:     ${formatHashrate(agg.hashrate ?? 0)}`,
+    `  Hashrate (24h):    ${formatHashrate(agg.hashrate_24h ?? 0)}`,
+    `  Active miners:     ${agg.active_miners ?? 0}`,
+    `  Total miners:      ${agg.total_miners ?? 0}`,
+    '',
+    '── Blocks & Shares ──',
+    `  Blocks found:      ${agg.blocks_found ?? 0}`,
+    `  Valid shares:      ${formatNum(agg.valid_shares, 0)}`,
+    `  Invalid shares:    ${formatNum(agg.invalid_shares, 0)}`,
+    `  Share efficiency:  ${agg.share_efficiency ?? '—'}%`,
+    `  Accept rate:       ${agg.accept_rate_pct ?? '—'}%`,
+    '',
+    '── PPLNS ──',
+    `  Window size:       ${pplns.window_size ?? 0}`,
+    `  Window used:       ${pplns.window_used ?? 0}`,
+    `  Window %:          ${pplns.window_pct != null ? pplns.window_pct.toFixed(2) + '%' : '—'}`,
+    `  Total paid:        ${formatNum(pplns.total_paid_zion, 4)} ZION`,
+    `  Payout rounds:     ${pplns.payout_rounds ?? 0}`,
+    '',
+    '── Fee Distribution ──',
+    `  Pool fee:          ${fee.pool_fee ?? POOL_FEE_PCT}%`,
+    `  Humanitarian:      ${fee.humanitarian_tithe ?? HUMANITARIAN_TITHE_PCT}%`,
+    `  Issobella Fund:    ${fee.issobella_fund ?? ISSOBELLA_FUND_PCT}%`,
+    `  Miner share:       ${fee.miner_share ?? MINER_SHARE_PCT}%`,
+    `  Min payout:        ${fee.min_payout ?? 0.1} ZION`,
+    '',
+    '── Runtime ──',
+    `  Chain height:      ${runtime.chain_height ?? '—'}`,
+    `  Difficulty:        ${formatNum(runtime.difficulty, 0)}`,
+    `  Network hashrate:  ${formatHashrate(runtime.network_hashrate ?? 0)}`,
+    `  Pool uptime:       ${formatDuration(runtime.pool_uptime_seconds ?? 0)}`,
+    `  Server status:     ${servers.length > 0 ? (servers[0].online ? '✓ Online' : '✗ Offline') : '—'}`,
+  ].join('\n');
+}
+
+function formatPoolMiners(data: any): string {
+  const miners: any[] = data.miners ?? [];
+  if (miners.length === 0) {
+    return 'Pool Miners\n  No active miners reported.';
+  }
+  const top = miners.slice(0, 10);
+  const lines = ['Pool Miners (Top 10)', `  Total: ${miners.length}`, ''];
+  top.forEach((m, i) => {
+    const addr = m.address ?? '—';
+    const short = addr.length > 20 ? `${addr.slice(0, 12)}...${addr.slice(-6)}` : addr;
+    const lastShare = m.last_share ? formatTimeAgo(m.last_share) : '—';
+    lines.push(`  ${(i + 1).toString().padStart(2)}. ${short.padEnd(24)} last share: ${lastShare}`);
+  });
+  return lines.join('\n');
+}
+
+function formatPoolBlocks(data: any): string {
+  const blocks: any[] = data.recent_blocks ?? [];
+  if (blocks.length === 0) {
+    return 'Pool Blocks\n  No recent blocks found.';
+  }
+  const top = blocks.slice(0, 10);
+  const lines = ['Pool Blocks (Recent 10)', ''];
+  top.forEach((b) => {
+    const reward = b.reward ? (typeof b.reward === 'number' ? b.reward : Number(b.reward) / ATOMIC_UNITS_PER_ZION) : 0;
+    const miner = b.miner_address ? (b.miner_address.length > 16 ? `${b.miner_address.slice(0, 10)}...${b.miner_address.slice(-4)}` : b.miner_address) : '—';
+    lines.push(`  #${b.height ?? '—'}  reward: ${formatNum(reward, 4)} ZION  miner: ${miner}  ${formatTimeAgo(b.timestamp)}`);
+  });
+  return lines.join('\n');
+}
+
+function formatPoolServers(data: any): string {
+  const servers: any[] = data.servers ?? [];
+  if (servers.length === 0) {
+    return 'Pool Servers\n  No servers configured.';
+  }
+  const lines = ['Pool Servers', ''];
+  servers.forEach((s) => {
+    lines.push(`  ${s.online ? '✓' : '✗'} ${s.name ?? s.id ?? '—'}  ${s.flag ?? ''} ${s.host ?? '—'}:${s.stratum ?? '—'}  region: ${s.region ?? '—'}`);
+  });
+  return lines.join('\n');
+}
+
+// ─── Formatters: Explorer ───────────────────────────────────────────────────
+
+function formatBlock(b: any): string {
+  const reward = typeof b.reward === 'number' ? b.reward : 0;
+  const miner = b.miner_address ?? b.miner ?? '—';
+  const shortMiner = miner.length > 20 ? `${miner.slice(0, 12)}...${miner.slice(-6)}` : miner;
+  return [
+    'Block Details',
+    '═══════════════════════════════════════════════════════════',
+    `  Height:         ${b.height ?? '—'}`,
+    `  Hash:           ${b.hash ?? '—'}`,
+    `  Prev hash:      ${b.prev_hash?.slice(0, 32) ?? '—'}...`,
+    `  Timestamp:      ${b.timestamp ? new Date(b.timestamp * 1000).toISOString() : '—'}`,
+    `  Difficulty:     ${formatNum(b.difficulty, 0)}`,
+    `  Reward:         ${formatNum(reward, 6)} ZION`,
+    `  Miner:          ${shortMiner}${b.miner_label ? ` (${b.miner_label})` : ''}`,
+    `  Tx count:       ${b.tx_count ?? b.num_txes ?? 0}`,
+    `  Block size:     ${formatNum(b.block_size, 0)} bytes`,
+    `  Confirmations:  ${b.confirmations ?? 0}`,
+    `  Status:         ${b.status ?? 'confirmed'}`,
+    `  Major version:  ${b.major_version ?? '—'}`,
+    `  Minor version:  ${b.minor_version ?? '—'}`,
+  ].join('\n');
+}
+
+function formatTx(tx: any): string {
+  const amount = typeof tx.amount === 'number' ? tx.amount : 0;
+  const fee = typeof tx.fee === 'number' ? tx.fee : 0;
+  return [
+    'Transaction Details',
+    '═══════════════════════════════════════════════════════════',
+    `  Hash:           ${tx.tx_hash ?? tx.tx_id ?? '—'}`,
+    `  Block height:   ${tx.block_height ?? '—'}`,
+    `  Timestamp:      ${tx.block_timestamp ? new Date(tx.block_timestamp * 1000).toISOString() : '—'}`,
+    `  From:           ${tx.from ?? '—'}`,
+    `  To:             ${tx.to ?? '—'}`,
+    `  Amount:         ${formatNum(amount, 6)} ZION`,
+    `  Fee:            ${formatNum(fee, 6)} ZION`,
+    `  Nonce:          ${tx.nonce ?? '—'}`,
+    `  Confirmations:  ${tx.confirmations ?? 0}`,
+    `  Status:         ${tx.status ?? (tx.in_pool ? 'pending' : 'confirmed')}`,
+    `  Model:          ${tx.transaction_model ?? 'hybrid'}`,
+  ].join('\n');
+}
+
+function formatAddress(a: any): string {
+  const bal = a.balance ?? {};
+  const mining = a.mining_stats;
+  const shortAddr = a.address.length > 24 ? `${a.address.slice(0, 14)}...${a.address.slice(-6)}` : a.address;
+  const lines = [
+    'Address Details',
+    '═══════════════════════════════════════════════════════════',
+    `  Address:        ${shortAddr}`,
+    `  Label:          ${a.known_label ?? '—'}`,
+    `  Type:           ${a.known_type ?? '—'}`,
+    `  Balance:        ${formatNum(bal.total, 6)} ZION`,
+    `  UTXOs:          ${bal.utxo_count ?? 0}`,
+    `  Pool pending:   ${formatNum(bal.pool_pending, 6)} ZION`,
+    `  Pool paid:      ${formatNum(bal.pool_paid, 6)} ZION`,
+    `  Tx count:       ${a.transaction_count ?? 0}`,
+    `  Model:          ${a.transaction_model ?? '—'}`,
+  ];
+  if (mining) {
+    lines.push('', '── Mining Stats ──');
+    lines.push(`  Blocks found:    ${mining.blocks_found ?? 0}`);
+    lines.push(`  Accepted shares: ${formatNum(mining.accepted_shares, 0)}`);
+    lines.push(`  Rejected shares: ${formatNum(mining.rejected_shares, 0)}`);
+    lines.push(`  Hashrate (1h):   ${mining.hashrate_formatted ?? '—'}`);
+    lines.push(`  Worker:          ${mining.worker_name ?? '—'}`);
+    lines.push(`  Consciousness:   ${mining.consciousness_level ?? '—'} (×${mining.consciousness_multiplier ?? 1})`);
+  }
+  return lines.join('\n');
+}
+
+function formatSearch(data: any, query: string): string {
+  const results: any[] = data.results ?? [];
+  if (results.length === 0) {
+    return `Search: "${query}"\n  No results found. Try a block height, tx hash, or zion1 address.`;
+  }
+  const lines = [`Search: "${query}"`, `  ${results.length} result(s)`, ''];
+  results.forEach((r, i) => {
+    lines.push(`  ${(i + 1).toString().padStart(2)}. [${r.type}] ${r.title}`);
+    lines.push(`      ${r.meta}`);
+    lines.push(`      → ${r.href}`);
+  });
+  return lines.join('\n');
+}
+
+function formatRichlist(data: any): string {
+  const list: any[] = data.rich_list ?? [];
+  if (list.length === 0) {
+    return 'Rich List\n  No data available.';
+  }
+  const top = list.slice(0, 10);
+  const lines = ['Rich List (Top 10)', ''];
+  top.forEach((e) => {
+    const addr = e.address.length > 20 ? `${e.address.slice(0, 12)}...${e.address.slice(-6)}` : e.address;
+    const label = e.label ? ` (${e.label})` : '';
+    lines.push(`  #${e.rank.toString().padStart(2)}  ${formatNum(e.balance, 0).padStart(20)} ZION  ${addr}${label}  [${e.type}]`);
+  });
+  const stats = data.stats ?? {};
+  lines.push('');
+  lines.push(`  Total in list:    ${formatNum(stats.total_balance, 0)} ZION`);
+  lines.push(`  Circulating:      ${formatNum(stats.circulating_supply, 0)} ZION`);
+  lines.push(`  Top 10 %:         ${stats.top_10_percentage != null ? stats.top_10_percentage.toFixed(2) + '%' : '—'}`);
+  return lines.join('\n');
+}
+
+function formatSupplyStats(data: any): string {
+  return [
+    'Supply Info',
+    '═══════════════════════════════════════════════════════════',
+    `  Chain height:        ${data.block_height ?? '—'}`,
+    `  Premine supply:      ${formatNum(data.premine_supply, 0)} ZION`,
+    `  Mined supply:        ${formatNum(data.mined_supply, 0)} ZION`,
+    `  Circulating supply:  ${formatNum(data.circulating_supply, 0)} ZION`,
+    `  Total supply cap:    ${formatNum(data.total_supply ?? data.max_supply, 0)} ZION`,
+    `  Remaining supply:    ${formatNum(data.remaining_supply, 0)} ZION`,
+    `  Emission:            ${data.emission_pct ?? '—'}%`,
+  ].join('\n');
+}
+
+function formatBlockchainStats(data: any): string {
+  return [
+    'Blockchain Stats',
+    '═══════════════════════════════════════════════════════════',
+    '',
+    '── Chain ──',
+    `  Block height:        ${data.block_height ?? '—'}`,
+    `  Difficulty:          ${formatNum(data.difficulty, 0)}`,
+    `  Network hashrate:    ${data.network_hashrate_formatted ?? formatHashrate(data.network_hashrate ?? 0)}`,
+    `  Target block time:   ${data.target_block_time ?? 60}s`,
+    `  Avg block time:      ${data.avg_block_time ?? '—'}s`,
+    '',
+    '── Supply ──',
+    `  Circulating:         ${formatNum(data.circulating_supply, 0)} ZION`,
+    `  Mined:               ${formatNum(data.mined_supply, 0)} ZION`,
+    `  Total cap:           ${formatNum(data.total_supply, 0)} ZION`,
+    `  Emission:            ${data.emission_pct ?? '—'}%`,
+    '',
+    '── Transactions ──',
+    `  Total txs:           ${formatNum(data.tx_count, 0)}`,
+    `  Mempool:             ${data.tx_pool_size ?? 0}`,
+    '',
+    '── Peers ──',
+    `  Incoming:            ${data.incoming_connections ?? 0}`,
+    `  Outgoing:            ${data.outgoing_connections ?? 0}`,
+    `  Total:               ${data.total_connections ?? 0}`,
+    `  White peerlist:      ${data.white_peerlist_size ?? 0}`,
+    '',
+    '── Node ──',
+    `  Version:             ${data.version ?? '—'}`,
+    `  Status:              ${data.status ?? '—'}`,
+    `  Database size:       ${formatNum(data.database_size, 0)} bytes`,
+    `  Alt blocks:          ${data.alt_blocks_count ?? 0}`,
+    '',
+    '── Pool ──',
+    `  Pool hashrate:       ${data.pool_hashrate_formatted ?? formatHashrate(data.pool_hashrate ?? 0)}`,
+    `  Active miners:       ${data.active_miners ?? 0}`,
+    `  Blocks found:        ${data.pool_blocks_found ?? 0}`,
+    `  Valid shares:        ${formatNum(data.valid_shares, 0)}`,
+  ].join('\n');
+}
+
+// ─── Formatters: DeFi ───────────────────────────────────────────────────────
+
+function formatDefiPrice(data: any): string {
+  const p = data.price ?? {};
+  const btcPerZion = p.weth_per_wzion && p.weth_usd ? (p.usd_per_wzion / (p.weth_usd * 0.000016)) : null; // rough BTC proxy
+  return [
+    'ZION Price',
+    '═══════════════════════════════════════════════════════════',
+    `  Network:        ${data.network ?? '—'} (chainId ${data.chainId ?? '—'})`,
+    `  Source:         ${data.source ?? '—'}`,
+    `  Pool:           ${data.pool ?? '—'}`,
+    '',
+    `  ZION/USD:       $${formatNum(p.usd_per_wzion, 6)}`,
+    `  ZION/ETH:       ${formatNum(p.weth_per_wzion, 8)}`,
+    `  ETH/ZION:       ${formatNum(p.wzion_per_weth, 2)}`,
+    `  ETH/USD:        $${formatNum(p.weth_usd, 2)}`,
+    `  Tick:           ${p.tick ?? '—'}`,
+    '',
+    `  Fetched:        ${data.fetchedAt ? new Date(data.fetchedAt).toISOString() : '—'}`,
+  ].join('\n');
+}
+
+function formatDefiStatus(data: any): string {
+  const d = data.data ?? {};
+  const w = d.wZION ?? {};
+  const st = d.staking ?? {};
+  const f = d.farm ?? {};
+  const g = d.governance ?? {};
+  const br = d.bridge ?? {};
+  return [
+    'DeFi Protocol Status',
+    '═══════════════════════════════════════════════════════════',
+    `  Network:        ${data.network ?? '—'} (chainId ${data.chainId ?? '—'})`,
+    '',
+    '── wZION Token ──',
+    `  Total supply:   ${w.totalSupply ?? '—'}`,
+    '',
+    '── Staking ──',
+    `  Total staked:   ${st.totalStaked ?? '—'}`,
+    `  APR:            ${st.apr ?? '—'}`,
+    `  Cooldown:       ${st.cooldownDays ?? '—'} days`,
+    '',
+    '── Farm ──',
+    `  Pool count:     ${f.poolCount ?? 0}`,
+    `  Reward/sec:     ${f.rewardPerSecond ?? '0'}`,
+    '',
+    '── Governance ──',
+    `  Proposals:      ${g.proposalCount ?? 0}`,
+    '',
+    '── Bridge ──',
+    `  Threshold:      ${br.threshold ?? '—'}`,
+    `  Validators:     ${br.validatorCount ?? '—'}`,
+  ].join('\n');
+}
+
+// ─── Formatters: Mining ─────────────────────────────────────────────────────
+
+function formatMineStart(): string {
+  return [
+    'ZION Mining — Quick Start Guide',
+    '═══════════════════════════════════════════════════════════',
+    '',
+    '1. Download the ZION miner from https://zionterranova.com/downloads',
+    '   (or build from source: cargo build --release -p zion-miner)',
+    '',
+    '2. Choose a mining algorithm:',
+    '   - deeksha_lite_v1         (default, balanced)',
+    '   - cosmic_harmony_ekam_deeksha_v2  (advanced)',
+    '   - deeksha_lite_fire       (thermal-intensive, higher power)',
+    '',
+    '3. Connect to the pool:',
+    `   Pool stratum:  ${SITE_POOL_PRIMARY}`,
+    `   Pool host:     ${SITE_PRIMARY_HOST}`,
+    `   Stratum port:  8444`,
+    '',
+    '4. Native miner command (CPU):',
+    '   ZION_POOL_ADDR=' + SITE_PRIMARY_HOST + ':8444 \\',
+    '   ZION_WORKER_NAME=<your-name> \\',
+    '   ZION_MINER_ID=<miner-id> \\',
+    '   ZION_PAYOUT_ADDRESS=<zion1...address> \\',
+    '   ZION_MINER_ALGORITHM=deeksha_lite_v1 \\',
+    '   cargo run --release -p zion-miner',
+    '',
+    '5. GPU miner (AMD/NVIDIA):',
+    '   cargo build --release -p zion-miner --features gpu-opencl',
+    '   # then set ZION_GPU_BACKEND=opencl and ZION_LOOP_COUNT=1000000',
+    '',
+    '6. xmrig-compatible (if supported by your setup):',
+    '   xmrig -o ' + SITE_PRIMARY_HOST + ':8444 -u <zion1...payout_address> -p x',
+    '',
+    'Notes:',
+    '  - ZION_PAYOUT_ADDRESS must be a valid 44-char zion1... address.',
+    '  - For sustained GPU mining, set ZION_LOOP_COUNT=1000000.',
+    '  - Pool and miner binaries must be compiled from the same source version.',
+    '',
+    'Type "mine calc <hashrate>" to estimate rewards.',
+    'Type "mine benchmarks" for hardware hashrate reference.',
+  ].join('\n');
+}
+
+function formatBenchmarks(): string {
+  const rows: Array<[string, string, string, string]> = [
+    ['Hardware', 'Algorithm', 'Hashrate', 'Notes'],
+    ['RX 5700 XT (AMD)', 'deeksha_lite_fire', '18.16 KH/s', 'RDNA1, OpenCL, 85% VRAM'],
+    ['RX 5700 XT (AMD)', 'deeksha_lite_v1', '9.70 KH/s', 'RDNA1, OpenCL'],
+    ['RTX 4090 (NVIDIA)', 'deeksha_lite_v1', '~45 KH/s', 'CUDA, estimated'],
+    ['RTX 3090 (NVIDIA)', 'deeksha_lite_v1', '~28 KH/s', 'CUDA, estimated'],
+    ['Ryzen 9 7950X (CPU)', 'deeksha_lite_v1', '~2 KH/s', '32 threads'],
+    ['Ryzen 7 5800X (CPU)', 'deeksha_lite_v1', '~1.2 KH/s', '16 threads'],
+    ['Raspberry Pi 4 (CPU)', 'deeksha_lite_v1', '~50 H/s', 'ARM, not recommended'],
+  ];
+  const colWidths = [22, 22, 14, 28];
+  const lines = ['Hardware Benchmarks (ZION Deeksha)', '═══════════════════════════════════════════════════════════', ''];
+  rows.forEach((row, idx) => {
+    const padded = row.map((cell, i) => cell.padEnd(colWidths[i]));
+    lines.push(`  ${padded.join('  ')}`);
+    if (idx === 0) {
+      lines.push(`  ${colWidths.map((w) => '─'.repeat(w)).join('  ')}`);
+    }
+  });
+  lines.push('');
+  lines.push('Note: Hashrates are benchmarks (ekam-bench). Live stratum hashrate may be');
+  lines.push('lower due to nonce batch size (ZION_NONCE_COUNT). For sustained GPU');
+  lines.push('mining, set ZION_LOOP_COUNT=1000000 on the miner.');
+  return lines.join('\n');
+}
+
+// ─── Formatters: Network ────────────────────────────────────────────────────
+
+function formatNetworkStats(data: any): string {
+  const summary = data.summary ?? {};
+  const nodes: any[] = data.nodes ?? [];
+  const lines = [
+    'Network Overview',
+    '═══════════════════════════════════════════════════════════',
+    '',
+    '── Summary ──',
+    `  Total nodes:       ${summary.total ?? nodes.length}`,
+    `  Online:            ${summary.online ?? 0} / ${summary.total ?? nodes.length}`,
+    `  Online %:          ${summary.onlinePct ?? '—'}%`,
+    `  In sync:           ${summary.inSync ? '✓ Yes' : '✗ No'}`,
+    `  Max height:        ${summary.maxHeight ?? '—'}`,
+    `  Min height:        ${summary.minHeight ?? '—'}`,
+    `  Height gap:        ${summary.heightGap ?? 0}`,
+    `  Total hashrate:    ${formatHashrate(summary.totalHashrate ?? 0)}`,
+    `  Total miners:      ${summary.totalMiners ?? 0}`,
+    `  Total blocks:      ${summary.totalBlocks ?? 0}`,
+    '',
+    '── Nodes ──',
+  ];
+  nodes.forEach((n) => {
+    lines.push(`  ${n.online ? '✓' : '✗'} ${n.name ?? n.id}  ${n.host ?? '—'}  height: ${n.height ?? 0}  peers: ${n.peers ?? 0}  hashrate: ${formatHashrate(n.hashrate ?? 0)}`);
+  });
+  return lines.join('\n');
+}
+
+function formatNetworkPeers(peers: any): string {
+  const list = Array.isArray(peers) ? peers : (peers?.peers ?? []);
+  if (list.length === 0) return 'Network Peers\n  No peers connected.';
+  const lines = ['Network Peers (Detailed)', `  Peer count: ${list.length}`, ''];
+  list.forEach((p: any, i: number) => {
+    lines.push(`  ${(i + 1).toString().padStart(3)}. ${p.host ?? p.ip ?? '—'}:${p.port ?? '—'}`);
+    lines.push(`      Peer ID:     ${p.peer_id ?? p.address ?? p.node_id ?? '—'}`);
+    lines.push(`      State:       ${p.state ?? '—'}`);
+    lines.push(`      Height:      ${p.height ?? '—'}`);
+    lines.push(`      Incoming:    ${p.incoming ? 'yes' : 'no'}`);
+    lines.push(`      Live time:   ${formatDuration(p.live_time ?? 0)}`);
+    lines.push(`      Avg download:${formatNum(p.avg_download, 0)} bytes/s`);
+    lines.push(`      Avg upload:  ${formatNum(p.avg_upload, 0)} bytes/s`);
+  });
+  return lines.join('\n');
+}
+
+// ─── Formatters: DAO ────────────────────────────────────────────────────────
+
+function formatDaoProposals(proposals: any[]): string {
+  if (!Array.isArray(proposals) || proposals.length === 0) {
+    return 'DAO Proposals\n  No active proposals found. The DAO API may be offline.';
+  }
+  const lines = ['DAO Proposals (Active)', `  Count: ${proposals.length}`, ''];
+  proposals.slice(0, 10).forEach((p, i) => {
+    const yes = p.for_votes ?? p.votes_yes ?? '0';
+    const no = p.against_votes ?? p.votes_no ?? '0';
+    const ends = p.voting_ends_at ?? '—';
+    lines.push(`  ${(i + 1).toString().padStart(2)}. #${p.id ?? '—'} [${p.state ?? '—'}] ${p.title ?? 'Untitled'}`);
+    lines.push(`      Type:    ${p.proposal_type_json ?? '—'}`);
+    lines.push(`      Proposer:${p.proposer ? ' ' + (p.proposer.length > 16 ? p.proposer.slice(0, 12) + '...' : p.proposer) : ' —'}`);
+    lines.push(`      Votes:   ✓ ${yes}  ✗ ${no}`);
+    lines.push(`      Ends:    ${ends}`);
+  });
+  return lines.join('\n');
+}
+
+// ─── Formatters: Bridge ─────────────────────────────────────────────────────
+
+function formatBridge(data: any): string {
+  const lines = [
+    'Bridge Status (L1 ↔ EVM)',
+    '═══════════════════════════════════════════════════════════',
+    `  Online:              ${data.online ? '✓ Yes' : '✗ No'}`,
+    `  Uptime:              ${formatDuration(data.uptime_seconds ?? 0)}`,
+    '',
+    '── Sync ──',
+    `  Last L1 height:      ${data.last_l1_height ?? 0}`,
+    `  Last EVM block:      ${data.last_evm_block ?? 0}`,
+    '',
+    '── L1 → EVM (Lock & Mint) ──',
+    `  Locks detected:      ${data.l1_locks_detected ?? 0}`,
+    `  Locks finalized:     ${data.l1_locks_finalized ?? 0}`,
+    `  EVM mints submitted: ${data.evm_mints_submitted ?? 0}`,
+    `  EVM mints confirmed: ${data.evm_mints_confirmed ?? 0}`,
+    '',
+    '── EVM → L1 (Burn & Unlock) ──',
+    `  EVM burns detected:  ${data.evm_burns_detected ?? 0}`,
+    `  L1 unlocks submitted:${data.l1_unlocks_submitted ?? 0}`,
+    `  L1 unlocks confirmed:${data.l1_unlocks_confirmed ?? 0}`,
+    '',
+    '── Errors ──',
+    `  Total errors:        ${data.errors_total ?? 0}`,
+  ];
+  return lines.join('\n');
 }
