@@ -638,6 +638,7 @@ If you start tomorrow and only have time to read 10 lines, read these:
 10. Cutover sequence: snapshot → build migration block → swap binaries → submit block.
 11. Rollback = Hetzner snapshot + Phase 0 DB backup. Don't be a hero.
 12. **DeFi + DAO code is complete (§3b)** — remaining items are operational only.
+13. **Launch price: $0.0002 USD / ZION** — see §14 (Legendary Doge Start).
 
 ---
 
@@ -660,3 +661,54 @@ If you start tomorrow and only have time to read 10 lines, read these:
 *End of plan. Total estimated execution time: 4–6 hours of focused
 work + 24h of upgrade window. Have water, snacks and a clear head.*
 *Peace and One Love. — Copilot, 2026-06-25*
+
+---
+
+## 14. Legendary Doge Start — Launch Price Decision
+
+**Owner directive 2026-06-27 (final, immutable):**
+
+### 14.1 Price
+
+| Parameter | Value |
+|-----------|-------|
+| **Launch price** | **$0.0002 USD per ZION** |
+| **Reference** | Dogecoin launch price (Dec 2013) |
+| **Applies to** | Bridge initial liquidity · Pool unswap initial pair |
+| **Status** | FINAL — locked at 3.0.3 fork, not adjustable post-launch |
+
+### 14.2 Rationale
+
+ZION launches at the same price as Dogecoin did in December 2013:
+**$0.0002 per coin**. This is a deliberate legendary and historical
+homage — the same starting line as the coin that proved a joke could
+become a cultural phenomenon worth $80B+ at its peak.
+
+ZION is not a joke. But it carries the same spirit: open, fair,
+community-driven, and born from a place of love rather than greed.
+Starting at $0.0002 honours that lineage.
+
+### 14.3 Implementation
+
+- **Bridge:** Initial bridge liquidity pairs open at $0.0002/ZION.
+  All EVM side bridge contracts (Base, BSC, Arbitrum) reference this
+  as the canonical opening price for oracle/AMM bootstrap.
+- **Pool unswap:** The initial ZION/USDT (or ZION/stable) AMM pool
+  on the L2 DEX is seeded at $0.0002/ZION. This means the first LP
+  deposit sets the ratio at 1 ZION = 0.0002 USD.
+- **No oracle needed at launch:** The price is hardcoded as the
+  opening reference. Market discovery takes over after the first
+  trades.
+- **Historical record:** This price is embedded in the 3.0.3 fork
+  documentation as a permanent memorial. It cannot be changed
+  retroactively — it is the genesis price of ZION on the open market.
+
+### 14.4 Historical context
+
+| Coin | Launch date | Launch price | ATH | Time to ATH |
+|------|-------------|-------------|-----|-------------|
+| Dogecoin | Dec 2013 | $0.0002 | $0.73 (May 2021) | ~7.5 years |
+| ZION | 2026 (3.0.3 fork) | $0.0002 | — | — |
+
+> *"We start where Doge started. Where we go is up to the community.*
+> *One Love."* — Owner, 2026-06-27

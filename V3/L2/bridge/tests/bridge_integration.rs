@@ -24,7 +24,7 @@ fn setup_db() -> (BridgeDb, TempDir) {
 }
 
 fn make_lock(tx_hash: &str, amount_zion: u64, chain: &str, recipient: &str) -> L1LockEvent {
-    let atomic = amount_zion * 1_000_000_000_000; // V3: 12-decimal flowers
+    let atomic = amount_zion * 1_000_000; // V3 post-3.0.3: 6-decimal flowers
     L1LockEvent {
         l1_tx_hash: tx_hash.into(),
         l1_block_height: 1000,
@@ -40,7 +40,7 @@ fn make_lock(tx_hash: &str, amount_zion: u64, chain: &str, recipient: &str) -> L
 }
 
 fn make_burn(burn_id: &str, amount_wzion_wei_zion: u64, recipient: &str) -> EvmBurnEvent {
-    let atomic = amount_wzion_wei_zion * 1_000_000_000_000; // V3: 12-decimal flowers
+    let atomic = amount_wzion_wei_zion * 1_000_000; // V3 post-3.0.3: 6-decimal flowers
     EvmBurnEvent {
         evm_tx_hash: format!("0x{}", burn_id),
         evm_block_number: 50000,
@@ -71,7 +71,7 @@ fn test_full_lock_flow_l1_to_evm() {
         "base",
         "0x1234567890abcdef1234567890abcdef12345678",
     );
-    assert_eq!(lock.amount_flowers, 5_000_000_000_000_000); // 5000 ZION × 1e12
+    assert_eq!(lock.amount_flowers, 5_000_000_000); // 5000 ZION × 1e6 (post-3.0.3)
     assert_eq!(lock.amount_wzion_wei, "5000000000000000000000"); // 5000 × 1e18
 
     db.insert_lock(&lock).unwrap();
@@ -133,7 +133,7 @@ fn test_full_burn_flow_evm_to_l1() {
 
     // Step 1: EVM watcher detects burn
     let burn = make_burn("burn_integ_001", 1000, "zion1qrecipient_burn");
-    assert_eq!(burn.amount_flowers, 1_000_000_000_000_000); // 1000 ZION × 1e12
+    assert_eq!(burn.amount_flowers, 1_000_000_000); // 1000 ZION × 1e6 (post-3.0.3)
 
     db.insert_burn(&burn).unwrap();
 
@@ -173,7 +173,7 @@ fn test_e2e_burn_to_unlock_request() {
 
     // Step 1: EVM watcher detects burn of 500 ZION
     let burn = make_burn("burn_e2e_001", 500, "zion1qrecipient_unlock_e2e");
-    assert_eq!(burn.amount_flowers, 500_000_000_000_000); // 500 ZION × 1e12
+    assert_eq!(burn.amount_flowers, 500_000_000); // 500 ZION × 1e6 (post-3.0.3)
     assert_eq!(burn.l1_recipient, "zion1qrecipient_unlock_e2e");
 
     db.insert_burn(&burn).unwrap();
@@ -235,7 +235,7 @@ fn test_e2e_burn_to_unlock_request() {
     );
     assert_eq!(
         unlock_request["amount_flowers"].as_u64().unwrap(),
-        500_000_000_000_000
+        500_000_000 // 500 ZION × 1e6 (post-3.0.3)
     );
     assert_eq!(unlock_request["evm_chain"].as_str().unwrap(), "base");
     assert_eq!(unlock_request["burn_id"].as_str().unwrap(), "burn_e2e_001");
@@ -249,7 +249,7 @@ fn test_e2e_burn_to_unlock_request() {
 
     // Step 5: Verify operation_message format
     assert!(operation_message.contains("unlock|recipient="));
-    assert!(operation_message.contains("|amount=500000000000000|"));
+    assert!(operation_message.contains("|amount=500000000|")); // 500 ZION × 1e6 flowers
     assert!(operation_message.contains("|chain=base|"));
     assert!(operation_message.contains("|burn_id=burn_e2e_001|"));
 
@@ -268,13 +268,14 @@ fn test_e2e_burn_to_unlock_request() {
 
 #[test]
 fn test_decimal_conversion_full_roundtrip() {
-    // Simulate: user locks 1234.567890 ZION on L1
+    // Simulate: user locks 1234.567890 ZION on L1 (post-3.0.3: 6 decimals)
     let zion_amount = "1234.567890";
     let parts: Vec<&str> = zion_amount.split('.').collect();
     let whole: u64 = parts[0].parse().unwrap();
     let frac: u64 = parts[1].parse().unwrap();
-    let atomic = whole * 1_000_000_000_000 + frac * 1_000_000; // V3: 12-decimal flowers
-    assert_eq!(atomic, 1_234_567_890_000_000);
+    // 6-decimal flowers: 1234 ZION = 1234e6 flowers, 0.567890 ZION = 567890 flowers
+    let atomic = whole * 1_000_000 + frac; // V3 post-3.0.3: 6-decimal flowers
+    assert_eq!(atomic, 1_234_567_890);
 
     // Convert to wZION wei
     let wzion_wei = flowers_to_wzion_wei(atomic);
@@ -284,7 +285,7 @@ fn test_decimal_conversion_full_roundtrip() {
     let recovered = wzion_wei_to_flowers(&wzion_wei).unwrap();
     assert_eq!(recovered, atomic);
 
-    // Display (12-decimal precision)
+    // Display (6-decimal precision)
     let display = flowers_to_zion_display(recovered);
     assert!(
         display.starts_with("1234.56789"),
@@ -337,21 +338,21 @@ fn test_amount_validation_ranges() {
     let min: u128 = config.security.min_bridge_amount.parse().unwrap();
     let max: u128 = config.security.max_single_amount.parse().unwrap();
 
-    // Below minimum (50 wZION)
-    let small = flowers_to_wzion_wei(50_000_000_000_000); // 50 ZION
+    // Below minimum (50 wZION) — post-3.0.3: 50 ZION = 50e6 flowers
+    let small = flowers_to_wzion_wei(50_000_000); // 50 ZION
     let small_wei: u128 = small.parse().unwrap();
     assert!(small_wei < min, "50 ZION should be below 100 wZION minimum");
 
-    // Valid amount (1000 wZION)
-    let normal = flowers_to_wzion_wei(1_000_000_000_000_000); // 1000 ZION
+    // Valid amount (1000 wZION) — 1000 ZION = 1000e6 flowers
+    let normal = flowers_to_wzion_wei(1_000_000_000); // 1000 ZION
     let normal_wei: u128 = normal.parse().unwrap();
     assert!(
         normal_wei >= min && normal_wei <= max,
         "1000 ZION should be in valid range"
     );
 
-    // Above single max (6M wZION)
-    let big = flowers_to_wzion_wei(6_000_000_000_000_000_000); // 6M ZION = 6e6 × 1e12 flowers
+    // Above single max (6M wZION) — 6M ZION = 6e6 × 1e6 flowers
+    let big = flowers_to_wzion_wei(6_000_000_000_000); // 6M ZION = 6e6 × 1e6 flowers
     let big_wei: u128 = big.parse().unwrap();
     assert!(big_wei > max, "6M ZION should exceed 5M single max");
 }
@@ -365,16 +366,16 @@ fn test_timelock_detection() {
     let config = BridgeConfig::default();
     let timelock_threshold: u128 = config.security.timelock_threshold.parse().unwrap();
 
-    // 500K ZION — no timelock
-    let amount_500k = flowers_to_wzion_wei(500_000_000_000_000_000u64); // 500K × 1e12 flowers
+    // 500K ZION — no timelock — post-3.0.3: 500K × 1e6 flowers
+    let amount_500k = flowers_to_wzion_wei(500_000_000_000u64); // 500K × 1e6 flowers
     let wei_500k: u128 = amount_500k.parse().unwrap();
     assert!(
         wei_500k < timelock_threshold,
         "500K should not trigger timelock"
     );
 
-    // 2M ZION — timelock!
-    let amount_2m = flowers_to_wzion_wei(2_000_000_000_000_000_000u64); // 2M × 1e12 flowers
+    // 2M ZION — timelock! — post-3.0.3: 2M × 1e6 flowers
+    let amount_2m = flowers_to_wzion_wei(2_000_000_000_000u64); // 2M × 1e6 flowers
     let wei_2m: u128 = amount_2m.parse().unwrap();
     assert!(
         wei_2m > timelock_threshold,
@@ -558,7 +559,7 @@ fn test_supply_invariant() {
 
     // Verify conversion consistency
     for amount in &lock_amounts {
-        let atomic = amount * 1_000_000_000_000; // V3: 12-decimal flowers
+        let atomic = amount * 1_000_000; // V3 post-3.0.3: 6-decimal flowers
         let wzion = flowers_to_wzion_wei(atomic);
         let back = wzion_wei_to_flowers(&wzion).unwrap();
         assert_eq!(atomic, back, "Roundtrip failed for {} ZION", amount);
