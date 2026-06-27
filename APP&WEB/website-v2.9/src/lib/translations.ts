@@ -69,10 +69,10 @@ const t = {
 
   /* ─── Hero ─── */
   hero: {
-    badge_version:  { cs: 'V3 Mainnet · 3.0.2 From Genesis to the Star', en: 'V3 Mainnet · 3.0.2 From Genesis to the Star' },
+    badge_version:  { cs: 'V3 Mainnet · 3.0.3 From Genesis to the Star', en: 'V3 Mainnet · 3.0.3 From Genesis to the Star' },
     badge_chv4:     { cs: 'Core + Edge topologie', en: 'Core + Edge topology' },
     tagline:        { cs: 'Nativní Rust blockchain s Proof-of-Work konsensem', en: 'Native Rust blockchain with Proof-of-Work consensus' },
-    title_sub:      { cs: 'Genesis Live · Core + Edge · canonical runtime v3.0.2 Ekam Deeksha', en: 'Genesis Live · Core + Edge · canonical runtime v3.0.2 Ekam Deeksha' },
+    title_sub:      { cs: 'Genesis Live · Core + Edge · canonical runtime v3.0.3 Ekam Deeksha · 6-decimal flowers', en: 'Genesis Live · Core + Edge · canonical runtime v3.0.3 Ekam Deeksha · 6-decimal flowers' },
     description:    {
       cs: 'ZION TerraNova mainnet launch countdown — 31. prosinec 2026 (Silvestr). Příprava V3 mainnet v Core + Edge topologii (Core PC + Hetzner Edge VPS), s veřejným poolem, mining binárkami a provozní telemetrií.',
       en: 'ZION TerraNova mainnet launch countdown — 31 December 2026 (New Year\'s Eve). Preparing V3 mainnet in Core + Edge topology (Core PC + Hetzner Edge VPS), with public pool, mining binaries, and operational telemetry.',
@@ -85,7 +85,7 @@ const t = {
     signal_mainnet: { cs: 'Launch Countdown', en: 'Launch Countdown' },
     signal_loc:     { cs: 'Core PC + Edge VPS · ShareRelay', en: 'Core PC + Edge VPS · ShareRelay' },
     signal_target:  { cs: '31. prosince 2026', en: '31 December 2026' },
-    signal_status_l1: { cs: 'Genesis Launch active · runtime v3.0.2', en: 'Genesis Launch active · runtime v3.0.2' },
+    signal_status_l1: { cs: 'Genesis Launch active · runtime v3.0.3', en: 'Genesis Launch active · runtime v3.0.3' },
     signal_status_nodes: { cs: 'Core + Edge online', en: 'Core + Edge online' },
     signal_status_mainnet: { cs: 'Launch Countdown · 31. prosince 2026', en: 'Launch Countdown · 31 December 2026' },
     metric_loc:     { cs: 'Řádků kódu (Rust)', en: 'Rust LOC' },

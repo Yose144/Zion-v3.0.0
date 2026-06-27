@@ -115,7 +115,7 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
           {cs ? 'Nativni Rust CLI' : 'Native Rust CLI'}
         </p>
-        <h2 className="text-3xl font-semibold text-white">ZION CLI · v3.0.2</h2>
+        <h2 className="text-3xl font-semibold text-white">ZION CLI · v3.0.3</h2>
         <p className="text-gray-400 max-w-3xl">
           {cs
             ? 'Jedna unifikovaná binárka obsahující celý stack: node, pool, miner, wallet, bridge, dao, deploy, monitoring a topology.'

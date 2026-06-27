@@ -170,19 +170,48 @@ docs/3.0.1Genesis/         — Všechny 3.0.0–3.0.1 dokumenty
 |-------|-------|--------------|
 | 3.0.0 | 2026-05 | Genesis reset, L1 mainnet, core pool/miner |
 | 3.0.1 | 2026-06-10 | Fire fork, KAT vektory, dashboard 2.0, L2/L3 základ |
-| **3.0.2** | **2026-06-18** | **L2/L3 kanonizace, L4 Oasis příprava, root cleanup** |
-| 3.0.3 | 2026-07 | L4 Oasis alpha, mobilní app, L2/L3 mainnet deploy |
+| 3.0.2 | 2026-06-18 | L2/L3 kanonizace, L4 Oasis příprava, root cleanup |
+| **3.0.3** | **2026-06-27** | **Decimal fork (1e12→1e6), Edge deployment, web upgrade, dashboard tuning** |
 | 3.1.0 | 2026-Q4 | Full L2-L6 integrace, satellite test |
+
+### 3.0.3 Decimal Fork — Co bylo dokončeno (2026-06-27)
+
+- ✅ **L1 Core:** migration.rs module, height-conditional consensus, RPC contract bump (_flowers canonical)
+- ✅ **L2 Bridge:** FLOWERS_TO_WEI_FACTOR 1e6→1e12 (EVM 18-6=12)
+- ✅ **L2 DAO:** FLOWERS_PER_ZION, thresholds, treasury, vote weights
+- ✅ **L3 WARP:** ChainId decimals, fees, router, xp_bridge
+- ✅ **L3 NCL + AI-Native:** pricing, orchestrator, transfer limits
+- ✅ **ZION_OS Dashboard:** app.py, dashboard.js, l3.html (34 replacements)
+- ✅ **Web v2.9:** constants.ts, zion-rpc.ts, 10 .tsx files (16 amount conversions)
+- ✅ **Edge deployment:** DB preserved, MIGRATION_HEIGHT=17995, 13/13 services active
+- ✅ **Documentation:** 27 files + StatusV3.md + AGENTS.md + ROADMAP.md + upgrade doc
+- ✅ **Tests:** ~1,223 workspace tests, 0 failures
+- ✅ **Price decision:** $0.0002/ZION (Doge legend)
+
+Viz [`ZION_3.0.3_DECIMAL_FORK_PLAN.md`](ZION_3.0.3_DECIMAL_FORK_PLAN.md) pro kompletní plán a [`StatusV3.md`](StatusV3.md) pro deployment detaily.
 
 ---
 
-## 7. Okamžité Akce (Next Steps)
+## 7. Okamžité Akce (Next Steps po 3.0.3)
 
-1. **Validator funding** — Dofundovat 5 mainnet validator adres na ≥0.01 ETH (deployer má jen ~0.002 ETH, potřeba externí ETH).
-2. **E2E bridge test** — Lock ZION na L1 bridge vault `zion1w0r0...` → ověřit mint wZION na Base → burn wZION → ověřit unlock na L1.
-3. **Push aktualizace** — `git push origin main` pro ZION_3.0.2_PLAN.md.
-4. **L3 verify** — Testovat WARP registry, swap agregátor.
-5. **L4 kickoff** — UE5 build pipeline, L4 → L1 bridge návrh.
+### ✅ Hotovo (3.0.3 Decimal Fork — 2026-06-27)
+- [x] Decimal fork 1e12→1e6 — kompletní ekosystém migrován
+- [x] Edge deployment — DB preserved, 13/13 services active
+- [x] Web v2.9 upgrade — constants + .tsx + upgrade doc
+- [x] Dashboard tuning — PPLNS, payout, balance, send e2e verifikováno
+- [x] Dokumentace — 27+ souborů aktualizováno
+
+### 🔄 Další na plánu (3.1.0 — Q4 2026)
+
+1. **DeFi Liquidity Seeding** — UniV3Pool inicializace (≥0.80 ETH), Staking/Farm reward activation
+2. **E2E Bridge test (burn direction)** — Base burn → L1 unlock (P0 blocker)
+3. **Validator funding** — Dofundovat 5 mainnet validator adres na ≥0.01 ETH
+4. **Wallet SDK** — pro mobile integrace (blocker pro mobilní app)
+5. **TX history RPC** — L1 node rozšíření pro explorer
+6. **L4 Oasis alpha** — UE5 build pipeline, L4→L1 bridge návrh, territory systém
+7. **Mobilní companion app** — React Native základ
+8. **L3 verify** — Testovat WARP registry, swap agregátor E2E
+9. **Hardware wallet** — Ledger/Trezor integrace (Phase 4)
 
 ---
 

@@ -1,8 +1,8 @@
-export const SITE_VERSION = 'v3.0.2';
+export const SITE_VERSION = 'v3.0.3';
 export const SITE_RELEASE_NAME = 'from genesis to the star';
-export const SITE_RELEASE_LABEL = `${SITE_VERSION} \"${SITE_RELEASE_NAME}\"`;
-export const SITE_RUNTIME_VERSION = 'v3.0.2';
-export const SITE_RUNTIME_NAME = 'Deeksha/Ekam canonical';
+export const SITE_RELEASE_LABEL = `${SITE_VERSION} "${SITE_RELEASE_NAME}"`;
+export const SITE_RUNTIME_VERSION = 'v3.0.3';
+export const SITE_RUNTIME_NAME = 'Deeksha/Ekam canonical · 6-decimal flowers';
 export const SITE_RUNTIME_LABEL = `${SITE_RUNTIME_VERSION} ${SITE_RUNTIME_NAME}`;
 export const SITE_ENVIRONMENT_LABEL = 'V3 Mainnet';
 export const SITE_PUBLIC_LAUNCH_STATUS = 'from genesis to the star';
