@@ -496,30 +496,30 @@ PowerShell `ConvertTo-Json` emits Czech decimal commas on Czech Windows. Fix: wr
 
 **Canonical Units (FLOWERS_PER_ZION):**
 
-> **⚠️ CRITICAL: All amounts in L1 core, RPC, wallet code, and on-chain transactions are in FLOWERS (10^-12 ZION), not ZION.**
+> **⚠️ CRITICAL: All amounts in L1 core, RPC, wallet code, and on-chain transactions are in FLOWERS (10^-6 ZION), not ZION.** *(updated to 6-decimal in 3.0.3 fork)*
 
-- **1 ZION = 1,000,000,000,000 flowers** (10^12, one trillion)
-- Canonical constant: `FLOWERS_PER_ZION = 1_000_000_000_000` (Rust) / `1000000000000` (JS/TS)
+- **1 ZION = 1,000,000 flowers** (10^6, one million)
+- Canonical constant: `FLOWERS_PER_ZION = 1_000_000` (Rust) / `1000000` (JS/TS)
 - Defined in: `V3/L1/core/src/emission.rs:11` (canonical source), `wallet.rs:156`, `blockchain.js:17`
 - RPC returns amounts in flowers: `balance_flowers`, `amount_flowers`, `fee_zion` (confusingly named but contains flowers)
-- UI/dashboard converts: `flowers / 1_000_000_000_000` → ZION for display
-- Account transactions: `amount_zion` field contains flowers (1000000000 = 0.001 ZION)
+- UI/dashboard converts: `flowers / 1_000_000` → ZION for display
+- Account transactions: `amount_zion` field contains flowers (1000 = 0.001 ZION)
 - UTXO transactions: `amount` field contains flowers (same unit)
 
 **Conversion examples:**
-- 0.001 ZION = `1_000_000_000` flowers (1 billion)
-- 1 ZION = `1_000_000_000_000` flowers (1 trillion)
-- 1000 ZION = `1_000_000_000_000_000` flowers (1 quadrillion)
-- Genesis Creator (Slot 11): 590 million ZION = `590_000_000_000_000_000_000` flowers (590 quintillion)
+- 0.001 ZION = `1_000` flowers (1 thousand)
+- 1 ZION = `1_000_000` flowers (1 million)
+- 1000 ZION = `1_000_000_000` flowers (1 billion)
+- Genesis Creator (Slot 11): 590 million ZION = `590_000_000_000_000` flowers (590 trillion)
 
 **Verification:**
 ```javascript
-const FLOWERS_PER_ZION = 1_000_000_000_000n;
-const flowers = 590_000_000_000_000_000_000n; // Genesis Creator balance
+const FLOWERS_PER_ZION = 1_000_000n;
+const flowers = 590_000_000_000_000n; // Genesis Creator balance
 const zion = flowers / FLOWERS_PER_ZION; // = 590_000_000 ZION = 590 million
 ```
 
-**⚠️ Common mistake:** RPC returns `balance_flowers: "590000000000000000000"` which is 590 **million** ZION, not 590 billion. Always divide by 10^12 to get ZION.
+**⚠️ Common mistake:** RPC returns `balance_flowers: "590000000000000"` which is 590 **million** ZION, not 590 billion. Always divide by 10^6 to get ZION.
 
 **⚠️ Live RPC contract drift (verified 2026-06-25 against `http://77.42.71.94:8443/jsonrpc`):**
 
@@ -535,17 +535,17 @@ be aware of all three. Full per-method JSON samples are documented in
 | `_zion` containing flowers ❌ BUG | `getBlockTemplate` (`reward_zion`, `estimated_miner_reward_zion`, `total_fees_zion`) | **Treat as flowers** — DO NOT render directly as ZION; the field is mis-named. Divide by `FLOWERS_PER_ZION` first |
 
 **Rule for new RPC methods:** Use only `_flowers` (on-the-wire) and
-`_zion` (genuine display floats, ≤ 12 decimal places). Never overload
+`_zion` (genuine display floats, ≤ 6 decimal places). Never overload
 `_zion` with raw flowers values. Cross-chain bridge code adds `_wei`
-for EVM-side amounts (18 decimals; `flowers × 10⁶ = wei`).
+for EVM-side amounts (18 decimals; `flowers × 10¹² = wei`).
 
 **Authoritative docs for unit work:**
 - [`docs/CANONICAL_UNITS_AUDIT.md`](./docs/CANONICAL_UNITS_AUDIT.md) —
   full audit, live JSON samples, recommended L1 contract bump (§3b.5),
   backend endpoint matrix, explorer endpoint canon.
 - [`docs/WARP_ARCHITECTURE.md`](./docs/WARP_ARCHITECTURE.md) —
-  cross-chain decimal table (corrected 2026-06-25: L1 = 12 decimals,
-  not 6).
+  cross-chain decimal table (corrected 2026-06-25: L1 = 6 decimals,
+  updated 3.0.3 fork).
 
 ### Genesis Backup/Restore (Dashboard Integration)
 

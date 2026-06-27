@@ -12,11 +12,11 @@ Current production tracker: `V3/docs/L2_MAINNET_PRODUCTION_CHECKLIST.md`
 
 ### The Problem
 
-V3 mainnet uses **12-decimal flowers**:
+V3 mainnet uses **6-decimal flowers** (updated 3.0.3 fork):
 
 ```
-1 ZION = 1,000,000,000,000 flowers (1e12)
-FLOWERS_PER_ZION = 1_000_000_000_000
+1 ZION = 1,000,000 flowers (1e6)
+FLOWERS_PER_ZION = 1_000_000
 ```
 
 Source: `V3/L1/core/src/emission.rs`, V3 ROADMAP constitutional table.
@@ -33,16 +33,16 @@ Source: `L2/bridge/src/types.rs`, `L3/warp/src/types.rs`.
 ### Correct V3 Conversion
 
 ```
-V3 L1:  1 ZION = 1e12 flowers  (12 decimals)
+V3 L1:  1 ZION = 1e6 flowers   (6 decimals)  (updated 3.0.3 fork)
 EVM:    1 wZION = 1e18 wei     (18 decimals)
-Gap:    18 - 12 = 6
-Correct multiplier: × 1e6 (L1→EVM)
-Correct divisor:    ÷ 1e6 (EVM→L1)
+Gap:    18 - 6 = 12
+Correct multiplier: × 1e12 (L1→EVM)
+Correct divisor:    ÷ 1e12 (EVM→L1)
 ```
 
 ### If Deployed Unfixed
 
-Locking 1 ZION (= 1e12 flowers) would be multiplied by 1e12 → 1e24 wei → **1,000,000 wZION minted** instead of 1 wZION. This is a **1,000,000× inflation exploit**.
+Locking 1 ZION (= 1e6 flowers) would be multiplied by 1e12 → 1e18 wei → **1,000,000 wZION minted** instead of 1 wZION. This is a **1,000,000× inflation exploit**. (Note: pre-3.0.3 fork, V3 used 1e12 flowers; the exploit math was different then. Updated 3.0.3 fork.)
 
 ### Files That Must Change
 
@@ -54,8 +54,8 @@ Locking 1 ZION (= 1e12 flowers) would be multiplied by 1e12 → 1e24 wei → **1
 | `L2/bridge/src/types.rs` — all test vectors | 6-dec assumptions | 12-dec | Tests pass wrongly |
 | `L3/warp/src/types.rs` — `ChainId::zion_l1()` | `decimals: 6` | `decimals: 12` | Conversion broken |
 | `L3/warp/src/types.rs` — conversion table comments | 6-dec | 12-dec | Misleading docs |
-| `docs/L2_WZION_BRIDGE.md` | "6 decimals" | "12 decimals (flowers)" | Wrong spec |
-| `docs/WARP_ARCHITECTURE.md` | "6 decimals" | "12 decimals (flowers)" | Wrong spec |
+| `docs/L2_WZION_BRIDGE.md` | "6 decimals" | "6 decimals (flowers)" | Wrong spec (updated 3.0.3 fork) |
+| `docs/WARP_ARCHITECTURE.md` | "6 decimals" | "6 decimals (flowers)" | Wrong spec (updated 3.0.3 fork) |
 | `docs/L1-L4_ROADMAP.md` | "Block time ~15 sec" | "60 sec (constitutional)" | Wrong finality |
 
 ---
@@ -858,7 +858,7 @@ V3/
   L2/
     bridge/
       src/
-        types.rs          ← conversion functions (fixed for 12 decimals)
+        types.rs          ← conversion functions (fixed for 6 decimals, updated 3.0.3 fork)
         watcher.rs        ← L1 block watcher daemon
         evm_watcher.rs    ← EVM event listener
         validator.rs      ← multisig quorum logic
@@ -897,7 +897,7 @@ V3/
   L3/
     warp/
       src/
-        types.rs          ← chain definitions (fixed for 12 decimals)
+        types.rs          ← chain definitions (fixed for 6 decimals, updated 3.0.3 fork)
         router.rs         ← WARP memo routing
         state.rs          ← transfer state machine
         fees.rs           ← per-chain fee calculator

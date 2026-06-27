@@ -197,7 +197,7 @@ PoW hash           = Ekam Deeksha (cosmic_harmony)
 
 ### Emission (V3 emission.rs — ověřeno ✅)
 ```
-FLOWERS_PER_ZION        = 1_000_000_000_000
+FLOWERS_PER_ZION        = 1_000_000  (updated to 6-decimal in 3.0.3 fork)
 TOTAL_SUPPLY            = 144_000_000_000 × FLOWERS_PER_ZION
 GENESIS_PREMINE         = 16_280_000_000 × FLOWERS_PER_ZION
 BASE_BLOCK_REWARD       = 5_400_067_000_000_000

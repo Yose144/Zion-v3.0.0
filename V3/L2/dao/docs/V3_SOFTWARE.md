@@ -32,7 +32,7 @@
 | Konstanta | Hodnota | Popis |
 |-----------|---------|-------|
 | `DAO_TREASURY_ADDRESSES` | 3 adresy | Treasury na L1 (4B ZION) |
-| `FLOWERS_PER_ZION` | 10¹² | Atomická přesnost |
+| `FLOWERS_PER_ZION` | 10⁶ | Atomická přesnost (updated 3.0.3 fork) |
 | `DAO_TREASURY_TOTAL` | 4×10²¹ flowers | Celkový treasury |
 | `PROPOSAL_THRESHOLD` | 1M ZION (flowers) | Min. balance pro návrh |
 | `VOTING_PERIOD_SECS` | 604 800 (7 dní) | Hlasovací období |

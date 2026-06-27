@@ -32,7 +32,7 @@ applyTo: "V3/**"
 ## L2/L3 Migration Rules
 
 - V3/L2 and V3/L3 directories do not exist yet. When they are created, follow the plan in `V3/PLAN.md`.
-- **CRITICAL decimal warning**: Legacy L2/L3 code uses 6-decimal atomics (1e6). V3 canonical is 12 decimals (1e12 flowers). All decimal conversion code must be audited before any L2/L3 migration — deploying unfixed code creates a 1,000,000× inflation vulnerability.
+- **CRITICAL decimal warning**: Legacy L2/L3 code uses 6-decimal atomics (1e6). V3 canonical is now 6 decimals (1e6 flowers) as of the 3.0.3 fork — previously 12 decimals (1e12). All decimal conversion code must be audited before any L2/L3 migration — deploying unfixed code creates a 1,000,000× inflation vulnerability.
 - L1 is READ-ONLY after genesis. L2/L3 are off-chain services communicating with L1 via JSON-RPC only. No consensus changes are needed for L2/L3 features.
 - When migrating code from legacy `L2/` or `L3/` into `V3/L2/` or `V3/L3/`, copy only audited behavior that fits the clean mainnet line.
 

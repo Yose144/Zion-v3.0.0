@@ -177,7 +177,7 @@ Všechny L2/L3 Rust crates jsou migrovány do V3. Zbývá pouze L2/contracts (So
 
 ```
 Root L2 kód: 1 ZION = 1e6 atomic   (6 decimals) ← ŠPATNĚ pro V3
-V3 mainnet:  1 ZION = 1e12 flowers  (12 decimals) ← SPRÁVNĚ
+V3 mainnet:  1 ZION = 1e6 flowers   (6 decimals)  ← SPRÁVNĚ (updated 3.0.3 fork)
 EVM wZION:   1 wZION = 1e18 wei     (18 decimals)
 ```
 
@@ -219,7 +219,7 @@ V3/L2/bridge/
 4. Bridge vault address = `zion1bridge000...vault` (V3 genesis address #TBD)
 5. L1 RPC endpoint = V3 node (port 8332)
 6. Konfirmační hloubka = 60 bloků (60 min @ 60s blocks)
-7. Testy: opravit všechny test vectors pro 12 decimals
+7. Testy: opravit všechny test vectors pro 6 decimals (updated 3.0.3 fork)
 
 ### B.2 V3/L2/contracts — Solidity
 
@@ -370,8 +370,8 @@ AI task revenue split:
 - 22 src + 8 adapter souborů
 - Cargo.toml: `thiserror="2"`, správné path závislosti
 - ChainId::zion_l1() decimals fixováno na 12
-- Všechny konverzní testy updatovány (6→12 decimal ZION hodnoty)
-- fees.rs: všechny min_fee/max_fee updatovány na 12-decimal hodnoty
+- Všechny konverzní testy updatovány (6→12 decimal ZION hodnoty) (reverted to 6-dec in 3.0.3 fork)
+- fees.rs: všechny min_fee/max_fee updatovány na 12-decimal hodnoty (reverted to 6-dec in 3.0.3 fork)
 - config.rs: `daily_limit_flowers()` a `timelock_threshold_flowers()` ×1e12
 - xp_bridge.rs: volume divisor změněn z 1e6 na 1e12
 - router.rs: daily_limit a timelock_threshold defaults updatovány
@@ -699,7 +699,7 @@ cargo test -p zion-ai-native              # 89 testů (88 lib + 1 doctest)
 | 3 | Genesis hash frozen + CONSTITUTION match | ✅ |
 | 4 | 7-day canary: chain growth, 0 reorgs, 0 P2P errors | ⬜ |
 | 5 | Seed nodes: min 3 geograficky oddělené | ⬜ |
-| 6 | Bridge decimal fix verified | ✅ (V3/L2/bridge 157 testů, všechny 12-decimal) |
+| 6 | Bridge decimal fix verified | ✅ (V3/L2/bridge 157 testů, všechny 6-decimal) (updated 3.0.3 fork) |
 | 7 | Mining guide publikován | ✅ |
 | 8 | Node operator guide publikován | ✅ |
 | 9 | Emergency kill-switch procedure dokumentována | ⬜ |
