@@ -478,7 +478,8 @@ export default function NetworkPage() {
             {runtimePanels.map((panel) => (
               <div
                 key={panel.label}
-                className="rounded-3xl border border-white/10 bg-white/5 p-6"
+                className="zion-rainbow-sub p-6"
+                style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
               >
                 <div className="flex items-center gap-3 mb-4">
                   <panel.icon className={`h-5 w-5 ${panel.accent}`} />
@@ -575,7 +576,7 @@ export default function NetworkPage() {
 
           <div className="grid gap-5 lg:grid-cols-3">
             {/* Hashrate */}
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+            <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-xs text-gray-500 uppercase tracking-wider">{cs ? 'Hashrate sítě' : 'Network Hashrate'}</p>
@@ -586,7 +587,7 @@ export default function NetworkPage() {
             </div>
 
             {/* Difficulty */}
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+            <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-xs text-gray-500 uppercase tracking-wider">{cs ? 'Obtížnost' : 'Difficulty'}</p>
@@ -597,7 +598,7 @@ export default function NetworkPage() {
             </div>
 
             {/* Block Time */}
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+            <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-xs text-gray-500 uppercase tracking-wider">{cs ? 'Průměrný block time' : 'Avg Block Time'}</p>
@@ -721,7 +722,8 @@ export default function NetworkPage() {
             {infraFeatures.map((node) => (
               <div
                 key={node.title}
-                className={`relative overflow-hidden rounded-3xl border ${node.border} ${node.bg} p-6`}
+                className="relative overflow-hidden zion-rainbow-sub p-6"
+                style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
@@ -794,7 +796,7 @@ export default function NetworkPage() {
             <p className="text-sm text-gray-400">{cs ? 'Vizualizujte aktualni topologii a porovnejte ji s archivovanym multi-host rolloutem zachovanym v release dokumentaci.' : 'Visualize the current topology and compare it with the archived multi-host rollout preserved in release documentation.'}</p>
           </div>
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-            <div className="rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+            <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <NetworkMap />
             </div>
             <PoolFinder />
@@ -815,14 +817,15 @@ export default function NetworkPage() {
             {guideBlocks.map((block) => (
               <div
                 key={block.title}
-                className="rounded-3xl border border-white/10 bg-white/5 p-6 space-y-4"
+                className="zion-rainbow-sub p-6 space-y-4"
+                style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
               >
                 <div className="flex items-center gap-3">
                   <block.icon className="h-5 w-5 text-zion-gold" />
                   <h3 className="text-lg font-semibold text-white">{block.title}</h3>
                 </div>
                 <p className="text-sm text-gray-400">{block.description}</p>
-                <div className="rounded-2xl border border-white/10 bg-black/40 p-4 space-y-1">
+                <div className="zion-rainbow-sub p-4 space-y-1" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                   {block.items.map((line) => (
                     <code key={line} className="block text-sm font-mono text-zion-gold">{line}</code>
                   ))}
@@ -941,7 +944,7 @@ export default function NetworkPage() {
 
 function SurfaceSkeleton({ lines = 4 }: { lines?: number }) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/5 p-6 space-y-3">
+    <div className="zion-rainbow-sub p-6 space-y-3" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
       <div className="h-5 w-32 rounded bg-white/10 animate-pulse" />
       {Array.from({ length: lines }).map((_, index) => (
         <div key={index} className="h-4 w-full rounded bg-white/5 animate-pulse" />
@@ -975,7 +978,7 @@ function NetSparkline({ data, color, height = 60 }: { data: number[]; color: str
 /* ─── ChainStatCard ─── */
 function ChainStatCard({ label, value, sub, color, tip }: { label: string; value: string; sub?: string; color: string; tip?: string }) {
   return (
-    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 hover:border-white/[0.12] transition-colors">
+    <div className="zion-rainbow-sub p-4 transition-colors" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
       <div className="flex items-center gap-1.5 mb-1">
         <p className="text-[11px] text-gray-500 uppercase tracking-wider">{label}</p>
         {tip && (

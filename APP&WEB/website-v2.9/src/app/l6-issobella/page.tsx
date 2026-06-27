@@ -128,7 +128,7 @@ export default function L6IssobellaPage() {
         </motion.section>
 
         {/* ── Fund Info ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-white/10 bg-black/40 p-8">
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Vesmírný fond' : 'Space Fund'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -137,30 +137,30 @@ export default function L6IssobellaPage() {
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-4 mb-6">
-            <div className="rounded-2xl border border-rose-500/30 bg-rose-500/5 p-4 text-center">
+            <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{cs ? 'Podíl z bloku' : 'Block share'}</p>
               <p className="text-3xl font-bold text-rose-400">5%</p>
               <p className="text-xs text-gray-500 mt-1">{cs ? 'každý blok, navždy' : 'every block, forever'}</p>
             </div>
-            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4 text-center">
+            <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{cs ? 'Přibližně / měsíc' : 'Approx / month'}</p>
               <p className="text-3xl font-bold text-emerald-400">~11,7M</p>
               <p className="text-xs text-gray-500 mt-1">ZION</p>
             </div>
-            <div className="rounded-2xl border border-purple-500/30 bg-purple-500/5 p-4 text-center">
+            <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{cs ? 'Správa' : 'Governed by'}</p>
               <p className="text-2xl font-bold text-purple-400">DAO</p>
               <p className="text-xs text-gray-500 mt-1">{cs ? 'L6 Radou' : 'L6 Council'}</p>
             </div>
           </div>
-          <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-gray-400 font-mono break-all">
+          <div className="zion-rainbow-sub p-4 text-sm text-gray-400 font-mono break-all" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
             <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Adresa fondu' : 'Fund wallet'}</p>
             {ISSOBELLA_WALLET}
           </div>
         </motion.section>
 
         {/* ── Missions / Vision ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-white/10 bg-white/5 p-8">
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Mise & Vize' : 'Missions & Vision'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -170,7 +170,7 @@ export default function L6IssobellaPage() {
           </div>
           <div className="grid md:grid-cols-3 gap-5">
             {missions.map((mission) => (
-              <div key={mission.name} className={`rounded-2xl border p-5 ${mission.color}`}>
+              <div key={mission.name} className={`zion-rainbow-sub p-5`} style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
                 <div className="flex items-start justify-between mb-3">
                   <h3 className="font-semibold text-white">{mission.name}</h3>
                   <span className={`text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-semibold border ${mission.badgeColor}`}>
@@ -189,7 +189,7 @@ export default function L6IssobellaPage() {
         </motion.section>
 
         {/* ── Principles ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-white/10 bg-black/40 p-8">
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Principy' : 'Principles'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -199,7 +199,7 @@ export default function L6IssobellaPage() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {principles.map((p) => (
-              <div key={p.title} className="rounded-2xl border border-white/10 bg-white/5 p-5">
+              <div key={p.title} className="zion-rainbow-sub p-5" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
                 <div className="flex items-center gap-2 mb-2">
                   <p.icon className={`h-5 w-5 ${p.color}`} />
                   <h3 className="font-semibold text-white">{p.title}</h3>

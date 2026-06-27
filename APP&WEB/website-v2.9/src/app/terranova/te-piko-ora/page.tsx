@@ -238,7 +238,7 @@ export default function TePikoOraPage() {
           transition={{ duration: 0.6 }}
           className="mb-16"
         >
-          <div className="relative zion-panel rounded-3xl md:rounded-[32px] p-6 md:p-10 overflow-hidden border border-white/10 bg-black/60 backdrop-blur-xl">
+          <div className="relative zion-rainbow-card rounded-3xl md:rounded-[32px] p-6 md:p-10 overflow-hidden border border-white/10 bg-black/60 backdrop-blur-xl" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start">
               {/* Ocean symbol */}
               <div className="shrink-0 w-20 h-20 rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 via-black/50 to-black flex items-center justify-center text-4xl">
@@ -302,7 +302,7 @@ export default function TePikoOraPage() {
           transition={{ delay: 0.15, duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-panel rounded-3xl p-6 md:p-8 border border-white/10 relative overflow-hidden">
+          <div className="zion-rainbow-card rounded-3xl p-6 md:p-8 border border-white/10 relative overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="relative z-10 grid md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-3">
                 <h3 className="text-lg font-bold text-gray-300">
@@ -451,7 +451,7 @@ export default function TePikoOraPage() {
           transition={{ delay: 0.25, duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-panel rounded-3xl p-6 md:p-8 border border-amber-500/15 relative overflow-hidden">
+          <div className="zion-rainbow-card rounded-3xl p-6 md:p-8 border border-amber-500/15 relative overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="absolute inset-0 bg-gradient-to-br from-amber-900/15 to-transparent" />
             <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-[70px] bg-amber-500/10" />
             <div className="relative z-10 space-y-4">
@@ -567,7 +567,7 @@ export default function TePikoOraPage() {
             <h2 className="text-2xl font-bold text-white">ZION Network</h2>
           </div>
 
-          <div className="zion-panel rounded-3xl p-6 md:p-8 border border-cyan-500/15 relative overflow-hidden">
+          <div className="zion-rainbow-card rounded-3xl p-6 md:p-8 border border-cyan-500/15 relative overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/20 to-transparent" />
             <div className="absolute -top-16 -left-16 w-40 h-40 rounded-full blur-[80px] bg-cyan-500/10" />
             <div className="relative z-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -602,7 +602,7 @@ export default function TePikoOraPage() {
           transition={{ delay: 0.45, duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-panel rounded-3xl p-6 md:p-8 border border-cyan-500/15 space-y-4">
+          <div className="zion-rainbow-card rounded-3xl p-6 md:p-8 border border-cyan-500/15 space-y-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <h3 className="text-lg font-bold text-gray-300">
               {cs ? 'Otevřené otázky — hledáme Guardians' : 'Open Questions — looking for Guardians'}
             </h3>

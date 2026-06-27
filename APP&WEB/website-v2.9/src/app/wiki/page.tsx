@@ -87,7 +87,8 @@ export default function WikiPage() {
             >
               <Link
                 href={s.href}
-                className="group block h-full rounded-[32px] border border-white/10 bg-black/60 backdrop-blur-xl p-6 transition-all duration-300 hover:border-zion-gold/30 hover:bg-white/5"
+                className="zion-rainbow-card group block h-full rounded-[32px] p-6"
+                style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
               >
                 <div className="inline-flex items-center justify-center rounded-2xl bg-linear-to-r from-zion-gold to-amber-500 p-3 shadow-lg">
                   <s.icon className="h-6 w-6 text-white" />

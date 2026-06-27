@@ -168,7 +168,8 @@ export default function BridgePage() {
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl md:rounded-[32px] border border-white/10 bg-black/60 p-6 md:p-10 backdrop-blur-xl"
+          className="zion-rainbow-card p-6 md:p-10"
+          style={{ '--rc': '59, 130, 246' } as React.CSSProperties}
         >
           <div className="space-y-5">
             <div className="flex flex-wrap items-center gap-3">
@@ -228,7 +229,7 @@ export default function BridgePage() {
         {/* ── TWO DIRECTIONS ── */}
         <div className="grid gap-6 md:grid-cols-2">
           {/* Lock & Mint */}
-          <motion.div initial={{ opacity: 0, x: -24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="rounded-[28px] border border-emerald-500/30 bg-gradient-to-b from-emerald-500/10 to-black/60 p-6 md:p-8 backdrop-blur-xl">
+          <motion.div initial={{ opacity: 0, x: -24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
             <div className="flex items-center justify-between mb-6">
               <div>
                 <p className="text-xs uppercase tracking-[0.4em] text-emerald-400">{cs ? 'Směr A' : 'Direction A'}</p>
@@ -254,11 +255,11 @@ export default function BridgePage() {
             </ol>
             {status && (
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl border border-white/10 bg-black/30 p-3 text-center">
+                <div className="zion-rainbow-sub p-3 text-center" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
                   <p className="text-lg font-bold text-white">{status.l1_locks_detected.toLocaleString()}</p>
                   <p className="text-xs text-gray-400 uppercase tracking-wider">{cs ? 'Zámků' : 'Locks'}</p>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-black/30 p-3 text-center">
+                <div className="zion-rainbow-sub p-3 text-center" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
                   <p className="text-lg font-bold text-emerald-400">{status.evm_mints_confirmed.toLocaleString()}</p>
                   <p className="text-xs text-gray-400 uppercase tracking-wider">{cs ? 'Mintů' : 'Mints'}</p>
                 </div>
@@ -267,7 +268,7 @@ export default function BridgePage() {
           </motion.div>
 
           {/* Burn & Unlock */}
-          <motion.div initial={{ opacity: 0, x: 24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="rounded-[28px] border border-orange-500/20 bg-gradient-to-b from-orange-500/5 to-black/60 p-6 md:p-8 backdrop-blur-xl">
+          <motion.div initial={{ opacity: 0, x: 24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
             <div className="flex items-center justify-between mb-6">
               <div>
                 <p className="text-xs uppercase tracking-[0.4em] text-orange-400">{cs ? 'Směr B' : 'Direction B'}</p>
@@ -293,11 +294,11 @@ export default function BridgePage() {
             </ol>
             {status && (
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl border border-white/10 bg-black/30 p-3 text-center">
+                <div className="zion-rainbow-sub p-3 text-center" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
                   <p className="text-lg font-bold text-white">{status.evm_burns_detected.toLocaleString()}</p>
                   <p className="text-xs text-gray-400 uppercase tracking-wider">{cs ? 'Burnů' : 'Burns'}</p>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-black/30 p-3 text-center">
+                <div className="zion-rainbow-sub p-3 text-center" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
                   <p className="text-lg font-bold text-orange-400">{status.l1_unlocks_confirmed.toLocaleString()}</p>
                   <p className="text-xs text-gray-400 uppercase tracking-wider">{cs ? 'Unlocků' : 'Unlocks'}</p>
                 </div>
@@ -313,7 +314,7 @@ export default function BridgePage() {
         </motion.section>
 
         {/* Burn section */}
-        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[28px] border border-orange-500/20 bg-gradient-to-b from-orange-500/5 to-black/60 p-6 md:p-10">
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
           <div className="flex items-center gap-3 mb-2">
             <Flame className="h-5 w-5 text-orange-400" />
             <h2 className="text-xl font-semibold text-white">{cs ? 'Spal wZION přímo tady' : 'Burn wZION directly'}</h2>
@@ -324,7 +325,7 @@ export default function BridgePage() {
           <div className="grid gap-6 md:grid-cols-2 items-start">
             <BridgeBurnWidget />
             <div className="space-y-4">
-              <div className="rounded-2xl border border-white/10 bg-black/40 p-4 space-y-3">
+              <div className="zion-rainbow-sub p-4 space-y-3" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
                 <p className="text-xs uppercase tracking-wider text-gray-400 font-semibold">{cs ? 'Co se stane po spalení' : 'What happens after you burn'}</p>
                 <ol className="space-y-2 text-sm">
                   <li className="flex gap-2 text-gray-300">
@@ -350,7 +351,7 @@ export default function BridgePage() {
         </motion.section>
 
         {/* ── MEMO GUIDE ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[28px] border border-cyan-500/20 bg-gradient-to-b from-cyan-500/5 to-black/60 p-6 md:p-10">
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
           <div className="flex items-center gap-3 mb-2">
             <Terminal className="h-5 w-5 text-cyan-400" />
             <h2 className="text-xl font-semibold text-white">{cs ? 'Jak zahájit bridge transfer' : 'How to initiate a bridge transfer'}</h2>
@@ -386,7 +387,7 @@ export default function BridgePage() {
                   </div>
                 </li>
               </ol>
-              <div className="rounded-2xl border border-cyan-500/20 bg-black/50 p-4 space-y-3">
+              <div className="zion-rainbow-sub p-4 space-y-3" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
                 <p className="text-xs uppercase tracking-wider text-cyan-400 font-semibold">{cs ? 'Formát memo' : 'Memo format'}</p>
                 <code className="block rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mono text-sm text-emerald-300">
                   BRIDGE:<span className="text-cyan-300">base</span>:<span className="text-yellow-300">0x<span className="opacity-60">YourEvmAddress</span></span>
@@ -421,7 +422,7 @@ export default function BridgePage() {
                   </div>
                 </li>
               </ol>
-              <div className="rounded-2xl border border-orange-500/20 bg-black/50 p-4">
+              <div className="zion-rainbow-sub p-4" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
                 <p className="text-xs uppercase tracking-wider text-orange-400 font-semibold mb-2">{cs ? 'Příklad: 500 wZION' : 'Example: 500 wZION'}</p>
                 <code className="block rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mono text-sm text-orange-200 break-all">
                   burn(500000000000000000000, &quot;ZoYourL1Address&quot;)
@@ -432,7 +433,7 @@ export default function BridgePage() {
           </div>
 
           {/* Memo builder */}
-          <div className="mt-8 rounded-2xl border border-white/10 bg-black/50 p-5">
+          <div className="mt-8 zion-rainbow-sub p-5" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
             <div className="flex items-center gap-2 mb-4">
               <Info className="h-4 w-4 text-cyan-400" />
               <p className="text-sm font-semibold text-white">Memo builder (L1 → Base)</p>
@@ -453,7 +454,7 @@ export default function BridgePage() {
 
         {/* ── RELAY STATS ── */}
         {status && (
-          <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[28px] border border-white/10 bg-white/5 p-6 md:p-8">
+          <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
             <div className="flex items-center gap-3 mb-6">
               <Activity className="h-5 w-5 text-cyan-400" />
               <h2 className="text-xl font-semibold text-white">{cs ? 'Statistiky relay' : 'Relay statistics'}</h2>
@@ -466,7 +467,7 @@ export default function BridgePage() {
                 { label: cs ? 'Unlocky' : 'Unlocks', value: status.l1_unlocks_submitted, color: 'text-white' },
                 { label: 'Uptime', value: formatUptime(status.uptime_seconds), color: 'text-cyan-300' },
               ].map((stat) => (
-                <div key={stat.label} className="rounded-2xl border border-white/10 bg-black/40 p-4 text-center">
+                <div key={stat.label} className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
                   <p className={`text-2xl font-bold font-mono ${stat.color}`}>{stat.value}</p>
                   <p className="mt-1 text-xs uppercase tracking-wider text-gray-400">{stat.label}</p>
                 </div>
@@ -476,7 +477,7 @@ export default function BridgePage() {
         )}
 
         {/* ── ARCHITECTURE ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[28px] border border-white/10 bg-white/5 p-6 md:p-10">
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
           <div className="flex items-center gap-3 mb-8">
             <Network className="h-5 w-5 text-purple-400" />
             <h2 className="text-xl font-semibold text-white">{cs ? 'Architektura' : 'Architecture'}</h2>
@@ -508,7 +509,7 @@ export default function BridgePage() {
               { name: 'Relayer', desc: cs ? 'Odesílá EVM mint TX a L1 unlock cally.' : 'Submits EVM mint transactions and L1 unlock calls.' },
               { name: 'SQLite DB', desc: cs ? 'INSERT OR IGNORE — replay-safe, duplikáty přeskočeny.' : 'INSERT OR IGNORE — replay-safe, duplicates skipped.' },
             ].map((c) => (
-              <div key={c.name} className="rounded-2xl border border-white/10 bg-black/40 p-4">
+              <div key={c.name} className="zion-rainbow-sub p-4" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
                 <p className="text-sm font-semibold text-white mb-1">{c.name}</p>
                 <p className="text-xs text-gray-400 leading-relaxed">{c.desc}</p>
               </div>
@@ -517,7 +518,7 @@ export default function BridgePage() {
         </motion.section>
 
         {/* ── CONTRACTS ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[28px] border border-white/10 bg-white/5 p-6 md:p-8">
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
           <h2 className="text-xl font-semibold text-white mb-2">{cs ? 'Adresy kontraktů' : 'Contract addresses'}</h2>
           <p className="text-sm text-gray-400 mb-6">{BRIDGE_CONTRACTS.network} · Chain ID {BRIDGE_CONTRACTS.chain_id}</p>
           <div className="space-y-3">
@@ -525,7 +526,7 @@ export default function BridgePage() {
               { label: 'wZION (ERC-20)', key: 'wzion', addr: BRIDGE_CONTRACTS.wzion_address },
               { label: 'ZIONBridge (relay escrow)', key: 'bridge', addr: BRIDGE_CONTRACTS.bridge_address },
             ].map(({ label, key, addr }) => (
-              <div key={key} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/40 px-4 py-3">
+              <div key={key} className="flex flex-wrap items-center justify-between gap-3 zion-rainbow-sub px-4 py-3" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
                 <div>
                   <p className="text-xs uppercase tracking-wider text-gray-400">{label}</p>
                   <p className="font-mono text-sm text-white break-all">{addr}</p>
@@ -545,7 +546,7 @@ export default function BridgePage() {
         </motion.section>
 
         {/* ── SECURITY ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[28px] border border-emerald-500/20 bg-emerald-500/5 p-6 md:p-8">
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
           <div className="flex items-start gap-4">
             <Shield className="h-6 w-6 text-emerald-400 shrink-0 mt-0.5" />
             <div className="w-full">
@@ -574,11 +575,11 @@ export default function BridgePage() {
         </motion.section>
 
         {/* ── FAQ ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[28px] border border-white/10 bg-white/5 p-6 md:p-10">
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
           <h2 className="text-xl font-semibold text-white mb-6">{cs ? 'Časté dotazy' : 'FAQ'}</h2>
           <div className="space-y-2">
             {faqs.map((faq, i) => (
-              <div key={i} className="rounded-2xl border border-white/10 bg-black/30 overflow-hidden">
+              <div key={i} className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
                 <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left">
                   <span className="text-sm font-semibold text-white">{faq.q}</span>
                   <ChevronDown className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
@@ -596,7 +597,7 @@ export default function BridgePage() {
         </motion.section>
 
         {/* ── READINESS CHECKLIST ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[28px] border border-white/10 bg-white/5 p-6 md:p-8">
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
           <div className="flex items-center gap-3 mb-6">
             <CheckCircle2 className="h-5 w-5 text-emerald-400" />
             <h2 className="text-xl font-semibold text-white">{cs ? 'Readiness kontrola' : 'Readiness checklist'}</h2>
@@ -631,7 +632,7 @@ export default function BridgePage() {
               { label: 'wZION (BaseScan)', href: `${BRIDGE_CONTRACTS.explorer_base}${BRIDGE_CONTRACTS.wzion_address}`, desc: cs ? 'Kód wZION kontraktu na Base Mainnet.' : 'wZION contract source on Base Mainnet.', external: true },
               { label: 'DeFi Hub', href: '/defi', desc: cs ? 'Swap wZION/ETH, portfolio, pool cena.' : 'Swap wZION/ETH, portfolio, pool price.' },
             ].map((res) => (
-              <Link key={res.label} href={res.href} target={'external' in res ? '_blank' : undefined} rel={'external' in res ? 'noreferrer' : undefined} className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/40 p-5 hover:bg-white/5 transition-colors group">
+              <Link key={res.label} href={res.href} target={'external' in res ? '_blank' : undefined} rel={'external' in res ? 'noreferrer' : undefined} className="flex flex-col gap-3 zion-rainbow-sub p-5 hover:bg-white/5 transition-colors group" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-semibold text-white group-hover:text-zion-gold transition-colors">{res.label}</p>
                   <ArrowRight className="h-3.5 w-3.5 text-gray-500 group-hover:text-zion-gold transition-colors" />

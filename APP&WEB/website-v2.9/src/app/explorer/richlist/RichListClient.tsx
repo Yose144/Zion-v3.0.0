@@ -460,7 +460,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="relative zion-panel rounded-4xl bg-black/60 p-8 md:p-12 overflow-hidden"
+          className="relative zion-rainbow-card rounded-4xl bg-black/60 p-8 md:p-12 overflow-hidden" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
         >
           <div className="absolute inset-0 bg-linear-to-br from-zion-gold/5 via-transparent to-zion-purple/5 pointer-events-none" />
           <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">

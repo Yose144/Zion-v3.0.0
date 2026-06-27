@@ -137,7 +137,7 @@ export default function DaoPage() {
         </Link>
 
         {/* HERO */}
-        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="zion-panel rounded-3xl md:rounded-4xl bg-black/60 p-6 md:p-10">
+        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} style={{ '--rc': '139, 92, 246' } as React.CSSProperties} className="zion-rainbow-card rounded-3xl md:rounded-4xl bg-black/60 p-6 md:p-10">
           <div className="inline-flex items-center gap-2 rounded-full border border-rose-500/40 bg-rose-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-rose-300 uppercase mb-4">
             <Scale className="h-4 w-4" />
             {cs ? 'Governance' : 'Governance'}

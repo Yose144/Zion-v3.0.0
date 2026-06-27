@@ -100,7 +100,7 @@ export default function BlocksPage() {
         </div>
 
         {/* Table */}
-        <div className="zion-panel rounded-[28px] bg-black/60 overflow-hidden">
+        <div className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

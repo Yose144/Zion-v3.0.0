@@ -139,7 +139,7 @@ export default function DaoPage() {
       <div className="zion-container max-w-7xl space-y-16">
 
         {/* ── HERO ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl md:rounded-[32px] border border-white/10 bg-black/60 p-6 md:p-10 backdrop-blur-xl">
+        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
           <div className="space-y-5">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-gold uppercase">
               <Crown className="h-4 w-4" />
@@ -194,25 +194,25 @@ export default function DaoPage() {
 
         {/* ── Treasury overview ── */}
         {treasury && (
-          <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-white/10 bg-black/40 p-8">
+          <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
             <div className="mb-6">
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Treasury</p>
               <h2 className="text-3xl font-semibold text-white">{cs ? 'Přehled treasury' : 'Treasury overview'}</h2>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="zion-rainbow-sub p-4" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
                 <p className="text-xs uppercase tracking-wider text-gray-400">Multisig</p>
                 <p className="text-lg font-semibold text-white mt-1">{treasury.multisig}</p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="zion-rainbow-sub p-4" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
                 <p className="text-xs uppercase tracking-wider text-gray-400">{cs ? 'K dispozici' : 'Available'}</p>
                 <p className="text-lg font-semibold text-white mt-1">{treasury.available_zion.toLocaleString()} ZION</p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="zion-rainbow-sub p-4" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
                 <p className="text-xs uppercase tracking-wider text-gray-400">{cs ? 'Čekající operace' : 'Pending Ops'}</p>
                 <p className="text-lg font-semibold text-white mt-1">{treasury.pending_operations}</p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="zion-rainbow-sub p-4" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
                 <p className="text-xs uppercase tracking-wider text-gray-400">{cs ? 'Denní limit' : 'Daily Limit'}</p>
                 <p className="text-lg font-semibold text-white mt-1">{treasury.daily_spend_limit_zion.toLocaleString()} ZION</p>
               </div>
@@ -221,7 +221,7 @@ export default function DaoPage() {
         )}
 
         {/* ── Bridge Vault ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-white/10 bg-white/5 p-8">
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Bridge Vault' : 'Bridge Vault'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -235,12 +235,12 @@ export default function DaoPage() {
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="zion-rainbow-sub p-4" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-wider text-gray-400">{cs ? 'Zamčeno ZION' : 'Locked ZION'}</p>
               <p className="text-lg font-semibold text-white mt-1">~100,000,000</p>
               <p className="text-xs text-gray-500">6 UTXO locks</p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="zion-rainbow-sub p-4" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-wider text-gray-400">{cs ? 'Relay status' : 'Relay status'}</p>
               <p className="text-lg font-semibold mt-1 flex items-center gap-2">
                 {bridgeStatus?.online ? (
@@ -257,12 +257,12 @@ export default function DaoPage() {
               </p>
               <p className="text-xs text-gray-500">{cs ? 'L2 Cross-Chain Relay' : 'L2 Cross-Chain Relay'}</p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="zion-rainbow-sub p-4" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-wider text-gray-400">{cs ? 'wZION mints' : 'wZION mints'}</p>
               <p className="text-lg font-semibold text-white mt-1">{bridgeStatus?.evm_mints_confirmed ?? '—'}</p>
               <p className="text-xs text-gray-500">{cs ? 'potvrzeno na Base' : 'confirmed on Base'}</p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="zion-rainbow-sub p-4" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-wider text-gray-400">{cs ? 'L1 blok' : 'L1 block'}</p>
               <p className="text-lg font-semibold text-white mt-1">{bridgeStatus?.last_l1_height ?? '—'}</p>
               <p className="text-xs text-gray-500">{cs ? 'poslední scan' : 'last scan'}</p>
@@ -281,14 +281,14 @@ export default function DaoPage() {
         </motion.section>
 
         {/* ── Governance phases ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-white/10 bg-white/5 p-8">
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Fáze governance' : 'Governance phases'}</p>
             <h2 className="text-3xl font-semibold text-white">{cs ? 'Cesta k plné decentralizaci' : 'Road to full decentralization'}</h2>
           </div>
           <div className="grid gap-6 md:grid-cols-3">
             {phases.map((phase) => (
-              <div key={phase.title} className="rounded-3xl border border-white/10 bg-black/30 p-6">
+              <div key={phase.title} className="zion-rainbow-sub p-6" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
                 <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{phase.title}</p>
                 <ul className="mt-4 space-y-2 text-sm text-gray-300">
                   {phase.bullets.map((item) => (
@@ -324,7 +324,7 @@ export default function DaoPage() {
               <p className="mt-4 text-gray-400">{cs ? 'Načítám návrhy…' : 'Loading proposals…'}</p>
             </div>
           ) : proposals.length === 0 ? (
-            <div className="rounded-3xl border border-white/10 bg-black/40 p-12 text-center backdrop-blur-xl">
+            <div className="zion-rainbow-card p-12 text-center" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
               <Crown className="h-12 w-12 text-gray-500 mx-auto mb-4" />
               <p className="text-lg font-semibold text-white mb-2">{cs ? 'Zatím žádné návrhy' : 'No proposals yet'}</p>
               <p className="text-gray-400">{cs ? 'Buď první, kdo vytvoří governance návrh!' : 'Be the first to create a governance proposal!'}</p>
@@ -339,7 +339,7 @@ export default function DaoPage() {
         </motion.section>
 
         {/* ── Humanitarian Tithe ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-pink-500/30 bg-gradient-to-r from-pink-500/20 via-purple-500/20 to-pink-500/20 p-10">
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-10" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
           <div className="flex items-center gap-3 mb-4">
             <Heart className="h-8 w-8 text-pink-400" />
             <h2 className="text-3xl font-semibold text-white">{cs ? 'Humanitární desátek' : 'Humanitarian Tithe'}</h2>
@@ -357,7 +357,7 @@ export default function DaoPage() {
                 { label: cs ? 'Příjemci' : 'Beneficiaries', value: stats.humanitarian.total_beneficiaries.toLocaleString() },
                 { label: cs ? 'Financováno' : 'Funded Amount', value: stats.humanitarian.total_funded.toLocaleString() },
               ].map((s) => (
-                <div key={s.label} className="rounded-2xl border border-pink-500/20 bg-black/40 p-4">
+                <div key={s.label} className="zion-rainbow-sub p-4" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
                   <p className="text-xs uppercase tracking-wider text-gray-400">{s.label}</p>
                   <p className="text-3xl font-bold text-white">{s.value}</p>
                 </div>
@@ -458,7 +458,7 @@ export default function DaoPage() {
         </motion.section>
 
         {/* ── Tree of Life ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-white/10 bg-white/5 p-8">
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
             <div>
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Tree of Life</p>
@@ -516,7 +516,7 @@ export default function DaoPage() {
         </motion.section>
 
         {/* ── Kabbalah Tree ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-white/10 bg-white/5 p-8">
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
             <div>
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'DAO' : 'DAO'}</p>
@@ -540,7 +540,7 @@ export default function DaoPage() {
           <h2 className="text-3xl font-semibold text-white text-center mb-8">{cs ? 'Užitečné odkazy' : 'Helpful links'}</h2>
           <div className="grid gap-4 md:grid-cols-3">
             {quickLinks.map((link) => (
-              <div key={link.label} className="rounded-2xl border border-white/10 bg-black/40 p-5 hover:bg-black/60 transition-colors">
+              <div key={link.label} className="zion-rainbow-sub p-5 hover:bg-white/5 transition-colors" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
                 <p className="text-sm font-semibold text-white">{link.label}</p>
                 <p className="mt-2 text-sm text-gray-300">{link.description}</p>
                 <Link href={link.href} target={link.href.startsWith('http') ? '_blank' : undefined} rel={link.href.startsWith('http') ? 'noreferrer' : undefined} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-zion-gold hover:text-zion-gold/80 transition-colors">

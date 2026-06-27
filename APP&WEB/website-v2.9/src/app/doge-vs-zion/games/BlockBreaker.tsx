@@ -747,7 +747,7 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
         </div>
 
         {/* Info bar */}
-        <div className="zion-panel rounded-2xl bg-black/60 p-3 flex items-center justify-between gap-4">
+        <div style={{ '--rc': '245, 158, 11' } as React.CSSProperties} className="zion-rainbow-card rounded-2xl bg-black/60 p-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div>
               <p className="text-[10px] text-gray-500">Score</p>
