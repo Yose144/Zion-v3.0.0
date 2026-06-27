@@ -11,6 +11,7 @@ import {
   Copy,
   Check,
   Crown,
+  Download,
   Gem,
   Loader2,
   Pickaxe,
@@ -21,6 +22,7 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
+import { exportToCsv } from "@/lib/csv-export";
 
 /* ── types ───────────────────────────────────────────────────── */
 
@@ -144,6 +146,19 @@ export default function RichListClient({ embedded = false }: RichListClientProps
     fetchRichList();
   }, [fetchRichList]);
 
+  const handleExportCsv = () => {
+    if (!data) return;
+    const headers = ["rank", "address", "balance", "percentage", "type"];
+    const rows = data.rich_list.map((e) => [
+      e.rank,
+      e.address,
+      e.balance,
+      e.percentage.toFixed(4),
+      e.type,
+    ]);
+    exportToCsv(`zion-richlist-${limit}.csv`, headers, rows);
+  };
+
   /* ── Shared content sections rendered in both modes ── */
   const content = (
     <>
@@ -261,7 +276,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
         )}
 
         {/* ═══════ LIMIT SELECTOR ═══════ */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <span className="text-sm text-white/40">{cs ? 'Zobrazit:' : 'Show:'}</span>
           {[25, 50, 100, 200].map((n) => (
             <button
@@ -276,6 +291,14 @@ export default function RichListClient({ embedded = false }: RichListClientProps
               {n}
             </button>
           ))}
+          <button
+            onClick={handleExportCsv}
+            disabled={!data || data.rich_list.length === 0}
+            className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white/60 hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            <Download className="w-3.5 h-3.5" />
+            {cs ? 'Export CSV' : 'Export CSV'}
+          </button>
         </div>
 
         {/* ═══════ TABLE ═══════ */}

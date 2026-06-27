@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
+  Activity,
   Check,
+  ChevronDown,
   ChevronRight,
   Copy,
   Cpu,
@@ -57,6 +59,51 @@ function timeAgo(ts: number, cs: boolean) {
   if (s < 3600) return cs ? `pred ${Math.floor(s / 60)} min` : `${Math.floor(s / 60)}m ago`;
   if (s < 86400) return cs ? `pred ${Math.floor(s / 3600)} h` : `${Math.floor(s / 3600)}h ago`;
   return cs ? `pred ${Math.floor(s / 86400)} d` : `${Math.floor(s / 86400)}d ago`;
+}
+
+/* ── watchlist (localStorage) ────────────────────────────────── */
+
+interface WatchEntry { address: string; label: string; addedAt: number; }
+
+const WATCHLIST_KEY = "zion-watchlist";
+
+function loadWatchlist(): WatchEntry[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(WATCHLIST_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch { return []; }
+}
+
+function saveWatchlist(list: WatchEntry[]) {
+  try { localStorage.setItem(WATCHLIST_KEY, JSON.stringify(list)); } catch { /* ignore */ }
+}
+
+/* ── donut chart ─────────────────────────────────────────────── */
+
+function DonutChart({ received, sent }: { received: number; sent: number }) {
+  const total = received + sent;
+  const r = 26;
+  const c = 2 * Math.PI * r;
+  const recvPct = total > 0 ? received / total : 0;
+  const sentPct = total > 0 ? sent / total : 0;
+  const recvLen = c * recvPct;
+  const sentLen = c * sentPct;
+  return (
+    <svg viewBox="0 0 64 64" className="w-16 h-16 -rotate-90">
+      <circle cx="32" cy="32" r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" />
+      {total > 0 && (
+        <>
+          <circle cx="32" cy="32" r={r} fill="none" stroke="#34d399" strokeWidth="8"
+            strokeDasharray={`${recvLen} ${c - recvLen}`} strokeDashoffset={0} />
+          <circle cx="32" cy="32" r={r} fill="none" stroke="#f87171" strokeWidth="8"
+            strokeDasharray={`${sentLen} ${c - sentLen}`} strokeDashoffset={-recvLen} />
+        </>
+      )}
+    </svg>
+  );
 }
 
 /* ── types ───────────────────────────────────────────────────── */
@@ -123,6 +170,42 @@ export default function AddressDetailClient() {
   const [data, setData] = useState<AddressData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  /* ── watchlist state ── */
+  const [watchlist, setWatchlist] = useState<WatchEntry[]>([]);
+  const [showLabelInput, setShowLabelInput] = useState(false);
+  const [labelValue, setLabelValue] = useState("");
+  const [mounted, setMounted] = useState(false);
+
+  /* ── pagination state ── */
+  const [visibleCount, setVisibleCount] = useState(10);
+  const txListRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+    setWatchlist(loadWatchlist());
+  }, []);
+
+  useEffect(() => { setVisibleCount(10); }, [addr]);
+
+  const isWatched = mounted && watchlist.some((w) => w.address === addr);
+
+  const toggleWatch = () => {
+    if (isWatched) {
+      const next = watchlist.filter((w) => w.address !== addr);
+      setWatchlist(next); saveWatchlist(next);
+      setShowLabelInput(false); setLabelValue("");
+    } else {
+      setShowLabelInput(true);
+    }
+  };
+
+  const confirmWatch = () => {
+    const entry: WatchEntry = { address: addr, label: labelValue.trim(), addedAt: Math.floor(Date.now() / 1000) };
+    const next = [entry, ...watchlist.filter((w) => w.address !== addr)];
+    setWatchlist(next); saveWatchlist(next);
+    setShowLabelInput(false); setLabelValue("");
+  };
 
   useEffect(() => {
     (async () => {
@@ -194,6 +277,12 @@ export default function AddressDetailClient() {
           <div className="min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-bold text-white tracking-tight">{cs ? 'Adresa' : 'Address'}</h1>
+              {isWatched && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-zion-gold/10 text-zion-gold border border-zion-gold/20" title={cs ? 'Sledovano' : 'Watched'}>
+                  <Star className="w-3 h-3 fill-current" />
+                  {cs ? 'Sledovano' : 'Watched'}
+                </span>
+              )}
               {data.known_label && (
                 <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider border ${
                   data.known_type === 'pool' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
@@ -210,10 +299,41 @@ export default function AddressDetailClient() {
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
               <p className="text-purple-300/70 font-mono text-sm break-all">{addr}</p>
               <CopyBtn text={addr} />
+              <button
+                onClick={toggleWatch}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-colors ${
+                  isWatched
+                    ? "bg-zion-gold/10 text-zion-gold border-zion-gold/30 hover:bg-zion-gold/20"
+                    : "bg-white/[0.04] text-white/60 border-white/[0.08] hover:bg-white/[0.08] hover:text-white/90"
+                }`}
+                title={isWatched ? (cs ? 'Prestat sledovat' : 'Unwatch') : (cs ? 'Sledovat' : 'Watch')}
+              >
+                <Star className={`w-3.5 h-3.5 ${isWatched ? "fill-current" : ""}`} />
+                {isWatched ? (cs ? 'Unwatch' : 'Unwatch') : (cs ? 'Watch' : 'Watch')}
+              </button>
             </div>
+            {showLabelInput && !isWatched && (
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                <input
+                  type="text"
+                  value={labelValue}
+                  onChange={(e) => setLabelValue(e.target.value)}
+                  placeholder={cs ? 'Volitelny popisek...' : 'Optional label...'}
+                  className="px-3 py-1.5 rounded-lg bg-black/40 border border-white/[0.08] text-[12px] text-white/80 placeholder:text-white/25 focus:outline-none focus:border-zion-gold/40 w-56"
+                  onKeyDown={(e) => { if (e.key === 'Enter') confirmWatch(); if (e.key === 'Escape') { setShowLabelInput(false); setLabelValue(""); } }}
+                  autoFocus
+                />
+                <button onClick={confirmWatch} className="px-3 py-1.5 rounded-lg bg-zion-gold/15 text-zion-gold border border-zion-gold/30 text-[11px] font-semibold hover:bg-zion-gold/25 transition-colors">
+                  {cs ? 'Pridat' : 'Add'}
+                </button>
+                <button onClick={() => { setShowLabelInput(false); setLabelValue(""); }} className="px-3 py-1.5 rounded-lg text-white/40 text-[11px] hover:text-white/70 transition-colors">
+                  {cs ? 'Zrusit' : 'Cancel'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -231,6 +351,60 @@ export default function AddressDetailClient() {
             </div>
           ))}
         </div>
+
+        {/* ── transaction summary (received / sent / fees) ──── */}
+        {(() => {
+          const txs = data.transactions;
+          const received = txs.filter((t) => t.receiver === addr).reduce((s, t) => s + t.amount, 0);
+          const sent = txs.filter((t) => t.receiver !== addr).reduce((s, t) => s + t.amount, 0);
+          const fees = txs.reduce((s, t) => s + (t.fee || 0), 0);
+          const total = received + sent;
+          return (
+            <div className="zion-rainbow-sub rounded-[28px] bg-black/60 p-6 mb-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+              <h2 className="text-sm font-semibold text-white/70 mb-4 flex items-center gap-2">
+                <Activity className="w-4 h-4 text-purple-400" />
+                {cs ? 'Souhrn transakci' : 'Transaction Summary'}
+              </h2>
+              <div className="flex items-center gap-6 flex-wrap">
+                <div className="relative flex-shrink-0">
+                  <DonutChart received={received} sent={sent} />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      <p className="text-[9px] uppercase tracking-wider text-white/30">{cs ? 'Celkem' : 'Total'}</p>
+                      <p className="text-[11px] font-bold text-white tabular-nums">{total.toFixed(2)}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4 flex-1 min-w-[260px]">
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                      <p className="text-[10px] uppercase tracking-wider text-white/30">{cs ? 'Prijato' : 'Received'}</p>
+                    </div>
+                    <p className="text-lg font-bold text-emerald-400 tabular-nums">{received.toFixed(4)}</p>
+                    <p className="text-[10px] text-white/30">ZION</p>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="w-2 h-2 rounded-full bg-red-400" />
+                      <p className="text-[10px] uppercase tracking-wider text-white/30">{cs ? 'Odeslano' : 'Sent'}</p>
+                    </div>
+                    <p className="text-lg font-bold text-red-400 tabular-nums">{sent.toFixed(4)}</p>
+                    <p className="text-[10px] text-white/30">ZION</p>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="w-2 h-2 rounded-full bg-amber-400" />
+                      <p className="text-[10px] uppercase tracking-wider text-white/30">{cs ? 'Poplatky' : 'Fees'}</p>
+                    </div>
+                    <p className="text-lg font-bold text-amber-400 tabular-nums">{fees.toFixed(6)}</p>
+                    <p className="text-[10px] text-white/30">ZION</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
 
@@ -288,7 +462,7 @@ export default function AddressDetailClient() {
         </div>
 
         {/* ── Transaction history table ──────────────────────── */}
-        <div className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+        <div ref={txListRef} className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden scroll-mt-8" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
           <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
             <h2 className="text-sm font-semibold text-white/70">
               {cs ? 'Transakce' : 'Transactions'} ({data.transactions.length})
@@ -317,44 +491,65 @@ export default function AddressDetailClient() {
               <p className="text-white/20 text-sm">{cs ? 'Nenalezeny zadne transakce' : 'No transactions found'}</p>
             </div>
           ) : (
-            data.transactions.map((t) => {
-              const incoming = t.receiver === addr;
-              return (
-                <Link
-                  key={t.tx_hash}
-                  href={`/explorer/tx?hash=${encodeURIComponent(t.tx_hash)}`}
-                  className="grid grid-cols-[70px_1fr_100px_90px_120px] gap-3 px-5 py-3 border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors group"
-                >
-                  {/* type */}
-                  <div className="flex items-center">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
-                      t.type === "payout" ? "bg-emerald-500/15 text-emerald-400" : "bg-blue-500/15 text-blue-400"
-                    }`}>{t.type === 'payout' ? (cs ? 'vyplata' : 'payout') : (cs ? 'prevod' : t.type)}</span>
-                  </div>
+            <>
+              {data.transactions.slice(0, visibleCount).map((t) => {
+                const incoming = t.receiver === addr;
+                return (
+                  <Link
+                    key={t.tx_hash}
+                    href={`/explorer/tx?hash=${encodeURIComponent(t.tx_hash)}`}
+                    className="grid grid-cols-[70px_1fr_100px_90px_120px] gap-3 px-5 py-3 border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors group"
+                  >
+                    {/* type */}
+                    <div className="flex items-center">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
+                        t.type === "payout" ? "bg-emerald-500/15 text-emerald-400" : "bg-blue-500/15 text-blue-400"
+                      }`}>{t.type === 'payout' ? (cs ? 'vyplata' : 'payout') : (cs ? 'prevod' : t.type)}</span>
+                    </div>
 
-                  {/* hash */}
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-[13px] font-mono text-cyan-300 group-hover:text-cyan-200 truncate transition-colors">
-                      {t.tx_hash.slice(0, 16)}…{t.tx_hash.slice(-8)}
-                    </span>
-                    <CopyBtn text={t.tx_hash} />
-                  </div>
+                    {/* hash */}
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-[13px] font-mono text-cyan-300 group-hover:text-cyan-200 truncate transition-colors">
+                        {t.tx_hash.slice(0, 16)}…{t.tx_hash.slice(-8)}
+                      </span>
+                      <CopyBtn text={t.tx_hash} />
+                    </div>
 
-                  {/* age */}
-                  <div className="flex items-center text-[12px] text-white/40 tabular-nums">{timeAgo(t.timestamp, cs)}</div>
+                    {/* age */}
+                    <div className="flex items-center text-[12px] text-white/40 tabular-nums">{timeAgo(t.timestamp, cs)}</div>
 
-                  {/* fee */}
-                  <div className="flex items-center justify-end text-[12px] text-white/30 tabular-nums font-mono">
-                    {t.fee > 0 ? t.fee.toFixed(6) : "—"}
-                  </div>
+                    {/* fee */}
+                    <div className="flex items-center justify-end text-[12px] text-white/30 tabular-nums font-mono">
+                      {t.fee > 0 ? t.fee.toFixed(6) : "—"}
+                    </div>
 
-                  {/* amount */}
-                  <div className={`flex items-center justify-end text-[13px] font-semibold tabular-nums ${incoming ? "text-emerald-400" : "text-red-400"}`}>
-                    {incoming ? "+" : "-"}{t.amount.toFixed(4)} ₿Z
-                  </div>
-                </Link>
-              );
-            })
+                    {/* amount */}
+                    <div className={`flex items-center justify-end text-[13px] font-semibold tabular-nums ${incoming ? "text-emerald-400" : "text-red-400"}`}>
+                      {incoming ? "+" : "-"}{t.amount.toFixed(4)} ₿Z
+                    </div>
+                  </Link>
+                );
+              })}
+
+              {/* pagination footer */}
+              <div className="px-6 py-4 flex items-center justify-between gap-3 flex-wrap">
+                <span className="text-[11px] text-white/40 tabular-nums">
+                  {cs ? `Zobrazuji ${Math.min(visibleCount, data.transactions.length)} z ${data.transactions.length}` : `Showing ${Math.min(visibleCount, data.transactions.length)} of ${data.transactions.length}`}
+                </span>
+                {visibleCount < data.transactions.length && (
+                  <button
+                    onClick={() => {
+                      setVisibleCount((c) => c + 10);
+                      setTimeout(() => txListRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] text-[12px] font-semibold text-white/70 hover:text-white transition-colors"
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                    {cs ? 'Nacist dalsi' : 'Load More'}
+                  </button>
+                )}
+              </div>
+            </>
           )}
         </div>
 
@@ -406,6 +601,43 @@ export default function AddressDetailClient() {
                 </Link>
               ))
             )}
+          </div>
+        )}
+
+        {/* ── Watchlist panel ─────────────────────────────────── */}
+        {mounted && watchlist.length > 0 && (
+          <div className="zion-rainbow-sub rounded-[28px] bg-black/60 p-6 mt-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+            <h2 className="text-sm font-semibold text-white/70 mb-4 flex items-center gap-2">
+              <Star className="w-4 h-4 text-zion-gold fill-current" />
+              {cs ? 'Sledovane adresy' : 'Watchlist'} ({watchlist.length})
+            </h2>
+            <div className="space-y-2">
+              {watchlist.map((w) => {
+                const current = w.address === addr;
+                return (
+                  <div key={w.address} className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${current ? "bg-zion-gold/5 border-zion-gold/20" : "bg-white/[0.02] border-white/[0.04] hover:bg-white/[0.04]"}`}>
+                    <Star className={`w-4 h-4 flex-shrink-0 ${current ? "text-zion-gold fill-current" : "text-zion-gold/60 fill-current"}`} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Link href={`/explorer/address?addr=${encodeURIComponent(w.address)}`} className="text-[13px] font-mono text-cyan-300 hover:text-cyan-200 truncate transition-colors">
+                          {w.address.slice(0, 20)}…{w.address.slice(-8)}
+                        </Link>
+                        {w.label && <span className="text-[10px] text-white/40 truncate">— {w.label}</span>}
+                      </div>
+                      <p className="text-[10px] text-white/25 mt-0.5">{cs ? 'Pridano' : 'Added'} {timeAgo(w.addedAt, cs)}</p>
+                    </div>
+                    {current && <span className="text-[10px] uppercase tracking-wider text-zion-gold font-semibold flex-shrink-0">{cs ? 'Aktualni' : 'Current'}</span>}
+                    <button
+                      onClick={() => { const next = watchlist.filter((x) => x.address !== w.address); setWatchlist(next); saveWatchlist(next); }}
+                      className="text-white/20 hover:text-red-400 transition-colors flex-shrink-0 text-[11px]"
+                      title={cs ? 'Odstranit' : 'Remove'}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>

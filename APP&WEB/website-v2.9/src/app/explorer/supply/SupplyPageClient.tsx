@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
@@ -24,7 +24,8 @@ import { useLang } from "@/contexts/LanguageContext";
 import { usePolling } from "@/hooks/usePolling";
 import { apiClient } from "@/lib/api";
 import { SITE_RELEASE_LABEL } from "@/lib/site";
-import { BLOCKS_PER_DECADE } from "@/lib/constants";
+import { BLOCKS_PER_DECADE, BLOCKS_PER_DAY } from "@/lib/constants";
+import { estimateCirculatingSupplyAtHeight } from "@/lib/supply";
 
 interface EmissionData {
   total_emission: number;
@@ -157,6 +158,196 @@ const DECADES = [
   { index: 9, reward: 724.785, blocks: 525_600, pct: "2.68%" },
   { index: 10, reward: 724.785, blocks: 0, pct: "Tail ∞" },
 ];
+
+/* ─── Supply Over Time SVG area chart ─────────────────────────── */
+type SupplyRange = "30d" | "90d" | "1y" | "all";
+
+function SupplyOverTimeChart({
+  currentHeight,
+  premine,
+  burned,
+  dailyEmission,
+  cs,
+}: {
+  currentHeight: number;
+  premine: number;
+  burned: number;
+  dailyEmission: number;
+  cs: boolean;
+}) {
+  const [range, setRange] = useState<SupplyRange>("90d");
+  const [hovered, setHovered] = useState<number | null>(null);
+
+  const data = useMemo(() => {
+    const daysByRange: Record<SupplyRange, number> = {
+      "30d": 30,
+      "90d": 90,
+      "1y": 365,
+      all: Math.max(30, Math.floor(currentHeight / BLOCKS_PER_DAY)),
+    };
+    const numDays = daysByRange[range];
+    const step = Math.max(1, Math.ceil(numDays / 180));
+    const pts: { label: string; supply: number; burn: number }[] = [];
+    const now = Date.now();
+    for (let i = numDays; i >= 0; i -= step) {
+      const height = Math.max(0, currentHeight - i * BLOCKS_PER_DAY);
+      const supply = estimateCirculatingSupplyAtHeight(height, premine);
+      const label = new Date(now - i * 86_400_000).toISOString().slice(0, 10);
+      const burn =
+        burned > 0
+          ? (burned / Math.max(currentHeight, 1)) * height
+          : dailyEmission * 0.02 * (height / BLOCKS_PER_DAY);
+      pts.push({ label, supply, burn });
+    }
+    return pts;
+  }, [range, currentHeight, premine, burned, dailyEmission]);
+
+  const W = 800, H = 260;
+  const PAD = { top: 16, right: 56, bottom: 28, left: 64 };
+  const chartW = W - PAD.left - PAD.right;
+  const chartH = H - PAD.top - PAD.bottom;
+
+  const supplyVals = data.map((d) => d.supply);
+  const burnVals = data.map((d) => d.burn);
+  const sMin = Math.min(...supplyVals);
+  const sMax = Math.max(...supplyVals);
+  const sRange = sMax - sMin || 1;
+  const bMax = Math.max(...burnVals, 1);
+
+  const xFor = (i: number) => PAD.left + (i / Math.max(data.length - 1, 1)) * chartW;
+  const ySupply = (v: number) => PAD.top + chartH - ((v - sMin) / sRange) * chartH;
+  const yBurn = (v: number) => PAD.top + chartH - (v / bMax) * chartH;
+
+  const supplyPath = data.map((d, i) => `${i === 0 ? "M" : "L"} ${xFor(i)} ${ySupply(d.supply)}`).join(" ");
+  const supplyArea = `${supplyPath} L ${xFor(data.length - 1)} ${PAD.top + chartH} L ${xFor(0)} ${PAD.top + chartH} Z`;
+  const burnPath = data.map((d, i) => `${i === 0 ? "M" : "L"} ${xFor(i)} ${yBurn(d.burn)}`).join(" ");
+
+  const yLabels = [0, 0.25, 0.5, 0.75, 1].map((pct) => ({
+    value: sMin + pct * sRange,
+    y: PAD.top + chartH - pct * chartH,
+  }));
+
+  const ranges: { value: SupplyRange; label: string }[] = [
+    { value: "30d", label: "30D" },
+    { value: "90d", label: "90D" },
+    { value: "1y", label: cs ? "1R" : "1Y" },
+    { value: "all", label: cs ? "Vše" : "All" },
+  ];
+
+  return (
+    <div
+      className="zion-rainbow-card rounded-3xl bg-black/60 p-6 md:p-8"
+      style={{ "--rc": "147, 51, 234" } as React.CSSProperties}
+    >
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
+            <TrendingUp className="w-4.5 h-4.5 text-purple-400" />
+          </div>
+          <div>
+            <h3 className="text-base font-semibold text-white">
+              {cs ? "Zásoba v čase" : "Supply Over Time"}
+            </h3>
+            <p className="text-[11px] text-white/30">
+              {cs ? "Kumulativní emise + projekce spalování" : "Cumulative emission + burn projection"}
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-0.5">
+          {ranges.map((r) => (
+            <button
+              key={r.value}
+              onClick={() => setRange(r.value)}
+              className={`px-3 py-1 text-[11px] rounded-md transition-all ${
+                range === r.value
+                  ? "bg-white/[0.10] text-white font-semibold"
+                  : "text-white/30 hover:text-white/60"
+              }`}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-56" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="supplyAreaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#9333ea" stopOpacity="0.25" />
+            <stop offset="50%" stopColor="#10b981" stopOpacity="0.12" />
+            <stop offset="100%" stopColor="#10b981" stopOpacity="0.01" />
+          </linearGradient>
+        </defs>
+        {/* Grid + left Y-axis (supply) */}
+        {yLabels.map((yl, i) => (
+          <g key={i}>
+            <line x1={PAD.left} x2={W - PAD.right} y1={yl.y} y2={yl.y} stroke="rgba(255,255,255,0.05)" strokeDasharray="4" />
+            <text x={PAD.left - 6} y={yl.y + 3} textAnchor="end" fill="rgba(255,255,255,0.2)" fontSize="8" fontFamily="monospace">
+              {fmtZion(yl.value)}
+            </text>
+          </g>
+        ))}
+        {/* Right Y-axis (burn) */}
+        {[0, 0.5, 1].map((pct, i) => (
+          <text
+            key={i}
+            x={W - PAD.right + 6}
+            y={PAD.top + chartH - pct * chartH + 3}
+            textAnchor="start"
+            fill="rgba(16,185,129,0.45)"
+            fontSize="7"
+            fontFamily="monospace"
+          >
+            {fmtZion(bMax * pct)}
+          </text>
+        ))}
+        {/* Supply area + line */}
+        <path d={supplyArea} fill="url(#supplyAreaGrad)" />
+        <path d={supplyPath} fill="none" stroke="#9333ea" strokeWidth="1.8" strokeLinejoin="round" opacity="0.9" />
+        {/* Burn line (dashed emerald) */}
+        <path d={burnPath} fill="none" stroke="#10b981" strokeWidth="1.2" strokeDasharray="4 2" opacity="0.7" />
+        {/* Hover */}
+        {data.map((d, i) => (
+          <g key={i}>
+            <rect
+              x={xFor(i) - chartW / data.length / 2}
+              y={PAD.top}
+              width={chartW / data.length}
+              height={chartH}
+              fill="transparent"
+              onMouseEnter={() => setHovered(i)}
+              onMouseLeave={() => setHovered(null)}
+            />
+            {hovered === i && (
+              <>
+                <line x1={xFor(i)} x2={xFor(i)} y1={PAD.top} y2={PAD.top + chartH} stroke="rgba(255,255,255,0.1)" strokeDasharray="2" />
+                <circle cx={xFor(i)} cy={ySupply(d.supply)} r="3.5" fill="#9333ea" stroke="rgba(0,0,0,0.6)" strokeWidth="1.5" />
+                <circle cx={xFor(i)} cy={yBurn(d.burn)} r="2.5" fill="#10b981" stroke="rgba(0,0,0,0.6)" strokeWidth="1" />
+                <rect x={Math.min(xFor(i) - 62, W - 130)} y={Math.max(ySupply(d.supply) - 38, 2)} width="124" height="34" rx="6" fill="rgba(0,0,0,0.9)" stroke="#9333ea" strokeWidth="0.5" />
+                <text x={Math.min(xFor(i), W - 68)} y={Math.max(ySupply(d.supply) - 24, 14)} textAnchor="middle" fill="white" fontSize="7.5" fontWeight="600" fontFamily="monospace">
+                  {fmtZion(d.supply)} ZION
+                </text>
+                <text x={Math.min(xFor(i), W - 68)} y={Math.max(ySupply(d.supply) - 12, 26)} textAnchor="middle" fill="#10b981" fontSize="7" fontFamily="monospace">
+                  {cs ? "spál." : "burn"} {fmtZion(d.burn)}
+                </text>
+              </>
+            )}
+          </g>
+        ))}
+      </svg>
+      <div className="flex items-center gap-4 mt-3 text-[10px]">
+        <span className="flex items-center gap-1.5 text-white/40">
+          <span className="w-3 h-1 rounded-full bg-purple-500" />
+          {cs ? "Cirkulující zásoba" : "Circulating supply"}
+        </span>
+        <span className="flex items-center gap-1.5 text-white/40">
+          <span className="w-3 h-px bg-emerald-500" style={{ borderTop: "1px dashed #10b981" }} />
+          {cs ? "Projekce spalování" : "Burn projection"}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export default function SupplyPageClient() {
   const { lang } = useLang();
@@ -304,6 +495,23 @@ export default function SupplyPageClient() {
               </div>
             </div>
           </div>
+        </motion.section>
+
+        {/* ═══════ SUPPLY OVER TIME CHART ═══════ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.04 }}
+        >
+          {!loading && data && (
+            <SupplyOverTimeChart
+              currentHeight={data.block_height}
+              premine={premine}
+              burned={burned}
+              dailyEmission={data.daily_emission}
+              cs={cs}
+            />
+          )}
         </motion.section>
 
         {/* ═══════ STATS GRID ═══════ */}

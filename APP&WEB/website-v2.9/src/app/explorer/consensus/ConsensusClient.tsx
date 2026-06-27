@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
@@ -7,6 +8,7 @@ import {
   Cpu,
   Clock,
   Flame,
+  Gauge,
   Heart,
   Layers,
   Pickaxe,
@@ -16,6 +18,171 @@ import {
   Zap,
 } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
+import { usePolling } from "@/hooks/usePolling";
+import { apiClient } from "@/lib/api";
+
+/* ─── Difficulty Adjustment SVG chart ────────────────────────── */
+function DifficultyChart({ cs }: { cs: boolean }) {
+  const [values, setValues] = useState<number[]>([]);
+  const [labels, setLabels] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [hovered, setHovered] = useState<number | null>(null);
+
+  const fetchDifficulty = useCallback(async () => {
+    try {
+      const result = await apiClient<{
+        data: { labels: string[]; values: number[] };
+      }>("/blockchain/charts?type=difficulty&range=7d");
+      const validIdx = result.data.values
+        .map((v, i) => (v > 0 ? i : -1))
+        .filter((i) => i >= 0);
+      setValues(validIdx.map((i) => result.data.values[i]));
+      setLabels(validIdx.map((i) => result.data.labels[i]));
+    } catch {
+      /* silent */
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDifficulty();
+  }, [fetchDifficulty]);
+  usePolling(fetchDifficulty, 30_000);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-48">
+        <div className="w-6 h-6 border-2 border-white/10 border-t-purple-400/60 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!values.length) {
+    return (
+      <div className="flex flex-col items-center justify-center h-48 text-white/20 gap-2">
+        <Gauge className="h-8 w-8" />
+        <p className="text-sm">{cs ? "Data nejsou dostupná" : "No data available"}</p>
+      </div>
+    );
+  }
+
+  const W = 800, H = 240;
+  const PAD = { top: 16, right: 16, bottom: 28, left: 60 };
+  const chartW = W - PAD.left - PAD.right;
+  const chartH = H - PAD.top - PAD.bottom;
+
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  // Pad range for bands
+  const yMin = min - range * 0.15;
+  const yMax = max + range * 0.15;
+  const yRange = yMax - yMin || 1;
+
+  const mean = values.reduce((a, b) => a + b, 0) / values.length;
+  const upperBand = mean * 1.2;
+  const lowerBand = mean * 0.8;
+
+  const xFor = (i: number) => PAD.left + (i / Math.max(values.length - 1, 1)) * chartW;
+  const yFor = (v: number) => PAD.top + chartH - ((v - yMin) / yRange) * chartH;
+
+  const pathD = values.map((v, i) => `${i === 0 ? "M" : "L"} ${xFor(i)} ${yFor(v)}`).join(" ");
+  const areaD = `${pathD} L ${xFor(values.length - 1)} ${PAD.top + chartH} L ${xFor(0)} ${PAD.top + chartH} Z`;
+
+  // Detect adjustment points (>5% change from previous)
+  const adjustmentIdx: number[] = [];
+  for (let i = 1; i < values.length; i++) {
+    const pct = Math.abs(values[i] - values[i - 1]) / (values[i - 1] || 1);
+    if (pct > 0.05) adjustmentIdx.push(i);
+  }
+
+  const yLabels = [0, 0.25, 0.5, 0.75, 1].map((pct) => ({
+    value: yMin + pct * yRange,
+    y: PAD.top + chartH - pct * chartH,
+  }));
+
+  const fmtSI = (v: number) => {
+    if (v >= 1e9) return (v / 1e9).toFixed(2) + "G";
+    if (v >= 1e6) return (v / 1e6).toFixed(2) + "M";
+    if (v >= 1e3) return (v / 1e3).toFixed(1) + "K";
+    return v.toFixed(0);
+  };
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-56" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="diffAreaGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#a855f7" stopOpacity="0.2" />
+          <stop offset="100%" stopColor="#a855f7" stopOpacity="0.01" />
+        </linearGradient>
+      </defs>
+      {/* Grid */}
+      {yLabels.map((yl, i) => (
+        <g key={i}>
+          <line x1={PAD.left} x2={W - PAD.right} y1={yl.y} y2={yl.y} stroke="rgba(255,255,255,0.05)" strokeDasharray="4" />
+          <text x={PAD.left - 6} y={yl.y + 3} textAnchor="end" fill="rgba(255,255,255,0.2)" fontSize="7.5" fontFamily="monospace">
+            {fmtSI(yl.value)}
+          </text>
+        </g>
+      ))}
+      {/* LWMA bands */}
+      <line x1={PAD.left} x2={W - PAD.right} y1={yFor(upperBand)} y2={yFor(upperBand)} stroke="rgba(239,68,68,0.3)" strokeWidth="1" strokeDasharray="6 3" />
+      <line x1={PAD.left} x2={W - PAD.right} y1={yFor(lowerBand)} y2={yFor(lowerBand)} stroke="rgba(34,197,94,0.3)" strokeWidth="1" strokeDasharray="6 3" />
+      <line x1={PAD.left} x2={W - PAD.right} y1={yFor(mean)} y2={yFor(mean)} stroke="rgba(255,255,255,0.12)" strokeWidth="0.8" strokeDasharray="2 2" />
+      {/* Band labels */}
+      <text x={W - PAD.right - 4} y={yFor(upperBand) - 3} textAnchor="end" fill="rgba(239,68,68,0.5)" fontSize="7" fontFamily="monospace">+20%</text>
+      <text x={W - PAD.right - 4} y={yFor(lowerBand) + 9} textAnchor="end" fill="rgba(34,197,94,0.5)" fontSize="7" fontFamily="monospace">-20%</text>
+      {/* Area + line */}
+      <path d={areaD} fill="url(#diffAreaGrad)" />
+      <path d={pathD} fill="none" stroke="#a855f7" strokeWidth="1.8" strokeLinejoin="round" opacity="0.9" />
+      {/* Adjustment dots */}
+      {adjustmentIdx.map((i) => (
+        <circle key={i} cx={xFor(i)} cy={yFor(values[i])} r="3" fill="#ef4444" stroke="rgba(0,0,0,0.6)" strokeWidth="1.5" opacity="0.85" />
+      ))}
+      {/* Hover */}
+      {values.map((v, i) => (
+        <g key={i}>
+          <rect
+            x={xFor(i) - chartW / values.length / 2}
+            y={PAD.top}
+            width={chartW / values.length}
+            height={chartH}
+            fill="transparent"
+            onMouseEnter={() => setHovered(i)}
+            onMouseLeave={() => setHovered(null)}
+          />
+          {hovered === i && (
+            <>
+              <line x1={xFor(i)} x2={xFor(i)} y1={PAD.top} y2={PAD.top + chartH} stroke="rgba(255,255,255,0.1)" strokeDasharray="2" />
+              <circle cx={xFor(i)} cy={yFor(v)} r="3.5" fill="#a855f7" stroke="rgba(0,0,0,0.6)" strokeWidth="1.5" />
+              <rect x={Math.min(xFor(i) - 44, W - 96)} y={Math.max(yFor(v) - 28, 2)} width="88" height="20" rx="6" fill="rgba(0,0,0,0.85)" stroke="#a855f7" strokeWidth="0.5" />
+              <text x={Math.min(xFor(i), W - 52)} y={Math.max(yFor(v) - 14, 14)} textAnchor="middle" fill="white" fontSize="7.5" fontWeight="600" fontFamily="monospace">
+                {fmtSI(v)}
+              </text>
+            </>
+          )}
+        </g>
+      ))}
+      {/* X-axis date labels (first, middle, last) */}
+      {[0, Math.floor(values.length / 2), values.length - 1]
+        .filter((idx, i, arr) => arr.indexOf(idx) === i && idx >= 0 && idx < labels.length)
+        .map((idx) => (
+          <text
+            key={`xl-${idx}`}
+            x={xFor(idx)}
+            y={H - 8}
+            textAnchor="middle"
+            fill="rgba(255,255,255,0.25)"
+            fontSize="7"
+            fontFamily="monospace"
+          >
+            {labels[idx] ? new Date(labels[idx]).toLocaleDateString(cs ? "cs-CZ" : "en-US", { month: "short", day: "numeric" }) : ""}
+          </text>
+        ))}
+    </svg>
+  );
+}
 
 export default function ConsensusClient() {
   const { lang } = useLang();

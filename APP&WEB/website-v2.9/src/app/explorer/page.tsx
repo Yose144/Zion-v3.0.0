@@ -11,6 +11,7 @@ import {
   Activity,
   ArrowLeftRight,
   BarChart3,
+  Code,
   Compass,
   ExternalLink,
   Flame,
@@ -169,6 +170,14 @@ export default function ExplorerPage() {
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <Globe className="h-3 w-3 text-zion-cyan" /> Core + Edge
                 </span>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href="/explorer/api-docs"
+                  className="inline-flex items-center gap-2 rounded-2xl bg-purple-500/15 border border-purple-500/30 px-5 py-2.5 text-sm font-semibold text-purple-300 hover:bg-purple-500/25 transition-colors"
+                >
+                  <Code className="h-4 w-4" /> {cs ? 'API dokumentace' : 'API Docs'}
+                </Link>
               </div>
             </div>
             <div className="w-full lg:max-w-xl">
