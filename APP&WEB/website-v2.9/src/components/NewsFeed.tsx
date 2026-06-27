@@ -24,19 +24,34 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
-    slug: 'from-genesis-on-the-star',
-    date: '2026-06-23',
+    slug: 'zion-3.0.3-decimal-fork',
+    date: '2026-06-27',
+    tag: { cs: 'Hard Fork', en: 'Hard Fork' },
+    tagColor: 'text-rose-400',
+    title: {
+      cs: 'ZION 3.0.3 — Decimal Fork: 10¹² → 10⁶ flowers, historie bloků zachována',
+      en: 'ZION 3.0.3 — Decimal Fork: 10¹² → 10⁶ flowers, block history preserved',
+    },
+    summary: {
+      cs: 'Měníme FLOWERS_PER_ZION z 10¹² na 10⁶ — čistší jednotky jako Monero a Cardano. Bloky 0..H zůstávají, hashe se nemění, explorer vidí celou historii. Na bloku H+1 migration block: burn starých UTXO, nové s amount /10⁶. Nový protocol_version 2, nová emise, nové fees — vše v flowers (10⁶). Bridge factor se mění z 10⁶ na 10¹² pro 1:1 kompatibilitu. Stejný release uzamkne canonical RPC pojmenování.',
+      en: 'Changing FLOWERS_PER_ZION from 10¹² to 10⁶ — cleaner units like Monero and Cardano. Blocks 0..H stay on disk, hashes unchanged, explorer sees full history. At block H+1 a migration block: burn old UTXO, create new with amount /10⁶. New protocol_version 2, new emission, new fees — all in flowers (10⁶). Bridge factor changes from 10⁶ to 10¹² for 1:1 compatibility. Same release locks canonical RPC naming.',
+    },
+    href: '/network',
+  },
+  {
+    slug: 'doge-vs-zion-legendary-price',
+    date: '2026-06-26',
     tag: { cs: 'Launch', en: 'Launch' },
     tagColor: 'text-zion-gold',
     title: {
-      cs: 'From Genesis on the Star 🚀 100M ZION letí na Base za $0.00002 — such DeFi, much wow!',
-      en: 'From Genesis on the Star 🚀 100M ZION flying to Base at $0.00002 — such DeFi, much wow!',
+      cs: 'Doge vs ZION 🐕 Nová cena: $0.0002 — jako legendární Dogecoin, much wow!',
+      en: 'Doge vs ZION 🐕 New price: $0.0002 — like legendary Dogecoin, much wow!',
     },
     summary: {
-      cs: 'Much bridge. Very mainnet. Such 5/5. WOW. 🐕 100M ZION zamčeno na L1, 5/5 validátorů potvrdilo on-chain, relay běží. Počáteční cena na UniV3Pool: $0.00002/ZION (FDV ~$2.9M). Když Doge šel na Měsíc, měl jeden podpis. My letíme na Base s pěti. To the moon? Ne. To the stars. 🌟',
-      en: 'Much bridge. Very mainnet. Such 5/5. WOW. 🐕 100M ZION locked on L1, 5/5 validators confirmed on-chain, relay is live. Initial UniV3Pool price: $0.00002/ZION (FDV ~$2.9M). When Doge went to the Moon, it had one signature. We\'re flying to Base with five. To the moon? No. To the stars. 🌟',
+      cs: 'Much price. Very legendary. Such wow. 🐕 ZION dostává novou seed cenu $0.0002/ZION — přesně jako Dogecoin v legendárních raných dnech. FDV ~$28.8M při 144B zásobě. 100M ZION zamčeno na L1, 5/5 validátorů potvrdilo, bridge běží na Base. Když Doge šel z $0.0002 na $0.70, byl to 3500× skok. My máme 5 podpisů, AI vrstvu a Strom života. To the moon? Ne. To the stars. 🌟 Hraj Doge vs ZION click battle!',
+      en: 'Much price. Very legendary. Such wow. 🐕 ZION gets a new seed price of $0.0002/ZION — exactly like Dogecoin in the legendary early days. FDV ~$28.8M at 144B supply. 100M ZION locked on L1, 5/5 validators confirmed, bridge running on Base. When Doge went from $0.0002 to $0.70, that was a 3500× jump. We have 5 signatures, an AI layer, and the Tree of Life. To the moon? No. To the stars. 🌟 Play the Doge vs ZION click battle!',
     },
-    href: '/defi',
+    href: '/doge-vs-zion',
     banner: 'doge-vs-zion',
   },
   {

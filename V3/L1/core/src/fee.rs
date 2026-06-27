@@ -5,14 +5,16 @@
 //!
 //! This makes ZION deflationary over time as fees reduce circulating supply.
 //!
-//! All values in flowers (1 ZION = 1,000,000,000,000 flowers).
+//! All values in flowers (1 ZION = 1,000,000 flowers, post-3.0.3 fork).
 
 use crate::emission;
 
 // ── Constants ──────────────────────────────────────────────────────────
 
-/// Minimum transaction fee: 0.001 ZION = 1,000 flowers.
-pub const MIN_TX_FEE: u64 = 1_000;
+/// Minimum transaction fee: 1 flower (minimum unit, post-3.0.3 fork).
+/// Pre-3.0.3: 1,000 flowers (0.000001 ZION at 12 decimals).
+/// Post-3.0.3: 1 flower (0.000001 ZION at 6 decimals).
+pub const MIN_TX_FEE: u64 = 1;
 
 /// Minimum fee rate: 1 flower per byte of serialized transaction.
 pub const MIN_FEE_RATE: u64 = 1;
@@ -58,7 +60,7 @@ pub fn minimum_fee_for_size(tx_size_bytes: usize) -> u64 {
 pub fn validate_fee(fee: u64, tx_size_bytes: usize) -> Result<(), String> {
     if fee < MIN_TX_FEE {
         return Err(format!(
-            "fee {} below minimum {} flowers (0.001 ZION)",
+            "fee {} below minimum {} flowers (0.000001 ZION)",
             fee, MIN_TX_FEE
         ));
     }
@@ -136,7 +138,7 @@ mod tests {
 
     #[test]
     fn min_fee_constant() {
-        assert_eq!(MIN_TX_FEE, 1_000);
+        assert_eq!(MIN_TX_FEE, 1);
     }
 
     #[test]
@@ -204,8 +206,9 @@ mod tests {
 
     #[test]
     fn validate_fee_too_low() {
-        assert!(validate_fee(999, 250).is_err());
         assert!(validate_fee(0, 250).is_err());
+        // 249 < minimum_fee_for_size(250) = max(1, 250) = 250
+        assert!(validate_fee(249, 250).is_err());
     }
 
     #[test]
@@ -232,7 +235,7 @@ mod tests {
 
     #[test]
     fn max_coinbase_block_1() {
-        assert_eq!(max_coinbase_output(1), 5_400_067_000_000_000);
+        assert_eq!(max_coinbase_output(1), 5_400_067_000);
     }
 
     #[test]
@@ -243,7 +246,7 @@ mod tests {
     #[test]
     fn max_coinbase_tail() {
         let tail_block = 10 * 5_256_000 + 1;
-        assert_eq!(max_coinbase_output(tail_block), 724_784_723_787_776);
+        assert_eq!(max_coinbase_output(tail_block), 724_784_723);
     }
 
     #[test]

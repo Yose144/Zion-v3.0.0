@@ -2,13 +2,15 @@
 //!
 //! Constitutional reference: `docs/mainnet/MAINNET_CONSTITUTION.md`
 //!
-//! All values in flowers (1 ZION = 1_000_000_000_000 flowers).
+//! All values in flowers (1 ZION = 1_000_000 flowers, post-3.0.3 fork).
+//! Pre-3.0.3: 1 ZION = 1_000_000_000_000 flowers (12 decimals).
+//! Post-3.0.3 (block H+1): 1 ZION = 1_000_000 flowers (6 decimals).
 //! Block height 0 is the genesis block (premine only, no mining reward).
 //! Decade Decay: reward × (4/5) every 5,256,000 blocks.
 //! After decade 10 (block 52,560,001+): perpetual tail emission.
 
-/// 1 ZION = 1_000_000_000_000 flowers (12 decimal places).
-pub const FLOWERS_PER_ZION: u64 = 1_000_000_000_000;
+/// 1 ZION = 1_000_000 flowers (6 decimal places, post-3.0.3 fork).
+pub const FLOWERS_PER_ZION: u64 = 1_000_000;
 
 /// Total supply: 144,000,000,000 ZION in flowers (u128 required).
 pub const TOTAL_SUPPLY: u128 = 144_000_000_000_u128 * FLOWERS_PER_ZION as u128;
@@ -37,12 +39,12 @@ pub const DECAY_DENOMINATOR: u64 = 5;
 /// Number of decades with active decay before tail emission.
 pub const MAX_DECAY_DECADES: u64 = 10;
 
-/// Base block reward (Decade 1): 5,400.067 ZION = 5,400,067,000,000,000 flowers.
-pub const BASE_REWARD: u64 = 5_400_067_000_000_000;
+/// Base block reward (Decade 1): 5,400.067 ZION = 5,400,067,000 flowers (post-3.0.3).
+pub const BASE_REWARD: u64 = 5_400_067_000;
 
-/// Tail emission reward: BASE_REWARD × (4/5)^10 = 724,784,723,787,776 flowers (~724.785 ZION).
+/// Tail emission reward: BASE_REWARD × (4/5)^9 = 724,784,723 flowers (~724.785 ZION).
 /// This reward continues forever after decade 10.
-pub const TAIL_REWARD: u64 = 724_784_723_787_776;
+pub const TAIL_REWARD: u64 = 724_784_723;
 
 /// Coinbase maturity: outputs unspendable for this many blocks.
 pub const COINBASE_MATURITY: u64 = 100;
@@ -135,11 +137,11 @@ pub fn zion_to_flowers(zion: u64) -> u64 {
     zion.saturating_mul(FLOWERS_PER_ZION)
 }
 
-/// Display a flower amount as a human-readable ZION string (e.g. "5400.067000000000").
+/// Display a flower amount as a human-readable ZION string (e.g. "5400.067000").
 pub fn format_zion(flowers: u64) -> String {
     let whole = flowers / FLOWERS_PER_ZION;
     let frac = flowers % FLOWERS_PER_ZION;
-    format!("{whole}.{frac:012}")
+    format!("{whole}.{frac:06}")
 }
 
 // -------------------------------------------------------------------------
@@ -158,7 +160,7 @@ mod tests {
     #[test]
     fn block_1_base_reward() {
         assert_eq!(block_subsidy(1), BASE_REWARD);
-        assert_eq!(block_subsidy(1), 5_400_067_000_000_000);
+        assert_eq!(block_subsidy(1), 5_400_067_000);
     }
 
     #[test]
@@ -173,7 +175,7 @@ mod tests {
         let d2 = BLOCKS_PER_DECADE + 1;
         let expected = BASE_REWARD * 4 / 5;
         assert_eq!(block_subsidy(d2), expected);
-        assert_eq!(expected, 4_320_053_600_000_000);
+        assert_eq!(expected, 4_320_053_600);
     }
 
     #[test]
@@ -246,9 +248,9 @@ mod tests {
     #[test]
     fn constants_consistency() {
         assert_eq!(MINING_EMISSION, TOTAL_SUPPLY - GENESIS_PREMINE);
-        assert_eq!(TOTAL_SUPPLY, 144_000_000_000_000_000_000_000_u128);
-        assert_eq!(GENESIS_PREMINE, 16_780_000_000_000_000_000_000_u128);
-        assert_eq!(MINING_EMISSION, 127_220_000_000_000_000_000_000_u128);
+        assert_eq!(TOTAL_SUPPLY, 144_000_000_000_000_000_u128);
+        assert_eq!(GENESIS_PREMINE, 16_780_000_000_000_000_u128);
+        assert_eq!(MINING_EMISSION, 127_220_000_000_000_000_u128);
         assert_eq!(BLOCKS_PER_DECADE, 5_256_000);
         assert_eq!(BLOCKS_PER_YEAR, 525_600);
     }
@@ -281,10 +283,10 @@ mod tests {
 
     #[test]
     fn format_zion_display() {
-        assert_eq!(format_zion(BASE_REWARD), "5400.067000000000");
-        assert_eq!(format_zion(TAIL_REWARD), "724.784723787776");
-        assert_eq!(format_zion(0), "0.000000000000");
-        assert_eq!(format_zion(FLOWERS_PER_ZION), "1.000000000000");
+        assert_eq!(format_zion(BASE_REWARD), "5400.067000");
+        assert_eq!(format_zion(TAIL_REWARD), "724.784723");
+        assert_eq!(format_zion(0), "0.000000");
+        assert_eq!(format_zion(FLOWERS_PER_ZION), "1.000000");
     }
 
     #[test]

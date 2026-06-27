@@ -68,7 +68,7 @@ export default function DogeVsZionBanner({ cs = true }: DogeVsZionBannerProps) {
               🛡️ 5/5 sigs
             </span>
             <span className="rounded-full border border-zion-gold/20 bg-black/40 px-2.5 py-0.5 text-[10px] font-bold text-zion-gold backdrop-blur-sm">
-              💰 $0.00002
+              💰 $0.0002
             </span>
             <span className="rounded-full border border-cyan-400/20 bg-black/40 px-2.5 py-0.5 text-[10px] font-bold text-cyan-300 backdrop-blur-sm">
               🔒 100M ZION
