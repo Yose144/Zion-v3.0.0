@@ -14,8 +14,8 @@
  *   tx_id: 64-char hex (deterministic from sender/recipient/amount/nonce),
  *   from: zion1... sender address,
  *   to: zion1... recipient address,
- *   amount_zion: u128 as string (in flowers, 1 ZION = 10^12 flowers),
- *   fee_zion: u64 number (MIN_FEE_FLOWERS = 1000 flowers = 0.000000001 ZION),
+ *   amount_zion: u128 as string (in flowers, 1 ZION = 10^6 flowers),
+ *   fee_zion: u64 number (MIN_FEE_FLOWERS = 1 flower, L1 fee::MIN_TX_FEE=1),
  *   nonce: u64 safe integer (timestamp_ms, unique per sender per tx),
  *   signature: 128-char hex Ed25519 signature over tx_id bytes,
  *   public_key: 64-char hex raw Ed25519 public key,
@@ -29,8 +29,8 @@ import { Buffer } from 'buffer';
 // Wire up sync sha512 for @noble/ed25519 v3
 ed25519.hashes.sha512 = sha512;
 
-export const FLOWERS_PER_ZION = 1_000_000_000_000n;
-export const MIN_FEE_FLOWERS = 1_000n;
+export const FLOWERS_PER_ZION = 1_000_000n;
+export const MIN_FEE_FLOWERS = 1n; // L1 fee::MIN_TX_FEE=1 (3.0.3)
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -49,12 +49,12 @@ function parseAmount(amountZion) {
   if (typeof amountZion === 'string') {
     const num = parseFloat(amountZion);
     // Treat as ZION if has decimal or is small
-    if (amountZion.includes('.') || num < 1e12) {
-      return BigInt(Math.floor(num * 1e12));
+    if (amountZion.includes('.') || num < 1e6) {
+      return BigInt(Math.floor(num * 1e6));
     }
     return BigInt(amountZion);
   }
-  return BigInt(Math.floor(Number(amountZion) * 1e12));
+  return BigInt(Math.floor(Number(amountZion) * 1e6));
 }
 
 // ---------------------------------------------------------------------------

@@ -49,7 +49,7 @@ describe('TransactionBuilder', () => {
       const fee = estimateTransactionFee(1, 2);
       expect(fee.bytes).toBe(1 * 250 + 2 * 34 + 10);
       expect(fee.feeAtomic).toBe(fee.bytes);
-      expect(fee.feeZion).toBe(fee.bytes / 1_000_000_000_000);
+      expect(fee.feeZion).toBe(fee.bytes / 1_000_000);
     });
   });
 

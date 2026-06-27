@@ -179,7 +179,7 @@ export {};
       "m/44'/0'/0'",
       txHash,
       'zion1testrecipientaddress0000000000ckzz',
-      1000000000000n // 1 ZION in flowers
+      1000000n // 1 ZION in flowers (6 decimal)
     );
 
     expect(sigHex).toHaveLength(128); // 64 bytes hex
@@ -202,7 +202,7 @@ export {};
         "m/44'/0'/0'",
         txHash,
         'zion1testrecipientaddress0000000000ckzz',
-        1000000000000n
+        1000000n
       )
     ).rejects.toThrow();
   });

@@ -181,8 +181,8 @@ function extractPublicKey(privateKeyDer) {
   return pubKeyDer.slice(-32);
 }
 
-const FLOWERS_PER_ZION = 1_000_000_000_000n; // 1e12
-const MIN_FEE_FLOWERS = 10_000_000n; // 0.00001 ZION minimum fee (10M flowers)
+const FLOWERS_PER_ZION = 1_000_000n; // 1e6 (3.0.3 decimal fork)
+const MIN_FEE_FLOWERS = 1n; // 1 flower minimum fee (L1 fee.rs MIN_TX_FEE=1, 3.0.3)
 
 /**
  * Build a signed UTXO transaction for V3.
@@ -198,7 +198,7 @@ const MIN_FEE_FLOWERS = 10_000_000n; // 0.00001 ZION minimum fee (10M flowers)
  */
 function buildUtxoTransaction({ fromAddress, toAddress, amountZion, utxos, privateKeyDer, memo }) {
   // Convert ZION to flowers with precise decimal handling
-  const amountFlowers = BigInt(Math.floor(amountZion * 1e12));
+  const amountFlowers = BigInt(Math.floor(amountZion * 1e6));
   const feeFlowers = MIN_FEE_FLOWERS;
   const totalNeeded = amountFlowers + feeFlowers;
 
@@ -217,7 +217,7 @@ function buildUtxoTransaction({ fromAddress, toAddress, amountZion, utxos, priva
   }
 
   if (inputSum < totalNeeded) {
-    const balanceZion = Number(inputSum) / 1e12;
+    const balanceZion = Number(inputSum) / 1e6;
     throw new Error(
       `Insufficient balance: need ${amountZion} + fee ZION, have ${balanceZion.toFixed(6)} ZION spendable`
     );
