@@ -4422,16 +4422,16 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
     }
 
     // V3 returns: balance_flowers (string, u128 in flowers), chain_height, transaction_model
-    // 1 ZION = 1_000_000_000_000 flowers (1e12)
+    // 1 ZION = 1_000_000 flowers (1e6) — 3.0.3 decimal fork
     // Use BigInt for precision with large u128 values, then convert to Number for display
     const balanceFlowersStr = rpcOk ? (result?.balance_flowers ?? '0') : '0';
     const utxoBalanceFlowersStr = rpcOk ? (result?.utxo_balance_flowers ?? '0') : '0';
     const accountBalanceFlowersStr = rpcOk ? (result?.account_balance_flowers ?? '0') : '0';
     let balanceZion = 0;
     try {
-      balanceZion = Number(BigInt(balanceFlowersStr)) / 1_000_000_000_000;
+      balanceZion = Number(BigInt(balanceFlowersStr)) / 1_000_000;
     } catch {
-      balanceZion = Number(balanceFlowersStr) / 1_000_000_000_000;
+      balanceZion = Number(balanceFlowersStr) / 1_000_000;
     }
     const balanceAtomic = balanceFlowersStr;
     const utxoCount = rpcOk ? (result?.utxo_count ?? 0) : 0;
@@ -4517,12 +4517,12 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
       transaction_model: rpcOk ? (result?.transaction_model ?? 'account') : 'unknown',
       rpc_ok: rpcOk,
       rpc_error: rpcError || '',
-      // Pool mining balance (V3 pool stores flowers: 1 ZION = 1_000_000_000_000 flowers)
-      pool_pending:        poolPending  / 1_000_000_000_000,
+      // Pool mining balance (V3 pool stores flowers: 1 ZION = 1_000_000 flowers — 3.0.3 decimal fork)
+      pool_pending:        poolPending  / 1_000_000,
       pool_pending_atomic: poolPending,
       pool_pending_stats_atomic: poolPendingFromStats,
       pool_pending_payouts_atomic: poolPendingFromPayouts,
-      pool_paid:           poolPaid     / 1_000_000_000_000,
+      pool_paid:           poolPaid     / 1_000_000,
       pool_paid_atomic:    poolPaid,
       pool_shares:         poolShares,
       pool_blocks:         poolBlocks,
@@ -4705,7 +4705,7 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
       }
 
       const accountBalanceFlowers = BigInt(balanceRes?.account_balance_flowers || '0');
-      const amountFlowers = BigInt(Math.floor(amt * 1e12));
+      const amountFlowers = BigInt(Math.floor(amt * 1e6));
       const feeFlowers = AccountBuilder.DEFAULT_FEE_FLOWERS;
       const totalNeeded = amountFlowers + feeFlowers;
 
@@ -4713,7 +4713,7 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
         console.warn('[MAIN wallet-send-transaction] Insufficient account balance');
         return {
           success: false,
-          error: `Insufficient balance: need ${amt} + fee ZION, have ${(Number(accountBalanceFlowers) / 1e12).toFixed(6)} ZION`
+          error: `Insufficient balance: need ${amt} + fee ZION, have ${(Number(accountBalanceFlowers) / 1e6).toFixed(6)} ZION`
         };
       }
 

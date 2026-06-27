@@ -134,7 +134,7 @@ async function main() {
   console.log('  tx_id:', acctTx.tx_id.slice(0, 16) + '...');
   console.log('  from:', acctTx.from.slice(0, 18) + '...');
   console.log('  to:', acctTx.to.slice(0, 18) + '...');
-  console.log('  amount_zion:', acctTx.amount_zion, 'flowers (', Number(acctTx.amount_zion) / 1e12, 'ZION)');
+  console.log('  amount_zion:', acctTx.amount_zion, 'flowers (', Number(acctTx.amount_zion) / 1e6, 'ZION)');
   console.log('  fee_zion:', acctTx.fee_zion, 'flowers');
   console.log('  nonce:', acctTx.nonce, '(safe int:', Number.isSafeInteger(acctTx.nonce), ')');
 
