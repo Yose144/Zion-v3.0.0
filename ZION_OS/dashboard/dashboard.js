@@ -645,6 +645,38 @@ async function edgeAction(action) {
   }
 }
 
+// ── Clear Edge Disk (runs edge-log-cleanup.sh + Docker prune via SSH) ──
+async function clearEdgeDisk(aggressive) {
+  const mode = aggressive ? 'Deep Clean (aggressive)' : 'Clear Edge Disk';
+  const msg = aggressive
+    ? '🔥 DEEP CLEAN\n\nThis will aggressively prune ALL Docker images, build cache, containers, volumes, and vacuum journal to 200MB.\nRunning containers will NOT be stopped.\n\nContinue?'
+    : '🧹 Clear Edge Disk\n\nThis will run the cleanup script (log rotation, journal vacuum, Docker build cache prune).\nSafe operation — running containers are not affected.\n\nContinue?';
+  if(!confirm(msg)) return;
+  toast(`${mode}: Running…`, 'success');
+  try {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 70000);
+    const res = await fetch('/api/edge/clear-disk', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({aggressive}),
+      signal: ctrl.signal,
+    });
+    clearTimeout(tid);
+    const d = await res.json();
+    if(d.ok){
+      toast(`${mode}: ${d.disk_before} → ${d.disk_after}`, 'success');
+      // Force refresh edge status to show updated disk
+      setTimeout(() => refreshEdgeServerCard(true), 2000);
+    } else {
+      toast(`${mode} failed: ${d.error || 'unknown'}`, 'error');
+    }
+  } catch(e) {
+    if(e.name === 'AbortError') toast(`${mode}: timeout — cleanup may still be running`, 'error');
+    else toast(`${mode} error: ${e.message}`, 'error');
+  }
+}
+
 // ── Service Telemetry Detail Cards (Overview panel) ──
 async function updateServiceTelemetryDetails(s){
   const container = document.getElementById('overview-telemetry-details');
