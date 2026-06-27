@@ -5,7 +5,7 @@ import { coreUrl } from '@/lib/core-endpoints';
  * GET /api/bridge/status
  *
  * Server-side proxy: fetches Prometheus metrics from the ZION bridge relay
- * (port 9102) and returns parsed JSON.
+ * (port 9101) and returns parsed JSON.
  */
 
 // NOTE: Next.js inlines env vars at build time, so we use the runtime
@@ -29,7 +29,7 @@ function parse(text: string, name: string): number {
 export async function GET() {
   try {
     const res = await fetch(BRIDGE_METRICS_URL, {
-      signal: AbortSignal.timeout(3000),
+      signal: AbortSignal.timeout(5000),
       headers: { Accept: 'text/plain' },
       cache: 'no-store',
     });

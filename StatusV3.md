@@ -1340,7 +1340,7 @@ Experimentální varianty (`deeksha_lite_optimized`, `deeksha_lite_fire_optimize
 | Pool | 8444 / 8455 | ✅ Online | 4 active sessions, ~4.6 KH/s |
 | DAO | 8450 | ✅ Online | Governance API |
 | WARP | 8453 | ✅ Online | Multi-chain relay |
-| Bridge | 9102 | ✅ Online | Cross-chain metrics |
+| Bridge | 9101 | ✅ Online | Cross-chain metrics |
 | Agent | 8767 | ✅ Online | Rig lifecycle manager |
 | Website | 3000 | ✅ Online | Next.js produkce |
 | **OASIS** | **8094** | ✅ **Nově** | Consciousness mining game L4 |
@@ -1906,7 +1906,7 @@ GET /api/bridge/validators  → {validators: [{address, online, last_signature}]
 | `APP&WEB/website-v2.9/src/app/bridge/page.tsx` | Base Sepolia Testnet · Replay-safe hero, Lock&Mint + Burn&Unlock směry, FAQ, Memo builder, Relay stats, Architecture diagram, Readiness checklist, Contract addresses |
 | `APP&WEB/website-v2.9/src/components/BridgeBurnWidget.tsx` | MetaMask + ethers v5 burn widget pro Base Sepolia; fix explorer link na `sepolia.basescan.org` |
 | `APP&WEB/website-v2.9/src/lib/bridge-api.ts` | `BRIDGE_CONTRACTS` → Base Sepolia adresy (chain 84532); `switchToBaseSepolia()` pro MetaMask switch |
-| `APP&WEB/website-v2.9/src/app/api/bridge/status/route.ts` | Prometheus metrics proxy na port 9102 |
+| `APP&WEB/website-v2.9/src/app/api/bridge/status/route.ts` | Prometheus metrics proxy na port 9101 |
 
 #### 26c: Desktop Agent Bridge Tab
 

@@ -97,7 +97,11 @@ export default function BridgeStatusBanner() {
                   {cs ? 'Bridge Status' : 'Bridge Status'}
                 </p>
                 <p className={`text-sm font-bold ${online ? 'text-emerald-300' : 'text-gray-400'}`}>
-                  {online ? (cs ? 'Online · Relay aktivní' : 'Online · Relay active') : (cs ? 'Offline' : 'Offline')}
+                  {loading
+                    ? (cs ? 'Připojování…' : 'Connecting…')
+                    : online
+                      ? (cs ? 'Online · Relay aktivní' : 'Online · Relay active')
+                      : (cs ? 'Offline · Relay restart?' : 'Offline · Relay restarting?')}
                 </p>
               </div>
             </div>
