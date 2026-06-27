@@ -383,8 +383,8 @@ Cíl: Vytvořit čisté repo, dostat core blockchain do souladu s WP2.9.5 a MAIN
 **Emission Parametry:**
 ```
 Block Reward:       5,400.067 ZION (konstantní)
-Block Reward (flowers): 5,400,067,000,000,000 (1 ZION = 1,000,000,000,000 flowers)
-FLOWERS_PER_ZION:   10¹² (12 decimals)  -- canonical, viz docs/CANONICAL_UNITS_AUDIT.md
+Block Reward (flowers): 5,400,067,000 (1 ZION = 1,000,000 flowers) *(updated to 6-decimal in 3.0.3 fork)*
+FLOWERS_PER_ZION:   10⁶ (6 decimals)  -- canonical, viz docs/CANONICAL_UNITS_AUDIT.md
 Block Time:         60 sekund
 Mining Supply:      127,720,000,000 ZION
 Mining Horizon:     23,652,000 bloků (~45 let)

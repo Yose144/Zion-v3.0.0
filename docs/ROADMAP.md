@@ -202,7 +202,7 @@ Tyto hodnoty jsou zmrazeny a **nemohou být změněny** bez hard forku a konsens
 | Consensus | Proof of Work (Cosmic Harmony v3) | 🔒 LOCKED |
 | Halving | ❌ ŽÁDNÝ (konstantní emise) | 🔒 LOCKED |
 | Presale | ❌ NEEXISTUJE | 🔒 LOCKED |
-| Sub-unit (flowers) | 1 ZION = 1,000,000,000,000 flowers (12 decimals, `FLOWERS_PER_ZION = 10¹²`) | 🔒 LOCKED |
+| Sub-unit (flowers) | 1 ZION = 1,000,000 flowers (6 decimals, `FLOWERS_PER_ZION = 10⁶`) *(updated to 6-decimal in 3.0.3 fork)* | 🔒 LOCKED |
 | Mining Horizon | 23,652,000 bloků (~45 let) | 🔒 LOCKED |
 
 ### Genesis Premine — 16,280,000,000 ZION

@@ -133,7 +133,7 @@ Projekt je **multi-layer monorepo** — kryptoměna ZION s vlastním PoW konsenz
 | **Block time** | 60 sekund |
 | **Block reward** | 5 400.067 ZION (Dekáda 1) |
 | **Celková nabídka** | 144 miliard ZION |
-| **Atomová jednotka** | 1 ZION = 10¹² flowers |
+| **Atomová jednotka** | 1 ZION = 10⁶ flowers *(updated to 6-decimal in 3.0.3 fork)* |
 | **DAA** | LWMA (60 bloků, ±25% clamp) |
 | **Max reorg** | 10 bloků |
 | **Soft finality** | 60 bloků |

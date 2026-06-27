@@ -453,7 +453,7 @@ f2e20e7a  feat(dashboard): L3 Rainbow Protocol standalone dashboard
 | **Wallets tab** | Source badge zobrazoval špatnou barvu (API vrací `source:'genesis'` ne `'premine'`); velká čísla jako `1650000000.000000 ZION` | Badge oprava `genesis`/`node`; formátování `1.65 BZION`, `804.88 KZION` |
 | **Pool port 8444** | UFW na edge měl `LIMIT` na 8444 (max 6 spojení/30s) — mineri se nemohli připojit z veřejné sítě | `ufw delete limit 8444/tcp && ufw allow 8444/tcp`; totéž pro 8333 |
 | **Restart Edge Pool** | Chybělo UI tlačítko pro restart vzdáleného poolu | Nové tlačítko + `restartEdgePool()` JS funkce + backend `restart-pool-edge` SSH akce |
-| **paid_total / pending_balance** | Dělení `1e8` místo `1e12` — zobrazovalo 10000× větší hodnoty | Opraveno na `/ 1_000_000_000_000` (flowers → ZION) |
+| **paid_total / pending_balance** | Dělení `1e8` místo `1e6` — zobrazovalo 100× větší hodnoty | Opraveno na `/ 1_000_000` (flowers → ZION) *(updated to 6-decimal in 3.0.3 fork)* |
 | **Pool miners last_seen_ago** | Pole chybělo — stale vs. aktivní miners nelze rozlišit | Přidáno `last_seen_ago = now - last_seen` v `get_edge_pool_miners()` |
 
 ### Technické detaily
@@ -2573,8 +2573,8 @@ nebo má konkrétní aktivační plán v
   `ZIONBridge`, `ZIONStaking`, `ZIONGovernance`, `ZIONFarm`,
   `ZIONAtomicSwap`. M-of-N threshold multisig (cílově 3/5; staging
   config v `bridge-mainnet.toml` nyní `1/2`).
-- **Decimal fix:** `FLOWERS_TO_WEI_FACTOR = 1_000_000` (× 10⁶, ne × 10¹²),
-  oprava inflation buga.
+- **Decimal fix:** `FLOWERS_TO_WEI_FACTOR = 1_000_000_000_000` (× 10¹², ne × 10⁶),
+  oprava inflation buga. *(Note: 3.0.3 fork changed FLOWERS_PER_ZION from 1e12 to 1e6; bridge factor updated accordingly.)*
 - **L1 enforcement:** od PR #22 nemůže relayer submitnout bridge unlock TX
   bez kompletního validátorského quora (předtím L1 trust-aboved relayerovi).
 - **Relayer fail-closed (NEW, PR #27, 2026-05-02):** `build_validator_proofs`
@@ -2857,7 +2857,7 @@ nebo má konkrétní aktivační plán v
 | Konsensus | Cosmic Harmony / Ekam Deeksha v2 (256 KiB scratchpad, BLAKE3) |
 | TX model | Hybrid Account + UTXO, Ed25519 |
 | Storage | LMDB přes `heed` |
-| Decimals | 10¹² flowers / 1 ZION |
+| Decimals | 10⁶ flowers / 1 ZION *(updated to 6-decimal in 3.0.3 fork)* |
 
 ---
 

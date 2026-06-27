@@ -114,7 +114,7 @@ Source of truth: `docs/mainnet/MAINNET_CONSTITUTION.md` (frozen SHA-256: c76aa00
 | Total supply (max, immutable) | 144,000,000,000 ZION |
 | Mining supply | 127,720,000,000 ZION (88.69%) |
 | Genesis premine | 16,280,000,000 ZION (11.31%) |
-| Atomic unit | 1 ZION = 1,000,000,000,000 flowers (u64) |
+| Atomic unit | 1 ZION = 1,000,000 flowers (u64) (updated to 6-decimal in 3.0.3 fork) |
 | Initial block reward | 5,400.067 ZION = 5,400,067,000,000,000 flowers |
 | Emission model | Decade Decay: ×(4/5) every 5,256,000 blocks |
 | Max decay decades | 10 |
@@ -264,7 +264,7 @@ This roadmap follows the release progression already defined in the repository d
   - thin supervision of prebuilt V3 node, pool, and miner binaries with live logs and persisted runtime env overrides
 - `L2/bridge` **(Sprint 8 — migrated from legacy `L2/bridge/`)**
   - wZION relay daemon (L1↔EVM, Base Sepolia deployment)
-  - **Critical decimal fix**: `FLOWERS_PER_ZION` 1e6→1e12, `amount_atomic`→`amount_flowers`, DB schema updated
+  - **Critical decimal fix**: `FLOWERS_PER_ZION` 1e6→1e12 (reverted to 1e6 in 3.0.3 fork), `amount_atomic`→`amount_flowers`, DB schema updated
   - Conversion functions: `flowers_to_wzion_wei()`, `wzion_wei_to_flowers()`, `flowers_to_zion_display()`
   - L1 watcher (UTXO memo parser, `BRIDGE:base:0x...` format), EVM watcher (Burn event log parser)
   - Relayer, DB (SQLite persistence), validator set (3-of-5 quorum), metrics, Ankr RPC client
@@ -272,7 +272,7 @@ This roadmap follows the release progression already defined in the repository d
   - **157 tests** (111 lib + 45 integration + 1 doctest)
 - `L2/dao` **(Sprint 8 — migrated from legacy `L2/dao/`)**
   - DAO governance daemon: proposal lifecycle, voting, treasury, timelock, humanitarian tithe
-  - 12-decimal flowers, u128 treasury amounts (4B ZION scale)
+  - 6-decimal flowers (updated 3.0.3 fork), u128 treasury amounts (4B ZION scale)
   - **65 tests** (40 lib + 25 integration)
 - `L2/atomic-swap` **(Sprint 8 — migrated from legacy `L2/atomic-swap/`)**
   - HTLC cross-chain atomic swaps with `amount_flowers`/`min_lock_flowers`
@@ -284,7 +284,7 @@ This roadmap follows the release progression already defined in the repository d
   - 3 compute backends (ONNX, WASM, TFLite — all stubs, ONNX first implementation planned)
   - Reputation system (worker scoring, ban threshold, consciousness bonus)
   - SQLite job store, REST API scaffold
-  - `reward_atomic`→`reward_flowers` naming for V3 12-decimal alignment
+  - `reward_atomic`→`reward_flowers` naming for V3 6-decimal alignment (updated 3.0.3 fork)
   - **43 tests** (42 lib + 1 doctest)
 - `L3/warp` **(Sprint 8 — migrated from legacy `L3/warp/`)**
   - Universal cross-chain bridge (7 chain adapters: EVM, Bitcoin, Solana, Tron, Stellar, Cardano, Cosmos)
@@ -397,7 +397,7 @@ Audit date: 2026-03-12. Each item maps to the constitutional parameter table abo
 | ID | Missing module | What constitution requires | V3 current state | Migration source |
 |----|----------------|---------------------------|------------------|------------------|
 | G1 | **Emission / Decade Decay** | Decade Decay (×4/5 per 5,256,000 blocks), tail ~724.785 ZION | ✅ `emission.rs` — 16 tests | `L1/core/src/blockchain/reward.rs` |
-| G2 | **Atomic units (flowers)** | 1 ZION = 1e12 flowers; reward = 5,400,067,000,000,000 flowers | ✅ Integrated in `emission.rs` | Same as G1 |
+| G2 | **Atomic units (flowers)** | 1 ZION = 1e6 flowers; reward = 5,400,067,000 flowers (updated 3.0.3 fork) | ✅ Integrated in `emission.rs` | Same as G1 |
 | G3 | **LWMA DAA** | 60-block window, ±25% max change, 30–120 s solve-time clamp | ✅ `difficulty.rs` — 31 tests (+10 auto-tuning: stats, predict, hashrate), integer-only ±25% clamp | `L1/core/src/blockchain/consensus.rs` |
 | G4 | **Genesis block + premine** | 16.28B ZION into 12 addresses as coinbase outputs in block 0 | ✅ `genesis.rs` — 17 tests, 12 premine outputs, frozen hash, ChainState init | `L1/core/src/blockchain/premine.rs` + `PREMINE_ADDRESSES_PUBLIC.txt` |
 | G5 | **Block propagation** | Flood-fill relay to all connected peers on new block accept | ✅ `propagation.rs` — SeenBlocks dedup, plan_relay(), node binary relay on announce+submit | ~~Phase 5d~~ done |
@@ -1067,7 +1067,7 @@ Critical path — next up (sequential):
 **Next up — L2/L3 integration (see `V3/PLAN.md` for full details):**
 
 12. **Phase A: L1 Finish** — async P2P multiplexing, BFG scrub (BLOCKER), genesis ceremony freeze
-13. **Phase B: L2 Migration** — decimal fix (CRITICAL: 6→12 decimals), bridge vault + RPC, contracts redeploy, DAO daemon
+13. **Phase B: L2 Migration** — decimal fix (CRITICAL: 6→12 decimals, reverted to 6 in 3.0.3 fork), bridge vault + RPC, contracts redeploy, DAO daemon
 14. **Phase C: L3 Migration** — NCL ONNX backend, WARP chain adapters (EVM first), AI-Native agent framework
 
 ## Implementation Dependencies
@@ -1099,7 +1099,7 @@ PoW hash               = Ekam Deeksha (cosmic_harmony)
 
 ### Emission (V3 emission.rs ✅)
 ```
-FLOWERS_PER_ZION       = 1_000_000_000_000
+FLOWERS_PER_ZION       = 1_000_000  (updated to 6-decimal in 3.0.3 fork)
 TOTAL_SUPPLY           = 144_000_000_000 × FLOWERS_PER_ZION
 GENESIS_PREMINE        = 16_280_000_000 × FLOWERS_PER_ZION
 BASE_BLOCK_REWARD      = 5_400_067_000_000_000
@@ -1258,7 +1258,7 @@ Completed work:
 - Miner test fix: `profile_does_not_override_explicit_env` env var race condition between parallel tests, tolerant assertion.
 - Comprehensive mainnet plan: `V3/PLAN.md` created (~700 lines) covering L1 finish, L2/L3 migration, Go/No-Go checklist.
 - **V3/L2/bridge migration** from legacy `L2/bridge/`:
-  - Critical decimal fix: `FLOWERS_PER_ZION` changed from `1_000_000` (6-dec) to `1_000_000_000_000` (12-dec)
+  - Critical decimal fix: `FLOWERS_PER_ZION` changed from `1_000_000` (6-dec) to `1_000_000_000_000` (12-dec) (reverted to 1_000_000 / 6-dec in 3.0.3 fork)
   - Field renames: `amount_atomic` → `amount_flowers`, `amount_wzion` → `amount_wzion_wei`, `l1_atomic_to_wzion_wei` → `flowers_to_wzion_wei`, etc.
   - DB schema column renamed: `amount_l1_atomic` → `amount_flowers`
   - All conversion functions updated: `flowers_to_wzion_wei()`, `wzion_wei_to_flowers()`, `flowers_to_zion_display()`
@@ -1282,8 +1282,8 @@ Completed work:
   - 22 src + 8 adapter files
   - Cargo.toml: `thiserror="2"`, correct path dependencies
   - ChainId::zion_l1() decimals fixed from 6 to 12
-  - All conversion tests updated (6→12 decimal ZION values)
-  - fees.rs: all min_fee/max_fee values updated to 12-decimal scale
+  - All conversion tests updated (6→12 decimal ZION values) (reverted to 6-dec in 3.0.3 fork)
+  - fees.rs: all min_fee/max_fee values updated to 12-decimal scale (reverted to 6-dec in 3.0.3 fork)
   - config.rs: `daily_limit_flowers()` and `timelock_threshold_flowers()` ×1e12
   - xp_bridge.rs: volume divisor changed from 1e6 to 1e12
   - router.rs: daily_limit and timelock_threshold defaults updated
@@ -1433,13 +1433,13 @@ GET /api/bridge/validators  → {validators: [...], threshold, total}
 
 Detailed plan: `V3/docs/L2_L3_MAINNET_PLAN.md` (Draft v2)
 
-All Rust L2/L3 crates have been migrated into V3 with 12-decimal flowers conversion.
+All Rust L2/L3 crates have been migrated into V3 with 6-decimal flowers conversion (updated 3.0.3 fork).
 Remaining work: L2/contracts Solidity redeploy, production hardening of individual services.
 
 ### L2 — wZION Bridge ✅ Migrated
 
 - Lock/Mint/Burn model: ZION → zion1bridge vault → 3-of-5 validator quorum → wZION ERC-20 mint on Base
-- **Critical decimal fix required**: root L2/L3 code assumes 6 decimals (1e6); V3 canonical is 12 decimals (1e12 flowers). **✅ FIXED** in Sprint 8 migration — all conversion functions, DB schema, and test vectors updated.
+- **Critical decimal fix**: root L2/L3 code originally assumed 6 decimals (1e6); V3 Sprint 8 changed to 12 decimals (1e12), then 3.0.3 fork reverted to 6 decimals (1e6 flowers). **✅ FIXED** — all conversion functions, DB schema, and test vectors updated.
 - L1 core changes needed: `BRIDGE_VAULT_ADDRESS`, `getBridgeLocks` RPC, `submitBridgeUnlock` RPC, Step 12 bridge unlock validation, memo prefix parsing (`BRIDGE:*`, `WARP:*`, `DAO:*`, `SWAP:*`)
 - Testnet contracts deployed on Base Sepolia (wZION, ZIONBridge, Governance, Treasury, Staking, Farm, AtomicSwap, Uniswap V3 pool)
 - Fee: 0.1% (50% burn, 25% DAO, 25% validators)

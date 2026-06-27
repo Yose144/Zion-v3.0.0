@@ -179,7 +179,7 @@ Found in `docs/docs2.9/` — migration source material and philosophical roots.
 | v2.8.3 | Lite WP | 144B | RandomX + CryptoNote | Multi-chain Dharma Ecosystem |
 | v2.9.5 | Full WP | 144B | CosmicHarmony v3 | Rust rewrite, CHv3/CHv4, bridge |
 | v2.9.7 | Update | 144B | CosmicHarmony v3 | Code freeze, 168h stability |
-| **v3.0** | **Canonical** | **144B** | **Ekam Deeksha v2** | **Clean-room Rust, UTXO, 12-decimal flowers, BLAKE3, on-chain fee split** |
+| **v3.0** | **Canonical** | **144B** | **Ekam Deeksha v2** | **Clean-room Rust, UTXO, 6-decimal flowers, BLAKE3, on-chain fee split (updated 3.0.3 fork)** |
 
 ---
 

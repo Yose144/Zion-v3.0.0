@@ -144,7 +144,7 @@ Velká část GPU guard kódu není použita:
 | TOTAL_SUPPLY | 144,000,000,000 ZION | 144B flowers |
 | GENESIS_PREMINE | 16,780,000,000 ZION | 11.65% |
 | MINING_EMISSION | 127,220,000,000 ZION | TOTAL - premine |
-| FLOWERS_PER_ZION | 1,000,000,000,000 | 12 decimal places |
+| FLOWERS_PER_ZION | 1,000,000 | 6 decimal places *(updated to 6-decimal in 3.0.3 fork)* |
 | BASE_REWARD | 5,400.067 ZION | Decade 1 |
 | TAIL_REWARD | ~724.785 ZION | Decade 11+ |
 

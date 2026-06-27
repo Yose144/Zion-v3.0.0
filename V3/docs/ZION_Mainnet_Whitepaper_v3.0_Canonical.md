@@ -231,7 +231,7 @@ The hard cap is **144,000,000,000 ZION** — set in genesis and immutable. No go
 | Genesis premine | 16,780,000,000 ZION | 11.65 % |
 | **Total** | **144,000,000,000 ZION** | **100 %** |
 
-Atomic unit: **1 ZION = 1,000,000,000,000 flowers** (12 decimals). All on-chain accounting uses flowers (`u64`).
+Atomic unit: **1 ZION = 1,000,000 flowers** (6 decimals) (updated to 6-decimal in 3.0.3 fork). All on-chain accounting uses flowers (`u64`).
 
 ### 5.2 Decade Decay Emission
 

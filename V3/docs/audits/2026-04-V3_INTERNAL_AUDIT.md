@@ -74,9 +74,9 @@
 
 | Konstanta | Hodnota | Reference | Stav |
 |---|---|---|---|
-| `FLOWERS_PER_ZION` | 1 000 000 000 000 (1e12) | konstituce | OK |
-| `TOTAL_SUPPLY` (u128) | 144 000 000 000 ZION × 1e12 = 1.44e23 flowers | konstituce | OK (u128 nutný) |
-| `GENESIS_PREMINE` (u128) | 16 780 000 000 ZION × 1e12 = 1.678e22 | 11.65 % | OK (≈11.653 %) |
+| `FLOWERS_PER_ZION` | 1 000 000 (1e6) | konstituce | OK (updated to 6-decimal in 3.0.3 fork) |
+| `TOTAL_SUPPLY` (u128) | 144 000 000 000 ZION × 1e6 = 1.44e17 flowers | konstituce | OK (u128 nutný) |
+| `GENESIS_PREMINE` (u128) | 16 780 000 000 ZION × 1e6 = 1.678e16 | 11.65 % | OK (≈11.653 %) |
 | `BLOCK_TIME_SECONDS` | 60 | konstituce | OK |
 | `BLOCKS_PER_DECADE` | 5 256 000 | 10×525 600 | OK |
 | `DECAY_NUMERATOR/DENOMINATOR` | 4/5 (−20 % per dekáda) | konstituce | OK |
@@ -542,16 +542,16 @@ Pokud C kód předpokládá min. velikost `header` (např. 32 bajtů hash) a Rus
 
 ## 14. L2 bridge — pozitivní zjištění
 
-- **Inflation bug fixed:** `FLOWERS_TO_WEI_FACTOR = 1_000_000` (10^6 = 18−12). Podle `L2_L3_MAINNET_PLAN.md` to dříve bylo 10^12 → 1 000 000× inflation. Aktuální stav v `V3/L2/bridge/src/types.rs`:
+- **Inflation bug fixed:** `FLOWERS_TO_WEI_FACTOR = 1_000_000_000_000` (10^12 = 18−6). Podle `L2_L3_MAINNET_PLAN.md` to dříve bylo 10^6 → 1 000 000× inflation. Aktuální stav v `V3/L2/bridge/src/types.rs` (updated 3.0.3 fork):
   ```rust
-  pub const FLOWERS_PER_ZION: u64 = 1_000_000_000_000;
-  pub const FLOWERS_TO_WEI_FACTOR: u128 = 1_000_000;
+  pub const FLOWERS_PER_ZION: u64 = 1_000_000;
+  pub const FLOWERS_TO_WEI_FACTOR: u128 = 1_000_000_000_000;
   pub fn flowers_to_wzion_wei(flowers: u64) -> u128 {
       (flowers as u128) * FLOWERS_TO_WEI_FACTOR
   }
   pub fn wzion_wei_to_l1_atomic(wei: u128) -> u64 { (wei / FLOWERS_TO_WEI_FACTOR) as u64 }
   ```
-  Test `flowers_to_zion_display(1_000_000_000_000) == "1"` ✅.
+  Test `flowers_to_zion_display(1_000_000) == "1"` ✅.
 - **Validator key loading** umí Zeroizing string, env var, nebo `0o600` permission file. Defense‑in‑depth ✅.
 - **Replay protection** přes `bridge_unlock_replay_keys` HashSet odvozený z `(source_chain, burn_id, evm_tx_hash)`.
 
