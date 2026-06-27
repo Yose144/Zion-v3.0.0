@@ -652,7 +652,7 @@ export default function NetworkPage() {
             {chainStats.last_block && (
               <>
                 <ChainStatCard label={cs ? 'Poslední blok' : 'Last Block'} value={`#${chainStats.last_block.height.toLocaleString(locale)}`} sub={new Date(chainStats.last_block.timestamp * 1000).toLocaleTimeString(locale)} color="text-zion-gold" tip={cs ? 'Nejnovější potvrzený blok a čas jeho vytěžení.' : 'Latest confirmed block and its mining time.'} />
-                <ChainStatCard label={cs ? 'Odměna' : 'Last Reward'} value={`${(chainStats.last_block.reward / 1e12).toFixed(2)} ZION`} color="text-emerald-400" tip={cs ? 'Odměna za poslední blok dle Decade Decay.' : 'Reward for the latest block per Decade Decay.'} />
+                <ChainStatCard label={cs ? 'Odměna' : 'Last Reward'} value={`${(chainStats.last_block.reward / 1e6).toFixed(2)} ZION`} color="text-emerald-400" tip={cs ? 'Odměna za poslední blok dle Decade Decay.' : 'Reward for the latest block per Decade Decay.'} />
               </>
             )}
           </div>

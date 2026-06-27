@@ -208,7 +208,7 @@ function shortAddr(addr: string): string {
 }
 
 function atomicToZion(atomic: number): string {
-  return (atomic / 1e12).toFixed(4);
+  return (atomic / 1e6).toFixed(4);
 }
 
 function parseHashrateInput(value: string): number {
@@ -278,7 +278,7 @@ export default function PoolDashboard() {
   const backupServer = onlineServers[1] ?? data?.servers?.[1] ?? onlineServers[0] ?? data?.servers?.[0];
   const myHashrate = parseHashrateInput(myHashrateInput);
   const poolHashrate = data?.aggregate.hashrate ?? 0;
-  const rewardPerBlock = data?.recent_blocks?.[0]?.reward ? data.recent_blocks[0].reward / 1e12 : 5400;
+  const rewardPerBlock = data?.recent_blocks?.[0]?.reward ? data.recent_blocks[0].reward / 1e6 : 5400;
   const blocksPerDay = estimateBlocksPerDay(data?.recent_blocks ?? []);
   const mySharePct = poolHashrate > 0 ? (myHashrate / poolHashrate) * 100 : 0;
   const myDailyZion = poolHashrate > 0
@@ -651,7 +651,7 @@ export default function PoolDashboard() {
                 {(() => {
                   const srv = data.servers.find(s => s.stats?.payouts);
                   const pending = srv?.stats?.payouts;
-                  const pendingZion = pending?.pending_total_atomic ? (pending.pending_total_atomic / 1e12).toFixed(4) : '0';
+                  const pendingZion = pending?.pending_total_atomic ? (pending.pending_total_atomic / 1e6).toFixed(4) : '0';
                   const pendingMiners = pending?.pending_miners ?? 0;
                   return (
                     <>

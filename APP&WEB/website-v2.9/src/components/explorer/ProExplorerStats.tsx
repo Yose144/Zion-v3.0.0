@@ -199,7 +199,7 @@ export default function ProExplorerStats() {
     },
     {
       icon: Banknote, label: cs ? "Pool výplaty" : "Pool Payouts",
-      value: stats.pool_pending_payouts_atomic ? `${(stats.pool_pending_payouts_atomic / 1e12).toFixed(2)} ZION` : "0 ZION",
+      value: stats.pool_pending_payouts_atomic ? `${(stats.pool_pending_payouts_atomic / 1e6).toFixed(2)} ZION` : "0 ZION",
       sub: stats.pool_pending_miners ? `${stats.pool_pending_miners} ${cs ? "minerů čeká" : "miners pending"}` : undefined,
       color: "text-amber-400", bgColor: "from-amber-500/5 to-transparent",
     },

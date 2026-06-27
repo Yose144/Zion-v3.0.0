@@ -113,7 +113,7 @@ function fmtNum(n?: number): string {
 }
 
 function fmtZion(atomic: number): string {
-  return (atomic / 1e12).toFixed(4);
+  return (atomic / 1e6).toFixed(4);
 }
 
 function timeAgo(ts: number, cs = false): string {
@@ -449,7 +449,7 @@ export default function MinerDashboard({ address }: { address: string }) {
                           </Link>
                         </td>
                         <td className="px-4 md:px-6 py-3 font-mono text-gray-400">{shortHash(b.hash)}</td>
-                        <td className="px-4 md:px-6 py-3 text-zion-gold">{(b.reward / 1e12).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 })} ZION</td>
+                        <td className="px-4 md:px-6 py-3 text-zion-gold">{(b.reward / 1e6).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 })} ZION</td>
                         <td className="px-4 md:px-6 py-3 text-gray-400">{timeAgo(b.timestamp, cs)}</td>
                         <td className="px-4 md:px-6 py-3 text-gray-500">{b.server ?? "—"}</td>
                       </tr>

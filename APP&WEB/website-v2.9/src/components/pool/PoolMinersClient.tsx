@@ -304,7 +304,7 @@ export default function PoolMinersClient() {
   }, 30_000, { immediate: false });
 
   const poolHashrate = data?.aggregate.hashrate ?? 0;
-  const rewardPerBlock = data?.recent_blocks?.[0]?.reward ? data.recent_blocks[0].reward / 1e12 : 5400;
+  const rewardPerBlock = data?.recent_blocks?.[0]?.reward ? data.recent_blocks[0].reward / 1e6 : 5400;
   const blocksPerDay = estimateBlocksPerDay(data?.recent_blocks ?? []);
   const minerSharePct = data?.fee.miner_share ?? 89;
 
