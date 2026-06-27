@@ -3,31 +3,45 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
- * Interaktivní Golden Orb — CSS/SVG animated, no external deps.
- * - Radial gradient core (gold → amber → white-hot center)
- * - Pulsing glow halo
- * - Rotating light rays (conic gradient via SVG)
- * - Floating sparkles (CSS particles)
- * - Mouse-reactive: orb tilts toward cursor, glow intensifies on hover
+ * Interaktivní Golden Orb v kosmickém prostoru.
+ * - 3D vrstvená sféra s parallax highlights (depth)
+ * - Mouse-reactive tilt + parallax (víc 3D)
+ * - Vesmírné pozadí: starfield + nebula + cosmic dust
+ * - Rotující paprsky, pulsující glow, floating sparkles
  */
 export default function GoldenOrb({ className = '' }: { className?: string }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [tilt, setTilt] = useState({ rx: 0, ry: 0 });
   const [hovered, setHovered] = useState(false);
+  const [stars, setStars] = useState<
+    { id: number; x: number; y: number; size: number; delay: number; twinkle: number }[]
+  >([]);
   const [sparkles, setSparkles] = useState<
     { id: number; x: number; y: number; delay: number; size: number }[]
   >([]);
 
-  // Generate stable sparkle positions once on mount
   useEffect(() => {
-    const arr = Array.from({ length: 14 }, (_, i) => ({
-      id: i,
-      x: 8 + Math.random() * 84,
-      y: 8 + Math.random() * 84,
-      delay: Math.random() * 4,
-      size: 1.5 + Math.random() * 2.5,
-    }));
-    setSparkles(arr);
+    // Starfield — 60 hvězd
+    setStars(
+      Array.from({ length: 60 }, (_, i) => ({
+        id: i,
+        x: Math.random() * 100,
+        y: Math.random() * 100,
+        size: 0.5 + Math.random() * 1.8,
+        delay: Math.random() * 5,
+        twinkle: 2 + Math.random() * 4,
+      }))
+    );
+    // Sparkles uvnitř orbu
+    setSparkles(
+      Array.from({ length: 10 }, (_, i) => ({
+        id: i,
+        x: 15 + Math.random() * 70,
+        y: 15 + Math.random() * 70,
+        delay: Math.random() * 4,
+        size: 1 + Math.random() * 2,
+      }))
+    );
   }, []);
 
   const handleMove = useCallback((e: React.MouseEvent) => {
@@ -38,7 +52,7 @@ export default function GoldenOrb({ className = '' }: { className?: string }) {
     const cy = r.top + r.height / 2;
     const dx = (e.clientX - cx) / (r.width / 2);
     const dy = (e.clientY - cy) / (r.height / 2);
-    setTilt({ rx: -dy * 12, ry: dx * 12 });
+    setTilt({ rx: -dy * 18, ry: dx * 18 });
   }, []);
 
   const handleLeave = useCallback(() => {
@@ -49,34 +63,83 @@ export default function GoldenOrb({ className = '' }: { className?: string }) {
   return (
     <div
       ref={wrapRef}
-      className={`group relative flex items-center justify-center ${className}`}
+      className={`group relative flex items-center justify-center overflow-hidden ${className}`}
       onMouseMove={handleMove}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={handleLeave}
-      style={{ perspective: '800px' }}
+      style={{ perspective: '600px' }}
     >
-      {/* ── Outer ambient glow ── */}
+      {/* ════════ KOSMICKÉ POZADÍ ════════ */}
+      {/* Deep space gradient */}
       <div
-        className="pointer-events-none absolute inset-0 rounded-full blur-3xl transition-opacity duration-700"
+        className="pointer-events-none absolute inset-0"
         style={{
           background:
-            'radial-gradient(circle at 50% 50%, rgba(251,191,36,0.35) 0%, rgba(245,158,11,0.18) 35%, transparent 70%)',
-          opacity: hovered ? 1 : 0.6,
-          transform: 'scale(1.3)',
+            'radial-gradient(ellipse at 50% 45%, #0a0a1a 0%, #050510 40%, #020208 100%)',
         }}
       />
 
-      {/* ── Rotating light rays (SVG conic) ── */}
+      {/* Nebula clouds */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-60"
+        style={{
+          background: `
+            radial-gradient(ellipse 60% 40% at 30% 30%, rgba(99,52,237,0.12) 0%, transparent 60%),
+            radial-gradient(ellipse 50% 35% at 70% 65%, rgba(168,85,247,0.08) 0%, transparent 55%),
+            radial-gradient(ellipse 40% 30% at 50% 80%, rgba(251,191,36,0.06) 0%, transparent 60%)
+          `,
+        }}
+      />
+
+      {/* Starfield */}
+      <div className="pointer-events-none absolute inset-0">
+        {stars.map((s) => (
+          <span
+            key={s.id}
+            className="absolute rounded-full bg-white"
+            style={{
+              left: `${s.x}%`,
+              top: `${s.y}%`,
+              width: `${s.size}px`,
+              height: `${s.size}px`,
+              boxShadow: s.size > 1.2 ? `0 0 ${s.size * 2}px rgba(255,255,255,0.6)` : 'none',
+              animation: `twinkle ${s.twinkle}s ease-in-out ${s.delay}s infinite`,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Cosmic dust drift */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-30"
+        style={{
+          background:
+            'radial-gradient(circle at 20% 70%, rgba(255,255,255,0.04) 0%, transparent 30%), radial-gradient(circle at 80% 20%, rgba(251,191,36,0.04) 0%, transparent 30%)',
+        }}
+      />
+
+      {/* ════════ ORB ════════ */}
+      {/* Outer ambient glow */}
+      <div
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[55%] w-[55%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl transition-opacity duration-700"
+        style={{
+          background:
+            'radial-gradient(circle, rgba(251,191,36,0.4) 0%, rgba(245,158,11,0.2) 40%, transparent 70%)',
+          opacity: hovered ? 1 : 0.55,
+        }}
+      />
+
+      {/* Rotating light rays */}
       <svg
-        className="pointer-events-none absolute h-[115%] w-[115%] animate-[spin_40s_linear_infinite] opacity-60"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[48%] w-[48%] -translate-x-1/2 -translate-y-1/2 animate-[spin_40s_linear_infinite]"
         viewBox="0 0 200 200"
         fill="none"
-        style={{ transition: 'opacity 0.6s', opacity: hovered ? 0.85 : 0.5 }}
+        style={{ opacity: hovered ? 0.8 : 0.45, transition: 'opacity 0.6s' }}
       >
         <defs>
           <radialGradient id="rayFade" cx="50%" cy="50%" r="50%">
             <stop offset="40%" stopColor="rgba(251,191,36,0)" />
-            <stop offset="65%" stopColor="rgba(251,191,36,0.25)" />
+            <stop offset="65%" stopColor="rgba(251,191,36,0.3)" />
             <stop offset="100%" stopColor="rgba(251,191,36,0)" />
           </radialGradient>
         </defs>
@@ -85,18 +148,18 @@ export default function GoldenOrb({ className = '' }: { className?: string }) {
             key={i}
             x="98"
             y="10"
-            width="4"
+            width="3"
             height="80"
-            rx="2"
+            rx="1.5"
             fill="url(#rayFade)"
             transform={`rotate(${i * 30} 100 100)`}
           />
         ))}
       </svg>
 
-      {/* ── Counter-rotating inner rays ── */}
+      {/* Counter-rotating inner rays */}
       <svg
-        className="pointer-events-none absolute h-[90%] w-[90%] animate-[spin_60s_linear_infinite_reverse] opacity-40"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[40%] w-[40%] -translate-x-1/2 -translate-y-1/2 animate-[spin_55s_linear_infinite_reverse] opacity-40"
         viewBox="0 0 200 200"
         fill="none"
       >
@@ -105,70 +168,87 @@ export default function GoldenOrb({ className = '' }: { className?: string }) {
             key={i}
             x="99"
             y="30"
-            width="2"
+            width="1.5"
             height="50"
-            rx="1"
-            fill="rgba(255,215,128,0.3)"
+            rx="0.75"
+            fill="rgba(255,215,128,0.35)"
             transform={`rotate(${i * 45 + 22.5} 100 100)`}
           />
         ))}
       </svg>
 
-      {/* ── Orb body (3D tilt) ── */}
+      {/* ── Orb body (3D layered) ── */}
       <div
-        className="relative aspect-square w-full max-w-[420px] transition-transform duration-200 ease-out"
+        className="relative aspect-square w-[38%] transition-transform duration-150 ease-out"
         style={{
-          transform: `rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg) scale(${hovered ? 1.04 : 1})`,
+          transform: `rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg) scale(${hovered ? 1.06 : 1})`,
           transformStyle: 'preserve-3d',
         }}
       >
-        {/* Pulsing halo ring */}
+        {/* Pulsing halo */}
         <div
-          className="absolute inset-[-8%] rounded-full animate-[pulse-glow_3s_ease-in-out_infinite]"
+          className="absolute inset-[-12%] rounded-full animate-[pulse-glow_3s_ease-in-out_infinite]"
           style={{
             background:
-              'radial-gradient(circle, transparent 55%, rgba(251,191,36,0.12) 62%, transparent 72%)',
+              'radial-gradient(circle, transparent 52%, rgba(251,191,36,0.15) 60%, transparent 72%)',
           }}
         />
 
-        {/* Main orb sphere */}
+        {/* Main sphere — layered for 3D depth */}
         <div
           className="relative h-full w-full overflow-hidden rounded-full"
           style={{
             background:
-              'radial-gradient(circle at 38% 32%, #fffbeb 0%, #fde68a 8%, #fbbf24 22%, #f59e0b 42%, #b45309 68%, #451a03 100%)',
+              'radial-gradient(circle at 36% 30%, #fffbeb 0%, #fde68a 6%, #fbbf24 18%, #f59e0b 38%, #d97706 58%, #78350f 82%, #1c0a02 100%)',
             boxShadow: `
-              inset -20px -30px 60px rgba(69,26,3,0.7),
-              inset 18px 22px 50px rgba(255,251,230,0.45),
-              0 0 60px rgba(251,191,36,0.5),
-              0 0 120px rgba(245,158,11,0.3)
+              inset -18px -28px 55px rgba(28,10,2,0.85),
+              inset 16px 20px 45px rgba(255,251,230,0.5),
+              inset 0 0 30px rgba(251,191,36,0.15),
+              0 0 50px rgba(251,191,36,0.45),
+              0 0 100px rgba(245,158,11,0.25),
+              0 8px 40px rgba(0,0,0,0.6)
             `,
+            transform: 'translateZ(0)',
           }}
         >
-          {/* Surface swirl / iridescence */}
+          {/* Iridescence swirl */}
           <div
             className="absolute inset-0 rounded-full opacity-50 mix-blend-screen animate-[spin_80s_linear_infinite]"
             style={{
               background:
-                'conic-gradient(from 0deg at 50% 50%, transparent 0deg, rgba(255,215,128,0.2) 60deg, transparent 120deg, rgba(251,191,36,0.15) 180deg, transparent 240deg, rgba(255,237,180,0.18) 300deg, transparent 360deg)',
+                'conic-gradient(from 0deg at 50% 50%, transparent 0deg, rgba(255,215,128,0.25) 60deg, transparent 120deg, rgba(251,191,36,0.18) 180deg, transparent 240deg, rgba(255,237,180,0.22) 300deg, transparent 360deg)',
             }}
           />
 
-          {/* Hot core highlight */}
+          {/* Hot core highlight — parallax (translateZ for depth) */}
           <div
-            className="absolute left-[28%] top-[22%] h-[35%] w-[35%] rounded-full blur-md"
+            className="absolute left-[26%] top-[20%] h-[32%] w-[32%] rounded-full blur-md"
             style={{
               background:
-                'radial-gradient(circle, rgba(255,255,245,0.85) 0%, rgba(255,251,230,0.4) 40%, transparent 70%)',
+                'radial-gradient(circle, rgba(255,255,250,0.9) 0%, rgba(255,251,230,0.45) 40%, transparent 70%)',
+              transform: `translateZ(20px) translateX(${tilt.ry * 0.3}px) translateY(${-tilt.rx * 0.3}px)`,
+              transition: 'transform 0.15s ease-out',
             }}
           />
 
-          {/* Secondary highlight */}
+          {/* Secondary highlight — deeper parallax */}
           <div
-            className="absolute bottom-[15%] right-[20%] h-[18%] w-[18%] rounded-full blur-sm opacity-60"
+            className="absolute bottom-[14%] right-[18%] h-[16%] w-[16%] rounded-full blur-sm opacity-60"
             style={{
               background:
-                'radial-gradient(circle, rgba(253,230,138,0.7) 0%, transparent 70%)',
+                'radial-gradient(circle, rgba(253,230,138,0.75) 0%, transparent 70%)',
+              transform: `translateZ(10px) translateX(${tilt.ry * 0.15}px) translateY(${-tilt.rx * 0.15}px)`,
+              transition: 'transform 0.15s ease-out',
+            }}
+          />
+
+          {/* Inner glow ring — front depth */}
+          <div
+            className="absolute inset-0 rounded-full"
+            style={{
+              background:
+                'radial-gradient(circle at 50% 50%, transparent 85%, rgba(251,191,36,0.35) 94%, transparent 100%)',
+              transform: 'translateZ(5px)',
             }}
           />
 
@@ -188,30 +268,43 @@ export default function GoldenOrb({ className = '' }: { className?: string }) {
             />
           ))}
 
-          {/* Rim light */}
+          {/* Rim light — front layer */}
           <div
             className="absolute inset-0 rounded-full"
             style={{
               background:
-                'radial-gradient(circle at 50% 50%, transparent 88%, rgba(251,191,36,0.4) 95%, transparent 100%)',
+                'radial-gradient(circle at 50% 50%, transparent 87%, rgba(255,215,128,0.3) 95%, transparent 100%)',
+              transform: 'translateZ(8px)',
             }}
           />
         </div>
+
+        {/* Specular reflection — top layer for glassy 3D feel */}
+        <div
+          className="pointer-events-none absolute left-[22%] top-[16%] h-[22%] w-[28%] rounded-full opacity-70"
+          style={{
+            background:
+              'radial-gradient(ellipse, rgba(255,255,255,0.6) 0%, transparent 70%)',
+            filter: 'blur(4px)',
+            transform: `translateZ(35px) translateX(${tilt.ry * 0.5}px) translateY(${-tilt.rx * 0.5}px)`,
+            transition: 'transform 0.15s ease-out',
+          }}
+        />
       </div>
 
-      {/* ── Sparkles orbiting outside ── */}
-      {sparkles.slice(0, 6).map((s) => (
+      {/* Orbiting sparkles outside orb */}
+      {sparkles.slice(0, 5).map((s) => (
         <span
           key={`orbit-${s.id}`}
           className="pointer-events-none absolute rounded-full bg-zion-gold"
           style={{
-            left: `${s.x}%`,
-            top: `${s.y}%`,
-            width: '3px',
-            height: '3px',
+            left: `${40 + s.x * 0.2}%`,
+            top: `${40 + s.y * 0.2}%`,
+            width: '2.5px',
+            height: '2.5px',
             boxShadow: '0 0 8px rgba(251,191,36,0.9)',
             animation: `sparkle-float ${5 + s.delay}s ease-in-out ${s.delay}s infinite`,
-            opacity: hovered ? 0.9 : 0.5,
+            opacity: hovered ? 0.85 : 0.45,
             transition: 'opacity 0.4s',
           }}
         />
@@ -220,9 +313,13 @@ export default function GoldenOrb({ className = '' }: { className?: string }) {
       <style>{`
         @keyframes sparkle-float {
           0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; }
-          25% { transform: translate(6px, -8px) scale(1.4); opacity: 0.9; }
-          50% { transform: translate(-4px, -14px) scale(0.8); opacity: 0.6; }
-          75% { transform: translate(-8px, 4px) scale(1.2); opacity: 0.8; }
+          25% { transform: translate(5px, -7px) scale(1.4); opacity: 0.9; }
+          50% { transform: translate(-3px, -12px) scale(0.8); opacity: 0.6; }
+          75% { transform: translate(-6px, 3px) scale(1.2); opacity: 0.8; }
+        }
+        @keyframes twinkle {
+          0%, 100% { opacity: 0.2; }
+          50% { opacity: 1; }
         }
       `}</style>
     </div>
