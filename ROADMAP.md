@@ -147,6 +147,45 @@ Key steps:
 
 ---
 
+## Phase 2.7 — 3.1.0 Pre-Development (Q3 2026) 🔄 Planned
+
+> **Audit:** [`AUDIT_3.1.0_EXISTING_CODE.md`](AUDIT_3.1.0_EXISTING_CODE.md) — všechny komponenty už existují, potřebují 3.0.3 fix + completion.
+
+### Fáze 1 — 3.0.3 Compatibility Fix
+
+| Feature | Status | Target |
+|---------|--------|--------|
+| Wallet SDK 3.0.3 fix (1e12→1e6, 6 souborů) | 🔵 Planned | Q3 2026 |
+| Mobile App 3.0.3 fix (1e12→1e6, 3 soubory) | 🔵 Planned | Q3 2026 |
+
+### Fáze 2 — TX History RPC
+
+| Feature | Status | Target |
+|---------|--------|--------|
+| getTransactionHistory UTXO scan | 🔵 Planned | Q3 2026 |
+| Address-based tx index (O(1) lookup) | 🔵 Planned | Q3 2026 |
+
+### Fáze 3 — L4 Oasis Backend Completion
+
+| Feature | Status | Target |
+|---------|--------|--------|
+| WebSocket event wiring | 🔵 Planned | Q3 2026 |
+| Data files (avatars.json, golden_egg.json) | 🔵 Planned | Q3 2026 |
+| L1 blockchain listener (real-time XP) | 🔵 Planned | Q4 2026 |
+| Wallet signature auth | 🔵 Planned | Q4 2026 |
+| E2E test (UE5 → Rust → L1) | 🔵 Planned | Q4 2026 |
+
+### Fáze 4 — Mobile App Polish
+
+| Feature | Status | Target |
+|---------|--------|--------|
+| QR code scan/generate | 🔵 Planned | Q4 2026 |
+| Biometric auth (FaceID/TouchID) | 🔵 Planned | Q4 2026 |
+| Deep linking (Universal Links / App Links) | 🔵 Planned | Q4 2026 |
+| Device build + test | 🔵 Planned | Q4 2026 |
+
+---
+
 ## Phase 3 — Ecosystem Growth (2027)
 
 ### DeFi Expansion
