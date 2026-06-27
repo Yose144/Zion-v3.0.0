@@ -126,7 +126,8 @@ export default function TerraNovaHomeMilestones() {
           </Link>
           <Link
             href="/download"
-            className="inline-flex items-center gap-2.5 rounded-2xl border border-white/15 bg-white/5 px-8 py-3.5 text-sm font-semibold text-white hover:bg-white/10 transition-all duration-300"
+            className="zion-rainbow-sub inline-flex items-center gap-2.5 px-8 py-3.5 text-sm font-semibold text-white hover:bg-white/10 transition-all duration-300"
+            style={{ '--rc': '244, 63, 94' } as React.CSSProperties}
           >
             {cs ? 'Přejít na Download' : 'Go to Download'}
             <ArrowRight className="w-4 h-4" />

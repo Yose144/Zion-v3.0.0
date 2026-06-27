@@ -17,7 +17,7 @@ export default function NetworkOperatorToolkit({ cs, primaryPool }: { cs: boolea
   };
 
   return (
-    <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
+    <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-8">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Operator toolkit' : 'Operator Toolkit'}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -28,7 +28,7 @@ export default function NetworkOperatorToolkit({ cs, primaryPool }: { cs: boolea
       </div>
 
       <div className="grid gap-5 lg:grid-cols-3">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+        <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
           <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{cs ? 'Primarni tezba' : 'Primary Mining'}</p>
           <p className="text-sm text-gray-300 mb-3">{cs ? 'Aktualni verejny stratum endpoint na Zion2. Historicky multi-host failover patri do archivovanych dokumentu o topologii.' : 'Current public stratum endpoint on Zion2. Historical multi-host failover belongs to archived topology docs.'}</p>
           <code className="block rounded-xl border border-white/10 bg-black/40 p-3 text-xs text-zion-gold break-all">{xmrigConnect}</code>
@@ -37,7 +37,7 @@ export default function NetworkOperatorToolkit({ cs, primaryPool }: { cs: boolea
           </button>
         </div>
 
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+        <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
           <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{cs ? 'Health probe' : 'Health Probes'}</p>
           <div className="space-y-2">
             <code className="block rounded-xl border border-white/10 bg-black/40 p-3 text-xs text-zion-gold break-all">{healthCurl}</code>
@@ -49,7 +49,7 @@ export default function NetworkOperatorToolkit({ cs, primaryPool }: { cs: boolea
           </div>
         </div>
 
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+        <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
           <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{cs ? 'Export a docs' : 'Export & Docs'}</p>
           <div className="space-y-2.5 text-sm">
             <a href="/api/network" target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3 py-2 hover:bg-black/40 transition">

@@ -971,7 +971,7 @@ export function ZionDefense() {
         {/* Wave break / victory / defeat overlay */}
         {s.status === 'wave-break' && (
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="rounded-2xl border border-zion-gold/30 bg-black/90 p-6 text-center max-w-sm">
+            <div className="zion-rainbow-sub p-6 text-center max-w-sm" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <p className="text-sm font-bold text-zion-gold mb-2">{cs ? `Vlna ${s.waveIndex + 1} vyčištěna!` : `Wave ${s.waveIndex + 1} cleared!`}</p>
               <p className="text-xs text-gray-400 mb-4">{cs ? `Bonus: +${level.waves[s.waveIndex]?.reward ?? 0} ZION` : `Bonus: +${level.waves[s.waveIndex]?.reward ?? 0} ZION`}</p>
               <button onClick={startNextWave} className="w-full rounded-xl bg-zion-gold/20 border border-zion-gold/30 px-4 py-2.5 text-sm font-bold text-zion-gold hover:bg-zion-gold/30 transition-colors">

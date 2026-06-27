@@ -415,7 +415,7 @@ export default function ConsciousnessTreeKabbalah({ guardianData }: Consciousnes
 
         {/* Hover Tooltip */}
         {hoveredSephira && (
-          <div className="absolute top-4 right-4 max-w-sm rounded-2xl border border-white/20 bg-black/95 p-6 shadow-2xl backdrop-blur-xl animate-fadeIn">
+          <div className="absolute top-4 right-4 max-w-sm zion-rainbow-sub p-6 shadow-2xl animate-fadeIn" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
             {(() => {
               const s = hoveredSephira ? sephirotById.get(hoveredSephira) : null;
               if (!s) return null;

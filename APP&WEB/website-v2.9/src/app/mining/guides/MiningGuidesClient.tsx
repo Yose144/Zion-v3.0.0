@@ -139,7 +139,8 @@ export default function MiningGuidesClient() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="relative rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-8 md:p-12 overflow-hidden"
+          className="zion-rainbow-card p-8 md:p-12"
+          style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
         >
           <div className="absolute inset-0 bg-linear-to-br from-zion-gold/5 via-transparent to-zion-purple/5 pointer-events-none" />
           <div className="relative">
@@ -174,7 +175,7 @@ export default function MiningGuidesClient() {
             Supported Algorithms
           </h2>
 
-          <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm overflow-hidden">
+          <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
             <div className="grid grid-cols-[1fr_80px_80px_1fr] gap-2 px-6 py-3 border-b border-white/10 bg-white/[0.02] hidden md:grid">
               <span className="text-[11px] text-white/30 uppercase tracking-wider">Algorithm</span>
               <span className="text-[11px] text-white/30 uppercase tracking-wider">Type</span>
@@ -232,7 +233,7 @@ export default function MiningGuidesClient() {
               animate={{ opacity: 1, x: 0 }}
               className="space-y-6"
             >
-              <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm p-6">
+              <div className="zion-rainbow-card p-6" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
                   <Cpu className="w-5 h-5 text-zion-cyan" />
                   CPU Mining with ZION Native Miner
@@ -315,7 +316,7 @@ tar xzf xmrig-*.tar.gz && cd xmrig-*
               animate={{ opacity: 1, x: 0 }}
               className="space-y-6"
             >
-              <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm p-6">
+              <div className="zion-rainbow-card p-6" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
                   <Monitor className="w-5 h-5 text-zion-gold" />
                   GPU Mining — Metal, CUDA & OpenCL
@@ -421,7 +422,7 @@ cargo build --release -p zion-miner --features opencl
               animate={{ opacity: 1, x: 0 }}
               className="space-y-6"
             >
-              <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm p-6">
+              <div className="zion-rainbow-card p-6" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
                   <Users className="w-5 h-5 text-zion-purple" />
                   Pool Mining — Steady Rewards
@@ -432,7 +433,7 @@ cargo build --release -p zion-miner --features opencl
                 </p>
 
                 {/* Pool endpoints */}
-                <div className="rounded-xl bg-white/[0.02] border border-white/10 p-5 mb-5">
+                <div className="zion-rainbow-sub p-5 mb-5" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                   <h4 className="text-sm font-medium text-white/60 mb-3">
                     ZION Official Pool Endpoints
                   </h4>
@@ -470,7 +471,7 @@ cargo build --release -p zion-miner --features opencl
                       { label: "Min Payout", value: "10 ZION", desc: "Automatic transfer" },
                       { label: "Payout Interval", value: "Every 2h", desc: "When threshold met" },
                     ].map((feat, i) => (
-                      <div key={i} className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-3">
+                      <div key={i} className="zion-tile p-3">
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-[11px] text-white/30 uppercase tracking-wider">{feat.label}</span>
                           <span className="text-sm font-medium text-white/80">{feat.value}</span>
@@ -503,7 +504,7 @@ cargo build --release -p zion-miner --features opencl
               animate={{ opacity: 1, x: 0 }}
               className="space-y-6"
             >
-              <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm p-6">
+              <div className="zion-rainbow-card p-6" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-emerald-400" />
                   Solo Mining — Full Block Rewards
@@ -597,7 +598,7 @@ curl -s http://localhost:8443 \\
             Hardware Comparison
           </h2>
 
-          <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm overflow-hidden">
+          <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
             <div className="grid grid-cols-[1fr_100px_80px_100px] gap-2 px-6 py-3 border-b border-white/10 bg-white/[0.02] hidden md:grid">
               <span className="text-[11px] text-white/30 uppercase tracking-wider">Hardware</span>
               <span className="text-[11px] text-white/30 uppercase tracking-wider">Hashrate</span>
@@ -640,7 +641,7 @@ curl -s http://localhost:8443 \\
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="rounded-3xl border border-white/10 bg-black/40 backdrop-blur-sm p-8 text-center"
+          className="zion-cta-banner p-8 text-center"
         >
           <h2 className="text-xl font-bold text-gradient mb-3">
             Ready to Mine?

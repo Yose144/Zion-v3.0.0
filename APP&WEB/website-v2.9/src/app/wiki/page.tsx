@@ -110,31 +110,36 @@ export default function WikiPage() {
           <div className="flex flex-wrap items-center justify-center gap-3 text-sm">
             <Link
               href="/terranova"
-              className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
+              className="zion-rainbow-sub px-4 py-2 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
+              style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
             >
               {cs ? 'TerraNova kniha' : 'TerraNova Book'}
             </Link>
             <Link
               href="/genesis"
-              className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
+              className="zion-rainbow-sub px-4 py-2 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
+              style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
             >
               Genesis
             </Link>
             <Link
               href="/docs"
-              className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
+              className="zion-rainbow-sub px-4 py-2 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
+              style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
             >
               {cs ? 'Dokumentace' : 'Documentation'}
             </Link>
             <Link
               href="/terranova/te-piko-ora"
-              className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
+              className="zion-rainbow-sub px-4 py-2 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
+              style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
             >
               Te Pīko Ora
             </Link>
             <Link
               href="/terranova/dharma-temple"
-              className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
+              className="zion-rainbow-sub px-4 py-2 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
+              style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
             >
               Dharma Temple
             </Link>

@@ -238,7 +238,7 @@ export default function TePikoOraPage() {
           transition={{ duration: 0.6 }}
           className="mb-16"
         >
-          <div className="relative zion-rainbow-card rounded-3xl md:rounded-[32px] p-6 md:p-10 overflow-hidden border border-white/10 bg-black/60 backdrop-blur-xl" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="relative zion-rainbow-card rounded-3xl md:rounded-[32px] p-6 md:p-10 overflow-hidden backdrop-blur-xl" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start">
               {/* Ocean symbol */}
               <div className="shrink-0 w-20 h-20 rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 via-black/50 to-black flex items-center justify-center text-4xl">

@@ -618,10 +618,10 @@ export default function WalletPage() {
             {cs ? 'Více o ZION Wallet' : 'Learn more about ZION Wallet'}
           </h2>
           <div className="flex flex-wrap justify-center gap-4">
-            <Link href="/download" className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors">
+            <Link href="/download" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '236, 72, 153' } as React.CSSProperties}>
               <Download className="h-4 w-4 text-zion-gold" /> {cs ? 'Stáhnout' : 'Download'}
             </Link>
-            <Link href="/docs" className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors">
+            <Link href="/docs" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '236, 72, 153' } as React.CSSProperties}>
               <BookOpen className="h-4 w-4 text-cyan-400" /> {cs ? 'Dokumentace' : 'Documentation'}
             </Link>
             <Link href="/explorer" className="inline-flex items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 px-6 py-3 text-sm font-semibold text-emerald-200 hover:bg-emerald-500/10 transition-colors">

@@ -789,8 +789,8 @@ export default function InteractiveTreeOfLife() {
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 2, ease: 'easeOut' }}
-          style={{ rotateY, rotateX, perspective: 1200 }}
-          className="relative mx-auto max-w-4xl cursor-crosshair rounded-3xl border border-white/5 bg-black/20 p-2 md:p-4 shadow-[0_20px_80px_rgba(0,0,0,0.35)]"
+          style={{ rotateY, rotateX, perspective: 1200, '--rc': '16, 185, 129' } as React.CSSProperties}
+          className="relative mx-auto max-w-4xl cursor-crosshair zion-rainbow-card p-2 md:p-4 shadow-[0_20px_80px_rgba(0,0,0,0.35)]"
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
         >
