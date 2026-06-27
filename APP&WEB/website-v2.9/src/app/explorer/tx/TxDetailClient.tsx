@@ -13,6 +13,7 @@ import {
   Shield,
   Clock,
   ArrowRightLeft,
+  Code,
 } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
@@ -29,6 +30,7 @@ interface Transaction {
   from?: string; to?: string; amount_zion?: string; fee_zion?: number;
   nonce?: number; signature?: string; public_key?: string; tx_id?: string;
   transaction_model?: string;
+  [key: string]: any;
 }
 
 const fmtDate = (ts: number, locale: string) => ts ? new Date(ts * 1000).toLocaleString(locale) : "—";
@@ -79,16 +81,19 @@ export default function TxDetailClient() {
   const hash = useMemo(() => String(searchParams.get("hash") || "").trim(), [searchParams]);
 
   const [tx, setTx] = useState<Transaction | null>(null);
+  const [rawJson, setRawJson] = useState<string | null>(null);
+  const [showRaw, setShowRaw] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
-        setError(null); setLoading(true); setTx(null);
+        setError(null); setLoading(true); setTx(null); setRawJson(null);
         if (!hash) { setError(cs ? "Chybi hash transakce" : "Missing transaction hash"); return; }
         const data = await apiClient<Transaction>(`/blockchain/transactions?hash=${encodeURIComponent(hash)}`);
         setTx(data);
+        try { setRawJson(JSON.stringify(data, null, 2)); } catch { setRawJson(null); }
       } catch (err) { setError(cs ? `Nepodarilo se nacist transakci: ${err}` : `Failed to load transaction: ${err}`); }
       finally { setLoading(false); }
     })();
@@ -169,8 +174,36 @@ export default function TxDetailClient() {
                 ⛏ Coinbase
               </span>
             )}
+            <button
+              onClick={() => setShowRaw((v) => !v)}
+              className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold transition border ${
+                showRaw
+                  ? "bg-purple-500/15 text-purple-300 border-purple-500/30"
+                  : "bg-white/5 text-white/60 border-white/10 hover:bg-white/10"
+              }`}
+            >
+              <Code className="h-3.5 w-3.5" />
+              {showRaw ? (cs ? 'Skrýt Raw JSON' : 'Hide Raw JSON') : (cs ? 'Raw JSON' : 'Raw JSON')}
+            </button>
           </div>
         </motion.div>
+
+        {/* Raw JSON View */}
+        {showRaw && rawJson && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
+            className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+              <div className="flex items-center gap-2">
+                <Code className="h-4 w-4 text-purple-400" />
+                <span className="text-sm font-semibold text-white">Raw JSON</span>
+              </div>
+              <CopyBtn text={rawJson} />
+            </div>
+            <pre className="bg-black/60 border border-white/10 rounded-xl p-4 m-4 overflow-x-auto text-[12px] leading-relaxed font-mono text-gray-300 max-h-[600px]">
+              {rawJson}
+            </pre>
+          </motion.div>
+        )}
 
         {/* Summary cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
