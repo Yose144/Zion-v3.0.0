@@ -48,8 +48,8 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       en: 'Historic memory 🐕 When Dogecoin was $0.0002 — and why ZION walks the same path',
     },
     summary: {
-      cs: 'V prosinci 2013 stál jeden Dogecoin $0.0002. Nikdo nevěděl, že za dva roky dosáhne $0.70 — 3500× skok, který zapsal memecoin do historie. Dnes ZION nastavuje seed cenu na stejných $0.0002/ZION. Ne proto, že bychom chtěli zopakovat Doge. Ale proto, že každá legenda začíná stejně — s malým číslem a velkým příběhem. 144B zásoba, 5/5 validátorů, AI vrstva, Strom života. FDV ~$28.8M. ZION není memecoin. Je to vzpomínka na budoucnost.',
-      en: 'In December 2013, one Dogecoin cost $0.0002. Nobody knew that within two years it would reach $0.70 — a 3500× jump that wrote memecoins into history. Today ZION sets its seed price at the same $0.0002/ZION. Not because we want to repeat Doge. But because every legend starts the same way — with a small number and a big story. 144B supply, 5/5 validators, AI layer, Tree of Life. FDV ~$28.8M. ZION is not a memecoin. It is a memory of the future.',
+      cs: 'V prosinci 2013 stál jeden Dogecoin $0.0002. Nikdo nevěděl, že v květnu 2021 — po 7.5 letech — dosáhne ATH $0.73, tedy 3650× skok, který zapsal memecoin do historie. Dnes ZION nastavuje seed cenu na stejných $0.0002/ZION. Ne proto, že bychom chtěli zopakovat Doge. Ale proto, že každá legenda začíná stejně — s malým číslem a velkým příběhem. 144B zásoba, 5/5 validátorů, AI vrstva, Strom života. FDV ~$28.8M. ZION není memecoin. Je to vzpomínka na budoucnost.',
+      en: 'In December 2013, one Dogecoin cost $0.0002. Nobody knew that in May 2021 — after 7.5 years — it would reach its ATH of $0.73, a 3650× jump that wrote memecoins into history. Today ZION sets its seed price at the same $0.0002/ZION. Not because we want to repeat Doge. But because every legend starts the same way — with a small number and a big story. 144B supply, 5/5 validators, AI layer, Tree of Life. FDV ~$28.8M. ZION is not a memecoin. It is a memory of the future.',
     },
     href: '/defi',
     banner: 'doge-vs-zion',
