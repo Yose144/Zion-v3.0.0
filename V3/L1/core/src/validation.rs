@@ -930,13 +930,13 @@ mod tests {
             })
         };
 
-        // height 100 < 525_600 — should be rejected
+        // height 100 < 144_000 — should be rejected
         let result = validate_premine_locks(&[make_coinbase(100), tx.clone()], 100, &lookup);
         assert!(matches!(result, Err(ValidationError::LockedPremine { .. })));
 
-        // height 525_600 — should be allowed
+        // height 144_000 — should be allowed
         let result2 =
-            validate_premine_locks(&[make_coinbase(525_600), tx.clone()], 525_600, &lookup);
+            validate_premine_locks(&[make_coinbase(144_000), tx.clone()], 144_000, &lookup);
         assert!(result2.is_ok());
 
         // Regression for PR #20 review: when the caller passes a slice
