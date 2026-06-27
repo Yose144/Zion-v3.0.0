@@ -102,7 +102,7 @@ function fmtDuration(secs?: number) {
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-5 ${className}`}>
+    <div className={`zion-rainbow-sub backdrop-blur-sm p-5 ${className}`} style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
       {children}
     </div>
   );
@@ -162,7 +162,7 @@ function WalletGate({ onEnter }: { onEnter: () => void }) {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
-        <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-8">
+        <div className="zion-rainbow-card backdrop-blur-md p-8" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-xl bg-zion-gold/15 flex items-center justify-center">
               <Shield size={18} className="text-zion-gold" />

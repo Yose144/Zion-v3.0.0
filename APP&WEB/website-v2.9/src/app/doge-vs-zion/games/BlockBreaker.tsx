@@ -686,7 +686,7 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
           </button>
 
           {/* Instructions */}
-          <div className="max-w-md rounded-2xl border border-white/10 bg-black/60 p-5 text-center">
+          <div className="max-w-md zion-rainbow-card p-5 text-center" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
             <h3 className="mb-3 text-sm font-bold text-white">How to Play</h3>
             <div className="space-y-2 text-xs text-gray-400">
               <p>Move the <span className="text-orange-400 font-bold">Firewall</span> paddle with mouse or arrow keys</p>
@@ -698,7 +698,7 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
           </div>
 
           {/* Layer legend */}
-          <div className="max-w-md rounded-2xl border border-white/10 bg-black/60 p-5">
+          <div className="max-w-md zion-rainbow-card p-5" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
             <h3 className="mb-3 text-sm font-bold text-white">Firewall Layers</h3>
             <div className="space-y-2">
               {ROW_DEFS.map((row, i) => (
@@ -747,7 +747,7 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
         </div>
 
         {/* Info bar */}
-        <div style={{ '--rc': '245, 158, 11' } as React.CSSProperties} className="zion-rainbow-card rounded-2xl bg-black/60 p-3 flex items-center justify-between gap-4">
+        <div style={{ '--rc': '245, 158, 11' } as React.CSSProperties} className="zion-rainbow-card p-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div>
               <p className="text-[10px] text-gray-500">Score</p>
@@ -776,7 +776,7 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
 
         {/* Canvas */}
         <div className="flex justify-center">
-          <div className="rounded-2xl border border-white/10 bg-black/60 overflow-hidden">
+          <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
             <canvas
               ref={canvasRef}
               onMouseMove={handleCanvasMove}

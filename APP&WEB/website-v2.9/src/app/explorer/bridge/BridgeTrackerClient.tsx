@@ -84,7 +84,8 @@ function PipelineStep({
   return (
     <div className="flex items-center gap-3">
       <div
-        className={`relative rounded-2xl border ${border} bg-black/40 p-4 min-w-[140px] flex-1`}
+        className="relative zion-rainbow-sub p-4 min-w-[140px] flex-1"
+        style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
       >
         <div className="flex items-center gap-2 mb-2">
           <Icon className={`h-4 w-4 ${color}`} />
@@ -195,13 +196,13 @@ export default function BridgeTrackerClient() {
 
             {/* Mini status panel */}
             <div className="grid gap-3 sm:grid-cols-2 lg:w-auto w-full">
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4">
+              <div className="zion-rainbow-sub px-5 py-4" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                 <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">L1 {cs ? "výška" : "height"}</p>
                 <p className="text-2xl font-semibold text-white mt-1 tabular-nums">
                   {fmtNum(data?.last_l1_height ?? 0)}
                 </p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4">
+              <div className="zion-rainbow-sub px-5 py-4" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                 <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">EVM {cs ? "blok" : "block"}</p>
                 <p className="text-2xl font-semibold text-white mt-1 tabular-nums">
                   {fmtNum(data?.last_evm_block ?? 0)}
@@ -228,7 +229,7 @@ export default function BridgeTrackerClient() {
           {loading && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
               {[...Array(8)].map((_, i) => (
-                <div key={i} className="rounded-3xl border border-white/8 bg-black/60 p-6 h-28" />
+                <div key={i} className="zion-rainbow-sub p-6 h-28" style={{ '--rc': '251, 191, 36' } as React.CSSProperties} />
               ))}
             </div>
           )}
@@ -247,7 +248,8 @@ export default function BridgeTrackerClient() {
               ].map((card) => (
                 <div
                   key={card.label}
-                  className="rounded-3xl border border-white/8 bg-black/60 backdrop-blur-xl p-6 hover:border-white/12 transition-colors"
+                  className="zion-rainbow-sub p-6"
+                  style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
                 >
                   <div className="flex items-center gap-2 mb-3">
                     <card.icon className={`h-4 w-4 ${card.accent}`} />
@@ -276,7 +278,7 @@ export default function BridgeTrackerClient() {
 
           <div className="grid gap-6 lg:grid-cols-2">
             {/* L1 → Base */}
-            <div className="rounded-4xl border border-white/8 bg-black/60 backdrop-blur-xl p-6 md:p-8">
+            <div className="zion-section p-6 md:p-8">
               <div className="flex items-center gap-2 mb-6">
                 <Lock className="h-5 w-5 text-zion-cyan" />
                 <h3 className="text-lg font-semibold text-white">L1 → Base</h3>
@@ -321,7 +323,7 @@ export default function BridgeTrackerClient() {
             </div>
 
             {/* Base → L1 */}
-            <div className="rounded-4xl border border-white/8 bg-black/60 backdrop-blur-xl p-6 md:p-8">
+            <div className="zion-section p-6 md:p-8">
               <div className="flex items-center gap-2 mb-6">
                 <Flame className="h-5 w-5 text-amber-400" />
                 <h3 className="text-lg font-semibold text-white">Base → L1</h3>
@@ -372,7 +374,7 @@ export default function BridgeTrackerClient() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.14 }}
-          className="rounded-4xl border border-white/8 bg-black/60 backdrop-blur-xl p-6 md:p-10"
+          className="zion-section p-6 md:p-10"
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? "Kontrakty" : "Contracts"}</p>
@@ -408,7 +410,7 @@ export default function BridgeTrackerClient() {
                 href={`${BRIDGE_CONTRACTS.explorer_base}${c.addr}`}
                 target="_blank"
                 rel="noreferrer"
-                className={`group rounded-2xl border ${c.border} bg-white/3 p-5 hover:bg-white/5 transition-colors`}
+                className="group zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
               >
                 <div className="flex items-center gap-2 mb-2">
                   <c.icon className={`h-4 w-4 ${c.color}`} />
@@ -427,7 +429,7 @@ export default function BridgeTrackerClient() {
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.18 }}
-          className="rounded-4xl border border-zion-cyan/30 bg-linear-to-r from-zion-cyan/20 via-zion-purple/10 to-zion-cyan/20 p-10 text-center"
+          className="zion-cta-banner p-10 text-center"
         >
           <ArrowLeftRight className="mx-auto h-12 w-12 text-zion-cyan" />
           <h2 className="mt-6 text-3xl font-semibold text-white">ZION Bridge</h2>

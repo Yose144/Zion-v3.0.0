@@ -181,7 +181,7 @@ function MetricPanel({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+    <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
       <div className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-black/40 ${accent}`}>
         {icon}
       </div>
@@ -205,7 +205,7 @@ export default function NetworkMonitoringSnapshot({ cs, locale }: { cs: boolean;
   usePolling(refreshMonitoring, 30_000);
 
   return (
-    <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
+    <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-8">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Observabilita' : 'Observability'}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -265,7 +265,7 @@ export default function NetworkMonitoringSnapshot({ cs, locale }: { cs: boolean;
           accent="text-blue-400"
           icon={<HardDrive className="h-5 w-5" />}
         />
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-6 flex flex-col justify-between">
+        <div className="zion-rainbow-sub p-6 flex flex-col justify-between" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-gray-500 mb-2">{cs ? 'Hlubsi drilldown' : 'Deep Drilldown'}</p>
             <p className="text-sm text-gray-300">{cs ? 'Pro sparkline grafy, syrove Prometheus metriky a inventar stacku pokracujte do plneho monitoringu.' : 'For sparklines, raw Prometheus-backed counters, and stack inventory, continue to the full monitoring dashboard.'}</p>

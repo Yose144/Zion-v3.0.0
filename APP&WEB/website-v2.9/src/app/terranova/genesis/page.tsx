@@ -204,7 +204,7 @@ export default function ZahradaGenesisPage() {
                   {SIGNALS.map((signal) => {
                     const Icon = signal.icon;
                     return (
-                      <div key={signal.labelCs} className="rounded-2xl border border-white/10 bg-black/60 px-3 py-3 backdrop-blur-sm">
+                      <div key={signal.labelCs} className="zion-rainbow-sub px-3 py-3" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                         <div className="flex items-center gap-2 text-zion-gold">
                           <Icon className="h-4 w-4" />
                           <span className="text-sm font-semibold">{signal.value}</span>
@@ -247,12 +247,13 @@ export default function ZahradaGenesisPage() {
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 + i * 0.07, duration: 0.5 }}
-                  className="relative rounded-[32px] border border-white/10 bg-black/60 backdrop-blur-xl p-5 space-y-3 overflow-hidden group hover:scale-[1.02] transition-transform duration-300"
+                  className="relative zion-rainbow-sub p-5 space-y-3 overflow-hidden group hover:scale-[1.02] transition-transform duration-300"
+                  style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
                 >
                   <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-[50px] bg-white/5 group-hover:bg-white/10 transition-colors duration-500" />
 
                   <div className="flex items-start justify-between relative z-10 gap-3">
-                    <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-black/20">
+                    <span className="inline-flex h-11 w-11 items-center justify-center zion-tile">
                       <Icon className="h-5 w-5" style={{ color: f.color }} />
                     </span>
                     <span
@@ -315,7 +316,7 @@ export default function ZahradaGenesisPage() {
                     {p.active && <div className="w-1.5 h-1.5 rounded-full bg-zion-cyan animate-pulse" />}
                   </div>
 
-                  <div className="rounded-2xl border border-white/10 bg-black/60 backdrop-blur-sm p-4 space-y-1">
+                  <div className="zion-rainbow-sub p-4 space-y-1" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                     <div className="flex items-center gap-3">
                       <span
                         className="text-xs font-bold tracking-wider"
@@ -355,10 +356,10 @@ export default function ZahradaGenesisPage() {
 
           <div className="grid md:grid-cols-3 gap-4">
             {/* Energie */}
-            <div className="relative rounded-2xl border border-white/10 bg-black/60 backdrop-blur-sm p-5 space-y-3 overflow-hidden">
+            <div className="relative zion-rainbow-sub p-5 space-y-3 overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
               <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-[40px] bg-zion-gold/10" />
               <div className="flex items-center gap-2 relative z-10">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5">
+                <span className="inline-flex h-9 w-9 items-center justify-center zion-tile">
                   <Sun className="h-4 w-4 text-zion-gold" />
                 </span>
                 <h3 className="font-bold text-zion-gold text-sm">{cs ? 'Energie' : 'Energy'}</h3>
@@ -381,10 +382,10 @@ export default function ZahradaGenesisPage() {
             </div>
 
             {/* Voda */}
-            <div className="relative rounded-2xl border border-white/10 bg-black/60 backdrop-blur-sm p-5 space-y-3 overflow-hidden">
+            <div className="relative zion-rainbow-sub p-5 space-y-3 overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
               <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-[40px] bg-zion-cyan/10" />
               <div className="flex items-center gap-2 relative z-10">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5">
+                <span className="inline-flex h-9 w-9 items-center justify-center zion-tile">
                   <Droplets className="h-4 w-4 text-zion-cyan" />
                 </span>
                 <h3 className="font-bold text-zion-cyan text-sm">{cs ? 'Voda' : 'Water'}</h3>
@@ -407,10 +408,10 @@ export default function ZahradaGenesisPage() {
             </div>
 
             {/* Jídlo */}
-            <div className="relative rounded-2xl border border-white/10 bg-black/60 backdrop-blur-sm p-5 space-y-3 overflow-hidden">
+            <div className="relative zion-rainbow-sub p-5 space-y-3 overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
               <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-[40px] bg-emerald-500/10" />
               <div className="flex items-center gap-2 relative z-10">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5">
+                <span className="inline-flex h-9 w-9 items-center justify-center zion-tile">
                   <Sprout className="h-4 w-4 text-emerald-400" />
                 </span>
                 <h3 className="font-bold text-emerald-400 text-sm">{cs ? 'Zahrada & Jídlo' : 'Garden & Food'}</h3>
@@ -474,7 +475,7 @@ export default function ZahradaGenesisPage() {
                 <h3 className="text-zion-gold font-bold text-sm uppercase tracking-widest">
                   {cs ? 'Humanitární závazek' : 'Humanitarian Commitment'}
                 </h3>
-                <div className="relative rounded-2xl border border-white/10 bg-black/60 p-4">
+                <div className="relative zion-rainbow-sub p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                   <div className="text-3xl font-black text-zion-gold mb-1">10 %</div>
                   <p className="text-gray-400 text-sm">
                     {cs
@@ -552,9 +553,9 @@ export default function ZahradaGenesisPage() {
               {ZION_ITEMS.map((item) => (
                 <div
                   key={item.label}
-                  className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/60 p-3"
+                  className="flex items-center gap-3 zion-rainbow-sub p-3" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
                 >
-                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
+                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center zion-tile">
                     <item.icon className="h-4 w-4 text-zion-gold" />
                   </span>
                   <div>

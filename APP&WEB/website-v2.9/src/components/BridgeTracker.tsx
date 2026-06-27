@@ -70,7 +70,7 @@ export default function BridgeTracker() {
   ];
 
   return (
-    <div className="rounded-3xl border border-white/8 bg-black/60 backdrop-blur-xl p-6 md:p-8 space-y-6">
+    <div className="zion-rainbow-card backdrop-blur-xl p-6 md:p-8 space-y-6" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -118,7 +118,7 @@ export default function BridgeTracker() {
               transition={{ delay: i * 0.08 }}
               className="relative"
             >
-              <div className="rounded-2xl border border-white/8 bg-white/3 p-4">
+              <div className="zion-rainbow-sub p-4" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
                 <step.icon className={`h-5 w-5 ${step.color} mb-2`} />
                 <p className="text-2xl font-bold tabular-nums text-white">
                   {step.count.toLocaleString()}
@@ -153,7 +153,7 @@ export default function BridgeTracker() {
               transition={{ delay: 0.24 + i * 0.08 }}
               className="relative"
             >
-              <div className="rounded-2xl border border-white/8 bg-white/3 p-4">
+              <div className="zion-rainbow-sub p-4" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
                 <step.icon className={`h-5 w-5 ${step.color} mb-2`} />
                 <p className="text-2xl font-bold tabular-nums text-white">
                   {step.count.toLocaleString()}

@@ -141,7 +141,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
   return (
     <div className="zion-shell min-h-screen pt-32 pb-20">
       <div className="zion-container max-w-7xl space-y-12">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ '--rc': '99, 102, 241' } as React.CSSProperties} className="zion-rainbow-card rounded-4xl bg-black/60 p-10 backdrop-blur-xl">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ '--rc': '99, 102, 241' } as React.CSSProperties} className="zion-rainbow-card p-10 backdrop-blur-xl">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Mission control</p>
@@ -439,7 +439,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
               <Link
                 key={card.title}
                 href={card.href}
-                className="group zion-rainbow-sub p-5 hover:border-zion-cyan/60 hover:bg-black/60 transition-all"
+                className="group zion-rainbow-sub p-5 transition-all"
                 style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
               >
                 <div className="flex items-center gap-3">
@@ -456,7 +456,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
             ))}
           </div>
 
-          <div className="mt-6 rounded-2xl border border-white/10 bg-black/30 p-4">
+          <div className="mt-6 zion-section p-4">
             <p className="text-xs uppercase tracking-[0.3em] text-gray-400 mb-2">{cs ? 'Dostupne metriky' : 'Available Metrics'}</p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
@@ -509,7 +509,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
           {blocks && blocks.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2">
               {blocks.map((block: any) => (
-                <div key={block.hash} className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                <div key={block.hash} className="zion-tile p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs uppercase tracking-[0.3em] text-gray-400">#{block.height}</p>
@@ -545,7 +545,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
           </div>
           <div className="mt-6 grid gap-4 md:grid-cols-3">
             {roadmapSlices.map((slice) => (
-              <div key={slice.title} className="rounded-2xl border border-white/20 bg-black/30 p-4">
+              <div key={slice.title} className="zion-tile p-4">
                 <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Sprint</p>
                 <h3 className="mt-2 text-lg font-semibold text-white">{slice.title}</h3>
                 <ul className="mt-3 space-y-2 text-sm text-gray-200">
@@ -568,7 +568,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+    <div className="zion-tile p-4">
       <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{label}</p>
       <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
     </div>

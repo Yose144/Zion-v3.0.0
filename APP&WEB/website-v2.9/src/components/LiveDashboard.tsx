@@ -192,7 +192,7 @@ export default function LiveDashboard() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {auxCards.map((card) => (
-                <div key={card.label} className="group relative rounded-2xl border border-white/10 bg-black/40 p-4">
+                <div key={card.label} className="group relative zion-rainbow-sub p-4" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-400">{card.label}</p>
@@ -230,7 +230,7 @@ export default function LiveDashboard() {
               <p className="text-sm text-gray-400">{formattedTimestamp}</p>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="zion-tile p-4">
               <p className="text-xs text-gray-400 mb-2">Hash</p>
               <p className="font-mono text-xs text-zion-cyan break-all">
                 {latestBlock?.hash ?? (cs ? 'Cekani na signal' : 'Waiting for signal')}

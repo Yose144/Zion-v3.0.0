@@ -53,7 +53,8 @@ export default function ProposalCard({ proposal, onVote }: ProposalCardProps) {
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border border-white/8 bg-white/[0.03] p-5 hover:border-white/15 transition-colors"
+      className="zion-rainbow-sub p-5 transition-colors"
+      style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
     >
       {/* Header */}
       <div className="flex items-start gap-3 mb-4">
@@ -104,15 +105,15 @@ export default function ProposalCard({ proposal, onVote }: ProposalCardProps) {
 
       {/* Vote counts */}
       <div className="grid grid-cols-3 gap-2 mb-4 text-center">
-        <div className="rounded-xl border border-white/6 bg-white/[0.02] p-2">
+        <div className="zion-tile p-2">
           <p className="text-xs font-semibold text-emerald-400">{formatNumber(votesFor)}</p>
           <p className="text-[10px] text-gray-500">For</p>
         </div>
-        <div className="rounded-xl border border-white/6 bg-white/[0.02] p-2">
+        <div className="zion-tile p-2">
           <p className="text-xs font-semibold text-red-400">{formatNumber(votesAgainst)}</p>
           <p className="text-[10px] text-gray-500">Against</p>
         </div>
-        <div className="rounded-xl border border-white/6 bg-white/[0.02] p-2">
+        <div className="zion-tile p-2">
           <p className="text-xs font-semibold text-gray-400">{formatNumber(votesAbstain)}</p>
           <p className="text-[10px] text-gray-500">Abstain</p>
         </div>

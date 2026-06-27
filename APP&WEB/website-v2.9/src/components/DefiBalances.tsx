@@ -135,7 +135,7 @@ export default function DefiBalances() {
   };
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 space-y-5">
+    <div className="zion-rainbow-card backdrop-blur-xl p-6 space-y-5" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-white">
           {cs ? 'Portfolio' : 'Portfolio'}
@@ -216,7 +216,7 @@ export default function DefiBalances() {
           {/* Balance cards */}
           {balances ? (
             <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-center">
+              <div className="zion-tile p-3 text-center">
                 <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">ETH</div>
                 <div className="font-mono text-sm font-semibold text-white">{balances.eth}</div>
               </div>
@@ -224,7 +224,7 @@ export default function DefiBalances() {
                 <div className="text-[10px] uppercase tracking-wider text-zion-gold/70 mb-1">wZION</div>
                 <div className="font-mono text-sm font-semibold text-zion-gold">{balances.wzion}</div>
               </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-center">
+              <div className="zion-tile p-3 text-center">
                 <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">WETH</div>
                 <div className="font-mono text-sm font-semibold text-white">{balances.weth}</div>
               </div>

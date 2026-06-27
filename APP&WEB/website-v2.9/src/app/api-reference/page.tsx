@@ -57,7 +57,7 @@ function ApiQuickstartPanels({ cs }: { cs: boolean }) {
           <Link
             key={p.href}
             href={p.href}
-            className="group rounded-3xl border border-white/10 bg-white/5 p-5 hover:bg-white/8 transition-colors"
+            className="group zion-tile p-5 hover:bg-white/8 transition-colors"
           >
             <div className="flex items-center gap-3">
               <p.icon className="h-5 w-5 text-zion-gold" />
@@ -202,7 +202,7 @@ export default function ApiReferencePage() {
   return (
     <div className="pt-28 pb-20 overflow-x-hidden">
       <div className="zion-container max-w-6xl space-y-12">
-        <section className="rounded-[36px] border border-white/10 bg-black/60 p-8 backdrop-blur-xl shadow-[0_30px_120px_rgba(0,0,0,0.5)]">
+        <section className="zion-rainbow-card p-8" style={{ '--rc': '168, 85, 247' } as React.CSSProperties}>
           <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple/40 bg-zion-purple/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-zion-gold">
             <Sparkles className="h-4 w-4" /> API v2.9 · Orion Mesh
           </div>
@@ -232,7 +232,7 @@ export default function ApiReferencePage() {
           {apiStats.map((stat) => {
             const Icon = stat.icon;
             return (
-              <div key={stat.label} className="rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur">
+              <div key={stat.label} className="zion-tile p-5">
                 <Icon className="h-5 w-5 text-zion-gold" />
                 <p className="mt-2 text-3xl font-semibold text-white">{stat.value}</p>
                 <p className="text-sm text-gray-400">{stat.label} · {stat.detail}</p>
@@ -262,7 +262,7 @@ export default function ApiReferencePage() {
                   {group.endpoints.map((endpoint) => (
                     <div
                       key={`${group.title}-${endpoint.path}`}
-                      className="rounded-2xl border border-white/10 bg-white/5 p-4"
+                      className="zion-tile p-4"
                     >
                       <div className="flex flex-wrap items-center gap-3">
                         <span className="rounded-full bg-black/50 px-3 py-1 text-xs font-semibold text-zion-gold">

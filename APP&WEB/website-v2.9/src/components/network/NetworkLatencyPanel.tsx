@@ -31,7 +31,7 @@ export default function NetworkLatencyPanel({ nodes, cs }: Props) {
   const onlineNodes = nodes.filter((n) => n.online);
 
   return (
-    <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
+    <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-6">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Latence' : 'Latency'}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -47,14 +47,15 @@ export default function NetworkLatencyPanel({ nodes, cs }: Props) {
 
       <div className="grid gap-3">
         {onlineNodes.length === 0 && (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-sm text-gray-500 text-center">
+          <div className="zion-tile p-6 text-sm text-gray-500 text-center">
             {cs ? 'Žádné uzly nejsou online.' : 'No nodes are currently online.'}
           </div>
         )}
         {onlineNodes.map((node) => (
           <div
             key={node.id}
-            className="rounded-2xl border border-white/10 bg-white/5 p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6"
+            className="zion-rainbow-sub p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6"
+            style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
           >
             <div className="flex items-center gap-3 min-w-[140px]">
               <div className={`w-2.5 h-2.5 rounded-full ${node.online ? 'bg-emerald-400 animate-pulse' : 'bg-red-500'}`} />
