@@ -15,7 +15,7 @@ What is already true:
 - `V3/L2/bridge` exists and tests pass (161 tests).
 - `V3/L2/dao` exists and tests pass (65 tests).
 - `V3/L2/atomic-swap` exists and tests pass (34 tests).
-- Decimal migration to V3 12-decimal flowers is already done in the Rust crates.
+- Decimal migration to V3 6-decimal flowers is already done in the Rust crates (updated 3.0.3 fork).
 - **Base mainnet contracts are deployed and verified on BaseScan** (2026-04-01):
   - wZION: `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6`
   - ZIONBridge: `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721`

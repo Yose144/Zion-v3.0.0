@@ -58,7 +58,7 @@ science and space fund. This is not a marketing promise; it is enforced in the c
 | Address format | Bech32 (`zion1…`) |
 | Transaction model | UTXO + account model |
 | Fee model | 100 % burned (deflationary) |
-| Atomic unit | 1 ZION = 1,000,000,000,000 flowers (12 decimals) |
+| Atomic unit | 1 ZION = 1,000,000 flowers (6 decimals) *(updated to 6-decimal in 3.0.3 fork)* |
 | L2 wrapped token | wZION (ERC-20 on Base) |
 | Codebase | Rust + Tokio · MIT license · ~1,470 automated tests |
 

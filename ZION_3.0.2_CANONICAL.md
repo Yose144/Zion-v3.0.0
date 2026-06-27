@@ -39,7 +39,7 @@ version strings (`V3/Cargo.toml`, bridge configs, READMEs, roadmap) are unified 
 | Total supply (hard cap) | 144,000,000,000 ZION | `V3/L1/core/src/emission.rs` |
 | Mining emission | 127,220,000,000 ZION (88.35 %) | `emission.rs` |
 | Genesis premine | 16,780,000,000 ZION (11.65 %), 14 outputs | `genesis.rs` |
-| Atomic unit | 1 ZION = 1,000,000,000,000 flowers (12 decimals) | `emission.rs` |
+| Atomic unit | 1 ZION = 1,000,000 flowers (6 decimals) *(updated to 6-decimal in 3.0.3 fork)* | `emission.rs` |
 | Block time | 60 seconds | `consensus.rs` |
 | Initial block reward | 5,400.067 ZION | `emission.rs` |
 | Emission model | Decade Decay (−20 % every 10 years = 5,256,000 blocks) | `emission.rs` |
