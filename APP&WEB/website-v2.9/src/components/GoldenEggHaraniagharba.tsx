@@ -191,7 +191,8 @@ export default function GoldenEggHaraniagharba() {
                 </Link>
                 <Link
                   href="/network"
-                  className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white hover:border-white/30"
+                  className="zion-rainbow-sub inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white hover:border-white/30"
+                  style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
                 >
                   {tr('goldenEgg', 'cta_network', lang)}
                   <ArrowRight className="h-4 w-4" />

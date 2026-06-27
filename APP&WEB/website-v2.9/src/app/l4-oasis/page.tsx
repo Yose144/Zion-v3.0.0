@@ -395,7 +395,7 @@ export default function L4OasisPage() {
             <Link href="/l5-free-world" className="inline-flex items-center gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/5 px-6 py-3 text-sm font-semibold text-amber-200 hover:bg-amber-500/10 transition-colors">
               L5 Free World <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link href="/terranova" className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors">
+            <Link href="/terranova" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '249, 115, 22' } as React.CSSProperties}>
               <BookOpen className="h-4 w-4" /> TerraNova Book
             </Link>
           </div>

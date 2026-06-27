@@ -66,13 +66,13 @@ export default function ApiQuickstartPanels({ cs }: { cs: boolean }) {
 
   return (
     <section className="grid gap-6 lg:grid-cols-2">
-      <div className="rounded-4xl border border-white/10 bg-black/50 p-6 backdrop-blur">
+      <div className="zion-rainbow-card p-6" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
         <h3 className="text-2xl font-semibold text-white flex items-center gap-3">
           <Terminal className="h-6 w-6 text-zion-gold" /> {cs ? 'Quickstart ukazky' : 'Quickstart snippets'}
         </h3>
         <div className="mt-4 space-y-4">
           {codeSamples.map((sample) => (
-            <div key={sample.id} className="rounded-2xl border border-white/10 bg-black/70 p-4">
+            <div key={sample.id} className="zion-rainbow-sub p-4" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
               <div className="mb-2 flex items-center justify-between text-sm text-gray-300">
                 <span>{sample.label}</span>
                 <button
@@ -98,13 +98,13 @@ export default function ApiQuickstartPanels({ cs }: { cs: boolean }) {
         </div>
       </div>
 
-      <div className="rounded-4xl border border-white/10 bg-black/50 p-6 backdrop-blur">
+      <div className="zion-rainbow-card p-6" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
         <h3 className="text-2xl font-semibold text-white flex items-center gap-3">
           <Server className="h-6 w-6 text-zion-gold" /> {cs ? 'Checklist nasazeni' : 'Onboarding checklist'}
         </h3>
         <div className="mt-4 space-y-4">
           {onboardingSteps.map((step) => (
-            <div key={step.title} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div key={step.title} className="zion-rainbow-sub p-4" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
               <p className="text-sm uppercase tracking-[0.3em] text-gray-500">{step.title}</p>
               <p className="text-sm text-gray-300 mt-2">{step.detail}</p>
             </div>

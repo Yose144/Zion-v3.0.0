@@ -94,8 +94,8 @@ function StatCard({ icon: Icon, label, value, sub, color, bgColor, delay = 0 }: 
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay }}
-      className="group relative rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 
-        hover:border-white/20 hover:bg-white/[0.06] transition-all duration-300 overflow-hidden"
+      className="group relative zion-rainbow-sub p-4 
+        transition-all duration-300 overflow-hidden" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
     >
       <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 
         bg-gradient-to-br ${bgColor} pointer-events-none`} />
@@ -136,7 +136,7 @@ export default function ProExplorerStats() {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
         {[...Array(12)].map((_, i) => (
-          <div key={i} className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 animate-pulse">
+          <div key={i} className="zion-rainbow-sub p-4 animate-pulse" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
             <div className="h-8 w-8 bg-white/5 rounded-xl mb-3" />
             <div className="h-3 w-16 bg-white/5 rounded mb-2" />
             <div className="h-6 w-20 bg-white/5 rounded" />
@@ -148,7 +148,7 @@ export default function ProExplorerStats() {
 
   if (error || !stats) {
     return (
-      <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6 text-center">
+      <div className="zion-rainbow-sub p-6 text-center" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
         <Server className="h-8 w-8 text-red-400 mx-auto mb-2" />
         <p className="text-red-400 text-sm">{cs ? "Nepodařilo se připojit k síti ZION" : "Unable to connect to ZION network"}</p>
         <button onClick={fetchStats} className="mt-3 text-xs text-gray-400 hover:text-white transition">{cs ? "Zkusit znovu →" : "Retry →"}</button>

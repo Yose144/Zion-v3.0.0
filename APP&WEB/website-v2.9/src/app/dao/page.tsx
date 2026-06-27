@@ -161,7 +161,7 @@ export default function DaoPage() {
                 {loading ? (cs ? 'Načítám…' : 'Loading…') : (cs ? 'Obnovit data' : 'Refresh Data')}
                 <ArrowRight className="h-4 w-4" />
               </button>
-              <Link href="/docs" className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white">
+              <Link href="/docs" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
                 {cs ? 'Dokumentace governance' : 'Governance docs'}
               </Link>
             </div>

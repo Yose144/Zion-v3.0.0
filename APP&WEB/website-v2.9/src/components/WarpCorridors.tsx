@@ -83,7 +83,7 @@ export default function WarpCorridors() {
 
         <div className="grid md:grid-cols-3 gap-6">
           {corridorStats.map((stat) => (
-            <div key={stat.label} className="rounded-3xl border border-white/10 bg-black/50 p-6 backdrop-blur">
+            <div key={stat.label} className="zion-rainbow-sub p-6" style={{ '--rc': '217, 70, 239' } as React.CSSProperties}>
               <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{stat.label}</p>
               <p className="text-3xl font-semibold text-white mt-2">{stat.value}</p>
               <p className="text-sm text-gray-400 mt-3 leading-relaxed">{stat.detail}</p>
@@ -97,7 +97,7 @@ export default function WarpCorridors() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="rounded-4xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 space-y-4 hud-grid"
+            className="zion-rainbow-card p-6 space-y-4 hud-grid" style={{ '--rc': '217, 70, 239' } as React.CSSProperties}
           >
             <div className="flex items-center justify-between">
               <div>
@@ -114,7 +114,7 @@ export default function WarpCorridors() {
               {warpCorridors.map((lane, idx) => (
                 <div
                   key={lane.chain}
-                  className="rounded-2xl border border-white/10 bg-black/40 p-4 flex flex-col gap-2"
+                  className="zion-rainbow-sub p-4 flex flex-col gap-2" style={{ '--rc': '217, 70, 239' } as React.CSSProperties}
                 >
                   <div className="flex items-center justify-between">
                     <p className="text-base font-semibold text-white">{lane.chain}</p>
@@ -133,7 +133,7 @@ export default function WarpCorridors() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 space-y-6"
+            className="zion-rainbow-card p-6 space-y-6" style={{ '--rc': '217, 70, 239' } as React.CSSProperties}
           >
             <div className="flex items-center justify-between">
               <div>
@@ -144,14 +144,14 @@ export default function WarpCorridors() {
             </div>
 
             {validatorDeck.map((block) => (
-              <div key={block.title} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div key={block.title} className="zion-rainbow-sub p-4" style={{ '--rc': '217, 70, 239' } as React.CSSProperties}>
                 <p className="text-sm text-gray-400">{block.title}</p>
                 <p className="text-2xl font-semibold text-white">{block.value}</p>
                 <p className="text-sm text-gray-300 mt-2 leading-relaxed">{block.description}</p>
               </div>
             ))}
 
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 flex items-center gap-4 text-sm text-gray-300">
+            <div className="zion-rainbow-sub p-4 flex items-center gap-4 text-sm text-gray-300" style={{ '--rc': '217, 70, 239' } as React.CSSProperties}>
               <Waves className="w-5 h-5 text-zion-gold" />
               Warp liquidity is governed by DAO orbits. Validators upload proofs to GitHub + IPFS, mirrored via Ansible runbooks every hour.
             </div>

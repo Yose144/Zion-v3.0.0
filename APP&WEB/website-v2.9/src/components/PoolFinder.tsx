@@ -89,7 +89,7 @@ export default function PoolFinder() {
   }, []);
 
   return (
-    <div className="rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+    <div className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
       <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
         <Zap className="w-5 h-5 text-zion-gold" />
         {cs ? 'Najít nejlepší těžební pool' : 'Find Best Mining Pool'}

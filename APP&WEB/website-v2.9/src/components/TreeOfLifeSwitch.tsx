@@ -27,7 +27,7 @@ function SplineFallbackScene() {
             </span>
           </h2>
         </div>
-        <div className="relative mx-auto max-w-5xl rounded-3xl border border-white/10 bg-black/25 shadow-[0_20px_80px_rgba(0,0,0,0.45)] overflow-hidden">
+        <div className="relative mx-auto max-w-5xl zion-rainbow-card shadow-[0_20px_80px_rgba(0,0,0,0.45)] overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
           <div className="aspect-16/10 min-h-[420px] md:min-h-[560px] w-full flex items-center justify-center">
             <div className="text-center px-8">
               <div className="mx-auto mb-5 h-20 w-20 rounded-full border border-amber-300/30 flex items-center justify-center animate-pulse">

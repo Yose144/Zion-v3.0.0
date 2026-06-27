@@ -215,7 +215,8 @@ export default function ResonancePage() {
             <div className="mt-10 flex flex-wrap gap-4">
               <Link
                 href="/docs"
-                className="group inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:border-zion-purple/50 hover:bg-white/10"
+                className="zion-rainbow-sub group inline-flex items-center gap-2 px-5 py-3 text-sm font-semibold text-white transition hover:border-zion-purple/50 hover:bg-white/10"
+                style={{ '--rc': '217, 70, 239' } as React.CSSProperties}
               >
                 <BookOpen className="h-4 w-4 text-zion-cyan" />
                 {lang === 'cs' ? 'Dokumentace' : 'Documentation'}
@@ -223,7 +224,8 @@ export default function ResonancePage() {
               </Link>
               <Link
                 href="/terranova"
-                className="group inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:border-zion-gold/50 hover:bg-white/10"
+                className="zion-rainbow-sub group inline-flex items-center gap-2 px-5 py-3 text-sm font-semibold text-white transition hover:border-zion-gold/50 hover:bg-white/10"
+                style={{ '--rc': '217, 70, 239' } as React.CSSProperties}
               >
                 <TreePine className="h-4 w-4 text-zion-gold" />
                 Terra Nova

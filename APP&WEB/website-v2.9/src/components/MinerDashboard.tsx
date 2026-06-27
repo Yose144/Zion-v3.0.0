@@ -157,7 +157,7 @@ function StatCard({ icon, label, value, sub, accent = "text-zion-cyan" }: {
   accent?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 space-y-2">
+    <div className="zion-rainbow-sub p-4 space-y-2" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
       <div className={`h-8 w-8 rounded-xl bg-white/5 flex items-center justify-center [&>svg]:h-4 [&>svg]:w-4 ${accent}`}>
         {icon}
       </div>
@@ -273,7 +273,7 @@ export default function MinerDashboard({ address }: { address: string }) {
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-3xl border border-red-500/20 bg-black/60 backdrop-blur-xl p-8 md:p-12 text-center space-y-6"
+            className="zion-rainbow-card p-8 md:p-12 text-center space-y-6" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
           >
             <div className="mx-auto h-16 w-16 rounded-2xl bg-red-500/10 flex items-center justify-center">
               <XCircle className="h-8 w-8 text-red-400" />
@@ -304,7 +304,7 @@ export default function MinerDashboard({ address }: { address: string }) {
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 md:p-10 shadow-[0_30px_120px_rgba(0,0,0,0.45)]"
+          className="zion-rainbow-card p-6 md:p-10 shadow-[0_30px_120px_rgba(0,0,0,0.45)]" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
         >
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
@@ -398,7 +398,7 @@ export default function MinerDashboard({ address }: { address: string }) {
             </h2>
             <p className="text-sm text-gray-400">{cs ? 'Zive vzorky hashratu sbirane kazdych 15 sekund.' : 'Live hashrate samples collected every 15 seconds.'}</p>
           </div>
-          <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 md:p-8">
+          <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <span className="text-sm text-gray-400">{cs ? 'Aktualne:' : 'Current:'}</span>
@@ -428,7 +428,7 @@ export default function MinerDashboard({ address }: { address: string }) {
               </h2>
               <p className="text-sm text-gray-400">{cs ? 'Bloky nalezene timto minerem v poolu.' : 'Blocks found by this miner on the pool.'}</p>
             </div>
-            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl overflow-hidden">
+            <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -475,7 +475,7 @@ export default function MinerDashboard({ address }: { address: string }) {
             </h2>
             <p className="text-sm text-gray-400">{cs ? 'Historie pool payoutu tomuto minerovi.' : 'History of pool payouts to this miner.'}</p>
           </div>
-          <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 md:p-8">
+          <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
             {data.payouts.length === 0 ? (
               <div className="text-center py-10 text-gray-500">
                 <Wallet className="h-10 w-10 mx-auto mb-3 opacity-30" />
@@ -535,38 +535,38 @@ export default function MinerDashboard({ address }: { address: string }) {
             </h2>
             <p className="text-sm text-gray-400">{cs ? 'Nejlepsi dostupna telemetrie minera z pool accounting a zivych runtime dat.' : 'Best available miner telemetry from pool accounting and live runtime data.'}</p>
           </div>
-          <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 md:p-8">
+          <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
             {!promMetrics ? (
               <p className="text-sm text-gray-400">{cs ? 'Nacitam rozsirene metriky minera...' : 'Loading advanced miner metrics...'}</p>
             ) : (
               <>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-1">
+                  <div className="zion-rainbow-sub p-4 space-y-1" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                     <p className="text-xs text-zion-cyan font-mono break-all">miner_hashrate{`{address="..."}`}</p>
                     <p className="text-lg font-semibold text-white">{fmtHash(promMetrics.metrics.hashrate)}</p>
                     <p className="text-xs text-gray-400">{cs ? 'Aktualni hashrate (Gauge)' : 'Current hashrate (Gauge)'}</p>
                   </div>
-                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-1">
+                  <div className="zion-rainbow-sub p-4 space-y-1" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                     <p className="text-xs text-zion-cyan font-mono break-all">miner_shares_total{`{status="valid|invalid"}`}</p>
                     <p className="text-lg font-semibold text-white">{fmtNum(promMetrics.metrics.shares_valid)} / {fmtNum(promMetrics.metrics.shares_invalid)}</p>
                     <p className="text-xs text-gray-400">{cs ? 'Validni / neplatne shares (Counter)' : 'Valid / invalid shares (Counter)'}</p>
                   </div>
-                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-1">
+                  <div className="zion-rainbow-sub p-4 space-y-1" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                     <p className="text-xs text-zion-cyan font-mono break-all">miner_blocks_found_total{`{address="..."}`}</p>
                     <p className="text-lg font-semibold text-white">{fmtNum(promMetrics.metrics.blocks_found)}</p>
                     <p className="text-xs text-gray-400">{cs ? 'Nalezene bloky (Counter)' : 'Blocks found (Counter)'}</p>
                   </div>
-                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-1">
+                  <div className="zion-rainbow-sub p-4 space-y-1" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                     <p className="text-xs text-zion-cyan font-mono break-all">miner_pending_balance_atomic{`{address="..."}`}</p>
                     <p className="text-lg font-semibold text-white">{fmtZion(promMetrics.metrics.pending_balance_atomic)} ZION</p>
                     <p className="text-xs text-gray-400">{cs ? 'Cekajici zustatek (Gauge)' : 'Pending balance (Gauge)'}</p>
                   </div>
-                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-1">
+                  <div className="zion-rainbow-sub p-4 space-y-1" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                     <p className="text-xs text-zion-cyan font-mono break-all">miner_paid_total_atomic{`{address="..."}`}</p>
                     <p className="text-lg font-semibold text-white">{fmtZion(promMetrics.metrics.paid_total_atomic)} ZION</p>
                     <p className="text-xs text-gray-400">{cs ? 'Celkem vyplaceno (Gauge)' : 'Total paid (Gauge)'}</p>
                   </div>
-                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-1">
+                  <div className="zion-rainbow-sub p-4 space-y-1" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                     <p className="text-xs text-zion-cyan font-mono break-all">miner_connections_active{`{address="..."}`}</p>
                     <p className="text-lg font-semibold text-white">{fmtNum(promMetrics.metrics.connections_active)}</p>
                     <p className="text-xs text-gray-400">{cs ? 'Aktivni spojeni (Gauge)' : 'Active connections (Gauge)'}</p>
