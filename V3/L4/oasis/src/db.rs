@@ -80,6 +80,54 @@ impl OasisDb {
                 completed_at   INTEGER,
                 PRIMARY KEY (player_address, quest_id)
             );
+
+            CREATE TABLE IF NOT EXISTS raid_teams (
+                id          TEXT PRIMARY KEY,
+                leader      TEXT NOT NULL,
+                name        TEXT NOT NULL,
+                members     TEXT NOT NULL DEFAULT '[]',
+                data        TEXT NOT NULL,
+                created_at  INTEGER NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS golden_egg_progress (
+                player_address TEXT NOT NULL,
+                clue_id        INTEGER NOT NULL,
+                category       TEXT NOT NULL,
+                discovered_at  INTEGER NOT NULL,
+                PRIMARY KEY (player_address, clue_id)
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_golden_egg_player ON golden_egg_progress(player_address);
+
+            CREATE TABLE IF NOT EXISTS territory_state (
+                territory_id   INTEGER PRIMARY KEY,
+                controller      TEXT,
+                guild_id        TEXT,
+                contested       INTEGER NOT NULL DEFAULT 0,
+                data            TEXT NOT NULL,
+                updated_at      INTEGER NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS tithe_records (
+                id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                player_address TEXT NOT NULL,
+                amount_flowers INTEGER NOT NULL,
+                timestamp    INTEGER NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_tithe_player ON tithe_records(player_address);
+
+            CREATE TABLE IF NOT EXISTS challenge_submissions (
+                id           TEXT PRIMARY KEY,
+                player_address TEXT NOT NULL,
+                challenge_id  TEXT NOT NULL,
+                score         INTEGER NOT NULL,
+                data          TEXT NOT NULL,
+                submitted_at  INTEGER NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_challenge_player ON challenge_submissions(player_address);
             ",
         )
         .map_err(OasisError::Database)?;
@@ -388,6 +436,113 @@ impl OasisDb {
             )
             .map_err(OasisError::Database)?;
         Ok(count as u32)
+    }
+
+    // ── Raid Teams ──────────────────────────────────────────────────────────
+
+    pub fn save_raid_team(&self, id: &str, leader: &str, name: &str, members: &str, data: &str) -> OasisResult<()> {
+        let now = now_secs();
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO raid_teams (id, leader, name, members, data, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+             ON CONFLICT(id) DO UPDATE SET members = excluded.members, data = excluded.data",
+            params![id, leader, name, members, data, now],
+        ).map_err(OasisError::Database)?;
+        Ok(())
+    }
+
+    pub fn get_raid_team(&self, id: &str) -> OasisResult<Option<(String, String, String, String)>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn
+            .prepare("SELECT leader, name, members, data FROM raid_teams WHERE id = ?1")
+            .map_err(OasisError::Database)?;
+        let mut rows = stmt.query(params![id]).map_err(OasisError::Database)?;
+        if let Some(row) = rows.next().map_err(OasisError::Database)? {
+            return Ok(Some((
+                row.get(0).map_err(OasisError::Database)?,
+                row.get(1).map_err(OasisError::Database)?,
+                row.get(2).map_err(OasisError::Database)?,
+                row.get(3).map_err(OasisError::Database)?,
+            )));
+        }
+        Ok(None)
+    }
+
+    // ── Golden Egg Progress ──────────────────────────────────────────────────
+
+    pub fn save_clue_discovery(&self, address: &str, clue_id: u32, category: &str) -> OasisResult<()> {
+        let now = now_secs();
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT OR IGNORE INTO golden_egg_progress (player_address, clue_id, category, discovered_at)
+             VALUES (?1, ?2, ?3, ?4)",
+            params![address, clue_id as i64, category, now],
+        ).map_err(OasisError::Database)?;
+        Ok(())
+    }
+
+    pub fn get_clue_count(&self, address: &str) -> OasisResult<u32> {
+        let conn = self.conn.lock().unwrap();
+        let count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM golden_egg_progress WHERE player_address = ?1",
+                params![address],
+                |row| row.get(0),
+            )
+            .map_err(OasisError::Database)?;
+        Ok(count as u32)
+    }
+
+    // ── Territory State ──────────────────────────────────────────────────────
+
+    pub fn save_territory(&self, territory_id: u32, controller: &str, guild_id: Option<&str>, data: &str) -> OasisResult<()> {
+        let now = now_secs();
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO territory_state (territory_id, controller, guild_id, contested, data, updated_at)
+             VALUES (?1, ?2, ?3, 0, ?4, ?5)
+             ON CONFLICT(territory_id) DO UPDATE SET controller = excluded.controller, guild_id = excluded.guild_id, data = excluded.data, updated_at = excluded.updated_at",
+            params![territory_id as i64, controller, guild_id, data, now],
+        ).map_err(OasisError::Database)?;
+        Ok(())
+    }
+
+    // ── Tithe Records ────────────────────────────────────────────────────────
+
+    pub fn save_tithe(&self, address: &str, amount_flowers: u64) -> OasisResult<()> {
+        let now = now_secs();
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO tithe_records (player_address, amount_flowers, timestamp) VALUES (?1, ?2, ?3)",
+            params![address, amount_flowers as i64, now],
+        ).map_err(OasisError::Database)?;
+        Ok(())
+    }
+
+    pub fn get_total_tithe(&self, address: &str) -> OasisResult<u64> {
+        let conn = self.conn.lock().unwrap();
+        let total: i64 = conn
+            .query_row(
+                "SELECT COALESCE(SUM(amount_flowers), 0) FROM tithe_records WHERE player_address = ?1",
+                params![address],
+                |row| row.get(0),
+            )
+            .map_err(OasisError::Database)?;
+        Ok(total as u64)
+    }
+
+    // ── Challenge Submissions ────────────────────────────────────────────────
+
+    pub fn save_challenge(&self, id: &str, address: &str, challenge_id: &str, score: u32, data: &str) -> OasisResult<()> {
+        let now = now_secs();
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT OR REPLACE INTO challenge_submissions (id, player_address, challenge_id, score, data, submitted_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![id, address, challenge_id, score as i64, data, now],
+        ).map_err(OasisError::Database)?;
+        Ok(())
     }
 }
 

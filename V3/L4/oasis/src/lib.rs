@@ -50,6 +50,8 @@
 //!   - Controlled by OASIS game engine + DAO governance
 
 pub mod api;
+pub mod auth;
+pub mod blockchain_listener;
 pub mod challenges;
 pub mod combat;
 pub mod config;

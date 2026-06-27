@@ -4,6 +4,13 @@ import BlockchainRPC from '../services/BlockchainRPC';
 import {createSignedTransaction} from '../services/TransactionBuilder';
 import {buildAccountTransaction} from '../services/AccountBuilder';
 import {CONFIG} from '../constants/config';
+import {
+  queueTransaction,
+  getQueue,
+  removeTransaction,
+  incrementAttempts,
+  getPendingCount,
+} from '../services/OfflineTxQueue';
 
 const WalletContext = createContext();
 
@@ -23,6 +30,7 @@ export const WalletProvider = ({children}) => {
   const [utxos, setUtxos] = useState([]);
   const [balanceLoading, setBalanceLoading] = useState(false);
   const [locked, setLocked] = useState(false);
+  const [pendingTxCount, setPendingTxCount] = useState(0);
   const refreshTimerRef = useRef(null);
   const lockTimerRef = useRef(null);
   const lastActivityRef = useRef(Date.now());
@@ -84,6 +92,12 @@ export const WalletProvider = ({children}) => {
     try {
       await WalletService.initialize();
       refreshWallets();
+      // Sync pending offline-tx count from the persisted queue.
+      try {
+        setPendingTxCount(await getPendingCount());
+      } catch (e) {
+        console.warn('Failed to load pending tx count:', e);
+      }
     } catch (error) {
       console.error('Failed to initialize wallet:', error);
     } finally {
@@ -197,8 +211,20 @@ export const WalletProvider = ({children}) => {
         utxos: freshUtxos,
         privateKey: Buffer.from(privateKey, 'hex'),
       });
-      txId = await BlockchainRPC.broadcastTransaction(tx);
-      txId = txId || (txHash instanceof Buffer ? txHash.toString('hex') : txHash);
+      // Ensure the signed tx carries an id + model tag for the offline queue.
+      const txIdCandidate = txHash instanceof Buffer ? txHash.toString('hex') : txHash;
+      if (!tx.tx_id) tx.tx_id = txIdCandidate;
+      tx._zionModel = 'utxo';
+      try {
+        txId = await BlockchainRPC.broadcastTransaction(tx);
+      } catch (broadcastErr) {
+        // Network/RPC failure → persist for later broadcast instead of throwing.
+        console.warn('📡 Broadcast failed, queueing tx offline:', broadcastErr.message);
+        await queueTransaction(tx);
+        setPendingTxCount(await getPendingCount());
+        return { txId: tx.tx_id, model, queued: true };
+      }
+      txId = txId || txIdCandidate;
     } else if (accountBalanceFlowers > 0n) {
       // ── Account model ──────────────────────────────────────────
       model = 'account';
@@ -208,7 +234,15 @@ export const WalletProvider = ({children}) => {
         amountZion,
         privateKey: Buffer.from(privateKey, 'hex'),
       });
-      txId = await BlockchainRPC.broadcastAccountTransaction(accountTx);
+      accountTx._zionModel = 'account';
+      try {
+        txId = await BlockchainRPC.broadcastAccountTransaction(accountTx);
+      } catch (broadcastErr) {
+        console.warn('📡 Account broadcast failed, queueing tx offline:', broadcastErr.message);
+        await queueTransaction(accountTx);
+        setPendingTxCount(await getPendingCount());
+        return { txId: accountTx.tx_id, model, queued: true };
+      }
       if (!txId) txId = accountTx.tx_id;
     } else {
       throw new Error('Insufficient balance: address has neither UTXOs nor account balance');
@@ -218,6 +252,62 @@ export const WalletProvider = ({children}) => {
     setTimeout(() => refreshBalance(), 2000);
 
     return {txId, model};
+  };
+
+  /**
+   * Attempt to broadcast all queued (offline) transactions.
+   * Called when connectivity is restored (e.g. via useNetworkStatus).
+   *
+   * For each queued tx:
+   *  - On success → remove from queue
+   *  - On failure → increment attempt counter
+   * Updates pendingTxCount afterwards and returns a summary.
+   *
+   * @returns {Promise<{broadcast: number, failed: number, remaining: number}>}
+   */
+  const broadcastPendingTransactions = async () => {
+    const queue = await getQueue();
+    if (!queue.length) {
+      setPendingTxCount(0);
+      return { broadcast: 0, failed: 0, remaining: 0 };
+    }
+
+    let broadcast = 0;
+    let failed = 0;
+
+    for (const item of queue) {
+      const tx = item.tx;
+      const txId = tx?.tx_id;
+      if (!txId) {
+        // Cannot track a tx without an id — skip & drop it.
+        await removeTransaction(txId);
+        continue;
+      }
+      try {
+        const isAccount = tx._zionModel === 'account';
+        if (isAccount) {
+          await BlockchainRPC.broadcastAccountTransaction(tx);
+        } else {
+          await BlockchainRPC.broadcastTransaction(tx);
+        }
+        await removeTransaction(txId);
+        broadcast++;
+      } catch (err) {
+        console.warn(`📡 Re-broadcast failed for ${txId}:`, err.message);
+        await incrementAttempts(txId);
+        failed++;
+      }
+    }
+
+    const remaining = await getPendingCount();
+    setPendingTxCount(remaining);
+
+    if (broadcast > 0) {
+      // Refresh balance to reflect newly accepted transactions.
+      setTimeout(() => refreshBalance(), 2000);
+    }
+
+    return { broadcast, failed, remaining };
   };
 
   const value = {
@@ -239,6 +329,8 @@ export const WalletProvider = ({children}) => {
     refreshWallets,
     refreshBalance,
     sendZion,
+    pendingTxCount,
+    broadcastPendingTransactions,
   };
 
   return (

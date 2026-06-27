@@ -10,7 +10,7 @@
  * Shown once; skipped if wallets already exist.
  */
 
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -28,14 +28,24 @@ import {colors, spacing, typography} from '../constants/theme';
 
 const STEPS = ['welcome', 'createOrImport', 'backupPhrase', 'secure'];
 
-const OnboardingScreen = ({navigation}) => {
+const OnboardingScreen = ({navigation, route}) => {
   const [step, setStep] = useState(0);
   const [walletCreated, setWalletCreated] = useState(null);
   const [mnemonicVisible, setMnemonicVisible] = useState(false);
   const [confirmedBackup, setConfirmedBackup] = useState(false);
+  const [pendingImport, setPendingImport] = useState(null);
   const {createWallet, importWallet} = useWallet();
 
   const currentStep = STEPS[step];
+
+  // Consume deep-link import params (zion://import?mnemonic=...)
+  useEffect(() => {
+    const params = route?.params;
+    if (params?.importMnemonic) {
+      setPendingImport(params.importMnemonic);
+      setStep(1); // jump to createOrImport step so user can confirm
+    }
+  }, [route?.params]);
 
   const handleCreateWallet = async () => {
     try {
@@ -93,6 +103,20 @@ const OnboardingScreen = ({navigation}) => {
         <Text style={styles.subtitle}>
           Create a new wallet or restore an existing one with your seed phrase.
         </Text>
+
+        {pendingImport ? (
+          <GlassCard style={styles.optionCard}>
+            <TouchableOpacity
+              style={styles.optionButton}
+              onPress={() => handleImportWallet(pendingImport)}>
+              <Icon name="link-variant" size={40} color={colors.primary.cyan} />
+              <Text style={styles.optionTitle}>Import from Deep Link</Text>
+              <Text style={styles.optionDesc}>
+                A wallet was shared via a ZION link. Tap to import it now.
+              </Text>
+            </TouchableOpacity>
+          </GlassCard>
+        ) : null}
 
         <GlassCard style={styles.optionCard}>
           <TouchableOpacity style={styles.optionButton} onPress={handleCreateWallet}>
