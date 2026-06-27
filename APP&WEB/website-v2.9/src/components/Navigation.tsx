@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import {
   Menu, X, SignalHigh, Orbit, ChevronDown, LayoutDashboard, Pickaxe, Shield,
   HardHat, Download, Coins, ArrowLeftRight, Landmark, Wallet, BookOpen,
-  Newspaper, Map, Sparkles, Rocket, Brain, Flower2, Globe2, Zap,
+  Newspaper, Map, Sparkles, Rocket, Brain, Flower2, Globe2, Zap, Atom,
 } from 'lucide-react';
 import NavAuthButton from './NavAuthButton';
 import { useLang } from '@/contexts/LanguageContext';
@@ -24,7 +24,7 @@ export default function Navigation() {
   const { lang, setLang } = useLang();
 
   const navItemMatches = (href: string) =>
-    pathname === href || (href === '/terranova' && pathname.startsWith('/terranova')) || (href === '/wiki' && pathname === '/wiki');
+    pathname === href || (href === '/terranova' && pathname.startsWith('/terranova')) || (href === '/quantum-revolution' && pathname.startsWith('/quantum-revolution')) || (href === '/wiki' && pathname === '/wiki');
   // Trimmed structure: 4 lean groups (≤5 items each). Secondary pages stay reachable via footer/direct URL.
   const navGroups: NavGroup[] = [
     {
@@ -82,6 +82,7 @@ export default function Navigation() {
     { href: '/news', icon: Newspaper, color: '249, 115, 22', label: tr('nav', 'news', lang) },
     { href: '/roadmap', icon: Map, color: '99, 102, 241', label: tr('nav', 'roadmap', lang) },
     { href: '/genesis', icon: Sparkles, color: '251, 191, 36', label: tr('nav', 'genesis', lang) },
+    { href: '/quantum-revolution', icon: Atom, color: '251, 191, 36', label: tr('nav', 'quantum_revolution', lang) },
     { href: '/terranova', icon: Globe2, color: '34, 197, 94', label: tr('nav', 'terranova', lang) },
     { href: '/l3-hiran', icon: Brain, color: '139, 92, 246', label: tr('nav', 'l3_hiran', lang) },
     { href: '/l4-oasis', icon: Flower2, color: '217, 70, 239', label: tr('nav', 'l4_oasis', lang) },
