@@ -118,7 +118,7 @@ export default function WarpPage() {
                   {cs ? 'Otevřít DeFi Hub' : 'Open DeFi Hub'}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
-                <Link href="/bridge" className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white">
+                <Link href="/bridge" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white" style={{ '--rc': '217, 70, 239' } as React.CSSProperties}>
                   {cs ? 'Bridge operace' : 'Bridge operations'}
                 </Link>
               </div>

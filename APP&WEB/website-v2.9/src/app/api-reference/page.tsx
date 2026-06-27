@@ -215,13 +215,15 @@ export default function ApiReferencePage() {
                 href="/health"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-gray-100 hover:border-zion-gold/60"
+              className="zion-rainbow-sub inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-gray-100 hover:border-zion-gold/60"
+              style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <Server className="h-4 w-4 text-zion-gold" /> {cs ? 'Živé health' : 'Live health'}
             </a>
             <Link
               href="/docs"
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-gray-100 hover:border-zion-gold/60"
+              className="zion-rainbow-sub inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-gray-100 hover:border-zion-gold/60"
+              style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <ArrowUpRight className="h-4 w-4 text-zion-gold" /> {cs ? 'Plná dokumentace' : 'Full docs'}
             </Link>

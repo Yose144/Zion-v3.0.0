@@ -179,7 +179,7 @@ export default function KompasPageClient() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="flex items-center justify-center h-full min-h-[400px] rounded-3xl border border-dashed border-white/10 bg-black/30"
+                    className="zion-section flex items-center justify-center h-full min-h-[400px] border-dashed"
                   >
                     <p className="text-gray-600 text-sm text-center px-6">
                       {cs ? 'Vyber směr na kompasu →' : 'Select a direction on the compass →'}

@@ -241,7 +241,7 @@ export default function EkamMuseumLanding() {
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,8,16,0.16),rgba(5,8,16,0.24)_24%,rgba(5,8,16,0.58)_72%,rgba(5,8,16,0.82)_100%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(251,191,36,0.14),transparent_24%),radial-gradient(circle_at_85%_22%,rgba(56,189,248,0.10),transparent_20%)]" />
           <div className="absolute inset-x-0 bottom-0 mx-auto flex max-w-6xl items-end justify-between gap-4 px-6 pb-6 sm:px-8 lg:px-10 lg:pb-8">
-            <div className="rounded-2xl border border-white/12 bg-black/32 px-4 py-3 backdrop-blur-sm">
+            <div className="zion-rainbow-sub px-4 py-3" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
               <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-amber-100/80">EKAM</p>
               <p className="mt-1 text-sm text-white/92">Varadaiahpalem · Oneness Temple</p>
             </div>
@@ -258,7 +258,7 @@ export default function EkamMuseumLanding() {
 
         <div className="relative z-10 mx-auto -mt-10 px-6 sm:-mt-12 sm:px-8 lg:px-10">
           <div className="mx-auto max-w-6xl">
-            <div className="max-w-4xl rounded-4xl border border-white/14 bg-black/38 p-6 shadow-[0_22px_64px_rgba(2,6,23,0.30)] backdrop-blur-md sm:p-8 lg:p-10">
+            <div className="max-w-4xl zion-rainbow-card p-6 shadow-[0_22px_64px_rgba(2,6,23,0.30)] sm:p-8 lg:p-10" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
               <div className="max-w-3xl space-y-5">
                 <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/12 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.32em] text-amber-100/88">
                   <Sparkles className="h-3.5 w-3.5 text-zion-gold" />
@@ -279,14 +279,14 @@ export default function EkamMuseumLanding() {
       {/* ═══════════ SACRED ARCHITECTURE ═══════════ */}
       <section className="relative px-6 pt-6 pb-12 sm:px-8 sm:pt-8 lg:px-10">
         <div className="mx-auto max-w-6xl">
-          <div className="rounded-[2rem] border border-white/10 bg-white/5 p-7 backdrop-blur-sm">
+          <div className="zion-rainbow-card p-7" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-100/60">{tr('ekamPage', 'arch_label', lang)}</p>
             <h2 className="mt-3 text-2xl font-semibold text-white sm:text-3xl">{tr('ekamPage', 'arch_title', lang)}</h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">{tr('ekamPage', 'arch_subtitle', lang)}</p>
 
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {archFacts.map(({ key, Icon }) => (
-                <article key={key} className="rounded-3xl border border-white/10 bg-slate-950/35 p-5 transition hover:border-amber-200/24">
+                <article key={key} className="zion-rainbow-sub p-5 transition hover:border-amber-200/24" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
                   <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-200/20 bg-amber-300/10 text-amber-100">
                     <Icon className="h-5 w-5" />
                   </div>
@@ -302,14 +302,14 @@ export default function EkamMuseumLanding() {
       {/* ═══════════ SACRED GEOMETRY ═══════════ */}
       <section className="relative px-6 py-12 sm:px-8 lg:px-10">
         <div className="mx-auto max-w-6xl">
-          <div className="rounded-[2rem] border border-amber-200/12 bg-[linear-gradient(135deg,rgba(255,215,120,0.06),rgba(255,255,255,0.02))] p-7 backdrop-blur-sm">
+          <div className="zion-rainbow-card p-7" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-100/60">{tr('ekamPage', 'geo_label', lang)}</p>
             <h2 className="mt-3 text-2xl font-semibold text-white sm:text-3xl">{tr('ekamPage', 'geo_title', lang)}</h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">{tr('ekamPage', 'geo_subtitle', lang)}</p>
 
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {geoFacts.map(({ key, Icon }) => (
-                <article key={key} className="rounded-3xl border border-white/10 bg-black/20 p-5">
+                <article key={key} className="zion-rainbow-sub p-5" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
                   <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-200/20 bg-amber-300/10 text-amber-100">
                     <Icon className="h-5 w-5" />
                   </div>
@@ -326,18 +326,18 @@ export default function EkamMuseumLanding() {
       <section className="relative px-6 py-12 sm:px-8 lg:px-10">
         <div className="mx-auto max-w-6xl">
           <div className="grid gap-6 lg:grid-cols-2">
-            <div className="rounded-[2rem] border border-white/10 bg-white/5 p-7 backdrop-blur-sm">
+            <div className="zion-rainbow-card p-7" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-100/60">{tr('ekamPage', 'deeksha_label', lang)}</p>
               <h2 className="mt-3 text-2xl font-semibold text-white sm:text-3xl">{tr('ekamPage', 'deeksha_title', lang)}</h2>
               <p className="mt-3 text-sm leading-7 text-slate-300">{tr('ekamPage', 'deeksha_body', lang)}</p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <article className="rounded-3xl border border-white/10 bg-slate-950/35 p-5">
+              <article className="zion-rainbow-sub p-5" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-100/70">{tr('ekamPage', 'deeksha_sparsha_label', lang)}</p>
                 <h3 className="mt-3 text-base font-semibold text-white">{tr('ekamPage', 'deeksha_sparsha_title', lang)}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-400">{tr('ekamPage', 'deeksha_sparsha_body', lang)}</p>
               </article>
-              <article className="rounded-3xl border border-white/10 bg-slate-950/35 p-5">
+              <article className="zion-rainbow-sub p-5" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-100/70">{tr('ekamPage', 'deeksha_smarana_label', lang)}</p>
                 <h3 className="mt-3 text-base font-semibold text-white">{tr('ekamPage', 'deeksha_smarana_title', lang)}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-400">{tr('ekamPage', 'deeksha_smarana_body', lang)}</p>
@@ -350,7 +350,7 @@ export default function EkamMuseumLanding() {
       {/* ═══════════ FOUNDERS & FAMILY LINEAGE ═══════════ */}
       <section className="relative px-6 py-12 sm:px-8 lg:px-10">
         <div className="mx-auto max-w-6xl">
-          <div className="rounded-[2rem] border border-amber-200/12 bg-[linear-gradient(135deg,rgba(255,215,120,0.06),rgba(255,255,255,0.02))] p-7 backdrop-blur-sm">
+          <div className="zion-rainbow-card p-7" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-200/20 bg-amber-300/10 text-amber-100">
                 <Users className="h-5 w-5" />
@@ -362,7 +362,7 @@ export default function EkamMuseumLanding() {
             </div>
             <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300">{tr('ekamPage', 'founders_subtitle', lang)}</p>
 
-            <div className="mt-6 relative overflow-hidden rounded-2xl border border-amber-200/20 bg-black/30 shadow-[0_18px_60px_rgba(0,0,0,0.35)]">
+            <div className="mt-6 relative overflow-hidden zion-rainbow-sub shadow-[0_18px_60px_rgba(0,0,0,0.35)]" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
               <Image
                 src={EKAM_FOUNDERS_BANNER_IMAGE}
                 alt="Sri Amma & Sri Bhagavan"
@@ -386,7 +386,7 @@ export default function EkamMuseumLanding() {
             {/* ── Family portrait + quote ── */}
             <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_1.2fr]">
               <div className="space-y-4">
-                <div className="relative overflow-hidden rounded-2xl border border-amber-200/20 bg-black/30 shadow-[0_18px_60px_rgba(0,0,0,0.35)]">
+                <div className="relative overflow-hidden zion-rainbow-sub shadow-[0_18px_60px_rgba(0,0,0,0.35)]" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
                   <Image
                     src={EKAM_PREETHAJI_KRISHNAJI_IMAGE}
                     alt="Sri Preethaji & Sri Krishnaji"
@@ -414,7 +414,7 @@ export default function EkamMuseumLanding() {
                 </a>
 
                 {/* ── Quote ── */}
-                <div className="rounded-2xl border border-amber-300/15 bg-amber-300/5 p-5">
+                <div className="zion-rainbow-sub p-5" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
                   <Quote className="mb-2 h-5 w-5 text-amber-300/40" />
                   <p className="text-sm italic leading-relaxed text-amber-100/80">
                     {tr('ekamPage', 'founders_quote', lang)}
@@ -428,7 +428,7 @@ export default function EkamMuseumLanding() {
               {/* ── Family cards ── */}
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-2">
                 {familyMembers.map(({ key, Icon }) => (
-                  <article key={key} className="rounded-3xl border border-white/10 bg-slate-950/35 p-5 transition hover:border-amber-200/24">
+                  <article key={key} className="zion-rainbow-sub p-5 transition hover:border-amber-200/24" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-amber-200/20 bg-amber-300/10 text-amber-100">
                       <Icon className="h-4 w-4" />
                     </div>
@@ -445,7 +445,7 @@ export default function EkamMuseumLanding() {
       {/* ═══════════ VIRTUAL TOUR / TEMPLE GALLERY ═══════════ */}
       <section className="relative px-6 py-12 sm:px-8 lg:px-10">
         <div className="mx-auto max-w-6xl">
-          <div className="rounded-[2rem] border border-white/10 bg-white/5 p-7 backdrop-blur-sm">
+          <div className="zion-rainbow-card p-7" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-200/20 bg-sky-300/10 text-sky-100">
                 <Play className="h-5 w-5" />
@@ -460,7 +460,7 @@ export default function EkamMuseumLanding() {
             {/* ── Image gallery ── */}
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {/* Ekam hero */}
-              <div className="relative overflow-hidden rounded-2xl border border-amber-200/20 bg-black/30 sm:col-span-2 lg:col-span-1 lg:row-span-2">
+              <div className="relative overflow-hidden zion-rainbow-sub sm:col-span-2 lg:col-span-1 lg:row-span-2" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
                 <Image
                   src={EKAM_BANNER_IMAGE}
                   alt="Ekam — Oneness Temple"
@@ -478,7 +478,7 @@ export default function EkamMuseumLanding() {
                 </div>
               </div>
               {/* Turiya / Sacred space */}
-              <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+              <div className="relative overflow-hidden zion-rainbow-sub" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
                 <Image
                   src={EKAM_TURIYA_IMAGE}
                   alt="Sacred meditation space"
@@ -496,7 +496,7 @@ export default function EkamMuseumLanding() {
                 </div>
               </div>
               {/* Nordic centre */}
-              <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+              <div className="relative overflow-hidden zion-rainbow-sub" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
                 <Image
                   src={EKAM_NORDIC_IMAGE}
                   alt="Oneness Nordic — European Centre"
@@ -518,7 +518,7 @@ export default function EkamMuseumLanding() {
             {/* ── Facts row ── */}
             <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {tourFacts.map(({ key, Icon }) => (
-                <div key={key} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 p-4">
+                <div key={key} className="flex items-center gap-3 zion-rainbow-sub p-4" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
                   <Icon className="h-4 w-4 shrink-0 text-amber-200/60" />
                   <p className="text-xs font-medium text-slate-300">{tr('ekamPage', key, lang)}</p>
                 </div>
@@ -526,7 +526,7 @@ export default function EkamMuseumLanding() {
             </div>
 
             {/* ── Nordic description ── */}
-            <div className="mt-6 rounded-2xl border border-sky-200/10 bg-sky-300/5 p-5">
+            <div className="mt-6 zion-rainbow-sub p-5" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
               <h3 className="text-base font-semibold text-white">{tr('ekamPage', 'tour_nordic_title', lang)}</h3>
               <p className="mt-2 text-sm leading-relaxed text-slate-300">{tr('ekamPage', 'tour_nordic_body', lang)}</p>
             </div>
@@ -559,7 +559,7 @@ export default function EkamMuseumLanding() {
       {/* ═══════════ VISITOR PATH ═══════════ */}
       <section className="relative px-6 py-12 sm:px-8 lg:px-10">
         <div className="mx-auto max-w-6xl">
-          <div className="rounded-[2rem] border border-white/10 bg-white/5 p-7 backdrop-blur-sm">
+          <div className="zion-rainbow-card p-7" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-200/20 bg-sky-300/10 text-sky-100">
                 <Orbit className="h-5 w-5" />
@@ -574,7 +574,7 @@ export default function EkamMuseumLanding() {
               {halls.map(({ title, body, Icon }, index) => (
                 <article
                   key={title}
-                  className="relative rounded-3xl border border-white/10 bg-slate-950/35 p-5 transition hover:border-amber-200/24 hover:bg-slate-950/50"
+                  className="relative zion-rainbow-sub p-5 transition hover:border-amber-200/24 hover:bg-slate-950/50" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
                 >
                   <span className="absolute right-4 top-4 text-[11px] font-semibold text-amber-100/40">{index + 1}/4</span>
                   <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-200/20 bg-amber-300/10 text-amber-100">
