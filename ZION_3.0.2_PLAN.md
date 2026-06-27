@@ -205,13 +205,15 @@ Viz [`ZION_3.0.3_DECIMAL_FORK_PLAN.md`](ZION_3.0.3_DECIMAL_FORK_PLAN.md) pro kom
 
 > **Audit:** Viz [`AUDIT_3.1.0_EXISTING_CODE.md`](AUDIT_3.1.0_EXISTING_CODE.md) — všechny 4 komponenty už existují, potřebují 3.0.3 fix + completion (žádné duplikace).
 
-#### Fáze 1 — 3.0.3 Compatibility Fix (rychlé)
-1. **Wallet SDK 3.0.3 fix** — `1e12`→`1e6` v 6 souborech, build, testy
-2. **Mobile App 3.0.3 fix** — `1e12`→`1e6` v 3 souborech (blockchain.js, AccountBuilder.js, BlockchainRPC.js)
+#### Fáze 1 — 3.0.3 Compatibility Fix ✅ DONE (commit `61ddc587`)
+1. ✅ **Wallet SDK 3.0.3 fix** — `1e12`→`1e6` v 6 souborech, build, testy (35/35 pass)
+2. ✅ **Mobile App 3.0.3 fix** — `1e12`→`1e6` v 6 souborech + fee constants
+3. ✅ **Desktop Agent 3.0.3 fix** — `1e12`→`1e6` v 6 souborech + fee constants
+4. ✅ **Fee constants aligned** — MIN_TX_FEE=1 across all SDKs
 
-#### Fáze 2 — TX History RPC (střední)
-3. **getTransactionHistory UTXO fix** — přidat scan `block.utxo_transactions` (aktuálně jen account-model)
-4. **Address index** — `HashMap<String, Vec<(height, tx_hash)>>` v ChainState pro O(1) lookup
+#### Fáze 2 — TX History RPC ✅ DONE (commit `77776e48`, Edge deployed)
+5. ✅ **getTransactionHistory UTXO + coinbase fix** — scan `block.utxo_transactions` + coinbase rewards, `tx_model` field, 3 tests, 47/47 RPC suite, Edge deployed (69,694 txs verified)
+6. 🔵 **Address index** — `HashMap<String, Vec<(height, tx_hash)>>` v ChainState pro O(1) lookup (optional, linear scan funguje)
 
 #### Fáze 3 — L4 Oasis Backend Completion (větší)
 5. **WebSocket events** — wire event broadcasting logic

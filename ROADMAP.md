@@ -155,14 +155,16 @@ Key steps:
 
 | Feature | Status | Target |
 |---------|--------|--------|
-| Wallet SDK 3.0.3 fix (1e12→1e6, 6 souborů) | 🔵 Planned | Q3 2026 |
-| Mobile App 3.0.3 fix (1e12→1e6, 3 soubory) | 🔵 Planned | Q3 2026 |
+| Wallet SDK 3.0.3 fix (1e12→1e6, 6 souborů) | ✅ Done (commit `61ddc587`) | Q3 2026 |
+| Mobile App 3.0.3 fix (1e12→1e6, 3 soubory) | ✅ Done (commit `61ddc587`) | Q3 2026 |
+| Desktop Agent 3.0.3 fix (1e12→1e6, 6 souborů) | ✅ Done (commit `61ddc587`) | Q3 2026 |
+| Fee constants aligned (MIN_TX_FEE=1) | ✅ Done (commit `61ddc587`) | Q3 2026 |
 
 ### Fáze 2 — TX History RPC
 
 | Feature | Status | Target |
 |---------|--------|--------|
-| getTransactionHistory UTXO scan | 🔵 Planned | Q3 2026 |
+| getTransactionHistory UTXO + coinbase scan | ✅ Done (commit `77776e48`, Edge deployed) | Q3 2026 |
 | Address-based tx index (O(1) lookup) | 🔵 Planned | Q3 2026 |
 
 ### Fáze 3 — L4 Oasis Backend Completion

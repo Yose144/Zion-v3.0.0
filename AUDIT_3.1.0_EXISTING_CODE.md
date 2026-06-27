@@ -10,9 +10,9 @@
 
 | Komponenta | Existuje | 3.0.3 compatible | Co chybí |
 |------------|----------|------------------|----------|
-| Wallet SDK | ✅ `APP&WEB/zion-wallet-sdk/` | ❌ 1e12 | Fix 1e12→1e6, build, mobile features |
-| Mobile App | ✅ `APP&WEB/mobile-app/` | ❌ 1e12 | Fix 1e12→1e6, build, test |
-| TX History RPC | ✅ `getTransactionHistory` v rpc.rs | ✅ (no constants) | UTXO txs scan, address index |
+| Wallet SDK | ✅ `APP&WEB/zion-wallet-sdk/` | ✅ Fixed (`61ddc587`) | Mobile features (QR, biometrics, BLE) |
+| Mobile App | ✅ `APP&WEB/mobile-app/` | ✅ Fixed (`61ddc587`) | QR, biometrics, deep linking, device build |
+| TX History RPC | ✅ `getTransactionHistory` v rpc.rs | ✅ Fixed (`77776e48`, Edge deployed) | Address index (optional), height range |
 | L4 Oasis | ✅ `V3/L4/oasis/` | ⚠️ Needs audit | Backend completion, UE5 content |
 
 ---
@@ -37,19 +37,19 @@
 | Generic HID | `src/hardware/generic-hid-wallet.ts` (123 lines) | ✅ Abstract base |
 | Public API | `src/index.ts` (112 lines) | ✅ Exports |
 
-### 3.0.3 Fix needed (CRITICAL)
+### 3.0.3 Fix — ✅ DONE (commit `61ddc587`)
 
-| Soubor | Řádky | Co |
-|--------|-------|----|
-| `src/core/transaction.ts` | 15, 145, 164, 329, 330, 335 | `FLOWERS_PER_ZION = 1_000_000_000_000n` → `1_000_000n`, `* 1e12` → `* 1e6`, `/ 1e12` → `/ 1e6` |
-| `src/wallet/wallet-manager.ts` | 421, 426 | `* 1e12` → `* 1e6`, `/ 1e12` → `/ 1e6` |
-| `src/rpc/zion-rpc.ts` | 117, 123, 125, 153, 154, 155 | `1_000_000_000_000` → `1_000_000` |
+| Soubor | Co | Status |
+|--------|----|--------|
+| `src/core/transaction.ts` | `FLOWERS_PER_ZION` 1e12→1e6, `MIN_FEE_FLOWERS` → `1n`, `ACCOUNT_DEFAULT_FEE` → `1n` | ✅ |
+| `src/wallet/wallet-manager.ts` | `* 1e12` → `* 1e6`, `/ 1e12` → `/ 1e6` | ✅ |
+| `src/rpc/zion-rpc.ts` | `1_000_000_000_000` → `1_000_000` (6 matches) | ✅ |
+| `__tests__/ledger-app.test.ts` | Test values updated | ✅ |
 
-### Build status
+### Build status — ✅ DONE
 
-- `dist/` — **neexistuje** (nezbuilděno)
-- `npm run build` — TypeScript compilation
-- Tests: `npm test` (Jest, 6 test files)
+- `npm run build` — ✅ clean compile
+- Tests: 35/35 pass (1 pre-existing ledger suite fail — missing optional dep)
 
 ### Missing for full mobile integration
 
@@ -88,50 +88,56 @@
 |-------|--------|--------|
 | Wallet context | `src/context/WalletContext.js` | ✅ |
 | Mining context | `src/context/MiningContext.js` | ✅ |
-| Blockchain RPC | `src/services/BlockchainRPC.js` | ✅ (needs 3.0.3 fix) |
-| Account builder | `src/services/AccountBuilder.js` | ✅ (needs 3.0.3 fix) |
+| Blockchain RPC | `src/services/BlockchainRPC.js` | ✅ 3.0.3 fixed |
+| Account builder | `src/services/AccountBuilder.js` | ✅ 3.0.3 fixed |
 | Config | `src/constants/config.js` | ✅ (SCALE_FACTOR 1e12 correct for bridge) |
-| Blockchain constants | `src/constants/blockchain.js` | ❌ 1e12, needs 1e6 |
+| Blockchain constants | `src/constants/blockchain.js` | ✅ 3.0.3 fixed |
 
-### 3.0.3 Fix needed
+### 3.0.3 Fix — ✅ DONE (commit `61ddc587`)
 
-| Soubor | Co |
-|--------|----|
-| `src/constants/blockchain.js` | `FLOWERS_PER_ZION`, `ATOMIC_UNITS_PER_ZION`, `BLOCK_REWARD_ATOMIC` — 1e12→1e6 |
-| `src/services/BlockchainRPC.js` | `/ 1_000_000_000_000` → `/ 1_000_000` |
-| `src/services/AccountBuilder.js` | `FLOWERS_PER_ZION`, `* 1e12` → `* 1e6` |
+| Soubor | Co | Status |
+|--------|----|--------|
+| `src/constants/blockchain.js` | `FLOWERS_PER_ZION`, `ATOMIC_UNITS_PER_ZION`, `BLOCK_REWARD_ATOMIC`, `TAIL_REWARD_ATOMIC` — 1e12→1e6 | ✅ |
+| `src/services/BlockchainRPC.js` | `/ 1_000_000_000_000` → `/ 1_000_000` | ✅ |
+| `src/services/AccountBuilder.js` | `FLOWERS_PER_ZION`, `* 1e12` → `* 1e6`, `MIN_FEE_FLOWERS` → `1n` | ✅ |
+| `src/services/TransactionBuilder.js` | `* 1e12` → `* 1e6` (amount + fee) | ✅ |
 
 **Poznámka:** `config.js` `SCALE_FACTOR: 1e12` je SPRÁVNÉ — to je bridge factor (EVM 18-6=12).
 
 ---
 
-## 3. TX History RPC (`V3/L1/core/src/rpc.rs`)
+## 3. TX History RPC (`V3/L1/core/src/rpc.rs`) — ✅ UTXO + coinbase fix DONE
 
 ### Co existuje
 
 | RPC Method | Status | Poznámka |
 |------------|--------|----------|
-| `getTransactionHistory` | ✅ Existuje (lines 488-566) | ⚠️ Jen account-model txs |
-| `getAddressInfo` | ✅ Existuje (lines 568-644) | Balance, tx count, UTXO count |
-| `getUtxos` | ✅ Existuje (lines 796-841) | Spendable UTXOs |
+| `getTransactionHistory` | ✅ Fixed (commit `77776e48`, Edge deployed) | ✅ Account + UTXO + coinbase, `tx_model` field |
+| `getAddressInfo` | ✅ Existuje | Balance, tx count, UTXO count |
+| `getUtxos` | ✅ Existuje | Spendable UTXOs |
 | `getBalance` | ✅ Existuje | Account + UTXO hybrid |
 | `getBalanceAtHeight` | ✅ Existuje | Historical balance |
 | `getTransaction` | ✅ Existuje | Single tx by hash |
 | `getAccountTransaction` | ✅ Existuje | Account-model tx |
 
-### Co chybí
+### ✅ Done — UTXO + coinbase scan (commit `77776e48`)
+
+| Co | Status | Popis |
+|----|--------|-------|
+| **UTXO txs in getTransactionHistory** | ✅ Done | Scan `block.utxo_transactions`, match output address + derived input address |
+| **Coinbase rewards** | ✅ Done | Match `block.miner_address`, include subsidy/reward split |
+| **`tx_model` field** | ✅ Done | `"account"` / `"utxo"` / `"coinbase"` v každém tx |
+| **Tests** | ✅ Done | 3 nové testy, 47/47 RPC suite |
+| **Edge deploy** | ✅ Done | Binary swap, 69,694 txs verified |
+
+### Co zbývá (optional)
 
 | Co | Priorita | Popis |
 |----|----------|-------|
-| **UTXO txs in getTransactionHistory** | P0 | Přidat scan `block.utxo_transactions` matching sender/recipient |
-| **Address index** | P1 | `HashMap<String, Vec<(height, tx_hash)>>` v ChainState pro O(1) lookup |
+| **Address index** | P1 (optional) | `HashMap<String, Vec<(height, tx_hash)>>` v ChainState pro O(1) lookup (linear scan funguje, 69k txs OK) |
 | **Height range query** | P2 | `from_height` / `to_height` parametry |
 | **Mempool txs** | P2 | Include pending txs v history |
 | **Persistent index** | P3 | Disk-persisted address index pro fast startup |
-
-### Current limitation
-
-`getTransactionHistory` skenuje jen `block.transactions` (account-model). Pro hybrid model chybí `block.utxo_transactions` — miner payouts, UTXO sends nejsou v historii.
 
 ---
 
