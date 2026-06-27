@@ -91,5 +91,5 @@ backup_interval_secs = 3600
 # ── Metrics ───────────────────────────────────────────────
 [metrics]
 enabled   = true
-port      = 9102
+port      = 9101
 log_level = "info"
