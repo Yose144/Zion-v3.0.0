@@ -22,14 +22,14 @@ export default function StoryTriptych() {
       chapters: cs ? 'Kniha · Kompas · CLI' : 'Book · Compass · CLI',
     },
     {
-      href: '/genesis#chapter-4',
+      href: '/quantum-revolution',
       icon: Sparkles,
       title: cs ? 'Kvantová Revoluce' : 'Quantum Revolution',
       subtitle: cs ? 'Kniha, která to odstartovala' : 'The book that started it all',
       desc: cs
         ? 'Příběh u ohně o Nové Zemi, kde kvantová fyzika potkává duši a blockchain je meditace.'
         : 'A fireside story of a New Earth where quantum physics meets the soul and blockchain is meditation.',
-      rc: '217, 70, 239', // fuchsia
+      rc: '251, 191, 36', // gold
       chapters: cs ? '10 kapitol · 11 jazyků' : '10 chapters · 11 languages',
     },
     {
