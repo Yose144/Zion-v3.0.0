@@ -412,7 +412,8 @@ export default function MiningUnifiedClient() {
                 href={GH_GUIDE}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-2xl bg-white/5 border border-white/10 px-5 py-2.5 text-sm font-semibold text-gray-300 hover:bg-white/10 transition-colors"
+                className="zion-rainbow-sub inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-gray-300 hover:bg-white/10 transition-colors"
+                style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
               >
                 <Github className="h-4 w-4" />
                 {cs ? 'Plny navod na GitHubu' : 'Full Guide on GitHub'}
@@ -420,7 +421,8 @@ export default function MiningUnifiedClient() {
               </Link>
               <Link
                 href="/pool"
-                className="inline-flex items-center gap-2 rounded-2xl bg-white/5 border border-white/10 px-5 py-2.5 text-sm font-semibold text-gray-300 hover:bg-white/10 transition-colors"
+                className="zion-rainbow-sub inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-gray-300 hover:bg-white/10 transition-colors"
+                style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
               >
                 <Globe className="h-4 w-4" />
                 {cs ? 'Pool dashboard' : 'Pool Dashboard'}

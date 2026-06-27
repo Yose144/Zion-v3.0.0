@@ -228,10 +228,10 @@ export default function L6IssobellaPage() {
         <motion.section initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="zion-cta-banner" style={{ borderColor: 'rgba(244, 63, 94, 0.35)', background: 'linear-gradient(90deg, rgba(244, 63, 94, 0.22), rgba(147, 51, 234, 0.12) 50%, rgba(244, 63, 94, 0.22))', boxShadow: '0 24px 80px rgba(244, 63, 94, 0.18)' }}>
           <h2 className="text-2xl font-semibold text-white text-center mb-6">{cs ? 'Více o L6 a ekosystému' : 'Learn more about L6 and the ecosystem'}</h2>
           <div className="flex flex-wrap justify-center gap-4">
-            <Link href="/dao" className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors">
+            <Link href="/dao" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
               <Crown className="h-4 w-4 text-zion-gold" /> DAO Governance
             </Link>
-            <Link href="/network" className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors">
+            <Link href="/network" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
               <Globe2 className="h-4 w-4 text-cyan-400" /> {cs ? 'Síť' : 'Network'}
             </Link>
             <Link href="/l5-free-world" className="inline-flex items-center gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/5 px-6 py-3 text-sm font-semibold text-amber-200 hover:bg-amber-500/10 transition-colors">

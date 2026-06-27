@@ -39,14 +39,16 @@ export default function NotFound() {
           </Link>
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
+            className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
+            style={{ '--rc': '244, 63, 94' } as React.CSSProperties}
           >
             <Rocket className="w-4 h-4" />
             {tr('notFound', 'btn_dashboard', lang)}
           </Link>
           <Link
             href="/explorer"
-            className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
+            className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
+            style={{ '--rc': '244, 63, 94' } as React.CSSProperties}
           >
             <Search className="w-4 h-4" />
             {tr('notFound', 'btn_explorer', lang)}

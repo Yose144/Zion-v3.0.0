@@ -129,7 +129,8 @@ export default function RoadmapPulse() {
             </Link>
             <Link
               href="/explorer"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl border border-white/10 bg-white/5 text-sm font-semibold"
+              className="zion-rainbow-sub inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold"
+              style={{ '--rc': '249, 115, 22' } as React.CSSProperties}
             >
               <CalendarDays className="w-4 h-4 text-zion-cyan" />
               {cs ? 'Pruzkumnik blockchainu' : 'Block Explorer'}

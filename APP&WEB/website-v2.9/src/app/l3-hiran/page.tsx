@@ -496,7 +496,7 @@ export default function L3HiranPage() {
             <Link href="/ai-native" className="inline-flex items-center gap-2 rounded-2xl border border-cyan-500/30 bg-cyan-500/5 px-6 py-3 text-sm font-semibold text-cyan-200 hover:bg-cyan-500/10 transition-colors">
               <Brain className="h-4 w-4" /> AI Native
             </Link>
-            <Link href="/warp" className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors">
+            <Link href="/warp" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
               <Globe className="h-4 w-4" /> L3 WARP
             </Link>
             <Link href="/l4-oasis" className="inline-flex items-center gap-2 rounded-2xl border border-orange-500/30 bg-orange-500/5 px-6 py-3 text-sm font-semibold text-orange-200 hover:bg-orange-500/10 transition-colors">

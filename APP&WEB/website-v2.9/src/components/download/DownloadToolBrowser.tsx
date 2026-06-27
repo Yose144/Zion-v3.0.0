@@ -182,14 +182,16 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
                   <div className="flex flex-wrap items-center gap-2">
                     <Link
                       href={url}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 hover:bg-white/15 px-5 py-2.5 text-sm font-semibold text-white transition-colors"
+                      className="zion-rainbow-sub inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/15 transition-colors"
+                      style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
                     >
                       <ArrowDownToLine className="h-4 w-4" />
                       {cs ? 'Stáhnout' : 'Download'}
                     </Link>
                     <Link
                       href={shaUrl}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 px-4 py-2.5 text-xs font-semibold text-gray-300 transition-colors"
+                      className="zion-rainbow-sub inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-white/10 transition-colors"
+                      style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
                     >
                       <Copy className="h-3 w-3" />
                       SHA256

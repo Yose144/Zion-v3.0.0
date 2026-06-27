@@ -19,7 +19,7 @@ export default function V3InternalAuditNewsPage() {
           {cs ? 'Zpět na novinky' : 'Back to news'}
         </Link>
 
-        <div className="rounded-4xl border border-emerald-400/20 bg-emerald-400/5 p-7 sm:p-10 backdrop-blur">
+        <div className="zion-rainbow-card p-7 sm:p-10" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
           <div className="flex items-start gap-4">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-400/25 bg-emerald-400/10">
               <ShieldCheck className="h-6 w-6 text-emerald-400" />
@@ -42,7 +42,7 @@ export default function V3InternalAuditNewsPage() {
           </div>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
-            <div className="rounded-3xl border border-white/10 bg-black/30 p-5">
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
               <div className="flex items-center gap-2 text-sm font-semibold text-white">
                 <ListChecks className="h-4 w-4 text-emerald-400" />
                 {cs ? 'Uzavřené nálezy' : 'Closed findings'}
@@ -53,7 +53,7 @@ export default function V3InternalAuditNewsPage() {
                   : 'Critical fixes are implemented and verified by tests (F1, F3, F4, F5, F6 + more).'}
               </p>
             </div>
-            <div className="rounded-3xl border border-white/10 bg-black/30 p-5">
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
               <div className="flex items-center gap-2 text-sm font-semibold text-white">
                 <AlertTriangle className="h-4 w-4 text-zion-gold" />
                 {cs ? 'Co ještě blokuje' : 'What still blocks'}
@@ -64,7 +64,7 @@ export default function V3InternalAuditNewsPage() {
                   : 'Operational hygiene: rotate compromised keys, scrub history, fix CI billing, and coordinate the fork window.'}
               </p>
             </div>
-            <div className="rounded-3xl border border-white/10 bg-black/30 p-5">
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
               <div className="flex items-center gap-2 text-sm font-semibold text-white">
                 <ShieldCheck className="h-4 w-4 text-zion-cyan" />
                 {cs ? 'Aktivační plán' : 'Activation plan'}

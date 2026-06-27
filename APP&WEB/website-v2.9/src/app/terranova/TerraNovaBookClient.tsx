@@ -1924,7 +1924,8 @@ export default function TerraNovaBookClient() {
           <div className="flex items-center justify-center">
             <Link
               href="/docs"
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
+              className="zion-rainbow-sub inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
+              style={{ '--rc': '244, 63, 94' } as React.CSSProperties}
             >
               <BookOpen className="w-4 h-4" />
               {cs ? 'Dokumentace' : 'Documentation'}

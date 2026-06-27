@@ -254,10 +254,10 @@ export default function L5FreeWorldPage() {
         <motion.section initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="zion-cta-banner" style={{ borderColor: 'rgba(245, 158, 11, 0.35)', background: 'linear-gradient(90deg, rgba(245, 158, 11, 0.22), rgba(16, 185, 129, 0.12) 50%, rgba(245, 158, 11, 0.22))', boxShadow: '0 24px 80px rgba(245, 158, 11, 0.18)' }}>
           <h2 className="text-2xl font-semibold text-white text-center mb-6">{cs ? 'Více o L5' : 'Learn more about L5'}</h2>
           <div className="flex flex-wrap justify-center gap-4">
-            <Link href="/dao" className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors">
+            <Link href="/dao" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
               <Crown className="h-4 w-4 text-zion-gold" /> DAO Governance
             </Link>
-            <Link href="/network" className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors">
+            <Link href="/network" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
               <Globe2 className="h-4 w-4 text-cyan-400" /> {cs ? 'Síť' : 'Network'}
             </Link>
             <Link href="/l6-issobella" className="inline-flex items-center gap-2 rounded-2xl border border-rose-500/30 bg-rose-500/5 px-6 py-3 text-sm font-semibold text-rose-200 hover:bg-rose-500/10 transition-colors">

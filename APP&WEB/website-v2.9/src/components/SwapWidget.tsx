@@ -185,7 +185,7 @@ export default function SwapWidget() {
   const inputBal = direction === 'eth-to-wzion' ? ethBalance : wzionBalance;
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 space-y-4">
+    <div className="zion-rainbow-card p-6 space-y-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
       <h3 className="text-lg font-semibold text-white">
         {cs ? 'Swap' : 'Swap'}
       </h3>
