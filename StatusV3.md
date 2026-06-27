@@ -22,6 +22,43 @@
 
 ---
 
+## Co je nového 2026-06-27 — getTransactionHistory RPC Fix DEPLOYED ✅
+
+> **Status:** ✅ DOKONČENO — `getTransactionHistory` RPC metoda rozšířena o UTXO transactions + coinbase rewards. Nasazeno na Edge.
+
+### TL;DR
+
+- **Před:** `getTransactionHistory` skenoval jen account-model txs (`block.transactions`)
+- **Po:** skenuje 3 typy: account-model + UTXO + coinbase rewards
+- **Nový field:** `tx_model` (`"account"` / `"utxo"` / `"coinbase"`) v každém tx záznamu
+- **UTXO matching:** output address (recipient) + derived input address (sender via `crypto::derive_address`)
+- **Coinbase:** `miner_address` match, obsahuje `subsidy_zion`, `miner_reward_zion`, `humanitarian/issobella/pool_fee` addresses
+- **Edge deploy:** binary swap `/usr/local/bin/zion-node`, backup `node.bak-20260627-2006`, node restart
+- **Verifikace:** 69,694 txs v historii miner adresy (34 account + 16 coinbase v prvních 50)
+- **Tests:** 3 nové testy, 47/47 RPC suite ✅
+- **Commit:** `77776e48`
+
+### Co se změnilo
+
+| Typ tx | Před | Po | Co se matchuje |
+|--------|------|----|----------------|
+| Account-model | ✅ | ✅ | `tx.from == address \|\| tx.to == address` |
+| UTXO | ❌ | ✅ | output address + `derive_address(input.public_key)` |
+| Coinbase | ❌ | ✅ | `block.miner_address == address` |
+
+### Edge verifikace
+
+```
+getTransactionHistory(zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604, limit=50)
+→ total: 69,694 transactions
+→ 34 account-model + 16 coinbase (v prvních 50)
+→ coinbase: subsidy_zion=5400067000 (5400.067 ZION, 6-dec)
+→ chain height 18071, protocol zion-v3-node/3.0.3
+→ 12/13 services active (atomic-swap optional, inactive)
+```
+
+---
+
 ## Co je nového 2026-06-27 — 3.0.3 DECIMAL FORK DEPLOYED ON EDGE ✅
 
 > **Status:** ✅ DOKONČENO — Kompletní ekosystém ZION migrován z 12-decimal (1e12) na 6-decimal (1e6) flowers per ZION. Edge server nasazen s preserved DB, MIGRATION_HEIGHT=17995.
