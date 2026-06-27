@@ -213,7 +213,7 @@ export default function BlockDetailClient() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Block Details */}
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-            className="zion-panel rounded-[28px] bg-black/60 p-6">
+            className="zion-rainbow-sub rounded-[28px] bg-black/60 p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
             <div className="flex items-center gap-3 mb-5">
               <div className="h-8 w-8 rounded-xl bg-zion-cyan/10 flex items-center justify-center">
                 <Layers className="h-4 w-4 text-zion-cyan" />
@@ -231,7 +231,7 @@ export default function BlockDetailClient() {
 
           {/* Mining Details */}
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-            className="zion-panel rounded-[28px] bg-black/60 p-6">
+            className="zion-rainbow-sub rounded-[28px] bg-black/60 p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
             <div className="flex items-center gap-3 mb-5">
               <div className="h-8 w-8 rounded-xl bg-zion-gold/10 flex items-center justify-center">
                 <Cpu className="h-4 w-4 text-zion-gold" />
@@ -279,7 +279,7 @@ export default function BlockDetailClient() {
 
         {/* Transactions */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-          className="zion-panel rounded-[28px] bg-black/60 overflow-hidden">
+          className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
           <div className="flex items-center gap-3 px-6 py-5 border-b border-white/[0.06]">
             <div className="h-8 w-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
               <Hash className="h-4 w-4 text-emerald-400" />

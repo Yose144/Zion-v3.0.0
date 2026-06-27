@@ -255,8 +255,8 @@ export default function ResonancePage() {
             {FREQUENCIES.map((f, i) => (
               <FadeIn key={f.layer} delay={i * 0.05}>
                 <div
-                  className="zion-panel rounded-3xl p-5 ring-1 ring-white/5 transition hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.35)]"
-                  style={{ borderTop: `2px solid rgba(${f.rgb},0.6)` }}
+                  className="zion-rainbow-sub rounded-3xl p-5"
+                  style={{ '--rc': '217, 70, 239', borderTop: `2px solid rgba(${f.rgb},0.6)` } as React.CSSProperties}
                 >
                   <div className="flex items-center justify-between mb-4">
                     <span
@@ -279,8 +279,8 @@ export default function ResonancePage() {
             {/* Carrier wave card */}
             <FadeIn delay={FREQUENCIES.length * 0.05}>
               <div
-                className="zion-panel rounded-3xl p-5 ring-1 ring-white/5 transition hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.35)] flex flex-col justify-center items-center text-center"
-                style={{ borderTop: '2px solid rgba(251,191,36,0.6)' }}
+                className="zion-rainbow-sub rounded-3xl p-5 flex flex-col justify-center items-center text-center"
+                style={{ '--rc': '217, 70, 239', borderTop: '2px solid rgba(251,191,36,0.6)' } as React.CSSProperties}
               >
                 <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-500/15 text-amber-400 mb-3">
                   <Waves className="h-6 w-6" />
@@ -307,8 +307,8 @@ export default function ResonancePage() {
             {SECTIONS.map((s, i) => (
               <FadeIn key={s.titleEn} delay={i * 0.08}>
                 <div
-                  className="zion-panel rounded-3xl p-6 md:p-8 ring-1 ring-white/5 transition hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.35)] h-full"
-                  style={{ borderLeft: `3px solid rgba(${s.rgb},0.6)` }}
+                  className="zion-rainbow-card rounded-3xl p-6 md:p-8 h-full"
+                  style={{ '--rc': '217, 70, 239', borderLeft: `3px solid rgba(${s.rgb},0.6)` } as React.CSSProperties}
                 >
                   <div className="flex items-center gap-3 mb-4">
                     <span
@@ -383,8 +383,8 @@ export default function ResonancePage() {
             ].map((g, i) => (
               <FadeIn key={g.gate} delay={i * 0.08}>
                 <div
-                  className="zion-panel rounded-3xl p-6 md:p-8 ring-1 ring-white/5 transition hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.35)] h-full"
-                  style={{ borderTop: `3px solid rgba(${g.rgb},0.6)` }}
+                  className="zion-rainbow-card rounded-3xl p-6 md:p-8 h-full"
+                  style={{ '--rc': '217, 70, 239', borderTop: `3px solid rgba(${g.rgb},0.6)` } as React.CSSProperties}
                 >
                   <div className="flex items-center gap-3 mb-4">
                     <span

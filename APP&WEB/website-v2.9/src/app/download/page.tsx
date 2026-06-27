@@ -73,7 +73,7 @@ export default function DownloadPage() {
         {/* ─── Hero ─── */}
         <section
           className="zion-rainbow-card p-5 sm:p-8 md:p-10"
-          style={{ '--rc': '59, 130, 246' } as React.CSSProperties}
+          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-6">
             <div className="zion-kicker border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan">
@@ -127,7 +127,7 @@ export default function DownloadPage() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-zion-cyan/20 bg-zion-cyan/5 p-5">
+          <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
             <p className="text-sm text-gray-300">
               <span className="text-zion-cyan font-semibold">{cs ? 'Zdroj pravdy:' : 'Source of truth:'}</span>{' '}
               {cs ? 'operátorské příkazy, guide, FAQ, reference a troubleshooting jsou v sekci ' : 'operator commands, guide, FAQ, reference, and troubleshooting live in the '}
@@ -149,7 +149,7 @@ export default function DownloadPage() {
             <p className="text-gray-400">{cs ? 'GUI na jedno kliknuti pro tezbu, spravu penezenky a monitoring — bez terminalu' : 'One-click GUI for mining, wallet management and monitoring — no terminal needed'}</p>
           </div>
 
-          <div className="relative overflow-hidden rounded-4xl border border-zion-gold/20 bg-linear-to-br from-zion-gold/5 via-black/40 to-zion-purple/5 p-8">
+          <div className="relative overflow-hidden zion-rainbow-card p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
             <div className="absolute top-4 right-4 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-3 py-1 text-xs font-semibold tracking-wider text-zion-gold">
               🚧 {cs ? 'VE VYVOJI' : 'IN DEVELOPMENT'}
             </div>
@@ -197,7 +197,7 @@ export default function DownloadPage() {
               </button>
             </div>
 
-            <div className="mt-6 rounded-2xl border border-zion-gold/20 bg-zion-gold/5 p-4">
+            <div className="mt-6 zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <p className="text-sm text-gray-300">
                 <span className="text-zion-gold font-semibold">💡 {cs ? 'Chcete predbezny pristup?' : 'Want early access?'}</span>{' '}
                 {cs ? 'Desktop Agent bude dostupny v nasem ' : 'The Desktop Agent will be available in our '}
@@ -222,7 +222,7 @@ export default function DownloadPage() {
           </div>
           <div className="grid gap-6 md:grid-cols-3">
             {cliQuickstartSteps.map((step) => (
-              <div key={step.title} className="zion-tile p-6">
+              <div key={step.title} className="zion-rainbow-sub p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                 <div className="flex items-center gap-3">
                   <Shield className="h-5 w-5 text-zion-cyan" />
                   <p className="text-xs uppercase tracking-[0.35em] text-gray-400">{cs ? 'Krok' : 'Step'}</p>
@@ -254,7 +254,7 @@ export default function DownloadPage() {
               { label: cs ? 'Podporovane OS' : 'Supported OS', value: cs ? 'Windows 10/11, Linux (x86_64/ARM64), macOS (Apple Silicon)' : 'Windows 10/11, Linux (x86_64/ARM64), macOS (Apple Silicon)' },
               { label: cs ? 'Sit' : 'Network', value: cs ? 'Stabilni internet, odchozi TCP port 8444 (pool stratum)' : 'Stable internet, outbound TCP port 8444 (pool stratum)' },
             ].map((req) => (
-              <div key={req.label} className="rounded-2xl border border-white/10 bg-white/5 p-5">
+              <div key={req.label} className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                 <div className="flex items-center gap-3">
                   <Cpu className="h-5 w-5 text-zion-gold" />
                   <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{req.label}</p>

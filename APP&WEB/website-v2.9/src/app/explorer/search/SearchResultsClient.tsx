@@ -93,7 +93,7 @@ export default function SearchResultsClient() {
         </Link>
 
         {/* HERO */}
-        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="zion-panel rounded-3xl md:rounded-4xl bg-black/60 p-6 md:p-10">
+        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="zion-rainbow-card rounded-3xl md:rounded-4xl bg-black/60 p-6 md:p-10" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
           <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan uppercase mb-4">
             <Search className="h-4 w-4" />
             {SITE_RELEASE_LABEL} · {cs ? "Hledání" : "Search"}

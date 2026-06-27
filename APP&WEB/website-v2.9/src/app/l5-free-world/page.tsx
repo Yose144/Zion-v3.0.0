@@ -126,7 +126,7 @@ export default function L5FreeWorldPage() {
         </motion.section>
 
         {/* ── Fund Info ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-white/10 bg-black/40 p-8">
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Humanitární fond' : 'Humanitarian Fund'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -135,30 +135,30 @@ export default function L5FreeWorldPage() {
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-4 mb-6">
-            <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 text-center">
+            <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{cs ? 'Podíl z bloku' : 'Block share'}</p>
               <p className="text-3xl font-bold text-amber-400">5%</p>
               <p className="text-xs text-gray-500 mt-1">{cs ? 'každý blok, navždy' : 'every block, forever'}</p>
             </div>
-            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4 text-center">
+            <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{cs ? 'Přibližně / měsíc' : 'Approx / month'}</p>
               <p className="text-3xl font-bold text-emerald-400">~11,7M</p>
               <p className="text-xs text-gray-500 mt-1">ZION</p>
             </div>
-            <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/5 p-4 text-center">
+            <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{cs ? 'Správa' : 'Governed by'}</p>
               <p className="text-2xl font-bold text-cyan-400">DAO</p>
               <p className="text-xs text-gray-500 mt-1">{cs ? 'L5 Radou' : 'L5 Council'}</p>
             </div>
           </div>
-          <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-gray-400 font-mono break-all">
+          <div className="zion-rainbow-sub p-4 text-sm text-gray-400 font-mono break-all" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
             <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Adresa fondu' : 'Fund wallet'}</p>
             {HUMANITARIAN_WALLET}
           </div>
         </motion.section>
 
         {/* ── L5 Protocol suite ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-white/10 bg-white/5 p-8">
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Sdílené protokoly' : 'Shared Protocols'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -169,7 +169,7 @@ export default function L5FreeWorldPage() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {protocols.map((p) => (
-              <div key={p.title} className="rounded-2xl border border-white/10 bg-black/30 p-5">
+              <div key={p.title} className="zion-rainbow-sub p-5" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
                 <div className="flex items-center gap-2 mb-2">
                   <p.icon className={`h-5 w-5 ${p.color}`} />
                   <h3 className="font-semibold text-white">{p.title}</h3>
@@ -181,7 +181,7 @@ export default function L5FreeWorldPage() {
         </motion.section>
 
         {/* ── Communities ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-white/10 bg-black/40 p-8">
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Komunity' : 'Communities'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -192,7 +192,7 @@ export default function L5FreeWorldPage() {
           <div className="grid md:grid-cols-3 gap-5">
             {communities.map((community) => {
               const Card = (
-                <div className={`rounded-2xl border p-5 transition-all duration-300 ${community.status === 'planned' ? 'border-amber-500/30 bg-amber-500/5' : 'border-white/10 bg-white/5'} ${community.href ? 'hover:border-amber-500/50 hover:bg-amber-500/10 cursor-pointer' : ''}`}>
+                <div className={`zion-rainbow-sub p-5 transition-all duration-300 ${community.href ? 'cursor-pointer' : ''}`} style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <h3 className="font-semibold text-white">{community.name}</h3>
@@ -231,7 +231,7 @@ export default function L5FreeWorldPage() {
         </motion.section>
 
         {/* ── Revenue model ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-emerald-500/20 bg-emerald-500/5 p-8">
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
           <div className="flex items-center gap-3 mb-6">
             <Wallet className="h-7 w-7 text-emerald-400" />
             <h2 className="text-3xl font-semibold text-white">{cs ? 'Ekonomický model L5' : 'L5 Economic Model'}</h2>
@@ -242,7 +242,7 @@ export default function L5FreeWorldPage() {
               { label: cs ? 'Guardian Node (místní)' : 'Guardian Node (local)', split: cs ? '90% komunitní těžař · 10% → komunitní pokladna' : '90% community miner · 10% → community treasury', color: 'text-emerald-400' },
               { label: cs ? 'Komunitní pokladna' : 'Community Treasury', split: cs ? '60% projekty · 30% rezervy · 10% humanitární příspěvek (L5 global)' : '60% projects · 30% reserves · 10% humanitarian tithe (L5 global)', color: 'text-amber-400' },
             ].map((row) => (
-              <div key={row.label} className="rounded-xl border border-white/10 bg-black/30 p-4">
+              <div key={row.label} className="zion-rainbow-sub p-4" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
                 <p className={`text-xs uppercase tracking-wider mb-1 ${row.color}`}>{row.label}</p>
                 <p className="text-gray-300">{row.split}</p>
               </div>

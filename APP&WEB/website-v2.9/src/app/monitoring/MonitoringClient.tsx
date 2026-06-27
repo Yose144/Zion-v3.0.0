@@ -257,7 +257,7 @@ function StatCard({ label, value, icon: Icon, accent = 'text-zion-cyan', sub }: 
   sub?: string;
 }) {
   return (
-    <div className="zion-panel rounded-xl bg-black/60 border border-white/10 p-4 flex flex-col gap-1.5 min-w-0">
+    <div style={{ '--rc': '244, 63, 94' } as React.CSSProperties} className="zion-rainbow-sub rounded-xl bg-black/60 border border-white/10 p-4 flex flex-col gap-1.5 min-w-0">
       <div className="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-[0.2em] truncate">
         <Icon className={`h-4 w-4 shrink-0 ${accent}`} />
         <span className="truncate">{label}</span>
@@ -373,7 +373,8 @@ export default function MonitoringClient() {
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          className="zion-panel rounded-3xl bg-black/60 p-6 md:p-10"
+          style={{ '--rc': '244, 63, 94' } as React.CSSProperties}
+          className="zion-rainbow-card rounded-3xl bg-black/60 p-6 md:p-10"
         >
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-4">
@@ -463,7 +464,7 @@ export default function MonitoringClient() {
           </div>
           {/* Sparkline */}
           {sparklines && sparklines.chainHeight.length > 1 && (
-            <div className="mt-3 zion-panel rounded-xl bg-black/40 border border-white/10 p-4">
+            <div style={{ '--rc': '244, 63, 94' } as React.CSSProperties} className="mt-3 zion-rainbow-sub rounded-xl bg-black/40 border border-white/10 p-4">
               <div className="text-xs text-gray-400 mb-2">{cs ? 'Vyska chainu — posledni 1 hodina' : 'Chain Height — last 1 hour'}</div>
               <Sparkline data={sparklines.chainHeight} color="#FFD700" height={40} />
             </div>
@@ -493,13 +494,13 @@ export default function MonitoringClient() {
           {sparklines && (sparklines.poolSessions.length > 1 || sparklines.shares.length > 1) && (
             <div className="mt-3 grid md:grid-cols-2 gap-3">
               {sparklines.poolSessions.length > 1 && (
-                <div className="zion-panel rounded-xl bg-black/40 border border-white/10 p-4">
+                <div style={{ '--rc': '244, 63, 94' } as React.CSSProperties} className="zion-rainbow-sub rounded-xl bg-black/40 border border-white/10 p-4">
                   <div className="text-xs text-gray-400 mb-2">{cs ? 'Aktivni mineri — posledni 1 hodina' : 'Active Miners — last 1 hour'}</div>
                   <Sparkline data={sparklines.poolSessions} color="#FFD700" height={36} />
                 </div>
               )}
               {sparklines.shares.length > 1 && (
-                <div className="zion-panel rounded-xl bg-black/40 border border-white/10 p-4">
+                <div style={{ '--rc': '244, 63, 94' } as React.CSSProperties} className="zion-rainbow-sub rounded-xl bg-black/40 border border-white/10 p-4">
                   <div className="text-xs text-gray-400 mb-2">{cs ? 'Prijate shares — posledni 1 hodina' : 'Accepted Shares — last 1 hour'}</div>
                   <Sparkline data={sparklines.shares} color="#10b981" height={36} />
                 </div>
@@ -513,7 +514,8 @@ export default function MonitoringClient() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="zion-panel rounded-2xl bg-black/40 border border-white/10 p-6"
+          style={{ '--rc': '244, 63, 94' } as React.CSSProperties}
+          className="zion-rainbow-card rounded-2xl bg-black/40 border border-white/10 p-6"
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Network className="h-5 w-5 text-sky-400" />
@@ -532,7 +534,8 @@ export default function MonitoringClient() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          className="zion-panel rounded-2xl bg-black/40 border border-white/10 p-6"
+          style={{ '--rc': '244, 63, 94' } as React.CSSProperties}
+          className="zion-rainbow-card rounded-2xl bg-black/40 border border-white/10 p-6"
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <CircleDollarSign className="h-5 w-5 text-pink-400" />
@@ -572,7 +575,8 @@ export default function MonitoringClient() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="zion-panel rounded-2xl bg-black/40 border border-white/10 p-6"
+          style={{ '--rc': '244, 63, 94' } as React.CSSProperties}
+          className="zion-rainbow-card rounded-2xl bg-black/40 border border-white/10 p-6"
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <HardDrive className="h-5 w-5 text-zion-cyan" />
@@ -652,7 +656,8 @@ export default function MonitoringClient() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
-          className="zion-panel rounded-2xl bg-black/40 border border-white/10 p-6"
+          style={{ '--rc': '244, 63, 94' } as React.CSSProperties}
+          className="zion-rainbow-card rounded-2xl bg-black/40 border border-white/10 p-6"
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Shield className="h-5 w-5 text-emerald-400" />

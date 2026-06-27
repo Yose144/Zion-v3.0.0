@@ -312,7 +312,7 @@ export default function MempoolPageClient() {
         </div>
 
         {/* search + table */}
-        <div className="zion-panel rounded-[28px] bg-black/60 overflow-hidden">
+        <div className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
           {/* toolbar */}
           <div className="px-5 py-3 border-b border-white/6 flex items-center gap-3">
             <div className="flex-1 relative">

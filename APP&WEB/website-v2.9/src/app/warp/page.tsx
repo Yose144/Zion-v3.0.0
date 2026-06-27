@@ -95,7 +95,7 @@ export default function WarpPage() {
         <div className="zion-container max-w-6xl space-y-16">
 
         {/* ── Hero ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl md:rounded-[32px] border border-white/10 bg-black/60 p-6 md:p-10 backdrop-blur-xl">
+        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '217, 70, 239' } as React.CSSProperties}>
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple/40 bg-zion-purple/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-gold uppercase">
@@ -125,7 +125,7 @@ export default function WarpPage() {
             </div>
             <div className="grid w-full gap-4 sm:grid-cols-2 lg:w-auto">
               {warpStats.map((chip) => (
-                <div key={chip.label} className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur">
+                <div key={chip.label} className="zion-rainbow-sub px-5 py-4" style={{ '--rc': '217, 70, 239' } as React.CSSProperties}>
                   <chip.icon className="h-6 w-6 text-zion-gold" />
                   <p className="mt-3 text-xs uppercase tracking-[0.3em] text-gray-400">{chip.label}</p>
                   <p className="text-3xl font-semibold text-white">{chip.value}</p>
@@ -144,7 +144,7 @@ export default function WarpPage() {
           </div>
           <div className="space-y-6">
             {corridorRows.map((row) => (
-              <div key={row.title} className={`rounded-3xl border p-6 ${row.live ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-white/10 bg-black/40'}`}>
+              <div key={row.title} className="zion-rainbow-card p-6" style={{ '--rc': '217, 70, 239' } as React.CSSProperties}>
                 <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <div>
                     <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{row.subtitle}</p>
@@ -163,7 +163,7 @@ export default function WarpPage() {
                 </div>
                 <div className="mt-5 grid gap-4 md:grid-cols-3">
                   {row.entries.map((entry) => (
-                    <div key={entry.label} className="rounded-2xl border border-white/5 bg-white/5 p-4">
+                    <div key={entry.label} className="zion-rainbow-sub p-4" style={{ '--rc': '217, 70, 239' } as React.CSSProperties}>
                       <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{entry.label}</p>
                       <p className="mt-2 text-sm text-gray-200 leading-relaxed">{entry.value}</p>
                     </div>
@@ -175,14 +175,14 @@ export default function WarpPage() {
         </motion.section>
 
         {/* ── Onboarding runbook ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-white/10 bg-white/5 p-8">
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '217, 70, 239' } as React.CSSProperties}>
           <div className="flex flex-col gap-2">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Operační runbook' : 'Operations runbook'}</p>
             <h2 className="text-3xl font-semibold text-white">{cs ? 'Připojit nový koridór online' : 'Bring a new corridor online'}</h2>
           </div>
           <div className="mt-6 grid gap-6 md:grid-cols-3">
             {onboarding.map((block, idx) => (
-              <div key={block.title} className="zion-section">
+              <div key={block.title} className="zion-rainbow-sub p-5" style={{ '--rc': '217, 70, 239' } as React.CSSProperties}>
                 <div className="flex items-center gap-3">
                   <CircuitBoard className="h-5 w-5 text-zion-cyan" />
                   <p className="text-xs uppercase tracking-[0.35em] text-gray-400">{cs ? 'Fáze' : 'Stage'} {idx + 1}</p>

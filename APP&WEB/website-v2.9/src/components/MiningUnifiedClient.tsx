@@ -362,7 +362,8 @@ export default function MiningUnifiedClient() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="relative rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-8 md:p-12 overflow-hidden"
+          className="relative zion-rainbow-card p-8 md:p-12 overflow-hidden"
+          style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
         >
           <div className="absolute inset-0 bg-linear-to-br from-zion-gold/5 via-transparent to-zion-purple/5 pointer-events-none" />
           <div className="relative">
@@ -434,7 +435,8 @@ export default function MiningUnifiedClient() {
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="rounded-[32px] border border-white/10 bg-white/5 p-8"
+          className="zion-rainbow-card p-8"
+          style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
         >
           <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
             <Rocket className="w-6 h-6 text-zion-gold" />
@@ -444,7 +446,7 @@ export default function MiningUnifiedClient() {
 
           <div className="grid gap-6 md:grid-cols-3">
             {quickStartSteps.map((s) => (
-              <div key={s.step} className="rounded-3xl border border-white/10 bg-black/30 p-6">
+              <div key={s.step} className="zion-rainbow-sub p-6" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold border ${s.color}`}>
                   {s.step}
                 </span>
@@ -462,7 +464,7 @@ export default function MiningUnifiedClient() {
           </div>
 
           {/* One-line install */}
-          <div className="mt-6 rounded-2xl border border-white/10 bg-black/40 p-5">
+          <div className="mt-6 zion-rainbow-sub p-5" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
             <p className="text-xs uppercase tracking-[0.3em] text-gray-500 mb-2">
               {cs ? 'Jednoradkova instalace (Linux / macOS)' : 'One-line install (Linux / macOS)'}
             </p>
@@ -493,7 +495,7 @@ export default function MiningUnifiedClient() {
               : 'Cosmic Harmony v3 rotates RandomX + Yescrypt + Blake3 for ASIC resistance. Connect on port 8444 for auto-algo or pick a dedicated port.'}
           </p>
 
-          <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm overflow-hidden">
+          <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
             <div className="grid grid-cols-[1fr_80px_80px_1fr] gap-2 px-6 py-3 border-b border-white/10 bg-white/[0.02] hidden md:grid">
               <span className="text-[11px] text-white/30 uppercase tracking-wider">{cs ? 'Algoritmus' : 'Algorithm'}</span>
               <span className="text-[11px] text-white/30 uppercase tracking-wider">{cs ? 'Typ' : 'Type'}</span>
@@ -557,7 +559,7 @@ export default function MiningUnifiedClient() {
           {/* ── CPU Mining ── */}
           {activeTab === "cpu" && (
             <motion.div key="cpu" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-              <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm p-6">
+              <div className="zion-rainbow-sub p-6" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
                   <Cpu className="w-5 h-5 text-zion-cyan" />
                   {cs ? 'CPU tezba se ZION Native Minerem' : 'CPU Mining with ZION Native Miner'}
@@ -620,7 +622,7 @@ ls -la target/release/zion-miner`}
           {/* ── GPU Mining ── */}
           {activeTab === "gpu" && (
             <motion.div key="gpu" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-              <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm p-6">
+              <div className="zion-rainbow-sub p-6" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
                   <Monitor className="w-5 h-5 text-zion-gold" />
                   {cs ? 'GPU tezba - Metal, CUDA a OpenCL' : 'GPU Mining — Metal, CUDA & OpenCL'}
@@ -696,7 +698,7 @@ cargo build --release -p zion-miner --features opencl
           {/* ── Pool Mining ── */}
           {activeTab === "pool" && (
             <motion.div key="pool" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-              <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm p-6">
+              <div className="zion-rainbow-sub p-6" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
                   <Users className="w-5 h-5 text-zion-purple" />
                   {cs ? 'Pool tezba - stabilni odmeny' : 'Pool Mining — Steady Rewards'}
@@ -705,7 +707,7 @@ cargo build --release -p zion-miner --features opencl
                   {cs ? 'Spojuje hashrate vice mineru pro caste a predvidatelne payouty. Nejlepsi volba pro vetsinu mineru.' : 'Combines hashrate from many miners for frequent, predictable payouts. Best for most miners.'}
                 </p>
 
-                <div className="rounded-xl bg-white/[0.02] border border-white/10 p-5 mb-5">
+                <div className="zion-rainbow-sub p-5 mb-5" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                   <h4 className="text-sm font-medium text-white/60 mb-3">{cs ? 'Oficialni ZION pool endpointy' : 'ZION Official Pool Endpoints'}</h4>
                   <div className="space-y-2">
                     {algorithmsView.map((algo, i) => (
@@ -734,7 +736,7 @@ cargo build --release -p zion-miner --features opencl
                     { label: cs ? 'Min. payout' : 'Min Payout', value: '10 ZION', desc: cs ? 'Automaticky' : 'Automatic transfer' },
                     { label: cs ? 'Interval' : 'Interval', value: cs ? 'Kazde 2 h' : 'Every 2h', desc: cs ? 'Po dosazeni prahu' : 'When threshold met' },
                   ].map((feat, i) => (
-                    <div key={i} className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-3">
+                    <div key={i} className="zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-[11px] text-white/30 uppercase tracking-wider">{feat.label}</span>
                         <span className="text-sm font-medium text-white/80">{feat.value}</span>
@@ -758,7 +760,7 @@ cargo build --release -p zion-miner --features opencl
           {/* ── Solo Mining ── */}
           {activeTab === "solo" && (
             <motion.div key="solo" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-              <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm p-6">
+              <div className="zion-rainbow-sub p-6" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-emerald-400" />
                   {cs ? 'Solo tezba - plne blokove odmeny' : 'Solo Mining — Full Block Rewards'}
@@ -828,7 +830,7 @@ cargo build --release -p zion-miner --features opencl
           </h2>
           <p className="text-white/40 text-sm mb-5">{cs ? 'Priblizne hodnoty pro Cosmic Harmony v3 / RandomX / Autolykos v2.' : 'Approximate values for Cosmic Harmony v3 / RandomX / Autolykos v2.'}</p>
 
-          <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm overflow-hidden">
+          <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
             <div className="grid grid-cols-[1fr_100px_80px_100px] gap-2 px-6 py-3 border-b border-white/10 bg-white/[0.02] hidden md:grid">
               <span className="text-[11px] text-white/30 uppercase tracking-wider">{cs ? 'Hardware' : 'Hardware'}</span>
               <span className="text-[11px] text-white/30 uppercase tracking-wider">Hashrate</span>
@@ -878,7 +880,7 @@ cargo build --release -p zion-miner --features opencl
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {nodeRequirementsView.map((req, i) => (
-                <div key={i} className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm p-5">
+                <div key={i} className="zion-rainbow-sub p-5" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                   <div className="flex items-center gap-2 mb-2">
                     <req.icon className={`w-4 h-4 ${req.color}`} />
                     <span className="text-[11px] text-white/40 uppercase tracking-wider">{req.label}</span>
@@ -896,7 +898,7 @@ cargo build --release -p zion-miner --features opencl
               {cs ? 'Instalace' : 'Installation'}
             </h3>
 
-            <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm p-6">
+            <div className="zion-rainbow-sub p-6" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-4">
                 <span className="flex items-center justify-center w-7 h-7 rounded-full bg-zion-gold/10 border border-zion-gold/20 text-zion-gold text-xs font-bold">1</span>
                 <h4 className="text-white font-medium">{cs ? 'Predkompilovana binarka (doporuceno)' : 'Pre-compiled Binary (recommended)'}</h4>
@@ -912,7 +914,7 @@ chmod +x zion
               />
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm p-6">
+            <div className="zion-rainbow-sub p-6" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-4">
                 <span className="flex items-center justify-center w-7 h-7 rounded-full bg-zion-cyan/10 border border-zion-cyan/20 text-zion-cyan text-xs font-bold">2</span>
                 <h4 className="text-white font-medium">{cs ? 'Build ze zdrojoveho kodu' : 'Build from Source'}</h4>
@@ -925,7 +927,7 @@ cargo build --release -p zion-node
               />
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm p-6">
+            <div className="zion-rainbow-sub p-6" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-4">
                 <span className="flex items-center justify-center w-7 h-7 rounded-full bg-zion-purple/10 border border-zion-purple/20 text-zion-purple text-xs font-bold">3</span>
                 <h4 className="text-white font-medium">Docker</h4>
@@ -966,7 +968,7 @@ docker run -d \\
               ))}
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm p-6">
+            <div className="zion-rainbow-sub p-6" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <p className="text-white/50 text-sm mb-4">
                 {networkConfigsView[activeNetwork].description} - {cs ? 'config' : 'config'}:{" "}
                 <code className="text-zion-cyan/80 bg-zion-cyan/5 px-2 py-0.5 rounded text-xs">
@@ -1008,7 +1010,7 @@ bootstrap = [
               {cs ? 'Porty a firewall' : 'Ports & Firewall'}
             </h3>
 
-            <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm overflow-hidden">
+            <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <div className="grid grid-cols-4 gap-2 px-6 py-3 border-b border-white/10 bg-white/[0.02]">
                 <span className="text-[11px] text-white/30 uppercase tracking-wider">Port</span>
                 <span className="text-[11px] text-white/30 uppercase tracking-wider">{cs ? 'Protokol' : 'Protocol'}</span>
@@ -1048,7 +1050,7 @@ sudo ufw status`}
               {cs ? 'Reference pro Node CLI' : 'Node CLI Reference'}
             </h3>
 
-            <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm overflow-hidden">
+            <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               {cliCommandsView.map((c, i) => (
                 <div key={i} className="flex flex-col md:flex-row md:items-center justify-between gap-2 px-6 py-3.5 border-b border-white/[0.04] last:border-0">
                   <code className="text-sm font-mono text-zion-cyan/80 break-all">{c.cmd}</code>
@@ -1059,7 +1061,7 @@ sudo ufw status`}
           </div>
 
           {/* Verify Node */}
-          <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm p-6 space-y-5">
+          <div className="zion-rainbow-sub p-6 space-y-5" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
               <Rocket className="w-5 h-5 text-emerald-400" />
               {cs ? 'Overte svuj node' : 'Verify Your Node'}
@@ -1107,7 +1109,7 @@ sudo ufw status`}
 
           <div className="space-y-3">
             {faqItemsView.map((faq, idx) => (
-              <div key={idx} className="rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
+              <div key={idx} className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <button
                   onClick={() => setOpenFaqIndex(openFaqIndex === idx ? null : idx)}
                   className="w-full flex items-center justify-between p-5 text-left hover:bg-white/5 transition-colors"
@@ -1134,7 +1136,8 @@ sudo ufw status`}
           initial={{ opacity: 0, scale: 0.98 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
-          className="rounded-[32px] border border-zion-gold/30 bg-gradient-to-r from-zion-purple/30 via-zion-gold/15 to-zion-purple/30 p-10 text-center"
+          className="zion-rainbow-card p-10 text-center"
+          style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
         >
           <Pickaxe className="mx-auto h-12 w-12 text-zion-gold" />
           <h2 className="mt-6 text-3xl font-semibold text-white">{cs ? 'Pripraveni tezit ZION?' : 'Ready to mine ZION?'}</h2>
