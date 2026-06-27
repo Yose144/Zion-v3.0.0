@@ -1,11 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { ArrowRight, BookOpen, Orbit, Sparkles, Stars } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
-import { EKAM_GOLDEN_EGG_IMAGE, EKAM_SOURCE_URL } from '@/lib/site';
 import { tr } from '@/lib/translations';
+import GoldenOrb from './GoldenOrb';
 
 export default function GoldenEggHaraniagharba() {
   const { lang } = useLang();
@@ -45,36 +44,21 @@ export default function GoldenEggHaraniagharba() {
           <div className="absolute -bottom-20 -left-5 h-52 w-52 rounded-full bg-zion-purple/10 blur-3xl" />
 
           <div className="relative grid gap-6 lg:grid-cols-[0.4fr_1fr] lg:items-start">
-            {/* ── Left: Compact Image ── */}
+            {/* ── Left: Interactive Golden Orb ── */}
             <div className="space-y-2">
               <div className="relative overflow-hidden zion-rainbow-sub shadow-[0_18px_60px_rgba(0,0,0,0.35)]" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
-                <Image
-                  src={EKAM_GOLDEN_EGG_IMAGE}
-                  alt="Ekam visual used as Golden Egg inspiration"
-                  width={800}
-                  height={800}
-                  sizes="(min-width: 1024px) 380px, 100vw"
-                  className="aspect-square w-full object-cover object-center"
-                  loading="lazy"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="absolute inset-0 bg-linear-to-t from-black/75 via-black/10 to-transparent" />
-                <div className="absolute inset-x-0 bottom-0 p-4">
+                <GoldenOrb className="aspect-square w-full" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+                <div className="absolute inset-x-0 bottom-0 p-4 pointer-events-none">
                   <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/35 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-amber-100">
                     <Sparkles className="h-3 w-3 text-zion-gold" />
                     {tr('goldenEgg', 'visual_badge', lang)}
                   </div>
                 </div>
               </div>
-              <a
-                href={EKAM_SOURCE_URL}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.24em] text-amber-100/70 transition hover:text-amber-100"
-              >
-                {tr('goldenEgg', 'source', lang)}
-                <ArrowRight className="h-3 w-3" />
-              </a>
+              <p className="text-[10px] uppercase tracking-[0.24em] text-amber-100/50 text-center">
+                {cs ? 'Interaktivní Golden Orb — pohyb myší ovlivňuje světlo' : 'Interactive Golden Orb — move mouse to steer the light'}
+              </p>
             </div>
 
             {/* ── Right: Content ── */}
