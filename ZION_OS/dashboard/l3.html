@@ -145,7 +145,7 @@ async function fetchTransfers(){
     const tb = document.querySelector('#transfers-table tbody');
     if(d.offline||d.error){ tb.innerHTML=`<tr><td colspan="5" class="error">${d.error||'Offline'}</td></tr>`; return; }
     const list = Array.isArray(d)?d:[];
-    const rows = list.slice(0,10).map(t=>`<tr class="row"><td>${t.id?.slice(0,8)||'?'}</td><td>${t.source_chain||'?'}</td><td>${t.dest_chain||'?'}</td><td>${(t.amount_flowers/1e12).toFixed(4)}</td><td>${t.status||'?'}</td></tr>`).join('');
+    const rows = list.slice(0,10).map(t=>`<tr class="row"><td>${t.id?.slice(0,8)||'?'}</td><td>${t.source_chain||'?'}</td><td>${t.dest_chain||'?'}</td><td>${(t.amount_flowers/1e6).toFixed(4)}</td><td>${t.status||'?'}</td></tr>`).join('');
     tb.innerHTML = rows||'<tr><td colspan="5" class="muted">No transfers</td></tr>';
     document.getElementById('transfers-count').textContent = list.length;
   }catch(e){ document.querySelector('#transfers-table tbody').innerHTML = fmtError(e); }
@@ -194,7 +194,7 @@ async function fetchJobs(){
     const tb = document.querySelector('#jobs-table tbody');
     if(d.offline||d.error){ tb.innerHTML=`<tr><td colspan="4" class="error">${d.error||'Offline'}</td></tr>`; return; }
     const list = Array.isArray(d)?d:[];
-    const rows = list.map(j=>`<tr class="row"><td>${j.id?.slice(0,8)||'?'}</td><td>${j.job_type||'?'}</td><td>${j.status||'?'}</td><td>${(j.reward_flowers/1e12).toFixed(4)} ZION</td></tr>`).join('');
+    const rows = list.map(j=>`<tr class="row"><td>${j.id?.slice(0,8)||'?'}</td><td>${j.job_type||'?'}</td><td>${j.status||'?'}</td><td>${(j.reward_flowers/1e6).toFixed(4)} ZION</td></tr>`).join('');
     tb.innerHTML = rows||'<tr><td colspan="4" class="muted">No jobs</td></tr>';
     document.getElementById('jobs-count').textContent = list.length;
   }catch(e){ document.querySelector('#jobs-table tbody').innerHTML = fmtError(e); }

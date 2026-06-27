@@ -403,6 +403,56 @@ export default function PoolDashboard() {
           </div>
         </motion.section>
 
+        {/* ═══════ SUBPAGE NAVIGATION ═══════ */}
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.02 }}
+        >
+          <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+            <div className="flex flex-wrap items-center gap-2 md:gap-3">
+              <span className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mr-1 hidden sm:inline">
+                {cs ? 'Pool sekce' : 'Pool sections'}
+              </span>
+              <Link
+                href="/pool"
+                className="inline-flex items-center gap-2 rounded-xl border border-zion-cyan/30 bg-zion-cyan/10 px-4 py-2 text-sm font-semibold text-zion-cyan transition hover:bg-zion-cyan/20"
+              >
+                <Activity className="h-3.5 w-3.5" />
+                {cs ? 'Přehled' : 'Overview'}
+              </Link>
+              <Link
+                href="/pool/blocks"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-gray-300 transition hover:border-white/25 hover:text-white"
+              >
+                <Box className="h-3.5 w-3.5" />
+                {cs ? 'Bloky' : 'Blocks'}
+              </Link>
+              <Link
+                href="/pool/miners"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-gray-300 transition hover:border-white/25 hover:text-white"
+              >
+                <Users className="h-3.5 w-3.5" />
+                {cs ? 'Mineři' : 'Miners'}
+              </Link>
+              <Link
+                href="/pool/calculator"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-gray-300 transition hover:border-white/25 hover:text-white"
+              >
+                <TrendingUp className="h-3.5 w-3.5" />
+                {cs ? 'Kalkulačka' : 'Calculator'}
+              </Link>
+              <Link
+                href="/pool/benchmarks"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-gray-300 transition hover:border-white/25 hover:text-white"
+              >
+                <Cpu className="h-3.5 w-3.5" />
+                {cs ? 'Benchmarky' : 'Benchmarks'}
+              </Link>
+            </div>
+          </div>
+        </motion.section>
+
         {/* ═══════ MINER SEARCH ═══════ */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
