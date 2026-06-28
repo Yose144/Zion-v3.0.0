@@ -95,6 +95,12 @@
     mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
   }
 
+  body.warp-only-mode .site-hero,
+  body.warp-only-mode .site-main,
+  body.warp-only-mode .site-footer {
+    display: none !important;
+  }
+
   .zion-container {
     width: 100%;
     max-width: 80rem;

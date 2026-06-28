@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
 import {
   ATOMIC_UNITS_PER_ZION,
+  BLOCK_REWARD_ZION,
+  FLOWERS_PER_ZION,
   HUMANITARIAN_TITHE_PCT,
   HUMANITARIAN_WALLET,
   ISSOBELLA_FUND_PCT,
@@ -9,6 +11,8 @@ import {
   MINER_SHARE_PCT,
   POOL_FEE_PCT,
   POOL_FEE_WALLET,
+  POOL_WALLET,
+  TOTAL_SUPPLY_ZION,
 } from '@/lib/constants';
 import { SITE_PRIMARY_HOST, SITE_PRIMARY_POOL_API_URL } from '@/lib/site';
 
@@ -121,7 +125,8 @@ export async function GET() {
   ];
   const promResults = await Promise.allSettled(promQueries.map((query) => promQuery(query)));
 
-  const chainHeight = firstMetricValue(promResults, 0) ?? info?.height ?? 0;
+  const chainHeightRaw = firstMetricValue(promResults, 0) ?? info?.height ?? 0;
+  const chainHeight = chainHeightRaw;
   const activeMiners = firstMetricValue(promResults, 1) ?? poolStats?.miners?.active ?? 0;
   const submitsTotal = firstMetricValue(promResults, 2) ?? poolStats?.routing?.submits ?? 0;
   const acceptedTotal = firstMetricValue(promResults, 3) ?? poolStats?.routing?.accepted ?? poolStats?.shares?.valid ?? 0;
@@ -132,7 +137,15 @@ export async function GET() {
   const pplnsRegisteredMiners = firstMetricValue(promResults, 10) ?? poolStats?.miners?.total ?? activeMiners;
   const pplnsWindowSize = firstMetricValue(promResults, 11) ?? poolStats?.pplns_window_size ?? 0;
   const pplnsWindowUsed = firstMetricValue(promResults, 12) ?? 0;
-  const pplnsTotalPaidFlowers = firstMetricValue(promResults, 13) ?? poolStats?.payouts?.pending_total_atomic ?? 0;
+  let pplnsTotalPaidFlowers = firstMetricValue(promResults, 13) ?? poolStats?.payouts?.total_paid_atomic ?? 0;
+  // Sanity clamp: pre-hardfork pool servers accumulated total_paid in 12-decimal
+  // flowers (1 ZION = 1e12). After 3.0.3 fork, flowers are 6-decimal (1 ZION = 1e6).
+  // Total paid can never exceed MINING_EMISSION (127.22B ZION × 1e6 = 127.22e15).
+  // Values above are clearly pre-fork artifacts — divide by 1e6 to convert.
+  const MINING_EMISSION_FLOWERS = TOTAL_SUPPLY_ZION * FLOWERS_PER_ZION; // 144e9 × 1e6 = 144e15
+  if (pplnsTotalPaidFlowers > MINING_EMISSION_FLOWERS) {
+    pplnsTotalPaidFlowers = Math.floor(pplnsTotalPaidFlowers / 1_000_000);
+  }
   const pplnsPayoutRounds = firstMetricValue(promResults, 14) ?? 0;
 
   const validShares = acceptedTotal;
@@ -199,6 +212,33 @@ export async function GET() {
     }
   }
 
+  // ── Fee wallet on-chain balances ──────────────────────────────────────────
+  const feeWallets: Array<{ key: string; address: string }> = [
+    { key: 'pool', address: POOL_WALLET },
+    { key: 'humanitarian', address: HUMANITARIAN_WALLET },
+    { key: 'issobella', address: ISSOBELLA_WALLET },
+  ].filter((w) => w.address && w.address.startsWith('zion1'));
+
+  const feeBalances: Record<string, { balance_flowers: number; balance_zion: number; utxo_count: number }> = {};
+  await Promise.all(feeWallets.map(async (w) => {
+    try {
+      const bal = await rpc.getAddressBalance(w.address);
+      feeBalances[w.key] = {
+        balance_flowers: bal.balance_atomic ?? 0,
+        balance_zion: bal.balance_zion ?? 0,
+        utxo_count: bal.utxo_count ?? 0,
+      };
+    } catch {
+      feeBalances[w.key] = { balance_flowers: 0, balance_zion: 0, utxo_count: 0 };
+    }
+  }));
+
+  // Burned total: 1% of every block subsidy is permanently destroyed at coinbase.
+  const blocksFound = poolStats?.blocks?.found ?? 0;
+  const burnedTotalZion = blocksFound > 0
+    ? blocksFound * (BLOCK_REWARD_ZION * POOL_FEE_PCT / 100)
+    : 0;
+
   return NextResponse.json({
     ok: !!poolStats || !!info,
     timestamp: Date.now(),
@@ -225,6 +265,9 @@ export async function GET() {
       humanitarian_wallet: HUMANITARIAN_WALLET,
       issobella_wallet: ISSOBELLA_WALLET,
       pool_fee_wallet: POOL_FEE_WALLET,
+      pool_wallet: POOL_WALLET,
+      burned_total_zion: burnedTotalZion,
+      balances: feeBalances,
     },
     routing,
     pplns: {

@@ -74,8 +74,8 @@ export const TAIL_REWARD_ZION = 724.785;
 /** Total supply cap: 144 billion ZION */
 export const TOTAL_SUPPLY_ZION = 144_000_000_000;
 
-/** Genesis premine: 16.28 billion ZION */
-export const GENESIS_PREMINE_ZION = 16_280_000_000;
+/** Genesis premine: 16.78 billion ZION (16,780,000,000,000,000 flowers / 1e6) */
+export const GENESIS_PREMINE_ZION = 16_780_000_000;
 
 /** Calculate block reward at a given height using Decade Decay */
 export function blockRewardAtHeight(height: number): number {
@@ -119,16 +119,19 @@ export const ISSOBELLA_FUND_PCT = 5;
 /** Pool operator fee: 1% of block reward */
 export const POOL_FEE_PCT = 1;
 
-// ─── Tithe Wallet Addresses ─────────────────────────────────────────────────
+// ─── Tithe Wallet Addresses (mainnet canonical, 2026-06-07) ────────────────
 
-/** Humanitarian fund wallet (genesis premine [12]) */
-export const HUMANITARIAN_WALLET = 'zion1c245e7f5d8h427r4p4s2s607d7v4c255z7x96t3';
+/** Humanitarian fund wallet (Children Future Fund) — mainnet canonical */
+export const HUMANITARIAN_WALLET = 'zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4';
 
-/** L5/L6 Issobella fund wallet */
-export const ISSOBELLA_WALLET = 'zion170a374s6h390k7w244m5c4f354v8n4678844655';
+/** L5/L6 Issobella fund wallet — mainnet canonical */
+export const ISSOBELLA_WALLET = 'zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702';
 
-/** Pool fee wallet */
-export const POOL_FEE_WALLET = 'zion1y5u653y3w4z7p5r3l034y0q6u06542a426z77j7';
+/** Pool fee wallet — BURNED (no address; 1% is permanently removed at coinbase) */
+export const POOL_FEE_WALLET = '';
+
+/** Pool / miner payout wallet — mainnet canonical (receives 89% miner slice) */
+export const POOL_WALLET = 'zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604';
 
 /** Miner reward per block in ZION (Decade 1) */
 export const MINER_REWARD_ZION = BLOCK_REWARD_ZION * MINER_SHARE_PCT / 100;
@@ -164,10 +167,10 @@ export const KNOWN_ADDRESS_LABELS: Record<
     type: KnownAddressType;
   }
 > = {
-  [HUMANITARIAN_WALLET]: { label: 'Humanitarian tithe wallet', type: 'humanitarian' },
-  [ISSOBELLA_WALLET]: { label: 'L5/L6 Issobella fund wallet', type: 'issobella' },
-  [POOL_FEE_WALLET]: { label: 'Pool fee wallet', type: 'pool_fee' },
+  [HUMANITARIAN_WALLET]: { label: 'Humanitarian Fund (Children Future Fund)', type: 'humanitarian' },
+  [ISSOBELLA_WALLET]: { label: 'L5/L6 Issobella Space Fund', type: 'issobella' },
+  [POOL_WALLET]: { label: 'Pool / Miner Payout Wallet', type: 'pool_fee' },
 };
 
 /** Pool payout / fee wallet used by explorer heuristics (`is_pool_block`). */
-export const POOL_WALLET = POOL_FEE_WALLET;
+export const POOL_FEE_WALLET_HEURISTIC = POOL_WALLET;

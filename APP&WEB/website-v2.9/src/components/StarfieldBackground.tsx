@@ -10,6 +10,7 @@ interface StarfieldBackgroundProps {
   speed?: number;
   trailOpacity?: number;
   backgroundGradient?: string;
+  flowDirection?: 'outward' | 'inward';
 }
 
 const DEFAULT_COLOR: RGBColor = [255, 215, 0];
@@ -21,6 +22,7 @@ export default function StarfieldBackground({
   speed = 2,
   trailOpacity = 0.08,
   backgroundGradient = DEFAULT_GRADIENT,
+  flowDirection = 'outward',
 }: StarfieldBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -62,11 +64,20 @@ export default function StarfieldBackground({
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       stars.forEach((star) => {
-        star.z -= speed;
-        if (star.z <= 0) {
-          star.z = canvas.width;
-          star.x = Math.random() * canvas.width - canvas.width / 2;
-          star.y = Math.random() * canvas.height - canvas.height / 2;
+        if (flowDirection === 'inward') {
+          star.z += speed;
+          if (star.z >= canvas.width) {
+            star.z = Math.random() * 18 + 2;
+            star.x = Math.random() * canvas.width - canvas.width / 2;
+            star.y = Math.random() * canvas.height - canvas.height / 2;
+          }
+        } else {
+          star.z -= speed;
+          if (star.z <= 0) {
+            star.z = canvas.width;
+            star.x = Math.random() * canvas.width - canvas.width / 2;
+            star.y = Math.random() * canvas.height - canvas.height / 2;
+          }
         }
 
         const x = (star.x / star.z) * canvas.width + canvas.width / 2;
@@ -97,7 +108,7 @@ export default function StarfieldBackground({
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', handleResize);
     };
-  }, [density, speed, starColor, trailOpacity]);
+  }, [density, speed, starColor, trailOpacity, flowDirection]);
 
   return (
     <canvas
