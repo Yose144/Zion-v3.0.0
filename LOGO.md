@@ -103,13 +103,14 @@ Všechny ikony jsou **vyrenderovány z live stargate** (Playwright screenshot z 
 
 | Optimalizace | Co dělá |
 |--------------|---------|
-| `content-visibility: auto` | Přeskočí renderování když je off-screen |
-| `contain: strict` na `.gate` | Izoluje layout/paint |
+| `container-type: inline-size` | Container queries — glyfy/chevrony se škálují s velikostí |
+| `cqw` jednotky | Všechny vmin hodnoty převedeny na cqw (2:1 poměr, gate = 50vmin) |
 | `translate3d` místo `translate` | GPU compositing |
 | `will-change: transform` | Před-alokace GPU vrstev |
 | `backface-visibility: hidden` | Zrychluje 3D transformy |
 | `pointer-events: none` | Rotující vrstvy nepřijímají eventy |
 | `width: 35%` na obrázky | Obrázky 35% gate (ne 100%) — dle originálu |
+| `overflow: hidden` na `.container` | Ořízne obrázky na kruh, chevrony přesahují ven |
 | `prefers-reduced-motion` | Vypne animace pro uživatele s preferencí |
 
 ---
