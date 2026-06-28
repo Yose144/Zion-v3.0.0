@@ -125,8 +125,7 @@ export async function GET() {
   ];
   const promResults = await Promise.allSettled(promQueries.map((query) => promQuery(query)));
 
-  const chainHeightRaw = firstMetricValue(promResults, 0) ?? info?.height ?? 0;
-  const chainHeight = chainHeightRaw;
+  const chainHeight = firstMetricValue(promResults, 0) ?? info?.height ?? 0;
   const activeMiners = firstMetricValue(promResults, 1) ?? poolStats?.miners?.active ?? 0;
   const submitsTotal = firstMetricValue(promResults, 2) ?? poolStats?.routing?.submits ?? 0;
   const acceptedTotal = firstMetricValue(promResults, 3) ?? poolStats?.routing?.accepted ?? poolStats?.shares?.valid ?? 0;
