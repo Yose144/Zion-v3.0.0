@@ -19,6 +19,8 @@ import {
   Info,
   Download,
   Activity,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
@@ -49,10 +51,11 @@ interface BenchRow {
   notes: { cs: string; en: string };
 }
 
-/* ─── Static benchmark data ─────────────────────────────────── */
-/* Based on AGENTS.md benchmarks (RX 5700 XT measured) + estimates */
+/* ─── Measured benchmark data ───────────────────────────────── */
+/* Only real measurements from our mining hardware. Estimated/manufacturer
+   specifications are NOT included. Community submissions welcome. */
 
-const BENCH_DATA: BenchRow[] = [
+const MEASURED_BENCHMARKS: BenchRow[] = [
   {
     id: 'rx5700xt-fire',
     hardware: 'AMD RX 5700 XT',
@@ -83,150 +86,6 @@ const BENCH_DATA: BenchRow[] = [
     notes: {
       cs: 'Měřeno po RDNA1 fix. Standardní 256 KiB scratchpad, 4 průchody.',
       en: 'Measured after RDNA1 fix. Standard 256 KiB scratchpad, 4 passes.',
-    },
-  },
-  {
-    id: 'rtx4090-v1',
-    hardware: 'NVIDIA RTX 4090',
-    type: 'GPU',
-    algorithm: 'deeksha_lite_v1',
-    hashrate: 45,
-    power: 450,
-    memory: '24 GB GDDR6X',
-    arch: 'Ada Lovelace (SM 8.9)',
-    backend: 'CUDA',
-    measured: false,
-    notes: {
-      cs: 'Odhad na základě škálování oproti RTX 3090 a H100. TPB=24, wc=262144.',
-      en: 'Estimated based on scaling vs RTX 3090 and H100. TPB=24, wc=262144.',
-    },
-  },
-  {
-    id: 'rtx3090-v1',
-    hardware: 'NVIDIA RTX 3090',
-    type: 'GPU',
-    algorithm: 'deeksha_lite_v1',
-    hashrate: 30,
-    power: 350,
-    memory: '24 GB GDDR6X',
-    arch: 'Ampere (SM 8.6)',
-    backend: 'CUDA',
-    measured: false,
-    notes: {
-      cs: 'Odhad ~1.5× RTX 3060 (16.5 KH/s). TPB=24, wc=4096.',
-      en: 'Estimated ~1.5× RTX 3060 (16.5 KH/s). TPB=24, wc=4096.',
-    },
-  },
-  {
-    id: 'rx6900xt-v1',
-    hardware: 'AMD RX 6900 XT',
-    type: 'GPU',
-    algorithm: 'deeksha_lite_v1',
-    hashrate: 25,
-    power: 300,
-    memory: '16 GB GDDR6',
-    arch: 'RDNA2 (gfx1030)',
-    backend: 'OpenCL',
-    measured: false,
-    notes: {
-      cs: 'Odhad ~2.5× RX 5700 XT v1. RDNA2 má větší L2 cache.',
-      en: 'Estimated ~2.5× RX 5700 XT v1. RDNA2 has larger L2 cache.',
-    },
-  },
-  {
-    id: 'rx580-v1',
-    hardware: 'AMD RX 580',
-    type: 'GPU',
-    algorithm: 'deeksha_lite_v1',
-    hashrate: 5,
-    power: 185,
-    memory: '8 GB GDDR5',
-    arch: 'Polaris (GCN 4.0)',
-    backend: 'OpenCL',
-    measured: false,
-    notes: {
-      cs: 'Odhad. Starší GCN architektura, nižší L2 cache.',
-      en: 'Estimated. Older GCN architecture, smaller L2 cache.',
-    },
-  },
-  {
-    id: 'ryzen7950x-v1',
-    hardware: 'Ryzen 9 7950X',
-    type: 'CPU',
-    algorithm: 'deeksha_lite_v1',
-    hashrate: 2,
-    power: 65,
-    memory: '64 MB L3',
-    arch: 'Zen 4 (16C/32T)',
-    backend: 'CPU',
-    measured: false,
-    notes: {
-      cs: 'Odhad. 16 jader, velký L3 cache. TDP 65W (base), ~105W boost.',
-      en: 'Estimated. 16 cores, large L3 cache. TDP 65W (base), ~105W boost.',
-    },
-  },
-  {
-    id: 'ryzen5950x-v1',
-    hardware: 'Ryzen 9 5950X',
-    type: 'CPU',
-    algorithm: 'deeksha_lite_v1',
-    hashrate: 1.5,
-    power: 65,
-    memory: '64 MB L3',
-    arch: 'Zen 3 (16C/32T)',
-    backend: 'CPU',
-    measured: false,
-    notes: {
-      cs: 'Odhad. 16 jader Zen 3, dobrý poměr výkon/příkon.',
-      en: 'Estimated. 16 cores Zen 3, good performance/power ratio.',
-    },
-  },
-  {
-    id: 'i9-13900k-v1',
-    hardware: 'Intel i9-13900K',
-    type: 'CPU',
-    algorithm: 'deeksha_lite_v1',
-    hashrate: 1.8,
-    power: 65,
-    memory: '36 MB L3',
-    arch: 'Raptor Lake (24C/32T)',
-    backend: 'CPU',
-    measured: false,
-    notes: {
-      cs: 'Odhad. 8P+16E jader. Hybridní architektura, P-cores dominantní.',
-      en: 'Estimated. 8P+16E cores. Hybrid architecture, P-cores dominant.',
-    },
-  },
-  {
-    id: 'm2max-v1',
-    hardware: 'Apple M2 Max',
-    type: 'CPU',
-    algorithm: 'deeksha_lite_v1',
-    hashrate: 1.2,
-    power: 30,
-    memory: '48 MB L2',
-    arch: 'Apple Silicon (12C)',
-    backend: 'Metal',
-    measured: false,
-    notes: {
-      cs: 'Odhad. Vynikající efektivita (30W). Metal backend.',
-      en: 'Estimated. Excellent efficiency (30W). Metal backend.',
-    },
-  },
-  {
-    id: 'threadripper3990x-v1',
-    hardware: 'Threadripper 3990X',
-    type: 'CPU',
-    algorithm: 'deeksha_lite_v1',
-    hashrate: 3,
-    power: 280,
-    memory: '256 MB L3',
-    arch: 'Zen 2 (64C/128T)',
-    backend: 'CPU',
-    measured: false,
-    notes: {
-      cs: 'Odhad. 64 jader, obrovský L3 cache, ale vysoký příkon 280W.',
-      en: 'Estimated. 64 cores, huge L3 cache, but high 280W power draw.',
     },
   },
 ];
@@ -342,7 +201,7 @@ export default function PoolBenchmarksClient() {
   /* ─── Filtering + sorting ──────────────────────────────────── */
 
   const filteredRows = useMemo(() => {
-    let rows = BENCH_DATA.filter((r) => {
+    let rows = MEASURED_BENCHMARKS.filter((r) => {
       if (algoFilter !== 'all' && r.algorithm !== algoFilter) return false;
       if (hwFilter !== 'all' && r.type !== hwFilter) return false;
       return true;
@@ -360,16 +219,18 @@ export default function PoolBenchmarksClient() {
   /* ─── Summary stats ────────────────────────────────────────── */
 
   const summary = useMemo(() => {
-    const gpus = BENCH_DATA.filter((r) => r.type === 'GPU');
-    const cpus = BENCH_DATA.filter((r) => r.type === 'CPU');
-    const bestGpu = gpus.reduce((m, r) => (r.hashrate > m.hashrate ? r : m), gpus[0]);
-    const bestCpu = cpus.reduce((m, r) => (r.hashrate > m.hashrate ? r : m), cpus[0]);
-    const mostEff = BENCH_DATA.reduce((m, r) => (efficiency(r) > efficiency(m) ? r : m), BENCH_DATA[0]);
+    const gpus = MEASURED_BENCHMARKS.filter((r) => r.type === 'GPU');
+    const cpus = MEASURED_BENCHMARKS.filter((r) => r.type === 'CPU');
+    const bestGpu = gpus.length > 0 ? gpus.reduce((m, r) => (r.hashrate > m.hashrate ? r : m), gpus[0]) : undefined;
+    const bestCpu = cpus.length > 0 ? cpus.reduce((m, r) => (r.hashrate > m.hashrate ? r : m), cpus[0]) : undefined;
+    const mostEff = MEASURED_BENCHMARKS.length > 0
+      ? MEASURED_BENCHMARKS.reduce((m, r) => (efficiency(r) > efficiency(m) ? r : m), MEASURED_BENCHMARKS[0])
+      : undefined;
     return {
       bestGpu,
       bestCpu,
       mostEff,
-      total: BENCH_DATA.length,
+      total: MEASURED_BENCHMARKS.length,
     };
   }, []);
 
@@ -387,15 +248,15 @@ export default function PoolBenchmarksClient() {
   /* ─── Chart data ───────────────────────────────────────────── */
 
   const chartRows = useMemo(() => {
-    return [...BENCH_DATA].sort((a, b) => efficiency(b) - efficiency(a));
+    return [...MEASURED_BENCHMARKS].sort((a, b) => efficiency(b) - efficiency(a));
   }, []);
 
   const hashrateChartRows = useMemo(() => {
-    return [...BENCH_DATA].sort((a, b) => b.hashrate - a.hashrate);
+    return [...MEASURED_BENCHMARKS].sort((a, b) => b.hashrate - a.hashrate);
   }, []);
 
-  const maxEff = Math.max(...BENCH_DATA.map(efficiency));
-  const maxHash = Math.max(...BENCH_DATA.map((r) => r.hashrate));
+  const maxEff = Math.max(...MEASURED_BENCHMARKS.map(efficiency));
+  const maxHash = Math.max(...MEASURED_BENCHMARKS.map((r) => r.hashrate));
 
   const effColor = (eff: number): string => {
     const ratio = eff / maxEff;
@@ -446,6 +307,22 @@ export default function PoolBenchmarksClient() {
               {cs ? 'Zpět na Pool' : 'Back to Pool'}
             </Link>
           </div>
+        </motion.section>
+
+        {/* ── A2. INFO BANNER ─────────────────────────────────────── */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.03 }}
+          className="zion-rainbow-sub p-4 md:p-5 flex items-start gap-3"
+          style={rcStyle}
+        >
+          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+          <p className="text-sm text-gray-300 leading-relaxed">
+            {cs
+              ? 'Tyto benchmarky jsou z reálných měření našeho těžebního hardwaru. Přispěvky komunity jsou vítány.'
+              : 'These benchmarks are from real measurements on our mining hardware. Community benchmark submissions are welcome.'}
+          </p>
         </motion.section>
 
         {/* ── B. FILTER BAR ───────────────────────────────────────── */}
@@ -522,29 +399,29 @@ export default function PoolBenchmarksClient() {
           <SummaryCard
             icon={<TrendingUp className="w-5 h-5 text-emerald-400" />}
             label={cs ? 'Nejlepší GPU hashrate' : 'Best GPU hashrate'}
-            value={`${summary.bestGpu.hashrate} KH/s`}
-            sub={summary.bestGpu.hardware}
+            value={summary.bestGpu ? `${summary.bestGpu.hashrate} KH/s` : '—'}
+            sub={summary.bestGpu?.hardware}
             rc={rcStyle}
           />
           <SummaryCard
             icon={<Cpu className="w-5 h-5 text-cyan-400" />}
             label={cs ? 'Nejlepší CPU hashrate' : 'Best CPU hashrate'}
-            value={`${summary.bestCpu.hashrate} KH/s`}
-            sub={summary.bestCpu.hardware}
+            value={summary.bestCpu ? `${summary.bestCpu.hashrate} KH/s` : (cs ? 'Žádné měření' : 'No data')}
+            sub={summary.bestCpu?.hardware ?? (cs ? 'CPU benchmarky očekávány' : 'CPU benchmarks pending')}
             rc={rcStyle}
           />
           <SummaryCard
             icon={<Zap className="w-5 h-5 text-amber-400" />}
             label={cs ? 'Nejefektivnější (H/W)' : 'Most efficient (H/W)'}
-            value={`${efficiency(summary.mostEff).toFixed(2)} KH/W`}
-            sub={summary.mostEff.hardware}
+            value={summary.mostEff ? `${efficiency(summary.mostEff).toFixed(2)} KH/W` : '—'}
+            sub={summary.mostEff?.hardware}
             rc={rcStyle}
           />
           <SummaryCard
             icon={<Server className="w-5 h-5 text-purple-400" />}
             label={cs ? 'Celkem benchmarků' : 'Total benchmarks'}
             value={`${summary.total}`}
-            sub={cs ? 'GPU + CPU záznamů' : 'GPU + CPU entries'}
+            sub={cs ? 'ověřených měření' : 'verified measurements'}
             rc={rcStyle}
           />
         </motion.section>
@@ -678,11 +555,16 @@ export default function PoolBenchmarksClient() {
             <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> {cs ? 'Měřeno' : 'Measured'}
             </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400/60" /> {cs ? 'Odhad' : 'Estimated'}
-            </span>
             <span className="ml-auto">
               {cs ? 'Klikněte na řádek pro detail.' : 'Click a row for details.'}
+            </span>
+          </div>
+          <div className="px-4 py-3 border-t border-white/5 flex items-center gap-2 text-xs text-gray-500">
+            <AlertCircle className="w-3.5 h-3.5 text-amber-400/70 shrink-0" />
+            <span>
+              {cs
+                ? 'Zobrazena pouze ověřená měření. Odhady/specifikace výrobce nejsou zahrnuty.'
+                : 'Only verified measurements are shown. Estimated/manufacturer specifications are not included.'}
             </span>
           </div>
         </motion.section>
@@ -840,7 +722,7 @@ export default function PoolBenchmarksClient() {
                 </tr>
               </thead>
               <tbody>
-                {BENCH_DATA.map((row) => {
+                {MEASURED_BENCHMARKS.map((row) => {
                   const zion = computeZionPerDay(row);
                   const gross = zion * zionPrice;
                   const elec = (row.power / 1000) * 24 * elecCost;
@@ -979,7 +861,7 @@ function SummaryCard({
   icon: React.ReactNode;
   label: string;
   value: string;
-  sub: string;
+  sub?: string;
   rc: React.CSSProperties;
 }) {
   return (
@@ -989,7 +871,7 @@ function SummaryCard({
         <span className="text-xs text-gray-400 uppercase tracking-wider">{label}</span>
       </div>
       <div className="text-2xl font-bold text-white mb-1">{value}</div>
-      <div className="text-xs text-gray-500 truncate" title={sub}>{sub}</div>
+      {sub && <div className="text-xs text-gray-500 truncate" title={sub}>{sub}</div>}
     </div>
   );
 }

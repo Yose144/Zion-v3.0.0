@@ -109,13 +109,18 @@ interface PoolStats {
   recent_blocks?: { height: number; timestamp: number; reward: number }[];
 }
 
-/* ─── Mock price history (sparkline) ─── */
-const MOCK_PRICE_HISTORY = [
-  0.00018, 0.00019, 0.00021, 0.0002, 0.00022, 0.00024, 0.00023, 0.00021,
-  0.0002, 0.00019, 0.0002, 0.00022, 0.00024, 0.00026, 0.00025, 0.00023,
-  0.00022, 0.0002, 0.00021, 0.00023, 0.00025, 0.00027, 0.00026, 0.00024,
-  0.00022, 0.0002, 0.00019, 0.0002, 0.00021, 0.0002,
-];
+/* ─── DeFi price API response shape (subset) ─── */
+interface PriceData {
+  ok: boolean;
+  source?: string;
+  price?: {
+    usd_per_wzion: number;
+    weth_per_wzion: number;
+    wzion_per_weth: number;
+    weth_usd: number;
+  };
+  fetchedAt?: number;
+}
 
 /* ═══════════════════════════════════════════════════════════
    MAIN COMPONENT
@@ -138,6 +143,7 @@ export default function PoolCalculatorClient() {
   /* ─── Live pool data ─── */
   const [poolStats, setPoolStats] = useState<PoolStats | null>(null);
   const [poolHashrate, setPoolHashrate] = useState(0);
+  const [priceSource, setPriceSource] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
   const fetchPool = useCallback(async () => {
@@ -160,11 +166,14 @@ export default function PoolCalculatorClient() {
     try {
       const res = await fetch('/api/defi/price', { cache: 'no-store' });
       if (!res.ok) throw new Error('price');
-      const data = await res.json();
-      const p = typeof data === 'number' ? data : data?.price ?? data?.zionPrice ?? data?.usd;
-      if (typeof p === 'number' && p > 0) setZionPrice(p);
+      const data: PriceData = await res.json();
+      const p = data?.price?.usd_per_wzion;
+      if (typeof p === 'number' && p > 0) {
+        setZionPrice(p);
+        setPriceSource(data?.source ?? '');
+      }
     } catch {
-      /* keep default 0.0002 */
+      /* keep last known price */
     }
   }, []);
 
@@ -653,20 +662,39 @@ export default function PoolCalculatorClient() {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="grid gap-6 lg:grid-cols-2"
         >
-          {/* Price sparkline */}
+          {/* Current ZION price (live spot — no historical series available) */}
           <div className="zion-rainbow-sub p-6" style={purpleStyle}>
             <div className="relative z-[1]">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="flex items-center gap-2 text-base font-semibold text-white">
                   <TrendingUp className="h-4 w-4 text-emerald-400" />
-                  {cs ? 'Cena ZION (30d)' : 'ZION Price (30d)'}
+                  {cs ? 'Aktuální cena ZION' : 'Current ZION Price'}
                 </h3>
                 <span className="font-mono text-sm text-emerald-400">${zionPrice.toFixed(6)}</span>
               </div>
-              <PriceSparkline values={MOCK_PRICE_HISTORY} current={zionPrice} />
-              <div className="mt-3 flex justify-between text-xs text-gray-500">
-                <span>30 {cs ? 'dní zpět' : 'days ago'}</span>
-                <span>{cs ? 'dnes' : 'today'}</span>
+              <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] py-10">
+                <span className="text-4xl font-bold font-mono text-emerald-400">
+                  ${zionPrice.toFixed(6)}
+                </span>
+                <span className="text-xs text-gray-500">
+                  {cs ? 'USD za 1 ZION (spot)' : 'USD per 1 ZION (spot)'}
+                </span>
+                {priceSource && (
+                  <span className="rounded-full bg-white/5 px-2.5 py-1 text-[10px] uppercase tracking-wider text-gray-500">
+                    {priceSource === 'live'
+                      ? cs ? 'živá data' : 'live'
+                      : priceSource === 'seed-uninitialized'
+                        ? cs ? 'seed (pool není inicializován)' : 'seed (pool uninitialized)'
+                        : priceSource === 'seed-fallback'
+                          ? cs ? 'seed (záloha)' : 'seed (fallback)'
+                          : priceSource}
+                  </span>
+                )}
+                <p className="mt-1 max-w-xs text-center text-[11px] text-gray-600">
+                  {cs
+                    ? 'Historická řada cen není k dispozici. Zobrazena je aktuální spot cena z /api/defi/price.'
+                    : 'No historical price series available. Showing the current spot price from /api/defi/price.'}
+                </p>
               </div>
             </div>
           </div>
@@ -796,43 +824,6 @@ function ResultCard({
         </div>
       </div>
     </div>
-  );
-}
-
-/* ─── Price sparkline SVG ─── */
-function PriceSparkline({ values, current }: { values: number[]; current: number }) {
-  const W = 480;
-  const H = 160;
-  const PAD = { top: 12, right: 12, bottom: 16, left: 12 };
-  const cw = W - PAD.left - PAD.right;
-  const ch = H - PAD.top - PAD.bottom;
-  const all = [...values, current];
-  const min = Math.min(...all);
-  const max = Math.max(...all);
-  const range = max - min || 1;
-  const pts = all.map((v, i) => ({
-    x: PAD.left + (i / Math.max(all.length - 1, 1)) * cw,
-    y: PAD.top + ch - ((v - min) / range) * ch,
-  }));
-  const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-  const areaD = `${pathD} L ${pts[pts.length - 1].x} ${PAD.top + ch} L ${pts[0].x} ${PAD.top + ch} Z`;
-
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" preserveAspectRatio="none" style={{ height: 160 }}>
-      <defs>
-        <linearGradient id="price-grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#10b981" stopOpacity="0.35" />
-          <stop offset="100%" stopColor="#10b981" stopOpacity="0.02" />
-        </linearGradient>
-        <linearGradient id="price-line" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#f59e0b" />
-          <stop offset="100%" stopColor="#10b981" />
-        </linearGradient>
-      </defs>
-      <path d={areaD} fill="url(#price-grad)" />
-      <path d={pathD} fill="none" stroke="url(#price-line)" strokeWidth="2" strokeLinejoin="round" />
-      <circle cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r="3" fill="#10b981" />
-    </svg>
   );
 }
 
