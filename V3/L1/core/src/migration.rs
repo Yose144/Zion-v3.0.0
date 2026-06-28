@@ -126,7 +126,7 @@ pub fn dao_treasury_address() -> String {
         .iter()
         .find(|o| o.category == "dao_treasury")
         .map(|o| o.address.to_string())
-        .unwrap_or_else(|| "zion1dao00000000000000000000000000000treasury".to_string())
+        .unwrap_or_else(|| "zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4".to_string())
 }
 
 

@@ -190,7 +190,7 @@ The ZION V3 mainnet dashboard is a **Python stdlib-only HTTP server** with a ric
 | Edge Pool | ALIVE | 8444@100.76.16.108 | 1/2 ports open |
 | GPU Miner | OFFLINE | — | Log stale (6049s) |
 | Bridge | OFFLINE | 9101 | Not deployed |
-| DAO | OFFLINE | 8081 | Not deployed |
+| DAO | OFFLINE | 8450 | Not deployed |
 | Atomic Swap | OFFLINE | 8888 | Not deployed |
 | WARP Relay | OFFLINE | 8580 | Not deployed |
 | NCL | OFFLINE | 8001 | Backend unreachable |

@@ -6,8 +6,8 @@
 [swap]
 name              = "ZION Atomic Swap Service"
 network           = "mainnet"
-min_lock_flowers  = 1_000_000_000_000      # 1 ZION minimum
-max_lock_atomic   = 100_000_000_000_000    # 100 000 ZION maximum
+min_lock_flowers  = 1_000_000             # 1 ZION minimum (1e6 scale)
+max_lock_atomic   = 100_000_000_000       # 100 000 ZION maximum (1e6 scale)
 release_fee_atomic = 10_000                # flat fee per release
 
 # ── ZION L1 ──────────────────────────────────────────────────────────────────

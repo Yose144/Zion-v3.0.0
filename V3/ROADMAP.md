@@ -11,7 +11,7 @@ This file is the active source-of-truth for the clean `V3/` mainnet line.
 
 **3.0.3 Decimal Fork** byl nasazen na Edge server (2026-06-27):
 - **FLOWERS_PER_ZION:** 1e12 (12-decimal) → 1e6 (6-decimal)
-- **MIGRATION_HEIGHT:** 17995 (in-place fork, DB preserved)
+- **MIGRATION_HEIGHT:** 18850 (in-place fork, DB preserved)
 - **protocol_version:** zion-v3-node/3.0.3, protocol_version_numeric=2
 - **All 13 Edge services:** active
 - **Chain height:** 18014+ (těžba běží)
@@ -53,7 +53,7 @@ This file is the active source-of-truth for the clean `V3/` mainnet line.
 | `LEGACY_FLOWERS_PER_ZION` | `1_000_000_000_000` (1e12) |
 | `FLOWERS_TO_WEI_FACTOR` | `1_000_000_000_000` (1e12, EVM 18-6=12) |
 | `BLOCK_REWARD_ATOMIC` | `5_400_067_000` (5400.067 ZION × 1e6) |
-| `MIGRATION_HEIGHT` | `17995` (Edge) |
+| `MIGRATION_HEIGHT` | `18850` (Edge) |
 | `protocol_version` | `zion-v3-node/3.0.3` |
 
 Viz [`ZION_3.0.3_DECIMAL_FORK_PLAN.md`](../ZION_3.0.3_DECIMAL_FORK_PLAN.md) pro kompletní plán a [`StatusV3.md`](../StatusV3.md) pro deployment detaily.

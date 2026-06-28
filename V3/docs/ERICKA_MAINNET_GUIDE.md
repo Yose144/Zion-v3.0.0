@@ -100,9 +100,9 @@ Při vytvoření blockchainu (genesis blok) bylo do 14 peněženek vloženo **16
 | 3 | OASIS Golden Egg 3 | `zion1e6r0q3g6t0r0v5f6h7k7c5f3v562j0v7e5e5d0a` | 1,650,000,000 | NE |
 | 4 | OASIS Golden Egg 4 | `zion1l7e4c4c5x8l440t295a7m4k5p5x8v8z7r043s23` | 1,650,000,000 | NE |
 | 5 | OASIS Golden Egg 5 | `zion1n8h2a8p386z274859833h7v6c5n687f7a6k523u` | 1,650,000,000 | NE |
-| 6 | DAO Treasury (hlavní) | `zion176u8r6w53768e2k04035d4d3c2z5g555n6l4r3s` | 2,500,000,000 | ANO — 1 rok |
-| 7 | DAO Grants | `zion12643n776r3m8f340484756q06485h5w4c2l405m` | 1,000,000,000 | ANO — 1 rok |
-| 8 | DAO Bootstrap | `zion1k8w734x422f3t6t536r287k2c6n3z0e05257606` | 500,000,000 | ANO — 1 rok |
+| 6 | DAO Treasury (hlavní) | `zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4` | 2,500,000,000 | ANO — 1 rok |
+| 7 | DAO Grants | `zion1r5j0j7y444a8j402n8t8u2n8y323u6x4r2aw7l6` | 1,000,000,000 | ANO — 1 rok |
+| 8 | DAO Bootstrap | `zion1932843t398t095g4h3x2f3a5l0q40490k4fm2w8` | 500,000,000 | ANO — 1 rok |
 | 9 | Core Dev Fund | `zion1q540v6y4f0s4v3n0f8t740t53494z56024u645c` | 1,000,000,000 | NE |
 | 10 | Seed Nodes | `zion1h4w39686t8w376g0x0y426e775q6p2q0v698v43` | 1,000,000,000 | NE |
 | 11 | Genesis Creator | `zion1x638z5x6d2d0y6u3f7y8g7j56054a4a2a2c7l8f` | 590,000,000 | NE |
@@ -111,7 +111,7 @@ Při vytvoření blockchainu (genesis blok) bylo do 14 peněženek vloženo **16
 | 14 | Bridge Vault UTXO Seed | `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0` | 100,000,000 | NE |
 
 > **"Zamčeno — 1 rok"** znamená, že z těchto adres (6, 7, 8) nelze nic poslat, dokud
-> síť nedosáhne bloku číslo 525,600 (asi 1 rok po startu). To je zakódováno
+> síť nedosáhne bloku číslo 144,000 (asi 1 rok po startu). To je zakódováno
 > přímo v blockchainu a nejde to obejít.
 
 ### Kde jsou privátní klíče?

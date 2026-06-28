@@ -4942,7 +4942,7 @@ MAINNET_CONSTANTS = {
     },
     "special_addresses": {
         "burn": "zion1burn0000000000000000000000000000000dead",
-        "dao": "zion1dao00000000000000000000000000000treasury",
+        "dao": "zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4",
         "bridge_vault": "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0",
     },
 }

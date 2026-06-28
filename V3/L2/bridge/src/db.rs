@@ -564,7 +564,7 @@ mod tests {
             evm_chain: "base".into(),
             evm_burner: "0xaaabbbccc".into(),
             amount_wzion_wei: "1000000000000000000000".into(), // 1000 wZION
-            amount_flowers: 1_000_000_000_000_000,             // 1000 ZION Ă— 1e12
+            amount_flowers: 1_000_000_000,                      // 1000 ZION × 1e6 (post-3.0.3)
             l1_recipient: "zion1qrecipient".into(),
             burn_id: burn_id.into(),
             detected_at: Utc::now(),

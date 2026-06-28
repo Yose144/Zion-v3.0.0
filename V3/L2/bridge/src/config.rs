@@ -93,7 +93,7 @@ pub struct BridgeIdentity {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct L1Config {
-    /// ZION L1 raw TCP JSON-RPC address (e.g., "204.168.245.175:8443")
+    /// ZION L1 raw TCP JSON-RPC address (e.g., "127.0.0.1:8443")
     pub rpc_url: String,
 
     /// Optional backup L1 raw TCP JSON-RPC address
@@ -456,7 +456,7 @@ version = "0.1.0"
 network = "testnet"
 
 [l1]
-rpc_url = "204.168.245.175:8443"
+rpc_url = "127.0.0.1:8443"
 bridge_address = "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0"
 finality_blocks = 60
 poll_interval_secs = 15
