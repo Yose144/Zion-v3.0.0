@@ -136,7 +136,8 @@ async fn main() -> Result<()> {
     let l1_shutdown = Arc::clone(&shutdown);
     let l1_lock_tx = lock_tx.clone();
     let _l1_handle = tokio::spawn(async move {
-        let mut watcher = L1Watcher::new(l1_config, Some(last_l1_height));
+        let mut watcher = L1Watcher::new(l1_config, Some(last_l1_height))
+            .with_metrics(Arc::clone(&l1_metrics));
         loop {
             if l1_shutdown.load(Ordering::Relaxed) {
                 info!("L1 watcher: shutdown signal received");
