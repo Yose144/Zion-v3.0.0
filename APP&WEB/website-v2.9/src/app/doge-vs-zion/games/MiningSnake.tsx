@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { ArrowLeft, Volume2, VolumeX, RefreshCw, Trophy } from 'lucide-react';
+import { useLang } from '@/contexts/LanguageContext';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -272,6 +273,8 @@ function renderCanvas(s: GameState, canvas: HTMLCanvasElement | null) {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function MiningSnake({ onBack }: { onBack: () => void }) {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const stateRef = useRef<GameState>(initState());
   const rafRef = useRef<number>(0);
@@ -436,11 +439,11 @@ export function MiningSnake({ onBack }: { onBack: () => void }) {
           onClick={onBack}
           className="flex items-center gap-1 text-sm text-zinc-400 hover:text-white transition-colors"
         >
-          <ArrowLeft size={18} /> Back
+          <ArrowLeft size={18} /> {cs ? 'Zpět' : 'Back'}
         </button>
         <div className="text-center">
-          <h1 className="text-xl font-bold text-green-400 tracking-wide">Mining Snake</h1>
-          <p className="text-[10px] text-zinc-500">Collect ZION. Don&apos;t crash your rig.</p>
+          <h1 className="text-xl font-bold text-green-400 tracking-wide">{cs ? 'Těžební Had' : 'Mining Snake'}</h1>
+          <p className="text-[10px] text-zinc-500">{cs ? 'Sbírej ZION. Nenič svůj rig.' : 'Collect ZION. Don\u2019t crash your rig.'}</p>
         </div>
         <button
           onClick={() => setMuted((m) => !m)}
@@ -456,11 +459,11 @@ export function MiningSnake({ onBack }: { onBack: () => void }) {
         <div className="flex items-center gap-1.5 text-amber-400">
           <span className="text-base">⛏️</span>
           <span className="font-mono font-bold">{coins}</span>
-          <span className="text-zinc-500 text-xs">coins</span>
+          <span className="text-zinc-500 text-xs">{cs ? 'mince' : 'coins'}</span>
         </div>
         <div className="flex items-center gap-1.5 text-white">
           <span className="font-mono font-bold">{score}</span>
-          <span className="text-zinc-500 text-xs">pts</span>
+          <span className="text-zinc-500 text-xs">{cs ? 'bodů' : 'pts'}</span>
         </div>
         <div className="flex items-center gap-1.5 text-yellow-500">
           <Trophy size={14} />
@@ -469,65 +472,66 @@ export function MiningSnake({ onBack }: { onBack: () => void }) {
       </div>
 
       {/* Canvas + overlays */}
-      <div className="relative" style={{ width: CANVAS_SIZE, height: CANVAS_SIZE }}>
+      <div className="relative zion-rainbow-card zion-rainbow-sub p-1" style={{ '--rc': '147, 51, 234', width: CANVAS_SIZE + 8, height: CANVAS_SIZE + 8 } as React.CSSProperties}>
         <canvas
           ref={canvasRef}
           width={CANVAS_SIZE}
           height={CANVAS_SIZE}
-          className="rounded-lg border border-green-900/50 touch-none"
+          className="rounded-lg touch-none"
           style={{ width: CANVAS_SIZE, height: CANVAS_SIZE }}
         />
 
         {/* Start overlay */}
         {status === 'start' && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 rounded-lg backdrop-blur-sm gap-4 p-6 text-center">
+          <div className="absolute inset-1 flex flex-col items-center justify-center bg-black/70 rounded-lg backdrop-blur-sm gap-4 p-6 text-center">
             <div className="text-4xl">⛏️</div>
-            <h2 className="text-lg font-bold text-green-400">Mining Snake</h2>
+            <h2 className="text-lg font-bold text-green-400">{cs ? 'Těžební Had' : 'Mining Snake'}</h2>
             <p className="text-xs text-zinc-400 max-w-xs leading-relaxed">
-              Pilot your mining rig across the grid. Collect ZION coins (⛏️) to grow and score.
-              Grab rare diamonds (💎) for +50 bonus points. Don&apos;t hit the walls or yourself!
+              {cs
+                ? 'Riď svůj těžební rig po mřížce. Sbírej ZION mince (⛏️) pro růst a skóre. Chyť vzácné diamanty (💎) za +50 bonusových bodů. Nenarazíš do stěn ani do sebe!'
+                : 'Pilot your mining rig across the grid. Collect ZION coins (⛏️) to grow and score. Grab rare diamonds (💎) for +50 bonus points. Don\u2019t hit the walls or yourself!'}
             </p>
             <div className="text-[10px] text-zinc-500">
-              Arrow keys / WASD to move · Space to pause
+              {cs ? 'Šipky / WASD pro pohyb · Mezerník pro pauzu' : 'Arrow keys / WASD to move · Space to pause'}
             </div>
             <button
               onClick={startGame}
               className="px-6 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white font-bold text-sm transition-colors"
             >
-              Start Mining
+              {cs ? 'Začít těžit' : 'Start Mining'}
             </button>
           </div>
         )}
 
         {/* Pause overlay */}
         {status === 'paused' && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 rounded-lg backdrop-blur-sm gap-3">
-            <h2 className="text-lg font-bold text-white">Paused</h2>
+          <div className="absolute inset-1 flex flex-col items-center justify-center bg-black/60 rounded-lg backdrop-blur-sm gap-3">
+            <h2 className="text-lg font-bold text-white">{cs ? 'Pauza' : 'Paused'}</h2>
             <button
               onClick={togglePause}
               className="px-5 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white font-bold text-sm transition-colors"
             >
-              Resume
+              {cs ? 'Pokračovat' : 'Resume'}
             </button>
-            <p className="text-[10px] text-zinc-500">Press Space to resume</p>
+            <p className="text-[10px] text-zinc-500">{cs ? 'Stiskni MEZERNÍK pro pokračování' : 'Press Space to resume'}</p>
           </div>
         )}
 
         {/* Game over overlay */}
         {status === 'over' && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/75 rounded-lg backdrop-blur-sm gap-3 p-6 text-center">
+          <div className="absolute inset-1 flex flex-col items-center justify-center bg-black/75 rounded-lg backdrop-blur-sm gap-3 p-6 text-center">
             <div className="text-3xl">💥</div>
-            <h2 className="text-lg font-bold text-red-400">Rig Crashed</h2>
+            <h2 className="text-lg font-bold text-red-400">{cs ? 'Rig havaroval' : 'Rig Crashed'}</h2>
             <div className="flex flex-col gap-1">
               <div className="text-sm text-white">
-                Score: <span className="font-mono font-bold text-amber-400">{score}</span>
+                {cs ? 'Skóre' : 'Score'}: <span className="font-mono font-bold text-amber-400">{score}</span>
               </div>
               <div className="text-xs text-zinc-400">
-                Coins: <span className="font-mono">{coins}</span> · Best: <span className="font-mono text-yellow-500">{highScore}</span>
+                {cs ? 'Mince' : 'Coins'}: <span className="font-mono">{coins}</span> · {cs ? 'Nejlepší' : 'Best'}: <span className="font-mono text-yellow-500">{highScore}</span>
               </div>
               {score >= highScore && score > 0 && (
                 <div className="text-xs text-yellow-400 font-bold flex items-center gap-1 justify-center">
-                  <Trophy size={12} /> New High Score!
+                  <Trophy size={12} /> {cs ? 'Nové nejlepší skóre!' : 'New High Score!'}
                 </div>
               )}
             </div>
@@ -535,7 +539,7 @@ export function MiningSnake({ onBack }: { onBack: () => void }) {
               onClick={startGame}
               className="flex items-center gap-2 px-5 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white font-bold text-sm transition-colors"
             >
-              <RefreshCw size={14} /> Retry
+              <RefreshCw size={14} /> {cs ? 'Zkusit znovu' : 'Retry'}
             </button>
           </div>
         )}
@@ -543,7 +547,7 @@ export function MiningSnake({ onBack }: { onBack: () => void }) {
 
       {/* Mobile controls hint */}
       <p className="text-[10px] text-zinc-600 text-center">
-        Swipe to steer on mobile · Space to pause
+        {cs ? 'Posunem prstem riď na mobilu · Mezerník pro pauzu' : 'Swipe to steer on mobile · Space to pause'}
       </p>
     </div>
   );

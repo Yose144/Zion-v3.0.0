@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, Volume2, VolumeX, RefreshCw, Trophy } from 'lucide-react';
+import { useLang } from '@/contexts/LanguageContext';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -59,7 +60,7 @@ const sfx = new SoundManager();
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type GameStatus = 'ready' | 'playing' | 'over';
+type GameStatus = 'ready' | 'playing' | 'paused' | 'over';
 
 interface Obstacle {
   x: number;
@@ -123,6 +124,14 @@ function flap(s: GameState) {
   if (s.status === 'playing') {
     s.vy = FLAP_VY;
     sfx.flap();
+  }
+}
+
+function togglePause(s: GameState) {
+  if (s.status === 'playing') {
+    s.status = 'paused';
+  } else if (s.status === 'paused') {
+    s.status = 'playing';
   }
 }
 
@@ -302,6 +311,8 @@ function drawPillar(ctx: CanvasRenderingContext2D, x: number, y: number, w: numb
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function FlappyNode({ onBack }: { onBack: () => void }) {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const stateRef = useRef<GameState>(createInitialState());
   const rafRef = useRef<number | null>(null);
@@ -327,6 +338,12 @@ export function FlappyNode({ onBack }: { onBack: () => void }) {
   const doFlap = useCallback(() => {
     sfx.init();
     flap(stateRef.current);
+    syncUI();
+  }, [syncUI]);
+
+  const doTogglePause = useCallback(() => {
+    sfx.init();
+    togglePause(stateRef.current);
     syncUI();
   }, [syncUI]);
 
@@ -381,15 +398,23 @@ export function FlappyNode({ onBack }: { onBack: () => void }) {
   // Keyboard
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.code === 'KeyP') {
+        e.preventDefault();
+        const s = stateRef.current;
+        if (s.status === 'playing' || s.status === 'paused') doTogglePause();
+        return;
+      }
       if (e.code === 'Space' || e.code === 'ArrowUp') {
         e.preventDefault();
-        if (stateRef.current.status === 'over') restart();
+        const s = stateRef.current;
+        if (s.status === 'paused') return; // don't flap while paused
+        if (s.status === 'over') restart();
         else doFlap();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [doFlap, restart]);
+  }, [doFlap, doTogglePause, restart]);
 
   const handleCanvasInteract = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
@@ -405,11 +430,11 @@ export function FlappyNode({ onBack }: { onBack: () => void }) {
           onClick={onBack}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 transition-colors text-sm"
         >
-          <ArrowLeft size={16} /> Back
+          <ArrowLeft size={16} /> {cs ? 'Zpět' : 'Back'}
         </button>
         <div className="text-center">
-          <h2 className="text-lg font-bold text-white leading-tight">Flappy Node</h2>
-          <p className="text-[11px] text-slate-400">Keep the node alive. Dodge the firewalls.</p>
+          <h2 className="text-lg font-bold text-white leading-tight">{cs ? 'Flappy Uzel' : 'Flappy Node'}</h2>
+          <p className="text-[11px] text-slate-400">{cs ? 'Udrž uzel při životě. Uhýbej firewallům.' : 'Keep the node alive. Dodge the firewalls.'}</p>
         </div>
         <button
           onClick={toggleMute}
@@ -421,14 +446,14 @@ export function FlappyNode({ onBack }: { onBack: () => void }) {
       </div>
 
       {/* Game area */}
-      <div className="relative" style={{ width: CANVAS_W, height: CANVAS_H }}>
+      <div className="relative zion-rainbow-card zion-rainbow-sub p-1" style={{ '--rc': '147, 51, 234', width: CANVAS_W + 8, height: CANVAS_H + 8 } as React.CSSProperties}>
         <canvas
           ref={canvasRef}
           width={CANVAS_W}
           height={CANVAS_H}
           onMouseDown={handleCanvasInteract}
           onTouchStart={handleCanvasInteract}
-          className="rounded-xl border border-white/10 cursor-pointer touch-none"
+          className="rounded-xl cursor-pointer touch-none"
           style={{ display: 'block' }}
         />
 
@@ -443,49 +468,63 @@ export function FlappyNode({ onBack }: { onBack: () => void }) {
 
         {/* Ready screen */}
         {uiStatus === 'ready' && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/55 rounded-xl backdrop-blur-sm">
+          <div className="absolute inset-1 flex flex-col items-center justify-center bg-black/55 rounded-xl backdrop-blur-sm">
             <div className="text-5xl mb-3">🛡️</div>
-            <h3 className="text-2xl font-bold text-white mb-1">Flappy Node</h3>
+            <h3 className="text-2xl font-bold text-white mb-1">{cs ? 'Flappy Uzel' : 'Flappy Node'}</h3>
             <p className="text-sm text-slate-300 mb-5 text-center px-6">
-              Click / Spacebar to flap
+              {cs ? 'Klepni nebo stiskni MEZERNÍK pro flap' : 'Click / Spacebar to flap'}
             </p>
             <button
               onClick={doFlap}
               className="px-6 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-white font-semibold transition-colors shadow-lg shadow-emerald-500/30"
             >
-              Start
+              {cs ? 'Start' : 'Start'}
             </button>
             <div className="mt-4 flex items-center gap-1.5 text-xs text-amber-300">
-              <Trophy size={13} /> Best: {highScore}
+              <Trophy size={13} /> {cs ? 'Nejlepší' : 'Best'}: {highScore}
             </div>
+          </div>
+        )}
+
+        {/* Pause screen */}
+        {uiStatus === 'paused' && (
+          <div className="absolute inset-1 flex flex-col items-center justify-center bg-black/60 rounded-xl backdrop-blur-sm">
+            <h3 className="text-2xl font-bold text-white mb-4">{cs ? 'Pauza' : 'PAUSED'}</h3>
+            <button
+              onClick={doTogglePause}
+              className="px-6 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-white font-semibold transition-colors shadow-lg shadow-emerald-500/30"
+            >
+              {cs ? 'Pokračovat' : 'Resume'}
+            </button>
+            <p className="mt-3 text-[11px] text-slate-400">{cs ? 'Stiskni P pro pokračování' : 'Press P to resume'}</p>
           </div>
         )}
 
         {/* Game over screen */}
         {uiStatus === 'over' && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/65 rounded-xl backdrop-blur-sm">
-            <h3 className="text-2xl font-bold text-red-400 mb-2">Node Down</h3>
+          <div className="absolute inset-1 flex flex-col items-center justify-center bg-black/65 rounded-xl backdrop-blur-sm">
+            <h3 className="text-2xl font-bold text-red-400 mb-2">{cs ? 'Uzel padl' : 'Node Down'}</h3>
             <div className="flex items-center gap-4 mb-4">
               <div className="text-center">
-                <div className="text-[11px] text-slate-400 uppercase tracking-wide">Score</div>
+                <div className="text-[11px] text-slate-400 uppercase tracking-wide">{cs ? 'Skóre' : 'Score'}</div>
                 <div className="text-3xl font-black text-white">{score}</div>
               </div>
               <div className="w-px h-10 bg-white/15" />
               <div className="text-center">
-                <div className="text-[11px] text-slate-400 uppercase tracking-wide">Best</div>
+                <div className="text-[11px] text-slate-400 uppercase tracking-wide">{cs ? 'Nejlepší' : 'Best'}</div>
                 <div className="text-3xl font-black text-amber-300 flex items-center gap-1">
                   <Trophy size={20} /> {highScore}
                 </div>
               </div>
             </div>
             {score > 0 && score >= highScore && (
-              <div className="mb-3 text-xs text-emerald-400 font-semibold">New High Score!</div>
+              <div className="mb-3 text-xs text-emerald-400 font-semibold">{cs ? 'Nové nejlepší skóre!' : 'New High Score!'}</div>
             )}
             <button
               onClick={restart}
               className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-white font-semibold transition-colors shadow-lg shadow-emerald-500/30"
             >
-              <RefreshCw size={16} /> Retry
+              <RefreshCw size={16} /> {cs ? 'Zkusit znovu' : 'Retry'}
             </button>
           </div>
         )}
@@ -493,7 +532,7 @@ export function FlappyNode({ onBack }: { onBack: () => void }) {
 
       {/* Footer hint */}
       <p className="mt-3 text-[11px] text-slate-500 text-center">
-        Tap, click, or press Space to flap. Pass through the firewall gaps to score.
+        {cs ? 'Klepni, klikni nebo stiskni MEZERNÍK pro flap. P pro pauzu. Projížděj mezerami ve firewallu pro skóre.' : 'Tap, click, or press Space to flap. P to pause. Pass through the firewall gaps to score.'}
       </p>
     </div>
   );
