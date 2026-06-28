@@ -5900,14 +5900,14 @@ async function initiateAtomicSwap() {
 async function loadL3Data() {
   // WARP health
   try {
-    const r = await fetch('/api/l3/warp/chains', { signal: AbortSignal.timeout(3000) }).then(r => r.json());
+    const r = await fetch('/api/warp/health', { signal: AbortSignal.timeout(3000) }).then(r => r.json());
     const ok = r.ok || r.status === 'online';
     const badge = document.getElementById('l3-warp-badge');
     if(badge){ badge.className = ok ? 'text-[10px] px-2 py-0.5 rounded-full bg-emerald-700/50 text-emerald-300' : 'text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400'; badge.textContent = ok ? 'Online' : 'Offline'; }
     const el = id => document.getElementById(id);
-    if(el('l3-warp-relayed')) el('l3-warp-relayed').textContent = r.total ?? '—';
-    if(el('l3-warp-pending')) el('l3-warp-pending').textContent = '—';
-    if(el('l3-warp-chains')) el('l3-warp-chains').textContent = r.total ?? '—';
+    if(el('l3-warp-relayed')) el('l3-warp-relayed').textContent = r.transfers_total ?? '—';
+    if(el('l3-warp-pending')) el('l3-warp-pending').textContent = r.transfers_pending ?? '—';
+    if(el('l3-warp-chains')) el('l3-warp-chains').textContent = '21';
   } catch(e) {}
 
   // NCL jobs
@@ -8135,17 +8135,28 @@ async function loadWarpPanel(){
       fetch('/api/l3/warp/chains').then(r => r.json()),
       fetch('/api/l3/warp/transfers').then(r => r.json())
     ]);
-    const chainsData = chains.status === 'fulfilled' ? chains.value : [];
-    const transfersData = transfers.status === 'fulfilled' ? transfers.value : [];
+    const chainsResp = chains.status === 'fulfilled' ? chains.value : {};
+    const transfersResp = transfers.status === 'fulfilled' ? transfers.value : {};
+    const chainsData = chainsResp.chains || chainsResp.data || [];
+    const transfersData = transfersResp.transfers || transfersResp.data || [];
+
+    // Update WARP status badge
+    const statusEl = document.getElementById('warp-status');
+    if(statusEl){
+      statusEl.textContent = chainsResp.ok ? '● Online' : '● Offline';
+      statusEl.className = chainsResp.ok ? 'text-emerald-400' : 'text-red-400';
+    }
+    setText('warp-chain-count', chainsResp.total || chainsData.length || 0);
+    setText('warp-transfer-count', transfersResp.total || transfersData.length || 0);
 
     const chainsBody = document.getElementById('warp-chains-body');
     if(chainsBody){
       if(Array.isArray(chainsData) && chainsData.length){
         chainsBody.innerHTML = chainsData.map(c => `
           <tr class="border-b border-white/5 hover:bg-white/5">
-            <td class="py-2 px-2 font-mono text-emerald-400">${escapeHtml(c.chain_id || c.id || '—')}</td>
+            <td class="py-2 px-2 font-mono text-emerald-400">${escapeHtml(c.family || c.chain_id || c.id || '—')}</td>
             <td class="py-2 px-2">${escapeHtml(c.name || '—')}</td>
-            <td class="py-2 px-2 text-right">${escapeHtml(c.status || '—')}</td>
+            <td class="py-2 px-2 text-right">${escapeHtml(c.decimals !== undefined ? c.decimals : '—')}</td>
           </tr>`).join('');
       } else {
         chainsBody.innerHTML = '<tr><td colspan="3" class="py-4 text-gray-500 italic text-center">No chains connected.</td></tr>';
