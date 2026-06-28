@@ -96,6 +96,43 @@ PAYOUT_HIGHWATER_FILE = DATA_DIR / "dashboard-payout-highwater.json"
 EDGE_HOST = "100.76.16.108"   # Tailscale IP (preferred — low latency)
 EDGE_PUBLIC_IP = "77.42.71.94"  # Public IP (fallback if Tailscale down)
 
+# ── Decimal conversion helpers (3.0.3 fork) ──────────────────────────────
+# Post-3.0.3: 1 ZION = 1_000_000 flowers (6 decimals)
+# Pre-3.0.3:  1 ZION = 1_000_000_000_000 flowers (12 decimals)
+# The L1 migration was supposed to divide all balances by 1e6 at block H+1,
+# but the migration code was never wired up. Balances in the DB are still
+# in legacy 1e12 scale. This helper detects legacy-scale values and converts
+# them correctly for display.
+FLOWERS_PER_ZION = 1_000_000           # post-3.0.3
+LEGACY_FLOWERS_PER_ZION = 1_000_000_000_000  # pre-3.0.3
+TOTAL_SUPPLY_ZION = 144_000_000_000    # 144 billion ZION
+TOTAL_SUPPLY_FLOWERS = TOTAL_SUPPLY_ZION * FLOWERS_PER_ZION  # 1.44e17
+
+def flowers_to_zion(flowers):
+    """Convert flowers (integer) to ZION (float), auto-detecting legacy scale.
+    If the value exceeds total supply in post-3.0.3 scale, it must be legacy
+    (1e12) and is divided by 1e12 instead of 1e6."""
+    if flowers is None or flowers == 0:
+        return 0.0
+    try:
+        f = int(flowers)
+    except (ValueError, TypeError):
+        return 0.0
+    # Heuristic: if value > 10x total supply in post-3.0.3 flowers, it's legacy
+    if f > TOTAL_SUPPLY_FLOWERS * 10:
+        return f / LEGACY_FLOWERS_PER_ZION
+    return f / FLOWERS_PER_ZION
+
+def is_legacy_scale(flowers):
+    """Check if a balance value is in legacy (1e12) scale."""
+    if flowers is None:
+        return False
+    try:
+        f = int(flowers)
+    except (ValueError, TypeError):
+        return False
+    return f > TOTAL_SUPPLY_FLOWERS * 10
+
 # ── Metrics history (in-memory ring buffer) ─────────────────────────────
 
 class MetricsHistory:
@@ -2532,7 +2569,7 @@ def _build_status_edge_primary() -> dict:
                             "miner_id": m.group(1),
                             "worker_name": m.group(2),
                             "balance_atomic": int(m.group(3)),
-                            "balance_zion": int(m.group(3)) / 1_000_000,
+                            "balance_zion": flowers_to_zion(int(m.group(3))),
                         })
     except Exception:
         pass
@@ -2564,6 +2601,7 @@ def _build_status_edge_primary() -> dict:
         "hashrate_khs": edge_metrics["hashrate"],
         "pplns_rounds": edge_payout["pplns_rounds"],
         "pplns_total_paid": edge_payout["pplns_total_paid"],
+        "pplns_total_paid_zion": flowers_to_zion(edge_payout["pplns_total_paid"]),
         "pplns_window_size": edge_payout["pplns_window_size"],
         "pplns_window_used": edge_payout["pplns_window_used"],
         "pplns_registered_miners": edge_payout["pplns_registered_miners"],
@@ -3403,7 +3441,7 @@ def build_wallets() -> dict:
             bal = rpc_call(rpc_host, rpc_port, "getBalance", {"address": addr})
             if bal and not bal.get("_rpc_error"):
                 atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
-                w["balance_zion"] = bal.get("balance_zion") if isinstance(bal.get("balance_zion"), (int, float)) else atomic / 1_000_000
+                w["balance_zion"] = bal.get("balance_zion") if isinstance(bal.get("balance_zion"), (int, float)) else flowers_to_zion(atomic)
                 w["balance_atomic"] = atomic
                 w["rpc_ok"] = True
             else:
@@ -3918,7 +3956,7 @@ def get_pool_miners() -> dict:
             val = int(line.split()[-1])
             if m_id and m_id.group(1) in miners:
                 miners[m_id.group(1)]["paid_total_atomic"] = val
-                miners[m_id.group(1)]["paid_total"] = val / 1e6  # convert atomic flowers to ZION
+                miners[m_id.group(1)]["paid_total"] = flowers_to_zion(val)  # convert atomic flowers to ZION
         elif line.startswith("zion_pool_miner_last_seen_seconds{"):
             m_id = re.search(r'miner_id="([^"]+)"', line)
             val = int(float(line.split()[-1]))
@@ -3953,7 +3991,7 @@ def get_pool_miners() -> dict:
                 or int(miner.get("paid_total_atomic") or 0) == 0
             ):
                 miner["paid_total_atomic"] = payout_atomic
-                miner["paid_total"] = payout_atomic / 1e6
+                miner["paid_total"] = flowers_to_zion(payout_atomic)
             miner["blocks_found"] = payout_miner.get("blocks_found", miner.get("blocks_found", 0))
             if payout_miner.get("pending_balance") is not None:
                 miner["pending_balance"] = payout_miner.get("pending_balance")
@@ -4156,7 +4194,7 @@ def get_pool_wallet_status() -> dict:
         bal = rpc_call("127.0.0.1", 8443, "getBalance", {"address": wallet})
         if bal and not bal.get("_rpc_error"):
             atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
-            status["balance_zion"] = bal.get("balance_zion") if isinstance(bal.get("balance_zion"), (int, float)) else atomic / 1_000_000
+            status["balance_zion"] = bal.get("balance_zion") if isinstance(bal.get("balance_zion"), (int, float)) else flowers_to_zion(atomic)
     return status
 
 # ── Payout System Status Builder ─────────────────────────────────────────
@@ -4198,7 +4236,7 @@ def fetch_pool_miners() -> list:
         addr = m.get("address") or m.get("miner_id") or ""
         paid_total_atomic = paid_map.get(addr, 0)
         m["paid_total_atomic"] = paid_total_atomic
-        m["paid_total"] = paid_total_atomic / 1e6
+        m["paid_total"] = flowers_to_zion(paid_total_atomic)
     return miners
 
 def sanitize_pool_stats(pool_stats: dict, miners: list) -> dict:
@@ -4504,7 +4542,7 @@ def build_payout_status() -> dict:
             bal = rpc_call(rpc_host, 8443, "getBalance", {"address": addr}, timeout=2.5)
             if bal and not bal.get("_rpc_error"):
                 atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
-                balances[key] = {"atomic": atomic, "zion": atomic / 1_000_000}
+                balances[key] = {"atomic": atomic, "zion": flowers_to_zion(atomic)}
     status["balances"] = balances
 
     # ── Pool stats / miners from Edge or local ──────────────────────────
@@ -4536,12 +4574,12 @@ def build_payout_status() -> dict:
             bal = rpc_call(rpc_host, 8443, "getBalance", {"address": addr}, timeout=2.0)
             if bal and not bal.get("_rpc_error"):
                 atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
-                m["on_chain_balance_zion"] = atomic / 1_000_000
+                m["on_chain_balance_zion"] = flowers_to_zion(atomic)
             elif is_edge and local_rpc_alive:
                 bal = rpc_call("127.0.0.1", 8443, "getBalance", {"address": addr}, timeout=2.0)
                 if bal and not bal.get("_rpc_error"):
                     atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
-                    m["on_chain_balance_zion"] = atomic / 1_000_000
+                    m["on_chain_balance_zion"] = flowers_to_zion(atomic)
 
     # ── Network-wide emission totals from block 0 (consensus schedule) ──
     try:
@@ -6342,7 +6380,11 @@ async function refreshPayout(){
 }
 function formatFlowers(v){
   if(!v&&v!==0)return'—';
-  const zion=v/1_000_000;
+  // Auto-detect legacy scale: if value > 1.44e18 (10x total supply in post-3.0.3 flowers),
+  // it's in legacy 1e12 scale and must be divided by 1e12 instead of 1e6.
+  let divisor=1_000_000;
+  if(v>1.44e18)divisor=1_000_000_000_000;
+  const zion=v/divisor;
     return zion.toLocaleString('en-US',{minimumFractionDigits:4,maximumFractionDigits:4})+' ZION';
 }
 
