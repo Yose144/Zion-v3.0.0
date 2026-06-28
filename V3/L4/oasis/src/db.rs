@@ -350,6 +350,14 @@ impl OasisDb {
         Ok(count as u64)
     }
 
+    /// Reset `daily_xp` to 0 for all players. Called at UTC midnight.
+    pub fn reset_all_daily_xp(&self) -> OasisResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("UPDATE players SET daily_xp = 0", [])
+            .map_err(OasisError::Database)?;
+        Ok(())
+    }
+
     // ── Quest Progress ─────────────────────────────────────────────────────
 
     /// Save (insert or update) quest progress.
