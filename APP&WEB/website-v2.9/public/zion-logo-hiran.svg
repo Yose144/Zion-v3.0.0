@@ -1,0 +1,240 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Deep space background -->
+    <radialGradient id="space" cx="50%" cy="45%" r="65%">
+      <stop offset="0%" stop-color="#0a0a1a"/>
+      <stop offset="40%" stop-color="#050510"/>
+      <stop offset="100%" stop-color="#020208"/>
+    </radialGradient>
+
+    <!-- Nebula purple -->
+    <radialGradient id="nebulaPurple" cx="30%" cy="30%" r="50%">
+      <stop offset="0%" stop-color="#6334ed" stop-opacity="0.15"/>
+      <stop offset="60%" stop-color="#6334ed" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Nebula gold -->
+    <radialGradient id="nebulaGold" cx="50%" cy="80%" r="40%">
+      <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.08"/>
+      <stop offset="60%" stop-color="#fbbf24" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Golden orb body — layered radial gradient -->
+    <radialGradient id="orbBody" cx="36%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#fffbeb"/>
+      <stop offset="6%" stop-color="#fde68a"/>
+      <stop offset="18%" stop-color="#fbbf24"/>
+      <stop offset="38%" stop-color="#f59e0b"/>
+      <stop offset="58%" stop-color="#d97706"/>
+      <stop offset="82%" stop-color="#78350f"/>
+      <stop offset="100%" stop-color="#1c0a02"/>
+    </radialGradient>
+
+    <!-- Orb glow halo -->
+    <radialGradient id="orbGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.5"/>
+      <stop offset="40%" stop-color="#f59e0b" stop-opacity="0.2"/>
+      <stop offset="70%" stop-color="#f59e0b" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Light ray fade -->
+    <radialGradient id="rayFade" cx="50%" cy="50%" r="50%">
+      <stop offset="40%" stop-color="#fbbf24" stop-opacity="0"/>
+      <stop offset="65%" stop-color="#fbbf24" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#fbbf24" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Specular highlight -->
+    <radialGradient id="specular" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.7"/>
+      <stop offset="70%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Inner glow ring -->
+    <radialGradient id="innerRing" cx="50%" cy="50%" r="50%">
+      <stop offset="85%" stop-color="#fbbf24" stop-opacity="0"/>
+      <stop offset="94%" stop-color="#fbbf24" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#fbbf24" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Orb clip for inner elements -->
+    <clipPath id="orbClip">
+      <circle cx="256" cy="256" r="88"/>
+    </clipPath>
+  </defs>
+
+  <!-- ════════ KOSMICKÉ POZADÍ ════════ -->
+  <rect width="512" height="512" rx="64" fill="url(#space)"/>
+  <rect width="512" height="512" rx="64" fill="url(#nebulaPurple)"/>
+  <rect width="512" height="512" rx="64" fill="url(#nebulaGold)"/>
+
+  <!-- Starfield (static, hand-placed) -->
+  <g fill="#ffffff">
+    <circle cx="48" cy="72" r="0.8" opacity="0.6"/>
+    <circle cx="112" cy="40" r="1.2" opacity="0.8"/>
+    <circle cx="180" cy="68" r="0.6" opacity="0.5"/>
+    <circle cx="340" cy="52" r="1.0" opacity="0.7"/>
+    <circle cx="420" cy="88" r="0.7" opacity="0.5"/>
+    <circle cx="468" cy="44" r="1.3" opacity="0.9"/>
+    <circle cx="72" cy="140" r="0.9" opacity="0.6"/>
+    <circle cx="24" cy="200" r="0.5" opacity="0.4"/>
+    <circle cx="460" cy="160" r="0.8" opacity="0.6"/>
+    <circle cx="488" cy="220" r="1.1" opacity="0.7"/>
+    <circle cx="40" cy="300" r="0.7" opacity="0.5"/>
+    <circle cx="472" cy="300" r="0.6" opacity="0.4"/>
+    <circle cx="60" cy="380" r="1.0" opacity="0.7"/>
+    <circle cx="440" cy="400" r="0.8" opacity="0.6"/>
+    <circle cx="100" cy="440" r="0.5" opacity="0.4"/>
+    <circle cx="380" cy="460" r="1.2" opacity="0.8"/>
+    <circle cx="240" cy="470" r="0.6" opacity="0.5"/>
+    <circle cx="160" cy="440" r="0.9" opacity="0.6"/>
+    <circle cx="320" cy="48" r="0.5" opacity="0.4"/>
+    <circle cx="200" cy="24" r="0.8" opacity="0.6"/>
+  </g>
+
+  <!-- ════════ SRI YANTRA (sacred geometry) ════════ -->
+  <g stroke="rgba(251,191,36,0.7)" stroke-width="0.6" fill="none" stroke-linejoin="round" transform="translate(256 256)">
+    <!-- Outer square with 4 gates (Bhupura) -->
+    <rect x="-86" y="-86" width="172" height="172" rx="1"/>
+    <rect x="-82" y="-82" width="164" height="164" rx="1"/>
+    <!-- T-gates -->
+    <line x1="0" y1="-86" x2="0" y2="-94"/>
+    <line x1="-6" y1="-90" x2="6" y2="-90"/>
+    <line x1="0" y1="86" x2="0" y2="94"/>
+    <line x1="-6" y1="90" x2="6" y2="90"/>
+    <line x1="-86" y1="0" x2="-94" y2="0"/>
+    <line x1="-90" y1="-6" x2="-90" y2="6"/>
+    <line x1="86" y1="0" x2="94" y2="0"/>
+    <line x1="90" y1="-6" x2="90" y2="6"/>
+
+    <!-- 16-petal lotus -->
+    <circle cx="0" cy="0" r="78"/>
+    <g>
+      <line x1="62" y1="0" x2="78" y2="0"/>
+      <line x1="57.3" y1="22.5" x2="72.2" y2="28.4"/>
+      <line x1="43.8" y1="43.8" x2="55.2" y2="55.2"/>
+      <line x1="22.5" y1="57.3" x2="28.4" y2="72.2"/>
+      <line x1="0" y1="62" x2="0" y2="78"/>
+      <line x1="-22.5" y1="57.3" x2="-28.4" y2="72.2"/>
+      <line x1="-43.8" y1="43.8" x2="-55.2" y2="55.2"/>
+      <line x1="-57.3" y1="22.5" x2="-72.2" y2="28.4"/>
+      <line x1="-62" y1="0" x2="-78" y2="0"/>
+      <line x1="-57.3" y1="-22.5" x2="-72.2" y2="-28.4"/>
+      <line x1="-43.8" y1="-43.8" x2="-55.2" y2="-55.2"/>
+      <line x1="-22.5" y1="-57.3" x2="-28.4" y2="-72.2"/>
+      <line x1="0" y1="-62" x2="0" y2="-78"/>
+      <line x1="22.5" y1="-57.3" x2="28.4" y2="-72.2"/>
+      <line x1="43.8" y1="-43.8" x2="55.2" y2="-55.2"/>
+      <line x1="57.3" y1="-22.5" x2="72.2" y2="-28.4"/>
+    </g>
+    <circle cx="0" cy="0" r="62"/>
+
+    <!-- 8-petal lotus -->
+    <circle cx="0" cy="0" r="56"/>
+    <g>
+      <line x1="44" y1="0" x2="56" y2="0"/>
+      <line x1="31.1" y1="31.1" x2="39.6" y2="39.6"/>
+      <line x1="0" y1="44" x2="0" y2="56"/>
+      <line x1="-31.1" y1="31.1" x2="-39.6" y2="39.6"/>
+      <line x1="-44" y1="0" x2="-56" y2="0"/>
+      <line x1="-31.1" y1="-31.1" x2="-39.6" y2="-39.6"/>
+      <line x1="0" y1="-44" x2="0" y2="-56"/>
+      <line x1="31.1" y1="-31.1" x2="39.6" y2="-39.6"/>
+    </g>
+    <circle cx="0" cy="0" r="44"/>
+
+    <!-- 9 interlocking triangles -->
+    <!-- Upward (Shiva) — 4 triangles, apex up -->
+    <polygon points="0,-84 -78,46 78,46"/>
+    <polygon points="0,-66 -62,38 62,38"/>
+    <polygon points="0,-48 -46,30 46,30"/>
+    <polygon points="0,-30 -30,22 30,22"/>
+    <!-- Downward (Shakti) — 5 triangles, apex down -->
+    <polygon points="0,84 -78,-46 78,-46"/>
+    <polygon points="0,66 -62,-38 62,-38"/>
+    <polygon points="0,48 -46,-30 46,-30"/>
+    <polygon points="0,30 -30,-22 30,-22"/>
+    <polygon points="0,12 -18,-14 18,-14"/>
+
+    <!-- Bindu (central point) -->
+    <circle cx="0" cy="0" r="1.8" fill="rgba(255,251,230,0.9)" stroke="none"/>
+  </g>
+
+  <!-- ════════ ORB ════════ -->
+  <!-- Outer ambient glow -->
+  <circle cx="256" cy="256" r="140" fill="url(#orbGlow)"/>
+
+  <!-- 12 rotating light rays (static) -->
+  <g transform="translate(256 256)" opacity="0.5">
+    <g>
+      <rect x="-1.5" y="-100" width="3" height="80" rx="1.5" fill="url(#rayFade)" transform="rotate(0)"/>
+      <rect x="-1.5" y="-100" width="3" height="80" rx="1.5" fill="url(#rayFade)" transform="rotate(30)"/>
+      <rect x="-1.5" y="-100" width="3" height="80" rx="1.5" fill="url(#rayFade)" transform="rotate(60)"/>
+      <rect x="-1.5" y="-100" width="3" height="80" rx="1.5" fill="url(#rayFade)" transform="rotate(90)"/>
+      <rect x="-1.5" y="-100" width="3" height="80" rx="1.5" fill="url(#rayFade)" transform="rotate(120)"/>
+      <rect x="-1.5" y="-100" width="3" height="80" rx="1.5" fill="url(#rayFade)" transform="rotate(150)"/>
+      <rect x="-1.5" y="-100" width="3" height="80" rx="1.5" fill="url(#rayFade)" transform="rotate(180)"/>
+      <rect x="-1.5" y="-100" width="3" height="80" rx="1.5" fill="url(#rayFade)" transform="rotate(210)"/>
+      <rect x="-1.5" y="-100" width="3" height="80" rx="1.5" fill="url(#rayFade)" transform="rotate(240)"/>
+      <rect x="-1.5" y="-100" width="3" height="80" rx="1.5" fill="url(#rayFade)" transform="rotate(270)"/>
+      <rect x="-1.5" y="-100" width="3" height="80" rx="1.5" fill="url(#rayFade)" transform="rotate(300)"/>
+      <rect x="-1.5" y="-100" width="3" height="80" rx="1.5" fill="url(#rayFade)" transform="rotate(330)"/>
+    </g>
+  </g>
+
+  <!-- 8 counter-rotating inner rays (static) -->
+  <g transform="translate(256 256)" opacity="0.35">
+    <g transform="rotate(22.5)">
+      <rect x="-0.75" y="-70" width="1.5" height="50" rx="0.75" fill="rgba(255,215,128,0.4)" transform="rotate(0)"/>
+      <rect x="-0.75" y="-70" width="1.5" height="50" rx="0.75" fill="rgba(255,215,128,0.4)" transform="rotate(45)"/>
+      <rect x="-0.75" y="-70" width="1.5" height="50" rx="0.75" fill="rgba(255,215,128,0.4)" transform="rotate(90)"/>
+      <rect x="-0.75" y="-70" width="1.5" height="50" rx="0.75" fill="rgba(255,215,128,0.4)" transform="rotate(135)"/>
+      <rect x="-0.75" y="-70" width="1.5" height="50" rx="0.75" fill="rgba(255,215,128,0.4)" transform="rotate(180)"/>
+      <rect x="-0.75" y="-70" width="1.5" height="50" rx="0.75" fill="rgba(255,215,128,0.4)" transform="rotate(225)"/>
+      <rect x="-0.75" y="-70" width="1.5" height="50" rx="0.75" fill="rgba(255,215,128,0.4)" transform="rotate(270)"/>
+      <rect x="-0.75" y="-70" width="1.5" height="50" rx="0.75" fill="rgba(255,215,128,0.4)" transform="rotate(315)"/>
+    </g>
+  </g>
+
+  <!-- Main sphere -->
+  <circle cx="256" cy="256" r="88" fill="url(#orbBody)"/>
+
+  <!-- Inner glow ring -->
+  <circle cx="256" cy="256" r="88" fill="url(#innerRing)"/>
+
+  <!-- Iridescence swirl (simplified) -->
+  <g clip-path="url(#orbClip)" opacity="0.3">
+    <path d="M 168 256 A 88 88 0 0 1 344 256 A 88 88 0 0 1 168 256" fill="none" stroke="rgba(255,215,128,0.3)" stroke-width="20"/>
+  </g>
+
+  <!-- Hot core highlight (parallax) -->
+  <ellipse cx="232" cy="228" rx="28" ry="24" fill="url(#specular)" opacity="0.8"/>
+
+  <!-- Secondary highlight -->
+  <circle cx="288" cy="284" r="12" fill="rgba(253,230,138,0.5)" opacity="0.6"/>
+
+  <!-- Rim light -->
+  <circle cx="256" cy="256" r="86" fill="none" stroke="rgba(255,215,128,0.25)" stroke-width="2"/>
+
+  <!-- Floating sparkles inside orb -->
+  <g clip-path="url(#orbClip)">
+    <circle cx="220" cy="240" r="1.5" fill="#fffbeb" opacity="0.9"/>
+    <circle cx="280" cy="250" r="1.2" fill="#fffbeb" opacity="0.7"/>
+    <circle cx="250" cy="290" r="1.0" fill="#fffbeb" opacity="0.8"/>
+    <circle cx="270" cy="220" r="1.3" fill="#fffbeb" opacity="0.6"/>
+    <circle cx="240" cy="270" r="0.8" fill="#fffbeb" opacity="0.5"/>
+  </g>
+
+  <!-- Orbiting sparkles outside orb -->
+  <g fill="#fbbf24">
+    <circle cx="196" cy="196" r="2" opacity="0.7"/>
+    <circle cx="320" cy="200" r="1.5" opacity="0.5"/>
+    <circle cx="310" cy="320" r="2" opacity="0.6"/>
+    <circle cx="200" cy="310" r="1.8" opacity="0.5"/>
+    <circle cx="256" cy="170" r="1.5" opacity="0.4"/>
+  </g>
+
+  <!-- ════════ ZION TEXT ════════ -->
+  <text x="256" y="440" text-anchor="middle" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="28" font-weight="800" letter-spacing="6" fill="#fbbf24" opacity="0.95">ZION</text>
+  <text x="256" y="464" text-anchor="middle" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="500" letter-spacing="3" fill="#9333EA" opacity="0.7">TERRA NOVA</text>
+</svg>

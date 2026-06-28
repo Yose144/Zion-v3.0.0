@@ -4705,6 +4705,43 @@ def check_port_open(host: str, port: int, timeout: float = 1.0) -> bool:
     except Exception:
         return False
 
+def fetch_prometheus_metrics(host: str, port: int, timeout: float = 2.0) -> dict:
+    """Fetch and parse Prometheus metrics from a service endpoint."""
+    try:
+        url = f"http://{host}:{port}/metrics"
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            text = resp.read().decode("utf-8", errors="replace")
+        metrics = {}
+        for line in text.splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            parts = line.split()
+            if len(parts) >= 2:
+                key = parts[0]
+                # Strip labels: metric{label="val"} → metric
+                if "{" in key:
+                    key = key.split("{")[0]
+                try:
+                    val = float(parts[-1])
+                    metrics[key] = val
+                except ValueError:
+                    pass
+        return metrics
+    except Exception:
+        return {}
+
+def fetch_service_json(host: str, port: int, path: str = "/health", timeout: float = 2.0) -> dict:
+    """Fetch JSON from a service endpoint."""
+    try:
+        url = f"http://{host}:{port}{path}"
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return json.loads(resp.read().decode("utf-8", errors="replace"))
+    except Exception:
+        return {}
+
 # ── Network topology + App connectivity ──────────────────────────────────
 
 def get_network_topology() -> dict:
@@ -8518,19 +8555,133 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         "status": "online" if alive else "offline"})
         elif route == "/api/oasis/stats":
             alive = check_port_open("127.0.0.1", 8094, timeout=1.5)
+            health = fetch_service_json("127.0.0.1", 8094, "/health") if alive else {}
             self._json({"ok": alive, "service": "oasis", "port": 8094,
                         "status": "online" if alive else "offline",
-                        "avatars": 0, "active_quests": 0})
+                        "version": health.get("data", {}).get("version", "—") if health else "—",
+                        "avatars": 0, "active_quests": 0,
+                        "guilds": 0, "territories": 0, "players": 0,
+                        "economy_volume_zion": 0})
         elif route == "/api/oasis/quests":
-            self._json({"ok": True, "quests": [], "total": 0, "note": "OASIS not yet deployed"})
+            self._json({"ok": True, "quests": [], "total": 0, "note": "OASIS game quests not yet available"})
         elif route == "/api/freeworld/stats":
-            self._json({"ok": True, "service": "freeworld", "status": "planned",
-                        "settlements": 0, "citizens": 0, "note": "Free World layer not yet deployed"})
+            alive = check_port_open("127.0.0.1", 8095, timeout=1.5)
+            metrics = fetch_prometheus_metrics("127.0.0.1", 8095) if alive else {}
+            self._json({"ok": alive, "service": "freeworld", "port": 8095,
+                        "status": "online" if alive else "offline",
+                        "blocks_scanned": int(metrics.get("zion_free_world_blocks_scanned", 0)),
+                        "grants_pending": int(metrics.get("zion_free_world_grants_pending", 0)),
+                        "grants_approved": int(metrics.get("zion_free_world_grants_approved", 0)),
+                        "grants_disbursed": int(metrics.get("zion_free_world_grants_disbursed", 0)),
+                        "projects_active": int(metrics.get("zion_free_world_projects_active", 0)),
+                        "total_accumulated_zion": metrics.get("zion_free_world_total_accumulated_zion", 0),
+                        "total_disbursed_zion": metrics.get("zion_free_world_total_disbursed_zion", 0),
+                        "settlements": int(metrics.get("zion_free_world_projects_active", 0)),
+                        "citizens": 0})
         elif route == "/api/space/stats":
-            self._json({"ok": True, "service": "issobella-space", "status": "planned",
-                        "missions": 0, "satellites": 0, "note": "Issobella Space layer not yet deployed"})
+            alive = check_port_open("127.0.0.1", 8096, timeout=1.5)
+            metrics = fetch_prometheus_metrics("127.0.0.1", 8096) if alive else {}
+            self._json({"ok": alive, "service": "issobella-space", "port": 8096,
+                        "status": "online" if alive else "offline",
+                        "blocks_scanned": int(metrics.get("zion_issobella_blocks_scanned", 0)),
+                        "missions_planning": int(metrics.get("zion_issobella_missions_planning", 0)),
+                        "missions_launched": int(metrics.get("zion_issobella_missions_launched", 0)),
+                        "missions_operational": int(metrics.get("zion_issobella_missions_operational", 0)),
+                        "observations_recorded": int(metrics.get("zion_issobella_observations_recorded", 0)),
+                        "proposals_submitted": int(metrics.get("zion_issobella_proposals_submitted", 0)),
+                        "total_accumulated_zion": metrics.get("zion_issobella_total_accumulated_zion", 0),
+                        "total_disbursed_zion": metrics.get("zion_issobella_total_disbursed_zion", 0),
+                        "missions": int(metrics.get("zion_issobella_missions_operational", 0)),
+                        "satellites": 0})
         elif route == "/api/space/missions":
             self._json({"ok": True, "missions": [], "total": 0, "note": "Issobella Space not yet deployed"})
+        # ── L3 endpoints: WARP, AI agents, NCL ──
+        elif route == "/api/l3/warp/chains":
+            warp_alive = check_port_open("127.0.0.1", 9333, timeout=1.5)
+            self._json({"ok": warp_alive, "chains": [], "total": 0,
+                        "status": "online" if warp_alive else "offline",
+                        "note": "WARP relay not yet started" if not warp_alive else ""})
+        elif route == "/api/l3/warp/transfers":
+            warp_alive = check_port_open("127.0.0.1", 9333, timeout=1.5)
+            self._json({"ok": warp_alive, "transfers": [], "total": 0,
+                        "status": "online" if warp_alive else "offline"})
+        elif route == "/api/l3/ai/agents":
+            hiran_status = get_ai_services_status()
+            hiran = hiran_status.get("hiran", {})
+            orch = hiran_status.get("hiranyagarbha", {})
+            agents = []
+            if orch.get("alive"):
+                # Fetch agent list from orchestrator if available
+                orch_data = fetch_service_json("127.0.0.1", 8001, "/api/agents", timeout=2.0)
+                if orch_data.get("success"):
+                    agents = orch_data.get("data", {}).get("agents", [])
+            self._json({
+                "ok": True,
+                "agents": agents,
+                "total": len(agents),
+                "hiran_alive": hiran.get("alive", False),
+                "hiran_backend": hiran.get("backend", "none"),
+                "hiran_model": hiran.get("model", "—"),
+                "orchestrator_alive": orch.get("alive", False),
+                "orchestrator_agents": orch.get("agents", 0),
+                "orchestrator_tasks": orch.get("tasks", 0),
+            })
+        elif route == "/api/l3/ncl/jobs":
+            hiran_status = get_ai_services_status()
+            orch = hiran_status.get("hiranyagarbha", {})
+            jobs = []
+            if orch.get("alive"):
+                # Fetch NCL jobs from orchestrator if available
+                jobs_data = fetch_service_json("127.0.0.1", 8001, "/api/ncl/jobs", timeout=2.0)
+                if jobs_data.get("success"):
+                    jobs = jobs_data.get("data", {}).get("jobs", [])
+            self._json({
+                "ok": True,
+                "jobs": jobs,
+                "total": len(jobs),
+                "orchestrator_alive": orch.get("alive", False),
+                "orchestrator_tasks": orch.get("tasks", 0),
+            })
+        # ── L4 endpoints: OASIS game data ──
+        elif route == "/api/l4/stats":
+            alive = check_port_open("127.0.0.1", 8094, timeout=1.5)
+            health = fetch_service_json("127.0.0.1", 8094, "/health") if alive else {}
+            self._json({"ok": alive, "service": "oasis", "port": 8094,
+                        "status": "online" if alive else "offline",
+                        "version": health.get("data", {}).get("version", "—") if health else "—",
+                        "avatars": 0, "guilds": 0, "territories": 0,
+                        "active_quests": 0, "players": 0, "economy_volume_zion": 0})
+        elif route == "/api/l4/avatars":
+            self._json({"ok": True, "avatars": [], "total": 0, "note": "OASIS avatars not yet available"})
+        elif route == "/api/l4/quests":
+            self._json({"ok": True, "quests": [], "total": 0, "note": "OASIS quests not yet available"})
+        # ── L5 endpoints: Free World humanitarian ──
+        elif route == "/api/l5/stats":
+            alive = check_port_open("127.0.0.1", 8095, timeout=1.5)
+            metrics = fetch_prometheus_metrics("127.0.0.1", 8095) if alive else {}
+            self._json({"ok": alive, "service": "freeworld", "port": 8095,
+                        "status": "online" if alive else "offline",
+                        "blocks_scanned": int(metrics.get("zion_free_world_blocks_scanned", 0)),
+                        "grants_pending": int(metrics.get("zion_free_world_grants_pending", 0)),
+                        "grants_approved": int(metrics.get("zion_free_world_grants_approved", 0)),
+                        "grants_disbursed": int(metrics.get("zion_free_world_grants_disbursed", 0)),
+                        "projects_active": int(metrics.get("zion_free_world_projects_active", 0)),
+                        "total_accumulated_zion": metrics.get("zion_free_world_total_accumulated_zion", 0),
+                        "total_disbursed_zion": metrics.get("zion_free_world_total_disbursed_zion", 0)})
+        # ── L6 endpoints: Issobella space ──
+        elif route == "/api/l6/stats":
+            alive = check_port_open("127.0.0.1", 8096, timeout=1.5)
+            metrics = fetch_prometheus_metrics("127.0.0.1", 8096) if alive else {}
+            self._json({"ok": alive, "service": "issobella-space", "port": 8096,
+                        "status": "online" if alive else "offline",
+                        "blocks_scanned": int(metrics.get("zion_issobella_blocks_scanned", 0)),
+                        "missions_planning": int(metrics.get("zion_issobella_missions_planning", 0)),
+                        "missions_launched": int(metrics.get("zion_issobella_missions_launched", 0)),
+                        "missions_operational": int(metrics.get("zion_issobella_missions_operational", 0)),
+                        "observations_recorded": int(metrics.get("zion_issobella_observations_recorded", 0)),
+                        "proposals_submitted": int(metrics.get("zion_issobella_proposals_submitted", 0)),
+                        "total_accumulated_zion": metrics.get("zion_issobella_total_accumulated_zion", 0),
+                        "total_disbursed_zion": metrics.get("zion_issobella_total_disbursed_zion", 0)})
         elif route == "/api/mempool":
             try:
                 self._json(get_mempool_detail())
