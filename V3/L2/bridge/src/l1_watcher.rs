@@ -25,6 +25,7 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
+use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
 use tokio::sync::mpsc;
@@ -94,6 +95,8 @@ pub struct L1Watcher {
     consecutive_rpc_errors: u32,
     /// Whether we are currently using the backup RPC URL.
     using_backup_rpc: bool,
+    /// Shared metrics for gauge updates (optional — None in tests).
+    metrics: Option<Arc<crate::metrics::BridgeMetrics>>,
 }
 
 impl L1Watcher {
@@ -104,6 +107,21 @@ impl L1Watcher {
             pending_locks: HashMap::new(),
             consecutive_rpc_errors: 0,
             using_backup_rpc: false,
+            metrics: None,
+        }
+    }
+
+    /// Attach shared metrics so the watcher can update gauges.
+    pub fn with_metrics(mut self, metrics: Arc<crate::metrics::BridgeMetrics>) -> Self {
+        self.metrics = Some(metrics);
+        self
+    }
+
+    /// Update the shared metrics gauge with the latest processed L1 height.
+    fn update_metrics(&self) {
+        if let Some(ref m) = self.metrics {
+            m.last_l1_height
+                .store(self.last_processed_height, std::sync::atomic::Ordering::Relaxed);
         }
     }
 
@@ -213,6 +231,7 @@ impl L1Watcher {
             }
             // Advance only as far as we successfully scanned.
             self.last_processed_height = highest_ok;
+            self.update_metrics();
         }
 
         let finalized_height = current_height.saturating_sub(self.config.finality_blocks);
@@ -334,6 +353,9 @@ impl L1Watcher {
                 );
 
                 self.pending_locks.insert(tx_hash, lock_event);
+                if let Some(ref m) = self.metrics {
+                    m.l1_locks_detected.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                }
             }
         }
     }
