@@ -5473,7 +5473,7 @@ async function overviewLogSwitch(svcId){
 // DAO Governance Tab
 // ─────────────────────────────────────────────────────────────────────
 
-const DAO_API = 'http://127.0.0.1:8081';
+const DAO_API = 'http://127.0.0.1:8450';
 const DAO_PAGE_SIZE = 10;
 let _daoPage = 0;
 let _daoTotalProposals = 0;

@@ -108,7 +108,7 @@ Health endpointy:
 
 curl -fsS http://127.0.0.1:9100/health
 curl -fsS http://127.0.0.1:8888/health
-curl -fsS http://127.0.0.1:8081/api/dao/health
+curl -fsS http://127.0.0.1:8450/api/dao/health
 
 Pokud je vse OK:
 - bridge vrati JSON se status ok

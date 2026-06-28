@@ -25,7 +25,7 @@ import { MiningSnake } from './games/MiningSnake';
 import { BlockBreaker } from './games/BlockBreaker';
 import { FlappyNode } from './games/FlappyNode';
 import { StarMiner } from './games/StarMiner';
-import OasisAmbientScene from '@/components/OasisAmbientScene';
+import ShowdownHero from '@/components/ShowdownHero';
 import SpotifyBanner from '@/components/SpotifyBanner';
 import StargatePortal from '@/components/StargatePortal';
 
@@ -286,40 +286,40 @@ interface BattleStat {
 const BATTLE_STATS: BattleStat[] = [
   {
     icon: Zap,
-    claim: 'ZION has 6-decimal precision vs Doge\'s 8.',
-    claimCs: 'ZION má 6 desetinných míst vs Doge 8.',
+    claim: 'ZION has 6-decimal precision. Doge has 8 — because nothing says "fun money" like counting satoshis.',
+    claimCs: 'ZION má 6 desetinných míst. Doge má 8 — protože nic neříká "zábavné peníze" jako počítání satoshi.',
     winner: 'zion',
     winnerLabel: 'ZION wins on simplicity',
     winnerLabelCs: 'ZION vyhrává na jednoduchosti',
   },
   {
     icon: Heart,
-    claim: 'ZION has a humanitarian fund. Doge has memes.',
-    claimCs: 'ZION má humanitární fond. Doge má memy.',
+    claim: 'ZION has a 5% humanitarian fund built into consensus. Doge has... a meme of a dog.',
+    claimCs: 'ZION má 5% humanitární fond zabudovaný v konsenzu. Doge má... mem psa.',
     winner: 'zion',
     winnerLabel: 'ZION wins on impact',
     winnerLabelCs: 'ZION vyhrává na dopadu',
   },
   {
     icon: Shield,
-    claim: 'ZION is quantum-resistant. Doge is... not.',
-    claimCs: 'ZION je kvantově-odolný. Doge... není.',
+    claim: 'ZION is quantum-resistant. Doge is Scrypt from 2013. Good luck with that, quantum computers.',
+    claimCs: 'ZION je kvantově-odolný. Doge je Scrypt z roku 2013. Hodně štěstí, kvantové počítače.',
     winner: 'zion',
     winnerLabel: 'ZION wins on security',
     winnerLabelCs: 'ZION vyhrává na bezpečnosti',
   },
   {
     icon: Sparkles,
-    claim: 'Doge has a Shiba Inu mascot. ZION has a stargate.',
-    claimCs: 'Doge má maskota Shiba Inu. ZION má hvězdnou bránu.',
+    claim: 'Doge has a Shiba Inu mascot that peaked in 2013. ZION has a stargate to six layers of reality.',
+    claimCs: 'Doge má maskota Shiba Inu, který vrcholil v roce 2013. ZION má hvězdnou bránu do šesti vrstev reality.',
     winner: 'tie',
-    winnerLabel: 'Tie on style',
-    winnerLabelCs: 'Remíza na stylu',
+    winnerLabel: 'Tie on style (both iconic)',
+    winnerLabelCs: 'Remíza na stylu (oba ikonické)',
   },
   {
     icon: Trophy,
-    claim: 'Doge is on every exchange. ZION is building its bridge.',
-    claimCs: 'Doge je na každé burze. ZION buduje svůj most.',
+    claim: 'Doge is on every exchange. ZION is building a bridge to Base. One is already there, the other is building the future.',
+    claimCs: 'Doge je na každé burze. ZION buduje most na Base. Jeden už tam je, druhý buduje budoucnost.',
     winner: 'doge',
     winnerLabel: 'Doge wins on availability (for now)',
     winnerLabelCs: 'Doge vyhrává na dostupnosti (zatím)',
@@ -460,7 +460,7 @@ export default function DogeVsZionPage() {
           </button>
         </div>
 
-        {/* ─── Hero s Oasis ambient scene ─── */}
+        {/* ─── Hero — cosmic showdown ─── */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -468,19 +468,19 @@ export default function DogeVsZionPage() {
           className="relative overflow-hidden zion-rainbow-card"
           style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
-          {/* Oasis ambient scene jako background */}
-          <OasisAmbientScene className="absolute inset-0 h-full w-full" />
+          {/* Cosmic showdown background */}
+          <ShowdownHero className="absolute inset-0 h-full w-full" />
 
           {/* Overlay obsah */}
-          <div className="relative z-10 flex flex-col items-center px-6 py-12 md:py-16 text-center">
+          <div className="relative z-10 flex flex-col items-center px-6 py-14 md:py-20 text-center">
             {/* Stargate portal nad titulkem */}
             <motion.div
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ duration: 0.8, ease: 'easeOut' }}
-              className="mb-4"
+              className="mb-6"
             >
-              <StargatePortal size={72} active />
+              <StargatePortal size={96} active />
             </motion.div>
 
             {/* Badge */}
@@ -488,40 +488,42 @@ export default function DogeVsZionPage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="inline-flex items-center gap-2 rounded-full border border-zion-purple/30 bg-zion-purple/10 px-4 py-1 text-xs font-semibold tracking-widest text-zion-purple uppercase mb-4"
+              className="inline-flex items-center gap-2 rounded-full border border-zion-purple/30 bg-zion-purple/10 px-4 py-1 text-xs font-semibold tracking-widest text-zion-purple uppercase mb-5"
             >
               <Swords className="h-3.5 w-3.5" />
-              {cs ? 'Showdown & Arcade' : 'Showdown & Arcade'}
+              {cs ? 'Showdown & Arkáda' : 'Showdown & Arcade'}
             </motion.div>
 
-            {/* Titulek s gradient + animace */}
+            {/* Titulek — split gradient: amber Doge vs purple ZION */}
             <motion.h1
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.3, duration: 0.5 }}
-              className="text-4xl md:text-6xl font-bold text-gradient leading-tight"
+              className="text-5xl md:text-7xl font-black leading-tight tracking-tight"
             >
-              Doge vs ZION
+              <span className="bg-gradient-to-r from-amber-400 to-amber-600 bg-clip-text text-transparent">Doge</span>
+              <span className="text-gray-500 mx-3 font-light">vs</span>
+              <span className="bg-gradient-to-r from-purple-400 to-fuchsia-500 bg-clip-text text-transparent">ZION</span>
             </motion.h1>
 
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="mt-2 text-lg md:text-xl font-semibold text-gray-200"
+              className="mt-3 text-base md:text-lg font-semibold text-gray-200"
             >
-              {cs ? 'Arkáda & Showdown' : 'Arcade & Showdown'}
+              {cs ? 'Arkáda & Srovnání' : 'Arcade & Showdown'}
             </motion.p>
 
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
-              className="mt-3 text-sm md:text-base text-gray-300 max-w-xl"
+              className="mt-3 text-sm md:text-base text-gray-400 max-w-2xl leading-relaxed"
             >
               {cs
-                ? 'Může Doge konkurovat kvantově-odolnému, humanitárnímu ZION? Hraj a rozhodni.'
-                : 'Can the Doge compete with quantum-resistant, humanitarian-powered ZION? Play and decide.'}
+                ? 'Jeden má memy a Shiba Inu. Druhý je kvantově-odolný, humanitární a těží na hvězdách. Hraj a rozhodni kdo vyhraje.'
+                : 'One has memes and a Shiba Inu. The other is quantum-resistant, humanitarian, and mines on stars. Play and decide who wins.'}
             </motion.p>
 
             {/* Statistiky */}
@@ -529,7 +531,7 @@ export default function DogeVsZionPage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
-              className="mt-5 flex flex-wrap justify-center gap-4 text-xs"
+              className="mt-6 flex flex-wrap justify-center gap-3 text-xs"
             >
               <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/50 px-3 py-1.5 backdrop-blur-sm">
                 <Gamepad2 className="h-3.5 w-3.5 text-zion-cyan" />
@@ -538,7 +540,7 @@ export default function DogeVsZionPage() {
               <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/50 px-3 py-1.5 backdrop-blur-sm">
                 <Trophy className="h-3.5 w-3.5 text-zion-gold" />
                 <span className="text-gray-300">
-                  {Object.values(highScores).reduce((a, b) => a + b, 0)} {cs ? 'celkem bodů' : 'total points'}
+                  {Object.values(highScores).reduce((a, b) => a + b, 0)} {cs ? 'bodů' : 'pts'}
                 </span>
               </div>
               <div className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 backdrop-blur-sm ${zion.connected ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-white/10 bg-black/50'}`}>
@@ -786,8 +788,8 @@ export default function DogeVsZionPage() {
               </div>
               <p className="text-xs text-gray-400 leading-relaxed mb-4">
                 {cs
-                  ? 'Legendární klikárna, která to všechno začala. Těž Dogecoiny, najmi psy, let na měsíc.'
-                  : 'The legendary clicker that started it all. Mine Dogecoins, hire dogs, go to the moon.'}
+                  ? 'Legendární klikárna, která to všechno začala. Těž Dogecoiny, najmi psy, let na měsíc. 100% time-waster, 0% kvantová odolnost.'
+                  : 'The legendary clicker that started it all. Mine Dogecoins, hire dogs, go to the moon. 100% time-waster, 0% quantum resistance.'}
               </p>
               <div
                 className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all group-hover:gap-3"
@@ -823,8 +825,8 @@ export default function DogeVsZionPage() {
               </div>
               <p className="text-xs text-gray-400 leading-relaxed mb-4">
                 {cs
-                  ? 'ZION odpověď na Doge Miner 2. Těž na hvězdě, stavej rigy, dosáhni Issobelly.'
-                  : "ZION's answer to Doge Miner 2. Mine on the star, build rigs, reach Issobella."}
+                  ? 'ZION odpověď na Doge Miner 2. Těž na hvězdě, stavej rigy od CPU po Cosmic Harmony, dosáhni Issobelly. 100% time-waster, 100% kvantová odolnost.'
+                  : "ZION's answer to Doge Miner 2. Mine on the star, build rigs from CPU to Cosmic Harmony, reach Issobella. 100% time-waster, 100% quantum resistance."}
               </p>
               <div
                 className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all group-hover:gap-3"

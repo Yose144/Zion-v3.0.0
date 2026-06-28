@@ -1,13 +1,14 @@
 //! Shared types for bridge operations.
 //!
-//! ## V3 Decimal Convention
+//! ## V3 Decimal Convention (post-3.0.3 fork)
 //!
-//! L1 atomic unit (flowers): 1 ZION = 1,000,000,000,000 flowers (12 decimals)
+//! L1 atomic unit (flowers): 1 ZION = 1,000,000 flowers (6 decimals)
 //! EVM wZION: 1 wZION = 1e18 wei (18 decimals)
-//! Conversion factor: 1e6 (18 - 12 = 6)
+//! Conversion factor: 1e12 (18 - 6 = 12)
 //!
-//! **CRITICAL**: Legacy L2 used 6 decimals. V3 uses 12. All conversion
-//! functions below are updated for 12-decimal flowers.
+//! **CRITICAL**: Pre-3.0.3 L1 used 12 decimals (1e12 flowers/ZION).
+//! Post-3.0.3 L1 uses 6 decimals (1e6 flowers/ZION). The bridge
+//! FLOWERS_TO_WEI_FACTOR is now 1e12 (18-6=12).
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

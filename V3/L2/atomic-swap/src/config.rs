@@ -50,8 +50,8 @@ impl Default for SwapIdentity {
         Self {
             name: "ZION Atomic Swap Service".into(),
             network: "mainnet".into(),
-            min_lock_flowers: 1_000_000_000_000, // 1 ZION
-            max_lock_atomic: 10_000_000_000_000, // 10 000 ZION
+            min_lock_flowers: 1_000_000, // 1 ZION (1e6 scale)
+            max_lock_atomic: 10_000_000_000, // 10 000 ZION (1e6 scale)
             release_fee_atomic: 2_000,           // 0.002 ZION
         }
     }
@@ -59,7 +59,7 @@ impl Default for SwapIdentity {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct L1Config {
-    /// L1 raw TCP JSON-RPC address, e.g. `204.168.245.175:8443`
+    /// L1 raw TCP JSON-RPC address, e.g. `127.0.0.1:8443`
     pub rpc_url: String,
 
     /// Bearer token for L1 RPC (value of `ZION_RPC_TOKEN` on node).

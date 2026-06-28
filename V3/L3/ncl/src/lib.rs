@@ -3,9 +3,9 @@
 //! Decentralized AI task marketplace where miners provide GPU/NPU compute
 //! and earn ZION rewards for executing AI inference jobs.
 //!
-//! ## V3 Decimal Convention
+//! ## V3 Decimal Convention (post-3.0.3 fork)
 //!
-//! All ZION amounts use **12-decimal flowers** (1 ZION = 10^12 flowers).
+//! All ZION amounts use **6-decimal flowers** (1 ZION = 10^6 flowers).
 //! Fields named `reward_flowers`, `total_earned`, etc. are in flowers.
 //!
 //! ## Architecture
