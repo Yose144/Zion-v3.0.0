@@ -160,11 +160,11 @@ export default function Navigation() {
       <div className="relative mx-auto w-[min(90vw,1320px)] py-4">
         <div className="zion-panel flex items-center justify-between gap-4 px-4 py-3 ring-1 ring-white/5 md:px-5">
           <Link href="/" className="flex items-center space-x-3 group">
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center relative overflow-hidden border border-white/20 group-hover:border-zion-gold/50 transition-colors bg-black/40 shadow-[0_12px_34px_rgba(0,0,0,0.35)]">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,215,0,0.3),transparent_60%)]" />
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center relative overflow-hidden border border-white/20 group-hover:border-zion-cyan/50 transition-colors bg-black/40 shadow-[0_12px_34px_rgba(0,0,0,0.35)]">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(111,255,240,0.15),transparent_60%)]" />
               <Image
-                src="/zion-icon-hiran.svg"
-                alt="ZION Logo — Hiran Golden Orb"
+                src="/stargate-icon.svg"
+                alt="ZION Stargate"
                 width={48}
                 height={48}
                 className="relative z-10 w-full h-full"
