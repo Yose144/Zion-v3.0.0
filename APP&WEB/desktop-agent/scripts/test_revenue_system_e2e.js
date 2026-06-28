@@ -16,11 +16,30 @@
  */
 
 const { spawn } = require('child_process');
+const { spawnSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
 const TEST_DURATION_DEFAULT = 60; // seconds
 const REVENUE_CHECK_INTERVAL = 5000; // ms
+
+function resolvePythonCommand() {
+  const candidates = process.platform === 'win32'
+    ? ['python', 'python3', 'py']
+    : ['python3', 'python'];
+
+  for (const cmd of candidates) {
+    try {
+      const probeArgs = cmd === 'py' ? ['-3', '--version'] : ['--version'];
+      const probe = spawnSync(cmd, probeArgs, { stdio: 'ignore' });
+      if (probe.status === 0) return { cmd, extraArgs: cmd === 'py' ? ['-3'] : [] };
+    } catch {
+      // try next candidate
+    }
+  }
+
+  return null;
+}
 
 class RevenueSystemE2ETest {
   constructor(options = {}) {
@@ -82,7 +101,13 @@ class RevenueSystemE2ETest {
         ZION_DE_ENABLED: '1'
       };
 
-      const proc = spawn('python', [script, '--pool', this.pool, '--worker', this.worker, '--threads', '1'], {
+      const python = resolvePythonCommand();
+      if (!python) {
+        reject(new Error('Python runtime not found (tried python3/python/py)'));
+        return;
+      }
+
+      const proc = spawn(python.cmd, [...python.extraArgs, script, '--pool', this.pool, '--worker', this.worker, '--threads', '1'], {
         cwd: path.join(__dirname, '..', 'resources', 'mining'),
         env,
         stdio: ['pipe', 'pipe', 'pipe']
