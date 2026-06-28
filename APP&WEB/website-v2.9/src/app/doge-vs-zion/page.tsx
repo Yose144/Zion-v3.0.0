@@ -498,9 +498,9 @@ export default function DogeVsZionPage() {
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ duration: 0.8, ease: 'easeOut' }}
-              className="mb-4"
+              className="mb-4 w-full max-w-[360px]"
             >
-              <StargateLogo className="mx-auto max-w-[360px]" />
+              <StargateLogo className="w-full" />
             </motion.div>
 
             {/* Nápis pod stargatem */}
