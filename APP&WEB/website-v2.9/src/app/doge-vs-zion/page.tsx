@@ -508,7 +508,7 @@ export default function DogeVsZionPage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="text-2xl md:text-3xl font-bold tracking-tight"
+              className="relative z-20 text-2xl md:text-3xl font-bold tracking-tight"
             >
               <span className="bg-gradient-to-r from-zion-gold via-zion-purple to-zion-cyan bg-clip-text text-transparent">
                 {cs ? 'Showdown a Arkáda' : 'Showdown & Arcade'}
@@ -1128,53 +1128,6 @@ export default function DogeVsZionPage() {
           </div>
         </motion.section>
 
-        {/* ════════ STARGATE — Enter to Oasis ════════ */}
-        <motion.section
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-          className="relative px-4 py-20 md:py-28"
-        >
-          <div className="zion-container">
-            <div className="mx-auto max-w-2xl text-center mb-10">
-              <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-cyan/75 mb-3">
-                {cs ? 'Brána · Stargate' : 'Gateway · Stargate'}
-              </p>
-              <h2 className="text-3xl font-bold leading-tight text-white sm:text-4xl md:text-5xl">
-                {cs ? 'ZION Stargate' : 'ZION Stargate'}
-              </h2>
-              <p className="mt-4 text-base leading-relaxed text-gray-300 md:text-lg">
-                {cs
-                  ? 'Původní stargate z newearth.cz — 28 rotujících vrstev, 39 glyphů, 9 chevronů. Kosmický portál do ZION Oasis.'
-                  : 'The original stargate from newearth.cz — 28 rotating layers, 39 glyphs, 9 chevrons. Cosmic portal to ZION Oasis.'}
-              </p>
-            </div>
-
-            <StargateLogo className="mx-auto max-w-[360px]" />
-
-            {/* Enter to Oasis button */}
-            <div className="mt-10 flex justify-center">
-              <Link
-                href="/l4-oasis"
-                className="group inline-flex items-center gap-3 rounded-2xl border border-emerald-400/30 bg-gradient-to-br from-emerald-500/15 via-teal-500/8 to-transparent px-8 py-4 backdrop-blur-sm transition-all duration-300 hover:border-emerald-400/60 hover:shadow-[0_0_40px_rgba(16,185,129,0.25)] hover:scale-[1.04]"
-              >
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-emerald-400/30 bg-emerald-500/15 ring-1 ring-emerald-400/20 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-                  <Leaf className="h-5 w-5 text-emerald-300" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-lg font-bold text-emerald-300 tracking-wide">
-                    {cs ? 'Vstoupit do Oasis' : 'Enter to Oasis'}
-                  </span>
-                  <span className="text-[11px] text-gray-400 group-hover:text-gray-300 transition-colors">
-                    {cs ? 'L4 Metaverse · UE5 · On-chain' : 'L4 Metaverse · UE5 · On-chain'}
-                  </span>
-                </div>
-                <ArrowRight className="h-5 w-5 text-gray-500 transition-all duration-300 group-hover:text-emerald-300 group-hover:translate-x-1.5" />
-              </Link>
-            </div>
-          </div>
-        </motion.section>
       </div>
     </div>
   );
