@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import TahitiFlower from './TahitiFlower';
 import VisionBar from './VisionBar';
-import StargateGate from './StargateGate';
+import StargateLogo from './StargateLogo';
 
 export default function HeroSection() {
   const [expanded, setExpanded] = useState(false);
@@ -29,7 +29,7 @@ export default function HeroSection() {
           >
             <div className="flex flex-col items-center gap-5 pt-5 pb-2">
               <VisionBar />
-              <StargateGate />
+              <StargateLogo className="max-w-[280px]" />
             </div>
           </motion.div>
         )}

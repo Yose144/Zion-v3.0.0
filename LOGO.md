@@ -9,6 +9,9 @@
 
 Logo reprezentuje **Stargate** — kosmický portál mezi světy. Je to přesná replika stargate z newearth.cz, která symbolizuje bránu do ZION Oasis (L4 metaverse) a celého ZION ekosystému.
 
+> **Originál = animovaný stargate v gaming sekci (`/doge-vs-zion`).**
+> Všechny ostatní verze (navigace, favicon, OG, hero panel, novinky) jsou **renderované miniatury** tohoto originálu.
+
 ### Vizuální prvky
 
 | Prvek | Význam |
@@ -86,8 +89,10 @@ Všechny ikony jsou **vyrenderovány z live stargate** (Playwright screenshot z 
 
 | Umístění | Soubor | Velikost |
 |----------|--------|----------|
+| **Gaming sekce** (`/doge-vs-zion`) | `StargateLogo` komponenta | 360px max-width — **ORIGINÁL** |
+| **Hero panel** (Aloha, rozbalený) | `StargateLogo` komponenta | ~280px |
+| **Novinky** (DogeVsZionBanner) | `StargateLogo` komponenta | ~120px |
 | **Navigace** (header) | `stargate-icon.png` | 48×48px |
-| **Gaming sekce** (`/doge-vs-zion`) | `StargateLogo` komponenta | 360px max-width |
 | **Favicon** | `favicon.ico` | 32×32px |
 | **Apple touch** | `apple-icon.png` | 180×180px |
 | **OG image** | `stargate-og.png` | 1024×1024px |
