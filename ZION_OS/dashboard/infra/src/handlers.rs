@@ -379,7 +379,11 @@ async fn fetch_pool_stats(state: &AppState) -> anyhow::Result<PoolStats> {
     let mut invalid = 0u64;
     let mut total = 0u64;
     let mut blocks = 0u64;
-    let mut hashrate = 0.0f64;
+    let mut hashrate_hps = 0.0f64;
+    let mut hashrate_1h_hps = 0.0f64;
+    let mut hashrate_24h_hps = 0.0f64;
+    let mut active_sessions = 0u64;
+    let mut miners_tracked = 0u64;
 
     for line in body.lines() {
         if line.starts_with("zion_pool_accepted_total ") {
@@ -390,18 +394,27 @@ async fn fetch_pool_stats(state: &AppState) -> anyhow::Result<PoolStats> {
             total = line.split_whitespace().last().unwrap_or("0").parse().unwrap_or(0);
         } else if line.starts_with("zion_pool_blocks_found_total ") {
             blocks = line.split_whitespace().last().unwrap_or("0").parse().unwrap_or(0);
-        } else if line.starts_with("zion_pool_hashrate_khs ") {
-            hashrate = line.split_whitespace().last().unwrap_or("0").parse().unwrap_or(0.0);
+        } else if line.starts_with("zion_pool_hashrate_hps ") {
+            hashrate_hps = line.split_whitespace().last().unwrap_or("0").parse().unwrap_or(0.0);
+        } else if line.starts_with("zion_pool_hashrate_1h_hps ") {
+            hashrate_1h_hps = line.split_whitespace().last().unwrap_or("0").parse().unwrap_or(0.0);
+        } else if line.starts_with("zion_pool_hashrate_24h_hps ") {
+            hashrate_24h_hps = line.split_whitespace().last().unwrap_or("0").parse().unwrap_or(0.0);
+        } else if line.starts_with("zion_pool_active_sessions ") {
+            active_sessions = line.split_whitespace().last().unwrap_or("0").parse().unwrap_or(0);
+        } else if line.starts_with("zion_pool_miners_tracked ") {
+            miners_tracked = line.split_whitespace().last().unwrap_or("0").parse().unwrap_or(0);
         }
     }
     total = if total == 0 { valid + invalid } else { total };
 
+    // Convert H/s to KH/s for display
     Ok(PoolStats {
-        hashrate,
-        hashrate_1h: 0.0,
-        hashrate_24h: 0.0,
-        active_miners: 0, // Not directly exposed in Prometheus metrics
-        total_miners: 0,
+        hashrate: hashrate_hps / 1000.0,
+        hashrate_1h: hashrate_1h_hps / 1000.0,
+        hashrate_24h: hashrate_24h_hps / 1000.0,
+        active_miners: active_sessions,
+        total_miners: miners_tracked,
         valid_shares: valid,
         invalid_shares: invalid,
         total_shares: total,
