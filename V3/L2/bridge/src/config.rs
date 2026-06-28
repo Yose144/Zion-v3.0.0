@@ -499,7 +499,7 @@ log_level = "info"
 "#;
         let config: BridgeConfig = toml::from_str(toml_str).unwrap();
         assert_eq!(config.bridge.name, "Test Bridge");
-        assert_eq!(config.l1.rpc_url, "204.168.245.175:8443");
+        assert_eq!(config.l1.rpc_url, "127.0.0.1:8443");
         assert_eq!(config.evm_chains.len(), 1);
         assert_eq!(config.evm_chains[0].chain_id, "base");
         assert_eq!(config.evm_chains[0].evm_chain_id, 84532);
