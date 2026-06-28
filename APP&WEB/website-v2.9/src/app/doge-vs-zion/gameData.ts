@@ -329,7 +329,7 @@ export const ENEMIES: Record<EnemyType, EnemyDef> = {
   exploiter: {
     type: 'exploiter',
     name: 'Bridge Exploiter',
-    emoji: 'Hack',
+    emoji: '💻',
     baseHp: 100,
     speed: 1.0,
     reward: 25,

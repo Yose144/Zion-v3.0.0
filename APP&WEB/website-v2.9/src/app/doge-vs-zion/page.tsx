@@ -3,8 +3,22 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Volume2, VolumeX, Trophy, Play, Gamepad2, Sparkles } from 'lucide-react';
+import {
+  ArrowLeft,
+  Volume2,
+  VolumeX,
+  Trophy,
+  Play,
+  Gamepad2,
+  Sparkles,
+  Swords,
+  Zap,
+  Shield,
+  Heart,
+  Lock,
+} from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { usePolling } from '@/hooks/usePolling';
 import { ZionDefense } from './games/ZionDefense';
 import { MiningSnake } from './games/MiningSnake';
 import { BlockBreaker } from './games/BlockBreaker';
@@ -79,6 +93,113 @@ const GAMES: GameEntry[] = [
   },
 ];
 
+// ─── Coming Soon games ────────────────────────────────────────────────────────
+
+interface ComingSoonEntry {
+  title: string;
+  titleCs: string;
+  emoji: string;
+  description: string;
+  descriptionCs: string;
+  color: string;
+}
+
+const COMING_SOON: ComingSoonEntry[] = [
+  {
+    title: 'Doge Hunter',
+    titleCs: 'Lovec Doge',
+    emoji: '🐕',
+    description: 'Hunt down rogue Doge transactions before they clog the mempool.',
+    descriptionCs: 'Lov rogue Doge transakce než zahltí mempool.',
+    color: '#f59e0b',
+  },
+  {
+    title: 'Quantum Chess',
+    titleCs: 'Kvantový Šach',
+    emoji: '♟️',
+    description: 'Chess with quantum moves — pieces can be in two places at once.',
+    descriptionCs: 'Šachy s kvantovými tahy — figurky mohou být na dvou místech najednou.',
+    color: '#9333ea',
+  },
+  {
+    title: 'Bridge Runner',
+    titleCs: 'Běžec přes Most',
+    emoji: '🌉',
+    description: 'Cross-chain obstacle course. Race assets from Base to ZION L1.',
+    descriptionCs: 'Cross-chain překážková dráha. Přenes aktiva z Base na ZION L1.',
+    color: '#06b6d4',
+  },
+];
+
+// ─── Doge (hardcoded approximate values) ──────────────────────────────────────
+
+const DOGE = {
+  name: 'Dogecoin',
+  ticker: 'DOGE',
+  priceUsd: 0.12,
+  supply: 10.8e9, // 10.8B DOGE
+  blockTime: 60, // seconds
+  algorithm: 'Scrypt PoW',
+  hashrate: '500 KH/s',
+  decimals: 8,
+  txPerSec: 30,
+};
+
+// ─── ZION defaults (overwritten by live API data) ─────────────────────────────
+
+interface ZionStats {
+  priceUsd: number;
+  circulatingSupply: number; // in ZION units
+  maxSupply: number;
+  blockTime: number; // seconds
+  algorithm: string;
+  hashrate: string;
+  hashrateRaw: number;
+  decimals: number;
+  txCount: number;
+  blockHeight: number;
+  connected: boolean;
+}
+
+const ZION_DEFAULT: ZionStats = {
+  priceUsd: 0.0002,
+  circulatingSupply: 16_280_000_000,
+  maxSupply: 144_000_000_000,
+  blockTime: 60,
+  algorithm: 'Deeksha Lite v1',
+  hashrate: '—',
+  hashrateRaw: 0,
+  decimals: 6,
+  txCount: 0,
+  blockHeight: 0,
+  connected: false,
+};
+
+// ─── Formatting helpers ───────────────────────────────────────────────────────
+
+function formatSupply(value: number): string {
+  if (value >= 1e12) return `${(value / 1e12).toFixed(2)}T`;
+  if (value >= 1e9) return `${(value / 1e9).toFixed(2)}B`;
+  if (value >= 1e6) return `${(value / 1e6).toFixed(2)}M`;
+  if (value >= 1e3) return `${(value / 1e3).toFixed(2)}K`;
+  return value.toFixed(0);
+}
+
+function formatPrice(usd: number): string {
+  if (usd >= 1) return `$${usd.toFixed(2)}`;
+  if (usd >= 0.01) return `$${usd.toFixed(4)}`;
+  return `$${usd.toFixed(6)}`;
+}
+
+function formatMarketCap(price: number, supply: number): string {
+  const cap = price * supply;
+  if (cap >= 1e12) return `$${(cap / 1e12).toFixed(2)}T`;
+  if (cap >= 1e9) return `$${(cap / 1e9).toFixed(2)}B`;
+  if (cap >= 1e6) return `$${(cap / 1e6).toFixed(2)}M`;
+  if (cap >= 1e3) return `$${(cap / 1e3).toFixed(2)}K`;
+  return `$${cap.toFixed(2)}`;
+}
+
 // ─── Score loading ────────────────────────────────────────────────────────────
 
 function loadAllScores(): Record<string, number> {
@@ -103,6 +224,133 @@ function loadAllScores(): Record<string, number> {
   return scores;
 }
 
+// ─── Comparison metric row ────────────────────────────────────────────────────
+
+interface MetricRow {
+  label: string;
+  labelCs: string;
+  doge: string;
+  zion: string;
+}
+
+function buildMetrics(doge: typeof DOGE, zion: ZionStats): MetricRow[] {
+  const zionTxPerSec =
+    zion.blockHeight > 0 && zion.blockTime > 0
+      ? (zion.txCount / (zion.blockHeight * zion.blockTime)).toFixed(2)
+      : '—';
+  return [
+    { label: 'Price', labelCs: 'Cena', doge: formatPrice(doge.priceUsd), zion: formatPrice(zion.priceUsd) },
+    { label: 'Market Cap', labelCs: 'Tržní kap.', doge: formatMarketCap(doge.priceUsd, doge.supply), zion: formatMarketCap(zion.priceUsd, zion.circulatingSupply) },
+    { label: 'Supply', labelCs: 'Dodávka', doge: `${formatSupply(doge.supply)} DOGE`, zion: `${formatSupply(zion.circulatingSupply)} / ${formatSupply(zion.maxSupply)} ZION` },
+    { label: 'Block Time', labelCs: 'Čas bloku', doge: `${doge.blockTime}s`, zion: `${zion.blockTime}s` },
+    { label: 'Algorithm', labelCs: 'Algoritmus', doge: doge.algorithm, zion: zion.algorithm },
+    { label: 'Network Hashrate', labelCs: 'Hashrate sítě', doge: doge.hashrate, zion: zion.hashrate },
+    { label: 'Decimals', labelCs: 'Desetinná místa', doge: `${doge.decimals}`, zion: `${zion.decimals}` },
+    { label: 'TX/sec', labelCs: 'TX/sek', doge: `~${doge.txPerSec}`, zion: zionTxPerSec },
+  ];
+}
+
+// ─── Battle Stats (fun) ───────────────────────────────────────────────────────
+
+interface BattleStat {
+  icon: typeof Trophy;
+  claim: string;
+  claimCs: string;
+  winner: 'zion' | 'doge' | 'tie';
+  winnerLabel: string;
+  winnerLabelCs: string;
+}
+
+const BATTLE_STATS: BattleStat[] = [
+  {
+    icon: Zap,
+    claim: 'ZION has 6-decimal precision vs Doge\'s 8.',
+    claimCs: 'ZION má 6 desetinných míst vs Doge 8.',
+    winner: 'zion',
+    winnerLabel: 'ZION wins on simplicity',
+    winnerLabelCs: 'ZION vyhrává na jednoduchosti',
+  },
+  {
+    icon: Heart,
+    claim: 'ZION has a humanitarian fund. Doge has memes.',
+    claimCs: 'ZION má humanitární fond. Doge má memy.',
+    winner: 'zion',
+    winnerLabel: 'ZION wins on impact',
+    winnerLabelCs: 'ZION vyhrává na dopadu',
+  },
+  {
+    icon: Shield,
+    claim: 'ZION is quantum-resistant. Doge is... not.',
+    claimCs: 'ZION je kvantově-odolný. Doge... není.',
+    winner: 'zion',
+    winnerLabel: 'ZION wins on security',
+    winnerLabelCs: 'ZION vyhrává na bezpečnosti',
+  },
+  {
+    icon: Sparkles,
+    claim: 'Doge has a Shiba Inu mascot. ZION has a stargate.',
+    claimCs: 'Doge má maskota Shiba Inu. ZION má hvězdnou bránu.',
+    winner: 'tie',
+    winnerLabel: 'Tie on style',
+    winnerLabelCs: 'Remíza na stylu',
+  },
+  {
+    icon: Trophy,
+    claim: 'Doge is on every exchange. ZION is building its bridge.',
+    claimCs: 'Doge je na každé burze. ZION buduje svůj most.',
+    winner: 'doge',
+    winnerLabel: 'Doge wins on availability (for now)',
+    winnerLabelCs: 'Doge vyhrává na dostupnosti (zatím)',
+  },
+];
+
+// ─── ZION advantages ──────────────────────────────────────────────────────────
+
+const ZION_ADVANTAGES: { icon: typeof Trophy; title: string; titleCs: string; desc: string; descCs: string }[] = [
+  {
+    icon: Zap,
+    title: '6-Decimal Precision',
+    titleCs: '6 desetinných míst',
+    desc: 'Cleaner units — 1 ZION = 1,000,000 flowers. No awkward satoshi math.',
+    descCs: 'Čistší jednotky — 1 ZION = 1 000 000 květin. Žádná neohrabaná satoshi matematika.',
+  },
+  {
+    icon: Heart,
+    title: 'Humanitarian Fund (5%)',
+    titleCs: 'Humanitární fond (5%)',
+    desc: 'Every block reward funds real-world humanitarian causes. Built into consensus.',
+    descCs: 'Každá odměna za blok financuje skutečné humanitární projekty. Zabudováno v konsenzu.',
+  },
+  {
+    icon: Sparkles,
+    title: 'AI-Native',
+    titleCs: 'AI-nativní',
+    desc: 'Designed for AI workloads and inference economics from day one.',
+    descCs: 'Navrženo pro AI zátěž a ekonomiku inference od prvního dne.',
+  },
+  {
+    icon: Shield,
+    title: 'Quantum-Resistant',
+    titleCs: 'Kvantově-odolný',
+    desc: 'Deeksha Lite PoW is built to survive the post-quantum era.',
+    descCs: 'Deeksha Lite PoW je postaveno aby přežilo post-kvantovou éru.',
+  },
+  {
+    icon: Gamepad2,
+    title: 'Bridge to Base',
+    titleCs: 'Most na Base',
+    desc: 'wZION on Base L2 — DeFi liquidity meets L1 security.',
+    descCs: 'wZION na Base L2 — DeFi likvidita se potkává s L1 bezpečností.',
+  },
+  {
+    icon: Trophy,
+    title: 'DAO Governance',
+    titleCs: 'DAO správa',
+    desc: 'On-chain governance lets the community steer the protocol.',
+    descCs: 'On-chain správa umožňuje komunitě řídit protokol.',
+  },
+];
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function DogeVsZionPage() {
@@ -111,6 +359,40 @@ export default function DogeVsZionPage() {
   const [activeGame, setActiveGame] = useState<string | null>(null);
   const [muted, setMuted] = useState(false);
   const [highScores, setHighScores] = useState<Record<string, number>>(() => loadAllScores());
+  const [zion, setZion] = useState<ZionStats>(ZION_DEFAULT);
+
+  // Fetch ZION blockchain stats (15s polling)
+  usePolling(async () => {
+    try {
+      const res = await fetch('/api/blockchain/stats', { cache: 'no-store' });
+      if (!res.ok) return;
+      const data = await res.json();
+      setZion((prev) => ({
+        ...prev,
+        circulatingSupply: data.circulating_supply ?? prev.circulatingSupply,
+        maxSupply: data.max_supply ?? data.total_supply ?? prev.maxSupply,
+        blockTime: data.target_block_time ?? data.avg_block_time ?? prev.blockTime,
+        hashrate: data.network_hashrate_formatted ?? prev.hashrate,
+        hashrateRaw: data.network_hashrate ?? prev.hashrateRaw,
+        txCount: data.tx_count ?? prev.txCount,
+        blockHeight: data.block_height ?? data.total_blocks ?? prev.blockHeight,
+        connected: data.connected ?? true,
+      }));
+    } catch { /* noop */ }
+  }, 15_000);
+
+  // Fetch ZION price (30s polling)
+  usePolling(async () => {
+    try {
+      const res = await fetch('/api/defi/price', { cache: 'no-store' });
+      if (!res.ok) return;
+      const data = await res.json();
+      const usd = data?.price?.usd_per_wzion;
+      if (typeof usd === 'number' && Number.isFinite(usd) && usd > 0) {
+        setZion((prev) => ({ ...prev, priceUsd: usd }));
+      }
+    } catch { /* noop */ }
+  }, 30_000);
 
   // Refresh scores when returning to hub
   const backToHub = () => {
@@ -124,6 +406,8 @@ export default function DogeVsZionPage() {
   if (activeGame === 'mining-snake') return <MiningSnake onBack={backToHub} />;
   if (activeGame === 'block-breaker') return <BlockBreaker onBack={backToHub} />;
   if (activeGame === 'flappy-node') return <FlappyNode onBack={backToHub} />;
+
+  const metrics = buildMetrics(DOGE, zion);
 
   // ─── Hub page ───────────────────────────────────────────────────────────────
 
@@ -159,7 +443,7 @@ export default function DogeVsZionPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="relative overflow-hidden zion-rainbow-card"
-          style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
+          style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           {/* Oasis ambient scene jako background */}
           <OasisAmbientScene className="absolute inset-0 h-full w-full" />
@@ -181,10 +465,10 @@ export default function DogeVsZionPage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="inline-flex items-center gap-2 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-4 py-1 text-xs font-semibold tracking-widest text-zion-gold uppercase mb-4"
+              className="inline-flex items-center gap-2 rounded-full border border-zion-purple/30 bg-zion-purple/10 px-4 py-1 text-xs font-semibold tracking-widest text-zion-purple uppercase mb-4"
             >
-              <Sparkles className="h-3.5 w-3.5" />
-              {cs ? 'Meme Lab & Arcade' : 'Meme Lab & Arcade'}
+              <Swords className="h-3.5 w-3.5" />
+              {cs ? 'Showdown & Arcade' : 'Showdown & Arcade'}
             </motion.div>
 
             {/* Titulek s gradient + animace */}
@@ -194,8 +478,17 @@ export default function DogeVsZionPage() {
               transition={{ delay: 0.3, duration: 0.5 }}
               className="text-4xl md:text-6xl font-bold text-gradient leading-tight"
             >
-              ZION Arcade
+              Doge vs ZION
             </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              className="mt-2 text-lg md:text-xl font-semibold text-gray-200"
+            >
+              {cs ? 'Arkáda & Showdown' : 'Arcade & Showdown'}
+            </motion.p>
 
             <motion.p
               initial={{ opacity: 0 }}
@@ -204,8 +497,8 @@ export default function DogeVsZionPage() {
               className="mt-3 text-sm md:text-base text-gray-300 max-w-xl"
             >
               {cs
-                ? 'ZION-themed hry. Od tower defense přes retro klasiky po interaktivní oázu. Hraj a sbírej ZION!'
-                : 'ZION-themed games. From tower defense to retro classics to the interactive oasis. Play and earn ZION!'}
+                ? 'Může Doge konkurovat kvantově-odolnému, humanitárnímu ZION? Hraj a rozhodni.'
+                : 'Can the Doge compete with quantum-resistant, humanitarian-powered ZION? Play and decide.'}
             </motion.p>
 
             {/* Statistiky */}
@@ -225,6 +518,10 @@ export default function DogeVsZionPage() {
                   {Object.values(highScores).reduce((a, b) => a + b, 0)} {cs ? 'celkem bodů' : 'total points'}
                 </span>
               </div>
+              <div className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 backdrop-blur-sm ${zion.connected ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-white/10 bg-black/50'}`}>
+                <span className={`h-2 w-2 rounded-full ${zion.connected ? 'bg-emerald-400 animate-pulse' : 'bg-gray-500'}`} />
+                <span className="text-gray-300">{zion.connected ? (cs ? 'ZION online' : 'ZION live') : (cs ? 'ZION offline' : 'ZION offline')}</span>
+              </div>
             </motion.div>
           </div>
         </motion.section>
@@ -232,15 +529,197 @@ export default function DogeVsZionPage() {
         {/* ─── Spotify music banner ─── */}
         <SpotifyBanner cs={cs} />
 
-        {/* Game cards grid */}
+        {/* ─── Doge vs ZION Comparison ─── */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="zion-section"
+        >
+          <div className="mb-6 flex items-center gap-3">
+            <Swords className="h-6 w-6 text-zion-purple" />
+            <div>
+              <h2 className="text-2xl font-bold text-white tracking-tight">
+                {cs ? 'Doge vs ZION — Srovnání' : 'Doge vs ZION — Comparison'}
+              </h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {cs ? 'Skutečná data ZION z API · Doge aprox. hodnoty' : 'Live ZION data from API · Doge approximate values'}
+              </p>
+            </div>
+          </div>
+
+          {/* Two columns with VS badge */}
+          <div className="relative grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            {/* VS badge (center, desktop) */}
+            <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 items-center justify-center">
+              <motion.div
+                initial={{ scale: 0, rotate: -90 }}
+                whileInView={{ scale: 1, rotate: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
+                className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-white/20 bg-black text-lg font-black text-white shadow-[0_0_30px_rgba(147,51,234,0.5)]"
+              >
+                VS
+              </motion.div>
+            </div>
+
+            {/* Doge column (amber/gold) */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4 }}
+              className="zion-rainbow-card p-5"
+              style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl text-2xl bg-amber-500/15 border border-amber-500/40">
+                  🐕
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-amber-400">Dogecoin</h3>
+                  <p className="text-[10px] uppercase tracking-widest text-gray-500">DOGE · Scrypt PoW</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {metrics.map((m) => (
+                  <div key={m.label} className="flex items-center justify-between border-b border-white/5 pb-1.5">
+                    <span className="text-xs text-gray-500">{cs ? m.labelCs : m.label}</span>
+                    <span className="text-xs font-semibold text-amber-300 text-right">{m.doge}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* ZION column (purple/emerald) */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4 }}
+              className="zion-rainbow-card p-5"
+              style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl text-2xl bg-purple-500/15 border border-purple-500/40">
+                  🌌
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-purple-400">ZION</h3>
+                  <p className="text-[10px] uppercase tracking-widest text-gray-500">ZION · Deeksha Lite · {zion.connected ? 'LIVE' : 'OFFLINE'}</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {metrics.map((m) => (
+                  <div key={m.label} className="flex items-center justify-between border-b border-white/5 pb-1.5">
+                    <span className="text-xs text-gray-500">{cs ? m.labelCs : m.label}</span>
+                    <span className="text-xs font-semibold text-emerald-300 text-right">{m.zion}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+
+          {/* ZION advantages callout */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="mt-6 zion-rainbow-sub p-5"
+            style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+          >
+            <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+              <Trophy className="h-4 w-4 text-emerald-400" />
+              {cs ? 'Výhody ZION' : 'ZION Advantages'}
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {ZION_ADVANTAGES.map((adv) => {
+                const Icon = adv.icon;
+                return (
+                  <div key={adv.title} className="flex items-start gap-2.5 rounded-lg border border-white/5 bg-black/30 p-3">
+                    <Icon className="h-4 w-4 mt-0.5 shrink-0 text-emerald-400" />
+                    <div>
+                      <p className="text-xs font-semibold text-white">{cs ? adv.titleCs : adv.title}</p>
+                      <p className="text-[11px] text-gray-400 mt-0.5 leading-relaxed">{cs ? adv.descCs : adv.desc}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+        </motion.section>
+
+        {/* ─── Battle Stats (fun) ─── */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="zion-section"
+        >
+          <div className="mb-6 flex items-center gap-3">
+            <Trophy className="h-6 w-6 text-zion-gold" />
+            <div>
+              <h2 className="text-2xl font-bold text-white tracking-tight">
+                {cs ? 'Bitvní Statistiky' : 'Battle Stats'}
+              </h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {cs ? 'Hravé srovnání — kdo vyhrává?' : 'A playful showdown — who wins?'}
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {BATTLE_STATS.map((stat, idx) => {
+              const Icon = stat.icon;
+              const isZionWin = stat.winner === 'zion';
+              const isDogeWin = stat.winner === 'doge';
+              const isTie = stat.winner === 'tie';
+              const winnerColor = isZionWin ? 'text-emerald-400' : isDogeWin ? 'text-amber-400' : 'text-gray-400';
+              const winnerBg = isZionWin ? 'border-emerald-500/30 bg-emerald-500/5' : isDogeWin ? 'border-amber-500/30 bg-amber-500/5' : 'border-white/10 bg-black/30';
+              return (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, x: -10 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: idx * 0.08 }}
+                  className={`flex items-center gap-4 rounded-xl border p-4 ${winnerBg}`}
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/5 border border-white/10">
+                    <Icon className={`h-5 w-5 ${winnerColor}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-200">{cs ? stat.claimCs : stat.claim}</p>
+                    <p className={`text-xs font-bold mt-0.5 ${winnerColor}`}>
+                      {isZionWin && '🏆 '}
+                      {isDogeWin && '🐶 '}
+                      {isTie && '🤝 '}
+                      {cs ? stat.winnerLabelCs : stat.winnerLabel}
+                    </p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </motion.section>
+
+        {/* ─── ZION Arcade (games) ─── */}
         <div>
           <div className="mb-4 flex items-center gap-3">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-zion-purple/40 to-transparent" />
-            <div className="flex items-center gap-2">
-              <Gamepad2 className="h-5 w-5 text-zion-purple" />
-              <h2 className="text-lg font-bold text-white tracking-wide">
-                {cs ? 'Vyber si hru' : 'Pick a game'}
-              </h2>
+            <div className="flex flex-col items-center">
+              <div className="flex items-center gap-2">
+                <Gamepad2 className="h-5 w-5 text-zion-purple" />
+                <h2 className="text-lg font-bold text-white tracking-wide">
+                  {cs ? 'ZION Arkáda' : 'ZION Arcade'}
+                </h2>
+              </div>
+              <p className="text-[11px] text-gray-500 mt-0.5">
+                {cs ? 'Hraj hry, získej slávu, braň síť' : 'Play games, earn glory, defend the network'}
+              </p>
             </div>
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-zion-purple/40 to-transparent" />
           </div>
@@ -371,16 +850,68 @@ export default function DogeVsZionPage() {
         </div>
         </div>
 
-        {/* Coming soon teaser */}
-        <div className="relative overflow-hidden zion-rainbow-sub p-6 text-center" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
-          <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(circle at 30% 50%, #8b5cf6, transparent 50%), radial-gradient(circle at 70% 50%, #06b6d4, transparent 50%)' }} />
-          <p className="relative text-sm text-gray-400">
-            {cs ? 'Další hry brzy... 🎮' : 'More games coming soon... 🎮'}
-          </p>
-          <p className="relative mt-1 text-[10px] text-gray-600">
-            {cs ? 'Cosmic Tetris · Space Invaders · 2048 · a více' : 'Cosmic Tetris · Space Invaders · 2048 · and more'}
-          </p>
-        </div>
+        {/* ─── Coming Soon (locked teasers) ─── */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="zion-section"
+        >
+          <div className="mb-4 flex items-center gap-3">
+            <Lock className="h-5 w-5 text-gray-500" />
+            <div>
+              <h2 className="text-lg font-bold text-white tracking-wide">
+                {cs ? 'Již brzy' : 'Coming Soon'}
+              </h2>
+              <p className="text-[11px] text-gray-500 mt-0.5">
+                {cs ? 'Další hry na horizontu' : 'More games on the horizon'}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {COMING_SOON.map((game, idx) => (
+              <motion.div
+                key={game.title}
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.1 }}
+                className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/40 p-5 opacity-70"
+                style={{ '--rc': game.color } as React.CSSProperties}
+              >
+                {/* Lock overlay */}
+                <div className="absolute top-3 right-3 flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 border border-white/10">
+                  <Lock className="h-4 w-4 text-gray-500" />
+                </div>
+
+                {/* Subtle color glow */}
+                <div
+                  className="absolute -bottom-8 -right-8 h-24 w-24 rounded-full opacity-10 blur-2xl"
+                  style={{ backgroundColor: game.color }}
+                />
+
+                <div className="relative flex items-center gap-3 mb-3">
+                  <div
+                    className="flex h-12 w-12 items-center justify-center rounded-xl text-2xl grayscale"
+                    style={{
+                      backgroundColor: `${game.color}15`,
+                      border: `1px solid ${game.color}30`,
+                    }}
+                  >
+                    {game.emoji}
+                  </div>
+                  <h3 className="text-base font-bold text-gray-400">{cs ? game.titleCs : game.title}</h3>
+                </div>
+                <p className="relative text-xs text-gray-500 leading-relaxed">{cs ? game.descriptionCs : game.description}</p>
+                <p className="relative mt-3 text-[10px] uppercase tracking-widest text-gray-600 font-semibold">
+                  {cs ? 'Zamčeno · brzy' : 'Locked · soon'}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.section>
       </div>
     </div>
   );

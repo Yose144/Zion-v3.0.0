@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, Volume2, VolumeX, RefreshCw, Trophy } from 'lucide-react';
+import { useLang } from '@/contexts/LanguageContext';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -113,7 +114,7 @@ interface Particle {
   size: number;
 }
 
-type GameStatus = 'start' | 'playing' | 'level-complete' | 'game-over';
+type GameStatus = 'start' | 'playing' | 'paused' | 'level-complete' | 'game-over';
 
 interface GameState {
   status: GameStatus;
@@ -353,7 +354,7 @@ function updateGame(s: GameState, dt: number): void {
 
 // ─── Render ───────────────────────────────────────────────────────────────────
 
-function renderCanvas(s: GameState, canvasRef: React.RefObject<HTMLCanvasElement | null>): void {
+function renderCanvas(s: GameState, canvasRef: React.RefObject<HTMLCanvasElement | null>, cs: boolean): void {
   const canvas = canvasRef.current;
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
@@ -449,13 +450,15 @@ function renderCanvas(s: GameState, canvasRef: React.RefObject<HTMLCanvasElement
     ctx.font = '12px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('Click or press Space to launch', CANVAS_W / 2, CANVAS_H - 50);
+    ctx.fillText(cs ? 'Klepni nebo stiskni MEZERNÍK pro start' : 'Click or press Space to launch', CANVAS_W / 2, CANVAS_H - 50);
   }
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function BlockBreaker({ onBack }: { onBack: () => void }) {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
   const [muted, setMuted] = useState(false);
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [highScore, setHighScore] = useState(() => {
@@ -515,6 +518,17 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
     setGameState(state);
   }, []);
 
+  const togglePause = useCallback(() => {
+    const s = gameRef.current;
+    if (!s) return;
+    if (s.status === 'playing') {
+      s.status = 'paused';
+    } else if (s.status === 'paused') {
+      s.status = 'playing';
+    }
+    syncState();
+  }, [syncState]);
+
   // ─── Game Loop ──────────────────────────────────────────────────────────────
 
   const hasGame = gameState !== null;
@@ -534,7 +548,7 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
       }
       updateParticles(s.particles, dt);
 
-      renderCanvas(s, canvasRef);
+      renderCanvas(s, canvasRef, cs);
 
       // Sync UI when status changes
       if (s.status !== 'playing') {
@@ -547,7 +561,7 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
     lastTimeRef.current = performance.now();
     animRef.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(animRef.current);
-  }, [hasGame, syncState]);
+  }, [hasGame, syncState, cs]);
 
   // Periodic UI sync for score/lives
   useEffect(() => {
@@ -564,6 +578,13 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
     const handleKeyDown = (e: KeyboardEvent) => {
       const s = gameRef.current;
       if (!s) return;
+      if (e.key === 'p' || e.key === 'P') {
+        if (s.status === 'playing' || s.status === 'paused') {
+          togglePause();
+        }
+        e.preventDefault();
+        return;
+      }
       if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
         s.keyLeft = true;
         mouseActiveRef.current = false;
@@ -594,7 +615,7 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [hasGame]);
+  }, [hasGame, togglePause]);
 
   // ─── Mouse / Touch ──────────────────────────────────────────────────────────
 
@@ -659,7 +680,7 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
           {/* Header */}
           <div className="flex w-full items-center justify-between">
             <button onClick={onBack} className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
-              <ArrowLeft className="h-4 w-4" /> Back
+              <ArrowLeft className="h-4 w-4" /> {cs ? 'Zpět' : 'Back'}
             </button>
             <button onClick={() => { sfx.init(); setMuted((m) => !m); }} className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 text-xs text-gray-400 hover:text-white transition-colors">
               {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
@@ -668,38 +689,38 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
 
           {/* Title */}
           <div className="text-center">
-            <h1 className="text-3xl md:text-5xl font-bold text-gradient">Block Breaker</h1>
-            <p className="mt-2 text-sm text-gray-500">Break through the firewalls. Free the network.</p>
+            <h1 className="text-3xl md:text-5xl font-bold text-gradient">{cs ? 'Rozbíječ Bloků' : 'Block Breaker'}</h1>
+            <p className="mt-2 text-sm text-gray-500">{cs ? 'Proraz si skrz firewally. Osvoboď síť.' : 'Break through the firewalls. Free the network.'}</p>
           </div>
 
           {/* High score */}
           {highScore > 0 && (
             <div className="flex items-center gap-2 rounded-xl border border-zion-gold/20 bg-zion-gold/5 px-4 py-2">
               <Trophy className="h-4 w-4 text-zion-gold" />
-              <span className="text-sm font-bold text-zion-gold">High Score: {highScore}</span>
+              <span className="text-sm font-bold text-zion-gold">{cs ? 'Nejlepší skóre' : 'High Score'}: {highScore}</span>
             </div>
           )}
 
           {/* Start button */}
           <button onClick={startGame} className="rounded-xl bg-zion-gold/20 border border-zion-gold/30 px-8 py-3 text-lg font-bold text-zion-gold hover:bg-zion-gold/30 transition-colors">
-            Start Game
+            {cs ? 'Hrát' : 'Start Game'}
           </button>
 
           {/* Instructions */}
           <div className="max-w-md zion-rainbow-card p-5 text-center" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
-            <h3 className="mb-3 text-sm font-bold text-white">How to Play</h3>
+            <h3 className="mb-3 text-sm font-bold text-white">{cs ? 'Jak hrát' : 'How to Play'}</h3>
             <div className="space-y-2 text-xs text-gray-400">
-              <p>Move the <span className="text-orange-400 font-bold">Firewall</span> paddle with mouse or arrow keys</p>
-              <p>Launch the <span className="text-blue-400 font-bold">Validator node</span> with click or Space</p>
-              <p>Break through <span className="text-purple-400 font-bold">firewall segments</span> to score points</p>
-              <p>Don&apos;t let the node fall — you have <span className="text-red-400 font-bold">3 lives</span></p>
-              <p>Clear all blocks to advance to the next layer</p>
+              <p>{cs ? 'Pohybuj pádlem ' : 'Move the '}<span className="text-orange-400 font-bold">{cs ? 'Firewall' : 'Firewall'}</span>{cs ? ' myší nebo šipkami' : ' paddle with mouse or arrow keys'}</p>
+              <p>{cs ? 'Vystřel ' : 'Launch the '}<span className="text-blue-400 font-bold">{cs ? 'Validator uzel' : 'Validator node'}</span>{cs ? ' klikem nebo MEZERNÍKEM' : ' with click or Space'}</p>
+              <p>{cs ? 'Proraz ' : 'Break through '}<span className="text-purple-400 font-bold">{cs ? 'firewallové segmenty' : 'firewall segments'}</span>{cs ? ' pro body' : ' to score points'}</p>
+              <p>{cs ? 'Nenech uzel spadnout — máš ' : 'Don\u2019t let the node fall — you have '}<span className="text-red-400 font-bold">{cs ? '3 životy' : '3 lives'}</span></p>
+              <p>{cs ? 'Vyčisti všechny bloky pro postup na další vrstvu' : 'Clear all blocks to advance to the next layer'}</p>
             </div>
           </div>
 
           {/* Layer legend */}
           <div className="max-w-md zion-rainbow-card p-5" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
-            <h3 className="mb-3 text-sm font-bold text-white">Firewall Layers</h3>
+            <h3 className="mb-3 text-sm font-bold text-white">{cs ? 'Firewallové vrstvy' : 'Firewall Layers'}</h3>
             <div className="space-y-2">
               {ROW_DEFS.map((row, i) => (
                 <div key={i} className="flex items-center justify-between text-xs">
@@ -707,7 +728,7 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
                     <div className="h-4 w-8 rounded" style={{ backgroundColor: row.color, border: `1px solid ${row.borderColor}` }} />
                     <span className="text-gray-300">{row.label}</span>
                   </div>
-                  <span className="text-gray-500">{row.points} pts</span>
+                  <span className="text-gray-500">{row.points} {cs ? 'bodů' : 'pts'}</span>
                 </div>
               ))}
             </div>
@@ -728,9 +749,12 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
         {/* Header */}
         <div className="flex items-center justify-between">
           <button onClick={onBack} className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
-            <ArrowLeft className="h-4 w-4" /> Back
+            <ArrowLeft className="h-4 w-4" /> {cs ? 'Zpět' : 'Back'}
           </button>
           <div className="flex items-center gap-2">
+            <button onClick={togglePause} disabled={s.status !== 'playing' && s.status !== 'paused'} className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 text-xs text-gray-400 hover:text-white transition-colors disabled:opacity-30">
+              {s.status === 'paused' ? '▶' : '⏸'}
+            </button>
             <button onClick={restartGame} className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 text-xs text-gray-400 hover:text-white transition-colors">
               <RefreshCw className="h-4 w-4" />
             </button>
@@ -742,25 +766,25 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
 
         {/* Title */}
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gradient">Block Breaker</h1>
-          <p className="text-[10px] text-gray-500">Break through the firewalls. Free the network.</p>
+          <h1 className="text-2xl font-bold text-gradient">{cs ? 'Rozbíječ Bloků' : 'Block Breaker'}</h1>
+          <p className="text-[10px] text-gray-500">{cs ? 'Proraz si skrz firewally. Osvoboď síť.' : 'Break through the firewalls. Free the network.'}</p>
         </div>
 
         {/* Info bar */}
         <div style={{ '--rc': '245, 158, 11' } as React.CSSProperties} className="zion-rainbow-card p-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div>
-              <p className="text-[10px] text-gray-500">Score</p>
+              <p className="text-[10px] text-gray-500">{cs ? 'Skóre' : 'Score'}</p>
               <p className="text-sm font-bold tabular-nums text-white">{s.score}</p>
             </div>
             <div>
-              <p className="text-[10px] text-gray-500">Level</p>
+              <p className="text-[10px] text-gray-500">{cs ? 'Úroveň' : 'Level'}</p>
               <p className="text-sm font-bold tabular-nums text-zion-gold">{s.level}</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
             <div>
-              <p className="text-[10px] text-gray-500">Lives</p>
+              <p className="text-[10px] text-gray-500">{cs ? 'Životy' : 'Lives'}</p>
               <div className="flex gap-1">
                 {Array.from({ length: LIVES }).map((_, i) => (
                   <span key={i} className={i < s.lives ? 'text-red-400' : 'text-gray-700'}>❤</span>
@@ -768,7 +792,7 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
               </div>
             </div>
             <div>
-              <p className="text-[10px] text-gray-500">High</p>
+              <p className="text-[10px] text-gray-500">{cs ? 'Nejlepší' : 'High'}</p>
               <p className="text-sm font-bold tabular-nums text-zion-gold">{Math.max(highScore, s.score)}</p>
             </div>
           </div>
@@ -789,16 +813,30 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
           </div>
         </div>
 
+        {/* Pause overlay */}
+        {s.status === 'paused' && (
+          <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+            <div className="rounded-2xl border border-zion-gold/30 bg-gradient-to-br from-black/90 to-zion-gold/10 p-6 text-center max-w-sm">
+              <p className="text-3xl mb-2">⏸</p>
+              <p className="text-lg font-bold text-zion-gold mb-4">{cs ? 'Pauza' : 'PAUSED'}</p>
+              <button onClick={togglePause} className="w-full rounded-xl bg-zion-gold/20 border border-zion-gold/30 px-4 py-2.5 text-sm font-bold text-zion-gold hover:bg-zion-gold/30 transition-colors">
+                {cs ? 'Pokračovat' : 'Resume'}
+              </button>
+              <p className="mt-3 text-[11px] text-gray-500">{cs ? 'Stiskni P pro pokračování' : 'Press P to resume'}</p>
+            </div>
+          </div>
+        )}
+
         {/* Level complete overlay */}
         {s.status === 'level-complete' && (
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
             <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-black/90 to-emerald-500/10 p-6 text-center max-w-sm">
               <p className="text-3xl mb-2">🔓</p>
-              <p className="text-lg font-bold text-emerald-300 mb-2">Layer {s.level} Breached!</p>
-              <p className="text-xs text-gray-400 mb-1">Score: {s.score}</p>
-              <p className="text-xs text-gray-500 mb-4">Next layer: faster node, more firewalls</p>
+              <p className="text-lg font-bold text-emerald-300 mb-2">{cs ? `Vrstva ${s.level} proražena!` : `Layer ${s.level} Breached!`}</p>
+              <p className="text-xs text-gray-400 mb-1">{cs ? 'Skóre' : 'Score'}: {s.score}</p>
+              <p className="text-xs text-gray-500 mb-4">{cs ? 'Další vrstva: rychlejší uzel, více firewallů' : 'Next layer: faster node, more firewalls'}</p>
               <button onClick={nextLevel} className="w-full rounded-xl bg-emerald-500/20 border border-emerald-500/30 px-4 py-2.5 text-sm font-bold text-emerald-300 hover:bg-emerald-500/30 transition-colors">
-                Advance to Layer {s.level + 1} →
+                {cs ? `Postup na vrstvu ${s.level + 1} →` : `Advance to Layer ${s.level + 1} →`}
               </button>
             </div>
           </div>
@@ -809,23 +847,23 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
             <div className="rounded-2xl border border-red-500/30 bg-gradient-to-br from-black/90 to-red-500/10 p-6 text-center max-w-sm">
               <p className="text-3xl mb-2">🔥</p>
-              <p className="text-lg font-bold text-red-300 mb-2">Firewall Compromised</p>
-              <p className="text-xs text-gray-400 mb-1">Final Score: {s.score}</p>
-              <p className="text-xs text-gray-400 mb-1">Layers Breached: {s.level - 1}</p>
+              <p className="text-lg font-bold text-red-300 mb-2">{cs ? 'Firewall kompromitován' : 'Firewall Compromised'}</p>
+              <p className="text-xs text-gray-400 mb-1">{cs ? 'Konečné skóre' : 'Final Score'}: {s.score}</p>
+              <p className="text-xs text-gray-400 mb-1">{cs ? 'Proražené vrstvy' : 'Layers Breached'}: {s.level - 1}</p>
               {s.score >= highScore && s.score > 0 && (
                 <p className="text-xs font-bold text-zion-gold mb-4 flex items-center justify-center gap-1">
-                  <Trophy className="h-3 w-3" /> New High Score!
+                  <Trophy className="h-3 w-3" /> {cs ? 'Nové nejlepší skóre!' : 'New High Score!'}
                 </p>
               )}
               {s.score < highScore && (
-                <p className="text-xs text-gray-500 mb-4">High Score: {highScore}</p>
+                <p className="text-xs text-gray-500 mb-4">{cs ? 'Nejlepší skóre' : 'High Score'}: {highScore}</p>
               )}
               <div className="flex gap-2">
                 <button onClick={onBack} className="flex-1 rounded-xl bg-white/10 border border-white/20 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/20 transition-colors">
-                  Back
+                  {cs ? 'Zpět' : 'Back'}
                 </button>
                 <button onClick={restartGame} className="flex-1 rounded-xl bg-red-500/20 border border-red-500/30 px-4 py-2.5 text-sm font-bold text-red-300 hover:bg-red-500/30 transition-colors">
-                  Retry
+                  {cs ? 'Zkusit znovu' : 'Retry'}
                 </button>
               </div>
             </div>
