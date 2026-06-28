@@ -1078,10 +1078,10 @@ SERVICE_REGISTRY_LOCAL_DEV = [
      "child_says": "🌉 A magical bridge to send ZION to other crypto worlds!",
      "depends_on": ["node1"]},
     {"id": "dao", "name": "ZION DAO", "icon": "🗳️", "level": "L2", "kind": "dao",
-     "ports": {"api": 8081},
+     "ports": {"api": 8450},
      "log": "dao.log", "start": "start-dao", "stop": "stop-dao",
      "health_method": "tcp", "severity": "warning", "autoheal": False,
-     "purpose": "Decentralized governance: proposals, voting, treasury management. API on 8081.",
+     "purpose": "Decentralized governance: proposals, voting, treasury management. API on 8450.",
      "child_says": "🗳️ Everyone votes here to decide what ZION should do next!",
      "depends_on": ["node1"]},
     {"id": "atomic-swap", "name": "Atomic Swap", "icon": "🔄", "level": "L2", "kind": "swap",
@@ -4954,10 +4954,10 @@ PREMINE_OUTPUTS = [
     {"address": "zion1e6r0q3g6t0r0v5f6h7k7c5f3v562j0v7e5e5d0a", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 3)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
     {"address": "zion1l7e4c4c5x8l440t295a7m4k5p5x8v8z7r043s23", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 4)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
     {"address": "zion1n8h2a8p386z274859833h7v6c5n687f7a6k523u", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 5)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
-    # DAO Treasury (3 slots = 4.0B) — locked until block 525,600
-    {"address": "zion176u8r6w53768e2k04035d4d3c2z5g555n6l4r3s", "purpose": "DAO Treasury — Community Governance (main)", "amount_zion": 2_500_000_000, "category": "dao_treasury", "unlock_height": 525_600},
-    {"address": "zion12643n776r3m8f340484756q06485h5w4c2l405m", "purpose": "DAO Treasury — Grants & Bounties", "amount_zion": 1_000_000_000, "category": "dao_treasury", "unlock_height": 525_600},
-    {"address": "zion1k8w734x422f3t6t536r287k2c6n3z0e05257606", "purpose": "DAO Treasury — Ecosystem Bootstrap", "amount_zion": 500_000_000, "category": "dao_treasury", "unlock_height": 525_600},
+    # DAO Treasury (3 slots = 4.0B) — locked until block 144,000 (post-3.0.3 fork)
+    {"address": "zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4", "purpose": "DAO Treasury — Community Governance (main)", "amount_zion": 2_500_000_000, "category": "dao_treasury", "unlock_height": 144_000},
+    {"address": "zion1r5j0j7y444a8j402n8t8u2n8y323u6x4r2aw7l6", "purpose": "DAO Treasury — Grants & Bounties", "amount_zion": 1_000_000_000, "category": "dao_treasury", "unlock_height": 144_000},
+    {"address": "zion1932843t398t095g4h3x2f3a5l0q40490k4fm2w8", "purpose": "DAO Treasury — Ecosystem Bootstrap", "amount_zion": 500_000_000, "category": "dao_treasury", "unlock_height": 144_000},
     # Infrastructure (3 slots = 2.59B)
     {"address": "zion1q540v6y4f0s4v3n0f8t740t53494z56024u645c", "purpose": "Core Development Fund", "amount_zion": 1_000_000_000, "category": "infrastructure", "unlock_height": None},
     {"address": "zion1h4w39686t8w376g0x0y426e775q6p2q0v698v43", "purpose": "Network Infrastructure — P2P Seed Nodes", "amount_zion": 1_000_000_000, "category": "infrastructure", "unlock_height": None},
@@ -7655,7 +7655,7 @@ def _build_health_map() -> dict:
             "hiran": 8002,
             "hiranyagarbha": 8001,
             "bridge": None,
-            "dao": 8081,
+            "dao": 8450,
             "swap": 8888,
             "warp": 9333,
         }
@@ -7792,8 +7792,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             pass  # client closed connection early — benign
 
     def _proxy_to_dao(self, method, route, body, req_headers):
-        """Proxy a request to the DAO daemon on port 8081, preserving auth headers."""
-        DAO_PORT = 8081
+        """Proxy a request to the DAO daemon on port 8450, preserving auth headers."""
+        DAO_PORT = 8450
         # Reconstruct full path including query string
         full_path = self.path if self.path.startswith("/api/dao") else route
         url = f"http://127.0.0.1:{DAO_PORT}{full_path}"
@@ -8478,7 +8478,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._json({"ok": False, "tx_count": 0, "transactions": [], "error": str(e)[:80]})
         elif route.startswith("/api/dao"):
-            # Proxy all /api/dao/* requests to DAO daemon on port 8081
+            # Proxy all /api/dao/* requests to DAO daemon on port 8450
             self._proxy_to_dao("GET", route, None, dict(self.headers))
         elif route.startswith("/api/service-log/"):
             svc_name = route.split("/api/service-log/")[1].split("?")[0]
@@ -9318,7 +9318,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             payload = {}
 
         if route.startswith("/api/dao"):
-            # Proxy POST /api/dao/* to DAO daemon on port 8081
+            # Proxy POST /api/dao/* to DAO daemon on port 8450
             self._proxy_to_dao("POST", route, raw, dict(self.headers))
             return
         elif route == "/api/hiran/chat":
