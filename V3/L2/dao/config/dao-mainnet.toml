@@ -1,6 +1,7 @@
 # ──────────────────────────────────────────────────────────────────────────────
-# ZION DAO — Mainnet Configuration
+# ZION DAO — Mainnet Configuration (post-3.0.3 decimal fork)
 # On-chain governance: proposals, voting (1 ZION = 1 vote), treasury multisig
+# All flower values are in NEW 6-decimal scale (FLOWERS_PER_ZION = 1_000_000)
 # ──────────────────────────────────────────────────────────────────────────────
 
 name    = "ZION DAO"
@@ -23,22 +24,24 @@ l1_rpc_backup = ""                         # set backup RPC for failover
 # ── L1 Scanner ───────────────────────────────────────────────────────────────
 
 scan_interval_secs = 15
-min_vote_weight    = 1_000_000_000_000      # 1 ZION in flowers
+min_vote_weight    = 1_000_000             # 1 ZION in flowers (1e6 scale)
 finality_blocks    = 12                     # mainnet: deeper finality
 
 # ── Governance ───────────────────────────────────────────────────────────────
 
-proposal_threshold  = 10_000_000_000_000_000_000  # 10 M ZION in flowers
+proposal_threshold  = 10_000_000_000_000   # 10 M ZION in flowers (1e6 scale)
 quorum_percent      = 15.0                         # mainnet: stricter quorum
 voting_period_days  = 14                           # mainnet: longer voting
 timelock_hours      = 72                           # mainnet: longer timelock
 
 # ── Treasury ─────────────────────────────────────────────────────────────────
+# These are the REAL DAO treasury addresses from genesis.rs (premine outputs).
+# Locked until DAO_TREASURY_LOCK_HEIGHT = 144_000 (≈100 days at 60s/block).
 
 treasury_addresses = [
-    "zion1dao0treasury0main000000000000000000001",
-    "zion1dao0treasury0main000000000000000000002",
-    "zion1dao0treasury0main000000000000000000003",
+    "zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4",  # Community Governance (main) — 2.5B ZION
+    "zion1r5j0j7y444a8j402n8t8u2n8y323u6x4r2aw7l6",  # Grants & Bounties — 1.0B ZION
+    "zion1932843t398t095g4h3x2f3a5l0q40490k4fm2w8",  # Ecosystem Bootstrap — 0.5B ZION
 ]
 daily_spend_limit   = 50_000_000     # 50 M ZION (whole coins) — conservative start
 multisig_threshold  = 5
