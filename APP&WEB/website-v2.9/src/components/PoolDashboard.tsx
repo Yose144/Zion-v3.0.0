@@ -267,6 +267,8 @@ export default function PoolDashboard() {
   const [searchError, setSearchError] = useState("");
   const [myHashrateInput, setMyHashrateInput] = useState('100M');
   const [activeOnly, setActiveOnly] = useState(true);
+  const [miningMode, setMiningMode] = useState<'cpu' | 'gpu'>('cpu');
+  const [minerOS, setMinerOS] = useState<'linux' | 'windows'>('linux');
   const hashrateHistoryRef = useRef<{ts: number; value: number}[]>([]);
   const acceptRateHistoryRef = useRef<{ts: number; value: number}[]>([]);
   const activeMinersHistoryRef = useRef<{ts: number; value: number}[]>([]);
@@ -290,8 +292,7 @@ export default function PoolDashboard() {
 
   const primaryEndpoint = primaryServer ? `${primaryServer.host}:${primaryServer.stratum}` : SITE_POOL_PRIMARY;
   const backupEndpoint = backupServer ? `${backupServer.host}:${backupServer.stratum}` : primaryEndpoint;
-  const xmrigFailoverCmd = `./xmrig -o stratum+tcp://${primaryEndpoint} --url-backup=stratum+tcp://${backupEndpoint} -u YOUR_ZION_ADDRESS -p x`;
-  const nativeFailoverCmd = `python zion_native_miner_v2_9.py --pool ${primaryEndpoint} --pool-backup ${backupEndpoint} --wallet YOUR_ZION_ADDRESS`;
+  const zionMinerFailoverCmd = `# Primary pool\nZION_POOL_ADDR=${primaryEndpoint} \\\nZION_WORKER_NAME=my-rig \\\nZION_MINER_ID=worker-01 \\\nZION_PAYOUT_ADDRESS=zion1...your44charaddress \\\nZION_MINER_ALGORITHM=deeksha_lite_v1 \\\nZION_LOOP_COUNT=1000000 \\\ncargo run --release --manifest-path V3/Cargo.toml -p zion-miner\n\n# Failover: switch ZION_POOL_ADDR to backup\nZION_POOL_ADDR=${backupEndpoint} cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`;
   const routingGroups = data?.routing?.groups ? Object.entries(data.routing.groups).filter(([, group]) => group.submits > 0 || group.accepted > 0) : [];
 
   const fetchData = useCallback(async () => {
@@ -358,7 +359,7 @@ export default function PoolDashboard() {
                 {SITE_RELEASE_LABEL} · {cs ? 'Těžební pool' : 'Mining Pool'}
               </div>
               <div>
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Cosmic Harmony</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Deeksha PoW</p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
                   {cs ? 'Těžte ZION' : 'Mine ZION'}
                 </h1>
@@ -1010,11 +1011,11 @@ export default function PoolDashboard() {
               <Rocket className="h-7 w-7 text-zion-gold" />
               {cs ? 'Začněte těžit ZION' : 'Start Mining ZION'}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Postupujte podle těchto kroků a začněte těžit během několika minut.' : 'Follow these steps to begin mining in minutes.'}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Postupujte podle těchto kroků a začněte těžit během několika minut. ZION používá zion-miner (Rust binárka z V3).' : 'Follow these steps to begin mining in minutes. ZION uses zion-miner (the Rust binary from V3).'}</p>
           </div>
 
           <div className="grid gap-5 md:grid-cols-2">
-            {/* Step 1 */}
+            {/* Step 1 — Get a ZION Wallet */}
             <div className="zion-rainbow-sub p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br from-purple-500/80 to-indigo-600/80">
@@ -1022,90 +1023,203 @@ export default function PoolDashboard() {
                 </div>
                 <div>
                   <h3 className="text-base font-semibold text-white">{cs ? '1. Získejte ZION peněženku' : '1. Get a ZION Wallet'}</h3>
-                  <p className="text-[11px] text-gray-500">{cs ? 'Vygenerujte svou těžební adresu' : 'Generate your mining address'}</p>
+                  <p className="text-[11px] text-gray-500">{cs ? 'Vyžadována platná 44-znaková zion1... adresa' : 'Valid 44-char zion1... address required'}</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-300 mb-3">{cs ? 'Stáhněte desktop peněženku ZION nebo použijte webovou peněženku pro vytvoření těžební adresy.' : 'Download the ZION desktop wallet or use the web wallet to generate your mining address.'}</p>
+              <p className="text-sm text-gray-300 mb-3">{cs ? 'Stáhněte desktop peněženku ZION nebo použijte webovou peněženku pro vytvoření těžební adresy. Pool odmítne připojení bez platné payout adresy.' : 'Download the ZION desktop wallet or use the web wallet to generate your mining address. The pool rejects connections without a valid payout address.'}</p>
+              <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2.5 text-xs text-amber-200 flex items-start gap-2 mb-3">
+                <Bell className="h-3.5 w-3.5 mt-0.5" />
+                <span>{cs ? 'Kritické: ZION_PAYOUT_ADDRESS musí být platná 44-znaková zion1... adresa. Pool odmítne spojení ("pool closed the connection") bez ní.' : 'Critical: ZION_PAYOUT_ADDRESS must be a valid 44-char zion1... address. The pool rejects the connection ("pool closed the connection") without it.'}</span>
+              </div>
               <Link href="/download" className="inline-flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors">
                 {cs ? 'Stáhnout peněženku' : 'Download Wallet'} <ExternalLink className="h-3.5 w-3.5" />
               </Link>
             </div>
 
-            {/* Step 2 */}
+            {/* Step 2 — Build the Miner */}
             <div className="zion-rainbow-sub p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br from-zion-cyan/80 to-blue-600/80">
                   <Cpu className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-white">{cs ? '2. Vyberte těžební software' : '2. Choose Mining Software'}</h3>
-                  <p className="text-[11px] text-gray-500">{cs ? 'ZION Native Miner nebo XMRig' : 'ZION Native Miner or XMRig'}</p>
+                  <h3 className="text-base font-semibold text-white">{cs ? '2. Sestavte miner' : '2. Build the Miner'}</h3>
+                  <p className="text-[11px] text-gray-500">{cs ? 'Rust toolchain + V3 zdroj' : 'Rust toolchain + V3 source'}</p>
                 </div>
               </div>
-              <div className="space-y-2">
-                <div className="zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-                  <p className="text-sm font-medium text-white flex items-center gap-2"><Sparkles className="h-3.5 w-3.5 text-purple-400" /> ZION Native Miner</p>
-                  <p className="text-xs text-gray-400 mt-1">{cs ? 'Oficiální — algoritmus Cosmic Harmony · Python/Rust' : 'Official — Cosmic Harmony algorithm · Python/Rust'}</p>
+              <p className="text-sm text-gray-300 mb-3">{cs ? 'zion-miner je Rust binárka z V3 workspace. Sestavte ji přes cargo. Pro GPU přidejte --features gpu-opencl (nebo gpu-cuda, gpu-metal).' : 'zion-miner is the Rust binary from the V3 workspace. Build it with cargo. For GPU add --features gpu-opencl (or gpu-cuda, gpu-metal).'}</p>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">{cs ? 'CPU sestavení' : 'CPU build'}</p>
+                  <pre className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-xs text-gray-200 overflow-x-auto font-mono">
+{`cargo build --release --manifest-path V3/Cargo.toml -p zion-miner`}
+                  </pre>
                 </div>
-                <div className="zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-                  <p className="text-sm font-medium text-white flex items-center gap-2"><Zap className="h-3.5 w-3.5 text-orange-400" /> XMRig</p>
-                  <p className="text-xs text-gray-400 mt-1">{cs ? 'Průmyslový standard · optimalizovaný pro CPU' : 'Industry-standard · CPU optimized'}</p>
+                <div>
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">{cs ? 'GPU sestavení (OpenCL)' : 'GPU build (OpenCL)'}</p>
+                  <pre className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-xs text-gray-200 overflow-x-auto font-mono">
+{`cargo build --release --manifest-path V3/Cargo.toml -p zion-miner --features gpu-opencl`}
+                  </pre>
                 </div>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-3 text-sm">
+                <Link href="/mining/node-setup" className="inline-flex items-center gap-2 text-zion-cyan hover:text-white transition-colors">
+                  {cs ? 'Průvodce nastavením' : 'Node setup guide'} <ExternalLink className="h-3.5 w-3.5" />
+                </Link>
+                <Link href="/mining/guides" className="inline-flex items-center gap-2 text-zion-cyan hover:text-white transition-colors">
+                  {cs ? 'Více průvodců' : 'More guides'} <ExternalLink className="h-3.5 w-3.5" />
+                </Link>
               </div>
             </div>
 
-            {/* Step 3 */}
-            <div className="zion-rainbow-sub p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+            {/* Step 3 — Choose Algorithm */}
+            <div className="zion-rainbow-sub p-6 md:col-span-2" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br from-purple-500/80 to-fuchsia-600/80">
+                  <Layers className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-white">{cs ? '3. Vyberte algoritmus' : '3. Choose Algorithm'}</h3>
+                  <p className="text-[11px] text-gray-500">{cs ? '3 varianty Deeksha PoW' : '3 Deeksha PoW variants'}</p>
+                </div>
+              </div>
+              <div className="grid gap-3 md:grid-cols-3">
+                {[
+                  { algo: 'deeksha_lite_v1', tag: cs ? 'Výchozí · CPU + GPU · Vyvážený' : 'Default · CPU + GPU · Balanced', desc: cs ? 'Standardní Deeksha Lite — doporučeno pro začátek.' : 'Standard Deeksha Lite — recommended starting point.' },
+                  { algo: 'cosmic_harmony_ekam_deeksha_v2', tag: cs ? 'Pokročilý · CPU + GPU' : 'Advanced · CPU + GPU', desc: cs ? 'Ekam v2 — pokročilejší varianta Deeksha.' : 'Ekam v2 — advanced Deeksha variant.' },
+                  { algo: 'deeksha_lite_fire', tag: cs ? 'Teplotně náročný · 512 KiB scratchpad · Vyšší příkon' : 'Thermal-intensive · 512 KiB scratchpad · Higher power draw', desc: cs ? 'Fire — vyšší hashrate, vyšší spotřeba. RX 5700 XT: 18.16 KH/s.' : 'Fire — higher hashrate, higher power. RX 5700 XT: 18.16 KH/s.' },
+                ].map((a) => (
+                  <div key={a.algo} className="zion-rainbow-sub p-4" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+                    <div className="flex items-center justify-between mb-2">
+                      <code className="text-sm text-zion-cyan font-mono">{a.algo}</code>
+                      <CopyButton text={`ZION_MINER_ALGORITHM=${a.algo}`} />
+                    </div>
+                    <p className="text-[11px] text-gray-400 mb-1">{a.tag}</p>
+                    <p className="text-xs text-gray-500">{a.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Step 4 — Configure & Connect */}
+            <div className="zion-rainbow-sub p-6 md:col-span-2" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br from-emerald-500/80 to-teal-600/80">
                   <Terminal className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-white">{cs ? '3. Nakonfigurujte a připojte' : '3. Configure & Connect'}</h3>
-                  <p className="text-[11px] text-gray-500">{cs ? 'Spusťte těžbu jedním příkazem' : 'Start mining with one command'}</p>
+                  <h3 className="text-base font-semibold text-white">{cs ? '4. Nakonfigurujte a připojte' : '4. Configure & Connect'}</h3>
+                  <p className="text-[11px] text-gray-500">{cs ? 'Spusťte zion-miner se správnými env vars' : 'Run zion-miner with the right env vars'}</p>
                 </div>
               </div>
-              <div className="space-y-3">
-                <div>
-                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">ZION Native Miner</p>
-                  <pre className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-xs text-gray-200 overflow-x-auto font-mono">
-{`python zion_native_miner_v2_9.py \\
-  --pool ${SITE_POOL_PRIMARY} \\
-  --wallet YOUR_ZION_ADDRESS`}
-                  </pre>
+
+              {/* Mode + OS toggles */}
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                <div className="inline-flex rounded-xl border border-white/10 bg-white/5 p-1">
+                  <button onClick={() => setMiningMode('cpu')} className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${miningMode === 'cpu' ? 'bg-zion-cyan/20 text-zion-cyan' : 'text-gray-400 hover:text-white'}`}>
+                    <Cpu className="h-3.5 w-3.5 inline mr-1.5" /> {cs ? 'CPU těžba' : 'CPU Mining'}
+                  </button>
+                  <button onClick={() => setMiningMode('gpu')} className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${miningMode === 'gpu' ? 'bg-zion-cyan/20 text-zion-cyan' : 'text-gray-400 hover:text-white'}`}>
+                    <Zap className="h-3.5 w-3.5 inline mr-1.5" /> {cs ? 'GPU těžba' : 'GPU Mining'}
+                  </button>
                 </div>
-                <div>
-                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">XMRig</p>
-                  <pre className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-xs text-gray-200 overflow-x-auto font-mono">
-{`./xmrig -o stratum+tcp://${SITE_POOL_PRIMARY} \\
-  -u YOUR_ZION_ADDRESS -p x`}
-                  </pre>
+                <div className="inline-flex rounded-xl border border-white/10 bg-white/5 p-1">
+                  <button onClick={() => setMinerOS('linux')} className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${minerOS === 'linux' ? 'bg-zion-cyan/20 text-zion-cyan' : 'text-gray-400 hover:text-white'}`}>
+                    Linux/macOS
+                  </button>
+                  <button onClick={() => setMinerOS('windows')} className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${minerOS === 'windows' ? 'bg-zion-cyan/20 text-zion-cyan' : 'text-gray-400 hover:text-white'}`}>
+                    Windows
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {minerOS === 'linux' ? (
+                  <div>
+                    <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5 flex items-center">
+                      {cs ? 'Linux / macOS (bash)' : 'Linux / macOS (bash)'}
+                      <CopyButton text={`ZION_POOL_ADDR=${SITE_POOL_PRIMARY} \\\nZION_WORKER_NAME=my-rig \\\nZION_MINER_ID=worker-01 \\\nZION_PAYOUT_ADDRESS=zion1...your44charaddress \\\nZION_MINER_ALGORITHM=deeksha_lite_v1 \\\nZION_LOOP_COUNT=1000000${miningMode === 'gpu' ? ' \\\nZION_GPU_BACKEND=opencl \\\nZION_NONCE_COUNT_GPU=262144' : ''} \\\ncargo run --release --manifest-path V3/Cargo.toml -p zion-miner`} />
+                    </p>
+                    <pre className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-xs text-gray-200 overflow-x-auto font-mono">
+{`ZION_POOL_ADDR=${SITE_POOL_PRIMARY} \\
+ZION_WORKER_NAME=my-rig \\
+ZION_MINER_ID=worker-01 \\
+ZION_PAYOUT_ADDRESS=zion1...your44charaddress \\
+ZION_MINER_ALGORITHM=deeksha_lite_v1 \\
+ZION_LOOP_COUNT=1000000${miningMode === 'gpu' ? ` \\
+ZION_GPU_BACKEND=opencl \\
+ZION_NONCE_COUNT_GPU=262144` : ''} \\
+cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
+                    </pre>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5 flex items-center">
+                      Windows PowerShell
+                      <CopyButton text={`$env:ZION_POOL_ADDR='${SITE_POOL_PRIMARY}'\n$env:ZION_WORKER_NAME='my-rig'\n$env:ZION_MINER_ID='worker-01'\n$env:ZION_PAYOUT_ADDRESS='zion1...your44charaddress'\n$env:ZION_MINER_ALGORITHM='deeksha_lite_v1'\n$env:ZION_LOOP_COUNT='1000000'${miningMode === 'gpu' ? `\n$env:ZION_GPU_BACKEND='opencl'\n$env:ZION_NONCE_COUNT_GPU='262144'` : ''}\ncargo run --release --manifest-path V3/Cargo.toml -p zion-miner`} />
+                    </p>
+                    <pre className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-xs text-gray-200 overflow-x-auto font-mono">
+{`$env:ZION_POOL_ADDR='${SITE_POOL_PRIMARY}'
+$env:ZION_WORKER_NAME='my-rig'
+$env:ZION_MINER_ID='worker-01'
+$env:ZION_PAYOUT_ADDRESS='zion1...your44charaddress'
+$env:ZION_MINER_ALGORITHM='deeksha_lite_v1'
+$env:ZION_LOOP_COUNT='1000000'${miningMode === 'gpu' ? `
+$env:ZION_GPU_BACKEND='opencl'
+$env:ZION_NONCE_COUNT_GPU='262144'` : ''}
+cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
+                    </pre>
+                  </div>
+                )}
+                {miningMode === 'gpu' && (
+                  <div className="rounded-xl border border-zion-cyan/20 bg-zion-cyan/10 px-3 py-2.5 text-xs text-zion-cyan/90 flex items-start gap-2">
+                    <Zap className="h-3.5 w-3.5 mt-0.5" />
+                    <span>{cs ? 'GPU: ZION_GPU_BACKEND=opencl (nebo cuda, metal). ZION_NONCE_COUNT_GPU=262144 je kritické pro GPU hashrate. ZION_LOOP_COUNT=1000000 zabraňuje reconnectům.' : 'GPU: ZION_GPU_BACKEND=opencl (or cuda, metal). ZION_NONCE_COUNT_GPU=262144 is critical for GPU hashrate. ZION_LOOP_COUNT=1000000 prevents reconnects.'}</span>
+                  </div>
+                )}
+                <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2.5 text-xs text-amber-200 flex items-start gap-2">
+                  <Shield className="h-3.5 w-3.5 mt-0.5" />
+                  <span>{cs ? 'Pool a miner binárky musí být zkompilovány ze stejné zdrojové verze — protokol není zpětně kompatibilní.' : 'Pool and miner binaries must be compiled from the same source version — protocol is not backward compatible.'}</span>
                 </div>
               </div>
             </div>
 
-            {/* Step 4 */}
-            <div className="zion-rainbow-sub p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+            {/* Step 5 — Monitor & Earn */}
+            <div className="zion-rainbow-sub p-6 md:col-span-2" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br from-zion-gold/80 to-amber-600/80">
                   <TrendingUp className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-white">{cs ? '4. Sledujte a vydělávejte' : '4. Monitor & Earn'}</h3>
+                  <h3 className="text-base font-semibold text-white">{cs ? '5. Sledujte a vydělávejte' : '5. Monitor & Earn'}</h3>
                   <p className="text-[11px] text-gray-500">{cs ? 'Sledujte své odměny v reálném čase' : 'Track your rewards in real-time'}</p>
                 </div>
               </div>
               <p className="text-sm text-gray-300 mb-3">{cs ? 'Po připojení sledujte své těžební statistiky přímo zde. Výplaty probíhají automaticky po dosažení minimálního prahu.' : 'Once connected, monitor your mining stats right here. Payouts are automatic when you reach the minimum threshold.'}</p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
                 <div className="zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                   <p className="text-[11px] text-gray-500">{cs ? 'Min. payout' : 'Min Payout'}</p>
-                  <p className="text-lg font-bold text-white font-mono">0.1 ZION</p>
+                  <p className="text-lg font-bold text-white font-mono">{(data?.fee?.min_payout ?? 0.1)} ZION</p>
+                </div>
+                <div className="zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+                  <p className="text-[11px] text-gray-500">{cs ? 'Podíl minera' : 'Miner Share'}</p>
+                  <p className="text-lg font-bold text-white font-mono">{(data?.fee?.miner_share ?? 89)}%</p>
                 </div>
                 <div className="zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                   <p className="text-[11px] text-gray-500">{cs ? 'Metoda odměn' : 'Reward Method'}</p>
                   <p className="text-lg font-bold text-white">PPLNS</p>
                 </div>
+                <div className="zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+                  <p className="text-[11px] text-gray-500">{cs ? 'Pool fee' : 'Pool Fee'}</p>
+                  <p className="text-lg font-bold text-white font-mono">{(data?.fee?.pool_fee ?? 1)}%</p>
+                </div>
               </div>
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 text-xs text-gray-300 mb-3">
+                {cs ? 'Rozdělení coinbase: 89 % miner · 5 % humanitární tithe · 5 % fond Issobella · 1 % pool fee. PPLNS — férová distribuce podle odevzdaných shares.' : 'Coinbase split: 89% miner · 5% humanitarian tithe · 5% Issobella fund · 1% pool fee. PPLNS — fair distribution based on contributed shares.'}
+              </div>
+              <Link href="/pool/miner/YOUR_ADDRESS" className="inline-flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors">
+                {cs ? 'Otevřít dashboard minera' : 'Open miner dashboard'} <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
             </div>
           </div>
         </motion.section>
@@ -1127,12 +1241,12 @@ export default function PoolDashboard() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
-              { icon: <Zap className="h-5 w-5 text-white" />, color: "from-purple-500/80 to-indigo-600/80", title: cs ? 'Algoritmus Cosmic Harmony' : 'Cosmic Harmony Algorithm', desc: cs ? 'Nativní ZION PoW algoritmus, přívětivý k CPU a odolný vůči ASIC pro férovější distribuci.' : 'Native ZION PoW algorithm, CPU-friendly, ASIC-resistant design for fair distribution.' },
+              { icon: <Zap className="h-5 w-5 text-white" />, color: "from-purple-500/80 to-indigo-600/80", title: cs ? 'Deeksha PoW algoritmus' : 'Deeksha PoW Algorithm', desc: cs ? 'Nativní ZION PoW, CPU + GPU, odolný vůči ASIC. 3 varianty: Lite v1, Ekam v2, Fire.' : 'Native ZION PoW, CPU + GPU, ASIC-resistant. 3 variants: Lite v1, Ekam v2, Fire.' },
               { icon: <Heart className="h-5 w-5 text-white" />, color: "from-pink-500/80 to-rose-600/80", title: cs ? 'Humanitární mise' : 'Humanitarian Mission', desc: cs ? '5 % humanitární tithe + 5 % fond Issobella. Těžba pro vědomí.' : '5% humanitarian + 5% Issobella fund. Mining for consciousness.' },
-              { icon: <Globe className="h-5 w-5 text-white" />, color: "from-blue-500/80 to-cyan-600/80", title: cs ? 'Primární host poolu' : 'Primary Host Pool', desc: cs ? 'Veřejný stratum běží na Zion2, zatímco interní seed kontejnery zůstávají za stejným hostem.' : 'Public stratum access runs on Zion2 while internal seed containers stay behind the same host.' },
+              { icon: <Server className="h-5 w-5 text-white" />, color: "from-blue-500/80 to-cyan-600/80", title: cs ? 'Skutečná pool infrastruktura' : 'Real Pool Infrastructure', desc: cs ? 'Edge server, skutečný stratum, PPLNS, živý monitoring.' : 'Edge server, real stratum, PPLNS, live monitoring.' },
               { icon: <Shield className="h-5 w-5 text-white" />, color: "from-emerald-500/80 to-teal-600/80", title: cs ? 'PPLNS odměny' : 'PPLNS Rewards', desc: cs ? 'Férová distribuce odměn podle vašich odevzdaných shares. Bez luck variance.' : 'Fair reward distribution based on your contributed shares. No luck variance.' },
-              { icon: <Signal className="h-5 w-5 text-white" />, color: "from-orange-500/80 to-amber-600/80", title: cs ? 'Monitoring v reálném čase' : 'Real-Time Monitoring', desc: cs ? 'Živý přehled hashratu, shares a výdělků přes webový dashboard.' : 'Live hashrate, shares, and earnings tracking via web dashboard.' },
-              { icon: <Cpu className="h-5 w-5 text-white" />, color: "from-zion-cyan/80 to-blue-600/80", title: cs ? 'Kompatibilní s XMRig' : 'XMRig Compatible', desc: cs ? 'Použijte standardní těžební software. Není potřeba nic speciálního.' : 'Use standard mining software. No special tools required.' },
+              { icon: <Zap className="h-5 w-5 text-white" />, color: "from-orange-500/80 to-amber-600/80", title: cs ? 'GPU akcelerace' : 'GPU Acceleration', desc: cs ? 'Podpora OpenCL/CUDA/Metal. RX 5700 XT: 18 KH/s na Fire.' : 'OpenCL/CUDA/Metal support. RX 5700 XT: 18 KH/s on Fire.' },
+              { icon: <Signal className="h-5 w-5 text-white" />, color: "from-zion-cyan/80 to-blue-600/80", title: cs ? 'Monitoring v reálném čase' : 'Real-Time Monitoring', desc: cs ? 'Živý přehled hashratu, shares a výdělků přes webový dashboard a API.' : 'Live hashrate, shares, and earnings via web dashboard + API.' },
             ].map((f) => (
               <div key={f.title} className="group zion-rainbow-sub p-5 transition-all duration-200" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                 <div className={`flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br ${f.color} opacity-80 group-hover:opacity-100 transition mb-4`}>
@@ -1186,14 +1300,13 @@ export default function PoolDashboard() {
               <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{cs ? 'Failover konfigurace' : 'Failover Config'}</p>
               <div className="space-y-3">
                 <div className="zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">{cs ? 'XMRig (primární + záložní)' : 'XMRig (primary + backup)'}</p>
-                  <code className="block text-xs text-zion-cyan break-all">{xmrigFailoverCmd}</code>
-                  <div className="mt-2"><CopyButton text={xmrigFailoverCmd} /></div>
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">{cs ? 'zion-miner (primární + záložní)' : 'zion-miner (primary + backup)'}</p>
+                  <pre className="block text-xs text-zion-cyan whitespace-pre-wrap break-all font-mono">{zionMinerFailoverCmd}</pre>
+                  <div className="mt-2"><CopyButton text={zionMinerFailoverCmd} /></div>
                 </div>
-                <div className="zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">Native Miner failover</p>
-                  <code className="block text-xs text-zion-cyan break-all">{nativeFailoverCmd}</code>
-                  <div className="mt-2"><CopyButton text={nativeFailoverCmd} /></div>
+                <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2.5 text-xs text-amber-200 flex items-start gap-2">
+                  <Shield className="h-3.5 w-3.5 mt-0.5" />
+                  <span>{cs ? 'Pro failover přepněte ZION_POOL_ADDR na záložní endpoint a restartujte zion-miner. Pool a miner musí být ze stejné zdrojové verze.' : 'For failover, switch ZION_POOL_ADDR to the backup endpoint and restart zion-miner. Pool and miner must be from the same source version.'}</span>
                 </div>
               </div>
             </div>
@@ -1239,14 +1352,16 @@ export default function PoolDashboard() {
 
           <div className="space-y-3">
             {[
-              { q: cs ? 'Jaký algoritmus ZION používá?' : 'What algorithm does ZION use?', a: cs ? 'ZION používá Cosmic Harmony — vlastní proof-of-work algoritmus přívětivý k CPU a odolný vůči ASIC. Podporuje CPU i GPU těžbu.' : 'ZION uses Cosmic Harmony — a custom CPU-friendly, ASIC-resistant proof-of-work algorithm. It supports both CPU and GPU mining.' },
+              { q: cs ? 'Jaký algoritmus ZION používá?' : 'What algorithm does ZION use?', a: cs ? 'ZION používá Deeksha — vlastní proof-of-work algoritmus odolný vůči ASIC. 3 varianty: Deeksha Lite v1 (výchozí), Ekam v2 (pokročilý), Fire (teplotně náročný, 512 KiB scratchpad). Podporuje CPU i GPU těžbu.' : 'ZION uses Deeksha — a custom ASIC-resistant proof-of-work algorithm. 3 variants: Deeksha Lite v1 (default), Ekam v2 (advanced), Fire (thermal-intensive, 512 KiB scratchpad). It supports both CPU and GPU mining.' },
               { q: cs ? 'Jak funguje PPLNS?' : 'How does PPLNS work?', a: cs ? 'PPLNS (Pay Per Last N Shares) odměňuje minery podle jejich příspěvku v posledních N share. Je férovější než proporcionální odměny a penalizuje pool-hopping.' : 'PPLNS (Pay Per Last N Shares) rewards miners based on their contribution in the last N shares. It is fairer than proportional rewards and penalizes pool-hopping.' },
-              { q: cs ? 'Jaký je minimální payout?' : 'What is the minimum payout?', a: cs ? 'Minimální výplata je 0.1 ZION. Výplaty probíhají automaticky po nalezení bloku, jakmile váš zůstatek dosáhne prahu.' : 'The minimum payout is 0.1 ZION. Payouts happen automatically after a block is found once your balance reaches the threshold.' },
+              { q: cs ? 'Jaký je minimální payout?' : 'What is the minimum payout?', a: cs ? `Minimální výplata je ${data?.fee?.min_payout ?? 0.1} ZION. Výplaty probíhají automaticky po nalezení bloku, jakmile váš zůstatek dosáhne prahu.` : `The minimum payout is ${data?.fee?.min_payout ?? 0.1} ZION. Payouts happen automatically after a block is found once your balance reaches the threshold.` },
               { q: cs ? 'Kam jdou tithe a fondy?' : 'Where do tithe and funds go?', a: cs ? 'Distribuce coinbase: 89 % miner, 5 % humanitární tithe, 5 % fond Issobella, 1 % pool fee. Tithe a fondy jsou kódovány přímo v coinbase transakci na chain úrovni.' : 'Coinbase distribution: 89% miner, 5% humanitarian tithe, 5% Issobella fund, 1% pool fee. Tithe and funds are encoded directly in the coinbase transaction at the chain level.' },
-              { q: cs ? 'Mohu používat XMRig nebo jen nativní miner?' : 'Can I use XMRig or only the native miner?', a: cs ? 'Oba jsou podporovány. XMRig je průmyslový standard s optimalizacemi pro CPU. Nativní ZION miner nabízí dedikovanou podporu Cosmic Harmony a GPU akceleraci.' : 'Both are supported. XMRig is industry-standard with CPU optimizations. The native ZION miner offers dedicated Cosmic Harmony support and GPU acceleration.' },
+              { q: cs ? 'Mohu používat XMRig?' : 'Can I use XMRig?', a: cs ? 'NE. ZION používá Deeksha PoW, který XMRig nepodporuje. Musíte použít oficiální zion-miner (Rust binárka z V3).' : 'NO. ZION uses Deeksha PoW, which is not supported by XMRig. You must use the official zion-miner (the Rust binary from V3).' },
               { q: cs ? 'Co znamená Pool Luck?' : 'What does Pool Luck mean?', a: cs ? 'Pool Luck ukazuje poměr nalezených bloků vs. statisticky očekávaných na základě hashrate poolu a obtížnosti sítě. 100 % = přesně dle očekávání, nad 100 % = lepší než průměr.' : 'Pool Luck shows the ratio of blocks found vs. statistically expected based on pool hashrate and network difficulty. 100% = exactly as expected, above 100% = better than average.' },
-              { q: cs ? 'Jak nastavím failover?' : 'How do I set up failover?', a: cs ? 'Použijte záložní pool endpoint v konfiguraci XMRig (--url-backup) nebo v nativním mineru (--pool-backup). Automaticky přepne při výpadku primárního serveru.' : 'Use the backup pool endpoint in your XMRig config (--url-backup) or native miner (--pool-backup). It auto-switches on primary server failure.' },
+              { q: cs ? 'Jak nastavím failover?' : 'How do I set up failover?', a: cs ? 'Pro failover přepněte ZION_POOL_ADDR na záložní endpoint a restartujte zion-miner. Pool a miner musí být zkompilovány ze stejné zdrojové verze — protokol není zpětně kompatibilní.' : 'For failover, switch ZION_POOL_ADDR to the backup endpoint and restart zion-miner. Pool and miner must be compiled from the same source version — protocol is not backward compatible.' },
               { q: cs ? 'Jak často probíhají výplaty?' : 'How often are payouts processed?', a: cs ? 'Výplaty se zpracovávají po každém nalezeném bloku. Pool spočítá PPLNS podíly, vytvoří transakci a odešle ji do sítě. Potvrzení trvá obvykle 10 bloků.' : 'Payouts are processed after every block found. The pool calculates PPLNS shares, creates a transaction, and broadcasts it. Confirmation takes around 10 blocks.' },
+              { q: cs ? 'Potřebuji GPU?' : 'Do I need a GPU?', a: cs ? 'Ne, CPU těžba funguje. Ale GPU (OpenCL/CUDA/Metal) dává 10-100x vyšší hashrate. RX 5700 XT dosahuje 18.16 KH/s na Fire.' : 'No, CPU mining works. But GPU (OpenCL/CUDA/Metal) gives 10-100x more hashrate. RX 5700 XT reaches 18.16 KH/s on Fire.' },
+              { q: cs ? 'Co je ZION_PAYOUT_ADDRESS?' : 'What is ZION_PAYOUT_ADDRESS?', a: cs ? 'Kritické: musí být platná 44-znaková zion1... adresa. Pool odmítne spojení ("pool closed the connection") bez ní — fallback na miner_id není povolen.' : 'Critical: must be a valid 44-char zion1... address. The pool rejects the connection ("pool closed the connection") without it — fallback to miner_id is not allowed.' },
             ].map((item) => (
               <FAQItem key={item.q} question={item.q} answer={item.a} />
             ))}
@@ -1263,7 +1378,7 @@ export default function PoolDashboard() {
           <Pickaxe className="mx-auto h-12 w-12 text-zion-cyan" />
           <h2 className="mt-6 text-3xl font-semibold text-white">{cs ? 'ZION těžební pool' : 'ZION Mining Pool'}</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
-            {cs ? 'Těžte ZION s Cosmic Harmony — férový a transparentní PoW pool s humanitárním přesahem zabudovaným do každého bloku.' : 'Mine ZION with Cosmic Harmony — a fair, transparent PoW pool with humanitarian impact built into every block.'}
+            {cs ? 'Těžte ZION s Deeksha PoW — férový a transparentní PoW pool s humanitárním přesahem zabudovaným do každého bloku.' : 'Mine ZION with Deeksha PoW — a fair, transparent PoW pool with humanitarian impact built into every block.'}
           </p>
           <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
             89% miner · 5% humanitarian · 5% Issobella fund · 1% pool fee · PPLNS · Launch Countdown to 31 December 2026
