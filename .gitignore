@@ -145,6 +145,9 @@ run/
 !ZION_OS/dashboard/
 !ZION_OS/dashboard/**
 
+# But still ignore Rust build artifacts inside dashboard/infra
+ZION_OS/dashboard/infra/target/
+
 # Python (tools)
 __pycache__/
 *.pyc
