@@ -8,10 +8,18 @@ import { coreUrl } from '@/lib/core-endpoints';
  * (port 9101) and returns parsed JSON.
  */
 
-// NOTE: Next.js inlines env vars at build time, so we use the runtime
-// core-endpoints helper which hardcodes the active Core Tailscale IP.
-const BRIDGE_METRICS_URL =
-  coreUrl('bridgeMetrics', process.env.BRIDGE_METRICS_URL) + '/metrics';
+/**
+ * Resolve bridge metrics URL at REQUEST TIME (not build time).
+ * Next.js inlines process.env at build time for top-level constants,
+ * which means env vars set only at runtime (e.g. in Docker compose)
+ * would be undefined during build → fallback to 127.0.0.1 (wrong in Docker).
+ * Reading process.env inside the handler ensures runtime values are used.
+ */
+function getBridgeMetricsUrl(): string {
+  // Use bracket notation to prevent Next.js build-time inlining
+  const envVar = process.env['BRIDGE_' + 'METRICS_' + 'URL'];
+  return coreUrl('bridgeMetrics', envVar) + '/metrics';
+}
 
 /** Parse a single Prometheus metric line: "metric_name{...} value" → number */
 function parse(text: string, name: string): number {
@@ -28,7 +36,8 @@ function parse(text: string, name: string): number {
 
 export async function GET() {
   try {
-    const res = await fetch(BRIDGE_METRICS_URL, {
+    const url = getBridgeMetricsUrl();
+    const res = await fetch(url, {
       signal: AbortSignal.timeout(5000),
       headers: { Accept: 'text/plain' },
       cache: 'no-store',
