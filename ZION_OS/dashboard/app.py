@@ -8550,7 +8550,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 import subprocess
                 result = subprocess.run(["git", "status", "--porcelain", "-uno"],
                                       cwd=REPO_ROOT, capture_output=True, text=True, timeout=5)
-                git_status["clean"] = len(result.stdout.strip()) == 0
+                # Ignore runtime state files (dashboard state.json, etc.)
+                lines = [l for l in result.stdout.strip().split("\n")
+                         if l and "state.json" not in l and "dashboard/data/" not in l]
+                git_status["clean"] = len(lines) == 0
                 result = subprocess.run(["git", "branch", "--show-current"],
                                       cwd=REPO_ROOT, capture_output=True, text=True, timeout=5)
                 git_status["branch"] = result.stdout.strip()
