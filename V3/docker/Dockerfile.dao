@@ -26,7 +26,7 @@ RUN mkdir -p /data/dao && chown -R zion:zion /data/dao
 ENV DAO_CONFIG=/etc/zion/dao-testnet.toml
 
 WORKDIR /data/dao
-EXPOSE 8081
+EXPOSE 8450
 VOLUME ["/data/dao"]
 USER zion
 ENTRYPOINT ["zion-dao"]

@@ -13,7 +13,7 @@
 | Core RPC | 8443 | 8443 | JSON-RPC/health |
 | Pool Stratum | 3333 | 3333 | Miner stratum |
 | Pool API | 8080 | 8080 | Pool API + metrics |
-| DAO API | 8081 | 8081 (or nginx `/dao-api`) | DAO daemon API |
+| DAO API | 8450 | 8450 (or nginx `/dao-api`) | DAO daemon API |
 | Website | 3000 | 3000 (or nginx `:443`) | Next.js app |
 | Grafana | 3000 | 3001 | Monitoring UI |
 | Prometheus | 9090 | 9090 | Metrics backend |
@@ -28,7 +28,7 @@
 | Core RPC | 8444 | 8444 | JSON-RPC/health |
 | Pool Stratum | 3333 | 3333 | Miner stratum |
 | Pool API | 8080 | 8080 | Pool API + metrics |
-| DAO API | 8081 | 8081 (or nginx `/dao-api`) | DAO daemon API |
+| DAO API | 8450 | 8450 (or nginx `/dao-api`) | DAO daemon API |
 | Website | 3000 | 3000 | Next.js app |
 | Grafana | 3000 | 3001 | Monitoring UI |
 | Prometheus | 9090 | 9090 | Metrics backend |
@@ -42,7 +42,7 @@
 | `/api/*` | backend API gateway |
 | `/blockchain-rpc/*` | `core:8444` (testnet) / `core:8443` (mainnet) |
 | `/pool/*` | `pool:8080` |
-| `/dao-api/*` | `dao:8081` |
+| `/dao-api/*` | `dao:8450` |
 
 ---
 
@@ -57,5 +57,5 @@
 ## Notes
 
 - `8080` je rezervovaný pro pool API.
-- DAO daemon má vlastní port `8081` (aby nekolidoval s pool API).
+- DAO daemon má vlastní port `8450` (aby nekolidoval s pool API).
 - Jakákoli změna portů musí aktualizovat: `config/*.toml`, `docker/*.yml`, `APP&WEB/website-v2.9/.env*.example`, E2E testy a tento soubor.

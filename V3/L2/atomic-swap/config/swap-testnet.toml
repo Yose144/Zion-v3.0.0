@@ -6,8 +6,8 @@
 [swap]
 name              = "ZION Atomic Swap Service"
 network           = "testnet"
-min_lock_flowers  = 1_000_000_000_000      # 1 ZION minimum
-max_lock_atomic   = 10_000_000_000_000     # 10 000 ZION maximum
+min_lock_flowers  = 1_000_000             # 1 ZION minimum (1e6 scale)
+max_lock_atomic   = 10_000_000_000        # 10 000 ZION maximum (1e6 scale)
 release_fee_atomic = 2_000                 # 0.000000002 ZION flat fee
 
 # ── ZION L1 ──────────────────────────────────────────────────────────────────

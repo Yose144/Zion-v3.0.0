@@ -90,7 +90,7 @@ struct BalanceAtHeightInfo {
 
 #[derive(Debug, Clone)]
 pub struct ScannerConfig {
-    /// L1 RPC address, e.g. `204.168.245.175:8443`
+    /// L1 RPC address, e.g. `127.0.0.1:8443`
     pub rpc_url: String,
     /// Poll interval (how often to ask for new blocks)
     pub poll_interval: Duration,
@@ -103,7 +103,7 @@ pub struct ScannerConfig {
 impl Default for ScannerConfig {
     fn default() -> Self {
         Self {
-            rpc_url: "204.168.245.175:8443".to_string(),
+            rpc_url: "127.0.0.1:8443".to_string(),
             poll_interval: Duration::from_secs(30),
             min_vote_weight: 1_000_000, // 1 ZION in flowers (6-decimal)
             finality_blocks: 6,
