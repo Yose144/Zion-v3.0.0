@@ -2002,13 +2002,14 @@ async function loadPayoutTab(){
     const activeCount = ss.active_sessions ?? ps.miners?.active ?? miners.length ?? 0;
     set('payout-kpi-miners', activeCount);
 
-    // Total paid: sum from miners array (paid_total field, already in ZION from our API)
+    // Total paid: use pplns.total_paid_flowers from pool /stats (sanitized by backend).
+    // This is the authoritative lifetime total. Fallback to miner paid_total sum.
     let totalPaidZion = 0;
-    miners.forEach(m => { totalPaidZion += (m.paid_total ?? 0); });
-    // Fallback: if no miner paid_total, try on-chain balances sum
-    if(totalPaidZion === 0 && d.balances){
-      const b = d.balances;
-      totalPaidZion = (b.miner?.zion ?? 0) + (b.humanitarian?.zion ?? 0) + (b.issobella?.zion ?? 0);
+    const pplnsPaidFlowers = ps.pplns?.total_paid_flowers;
+    if(pplnsPaidFlowers && pplnsPaidFlowers > 0){
+      totalPaidZion = pplnsPaidFlowers / 1_000_000;
+    } else {
+      miners.forEach(m => { totalPaidZion += (m.paid_total ?? 0); });
     }
     set('payout-kpi-total-paid', totalPaidZion > 0 ? _zionFmt(totalPaidZion) + ' ZION' : '—');
 
@@ -2038,7 +2039,7 @@ async function loadPayoutTab(){
     set('payout-pplns-used', pplns.window_used ?? '—');
     set('payout-pplns-registered', pplns.registered_miners ?? pplns.miners_registered ?? miners.length ?? 0);
     set('payout-pplns-rounds', pplns.payout_rounds ?? pplns.rounds_completed ?? '—');
-    // Total paid: use sum of miner paid_total (reliable) instead of pplns.total_paid_flowers (pool server bug)
+    // Total paid: use the same totalPaidZion computed above (from sanitized pplns.total_paid_flowers)
     set('payout-pplns-total', totalPaidZion > 0 ? _zionFmt(totalPaidZion) + ' ZION' : (d.burned_total != null ? _zionFmt(d.burned_total) + ' ZION' : '—'));
 
     const lastTime = d.last_payout_time;
@@ -2432,7 +2433,12 @@ function updatePayoutSnapshot(d){
   set('payout-kpi-miners', ss.active_sessions ?? miners.length ?? 0);
 
   let totalPaid = 0;
-  miners.forEach(m => { totalPaid += (m.total_paid || m.paid_total || 0); });
+  const snapPplns = (d.pool_stats || {}).pplns || {};
+  if(snapPplns.total_paid_flowers && snapPplns.total_paid_flowers > 0){
+    totalPaid = snapPplns.total_paid_flowers / 1_000_000;
+  } else {
+    miners.forEach(m => { totalPaid += (m.total_paid || m.paid_total || 0); });
+  }
   set('payout-kpi-total-paid', totalPaid > 0 ? _zionFmt(totalPaid) + ' ZION' : '—');
 
   const ar = ss.accept_rate_pct;

@@ -411,7 +411,28 @@ impl PplnsEngine {
     }
 
     /// Summary statistics.
+    ///
+    /// Includes a migration-aware clamp on `total_paid_flowers`: a pool server
+    /// that ran through the 3.0.3 decimal fork without restart would have
+    /// accumulated lifetime payouts in legacy 12-decimal flowers (1 ZION =
+    /// 1e12). After the fork, flowers are 6-decimal (1 ZION = 1e6), so the old
+    /// counter is up to 1e6× too large. We clamp it to `MINING_EMISSION_FLOWERS`
+    /// (the total mining supply in 6-decimal flowers) — any value above that is
+    /// physically impossible and clearly a pre-fork artifact.
     pub fn stats(&self) -> PplnsStats {
+        /// Total mining emission = 127.22B ZION = 127,220,000,000,000,000 flowers (6-decimal).
+        /// total_paid can never exceed this. Values above are pre-hardfork 12-decimal artifacts.
+        const MINING_EMISSION_FLOWERS_6DEC: u128 = 127_220_000_000_000_000;
+
+        let clamped_paid = if self.total_paid_flowers > MINING_EMISSION_FLOWERS_6DEC {
+            // Pre-hardfork 12-decimal artifact — divide by MIGRATION_DIVISOR (1e6)
+            // to convert to 6-decimal, then clamp to mining emission as a safety net.
+            let migrated = self.total_paid_flowers / 1_000_000;
+            migrated.min(MINING_EMISSION_FLOWERS_6DEC)
+        } else {
+            self.total_paid_flowers
+        };
+
         PplnsStats {
             window_size: self.config.window_size,
             window_used: self.window.len(),
@@ -421,7 +442,7 @@ impl PplnsEngine {
                 .unpaid
                 .values()
                 .fold(0u128, |acc, &v| acc.saturating_add(v as u128)),
-            total_paid_flowers: self.total_paid_flowers,
+            total_paid_flowers: clamped_paid,
             payout_rounds: self.payout_rounds,
         }
     }
@@ -901,7 +922,44 @@ mod tests {
 
         assert_eq!(payouts.len(), 1);
         assert_eq!(payouts[0].amount, 10);
-        assert_eq!(e.stats().total_paid_flowers, u64::MAX as u128 + 10);
+        // Internal counter grows past u64 max
+        assert_eq!(e.total_paid_flowers, u64::MAX as u128 + 10);
+    }
+
+    #[test]
+    fn stats_clamps_pre_hardfork_12decimal_artifact() {
+        let mut e = engine(100, 1);
+        // Simulate a pool that ran through the 3.0.3 decimal fork without restart.
+        // Pre-fork total_paid_flowers was in 12-decimal flowers (1 ZION = 1e12).
+        // A typical value: ~20M ZION × 1e12 = 20,000,000,000,000,000,000 (2e19)
+        e.total_paid_flowers = 19_980_693_363_360_934_807u128;
+
+        let s = e.stats();
+        // Should be divided by 1e6 to convert to 6-decimal: ~19,980,693 ZION
+        let expected = 19_980_693_363_360_934_807u128 / 1_000_000;
+        assert_eq!(s.total_paid_flowers, expected);
+        // And should be within mining emission (127.22B ZION)
+        assert!(s.total_paid_flowers <= 127_220_000_000_000_000u128);
+    }
+
+    #[test]
+    fn stats_clamps_absurd_values_to_mining_emission() {
+        let mut e = engine(100, 1);
+        // Even after division by 1e6, if the value is still > mining emission, clamp it
+        e.total_paid_flowers = u128::MAX;
+
+        let s = e.stats();
+        assert_eq!(s.total_paid_flowers, 127_220_000_000_000_000u128);
+    }
+
+    #[test]
+    fn stats_passes_through_normal_values() {
+        let mut e = engine(100, 1);
+        // Normal post-fork value: 5.4M ZION × 1e6 = 5,400,000,000,000 flowers
+        e.total_paid_flowers = 5_400_000_000_000u128;
+
+        let s = e.stats();
+        assert_eq!(s.total_paid_flowers, 5_400_000_000_000u128);
     }
 
     /// Ten miners with different hashrates (simulated via difficulty).

@@ -255,7 +255,7 @@
 
 /* ════ ROTUJÍCÍ VRSTVY — performance ════ */
 .stargate-wrap .gate img {
-  width: 100%;
+  width: 35%;
   height: auto;
   position: absolute;
   border-radius: 100%;

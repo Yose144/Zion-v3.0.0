@@ -4265,9 +4265,22 @@ def fetch_pool_miners() -> list:
     return miners
 
 def sanitize_pool_stats(pool_stats: dict, miners: list) -> dict:
-    """Patch old pool `/stats` payloads that saturated lifetime payout counters at u64 max."""
+    """Patch old pool `/stats` payloads that saturated lifetime payout counters at u64 max.
+
+    Also handles the 3.0.3 decimal fork legacy: pre-fork pool servers accumulated
+    total_paid_flowers in 12-decimal flowers (1 ZION = 1e12). After the fork, flowers
+    are 6-decimal (1 ZION = 1e6). A pool server that ran through the fork without
+    restart would have a mixed-scale total — up to 1e6× too large.
+
+    We clamp total_paid to MINING_EMISSION (127.22B ZION = 127.22e15 flowers in
+    6-decimal). Any value above that is clearly a pre-fork artifact and is discarded.
+    """
     if not isinstance(pool_stats, dict):
         return {}
+
+    # Total mining emission = 127.22B ZION = 127,220,000,000,000,000 flowers (6-decimal).
+    # total_paid can never exceed this. Values above are pre-hardfork 12-decimal artifacts.
+    MINING_EMISSION_FLOWERS_6DEC = 127_220_000_000_000_000  # 127.22B ZION × 1e6
 
     u64_max = (1 << 64) - 1
     miners_total_atomic = sum(int(m.get("paid_total_atomic") or 0) for m in miners)
@@ -4276,12 +4289,21 @@ def sanitize_pool_stats(pool_stats: dict, miners: list) -> dict:
     try:
         if PAYOUT_HIGHWATER_FILE.exists():
             with open(PAYOUT_HIGHWATER_FILE, "r", encoding="utf-8") as f:
-                highwater_atomic = int((json.load(f) or {}).get("total_paid_atomic") or 0)
+                hw_val = int((json.load(f) or {}).get("total_paid_atomic") or 0)
+                # Discard pre-hardfork highwater values (12-decimal artifacts)
+                if hw_val <= MINING_EMISSION_FLOWERS_6DEC:
+                    highwater_atomic = hw_val
+                else:
+                    # Stale pre-fork value — remove the file so it doesn't keep poisoning
+                    try:
+                        PAYOUT_HIGHWATER_FILE.unlink()
+                    except Exception:
+                        pass
     except Exception:
         highwater_atomic = 0
     try:
         env_floor = int(os.environ.get("ZION_PAYOUT_HIGHWATER_ATOMIC", "0") or 0)
-        if env_floor > highwater_atomic:
+        if env_floor > highwater_atomic and env_floor <= MINING_EMISSION_FLOWERS_6DEC:
             highwater_atomic = env_floor
     except Exception:
         pass
@@ -4289,16 +4311,24 @@ def sanitize_pool_stats(pool_stats: dict, miners: list) -> dict:
     pplns = pool_stats.get("pplns") if isinstance(pool_stats.get("pplns"), dict) else None
     payouts = pool_stats.get("payouts") if isinstance(pool_stats.get("payouts"), dict) else None
 
-    if pplns and int(pplns.get("total_paid_flowers") or 0) == u64_max:
-        pplns["total_paid_flowers"] = miners_total_atomic or None
-    if payouts and int(payouts.get("total_paid_atomic") or 0) == u64_max:
-        payouts["total_paid_atomic"] = miners_total_atomic or None
+    # Clamp pre-hardfork 12-decimal values from pool server (ran through fork without restart)
+    if pplns:
+        raw = int(pplns.get("total_paid_flowers") or 0)
+        if raw == u64_max or raw > MINING_EMISSION_FLOWERS_6DEC:
+            pplns["total_paid_flowers"] = miners_total_atomic or None
+    if payouts:
+        raw = int(payouts.get("total_paid_atomic") or 0)
+        if raw == u64_max or raw > MINING_EMISSION_FLOWERS_6DEC:
+            payouts["total_paid_atomic"] = miners_total_atomic or None
 
     # New pool process instances can expose smaller in-memory lifetime counters
     # right after restart. Keep dashboard totals monotonic using the best source.
     pplns_total = int(pplns.get("total_paid_flowers") or 0) if pplns else 0
     payouts_total = int(payouts.get("total_paid_atomic") or 0) if payouts else 0
-    monotonic_total = max(pplns_total, payouts_total, miners_total_atomic, highwater_atomic)
+    # Only use values within sane range for monotonic max
+    sane_candidates = [v for v in (pplns_total, payouts_total, miners_total_atomic, highwater_atomic)
+                       if 0 < v <= MINING_EMISSION_FLOWERS_6DEC]
+    monotonic_total = max(sane_candidates) if sane_candidates else 0
     if pplns and monotonic_total:
         pplns["total_paid_flowers"] = monotonic_total
     if payouts and monotonic_total:
