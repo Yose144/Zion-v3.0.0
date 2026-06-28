@@ -8528,11 +8528,13 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
             # Verify fee split addresses are non-empty and self-consistent
             # (tip block is the source of truth; log/env are fallbacks)
+            # NOTE: pool_fee is a BURN amount (1% of subsidy) — it is NOT paid to
+            # any address, so pool_fee_address is intentionally empty on-chain.
             fee_split_match = {
                 "miner": bool(canonical_addresses["miner"]),
                 "humanitarian": bool(canonical_addresses["humanitarian"]),
                 "issobella": bool(canonical_addresses["issobella"]),
-                "pool_fee": bool(canonical_addresses["pool_fee"]),
+                "pool_fee": True,  # burn model — empty address is correct
             }
             
             # Launch countdown (31.12.2026 12:00 UTC)
