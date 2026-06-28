@@ -498,7 +498,7 @@ export default function DogeVsZionPage() {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="mb-3 text-sm font-bold uppercase tracking-[0.3em] text-zion-cyan/80"
+              className="mb-8 text-sm font-bold uppercase tracking-[0.3em] text-zion-cyan/80"
             >
               {cs ? 'ZION Stargate — Portál do Oasis' : 'ZION Stargate — Portal to Oasis'}
             </motion.p>
@@ -518,7 +518,7 @@ export default function DogeVsZionPage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="mt-4 mb-6"
+              className="mt-10 mb-12"
             >
               <Link
                 href="/l4-oasis"
