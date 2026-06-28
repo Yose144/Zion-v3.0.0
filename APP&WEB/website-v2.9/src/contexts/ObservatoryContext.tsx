@@ -2,7 +2,14 @@
 
 import React, { createContext, useContext, useMemo, useState } from "react";
 
-export type ObservatoryMode = "deep-space" | "planet-orbit" | "galactic-core" | "nebula-drift" | "galaxy-core";
+export type ObservatoryMode =
+  | "deep-space"
+  | "planet-orbit"
+  | "galactic-core"
+  | "nebula-drift"
+  | "galaxy-core"
+  | "desktop-agent"
+  | "warp-speed";
 
 type ObservatoryContextType = {
   mode: ObservatoryMode;
@@ -13,15 +20,17 @@ type ObservatoryContextType = {
 const ObservatoryContext = createContext<ObservatoryContextType | null>(null);
 
 const MODES: ObservatoryContextType["availableModes"] = [
+  { id: "planet-orbit", label: "Turquoise Core", description: "Default turquoise atmosphere" },
+  { id: "desktop-agent", label: "Desktop Agent", description: "Desktop agent visual match" },
+  { id: "warp-speed", label: "Warp", description: "Warp tunnel effect" },
   { id: "deep-space", label: "Deep Space", description: "Flight through the cosmos" },
-  { id: "planet-orbit", label: "Planet Orbit", description: "AI / Mining deck" },
   { id: "galactic-core", label: "Command Nexus", description: "WARP & DAO view" },
   { id: "nebula-drift", label: "Nebula Drift", description: "Desktop agent vibe" },
   { id: "galaxy-core", label: "Galaxy Core", description: "Contact approach" },
 ];
 
 export function ObservatoryProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setMode] = useState<ObservatoryMode>('deep-space');
+  const [mode, setMode] = useState<ObservatoryMode>('planet-orbit');
 
   const value = useMemo(
     () => ({ mode, setMode, availableModes: MODES }),

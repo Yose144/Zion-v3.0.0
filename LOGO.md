@@ -49,12 +49,14 @@ Logo reprezentuje **Stargate** — kosmický portál mezi světy. Je to přesná
 
 ### Statická ikona (navigace, favicon, OG)
 
+Všechny ikony jsou **vyrenderovány z live stargate** (Playwright screenshot z `/doge-vs-zion`), ne ručně kreslené — jsou identické s originálem.
+
 | Soubor | Velikost | Rozměr | Popis |
 |--------|----------|--------|-------|
-| `public/stargate-icon.svg` | ~6 KB | 512×512 | SVG ikona pro navigaci |
-| `public/stargate-icon.png` | 306 KB | 512×512 | PNG fallback |
-| `public/stargate-og.png` | 984 KB | 1024×1024 | OG image |
-| `public/apple-icon.png` | 48 KB | 180×180 | Apple touch icon |
+| `public/stargate-icon.png` | 283 KB | 512×512 |Navigační ikona (z live renderu) |
+| `public/stargate-nav.png` | 4.5 KB | 48×48 | Malá nav ikona (optimalizovaná) |
+| `public/stargate-og.png` | 866 KB | 1024×1024 | OG image |
+| `public/apple-icon.png` | 46 KB | 180×180 | Apple touch icon |
 | `public/favicon.ico` | 4 KB | 32×32 | Favicon |
 
 ### Komponenty
@@ -84,7 +86,7 @@ Logo reprezentuje **Stargate** — kosmický portál mezi světy. Je to přesná
 
 | Umístění | Soubor | Velikost |
 |----------|--------|----------|
-| **Navigace** (header) | `stargate-icon.svg` | 48×48px |
+| **Navigace** (header) | `stargate-icon.png` | 48×48px |
 | **Gaming sekce** (`/doge-vs-zion`) | `StargateLogo` komponenta | 360px max-width |
 | **Favicon** | `favicon.ico` | 32×32px |
 | **Apple touch** | `apple-icon.png` | 180×180px |
@@ -126,18 +128,32 @@ Pro změnu velikosti stargate v gaming sekci:
 Pro změnu navigační ikony:
 ```tsx
 // src/components/Navigation.tsx
-<Image src="/stargate-icon.svg" alt="ZION Stargate" width={48} height={48} />
+<Image src="/stargate-icon.png" alt="ZION Stargate" width={48} height={48} />
 ```
 
 Pro regeneraci statických ikon z live stargate:
 ```bash
-# Render stargate z live stránky
-npx playwright screenshot --viewport-size="800,800" --wait-for-timeout=4000 \
-  "https://zionterranova.com/doge-vs-zion" /tmp/stargate-render.png
+# Hi-res render stargate z live stránky (deviceScaleFactor 4)
+node -e "
+const { chromium } = require('playwright');
+(async () => {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage({ viewport: { width: 600, height: 600 }, deviceScaleFactor: 4 });
+  await page.goto('https://zionterranova.com/doge-vs-zion', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(5000);
+  await page.evaluate(() => { const el = document.querySelector('.stargate-wrap'); if (el) el.scrollIntoView({ block: 'center' }); });
+  await page.waitForTimeout(3000);
+  const el = await page.\$('.stargate-wrap');
+  await el.screenshot({ path: '/tmp/stargate-hires.png' });
+  await browser.close();
+})();
+"
 
 # Vygenerovat všechny velikosti
-magick /tmp/stargate-render.png -resize 512x512^ -gravity center -extent 512x512 public/stargate-icon.png
-magick /tmp/stargate-render.png -resize 1024x1024^ -gravity center -extent 1024x1024 public/stargate-og.png
-magick /tmp/stargate-render.png -resize 180x180^ -gravity center -extent 180x180 public/apple-icon.png
-magick /tmp/stargate-render.png -resize 32x32^ -gravity center -extent 32x32 public/favicon.ico
+magick /tmp/stargate-hires.png -trim -strip /tmp/stargate-trimmed.png
+magick /tmp/stargate-trimmed.png -resize 512x512^ -gravity center -extent 512x512 -strip public/stargate-icon.png
+magick /tmp/stargate-trimmed.png -resize 1024x1024^ -gravity center -extent 1024x1024 -strip public/stargate-og.png
+magick /tmp/stargate-trimmed.png -resize 180x180^ -gravity center -extent 180x180 -strip public/apple-icon.png
+magick /tmp/stargate-trimmed.png -resize 32x32^ -gravity center -extent 32x32 -strip public/favicon.ico
+magick /tmp/stargate-trimmed.png -resize 48x48^ -gravity center -extent 48x48 -strip public/stargate-nav.png
 ```

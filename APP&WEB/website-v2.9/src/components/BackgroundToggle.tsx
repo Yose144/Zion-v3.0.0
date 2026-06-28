@@ -6,8 +6,10 @@ import { Palette, Check, Sparkles, Globe, Radio, Cloud, Orbit } from 'lucide-rea
 import { useObservatory, type ObservatoryMode } from '@/contexts/ObservatoryContext';
 
 const backgroundConfig: Record<ObservatoryMode, { icon: typeof Sparkles; label: string; description: string; color: string }> = {
+  'planet-orbit': { icon: Globe, label: 'Turquoise Core', description: 'Default turquoise atmosphere', color: '45, 212, 191' },
+  'desktop-agent': { icon: Cloud, label: 'Desktop Agent', description: 'Desktop agent visual match', color: '80, 230, 210' },
+  'warp-speed': { icon: Orbit, label: 'Warp', description: 'Warp tunnel effect', color: '111, 255, 240' },
   'deep-space': { icon: Sparkles, label: 'Deep Space', description: 'Classic starfield', color: '251, 191, 36' },
-  'planet-orbit': { icon: Globe, label: 'Planet Orbit', description: 'Orbital view', color: '6, 182, 212' },
   'galactic-core': { icon: Radio, label: 'Galactic Core', description: 'Command nexus', color: '147, 51, 234' },
   'nebula-drift': { icon: Cloud, label: 'Nebula Drift', description: 'Desktop agent vibe', color: '180, 140, 255' },
   'galaxy-core': { icon: Orbit, label: 'Galaxy Core', description: 'Contact approach', color: '180, 220, 255' },
