@@ -2,13 +2,23 @@
 
 /**
  * Stargate — přesná replika z newearth.cz
- * 28 rotujících vrstev (2.png x22 + 1.png x6)
- * 39 glyphs (A-Z, a-m)
- * 9 chevrons + 9 chevronInners
- * Center logo (Z.png)
- * Metalický kruh (radial-gradient)
  *
- * Inspirováno public_html/stargate.css z newearth.cz
+ * Struktura (dle originálu):
+ * .gate
+ *   .container
+ *     img.rotate1..28  (28 rotujících vrstev)
+ *     a.center-logo > img (Z.gif)
+ *   .glyphs > .glyph x39
+ *   .chevrons > .chevron x9
+ *   .chevronInners > .chevronInner x9
+ *
+ * Performance optimalizace:
+ * - contain: strict na .gate (izoluje layout/paint)
+ * - content-visibility: auto na .stargate-wrap (off-screen skip)
+ * - will-change: transform na rotujících img
+ * - translate3d místo translate (GPU compositing)
+ * - backface-visibility: hidden
+ * - pointer-events: none na rotující vrstvy
  */
 
 const GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
@@ -57,30 +67,42 @@ export default function StargateLogo({ className = '' }: { className?: string })
               alt={`${i + 1}`}
               className={layer.cls}
               loading={i < 4 ? 'eager' : 'lazy'}
+              decoding={i < 4 ? 'sync' : 'async'}
             />
           ))}
+          {/* Center logo — Z.gif s grayscale + contrast filtrem (dle originálu) */}
           <a
             className="center-logo"
-            href="/"
-            aria-label="Zion Terra Nova"
+            href="/l4-oasis"
+            aria-label="Zion Terra Nova — Enter to Oasis"
           >
-            <img src="/stargate/Z.png" alt="Zion" />
+            <img
+              src="/stargate/Z.gif"
+              alt="Zion"
+              style={{
+                filter: 'grayscale(100%) contrast(180%)',
+                boxShadow: '0 0 1px #000',
+                opacity: 0.6,
+              }}
+            />
           </a>
-          <div className="glyphs">
-            {GLYPHS.map((g, i) => (
-              <div key={i} className="glyph">{g}</div>
-            ))}
-          </div>
-          <div className="chevrons">
-            {Array.from({ length: 9 }).map((_, i) => (
-              <div key={i} className="chevron" />
-            ))}
-          </div>
-          <div className="chevronInners">
-            {Array.from({ length: 9 }).map((_, i) => (
-              <div key={i} className="chevronInner" />
-            ))}
-          </div>
+        </div>
+        {/* Glyphs — mimo container, uvnitř gate (dle originálu) */}
+        <div className="glyphs">
+          {GLYPHS.map((g, i) => (
+            <div key={i} className="glyph">{g}</div>
+          ))}
+        </div>
+        {/* Chevrons — mimo container, uvnitř gate */}
+        <div className="chevrons">
+          {Array.from({ length: 9 }).map((_, i) => (
+            <div key={i} className="chevron" />
+          ))}
+        </div>
+        <div className="chevronInners">
+          {Array.from({ length: 9 }).map((_, i) => (
+            <div key={i} className="chevronInner" />
+          ))}
         </div>
       </div>
     </div>
