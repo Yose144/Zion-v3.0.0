@@ -20,6 +20,9 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  /* Container queries — glyph/chevron sizes scale with container */
+  container-type: size;
+  container-name: stargate;
   /* Performance: skip rendering when off-screen */
   content-visibility: auto;
   contain-intrinsic-size: 360px 360px;
@@ -94,7 +97,7 @@
   height: 40%;
   border-radius: 100%;
   background: rgba(0,0,0,0.15);
-  box-shadow: 0 0 20vmin 10vmin rgba(0,0,0,0.15);
+  box-shadow: 0 0 20cqmin 10cqmin rgba(0,0,0,0.15);
 }
 
 /* ════ GLYPHS ════ */
@@ -119,7 +122,7 @@
   left: 50%;
   height: 43%;
   transform-origin: center bottom;
-  font-size: 1.6vmin;
+  font-size: 1.6cqmin;
   text-align: center;
   width: 6.5%;
   color: #fff;
@@ -193,12 +196,12 @@
   position: absolute;
   bottom: 50%;
   left: 50%;
-  width: 8vmin;
+  width: 8cqmin;
   transform-origin: center bottom;
-  border: 3vmin transparent solid;
-  border-bottom: 26vmin transparent solid;
-  border-top: 5vmin #909192 solid;
-  filter: drop-shadow(0 0.5vmin 0.5vmin rgba(0,0,0,0.2));
+  border: 3cqmin transparent solid;
+  border-bottom: 26cqmin transparent solid;
+  border-top: 5cqmin #909192 solid;
+  filter: drop-shadow(0 0.5cqmin 0.5cqmin rgba(0,0,0,0.2));
 }
 
 .stargate-wrap .chevron:nth-of-type(9n+1), .stargate-wrap .chevronInner:nth-of-type(9n+1) { transform: translateX(-50%) rotate(0deg); }
@@ -216,15 +219,15 @@
   content: "";
   position: absolute;
   left: 0;
-  bottom: 2.2vmin;
+  bottom: 2.2cqmin;
   background: hsl(180, 83%, 39%);
-  box-shadow: 0 0 0.8vmin hsl(0,0%,100%) inset, 0 0 0.8vmin hsl(0,0%,100%);
+  box-shadow: 0 0 0.8cqmin hsl(0,0%,100%) inset, 0 0 0.8cqmin hsl(0,0%,100%);
   width: 100%;
-  height: 2vmin;
-  transform: translateX(1.2vmin) skewX(-30deg);
+  height: 2cqmin;
+  transform: translateX(1.2cqmin) skewX(-30deg);
 }
 .stargate-wrap .chevron:after, .stargate-wrap .chevronInner:after {
-  transform: translateX(-1.2vmin) skewX(30deg);
+  transform: translateX(-1.2cqmin) skewX(30deg);
 }
 
 .stargate-wrap .chevronInners {
@@ -235,18 +238,18 @@
 }
 
 .stargate-wrap .chevronInner {
-  width: 6vmin;
-  border-left-width: 2.5vmin;
-  border-right-width: 2.5vmin;
-  border-bottom-width: 27.5vmin;
-  filter: drop-shadow(0 0.5vmin 0 #727374);
+  width: 6cqmin;
+  border-left-width: 2.5cqmin;
+  border-right-width: 2.5cqmin;
+  border-bottom-width: 27.5cqmin;
+  filter: drop-shadow(0 0.5cqmin 0 #727374);
 }
 .stargate-wrap .chevronInner:before {
   left: 50%;
   width: 230%;
-  bottom: 2.8vmin;
+  bottom: 2.8cqmin;
   transform: translateX(-50%);
-  border-radius: 0.4vmin;
+  border-radius: 0.4cqmin;
 }
 .stargate-wrap .chevronInner:after { display: none; }
 
