@@ -16,6 +16,7 @@ Environment="ZION_METRICS_BIND=0.0.0.0:9116"
 Environment="ZION_WEBSOCKET_BIND=0.0.0.0:8447"
 Environment="ZION_SEED_PEERS=127.0.0.1:8333"
 Environment="ZION_NODE_STATE_PATH=/root/zion-2.9.6-main/data/edge2-state.db"
+Environment="ZION_MIGRATION_HEIGHT=18850"
 Environment="RUST_LOG=info,zion_core=debug"
 ExecStart=/root/zion-2.9.6-main/V3/target/release/node
 Restart=always
