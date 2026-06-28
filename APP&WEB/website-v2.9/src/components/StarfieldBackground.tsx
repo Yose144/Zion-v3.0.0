@@ -11,6 +11,10 @@ interface StarfieldBackgroundProps {
   trailOpacity?: number;
   backgroundGradient?: string;
   flowDirection?: 'outward' | 'inward';
+  /** When true, clears canvas each frame (clearRect) so CSS background
+   *  gradient shows through. Use for modes where nebula/gradient must
+   *  be visible (desktop-agent, galaxy-core). Stars have no trails. */
+  clearPerFrame?: boolean;
 }
 
 const DEFAULT_COLOR: RGBColor = [255, 215, 0];
@@ -23,6 +27,7 @@ export default function StarfieldBackground({
   trailOpacity = 0.08,
   backgroundGradient = DEFAULT_GRADIENT,
   flowDirection = 'outward',
+  clearPerFrame = false,
 }: StarfieldBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -60,8 +65,12 @@ export default function StarfieldBackground({
     const animate = () => {
       if (!ctx || !canvas) return;
 
-      ctx.fillStyle = `rgba(0, 0, 0, ${Math.min(Math.max(trailOpacity * 0.5, 0.01), 0.15)})`;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      if (clearPerFrame) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      } else {
+        ctx.fillStyle = `rgba(0, 0, 0, ${Math.min(Math.max(trailOpacity * 0.5, 0.01), 0.15)})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
 
       stars.forEach((star) => {
         if (flowDirection === 'inward') {
@@ -108,7 +117,7 @@ export default function StarfieldBackground({
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', handleResize);
     };
-  }, [density, speed, starColor, trailOpacity, flowDirection]);
+  }, [density, speed, starColor, trailOpacity, flowDirection, clearPerFrame]);
 
   return (
     <canvas
