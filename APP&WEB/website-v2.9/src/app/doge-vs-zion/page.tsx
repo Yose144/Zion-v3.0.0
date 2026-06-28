@@ -493,14 +493,40 @@ export default function DogeVsZionPage() {
 
           {/* Overlay obsah */}
           <div className="relative z-10 flex flex-col items-center px-6 py-10 md:py-14 text-center">
+            {/* Nadpis nad stargate */}
+            <motion.p
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="mb-3 text-sm font-bold uppercase tracking-[0.3em] text-zion-cyan/80"
+            >
+              {cs ? 'ZION Stargate — Portál do Oasis' : 'ZION Stargate — Portal to Oasis'}
+            </motion.p>
+
             {/* Stargate — plný originál, úplně nahoře */}
             <motion.div
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ duration: 0.8, ease: 'easeOut' }}
-              className="mb-4 w-full max-w-[360px]"
+              className="w-full max-w-[360px]"
             >
               <StargateLogo className="w-full" />
+            </motion.div>
+
+            {/* Odkaz na Oasis pod stargate */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="mt-4 mb-6"
+            >
+              <Link
+                href="/l4-oasis"
+                className="group inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/5 px-5 py-2 text-sm font-bold text-zion-cyan transition-all hover:border-zion-cyan/60 hover:bg-zion-cyan/10 hover:shadow-[0_8px_30px_rgba(111,255,240,0.2)]"
+              >
+                {cs ? 'Vstoupit do Oasis' : 'Enter to Oasis'}
+                <span className="transition-transform group-hover:translate-x-1">→</span>
+              </Link>
             </motion.div>
 
             {/* Nápis pod stargatem */}
