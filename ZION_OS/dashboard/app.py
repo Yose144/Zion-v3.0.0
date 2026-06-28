@@ -65,7 +65,7 @@ SERVICE_LOG_MAP = {
 # Load config
 def load_config() -> dict:
     defaults = {
-        "host": "127.0.0.1",
+        "host": "0.0.0.0",
         "port": 8766,
         "topology": "edge-primary",  # "edge-primary" or "local-dev"
         "log_rotation_max_bytes": 104857600,
