@@ -76,8 +76,8 @@ contract ZIONBridge is AccessControl, Pausable, ReentrancyGuard {
     //  Constants
     // ──────────────────────────────────────────────
 
-    /// @notice Amount above which timelock applies (1M wZION)
-    uint256 public constant TIMELOCK_THRESHOLD = 1_000_000 * 1e18;
+    /// @notice Amount above which timelock applies (1B wZION — effectively disabled for premine)
+    uint256 public constant TIMELOCK_THRESHOLD = 1_000_000_000 * 1e18;
 
     /// @notice Timelock delay for large transfers (24 hours)
     uint256 public constant TIMELOCK_DELAY = 24 hours;
