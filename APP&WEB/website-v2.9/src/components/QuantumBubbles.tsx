@@ -44,6 +44,14 @@ const BUBBLE_PRESETS: Record<ObservatoryMode, Bubble[]> = {
     { id: "gx-1", size: 600, x: 42, y: 42, color: "rgba(180,220,255,0.22)", blur: 120 },
     { id: "gx-2", size: 400, x: 47, y: 47, color: "rgba(120,180,255,0.18)", blur: 100 },
   ],
+  "desktop-agent": [
+    { id: "da-1", size: 280, x: 20, y: 30, color: "rgba(249,217,118,0.15)", blur: 60 },
+    { id: "da-2", size: 200, x: 70, y: 40, color: "rgba(50,230,255,0.12)", blur: 55 },
+  ],
+  "warp-speed": [
+    { id: "ws-1", size: 320, x: 45, y: 45, color: "rgba(180,220,255,0.2)", blur: 80 },
+    { id: "ws-2", size: 240, x: 50, y: 50, color: "rgba(120,180,255,0.15)", blur: 70 },
+  ],
 };
 
 interface QuantumBubblesProps {
