@@ -1,0 +1,161 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="space" cx="50%" cy="45%" r="65%">
+      <stop offset="0%" stop-color="#0a0a1a"/>
+      <stop offset="40%" stop-color="#050510"/>
+      <stop offset="100%" stop-color="#020208"/>
+    </radialGradient>
+    <radialGradient id="orbBody" cx="36%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#fffbeb"/>
+      <stop offset="6%" stop-color="#fde68a"/>
+      <stop offset="18%" stop-color="#fbbf24"/>
+      <stop offset="38%" stop-color="#f59e0b"/>
+      <stop offset="58%" stop-color="#d97706"/>
+      <stop offset="82%" stop-color="#78350f"/>
+      <stop offset="100%" stop-color="#1c0a02"/>
+    </radialGradient>
+    <radialGradient id="orbGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.5"/>
+      <stop offset="40%" stop-color="#f59e0b" stop-opacity="0.2"/>
+      <stop offset="70%" stop-color="#f59e0b" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="rayFade" cx="50%" cy="50%" r="50%">
+      <stop offset="40%" stop-color="#fbbf24" stop-opacity="0"/>
+      <stop offset="65%" stop-color="#fbbf24" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#fbbf24" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="specular" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.7"/>
+      <stop offset="70%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="innerRing" cx="50%" cy="50%" r="50%">
+      <stop offset="85%" stop-color="#fbbf24" stop-opacity="0"/>
+      <stop offset="94%" stop-color="#fbbf24" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#fbbf24" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="orbClip">
+      <circle cx="256" cy="256" r="120"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="url(#space)"/>
+
+  <!-- Stars -->
+  <g fill="#ffffff">
+    <circle cx="48" cy="72" r="0.8" opacity="0.6"/>
+    <circle cx="112" cy="40" r="1.2" opacity="0.8"/>
+    <circle cx="420" cy="88" r="0.7" opacity="0.5"/>
+    <circle cx="468" cy="44" r="1.3" opacity="0.9"/>
+    <circle cx="72" cy="140" r="0.9" opacity="0.6"/>
+    <circle cx="460" cy="160" r="0.8" opacity="0.6"/>
+    <circle cx="40" cy="300" r="0.7" opacity="0.5"/>
+    <circle cx="472" cy="300" r="0.6" opacity="0.4"/>
+    <circle cx="60" cy="440" r="1.0" opacity="0.7"/>
+    <circle cx="440" cy="400" r="0.8" opacity="0.6"/>
+    <circle cx="380" cy="460" r="1.2" opacity="0.8"/>
+    <circle cx="160" cy="440" r="0.9" opacity="0.6"/>
+  </g>
+
+  <!-- Sri Yantra (sacred geometry) -->
+  <g stroke="rgba(251,191,36,0.6)" stroke-width="0.8" fill="none" stroke-linejoin="round" transform="translate(256 256)">
+    <rect x="-110" y="-110" width="220" height="220" rx="2"/>
+    <rect x="-104" y="-104" width="208" height="208" rx="2"/>
+    <line x1="0" y1="-110" x2="0" y2="-120"/>
+    <line x1="-8" y1="-115" x2="8" y2="-115"/>
+    <line x1="0" y1="110" x2="0" y2="120"/>
+    <line x1="-8" y1="115" x2="8" y2="115"/>
+    <line x1="-110" y1="0" x2="-120" y2="0"/>
+    <line x1="-115" y1="-8" x2="-115" y2="8"/>
+    <line x1="110" y1="0" x2="120" y2="0"/>
+    <line x1="115" y1="-8" x2="115" y2="8"/>
+    <circle cx="0" cy="0" r="100"/>
+    <g>
+      <line x1="80" y1="0" x2="100" y2="0"/>
+      <line x1="73.9" y1="29" x2="92.3" y2="36.5"/>
+      <line x1="56.6" y1="56.6" x2="70.7" y2="70.7"/>
+      <line x1="29" y1="73.9" x2="36.5" y2="92.3"/>
+      <line x1="0" y1="80" x2="0" y2="100"/>
+      <line x1="-29" y1="73.9" x2="-36.5" y2="92.3"/>
+      <line x1="-56.6" y1="56.6" x2="-70.7" y2="70.7"/>
+      <line x1="-73.9" y1="29" x2="-92.3" y2="36.5"/>
+      <line x1="-80" y1="0" x2="-100" y2="0"/>
+      <line x1="-73.9" y1="-29" x2="-92.3" y2="-36.5"/>
+      <line x1="-56.6" y1="-56.6" x2="-70.7" y2="-70.7"/>
+      <line x1="-29" y1="-73.9" x2="-36.5" y2="-92.3"/>
+      <line x1="0" y1="-80" x2="0" y2="-100"/>
+      <line x1="29" y1="-73.9" x2="36.5" y2="-92.3"/>
+      <line x1="56.6" y1="-56.6" x2="70.7" y2="-70.7"/>
+      <line x1="73.9" y1="-29" x2="92.3" y2="-36.5"/>
+    </g>
+    <circle cx="0" cy="0" r="80"/>
+    <g>
+      <line x1="56" y1="0" x2="72" y2="0"/>
+      <line x1="39.6" y1="39.6" x2="50.9" y2="50.9"/>
+      <line x1="0" y1="56" x2="0" y2="72"/>
+      <line x1="-39.6" y1="39.6" x2="-50.9" y2="50.9"/>
+      <line x1="-56" y1="0" x2="-72" y2="0"/>
+      <line x1="-39.6" y1="-39.6" x2="-50.9" y2="-50.9"/>
+      <line x1="0" y1="-56" x2="0" y2="-72"/>
+      <line x1="39.6" y1="-39.6" x2="50.9" y2="-50.9"/>
+    </g>
+    <circle cx="0" cy="0" r="56"/>
+    <polygon points="0,-108 -100,59 100,59"/>
+    <polygon points="0,-84 -78,48 78,48"/>
+    <polygon points="0,-60 -56,38 56,38"/>
+    <polygon points="0,-36 -36,22 36,22"/>
+    <polygon points="0,108 -100,-59 100,-59"/>
+    <polygon points="0,84 -78,-48 78,-48"/>
+    <polygon points="0,60 -56,-38 56,-38"/>
+    <polygon points="0,36 -36,-22 36,-22"/>
+    <polygon points="0,12 -18,-14 18,-14"/>
+    <circle cx="0" cy="0" r="2.5" fill="rgba(255,251,230,0.9)" stroke="none"/>
+  </g>
+
+  <!-- Orb glow -->
+  <circle cx="256" cy="256" r="180" fill="url(#orbGlow)"/>
+
+  <!-- 12 light rays -->
+  <g transform="translate(256 256)" opacity="0.5">
+    <rect x="-2" y="-130" width="4" height="100" rx="2" fill="url(#rayFade)" transform="rotate(0)"/>
+    <rect x="-2" y="-130" width="4" height="100" rx="2" fill="url(#rayFade)" transform="rotate(30)"/>
+    <rect x="-2" y="-130" width="4" height="100" rx="2" fill="url(#rayFade)" transform="rotate(60)"/>
+    <rect x="-2" y="-130" width="4" height="100" rx="2" fill="url(#rayFade)" transform="rotate(90)"/>
+    <rect x="-2" y="-130" width="4" height="100" rx="2" fill="url(#rayFade)" transform="rotate(120)"/>
+    <rect x="-2" y="-130" width="4" height="100" rx="2" fill="url(#rayFade)" transform="rotate(150)"/>
+    <rect x="-2" y="-130" width="4" height="100" rx="2" fill="url(#rayFade)" transform="rotate(180)"/>
+    <rect x="-2" y="-130" width="4" height="100" rx="2" fill="url(#rayFade)" transform="rotate(210)"/>
+    <rect x="-2" y="-130" width="4" height="100" rx="2" fill="url(#rayFade)" transform="rotate(240)"/>
+    <rect x="-2" y="-130" width="4" height="100" rx="2" fill="url(#rayFade)" transform="rotate(270)"/>
+    <rect x="-2" y="-130" width="4" height="100" rx="2" fill="url(#rayFade)" transform="rotate(300)"/>
+    <rect x="-2" y="-130" width="4" height="100" rx="2" fill="url(#rayFade)" transform="rotate(330)"/>
+  </g>
+
+  <!-- Main sphere -->
+  <circle cx="256" cy="256" r="120" fill="url(#orbBody)"/>
+  <circle cx="256" cy="256" r="120" fill="url(#innerRing)"/>
+
+  <!-- Specular highlight -->
+  <ellipse cx="220" cy="216" rx="38" ry="32" fill="url(#specular)" opacity="0.8"/>
+  <circle cx="300" cy="300" r="16" fill="rgba(253,230,138,0.5)" opacity="0.6"/>
+
+  <!-- Rim light -->
+  <circle cx="256" cy="256" r="117" fill="none" stroke="rgba(255,215,128,0.25)" stroke-width="3"/>
+
+  <!-- Sparkles inside orb -->
+  <g clip-path="url(#orbClip)">
+    <circle cx="210" cy="230" r="2" fill="#fffbeb" opacity="0.9"/>
+    <circle cx="290" cy="250" r="1.5" fill="#fffbeb" opacity="0.7"/>
+    <circle cx="250" cy="300" r="1.2" fill="#fffbeb" opacity="0.8"/>
+    <circle cx="280" cy="210" r="1.8" fill="#fffbeb" opacity="0.6"/>
+    <circle cx="230" cy="280" r="1.0" fill="#fffbeb" opacity="0.5"/>
+  </g>
+
+  <!-- Orbiting sparkles -->
+  <g fill="#fbbf24">
+    <circle cx="160" cy="160" r="2.5" opacity="0.7"/>
+    <circle cx="350" cy="170" r="2" opacity="0.5"/>
+    <circle cx="340" cy="340" r="2.5" opacity="0.6"/>
+    <circle cx="170" cy="340" r="2" opacity="0.5"/>
+  </g>
+</svg>
