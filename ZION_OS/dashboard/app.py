@@ -3926,6 +3926,85 @@ def run_edge_action(action: str) -> dict:
         return {"ok": False, "error": str(e), "action": action}
 
 
+def list_edge_backups() -> dict:
+    """List available backups on Edge server (/root/zion-backups/)."""
+    try:
+        result = _run_edge_cmd(
+            "ls -lht /root/zion-backups/*.tar.gz 2>/dev/null | head -20; "
+            "echo '===HEALTH==='; cat /root/zion-backups/health.json 2>/dev/null",
+            timeout=5
+        )
+        if result.returncode != 0 and not EDGE_IS_LOCAL:
+            return {"ok": False, "error": result.stderr.strip() or "SSH failed"}
+
+        output = result.stdout.strip()
+        parts = output.split("===HEALTH===")
+        ls_part = parts[0].strip() if parts else output
+        health_part = parts[1].strip() if len(parts) > 1 else ""
+
+        backups = []
+        for line in ls_part.splitlines():
+            line = line.strip()
+            if not line or line.startswith("total") or not line.endswith(".tar.gz"):
+                continue
+            # Parse: -rw-r--r-- 1 root root 25M Jun 28 15:04 /root/zion-backups/zion-edge-20260628-150423.tar.gz
+            fields = line.split()
+            if len(fields) < 9:
+                continue
+            name = fields[-1].split("/")[-1]
+            size_str = fields[4]
+            # Convert size to MB
+            if size_str.endswith("M"):
+                size_mb = float(size_str[:-1])
+            elif size_str.endswith("K"):
+                size_mb = float(size_str[:-1]) / 1024
+            elif size_str.endswith("G"):
+                size_mb = float(size_str[:-1]) * 1024
+            else:
+                size_mb = float(size_str) / (1024*1024)
+            timestamp = f"{fields[5]} {fields[6]} {fields[7]}"
+            backups.append({"name": name, "size_mb": round(size_mb, 2), "date": timestamp})
+
+        health = {}
+        if health_part:
+            try:
+                import json as _json
+                health = _json.loads(health_part)
+            except Exception:
+                pass
+
+        return {"ok": True, "backups": backups, "health": health, "count": len(backups)}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def get_edge_backup_path(filename: str) -> "Path | None":
+    """Get local path to an edge backup file. Downloads via SCP if not on Edge."""
+    # On Edge: file is local
+    if EDGE_IS_LOCAL:
+        p = Path(f"/root/zion-backups/{filename}")
+        return p if p.exists() else None
+    # On Core PC: download to temp, then serve
+    import tempfile as _tf
+    local_cache = Path(_tf.gettempdir()) / f"edge-backup-{filename}"
+    if local_cache.exists():
+        return local_cache
+    ssh_key = REPO_ROOT / "ssh-key-zion-edge"
+    if not ssh_key.exists():
+        return None
+    try:
+        subprocess.run(
+            ["scp", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
+             "-o", "ConnectTimeout=5", "-o", "BatchMode=yes",
+             f"root@{EDGE_HOST}:/root/zion-backups/{filename}",
+             str(local_cache)],
+            capture_output=True, timeout=120
+        )
+        return local_cache if local_cache.exists() else None
+    except Exception:
+        return None
+
+
 def get_pool_miners() -> dict:
     """Fetch active miners from Edge pool Prometheus metrics."""
     try:
@@ -9254,6 +9333,36 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/launch-day/status":
             # v2 client alias for launch-day-prepare?action=status
             self._json(get_launch_state())
+        elif route == "/api/edge/backup/list":
+            self._json(list_edge_backups())
+        elif route == "/api/edge/backup/download":
+            # Download a specific backup file: /api/edge/backup/download?name=zion-edge-20260628-150423.tar.gz
+            fname = params.get("name", [""])[0].strip()
+            if not fname or "/" in fname or ".." in fname:
+                self._json({"ok": False, "error": "Invalid filename"})
+                return
+            if not fname.endswith(".tar.gz"):
+                self._json({"ok": False, "error": "Only .tar.gz files allowed"})
+                return
+            filepath = get_edge_backup_path(fname)
+            if filepath is None or not filepath.exists():
+                self._json({"ok": False, "error": f"Backup not found: {fname}"})
+                return
+            try:
+                file_size = filepath.stat().st_size
+                self.send_response(200)
+                self.send_header("Content-Type", "application/gzip")
+                self.send_header("Content-Disposition", f'attachment; filename="{fname}"')
+                self.send_header("Content-Length", str(file_size))
+                self.end_headers()
+                with open(filepath, "rb") as f:
+                    while True:
+                        chunk = f.read(65536)
+                        if not chunk:
+                            break
+                        self.wfile.write(chunk)
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
         elif route == "/api/backup/list":
             backups = []
             backup_dir = REPO_ROOT / "backups"

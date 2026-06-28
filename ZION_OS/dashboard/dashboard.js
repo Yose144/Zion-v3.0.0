@@ -677,6 +677,50 @@ async function clearEdgeDisk(aggressive) {
   }
 }
 
+// ── Download Edge Backup (lists backups, lets user pick, downloads via API) ──
+async function downloadEdgeBackup() {
+  toast('Fetching backup list…', 'success');
+  try {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 10000);
+    const res = await fetch('/api/edge/backup/list', { signal: ctrl.signal });
+    clearTimeout(tid);
+    const d = await res.json();
+    if (!d.ok) { toast(`Failed: ${d.error || 'unknown'}`, 'error'); return; }
+    if (!d.backups || d.backups.length === 0) {
+      toast('No backups found on Edge', 'error');
+      return;
+    }
+    // Show most recent 5 backups in a prompt
+    const recent = d.backups.slice(0, 5);
+    let msg = 'Select a backup to download:\n\n';
+    recent.forEach((b, i) => {
+      msg += `${i + 1}. ${b.name} (${b.size_mb} MB, ${b.date})\n`;
+    });
+    msg += '\nEnter number (1-' + recent.length + '):';
+    const choice = prompt(msg);
+    if (!choice) return;
+    const idx = parseInt(choice) - 1;
+    if (isNaN(idx) || idx < 0 || idx >= recent.length) {
+      toast('Invalid selection', 'error');
+      return;
+    }
+    const fname = recent[idx].name;
+    toast(`Downloading ${fname}…`, 'success');
+    // Trigger download via hidden link
+    const a = document.createElement('a');
+    a.href = `/api/edge/backup/download?name=${encodeURIComponent(fname)}`;
+    a.download = fname;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    toast(`Download started: ${fname}`, 'success');
+  } catch(e) {
+    if(e.name === 'AbortError') toast('Timeout fetching backup list', 'error');
+    else toast(`Error: ${e.message}`, 'error');
+  }
+}
+
 // ── Service Telemetry Detail Cards (Overview panel) ──
 async function updateServiceTelemetryDetails(s){
   const container = document.getElementById('overview-telemetry-details');

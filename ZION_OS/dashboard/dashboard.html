@@ -700,6 +700,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           <button onclick="clearEdgeDisk(true)" class="text-[10px] px-2.5 py-1.5 bg-red-800/60 hover:bg-red-700/80 border border-red-600/50 rounded-md font-semibold transition">🔥 Deep Clean</button>
           <button onclick="edgeAction('clean-docker')" class="text-[10px] px-2.5 py-1.5 bg-orange-700/40 hover:bg-orange-600/60 border border-orange-500/30 rounded-md font-semibold transition">🐳 Docker Prune</button>
           <button onclick="edgeAction('backup-edge')" class="text-[10px] px-2.5 py-1.5 bg-blue-700/40 hover:bg-blue-600/60 border border-blue-500/30 rounded-md font-semibold transition">💾 Backup Edge</button>
+          <button onclick="downloadEdgeBackup()" class="text-[10px] px-2.5 py-1.5 bg-cyan-700/40 hover:bg-cyan-600/60 border border-cyan-500/30 rounded-md font-semibold transition">📥 Download Backup</button>
           <button onclick="edgeAction('security-audit')" class="text-[10px] px-2.5 py-1.5 bg-amber-700/40 hover:bg-amber-600/60 border border-amber-500/30 rounded-md font-semibold transition">🔒 Security Audit</button>
           <button onclick="edgeAction('full-health')" class="text-[10px] px-2.5 py-1.5 bg-zinc-700/50 hover:bg-zinc-600 border border-white/10 rounded-md font-semibold transition">📊 Full Health</button>
         </div>
@@ -4935,7 +4936,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=72"></script>
+<script src="/dashboard.js?v=73"></script>
 <script>
 // ═══ ZION Theme — Auto-apply accent colors per pane ═══
 (function(){
