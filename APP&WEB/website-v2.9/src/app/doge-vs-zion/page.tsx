@@ -1159,7 +1159,7 @@ export default function DogeVsZionPage() {
               </p>
             </div>
 
-            <StargateLogo className="mx-auto max-w-[460px]" />
+            <StargateLogo className="mx-auto max-w-[360px]" />
 
             {/* Enter to Oasis button */}
             <div className="mt-10 flex justify-center">
