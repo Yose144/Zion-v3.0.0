@@ -1,0 +1,27 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": ["TEAMID.com.zionterranova.mobile"],
+        "components": [
+          {
+            "/": "/wallet/*",
+            "comment": "Wallet deep link — opens ZION Mobile wallet"
+          },
+          {
+            "/": "/send/*",
+            "comment": "Send deep link — opens ZION Mobile send screen"
+          },
+          {
+            "/": "/bridge/*",
+            "comment": "Bridge deep link — opens ZION Mobile bridge screen"
+          }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": ["TEAMID.com.zionterranova.mobile"]
+  }
+}
