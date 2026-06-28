@@ -14,7 +14,8 @@
 
 | Milestone | Target | Status |
 |-----------|--------|--------|
-| **3.0.3 Decimal Fork** | 27 June 2026 | ✅ **DEPLOYED** (Edge, MIGRATION_HEIGHT=17995) |
+| **3.0.3 Decimal Fork** | 27 June 2026 | ✅ **DEPLOYED** (Edge, MIGRATION_HEIGHT=18850) |
+| **Pool Persistence + TX Index** | 28 June 2026 | ✅ **DEPLOYED** (Session 3, Edge) |
 | **Mainnet Genesis #0** | 31 December 2026 | Ready for launch |
 | **Summer Solstice rehearsal** | 20 June 2026 | Completed (internal) |
 
@@ -97,9 +98,13 @@
 
 | Item | Status | Detail |
 |------|--------|--------|
-| Final payout verification | 🔄 In progress | PPLNS window validation |
+| PPLNS payout persistence | ✅ Done | File-based JSON snapshot, Edge deployed (commit `33a48151`) |
+| Address TX index (O(1) history) | ✅ Done | In-memory HashMap, Edge deployed (commit `fe3beed9`) |
+| Final payout verification | 🔄 In progress | Fee accumulator payout logic (tracked but not paid by pool) |
 | Security audit | 🔄 Scheduled | External firm booked |
-| Bridge validator key provisioning | 🔄 In progress | 3/5 threshold production |
+| Bridge mainnet validator keys | ⚠️ User task | Requires air-gapped machine + hardware wallet |
+| Bridge relay mainnet activation | ⚠️ Pending | After validator key provisioning |
+| Validator address top-up (≥0.01 ETH) | ⚠️ Pending | 5 validators need gas funding |
 | Community preparation | 🔄 Ongoing | Documentation, tutorials |
 | CI billing resolution | ⚠️ Pending | GitHub Actions infrastructure |
 
@@ -117,6 +122,19 @@ Key steps:
 
 ---
 
+## Phase 2.6 — Session 3 Engineering (2026-06-28) ✅ Complete
+
+| Feature | Commit | Edge Deployed |
+|---------|--------|---------------|
+| PPLNS pool persistence (file-based JSON snapshot) | `33a48151` | ✅ Yes |
+| Address TX index (O(1) getTransactionHistory) | `fe3beed9` | ✅ Yes |
+| Mobile Universal Links + App Links + EAS config | `529456f5` | N/A (EAS build) |
+| L4 daily streak system + daily XP reset | `58ac8294` | ✅ Yes |
+| L4 territory contest 24h cooldowns | `58ac8294` | ✅ Yes |
+| L4 daily_xp reset fix (json_set) | `3559d1a7` | ✅ Yes |
+
+---
+
 ## Phase 2.5 — L2/L3 Kanonizace + L4 Oasis Prep (Q2 2026) ✅ Complete
 
 ### L2 — Bridge / DAO / Atomic Swap
@@ -126,7 +144,7 @@ Key steps:
 || Bridge relay (L1 ↔ Base, 60-block finality) | ✅ Active |
 || DAO governance daemon (65 tests) | ✅ Active |
 || Atomic Swap HTLC (E2E tests + /swap web) | ✅ Active |
-|| 3/5 multisig validator threshold | ✅ Configured |
+|| 3/5 multisig validator threshold | ✅ Configured (5/5 for mainnet) |
 
 ### L3 — WARP + AI-Native + NCL
 
@@ -165,26 +183,38 @@ Key steps:
 | Feature | Status | Target |
 |---------|--------|--------|
 | getTransactionHistory UTXO + coinbase scan | ✅ Done (commit `77776e48`, Edge deployed) | Q3 2026 |
-| Address-based tx index (O(1) lookup) | 🔵 Planned | Q3 2026 |
+| Address-based tx index (O(1) lookup) | ✅ Done (commit `fe3beed9`, Edge deployed) | Q3 2026 |
 
 ### Fáze 3 — L4 Oasis Backend Completion
 
 | Feature | Status | Target |
 |---------|--------|--------|
-| WebSocket event wiring | 🔵 Planned | Q3 2026 |
-| Data files (avatars.json, golden_egg.json) | 🔵 Planned | Q3 2026 |
-| L1 blockchain listener (real-time XP) | 🔵 Planned | Q4 2026 |
+| WebSocket event wiring | ✅ Done (axum WS + tokio-tungstenite, 13 event types, 2 endpoints) | Q3 2026 |
+| Data files (avatars.json, golden_egg.json) | ✅ Done (51 avatars, 255 quests, 108 clues) | Q3 2026 |
+| L1 blockchain listener (real-time XP) | ✅ Done (blockchain_listener.rs, polls L1 RPC) | Q3 2026 |
+| Daily streak system | ✅ Done (commit `58ac8294`, touch() + daily XP reset) | Q3 2026 |
+| Territory contest cooldowns | ✅ Done (commit `58ac8294`, 24h cooldown) | Q3 2026 |
+| Achievement system | ✅ Done (5 types, auto-checking, milestones) | Q3 2026 |
 | Wallet signature auth | 🔵 Planned | Q4 2026 |
+| Guild wars (declaration + resolution) | 🔵 Needs design | Q4 2026 |
+| Raid boss combat (HP, abilities, 108 pillars) | 🔵 Needs design | Q4 2026 |
+| OASIS token bridge (L4→L1) | 🔵 In design | Q4 2026 |
 | E2E test (UE5 → Rust → L1) | 🔵 Planned | Q4 2026 |
 
 ### Fáze 4 — Mobile App Polish
 
 | Feature | Status | Target |
 |---------|--------|--------|
-| QR code scan/generate | 🔵 Planned | Q4 2026 |
-| Biometric auth (FaceID/TouchID) | 🔵 Planned | Q4 2026 |
-| Deep linking (Universal Links / App Links) | 🔵 Planned | Q4 2026 |
-| Device build + test | 🔵 Planned | Q4 2026 |
+| QR code scan/generate | ✅ Done | Q4 2026 |
+| Biometric auth (FaceID/TouchID) | ✅ Done | Q4 2026 |
+| Send/receive/balance/tx history | ✅ Done | Q4 2026 |
+| 3.0.3 decimal fix | ✅ Done (commit `61ddc587`) | Q3 2026 |
+| Deep linking (Universal Links / App Links) | ✅ Done (commit `529456f5`) | Q3 2026 |
+| EAS build config (eas.json) | ✅ Done (commit `529456f5`) | Q3 2026 |
+| apple-app-site-association + assetlinks.json | ✅ Done (placeholders, need real TEAMID/SHA256) | Q3 2026 |
+| `npx expo prebuild` (android/ + ios/ folders) | 🔵 Planned | Q4 2026 |
+| First device build (EAS Build) | 🔵 Planned (needs Apple Team ID + Android SHA256) | Q4 2026 |
+| App Store / Play Store submission | 🔵 Planned | Q4 2026 |
 
 ---
 
@@ -214,8 +244,18 @@ Key steps:
 | Avatar system (51 core + 151 extended) | ✅ Active | Now |
 | Quest engine (5 quests per avatar) | ✅ Active | Now |
 | REST API (`/avatars`, `/quests`) | ✅ Active | Now |
-| Golden Egg treasure hunt (108 clues, 8.25B ZION prize) | 🔵 Planned | 2027 |
-| Guild system & territories | 🔵 Planned | 2028 |
+| WebSocket real-time events (13 types, 2 endpoints) | ✅ Active | Now |
+| L1 blockchain listener (real-time XP) | ✅ Active | Now |
+| Daily streak + achievements | ✅ Active | Now |
+| Territory system (8 regions, claim/contest/cooldown) | ✅ Active | Now |
+| Raid teams (108 pillars, roles, leaderboard) | ✅ Active | Now |
+| Consciousness levels (9 tiers, Physical→OnTheStar) | ✅ Active | Now |
+| Tithe system (humanitarian contributions) | ✅ Active | Now |
+| Golden Egg treasure hunt (108 clues, 8.25B ZION prize) | ✅ Active | Now |
+| Guild wars (declaration + resolution) | 🔵 Needs design | Q4 2026 |
+| Raid boss combat (HP, abilities, 108 pillars) | 🔵 Needs design | Q4 2026 |
+| OASIS token bridge (L4→L1) | 🔵 In design | Q4 2026 |
+| Wallet signature auth | 🔵 Planned | Q4 2026 |
 | UE5 integration | 🔵 Planned | 2028–2029 |
 
 ### L5 Free World — Physical Communities
@@ -267,9 +307,10 @@ Key steps:
 
 | Metric | Value |
 |--------|-------|
-| V3 workspace tests | ~1,470+ |
+| V3 workspace tests | ~1,650+ (514 zion-core, 31 zion-pool, 124 zion-oasis, +others) |
 | Test pass rate | 100% (last clean gate) |
-| Lines of code (V3) | 50,000+ (Rust) |
+| Lines of code (V3) | 55,000+ (Rust) |
+| Edge services active | 12/12 |
 | Documentation pages | 200+ |
 | Contributors | Core team + community |
 
@@ -287,5 +328,5 @@ Key steps:
 
 ---
 
-*Last updated: 2026-06-27*
-*Version: v3.0.3 · Status: Mainnet Ready (L1 Active, L2/L3 Ready, L4 Oasis in Prep, 3.0.3 Decimal Fork Deployed)*
+*Last updated: 2026-06-28 (Session 3)*
+*Version: v3.0.3 · Status: Mainnet Ready (L1 Active, L2/L3 Ready, L4 Oasis Backend Complete, 3.0.3 Decimal Fork Deployed, Pool Persistence + TX Index Deployed)*
