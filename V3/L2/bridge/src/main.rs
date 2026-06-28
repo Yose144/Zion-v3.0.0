@@ -246,13 +246,18 @@ async fn recover_pending_locks(
 ) -> usize {
     let mut count = 0usize;
 
-    // Pending + Confirmed
+    // Pending + Confirmed + Executing (stuck mid-processing)
     match db.get_pending_locks() {
         Ok(locks) => {
             for lock in locks {
                 info!(
-                    "🔄 Recovery: re-queueing pending lock {} ({} wZION wei)",
-                    lock.l1_tx_hash, lock.amount_wzion_wei
+                    "🔄 Recovery: re-queueing pending lock {} ({} wZION wei, status={:?})",
+                    lock.l1_tx_hash, lock.amount_wzion_wei, lock.status,
+                );
+                // Reset to Pending so the relayer re-processes it cleanly
+                let _ = db.update_lock_status(
+                    &lock.l1_tx_hash,
+                    zion_bridge::types::BridgeStatus::Pending,
                 );
                 if lock_tx.send(lock).await.is_err() {
                     error!("Recovery: lock channel closed during startup");
@@ -298,8 +303,13 @@ async fn recover_pending_burns(
         Ok(burns) => {
             for burn in burns {
                 info!(
-                    "🔄 Recovery: re-queueing pending burn {} ({} wZION wei)",
-                    burn.burn_id, burn.amount_wzion_wei
+                    "🔄 Recovery: re-queueing pending burn {} ({} wZION wei, status={:?})",
+                    burn.burn_id, burn.amount_wzion_wei, burn.status,
+                );
+                // Reset to Pending so the relayer re-processes it cleanly
+                let _ = db.update_burn_status(
+                    &burn.burn_id,
+                    zion_bridge::types::BridgeStatus::Pending,
                 );
                 if burn_tx.send(burn).await.is_err() {
                     error!("Recovery: burn channel closed during startup");
