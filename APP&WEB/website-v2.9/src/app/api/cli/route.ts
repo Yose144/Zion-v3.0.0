@@ -48,7 +48,7 @@ import {
 
 const FETCH_TIMEOUT = 8000;
 const CLEAR_MARKER = '__CLEAR__';
-const WEB_CLI_VERSION = 'v2.0.0';
+const WEB_CLI_VERSION = 'v2.1.0';
 
 interface CliResponse {
   ok: boolean;
@@ -262,11 +262,20 @@ async function handleStatus(): Promise<CliResponse> {
       poolOnline = true;
       const agg = data.aggregate ?? {};
       const runtime = data.runtime ?? {};
+      const pplns = data.pplns ?? {};
+      const fee = data.fee ?? {};
+      const feeBal = fee.balances ?? {};
       lines.push(`  ✓ Online — ${SITE_POOL_PRIMARY}`);
       lines.push(`    Hashrate:       ${formatHashrate(agg.hashrate ?? runtime.network_hashrate ?? 0)}`);
       lines.push(`    Active miners: ${agg.active_miners ?? 0}`);
       lines.push(`    Blocks found:  ${agg.blocks_found ?? 0}`);
       lines.push(`    Share eff:     ${agg.share_efficiency ?? '—'}%`);
+      lines.push(`    Total paid:    ${formatNum(pplns.total_paid_zion, 4)} ZION (${pplns.payout_rounds ?? 0} rounds)`);
+      lines.push(`    Fee split:     ${fee.miner_share ?? MINER_SHARE_PCT}/${fee.humanitarian_tithe ?? HUMANITARIAN_TITHE_PCT}/${fee.issobella_fund ?? ISSOBELLA_FUND_PCT}/${fee.pool_fee ?? POOL_FEE_PCT} (miner/hum/isso/burn)`);
+      lines.push(`    Pool wallet:   ${formatNum(feeBal.pool?.balance_zion ?? 0, 2)} ZION`);
+      lines.push(`    Humanitarian:  ${formatNum(feeBal.humanitarian?.balance_zion ?? 0, 2)} ZION`);
+      lines.push(`    Issobella:     ${formatNum(feeBal.issobella?.balance_zion ?? 0, 2)} ZION`);
+      lines.push(`    Burned (1%):   ${formatNum(fee.burned_total_zion ?? 0, 2)} ZION`);
     } else {
       lines.push(`  ⚠ Pool stats unavailable (stratum on ${SITE_POOL_PRIMARY})`);
     }
@@ -406,7 +415,7 @@ async function handlePool(sub?: string): Promise<CliResponse> {
     return {
       ok: false,
       output: '',
-      error: 'Usage: pool <subcommand>. Try: stats, miners, blocks, servers',
+      error: 'Usage: pool <subcommand>. Try: stats, miners, blocks, servers, payouts',
     };
   }
 
@@ -423,11 +432,12 @@ async function handlePool(sub?: string): Promise<CliResponse> {
   if (sub === 'miners') return { ok: true, output: formatPoolMiners(data) };
   if (sub === 'blocks') return { ok: true, output: formatPoolBlocks(data) };
   if (sub === 'servers') return { ok: true, output: formatPoolServers(data) };
+  if (sub === 'payouts' || sub === 'fees') return { ok: true, output: formatPoolPayouts(data) };
 
   return {
     ok: false,
     output: '',
-    error: `Unknown pool subcommand: "${sub}". Try: stats, miners, blocks, servers`,
+    error: `Unknown pool subcommand: "${sub}". Try: stats, miners, blocks, servers, payouts`,
   };
 }
 
@@ -842,6 +852,7 @@ function formatHelp(): string {
         ['pool miners', 'Top 10 active miners'],
         ['pool blocks', 'Recent 10 blocks found'],
         ['pool servers', 'Pool servers and online status'],
+        ['pool payouts', 'Fee split, on-chain wallet balances, burned total'],
       ],
     },
     {
@@ -1093,6 +1104,7 @@ function formatPoolStats(data: any): string {
   const pplns = data.pplns ?? {};
   const runtime = data.runtime ?? {};
   const servers = data.servers ?? [];
+  const feeBalances = fee.balances ?? {};
 
   return [
     'Pool Stats',
@@ -1119,11 +1131,17 @@ function formatPoolStats(data: any): string {
     `  Payout rounds:     ${pplns.payout_rounds ?? 0}`,
     '',
     '── Fee Distribution ──',
-    `  Pool fee:          ${fee.pool_fee ?? POOL_FEE_PCT}%`,
+    `  Pool fee (burned): ${fee.pool_fee ?? POOL_FEE_PCT}%`,
     `  Humanitarian:      ${fee.humanitarian_tithe ?? HUMANITARIAN_TITHE_PCT}%`,
     `  Issobella Fund:    ${fee.issobella_fund ?? ISSOBELLA_FUND_PCT}%`,
     `  Miner share:       ${fee.miner_share ?? MINER_SHARE_PCT}%`,
     `  Min payout:        ${fee.min_payout ?? 0.1} ZION`,
+    '',
+    '── Fee Wallet On-Chain Balances ──',
+    `  Pool/Miner:        ${formatNum(feeBalances.pool?.balance_zion ?? 0, 2)} ZION  (${fee.pool_wallet ?? '—'})`,
+    `  Humanitarian:      ${formatNum(feeBalances.humanitarian?.balance_zion ?? 0, 2)} ZION  (${fee.humanitarian_wallet ?? '—'})`,
+    `  Issobella:         ${formatNum(feeBalances.issobella?.balance_zion ?? 0, 2)} ZION  (${fee.issobella_wallet ?? '—'})`,
+    `  Burned (1%):       ${formatNum(fee.burned_total_zion ?? 0, 2)} ZION  (permanently destroyed)`,
     '',
     '── Runtime ──',
     `  Chain height:      ${runtime.chain_height ?? '—'}`,
@@ -1175,6 +1193,52 @@ function formatPoolServers(data: any): string {
     lines.push(`  ${s.online ? '✓' : '✗'} ${s.name ?? s.id ?? '—'}  ${s.flag ?? ''} ${s.host ?? '—'}:${s.stratum ?? '—'}  region: ${s.region ?? '—'}`);
   });
   return lines.join('\n');
+}
+
+function formatPoolPayouts(data: any): string {
+  const fee = data.fee ?? {};
+  const pplns = data.pplns ?? {};
+  const agg = data.aggregate ?? {};
+  const feeBal = fee.balances ?? {};
+  const blocksFound = agg.blocks_found ?? 0;
+  const blockReward = BLOCK_REWARD_ZION;
+  const minerPerBlock = blockReward * (fee.miner_share ?? MINER_SHARE_PCT) / 100;
+  const humPerBlock = blockReward * (fee.humanitarian_tithe ?? HUMANITARIAN_TITHE_PCT) / 100;
+  const issoPerBlock = blockReward * (fee.issobella_fund ?? ISSOBELLA_FUND_PCT) / 100;
+  const burnPerBlock = blockReward * (fee.pool_fee ?? POOL_FEE_PCT) / 100;
+
+  return [
+    'Pool Payouts & Fee Split',
+    '═══════════════════════════════════════════════════════════',
+    '',
+    '── PPLNS ──',
+    `  Total paid:        ${formatNum(pplns.total_paid_zion, 4)} ZION`,
+    `  Payout rounds:     ${pplns.payout_rounds ?? 0}`,
+    `  Window:            ${pplns.window_used ?? 0} / ${pplns.window_size ?? 0} (${pplns.window_pct != null ? pplns.window_pct.toFixed(2) + '%' : '—'})`,
+    `  Registered miners: ${pplns.registered_miners ?? 0}`,
+    `  Min payout:        ${fee.min_payout ?? 0.1} ZION`,
+    '',
+    '── Fee Split (per block) ──',
+    `  Block reward:      ${formatNum(blockReward, 4)} ZION`,
+    `  Miner (89%):       ${formatNum(minerPerBlock, 4)} ZION/block  → ${formatNum(minerPerBlock * blocksFound, 2)} ZION total`,
+    `  Humanitarian (5%): ${formatNum(humPerBlock, 4)} ZION/block  → ${formatNum(humPerBlock * blocksFound, 2)} ZION total`,
+    `  Issobella (5%):    ${formatNum(issoPerBlock, 4)} ZION/block  → ${formatNum(issoPerBlock * blocksFound, 2)} ZION total`,
+    `  Burned (1%):       ${formatNum(burnPerBlock, 4)} ZION/block  → ${formatNum(burnPerBlock * blocksFound, 2)} ZION total`,
+    `  Blocks found:      ${blocksFound}`,
+    '',
+    '── On-Chain Wallet Balances ──',
+    `  Pool/Miner:        ${formatNum(feeBal.pool?.balance_zion ?? 0, 2)} ZION  UTXOs: ${feeBal.pool?.utxo_count ?? 0}`,
+    `    ${fee.pool_wallet ?? '—'}`,
+    `  Humanitarian:      ${formatNum(feeBal.humanitarian?.balance_zion ?? 0, 2)} ZION  UTXOs: ${feeBal.humanitarian?.utxo_count ?? 0}`,
+    `    ${fee.humanitarian_wallet ?? '—'}`,
+    `  Issobella:         ${formatNum(feeBal.issobella?.balance_zion ?? 0, 2)} ZION  UTXOs: ${feeBal.issobella?.utxo_count ?? 0}`,
+    `    ${fee.issobella_wallet ?? '—'}`,
+    '',
+    '── Burned (Permanent Destruction) ──',
+    `  Total burned:      ${formatNum(fee.burned_total_zion ?? 0, 2)} ZION`,
+    `  Note:             1% of every block subsidy is permanently destroyed at coinbase.`,
+    `                    There is no pool_fee wallet — the coins are unspendable.`,
+  ].join('\n');
 }
 
 // ─── Formatters: Explorer ───────────────────────────────────────────────────
