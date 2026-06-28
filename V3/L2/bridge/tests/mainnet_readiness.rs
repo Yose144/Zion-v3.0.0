@@ -200,7 +200,7 @@ fn base_mainnet_chain() -> EvmChainConfig {
         // Placeholder — update after T1 bridge deploy via:
         //   ./scripts/deploy-bridge-base.sh base
         wzion_address: "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6".into(),
-        bridge_contract_address: "0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88".into(),
+        bridge_contract_address: "0x5a1Df5961C166a79E0817329e2807Aac63Db57F5".into(),
         finality_blocks: 64, // Base mainnet: 64 blocks ≈ 128s
         enabled: true,       // 5/5 bridge deployed and migrated
         gas_strategy: "eip1559".into(),
@@ -233,7 +233,7 @@ fn test_mainnet_chain_id() {
     );
     // 5/5 bridge deployed
     assert_eq!(
-        chain.bridge_contract_address, "0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88",
+        chain.bridge_contract_address, "0x5a1Df5961C166a79E0817329e2807Aac63Db57F5",
         "Mainnet bridge contract must be the deployed 5/5 bridge"
     );
 }
@@ -1053,7 +1053,7 @@ fn test_parse_bridge_mainnet_toml() {
     );
     assert_eq!(
         base.bridge_contract_address,
-        "0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88"
+        "0x5a1Df5961C166a79E0817329e2807Aac63Db57F5"
     );
     assert_eq!(cfg.metrics.log_level, "info");
     assert_eq!(cfg.validator.threshold, 5);

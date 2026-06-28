@@ -49,7 +49,7 @@ impl BridgeDb {
                 l1_tx_hash       TEXT PRIMARY KEY,
                 l1_block_height  INTEGER NOT NULL,
                 l1_sender        TEXT NOT NULL,
-                amount_flowers    INTEGER NOT NULL,
+                amount_flowers    TEXT NOT NULL,
                 amount_wzion_wei     TEXT NOT NULL,
                 target_chain     TEXT NOT NULL,
                 evm_recipient    TEXT NOT NULL,
@@ -69,7 +69,7 @@ impl BridgeDb {
                 evm_chain        TEXT NOT NULL,
                 evm_burner       TEXT NOT NULL,
                 amount_wzion_wei     TEXT NOT NULL,
-                amount_flowers INTEGER NOT NULL,
+                amount_flowers   TEXT NOT NULL,
                 l1_recipient     TEXT NOT NULL,
                 status           TEXT NOT NULL DEFAULT 'pending',
                 confirmations    INTEGER NOT NULL DEFAULT 0,
@@ -136,6 +136,49 @@ impl BridgeDb {
             let _ = conn.execute(alter, []);
         }
 
+        // Migration: convert amount_flowers from INTEGER to TEXT for both tables.
+        // Pre-fork premine locks have amount_flowers up to 1.67e19 which overflows
+        // SQLite's INTEGER (i64, max 9.2e18). Store as TEXT instead.
+        // SQLite doesn't support ALTER COLUMN, so we use the table-rebuild approach.
+        for (table, cols) in &[
+            ("l1_locks", "l1_tx_hash TEXT PRIMARY KEY, l1_block_height INTEGER NOT NULL, l1_sender TEXT NOT NULL, amount_flowers TEXT NOT NULL, amount_wzion_wei TEXT NOT NULL, target_chain TEXT NOT NULL, evm_recipient TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', confirmations INTEGER NOT NULL DEFAULT 0, detected_at TEXT NOT NULL, completed_at TEXT, evm_tx_hash TEXT, retry_count INTEGER NOT NULL DEFAULT 0, last_error TEXT"),
+            ("evm_burns", "burn_id TEXT PRIMARY KEY, evm_tx_hash TEXT NOT NULL, evm_block_number INTEGER NOT NULL, evm_chain TEXT NOT NULL, evm_burner TEXT NOT NULL, amount_wzion_wei TEXT NOT NULL, amount_flowers TEXT NOT NULL, l1_recipient TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', confirmations INTEGER NOT NULL DEFAULT 0, detected_at TEXT NOT NULL, completed_at TEXT, l1_unlock_tx TEXT, retry_count INTEGER NOT NULL DEFAULT 0, last_error TEXT"),
+        ] {
+            // Check if amount_flowers column is INTEGER (needs migration)
+            let needs_migration: bool = {
+                let mut stmt = conn.prepare(&format!("PRAGMA table_info({})", table))?;
+                let rows = stmt.query_map([], |row| {
+                    let name: String = row.get(1)?;
+                    let col_type: String = row.get(2)?;
+                    Ok((name, col_type))
+                })?;
+                let mut found = false;
+                for row in rows {
+                    if let Ok((name, col_type)) = row {
+                        if name == "amount_flowers" && col_type == "INTEGER" {
+                            found = true;
+                        }
+                    }
+                }
+                found
+            };
+            if needs_migration {
+                info!("Migrating {}.amount_flowers from INTEGER to TEXT", table);
+                conn.execute_batch(&format!(
+                    "CREATE TABLE _{table}_new ({cols});
+                     INSERT INTO _{table}_new SELECT * FROM {table};
+                     DROP TABLE {table};
+                     ALTER TABLE _{table}_new RENAME TO {table};",
+                    table = table, cols = cols
+                ))?;
+                // Recreate indexes
+                let idx = if *table == "l1_locks" { "idx_locks_status" } else { "idx_burns_status" };
+                let status_col = if *table == "l1_locks" { "status" } else { "status" };
+                conn.execute(&format!("CREATE INDEX IF NOT EXISTS {} ON {}({})", idx, table, status_col), [])?;
+                info!("Migration of {} complete", table);
+            }
+        }
+
         info!("đź“¦ Bridge database initialized");
         Ok(())
     }
@@ -154,7 +197,7 @@ impl BridgeDb {
                 lock.l1_tx_hash,
                 lock.l1_block_height,
                 lock.l1_sender,
-                lock.amount_flowers,
+                lock.amount_flowers.to_string(),
                 lock.amount_wzion_wei,
                 lock.target_chain,
                 lock.evm_recipient,
@@ -182,7 +225,7 @@ impl BridgeDb {
                 burn.evm_chain,
                 burn.evm_burner,
                 burn.amount_wzion_wei,
-                burn.amount_flowers,
+                burn.amount_flowers.to_string(),
                 burn.l1_recipient,
                 format!("{:?}", burn.status),
                 burn.confirmations,
@@ -272,11 +315,12 @@ impl BridgeDb {
              FROM l1_locks WHERE status IN ('Pending', 'Confirmed', 'Executing')",
         )?;
         let rows = stmt.query_map([], |row| {
+            let flowers_str: String = row.get(3)?;
             Ok(L1LockEvent {
                 l1_tx_hash: row.get(0)?,
                 l1_block_height: row.get(1)?,
                 l1_sender: row.get(2)?,
-                amount_flowers: row.get(3)?,
+                amount_flowers: flowers_str.parse().unwrap_or(0),
                 amount_wzion_wei: row.get(4)?,
                 target_chain: row.get(5)?,
                 evm_recipient: row.get(6)?,
@@ -304,6 +348,7 @@ impl BridgeDb {
              FROM evm_burns WHERE status IN ('Pending', 'Confirmed', 'Executing')",
         )?;
         let rows = stmt.query_map([], |row| {
+            let flowers_str: String = row.get(6)?;
             Ok(EvmBurnEvent {
                 burn_id: row.get(0)?,
                 evm_tx_hash: row.get(1)?,
@@ -311,7 +356,7 @@ impl BridgeDb {
                 evm_chain: row.get(3)?,
                 evm_burner: row.get(4)?,
                 amount_wzion_wei: row.get(5)?,
-                amount_flowers: row.get(6)?,
+                amount_flowers: flowers_str.parse().unwrap_or(0),
                 l1_recipient: row.get(7)?,
                 status: BridgeStatus::Pending,
                 confirmations: row.get(9)?,
@@ -396,11 +441,12 @@ impl BridgeDb {
              FROM l1_locks WHERE status = 'Failed' AND retry_count < ?1",
         )?;
         let rows = stmt.query_map(params![max_retries], |row| {
+            let flowers_str: String = row.get(3)?;
             Ok(L1LockEvent {
                 l1_tx_hash: row.get(0)?,
                 l1_block_height: row.get(1)?,
                 l1_sender: row.get(2)?,
-                amount_flowers: row.get(3)?,
+                amount_flowers: flowers_str.parse().unwrap_or(0),
                 amount_wzion_wei: row.get(4)?,
                 target_chain: row.get(5)?,
                 evm_recipient: row.get(6)?,
@@ -425,6 +471,7 @@ impl BridgeDb {
              FROM evm_burns WHERE status = 'Failed' AND retry_count < ?1",
         )?;
         let rows = stmt.query_map(params![max_retries], |row| {
+            let flowers_str: String = row.get(6)?;
             Ok(EvmBurnEvent {
                 burn_id: row.get(0)?,
                 evm_tx_hash: row.get(1)?,
@@ -432,7 +479,7 @@ impl BridgeDb {
                 evm_chain: row.get(3)?,
                 evm_burner: row.get(4)?,
                 amount_wzion_wei: row.get(5)?,
-                amount_flowers: row.get(6)?,
+                amount_flowers: flowers_str.parse().unwrap_or(0),
                 l1_recipient: row.get(7)?,
                 status: BridgeStatus::Failed,
                 confirmations: row.get(9)?,
@@ -610,7 +657,7 @@ mod tests {
         let pending = db.get_pending_burns().unwrap();
         assert_eq!(pending.len(), 1);
         assert_eq!(pending[0].burn_id, "burn001");
-        assert_eq!(pending[0].amount_flowers, 1_000_000_000_000_000); // 1000 ZION
+        assert_eq!(pending[0].amount_flowers, 1_000_000_000); // 1000 ZION × 1e6 (post-3.0.3)
     }
 
     #[test]
