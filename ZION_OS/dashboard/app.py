@@ -103,6 +103,60 @@ AUTH_EXEMPT_ROUTES = {"/api/health", "/health", "/favicon.ico"}
 EDGE_HOST = "100.76.16.108"   # Tailscale IP (preferred — low latency)
 EDGE_PUBLIC_IP = "77.42.71.94"  # Public IP (fallback if Tailscale down)
 
+# ── Edge-local detection ─────────────────────────────────────────────────
+# When the dashboard runs ON the Edge server, we can execute commands locally
+# instead of SSH (which requires a key file that may not exist on Edge itself).
+def _is_edge_local() -> bool:
+    """Detect if we're running on the Edge server itself."""
+    try:
+        # Check hostname
+        hostname = socket.gethostname()
+        if "edge" in hostname.lower() or "mainnet" in hostname.lower():
+            return True
+        # Check if EDGE_HOST matches any local interface
+        local_ips = set()
+        try:
+            local_ips.add(socket.gethostbyname(socket.gethostname()))
+        except Exception:
+            pass
+        # Check all interfaces
+        try:
+            hostname_full = socket.getfqdn()
+            local_ips.add(socket.gethostbyname(hostname_full))
+        except Exception:
+            pass
+        # Check Tailscale IP directly
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.settimeout(0.5)
+            s.connect((EDGE_HOST, 8443))
+            local_ip = s.getsockname()[0]
+            s.close()
+            if local_ip == EDGE_HOST:
+                return True
+        except Exception:
+            pass
+        return False
+    except Exception:
+        return False
+
+EDGE_IS_LOCAL = _is_edge_local()
+
+def _run_edge_cmd(cmd: str, timeout: int = 8) -> subprocess.CompletedProcess:
+    """Run a command on the Edge server — locally if we're on Edge, via SSH otherwise."""
+    if EDGE_IS_LOCAL:
+        return subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=timeout)
+    # SSH path — requires key file
+    ssh_key = REPO_ROOT / "ssh-key-zion-edge"
+    if not ssh_key.exists():
+        raise FileNotFoundError(f"SSH key not found: {ssh_key}")
+    return subprocess.run(
+        ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
+         "-o", "ConnectTimeout=3", "-o", "BatchMode=yes",
+         f"root@{EDGE_HOST}", cmd],
+        capture_output=True, text=True, timeout=timeout
+    )
+
 # ── Decimal conversion helpers (3.0.3 fork) ──────────────────────────────
 # Post-3.0.3: 1 ZION = 1_000_000 flowers (6 decimals)
 # Pre-3.0.3:  1 ZION = 1_000_000_000_000 flowers (12 decimals)
@@ -471,24 +525,11 @@ def get_edge_server_health() -> dict:
         "docker": [],
     }
 
-    # SSH to Edge server and run the health probe script
-    ssh_key = REPO_ROOT / "ssh-key-zion-edge"
-    if not ssh_key.exists():
-        result["error"] = "SSH key not found"
-        with EDGE_HEALTH_LOCK:
-            EDGE_HEALTH_CACHE["ts"] = now
-            EDGE_HEALTH_CACHE["data"] = result
-        return result
-    ssh_cmd = (
-        f'ssh -i "{ssh_key}" -o ConnectTimeout=3 -o StrictHostKeyChecking=no -o BatchMode=yes '
-        f'root@{EDGE_HOST} /usr/local/bin/edge-health-probe.sh'
-    )
-
+    # Run health probe on Edge — locally if on Edge, via SSH otherwise
     try:
-        import subprocess as _sp
-        out = _sp.run(ssh_cmd, shell=True, capture_output=True, text=True, timeout=8)
+        out = _run_edge_cmd("/usr/local/bin/edge-health-probe.sh", timeout=8)
         if out.returncode != 0 or not out.stdout.strip():
-            result["error"] = out.stderr.strip()[:200] if out.stderr else "SSH failed"
+            result["error"] = out.stderr.strip()[:200] if out.stderr else "Edge probe failed"
             with EDGE_HEALTH_LOCK:
                 EDGE_HEALTH_CACHE["ts"] = now
                 EDGE_HEALTH_CACHE["data"] = result
@@ -3694,21 +3735,15 @@ def get_edge_server_status() -> dict:
         return _edge_status_cache["data"]
 
     ssh_key = REPO_ROOT / "ssh-key-zion-edge"
-    if not ssh_key.exists():
+    if not EDGE_IS_LOCAL and not ssh_key.exists():
         return {"ok": False, "error": "SSH key not found"}
 
     try:
-        # Single SSH call: combine all commands to avoid 3x SSH overhead
+        # Single command: combine all metrics to avoid multiple calls
         combined_cmd = "cat /proc/loadavg && free -m && df -h / | tail -1 && echo '===TOP===' && ps -eo rss,comm --sort=-rss | head -6 | tail -5 && echo '===SVC===' && systemctl is-active zion-edge-node1 zion-edge-node2 zion-pool-server zion-edge-dao zion-edge-warp zion-edge-bridge 2>/dev/null"
-        result = subprocess.run(
-            ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
-             "-o", "ConnectTimeout=2", "-o", "BatchMode=yes",
-             "root@100.76.16.108",
-             combined_cmd],
-            capture_output=True, text=True, timeout=8
-        )
+        result = _run_edge_cmd(combined_cmd, timeout=8)
         if result.returncode != 0:
-            return {"ok": False, "error": result.stderr.strip() or "SSH failed"}
+            return {"ok": False, "error": result.stderr.strip() or "Edge command failed"}
 
         output = result.stdout.strip()
         # Split output by markers
@@ -3783,28 +3818,24 @@ def get_edge_server_status() -> dict:
         _edge_status_cache["ts"] = now
         return data
     except subprocess.TimeoutExpired:
-        return {"ok": False, "error": "SSH timeout"}
+        return {"ok": False, "error": "Command timeout"}
+    except FileNotFoundError as e:
+        return {"ok": False, "error": str(e)}
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
 def clear_edge_disk(aggressive: bool = False) -> dict:
-    """Run edge-log-cleanup.sh on Edge server via SSH, plus Docker prune.
+    """Run edge-log-cleanup.sh on Edge server, plus Docker prune.
     Returns disk usage before/after and freed space."""
     ssh_key = REPO_ROOT / "ssh-key-zion-edge"
-    if not ssh_key.exists():
+    if not EDGE_IS_LOCAL and not ssh_key.exists():
         return {"ok": False, "error": "SSH key not found"}
 
     try:
         # Get disk usage before
-        result = subprocess.run(
-            ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
-             "-o", "ConnectTimeout=3", "-o", "BatchMode=yes",
-             "root@100.76.16.108",
-             "df -h / | tail -1 | awk '{print $5\" \"$4}'"],
-            capture_output=True, text=True, timeout=8
-        )
+        result = _run_edge_cmd("df -h / | tail -1 | awk '{print $5\" \"$4}'", timeout=8)
         if result.returncode != 0:
-            return {"ok": False, "error": result.stderr.strip() or "SSH failed"}
+            return {"ok": False, "error": result.stderr.strip() or "Edge command failed"}
         before_parts = result.stdout.strip().split()
         disk_before_pct = before_parts[0].rstrip('%') if before_parts else "?"
         disk_before_avail = before_parts[1] if len(before_parts) > 1 else "?"
@@ -3821,23 +3852,11 @@ def clear_edge_disk(aggressive: bool = False) -> dict:
                 "/usr/local/bin/edge-log-cleanup.sh 2>&1"
             )
 
-        result = subprocess.run(
-            ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
-             "-o", "ConnectTimeout=3", "-o", "BatchMode=yes",
-             "root@100.76.16.108",
-             cleanup_cmd],
-            capture_output=True, text=True, timeout=60
-        )
+        result = _run_edge_cmd(cleanup_cmd, timeout=60)
         cleanup_output = result.stdout.strip()
 
         # Get disk usage after
-        result = subprocess.run(
-            ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
-             "-o", "ConnectTimeout=3", "-o", "BatchMode=yes",
-             "root@100.76.16.108",
-             "df -h / | tail -1 | awk '{print $5\" \"$4}'"],
-            capture_output=True, text=True, timeout=8
-        )
+        result = _run_edge_cmd("df -h / | tail -1 | awk '{print $5\" \"$4}'", timeout=8)
         after_parts = result.stdout.strip().split()
         disk_after_pct = after_parts[0].rstrip('%') if after_parts else "?"
         disk_after_avail = after_parts[1] if len(after_parts) > 1 else "?"
@@ -3854,18 +3873,21 @@ def clear_edge_disk(aggressive: bool = False) -> dict:
             "output": cleanup_output[-500:] if cleanup_output else "",
         }
     except subprocess.TimeoutExpired:
-        return {"ok": False, "error": "SSH timeout — cleanup may still be running on edge"}
+        return {"ok": False, "error": "Timeout - cleanup may still be running"}
+    except FileNotFoundError as e:
+        return {"ok": False, "error": str(e)}
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
 
 def run_edge_action(action: str) -> dict:
-    """Run an action on the Edge server via SSH (service restart, docker clean, etc.)."""
+    """Run an action on the Edge server (service restart, docker clean, etc.).
+    Executes locally when on Edge, via SSH otherwise."""
     ssh_key = REPO_ROOT / "ssh-key-zion-edge"
-    if not ssh_key.exists():
+    if not EDGE_IS_LOCAL and not ssh_key.exists():
         return {"ok": False, "error": "SSH key not found"}
 
-    # Map action → SSH command
+    # Map action → command
     ACTION_MAP = {
         "restart-node1":          "systemctl restart zion-edge-node1",
         "restart-node2":          "systemctl restart zion-edge-node2",
@@ -3888,13 +3910,7 @@ def run_edge_action(action: str) -> dict:
         return {"ok": False, "error": f"Unknown action: {action}"}
 
     try:
-        result = subprocess.run(
-            ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
-             "-o", "ConnectTimeout=5", "-o", "BatchMode=yes",
-             "root@100.76.16.108",
-             cmd],
-            capture_output=True, text=True, timeout=30
-        )
+        result = _run_edge_cmd(cmd, timeout=30)
         output = (result.stdout + "\n" + result.stderr).strip()
         ok = result.returncode == 0
         # Invalidate edge status cache after restarts
@@ -3903,7 +3919,9 @@ def run_edge_action(action: str) -> dict:
             _edge_status_cache["ts"] = 0
         return {"ok": ok, "result": output[-300:] if output else "OK", "action": action}
     except subprocess.TimeoutExpired:
-        return {"ok": False, "error": "SSH timeout", "action": action}
+        return {"ok": False, "error": "Command timeout", "action": action}
+    except FileNotFoundError as e:
+        return {"ok": False, "error": str(e), "action": action}
     except Exception as e:
         return {"ok": False, "error": str(e), "action": action}
 
