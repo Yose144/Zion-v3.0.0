@@ -241,7 +241,7 @@ impl L1Watcher {
             if lock.l1_block_height <= finalized_height {
                 info!(
                     "✅ L1 Lock finalized: {} ZION from {} → {} (TX: {})",
-                    crate::types::conversion::flowers_to_zion_display(lock.amount_flowers),
+                    crate::types::conversion::flowers_to_zion_display_at(lock.amount_flowers, lock.l1_block_height),
                     lock.l1_sender,
                     lock.evm_recipient,
                     tx_hash,
@@ -331,12 +331,16 @@ impl L1Watcher {
                     .unwrap_or_default();
 
                 let tx_hash = hex::encode(tx.id);
+                let wzion_wei = crate::types::conversion::flowers_to_wzion_wei_at(
+                    output.amount,
+                    block.height,
+                );
                 let lock_event = L1LockEvent {
                     l1_tx_hash: tx_hash.clone(),
                     l1_block_height: block.height,
                     l1_sender: sender,
                     amount_flowers: output.amount,
-                    amount_wzion_wei: crate::types::conversion::flowers_to_wzion_wei(output.amount),
+                    amount_wzion_wei: wzion_wei,
                     target_chain,
                     evm_recipient,
                     detected_at: Utc::now(),
@@ -344,12 +348,18 @@ impl L1Watcher {
                     confirmations: 0,
                 };
 
+                let scale_note = if block.height < crate::types::MIGRATION_HEIGHT {
+                    " (pre-3.0.3 legacy scale)"
+                } else {
+                    ""
+                };
                 info!(
-                    "🔒 L1 Lock detected: {} ZION at height {} (TX: {}) — waiting {} blocks for finality",
-                    crate::types::conversion::flowers_to_zion_display(output.amount),
+                    "🔒 L1 Lock detected: {} ZION at height {} (TX: {}) — waiting {} blocks for finality{}",
+                    crate::types::conversion::flowers_to_zion_display_at(output.amount, block.height),
                     block.height,
                     tx_hash,
                     self.config.finality_blocks,
+                    scale_note,
                 );
 
                 self.pending_locks.insert(tx_hash, lock_event);
