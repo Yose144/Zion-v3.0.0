@@ -81,6 +81,41 @@ impl Player {
         self.level > old_level
     }
 
+    /// Mark the player as active now. Updates the daily streak based on
+    /// the time elapsed since `last_active`:
+    ///   - < 24h since last activity → consecutive (streak +1 once per day)
+    ///   - 24h–48h → streak continues (same day boundary)
+    ///   - > 48h → streak reset to 1
+    /// Also updates `last_active` to the current timestamp.
+    pub fn touch(&mut self) {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        self.touch_at(now);
+    }
+
+    /// Same as `touch()` but with an explicit timestamp (for testing).
+    pub fn touch_at(&mut self, now: u64) {
+        let elapsed = now.saturating_sub(self.last_active);
+        if self.last_active == 0 {
+            // First ever activity
+            self.daily_streak = 1;
+            self.best_streak = self.best_streak.max(self.daily_streak);
+        } else if elapsed < 86_400 {
+            // Same day — no streak change
+        } else if elapsed < 172_800 {
+            // 1-2 days: consecutive day
+            self.daily_streak += 1;
+            self.best_streak = self.best_streak.max(self.daily_streak);
+        } else {
+            // > 2 days: streak broken
+            self.daily_streak = 1;
+        }
+        self.last_active = now;
+        self.check_achievement(AchievementType::Streak);
+    }
+
     /// Record a mined block
     pub fn record_block(&mut self) {
         self.blocks_mined += 1;
@@ -236,5 +271,44 @@ mod tests {
         store.get_or_create("addr1");
         store.get_or_create("addr2");
         assert_eq!(store.total_players(), 2);
+    }
+
+    #[test]
+    fn test_streak_first_touch() {
+        let mut player = Player::new("zion1streak".to_string());
+        player.last_active = 0;
+        player.touch_at(1_000_000);
+        assert_eq!(player.daily_streak, 1);
+        assert_eq!(player.best_streak, 1);
+    }
+
+    #[test]
+    fn test_streak_same_day_no_change() {
+        let mut player = Player::new("zion1streak".to_string());
+        player.last_active = 1_000_000;
+        player.daily_streak = 5;
+        player.touch_at(1_000_000 + 3600); // 1 hour later
+        assert_eq!(player.daily_streak, 5); // unchanged
+    }
+
+    #[test]
+    fn test_streak_next_day_increments() {
+        let mut player = Player::new("zion1streak".to_string());
+        player.last_active = 1_000_000;
+        player.daily_streak = 5;
+        player.touch_at(1_000_000 + 86_400 + 1); // ~24h+1s later
+        assert_eq!(player.daily_streak, 6);
+        assert_eq!(player.best_streak, 6);
+    }
+
+    #[test]
+    fn test_streak_breaks_after_48h() {
+        let mut player = Player::new("zion1streak".to_string());
+        player.last_active = 1_000_000;
+        player.daily_streak = 10;
+        player.best_streak = 10;
+        player.touch_at(1_000_000 + 172_800 + 1); // ~48h+1s later
+        assert_eq!(player.daily_streak, 1); // reset
+        assert_eq!(player.best_streak, 10); // best unchanged
     }
 }
