@@ -129,6 +129,10 @@ const t = {
     },
   },
 
+  intro: {
+    badge: { cs: 'Intro · Brána', en: 'Intro · Gateway' },
+  },
+
   goldenEgg: {
     badge: { cs: 'Hiranyagarbha · Golden Egg', en: 'Hiranyagarbha · Golden Egg' },
     signal: { cs: 'L4 symbolika ukotvená v L1', en: 'L4 symbolism grounded in L1' },
