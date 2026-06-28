@@ -51,14 +51,34 @@ body{
 }
 .zion-panel{
   border-radius:clamp(1rem,2.5vw,1.5rem);
-  border:1px solid rgba(255,255,255,0.25);
-  background:rgba(15,20,35,0.95);
-  box-shadow:0 24px 90px rgba(0,0,0,0.5);
+  border:1px solid rgba(255,255,255,0.12);
+  background:rgba(15,20,35,0.92);
+  backdrop-filter:blur(10px);
+  box-shadow:0 16px 50px rgba(0,0,0,0.35);
+  transition:border-color 220ms ease,box-shadow 220ms ease;
+}
+/* Accent-aware: when inside a pane-accent, panels get the pane's color */
+.pane-accent .zion-panel{
+  border-color:rgba(var(--rc,255 215 0),0.15);
+}
+.pane-accent .zion-panel:hover{
+  border-color:rgba(var(--rc,255 215 0),0.3);
+  box-shadow:0 20px 60px rgba(0,0,0,0.4),0 0 30px rgba(var(--rc,255 215 0),0.08);
+}
+/* Top accent line on panels inside themed panes */
+.pane-accent .zion-panel::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,rgb(var(--rc,255 215 0) / 0.6),rgb(var(--rc,255 215 0) / 0.15),transparent);
+  border-radius:clamp(1rem,2.5vw,1.5rem) clamp(1rem,2.5vw,1.5rem) 0 0;
 }
 .zion-panel-soft{
   border-radius:1.65rem;
-  border:1px solid rgba(255,255,255,0.22);
-  background:rgba(255,255,255,0.14);
+  border:1px solid rgba(255,255,255,0.1);
+  background:rgba(255,255,255,0.06);
+  backdrop-filter:blur(8px);
+}
+.pane-accent .zion-panel-soft{
+  border-color:rgba(var(--rc,255 215 0),0.12);
 }
 .zion-panel-hover{transition:border-color 180ms ease,background-color 180ms ease,transform 180ms ease,box-shadow 180ms ease;}
 .zion-panel-hover:hover{transform:translateY(-2px);border-color:var(--zion-border-strong);background-color:var(--zion-surface-hover);box-shadow:var(--zion-shadow-panel),var(--zion-shadow-glow);}
@@ -81,12 +101,33 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
 .tab-btn{position:relative;padding:0.7rem 1.1rem;font-size:0.85rem;font-weight:600;color:#9ca3af;border-radius:0.75rem;transition:all 180ms;cursor:pointer;background:transparent;border:1px solid transparent;white-space:nowrap;}
 .tab-btn:hover{color:#fff;background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.08);}
 .tab-active{color:#fff;background:linear-gradient(135deg,rgba(255,215,0,0.08),rgba(147,51,234,0.08));border-color:rgba(255,215,0,0.3) !important;box-shadow:0 4px 20px rgba(147,51,234,0.2);}
+/* Accent-aware tab active */
+.pane-accent .tab-active{
+  background:linear-gradient(135deg,rgba(var(--rc,255 215 0),0.1),rgba(var(--rc,255 215 0),0.04));
+  border-color:rgba(var(--rc,255 215 0),0.35) !important;
+  box-shadow:0 4px 20px rgba(var(--rc,255 215 0),0.15);
+}
+.pane-accent .tab-btn:hover{
+  color:rgb(var(--rc,255 215 0));
+  background:rgba(var(--rc,255 215 0),0.04);
+  border-color:rgba(var(--rc,255 215 0),0.1);
+}
+/* Accent-aware kicker */
+.pane-accent .zion-kicker{
+  border-color:rgba(var(--rc,255 215 0),0.2);
+  background:linear-gradient(90deg,rgba(var(--rc,255 215 0),0.08),rgba(var(--rc,255 215 0),0.03));
+  color:rgb(var(--rc,255 215 0));
+}
 .log-tail{font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.6;}
 ::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:3px;}
 ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.2);}
 .svc-card{position:relative;overflow:hidden;}
 .svc-card::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 80% 0%,rgba(255,215,0,0.08),transparent 60%);pointer-events:none;}
+/* Accent-aware svc card glow */
+.pane-accent .svc-card::before{
+  background:radial-gradient(circle at 80% 0%,rgba(var(--rc,255 215 0),0.08),transparent 60%);
+}
 .svc-live{border-color:rgba(16,185,129,0.5) !important;box-shadow:0 0 30px rgba(16,185,129,0.2);}
 .alert-critical{background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(239,68,68,0.05));border-color:rgba(239,68,68,0.4);}
 .alert-warning{background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.05));border-color:rgba(245,158,11,0.4);}
@@ -102,6 +143,12 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
 .nav-group>button{padding:0.4rem 0.7rem;font-size:0.78rem;font-weight:600;color:#9ca3af;background:transparent;border:1px solid transparent;border-radius:0.5rem;cursor:pointer;transition:all .15s;white-space:nowrap;}
 .nav-group>button:hover{color:#fff;background:rgba(255,255,255,0.05);}
 .nav-group>button.tab-active{color:#fff;background:linear-gradient(135deg,rgba(255,215,0,0.12),rgba(147,51,234,0.12));border-color:rgba(255,215,0,0.3);box-shadow:0 4px 20px rgba(147,51,234,0.2);}
+/* Accent-aware nav active */
+.pane-accent .nav-group>button.tab-active{
+  background:linear-gradient(135deg,rgba(var(--rc,255 215 0),0.12),rgba(var(--rc,255 215 0),0.04));
+  border-color:rgba(var(--rc,255 215 0),0.3);
+  box-shadow:0 4px 20px rgba(var(--rc,255 215 0),0.15);
+}
 .nav-dropdown{display:none;position:absolute;top:100%;left:0;min-width:200px;background:rgba(7,10,20,0.98);border:1px solid rgba(255,255,255,0.12);border-radius:0.75rem;padding:0.5rem;z-index:100;box-shadow:0 24px 60px rgba(0,0,0,0.5);}
 .nav-group:hover .nav-dropdown{display:block;}
 .nav-dropdown button{display:block;width:100%;text-align:left;padding:0.4rem 0.7rem;font-size:0.75rem;font-weight:500;color:#9ca3af;background:transparent;border:1px solid transparent;border-radius:0.4rem;cursor:pointer;transition:all .1s;white-space:nowrap;}
@@ -113,6 +160,16 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
 .ncl-tab-btn{padding:0.5rem 0.85rem;font-size:0.75rem;font-weight:600;border-radius:0.65rem;cursor:pointer;transition:all 180ms;color:#9ca3af;background:transparent;border:1px solid transparent;}
 .ncl-tab-btn:hover{color:#fff;background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.08);}
 .ncl-tab-btn.active{color:#e9d5ff;background:linear-gradient(135deg,rgba(147,51,234,0.12),rgba(6,182,212,0.08));border-color:rgba(147,51,234,0.35);box-shadow:0 4px 16px rgba(147,51,234,0.2);}
+/* Accent-aware NCL tabs */
+.pane-accent .ncl-tab-btn.active{
+  background:linear-gradient(135deg,rgba(var(--rc,255 215 0),0.12),rgba(var(--rc,255 215 0),0.04));
+  border-color:rgba(var(--rc,255 215 0),0.35);
+  box-shadow:0 4px 16px rgba(var(--rc,255 215 0),0.15);
+}
+.pane-accent .ncl-tab-btn:hover{
+  color:rgb(var(--rc,255 215 0));
+  background:rgba(var(--rc,255 215 0),0.04);
+}
 @keyframes ncl-heartbeat{0%,100%{box-shadow:0 0 4px rgba(16,185,129,0.3)}50%{box-shadow:0 0 14px rgba(16,185,129,0.8)}}
 .ncl-dot-live{width:8px;height:8px;border-radius:50%;background:#10b981;animation:ncl-heartbeat 2s infinite;}
 .ncl-dot-off{width:8px;height:8px;border-radius:50%;background:#ef4444;}
@@ -133,8 +190,16 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
 /* ── Service Telemetry Detail Cards (Overview) ── */
 .telemetry-detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;}
-.telemetry-detail-card{background:rgba(15,20,35,0.95);border:1px solid rgba(255,255,255,0.12);border-radius:1.2rem;padding:1rem;position:relative;overflow:hidden;transition:border-color .2s,box-shadow .2s;}
-.telemetry-detail-card:hover{border-color:rgba(255,255,255,0.22);box-shadow:0 24px 90px rgba(0,0,0,0.42),0 0 42px rgba(147,51,234,0.1);}
+.telemetry-detail-card{background:rgba(15,20,35,0.92);border:1px solid rgba(255,255,255,0.1);border-radius:1.2rem;padding:1rem;position:relative;overflow:hidden;transition:border-color .2s,box-shadow .2s;backdrop-filter:blur(8px);}
+.telemetry-detail-card:hover{border-color:rgba(255,255,255,0.2);box-shadow:0 20px 60px rgba(0,0,0,0.4),0 0 30px rgba(var(--rc,255 215 0),0.08);}
+/* Accent-aware telemetry cards */
+.pane-accent .telemetry-detail-card{
+  border-color:rgba(var(--rc,255 215 0),0.1);
+}
+.pane-accent .telemetry-detail-card:hover{
+  border-color:rgba(var(--rc,255 215 0),0.28);
+  box-shadow:0 20px 60px rgba(0,0,0,0.4),0 0 30px rgba(var(--rc,255 215 0),0.1);
+}
 .telemetry-detail-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;}
 .tdc-node::before{background:linear-gradient(90deg,#10b981,#059669);}
 .tdc-pool::before{background:linear-gradient(90deg,#ffd700,#b8981a);}
@@ -154,6 +219,145 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 .tdc-value.small{font-size:.65rem;}
 @media(max-width:1024px){.telemetry-detail-grid{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:640px){.telemetry-detail-grid{grid-template-columns:1fr;}}
+
+/* ═══ ZION Theme System (from ZIONTHEME.md) ═══ */
+
+/* ── Rainbow Card — per-card color accent via --rc variable ── */
+.zion-rainbow-card{
+  position:relative;
+  border-radius:clamp(1.2rem,2vw,1.65rem);
+  border:1px solid rgba(var(--rc,255 215 0),0.18);
+  background:rgba(15,20,35,0.92);
+  backdrop-filter:blur(12px);
+  box-shadow:0 20px 60px rgba(0,0,0,0.4);
+  overflow:hidden;
+  transition:border-color 220ms ease,box-shadow 220ms ease,transform 220ms ease;
+}
+.zion-rainbow-card::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,rgb(var(--rc,255 215 0) / 0.8),rgb(var(--rc,255 215 0) / 0.3),transparent);
+}
+.zion-rainbow-card:hover{
+  border-color:rgba(var(--rc,255 215 0),0.38);
+  box-shadow:0 24px 80px rgba(0,0,0,0.45),0 0 40px rgba(var(--rc,255 215 0),0.12);
+  transform:translateY(-2px);
+}
+
+/* ── Rainbow Sub-card — inner tile with color accent ── */
+.zion-rainbow-sub{
+  border-radius:1.2rem;
+  border:1px solid rgba(var(--rc,255 215 0),0.12);
+  background:rgba(var(--rc,255 215 0),0.04);
+  transition:border-color 180ms ease,background 180ms ease;
+}
+.zion-rainbow-sub:hover{
+  border-color:rgba(var(--rc,255 215 0),0.25);
+  background:rgba(var(--rc,255 215 0),0.07);
+}
+
+/* ── Section — standard content panel ── */
+.zion-section{
+  border-radius:clamp(1.2rem,2vw,1.65rem);
+  border:1px solid rgba(255,255,255,0.1);
+  background:rgba(15,20,35,0.85);
+  backdrop-filter:blur(10px);
+  box-shadow:0 16px 50px rgba(0,0,0,0.3);
+}
+
+/* ── Tile — soft inner tile for grids ── */
+.zion-tile{
+  border-radius:1.2rem;
+  border:1px solid rgba(255,255,255,0.08);
+  background:rgba(255,255,255,0.04);
+  transition:border-color 180ms ease,background 180ms ease;
+}
+.zion-tile:hover{
+  border-color:rgba(255,255,255,0.16);
+  background:rgba(255,255,255,0.06);
+}
+
+/* ── CTA Banner — bottom call-to-action ── */
+.zion-cta-banner{
+  border-radius:clamp(1.2rem,2vw,1.65rem);
+  border:1px solid rgba(255,255,255,0.12);
+  background:linear-gradient(135deg,rgba(147,51,234,0.12),rgba(255,215,0,0.06),rgba(6,182,212,0.08));
+  backdrop-filter:blur(10px);
+}
+
+/* ── Pane accent system — auto-applied per pane ID ── */
+.pane-accent{
+  --rc:255 215 0; /* default gold */
+}
+.pane-accent .zion-pane-header{
+  display:flex;align-items:center;gap:0.6rem;margin-bottom:1rem;
+  padding-bottom:0.75rem;
+  border-bottom:1px solid rgba(var(--rc,255 215 0),0.15);
+}
+.pane-accent .zion-pane-header .pane-icon{
+  width:2.5rem;height:2.5rem;border-radius:0.75rem;
+  display:flex;align-items:center;justify-content:center;font-size:1.3rem;
+  background:rgba(var(--rc,255 215 0),0.12);
+  border:1px solid rgba(var(--rc,255 215 0),0.2);
+}
+.pane-accent .zion-pane-header h2{
+  font-size:1.5rem;font-weight:800;color:#fff;
+}
+.pane-accent .zion-pane-header .pane-sub{
+  font-size:0.75rem;color:#9ca3af;font-weight:500;
+}
+
+/* ── Stat card — unified metric display ── */
+.zion-stat-card{
+  border-radius:1rem;
+  border:1px solid rgba(255,255,255,0.08);
+  background:rgba(255,255,255,0.03);
+  padding:1rem;
+  transition:border-color 180ms,transform 180ms;
+}
+.zion-stat-card:hover{
+  border-color:rgba(var(--rc,255 215 0),0.25);
+  transform:translateY(-1px);
+}
+.zion-stat-card .stat-label{
+  font-size:0.65rem;text-transform:uppercase;letter-spacing:0.08em;
+  color:#888;font-weight:600;
+}
+.zion-stat-card .stat-value{
+  font-size:1.5rem;font-weight:800;color:#fff;
+  font-family:'JetBrains Mono',monospace;
+}
+.zion-stat-card .stat-sub{
+  font-size:0.7rem;color:#9ca3af;
+}
+
+/* ── Badge system ── */
+.zion-badge{
+  display:inline-flex;align-items:center;gap:0.3rem;
+  padding:0.15rem 0.6rem;border-radius:9999px;
+  font-size:0.65rem;font-weight:700;letter-spacing:0.04em;
+}
+.zion-badge-success{background:rgba(16,185,129,0.12);color:#34d399;border:1px solid rgba(16,185,129,0.25);}
+.zion-badge-warning{background:rgba(251,191,36,0.12);color:#fbbf24;border:1px solid rgba(251,191,36,0.25);}
+.zion-badge-danger{background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.25);}
+.zion-badge-info{background:rgba(59,130,246,0.12);color:#60a5fa;border:1px solid rgba(59,130,246,0.25);}
+.zion-badge-accent{background:rgba(var(--rc,255 215 0),0.12);color:rgb(var(--rc,255 215 0));border:1px solid rgba(var(--rc,255 215 0),0.25);}
+
+/* ── Table styling ── */
+.zion-table{width:100%;border-collapse:collapse;}
+.zion-table th{
+  text-align:left;padding:0.6rem 0.75rem;
+  font-size:0.65rem;text-transform:uppercase;letter-spacing:0.08em;
+  color:#888;font-weight:700;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.zion-table td{
+  padding:0.6rem 0.75rem;
+  font-size:0.8rem;color:#d1d5db;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+}
+.zion-table tr:hover td{
+  background:rgba(var(--rc,255 215 0),0.03);
+}
 </style>
 </head>
 <body class="zion-shell">
@@ -4727,6 +4931,87 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=71"></script>
+<script src="/dashboard.js?v=72"></script>
+<script>
+// ═══ ZION Theme — Auto-apply accent colors per pane ═══
+(function(){
+  const PANE_ACCENTS = {
+    'pane-overview':          {rc:'255 215 0',   icon:'📊', label:'Overview',         sub:'Real-time network status'},
+    'pane-nodes':             {rc:'16 185 129',  icon:'🔗', label:'Nodes',            sub:'L1 node status & P2P'},
+    'pane-orchestrator':      {rc:'6 182 212',   icon:'🎭', label:'Orchestrator',     sub:'Service orchestration'},
+    'pane-payout':            {rc:'251 191 36',  icon:'💰', label:'Payouts',          sub:'Miner payouts & fee split'},
+    'pane-wallets':           {rc:'251 191 36',  icon:'👛', label:'Wallets',          sub:'Wallet balances & UTXO'},
+    'pane-explorer':          {rc:'6 182 212',   icon:'🔍', label:'Explorer',         sub:'Block & tx explorer'},
+    'pane-alerts':            {rc:'244 63 94',   icon:'🚨', label:'Alerts',           sub:'Active alerts & warnings'},
+    'pane-services':          {rc:'99 102 241',  icon:'⚙️', label:'Services',         sub:'Systemd service control'},
+    'pane-backups':           {rc:'59 130 246',  icon:'💾', label:'Backups',          sub:'Genesis backups & recovery'},
+    'pane-genesis':           {rc:'20 184 166',  icon:'🌱', label:'Genesis',          sub:'Premine & emission schedule'},
+    'pane-blockers':          {rc:'239 68 68',   icon:'🚧', label:'P0 Blockers',      sub:'Launch blockers tracker'},
+    'pane-l1':                {rc:'16 185 129',  icon:'🟢', label:'L1 Core',          sub:'Consensus & validation'},
+    'pane-l2':                {rc:'147 51 234',  icon:'🟣', label:'L2 DeFi',          sub:'Bridge, swap, DAO, atomic'},
+    'pane-l3':                {rc:'139 92 246',  icon:'🧠', label:'L3 Hiran',         sub:'AI inference layer'},
+    'pane-l4':                {rc:'249 115 22',  icon:'🌸', label:'L4 Oasis',         sub:'Consciousness mining game'},
+    'pane-l5':                {rc:'245 158 11',  icon:'🌍', label:'L5 Free World',    sub:'Humanitarian fund scanner'},
+    'pane-l6':                {rc:'244 63 94',   icon:'⚡', label:'L6 Issobella',     sub:'Issobella fund scanner'},
+    'pane-charts':            {rc:'6 182 212',   icon:'📈', label:'Charts',           sub:'Hashrate & block charts'},
+    'pane-events':            {rc:'56 189 248',  icon:'📡', label:'Events',           sub:'Block events feed'},
+    'pane-env':               {rc:'100 116 139', icon:'🔑', label:'Env Vars',         sub:'Environment configuration'},
+    'pane-database':          {rc:'59 130 246',  icon:'🗄️', label:'Database',         sub:'Chain state & DB tools'},
+    'pane-metrics':           {rc:'99 102 241',  icon:'📊', label:'Metrics',          sub:'Prometheus & Grafana'},
+    'pane-launch-day':        {rc:'255 215 0',   icon:'🚀', label:'Launch Day',       sub:'Genesis rotation & launch'},
+    'pane-wizard':            {rc:'147 51 234',  icon:'🧙', label:'Setup Wizard',     sub:'Guided mainnet setup'},
+    'pane-miner-live':        {rc:'251 191 36',  icon:'⛏️', label:'Miner Live',       sub:'Real-time miner monitor'},
+    'pane-settings':          {rc:'100 116 139', icon:'⚙️', label:'Settings',         sub:'Dashboard configuration'},
+    'pane-fleet':             {rc:'6 182 212',   icon:'🚢', label:'Fleet',            sub:'Rig fleet management'},
+    'pane-logs':              {rc:'156 163 175', icon:'📜', label:'Logs',             sub:'Service log viewer'},
+    'pane-bridge':            {rc:'251 191 36',  icon:'🌉', label:'Bridge',           sub:'L2 cross-chain bridge'},
+    'pane-bridge-validators': {rc:'59 130 246',  icon:'🔐', label:'Bridge Validators',sub:'Validator set & multisig'},
+    'pane-hiran':             {rc:'139 92 246',  icon:'🧠', label:'Hiran AI',         sub:'Local inference & GGUF'},
+    'pane-ops':               {rc:'249 115 22',  icon:'🛠️', label:'Ops',              sub:'Operational tooling'},
+    'pane-topology':          {rc:'6 182 212',   icon:'🗺️', label:'Topology',         sub:'Network topology map'},
+    'pane-agent':             {rc:'16 185 129',  icon:'🤖', label:'Agent',            sub:'Edge agent status'},
+    'pane-dao':               {rc:'147 51 234',  icon:'🗳️', label:'DAO',              sub:'Proposals & governance'},
+    'pane-warp':              {rc:'147 51 234',  icon:'🌀', label:'WARP',             sub:'L3 WARP relay'},
+    'pane-ai-agents':         {rc:'217 70 239',  icon:'🤖', label:'AI Agents',        sub:'AI agent management'},
+    'pane-ncl-jobs':          {rc:'147 51 234',  icon:'📋', label:'NCL Jobs',         sub:'NCL compute jobs'},
+  };
+
+  function applyPaneAccent(paneEl){
+    const id = paneEl.id;
+    const cfg = PANE_ACCENTS[id];
+    if(!cfg) return;
+    paneEl.classList.add('pane-accent');
+    paneEl.style.setProperty('--rc', cfg.rc);
+    // Inject pane header if not already present
+    if(!paneEl.querySelector('.zion-pane-header') && !paneEl.dataset.headerInjected){
+      paneEl.dataset.headerInjected = '1';
+      const header = document.createElement('div');
+      header.className = 'zion-pane-header';
+      header.innerHTML = `
+        <div class="pane-icon">${cfg.icon}</div>
+        <div>
+          <h2>${cfg.label}</h2>
+          <div class="pane-sub">${cfg.sub}</div>
+        </div>`;
+      paneEl.insertBefore(header, paneEl.firstChild);
+    }
+  }
+
+  // Apply to all panes on load
+  document.querySelectorAll('[id^="pane-"]').forEach(applyPaneAccent);
+
+  // Watch for dynamically added panes
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((m) => {
+      m.addedNodes.forEach((node) => {
+        if(node.nodeType === 1 && node.id && node.id.startsWith('pane-')){
+          applyPaneAccent(node);
+        }
+      });
+    });
+  });
+  observer.observe(document.body, {childList:true, subtree:true});
+})();
+</script>
 </body>
 </html>
