@@ -10,6 +10,7 @@ User=root
 WorkingDirectory=/root/zion-2.9.6-main
 EnvironmentFile=/root/zion-2.9.6-main/edge-deploy/config/edge-environment.sh
 Environment="DAO_API_PORT=8450"
+Environment="DAO_CONFIG=/root/zion-2.9.6-main/V3/L2/dao/config/dao-mainnet.toml"
 Environment="DAO_DB_PATH=/root/zion-2.9.6-main/data/edge-dao.db"
 Environment="DAO_L1_RPC=http://127.0.0.1:8443/jsonrpc"
 Environment="RUST_LOG=info,zion_dao=debug"
