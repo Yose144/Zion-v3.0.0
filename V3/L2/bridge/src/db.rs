@@ -260,12 +260,16 @@ impl BridgeDb {
     }
 
     /// Get pending L1 lock events.
+    ///
+    /// Includes `Executing` status so that locks stuck mid-processing after a
+    /// crash or restart are re-queued. The relayer's `submitLockProof()` is
+    /// idempotent on-chain (increments confirmations), so re-submission is safe.
     pub fn get_pending_locks(&self) -> Result<Vec<L1LockEvent>> {
         let conn = self.conn.lock().expect("db lock poisoned");
         let mut stmt = conn.prepare(
             "SELECT l1_tx_hash, l1_block_height, l1_sender, amount_flowers, amount_wzion_wei,
                     target_chain, evm_recipient, status, confirmations, detected_at
-             FROM l1_locks WHERE status IN ('Pending', 'Confirmed')",
+             FROM l1_locks WHERE status IN ('Pending', 'Confirmed', 'Executing')",
         )?;
         let rows = stmt.query_map([], |row| {
             Ok(L1LockEvent {
@@ -289,12 +293,15 @@ impl BridgeDb {
     }
 
     /// Get pending EVM burn events.
+    ///
+    /// Includes `Executing` status so that burns stuck mid-processing after a
+    /// crash or restart are re-queued.
     pub fn get_pending_burns(&self) -> Result<Vec<EvmBurnEvent>> {
         let conn = self.conn.lock().expect("db lock poisoned");
         let mut stmt = conn.prepare(
             "SELECT burn_id, evm_tx_hash, evm_block_number, evm_chain, evm_burner,
                     amount_wzion_wei, amount_flowers, l1_recipient, status, confirmations, detected_at
-             FROM evm_burns WHERE status IN ('Pending', 'Confirmed')",
+             FROM evm_burns WHERE status IN ('Pending', 'Confirmed', 'Executing')",
         )?;
         let rows = stmt.query_map([], |row| {
             Ok(EvmBurnEvent {
@@ -773,6 +780,21 @@ mod tests {
         // Failed should not be in pending
         assert_eq!(db.get_pending_locks().unwrap().len(), 0);
         assert_eq!(db.count_by_status("l1_locks", "Failed").unwrap(), 1);
+    }
+
+    #[test]
+    fn test_executing_status_recovered() {
+        // After a crash, locks in 'Executing' status should be recovered
+        // by get_pending_locks() so they can be re-processed on restart.
+        let (db, _dir) = test_db();
+        db.insert_lock(&sample_lock("exec_tx")).unwrap();
+        db.update_lock_status("exec_tx", BridgeStatus::Executing)
+            .unwrap();
+
+        // Executing should appear in pending (for crash recovery)
+        let pending = db.get_pending_locks().unwrap();
+        assert_eq!(pending.len(), 1, "Executing locks must be recoverable");
+        assert_eq!(pending[0].l1_tx_hash, "exec_tx");
     }
 
     // ── New robustness tests ─────────────────────────────────────────────────
