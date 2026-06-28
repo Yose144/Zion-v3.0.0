@@ -1815,6 +1815,8 @@ async function loadWallets(){
         dao:   { label: '🗳️ DAO Treasury', color: '#9333ea' },
         infrastructure: { label: '🏗️ Infrastructure', color: '#06b6d4' },
         humanitarian: { label: '💝 Humanitarian', color: '#10b981' },
+        bridge_seed: { label: '🌉 Bridge Seed', color: '#f59e0b' },
+        bridge_vault_utxo: { label: '🔒 Bridge Vault UTXO', color: '#f97316' },
       };
       catBars.innerHTML = Object.entries(cats).map(([key, val]) => {
         const meta = catMeta[key] || { label: key, color: '#9ca3af' };
@@ -4366,8 +4368,8 @@ async function loadGenesis(){
   // Stats grid
   const stats = [
     { label: 'Total Supply', value: '144B', sub: 'ZION (hard cap)', color: 'text-gradient' },
-    { label: 'Premine', value: '16.28B', sub: '11.31% (genesis)', color: 'text-zion-gold' },
-    { label: 'Mining Emission', value: '127.72B', sub: '88.69% (100yr)', color: 'text-zion-cyan' },
+    { label: 'Premine', value: '16.78B', sub: '11.65% (genesis)', color: 'text-zion-gold' },
+    { label: 'Mining Emission', value: '127.22B', sub: '88.35% (100yr)', color: 'text-zion-cyan' },
     { label: 'Block Time', value: '60s', sub: 'Target', color: 'text-zion-purple' },
     { label: 'Base Reward', value: '5,400 ZION', sub: 'Initial', color: 'text-emerald-400' },
     { label: 'Tail Reward', value: '724.78 ZION', sub: 'Forever (from ~2126)', color: 'text-amber-400' },
@@ -4414,8 +4416,10 @@ async function loadGenesis(){
     dao_treasury: 'border-blue-500/30 bg-blue-500/5',
     infrastructure: 'border-zion-cyan/30 bg-cyan-500/5',
     humanitarian: 'border-emerald-500/30 bg-emerald-500/5',
+    bridge_seed: 'border-amber-500/30 bg-amber-500/5',
+    bridge_vault_utxo: 'border-orange-500/30 bg-orange-500/5',
   };
-  const catIcons = { oasis_golden_egg: '🌸', dao_treasury: '🗳️', infrastructure: '🏗️', humanitarian: '💝' };
+  const catIcons = { oasis_golden_egg: '🌸', dao_treasury: '🗳️', infrastructure: '🏗️', humanitarian: '💝', bridge_seed: '🌉', bridge_vault_utxo: '🔒' };
   document.getElementById('premine-table').innerHTML = res.premine.map((p, i) => `
     <div class="zion-panel-soft border ${catColors[p.category] || 'border-white/10'} rounded-xl p-3 flex items-center gap-3">
       <div class="text-2xl">${catIcons[p.category] || '⚪'}</div>
