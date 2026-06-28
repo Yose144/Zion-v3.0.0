@@ -2,19 +2,16 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Palette, Check, Sparkles, Globe, Radio, Cloud, Orbit } from 'lucide-react';
+import { Palette, Check, Globe, Orbit, Radio, Sparkles } from 'lucide-react';
 import { useObservatory, type ObservatoryMode } from '@/contexts/ObservatoryContext';
 
 type BackgroundTogglePlacement = 'fixed' | 'nav';
 
 const backgroundConfig: Record<ObservatoryMode, { icon: typeof Sparkles; label: string; description: string; color: string }> = {
   'planet-orbit': { icon: Globe, label: 'Turquoise Core', description: 'Default turquoise atmosphere', color: '45, 212, 191' },
-  'desktop-agent': { icon: Cloud, label: 'Desktop Agent', description: 'Desktop agent visual match', color: '6, 182, 212' },
+  'galaxy-core': { icon: Sparkles, label: 'Galaxy Core', description: 'Contact approach — inward starflow', color: '180, 220, 255' },
+  'desktop-agent': { icon: Radio, label: 'Desktop Agent', description: 'Purple starfield — desktop agent match', color: '200, 118, 255' },
   'warp-speed': { icon: Orbit, label: 'Warp', description: 'Warp tunnel effect', color: '111, 255, 240' },
-  'deep-space': { icon: Sparkles, label: 'Deep Space', description: 'Classic starfield', color: '251, 191, 36' },
-  'galactic-core': { icon: Radio, label: 'Galactic Core', description: 'Command nexus', color: '147, 51, 234' },
-  'nebula-drift': { icon: Cloud, label: 'Nebula Drift', description: 'Desktop agent vibe', color: '180, 140, 255' },
-  'galaxy-core': { icon: Orbit, label: 'Galaxy Core', description: 'Contact approach', color: '180, 220, 255' },
 };
 
 export default function BackgroundToggle({ placement = 'fixed' }: { placement?: BackgroundTogglePlacement }) {

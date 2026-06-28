@@ -11,17 +11,6 @@ import { useObservatory } from '@/contexts/ObservatoryContext';
 type BackgroundOrchestratorVariant = 'default' | 'home';
 
 const OBSERVATORY_PRESETS = {
-  'deep-space': {
-    starfield: {
-      starColor: [255, 217, 118] as [number, number, number],
-      density: 260,
-      speed: 2.4,
-      trailOpacity: 0.08,
-      backgroundGradient:
-        'radial-gradient(circle at 20% 20%, rgba(13,17,35,0.95), rgba(2,3,8,0.98))',
-    },
-    bubbleDensity: 'medium' as const,
-  },
   'planet-orbit': {
     starfield: {
       starColor: [45, 212, 191] as [number, number, number],
@@ -35,15 +24,21 @@ const OBSERVATORY_PRESETS = {
   },
   'desktop-agent': {
     starfield: {
-      starColor: [6, 182, 212] as [number, number, number],
-      density: 320,
-      speed: 2.1,
-      trailOpacity: 0.08,
-      clearPerFrame: true,
+      // Exact match to APP&WEB/desktop-agent/src/ui/renderer.js
+      starColor: [200, 118, 255] as [number, number, number], // galactic-core purple
+      density: 100,
+      speed: 3.2,
+      trailOpacity: 0.045,
+      lineTrails: true,
+      fpsLimit: 24,
+      // Purple radial gradient drawn ON canvas (matches desktop-agent cachedGradient)
+      canvasGradient: { x: 0.4, y: 0.6, inner: 'rgba(22, 8, 32, 0.90)', outer: 'rgba(4, 2, 12, 0.98)' },
+      canvasGradientAlpha: 0.22,
+      // CSS background matches desktop-agent body gradient
       backgroundGradient:
-        'radial-gradient(ellipse at 50% 30%, rgba(20,24,50,0.4) 0%, rgba(8,10,24,0.7) 30%, rgba(2,3,10,0.92) 70%, rgba(0,0,0,0.98) 100%), radial-gradient(ellipse at 20% 40%, rgba(147,51,234,0.14), transparent 55%), radial-gradient(ellipse at 80% 65%, rgba(6,182,212,0.1), transparent 55%)',
+        'radial-gradient(circle at 50% 20%, rgba(10,12,28,0.45), rgba(0,0,0,0.85)), radial-gradient(ellipse at 20% 30%, rgba(147,51,234,0.12), transparent 50%), radial-gradient(ellipse at 80% 70%, rgba(6,182,212,0.08), transparent 50%), rgb(0,0,0)',
     },
-    bubbleDensity: 'medium' as const,
+    bubbleDensity: 'low' as const,
   },
   'warp-speed': {
     starfield: {
@@ -55,28 +50,6 @@ const OBSERVATORY_PRESETS = {
         'radial-gradient(ellipse at center, #083832 0%, #010807 100%)',
     },
     bubbleDensity: 'low' as const,
-  },
-  'galactic-core': {
-    starfield: {
-      starColor: [200, 118, 255] as [number, number, number],
-      density: 320,
-      speed: 3.2,
-      trailOpacity: 0.05,
-      backgroundGradient:
-        'radial-gradient(circle at 40% 60%, rgba(22,8,32,0.9), rgba(4,2,12,0.98))',
-    },
-    bubbleDensity: 'medium' as const,
-  },
-  'nebula-drift': {
-    starfield: {
-      starColor: [180, 140, 255] as [number, number, number],
-      density: 180,
-      speed: 1.6,
-      trailOpacity: 0.12,
-      backgroundGradient:
-        'radial-gradient(ellipse at 30% 40%, rgba(30,12,50,0.92), rgba(8,4,20,0.97))',
-    },
-    bubbleDensity: 'high' as const,
   },
   'galaxy-core': {
     starfield: {
@@ -132,7 +105,7 @@ export default function BackgroundOrchestrator({ variant = 'default' }: { varian
   const overlayClass = isGalaxyCoreMode
     ? '' /* galaxy-core: CSS gradient on canvas is the look, no overlay */
     : isDesktopAgentMode
-    ? '' /* desktop-agent: CSS gradient on canvas is the look, no overlay */
+    ? '' /* desktop-agent: canvas gradient + CSS gradient is the look, no overlay */
     : isHomeVariant
     ? 'pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_12%,rgba(80,230,210,0.16),rgba(45,212,191,0.08)_18%,rgba(10,20,30,0.34)_34%,rgba(4,10,14,0.76)_58%,rgba(0,0,0,0.95)_100%)]'
     : 'pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_20%,rgba(10,12,28,0.65),rgba(0,0,0,0.95))]';

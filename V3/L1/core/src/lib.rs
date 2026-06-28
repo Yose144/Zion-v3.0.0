@@ -671,6 +671,10 @@ struct ChainState {
     /// Pool fee address (1% of coinbase). Empty = portion goes to miner.
     pool_fee_address: String,
     bridge_unlock_replay_keys: HashSet<String>,
+    /// In-memory address → block indices map for O(1) transaction history lookup.
+    /// Built incrementally as blocks are accepted. Key = address, Value = indices
+    /// into `accepted_blocks` where that address appears (as sender, recipient, or miner).
+    address_tx_index: HashMap<String, Vec<usize>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1286,6 +1290,16 @@ impl NodeRuntime {
 
     pub fn accepted_blocks(&self) -> &[AcceptedBlock] {
         &self.chain_state.accepted_blocks
+    }
+
+    /// Returns indices of blocks that contain transactions for the given address.
+    /// Uses the in-memory address_tx_index for O(1) lookup instead of scanning
+    /// all blocks. Returns an empty vec if the address has no transactions.
+    pub fn block_indices_for_address(&self, address: &str) -> Vec<usize> {
+        self.chain_state
+            .block_indices_for_address(address)
+            .cloned()
+            .unwrap_or_default()
     }
 
     pub fn accepted_blocks_since(&self, from_height: u64, limit: usize) -> Vec<AcceptedBlock> {
@@ -2062,6 +2076,7 @@ impl ChainState {
             issobella_address: String::new(),
             pool_fee_address: String::new(),
             bridge_unlock_replay_keys: HashSet::new(),
+            address_tx_index: HashMap::new(),
         }
     }
 
@@ -2126,8 +2141,10 @@ impl ChainState {
             issobella_address: String::new(),
             pool_fee_address: String::new(),
             bridge_unlock_replay_keys: snapshot.bridge_unlock_replay_keys.into_iter().collect(),
+            address_tx_index: HashMap::new(),
         };
         chain_state.rebuild_mempool_index();
+        chain_state.rebuild_address_tx_index();
         chain_state.active_template.transactions = persisted_transaction_ids
             .iter()
             .filter_map(|tx_id| chain_state.mempool_by_id.get(tx_id).cloned())
@@ -2294,6 +2311,9 @@ impl ChainState {
         self.accepted_by_template_id
             .insert(accepted_block.template_id, accepted_block.clone());
         self.accepted_blocks.push(accepted_block);
+        // Index the newly accepted block by all involved addresses.
+        let new_idx = self.accepted_blocks.len() - 1;
+        self.index_block_addresses(new_idx);
         self.rebuild_bridge_unlock_replay_keys();
         let next_template_id = self.next_template_id;
         let miner_addr = self.miner_address.clone();
@@ -3141,6 +3161,75 @@ impl ChainState {
             self.accepted_by_template_id
                 .insert(block.template_id, block.clone());
         }
+    }
+
+    /// Rebuild the address→block-index map from scratch by scanning all
+    /// accepted blocks. Called on startup after loading from disk.
+    fn rebuild_address_tx_index(&mut self) {
+        self.address_tx_index.clear();
+        for idx in 0..self.accepted_blocks.len() {
+            self.index_block_addresses(idx);
+        }
+    }
+
+    /// Index a single block by all addresses involved in its transactions.
+    /// For each address that appears as a sender, recipient, or miner in the
+    /// block, add this block's index to the address's lookup vector.
+    fn index_block_addresses(&mut self, block_idx: usize) {
+        let block = match self.accepted_blocks.get(block_idx) {
+            Some(b) => b,
+            None => return,
+        };
+        let mut addresses = std::collections::HashSet::new();
+
+        // Account-model transactions (from/to)
+        for tx in &block.transactions {
+            if !tx.from.is_empty() {
+                addresses.insert(tx.from.clone());
+            }
+            if !tx.to.is_empty() {
+                addresses.insert(tx.to.clone());
+            }
+        }
+
+        // UTXO transactions (inputs/outputs)
+        for utxo_tx in &block.utxo_transactions {
+            for output in &utxo_tx.outputs {
+                if !output.address.is_empty() {
+                    addresses.insert(output.address.clone());
+                }
+            }
+            for input in &utxo_tx.inputs {
+                let addr = crate::crypto::derive_address(&input.public_key);
+                if !addr.is_empty() {
+                    addresses.insert(addr);
+                }
+            }
+        }
+
+        // Coinbase addresses (miner, humanitarian, issobella)
+        if !block.miner_address.is_empty() {
+            addresses.insert(block.miner_address.clone());
+        }
+        if !block.humanitarian_address.is_empty() {
+            addresses.insert(block.humanitarian_address.clone());
+        }
+        if !block.issobella_address.is_empty() {
+            addresses.insert(block.issobella_address.clone());
+        }
+
+        for addr in addresses {
+            self.address_tx_index
+                .entry(addr)
+                .or_default()
+                .push(block_idx);
+        }
+    }
+
+    /// Get the indices of blocks that contain transactions for the given address.
+    /// Returns `None` if the address has no transactions (not in index).
+    fn block_indices_for_address(&self, address: &str) -> Option<&Vec<usize>> {
+        self.address_tx_index.get(address)
     }
 
     fn rebuild_mempool_index(&mut self) {
