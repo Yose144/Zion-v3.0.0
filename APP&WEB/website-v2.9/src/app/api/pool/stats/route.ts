@@ -18,6 +18,15 @@ import { SITE_PRIMARY_HOST, SITE_PRIMARY_POOL_API_URL } from '@/lib/site';
 
 const PROMETHEUS_URL = process.env.PROMETHEUS_URL || 'http://127.0.0.1:9090';
 
+// ── In-memory cache for fee wallet balances (30s TTL) ───────────────────────
+// Avoids 3+ RPC calls on every /api/pool/stats request.
+interface FeeBalanceCache {
+  data: Record<string, { balance_flowers: number; balance_zion: number; utxo_count: number }>;
+  timestamp: number;
+}
+let feeBalanceCache: FeeBalanceCache | null = null;
+const FEE_BALANCE_CACHE_TTL_MS = 30_000;
+
 interface PromResult {
   metric: Record<string, string>;
   value: [number, string];
@@ -211,26 +220,42 @@ export async function GET() {
     }
   }
 
-  // ── Fee wallet on-chain balances ──────────────────────────────────────────
-  const feeWallets: Array<{ key: string; address: string }> = [
-    { key: 'pool', address: POOL_WALLET },
-    { key: 'humanitarian', address: HUMANITARIAN_WALLET },
-    { key: 'issobella', address: ISSOBELLA_WALLET },
-  ].filter((w) => w.address && w.address.startsWith('zion1'));
+  // ── Fee wallet on-chain balances (cached 30s) ─────────────────────────────
+  // Use a module-level cache to avoid 3+ RPC calls on every request.
+  // The getUtxos RPC call is very slow for large wallets, so we skip it here
+  // and only fetch the balance.
+  const now = Date.now();
+  if (feeBalanceCache && (now - feeBalanceCache.timestamp) < FEE_BALANCE_CACHE_TTL_MS) {
+    // Cache hit — use cached balances
+  } else {
+    // Cache miss — fetch fresh balances
+    const feeWallets: Array<{ key: string; address: string }> = [
+      { key: 'pool', address: POOL_WALLET },
+      { key: 'humanitarian', address: HUMANITARIAN_WALLET },
+      { key: 'issobella', address: ISSOBELLA_WALLET },
+    ].filter((w) => w.address && w.address.startsWith('zion1'));
 
-  const feeBalances: Record<string, { balance_flowers: number; balance_zion: number; utxo_count: number }> = {};
-  await Promise.all(feeWallets.map(async (w) => {
-    try {
-      const bal = await rpc.getAddressBalance(w.address);
-      feeBalances[w.key] = {
-        balance_flowers: bal.balance_atomic ?? 0,
-        balance_zion: bal.balance_zion ?? 0,
-        utxo_count: bal.utxo_count ?? 0,
-      };
-    } catch {
-      feeBalances[w.key] = { balance_flowers: 0, balance_zion: 0, utxo_count: 0 };
-    }
-  }));
+    const freshBalances: Record<string, { balance_flowers: number; balance_zion: number; utxo_count: number }> = {};
+    await Promise.all(feeWallets.map(async (w) => {
+      try {
+        // Only fetch balance, skip getUtxos (which is very slow for large wallets)
+        const res = await rpc.rpcCall<any>('getBalance', { address: w.address });
+        const balanceAtomic = Number(res?.balance_flowers ?? res?.balance_atomic ?? 0);
+        const balanceZion = typeof res?.balance_zion === 'number'
+          ? res.balance_zion
+          : balanceAtomic / FLOWERS_PER_ZION;
+        freshBalances[w.key] = {
+          balance_flowers: balanceAtomic,
+          balance_zion: balanceZion,
+          utxo_count: 0, // skipped for performance
+        };
+      } catch {
+        freshBalances[w.key] = { balance_flowers: 0, balance_zion: 0, utxo_count: 0 };
+      }
+    }));
+    feeBalanceCache = { data: freshBalances, timestamp: now };
+  }
+  const feeBalances = feeBalanceCache.data;
 
   // Burned total: 1% of every block subsidy is permanently destroyed at coinbase.
   const blocksFound = poolStats?.blocks?.found ?? 0;
