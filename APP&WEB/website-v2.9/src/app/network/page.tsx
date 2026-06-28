@@ -795,7 +795,7 @@ export default function NetworkPage() {
         </section>
 
         {/* ═══════ MONITORING SNAPSHOT ═══════ */}
-        <NetworkMonitoringSnapshot cs={cs} locale={locale} />
+        <NetworkMonitoringSnapshot />
 
         {/* ═══════ LIVE NETWORK FEED ═══════ */}
         <NetworkEventsFeed cs={cs} />
@@ -882,7 +882,7 @@ export default function NetworkPage() {
         </section>
 
         {/* ═══════ OPERATOR TOOLKIT ═══════ */}
-        <NetworkOperatorToolkit cs={cs} primaryPool={primaryPool} />
+        <NetworkOperatorToolkit primaryPool={primaryPool} />
 
         {/* ═══════ NETWORK FAQ ═══════ */}
         <section className="zion-section">

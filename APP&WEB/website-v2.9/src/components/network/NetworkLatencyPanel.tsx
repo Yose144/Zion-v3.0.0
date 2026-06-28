@@ -1,6 +1,7 @@
 'use client';
 
 import { Activity, Server, Zap } from 'lucide-react';
+import { useLang } from '@/contexts/LanguageContext';
 
 interface NodeLatency {
   id: string;
@@ -13,7 +14,6 @@ interface NodeLatency {
 
 interface Props {
   nodes: NodeLatency[];
-  cs: boolean;
 }
 
 function latencyBar(ms: number | undefined, max = 500) {
@@ -27,7 +27,9 @@ function latencyBar(ms: number | undefined, max = 500) {
   );
 }
 
-export default function NetworkLatencyPanel({ nodes, cs }: Props) {
+export default function NetworkLatencyPanel({ nodes }: Props) {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
   const onlineNodes = nodes.filter((n) => n.online);
 
   return (

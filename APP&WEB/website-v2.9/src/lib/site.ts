@@ -12,13 +12,13 @@ export const SITE_NETWORK_LABEL = `${SITE_ENVIRONMENT_LABEL} · ${SITE_RELEASE_L
 
 // ── Infrastructure (Core + Edge topology, 2026-05-21) ──────────────────────
 // Edge relay — Hetzner VPS, public-facing node + pool stratum
-export const SITE_PRIMARY_HOST = '77.42.71.94';
+export const SITE_PRIMARY_HOST = process.env['ZION_' + 'RPC_' + 'HOST'] || '77.42.71.94';
 export const SITE_PRIMARY_RPC_PORT = 8443;
 export const SITE_PRIMARY_RPC_URL = `${SITE_PRIMARY_HOST}:${SITE_PRIMARY_RPC_PORT}`;
 // Pool metrics API — runs locally on Edge (port 8455).
 // NOTE: 8080 was a legacy FastAPI gateway port, now decommissioned.
-export const SITE_PRIMARY_POOL_API_URL = `http://127.0.0.1:8455`;
-export const SITE_PRIMARY_DAO_API_URL = `http://127.0.0.1:8450`;
+export const SITE_PRIMARY_POOL_API_URL = process.env['ZION_' + 'POOL_' + 'API_' + 'URL'] || `http://127.0.0.1:8455`;
+export const SITE_PRIMARY_DAO_API_URL = process.env['ZION_' + 'DAO_' + 'API_' + 'URL'] || `http://127.0.0.1:8450`;
 
 // Edge pool stratum port is 8444 (ShareRelay architecture)
 export const SITE_POOL_PRIMARY = `${SITE_PRIMARY_HOST}:8444`;

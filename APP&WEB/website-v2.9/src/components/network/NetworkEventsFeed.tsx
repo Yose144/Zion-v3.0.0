@@ -23,14 +23,21 @@ async function fetchRecentBlocks(): Promise<{ height: number; hash: string; time
     const data = await res.json();
     const height = data.block_height ?? 0;
     if (!height) return [];
+    // Real hash + timestamp for the latest block (from the API). Older blocks
+    // are not exposed individually by /api/blockchain/stats, so we only show the
+    // real hash for the tip and '—' for the rest (no synthetic hashes).
+    const topHash: string = data.top_block_hash || data.last_block?.hash || '';
+    const topTs: number = data.last_block?.timestamp
+      ? Math.floor(data.last_block.timestamp * 1000)
+      : Date.now();
     const blocks = [];
     for (let i = 0; i < 5; i++) {
       const h = height - i;
       if (h <= 0) break;
       blocks.push({
         height: h,
-        hash: `...${String(h).slice(-4)}`,
-        timestamp: Date.now() - i * 60000,
+        hash: i === 0 ? (topHash || '—') : '—',
+        timestamp: i === 0 ? topTs : Date.now() - i * 60000,
       });
     }
     return blocks;
@@ -66,14 +73,17 @@ function useNetworkEvents(cs: boolean) {
 
     blocks.forEach((b, i) => {
       const isNew = b.height > lastHeight;
+      const shortHash = b.hash && b.hash !== '—' && b.hash.length > 16
+        ? `${b.hash.slice(0, 10)}…${b.hash.slice(-6)}`
+        : b.hash;
       newEvents.push({
         id: `block-${b.height}`,
         type: 'block',
-        time: now - i * 60000,
+        time: b.timestamp || now - i * 60000,
         title: `Block #${b.height.toLocaleString()} mined`,
         titleCs: `Blok #${b.height.toLocaleString()} vytěžen`,
-        detail: `Hash ${b.hash}`,
-        detailCs: `Hash ${b.hash}`,
+        detail: `Hash ${shortHash}`,
+        detailCs: `Hash ${shortHash}`,
         link: `/explorer/block?id=${b.height}`,
       });
       if (isNew && i === 0) {
