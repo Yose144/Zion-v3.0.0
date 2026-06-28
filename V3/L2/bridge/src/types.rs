@@ -18,9 +18,18 @@ use serde::{Deserialize, Serialize};
 /// V3 canonical: 1 ZION = 1e6 flowers (6 decimals, post-3.0.3 fork).
 pub const FLOWERS_PER_ZION: u64 = 1_000_000;
 
+/// Pre-3.0.3: 1 ZION = 1e12 flowers (12 decimals).
+pub const FLOWERS_PER_ZION_LEGACY: u64 = 1_000_000_000_000;
+
 /// Conversion factor between L1 flowers (6 dec) and EVM wei (18 dec).
 /// 18 - 6 = 12 → multiply/divide by 1e12.
 pub const FLOWERS_TO_WEI_FACTOR: u128 = 1_000_000_000_000;
+
+/// Pre-3.0.3 conversion factor: 18 - 12 = 6 → multiply/divide by 1e6.
+pub const FLOWERS_TO_WEI_FACTOR_LEGACY: u128 = 1_000_000;
+
+/// 3.0.3 migration height. Locks before this height use legacy 1e12 scale.
+pub const MIGRATION_HEIGHT: u64 = 18_850;
 
 /// Minimum bridge amount: 100 ZION in flowers.
 pub const MIN_BRIDGE_AMOUNT: u64 = 100 * FLOWERS_PER_ZION;
@@ -172,9 +181,31 @@ pub struct ChainBridgeStats {
 // ── Decimal conversion helpers (V3: 6 decimals, post-3.0.3) ───────────────────
 
 pub mod conversion {
-    use super::{FLOWERS_PER_ZION, FLOWERS_TO_WEI_FACTOR};
+    use super::{
+        FLOWERS_PER_ZION, FLOWERS_TO_WEI_FACTOR, FLOWERS_TO_WEI_FACTOR_LEGACY, MIGRATION_HEIGHT,
+    };
 
-    /// Convert L1 flowers (6 decimals) to wZION wei string (18 decimals).
+    /// Convert L1 flowers to wZION wei string (18 decimals), height-aware.
+    ///
+    /// Post-3.0.3 (height >= MIGRATION_HEIGHT): 1 ZION = 1e6 flowers, factor = 1e12
+    /// Pre-3.0.3  (height <  MIGRATION_HEIGHT): 1 ZION = 1e12 flowers, factor = 1e6
+    ///
+    /// Example: 1e6 flowers at height 20000 → "1000000000000000000" (1e18 wei, 1 ZION)
+    /// Example: 1e14 flowers at height 11324 → "100000000000000000000" (1e20 wei, 100 ZION)
+    pub fn flowers_to_wzion_wei_at(flowers: u64, block_height: u64) -> String {
+        let factor = if block_height >= MIGRATION_HEIGHT {
+            FLOWERS_TO_WEI_FACTOR // 1e12 (post-fork)
+        } else {
+            FLOWERS_TO_WEI_FACTOR_LEGACY // 1e6 (pre-fork)
+        };
+        let wei = (flowers as u128) * factor;
+        wei.to_string()
+    }
+
+    /// Convert L1 flowers (6 decimals, post-3.0.3) to wZION wei string.
+    ///
+    /// **WARNING**: Only use for post-3.0.3 locks. For pre-fork locks,
+    /// use `flowers_to_wzion_wei_at(flowers, block_height)`.
     ///
     /// V3 post-3.0.3: 1 ZION = 1e6 flowers. EVM: 1 wZION = 1e18 wei.
     /// Factor = 1e12 (18 - 6 = 12).
@@ -185,7 +216,7 @@ pub mod conversion {
         wei.to_string()
     }
 
-    /// Convert wZION wei string (18 decimals) to L1 flowers (6 decimals).
+    /// Convert wZION wei string (18 decimals) to L1 flowers (6 decimals, post-3.0.3).
     /// Rounds down (truncates sub-flower dust).
     pub fn wzion_wei_to_flowers(wei_str: &str) -> Result<u64, String> {
         let wei: u128 = wei_str
@@ -198,8 +229,8 @@ pub mod conversion {
         Ok(flowers as u64)
     }
 
-    /// Format flowers to human-readable ZION.
-    /// Example: 5_400_067_000 flowers → "5400.067" (post-3.0.3, 6 decimals)
+    /// Format flowers to human-readable ZION (post-3.0.3, 6 decimals).
+    /// Example: 5_400_067_000 flowers → "5400.067"
     pub fn flowers_to_zion_display(flowers: u64) -> String {
         let whole = flowers / FLOWERS_PER_ZION;
         let frac = flowers % FLOWERS_PER_ZION;
@@ -207,6 +238,31 @@ pub mod conversion {
             format!("{}", whole)
         } else {
             format!("{}.{:06}", whole, frac)
+                .trim_end_matches('0')
+                .to_string()
+        }
+    }
+
+    /// Format flowers to human-readable ZION, height-aware.
+    /// Pre-3.0.3: 1 ZION = 1e12 flowers (12 decimals)
+    /// Post-3.0.3: 1 ZION = 1e6 flowers (6 decimals)
+    pub fn flowers_to_zion_display_at(flowers: u64, block_height: u64) -> String {
+        use super::{FLOWERS_PER_ZION, FLOWERS_PER_ZION_LEGACY, MIGRATION_HEIGHT};
+        let divisor = if block_height >= MIGRATION_HEIGHT {
+            FLOWERS_PER_ZION
+        } else {
+            FLOWERS_PER_ZION_LEGACY
+        };
+        let whole = flowers / divisor;
+        let frac = flowers % divisor;
+        if frac == 0 {
+            format!("{}", whole)
+        } else if divisor == FLOWERS_PER_ZION {
+            format!("{}.{:06}", whole, frac)
+                .trim_end_matches('0')
+                .to_string()
+        } else {
+            format!("{}.{:012}", whole, frac)
                 .trim_end_matches('0')
                 .to_string()
         }
@@ -222,6 +278,58 @@ pub mod conversion {
             assert_eq!(
                 flowers_to_wzion_wei(1_000_000),
                 "1000000000000000000" // 1e18
+            );
+        }
+
+        #[test]
+        fn test_flowers_to_wzion_wei_at_post_fork() {
+            // Post-fork: 1 ZION = 1e6 flowers, factor = 1e12
+            // 100 ZION = 100e6 flowers → 100e18 wei
+            assert_eq!(
+                flowers_to_wzion_wei_at(100_000_000, 20_000),
+                "100000000000000000000" // 100 × 1e18
+            );
+        }
+
+        #[test]
+        fn test_flowers_to_wzion_wei_at_pre_fork() {
+            // Pre-fork: 1 ZION = 1e12 flowers, factor = 1e6
+            // 100 ZION = 100e12 = 1e14 flowers → 1e14 × 1e6 = 1e20 wei
+            assert_eq!(
+                flowers_to_wzion_wei_at(100_000_000_000_000, 11_324),
+                "100000000000000000000" // 100 × 1e18
+            );
+        }
+
+        #[test]
+        fn test_flowers_to_wzion_wei_at_migration_boundary() {
+            // At exactly MIGRATION_HEIGHT: use post-fork factor (1e12)
+            assert_eq!(
+                flowers_to_wzion_wei_at(1_000_000, super::super::MIGRATION_HEIGHT),
+                "1000000000000000000" // 1 ZION
+            );
+            // One block before: use pre-fork factor (1e6)
+            assert_eq!(
+                flowers_to_wzion_wei_at(1_000_000, super::super::MIGRATION_HEIGHT - 1),
+                "1000000000000" // 1e6 flowers × 1e6 = 1e12 wei = 0.000001 ZION (tiny!)
+            );
+        }
+
+        #[test]
+        fn test_display_at_pre_fork() {
+            // 1e14 flowers at height 11324 (pre-fork) = 100 ZION
+            assert_eq!(
+                flowers_to_zion_display_at(100_000_000_000_000, 11_324),
+                "100"
+            );
+        }
+
+        #[test]
+        fn test_display_at_post_fork() {
+            // 1e8 flowers at height 20000 (post-fork) = 100 ZION
+            assert_eq!(
+                flowers_to_zion_display_at(100_000_000, 20_000),
+                "100"
             );
         }
 

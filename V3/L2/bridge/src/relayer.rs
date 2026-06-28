@@ -180,7 +180,7 @@ impl Relayer {
     async fn handle_l1_lock(&self, lock: L1LockEvent) -> Result<()> {
         info!(
             "📤 Processing L1→EVM lock: {} ZION → {} on {} (TX: {})",
-            crate::types::conversion::flowers_to_zion_display(lock.amount_flowers),
+            crate::types::conversion::flowers_to_zion_display_at(lock.amount_flowers, lock.l1_block_height),
             lock.evm_recipient,
             lock.target_chain,
             lock.l1_tx_hash,
