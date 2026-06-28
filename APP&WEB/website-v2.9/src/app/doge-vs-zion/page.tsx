@@ -159,6 +159,15 @@ const DOGE = {
   txPerSec: 30,
 };
 
+// Doge at launch (December 2013) — ZION is at the same starting point
+const DOGE_LAUNCH = {
+  priceUsd: 0.0002, // Doge's actual launch price
+  year: 2013,
+  yearsAgo: 13,
+  priceNow: 0.12, // 600x from launch
+  multiplier: 600, // 0.12 / 0.0002
+};
+
 // ─── ZION defaults (overwritten by live API data) ─────────────────────────────
 
 interface ZionStats {
@@ -286,11 +295,19 @@ interface BattleStat {
 const BATTLE_STATS: BattleStat[] = [
   {
     icon: Zap,
-    claim: 'ZION has 6-decimal precision. Doge has 8 — because nothing says "fun money" like counting satoshis.',
-    claimCs: 'ZION má 6 desetinných míst. Doge má 8 — protože nic neříká "zábavné peníze" jako počítání satoshi.',
+    claim: `ZION is at $0.0002 — exactly where Doge was in December 2013. Doge did 600x since. History doesn't repeat, but it rhymes.`,
+    claimCs: `ZION je na $0.0002 — přesně kde byl Doge v prosinci 2013. Doge od té doby udělal 600x. Historie se neopakuje, ale rýmuje.`,
     winner: 'zion',
-    winnerLabel: 'ZION wins on simplicity',
-    winnerLabelCs: 'ZION vyhrává na jednoduchosti',
+    winnerLabel: 'ZION is at the starting line',
+    winnerLabelCs: 'ZION je na startovní čáře',
+  },
+  {
+    icon: Gamepad2,
+    claim: 'ZION has Oasis — a UE5 metaverse with on-chain avatars, XP economy, and Golden Egg treasure. Doge has... a meme.',
+    claimCs: 'ZION má Oasis — UE5 metaverse s on-chain avatary, XP ekonomií a Golden Egg pokladem. Doge má... mem.',
+    winner: 'zion',
+    winnerLabel: 'ZION wins on utility',
+    winnerLabelCs: 'ZION vyhrává na užitku',
   },
   {
     icon: Heart,
@@ -359,17 +376,17 @@ const ZION_ADVANTAGES: { icon: typeof Trophy; title: string; titleCs: string; de
   },
   {
     icon: Gamepad2,
-    title: 'Bridge to Base',
-    titleCs: 'Most na Base',
-    desc: 'wZION on Base L2 — DeFi liquidity meets L1 security.',
-    descCs: 'wZION na Base L2 — DeFi likvidita se potkává s L1 bezpečností.',
+    title: 'ZION Oasis — L4 Game Layer',
+    titleCs: 'ZION Oasis — L4 herní vrstva',
+    desc: 'UE5 metaverse on ZION. On-chain avatars, XP economy, Golden Egg treasure, guild DAO.',
+    descCs: 'UE5 metaverse na ZION. On-chain avatary, XP ekonomie, Golden Egg poklad, guild DAO.',
   },
   {
     icon: Trophy,
-    title: 'DAO Governance',
-    titleCs: 'DAO správa',
-    desc: 'On-chain governance lets the community steer the protocol.',
-    descCs: 'On-chain správa umožňuje komunitě řídit protokol.',
+    title: 'Bridge to Base + DAO',
+    titleCs: 'Most na Base + DAO',
+    desc: 'wZION on Base L2 for DeFi liquidity. On-chain DAO governance steers the protocol.',
+    descCs: 'wZION na Base L2 pro DeFi likviditu. On-chain DAO správa řídí protokol.',
   },
 ];
 
@@ -522,8 +539,8 @@ export default function DogeVsZionPage() {
               className="mt-3 text-sm md:text-base text-gray-400 max-w-2xl leading-relaxed"
             >
               {cs
-                ? 'Jeden má memy a Shiba Inu. Druhý je kvantově-odolný, humanitární a těží na hvězdách. Hraj a rozhodni kdo vyhraje.'
-                : 'One has memes and a Shiba Inu. The other is quantum-resistant, humanitarian, and mines on stars. Play and decide who wins.'}
+                ? 'ZION je na $0.0002 — přesně kde byl Doge v prosinci 2013. Ale ZION má Oasis, kvantovou odolnost a humanitární fond. Hraj a rozhodni kdo vyhraje.'
+                : 'ZION is at $0.0002 — exactly where Doge was in December 2013. But ZION has Oasis, quantum resistance, and a humanitarian fund. Play and decide who wins.'}
             </motion.p>
 
             {/* Statistiky */}
@@ -645,6 +662,72 @@ export default function DogeVsZionPage() {
               </div>
             </motion.div>
           </div>
+
+          {/* Doge 2013 → Now callout — ZION is at the same starting point */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.15 }}
+            className="mt-4 relative overflow-hidden rounded-2xl border border-amber-500/20 bg-gradient-to-r from-amber-500/5 via-purple-500/5 to-amber-500/5 p-5"
+          >
+            <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
+              {/* Left: Doge 2013 */}
+              <div className="flex items-center gap-3 flex-1">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/15 border border-amber-500/30 text-lg">
+                  🐕
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-amber-400">Doge · Dec 2013</p>
+                  <p className="text-lg font-black text-amber-300">$0.0002</p>
+                </div>
+              </div>
+
+              {/* Center: arrow + multiplier */}
+              <div className="flex flex-col items-center">
+                <motion.div
+                  animate={{ x: [0, 5, 0] }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                  className="text-2xl text-gray-500"
+                >
+                  →
+                </motion.div>
+                <p className="text-xs font-bold text-emerald-400 mt-1">600x</p>
+                <p className="text-[10px] text-gray-500">{cs ? 'za 13 let' : 'in 13 years'}</p>
+              </div>
+
+              {/* Right: Doge now */}
+              <div className="flex items-center gap-3 flex-1">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/15 border border-amber-500/30 text-lg">
+                  🐕
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-amber-400">Doge · 2026</p>
+                  <p className="text-lg font-black text-amber-300">$0.12</p>
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="hidden md:block h-12 w-px bg-white/10" />
+
+              {/* ZION now = Doge 2013 */}
+              <div className="flex items-center gap-3 flex-1">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/15 border border-purple-500/30 text-lg">
+                  🌌
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-purple-400">ZION · dnes</p>
+                  <p className="text-lg font-black text-purple-300">$0.0002</p>
+                </div>
+              </div>
+            </div>
+
+            <p className="mt-4 text-center text-xs text-gray-400 leading-relaxed">
+              {cs
+                ? 'ZION je dnes přesně kde byl Doge v prosinci 2013. Stejná cena, stejný start. Ale ZION má navíc: kvantovou odolnost, humanitární fond, AI-nativní design a Oasis metaverse. Historie se neopakuje — ale rýmuje.'
+                : 'ZION today is exactly where Doge was in December 2013. Same price, same starting line. But ZION has more: quantum resistance, humanitarian fund, AI-native design, and the Oasis metaverse. History doesn\'t repeat — but it rhymes.'}
+            </p>
+          </motion.div>
 
           {/* ZION advantages callout */}
           <motion.div
