@@ -69,11 +69,15 @@ export default function RootLayout({
                     <ClientBackgrounds />
                     <div className="relative z-10 overflow-x-clip w-full">
                       <Navigation />
-                      <HeroSection />
-                      <main className="zion-shell min-h-screen">
+                      <div className="site-hero">
+                        <HeroSection />
+                      </div>
+                      <main className="zion-shell site-main min-h-screen">
                         {children}
                       </main>
-                      <Footer />
+                      <div className="site-footer">
+                        <Footer />
+                      </div>
                     </div>
                     <script dangerouslySetInnerHTML={{__html: `
                       (function() {
