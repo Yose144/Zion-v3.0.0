@@ -153,12 +153,12 @@ async function executeCommand(input: string): Promise<CliResponse> {
 /** Base URL for internal API calls (server-side fetch needs absolute URLs). */
 const INTERNAL_BASE = process.env.INTERNAL_API_BASE || `http://127.0.0.1:${process.env.PORT || 3000}`;
 
-async function fetchJson<T = any>(url: string, init?: RequestInit): Promise<{ ok: boolean; status: number; data: T | null }> {
+async function fetchJson<T = any>(url: string, init?: RequestInit, timeoutMs = FETCH_TIMEOUT): Promise<{ ok: boolean; status: number; data: T | null }> {
   try {
     const absUrl = url.startsWith('http') ? url : `${INTERNAL_BASE}${url}`;
     const res = await fetch(absUrl, {
       ...init,
-      signal: AbortSignal.timeout(FETCH_TIMEOUT),
+      signal: AbortSignal.timeout(timeoutMs),
     });
     if (!res.ok) return { ok: false, status: res.status, data: null };
     const data = (await res.json()) as T;
@@ -166,6 +166,11 @@ async function fetchJson<T = any>(url: string, init?: RequestInit): Promise<{ ok
   } catch (e: any) {
     return { ok: false, status: 0, data: null };
   }
+}
+
+/** Fetch with extended timeout for endpoints that do heavy RPC work (e.g. pool stats). */
+async function fetchJsonSlow<T = any>(url: string): Promise<{ ok: boolean; status: number; data: T | null }> {
+  return fetchJson<T>(url, undefined, 30000);
 }
 
 function isValidAddress(addr?: string): boolean {
@@ -261,7 +266,7 @@ async function handleStatus(): Promise<CliResponse> {
   lines.push('', '── Mining Pool ──');
   let poolOnline = false;
   try {
-    const { ok, data } = await fetchJson<any>('/api/pool/stats');
+    const { ok, data } = await fetchJsonSlow<any>('/api/pool/stats');
     if (ok && data) {
       poolOnline = true;
       const agg = data.aggregate ?? {};
@@ -330,10 +335,10 @@ async function handleStatus(): Promise<CliResponse> {
       lines.push(`  ✓ Online — ${aiUrl}`);
       lines.push(`    Model: ${data.model ?? 'hiran-v2.2'}`);
     } else {
-      lines.push(`  ⚠ Responded HTTP ${res.status}`);
+      lines.push(`  ⚠ Offline (HTTP ${res.status}) — inference service not running`);
     }
   } catch (e: any) {
-    lines.push(`  ✗ Offline — ${e.message}`);
+    lines.push(`  ⚠ Offline — inference service not running on this node`);
   }
 
   // Website
@@ -363,7 +368,7 @@ async function handleNode(sub?: string): Promise<CliResponse> {
       const info = await rpc.getInfo();
       return { ok: true, output: formatNodeInfo(info) };
     } catch (e: any) {
-      return { ok: false, output: '', error: `Cannot reach node: ${e.message}. Try 'status' for a full health check.` };
+      return { ok: false, output: '', error: `Node is temporarily unreachable (${e.message}). The node may be busy or syncing. Try 'status' for a quick health check.` };
     }
   }
 
@@ -373,7 +378,7 @@ async function handleNode(sub?: string): Promise<CliResponse> {
       const lastBlock = await rpc.getLastBlockHeader().catch(() => null);
       return { ok: true, output: formatChainInfo(info, lastBlock) };
     } catch (e: any) {
-      return { ok: false, output: '', error: `Cannot reach node: ${e.message}` };
+      return { ok: false, output: '', error: `Node is temporarily unreachable (${e.message}). Try 'status' for a quick health check.` };
     }
   }
 
@@ -382,7 +387,7 @@ async function handleNode(sub?: string): Promise<CliResponse> {
       const peers = await rpc.getConnections();
       return { ok: true, output: formatPeers(peers) };
     } catch (e: any) {
-      return { ok: false, output: '', error: `Cannot reach node: ${e.message}` };
+      return { ok: false, output: '', error: `Node is temporarily unreachable (${e.message}). Try 'status' for a quick health check.` };
     }
   }
 
@@ -392,7 +397,7 @@ async function handleNode(sub?: string): Promise<CliResponse> {
       const summary = await rpc.getNetworkSummary().catch(() => null);
       return { ok: true, output: formatSupply(info, summary) };
     } catch (e: any) {
-      return { ok: false, output: '', error: `Cannot reach node: ${e.message}` };
+      return { ok: false, output: '', error: `Node is temporarily unreachable (${e.message}). Try 'status' for a quick health check.` };
     }
   }
 
@@ -401,7 +406,7 @@ async function handleNode(sub?: string): Promise<CliResponse> {
       const mempool = await rpc.getTransactionPool();
       return { ok: true, output: formatMempool(mempool) };
     } catch (e: any) {
-      return { ok: false, output: '', error: `Cannot reach node: ${e.message}` };
+      return { ok: false, output: '', error: `Node is temporarily unreachable (${e.message}). Try 'status' for a quick health check.` };
     }
   }
 
@@ -423,12 +428,12 @@ async function handlePool(sub?: string): Promise<CliResponse> {
     };
   }
 
-  const { ok, data, status } = await fetchJson<any>('/api/pool/stats');
+  const { ok, data, status } = await fetchJsonSlow<any>('/api/pool/stats');
   if (!ok || !data) {
     return {
       ok: false,
       output: '',
-      error: `Cannot fetch pool stats${status ? ` (HTTP ${status})` : ''}. The pool may be offline. Try 'status' for a health check.`,
+      error: `Pool stats temporarily unavailable (the pool API may be under load). Try 'status' for a quick health check.`,
     };
   }
 
@@ -462,9 +467,9 @@ async function handleExplorer(sub?: string, args?: string[]): Promise<CliRespons
       return { ok: false, output: '', error: 'Usage: explorer block <height|hash>' };
     }
     const param = /^\d+$/.test(heightOrHash) ? `height=${heightOrHash}` : `hash=${encodeURIComponent(heightOrHash)}`;
-    const { ok: okRes, data, status } = await fetchJson<any>(`/api/blockchain/block?${param}`);
+    const { ok: okRes, data, status } = await fetchJsonSlow<any>(`/api/blockchain/block?${param}`);
     if (!okRes || !data) {
-      return { ok: false, output: '', error: `Block not found${status ? ` (HTTP ${status})` : ''}. Check the height/hash and try again.` };
+      return { ok: false, output: '', error: `Block not found. Check the height/hash and try again.` };
     }
     return { ok: true, output: formatBlock(data) };
   }
@@ -474,9 +479,9 @@ async function handleExplorer(sub?: string, args?: string[]): Promise<CliRespons
     if (!hash) {
       return { ok: false, output: '', error: 'Usage: explorer tx <tx_hash>' };
     }
-    const { ok: okRes, data, status } = await fetchJson<any>(`/api/blockchain/transactions?tx_hash=${encodeURIComponent(hash)}`);
+    const { ok: okRes, data, status } = await fetchJsonSlow<any>(`/api/blockchain/transactions?tx_hash=${encodeURIComponent(hash)}`);
     if (!okRes || !data) {
-      return { ok: false, output: '', error: `Transaction not found${status ? ` (HTTP ${status})` : ''}. Verify the hash (64 hex chars).` };
+      return { ok: false, output: '', error: `Transaction not found. Verify the hash (64 hex chars).` };
     }
     return { ok: true, output: formatTx(data) };
   }
@@ -486,9 +491,9 @@ async function handleExplorer(sub?: string, args?: string[]): Promise<CliRespons
     if (!isValidAddress(addr)) {
       return { ok: false, output: '', error: 'Usage: explorer address <zion1...>. Address must start with "zion1" and be at least 44 chars.' };
     }
-    const { ok: okRes, data, status } = await fetchJson<any>(`/api/blockchain/address?address=${encodeURIComponent(addr!)}`);
+    const { ok: okRes, data, status } = await fetchJsonSlow<any>(`/api/blockchain/address?address=${encodeURIComponent(addr!)}`);
     if (!okRes || !data) {
-      return { ok: false, output: '', error: `Address lookup failed${status ? ` (HTTP ${status})` : ''}.` };
+      return { ok: false, output: '', error: `Address lookup failed. The blockchain API may be busy.` };
     }
     return { ok: true, output: formatAddress(data) };
   }
@@ -498,7 +503,7 @@ async function handleExplorer(sub?: string, args?: string[]): Promise<CliRespons
     if (!query) {
       return { ok: false, output: '', error: 'Usage: explorer search <query>. Query can be a block height, hash, tx hash, or address.' };
     }
-    const { ok: okRes, data } = await fetchJson<any>(`/api/blockchain/search?q=${encodeURIComponent(query)}`);
+    const { ok: okRes, data } = await fetchJsonSlow<any>(`/api/blockchain/search?q=${encodeURIComponent(query)}`);
     if (!okRes || !data) {
       return { ok: false, output: '', error: 'Search failed. Try a block height, hash, tx hash, or zion1 address.' };
     }
@@ -506,25 +511,25 @@ async function handleExplorer(sub?: string, args?: string[]): Promise<CliRespons
   }
 
   if (sub === 'richlist') {
-    const { ok: okRes, data, status } = await fetchJson<any>(`/api/blockchain/richlist?limit=10`);
+    const { ok: okRes, data, status } = await fetchJsonSlow<any>(`/api/blockchain/richlist?limit=10`);
     if (!okRes || !data) {
-      return { ok: false, output: '', error: `Rich list unavailable${status ? ` (HTTP ${status})` : ''}.` };
+      return { ok: false, output: '', error: `Rich list temporarily unavailable. The blockchain API may be busy.` };
     }
     return { ok: true, output: formatRichlist(data) };
   }
 
   if (sub === 'supply') {
-    const { ok: okRes, data, status } = await fetchJson<any>(`/api/blockchain/stats`);
+    const { ok: okRes, data, status } = await fetchJsonSlow<any>(`/api/blockchain/stats`);
     if (!okRes || !data) {
-      return { ok: false, output: '', error: `Supply info unavailable${status ? ` (HTTP ${status})` : ''}. Try 'node supply' instead.` };
+      return { ok: false, output: '', error: `Supply info temporarily unavailable. Try 'node supply' instead.` };
     }
     return { ok: true, output: formatSupplyStats(data) };
   }
 
   if (sub === 'stats') {
-    const { ok: okRes, data, status } = await fetchJson<any>(`/api/blockchain/stats`);
+    const { ok: okRes, data, status } = await fetchJsonSlow<any>(`/api/blockchain/stats`);
     if (!okRes || !data) {
-      return { ok: false, output: '', error: `Blockchain stats unavailable${status ? ` (HTTP ${status})` : ''}.` };
+      return { ok: false, output: '', error: `Blockchain stats temporarily unavailable. The blockchain API may be busy.` };
     }
     return { ok: true, output: formatBlockchainStats(data) };
   }
@@ -550,7 +555,7 @@ async function handleDefi(sub?: string): Promise<CliResponse> {
   if (sub === 'price') {
     const { ok, data, status } = await fetchJson<any>('/api/defi/price');
     if (!ok || !data) {
-      return { ok: false, output: '', error: `Price feed unavailable${status ? ` (HTTP ${status})` : ''}.` };
+      return { ok: false, output: '', error: `Price feed temporarily unavailable.` };
     }
     return { ok: true, output: formatDefiPrice(data) };
   }
@@ -558,7 +563,7 @@ async function handleDefi(sub?: string): Promise<CliResponse> {
   if (sub === 'status') {
     const { ok, data, status } = await fetchJson<any>('/api/defi/status');
     if (!ok || !data) {
-      return { ok: false, output: '', error: `DeFi status unavailable${status ? ` (HTTP ${status})` : ''}.` };
+      return { ok: false, output: '', error: `DeFi status temporarily unavailable.` };
     }
     return { ok: true, output: formatDefiStatus(data) };
   }
@@ -628,7 +633,7 @@ async function handleMineCalc(hashrateInput: string): Promise<CliResponse> {
 
   // Fetch pool stats (for pool hashrate + blocks) and price in parallel
   const [poolRes, priceRes] = await Promise.all([
-    fetchJson<any>('/api/pool/stats'),
+    fetchJsonSlow<any>('/api/pool/stats'),
     fetchJson<any>('/api/defi/price'),
   ]);
 
@@ -678,7 +683,7 @@ async function handleNetwork(sub?: string): Promise<CliResponse> {
   if (!sub || sub === 'stats' || sub === 'overview') {
     const { ok, data, status } = await fetchJson<any>('/api/network');
     if (!ok || !data) {
-      return { ok: false, output: '', error: `Network status unavailable${status ? ` (HTTP ${status})` : ''}.` };
+      return { ok: false, output: '', error: `Network status temporarily unavailable.` };
     }
     return { ok: true, output: formatNetworkStats(data) };
   }
@@ -689,7 +694,7 @@ async function handleNetwork(sub?: string): Promise<CliResponse> {
       const peers = await rpc.getConnections();
       return { ok: true, output: formatNetworkPeers(peers) };
     } catch (e: any) {
-      return { ok: false, output: '', error: `Cannot reach node: ${e.message}` };
+      return { ok: false, output: '', error: `Node is temporarily unreachable (${e.message}). Try 'status' for a quick health check.` };
     }
   }
 
@@ -706,11 +711,10 @@ async function handleDao(sub?: string): Promise<CliResponse> {
   if (!sub || sub === 'proposals' || sub === 'list') {
     const { ok, data, status } = await fetchJson<any>('/api/dao/proposals?limit=20&status=Active');
     if (!ok || data == null) {
-      // The DAO proxy returns 503 with a fallback payload when offline
       if (data && data.note) {
         return { ok: false, output: '', error: `DAO API offline: ${data.note}` };
       }
-      return { ok: false, output: '', error: `DAO proposals unavailable${status ? ` (HTTP ${status})` : ''}.` };
+      return { ok: false, output: '', error: `DAO proposals temporarily unavailable.` };
     }
     const proposals = data?.proposals ?? data?.data?.proposals ?? (Array.isArray(data) ? data : []);
     return { ok: true, output: formatDaoProposals(proposals) };
@@ -728,7 +732,7 @@ async function handleDao(sub?: string): Promise<CliResponse> {
 async function handleBridge(): Promise<CliResponse> {
   const { ok, data, status } = await fetchJson<any>('/api/bridge/status');
   if (!ok || !data) {
-    return { ok: false, output: '', error: `Bridge status unavailable${status ? ` (HTTP ${status})` : ''}.` };
+    return { ok: false, output: '', error: `Bridge status temporarily unavailable.` };
   }
   return { ok: true, output: formatBridge(data) };
 }
@@ -752,9 +756,9 @@ async function handleAi(sub?: string, args?: string[]): Promise<CliResponse> {
           ].join('\n'),
         };
       }
-      return { ok: false, output: '', error: `Hiran AI responded HTTP ${res.status}` };
+      return { ok: false, output: '', error: `Hiran AI is currently offline (HTTP ${res.status}). The inference service may not be running.` };
     } catch (e: any) {
-      return { ok: false, output: '', error: `Hiran AI offline: ${e.message}` };
+      return { ok: false, output: '', error: `Hiran AI is currently offline. The inference service may not be running on this node.` };
     }
   }
 
@@ -775,7 +779,7 @@ async function handleAi(sub?: string, args?: string[]): Promise<CliResponse> {
       const answer = data.response ?? data.answer ?? data.content ?? 'No response';
       return { ok: true, output: `Hiran: ${answer}` };
     } catch (e: any) {
-      return { ok: false, output: '', error: `AI request failed: ${e.message}. Try 'ai status' to check the endpoint.` };
+      return { ok: false, output: '', error: `AI request failed. The inference service may be offline. Try 'ai status' to check.` };
     }
   }
 
@@ -811,7 +815,7 @@ async function handleWallet(sub?: string, args?: string[]): Promise<CliResponse>
         ].join('\n'),
       };
     } catch (e: any) {
-      return { ok: false, output: '', error: `Cannot reach node: ${e.message}` };
+      return { ok: false, output: '', error: `Node is temporarily unreachable (${e.message}). Try 'status' for a quick health check.` };
     }
   }
 
@@ -852,7 +856,7 @@ function formatHelp(): string {
     {
       name: 'Pool',
       cmds: [
-        ['pool stats', 'Pool hashrate, miners, blocks, PPLNS, fees'],
+        ['pool stats', 'Pool hashrate, miners, blocks, PPLNS, fee wallets'],
         ['pool miners', 'Top 10 active miners'],
         ['pool blocks', 'Recent 10 blocks found'],
         ['pool servers', 'Pool servers and online status'],
@@ -882,7 +886,7 @@ function formatHelp(): string {
       name: 'Mining',
       cmds: [
         ['mine start', 'Quick-start mining guide'],
-        ['mine calc <hashrate>', 'Mining reward calculator (e.g. "100M")'],
+        ['mine calc <hashrate>', 'Reward calculator (e.g. "100M", "18KH", "2.5GH")'],
         ['mine benchmarks', 'Hardware benchmark table'],
       ],
     },
@@ -897,7 +901,7 @@ function formatHelp(): string {
       name: 'DAO & Bridge',
       cmds: [
         ['dao proposals', 'Active governance proposals'],
-        ['bridge status', 'L1↔EVM bridge relay status'],
+        ['bridge status', 'L1<->EVM bridge relay status'],
       ],
     },
     {
@@ -917,18 +921,18 @@ function formatHelp(): string {
       name: 'Meta',
       cmds: [
         ['help', 'Show this help (aliases: ls, h, ?)'],
-        ['version', 'Show CLI/site/node versions (alias: whoami)'],
-        ['status', 'Full network health check'],
-        ['about', 'ZION project info'],
+        ['version', 'Show CLI/site/node versions (alias: whoami, ver)'],
+        ['status', 'Full network health check (node+pool+defi+bridge+ai)'],
+        ['about', 'ZION project info & mission'],
         ['docs', 'Documentation links'],
         ['links', 'Useful links (explorer, pool, github...)'],
-        ['clear', 'Clear the terminal (alias: clr, cls)'],
+        ['clear', 'Clear the terminal (aliases: clr, cls)'],
       ],
     },
   ];
 
   const lines: string[] = [
-    'ZION Web CLI — Available Commands',
+    'ZION Web CLI v2.1.0 — Available Commands',
     '═══════════════════════════════════════════════════════════════',
     '',
   ];
@@ -942,8 +946,25 @@ function formatHelp(): string {
     lines.push('');
   }
 
-  lines.push('Aliases: ls/h/? = help · v/whoami = version · clr/cls = clear · ex = explorer');
-  lines.push('Tip: Use ↑/↓ for command history, Tab for autocomplete.');
+  lines.push('── Examples ──');
+  lines.push('  pool stats              Quick pool overview');
+  lines.push('  pool payouts            Fee split & wallet balances');
+  lines.push('  explorer block 19274    Look up a block by height');
+  lines.push('  explorer address zion1...  Check any address balance');
+  lines.push('  mine calc 18KH          Estimate rewards for 18 KH/s');
+  lines.push('  wallet balance zion1... Check your wallet balance');
+  lines.push('  ai ask "What is ZION?"  Ask the AI a question');
+  lines.push('');
+  lines.push('── Aliases ──');
+  lines.push('  ls / h / ?      = help');
+  lines.push('  v / whoami      = version');
+  lines.push('  clr / cls       = clear');
+  lines.push('  ex              = explorer');
+  lines.push('  net             = network');
+  lines.push('  mining          = mine');
+  lines.push('');
+  lines.push('Tip: Use Up/Down for command history, Tab for autocomplete.');
+  lines.push('     Click any quick-command chip above the terminal for one-click access.');
   return lines.join('\n');
 }
 
