@@ -351,10 +351,16 @@ impl OasisDb {
     }
 
     /// Reset `daily_xp` to 0 for all players. Called at UTC midnight.
+    /// The player data is stored as JSON in the `data` column, so we use
+    /// SQLite's `json_set()` to update the nested field.
     pub fn reset_all_daily_xp(&self) -> OasisResult<()> {
         let conn = self.conn.lock().unwrap();
-        conn.execute("UPDATE players SET daily_xp = 0", [])
-            .map_err(OasisError::Database)?;
+        // json_set works on the JSON text in the data column
+        conn.execute(
+            "UPDATE players SET data = json_set(data, '$.daily_xp', 0)",
+            [],
+        )
+        .map_err(OasisError::Database)?;
         Ok(())
     }
 
