@@ -117,7 +117,8 @@ fn main() -> Result<()> {
     if !fee_config.issobella_wallet.is_empty() {
         println!("issobella_wallet={}", fee_config.issobella_wallet);
     }
-    let pplns_engine = Arc::new(Mutex::new(PplnsEngine::new(PplnsConfig {
+    let pplns_state_path = std::env::var("ZION_PPLNS_STATE_PATH").unwrap_or_default();
+    let mut pplns_engine_inner = PplnsEngine::new(PplnsConfig {
         window_size: parse_env_u64("ZION_PPLNS_WINDOW_SIZE", 500_000).unwrap_or(500_000) as usize,
         min_payout_flowers: parse_env_u64(
             "ZION_PPLNS_MIN_PAYOUT",
@@ -125,7 +126,31 @@ fn main() -> Result<()> {
         )
         .unwrap_or(zion_core::wallet::MIN_PAYOUT_AMOUNT),
         fee_config,
-    })));
+    });
+
+    // Restore PPLNS state from disk if a state path is configured and the file exists.
+    if !pplns_state_path.is_empty() {
+        if let Some(snap) = PplnsEngine::load_from_path(&pplns_state_path) {
+            println!(
+                "pplns_persistence: restored state from {} — shares={} miners={} unpaid_miners={} total_paid={}",
+                pplns_state_path,
+                snap.window.len(),
+                snap.addresses.len(),
+                snap.unpaid.len(),
+                snap.total_paid_flowers
+            );
+            pplns_engine_inner.restore(snap);
+        } else {
+            println!(
+                "pplns_persistence: no snapshot found at {} — starting fresh",
+                pplns_state_path
+            );
+        }
+    } else {
+        println!("pplns_persistence: ZION_PPLNS_STATE_PATH not set — state will be lost on restart");
+    }
+
+    let pplns_engine = Arc::new(Mutex::new(pplns_engine_inner));
     let active_sessions = Arc::new(AtomicU64::new(0));
     let session_id_counter = Arc::new(AtomicU64::new(0));
     let listener = TcpListener::bind(&config.bind_addr)
@@ -188,6 +213,33 @@ fn main() -> Result<()> {
                 pplns_ref,
             ) {
                 eprintln!("routing_metrics_error={error:#}");
+            }
+        });
+    }
+
+    // ── PPLNS persistence thread ────────────────────────────────────
+    // Periodically saves the PPLNS engine state (unpaid balances, share
+    // window, fee accumulators) to a JSON file so that miner earnings
+    // survive pool restarts and crashes.
+    if !pplns_state_path.is_empty() {
+        let pplns_ref = Arc::clone(&pplns_engine);
+        let state_path = pplns_state_path.clone();
+        let save_interval_s = parse_env_u64("ZION_PPLNS_SAVE_INTERVAL_S", 10)
+            .unwrap_or(10);
+        println!(
+            "pplns_persistence: periodic save every {}s to {}",
+            save_interval_s, state_path
+        );
+        thread::spawn(move || {
+            loop {
+                thread::sleep(Duration::from_secs(save_interval_s));
+                let pplns = pplns_ref.lock().expect("pplns lock poisoned");
+                if let Err(e) = pplns.save_to_path(&state_path) {
+                    eprintln!(
+                        "pplns_persistence: save failed to {}: {}",
+                        state_path, e
+                    );
+                }
             }
         });
     }
@@ -287,6 +339,20 @@ fn main() -> Result<()> {
     loop {
         if shutdown.load(Ordering::SeqCst) {
             println!("shutdown_draining clients={}", handles.len());
+            // Final PPLNS state save before exit.
+            if !pplns_state_path.is_empty() {
+                let pplns = pplns_engine.lock().expect("pplns lock poisoned");
+                match pplns.save_to_path(&pplns_state_path) {
+                    Ok(()) => println!(
+                        "pplns_persistence: final save OK to {}",
+                        pplns_state_path
+                    ),
+                    Err(e) => eprintln!(
+                        "pplns_persistence: final save FAILED to {}: {}",
+                        pplns_state_path, e
+                    ),
+                }
+            }
             break;
         }
         if matches!(config.accept_limit, Some(limit) if accepted >= limit) {

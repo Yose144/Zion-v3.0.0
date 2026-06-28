@@ -10,10 +10,13 @@
 //! - 1% pool operator fee
 
 use std::collections::{HashMap, VecDeque};
+use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use serde::{Deserialize, Serialize};
+
 /// Single accepted share recorded in the PPLNS window.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PplnsShare {
     pub miner_id: String,
     pub worker_name: String,
@@ -146,6 +149,24 @@ pub struct PplnsEngine {
     fee_pool_flowers: u64,
 }
 
+/// Serializable snapshot of all PPLNS engine mutable state.
+///
+/// Used for crash-safe persistence: the pool server saves this to a JSON
+/// file periodically and on shutdown, and restores it on startup so that
+/// unpaid miner balances and the share window survive restarts.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PplnsSnapshot {
+    pub window: Vec<PplnsShare>,
+    pub window_total_difficulty: u128,
+    pub addresses: HashMap<String, String>,
+    pub unpaid: HashMap<String, u64>,
+    pub total_paid_flowers: u128,
+    pub payout_rounds: u64,
+    pub fee_humanitarian_flowers: u64,
+    pub fee_issobella_flowers: u64,
+    pub fee_pool_flowers: u64,
+}
+
 impl PplnsEngine {
     pub fn new(config: PplnsConfig) -> Self {
         Self {
@@ -159,6 +180,77 @@ impl PplnsEngine {
             fee_humanitarian_flowers: 0,
             fee_issobella_flowers: 0,
             fee_pool_flowers: 0,
+        }
+    }
+
+    /// Capture a serializable snapshot of the current engine state.
+    pub fn snapshot(&self) -> PplnsSnapshot {
+        PplnsSnapshot {
+            window: self.window.iter().cloned().collect(),
+            window_total_difficulty: self.window_total_difficulty,
+            addresses: self.addresses.clone(),
+            unpaid: self.unpaid.clone(),
+            total_paid_flowers: self.total_paid_flowers,
+            payout_rounds: self.payout_rounds,
+            fee_humanitarian_flowers: self.fee_humanitarian_flowers,
+            fee_issobella_flowers: self.fee_issobella_flowers,
+            fee_pool_flowers: self.fee_pool_flowers,
+        }
+    }
+
+    /// Restore engine state from a previously saved snapshot.
+    pub fn restore(&mut self, snap: PplnsSnapshot) {
+        self.window = snap.window.into_iter().collect();
+        self.window_total_difficulty = snap.window_total_difficulty;
+        self.addresses = snap.addresses;
+        self.unpaid = snap.unpaid;
+        self.total_paid_flowers = snap.total_paid_flowers;
+        self.payout_rounds = snap.payout_rounds;
+        self.fee_humanitarian_flowers = snap.fee_humanitarian_flowers;
+        self.fee_issobella_flowers = snap.fee_issobella_flowers;
+        self.fee_pool_flowers = snap.fee_pool_flowers;
+    }
+
+    /// Save engine state to a JSON file (atomic write via temp + rename).
+    pub fn save_to_path<P: AsRef<Path>>(&self, path: P) -> std::io::Result<()> {
+        let path = path.as_ref();
+        let snap = self.snapshot();
+        let json = serde_json::to_vec(&snap)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+
+        // Atomic write: write to temp file, then rename.
+        let tmp = path.with_extension("json.tmp");
+        std::fs::write(&tmp, &json)?;
+        std::fs::rename(&tmp, path)?;
+        Ok(())
+    }
+
+    /// Load engine state from a JSON file. Returns `None` if file doesn't
+    /// exist (first run).  Errors are logged to stderr and treated as
+    /// "no snapshot" so the pool can still start.
+    pub fn load_from_path<P: AsRef<Path>>(path: P) -> Option<PplnsSnapshot> {
+        let path = path.as_ref();
+        match std::fs::read(path) {
+            Ok(data) => match serde_json::from_slice::<PplnsSnapshot>(&data) {
+                Ok(snap) => Some(snap),
+                Err(e) => {
+                    eprintln!(
+                        "pplns_persistence: failed to parse snapshot {}: {} — starting fresh",
+                        path.display(),
+                        e
+                    );
+                    None
+                }
+            },
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
+            Err(e) => {
+                eprintln!(
+                    "pplns_persistence: failed to read snapshot {}: {} — starting fresh",
+                    path.display(),
+                    e
+                );
+                None
+            }
         }
     }
 
@@ -1049,5 +1141,88 @@ mod tests {
                 rel_diff * 100.0
             );
         }
+    }
+
+    #[test]
+    fn snapshot_and_restore_preserves_state() {
+        let mut e = engine_with_fees(100, 500_000);
+        e.register_address("alice", "zion1alice");
+        e.register_address("bob", "zion1bob");
+        e.record_share_at("alice", "rig1", 1, 1000);
+        e.record_share_at("bob", "rig2", 1, 2000);
+        e.compute_payouts(1_000_000);
+        // Bob is below threshold, so he has unpaid balance.
+        let bob_unpaid = e.unpaid_balance("bob");
+        assert!(bob_unpaid > 0);
+
+        let snap = e.snapshot();
+        let mut e2 = engine_with_fees(100, 500_000);
+        e2.restore(snap);
+
+        assert_eq!(e2.window_len(), e.window_len());
+        assert_eq!(e2.unpaid_balance("bob"), bob_unpaid);
+        assert_eq!(e2.address_for("alice"), Some("zion1alice"));
+        assert_eq!(e2.stats().total_paid_flowers, e.stats().total_paid_flowers);
+        assert_eq!(e2.fee_stats().humanitarian_accumulated_flowers, e.fee_stats().humanitarian_accumulated_flowers);
+    }
+
+    #[test]
+    fn save_and_load_roundtrip() {
+        let dir = std::env::temp_dir();
+        let path = dir.join(format!(
+            "zion_pplns_test_{}.json",
+            std::process::id()
+        ));
+        // Clean up any leftover from a previous run.
+        let _ = std::fs::remove_file(&path);
+
+        let mut e = engine_with_fees(100, 500_000);
+        e.register_address("alice", "zion1alice");
+        e.register_address("bob", "zion1bob");
+        e.record_share_at("alice", "rig1", 1, 1000);
+        e.record_share_at("bob", "rig2", 1, 2000);
+        e.compute_payouts(1_000_000);
+        let bob_unpaid = e.unpaid_balance("bob");
+        let total_paid = e.stats().total_paid_flowers;
+
+        // Save
+        e.save_to_path(&path).expect("save should succeed");
+        assert!(path.exists(), "snapshot file should exist");
+
+        // Load into a fresh engine
+        let snap = PplnsEngine::load_from_path(&path).expect("snapshot should load");
+        let mut e2 = engine_with_fees(100, 500_000);
+        e2.restore(snap);
+
+        assert_eq!(e2.unpaid_balance("bob"), bob_unpaid);
+        assert_eq!(e2.stats().total_paid_flowers, total_paid);
+        assert_eq!(e2.address_for("alice"), Some("zion1alice"));
+
+        // Clean up
+        let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn load_nonexistent_returns_none() {
+        let path = std::env::temp_dir().join("zion_pplns_nonexistent_999999.json");
+        let _ = std::fs::remove_file(&path);
+        assert!(PplnsEngine::load_from_path(&path).is_none());
+    }
+
+    #[test]
+    fn restore_preserves_fee_accumulators() {
+        let mut e = engine_with_fees(100, 1);
+        e.register_address("alice", "zion1alice");
+        e.record_share_at("alice", "rig1", 1, 1000);
+        e.compute_payouts(1_000_000);
+
+        let snap = e.snapshot();
+        let mut e2 = engine_with_fees(100, 1);
+        e2.restore(snap);
+
+        let fs = e2.fee_stats();
+        assert_eq!(fs.humanitarian_accumulated_flowers, 50_000);
+        assert_eq!(fs.issobella_accumulated_flowers, 50_000);
+        assert_eq!(fs.pool_fee_accumulated_flowers, 10_000);
     }
 }
