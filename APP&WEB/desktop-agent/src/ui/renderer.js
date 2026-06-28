@@ -2582,7 +2582,7 @@ async function loadWalletsList() {
         }
         const htmlRows = payouts.slice(0, 20).map(tx => {
           const h = tx.height || '—';
-          const amt = tx.total_output ? (Number(tx.total_output) / 1e9).toFixed(4) : '—';
+          const amt = tx.total_output ? (Number(tx.total_output) / 1e6).toFixed(4) : '—';
           const t = tx.time ? new Date(tx.time * 1000).toLocaleString() : '—';
           const id = tx.txid ? escapeHtml(tx.txid.slice(0, 24) + '…') : '—';
           return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.05);margin-bottom:6px">

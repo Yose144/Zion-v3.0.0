@@ -16,6 +16,7 @@ import {
   Shield,
   Heart,
   Lock,
+  ExternalLink,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { usePolling } from '@/hooks/usePolling';
@@ -23,6 +24,7 @@ import { ZionDefense } from './games/ZionDefense';
 import { MiningSnake } from './games/MiningSnake';
 import { BlockBreaker } from './games/BlockBreaker';
 import { FlappyNode } from './games/FlappyNode';
+import { StarMiner } from './games/StarMiner';
 import OasisAmbientScene from '@/components/OasisAmbientScene';
 import SpotifyBanner from '@/components/SpotifyBanner';
 import StargatePortal from '@/components/StargatePortal';
@@ -90,6 +92,18 @@ const GAMES: GameEntry[] = [
     glowColor: '#22d3ee',
     hsKey: 'flappy-node-hs',
     badge: 'RETRO',
+  },
+  {
+    id: 'star-miner',
+    title: 'Star Miner',
+    emoji: '⭐',
+    genre: 'Idle / Clicker',
+    description: 'ZION\'s answer to Doge Miner 2. Mine on the star, build rigs, reach Issobella.',
+    descriptionCs: 'ZION odpověď na Doge Miner 2. Těž na hvězdě, stavej rigy, dosáhni Issobelly.',
+    color: '#9333ea',
+    glowColor: '#a855f7',
+    hsKey: 'star-miner-save',
+    badge: 'NEW',
   },
 ];
 
@@ -212,6 +226,14 @@ function loadAllScores(): Record<string, number> {
           const data = JSON.parse(raw);
           const stars = Object.values(data.levelStars ?? {}) as number[];
           scores[game.id] = stars.reduce((a, b) => a + b, 0);
+        }
+      } catch { /* noop */ }
+    } else if (game.id === 'star-miner') {
+      try {
+        const raw = localStorage.getItem(game.hsKey);
+        if (raw) {
+          const data = JSON.parse(raw);
+          scores[game.id] = Math.floor(data.totalMined ?? 0);
         }
       } catch { /* noop */ }
     } else {
@@ -406,6 +428,7 @@ export default function DogeVsZionPage() {
   if (activeGame === 'mining-snake') return <MiningSnake onBack={backToHub} />;
   if (activeGame === 'block-breaker') return <BlockBreaker onBack={backToHub} />;
   if (activeGame === 'flappy-node') return <FlappyNode onBack={backToHub} />;
+  if (activeGame === 'star-miner') return <StarMiner onBack={backToHub} />;
 
   const metrics = buildMetrics(DOGE, zion);
 
@@ -703,6 +726,118 @@ export default function DogeVsZionPage() {
                 </motion.div>
               );
             })}
+          </div>
+        </motion.section>
+
+        {/* ─── The Original (Doge Miner 2 vs Star Miner) ─── */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="zion-section"
+        >
+          <div className="mb-6 flex items-center gap-3">
+            <Sparkles className="h-6 w-6 text-amber-400" />
+            <div>
+              <h2 className="text-2xl font-bold text-white tracking-tight">
+                {cs ? 'Originál' : 'The Original'}
+              </h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {cs ? 'Kde to všechno začalo — a ZION odpověď' : 'Where it all began — and the ZION answer'}
+              </p>
+            </div>
+          </div>
+
+          <div className="relative grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            {/* VS badge (center, desktop) */}
+            <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 items-center justify-center">
+              <motion.div
+                initial={{ scale: 0, rotate: -90 }}
+                whileInView={{ scale: 1, rotate: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
+                className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white/20 bg-black text-sm font-black text-white shadow-[0_0_24px_rgba(245,158,11,0.4)]"
+              >
+                VS
+              </motion.div>
+            </div>
+
+            {/* Doge Miner 2 (amber/gold) */}
+            <motion.a
+              href="https://dogeminer2.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4 }}
+              className="group zion-rainbow-card p-5 transition-all hover:scale-[1.02]"
+              style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl text-2xl bg-amber-500/15 border border-amber-500/40">
+                  🐕
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-amber-400">Doge Miner 2</h3>
+                  <p className="text-[10px] uppercase tracking-widest text-gray-500">{cs ? 'Legendární klikárna' : 'Legendary clicker'}</p>
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 leading-relaxed mb-4">
+                {cs
+                  ? 'Legendární klikárna, která to všechno začala. Těž Dogecoiny, najmi psy, let na měsíc.'
+                  : 'The legendary clicker that started it all. Mine Dogecoins, hire dogs, go to the moon.'}
+              </p>
+              <div
+                className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all group-hover:gap-3"
+                style={{
+                  backgroundColor: 'rgba(245,158,11,0.2)',
+                  color: '#f59e0b',
+                  border: '1px solid rgba(245,158,11,0.4)',
+                }}
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                {cs ? 'Hrát externě' : 'Play External'}
+              </div>
+            </motion.a>
+
+            {/* Star Miner (purple) */}
+            <motion.button
+              onClick={() => setActiveGame('star-miner')}
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4 }}
+              className="group relative overflow-hidden zion-rainbow-card p-5 text-left transition-all hover:scale-[1.02]"
+              style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl text-2xl bg-purple-500/15 border border-purple-500/40">
+                  ⭐
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-purple-400">Star Miner</h3>
+                  <p className="text-[10px] uppercase tracking-widest text-gray-500">{cs ? 'ZION odpověď' : 'ZION answer'}</p>
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 leading-relaxed mb-4">
+                {cs
+                  ? 'ZION odpověď na Doge Miner 2. Těž na hvězdě, stavej rigy, dosáhni Issobelly.'
+                  : "ZION's answer to Doge Miner 2. Mine on the star, build rigs, reach Issobella."}
+              </p>
+              <div
+                className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all group-hover:gap-3"
+                style={{
+                  backgroundColor: 'rgba(147,51,234,0.2)',
+                  color: '#a855f7',
+                  border: '1px solid rgba(147,51,234,0.4)',
+                }}
+              >
+                <Play className="h-3.5 w-3.5" />
+                {cs ? 'Hrát' : 'Play'}
+              </div>
+            </motion.button>
           </div>
         </motion.section>
 

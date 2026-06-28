@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-03-16T21:54:55.286Z",
-  "duration": 3,
+  "timestamp": "2026-06-28T06:01:37.975Z",
+  "duration": 5,
   "testType": "revenue_system_e2e",
   "results": {
     "configInit": true,

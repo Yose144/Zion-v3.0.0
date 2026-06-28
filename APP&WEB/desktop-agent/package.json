@@ -9,7 +9,7 @@
     "start": "node scripts/launch-electron.js",
     "dev": "node scripts/launch-electron.js",
     "dev:wallet": "node scripts/launch-electron.js",
-    "test": "node test/test_mining_modes.js && python test_deeksha_revenue.py",
+    "test": "node test/test_mining_modes.js && python3 test_deeksha_revenue.py",
     "test:e2e": "node scripts/test_e2e_mining_flow.js",
     "test:revenue": "node scripts/test_revenue_system_e2e.js",
     "test:wallet": "node scripts/test-wallet-e2e.js",
