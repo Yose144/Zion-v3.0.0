@@ -117,8 +117,8 @@ pub fn total_fees_burned(fees: &[u64]) -> u64 {
 /// Provable-burn address (no known private key).
 pub const BURN_ADDRESS: &str = "zion1burn0000000000000000000000000000000dead";
 
-/// DAO treasury address.
-pub const DAO_ADDRESS: &str = "zion1dao00000000000000000000000000000treasury";
+/// DAO treasury address (main — Community Governance, 2.5B ZION).
+pub const DAO_ADDRESS: &str = "zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4";
 
 /// Bridge vault address.
 ///

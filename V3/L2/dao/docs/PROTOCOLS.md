@@ -143,9 +143,9 @@ Pravidlo: 5 z 7 pro treasury operace
 ```rust
 // Konstanty z types.rs
 pub const DAO_TREASURY_ADDRESSES: &[&str] = &[
-    "zion1dao0treasury0main000000000000000000001",
-    "zion1dao0treasury0main000000000000000000002",
-    "zion1dao0treasury0main000000000000000000003",
+    "zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4",
+    "zion1r5j0j7y444a8j402n8t8u2n8y323u6x4r2aw7l6",
+    "zion1932843t398t095g4h3x2f3a5l0q40490k4fm2w8",
 ];
 pub const DAO_TREASURY_TOTAL: u128 = 4_000_000_000_u128 * FLOWERS_PER_ZION as u128;
 pub const DAILY_SPEND_LIMIT: u128 = 100_000_000_u128 * FLOWERS_PER_ZION as u128;

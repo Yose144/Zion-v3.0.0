@@ -165,7 +165,7 @@ Očekávaný výsledek:
 Cíl: Ověřit DAO health a proposal flow
 
 Kroky:
-curl http://100.76.16.108:8081/api/dao/health
+curl http://100.76.16.108:8450/api/dao/health
 
 Očekávaný výsledek:
 {"data":{"service":"zion-dao","status":"ok",...}}   ✅ (ověřeno)

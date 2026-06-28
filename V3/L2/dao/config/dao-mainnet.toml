@@ -9,7 +9,7 @@ version = "1.0.0"
 
 # ── HTTP API ─────────────────────────────────────────────────────────────────
 
-api_port = 8081
+api_port = 8450
 api_key  = ""             # set ZION_DAO_API_KEY env var for production
 
 # ── Database ─────────────────────────────────────────────────────────────────

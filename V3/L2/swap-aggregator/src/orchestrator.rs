@@ -504,7 +504,7 @@ mod tests {
 
         let req = crate::types::SwapRequest {
             direction: SwapDirection::ZionToEvm,
-            amount_in: "1000000000000".into(), // 1 ZION
+            amount_in: "1000000".into(), // 1 ZION (1e6 scale)
             output_token: crate::types::OutputToken::Usdc,
             zion_address: "zion1test".into(),
             evm_address: "0x1234".into(),
@@ -513,7 +513,7 @@ mod tests {
 
         let record = orchestrator.create_swap(req).await.unwrap();
         assert!(!record.id.is_empty());
-        assert_eq!(record.amount_in, "1000000000000");
+        assert_eq!(record.amount_in, "1000000");
         assert_eq!(record.status, SwapStatus::Pending);
 
         let fetched = orchestrator.get_swap(&record.id).await.unwrap();
@@ -529,11 +529,11 @@ mod tests {
         let req = crate::types::QuoteRequest {
             direction: SwapDirection::ZionToEvm,
             output_token: crate::types::OutputToken::Usdc,
-            amount_in: "1000000000000".into(),
+            amount_in: "1000000".into(),
         };
 
         let quote = orchestrator.quote(req).await.unwrap();
-        assert_eq!(quote.amount_in, "1000000000000");
+        assert_eq!(quote.amount_in, "1000000");
         assert!(!quote.amount_out.is_empty());
         assert_eq!(quote.route, "wZION→WETH→USDC");
     }

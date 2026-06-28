@@ -262,7 +262,7 @@ impl Default for BridgeConfig {
 
 impl Default for DaoConfig {
     fn default() -> Self {
-        Self { port: 8081 }
+        Self { port: 8450 }
     }
 }
 

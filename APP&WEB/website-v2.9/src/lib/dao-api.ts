@@ -1,6 +1,6 @@
 /**
  * ZION DAO API Client
- * Connects to the Rust zion-dao daemon (axum, port 8081).
+ * Connects to the Rust zion-dao daemon (axum, port 8450).
  *
  * Endpoint base (override via NEXT_PUBLIC_DAO_API_URL):
  *   default     → internal Next.js `/api/dao` proxy route
