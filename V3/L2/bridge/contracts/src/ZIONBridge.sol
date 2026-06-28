@@ -2,8 +2,8 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 /**
  * @title ZIONBridge — Cross-chain bridge controller (EVM side)
@@ -16,7 +16,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
  *   - Each validator independently verifies L1 lock/unlock TX
  *   - Consensus threshold must be met before mint/burn execution
  *   - Timelock on large transfers (>1M wZION) — 24h delay
- *   - Rate limiting: max 10M wZION/day total throughput
+ *   - Rate limiting: configurable daily throughput (default 1B wZION)
  *
  * Flow (L1 → EVM):
  *   1. User sends ZION to L1 bridge lock address
@@ -82,8 +82,8 @@ contract ZIONBridge is AccessControl, Pausable, ReentrancyGuard {
     /// @notice Timelock delay for large transfers (24 hours)
     uint256 public constant TIMELOCK_DELAY = 24 hours;
 
-    /// @notice Maximum daily bridge throughput (10M wZION)
-    uint256 public constant DAILY_LIMIT = 10_000_000 * 1e18;
+    /// @notice Maximum daily bridge throughput (1B wZION, configurable)
+    uint256 public dailyLimit;
 
     /// @notice L1 finality requirement (60 blocks × 60s = ~1 hour)
     uint256 public constant L1_FINALITY_BLOCKS = 60;
@@ -131,6 +131,7 @@ contract ZIONBridge is AccessControl, Pausable, ReentrancyGuard {
     event ValidatorAdded(address indexed validator);
     event ValidatorRemoved(address indexed validator);
     event DailyLimitReset(uint256 timestamp);
+    event DailyLimitUpdated(uint256 oldLimit, uint256 newLimit);
 
     // ──────────────────────────────────────────────
     //  Errors
@@ -175,6 +176,7 @@ contract ZIONBridge is AccessControl, Pausable, ReentrancyGuard {
         wZION = IWZION(wZIONAddr);
         threshold = _threshold;
         validatorCount = uint8(validators.length);
+        dailyLimit = 1_000_000_000 * 1e18; // 1B wZION/day default
         dailyResetTimestamp = block.timestamp;
     }
 
@@ -336,6 +338,13 @@ contract ZIONBridge is AccessControl, Pausable, ReentrancyGuard {
         _unpause();
     }
 
+    /// @notice Update the daily bridge throughput limit. Only admin.
+    function setDailyLimit(uint256 _dailyLimit) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_dailyLimit > 0, "Zero limit");
+        emit DailyLimitUpdated(dailyLimit, _dailyLimit);
+        dailyLimit = _dailyLimit;
+    }
+
     // ──────────────────────────────────────────────
     //  View functions
     // ──────────────────────────────────────────────
@@ -365,10 +374,10 @@ contract ZIONBridge is AccessControl, Pausable, ReentrancyGuard {
 
     function dailyRemaining() external view returns (uint256 mintRemaining, uint256 burnRemaining) {
         if (block.timestamp >= dailyResetTimestamp + 1 days) {
-            return (DAILY_LIMIT, DAILY_LIMIT);
+            return (dailyLimit, dailyLimit);
         }
-        uint256 mintLeft = dailyMinted >= DAILY_LIMIT ? 0 : DAILY_LIMIT - dailyMinted;
-        uint256 burnLeft = dailyBurned >= DAILY_LIMIT ? 0 : DAILY_LIMIT - dailyBurned;
+        uint256 mintLeft = dailyMinted >= dailyLimit ? 0 : dailyLimit - dailyMinted;
+        uint256 burnLeft = dailyBurned >= dailyLimit ? 0 : dailyLimit - dailyBurned;
         return (mintLeft, burnLeft);
     }
 
@@ -385,7 +394,7 @@ contract ZIONBridge is AccessControl, Pausable, ReentrancyGuard {
 
         // Daily limit check
         _resetDailyLimitIfNeeded();
-        uint256 remaining = DAILY_LIMIT > dailyMinted ? DAILY_LIMIT - dailyMinted : 0;
+        uint256 remaining = dailyLimit > dailyMinted ? dailyLimit - dailyMinted : 0;
         if (proof.amount > remaining) {
             revert DailyLimitExceeded(proof.amount, remaining);
         }
