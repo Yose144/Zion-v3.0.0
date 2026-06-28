@@ -114,10 +114,6 @@ interface DayBucket {
   luck: number; // found/expected ratio (1.0 = 100%)
 }
 
-interface HistBlock extends Block {
-  poolLuck: number; // luck at time of block
-}
-
 /* ═══════════════════════ HELPERS ═══════════════════════ */
 function fmtHash(h?: number): string {
   if (!h || h <= 0) return "0 H/s";
@@ -186,121 +182,39 @@ function fmtDateTime(ts: number): string {
   });
 }
 
-/* Seeded PRNG (mulberry32) for deterministic mock generation */
-function mulberry32(seed: number) {
-  let a = seed >>> 0;
-  return function () {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-/* ═══════════════════════ MOCK HISTORY GENERATION ═══════════════════════ */
+/* ═══════════════════════ REAL BUCKET BUILDER ═══════════════════════ */
 /**
- * The live API exposes only recent_blocks. We extrapolate a plausible
- * historical series backwards from the most recent block, using a seeded
- * PRNG so the chart is stable across re-renders within a session.
+ * Build day buckets from ONLY real recent_blocks returned by the API.
+ * No synthetic/fake generation. Days with no real blocks remain zeroed.
  */
-function generateHistory(
-  recent: Block[],
-  poolHash: number,
-  networkHash: number,
-  days: number,
-): { buckets: DayBucket[]; blocks: HistBlock[] } {
+function buildRealBuckets(recent: Block[], days: number): DayBucket[] {
   const now = Math.floor(Date.now() / 1000);
   const daySec = 86400;
-  const seed = recent.length > 0 ? recent[0].height : 1;
-  const rng = mulberry32(seed);
-
-  // Build day buckets
+  const rangeStart = now - days * daySec;
   const buckets: DayBucket[] = [];
-  const basePoolHash = poolHash > 0 ? poolHash : 50000;
-  const baseNetHash = networkHash > 0 ? networkHash : basePoolHash * 8;
-
-  // Expected blocks per day = pool share * network blocks/day
-  // Assume ~144 blocks/day (10-min target) for network
-  const netBlocksPerDay = 144;
-  const poolShare = Math.max(0.05, Math.min(0.4, basePoolHash / baseNetHash));
-  const expectedPerDay = netBlocksPerDay * poolShare;
-
   for (let i = days - 1; i >= 0; i--) {
     const ts = now - i * daySec;
     const dayStart = ts - (ts % daySec);
-    const date = new Date(dayStart * 1000);
-    const day = date.toISOString().slice(0, 10);
-
-    // Hashrate wanders with realistic variance
-    const poolWander = 1 + (rng() - 0.5) * 0.35;
-    const netWander = 1 + (rng() - 0.5) * 0.2;
-    const poolH = basePoolHash * poolWander;
-    const netH = baseNetHash * netWander;
-
-    // Luck: gamma-ish around 1.0, occasional hot/cold streaks
-    const luckNoise = (rng() + rng() + rng()) / 3; // ~normal-ish
-    const luck = 0.6 + luckNoise * 0.9; // 0.6 .. 1.5
-    const blocks = Math.max(0, Math.round(expectedPerDay * luck));
-    const reward = blocks * 5e12 * (0.98 + rng() * 0.04); // ~5 ZION +/- 2%
-
     buckets.push({
-      day,
+      day: new Date(dayStart * 1000).toISOString().slice(0, 10),
       ts: dayStart,
-      blocks,
-      rewards: reward,
-      poolHashrate: poolH,
-      networkHashrate: netH,
-      luck,
+      blocks: 0,
+      rewards: 0,
+      poolHashrate: 0,
+      networkHashrate: 0,
+      luck: 0,
     });
   }
-
-  // Fold real recent_blocks into today's bucket (if present)
-  const todayStart = now - (now % daySec);
-  const todayBucket = buckets.find((b) => b.ts === todayStart);
-  if (todayBucket && recent.length > 0) {
-    todayBucket.blocks = Math.max(todayBucket.blocks, recent.length);
-    const realRewards = recent.reduce((s, b) => s + b.reward, 0);
-    todayBucket.rewards = Math.max(todayBucket.rewards, realRewards);
-  }
-
-  // Generate per-block list (merge real + synthetic)
-  const blocks: HistBlock[] = [];
-  // Real blocks first
   for (const b of recent) {
-    blocks.push({ ...b, poolLuck: bucketLuckFor(b.timestamp, buckets) });
-  }
-  // Synthetic blocks filling each bucket
-  for (const b of buckets) {
-    const realCount = recent.filter((r) => {
-      const rStart = r.timestamp - (r.timestamp % daySec);
-      return rStart === b.ts;
-    }).length;
-    const synth = Math.max(0, b.blocks - realCount);
-    for (let j = 0; j < synth; j++) {
-      const offset = Math.floor((j / Math.max(1, synth)) * daySec) + Math.floor(rng() * 3600);
-      blocks.push({
-        height: 0, // synthetic, unknown height
-        hash: "",
-        difficulty: 0,
-        reward: 5e12 * (0.98 + rng() * 0.04),
-        timestamp: b.ts + offset,
-        miner_address: `zion1${Math.floor(rng() * 1e16).toString(16).padStart(16, "0")}`,
-        server: "synthetic",
-        poolLuck: b.luck,
-      });
+    if (b.timestamp < rangeStart) continue;
+    const dayStart = b.timestamp - (b.timestamp % daySec);
+    const bucket = buckets.find((x) => x.ts === dayStart);
+    if (bucket) {
+      bucket.blocks += 1;
+      bucket.rewards += b.reward;
     }
   }
-  blocks.sort((a, z) => z.timestamp - a.timestamp);
-
-  return { buckets, blocks };
-}
-
-function bucketLuckFor(ts: number, buckets: DayBucket[]): number {
-  const dayStart = ts - (ts % 86400);
-  const b = buckets.find((x) => x.ts === dayStart);
-  return b ? b.luck : 1;
+  return buckets;
 }
 
 /* ═══════════════════════ STAT CARD ═══════════════════════ */
@@ -339,17 +253,47 @@ function StatCard({
   );
 }
 
+/* ═══════════════════════ INSUFFICIENT DATA PLACEHOLDER ═══════════════════════ */
+function InsufficientData({
+  height = 220,
+  cs = false,
+  hashrate = false,
+}: {
+  height?: number;
+  cs?: boolean;
+  hashrate?: boolean;
+}) {
+  return (
+    <div
+      className="flex flex-col items-center justify-center gap-2 rounded-xl bg-white/[0.02] border border-white/[0.06] px-6 text-center"
+      style={{ height }}
+    >
+      <p className="text-sm text-gray-400">
+        {hashrate
+          ? cs
+            ? "Historická data hashrate nejsou k dispozici"
+            : "Historical hashrate data unavailable"
+          : cs
+            ? "Nedostatek historických dat"
+            : "Insufficient historical data"}
+      </p>
+      <p className="text-xs text-gray-600">
+        {hashrate
+          ? cs
+            ? "Graf se naplní jak bude těžba pokračovat"
+            : "Chart will populate as more blocks are mined"
+          : cs
+            ? "Grafy se naplní jak bude těžba pokračovat"
+            : "Charts will populate as more blocks are mined"}
+      </p>
+    </div>
+  );
+}
+
 /* ═══════════════════════ DISCOVERY AREA CHART ═══════════════════════ */
-function DiscoveryChart({ data, height = 220 }: { data: DayBucket[]; height?: number }) {
+function DiscoveryChart({ data, height = 220, cs = false }: { data: DayBucket[]; height?: number; cs?: boolean }) {
   if (data.length < 2) {
-    return (
-      <div
-        className="flex items-center justify-center rounded-xl bg-white/[0.02] border border-white/[0.06]"
-        style={{ height }}
-      >
-        <p className="text-xs text-gray-500">Collecting data…</p>
-      </div>
-    );
+    return <InsufficientData height={height} cs={cs} />;
   }
   const values = data.map((d) => d.blocks);
   const max = Math.max(...values, 1);
@@ -416,16 +360,9 @@ function DiscoveryChart({ data, height = 220 }: { data: DayBucket[]; height?: nu
 }
 
 /* ═══════════════════════ LUCK TREND CHART ═══════════════════════ */
-function LuckChart({ data, height = 220 }: { data: DayBucket[]; height?: number }) {
+function LuckChart({ data, height = 220, cs = false }: { data: DayBucket[]; height?: number; cs?: boolean }) {
   if (data.length < 2) {
-    return (
-      <div
-        className="flex items-center justify-center rounded-xl bg-white/[0.02] border border-white/[0.06]"
-        style={{ height }}
-      >
-        <p className="text-xs text-gray-500">Collecting data…</p>
-      </div>
-    );
+    return <InsufficientData height={height} cs={cs} />;
   }
   // Cumulative luck
   let cumFound = 0;
@@ -504,16 +441,9 @@ function LuckChart({ data, height = 220 }: { data: DayBucket[]; height?: number 
 }
 
 /* ═══════════════════════ REWARD BAR CHART ═══════════════════════ */
-function RewardChart({ data, height = 220 }: { data: DayBucket[]; height?: number }) {
+function RewardChart({ data, height = 220, cs = false }: { data: DayBucket[]; height?: number; cs?: boolean }) {
   if (data.length < 2) {
-    return (
-      <div
-        className="flex items-center justify-center rounded-xl bg-white/[0.02] border border-white/[0.06]"
-        style={{ height }}
-      >
-        <p className="text-xs text-gray-500">Collecting data…</p>
-      </div>
-    );
+    return <InsufficientData height={height} cs={cs} />;
   }
   const values = data.map((d) => d.rewards / 1e6); // ZION
   const max = Math.max(...values, 1);
@@ -570,16 +500,13 @@ function RewardChart({ data, height = 220 }: { data: DayBucket[]; height?: numbe
 }
 
 /* ═══════════════════════ DUAL-LINE HASHRATE CHART ═══════════════════════ */
-function HashrateTimeline({ data, height = 240 }: { data: DayBucket[]; height?: number }) {
-  if (data.length < 2) {
-    return (
-      <div
-        className="flex items-center justify-center rounded-xl bg-white/[0.02] border border-white/[0.06]"
-        style={{ height }}
-      >
-        <p className="text-xs text-gray-500">Collecting data…</p>
-      </div>
-    );
+function HashrateTimeline({ data, height = 240, cs = false }: { data: DayBucket[]; height?: number; cs?: boolean }) {
+  // The API only exposes the current hashrate snapshot, not a historical
+  // series. Without per-day historical hashrate we cannot draw a real
+  // timeline, so show an honest placeholder instead of fake/flat data.
+  const hasHashData = data.some((d) => d.poolHashrate > 0 || d.networkHashrate > 0);
+  if (data.length < 2 || !hasHashData) {
+    return <InsufficientData height={height} cs={cs} hashrate />;
   }
   const pool = data.map((d) => d.poolHashrate);
   const net = data.map((d) => d.networkHashrate);
@@ -677,32 +604,67 @@ export default function PoolBlocksClient() {
   const netHash = data?.runtime?.network_hashrate ?? 0;
   const recent = data?.recent_blocks ?? [];
 
-  const { buckets, blocks } = useMemo(
-    () => generateHistory(recent, poolHash, netHash, days),
-    [recent, poolHash, netHash, days],
-  );
+  // Build day buckets from ONLY real recent_blocks (no synthetic generation).
+  const rawBuckets = useMemo(() => buildRealBuckets(recent, days), [recent, days]);
+
+  // Enrich buckets with real luck derived from actual block counts vs the
+  // expected daily blocks (network cadence * pool share of network hashrate).
+  // poolHashrate/networkHashrate are intentionally left at 0 because the API
+  // only exposes the current snapshot, not a historical series.
+  const buckets = useMemo(() => {
+    const poolShare = poolHash > 0 && netHash > 0 ? poolHash / netHash : 0;
+    const expectedPerDay = 144 * poolShare;
+    return rawBuckets.map((b) => ({
+      ...b,
+      luck: expectedPerDay > 0 && b.blocks > 0 ? b.blocks / expectedPerDay : 0,
+    }));
+  }, [rawBuckets, poolHash, netHash]);
+
+  // Real blocks within the selected range, newest first (table source).
+  const realBlocks = useMemo(() => {
+    const now = Math.floor(Date.now() / 1000);
+    const rangeStart = now - days * 86400;
+    return recent
+      .filter((b) => b.timestamp >= rangeStart)
+      .sort((a, z) => z.timestamp - a.timestamp);
+  }, [recent, days]);
+
+  // Threshold: need a reasonable amount of real data to draw meaningful charts.
+  const hasEnough = realBlocks.length >= 20;
+
+  // Map day-start ts -> bucket luck, for per-block luck display.
+  const luckByDay = useMemo(() => {
+    const m = new Map<number, number>();
+    for (const b of buckets) m.set(b.ts, b.luck);
+    return m;
+  }, [buckets]);
 
   // Reset pagination when range changes
   useEffect(() => {
     setVisibleCount(25);
   }, [range]);
 
-  /* ═══════════════════════ DERIVED STATS ═══════════════════════ */
+  /* ═══════════════════════ DERIVED STATS (real data only) ═══════════════════════ */
   const stats = useMemo(() => {
-    const totalBlocks = buckets.reduce((s, b) => s + b.blocks, 0);
-    const totalRewards = buckets.reduce((s, b) => s + b.rewards, 0);
+    const totalBlocks = realBlocks.length;
+    const totalRewards = realBlocks.reduce((s, b) => s + b.reward, 0);
     const avgReward = totalBlocks > 0 ? totalRewards / totalBlocks : 0;
 
-    // Average block time: network target ~600s, adjusted by luck
-    const periodSecs = days * 86400;
-    const avgBlockTime = totalBlocks > 0 ? periodSecs / totalBlocks : 0;
+    // Average block time from real timestamp deltas (oldest -> newest).
+    let avgBlockTime = 0;
+    if (realBlocks.length >= 2) {
+      const asc = [...realBlocks].sort((a, z) => a.timestamp - z.timestamp);
+      let sum = 0;
+      for (let i = 1; i < asc.length; i++) sum += asc[i].timestamp - asc[i - 1].timestamp;
+      avgBlockTime = sum / (asc.length - 1);
+    }
 
-    // Best streak: longest consecutive days with >= expected blocks
-    const expectedPerDay = buckets.length > 0 ? totalBlocks / buckets.length : 0;
+    // Best streak: longest run of consecutive days that each found >= 1 block.
+    const daysWithBlocks = new Set(realBlocks.map((b) => b.timestamp - (b.timestamp % 86400)));
     let bestStreak = 0;
     let cur = 0;
     for (const b of buckets) {
-      if (b.blocks >= expectedPerDay) {
+      if (daysWithBlocks.has(b.ts)) {
         cur++;
         bestStreak = Math.max(bestStreak, cur);
       } else {
@@ -710,14 +672,10 @@ export default function PoolBlocksClient() {
       }
     }
 
-    // Luck index: cumulative found / expected
-    let found = 0;
-    let expected = 0;
-    for (const b of buckets) {
-      found += b.blocks;
-      expected += b.blocks / b.luck;
-    }
-    const luckIndex = expected > 0 ? found / expected : 1;
+    // Luck index: real found vs expected (network cadence * pool share * days).
+    const poolShare = poolHash > 0 && netHash > 0 ? poolHash / netHash : 0;
+    const expected = days * 144 * poolShare;
+    const luckIndex = expected > 0 && totalBlocks > 0 ? totalBlocks / expected : null;
 
     return {
       totalBlocks,
@@ -727,9 +685,9 @@ export default function PoolBlocksClient() {
       bestStreak,
       luckIndex,
     };
-  }, [buckets, days]);
+  }, [realBlocks, buckets, days, poolHash, netHash]);
 
-  const visibleBlocks = blocks.slice(0, visibleCount);
+  const visibleBlocks = realBlocks.slice(0, visibleCount);
 
   const rangeOptions: { key: TimeRange; label: string; labelCs: string }[] = [
     { key: "24h", label: "24h", labelCs: "24h" },
@@ -864,9 +822,9 @@ export default function PoolBlocksClient() {
             <StatCard
               icon={<TrendingUp className="h-5 w-5 text-white" />}
               label={cs ? "Index štěstí" : "Luck Index"}
-              value={`${(stats.luckIndex * 100).toFixed(1)}%`}
+              value={stats.luckIndex === null ? "—" : `${(stats.luckIndex * 100).toFixed(1)}%`}
               sub={cs ? "nalezeno / očekáváno" : "found / expected"}
-              accent={stats.luckIndex >= 1 ? "emerald" : stats.luckIndex >= 0.8 ? "amber" : "rose"}
+              accent={stats.luckIndex === null ? "purple" : stats.luckIndex >= 1 ? "emerald" : stats.luckIndex >= 0.8 ? "amber" : "rose"}
             />
             <StatCard
               icon={<Gift className="h-5 w-5 text-white" />}
@@ -893,7 +851,7 @@ export default function PoolBlocksClient() {
             </p>
           </div>
           <div className="zion-rainbow-card p-6" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
-            <DiscoveryChart data={buckets} />
+            {hasEnough ? <DiscoveryChart data={buckets} cs={cs} /> : <InsufficientData height={220} cs={cs} />}
           </div>
         </motion.section>
 
@@ -926,7 +884,7 @@ export default function PoolBlocksClient() {
                 <span className="text-gray-400">{cs ? "Nešťastné (<80%)" : "Unlucky (<80%)"}</span>
               </span>
             </div>
-            <LuckChart data={buckets} />
+            {hasEnough ? <LuckChart data={buckets} cs={cs} /> : <InsufficientData height={220} cs={cs} />}
           </div>
         </motion.section>
 
@@ -945,7 +903,7 @@ export default function PoolBlocksClient() {
             </p>
           </div>
           <div className="zion-rainbow-card p-6" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
-            <RewardChart data={buckets} />
+            {hasEnough ? <RewardChart data={buckets} cs={cs} /> : <InsufficientData height={220} cs={cs} />}
           </div>
         </motion.section>
 
@@ -974,7 +932,7 @@ export default function PoolBlocksClient() {
                 <span className="text-gray-400">{cs ? "Síť" : "Network"}</span>
               </span>
             </div>
-            <HashrateTimeline data={buckets} />
+            <HashrateTimeline data={buckets} cs={cs} />
           </div>
         </motion.section>
 
@@ -984,12 +942,12 @@ export default function PoolBlocksClient() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? "Ledger" : "Ledger"}</p>
             <h2 className="text-2xl font-semibold text-white flex items-center gap-3">
               <Blocks className="h-6 w-6 text-zion-gold" />
-              {cs ? "Detailní seznam bloků" : "Detailed Blocks Table"} ({fmtNum(blocks.length)})
+              {cs ? "Detailní seznam bloků" : "Detailed Blocks Table"} ({fmtNum(realBlocks.length)})
             </h2>
             <p className="text-sm text-gray-400">
               {cs
-                ? "Všechny bloky v vybraném období. Syntetické bloky (bez výšky) jsou extrapolovány z nedávných dat."
-                : "All blocks in the selected period. Synthetic blocks (no height) are extrapolated from recent data."}
+                ? "Skutečné bloky objevené poolem ve vybraném období (data z API)."
+                : "Real blocks discovered by the pool in the selected period (API data)."}
             </p>
           </div>
 
@@ -1020,24 +978,23 @@ export default function PoolBlocksClient() {
                 </thead>
                 <tbody>
                   {visibleBlocks.map((b, i) => {
-                    const isSynthetic = b.height === 0;
+                    const dayLuck = luckByDay.get(b.timestamp - (b.timestamp % 86400)) ?? 0;
+                    const hasHeight = b.height > 0;
                     return (
                       <tr
                         key={`${b.timestamp}-${i}`}
                         className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors"
                       >
                         <td className="px-5 py-3.5">
-                          {isSynthetic ? (
-                            <span className="text-gray-600 font-mono text-xs italic">
-                              {cs ? "syntetický" : "synthetic"}
-                            </span>
-                          ) : (
+                          {hasHeight ? (
                             <Link
                               href={`/explorer/block?height=${b.height}`}
                               className="text-zion-cyan hover:text-white font-mono font-semibold transition-colors"
                             >
                               #{fmtNum(b.height)}
                             </Link>
+                          ) : (
+                            <span className="text-gray-600 font-mono text-xs">—</span>
                           )}
                         </td>
                         <td className="px-5 py-3.5 text-gray-500 text-xs">
@@ -1048,25 +1005,29 @@ export default function PoolBlocksClient() {
                           {b.difficulty > 0 ? fmtDifficulty(b.difficulty) : "—"}
                         </td>
                         <td className="px-5 py-3.5 text-emerald-400 font-mono text-xs">
-                          {atomicToZion(b.reward)} ZION
+                          {b.reward > 0 ? `${atomicToZion(b.reward)} ZION` : "—"}
                         </td>
                         <td className="px-5 py-3.5">
                           <code className="text-xs text-gray-400 font-mono">
-                            {isSynthetic ? shortAddr(b.miner_address) : shortAddr(b.miner_address)}
+                            {b.miner_address ? shortAddr(b.miner_address) : "—"}
                           </code>
                         </td>
                         <td className="px-5 py-3.5">
-                          <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-xs font-mono ${luckBadge(b.poolLuck)}`}
-                          >
-                            <Zap className="h-3 w-3" />
-                            {(b.poolLuck * 100).toFixed(0)}%
-                          </span>
+                          {dayLuck > 0 ? (
+                            <span
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-xs font-mono ${luckBadge(dayLuck)}`}
+                            >
+                              <Zap className="h-3 w-3" />
+                              {(dayLuck * 100).toFixed(0)}%
+                            </span>
+                          ) : (
+                            <span className="text-gray-600 font-mono text-xs">—</span>
+                          )}
                         </td>
                       </tr>
                     );
                   })}
-                  {blocks.length === 0 && (
+                  {realBlocks.length === 0 && (
                     <tr>
                       <td colSpan={6} className="px-5 py-10 text-center text-gray-500">
                         {cs ? "Žádné bloky v tomto období" : "No blocks in this period"}
@@ -1076,12 +1037,12 @@ export default function PoolBlocksClient() {
                 </tbody>
               </table>
             </div>
-            {visibleCount < blocks.length && (
+            {visibleCount < realBlocks.length && (
               <div className="px-5 py-4 border-t border-white/[0.06] flex items-center justify-between">
                 <span className="text-xs text-gray-500">
                   {cs
-                    ? `Zobrazeno ${visibleCount} z ${fmtNum(blocks.length)}`
-                    : `Showing ${visibleCount} of ${fmtNum(blocks.length)}`}
+                    ? `Zobrazeno ${visibleCount} z ${fmtNum(realBlocks.length)}`
+                    : `Showing ${visibleCount} of ${fmtNum(realBlocks.length)}`}
                 </span>
                 <button
                   onClick={() => setVisibleCount((c) => c + 25)}

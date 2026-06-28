@@ -16,6 +16,7 @@ import {
   Copy,
   Crown,
   Gauge,
+  Info,
   Medal,
   Pickaxe,
   Search,
@@ -243,6 +244,7 @@ function SortHeader({
   sortDir,
   onSort,
   align = "left",
+  tooltip,
 }: {
   label: string;
   sortKey: SortKey;
@@ -250,6 +252,7 @@ function SortHeader({
   sortDir: "asc" | "desc";
   onSort: (k: SortKey) => void;
   align?: "left" | "right";
+  tooltip?: string;
 }) {
   const active = currentSort === sortKey;
   return (
@@ -261,6 +264,15 @@ function SortHeader({
     >
       <span className={`inline-flex items-center gap-1 ${align === "right" ? "flex-row-reverse" : ""}`}>
         {label}
+        {tooltip && (
+          <span
+            className="cursor-help"
+            title={tooltip}
+            onClick={(e) => { e.stopPropagation(); }}
+          >
+            <Info className="h-3 w-3 text-gray-500 hover:text-zion-cyan transition-colors" />
+          </span>
+        )}
         {active ? (
           sortDir === "asc" ? <ChevronUp className="h-3 w-3 text-zion-cyan" /> : <ChevronDown className="h-3 w-3 text-zion-cyan" />
         ) : (
@@ -661,7 +673,7 @@ export default function PoolMinersClient() {
                         <SortHeader label="#" sortKey="rank" currentSort={sortKey} sortDir={sortDir} onSort={handleSort} />
                         <SortHeader label={cs ? "Adresa" : "Address"} sortKey="address" currentSort={sortKey} sortDir={sortDir} onSort={handleSort} />
                         <SortHeader label={cs ? "Server" : "Server"} sortKey="server" currentSort={sortKey} sortDir={sortDir} onSort={handleSort} />
-                        <SortHeader label={cs ? "Hashrate" : "Hashrate"} sortKey="hashrate" currentSort={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
+                        <SortHeader label={cs ? "Hashrate" : "Hashrate"} sortKey="hashrate" currentSort={sortKey} sortDir={sortDir} onSort={handleSort} align="right" tooltip={cs ? "Hashrate je odhadován z frekvence odesílání share. Skutečný individuální hashrate se může lišit." : "Hashrate is estimated from share submission frequency. Actual individual hashrate may vary."} />
                         <SortHeader label={cs ? "Podíl" : "Share %"} sortKey="sharePct" currentSort={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
                         <SortHeader label={cs ? "Shares" : "Shares"} sortKey="validShares" currentSort={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
                         <SortHeader label={cs ? "Poslední share" : "Last Share"} sortKey="last_share" currentSort={sortKey} sortDir={sortDir} onSort={handleSort} />
@@ -772,6 +784,15 @@ export default function PoolMinersClient() {
                   <p className="mt-1 text-2xl font-bold text-white font-mono">{fmtHash(topHashrate)}</p>
                   <p className="text-[11px] text-gray-500 mt-1">{cs ? "největší přispěvatel" : "biggest contributor"}</p>
                 </div>
+              </div>
+
+              <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
+                <Info className="h-3.5 w-3.5 shrink-0" />
+                <span>
+                  {cs
+                    ? "Hashrate minerů je odhadován proporcionálně z pool hashrate na základě aktivity odesílání share."
+                    : "Miner hashrate is estimated proportionally from pool hashrate based on share submission activity."}
+                </span>
               </div>
             </motion.section>
 
