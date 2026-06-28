@@ -5,6 +5,7 @@ if not exist "logs" mkdir logs
 
 :: === Sit ===
 set ZION_POOL_ADDR=77.42.71.94:8444
+:: Fallback (Tailscale VPN): set ZION_POOL_ADDR=100.76.16.108:8444
 set ZION_LOOP_COUNT=1000000
 
 :: === Identita mineru ===
