@@ -60,24 +60,24 @@ export default function DogeVsZionBanner({ cs = true }: DogeVsZionBannerProps) {
 
         {/* Center content */}
         <div className="flex-1 text-center">
-          <div className="mb-2 flex flex-wrap items-center justify-center gap-2">
-            <span className="rounded-full border border-amber-400/20 bg-black/40 px-2.5 py-0.5 text-[10px] font-bold text-amber-300 backdrop-blur-sm">
+          <div className="mb-1.5 flex flex-wrap items-center justify-center gap-1.5">
+            <span className="rounded-full border border-amber-400/20 bg-black/40 px-2 py-0.5 text-[8px] font-bold text-amber-300 backdrop-blur-sm">
               🐕 1 sig
             </span>
-            <span className="rounded-full border border-emerald-400/20 bg-black/40 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300 backdrop-blur-sm">
+            <span className="rounded-full border border-emerald-400/20 bg-black/40 px-2 py-0.5 text-[8px] font-bold text-emerald-300 backdrop-blur-sm">
               🛡️ 5/5 sigs
             </span>
-            <span className="rounded-full border border-zion-gold/20 bg-black/40 px-2.5 py-0.5 text-[10px] font-bold text-zion-gold backdrop-blur-sm">
+            <span className="rounded-full border border-zion-gold/20 bg-black/40 px-2 py-0.5 text-[8px] font-bold text-zion-gold backdrop-blur-sm">
               💰 $0.0002
             </span>
-            <span className="rounded-full border border-cyan-400/20 bg-black/40 px-2.5 py-0.5 text-[10px] font-bold text-cyan-300 backdrop-blur-sm">
+            <span className="rounded-full border border-cyan-400/20 bg-black/40 px-2 py-0.5 text-[8px] font-bold text-cyan-300 backdrop-blur-sm">
               🔒 100M ZION
             </span>
           </div>
-          <h3 className="text-base font-bold text-white md:text-lg">
+          <h3 className="text-sm font-bold text-white md:text-base">
             {cs ? 'Doge vs ZION — kdo zamkne 100M ZION první?' : 'Doge vs ZION — who locks 100M ZION first?'}
           </h3>
-          <p className="mt-1 text-xs text-white/50">
+          <p className="mt-1 text-[10px] text-white/50">
             {cs ? 'Klikni a hraj v Click Battle →' : 'Click and play the Click Battle →'}
           </p>
         </div>
