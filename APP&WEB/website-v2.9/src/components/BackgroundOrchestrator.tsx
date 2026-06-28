@@ -39,8 +39,9 @@ const OBSERVATORY_PRESETS = {
       density: 320,
       speed: 2.1,
       trailOpacity: 0.08,
+      clearPerFrame: true,
       backgroundGradient:
-        'radial-gradient(circle at 50% 20%, rgba(10,12,28,0.45), rgba(0,0,0,0.85)), radial-gradient(ellipse at 20% 30%, rgba(147,51,234,0.12), transparent 50%), radial-gradient(ellipse at 80% 70%, rgba(6,182,212,0.08), transparent 50%), rgb(0,0,0)',
+        'radial-gradient(ellipse at 50% 30%, rgba(20,24,50,0.4) 0%, rgba(8,10,24,0.7) 30%, rgba(2,3,10,0.92) 70%, rgba(0,0,0,0.98) 100%), radial-gradient(ellipse at 20% 40%, rgba(147,51,234,0.14), transparent 55%), radial-gradient(ellipse at 80% 65%, rgba(6,182,212,0.1), transparent 55%)',
     },
     bubbleDensity: 'medium' as const,
   },
@@ -80,12 +81,13 @@ const OBSERVATORY_PRESETS = {
   'galaxy-core': {
     starfield: {
       starColor: [232, 240, 255] as [number, number, number],
-      density: 480,
-      speed: 2.35,
+      density: 520,
+      speed: 3.5,
       trailOpacity: 0.028,
       flowDirection: 'inward' as const,
+      clearPerFrame: true,
       backgroundGradient:
-        'radial-gradient(circle at 50% 50%, rgba(232,240,255,0.2) 0%, rgba(170,196,255,0.12) 8%, rgba(86,118,184,0.22) 20%, rgba(26,44,86,0.5) 40%, rgba(7,14,34,0.85) 68%, rgba(0,0,0,0.995) 100%)',
+        'radial-gradient(circle at 50% 50%, rgba(220,230,255,0.22) 0%, rgba(150,180,240,0.14) 6%, rgba(60,90,160,0.18) 18%, rgba(20,30,70,0.45) 38%, rgba(5,8,24,0.82) 65%, rgba(0,0,0,0.98) 100%)',
     },
     bubbleDensity: 'medium' as const,
   },
@@ -114,7 +116,7 @@ export default function BackgroundOrchestrator({ variant = 'default' }: { varian
     );
   }
 
-  const starfieldConfig = isHomeVariant
+  const starfieldConfig = isHomeVariant && !isGalaxyCoreMode && !isDesktopAgentMode
     ? {
         ...observatory.starfield,
         starColor: [80, 230, 210] as [number, number, number],
@@ -128,9 +130,9 @@ export default function BackgroundOrchestrator({ variant = 'default' }: { varian
 
   const bubbleDensity = isHomeVariant ? 'medium' : observatory.bubbleDensity;
   const overlayClass = isGalaxyCoreMode
-    ? 'pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_50%,rgba(238,244,255,0.14),rgba(190,210,255,0.08)_10%,rgba(84,118,188,0.14)_24%,rgba(18,34,72,0.6)_50%,rgba(0,0,0,0.96)_100%)]'
+    ? '' /* galaxy-core: CSS gradient on canvas is the look, no overlay */
     : isDesktopAgentMode
-    ? 'pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_20%,rgba(10,12,28,0.28),rgba(0,0,0,0.78))]'
+    ? '' /* desktop-agent: CSS gradient on canvas is the look, no overlay */
     : isHomeVariant
     ? 'pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_12%,rgba(80,230,210,0.16),rgba(45,212,191,0.08)_18%,rgba(10,20,30,0.34)_34%,rgba(4,10,14,0.76)_58%,rgba(0,0,0,0.95)_100%)]'
     : 'pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_20%,rgba(10,12,28,0.65),rgba(0,0,0,0.95))]';
@@ -144,7 +146,7 @@ export default function BackgroundOrchestrator({ variant = 'default' }: { varian
       {shouldRenderCyberGrid && <CyberGrid />}
 
       <QuantumBubbles mode={mode} density={bubbleDensity} />
-      <div className={overlayClass} />
+      {overlayClass && <div className={overlayClass} />}
     </>
   );
 }
