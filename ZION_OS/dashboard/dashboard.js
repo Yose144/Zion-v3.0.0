@@ -2005,9 +2005,10 @@ async function loadPayoutTab(){
     // Total paid: sum from miners array (paid_total field, already in ZION from our API)
     let totalPaidZion = 0;
     miners.forEach(m => { totalPaidZion += (m.paid_total ?? 0); });
-    // Also try pool_stats pplns total_paid_flowers
-    if(totalPaidZion === 0 && ps.pplns?.total_paid_flowers){
-      totalPaidZion = ps.pplns.total_paid_flowers / 1_000_000;
+    // Fallback: if no miner paid_total, try on-chain balances sum
+    if(totalPaidZion === 0 && d.balances){
+      const b = d.balances;
+      totalPaidZion = (b.miner?.zion ?? 0) + (b.humanitarian?.zion ?? 0) + (b.issobella?.zion ?? 0);
     }
     set('payout-kpi-total-paid', totalPaidZion > 0 ? _zionFmt(totalPaidZion) + ' ZION' : '—');
 
@@ -2019,11 +2020,17 @@ async function loadPayoutTab(){
       kpiAR.className = 'text-xl font-bold '+(ar != null && ar >= 95 ? 'text-emerald-400' : ar != null && ar >= 80 ? 'text-amber-400' : 'text-red-400');
     }
 
-    // ── Fee Split Addresses ──────────────────────────────────────────
+    // ── Fee Split Addresses + On-chain Balances ──────────────────────
     set('payout-fee-miner-addr', d.miner_wallet || '—');
     set('payout-fee-human-addr', d.humanitarian_wallet || '—');
     set('payout-fee-isso-addr', d.issobella_wallet || '—');
     set('payout-fee-pool-addr', d.pool_fee_wallet ? d.pool_fee_wallet : 'Burned (no address)');
+    // On-chain balances for each fee wallet
+    const bals = d.balances || {};
+    set('payout-fee-miner-bal', bals.miner ? _zionFmt(bals.miner.zion) + ' ZION' : '—');
+    set('payout-fee-human-bal', bals.humanitarian ? _zionFmt(bals.humanitarian.zion) + ' ZION' : '—');
+    set('payout-fee-isso-bal', bals.issobella ? _zionFmt(bals.issobella.zion) + ' ZION' : '—');
+    set('payout-fee-pool-bal', d.burned_total != null ? _zionFmt(d.burned_total) + ' ZION' : '—');
 
     // ── PPLNS Status ─────────────────────────────────────────────────
     const pplns = ps.pplns || {};
@@ -2031,9 +2038,8 @@ async function loadPayoutTab(){
     set('payout-pplns-used', pplns.window_used ?? '—');
     set('payout-pplns-registered', pplns.registered_miners ?? pplns.miners_registered ?? miners.length ?? 0);
     set('payout-pplns-rounds', pplns.payout_rounds ?? pplns.rounds_completed ?? '—');
-    // total paid: pplns.total_paid_flowers (atomic) → ZION
-    const pplnsTotalZion = pplns.total_paid_flowers ? pplns.total_paid_flowers / 1_000_000 : null;
-    set('payout-pplns-total', pplnsTotalZion != null ? _zionFmt(pplnsTotalZion) + ' ZION' : (d.burned_total != null ? _zionFmt(d.burned_total) + ' ZION' : '—'));
+    // Total paid: use sum of miner paid_total (reliable) instead of pplns.total_paid_flowers (pool server bug)
+    set('payout-pplns-total', totalPaidZion > 0 ? _zionFmt(totalPaidZion) + ' ZION' : (d.burned_total != null ? _zionFmt(d.burned_total) + ' ZION' : '—'));
 
     const lastTime = d.last_payout_time;
     const lastTx = d.last_payout_tx;
@@ -2378,7 +2384,8 @@ function connectPayoutSse(){
         const set = (id, text) => { const el = document.getElementById(id); if(el) el.textContent = text; };
         if(d.blocks_found != null) set('payout-kpi-blocks', d.blocks_found);
         if(d.active_miners != null) set('payout-kpi-miners', d.active_miners);
-        if(d.total_paid != null) set('payout-kpi-total-paid', formatFlowers(d.total_paid));
+        // Note: don't override total_paid from SSE — pplns.total_paid_flowers has a pool server bug
+        // (returns 19.98T ZION > total supply). Total paid is computed from miner paid_total in loadPayoutTab.
         if(d.accept_rate_pct != null){
           const arEl = document.getElementById('payout-kpi-accept-rate');
           if(arEl){
@@ -2439,6 +2446,12 @@ function updatePayoutSnapshot(d){
   set('payout-fee-human-addr', d.humanitarian_wallet || '—');
   set('payout-fee-isso-addr', d.issobella_wallet || '—');
   set('payout-fee-pool-addr', d.pool_fee_wallet ? d.pool_fee_wallet : 'Burned (no address)');
+  // On-chain balances for each fee wallet
+  const snapBals = d.balances || {};
+  set('payout-fee-miner-bal', snapBals.miner ? _zionFmt(snapBals.miner.zion) + ' ZION' : '—');
+  set('payout-fee-human-bal', snapBals.humanitarian ? _zionFmt(snapBals.humanitarian.zion) + ' ZION' : '—');
+  set('payout-fee-isso-bal', snapBals.issobella ? _zionFmt(snapBals.issobella.zion) + ' ZION' : '—');
+  set('payout-fee-pool-bal', d.burned_total != null ? _zionFmt(d.burned_total) + ' ZION' : '—');
 
   const ps = d.pool_stats || {};
   const pplns = ps.pplns || {};
@@ -2446,8 +2459,8 @@ function updatePayoutSnapshot(d){
   set('payout-pplns-used', pplns.window_used ?? '—');
   set('payout-pplns-registered', pplns.miners_registered ?? miners.length ?? 0);
   set('payout-pplns-rounds', pplns.rounds_completed ?? '—');
-  const pplnsTotalZion = pplns.total_paid_flowers ? pplns.total_paid_flowers / 1_000_000 : null;
-  set('payout-pplns-total', pplnsTotalZion != null ? _zionFmt(pplnsTotalZion) + ' ZION' : (d.burned_total != null ? _zionFmt(d.burned_total) + ' ZION' : '—'));
+  // Use sum of miner paid_total instead of buggy pplns.total_paid_flowers
+  set('payout-pplns-total', totalPaid > 0 ? _zionFmt(totalPaid) + ' ZION' : (d.burned_total != null ? _zionFmt(d.burned_total) + ' ZION' : '—'));
 
   set('payout-last-time', d.last_payout_time || '—');
   const txEl = document.getElementById('payout-last-tx');
