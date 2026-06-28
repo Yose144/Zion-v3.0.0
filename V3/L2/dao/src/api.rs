@@ -452,18 +452,15 @@ async fn cast_vote(
 /// GET /api/dao/treasury
 async fn treasury_overview(State(state): State<AppState>) -> Json<serde_json::Value> {
     let treasury = state.treasury.lock().await;
+    let config = &state.config;
     ok(serde_json::json!({
         "total_zion": (DAO_TREASURY_TOTAL / FLOWERS_PER_ZION as u128) as u64,
         "available_flowers": treasury.balance().to_string(),
         "available_zion": (treasury.balance() / FLOWERS_PER_ZION as u128) as u64,
-        "addresses": [
-            "zion1dao0treasury0main000000000000000000001",
-            "zion1dao0treasury0main000000000000000000002",
-            "zion1dao0treasury0main000000000000000000003",
-        ],
+        "addresses": config.treasury_addresses,
         "multisig": format!("{}-of-{}", treasury.threshold(), treasury.guardian_count()),
         "pending_operations": treasury.pending_count(),
-        "daily_spend_limit_zion": 100_000_000u64,
+        "daily_spend_limit_zion": config.daily_spend_limit,
         "note": "Treasury operations require guardian signatures",
     }))
 }
