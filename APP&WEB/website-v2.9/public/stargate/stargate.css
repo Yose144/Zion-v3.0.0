@@ -119,8 +119,9 @@
   font-size: 3.20cqw;
   text-align: center;
   width: 6.5%;
-  color: #fff;
-  text-shadow: rgba(0,0,0,0.4) 0 2px 2px;
+  /* Font není dostupný — skryj text, nech jen dekorativní :before čáru */
+  color: transparent;
+  text-shadow: none;
 }
 
 /* 39 glyph rotations */
