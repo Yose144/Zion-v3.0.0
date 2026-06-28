@@ -150,9 +150,13 @@ async function executeCommand(input: string): Promise<CliResponse> {
 
 // ─── Fetch helpers ──────────────────────────────────────────────────────────
 
+/** Base URL for internal API calls (server-side fetch needs absolute URLs). */
+const INTERNAL_BASE = process.env.INTERNAL_API_BASE || `http://127.0.0.1:${process.env.PORT || 3000}`;
+
 async function fetchJson<T = any>(url: string, init?: RequestInit): Promise<{ ok: boolean; status: number; data: T | null }> {
   try {
-    const res = await fetch(url, {
+    const absUrl = url.startsWith('http') ? url : `${INTERNAL_BASE}${url}`;
+    const res = await fetch(absUrl, {
       ...init,
       signal: AbortSignal.timeout(FETCH_TIMEOUT),
     });
@@ -760,7 +764,7 @@ async function handleAi(sub?: string, args?: string[]): Promise<CliResponse> {
       return { ok: false, output: '', error: 'Usage: ai ask "your question". Example: ai ask "What is the ZION consensus algorithm?"' };
     }
     try {
-      const res = await fetch('http://127.0.0.1:3000/api/ai-chat', {
+      const res = await fetch(`${INTERNAL_BASE}/api/ai-chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: question }),
