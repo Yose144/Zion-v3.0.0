@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'cs_CZ',
     siteName: 'ZION TerraNova',
-    images: [{ url: '/zion-logo-hiran.png', width: 1024, height: 1024, alt: 'ZION TerraNova — Hiran Golden Orb' }],
+    images: [{ url: '/stargate-og.png', width: 1024, height: 1024, alt: 'ZION TerraNova — Stargate' }],
   },
   twitter: {
     card: 'summary_large_image',

@@ -26,13 +26,57 @@ export default function BackgroundToggle() {
         onClick={() => setIsOpen(!isOpen)}
         whileHover={{ scale: 1.08 }}
         whileTap={{ scale: 0.92 }}
-        className="fixed bottom-4 right-4 z-50 h-12 w-12 rounded-full border bg-black/60 backdrop-blur flex items-center justify-center transition-all"
+        className="fixed bottom-4 right-4 z-50 h-12 w-12 rounded-full border bg-black/60 backdrop-blur flex items-center justify-center transition-all relative overflow-visible"
         style={{
           borderColor: `rgba(${currentColor}, 0.5)`,
           boxShadow: `0 0 20px rgba(${currentColor}, 0.3)`,
         }}
         aria-label="Toggle background menu"
       >
+        {/* Desktop-agent inspired warp aura */}
+        <motion.span
+          aria-hidden="true"
+          className="pointer-events-none absolute -inset-2 rounded-full"
+          style={{
+            background: `conic-gradient(from 0deg, rgba(${currentColor}, 0), rgba(${currentColor}, 0.7), rgba(${currentColor}, 0), rgba(${currentColor}, 0.55), rgba(${currentColor}, 0))`,
+            filter: 'blur(5px)',
+          }}
+          animate={{
+            rotate: 360,
+            opacity: isOpen ? 0.95 : 0.6,
+            scale: isOpen ? 1.18 : 1.02,
+          }}
+          transition={{
+            rotate: { duration: isOpen ? 1.6 : 4.2, repeat: Infinity, ease: 'linear' },
+            opacity: { duration: 0.24 },
+            scale: { duration: 0.24 },
+          }}
+        />
+
+        {[0, 60, 120, 180, 240, 300].map((deg) => (
+          <motion.span
+            key={deg}
+            aria-hidden="true"
+            className="pointer-events-none absolute left-1/2 top-1/2 h-[2px] origin-left rounded-full"
+            style={{
+              width: isOpen ? '18px' : '12px',
+              transform: `translateY(-50%) rotate(${deg}deg)`,
+              background: `linear-gradient(90deg, rgba(${currentColor}, 0.85), rgba(${currentColor}, 0))`,
+              filter: 'blur(0.4px)',
+            }}
+            animate={{
+              opacity: isOpen ? [0.2, 0.95, 0.2] : [0.08, 0.45, 0.08],
+              scaleX: isOpen ? [0.75, 1.45, 0.75] : [0.85, 1.1, 0.85],
+            }}
+            transition={{
+              duration: isOpen ? 0.8 : 1.6,
+              repeat: Infinity,
+              ease: 'easeInOut',
+              delay: deg / 720,
+            }}
+          />
+        ))}
+
         <CurrentIcon className="w-6 h-6" style={{ color: `rgb(${currentColor})` }} />
       </motion.button>
 
