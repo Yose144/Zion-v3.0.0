@@ -18,21 +18,6 @@ import { useLang } from '@/contexts/LanguageContext';
    Types
    ═══════════════════════════════════════════════════════════ */
 
-interface ChainStats {
-  block_height: number;
-  difficulty: number;
-  network_hashrate: number;
-  network_hashrate_formatted: string;
-  target_block_time: number;
-  avg_block_time: number;
-  tx_pool_size: number;
-  total_connections: number;
-  alt_blocks_count: number;
-  connected: boolean;
-}
-
-type RangeKey = '24h' | '7d' | '30d' | '90d' | 'all';
-
 interface SeriesPoint {
   ts: number; // unix seconds
   value: number;
@@ -48,74 +33,6 @@ function fmtSI(v: number): string {
   if (v >= 1e6) return `${(v / 1e6).toFixed(2)}M`;
   if (v >= 1e3) return `${(v / 1e3).toFixed(1)}K`;
   return v.toFixed(0);
-}
-
-function mulberry32(seed: number) {
-  return function () {
-    seed |= 0;
-    seed = (seed + 0x6d2b79f5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-const RANGE_SECONDS: Record<RangeKey, number> = {
-  '24h': 86400,
-  '7d': 604800,
-  '30d': 2592000,
-  '90d': 7776000,
-  all: 15552000, // ~180d for "All"
-};
-
-const RANGE_POINTS: Record<RangeKey, number> = {
-  '24h': 48,
-  '7d': 56,
-  '30d': 60,
-  '90d': 90,
-  all: 90,
-};
-
-/* ═══════════════════════════════════════════════════════════
-   Generate historical series by extrapolating backwards
-   ═══════════════════════════════════════════════════════════ */
-
-function generateSeries(
-  current: number,
-  range: RangeKey,
-  variance: number, // fractional variance (0.1 = ±10%)
-  seed: number,
-  trend: 'up' | 'down' | 'flat' = 'flat'
-): SeriesPoint[] {
-  const seconds = RANGE_SECONDS[range];
-  const points = RANGE_POINTS[range];
-  const now = Math.floor(Date.now() / 1000);
-  const step = seconds / points;
-  const rng = mulberry32(seed);
-
-  const result: SeriesPoint[] = [];
-  for (let i = 0; i < points; i++) {
-    const ts = now - (points - 1 - i) * step;
-    // Trend: value drifts from (current * (1 - trendAmount)) to current
-    const progress = i / (points - 1);
-    let base: number;
-    if (trend === 'up') {
-      base = current * (0.7 + 0.3 * progress);
-    } else if (trend === 'down') {
-      base = current * (1.1 - 0.1 * progress);
-    } else {
-      base = current;
-    }
-    // Add noise
-    const noise = (rng() - 0.5) * 2 * variance * base;
-    const value = Math.max(0, base + noise);
-    result.push({ ts, value });
-  }
-  // Ensure last point = current
-  if (result.length > 0) {
-    result[result.length - 1].value = current;
-  }
-  return result;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -297,22 +214,11 @@ function formatXLabel(series: SeriesPoint[], pct: number): string {
    Main component
    ═══════════════════════════════════════════════════════════ */
 
-const RANGES: { key: RangeKey; label: string; labelCs: string }[] = [
-  { key: '24h', label: '24h', labelCs: '24h' },
-  { key: '7d', label: '7d', labelCs: '7d' },
-  { key: '30d', label: '30d', labelCs: '30d' },
-  { key: '90d', label: '90d', labelCs: '90d' },
-  { key: 'all', label: 'All', labelCs: 'Vše' },
-];
-
 export default function NetworkHistoricalCharts() {
   const { lang } = useLang();
   const cs = lang === 'cs';
 
-  const [range, setRange] = useState<RangeKey>('7d');
-  const [stats, setStats] = useState<ChainStats | null>(null);
-
-  // 24h polling data (same as Network24hCharts) — stored in state for render access
+  // 24h polling data (real — polls /api/blockchain/stats every 15s)
   const [hashrate24h, setHashrate24h] = useState<SeriesPoint[]>([]);
   const [difficulty24h, setDifficulty24h] = useState<SeriesPoint[]>([]);
   const [blockTime24h, setBlockTime24h] = useState<SeriesPoint[]>([]);
@@ -324,7 +230,6 @@ export default function NetworkHistoricalCharts() {
       const res = await fetch('/api/blockchain/stats', { cache: 'no-store' });
       if (!res.ok) return;
       const json = await res.json();
-      setStats(json);
       const now = Math.floor(Date.now() / 1000);
       const append = (prev: SeriesPoint[], value: number) =>
         [...prev.filter((p) => now - p.ts < 86400), { ts: now, value }].slice(-60);
@@ -339,34 +244,14 @@ export default function NetworkHistoricalCharts() {
 
   usePolling(fetchStats, 15_000);
 
-  /* ── Build series for selected range ── */
-  const series = useMemo(() => {
-    if (range === '24h') {
-      return {
-        hashrate: hashrate24h,
-        difficulty: difficulty24h,
-        blockTime: blockTime24h,
-        peerCount: peerCount24h,
-        mempool: mempool24h,
-      };
-    }
-    // Generate historical data from current values
-    const seed = 20260627 + RANGE_SECONDS[range];
-    const cur = stats ?? {
-      network_hashrate: 0,
-      difficulty: 0,
-      avg_block_time: 60,
-      total_connections: 5,
-      tx_pool_size: 0,
-    };
-    return {
-      hashrate: generateSeries(cur.network_hashrate || 1000, range, 0.15, seed, 'up'),
-      difficulty: generateSeries(cur.difficulty || 60000, range, 0.12, seed + 1, 'up'),
-      blockTime: generateSeries(cur.avg_block_time || 60, range, 0.2, seed + 2, 'flat'),
-      peerCount: generateSeries(cur.total_connections || 5, range, 0.3, seed + 3, 'flat'),
-      mempool: generateSeries(cur.tx_pool_size || 2, range, 0.5, seed + 4, 'flat'),
-    };
-  }, [range, stats, hashrate24h, difficulty24h, blockTime24h, peerCount24h, mempool24h]);
+  /* ── Real 24h series (only range available — no synthetic history) ── */
+  const series = useMemo(() => ({
+    hashrate: hashrate24h,
+    difficulty: difficulty24h,
+    blockTime: blockTime24h,
+    peerCount: peerCount24h,
+    mempool: mempool24h,
+  }), [hashrate24h, difficulty24h, blockTime24h, peerCount24h, mempool24h]);
 
   const charts = useMemo(
     () => [
@@ -442,37 +327,20 @@ export default function NetworkHistoricalCharts() {
         </h2>
         <p className="text-sm text-gray-400">
           {cs
-            ? 'Hashrate, obtížnost, čas bloku, počet peerů a mempool s výběrem časového rozsahu a exportem do CSV.'
-            : 'Hashrate, difficulty, block time, peer count, and mempool with date range selection and CSV export.'}
+            ? 'Hashrate, obtížnost, čas bloku, počet peerů a mempool — živá data za posledních 24 hodin s exportem do CSV.'
+            : 'Hashrate, difficulty, block time, peer count, and mempool — live data for the last 24 hours with CSV export.'}
         </p>
       </div>
 
-      {/* Date range picker */}
+      {/* Live data badge — only 24h real data is available */}
       <div className="flex flex-wrap items-center gap-2 mb-6">
         <span className="text-xs text-gray-500 mr-2">{cs ? 'Rozsah:' : 'Range:'}</span>
         <div className="inline-flex rounded-xl border border-purple-400/20 bg-purple-500/5 p-1">
-          {RANGES.map((r) => (
-            <button
-              key={r.key}
-              onClick={() => setRange(r.key)}
-              className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-                range === r.key
-                  ? 'bg-purple-500/30 text-purple-100'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              {cs ? r.labelCs : r.label}
-            </button>
-          ))}
-        </div>
-        {range === '24h' && (
-          <span className="text-[10px] text-emerald-400 ml-2">● {cs ? 'Živá data' : 'Live data'}</span>
-        )}
-        {range !== '24h' && (
-          <span className="text-[10px] text-amber-400/70 ml-2">
-            {cs ? '○ Odhadováno z aktuálních hodnot' : '○ Extrapolated from current values'}
+          <span className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-purple-500/30 text-purple-100">
+            24h
           </span>
-        )}
+        </div>
+        <span className="text-[10px] text-emerald-400 ml-2">● {cs ? 'Živá data' : 'Live data'}</span>
       </div>
 
       {/* Charts grid */}
@@ -503,9 +371,23 @@ export default function NetworkHistoricalCharts() {
             </div>
             <div className="text-xs text-gray-500 mb-3">{cs ? chart.tipCs : chart.tip}</div>
             <div className="flex-1 min-h-[160px]">
-              {chart.type === 'area' && <AreaChart series={chart.series} color={chart.color} />}
-              {chart.type === 'line' && <LineChart series={chart.series} color={chart.color} />}
-              {chart.type === 'bar' && <BarChart series={chart.series} color={chart.color} />}
+              {chart.series.length < 2 ? (
+                <div className="flex flex-col items-center justify-center gap-2 h-full text-center">
+                  <p className="text-sm text-gray-400">
+                    {cs ? 'Nedostatek dat pro zobrazení grafu' : 'Insufficient data to render chart'}
+                  </p>
+                  <p className="text-xs text-gray-600">
+                    {cs ? 'Graf se naplní jak budou přibývat živá data (každých 15 s).'
+                      : 'Chart will populate as live data accumulates (every 15s).'}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {chart.type === 'area' && <AreaChart series={chart.series} color={chart.color} />}
+                  {chart.type === 'line' && <LineChart series={chart.series} color={chart.color} />}
+                  {chart.type === 'bar' && <BarChart series={chart.series} color={chart.color} />}
+                </>
+              )}
             </div>
             {chart.series.length > 0 && (
               <div className="mt-2 flex items-center justify-between text-[10px] text-gray-500">
