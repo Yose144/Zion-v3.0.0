@@ -138,7 +138,7 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
         category: "oasis_golden_egg",
         unlock_height: None,
     },
-    // --- DAO Treasury (3 slots = 4.0B) — locked until height 525,600 ---
+    // --- DAO Treasury (3 slots = 4.0B) — locked until height 144,000 ---
     PremineOutput {
         address: "zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4",
         purpose: "DAO Treasury — Community Governance (main)",
