@@ -35,6 +35,7 @@ const QUICK_COMMANDS: QuickCommand[] = [
   { label: 'pool miners', icon: Pickaxe, desc: 'Top miners', category: 'Pool' },
   { label: 'pool blocks', icon: Blocks, desc: 'Recent blocks', category: 'Pool' },
   { label: 'pool servers', icon: Server, desc: 'Pool servers', category: 'Pool' },
+  { label: 'pool payouts', icon: Coins, desc: 'Fee split & wallets', category: 'Pool' },
   // Explorer
   { label: 'explorer stats', icon: Activity, desc: 'Chain stats', category: 'Explorer' },
   { label: 'explorer supply', icon: Coins, desc: 'Supply', category: 'Explorer' },
@@ -118,8 +119,9 @@ The Golden Age begins. Peace & One Love 4ever.
 `;
 
 const WELCOME_TEXT = `${GENESIS_BANNER}
-ZION Web CLI v2.0.0 — v3.0.3 mainnet
+ZION Web CLI v2.1.0 — v3.0.3 mainnet
 6-decimal flowers (1 ZION = 1,000,000 flowers)
+Fee split: 89% miner / 5% humanitarian / 5% Issobella / 1% burned
 Type "help" or "?" for all commands. Press Tab for autocomplete.`;
 
 export default function WebTerminal() {
@@ -150,7 +152,7 @@ export default function WebTerminal() {
     [
       'help', 'version', 'status', 'about', 'docs', 'links', 'clear',
       'node info', 'node chain', 'node peers', 'node supply', 'node mempool',
-      'pool stats', 'pool miners', 'pool blocks', 'pool servers',
+      'pool stats', 'pool miners', 'pool blocks', 'pool servers', 'pool payouts',
       'explorer block', 'explorer tx', 'explorer address', 'explorer search',
       'explorer richlist', 'explorer supply', 'explorer stats',
       'defi price', 'defi status',
@@ -387,7 +389,7 @@ export default function WebTerminal() {
                   </span>
                 </p>
                 <p className="truncate text-[10px] text-gray-500 sm:text-xs">
-                  Web CLI v2.0.0 · node · pool · explorer · defi · mine · dao · bridge · ai
+                  Web CLI v2.1.0 · node · pool · explorer · defi · mine · dao · bridge · ai
                 </p>
               </div>
             </div>

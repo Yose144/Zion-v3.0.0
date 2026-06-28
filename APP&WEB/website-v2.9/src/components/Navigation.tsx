@@ -10,6 +10,7 @@ import {
   Newspaper, Map, Sparkles, Rocket, Brain, Flower2, Globe2, Zap, Atom,
 } from 'lucide-react';
 import NavAuthButton from './NavAuthButton';
+import BackgroundToggle from './BackgroundToggle';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 import { SITE_RELEASE_LABEL } from '@/lib/site';
@@ -283,31 +284,36 @@ export default function Navigation() {
         </div>
 
         {/* ═══ SECOND ROW — mini icon quick nav ═══ */}
-        <div className="mt-2 hidden md:flex items-center justify-center gap-1 flex-wrap">
-          {miniLinks.map((ml) => {
-            const isActive = navItemMatches(ml.href);
-            return (
-              <Link
-                key={ml.href}
-                href={ml.href}
-                title={ml.label}
-                className="group relative p-1.5 rounded-lg border transition-all hover:scale-110"
-                style={{
-                  borderColor: isActive ? `rgba(${ml.color}, 0.5)` : 'rgba(255,255,255,0.08)',
-                  backgroundColor: isActive ? `rgba(${ml.color}, 0.12)` : 'rgba(0,0,0,0.5)',
-                }}
-              >
-                <ml.icon
-                  className="w-3.5 h-3.5"
-                  style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.5)' }}
-                />
-                {/* Tooltip */}
-                <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[9px] bg-black/95 border border-white/10 rounded px-1.5 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
-                  {ml.label}
-                </span>
-              </Link>
-            );
-          })}
+        <div className="mt-2 hidden md:flex items-center justify-between gap-3">
+          <div className="flex flex-1 items-center justify-center gap-1 flex-wrap">
+            {miniLinks.map((ml) => {
+              const isActive = navItemMatches(ml.href);
+              return (
+                <Link
+                  key={ml.href}
+                  href={ml.href}
+                  title={ml.label}
+                  className="group relative p-1.5 rounded-lg border transition-all hover:scale-110"
+                  style={{
+                    borderColor: isActive ? `rgba(${ml.color}, 0.5)` : 'rgba(255,255,255,0.08)',
+                    backgroundColor: isActive ? `rgba(${ml.color}, 0.12)` : 'rgba(0,0,0,0.5)',
+                  }}
+                >
+                  <ml.icon
+                    className="w-3.5 h-3.5"
+                    style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.5)' }}
+                  />
+                  {/* Tooltip */}
+                  <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[9px] bg-black/95 border border-white/10 rounded px-1.5 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                    {ml.label}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+          <div className="shrink-0">
+            <BackgroundToggle placement="nav" />
+          </div>
         </div>
 
         {/* ═══ MOBILE OVERLAY + MENU ═══ */}

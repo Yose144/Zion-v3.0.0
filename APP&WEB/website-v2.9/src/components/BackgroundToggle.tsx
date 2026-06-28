@@ -5,9 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Palette, Check, Sparkles, Globe, Radio, Cloud, Orbit } from 'lucide-react';
 import { useObservatory, type ObservatoryMode } from '@/contexts/ObservatoryContext';
 
+type BackgroundTogglePlacement = 'fixed' | 'nav';
+
 const backgroundConfig: Record<ObservatoryMode, { icon: typeof Sparkles; label: string; description: string; color: string }> = {
   'planet-orbit': { icon: Globe, label: 'Turquoise Core', description: 'Default turquoise atmosphere', color: '45, 212, 191' },
-  'desktop-agent': { icon: Cloud, label: 'Desktop Agent', description: 'Desktop agent visual match', color: '80, 230, 210' },
+  'desktop-agent': { icon: Cloud, label: 'Desktop Agent', description: 'Desktop agent visual match', color: '6, 182, 212' },
   'warp-speed': { icon: Orbit, label: 'Warp', description: 'Warp tunnel effect', color: '111, 255, 240' },
   'deep-space': { icon: Sparkles, label: 'Deep Space', description: 'Classic starfield', color: '251, 191, 36' },
   'galactic-core': { icon: Radio, label: 'Galactic Core', description: 'Command nexus', color: '147, 51, 234' },
@@ -15,12 +17,21 @@ const backgroundConfig: Record<ObservatoryMode, { icon: typeof Sparkles; label: 
   'galaxy-core': { icon: Orbit, label: 'Galaxy Core', description: 'Contact approach', color: '180, 220, 255' },
 };
 
-export default function BackgroundToggle() {
+export default function BackgroundToggle({ placement = 'fixed' }: { placement?: BackgroundTogglePlacement }) {
   const { mode, setMode } = useObservatory();
   const [isOpen, setIsOpen] = useState(false);
 
   const CurrentIcon = backgroundConfig[mode]?.icon || Sparkles;
   const currentColor = backgroundConfig[mode]?.color || '6, 182, 212';
+  const isNavPlacement = placement === 'nav';
+
+  const buttonClassName = isNavPlacement
+    ? 'z-50 h-10 w-10 rounded-full border bg-black/70 backdrop-blur flex items-center justify-center transition-all relative overflow-visible hover:bg-black/85'
+    : 'fixed bottom-4 right-4 z-50 h-12 w-12 rounded-full border bg-black/60 backdrop-blur flex items-center justify-center transition-all relative overflow-visible';
+
+  const panelClassName = isNavPlacement
+    ? 'absolute right-0 top-full mt-2 w-72 bg-black/90 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden z-50'
+    : 'fixed bottom-20 right-4 w-72 bg-black/90 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden z-50';
 
   return (
     <div className="relative">
@@ -28,7 +39,7 @@ export default function BackgroundToggle() {
         onClick={() => setIsOpen(!isOpen)}
         whileHover={{ scale: 1.08 }}
         whileTap={{ scale: 0.92 }}
-        className="fixed bottom-4 right-4 z-50 h-12 w-12 rounded-full border bg-black/60 backdrop-blur flex items-center justify-center transition-all relative overflow-visible"
+        className={buttonClassName}
         style={{
           borderColor: `rgba(${currentColor}, 0.5)`,
           boxShadow: `0 0 20px rgba(${currentColor}, 0.3)`,
@@ -90,7 +101,7 @@ export default function BackgroundToggle() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ duration: 0.2 }}
-              className="fixed bottom-20 right-4 w-72 bg-black/90 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden z-50"
+              className={panelClassName}
             >
               <div className="p-2">
                 <div className="text-xs text-gray-400 px-3 py-2 font-semibold uppercase tracking-wide flex items-center gap-2">

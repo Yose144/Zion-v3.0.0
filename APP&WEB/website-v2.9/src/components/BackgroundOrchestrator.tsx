@@ -35,12 +35,12 @@ const OBSERVATORY_PRESETS = {
   },
   'desktop-agent': {
     starfield: {
-      starColor: [80, 230, 210] as [number, number, number],
-      density: 280,
-      speed: 2.8,
+      starColor: [6, 182, 212] as [number, number, number],
+      density: 320,
+      speed: 2.1,
       trailOpacity: 0.08,
       backgroundGradient:
-        'radial-gradient(circle at 50% 14%, rgba(80,230,210,0.24), rgba(10,80,70,0.2) 22%, rgba(6,26,28,0.9) 58%, rgba(0,0,0,0.98) 100%)',
+        'radial-gradient(circle at 50% 20%, rgba(10,12,28,0.45), rgba(0,0,0,0.85)), radial-gradient(ellipse at 20% 30%, rgba(147,51,234,0.12), transparent 50%), radial-gradient(ellipse at 80% 70%, rgba(6,182,212,0.08), transparent 50%), rgb(0,0,0)',
     },
     bubbleDensity: 'medium' as const,
   },
@@ -79,14 +79,15 @@ const OBSERVATORY_PRESETS = {
   },
   'galaxy-core': {
     starfield: {
-      starColor: [200, 230, 255] as [number, number, number],
-      density: 420,
-      speed: 7,
-      trailOpacity: 0.03,
+      starColor: [232, 240, 255] as [number, number, number],
+      density: 480,
+      speed: 2.35,
+      trailOpacity: 0.028,
+      flowDirection: 'inward' as const,
       backgroundGradient:
-        'radial-gradient(circle at 50% 50%, rgba(20,40,80,0.85), rgba(4,6,16,0.97))',
+        'radial-gradient(circle at 50% 50%, rgba(232,240,255,0.2) 0%, rgba(170,196,255,0.12) 8%, rgba(86,118,184,0.22) 20%, rgba(26,44,86,0.5) 40%, rgba(7,14,34,0.85) 68%, rgba(0,0,0,0.995) 100%)',
     },
-    bubbleDensity: 'low' as const,
+    bubbleDensity: 'medium' as const,
   },
 };
 
@@ -96,9 +97,11 @@ export default function BackgroundOrchestrator({ variant = 'default' }: { varian
   const themeName = currentTheme.name;
   const observatory = OBSERVATORY_PRESETS[mode];
   const isHomeVariant = variant === 'home';
-  const shouldRenderWarpStarfield = isHomeVariant || themeName === 'cosmic' || themeName === 'sacred';
-  const shouldRenderMatrixRain = !isHomeVariant && themeName === 'matrix';
-  const shouldRenderCyberGrid = !isHomeVariant && themeName === 'cyberpunk';
+  const isGalaxyCoreMode = mode === 'galaxy-core';
+  const isDesktopAgentMode = mode === 'desktop-agent';
+  const shouldRenderWarpStarfield = isDesktopAgentMode || isGalaxyCoreMode || isHomeVariant || themeName === 'cosmic' || themeName === 'sacred';
+  const shouldRenderMatrixRain = !isHomeVariant && !isGalaxyCoreMode && !isDesktopAgentMode && themeName === 'matrix';
+  const shouldRenderCyberGrid = !isHomeVariant && !isGalaxyCoreMode && !isDesktopAgentMode && themeName === 'cyberpunk';
 
   if (mode === 'warp-speed') {
     return (
@@ -124,7 +127,11 @@ export default function BackgroundOrchestrator({ variant = 'default' }: { varian
     : observatory.starfield;
 
   const bubbleDensity = isHomeVariant ? 'medium' : observatory.bubbleDensity;
-  const overlayClass = isHomeVariant
+  const overlayClass = isGalaxyCoreMode
+    ? 'pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_50%,rgba(238,244,255,0.14),rgba(190,210,255,0.08)_10%,rgba(84,118,188,0.14)_24%,rgba(18,34,72,0.6)_50%,rgba(0,0,0,0.96)_100%)]'
+    : isDesktopAgentMode
+    ? 'pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_20%,rgba(10,12,28,0.28),rgba(0,0,0,0.78))]'
+    : isHomeVariant
     ? 'pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_12%,rgba(80,230,210,0.16),rgba(45,212,191,0.08)_18%,rgba(10,20,30,0.34)_34%,rgba(4,10,14,0.76)_58%,rgba(0,0,0,0.95)_100%)]'
     : 'pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_20%,rgba(10,12,28,0.65),rgba(0,0,0,0.95))]';
 

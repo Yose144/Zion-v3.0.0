@@ -41,12 +41,16 @@ const BUBBLE_PRESETS: Record<ObservatoryMode, Bubble[]> = {
     { id: "nd-5", size: 200, x: 20, y: 75, color: "rgba(255,120,200,0.1)", blur: 65 },
   ],
   "galaxy-core": [
-    { id: "gx-1", size: 600, x: 42, y: 42, color: "rgba(180,220,255,0.22)", blur: 120 },
-    { id: "gx-2", size: 400, x: 47, y: 47, color: "rgba(120,180,255,0.18)", blur: 100 },
+    { id: "gx-1", size: 760, x: 45, y: 44, color: "rgba(232,240,255,0.2)", blur: 165, opacity: 0.68 },
+    { id: "gx-2", size: 560, x: 52, y: 48, color: "rgba(176,202,255,0.16)", blur: 145, opacity: 0.56 },
+    { id: "gx-3", size: 420, x: 60, y: 55, color: "rgba(122,156,230,0.12)", blur: 120, opacity: 0.5 },
+    { id: "gx-4", size: 340, x: 32, y: 60, color: "rgba(132,178,255,0.1)", blur: 108, opacity: 0.44 },
+    { id: "gx-5", size: 280, x: 22, y: 32, color: "rgba(145,170,220,0.08)", blur: 92, opacity: 0.38 },
   ],
   "desktop-agent": [
-    { id: "da-1", size: 280, x: 20, y: 30, color: "rgba(249,217,118,0.15)", blur: 60 },
-    { id: "da-2", size: 200, x: 70, y: 40, color: "rgba(50,230,255,0.12)", blur: 55 },
+    { id: "da-1", size: 360, x: 20, y: 30, color: "rgba(147,51,234,0.16)", blur: 95, opacity: 0.52 },
+    { id: "da-2", size: 300, x: 78, y: 68, color: "rgba(6,182,212,0.14)", blur: 88, opacity: 0.48 },
+    { id: "da-3", size: 220, x: 52, y: 24, color: "rgba(255,215,0,0.1)", blur: 76, opacity: 0.42 },
   ],
   "warp-speed": [
     { id: "ws-1", size: 320, x: 45, y: 45, color: "rgba(180,220,255,0.2)", blur: 80 },
