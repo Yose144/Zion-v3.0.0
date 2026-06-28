@@ -1,6 +1,7 @@
 # ZION 3.0.3 — Decimal Fork Plan (preserves block history)
 
-> **Status:** APPROVED IN PRINCIPLE by repo owner, 2026-06-25.
+> **Status:** ✅ DEPLOYED ON EDGE (2026-06-27) + RPC SCALE FIX (2026-06-28).
+> **Updated:** 2026-06-28 — RPC `scaled_amount()` fix deployed. `ZION_MIGRATION_HEIGHT=18850` (all blocks 0-18850 in legacy 1e12 scale). Balance queries now correctly normalize across fork boundary. See [`REPORT_3.0.3_FIXES.md`](./REPORT_3.0.3_FIXES.md) for full details.
 > **Updated:** 2026-06-27 — added §3a (DAO Treasury unlock @ 144 000)
 > and §3b (DeFi + DAO completion status) per owner directive.
 > Scheduled execution: 2026-06-27+ (imminent).

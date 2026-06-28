@@ -1,6 +1,6 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** **2026-06-27** (**3.0.3 DECIMAL FORK DEPLOYED ON EDGE** — kompletní ekosystém migrován z 12-decimal na 6-decimal flowers, DB preserved, MIGRATION_HEIGHT=17995, všechny 13 Edge services aktivní, chain height 18003+, protocol_version=zion-v3-node/3.0.3, flowers_per_zion=1,000,000); **2026-06-24** (EMERGENCY MINT COMPLETE — 99,999,899 wZION mintováno na Base Mainnet přes wZION.bridgeMint() po obejití DAILY_LIMIT bug na bridge kontraktu; DeFi web UI mainnet-ready — Staking/Farming/DAO pages s wallet connect, BridgeTracker pipeline komponenta, commit 107a121); **2026-06-23** (Multi-validator relay nasazen — 5/5 confirmací pro všech 6 locků, 24h timelock aktivní, wZION mintování čeká na expiry 2026-06-24 16:52 UTC); **2026-06-23** (100M ZION UTXO locks potvrzeno, memo bug opraven, relay čeká na validator key); **2026-06-22** (Bridge mainnet readiness — 5/5 validators funded, single-sig bridge blocker documented, testnet RPC + block-range fixes); **2026-06-18** (Git historie obnovena, root cleanup v3.0.2, L2/L3 kanonizace, L4 Oasis příprava); **2026-06-15** (Edge server full update — Rust + V3 rebuild + služby restart, bridge port fix, dashboard restart tlačítka fix); **2026-06-14** (Dashboard all-tabs fix, Payout/Wallets sekce, Restart Edge Pool SSH, UFW 8444 oprava — viz sekce níže); **2026-06-13** (Fire algorithm hard fork deployment — viz sekce níže); **2026-06-13** (Hiran v2.3 documentation cleanup — viz sekce níže); **2026-06-11** (Hard Genesis Reset #0 completed — viz sekce níže); **2026-06-11** (Pool stale share detection + dashboard tab fix — viz sekce níže); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
+> **Datum:** **2026-06-28** (**L1 MIGRATION RPC FIX + DASHBOARD POLISH + BRIDGE METRICS** — `ZION_MIGRATION_HEIGHT` env var nyní čtena node kódem, `scaled_amount()` helper v RPC normalizuje legacy 1e12 → 1e6 scale pro balance dotazy, MIGRATION_HEIGHT=18850, dashboard `ready_for_launch: True` 13/13 checklist, všechny balance korektní; full report: [`REPORT_3.0.3_FIXES.md`](./REPORT_3.0.3_FIXES.md)); **2026-06-27** (**3.0.3 DECIMAL FORK DEPLOYED ON EDGE** — kompletní ekosystém migrován z 12-decimal na 6-decimal flowers, DB preserved, MIGRATION_HEIGHT=17995, všechny 13 Edge services aktivní, chain height 18003+, protocol_version=zion-v3-node/3.0.3, flowers_per_zion=1,000,000); **2026-06-24** (EMERGENCY MINT COMPLETE — 99,999,899 wZION mintováno na Base Mainnet přes wZION.bridgeMint() po obejití DAILY_LIMIT bug na bridge kontraktu; DeFi web UI mainnet-ready — Staking/Farming/DAO pages s wallet connect, BridgeTracker pipeline komponenta, commit 107a121); **2026-06-23** (Multi-validator relay nasazen — 5/5 confirmací pro všech 6 locků, 24h timelock aktivní, wZION mintování čeká na expiry 2026-06-24 16:52 UTC); **2026-06-23** (100M ZION UTXO locks potvrzeno, memo bug opraven, relay čeká na validator key); **2026-06-22** (Bridge mainnet readiness — 5/5 validators funded, single-sig bridge blocker documented, testnet RPC + block-range fixes); **2026-06-18** (Git historie obnovena, root cleanup v3.0.2, L2/L3 kanonizace, L4 Oasis příprava); **2026-06-15** (Edge server full update — Rust + V3 rebuild + služby restart, bridge port fix, dashboard restart tlačítka fix); **2026-06-14** (Dashboard all-tabs fix, Payout/Wallets sekce, Restart Edge Pool SSH, UFW 8444 oprava — viz sekce níže); **2026-06-13** (Fire algorithm hard fork deployment — viz sekce níže); **2026-06-13** (Hiran v2.3 documentation cleanup — viz sekce níže); **2026-06-11** (Hard Genesis Reset #0 completed — viz sekce níže); **2026-06-11** (Pool stale share detection + dashboard tab fix — viz sekce níže); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
 > (sjednocení `StatusV3.md` ↔ `StatusV3-Part2.md` — TL;DR, roadmap §6, §8, §5
 > pyramida, odkazy).
 > **Předchozí update:** 2026-05-03 (genesis konsensus — merged na `main`)
@@ -19,6 +19,72 @@
 > starý Praha server (`91.98.122.165`) nebo historickou multi-server topologii
 > (Prague, SG, Helsinki, US) jsou **archivní / historické**, pokud není explicitně
 > uvedeno jinak. Aktuální živá topologie je **Core + Edge** (viz sekce Infrastruktura).
+
+---
+
+## Co je nového 2026-06-28 — L1 Migration RPC Fix + Dashboard Polish + Bridge Metrics ✅
+
+> **Status:** ✅ DOKONČENO — 9 oprav napříč ekosystémem. Edge server `ready_for_launch: True`, checklist 13/13. Full report: [`REPORT_3.0.3_FIXES.md`](./REPORT_3.0.3_FIXES.md)
+
+### TL;DR
+
+- **L1 CRITICAL:** `ZION_MIGRATION_HEIGHT` env var nebyla čtena node kódem → RPC balance dotazy ukazovaly ~1e6x příliš velké hodnoty. Opraveno přidáním `scaled_amount()` helperu do `rpc.rs` + čtení env var v `node.rs`.
+- **MIGRATION_HEIGHT:** Změněno z 17995 → 18850 (skutečný tip v době opravy — migrace nebyla nikdy provedena, všechny bloky 0-18850 jsou v legacy 1e12 scale).
+- **L2 Bridge:** `last_l1_height` metrika se neaktualizovala — `L1Watcher` neměl přístup k `BridgeMetrics`. Opraveno.
+- **Dashboard:** 7 oprav — genesis_hash, fee_split_match, node2_running, git_status.clean, Tailscale bind, balance/payout scale auto-detect.
+- **Test results:** 501 zion-core tests, 0 failures
+- **Commity:** `2f466a40` (L1 fix), `a7d426b1` (service files)
+
+### Balance před a po opravě
+
+| Adresa | Před (chybně) | Po (správně) |
+|--------|--------------|--------------|
+| Humanitarian | 545,093,833 ZION | 4,859,791 ZION |
+| Pool wallet | 273,819,293 ZION | 2,738,193 ZION |
+| Issobella | 545,093,833 ZION | 4,859,791 ZION |
+
+### Co bylo změněno
+
+#### L1 Core (commit `2f466a40`)
+- `rpc.rs` — `scaled_amount()` helper (dělí pre-migration amounty 1e6), aplikováno na 5 balance loopů v `getBalance`, `getAccountBalance`, `getBalanceAtHeight`
+- `bin/node.rs` — čtení `ZION_MIGRATION_HEIGHT` env var + `migration::set_migration_height()` při startu
+
+#### L2 Bridge
+- `l1_watcher.rs` — `Arc<BridgeMetrics>` v `L1Watcher` konstruktoru
+- `main.rs` — předání `BridgeMetrics` do `L1Watcher`
+- `types.rs` — `l1_locks_detected` metrika
+
+#### ZION OS Dashboard
+- `app.py` — genesis_hash (`hash_hex` fallback), fee_split (derivace z live tip bloku, pool_fee burned), node2_running (edge_node2 mapování), git_status (ignore runtime files), balance/payout scale auto-detect (1e12 → 1e6)
+- `config.json` — bind `0.0.0.0:8766` (Tailscale access)
+
+#### Service files (commit `a7d426b1`)
+- `edge-deploy/systemd/zion-edge-node1.service` — `ZION_MIGRATION_HEIGHT=18850`
+- `edge-deploy/systemd/zion-edge-node2.service` — `ZION_MIGRATION_HEIGHT=18850`
+- `ZION_OS/infra/systemd/zion-edge-node1.service` — `ZION_MIGRATION_HEIGHT=18850`
+- `ZION_OS/infra/systemd/zion-edge-node2.service` — `ZION_MIGRATION_HEIGHT=18850`
+
+### Edge verifikace
+
+```
+chain_height: 18852
+humanitarian: 4,859,791 ZION ✅
+pool:         2,738,193 ZION ✅
+issobella:    4,859,791 ZION ✅
+ready_for_launch: True ✅
+checklist: 13/13 ✅
+fee_split_all_match: True ✅
+genesis_hash: 7543004c76b11416... ✅
+node2_running: True ✅
+git_status.clean: True ✅
+```
+
+### Kanonické konstanty (post-2026-06-28)
+
+| Constant | Value | Note |
+|----------|-------|------|
+| `MIGRATION_HEIGHT` | `18850` | Edge server — všechny bloky 0-18850 jsou legacy 1e12 scale |
+| `MIGRATION_DIVISOR` | `1_000_000` (1e6) | `scaled_amount()` dělí pre-migration amounty touto hodnotou |
 
 ---
 
