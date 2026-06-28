@@ -16,35 +16,10 @@ type Bubble = {
 };
 
 const BUBBLE_PRESETS: Record<ObservatoryMode, Bubble[]> = {
-  "deep-space": [
-    { id: "ds-1", size: 320, x: 8, y: 18, color: "rgba(249,217,118,0.15)", blur: 65 },
-    { id: "ds-2", size: 260, x: 72, y: 24, color: "rgba(50,230,255,0.12)", blur: 55 },
-    { id: "ds-3", size: 220, x: 45, y: 74, color: "rgba(155,92,255,0.14)", blur: 50 },
-    { id: "ds-4", size: 160, x: 12, y: 70, color: "rgba(255,128,229,0.08)", blur: 45 },
-  ],
   "planet-orbit": [
     { id: "po-1", size: 280, x: 20, y: 30, color: "rgba(249,217,118,0.18)", blur: 70 },
     { id: "po-2", size: 200, x: 70, y: 40, color: "rgba(50,230,255,0.16)", blur: 60 },
     { id: "po-3", size: 240, x: 60, y: 75, color: "rgba(155,92,255,0.15)", blur: 65 },
-  ],
-  "galactic-core": [
-    { id: "gc-1", size: 360, x: 15, y: 25, color: "rgba(249,217,118,0.12)", blur: 90 },
-    { id: "gc-2", size: 300, x: 55, y: 35, color: "rgba(50,230,255,0.14)", blur: 80 },
-    { id: "gc-3", size: 220, x: 78, y: 68, color: "rgba(155,92,255,0.16)", blur: 70 },
-    { id: "gc-4", size: 180, x: 32, y: 80, color: "rgba(255,128,229,0.1)", blur: 60 },
-  ],
-  "nebula-drift": [
-    { id: "nd-1", size: 420, x: 10, y: 15, color: "rgba(140,80,255,0.18)", blur: 100 },
-    { id: "nd-2", size: 380, x: 65, y: 20, color: "rgba(255,180,80,0.12)", blur: 95 },
-    { id: "nd-3", size: 300, x: 35, y: 55, color: "rgba(80,200,255,0.14)", blur: 85 },
-    { id: "nd-4", size: 260, x: 75, y: 65, color: "rgba(200,100,255,0.16)", blur: 75 },
-    { id: "nd-5", size: 200, x: 20, y: 75, color: "rgba(255,120,200,0.1)", blur: 65 },
-  ],
-  "galaxy-core": [
-    { id: "gx-1", size: 600, x: 48, y: 48, color: "rgba(200,220,255,0.16)", blur: 140, opacity: 0.5 },
-    { id: "gx-2", size: 400, x: 55, y: 52, color: "rgba(140,170,230,0.12)", blur: 120, opacity: 0.4 },
-    { id: "gx-3", size: 300, x: 35, y: 40, color: "rgba(100,140,200,0.08)", blur: 100, opacity: 0.3 },
-    { id: "gx-4", size: 250, x: 65, y: 35, color: "rgba(160,190,240,0.06)", blur: 90, opacity: 0.25 },
   ],
   "desktop-agent": [
     { id: "da-1", size: 360, x: 20, y: 30, color: "rgba(147,51,234,0.16)", blur: 95, opacity: 0.52 },
@@ -54,6 +29,12 @@ const BUBBLE_PRESETS: Record<ObservatoryMode, Bubble[]> = {
   "warp-speed": [
     { id: "ws-1", size: 320, x: 45, y: 45, color: "rgba(180,220,255,0.2)", blur: 80 },
     { id: "ws-2", size: 240, x: 50, y: 50, color: "rgba(120,180,255,0.15)", blur: 70 },
+  ],
+  "galaxy-core": [
+    { id: "gx-1", size: 600, x: 48, y: 48, color: "rgba(200,220,255,0.16)", blur: 140, opacity: 0.5 },
+    { id: "gx-2", size: 400, x: 55, y: 52, color: "rgba(140,170,230,0.12)", blur: 120, opacity: 0.4 },
+    { id: "gx-3", size: 300, x: 35, y: 40, color: "rgba(100,140,200,0.08)", blur: 100, opacity: 0.3 },
+    { id: "gx-4", size: 250, x: 65, y: 35, color: "rgba(160,190,240,0.06)", blur: 90, opacity: 0.25 },
   ],
 };
 
@@ -95,7 +76,7 @@ function createInstances(mode: ObservatoryMode, density: QuantumBubblesProps["de
   return normalized;
 }
 
-function QuantumBubblesComponent({ mode = "deep-space", density = "medium" }: QuantumBubblesProps) {
+function QuantumBubblesComponent({ mode = "planet-orbit", density = "medium" }: QuantumBubblesProps) {
   const bubbles = useMemo(() => createInstances(mode, density), [mode, density]);
 
   return (

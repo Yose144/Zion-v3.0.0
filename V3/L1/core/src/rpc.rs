@@ -534,8 +534,17 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                     .lock()
                     .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
 
+                let all_blocks = rt.accepted_blocks();
                 let mut transactions = Vec::new();
-                for block in rt.accepted_blocks() {
+
+                // Use the in-memory address index for O(1) block lookup
+                // instead of scanning all accepted blocks.
+                let matching_indices = rt.block_indices_for_address(address);
+                for &idx in &matching_indices {
+                    let block = match all_blocks.get(idx) {
+                        Some(b) => b,
+                        None => continue,
+                    };
                     // 1. Account-model transactions (from/to fields)
                     for tx in &block.transactions {
                         // Check if address is involved (from or to)
