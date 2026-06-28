@@ -5617,6 +5617,17 @@ async function loadDaoTreasury() {
     if(el('dao-treas-total')) el('dao-treas-total').textContent = d.total_zion ? Number(d.total_zion).toLocaleString() : '4,000,000,000';
     if(el('dao-treas-multisig')) el('dao-treas-multisig').textContent = d.multisig ?? '5-of-7';
     if(el('dao-treas-pending')) el('dao-treas-pending').textContent = d.pending_operations ?? '0';
+    // DAO Treasury lock countdown — locked until block 144,000
+    const DAO_UNLOCK_HEIGHT = 144000;
+    try {
+      const ci = await fetch('/api/chain-info', { signal: AbortSignal.timeout(3000) }).then(r => r.json());
+      const ch = ci.chain_height || ci.height || 0;
+      if(el('dao-treas-current-height')) el('dao-treas-current-height').textContent = ch.toLocaleString();
+      if(el('dao-treas-blocks-remaining')) {
+        const remaining = Math.max(0, DAO_UNLOCK_HEIGHT - ch);
+        el('dao-treas-blocks-remaining').textContent = remaining.toLocaleString() + (remaining === 0 ? ' ✅ UNLOCKED' : '');
+      }
+    } catch(_) { /* chain-info offline */ }
   } catch(e) { /* DAO offline */ }
 }
 

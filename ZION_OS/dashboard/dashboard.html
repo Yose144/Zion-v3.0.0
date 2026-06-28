@@ -1992,7 +1992,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <div class="flex justify-between"><span class="text-gray-400">Voting Period</span><span class="text-white">14 days</span></div>
         <div class="flex justify-between"><span class="text-gray-400">Timelock</span><span class="text-white">72 hours</span></div>
         <div class="flex justify-between"><span class="text-gray-400">Proposal Threshold</span><span class="text-white">10M ZION</span></div>
-        <div class="flex justify-between"><span class="text-gray-400">DAO API</span><span class="text-white font-mono">:8081</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">DAO API</span><span class="text-white font-mono">:8450</span></div>
       </div>
       <div class="flex gap-2">
         <button onclick="controlAction('start-dao')" class="text-xs px-3 py-1.5 bg-emerald-700/50 hover:bg-emerald-600 rounded-lg font-semibold transition">▶ Start DAO</button>
@@ -2164,11 +2164,11 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       <div class="bg-black/30 rounded-xl p-4">
         <div class="text-sm font-bold text-purple-400 mb-2">🗳️ DAO Treasury</div>
         <div class="space-y-1 text-gray-300">
-          <div>• 4B ZION locked (unlock #525,600)</div>
+          <div>• 4B ZION locked (unlock #144,000)</div>
           <div>• 5-of-7 multisig</div>
           <div>• 100M ZION daily limit</div>
           <div>• On-chain voting 1 ZION = 1 vote</div>
-          <div class="text-gray-500 mt-2">API: <span class="font-mono">:8081</span></div>
+          <div class="text-gray-500 mt-2">API: <span class="font-mono">:8450</span></div>
         </div>
       </div>
     </div>
@@ -4482,11 +4482,16 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           <hr class="border-white/10">
           <div class="text-[10px] text-gray-500 mb-1">Treasury Addresses</div>
           <div class="space-y-1">
-            <div class="font-mono text-[9px] text-gray-400 truncate bg-black/30 rounded px-2 py-1">zion176u8r6w53768e2k04035d4d3c2z5g555n6l4r3s</div>
-            <div class="font-mono text-[9px] text-gray-400 truncate bg-black/30 rounded px-2 py-1">zion12643n776r3m8f340484756q06485h5w4c2l405m</div>
-            <div class="font-mono text-[9px] text-gray-400 truncate bg-black/30 rounded px-2 py-1">zion1k8w734x422f3t6t536r287k2c6n3z0e05257606</div>
+            <div class="font-mono text-[9px] text-gray-400 truncate bg-black/30 rounded px-2 py-1" title="Community Governance (main) — 2.5B ZION">zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4</div>
+            <div class="font-mono text-[9px] text-gray-400 truncate bg-black/30 rounded px-2 py-1" title="Grants & Bounties — 1.0B ZION">zion1r5j0j7y444a8j402n8t8u2n8y323u6x4r2aw7l6</div>
+            <div class="font-mono text-[9px] text-gray-400 truncate bg-black/30 rounded px-2 py-1" title="Ecosystem Bootstrap — 0.5B ZION">zion1932843t398t095g4h3x2f3a5l0q40490k4fm2w8</div>
           </div>
-          <div class="text-[10px] text-gray-500 mt-2">Unlock height: <span class="text-white">525,600</span></div>
+          <div class="text-[10px] text-gray-500 mt-2">Unlock height: <span class="text-amber-400 font-bold">144,000</span> <span class="text-gray-600">(≈100 days)</span></div>
+          <div class="bg-amber-500/10 border border-amber-500/20 rounded-lg p-2 mt-2">
+            <div class="text-[10px] text-amber-400 font-bold">🔒 Timelocked</div>
+            <div class="text-[9px] text-gray-400 mt-0.5">Treasury locked until block 144,000. Current height: <span id="dao-treas-current-height" class="text-white font-mono">—</span></div>
+            <div class="text-[9px] text-gray-400">Blocks remaining: <span id="dao-treas-blocks-remaining" class="text-white font-mono">—</span></div>
+          </div>
         </div>
       </div>
 
@@ -4500,7 +4505,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           <div class="flex justify-between"><span class="text-gray-400">Min vote weight</span><span class="text-white">1 ZION</span></div>
           <div class="flex justify-between"><span class="text-gray-400">Quorum</span><span class="text-white">15%</span></div>
           <div class="flex justify-between"><span class="text-gray-400">Finality blocks</span><span class="text-white">12</span></div>
-          <div class="flex justify-between"><span class="text-gray-400">DAO API port</span><span class="text-white font-mono">8081</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">DAO API port</span><span class="text-white font-mono">8450</span></div>
         </div>
       </div>
     </div>
@@ -4549,7 +4554,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       <span id="dao-daemon-badge" class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Unknown</span>
     </div>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 text-xs">
-      <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">API Port</div><div class="text-white font-mono">8081</div></div>
+      <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">API Port</div><div class="text-white font-mono">8450</div></div>
       <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">L1 Scan Interval</div><div class="text-white font-mono">15s</div></div>
       <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">DB Path</div><div class="text-white font-mono truncate">/data/dao/dao.db</div></div>
       <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">L1 RPC</div><div class="text-white font-mono">127.0.0.1:8443</div></div>
