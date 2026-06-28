@@ -36,14 +36,9 @@ export default function HeroSection() {
 
               <StargateLogo className="max-w-[280px]" />
 
-              <p className="mt-8 max-w-md text-center text-sm text-white/50 leading-relaxed">
-                Kosmická brána mezi světy — přesná replika stargate z newearth.cz.
-                28 rotujících vrstev, 39 glyphů, 9 chevronů. Vstoupit do Oasis →
-              </p>
-
               <a
                 href="/l4-oasis"
-                className="mt-6 group inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/5 px-5 py-2 text-sm font-bold text-zion-cyan transition-all hover:border-zion-cyan/60 hover:bg-zion-cyan/10 hover:shadow-[0_8px_30px_rgba(111,255,240,0.2)]"
+                className="mt-10 group inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/5 px-6 py-2.5 text-sm font-bold text-zion-cyan transition-all hover:border-zion-cyan/60 hover:bg-zion-cyan/10 hover:shadow-[0_8px_30px_rgba(111,255,240,0.2)]"
               >
                 Vstoupit do Oasis
                 <span className="transition-transform group-hover:translate-x-1">→</span>
