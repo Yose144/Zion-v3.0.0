@@ -22,6 +22,102 @@
 
 ---
 
+## Co je nového 2026-06-28 (Session 3) — Pool Persistence + Address TX Index + Mobile Deep Links ✅
+
+> **Status:** ✅ DOKONČENO — 4 features napříč ekosystémem
+
+### TL;DR
+
+- **Pool PPLNS Persistence:** File-based JSON snapshot pro unpaid balances, share window, fee accumulators. Pool restart už neznamená ztrátu miner rewards. Atomic write (temp+rename), periodic save (10s), final save na shutdown. Edge deploynuto a aktivní.
+- **Address TX Index:** In-memory `address_tx_index: HashMap<String, Vec<usize>>` v ChainState. `getTransactionHistory` RPC nyní O(1) lookup místo O(N×T) full chain scan. Genesis block indexován při init. Žádná DB migrace — index se rebuildne v paměti při startu.
+- **Mobile Universal Links:** iOS `associated-domains` + Android `intentFilters` v `app.json`. `eas.json` s development/preview/production profily. `apple-app-site-association` + `assetlinks.json` v `/.well-known/`.
+- **L4 WebSocket:** Byl už plně implementován (axum WS upgrade = tokio-tungstenite). 13 event types, 2 WS endpoints, broadcast hub, ping/pong keepalive.
+
+### Commity
+
+| Commit | Popis |
+|--------|-------|
+| `33a48151` | feat(pool): PPLNS persistence — survive restarts without losing miner balances |
+| `fe3beed9` | feat(core): in-memory address TX index — O(1) getTransactionHistory lookup |
+| `529456f5` | feat(mobile): Universal Links + App Links + EAS build config |
+
+### Pool PPLNS Persistence — detaily
+
+**Soubory:** `V3/L1/pool/src/pplns.rs`, `V3/L1/pool/src/bin/server.rs`
+
+**Env vars:**
+- `ZION_PPLNS_STATE_PATH=/path/to/pplns-state.json` (empty = disabled, in-memory only)
+- `ZION_PPLNS_SAVE_INTERVAL_S=10` (save frequency)
+
+**Edge deployment:**
+- `ZION_PPLNS_STATE_PATH=/root/zion-2.9.6-main/edge-deploy/data/pplns-state.json`
+- Pool binary rebuildnut a restartován
+- State file se vytváří a aktualizuje (24 shares, 1 miner = 2946 bytes při testu)
+- 4 nové testy: snapshot/restore, save/load roundtrip, missing file, fee accumulators
+
+### Address TX Index — detaily
+
+**Soubory:** `V3/L1/core/src/lib.rs`, `V3/L1/core/src/rpc.rs`
+
+**Co se indexuje:**
+- Account-model transactions: `from` a `to` adresy
+- UTXO transactions: output adresy + input adresy (derived z public_key)
+- Coinbase: `miner_address`, `humanitarian_address`, `issobella_address`
+
+**Performance:** O(1) address lookup + O(K) block scan kde K = bloky obsahující TX pro danou adresu (typicky << N total blocks)
+
+### Mobile Deep Links — detaily
+
+**Soubory:** `APP&WEB/mobile-app/app.json`, `APP&WEB/mobile-app/eas.json`, `APP&WEB/website-v2.9/public/.well-known/`
+
+**iOS Universal Links:**
+- `applinks:zionterranova.com`, `applinks:www.zionterranova.com`
+- Paths: `/wallet/*`, `/send/*`, `/bridge/*`
+- `apple-app-site-association` v `/.well-known/`
+
+**Android App Links:**
+- `https://zionterranova.com/wallet`, `/send`
+- `assetlinks.json` v `/.well-known/` (placeholder SHA256 — nahradit po prvním buildu)
+
+**EAS Build:**
+- 3 profily: development (internal), preview (internal), production (auto-increment)
+- Env vars: `ZION_RPC_URL`, `ZION_POOL_URL`, `ZION_EXPLORER_URL`
+
+### Co ještě chybí (user tasks)
+
+| Task | Proč user task |
+|------|----------------|
+| Bridge mainnet validator keys | Vyžaduje air-gapped machine + hardware wallet |
+| `assetlinks.json` SHA256 fingerprint | Vyžaduje `keytool` output z first build |
+| `apple-app-site-association` TEAMID | Vyžaduje Apple Developer Team ID |
+| L4 guild wars + raid boss combat | Needs game design discussion (war declaration, boss HP/abilities) |
+
+### L4 Game Mechanics — daily streak + territory cooldowns
+
+**Commit:** `58ac8294`
+
+**Daily Streak (player.rs):**
+- `touch()` / `touch_at()` — updates streak based on time since `last_active`
+- < 24h = same day (no change), 24-48h = consecutive (+1), > 48h = reset to 1
+- Wired into `award_xp` handler — every XP award marks player active
+- `check_achievement(Streak)` called automatically (7/30/90/365 day milestones)
+- 4 new tests: first touch, same day, next day, 48h break
+
+**Daily XP Reset (server.rs + db.rs):**
+- `reset_all_daily_xp()` — `UPDATE players SET daily_xp = 0`
+- Background task checks UTC midnight every 60s, resets all players
+
+**Territory Contest Cooldown (territory.rs):**
+- `last_contested` field + 24h cooldown enforcement
+- `contest()` now returns `Result<bool, TerritoryError>`
+- `CooldownActive { remaining_secs }` error variant
+- `contest_cooldown_remaining()` helper
+- 2 tests: contest_success (updated), contest_cooldown (new)
+
+**124 L4 tests pass, 0 failures.**
+
+---
+
 ## Co je nového 2026-06-28 — L1 Migration RPC Fix + Dashboard Polish + Bridge Metrics ✅
 
 > **Status:** ✅ DOKONČENO — 9 oprav napříč ekosystémem. Edge server `ready_for_launch: True`, checklist 13/13. Full report: [`REPORT_3.0.3_FIXES.md`](./REPORT_3.0.3_FIXES.md)
