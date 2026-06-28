@@ -4,6 +4,7 @@ import StarfieldBackground from './StarfieldBackground';
 import MatrixRain from './MatrixRain';
 import CyberGrid from './CyberGrid';
 import QuantumBubbles from './QuantumBubbles';
+import WarpSpeedBackground from './WarpSpeedBackground';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useObservatory } from '@/contexts/ObservatoryContext';
 
@@ -23,14 +24,36 @@ const OBSERVATORY_PRESETS = {
   },
   'planet-orbit': {
     starfield: {
-      starColor: [90, 200, 255] as [number, number, number],
+      starColor: [45, 212, 191] as [number, number, number],
       density: 300,
       speed: 3,
       trailOpacity: 0.06,
       backgroundGradient:
-        'radial-gradient(circle at 60% 10%, rgba(6,14,32,0.92), rgba(2,4,18,0.98))',
+        'radial-gradient(circle at 60% 10%, rgba(4,30,28,0.92), rgba(2,12,11,0.98))',
     },
     bubbleDensity: 'high' as const,
+  },
+  'desktop-agent': {
+    starfield: {
+      starColor: [80, 230, 210] as [number, number, number],
+      density: 280,
+      speed: 2.8,
+      trailOpacity: 0.08,
+      backgroundGradient:
+        'radial-gradient(circle at 50% 14%, rgba(80,230,210,0.24), rgba(10,80,70,0.2) 22%, rgba(6,26,28,0.9) 58%, rgba(0,0,0,0.98) 100%)',
+    },
+    bubbleDensity: 'medium' as const,
+  },
+  'warp-speed': {
+    starfield: {
+      starColor: [111, 255, 240] as [number, number, number],
+      density: 520,
+      speed: 14,
+      trailOpacity: 0.03,
+      backgroundGradient:
+        'radial-gradient(ellipse at center, #083832 0%, #010807 100%)',
+    },
+    bubbleDensity: 'low' as const,
   },
   'galactic-core': {
     starfield: {
@@ -76,6 +99,17 @@ export default function BackgroundOrchestrator({ variant = 'default' }: { varian
   const shouldRenderWarpStarfield = isHomeVariant || themeName === 'cosmic' || themeName === 'sacred';
   const shouldRenderMatrixRain = !isHomeVariant && themeName === 'matrix';
   const shouldRenderCyberGrid = !isHomeVariant && themeName === 'cyberpunk';
+
+  if (mode === 'warp-speed') {
+    return (
+      <WarpSpeedBackground
+        starColor={[111, 255, 240]}
+        speed={24}
+        density={520}
+        backgroundGradient="radial-gradient(ellipse at center, #0a2e2a 0%, #020a0a 100%)"
+      />
+    );
+  }
 
   const starfieldConfig = isHomeVariant
     ? {
