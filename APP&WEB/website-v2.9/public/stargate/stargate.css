@@ -1,8 +1,9 @@
 /* Stargate — scoped verze pro zionterranova.com
    Původní: public_html/stargate.css z newearth.cz
-   Upraveno: body styly -> .stargate-wrap scoped
+   Performance: contain, content-visibility, translate3d, will-change
 */
 
+/* ════ WRAPPER — off-screen skip ════ */
 .stargate-wrap {
   --gate-offset-y: 0vmin;
   position: relative;
@@ -10,19 +11,22 @@
   aspect-ratio: 1 / 1;
   max-width: 600px;
   margin: 0 auto;
-  background: black;
+  background: #000;
   background-image: url(/stargate/nebula.jpg);
   background-size: cover;
-  background-position: center center;
+  background-position: center;
   background-repeat: no-repeat;
   border-radius: 50%;
   overflow: hidden;
   display: flex;
   justify-content: center;
   align-items: center;
-  text-align: center;
+  /* Performance: skip rendering when off-screen */
+  content-visibility: auto;
+  contain-intrinsic-size: 600px 600px;
 }
 
+/* ════ GATE — metalický kruh ════ */
 .stargate-wrap .gate {
   opacity: 0.35;
   display: flex;
@@ -36,11 +40,15 @@
   margin: 0 auto;
   left: 50%;
   top: calc(50% + var(--gate-offset-y));
-  transform: translate(-50%, -50%);
+  transform: translate3d(-50%, -50%, 0);
   z-index: 0;
-  background-image: radial-gradient(circle at center center, #000000 0%, hsl(0, 0%, 0%) 54%, #7e7f81 54%, #7e7f81 56%, hsl(216, 1%, 55%) 56%, hsl(216, 1%, 55%) 63%, #727374 63%, #727374 65%, #7e7f81 65%, #656667 75%);
+  background-image: radial-gradient(circle at center, #000 0%, hsl(0,0%,0%) 54%, #7e7f81 54%, #7e7f81 56%, hsl(216,1%,55%) 56%, hsl(216,1%,55%) 63%, #727374 63%, #727374 65%, #7e7f81 65%, #656667 75%);
+  /* Performance: isolate this subtree */
+  contain: strict;
+  contain-intrinsic-size: 100% 100%;
 }
 
+/* ════ CONTAINER — drží rotující vrstvy ════ */
 .stargate-wrap .container {
   position: relative;
   width: 100%;
@@ -54,11 +62,12 @@
   overflow: hidden;
 }
 
+/* ════ CENTER LOGO ════ */
 .stargate-wrap .container .center-logo {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate3d(-50%, -50%, 0);
   width: 15%;
   height: 15%;
   border-radius: 50%;
@@ -74,6 +83,7 @@
   display: block;
 }
 
+/* ════ GATE SHADOW ════ */
 .stargate-wrap .gate:before {
   content: "";
   position: absolute;
@@ -84,10 +94,11 @@
   width: 40%;
   height: 40%;
   border-radius: 100%;
-  background: rgba(0, 0, 0, 0.15);
-  box-shadow: 0 0 20vmin 10vmin rgba(0, 0, 0, 0.15);
+  background: rgba(0,0,0,0.15);
+  box-shadow: 0 0 20vmin 10vmin rgba(0,0,0,0.15);
 }
 
+/* ════ GLYPHS ════ */
 .stargate-wrap .glyphs {
   position: absolute;
   top: 0;
@@ -96,6 +107,7 @@
   height: 100%;
   animation: spin 10s linear infinite;
   animation-play-state: paused;
+  will-change: transform;
 }
 .stargate-wrap .gate:hover > .glyphs {
   animation-play-state: running;
@@ -111,11 +123,11 @@
   font-size: 1.6vmin;
   text-align: center;
   width: 6.5%;
-  color: #ffffff;
-  text-shadow: rgba(0, 0, 0, 0.4) 0 2px 2px;
+  color: #fff;
+  text-shadow: rgba(0,0,0,0.4) 0 2px 2px;
 }
 
-/* 39 glyph rotations (9.2307692308deg each) */
+/* 39 glyph rotations */
 .stargate-wrap .glyph:nth-of-type(39n+1) { transform: translateX(-50%) rotate(0deg); }
 .stargate-wrap .glyph:nth-of-type(39n+2) { transform: translateX(-50%) rotate(9.2307692308deg); }
 .stargate-wrap .glyph:nth-of-type(39n+3) { transform: translateX(-50%) rotate(18.4615384615deg); }
@@ -167,6 +179,7 @@
   transform: translateY(-28%) rotate(4.6153846154deg);
 }
 
+/* ════ CHEVRONS ════ */
 .stargate-wrap .chevrons, .stargate-wrap .chevronInners {
   position: absolute;
   top: -1%;
@@ -186,7 +199,7 @@
   border: 3vmin transparent solid;
   border-bottom: 26vmin transparent solid;
   border-top: 5vmin #909192 solid;
-  filter: drop-shadow(0 0.5vmin 0.5vmin rgba(0, 0, 0, 0.2));
+  filter: drop-shadow(0 0.5vmin 0.5vmin rgba(0,0,0,0.2));
 }
 
 .stargate-wrap .chevron:nth-of-type(9n+1), .stargate-wrap .chevronInner:nth-of-type(9n+1) { transform: translateX(-50%) rotate(0deg); }
@@ -206,7 +219,7 @@
   left: 0;
   bottom: 2.2vmin;
   background: hsl(180, 83%, 39%);
-  box-shadow: 0 0 0.8vmin hsl(0, 0%, 100%) inset, 0 0 0.8vmin hsl(0, 0%, 100%);
+  box-shadow: 0 0 0.8vmin hsl(0,0%,100%) inset, 0 0 0.8vmin hsl(0,0%,100%);
   width: 100%;
   height: 2vmin;
   transform: translateX(1.2vmin) skewX(-30deg);
@@ -236,14 +249,11 @@
   transform: translateX(-50%);
   border-radius: 0.4vmin;
 }
-.stargate-wrap .chevronInner:after {
-  display: none;
-}
+.stargate-wrap .chevronInner:after { display: none; }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 
+/* ════ ROTUJÍCÍ VRSTVY — performance ════ */
 .stargate-wrap .gate img {
   width: 100%;
   height: auto;
@@ -251,7 +261,8 @@
   border-radius: 100%;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate3d(-50%, -50%, 0);
+  /* GPU compositing */
   will-change: transform;
   backface-visibility: hidden;
   pointer-events: none;
@@ -269,6 +280,17 @@
   .stargate-wrap .rotate26, .stargate-wrap .rotate27, .stargate-wrap .rotate28 { --img-scale: 1.74; }
 }
 
+/* ════ KEYFRAMES — translate3d pro GPU ════ */
+@keyframes rotate-right {
+  from { transform: translate3d(-50%, -50%, 0) rotate(0deg) scale(var(--img-scale, 1)); }
+  to   { transform: translate3d(-50%, -50%, 0) rotate(360deg) scale(var(--img-scale, 1)); }
+}
+@keyframes rotate-left {
+  from { transform: translate3d(-50%, -50%, 0) rotate(0deg) scale(var(--img-scale, 1)); }
+  to   { transform: translate3d(-50%, -50%, 0) rotate(-360deg) scale(var(--img-scale, 1)); }
+}
+
+/* ════ 28 ROTATE LAYERS ════ */
 .stargate-wrap .rotate1 { width: 90%; opacity: 0.8; animation: rotate-right 33s linear infinite; z-index: 1; }
 .stargate-wrap .rotate2 { width: 60%; opacity: 0.8; animation: rotate-left 33792s linear infinite; }
 .stargate-wrap .rotate3 { width: 70%; opacity: 0.9; animation: rotate-right 66s linear infinite; }
@@ -298,15 +320,7 @@
 .stargate-wrap .rotate27 { width: 100%; opacity: 0.1; animation: rotate-left 128s linear infinite; }
 .stargate-wrap .rotate28 { width: 100%; opacity: 0.1; animation: rotate-right 33s linear infinite; }
 
-@keyframes rotate-right {
-  from { transform: translate(-50%, -50%) rotate(0deg) scale(var(--img-scale, 1)); }
-  to   { transform: translate(-50%, -50%) rotate(360deg) scale(var(--img-scale, 1)); }
-}
-@keyframes rotate-left {
-  from { transform: translate(-50%, -50%) rotate(0deg) scale(var(--img-scale, 1)); }
-  to   { transform: translate(-50%, -50%) rotate(-360deg) scale(var(--img-scale, 1)); }
-}
-
+/* ════ MOBILE ════ */
 @media (max-width: 768px) {
   .stargate-wrap .gate { width: min(100vmin, 92vw); }
   .stargate-wrap { --gate-offset-y: 4vmin; }
@@ -381,6 +395,7 @@
   .stargate-wrap .container .center-logo { width: 19%; height: 19%; }
 }
 
+/* ════ REDUCED MOTION ════ */
 @media (prefers-reduced-motion: reduce) {
   .stargate-wrap .glyphs,
   .stargate-wrap .gate img[class*="rotate"],
