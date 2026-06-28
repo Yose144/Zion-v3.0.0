@@ -26,8 +26,8 @@ set ZION_JOB_TTL_MS=15000
 set ZION_VARDIFF_START_DIFF=1
 set ZION_VARDIFF_TARGET_SECS=10
 
-:: -- Penazenky -----------------------------------------------------------------
-set ZION_POOL_WALLET=zion1w523a76830x2t5m7f3j023w265e8g5c400a4790
+:: -- Penazenky (canonical — shoda s Edge) -------------------------------------
+set ZION_POOL_WALLET=zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604
 set ZION_HUMANITARIAN_WALLET=zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4
 set ZION_ISSOBELLA_WALLET=zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702
 
