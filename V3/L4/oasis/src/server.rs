@@ -149,9 +149,10 @@ pub async fn start_server(state: OasisState) -> anyhow::Result<()> {
     // Spawn Prometheus metrics endpoint in background
     tokio::spawn(serve_metrics(metrics.clone(), metrics_port));
 
-    // Spawn periodic gauge refresh from DB
+    // Spawn periodic gauge refresh from DB + daily XP reset at midnight UTC
     tokio::spawn(async move {
         let mut interval = tokio::time::interval(std::time::Duration::from_secs(60));
+        let mut last_reset_day: u64 = 0;
         loop {
             interval.tick().await;
             if let Ok(count) = db.player_count() {
@@ -163,6 +164,20 @@ pub async fn start_server(state: OasisState) -> anyhow::Result<()> {
                 metrics
                     .active_guilds
                     .store(count, std::sync::atomic::Ordering::Relaxed);
+            }
+            // Daily XP reset at UTC midnight
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs();
+            let today = now / 86_400;
+            if today != last_reset_day {
+                last_reset_day = today;
+                if let Err(e) = db.reset_all_daily_xp() {
+                    tracing::warn!("Daily XP reset failed: {}", e);
+                } else {
+                    info!("Daily XP reset completed for UTC day {}", today);
+                }
             }
         }
     });
@@ -279,6 +294,8 @@ async fn award_xp(
     player.total_xp = award.new_total_xp;
     player.daily_xp += award.actual_amount;
     player.level = award.new_level;
+    // Update daily streak on every XP award (marks player as active)
+    player.touch();
 
     if let Err(e) = state.db.save_player(&player) {
         return (

@@ -36,6 +36,9 @@ pub struct Territory {
     pub capacity: u32,
     /// Current miners
     pub active_miners: Vec<String>,
+    /// When the territory was last contested (Unix seconds). 0 = never.
+    #[serde(default)]
+    pub last_contested: u64,
 }
 
 /// Region types — thematic areas of the OASIS
@@ -89,6 +92,7 @@ impl Territory {
             adjacent: Vec::new(),
             capacity: 50,
             active_miners: Vec::new(),
+            last_contested: 0,
         }
     }
 
@@ -108,21 +112,50 @@ impl Territory {
         Ok(())
     }
 
-    /// Contest this territory (guild war)
-    pub fn contest(&mut self, attacking_guild: &str, attack_power: u64) -> bool {
+    /// Contest this territory (guild war). Returns `Err(CooldownActive)` if
+    /// the territory was contested within the last `TERRITORY_DEFENSE_PERIOD`
+    /// seconds (24h). On success, updates `last_contested` and resolves the
+    /// battle.
+    pub fn contest(&mut self, attacking_guild: &str, attack_power: u64) -> Result<bool, TerritoryError> {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        // Enforce 24h cooldown between contests
+        if self.last_contested > 0 {
+            let elapsed = now.saturating_sub(self.last_contested);
+            if elapsed < TERRITORY_DEFENSE_PERIOD {
+                return Err(TerritoryError::CooldownActive {
+                    remaining_secs: TERRITORY_DEFENSE_PERIOD - elapsed,
+                });
+            }
+        }
+        self.last_contested = now;
         if attack_power > self.defense_power {
             self.controller = Some(attacking_guild.to_string());
             self.defense_power = attack_power / 2; // weakened after battle
-            self.claimed_at = Some(
-                std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap_or_default()
-                    .as_secs(),
-            );
-            true // territory captured
+            self.claimed_at = Some(now);
+            Ok(true) // territory captured
         } else {
             self.defense_power = self.defense_power.saturating_sub(attack_power / 3);
-            false // defense held
+            Ok(false) // defense held
+        }
+    }
+
+    /// Seconds remaining until this territory can be contested again.
+    pub fn contest_cooldown_remaining(&self) -> u64 {
+        if self.last_contested == 0 {
+            return 0;
+        }
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        let elapsed = now.saturating_sub(self.last_contested);
+        if elapsed >= TERRITORY_DEFENSE_PERIOD {
+            0
+        } else {
+            TERRITORY_DEFENSE_PERIOD - elapsed
         }
     }
 
@@ -155,6 +188,7 @@ pub enum TerritoryError {
     NotController,
     AtCapacity,
     InsufficientLevel,
+    CooldownActive { remaining_secs: u64 },
 }
 
 impl std::fmt::Display for TerritoryError {
@@ -165,6 +199,9 @@ impl std::fmt::Display for TerritoryError {
             Self::NotController => write!(f, "Not the territory controller"),
             Self::AtCapacity => write!(f, "Territory at full capacity"),
             Self::InsufficientLevel => write!(f, "Insufficient level to claim"),
+            Self::CooldownActive { remaining_secs } => {
+                write!(f, "Territory contest cooldown active: {}s remaining", remaining_secs)
+            }
         }
     }
 }
@@ -266,9 +303,27 @@ mod tests {
         let mut t = Territory::new("t1".into(), "Test".into(), Region::Forest);
         t.claim("guild1").unwrap();
         // Attack with more power than defense (100)
-        let captured = t.contest("guild2", 200);
+        let captured = t.contest("guild2", 200).unwrap();
         assert!(captured);
         assert!(t.is_controlled_by("guild2"));
+    }
+
+    #[test]
+    fn test_contest_cooldown() {
+        let mut t = Territory::new("t1".into(), "Test".into(), Region::Forest);
+        t.claim("guild1").unwrap();
+        // First contest succeeds
+        let result = t.contest("guild2", 50);
+        assert!(result.is_ok());
+        // Second contest immediately after should fail with cooldown
+        let result = t.contest("guild2", 200);
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            TerritoryError::CooldownActive { remaining_secs } => {
+                assert!(remaining_secs > 0);
+            }
+            _ => panic!("expected CooldownActive error"),
+        }
     }
 
     #[test]
