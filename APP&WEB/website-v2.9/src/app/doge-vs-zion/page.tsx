@@ -492,34 +492,35 @@ export default function DogeVsZionPage() {
           <ShowdownHero className="absolute inset-0 h-full w-full" />
 
           {/* Overlay obsah */}
-          <div className="relative z-10 flex flex-col items-center px-6 py-14 md:py-20 text-center">
-            {/* Stargate portal nad titulkem */}
+          <div className="relative z-10 flex flex-col items-center px-6 py-10 md:py-14 text-center">
+            {/* Stargate — plný originál, úplně nahoře */}
             <motion.div
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ duration: 0.8, ease: 'easeOut' }}
-              className="mb-6"
+              className="mb-4"
             >
-              <StargatePortal size={96} active />
+              <StargateLogo className="mx-auto max-w-[360px]" />
             </motion.div>
 
-            {/* Badge */}
-            <motion.div
+            {/* Nápis pod stargatem */}
+            <motion.h2
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="inline-flex items-center gap-2 rounded-full border border-zion-purple/30 bg-zion-purple/10 px-4 py-1 text-xs font-semibold tracking-widest text-zion-purple uppercase mb-5"
+              transition={{ delay: 0.3 }}
+              className="text-2xl md:text-3xl font-bold tracking-tight"
             >
-              <Swords className="h-3.5 w-3.5" />
-              {cs ? 'Showdown & Arkáda' : 'Showdown & Arcade'}
-            </motion.div>
+              <span className="bg-gradient-to-r from-zion-gold via-zion-purple to-zion-cyan bg-clip-text text-transparent">
+                {cs ? 'Showdown a Arkáda' : 'Showdown & Arcade'}
+              </span>
+            </motion.h2>
 
             {/* Titulek — split gradient: amber Doge vs purple ZION */}
             <motion.h1
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-              className="text-5xl md:text-7xl font-black leading-tight tracking-tight"
+              transition={{ delay: 0.5, duration: 0.5 }}
+              className="mt-6 text-5xl md:text-7xl font-black leading-tight tracking-tight"
             >
               <span className="bg-gradient-to-r from-amber-400 to-amber-600 bg-clip-text text-transparent">Doge</span>
               <span className="text-gray-500 mx-3 font-light">vs</span>
@@ -529,16 +530,7 @@ export default function DogeVsZionPage() {
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-              className="mt-3 text-base md:text-lg font-semibold text-gray-200"
-            >
-              {cs ? 'Arkáda & Srovnání' : 'Arcade & Showdown'}
-            </motion.p>
-
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
+              transition={{ delay: 0.6 }}
               className="mt-3 text-sm md:text-base text-gray-400 max-w-2xl leading-relaxed"
             >
               {cs
