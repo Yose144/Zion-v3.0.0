@@ -123,9 +123,9 @@ impl Default for DaoConfig {
             voting_period_days: 7,
             timelock_hours: 48,
             treasury_addresses: vec![
-                "zion1dao0treasury0main000000000000000000001".into(),
-                "zion1dao0treasury0main000000000000000000002".into(),
-                "zion1dao0treasury0main000000000000000000003".into(),
+                "zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4".into(), // Community Governance (main) — 2.5B ZION
+                "zion1r5j0j7y444a8j402n8t8u2n8y323u6x4r2aw7l6".into(), // Grants & Bounties — 1.0B ZION
+                "zion1932843t398t095g4h3x2f3a5l0q40490k4fm2w8".into(), // Ecosystem Bootstrap — 0.5B ZION
             ],
             daily_spend_limit: 100_000_000, // 100M ZION (whole coins, not flowers)
             multisig_threshold: 5,
