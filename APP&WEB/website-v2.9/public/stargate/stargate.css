@@ -18,6 +18,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  /* Kulatý — ne čtverec (overflow hidden by ořízl chevrony) */
+  border-radius: 50%;
   /* Container queries — glyph/chevron sizes scale with container */
   container-type: inline-size;
   container-name: stargate;
