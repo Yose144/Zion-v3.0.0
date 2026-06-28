@@ -2061,7 +2061,7 @@ impl ChainState {
         );
         let mut accepted_by_height = BTreeMap::new();
         accepted_by_height.insert(0, genesis.clone());
-        Self {
+        let mut state = Self {
             height: 0,
             tip_hash: genesis_hash,
             next_template_id: 2,
@@ -2077,7 +2077,10 @@ impl ChainState {
             pool_fee_address: String::new(),
             bridge_unlock_replay_keys: HashSet::new(),
             address_tx_index: HashMap::new(),
-        }
+        };
+        // Index genesis block (height 0) for address lookups.
+        state.index_block_addresses(0);
+        state
     }
 
     fn from_snapshot(
