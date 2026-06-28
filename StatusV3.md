@@ -3464,3 +3464,86 @@ v OpenCL kernelu.
 - `VEGA64_S4_MEMHARD_DEBUG_GUIDE.md` (kompletně přepsán s novými root cause)
 
 **Historický kontext:** Commit `db55e983` (2026-03) dosahoval ~8.83 KH/s s Blake3 kernelem. Mezitím kernel přešel na SHA3, což způsobilo ~3× pokles hashrate a nesprávné hashe. Tento fix vrací kernel do stavu shodného s L1 consensusem.
+
+---
+
+## Session 2 — Edge Backup Dashboard + Systemd + IP Cleanup (2026-06-28 evening)
+
+### Co se udělalo
+
+**1. Edge Python Dashboard → systemd service**
+- Python dashboard (port 8766) běžel jako ruční `nohup` proces — po rebootu by nenastartoval.
+- `zion-python-dashboard.service` aktivováno: `systemctl enable + start` → `active`, `enabled`.
+- Přežije reboot Edge serveru.
+
+**2. Nové API endpointy — Edge Backup Download**
+- `GET /api/edge/backup/list` — seznam backupů z `/root/zion-backups/` + health.json
+- `GET /api/edge/backup/download?name=<file>` — stáhne `.tar.gz` (na Edge lokálně, na Core PC přes SCP)
+- "📥 Download Backup" tlačítko v dashboard HTML (v=73)
+- `downloadEdgeBackup()` JS funkce — uživatel vybere backup ze seznamu
+
+**3. Local Node — Restore + Rebuild (3.0.3)**
+- Local node běžel na staré binárce (v0.1) — nesync s Edge (v3.0.3).
+- Stáhl edge-state.db (70 MB, height 19333), nahradil local DB.
+- Rebuild `node.exe` z aktuálního zdroje (`cargo build --release -p zion-core --bin node`).
+- Výsledek: Local node sync s Edge — height 19356, protocol v3.0.3.
+- `ZION_MIGRATION_HEIGHT=0` (fresh post-fork node — `is_post_migration()` vrací `true` pro všechny bloky).
+
+**4. .bat soubory — IP canonical cleanup**
+- Princip: `77.42.71.94` (Edge public IP) = main, `100.76.16.108` (Tailscale VPN) = fallback v komentáři.
+- 12 souborů opraveno (miner + node + pool skripty).
+- `run-local-pool.bat` — pool wallet → canonical `zion16825y...` (byl `zion1w523a...`).
+- AGENTS.md aktualizován (Tailscale fallback notes, SSH endpoint).
+
+**5. Edge disk cleanup**
+- Disk usage: 94% → 46% (80 GB uvolněno — Docker images + build cache).
+- `edge-log-cleanup.sh` aktualizován: Docker image + build cache pruning.
+- Spouští se každých 6h přes cron.
+
+### Aktuální topologie
+
+```
+┌─ EDGE (77.42.71.94 / 100.76.16.108 Tailscale) ─────────────┐
+│  Node1 (8443) height 19356, v3.0.3, MIGRATION_HEIGHT=18850 │
+│  Node2 (8446), Pool (8444), DAO (8450), Bridge (9101)      │
+│  Website (3000 Docker), Prometheus (9090 Docker)           │
+│  Python Dashboard (8766) — systemd, enabled                │
+│  Auto-backup 15 min → /root/zion-backups/ (7d retence)     │
+│  Edge log cleanup 6h → Docker prune                        │
+│  Disk: 46%                                                 │
+└─────────────────────────────────────────────────────────────┘
+                          │ Tailscale VPN
+                          ▼
+┌─ CORE PC (W11) ─────────────────────────────────────────────┐
+│  Local Node (8443) height 19356, v3.0.3 — sync s Edge       │
+│    DB: edge-state.db restore, MIGRATION_HEIGHT=0            │
+│  Local Dashboard (8766) — vidí Edge přes SSH                │
+│  Auto-backup 15 min → C:\ZION-AutoBackups\ (30d retence)    │
+│    Task Scheduler: ZION-Local-Backup (Ready)                │
+│  .bat skripty: 77.42.71.94 main + Tailscale fallback        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Git commity (session 2)
+| Commit | Popis |
+|--------|-------|
+| `17b32693` | feat(dashboard): edge backup download + systemd service + run-node.bat 3.0.3 |
+| `b91780bc` | fix(doge-vs-zion): stargate invisible (z dřívější session) |
+| `69d1cee` | fix(scripts): canonical IPs + Tailscale fallback in all .bat + AGENTS.md |
+
+### Dashboard endpointy (aktuální)
+| Endpoint | Metoda | Co dělá |
+|----------|--------|---------|
+| `/api/edge/backup/list` | GET | Seznam backupů + health.json |
+| `/api/edge/backup/download` | GET `?name=` | Stáhne .tar.gz backup |
+| `/api/edge/clear-disk` | POST | Docker prune na Edge |
+| `/api/edge-action` | POST `{"action":"..."}` | Restart služeb, health probe, docker prune |
+| `/api/edge-status` | GET | CPU, mem, disk, services status |
+
+### Dashboardy (oba běží)
+| Dashboard | URL | Přístup |
+|-----------|-----|---------|
+| Edge (primární) | `http://100.76.16.108:8766` | Tailscale |
+| Core PC (lokální) | `http://127.0.0.1:8766` | localhost |
+
+Auth: `admin:root` (HTTP Basic)
