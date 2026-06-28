@@ -17,6 +17,7 @@ use std::sync::{Arc, Mutex};
 use crate::crypto;
 use crate::emission;
 use crate::fee;
+use crate::migration;
 use crate::{
     bridge_operation_message, BridgeValidatorProof, NodeRuntime, BRIDGE_MIN_VALIDATOR_PROOFS,
 };
@@ -40,6 +41,20 @@ pub const TX_REJECTED: i64 = -32004;
 pub const NOT_SYNCED: i64 = -32005;
 
 const ACTIVE_TRANSACTION_MODEL: &str = "hybrid";
+
+/// Convert a transaction amount from a given block height to post-migration
+/// flowers (6-decimal scale). Pre-migration blocks store amounts in legacy
+/// 12-decimal flowers; this divides by MIGRATION_DIVISOR to normalize.
+/// If migration_height is 0 (not set), returns the amount unchanged (fresh
+/// nodes that start post-fork have all amounts in new scale already).
+#[inline]
+fn scaled_amount(amount: u128, block_height: u64) -> u128 {
+    if migration::is_post_migration(block_height) {
+        amount
+    } else {
+        amount / migration::MIGRATION_DIVISOR as u128
+    }
+}
 
 /// RPC-side mirror of the L1 protocol allow-list (env-var driven). Kept
 /// here so the JSON-RPC entry-point can reject obviously bad submissions
@@ -643,11 +658,13 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                 let mut account_balance: i128 = 0;
                 for block in rt.accepted_blocks() {
                     for tx in &block.transactions {
+                        let amt = scaled_amount(tx.amount_zion, block.height);
+                        let fee = scaled_amount(tx.fee_zion as u128, block.height);
                         if tx.to == address {
-                            account_balance += tx.amount_zion as i128;
+                            account_balance += amt as i128;
                         }
                         if tx.from == address {
-                            account_balance -= (tx.amount_zion + tx.fee_zion as u128) as i128;
+                            account_balance -= (amt + fee) as i128;
                         }
                     }
                 }
@@ -719,11 +736,13 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                     let mut account_balance: i128 = 0;
                     for block in rt.accepted_blocks() {
                         for tx in &block.transactions {
+                            let amt = scaled_amount(tx.amount_zion, block.height);
+                            let fee = scaled_amount(tx.fee_zion as u128, block.height);
                             if tx.to == account_id {
-                                account_balance += tx.amount_zion as i128;
+                                account_balance += amt as i128;
                             }
                             if tx.from == account_id {
-                                account_balance -= (tx.amount_zion + tx.fee_zion as u128) as i128;
+                                account_balance -= (amt + fee) as i128;
                             }
                         }
                     }
@@ -744,11 +763,13 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                 let mut balance: i128 = 0;
                 for block in rt.accepted_blocks() {
                     for tx in &block.transactions {
+                        let amt = scaled_amount(tx.amount_zion, block.height);
+                        let fee = scaled_amount(tx.fee_zion as u128, block.height);
                         if tx.to == account_id {
-                            balance += tx.amount_zion as i128;
+                            balance += amt as i128;
                         }
                         if tx.from == account_id {
-                            balance -= (tx.amount_zion + tx.fee_zion as u128) as i128;
+                            balance -= (amt + fee) as i128;
                         }
                     }
                 }
@@ -798,11 +819,13 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                         .filter(|block| block.height <= effective_height)
                     {
                         for tx in &block.transactions {
+                            let amt = scaled_amount(tx.amount_zion, block.height);
+                            let fee = scaled_amount(tx.fee_zion as u128, block.height);
                             if tx.to == account_id {
-                                account_balance += tx.amount_zion as i128;
+                                account_balance += amt as i128;
                             }
                             if tx.from == account_id {
-                                account_balance -= (tx.amount_zion + tx.fee_zion as u128) as i128;
+                                account_balance -= (amt + fee) as i128;
                             }
                         }
                     }
@@ -826,11 +849,13 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                     .filter(|block| block.height <= effective_height)
                 {
                     for tx in &block.transactions {
+                        let amt = scaled_amount(tx.amount_zion, block.height);
+                        let fee = scaled_amount(tx.fee_zion as u128, block.height);
                         if tx.to == account_id {
-                            balance += tx.amount_zion as i128;
+                            balance += amt as i128;
                         }
                         if tx.from == account_id {
-                            balance -= (tx.amount_zion + tx.fee_zion as u128) as i128;
+                            balance -= (amt + fee) as i128;
                         }
                     }
                 }
