@@ -76,8 +76,8 @@ validator_addresses = [
 
 # ── Security ──────────────────────────────────────────────
 [security]
-max_single_amount   = "5000000000000000000000000"
-daily_limit         = "10000000000000000000000000"
+max_single_amount   = "1000000000000000000000000000"
+daily_limit         = "5000000000000000000000000000"
 min_bridge_amount   = "100000000000000000000"
 timelock_threshold  = "1000000000000000000000000"
 max_ops_per_hour    = 100
