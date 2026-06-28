@@ -5900,44 +5900,43 @@ async function initiateAtomicSwap() {
 async function loadL3Data() {
   // WARP health
   try {
-    const r = await fetch('/api/warp/health', { signal: AbortSignal.timeout(3000) }).then(r => r.json());
-    const ok = r.ok || r.status === 'ok';
+    const r = await fetch('/api/l3/warp/chains', { signal: AbortSignal.timeout(3000) }).then(r => r.json());
+    const ok = r.ok || r.status === 'online';
     const badge = document.getElementById('l3-warp-badge');
     if(badge){ badge.className = ok ? 'text-[10px] px-2 py-0.5 rounded-full bg-emerald-700/50 text-emerald-300' : 'text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400'; badge.textContent = ok ? 'Online' : 'Offline'; }
     const el = id => document.getElementById(id);
-    if(el('l3-warp-relayed')) el('l3-warp-relayed').textContent = r.total_relayed ?? '—';
-    if(el('l3-warp-pending')) el('l3-warp-pending').textContent = r.pending ?? '—';
-    if(el('l3-warp-chains')) el('l3-warp-chains').textContent = r.chain_count ?? '5';
+    if(el('l3-warp-relayed')) el('l3-warp-relayed').textContent = r.total ?? '—';
+    if(el('l3-warp-pending')) el('l3-warp-pending').textContent = '—';
+    if(el('l3-warp-chains')) el('l3-warp-chains').textContent = r.total ?? '—';
   } catch(e) {}
 
-  // NCL
+  // NCL jobs
   try {
-    const r = await fetch('/api/ncl/status', { signal: AbortSignal.timeout(3000) }).then(r => r.json());
-    const ok = r.ok || r.status === 'ok';
+    const r = await fetch('/api/l3/ncl/jobs', { signal: AbortSignal.timeout(3000) }).then(r => r.json());
+    const ok = r.orchestrator_alive || r.ok;
     const badge = document.getElementById('l3-ncl-badge');
     if(badge){ badge.className = ok ? 'text-[10px] px-2 py-0.5 rounded-full bg-emerald-700/50 text-emerald-300' : 'text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400'; badge.textContent = ok ? 'Online' : 'Offline'; }
     const el = id => document.getElementById(id);
-    const workers = r.workers ?? r.total_workers ?? '—';
-    const jobs = r.jobs ?? r.active_jobs ?? '—';
-    const tflops = r.tflops ?? r.compute_tflops ?? '—';
+    const workers = r.orchestrator_alive ? '1' : '—';
+    const jobs = r.total ?? r.orchestrator_tasks ?? '—';
     if(el('l3-ncl-workers')) el('l3-ncl-workers').textContent = workers;
     if(el('l3-ncl-workers-2')) el('l3-ncl-workers-2').textContent = workers;
     if(el('l3-ncl-jobs')) el('l3-ncl-jobs').textContent = jobs;
     if(el('l3-ncl-jobs-2')) el('l3-ncl-jobs-2').textContent = jobs;
-    if(el('l3-tflops')) el('l3-tflops').textContent = tflops;
-    if(el('l3-ncl-tflops-2')) el('l3-ncl-tflops-2').textContent = tflops;
+    if(el('l3-tflops')) el('l3-tflops').textContent = '—';
+    if(el('l3-ncl-tflops-2')) el('l3-ncl-tflops-2').textContent = '—';
   } catch(e) {}
 
-  // Hiran inference
+  // Hiran inference + AI agents
   try {
-    const r = await fetch('/api/hiran/status', { signal: AbortSignal.timeout(3000) }).then(r => r.json());
-    const ok = r.ok || r.status === 'ok';
+    const r = await fetch('/api/l3/ai/agents', { signal: AbortSignal.timeout(3000) }).then(r => r.json());
+    const ok = r.hiran_alive || r.orchestrator_alive;
     const badge = document.getElementById('l3-hiran-badge');
     if(badge){ badge.className = ok ? 'text-[10px] px-2 py-0.5 rounded-full bg-emerald-700/50 text-emerald-300' : 'text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400'; badge.textContent = ok ? 'Online' : 'Offline'; }
     const el = id => document.getElementById(id);
-    if(el('l3-hiran-model') && r.model) el('l3-hiran-model').textContent = r.model;
-    if(el('l3-hiran-backend') && r.backend) el('l3-hiran-backend').textContent = r.backend;
-    if(el('l3-agents')) el('l3-agents').textContent = r.agents ?? '—';
+    if(el('l3-hiran-model') && r.hiran_model) el('l3-hiran-model').textContent = r.hiran_model;
+    if(el('l3-hiran-backend') && r.hiran_backend) el('l3-hiran-backend').textContent = r.hiran_backend;
+    if(el('l3-agents')) el('l3-agents').textContent = r.orchestrator_agents ?? r.total ?? '—';
   } catch(e) {}
 }
 
@@ -5973,24 +5972,25 @@ async function loadL4Data() {
     const el = id => document.getElementById(id);
     if(el('l4-avatars')) el('l4-avatars').textContent = r.avatars ?? '—';
     if(el('l4-avatar-count')) el('l4-avatar-count').textContent = r.avatars ?? '—';
-    if(el('l4-avatar-active')) el('l4-avatar-active').textContent = r.active_avatars ?? '—';
-    if(el('l4-avatar-nft')) el('l4-avatar-nft').textContent = r.nfts_minted ?? '—';
+    if(el('l4-avatar-active')) el('l4-avatar-active').textContent = r.avatars ?? '—';
+    if(el('l4-avatar-nft')) el('l4-avatar-nft').textContent = r.avatars ?? '—';
     if(el('l4-guilds')) el('l4-guilds').textContent = r.guilds ?? '—';
     if(el('l4-guild-count')) el('l4-guild-count').textContent = r.guilds ?? '—';
-    if(el('l4-guild-members')) el('l4-guild-members').textContent = r.guild_members ?? '—';
+    if(el('l4-guild-members')) el('l4-guild-members').textContent = '—';
     if(el('l4-territories')) el('l4-territories').textContent = r.territories ?? '—';
     if(el('l4-territory-count')) el('l4-territory-count').textContent = r.territories ?? '—';
-    if(el('l4-territory-contested')) el('l4-territory-contested').textContent = r.contested ?? '—';
+    if(el('l4-territory-contested')) el('l4-territory-contested').textContent = '—';
     if(el('l4-quests')) el('l4-quests').textContent = r.active_quests ?? '—';
     if(el('l4-quest-active')) el('l4-quest-active').textContent = r.active_quests ?? '—';
-    if(el('l4-quest-completed')) el('l4-quest-completed').textContent = r.completed_quests ?? '—';
-    if(el('l4-players')) el('l4-players').textContent = r.online_players ?? '—';
-    if(el('l4-server-players')) el('l4-server-players').textContent = `${r.online_players ?? 0}/1000`;
+    if(el('l4-quest-completed')) el('l4-quest-completed').textContent = '—';
+    if(el('l4-players')) el('l4-players').textContent = r.players ?? '—';
+    if(el('l4-server-players')) el('l4-server-players').textContent = `${r.players ?? 0}/1000`;
     if(el('l4-server-status')){
-      const ok = r.online;
+      const ok = r.ok;
       el('l4-server-status').textContent = ok ? 'Online' : 'Offline';
       el('l4-server-status').className = ok ? 'text-emerald-400' : 'text-gray-400';
     }
+    if(el('l4-version')) el('l4-version').textContent = r.version ?? '—';
   } catch(e) {}
 }
 
@@ -6017,16 +6017,23 @@ async function loadL5Data() {
   try {
     const r = await fetch('/api/freeworld/stats', { signal: AbortSignal.timeout(3000) }).then(r => r.json());
     const el = id => document.getElementById(id);
-    if(el('l5-nodes')) el('l5-nodes').textContent = r.mesh_nodes ?? '—';
-    if(el('l5-mesh-nodes')) el('l5-mesh-nodes').textContent = r.mesh_nodes ?? '—';
-    if(el('l5-communities')) el('l5-communities').textContent = r.communities ?? '—';
-    if(el('l5-aid-tx')) el('l5-aid-tx').textContent = r.aid_transactions ?? '—';
-    if(el('l5-medical-queries')) el('l5-medical-queries').textContent = r.medical_queries ?? '—';
-    if(el('l5-med-queries')) el('l5-med-queries').textContent = r.medical_queries ?? '—';
-    if(el('l5-daos')) el('l5-daos').textContent = r.active_daos ?? '—';
-    if(el('l5-dao-count')) el('l5-dao-count').textContent = r.active_daos ?? '—';
-    if(el('l5-fund')) el('l5-fund').textContent = r.fund_zion ? (r.fund_zion/1e6).toFixed(0)+'M' : '—';
-    if(el('l5-hum-fund')) el('l5-hum-fund').textContent = r.fund_zion ? (r.fund_zion/1e6).toFixed(0)+'M' : '—';
+    if(el('l5-nodes')) el('l5-nodes').textContent = r.projects_active ?? '—';
+    if(el('l5-mesh-nodes')) el('l5-mesh-nodes').textContent = r.projects_active ?? '—';
+    if(el('l5-communities')) el('l5-communities').textContent = r.settlements ?? '—';
+    if(el('l5-aid-tx')) el('l5-aid-tx').textContent = r.grants_disbursed ?? '—';
+    if(el('l5-medical-queries')) el('l5-medical-queries').textContent = '—';
+    if(el('l5-med-queries')) el('l5-med-queries').textContent = '—';
+    if(el('l5-daos')) el('l5-daos').textContent = r.grants_pending ?? '—';
+    if(el('l5-dao-count')) el('l5-dao-count').textContent = r.grants_pending ?? '—';
+    if(el('l5-fund')) el('l5-fund').textContent = r.total_accumulated_zion ? (r.total_accumulated_zion/1e6).toFixed(0)+'M' : '—';
+    if(el('l5-hum-fund')) el('l5-hum-fund').textContent = r.total_accumulated_zion ? (r.total_accumulated_zion/1e6).toFixed(0)+'M' : '—';
+    if(el('l5-grants-pending')) el('l5-grants-pending').textContent = r.grants_pending ?? '—';
+    if(el('l5-grants-approved')) el('l5-grants-approved').textContent = r.grants_approved ?? '—';
+    if(el('l5-grants-disbursed')) el('l5-grants-disbursed').textContent = r.grants_disbursed ?? '—';
+    if(el('l5-disbursed-zion')) el('l5-disbursed-zion').textContent = r.total_disbursed_zion ? (r.total_disbursed_zion/1e6).toFixed(2)+'M' : '—';
+    if(el('l5-blocks-scanned')) el('l5-blocks-scanned').textContent = r.blocks_scanned ?? '—';
+    const ok = r.ok;
+    if(el('l5-status')){ el('l5-status').textContent = ok ? 'Online' : 'Offline'; el('l5-status').className = ok ? 'text-emerald-400' : 'text-gray-400'; }
   } catch(e) {}
 }
 
@@ -6040,17 +6047,18 @@ async function loadL6Data() {
     const el = id => document.getElementById(id);
     if(el('l6-satellites')) el('l6-satellites').textContent = r.satellites ?? '—';
     if(el('l6-sat-active')) el('l6-sat-active').textContent = r.satellites ?? '—';
-    if(el('l6-stations')) el('l6-stations').textContent = r.stations ?? '—';
-    if(el('l6-orbital-count')) el('l6-orbital-count').textContent = r.stations ?? '—';
-    if(el('l6-settlements')) el('l6-settlements').textContent = r.settlements ?? '—';
-    if(el('l6-missions')) el('l6-missions').textContent = r.active_missions ?? '—';
-    if(el('l6-missions-funded')) el('l6-missions-funded').textContent = r.missions_funded ?? '—';
-    if(el('l6-uplinks')) el('l6-uplinks').textContent = r.uplinks_per_sec ?? '—';
-    if(el('l6-fund')) el('l6-fund').textContent = r.fund_zion ? (r.fund_zion/1e9).toFixed(1)+'B' : '—';
-    if(el('l6-fund-allocated')) el('l6-fund-allocated').textContent = r.fund_allocated ? (r.fund_allocated/1e6).toFixed(0)+'M' : '—';
-    if(el('l6-fund-available')) el('l6-fund-available').textContent = r.fund_available ? (r.fund_available/1e6).toFixed(0)+'M' : '—';
-    if(el('l6-dao-proposals')) el('l6-dao-proposals').textContent = r.dao_proposals ?? '—';
-    const ok = r.online;
+    if(el('l6-stations')) el('l6-stations').textContent = r.missions_operational ?? '—';
+    if(el('l6-orbital-count')) el('l6-orbital-count').textContent = r.missions_operational ?? '—';
+    if(el('l6-settlements')) el('l6-settlements').textContent = r.missions_launched ?? '—';
+    if(el('l6-missions')) el('l6-missions').textContent = r.missions_planning ?? '—';
+    if(el('l6-missions-funded')) el('l6-missions-funded').textContent = r.missions_launched ?? '—';
+    if(el('l6-uplinks')) el('l6-uplinks').textContent = r.observations_recorded ?? '—';
+    if(el('l6-fund')) el('l6-fund').textContent = r.total_accumulated_zion ? (r.total_accumulated_zion/1e9).toFixed(1)+'B' : '—';
+    if(el('l6-fund-allocated')) el('l6-fund-allocated').textContent = r.total_disbursed_zion ? (r.total_disbursed_zion/1e6).toFixed(0)+'M' : '—';
+    if(el('l6-fund-available')) el('l6-fund-available').textContent = r.total_accumulated_zion ? ((r.total_accumulated_zion - (r.total_disbursed_zion||0))/1e6).toFixed(0)+'M' : '—';
+    if(el('l6-dao-proposals')) el('l6-dao-proposals').textContent = r.proposals_submitted ?? '—';
+    if(el('l6-blocks-scanned')) el('l6-blocks-scanned').textContent = r.blocks_scanned ?? '—';
+    const ok = r.ok;
     if(el('l6-api-status')){ el('l6-api-status').textContent = ok ? 'Online' : 'Offline'; el('l6-api-status').className = ok ? 'text-emerald-400' : 'text-gray-400'; }
   } catch(e) {}
 }
@@ -7335,33 +7343,55 @@ function updateBridgeTimelockCountdown(){
   el.className = 'text-[10px] text-amber-400';
 }
 
-// Static validator data from BRIDGE_MAINNET_READINESS.md
-const BRIDGE_VALIDATORS = [
-  { id: 1, address: '0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186', role: 'Deployer + Guardian + Validator', balance: '~0.002 ETH' },
-  { id: 2, address: '0x24d986841E56e5571489B25951eE8C1Ae761FA82', role: 'Guardian + Validator', balance: '~0.001 ETH' },
-  { id: 3, address: '0x665c55eDCF25c2c5A1dfF1B20eE950cBDC58d3d0', role: 'Guardian + Validator', balance: '~0.001 ETH' },
-  { id: 4, address: '0x8E644b3E9FaBf52eE321DC5B3D5AA06d6e3E66C6', role: 'Guardian + Validator', balance: '~0.001 ETH' },
-  { id: 5, address: '0x7e0D2eD71d78B9CFB5034A83333e82e304bc4CB2', role: 'Guardian + Validator', balance: '~0.001 ETH' },
+// Fallback validator data (used if API is unavailable)
+const BRIDGE_VALIDATORS_FALLBACK = [
+  { id: 1, address: '0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186', role: 'Deployer + Guardian + Validator', balance: '~0.002 ETH', online: true },
+  { id: 2, address: '0x24d986841E56e5571489B25951eE8C1Ae761FA82', role: 'Guardian + Validator', balance: '~0.001 ETH', online: true },
+  { id: 3, address: '0x665c55eDCF25c2c5A1dfF1B20eE950cBDC58d3d0', role: 'Guardian + Validator', balance: '~0.001 ETH', online: true },
+  { id: 4, address: '0x8E644b3E9FaBf52eE321DC5B3D5AA06d6e3E66C6', role: 'Guardian + Validator', balance: '~0.001 ETH', online: true },
+  { id: 5, address: '0x7e0D2eD71d78B9CFB5034A83333e82e304bc4CB2', role: 'Guardian + Validator', balance: '~0.001 ETH', online: true },
 ];
 
 async function loadBridgeValidators(){
+  // Fetch real validator data from API, fallback to static
+  let validators = BRIDGE_VALIDATORS_FALLBACK;
+  let threshold = 5;
+  try {
+    const data = await fetch('/api/bridge/validators').then(r => r.json());
+    if (data.validators && data.validators.length > 0) {
+      validators = data.validators.map((v, i) => ({
+        id: i + 1,
+        address: v.address,
+        role: v.role || 'Validator',
+        balance: v.balance || '—',
+        online: v.online !== false,
+      }));
+      threshold = data.threshold || validators.length;
+    }
+  } catch(e) { /* use fallback */ }
+
   // Render validator table
   const tbody = document.getElementById('validators-table-body');
   if(tbody){
-    tbody.innerHTML = BRIDGE_VALIDATORS.map(v => `
-      <tr class="border-b border-white/5">
+    tbody.innerHTML = validators.map(v => `
+      <tr class="border-b border-white/5 hover:bg-white/5 transition">
         <td class="py-2 px-2 text-center font-bold text-zion-gold">${v.id}</td>
         <td class="py-2 px-2 font-mono text-[10px]">
           <a href="https://basescan.org/address/${v.address}" target="_blank" class="text-blue-400 hover:text-blue-300">${v.address.substring(0,8)}…${v.address.substring(36)} ↗</a>
         </td>
         <td class="py-2 px-2 text-center text-xs text-gray-300">${escapeHtml(v.role)}</td>
         <td class="py-2 px-2 text-right font-mono text-xs text-amber-400">${v.balance}</td>
-        <td class="py-2 px-2 text-center"><span class="text-emerald-400 text-xs">● Active</span></td>
+        <td class="py-2 px-2 text-center">
+          <span class="${v.online ? 'text-emerald-400' : 'text-red-400'} text-xs">● ${v.online ? 'Active' : 'Offline'}</span>
+        </td>
         <td class="py-2 px-2 text-center">
           <a href="https://basescan.org/address/${v.address}" target="_blank" class="text-[10px] text-blue-400 hover:text-blue-300">View ↗</a>
         </td>
       </tr>`).join('');
   }
+
+  // Update threshold display
+  setText('val-threshold', threshold + '/' + validators.length);
 
   // Check relay status
   const relayEl = document.getElementById('val-relay-status');
