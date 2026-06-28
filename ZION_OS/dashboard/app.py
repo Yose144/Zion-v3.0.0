@@ -92,6 +92,13 @@ PORT = CONFIG["port"]
 TOPOLOGY = CONFIG["topology"]
 PAYOUT_HIGHWATER_FILE = DATA_DIR / "dashboard-payout-highwater.json"
 
+# ── Basic Auth (HTTP 401) ────────────────────────────────────────────────
+# Credentials from env vars (override config.json). Default: admin / root
+AUTH_USER = os.environ.get("DASHBOARD_AUTH_USER", "admin")
+AUTH_PASS = os.environ.get("DASHBOARD_AUTH_PASS", "root")
+# Endpoints that skip auth (health checks, static assets)
+AUTH_EXEMPT_ROUTES = {"/api/health", "/health", "/favicon.ico"}
+
 # Edge server addresses (Hetzner VPS — always-on)
 EDGE_HOST = "100.76.16.108"   # Tailscale IP (preferred — low latency)
 EDGE_PUBLIC_IP = "77.42.71.94"  # Public IP (fallback if Tailscale down)
@@ -7760,6 +7767,34 @@ class DashboardHandler(BaseHTTPRequestHandler):
         # suppress default request logging
         pass
 
+    def _check_auth(self):
+        """HTTP Basic Auth check. Returns True if authorized, sends 401 if not."""
+        parsed = urllib.parse.urlparse(self.path)
+        route = parsed.path
+        # Skip auth for health checks and static assets
+        if route in AUTH_EXEMPT_ROUTES:
+            return True
+        # Check Authorization header
+        auth_header = self.headers.get("Authorization", "")
+        if auth_header.startswith("Basic "):
+            try:
+                decoded = base64.b64decode(auth_header[6:]).decode("utf-8")
+                user, _, passwd = decoded.partition(":")
+                if user == AUTH_USER and passwd == AUTH_PASS:
+                    return True
+            except Exception:
+                pass
+        # Not authorized — send 401 challenge
+        self.send_response(401)
+        self.send_header("WWW-Authenticate", 'Basic realm="ZION Dashboard"')
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.end_headers()
+        try:
+            self.wfile.write(b"401 Unauthorized - authentication required\n")
+        except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
+            pass
+        return False
+
     def _json(self, data, status=200):
         try:
             body = json.dumps(data).encode("utf-8")
@@ -7840,6 +7875,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             return {"ok": False, "error": str(e)}
 
     def do_GET(self):
+        if not self._check_auth():
+            return
         parsed = urllib.parse.urlparse(self.path)
         route = parsed.path
         params = urllib.parse.parse_qs(parsed.query)
@@ -9312,6 +9349,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_POST(self):
+        if not self._check_auth():
+            return
         parsed = urllib.parse.urlparse(self.path)
         route = parsed.path
         length = int(self.headers.get("Content-Length", "0"))
@@ -9775,6 +9814,7 @@ if __name__ == "__main__":
     print("=" * 60)
     print(f"  Log directory : {LOG_DIR.absolute()}")
     print(f"  URL           : http://{HOST}:{PORT}")
+    print(f"  Auth          : {AUTH_USER} / {'***' if AUTH_PASS else '(none)'}")
     print("  Press Ctrl+C to stop")
     print("=" * 60)
     # Background sampler and WS push temporarily disabled due to Windows
