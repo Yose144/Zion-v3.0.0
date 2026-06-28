@@ -367,5 +367,95 @@ Tento dokument (`dashboard.md`) je v rootu repozitáře pro snadný přístup z 
 
 ---
 
+## 12. Session 2 (2026-06-28 evening) — Edge Backup + Systemd + IP Cleanup
+
+### Co se udělalo
+
+#### Edge Python Dashboard → systemd
+- **Problém:** Python dashboard (port 8766) běžel jako ruční `nohup` proces — po rebootu Edge by nenastartoval.
+- **Řešení:** `zion-python-dashboard.service` (systemd) — `enabled` + `active`. Přežije reboot.
+- Service už existovala v `/etc/systemd/system/zion-python-dashboard.service`, jen byla `inactive/dead`.
+- Po `systemctl enable + start` dashboard běží jako spravovaná služba.
+
+#### Nové API endpointy — Edge Backup Download
+- **`GET /api/edge/backup/list`** — vrací seznam backupů z `/root/zion-backups/*.tar.gz` + `health.json`
+  - Funguje na Edge (lokální soubory) i na Core PC (SSH do Edge, parsování `ls -lht`)
+- **`GET /api/edge/backup/download?name=<filename>`** — stáhne backup `.tar.gz`
+  - Na Edge: servíruje lokální soubor
+  - Na Core PC: SCP download z Edge do temp, pak HTTP stream
+  - Validace: jen `.tar.gz`, žádné `/` nebo `..` v názvu
+- **Funkce v `app.py`:** `list_edge_backups()`, `get_edge_backup_path()`
+- **Tlačítko v HTML:** "📥 Download Backup" v Edge Server → Maintenance & Security sekci
+- **JS funkce:** `downloadEdgeBackup()` — vypíše seznam, uživatel vybere číslo, spustí download
+- **Cache version:** v=72 → v=73
+
+#### Local Node — Restore + Rebuild (3.0.3)
+- Local node běžel na staré binárce (v0.1 protocol) — nesync s Edge (v3.0.3).
+- **Stáhl edge-state.db** (70 MB, height 19333) z Edge backup.
+- **Nahradil** `V3/data/zion-node-state.db` (záloha starého v `backups/`).
+- **Rebuild node.exe:** `cargo build --release -p zion-core --bin node` (2m16s).
+- **Výsledek:** Local node sync s Edge — height 19356, protocol v3.0.3.
+- `ZION_MIGRATION_HEIGHT` není nastaven → `0` → `is_post_migration()` vrací `true` pro všechny bloky → **správně** pro fresh post-fork node.
+
+#### .bat soubory — IP canonical cleanup
+- **Princip:** `77.42.71.94` (Edge Hetzner public IP) = **main**, `100.76.16.108` (Tailscale VPN) = **fallback v komentáři**.
+- 12 souborů opraveno:
+  - `run-node.bat`, `start-node-window.bat`, `start-zionos-dashboard.bat` — seed peers
+  - `start-miner-window.bat`, `run-miner.bat`, `restart-miner-gpu.bat`, `restart-miner-temp.bat`, `start-miner-fire.bat`, `start-miner-target2.bat`, `start-miner-target3.bat` — pool addr
+  - `run-local-pool.bat` — pool wallet → canonical `zion16825y...` (byl `zion1w523a...`)
+  - `start-all-visible.bat` — echo řádek
+- Všechny mají `:: Fallback (Tailscale VPN): set ZION_...=100.76.16.108:...` jako komentář.
+- **AGENTS.md** aktualizován: PowerShell examples s Tailscale fallback note, SSH endpoint (public main + Tailscale fallback), "Tailscale is currently down" odstraněno.
+
+### Topologie (aktuální)
+
+```
+┌─ EDGE (77.42.71.94 / 100.76.16.108 Tailscale) ─────────────┐
+│  Node1 (8443) height 19356, v3.0.3, MIGRATION_HEIGHT=18850 │
+│  Node2 (8446), Pool (8444), DAO (8450), Bridge (9101)      │
+│  Website (3000 Docker), Prometheus (9090 Docker)           │
+│  Python Dashboard (8766) — systemd, enabled                │
+│  Auto-backup 15 min → /root/zion-backups/ (7d retence)     │
+│  Edge log cleanup 6h → Docker prune                        │
+│  Disk: 46% (bylo 94%)                                      │
+└─────────────────────────────────────────────────────────────┘
+                          │ Tailscale VPN
+                          ▼
+┌─ CORE PC (W11) ─────────────────────────────────────────────┐
+│  Local Node (8443) height 19356, v3.0.3 — sync s Edge       │
+│    DB: edge-state.db restore, MIGRATION_HEIGHT=0            │
+│  Local Dashboard (8766) — vidí Edge přes SSH                │
+│  Auto-backup 15 min → C:\ZION-AutoBackups\ (30d retence)    │
+│    Task Scheduler: ZION-Local-Backup (Ready)                │
+│  .bat skripty: 77.42.71.94 main + Tailscale fallback        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Git commity (session 2)
+| Commit | Popis |
+|--------|-------|
+| `17b32693` | feat(dashboard): edge backup download + systemd service + run-node.bat 3.0.3 |
+| `b91780bc` | fix(doge-vs-zion): stargate invisible (z dřívější session) |
+| `69d1cee` | fix(scripts): canonical IPs + Tailscale fallback in all .bat + AGENTS.md |
+
+### Endpointy (aktuální)
+| Endpoint | URL | Co dělá |
+|----------|-----|---------|
+| `/api/edge/backup/list` | `GET` | Seznam backupů + health.json |
+| `/api/edge/backup/download` | `GET ?name=` | Stáhne .tar.gz backup |
+| `/api/edge/clear-disk` | `POST` | Docker prune na Edge |
+| `/api/edge-action` | `POST {"action":"..."}` | Restart služeb, health probe, docker prune |
+| `/api/edge-status` | `GET` | CPU, mem, disk, services status |
+
+### Dashboardy (oba běží)
+| Dashboard | URL | Přístup |
+|-----------|-----|---------|
+| Edge (primární) | `http://100.76.16.108:8766` | Tailscale |
+| Core PC (lokální) | `http://127.0.0.1:8766` | localhost |
+
+Auth: `admin:root` (HTTP Basic)
+
+---
+
 *Gate, Gate, Paragate, Parasamgate, Bodhi Swaha.*
 *The Golden Age begins. Peace & One Love 4ever.*
