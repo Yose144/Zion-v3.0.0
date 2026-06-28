@@ -1,0 +1,49 @@
+{
+  "cli": {
+    "version": ">= 12.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "channel": "development",
+      "env": {
+        "ZION_RPC_URL": "http://77.42.71.94:8443",
+        "ZION_POOL_URL": "http://77.42.71.94:8444",
+        "ZION_EXPLORER_URL": "https://zionterranova.com"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "channel": "preview",
+      "env": {
+        "ZION_RPC_URL": "http://77.42.71.94:8443",
+        "ZION_POOL_URL": "http://77.42.71.94:8444",
+        "ZION_EXPLORER_URL": "https://zionterranova.com"
+      }
+    },
+    "production": {
+      "channel": "production",
+      "autoIncrement": true,
+      "env": {
+        "ZION_RPC_URL": "http://77.42.71.94:8443",
+        "ZION_POOL_URL": "http://77.42.71.94:8444",
+        "ZION_EXPLORER_URL": "https://zionterranova.com"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "estrelaisabellazion3@gmail.com",
+        "ascAppId": "com.zionterranova.mobile",
+        "appleTeamId": ""
+      },
+      "android": {
+        "serviceAccountKeyPath": "./credentials/google-service-account.json",
+        "track": "internal"
+      }
+    }
+  }
+}
