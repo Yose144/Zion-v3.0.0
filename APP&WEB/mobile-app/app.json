@@ -21,6 +21,10 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.zionterranova.mobile",
       "buildNumber": "7",
+      "associatedDomains": [
+        "applinks:zionterranova.com",
+        "applinks:www.zionterranova.com"
+      ],
       "infoPlist": {
         "NSCameraUsageDescription": "ZION uses the camera to scan QR codes for wallet addresses and payments.",
         "NSFaceIDUsageDescription": "ZION uses Face ID to securely unlock your wallet.",
@@ -41,6 +45,29 @@
         "USE_FINGERPRINT",
         "RECEIVE_BOOT_COMPLETED",
         "WAKE_LOCK"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "https",
+              "host": "zionterranova.com",
+              "pathPrefix": "/wallet"
+            },
+            {
+              "scheme": "https",
+              "host": "zionterranova.com",
+              "pathPrefix": "/send"
+            },
+            {
+              "scheme": "https",
+              "host": "www.zionterranova.com",
+              "pathPrefix": "/wallet"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
       ]
     },
     "web": {
