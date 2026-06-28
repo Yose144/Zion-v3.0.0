@@ -15,8 +15,6 @@
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  border-radius: 50%;
-  overflow: hidden;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -91,7 +89,7 @@
   height: 40%;
   border-radius: 100%;
   background: rgba(0,0,0,0.15);
-  box-shadow: 0 0 20cqw 10cqw rgba(0,0,0,0.15);
+  box-shadow: 0 0 40cqw 20cqw rgba(0,0,0,0.15);
 }
 
 /* ════ GLYPHS ════ */
@@ -116,7 +114,7 @@
   left: 50%;
   height: 43%;
   transform-origin: center bottom;
-  font-size: 1.6cqw;
+  font-size: 3.20cqw;
   text-align: center;
   width: 6.5%;
   color: #fff;
@@ -190,12 +188,12 @@
   position: absolute;
   bottom: 50%;
   left: 50%;
-  width: 8cqw;
+  width: 16cqw;
   transform-origin: center bottom;
-  border: 3cqw transparent solid;
-  border-bottom: 26cqw transparent solid;
-  border-top: 5cqw #909192 solid;
-  filter: drop-shadow(0 0.5cqw 0.5cqw rgba(0,0,0,0.2));
+  border: 6cqw transparent solid;
+  border-bottom: 52cqw transparent solid;
+  border-top: 10cqw #909192 solid;
+  filter: drop-shadow(0 1cqw 1cqw rgba(0,0,0,0.2));
 }
 
 .stargate-wrap .chevron:nth-of-type(9n+1), .stargate-wrap .chevronInner:nth-of-type(9n+1) { transform: translateX(-50%) rotate(0deg); }
@@ -213,15 +211,15 @@
   content: "";
   position: absolute;
   left: 0;
-  bottom: 2.2cqw;
+  bottom: 4.40cqw;
   background: hsl(180, 83%, 39%);
-  box-shadow: 0 0 0.8cqw hsl(0,0%,100%) inset, 0 0 0.8cqw hsl(0,0%,100%);
+  box-shadow: 0 0 1.60cqw hsl(0,0%,100%) inset, 0 0 1.60cqw hsl(0,0%,100%);
   width: 100%;
-  height: 2cqw;
-  transform: translateX(1.2cqw) skewX(-30deg);
+  height: 4cqw;
+  transform: translateX(2.40cqw) skewX(-30deg);
 }
 .stargate-wrap .chevron:after, .stargate-wrap .chevronInner:after {
-  transform: translateX(-1.2cqw) skewX(30deg);
+  transform: translateX(-2.40cqw) skewX(30deg);
 }
 
 .stargate-wrap .chevronInners {
@@ -232,18 +230,18 @@
 }
 
 .stargate-wrap .chevronInner {
-  width: 6cqw;
-  border-left-width: 2.5cqw;
-  border-right-width: 2.5cqw;
-  border-bottom-width: 27.5cqw;
-  filter: drop-shadow(0 0.5cqw 0 #727374);
+  width: 12cqw;
+  border-left-width: 5cqw;
+  border-right-width: 5cqw;
+  border-bottom-width: 55cqw;
+  filter: drop-shadow(0 1cqw 0 #727374);
 }
 .stargate-wrap .chevronInner:before {
   left: 50%;
   width: 230%;
-  bottom: 2.8cqw;
+  bottom: 5.60cqw;
   transform: translateX(-50%);
-  border-radius: 0.4cqw;
+  border-radius: 0.80cqw;
 }
 .stargate-wrap .chevronInner:after { display: none; }
 
