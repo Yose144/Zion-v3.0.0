@@ -3655,7 +3655,7 @@ def build_explorer() -> dict:
     chain_height = info.get("chain_height", 0) if info else 0
     block_reward = 5400.067
     estimated_mined = chain_height * block_reward
-    total_premine = 16_280_000_000
+    total_premine = 16_780_000_000
     circulating_estimate = total_premine + estimated_mined
 
     return {
@@ -4070,8 +4070,8 @@ def get_backup_status() -> dict:
 
 BLOCKS_PER_DECADE = 5_256_000
 MAX_DECAY_DECADES = 10
-BASE_REWARD = 5_400_067_000_000_000
-TAIL_REWARD = 580_184_552_960_000
+BASE_REWARD = 5_400_067_000
+TAIL_REWARD = 724_784_723
 
 
 def block_subsidy(height: int) -> int:
@@ -4905,8 +4905,8 @@ def save_alert_config(cfg: dict) -> dict:
 MAINNET_CONSTANTS = {
     "supply": {
         "total_zion": 144_000_000_000,
-        "genesis_premine_zion": 16_280_000_000,
-        "mining_emission_zion": 127_720_000_000,
+        "genesis_premine_zion": 16_780_000_000,
+        "mining_emission_zion": 127_220_000_000,
         "flowers_per_zion": 1_000_000,
     },
     "block": {
@@ -4914,7 +4914,7 @@ MAINNET_CONSTANTS = {
         "blocks_per_year": 525_600,
         "blocks_per_decade": 5_256_000,
         "base_reward_zion": 5400.067,
-        "tail_reward_zion": 724.784723787776,
+        "tail_reward_zion": 724.784723,
         "decay_factor": "0.8 (4/5) per decade",
         "max_decay_decades": 10,
         "coinbase_maturity": 100,
@@ -4949,21 +4949,25 @@ MAINNET_CONSTANTS = {
 
 PREMINE_OUTPUTS = [
     # OASIS + Golden Egg (5 slots × 1.65B = 8.25B)
-    {"address": "zion166e6v3k204h8p5w4w3a7m0x790q5m7z5z6n252p", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 1)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
-    {"address": "zion1l2h8h0e3h7m6p8e297m6n624c5m7r2k364v684a", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 2)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
-    {"address": "zion1e6r0q3g6t0r0v5f6h7k7c5f3v562j0v7e5e5d0a", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 3)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
-    {"address": "zion1l7e4c4c5x8l440t295a7m4k5p5x8v8z7r043s23", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 4)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
-    {"address": "zion1n8h2a8p386z274859833h7v6c5n687f7a6k523u", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 5)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
+    {"address": "zion153e378e4x0g6s380h2h8z4t506g5s323f5se8g5", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 1)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
+    {"address": "zion1w548y2k3q802w885u7h0x2z8w7d675m0u3ya0l3", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 2)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
+    {"address": "zion192v4c0k074u7c502q6x8e0t592s564s7l4pm607", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 3)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
+    {"address": "zion1n690n062g668s8g0y4772830z8r450c0l06f295", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 4)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
+    {"address": "zion17323k5e490t832f4d0m3w4x3s2e2z7a7600j3v7", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 5)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
     # DAO Treasury (3 slots = 4.0B) — locked until block 144,000 (post-3.0.3 fork)
     {"address": "zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4", "purpose": "DAO Treasury — Community Governance (main)", "amount_zion": 2_500_000_000, "category": "dao_treasury", "unlock_height": 144_000},
     {"address": "zion1r5j0j7y444a8j402n8t8u2n8y323u6x4r2aw7l6", "purpose": "DAO Treasury — Grants & Bounties", "amount_zion": 1_000_000_000, "category": "dao_treasury", "unlock_height": 144_000},
     {"address": "zion1932843t398t095g4h3x2f3a5l0q40490k4fm2w8", "purpose": "DAO Treasury — Ecosystem Bootstrap", "amount_zion": 500_000_000, "category": "dao_treasury", "unlock_height": 144_000},
     # Infrastructure (3 slots = 2.59B)
-    {"address": "zion1q540v6y4f0s4v3n0f8t740t53494z56024u645c", "purpose": "Core Development Fund", "amount_zion": 1_000_000_000, "category": "infrastructure", "unlock_height": None},
-    {"address": "zion1h4w39686t8w376g0x0y426e775q6p2q0v698v43", "purpose": "Network Infrastructure — P2P Seed Nodes", "amount_zion": 1_000_000_000, "category": "infrastructure", "unlock_height": None},
-    {"address": "zion1x638z5x6d2d0y6u3f7y8g7j56054a4a2a2c7l8f", "purpose": "Genesis Creator — Lifetime Rent", "amount_zion": 590_000_000, "category": "infrastructure", "unlock_height": None},
+    {"address": "zion1d3p5x622m327r060w5z0q5r203v837m6l8pa8x5", "purpose": "Core Development Fund", "amount_zion": 1_000_000_000, "category": "infrastructure", "unlock_height": None},
+    {"address": "zion1r6r4s0u2e6u4t23767s05752d70660h2f29d2l7", "purpose": "Network Infrastructure — P2P Seed Nodes", "amount_zion": 1_000_000_000, "category": "infrastructure", "unlock_height": None},
+    {"address": "zion16542q4l853a2z0u5r5w8y4m8k4558847h503736", "purpose": "Genesis Creator — Lifetime Rent", "amount_zion": 590_000_000, "category": "infrastructure", "unlock_height": None},
     # Humanitarian (1 slot = 1.44B)
-    {"address": "zion1m4v5z8z850u480c5c208z274e334369275n5y20", "purpose": "Children Future Fund — Humanitarian DAO", "amount_zion": 1_440_000_000, "category": "humanitarian", "unlock_height": None},
+    {"address": "zion1z7g4u3s2w3c5z5u4a60864m2y7q8e5j304g46r7", "purpose": "Children Future Fund — Humanitarian DAO", "amount_zion": 1_440_000_000, "category": "humanitarian", "unlock_height": None},
+    # Bridge Seed Fund (1 slot = 0.4B) — immediate unlock for EVM bridge liquidity
+    {"address": "zion13794g7k3m0f84637l2x0t855h3l258k8p3xp5t3", "purpose": "Bridge Seed Fund — EVM Bridge Liquidity", "amount_zion": 400_000_000, "category": "bridge_seed", "unlock_height": None},
+    # Bridge Vault UTXO Seed (1 slot = 0.1B) — UTXO liquidity for bridge unlocks
+    {"address": "zion1r565v3k2u8p8t6n494p0n527c0m7a5s4s5ae0x7", "purpose": "Bridge Vault UTXO Seed — EVM Bridge Unlock Liquidity", "amount_zion": 100_000_000, "category": "bridge_vault_utxo", "unlock_height": None},
 ]
 
 P0_BLOCKERS = [
