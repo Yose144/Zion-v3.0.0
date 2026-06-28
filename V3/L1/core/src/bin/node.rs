@@ -11,6 +11,7 @@ use zion_core::{
     discovery::{DiscoveryCommand, DiscoveryEngine, DISCOVERY_PORT},
     encode_p2p_message, encode_rpc_response,
     ibd::{IbdCommand, IbdEngine},
+    migration,
     node_protocol_version,
     p2p_security::PeerSecurity,
     peer_manager::{PeerAction, PeerDirection, PeerManager, MIN_OUTBOUND},
@@ -51,6 +52,19 @@ fn lock_peer_sec(m: &Mutex<PeerSecurity>) -> MutexGuard<'_, PeerSecurity> {
 }
 
 fn main() -> Result<()> {
+    // Read migration height from env (set by edge-deploy config).
+    // This tells the node which blocks are pre-migration (legacy 1e12 scale)
+    // vs post-migration (new 1e6 scale). The RPC layer uses this to normalize
+    // balance computations across the fork boundary.
+    if let Ok(mh_str) = std::env::var("ZION_MIGRATION_HEIGHT") {
+        if let Ok(mh) = mh_str.parse::<u64>() {
+            if mh > 0 {
+                migration::set_migration_height(mh);
+                eprintln!("migration_height={mh} (pre-fork blocks use legacy 1e12 scale)");
+            }
+        }
+    }
+
     let config = NodeServerConfig::from_env()?;
     let miner_address = std::env::var("ZION_MINER_ADDRESS").unwrap_or_default();
     let humanitarian_address = std::env::var("ZION_HUMANITARIAN_WALLET").unwrap_or_default();
