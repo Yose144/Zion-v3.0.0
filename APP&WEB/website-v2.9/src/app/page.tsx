@@ -4,6 +4,7 @@ import BridgeStatusBanner from '@/components/BridgeStatusBanner';
 import HomeQuickLinks from '@/components/HomeQuickLinks';
 import WebTerminal from '@/components/WebTerminal';
 import StoryTriptych from '@/components/StoryTriptych';
+import IntroSection from '@/components/IntroSection';
 
 const NewsFeed = dynamicImport(() => import('@/components/NewsFeed'));
 const LiveDashboard = dynamicImport(() => import('@/components/LiveDashboard'));
@@ -20,6 +21,7 @@ export default function Home() {
   return (
     <>
       <Hero />
+      <IntroSection />
       <WebTerminal />
       <BridgeStatusBanner />
       <HomeQuickLinks />
