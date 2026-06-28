@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import Link from 'next/link';
 import { Activity, Cpu, Database, ExternalLink, HardDrive, Radio, RefreshCw, Server, Sparkles } from 'lucide-react';
 import { usePolling } from '@/hooks/usePolling';
+import { useLang } from '@/contexts/LanguageContext';
 
 interface MonitoringSnapshot {
   chainHeight: number | null;
@@ -192,7 +193,10 @@ function MetricPanel({
   );
 }
 
-export default function NetworkMonitoringSnapshot({ cs, locale }: { cs: boolean; locale: string }) {
+export default function NetworkMonitoringSnapshot() {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
+  const locale = cs ? 'cs-CZ' : 'en-US';
   const [monitoring, setMonitoring] = useState<MonitoringSnapshot | null>(null);
   const [monitoringUpdatedAt, setMonitoringUpdatedAt] = useState<Date | null>(null);
 

@@ -3,8 +3,11 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Copy, Download, ExternalLink, Terminal } from 'lucide-react';
+import { useLang } from '@/contexts/LanguageContext';
 
-export default function NetworkOperatorToolkit({ cs, primaryPool }: { cs: boolean; primaryPool: string }) {
+export default function NetworkOperatorToolkit({ primaryPool }: { primaryPool: string }) {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
   const [copied, setCopied] = useState<string | null>(null);
   const xmrigConnect = `./xmrig -o stratum+tcp://${primaryPool} -u YOUR_ZION_ADDRESS -p x`;
   const healthCurl = 'curl -s https://www.zionterranova.com/api/health';

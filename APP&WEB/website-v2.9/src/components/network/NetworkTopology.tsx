@@ -75,57 +75,72 @@ interface SimNode {
 interface SimEdge {
   source: string;
   target: string;
-  latency: number;
+  latency: number; // 0 = unknown (no latency data available for this link)
 }
 
 /* ═══════════════════════════════════════════════════════════
-   Seeded PRNG (mulberry32) for deterministic synthetic peers
+   Real peer data — mirrors /api/blockchain/peers response
    ═══════════════════════════════════════════════════════════ */
 
-function mulberry32(seed: number) {
-  return function () {
-    seed |= 0;
-    seed = (seed + 0x6d2b79f5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
+interface PeerInfo {
+  address: string;
+  host: string;
+  port: number;
+  height: number;
+  incoming: boolean;
+  connected: boolean;
+  state: string;
+  sub_version: string;
+  last_seen: number;
+  idle_seconds: number;
+  failed_attempts: number;
 }
 
-const VERSIONS = ['3.0.3', '3.0.2', '3.0.1', '2.9.9', '3.1.0-dev'];
-const REGIONS = ['EU', 'NA', 'AS', 'SA', 'AF', 'OC'];
+interface PeersResponse {
+  count: number;
+  connected_peers: number;
+  peers: PeerInfo[];
+}
 
-function shortAddr(rng: () => number): string {
-  const hex = '0123456789abcdef';
-  let s = '';
-  for (let i = 0; i < 8; i++) s += hex[Math.floor(rng() * 16)];
-  return `zion1${s}…`;
+/* Shorten a real peer address/host for compact display */
+function shortPeerLabel(peer: PeerInfo, idx: number): string {
+  const host = peer.host || peer.address?.split(':')[0] || '';
+  if (host) {
+    // Show last two octets of an IPv4, or a trimmed host
+    const parts = host.split('.');
+    if (parts.length === 4) return `…${parts[2]}.${parts[3]}`;
+    return host.length > 12 ? `${host.slice(0, 10)}…` : host;
+  }
+  return `peer-${idx + 1}`;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   Build simulation graph from network status
+   Build simulation graph from real network status + real peers
    ═══════════════════════════════════════════════════════════ */
 
-function buildGraph(status: NetworkStatus, width: number, height: number): { nodes: SimNode[]; edges: SimEdge[] } {
-  const rng = mulberry32(20260627);
+function buildGraph(
+  status: NetworkStatus,
+  peers: PeerInfo[],
+  width: number,
+  height: number
+): { nodes: SimNode[]; edges: SimEdge[] } {
   const cx = width / 2;
   const cy = height / 2;
   const nodes: SimNode[] = [];
   const edges: SimEdge[] = [];
 
-  // Seed nodes (real)
-  const onlineNodes = status.nodes.filter((n) => n.online);
+  // Seed nodes (real — from /api/network)
   const seedNodes = status.nodes.map((n, i) => {
-    const angle = (i / status.nodes.length) * Math.PI * 2;
+    const angle = (i / Math.max(status.nodes.length, 1)) * Math.PI * 2;
     const r = Math.min(width, height) * 0.25;
     return {
       id: n.id,
       label: n.name,
-      shortAddr: shortAddr(rng),
-      version: '3.0.3',
+      shortAddr: n.host || n.id,
+      version: '', // version not exposed by /api/network
       host: n.host,
       port: 8333,
-      latency: n.rpcLatencyMs ?? 30,
+      latency: n.rpcLatencyMs ?? 0, // 0 = unknown
       height: n.height,
       connectionCount: n.peers,
       isSeed: true,
@@ -140,40 +155,46 @@ function buildGraph(status: NetworkStatus, width: number, height: number): { nod
   });
   nodes.push(...seedNodes);
 
-  // Synthetic peers around each online seed node based on peers count
-  onlineNodes.forEach((seed) => {
-    const peerCount = Math.min(seed.peers, 12);
-    const seedIdx = nodes.findIndex((n) => n.id === seed.id);
-    for (let p = 0; p < peerCount; p++) {
-      const angle = rng() * Math.PI * 2;
-      const r = 60 + rng() * 80;
-      const id = `${seed.id}-peer-${p}`;
-      const latency = Math.floor(20 + rng() * 280);
-      nodes.push({
-        id,
-        label: `${REGIONS[Math.floor(rng() * REGIONS.length)]}-${p}`,
-        shortAddr: shortAddr(rng),
-        version: VERSIONS[Math.floor(rng() * VERSIONS.length)],
-        host: `${Math.floor(rng() * 255)}.${Math.floor(rng() * 255)}.${Math.floor(rng() * 255)}.${Math.floor(rng() * 255)}`,
-        port: 8333,
-        latency,
-        height: Math.max(0, seed.height - Math.floor(rng() * 5)),
-        connectionCount: Math.floor(rng() * 8) + 1,
-        isSeed: false,
-        online: true,
-        x: nodes[seedIdx].x + Math.cos(angle) * r,
-        y: nodes[seedIdx].y + Math.sin(angle) * r,
-        vx: 0,
-        vy: 0,
-        fx: null,
-        fy: null,
-      });
-      // Edge seed -> peer
-      edges.push({ source: seed.id, target: id, latency });
+  // Real peers (from /api/blockchain/peers) — attached to the first online seed.
+  // Real peers have no lat/lon and no latency, so cluster them around their seed
+  // and mark link latency as 0 (unknown).
+  const anchorSeed = seedNodes.find((s) => s.online) ?? seedNodes[0];
+  const connectedPeers = peers.filter((p) => p.connected);
+  const peerList = connectedPeers.length > 0 ? connectedPeers : peers;
+
+  peerList.forEach((peer, p) => {
+    const angle = (p / Math.max(peerList.length, 1)) * Math.PI * 2;
+    const r = 70 + (p % 3) * 35;
+    const id = `peer-${p}`;
+    const anchor = anchorSeed ?? { x: cx, y: cy };
+    nodes.push({
+      id,
+      label: peer.incoming
+        ? `in ${shortPeerLabel(peer, p)}`
+        : `out ${shortPeerLabel(peer, p)}`,
+      shortAddr: shortPeerLabel(peer, p),
+      version: peer.sub_version || '',
+      host: peer.host || peer.address?.split(':')[0] || '—',
+      port: peer.port || 8333,
+      latency: 0, // unknown — peers API exposes no latency
+      height: peer.height || 0,
+      connectionCount: 1,
+      isSeed: false,
+      online: peer.connected,
+      x: anchor.x + Math.cos(angle) * r,
+      y: anchor.y + Math.sin(angle) * r,
+      vx: 0,
+      vy: 0,
+      fx: null,
+      fy: null,
+    });
+    // Edge anchor seed -> peer (latency unknown → 0)
+    if (anchorSeed) {
+      edges.push({ source: anchorSeed.id, target: id, latency: 0 });
     }
   });
 
-  // Inter-seed edges
+  // Inter-seed edges (real latencies where measured)
   for (let i = 0; i < seedNodes.length; i++) {
     for (let j = i + 1; j < seedNodes.length; j++) {
       if (seedNodes[i].online && seedNodes[j].online) {
@@ -181,21 +202,6 @@ function buildGraph(status: NetworkStatus, width: number, height: number): { nod
           source: seedNodes[i].id,
           target: seedNodes[j].id,
           latency: Math.max(seedNodes[i].latency, seedNodes[j].latency),
-        });
-      }
-    }
-  }
-
-  // A few peer-to-peer cross links for mesh feel
-  const peerNodes = nodes.filter((n) => !n.isSeed);
-  for (let i = 0; i < peerNodes.length; i++) {
-    if (rng() < 0.3 && i + 1 < peerNodes.length) {
-      const j = (i + 1 + Math.floor(rng() * 3)) % peerNodes.length;
-      if (j !== i) {
-        edges.push({
-          source: peerNodes[i].id,
-          target: peerNodes[j].id,
-          latency: Math.floor(40 + rng() * 200),
         });
       }
     }
@@ -209,6 +215,7 @@ function buildGraph(status: NetworkStatus, width: number, height: number): { nod
    ═══════════════════════════════════════════════════════════ */
 
 function latencyColor(ms: number): string {
+  if (ms <= 0) return '#64748b'; // unknown / no data — slate
   if (ms < 50) return '#22c55e'; // green
   if (ms < 200) return '#f59e0b'; // amber
   return '#ef4444'; // red
@@ -226,6 +233,8 @@ export default function NetworkTopology() {
   const cs = lang === 'cs';
 
   const [status, setStatus] = useState<NetworkStatus | null>(null);
+  const [peers, setPeers] = useState<PeerInfo[]>([]);
+  const [peersError, setPeersError] = useState(false);
   const [error, setError] = useState(false);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
@@ -245,26 +254,38 @@ export default function NetworkTopology() {
 
   const fetchStatus = useCallback(async () => {
     try {
-      const res = await fetch('/api/network', { cache: 'no-store' });
-      if (res.ok) {
-        const data = await res.json();
+      const [netRes, peersRes] = await Promise.all([
+        fetch('/api/network', { cache: 'no-store' }),
+        fetch('/api/blockchain/peers', { cache: 'no-store' }),
+      ]);
+      if (netRes.ok) {
+        const data = await netRes.json();
         setStatus(data);
         setError(false);
       } else {
         setError(true);
       }
+      if (peersRes.ok) {
+        const pdata: PeersResponse = await peersRes.json();
+        setPeers(Array.isArray(pdata.peers) ? pdata.peers : []);
+        setPeersError(false);
+      } else {
+        setPeers([]);
+        setPeersError(true);
+      }
     } catch {
       setError(true);
+      setPeersError(true);
     }
   }, []);
 
   usePolling(fetchStatus, 30_000);
 
-  // Build graph when status changes — compute via useMemo to avoid cascading renders
+  // Build graph when status or peers change
   const builtGraph = useMemo(() => {
     if (!status) return null;
-    return buildGraph(status, VIEW_W, VIEW_H);
-  }, [status]);
+    return buildGraph(status, peers, VIEW_W, VIEW_H);
+  }, [status, peers]);
 
   useEffect(() => {
     if (!builtGraph) return;
@@ -517,6 +538,18 @@ export default function NetworkTopology() {
             ? 'Interaktivní graf P2P mesh spojení. Kolečka = peery (velikost podle počtu spojení), čáry = spojení (barva podle latence).'
             : 'Interactive force-directed graph of P2P mesh connections. Circles = peers (sized by connection count), lines = links (colored by latency).'}
         </p>
+        {peers.length === 0 && !peersError && (
+          <p className="text-xs text-amber-400/80 inline-flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+            {cs ? 'Žádné peery nejsou připojeny — zobrazuji pouze seed uzly.' : 'No peers connected — showing seed nodes only.'}
+          </p>
+        )}
+        {peersError && (
+          <p className="text-xs text-red-400/80 inline-flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+            {cs ? 'Peer data nedostupná — zobrazuji pouze seed uzly.' : 'Peer data unavailable — showing seed nodes only.'}
+          </p>
+        )}
       </div>
 
       <div className="zion-rainbow-sub p-4" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
@@ -650,15 +683,17 @@ export default function NetworkTopology() {
                     >
                       {node.shortAddr}
                     </text>
-                    <text
-                      y={radius + 22}
-                      textAnchor="middle"
-                      fill="rgba(160,160,180,0.4)"
-                      fontSize="7"
-                      fontFamily="monospace"
-                    >
-                      v{node.version}
-                    </text>
+                    {node.version && (
+                      <text
+                        y={radius + 22}
+                        textAnchor="middle"
+                        fill="rgba(160,160,180,0.4)"
+                        fontSize="7"
+                        fontFamily="monospace"
+                      >
+                        v{node.version}
+                      </text>
+                    )}
                   </g>
                 );
               })}
@@ -676,11 +711,11 @@ export default function NetworkTopology() {
                 <span className="text-gray-500">{cs ? 'Port' : 'Port'}</span>
                 <span className="text-gray-300 font-mono text-right">{hovered.port}</span>
                 <span className="text-gray-500">{cs ? 'Verze' : 'Version'}</span>
-                <span className="text-gray-300 font-mono text-right">v{hovered.version}</span>
+                <span className="text-gray-300 font-mono text-right">{hovered.version ? `v${hovered.version}` : '—'}</span>
                 <span className="text-gray-500">{cs ? 'Latence' : 'Latency'}</span>
-                <span className="font-mono text-right" style={{ color: latencyColor(hovered.latency) }}>{hovered.latency}ms</span>
+                <span className="font-mono text-right" style={{ color: latencyColor(hovered.latency) }}>{hovered.latency > 0 ? `${hovered.latency}ms` : '—'}</span>
                 <span className="text-gray-500">{cs ? 'Výška' : 'Height'}</span>
-                <span className="text-gray-300 font-mono text-right">{hovered.height.toLocaleString()}</span>
+                <span className="text-gray-300 font-mono text-right">{hovered.height > 0 ? hovered.height.toLocaleString() : '—'}</span>
                 <span className="text-gray-500">{cs ? 'Spojení' : 'Connections'}</span>
                 <span className="text-gray-300 font-mono text-right">{hovered.connectionCount}</span>
               </div>
@@ -701,6 +736,10 @@ export default function NetworkTopology() {
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-0.5 bg-red-500" />
               <span className="text-gray-400">&gt;200ms</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-0.5 bg-slate-500" />
+              <span className="text-gray-400">{cs ? 'neznámá' : 'unknown'}</span>
             </div>
             <div className="flex items-center gap-1.5 ml-4">
               <div className="w-3 h-3 rounded-full bg-zion-gold" />
