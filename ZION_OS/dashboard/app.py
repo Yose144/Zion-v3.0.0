@@ -2706,7 +2706,7 @@ def _build_status_edge_primary() -> dict:
         "timestamp": datetime.now().isoformat(),
         "topology": "edge-primary",
         "node1": n1,
-        "node2": {"running": False, "chain_height": None, "tip_hash": None, "known_peers": 0, "mempool_size": 0},
+        "node2": edge_node2_status if edge_node2_status.get("running") else {"running": False, "chain_height": None, "tip_hash": None, "known_peers": 0, "mempool_size": 0},
         "edge_node": edge_node1_status,
         "edge_node2": edge_node2_status,
         "pool": pool_status,
@@ -8550,9 +8550,13 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/swap/initiate":
             self._json({"ok": False, "error": "Swap initiation requires POST — use POST /api/swap/initiate"})
         elif route == "/api/warp/health":
-            alive = check_port_open("127.0.0.1", 9333, timeout=1.5)
-            self._json({"ok": alive, "service": "warp", "port": 9333,
-                        "status": "online" if alive else "offline"})
+            alive = check_port_open("127.0.0.1", 8453, timeout=1.5)
+            health = fetch_service_json("127.0.0.1", 8453, "/health") if alive else {}
+            self._json({"ok": alive, "service": "warp", "port": 8453,
+                        "status": "online" if alive else "offline",
+                        "version": health.get("version", "—") if health else "—",
+                        "transfers_total": health.get("transfers_total", 0) if health else 0,
+                        "transfers_pending": health.get("transfers_pending", 0) if health else 0})
         elif route == "/api/oasis/stats":
             alive = check_port_open("127.0.0.1", 8094, timeout=1.5)
             health = fetch_service_json("127.0.0.1", 8094, "/health") if alive else {}
@@ -8597,13 +8601,20 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json({"ok": True, "missions": [], "total": 0, "note": "Issobella Space not yet deployed"})
         # ── L3 endpoints: WARP, AI agents, NCL ──
         elif route == "/api/l3/warp/chains":
-            warp_alive = check_port_open("127.0.0.1", 9333, timeout=1.5)
-            self._json({"ok": warp_alive, "chains": [], "total": 0,
-                        "status": "online" if warp_alive else "offline",
-                        "note": "WARP relay not yet started" if not warp_alive else ""})
+            warp_alive = check_port_open("127.0.0.1", 8453, timeout=1.5)
+            chains = []
+            if warp_alive:
+                data = fetch_service_json("127.0.0.1", 8453, "/chains", timeout=2.0)
+                chains = data.get("data", []) if data else []
+            self._json({"ok": warp_alive, "chains": chains, "total": len(chains),
+                        "status": "online" if warp_alive else "offline"})
         elif route == "/api/l3/warp/transfers":
-            warp_alive = check_port_open("127.0.0.1", 9333, timeout=1.5)
-            self._json({"ok": warp_alive, "transfers": [], "total": 0,
+            warp_alive = check_port_open("127.0.0.1", 8453, timeout=1.5)
+            transfers = []
+            if warp_alive:
+                data = fetch_service_json("127.0.0.1", 8453, "/transfers", timeout=2.0)
+                transfers = data.get("data", []) if data else []
+            self._json({"ok": warp_alive, "transfers": transfers, "total": len(transfers),
                         "status": "online" if warp_alive else "offline"})
         elif route == "/api/l3/ai/agents":
             hiran_status = get_ai_services_status()
