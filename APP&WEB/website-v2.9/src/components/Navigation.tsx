@@ -162,12 +162,13 @@ export default function Navigation() {
           <Link href="/" className="flex items-center space-x-3 group">
             <div className="w-12 h-12 rounded-2xl flex items-center justify-center relative overflow-hidden border border-white/20 group-hover:border-zion-gold/50 transition-colors bg-black/40 shadow-[0_12px_34px_rgba(0,0,0,0.35)]">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,215,0,0.3),transparent_60%)]" />
-              <Image 
-                src="/LogoStargate.jpg" 
-                alt="ZION Logo" 
-                width={48} 
+              <Image
+                src="/zion-icon-hiran.svg"
+                alt="ZION Logo — Hiran Golden Orb"
+                width={48}
                 height={48}
-                className="relative z-10 object-cover w-full h-full"
+                className="relative z-10 w-full h-full"
+                priority
               />
             </div>
             <span className="text-2xl font-bold text-gradient-soft tracking-tight">ZION</span>
