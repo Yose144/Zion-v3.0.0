@@ -22,6 +22,81 @@
 
 ---
 
+## Co je nového 2026-06-29 (Session 5) — CEX Page + DexScreener Integration + Desktop Bridge/DeFi Panels ✅
+
+> **Status:** ✅ DOKONČENO — CEX listings page, DexScreener API integration, WebTerminal `cex` command, ZION_OS desktop bridge/defi panels
+
+### TL;DR
+
+- **Nová `/cex` page** na website — kompletní CEX listings hub s listing status tabulkou (6 burz), DEX trading dashboardem s reálnými daty z DexScreener API, "How to Buy" guide (DEX/CEX/Bridge), FAQ
+- **Nový `/api/cex/listings` endpoint** — data-driven CEX listing registry + DexScreener integration (reálný volume, liquidity, txns, price change pro všechny wZION pairs na Base)
+- **WebTerminal `cex` command** — `cex listings`, `cex dex`, `cex status` + přidáno do `status` overview
+- **ZION_OS desktop** — `DefiPanel` (live price/TVL/liquidity z Edge API) + `BridgePanel` (relay status, L1 locks, EVM mints, uptime)
+- **Opravy** — `/api/defi/status` aktualizovaný s novou bridge adresou + pool data; `bridge-api.ts` bridge adresa opravena
+- **Deploy** — vše nasazeno na Edge (https://zion.cz), verze 3.1.0-cex3
+
+### Co bylo uděláno
+
+#### Web (website-v2.9)
+
+1. **`/cex` page** (`src/app/cex/page.tsx` + `layout.tsx`):
+   - Hero s live DEX price, volume, liquidity, exchange count
+   - DEX Trading Dashboard — aggregate stats (price, volume 24h, liquidity, txns 24h s buys/sells)
+   - Per-pair breakdown tabulka z DexScreener (pair, price, 24h %, liquidity, volume, txns)
+   - CEX Listings tabulka — 6 burz (XT.COM, Azbit, P2B, Binance, KuCoin, Gate.io) s status, pairs, KYC, fee, notes
+   - How to Buy — 3 cesty (DEX/Uniswap, CEX, Bridge)
+   - FAQ — 5 otázek s animate expand/collapse
+   - Refresh button, auto-refresh 60s
+
+2. **`/api/cex/listings` endpoint** (`src/app/api/cex/listings/route.ts`):
+   - CEX listing registry (single source of truth pro exchange status)
+   - DexScreener API integration — fetches reálná trading data pro wZION pairs na Base
+   - Agreguje: total volume 24h, total liquidity, total txns (buys/sells), best price
+   - Per-pair detail: price, price change 24h/1h, liquidity, volume 24h/6h/1h, txns, FDV, market cap
+   - Caching: 5 min s-maxage + stale-while-revalidate
+
+3. **`/api/defi/status` oprava**:
+   - Nová bridge adresa `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467`
+   - Pool data pro oba pooly (WETH + USDC) — slot0, liquidity, tick, price
+   - Chainlink WETH/USD oracle feed
+   - Robustní BigInt handling (0x/empty returns — try/catch + length checks)
+
+4. **`/defi` page vylepšení**:
+   - Pool stats overview karty (Price, TVL, Liquidity, Active Pools)
+   - Aktualizovaný CTA text (1% fee)
+   - DexScreener link na nový pool
+
+5. **`/bridge` page oprava**:
+   - `bridge-api.ts` — `BRIDGE_CONTRACTS_MAINNET.bridge_address` aktualizováno na `0x72c8f0Dc...`
+
+6. **WebTerminal**:
+   - `cex listings` — CEX exchange listing status
+   - `cex dex` — DEX trading data (DexScreener)
+   - `cex status` — CEX + DEX summary
+   - Přidáno do `status` overview commandu
+   - Přidáno do help sekce + autocomplete + quick commands panel
+
+7. **Navigace**:
+   - CEX přidáno do Navigation.tsx (menu + mini links)
+   - CEX přidáno do Footer.tsx
+
+#### ZION_OS Desktop
+
+1. **`DefiPanel.tsx`** — live price, TVL, liquidity, ETH/USD z Edge website API (`/api/defi/price`)
+2. **`BridgePanel.tsx`** — relay status (online/offline), L1 locks, EVM mints, unlocks, uptime, errors z Edge API (`/api/bridge/status`)
+3. **`App.tsx`** — oba panely přidány do dashboard layoutu
+4. Build prošel (`tsc && vite build` ✅)
+
+### Live data na Edge (2026-06-29)
+
+- `/cex` page: **200 OK**
+- `/api/cex/listings`: **ok: true**, DexScreener source
+- `/api/defi/status`: **ok: true**, wZION/WETH pool active, tick=-161184, price=$0.0002
+- wZION supply: 100M
+- Bridge: 5 validators
+
+---
+
 ## Co je nového 2026-06-29 (Session 4) — Uniswap V3 Pools Created + Two-Sided WETH Liquidity + Bridge Fixes ✅
 
 > **Status:** ✅ DOKONČENO — Uniswap V3 pools na Base mainnet, aktivní likvidita, bridge stabilizovaný
