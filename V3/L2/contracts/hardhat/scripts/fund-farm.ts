@@ -60,15 +60,18 @@ async function main() {
   };
 
   // approve
+  const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
   console.log("\nApproving...");
   const tx1 = await wzion.approve(farmAddr, seedAmount, gasOpts);
-  await tx1.wait();
+  await tx1.wait(2);
+  await sleep(3000);
   console.log(`✅ Approved: ${tx1.hash}`);
 
   // fundRewards
   console.log("Funding rewards...");
   const tx2 = await farm.fundRewards(seedAmount, gasOpts);
-  await tx2.wait();
+  await tx2.wait(2);
+  await sleep(3000);
   console.log(`✅ Funded: ${tx2.hash}`);
 
   const pool = await farm.rewardPoolBalance();
