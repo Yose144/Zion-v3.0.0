@@ -485,5 +485,22 @@ E2E Test (full flow):
 
 ---
 
+---
+
+## 🔮 Roadmap Extension — Native Swap
+
+> **Plánovaná rozšíření WARP o přímý swap nativních coinů (BTC↔ETH↔SOL) bez wZION.**
+
+Viz kompletní návrh: [`docs/NATIVE_SWAP_DESIGN.md`](./NATIVE_SWAP_DESIGN.md)
+
+TL;DR:
+- Uživatel zadá `swap(ETH, SOL, amount)` — ZION funguje jen jako **fee token**
+- Interně: DEX agregátor (1inch/Jupiter) + USDC settlement relay přes WARP
+- Dvě implementační cesty: **Aggregated** (rychlé, DEX) a **HTLC Atomic** (trustless, bez custody)
+- Fee distribuce: 50% burn / 25% DAO / 25% validátoři (stejná jako WARP transfer)
+- Thorchain integrace jako alternativa pro BTC↔X (nativní, testovaná likvidita)
+
+---
+
 *Built with 🌀 for the ZION multi-chain universe.*
 *Peace and One Love.* ☮️❤️
