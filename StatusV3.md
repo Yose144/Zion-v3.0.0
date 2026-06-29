@@ -107,7 +107,7 @@
 - **Uniswap V3 pools vytvořeny na Base mainnet** — wZION/USDC (0.3% fee) a wZION/WETH (1% fee), oba inicializovány na $0.0002/ZION
 - **Two-sided likvidita aktivní** na wZION/WETH poolu (100K wZION + 0.0069 WETH, NFT #5431714)
 - **Single-sided likvidita** na obou poolech (1M wZION nad cenou, NFT #5431091 a #5431093)
-- **Bridge stabilizován** — `start_block_height` zvýšen na 11700 (přestal reprocovat už mintnuté locky)
+- **Bridge stabilizován** — reprocessing locků mitigován; v repozitáři je `start_block_height=11300` (runtime na Edge může být vyšší podle live override)
 - **Validator-5 funded** — 0.01 ETH pro gas (došel mu balance)
 - **WETH získán** — wrapnul 0.02 ETH → WETH přes WETH contract `deposit()`
 
@@ -131,7 +131,7 @@
 1. **Pool creation revert** — out of gas (1M → 5.5M gas limit)
 2. **NPM mint revert** — wrong ABI encoding (struct vs individual params)
 3. **Wrong Uniswap addresses** — Base addresses ≠ Ethereum mainnet
-4. **Bridge reprocessing** — `start_block_height` 11300 → 11700
+4. **Bridge reprocessing** — mitigováno (historicky se pracovalo s vyšším start blockem; repo default je 11300)
 5. **Validator-5 ETH** — funded 0.01 ETH
 
 ### Zbývá (user tasks)
@@ -532,7 +532,7 @@ systemctl start zion-edge-node1
 1. ⏳ **Grant BRIDGE_ROLE na wZION pro bridge kontrakt** — pro budoucí normální mints (malé částky)
 2. ⏳ **Redeploy ZIONBridge** bez DAILY_LIMIT (nebo s vyšším) — pro budoucí velké mints
 3. ⏳ **7th lock (100 wZION)** — 4/5 confirmací, potřebuje 5th validator
-4. ⏳ **Seed UniV3 pool** — wZION + WETH likvidita na `0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB`
+4. ⏳ **Deepen UniV3 liquidity** — navýšit aktivní wZION + WETH pozici na `0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699`
 5. ⏳ **E2E test** — swap ZION→ETH a zpět
 6. ⏳ **Veřejné oznámení** DEX likvidity
 
@@ -585,7 +585,7 @@ if (amount >= TIMELOCK_THRESHOLD) {  // 1_000_000 * 1e18
 
 1. ✅ Relay zavolá `executeTimelockedMint()` automaticky
 2. ⏳ ~100M wZION mintováno na `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186`
-3. ⏳ Přidat wZION + WETH likviditu na UniV3Pool (`0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB`)
+3. ⏳ Navýšit wZION + WETH likviditu na aktivním UniV3Pool (`0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699`)
 4. ⏳ E2E test: swap ZION→ETH a zpět
 5. ⏳ Veřejné oznámení DEX likvidity
 
@@ -677,7 +677,7 @@ Viz [`fixL1bridge100m.md`](./fixL1bridge100m.md) pro kompletní chronologii, roo
 | Item | Address / Value | Status |
 |------|-----------------|--------|
 | wZION (Base Mainnet) | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | ✅ Exists, supply > 0 |
-| ZIONBridge (new 5/5) | `0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88` | ✅ threshold = 5, validatorCount = 5 |
+| ZIONBridge (new 5/5, v3) | `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467` | ✅ threshold = 5, validatorCount = 5 |
 | BridgeValidator (new 5/5) | `0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627` | ✅ threshold = 5, guardianCount = 5 |
 | ZIONBridge (old) | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | ❌ BRIDGE_ROLE revoked |
 | 5 validator addresses | see `BRIDGE_MAINNET_READINESS.md` | ✅ Funded (~0.0061 ETH total) |
@@ -688,7 +688,7 @@ Viz [`fixL1bridge100m.md`](./fixL1bridge100m.md) pro kompletní chronologii, roo
 | L1 UTXO lock (memo test) | txid `8eb0bb8c...` | ✅ Relay detected, `default_evm_recipient` fallback active |
 | wZION totalSupply | Base Mainnet | 300 wZION (54 in UniV3 pool, 0 on bridge, ~246 held by users/treasury) |
 
-**Next steps:** ~~Fix UTXO memo propagation~~ ✅ Done (`20379ec4`). ~~Re-send 100M UTXO lock~~ ✅ Done (6 TX s memo, bloky 11611–11612). **⚠️ Bloker #1: poskytnout validator privátní klíč** pro `0xdde17506...` (`ZION_VALIDATOR_PRIVATE_KEY` env var nebo `keys/validator.key`) → restart relay → mint ~100M wZION. **Bloker #2:** Top up validator ETH to ~0.05 ETH. **Bloker #3:** Run E2E lock→mint→burn→unlock test. **Bloker #4:** Přidat wZION + WETH likviditu na UniV3Pool (`0xa88C4C89...`).
+**Status 2026-06-29 (session 7):** Všechny blokery vyřešeny. ~~Bloker #1: validator klíč~~ ✅ ZION_VALIDATOR_PRIVATE_KEY nastaveno + ZION_VALIDATOR_EXTRA_KEYS (5 klíčů). ~~Bloker #2: ETH~~ ✅. ~~Bloker #3: E2E test~~ ✅ Reverse bridge plně funkční (viz sekce níže). **Zbývá:** Deploy ZIONStaking+ZIONFarm, USDT likvidita.
 
 ### Testnet Fixes
 
@@ -706,6 +706,46 @@ Viz [`fixL1bridge100m.md`](./fixL1bridge100m.md) pro kompletní chronologii, roo
 - `V3/L2/bridge/tests/mainnet_readiness.rs`
 - `V3/docs/BRIDGE_MAINNET_DEPLOY.md`, `BRIDGE_MAINNET_LAUNCH_CHECKLIST.md`, `BRIDGE_MULTISIG.md`
 - `L2audit.md`, `ZION_3.0.2_PLAN.md`, `BRIDGE_MAINNET_READINESS.md` (new)
+
+---
+
+## Co je nového 2026-06-29 (Reverse Bridge E2E + L1 Vault Fix — FULLY OPERATIONAL)
+
+> **Status:** ✅ KOMPLETNÍ — Reverse bridge (EVM→L1) funguje end-to-end na mainnet. L1 vault seed bug opraven, node přebuildn a nasazen na Edge, 100 ZION unlock potvrzen.
+
+### Bridge Vault Fix
+
+**Příčina:** V commitu `4b94181f` (Edge sync) byl `BRIDGE_VAULT_SEED` omylem změněn z `"ZION Bridge Vault V3 Mainnet"` na `"...v2_2026-06-03-GENESIS-RESET"`, čímž se kanonická vault adresa změnila na prázdnou (`zion106v7v0...`). Skutečný vault (`zion1w0r0a560...` s ~100M ZION) zůstal nezměněn, ale `submitBridgeUnlock` hledal UTXOs ve špatném vaultu.
+
+**Fix:** `V3/L1/core/src/crypto.rs` + `V3/L1/core/src/fee.rs` — seed vrácen na původní, konstanta aktualizována. 514 testů OK.
+
+### Edge Deploy
+
+```
+cargo build --release -p zion-core --bin node  # 38.88s na Edge
+cp V3/target/release/node /usr/local/bin/zion-node
+systemctl restart zion-edge-node1
+```
+
+### E2E Bridge Test (FINÁLNÍ VÝSLEDEK)
+
+| Krok | TX / blok | Status |
+|------|-----------|--------|
+| `bridgeBurn(100 wZION)` | TX `0x70ad4d93...` Base blok 47982490 | ✅ |
+| BridgeBurn event detection | relay `2026-06-29T17:34:40` | ✅ |
+| 5/5 validator signatures | ZION_VALIDATOR_EXTRA_KEYS + ZION_BRIDGE_VALIDATOR_PUBKEYS | ✅ |
+| `submitBridgeUnlock` L1 | L1 blok 20919, 100 ZION → `zion16825y...` | ✅ |
+| `confirmBurnRelease` EVM | TX `0x97f41f0add2e08...` Base mainnet | ✅ |
+| Replay protection | `bridge unlock replay key already used` | ✅ |
+
+### Edge Konfigurace (trvalá)
+
+| Soubor | Proměnná | Hodnota |
+|--------|----------|---------|
+| `/root/zion-validator-key.env` | `ZION_VALIDATOR_PRIVATE_KEY` | klíč validátora 1 |
+| `/root/zion-validator-key.env` | `ZION_VALIDATOR_EXTRA_KEYS` | klíče validátorů 2–5 |
+| `/etc/systemd/system/zion-edge-node1.service.d/bridge-validators.conf` | `ZION_BRIDGE_VALIDATOR_PUBKEYS` | 5 compressed pubkeys |
+| `/etc/systemd/system/zion-edge-node1.service.d/bridge-validators.conf` | `ZION_BRIDGE_VALIDATOR_THRESHOLD` | `5` |
 
 ---
 
