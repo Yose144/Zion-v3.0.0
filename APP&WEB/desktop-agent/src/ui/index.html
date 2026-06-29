@@ -3905,60 +3905,204 @@
               <h1 class="web29-title text-gradient">ZION Bridge</h1>
               <div class="web29-chip" id="bridge-status-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>Base Mainnet</div>
             </div>
+            <div class="web29-subtitle">Lock ZION on L1 &rarr; receive wZION on Base. Burn wZION &rarr; receive ZION on L1. 1:1 peg, no fees.</div>
+          </div>
+        </div>
+
+        <!-- Live stats strip -->
+        <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
+          <div class="stat-card" style="padding:12px 14px">
+            <h3 style="font-size:10px">MINTS</h3>
+            <div class="value" id="bridge-stat-mints" style="font-size:22px">—</div>
+            <div class="label">L1→Base confirmed</div>
+          </div>
+          <div class="stat-card" style="padding:12px 14px">
+            <h3 style="font-size:10px">BURNS</h3>
+            <div class="value" id="bridge-stat-burns" style="font-size:22px">—</div>
+            <div class="label">Base→L1 confirmed</div>
+          </div>
+          <div class="stat-card" style="padding:12px 14px">
+            <h3 style="font-size:10px">L1 HEIGHT</h3>
+            <div class="value" id="bridge-stat-l1height" style="font-size:22px">—</div>
+            <div class="label">Latest block</div>
+          </div>
+          <div class="stat-card" style="padding:12px 14px">
+            <h3 style="font-size:10px">RELAY</h3>
+            <div class="value" id="bridge-stat-relay" style="font-size:22px">—</div>
+            <div class="label">Uptime</div>
           </div>
         </div>
 
         <div class="section-tabs" data-group="bridge">
-          <div class="section-tab active" data-section="bridge-status">
+          <div class="section-tab active" data-section="bridge-lock">
             <span class="tab-dot"></span>
+            <span>Lock ZION</span>
+          </div>
+          <div class="section-tab" data-section="bridge-burn">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+            <span>Burn wZION</span>
+          </div>
+          <div class="section-tab" data-section="bridge-status">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-check"></use></svg>
             <span>Status</span>
           </div>
           <div class="section-tab" data-section="bridge-contracts">
             <svg class="tab-icon icon" aria-hidden="true"><use href="#i-link"></use></svg>
             <span>Contracts</span>
           </div>
-          <div class="section-tab" data-section="bridge-guide">
-            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-info"></use></svg>
-            <span>Guide</span>
+        </div>
+
+        <!-- ── Lock ZION → wZION ────────────────────────────── -->
+        <div id="bridge-lock" class="section-panel active">
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-bridge"></use></svg> Lock ZION &rarr; wZION (L1 &rarr; Base)</span>
+            </h2>
+            <div class="stack-col panel-mt-20">
+
+              <!-- Info banner -->
+              <div class="control-panel panel-tight" style="border-left:3px solid rgba(16,185,129,0.6);margin-bottom:4px">
+                <div class="stack-col" style="gap:4px">
+                  <span style="font-size:12px;font-weight:600;color:#6ee7b7">How it works</span>
+                  <span style="font-size:12px;color:rgba(255,255,255,0.7)">Send ZION to the Bridge Vault address with a special memo that includes your Base EVM address. Minimum 100 ZION. After 60-block L1 finality (~10 min), the relay mints wZION to your EVM wallet.</span>
+                </div>
+              </div>
+
+              <!-- Step 1: EVM address -->
+              <div class="form-group">
+                <label>Your Base EVM Address</label>
+                <div class="inline-row">
+                  <input type="text" id="bridge-lock-evm" placeholder="0x..." class="input-flex-mono" maxlength="42" />
+                </div>
+                <span style="font-size:11px;color:rgba(255,255,255,0.4)">wZION will be minted to this address on Base Mainnet</span>
+              </div>
+
+              <!-- Step 2: Amount -->
+              <div class="form-group">
+                <label>Amount (ZION) <span style="color:rgba(255,255,255,0.35);font-weight:400">— min. 100 ZION</span></label>
+                <input type="number" id="bridge-lock-amount" placeholder="100" min="100" step="1" class="form-control" />
+              </div>
+
+              <!-- Step 3: Generated memo -->
+              <div class="form-group">
+                <label>Transaction Memo <span style="font-size:11px;color:rgba(255,255,255,0.35);font-weight:400">(auto-generated)</span></label>
+                <div class="inline-row">
+                  <input type="text" id="bridge-lock-memo" readonly placeholder="Fill EVM address above..." class="input-flex-mono" style="color:#6ee7b7" />
+                  <button class="btn btn-ghost btn-sm" id="bridge-lock-copy-memo">Copy</button>
+                </div>
+                <span class="status-note hidden" id="bridge-lock-memo-copied">Memo copied!</span>
+              </div>
+
+              <!-- Destination address -->
+              <div class="form-group">
+                <label>Bridge Vault Address <span style="font-size:11px;color:rgba(255,255,255,0.35);font-weight:400">(send ZION here)</span></label>
+                <div class="inline-row">
+                  <input type="text" value="zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0" readonly class="input-flex-mono" style="color:#6ee7b7;font-size:11px" />
+                  <button class="btn btn-ghost btn-sm" onclick="copyToClipboard('zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0','bridge-vault-addr-copied')">Copy</button>
+                </div>
+                <span class="status-note hidden" id="bridge-vault-addr-copied">Address copied!</span>
+              </div>
+
+              <!-- Send button -->
+              <div class="inline-row" style="gap:10px;margin-top:4px">
+                <button class="btn btn-primary" id="bridge-lock-send-btn" disabled>
+                  <svg class="icon icon-sm" aria-hidden="true"><use href="#i-spark"></use></svg>
+                  Send Lock TX
+                </button>
+                <button class="btn btn-ghost btn-sm" id="bridge-lock-fill-wallet">Use active wallet</button>
+              </div>
+              <div id="bridge-lock-status" class="status-note" style="margin-top:8px"></div>
+              <div id="bridge-lock-tx-result" class="control-panel panel-tight" style="display:none;border-left:3px solid rgba(16,185,129,0.6);margin-top:8px">
+                <div class="stack-col" style="gap:4px">
+                  <span style="font-size:12px;font-weight:600;color:#6ee7b7">TX Submitted</span>
+                  <span style="font-size:12px;color:rgba(255,255,255,0.7)">TX Hash: <code id="bridge-lock-txhash" style="font-size:11px"></code></span>
+                  <span style="font-size:12px;color:rgba(255,255,255,0.5)">Wait ~10 min for 60-block finality. wZION will appear in your Base wallet.</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div id="bridge-status" class="section-panel active">
+        <!-- ── Burn wZION → ZION ─────────────────────────────── -->
+        <div id="bridge-burn" class="section-panel">
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg> Burn wZION &rarr; ZION (Base &rarr; L1)</span>
+            </h2>
+            <div class="stack-col panel-mt-20">
+
+              <div class="control-panel panel-tight" style="border-left:3px solid rgba(249,115,22,0.6)">
+                <div class="stack-col" style="gap:4px">
+                  <span style="font-size:12px;font-weight:600;color:#fb923c">How it works</span>
+                  <span style="font-size:12px;color:rgba(255,255,255,0.7)">Call <code style="background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:4px;font-size:11px">burn(amount, l1Recipient)</code> on the wZION contract on Base. After 64 EVM confirmations (~2 min), the relay unlocks ZION to your L1 address.</span>
+                </div>
+              </div>
+
+              <div class="control-panel panel-tight" style="margin-top:8px">
+                <div class="stack-col" style="gap:10px">
+                  <span style="font-size:12px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.05em">Quick Actions</span>
+                  <div class="inline-row" style="flex-wrap:wrap;gap:8px">
+                    <button class="btn btn-primary" id="bridge-burn-open-site" onclick="window.electronAPI?.openExternal?.('https://zionterranova.com/bridge')">
+                      <svg class="icon icon-sm" aria-hidden="true"><use href="#i-link"></use></svg>
+                      Open Burn Widget (Website)
+                    </button>
+                    <button class="btn btn-ghost btn-sm" onclick="window.electronAPI?.openExternal?.('https://basescan.org/token/0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6#writeContract')">
+                      BaseScan Contract
+                    </button>
+                  </div>
+                  <div class="stack-col" style="gap:6px;margin-top:4px">
+                    <div style="font-size:11px;color:rgba(255,255,255,0.5)">wZION Contract (Base Mainnet)</div>
+                    <div class="inline-row">
+                      <code style="flex:1;background:rgba(0,0,0,0.3);padding:4px 8px;border-radius:6px;font-size:11px;color:#fb923c">0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6</code>
+                      <button class="btn btn-ghost btn-sm" onclick="copyToClipboard('0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6','bridge-burn-wzion-copied')">Copy</button>
+                    </div>
+                    <span class="status-note hidden" id="bridge-burn-wzion-copied">Copied!</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step by step -->
+              <div class="control-panel panel-tight" style="margin-top:8px">
+                <div class="stack-col" style="gap:8px">
+                  <span style="font-size:12px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.05em">Steps</span>
+                  <div class="bridge-readiness-row status-done"><span class="bridge-readiness-icon">1</span><span class="bridge-readiness-label">Connect MetaMask to Base Mainnet</span></div>
+                  <div class="bridge-readiness-row status-done"><span class="bridge-readiness-icon">2</span><span class="bridge-readiness-label">Open burn widget on zionterranova.com/bridge</span></div>
+                  <div class="bridge-readiness-row status-done"><span class="bridge-readiness-icon">3</span><span class="bridge-readiness-label">Enter amount + your zion1 L1 address</span></div>
+                  <div class="bridge-readiness-row status-done"><span class="bridge-readiness-icon">4</span><span class="bridge-readiness-label">Confirm TX — wait ~2 min for 64 EVM blocks</span></div>
+                  <div class="bridge-readiness-row status-done"><span class="bridge-readiness-icon">5</span><span class="bridge-readiness-label">ZION unlocked to your L1 wallet</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Status / Readiness ────────────────────────────── -->
+        <div id="bridge-status" class="section-panel">
           <div class="control-panel">
             <h2 class="panel-header-row">
               <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg> Vault & Validator Status</span>
             </h2>
             <div class="stack-col panel-mt-20">
-              <!-- Bridge Vault -->
               <div class="control-panel panel-tight" style="border-left:3px solid rgba(16,185,129,0.6)">
                 <div class="stack-col" style="gap:6px">
                   <span style="font-size:12px;color:rgba(255,255,255,0.5)">L1 Bridge Vault (keyless)</span>
                   <div class="inline-row" style="gap:8px;align-items:center">
-                    <code style="background:rgba(0,0,0,0.3);padding:4px 8px;border-radius:6px;font-size:12px;color:#6ee7b7">zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0</code>
+                    <code style="background:rgba(0,0,0,0.3);padding:4px 8px;border-radius:6px;font-size:11px;color:#6ee7b7">zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0</code>
                     <button class="btn btn-primary btn-sm" onclick="copyToClipboard('zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0', 'bridge-vault-copied')">Copy</button>
                   </div>
                   <span class="status-note hidden" id="bridge-vault-copied">Copied!</span>
                   <div class="stack-col" style="gap:4px;margin-top:4px">
-                    <div class="bridge-readiness-row status-done">
-                      <span class="bridge-readiness-label">Vault balance: <span id="bridge-vault-balance">~100M ZION</span></div>
-                    <div class="bridge-readiness-row status-done">
-                      <span class="bridge-readiness-label">UTXO locks: <span id="bridge-vault-locks">6 TX (blocks 11611–11612)</span></div>
+                    <div class="bridge-readiness-row status-done"><span class="bridge-readiness-label">Vault balance: <span id="bridge-vault-balance">—</span></span></div>
+                    <div class="bridge-readiness-row status-done"><span class="bridge-readiness-label">UTXO locks: <span id="bridge-vault-locks">—</span></span></div>
                   </div>
                 </div>
               </div>
-              <!-- Validator Multisig -->
-              <div class="control-panel panel-tight" style="border-left:3px solid rgba(99,102,241,0.6)">
+              <div class="control-panel panel-tight" style="border-left:3px solid rgba(99,102,241,0.6);margin-top:8px">
                 <div class="stack-col" style="gap:6px">
                   <span style="font-size:12px;color:rgba(255,255,255,0.5)">Bridge Validator Multisig</span>
-                  <div class="bridge-readiness-row status-done">
-                    <span class="bridge-readiness-label">Threshold: 5/5 (fail-closed)</span>
-                  </div>
-                  <div class="bridge-readiness-row status-done">
-                    <span class="bridge-readiness-label">Validator count: 5 guardians</span>
-                  </div>
-                  <div class="bridge-readiness-row status-done">
-                    <span class="bridge-readiness-label">Contract: 0x9C138dC6...a835627</span>
-                  </div>
+                  <div class="bridge-readiness-row status-done"><span class="bridge-readiness-label">Threshold: 5/5 (fail-closed)</span></div>
+                  <div class="bridge-readiness-row status-done"><span class="bridge-readiness-label">Validator count: 5 guardians</span></div>
+                  <div class="bridge-readiness-row status-done"><span class="bridge-readiness-label">Contract: 0x9C138dC6...a835627</span></div>
                 </div>
               </div>
             </div>
@@ -3973,6 +4117,7 @@
           </div>
         </div>
 
+        <!-- ── Contracts ─────────────────────────────────────── -->
         <div id="bridge-contracts" class="section-panel">
           <div class="control-panel">
             <h2 class="panel-header-row">
@@ -3980,10 +4125,11 @@
             </h2>
             <div class="stack-col panel-mt-20">
               <div class="form-group form-group-no-margin">
-                <label>wZION ERC-20</label>
+                <label>wZION ERC-20 (Base Mainnet)</label>
                 <div class="inline-row">
                   <input type="text" id="bridge-wzion-addr" value="0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6" readonly class="input-flex-mono" />
                   <button class="btn btn-primary btn-sm" onclick="copyToClipboard('0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6', 'bridge-wzion-copied')">Copy</button>
+                  <button class="btn btn-ghost btn-sm" onclick="window.electronAPI?.openExternal?.('https://basescan.org/token/0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6')">BaseScan</button>
                 </div>
                 <span class="status-note hidden" id="bridge-wzion-copied">Copied!</span>
               </div>
@@ -3992,6 +4138,7 @@
                 <div class="inline-row">
                   <input type="text" id="bridge-addr" value="0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467" readonly class="input-flex-mono" />
                   <button class="btn btn-primary btn-sm" onclick="copyToClipboard('0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467', 'bridge-copied')">Copy</button>
+                  <button class="btn btn-ghost btn-sm" onclick="window.electronAPI?.openExternal?.('https://basescan.org/address/0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467')">BaseScan</button>
                 </div>
                 <span class="status-note hidden" id="bridge-copied">Copied!</span>
               </div>
@@ -4000,30 +4147,9 @@
                 <div class="inline-row">
                   <input type="text" id="bridge-validator-addr" value="0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627" readonly class="input-flex-mono" />
                   <button class="btn btn-primary btn-sm" onclick="copyToClipboard('0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627', 'bridge-validator-copied')">Copy</button>
+                  <button class="btn btn-ghost btn-sm" onclick="window.electronAPI?.openExternal?.('https://basescan.org/address/0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627')">BaseScan</button>
                 </div>
                 <span class="status-note hidden" id="bridge-validator-copied">Copied!</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div id="bridge-guide" class="section-panel">
-          <div class="control-panel">
-            <h2 class="panel-header-row">
-              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-info"></use></svg> How to Bridge</span>
-            </h2>
-            <div class="stack-col panel-mt-20">
-              <div class="control-panel panel-tight" style="border-left:3px solid rgba(16,185,129,0.6)">
-                <div class="stack-col" style="gap:4px">
-                  <span style="font-size:12px;color:rgba(255,255,255,0.5)">L1 &rarr; Base</span>
-                  <span style="font-size:13px;color:rgba(255,255,255,0.8)">Send ZION to the bridge address with memo <code style="background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:6px;font-size:12px">BRIDGE:base:0xYourEvmAddress</code>. Minimum 100 ZION. Wait ~10 min for 60-block finality, then wZION is minted.</span>
-                </div>
-              </div>
-              <div class="control-panel panel-tight" style="border-left:3px solid rgba(249,115,22,0.6)">
-                <div class="stack-col" style="gap:4px">
-                  <span style="font-size:12px;color:rgba(255,255,255,0.5)">Base &rarr; L1</span>
-                  <span style="font-size:13px;color:rgba(255,255,255,0.8)">Use the website burn widget or call <code style="background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:6px;font-size:12px">burn(amount, l1Recipient)</code> on wZION. Wait ~2 min for 64 EVM block confirmations, then ZION is unlocked on L1.</span>
-                </div>
               </div>
             </div>
           </div>
@@ -5529,6 +5655,250 @@
       <!-- ═══════════════════════════════════════════════ -->
       <!-- DeFi — Staking, Farming, L2 Overview           -->
       <!-- ═══════════════════════════════════════════════ -->
+      <div id="defi-view" class="view-shell d-none">
+        <div class="web29-page-header">
+          <div class="web29-title-stack">
+            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Layer 2</div>
+            <div class="web29-title-row">
+              <h1 class="web29-title text-gradient">DeFi</h1>
+              <div class="web29-chip" id="defi-network-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>Base Mainnet</div>
+            </div>
+            <div class="web29-subtitle">wZION on Base — swap, stake, farm, and track your portfolio</div>
+          </div>
+          <div class="header-badge-wrap">
+            <button class="btn btn-ghost btn-sm" id="defi-refresh-btn" title="Refresh DeFi data">
+              <svg class="icon icon-sm" aria-hidden="true"><use href="#i-refresh"></use></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Price strip -->
+        <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
+          <div class="stat-card" style="padding:12px 14px">
+            <h3 style="font-size:10px">ZION PRICE</h3>
+            <div class="value" id="defi-price-usd" style="font-size:22px">—</div>
+            <div class="label">USD per ZION</div>
+          </div>
+          <div class="stat-card" style="padding:12px 14px">
+            <h3 style="font-size:10px">24H CHANGE</h3>
+            <div class="value" id="defi-price-change" style="font-size:22px">—</div>
+            <div class="label">vs yesterday</div>
+          </div>
+          <div class="stat-card" style="padding:12px 14px">
+            <h3 style="font-size:10px">wZION SUPPLY</h3>
+            <div class="value" id="defi-wzion-supply" style="font-size:22px">—</div>
+            <div class="label">Total minted</div>
+          </div>
+          <div class="stat-card" style="padding:12px 14px">
+            <h3 style="font-size:10px">STAKING APR</h3>
+            <div class="value" id="defi-staking-apr" style="font-size:22px">~12%</div>
+            <div class="label">Estimated</div>
+          </div>
+        </div>
+
+        <div class="section-tabs" data-group="defi">
+          <div class="section-tab active" data-section="defi-swap">
+            <span class="tab-dot"></span>
+            <span>Swap</span>
+          </div>
+          <div class="section-tab" data-section="defi-pools">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
+            <span>Pools</span>
+          </div>
+          <div class="section-tab" data-section="defi-staking">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-star"></use></svg>
+            <span>Staking</span>
+          </div>
+          <div class="section-tab" data-section="defi-farming">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+            <span>Farming</span>
+          </div>
+          <div class="section-tab" data-section="defi-portfolio">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
+            <span>Portfolio</span>
+          </div>
+        </div>
+
+        <!-- ── Swap ──────────────────────────────────────────── -->
+        <div id="defi-swap" class="section-panel active">
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg> Swap wZION on Uniswap v3</span>
+            </h2>
+            <div class="stack-col panel-mt-20">
+              <div class="control-panel panel-tight" style="border-left:3px solid rgba(99,102,241,0.6)">
+                <div class="stack-col" style="gap:4px">
+                  <span style="font-size:12px;font-weight:600;color:#a5b4fc">wZION / USDT Pool (0.3%)</span>
+                  <div class="inline-row" style="gap:12px;flex-wrap:wrap">
+                    <span style="font-size:12px;color:rgba(255,255,255,0.7)">Price: <strong id="defi-pool-usdt-price">—</strong> USD</span>
+                    <span style="font-size:12px;color:rgba(255,255,255,0.7)">Liquidity: <strong id="defi-pool-usdt-liq">—</strong></span>
+                    <span id="defi-pool-usdt-badge" class="pill pill-compact" style="font-size:10px">Checking...</span>
+                  </div>
+                </div>
+              </div>
+              <div class="control-panel panel-tight" style="border-left:3px solid rgba(16,185,129,0.6);margin-top:6px">
+                <div class="stack-col" style="gap:4px">
+                  <span style="font-size:12px;font-weight:600;color:#6ee7b7">wZION / WETH Pool (0.3%)</span>
+                  <div class="inline-row" style="gap:12px;flex-wrap:wrap">
+                    <span style="font-size:12px;color:rgba(255,255,255,0.7)">Price: <strong id="defi-pool-weth-price">—</strong> USD</span>
+                    <span style="font-size:12px;color:rgba(255,255,255,0.7)">Liquidity: <strong id="defi-pool-weth-liq">—</strong></span>
+                    <span id="defi-pool-weth-badge" class="pill pill-compact" style="font-size:10px">Checking...</span>
+                  </div>
+                </div>
+              </div>
+              <div class="inline-row" style="gap:8px;flex-wrap:wrap;margin-top:12px">
+                <button class="btn btn-primary" onclick="window.electronAPI?.openExternal?.('https://app.uniswap.org/swap?chain=base&outputCurrency=0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6')">
+                  <svg class="icon icon-sm" aria-hidden="true"><use href="#i-link"></use></svg>
+                  Swap on Uniswap
+                </button>
+                <button class="btn btn-ghost btn-sm" onclick="window.electronAPI?.openExternal?.('https://zionterranova.com/defi')">
+                  Open DeFi Dashboard
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Pools ─────────────────────────────────────────── -->
+        <div id="defi-pools" class="section-panel">
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg> Uniswap v3 Pools (Base)</span>
+            </h2>
+            <div class="stack-col panel-mt-20" id="defi-pools-grid">
+              <!-- Populated by renderer -->
+              <div style="color:rgba(255,255,255,0.35);font-size:12px">Loading pool data...</div>
+            </div>
+            <div class="inline-row" style="margin-top:12px;gap:8px">
+              <button class="btn btn-primary btn-sm" onclick="window.electronAPI?.openExternal?.('https://app.uniswap.org/add/v3/base?currency0=0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6')">
+                <svg class="icon icon-sm" aria-hidden="true"><use href="#i-spark"></use></svg>
+                Add Liquidity
+              </button>
+              <button class="btn btn-ghost btn-sm" onclick="window.electronAPI?.openExternal?.('https://app.uniswap.org/pool?chain=base')">
+                My Positions
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Staking ────────────────────────────────────────── -->
+        <div id="defi-staking" class="section-panel">
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg> Stake wZION</span>
+            </h2>
+            <div class="stack-col panel-mt-20">
+              <div class="control-panel panel-tight" style="border-left:3px solid rgba(99,102,241,0.6)">
+                <div class="stack-col" style="gap:6px">
+                  <div class="inline-row" style="gap:20px;flex-wrap:wrap">
+                    <span style="font-size:12px;color:rgba(255,255,255,0.5)">Total Staked: <strong id="defi-total-staked">—</strong></span>
+                    <span style="font-size:12px;color:rgba(255,255,255,0.5)">APR: <strong id="defi-staking-apr-detail">~12%</strong></span>
+                    <span style="font-size:12px;color:rgba(255,255,255,0.5)">Network: <strong id="defi-network">Base Mainnet</strong></span>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group" style="margin-top:12px">
+                <label>Amount (wZION)</label>
+                <input type="number" id="defi-stake-amount" placeholder="0.0" min="0" step="0.01" class="form-control" />
+              </div>
+              <div class="inline-row" style="gap:8px;flex-wrap:wrap">
+                <button class="btn btn-primary btn-sm" id="defi-stake-btn">Stake</button>
+                <button class="btn btn-ghost btn-sm" id="defi-unstake-btn">Unstake</button>
+                <button class="btn btn-ghost btn-sm" id="defi-claim-btn">Claim Rewards</button>
+              </div>
+              <div id="defi-stake-status" class="status-note" style="margin-top:8px"></div>
+              <div class="control-panel panel-tight" style="border-left:3px solid rgba(249,115,22,0.5);margin-top:8px">
+                <span style="font-size:11px;color:rgba(255,255,255,0.5)">Staking requires MetaMask connected to Base Mainnet. Use the website for full on-chain interaction.</span>
+              </div>
+              <button class="btn btn-ghost btn-sm" style="align-self:flex-start;margin-top:6px" onclick="window.electronAPI?.openExternal?.('https://zionterranova.com/defi/staking')">
+                <svg class="icon icon-sm" aria-hidden="true"><use href="#i-link"></use></svg>
+                Open Staking on Website
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Farming ────────────────────────────────────────── -->
+        <div id="defi-farming" class="section-panel">
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg> LP Farming</span>
+            </h2>
+            <div class="stack-col panel-mt-20">
+              <div class="control-panel panel-tight" style="border-left:3px solid rgba(16,185,129,0.6)">
+                <div class="stack-col" style="gap:4px">
+                  <span style="font-size:12px;color:rgba(255,255,255,0.5)">Active Pools: <strong id="defi-farm-pools">—</strong> &nbsp;|&nbsp; Reward rate: <strong id="defi-farm-rps">—</strong> wZION/s</span>
+                </div>
+              </div>
+              <div id="defi-farm-pool-list" class="stack-col panel-mt-20" style="gap:8px">
+                <div class="control-panel panel-tight">
+                  <div class="stack-col" style="gap:6px">
+                    <span style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.8)">wZION / USDT — Pool #0</span>
+                    <div class="inline-row" style="gap:12px">
+                      <span style="font-size:12px;color:rgba(255,255,255,0.5)">APR: <strong>—</strong></span>
+                      <span style="font-size:12px;color:rgba(255,255,255,0.5)">TVL: <strong>—</strong></span>
+                    </div>
+                    <div class="inline-row" style="gap:6px">
+                      <button class="btn btn-ghost btn-sm" id="defi-farm-deposit-btn">Deposit LP</button>
+                      <button class="btn btn-ghost btn-sm" id="defi-farm-withdraw-btn">Withdraw</button>
+                      <button class="btn btn-primary btn-sm" id="defi-farm-harvest-btn">Harvest</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div id="defi-farm-status" class="status-note" style="margin-top:8px"></div>
+              <button class="btn btn-ghost btn-sm" style="align-self:flex-start;margin-top:6px" onclick="window.electronAPI?.openExternal?.('https://zionterranova.com/defi/farming')">
+                <svg class="icon icon-sm" aria-hidden="true"><use href="#i-link"></use></svg>
+                Open Farming on Website
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Portfolio ──────────────────────────────────────── -->
+        <div id="defi-portfolio" class="section-panel">
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg> Portfolio</span>
+            </h2>
+            <div class="stack-col panel-mt-20">
+              <div class="form-group form-group-no-margin">
+                <label>Your EVM Address (Base)</label>
+                <div class="inline-row">
+                  <input type="text" id="defi-portfolio-evm" placeholder="0x..." class="input-flex-mono" maxlength="42" />
+                  <button class="btn btn-primary btn-sm" id="defi-portfolio-lookup-btn">Lookup</button>
+                </div>
+              </div>
+              <div id="defi-portfolio-result" class="stack-col" style="gap:8px;display:none;margin-top:12px">
+                <div class="control-panel panel-tight" style="border-left:3px solid rgba(16,185,129,0.6)">
+                  <div class="stack-col" style="gap:4px">
+                    <span style="font-size:12px;color:rgba(255,255,255,0.5)">wZION Balance</span>
+                    <span style="font-size:20px;font-weight:700;color:#6ee7b7" id="defi-portfolio-wzion">—</span>
+                  </div>
+                </div>
+                <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);gap:8px">
+                  <div class="stat-card" style="padding:10px 12px">
+                    <h3 style="font-size:10px">STAKED</h3>
+                    <div class="value" id="defi-portfolio-staked" style="font-size:18px">—</div>
+                    <div class="label">wZION staked</div>
+                  </div>
+                  <div class="stat-card" style="padding:10px 12px">
+                    <h3 style="font-size:10px">PENDING</h3>
+                    <div class="value" id="defi-portfolio-pending" style="font-size:18px">—</div>
+                    <div class="label">Rewards</div>
+                  </div>
+                  <div class="stat-card" style="padding:10px 12px">
+                    <h3 style="font-size:10px">LP TOKENS</h3>
+                    <div class="value" id="defi-portfolio-lp" style="font-size:18px">—</div>
+                    <div class="label">Deposited</div>
+                  </div>
+                </div>
+              </div>
+              <div id="defi-portfolio-status" class="status-note" style="margin-top:8px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- ═══════════════════════════════════════════════ -->
       <!-- DAO — On-Chain Governance                      -->
@@ -5910,6 +6280,10 @@ Click a button above to run a command.
       <div class="nav-item" data-view="bridge">
         <svg class="icon" aria-hidden="true"><use href="#i-bridge"></use></svg>
         <span>Bridge</span>
+      </div>
+      <div class="nav-item" data-view="defi">
+        <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+        <span>DeFi</span>
       </div>
       <div class="nav-item" data-view="network">
         <svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
