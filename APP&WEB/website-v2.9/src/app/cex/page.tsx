@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useCallback } from 'react';
 import {
   ExternalLink,
@@ -12,17 +12,19 @@ import {
   Clock,
   XCircle,
   HelpCircle,
-  Wallet,
   ArrowRight,
   Activity,
   DollarSign,
+  RefreshCw,
+  Users,
+  Zap,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { CONTRACTS, SEED_PRICE_USD } from '@/lib/defi-contracts';
 
-// ─── CEX Listing Data ────────────────────────────────────────────────────────
+// ─── Types ───────────────────────────────────────────────────────────────────
 
-interface CexExchange {
+interface CexListing {
   name: string;
   logo: string;
   url: string;
@@ -31,84 +33,61 @@ interface CexExchange {
   volume24h?: number;
   updated: string;
   notes?: string;
+  kyc_required: boolean;
+  countries?: string;
+  fee_spot?: string;
 }
 
-const CEX_EXCHANGES: CexExchange[] = [
-  {
-    name: 'XT.COM',
-    logo: 'XT',
-    url: 'https://www.xt.com',
-    status: 'planned',
-    pairs: ['ZION/USDT', 'ZION/USDC'],
-    updated: '2026-06-29',
-    notes: 'Initial listing application prepared. Awaiting token audit completion.',
-  },
-  {
-    name: 'Azbit',
-    logo: 'AZ',
-    url: 'https://azbit.com',
-    status: 'planned',
-    pairs: ['ZION/USDT', 'ZION/BTC'],
-    updated: '2026-06-29',
-    notes: 'Listing agreement draft stage.',
-  },
-  {
-    name: 'P2B',
-    logo: 'P2',
-    url: 'https://p2pb2b.com',
-    status: 'planned',
-    pairs: ['ZION/USDT'],
-    updated: '2026-06-29',
-    notes: 'Community vote campaign planned.',
-  },
-  {
-    name: 'Binance',
-    logo: 'BN',
-    url: 'https://www.binance.com',
-    status: 'planned',
-    pairs: ['ZION/USDT', 'ZION/USDC', 'ZION/ETH'],
-    updated: '2026-06-29',
-    notes: 'Long-term target. Requires full security audit + market cap threshold.',
-  },
-  {
-    name: 'KuCoin',
-    logo: 'KC',
-    url: 'https://www.kucoin.com',
-    status: 'planned',
-    pairs: ['ZION/USDT'],
-    updated: '2026-06-29',
-    notes: 'Fast-track listing candidate after DEX volume threshold.',
-  },
-  {
-    name: 'Gate.io',
-    logo: 'GT',
-    url: 'https://www.gate.io',
-    status: 'planned',
-    pairs: ['ZION/USDT'],
-    updated: '2026-06-29',
-    notes: 'Community-driven listing via Gate Startup.',
-  },
-];
+interface DexPairDetail {
+  address: string;
+  dex: string;
+  pair: string;
+  price_usd: number;
+  price_native: string;
+  liquidity_usd: number;
+  volume_24h: number;
+  volume_6h: number;
+  volume_1h: number;
+  price_change_24h: number;
+  price_change_1h: number;
+  txns_24h: { buys: number; sells: number };
+  fdv: number;
+  market_cap: number;
+  created_at: number;
+}
+
+interface CexApiResponse {
+  ok: boolean;
+  cex: {
+    listings: CexListing[];
+    summary: {
+      total_exchanges: number;
+      listed: number;
+      applied: number;
+      planned: number;
+      total_pairs: number;
+    };
+  };
+  dex: {
+    source: string;
+    pairs: number;
+    total_volume_24h: number;
+    total_liquidity_usd: number;
+    total_txns_24h?: number;
+    total_buys_24h?: number;
+    total_sells_24h?: number;
+    best_price_usd?: number;
+    pairs_detail?: DexPairDetail[];
+  };
+  fetchedAt: number;
+}
 
 const STATUS_CONFIG = {
   listed: { label: 'Listed', labelCs: 'Listováno', icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
   applied: { label: 'Applied', labelCs: 'Podáno', icon: Clock, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
   planned: { label: 'Planned', labelCs: 'Plánováno', icon: Clock, color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20' },
   rejected: { label: 'Rejected', labelCs: 'Odmítnuto', icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' },
-};
-
-// ─── DEX Price Data (from /api/defi/price) ───────────────────────────────────
-
-interface DexPrice {
-  usd_per_wzion: number;
-  weth_per_wzion: number;
-  wzion_per_weth: number;
-  weth_usd: number;
-  tick: number;
-  source: string;
-  tvl_usd: number;
-  liquidity: string;
-}
+} as const;
 
 // ─── FAQ Items ───────────────────────────────────────────────────────────────
 
@@ -145,43 +124,49 @@ const FAQ_ITEMS = [
   },
 ];
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function formatVolume(v: number): string {
+  if (v >= 1e6) return `$${(v / 1e6).toFixed(2)}M`;
+  if (v >= 1e3) return `$${(v / 1e3).toFixed(2)}K`;
+  return `$${v.toFixed(2)}`;
+}
+
+function formatPct(v: number): string {
+  const sign = v >= 0 ? '+' : '';
+  return `${sign}${v.toFixed(2)}%`;
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function CexPage() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const [dexPrice, setDexPrice] = useState<DexPrice | null>(null);
+  const [data, setData] = useState<CexApiResponse | null>(null);
+  const [loading, setLoading] = useState(true);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  const fetchDexPrice = useCallback(async () => {
+  const refresh = useCallback(async () => {
     try {
-      const res = await fetch('/api/defi/price');
+      const res = await fetch('/api/cex/listings', { cache: 'no-store' });
       if (!res.ok) return;
-      const data = await res.json();
-      if (data.ok) {
-        setDexPrice({
-          usd_per_wzion: data.price?.usd_per_wzion ?? SEED_PRICE_USD,
-          weth_per_wzion: data.price?.weth_per_wzion ?? 0,
-          wzion_per_weth: data.price?.wzion_per_weth ?? 0,
-          weth_usd: data.price?.weth_usd ?? 2000,
-          tick: data.price?.tick ?? 0,
-          source: data.source ?? 'seed',
-          tvl_usd: data.tvl?.usd ?? 0,
-          liquidity: data.liquidity ?? '0',
-        });
-      }
+      const d = await res.json();
+      setData(d);
     } catch { /* ignore */ }
+    finally { setLoading(false); }
   }, []);
 
   useEffect(() => {
-    void fetchDexPrice();
-    const interval = setInterval(fetchDexPrice, 60_000);
+    refresh();
+    const interval = setInterval(refresh, 60_000);
     return () => clearInterval(interval);
-  }, [fetchDexPrice]);
+  }, [refresh]);
 
-  const listedCount = CEX_EXCHANGES.filter(e => e.status === 'listed').length;
-  const plannedCount = CEX_EXCHANGES.filter(e => e.status === 'planned').length;
-  const totalPairs = CEX_EXCHANGES.reduce((acc, e) => acc + e.pairs.length, 0);
+  const listings = data?.cex?.listings ?? [];
+  const summary = data?.cex?.summary;
+  const dex = data?.dex;
+  const dexPairs = dex?.pairs_detail ?? [];
+  const bestPrice = dex?.best_price_usd ?? SEED_PRICE_USD;
 
   return (
     <div className="relative overflow-hidden bg-black text-white pt-28 pb-16">
@@ -204,6 +189,13 @@ export default function CexPage() {
             <span className="text-xs uppercase tracking-[0.35em] text-gray-400">
               ZION · Centralized Exchanges
             </span>
+            <button
+              onClick={refresh}
+              className="ml-auto inline-flex items-center gap-1 text-[10px] text-gray-500 hover:text-white transition-colors"
+            >
+              <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
+              {cs ? 'Obnovit' : 'Refresh'}
+            </button>
           </div>
 
           <h1 className="mb-4 text-4xl font-bold md:text-5xl lg:text-6xl">
@@ -221,26 +213,31 @@ export default function CexPage() {
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5">
               <Activity className="h-3.5 w-3.5 text-zion-gold" />
               <span className="text-gray-300">{cs ? 'Cena DEX' : 'DEX Price'}:</span>
-              <span className="font-mono text-white">${(dexPrice?.usd_per_wzion ?? SEED_PRICE_USD).toFixed(6)}</span>
-              <span className={`text-[10px] ${dexPrice?.source === 'live' ? 'text-emerald-400' : 'text-amber-400'}`}>
-                {dexPrice?.source ?? 'seed'}
+              <span className="font-mono text-white">${bestPrice.toFixed(6)}</span>
+              <span className={`text-[10px] ${dex?.source === 'dexscreener' ? 'text-emerald-400' : 'text-amber-400'}`}>
+                {dex?.source === 'dexscreener' ? 'live' : (dex?.source ?? 'seed')}
               </span>
             </div>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5">
               <DollarSign className="h-3.5 w-3.5 text-zion-cyan" />
-              <span className="text-gray-300">{cs ? 'TVL' : 'TVL'}:</span>
-              <span className="font-mono text-white">${(dexPrice?.tvl_usd ?? 0).toFixed(2)}</span>
+              <span className="text-gray-300">{cs ? 'DEX Volume 24h' : 'DEX Volume 24h'}:</span>
+              <span className="font-mono text-white">{formatVolume(dex?.total_volume_24h ?? 0)}</span>
+            </div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5">
+              <DollarSign className="h-3.5 w-3.5 text-emerald-400" />
+              <span className="text-gray-300">{cs ? 'DEX Likvidita' : 'DEX Liquidity'}:</span>
+              <span className="font-mono text-white">{formatVolume(dex?.total_liquidity_usd ?? 0)}</span>
             </div>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5">
               <Building2 className="h-3.5 w-3.5 text-zion-purple" />
               <span className="text-gray-300">{cs ? 'Burzy' : 'Exchanges'}:</span>
-              <span className="font-mono text-white">{listedCount}/{CEX_EXCHANGES.length}</span>
+              <span className="font-mono text-white">{summary?.listed ?? 0}/{summary?.total_exchanges ?? 0}</span>
             </div>
           </div>
         </motion.div>
       </section>
 
-      {/* ── DEX Trading (available now) ── */}
+      {/* ── DEX Trading Dashboard (DexScreener data) ── */}
       <section className="zion-container relative z-10 mb-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -257,6 +254,9 @@ export default function CexPage() {
                   <CheckCircle2 className="h-3 w-3" />
                   {cs ? 'DOSTUPNÉ NYNÍ' : 'AVAILABLE NOW'}
                 </span>
+                {dex?.source === 'dexscreener' && (
+                  <span className="text-[10px] text-gray-500">via DexScreener</span>
+                )}
               </div>
               <h2 className="text-2xl font-bold text-white">{cs ? 'DEX Trading — Uniswap V3' : 'DEX Trading — Uniswap V3'}</h2>
               <p className="text-sm text-gray-400 mt-1">{cs ? 'Obchoduj wZION bez KYC, přímo z vaší peněženky' : 'Trade wZION without KYC, directly from your wallet'}</p>
@@ -272,28 +272,77 @@ export default function CexPage() {
             </a>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {/* DEX aggregate stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="zion-rainbow-sub p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
               <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Cena' : 'Price'}</p>
-              <p className="text-lg font-bold text-white mt-1">${(dexPrice?.usd_per_wzion ?? SEED_PRICE_USD).toFixed(6)}</p>
+              <p className="text-lg font-bold text-white mt-1">${bestPrice.toFixed(6)}</p>
               <p className="text-[10px] text-gray-500">USD / wZION</p>
             </div>
             <div className="zion-rainbow-sub p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
-              <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'TVL' : 'TVL'}</p>
-              <p className="text-lg font-bold text-white mt-1">${(dexPrice?.tvl_usd ?? 0).toFixed(2)}</p>
+              <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Volume 24h' : 'Volume 24h'}</p>
+              <p className="text-lg font-bold text-white mt-1">{formatVolume(dex?.total_volume_24h ?? 0)}</p>
+              <p className="text-[10px] text-gray-500">{cs ? 'celkem' : 'total'}</p>
+            </div>
+            <div className="zion-rainbow-sub p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+              <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Likvidita' : 'Liquidity'}</p>
+              <p className="text-lg font-bold text-white mt-1">{formatVolume(dex?.total_liquidity_usd ?? 0)}</p>
               <p className="text-[10px] text-gray-500">{cs ? 'v poolech' : 'in pools'}</p>
             </div>
             <div className="zion-rainbow-sub p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
-              <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Pooly' : 'Pools'}</p>
-              <p className="text-lg font-bold text-white mt-1">2</p>
-              <p className="text-[10px] text-gray-500">wZION/WETH · wZION/USDC</p>
-            </div>
-            <div className="zion-rainbow-sub p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
-              <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Síť' : 'Network'}</p>
-              <p className="text-lg font-bold text-white mt-1">Base</p>
-              <p className="text-[10px] text-gray-500">Chain ID 8453</p>
+              <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Transakce 24h' : 'Txns 24h'}</p>
+              <p className="text-lg font-bold text-white mt-1">{(dex?.total_txns_24h ?? 0).toLocaleString()}</p>
+              <p className="text-[10px] text-gray-500">
+                <span className="text-emerald-400">{dex?.total_buys_24h ?? 0} buys</span>
+                {' · '}
+                <span className="text-red-400">{dex?.total_sells_24h ?? 0} sells</span>
+              </p>
             </div>
           </div>
+
+          {/* Per-pair breakdown from DexScreener */}
+          {dexPairs.length > 0 && (
+            <div className="overflow-hidden rounded-xl border border-white/10">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/10 bg-white/2">
+                    <th className="p-3 text-left font-medium text-gray-400">{cs ? 'Pár' : 'Pair'}</th>
+                    <th className="p-3 text-right font-medium text-gray-400">{cs ? 'Cena' : 'Price'}</th>
+                    <th className="p-3 text-right font-medium text-gray-400">24h %</th>
+                    <th className="p-3 text-right font-medium text-gray-500">Liquidity</th>
+                    <th className="p-3 text-right font-medium text-gray-500">Volume 24h</th>
+                    <th className="p-3 text-right font-medium text-gray-500">Txns</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dexPairs.map((pair) => (
+                    <tr key={pair.address} className="border-b border-white/5 hover:bg-white/3">
+                      <td className="p-3">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-white">{pair.pair}</span>
+                          <span className="rounded bg-white/5 px-1.5 py-0.5 text-[9px] text-gray-500 uppercase">{pair.dex}</span>
+                        </div>
+                      </td>
+                      <td className="p-3 text-right font-mono text-white">${pair.price_usd.toFixed(6)}</td>
+                      <td className="p-3 text-right">
+                        <span className={`inline-flex items-center gap-1 font-mono ${pair.price_change_24h >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                          {pair.price_change_24h >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                          {formatPct(pair.price_change_24h)}
+                        </span>
+                      </td>
+                      <td className="p-3 text-right font-mono text-gray-300">{formatVolume(pair.liquidity_usd)}</td>
+                      <td className="p-3 text-right font-mono text-gray-300">{formatVolume(pair.volume_24h)}</td>
+                      <td className="p-3 text-right text-[10px]">
+                        <span className="text-emerald-400">{pair.txns_24h.buys}B</span>
+                        {' / '}
+                        <span className="text-red-400">{pair.txns_24h.sells}S</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           <div className="mt-4 flex flex-wrap gap-2">
             <a
@@ -310,7 +359,15 @@ export default function CexPage() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
             >
-              wZON Contract <ExternalLink className="h-2.5 w-2.5" />
+              wZION Contract <ExternalLink className="h-2.5 w-2.5" />
+            </a>
+            <a
+              href={`https://app.uniswap.org/pools?chain=base&token0=${CONTRACTS.wZION}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+            >
+              Uniswap Pools <ExternalLink className="h-2.5 w-2.5" />
             </a>
           </div>
         </motion.div>
@@ -327,9 +384,9 @@ export default function CexPage() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">{cs ? 'Seznam Burz' : 'Exchange Listings'}</h2>
             <div className="flex gap-3 text-xs text-gray-400">
-              <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-emerald-400" />{listedCount} {cs ? 'listováno' : 'listed'}</span>
-              <span className="flex items-center gap-1"><Clock className="h-3 w-3 text-cyan-400" />{plannedCount} {cs ? 'plánováno' : 'planned'}</span>
-              <span className="flex items-center gap-1"><BarChart3 className="h-3 w-3 text-gray-400" />{totalPairs} {cs ? 'párů' : 'pairs'}</span>
+              <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-emerald-400" />{summary?.listed ?? 0} {cs ? 'listováno' : 'listed'}</span>
+              <span className="flex items-center gap-1"><Clock className="h-3 w-3 text-cyan-400" />{summary?.planned ?? 0} {cs ? 'plánováno' : 'planned'}</span>
+              <span className="flex items-center gap-1"><BarChart3 className="h-3 w-3 text-gray-400" />{summary?.total_pairs ?? 0} {cs ? 'párů' : 'pairs'}</span>
             </div>
           </div>
 
@@ -341,12 +398,14 @@ export default function CexPage() {
                     <th className="p-4 text-left font-medium text-gray-400">{cs ? 'Burza' : 'Exchange'}</th>
                     <th className="p-4 text-left font-medium text-gray-400">{cs ? 'Status' : 'Status'}</th>
                     <th className="p-4 text-left font-medium text-gray-400">{cs ? 'Páry' : 'Pairs'}</th>
+                    <th className="p-4 text-left font-medium text-gray-400">{cs ? 'KYC' : 'KYC'}</th>
+                    <th className="p-4 text-left font-medium text-gray-400">{cs ? 'Poplatek' : 'Fee'}</th>
                     <th className="p-4 text-left font-medium text-gray-400">{cs ? 'Poznámka' : 'Notes'}</th>
                     <th className="p-4 text-right font-medium text-gray-400">{cs ? 'Odkaz' : 'Link'}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {CEX_EXCHANGES.map((ex) => {
+                  {listings.map((ex) => {
                     const status = STATUS_CONFIG[ex.status];
                     const StatusIcon = status.icon;
                     return (
@@ -356,7 +415,12 @@ export default function CexPage() {
                             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-zion-gold/30 to-zion-purple/20 text-xs font-bold text-white">
                               {ex.logo}
                             </div>
-                            <span className="font-semibold text-white">{ex.name}</span>
+                            <div>
+                              <span className="font-semibold text-white">{ex.name}</span>
+                              {ex.countries && (
+                                <p className="text-[9px] text-gray-500">{ex.countries}</p>
+                              )}
+                            </div>
                           </div>
                         </td>
                         <td className="p-4">
@@ -374,6 +438,12 @@ export default function CexPage() {
                             ))}
                           </div>
                         </td>
+                        <td className="p-4">
+                          <span className={`text-[10px] ${ex.kyc_required ? 'text-amber-400' : 'text-emerald-400'}`}>
+                            {ex.kyc_required ? 'Required' : 'No'}
+                          </span>
+                        </td>
+                        <td className="p-4 text-[10px] font-mono text-gray-300">{ex.fee_spot ?? '—'}</td>
                         <td className="p-4 text-xs text-gray-400 max-w-xs">{ex.notes ?? '—'}</td>
                         <td className="p-4 text-right">
                           <a
@@ -490,11 +560,20 @@ export default function CexPage() {
                   </span>
                   <span className={`text-gray-400 transition-transform ${openFaq === i ? 'rotate-180' : ''}`}>▾</span>
                 </button>
-                {openFaq === i && (
-                  <div className="px-4 pb-4 text-xs text-gray-300 leading-relaxed pl-11">
-                    {cs ? item.aCs : item.a}
-                  </div>
-                )}
+                <AnimatePresence>
+                  {openFaq === i && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <div className="px-4 pb-4 text-xs text-gray-300 leading-relaxed pl-11">
+                        {cs ? item.aCs : item.a}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             ))}
           </div>

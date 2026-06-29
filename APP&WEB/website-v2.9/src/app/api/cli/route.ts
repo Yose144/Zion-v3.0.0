@@ -123,6 +123,9 @@ async function executeCommand(input: string): Promise<CliResponse> {
   // ─── DeFi ─────────────────────────────────────────────────────────────────
   if (cmd === 'defi') return await handleDefi(sub);
 
+  // ─── CEX ──────────────────────────────────────────────────────────────────
+  if (cmd === 'cex') return await handleCex(sub);
+
   // ─── Mining ───────────────────────────────────────────────────────────────
   if (cmd === 'mine' || cmd === 'mining') return await handleMine(sub, args);
 
@@ -323,6 +326,26 @@ async function handleStatus(): Promise<CliResponse> {
     }
   } catch {
     lines.push('  ⚠ Bridge status unavailable');
+  }
+
+  // CEX + DEX
+  lines.push('', '── CEX + DEX ──');
+  try {
+    const { ok, data } = await fetchJson<any>('/api/cex/listings');
+    if (ok && data) {
+      const listed = data.cex?.summary?.listed ?? 0;
+      const total = data.cex?.summary?.total_exchanges ?? 0;
+      lines.push(`  CEX: ${listed}/${total} listed, ${data.cex?.summary?.planned ?? 0} planned`);
+      const dex = data.dex;
+      if (dex) {
+        lines.push(`  DEX: ${dex.pairs ?? 0} pairs, ${formatVolume(dex.total_volume_24h ?? 0)} vol/24h, ${formatVolume(dex.total_liquidity_usd ?? 0)} liq`);
+        lines.push(`  Price: $${(dex.best_price_usd ?? 0).toFixed(6)} (${dex.source ?? 'unknown'})`);
+      }
+    } else {
+      lines.push('  ⚠ CEX data unavailable');
+    }
+  } catch {
+    lines.push('  ⚠ CEX data unavailable');
   }
 
   // AI (Hiran)
@@ -581,6 +604,88 @@ async function handleDefi(sub?: string): Promise<CliResponse> {
     output: '',
     error: `Unknown defi subcommand: "${sub}". Try: price, pools, status`,
   };
+}
+
+// ─── CEX handlers ────────────────────────────────────────────────────────────
+
+async function handleCex(sub?: string): Promise<CliResponse> {
+  if (!sub) {
+    return {
+      ok: false,
+      output: '',
+      error: 'Usage: cex <subcommand>. Try: listings, dex, status',
+    };
+  }
+
+  if (sub === 'listings' || sub === 'ls') {
+    const { ok, data } = await fetchJson<any>('/api/cex/listings');
+    if (!ok || !data) {
+      return { ok: false, output: '', error: 'CEX listings unavailable.' };
+    }
+    const lines: string[] = ['── CEX Listings ──', ''];
+    for (const ex of data.cex?.listings ?? []) {
+      const statusIcon = ex.status === 'listed' ? '✓' : ex.status === 'planned' ? '○' : '!';
+      lines.push(`  ${statusIcon} ${ex.name.padEnd(12)} [${ex.status.toUpperCase()}]  pairs: ${ex.pairs.join(', ')}  kyc: ${ex.kyc_required ? 'yes' : 'no'}`);
+      if (ex.notes) lines.push(`    └ ${ex.notes}`);
+    }
+    lines.push('', `  Total: ${data.cex?.summary?.total_exchanges ?? 0} exchanges, ${data.cex?.summary?.listed ?? 0} listed, ${data.cex?.summary?.planned ?? 0} planned`);
+    return { ok: true, output: lines.join('\n') };
+  }
+
+  if (sub === 'dex') {
+    const { ok, data } = await fetchJson<any>('/api/cex/listings');
+    if (!ok || !data) {
+      return { ok: false, output: '', error: 'DEX data unavailable.' };
+    }
+    const dex = data.dex;
+    const lines: string[] = [
+      '── DEX Trading (Uniswap V3 · Base) ──',
+      '',
+      `  Source:       ${dex?.source ?? 'unknown'}`,
+      `  Pairs:        ${dex?.pairs ?? 0}`,
+      `  Volume 24h:   ${formatVolume(dex?.total_volume_24h ?? 0)}`,
+      `  Liquidity:    ${formatVolume(dex?.total_liquidity_usd ?? 0)}`,
+      `  Txns 24h:     ${dex?.total_txns_24h ?? 0} (${dex?.total_buys_24h ?? 0} buys / ${dex?.total_sells_24h ?? 0} sells)`,
+      `  Best price:   $${(dex?.best_price_usd ?? 0).toFixed(6)}`,
+    ];
+    if (dex?.pairs_detail && dex.pairs_detail.length > 0) {
+      lines.push('', '  ── Per-pair breakdown ──');
+      for (const p of dex.pairs_detail) {
+        const change = p.price_change_24h >= 0 ? `+${p.price_change_24h.toFixed(2)}%` : `${p.price_change_24h.toFixed(2)}%`;
+        lines.push(`  ${p.pair.padEnd(16)} $${p.price_usd.toFixed(6)}  ${change}  liq: ${formatVolume(p.liquidity_usd)}  vol: ${formatVolume(p.volume_24h)}`);
+      }
+    }
+    lines.push('', '  Trade: https://app.uniswap.org/swap?chain=base');
+    return { ok: true, output: lines.join('\n') };
+  }
+
+  if (sub === 'status') {
+    const { ok, data } = await fetchJson<any>('/api/cex/listings');
+    if (!ok || !data) {
+      return { ok: false, output: '', error: 'CEX status unavailable.' };
+    }
+    const lines: string[] = [
+      '── CEX + DEX Status ──',
+      '',
+      `  CEX: ${data.cex?.summary?.listed ?? 0}/${data.cex?.summary?.total_exchanges ?? 0} listed, ${data.cex?.summary?.planned ?? 0} planned`,
+      `  DEX: ${data.dex?.pairs ?? 0} pairs, ${formatVolume(data.dex?.total_volume_24h ?? 0)} vol/24h, ${formatVolume(data.dex?.total_liquidity_usd ?? 0)} liquidity`,
+      `  Price: $${(data.dex?.best_price_usd ?? 0).toFixed(6)}`,
+      `  Source: ${data.dex?.source ?? 'unknown'}`,
+    ];
+    return { ok: true, output: lines.join('\n') };
+  }
+
+  return {
+    ok: false,
+    output: '',
+    error: `Unknown cex subcommand: "${sub}". Try: listings, dex, status`,
+  };
+}
+
+function formatVolume(v: number): string {
+  if (v >= 1e6) return `$${(v / 1e6).toFixed(2)}M`;
+  if (v >= 1e3) return `$${(v / 1e3).toFixed(2)}K`;
+  return `$${v.toFixed(2)}`;
 }
 
 // ─── Mining handlers ────────────────────────────────────────────────────────
@@ -892,6 +997,14 @@ function formatHelp(): string {
       ],
     },
     {
+      name: 'CEX',
+      cmds: [
+        ['cex listings', 'CEX exchange listing status'],
+        ['cex dex', 'DEX trading data (DexScreener)'],
+        ['cex status', 'CEX + DEX summary'],
+      ],
+    },
+    {
       name: 'Mining',
       cmds: [
         ['mine start', 'Quick-start mining guide'],
@@ -1026,6 +1139,7 @@ function formatDocs(): string {
     '  Explorer:          https://zionterranova.com/explorer',
     '  Pool:              https://zionterranova.com/pool',
     '  DeFi:              https://zionterranova.com/defi',
+    '  CEX:               https://zionterranova.com/cex',
     '  DAO:               https://zionterranova.com/dao',
     '  Bridge:            https://zionterranova.com/bridge',
     '  Downloads:         https://zionterranova.com/downloads',
@@ -1043,6 +1157,7 @@ function formatLinks(): string {
     '  Explorer:          https://zionterranova.com/explorer',
     '  Pool:              https://zionterranova.com/pool',
     '  DeFi:              https://zionterranova.com/defi',
+    '  CEX:               https://zionterranova.com/cex',
     '  DAO:               https://zionterranova.com/dao',
     '  Bridge:            https://zionterranova.com/bridge',
     '  Downloads:         https://zionterranova.com/downloads',
