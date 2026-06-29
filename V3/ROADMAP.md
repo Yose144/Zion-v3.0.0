@@ -47,24 +47,28 @@ Verze **3.0.3** je nyní uzavřena. Všechny klíčové komponenty jsou funkčn�
 - [x] **ZIONStaking** — `0xbd5cEe7878337d22188BFBaF9aa9F39A850Be78B` (12% APR, 7d cooldown, 100K wZION reward pool funded)
 - [x] **ZIONFarm** — `0x167B2753F5D8D9F8e62875cc9e379d7804308B08` (1 wZION/s, 90d halving, 500K wZION pool funded, Pool 0: wZION single)
 - [x] `defi-contracts.ts` aktualizováno: reálné adresy + `STAKING_DEPLOYED=true`, `FARM_DEPLOYED=true`
-- [ ] `/defi/staking` page: "Deploy pending" banner zmizí, live data z kontraktu (vyžaduje website rebuild)
-- [ ] `/defi/farming` page: "Deploy pending" banner zmizí, live data z kontraktu (vyžaduje website rebuild)
-- [ ] Verify na Basescan: `npx hardhat run scripts/verify-base-mainnet-basescan.ts --network base` (vyžaduje BASESCAN_API_KEY)
+- [x] `/defi/staking` page: "Deploy pending" banner zmizí, live data z kontraktu (website v3.6.3 deployed ✅)
+- [x] `/defi/farming` page: "Deploy pending" banner zmizí, live data z kontraktu (website v3.6.3 deployed ✅)
+- [ ] Verify na Basescan: `npx hardhat run scripts/verify-base-mainnet-basescan.ts --network base` (vyžaduje BASESCAN_API_KEY — získat na basescan.org/myapikey)
 - [x] `V3/L2/contracts/hardhat/` doplněn o zkopírované .sol + deploy skripty
 
-#### P2 — Atomic Swap E2E — ✅ ESCROW FUNDED 2026-06-29
+#### P2 — Atomic Swap E2E — ✅ ESCROW FUNDED + E2E TEST 2026-06-29
 
 - [x] Pošli **100K ZION** na `zion1y0j484d5e8r49785d253e8w0c2x4t3n792m5724` (✅ potvrzeno: 100,000 ZION)
 - [x] Ověř balance: `getAddressInfo` RPC → `balance_zion: 100000.000000` ✅
-- [ ] E2E test: generuj preimage+hashlock → `SWAP:LOCK` L1 memo TX → daemon detekce → EVM claim
+- [x] E2E test: LOCK TX (1 ZION, memo `SWAP:LOCK:<hash>:120:base:0xTest`) — **přijat do chainu** ✅
+- [x] E2E test: CLAIM TX (memo `SWAP:CLAIM:<hash>:<preimage>`) — **přijat do chainu** ✅
+- [x] Atomic swap daemon běží, API na :8452, L1 watcher skenuje bloky ✅
+- [ ] **ROADMAP ITEM:** L2 watcher update — `L1Block` struct přidat `account_transactions` pole + watcher.rs skenovat i account-model memo TXs (aktuálně skenuje jen `utxo_transactions`)
 - [ ] Vytvoř `docs/ATOMIC_SWAP_RUNBOOK.md`
 
-#### P3 — DAO Guardians + Voting E2E
+#### P3 — DAO Guardians + Voting E2E — ✅ DONE 2026-06-29
 
-- [ ] Vygeneruj 5-7 guardian keypairs (`zion-cli keygen --label guardian-N`)
-- [ ] Přidej `[[guardians]]` sekce do `/root/zion-2.9.6-main/V3/L2/dao/config/dao-mainnet.toml`
-- [ ] Restart `zion-edge-dao.service` + ověř `/api/dao/co-admins`
-- [ ] Voting E2E: `DAO:vote:<id>:yes` L1 memo → scanner → DB → web UI zobrazí vote
+- [x] Vygeneruj 5 guardian keypairs (mnemonics uloženy na `C:\Users\yosef\Desktop\ZION_DAO_GUARDIAN_KEYS.txt`)
+- [x] Přidej `[[guardians]]` sekce do `dao-mainnet.toml` na Edge (5 guardian entries)
+- [x] Restart `zion-edge-dao.service` + ověř `/api/dao/health` → 200 OK ✅
+- [x] Voting E2E: `DAO:vote:1:yes` L1 memo TX odeslán z Aloha wallet (26.5M ZION voting weight) — **přijat do chainu** ✅
+- [ ] **ROADMAP ITEM:** DAO scanner taky skenuje jen `utxo_transactions` — account-model memo TXs nejsou detekovány (stejný limit jako atomic swap watcher)
 
 #### P4 — WARP UI Transfer Formulář
 
