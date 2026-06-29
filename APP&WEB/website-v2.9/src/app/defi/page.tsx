@@ -23,6 +23,7 @@ import SwapWidget from '@/components/SwapWidget';
 import BridgeBurnWidget from '@/components/BridgeBurnWidget';
 import DefiBalances from '@/components/DefiBalances';
 import { CONTRACTS, SEED_PRICE_USD } from '@/lib/defi-contracts';
+import { Droplets, TrendingUp } from 'lucide-react';
 import { useNetworkStatus } from '@/hooks/useWebSocketSubscription';
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
@@ -51,6 +52,15 @@ export default function DefiPage() {
     evm_mints_confirmed: number;
     last_l1_height: number;
     errors_total: number;
+  } | null>(null);
+  const [poolStats, setPoolStats] = useState<{
+    tvl_usd: number;
+    total_wzion_liquidity: number;
+    active_pools: number;
+    pools: {
+      wzion_weth: { active: boolean; liquidity: string; tick: number; price_usd: number };
+      wzion_usdc: { active: boolean; liquidity: string; tick: number };
+    };
   } | null>(null);
 
   // ── WebSocket subscription for real-time network status ─────────────────────
@@ -104,10 +114,38 @@ export default function DefiPage() {
     };
     void refreshBridge();
 
+    const refreshPools = async () => {
+      try {
+        const res = await fetch('/api/defi/pools', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled && data.ok) setPoolStats(data.summary ? {
+          tvl_usd: data.summary.total_tvl_usd ?? 0,
+          total_wzion_liquidity: data.summary.total_wzion_liquidity ?? 0,
+          active_pools: data.summary.active_pools ?? 0,
+          pools: {
+            wzion_weth: {
+              active: data.pools?.wzion_weth?.active ?? false,
+              liquidity: data.pools?.wzion_weth?.liquidity ?? '0',
+              tick: data.pools?.wzion_weth?.tick ?? 0,
+              price_usd: data.pools?.wzion_weth?.price?.usd_per_wzion ?? 0,
+            },
+            wzion_usdc: {
+              active: data.pools?.wzion_usdc?.active ?? false,
+              liquidity: data.pools?.wzion_usdc?.liquidity ?? '0',
+              tick: data.pools?.wzion_usdc?.tick ?? 0,
+            },
+          },
+        } : null);
+      } catch { /* ignore */ }
+    };
+    void refreshPools();
+
     const interval = setInterval(() => {
       void refreshSupply();
       void refreshPrice();
       void refreshBridge();
+      void refreshPools();
     }, 60_000);
 
     return () => {
@@ -227,6 +265,46 @@ export default function DefiPage() {
             </a>
           </div>
         </motion.div>
+      </section>
+
+      {/* ── Pool Stats Overview ── */}
+      <section className="zion-container relative z-10 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="zion-rainbow-card p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="h-4 w-4 text-zion-gold" />
+              <span className="text-[10px] uppercase tracking-wider text-gray-400">{cs ? 'Cena' : 'Price'}</span>
+            </div>
+            <p className="text-xl font-bold text-white">
+              ${(poolStats?.pools.wzion_weth.price_usd ?? wZIONPrice?.usd_per_wzion ?? SEED_PRICE_USD).toFixed(6)}
+            </p>
+            <p className="text-[10px] text-gray-500">USD / wZION</p>
+          </div>
+          <div className="zion-rainbow-card p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+            <div className="flex items-center gap-2 mb-2">
+              <Droplets className="h-4 w-4 text-zion-cyan" />
+              <span className="text-[10px] uppercase tracking-wider text-gray-400">{cs ? 'TVL' : 'TVL'}</span>
+            </div>
+            <p className="text-xl font-bold text-white">${(poolStats?.tvl_usd ?? 0).toFixed(2)}</p>
+            <p className="text-[10px] text-gray-500">{cs ? 'celkem v poolech' : 'total in pools'}</p>
+          </div>
+          <div className="zion-rainbow-card p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+            <div className="flex items-center gap-2 mb-2">
+              <Activity className="h-4 w-4 text-emerald-400" />
+              <span className="text-[10px] uppercase tracking-wider text-gray-400">{cs ? 'Likvidita' : 'Liquidity'}</span>
+            </div>
+            <p className="text-xl font-bold text-white">{(poolStats?.total_wzion_liquidity ?? 0).toFixed(0)}</p>
+            <p className="text-[10px] text-gray-500">wZION</p>
+          </div>
+          <div className="zion-rainbow-card p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+            <div className="flex items-center gap-2 mb-2">
+              <Layers className="h-4 w-4 text-zion-purple" />
+              <span className="text-[10px] uppercase tracking-wider text-gray-400">{cs ? 'Pooly' : 'Pools'}</span>
+            </div>
+            <p className="text-xl font-bold text-white">{poolStats?.active_pools ?? 0}</p>
+            <p className="text-[10px] text-gray-500">{cs ? 'aktivní' : 'active'}</p>
+          </div>
+        </div>
       </section>
 
       {/* ── Tab Navigation ── */}
@@ -440,8 +518,8 @@ export default function DefiPage() {
           </h2>
           <p className="mx-auto mb-6 max-w-lg text-gray-300">
             {cs
-              ? 'wZION je k dispozici na Uniswap V3 (Base). Pool wZION/WETH s 0.3% fee.'
-              : 'wZION is available on Uniswap V3 (Base). wZION/WETH pool with 0.3% fee.'}
+              ? 'wZION je k dispozici na Uniswap V3 (Base). Pool wZION/WETH s 1% fee.'
+              : 'wZION is available on Uniswap V3 (Base). wZION/WETH pool with 1% fee.'}
           </p>
           <div className="flex justify-center gap-4 flex-wrap">
             <a
@@ -454,7 +532,7 @@ export default function DefiPage() {
               <ExternalLink className="h-4 w-4" />
             </a>
             <a
-              href={`https://dexscreener.com/base/${CONTRACTS.UniV3Pool}`}
+              href={`https://dexscreener.com/base/${CONTRACTS.UniV3PoolWETH}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 px-6 py-3 text-white transition-colors hover:border-zion-cyan/45"

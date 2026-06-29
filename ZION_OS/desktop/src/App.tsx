@@ -4,6 +4,8 @@ import ServiceGrid from './components/ServiceGrid';
 import MinerPanel from './components/MinerPanel';
 import PoolPanel from './components/PoolPanel';
 import ChainPanel from './components/ChainPanel';
+import DefiPanel from './components/DefiPanel';
+import BridgePanel from './components/BridgePanel';
 import AlertsPanel from './components/AlertsPanel';
 import ReadinessBar from './components/ReadinessBar';
 import PerformanceCharts from './components/PerformanceCharts';
@@ -118,6 +120,12 @@ export default function App() {
           <ChainPanel status={status} />
           <AlertsPanel alerts={alerts} />
           <PerformanceCharts miner={status?.miner} />
+        </div>
+
+        {/* DeFi + Bridge panels — fetch from Edge website API */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <DefiPanel />
+          <BridgePanel />
         </div>
       </main>
 
