@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Terminal, Send, ChevronRight, Cpu, Activity, Wifi, Wallet, Sparkles, X,
   HelpCircle, Boxes, Search, Coins, Pickaxe, Network, GitBranch, Bot,
-  Copy, Check, History, Trash2, Server, Blocks, Gauge,
+  Copy, Check, History, Trash2, Server, Blocks, Gauge, Droplets,
 } from 'lucide-react';
 
 interface TerminalLine {
@@ -42,6 +42,7 @@ const QUICK_COMMANDS: QuickCommand[] = [
   { label: 'explorer richlist', icon: Coins, desc: 'Rich list', category: 'Explorer' },
   // DeFi
   { label: 'defi price', icon: Coins, desc: 'ZION price', category: 'DeFi' },
+  { label: 'defi pools', icon: Droplets, desc: 'Pool stats & TVL', category: 'DeFi' },
   { label: 'defi status', icon: GitBranch, desc: 'DeFi status', category: 'DeFi' },
   // Mining
   { label: 'mine start', icon: Pickaxe, desc: 'Mining guide', category: 'Mining' },
@@ -155,7 +156,7 @@ export default function WebTerminal() {
       'pool stats', 'pool miners', 'pool blocks', 'pool servers', 'pool payouts',
       'explorer block', 'explorer tx', 'explorer address', 'explorer search',
       'explorer richlist', 'explorer supply', 'explorer stats',
-      'defi price', 'defi status',
+      'defi price', 'defi pools', 'defi status',
       'mine start', 'mine calc', 'mine benchmarks',
       'network stats', 'network peers',
       'dao proposals', 'bridge status',

@@ -548,20 +548,28 @@ async function handleDefi(sub?: string): Promise<CliResponse> {
     return {
       ok: false,
       output: '',
-      error: 'Usage: defi <subcommand>. Try: price, status',
+      error: 'Usage: defi <subcommand>. Try: price, pools, status',
     };
   }
 
   if (sub === 'price') {
-    const { ok, data, status } = await fetchJson<any>('/api/defi/price');
+    const { ok, data, status } = await fetchJsonSlow<any>('/api/defi/price');
     if (!ok || !data) {
       return { ok: false, output: '', error: `Price feed temporarily unavailable.` };
     }
     return { ok: true, output: formatDefiPrice(data) };
   }
 
+  if (sub === 'pools') {
+    const { ok, data, status } = await fetchJsonSlow<any>('/api/defi/pools');
+    if (!ok || !data) {
+      return { ok: false, output: '', error: `Pool stats temporarily unavailable.` };
+    }
+    return { ok: true, output: formatDefiPools(data) };
+  }
+
   if (sub === 'status') {
-    const { ok, data, status } = await fetchJson<any>('/api/defi/status');
+    const { ok, data, status } = await fetchJsonSlow<any>('/api/defi/status');
     if (!ok || !data) {
       return { ok: false, output: '', error: `DeFi status temporarily unavailable.` };
     }
@@ -571,7 +579,7 @@ async function handleDefi(sub?: string): Promise<CliResponse> {
   return {
     ok: false,
     output: '',
-    error: `Unknown defi subcommand: "${sub}". Try: price, status`,
+    error: `Unknown defi subcommand: "${sub}". Try: price, pools, status`,
   };
 }
 
@@ -878,7 +886,8 @@ function formatHelp(): string {
     {
       name: 'DeFi',
       cmds: [
-        ['defi price', 'ZION price in USD/ETH/BTC'],
+        ['defi price', 'ZION price in USD/ETH + TVL'],
+        ['defi pools', 'Uniswap V3 pool stats (liquidity, TVL, NFTs)'],
         ['defi status', 'DeFi protocol status (wZION, bridge, staking)'],
       ],
     },
@@ -1434,7 +1443,9 @@ function formatBlockchainStats(data: any): string {
 
 function formatDefiPrice(data: any): string {
   const p = data.price ?? {};
-  const btcPerZion = p.weth_per_wzion && p.weth_usd ? (p.usd_per_wzion / (p.weth_usd * 0.000016)) : null; // rough BTC proxy
+  const tvl = data.tvl ?? {};
+  const liq = data.liquidity ?? '0';
+  const liqNum = Number(liq);
   return [
     'ZION Price',
     '═══════════════════════════════════════════════════════════',
@@ -1448,8 +1459,79 @@ function formatDefiPrice(data: any): string {
     `  ETH/USD:        $${formatNum(p.weth_usd, 2)}`,
     `  Tick:           ${p.tick ?? '—'}`,
     '',
+    '── Liquidity ──',
+    `  Pool liquidity: ${liqNum > 0 ? formatNum(liqNum, 0) : '0 (inactive)'}`,
+    `  TVL (WETH):     ${formatNum(tvl.weth ?? 0, 6)} WETH`,
+    `  TVL (wZION):    ${formatNum(tvl.wzion ?? 0, 2)} wZION`,
+    `  TVL (USD):      $${formatNum(tvl.usd ?? 0, 2)}`,
+    '',
     `  Fetched:        ${data.fetchedAt ? new Date(data.fetchedAt).toISOString() : '—'}`,
   ].join('\n');
+}
+
+function formatDefiPools(data: any): string {
+  const pools = data.pools ?? {};
+  const summary = data.summary ?? {};
+  const weth = pools.wzion_weth ?? {};
+  const usdc = pools.wzion_usdc ?? {};
+  const lines: string[] = [
+    'Uniswap V3 Pool Stats',
+    '═══════════════════════════════════════════════════════════',
+    `  Network:        ${data.network ?? '—'} (chainId ${data.chainId ?? '—'})`,
+    `  ETH/USD:        $${formatNum(data.weth_usd ?? 0, 2)}`,
+    '',
+    '── wZION/WETH (1% fee) ──',
+    `  Address:        ${weth.address ?? '—'}`,
+    `  Active:         ${weth.active ? 'YES' : 'NO'}`,
+    `  Liquidity:      ${weth.liquidity ? formatNum(Number(weth.liquidity), 0) : '0'}`,
+    `  Tick:           ${weth.tick ?? '—'}`,
+    `  Price (WETH):   ${formatNum(weth.price?.token1_per_token0 ?? 0, 8)}`,
+    `  Price (USD):    $${formatNum(weth.price?.usd_per_wzion ?? 0, 6)}`,
+    `  wZION in pool:  ${formatNum(weth.balances?.token0 ?? 0, 2)}`,
+    `  WETH in pool:   ${formatNum(weth.balances?.token1 ?? 0, 6)}`,
+    `  TVL (USD):      $${formatNum(weth.tvl?.usd ?? 0, 2)}`,
+    `  NFT positions:  ${weth.nft_positions?.length ?? 0}`,
+  ];
+
+  if (weth.nft_positions) {
+    for (const pos of weth.nft_positions) {
+      lines.push(`    #${pos.id}: ${pos.type} (${pos.tickLower} to ${pos.tickUpper})`);
+    }
+  }
+
+  lines.push(
+    '',
+    '── wZION/USDC (0.3% fee) ──',
+    `  Address:        ${usdc.address ?? '—'}`,
+    `  Active:         ${usdc.active ? 'YES' : 'NO'}`,
+    `  Liquidity:      ${usdc.liquidity ? formatNum(Number(usdc.liquidity), 0) : '0'}`,
+    `  Tick:           ${usdc.tick ?? '—'}`,
+    `  Price (USDC):   ${formatNum(usdc.price?.token1_per_token0 ?? 0, 6)}`,
+    `  Price (USD):    $${formatNum(usdc.price?.usd_per_wzion ?? 0, 6)}`,
+    `  wZION in pool:  ${formatNum(usdc.balances?.token0 ?? 0, 2)}`,
+    `  USDC in pool:   ${formatNum(usdc.balances?.token1 ?? 0, 2)}`,
+    `  TVL (USD):      $${formatNum(usdc.tvl?.usd ?? 0, 2)}`,
+    `  NFT positions:  ${usdc.nft_positions?.length ?? 0}`,
+  );
+
+  if (usdc.nft_positions) {
+    for (const pos of usdc.nft_positions) {
+      lines.push(`    #${pos.id}: ${pos.type} (${pos.tickLower} to ${pos.tickUpper})`);
+    }
+  }
+
+  lines.push(
+    '',
+    '── Summary ──',
+    `  Total TVL:      $${formatNum(summary.total_tvl_usd ?? 0, 2)}`,
+    `  Total wZION:    ${formatNum(summary.total_wzion_liquidity ?? 0, 2)} wZION`,
+    `  Active pools:   ${summary.active_pools ?? 0}`,
+    `  NFT positions:  ${summary.total_nft_positions ?? 0}`,
+    '',
+    `  Fetched:        ${data.fetchedAt ? new Date(data.fetchedAt).toISOString() : '—'}`,
+  );
+
+  return lines.join('\n');
 }
 
 function formatDefiStatus(data: any): string {

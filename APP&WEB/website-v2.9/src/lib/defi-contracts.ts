@@ -59,11 +59,23 @@ export const CONTRACTS_SEPOLIA = {
 export const CONTRACTS = {
   wZION:          '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
   WETH:           '0x4200000000000000000000000000000000000006',
-  ZIONBridge:     '0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88',
-  UniV3Pool:      '0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB',
+  USDC:           '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+  ZIONBridge:     '0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467',
+  // Uniswap V3 — new pools created 2026-06-29 at $0.0002/ZION
+  UniV3Factory:   '0x33128a8fC17869897dcE68Ed026d694621f6FDfD',
+  UniV3PoolWETH:  '0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699', // wZION/WETH 1% fee
+  UniV3PoolUSDC:  '0x5eBdC6E1D516f42EEB54f14faCF8715AbD5B9d8d', // wZION/USDC 0.3% fee
+  // Legacy pool (wrong price ~$0.017/ZION — kept for reference only)
+  UniV3PoolLegacy:'0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB',
+  // Default pool for price feed (WETH pool — has active two-sided liquidity)
+  UniV3Pool:      '0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699',
   UniV3Router:    '0x2626664c2603336E57B271c5C0b26F421741e481',
   QuoterV2:       '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a',
   PositionManager:'0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1',
+  // NFT Position IDs (NonfungiblePositionManager)
+  NFT_Position_WETH_Single:  5431093, // 1M wZION single-sided (above price)
+  NFT_Position_WETH_TwoSided: 5431714, // 100K wZION + 0.0069 WETH (ACTIVE)
+  NFT_Position_USDC_Single:  5431091, // 1M wZION single-sided (above price)
   // DeFi contracts — deployed via deploy-defi.ts + deploy-farm.ts on Base Mainnet
   // Addresses will be filled after deployment. Until then, pages show "deploying" state.
   ZIONStaking:    '0x0000000000000000000000000000000000000000', // TODO: fill after deploy
@@ -85,44 +97,39 @@ export const VALIDATOR2 = '0x8cc6F931edDAf5F14D0071727Ed1640752B5c787';
 // These are used as fallback values while the Uni V3 pool has no liquidity yet,
 // or while ETH/USD Chainlink data is temporarily unavailable.
 //
-// Updated 2026-06-26: price raised from $0.00002 to $0.0002 — matching
-// the legendary Dogecoin early price. FDV ~$28.8M at 144B supply.
+// Updated 2026-06-29: Pools created on Base mainnet at $0.0002/ZION.
+// wZION/WETH pool (1% fee, tickSpacing=200): sqrtPriceX96 = 25054144837504793613172736, tick = -161190
+// wZION/USDC pool (0.3% fee, tickSpacing=60): sqrtPriceX96 = 1120455419495722778624, tick = -361501
 //
-// Derivation (2026-06-26, ETH = $1 656):
-//   price_eth_per_wzion = $0.0002 / $1656  ≈ 1.20773e-7 ETH/wZION
-//   sqrtPriceX96 = floor(sqrt(price_eth_per_wzion) × 2^96)
-//               = 27_533_654_715_549_841_774_536_704
-//   tick         = floor(log(price_eth_per_wzion) / log(1.0001))
-//               = -161_368
+// Derivation (2026-06-29, ETH = $2000):
+//   price_eth_per_wzion = $0.0002 / $2000  = 1e-7 ETH/wZION
+//   sqrtPriceX96 = floor(sqrt(1e-7) × 2^96) = 25054144837504793613172736
+//   tick = floor(log(1e-7) / log(1.0001)) = -161190
 //
 // wZION (token0) < WETH (token1) by address — so price = WETH per wZION.
-//
-// To seed the Uni V3 pool at this price call:
-//   IUniswapV3Pool(pool).initialize(SEED_SQRT_PRICE_X96)
-// or set it via NonfungiblePositionManager.mint().
 
 /** Seed price in USD for 1 wZION = 1 ZION on the L2 */
 export const SEED_PRICE_USD = 0.0002;
 
 /** ETH/USD reference rate used to derive SEED_SQRT_PRICE_X96 */
-export const SEED_ETH_USD = 1656;
+export const SEED_ETH_USD = 2000;
 
 /** Seed price expressed in ETH (WETH per wZION) */
-export const SEED_PRICE_ETH = SEED_PRICE_USD / SEED_ETH_USD; // ≈ 1.20773e-7
+export const SEED_PRICE_ETH = SEED_PRICE_USD / SEED_ETH_USD; // = 1e-7
 
-/** sqrtPriceX96 for the Uni V3 wZION/WETH 0.3% pool at seed price */
-export const SEED_SQRT_PRICE_X96 = '27533654715549841774536704';
+/** sqrtPriceX96 for the Uni V3 wZION/WETH 1% pool at seed price */
+export const SEED_SQRT_PRICE_X96 = '25054144837504793613172736';
 
 /** Tick corresponding to the seed price (wZION is token0, WETH is token1) */
-export const SEED_TICK = -161368;
+export const SEED_TICK = -161190;
 
-/** Full-range tick bounds for the 0.3% pool (tickSpacing = 60) */
-export const TICK_LOWER_FULL = -887220;
-export const TICK_UPPER_FULL = 887220;
+/** Full-range tick bounds for the 1% pool (tickSpacing = 200) */
+export const TICK_LOWER_FULL = -887200;
+export const TICK_UPPER_FULL = 887200;
 
-/** Concentrated-range tick bounds (±600 ticks ≈ ±6% around seed price) */
-export const TICK_LOWER_CONC = -182940; // SEED_TICK - 612, snapped to tickSpacing=60
-export const TICK_UPPER_CONC = -181740; // SEED_TICK + 588, snapped to tickSpacing=60
+/** Concentrated-range tick bounds for two-sided WETH position */
+export const TICK_LOWER_CONC = -162000; // snapped to tickSpacing=200
+export const TICK_UPPER_CONC = -160000; // snapped to tickSpacing=200
 
 // ─── Minimal ABIs ────────────────────────────────────────────────────────────
 
@@ -207,6 +214,21 @@ export const POOL_V3_ABI = [
   'function liquidity() view returns (uint128)',
   'function token0() view returns (address)',
   'function token1() view returns (address)',
+  'function fee() view returns (uint24)',
+  'function tickSpacing() view returns (int24)',
+] as const;
+
+/** ERC20 ABI for balance checks */
+export const ERC20_ABI = [
+  'function balanceOf(address) view returns (uint256)',
+  'function totalSupply() view returns (uint256)',
+  'function decimals() view returns (uint8)',
+  'function symbol() view returns (string)',
+] as const;
+
+/** NPM ABI for position queries */
+export const NPM_ABI = [
+  'function positions(uint256 tokenId) view returns (uint96 nonce, address operator, address token0, address token1, uint24 fee, int24 tickLower, int24 tickUpper, uint128 liquidity, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128, uint128 tokensOwed0, uint128 tokensOwed1)',
 ] as const;
 
 // ─── DeFi product definitions ────────────────────────────────────────────────
@@ -243,14 +265,14 @@ export const DEFI_PRODUCTS: DefiProduct[] = [
     id: 'dex',
     name: 'wZION/WETH Pool',
     nameCs: 'wZION/WETH Pool',
-    description: 'Uniswap V3 concentrated liquidity pool. Trade wZION for WETH and vice-versa. 0.3% fee tier.',
-    descriptionCs: 'Uniswap V3 pool s koncentrovanou likviditou. Obchoduj wZION za WETH a zpět. 0.3% poplatek.',
-    contract: CONTRACTS.UniV3Pool,
+    description: 'Uniswap V3 concentrated liquidity pool. Trade wZION for WETH and vice-versa. 1% fee tier. Active two-sided liquidity at $0.0002/ZION.',
+    descriptionCs: 'Uniswap V3 pool s koncentrovanou likviditou. Obchoduj wZION za WETH a zpět. 1% poplatek. Aktivní two-sided likvidita na $0.0002/ZION.',
+    contract: CONTRACTS.UniV3PoolWETH,
     href: '/defi',
     status: 'live',
     icon: 'dex',
     color: 'from-sky-500 to-indigo-500',
-    tags: ['Uniswap V3', '0.3% Fee', 'Concentrated LP'],
+    tags: ['Uniswap V3', '1% Fee', 'Concentrated LP', 'Active Liquidity'],
   },
   {
     id: 'farming',
