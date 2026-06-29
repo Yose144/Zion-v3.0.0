@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   ArrowLeftRight,
   Wallet,
@@ -27,8 +27,6 @@ import { AlertTriangle, Droplets, TrendingUp } from 'lucide-react';
 import { useNetworkStatus } from '@/hooks/useWebSocketSubscription';
 
 // ─── Price Sparkline (SVG, no deps) ──────────────────────────────────────────
-
-const MAX_POINTS = 60; // keep 60 samples (1 per minute = 1h window)
 
 function PriceSparkline({
   prices,
@@ -105,9 +103,9 @@ export default function DefiPage() {
   const [tab, setTab] = useState<Tab>('swap');
   const [wZIONSupply, setWZIONSupply] = useState<string | null>(null);
   const [wZIONPrice, setWZIONPrice] = useState<{ wzion_per_weth: number; usd_per_wzion: number } | null>(null);
-  // Price history for sparkline (sampled every 60s)
-  const priceHistory = useRef<number[]>([]);
-  const [sparkPrices, setSparkPrices] = useState<number[]>([]);
+  // Chart data from GeckoTerminal OHLCV (loaded immediately, refreshed every 60s)
+  const [chartPrices, setChartPrices] = useState<number[]>([]);
+  const [chartLoading, setChartLoading] = useState(true);
   const [bridgeStatus, setBridgeStatus] = useState<{
     online: boolean;
     l1_locks_detected: number;
@@ -161,22 +159,33 @@ export default function DefiPage() {
         if (!res.ok) return;
         const data = await res.json();
         if (data.ok && !cancelled) {
-          const p: number = data.price.usd_per_wzion;
           setWZIONPrice({
             wzion_per_weth: data.price.wzion_per_weth,
-            usd_per_wzion: p,
+            usd_per_wzion: data.price.usd_per_wzion,
           });
-          // Append to sparkline history
-          if (p > 0) {
-            priceHistory.current = [...priceHistory.current, p].slice(-MAX_POINTS);
-            setSparkPrices([...priceHistory.current]);
-          }
         }
       } catch { /* ignore */ }
     };
 
+    const refreshChart = async () => {
+      try {
+        const res = await fetch('/api/defi/chart', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled && data.ok && Array.isArray(data.prices) && data.prices.length > 0) {
+          setChartPrices(data.prices);
+          setChartLoading(false);
+        } else if (!cancelled) {
+          setChartLoading(false);
+        }
+      } catch {
+        if (!cancelled) setChartLoading(false);
+      }
+    };
+
     void refreshSupply();
     void refreshPrice();
+    void refreshChart();
 
     const refreshBridge = async () => {
       try {
@@ -228,6 +237,7 @@ export default function DefiPage() {
       void refreshPrice();
       void refreshBridge();
       void refreshPools();
+      void refreshChart();
     }, 60_000);
 
     return () => {
@@ -406,11 +416,11 @@ export default function DefiPage() {
                 <p className="text-lg font-bold font-mono text-white">
                   ${(poolStats?.primary_price_usd ?? wZIONPrice?.usd_per_wzion ?? SEED_PRICE_USD).toFixed(6)}
                 </p>
-                {sparkPrices.length >= 2 && (() => {
-                  const chg = ((sparkPrices[sparkPrices.length - 1] - sparkPrices[0]) / sparkPrices[0]) * 100;
+                {chartPrices.length >= 2 && (() => {
+                  const chg = ((chartPrices[chartPrices.length - 1] - chartPrices[0]) / chartPrices[0]) * 100;
                   return (
                     <p className={`text-[10px] text-right ${chg >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {chg >= 0 ? '+' : ''}{chg.toFixed(2)}% ({cs ? 'od startu' : 'since load'})
+                      {chg >= 0 ? '+' : ''}{chg.toFixed(2)}% ({cs ? '1h' : '1h'})
                     </p>
                   );
                 })()}
@@ -426,14 +436,20 @@ export default function DefiPage() {
             </div>
           </div>
 
-          {/* Sparkline */}
-          <div className="relative h-20 w-full">
-            {sparkPrices.length >= 2 ? (
-              <PriceSparkline prices={sparkPrices} height={80} />
-            ) : (
+          {/* Price chart — GeckoTerminal OHLCV */}
+          <div className="relative h-24 w-full">
+            {chartPrices.length >= 2 ? (
+              <PriceSparkline prices={chartPrices} height={96} />
+            ) : chartLoading ? (
               <div className="flex h-full items-center justify-center">
                 <p className="text-[10px] text-gray-600 animate-pulse">
                   {cs ? 'Načítám cenová data…' : 'Loading price data…'}
+                </p>
+              </div>
+            ) : (
+              <div className="flex h-full items-center justify-center">
+                <p className="text-[10px] text-gray-600">
+                  {cs ? 'Cenová data zatím nedostupná' : 'Price data not available yet'}
                 </p>
               </div>
             )}
