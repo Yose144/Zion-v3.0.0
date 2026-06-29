@@ -3821,6 +3821,78 @@ v OpenCL kernelu.
 
 ---
 
+## Session 9 — Node Memory Patch: Block Retention Window (2026-06-30)
+
+> **Status:** ✅ KÓD HOTOVÝ + TESTS PASS — čeká na deploy na Edge
+
+### Problém
+
+`zion-node` na Edge serveru konzumoval 3.7 GB RAM při výšce ~21,000 bloků. Analýza odhalila:
+
+1. **Trojí kopie každého bloku v RAM** — `accepted_blocks` (Vec) + `accepted_by_height` (BTreeMap) + `accepted_by_template_id` (HashMap), všechny drží kompletní `AcceptedBlock` strukturu
+2. **Žádný pruning** — bloky drženy navždy v paměti, žádné eviction mechanismy
+3. **Address_tx_index** — unbounded HashMap<String, Vec<usize>>
+4. **Růst ~5.5-16 MB / 1,000 bloků** — při 100K blocích by to bylo 600 MB-1.5 GB, při 1M blocích 6-15 GB (crash)
+
+### Root Cause Analysis (subagent explorace)
+
+- **UTXO set:** DB-backed (LMDB) ✅ — není v RAM
+- **Block data:** DB-backed ALE TAKÉ trojnásobně v RAM ❌
+- **Mempool:** bounded (4096 txs) ✅
+- **Address index:** unbounded v RAM ❌
+- **LMDB map size:** 10 GB (memory-mapped, OS drží pages v RAM)
+
+### Patch: Block Retention Window
+
+**Soubory upravené (L1 consensus — explicit approval udělen):**
+- `V3/L1/core/src/lib.rs` — ChainState + prune_old_blocks()
+- `V3/L1/core/src/bin/node.rs` — NodeServerConfig + env var parsing
+
+**Implementace:**
+
+1. **`ZION_BLOCK_RETENTION` env var** (default 0 = unlimited)
+   - Pokud >0, pouze posledních N bloků v RAM
+   - Staré bloky odstraněny ze `accepted_blocks`, `accepted_by_height`, `accepted_by_template_id`, `address_tx_index`
+   - Bloky zůstávají v LMDB/ChainStore persistent storage
+   - `address_tx_index` indexy dekrementovány při pruning
+
+2. **`ZION_LMDB_MAP_SIZE_MB` env var** (default 0 = 10 GB)
+   - Parsed v `NodeServerConfig`, forward-looking pro LMDB migraci
+   - Aktuálně Edge node používá ChainStore (JSON snapshot + journal), ne LMDB
+
+3. **`prune_old_blocks()` metoda na ChainState:**
+   - Voláno po každém `accept_block_record()`
+   - Odstraní nejstarší blok (index 0) ze všech 3 struktur
+   - Upraví `address_tx_index`: odstraní index 0, dekrementuje zbytek
+   - Odstraní prázdné address entries
+
+4. **`set_block_retention()` metoda na NodeRuntime:**
+   - Nastaví retention + okamžitě provede pruning
+   - Voláno z `node.rs` main() po vytvoření runtime
+
+### Bezpečnostní analýza
+
+- **Consensus impact:** Žádný. Pruning pouze ovlivňuje in-memory RPC cache. Block validation používá `accepted_blocks` pro nedávné bloky (reorg window), LMDB pro historická data.
+- **Reorg risk:** Pokud `ZION_BLOCK_RETENTION` < reorg depth, reorgy hlubší než retention window selžou. Doporučeno: 1000-10000.
+- **RPC impact:** `get_block_by_height`, `get_block_by_template_id`, address history pro pruned bloky vrátí `None`. Behavior change pro staré bloky.
+- **Active template:** `build_template` voláno PŘED pruning, takže template je vždy postaven s plným current state.
+
+### Test výsledky
+
+- `cargo check -p zion-core`: ✅ pass (1 dead_code warning pro `lmdb_map_size_mb` — suppressed)
+- `cargo test -p zion-core`: ✅ všechny testy pass (0 failed)
+- Default `block_retention=0` = žádná behavior change
+
+### Plán deploy na Edge
+
+1. Build release binárky: `cargo build --release -p zion-core`
+2. SCP na Edge server
+3. Nastavit `ZION_BLOCK_RETENTION=10000` v `edge-environment.sh`
+4. Restart `zion-edge-node1.service`
+5. Monitorovat RAM usage po restartu (očekáváno: ~300-500 MB místo 3.7 GB)
+
+---
+
 ## Session 2 — Edge Backup Dashboard + Systemd + IP Cleanup (2026-06-28 evening)
 
 ### Co se udělalo
