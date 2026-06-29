@@ -3983,6 +3983,22 @@
                 <input type="number" id="bridge-lock-amount" placeholder="100" min="100" step="1" class="form-control" />
               </div>
 
+              <!-- Step 2b: From address (auto-filled from active wallet) -->
+              <div class="form-group">
+                <label>From (your ZION L1 wallet)</label>
+                <div class="inline-row">
+                  <input type="text" id="bridge-lock-from" readonly placeholder="— set active wallet in Wallet tab —" class="input-flex-mono" style="font-size:11px" />
+                  <button class="btn btn-ghost btn-sm" id="bridge-lock-fill-from">Use active wallet</button>
+                </div>
+                <span style="font-size:11px;color:rgba(255,255,255,0.4)">Set your active wallet in the Wallet tab first</span>
+              </div>
+
+              <!-- Step 2c: Wallet password -->
+              <div class="form-group">
+                <label>Wallet Password <span style="font-size:11px;color:rgba(255,255,255,0.35);font-weight:400">(to sign the transaction)</span></label>
+                <input type="password" id="bridge-lock-password" placeholder="Enter wallet password" autocomplete="off" class="form-control" />
+              </div>
+
               <!-- Step 3: Generated memo -->
               <div class="form-group">
                 <label>Transaction Memo <span style="font-size:11px;color:rgba(255,255,255,0.35);font-weight:400">(auto-generated)</span></label>
@@ -4009,7 +4025,6 @@
                   <svg class="icon icon-sm" aria-hidden="true"><use href="#i-spark"></use></svg>
                   Send Lock TX
                 </button>
-                <button class="btn btn-ghost btn-sm" id="bridge-lock-fill-wallet">Use active wallet</button>
               </div>
               <div id="bridge-lock-status" class="status-note" style="margin-top:8px"></div>
               <div id="bridge-lock-tx-result" class="control-panel panel-tight" style="display:none;border-left:3px solid rgba(16,185,129,0.6);margin-top:8px">
