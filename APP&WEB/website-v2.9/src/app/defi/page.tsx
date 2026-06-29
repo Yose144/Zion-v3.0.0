@@ -437,18 +437,18 @@ export default function DefiPage() {
           </div>
 
           {/* Price chart — GeckoTerminal OHLCV */}
-          <div className="relative h-24 w-full">
+          <div className="relative h-48 w-full">
             {chartPrices.length >= 2 ? (
-              <PriceSparkline prices={chartPrices} height={96} />
+              <PriceSparkline prices={chartPrices} height={192} />
             ) : chartLoading ? (
               <div className="flex h-full items-center justify-center">
-                <p className="text-[10px] text-gray-600 animate-pulse">
+                <p className="text-xs text-gray-600 animate-pulse">
                   {cs ? 'Načítám cenová data…' : 'Loading price data…'}
                 </p>
               </div>
             ) : (
               <div className="flex h-full items-center justify-center">
-                <p className="text-[10px] text-gray-600">
+                <p className="text-xs text-gray-600">
                   {cs ? 'Cenová data zatím nedostupná' : 'Price data not available yet'}
                 </p>
               </div>
