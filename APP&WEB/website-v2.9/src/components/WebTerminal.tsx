@@ -6,6 +6,7 @@ import {
   Terminal, Send, ChevronRight, Cpu, Activity, Wifi, Wallet, Sparkles, X,
   HelpCircle, Boxes, Search, Coins, Pickaxe, Network, GitBranch, Bot,
   Copy, Check, History, Trash2, Server, Blocks, Gauge, Droplets,
+  Building2, BarChart3,
 } from 'lucide-react';
 
 interface TerminalLine {
@@ -14,7 +15,7 @@ interface TerminalLine {
   text: string;
 }
 
-type CommandCategory = 'Node' | 'Pool' | 'Explorer' | 'DeFi' | 'Mining' | 'Network' | 'DAO & Bridge' | 'Wallet' | 'AI' | 'Meta';
+type CommandCategory = 'Node' | 'Pool' | 'Explorer' | 'DeFi' | 'CEX' | 'Mining' | 'Network' | 'DAO & Bridge' | 'Wallet' | 'AI' | 'Meta';
 
 interface QuickCommand {
   label: string;
@@ -44,6 +45,10 @@ const QUICK_COMMANDS: QuickCommand[] = [
   { label: 'defi price', icon: Coins, desc: 'ZION price', category: 'DeFi' },
   { label: 'defi pools', icon: Droplets, desc: 'Pool stats & TVL', category: 'DeFi' },
   { label: 'defi status', icon: GitBranch, desc: 'DeFi status', category: 'DeFi' },
+  // CEX
+  { label: 'cex listings', icon: Building2, desc: 'CEX listing status', category: 'CEX' },
+  { label: 'cex dex', icon: BarChart3, desc: 'DEX trading data', category: 'CEX' },
+  { label: 'cex status', icon: Activity, desc: 'CEX + DEX summary', category: 'CEX' },
   // Mining
   { label: 'mine start', icon: Pickaxe, desc: 'Mining guide', category: 'Mining' },
   { label: 'mine calc 100M', icon: Gauge, desc: 'Reward calc', category: 'Mining' },
@@ -65,13 +70,14 @@ const QUICK_COMMANDS: QuickCommand[] = [
   { label: 'clear', icon: Trash2, desc: 'Clear terminal', category: 'Meta' },
 ];
 
-const CATEGORIES: CommandCategory[] = ['Node', 'Pool', 'Explorer', 'DeFi', 'Mining', 'Network', 'DAO & Bridge', 'Wallet', 'AI', 'Meta'];
+const CATEGORIES: CommandCategory[] = ['Node', 'Pool', 'Explorer', 'DeFi', 'CEX', 'Mining', 'Network', 'DAO & Bridge', 'Wallet', 'AI', 'Meta'];
 
 const CATEGORY_ICONS: Record<CommandCategory, typeof Cpu> = {
   'Node': Cpu,
   'Pool': Gauge,
   'Explorer': Search,
   'DeFi': Coins,
+  'CEX': Building2,
   'Mining': Pickaxe,
   'Network': Network,
   'DAO & Bridge': Boxes,
@@ -157,6 +163,7 @@ export default function WebTerminal() {
       'explorer block', 'explorer tx', 'explorer address', 'explorer search',
       'explorer richlist', 'explorer supply', 'explorer stats',
       'defi price', 'defi pools', 'defi status',
+      'cex listings', 'cex dex', 'cex status',
       'mine start', 'mine calc', 'mine benchmarks',
       'network stats', 'network peers',
       'dao proposals', 'bridge status',
