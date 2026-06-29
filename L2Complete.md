@@ -1,6 +1,6 @@
 # L2 Bridge Completion — Status & Plan
 
-**Last updated:** 2026-06-29 (session 7: L1 vault fix deployed, reverse bridge FULLY OPERATIONAL)
+**Last updated:** 2026-06-29 (session 8: atomic swap activated with production escrow, DAO scanner fixed, 3.0.4 milestone defined)
 
 ---
 
@@ -53,7 +53,27 @@
 - `mainnet_readiness::test_parse_bridge_mainnet_toml` — bridge address updated to v3
 - All `cargo test -p zion-bridge` tests pass
 
-### 7. Uniswap V3 Pool Cleanup ✅ (Sessions 2, 3 & 5)
+### 7. Atomic Swap Daemon — Activated ✅ (Session 8, 2026-06-29)
+
+- **Service:** `zion-edge-atomic-swap.service` — `active (running)` na portu 8452
+- **Escrow address:** `zion1y0j484d5e8r49785d253e8w0c2x4t3n792m5724` (produkční Ed25519 keypair, 2026-06-29)
+- **Contract:** `0x3DE9Ad42716854083ab837706E3961d10B0e63Eb` (Base Mainnet, ZIONAtomicSwap.sol)
+- **L1 watcher:** scanuje bloky od genesis, hledá `SWAP:LOCK` mema
+- **EVM watcher:** sleduje Base mainnet HTLC events (Locked/Claimed/Refunded)
+- **Opravy:**
+  - `SO_REUSEADDR + SO_REUSEPORT` via socket2 crate → daemon se restartuje okamžitě bez čekání na TIME_WAIT
+  - DB cesta opravena na `/root/zion-2.9.6-main/V3/data/atomic-swap.db`
+  - `ZION_SWAP_BEARER_TOKEN` env var podpora pro API endpoint ochranu
+- **Secrets:** `systemd drop-in /etc/systemd/system/zion-edge-atomic-swap.service.d/secrets.conf` (chmod 600)
+- **⚠️ Funding potřeba:** escrow adresa musí dostat ~5-10 ZION pro release TX fees (L1)
+
+### 8. DAO L1 Scanner Fix ✅ (Session 8, 2026-06-29)
+
+- **Root cause:** `DAO_L1_RPC=http://127.0.0.1:8443/jsonrpc` — `normalize_rpc_addr()` strippuje `http://` prefix ale ne `/jsonrpc` suffix → `TcpStream::connect("127.0.0.1:8443/jsonrpc")` selhalo s "Connection refused"
+- **Fix:** `DAO_L1_RPC=127.0.0.1:8443` v `/etc/systemd/system/zion-edge-dao.service`
+- **Status po fix:** `[DAO-SCANNER] Starting L1 scanner → 127.0.0.1:8443` ✅
+
+### 9. Uniswap V3 Pool Cleanup ✅ (Sessions 2, 3 & 5)
 
 #### Canonical Pools on Base Mainnet (final state 2026-06-29)
 | Pair | Fee | Pool Address | Liquidity | Status |
