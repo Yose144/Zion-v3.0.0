@@ -1,8 +1,30 @@
 # ZION 3.0.4 Deploy Runbook
 
 **Created:** 2026-06-29
-**Status:** Ready for execution (blocker: ~0.005 ETH gas on deployer wallet)
+**Status:** ✅ COMPLETED (2026-06-29) — all DeFi contracts deployed, reward pools funded, DAO guardians provisioned, website rebuilt
 **Target:** Base Mainnet (chain 8453)
+
+---
+
+## Deploy Results (2026-06-29)
+
+| Kontrakt | Adresa | TX Hash | Detail |
+|----------|--------|---------|--------|
+| ZIONGovernance | `0xB77eB4ab9468Ce03FBd7eCec70e976EFCfa623E8` | — | Token-weighted voting, quorum 15%, 14d voting |
+| ZIONTreasury | `0x455f465ac7e14fdA97dC46fdd74bCa78bfC0aEeD` | — | 3-of-3 multisig |
+| ZIONStaking | `0xbd5cEe7878337d22188BFBaF9aa9F39A850Be78B` | `0x9604e075...` (fund) | 12% APR, 7d cooldown, 100K wZION funded |
+| ZIONFarm | `0x167B2753F5D8D9F8e62875cc9e379d7804308B08` | `0xb89d6fef...` (fund) | 1 wZION/s, 90d halving, 500K wZION funded |
+
+**Deployer balance after deploy:** 0.0059 ETH, 199,509,960 wZION
+
+**Hardhat config fixes applied:**
+- `tsconfig.json`: `"ignoreDeprecations": "6.0"`, `"rootDir": "."`
+- `hardhat.config.ts`: multi-compiler 0.8.20 (paris) + 0.8.26 (cancun) for OpenZeppelin v5 `mcopy`
+- All deploy/fund scripts: `await sleep(3000)` after each TX (public Base RPC 1 in-flight limit)
+
+**Remaining:**
+- [ ] Basescan verify (needs `BASESCAN_API_KEY` from https://basescan.org/myapikey)
+- [ ] L2 watcher update: `L1Block` struct add `account_transactions` field + watcher.rs scan account-model memo TXs
 
 ---
 
