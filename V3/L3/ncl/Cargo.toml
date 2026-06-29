@@ -14,7 +14,7 @@ tracing = "0.1"
 thiserror = "2"
 uuid = { version = "1", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
-rusqlite = { version = "0.31", features = ["bundled"] }
+rusqlite = { version = "0.40", features = ["bundled"] }
 axum = "0.7"
 
 # Optional ONNX Runtime backend (heavy — not enabled by default)
