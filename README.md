@@ -283,5 +283,5 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-*Last updated: 2026-06-27 · Genesis Hash: `7543004c76b11416ef32e2f1f5a4c72f0178f841d4559bf476e29e15a9602728` · Consensus: `deeksha_lite_v1` + `deeksha_lite_fire` · 3.0.3 Decimal Fork Deployed*
+*Last updated: 2026-06-29 · Genesis Hash: `7543004c76b11416ef32e2f1f5a4c72f0178f841d4559bf476e29e15a9602728` · Consensus: `deeksha_lite_v1` + `deeksha_lite_fire` · 3.0.3 Decimal Fork Deployed · Uniswap V3 Pools Live on Base*
 *Repository: `Yose144/Zion-v3.0.0` · Branch: `main` · Version: v3.0.3*
