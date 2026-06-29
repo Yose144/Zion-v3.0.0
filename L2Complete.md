@@ -68,10 +68,13 @@
 | 5431091 | wZION/USDC 0.3% | -361440 to -360000 | Withdrawn + burned | `0xb40cd241...` |
 | 5431093 | wZION/WETH 1.0% | -161000 to -160000 | Withdrawn + burned | `0x1beb81c1...` |
 
-#### Remaining NFT Position (ONLY ONE)
-| NFT # | Pool | Tick Range | Liquidity | Status |
-|-------|------|------------|-----------|--------|
-| 5431714 | wZION/WETH 1.0% | -162000 to -160000 | 547909963844053940788 | **ACTIVE — two-sided** |
+#### Remaining NFT Positions (2)
+| NFT # | Pool | Tick Range | Liquidity | Type | TX |
+|-------|------|------------|-----------|------|-----|
+| 5431714 | wZION/WETH 1.0% | -162000 to -160000 | 547909963844053940788 | Narrow (±10%) — original | `0xc7f84d0e...` |
+| 5434576 | wZION/WETH 1.0% | -164000 to -158000 | 429876233605855311813 | **Wide (±30%) — new** | `0xd9db0431...` |
+
+**Total pool liquidity:** 977786197449909252601 (~2x increase)
 
 #### Key Fix: Tuple ABI
 - **Root cause of previous failed withdraws:** NPM `decreaseLiquidity()` and `collect()` take **struct (tuple)** parameters, not individual params
@@ -80,10 +83,10 @@
 - Same for `collect()`: use `collect((uint256,address,uint128,uint128))` not `collect(uint256,address,uint128,uint128)`
 - Script: `ZION_OS/dashboard/uniswap_withdraw.py`
 
-#### Token Balances After Cleanup
-- **wZION:** 99,900,542.74 (recovered ~2M wZION from withdrawn positions)
-- **ETH:** 0.041523
-- **WETH:** ~0.013 (remaining from original 0.02 ETH wrap)
+#### Token Balances After Liquidity Addition
+- **wZION:** 99,700,542.74 (200K used for new wide position)
+- **ETH:** 0.034685
+- **WETH:** 0.002142 (0.020 used for liquidity)
 - **USDC:** 0
 - **USDT:** 0
 
@@ -92,10 +95,12 @@
 ## 🔧 Remaining Work — USDT/wZION Pool
 
 ### Current State
-- wZION/WETH 1.0% pool: **ACTIVE** ✅ (only remaining pool, ~$185 liquidity)
-- Old wZION/WETH 0.3% pool: **EMPTY** (all liquidity withdrawn, can be ignored)
-- Old wZION/USDC 0.3% pool: **EMPTY** (all liquidity withdrawn, abandoned)
-- Deployer has ~99.9M wZION, ~0.013 WETH, 0 USDT
+- wZION/WETH 1.0% pool: **ACTIVE** ✅ (2 positions, ~$370 liquidity, ~2x depth)
+  - NFT #5431714: narrow ±10% (100K wZION + 0.0069 WETH)
+  - NFT #5434576: wide ±30% (200K wZION + 0.020 WETH)
+- Old wZION/WETH 0.3% pool: **DEAD** (liquidity=0, abandoned forever — Uniswap pools can't be destroyed)
+- Old wZION/USDC 0.3% pool: **DEAD** (liquidity=0, abandoned)
+- Deployer has ~99.7M wZION, ~0.002 WETH, 0.035 ETH, 0 USDT
 - **Decision: Use USDT instead of USDC** (more universal stablecoin)
 
 ### Step 1: Get USDT
@@ -214,9 +219,9 @@ npm.functions.collect((token_id, recipient, MAX_UINT128, MAX_UINT128))
 - **wZION totalSupply:** 100,000,299 wZION (100M ZION bridged)
 - **wZION MAX_SUPPLY:** 144,000,000,000 wZION (144B — matches L1 total supply)
 - **Available to bridge:** ~143.9B wZION remaining
-- **Deployer wZION balance:** ~99,900,542 wZION (recovered after pool cleanup)
-- **Deployer ETH balance:** ~0.041 ETH
-- **Deployer WETH balance:** ~0.013 WETH
+- **Deployer wZION balance:** ~99,700,542 wZION (300K in Uniswap liquidity)
+- **Deployer ETH balance:** ~0.035 ETH
+- **Deployer WETH balance:** ~0.002 WETH
 - **Deployer USDC balance:** 0
 - **Deployer USDT balance:** 0
 
