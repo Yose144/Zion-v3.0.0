@@ -8,15 +8,24 @@ const PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY || "0x000000000000000000000
 
 const config: HardhatUserConfig = {
   solidity: {
-    version: "0.8.20",
-    settings: {
-      optimizer: {
-        enabled: true,
-        runs: 200,
+    compilers: [
+      {
+        version: "0.8.20",
+        settings: {
+          optimizer: { enabled: true, runs: 200 },
+          viaIR: true,
+          evmVersion: "paris",
+        },
       },
-      viaIR: true,
-      evmVersion: "paris",
-    },
+      {
+        version: "0.8.26",
+        settings: {
+          optimizer: { enabled: true, runs: 200 },
+          viaIR: true,
+          evmVersion: "cancun",
+        },
+      },
+    ],
   },
   paths: {
     sources: "./sol",
