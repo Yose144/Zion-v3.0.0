@@ -73,10 +73,10 @@ export const CONTRACTS = {
   UniV3Router:    '0x2626664c2603336E57B271c5C0b26F421741e481',
   QuoterV2:       '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a',
   PositionManager:'0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1',
-  // NFT Position IDs — active LP positions (NonfungiblePositionManager)
-  NFT_Position_WETH: 5434576, // wZION/WETH 1% — 200K wZION + 0.020 WETH (ACTIVE)
-  NFT_Position_USDT: 5435121, // wZION/USDT 0.3% — active position (ACTIVE)
-  NFT_Position_SOL:  5434872, // wZION/SOL 0.01% — 100K wZION + 0.272 SOL (ACTIVE)
+  // NFT Position IDs — LP positions (NonfungiblePositionManager)
+  NFT_Position_USDT: 2740371, // wZION/USDT 0.3% — ACTIVE (only active position)
+  NFT_Position_WETH: 2740380, // wZION/WETH 1% — BURNED (position closed)
+  NFT_Position_SOL:  5434872, // wZION/SOL 0.01% — DEPLETED
   // DeFi contracts — deployed 2026-06-29 via deploy-defi.ts + deploy-farm.ts on Base Mainnet
   ZIONGovernance: '0xB77eB4ab9468Ce03FBd7eCec70e976EFCfa623E8',
   ZIONTreasury:   '0x455f465ac7e14fdA97dC46fdd74bCa78bfC0aEeD', // 3-of-3 multisig
