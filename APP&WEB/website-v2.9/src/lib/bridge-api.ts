@@ -36,10 +36,10 @@ export const BRIDGE_CONTRACTS_SEPOLIA: BridgeContractInfo = {
   explorer_base: 'https://sepolia.basescan.org/address/',
 };
 
-/** Base Mainnet contracts — 5/5 ZIONBridge deployed and wZION BRIDGE_ROLE migrated. */
+/** Base Mainnet contracts — ZIONBridge v3 deployed 2026-06-29 (no timelock for premine). */
 export const BRIDGE_CONTRACTS_MAINNET: BridgeContractInfo = {
   wzion_address: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
-  bridge_address: '0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88',
+  bridge_address: '0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467',
   network: 'Base Mainnet',
   chain_id: 8453,
   explorer_base: 'https://basescan.org/address/',
