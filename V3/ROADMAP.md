@@ -39,7 +39,10 @@ Verze **3.0.3** je nyní uzavřena. Všechny klíčové komponenty jsou funkčn�
 
 #### P1 — DeFi kontrakty (Base Mainnet) — blocker: ~0.005 ETH gas
 
-- [ ] **ZIONGovernance** — deploy: `cd archive/2.9.9/legacy-code/L2/contracts && npx hardhat run scripts/deploy-defi.ts --network base`
+> **Runbook:** [`V3/docs/ZION_3.0.4_DEPLOY_RUNBOOK.md`](../V3/docs/ZION_3.0.4_DEPLOY_RUNBOOK.md) — kompletní krok-za-krokem návod.
+> **Deploy skripty:** `V3/L2/contracts/hardhat/scripts/` (připraveno 2026-06-29 — wZION adresa opravena, fund skripty čtou z deployed JSON, verify skript aktualizován na bridge v3).
+
+- [ ] **ZIONGovernance** — deploy: `cd V3/L2/contracts/hardhat && npx hardhat run scripts/deploy-defi.ts --network base`
 - [ ] **ZIONTreasury** — součást deploy-defi.ts výše
 - [ ] **ZIONStaking** — součást deploy-defi.ts; init APR 12%, 7d cooldown; reward pool seed 100K wZION
 - [ ] **ZIONFarm** — `npx hardhat run scripts/deploy-farm.ts --network base`; Pool 0: wZION single; Pool 1: wZION/USDT LP; seed 500K wZION
