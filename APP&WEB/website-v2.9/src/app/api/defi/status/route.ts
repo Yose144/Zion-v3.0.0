@@ -55,17 +55,25 @@ async function ethCall(to: string, data: string): Promise<string | null> {
 }
 
 function hexToNumber(hex: string | null): number {
-  if (!hex || hex === '0x') return 0;
-  return Number(BigInt(hex));
+  if (!hex || hex === '0x' || hex === '0x0') return 0;
+  try {
+    return Number(BigInt(hex));
+  } catch {
+    return 0;
+  }
 }
 
 function hexToDecimal18(hex: string | null): string {
   if (!hex || hex === '0x') return '0';
-  const raw = BigInt(hex);
-  const whole = raw / BigInt(1e18);
-  const frac = raw % BigInt(1e18);
-  const fracStr = frac.toString().padStart(18, '0').slice(0, 4);
-  return `${whole}.${fracStr}`;
+  try {
+    const raw = BigInt(hex);
+    const whole = raw / BigInt(1e18);
+    const frac = raw % BigInt(1e18);
+    const fracStr = frac.toString().padStart(18, '0').slice(0, 4);
+    return `${whole}.${fracStr}`;
+  } catch {
+    return '0';
+  }
 }
 
 function decodeSlot0Tick(hex: string): number {
