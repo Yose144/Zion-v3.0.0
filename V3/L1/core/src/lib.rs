@@ -2142,7 +2142,17 @@ impl ChainState {
                 transactions: Vec::new(),
                 total_fees_zion: snapshot.active_template.total_fees_zion,
             },
-            accepted_blocks: snapshot.accepted_blocks,
+            accepted_blocks: {
+                // Ensure genesis block (height 0) is always present in memory.
+                // It may be missing if the snapshot was saved with block retention
+                // pruning enabled. Genesis is needed for premine wallet discovery
+                // via getBlockByHeight(0) RPC.
+                let mut blocks = snapshot.accepted_blocks;
+                if blocks.first().map(|b| b.height) != Some(0) {
+                    blocks.insert(0, genesis::genesis_block());
+                }
+                blocks
+            },
             accepted_by_height: BTreeMap::new(),
             accepted_by_template_id: HashMap::new(),
             mempool: snapshot
@@ -3193,6 +3203,9 @@ impl ChainState {
     /// and `accepted_by_template_id`. Adjusts `address_tx_index` by removing
     /// the pruned index and decrementing all higher indices.
     ///
+    /// The genesis block (height 0) is NEVER pruned — it's needed for
+    /// premine wallet discovery via `getBlockByHeight(0)` RPC.
+    ///
     /// Blocks remain in LMDB persistent storage — this only affects in-memory
     /// caches for RPC queries and consensus validation of recent blocks.
     fn prune_old_blocks(&mut self) {
@@ -3200,6 +3213,10 @@ impl ChainState {
             return;
         }
         while self.accepted_blocks.len() > self.block_retention {
+            // Never prune genesis (height 0) — needed for premine wallet discovery
+            if self.accepted_blocks.first().map(|b| b.height) == Some(0) {
+                break;
+            }
             // Remove the oldest block (index 0)
             let removed = self.accepted_blocks.remove(0);
 
