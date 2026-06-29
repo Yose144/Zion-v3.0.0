@@ -1,6 +1,6 @@
 # L2 Bridge Completion — Status & Plan
 
-**Last updated:** 2026-06-29 (session 8: atomic swap activated with production escrow, DAO scanner fixed, 3.0.4 milestone defined)
+**Last updated:** 2026-06-29 (session 8: atomic swap activated, DAO scanner fixed, 3.0.4 complete upgrade plan added)
 
 ---
 
@@ -436,3 +436,403 @@ For 100K wZION in a 0.01% concentrated position ±5000 ticks around the target p
 | USDT | `0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2` | 6 (bridged) |
 | SOL  | `0x311935Cd80B76769bF2ecC9D8Ab7635b2139cf82` | 9 (Base bridge) |
 | WETH | `0x4200000000000000000000000000000000000006` | 18 |
+
+---
+
+# 🚀 ZION 3.0.4 — Upgrade Plan (Target: Q3 2026)
+
+> Tento dokument je **kanonickým upgrade runbookem** pro verzi 3.0.4.
+> Každý krok má přesný příkaz nebo kód. Nic nezůstává ambiguitní.
+
+## Přehled stavu před 3.0.4
+
+### Co je hotové ✅
+
+| Komponenta | Adresa / Port | Stav |
+|-----------|---------------|------|
+| L1 Node (node1+node2) | 8443/8446 | ✅ LIVE, height ~21000+, protocol 3.0.3 |
+| L1 Mining Pool | 8444 | ✅ LIVE, PPLNS |
+| L2 Bridge L1→EVM | 8451 | ✅ VERIFIED, 100M wZION minted |
+| L2 Bridge EVM→L1 | 8451 | ✅ VERIFIED E2E (blok 20919) |
+| L2 DAO daemon | 8450 | ✅ LIVE, L1 scanner aktivní |
+| L2 Atomic Swap daemon | 8452 | ✅ ACTIVE, produkční escrow |
+| L3 WARP daemon | 8453 | ✅ LIVE, EVM+BTC+SOL+XLM+TRX |
+| wZION | `0x0c493763...` | ✅ 100M supply |
+| ZIONBridge v3 | `0x72c8f0Dc...` | ✅ 5/5 validators |
+| ZIONAtomicSwap | `0x3DE9Ad42...` | ✅ deployed |
+| UniV3 wZION/USDT | `0x186b46c2...` | ✅ PRIMARY pool, ACTIVE |
+| UniV3 wZION/WETH | `0x18c0DaeF...` | ✅ secondary |
+| UniV3 wZION/SOL | `0xF38c56bb...` | ✅ tertiary |
+| Website /bridge | — | ✅ MetaMask flow hotový |
+| Website /dao | — | ✅ live connection k DAO daemonu |
+| Website /swap | — | ✅ live connection k atomic-swap |
+| Website /defi/staking | — | ✅ UI hotové, čeká na kontrakty |
+| Website /defi/farming | — | ✅ UI hotové, čeká na kontrakty |
+| Website /warp | — | ✅ info dashboard |
+
+### Co chybí pro 3.0.4 ❌
+
+| Item | Blocker | Poznámka |
+|------|---------|----------|
+| ZIONStaking (Base Mainnet) | ~0.003 ETH gas | Kontrakt ready v archive/sol/ |
+| ZIONFarm (Base Mainnet) | ~0.001 ETH gas | Kontrakt ready v archive/sol/ |
+| ZIONGovernance (Base Mainnet) | ~0.001 ETH gas | Součást deploy-defi.ts |
+| ZIONTreasury (Base Mainnet) | ~0.001 ETH gas | Součást deploy-defi.ts |
+| Atomic swap escrow funding | ~5-10 ZION | Release TX fees pro escrow |
+| Atomic swap E2E test | escrow funding | Jeden kompletní HTLC swap |
+| WARP UI — transfer formulář | kodování | POST /transfers/outbound wire-up |
+| DAO guardians provisioning | admin akce | Nastavit reálné guardian keys |
+| Bridge UI — "Lock ZION" tab | kodování | L1→EVM instrukce + tracker |
+| Wallet SDK (npm) | nový vývoj | Blocker pro mobile |
+
+---
+
+## P1 — Deploy ZIONStaking + ZIONFarm + ZIONGovernance + ZIONTreasury
+
+### Prerequisity
+
+- Deployer: `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186`
+- wZION: `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6`
+- Gas potřeba: **~0.005 ETH** (4 kontrakty × ~0.001 ETH + reward seed TX)
+- Hardhat projekt: `archive/2.9.9/legacy-code/L2/contracts/`
+  - Solidity 0.8.20, OpenZeppelin ^5.1.0, Hardhat ^2.22
+
+### Krok 1 — Instalace
+
+```bash
+cd archive/2.9.9/legacy-code/L2/contracts
+npm install
+```
+
+### Krok 2 — Vytvoř `.env` (nikdy commitovat!)
+
+```bash
+# archive/2.9.9/legacy-code/L2/contracts/.env
+DEPLOYER_PRIVATE_KEY=<0xdde17506 private key>
+BASE_MAINNET_RPC=https://mainnet.base.org
+BASESCAN_API_KEY=<tvůj Basescan API key>
+
+WZION_ADDRESS=0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6
+GUARDIAN_ADDRESS=0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186
+
+STAKING_APR_BPS=1200
+FARM_REWARD_PER_SEC=1000000000000000000
+FARM_HALVING_INTERVAL=7776000
+```
+
+### Krok 3 — Deploy DeFi stack (Governance + Treasury + Staking)
+
+```bash
+npx hardhat run scripts/deploy-defi.ts --network base
+```
+
+Výstup `deployed-defi.json`:
+```json
+{
+  "network": "base",
+  "governance": "0x<NEW_GOVERNANCE>",
+  "treasury":   "0x<NEW_TREASURY>",
+  "staking":    "0x<NEW_STAKING>"
+}
+```
+
+### Krok 4 — Deploy ZIONFarm
+
+```bash
+npx hardhat run scripts/deploy-farm.ts --network base
+```
+
+Výstup `deployed-farm-base.json`:
+```json
+{
+  "network": "base",
+  "ZIONFarm": "0x<NEW_FARM>",
+  "pools": [{"pid": 0, "name": "wZION Single", "lpToken": "0x0c493763..."}]
+}
+```
+
+### Krok 5 — Fund reward pools
+
+```bash
+# Staking reward seed (100K wZION)
+npx hardhat run scripts/fund-staking.ts --network base
+
+# Farm reward seed (500K wZION)
+npx hardhat run scripts/fund-farm.ts --network base
+```
+
+### Krok 6 — Přidej LP Pool 1 do ZIONFarm
+
+Zavolej `addPool(50, 0x186b46c2..., "wZION/USDT LP", false)` — přidá UniV3 USDT pool jako LP farming pool.
+
+### Krok 7 — Verify na Basescan
+
+```bash
+npx hardhat run scripts/verify-base-mainnet-basescan.ts --network base
+```
+
+### Krok 8 — Aktualizuj `defi-contracts.ts`
+
+```typescript
+// APP&WEB/website-v2.9/src/lib/defi-contracts.ts
+// Base Mainnet (deployed 3.0.4)
+ZIONStaking:    '0x<STAKING>',
+ZIONFarm:       '0x<FARM>',
+ZIONGovernance: '0x<GOVERNANCE>',
+ZIONTreasury:   '0x<TREASURY>',
+
+// Flags (řádky 89-91)
+export const STAKING_DEPLOYED    = true;
+export const FARM_DEPLOYED       = true;
+export const GOVERNANCE_DEPLOYED = true;
+```
+
+### Krok 9 — Deploy website na Edge
+
+```bash
+# Na Edge serveru:
+cd /var/www/zion-website
+git pull origin main
+npm run build
+pm2 restart zion-website
+```
+
+---
+
+## P2 — Atomic Swap Escrow Funding + E2E Test
+
+### Krok 1 — Pošli ZION na escrow
+
+```bash
+# Z mining wallet přes CLI:
+zion-cli send \
+  --to zion1y0j484d5e8r49785d253e8w0c2x4t3n792m5724 \
+  --amount 5 \
+  --from <tvůj-mining-wallet>
+# Memo není potřeba — prostý transfer pro fee coverage
+```
+
+### Krok 2 — Ověř balance na Edge
+
+```bash
+ssh root@100.76.16.108
+echo '{"jsonrpc":"2.0","id":1,"method":"getAddressInfo","params":{"address":"zion1y0j484d5e8r49785d253e8w0c2x4t3n792m5724"}}' \
+  | nc -w3 127.0.0.1 8443 | python3 -m json.tool
+# Očekáváno: balance_flowers > 0
+```
+
+### Krok 3 — Atomic Swap E2E test (1 ZION L1→EVM)
+
+**Vygeneruj preimage a hashlock:**
+```python
+import secrets, hashlib
+preimage = secrets.token_bytes(32)
+hashlock = hashlib.sha256(preimage).hexdigest()
+print(f"preimage: {preimage.hex()}\nhashlock: {hashlock}")
+```
+
+**Iniciuj L1 SWAP:LOCK memo TX:**
+```bash
+zion-cli send \
+  --to zion1y0j484d5e8r49785d253e8w0c2x4t3n792m5724 \
+  --amount 1 \
+  --memo "SWAP:LOCK:<hashlock>:0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186:1440" \
+  --from <tvůj-wallet>
+```
+
+**Sleduj atomic-swap daemon:**
+```bash
+ssh root@100.76.16.108
+journalctl -u zion-edge-atomic-swap -f
+curl -s http://localhost:8452/api/swap/htlcs/pending | python3 -m json.tool
+```
+
+**Claim na EVM:**
+```bash
+curl -s http://localhost:8452/api/swap/htlcs/<id>/claim \
+  -X POST \
+  -H "Authorization: Bearer <ZION_SWAP_BEARER_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d "{\"preimage\": \"<preimage_hex>\"}"
+```
+
+---
+
+## P3 — DAO Guardians + Voting E2E
+
+### Krok 1 — Vygeneruj guardian keypairs
+
+```bash
+# Na Edge nebo lokálně:
+zion-cli keygen --label guardian-1  # → adresa + Ed25519 pubkey
+zion-cli keygen --label guardian-2
+# ... celkem 5-7 keypairs
+```
+
+### Krok 2 — Přidej guardians do `dao-mainnet.toml`
+
+Na Edge: `/root/zion-2.9.6-main/V3/L2/dao/config/dao-mainnet.toml`:
+```toml
+[[guardians]]
+name       = "guardian-1"
+address    = "zion1<addr1>"
+public_key = "<ed25519hex1>"
+
+[[guardians]]
+name       = "guardian-2"
+address    = "zion1<addr2>"
+public_key = "<ed25519hex2>"
+# ... (5 guardians minimum pro 5-of-7 threshold)
+```
+
+### Krok 3 — Restart DAO + ověř
+
+```bash
+systemctl restart zion-edge-dao.service
+curl -s http://localhost:8450/api/dao/co-admins | python3 -m json.tool
+# Očekáváno: seznam guardians
+```
+
+### Krok 4 — Voting E2E test
+
+```bash
+# 1. Vytvoř proposal
+curl -s http://localhost:8450/api/dao/proposals \
+  -X POST -H "Content-Type: application/json" \
+  -d '{"title":"3.0.4 test proposal","description":"Verify voting works","proposer":"zion1<addr>","proposal_type_json":"{\"Parameter\":{\"parameter_name\":\"test\",\"current_value\":\"\",\"proposed_value\":\"\"}}"}'
+
+# 2. Hlasuj přes L1 TX memo (DAO:vote:<id>:yes)
+zion-cli send --to <treasury-addr> --amount 0.000001 \
+  --memo "DAO:vote:3:yes" --from <wallet>
+
+# 3. Počkej 15s (scan interval), pak ověř
+sleep 20
+curl -s http://localhost:8450/api/dao/proposals/3/votes | python3 -m json.tool
+# Očekáváno: votes_yes > 0
+```
+
+---
+
+## P4 — WARP UI Transfer Formulář
+
+### Co přidat do `APP&WEB/website-v2.9/src/app/warp/page.tsx`
+
+Nová sekce "Initiate WARP Transfer" se stavebními bloky:
+
+1. **Memo Builder** — `WARP:1:<chain>:<recipient>` composer
+2. **Chain selector** — dropdown: ethereum / bitcoin / solana / stellar / tron
+3. **Amount + recipient fields**
+4. **"Copy Memo" button** + QR kód pro mobilní wallet
+5. **Transfer tracker** — polling `GET /api/warp/transfers/:id`
+
+### Přidej WARP do `core-endpoints.ts`
+
+```typescript
+// APP&WEB/website-v2.9/src/lib/core-endpoints.ts
+/** WARP daemon — runs locally on Edge (port 8453) */
+warp: `http://127.0.0.1:8453`,
+```
+
+### Vytvoř API proxy route
+
+Soubor: `APP&WEB/website-v2.9/src/app/api/warp/[...path]/route.ts`
+(vzor: zkopírovat ze `src/app/api/dao/[...path]/route.ts`, změnit upstream na WARP port 8453)
+
+---
+
+## P5 — Bridge UI — "Lock ZION" Tab
+
+### Současný stav
+
+- `/bridge` má `BridgeBurnWidget` (EVM→L1 burn) — ✅
+- Chybí: L1→EVM "Lock ZION" instrukce + live tracker
+
+### Co přidat
+
+V `APP&WEB/website-v2.9/src/app/bridge/page.tsx` — tab `'lock'`:
+
+1. **Vault adresa** (copy button): `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0`
+2. **Memo generátor**: zadej MetaMask adresu → vygeneruj `BRIDGE:<evm_addr>`
+3. **Live tracker** — polling `/api/bridge/status`:
+   - Zobraz: locks detected / relay confirmations (x/5) / EVM mint / complete
+4. **Minimum warning**: min 100 ZION, fee 0.1%
+
+---
+
+## P6 — Migrace deploy skriptů do V3/L2/contracts/
+
+### Cíl: kanonický adresář pro všechny Base Mainnet kontrakty
+
+```
+V3/L2/contracts/
+├── hardhat/
+│   ├── package.json
+│   ├── hardhat.config.ts   (base mainnet + basescan)
+│   ├── sol/
+│   │   ├── ZIONStaking.sol
+│   │   ├── ZIONFarm.sol
+│   │   ├── ZIONGovernance.sol
+│   │   └── ZIONTreasury.sol
+│   ├── scripts/
+│   │   ├── deploy-all-defi.ts   (master: staking+farm+gov+treasury)
+│   │   └── fund-rewards.ts      (seed reward pools)
+│   └── .env.mainnet.example
+└── foundry/                      (existující bridge contracts)
+    └── ...
+```
+
+Obsah `.env.mainnet.example`:
+```bash
+DEPLOYER_PRIVATE_KEY=     # 0xdde17506 private key
+BASE_MAINNET_RPC=https://mainnet.base.org
+BASESCAN_API_KEY=         # https://basescan.org/myapikey
+
+WZION_ADDRESS=0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6
+GUARDIAN_ADDRESS=0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186
+STAKING_APR_BPS=1200
+FARM_REWARD_PER_SEC=1000000000000000000
+FARM_HALVING_INTERVAL=7776000
+```
+
+---
+
+## Checklist 3.0.4 Release
+
+```
+[ ] P1a: ZIONGovernance deployed na Base Mainnet
+[ ] P1b: ZIONTreasury deployed na Base Mainnet
+[ ] P1c: ZIONStaking deployed na Base Mainnet
+[ ] P1d: ZIONFarm deployed na Base Mainnet
+[ ] P1e: defi-contracts.ts aktualizováno (reálné adresy + DEPLOYED=true)
+[ ] P1f: Website /defi/staking plně funkční s live daty
+[ ] P1g: Website /defi/farming plně funkční s live daty
+[ ] P1h: Reward pools seeded (Staking 100K + Farm 500K wZION)
+[ ] P1i: Kontrakty verified na Basescan
+[ ] P2a: Escrow funded (~5 ZION na zion1y0j484...)
+[ ] P2b: Atomic swap E2E test dokončen (HTLC L1→EVM + claim)
+[ ] P2c: docs/ATOMIC_SWAP_RUNBOOK.md vytvořen
+[ ] P3a: DAO guardian keys nastaveny (5+ guardians)
+[ ] P3b: DAO voting E2E test (L1 memo → scanner → DB → web UI)
+[ ] P4a: WARP memo builder UI přidán do /warp page
+[ ] P4b: /api/warp proxy route přidán
+[ ] P4c: WARP transfer status tracker funkční
+[ ] P5a: Bridge "Lock ZION" tab dokončen
+[ ] P5b: BridgeTracker live component (lock → relay → mint)
+[ ] P6a: V3/L2/contracts/hardhat/ vytvořen + .env.mainnet.example
+[ ] DOCS: L2Complete.md aktualizováno s deployment adresami po P1
+[ ] DOCS: ROADMAP.md 3.0.4 checkboxes dokončeny
+[ ] RELEASE: git tag v3.0.4 + push + GitHub release notes
+```
+
+---
+
+## Reference — Sepolia testnet adresy (pouze pro testování)
+
+| Kontrakt | Síť | Adresa | Deployed |
+|----------|-----|--------|----------|
+| ZIONGovernance | Base Sepolia | `0x039F730e3e1c3f36da95187697118791762290a1` | 2026-03-02 |
+| ZIONTreasury | Base Sepolia | `0x178d85323dC94Ce2477269Dfb93a12D04B9bE537` | 2026-03-02 |
+| ZIONStaking | Base Sepolia | `0x487D87E243f87b1DDEEDEB890c40F2cEcCf67913` | 2026-03-02 |
+| ZIONFarm | Base Sepolia | `0x1B8BA92C401d53cBcEc422BAD4b83fABcb0A3843` | 2026-03-02 |
+
+> ⚠️ wZION adresa `0x0c493763...` je **stejná** na Sepolia i Base Mainnet — vždy ověřuj chainId!
