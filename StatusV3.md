@@ -120,6 +120,7 @@
 - **ETH/wZION V4 NFT spálen** — NFT #2740380 byla prázdná (0 likvidity), vypálena přes `modifyLiquiditiesWithoutUnlock` (TX `0xea5a19cd...`)
 - **ETH flow audit** — 0.07 ETH deposit z Binance → swap na WETH/SOL/USDT → likvidita poolům; peníze nebyly ztraceny
 - **Deployer wallet** — 0.0107 ETH ($17.32) + 199M wZION + 1 V4 NFT pozice
+- **LI.FI cross-chain swap + bridge** — widget integrovaný do /defi page, agreguje 30+ DEX a 20+ bridge protokolů na 25+ chainech
 
 Viz [Session 10 detail](#session-10--uniswap-v4-migration--defi-audit-2026-06-30) níže.
 
@@ -4073,6 +4074,30 @@ V4 NFT pozice deployeru (1 NFT v PositionManager po burn):
 - **wZION/USDT V4 pool** (NFT #2740371) je aktivní s likviditou 6.7e15 — jediný aktivní pool
 - **V3 pooly zůstávají deployované** ale prázdné — likvidita plně migrována na V4
 - **EIP-7702 delegace** na deployer address (MetaMask Delegator) stále aktivní — viz Session 8 audit
+
+### 6. LI.FI Cross-Chain Swap + Bridge Integration
+
+**Problém:** Web měl jen Uniswap V3 swap (1 DEX, 3 pooly, hardcoded). Žádné jiné DEXy, žádný cross-chain bridge v UI.
+
+**Řešení:** LI.FI widget — agreguje 20+ bridge protokolů a 30+ DEX napříč 25+ chainy.
+
+**Implementace:**
+- `src/components/LiFiWidget.tsx` — iframe widget (hosted na `widget.li.fi`)
+- wZION přednastavený jako výchozí token na Base (chain 8453)
+- Podporované chainy: Base, Ethereum, Arbitrum, BSC, Polygon, Optimism, Avalanche
+- Dark theme, 1% slippage, best price routing
+- Widget má vlastní wallet connection (MetaMask, WalletConnect)
+- Integrováno do `/defi` page swap tabu (nad původní SwapWidget)
+
+**Agregované DEXy na Base:**
+- Uniswap V3/V4, Aerodrome (Slipstream + V1), PancakeSwap V3, SushiSwap V3
+- + 25 dalších DEX a bridge protokolů (Stargate, Across, Hop, Synapse, deBridge, Squid, Portal/Wormhole)
+
+**Dependencies:**
+- `@lifi/sdk`, `@lifi/widget`, `viem` přidány do package.json
+- Widget používá hosted iframe — žádné wagmi/viem peer dependency konflikty
+
+**WARP status:** Běží na Edge (port 9333), 80% hotový, `execute_mint()` stub (D-04) — dokončit později pro non-EVM chainy (Solana, BTC)
 
 ---
 

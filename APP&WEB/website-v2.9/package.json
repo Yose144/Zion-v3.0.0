@@ -12,6 +12,8 @@
     "docs:i18n": "node scripts/docs-i18n-report.mjs"
   },
   "dependencies": {
+    "@lifi/sdk": "^4.0.1",
+    "@lifi/widget": "^4.1.0",
     "@noble/ed25519": "^3.1.0",
     "@noble/hashes": "^2.2.0",
     "@react-three/drei": "^10.7.6",
@@ -31,6 +33,7 @@
     "react-markdown": "^9.0.1",
     "remark-gfm": "^4.0.1",
     "three": "^0.169.0",
+    "viem": "^2.53.1",
     "zion-wallet-sdk": "file:./zion-wallet-sdk-1.0.0.tgz"
   },
   "devDependencies": {
