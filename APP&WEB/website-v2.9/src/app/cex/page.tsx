@@ -119,8 +119,8 @@ const FAQ_ITEMS = [
   {
     q: 'Is ZION available on DEX?',
     qCs: 'Je ZION dostupný na DEX?',
-    a: 'Yes! wZION is available on Uniswap V3 (Base mainnet) in the wZION/WETH pool (1% fee) and wZION/USDC pool (0.3% fee). Trade directly at app.uniswap.org with no KYC required.',
-    aCs: 'Ano! wZION je dostupný na Uniswap V3 (Base mainnet) v poolu wZION/WETH (1% fee) a wZION/USDC (0.3% fee). Obchodujte přímo na app.uniswap.org bez KYC.',
+    a: 'Yes! wZION is available on Uniswap V3 (Base mainnet) in three pools: wZION/USDT (0.3% fee, primary), wZION/WETH (1% fee), and wZION/SOL (0.01% fee). Trade directly at app.uniswap.org with no KYC required.',
+    aCs: 'Ano! wZION je dostupný na Uniswap V3 (Base mainnet) ve třech poolch: wZION/USDT (0.3% fee, primární), wZION/WETH (1% fee) a wZION/SOL (0.01% fee). Obchodujte přímo na app.uniswap.org bez KYC.',
   },
 ];
 
