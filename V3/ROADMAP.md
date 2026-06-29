@@ -60,7 +60,7 @@ Verze **3.0.3** je nyní uzavřena. Všechny klíčové komponenty jsou funkčn�
 - [x] E2E test: CLAIM TX (memo `SWAP:CLAIM:<hash>:<preimage>`) — **přijat do chainu** ✅
 - [x] Atomic swap daemon běží, API na :8452, L1 watcher skenuje bloky ✅
 - [ ] **ROADMAP ITEM:** L2 watcher update — `L1Block` struct přidat `account_transactions` pole + watcher.rs skenovat i account-model memo TXs (aktuálně skenuje jen `utxo_transactions`)
-- [ ] Vytvoř `docs/ATOMIC_SWAP_RUNBOOK.md`
+- [x] Vytvoř `docs/ATOMIC_SWAP_RUNBOOK.md` ✅ (2026-06-29)
 
 #### P3 — DAO Guardians + Voting E2E — ✅ DONE 2026-06-29
 
