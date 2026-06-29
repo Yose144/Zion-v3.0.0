@@ -1,6 +1,6 @@
 # L2 Bridge Completion — Status & Plan
 
-**Last updated:** 2026-08-18 (session 4: USDT liquidity boost + dashboard decimal fix + Blockaid false-positive)
+**Last updated:** 2026-06-29 (session 5: pool cleanup, NFT burns, price chart, canonical filter)
 
 ---
 
@@ -53,38 +53,49 @@
 - `mainnet_readiness::test_parse_bridge_mainnet_toml` — bridge address updated to v3
 - All `cargo test -p zion-bridge` tests pass
 
-### 7. Uniswap V3 Pool Cleanup ✅ (Sessions 2 & 3)
+### 7. Uniswap V3 Pool Cleanup ✅ (Sessions 2, 3 & 5)
 
-#### Pools on Base Mainnet (verified via factory)
+#### Canonical Pools on Base Mainnet (final state 2026-06-29)
 | Pair | Fee | Pool Address | Liquidity | Status |
 |------|-----|--------------|-----------|--------|
-| wZION/WETH | 0.3% (3000) | `0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB` | 0 | **DEAD — old wrong-price pool** |
-| wZION/WETH | 1.0% (10000) | `0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699` | 429876233605855311813 | **ACTIVE — canonical** |
-| wZION/USDC | 0.3% (3000) | `0x5eBdC6E1D516f42EEB54f14faCF8715AbD5B9d8d` | 0 | **DEAD — abandoned** |
-| wZION/USDT | 0.3% (3000) | `0x186b46c2f04153999d44D25179cD623fD62Bfda2` | 1809213566686228 | **ACTIVE — PRIMARY USDT pool** |
-| wZION/SOL | 0.3% (3000) | `0xc74F645A882dd7Bbbb60cc85Be10FF8a1572d01B` | 0 | **DEAD — wrong price (inverted)** |
-| wZION/SOL | 1.0% (10000) | `0x1d43fd5afF5F7d810be32d8012e290210d823F11` | 0 | **DEAD — abandoned after withdrawal** |
-| wZION/SOL | 0.01% (100) | `0xF38c56bbBBBC6d9FA11E7DE84bF7Bb70e1e8D2b3` | 23597018927051195 | **ACTIVE — canonical SOL pool** |
+| wZION/USDT | 0.3% (3000) | `0x186b46c2f04153999d44D25179cD623fD62Bfda2` | 2,329,175,222,979,065 | **ACTIVE — PRIMARY ✅** |
+| wZION/WETH | 1.0% (10000) | `0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699` | 429,876,233,605,855,311,813 | **ACTIVE — secondary ✅** |
+| wZION/SOL | 0.01% (100) | `0xF38c56bbBBBC6d9FA11E7DE84bF7Bb70e1e8D2b3` | 23,597,018,927,051,195 | **ACTIVE — tertiary ✅** |
 
-#### NFT Positions Withdrawn (Session 2)
-| NFT # | Pool | Tick Range | Action | TX (decreaseLiquidity) |
-|-------|------|------------|--------|------------------------|
-| 4901417 | wZION/WETH 0.3% | -887220 to 887220 (full range) | Withdrawn + burned | `0xb0a3283c...` |
+#### Dead/Rogue Pools (liq=0, no LP, cannot be destroyed)
+| Pair | Fee | Pool Address | Liquidity | Note |
+|------|-----|--------------|-----------|------|
+| wZION/WETH | 0.3% (3000) | `0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB` | 0 | old wrong-price pool |
+| wZION/USDC | 0.3% (3000) | `0x5eBdC6E1D516f42EEB54f14faCF8715AbD5B9d8d` | 0 | abandoned |
+| wZION/SOL | 0.05% (500) | `0x2A0807007C62aC75DC0e295aE4C747a6CaC4051C` | 0 | rogue (no LP) |
+| wZION/SOL | 0.3% (3000) | `0xc74F645A882dd7Bbbb60cc85Be10FF8a1572d01B` | 0 | inverted price (was $25M) |
+| wZION/SOL | 1.0% (10000) | `0x1d43fd5afF5F7d810be32d8012e290210d823F11` | 0 | rogue (no LP) |
+
+> All rogue pools are filtered in `/api/cex/listings` via `CANONICAL_POOLS` whitelist. DexScreener will naturally de-list them as they show 0 activity.
+
+#### NFT Positions Withdrawn (Sessions 2–3)
+| NFT # | Pool | Tick Range | Action | TX |
+|-------|------|------------|--------|----|
+| 4901417 | wZION/WETH 0.3% | -887220 to 887220 | Withdrawn + burned | `0xb0a3283c...` |
 | 5431091 | wZION/USDC 0.3% | -361440 to -360000 | Withdrawn + burned | `0xb40cd241...` |
 | 5431093 | wZION/WETH 1.0% | -161000 to -160000 | Withdrawn + burned | `0x1beb81c1...` |
 
-#### Remaining NFT Positions (5)
-| NFT # | Pool | Tick Range | Liquidity | Type | TX |
-|-------|------|------------|-----------|------|-----|
-| 5431714 | wZION/WETH 1.0% | -162000 to -160000 | 0 | Narrow — **depleted** | `0xc7f84d0e...` |
-| 5434576 | wZION/WETH 1.0% | -164000 to -158000 | 429876233605855311813 | **Wide (±30%) — active** | `0xd9db0431...` |
-| 5434637 | wZION/USDT 0.3% | -366600 to -356580 | 987362838016781 | **USDT narrow — active** | `0xcb67ba8b...` |
-| 5434872 | wZION/SOL 0.01% | -340387 to -330387 | 23597018927051195 | **SOL pool — active** | `0x1abc904f...` |
-| 5435121 | wZION/USDT 0.3% | -399960 to -330000 | 821850728669447 | **USDT wide (±25%) — active (NEW)** | `0x94995e14...` |
+#### NFT Positions Burned (Session 5)
+| NFT # | Pool | Reason | TX |
+|-------|------|--------|----|
+| 5431714 | wZION/WETH 1.0% | liq=0, owed=0 — empty position | `0xb6003f2c...` |
+| 5434637 | wZION/USDT 0.3% | liq=0, owed=0 — empty position | `0x51a4454b...` |
 
-**WETH pool liquidity:** 429876233605855311813 (wide position)
-**USDT pool liquidity:** 1809213566686228 (two positions: narrow + wide)
-**SOL pool liquidity:** 23597018927051195
+#### Active NFT Positions (final 2026-06-29)
+| NFT # | Pool | Liquidity | Status |
+|-------|------|-----------|--------|
+| 5434576 | wZION/WETH 1.0% (10000) | 429,876,233,605,855,311,813 | **ACTIVE — wide ±30%** |
+| 5434872 | wZION/SOL 0.01% (100) | 23,597,018,927,051,195 | **ACTIVE** |
+| 5435121 | wZION/USDT 0.3% (3000) | 2,329,175,222,979,065 | **ACTIVE — primary** |
+
+**WETH pool liquidity:** 429,876,233,605,855,311,813
+**USDT pool liquidity:** 2,329,175,222,979,065
+**SOL pool liquidity:** 23,597,018,927,051,195
 
 #### Key Fix: Tuple ABI
 - **Root cause of previous failed withdraws:** NPM `decreaseLiquidity()` and `collect()` take **struct (tuple)** parameters, not individual params
@@ -114,19 +125,16 @@
 - [x] Create + initialize SOL/wZION pool (fee=0.01%, exact $0.0002/ZION)
 - [x] Add exact-ratio liquidity (100K wZION + 0.272 SOL)
 
-### Current State — 3 Active Pools
-- wZION/WETH 1.0%: **ACTIVE** ✅ (wide position, 430B liquidity)
-  - NFT #5431714: narrow ±10% — **depleted** (liq=0)
-  - NFT #5434576: wide ±30% — **active** (200K wZION + 0.020 WETH)
-- wZION/USDT 0.3%: **ACTIVE — PRIMARY** ✅ (1.81T liquidity, 69,955 wZION + 11.45 USDT)
-  - NFT #5434637: narrow ±50% range (100K wZION + 3.14 USDT)
-  - NFT #5435121: wide ±25% range (50K wZION + 9.19 USDT) — **NEW (session 4)**
+### Current State — 3 Canonical Active Pools (2026-06-29)
+- wZION/USDT 0.3%: **ACTIVE — PRIMARY** ✅ (~$150+ TVL)
+  - NFT #5435121: active wide position — sole active position on pool
+  - Price reference: wZION/USDT on-chain (USDT=stablecoin, most reliable USD price)
+- wZION/WETH 1.0%: **ACTIVE** ✅ (wide position, 430T liquidity)
+  - NFT #5434576: wide ±30% — active (200K wZION + 0.020 WETH)
 - wZION/SOL 0.01%: **ACTIVE** ✅ (23.6T liquidity, 100K wZION + 0.272 SOL)
   - NFT #5434872: tick [-340387, -330387] (±5000 ticks)
-  - Initialized at exact $0.0002/ZION (1 SOL = 367,200 ZION)
-  - Price moved to ~410,912 ZION/SOL after immediate post-mint swap (market arbitrage)
-- DEAD pools (cannot be destroyed): wZION/WETH 0.3%, wZION/USDC 0.3%, wZION/SOL 0.3%, wZION/SOL 1.0%
-- Deployer: ~99.68M wZION, 0.006 ETH, 14.59 USDT, 0.002 SOL, 0 WETH
+- Dead/rogue pools (liq=0, no LP, filtered in API): 5 pools — see table above
+- Deployer NFTs: **3 active** (#5434576, #5434872, #5435121) — 2 empty burned (session 5)
 
 ### Liquidity Plan — Focus on USDT
 - **Primary:** wZION/USDT 0.3% — target to grow to **500K wZION + 100 USDT** ($100+ liquidity)
@@ -154,11 +162,27 @@
 - [x] Update website /api/defi/pools and /api/defi/status to include USDT + SOL pools
 - [x] Update DeFi dashboard UI to prioritize USDT pool
 - [x] Fix decimal adjustment in price calculation (USDT 6 decimals vs wZION 18)
-- [ ] Burn NFT #5431714 (depleted, liq=0 — cleanup)
+- [x] Burn NFT #5431714 (session 5 — TX `0xb6003f2c...`)
+- [x] Burn NFT #5434637 (session 5 — TX `0x51a4454b...`)
+- [x] Filter rogue/dead pools in /api/cex/listings (CANONICAL_POOLS whitelist — session 5)
+- [x] Fix best_price_usd — WETH-first ordered fallback, no longer picks $25M outlier (session 5)
+- [x] Add wZION/USDT price sparkline chart to /defi page (session 5)
+- [x] Clean up defi-contracts.ts — remove DEAD/LEGACY entries, update NFT position IDs (session 5)
+- [x] Update CEX page DexScreener link to primary USDT pool (session 5)
+- [x] Update L2OS dashboard DeFi panel canonical pool mapping (session 4+5)
 - [ ] Add more USDT liquidity (need external USDT or more ETH to swap)
 - [ ] Submit Blockaid false-positive report
-- [ ] Verify on DexScreener
 - [ ] Monitor bridge relayer continues processing new locks
+
+### Session 5 Changes (2026-06-29)
+| What | Where | Detail |
+|------|-------|--------|
+| Burn empty NFTs | on-chain | NFT #5431714 + #5434637 — liq=0, owed=0 — burned via NPM.burn() |
+| Canonical pool filter | `/api/cex/listings` | `CANONICAL_POOLS` Set, whitelist-only filter, no rogue pools |
+| Price feed fix | `/api/cex/listings` | `best_price_usd` = WETH→USDT→SOL ordered fallback (not max) |
+| Price sparkline chart | `/defi/page.tsx` | SVG sparkline, samples `/api/defi/price` every 60s, 60-pt window |
+| defi-contracts.ts cleanup | `src/lib/defi-contracts.ts` | Removed DEAD/LEGACY entries, corrected NFT IDs (5435121 not 5434637) |
+| CEX DexScreener link | `/cex/page.tsx` | Changed from WETH pool → USDT pool (primary) |
 
 ---
 

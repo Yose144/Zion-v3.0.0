@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   ArrowLeftRight,
   Wallet,
@@ -26,6 +26,66 @@ import { CONTRACTS, SEED_PRICE_USD } from '@/lib/defi-contracts';
 import { AlertTriangle, Droplets, TrendingUp } from 'lucide-react';
 import { useNetworkStatus } from '@/hooks/useWebSocketSubscription';
 
+// ─── Price Sparkline (SVG, no deps) ──────────────────────────────────────────
+
+const MAX_POINTS = 60; // keep 60 samples (1 per minute = 1h window)
+
+function PriceSparkline({
+  prices,
+  width = 400,
+  height = 80,
+}: {
+  prices: number[];
+  width?: number;
+  height?: number;
+}) {
+  if (prices.length < 2) return null;
+  const pad = 4;
+  const w = width - pad * 2;
+  const h = height - pad * 2;
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  const range = max - min || max * 0.01;
+  const pts = prices.map((p, i) => {
+    const x = pad + (i / (prices.length - 1)) * w;
+    const y = pad + h - ((p - min) / range) * h;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  const polyline = pts.join(' ');
+  // Fill area
+  const first = pts[0];
+  const last = pts[pts.length - 1];
+  const fillPts = `${first} ${polyline} ${last.split(',')[0]},${pad + h} ${pad},${pad + h}`;
+  const up = prices[prices.length - 1] >= prices[0];
+  const stroke = up ? '#10b981' : '#f87171';
+  const fillId = `spark-fill-${Math.random().toString(36).slice(2, 7)}`;
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      width="100%"
+      height={height}
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={stroke} stopOpacity="0.25" />
+          <stop offset="100%" stopColor={stroke} stopOpacity="0.01" />
+        </linearGradient>
+      </defs>
+      <polygon points={fillPts} fill={`url(#${fillId})`} />
+      <polyline points={polyline} fill="none" stroke={stroke} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+      {/* last dot */}
+      <circle
+        cx={parseFloat(pts[pts.length - 1].split(',')[0])}
+        cy={parseFloat(pts[pts.length - 1].split(',')[1])}
+        r="2.5"
+        fill={stroke}
+      />
+    </svg>
+  );
+}
+
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 
 type Tab = 'swap' | 'bridge' | 'portfolio';
@@ -45,6 +105,9 @@ export default function DefiPage() {
   const [tab, setTab] = useState<Tab>('swap');
   const [wZIONSupply, setWZIONSupply] = useState<string | null>(null);
   const [wZIONPrice, setWZIONPrice] = useState<{ wzion_per_weth: number; usd_per_wzion: number } | null>(null);
+  // Price history for sparkline (sampled every 60s)
+  const priceHistory = useRef<number[]>([]);
+  const [sparkPrices, setSparkPrices] = useState<number[]>([]);
   const [bridgeStatus, setBridgeStatus] = useState<{
     online: boolean;
     l1_locks_detected: number;
@@ -95,10 +158,16 @@ export default function DefiPage() {
         if (!res.ok) return;
         const data = await res.json();
         if (data.ok && !cancelled) {
+          const p: number = data.price.usd_per_wzion;
           setWZIONPrice({
             wzion_per_weth: data.price.wzion_per_weth,
-            usd_per_wzion: data.price.usd_per_wzion,
+            usd_per_wzion: p,
           });
+          // Append to sparkline history
+          if (p > 0) {
+            priceHistory.current = [...priceHistory.current, p].slice(-MAX_POINTS);
+            setSparkPrices([...priceHistory.current]);
+          }
         }
       } catch { /* ignore */ }
     };
@@ -313,6 +382,84 @@ export default function DefiPage() {
             </div>
             <p className="text-xl font-bold text-white">{poolStats?.active_pools ?? 0}</p>
             <p className="text-[10px] text-gray-500">{cs ? 'aktivní' : 'active'}</p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── wZION/USDT Price Chart ── */}
+      <section className="zion-container relative z-10 mb-8">
+        <div className="zion-rainbow-card p-5" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-zion-gold" />
+              <span className="text-sm font-semibold text-white">wZION / USDT</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-zion-gold/20 text-zion-gold border border-zion-gold/30">
+                {cs ? 'primární' : 'primary'}
+              </span>
+              <span className="text-[10px] text-gray-500">0.3% fee · Base Mainnet</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <p className="text-lg font-bold font-mono text-white">
+                  ${(poolStats?.primary_price_usd ?? wZIONPrice?.usd_per_wzion ?? SEED_PRICE_USD).toFixed(6)}
+                </p>
+                {sparkPrices.length >= 2 && (() => {
+                  const chg = ((sparkPrices[sparkPrices.length - 1] - sparkPrices[0]) / sparkPrices[0]) * 100;
+                  return (
+                    <p className={`text-[10px] text-right ${chg >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {chg >= 0 ? '+' : ''}{chg.toFixed(2)}% ({cs ? 'od startu' : 'since load'})
+                    </p>
+                  );
+                })()}
+              </div>
+              <a
+                href={`https://dexscreener.com/base/${CONTRACTS.UniV3PoolUSDT}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] flex items-center gap-1 text-gray-400 hover:text-white transition-colors"
+              >
+                DexScreener <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
+          </div>
+
+          {/* Sparkline */}
+          <div className="relative h-20 w-full">
+            {sparkPrices.length >= 2 ? (
+              <PriceSparkline prices={sparkPrices} height={80} />
+            ) : (
+              <div className="flex h-full items-center justify-center">
+                <p className="text-[10px] text-gray-600 animate-pulse">
+                  {cs ? 'Načítám cenová data…' : 'Loading price data…'}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Pool metrics row */}
+          <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px]">
+            <div className="bg-black/30 rounded-lg p-2">
+              <p className="text-gray-500 mb-0.5">TVL</p>
+              <p className="text-white font-mono">${(poolStats?.tvl_usd ?? 0).toFixed(2)}</p>
+            </div>
+            <div className="bg-black/30 rounded-lg p-2">
+              <p className="text-gray-500 mb-0.5">{cs ? 'Likvidita' : 'Liquidity'}</p>
+              <p className="text-white font-mono">
+                {poolStats?.pools?.wzion_usdt?.liquidity
+                  ? Number(poolStats.pools.wzion_usdt.liquidity).toLocaleString()
+                  : '—'}
+              </p>
+            </div>
+            <div className="bg-black/30 rounded-lg p-2">
+              <p className="text-gray-500 mb-0.5">Tick</p>
+              <p className="text-white font-mono">{poolStats?.pools?.wzion_usdt?.tick ?? '—'}</p>
+            </div>
+            <div className="bg-black/30 rounded-lg p-2">
+              <p className="text-gray-500 mb-0.5">{cs ? 'Stav' : 'Status'}</p>
+              <p className={poolStats?.pools?.wzion_usdt?.active ? 'text-emerald-400' : 'text-amber-400'}>
+                {poolStats?.pools?.wzion_usdt?.active ? (cs ? 'aktivní' : 'active') : (cs ? 'načítám' : 'loading')}
+              </p>
+            </div>
           </div>
         </div>
       </section>
