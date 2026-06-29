@@ -5,6 +5,12 @@ keys/
 *.key
 zion-validator-key.env
 
+# Scripts with hardcoded private keys / mnemonics — DO NOT COMMIT
+revoke_old_bridge.js
+APP&WEB/desktop-agent/atomic-swap-e2e.js
+APP&WEB/desktop-agent/dao-vote-test.js
+APP&WEB/desktop-agent/send-to-escrow.js
+
 # Build artifacts
 /target/
 **/target/
