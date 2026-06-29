@@ -20,6 +20,7 @@ import {
 import { useLang } from '@/contexts/LanguageContext';
 import { useWallet } from '@/contexts/WalletContext';
 import SwapWidget from '@/components/SwapWidget';
+import LiFiWidget from '@/components/LiFiWidget';
 import BridgeBurnWidget from '@/components/BridgeBurnWidget';
 import DefiBalances from '@/components/DefiBalances';
 import { CONTRACTS, SEED_PRICE_USD } from '@/lib/defi-contracts';
@@ -125,7 +126,7 @@ export default function DefiPage() {
     deployer_wzion: number;
     primary_price_usd: number;
     pools: {
-      wzion_usdt: { pair: string; fee: number; feeLabel: string; active: boolean; nft_id: number; nft_owner: string | null; balances: { wzion: number; usdt: number }; price_usd: number; tvl_usd: number };
+      wzion_usdt: { pair: string; fee: number; feeLabel: string; active: boolean; nft_id: number; nft_owner: string | null; tick: number; balances: { wzion: number; usdt: number }; price_usd: number; tvl_usd: number };
       wzion_weth: { pair: string; fee: number; feeLabel: string; active: boolean; nft_id: number; nft_owner: string | null; balances: { wzion: number; weth: number }; price_usd: number; tvl_usd: number };
     };
     contracts?: {
@@ -225,6 +226,7 @@ export default function DefiPage() {
               active: data.pools?.wzion_usdt?.active ?? false,
               nft_id: data.pools?.wzion_usdt?.nft_id ?? 0,
               nft_owner: data.pools?.wzion_usdt?.nft_owner ?? null,
+              tick: data.pools?.wzion_usdt?.tick ?? 0,
               balances: data.pools?.wzion_usdt?.balances ?? { wzion: 0, usdt: 0 },
               price_usd: data.pools?.wzion_usdt?.price_usd ?? 0,
               tvl_usd: data.pools?.wzion_usdt?.tvl_usd ?? 0,
@@ -493,6 +495,10 @@ export default function DefiPage() {
               </p>
             </div>
             <div className="bg-black/30 rounded-lg p-2">
+              <p className="text-gray-500 mb-0.5">Tick</p>
+              <p className="text-white font-mono">{poolStats?.pools?.wzion_usdt?.tick ?? '—'}</p>
+            </div>
+            <div className="bg-black/30 rounded-lg p-2">
               <p className="text-gray-500 mb-0.5">{cs ? 'Stav' : 'Status'}</p>
               <p className={poolStats?.pools?.wzion_usdt?.active ? 'text-emerald-400' : 'text-amber-400'}>
                 {poolStats?.pools?.wzion_usdt?.active ? (cs ? 'aktivní' : 'active') : (poolStats ? (cs ? 'neaktivní' : 'inactive') : (cs ? 'načítám' : 'loading'))}
@@ -544,6 +550,10 @@ export default function DefiPage() {
               <div className="flex justify-between">
                 <span className="text-gray-400">TVL:</span>
                 <span className="font-mono text-white">${(poolStats?.pools?.wzion_usdt?.tvl_usd ?? 0).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Tick:</span>
+                <span className="font-mono text-white">{poolStats?.pools?.wzion_usdt?.tick ?? '—'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">{cs ? 'Stav' : 'Status'}:</span>
@@ -632,10 +642,15 @@ export default function DefiPage() {
           transition={{ duration: 0.3 }}
         >
           {tab === 'swap' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl">
-              <SwapWidget />
-              <div className="space-y-6">
-                <DefiBalances />
+            <div className="space-y-6 max-w-5xl">
+              {/* LI.FI Cross-Chain Swap + Bridge — aggregates 30+ DEX and 20+ bridges */}
+              <LiFiWidget />
+              {/* Original Uniswap V3 swap widget — direct pool swap for wZION/ETH */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <SwapWidget />
+                <div className="space-y-6">
+                  <DefiBalances />
+                </div>
               </div>
             </div>
           )}
