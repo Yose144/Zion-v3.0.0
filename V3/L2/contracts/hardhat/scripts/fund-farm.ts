@@ -1,23 +1,57 @@
 /**
  * Seed ZIONFarm reward pool with wZION
- * Usage: npx hardhat run scripts/fund-farm.ts --network base-sepolia
+ *
+ * Usage:
+ *   npx hardhat run scripts/fund-farm.ts --network base
+ *
+ * Env vars:
+ *   FARM_ADDRESS     — deployed ZIONFarm address (overrides deployed-farm-base.json)
+ *   WZION_ADDRESS    — wZION token address (default: Base Mainnet)
+ *   FARM_SEED_AMOUNT — wZION to seed (default: 500000 = 500K wZION)
  */
 import { ethers } from "hardhat";
+import * as fs from "fs";
+import * as path from "path";
 
-const FARM_ADDR  = "0x1B8BA92C401d53cBcEc422BAD4b83fABcb0A3843";
-const WZION_ADDR = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6";
-const AMOUNT     = ethers.parseEther("500"); // 500 wZION seed
+const WZION_DEFAULT = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6";
+const DEFAULT_SEED = "500000"; // 500K wZION
 
 async function main() {
   const [deployer] = await ethers.getSigners();
-  console.log(`Seeding ZIONFarm — deployer: ${deployer.address}`);
+  console.log(`\n🌾 Seed ZIONFarm — deployer: ${deployer.address}`);
 
-  const wzion = await ethers.getContractAt("WZION", WZION_ADDR);
-  const farm  = await ethers.getContractAt("ZIONFarm", FARM_ADDR);
+  // Resolve farm address from env or deployed-farm-base.json
+  let farmAddr = process.env.FARM_ADDRESS || "";
+  if (!farmAddr) {
+    const deployedPath = path.join(__dirname, "..", "deployed-farm-base.json");
+    if (fs.existsSync(deployedPath)) {
+      const deployed = JSON.parse(fs.readFileSync(deployedPath, "utf8"));
+      farmAddr = deployed.farm || deployed.ZIONFarm || "";
+    }
+  }
+  if (!farmAddr || !ethers.isAddress(farmAddr)) {
+    throw new Error(
+      "FARM_ADDRESS not set. Either:\n" +
+      "  1. Set FARM_ADDRESS env var, or\n" +
+      "  2. Run deploy-farm.ts first to generate deployed-farm-base.json"
+    );
+  }
+
+  const wzionAddr = process.env.WZION_ADDRESS || WZION_DEFAULT;
+  const seedAmount = ethers.parseEther(process.env.FARM_SEED_AMOUNT || DEFAULT_SEED);
+
+  console.log(`Farm:     ${farmAddr}`);
+  console.log(`wZION:    ${wzionAddr}`);
+  console.log(`Seed:     ${ethers.formatEther(seedAmount)} wZION`);
+
+  const wzion = await ethers.getContractAt("WZION", wzionAddr);
+  const farm  = await ethers.getContractAt("ZIONFarm", farmAddr);
 
   const bal = await wzion.balanceOf(deployer.address);
-  console.log(`wZION balance: ${ethers.formatEther(bal)}`);
-  if (bal < AMOUNT) throw new Error(`Insufficient wZION (have ${ethers.formatEther(bal)}, need 500)`);
+  console.log(`Deployer wZION balance: ${ethers.formatEther(bal)}`);
+  if (bal < seedAmount) {
+    throw new Error(`Insufficient wZION (have ${ethers.formatEther(bal)}, need ${ethers.formatEther(seedAmount)})`);
+  }
 
   // Use high gas to clear any stuck pending txs
   const gasOpts = {
@@ -26,15 +60,16 @@ async function main() {
   };
 
   // approve
-  console.log("Approving...");
-  const tx1 = await wzion.approve(FARM_ADDR, AMOUNT, gasOpts);
+  console.log("\nApproving...");
+  const tx1 = await wzion.approve(farmAddr, seedAmount, gasOpts);
   await tx1.wait();
-  console.log("✅ Approved");
+  console.log(`✅ Approved: ${tx1.hash}`);
 
   // fundRewards
   console.log("Funding rewards...");
-  const tx2 = await farm.fundRewards(AMOUNT, gasOpts);
+  const tx2 = await farm.fundRewards(seedAmount, gasOpts);
   await tx2.wait();
+  console.log(`✅ Funded: ${tx2.hash}`);
 
   const pool = await farm.rewardPoolBalance();
   console.log(`✅ Farm rewardPoolBalance: ${ethers.formatEther(pool)} wZION`);

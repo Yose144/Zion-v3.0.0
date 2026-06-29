@@ -1,33 +1,67 @@
 /**
  * Fund ZIONStaking reward pool with wZION
- * Usage: npx hardhat run scripts/fund-staking.ts --network base-sepolia
+ *
+ * Usage:
+ *   npx hardhat run scripts/fund-staking.ts --network base
+ *
+ * Env vars:
+ *   STAKING_ADDRESS  — deployed ZIONStaking address (overrides deployed-defi.json)
+ *   WZION_ADDRESS    — wZION token address (default: Base Mainnet)
+ *   STAKING_SEED_AMOUNT — wZION to seed (default: 100000 = 100K wZION)
  */
 import { ethers } from "hardhat";
+import * as fs from "fs";
+import * as path from "path";
 
-const STAKING_ADDR = "0x487D87E243f87b1DDEEDEB890c40F2cEcCf67913";
-const WZION_ADDR   = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6";
-const AMOUNT       = ethers.parseEther("50"); // 50 wZION seed
+const WZION_DEFAULT = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6";
+const DEFAULT_SEED = "100000"; // 100K wZION
 
 async function main() {
   const [deployer] = await ethers.getSigners();
-  console.log(`Funding ZIONStaking — deployer: ${deployer.address}`);
+  console.log(`\n💰 Fund ZIONStaking — deployer: ${deployer.address}`);
 
-  const wzion   = await ethers.getContractAt("WZION", WZION_ADDR);
-  const staking = await ethers.getContractAt("ZIONStaking", STAKING_ADDR);
+  // Resolve staking address from env or deployed-defi.json
+  let stakingAddr = process.env.STAKING_ADDRESS || "";
+  if (!stakingAddr) {
+    const deployedPath = path.join(__dirname, "..", "deployed-defi.json");
+    if (fs.existsSync(deployedPath)) {
+      const deployed = JSON.parse(fs.readFileSync(deployedPath, "utf8"));
+      stakingAddr = deployed.staking || deployed.ZIONStaking || "";
+    }
+  }
+  if (!stakingAddr || !ethers.isAddress(stakingAddr)) {
+    throw new Error(
+      "STAKING_ADDRESS not set. Either:\n" +
+      "  1. Set STAKING_ADDRESS env var, or\n" +
+      "  2. Run deploy-defi.ts first to generate deployed-defi.json"
+    );
+  }
+
+  const wzionAddr = process.env.WZION_ADDRESS || WZION_DEFAULT;
+  const seedAmount = ethers.parseEther(process.env.STAKING_SEED_AMOUNT || DEFAULT_SEED);
+
+  console.log(`Staking:  ${stakingAddr}`);
+  console.log(`wZION:    ${wzionAddr}`);
+  console.log(`Seed:     ${ethers.formatEther(seedAmount)} wZION`);
+
+  const wzion   = await ethers.getContractAt("WZION", wzionAddr);
+  const staking = await ethers.getContractAt("ZIONStaking", stakingAddr);
 
   const bal = await wzion.balanceOf(deployer.address);
-  console.log(`wZION balance: ${ethers.formatEther(bal)}`);
-  if (bal < AMOUNT) throw new Error(`Insufficient wZION (have ${ethers.formatEther(bal)}, need 50)`);
+  console.log(`Deployer wZION balance: ${ethers.formatEther(bal)}`);
+  if (bal < seedAmount) {
+    throw new Error(`Insufficient wZION (have ${ethers.formatEther(bal)}, need ${ethers.formatEther(seedAmount)})`);
+  }
 
   // approve
-  console.log("Approving wZION...");
-  const tx1 = await wzion.approve(STAKING_ADDR, AMOUNT);
+  console.log("\nApproving wZION...");
+  const tx1 = await wzion.approve(stakingAddr, seedAmount);
   await tx1.wait();
   console.log(`✅ Approved: ${tx1.hash}`);
 
   // fund
   console.log("Funding reward pool...");
-  const tx2 = await staking.fundRewardPool(AMOUNT);
+  const tx2 = await staking.fundRewardPool(seedAmount);
   await tx2.wait();
   console.log(`✅ Funded: ${tx2.hash}`);
 
