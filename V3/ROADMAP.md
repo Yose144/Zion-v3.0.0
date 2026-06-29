@@ -1532,5 +1532,38 @@ L1 mainnet stable (Phase 8 complete)
  └─► L2 Bridge: decimal fix → vault + RPC → daemon → testnet E2E → mainnet
       ├─► L2 DeFi: staking + farm deploy → DAO daemon → atomic swap → Uniswap pool
       └─► L3 WARP: chain adapters → router → testnet E2E → mainnet (EVM first)
-           └─► L3 AI Native + NCL: ONNX backend → agent framework → compute market → testnet
+           ├─► L3 AI Native + NCL: ONNX backend → agent framework → compute market → testnet
+           └─► L3 Native Swap: quote engine → aggregated exec → HTLC atomic → hybrid router
 ```
+
+### L3 — Native Swap (📐 Design phase)
+
+> Přímý swap nativních coinů (BTC↔ETH↔SOL, ...) **bez nutnosti wZION** v trase.
+> ZION slouží pouze jako fee token — generuje deflační tlak bez toho, aby byl v trase.
+
+Kompletní návrh: [`docs/NATIVE_SWAP_DESIGN.md`](../docs/NATIVE_SWAP_DESIGN.md)
+
+**Principy:**
+- `swap(ETH, SOL, 1.0)` → uživatel dostane SOL přímo, interně: ETH→USDC (1inch) + USDC→SOL (Jupiter)
+- Intermediate stablecoin (USDC) jako settlement layer — uživatel ho nikdy nevidí
+- Dvě cesty: **Aggregated** (rychlé, DEX, < $10K) a **HTLC Atomic** (trustless, > $10K)
+- Fee: 0.10–0.30% v ZION (auto-strháváno z output nebo vyžadováno předem)
+- Fee distribuce: 50% burn / 25% DAO / 25% validátoři
+
+**Klíčové závislosti:**
+- 1inch Quote API (EVM chains)
+- Jupiter Quote API (Solana)
+- KyberSwap (Base — již používáme pro WETH→SOL swappy)
+- Thorchain jako alternativa pro BTC↔X (nativní HTLC bez wrapped tokenů)
+
+**Fáze implementace:**
+
+| Fáze | Co | Odhad |
+|------|----|-------|
+| 1 | Quote engine (1inch + Jupiter) + `/api/warp/swap/quote` endpoint | 2–4 týdny |
+| 2 | Aggregated execution + USDC relay + UI widget | 4–8 týdnů |
+| 3 | HTLC Atomic cross-chain + BTC | 2–4 měsíce |
+| 4 | Hybrid router + auto-fee + dashboard | 1 měsíc |
+
+**Status:** 📐 Design dokument vytvořen (2026-06-29). Implementace blokována na
+schválení fee modelu a legal review custody varianty.
