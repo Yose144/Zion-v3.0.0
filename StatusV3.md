@@ -117,9 +117,9 @@
 
 - **Uniswap V3 → V4 migrace** — původní 3 V3 pooly (wZION/USDT 0.3%, wZION/WETH 1%, wZION/SOL 0.01%) vyprázdněny, likuidita přesunuta na V4
 - **wZION/USDT V4 pool aktivní** — NFT #2740371, fee 0.3%, liquidity 6.7e15, jediný aktivní pool
-- **ETH/wZION V4 pool prázdný** — NFT #2740380, fee 0.3%, 0 likvidity (pozice vytvořena ale bez depositu)
+- **ETH/wZION V4 NFT spálen** — NFT #2740380 byla prázdná (0 likvidity), vypálena přes `modifyLiquiditiesWithoutUnlock` (TX `0xea5a19cd...`)
 - **ETH flow audit** — 0.07 ETH deposit z Binance → swap na WETH/SOL/USDT → likvidita poolům; peníze nebyly ztraceny
-- **Deployer wallet** — 0.0107 ETH ($17.32) + 199M wZION + 2 V4 NFT pozice
+- **Deployer wallet** — 0.0107 ETH ($17.32) + 199M wZION + 1 V4 NFT pozice
 
 Viz [Session 10 detail](#session-10--uniswap-v4-migration--defi-audit-2026-06-30) níže.
 
@@ -4043,12 +4043,12 @@ V4 kontrakty na Base:
 | Quoter | `0x0d5e0f971ed27fbff6c2837bf31316121532048d` |
 | Universal Router 2.1.1 | `0xFdf682F51fe81aa4898f0ae2163d8a55c127fbc7` |
 
-V4 NFT pozice deployeru (2 NFT v PositionManager):
+V4 NFT pozice deployeru (1 NFT v PositionManager po burn):
 
 | NFT ID | Pool | Fee | Tick Range | Liquidity | Status |
 |--------|------|-----|------------|-----------|--------|
 | #2740371 | wZION/USDT | 0.3% | [-1726464, -593671] | 6,705,767,932,354,670 | ✅ Aktivní |
-| #2740380 | ETH(native)/wZION | 0.3% | [6888448, -8352766] | 0 | ⚠️ Prázdná |
+| ~~#2740380~~ | ~~ETH(native)/wZION~~ | ~~0.3%~~ | — | 0 | ❌ Spálen (Session 10) |
 
 **4. Deployer Wallet — Aktuální balances**
 
@@ -4069,7 +4069,7 @@ V4 NFT pozice deployeru (2 NFT v PositionManager):
 ### Poznámky
 
 - **Uniswap V4 fee tier 0.3%** — stejná jako původní V3 USDT pool, V4 podporuje custom fee tiers přes hooks ale 0.3% je standard
-- **ETH/wZION V4 pool** (NFT #2740380) má 0 likviditu — pozice byla vytvořena ale likvidita nebyla depositnuta (nebo byla withdrawnuta)
+- **ETH/wZION V4 NFT #2740380 spálena** — prázdná pozice (0 likvidity) vypálena přes `modifyLiquiditiesWithoutUnlock(0x03, [encoded params])` (TX `0xea5a19cdca8d632109889aa76e853f4ebecd859cd31022e9886161ff170a7756`, block 47991600, gas 48870)
 - **wZION/USDT V4 pool** (NFT #2740371) je aktivní s likviditou 6.7e15 — jediný aktivní pool
 - **V3 pooly zůstávají deployované** ale prázdné — likvidita plně migrována na V4
 - **EIP-7702 delegace** na deployer address (MetaMask Delegator) stále aktivní — viz Session 8 audit
