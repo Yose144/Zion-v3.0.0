@@ -57,9 +57,11 @@ export default function DefiPage() {
     tvl_usd: number;
     total_wzion_liquidity: number;
     active_pools: number;
+    primary_price_usd: number;
     pools: {
+      wzion_usdt: { active: boolean; liquidity: string; tick: number; price_usd: number };
       wzion_weth: { active: boolean; liquidity: string; tick: number; price_usd: number };
-      wzion_usdc: { active: boolean; liquidity: string; tick: number };
+      wzion_sol: { active: boolean; liquidity: string; tick: number; price_usd: number };
     };
   } | null>(null);
 
@@ -123,17 +125,25 @@ export default function DefiPage() {
           tvl_usd: data.summary.total_tvl_usd ?? 0,
           total_wzion_liquidity: data.summary.total_wzion_liquidity ?? 0,
           active_pools: data.summary.active_pools ?? 0,
+          primary_price_usd: data.pools?.wzion_usdt?.price?.usd_per_wzion ?? data.pools?.wzion_weth?.price?.usd_per_wzion ?? SEED_PRICE_USD,
           pools: {
+            wzion_usdt: {
+              active: data.pools?.wzion_usdt?.active ?? false,
+              liquidity: data.pools?.wzion_usdt?.liquidity ?? '0',
+              tick: data.pools?.wzion_usdt?.tick ?? 0,
+              price_usd: data.pools?.wzion_usdt?.price?.usd_per_wzion ?? 0,
+            },
             wzion_weth: {
               active: data.pools?.wzion_weth?.active ?? false,
               liquidity: data.pools?.wzion_weth?.liquidity ?? '0',
               tick: data.pools?.wzion_weth?.tick ?? 0,
               price_usd: data.pools?.wzion_weth?.price?.usd_per_wzion ?? 0,
             },
-            wzion_usdc: {
-              active: data.pools?.wzion_usdc?.active ?? false,
-              liquidity: data.pools?.wzion_usdc?.liquidity ?? '0',
-              tick: data.pools?.wzion_usdc?.tick ?? 0,
+            wzion_sol: {
+              active: data.pools?.wzion_sol?.active ?? false,
+              liquidity: data.pools?.wzion_sol?.liquidity ?? '0',
+              tick: data.pools?.wzion_sol?.tick ?? 0,
+              price_usd: data.pools?.wzion_sol?.price?.usd_per_wzion ?? 0,
             },
           },
         } : null);
@@ -247,7 +257,7 @@ export default function DefiPage() {
                   ${(wZIONPrice?.usd_per_wzion ?? SEED_PRICE_USD).toFixed(5)}
                 </span>
                 {wZIONPrice?.usd_per_wzion != null && wZIONPrice.usd_per_wzion > 0 ? (
-                  <span className="text-[10px] text-emerald-400/70">live</span>
+                  <span className="text-[10px] text-emerald-400/70">live USDT</span>
                 ) : (
                   <span className="text-[10px] text-amber-400/70">seed</span>
                 )}
@@ -276,9 +286,9 @@ export default function DefiPage() {
               <span className="text-[10px] uppercase tracking-wider text-gray-400">{cs ? 'Cena' : 'Price'}</span>
             </div>
             <p className="text-xl font-bold text-white">
-              ${(poolStats?.pools.wzion_weth.price_usd ?? wZIONPrice?.usd_per_wzion ?? SEED_PRICE_USD).toFixed(6)}
+              ${(poolStats?.primary_price_usd ?? wZIONPrice?.usd_per_wzion ?? SEED_PRICE_USD).toFixed(6)}
             </p>
-            <p className="text-[10px] text-gray-500">USD / wZION</p>
+            <p className="text-[10px] text-gray-500">USDT / wZION</p>
           </div>
           <div className="zion-rainbow-card p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="flex items-center gap-2 mb-2">
@@ -304,6 +314,59 @@ export default function DefiPage() {
             <p className="text-xl font-bold text-white">{poolStats?.active_pools ?? 0}</p>
             <p className="text-[10px] text-gray-500">{cs ? 'aktivní' : 'active'}</p>
           </div>
+        </div>
+      </section>
+
+      {/* ── Active Pools Detail ── */}
+      <section className="zion-container relative z-10 mb-8">
+        <h2 className="mb-4 text-lg font-semibold text-white">
+          {cs ? 'Aktivní Uniswap V3 pooly' : 'Active Uniswap V3 pools'}
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[
+            { key: 'wzion_usdt', label: 'wZION/USDT', fee: '0.3%', primary: true },
+            { key: 'wzion_weth', label: 'wZION/WETH', fee: '1%', primary: false },
+            { key: 'wzion_sol', label: 'wZION/SOL', fee: '0.01%', primary: false },
+          ].map((pool) => {
+            const stats = poolStats?.pools[pool.key as keyof typeof poolStats.pools];
+            return (
+              <div
+                key={pool.key}
+                className={`zion-rainbow-card p-4 ${pool.primary ? 'border-zion-gold/30' : ''}`}
+                style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-semibold text-white">{pool.label}</span>
+                  {pool.primary && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-zion-gold/20 text-zion-gold border border-zion-gold/30">
+                      {cs ? 'primární' : 'primary'}
+                    </span>
+                  )}
+                  <span className="text-[10px] text-gray-400">{pool.fee}</span>
+                </div>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">{cs ? 'Cena' : 'Price'}:</span>
+                    <span className="font-mono text-white">${(stats?.price_usd ?? 0).toFixed(6)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">{cs ? 'Likvidita' : 'Liquidity'}:</span>
+                    <span className="font-mono text-white">{stats?.liquidity ? Number(stats.liquidity).toLocaleString() : '—'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Tick:</span>
+                    <span className="font-mono text-white">{stats?.tick ?? '—'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">{cs ? 'Stav' : 'Status'}:</span>
+                    <span className={stats?.active ? 'text-emerald-400' : 'text-amber-400'}>
+                      {stats?.active ? (cs ? 'aktivní' : 'active') : (cs ? 'neaktivní' : 'inactive')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -518,12 +581,12 @@ export default function DefiPage() {
           </h2>
           <p className="mx-auto mb-6 max-w-lg text-gray-300">
             {cs
-              ? 'wZION je k dispozici na Uniswap V3 (Base). Pool wZION/WETH s 1% fee.'
-              : 'wZION is available on Uniswap V3 (Base). wZION/WETH pool with 1% fee.'}
+              ? 'wZION je k dispozici na Uniswap V3 (Base). Primární pool wZION/USDT s 0.3% fee.'
+              : 'wZION is available on Uniswap V3 (Base). Primary wZION/USDT pool with 0.3% fee.'}
           </p>
           <div className="flex justify-center gap-4 flex-wrap">
             <a
-              href={`https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=${CONTRACTS.wZION}`}
+              href={`https://app.uniswap.org/swap?chain=base&inputCurrency=${CONTRACTS.USDT}&outputCurrency=${CONTRACTS.wZION}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan px-6 py-3 font-semibold text-white shadow-[0_12px_35px_rgba(147,51,234,0.35)] transition-shadow hover:shadow-[0_18px_45px_rgba(147,51,234,0.45)]"
@@ -532,7 +595,7 @@ export default function DefiPage() {
               <ExternalLink className="h-4 w-4" />
             </a>
             <a
-              href={`https://dexscreener.com/base/${CONTRACTS.UniV3PoolWETH}`}
+              href={`https://dexscreener.com/base/${CONTRACTS.UniV3PoolUSDT}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 px-6 py-3 text-white transition-colors hover:border-zion-cyan/45"
