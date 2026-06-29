@@ -36,6 +36,9 @@ export const CORE = {
 
   /** Atomic Swap API — runs locally on Edge (port 8452) */
   atomicSwap: `http://127.0.0.1:8452`,
+
+  /** WARP daemon — runs locally on Edge (port 8453) */
+  warp: `http://127.0.0.1:8453`,
 } as const;
 
 /** Resolve a Core endpoint, allowing env-var override for dev/test. */
