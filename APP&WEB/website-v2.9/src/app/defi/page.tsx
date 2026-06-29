@@ -492,7 +492,7 @@ export default function DefiPage() {
       {/* ── Active Pools Detail ── */}
       <section className="zion-container relative z-10 mb-8">
         <h2 className="mb-4 text-lg font-semibold text-white">
-          {cs ? 'Aktivní Uniswap V3 pooly' : 'Active Uniswap V3 pools'}
+          {cs ? 'Uniswap V3 pooly' : 'Uniswap V3 pools'}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
@@ -503,11 +503,13 @@ export default function DefiPage() {
             const stats = poolStats?.pools[pool.key as keyof typeof poolStats.pools];
             const wzionLiq = stats?.balances?.token0 ?? 0;
             const token1Liq = stats?.balances?.token1 ?? 0;
-            const activeNfts = (stats?.nft_positions ?? []).filter(p => p.type !== 'depleted');
+            const activeNfts = (stats?.nft_positions ?? []).filter(p => p.type === 'two-sided');
+            const burnedNfts = (stats?.nft_positions ?? []).filter(p => p.type === 'burned');
+            const isDepleted = activeNfts.length === 0;
             return (
               <div
                 key={pool.key}
-                className={`zion-rainbow-card p-4 ${pool.primary ? 'border-zion-gold/30' : ''}`}
+                className={`zion-rainbow-card p-4 ${pool.primary ? 'border-zion-gold/30' : ''} ${isDepleted ? 'opacity-60' : ''}`}
                 style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between mb-2">
@@ -542,8 +544,10 @@ export default function DefiPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">{cs ? 'Stav' : 'Status'}:</span>
-                    <span className={stats?.active ? 'text-emerald-400' : 'text-amber-400'}>
-                      {stats?.active ? (cs ? 'aktivní' : 'active') : (cs ? 'neaktivní' : 'inactive')}
+                    <span className={isDepleted ? 'text-gray-500' : 'text-emerald-400'}>
+                      {isDepleted
+                        ? (cs ? 'bez likvidity' : 'no liquidity')
+                        : (cs ? 'aktivní' : 'active')}
                     </span>
                   </div>
                   {activeNfts.length > 0 && (
@@ -559,6 +563,21 @@ export default function DefiPage() {
                             {nft.usdt ? ` + $${nft.usdt}` : ''}
                             {nft.weth ? ` + ${nft.weth} WETH` : ''}
                             {nft.sol ? ` + ${nft.sol} SOL` : ''}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {burnedNfts.length > 0 && (
+                    <div className="pt-2 mt-2 border-t border-white/10 space-y-1">
+                      <p className="text-[10px] uppercase tracking-wider text-gray-600">
+                        {cs ? 'Vypálené pozice' : 'Burned positions'} ({burnedNfts.length})
+                      </p>
+                      {burnedNfts.map((nft) => (
+                        <div key={nft.id} className="flex justify-between text-[10px]">
+                          <span className="text-gray-600 font-mono">#{nft.id}</span>
+                          <span className="text-red-400/70 font-mono">
+                            {cs ? 'vypálena' : 'burned'}
                           </span>
                         </div>
                       ))}
