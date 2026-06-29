@@ -22,6 +22,7 @@ export interface BridgeStatus {
 export interface BridgeContractInfo {
   wzion_address: string;
   bridge_address: string;
+  l1_bridge_address: string;
   network: string;
   chain_id: number;
   explorer_base: string;
@@ -31,6 +32,7 @@ export interface BridgeContractInfo {
 export const BRIDGE_CONTRACTS_SEPOLIA: BridgeContractInfo = {
   wzion_address: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
   bridge_address: '0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1',
+  l1_bridge_address: 'zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0',
   network: 'Base Sepolia Testnet',
   chain_id: 84532,
   explorer_base: 'https://sepolia.basescan.org/address/',
@@ -40,6 +42,7 @@ export const BRIDGE_CONTRACTS_SEPOLIA: BridgeContractInfo = {
 export const BRIDGE_CONTRACTS_MAINNET: BridgeContractInfo = {
   wzion_address: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
   bridge_address: '0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467',
+  l1_bridge_address: 'zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0',
   network: 'Base Mainnet',
   chain_id: 8453,
   explorer_base: 'https://basescan.org/address/',
