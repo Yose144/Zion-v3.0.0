@@ -1,6 +1,6 @@
 # L2 Bridge Completion — Status & Plan
 
-**Last updated:** 2026-06-29 (session 5: pool cleanup, NFT burns, price chart, canonical filter)
+**Last updated:** 2026-06-29 (session 6: reverse bridge E2E test, vault address blocker found)
 
 ---
 
@@ -170,9 +170,56 @@
 - [x] Clean up defi-contracts.ts — remove DEAD/LEGACY entries, update NFT position IDs (session 5)
 - [x] Update CEX page DexScreener link to primary USDT pool (session 5)
 - [x] Update L2OS dashboard DeFi panel canonical pool mapping (session 4+5)
+- [x] E2E reverse bridge test — burn TX confirmed, relay detected, 5/5 sigs OK (session 6)
+- [x] Configure ZION_VALIDATOR_EXTRA_KEYS + ZION_BRIDGE_VALIDATOR_PUBKEYS on Edge (session 6)
+- [ ] **P0 BLOCKER: Fix BRIDGE_VAULT_ADDRESS mismatch (see session 6 below) — requires L1 node rebuild**
 - [ ] Add more USDT liquidity (need external USDT or more ETH to swap)
 - [ ] Submit Blockaid false-positive report
+- [ ] Deploy ZIONStaking + ZIONFarm on Base Mainnet (needs ~0.01 ETH for deploy gas)
 - [ ] Monitor bridge relayer continues processing new locks
+
+### Session 6 Changes (2026-06-29)
+| What | Where | Detail |
+|------|-------|--------|
+| Reverse bridge E2E test | on-chain + relay | `bridgeBurn(100 wZION)` TX `0x70ad4d93...` blok 47982490 — CONFIRMED ✅ |
+| Relay detection | `zion-edge-bridge` | BridgeBurn event zachycen `2026-06-29T17:34:40` — INFO log ✅ |
+| 5/5 signatures | relay env | `ZION_VALIDATOR_EXTRA_KEYS` přidán do `/root/zion-validator-key.env` — 5 klíčů agregováno ✅ |
+| Validator pubkeys | L1 node drop-in | `ZION_BRIDGE_VALIDATOR_PUBKEYS` + `ZION_BRIDGE_VALIDATOR_THRESHOLD=5` v `/etc/systemd/system/zion-edge-node1.service.d/bridge-validators.conf` ✅ |
+| **BLOCKER discovered** | `V3/L1/core/src/fee.rs:131` | `BRIDGE_VAULT_ADDRESS` = `zion106v7v0...` (kanonická/keyless) ≠ live vault `zion1w0r0a5...` (kde jsou reálné locky). `submitBridgeUnlock` hledá UTXOs v prázdné `zion106v7v0`. |
+| wZION_PLAN.md aktualizace | `docs/` | USDT deployer=0 (vše v poolu: 26.66 USDT + 138K wZION), pool in-range ✅ |
+
+#### 🔴 P0 BLOCKER: BRIDGE_VAULT_ADDRESS Mismatch
+
+**Symptom:** `submitBridgeUnlock` vrací `bridge vault balance 0 is insufficient`
+
+**Root cause:**
+```
+V3/L1/core/src/fee.rs:131
+pub const BRIDGE_VAULT_ADDRESS: &str = "zion106v7v0v0k3d500v0h7l636w0j4f5l4v044mh4a6";
+                                         ↑ kanonická adresa (seed = "ZION Bridge Vault V3 Mainnet")
+                                           PRÁZDNÁ — balance = 0
+```
+
+```
+V3/L2/bridge/config/bridge-mainnet.toml
+bridge_address = "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0"
+                   ↑ live vault kde je 99,999,999 ZION
+                     (bridge posílal locky sem, ale kód v fee.rs neví o ní)
+```
+
+**Fix (dvě možnosti — vyžaduje L1 souhlas):**
+
+Varianta A (doporučeno): změnit `BRIDGE_VAULT_ADDRESS` v `fee.rs` na `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0`
+a přidat `BRIDGE_VAULT_SEED` override nebo env var `ZION_BRIDGE_VAULT_ADDRESS` v rpc.rs.
+
+Varianta B: přidat do L1 node env `ZION_BRIDGE_VAULT_ADDRESS=zion1w0r0a560...` a číst v `fee.rs/rpc.rs` přednostně z env.
+
+Varianta C (čisté, dlouhodobé): přesunout UTXO z `zion1w0r0a5...` na `zion106v7v0...` — ale oba jsou keyless, nelze.
+
+→ **Výsledek: Varianta A nebo B, vyžaduje L1 kód edit + rebuild node na Edge.**
+→ **AGENTS.md L1 ochranný protokol: vyžaduje explicitní souhlas vlastníka před změnou `fee.rs`.**
+
+Aktuální stav: relay re-queue nezpracovaného burn, bude retryovat při dalším startu.
 
 ### Session 5 Changes (2026-06-29)
 | What | Where | Detail |
