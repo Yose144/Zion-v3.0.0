@@ -1,7 +1,7 @@
 // ZION V3 Mainnet Ready v3.0.2 - Main Process
 // Electron main process with system tray, auto-start, GPU mining, IPC
 
-const { app, BrowserWindow, Tray, Menu, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const { spawn, execFileSync } = require('child_process');
 const fs = require('fs');
@@ -3729,6 +3729,15 @@ ipcMain.handle('open-logs', () => {
   const { shell } = require('electron');
   shell.openPath(LOG_PATH);
   return { success: true };
+});
+
+// Open URL in system default browser (used by Bridge / DeFi / external links)
+ipcMain.handle('open-external', async (_event, url) => {
+  if (typeof url !== 'string' || !/^https?:\/\//.test(url)) {
+    return { ok: false, error: 'Invalid URL' };
+  }
+  await shell.openExternal(url);
+  return { ok: true };
 });
 // TREE NODE IPC HANDLERS — Start/stop/monitor a local ZION L1 core node
 // ============================================================================

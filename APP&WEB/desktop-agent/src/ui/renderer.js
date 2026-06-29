@@ -628,6 +628,7 @@ const _viewInitFns = {
   node:      () => initNodeView(),
   about:     () => { initUpdateUI(); initSecurityUI(); },
   bridge:    () => initBridgeView(),
+  defi:      () => initDefiView(),
   cli:       () => initCliView(),
 };
 
@@ -3348,51 +3349,180 @@ function copyToClipboard(text, badgeId) {
 }
 
 let _bridgeInitialized = false;
+let _bridgePollTimer = null;
+
+// Fetch bridge status from the Edge relay API
+async function fetchBridgeStatus() {
+  const urls = [
+    'http://127.0.0.1:8766/api/bridge/status',
+    'https://zionterranova.com/api/bridge/status',
+  ];
+  for (const url of urls) {
+    try {
+      const r = await fetch(url, { signal: AbortSignal.timeout(4000) });
+      if (r.ok) return await r.json();
+    } catch { /* try next */ }
+  }
+  return null;
+}
+
+function updateBridgeStats(data) {
+  if (!data) return;
+  const $ = id => document.getElementById(id);
+  if ($('bridge-stat-mints'))    $('bridge-stat-mints').textContent    = data.evm_mints_confirmed ?? '—';
+  if ($('bridge-stat-burns'))    $('bridge-stat-burns').textContent    = data.evm_burns_confirmed ?? data.l1_unlocks_confirmed ?? '—';
+  if ($('bridge-stat-l1height')) $('bridge-stat-l1height').textContent = data.l1_height ?? '—';
+  if ($('bridge-stat-relay')) {
+    const up = data.uptime_seconds;
+    $('bridge-stat-relay').textContent = up != null
+      ? (up < 3600 ? `${Math.floor(up/60)}m` : `${Math.floor(up/3600)}h`)
+      : (data.online ? 'Online' : '—');
+  }
+  const chip = $('bridge-status-chip');
+  if (chip) {
+    const online = data.online ? 'Online' : 'Offline';
+    const upStr = data.uptime_seconds ? ` · ${Math.floor(data.uptime_seconds/3600)}h uptime` : '';
+    chip.innerHTML = `<svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>Base Mainnet · ${online}${upStr}`;
+  }
+}
+
 function initBridgeView() {
-  if (_bridgeInitialized) return;
+  if (_bridgeInitialized) {
+    void fetchBridgeStatus().then(updateBridgeStats);
+    return;
+  }
   _bridgeInitialized = true;
   dbg('[BRIDGE] Initializing Bridge view');
 
+  // ── Readiness checklist ──────────────────────────────
   const grid = document.getElementById('bridge-readiness-grid');
   const countEl = document.getElementById('bridge-readiness-count');
-  if (!grid) return;
+  if (grid) {
+    const items = [
+      { label: 'wZION contract deployed', done: true },
+      { label: 'ZIONBridge contract deployed', done: true },
+      { label: 'BaseScan verified', done: false },
+      { label: '5/5 Guardian multisig', done: true },
+      { label: 'Relay metrics endpoint', done: true },
+      { label: 'Burn widget (live)', done: true },
+      { label: 'L1 → Base (mint) active', done: true },
+      { label: 'Base → L1 (unlock) active', done: true },
+    ];
+    const doneCount = items.filter(i => i.done).length;
+    if (countEl) countEl.textContent = `${doneCount}/${items.length}`;
+    grid.innerHTML = items.map(item => {
+      const cls = item.done ? 'status-done' : 'status-pending';
+      const icon = item.done ? '✓' : '◐';
+      return `<div class="bridge-readiness-row ${cls}">
+        <span class="bridge-readiness-icon">${icon}</span>
+        <span class="bridge-readiness-label">${escapeHtml(item.label)}</span>
+      </div>`;
+    }).join('');
+  }
 
-  const items = [
-    { label: 'wZION contract', done: true },
-    { label: 'ZIONBridge contract', done: true },
-    { label: 'BaseScan verified', done: false },
-    { label: '3/5 Guardian multisig', done: false },
-    { label: 'Relay metrics', done: true },
-    { label: 'Burn widget (live)', done: true },
-    { label: 'L1 → Base (mint)', done: true },
-    { label: 'Base → L1 (unlock)', done: true },
-  ];
+  // ── Lock widget ──────────────────────────────────────
+  const evmInput   = document.getElementById('bridge-lock-evm');
+  const amtInput   = document.getElementById('bridge-lock-amount');
+  const memoInput  = document.getElementById('bridge-lock-memo');
+  const copyMemoBtn = document.getElementById('bridge-lock-copy-memo');
+  const sendBtn    = document.getElementById('bridge-lock-send-btn');
+  const fillBtn    = document.getElementById('bridge-lock-fill-wallet');
+  const statusEl   = document.getElementById('bridge-lock-status');
+  const resultEl   = document.getElementById('bridge-lock-tx-result');
+  const txHashEl   = document.getElementById('bridge-lock-txhash');
 
-  const doneCount = items.filter(i => i.done).length;
-  if (countEl) countEl.textContent = `${doneCount}/${items.length}`;
+  const BRIDGE_VAULT = 'zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0';
 
-  grid.innerHTML = items.map(item => {
-    const cls = item.done ? 'status-done' : 'status-pending';
-    const icon = item.done ? '✓' : '◐';
-    return `<div class="bridge-readiness-row ${cls}">
-      <span class="bridge-readiness-icon">${icon}</span>
-      <span class="bridge-readiness-label">${escapeHtml(item.label)}</span>
-    </div>`;
-  }).join('');
+  // Auto-generate memo when EVM address changes
+  function rebuildMemo() {
+    const evm = evmInput?.value?.trim() ?? '';
+    const isValidEvm = /^0x[0-9a-fA-F]{40}$/.test(evm);
+    if (memoInput) {
+      memoInput.value = isValidEvm ? `BRIDGE:base:${evm}` : '';
+    }
+    if (sendBtn) {
+      const amt = parseFloat(amtInput?.value ?? '0');
+      sendBtn.disabled = !(isValidEvm && amt >= 100);
+    }
+  }
 
-  // Try to fetch bridge status from local dashboard API
-  fetch('http://127.0.0.1:8766/api/bridge/status', { signal: AbortSignal.timeout(3000) })
-    .then(r => r.ok ? r.json() : null)
-    .then(data => {
-      if (!data) return;
-      const chip = document.getElementById('bridge-status-chip');
-      if (chip) {
-        const online = data.online ? 'Online' : 'Offline';
-        const uptime = data.uptime_seconds ? ` · ${Math.floor(data.uptime_seconds / 3600)}h uptime` : '';
-        chip.innerHTML = `<svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>Base Sepolia Testnet · ${online}${uptime}`;
+  if (evmInput)  evmInput.addEventListener('input',  rebuildMemo);
+  if (amtInput)  amtInput.addEventListener('input',  rebuildMemo);
+
+  if (copyMemoBtn) {
+    copyMemoBtn.addEventListener('click', () => {
+      const memo = memoInput?.value ?? '';
+      if (!memo) return;
+      copyToClipboard(memo, 'bridge-lock-memo-copied');
+    });
+  }
+
+  // Fill from active wallet
+  if (fillBtn) {
+    fillBtn.addEventListener('click', () => {
+      const activeWallet = document.getElementById('active-wallet-address')?.value
+        ?? document.getElementById('wallet-overview-address')?.textContent?.trim()
+        ?? '';
+      if (activeWallet && activeWallet.startsWith('zion1')) {
+        // We need the EVM equivalent — just show hint
+        if (statusEl) statusEl.textContent = 'Enter your Base EVM address (0x...) — it is different from your ZION L1 address';
       }
-    })
-    .catch(() => {});
+    });
+  }
+
+  // Send Lock TX via wallet-send IPC
+  if (sendBtn) {
+    sendBtn.addEventListener('click', async () => {
+      const evm   = evmInput?.value?.trim() ?? '';
+      const amt   = parseFloat(amtInput?.value ?? '0');
+      const memo  = memoInput?.value ?? '';
+
+      if (!/^0x[0-9a-fA-F]{40}$/.test(evm)) {
+        if (statusEl) statusEl.textContent = '⚠ Invalid EVM address (must be 0x + 40 hex chars)';
+        return;
+      }
+      if (amt < 100) {
+        if (statusEl) statusEl.textContent = '⚠ Minimum 100 ZION';
+        return;
+      }
+      if (!memo.startsWith('BRIDGE:base:')) {
+        if (statusEl) statusEl.textContent = '⚠ Memo not generated — enter EVM address first';
+        return;
+      }
+
+      sendBtn.disabled = true;
+      if (statusEl) statusEl.textContent = 'Sending lock transaction...';
+
+      try {
+        // Reuse wallet-send IPC with memo field (bridge lock TX)
+        const result = await window.electronAPI?.walletSendTransaction?.({
+          to: BRIDGE_VAULT,
+          amount: String(amt),
+          memo,
+        });
+        if (result?.ok) {
+          if (statusEl) statusEl.textContent = '';
+          if (resultEl) resultEl.style.display = 'block';
+          if (txHashEl) txHashEl.textContent = result.tx_hash ?? result.txHash ?? 'submitted';
+        } else {
+          if (statusEl) statusEl.textContent = `⚠ ${result?.error ?? 'Transaction failed'}`;
+          sendBtn.disabled = false;
+        }
+      } catch (e) {
+        if (statusEl) statusEl.textContent = `⚠ ${e.message ?? 'Unknown error'}`;
+        sendBtn.disabled = false;
+      }
+    });
+  }
+
+  // ── Live stats polling ────────────────────────────────
+  void fetchBridgeStatus().then(updateBridgeStats);
+
+  _bridgePollTimer = setInterval(() => {
+    if (currentView !== 'bridge') return;
+    if (document.hidden) return;
+    void fetchBridgeStatus().then(updateBridgeStats);
+  }, 30000);
 }
 
 dbg('Renderer script loaded');
@@ -3752,6 +3882,9 @@ let _defiInitDone = false;
 let _defiRefreshTimer = null;
 const DEFI_API = '/api/defi/status';
 const DEFI_SITE_API = 'https://zionterranova.com/api/defi/status';
+// GeckoTerminal pool IDs for wZION on Base
+const GECKO_POOL_USDT = 'base/0x_wzion_usdt'; // updated if known
+const GECKO_POOLS_API = 'https://api.geckoterminal.com/api/v2/networks/base/tokens/0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6/pools?page=1';
 
 async function fetchDefiStatus() {
   // Try local first (if running inside website), fallback to remote
@@ -3766,27 +3899,96 @@ async function fetchDefiStatus() {
   return null;
 }
 
+async function fetchDefiPools() {
+  // Also try our own website pool API
+  const urls = [
+    'https://zionterranova.com/api/defi/pools',
+    GECKO_POOLS_API,
+  ];
+  for (const url of urls) {
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
+      if (!res.ok) continue;
+      return await res.json();
+    } catch { /* try next */ }
+  }
+  return null;
+}
+
 function updateDefiUI(data) {
   if (!data) return;
   const $ = id => document.getElementById(id);
-  if ($('defi-wzion-supply'))  $('defi-wzion-supply').textContent  = data.data?.wZION?.totalSupply ?? '—';
-  if ($('defi-total-staked'))  $('defi-total-staked').textContent  = data.data?.staking?.totalStaked ?? '—';
-  if ($('defi-staking-apr'))   $('defi-staking-apr').textContent   = data.data?.staking?.apr ?? '~12%';
-  if ($('defi-farm-pools'))    $('defi-farm-pools').textContent    = data.data?.farm?.poolCount ?? '—';
-  if ($('defi-proposals'))     $('defi-proposals').textContent     = data.data?.governance?.proposalCount ?? '—';
-  if ($('defi-network'))       $('defi-network').textContent       = data.network ?? 'Base Sepolia';
-  if ($('defi-farm-pool-count')) $('defi-farm-pool-count').textContent = data.data?.farm?.poolCount ?? '—';
-  if ($('defi-farm-rps'))      $('defi-farm-rps').textContent      = data.data?.farm?.rewardPerSecond ?? '—';
+  if ($('defi-wzion-supply'))    $('defi-wzion-supply').textContent    = data.data?.wZION?.totalSupply ?? '—';
+  if ($('defi-total-staked'))    $('defi-total-staked').textContent    = data.data?.staking?.totalStaked ?? '—';
+  if ($('defi-staking-apr'))     $('defi-staking-apr').textContent     = data.data?.staking?.apr ?? '~12%';
+  if ($('defi-staking-apr-detail')) $('defi-staking-apr-detail').textContent = data.data?.staking?.apr ?? '~12%';
+  if ($('defi-farm-pools'))      $('defi-farm-pools').textContent      = data.data?.farm?.poolCount ?? '—';
+  if ($('defi-proposals'))       $('defi-proposals').textContent       = data.data?.governance?.proposalCount ?? '—';
+  if ($('defi-network'))         $('defi-network').textContent         = data.network ?? 'Base Mainnet';
+  if ($('defi-farm-rps'))        $('defi-farm-rps').textContent        = data.data?.farm?.rewardPerSecond ?? '—';
+}
+
+function updateDefiPoolsUI(poolData) {
+  if (!poolData) return;
+  const $ = id => document.getElementById(id);
+
+  // Our website API format: poolData.pools.wzion_usdt / wzion_weth
+  const usdt = poolData.pools?.wzion_usdt;
+  const weth = poolData.pools?.wzion_weth;
+
+  if (usdt) {
+    if ($('defi-pool-usdt-price')) $('defi-pool-usdt-price').textContent = usdt.price?.usd_per_wzion != null ? `$${Number(usdt.price.usd_per_wzion).toFixed(4)}` : '—';
+    if ($('defi-pool-usdt-liq'))   $('defi-pool-usdt-liq').textContent   = usdt.liquidity ?? '—';
+    if ($('defi-pool-usdt-badge')) {
+      $('defi-pool-usdt-badge').textContent = usdt.active ? 'Active' : 'Inactive';
+      $('defi-pool-usdt-badge').style.color = usdt.active ? '#6ee7b7' : '#f87171';
+    }
+    // price strip
+    if ($('defi-price-usd')) $('defi-price-usd').textContent = usdt.price?.usd_per_wzion != null ? `$${Number(usdt.price.usd_per_wzion).toFixed(4)}` : '—';
+  }
+  if (weth) {
+    if ($('defi-pool-weth-price')) $('defi-pool-weth-price').textContent = weth.price?.usd_per_wzion != null ? `$${Number(weth.price.usd_per_wzion).toFixed(4)}` : '—';
+    if ($('defi-pool-weth-liq'))   $('defi-pool-weth-liq').textContent   = weth.liquidity ?? '—';
+    if ($('defi-pool-weth-badge')) {
+      $('defi-pool-weth-badge').textContent = weth.active ? 'Active' : 'Inactive';
+      $('defi-pool-weth-badge').style.color = weth.active ? '#6ee7b7' : '#f87171';
+    }
+  }
+
+  // Pools grid (detailed view)
+  const grid = $('defi-pools-grid');
+  if (grid && (usdt || weth)) {
+    const rows = [];
+    for (const [key, pool] of Object.entries(poolData.pools ?? {})) {
+      if (!pool) continue;
+      const priceStr = pool.price?.usd_per_wzion != null ? `$${Number(pool.price.usd_per_wzion).toFixed(4)}` : '—';
+      const liqStr = pool.liquidity ?? '—';
+      const label = key === 'wzion_usdt' ? 'wZION / USDT (0.3%)' : key === 'wzion_weth' ? 'wZION / WETH (0.3%)' : key;
+      const borderColor = key === 'wzion_usdt' ? 'rgba(99,102,241,0.6)' : 'rgba(16,185,129,0.6)';
+      rows.push(`<div class="control-panel panel-tight" style="border-left:3px solid ${borderColor}">
+        <div class="stack-col" style="gap:4px">
+          <span style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.85)">${escapeHtml(label)}</span>
+          <div class="inline-row" style="gap:16px;flex-wrap:wrap">
+            <span style="font-size:12px;color:rgba(255,255,255,0.6)">Price: <strong>${priceStr}</strong></span>
+            <span style="font-size:12px;color:rgba(255,255,255,0.6)">Liquidity: <strong>${escapeHtml(liqStr)}</strong></span>
+            <span style="font-size:12px;color:${pool.active ? '#6ee7b7' : '#f87171'}">${pool.active ? 'Active' : 'Inactive'}</span>
+          </div>
+        </div>
+      </div>`);
+    }
+    if (rows.length) grid.innerHTML = rows.join('');
+    else grid.innerHTML = '<span style="color:rgba(255,255,255,0.35);font-size:12px">No pool data available</span>';
+  }
 }
 
 async function refreshDefiData() {
-  const data = await fetchDefiStatus();
-  updateDefiUI(data);
+  const [status, pools] = await Promise.all([fetchDefiStatus(), fetchDefiPools()]);
+  updateDefiUI(status);
+  updateDefiPoolsUI(pools);
 }
 
 function initDefiView() {
   if (_defiInitDone) {
-    // Already initialized — just refresh data
     void refreshDefiData();
     return;
   }
@@ -3798,10 +4000,10 @@ function initDefiView() {
     refreshBtn.addEventListener('click', () => void refreshDefiData());
   }
 
-  // Staking buttons — show status messages (real TX handling needs MetaMask)
-  const stakeBtn = document.getElementById('defi-stake-btn');
+  // Staking buttons — real TX needs MetaMask, redirect to website
+  const stakeBtn   = document.getElementById('defi-stake-btn');
   const unstakeBtn = document.getElementById('defi-unstake-btn');
-  const claimBtn = document.getElementById('defi-claim-btn');
+  const claimBtn   = document.getElementById('defi-claim-btn');
   const stakeStatus = document.getElementById('defi-stake-status');
 
   if (stakeBtn) {
@@ -3811,46 +4013,80 @@ function initDefiView() {
         if (stakeStatus) stakeStatus.textContent = '⚠ Enter a valid amount';
         return;
       }
-      if (stakeStatus) stakeStatus.textContent = '🔗 Connect MetaMask on zionterranova.com/defi to stake wZION on-chain';
+      window.electronAPI?.openExternal?.('https://zionterranova.com/defi/staking');
+      if (stakeStatus) stakeStatus.textContent = 'Opening staking page — connect MetaMask to complete on-chain';
     });
   }
   if (unstakeBtn) {
     unstakeBtn.addEventListener('click', () => {
-      if (stakeStatus) stakeStatus.textContent = '🔗 Unstaking requires MetaMask — visit zionterranova.com/defi';
+      window.electronAPI?.openExternal?.('https://zionterranova.com/defi/staking');
+      if (stakeStatus) stakeStatus.textContent = 'Opening staking page...';
     });
   }
   if (claimBtn) {
     claimBtn.addEventListener('click', () => {
-      if (stakeStatus) stakeStatus.textContent = '🔗 Claim rewards via MetaMask — visit zionterranova.com/defi';
+      window.electronAPI?.openExternal?.('https://zionterranova.com/defi/staking');
+      if (stakeStatus) stakeStatus.textContent = 'Opening staking page...';
     });
   }
 
   // Farm buttons
-  const farmDeposit = document.getElementById('defi-farm-deposit-btn');
+  const farmDeposit  = document.getElementById('defi-farm-deposit-btn');
   const farmWithdraw = document.getElementById('defi-farm-withdraw-btn');
-  const farmHarvest = document.getElementById('defi-farm-harvest-btn');
-  const farmStatus = document.getElementById('defi-farm-status');
+  const farmHarvest  = document.getElementById('defi-farm-harvest-btn');
+  const farmStatus   = document.getElementById('defi-farm-status');
+  const openFarm = () => {
+    window.electronAPI?.openExternal?.('https://zionterranova.com/defi/farming');
+    if (farmStatus) farmStatus.textContent = 'Opening farming page...';
+  };
+  if (farmDeposit)  farmDeposit.addEventListener('click', openFarm);
+  if (farmWithdraw) farmWithdraw.addEventListener('click', openFarm);
+  if (farmHarvest)  farmHarvest.addEventListener('click', openFarm);
 
-  if (farmDeposit) {
-    farmDeposit.addEventListener('click', () => {
-      if (farmStatus) farmStatus.textContent = '🔗 Deposit LP tokens via MetaMask — visit zionterranova.com/defi';
-    });
-  }
-  if (farmWithdraw) {
-    farmWithdraw.addEventListener('click', () => {
-      if (farmStatus) farmStatus.textContent = '🔗 Withdraw LP tokens via MetaMask — visit zionterranova.com/defi';
-    });
-  }
-  if (farmHarvest) {
-    farmHarvest.addEventListener('click', () => {
-      if (farmStatus) farmStatus.textContent = '🔗 Harvest rewards via MetaMask — visit zionterranova.com/defi';
+  // Portfolio EVM lookup
+  const portfolioInput  = document.getElementById('defi-portfolio-evm');
+  const portfolioBtn    = document.getElementById('defi-portfolio-lookup-btn');
+  const portfolioResult = document.getElementById('defi-portfolio-result');
+  const portfolioStatus = document.getElementById('defi-portfolio-status');
+
+  if (portfolioBtn) {
+    portfolioBtn.addEventListener('click', async () => {
+      const evm = portfolioInput?.value?.trim() ?? '';
+      if (!/^0x[0-9a-fA-F]{40}$/.test(evm)) {
+        if (portfolioStatus) portfolioStatus.textContent = '⚠ Enter a valid 0x EVM address';
+        return;
+      }
+      if (portfolioStatus) portfolioStatus.textContent = 'Looking up balances...';
+      if (portfolioResult) portfolioResult.style.display = 'none';
+
+      try {
+        // Fetch wZION balance via our website API or BaseScan
+        const url = `https://zionterranova.com/api/defi/portfolio?address=${encodeURIComponent(evm)}`;
+        const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+        if (res.ok) {
+          const d = await res.json();
+          const $ = id => document.getElementById(id);
+          if ($('defi-portfolio-wzion'))  $('defi-portfolio-wzion').textContent  = d.wzion_balance != null ? `${Number(d.wzion_balance).toFixed(4)} wZION` : '—';
+          if ($('defi-portfolio-staked')) $('defi-portfolio-staked').textContent = d.staked != null ? Number(d.staked).toFixed(4) : '—';
+          if ($('defi-portfolio-pending')) $('defi-portfolio-pending').textContent = d.pending_rewards != null ? Number(d.pending_rewards).toFixed(4) : '—';
+          if ($('defi-portfolio-lp'))     $('defi-portfolio-lp').textContent     = d.lp_deposited != null ? Number(d.lp_deposited).toFixed(4) : '—';
+          if (portfolioResult) portfolioResult.style.display = 'flex';
+          if (portfolioStatus) portfolioStatus.textContent = '';
+        } else {
+          // Fallback: direct to BaseScan
+          window.electronAPI?.openExternal?.(`https://basescan.org/token/0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6?a=${evm}`);
+          if (portfolioStatus) portfolioStatus.textContent = 'Portfolio API not available — opening BaseScan';
+        }
+      } catch {
+        if (portfolioStatus) portfolioStatus.textContent = 'Unable to fetch portfolio data — check connection';
+      }
     });
   }
 
   // Initial data load
   void refreshDefiData();
 
-  // Auto-refresh while on DeFi tab (every 30s)
+  // Auto-refresh every 30s while on DeFi view
   _defiRefreshTimer = setInterval(() => {
     if (currentView !== 'defi') return;
     if (document.hidden) return;

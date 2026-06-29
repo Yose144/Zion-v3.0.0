@@ -163,6 +163,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   cliWarpPending: () => ipcRenderer.invoke('cli-warp-pending'),
   cliWarpStats: () => ipcRenderer.invoke('cli-warp-stats'),
 
+  // Open URL in system browser
+  openExternal: (url) => ipcRenderer.invoke('open-external', url),
+
+  // Generic invoke (for dynamic handler calls)
+  invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
+
   // Cleanup listeners
   removeAllListeners: (channel) => {
     ipcRenderer.removeAllListeners(channel);
