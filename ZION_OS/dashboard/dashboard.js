@@ -5902,6 +5902,81 @@ async function loadL2Data() {
     if(el('l2-swap-refunded')) el('l2-swap-refunded').textContent = r.refunded ?? '—';
     if(el('l2-swaps')) el('l2-swaps').textContent = r.active_htlcs ?? '—';
   } catch(e) {}
+
+  // DeFi / Uniswap V3 pools — data z /api/cex/listings (DexScreener)
+  try {
+    const r = await fetch('/api/cex/listings', { signal: AbortSignal.timeout(6000) }).then(r => r.json());
+    const el = id => document.getElementById(id);
+    const dex = r.dex || {};
+    const pairs = dex.pairs || [];
+
+    // badge
+    const defiOk = dex.price_usd > 0 || pairs.length > 0;
+    if(el('l2-defi-badge')){
+      el('l2-defi-badge').className = defiOk
+        ? 'text-[10px] px-2 py-0.5 rounded-full bg-emerald-700/50 text-emerald-300'
+        : 'text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400';
+      el('l2-defi-badge').textContent = defiOk ? 'Live' : 'No data';
+    }
+
+    // Cena — z aggregate nebo nejlepšího páru
+    const priceUsd = dex.price_usd ?? dex.best_price ?? null;
+    const priceStr = priceUsd ? '$' + Number(priceUsd).toFixed(6) : '—';
+    if(el('l2-defi-price')) el('l2-defi-price').textContent = priceStr;
+    if(el('l2-defi-price-big')) el('l2-defi-price-big').textContent = priceStr;
+
+    // 24h price change (z prvního páru s daty)
+    const firstPairChange = pairs[0]?.price_change?.h24 ?? null;
+    if(el('l2-defi-price-change') && firstPairChange !== null){
+      const ch = Number(firstPairChange).toFixed(2);
+      el('l2-defi-price-change').textContent = '24h: ' + (ch > 0 ? '+' : '') + ch + '%';
+      el('l2-defi-price-change').className = 'text-[10px] ' + (ch >= 0 ? 'text-emerald-400' : 'text-red-400');
+    }
+
+    // TVL / liquidity celkem
+    const totalLiq = dex.total_liquidity_usd ?? null;
+    if(el('l2-defi-tvl')) el('l2-defi-tvl').textContent = totalLiq ? '$' + formatVolume(totalLiq) : '—';
+
+    // Volume 24h celkem
+    const vol24h = dex.total_volume_24h ?? null;
+    if(el('l2-defi-volume24h')) el('l2-defi-volume24h').textContent = vol24h ? '$' + formatVolume(vol24h) : '—';
+
+    // Txns 24h
+    const txns24h = dex.total_txns_24h ?? null;
+    if(el('l2-defi-txns24h')) el('l2-defi-txns24h').textContent = txns24h ? 'txns: ' + txns24h : 'txns: —';
+
+    // wZION supply — z r.dex.wzion_supply nebo statická hodnota
+    const supply = dex.wzion_supply ?? r.wzion_supply ?? null;
+    const supplyStr = supply ? (Number(supply) / 1e6).toFixed(1) + 'M' : '100M';
+    if(el('l2-wzion-supply')) el('l2-wzion-supply').textContent = supplyStr;
+    if(el('l2-defi-supply-big')) el('l2-defi-supply-big').textContent = supplyStr;
+
+    // Per-pool data — mapujeme podle pairAddress nebo pairName
+    const POOL_USDT = '0x186b46c2f04153999d44d25179cd623fd62bfda2';
+    const POOL_WETH = '0x18c0daef295e63f1bfbc7c39e71d0fabf4600699';
+    const POOL_SOL  = '0xf38c56bbbbbc6d9fa11e7de84bf7bb70e1e8d2b3';
+
+    function fillPool(prefix, poolAddr) {
+      const p = pairs.find(p => (p.pairAddress || '').toLowerCase() === poolAddr.toLowerCase());
+      if(!p) return;
+      const price = p.priceUsd ? '$' + Number(p.priceUsd).toFixed(6) : '—';
+      const liq   = p.liquidity?.usd ? '$' + formatVolume(p.liquidity.usd) : '—';
+      const vol   = p.volume?.h24 ? '$' + formatVolume(p.volume.h24) : '—';
+      const txns  = (p.txns?.h24?.buys ?? 0) + (p.txns?.h24?.sells ?? 0);
+      if(el(prefix + '-price')) el(prefix + '-price').textContent = price;
+      if(el(prefix + '-liq'))   el(prefix + '-liq').textContent   = liq;
+      if(el(prefix + '-vol'))   el(prefix + '-vol').textContent   = vol;
+      if(el(prefix + '-txns'))  el(prefix + '-txns').textContent  = txns || '—';
+    }
+
+    fillPool('l2-pool-usdt', POOL_USDT);
+    fillPool('l2-pool-weth', POOL_WETH);
+    fillPool('l2-pool-sol',  POOL_SOL);
+
+  } catch(e) {
+    const el = id => document.getElementById(id);
+    if(el('l2-defi-badge')){ el('l2-defi-badge').className = 'text-[10px] px-2 py-0.5 rounded-full bg-red-700/50 text-red-300'; el('l2-defi-badge').textContent = 'Error'; }
+  }
 }
 
 async function getAggregatorQuote() {
