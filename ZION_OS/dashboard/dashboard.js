@@ -1,10 +1,11 @@
 'use strict';
 
-const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','bridge-validators','genesis','blockers','ops','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','payout','backups','topology','miner-live','settings','fleet','agent','warp','ai-agents','ncl-jobs'];
+const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','bridge-validators','genesis','blockers','ops','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','cex','warp-swap','payout','backups','topology','miner-live','settings','fleet','agent','warp','ai-agents','ncl-jobs'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
 let _payoutSseSource = null;  // EventSource for real-time payout events
 let _payoutTimer = null;      // Fallback poll timer for payout tab
+let _cexTimer = null;         // CEX panel auto-refresh timer
 let friendlyMode = false;
 let _overviewWidgetTimer = null;
 let _countdownTimer = null;
@@ -117,6 +118,7 @@ function clearTabTimers(except){
   if(except !== 'backups') _backupsTimer = null;
   if(except !== 'dao') _daoTimer = null;
   if(except !== 'payout'){ clearInterval(_payoutTimer); _payoutTimer = null; }
+  if(except !== 'cex'){ clearInterval(_cexTimer); _cexTimer = null; }
 }
 
 function switchTab(name){
@@ -143,6 +145,8 @@ function switchTab(name){
   else if(name === 'hiran'){ clearTabTimers('hiran'); loadAgentList(); checkAiStatus(); if(!_hiranTimer) _hiranTimer = setInterval(()=>{loadAgentList(); checkAiStatus();}, 10000); }
   else if(name === 'topology'){ clearTabTimers('topology'); loadTopology(); if(!_topologyTimer) _topologyTimer = setInterval(loadTopology, 10000); }
   else if(name === 'dao'){ clearTabTimers('dao'); loadDaoAll(); if(!_daoTimer) _daoTimer = setInterval(loadDaoAll, 10000); }
+  else if(name === 'cex'){ clearTabTimers(null); loadCexPanel(); if(!_cexTimer) _cexTimer = setInterval(loadCexPanel, 60000); }
+  else if(name === 'warp-swap'){ clearTabTimers(null); loadWarpSwapPanel(); }
   else if(name === 'payout'){ clearTabTimers(null); loadPayoutTab(); connectPayoutSse(); if(!_payoutTimer) _payoutTimer = setInterval(loadPayoutTab, 10000); }
   else { clearTabTimers(null); disconnectPayoutSse(); }
 
@@ -8243,6 +8247,151 @@ async function loadWarpPanel(){
     }
   } catch(e){
     console.warn('WARP panel load failed:', e);
+  }
+}
+
+// ── CEX + DEX Panel ──────────────────────────────────────────────────────
+async function loadCexPanel(){
+  try {
+    const res = await fetch('/api/cex/listings').then(r => r.json());
+    if(!res || !res.ok){
+      setText('cex-summary', 'unavailable');
+      setText('cex-dex-source', 'offline');
+      const body = document.getElementById('cex-listings-body');
+      if(body) body.innerHTML = '<tr><td colspan="5" class="py-4 text-gray-500 italic text-center">CEX data unavailable.</td></tr>';
+      return;
+    }
+
+    // DEX aggregate stats
+    const dex = res.dex || {};
+    const price = dex.best_price_usd || 0;
+    setText('cex-dex-price', '$' + price.toFixed(6));
+    setText('cex-dex-volume', formatVolume(dex.total_volume_24h || 0));
+    setText('cex-dex-liquidity', formatVolume(dex.total_liquidity_usd || 0));
+    setText('cex-dex-txns', (dex.total_txns_24h || 0).toLocaleString());
+    setText('cex-dex-buys', (dex.total_buys_24h || 0).toLocaleString());
+    setText('cex-dex-sells', (dex.total_sells_24h || 0).toLocaleString());
+    setText('cex-dex-source', dex.source || '—');
+
+    // CEX summary
+    const summary = res.cex?.summary || {};
+    setText('cex-summary', (summary.listed || 0) + '/' + (summary.total_exchanges || 0) + ' listed · ' + (summary.planned || 0) + ' planned');
+
+    // CEX listings table
+    const listings = res.cex?.listings || [];
+    const listingsBody = document.getElementById('cex-listings-body');
+    if(listingsBody){
+      if(listings.length){
+        const statusColors = {listed:'text-emerald-400',applied:'text-amber-400',planned:'text-cyan-400',rejected:'text-red-400'};
+        listingsBody.innerHTML = listings.map(ex => `
+          <tr class="border-b border-white/5 hover:bg-white/5">
+            <td class="py-2 px-2 font-mono text-white">${escapeHtml(ex.name)}</td>
+            <td class="py-2 px-2"><span class="${statusColors[ex.status]||'text-gray-400'} font-semibold">${escapeHtml(ex.status||'—')}</span></td>
+            <td class="py-2 px-2 text-gray-300">${escapeHtml((ex.pairs||[]).join(', ')||'—')}</td>
+            <td class="py-2 px-2 ${ex.kyc_required?'text-amber-400':'text-emerald-400'}">${ex.kyc_required?'Yes':'No'}</td>
+            <td class="py-2 px-2 text-gray-300 font-mono">${escapeHtml(ex.fee_spot||'—')}</td>
+          </tr>`).join('');
+      } else {
+        listingsBody.innerHTML = '<tr><td colspan="5" class="py-4 text-gray-500 italic text-center">No listings.</td></tr>';
+      }
+    }
+
+    // DEX per-pair breakdown
+    const pairs = dex.pairs_detail || [];
+    const pairsBody = document.getElementById('cex-dex-pairs-body');
+    if(pairsBody){
+      if(pairs.length){
+        pairsBody.innerHTML = pairs.map(p => {
+          const change = p.price_change_24h || 0;
+          const changeColor = change >= 0 ? 'text-emerald-400' : 'text-red-400';
+          const changeStr = (change >= 0 ? '+' : '') + change.toFixed(2) + '%';
+          return `
+          <tr class="border-b border-white/5 hover:bg-white/5">
+            <td class="py-2 px-2 font-mono text-white">${escapeHtml(p.pair||'—')}</td>
+            <td class="py-2 px-2 text-right font-mono text-white">$${(p.price_usd||0).toFixed(6)}</td>
+            <td class="py-2 px-2 text-right font-mono ${changeColor}">${changeStr}</td>
+            <td class="py-2 px-2 text-right font-mono text-gray-300">${formatVolume(p.liquidity_usd||0)}</td>
+            <td class="py-2 px-2 text-right font-mono text-gray-300">${formatVolume(p.volume_24h||0)}</td>
+            <td class="py-2 px-2 text-center text-[10px]">
+              <span class="text-emerald-400">${(p.txns_24h?.buys||0)}B</span> /
+              <span class="text-red-400">${(p.txns_24h?.sells||0)}S</span>
+            </td>
+          </tr>`;
+        }).join('');
+      } else {
+        pairsBody.innerHTML = '<tr><td colspan="6" class="py-4 text-gray-500 italic text-center">No DEX pairs found.</td></tr>';
+      }
+    }
+  } catch(e){
+    console.warn('CEX panel load failed:', e);
+    setText('cex-dex-source', 'error');
+  }
+}
+
+function formatVolume(v){
+  if(v >= 1e6) return '$' + (v/1e6).toFixed(2) + 'M';
+  if(v >= 1e3) return '$' + (v/1e3).toFixed(2) + 'K';
+  return '$' + v.toFixed(2);
+}
+
+// ── WARP Cross-Chain Swap Panel ──────────────────────────────────────────
+async function loadWarpSwapPanel(){
+  const corridors = [
+    {from:'ETH', to:'wZION', icon:'💧', color:'text-cyan-400', bg:'bg-cyan-500/10', border:'border-cyan-500/20', status:'live', desc:'Uniswap V3 · Base · wZION/WETH + wZION/USDC'},
+    {from:'ZION', to:'wZION', icon:'🔄', color:'text-emerald-400', bg:'bg-emerald-500/10', border:'border-emerald-500/20', status:'live', desc:'L1 ↔ L2 bridge · 5/5 validators · 1:1 peg'},
+    {from:'BTC', to:'wZION', icon:'₿', color:'text-orange-400', bg:'bg-orange-500/10', border:'border-orange-500/20', status:'planned', desc:'HTLC · SegWit + Taproot · 2-of-3 multi-sig'},
+    {from:'SOL', to:'wZION', icon:'◎', color:'text-purple-400', bg:'bg-purple-500/10', border:'border-purple-500/20', status:'research', desc:'SPL program · PDA-secured · Tower BFT'},
+  ];
+  const statusStyle = {
+    live:     {label:'Live',     color:'text-emerald-400', bg:'bg-emerald-500/10', border:'border-emerald-500/20'},
+    planned:  {label:'Planned',  color:'text-cyan-400',    bg:'bg-cyan-500/10',    border:'border-cyan-500/20'},
+    research: {label:'Research', color:'text-amber-400',   bg:'bg-amber-500/10',   border:'border-amber-500/20'},
+  };
+  const corridorsEl = document.getElementById('warp-swap-corridors');
+  if(corridorsEl){
+    corridorsEl.innerHTML = corridors.map(c => {
+      const s = statusStyle[c.status];
+      return `
+        <div class="zion-panel p-4 border ${s.border}">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="text-2xl">${c.icon}</span>
+              <div class="flex items-center gap-1.5">
+                <span class="text-lg font-bold text-white">${c.from}</span>
+                <span class="text-gray-600 text-xs">→</span>
+                <span class="text-lg font-bold text-white">${c.to}</span>
+              </div>
+            </div>
+            <span class="text-[10px] px-2 py-0.5 rounded-full border ${s.bg} ${s.border} ${s.color} font-semibold">${s.label}</span>
+          </div>
+          <p class="text-xs text-gray-400 leading-relaxed">${c.desc}</p>
+          ${c.status === 'live' ? '<a href="https://zion.cz/defi" target="_blank" class="mt-2 inline-block text-[10px] text-cyan-400 hover:text-white">Open swap ↗</a>' : ''}
+        </div>`;
+    }).join('');
+  }
+
+  // Roadmap
+  const roadmap = [
+    {phase:'Phase 1 (Done)', title:'Ethereum Corridor', desc:'wZION ERC-20 on Base Mainnet, Uniswap V3 pools, 5/5 Guardian validators, bridge relay live', done:true},
+    {phase:'Phase 2 (Active)', title:'DEX Liquidity + CEX Listings', desc:'Seed liquidity on Uniswap V3, DexScreener integration, CEX listing applications (XT.COM, Azbit, P2B, KuCoin, Gate.io)', done:true},
+    {phase:'Phase 3 (Planned)', title:'Bitcoin HTLC Bridge', desc:'SegWit + Taproot HTLC bridge, 2-of-3 multi-sig, 24h timelock, Lightning exits, OTC bridging', done:false},
+    {phase:'Phase 4 (Research)', title:'Solana SPL + Multi-chain AMM', desc:'Solana SPL program with PDA-secured mint, Tower BFT finality, AMM routing for cross-chain swaps', done:false},
+  ];
+  const roadmapEl = document.getElementById('warp-swap-roadmap');
+  if(roadmapEl){
+    roadmapEl.innerHTML = roadmap.map(r => `
+      <div class="flex items-center gap-4 p-3 rounded-lg border ${r.done ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-white/10 bg-white/2'}">
+        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${r.done ? 'bg-emerald-500/20' : 'bg-white/5'}">
+          ${r.done ? '✓' : '○'}
+        </div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold ${r.done?'text-emerald-400':'text-gray-400'}">${r.phase}</span>
+            <span class="text-sm font-bold text-white">${r.title}</span>
+          </div>
+          <p class="text-xs text-gray-500 mt-0.5">${r.desc}</p>
+        </div>
+      </div>`).join('');
   }
 }
 
