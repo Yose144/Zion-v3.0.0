@@ -22,6 +22,93 @@
 
 ---
 
+## Co je nového 2026-06-29 (Session 9) — 3.0.4 DeFi Deploy + Farm Funding + DAO Guardians + Website Rebuild ✅
+
+> **Status:** ✅ DOKONČENO — DeFi kontrakty deploylovány na Base Mainnet, reward pools funded, DAO guardians provisioned, website rebuild v3.6.3, atomic swap E2E test
+
+### TL;DR
+
+- **P1 DeFi kontrakty deploylovány** — ZIONGovernance, ZIONTreasury, ZIONStaking, ZIONFarm na Base Mainnet
+- **Reward pools funded** — 100K wZION staking + 500K wZION farm (celkem 600K wZION)
+- **P2 Atomic swap escrow** — 100K ZION odesláno na escrow, LOCK+CLAIM E2E TXs přijaty
+- **P3 DAO guardians** — 5 keypairs vygenerováno, dao-mainnet.toml aktualizováno, voting E2E
+- **Website rebuild** — v3.6.3 s reálnými DeFi adresami, `/defi/staking` a `/defi/farming` live
+- **Hardhat config fixes** — multi-compiler (0.8.20 + 0.8.26 cancun), tsconfig rootDir, sleep pattern pro RPC
+
+### DeFi kontrakty na Base Mainnet (deploylováno 2026-06-29)
+
+| Kontrakt | Adresa | Detail |
+|----------|--------|--------|
+| ZIONGovernance | `0xB77eB4ab9468Ce03FBd7eCec70e976EFCfa623E8` | Token-weighted voting, quorum 15%, 14d voting period |
+| ZIONTreasury | `0x455f465ac7e14fdA97dC46fdd74bCa78bfC0aEeD` | 3-of-3 multisig (deployer + validator-2 + validator-3) |
+| ZIONStaking | `0xbd5cEe7878337d22188BFBaF9aa9F39A850Be78B` | 12% APR, 7d cooldown, **100K wZION reward pool funded** |
+| ZIONFarm | `0x167B2753F5D8D9F8e62875cc9e379d7804308B08` | 1 wZION/s, 90d halving, **500K wZION pool funded**, Pool 0: wZION single |
+
+- Deployer: `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186` (199.6M wZION balance, 0.0059 ETH)
+- `defi-contracts.ts` aktualizováno — `STAKING_DEPLOYED=true`, `FARM_DEPLOYED=true`, `GOVERNANCE_DEPLOYED=true`
+- Deploy TXs: Governance `0x...`, Treasury `0x...`, Staking `0x...`, Farm `0x...`
+
+### Atomic Swap E2E (2026-06-29)
+
+| Test | Stav | Detail |
+|------|------|--------|
+| Escrow funding | ✅ | 100,000 ZION na `zion1y0j484d5e8r49785d253e8w0c2x4t3n792m5724` |
+| LOCK TX | ✅ | 1 ZION, memo `SWAP:LOCK:<hash>:120:base:0xTest` — přijat do chainu |
+| CLAIM TX | ✅ | memo `SWAP:CLAIM:<hash>:<preimage>` — přijat do chainu |
+| Daemon | ✅ | API :8452, L1 watcher skenuje bloky |
+| **Omezení** | ⚠️ | Watcher skenuje jen `utxo_transactions`, ne `account_transactions` (roadmap item) |
+
+### DAO Guardians (2026-06-29)
+
+- 5 guardian keypairs vygenerováno (mnemonics uloženy na `C:\Users\yosef\Desktop\ZION_DAO_GUARDIAN_KEYS.txt`)
+- `dao-mainnet.toml` na Edge aktualizováno s `[[guardians]]` sekcemi
+- DAO service restartováno, `/api/dao/health` → 200 OK
+- Voting E2E: `DAO:vote:1:yes` memo TX odeslán z Aloha wallet (26.5M ZION voting weight)
+- **Omezení:** DAO scanner taky skenuje jen `utxo_transactions` (roadmap item)
+
+### Website rebuild v3.6.3
+
+- Build na lokálním PC (Edge build nefungoval — chybějící Ledger/Trezor deps, Turbopack `&` v cestě)
+- `npx next build --webpack` (Turbopack problematický s `APP&WEB` cestou)
+- TypeScript fix: `as const` literal comparison → cast na `string`
+- Docker image `zion-website:v3.6.3` buildnut na Edge, `chmod -R 755 /app/.next` pro EACCES fix
+- `/defi/staking` a `/defi/farming` pages nyní zobrazují live data z kontraktů
+- API `/api/defi/status` vrací: staking totalStaked=0, farm poolCount=0 (čerstvé kontrakty)
+
+### Hardhat config fixes
+
+| Problém | Řešení |
+|---------|--------|
+| `moduleResolution=node10` deprecation | `tsconfig.json`: `"ignoreDeprecations": "6.0"` |
+| `rootDir` chyba | `tsconfig.json`: `"rootDir": "."` |
+| Solidity 0.8.20 vs OpenZeppelin v5 `mcopy` | Multi-compiler: 0.8.20 (paris) + 0.8.26 (cancun) |
+| Public Base RPC 1 in-flight TX limit | `await sleep(3000)` po každém TX ve všech deploy/fund skriptech |
+
+### Edge service stav (2026-06-29 22:00 UTC)
+
+| Service | Port | Status | Poznámka |
+|---------|------|--------|----------|
+| zion-edge-node1 | 8333/8443 | ✅ active | chain height 20270+, protocol 3.0.3, MemoryMax=3G |
+| zion-edge-pool | 8444 | ✅ active | Stratum mining |
+| zion-edge-bridge | 8451 | ✅ active | DB cleanup, relay v klidu |
+| zion-edge-dao | 8450 | ✅ active | 5 guardians, 2 active proposals, treasury 4B ZION |
+| zion-edge-atomic-swap | 8452 | ✅ active | L1 watcher, EVM watcher pro 0x3DE9... |
+| zion-website (Docker) | 3000 | ✅ healthy | v3.6.3, DeFi pages live |
+
+### Zbývá (vyžaduje lidskou akci)
+
+1. **Basescan verify** — získat API key na `basescan.org/myapikey`, spustit `verify-base-mainnet-basescan.ts`
+2. **L2 watcher update** (roadmap) — `L1Block` struct přidat `account_transactions` + watcher.rs skenovat i account-model memo TXs
+3. **Guardian mnemonics backup** — zkopírovat `ZION_DAO_GUARDIAN_KEYS.txt` na flash drive (`F:\`)
+4. **ATOMIC_SWAP_RUNBOOK.md** — vytvořit dokumentaci
+
+### Commity
+
+- `4ae1c7bc` — DeFi contracts deploy + fund + DAO guardians
+- `ea73d403` — Website rebuild v3.6.3 + atomic swap E2E + ROADMAP update
+
+---
+
 ## Co je nového 2026-06-29 (Session 8) — L2 + Bridge E2E Verification + DAO Metrics Fix ✅
 
 > **Status:** ✅ DOKONČENO — kompletní E2E ověření L2 + bridge ekosystému, všechny services aktivní, DAO metrics counter opraven, pool service stabilizován
