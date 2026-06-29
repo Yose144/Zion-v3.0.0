@@ -51,6 +51,9 @@ zeroize = { version = "1.7", features = ["zeroize_derive"] }
 # Time
 chrono = { version = "0.4", features = ["serde"] }
 
+# TCP socket options (SO_REUSEADDR / SO_REUSEPORT for graceful restarts)
+socket2 = { version = "0.5", features = ["all"] }
+
 [dev-dependencies]
 tokio-test = "0.4"
 tempfile = "3"

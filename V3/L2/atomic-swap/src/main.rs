@@ -21,6 +21,8 @@
 //! 6. Start axum HTTP API
 
 use axum::{routing::get, routing::post, Router};
+use socket2::{Domain, Protocol, Socket, Type};
+use std::net::SocketAddr;
 use std::sync::Arc;
 use tracing::{error, info};
 use tracing_subscriber::EnvFilter;
@@ -116,7 +118,7 @@ async fn main() -> anyhow::Result<()> {
         db: Arc::clone(&db),
         executor: Arc::clone(&executor),
         escrow_address: escrow_address.clone(),
-        bearer_token: cfg.api.bearer_token.clone(),
+        bearer_token: cfg.api_bearer_token(),
     };
 
     let app = Router::new()
@@ -130,7 +132,19 @@ async fn main() -> anyhow::Result<()> {
 
     let bind = &cfg.api.bind;
     info!("🚀 Atomic Swap API listening on http://{bind}");
-    let listener = tokio::net::TcpListener::bind(bind).await?;
+
+    // Use socket2 to set SO_REUSEADDR + SO_REUSEPORT so the daemon can
+    // restart immediately without waiting for TIME_WAIT to expire.
+    let addr: SocketAddr = bind.parse()?;
+    let socket = Socket::new(Domain::IPV4, Type::STREAM, Some(Protocol::TCP))?;
+    socket.set_reuse_address(true)?;
+    #[cfg(unix)]
+    socket.set_reuse_port(true)?;
+    socket.set_nonblocking(true)?;
+    socket.bind(&addr.into())?;
+    socket.listen(1024)?;
+    let listener = tokio::net::TcpListener::from_std(socket.into())?;
+
     axum::serve(listener, app).await?;
 
     Ok(())

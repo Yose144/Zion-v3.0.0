@@ -168,4 +168,12 @@ impl SwapConfig {
             .ok()
             .or_else(|| self.l1.rpc_token.clone())
     }
+
+    /// Resolve the API bearer token: `ZION_SWAP_BEARER_TOKEN` env var
+    /// takes priority over the `api.bearer_token` TOML field.
+    pub fn api_bearer_token(&self) -> Option<String> {
+        std::env::var("ZION_SWAP_BEARER_TOKEN")
+            .ok()
+            .or_else(|| self.api.bearer_token.clone())
+    }
 }
