@@ -57,9 +57,10 @@
 #### Pools on Base Mainnet (verified via factory)
 | Pair | Fee | Pool Address | Liquidity | Status |
 |------|-----|--------------|-----------|--------|
-| wZION/WETH | 0.3% (3000) | `0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB` | 0 (withdrawn) | **Empty — old wrong-price pool** |
-| wZION/WETH | 1.0% (10000) | `0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699` | 547909963844053940788 | **ACTIVE — canonical** |
-| wZION/USDC | 0.3% (3000) | `0x5eBdC6E1D516f42EEB54f14faCF8715AbD5B9d8d` | 0 (withdrawn) | **Empty — abandoned** |
+| wZION/WETH | 0.3% (3000) | `0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB` | 0 | **DEAD — old wrong-price pool** |
+| wZION/WETH | 1.0% (10000) | `0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699` | 429876233605855311813 | **ACTIVE — canonical** |
+| wZION/USDC | 0.3% (3000) | `0x5eBdC6E1D516f42EEB54f14faCF8715AbD5B9d8d` | 0 | **DEAD — abandoned** |
+| wZION/USDT | 0.3% (3000) | `0x186b46c2f04153999d44D25179cD623fD62Bfda2` | 987362838016781 | **ACTIVE — new (Session 2)** |
 
 #### NFT Positions Withdrawn (Session 2)
 | NFT # | Pool | Tick Range | Action | TX (decreaseLiquidity) |
@@ -68,13 +69,15 @@
 | 5431091 | wZION/USDC 0.3% | -361440 to -360000 | Withdrawn + burned | `0xb40cd241...` |
 | 5431093 | wZION/WETH 1.0% | -161000 to -160000 | Withdrawn + burned | `0x1beb81c1...` |
 
-#### Remaining NFT Positions (2)
+#### Remaining NFT Positions (3)
 | NFT # | Pool | Tick Range | Liquidity | Type | TX |
 |-------|------|------------|-----------|------|-----|
-| 5431714 | wZION/WETH 1.0% | -162000 to -160000 | 547909963844053940788 | Narrow (±10%) — original | `0xc7f84d0e...` |
-| 5434576 | wZION/WETH 1.0% | -164000 to -158000 | 429876233605855311813 | **Wide (±30%) — new** | `0xd9db0431...` |
+| 5431714 | wZION/WETH 1.0% | -162000 to -160000 | 0 | Narrow — **depleted** (swap drained) | `0xc7f84d0e...` |
+| 5434576 | wZION/WETH 1.0% | -164000 to -158000 | 429876233605855311813 | **Wide (±30%) — active** | `0xd9db0431...` |
+| 5434637 | wZION/USDT 0.3% | -366600 to -356580 | 987362838016781 | **USDT pool — new** | `0xcb67ba8b...` |
 
-**Total pool liquidity:** 977786197449909252601 (~2x increase)
+**WETH pool liquidity:** 429876233605855311813 (wide position only)
+**USDT pool liquidity:** 987362838016781 (two-sided, $0.0002/ZION)
 
 #### Key Fix: Tuple ABI
 - **Root cause of previous failed withdraws:** NPM `decreaseLiquidity()` and `collect()` take **struct (tuple)** parameters, not individual params
@@ -94,37 +97,28 @@
 
 ## 🔧 Remaining Work — USDT/wZION Pool
 
+### ✅ DONE (Session 2)
+- [x] Swap 0.002 WETH → 3.14 USDT via SwapRouter02 multicall
+- [x] Create + initialize USDT/wZION pool (fee=3000, $0.0002/ZION)
+- [x] Add two-sided liquidity (100K wZION + 3.14 USDT)
+- [x] Pool address: `0x186b46c2f04153999d44D25179cD623fD62Bfda2`
+
 ### Current State
-- wZION/WETH 1.0% pool: **ACTIVE** ✅ (2 positions, ~$370 liquidity, ~2x depth)
-  - NFT #5431714: narrow ±10% (100K wZION + 0.0069 WETH)
-  - NFT #5434576: wide ±30% (200K wZION + 0.020 WETH)
-- Old wZION/WETH 0.3% pool: **DEAD** (liquidity=0, abandoned forever — Uniswap pools can't be destroyed)
-- Old wZION/USDC 0.3% pool: **DEAD** (liquidity=0, abandoned)
-- Deployer has ~99.7M wZION, ~0.002 WETH, 0.035 ETH, 0 USDT
-- **Decision: Use USDT instead of USDC** (more universal stablecoin)
+- wZION/WETH 1.0% pool: **ACTIVE** ✅ (wide position, 430B liquidity)
+  - NFT #5431714: narrow ±10% — **depleted** (liq=0, swap drained)
+  - NFT #5434576: wide ±30% — **active** (200K wZION + 0.020 WETH)
+- wZION/USDT 0.3% pool: **ACTIVE** ✅ (new, 987B liquidity)
+  - NFT #5434637: ±50% range (100K wZION + 3.14 USDT)
+- Old wZION/WETH 0.3% pool: **DEAD** (liquidity=0)
+- Old wZION/USDC 0.3% pool: **DEAD** (liquidity=0)
+- Deployer: ~99.78M wZION, 0.0001 WETH, 0.041 ETH, 0 USDT
 
-### Step 1: Get USDT
-- [ ] User sends USDT to `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186`
-- [ ] Or: swap WETH → USDT via Uniswap Universal Router (`0x198EF79F1F515F02dFE9e3115eD9fC07183f02fC`)
-- [ ] Suggested: $500-2000 USDT for seed liquidity
-
-### Step 2: Create USDT/wZION Pool
-- **USDT address (Base):** `0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2` (6 decimals, bridged)
-- [ ] Create + initialize pool via NPM `createAndInitializePoolIfNecessary`
-  - Fee: 0.3% (3000) — standard for stablecoin pairs
-  - sqrtPriceX96: set for $0.0002 USD/ZION (USDT has 6 decimals, wZION has 18)
-  - Price ratio: 1 wZION = 0.0002 USDT = 0.0002 * 1e6 / 1e18 = 2e-16
-  - sqrtPriceX96 = sqrt(2e-16) * 2^96 = 1.414e-8 * 7.9e28 ≈ 1.12e21
-- [ ] Approve wZION + USDT for NPM
-- [ ] Mint two-sided liquidity position (use tuple ABI!)
-- [ ] Verify on DexScreener
-
-### Step 3: Verify & Monitor
-- [ ] Check pool price matches $0.0002/ZION
-- [ ] Verify active liquidity
-- [ ] Test small swap via Uniswap UI
+### Remaining Tasks
+- [ ] Burn NFT #5431714 (depleted, liq=0 — cleanup)
+- [ ] Add more USDT liquidity when more USDT is acquired
+- [ ] Update website /api/defi/pools to include USDT pool
+- [ ] Verify on DexScreener (may take a few minutes to index)
 - [ ] Monitor bridge relayer continues processing new locks
-- [ ] Update website /api/defi/price to include USDT pool
 
 ---
 
@@ -179,9 +173,28 @@ npm.functions.collect((token_id, recipient, MAX_UINT128, MAX_UINT128))
 **Wrong selector (individual params):** `0x03a3f2ab` → reverts silently (no error message)
 **Correct selector (tuple):** `0x0c49ccbe` → works
 
+### SwapRouter02 multicall pattern (Base)
+SwapRouter02 (`0x2626664c2603336E57B271c5C0b26F421741e481`) does NOT expose `exactInputSingle` directly — must wrap in `multicall(deadline, [calldata])`.
+```python
+# 1. Build exactInput calldata (tuple ABI)
+path = bytes.fromhex(WETH[2:] + (500).to_bytes(3,'big').hex() + USDT[2:])
+ei_fn = router.functions.exactInput((path, recipient, amount_in, 0))
+ei_calldata = ei_fn.build_transaction({...})["data"]
+
+# 2. Wrap in multicall
+fn = router.functions.multicall(deadline, [ei_calldata])
+tx_hash, receipt = send_tx(w3, account, fn, gas_limit=250000)
+```
+**Path encoding:** `tokenIn (20 bytes) + fee (3 bytes) + tokenOut (20 bytes)` = 43 bytes packed
+
 ### Gas Requirements
 - `createAndInitializePoolIfNecessary`: ~4.6M gas (set limit to 5.5M)
+- `mint` (two-sided, new pool): ~555K gas (set limit to 700K)
 - `mint` (single-sided): ~490K gas (set limit to 600K)
+- `decreaseLiquidity`: ~180K gas (set limit to 400K)
+- `collect`: ~85K gas (set limit to 200K)
+- `burn`: ~85K gas (set limit to 150K)
+- `multicall` (swap): ~130K gas (set limit to 250K)
 - `mint` (full-range two-sided): ~500K gas estimated
 
 ### Single-Sided Liquidity
@@ -219,11 +232,11 @@ npm.functions.collect((token_id, recipient, MAX_UINT128, MAX_UINT128))
 - **wZION totalSupply:** 100,000,299 wZION (100M ZION bridged)
 - **wZION MAX_SUPPLY:** 144,000,000,000 wZION (144B — matches L1 total supply)
 - **Available to bridge:** ~143.9B wZION remaining
-- **Deployer wZION balance:** ~99,700,542 wZION (300K in Uniswap liquidity)
-- **Deployer ETH balance:** ~0.035 ETH
-- **Deployer WETH balance:** ~0.002 WETH
+- **Deployer wZION balance:** ~99,784,873 wZION (300K in Uniswap: 200K WETH + 100K USDT)
+- **Deployer ETH balance:** ~0.041 ETH
+- **Deployer WETH balance:** ~0.0001 WETH
 - **Deployer USDC balance:** 0
-- **Deployer USDT balance:** 0
+- **Deployer USDT balance:** 0 (3.14 USDT used for pool liquidity)
 
 ## 📊 Uniswap V3 Addresses (Base mainnet)
 | Contract | Address |
