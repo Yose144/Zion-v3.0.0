@@ -6,6 +6,10 @@ import PoolPanel from './components/PoolPanel';
 import ChainPanel from './components/ChainPanel';
 import DefiPanel from './components/DefiPanel';
 import BridgePanel from './components/BridgePanel';
+import CexPanel from './components/CexPanel';
+import WarpPanel from './components/WarpPanel';
+import HashrateChart from './components/HashrateChart';
+import DaoPanel from './components/DaoPanel';
 import AlertsPanel from './components/AlertsPanel';
 import ReadinessBar from './components/ReadinessBar';
 import PerformanceCharts from './components/PerformanceCharts';
@@ -114,6 +118,9 @@ export default function App() {
           </div>
         </div>
 
+        {/* Pool hashrate chart — fetches from Edge API */}
+        <HashrateChart />
+
         <LogViewer />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -122,16 +129,22 @@ export default function App() {
           <PerformanceCharts miner={status?.miner} />
         </div>
 
-        {/* DeFi + Bridge panels — fetch from Edge website API */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <DefiPanel />
-          <BridgePanel />
-        </div>
+        {/* Edge Ecosystem panels — fetch from Edge website API */}
+        <section>
+          <h2 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Edge Ecosystem</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <DefiPanel />
+            <BridgePanel />
+            <CexPanel />
+            <WarpPanel />
+            <DaoPanel />
+          </div>
+        </section>
       </main>
 
       <footer className="border-t border-white/10 mt-6 py-3">
         <div className="max-w-[1600px] mx-auto px-4 flex items-center justify-between text-[10px] text-gray-500">
-          <span>ZION V3 Dashboard v3.0.0</span>
+          <span>ZION V3 Dashboard v3.1.0</span>
           <span className="font-mono">{status ? new Date(status.timestamp).toLocaleTimeString() : '—'}</span>
         </div>
       </footer>
