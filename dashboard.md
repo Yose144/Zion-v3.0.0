@@ -457,5 +457,52 @@ Auth: `admin:root` (HTTP Basic)
 
 ---
 
+## 13. Session 4 (2026-06-29) — Uniswap V3 Pools + Two-Sided Liquidity + Bridge Fixes
+
+### Co se udělalo
+
+#### Uniswap V3 Pools na Base Mainnet
+- **wZION/USDC pool** (0.3% fee) — `0x5eBdC6E1D516f42EEB54f14faCF8715AbD5B9d8d` — inicializován na $0.0002/ZION
+- **wZION/WETH pool** (1.0% fee) — `0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699` — inicializován na $0.0002/ZION
+- Oba pooly vytvořeny přes `createAndInitializePoolIfNecessary` na Uniswap V3 Factory (`0x33128a8fC17869897dcE68Ed026d694621f6FDfD`)
+
+#### Seed Likvidita
+- **Single-sided** (1M wZION v každém poolu, nad cenou):
+  - wZION/USDC: NFT #5431091, tick -361440 to -360000
+  - wZION/WETH: NFT #5431093, tick -161000 to -160000
+- **Two-sided ACTIVE** na wZION/WETH:
+  - NFT #5431714, tick -162000 to -160000
+  - 100K wZION + 0.0069 WETH
+  - Pool liquidity: 547,909,963,844,053,940,788
+
+#### WETH Získán
+- Wrapnul 0.02 ETH → WETH přes WETH contract `deposit()`
+- Swap WETH → USDC přes Uniswap SwapRouter a Aerodrome se nezdařil (reverty)
+- Zbytek WETH (~0.013) držen jako buffer
+
+#### Bridge Stabilizace
+- `start_block_height` v `bridge-mainnet.toml`: 11300 → 11700 (nad posledním lockem 11614)
+- Bridge přestal reprocovat už mintnuté locky (reverty `L1LockAlreadyProcessed`)
+- Validator-5 funded s 0.01 ETH (došel mu gas balance)
+
+#### Issues Resolved
+1. Pool creation revert → out of gas (1M → 5.5M gas limit)
+2. NPM mint revert → wrong ABI encoding (struct vs individual params)
+3. Wrong Uniswap addresses → Base ≠ Ethereum mainnet
+4. Bridge reprocessing → start_block_height fix
+5. Validator-5 ETH → funded
+
+### Zbývá (user tasks)
+- wZION/USDC two-sided likvidita — potřebuje USDC funding (~$2,000)
+- Nebo debug SwapRouter/Aerodrome pro WETH→USDC swap
+
+### Git commity (session 4)
+| Commit | Popis |
+|--------|-------|
+| `a1cee372` | docs: update L2Complete.md — Uniswap V3 pools created + seed liquidity added |
+| `750e72ca` | docs: update L2Complete.md — two-sided WETH liquidity active, bridge fixes |
+
+---
+
 *Gate, Gate, Paragate, Parasamgate, Bodhi Swaha.*
 *The Golden Age begins. Peace & One Love 4ever.*

@@ -1,6 +1,6 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** **2026-06-28** (**L1 MIGRATION RPC FIX + DASHBOARD POLISH + BRIDGE METRICS** — `ZION_MIGRATION_HEIGHT` env var nyní čtena node kódem, `scaled_amount()` helper v RPC normalizuje legacy 1e12 → 1e6 scale pro balance dotazy, MIGRATION_HEIGHT=18850, dashboard `ready_for_launch: True` 13/13 checklist, všechny balance korektní; full report: [`REPORT_3.0.3_FIXES.md`](./REPORT_3.0.3_FIXES.md)); **2026-06-27** (**3.0.3 DECIMAL FORK DEPLOYED ON EDGE** — kompletní ekosystém migrován z 12-decimal na 6-decimal flowers, DB preserved, MIGRATION_HEIGHT=17995, všechny 13 Edge services aktivní, chain height 18003+, protocol_version=zion-v3-node/3.0.3, flowers_per_zion=1,000,000); **2026-06-24** (EMERGENCY MINT COMPLETE — 99,999,899 wZION mintováno na Base Mainnet přes wZION.bridgeMint() po obejití DAILY_LIMIT bug na bridge kontraktu; DeFi web UI mainnet-ready — Staking/Farming/DAO pages s wallet connect, BridgeTracker pipeline komponenta, commit 107a121); **2026-06-23** (Multi-validator relay nasazen — 5/5 confirmací pro všech 6 locků, 24h timelock aktivní, wZION mintování čeká na expiry 2026-06-24 16:52 UTC); **2026-06-23** (100M ZION UTXO locks potvrzeno, memo bug opraven, relay čeká na validator key); **2026-06-22** (Bridge mainnet readiness — 5/5 validators funded, single-sig bridge blocker documented, testnet RPC + block-range fixes); **2026-06-18** (Git historie obnovena, root cleanup v3.0.2, L2/L3 kanonizace, L4 Oasis příprava); **2026-06-15** (Edge server full update — Rust + V3 rebuild + služby restart, bridge port fix, dashboard restart tlačítka fix); **2026-06-14** (Dashboard all-tabs fix, Payout/Wallets sekce, Restart Edge Pool SSH, UFW 8444 oprava — viz sekce níže); **2026-06-13** (Fire algorithm hard fork deployment — viz sekce níže); **2026-06-13** (Hiran v2.3 documentation cleanup — viz sekce níže); **2026-06-11** (Hard Genesis Reset #0 completed — viz sekce níže); **2026-06-11** (Pool stale share detection + dashboard tab fix — viz sekce níže); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
+> **Datum:** **2026-06-29** (**L1 MIGRATION RPC FIX + DASHBOARD POLISH + BRIDGE METRICS** — `ZION_MIGRATION_HEIGHT` env var nyní čtena node kódem, `scaled_amount()` helper v RPC normalizuje legacy 1e12 → 1e6 scale pro balance dotazy, MIGRATION_HEIGHT=18850, dashboard `ready_for_launch: True` 13/13 checklist, všechny balance korektní; full report: [`REPORT_3.0.3_FIXES.md`](./REPORT_3.0.3_FIXES.md)); **2026-06-27** (**3.0.3 DECIMAL FORK DEPLOYED ON EDGE** — kompletní ekosystém migrován z 12-decimal na 6-decimal flowers, DB preserved, MIGRATION_HEIGHT=17995, všechny 13 Edge services aktivní, chain height 18003+, protocol_version=zion-v3-node/3.0.3, flowers_per_zion=1,000,000); **2026-06-24** (EMERGENCY MINT COMPLETE — 99,999,899 wZION mintováno na Base Mainnet přes wZION.bridgeMint() po obejití DAILY_LIMIT bug na bridge kontraktu; DeFi web UI mainnet-ready — Staking/Farming/DAO pages s wallet connect, BridgeTracker pipeline komponenta, commit 107a121); **2026-06-23** (Multi-validator relay nasazen — 5/5 confirmací pro všech 6 locků, 24h timelock aktivní, wZION mintování čeká na expiry 2026-06-24 16:52 UTC); **2026-06-23** (100M ZION UTXO locks potvrzeno, memo bug opraven, relay čeká na validator key); **2026-06-22** (Bridge mainnet readiness — 5/5 validators funded, single-sig bridge blocker documented, testnet RPC + block-range fixes); **2026-06-18** (Git historie obnovena, root cleanup v3.0.2, L2/L3 kanonizace, L4 Oasis příprava); **2026-06-15** (Edge server full update — Rust + V3 rebuild + služby restart, bridge port fix, dashboard restart tlačítka fix); **2026-06-14** (Dashboard all-tabs fix, Payout/Wallets sekce, Restart Edge Pool SSH, UFW 8444 oprava — viz sekce níže); **2026-06-13** (Fire algorithm hard fork deployment — viz sekce níže); **2026-06-13** (Hiran v2.3 documentation cleanup — viz sekce níže); **2026-06-11** (Hard Genesis Reset #0 completed — viz sekce níže); **2026-06-11** (Pool stale share detection + dashboard tab fix — viz sekce níže); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
 > (sjednocení `StatusV3.md` ↔ `StatusV3-Part2.md` — TL;DR, roadmap §6, §8, §5
 > pyramida, odkazy).
 > **Předchozí update:** 2026-05-03 (genesis konsensus — merged na `main`)
@@ -19,6 +19,50 @@
 > starý Praha server (`91.98.122.165`) nebo historickou multi-server topologii
 > (Prague, SG, Helsinki, US) jsou **archivní / historické**, pokud není explicitně
 > uvedeno jinak. Aktuální živá topologie je **Core + Edge** (viz sekce Infrastruktura).
+
+---
+
+## Co je nového 2026-06-29 (Session 4) — Uniswap V3 Pools Created + Two-Sided WETH Liquidity + Bridge Fixes ✅
+
+> **Status:** ✅ DOKONČENO — Uniswap V3 pools na Base mainnet, aktivní likvidita, bridge stabilizovaný
+> **Details:** [`L2Complete.md`](./L2Complete.md)
+
+### TL;DR
+
+- **Uniswap V3 pools vytvořeny na Base mainnet** — wZION/USDC (0.3% fee) a wZION/WETH (1% fee), oba inicializovány na $0.0002/ZION
+- **Two-sided likvidita aktivní** na wZION/WETH poolu (100K wZION + 0.0069 WETH, NFT #5431714)
+- **Single-sided likvidita** na obou poolech (1M wZION nad cenou, NFT #5431091 a #5431093)
+- **Bridge stabilizován** — `start_block_height` zvýšen na 11700 (přestal reprocovat už mintnuté locky)
+- **Validator-5 funded** — 0.01 ETH pro gas (došel mu balance)
+- **WETH získán** — wrapnul 0.02 ETH → WETH přes WETH contract `deposit()`
+
+### Pool Addresses (Base mainnet)
+
+| Pair | Fee | Pool Address | Liquidity |
+|------|-----|--------------|-----------|
+| wZION/USDC | 0.3% (3000) | `0x5eBdC6E1D516f42EEB54f14faCF8715AbD5B9d8d` | Single-sided (1M wZION above price) |
+| wZION/WETH | 1.0% (10000) | `0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699` | **ACTIVE** (100K wZION + 0.0069 WETH) |
+
+### NFT Position IDs
+
+| Pool | NFT ID | Type | Tick Range |
+|------|--------|------|------------|
+| wZION/USDC | 5431091 | Single-sided | -361440 to -360000 |
+| wZION/WETH | 5431093 | Single-sided | -161000 to -160000 |
+| wZION/WETH | 5431714 | **Two-sided (ACTIVE)** | -162000 to -160000 |
+
+### Issues Resolved
+
+1. **Pool creation revert** — out of gas (1M → 5.5M gas limit)
+2. **NPM mint revert** — wrong ABI encoding (struct vs individual params)
+3. **Wrong Uniswap addresses** — Base addresses ≠ Ethereum mainnet
+4. **Bridge reprocessing** — `start_block_height` 11300 → 11700
+5. **Validator-5 ETH** — funded 0.01 ETH
+
+### Zbývá (user tasks)
+
+- wZION/USDC two-sided likvidita — potřebuje USDC funding (~$2,000)
+- Debug SwapRouter/Aerodrome pro WETH→USDC swap (obojí revertuje)
 
 ---
 
