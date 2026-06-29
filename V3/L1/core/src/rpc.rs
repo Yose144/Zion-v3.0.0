@@ -56,6 +56,38 @@ fn scaled_amount(amount: u128, block_height: u64) -> u128 {
     }
 }
 
+/// Compute the scaled UTXO balance for an address by iterating accepted blocks
+/// and applying scaled_amount() per block height. This ensures pre-migration
+/// UTXO outputs (stored in 1e12 flowers) are normalised to 1e6 flowers before
+/// being summed — unlike rt.utxo_balance() which sums raw amounts.
+fn scaled_utxo_balance(rt: &NodeRuntime, address: &str) -> u128 {
+    // Replay the UTXO set block-by-block so we know each output's block height.
+    let mut utxo_map: std::collections::HashMap<(String, u32), (u64, u64)> =
+        std::collections::HashMap::new(); // key → (amount_raw, block_height)
+    for block in rt.accepted_blocks() {
+        for utxo_tx in &block.utxo_transactions {
+            for input in &utxo_tx.inputs {
+                utxo_map.remove(&(crypto::to_hex(&input.prev_tx_hash), input.output_index));
+            }
+        }
+        for utxo_tx in &block.utxo_transactions {
+            let tx_hash = crypto::to_hex(&utxo_tx.id);
+            for (idx, output) in utxo_tx.outputs.iter().enumerate() {
+                if output.address == address {
+                    utxo_map.insert(
+                        (tx_hash.clone(), idx as u32),
+                        (output.amount, block.height),
+                    );
+                }
+            }
+        }
+    }
+    utxo_map
+        .values()
+        .map(|&(amount, height)| scaled_amount(amount as u128, height))
+        .sum()
+}
+
 /// RPC-side mirror of the L1 protocol allow-list (env-var driven). Kept
 /// here so the JSON-RPC entry-point can reject obviously bad submissions
 /// fast, before they ever reach the runtime.
@@ -662,8 +694,10 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                     .lock()
                     .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
 
-                // Get balance: UTXO + account-model for all addresses
-                let utxo_balance = rt.utxo_balance(address);
+                // Get balance: UTXO + account-model for all addresses.
+                // Use scaled_utxo_balance() to normalise pre-migration (1e12)
+                // UTXO outputs to post-migration (1e6) flowers before summing.
+                let utxo_balance = scaled_utxo_balance(&rt, address);
                 let mut account_balance: i128 = 0;
                 for block in rt.accepted_blocks() {
                     for tx in &block.transactions {
@@ -740,7 +774,9 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                     .lock()
                     .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
                 if looks_like_utxo_address(account_id) {
-                    let utxo_balance = rt.utxo_balance(account_id);
+                    // Use scaled_utxo_balance() to normalise pre-migration (1e12)
+                    // UTXO outputs to post-migration (1e6) flowers.
+                    let utxo_balance = scaled_utxo_balance(&rt, account_id);
                     // Also scan account-model transactions (coinbase/premine credits)
                     let mut account_balance: i128 = 0;
                     for block in rt.accepted_blocks() {
@@ -903,23 +939,30 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                     .lock()
                     .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
                 let utxos = rt.spendable_utxos(address);
+                // Scale UTXO amounts: pre-migration blocks (height <= MIGRATION_HEIGHT)
+                // store amounts in 1e12 flowers; normalise to 1e6 for all callers.
                 let utxo_list: Vec<Value> = utxos
                     .iter()
                     .map(|u| {
+                        let amount = scaled_amount(u.amount as u128, u.height);
                         json!({
                             "tx_hash": u.tx_hash,
                             "output_index": u.output_index,
-                            "amount": u.amount,
+                            "amount": amount,
                             "address": u.address,
                             "height": u.height,
                         })
                     })
                     .collect();
+                let total_scaled: u128 = utxos
+                    .iter()
+                    .map(|u| scaled_amount(u.amount as u128, u.height))
+                    .sum();
                 Ok(json!({
                     "address": address,
                     "utxos": utxo_list,
                     "count": utxo_list.len(),
-                    "total_amount": utxos.iter().map(|u| u.amount).sum::<u64>(),
+                    "total_amount": total_scaled,
                     "chain_height": rt.chain_height(),
                 }))
             }),
