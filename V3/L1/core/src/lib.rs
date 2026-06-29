@@ -52,6 +52,11 @@ pub const MAX_TEMPLATE_TRANSACTIONS: usize = 16;
 pub const MAX_MEMPOOL_TRANSACTIONS: usize = 4_096;
 pub const MAX_TEMPLATE_UTXO_TRANSACTIONS: usize = 16;
 
+/// Default block retention window: 0 = unlimited (keep all blocks in memory).
+/// Set via `ZION_BLOCK_RETENTION` env var to cap memory usage.
+/// When set, old blocks are pruned from in-memory caches but remain in LMDB.
+pub const DEFAULT_BLOCK_RETENTION: usize = 0;
+
 pub mod bridge;
 pub use bridge::{
     bridge_operation_message, BridgeUnlockRequest, BridgeValidatorProof,
@@ -675,6 +680,9 @@ struct ChainState {
     /// Built incrementally as blocks are accepted. Key = address, Value = indices
     /// into `accepted_blocks` where that address appears (as sender, recipient, or miner).
     address_tx_index: HashMap<String, Vec<usize>>,
+    /// Maximum number of blocks to keep in memory. 0 = unlimited.
+    /// Old blocks are pruned from in-memory caches but remain in LMDB.
+    block_retention: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1001,6 +1009,15 @@ impl NodeRuntime {
             pool_fee_address: String::new(),
             ws_notifier: None,
         }
+    }
+
+    /// Set the in-memory block retention window.
+    /// 0 = unlimited (default), N = keep only last N blocks in memory.
+    /// Old blocks are pruned from RAM but remain in LMDB persistent storage.
+    pub fn set_block_retention(&mut self, retention: usize) {
+        self.chain_state.block_retention = retention;
+        // Immediately prune if we're already over the limit
+        self.chain_state.prune_old_blocks();
     }
 
     pub fn with_websocket_notifier(
@@ -2077,6 +2094,7 @@ impl ChainState {
             pool_fee_address: String::new(),
             bridge_unlock_replay_keys: HashSet::new(),
             address_tx_index: HashMap::new(),
+            block_retention: DEFAULT_BLOCK_RETENTION,
         };
         // Index genesis block (height 0) for address lookups.
         state.index_block_addresses(0);
@@ -2145,6 +2163,7 @@ impl ChainState {
             pool_fee_address: String::new(),
             bridge_unlock_replay_keys: snapshot.bridge_unlock_replay_keys.into_iter().collect(),
             address_tx_index: HashMap::new(),
+            block_retention: DEFAULT_BLOCK_RETENTION,
         };
         chain_state.rebuild_mempool_index();
         chain_state.rebuild_address_tx_index();
@@ -2318,6 +2337,8 @@ impl ChainState {
         let new_idx = self.accepted_blocks.len() - 1;
         self.index_block_addresses(new_idx);
         self.rebuild_bridge_unlock_replay_keys();
+        // Prune old blocks from memory if retention window is set.
+        self.prune_old_blocks();
         let next_template_id = self.next_template_id;
         let miner_addr = self.miner_address.clone();
         let humanitarian_addr = self.humanitarian_address.clone();
@@ -3163,6 +3184,46 @@ impl ChainState {
             self.accepted_by_height.insert(block.height, block.clone());
             self.accepted_by_template_id
                 .insert(block.template_id, block.clone());
+        }
+    }
+
+    /// Prune old blocks from in-memory caches if `block_retention > 0`.
+    ///
+    /// Removes the oldest block from `accepted_blocks`, `accepted_by_height`,
+    /// and `accepted_by_template_id`. Adjusts `address_tx_index` by removing
+    /// the pruned index and decrementing all higher indices.
+    ///
+    /// Blocks remain in LMDB persistent storage — this only affects in-memory
+    /// caches for RPC queries and consensus validation of recent blocks.
+    fn prune_old_blocks(&mut self) {
+        if self.block_retention == 0 {
+            return;
+        }
+        while self.accepted_blocks.len() > self.block_retention {
+            // Remove the oldest block (index 0)
+            let removed = self.accepted_blocks.remove(0);
+
+            // Remove from height and template_id indexes
+            self.accepted_by_height.remove(&removed.height);
+            self.accepted_by_template_id.remove(&removed.template_id);
+
+            // Adjust address_tx_index: remove index 0 from all entries,
+            // then decrement all remaining indices by 1.
+            let mut empty_keys = Vec::new();
+            for (addr, indices) in self.address_tx_index.iter_mut() {
+                // Remove the pruned block index (0) if present
+                indices.retain(|&idx| idx != 0);
+                // Decrement all remaining indices by 1
+                for idx in indices.iter_mut() {
+                    *idx -= 1;
+                }
+                if indices.is_empty() {
+                    empty_keys.push(addr.clone());
+                }
+            }
+            for key in empty_keys {
+                self.address_tx_index.remove(&key);
+            }
         }
     }
 

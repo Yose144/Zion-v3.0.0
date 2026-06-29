@@ -100,6 +100,9 @@ fn main() -> Result<()> {
                 pool_fee_address.clone(),
             );
         }
+        if config.block_retention > 0 {
+            rt.set_block_retention(config.block_retention);
+        }
         rt
     }));
 
@@ -125,6 +128,14 @@ fn main() -> Result<()> {
     println!("protocol_version={}", node_protocol_version());
     println!("p2p_bind={}", config.node_config.p2p_bind.address());
     println!("rpc_bind={}", config.node_config.rpc_bind.address());
+    println!(
+        "block_retention={}",
+        if config.block_retention == 0 {
+            "unlimited".to_string()
+        } else {
+            config.block_retention.to_string()
+        }
+    );
     println!(
         "p2p_accept_limit={}",
         config
@@ -801,6 +812,9 @@ struct NodeServerConfig {
     rpc_accept_limit: Option<u32>,
     sync_batch_limit: u16,
     state_path: Option<String>,
+    block_retention: usize,
+    #[allow(dead_code)]
+    lmdb_map_size_mb: usize,
     node_config: NodeConfig,
 }
 
@@ -831,12 +845,24 @@ impl NodeServerConfig {
 
         let shared_accept_limit = parse_accept_limit_env("ZION_ACCEPT_LIMIT", None)?;
 
+        let block_retention = std::env::var("ZION_BLOCK_RETENTION")
+            .ok()
+            .and_then(|v| v.parse::<usize>().ok())
+            .unwrap_or(zion_core::DEFAULT_BLOCK_RETENTION);
+
+        let lmdb_map_size_mb = std::env::var("ZION_LMDB_MAP_SIZE_MB")
+            .ok()
+            .and_then(|v| v.parse::<usize>().ok())
+            .unwrap_or(0); // 0 = use default (10 GB)
+
         Ok(Self {
             node_id: env_or_default("ZION_NODE_ID", "v3-node-0"),
             p2p_accept_limit: parse_accept_limit_env("ZION_P2P_ACCEPT_LIMIT", shared_accept_limit)?,
             rpc_accept_limit: parse_accept_limit_env("ZION_RPC_ACCEPT_LIMIT", shared_accept_limit)?,
             sync_batch_limit: parse_sync_batch_limit_env()?,
             state_path: std::env::var("ZION_NODE_STATE_PATH").ok(),
+            block_retention,
+            lmdb_map_size_mb,
             node_config,
         })
     }

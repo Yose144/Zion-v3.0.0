@@ -504,5 +504,35 @@ Auth: `admin:root` (HTTP Basic)
 
 ---
 
+## 14. Session 9 (2026-06-30) — Node Memory Patch: Block Retention Window
+
+### Problém
+- `zion-node` na Edge konzumoval 3.7 GB RAM při ~21K blocích
+- Root cause: trojí kopie každého bloku v RAM + žádný pruning + unbounded address index
+- Růst ~5.5-16 MB / 1,000 bloků — při 1M blocích by crashnul (6-15 GB)
+
+### Patch (L1 consensus — explicit approval)
+- **`ZION_BLOCK_RETENTION` env var** (default 0 = unlimited, Edge: 10000)
+  - Posledních N bloků v RAM, staré pruned z in-memory caches
+  - Bloky zůstávají v ChainStore persistent storage
+- **`prune_old_blocks()`** na ChainState — voláno po každém accept_block_record
+- **`ZION_LMDB_MAP_SIZE_MB`** env var (forward-looking, aktuálně nepoužito — Edge používá ChainStore)
+
+### Soubory
+- `V3/L1/core/src/lib.rs` — ChainState.block_retention + prune_old_blocks() + set_block_retention()
+- `V3/L1/core/src/bin/node.rs` — NodeServerConfig parsing + startup log
+
+### Test výsledky
+- `cargo check -p zion-core`: ✅ pass
+- `cargo test -p zion-core`: ✅ 0 failed
+- Default `block_retention=0` = žádná behavior change
+
+### Plán deploy
+1. `cargo build --release -p zion-core`
+2. SCP na Edge, nastavit `ZION_BLOCK_RETENTION=10000`
+3. Restart node1, monitor RAM (očekáváno ~300-500 MB místo 3.7 GB)
+
+---
+
 *Gate, Gate, Paragate, Parasamgate, Bodhi Swaha.*
 *The Golden Age begins. Peace & One Love 4ever.*
