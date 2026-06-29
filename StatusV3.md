@@ -1,6 +1,6 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** **2026-06-29** (**L1 MIGRATION RPC FIX + DASHBOARD POLISH + BRIDGE METRICS** — `ZION_MIGRATION_HEIGHT` env var nyní čtena node kódem, `scaled_amount()` helper v RPC normalizuje legacy 1e12 → 1e6 scale pro balance dotazy, MIGRATION_HEIGHT=18850, dashboard `ready_for_launch: True` 13/13 checklist, všechny balance korektní; full report: [`REPORT_3.0.3_FIXES.md`](./REPORT_3.0.3_FIXES.md)); **2026-06-27** (**3.0.3 DECIMAL FORK DEPLOYED ON EDGE** — kompletní ekosystém migrován z 12-decimal na 6-decimal flowers, DB preserved, MIGRATION_HEIGHT=17995, všechny 13 Edge services aktivní, chain height 18003+, protocol_version=zion-v3-node/3.0.3, flowers_per_zion=1,000,000); **2026-06-24** (EMERGENCY MINT COMPLETE — 99,999,899 wZION mintováno na Base Mainnet přes wZION.bridgeMint() po obejití DAILY_LIMIT bug na bridge kontraktu; DeFi web UI mainnet-ready — Staking/Farming/DAO pages s wallet connect, BridgeTracker pipeline komponenta, commit 107a121); **2026-06-23** (Multi-validator relay nasazen — 5/5 confirmací pro všech 6 locků, 24h timelock aktivní, wZION mintování čeká na expiry 2026-06-24 16:52 UTC); **2026-06-23** (100M ZION UTXO locks potvrzeno, memo bug opraven, relay čeká na validator key); **2026-06-22** (Bridge mainnet readiness — 5/5 validators funded, single-sig bridge blocker documented, testnet RPC + block-range fixes); **2026-06-18** (Git historie obnovena, root cleanup v3.0.2, L2/L3 kanonizace, L4 Oasis příprava); **2026-06-15** (Edge server full update — Rust + V3 rebuild + služby restart, bridge port fix, dashboard restart tlačítka fix); **2026-06-14** (Dashboard all-tabs fix, Payout/Wallets sekce, Restart Edge Pool SSH, UFW 8444 oprava — viz sekce níže); **2026-06-13** (Fire algorithm hard fork deployment — viz sekce níže); **2026-06-13** (Hiran v2.3 documentation cleanup — viz sekce níže); **2026-06-11** (Hard Genesis Reset #0 completed — viz sekce níže); **2026-06-11** (Pool stale share detection + dashboard tab fix — viz sekce níže); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
+> **Datum:** **2026-06-29** (**ATOMIC SWAP ACTIVATED + DAO SCANNER FIX + 3.0.4 DEFINED** — atomic-swap daemon aktivní s produkčním escrow keypair, SO_REUSEADDR fix, DAO L1 scanner opraven (DAO_L1_RPC env var bez /jsonrpc suffix), core-endpoints.ts atomicSwap port 8460→8452 opraven, 3.0.4 milestone definován v ROADMAP.md; **REVERSE BRIDGE E2E VERIFIED** — 100 wZION burn → 100 ZION unlock na L1 blok 20919, BRIDGE_VAULT_SEED fix, E2E confirmed 2026-06-29); **L1 MIGRATION RPC FIX + DASHBOARD POLISH + BRIDGE METRICS** — `ZION_MIGRATION_HEIGHT` env var nyní čtena node kódem, `scaled_amount()` helper v RPC normalizuje legacy 1e12 → 1e6 scale pro balance dotazy, MIGRATION_HEIGHT=18850, dashboard `ready_for_launch: True` 13/13 checklist, všechny balance korektní; full report: [`REPORT_3.0.3_FIXES.md`](./REPORT_3.0.3_FIXES.md)); **2026-06-27** (**3.0.3 DECIMAL FORK DEPLOYED ON EDGE** — kompletní ekosystém migrován z 12-decimal na 6-decimal flowers, DB preserved, MIGRATION_HEIGHT=17995, všechny 13 Edge services aktivní, chain height 18003+, protocol_version=zion-v3-node/3.0.3, flowers_per_zion=1,000,000); **2026-06-24** (EMERGENCY MINT COMPLETE — 99,999,899 wZION mintováno na Base Mainnet přes wZION.bridgeMint() po obejití DAILY_LIMIT bug na bridge kontraktu; DeFi web UI mainnet-ready — Staking/Farming/DAO pages s wallet connect, BridgeTracker pipeline komponenta, commit 107a121); **2026-06-23** (Multi-validator relay nasazen — 5/5 confirmací pro všech 6 locků, 24h timelock aktivní, wZION mintování čeká na expiry 2026-06-24 16:52 UTC); **2026-06-23** (100M ZION UTXO locks potvrzeno, memo bug opraven, relay čeká na validator key); **2026-06-22** (Bridge mainnet readiness — 5/5 validators funded, single-sig bridge blocker documented, testnet RPC + block-range fixes); **2026-06-18** (Git historie obnovena, root cleanup v3.0.2, L2/L3 kanonizace, L4 Oasis příprava); **2026-06-15** (Edge server full update — Rust + V3 rebuild + služby restart, bridge port fix, dashboard restart tlačítka fix); **2026-06-14** (Dashboard all-tabs fix, Payout/Wallets sekce, Restart Edge Pool SSH, UFW 8444 oprava — viz sekce níže); **2026-06-13** (Fire algorithm hard fork deployment — viz sekce níže); **2026-06-13** (Hiran v2.3 documentation cleanup — viz sekce níže); **2026-06-11** (Hard Genesis Reset #0 completed — viz sekce níže); **2026-06-11** (Pool stale share detection + dashboard tab fix — viz sekce níže); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
 > (sjednocení `StatusV3.md` ↔ `StatusV3-Part2.md` — TL;DR, roadmap §6, §8, §5
 > pyramida, odkazy).
 > **Předchozí update:** 2026-05-03 (genesis konsensus — merged na `main`)
@@ -19,6 +19,40 @@
 > starý Praha server (`91.98.122.165`) nebo historickou multi-server topologii
 > (Prague, SG, Helsinki, US) jsou **archivní / historické**, pokud není explicitně
 > uvedeno jinak. Aktuální živá topologie je **Core + Edge** (viz sekce Infrastruktura).
+
+---
+
+## Co je nového 2026-06-29 (Session 7) — Atomic Swap Activated + DAO Scanner Fix + 3.0.4 Plan ✅
+
+> **Status:** ✅ DOKONČENO — atomic-swap daemon plně funkční, DAO scanner opraven, 3.0.4 milestone definován
+
+### TL;DR
+
+- **Atomic Swap daemon aktivní** — `zion-edge-atomic-swap.service` běží na portu 8452 s produkčním Ed25519 escrow keypair; opraveny 3 problémy: SO_REUSEADDR (TIME_WAIT blocker), DB cesta (legacy `/home/zionserver`), bearer token env var (`ZION_SWAP_BEARER_TOKEN`)
+- **Escrow adresa:** `zion1y0j484d5e8r49785d253e8w0c2x4t3n792m5724` (nový produkční keypair, 2026-06-29); L1 watcher scanuje bloky, EVM watcher sleduje Base contract `0x3DE9Ad42716854083ab837706E3961d10B0e63Eb`
+- **DAO L1 scanner opraven** — `DAO_L1_RPC` env var měla `/jsonrpc` suffix → `normalize_rpc_addr()` neopravil HTTP prefix → TcpStream.connect selhával; opraveno na `127.0.0.1:8443`
+- **core-endpoints.ts opraven** — `atomicSwap` port byl 8460 (neexistující), opraven na 8452
+- **3.0.4 milestone definován** v ROADMAP.md — scope: ZIONStaking/ZIONFarm Base Mainnet deploy, DAO UI live connection, WARP UI, Bridge UI, Atomic Swap funding + E2E test
+
+### Edge service stav (2026-06-29 18:41 UTC)
+
+| Service | Port | Status | Poznámka |
+|---------|------|--------|----------|
+| zion-edge-node1 | 8333/8443 | ✅ active | chain height ~20950+ |
+| zion-edge-node2 | 8334/8446 | ✅ active | follower |
+| zion-edge-pool | 8444 | ✅ active | Stratum mining |
+| zion-edge-bridge | 8451 | ✅ active | 5/5 validators, reverse bridge verified |
+| zion-edge-dao | 8450 | ✅ active | L1 scanner fix aplikován |
+| zion-edge-warp | 8453 | ✅ active | EVM+BTC+SOL+XLM+TRX adapters |
+| zion-edge-atomic-swap | 8452 | ✅ **ACTIVE** (nové) | produkční escrow, L1+EVM watcher |
+
+### Opravené soubory
+
+- `V3/L2/atomic-swap/src/main.rs` — socket2 SO_REUSEADDR + SO_REUSEPORT
+- `V3/L2/atomic-swap/src/config.rs` — `api_bearer_token()` env var override
+- `V3/L2/atomic-swap/Cargo.toml` — socket2 dependency
+- `V3/L2/atomic-swap/config/swap-mainnet.toml` — DB cesta
+- `APP&WEB/website-v2.9/src/lib/core-endpoints.ts` — atomicSwap port 8452
 
 ---
 

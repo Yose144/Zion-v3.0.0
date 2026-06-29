@@ -34,8 +34,8 @@ export const CORE = {
   /** Pool stratum — runs locally on Edge */
   poolStratum: `127.0.0.1:8444`,
 
-  /** Atomic Swap API — runs locally on Edge (port 8460) */
-  atomicSwap: `http://127.0.0.1:8460`,
+  /** Atomic Swap API — runs locally on Edge (port 8452) */
+  atomicSwap: `http://127.0.0.1:8452`,
 } as const;
 
 /** Resolve a Core endpoint, allowing env-var override for dev/test. */
