@@ -1,13 +1,13 @@
 /**
- * ZION DeFi — Pool Stats API
+ * ZION DeFi — Pool Stats API (V4)
  *
- * Returns detailed stats for all active Uniswap V3 pools on Base:
- * - wZION/USDT (0.3% fee) — primary stablecoin pair
- * - wZION/WETH (1% fee) — secondary volatile pair
- * - wZION/SOL (0.01% fee) — tertiary volatile pair
+ * Queries real on-chain data from Uniswap V4 on Base Mainnet.
+ * V3 pools are empty — all liquidity migrated to V4.
  *
- * For each pool: slot0 (sqrtPriceX96, tick), liquidity, fee, token balances,
- * TVL estimate, and NFT position info.
+ * Real data sources:
+ * - V4 PoolManager token balances (wZION, USDT held by singleton)
+ * - V4 PositionManager NFT ownerOf (check if positions are active or burned)
+ * - wZION totalSupply, Staking/Farm/Treasury balances
  */
 
 export const dynamic = 'force-dynamic';
@@ -16,84 +16,34 @@ import { NextResponse } from 'next/server';
 
 const RPC_URL = process.env.BASE_RPC_URL || 'https://base.publicnode.com';
 
-// Pool addresses (Base Mainnet — updated 2026-08-18)
-type NftPosition = {
-  id: number;
-  type: string;
-  tickLower: number;
-  tickUpper: number;
-  wzion: number;
-  usdt?: number;
-  weth?: number;
-  sol?: number;
-};
-type PoolConfig = {
-  address: string;
-  fee: number;
-  feeLabel: string;
-  token0: string;
-  token1: string;
-  token0Symbol: string;
-  token1Symbol: string;
-  token0Decimals: number;
-  token1Decimals: number;
-  nftPositions: NftPosition[];
-};
-const POOLS: Record<string, PoolConfig> = {
-  wzion_usdt: {
-    address: '0x186b46c2f04153999d44D25179cD623fD62Bfda2',
-    fee: 3000,
-    feeLabel: '0.3%',
-    token0: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6', // wZION
-    token1: '0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2',  // USDT
-    token0Symbol: 'wZION',
-    token1Symbol: 'USDT',
-    token0Decimals: 18,
-    token1Decimals: 6,
-    nftPositions: [
-      { id: 2740371, type: 'two-sided', tickLower: -366600, tickUpper: -356580, wzion: 100_000, usdt: 3.14 },
-    ],
-  },
-  wzion_weth: {
-    address: '0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699',
-    fee: 10000,
-    feeLabel: '1%',
-    token0: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6', // wZION
-    token1: '0x4200000000000000000000000000000000000006',  // WETH
-    token0Symbol: 'wZION',
-    token1Symbol: 'WETH',
-    token0Decimals: 18,
-    token1Decimals: 18,
-    nftPositions: [
-      { id: 5431714, type: 'depleted', tickLower: -162000, tickUpper: -160000, wzion: 0, weth: 0 },
-      { id: 2740380, type: 'burned', tickLower: -164000, tickUpper: -158000, wzion: 0, weth: 0 },
-    ],
-  },
-  wzion_sol: {
-    address: '0xF38c56bbBBBC6d9FA11E7DE84bF7Bb70e1e8D2b3',
-    fee: 100,
-    feeLabel: '0.01%',
-    token0: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6', // wZION
-    token1: '0x311935Cd80B76769bF2ecC9D8Ab7635b2139cf82',  // SOL
-    token0Symbol: 'wZION',
-    token1Symbol: 'SOL',
-    token0Decimals: 18,
-    token1Decimals: 9,
-    nftPositions: [
-      { id: 5434872, type: 'depleted', tickLower: -340387, tickUpper: -330387, wzion: 0, sol: 0 },
-    ],
-  },
-};
+// V4 contracts on Base Mainnet
+const V4_POOL_MANAGER     = '0x498581fF718922c3f8e6A244956aF099B2652b2b';
+const V4_POSITION_MANAGER = '0x7C5f5A4bBd8fD63184577525326123B519429BdC';
 
-const CHAINLINK_WETH_USD = '0x71041dddad3595F9CEdDCDcF2012034b68dF6aFA';
-// SOL/USD fallback until Chainlink feed is wired in
-const SOL_USD_FALLBACK = 73.44;
+// Token contracts
+const WZION  = '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6';
+const USDT   = '0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2';
+const WETH   = '0x4200000000000000000000000000000000000006';
+const SOL    = '0x311935Cd80B76769bF2ecC9D8Ab7635b2139cf82';
+
+// DeFi contracts
+const STAKING   = '0xbd5cEe7878337d22188BFBaF9aa9F39A850Be78B';
+const FARM      = '0x167B2753F5D8D9F8e62875cc9e379d7804308B08';
+const TREASURY  = '0x455f465ac7e14fdA97dC46fdd74bCa78bfC0aEeD';
+const GOVERNANCE = '0xB77eB4ab9468Ce03FBd7eCec70e976EFCfa623E8';
+const BRIDGE    = '0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467';
+const DEPLOYER  = '0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186';
+
+// V4 NFT position IDs
+const NFT_USDT = 2740371; // wZION/USDT 0.3% — active
+const NFT_WETH = 2740380; // ETH/wZION 0.3% — burned
 
 // Function selectors
-const SLOT0     = '0x3850c7bd';
-const LIQUIDITY = '0x1a686502';
-const BALANCE_OF = '0x70a08231'; // balanceOf(address)
-const LATEST_ROUND_DATA = '0xfeaf968c';
+const BALANCE_OF    = '0x70a08231';
+const TOTAL_SUPPLY  = '0x18160ddd';
+const OWNER_OF      = '0x6352211e';
+const LATEST_ROUND  = '0xfeaf968c';
+const CHAINLINK_WETH = '0x71041dddad3595F9CEdDCDcF2012034b68dF6aFA';
 
 async function ethCall(to: string, data: string): Promise<string | null> {
   try {
@@ -101,7 +51,7 @@ async function ethCall(to: string, data: string): Promise<string | null> {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0' },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: [{ to, data }, 'latest'] }),
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(8000),
     });
     const json = await res.json();
     return json?.result ?? null;
@@ -110,19 +60,21 @@ async function ethCall(to: string, data: string): Promise<string | null> {
   }
 }
 
-function decodeSlot0(hex: string): { sqrtPriceX96: bigint; tick: number } {
-  const clean = hex.startsWith('0x') ? hex.slice(2) : hex;
-  const sqrtPriceX96 = BigInt('0x' + clean.slice(0, 64));
-  // tick is int24, ABI-encoded as sign-extended to 256 bits
-  const tickRaw = BigInt('0x' + clean.slice(64, 128));
-  const tick24 = tickRaw & 0xFFFFFFn;
-  const tick = tick24 >= 2n ** 23n ? Number(tick24 - 2n ** 24n) : Number(tick24);
-  return { sqrtPriceX96, tick };
+function encodeAddress(addr: string): string {
+  return addr.toLowerCase().replace('0x', '').padStart(64, '0');
 }
 
-function decodeUint128(hex: string): bigint {
-  const clean = hex.startsWith('0x') ? hex.slice(2) : hex;
-  return BigInt('0x' + clean.slice(0, 64));
+function encodeUint256(n: number): string {
+  return BigInt(n).toString(16).padStart(64, '0');
+}
+
+function hexToBigInt(hex: string | null): bigint {
+  if (!hex || hex === '0x') return 0n;
+  return BigInt(hex);
+}
+
+function toHuman(val: bigint, decimals: number): number {
+  return Number(val) / 10 ** decimals;
 }
 
 function decodeChainlinkAnswer(hex: string): number {
@@ -132,158 +84,123 @@ function decodeChainlinkAnswer(hex: string): number {
   return Number(signed) / 1e8;
 }
 
-function encodeAddress(addr: string): string {
-  return addr.toLowerCase().replace('0x', '').padStart(64, '0');
-}
-
-async function getPoolStats(poolConfig: PoolConfig, wethUsd: number, solUsd: number) {
-  const poolAddr = poolConfig.address;
-
-  // Fetch slot0, liquidity, and token balances in parallel
-  const [slot0Hex, liquidityHex, bal0Hex, bal1Hex] = await Promise.all([
-    ethCall(poolAddr, SLOT0),
-    ethCall(poolAddr, LIQUIDITY),
-    ethCall(poolConfig.token0, BALANCE_OF + encodeAddress(poolAddr)),
-    ethCall(poolConfig.token1, BALANCE_OF + encodeAddress(poolAddr)),
-  ]);
-
-  const liquidity = liquidityHex ? decodeUint128(liquidityHex) : 0n;
-  const balance0 = bal0Hex ? BigInt(bal0Hex) : 0n;
-  const balance1 = bal1Hex ? BigInt(bal1Hex) : 0n;
-
-  let sqrtPriceX96 = 0n;
-  let tick = 0;
-  let active = false;
-
-  if (slot0Hex) {
-    try {
-      const decoded = decodeSlot0(slot0Hex);
-      sqrtPriceX96 = decoded.sqrtPriceX96;
-      tick = decoded.tick;
-      active = sqrtPriceX96 > 0n;
-    } catch { /* decode failed */ }
-  }
-
-  // Calculate price
-  const Q96 = 2n ** 96n;
-  let priceToken1PerToken0 = 0;
-  let priceUsd = 0;
-
-  if (sqrtPriceX96 > 0n) {
-    const sqrtNum = Number(sqrtPriceX96) / Number(Q96);
-    // Raw price is token1/token0 in raw units; adjust for decimals
-    // human price = raw * 10^(token0Decimals - token1Decimals)
-    const decimalAdjustment = 10 ** (poolConfig.token0Decimals - poolConfig.token1Decimals);
-    priceToken1PerToken0 = sqrtNum * sqrtNum * decimalAdjustment;
-
-    if (poolConfig.token1Symbol === 'WETH') {
-      priceUsd = priceToken1PerToken0 * wethUsd;
-    } else if (poolConfig.token1Symbol === 'USDT') {
-      priceUsd = priceToken1PerToken0; // USDT ≈ $1
-    } else if (poolConfig.token1Symbol === 'SOL') {
-      priceUsd = priceToken1PerToken0 * solUsd;
-    }
-  }
-
-  // Token balances in human-readable units (on-chain pool balances — may be near 0
-  // if liquidity is held in NFT positions rather than sitting idle in the pool)
-  const balance0Human = Number(balance0) / 10 ** poolConfig.token0Decimals;
-  const balance1Human = Number(balance1) / 10 ** poolConfig.token1Decimals;
-
-  // Sum NFT position amounts (canonical deposited liquidity)
-  const nftWzion = poolConfig.nftPositions.reduce((s, p) => s + (p.wzion ?? 0), 0);
-  const nftToken1 = poolConfig.nftPositions.reduce((s, p) => {
-    if (poolConfig.token1Symbol === 'USDT') return s + (p.usdt ?? 0);
-    if (poolConfig.token1Symbol === 'WETH') return s + (p.weth ?? 0);
-    if (poolConfig.token1Symbol === 'SOL')  return s + (p.sol ?? 0);
-    return s;
-  }, 0);
-
-  // Effective liquidity = max(on-chain pool balance, NFT position sum)
-  // NFT positions represent the canonical deposited amounts; pool balances
-  // can drift to ~0 when swaps move tokens out of the active range.
-  const effBalance0 = Math.max(balance0Human, nftWzion);
-  const effBalance1 = Math.max(balance1Human, nftToken1);
-
-  // TVL: use effective balances (NFT positions + on-chain)
-  let tvlUsd = 0;
-  if (poolConfig.token1Symbol === 'WETH') {
-    tvlUsd = (effBalance1 * wethUsd) + (effBalance0 * priceUsd);
-  } else if (poolConfig.token1Symbol === 'USDT') {
-    tvlUsd = effBalance1 + (effBalance0 * priceUsd);
-  } else if (poolConfig.token1Symbol === 'SOL') {
-    tvlUsd = (effBalance1 * solUsd) + (effBalance0 * priceUsd);
-  }
-
-  return {
-    address: poolAddr,
-    fee: poolConfig.fee,
-    feeLabel: poolConfig.feeLabel,
-    pair: `${poolConfig.token0Symbol}/${poolConfig.token1Symbol}`,
-    token0: { address: poolConfig.token0, symbol: poolConfig.token0Symbol, decimals: poolConfig.token0Decimals },
-    token1: { address: poolConfig.token1, symbol: poolConfig.token1Symbol, decimals: poolConfig.token1Decimals },
-    active,
-    sqrtPriceX96: sqrtPriceX96.toString(),
-    tick,
-    liquidity: liquidity.toString(),
-    price: {
-      token1_per_token0: priceToken1PerToken0,
-      usd_per_wzion: priceUsd,
-    },
-    balances: {
-      token0: effBalance0,
-      token1: effBalance1,
-      pool_token0: balance0Human,
-      pool_token1: balance1Human,
-    },
-    tvl: {
-      token0: effBalance0,
-      token1: effBalance1,
-      usd: tvlUsd,
-    },
-    nft_positions: poolConfig.nftPositions,
-  };
-}
-
 export async function GET() {
-  // Fetch Chainlink WETH/USD
-  const wethUsdHex = await ethCall(CHAINLINK_WETH_USD, LATEST_ROUND_DATA);
-  let wethUsd = 2000; // fallback
-  if (wethUsdHex) {
-    try { wethUsd = decodeChainlinkAnswer(wethUsdHex); } catch { /* keep fallback */ }
-  }
-
-  // SOL/USD fallback until Chainlink feed is wired in
-  const solUsd = SOL_USD_FALLBACK;
-
-  // Fetch all three pool stats in parallel
-  const [usdtPool, wethPool, solPool] = await Promise.all([
-    getPoolStats(POOLS.wzion_usdt, wethUsd, solUsd),
-    getPoolStats(POOLS.wzion_weth, wethUsd, solUsd),
-    getPoolStats(POOLS.wzion_sol, wethUsd, solUsd),
+  // Fetch all real on-chain data in parallel
+  const [
+    wzionSupplyHex,
+    poolMgrWzionHex, poolMgrUsdtHex, poolMgrWethHex, poolMgrSolHex,
+    stakingWzionHex, farmWzionHex, treasuryWzionHex, govWzionHex, bridgeWzionHex,
+    deployerWzionHex,
+    nftUsdtOwnerHex, nftWethOwnerHex,
+    wethUsdHex,
+  ] = await Promise.all([
+    ethCall(WZION, TOTAL_SUPPLY),
+    ethCall(WZION, BALANCE_OF + encodeAddress(V4_POOL_MANAGER)),
+    ethCall(USDT, BALANCE_OF + encodeAddress(V4_POOL_MANAGER)),
+    ethCall(WETH, BALANCE_OF + encodeAddress(V4_POOL_MANAGER)),
+    ethCall(SOL, BALANCE_OF + encodeAddress(V4_POOL_MANAGER)),
+    ethCall(WZION, BALANCE_OF + encodeAddress(STAKING)),
+    ethCall(WZION, BALANCE_OF + encodeAddress(FARM)),
+    ethCall(WZION, BALANCE_OF + encodeAddress(TREASURY)),
+    ethCall(WZION, BALANCE_OF + encodeAddress(GOVERNANCE)),
+    ethCall(WZION, BALANCE_OF + encodeAddress(BRIDGE)),
+    ethCall(WZION, BALANCE_OF + encodeAddress(DEPLOYER)),
+    ethCall(V4_POSITION_MANAGER, OWNER_OF + encodeUint256(NFT_USDT)),
+    ethCall(V4_POSITION_MANAGER, OWNER_OF + encodeUint256(NFT_WETH)),
+    ethCall(CHAINLINK_WETH, LATEST_ROUND),
   ]);
 
-  const pools = {
-    wzion_usdt: usdtPool,
-    wzion_weth: wethPool,
-    wzion_sol: solPool,
-  };
+  // Parse real balances
+  const wzionSupply = toHuman(hexToBigInt(wzionSupplyHex), 18);
+  const poolMgrWzion = toHuman(hexToBigInt(poolMgrWzionHex), 18);
+  const poolMgrUsdt = toHuman(hexToBigInt(poolMgrUsdtHex), 6);
+  const poolMgrWeth = toHuman(hexToBigInt(poolMgrWethHex), 18);
+  const poolMgrSol = toHuman(hexToBigInt(poolMgrSolHex), 9);
+  const stakingWzion = toHuman(hexToBigInt(stakingWzionHex), 18);
+  const farmWzion = toHuman(hexToBigInt(farmWzionHex), 18);
+  const treasuryWzion = toHuman(hexToBigInt(treasuryWzionHex), 18);
+  const govWzion = toHuman(hexToBigInt(govWzionHex), 18);
+  const bridgeWzion = toHuman(hexToBigInt(bridgeWzionHex), 18);
+  const deployerWzion = toHuman(hexToBigInt(deployerWzionHex), 18);
 
-  const allPoolStats = [usdtPool, wethPool, solPool];
+  // Check NFT ownership (real on-chain)
+  const nftUsdtOwner = nftUsdtOwnerHex && hexToBigInt(nftUsdtOwnerHex) !== 0n
+    ? '0x' + nftUsdtOwnerHex.slice(26).toLowerCase()
+    : null;
+  const nftWethOwner = nftWethOwnerHex && hexToBigInt(nftWethOwnerHex) !== 0n
+    ? '0x' + nftWethOwnerHex.slice(26).toLowerCase()
+    : null;
+
+  // WETH price from Chainlink
+  let wethUsd = 2000;
+  if (wethUsdHex) {
+    try { wethUsd = decodeChainlinkAnswer(wethUsdHex); } catch { /* fallback */ }
+  }
+
+  // TVL = USDT in PoolManager + (wZION in PoolManager * price)
+  // Price: USDT/wZION — we need to derive from pool balances
+  // If pool has wZION and USDT, price = USDT / wZION
+  const priceUsd = poolMgrWzion > 0 ? poolMgrUsdt / poolMgrWzion : 0;
+  const tvlUsd = poolMgrUsdt + (poolMgrWzion * priceUsd);
+
+  // Determine active pools from NFT ownership
+  const usdtActive = nftUsdtOwner !== null;
+  const wethActive = nftWethOwner !== null;
 
   return NextResponse.json({
     ok: true,
     network: 'base-mainnet',
     chainId: 8453,
+    source: 'uniswap-v4-onchain',
     weth_usd: wethUsd,
-    sol_usd: solUsd,
     primary_pool: 'wzion_usdt',
-    pools,
     summary: {
-      total_tvl_usd: allPoolStats.reduce((sum, p) => sum + p.tvl.usd, 0),
-      total_wzion_liquidity: allPoolStats.reduce((sum, p) => sum + p.balances.token0, 0),
-      active_pools: allPoolStats.filter((p) => p.active).length,
-      total_nft_positions: allPoolStats.reduce((sum, p) => sum + p.nft_positions.length, 0),
+      total_tvl_usd: tvlUsd,
+      total_wzion_liquidity: poolMgrWzion,
+      active_pools: (usdtActive ? 1 : 0) + (wethActive ? 1 : 0),
+      wzion_supply: wzionSupply,
+      deployer_wzion: deployerWzion,
+    },
+    pools: {
+      wzion_usdt: {
+        pair: 'wZION/USDT',
+        fee: 3000,
+        feeLabel: '0.3%',
+        active: usdtActive,
+        nft_id: NFT_USDT,
+        nft_owner: nftUsdtOwner,
+        balances: {
+          wzion: poolMgrWzion,
+          usdt: poolMgrUsdt,
+        },
+        price_usd: priceUsd,
+        tvl_usd: poolMgrUsdt + (poolMgrWzion * priceUsd),
+      },
+      wzion_weth: {
+        pair: 'ETH/wZION',
+        fee: 3000,
+        feeLabel: '0.3%',
+        active: wethActive,
+        nft_id: NFT_WETH,
+        nft_owner: nftWethOwner,
+        balances: {
+          wzion: 0,
+          weth: 0,
+        },
+        price_usd: 0,
+        tvl_usd: 0,
+      },
+    },
+    contracts: {
+      staking: { wzion: stakingWzion },
+      farm: { wzion: farmWzion },
+      treasury: { wzion: treasuryWzion },
+      governance: { wzion: govWzion },
+      bridge: { wzion: bridgeWzion },
+    },
+    v4_addresses: {
+      poolManager: V4_POOL_MANAGER,
+      positionManager: V4_POSITION_MANAGER,
     },
     fetchedAt: Date.now(),
   }, {
