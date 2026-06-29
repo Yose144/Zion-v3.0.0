@@ -166,6 +166,7 @@ export default function CexPage() {
   const summary = data?.cex?.summary;
   const dex = data?.dex;
   const dexPairs = dex?.pairs_detail ?? [];
+  // best_price_usd is already set to WETH-first canonical price by /api/cex/listings
   const bestPrice = dex?.best_price_usd ?? SEED_PRICE_USD;
 
   return (
@@ -346,7 +347,7 @@ export default function CexPage() {
 
           <div className="mt-4 flex flex-wrap gap-2">
             <a
-              href={`https://dexscreener.com/base/${CONTRACTS.UniV3PoolWETH}`}
+              href={`https://dexscreener.com/base/${CONTRACTS.UniV3PoolUSDT}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
