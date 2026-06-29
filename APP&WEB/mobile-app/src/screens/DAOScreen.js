@@ -31,6 +31,7 @@ import {
   getDAOProposals,
   getDAOTreasury,
   getBridgeVaultInfo,
+  ATOMIC_SWAP,
 } from '../services/DAOService';
 
 const DAOScreen = () => {
@@ -116,7 +117,10 @@ const DAOScreen = () => {
 
   // ── Treasury ──────────────────────────────────────────────────────────
   function renderTreasury() {
-    const balanceZion = treasury?.treasury_total_zion ?? stats?.treasury_total_zion ?? 4_000_000_000;
+    // DAO API returns: { total_zion, available_zion, available_flowers, multisig, pending_operations, ... }
+    const balanceZion = treasury?.total_zion ?? treasury?.treasury_total_zion ?? stats?.treasury_total_zion ?? 4_000_000_000;
+    const multisig = treasury?.multisig ?? stats?.multisig ?? '5-of-7';
+    const pendingOps = treasury?.pending_operations ?? 0;
     return (
       <GlassCard style={styles.card}>
         <Text style={styles.cardTitle}>Treasury</Text>
@@ -126,10 +130,14 @@ const DAOScreen = () => {
             {Number(balanceZion).toLocaleString()} ZION
           </Text>
         </View>
-        {treasury?.operations && Array.isArray(treasury.operations) && treasury.operations.length > 0 && (
+        <View style={styles.treasuryRow}>
+          <Text style={styles.treasuryLabel}>Multisig</Text>
+          <Text style={styles.treasuryVal}>{multisig}</Text>
+        </View>
+        {pendingOps > 0 && (
           <View style={styles.treasuryRow}>
             <Text style={styles.treasuryLabel}>Pending ops</Text>
-            <Text style={styles.treasuryVal}>{treasury.operations.length}</Text>
+            <Text style={styles.treasuryVal}>{pendingOps}</Text>
           </View>
         )}
       </GlassCard>
@@ -180,6 +188,43 @@ const DAOScreen = () => {
               {vaultInfo.validator_contract.slice(0, 14)}…{vaultInfo.validator_contract.slice(-10)}
             </Text>
           </TouchableOpacity>
+        </View>
+      </GlassCard>
+    );
+  }
+
+  // ── Atomic Swap ───────────────────────────────────────────────────────
+  function renderAtomicSwap() {
+    return (
+      <GlassCard style={styles.card}>
+        <Text style={styles.cardTitle}>Atomic Swap (L2)</Text>
+        <View style={styles.vaultRow}>
+          <Text style={styles.vaultLabel}>Escrow</Text>
+          <TouchableOpacity
+            onPress={() => { Clipboard.setString(ATOMIC_SWAP.escrow_address); Alert.alert('Copied', 'Escrow address copied'); }}
+          >
+            <Text style={styles.monoAddr}>
+              {ATOMIC_SWAP.escrow_address.slice(0, 18)}…{ATOMIC_SWAP.escrow_address.slice(-10)}
+            </Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.vaultRow}>
+          <Text style={styles.vaultLabel}>EVM contract</Text>
+          <TouchableOpacity
+            onPress={() => { Clipboard.setString(ATOMIC_SWAP.evm_contract); Alert.alert('Copied', 'EVM contract copied'); }}
+          >
+            <Text style={styles.monoAddr}>
+              {ATOMIC_SWAP.evm_contract.slice(0, 14)}…{ATOMIC_SWAP.evm_contract.slice(-10)}
+            </Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.vaultRow}>
+          <Text style={styles.vaultLabel}>Status</Text>
+          <Text style={styles.vaultVal}>{ATOMIC_SWAP.status} (port {ATOMIC_SWAP.api_port})</Text>
+        </View>
+        <View style={styles.vaultRow}>
+          <Text style={styles.vaultLabel}>Funding</Text>
+          <Text style={styles.vaultVal}>{ATOMIC_SWAP.funding_needed}</Text>
         </View>
       </GlassCard>
     );
@@ -241,6 +286,7 @@ const DAOScreen = () => {
       {renderStats()}
       {renderTreasury()}
       {renderBridgeVault()}
+      {renderAtomicSwap()}
       {renderProposals()}
 
       <View style={styles.footer}>

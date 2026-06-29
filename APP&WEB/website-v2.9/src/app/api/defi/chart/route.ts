@@ -32,7 +32,7 @@ interface OhlcvCandle {
 async function fetchOhlcv(timeframe: 'minute' | 'hour', limit: number): Promise<OhlcvCandle[]> {
   const url = `${GECKO_BASE}/${POOL_USDT}/ohlcv/${timeframe}?limit=${limit}`;
   const res = await fetch(url, {
-    headers: { 'Accept': 'application/json' },
+    headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' },
     signal: AbortSignal.timeout(8000),
   });
   if (!res.ok) return [];

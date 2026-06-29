@@ -25,8 +25,8 @@ import * as path from "path";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-/** Official wZION address on Base Sepolia testnet */
-const WZION_SEPOLIA = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6";
+/** wZION address — same on Base Sepolia testnet and Base Mainnet */
+const WZION_DEFAULT = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6";
 
 /** Default staking APR: 12% */
 const DEFAULT_APR_BPS = 1200;
@@ -56,7 +56,7 @@ async function main() {
 
   // ── Resolve addresses ─────────────────────────────────────────────────────
 
-  const wzionAddr   = process.env.WZION_ADDRESS   || (isLocal ? "" : WZION_SEPOLIA);
+  const wzionAddr   = process.env.WZION_ADDRESS   || (isLocal ? "" : WZION_DEFAULT);
   const guardianAddr = process.env.GUARDIAN_ADDRESS || deployer.address;
   const aprBps      = parseInt(process.env.STAKING_APR_BPS || String(DEFAULT_APR_BPS));
 
