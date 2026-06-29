@@ -2153,8 +2153,114 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-blue-400" id="l2-proposals">—</div><div class="text-[10px] text-gray-400 mt-1">DAO Proposals</div></div>
     <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-amber-400" id="l2-swaps">—</div><div class="text-[10px] text-gray-400 mt-1">Active Swaps</div></div>
     <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-purple-400" id="l2-treasury">4B</div><div class="text-[10px] text-gray-400 mt-1">Treasury ZION</div></div>
-    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-cyan-400" id="l2-bridge-volume">—</div><div class="text-[10px] text-gray-400 mt-1">Bridge Volume</div></div>
-    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-zion-gold" id="l2-swap-volume">—</div><div class="text-[10px] text-gray-400 mt-1">Swap Volume</div></div>
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-cyan-400" id="l2-defi-price">—</div><div class="text-[10px] text-gray-400 mt-1">wZION Price</div></div>
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-zion-gold" id="l2-wzion-supply">—</div><div class="text-[10px] text-gray-400 mt-1">wZION Supply</div></div>
+  </div>
+
+  <!-- DeFi / Uniswap V3 Pools Panel -->
+  <div class="zion-panel p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-base font-bold flex items-center gap-2">💹 DeFi — Uniswap V3 Pools (Base Mainnet)</h2>
+      <div class="flex gap-2 items-center">
+        <span id="l2-defi-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Loading…</span>
+        <a href="https://app.uniswap.org" target="_blank" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">Uniswap ↗</a>
+        <a href="https://dexscreener.com/base/0x186b46c2f04153999d44D25179cD623fD62Bfda2" target="_blank" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">DexScreener ↗</a>
+      </div>
+    </div>
+
+    <!-- DeFi KPI cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+      <div class="bg-black/30 rounded-xl p-3 text-center">
+        <div class="text-[10px] text-gray-400 mb-1">wZION Price</div>
+        <div class="text-lg font-bold text-emerald-400" id="l2-defi-price-big">—</div>
+        <div class="text-[10px] text-gray-500" id="l2-defi-price-change">24h: —</div>
+      </div>
+      <div class="bg-black/30 rounded-xl p-3 text-center">
+        <div class="text-[10px] text-gray-400 mb-1">Total TVL</div>
+        <div class="text-lg font-bold text-amber-400" id="l2-defi-tvl">—</div>
+        <div class="text-[10px] text-gray-500">3 active pools</div>
+      </div>
+      <div class="bg-black/30 rounded-xl p-3 text-center">
+        <div class="text-[10px] text-gray-400 mb-1">Volume 24h</div>
+        <div class="text-lg font-bold text-cyan-400" id="l2-defi-volume24h">—</div>
+        <div class="text-[10px] text-gray-500" id="l2-defi-txns24h">txns: —</div>
+      </div>
+      <div class="bg-black/30 rounded-xl p-3 text-center">
+        <div class="text-[10px] text-gray-400 mb-1">wZION Supply</div>
+        <div class="text-lg font-bold text-purple-400" id="l2-defi-supply-big">—</div>
+        <div class="text-[10px] text-gray-500">of 144B max</div>
+      </div>
+    </div>
+
+    <!-- Pool table -->
+    <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-2">Active Pools</div>
+    <div class="space-y-2" id="l2-pool-list">
+      <!-- Primary: USDT -->
+      <div class="bg-black/30 rounded-xl p-3 flex flex-wrap gap-3 items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold text-emerald-400">● PRIMARY</span>
+          <span class="text-sm font-bold text-white">wZION/USDT</span>
+          <span class="text-[10px] text-gray-400 bg-white/5 px-2 py-0.5 rounded">0.3% fee</span>
+        </div>
+        <div class="flex gap-4 text-xs">
+          <div class="text-center"><div class="text-gray-400 text-[10px]">Price</div><div class="text-white font-bold" id="l2-pool-usdt-price">—</div></div>
+          <div class="text-center"><div class="text-gray-400 text-[10px]">Liquidity</div><div class="text-amber-400 font-bold" id="l2-pool-usdt-liq">—</div></div>
+          <div class="text-center"><div class="text-gray-400 text-[10px]">Vol 24h</div><div class="text-cyan-400 font-bold" id="l2-pool-usdt-vol">—</div></div>
+          <div class="text-center"><div class="text-gray-400 text-[10px]">Txns 24h</div><div class="text-white font-bold" id="l2-pool-usdt-txns">—</div></div>
+        </div>
+        <a href="https://dexscreener.com/base/0x186b46c2f04153999d44D25179cD623fD62Bfda2" target="_blank" class="text-[10px] text-blue-400 hover:text-blue-300">BaseScan ↗</a>
+      </div>
+      <!-- Secondary: WETH -->
+      <div class="bg-black/30 rounded-xl p-3 flex flex-wrap gap-3 items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold text-blue-400">● WETH</span>
+          <span class="text-sm font-bold text-white">wZION/WETH</span>
+          <span class="text-[10px] text-gray-400 bg-white/5 px-2 py-0.5 rounded">1.0% fee</span>
+        </div>
+        <div class="flex gap-4 text-xs">
+          <div class="text-center"><div class="text-gray-400 text-[10px]">Price</div><div class="text-white font-bold" id="l2-pool-weth-price">—</div></div>
+          <div class="text-center"><div class="text-gray-400 text-[10px]">Liquidity</div><div class="text-amber-400 font-bold" id="l2-pool-weth-liq">—</div></div>
+          <div class="text-center"><div class="text-gray-400 text-[10px]">Vol 24h</div><div class="text-cyan-400 font-bold" id="l2-pool-weth-vol">—</div></div>
+          <div class="text-center"><div class="text-gray-400 text-[10px]">Txns 24h</div><div class="text-white font-bold" id="l2-pool-weth-txns">—</div></div>
+        </div>
+        <a href="https://dexscreener.com/base/0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699" target="_blank" class="text-[10px] text-blue-400 hover:text-blue-300">BaseScan ↗</a>
+      </div>
+      <!-- Tertiary: SOL -->
+      <div class="bg-black/30 rounded-xl p-3 flex flex-wrap gap-3 items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold text-purple-400">● SOL</span>
+          <span class="text-sm font-bold text-white">wZION/SOL</span>
+          <span class="text-[10px] text-gray-400 bg-white/5 px-2 py-0.5 rounded">0.01% fee</span>
+        </div>
+        <div class="flex gap-4 text-xs">
+          <div class="text-center"><div class="text-gray-400 text-[10px]">Price</div><div class="text-white font-bold" id="l2-pool-sol-price">—</div></div>
+          <div class="text-center"><div class="text-gray-400 text-[10px]">Liquidity</div><div class="text-amber-400 font-bold" id="l2-pool-sol-liq">—</div></div>
+          <div class="text-center"><div class="text-gray-400 text-[10px]">Vol 24h</div><div class="text-cyan-400 font-bold" id="l2-pool-sol-vol">—</div></div>
+          <div class="text-center"><div class="text-gray-400 text-[10px]">Txns 24h</div><div class="text-white font-bold" id="l2-pool-sol-txns">—</div></div>
+        </div>
+        <a href="https://dexscreener.com/base/0xF38c56bbBBBC6d9FA11E7DE84bF7Bb70e1e8D2b3" target="_blank" class="text-[10px] text-blue-400 hover:text-blue-300">BaseScan ↗</a>
+      </div>
+    </div>
+
+    <!-- Contract addresses -->
+    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-2 text-[10px]">
+      <div class="bg-black/20 rounded-lg p-2 flex justify-between">
+        <span class="text-gray-500">wZION (ERC-20)</span>
+        <a href="https://basescan.org/token/0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6" target="_blank" class="text-blue-400 font-mono hover:text-blue-300">0x0c493763…</a>
+      </div>
+      <div class="bg-black/20 rounded-lg p-2 flex justify-between">
+        <span class="text-gray-500">ZIONBridge v3</span>
+        <a href="https://basescan.org/address/0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467" target="_blank" class="text-blue-400 font-mono hover:text-blue-300">0x72c8f0Dc…</a>
+      </div>
+      <div class="bg-black/20 rounded-lg p-2 flex justify-between">
+        <span class="text-gray-500">Primary Pool (USDT)</span>
+        <a href="https://basescan.org/address/0x186b46c2f04153999d44D25179cD623fD62Bfda2" target="_blank" class="text-blue-400 font-mono hover:text-blue-300">0x186b46c2…</a>
+      </div>
+      <div class="bg-black/20 rounded-lg p-2 flex justify-between">
+        <span class="text-gray-500">WETH Pool (secondary)</span>
+        <a href="https://basescan.org/address/0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699" target="_blank" class="text-blue-400 font-mono hover:text-blue-300">0x18c0DaeF…</a>
+      </div>
+    </div>
   </div>
 
   <!-- Bridge + DAO side by side -->
