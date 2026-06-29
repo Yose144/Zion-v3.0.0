@@ -11,7 +11,7 @@ import {
   CheckCircle2,
   Clock,
   XCircle,
-  HelpCircle,
+  ChevronDown,
   ArrowRight,
   Activity,
   DollarSign,
@@ -200,7 +200,7 @@ export default function CexPage() {
           </div>
 
           <h1 className="mb-4 text-4xl font-bold md:text-5xl lg:text-6xl">
-            <span className="text-gradient">CEX Listings</span>
+            <span className="text-gradient">CEX</span>
           </h1>
 
           <p className="mb-6 max-w-2xl text-lg leading-relaxed text-gray-300">
@@ -382,8 +382,8 @@ export default function CexPage() {
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">{cs ? 'Seznam Burz' : 'Exchange Listings'}</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-white">{cs ? 'Seznam Burz' : 'Exchange Listings'}</h2>
             <div className="flex gap-3 text-xs text-gray-400">
               <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-emerald-400" />{summary?.listed ?? 0} {cs ? 'listováno' : 'listed'}</span>
               <span className="flex items-center gap-1"><Clock className="h-3 w-3 text-cyan-400" />{summary?.planned ?? 0} {cs ? 'plánováno' : 'planned'}</span>
@@ -474,7 +474,7 @@ export default function CexPage() {
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="text-2xl font-bold mb-6">{cs ? 'Jak koupit ZION' : 'How to Buy ZION'}</h2>
+          <h2 className="mb-4 text-lg font-semibold text-white">{cs ? 'Jak koupit ZION' : 'How to Buy ZION'}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* DEX path */}
             <div className="zion-rainbow-card p-6" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
@@ -547,19 +547,18 @@ export default function CexPage() {
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="text-2xl font-bold mb-6">{cs ? 'Často kladené dotazy' : 'FAQ'}</h2>
-          <div className="space-y-3 max-w-3xl">
+          <h2 className="mb-4 text-lg font-semibold text-white">{cs ? 'Časté dotazy' : 'FAQ'}</h2>
+          <div className="space-y-2 max-w-3xl">
             {FAQ_ITEMS.map((item, i) => (
               <div key={i} className="zion-rainbow-card overflow-hidden" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="flex w-full items-center justify-between p-4 text-left"
+                  className="flex w-full items-center justify-between gap-4 p-4 text-left"
                 >
-                  <span className="flex items-center gap-3 text-sm font-medium text-white">
-                    <HelpCircle className="h-4 w-4 text-zion-gold shrink-0" />
+                  <span className="text-sm font-medium text-white">
                     {cs ? item.qCs : item.q}
                   </span>
-                  <span className={`text-gray-400 transition-transform ${openFaq === i ? 'rotate-180' : ''}`}>▾</span>
+                  <ChevronDown className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
                 </button>
                 <AnimatePresence>
                   {openFaq === i && (
@@ -569,7 +568,7 @@ export default function CexPage() {
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <div className="px-4 pb-4 text-xs text-gray-300 leading-relaxed pl-11">
+                      <div className="px-4 pb-4 text-xs text-gray-300 leading-relaxed">
                         {cs ? item.aCs : item.a}
                       </div>
                     </motion.div>
