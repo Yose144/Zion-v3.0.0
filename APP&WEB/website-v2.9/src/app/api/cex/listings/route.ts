@@ -104,6 +104,14 @@ const CEX_LISTINGS: CexListing[] = [
 const DEXSCREENER_API = 'https://api.dexscreener.com/latest/dex/tokens';
 const WZION_TOKEN = '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6';
 
+// Canonical Uniswap V3 pools on Base — only these are official.
+// All other wZION pools (wrong fee tiers, inverted price, dust) are filtered out.
+const CANONICAL_POOLS = new Set([
+  '0x186b46c2f04153999d44d25179cd623fd62bfda2', // wZION/USDT 0.3%  (primary)
+  '0x18c0daef295e63f1bfbc7c39e71d0fabf4600699', // wZION/WETH 1.0%  (secondary)
+  '0xf38c56bbbbbc6d9fa11e7de84bf7bb70e1e8d2b3', // wZION/SOL  0.01% (tertiary)
+]);
+
 interface DexPair {
   pairAddress: string;
   dexId: string;
@@ -139,10 +147,11 @@ export async function GET() {
   try {
     const dexPairs = await fetchDexData();
 
-    // Filter to Base chain pairs only
+    // Filter to canonical Base chain pairs only — exclude rogue/dust pools
     const basePairs = dexPairs.filter(p =>
       p.dexId === 'uniswap' &&
-      p.baseToken?.address?.toLowerCase() === WZION_TOKEN.toLowerCase()
+      p.baseToken?.address?.toLowerCase() === WZION_TOKEN.toLowerCase() &&
+      CANONICAL_POOLS.has(p.pairAddress?.toLowerCase() ?? '')
     );
 
     // Aggregate DEX stats
@@ -158,10 +167,20 @@ export async function GET() {
           }, 0),
           total_buys_24h: basePairs.reduce((acc, p) => acc + (p.txns?.h24?.buys ?? 0), 0),
           total_sells_24h: basePairs.reduce((acc, p) => acc + (p.txns?.h24?.sells ?? 0), 0),
-          best_price_usd: basePairs
-            .map(p => parseFloat(p.priceUsd ?? '0'))
-            .filter(p => p > 0)
-            .sort((a, b) => b - a)[0] ?? 0,
+          // Best price: prefer WETH pair (most liquid), fallback to USDT, then SOL
+          best_price_usd: (() => {
+            const order = [
+              '0x18c0daef295e63f1bfbc7c39e71d0fabf4600699', // WETH
+              '0x186b46c2f04153999d44d25179cd623fd62bfda2', // USDT
+              '0xf38c56bbbbbc6d9fa11e7de84bf7bb70e1e8d2b3', // SOL
+            ];
+            for (const addr of order) {
+              const p = basePairs.find(x => x.pairAddress?.toLowerCase() === addr);
+              const price = parseFloat(p?.priceUsd ?? '0');
+              if (price > 0) return price;
+            }
+            return 0;
+          })(),
           pairs_detail: basePairs.map(p => ({
             address: p.pairAddress,
             dex: p.dexId,
