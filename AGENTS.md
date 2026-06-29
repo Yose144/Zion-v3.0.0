@@ -63,6 +63,7 @@ The following paths and concepts are **L1 consensus-critical** and require **exp
 | **P2P protocol** | `V3/L1/core/src/p2p.rs`, `peer.rs` | Wire format, handshake, propagation rules |
 | **Mining / PoW** | `V3/L1/cosmic-harmony/src/` (all algorithms) | Hash functions, scratchpad sizes, algorithm parameters |
 | **Canonical addresses** | `MAINNET_CANONICAL_*` constants anywhere | Humanitarian, Issobella, pool-fee, default-miner wallets |
+| **Bridge vault seed** | `V3/L1/core/src/crypto.rs:BRIDGE_VAULT_SEED` | Must stay `"ZION Bridge Vault V3 Mainnet"` — live mainnet vault with ~100M ZION |
 
 ### Agent rules for L1
 
@@ -736,9 +737,26 @@ If pool stops accepting connections:
 
 **Next Steps:**
 - Fix auto-backup script to capture live DB state
-- Complete bridge validator 3/5 setup
+- ~~Complete bridge validator 3/5 setup~~ → ✅ 5/5 validators configured (2026-06-29)
+- ~~Reverse bridge (EVM→L1)~~ → ✅ FULLY OPERATIONAL — E2E test passed (2026-06-29)
+- Deploy ZIONStaking + ZIONFarm on Base Mainnet (needs ETH for gas)
 - External audit of genesis configuration
 - **MAINNET LAUNCH READY** — All critical systems operational
+
+### Bridge Vault — Canonical Reference (IMPORTANT)
+
+**Live vault:** `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0` (~100M ZION locked)
+**Seed:** `"ZION Bridge Vault V3 Mainnet"` (in `V3/L1/core/src/crypto.rs:BRIDGE_VAULT_SEED`)
+**DO NOT change this seed** — it is tied to the live mainnet vault with real funds.
+
+⚠️ In commit `4b94181f` the seed was accidentally changed to `"...v2_2026-06-03-GENESIS-RESET"`,
+   generating an empty address `zion106v7v0...` and breaking `submitBridgeUnlock`.
+   Fixed in commit `e6175b5b` (2026-06-29). If you ever see vault balance = 0 in getBridgeVaultBalance,
+   re-check that `BRIDGE_VAULT_SEED` = `"ZION Bridge Vault V3 Mainnet"`.
+
+**Edge bridge-validators drop-in:** `/etc/systemd/system/zion-edge-node1.service.d/bridge-validators.conf`
+- `ZION_BRIDGE_VALIDATOR_PUBKEYS` = 5 compressed secp256k1 pubkeys (comma-separated)
+- `ZION_BRIDGE_VALIDATOR_THRESHOLD` = `5`
 
 ---
 

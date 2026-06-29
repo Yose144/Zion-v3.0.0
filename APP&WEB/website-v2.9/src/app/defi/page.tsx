@@ -113,6 +113,9 @@ export default function DefiPage() {
     l1_locks_detected: number;
     l1_locks_finalized: number;
     evm_mints_confirmed: number;
+    evm_burns_detected: number;
+    l1_unlocks_submitted: number;
+    l1_unlocks_confirmed: number;
     last_l1_height: number;
     errors_total: number;
   } | null>(null);
@@ -603,6 +606,16 @@ export default function DefiPage() {
                     <p className="text-[10px] text-gray-500">{cs ? 'potvrzeno' : 'confirmed'}</p>
                   </div>
                   <div className="zion-rainbow-sub p-3" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+                    <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'L1 Odemčeno' : 'L1 Unlocks'}</p>
+                    <p className="text-base font-semibold text-white mt-1 flex items-center gap-1">
+                      {bridgeStatus?.l1_unlocks_confirmed ?? '—'}
+                      {bridgeStatus && (bridgeStatus.l1_unlocks_confirmed ?? 0) > 0 && (
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                      )}
+                    </p>
+                    <p className="text-[10px] text-gray-500">{cs ? 'potvrzeno' : 'confirmed'}</p>
+                  </div>
+                  <div className="zion-rainbow-sub p-3" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                     <p className="text-[10px] uppercase tracking-wider text-gray-500">L1 {cs ? 'blok' : 'block'}</p>
                     <p className="text-base font-semibold text-white mt-1">{bridgeStatus?.last_l1_height ?? '—'}</p>
                     <p className="text-[10px] text-gray-500">{cs ? 'poslední scan' : 'last scan'}</p>
@@ -617,6 +630,11 @@ export default function DefiPage() {
                   <span>{cs ? 'Vault' : 'Vault'}: <span className="text-gray-400 font-mono">zion1w0r0…w0t0</span></span>
                   <span className="text-gray-600">·</span>
                   <span>{cs ? 'Finality: 60 bloků' : 'Finality: 60 blocks'}</span>
+                  <span className="text-gray-600">·</span>
+                  <span className="inline-flex items-center gap-1 text-emerald-400">
+                    <CheckCircle2 className="h-3 w-3" />
+                    {cs ? 'Reverse bridge ověřen E2E (2026-06-29)' : 'Reverse bridge E2E verified (2026-06-29)'}
+                  </span>
                 </div>
               </div>
 
