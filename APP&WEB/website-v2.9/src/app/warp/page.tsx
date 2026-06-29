@@ -35,7 +35,7 @@ const getCorridorRows = (cs: boolean): { title: string; subtitle: string; live: 
     live: true,
     entries: [
       { label: cs ? 'Validátoři' : 'Validators', value: cs ? '5/5 Guardian validators aktivních · quorum 2/5 · replay-safe' : '5/5 Guardian validators active · quorum 2/5 · replay-safe' },
-      { label: cs ? 'Stav' : 'Status', value: cs ? 'Živě na Base Mainnet (chain 8453) · wZION/WETH + wZION/USDC Uniswap V3 pools aktivní' : 'Live on Base Mainnet (chain 8453) · wZION/WETH + wZION/USDC Uniswap V3 pools active' },
+      { label: cs ? 'Stav' : 'Status', value: cs ? 'Živě na Base Mainnet (chain 8453) · wZION/USDT + wZION/WETH + wZION/SOL Uniswap V3 pools aktivní' : 'Live on Base Mainnet (chain 8453) · wZION/USDT + wZION/WETH + wZION/SOL Uniswap V3 pools active' },
       { label: cs ? 'Integrace' : 'Integration', value: cs ? 'EVM peněženky, DeFi swap, DAO treasury, LP stakes, CEX listings' : 'EVM wallets, DeFi swap, DAO treasury, LP stakes, CEX listings' },
     ],
   },
@@ -108,7 +108,7 @@ const getSwapPairs = (cs: boolean) => [
     bg: 'bg-cyan-500/10',
     border: 'border-cyan-500/20',
     status: 'live',
-    desc: cs ? 'Uniswap V3 na Base — wZION/WETH pool (1% fee) + wZION/USDC pool (0.3% fee)' : 'Uniswap V3 on Base — wZION/WETH pool (1% fee) + wZION/USDC pool (0.3% fee)',
+    desc: cs ? 'Uniswap V3 na Base — wZION/USDT (0.3% fee) + wZION/WETH (1% fee) + wZION/SOL (0.01% fee)' : 'Uniswap V3 on Base — wZION/USDT (0.3% fee) + wZION/WETH (1% fee) + wZION/SOL (0.01% fee)',
     eta: cs ? 'Dostupné nyní' : 'Available now',
   },
   {

@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 
 const HEADERS = { 'Cache-Control': 'no-store, max-age=0' };
 
-const RPC_URL = process.env.BASE_RPC_URL || 'https://mainnet.base.org';
+const RPC_URL = process.env.BASE_RPC_URL || 'https://base.publicnode.com';
 
 // Minimal contract interfaces for on-chain reads
 const CALLS = {
@@ -19,14 +19,16 @@ const CALLS = {
   liquidity:      '0x1a686502', // liquidity()
 };
 
-// Updated 2026-06-29 — new bridge + pool addresses
+// Updated 2026-08-18 — active bridge + pool addresses
 const CONTRACTS: Record<string, string> = {
   wZION:          '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
   WETH:           '0x4200000000000000000000000000000000000006',
-  USDC:           '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+  USDT:           '0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2',
+  SOL:            '0x311935Cd80B76769bF2ecC9D8Ab7635b2139cf82',
   ZIONBridge:     '0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467',
   UniV3PoolWETH:  '0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699', // wZION/WETH 1%
-  UniV3PoolUSDC:  '0x5eBdC6E1D516f42EEB54f14faCF8715AbD5B9d8d', // wZION/USDC 0.3%
+  UniV3PoolUSDT:  '0x186b46c2f04153999d44D25179cD623fD62Bfda2', // wZION/USDT 0.3% — primary
+  UniV3PoolSOL:   '0xF38c56bbBBBC6d9FA11E7DE84bF7Bb70e1e8D2b3', // wZION/SOL 0.01%
   UniV3Router:    '0x2626664c2603336E57B271c5C0b26F421741e481',
   UniV3Factory:   '0x33128a8fC17869897dcE68Ed026d694621f6FDfD',
 };
@@ -113,6 +115,25 @@ function decodeChainlinkAnswer(hex: string): number {
   }
 }
 
+function decodeSqrtPriceX96(hex: string | null): bigint | null {
+  if (!hex || hex === '0x') return null;
+  try {
+    const clean = hex.startsWith('0x') ? hex.slice(2) : hex;
+    if (clean.length < 64) return null;
+    return BigInt('0x' + clean.slice(0, 64));
+  } catch { return null; }
+}
+
+function sqrtPriceToUsdPerWzion(sqrtPriceX96: bigint, token1Usd: number, token1Decimals: number, token0Decimals: number): number {
+  const Q96 = 2n ** 96n;
+  const sqrtNum = Number(sqrtPriceX96) / Number(Q96);
+  const rawPrice = sqrtNum * sqrtNum; // token1 / token0 in raw units
+  // human price = raw * 10^(token0Decimals - token1Decimals)
+  const decimalAdjustment = 10 ** (token0Decimals - token1Decimals);
+  const humanPrice = rawPrice * decimalAdjustment;
+  return humanPrice * token1Usd;
+}
+
 export async function GET() {
   try {
     const [
@@ -121,8 +142,10 @@ export async function GET() {
       validatorCountHex,
       slot0WethHex,
       liquidityWethHex,
-      slot0UsdcHex,
-      liquidityUsdcHex,
+      slot0UsdtHex,
+      liquidityUsdtHex,
+      slot0SolHex,
+      liquiditySolHex,
       wethUsdHex,
     ] = await Promise.all([
       ethCall(CONTRACTS.wZION, CALLS.totalSupply),
@@ -130,52 +153,23 @@ export async function GET() {
       ethCall(CONTRACTS.ZIONBridge, CALLS.validatorCount),
       ethCall(CONTRACTS.UniV3PoolWETH, CALLS.slot0),
       ethCall(CONTRACTS.UniV3PoolWETH, CALLS.liquidity),
-      ethCall(CONTRACTS.UniV3PoolUSDC, CALLS.slot0),
-      ethCall(CONTRACTS.UniV3PoolUSDC, CALLS.liquidity),
+      ethCall(CONTRACTS.UniV3PoolUSDT, CALLS.slot0),
+      ethCall(CONTRACTS.UniV3PoolUSDT, CALLS.liquidity),
+      ethCall(CONTRACTS.UniV3PoolSOL, CALLS.slot0),
+      ethCall(CONTRACTS.UniV3PoolSOL, CALLS.liquidity),
       ethCall(CHAINLINK_WETH_USD, LATEST_ROUND_DATA),
     ]);
 
-    // Parse WETH pool
-    let wethPoolActive = false;
-    let wethTick = 0;
-    let wethLiquidity = 0n;
-    let wethPriceUsd = 0.0002; // seed fallback
-    if (slot0WethHex && slot0WethHex !== '0x') {
-      try {
-        const clean = slot0WethHex.startsWith('0x') ? slot0WethHex.slice(2) : slot0WethHex;
-        if (clean.length >= 64) {
-          const sqrtPriceX96 = BigInt('0x' + clean.slice(0, 64));
-          wethTick = decodeSlot0Tick(slot0WethHex);
-          wethPoolActive = sqrtPriceX96 > 0n;
-          if (wethPoolActive) {
-            const Q96 = 2n ** 96n;
-            const sqrtNum = Number(sqrtPriceX96) / Number(Q96);
-            const wethPerWzion = sqrtNum * sqrtNum;
-            const wethUsd = wethUsdHex ? decodeChainlinkAnswer(wethUsdHex) : 2000;
-            wethPriceUsd = wethPerWzion * wethUsd;
-          }
-        }
-      } catch { /* decode failed */ }
-    }
-    wethLiquidity = liquidityWethHex ? decodeUint128(liquidityWethHex) : 0n;
-
-    // Parse USDC pool
-    let usdcPoolActive = false;
-    let usdcTick = 0;
-    let usdcLiquidity = 0n;
-    if (slot0UsdcHex && slot0UsdcHex !== '0x') {
-      try {
-        const clean = slot0UsdcHex.startsWith('0x') ? slot0UsdcHex.slice(2) : slot0UsdcHex;
-        if (clean.length >= 64) {
-          const sqrtPriceX96 = BigInt('0x' + clean.slice(0, 64));
-          usdcTick = decodeSlot0Tick(slot0UsdcHex);
-          usdcPoolActive = sqrtPriceX96 > 0n;
-        }
-      } catch { /* decode failed */ }
-    }
-    usdcLiquidity = liquidityUsdcHex ? decodeUint128(liquidityUsdcHex) : 0n;
-
     const wethUsd = wethUsdHex ? decodeChainlinkAnswer(wethUsdHex) : 2000;
+    const solUsd = 73.44; // fallback until Chainlink SOL/USD feed is wired
+
+    const wethSqrt = decodeSqrtPriceX96(slot0WethHex);
+    const usdtSqrt = decodeSqrtPriceX96(slot0UsdtHex);
+    const solSqrt = decodeSqrtPriceX96(slot0SolHex);
+
+    const wethPoolActive = wethSqrt !== null && wethSqrt > 0n;
+    const usdtPoolActive = usdtSqrt !== null && usdtSqrt > 0n;
+    const solPoolActive = solSqrt !== null && solSqrt > 0n;
 
     return NextResponse.json({
       ok: true,
@@ -204,25 +198,36 @@ export async function GET() {
           validatorCount: hexToNumber(validatorCountHex),
         },
         pools: {
+          wzion_usdt: {
+            address: CONTRACTS.UniV3PoolUSDT,
+            fee: 3000,
+            feeLabel: '0.3%',
+            active: usdtPoolActive,
+            tick: usdtPoolActive ? decodeSlot0Tick(slot0UsdtHex!) : 0,
+            liquidity: (liquidityUsdtHex ? decodeUint128(liquidityUsdtHex) : 0n).toString(),
+            price_usd: usdtSqrt ? sqrtPriceToUsdPerWzion(usdtSqrt, 1, 6, 18) : 0.0002,
+          },
           wzion_weth: {
             address: CONTRACTS.UniV3PoolWETH,
             fee: 10000,
             feeLabel: '1%',
             active: wethPoolActive,
-            tick: wethTick,
-            liquidity: wethLiquidity.toString(),
-            price_usd: wethPriceUsd,
+            tick: wethPoolActive ? decodeSlot0Tick(slot0WethHex!) : 0,
+            liquidity: (liquidityWethHex ? decodeUint128(liquidityWethHex) : 0n).toString(),
+            price_usd: wethSqrt ? sqrtPriceToUsdPerWzion(wethSqrt, wethUsd, 18, 18) : 0.0002,
           },
-          wzion_usdc: {
-            address: CONTRACTS.UniV3PoolUSDC,
-            fee: 3000,
-            feeLabel: '0.3%',
-            active: usdcPoolActive,
-            tick: usdcTick,
-            liquidity: usdcLiquidity.toString(),
+          wzion_sol: {
+            address: CONTRACTS.UniV3PoolSOL,
+            fee: 100,
+            feeLabel: '0.01%',
+            active: solPoolActive,
+            tick: solPoolActive ? decodeSlot0Tick(slot0SolHex!) : 0,
+            liquidity: (liquiditySolHex ? decodeUint128(liquiditySolHex) : 0n).toString(),
+            price_usd: solSqrt ? sqrtPriceToUsdPerWzion(solSqrt, solUsd, 9, 18) : 0.0002,
           },
         },
         weth_usd: wethUsd,
+        sol_usd: solUsd,
       },
       fetchedAt: Date.now(),
     }, { headers: HEADERS });

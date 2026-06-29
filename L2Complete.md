@@ -14,7 +14,8 @@
   - OpenZeppelin imports fixed for v4.x (`security/` not `utils/`)
 - **Roles configured:**
   - `BRIDGE_ROLE` on wZION granted to new bridge, revoked from previous (`0x5a1Df5961C166a79E0817329e2807Aac63Db57F5`)
-  - `VALIDATOR_ROLE` + `GUARDIAN_ROLE` on bridge for all 5 validators
+  - `VALIDATOR_ROLE` on bridge for all 5 validators (required for `submitLockProof` / `confirmBurnRelease`)
+  - `GUARDIAN_ROLE` + `DEFAULT_ADMIN_ROLE` on bridge only for validator-1 deployer (`0xdde17506...`) — controls pause/unpause and admin functions
   - Validators: `0xdde17506...`, `0x24d98684...`, `0x665c55ed...`, `0x8e644b3e...`, `0x7e0D2eD7...`
   - Threshold: 5/5
 
@@ -125,10 +126,19 @@
 - DEAD pools (cannot be destroyed): wZION/WETH 0.3%, wZION/USDC 0.3%, wZION/SOL 0.3%, wZION/SOL 1.0%
 - Deployer: ~99.73M wZION, 0.021 ETH, 0.002 SOL, 0 WETH, 0 USDT
 
+### Liquidity Plan — Focus on USDT
+- **Primary:** wZION/USDT 0.3% — target to grow to **500K wZION + 100 USDT** ($100+ liquidity)
+  - Stablecoin pair = best for real trading and integrations
+  - Current: 100K wZION + 3.14 USDT (~$23)
+- **Secondary:** wZION/WETH 1.0% — maintain wide position, add if more WETH available
+- **Tertiary:** wZION/SOL 0.01% — keep as-is, do not add more (volatile, expensive to rebalance)
+- **Dead pools:** leave at 0 liquidity; do not deposit again
+
 ### Remaining Tasks
 - [ ] Burn NFT #5431714 (depleted, liq=0 — cleanup)
-- [ ] Add more liquidity when more tokens acquired
-- [ ] Update website /api/defi/pools to include USDT + SOL pools
+- [ ] Add USDT liquidity to primary pool (target 500K wZION + 100 USDT)
+- [ ] Update website /api/defi/pools and /api/defi/status to include USDT + SOL pools
+- [ ] Update DeFi dashboard UI to prioritize USDT pool
 - [ ] Verify on DexScreener
 - [ ] Monitor bridge relayer continues processing new locks
 

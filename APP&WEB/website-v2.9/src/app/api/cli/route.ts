@@ -36,6 +36,7 @@ import {
   ISSOBELLA_FUND_PCT,
   MINER_SHARE_PCT,
 } from '@/lib/constants';
+import { CONTRACTS as DEFI_CONTRACTS } from '@/lib/defi-contracts';
 import {
   SITE_VERSION,
   SITE_RUNTIME_VERSION,
@@ -1561,22 +1562,22 @@ function formatDefiPrice(data: any): string {
   const tvl = data.tvl ?? {};
   const liq = data.liquidity ?? '0';
   const liqNum = Number(liq);
+  const pool = data.pool ?? '—';
+  const token1Symbol = pool === DEFI_CONTRACTS.UniV3PoolUSDT ? 'USDT' : pool === DEFI_CONTRACTS.UniV3PoolWETH ? 'WETH' : pool === DEFI_CONTRACTS.UniV3PoolSOL ? 'SOL' : 'TOKEN';
   return [
     'ZION Price',
     '═══════════════════════════════════════════════════════════',
     `  Network:        ${data.network ?? '—'} (chainId ${data.chainId ?? '—'})`,
     `  Source:         ${data.source ?? '—'}`,
-    `  Pool:           ${data.pool ?? '—'}`,
+    `  Pool:           ${pool}`,
     '',
     `  ZION/USD:       $${formatNum(p.usd_per_wzion, 6)}`,
-    `  ZION/ETH:       ${formatNum(p.weth_per_wzion, 8)}`,
-    `  ETH/ZION:       ${formatNum(p.wzion_per_weth, 2)}`,
     `  ETH/USD:        $${formatNum(p.weth_usd, 2)}`,
     `  Tick:           ${p.tick ?? '—'}`,
     '',
     '── Liquidity ──',
     `  Pool liquidity: ${liqNum > 0 ? formatNum(liqNum, 0) : '0 (inactive)'}`,
-    `  TVL (WETH):     ${formatNum(tvl.weth ?? 0, 6)} WETH`,
+    `  TVL (${token1Symbol}): ${formatNum(tvl.token1 ?? tvl.weth ?? 0, 6)} ${token1Symbol}`,
     `  TVL (wZION):    ${formatNum(tvl.wzion ?? 0, 2)} wZION`,
     `  TVL (USD):      $${formatNum(tvl.usd ?? 0, 2)}`,
     '',
@@ -1588,12 +1589,35 @@ function formatDefiPools(data: any): string {
   const pools = data.pools ?? {};
   const summary = data.summary ?? {};
   const weth = pools.wzion_weth ?? {};
-  const usdc = pools.wzion_usdc ?? {};
+  const usdt = pools.wzion_usdt ?? {};
+  const sol = pools.wzion_sol ?? {};
   const lines: string[] = [
     'Uniswap V3 Pool Stats',
     '═══════════════════════════════════════════════════════════',
     `  Network:        ${data.network ?? '—'} (chainId ${data.chainId ?? '—'})`,
     `  ETH/USD:        $${formatNum(data.weth_usd ?? 0, 2)}`,
+    `  SOL/USD:        $${formatNum(data.sol_usd ?? 0, 2)}`,
+    '',
+    '── wZION/USDT (0.3% fee) — PRIMARY ──',
+    `  Address:        ${usdt.address ?? '—'}`,
+    `  Active:         ${usdt.active ? 'YES' : 'NO'}`,
+    `  Liquidity:      ${usdt.liquidity ? formatNum(Number(usdt.liquidity), 0) : '0'}`,
+    `  Tick:           ${usdt.tick ?? '—'}`,
+    `  Price (USDT):   ${formatNum(usdt.price?.token1_per_token0 ?? 0, 6)}`,
+    `  Price (USD):    $${formatNum(usdt.price?.usd_per_wzion ?? 0, 6)}`,
+    `  wZION in pool:  ${formatNum(usdt.balances?.token0 ?? 0, 2)}`,
+    `  USDT in pool:   ${formatNum(usdt.balances?.token1 ?? 0, 2)}`,
+    `  TVL (USD):      $${formatNum(usdt.tvl?.usd ?? 0, 2)}`,
+    `  NFT positions:  ${usdt.nft_positions?.length ?? 0}`,
+  ];
+
+  if (usdt.nft_positions) {
+    for (const pos of usdt.nft_positions) {
+      lines.push(`    #${pos.id}: ${pos.type} (${pos.tickLower} to ${pos.tickUpper})`);
+    }
+  }
+
+  lines.push(
     '',
     '── wZION/WETH (1% fee) ──',
     `  Address:        ${weth.address ?? '—'}`,
@@ -1606,7 +1630,7 @@ function formatDefiPools(data: any): string {
     `  WETH in pool:   ${formatNum(weth.balances?.token1 ?? 0, 6)}`,
     `  TVL (USD):      $${formatNum(weth.tvl?.usd ?? 0, 2)}`,
     `  NFT positions:  ${weth.nft_positions?.length ?? 0}`,
-  ];
+  );
 
   if (weth.nft_positions) {
     for (const pos of weth.nft_positions) {
@@ -1616,21 +1640,21 @@ function formatDefiPools(data: any): string {
 
   lines.push(
     '',
-    '── wZION/USDC (0.3% fee) ──',
-    `  Address:        ${usdc.address ?? '—'}`,
-    `  Active:         ${usdc.active ? 'YES' : 'NO'}`,
-    `  Liquidity:      ${usdc.liquidity ? formatNum(Number(usdc.liquidity), 0) : '0'}`,
-    `  Tick:           ${usdc.tick ?? '—'}`,
-    `  Price (USDC):   ${formatNum(usdc.price?.token1_per_token0 ?? 0, 6)}`,
-    `  Price (USD):    $${formatNum(usdc.price?.usd_per_wzion ?? 0, 6)}`,
-    `  wZION in pool:  ${formatNum(usdc.balances?.token0 ?? 0, 2)}`,
-    `  USDC in pool:   ${formatNum(usdc.balances?.token1 ?? 0, 2)}`,
-    `  TVL (USD):      $${formatNum(usdc.tvl?.usd ?? 0, 2)}`,
-    `  NFT positions:  ${usdc.nft_positions?.length ?? 0}`,
+    '── wZION/SOL (0.01% fee) ──',
+    `  Address:        ${sol.address ?? '—'}`,
+    `  Active:         ${sol.active ? 'YES' : 'NO'}`,
+    `  Liquidity:      ${sol.liquidity ? formatNum(Number(sol.liquidity), 0) : '0'}`,
+    `  Tick:           ${sol.tick ?? '—'}`,
+    `  Price (SOL):    ${formatNum(sol.price?.token1_per_token0 ?? 0, 8)}`,
+    `  Price (USD):    $${formatNum(sol.price?.usd_per_wzion ?? 0, 6)}`,
+    `  wZION in pool:  ${formatNum(sol.balances?.token0 ?? 0, 2)}`,
+    `  SOL in pool:    ${formatNum(sol.balances?.token1 ?? 0, 6)}`,
+    `  TVL (USD):      $${formatNum(sol.tvl?.usd ?? 0, 2)}`,
+    `  NFT positions:  ${sol.nft_positions?.length ?? 0}`,
   );
 
-  if (usdc.nft_positions) {
-    for (const pos of usdc.nft_positions) {
+  if (sol.nft_positions) {
+    for (const pos of sol.nft_positions) {
       lines.push(`    #${pos.id}: ${pos.type} (${pos.tickLower} to ${pos.tickUpper})`);
     }
   }

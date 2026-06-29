@@ -1,9 +1,10 @@
 /**
  * ZION DeFi — Pool Stats API
  *
- * Returns detailed stats for both Uniswap V3 pools:
- * - wZION/WETH (1% fee) — active two-sided liquidity
- * - wZION/USDC (0.3% fee) — single-sided (above price)
+ * Returns detailed stats for all active Uniswap V3 pools on Base:
+ * - wZION/USDT (0.3% fee) — primary stablecoin pair
+ * - wZION/WETH (1% fee) — secondary volatile pair
+ * - wZION/SOL (0.01% fee) — tertiary volatile pair
  *
  * For each pool: slot0 (sqrtPriceX96, tick), liquidity, fee, token balances,
  * TVL estimate, and NFT position info.
@@ -13,10 +14,24 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 
-const RPC_URL = process.env.BASE_RPC_URL || 'https://mainnet.base.org';
+const RPC_URL = process.env.BASE_RPC_URL || 'https://base.publicnode.com';
 
-// Pool addresses (Base Mainnet — created 2026-06-29)
+// Pool addresses (Base Mainnet — updated 2026-08-18)
 const POOLS = {
+  wzion_usdt: {
+    address: '0x186b46c2f04153999d44D25179cD623fD62Bfda2',
+    fee: 3000,
+    feeLabel: '0.3%',
+    token0: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6', // wZION
+    token1: '0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2',  // USDT
+    token0Symbol: 'wZION',
+    token1Symbol: 'USDT',
+    token0Decimals: 18,
+    token1Decimals: 6,
+    nftPositions: [
+      { id: 5434637, type: 'two-sided', tickLower: -366600, tickUpper: -356580, wzion: 100_000, usdt: 3.14 },
+    ],
+  },
   wzion_weth: {
     address: '0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699',
     fee: 10000,
@@ -28,27 +43,29 @@ const POOLS = {
     token0Decimals: 18,
     token1Decimals: 18,
     nftPositions: [
-      { id: 5431093, type: 'single-sided', tickLower: -161000, tickUpper: -160000, wzion: 1_000_000 },
-      { id: 5431714, type: 'two-sided', tickLower: -162000, tickUpper: -160000, wzion: 100_000, weth: 0.0069 },
+      { id: 5431714, type: 'depleted', tickLower: -162000, tickUpper: -160000, wzion: 0, weth: 0 },
+      { id: 5434576, type: 'two-sided', tickLower: -164000, tickUpper: -158000, wzion: 200_000, weth: 0.020 },
     ],
   },
-  wzion_usdc: {
-    address: '0x5eBdC6E1D516f42EEB54f14faCF8715AbD5B9d8d',
-    fee: 3000,
-    feeLabel: '0.3%',
+  wzion_sol: {
+    address: '0xF38c56bbBBBC6d9FA11E7DE84bF7Bb70e1e8D2b3',
+    fee: 100,
+    feeLabel: '0.01%',
     token0: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6', // wZION
-    token1: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',  // USDC
+    token1: '0x311935Cd80B76769bF2ecC9D8Ab7635b2139cf82',  // SOL
     token0Symbol: 'wZION',
-    token1Symbol: 'USDC',
+    token1Symbol: 'SOL',
     token0Decimals: 18,
-    token1Decimals: 6,
+    token1Decimals: 9,
     nftPositions: [
-      { id: 5431091, type: 'single-sided', tickLower: -361440, tickUpper: -360000, wzion: 1_000_000 },
+      { id: 5434872, type: 'two-sided', tickLower: -340387, tickUpper: -330387, wzion: 100_000, sol: 0.272 },
     ],
   },
 };
 
 const CHAINLINK_WETH_USD = '0x71041dddad3595F9CEdDCDcF2012034b68dF6aFA';
+// SOL/USD fallback until Chainlink feed is wired in
+const SOL_USD_FALLBACK = 73.44;
 
 // Function selectors
 const SLOT0     = '0x3850c7bd';
@@ -97,7 +114,7 @@ function encodeAddress(addr: string): string {
   return addr.toLowerCase().replace('0x', '').padStart(64, '0');
 }
 
-async function getPoolStats(poolConfig: typeof POOLS[keyof typeof POOLS], wethUsd: number) {
+async function getPoolStats(poolConfig: typeof POOLS[keyof typeof POOLS], wethUsd: number, solUsd: number) {
   const poolAddr = poolConfig.address;
 
   // Fetch slot0, liquidity, and token balances in parallel
@@ -132,12 +149,17 @@ async function getPoolStats(poolConfig: typeof POOLS[keyof typeof POOLS], wethUs
 
   if (sqrtPriceX96 > 0n) {
     const sqrtNum = Number(sqrtPriceX96) / Number(Q96);
-    priceToken1PerToken0 = sqrtNum * sqrtNum;
+    // Raw price is token1/token0 in raw units; adjust for decimals
+    // human price = raw * 10^(token0Decimals - token1Decimals)
+    const decimalAdjustment = 10 ** (poolConfig.token0Decimals - poolConfig.token1Decimals);
+    priceToken1PerToken0 = sqrtNum * sqrtNum * decimalAdjustment;
 
     if (poolConfig.token1Symbol === 'WETH') {
       priceUsd = priceToken1PerToken0 * wethUsd;
-    } else if (poolConfig.token1Symbol === 'USDC') {
-      priceUsd = priceToken1PerToken0; // USDC ≈ $1
+    } else if (poolConfig.token1Symbol === 'USDT') {
+      priceUsd = priceToken1PerToken0; // USDT ≈ $1
+    } else if (poolConfig.token1Symbol === 'SOL') {
+      priceUsd = priceToken1PerToken0 * solUsd;
     }
   }
 
@@ -149,8 +171,10 @@ async function getPoolStats(poolConfig: typeof POOLS[keyof typeof POOLS], wethUs
   let tvlUsd = 0;
   if (poolConfig.token1Symbol === 'WETH') {
     tvlUsd = (balance1Human * wethUsd) + (balance0Human * priceUsd);
-  } else if (poolConfig.token1Symbol === 'USDC') {
+  } else if (poolConfig.token1Symbol === 'USDT') {
     tvlUsd = balance1Human + (balance0Human * priceUsd);
+  } else if (poolConfig.token1Symbol === 'SOL') {
+    tvlUsd = (balance1Human * solUsd) + (balance0Human * priceUsd);
   }
 
   return {
@@ -189,26 +213,37 @@ export async function GET() {
     try { wethUsd = decodeChainlinkAnswer(wethUsdHex); } catch { /* keep fallback */ }
   }
 
-  // Fetch both pool stats in parallel
-  const [wethPool, usdcPool] = await Promise.all([
-    getPoolStats(POOLS.wzion_weth, wethUsd),
-    getPoolStats(POOLS.wzion_usdc, wethUsd),
+  // SOL/USD fallback until Chainlink feed is wired in
+  const solUsd = SOL_USD_FALLBACK;
+
+  // Fetch all three pool stats in parallel
+  const [usdtPool, wethPool, solPool] = await Promise.all([
+    getPoolStats(POOLS.wzion_usdt, wethUsd, solUsd),
+    getPoolStats(POOLS.wzion_weth, wethUsd, solUsd),
+    getPoolStats(POOLS.wzion_sol, wethUsd, solUsd),
   ]);
+
+  const pools = {
+    wzion_usdt: usdtPool,
+    wzion_weth: wethPool,
+    wzion_sol: solPool,
+  };
+
+  const allPoolStats = [usdtPool, wethPool, solPool];
 
   return NextResponse.json({
     ok: true,
     network: 'base-mainnet',
     chainId: 8453,
     weth_usd: wethUsd,
-    pools: {
-      wzion_weth: wethPool,
-      wzion_usdc: usdcPool,
-    },
+    sol_usd: solUsd,
+    primary_pool: 'wzion_usdt',
+    pools,
     summary: {
-      total_tvl_usd: wethPool.tvl.usd + usdcPool.tvl.usd,
-      total_wzion_liquidity: wethPool.balances.token0 + usdcPool.balances.token0,
-      active_pools: (wethPool.active ? 1 : 0) + (usdcPool.active ? 1 : 0),
-      total_nft_positions: wethPool.nft_positions.length + usdcPool.nft_positions.length,
+      total_tvl_usd: allPoolStats.reduce((sum, p) => sum + p.tvl.usd, 0),
+      total_wzion_liquidity: allPoolStats.reduce((sum, p) => sum + p.balances.token0, 0),
+      active_pools: allPoolStats.filter((p) => p.active).length,
+      total_nft_positions: allPoolStats.reduce((sum, p) => sum + p.nft_positions.length, 0),
     },
     fetchedAt: Date.now(),
   }, {
