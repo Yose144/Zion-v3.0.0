@@ -27,7 +27,7 @@ import * as fs from "fs";
 // Known wZION addresses per network
 const WZION_ADDRESSES: Record<string, string> = {
   "base-sepolia": "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6",
-  "base":         "",  // TODO: set after mainnet deploy
+  "base":         "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6", // Base Mainnet — deployed 2026-06-24
 };
 
 async function main() {
