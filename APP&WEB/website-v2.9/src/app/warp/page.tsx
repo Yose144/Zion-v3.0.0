@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { useLang } from '@/contexts/LanguageContext';
 import {
   Activity,
@@ -10,8 +11,10 @@ import {
   CheckCircle2,
   CircuitBoard,
   CloudLightning,
+  Copy,
   Globe2,
   Lock,
+  Search,
   ShieldCheck,
   Sparkles,
   Zap,
@@ -170,6 +173,48 @@ export default function WarpPage() {
   const onboarding = getOnboarding(cs);
   const swapPairs = getSwapPairs(cs);
   const roadmap = getRoadmap(cs);
+
+  const [warpChain, setWarpChain] = useState('ethereum');
+  const [warpRecipient, setWarpRecipient] = useState('');
+  const [warpAmount, setWarpAmount] = useState('');
+  const [warpMemo, setWarpMemo] = useState('');
+  const [warpCopied, setWarpCopied] = useState(false);
+  const [warpTransferId, setWarpTransferId] = useState('');
+  const [warpTransferStatus, setWarpTransferStatus] = useState<any>(null);
+  const [warpLoading, setWarpLoading] = useState(false);
+
+  useEffect(() => {
+    if (warpRecipient) {
+      setWarpMemo(`WARP:1:${warpChain}:${warpRecipient}`);
+    } else {
+      setWarpMemo('');
+    }
+  }, [warpChain, warpRecipient]);
+
+  const copyWarpMemo = async () => {
+    if (!warpMemo) return;
+    try {
+      await navigator.clipboard.writeText(warpMemo);
+      setWarpCopied(true);
+      setTimeout(() => setWarpCopied(false), 2000);
+    } catch {
+      /* clipboard unavailable */
+    }
+  };
+
+  const checkWarpTransfer = async () => {
+    if (!warpTransferId) return;
+    setWarpLoading(true);
+    try {
+      const res = await fetch(`/api/warp/transfers/${encodeURIComponent(warpTransferId)}`);
+      const data = await res.json();
+      setWarpTransferStatus(data);
+    } catch (e: any) {
+      setWarpTransferStatus({ error: e.message });
+    } finally {
+      setWarpLoading(false);
+    }
+  };
 
   return (
     <div className="pt-28 pb-24 overflow-x-hidden">
@@ -398,6 +443,180 @@ export default function WarpPage() {
                 </ul>
               </div>
             ))}
+          </div>
+        </motion.section>
+
+        {/* ── Initiate WARP Transfer ── */}
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="space-y-6">
+          <div className="flex flex-col gap-2">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'WARP transfer' : 'WARP transfer'}</p>
+            <h2 className="text-3xl font-semibold text-white">{cs ? 'Iniciovat WARP transfer' : 'Initiate WARP Transfer'}</h2>
+            <p className="text-gray-400 max-w-2xl">
+              {cs
+                ? 'Sestavte memo pro cross-chain transfer a sledujte stav transakce přes WARP daemon API.'
+                : 'Build a memo for cross-chain transfer and track transaction status via the WARP daemon API.'}
+            </p>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Memo Builder */}
+            <div className="zion-rainbow-card p-6" style={{ '--rc': '217, 70, 239' } as React.CSSProperties}>
+              <div className="flex items-center gap-3 mb-5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zion-purple/10 border border-zion-purple/20">
+                  <CircuitBoard className="h-5 w-5 text-zion-purple" />
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{cs ? 'Memo builder' : 'Memo Builder'}</p>
+                  <h3 className="text-xl font-semibold text-white">{cs ? 'Sestavit transfer memo' : 'Build transfer memo'}</h3>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {/* Chain selector */}
+                <div>
+                  <label className="text-xs uppercase tracking-[0.3em] text-gray-400">{cs ? 'Cílový chain' : 'Target chain'}</label>
+                  <select
+                    value={warpChain}
+                    onChange={(e) => setWarpChain(e.target.value)}
+                    className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:border-zion-purple/50 transition-colors"
+                  >
+                    <option value="ethereum">Ethereum</option>
+                    <option value="bitcoin">Bitcoin</option>
+                    <option value="solana">Solana</option>
+                    <option value="stellar">Stellar</option>
+                    <option value="tron">Tron</option>
+                  </select>
+                </div>
+
+                {/* Recipient address */}
+                <div>
+                  <label className="text-xs uppercase tracking-[0.3em] text-gray-400">{cs ? 'Adresa příjemce' : 'Recipient address'}</label>
+                  <input
+                    type="text"
+                    value={warpRecipient}
+                    onChange={(e) => setWarpRecipient(e.target.value)}
+                    placeholder={cs ? 'zion1...' : 'zion1...'}
+                    className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white placeholder:text-gray-600 outline-none focus:border-zion-purple/50 transition-colors"
+                  />
+                </div>
+
+                {/* Amount */}
+                <div>
+                  <label className="text-xs uppercase tracking-[0.3em] text-gray-400">{cs ? 'Částka' : 'Amount'} (ZION)</label>
+                  <input
+                    type="number"
+                    value={warpAmount}
+                    onChange={(e) => setWarpAmount(e.target.value)}
+                    placeholder="0.00"
+                    className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white placeholder:text-gray-600 outline-none focus:border-zion-purple/50 transition-colors"
+                  />
+                </div>
+
+                {/* Generated memo */}
+                <div className="zion-rainbow-sub p-4" style={{ '--rc': '217, 70, 239' } as React.CSSProperties}>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{cs ? 'Vygenerovaný memo' : 'Generated memo'}</p>
+                    <button
+                      onClick={copyWarpMemo}
+                      disabled={!warpMemo}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {warpCopied ? (
+                        <>
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                          {cs ? 'Zkopírováno' : 'Copied'}
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3.5 w-3.5" />
+                          {cs ? 'Kopírovat memo' : 'Copy Memo'}
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <code className="mt-2 block break-all text-sm text-zion-cyan font-mono">
+                    {warpMemo || (cs ? 'Vyplňte adresu příjemce...' : 'Enter recipient address...')}
+                  </code>
+                </div>
+
+                {/* Instructions */}
+                <div className="flex items-start gap-2 rounded-xl border border-zion-gold/20 bg-zion-gold/5 p-4">
+                  <ArrowRight className="h-4 w-4 text-zion-gold mt-0.5 shrink-0" />
+                  <p className="text-sm text-gray-300">
+                    {cs
+                      ? 'Pošlete ZION na zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0 s tímto memem.'
+                      : 'Send ZION to zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0 with this memo.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Transfer Status Tracker */}
+            <div className="zion-rainbow-card p-6" style={{ '--rc': '217, 70, 239' } as React.CSSProperties}>
+              <div className="flex items-center gap-3 mb-5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zion-cyan/10 border border-zion-cyan/20">
+                  <Search className="h-5 w-5 text-zion-cyan" />
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{cs ? 'Sledování stavu' : 'Status tracker'}</p>
+                  <h3 className="text-xl font-semibold text-white">{cs ? 'Sledovat stav transferu' : 'Track transfer status'}</h3>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs uppercase tracking-[0.3em] text-gray-400">{cs ? 'Transfer ID' : 'Transfer ID'}</label>
+                  <div className="mt-2 flex gap-3">
+                    <input
+                      type="text"
+                      value={warpTransferId}
+                      onChange={(e) => setWarpTransferId(e.target.value)}
+                      placeholder={cs ? 'WARP-...' : 'WARP-...'}
+                      onKeyDown={(e) => { if (e.key === 'Enter') checkWarpTransfer(); }}
+                      className="flex-1 rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white placeholder:text-gray-600 outline-none focus:border-zion-cyan/50 transition-colors"
+                    />
+                    <button
+                      onClick={checkWarpTransfer}
+                      disabled={!warpTransferId || warpLoading}
+                      className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-zion-cyan to-zion-purple px-5 py-3 text-sm font-semibold text-black transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {warpLoading ? (
+                        <>
+                          <Activity className="h-4 w-4 animate-pulse" />
+                          {cs ? 'Načítání...' : 'Loading...'}
+                        </>
+                      ) : (
+                        <>
+                          <Search className="h-4 w-4" />
+                          {cs ? 'Zkontrolovat' : 'Check Status'}
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Status response */}
+                {warpTransferStatus !== null && (
+                  <div className="zion-rainbow-sub p-4" style={{ '--rc': '217, 70, 239' } as React.CSSProperties}>
+                    <p className="text-xs uppercase tracking-[0.3em] text-gray-400 mb-2">{cs ? 'Odpověď' : 'Response'}</p>
+                    <pre className="overflow-x-auto rounded-lg bg-black/50 p-3 text-xs text-gray-200 font-mono leading-relaxed">
+                      <code>{JSON.stringify(warpTransferStatus, null, 2)}</code>
+                    </pre>
+                  </div>
+                )}
+
+                {warpTransferStatus === null && (
+                  <div className="flex items-start gap-2 rounded-xl border border-white/10 bg-white/5 p-4">
+                    <Lock className="h-4 w-4 text-gray-500 mt-0.5 shrink-0" />
+                    <p className="text-sm text-gray-400">
+                      {cs
+                        ? 'Zadejte transfer ID pro zobrazení stavu transakce z WARP daemonu.'
+                        : 'Enter a transfer ID to query the transaction status from the WARP daemon.'}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </motion.section>
 

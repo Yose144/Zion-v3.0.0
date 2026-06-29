@@ -2,7 +2,37 @@
 
 Tento adresář obsahuje Hardhat deploy projekt pro ZION DeFi kontrakty na Base Mainnet.
 
-## Kontrakty
+Source soubory byly kanonizovány (zkopírovány z `archive/2.9.9/legacy-code/L2/contracts/`) — tento adresář je nyní single source of truth pro V3 DeFi deploy.
+
+## Aktuální stav adresáře
+
+```
+hardhat/
+├── .env.mainnet.example   # template — zkopíruj do .env a vyplň secrets
+├── .gitignore
+├── README.md              # tento soubor
+├── hardhat.config.ts      # Hardhat config (síť `base` = Base Mainnet)
+├── package.json           # npm závislosti (hardhat, ethers, dotenv, ...)
+├── tsconfig.json          # TS config pro deploy skripty
+├── sol/                   # Solidity kontrakty (kanonizované)
+│   ├── wZION.sol              # ERC-20 wrapper (již deployed na Base)
+│   ├── ZIONBridge.sol         # L1↔L2 bridge (již deployed)
+│   ├── ZIONAtomicSwap.sol     # atomic swap (již deployed)
+│   ├── ZIONStaking.sol        # single-asset staking (NOVÝ 3.0.4 deploy)
+│   ├── ZIONFarm.sol           # multi-pool yield farming (NOVÝ 3.0.4 deploy)
+│   ├── ZIONGovernance.sol     # on-chain governance (NOVÝ 3.0.4 deploy)
+│   └── ZIONTreasury.sol       # multisig treasury (NOVÝ 3.0.4 deploy)
+└── scripts/               # Hardhat deploy/fund/verify skripty
+    ├── deploy-defi.ts                 # deploy Governance + Treasury + Staking
+    ├── deploy-farm.ts                 # deploy ZIONFarm + init pooly
+    ├── fund-staking.ts                # fund staking reward pool
+    ├── fund-farm.ts                   # fund farm reward pool
+    └── verify-base-mainnet-basescan.ts # Basescan source verification
+```
+
+> **Pozn.:** `wZION.sol`, `ZIONBridge.sol`, `ZIONAtomicSwap.sol` jsou zahrnuty pro referenci / kompilaci závislostí — tyto kontrakty jsou **již deployed** na Base Mainnet (adresy v `.env.mainnet.example`). Nový 3.0.4 deploy cílí pouze na `ZIONStaking`, `ZIONFarm`, `ZIONGovernance`, `ZIONTreasury`.
+
+## Kontrakty k deployi (3.0.4)
 
 | Kontrakt | Popis | Prerequisita |
 |----------|-------|-------------|
@@ -13,7 +43,7 @@ Tento adresář obsahuje Hardhat deploy projekt pro ZION DeFi kontrakty na Base 
 
 ## Stav
 
-- **Sepolia testnet:** deployed 2026-03-02 (viz `../legacy/` pro adresy)
+- **Sepolia testnet:** deployed 2026-03-02 (viz `archive/2.9.9/legacy-code/L2/contracts/deployed-*.json` pro adresy)
 - **Base Mainnet:** ❌ PENDING — čeká na 3.0.4 deploy (~0.005 ETH gas potřeba)
 
 ## Prerekvizity
@@ -25,33 +55,22 @@ Tento adresář obsahuje Hardhat deploy projekt pro ZION DeFi kontrakty na Base 
 ## Rychlý start
 
 ```bash
-# 1. Zkopíruj source files z archive
-cp ../../../../../../archive/2.9.9/legacy-code/L2/contracts/sol/ZIONStaking.sol sol/
-cp ../../../../../../archive/2.9.9/legacy-code/L2/contracts/sol/ZIONFarm.sol sol/
-cp ../../../../../../archive/2.9.9/legacy-code/L2/contracts/sol/ZIONGovernance.sol sol/
-cp ../../../../../../archive/2.9.9/legacy-code/L2/contracts/sol/ZIONTreasury.sol sol/
-
-# 2. Zkopíruj deploy skripty
-cp ../../../../../../archive/2.9.9/legacy-code/L2/contracts/scripts/deploy-defi.ts scripts/
-cp ../../../../../../archive/2.9.9/legacy-code/L2/contracts/scripts/deploy-farm.ts scripts/
-cp ../../../../../../archive/2.9.9/legacy-code/L2/contracts/scripts/fund-staking.ts scripts/
-cp ../../../../../../archive/2.9.9/legacy-code/L2/contracts/scripts/fund-farm.ts scripts/
-cp ../../../../../../archive/2.9.9/legacy-code/L2/contracts/scripts/verify-base-mainnet-basescan.ts scripts/
-cp ../../../../../../archive/2.9.9/legacy-code/L2/contracts/hardhat.config.ts .
-cp ../../../../../../archive/2.9.9/legacy-code/L2/contracts/package.json .
-
-# 3. Nastav environment
+# 1. Nastav environment
 cp .env.mainnet.example .env
 # Vyplň DEPLOYER_PRIVATE_KEY, BASE_MAINNET_RPC, BASESCAN_API_KEY
 
-# 4. Instaluj závislosti
+# 2. Instaluj závislosti
 npm install
 
-# 5. Deploy
+# 3. Deploy (Base Mainnet)
 npx hardhat run scripts/deploy-defi.ts --network base    # → deployed-defi.json
 npx hardhat run scripts/deploy-farm.ts --network base    # → deployed-farm-base.json
 
-# 6. Verify
+# 4. Fund reward pools
+npx hardhat run scripts/fund-staking.ts --network base
+npx hardhat run scripts/fund-farm.ts --network base
+
+# 5. Verify na Basescan
 npx hardhat run scripts/verify-base-mainnet-basescan.ts --network base
 ```
 
@@ -84,10 +103,9 @@ export const GOVERNANCE_DEPLOYED = true;
 - **Reward rate:** 1 wZION/s initial (~86,400 wZION/den)
 - **Halving:** každých 90 dní
 
-## Adresář legacy
+## Provenience
 
-Původní deploy skripty a kontrakty jsou v:
-`archive/2.9.9/legacy-code/L2/contracts/`
-
-- `deployed-defi.json` — Sepolia testnet deploy (2026-03-02)
-- `deployed-farm-base-sepolia.json` — Sepolia farm deploy (2026-03-02)
+Source soubory kanonizovány z `archive/2.9.9/legacy-code/L2/contracts/` (P6 kanonizace).
+Původní Sepolia deploy artefakty zůstávají v archive:
+- `archive/2.9.9/legacy-code/L2/contracts/deployed-defi.json` — Sepolia testnet deploy (2026-03-02)
+- `archive/2.9.9/legacy-code/L2/contracts/deployed-farm-base-sepolia.json` — Sepolia farm deploy (2026-03-02)
