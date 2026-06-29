@@ -159,7 +159,7 @@ export const CONFIG = {
       CHAIN_ID: 8453,
       RPC_URL: 'https://mainnet.base.org',
       WZION_ADDRESS: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
-      BRIDGE_ADDRESS: '0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88', // ZIONBridge 5/5
+      BRIDGE_ADDRESS: '0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467', // ZIONBridge v3
       BRIDGE_VALIDATOR_ADDRESS: '0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627', // BridgeValidator 5/5
       EXPLORER: 'https://basescan.org',
       NAME: 'Base Mainnet',
