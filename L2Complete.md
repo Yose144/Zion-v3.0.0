@@ -63,49 +63,52 @@
 Both pools initialized at **$0.0002 USD/ZION**.
 
 #### Seed Liquidity Positions
-| Pool | NFT Position ID | Tick Range | wZION Deposited | USDC/WETH | TX |
-|------|----------------|------------|-----------------|-----------|-----|
-| wZION/USDC | 5431091 | -361440 to -360000 | 1,000,000 wZION | 0 (single-sided) | `0x8f1e5ef7...` |
-| wZION/WETH | 5431093 | -161000 to -160000 | 1,000,000 wZION | 0 (single-sided) | `0xaa7d2824...` |
+| Pool | NFT Position ID | Tick Range | wZION | USDC/WETH | Type | TX |
+|------|----------------|------------|-------|-----------|------|-----|
+| wZION/USDC | 5431091 | -361440 to -360000 | 1,000,000 | 0 | Single-sided (above price) | `0x8f1e5ef7...` |
+| wZION/WETH | 5431093 | -161000 to -160000 | 1,000,000 | 0 | Single-sided (above price) | `0xaa7d2824...` |
+| wZION/WETH | 5431714 | -162000 to -160000 | 100,000 | 0.0069 WETH | **Two-sided (ACTIVE)** | `0xc7f84d0e...` |
 
-**Note:** Liquidity is single-sided (wZION only, range above current price). Pool `liquidity` = 0 because positions are above current tick (inactive until price moves up). Tokens are held in pool contracts:
-- wZION in USDC pool: 999,999.99 wZION
-- wZION in WETH pool: 1,000,000 wZION
+**wZION/WETH pool has ACTIVE liquidity** at current price: `547,909,963,844,053,940,788`
+**wZION/USDC pool** still only has single-sided liquidity (needs USDC funding).
+
+#### WETH Acquisition
+- Wrapped 0.02 ETH → WETH via WETH contract `deposit()`
+- Used 0.0069 WETH for two-sided liquidity
+- Remaining: ~0.013 WETH
+- Could not swap WETH → USDC via Uniswap SwapRouter (reverts — possibly wrong router for Base) or Aerodrome (wrong factory address)
 
 #### Issues Resolved
 1. **Pool creation revert:** Root cause was **out of gas** — gas estimate ~4.75M, but gas limit was set to 1M. Fixed by setting gas limit to 5.5M.
 2. **Mint revert:** Root cause was **wrong ABI encoding** — NPM `mint()` takes a single struct parameter, not individual parameters. Fixed by using tuple-based ABI.
 3. **Wrong Uniswap addresses:** `0x1F98431c8aD98523631AE4a59f267346ea31F984` is Ethereum mainnet, NOT Base. Correct Base addresses discovered from Base docs.
+4. **Bridge reprocessing minted locks:** Fixed by setting `start_block_height = 11700` (above last lock at 11614) in bridge config.
+5. **Validator-5 out of ETH:** Funded with 0.01 ETH from deployer.
 
 ---
 
-## 🔧 Remaining Work — Two-Sided Liquidity
+## 🔧 Remaining Work — wZION/USDC Two-Sided Liquidity
 
 ### Current State
-- Pools are created and initialized at correct price ($0.0002/ZION)
-- 1M wZION seeded in each pool (single-sided, above current price)
-- **No active liquidity at current price** — need USDC and WETH to add two-sided positions
-- Deployer has 0 USDC and 0 WETH
+- wZION/WETH pool: **ACTIVE two-sided liquidity** ✅ (100K wZION + 0.0069 WETH)
+- wZION/USDC pool: Single-sided only (1M wZION above price, inactive)
+- Deployer has ~0.013 WETH remaining, 0 USDC
+- Need USDC to add two-sided liquidity to wZION/USDC pool
 
-### Step 1: Fund Deployer with USDC and WETH
-- [ ] User needs to send USDC and WETH to `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186`
-- [ ] Suggested amounts (user to confirm):
-  - wZION/USDC: 10M ZION + $2,000 USDC (small seed for price discovery)
-  - wZION/WETH: 10M ZION + 1 WETH (~$2,000)
-- [ ] Alternatively: bridge more ZION from L1 and swap for USDC/WETH
+### Step 1: Get USDC
+- [ ] User sends USDC to `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186`
+- [ ] Or: debug Uniswap SwapRouter / Aerodrome router to swap WETH → USDC
+- [ ] Suggested: $2,000 USDC for seed liquidity (10M ZION at $0.0002/ZION)
 
-### Step 2: Add Two-Sided Liquidity
+### Step 2: Add Two-Sided Liquidity to wZION/USDC
 - [ ] Approve wZION + USDC for NPM (`0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1`)
-- [ ] Mint full-range or wide-range position for wZION/USDC (tickLower=-887220, tickUpper=887220)
-- [ ] Approve wZION + WETH for NPM
-- [ ] Mint full-range or wide-range position for wZION/WETH
-- [ ] Record NFT position IDs
-- [ ] **Important:** Use struct-based ABI for `mint()` — see code example below
+- [ ] Mint position spanning current tick (tickLower=-362000, tickUpper=-360000, spacing=60)
+- [ ] Use struct-based ABI for `mint()` — see Technical Notes below
 
 ### Step 3: Verify & Monitor
 - [ ] Check pool prices match 0.0002 USD/ZION
-- [ ] Verify active liquidity (pool.liquidity > 0)
-- [ ] Test small swap via Uniswap UI or SwapRouter
+- [ ] Verify active liquidity on both pools
+- [ ] Test small swap via Uniswap UI
 - [ ] Monitor bridge relayer continues processing new locks
 
 ### Step 4: Optional — Old wZION/WETH Pool
@@ -183,7 +186,10 @@ npm.functions.mint(params).call({"from": deployer})
 - **wZION totalSupply:** 100,000,299 wZION (100M ZION bridged)
 - **wZION MAX_SUPPLY:** 144,000,000,000 wZION (144B — matches L1 total supply)
 - **Available to bridge:** ~143.9B wZION remaining
-- **Deployer wZION balance:** 98,000,045 wZION (2M used for Uniswap seed liquidity)
+- **Deployer wZION balance:** ~97,900,045 wZION (2.1M used for Uniswap liquidity)
+- **Deployer ETH balance:** ~0.041 ETH
+- **Deployer WETH balance:** ~0.013 WETH
+- **Deployer USDC balance:** 0 USDC
 
 ## 📊 Uniswap V3 Addresses (Base mainnet)
 | Contract | Address |
