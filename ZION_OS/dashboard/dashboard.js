@@ -5903,34 +5903,36 @@ async function loadL2Data() {
     if(el('l2-swaps')) el('l2-swaps').textContent = r.active_htlcs ?? '—';
   } catch(e) {}
 
-  // DeFi / Uniswap V3 pools — data z /api/cex/listings (DexScreener)
+  // DeFi / Uniswap V3 pools — data z /api/cex/listings (proxuje na website DexScreener API)
   try {
-    const r = await fetch('/api/cex/listings', { signal: AbortSignal.timeout(6000) }).then(r => r.json());
+    const r = await fetch('/api/cex/listings', { signal: AbortSignal.timeout(8000) }).then(r => r.json());
     const el = id => document.getElementById(id);
     const dex = r.dex || {};
-    const pairs = dex.pairs || [];
+    // Website API vrací pairs_detail (list), ne pairs (int)
+    const pairs = Array.isArray(dex.pairs_detail) ? dex.pairs_detail : [];
+    const hasDexData = dex.source === 'dexscreener' && pairs.length > 0;
 
     // badge
-    const defiOk = dex.price_usd > 0 || pairs.length > 0;
     if(el('l2-defi-badge')){
-      el('l2-defi-badge').className = defiOk
+      el('l2-defi-badge').className = hasDexData
         ? 'text-[10px] px-2 py-0.5 rounded-full bg-emerald-700/50 text-emerald-300'
-        : 'text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400';
-      el('l2-defi-badge').textContent = defiOk ? 'Live' : 'No data';
+        : 'text-[10px] px-2 py-0.5 rounded-full bg-amber-700/50 text-amber-300';
+      el('l2-defi-badge').textContent = hasDexData ? 'Live' : 'No DexScreener';
     }
 
-    // Cena — z aggregate nebo nejlepšího páru
-    const priceUsd = dex.price_usd ?? dex.best_price ?? null;
+    // Cena — z nejlepšího páru (WETH nebo USDT)
+    const bestPair = pairs.find(p => p.pair && p.pair.includes('WETH')) || pairs[0] || null;
+    const priceUsd = bestPair?.price_usd ?? dex.best_price_usd ?? null;
     const priceStr = priceUsd ? '$' + Number(priceUsd).toFixed(6) : '—';
     if(el('l2-defi-price')) el('l2-defi-price').textContent = priceStr;
     if(el('l2-defi-price-big')) el('l2-defi-price-big').textContent = priceStr;
 
-    // 24h price change (z prvního páru s daty)
-    const firstPairChange = pairs[0]?.price_change?.h24 ?? null;
-    if(el('l2-defi-price-change') && firstPairChange !== null){
-      const ch = Number(firstPairChange).toFixed(2);
+    // 24h price change z WETH páru
+    const ch24 = bestPair?.price_change_24h ?? null;
+    if(el('l2-defi-price-change') && ch24 !== null){
+      const ch = Number(ch24).toFixed(2);
       el('l2-defi-price-change').textContent = '24h: ' + (ch > 0 ? '+' : '') + ch + '%';
-      el('l2-defi-price-change').className = 'text-[10px] ' + (ch >= 0 ? 'text-emerald-400' : 'text-red-400');
+      el('l2-defi-price-change').className = 'text-[10px] ' + (Number(ch) >= 0 ? 'text-emerald-400' : 'text-red-400');
     }
 
     // TVL / liquidity celkem
@@ -5945,24 +5947,22 @@ async function loadL2Data() {
     const txns24h = dex.total_txns_24h ?? null;
     if(el('l2-defi-txns24h')) el('l2-defi-txns24h').textContent = txns24h ? 'txns: ' + txns24h : 'txns: —';
 
-    // wZION supply — z r.dex.wzion_supply nebo statická hodnota
-    const supply = dex.wzion_supply ?? r.wzion_supply ?? null;
-    const supplyStr = supply ? (Number(supply) / 1e6).toFixed(1) + 'M' : '100M';
-    if(el('l2-wzion-supply')) el('l2-wzion-supply').textContent = supplyStr;
-    if(el('l2-defi-supply-big')) el('l2-defi-supply-big').textContent = supplyStr;
+    // wZION supply — statická hodnota (100M mintováno)
+    if(el('l2-wzion-supply')) el('l2-wzion-supply').textContent = '100M';
+    if(el('l2-defi-supply-big')) el('l2-defi-supply-big').textContent = '100M';
 
-    // Per-pool data — mapujeme podle pairAddress nebo pairName
-    const POOL_USDT = '0x186b46c2f04153999d44d25179cd623fd62bfda2';
-    const POOL_WETH = '0x18c0daef295e63f1bfbc7c39e71d0fabf4600699';
-    const POOL_SOL  = '0xf38c56bbbbbc6d9fa11e7de84bf7bb70e1e8d2b3';
+    // Per-pool data — pairs_detail má "address" field (lowercase OK)
+    const POOL_USDT = '0x186b46c2f04153999d44D25179cD623fD62Bfda2';
+    const POOL_WETH = '0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699';
+    const POOL_SOL  = '0xF38c56bbBBBC6d9FA11E7DE84bF7Bb70e1e8D2b3';
 
     function fillPool(prefix, poolAddr) {
-      const p = pairs.find(p => (p.pairAddress || '').toLowerCase() === poolAddr.toLowerCase());
+      const p = pairs.find(p => (p.address || '').toLowerCase() === poolAddr.toLowerCase());
       if(!p) return;
-      const price = p.priceUsd ? '$' + Number(p.priceUsd).toFixed(6) : '—';
-      const liq   = p.liquidity?.usd ? '$' + formatVolume(p.liquidity.usd) : '—';
-      const vol   = p.volume?.h24 ? '$' + formatVolume(p.volume.h24) : '—';
-      const txns  = (p.txns?.h24?.buys ?? 0) + (p.txns?.h24?.sells ?? 0);
+      const price = p.price_usd ? '$' + Number(p.price_usd).toFixed(6) : '—';
+      const liq   = p.liquidity_usd ? '$' + formatVolume(p.liquidity_usd) : '—';
+      const vol   = p.volume_24h ? '$' + formatVolume(p.volume_24h) : '—';
+      const txns  = (p.txns_24h?.buys ?? 0) + (p.txns_24h?.sells ?? 0);
       if(el(prefix + '-price')) el(prefix + '-price').textContent = price;
       if(el(prefix + '-liq'))   el(prefix + '-liq').textContent   = liq;
       if(el(prefix + '-vol'))   el(prefix + '-vol').textContent   = vol;
