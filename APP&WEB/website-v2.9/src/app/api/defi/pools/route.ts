@@ -17,7 +17,29 @@ import { NextResponse } from 'next/server';
 const RPC_URL = process.env.BASE_RPC_URL || 'https://base.publicnode.com';
 
 // Pool addresses (Base Mainnet — updated 2026-08-18)
-const POOLS = {
+type NftPosition = {
+  id: number;
+  type: string;
+  tickLower: number;
+  tickUpper: number;
+  wzion: number;
+  usdt?: number;
+  weth?: number;
+  sol?: number;
+};
+type PoolConfig = {
+  address: string;
+  fee: number;
+  feeLabel: string;
+  token0: string;
+  token1: string;
+  token0Symbol: string;
+  token1Symbol: string;
+  token0Decimals: number;
+  token1Decimals: number;
+  nftPositions: NftPosition[];
+};
+const POOLS: Record<string, PoolConfig> = {
   wzion_usdt: {
     address: '0x186b46c2f04153999d44D25179cD623fD62Bfda2',
     fee: 3000,
@@ -29,7 +51,7 @@ const POOLS = {
     token0Decimals: 18,
     token1Decimals: 6,
     nftPositions: [
-      { id: 5434637, type: 'two-sided', tickLower: -366600, tickUpper: -356580, wzion: 100_000, usdt: 3.14 },
+      { id: 2740371, type: 'two-sided', tickLower: -366600, tickUpper: -356580, wzion: 100_000, usdt: 3.14 },
     ],
   },
   wzion_weth: {
@@ -44,7 +66,7 @@ const POOLS = {
     token1Decimals: 18,
     nftPositions: [
       { id: 5431714, type: 'depleted', tickLower: -162000, tickUpper: -160000, wzion: 0, weth: 0 },
-      { id: 5434576, type: 'two-sided', tickLower: -164000, tickUpper: -158000, wzion: 200_000, weth: 0.020 },
+      { id: 2740380, type: 'burned', tickLower: -164000, tickUpper: -158000, wzion: 0, weth: 0 },
     ],
   },
   wzion_sol: {
@@ -58,7 +80,7 @@ const POOLS = {
     token0Decimals: 18,
     token1Decimals: 9,
     nftPositions: [
-      { id: 5434872, type: 'two-sided', tickLower: -340387, tickUpper: -330387, wzion: 100_000, sol: 0.272 },
+      { id: 5434872, type: 'depleted', tickLower: -340387, tickUpper: -330387, wzion: 0, sol: 0 },
     ],
   },
 };
@@ -114,7 +136,7 @@ function encodeAddress(addr: string): string {
   return addr.toLowerCase().replace('0x', '').padStart(64, '0');
 }
 
-async function getPoolStats(poolConfig: typeof POOLS[keyof typeof POOLS], wethUsd: number, solUsd: number) {
+async function getPoolStats(poolConfig: PoolConfig, wethUsd: number, solUsd: number) {
   const poolAddr = poolConfig.address;
 
   // Fetch slot0, liquidity, and token balances in parallel
