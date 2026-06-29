@@ -209,10 +209,10 @@ H+1 ≈ 18 983, so the treasury stays locked for ~125 000 more blocks
 | Component | Address / Path | Status |
 |-----------|----------------|--------|
 | wZION (ERC-20) | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | ✅ Deployed, Base Mainnet |
-| ZIONBridge (5/5 multisig) | `0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88` | ✅ Deployed, threshold=5 |
+| ZIONBridge (5/5 multisig, v3) | `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467` | ✅ Deployed, threshold=5 |
 | BridgeValidator (5/5) | `0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627` | ✅ Deployed, guardianCount=5 |
 | Old bridge (revoked) | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | ❌ BRIDGE_ROLE revoked |
-| UniV3Pool (wZION/WETH) | `0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB` | ✅ Deployed, seed pending |
+| UniV3Pool (wZION/WETH, 1.0% active) | `0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699` | ✅ Active liquidity |
 | Bridge relay daemon | `V3/L2/bridge` (Edge server) | ✅ Active, multi-validator |
 | 100M wZION minted | Emergency mint 2026-06-24 | ✅ 99 999 899 wZION on Base |
 | 6 UTXO locks (~100M ZION) | L1 blocks 11611-11612 | ✅ 5/5 confirmations |
