@@ -24,6 +24,21 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'defi-live-3-pools-chart',
+    date: '2026-06-29',
+    tag: { cs: 'DeFi', en: 'DeFi' },
+    tagColor: 'text-zion-gold',
+    title: {
+      cs: 'DeFi Live! — 3 Uniswap V3 pooly, obousměrný bridge, live cenový graf',
+      en: 'DeFi Live! — 3 Uniswap V3 pools, bidirectional bridge, live price chart',
+    },
+    summary: {
+      cs: 'ZION DeFi ekosystém je plně operational na Base Mainnet. Tři Uniswap V3 pooly s reálnou likviditou: wZION/USDT 0.3% (primární, ~$52 TVL), wZION/WETH 1% (sekundární, ~$80 TVL), wZION/SOL 0.01% (terciární). Obousměrný bridge: lock ZION na L1 → mint wZION na Base, burn wZION → unlock ZION na L1 — 5/5 Guardian validátory, 60-block finalita. Live cenový graf na /defi čerpá OHLCV data z GeckoTerminalu. CEX listings page sleduje DexScreener data v reálném čase. Vše sjednoceno do jednoho designu — /defi, /bridge, /cex.',
+      en: 'ZION DeFi ecosystem is fully operational on Base Mainnet. Three Uniswap V3 pools with real liquidity: wZION/USDT 0.3% (primary, ~$52 TVL), wZION/WETH 1% (secondary, ~$80 TVL), wZION/SOL 0.01% (tertiary). Bidirectional bridge: lock ZION on L1 → mint wZION on Base, burn wZION → unlock ZION on L1 — 5/5 Guardian validators, 60-block finality. Live price chart on /defi pulls OHLCV data from GeckoTerminal. CEX listings page tracks DexScreener data in real-time. All unified into one design — /defi, /bridge, /cex.',
+    },
+    href: '/defi',
+  },
+  {
     slug: 'zion-3.0.3-decimal-fork',
     date: '2026-06-27',
     tag: { cs: 'Hard Fork', en: 'Hard Fork' },
