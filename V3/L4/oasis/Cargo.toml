@@ -35,7 +35,7 @@ tower = { version = "0.4", features = ["util"] }
 tower-http = { version = "0.5", features = ["cors", "trace"] }
 
 # HTTP client (Hiran AI bridge)
-reqwest = { version = "0.12", features = ["json"] }
+reqwest = { version = "0.13", features = ["json"] }
 
 # Wallet signature auth (Ed25519)
 ed25519-dalek = { workspace = true }
