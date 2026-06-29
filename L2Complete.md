@@ -1,6 +1,6 @@
 # L2 Bridge Completion — Status & Plan
 
-**Last updated:** 2026-06-29 (session 2: pool cleanup + USDT plan)
+**Last updated:** 2026-08-18 (session 3: SOL pool final setup + exact price)
 
 ---
 
@@ -52,7 +52,7 @@
 - `mainnet_readiness::test_parse_bridge_mainnet_toml` — bridge address updated to v3
 - All `cargo test -p zion-bridge` tests pass
 
-### 7. Uniswap V3 Pool Cleanup ✅ (Session 2)
+### 7. Uniswap V3 Pool Cleanup ✅ (Sessions 2 & 3)
 
 #### Pools on Base Mainnet (verified via factory)
 | Pair | Fee | Pool Address | Liquidity | Status |
@@ -61,7 +61,9 @@
 | wZION/WETH | 1.0% (10000) | `0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699` | 429876233605855311813 | **ACTIVE — canonical** |
 | wZION/USDC | 0.3% (3000) | `0x5eBdC6E1D516f42EEB54f14faCF8715AbD5B9d8d` | 0 | **DEAD — abandoned** |
 | wZION/USDT | 0.3% (3000) | `0x186b46c2f04153999d44D25179cD623fD62Bfda2` | 987362838016781 | **ACTIVE — USDT pool** |
-| wZION/SOL | 0.3% (3000) | `0xc74F645A882dd7Bbbb60cc85Be10FF8a1572d01B` | 8022958244 | **ACTIVE — SOL pool (new)** |
+| wZION/SOL | 0.3% (3000) | `0xc74F645A882dd7Bbbb60cc85Be10FF8a1572d01B` | 0 | **DEAD — wrong price (inverted)** |
+| wZION/SOL | 1.0% (10000) | `0x1d43fd5afF5F7d810be32d8012e290210d823F11` | 0 | **DEAD — abandoned after withdrawal** |
+| wZION/SOL | 0.01% (100) | `0xF38c56bbBBBC6d9FA11E7DE84bF7Bb70e1e8D2b3` | 23597018927051195 | **ACTIVE — canonical SOL pool** |
 
 #### NFT Positions Withdrawn (Session 2)
 | NFT # | Pool | Tick Range | Action | TX (decreaseLiquidity) |
@@ -70,17 +72,17 @@
 | 5431091 | wZION/USDC 0.3% | -361440 to -360000 | Withdrawn + burned | `0xb40cd241...` |
 | 5431093 | wZION/WETH 1.0% | -161000 to -160000 | Withdrawn + burned | `0x1beb81c1...` |
 
-#### Remaining NFT Positions (4)
+#### Remaining NFT Positions (3)
 | NFT # | Pool | Tick Range | Liquidity | Type | TX |
 |-------|------|------------|-----------|------|-----|
 | 5431714 | wZION/WETH 1.0% | -162000 to -160000 | 0 | Narrow — **depleted** | `0xc7f84d0e...` |
 | 5434576 | wZION/WETH 1.0% | -164000 to -158000 | 429876233605855311813 | **Wide (±30%) — active** | `0xd9db0431...` |
 | 5434637 | wZION/USDT 0.3% | -366600 to -356580 | 987362838016781 | **USDT pool — active** | `0xcb67ba8b...` |
-| 5434733 | wZION/SOL 0.3% | -79560 to -69540 | 8022958244 | **SOL pool — active (new)** | `0x234f3846...` |
+| 5434872 | wZION/SOL 0.01% | -340387 to -330387 | 23597018927051195 | **SOL pool — active (new)** | `0x1abc904f...` |
 
 **WETH pool liquidity:** 429876233605855311813 (wide position)
 **USDT pool liquidity:** 987362838016781 (100K wZION + 3.14 USDT)
-**SOL pool liquidity:** 8022958244 (100K wZION + 0.043 SOL)
+**SOL pool liquidity:** 23597018927051195 (100K wZION + 0.272 SOL)
 
 #### Key Fix: Tuple ABI
 - **Root cause of previous failed withdraws:** NPM `decreaseLiquidity()` and `collect()` take **struct (tuple)** parameters, not individual params
@@ -90,11 +92,12 @@
 - Script: `ZION_OS/dashboard/uniswap_withdraw.py`
 
 #### Token Balances After Liquidity Addition
-- **wZION:** 99,700,542.74 (200K used for new wide position)
-- **ETH:** 0.034685
-- **WETH:** 0.002142 (0.020 used for liquidity)
+- **wZION:** 99,731,908.06 (300K used for Uniswap: 200K WETH + 100K USDT + 100K SOL)
+- **ETH:** 0.021089
+- **WETH:** 0
 - **USDC:** 0
 - **USDT:** 0
+- **SOL:** 0.002302
 
 ---
 
@@ -104,9 +107,10 @@
 - [x] Swap 0.002 WETH → 3.14 USDT via SwapRouter02 multicall
 - [x] Create + initialize USDT/wZION pool (fee=3000, $0.0002/ZION)
 - [x] Add two-sided liquidity (100K wZION + 3.14 USDT)
-- [x] Swap 0.002 WETH → 0.043 SOL via KyberSwap aggregator (route: PancakeSwap V3)
-- [x] Create + initialize SOL/wZION pool (fee=3000, ~580K ZION/SOL)
-- [x] Add two-sided liquidity (100K wZION + 0.043 SOL)
+- [x] Cleanup wrong SOL/wZION pools (withdraw + burn NFTs #5434733, #5434820)
+- [x] Swap WETH → SOL via KyberSwap (total 0.0178 WETH → 0.2835 SOL)
+- [x] Create + initialize SOL/wZION pool (fee=0.01%, exact $0.0002/ZION)
+- [x] Add exact-ratio liquidity (100K wZION + 0.272 SOL)
 
 ### Current State — 3 Active Pools
 - wZION/WETH 1.0%: **ACTIVE** ✅ (wide position, 430B liquidity)
@@ -114,11 +118,12 @@
   - NFT #5434576: wide ±30% — **active** (200K wZION + 0.020 WETH)
 - wZION/USDT 0.3%: **ACTIVE** ✅ (987B liquidity, 100K wZION + 3.14 USDT)
   - NFT #5434637: ±50% range
-- wZION/SOL 0.3%: **ACTIVE** ✅ (8B liquidity, 100K wZION + 0.043 SOL)
-  - NFT #5434733: ±50% range
-- Old wZION/WETH 0.3%: **DEAD** (liquidity=0)
-- Old wZION/USDC 0.3%: **DEAD** (liquidity=0)
-- Deployer: ~99.78M wZION, 0.0001 WETH, 0.040 ETH, 0 SOL, 0 USDT
+- wZION/SOL 0.01%: **ACTIVE** ✅ (23.6T liquidity, 100K wZION + 0.272 SOL)
+  - NFT #5434872: tick [-340387, -330387] (±5000 ticks)
+  - Initialized at exact $0.0002/ZION (1 SOL = 367,200 ZION)
+  - Price moved to ~410,912 ZION/SOL after immediate post-mint swap (market arbitrage)
+- DEAD pools (cannot be destroyed): wZION/WETH 0.3%, wZION/USDC 0.3%, wZION/SOL 0.3%, wZION/SOL 1.0%
+- Deployer: ~99.73M wZION, 0.021 ETH, 0.002 SOL, 0 WETH, 0 USDT
 
 ### Remaining Tasks
 - [ ] Burn NFT #5431714 (depleted, liq=0 — cleanup)
@@ -211,6 +216,18 @@ swap_data = json.loads(urlopen(build_url, json.dumps(build_data)))["data"]
 ```
 **KyberSwap router (Base):** `0x6131B5fae19EA4f9D964eAc0408E4408b66337b5`
 **Route for WETH→SOL:** PancakeSwap V3 / Aerodrome Slipstream (multi-hop)
+**Note:** Larger WETH→SOL swaps (>0.005 WETH) may revert with `Call failed`. Use 0.002–0.005 WETH chunks and slippage 20% if needed.
+
+### SOL/wZION exact-price math
+Target: $73.44/SOL and $0.0002/wZION → 1 SOL = 367,200 wZION.
+```python
+SOL_PRICE = 73.44
+ZION_PRICE = 0.0002
+sol_per_zion = ZION_PRICE / SOL_PRICE          # 1 wZION = X SOL
+price_raw = (sol_per_zion * 1e9) / 1e18        # raw ratio (SOL 9 dec / wZION 18 dec)
+sqrt_price_x96 = int(math.sqrt(price_raw) * (2**96))  # 4134549992039516733440
+```
+For 100K wZION in a 0.01% concentrated position ±5000 ticks around the target price, the exact SOL amount is ~0.2724 SOL. The mint was executed at this exact ratio; the pool initialized at 1 SOL = 367,200 wZION and immediately received a post-creation swap that moved the spot price to ~410,912 wZION/SOL. This is normal market arbitrage, not a setup error.
 
 ### Gas Requirements
 - `createAndInitializePoolIfNecessary`: ~4.6M gas (set limit to 5.5M)
@@ -241,7 +258,8 @@ swap_data = json.loads(urlopen(build_url, json.dumps(build_data)))["data"]
 | DB schema | `V3/L2/bridge/src/db.rs` |
 | Relayer code | `V3/L2/bridge/src/relayer.rs` |
 | L1 watcher | `V3/L2/bridge/src/l1_watcher.rs` |
-| Uniswap setup script | `/root/uniswap_v3_setup.py` (Edge node) |
+| Uniswap setup script | `/root/fix_sol_pool_exact.py` (Edge node) |
+| Legacy setup scripts | `/root/uniswap_v3_setup.py`, `/root/create_sol_wzion_pool_final.py` |
 | Edge DB | `/root/zion-2.9.6-main/data/bridge-mainnet.db` (Edge node) |
 | Validator keys | `/root/zion-validator-key.env` (Edge node) |
 
@@ -257,11 +275,12 @@ swap_data = json.loads(urlopen(build_url, json.dumps(build_data)))["data"]
 - **wZION totalSupply:** 100,000,299 wZION (100M ZION bridged)
 - **wZION MAX_SUPPLY:** 144,000,000,000 wZION (144B — matches L1 total supply)
 - **Available to bridge:** ~143.9B wZION remaining
-- **Deployer wZION balance:** ~99,784,873 wZION (300K in Uniswap: 200K WETH + 100K USDT)
-- **Deployer ETH balance:** ~0.041 ETH
-- **Deployer WETH balance:** ~0.0001 WETH
+- **Deployer wZION balance:** ~99,731,908 wZION (300K in Uniswap: 200K WETH + 100K USDT + 100K SOL)
+- **Deployer ETH balance:** ~0.021 ETH
+- **Deployer WETH balance:** 0
 - **Deployer USDC balance:** 0
 - **Deployer USDT balance:** 0 (3.14 USDT used for pool liquidity)
+- **Deployer SOL balance:** 0.002302
 
 ## 📊 Uniswap V3 Addresses (Base mainnet)
 | Contract | Address |
