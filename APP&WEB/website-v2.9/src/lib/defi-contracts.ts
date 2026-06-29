@@ -63,21 +63,25 @@ export const CONTRACTS = {
   USDT:           '0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2',
   SOL:            '0x311935Cd80B76769bF2ecC9D8Ab7635b2139cf82',
   ZIONBridge:     '0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467',
-  // Uniswap V3 — canonical pools on Base mainnet (updated 2026-06-29)
+  // Uniswap V4 — canonical (liquidity migrated from V3 to V4 on 2026-06-29)
+  V4PoolManager:      '0x498581fF718922c3f8e6A244956aF099B2652b2b',
+  V4PositionManager:  '0x7C5f5A4bBd8fD63184577525326123B519429BdC',
+  V4StateView:        '0xa3c0c9b65bad0b08107aa264b0f3db444b867a71',
+  V4Quoter:           '0x0d5e0f971ed27fbff6c2837bf31316121532048d',
+  V4UniversalRouter:  '0xFdf682F51fe81aa4898f0ae2163d8a55c127fbc7',
+  // V4 NFT Position IDs
+  NFT_Position_USDT: 2740371, // wZION/USDT 0.3% — ACTIVE (only active V4 position)
+  NFT_Position_WETH: 2740380, // ETH/wZION 0.3% — BURNED
+  // Uniswap V3 — legacy (pools empty, liquidity migrated to V4)
   UniV3Factory:   '0x33128a8fC17869897dcE68Ed026d694621f6FDfD',
-  UniV3PoolWETH:  '0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699', // wZION/WETH 1% fee — ACTIVE
-  UniV3PoolUSDT:  '0x186b46c2f04153999d44D25179cD623fD62Bfda2', // wZION/USDT 0.3% fee — ACTIVE (primary)
-  UniV3PoolSOL:   '0xF38c56bbBBBC6d9FA11E7DE84bF7Bb70e1e8D2b3', // wZION/SOL 0.01% fee — ACTIVE
-  // Default pool for price feed (USDT stablecoin pair = most reliable)
+  UniV3PoolWETH:  '0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699',
+  UniV3PoolUSDT:  '0x186b46c2f04153999d44D25179cD623fD62Bfda2',
+  UniV3PoolSOL:   '0xF38c56bbBBBC6d9FA11E7DE84bF7Bb70e1e8D2b3',
   UniV3Pool:      '0x186b46c2f04153999d44D25179cD623fD62Bfda2',
   UniV3Router:    '0x2626664c2603336E57B271c5C0b26F421741e481',
   QuoterV2:       '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a',
   PositionManager:'0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1',
-  // NFT Position IDs — LP positions (NonfungiblePositionManager)
-  NFT_Position_USDT: 2740371, // wZION/USDT 0.3% — ACTIVE (only active position)
-  NFT_Position_WETH: 2740380, // wZION/WETH 1% — BURNED (position closed)
-  NFT_Position_SOL:  5434872, // wZION/SOL 0.01% — DEPLETED
-  // DeFi contracts — deployed 2026-06-29 via deploy-defi.ts + deploy-farm.ts on Base Mainnet
+  // DeFi contracts — deployed 2026-06-29 on Base Mainnet
   ZIONGovernance: '0xB77eB4ab9468Ce03FBd7eCec70e976EFCfa623E8',
   ZIONTreasury:   '0x455f465ac7e14fdA97dC46fdd74bCa78bfC0aEeD', // 3-of-3 multisig
   ZIONStaking:    '0xbd5cEe7878337d22188BFBaF9aa9F39A850Be78B', // 12% APR, 100K wZION reward pool

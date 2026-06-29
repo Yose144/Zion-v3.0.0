@@ -121,11 +121,19 @@ export default function DefiPage() {
     tvl_usd: number;
     total_wzion_liquidity: number;
     active_pools: number;
+    wzion_supply: number;
+    deployer_wzion: number;
     primary_price_usd: number;
     pools: {
-      wzion_usdt: { active: boolean; liquidity: string; tick: number; price_usd: number; balances?: { token0: number; token1: number }; nft_positions?: { id: number; type: string; wzion?: number; usdt?: number; weth?: number; sol?: number }[] };
-      wzion_weth: { active: boolean; liquidity: string; tick: number; price_usd: number; balances?: { token0: number; token1: number }; nft_positions?: { id: number; type: string; wzion?: number; usdt?: number; weth?: number; sol?: number }[] };
-      wzion_sol: { active: boolean; liquidity: string; tick: number; price_usd: number; balances?: { token0: number; token1: number }; nft_positions?: { id: number; type: string; wzion?: number; usdt?: number; weth?: number; sol?: number }[] };
+      wzion_usdt: { pair: string; fee: number; feeLabel: string; active: boolean; nft_id: number; nft_owner: string | null; balances: { wzion: number; usdt: number }; price_usd: number; tvl_usd: number };
+      wzion_weth: { pair: string; fee: number; feeLabel: string; active: boolean; nft_id: number; nft_owner: string | null; balances: { wzion: number; weth: number }; price_usd: number; tvl_usd: number };
+    };
+    contracts?: {
+      staking: { wzion: number };
+      farm: { wzion: number };
+      treasury: { wzion: number };
+      governance: { wzion: number };
+      bridge: { wzion: number };
     };
   } | null>(null);
 
@@ -202,38 +210,39 @@ export default function DefiPage() {
         const res = await fetch('/api/defi/pools', { cache: 'no-store' });
         if (!res.ok) return;
         const data = await res.json();
-        if (!cancelled && data.ok) setPoolStats(data.summary ? {
-          tvl_usd: data.summary.total_tvl_usd ?? 0,
-          total_wzion_liquidity: data.summary.total_wzion_liquidity ?? 0,
-          active_pools: data.summary.active_pools ?? 0,
-          primary_price_usd: data.pools?.wzion_usdt?.price?.usd_per_wzion ?? data.pools?.wzion_weth?.price?.usd_per_wzion ?? SEED_PRICE_USD,
+        if (!cancelled && data.ok) setPoolStats({
+          tvl_usd: data.summary?.total_tvl_usd ?? 0,
+          total_wzion_liquidity: data.summary?.total_wzion_liquidity ?? 0,
+          active_pools: data.summary?.active_pools ?? 0,
+          wzion_supply: data.summary?.wzion_supply ?? 0,
+          deployer_wzion: data.summary?.deployer_wzion ?? 0,
+          primary_price_usd: data.pools?.wzion_usdt?.price_usd ?? 0,
           pools: {
             wzion_usdt: {
+              pair: data.pools?.wzion_usdt?.pair ?? 'wZION/USDT',
+              fee: data.pools?.wzion_usdt?.fee ?? 3000,
+              feeLabel: data.pools?.wzion_usdt?.feeLabel ?? '0.3%',
               active: data.pools?.wzion_usdt?.active ?? false,
-              liquidity: data.pools?.wzion_usdt?.liquidity ?? '0',
-              tick: data.pools?.wzion_usdt?.tick ?? 0,
-              price_usd: data.pools?.wzion_usdt?.price?.usd_per_wzion ?? 0,
-              balances: data.pools?.wzion_usdt?.balances,
-              nft_positions: data.pools?.wzion_usdt?.nft_positions,
+              nft_id: data.pools?.wzion_usdt?.nft_id ?? 0,
+              nft_owner: data.pools?.wzion_usdt?.nft_owner ?? null,
+              balances: data.pools?.wzion_usdt?.balances ?? { wzion: 0, usdt: 0 },
+              price_usd: data.pools?.wzion_usdt?.price_usd ?? 0,
+              tvl_usd: data.pools?.wzion_usdt?.tvl_usd ?? 0,
             },
             wzion_weth: {
+              pair: data.pools?.wzion_weth?.pair ?? 'ETH/wZION',
+              fee: data.pools?.wzion_weth?.fee ?? 3000,
+              feeLabel: data.pools?.wzion_weth?.feeLabel ?? '0.3%',
               active: data.pools?.wzion_weth?.active ?? false,
-              liquidity: data.pools?.wzion_weth?.liquidity ?? '0',
-              tick: data.pools?.wzion_weth?.tick ?? 0,
-              price_usd: data.pools?.wzion_weth?.price?.usd_per_wzion ?? 0,
-              balances: data.pools?.wzion_weth?.balances,
-              nft_positions: data.pools?.wzion_weth?.nft_positions,
-            },
-            wzion_sol: {
-              active: data.pools?.wzion_sol?.active ?? false,
-              liquidity: data.pools?.wzion_sol?.liquidity ?? '0',
-              tick: data.pools?.wzion_sol?.tick ?? 0,
-              price_usd: data.pools?.wzion_sol?.price?.usd_per_wzion ?? 0,
-              balances: data.pools?.wzion_sol?.balances,
-              nft_positions: data.pools?.wzion_sol?.nft_positions,
+              nft_id: data.pools?.wzion_weth?.nft_id ?? 0,
+              nft_owner: data.pools?.wzion_weth?.nft_owner ?? null,
+              balances: data.pools?.wzion_weth?.balances ?? { wzion: 0, weth: 0 },
+              price_usd: data.pools?.wzion_weth?.price_usd ?? 0,
+              tvl_usd: data.pools?.wzion_weth?.tvl_usd ?? 0,
             },
           },
-        } : null);
+          contracts: data.contracts,
+        });
       } catch { /* ignore */ }
     };
     void refreshPools();
@@ -470,14 +479,18 @@ export default function DefiPage() {
             <div className="bg-black/30 rounded-lg p-2">
               <p className="text-gray-500 mb-0.5">{cs ? 'Likvidita' : 'Liquidity'}</p>
               <p className="text-white font-mono">
-                {poolStats?.pools?.wzion_usdt?.balances?.token0
-                  ? `${poolStats.pools.wzion_usdt.balances.token0.toLocaleString(undefined, { maximumFractionDigits: 0 })} wZION`
+                {(poolStats?.total_wzion_liquidity ?? 0) > 0
+                  ? `${(poolStats!.total_wzion_liquidity).toLocaleString(undefined, { maximumFractionDigits: 0 })} wZION`
                   : '—'}
               </p>
             </div>
             <div className="bg-black/30 rounded-lg p-2">
-              <p className="text-gray-500 mb-0.5">Tick</p>
-              <p className="text-white font-mono">{poolStats?.pools?.wzion_usdt?.tick ?? '—'}</p>
+              <p className="text-gray-500 mb-0.5">USDT</p>
+              <p className="text-white font-mono">
+                {(poolStats?.pools?.wzion_usdt?.balances?.usdt ?? 0) > 0
+                  ? (poolStats!.pools.wzion_usdt.balances.usdt).toLocaleString(undefined, { maximumFractionDigits: 2 })
+                  : '—'}
+              </p>
             </div>
             <div className="bg-black/30 rounded-lg p-2">
               <p className="text-gray-500 mb-0.5">{cs ? 'Stav' : 'Status'}</p>
@@ -492,101 +505,97 @@ export default function DefiPage() {
       {/* ── Active Pools Detail ── */}
       <section className="zion-container relative z-10 mb-8">
         <h2 className="mb-4 text-lg font-semibold text-white">
-          {cs ? 'Uniswap V3 pooly' : 'Uniswap V3 pools'}
+          {cs ? 'Uniswap V4 pooly' : 'Uniswap V4 pools'}
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[
-            { key: 'wzion_usdt', label: 'wZION/USDT', fee: '0.3%', primary: true, token1Symbol: 'USDT' },
-            { key: 'wzion_weth', label: 'wZION/WETH', fee: '1%', primary: false, token1Symbol: 'WETH' },
-            { key: 'wzion_sol', label: 'wZION/SOL', fee: '0.01%', primary: false, token1Symbol: 'SOL' },
-          ].map((pool) => {
-            const stats = poolStats?.pools[pool.key as keyof typeof poolStats.pools];
-            const wzionLiq = stats?.balances?.token0 ?? 0;
-            const token1Liq = stats?.balances?.token1 ?? 0;
-            const activeNfts = (stats?.nft_positions ?? []).filter(p => p.type === 'two-sided');
-            const burnedNfts = (stats?.nft_positions ?? []).filter(p => p.type === 'burned');
-            const isDepleted = activeNfts.length === 0;
-            return (
-              <div
-                key={pool.key}
-                className={`zion-rainbow-card p-4 ${pool.primary ? 'border-zion-gold/30' : ''} ${isDepleted ? 'opacity-60' : ''}`}
-                style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold text-white">{pool.label}</span>
-                  {pool.primary && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-zion-gold/20 text-zion-gold border border-zion-gold/30">
-                      {cs ? 'primární' : 'primary'}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* wZION/USDT — active V4 pool */}
+          <div
+            className="zion-rainbow-card p-4 border-zion-gold/30"
+            style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-semibold text-white">{poolStats?.pools?.wzion_usdt?.pair ?? 'wZION/USDT'}</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-zion-gold/20 text-zion-gold border border-zion-gold/30">
+                {cs ? 'primární' : 'primary'}
+              </span>
+              <span className="text-[10px] text-gray-400">{poolStats?.pools?.wzion_usdt?.feeLabel ?? '0.3%'}</span>
+            </div>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-400">{cs ? 'Cena' : 'Price'}:</span>
+                <span className="font-mono text-white">${(poolStats?.pools?.wzion_usdt?.price_usd ?? 0).toFixed(6)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">{cs ? 'Likvidita' : 'Liquidity'}:</span>
+                <span className="font-mono text-white">
+                  {(poolStats?.pools?.wzion_usdt?.balances?.wzion ?? 0) > 0
+                    ? `${(poolStats!.pools.wzion_usdt.balances.wzion).toLocaleString(undefined, { maximumFractionDigits: 0 })} wZION`
+                    : '—'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">USDT:</span>
+                <span className="font-mono text-white">
+                  {(poolStats?.pools?.wzion_usdt?.balances?.usdt ?? 0) > 0
+                    ? (poolStats!.pools.wzion_usdt.balances.usdt).toLocaleString(undefined, { maximumFractionDigits: 2 })
+                    : '—'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">TVL:</span>
+                <span className="font-mono text-white">${(poolStats?.pools?.wzion_usdt?.tvl_usd ?? 0).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">{cs ? 'Stav' : 'Status'}:</span>
+                <span className={poolStats?.pools?.wzion_usdt?.active ? 'text-emerald-400' : 'text-amber-400'}>
+                  {poolStats?.pools?.wzion_usdt?.active ? (cs ? 'aktivní' : 'active') : (cs ? 'načítám' : 'loading')}
+                </span>
+              </div>
+              {poolStats?.pools?.wzion_usdt?.nft_owner && (
+                <div className="pt-2 mt-2 border-t border-white/10 space-y-1">
+                  <p className="text-[10px] uppercase tracking-wider text-gray-500">
+                    {cs ? 'V4 NFT pozice' : 'V4 NFT position'}
+                  </p>
+                  <div className="flex justify-between text-[10px]">
+                    <span className="text-gray-500 font-mono">#{poolStats.pools.wzion_usdt.nft_id}</span>
+                    <span className="text-emerald-400 font-mono">
+                      {cs ? 'aktivní' : 'active'} · {poolStats.pools.wzion_usdt.nft_owner.slice(0, 8)}…{poolStats.pools.wzion_usdt.nft_owner.slice(-4)}
                     </span>
-                  )}
-                  <span className="text-[10px] text-gray-400">{pool.fee}</span>
+                  </div>
                 </div>
-                <div className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">{cs ? 'Cena' : 'Price'}:</span>
-                    <span className="font-mono text-white">${(stats?.price_usd ?? 0).toFixed(6)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">{cs ? 'Likvidita' : 'Liquidity'}:</span>
-                    <span className="font-mono text-white">
-                      {wzionLiq > 0 ? `${wzionLiq.toLocaleString(undefined, { maximumFractionDigits: 0 })} wZION` : '—'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">{pool.token1Symbol}:</span>
-                    <span className="font-mono text-white">
-                      {token1Liq > 0 ? token1Liq.toLocaleString(undefined, { maximumFractionDigits: 4 }) : '—'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Tick:</span>
-                    <span className="font-mono text-white">{stats?.tick ?? '—'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">{cs ? 'Stav' : 'Status'}:</span>
-                    <span className={isDepleted ? 'text-gray-500' : 'text-emerald-400'}>
-                      {isDepleted
-                        ? (cs ? 'bez likvidity' : 'no liquidity')
-                        : (cs ? 'aktivní' : 'active')}
-                    </span>
-                  </div>
-                  {activeNfts.length > 0 && (
-                    <div className="pt-2 mt-2 border-t border-white/10 space-y-1">
-                      <p className="text-[10px] uppercase tracking-wider text-gray-500">
-                        {cs ? 'NFT pozice' : 'NFT positions'} ({activeNfts.length})
-                      </p>
-                      {activeNfts.map((nft) => (
-                        <div key={nft.id} className="flex justify-between text-[10px]">
-                          <span className="text-gray-500 font-mono">#{nft.id}</span>
-                          <span className="text-gray-300 font-mono">
-                            {(nft.wzion ?? 0).toLocaleString()} wZION
-                            {nft.usdt ? ` + $${nft.usdt}` : ''}
-                            {nft.weth ? ` + ${nft.weth} WETH` : ''}
-                            {nft.sol ? ` + ${nft.sol} SOL` : ''}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {burnedNfts.length > 0 && (
-                    <div className="pt-2 mt-2 border-t border-white/10 space-y-1">
-                      <p className="text-[10px] uppercase tracking-wider text-gray-600">
-                        {cs ? 'Vypálené pozice' : 'Burned positions'} ({burnedNfts.length})
-                      </p>
-                      {burnedNfts.map((nft) => (
-                        <div key={nft.id} className="flex justify-between text-[10px]">
-                          <span className="text-gray-600 font-mono">#{nft.id}</span>
-                          <span className="text-red-400/70 font-mono">
-                            {cs ? 'vypálena' : 'burned'}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+              )}
+            </div>
+          </div>
+
+          {/* ETH/wZION — burned V4 position */}
+          <div
+            className="zion-rainbow-card p-4 opacity-50"
+            style={{ '--rc': '100, 100, 100' } as React.CSSProperties}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-semibold text-white">{poolStats?.pools?.wzion_weth?.pair ?? 'ETH/wZION'}</span>
+              <span className="text-[10px] text-gray-400">{poolStats?.pools?.wzion_weth?.feeLabel ?? '0.3%'}</span>
+            </div>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-400">{cs ? 'Likvidita' : 'Liquidity'}:</span>
+                <span className="font-mono text-gray-500">0</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">{cs ? 'Stav' : 'Status'}:</span>
+                <span className="text-red-400/70">{cs ? 'vypálena' : 'burned'}</span>
+              </div>
+              <div className="pt-2 mt-2 border-t border-white/10 space-y-1">
+                <p className="text-[10px] uppercase tracking-wider text-gray-600">
+                  {cs ? 'V4 NFT pozice' : 'V4 NFT position'}
+                </p>
+                <div className="flex justify-between text-[10px]">
+                  <span className="text-gray-600 font-mono">#{poolStats?.pools?.wzion_weth?.nft_id ?? 2740380}</span>
+                  <span className="text-red-400/70 font-mono">{cs ? 'spálena' : 'burned'}</span>
                 </div>
               </div>
-            );
-          })}
+            </div>
+          </div>
         </div>
       </section>
 
