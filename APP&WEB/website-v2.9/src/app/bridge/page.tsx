@@ -607,7 +607,7 @@ export default function BridgePage() {
               { label: cs ? 'wZION kontrakt' : 'wZION contract', done: true },
               { label: cs ? 'ZIONBridge kontrakt' : 'ZIONBridge contract', done: true },
               { label: cs ? 'BaseScan verifikace' : 'BaseScan verified', done: false },
-              { label: cs ? '3/5 Guardian multisig' : '3/5 Guardian multisig', done: false },
+              { label: cs ? '5/5 Guardian validators' : '5/5 Guardian validators', done: true },
               { label: cs ? 'Relay metrics' : 'Relay metrics', done: true },
               { label: cs ? 'Burn widget (live)' : 'Burn widget (live)', done: true },
               { label: cs ? 'L1 → Base (mint)' : 'L1 → Base (mint)', done: true },
@@ -626,11 +626,13 @@ export default function BridgePage() {
         {/* ── RESOURCES ── */}
         <motion.section initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="zion-cta-banner">
           <h2 className="text-2xl font-semibold text-white mb-6 text-center">{cs ? 'Zdroje' : 'Resources'}</h2>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[
               { label: cs ? 'Dokumentace' : 'Architecture docs', href: '/docs', desc: cs ? 'Relay design, Guardian flow, bezpečnostní model.' : 'Relay design, Guardian flow, security model.' },
               { label: 'wZION (BaseScan)', href: `${BRIDGE_CONTRACTS.explorer_base}${BRIDGE_CONTRACTS.wzion_address}`, desc: cs ? 'Kód wZION kontraktu na Base Mainnet.' : 'wZION contract source on Base Mainnet.', external: true },
               { label: 'DeFi Hub', href: '/defi', desc: cs ? 'Swap wZION/ETH, portfolio, pool cena.' : 'Swap wZION/ETH, portfolio, pool price.' },
+              { label: 'CEX Listings', href: '/cex', desc: cs ? 'CEX listování + DEX trading data.' : 'CEX listings + DEX trading data.' },
+              { label: 'WARP', href: '/warp', desc: cs ? 'Cross-chain koridory — BTC, ETH, SOL plán.' : 'Cross-chain corridors — BTC, ETH, SOL plan.' },
             ].map((res) => (
               <Link key={res.label} href={res.href} target={'external' in res ? '_blank' : undefined} rel={'external' in res ? 'noreferrer' : undefined} className="flex flex-col gap-3 zion-rainbow-sub p-5 hover:bg-white/5 transition-colors group" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
                 <div className="flex items-center gap-2">
