@@ -4607,7 +4607,7 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
         type: 'warning',
         title: 'Confirm Transaction',
         message: `Send ${amt} ZION?`,
-        detail: `From: ${fromAddr}\nTo: ${toAddr}${purpose ? '\nPurpose: ' + purpose : ''}${memo ? '\nMemo: ' + memo : ''}\n\nFee: 0.00001 ZION (minimum)\n\nThis action cannot be undone.`,
+        detail: `From: ${fromAddr}\nTo: ${toAddr}${purpose ? '\nPurpose: ' + purpose : ''}${memo ? '\nMemo: ' + memo : ''}\n\nFee: 0.000001 ZION (1 flower minimum)\n\nThis action cannot be undone.`,
         buttons: ['Send', 'Cancel'],
         defaultId: 1,
         cancelId: 1

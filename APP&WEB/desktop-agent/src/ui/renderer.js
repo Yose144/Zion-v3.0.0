@@ -3423,10 +3423,12 @@ function initBridgeView() {
   // ── Lock widget ──────────────────────────────────────
   const evmInput   = document.getElementById('bridge-lock-evm');
   const amtInput   = document.getElementById('bridge-lock-amount');
+  const fromInput  = document.getElementById('bridge-lock-from');
+  const pwdInput   = document.getElementById('bridge-lock-password');
   const memoInput  = document.getElementById('bridge-lock-memo');
   const copyMemoBtn = document.getElementById('bridge-lock-copy-memo');
   const sendBtn    = document.getElementById('bridge-lock-send-btn');
-  const fillBtn    = document.getElementById('bridge-lock-fill-wallet');
+  const fillBtn    = document.getElementById('bridge-lock-fill-from');
   const statusEl   = document.getElementById('bridge-lock-status');
   const resultEl   = document.getElementById('bridge-lock-tx-result');
   const txHashEl   = document.getElementById('bridge-lock-txhash');
@@ -3442,12 +3444,16 @@ function initBridgeView() {
     }
     if (sendBtn) {
       const amt = parseFloat(amtInput?.value ?? '0');
-      sendBtn.disabled = !(isValidEvm && amt >= 100);
+      const hasFrom = !!(fromInput?.value?.trim()?.startsWith('zion1'));
+      const hasPwd  = !!(pwdInput?.value?.length > 0);
+      sendBtn.disabled = !(isValidEvm && amt >= 100 && hasFrom && hasPwd);
     }
   }
 
   if (evmInput)  evmInput.addEventListener('input',  rebuildMemo);
   if (amtInput)  amtInput.addEventListener('input',  rebuildMemo);
+  if (fromInput) fromInput.addEventListener('input',  rebuildMemo);
+  if (pwdInput)  pwdInput.addEventListener('input',  rebuildMemo);
 
   if (copyMemoBtn) {
     copyMemoBtn.addEventListener('click', () => {
@@ -3459,13 +3465,18 @@ function initBridgeView() {
 
   // Fill from active wallet
   if (fillBtn) {
-    fillBtn.addEventListener('click', () => {
-      const activeWallet = document.getElementById('active-wallet-address')?.value
-        ?? document.getElementById('wallet-overview-address')?.textContent?.trim()
-        ?? '';
-      if (activeWallet && activeWallet.startsWith('zion1')) {
-        // We need the EVM equivalent — just show hint
-        if (statusEl) statusEl.textContent = 'Enter your Base EVM address (0x...) — it is different from your ZION L1 address';
+    fillBtn.addEventListener('click', async () => {
+      try {
+        const cfg = await window.electronAPI?.getConfig?.();
+        const addr = cfg?.wallet || cfg?.address || '';
+        if (addr && addr.startsWith('zion1')) {
+          if (fromInput) fromInput.value = addr;
+          rebuildMemo();
+        } else {
+          if (statusEl) statusEl.textContent = '⚠ No active wallet set. Go to Wallet tab → set your wallet address.';
+        }
+      } catch {
+        if (statusEl) statusEl.textContent = '⚠ Could not read config';
       }
     });
   }
@@ -3475,6 +3486,8 @@ function initBridgeView() {
     sendBtn.addEventListener('click', async () => {
       const evm   = evmInput?.value?.trim() ?? '';
       const amt   = parseFloat(amtInput?.value ?? '0');
+      const from  = fromInput?.value?.trim() ?? '';
+      const pwd   = pwdInput?.value ?? '';
       const memo  = memoInput?.value ?? '';
 
       if (!/^0x[0-9a-fA-F]{40}$/.test(evm)) {
@@ -3485,31 +3498,43 @@ function initBridgeView() {
         if (statusEl) statusEl.textContent = '⚠ Minimum 100 ZION';
         return;
       }
+      if (!from || !from.startsWith('zion1')) {
+        if (statusEl) statusEl.textContent = '⚠ Set your ZION L1 wallet address (click "Use active wallet")';
+        return;
+      }
+      if (!pwd) {
+        if (statusEl) statusEl.textContent = '⚠ Wallet password is required to sign the transaction';
+        return;
+      }
       if (!memo.startsWith('BRIDGE:base:')) {
         if (statusEl) statusEl.textContent = '⚠ Memo not generated — enter EVM address first';
         return;
       }
 
       sendBtn.disabled = true;
-      if (statusEl) statusEl.textContent = 'Sending lock transaction...';
+      if (statusEl) statusEl.textContent = '⏳ Sending lock transaction...';
 
       try {
         // Reuse wallet-send IPC with memo field (bridge lock TX)
         const result = await window.electronAPI?.walletSendTransaction?.({
+          rpcUrl: 'http://77.42.71.94:8443/jsonrpc',
+          from,
           to: BRIDGE_VAULT,
-          amount: String(amt),
+          amount: amt,
+          purpose: 'bridge-lock',
           memo,
+          password: pwd,
         });
-        if (result?.ok) {
+        if (result?.success) {
           if (statusEl) statusEl.textContent = '';
           if (resultEl) resultEl.style.display = 'block';
-          if (txHashEl) txHashEl.textContent = result.tx_hash ?? result.txHash ?? 'submitted';
+          if (txHashEl) txHashEl.textContent = result.txId ?? result.tx_id ?? 'submitted';
         } else {
-          if (statusEl) statusEl.textContent = `⚠ ${result?.error ?? 'Transaction failed'}`;
+          if (statusEl) statusEl.textContent = `❌ ${result?.error ?? 'Transaction failed'}`;
           sendBtn.disabled = false;
         }
       } catch (e) {
-        if (statusEl) statusEl.textContent = `⚠ ${e.message ?? 'Unknown error'}`;
+        if (statusEl) statusEl.textContent = `❌ ${e.message ?? 'Unknown error'}`;
         sendBtn.disabled = false;
       }
     });
