@@ -60,7 +60,8 @@
 | wZION/WETH | 0.3% (3000) | `0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB` | 0 | **DEAD — old wrong-price pool** |
 | wZION/WETH | 1.0% (10000) | `0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699` | 429876233605855311813 | **ACTIVE — canonical** |
 | wZION/USDC | 0.3% (3000) | `0x5eBdC6E1D516f42EEB54f14faCF8715AbD5B9d8d` | 0 | **DEAD — abandoned** |
-| wZION/USDT | 0.3% (3000) | `0x186b46c2f04153999d44D25179cD623fD62Bfda2` | 987362838016781 | **ACTIVE — new (Session 2)** |
+| wZION/USDT | 0.3% (3000) | `0x186b46c2f04153999d44D25179cD623fD62Bfda2` | 987362838016781 | **ACTIVE — USDT pool** |
+| wZION/SOL | 0.3% (3000) | `0xc74F645A882dd7Bbbb60cc85Be10FF8a1572d01B` | 8022958244 | **ACTIVE — SOL pool (new)** |
 
 #### NFT Positions Withdrawn (Session 2)
 | NFT # | Pool | Tick Range | Action | TX (decreaseLiquidity) |
@@ -69,15 +70,17 @@
 | 5431091 | wZION/USDC 0.3% | -361440 to -360000 | Withdrawn + burned | `0xb40cd241...` |
 | 5431093 | wZION/WETH 1.0% | -161000 to -160000 | Withdrawn + burned | `0x1beb81c1...` |
 
-#### Remaining NFT Positions (3)
+#### Remaining NFT Positions (4)
 | NFT # | Pool | Tick Range | Liquidity | Type | TX |
 |-------|------|------------|-----------|------|-----|
-| 5431714 | wZION/WETH 1.0% | -162000 to -160000 | 0 | Narrow — **depleted** (swap drained) | `0xc7f84d0e...` |
+| 5431714 | wZION/WETH 1.0% | -162000 to -160000 | 0 | Narrow — **depleted** | `0xc7f84d0e...` |
 | 5434576 | wZION/WETH 1.0% | -164000 to -158000 | 429876233605855311813 | **Wide (±30%) — active** | `0xd9db0431...` |
-| 5434637 | wZION/USDT 0.3% | -366600 to -356580 | 987362838016781 | **USDT pool — new** | `0xcb67ba8b...` |
+| 5434637 | wZION/USDT 0.3% | -366600 to -356580 | 987362838016781 | **USDT pool — active** | `0xcb67ba8b...` |
+| 5434733 | wZION/SOL 0.3% | -79560 to -69540 | 8022958244 | **SOL pool — active (new)** | `0x234f3846...` |
 
-**WETH pool liquidity:** 429876233605855311813 (wide position only)
-**USDT pool liquidity:** 987362838016781 (two-sided, $0.0002/ZION)
+**WETH pool liquidity:** 429876233605855311813 (wide position)
+**USDT pool liquidity:** 987362838016781 (100K wZION + 3.14 USDT)
+**SOL pool liquidity:** 8022958244 (100K wZION + 0.043 SOL)
 
 #### Key Fix: Tuple ABI
 - **Root cause of previous failed withdraws:** NPM `decreaseLiquidity()` and `collect()` take **struct (tuple)** parameters, not individual params
@@ -95,29 +98,33 @@
 
 ---
 
-## 🔧 Remaining Work — USDT/wZION Pool
+## 🔧 Remaining Work — Pool Expansion
 
 ### ✅ DONE (Session 2)
 - [x] Swap 0.002 WETH → 3.14 USDT via SwapRouter02 multicall
 - [x] Create + initialize USDT/wZION pool (fee=3000, $0.0002/ZION)
 - [x] Add two-sided liquidity (100K wZION + 3.14 USDT)
-- [x] Pool address: `0x186b46c2f04153999d44D25179cD623fD62Bfda2`
+- [x] Swap 0.002 WETH → 0.043 SOL via KyberSwap aggregator (route: PancakeSwap V3)
+- [x] Create + initialize SOL/wZION pool (fee=3000, ~580K ZION/SOL)
+- [x] Add two-sided liquidity (100K wZION + 0.043 SOL)
 
-### Current State
-- wZION/WETH 1.0% pool: **ACTIVE** ✅ (wide position, 430B liquidity)
-  - NFT #5431714: narrow ±10% — **depleted** (liq=0, swap drained)
+### Current State — 3 Active Pools
+- wZION/WETH 1.0%: **ACTIVE** ✅ (wide position, 430B liquidity)
+  - NFT #5431714: narrow ±10% — **depleted** (liq=0)
   - NFT #5434576: wide ±30% — **active** (200K wZION + 0.020 WETH)
-- wZION/USDT 0.3% pool: **ACTIVE** ✅ (new, 987B liquidity)
-  - NFT #5434637: ±50% range (100K wZION + 3.14 USDT)
-- Old wZION/WETH 0.3% pool: **DEAD** (liquidity=0)
-- Old wZION/USDC 0.3% pool: **DEAD** (liquidity=0)
-- Deployer: ~99.78M wZION, 0.0001 WETH, 0.041 ETH, 0 USDT
+- wZION/USDT 0.3%: **ACTIVE** ✅ (987B liquidity, 100K wZION + 3.14 USDT)
+  - NFT #5434637: ±50% range
+- wZION/SOL 0.3%: **ACTIVE** ✅ (8B liquidity, 100K wZION + 0.043 SOL)
+  - NFT #5434733: ±50% range
+- Old wZION/WETH 0.3%: **DEAD** (liquidity=0)
+- Old wZION/USDC 0.3%: **DEAD** (liquidity=0)
+- Deployer: ~99.78M wZION, 0.0001 WETH, 0.040 ETH, 0 SOL, 0 USDT
 
 ### Remaining Tasks
 - [ ] Burn NFT #5431714 (depleted, liq=0 — cleanup)
-- [ ] Add more USDT liquidity when more USDT is acquired
-- [ ] Update website /api/defi/pools to include USDT pool
-- [ ] Verify on DexScreener (may take a few minutes to index)
+- [ ] Add more liquidity when more tokens acquired
+- [ ] Update website /api/defi/pools to include USDT + SOL pools
+- [ ] Verify on DexScreener
 - [ ] Monitor bridge relayer continues processing new locks
 
 ---
@@ -186,6 +193,24 @@ fn = router.functions.multicall(deadline, [ei_calldata])
 tx_hash, receipt = send_tx(w3, account, fn, gas_limit=250000)
 ```
 **Path encoding:** `tokenIn (20 bytes) + fee (3 bytes) + tokenOut (20 bytes)` = 43 bytes packed
+
+### KyberSwap aggregator (for cross-DEX swaps)
+When Uniswap V3 has no direct pool (e.g., WETH→SOL), use KyberSwap aggregator API:
+```python
+# 1. Get route
+url = f"https://aggregator-api.kyberswap.com/base/api/v1/routes?tokenIn={WETH}&tokenOut={SOL}&amountIn={amount}"
+route = json.loads(urlopen(url))["data"]["routeSummary"]
+
+# 2. Build swap tx
+build_url = "https://aggregator-api.kyberswap.com/base/api/v1/route/build"
+build_data = {"routeSummary": route, "sender": addr, "recipient": addr, "slippageTolerance": 500, "deadLine": 9999999999}
+swap_data = json.loads(urlopen(build_url, json.dumps(build_data)))["data"]
+# swap_data["routerAddress"], swap_data["data"], swap_data["gas"]
+
+# 3. Approve token for router, then send tx to router with calldata
+```
+**KyberSwap router (Base):** `0x6131B5fae19EA4f9D964eAc0408E4408b66337b5`
+**Route for WETH→SOL:** PancakeSwap V3 / Aerodrome Slipstream (multi-hop)
 
 ### Gas Requirements
 - `createAndInitializePoolIfNecessary`: ~4.6M gas (set limit to 5.5M)
@@ -256,4 +281,5 @@ tx_hash, receipt = send_tx(w3, account, fn, gas_limit=250000)
 | wZION | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | 18 |
 | USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | 6 |
 | USDT | `0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2` | 6 (bridged) |
+| SOL  | `0x311935Cd80B76769bF2ecC9D8Ab7635b2139cf82` | 9 (Base bridge) |
 | WETH | `0x4200000000000000000000000000000000000006` | 18 |
