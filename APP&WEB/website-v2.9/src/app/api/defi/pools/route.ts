@@ -163,18 +163,34 @@ async function getPoolStats(poolConfig: typeof POOLS[keyof typeof POOLS], wethUs
     }
   }
 
-  // Token balances in human-readable units
+  // Token balances in human-readable units (on-chain pool balances — may be near 0
+  // if liquidity is held in NFT positions rather than sitting idle in the pool)
   const balance0Human = Number(balance0) / 10 ** poolConfig.token0Decimals;
   const balance1Human = Number(balance1) / 10 ** poolConfig.token1Decimals;
 
-  // TVL: use token balances held by pool (actual deposited amounts)
+  // Sum NFT position amounts (canonical deposited liquidity)
+  const nftWzion = poolConfig.nftPositions.reduce((s, p) => s + (p.wzion ?? 0), 0);
+  const nftToken1 = poolConfig.nftPositions.reduce((s, p) => {
+    if (poolConfig.token1Symbol === 'USDT') return s + (p.usdt ?? 0);
+    if (poolConfig.token1Symbol === 'WETH') return s + (p.weth ?? 0);
+    if (poolConfig.token1Symbol === 'SOL')  return s + (p.sol ?? 0);
+    return s;
+  }, 0);
+
+  // Effective liquidity = max(on-chain pool balance, NFT position sum)
+  // NFT positions represent the canonical deposited amounts; pool balances
+  // can drift to ~0 when swaps move tokens out of the active range.
+  const effBalance0 = Math.max(balance0Human, nftWzion);
+  const effBalance1 = Math.max(balance1Human, nftToken1);
+
+  // TVL: use effective balances (NFT positions + on-chain)
   let tvlUsd = 0;
   if (poolConfig.token1Symbol === 'WETH') {
-    tvlUsd = (balance1Human * wethUsd) + (balance0Human * priceUsd);
+    tvlUsd = (effBalance1 * wethUsd) + (effBalance0 * priceUsd);
   } else if (poolConfig.token1Symbol === 'USDT') {
-    tvlUsd = balance1Human + (balance0Human * priceUsd);
+    tvlUsd = effBalance1 + (effBalance0 * priceUsd);
   } else if (poolConfig.token1Symbol === 'SOL') {
-    tvlUsd = (balance1Human * solUsd) + (balance0Human * priceUsd);
+    tvlUsd = (effBalance1 * solUsd) + (effBalance0 * priceUsd);
   }
 
   return {
@@ -193,12 +209,14 @@ async function getPoolStats(poolConfig: typeof POOLS[keyof typeof POOLS], wethUs
       usd_per_wzion: priceUsd,
     },
     balances: {
-      token0: balance0Human,
-      token1: balance1Human,
+      token0: effBalance0,
+      token1: effBalance1,
+      pool_token0: balance0Human,
+      pool_token1: balance1Human,
     },
     tvl: {
-      token0: balance0Human,
-      token1: balance1Human,
+      token0: effBalance0,
+      token1: effBalance1,
       usd: tvlUsd,
     },
     nft_positions: poolConfig.nftPositions,
