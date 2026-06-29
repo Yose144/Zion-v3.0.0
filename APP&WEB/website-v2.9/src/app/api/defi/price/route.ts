@@ -66,8 +66,11 @@ function hexToBigInt(hex: string | null): bigint {
 function decodeSlot0(hex: string): { sqrtPriceX96: bigint; tick: number } {
   const clean = hex.startsWith('0x') ? hex.slice(2) : hex;
   const sqrtPriceX96 = BigInt('0x' + clean.slice(0, 64));
+  // tick is int24, ABI-encoded as sign-extended to 256 bits
   const tickRaw = BigInt('0x' + clean.slice(64, 128));
-  const tick = tickRaw >= 2n ** 23n ? Number(tickRaw - 2n ** 24n) : Number(tickRaw);
+  // Mask to 24 bits, then interpret as signed int24
+  const tick24 = tickRaw & 0xFFFFFFn;
+  const tick = tick24 >= 2n ** 23n ? Number(tick24 - 2n ** 24n) : Number(tick24);
   return { sqrtPriceX96, tick };
 }
 
