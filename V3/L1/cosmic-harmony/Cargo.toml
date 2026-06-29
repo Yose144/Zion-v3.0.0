@@ -17,7 +17,7 @@ testnet_fork_rehearsal = []
 
 [dependencies]
 serde.workspace = true
-aes = "0.8"
+aes = "0.9"
 blake3 = "1"
 chrono = { version = "0.4", features = ["serde"] }
 libc = "0.2"
