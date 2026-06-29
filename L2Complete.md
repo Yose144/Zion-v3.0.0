@@ -1,6 +1,6 @@
 # L2 Bridge Completion — Status & Plan
 
-**Last updated:** 2026-06-28
+**Last updated:** 2026-06-29
 
 ---
 
@@ -34,7 +34,7 @@
   - 1× 100 ZION lock (`8eb0bb8c...`)
   - 6× 16,666,666 ZION premine locks (`6bc2aa3e`, `d9ddb3c7`, `09fc9abb`, `2cd12d90`, `4b43e7a3`, `035c761d`)
 - **wZION totalSupply:** `100,000,299 wZION`
-- **Recipient balance:** `100,000,045 wZION` at `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186`
+- **Recipient balance:** `98,000,045 wZION` at `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186` (2M wZION used for Uniswap liquidity)
 - **ETH balance:** `0.0717 ETH` (for gas)
 - `processedL1Locks[l1TxHash] = true` for all 7 locks on wZION contract
 - DB: all locks marked `Completed`, `timelocked_ops` cleared
@@ -52,108 +52,107 @@
 - `mainnet_readiness::test_parse_bridge_mainnet_toml` — bridge address updated to v3
 - All `cargo test -p zion-bridge` tests pass
 
----
+### 7. Uniswap V3 Pools Created & Seed Liquidity Added ✅
 
-## 🔧 In Progress — Uniswap V3 Seed Liquidity
+#### Pools Created
+| Pair | Fee | Pool Address | sqrtPriceX96 | Tick | Status |
+|------|-----|--------------|--------------|------|--------|
+| wZION/USDC | 0.3% (3000) | `0x5eBdC6E1D516f42EEB54f14faCF8715AbD5B9d8d` | `1120455419495722778624` | -361501 | ✅ Created & initialized |
+| wZION/WETH | 1.0% (10000) | `0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699` | `25054144837504793613172736` | -161190 | ✅ Created & initialized |
 
-### Target Price
-- **0.0002 USD per ZION**
+Both pools initialized at **$0.0002 USD/ZION**.
 
-### Token Addresses (Base mainnet)
-| Token | Address | Decimals |
-|-------|---------|----------|
-| wZION | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | 18 |
-| USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | 6 |
-| WETH | `0x4200000000000000000000000000000000000006` | 18 |
+#### Seed Liquidity Positions
+| Pool | NFT Position ID | Tick Range | wZION Deposited | USDC/WETH | TX |
+|------|----------------|------------|-----------------|-----------|-----|
+| wZION/USDC | 5431091 | -361440 to -360000 | 1,000,000 wZION | 0 (single-sided) | `0x8f1e5ef7...` |
+| wZION/WETH | 5431093 | -161000 to -160000 | 1,000,000 wZION | 0 (single-sided) | `0xaa7d2824...` |
 
-### Uniswap V3 Addresses (Base mainnet)
-| Contract | Address |
-|----------|---------|
-| V3 Factory | `0x33128a8fC17869897dcE68Ed026d694621f6FDfD` |
-| NonfungiblePositionManager | `0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1` |
-| SwapRouter | `0x2626664c2603336E57B271c5C0b26F421741e481` |
-| QuoterV2 | `0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a` |
-| Universal Router | `0x198EF79F1F515F02dFE9e3115eD9fC07183f02fC` |
-| Permit2 | `0x000000000022D473030F116dDEE9F6B43aC78BA3` |
+**Note:** Liquidity is single-sided (wZION only, range above current price). Pool `liquidity` = 0 because positions are above current tick (inactive until price moves up). Tokens are held in pool contracts:
+- wZION in USDC pool: 999,999.99 wZION
+- wZION in WETH pool: 1,000,000 wZION
 
-> ⚠️ **NOT** `0x1F98431c8aD98523631AE4a59f267346ea31F984` — that's Ethereum mainnet, not Base!
-
-### Existing Pools
-| Pair | Fee | Pool Address | Status |
-|------|-----|--------------|--------|
-| wZION/WETH | 0.3% (3000) | `0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB` | Exists, price ~$0.017/ZION (wrong price) |
-| wZION/USDC | 0.3% (3000) | — | Not created |
-| wZION/WETH | 1% (10000) | — | Not created |
-
-### Price Calculations
-```
-wZION/USDC (fee=3000):
-  token0 = wZION (lower address), token1 = USDC
-  1 ZION = 0.0002 USDC → raw: 1e18 wZION = 200 USDC (6 dec)
-  price_raw = 200 / 1e18 = 2e-16
-  sqrtPriceX96 = sqrt(2e-16) * 2^96 = 1120455419495722778624
-
-wZION/WETH (fee=10000, ETH=$2000):
-  token0 = wZION, token1 = WETH
-  1 ZION = 0.0002 USD = 0.0002/2000 ETH = 1e-7 WETH
-  price_raw = 1e-7 (both 18 dec)
-  sqrtPriceX96 = sqrt(1e-7) * 2^96 = 25054144837504793613172736
-```
-
-### Current Blocker — Pool Creation Reverted
-Both `createAndInitializePoolIfNecessary` TXs reverted:
-- wZION/USDC: TX `0xf4c398d2...` — FAILED
-- wZION/WETH: TX `0xc8844baa...` — FAILED
-
-**Need to investigate revert reason.** Likely causes:
-1. wZION has transfer restrictions / whitelist that blocks Uniswap NPM
-2. sqrtPriceX96 out of valid tick range (MIN_TICK=-887272, MAX_TICK=887272)
-3. wZION `whenNotPaused` or similar guard
-
-### Setup Script
-- `/root/uniswap_v3_setup.py` on Edge node (created, needs debugging)
-- Supports: `--create-pools`, `--add-liquidity`, `--add-liquidity-weth`, `--check`
+#### Issues Resolved
+1. **Pool creation revert:** Root cause was **out of gas** — gas estimate ~4.75M, but gas limit was set to 1M. Fixed by setting gas limit to 5.5M.
+2. **Mint revert:** Root cause was **wrong ABI encoding** — NPM `mint()` takes a single struct parameter, not individual parameters. Fixed by using tuple-based ABI.
+3. **Wrong Uniswap addresses:** `0x1F98431c8aD98523631AE4a59f267346ea31F984` is Ethereum mainnet, NOT Base. Correct Base addresses discovered from Base docs.
 
 ---
 
-## 📋 Plan for Completion
+## 🔧 Remaining Work — Two-Sided Liquidity
 
-### Step 1: Debug Pool Creation Revert
-- [ ] Trace revert reason for TX `0xf4c398d2...` (wZION/USDC)
-- [ ] Check if wZION has transfer restrictions (whitelist, max transfer, etc.)
-- [ ] Verify sqrtPriceX96 is within valid tick range
-- [ ] If wZION blocks transfers to Uniswap, may need to whitelist NPM address or remove restriction
-- [ ] Check wZION contract for `canTransfer` / `isWhitelisted` / similar modifiers
+### Current State
+- Pools are created and initialized at correct price ($0.0002/ZION)
+- 1M wZION seeded in each pool (single-sided, above current price)
+- **No active liquidity at current price** — need USDC and WETH to add two-sided positions
+- Deployer has 0 USDC and 0 WETH
 
-### Step 2: Create Uniswap V3 Pools
-- [ ] Create wZION/USDC pool (fee=3000, 0.3%) at 0.0002 USD/ZION
-- [ ] Create wZION/WETH pool (fee=10000, 1%) at 0.0002 USD/ZION
-- [ ] Verify pool initialization (check `slot0.sqrtPriceX96`, `liquidity`)
-
-### Step 3: Acquire USDC and WETH for Seed Liquidity
-- [ ] User needs to fund deployer address (`0xdde17506...`) with USDC and WETH
+### Step 1: Fund Deployer with USDC and WETH
+- [ ] User needs to send USDC and WETH to `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186`
 - [ ] Suggested amounts (user to confirm):
-  - wZION/USDC: 10M ZION + $2,000 USDC (small seed)
+  - wZION/USDC: 10M ZION + $2,000 USDC (small seed for price discovery)
   - wZION/WETH: 10M ZION + 1 WETH (~$2,000)
-- [ ] Alternatively: swap some wZION for USDC/WETH via Uniswap after pool creation
+- [ ] Alternatively: bridge more ZION from L1 and swap for USDC/WETH
 
-### Step 4: Add Seed Liquidity
+### Step 2: Add Two-Sided Liquidity
 - [ ] Approve wZION + USDC for NPM (`0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1`)
-- [ ] Mint full-range position for wZION/USDC (tickLower=-887220, tickUpper=887220)
+- [ ] Mint full-range or wide-range position for wZION/USDC (tickLower=-887220, tickUpper=887220)
 - [ ] Approve wZION + WETH for NPM
-- [ ] Mint full-range position for wZION/WETH
+- [ ] Mint full-range or wide-range position for wZION/WETH
 - [ ] Record NFT position IDs
+- [ ] **Important:** Use struct-based ABI for `mint()` — see code example below
 
-### Step 5: Verify & Monitor
+### Step 3: Verify & Monitor
 - [ ] Check pool prices match 0.0002 USD/ZION
-- [ ] Verify liquidity depth on both pools
+- [ ] Verify active liquidity (pool.liquidity > 0)
 - [ ] Test small swap via Uniswap UI or SwapRouter
 - [ ] Monitor bridge relayer continues processing new locks
 
-### Step 6: Optional — Old wZION/WETH Pool
-- [ ] Existing pool `0xa88C4C89...` has wrong price (~$0.017/ZION)
+### Step 4: Optional — Old wZION/WETH Pool
+- [ ] Existing pool `0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB` (fee=3000) has wrong price (~$0.017/ZION)
 - [ ] Either: withdraw liquidity if we have a position, or ignore it
-- [ ] New 1% pool will be the canonical one at correct price
+- [ ] New 1% pool (`0x18c0DaeF...`) will be the canonical one at correct price
+
+---
+
+## 📝 Technical Notes
+
+### Uniswap V3 NPM mint() ABI
+The NPM `mint()` function takes a **single struct parameter**, not individual parameters:
+```python
+# CORRECT — struct-based ABI
+NPM_ABI = [{
+    "inputs": [{"components": [
+        {"name": "token0", "type": "address"},
+        {"name": "token1", "type": "address"},
+        {"name": "fee", "type": "uint24"},
+        {"name": "tickLower", "type": "int24"},
+        {"name": "tickUpper", "type": "int24"},
+        {"name": "amount0Desired", "type": "uint256"},
+        {"name": "amount1Desired", "type": "uint256"},
+        {"name": "amount0Min", "type": "uint256"},
+        {"name": "amount1Min", "type": "uint256"},
+        {"name": "recipient", "type": "address"},
+        {"name": "deadline", "type": "uint256"},
+    ], "name": "params", "type": "tuple"}],
+    "name": "mint", ...
+}]
+
+# Call with tuple:
+params = (token0, token1, fee, tickLower, tickUpper, amt0, amt1, amt0Min, amt1Min, recipient, deadline)
+npm.functions.mint(params).call({"from": deployer})
+```
+
+### Gas Requirements
+- `createAndInitializePoolIfNecessary`: ~4.6M gas (set limit to 5.5M)
+- `mint` (single-sided): ~490K gas (set limit to 600K)
+- `mint` (full-range two-sided): ~500K gas estimated
+
+### Single-Sided Liquidity
+- When `tickLower > currentTick`, only token0 is deposited (no token1 needed)
+- Position is "inactive" — liquidity only activates when price moves into range
+- Pool `liquidity` variable stays 0 until price enters the position's range
+- Tokens are held by the pool contract, not the NPM
 
 ---
 
@@ -184,3 +183,23 @@ Both `createAndInitializePoolIfNecessary` TXs reverted:
 - **wZION totalSupply:** 100,000,299 wZION (100M ZION bridged)
 - **wZION MAX_SUPPLY:** 144,000,000,000 wZION (144B — matches L1 total supply)
 - **Available to bridge:** ~143.9B wZION remaining
+- **Deployer wZION balance:** 98,000,045 wZION (2M used for Uniswap seed liquidity)
+
+## 📊 Uniswap V3 Addresses (Base mainnet)
+| Contract | Address |
+|----------|---------|
+| V3 Factory | `0x33128a8fC17869897dcE68Ed026d694621f6FDfD` |
+| NonfungiblePositionManager | `0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1` |
+| SwapRouter | `0x2626664c2603336E57B271c5C0b26F421741e481` |
+| QuoterV2 | `0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a` |
+| Universal Router | `0x198EF79F1F515F02dFE9e3115eD9fC07183f02fC` |
+| Permit2 | `0x000000000022D473030F116dDEE9F6B43aC78BA3` |
+
+> ⚠️ **NOT** `0x1F98431c8aD98523631AE4a59f267346ea31F984` — that's Ethereum mainnet, not Base!
+
+## 📊 Token Addresses (Base mainnet)
+| Token | Address | Decimals |
+|-------|---------|----------|
+| wZION | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | 18 |
+| USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | 6 |
+| WETH | `0x4200000000000000000000000000000000000006` | 18 |
