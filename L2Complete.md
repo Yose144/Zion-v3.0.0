@@ -1,6 +1,6 @@
 # L2 Bridge Completion — Status & Plan
 
-**Last updated:** 2026-08-18 (session 3: SOL pool final setup + exact price)
+**Last updated:** 2026-08-18 (session 4: USDT liquidity boost + dashboard decimal fix + Blockaid false-positive)
 
 ---
 
@@ -61,7 +61,7 @@
 | wZION/WETH | 0.3% (3000) | `0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB` | 0 | **DEAD — old wrong-price pool** |
 | wZION/WETH | 1.0% (10000) | `0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699` | 429876233605855311813 | **ACTIVE — canonical** |
 | wZION/USDC | 0.3% (3000) | `0x5eBdC6E1D516f42EEB54f14faCF8715AbD5B9d8d` | 0 | **DEAD — abandoned** |
-| wZION/USDT | 0.3% (3000) | `0x186b46c2f04153999d44D25179cD623fD62Bfda2` | 987362838016781 | **ACTIVE — USDT pool** |
+| wZION/USDT | 0.3% (3000) | `0x186b46c2f04153999d44D25179cD623fD62Bfda2` | 1809213566686228 | **ACTIVE — PRIMARY USDT pool** |
 | wZION/SOL | 0.3% (3000) | `0xc74F645A882dd7Bbbb60cc85Be10FF8a1572d01B` | 0 | **DEAD — wrong price (inverted)** |
 | wZION/SOL | 1.0% (10000) | `0x1d43fd5afF5F7d810be32d8012e290210d823F11` | 0 | **DEAD — abandoned after withdrawal** |
 | wZION/SOL | 0.01% (100) | `0xF38c56bbBBBC6d9FA11E7DE84bF7Bb70e1e8D2b3` | 23597018927051195 | **ACTIVE — canonical SOL pool** |
@@ -73,17 +73,18 @@
 | 5431091 | wZION/USDC 0.3% | -361440 to -360000 | Withdrawn + burned | `0xb40cd241...` |
 | 5431093 | wZION/WETH 1.0% | -161000 to -160000 | Withdrawn + burned | `0x1beb81c1...` |
 
-#### Remaining NFT Positions (3)
+#### Remaining NFT Positions (5)
 | NFT # | Pool | Tick Range | Liquidity | Type | TX |
 |-------|------|------------|-----------|------|-----|
 | 5431714 | wZION/WETH 1.0% | -162000 to -160000 | 0 | Narrow — **depleted** | `0xc7f84d0e...` |
 | 5434576 | wZION/WETH 1.0% | -164000 to -158000 | 429876233605855311813 | **Wide (±30%) — active** | `0xd9db0431...` |
-| 5434637 | wZION/USDT 0.3% | -366600 to -356580 | 987362838016781 | **USDT pool — active** | `0xcb67ba8b...` |
-| 5434872 | wZION/SOL 0.01% | -340387 to -330387 | 23597018927051195 | **SOL pool — active (new)** | `0x1abc904f...` |
+| 5434637 | wZION/USDT 0.3% | -366600 to -356580 | 987362838016781 | **USDT narrow — active** | `0xcb67ba8b...` |
+| 5434872 | wZION/SOL 0.01% | -340387 to -330387 | 23597018927051195 | **SOL pool — active** | `0x1abc904f...` |
+| 5435121 | wZION/USDT 0.3% | -399960 to -330000 | 821850728669447 | **USDT wide (±25%) — active (NEW)** | `0x94995e14...` |
 
 **WETH pool liquidity:** 429876233605855311813 (wide position)
-**USDT pool liquidity:** 987362838016781 (100K wZION + 3.14 USDT)
-**SOL pool liquidity:** 23597018927051195 (100K wZION + 0.272 SOL)
+**USDT pool liquidity:** 1809213566686228 (two positions: narrow + wide)
+**SOL pool liquidity:** 23597018927051195
 
 #### Key Fix: Tuple ABI
 - **Root cause of previous failed withdraws:** NPM `decreaseLiquidity()` and `collect()` take **struct (tuple)** parameters, not individual params
@@ -92,12 +93,12 @@
 - Same for `collect()`: use `collect((uint256,address,uint128,uint128))` not `collect(uint256,address,uint128,uint128)`
 - Script: `ZION_OS/dashboard/uniswap_withdraw.py`
 
-#### Token Balances After Liquidity Addition
-- **wZION:** 99,731,908.06 (300K used for Uniswap: 200K WETH + 100K USDT + 100K SOL)
-- **ETH:** 0.021089
+#### Token Balances After Liquidity Addition (Session 4)
+- **wZION:** 99,681,908.06 (350K used for Uniswap: 200K WETH + 100K+50K USDT + 100K SOL)
+- **ETH:** 0.006082
 - **WETH:** 0
 - **USDC:** 0
-- **USDT:** 0
+- **USDT:** 14.59 (23.78 received from swap, 9.19 used for liquidity)
 - **SOL:** 0.002302
 
 ---
@@ -117,28 +118,45 @@
 - wZION/WETH 1.0%: **ACTIVE** ✅ (wide position, 430B liquidity)
   - NFT #5431714: narrow ±10% — **depleted** (liq=0)
   - NFT #5434576: wide ±30% — **active** (200K wZION + 0.020 WETH)
-- wZION/USDT 0.3%: **ACTIVE** ✅ (987B liquidity, 100K wZION + 3.14 USDT)
-  - NFT #5434637: ±50% range
+- wZION/USDT 0.3%: **ACTIVE — PRIMARY** ✅ (1.81T liquidity, 69,955 wZION + 11.45 USDT)
+  - NFT #5434637: narrow ±50% range (100K wZION + 3.14 USDT)
+  - NFT #5435121: wide ±25% range (50K wZION + 9.19 USDT) — **NEW (session 4)**
 - wZION/SOL 0.01%: **ACTIVE** ✅ (23.6T liquidity, 100K wZION + 0.272 SOL)
   - NFT #5434872: tick [-340387, -330387] (±5000 ticks)
   - Initialized at exact $0.0002/ZION (1 SOL = 367,200 ZION)
   - Price moved to ~410,912 ZION/SOL after immediate post-mint swap (market arbitrage)
 - DEAD pools (cannot be destroyed): wZION/WETH 0.3%, wZION/USDC 0.3%, wZION/SOL 0.3%, wZION/SOL 1.0%
-- Deployer: ~99.73M wZION, 0.021 ETH, 0.002 SOL, 0 WETH, 0 USDT
+- Deployer: ~99.68M wZION, 0.006 ETH, 14.59 USDT, 0.002 SOL, 0 WETH
 
 ### Liquidity Plan — Focus on USDT
 - **Primary:** wZION/USDT 0.3% — target to grow to **500K wZION + 100 USDT** ($100+ liquidity)
   - Stablecoin pair = best for real trading and integrations
-  - Current: 100K wZION + 3.14 USDT (~$23)
+  - Current: 69,955 wZION + 11.45 USDT (~$15 TVL) — **needs more USDT**
+  - Remaining deployer USDT: 14.59 (can add another ~$14 liquidity)
 - **Secondary:** wZION/WETH 1.0% — maintain wide position, add if more WETH available
 - **Tertiary:** wZION/SOL 0.01% — keep as-is, do not add more (volatile, expensive to rebalance)
 - **Dead pools:** leave at 0 liquidity; do not deposit again
 
+### Blockaid / Uniswap "Potential Honeypot" Warning
+- **Status:** False positive from Blockaid heuristics (used by Uniswap UI)
+- **Root cause:** wZION contract has `bridgeMint` (BRIDGE_ROLE only) and `emergencyPause` (GUARDIAN_ROLE) — standard bridge token security, but Blockaid flags admin-controlled mint as honeypot risk
+- **Not a real honeypot:** No sell fees, no blacklist, no hidden minting — contract is verified ERC-20 with OpenZeppelin AccessControl
+- **Also flagged:** "Not listed on leading U.S. exchanges" (expected — not on Coinbase/Kraken/Gemini yet)
+- **Mitigation:**
+  1. Increase liquidity and trading volume (in progress)
+  2. Submit false-positive report to Blockaid via Uniswap "Submit an issue" link
+  3. Get token verified on Basescan (source code already verified)
+  4. Apply for Uniswap Default Token List (requires volume + community)
+  5. Website docs: add explanation for users about the warning
+
 ### Remaining Tasks
+- [x] Add USDT liquidity to primary pool (50K wZION + 9.19 USDT added — session 4)
+- [x] Update website /api/defi/pools and /api/defi/status to include USDT + SOL pools
+- [x] Update DeFi dashboard UI to prioritize USDT pool
+- [x] Fix decimal adjustment in price calculation (USDT 6 decimals vs wZION 18)
 - [ ] Burn NFT #5431714 (depleted, liq=0 — cleanup)
-- [ ] Add USDT liquidity to primary pool (target 500K wZION + 100 USDT)
-- [ ] Update website /api/defi/pools and /api/defi/status to include USDT + SOL pools
-- [ ] Update DeFi dashboard UI to prioritize USDT pool
+- [ ] Add more USDT liquidity (need external USDT or more ETH to swap)
+- [ ] Submit Blockaid false-positive report
 - [ ] Verify on DexScreener
 - [ ] Monitor bridge relayer continues processing new locks
 
