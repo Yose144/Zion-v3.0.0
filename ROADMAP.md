@@ -16,6 +16,7 @@
 |-----------|--------|--------|
 | **3.0.3 Decimal Fork** | 27 June 2026 | ✅ **DEPLOYED** (Edge, MIGRATION_HEIGHT=18850) |
 | **Pool Persistence + TX Index** | 28 June 2026 | ✅ **DEPLOYED** (Session 3, Edge) |
+| **Uniswap V3 Pools + Liquidity** | 29 June 2026 | ✅ **DEPLOYED** (Session 4, Base mainnet) |
 | **Mainnet Genesis #0** | 31 December 2026 | Ready for launch |
 | **Summer Solstice rehearsal** | 20 June 2026 | Completed (internal) |
 
@@ -83,7 +84,12 @@
 |---------|--------|
 | wZION ERC-20 on Base Mainnet | ✅ Deployed |
 | Bridge relay (L1 ↔ Base, 60-block finality) | ✅ Active |
-| 3/5 multisig validator threshold | ✅ Configured |
+| 5/5 multisig validator threshold | ✅ Configured |
+| 100M wZION minted (7 premine locks) | ✅ Complete |
+| Uniswap V3 wZION/USDC pool (0.3%) | ✅ Created at $0.0002/ZION |
+| Uniswap V3 wZION/WETH pool (1.0%) | ✅ Created at $0.0002/ZION |
+| Two-sided WETH liquidity (active) | ✅ 100K wZION + 0.0069 WETH |
+| wZION/USDC two-sided liquidity | ⚠️ Pending (needs USDC funding) |
 | ZIONStaking (12% APR, 7-day cooldown) | ✅ Deployed |
 | ZIONGovernance (stake-weighted voting) | ✅ Deployed |
 | ZIONFarm (MasterChef yield farming) | ✅ Deployed |
@@ -104,7 +110,7 @@
 | Security audit | 🔄 Scheduled | External firm booked |
 | Bridge mainnet validator keys | ⚠️ User task | Requires air-gapped machine + hardware wallet |
 | Bridge relay mainnet activation | ⚠️ Pending | After validator key provisioning |
-| Validator address top-up (≥0.01 ETH) | ⚠️ Pending | 5 validators need gas funding |
+| Validator address top-up (≥0.01 ETH) | ✅ Done | All 5 validators funded (Session 4) |
 | Community preparation | 🔄 Ongoing | Documentation, tutorials |
 | CI billing resolution | ⚠️ Pending | GitHub Actions infrastructure |
 
@@ -119,6 +125,20 @@ Key steps:
 4. Activate monitoring (Prometheus + Grafana)
 5. Verify genesis hash consistency across all nodes
 6. Open public mining
+
+---
+
+## Phase 2.8 — Session 4: Uniswap V3 Pools + Liquidity (2026-06-29) ✅ Complete
+
+|| Feature | Status | Detail |
+|---------|--------|--------|
+|| wZION/USDC pool (0.3% fee) | ✅ Created | `0x5eBdC6E1...` at $0.0002/ZION |
+|| wZION/WETH pool (1.0% fee) | ✅ Created | `0x18c0DaeF...` at $0.0002/ZION |
+|| Single-sided liquidity (1M wZION each) | ✅ Active | NFT #5431091, #5431093 |
+|| Two-sided WETH liquidity | ✅ Active | 100K wZION + 0.0069 WETH, NFT #5431714 |
+|| Bridge start_block_height fix | ✅ Done | 11300 → 11700 (stop reprocessing) |
+|| Validator-5 ETH funding | ✅ Done | 0.01 ETH sent |
+|| wZION/USDC two-sided liquidity | ⚠️ Pending | Needs USDC funding (~$2,000) |
 
 ---
 
@@ -328,5 +348,5 @@ Key steps:
 
 ---
 
-*Last updated: 2026-06-28 (Session 3)*
-*Version: v3.0.3 · Status: Mainnet Ready (L1 Active, L2/L3 Ready, L4 Oasis Backend Complete, 3.0.3 Decimal Fork Deployed, Pool Persistence + TX Index Deployed)*
+*Last updated: 2026-06-29 (Session 4)*
+*Version: v3.0.3 · Status: Mainnet Ready (L1 Active, L2/L3 Ready, L4 Oasis Backend Complete, 3.0.3 Decimal Fork Deployed, Pool Persistence + TX Index Deployed, Uniswap V3 Pools + Liquidity Deployed)*
