@@ -123,9 +123,9 @@ export default function DefiPage() {
     active_pools: number;
     primary_price_usd: number;
     pools: {
-      wzion_usdt: { active: boolean; liquidity: string; tick: number; price_usd: number };
-      wzion_weth: { active: boolean; liquidity: string; tick: number; price_usd: number };
-      wzion_sol: { active: boolean; liquidity: string; tick: number; price_usd: number };
+      wzion_usdt: { active: boolean; liquidity: string; tick: number; price_usd: number; balances?: { token0: number; token1: number }; nft_positions?: { id: number; type: string; wzion?: number; usdt?: number; weth?: number; sol?: number }[] };
+      wzion_weth: { active: boolean; liquidity: string; tick: number; price_usd: number; balances?: { token0: number; token1: number }; nft_positions?: { id: number; type: string; wzion?: number; usdt?: number; weth?: number; sol?: number }[] };
+      wzion_sol: { active: boolean; liquidity: string; tick: number; price_usd: number; balances?: { token0: number; token1: number }; nft_positions?: { id: number; type: string; wzion?: number; usdt?: number; weth?: number; sol?: number }[] };
     };
   } | null>(null);
 
@@ -213,18 +213,24 @@ export default function DefiPage() {
               liquidity: data.pools?.wzion_usdt?.liquidity ?? '0',
               tick: data.pools?.wzion_usdt?.tick ?? 0,
               price_usd: data.pools?.wzion_usdt?.price?.usd_per_wzion ?? 0,
+              balances: data.pools?.wzion_usdt?.balances,
+              nft_positions: data.pools?.wzion_usdt?.nft_positions,
             },
             wzion_weth: {
               active: data.pools?.wzion_weth?.active ?? false,
               liquidity: data.pools?.wzion_weth?.liquidity ?? '0',
               tick: data.pools?.wzion_weth?.tick ?? 0,
               price_usd: data.pools?.wzion_weth?.price?.usd_per_wzion ?? 0,
+              balances: data.pools?.wzion_weth?.balances,
+              nft_positions: data.pools?.wzion_weth?.nft_positions,
             },
             wzion_sol: {
               active: data.pools?.wzion_sol?.active ?? false,
               liquidity: data.pools?.wzion_sol?.liquidity ?? '0',
               tick: data.pools?.wzion_sol?.tick ?? 0,
               price_usd: data.pools?.wzion_sol?.price?.usd_per_wzion ?? 0,
+              balances: data.pools?.wzion_sol?.balances,
+              nft_positions: data.pools?.wzion_sol?.nft_positions,
             },
           },
         } : null);
@@ -464,8 +470,8 @@ export default function DefiPage() {
             <div className="bg-black/30 rounded-lg p-2">
               <p className="text-gray-500 mb-0.5">{cs ? 'Likvidita' : 'Liquidity'}</p>
               <p className="text-white font-mono">
-                {poolStats?.pools?.wzion_usdt?.liquidity
-                  ? Number(poolStats.pools.wzion_usdt.liquidity).toLocaleString()
+                {poolStats?.pools?.wzion_usdt?.balances?.token0
+                  ? `${poolStats.pools.wzion_usdt.balances.token0.toLocaleString(undefined, { maximumFractionDigits: 0 })} wZION`
                   : '—'}
               </p>
             </div>
@@ -476,7 +482,7 @@ export default function DefiPage() {
             <div className="bg-black/30 rounded-lg p-2">
               <p className="text-gray-500 mb-0.5">{cs ? 'Stav' : 'Status'}</p>
               <p className={poolStats?.pools?.wzion_usdt?.active ? 'text-emerald-400' : 'text-amber-400'}>
-                {poolStats?.pools?.wzion_usdt?.active ? (cs ? 'aktivní' : 'active') : (cs ? 'načítám' : 'loading')}
+                {poolStats?.pools?.wzion_usdt?.active ? (cs ? 'aktivní' : 'active') : (poolStats ? (cs ? 'neaktivní' : 'inactive') : (cs ? 'načítám' : 'loading'))}
               </p>
             </div>
           </div>
@@ -490,11 +496,14 @@ export default function DefiPage() {
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
-            { key: 'wzion_usdt', label: 'wZION/USDT', fee: '0.3%', primary: true },
-            { key: 'wzion_weth', label: 'wZION/WETH', fee: '1%', primary: false },
-            { key: 'wzion_sol', label: 'wZION/SOL', fee: '0.01%', primary: false },
+            { key: 'wzion_usdt', label: 'wZION/USDT', fee: '0.3%', primary: true, token1Symbol: 'USDT' },
+            { key: 'wzion_weth', label: 'wZION/WETH', fee: '1%', primary: false, token1Symbol: 'WETH' },
+            { key: 'wzion_sol', label: 'wZION/SOL', fee: '0.01%', primary: false, token1Symbol: 'SOL' },
           ].map((pool) => {
             const stats = poolStats?.pools[pool.key as keyof typeof poolStats.pools];
+            const wzionLiq = stats?.balances?.token0 ?? 0;
+            const token1Liq = stats?.balances?.token1 ?? 0;
+            const activeNfts = (stats?.nft_positions ?? []).filter(p => p.type !== 'depleted');
             return (
               <div
                 key={pool.key}
@@ -517,7 +526,15 @@ export default function DefiPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">{cs ? 'Likvidita' : 'Liquidity'}:</span>
-                    <span className="font-mono text-white">{stats?.liquidity ? Number(stats.liquidity).toLocaleString() : '—'}</span>
+                    <span className="font-mono text-white">
+                      {wzionLiq > 0 ? `${wzionLiq.toLocaleString(undefined, { maximumFractionDigits: 0 })} wZION` : '—'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">{pool.token1Symbol}:</span>
+                    <span className="font-mono text-white">
+                      {token1Liq > 0 ? token1Liq.toLocaleString(undefined, { maximumFractionDigits: 4 }) : '—'}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Tick:</span>
@@ -529,6 +546,24 @@ export default function DefiPage() {
                       {stats?.active ? (cs ? 'aktivní' : 'active') : (cs ? 'neaktivní' : 'inactive')}
                     </span>
                   </div>
+                  {activeNfts.length > 0 && (
+                    <div className="pt-2 mt-2 border-t border-white/10 space-y-1">
+                      <p className="text-[10px] uppercase tracking-wider text-gray-500">
+                        {cs ? 'NFT pozice' : 'NFT positions'} ({activeNfts.length})
+                      </p>
+                      {activeNfts.map((nft) => (
+                        <div key={nft.id} className="flex justify-between text-[10px]">
+                          <span className="text-gray-500 font-mono">#{nft.id}</span>
+                          <span className="text-gray-300 font-mono">
+                            {(nft.wzion ?? 0).toLocaleString()} wZION
+                            {nft.usdt ? ` + $${nft.usdt}` : ''}
+                            {nft.weth ? ` + ${nft.weth} WETH` : ''}
+                            {nft.sol ? ` + ${nft.sol} SOL` : ''}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             );
