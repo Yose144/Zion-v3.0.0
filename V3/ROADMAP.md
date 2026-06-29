@@ -33,40 +33,58 @@ Verze **3.0.3** je nyní uzavřena. Všechny klíčové komponenty jsou funkčn�
 ### Verze 3.0.4 — Milestone Definition
 
 **Target:** Q3 2026 (do 2026-09-30)
+**Kanon. runbook:** [`L2Complete.md`](../L2Complete.md) sekce "🚀 ZION 3.0.4 Upgrade Plan"
 
 **Scope — co musí být hotové pro closure 3.0.4:**
 
-#### Priority 1 — DeFi kontrakty (Base Mainnet)
-- [ ] **ZIONStaking.sol** — deploy na Base Mainnet (z archive/2.9.9/legacy-code/L2/contracts/sol/)
-  - Reward rate konfigurace, staking period, emergency withdraw
-  - Aktualizovat `defi-contracts.ts` s reálnou adresou
-- [ ] **ZIONFarm.sol** — deploy na Base Mainnet
-  - LP token farming (wZION/USDT UniV3 NFT)
-  - Aktualizovat `defi-contracts.ts` s reálnou adresou
-- [ ] Foundry deploy scripty v `V3/L2/contracts/` (nový podadresář)
+#### P1 — DeFi kontrakty (Base Mainnet) — blocker: ~0.005 ETH gas
 
-#### Priority 2 — Atomic Swap E2E
-- [ ] **Escrow funding** — zaslat ~5-10 ZION na `zion1y0j484d5e8r49785d253e8w0c2x4t3n792m5724` pro release fees
-- [ ] **E2E test** — jeden kompletní HTLC swap (L1 SWAP:LOCK → EVM claim)
-- [ ] Dokumentovat flow v `docs/ATOMIC_SWAP_RUNBOOK.md`
+- [ ] **ZIONGovernance** — deploy: `cd archive/2.9.9/legacy-code/L2/contracts && npx hardhat run scripts/deploy-defi.ts --network base`
+- [ ] **ZIONTreasury** — součást deploy-defi.ts výše
+- [ ] **ZIONStaking** — součást deploy-defi.ts; init APR 12%, 7d cooldown; reward pool seed 100K wZION
+- [ ] **ZIONFarm** — `npx hardhat run scripts/deploy-farm.ts --network base`; Pool 0: wZION single; Pool 1: wZION/USDT LP; seed 500K wZION
+- [ ] `defi-contracts.ts` aktualizováno: reálné adresy + `STAKING_DEPLOYED=true`, `FARM_DEPLOYED=true`
+- [ ] `/defi/staking` page: "Deploy pending" banner zmizí, live data z kontraktu
+- [ ] `/defi/farming` page: "Deploy pending" banner zmizí, live data z kontraktu
+- [ ] Verify na Basescan: `npx hardhat run scripts/verify-base-mainnet-basescan.ts --network base`
+- [ ] `V3/L2/contracts/hardhat/` doplněn o zkopírované .sol + deploy skripty
 
-#### Priority 3 — DAO UI live
-- [ ] Ověřit že `/dao` web page správně zobrazuje live proposals ze scanner DB
-- [ ] Guardians provisioning — nastavit reálné guardian keys v `dao-mainnet.toml`
-- [ ] Voting flow E2E test — DAO:vote memo → DB → UI
+#### P2 — Atomic Swap E2E — blocker: escrow funding
 
-#### Priority 4 — WARP UI
-- [ ] `/warp` page: přidat funkční "Initiate Transfer" formulář (WARP:1:<chain>:<recipient> memo builder)
-- [ ] Transfer status tracking přes `/api/warp/transfers/:id`
+- [ ] Pošli **5-10 ZION** na `zion1y0j484d5e8r49785d253e8w0c2x4t3n792m5724`
+- [ ] Ověř balance: `getAddressInfo` RPC → `balance_flowers > 0`
+- [ ] E2E test: generuj preimage+hashlock → `SWAP:LOCK` L1 memo TX → daemon detekce → EVM claim
+- [ ] Vytvoř `docs/ATOMIC_SWAP_RUNBOOK.md`
 
-#### Priority 5 — Bridge UI
-- [ ] `/bridge` page: plný MetaMask flow (approve → burn → track → L1 unlock)
-- [ ] Bridge tracker live (lock → relay → mint → confirm pipeline)
+#### P3 — DAO Guardians + Voting E2E
+
+- [ ] Vygeneruj 5-7 guardian keypairs (`zion-cli keygen --label guardian-N`)
+- [ ] Přidej `[[guardians]]` sekce do `/root/zion-2.9.6-main/V3/L2/dao/config/dao-mainnet.toml`
+- [ ] Restart `zion-edge-dao.service` + ověř `/api/dao/co-admins`
+- [ ] Voting E2E: `DAO:vote:<id>:yes` L1 memo → scanner → DB → web UI zobrazí vote
+
+#### P4 — WARP UI Transfer Formulář
+
+- [ ] Přidej `warp: 'http://127.0.0.1:8453'` do `core-endpoints.ts`
+- [ ] Vytvoř `src/app/api/warp/[...path]/route.ts` — proxy na port 8453
+- [ ] Přidej "Initiate Transfer" sekci do `/warp` page: chain dropdown + recipient + amount + memo builder (`WARP:1:<chain>:<addr>`) + copy button
+- [ ] Transfer status tracker: polling `GET /api/warp/transfers/:id`
+
+#### P5 — Bridge UI — "Lock ZION" Tab
+
+- [ ] V `/bridge` page tab `'lock'`: zobraz vault adresu + memo builder (`BRIDGE:0x<evm>`) + minimum warning
+- [ ] Live bridge tracker component (polling `/api/bridge/status`): lock → relay → mint → complete
+
+#### P6 — V3/L2/contracts/hardhat/ kanonizace
+
+- [ ] Zkopíruj .sol + skripty z archive do `V3/L2/contracts/hardhat/` (viz README.md v tom adresáři)
+- [ ] `V3/L2/contracts/hardhat/.env.mainnet.example` ✅ (vytvořeno 2026-06-29)
 
 #### Nice to have (3.0.4 nebo 3.1.0)
-- Wallet SDK základy (TypeScript, npm package)
+- Wallet SDK základy (TypeScript, npm package `@zion/sdk`)
 - WARP Bitcoin bridge testnet E2E
 - Více USDT likvidity v primárním poolu
+- Blockaid false-positive report submission
 
 ---
 
