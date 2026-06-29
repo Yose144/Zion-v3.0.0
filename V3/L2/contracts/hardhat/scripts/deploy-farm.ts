@@ -59,12 +59,14 @@ async function main() {
   console.log(`Halving:        every ${halvingInterval / 86400} days`);
 
   // ── Deploy ZIONFarm ───────────────────────────────────────────────────────
+  const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
   const Factory = await ethers.getContractFactory("ZIONFarm");
   console.log("\n⏳ Deploying ZIONFarm...");
   const farm = await Factory.deploy(
     wzionAddr, adminAddr, guardianAddr, rewardPerSecond, halvingInterval
   );
   await farm.waitForDeployment();
+  await sleep(3000);
   const farmAddr = await farm.getAddress();
   console.log(`✅ ZIONFarm deployed: ${farmAddr}`);
 
@@ -73,7 +75,8 @@ async function main() {
 
   // Pool 0: wZION single-asset staking (100 alloc pts)
   const tx0 = await farm.addPool(100, wzionAddr, "wZION Single", false);
-  await tx0.wait();
+  await tx0.wait(2);
+  await sleep(3000);
   console.log("  Pool 0: wZION single-asset staking (100 alloc pts)");
 
   // Note: Pool 1 (LP token) will be added after Uniswap V3 pool is deployed
@@ -82,7 +85,8 @@ async function main() {
   // ── Grant REWARD_FUNDER_ROLE to deployer ──────────────────────────────────
   const REWARD_FUNDER_ROLE = await farm.REWARD_FUNDER_ROLE();
   const txR = await farm.grantRole(REWARD_FUNDER_ROLE, deployer.address);
-  await txR.wait();
+  await txR.wait(2);
+  await sleep(3000);
   console.log(`✅ REWARD_FUNDER_ROLE granted to deployer`);
 
   // ── Save ─────────────────────────────────────────────────────────────────

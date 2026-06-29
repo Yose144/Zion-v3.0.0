@@ -85,6 +85,14 @@ async function main() {
   let nonce = await ethers.provider.getTransactionCount(deployer.address, "pending");
   const nextNonce = () => nonce++;
 
+  // Helper: wait for TX to be fully confirmed + extra delay for public RPC in-flight limit
+  const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+  const waitForConfirm = async (tx: { wait: (confirms?: number) => Promise<any> }) => {
+    const receipt = await tx.wait(2); // wait for 2 confirmations
+    await sleep(3000); // extra delay for public RPC in-flight limit
+    return receipt;
+  };
+
   // ── Step 1: ZIONGovernance ────────────────────────────────────────────────
 
   console.log("\n📜 Step 1: Deploying ZIONGovernance...");
@@ -92,6 +100,7 @@ async function main() {
   const Governance = await ethers.getContractFactory("ZIONGovernance");
   const governance = await Governance.deploy(finalWzion, { nonce: nextNonce() });
   await governance.waitForDeployment();
+  await sleep(3000);
   const govAddr = await governance.getAddress();
   console.log(`   ✅ ZIONGovernance: ${govAddr}`);
 
@@ -121,6 +130,7 @@ async function main() {
   const Treasury  = await ethers.getContractFactory("ZIONTreasury");
   const treasury  = await Treasury.deploy(finalWzion, uniqueSigners, threshold, { nonce: nextNonce() });
   await treasury.waitForDeployment();
+  await sleep(3000);
   const treasuryAddr = await treasury.getAddress();
   console.log(`   ✅ ZIONTreasury: ${treasuryAddr}`);
   console.log(`      Signers: ${uniqueSigners.join(", ")}`);
@@ -138,6 +148,7 @@ async function main() {
     { nonce: nextNonce() }
   );
   await staking.waitForDeployment();
+  await sleep(3000);
   const stakingAddr = await staking.getAddress();
   console.log(`   ✅ ZIONStaking: ${stakingAddr}`);
   console.log(`      APR: ${aprBps / 100}% | Cooldown: 7 days`);
@@ -146,7 +157,8 @@ async function main() {
   console.log("\n🔐 Step 4: Grant REWARD_FUNDER_ROLE to ZIONTreasury...");
   const REWARD_FUNDER_ROLE = await staking.REWARD_FUNDER_ROLE();
   const grantTx = await staking.grantRole(REWARD_FUNDER_ROLE, treasuryAddr, { nonce: nextNonce() });
-  await grantTx.wait();
+  await grantTx.wait(2);
+  await sleep(3000);
   console.log(`   ✅ REWARD_FUNDER_ROLE granted to treasury`);
 
   // Grant staking awareness to governance (read-only — just logging for config)

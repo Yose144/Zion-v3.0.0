@@ -54,15 +54,18 @@ async function main() {
   }
 
   // approve
+  const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
   console.log("\nApproving wZION...");
   const tx1 = await wzion.approve(stakingAddr, seedAmount);
-  await tx1.wait();
+  await tx1.wait(2);
+  await sleep(3000);
   console.log(`✅ Approved: ${tx1.hash}`);
 
   // fund
   console.log("Funding reward pool...");
   const tx2 = await staking.fundRewardPool(seedAmount);
-  await tx2.wait();
+  await tx2.wait(2);
+  await sleep(3000);
   console.log(`✅ Funded: ${tx2.hash}`);
 
   const pool = await staking.rewardPoolBalance();
