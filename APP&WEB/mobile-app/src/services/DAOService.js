@@ -100,3 +100,12 @@ export function getBridgeVaultInfo() {
     validator_contract : CONFIG.BRIDGE.MAINNET.BRIDGE_VALIDATOR_ADDRESS,
   };
 }
+
+/** Atomic Swap escrow info (production, activated 2026-06-29) */
+export const ATOMIC_SWAP = {
+  escrow_address   : 'zion1y0j484d5e8r49785d253e8w0c2x4t3n792m5724',
+  evm_contract     : '0x3DE9Ad42716854083ab837706E3961d10B0e63Eb',
+  api_port         : 8452,
+  status           : 'active',
+  funding_needed   : '5-10 ZION for release TX fees',
+};

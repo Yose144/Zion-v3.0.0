@@ -52,7 +52,7 @@ async function ethCall(to: string, data: string): Promise<string | null> {
   try {
     const res = await fetch(RPC_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0' },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: [{ to, data }, 'latest'] }),
       signal: AbortSignal.timeout(5000),
     });
