@@ -28,6 +28,9 @@ export type MiningPoolConfig = {
 };
 
 // Edge-only topology (Hetzner VPS).
+// Two nodes run on the same Edge VPS:
+//   - Node 1 (Primary / Genesis) — P2P 8333, RPC 8443
+//   - Node 2 (Follower / P2P peer) — P2P 8334, RPC 8446
 // Core PC is unreachable via Tailscale since 2026-05-30.
 // NOTE: These are built lazily (functions) so that env-var overrides in site.ts
 // (which use bracket notation to avoid Next.js build-time inlining) are read
@@ -36,13 +39,22 @@ function buildDefaultSeedNodes(): SeedNodeConfig[] {
   return [
     {
       id: 'edge-vps',
-      name: 'Edge VPS (Hetzner)',
+      name: 'Edge Node 1 (Primary)',
       host: SITE_PRIMARY_HOST,
       region: 'EU',
       lat: 50.08,
       lon: 14.44,
       ports: { p2p: 8333, rpc: 8443, stratum: 8444, pool_api: 8455 },
       poolApiUrl: SITE_PRIMARY_POOL_API_URL,
+    },
+    {
+      id: 'edge-follower',
+      name: 'Edge Node 2 (Follower)',
+      host: SITE_PRIMARY_HOST,
+      region: 'EU',
+      lat: 50.08,
+      lon: 14.44,
+      ports: { p2p: 8334, rpc: 8446, stratum: 0, pool_api: 0 },
     },
   ];
 }
