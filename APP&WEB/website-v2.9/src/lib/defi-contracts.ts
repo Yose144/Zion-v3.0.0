@@ -60,22 +60,27 @@ export const CONTRACTS = {
   wZION:          '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
   WETH:           '0x4200000000000000000000000000000000000006',
   USDC:           '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+  USDT:           '0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2',
+  SOL:            '0x311935Cd80B76769bF2ecC9D8Ab7635b2139cf82',
   ZIONBridge:     '0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467',
-  // Uniswap V3 — new pools created 2026-06-29 at $0.0002/ZION
+  // Uniswap V3 — active pools on Base mainnet (updated 2026-08-18)
   UniV3Factory:   '0x33128a8fC17869897dcE68Ed026d694621f6FDfD',
-  UniV3PoolWETH:  '0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699', // wZION/WETH 1% fee
-  UniV3PoolUSDC:  '0x5eBdC6E1D516f42EEB54f14faCF8715AbD5B9d8d', // wZION/USDC 0.3% fee
-  // Legacy pool (wrong price ~$0.017/ZION — kept for reference only)
-  UniV3PoolLegacy:'0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB',
-  // Default pool for price feed (WETH pool — has active two-sided liquidity)
-  UniV3Pool:      '0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699',
+  UniV3PoolWETH:  '0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699', // wZION/WETH 1% fee — ACTIVE
+  UniV3PoolUSDT:  '0x186b46c2f04153999d44D25179cD623fD62Bfda2', // wZION/USDT 0.3% fee — ACTIVE (primary)
+  UniV3PoolSOL:   '0xF38c56bbBBBC6d9FA11E7DE84bF7Bb70e1e8D2b3', // wZION/SOL 0.01% fee — ACTIVE
+  // Legacy / dead pools (0 liquidity — do not use)
+  UniV3PoolUSDC:  '0x5eBdC6E1D516f42EEB54f14faCF8715AbD5B9d8d', // wZION/USDC 0.3% — DEAD
+  UniV3PoolLegacy:'0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB', // wrong price
+  // Default pool for price feed (USDT stablecoin pair = most reliable)
+  UniV3Pool:      '0x186b46c2f04153999d44D25179cD623fD62Bfda2',
   UniV3Router:    '0x2626664c2603336E57B271c5C0b26F421741e481',
   QuoterV2:       '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a',
   PositionManager:'0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1',
   // NFT Position IDs (NonfungiblePositionManager)
-  NFT_Position_WETH_Single:  5431093, // 1M wZION single-sided (above price)
-  NFT_Position_WETH_TwoSided: 5431714, // 100K wZION + 0.0069 WETH (ACTIVE)
-  NFT_Position_USDC_Single:  5431091, // 1M wZION single-sided (above price)
+  NFT_Position_WETH_Wide:    5434576, // 200K wZION + 0.020 WETH (ACTIVE)
+  NFT_Position_WETH_Depleted: 5431714, // liq=0 (DEAD)
+  NFT_Position_USDT:         5434637, // 100K wZION + 3.14 USDT (ACTIVE)
+  NFT_Position_SOL:          5434872, // 100K wZION + 0.272 SOL (ACTIVE)
   // DeFi contracts — deployed via deploy-defi.ts + deploy-farm.ts on Base Mainnet
   // Addresses will be filled after deployment. Until then, pages show "deploying" state.
   ZIONStaking:    '0x0000000000000000000000000000000000000000', // TODO: fill after deploy
@@ -263,16 +268,16 @@ export const DEFI_PRODUCTS: DefiProduct[] = [
   },
   {
     id: 'dex',
-    name: 'wZION/WETH Pool',
-    nameCs: 'wZION/WETH Pool',
-    description: 'Uniswap V3 concentrated liquidity pool. Trade wZION for WETH and vice-versa. 1% fee tier. Active two-sided liquidity at $0.0002/ZION.',
-    descriptionCs: 'Uniswap V3 pool s koncentrovanou likviditou. Obchoduj wZION za WETH a zpět. 1% poplatek. Aktivní two-sided likvidita na $0.0002/ZION.',
-    contract: CONTRACTS.UniV3PoolWETH,
+    name: 'wZION DEX Pools',
+    nameCs: 'wZION DEX Pooly',
+    description: 'Uniswap V3 concentrated liquidity pools on Base. Primary USDT pair (0.3% fee), secondary WETH pair (1% fee), and SOL pair (0.01% fee). All seeded at $0.0002/ZION.',
+    descriptionCs: 'Uniswap V3 pooly s koncentrovanou likviditou na Base. Primární USDT pár (0.3% poplatek), sekundární WETH pár (1% poplatek) a SOL pár (0.01% poplatek). Všechny seednuté na $0.0002/ZION.',
+    contract: CONTRACTS.UniV3PoolUSDT,
     href: '/defi',
     status: 'live',
     icon: 'dex',
     color: 'from-sky-500 to-indigo-500',
-    tags: ['Uniswap V3', '1% Fee', 'Concentrated LP', 'Active Liquidity'],
+    tags: ['Uniswap V3', 'USDT Primary', 'WETH', 'SOL', 'Active Liquidity'],
   },
   {
     id: 'farming',

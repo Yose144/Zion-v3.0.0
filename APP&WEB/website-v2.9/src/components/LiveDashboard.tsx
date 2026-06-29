@@ -330,7 +330,9 @@ export default function LiveDashboard() {
                 </div>
               </div>
               <p className="text-[10px] text-gray-500">
-                {cs ? 'Uniswap V3 wZION/WETH 1% pool na Base mainnet. Aktualizováno každých 30s.' : 'Uniswap V3 wZION/WETH 1% pool on Base mainnet. Updated every 30s.'}
+                {cs
+                  ? 'Primární cena z wZION/USDT 0.3% poolu na Base mainnet. Aktualizováno každých 30s.'
+                  : 'Primary price from wZION/USDT 0.3% pool on Base mainnet. Updated every 30s.'}
               </p>
             </div>
           </motion.div>
