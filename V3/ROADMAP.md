@@ -67,9 +67,9 @@ Viz [`ZION_3.0.3_DECIMAL_FORK_PLAN.md`](../ZION_3.0.3_DECIMAL_FORK_PLAN.md) pro 
 Viz [`docs/DEFI_FULL_ROADMAP.md`](../docs/DEFI_FULL_ROADMAP.md) pro kompletní realistickou analýzu.
 TL;DR stav:
 - **Bridge L1→EVM (mint):** ✅ 100% ověřeno v produkci (5/5, 30 TX, 100M wZION)
-- **Bridge EVM→L1 (burn):** ⚠️ kód hotov, nikdy netestováno E2E — P0 blocker
-- **UniV3Pool:** ⏳ deployed, neinicializovaný — seed ETH ≥ 0.80 ETH potřeba
-- **Staking/Farm:** ⚠️ deployed, ale `notifyRewardAmount()` / `addPool()` nezavolány
+- **Bridge EVM→L1 (burn):** ✅ **PLNĚ FUNKČNÍ** — E2E test passed 2026-06-29: 100 wZION burn → L1 blok 20919 unlock → confirmBurnRelease TX `0x97f41f0a...` ✅ (oprava: BRIDGE_VAULT_SEED revert, commit `e6175b5b`)
+- **UniV3Pool:** ✅ 138K wZION + 26.66 USDT in-range, aktivní
+- **Staking/Farm:** ⚠️ deployed pouze na Sepolia, Base Mainnet deploy chybí
 - **Swap UI:** ⚠️ kód hotov, čeká jen na pool seeding
 - **Wallet SDK:** ❌ neexistuje — blocker pro mobile integrace
 - **TX history RPC:** ❌ chybí v L1 node — blocker pro explorer

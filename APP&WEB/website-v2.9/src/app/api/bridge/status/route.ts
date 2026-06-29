@@ -62,6 +62,12 @@ export async function GET() {
       l1_unlocks_submitted: parse(text, 'zion_bridge_l1_unlocks_submitted_total'),
       l1_unlocks_confirmed: parse(text, 'zion_bridge_l1_unlocks_confirmed_total'),
       errors_total:         parse(text, 'zion_bridge_errors_total'),
+      // Canonical vault info (updated 2026-06-29 — vault fix e6175b5b)
+      l1_vault_address: 'zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0',
+      bridge_e2e_confirmed: true,
+      bridge_e2e_burn_tx: '0x70ad4d93ee3922210ae2783fed5af1c34bfe6080fb01089b18572e0ceaa8a719',
+      bridge_e2e_unlock_block: 20919,
+      validator_threshold: '5/5',
       fetched_at: Date.now(),
     };
 
