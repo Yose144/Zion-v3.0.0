@@ -65,20 +65,21 @@ Verze **3.0.3** je nyní uzavřena. Všechny klíčové komponenty jsou funkčn�
 
 #### P4 — WARP UI Transfer Formulář
 
-- [ ] Přidej `warp: 'http://127.0.0.1:8453'` do `core-endpoints.ts`
-- [ ] Vytvoř `src/app/api/warp/[...path]/route.ts` — proxy na port 8453
-- [ ] Přidej "Initiate Transfer" sekci do `/warp` page: chain dropdown + recipient + amount + memo builder (`WARP:1:<chain>:<addr>`) + copy button
-- [ ] Transfer status tracker: polling `GET /api/warp/transfers/:id`
+- [x] Přidej `warp: 'http://127.0.0.1:8453'` do `core-endpoints.ts`
+- [x] Vytvoř `src/app/api/warp/[...path]/route.ts` — proxy na port 8453
+- [x] Přidej "Initiate Transfer" sekci do `/warp` page: chain dropdown + recipient + amount + memo builder (`WARP:1:<chain>:<addr>`) + copy button
+- [x] Transfer status tracker: polling `GET /api/warp/transfers/:id`
 
 #### P5 — Bridge UI — "Lock ZION" Tab
 
-- [ ] V `/bridge` page tab `'lock'`: zobraz vault adresu + memo builder (`BRIDGE:0x<evm>`) + minimum warning
-- [ ] Live bridge tracker component (polling `/api/bridge/status`): lock → relay → mint → complete
+- [x] V `/bridge` page tab `'lock'`: zobraz vault adresu + memo builder (`BRIDGE:0x<evm>`) + minimum warning
+- [x] Live bridge tracker component (polling `/api/bridge/status`): lock → relay → mint → complete
+- [x] **Desktop Agent Bridge Lock widget** — interaktivní L1 TX odeslání (from + password + memo + amount)
 
 #### P6 — V3/L2/contracts/hardhat/ kanonizace
 
-- [ ] Zkopíruj .sol + skripty z archive do `V3/L2/contracts/hardhat/` (viz README.md v tom adresáři)
-- [ ] `V3/L2/contracts/hardhat/.env.mainnet.example` ✅ (vytvořeno 2026-06-29)
+- [x] Zkopíruj .sol + skripty z archive do `V3/L2/contracts/hardhat/` (viz README.md v tom adresáři)
+- [x] `V3/L2/contracts/hardhat/.env.mainnet.example` ✅ (vytvořeno 2026-06-29)
 
 #### Nice to have (3.0.4 nebo 3.1.0)
 - Wallet SDK základy (TypeScript, npm package `@zion/sdk`)

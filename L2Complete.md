@@ -813,12 +813,12 @@ FARM_HALVING_INTERVAL=7776000
 [ ] P2c: docs/ATOMIC_SWAP_RUNBOOK.md vytvořen
 [ ] P3a: DAO guardian keys nastaveny (5+ guardians)
 [ ] P3b: DAO voting E2E test (L1 memo → scanner → DB → web UI)
-[ ] P4a: WARP memo builder UI přidán do /warp page
-[ ] P4b: /api/warp proxy route přidán
-[ ] P4c: WARP transfer status tracker funkční
-[ ] P5a: Bridge "Lock ZION" tab dokončen
-[ ] P5b: BridgeTracker live component (lock → relay → mint)
-[ ] P6a: V3/L2/contracts/hardhat/ vytvořen + .env.mainnet.example
+[x] P4a: WARP memo builder UI přidán do /warp page
+[x] P4b: /api/warp proxy route přidán
+[x] P4c: WARP transfer status tracker funkční
+[x] P5a: Bridge "Lock ZION" tab dokončen (website + desktop agent)
+[x] P5b: BridgeTracker live component (lock → relay → mint)
+[x] P6a: V3/L2/contracts/hardhat/ vytvořen + .env.mainnet.example + .sol + scripts
 [ ] DOCS: L2Complete.md aktualizováno s deployment adresami po P1
 [ ] DOCS: ROADMAP.md 3.0.4 checkboxes dokončeny
 [ ] RELEASE: git tag v3.0.4 + push + GitHub release notes
