@@ -77,22 +77,40 @@ function hexToDecimal18(hex: string | null): string {
 }
 
 function decodeSlot0Tick(hex: string): number {
-  const clean = hex.startsWith('0x') ? hex.slice(2) : hex;
-  const tickRaw = BigInt('0x' + clean.slice(64, 128));
-  const tick24 = tickRaw & 0xFFFFFFn;
-  return tick24 >= 2n ** 23n ? Number(tick24 - 2n ** 24n) : Number(tick24);
+  if (!hex || hex === '0x') return 0;
+  try {
+    const clean = hex.startsWith('0x') ? hex.slice(2) : hex;
+    if (clean.length < 128) return 0;
+    const tickRaw = BigInt('0x' + clean.slice(64, 128));
+    const tick24 = tickRaw & 0xFFFFFFn;
+    return tick24 >= 2n ** 23n ? Number(tick24 - 2n ** 24n) : Number(tick24);
+  } catch {
+    return 0;
+  }
 }
 
 function decodeUint128(hex: string): bigint {
-  const clean = hex.startsWith('0x') ? hex.slice(2) : hex;
-  return BigInt('0x' + clean.slice(0, 64));
+  if (!hex || hex === '0x') return 0n;
+  try {
+    const clean = hex.startsWith('0x') ? hex.slice(2) : hex;
+    if (clean.length < 64) return 0n;
+    return BigInt('0x' + clean.slice(0, 64));
+  } catch {
+    return 0n;
+  }
 }
 
 function decodeChainlinkAnswer(hex: string): number {
-  const clean = hex.startsWith('0x') ? hex.slice(2) : hex;
-  const answer = BigInt('0x' + clean.slice(64, 128));
-  const signed = answer >= 2n ** 255n ? answer - 2n ** 256n : answer;
-  return Number(signed) / 1e8;
+  if (!hex || hex === '0x') return 2000;
+  try {
+    const clean = hex.startsWith('0x') ? hex.slice(2) : hex;
+    if (clean.length < 128) return 2000;
+    const answer = BigInt('0x' + clean.slice(64, 128));
+    const signed = answer >= 2n ** 255n ? answer - 2n ** 256n : answer;
+    return Number(signed) / 1e8;
+  } catch {
+    return 2000;
+  }
 }
 
 export async function GET() {
@@ -122,18 +140,20 @@ export async function GET() {
     let wethTick = 0;
     let wethLiquidity = 0n;
     let wethPriceUsd = 0.0002; // seed fallback
-    if (slot0WethHex) {
+    if (slot0WethHex && slot0WethHex !== '0x') {
       try {
         const clean = slot0WethHex.startsWith('0x') ? slot0WethHex.slice(2) : slot0WethHex;
-        const sqrtPriceX96 = BigInt('0x' + clean.slice(0, 64));
-        wethTick = decodeSlot0Tick(slot0WethHex);
-        wethPoolActive = sqrtPriceX96 > 0n;
-        if (wethPoolActive) {
-          const Q96 = 2n ** 96n;
-          const sqrtNum = Number(sqrtPriceX96) / Number(Q96);
-          const wethPerWzion = sqrtNum * sqrtNum;
-          const wethUsd = wethUsdHex ? decodeChainlinkAnswer(wethUsdHex) : 2000;
-          wethPriceUsd = wethPerWzion * wethUsd;
+        if (clean.length >= 64) {
+          const sqrtPriceX96 = BigInt('0x' + clean.slice(0, 64));
+          wethTick = decodeSlot0Tick(slot0WethHex);
+          wethPoolActive = sqrtPriceX96 > 0n;
+          if (wethPoolActive) {
+            const Q96 = 2n ** 96n;
+            const sqrtNum = Number(sqrtPriceX96) / Number(Q96);
+            const wethPerWzion = sqrtNum * sqrtNum;
+            const wethUsd = wethUsdHex ? decodeChainlinkAnswer(wethUsdHex) : 2000;
+            wethPriceUsd = wethPerWzion * wethUsd;
+          }
         }
       } catch { /* decode failed */ }
     }
@@ -143,12 +163,14 @@ export async function GET() {
     let usdcPoolActive = false;
     let usdcTick = 0;
     let usdcLiquidity = 0n;
-    if (slot0UsdcHex) {
+    if (slot0UsdcHex && slot0UsdcHex !== '0x') {
       try {
         const clean = slot0UsdcHex.startsWith('0x') ? slot0UsdcHex.slice(2) : slot0UsdcHex;
-        const sqrtPriceX96 = BigInt('0x' + clean.slice(0, 64));
-        usdcTick = decodeSlot0Tick(slot0UsdcHex);
-        usdcPoolActive = sqrtPriceX96 > 0n;
+        if (clean.length >= 64) {
+          const sqrtPriceX96 = BigInt('0x' + clean.slice(0, 64));
+          usdcTick = decodeSlot0Tick(slot0UsdcHex);
+          usdcPoolActive = sqrtPriceX96 > 0n;
+        }
       } catch { /* decode failed */ }
     }
     usdcLiquidity = liquidityUsdcHex ? decodeUint128(liquidityUsdcHex) : 0n;
