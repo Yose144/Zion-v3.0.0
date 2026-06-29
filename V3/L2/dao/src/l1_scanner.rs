@@ -120,6 +120,8 @@ pub struct L1Scanner {
     db: Arc<Mutex<DaoDb>>,
     /// How many DAO events were processed this session
     events_processed: Arc<std::sync::atomic::AtomicU64>,
+    /// Shared metrics counters (optional — None in tests)
+    metrics: Option<Arc<crate::metrics::DaoMetrics>>,
 }
 
 impl L1Scanner {
@@ -128,7 +130,14 @@ impl L1Scanner {
             config,
             db,
             events_processed: Arc::new(std::sync::atomic::AtomicU64::new(0)),
+            metrics: None,
         }
+    }
+
+    /// Attach shared metrics counters for Prometheus reporting.
+    pub fn with_metrics(mut self, metrics: Arc<crate::metrics::DaoMetrics>) -> Self {
+        self.metrics = Some(metrics);
+        self
     }
 
     /// Number of events processed since startup.
@@ -208,6 +217,13 @@ impl L1Scanner {
             // Update cursor after each block (so crash mid-range doesn't restart)
             let db = self.db.lock().await;
             db.set_last_scanned_block(height)?;
+            drop(db);
+
+            // Increment Prometheus counter
+            if let Some(m) = &self.metrics {
+                m.l1_blocks_scanned
+                    .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            }
         }
 
         Ok(events_found)
