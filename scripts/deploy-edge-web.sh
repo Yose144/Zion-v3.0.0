@@ -31,8 +31,15 @@ echo "[3/6] Building Next.js app..."
 npm run build
 
 # Build Docker image from host artifacts
+# NOTE: .dockerignore excludes .next and node_modules (for CI builds that
+# install fresh inside Docker). Our deploy copies host-built artifacts, so
+# we temporarily move .dockerignore aside during the build.
 echo "[4/6] Building Docker image..."
 cd "$REPO_DIR"
+if [ -f "$WEB_DIR/.dockerignore" ]; then
+  mv "$WEB_DIR/.dockerignore" "$WEB_DIR/.dockerignore.bak"
+  trap 'mv "$WEB_DIR/.dockerignore.bak" "$WEB_DIR/.dockerignore" 2>/dev/null || true' EXIT
+fi
 docker build -t "zion-website:$VERSION" -f - "$WEB_DIR" <<'DOCKERFILE'
 FROM node:20-alpine
 WORKDIR /app
@@ -45,6 +52,10 @@ ENV PORT=3000
 EXPOSE 3000
 CMD ["node", "node_modules/.bin/next", "start"]
 DOCKERFILE
+# Restore .dockerignore
+if [ -f "$WEB_DIR/.dockerignore.bak" ]; then
+  mv "$WEB_DIR/.dockerignore.bak" "$WEB_DIR/.dockerignore"
+fi
 
 # Restart container
 echo "[5/6] Restarting container..."
