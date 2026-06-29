@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Github, MessageCircle, Globe, BookOpen, BookMarked, Compass, Map, Download, Pickaxe, FileText, Orbit, ArrowLeftRight, Gamepad2, Star, Wallet, Sprout, Brain } from 'lucide-react';
+import { Github, MessageCircle, Globe, BookOpen, BookMarked, Compass, Map, Download, Pickaxe, FileText, Orbit, ArrowLeftRight, Gamepad2, Star, Wallet, Sprout, Brain, Building2 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 import { SITE_RELEASE_LABEL, SITE_RUNTIME_VERSION } from '@/lib/site';
@@ -35,6 +35,7 @@ export default function Footer() {
       title: tr('footer', 'group_layers', lang),
       links: [
         { href: '/defi', label: `L2 ${tr('nav', 'defi', lang)}`, Icon: Wallet },
+        { href: '/cex', label: 'CEX Listings', Icon: Building2 },
         { href: '/wallet', label: tr('nav', 'wallet', lang), Icon: Wallet },
         { href: '/dao', label: tr('nav', 'dao', lang), Icon: Globe },
         { href: '/bridge', label: tr('nav', 'bridge', lang), Icon: ArrowLeftRight },
