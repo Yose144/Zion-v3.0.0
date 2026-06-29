@@ -37,25 +37,25 @@ Verze **3.0.3** je nyní uzavřena. Všechny klíčové komponenty jsou funkčn�
 
 **Scope — co musí být hotové pro closure 3.0.4:**
 
-#### P1 — DeFi kontrakty (Base Mainnet) — blocker: ~0.005 ETH gas
+#### P1 — DeFi kontrakty (Base Mainnet) — ✅ DEPLOYVED 2026-06-29
 
-> **Runbook:** [`V3/docs/ZION_3.0.4_DEPLOY_RUNBOOK.md`](../V3/docs/ZION_3.0.4_DEPLOY_RUNBOOK.md) — kompletní krok-za-krokem návod.
-> **Deploy skripty:** `V3/L2/contracts/hardhat/scripts/` (připraveno 2026-06-29 — wZION adresa opravena, fund skripty čtou z deployed JSON, verify skript aktualizován na bridge v3).
+> **Runbook:** [`V3/docs/ZION_3.0.4_DEPLOY_RUNBOOK.md`](../V3/docs/ZION_3.0.4_DEPLOY_RUNBOOK.md)
+> **Deploy skripty:** `V3/L2/contracts/hardhat/scripts/` (připraveno + spuštěno 2026-06-29)
 
-- [ ] **ZIONGovernance** — deploy: `cd V3/L2/contracts/hardhat && npx hardhat run scripts/deploy-defi.ts --network base`
-- [ ] **ZIONTreasury** — součást deploy-defi.ts výše
-- [ ] **ZIONStaking** — součást deploy-defi.ts; init APR 12%, 7d cooldown; reward pool seed 100K wZION
-- [ ] **ZIONFarm** — `npx hardhat run scripts/deploy-farm.ts --network base`; Pool 0: wZION single; Pool 1: wZION/USDT LP; seed 500K wZION
-- [ ] `defi-contracts.ts` aktualizováno: reálné adresy + `STAKING_DEPLOYED=true`, `FARM_DEPLOYED=true`
-- [ ] `/defi/staking` page: "Deploy pending" banner zmizí, live data z kontraktu
-- [ ] `/defi/farming` page: "Deploy pending" banner zmizí, live data z kontraktu
-- [ ] Verify na Basescan: `npx hardhat run scripts/verify-base-mainnet-basescan.ts --network base`
-- [ ] `V3/L2/contracts/hardhat/` doplněn o zkopírované .sol + deploy skripty
+- [x] **ZIONGovernance** — `0xB77eB4ab9468Ce03FBd7eCec70e976EFCfa623E8`
+- [x] **ZIONTreasury** — `0x455f465ac7e14fdA97dC46fdd74bCa78bfC0aEeD` (3-of-3 multisig: deployer + validator-2 + validator-3)
+- [x] **ZIONStaking** — `0xbd5cEe7878337d22188BFBaF9aa9F39A850Be78B` (12% APR, 7d cooldown, 100K wZION reward pool funded)
+- [x] **ZIONFarm** — `0x167B2753F5D8D9F8e62875cc9e379d7804308B08` (1 wZION/s, 90d halving, 500K wZION pool funded, Pool 0: wZION single)
+- [x] `defi-contracts.ts` aktualizováno: reálné adresy + `STAKING_DEPLOYED=true`, `FARM_DEPLOYED=true`
+- [ ] `/defi/staking` page: "Deploy pending" banner zmizí, live data z kontraktu (vyžaduje website rebuild)
+- [ ] `/defi/farming` page: "Deploy pending" banner zmizí, live data z kontraktu (vyžaduje website rebuild)
+- [ ] Verify na Basescan: `npx hardhat run scripts/verify-base-mainnet-basescan.ts --network base` (vyžaduje BASESCAN_API_KEY)
+- [x] `V3/L2/contracts/hardhat/` doplněn o zkopírované .sol + deploy skripty
 
-#### P2 — Atomic Swap E2E — blocker: escrow funding
+#### P2 — Atomic Swap E2E — ✅ ESCROW FUNDED 2026-06-29
 
-- [ ] Pošli **5-10 ZION** na `zion1y0j484d5e8r49785d253e8w0c2x4t3n792m5724`
-- [ ] Ověř balance: `getAddressInfo` RPC → `balance_flowers > 0`
+- [x] Pošli **100K ZION** na `zion1y0j484d5e8r49785d253e8w0c2x4t3n792m5724` (✅ potvrzeno: 100,000 ZION)
+- [x] Ověř balance: `getAddressInfo` RPC → `balance_zion: 100000.000000` ✅
 - [ ] E2E test: generuj preimage+hashlock → `SWAP:LOCK` L1 memo TX → daemon detekce → EVM claim
 - [ ] Vytvoř `docs/ATOMIC_SWAP_RUNBOOK.md`
 

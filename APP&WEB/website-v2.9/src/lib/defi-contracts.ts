@@ -77,12 +77,11 @@ export const CONTRACTS = {
   NFT_Position_WETH: 5434576, // wZION/WETH 1% — 200K wZION + 0.020 WETH (ACTIVE)
   NFT_Position_USDT: 5435121, // wZION/USDT 0.3% — active position (ACTIVE)
   NFT_Position_SOL:  5434872, // wZION/SOL 0.01% — 100K wZION + 0.272 SOL (ACTIVE)
-  // DeFi contracts — deployed via deploy-defi.ts + deploy-farm.ts on Base Mainnet
-  // Addresses will be filled after deployment. Until then, pages show "deploying" state.
-  ZIONStaking:    '0x0000000000000000000000000000000000000000', // TODO: fill after deploy
-  ZIONFarm:       '0x0000000000000000000000000000000000000000', // TODO: fill after deploy
-  ZIONGovernance: '0x0000000000000000000000000000000000000000', // TODO: fill after deploy
-  ZIONTreasury:   '0x0000000000000000000000000000000000000000', // TODO: fill after deploy
+  // DeFi contracts — deployed 2026-06-29 via deploy-defi.ts + deploy-farm.ts on Base Mainnet
+  ZIONGovernance: '0xB77eB4ab9468Ce03FBd7eCec70e976EFCfa623E8',
+  ZIONTreasury:   '0x455f465ac7e14fdA97dC46fdd74bCa78bfC0aEeD', // 3-of-3 multisig
+  ZIONStaking:    '0xbd5cEe7878337d22188BFBaF9aa9F39A850Be78B', // 12% APR, 100K wZION reward pool
+  ZIONFarm:       '0x167B2753F5D8D9F8e62875cc9e379d7804308B08', // 1 wZION/s, 90d halving, 500K wZION pool
 } as const;
 
 /** Helper: check if a DeFi contract is deployed on mainnet */
