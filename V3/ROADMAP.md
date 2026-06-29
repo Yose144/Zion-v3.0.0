@@ -1,9 +1,92 @@
 # ZION v3 Mainnet Roadmap
 
-Status date: **2026-06-27** (3.0.3 Decimal Fork DEPLOYED; supplements below; narrative body reflects Sprint 8 / March snapshot + June 2026 hot fixes + bridge 5/5 milestone)
+Status date: **2026-06-29** (Atomic Swap activated, DAO scanner fixed, 3.0.4 milestone defined — see supplement below)
 
 This file is the active source-of-truth for the clean `V3/` mainnet line.
 `V3/` is intentionally separated from the legacy root workspace. The legacy root remains migration source material and audit evidence, but new mainnet-track runtime work should land in `V3/`.
+
+## Supplement — 2026-06-29 (3.0.4 Milestone Defined + Atomic Swap Activated)
+
+### 3.0.3 Closure — kanonický stav
+
+Verze **3.0.3** je nyní uzavřena. Všechny klíčové komponenty jsou funkční:
+
+| Komponenta | Stav | Adresa / Poznámka |
+|-----------|------|-------------------|
+| L1 Node | ✅ LIVE | chain height ~21000+, protocol 3.0.3, 1e6 flowers |
+| L1 Mining Pool | ✅ LIVE | Stratum port 8444, PPLNS |
+| L2 Bridge (L1→EVM) | ✅ VERIFIED | 100M wZION mintováno, 5/5 validators |
+| L2 Bridge (EVM→L1) | ✅ VERIFIED E2E | 100 wZION burn → L1 blok 20919 unlock (2026-06-29) |
+| L2 DAO daemon | ✅ LIVE | port 8450, L1 scanner funkční (fix 2026-06-29) |
+| L2 Atomic Swap | ✅ **ACTIVATED** | port 8452, produkční escrow `zion1y0j484...`, L1+EVM watcher |
+| L3 WARP | ✅ LIVE | port 8453, EVM+BTC+SOL+XLM+TRX adapters |
+| wZION | ✅ DEPLOYED | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` |
+| ZIONBridge | ✅ DEPLOYED | `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467` |
+| UniV3 wZION/USDT | ✅ ACTIVE | `0x186b46c2f04153999d44D25179cD623fD62Bfda2` |
+| UniV3 wZION/WETH | ✅ ACTIVE | `0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699` |
+| ZIONStaking | ❌ MISSING | Base Mainnet deploy chybí → 3.0.4 |
+| ZIONFarm | ❌ MISSING | Base Mainnet deploy chybí → 3.0.4 |
+| Website /dao | ✅ UI DONE | live connection k DAO daemonu |
+| Website /swap | ✅ UI DONE | live connection k atomic-swap daemonu |
+| Website /warp | ✅ INFO | informační dashboard, swap UI → 3.0.4 |
+
+### Verze 3.0.4 — Milestone Definition
+
+**Target:** Q3 2026 (do 2026-09-30)
+
+**Scope — co musí být hotové pro closure 3.0.4:**
+
+#### Priority 1 — DeFi kontrakty (Base Mainnet)
+- [ ] **ZIONStaking.sol** — deploy na Base Mainnet (z archive/2.9.9/legacy-code/L2/contracts/sol/)
+  - Reward rate konfigurace, staking period, emergency withdraw
+  - Aktualizovat `defi-contracts.ts` s reálnou adresou
+- [ ] **ZIONFarm.sol** — deploy na Base Mainnet
+  - LP token farming (wZION/USDT UniV3 NFT)
+  - Aktualizovat `defi-contracts.ts` s reálnou adresou
+- [ ] Foundry deploy scripty v `V3/L2/contracts/` (nový podadresář)
+
+#### Priority 2 — Atomic Swap E2E
+- [ ] **Escrow funding** — zaslat ~5-10 ZION na `zion1y0j484d5e8r49785d253e8w0c2x4t3n792m5724` pro release fees
+- [ ] **E2E test** — jeden kompletní HTLC swap (L1 SWAP:LOCK → EVM claim)
+- [ ] Dokumentovat flow v `docs/ATOMIC_SWAP_RUNBOOK.md`
+
+#### Priority 3 — DAO UI live
+- [ ] Ověřit že `/dao` web page správně zobrazuje live proposals ze scanner DB
+- [ ] Guardians provisioning — nastavit reálné guardian keys v `dao-mainnet.toml`
+- [ ] Voting flow E2E test — DAO:vote memo → DB → UI
+
+#### Priority 4 — WARP UI
+- [ ] `/warp` page: přidat funkční "Initiate Transfer" formulář (WARP:1:<chain>:<recipient> memo builder)
+- [ ] Transfer status tracking přes `/api/warp/transfers/:id`
+
+#### Priority 5 — Bridge UI
+- [ ] `/bridge` page: plný MetaMask flow (approve → burn → track → L1 unlock)
+- [ ] Bridge tracker live (lock → relay → mint → confirm pipeline)
+
+#### Nice to have (3.0.4 nebo 3.1.0)
+- Wallet SDK základy (TypeScript, npm package)
+- WARP Bitcoin bridge testnet E2E
+- Více USDT likvidity v primárním poolu
+
+---
+
+## Supplement — 2026-06-29 (Reverse Bridge E2E + Atomic Swap Fixes)
+
+### Reverse Bridge (EVM→L1) — E2E Verified
+
+- **Burn TX:** `0x70ad4d93ee39...` (100 wZION burned na Base)
+- **L1 Unlock:** blok **20919**, 100 ZION přesunuto z vault na recipient
+- **confirmBurnRelease TX:** `0x97f41f0a...` (Base, confirmed)
+- **Root cause fix:** `BRIDGE_VAULT_SEED` revert v `V3/L1/core/src/crypto.rs` na `"ZION Bridge Vault V3 Mainnet"`, commit `e6175b5b`
+
+### Atomic Swap — Opravy
+
+- **SO_REUSEADDR + SO_REUSEPORT** via socket2 crate (TIME_WAIT blocker fix)
+- **DB cesta** opravena na `/root/zion-2.9.6-main/V3/data/atomic-swap.db`
+- **ZION_SWAP_BEARER_TOKEN** env var podpora přidána do `SwapConfig::api_bearer_token()`
+- Produkční escrow keypair vygenerován a nastaven v systemd drop-in `secrets.conf` (chmod 600)
+
+---
 
 ## Supplement — 2026-06-27 (3.0.3 Decimal Fork — DEPLOYED ✅)
 
