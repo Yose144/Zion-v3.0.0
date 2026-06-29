@@ -487,6 +487,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       <button>🗳️ Governance ▾</button>
       <div class="nav-dropdown">
         <button onclick="switchTab('dao')" id="tab-dao">DAO Governance</button>
+        <button onclick="switchTab('cex')" id="tab-cex">📊 CEX + DEX</button>
         <button onclick="switchTab('payout')" id="tab-payout">💰 Payouts</button>
         <button onclick="switchTab('wallets')" id="tab-wallets">💼 Wallets</button>
         <button onclick="switchTab('explorer')" id="tab-explorer">🔍 Explorer</button>
@@ -517,6 +518,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       <div class="nav-dropdown">
         <button onclick="switchTab('bridge')" id="tab-bridge">Bridge Status</button>
         <button onclick="switchTab('bridge-validators')" id="tab-bridge-validators">Validators</button>
+        <button onclick="switchTab('warp-swap')" id="tab-warp-swap">🔄 Cross-Chain Swap</button>
       </div>
     </div>
     <div class="nav-group">
@@ -4853,6 +4855,128 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
+  <!-- ═════════ TAB: CEX + DEX ═════════ -->
+  <div id="pane-cex" class="hidden space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">📊 CEX Listings + DEX Trading</h1>
+        <p class="text-xs text-gray-400 mt-1">Centralized exchange listings · DexScreener live data · Uniswap V3</p>
+      </div>
+      <button onclick="loadCexPanel()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+    </div>
+
+    <!-- DEX Trading Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="zion-panel p-4 text-center">
+        <p class="text-[10px] uppercase tracking-wider text-gray-500">DEX Price</p>
+        <p class="text-xl font-bold text-emerald-400 font-mono" id="cex-dex-price">—</p>
+        <p class="text-[9px] text-gray-500">USD / wZION</p>
+      </div>
+      <div class="zion-panel p-4 text-center">
+        <p class="text-[10px] uppercase tracking-wider text-gray-500">Volume 24h</p>
+        <p class="text-xl font-bold text-white font-mono" id="cex-dex-volume">—</p>
+        <p class="text-[9px] text-gray-500">total</p>
+      </div>
+      <div class="zion-panel p-4 text-center">
+        <p class="text-[10px] uppercase tracking-wider text-gray-500">Liquidity</p>
+        <p class="text-xl font-bold text-cyan-400 font-mono" id="cex-dex-liquidity">—</p>
+        <p class="text-[9px] text-gray-500">in pools</p>
+      </div>
+      <div class="zion-panel p-4 text-center">
+        <p class="text-[10px] uppercase tracking-wider text-gray-500">Txns 24h</p>
+        <p class="text-xl font-bold text-white font-mono" id="cex-dex-txns">—</p>
+        <p class="text-[9px] text-gray-500">
+          <span class="text-emerald-400" id="cex-dex-buys">0</span> buys /
+          <span class="text-red-400" id="cex-dex-sells">0</span> sells
+        </p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+      <!-- CEX Listings Table -->
+      <div class="zion-panel p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-base font-bold">🏛️ CEX Listings</h2>
+          <span class="text-[10px] text-gray-500" id="cex-summary">—</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead><tr class="text-gray-500 border-b border-white/10">
+              <th class="py-2 px-2">Exchange</th>
+              <th class="py-2 px-2">Status</th>
+              <th class="py-2 px-2">Pairs</th>
+              <th class="py-2 px-2">KYC</th>
+              <th class="py-2 px-2">Fee</th>
+            </tr></thead>
+            <tbody id="cex-listings-body"><tr><td colspan="5" class="py-4 text-gray-500 italic text-center">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DEX Per-Pair Breakdown -->
+      <div class="zion-panel p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-base font-bold">📈 DEX Pairs (DexScreener)</h2>
+          <span class="text-[10px] text-gray-500" id="cex-dex-source">—</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead><tr class="text-gray-500 border-b border-white/10">
+              <th class="py-2 px-2">Pair</th>
+              <th class="py-2 px-2 text-right">Price</th>
+              <th class="py-2 px-2 text-right">24h %</th>
+              <th class="py-2 px-2 text-right">Liquidity</th>
+              <th class="py-2 px-2 text-right">Volume</th>
+              <th class="py-2 px-2 text-center">Txns</th>
+            </tr></thead>
+            <tbody id="cex-dex-pairs-body"><tr><td colspan="6" class="py-4 text-gray-500 italic text-center">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick links -->
+    <div class="zion-panel p-4 flex flex-wrap items-center gap-3 text-xs">
+      <span class="text-gray-500">Quick links:</span>
+      <a href="https://zion.cz/cex" target="_blank" class="text-amber-400 hover:text-white">CEX Page ↗</a>
+      <a href="https://zion.cz/defi" target="_blank" class="text-cyan-400 hover:text-white">DeFi Hub ↗</a>
+      <a href="https://app.uniswap.org/swap?chain=base" target="_blank" class="text-emerald-400 hover:text-white">Uniswap ↗</a>
+      <a href="https://dexscreener.com/base" target="_blank" class="text-purple-400 hover:text-white">DexScreener ↗</a>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: WARP Cross-Chain Swap ═════════ -->
+  <div id="pane-warp-swap" class="hidden space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">🔄 Cross-Chain Swap</h1>
+        <p class="text-xs text-gray-400 mt-1">BTC · ETH · SOL · wZION — multichain corridor status</p>
+      </div>
+      <button onclick="loadWarpSwapPanel()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+    </div>
+
+    <!-- Corridor cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4" id="warp-swap-corridors">
+      <div class="py-4 text-gray-500 italic text-center">Loading corridors…</div>
+    </div>
+
+    <!-- Roadmap -->
+    <div class="zion-panel p-5">
+      <h2 class="text-base font-bold mb-4">🗺️ Multichain Roadmap</h2>
+      <div class="space-y-3" id="warp-swap-roadmap">
+        <div class="py-4 text-gray-500 italic text-center">Loading roadmap…</div>
+      </div>
+    </div>
+
+    <!-- Quick links -->
+    <div class="zion-panel p-4 flex flex-wrap items-center gap-3 text-xs">
+      <span class="text-gray-500">Quick links:</span>
+      <a href="https://zion.cz/warp" target="_blank" class="text-purple-400 hover:text-white">WARP Page ↗</a>
+      <a href="https://zion.cz/bridge" target="_blank" class="text-blue-400 hover:text-white">Bridge ↗</a>
+      <a href="https://zion.cz/defi" target="_blank" class="text-cyan-400 hover:text-white">DeFi Hub ↗</a>
+    </div>
+  </div>
+
   <!-- ═════════ TAB: WARP Relay ═════════ -->
   <div id="pane-warp" class="hidden space-y-4">
     <div class="flex items-center justify-between">
@@ -4976,6 +5100,8 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     'pane-topology':          {rc:'6 182 212',   icon:'🗺️', label:'Topology',         sub:'Network topology map'},
     'pane-agent':             {rc:'16 185 129',  icon:'🤖', label:'Agent',            sub:'Edge agent status'},
     'pane-dao':               {rc:'147 51 234',  icon:'🗳️', label:'DAO',              sub:'Proposals & governance'},
+    'pane-cex':               {rc:'245 158 11',  icon:'📊', label:'CEX+DEX',         sub:'Exchange listings & trading'},
+    'pane-warp-swap':         {rc:'217 70 239',  icon:'🔄', label:'Cross-Chain',     sub:'BTC · ETH · SOL · wZION'},
     'pane-warp':              {rc:'147 51 234',  icon:'🌀', label:'WARP',             sub:'L3 WARP relay'},
     'pane-ai-agents':         {rc:'217 70 239',  icon:'🤖', label:'AI Agents',        sub:'AI agent management'},
     'pane-ncl-jobs':          {rc:'147 51 234',  icon:'📋', label:'NCL Jobs',         sub:'NCL compute jobs'},
