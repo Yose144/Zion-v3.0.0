@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Activity, Atom, Braces, Database, Gauge, HelpCircle, Shield } from 'lucide-react';
+import { Activity, Atom, Braces, Database, Droplets, Gauge, HelpCircle, Shield, TrendingUp } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { apiClient } from '@/lib/api';
 import { usePolling } from '@/hooks/usePolling';
@@ -34,6 +34,25 @@ interface BlockchainStats {
   };
 }
 
+interface DefiPrice {
+  ok?: boolean;
+  source?: string;
+  price?: {
+    usd_per_wzion?: number;
+    weth_per_wzion?: number;
+    wzion_per_weth?: number;
+    weth_usd?: number;
+    tick?: number;
+  };
+  liquidity?: string;
+  tvl?: {
+    weth?: number;
+    wzion?: number;
+    usd?: number;
+  };
+  fetchedAt?: number;
+}
+
 const placeholderStats: BlockchainStats = {
   total_blocks: 0,
   total_supply: 144_000_000_000,
@@ -48,6 +67,7 @@ export default function LiveDashboard() {
   const cs = lang === 'cs';
   const locale = cs ? 'cs-CZ' : 'en-US';
   const [stats, setStats] = useState<BlockchainStats>(placeholderStats);
+  const [defiPrice, setDefiPrice] = useState<DefiPrice | null>(null);
   const [loadedAtLeastOnce, setLoadedAtLeastOnce] = useState(false);
   const [lastSuccessAt, setLastSuccessAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +97,19 @@ export default function LiveDashboard() {
     }
   }, [loadedAtLeastOnce]);
 
+  const fetchDefiPrice = useCallback(async () => {
+    try {
+      const data = await apiClient<DefiPrice | null>('/defi/price');
+      if (data && typeof data === 'object') {
+        setDefiPrice(data);
+      }
+    } catch {
+      // DeFi price is optional — silently ignore
+    }
+  }, []);
+
   usePolling(fetchStats, 30_000);
+  usePolling(fetchDefiPrice, 30_000);
 
   const supply = stats.total_supply ?? stats.max_supply ?? stats.circulating_supply ?? 0;
   const formattedSupply = supply >= 1e9
@@ -251,6 +283,55 @@ export default function LiveDashboard() {
             <div className="rounded-2xl border border-white/5 bg-linear-to-br from-zion-purple/20 to-zion-cyan/10 p-4 text-sm text-gray-200">
               Blockchain telemetry pulled live from the {SITE_RELEASE_LABEL} V3 mainnet API every 30 s, on top of the {SITE_RUNTIME_LABEL} runtime.
               Current public runtime is a Core + Edge topology (Core PC + Hetzner Edge VPS).
+            </div>
+
+            {/* DeFi Stats Card */}
+            <div className="rounded-2xl border border-white/10 bg-linear-to-br from-zion-gold/15 to-zion-cyan/5 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Droplets className="w-4 h-4 text-zion-cyan" />
+                  <span className="text-xs uppercase tracking-[0.3em] text-gray-400">{cs ? 'DeFi Pool' : 'DeFi Pool'}</span>
+                </div>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full border ${
+                  defiPrice?.source === 'live'
+                    ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30'
+                    : 'text-amber-300 bg-amber-500/10 border-amber-500/30'
+                }`}>
+                  {defiPrice?.source ?? '—'}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-xs text-gray-400">{cs ? 'Cena ZION' : 'ZION Price'}</p>
+                  <p className="text-lg font-semibold text-white flex items-center gap-1">
+                    <TrendingUp className="w-3.5 h-3.5 text-zion-gold" />
+                    ${defiPrice?.price?.usd_per_wzion?.toFixed(6) ?? '0.000200'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400">{cs ? 'TVL (USD)' : 'TVL (USD)'}</p>
+                  <p className="text-lg font-semibold text-white">
+                    ${(defiPrice?.tvl?.usd ?? 0).toFixed(2)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400">{cs ? 'Likvidita' : 'Liquidity'}</p>
+                  <p className="text-sm font-mono text-zion-cyan">
+                    {defiPrice?.liquidity && Number(defiPrice.liquidity) > 0
+                      ? Number(defiPrice.liquidity).toLocaleString(locale)
+                      : '—'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400">{cs ? 'ETH/USD' : 'ETH/USD'}</p>
+                  <p className="text-sm font-mono text-gray-200">
+                    ${defiPrice?.price?.weth_usd?.toFixed(2) ?? '—'}
+                  </p>
+                </div>
+              </div>
+              <p className="text-[10px] text-gray-500">
+                {cs ? 'Uniswap V3 wZION/WETH 1% pool na Base mainnet. Aktualizováno každých 30s.' : 'Uniswap V3 wZION/WETH 1% pool on Base mainnet. Updated every 30s.'}
+              </p>
             </div>
           </motion.div>
         </div>
