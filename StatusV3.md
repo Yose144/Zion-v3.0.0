@@ -109,6 +109,22 @@
 
 ---
 
+## Co je nového 2026-06-30 (Session 10) — Uniswap V4 Migration + DeFi Audit ✅
+
+> **Status:** ✅ DOKONČENO — likuidita přesunuta z Uniswap V3 na V4, ETH flow audit kompletní, dokumentace aktualizována
+
+### TL;DR
+
+- **Uniswap V3 → V4 migrace** — původní 3 V3 pooly (wZION/USDT 0.3%, wZION/WETH 1%, wZION/SOL 0.01%) vyprázdněny, likuidita přesunuta na V4
+- **wZION/USDT V4 pool aktivní** — NFT #2740371, fee 0.3%, liquidity 6.7e15, jediný aktivní pool
+- **ETH/wZION V4 pool prázdný** — NFT #2740380, fee 0.3%, 0 likvidity (pozice vytvořena ale bez depositu)
+- **ETH flow audit** — 0.07 ETH deposit z Binance → swap na WETH/SOL/USDT → likvidita poolům; peníze nebyly ztraceny
+- **Deployer wallet** — 0.0107 ETH ($17.32) + 199M wZION + 2 V4 NFT pozice
+
+Viz [Session 10 detail](#session-10--uniswap-v4-migration--defi-audit-2026-06-30) níže.
+
+---
+
 ## Co je nového 2026-06-29 (Session 8) — L2 + Bridge E2E Verification + DAO Metrics Fix ✅
 
 > **Status:** ✅ DOKONČENO — kompletní E2E ověření L2 + bridge ekosystému, všechny services aktivní, DAO metrics counter opraven, pool service stabilizován
@@ -3977,6 +3993,86 @@ v OpenCL kernelu.
 3. Nastavit `ZION_BLOCK_RETENTION=10000` v `edge-environment.sh`
 4. Restart `zion-edge-node1.service`
 5. Monitorovat RAM usage po restartu (očekáváno: ~300-500 MB místo 3.7 GB)
+
+---
+
+## Session 10 — Uniswap V4 Migration + DeFi Audit (2026-06-30)
+
+> **Status:** ✅ Dokončeno — likvidita přesunuta na Uniswap V4, dokumentace aktualizována
+
+### Co se udělalo
+
+**1. ETH Flow Audit — Deployer Wallet (`0xdde17506...bb389D186`)**
+
+Trace celého ETH flow od počátečního depositu 0.07 ETH (z Binance 73, 89 dní zpět):
+
+| Kam šlo ETH | Amount | USD (dnes) | Kde je teď |
+|-------------|--------|-----------|------------|
+| → WETH (swap ETH→WETH) | ~0.041 ETH | $66.90 | Bylo v V3 NFT, přesunuto na V4 |
+| → SOL (swap ETH→SOL) | ~0.029 ETH | $46.66 | Bylo v V3 NFT, collectnuto |
+| → USDT (swap ETH→USDT) | ~0.017 ETH | ~$27 | Bylo v V3 NFT, collectnuto |
+| Gas fees (~1940 TX) | ~0.003 ETH | ~$5 | Spotřebováno |
+| Zbytek na wallet | 0.0107 ETH | $17.32 | Aktuální ETH balance |
+
+**Závěr:** Peníze nebyly ztraceny. ETH bylo vyměněno za WETH/SOL/USDT pro poskytnutí likvidity Uniswap poolům.
+
+**2. Uniswap V3 → V4 Migrace**
+
+Původní 3 V3 pooly (všechny s likviditou = 0 po migraci):
+
+| V3 Pool | Fee | Adresa | Status |
+|---------|-----|--------|--------|
+| wZION/USDT | 0.3% | `0x186b46c2f04153999d44D25179cD623fD62Bfda2` | Prázdný |
+| wZION/WETH | 1.0% | `0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699` | Prázdný |
+| wZION/SOL | 0.01% | `0xF38c56bbBBBC6d9FA11E7DE84bF7Bb70e1e8D2b3` | Prázdný |
+
+V3 NFT pozice:
+- NFT #5434576 (wZION/WETH) — liquidity=0, pozice prázdná
+- NFT #5434872 (wZION/SOL) — liquidity=0, pozice prázdná
+- NFT #5435121 (wZION/USDT) — **spálen** (Invalid token ID), likvidita collectnuta
+
+**3. Uniswap V4 — Aktuální stav**
+
+V4 kontrakty na Base:
+| Kontrakt | Adresa |
+|----------|--------|
+| PoolManager | `0x498581fF718922c3f8e6A244956aF099B2652b2b` |
+| PositionManager | `0x7C5f5A4bBd8fD63184577525326123B519429BdC` |
+| StateView | `0xa3c0c9b65bad0b08107aa264b0f3db444b867a71` |
+| PositionDescriptor | `0x25d093633990dc94bedeed76c8f3cdaa75f3e7d5` |
+| Quoter | `0x0d5e0f971ed27fbff6c2837bf31316121532048d` |
+| Universal Router 2.1.1 | `0xFdf682F51fe81aa4898f0ae2163d8a55c127fbc7` |
+
+V4 NFT pozice deployeru (2 NFT v PositionManager):
+
+| NFT ID | Pool | Fee | Tick Range | Liquidity | Status |
+|--------|------|-----|------------|-----------|--------|
+| #2740371 | wZION/USDT | 0.3% | [-1726464, -593671] | 6,705,767,932,354,670 | ✅ Aktivní |
+| #2740380 | ETH(native)/wZION | 0.3% | [6888448, -8352766] | 0 | ⚠️ Prázdná |
+
+**4. Deployer Wallet — Aktuální balances**
+
+| Asset | Amount | USD |
+|-------|--------|-----|
+| ETH | 0.0107 | $17.32 |
+| wZION | 199,000,976.53 | (bridge mint) |
+| USDT | 0 | $0 |
+| SOL | 0.0023 | $0.17 |
+| WETH | 0 | $0 |
+| V4 NFT #2740371 (wZION/USDT) | wZION + USDT | ~$50 (odhad) |
+| V4 NFT #2740380 (ETH/wZION) | 0 | $0 |
+
+**5. wZION Token**
+- totalSupply: 200,000,099.00 (200M)
+- Deployer balance: 199,000,976.53 (99.5% supply)
+
+### Poznámky
+
+- **Uniswap V4 fee tier 0.3%** — stejná jako původní V3 USDT pool, V4 podporuje custom fee tiers přes hooks ale 0.3% je standard
+- **ETH/wZION V4 pool** (NFT #2740380) má 0 likviditu — pozice byla vytvořena ale likvidita nebyla depositnuta (nebo byla withdrawnuta)
+- **wZION/USDT V4 pool** (NFT #2740371) je aktivní s likviditou 6.7e15 — jediný aktivní pool
+- **V3 pooly zůstávají deployované** ale prázdné — likvidita plně migrována na V4
+- **EIP-7702 delegace** na deployer address (MetaMask Delegator) stále aktivní — viz Session 8 audit
 
 ---
 
