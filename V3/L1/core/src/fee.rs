@@ -128,7 +128,11 @@ pub const DAO_ADDRESS: &str = "zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4";
 ///
 /// Derived deterministically from seed `"ZION Bridge Vault V3 Mainnet"`
 /// via SHA-256 → derive_address. See `crypto::bridge_vault_address()`.
-pub const BRIDGE_VAULT_ADDRESS: &str = "zion106v7v0v0k3d500v0h7l636w0j4f5l4v044mh4a6";
+///
+/// Live mainnet vault: ~100M ZION locked here (premine bridge TX, blocks 11611–11612).
+/// A previous commit accidentally used a different seed ("...v2_2026-06-03-GENESIS-RESET")
+/// generating `zion106v7v0...` (empty) — reverted 2026-06-29.
+pub const BRIDGE_VAULT_ADDRESS: &str = "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0";
 
 // ── Tests ──────────────────────────────────────────────────────────────
 

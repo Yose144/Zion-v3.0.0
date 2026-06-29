@@ -167,7 +167,13 @@ pub fn derive_keyless_address(seed: &str) -> String {
 }
 
 /// The canonical seed string used to derive the ZION bridge vault address.
-pub const BRIDGE_VAULT_SEED: &str = "ZION Bridge Vault V3 Mainnet v2_2026-06-03-GENESIS-RESET";
+///
+/// NOTE: This must stay as `"ZION Bridge Vault V3 Mainnet"` — the live mainnet
+/// bridge vault (`zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0`) with ~100M ZION
+/// was derived from this seed.  A previous commit accidentally changed it to
+/// `"...v2_2026-06-03-GENESIS-RESET"`, generating a different empty address
+/// (`zion106v7v0...`) and breaking `submitBridgeUnlock`.  Reverted 2026-06-29.
+pub const BRIDGE_VAULT_SEED: &str = "ZION Bridge Vault V3 Mainnet";
 
 /// Derive the canonical bridge vault address.
 pub fn bridge_vault_address() -> String {
@@ -392,3 +398,4 @@ mod tests {
         assert!(from_hex("zzzz").is_none());
     }
 }
+
