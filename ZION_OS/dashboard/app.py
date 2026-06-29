@@ -8038,6 +8038,17 @@ class DashboardHandler(BaseHTTPRequestHandler):
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
+    def _proxy_to_edge_web(self, path):
+        """Proxy a GET request to the Edge website API (localhost:3000 on Edge server)."""
+        url = f"http://127.0.0.1:3000{path}"
+        try:
+            req = urllib.request.Request(url, headers={"Accept": "application/json"}, method="GET")
+            with urllib.request.urlopen(req, timeout=10) as r:
+                data = json.loads(r.read())
+            self._json(data)
+        except Exception as e:
+            self._json({"ok": False, "error": f"Edge website unreachable: {str(e)[:120]}", "offline": True})
+
     def do_GET(self):
         if not self._check_auth():
             return
@@ -9522,6 +9533,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 return
             dismiss_alert(alert_id)
             self._json({"ok": True, "dismissed": alert_id})
+            return
+        # ── CEX + DEX listings (proxy to Edge website API) ───────────────────
+        elif route == "/api/cex/listings":
+            self._proxy_to_edge_web("/api/cex/listings")
             return
         # ── Bridge API (Phase 26a) — Mainnet 5/5 Bridge ───────────────────────
         elif route == "/api/bridge/status":
