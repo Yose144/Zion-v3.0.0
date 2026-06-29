@@ -20,6 +20,9 @@ const RPC_URL = process.env.BASE_RPC_URL || 'https://base.publicnode.com';
 const V4_POOL_MANAGER     = '0x498581fF718922c3f8e6A244956aF099B2652b2b';
 const V4_POSITION_MANAGER = '0x7C5f5A4bBd8fD63184577525326123B519429BdC';
 
+// V3 USDT pool (still has valid slot0 price even though liquidity=0)
+const V3_POOL_USDT = '0x186b46c2f04153999d44D25179cD623fD62Bfda2';
+
 // Token contracts
 const WZION  = '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6';
 const USDT   = '0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2';
@@ -43,6 +46,7 @@ const BALANCE_OF    = '0x70a08231';
 const TOTAL_SUPPLY  = '0x18160ddd';
 const OWNER_OF      = '0x6352211e';
 const LATEST_ROUND  = '0xfeaf968c';
+const SLOT0         = '0x3850c7bd';
 const CHAINLINK_WETH = '0x71041dddad3595F9CEdDCDcF2012034b68dF6aFA';
 
 async function ethCall(to: string, data: string): Promise<string | null> {
@@ -93,6 +97,7 @@ export async function GET() {
     deployerWzionHex,
     nftUsdtOwnerHex, nftWethOwnerHex,
     wethUsdHex,
+    v3Slot0Hex,
   ] = await Promise.all([
     ethCall(WZION, TOTAL_SUPPLY),
     ethCall(WZION, BALANCE_OF + encodeAddress(V4_POOL_MANAGER)),
@@ -108,6 +113,7 @@ export async function GET() {
     ethCall(V4_POSITION_MANAGER, OWNER_OF + encodeUint256(NFT_USDT)),
     ethCall(V4_POSITION_MANAGER, OWNER_OF + encodeUint256(NFT_WETH)),
     ethCall(CHAINLINK_WETH, LATEST_ROUND),
+    ethCall(V3_POOL_USDT, SLOT0),
   ]);
 
   // Parse real balances
@@ -137,11 +143,33 @@ export async function GET() {
     try { wethUsd = decodeChainlinkAnswer(wethUsdHex); } catch { /* fallback */ }
   }
 
-  // TVL = USDT in PoolManager + (wZION in PoolManager * price)
-  // Price: USDT/wZION — we need to derive from pool balances
-  // If pool has wZION and USDT, price = USDT / wZION
-  const priceUsd = poolMgrWzion > 0 ? poolMgrUsdt / poolMgrWzion : 0;
-  const tvlUsd = poolMgrUsdt + (poolMgrWzion * priceUsd);
+  // Price from V3 USDT pool slot0 (still valid even with liquidity=0)
+  // V3 pool: token0=wZION(18), token1=USDT(6)
+  // price = (sqrtPriceX96 / Q96)^2 * 10^(token0Decimals - token1Decimals)
+  let priceUsd = 0;
+  let tick = 0;
+  if (v3Slot0Hex) {
+    try {
+      const clean = v3Slot0Hex.startsWith('0x') ? v3Slot0Hex.slice(2) : v3Slot0Hex;
+      const sqrtPriceX96 = BigInt('0x' + clean.slice(0, 64));
+      const tickRaw = BigInt('0x' + clean.slice(64, 128));
+      const tick24 = tickRaw & 0xFFFFFFn;
+      tick = tick24 >= 2n ** 23n ? Number(tick24 - 2n ** 24n) : Number(tick24);
+      if (sqrtPriceX96 > 0n) {
+        const Q96 = 2n ** 96n;
+        const sqrtNum = Number(sqrtPriceX96) / Number(Q96);
+        const decimalAdjustment = 10 ** (18 - 6); // wZION 18, USDT 6
+        priceUsd = sqrtNum * sqrtNum * decimalAdjustment; // USDT ≈ $1
+      }
+    } catch { /* decode failed */ }
+  }
+
+  // TVL: wZION in V4 PoolManager (only our pools use wZION) * price * 2
+  // (both sides of the pool: wZION + USDT, roughly equal value)
+  // V4 PoolManager is a singleton — USDT includes all V4 pools on Base,
+  // so we can't use the raw USDT balance. We estimate USDT side = wZION * price.
+  const wzionValueUsd = poolMgrWzion * priceUsd;
+  const tvlUsd = wzionValueUsd * 2;
 
   // Determine active pools from NFT ownership
   const usdtActive = nftUsdtOwner !== null;
@@ -169,12 +197,13 @@ export async function GET() {
         active: usdtActive,
         nft_id: NFT_USDT,
         nft_owner: nftUsdtOwner,
+        tick,
         balances: {
           wzion: poolMgrWzion,
           usdt: poolMgrUsdt,
         },
         price_usd: priceUsd,
-        tvl_usd: poolMgrUsdt + (poolMgrWzion * priceUsd),
+        tvl_usd: wzionValueUsd * 2,
       },
       wzion_weth: {
         pair: 'ETH/wZION',
