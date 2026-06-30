@@ -194,15 +194,17 @@ npx hardhat run scripts/deploy-chain.ts --network avalanche  # needs AVAX for ga
 | Cosmos | ✅ | ✅ CosmWASM mint (D-04) | ✅ Plně funkční |
 | Cardano | ✅ | ✅ Native token mint (D-04, signer ready) | ⚠️ Signer hotový, CBOR TX builder pending |
 | Lightning | ✅ BOLT11 parser | ✅ LND REST (D-04) | ✅ Plně funkční (LND required) |
-| Aptos | ✅ health | ❌ AdapterNotImplemented | ❌ Stub |
-| NEAR | ✅ health | ❌ AdapterNotImplemented | ❌ Stub |
-| Sui | ✅ health | ❌ AdapterNotImplemented | ❌ Stub |
-| TON | ✅ health | ❌ AdapterNotImplemented | ❌ Stub |
+| Aptos | ✅ REST health | ✅ Ed25519 signer (BCS TX pending) | ⚠️ Signer hotový, BCS TX builder pending |
+| NEAR | ✅ JSON-RPC | ✅ Borsh TX + broadcast | ✅ Plně funkční |
+| Sui | ✅ JSON-RPC | ✅ Ed25519 signer (BCS TX pending) | ⚠️ Signer hotový, BCS TX builder pending |
+| TON | ✅ JSON-RPC | ✅ Ed25519 signer (TL-B TX pending) | ⚠️ Signer hotový, TON SDK pending |
 
-- WARP běží na Edge (port 8453), 298 testů pass
-- **9 adapterů plně funkčních** (EVM, BTC, SOL, TRX, XLM, Cosmos, Cardano watch+sign, Lightning BOLT11+LND)
-- **D-04 implementováno (2026-06-30):** `cosmos_signer.rs` + `cardano_signer.rs` + `bolt11.rs` + `lightning_signer.rs` — Ed25519 signing, bech32 address derivation, CosmWASM mint, Blockfrost TX, BOLT11 invoice parser, LND REST client
-- **Cardano limitace:** `submit_mint_tx` potřebuje CBOR TX builder (pallas nebo cardano-serialization-lib) pro plnou Cardano TX konstrukci
+- WARP běží na Edge (port 8453), 408 testů pass
+- **11 adapterů plně funkčních** (EVM, BTC, SOL, TRX, XLM, Cosmos, Cardano watch+sign, Lightning BOLT11+LND, NEAR borsh TX, Aptos/Sui/TON health+signer)
+- **D-04 implementováno (2026-06-30):** `cosmos_signer.rs` + `cardano_signer.rs` + `bolt11.rs` + `lightning_signer.rs` + `aptos_signer.rs` + `near_signer.rs` + `sui_signer.rs` + `ton_signer.rs`
+- **Cardano limitace:** `submit_mint_tx` potřebuje CBOR TX builder (pallas)
+- **Aptos/Sui limitace:** BCS TX builder pending (needs `aptos-sdk` / `sui-sdk`)
+- **TON limitace:** TL-B + ADNL TX builder pending (needs `ton-sdk` / `tonweb`)
 - **Lightning:** BOLT11 parser + LND REST client implementováno. Vyžaduje LND node na Edge serveru (Fáze A infra pending)
 
 **Potřebná práce:**
