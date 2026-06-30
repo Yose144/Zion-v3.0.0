@@ -37,6 +37,8 @@ pub mod server;
 pub mod solana_signer;
 pub mod state;
 pub mod stellar_signer;
+pub mod sui_signer;
+pub mod ton_signer;
 pub mod tron_signer;
 pub mod types;
 pub mod validator;
