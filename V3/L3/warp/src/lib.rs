@@ -22,6 +22,7 @@ pub mod bcs;
 pub mod bolt11;
 pub mod btc_signer;
 pub mod cardano_signer;
+pub mod cbor;
 pub mod config;
 pub mod cosmos_signer;
 pub mod db;
