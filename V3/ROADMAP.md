@@ -59,7 +59,7 @@ Verze **3.0.3** je nyní uzavřena. Všechny klíčové komponenty jsou funkčn�
 - [x] E2E test: LOCK TX (1 ZION, memo `SWAP:LOCK:<hash>:120:base:0xTest`) — **přijat do chainu** ✅
 - [x] E2E test: CLAIM TX (memo `SWAP:CLAIM:<hash>:<preimage>`) — **přijat do chainu** ✅
 - [x] Atomic swap daemon běží, API na :8452, L1 watcher skenuje bloky ✅
-- [ ] **ROADMAP ITEM:** L2 watcher update — `L1Block` struct přidat `account_transactions` pole + watcher.rs skenovat i account-model memo TXs (aktuálně skenuje jen `utxo_transactions`)
+- [ ] **ROADMAP ITEM (L1 HARD FORK REQUIRED):** Account-model TXs nemají `memo` field v `Transaction` struct (`V3/L1/core/src/lib.rs:384-398`). Pouze UTXO TXs mají memo v `TxOutput` (`V3/L1/core/src/tx.rs:41-54`). Přidání memo fieldu do account-model TXs = L1 consensus change = hard fork. **Audit 2026-06-30:** Bridge/atomic-swap/DAO watchers správně skenují jen `utxo_transactions` protože account TXs nemají memo data. Viz audit report.
 - [x] Vytvoř `docs/ATOMIC_SWAP_RUNBOOK.md` ✅ (2026-06-29)
 
 #### P3 — DAO Guardians + Voting E2E — ✅ DONE 2026-06-29
@@ -68,7 +68,7 @@ Verze **3.0.3** je nyní uzavřena. Všechny klíčové komponenty jsou funkčn�
 - [x] Přidej `[[guardians]]` sekce do `dao-mainnet.toml` na Edge (5 guardian entries)
 - [x] Restart `zion-edge-dao.service` + ověř `/api/dao/health` → 200 OK ✅
 - [x] Voting E2E: `DAO:vote:1:yes` L1 memo TX odeslán z Aloha wallet (26.5M ZION voting weight) — **přijat do chainu** ✅
-- [ ] **ROADMAP ITEM:** DAO scanner taky skenuje jen `utxo_transactions` — account-model memo TXs nejsou detekovány (stejný limit jako atomic swap watcher)
+- [ ] **ROADMAP ITEM (L1 HARD FORK REQUIRED):** DAO scanner skenuje jen `utxo_transactions` — account-model TXs nemají memo field (stejný root cause jako atomic swap watcher)
 
 #### P4 — WARP UI Transfer Formulář
 
@@ -92,6 +92,22 @@ Verze **3.0.3** je nyní uzavřena. Všechny klíčové komponenty jsou funkčn�
 - Wallet SDK základy (TypeScript, npm package `@zion/sdk`)
 - WARP Bitcoin bridge testnet E2E
 - Více USDT likvidity v primárním poolu
+
+#### P7 — WARP D-04 Cosmos/Cardano execute_mint() — ✅ IMPLEMENTED 2026-06-30
+
+> **Runbook:** `V3/L3/warp/src/cosmos_signer.rs` + `V3/L3/warp/src/cardano_signer.rs`
+
+- [x] **Cosmos signer** — Ed25519 signing, bech32 address derivation, CosmWASM `mint` broadcast via REST `cosmos/tx/v1beta1/txs:encode` + broadcast
+- [x] **Cardano signer** — Ed25519 payment + policy key signing, enterprise address derivation, Blockfrost TX submission path
+- [x] **Cosmos adapter** `execute_mint()` — uses `CosmosSigner::from_env()` → `execute_contract_mint()`
+- [x] **Cardano adapter** `execute_mint()` — uses `CardanoSigner::from_env()` → `submit_mint_tx()`
+- [x] 269 WARP tests pass (11 new signer tests)
+- [ ] **Cardano CBOR TX builder** — `submit_mint_tx` returns error indicating need for `pallas` or `cardano-serialization-lib` crate for full CBOR TX construction
+- [ ] Deploy wZION CosmWASM contract na Cosmos hub-4
+- [ ] Deploy wZION Cardano native token (policy ID + asset name)
+- [ ] Set `WARP_COSMOS_RELAY_KEY` / `WARP_CARDANO_PAYMENT_KEY` / `WARP_CARDANO_POLICY_KEY` env vars on Edge
+
+#### Nice to have (continued)
 - Blockaid false-positive report submission
 
 ---

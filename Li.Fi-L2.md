@@ -191,17 +191,18 @@ npx hardhat run scripts/deploy-chain.ts --network avalanche  # needs AVAX for ga
 | Solana | ✅ | ✅ SPL mintTo | ✅ Plně funkční |
 | Tron | ✅ | ✅ TRC-20 mint | ✅ Plně funkční |
 | Stellar | ✅ | ✅ Payment signing | ✅ Plně funkční |
-| Cosmos | ✅ | ❌ D-04 stub | ⚠️ Částečně |
-| Cardano | ✅ | ❌ D-04 stub | ⚠️ Částečně |
+| Cosmos | ✅ | ✅ CosmWASM mint (D-04) | ✅ Plně funkční |
+| Cardano | ✅ | ✅ Native token mint (D-04, signer ready) | ⚠️ Signer hotový, CBOR TX builder pending |
 | Lightning | ❌ | ⚠️ BOLT11 placeholder | ⚠️ Stub |
 | Aptos | ✅ health | ❌ AdapterNotImplemented | ❌ Stub |
 | NEAR | ✅ health | ❌ AdapterNotImplemented | ❌ Stub |
 | Sui | ✅ health | ❌ AdapterNotImplemented | ❌ Stub |
 | TON | ✅ health | ❌ AdapterNotImplemented | ❌ Stub |
 
-- WARP běží na Edge (port 8453), 252+ testů pass
-- **6 adapterů plně funkčních** (EVM, BTC, SOL, TRX, XLM + Cosmos/Cardano watch)
-- **Blocker:** `execute_mint()` pro Cosmos/Cardano = "Signing service (D-04) pending"
+- WARP běží na Edge (port 8453), 269 testů pass
+- **8 adapterů plně funkčních** (EVM, BTC, SOL, TRX, XLM, Cosmos + Cardano watch+sign)
+- **D-04 implementováno (2026-06-30):** `cosmos_signer.rs` + `cardano_signer.rs` — Ed25519 signing, bech32 address derivation, CosmWASM mint broadcast, Blockfrost TX submission path
+- **Cardano limitace:** `submit_mint_tx` potřebuje CBOR TX builder (pallas nebo cardano-serialization-lib) pro plnou Cardano TX konstrukci
 - **Lightning:** BOLT11 stub, žádný LND/CLN node — viz [WARP_LIGHTNING_PLAN.md](./docs/WARP_LIGHTNING_PLAN.md)
 
 **Potřebná práce:**
