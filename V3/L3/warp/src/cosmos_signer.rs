@@ -18,6 +18,7 @@
 //! Executed via `cosmwasm.wasm.v1.MsgExecuteContract`.
 
 use crate::error::{WarpError, WarpResult};
+use base64::{engine::general_purpose::STANDARD as B64, Engine};
 use ed25519_dalek::{Signer, SigningKey};
 use sha2::{Digest, Sha256};
 
@@ -197,7 +198,7 @@ impl CosmosSigner {
                 "signer_infos": [{
                     "public_key": {
                         "@type": "/cosmos.crypto.secp256k1.PubKey",
-                        "key": base64::encode(&self.signing_key.verifying_key().to_bytes())
+                        "key": B64.encode(&self.signing_key.verifying_key().to_bytes())
                     },
                     "mode_info": {
                         "single": {
@@ -242,12 +243,12 @@ impl CosmosSigner {
             })?;
 
         // Sign the tx_bytes
-        let tx_bytes = base64::decode(tx_bytes_b64).map_err(|e| WarpError::AdapterError {
+        let tx_bytes = B64.decode(tx_bytes_b64).map_err(|e| WarpError::AdapterError {
             chain: "cosmos".into(),
             reason: format!("base64 decode tx_bytes: {}", e),
         })?;
         let signature = self.sign(&tx_bytes);
-        let _sig_b64 = base64::encode(&signature);
+        let _sig_b64 = B64.encode(&signature);
 
         // Broadcast the signed TX
         let broadcast_body = serde_json::json!({
