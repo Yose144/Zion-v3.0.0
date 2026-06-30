@@ -35,7 +35,7 @@ services:
       # ZION_VALIDATOR_PRIVATE_KEY: ""   # set in .env or secrets manager
       # ZION_VALIDATOR_EXTRA_KEYS: ""    # comma-separated extra validator private keys
       # ZION_VALIDATOR_EXTRA_IDS: ""     # optional comma-separated IDs for extra keys
-      # ANKR_API_KEY: ""                 # optional — Ankr premium tier
+      ANKR_API_KEY: "${ANKR_API_KEY}"  # Ankr free tier — set in .env (higher rate limits than no key)
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9100/health >/dev/null"]
       interval: 20s
