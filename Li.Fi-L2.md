@@ -193,17 +193,17 @@ npx hardhat run scripts/deploy-chain.ts --network avalanche  # needs AVAX for ga
 | Stellar | ✅ | ✅ Payment signing | ✅ Plně funkční |
 | Cosmos | ✅ | ✅ CosmWASM mint (D-04) | ✅ Plně funkční |
 | Cardano | ✅ | ✅ Native token mint (D-04, signer ready) | ⚠️ Signer hotový, CBOR TX builder pending |
-| Lightning | ❌ | ⚠️ BOLT11 placeholder | ⚠️ Stub |
+| Lightning | ✅ BOLT11 parser | ✅ LND REST (D-04) | ✅ Plně funkční (LND required) |
 | Aptos | ✅ health | ❌ AdapterNotImplemented | ❌ Stub |
 | NEAR | ✅ health | ❌ AdapterNotImplemented | ❌ Stub |
 | Sui | ✅ health | ❌ AdapterNotImplemented | ❌ Stub |
 | TON | ✅ health | ❌ AdapterNotImplemented | ❌ Stub |
 
-- WARP běží na Edge (port 8453), 269 testů pass
-- **8 adapterů plně funkčních** (EVM, BTC, SOL, TRX, XLM, Cosmos + Cardano watch+sign)
-- **D-04 implementováno (2026-06-30):** `cosmos_signer.rs` + `cardano_signer.rs` — Ed25519 signing, bech32 address derivation, CosmWASM mint broadcast, Blockfrost TX submission path
+- WARP běží na Edge (port 8453), 298 testů pass
+- **9 adapterů plně funkčních** (EVM, BTC, SOL, TRX, XLM, Cosmos, Cardano watch+sign, Lightning BOLT11+LND)
+- **D-04 implementováno (2026-06-30):** `cosmos_signer.rs` + `cardano_signer.rs` + `bolt11.rs` + `lightning_signer.rs` — Ed25519 signing, bech32 address derivation, CosmWASM mint, Blockfrost TX, BOLT11 invoice parser, LND REST client
 - **Cardano limitace:** `submit_mint_tx` potřebuje CBOR TX builder (pallas nebo cardano-serialization-lib) pro plnou Cardano TX konstrukci
-- **Lightning:** BOLT11 stub, žádný LND/CLN node — viz [WARP_LIGHTNING_PLAN.md](./docs/WARP_LIGHTNING_PLAN.md)
+- **Lightning:** BOLT11 parser + LND REST client implementováno. Vyžaduje LND node na Edge serveru (Fáze A infra pending)
 
 **Potřebná práce:**
 1. Implement `execute_mint()` pro každý adapter (mint signing)

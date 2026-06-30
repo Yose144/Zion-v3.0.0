@@ -1,9 +1,11 @@
 use crate::adapter::ChainAdapter;
+use crate::bolt11::Bolt11Invoice;
 use crate::error::{WarpError, WarpResult};
+use crate::lightning_signer::LndClient;
 use crate::protocol::{DepositProof, MintInstruction};
 use crate::types::ChainFamily;
 use async_trait::async_trait;
-use tracing::{info, warn};
+use tracing::{debug, info, warn};
 
 /// Bitcoin Lightning Network adapter.
 ///
@@ -11,12 +13,9 @@ use tracing::{info, warn};
 /// - Outbound: ZION user pays a Lightning invoice (ZION locked → BTC sent over LN)
 /// - Inbound: Lightning payment triggers ZION mint on L1
 ///
-/// Requires a connected Lightning node (LND, Core Lightning, or LDK).
+/// Requires a connected LND node (REST proxy on port 8080).
 pub struct LightningAdapter {
-    #[allow(dead_code)]
-    node_url: String,
-    #[allow(dead_code)]
-    macaroon: Option<String>,
+    lnd: Option<LndClient>,
 }
 
 impl Default for LightningAdapter {
@@ -27,73 +26,95 @@ impl Default for LightningAdapter {
 
 impl LightningAdapter {
     pub fn new() -> Self {
-        Self {
-            node_url: std::env::var("WARP_LN_NODE_URL")
-                .unwrap_or_else(|_| "http://localhost:8080".into()),
-            macaroon: std::env::var("WARP_LN_MACAROON").ok(),
-        }
+        // Try to create LND client from env; if not configured, adapter stays in stub mode
+        let lnd = match LndClient::from_env() {
+            Ok(client) => {
+                debug!("[WARP][LN] LND client configured from env");
+                Some(client)
+            }
+            Err(_) => {
+                debug!("[WARP][LN] No LND client configured — adapter in stub mode");
+                None
+            }
+        };
+        Self { lnd }
     }
 
-    pub fn with_endpoint(node_url: &str, macaroon: Option<&str>) -> Self {
-        Self {
-            node_url: node_url.to_string(),
-            macaroon: macaroon.map(|s| s.to_string()),
-        }
+    /// Create with an explicit LND client (for testing).
+    pub fn with_lnd(lnd: LndClient) -> Self {
+        Self { lnd: Some(lnd) }
     }
 
-    /// Decode a BOLT11 invoice and extract amount + payment hash.
-    pub fn decode_invoice(&self, invoice: &str) -> WarpResult<(u64, String)> {
-        // Minimal BOLT11 decode: extract amount from human-readable part
-        // Real implementation uses lightning-invoice crate
-        if !invoice.starts_with("lnbc") {
-            return Err(WarpError::InvalidAddress {
-                chain: "lightning".into(),
-                address: invoice.into(),
-            });
-        }
-
-        // Parse amount from lnbc1m, lnbc100u, lnbc10n, etc.
-        let amount_sats = parse_bolt11_amount(invoice)?;
-        // Payment hash is embedded in the invoice
-        let payment_hash = extract_payment_hash(invoice);
-
-        Ok((amount_sats, payment_hash))
+    /// Check if LND is configured.
+    pub fn has_lnd(&self) -> bool {
+        self.lnd.is_some()
     }
 
-    /// Create a BOLT11 invoice for inbound transfers.
-    pub async fn create_invoice(&self, amount_sats: u64, memo: &str) -> WarpResult<String> {
-        info!(
-            amount = amount_sats,
-            memo = memo,
-            "Creating Lightning invoice"
-        );
-        // Placeholder: real implementation calls LND/CLN/ldk-node gRPC/REST
-        let invoice = format!(
-            "lnbc{}n1p{}...{}",
-            amount_sats,
-            &hex::encode(sha256::digest(memo.as_bytes()))[..8],
-            &hex::encode(sha256::digest(&amount_sats.to_le_bytes()))[..6]
-        );
-        Ok(invoice)
+    /// Decode a BOLT11 invoice using the pure-Rust parser.
+    pub fn decode_invoice(&self, invoice: &str) -> WarpResult<Bolt11Invoice> {
+        Bolt11Invoice::decode(invoice)
     }
 
-    /// Pay a BOLT11 invoice for outbound transfers.
+    /// Create a BOLT11 invoice for inbound transfers via LND.
+    pub async fn create_invoice(
+        &self,
+        amount_msat: u64,
+        memo: &str,
+        expiry: Option<u64>,
+    ) -> WarpResult<String> {
+        let lnd = self.lnd.as_ref().ok_or_else(|| WarpError::AdapterError {
+            chain: "lightning".into(),
+            reason: "LND not configured — set WARP_LN_NODE_URL + WARP_LN_MACAROON".into(),
+        })?;
+
+        let resp = lnd.add_invoice(amount_msat, memo, expiry).await?;
+        resp.payment_request.ok_or_else(|| WarpError::AdapterError {
+            chain: "lightning".into(),
+            reason: "LND AddInvoice returned no payment_request".into(),
+        })
+    }
+
+    /// Pay a BOLT11 invoice for outbound transfers via LND.
     pub async fn pay_invoice(&self, invoice: &str) -> WarpResult<String> {
-        let (amount_sats, payment_hash) = self.decode_invoice(invoice)?;
+        let lnd = self.lnd.as_ref().ok_or_else(|| WarpError::AdapterError {
+            chain: "lightning".into(),
+            reason: "LND not configured".into(),
+        })?;
+
+        // Decode invoice first to validate it
+        let parsed = self.decode_invoice(invoice)?;
         info!(
-            amount = amount_sats,
-            payment_hash = %payment_hash,
-            "Paying Lightning invoice"
+            "[WARP][LN] Paying invoice: {} sats, hash={}",
+            parsed.amount_sats(),
+            &parsed.payment_hash_hex[..16]
         );
-        // Placeholder: real implementation calls LND SendPaymentV2 / CLN pay
-        Ok(format!("ln_payment_{}", payment_hash))
+
+        // Fee limit: 0.5% of amount, min 1000 msat
+        let fee_limit = if parsed.amount_msat > 0 {
+            Some((parsed.amount_msat / 200).max(1000))
+        } else {
+            Some(10_000) // default fee limit for any-amount invoices
+        };
+
+        let resp = lnd
+            .send_payment(invoice, fee_limit, Some(60))
+            .await?;
+
+        // Return the payment preimage as proof
+        let preimage = resp.payment_preimage.unwrap_or_else(|| {
+            format!("paid_{}", &parsed.payment_hash_hex[..16])
+        });
+        info!("[WARP][LN] Payment settled: preimage={}", &preimage[..16.min(preimage.len())]);
+        Ok(preimage)
     }
 
     /// Check if a payment hash has been settled.
-    pub async fn is_payment_settled(&self, payment_hash: &str) -> WarpResult<bool> {
-        info!(payment_hash = %payment_hash, "Checking Lightning payment status");
-        // Placeholder
-        Ok(false)
+    pub async fn is_payment_settled(&self, payment_hash_hex: &str) -> WarpResult<bool> {
+        let lnd = self.lnd.as_ref().ok_or_else(|| WarpError::AdapterError {
+            chain: "lightning".into(),
+            reason: "LND not configured".into(),
+        })?;
+        lnd.is_settled(payment_hash_hex).await
     }
 }
 
@@ -108,104 +129,113 @@ impl ChainAdapter for LightningAdapter {
     }
 
     async fn health_check(&self) -> WarpResult<bool> {
-        info!("Lightning health check — verifying node connectivity");
-        // Placeholder: real implementation calls GetInfo
-        Ok(true)
+        let lnd = match self.lnd.as_ref() {
+            Some(l) => l,
+            None => {
+                warn!("[WARP][LN] Health check: LND not configured");
+                return Ok(false);
+            }
+        };
+        match lnd.get_info().await {
+            Ok(info) => {
+                let synced = info.synced_to_chain.unwrap_or(false);
+                let channels = info.num_active_channels.unwrap_or(0);
+                info!(
+                    "[WARP][LN] Health OK — alias={:?} channels={} synced={} version={:?}",
+                    info.alias, channels, synced, info.version
+                );
+                Ok(synced && channels > 0)
+            }
+            Err(e) => {
+                warn!("[WARP][LN] Health FAIL: {}", e);
+                Ok(false)
+            }
+        }
     }
 
     async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {
-        // Lightning watch: poll settled invoices or subscribe to HTLC events
-        warn!("Lightning watch_events not yet implemented — use invoice polling");
+        // Lightning watch: poll settled invoices via LND
+        // In a full implementation, we'd use SubscribeInvoiceEvents streaming
+        // For now, we return empty — the router polls is_payment_settled per transfer
+        let lnd = match self.lnd.as_ref() {
+            Some(l) => l,
+            None => {
+                debug!("[WARP][LN] watch_events: LND not configured");
+                return Ok(vec![]);
+            }
+        };
+
+        // Check outbound capacity for health monitoring
+        match lnd.outbound_capacity_msat().await {
+            Ok(cap) => {
+                debug!("[WARP][LN] Outbound capacity: {} msat", cap);
+            }
+            Err(e) => {
+                warn!("[WARP][LN] Capacity check failed: {}", e);
+            }
+        }
+
+        // Inbound invoices are tracked by the router via transfer IDs
+        // This method returns empty for Lightning — settlements are polled
+        // individually via is_payment_settled() in the confirmations() method
         Ok(vec![])
     }
 
     async fn execute_mint(&self, instruction: &MintInstruction) -> WarpResult<String> {
-        // For inbound: create an invoice, user pays it, we detect settlement
-        let amount_sats: u64 =
-            instruction
-                .amount_dest_atomic
-                .try_into()
-                .map_err(|_| WarpError::DecimalOverflow {
-                    from_decimals: 18,
-                    to_decimals: 8,
-                })?;
-        let invoice = self
-            .create_invoice(amount_sats, &instruction.recipient)
-            .await?;
-        info!(invoice = %invoice, "Lightning invoice created for inbound transfer");
-        Ok(invoice)
+        // For outbound: pay the BOLT11 invoice specified in recipient field
+        // The recipient field contains the BOLT11 invoice to pay
+        let invoice = &instruction.recipient;
+
+        // Validate it looks like a BOLT11 invoice
+        if !invoice.starts_with("lnbc") && !invoice.starts_with("lntb") {
+            return Err(WarpError::InvalidAddress {
+                chain: "lightning".into(),
+                address: format!("expected BOLT11 invoice (lnbc.../lntb...), got: {}", &invoice[..invoice.len().min(40)]),
+            });
+        }
+
+        // Pay the invoice via LND
+        self.pay_invoice(invoice).await
     }
 
     async fn current_height(&self) -> WarpResult<u64> {
-        // Lightning has no block height; return 0
-        Ok(0)
+        // Lightning has no block height; return LND's best known block height
+        let lnd = match self.lnd.as_ref() {
+            Some(l) => l,
+            None => return Ok(0),
+        };
+        match lnd.get_info().await {
+            Ok(info) => Ok(info.block_height.unwrap_or(0) as u64),
+            Err(_) => Ok(0),
+        }
     }
 
-    async fn confirmations(&self, _tx_hash: &str) -> WarpResult<u64> {
-        // For Lightning, tx_hash is the payment hash; check settlement
-        let settled = self.is_payment_settled(_tx_hash).await?;
-        if settled {
-            Ok(1)
-        } else {
-            Ok(0)
+    async fn confirmations(&self, tx_hash: &str) -> WarpResult<u64> {
+        // For Lightning, tx_hash is the payment hash (hex)
+        // Return 1 if settled, 0 if pending
+        let lnd = match self.lnd.as_ref() {
+            Some(l) => l,
+            None => return Ok(0),
+        };
+        match lnd.is_settled(tx_hash).await {
+            Ok(true) => Ok(1),
+            Ok(false) => Ok(0),
+            Err(e) => {
+                debug!("[WARP][LN] confirmations check failed: {}", e);
+                Ok(0)
+            }
         }
     }
 }
 
-// ── BOLT11 helpers (minimal, real impl uses lightning-invoice crate) ──
-
-fn parse_bolt11_amount(invoice: &str) -> WarpResult<u64> {
-    // lnbc1m = 1 milli-satoshi? No, lnbc1m = 1 million satoshis in modern encoding
-    // Simplified: look for amount digits between 'lnbc' and unit letter
-    let rest = &invoice[4..]; // skip "lnbc"
-    let mut digits = String::new();
-    for ch in rest.chars() {
-        if ch.is_ascii_digit() {
-            digits.push(ch);
-        } else {
-            break;
-        }
-    }
-    if digits.is_empty() {
-        // No amount specified = any amount invoice
-        return Ok(0);
-    }
-    let num: u64 = digits.parse().map_err(|_| WarpError::InvalidAddress {
-        chain: "lightning".into(),
-        address: invoice.into(),
-    })?;
-    // Find unit
-    let unit_ch = rest.chars().nth(digits.len());
-    let multiplier = match unit_ch {
-        Some('m') => 1_000_000u64, // milli? actually modern uses 'm' for millisatoshi
-        Some('u') => 100u64,       // micro?
-        Some('n') => 1u64,         // nano = satoshi in some encodings
-        Some('p') => 10u64,        // pico = 0.1 satoshi (sub-satoshi)
-        _ => 1u64,
-    };
-    Ok(num * multiplier)
-}
-
-fn extract_payment_hash(_invoice: &str) -> String {
-    // Placeholder: real impl parses the tagged field 'p' (payment_hash)
-    use sha2::{Digest, Sha256};
-    let mut hasher = Sha256::new();
-    hasher.update(_invoice.as_bytes());
-    format!("{:x}", hasher.finalize())
-}
-
-mod sha256 {
-    use sha2::{Digest, Sha256};
-    pub fn digest(data: &[u8]) -> Vec<u8> {
-        let mut hasher = Sha256::new();
-        hasher.update(data);
-        hasher.finalize().to_vec()
-    }
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// Tests
+// ─────────────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::protocol::MintInstruction;
 
     #[test]
     fn test_lightning_adapter_meta() {
@@ -215,17 +245,79 @@ mod tests {
     }
 
     #[test]
-    fn test_decode_invoice_valid() {
+    fn test_lightning_adapter_no_lnd() {
+        std::env::remove_var("WARP_LN_NODE_URL");
         let a = LightningAdapter::new();
-        let inv = "lnbc100n1pj..."; // 100 satoshi invoice stub
-        let result = a.decode_invoice(inv);
-        assert!(result.is_ok());
+        assert!(!a.has_lnd());
     }
 
     #[test]
-    fn test_decode_invoice_invalid() {
+    fn test_decode_invoice_invalid_prefix() {
         let a = LightningAdapter::new();
-        let result = a.decode_invoice("not_an_invoice");
-        assert!(result.is_err());
+        assert!(a.decode_invoice("not_an_invoice").is_err());
+    }
+
+    #[test]
+    fn test_decode_invoice_empty() {
+        let a = LightningAdapter::new();
+        assert!(a.decode_invoice("").is_err());
+    }
+
+    #[tokio::test]
+    async fn test_health_check_no_lnd() {
+        std::env::remove_var("WARP_LN_NODE_URL");
+        let a = LightningAdapter::new();
+        let health = a.health_check().await.unwrap();
+        assert!(!health); // false because no LND configured
+    }
+
+    #[tokio::test]
+    async fn test_watch_events_no_lnd_empty() {
+        std::env::remove_var("WARP_LN_NODE_URL");
+        let a = LightningAdapter::new();
+        let events = a.watch_events().await.unwrap();
+        assert!(events.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_execute_mint_invalid_invoice() {
+        let a = LightningAdapter::new();
+        let inst = MintInstruction {
+            dest_chain: "lightning".into(),
+            recipient: "not_an_invoice".into(),
+            amount_dest_atomic: 100,
+            signatures: vec![],
+            warp_message_hash: String::new(),
+        };
+        assert!(a.execute_mint(&inst).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_execute_mint_no_lnd() {
+        std::env::remove_var("WARP_LN_NODE_URL");
+        let a = LightningAdapter::new();
+        let inst = MintInstruction {
+            dest_chain: "lightning".into(),
+            recipient: "lnbc100u1p3k252dqqnp4q0h...".into(),
+            amount_dest_atomic: 100,
+            signatures: vec![],
+            warp_message_hash: String::new(),
+        };
+        // Should error because LND is not configured
+        assert!(a.execute_mint(&inst).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_current_height_no_lnd() {
+        std::env::remove_var("WARP_LN_NODE_URL");
+        let a = LightningAdapter::new();
+        assert_eq!(a.current_height().await.unwrap(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_confirmations_no_lnd() {
+        std::env::remove_var("WARP_LN_NODE_URL");
+        let a = LightningAdapter::new();
+        assert_eq!(a.confirmations("abc123").await.unwrap(), 0);
     }
 }

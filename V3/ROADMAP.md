@@ -107,6 +107,19 @@ Verze **3.0.3** je nyní uzavřena. Všechny klíčové komponenty jsou funkčn�
 - [ ] Deploy wZION Cardano native token (policy ID + asset name)
 - [ ] Set `WARP_COSMOS_RELAY_KEY` / `WARP_CARDANO_PAYMENT_KEY` / `WARP_CARDANO_POLICY_KEY` env vars on Edge
 
+#### P8 — WARP Lightning Network — ✅ IMPLEMENTED 2026-06-30
+
+> **Runbook:** `V3/L3/warp/src/bolt11.rs` + `V3/L3/warp/src/lightning_signer.rs` + `V3/L3/warp/src/adapter/lightning.rs`
+
+- [x] **BOLT11 invoice parser** (`bolt11.rs`) — pure Rust bech32 decode, tagged field parsing (p/d/n/x/c/r/9), amount multipliers (m/u/n/p), signature extraction
+- [x] **LND REST client** (`lightning_signer.rs`) — GetInfo, AddInvoice, SendPayment, LookupInvoice, ListChannels, outbound capacity monitoring
+- [x] **Lightning adapter** — nahrazen stub real implementací: `decode_invoice()`, `create_invoice()`, `pay_invoice()`, `is_payment_settled()`, `health_check()`, `watch_events()`, `execute_mint()`, `confirmations()`
+- [x] 298 WARP tests pass (29 new: bolt11 + lightning_signer + lightning adapter)
+- [ ] **LND node setup na Edge** (Fáze A) — Docker container, bitcoind backend, channel opening, macaroon generation
+- [ ] Set `WARP_LN_NODE_URL` / `WARP_LN_MACAROON` env vars on Edge
+- [ ] Channel liquidity (0.5-1 BTC outbound)
+- [ ] Submarine swaps (Fáze E — future)
+
 #### Nice to have (continued)
 - Blockaid false-positive report submission
 
