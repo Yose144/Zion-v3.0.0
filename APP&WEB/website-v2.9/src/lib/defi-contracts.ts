@@ -86,6 +86,24 @@ export const CONTRACTS = {
   ZIONTreasury:   '0x455f465ac7e14fdA97dC46fdd74bCa78bfC0aEeD', // 3-of-3 multisig
   ZIONStaking:    '0xbd5cEe7878337d22188BFBaF9aa9F39A850Be78B', // 12% APR, 100K wZION reward pool
   ZIONFarm:       '0x167B2753F5D8D9F8e62875cc9e379d7804308B08', // 1 wZION/s, 90d halving, 500K wZION pool
+  // Uniswap CCA Auction — deployed 2026-06-30 on Base Mainnet
+  CCAAuction:     '0x4eD4EbBaa975d20cEA746E3569802D51768e1f93', // 66.47M wZION for USDC, 184-day lock
+} as const;
+
+/** CCA Auction immutable parameters (from AUCTION_CCA_BASE.md) */
+export const CCA_AUCTION_PARAMS = {
+  auctionContract:  '0x4eD4EbBaa975d20cEA746E3569802D51768e1f93',
+  token:            '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6', // wZION
+  currency:         '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', // USDC (Base)
+  totalSupply:      66_466_631.15,                                // wZION deposited
+  tokensRecipient:  '0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186',
+  fundsRecipient:   '0x5bb4bafafec57bED50d864Aaa9d1ef992611e000',
+  startBlock:       48_013_356,
+  endBlock:         55_959_126,
+  claimBlock:       55_959_126,
+  floorPriceQ96:    '15053350877700',
+  uniswapUrl:       'https://app.uniswap.org/explore/auctions/base/0x4eD4EbBaa975d20cEA746E3569802D51768e1f93',
+  basescanUrl:      'https://basescan.org/address/0x4eD4EbBaa975d20cEA746E3569802D51768e1f93',
 } as const;
 
 /** Helper: check if a DeFi contract is deployed on mainnet */
