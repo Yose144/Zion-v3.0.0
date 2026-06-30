@@ -1,7 +1,7 @@
 # LI.FI L2 — Cross-Chain DEX + Bridge Integration Plan
 
-> **Status:** ✅ Fáze 1 hotová (WidgetLight) · ✅ Fáze 2: 5 chainů live (Base+BSC+Polygon+Arbitrum+Optimism) · Fáze 3 WARP D-04
-> **Poslední update:** 2026-06-30 (Session 11 — 5-chain wZION deploy + bridge running + website live)
+> **Status:** ✅ Fáze 1 hotová (WidgetLight) · ✅ Fáze 2: 6 chainů live (Base+BSC+Polygon+Arbitrum+Optimism+Avalanche) · Fáze 3 WARP D-04
+> **Poslední update:** 2026-06-30 (Session 11 — 6-chain wZION deploy complete + bridge running + website live)
 > **Owner:** Zion Protocol Team
 
 ---
@@ -146,7 +146,7 @@ docker compose -f docker-compose.v3-l2.yml up -d zion-bridge
 | **BSC** | 56 | P0 | BNB | 0.01 | ✅ Deployed | wZION 0x0c49... + Bridge 0xa5a0... |
 | **Polygon** | 137 | P1 | POL | 0.05 | ✅ Deployed | wZION 0x0c49... + Bridge 0xa5a0... |
 | **Optimism** | 10 | P1 | ETH | 0.005 | ✅ Deployed | wZION 0x0c49... + Bridge 0xa5a0... |
-| **Avalanche** | 43114 | P2 | AVAX | 0.1 | ⬜ Pending | Needs AVAX on C-Chain |
+| **Avalanche** | 43114 | P2 | AVAX | 0.1 | ✅ Deployed | wZION 0x0c49... + Bridge 0xa5a0... |
 | **Ethereum Mainnet** | 1 | P3 | ETH | 0.02 | ⬜ Future | High gas, DeFi integrace |
 
 **Příkaz pro deploy:**
