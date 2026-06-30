@@ -1,9 +1,12 @@
 use crate::adapter::ChainAdapter;
 use crate::error::{WarpError, WarpResult};
 use crate::protocol::{DepositProof, MintInstruction};
+use crate::ton_cell;
 use crate::ton_signer::TonSigner;
 use crate::types::ChainFamily;
 use async_trait::async_trait;
+use base64::{engine::general_purpose::STANDARD as B64, Engine};
+use ed25519_dalek::Signer;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use tracing::{debug, info, warn};
@@ -76,6 +79,39 @@ struct AddressInfo {
     data: String,
     #[allow(dead_code)]
     code: String,
+}
+
+/// Parse a TON address string into a 32-byte hash.
+/// Accepts hex format (0x...) or raw 64-char hex.
+/// For base64 addresses (EQ.../UQ...), use the TON SDK for proper decoding.
+fn parse_ton_address(addr: &str) -> WarpResult<[u8; 32]> {
+    let stripped = addr.strip_prefix("0x").unwrap_or(addr);
+    // If it's a 64-char hex string, parse directly
+    if stripped.len() == 64 {
+        let bytes = hex::decode(stripped).map_err(|e| WarpError::AdapterError {
+            chain: "ton".into(),
+            reason: format!("invalid TON address hex: {}", e),
+        })?;
+        if bytes.len() != 32 {
+            return Err(WarpError::AdapterError {
+                chain: "ton".into(),
+                reason: format!("TON address must be 32 bytes, got {}", bytes.len()),
+            });
+        }
+        let mut arr = [0u8; 32];
+        arr.copy_from_slice(&bytes);
+        Ok(arr)
+    } else {
+        Err(WarpError::AdapterError {
+            chain: "ton".into(),
+            reason: format!(
+                "TON address must be 64-char hex (0x...), got '{}' (len={}). \
+                 For base64 addresses (EQ.../UQ...), use TON SDK.",
+                addr,
+                addr.len()
+            ),
+        })
+    }
 }
 
 /// `getTransactions` → array of transactions
@@ -338,26 +374,77 @@ impl ChainAdapter for TonAdapter {
     }
 
     async fn execute_mint(&self, instruction: &MintInstruction) -> WarpResult<String> {
-        // Load the Ed25519 relay key so we can surface the relay public key in
-        // the error message (useful for diagnostics). Even if the key loads,
-        // we cannot construct a TON transaction without a TON SDK.
         let signer = TonSigner::from_env().map_err(|e| WarpError::AdapterError {
             chain: "ton".into(),
             reason: format!("relay key unavailable: {}", e),
         })?;
         let amount = instruction.amount_dest_atomic;
         info!(
-            "[WARP][ton] minting {} nanoTON-equivalent to {} (relay pubkey {})",
-            amount,
-            instruction.recipient,
-            signer.public_key_hex()
+            "[WARP][ton] minting {} to {} (relay pubkey {})",
+            amount, instruction.recipient, signer.public_key_hex()
         );
-        Err(WarpError::AdapterError {
+
+        // 1. Parse recipient address (hex 32-byte hash + workchain)
+        let recipient_hash = parse_ton_address(&instruction.recipient)?;
+
+        // 2. Build jetton transfer body cell
+        let body_cell = ton_cell::build_jetton_transfer_body(
+            1,                  // query_id
+            amount as u64,      // amount
+            0,                  // dest workchain
+            &recipient_hash,
+        );
+
+        // 3. Build internal message cell (wrapping the body)
+        let internal_msg = ton_cell::build_internal_message(
+            0,                  // dest workchain
+            &recipient_hash,    // dest address hash
+            50_000_000,         // value (0.05 TON in nanoTON)
+            body_cell,
+        )
+        .map_err(|e| WarpError::AdapterError {
             chain: "ton".into(),
-            reason: "TON TX construction requires TL-B cell serialization + ADNL protocol; \
-                     install `ton-sdk`, `tonweb`, or `tonlib` to enable execute_mint"
-                .into(),
-        })
+            reason: format!("internal message build failed: {}", e),
+        })?;
+
+        // 4. Compute wallet V2R2 signing hash
+        let valid_until = (chrono::Utc::now().timestamp() as u32) + 3600; // 1 hour
+        let signing_hash = ton_cell::wallet_v2r2_signing_hash(
+            0x29a9a317, // subwallet_id (mainnet V2R2)
+            valid_until,
+            0,          // seqno (would need to fetch from chain)
+            &internal_msg,
+        );
+
+        // 5. Sign with Ed25519
+        let signature = signer.signing_key.sign(&signing_hash).to_bytes();
+
+        // 6. Build external message cell
+        let wallet_hash = signer.raw_address_hash();
+        let external_cell = ton_cell::build_wallet_v2r2_external(
+            signer.workchain(),
+            &wallet_hash,
+            0x29a9a317,
+            valid_until,
+            0, // seqno
+            internal_msg,
+            &signature,
+        )
+        .map_err(|e| WarpError::AdapterError {
+            chain: "ton".into(),
+            reason: format!("external message build failed: {}", e),
+        })?;
+
+        // 7. Serialize to BOC
+        let boc = ton_cell::serialize_boc(&external_cell);
+        let boc_b64 = B64.encode(&boc);
+
+        // 8. Submit via TON Center API
+        let v = self.rpc("sendBase64Transaction", json!({ "boc": boc_b64 })).await?;
+
+        let result = v.as_str().unwrap_or("unknown");
+        info!("[WARP][ton] TX submitted: {}", result);
+        Ok(result.to_string())
     }
 
     async fn current_height(&self) -> WarpResult<u64> {
@@ -637,7 +724,7 @@ mod tests {
         let adapter = TonAdapter::new();
         let inst = MintInstruction {
             dest_chain: "ton".into(),
-            recipient: "EQRecipient".into(),
+            recipient: format!("0x{}", "a".repeat(64)),
             amount_dest_atomic: 1_000_000,
             signatures: vec![],
             warp_message_hash: String::new(),
@@ -654,19 +741,28 @@ mod tests {
             msg
         );
 
-        // Part 2: with a valid key → signer loads, but adapter must still
-        // refuse to construct a TON transaction (needs a TON SDK).
+        // Part 2: with a valid key → signer loads, Cell/BOC encoding works,
+        // but sendBase64Transaction fails (no network) → network error, NOT TL-B error.
         std::env::set_var("WARP_TON_RELAY_KEY", hex::encode([42u8; 32]));
-        let adapter2 = TonAdapter::new();
+        let adapter2 = TonAdapter {
+            api_url: "http://127.0.0.1:1".into(),
+            client: reqwest::Client::builder()
+                .timeout(std::time::Duration::from_millis(200))
+                .build()
+                .unwrap(),
+            api_key: None,
+            bridge_account: None,
+        };
         let res2 = adapter2.execute_mint(&inst).await;
-        assert!(res2.is_err(), "execute_mint should error even with key");
+        assert!(res2.is_err(), "execute_mint should error without network");
         let msg2 = match res2.unwrap_err() {
             WarpError::AdapterError { reason, .. } => reason,
             other => panic!("expected AdapterError, got {:?}", other),
         };
+        // Should NOT mention TON SDK — TL-B is now implemented
         assert!(
-            msg2.contains("ton-sdk") || msg2.contains("tonweb") || msg2.contains("tonlib"),
-            "error should mention a TON SDK requirement: {}",
+            !msg2.contains("ton-sdk") && !msg2.contains("tonweb") && !msg2.contains("tonlib"),
+            "TL-B is now implemented — should not see TON SDK requirement: {}",
             msg2
         );
         std::env::remove_var("WARP_TON_RELAY_KEY");

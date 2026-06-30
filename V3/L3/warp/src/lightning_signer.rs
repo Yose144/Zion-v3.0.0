@@ -19,7 +19,7 @@
 
 use crate::error::{WarpError, WarpResult};
 use serde::{Deserialize, Serialize};
-use tracing::{debug, info, warn};
+use tracing::{debug, info};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LND REST response types

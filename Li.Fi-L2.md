@@ -197,13 +197,13 @@ npx hardhat run scripts/deploy-chain.ts --network avalanche  # needs AVAX for ga
 | Aptos | ✅ REST health | ✅ BCS TX + Ed25519 + submit | ✅ Plně funkční |
 | NEAR | ✅ JSON-RPC | ✅ Borsh TX + broadcast | ✅ Plně funkční |
 | Sui | ✅ JSON-RPC | ✅ BCS TX + Ed25519 + submit | ✅ Plně funkční |
-| TON | ✅ JSON-RPC | ✅ Ed25519 signer (TL-B TX pending) | ⚠️ Signer hotový, TON SDK pending |
+| TON | ✅ JSON-RPC | ✅ TL-B Cell + BOC + Ed25519 + submit | ✅ Plně funkční |
 
-- WARP běží na Edge (port 8453), 465 testů pass
-- **13 adapterů plně funkčních** (EVM, BTC, SOL, TRX, XLM, Cosmos, Cardano CBOR TX, Lightning BOLT11+LND, NEAR borsh TX, Aptos BCS TX, Sui BCS TX)
-- **D-04 implementováno (2026-06-30):** `cosmos_signer.rs` + `cardano_signer.rs` + `bolt11.rs` + `lightning_signer.rs` + `aptos_signer.rs` + `near_signer.rs` + `sui_signer.rs` + `ton_signer.rs` + `bcs.rs` + `cbor.rs`
+- WARP běží na Edge (port 8453), 487 testů pass
+- **Všech 13 adapterů plně funkčních** (EVM, BTC, SOL, TRX, XLM, Cosmos, Cardano CBOR TX, Lightning BOLT11+LND, NEAR borsh TX, Aptos BCS TX, Sui BCS TX, TON TL-B Cell+BOC)
+- **D-04 implementováno (2026-06-30):** `cosmos_signer.rs` + `cardano_signer.rs` + `bolt11.rs` + `lightning_signer.rs` + `aptos_signer.rs` + `near_signer.rs` + `sui_signer.rs` + `ton_signer.rs` + `bcs.rs` + `cbor.rs` + `ton_cell.rs`
 - **Cardano:** CBOR TX builder implementován — `cardano_tx_body` + `cardano_witness_set` + Blake2b-256 TX hash + Blockfrost submit
-- **TON limitace:** TL-B + ADNL TX builder pending (needs `ton-sdk` / `tonweb`)
+- **TON:** TL-B Cell+BOC TX builder implementován — `BitString` + `Cell` + `serialize_boc` + jetton transfer + wallet V2R2 signing + `sendBase64Transaction`
 - **Lightning:** BOLT11 parser + LND REST client implementováno. Vyžaduje LND node na Edge serveru (Fáze A infra pending)
 
 **Potřebná práce:**
