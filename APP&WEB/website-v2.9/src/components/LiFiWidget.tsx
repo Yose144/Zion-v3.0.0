@@ -10,7 +10,7 @@ const WZION_ADDRESSES: Record<number, string | null> = {
   8453:  '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6', // ✅ Base Mainnet
   1:     null,  // Ethereum Mainnet (not deployed)
   42161: null,  // Arbitrum One (not deployed)
-  56:    null,  // BNB Smart Chain (not deployed)
+  56:    '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6', // ✅ BNB Smart Chain (deployed 2026-06-30)
   137:   null,  // Polygon PoS (not deployed)
   10:    null,  // Optimism (not deployed)
   43114: null,  // Avalanche C-Chain (not deployed)
