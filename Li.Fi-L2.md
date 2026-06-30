@@ -282,7 +282,7 @@ Chains:         8453, 1, 42161, 56, 137, 10, 43114
 | `V3/L2/bridge/config/bridge-mainnet.toml` | Bridge relay multi-chain config |
 | `V3/L2/contracts/hardhat/sol/wZION.sol` | wZION ERC-20 contract (deploy na nové chainy) |
 | `V3/L2/contracts/hardhat/sol/ZIONBridge.sol` | Bridge contract (deploy na nové chainy) |
-| `V3/L3/warp/` | WARP universal bridge (non-EVM, 80% hotový) |
+| `V3/L3/warp/` | WARP universal bridge (13 chain family, 408 testů) |
 
 ---
 
@@ -293,11 +293,11 @@ Chains:         8453, 1, 42161, 56, 137, 10, 43114
 | **Chainy** | 10+ family (EVM + Solana, BTC, Tron...) | 25+ EVM chainů |
 | **Architektura** | Hub-and-spoke přes ZION L1 | Agregace externích bridge protokolů |
 | **Kontrola** | Plná (5/5 validator consensus) | Závislost na LI.FI infrastruktuře |
-| **Non-EVM** | ✅ (Solana, BTC, Tron, Stellar, Cardano, Cosmos) | ❌ (jen EVM) |
-| **Status** | 80% hotový, `execute_mint()` stub | ✅ Produkčně ready |
+| **Non-EVM** | ✅ (Solana, BTC, Tron, Stellar, Cardano, Cosmos, Lightning, Aptos, NEAR, Sui, TON) | ❌ (jen EVM) |
+| **Status** | 13 adapterů implementováno, 408 testů pass | ✅ Produkčně ready |
 | **DEX agregace** | ❌ (jen bridge) | ✅ (30+ DEX na Base) |
 | **Best price routing** | ❌ | ✅ (automatické) |
-| **Úsilí do produkce** | 8-12 týdnů | ✅ Hotovo (dny) |
+| **Úsilí do produkce** | NEAR plně funkční; Cardano/Aptos/Sui/TON potřebují TX builder; Lightning potřebuje LND node | ✅ Hotovo (dny) |
 | **Monetizace** | Vlastní fee engine (0.15%) | LI.FI fee (custom basis points) |
 
 **Strategie:** LI.FI pro EVM chainy (rychlé, hotové). WARP dokončit pro non-EVM chainy kde LI.FI nefunguje.
