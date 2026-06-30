@@ -23,8 +23,9 @@ hardhat/
 │   ├── ZIONGovernance.sol     # on-chain governance (NOVÝ 3.0.4 deploy)
 │   └── ZIONTreasury.sol       # multisig treasury (NOVÝ 3.0.4 deploy)
 └── scripts/               # Hardhat deploy/fund/verify skripty
-    ├── deploy-defi.ts                 # deploy Governance + Treasury + Staking
-    ├── deploy-farm.ts                 # deploy ZIONFarm + init pooly
+    ├── deploy-defi.ts                 # deploy Governance + Treasury + Staking (Base)
+    ├── deploy-farm.ts                 # deploy ZIONFarm + init pooly (Base)
+    ├── deploy-arbitrum.ts             # deploy wZION + ZIONBridge (Arbitrum One)
     ├── fund-staking.ts                # fund staking reward pool
     ├── fund-farm.ts                   # fund farm reward pool
     └── verify-base-mainnet-basescan.ts # Basescan source verification
