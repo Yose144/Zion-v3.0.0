@@ -24,17 +24,32 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
-    slug: 'defi-live-3-pools-chart',
+    slug: 'lifi-widget-light-migration',
+    date: '2026-06-30',
+    tag: { cs: 'DeFi', en: 'DeFi' },
+    tagColor: 'text-zion-gold',
+    title: {
+      cs: 'LI.FI Widget Light — cross-chain swap + bridge s 0.5% integrator fee',
+      en: 'LI.FI Widget Light — cross-chain swap + bridge with 0.5% integrator fee',
+    },
+    summary: {
+      cs: 'LiFi widget na /defi byl přepsán z plain iframe na WidgetLight komponentu z @lifi/widget-light (postMessage bridge). Opraven kritický slippage bug (100 → 0.01, tj. 10000% → 1%). Přidána monetizace: 0.5% integrator fee na každý swap. Routing: RECOMMENDED priority + gasless relayer routes. Chain filtering na 7 EVM chainů (Base, Ethereum, Arbitrum, BSC, Polygon, Optimism, Avalanche). Custom RPC per chain — žádné rate-limity z veřejných endpointů. wZION zůstává výchozí token na Base.',
+      en: 'LiFi widget on /defi has been rewritten from plain iframe to WidgetLight component from @lifi/widget-light (postMessage bridge). Fixed critical slippage bug (100 → 0.01, i.e. 10000% → 1%). Added monetization: 0.5% integrator fee on every swap. Routing: RECOMMENDED priority + gasless relayer routes. Chain filtering to 7 EVM chains (Base, Ethereum, Arbitrum, BSC, Polygon, Optimism, Avalanche). Custom RPC per chain — no rate-limits from public endpoints. wZION remains the default token on Base.',
+    },
+    href: '/defi',
+  },
+  {
+    slug: 'defi-live-usdt-pool-chart',
     date: '2026-06-29',
     tag: { cs: 'DeFi', en: 'DeFi' },
     tagColor: 'text-zion-gold',
     title: {
-      cs: 'DeFi Live! — 3 Uniswap V3 pooly, obousměrný bridge, live cenový graf',
-      en: 'DeFi Live! — 3 Uniswap V3 pools, bidirectional bridge, live price chart',
+      cs: 'DeFi Live! — wZION/USDT pool, obousměrný bridge, live cenový graf',
+      en: 'DeFi Live! — wZION/USDT pool, bidirectional bridge, live price chart',
     },
     summary: {
-      cs: 'ZION DeFi ekosystém je plně operational na Base Mainnet. Tři Uniswap V3 pooly s reálnou likviditou: wZION/USDT 0.3% (primární, ~$52 TVL), wZION/WETH 1% (sekundární, ~$80 TVL), wZION/SOL 0.01% (terciární). Obousměrný bridge: lock ZION na L1 → mint wZION na Base, burn wZION → unlock ZION na L1 — 5/5 Guardian validátory, 60-block finalita. Live cenový graf na /defi čerpá OHLCV data z GeckoTerminalu. CEX listings page sleduje DexScreener data v reálném čase. Vše sjednoceno do jednoho designu — /defi, /bridge, /cex.',
-      en: 'ZION DeFi ecosystem is fully operational on Base Mainnet. Three Uniswap V3 pools with real liquidity: wZION/USDT 0.3% (primary, ~$52 TVL), wZION/WETH 1% (secondary, ~$80 TVL), wZION/SOL 0.01% (tertiary). Bidirectional bridge: lock ZION on L1 → mint wZION on Base, burn wZION → unlock ZION on L1 — 5/5 Guardian validators, 60-block finality. Live price chart on /defi pulls OHLCV data from GeckoTerminal. CEX listings page tracks DexScreener data in real-time. All unified into one design — /defi, /bridge, /cex.',
+      cs: 'ZION DeFi ekosystém je plně operational na Base Mainnet. Aktivní Uniswap V3 pool: wZION/USDT 0.3% (primární, ~$50 TVL). WETH pozice byla spálena a SOL pool vyčerpán — konsolidace na jeden primární pool s reálnou likviditou. Obousměrný bridge: lock ZION na L1 → mint wZION na Base, burn wZION → unlock ZION na L1 — 5/5 Guardian validátory, 60-block finalita. Live cenový graf na /defi čerpá OHLCV data z GeckoTerminalu. CEX listings page sleduje DexScreener data v reálném čase. Vše sjednoceno do jednoho designu — /defi, /bridge, /cex.',
+      en: 'ZION DeFi ecosystem is fully operational on Base Mainnet. Active Uniswap V3 pool: wZION/USDT 0.3% (primary, ~$50 TVL). WETH position was burned and SOL pool depleted — consolidation to a single primary pool with real liquidity. Bidirectional bridge: lock ZION on L1 → mint wZION on Base, burn wZION → unlock ZION on L1 — 5/5 Guardian validators, 60-block finality. Live price chart on /defi pulls OHLCV data from GeckoTerminal. CEX listings page tracks DexScreener data in real-time. All unified into one design — /defi, /bridge, /cex.',
     },
     href: '/defi',
   },
