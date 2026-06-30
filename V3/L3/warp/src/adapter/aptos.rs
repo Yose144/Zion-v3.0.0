@@ -19,6 +19,7 @@
 
 use crate::adapter::ChainAdapter;
 use crate::aptos_signer::AptosSigner;
+use crate::bcs::BcsEncoder;
 use crate::error::{WarpError, WarpResult};
 use crate::protocol::{DepositProof, MintInstruction};
 use crate::types::ChainFamily;
@@ -81,6 +82,15 @@ struct AptosTx {
     vm_status: Option<String>,
 }
 
+/// `GET /v1/accounts/{address}` response — only the fields we need.
+#[derive(Debug, Deserialize)]
+#[allow(dead_code)]
+struct AccountResource {
+    sequence_number: String,
+    #[allow(dead_code)]
+    authentication_key: Option<String>,
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Adapter
 // ─────────────────────────────────────────────────────────────────────────────
@@ -123,6 +133,20 @@ impl AptosAdapter {
             event_field,
             client: reqwest::Client::builder()
                 .timeout(std::time::Duration::from_secs(15))
+                .build()
+                .unwrap(),
+        }
+    }
+
+    /// Construct with a specific RPC URL (for testing).
+    pub fn with_rpc(rpc_url: &str) -> Self {
+        Self {
+            rpc_url: rpc_url.to_string(),
+            bridge_account: DEFAULT_BRIDGE_ACCOUNT.to_string(),
+            event_handle: DEFAULT_EVENT_HANDLE.to_string(),
+            event_field: DEFAULT_EVENT_FIELD.to_string(),
+            client: reqwest::Client::builder()
+                .timeout(std::time::Duration::from_millis(200))
                 .build()
                 .unwrap(),
         }
@@ -245,6 +269,182 @@ impl AptosAdapter {
             confirmations: 0,
         })
     }
+
+    /// `GET /v1/accounts/{address}` → account resource (sequence_number).
+    async fn get_account(&self, address: &str) -> WarpResult<AccountResource> {
+        let url = format!("{}/v1/accounts/{}", self.rpc_url, address);
+        let acct: AccountResource = self
+            .client
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| WarpError::AdapterError {
+                chain: "aptos".into(),
+                reason: format!("account request failed: {}", e),
+            })?
+            .error_for_status()
+            .map_err(|e| WarpError::AdapterError {
+                chain: "aptos".into(),
+                reason: format!("account HTTP status: {}", e),
+            })?
+            .json()
+            .await
+            .map_err(|e| WarpError::AdapterError {
+                chain: "aptos".into(),
+                reason: format!("account parse: {}", e),
+            })?;
+        Ok(acct)
+    }
+
+    /// Parse a hex Aptos address string (e.g. "0xabc...") into 32 bytes.
+    fn parse_address_hex(hex_addr: &str) -> WarpResult<[u8; 32]> {
+        let stripped = hex_addr.strip_prefix("0x").unwrap_or(hex_addr);
+        // Aptos addresses can be shorter than 64 hex chars; left-pad to 32 bytes.
+        let padded = format!("{:0>64}", stripped);
+        let bytes = hex::decode(&padded).map_err(|e| WarpError::AdapterError {
+            chain: "aptos".into(),
+            reason: format!("invalid address hex '{}': {}", hex_addr, e),
+        })?;
+        if bytes.len() != 32 {
+            return Err(WarpError::AdapterError {
+                chain: "aptos".into(),
+                reason: format!("address must be 32 bytes, got {}", bytes.len()),
+            });
+        }
+        let mut arr = [0u8; 32];
+        arr.copy_from_slice(&bytes);
+        Ok(arr)
+    }
+
+    /// BCS-encode a `RawTransaction` for a `mint` entry function call.
+    ///
+    /// Aptos `RawTransaction` BCS layout:
+    /// ```text
+    /// sender: AccountAddress (32 bytes)
+    /// sequence_number: u64
+    /// payload: TransactionPayload::ScriptFunction (variant 2)
+    ///   module.address: AccountAddress (32 bytes)
+    ///   module.name: Identifier (string)
+    ///   function: Identifier (string)
+    ///   ty_args: Vec<TypeTag> (empty)
+    ///   args: Vec<Vec<u8>> (BCS-encoded function args)
+    /// max_gas_amount: u64
+    /// gas_unit_price: u64
+    /// expiration_timestamp_secs: u64
+    /// chain_id: u8
+    /// ```
+    fn encode_raw_transaction(
+        sender: &[u8; 32],
+        sequence_number: u64,
+        module_addr: &[u8; 32],
+        module_name: &str,
+        function_name: &str,
+        args: Vec<Vec<u8>>,
+        max_gas: u64,
+        gas_price: u64,
+        expiration: u64,
+        chain_id: u8,
+    ) -> Vec<u8> {
+        let mut enc = BcsEncoder::new();
+        // sender
+        enc.address_32_mut(sender);
+        // sequence_number
+        enc.u64_mut(sequence_number);
+        // payload: TransactionPayload::ScriptFunction = variant 2
+        enc.enum_variant(2, |e| {
+            // ModuleId: address + name
+            e.address_32_mut(module_addr);
+            e.string_mut(module_name);
+            // function name
+            e.string_mut(function_name);
+            // ty_args: empty Vec<TypeTag>
+            e.uleb128_mut(0);
+            // args: Vec<Vec<u8>>
+            e.seq(&args, |e2, arg| { e2.bytes_mut(arg); });
+        });
+        // max_gas_amount
+        enc.u64_mut(max_gas);
+        // gas_unit_price
+        enc.u64_mut(gas_price);
+        // expiration_timestamp_secs
+        enc.u64_mut(expiration);
+        // chain_id
+        enc.u8_mut(chain_id);
+        enc.take_bytes()
+    }
+
+    /// BCS-encode a `SignedTransaction` (Ed25519 authenticator).
+    ///
+    /// Layout:
+    /// ```text
+    /// raw_txn_bytes: Vec<u8> (the BCS-encoded RawTransaction)
+    /// authenticator: TransactionAuthenticator::Ed25519 = variant 0
+    ///   public_key: [u8; 32]
+    ///   signature: [u8; 64]
+    /// ```
+    fn encode_signed_transaction(
+        raw_txn_bytes: &[u8],
+        public_key: &[u8; 32],
+        signature: &[u8; 64],
+    ) -> Vec<u8> {
+        let mut enc = BcsEncoder::new();
+        // RawTransaction is not a Vec<u8> in BCS — it's a struct serialized inline.
+        // The SignedTransaction BCS is: raw_txn (struct, inline) + authenticator (enum).
+        // We append the raw bytes directly since BCS structs have no length prefix.
+        enc.raw_mut(raw_txn_bytes);
+        // authenticator: Ed25519 = variant 0
+        enc.enum_variant(0, |e| {
+            e.address_32_mut(public_key);
+            // signature: [u8; 64] — BCS serializes fixed arrays as sequences
+            e.uleb128_mut(64);
+            for b in signature.iter() {
+                e.u8_mut(*b);
+            }
+        });
+        enc.take_bytes()
+    }
+
+    /// Submit a BCS-encoded signed transaction to `POST /v1/transactions`.
+    async fn submit_transaction(&self, signed_tx_bcs: &[u8]) -> WarpResult<String> {
+        let url = format!("{}/v1/transactions", self.rpc_url);
+        let resp = self
+            .client
+            .post(&url)
+            .header("Content-Type", "application/x.aptos.signed_transaction+bcs")
+            .body(signed_tx_bcs.to_vec())
+            .send()
+            .await
+            .map_err(|e| WarpError::AdapterError {
+                chain: "aptos".into(),
+                reason: format!("submit TX request failed: {}", e),
+            })?;
+
+        let status = resp.status();
+        let body = resp.text().await.unwrap_or_default();
+
+        if status.is_success() {
+            // Parse the hash from the JSON response.
+            let v: serde_json::Value = serde_json::from_str(&body).map_err(|e| {
+                WarpError::AdapterError {
+                    chain: "aptos".into(),
+                    reason: format!("submit TX response parse: {}", e),
+                }
+            })?;
+            let hash = v
+                .get("hash")
+                .and_then(|h| h.as_str())
+                .ok_or_else(|| WarpError::AdapterError {
+                    chain: "aptos".into(),
+                    reason: format!("submit TX response missing hash: {}", body),
+                })?;
+            Ok(hash.to_string())
+        } else {
+            Err(WarpError::AdapterError {
+                chain: "aptos".into(),
+                reason: format!("submit TX HTTP {}: {}", status, body),
+            })
+        }
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -310,18 +510,69 @@ impl ChainAdapter for AptosAdapter {
             amount, instruction.recipient, signer.address
         );
 
-        // BCS encoding of RawTransaction → SignedTransaction is not yet
-        // implemented. Submitting to `POST /v1/transactions` requires a
-        // BCS-encoded payload with Content-Type
-        // `application/x.aptos.signed_transaction+bcs`. This needs either the
-        // `aptos-sdk` crate or a hand-rolled BCS encoder. Return a clear error.
-        Err(WarpError::AdapterError {
-            chain: "aptos".into(),
-            reason: "BCS transaction encoding not yet implemented — \
-                     aptos execute_mint requires aptos-sdk or manual BCS encoder \
-                     for RawTransaction/SignedTransaction submission"
-                .into(),
-        })
+        // 1. Get chain_id from node info
+        let node_info = self.node_info().await?;
+        let chain_id = node_info.chain_id as u8;
+
+        // 2. Get the sender account's current sequence_number
+        let account = self.get_account(&signer.address).await?;
+        let sequence_number: u64 = account
+            .sequence_number
+            .parse()
+            .map_err(|e| WarpError::AdapterError {
+                chain: "aptos".into(),
+                reason: format!("sequence_number parse: {}", e),
+            })?;
+
+        // 3. Parse the recipient address
+        let recipient_addr = Self::parse_address_hex(&instruction.recipient)?;
+
+        // 4. BCS-encode the function arguments:
+        //    mint(address recipient, u64 amount)
+        //    Each arg is BCS-encoded independently.
+        let arg_recipient = {
+            let mut e = BcsEncoder::new();
+            e.address_32_mut(&recipient_addr);
+            e.take_bytes()
+        };
+        let arg_amount = {
+            let mut e = BcsEncoder::new();
+            e.u64_mut(amount);
+            e.take_bytes()
+        };
+
+        // 5. Parse the bridge module address
+        let module_addr = Self::parse_address_hex(&self.bridge_account)?;
+
+        // 6. BCS-encode the RawTransaction
+        let expiration = chrono::Utc::now().timestamp() as u64 + 300; // 5 min expiry
+        let raw_txn = Self::encode_raw_transaction(
+            &signer.auth_key(),
+            sequence_number,
+            &module_addr,
+            "warp_bridge",
+            "mint",
+            vec![arg_recipient, arg_amount],
+            2000,    // max_gas_amount
+            100,     // gas_unit_price (octas)
+            expiration,
+            chain_id,
+        );
+
+        // 7. Sign the raw transaction
+        let signature = signer.sign(&raw_txn);
+        let pubkey = signer.public_key();
+
+        // 8. BCS-encode the SignedTransaction
+        let signed_tx = Self::encode_signed_transaction(&raw_txn, &pubkey, &signature);
+
+        // 9. Submit to the fullnode
+        let tx_hash = self.submit_transaction(&signed_tx).await?;
+        info!(
+            "[WARP][aptos] mint TX submitted: hash={} (seq={})",
+            tx_hash, sequence_number
+        );
+        Ok(tx_hash)
     }
 
     async fn current_height(&self) -> WarpResult<u64> {
@@ -362,15 +613,14 @@ mod tests {
     }
 
     #[test]
-    fn test_adapter_reads_rpc_env() {
+    fn test_adapter_env_behaviour() {
+        // Part 1: env override
         std::env::set_var("WARP_APTOS_RPC", "https://example.test/v1");
         let a = AptosAdapter::from_env();
         assert_eq!(a.rpc_url, "https://example.test/v1");
         std::env::remove_var("WARP_APTOS_RPC");
-    }
 
-    #[test]
-    fn test_adapter_defaults_when_env_unset() {
+        // Part 2: defaults when env unset
         std::env::remove_var("WARP_APTOS_RPC");
         std::env::remove_var("WARP_APTOS_BRIDGE_ACCOUNT");
         std::env::remove_var("WARP_APTOS_EVENT_HANDLE");
@@ -431,7 +681,9 @@ mod tests {
     // ── execute_mint (no key → error) ───────────────────────────────────────
 
     #[tokio::test]
-    async fn test_execute_mint_no_key_returns_error() {
+    async fn test_execute_mint_env_behaviour() {
+        // Combined test to avoid env-var interference between parallel tests.
+        // Part 1: no relay key → error mentioning the missing env var.
         std::env::remove_var("WARP_APTOS_RELAY_KEY");
         let a = AptosAdapter::new();
         let inst = MintInstruction {
@@ -442,7 +694,7 @@ mod tests {
             warp_message_hash: String::new(),
         };
         let result = a.execute_mint(&inst).await;
-        assert!(result.is_err());
+        assert!(result.is_err(), "execute_mint should error without relay key");
         let err = result.unwrap_err();
         match err {
             WarpError::AdapterError { chain, reason } => {
@@ -456,36 +708,83 @@ mod tests {
             }
             other => panic!("expected AdapterError, got {:?}", other),
         }
-    }
 
-    #[tokio::test]
-    async fn test_execute_mint_with_key_returns_bcs_error() {
-        // Provide a valid 32-byte hex key so the signer loads, then verify we
-        // get the clear "BCS not implemented" error rather than a key error.
+        // Part 2: with a valid key → signer loads, BCS encoding works,
+        // but node_info() fails (no network) → network error, NOT BCS error.
         std::env::set_var("WARP_APTOS_RELAY_KEY", hex::encode(&[0x42u8; 32]));
-        let a = AptosAdapter::new();
-        let inst = MintInstruction {
-            dest_chain: "aptos".into(),
-            recipient: "0xabc".into(),
-            amount_dest_atomic: 1_000_000,
-            signatures: vec![],
-            warp_message_hash: String::new(),
-        };
-        let result = a.execute_mint(&inst).await;
-        assert!(result.is_err());
-        let err = result.unwrap_err();
-        match err {
+        let a2 = AptosAdapter::with_rpc("http://127.0.0.1:1");
+        let result2 = a2.execute_mint(&inst).await;
+        assert!(result2.is_err(), "execute_mint should error without network");
+        let err2 = result2.unwrap_err();
+        match err2 {
             WarpError::AdapterError { chain, reason } => {
                 assert_eq!(chain, "aptos");
                 assert!(
-                    reason.contains("BCS"),
-                    "reason should mention BCS encoding, got: {}",
+                    !reason.contains("BCS"),
+                    "BCS is now implemented — should not see BCS error, got: {}",
                     reason
                 );
             }
             other => panic!("expected AdapterError, got {:?}", other),
         }
         std::env::remove_var("WARP_APTOS_RELAY_KEY");
+    }
+
+    #[test]
+    fn test_bcs_encode_raw_transaction_deterministic() {
+        let sender = [0x01u8; 32];
+        let module_addr = [0x02u8; 32];
+        let args = vec![vec![0xaa; 32], vec![0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]];
+        let raw1 = AptosAdapter::encode_raw_transaction(
+            &sender, 5, &module_addr, "warp_bridge", "mint",
+            args.clone(), 2000, 100, 99999, 1,
+        );
+        let raw2 = AptosAdapter::encode_raw_transaction(
+            &sender, 5, &module_addr, "warp_bridge", "mint",
+            args, 2000, 100, 99999, 1,
+        );
+        assert_eq!(raw1, raw2);
+        // Verify structure:
+        // 32 (sender) + 8 (seq) + 1 (variant) + 32 (module addr) +
+        // 12 ("warp_bridge": ULEB128(11)+11) + 5 ("mint": ULEB128(4)+4) +
+        // 1 (ty_args empty) + 1 (args len=2) + 33 (arg1: ULEB128(32)+32) + 9 (arg2: ULEB128(8)+8) +
+        // 8 (gas) + 8 (price) + 8 (expiry) + 1 (chain_id) = 159
+        assert_eq!(raw1.len(), 159);
+    }
+
+    #[test]
+    fn test_bcs_encode_signed_transaction() {
+        let raw = vec![0xde, 0xad, 0xbe, 0xef];
+        let pubkey = [0x42u8; 32];
+        let sig = [0x55u8; 64];
+        let signed = AptosAdapter::encode_signed_transaction(&raw, &pubkey, &sig);
+        // raw (4 bytes inline) + variant(1) + pubkey(32) + ULEB128(64) + 64 bytes
+        assert_eq!(signed.len(), 4 + 1 + 32 + 1 + 64);
+        // First 4 bytes should be the raw txn
+        assert_eq!(&signed[0..4], &[0xde, 0xad, 0xbe, 0xef]);
+        // Variant 0 (Ed25519)
+        assert_eq!(signed[4], 0);
+    }
+
+    #[test]
+    fn test_parse_address_hex_short() {
+        // "0x1" should be left-padded to 32 bytes
+        let addr = AptosAdapter::parse_address_hex("0x1").unwrap();
+        assert_eq!(addr[31], 1);
+        assert_eq!(addr[0], 0);
+    }
+
+    #[test]
+    fn test_parse_address_hex_full() {
+        let hex_str = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
+        let addr = AptosAdapter::parse_address_hex(hex_str).unwrap();
+        assert_eq!(addr[0], 0x12);
+        assert_eq!(addr[31], 0xef);
+    }
+
+    #[test]
+    fn test_parse_address_hex_invalid() {
+        assert!(AptosAdapter::parse_address_hex("not-hex").is_err());
     }
 
     // ── Event parsing ───────────────────────────────────────────────────────
