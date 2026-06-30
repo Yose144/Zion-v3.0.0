@@ -9,7 +9,7 @@ import { useWallet } from '@/contexts/WalletContext';
 const WZION_ADDRESSES: Record<number, string | null> = {
   8453:  '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6', // ✅ Base Mainnet
   1:     null,  // Ethereum Mainnet (not deployed)
-  42161: null,  // Arbitrum One (not deployed)
+  42161: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6', // ✅ Arbitrum One (deployed 2026-06-30)
   56:    '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6', // ✅ BNB Smart Chain (deployed 2026-06-30)
   137:   '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6', // ✅ Polygon PoS (deployed 2026-06-30)
   10:    null,  // Optimism (not deployed)
