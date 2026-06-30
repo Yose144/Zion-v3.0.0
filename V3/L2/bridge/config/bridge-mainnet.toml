@@ -57,17 +57,17 @@ enabled                 = false
 gas_strategy            = "eip1559"
 max_gas_gwei            = 20
 
-# -- BNB Smart Chain (Mainnet) — NOT DEPLOYED --
+# -- BNB Smart Chain (Mainnet) — DEPLOYED 2026-06-30 --
 [[evm_chains]]
 chain_id                = "bsc"
 name                    = "BNB Smart Chain (Mainnet)"
 evm_chain_id            = 56
 rpc_url                 = "https://bsc-dataseed.binance.org"
 rpc_url_backup          = "wss://bsc-ws-node.nariox.org"
-wzion_address           = "0x0000000000000000000000000000000000000000"
-bridge_contract_address = "0x0000000000000000000000000000000000000000"
+wzion_address           = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+bridge_contract_address = "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721"
 finality_blocks         = 15
-enabled                 = false
+enabled                 = true
 gas_strategy            = "legacy"
 max_gas_gwei            = 5
 
