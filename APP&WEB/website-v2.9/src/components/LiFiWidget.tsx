@@ -13,7 +13,7 @@ const WZION_ADDRESSES: Record<number, string | null> = {
   56:    '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6', // ✅ BNB Smart Chain (deployed 2026-06-30)
   137:   '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6', // ✅ Polygon PoS (deployed 2026-06-30)
   10:    '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6', // ✅ Optimism (deployed 2026-06-30)
-  43114: null,  // Avalanche C-Chain (not deployed)
+  43114: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6', // ✅ Avalanche C-Chain (deployed 2026-06-30)
 };
 
 // wZION on Base (default — the only chain with deployed wZION so far)

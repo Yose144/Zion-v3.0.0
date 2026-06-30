@@ -104,19 +104,20 @@ gas_strategy            = "eip1559"
 max_gas_gwei            = 20
 start_block             = 153610095
 
-# -- Avalanche C-Chain (Mainnet) — NOT DEPLOYED --
+# -- Avalanche C-Chain (Mainnet) — DEPLOYED 2026-06-30 --
 [[evm_chains]]
 chain_id                = "avalanche"
 name                    = "Avalanche C-Chain (Mainnet)"
 evm_chain_id            = 43114
 rpc_url                 = "https://api.avax.network/ext/bc/C/rpc"
 rpc_url_backup          = "wss://api.avax.network/ext/bc/C/ws"
-wzion_address           = "0x0000000000000000000000000000000000000000"
-bridge_contract_address = "0x0000000000000000000000000000000000000000"
+wzion_address           = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+bridge_contract_address = "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721"
 finality_blocks         = 12
-enabled                 = false
+enabled                 = true
 gas_strategy            = "eip1559"
 max_gas_gwei            = 50
+start_block             = 89126556
 
 # ── Validator Config ────────────────────────────────────────
 [validator]
