@@ -95,7 +95,9 @@ EXPLORER BRIDGE TRACKER
   ❌ WebSocket L1 (subscribeNewBlocks, subscribePendingTx) — endpoint neexistuje
   ❌ Mobile DeFi screens — placeholder, React Native bridge/swap/staking nefunguje
   ❌ NCL (Neural Consciousness Layer) — stuby, žádné live ONNX endpointy
-  ❌ WARP Bitcoin/Solana adapter — stuby
+  ✅ WARP Bitcoin/Solana adapter — implemented (BtcSigner P2WPKH + SolanaSigner SPL mintTo)
+  ⚠️ WARP Cardano/Aptos/Sui/TON — signer ready, TX builder pending (CBOR/BCS/TL-B)
+  ⚠️ WARP Lightning — BOLT11 parser + LND REST client ready, LND node infra pending
   ❌ TX history API (getTransactionHistory pro adresu) — RPC metoda chybí
   ❌ CoinGecko/CMC listing — cena null (čeká na live pool)
   ❌ Atomic Swap UI (HTLC) — ZIONAtomicSwap deployed, žádné UI
