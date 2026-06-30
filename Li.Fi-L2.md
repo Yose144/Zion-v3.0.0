@@ -199,8 +199,8 @@ npx hardhat run scripts/deploy-chain.ts --network avalanche  # needs AVAX for ga
 | Sui | ✅ JSON-RPC | ✅ BCS TX + Ed25519 + submit | ✅ Plně funkční |
 | TON | ✅ JSON-RPC | ✅ TL-B Cell + BOC + Ed25519 + submit | ✅ Plně funkční |
 
-- WARP běží na Edge (port 8453), 487 testů pass
-- **Všech 13 adapterů plně funkčních** (EVM, BTC, SOL, TRX, XLM, Cosmos, Cardano CBOR TX, Lightning BOLT11+LND, NEAR borsh TX, Aptos BCS TX, Sui BCS TX, TON TL-B Cell+BOC)
+- WARP běží na Edge (port 8453), 488 testů pass
+- **12 adapterů registrovaných** (11 plně funkčních + TON watch-only): EVM, BTC, SOL, TRX, XLM, Cosmos, Cardano CBOR TX, Lightning BOLT11+LND, NEAR borsh TX, Aptos BCS TX, Sui BCS TX, TON TL-B Cell+BOC
 - **D-04 implementováno (2026-06-30):** `cosmos_signer.rs` + `cardano_signer.rs` + `bolt11.rs` + `lightning_signer.rs` + `aptos_signer.rs` + `near_signer.rs` + `sui_signer.rs` + `ton_signer.rs` + `bcs.rs` + `cbor.rs` + `ton_cell.rs`
 - **Cardano:** CBOR TX builder implementován — `cardano_tx_body` + `cardano_witness_set` + Blake2b-256 TX hash + Blockfrost submit
 - **TON:** TL-B Cell+BOC TX builder implementován — `BitString` + `Cell` + `serialize_boc` + jetton transfer + wallet V2R2 signing + `sendBase64Transaction`
@@ -241,15 +241,16 @@ ZIONBridge:     0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467
 BridgeValidator:0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627
 ```
 
-### wZION na dalších chainech (⚠️ Nedeployed)
+### wZION na dalších chainech (✅ Deployed 2026-06-30)
 
 | Chain | wZION | ZIONBridge | Status |
 |-------|-------|------------|--------|
-| Arbitrum | TBD | TBD | Nedeployed |
-| Ethereum | TBD | TBD | Nedeployed |
-| BSC | TBD | TBD | Nedeployed |
-| Polygon | TBD | TBD | Nedeployed |
-| Optimism | TBD | TBD | Nedeployed |
+| Arbitrum | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | ✅ Deployed |
+| BSC | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | ✅ Deployed |
+| Polygon | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | ✅ Deployed |
+| Optimism | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | ✅ Deployed |
+| Avalanche | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | ✅ Deployed |
+| Ethereum | TBD | TBD | ⬜ Future |
 
 ### LI.FI konfigurace
 
@@ -281,7 +282,7 @@ Chains:         8453, 1, 42161, 56, 137, 10, 43114
 | `V3/L2/bridge/config/bridge-mainnet.toml` | Bridge relay multi-chain config |
 | `V3/L2/contracts/hardhat/sol/wZION.sol` | wZION ERC-20 contract (deploy na nové chainy) |
 | `V3/L2/contracts/hardhat/sol/ZIONBridge.sol` | Bridge contract (deploy na nové chainy) |
-| `V3/L3/warp/` | WARP universal bridge (13 chain family, 408 testů) |
+| `V3/L3/warp/` | WARP universal bridge (12 chain families, 488 testů) |
 
 ---
 
@@ -293,7 +294,7 @@ Chains:         8453, 1, 42161, 56, 137, 10, 43114
 | **Architektura** | Hub-and-spoke přes ZION L1 | Agregace externích bridge protokolů |
 | **Kontrola** | Plná (5/5 validator consensus) | Závislost na LI.FI infrastruktuře |
 | **Non-EVM** | ✅ (Solana, BTC, Tron, Stellar, Cardano, Cosmos, Lightning, Aptos, NEAR, Sui, TON) | ❌ (jen EVM) |
-| **Status** | 13 adapterů implementováno, 408 testů pass | ✅ Produkčně ready |
+| **Status** | 12 adapterů registrováno, 488 testů pass | ✅ Produkčně ready |
 | **DEX agregace** | ❌ (jen bridge) | ✅ (30+ DEX na Base) |
 | **Best price routing** | ❌ | ✅ (automatické) |
 | **Úsilí do produkce** | NEAR plně funkční; Cardano/Aptos/Sui/TON potřebují TX builder; Lightning potřebuje LND node | ✅ Hotovo (dny) |

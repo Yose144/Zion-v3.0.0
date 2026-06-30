@@ -1,6 +1,6 @@
 # ZION Mainnet Constants & Fixed Parameters
 
-> **Canonical technical reference** — all values extracted directly from `V3/` source code as of 2026-05-19.  
+> **Canonical technical reference** — all values extracted directly from `V3/` source code as of 2026-07-01 (3.0.4 canonical).
 > Source of truth: `V3/L1/core/src/` and `V3/L1/cosmic-harmony/src/`.
 
 ---
@@ -19,9 +19,9 @@
 | `DECAY_NUMERATOR` | `4` | Decay factor numerator (4/5 = 0.8) |
 | `DECAY_DENOMINATOR` | `5` | Decay factor denominator |
 | `MAX_DECAY_DECADES` | `10` | Decades before tail emission |
-| `BASE_REWARD` | `5_400_067_000_000_000` flowers | Initial block reward (5,400.067 ZION) |
+| `BASE_REWARD` | `5_400_067_000` flowers | Initial block reward (5,400.067 ZION) — 6-decimal scale (3.0.3 fork) |
 | `GENESIS_HASH` | `d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d` | Current canonical genesis |
-| `TAIL_REWARD` | `724_784_723_787_776` flowers | Perpetual tail emission (~724.7847 ZION) |
+| `TAIL_REWARD` | `724_784_723` flowers | Perpetual tail emission (~724.7847 ZION) — 6-decimal scale (3.0.3 fork) |
 | `COINBASE_MATURITY` | `100` | Blocks before coinbase spendable |
 | `MINER_PCT` | `89` | Miner share of block reward (%) |
 | `HUMANITARIAN_PCT` | `5` | Humanitarian fund share (%) |
@@ -36,7 +36,7 @@
 
 | Constant | Value | Description |
 |----------|-------|-------------|
-| `DAO_TREASURY_LOCK_HEIGHT` | `525_600` | ~1 year lock (~525,600 blocks) |
+| `DAO_TREASURY_LOCK_HEIGHT` | `144_000` | ~100 days lock (changed in 3.0.3 fork from 525,600) |
 | `GENESIS_TIMESTAMP` | `1_767_225_600` | Unix seconds (TBD at ceremony) |
 | `GENESIS_MESSAGE` | Embedded ASCII dedication | See `GENESIS_MESSAGE.txt` |
 | `PREMINE_OUTPUTS` | 13 outputs | See table below |
@@ -76,13 +76,13 @@
 
 | Constant | Value | Description |
 |----------|-------|-------------|
-| `MIN_TX_FEE` | `1_000` flowers | Minimum transaction fee (0.001 ZION) |
+| `MIN_TX_FEE` | `1` flower | Minimum transaction fee (0.000001 ZION) — 6-decimal scale (3.0.3 fork) |
 | `MIN_FEE_RATE` | `1` flower/byte | Minimum fee rate |
 | `MAX_TX_SIZE` | `100_000` bytes | Max transaction size |
 | `MAX_OUTPUT_AMOUNT` | `u64::MAX` | Single output cap |
 | `BURN_ADDRESS` | `zion1burn0000000000000000000000000000000dead` | Fee burn sink |
-| `DAO_ADDRESS` | `zion1dao00000000000000000000000000000treasury` | DAO treasury address |
-| `BRIDGE_VAULT_ADDRESS` | `zion106v7v0v0k3d500v0h7l636w0j4f5l4v044mh4a6` | L1 bridge vault (keyless derivation) |
+| `DAO_ADDRESS` | `zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4` | DAO treasury address (main governance) |
+| `BRIDGE_VAULT_ADDRESS` | `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0` | L1 bridge vault (from `BRIDGE_VAULT_SEED = "ZION Bridge Vault V3 Mainnet"`) |
 
 ---
 
@@ -282,7 +282,7 @@
 | Chain ID | `zion-mainnet-1` | `orphan.rs` |
 | Max reorg depth | 10 blocks | `chain.rs` / `lib.rs` |
 | Coinbase maturity | 100 blocks | `emission.rs` / `validation.rs` |
-| DAO Treasury lock | 525,600 blocks (~1 year) | `genesis.rs` |
+| DAO Treasury lock | 144,000 blocks (~100 days) | `genesis.rs` |
 | Fee model | 100 % burn | `fee.rs` |
 | Reward split | 89/5/5/1 % | `emission.rs` / `revenue.rs` |
 | Consensus | Ekam Deeksha v2 | `deeksha.rs` |
@@ -305,5 +305,5 @@
 
 ---
 
-*Generated from `V3/` source code — 2026-05-19*  
+*Generated from `V3/` source code — 2026-07-01 (3.0.4 canonical)*
 *Verify against current code before mainnet launch*

@@ -101,7 +101,7 @@ Verze **3.0.3** je nyní uzavřena. Všechny klíčové komponenty jsou funkčn�
 - [x] **Cardano signer** — Ed25519 payment + policy key signing, enterprise address derivation, Blockfrost TX submission path
 - [x] **Cosmos adapter** `execute_mint()` — uses `CosmosSigner::from_env()` → `execute_contract_mint()`
 - [x] **Cardano adapter** `execute_mint()` — uses `CardanoSigner::from_env()` → `submit_mint_tx()`
-- [x] 269 WARP tests pass (11 new signer tests)
+- [x] 488 WARP tests pass (cumulative — all adapters + signers + encoders)
 - [ ] **Cardano CBOR TX builder** — `submit_mint_tx` returns error indicating need for `pallas` or `cardano-serialization-lib` crate for full CBOR TX construction
 - [ ] Deploy wZION CosmWASM contract na Cosmos hub-4
 - [ ] Deploy wZION Cardano native token (policy ID + asset name)
@@ -114,7 +114,7 @@ Verze **3.0.3** je nyní uzavřena. Všechny klíčové komponenty jsou funkčn�
 - [x] **BOLT11 invoice parser** (`bolt11.rs`) — pure Rust bech32 decode, tagged field parsing (p/d/n/x/c/r/9), amount multipliers (m/u/n/p), signature extraction
 - [x] **LND REST client** (`lightning_signer.rs`) — GetInfo, AddInvoice, SendPayment, LookupInvoice, ListChannels, outbound capacity monitoring
 - [x] **Lightning adapter** — nahrazen stub real implementací: `decode_invoice()`, `create_invoice()`, `pay_invoice()`, `is_payment_settled()`, `health_check()`, `watch_events()`, `execute_mint()`, `confirmations()`
-- [x] 298 WARP tests pass (29 new: bolt11 + lightning_signer + lightning adapter)
+- [x] 488 WARP tests pass (cumulative — bolt11 + lightning_signer + lightning adapter included)
 - [ ] **LND node setup na Edge** (Fáze A) — Docker container, bitcoind backend, channel opening, macaroon generation
 - [ ] Set `WARP_LN_NODE_URL` / `WARP_LN_MACAROON` env vars on Edge
 - [ ] Channel liquidity (0.5-1 BTC outbound)
@@ -132,7 +132,7 @@ Verze **3.0.3** je nyní uzavřena. Všechny klíčové komponenty jsou funkčn�
 - [x] **CBOR encoder** — pure Rust CBOR (RFC 8949) encoder for Cardano TX construction. Implements uint/nint/bytes/text/array/map/tag/bool/null + Cardano TX helpers (tx_input, tx_output, tx_body, witness_set, transaction). 21 tests.
 - [x] **TON Cell/BOC encoder** — pure Rust TL-B Cell serialization for TON. `BitString` (bit-level ops) + `Cell` (1023-bit data + 4 refs + SHA-256 hash) + `serialize_boc` (unified BOC format 0xb5ee00ed) + jetton transfer body + internal message + wallet V2R2 external message + signing hash. 23 tests.
 - [x] **Cardano `submit_mint_tx`** — CBOR TX body (inputs + outputs + fee + ttl + mint) + Blake2b-256 body hash + Ed25519 witness + Blockfrost `/tx/submit`. Blake2b-224 for payment key hash + policy ID. **Plně funkční**
-- [x] 487 WARP tests pass (184 new: bcs + cbor + ton_cell + aptos BCS + sui BCS + cardano CBOR + ton TL-B + adapters + signers)
+- [x] 488 WARP tests pass (cumulative — bcs + cbor + ton_cell + aptos BCS + sui BCS + cardano CBOR + ton TL-B + adapters + signers)
 - [ ] Deploy wZION Move module on Aptos mainnet
 - [ ] Deploy wZION NEAR contract
 - [ ] Deploy wZION Sui package
