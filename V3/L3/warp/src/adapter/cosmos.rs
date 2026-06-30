@@ -1,4 +1,5 @@
 use crate::adapter::ChainAdapter;
+use crate::cosmos_signer::CosmosSigner;
 use crate::error::{WarpError, WarpResult};
 use crate::protocol::{DepositProof, MintInstruction};
 use crate::types::ChainFamily;
@@ -262,13 +263,31 @@ impl ChainAdapter for CosmosAdapter {
     }
 
     async fn execute_mint(&self, instruction: &MintInstruction) -> WarpResult<String> {
-        Err(WarpError::AdapterError {
+        let contract = wzion_contract(&self.network).ok_or_else(|| WarpError::AdapterError {
             chain: "cosmos".into(),
-            reason: format!(
-                "Signing service (D-04) pending — would execute CW20 mint of {} wZION to {}",
-                instruction.amount_dest_atomic, instruction.recipient
-            ),
-        })
+            reason: format!("no wZION contract configured for network '{}'", self.network),
+        })?;
+
+        let signer = CosmosSigner::from_env().map_err(|e| WarpError::AdapterError {
+            chain: "cosmos".into(),
+            reason: format!("relay key unavailable: {}", e),
+        })?;
+
+        let amount = instruction.amount_dest_atomic as u64;
+        info!(
+            "[WARP][cosmos] minting {} wZION to {} on {} (contract {})",
+            amount, instruction.recipient, self.network, contract
+        );
+
+        signer
+            .execute_contract_mint(
+                &self.client,
+                &self.rest_url,
+                contract,
+                &instruction.recipient,
+                amount,
+            )
+            .await
     }
 
     async fn current_height(&self) -> WarpResult<u64> {
@@ -354,7 +373,9 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_cosmos_execute_mint_is_err() {
+    async fn test_cosmos_execute_mint_no_key_is_err() {
+        // Without WARP_COSMOS_RELAY_KEY, execute_mint should error
+        std::env::remove_var("WARP_COSMOS_RELAY_KEY");
         let inst = MintInstruction {
             dest_chain: "cosmos".into(),
             recipient: "cosmos1abc".into(),
