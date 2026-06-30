@@ -25,11 +25,20 @@ hardhat/
 └── scripts/               # Hardhat deploy/fund/verify skripty
     ├── deploy-defi.ts                 # deploy Governance + Treasury + Staking (Base)
     ├── deploy-farm.ts                 # deploy ZIONFarm + init pooly (Base)
-    ├── deploy-arbitrum.ts             # deploy wZION + ZIONBridge (Arbitrum One)
+    ├── deploy-chain.ts                # deploy wZION + ZIONBridge on ANY EVM chain
     ├── fund-staking.ts                # fund staking reward pool
     ├── fund-farm.ts                   # fund farm reward pool
     └── verify-base-mainnet-basescan.ts # Basescan source verification
 ```
+
+> **Multi-chain deploy:** `deploy-chain.ts` works for Arbitrum, BSC, Polygon, Optimism, Avalanche:
+> ```bash
+> npx hardhat run scripts/deploy-chain.ts --network arbitrum   # needs ETH on Arbitrum
+> npx hardhat run scripts/deploy-chain.ts --network bsc        # needs BNB for gas
+> npx hardhat run scripts/deploy-chain.ts --network polygon    # needs POL for gas
+> npx hardhat run scripts/deploy-chain.ts --network optimism   # needs ETH on OP
+> npx hardhat run scripts/deploy-chain.ts --network avalanche  # needs AVAX for gas
+> ```
 
 > **Pozn.:** `wZION.sol`, `ZIONBridge.sol`, `ZIONAtomicSwap.sol` jsou zahrnuty pro referenci / kompilaci závislostí — tyto kontrakty jsou **již deployed** na Base Mainnet (adresy v `.env.mainnet.example`). Nový 3.0.4 deploy cílí pouze na `ZIONStaking`, `ZIONFarm`, `ZIONGovernance`, `ZIONTreasury`.
 

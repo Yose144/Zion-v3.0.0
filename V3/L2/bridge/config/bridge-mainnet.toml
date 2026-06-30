@@ -57,6 +57,62 @@ enabled                 = false
 gas_strategy            = "eip1559"
 max_gas_gwei            = 20
 
+# -- BNB Smart Chain (Mainnet) — NOT DEPLOYED --
+[[evm_chains]]
+chain_id                = "bsc"
+name                    = "BNB Smart Chain (Mainnet)"
+evm_chain_id            = 56
+rpc_url                 = "https://bsc-dataseed.binance.org"
+rpc_url_backup          = "wss://bsc-ws-node.nariox.org"
+wzion_address           = "0x0000000000000000000000000000000000000000"
+bridge_contract_address = "0x0000000000000000000000000000000000000000"
+finality_blocks         = 15
+enabled                 = false
+gas_strategy            = "legacy"
+max_gas_gwei            = 5
+
+# -- Polygon PoS (Mainnet) — NOT DEPLOYED --
+[[evm_chains]]
+chain_id                = "polygon"
+name                    = "Polygon PoS (Mainnet)"
+evm_chain_id            = 137
+rpc_url                 = "https://polygon-rpc.com"
+rpc_url_backup          = "wss://ws-mainnet.matic.network"
+wzion_address           = "0x0000000000000000000000000000000000000000"
+bridge_contract_address = "0x0000000000000000000000000000000000000000"
+finality_blocks         = 128
+enabled                 = false
+gas_strategy            = "legacy"
+max_gas_gwei            = 250
+
+# -- Optimism (Mainnet) — NOT DEPLOYED --
+[[evm_chains]]
+chain_id                = "optimism"
+name                    = "Optimism (Mainnet)"
+evm_chain_id            = 10
+rpc_url                 = "https://mainnet.optimism.io"
+rpc_url_backup          = "wss://ws-mainnet.optimism.io"
+wzion_address           = "0x0000000000000000000000000000000000000000"
+bridge_contract_address = "0x0000000000000000000000000000000000000000"
+finality_blocks         = 10
+enabled                 = false
+gas_strategy            = "eip1559"
+max_gas_gwei            = 20
+
+# -- Avalanche C-Chain (Mainnet) — NOT DEPLOYED --
+[[evm_chains]]
+chain_id                = "avalanche"
+name                    = "Avalanche C-Chain (Mainnet)"
+evm_chain_id            = 43114
+rpc_url                 = "https://api.avax.network/ext/bc/C/rpc"
+rpc_url_backup          = "wss://api.avax.network/ext/bc/C/ws"
+wzion_address           = "0x0000000000000000000000000000000000000000"
+bridge_contract_address = "0x0000000000000000000000000000000000000000"
+finality_blocks         = 12
+enabled                 = false
+gas_strategy            = "eip1559"
+max_gas_gwei            = 50
+
 # ── Validator Config ────────────────────────────────────────
 [validator]
 # 5/5 Guardian multisig — see V3/docs/BRIDGE_MULTISIG.md

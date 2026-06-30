@@ -60,6 +60,13 @@ const config: HardhatUserConfig = {
       accounts: [PRIVATE_KEY],
     },
 
+    // Polygon Amoy Testnet
+    "polygon-amoy": {
+      url: process.env.POLYGON_AMOY_RPC || "https://rpc-amoy.polygon.technology",
+      chainId: 80002,
+      accounts: [PRIVATE_KEY],
+    },
+
     // ── MainNet ──────────────────────────────────────────────────────────────
     base: {
       url: process.env.BASE_RPC || "https://mainnet.base.org",
@@ -71,6 +78,26 @@ const config: HardhatUserConfig = {
       chainId: 42161,
       accounts: [PRIVATE_KEY],
     },
+    bsc: {
+      url: process.env.BSC_RPC || "https://bsc-dataseed.binance.org",
+      chainId: 56,
+      accounts: [PRIVATE_KEY],
+    },
+    polygon: {
+      url: process.env.POLYGON_RPC || "https://polygon-rpc.com",
+      chainId: 137,
+      accounts: [PRIVATE_KEY],
+    },
+    optimism: {
+      url: process.env.OP_RPC || "https://mainnet.optimism.io",
+      chainId: 10,
+      accounts: [PRIVATE_KEY],
+    },
+    avalanche: {
+      url: process.env.AVAX_RPC || "https://api.avax.network/ext/bc/C/rpc",
+      chainId: 43114,
+      accounts: [PRIVATE_KEY],
+    },
   },
 
   etherscan: {
@@ -79,6 +106,12 @@ const config: HardhatUserConfig = {
       "base-sepolia": process.env.BASESCAN_API_KEY || "",
       arbitrum: process.env.ARBISCAN_API_KEY || "",
       "arbitrum-sepolia": process.env.ARBISCAN_API_KEY || "",
+      bsc: process.env.BSCSCAN_API_KEY || "",
+      "bsc-testnet": process.env.BSCSCAN_API_KEY || "",
+      polygon: process.env.POLYGONSCAN_API_KEY || "",
+      "polygon-amoy": process.env.POLYGONSCAN_API_KEY || "",
+      optimisticEthereum: process.env.OPSCAN_API_KEY || "",
+      avalanche: process.env.SNOWTRACE_API_KEY || "",
     },
     customChains: [
       {
@@ -111,6 +144,22 @@ const config: HardhatUserConfig = {
         urls: {
           apiURL: "https://api-sepolia.arbiscan.io/api",
           browserURL: "https://sepolia.arbiscan.io",
+        },
+      },
+      {
+        network: "polygon",
+        chainId: 137,
+        urls: {
+          apiURL: "https://api.polygonscan.com/api",
+          browserURL: "https://polygonscan.com",
+        },
+      },
+      {
+        network: "polygon-amoy",
+        chainId: 80002,
+        urls: {
+          apiURL: "https://api-amoy.polygonscan.com/api",
+          browserURL: "https://amoy.polygonscan.com",
         },
       },
     ],
