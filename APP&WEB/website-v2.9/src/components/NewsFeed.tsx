@@ -24,62 +24,17 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
-    slug: 'pancakeswap-v3-live',
+    slug: 'defi-ecosystem-live',
     date: '2026-06-30',
-    tag: { cs: 'DEX', en: 'DEX' },
-    tagColor: 'text-amber-400',
-    title: {
-      cs: 'PancakeSwap V3 LIVE! wZION/USDT pool na Base Mainnet',
-      en: 'PancakeSwap V3 LIVE! wZION/USDT pool on Base Mainnet',
-    },
-    summary: {
-      cs: 'wZION/USDT pool je LIVE na PancakeSwap V3 (Base) — 2. největší DEX na Base s $115M denním volume. Pool adresa 0x46cc98dec9d2a60f2850225c942d6017b82b6f47, 0.25% fee, seed price $0.0002/wZION, NFT pozice #2054747. wZION je nyní dostupný na 2 DEX platformách současně (Uniswap V4 + PancakeSwap V3) + LiFi agregátor s 30+ DEX. Swapujte na pancakeswap.finance nebo přidejte likviditu pro LP rewards. PancakeSwap podporuje multi-tier fees (0.01%–1%), MasterChef V3 farming a Smart Router pro best execution.',
-      en: 'wZION/USDT pool is LIVE on PancakeSwap V3 (Base) — 2nd largest DEX on Base with $115M daily volume. Pool address 0x46cc98dec9d2a60f2850225c942d6017b82b6f47, 0.25% fee, seed price $0.0002/wZION, NFT position #2054747. wZION is now available on 2 DEX platforms simultaneously (Uniswap V4 + PancakeSwap V3) + LiFi aggregator with 30+ DEX. Swap on pancakeswap.finance or add liquidity for LP rewards. PancakeSwap supports multi-tier fees (0.01%–1%), MasterChef V3 farming, and Smart Router for best execution.',
-    },
-    href: '/defi',
-  },
-  {
-    slug: 'uniswap-cca-auction-live',
-    date: '2026-06-30',
-    tag: { cs: 'Aukce', en: 'Auction' },
-    tagColor: 'text-amber-400',
-    title: {
-      cs: 'Uniswap CCA Aukce spuštěna! 66.47M wZION za USDC na Base',
-      en: 'Uniswap CCA Auction Live! 66.47M wZION for USDC on Base',
-    },
-    summary: {
-      cs: 'Uniswap Continuous Clearing Auction (CCA) je aktivní na Base Mainnet. 66,466,631 wZION vloženo do aukce, měna USDC, floor price $0.00019/wZION. Aukce běží ~184 dní (END_BLOCK immutable — zamýšleno 30 dní, ale end block nelze změnit). Po graduaci se automaticky vytvoří LBP pool na Uniswap V4 s objevenou cenou. Negrace? exitBid() vrátí USDC, sweepUnsoldTokens() vrátí neprodané wZION. Přihazuj přímo na app.uniswap.org nebo přes widget na /defi. Kontrakt: 0x4eD4…1f93. Detaily v AUCTION_CCA_BASE.md.',
-      en: 'Uniswap Continuous Clearing Auction (CCA) is active on Base Mainnet. 66,466,631 wZION deposited in the auction, currency USDC, floor price $0.00019/wZION. Auction runs ~184 days (END_BLOCK immutable — intended 30 days, but end block cannot be changed). After graduation, an LBP pool is automatically created on Uniswap V4 at the discovered price. No graduation? exitBid() refunds USDC, sweepUnsoldTokens() returns unsold wZION. Bid directly on app.uniswap.org or via the widget on /defi. Contract: 0x4eD4…1f93. Details in AUCTION_CCA_BASE.md.',
-    },
-    href: '/defi',
-  },
-  {
-    slug: 'wzion-6-chains-live',
-    date: '2026-06-30',
-    tag: { cs: 'Bridge', en: 'Bridge' },
-    tagColor: 'text-zion-cyan',
-    title: {
-      cs: 'wZION live na 6 chainech! — Base + BSC + Polygon + Arbitrum + Optimism + Avalanche',
-      en: 'wZION live on 6 chains! — Base + BSC + Polygon + Arbitrum + Optimism + Avalanche',
-    },
-    summary: {
-      cs: 'wZION ERC-20 a ZIONBridge nasazeny na 6 EVM chainech se stejnou adresou 0x0c49…02bb6 (deterministic deploy). ZIONBridge na všech chainech: 0xa5a0…1721. Bridge běží — lock ZION na L1 → mint wZION na jakémkoli z 6 chainů, burn wZION → unlock ZION na L1. Aktivní pool: wZION/USDT 0.3% na Base (TX 0xe668…17bd). Uniswap CCA aukce spuštěna: 66.47M wZION za USDC, 184-denní lock. LiFi Widget Light na /defi agreguje 30+ DEX a 20+ bridge protokolů napříč všemi chainy.',
-      en: 'wZION ERC-20 and ZIONBridge deployed on 6 EVM chains with the same address 0x0c49…02bb6 (deterministic deploy). ZIONBridge on all chains: 0xa5a0…1721. Bridge is running — lock ZION on L1 → mint wZION on any of the 6 chains, burn wZION → unlock ZION on L1. Active pool: wZION/USDT 0.3% on Base (TX 0xe668…17bd). Uniswap CCA auction launched: 66.47M wZION for USDC, 184-day lock. LiFi Widget Light on /defi aggregates 30+ DEX and 20+ bridge protocols across all chains.',
-    },
-    href: '/bridge',
-  },
-  {
-    slug: 'defi-live-usdt-pool-chart',
-    date: '2026-06-29',
     tag: { cs: 'DeFi', en: 'DeFi' },
     tagColor: 'text-zion-gold',
     title: {
-      cs: 'DeFi Live! — wZION/USDT pool, obousměrný bridge, live cenový graf',
-      en: 'DeFi Live! — wZION/USDT pool, bidirectional bridge, live price chart',
+      cs: 'ZION DeFi ekosystém LIVE — 2 DEX, 6 chainů, CCA aukce, bridge',
+      en: 'ZION DeFi ecosystem LIVE — 2 DEX, 6 chains, CCA auction, bridge',
     },
     summary: {
-      cs: 'ZION DeFi ekosystém je plně operational na Base Mainnet. Jediný aktivní pool: wZION/USDT 0.3% (TX 0xe668219e…d9917bd). WETH pozice byla spálena a SOL pool vyčerpán — konsolidace na jeden primární pool s reálnou likviditou. Obousměrný bridge: lock ZION na L1 → mint wZION na Base, burn wZION → unlock ZION na L1 — 5/5 Guardian validátory, 60-block finalita. Live cenový graf na /defi čerpá OHLCV data z GeckoTerminalu. CEX listings page sleduje DexScreener data v reálném čase. Vše sjednoceno do jednoho designu — /defi, /bridge, /cex.',
-      en: 'ZION DeFi ecosystem is fully operational on Base Mainnet. Single active pool: wZION/USDT 0.3% (TX 0xe668219e…d9917bd). WETH position was burned and SOL pool depleted — consolidation to a single primary pool with real liquidity. Bidirectional bridge: lock ZION on L1 → mint wZION on Base, burn wZION → unlock ZION on L1 — 5/5 Guardian validators, 60-block finality. Live price chart on /defi pulls OHLCV data from GeckoTerminal. CEX listings page tracks DexScreener data in real-time. All unified into one design — /defi, /bridge, /cex.',
+      cs: 'wZION je dostupný na 2 DEX platformách (Uniswap V4 + PancakeSwap V3), na 6 EVM chainech (Base, BSC, Polygon, Arbitrum, Optimism, Avalanche), s aktivní Uniswap CCA aukcí (66.47M wZION za USDC) a obousměrným bridge (lock ZION na L1 → mint wZION, burn → unlock). LiFi agregátor přidává 30+ DEX a 20+ bridge protokolů. Live cenový graf, swap widget a portfolio dashboard na /defi.',
+      en: 'wZION is available on 2 DEX platforms (Uniswap V4 + PancakeSwap V3), on 6 EVM chains (Base, BSC, Polygon, Arbitrum, Optimism, Avalanche), with an active Uniswap CCA auction (66.47M wZION for USDC) and bidirectional bridge (lock ZION on L1 → mint wZION, burn → unlock). LiFi aggregator adds 30+ DEX and 20+ bridge protocols. Live price chart, swap widget, and portfolio dashboard on /defi.',
     },
     href: '/defi',
   },
