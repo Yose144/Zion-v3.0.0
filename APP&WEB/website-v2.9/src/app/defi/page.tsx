@@ -23,8 +23,8 @@ import SwapWidget from '@/components/SwapWidget';
 import LiFiWidget from '@/components/LiFiWidget';
 import BridgeBurnWidget from '@/components/BridgeBurnWidget';
 import DefiBalances from '@/components/DefiBalances';
-import { CONTRACTS, SEED_PRICE_USD, CCA_AUCTION_PARAMS } from '@/lib/defi-contracts';
-import { AlertTriangle, Droplets, TrendingUp, Gavel, Clock, Trophy } from 'lucide-react';
+import { CONTRACTS, SEED_PRICE_USD, CCA_AUCTION_PARAMS, PANCAKE_V3 } from '@/lib/defi-contracts';
+import { AlertTriangle, Droplets, TrendingUp, Gavel, Clock, Trophy, ChefHat } from 'lucide-react';
 import { useNetworkStatus } from '@/hooks/useWebSocketSubscription';
 
 // ─── Price Sparkline (SVG, no deps) ──────────────────────────────────────────
@@ -723,6 +723,98 @@ export default function DefiPage() {
               {cs
                 ? 'Poznámka: END_BLOCK je immutable a nelze změnit — aukce běží ~184 dní (zamýšleno 30). Po END_BLOCK lze exitBid() pro refund nebo sweepUnsoldTokens() pro vrácení neprodaných wZION. Viz AUCTION_CCA_BASE.md.'
                 : 'Note: END_BLOCK is immutable and cannot be changed — auction runs ~184 days (intended 30). After END_BLOCK, exitBid() for refund or sweepUnsoldTokens() to reclaim unsold wZION. See AUCTION_CCA_BASE.md.'}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── PancakeSwap V3 ── */}
+      <section className="zion-container relative z-10 mb-8">
+        <div className="zion-rainbow-card p-6" style={{ '--rc': '255, 199, 0' } as React.CSSProperties}>
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <ChefHat className="h-6 w-6 text-amber-400" />
+              <div>
+                <h2 className="text-lg font-bold text-white">
+                  PancakeSwap V3
+                </h2>
+                <p className="text-[10px] text-gray-500">
+                  {cs ? '2. největší DEX na Base · $115M denní volume' : '2nd largest DEX on Base · $115M daily volume'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
+                {cs ? 'Připraveno' : 'Ready'}
+              </span>
+              <a
+                href={PANCAKE_V3.swapUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-linear-to-r from-amber-500 to-yellow-500 px-4 py-2 text-xs font-semibold text-white hover:opacity-90 transition-opacity"
+              >
+                {cs ? 'Swap na PancakeSwap' : 'Swap on PancakeSwap'}
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
+          </div>
+
+          {/* Info grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+            <div className="zion-rainbow-sub p-3" style={{ '--rc': '255, 199, 0' } as React.CSSProperties}>
+              <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Pool' : 'Pool'}</p>
+              <p className="text-sm font-semibold text-white">wZION / USDT</p>
+              <p className="text-[10px] text-gray-500">0.25% fee · Base Mainnet</p>
+            </div>
+            <div className="zion-rainbow-sub p-3" style={{ '--rc': '255, 199, 0' } as React.CSSProperties}>
+              <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Cena' : 'Price'}</p>
+              <p className="text-sm font-semibold text-white font-mono">$0.0002</p>
+              <p className="text-[10px] text-gray-500">{cs ? 'seed price' : 'seed price'}</p>
+            </div>
+            <div className="zion-rainbow-sub p-3" style={{ '--rc': '255, 199, 0' } as React.CSSProperties}>
+              <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Fee tiers' : 'Fee tiers'}</p>
+              <p className="text-sm font-semibold text-white">0.01% · 0.05% · 0.25% · 1%</p>
+              <p className="text-[10px] text-gray-500">{cs ? 'multi-tier' : 'multi-tier'}</p>
+            </div>
+          </div>
+
+          {/* Links */}
+          <div className="flex flex-wrap gap-2">
+            <a
+              href={PANCAKE_V3.swapUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+            >
+              {cs ? 'Swap wZION' : 'Swap wZION'} <ExternalLink className="h-2.5 w-2.5" />
+            </a>
+            <a
+              href={PANCAKE_V3.addLiquidityUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+            >
+              {cs ? 'Přidat likviditu' : 'Add Liquidity'} <ExternalLink className="h-2.5 w-2.5" />
+            </a>
+            <a
+              href={`https://basescan.org/address/${PANCAKE_V3.factory}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+            >
+              {cs ? 'Factory kontrakt' : 'Factory Contract'} <ExternalLink className="h-2.5 w-2.5" />
+            </a>
+          </div>
+
+          {/* Status note */}
+          <div className="mt-4 flex items-start gap-3 rounded-lg bg-amber-500/5 border border-amber-500/15 p-3">
+            <Clock className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+            <p className="text-[10px] text-gray-400 leading-relaxed">
+              {cs
+                ? 'PancakeSwap V3 pool je připraven k deployi. Pool wZION/USDT s 0.25% fee bude vytvořen pomocí deploy-pancakeswap-pool.ts skriptu. Po deployi se zde zobrazí live data z poolu (cena, TVL, likvidita). PancakeSwap je 2. největší DEX na Base s $115M denním volume — výrazně zvyšuje viditelnost wZION.'
+                : 'PancakeSwap V3 pool is ready for deployment. The wZION/USDT pool with 0.25% fee will be created using the deploy-pancakeswap-pool.ts script. After deployment, live pool data (price, TVL, liquidity) will be displayed here. PancakeSwap is the 2nd largest DEX on Base with $115M daily volume — significantly increasing wZION visibility.'}
             </p>
           </div>
         </div>
