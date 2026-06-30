@@ -47,6 +47,11 @@ impl BcsEncoder {
         self.buf
     }
 
+    /// Drain the internal buffer and return the BCS bytes (non-consuming variant).
+    pub fn take_bytes(&mut self) -> Vec<u8> {
+        std::mem::take(&mut self.buf)
+    }
+
     /// Borrow the internal buffer without consuming.
     pub fn as_bytes(&self) -> &[u8] {
         &self.buf
@@ -55,43 +60,43 @@ impl BcsEncoder {
     // ── Primitive types ──────────────────────────────────────────────────────
 
     /// Encode a u8.
-    pub fn u8(&mut self, v: u8) -> &mut Self {
+    pub fn u8(mut self, v: u8) -> Self {
         self.buf.push(v);
         self
     }
 
     /// Encode a bool (1 byte: 0 or 1).
-    pub fn bool(&mut self, v: bool) -> &mut Self {
+    pub fn bool(mut self, v: bool) -> Self {
         self.buf.push(if v { 1 } else { 0 });
         self
     }
 
     /// Encode a u16 (little-endian, 2 bytes).
-    pub fn u16(&mut self, v: u16) -> &mut Self {
+    pub fn u16(mut self, v: u16) -> Self {
         self.buf.extend_from_slice(&v.to_le_bytes());
         self
     }
 
     /// Encode a u32 (little-endian, 4 bytes).
-    pub fn u32(&mut self, v: u32) -> &mut Self {
+    pub fn u32(mut self, v: u32) -> Self {
         self.buf.extend_from_slice(&v.to_le_bytes());
         self
     }
 
     /// Encode a u64 (little-endian, 8 bytes).
-    pub fn u64(&mut self, v: u64) -> &mut Self {
+    pub fn u64(mut self, v: u64) -> Self {
         self.buf.extend_from_slice(&v.to_le_bytes());
         self
     }
 
     /// Encode a u128 (little-endian, 16 bytes).
-    pub fn u128(&mut self, v: u128) -> &mut Self {
+    pub fn u128(mut self, v: u128) -> Self {
         self.buf.extend_from_slice(&v.to_le_bytes());
         self
     }
 
     /// Encode a ULEB128 variable-length integer (used for lengths and enum indices).
-    pub fn uleb128(&mut self, mut v: u64) -> &mut Self {
+    pub fn uleb128(mut self, mut v: u64) -> Self {
         loop {
             let mut byte = (v & 0x7f) as u8;
             v >>= 7;
@@ -106,24 +111,82 @@ impl BcsEncoder {
         self
     }
 
-    // ── Composite types ──────────────────────────────────────────────────────
+    // ── Composite types (builder style, take self) ───────────────────────────
 
     /// Encode a sequence of bytes (Vec<u8>): ULEB128(len) ++ bytes.
-    pub fn bytes(&mut self, data: &[u8]) -> &mut Self {
-        self.uleb128(data.len() as u64);
+    pub fn bytes(mut self, data: &[u8]) -> Self {
+        self.uleb128_mut(data.len() as u64);
         self.buf.extend_from_slice(data);
         self
     }
 
     /// Encode a UTF-8 string: ULEB128(len) ++ UTF-8 bytes.
-    pub fn string(&mut self, s: &str) -> &mut Self {
+    pub fn string(self, s: &str) -> Self {
         self.bytes(s.as_bytes())
     }
 
     /// Encode a fixed-size 32-byte array (Aptos/Sui address).
-    pub fn address_32(&mut self, addr: &[u8; 32]) -> &mut Self {
+    pub fn address_32(mut self, addr: &[u8; 32]) -> Self {
         self.buf.extend_from_slice(addr);
         self
+    }
+
+    // ── &mut self variants (for use inside closures) ─────────────────────────
+
+    /// Encode a u8 (&mut self variant for closures).
+    pub fn u8_mut(&mut self, v: u8) {
+        self.buf.push(v);
+    }
+
+    /// Encode a u16 (&mut self variant for closures).
+    pub fn u16_mut(&mut self, v: u16) {
+        self.buf.extend_from_slice(&v.to_le_bytes());
+    }
+
+    /// Encode a u64 (&mut self variant for closures).
+    pub fn u64_mut(&mut self, v: u64) {
+        self.buf.extend_from_slice(&v.to_le_bytes());
+    }
+
+    /// Encode a u32 (&mut self variant for closures).
+    pub fn u32_mut(&mut self, v: u32) {
+        self.buf.extend_from_slice(&v.to_le_bytes());
+    }
+
+    /// Encode a ULEB128 (&mut self variant for closures).
+    pub fn uleb128_mut(&mut self, mut v: u64) {
+        loop {
+            let mut byte = (v & 0x7f) as u8;
+            v >>= 7;
+            if v != 0 {
+                byte |= 0x80;
+            }
+            self.buf.push(byte);
+            if v == 0 {
+                break;
+            }
+        }
+    }
+
+    /// Encode bytes (&mut self variant for closures).
+    pub fn bytes_mut(&mut self, data: &[u8]) {
+        self.uleb128_mut(data.len() as u64);
+        self.buf.extend_from_slice(data);
+    }
+
+    /// Encode a string (&mut self variant for closures).
+    pub fn string_mut(&mut self, s: &str) {
+        self.bytes_mut(s.as_bytes());
+    }
+
+    /// Encode a 32-byte address (&mut self variant for closures).
+    pub fn address_32_mut(&mut self, addr: &[u8; 32]) {
+        self.buf.extend_from_slice(addr);
+    }
+
+    /// Raw append (&mut self variant for closures).
+    pub fn raw_mut(&mut self, data: &[u8]) {
+        self.buf.extend_from_slice(data);
     }
 
     /// Encode an Option<T>: 1 byte (0=None, 1=Some) ++ encoded T.
@@ -144,24 +207,22 @@ impl BcsEncoder {
     }
 
     /// Encode a Vec<T>: ULEB128(len) ++ each element encoded by `encode_fn`.
-    pub fn seq<T>(&mut self, items: &[T], encode_fn: impl Fn(&mut Self, &T)) -> &mut Self {
-        self.uleb128(items.len() as u64);
+    pub fn seq<T>(&mut self, items: &[T], encode_fn: impl Fn(&mut Self, &T)) {
+        self.uleb128_mut(items.len() as u64);
         for item in items {
             encode_fn(self, item);
         }
-        self
     }
 
     /// Encode an enum variant: ULEB128(variant_index) ++ variant_data.
     /// The `encode_fn` encodes the variant-specific data.
-    pub fn enum_variant(&mut self, index: u32, encode_fn: impl Fn(&mut Self)) -> &mut Self {
-        self.uleb128(index as u64);
+    pub fn enum_variant(&mut self, index: u32, encode_fn: impl Fn(&mut Self)) {
+        self.uleb128_mut(index as u64);
         encode_fn(self);
-        self
     }
 
     /// Raw append (for pre-encoded sub-structures).
-    pub fn raw(&mut self, data: &[u8]) -> &mut Self {
+    pub fn raw(mut self, data: &[u8]) -> Self {
         self.buf.extend_from_slice(data);
         self
     }
@@ -431,38 +492,40 @@ mod tests {
 
     #[test]
     fn test_encode_option_none() {
-        let enc = BcsEncoder::new().option::<u8>(None, |e, v| { e.u8(*v); }).finish();
-        assert_eq!(enc, vec![0x00]);
+        let mut enc = BcsEncoder::new();
+        enc.option::<u8>(None, |e, v| { e.u8_mut(*v); });
+        assert_eq!(enc.take_bytes(), vec![0x00]);
     }
 
     #[test]
     fn test_encode_option_some() {
         let val = 42u8;
-        let enc = BcsEncoder::new().option(Some(&val), |e, v| { e.u8(*v); }).finish();
-        assert_eq!(enc, vec![0x01, 42]);
+        let mut enc = BcsEncoder::new();
+        enc.option(Some(&val), |e, v| { e.u8_mut(*v); });
+        assert_eq!(enc.take_bytes(), vec![0x01, 42]);
     }
 
     #[test]
     fn test_encode_seq_u64() {
         let items = vec![1u64, 2u64, 3u64];
-        let enc = BcsEncoder::new()
-            .seq(&items, |e, v| { e.u64(*v); })
-            .finish();
+        let mut enc = BcsEncoder::new();
+        enc.seq(&items, |e, v| { e.u64_mut(*v); });
+        let result = enc.take_bytes();
         // ULEB128(3) + 3 * 8 bytes LE
-        assert_eq!(enc[0], 3); // length
-        assert_eq!(enc.len(), 1 + 24);
+        assert_eq!(result[0], 3); // length
+        assert_eq!(result.len(), 1 + 24);
         // First u64 = 1 → LE
-        assert_eq!(enc[1..9], vec![1, 0, 0, 0, 0, 0, 0, 0]);
+        assert_eq!(&result[1..9], &[1, 0, 0, 0, 0, 0, 0, 0]);
     }
 
     #[test]
     fn test_encode_enum_variant() {
-        let enc = BcsEncoder::new()
-            .enum_variant(2, |e| { e.u64(99); })
-            .finish();
+        let mut enc = BcsEncoder::new();
+        enc.enum_variant(2, |e| { e.u64_mut(99); });
+        let result = enc.take_bytes();
         // ULEB128(2) + u64(99) LE
-        assert_eq!(enc[0], 2);
-        assert_eq!(enc[1..9], vec![99, 0, 0, 0, 0, 0, 0, 0]);
+        assert_eq!(result[0], 2);
+        assert_eq!(&result[1..9], &[99, 0, 0, 0, 0, 0, 0, 0]);
     }
 
     #[test]
@@ -475,10 +538,10 @@ mod tests {
             .finish();
         // u8(1) + u32 LE + string(3, "abc") + u64 LE
         assert_eq!(enc[0], 1);
-        assert_eq!(enc[1..5], vec![0x78, 0x56, 0x34, 0x12]);
+        assert_eq!(&enc[1..5], &[0x78, 0x56, 0x34, 0x12]);
         assert_eq!(enc[5], 3); // string length
-        assert_eq!(enc[6..9], b"abc");
-        assert_eq!(enc[9..17], vec![42, 0, 0, 0, 0, 0, 0, 0]);
+        assert_eq!(&enc[6..9], b"abc");
+        assert_eq!(&enc[9..17], &[42, 0, 0, 0, 0, 0, 0, 0]);
     }
 
     // ── Decoder tests ─────────────────────────────────────────────────────────
@@ -572,7 +635,8 @@ mod tests {
     #[test]
     fn test_encode_seq_empty() {
         let items: Vec<u64> = vec![];
-        let enc = BcsEncoder::new().seq(&items, |e, v| { e.u64(*v); }).finish();
-        assert_eq!(enc, vec![0x00]); // ULEB128(0)
+        let mut enc = BcsEncoder::new();
+        enc.seq(&items, |e, v| { e.u64_mut(*v); });
+        assert_eq!(enc.take_bytes(), vec![0x00]); // ULEB128(0)
     }
 }
