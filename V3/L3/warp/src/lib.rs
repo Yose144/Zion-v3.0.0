@@ -17,6 +17,7 @@
 //! ```
 
 pub mod adapter;
+pub mod aptos_signer;
 pub mod bolt11;
 pub mod btc_signer;
 pub mod cardano_signer;
@@ -28,6 +29,7 @@ pub mod evm_signer;
 pub mod fees;
 pub mod lightning_signer;
 pub mod metrics;
+pub mod near_signer;
 pub mod protocol;
 pub mod registry;
 pub mod router;
