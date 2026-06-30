@@ -18,6 +18,7 @@
 
 pub mod adapter;
 pub mod aptos_signer;
+pub mod bcs;
 pub mod bolt11;
 pub mod btc_signer;
 pub mod cardano_signer;
