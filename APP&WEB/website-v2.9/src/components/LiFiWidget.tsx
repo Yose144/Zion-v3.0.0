@@ -12,7 +12,7 @@ const WZION_ADDRESSES: Record<number, string | null> = {
   42161: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6', // ✅ Arbitrum One (deployed 2026-06-30)
   56:    '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6', // ✅ BNB Smart Chain (deployed 2026-06-30)
   137:   '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6', // ✅ Polygon PoS (deployed 2026-06-30)
-  10:    null,  // Optimism (not deployed)
+  10:    '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6', // ✅ Optimism (deployed 2026-06-30)
   43114: null,  // Avalanche C-Chain (not deployed)
 };
 
