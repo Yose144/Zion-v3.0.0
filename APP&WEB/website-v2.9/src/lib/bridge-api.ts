@@ -84,6 +84,16 @@ export const BRIDGE_CONTRACTS_ARBITRUM: BridgeContractInfo = {
   explorer_base: 'https://arbiscan.io/address/',
 };
 
+/** Optimism Mainnet contracts — deployed 2026-06-30 (5/5 multisig). */
+export const BRIDGE_CONTRACTS_OPTIMISM: BridgeContractInfo = {
+  wzion_address: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
+  bridge_address: '0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721',
+  l1_bridge_address: 'zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0',
+  network: 'Optimism Mainnet',
+  chain_id: 10,
+  explorer_base: 'https://optimistic.etherscan.io/address/',
+};
+
 /** Active contract set — mainnet 5/5 bridge is live */
 export const BRIDGE_CONTRACTS = BRIDGE_CONTRACTS_MAINNET;
 

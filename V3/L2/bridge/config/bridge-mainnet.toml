@@ -86,17 +86,17 @@ enabled                 = true
 gas_strategy            = "legacy"
 max_gas_gwei            = 250
 
-# -- Optimism (Mainnet) — NOT DEPLOYED --
+# -- Optimism (Mainnet) — DEPLOYED 2026-06-30 --
 [[evm_chains]]
 chain_id                = "optimism"
 name                    = "Optimism (Mainnet)"
 evm_chain_id            = 10
 rpc_url                 = "https://mainnet.optimism.io"
 rpc_url_backup          = "wss://ws-mainnet.optimism.io"
-wzion_address           = "0x0000000000000000000000000000000000000000"
-bridge_contract_address = "0x0000000000000000000000000000000000000000"
+wzion_address           = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+bridge_contract_address = "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721"
 finality_blocks         = 10
-enabled                 = false
+enabled                 = true
 gas_strategy            = "eip1559"
 max_gas_gwei            = 20
 
