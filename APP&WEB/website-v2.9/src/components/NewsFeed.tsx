@@ -24,19 +24,19 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
-    slug: 'lifi-widget-light-migration',
+    slug: 'wzion-5-chains-live',
     date: '2026-06-30',
-    tag: { cs: 'DeFi', en: 'DeFi' },
-    tagColor: 'text-zion-gold',
+    tag: { cs: 'Bridge', en: 'Bridge' },
+    tagColor: 'text-zion-cyan',
     title: {
-      cs: 'LI.FI Widget Light — cross-chain swap + bridge s 0.5% integrator fee',
-      en: 'LI.FI Widget Light — cross-chain swap + bridge with 0.5% integrator fee',
+      cs: 'wZION live na 5 chainech! — Base + BSC + Polygon + Arbitrum + Optimism',
+      en: 'wZION live on 5 chains! — Base + BSC + Polygon + Arbitrum + Optimism',
     },
     summary: {
-      cs: 'LiFi widget na /defi byl přepsán z plain iframe na WidgetLight komponentu z @lifi/widget-light (postMessage bridge). Opraven kritický slippage bug (100 → 0.01, tj. 10000% → 1%). Přidána monetizace: 0.5% integrator fee na každý swap. Routing: RECOMMENDED priority + gasless relayer routes. Chain filtering na 7 EVM chainů (Base, Ethereum, Arbitrum, BSC, Polygon, Optimism, Avalanche). Custom RPC per chain — žádné rate-limity z veřejných endpointů. wZION zůstává výchozí token na Base.',
-      en: 'LiFi widget on /defi has been rewritten from plain iframe to WidgetLight component from @lifi/widget-light (postMessage bridge). Fixed critical slippage bug (100 → 0.01, i.e. 10000% → 1%). Added monetization: 0.5% integrator fee on every swap. Routing: RECOMMENDED priority + gasless relayer routes. Chain filtering to 7 EVM chains (Base, Ethereum, Arbitrum, BSC, Polygon, Optimism, Avalanche). Custom RPC per chain — no rate-limits from public endpoints. wZION remains the default token on Base.',
+      cs: 'wZION ERC-20 a ZIONBridge nasazeny na 5 EVM chainech se stejnou adresou 0x0c49…02bb6 (deterministic deploy). ZIONBridge na všech chainech: 0xa5a0…1721. Bridge běží — lock ZION na L1 → mint wZION na jakémkoli z 5 chainů, burn wZION → unlock ZION na L1. Aktivní pool: wZION/USDT 0.3% na Base (TX 0xe668…17bd). Uniswap CCA aukce spuštěna: 66.47M wZION za USDC, 184-denní lock. LiFi Widget Light na /defi agreguje 30+ DEX a 20+ bridge protokolů napříč všemi chainy.',
+      en: 'wZION ERC-20 and ZIONBridge deployed on 5 EVM chains with the same address 0x0c49…02bb6 (deterministic deploy). ZIONBridge on all chains: 0xa5a0…1721. Bridge is running — lock ZION on L1 → mint wZION on any of the 5 chains, burn wZION → unlock ZION on L1. Active pool: wZION/USDT 0.3% on Base (TX 0xe668…17bd). Uniswap CCA auction launched: 66.47M wZION for USDC, 184-day lock. LiFi Widget Light on /defi aggregates 30+ DEX and 20+ bridge protocols across all chains.',
     },
-    href: '/defi',
+    href: '/bridge',
   },
   {
     slug: 'defi-live-usdt-pool-chart',
@@ -48,8 +48,8 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       en: 'DeFi Live! — wZION/USDT pool, bidirectional bridge, live price chart',
     },
     summary: {
-      cs: 'ZION DeFi ekosystém je plně operational na Base Mainnet. Aktivní Uniswap V3 pool: wZION/USDT 0.3% (primární, ~$50 TVL). WETH pozice byla spálena a SOL pool vyčerpán — konsolidace na jeden primární pool s reálnou likviditou. Obousměrný bridge: lock ZION na L1 → mint wZION na Base, burn wZION → unlock ZION na L1 — 5/5 Guardian validátory, 60-block finalita. Live cenový graf na /defi čerpá OHLCV data z GeckoTerminalu. CEX listings page sleduje DexScreener data v reálném čase. Vše sjednoceno do jednoho designu — /defi, /bridge, /cex.',
-      en: 'ZION DeFi ecosystem is fully operational on Base Mainnet. Active Uniswap V3 pool: wZION/USDT 0.3% (primary, ~$50 TVL). WETH position was burned and SOL pool depleted — consolidation to a single primary pool with real liquidity. Bidirectional bridge: lock ZION on L1 → mint wZION on Base, burn wZION → unlock ZION on L1 — 5/5 Guardian validators, 60-block finality. Live price chart on /defi pulls OHLCV data from GeckoTerminal. CEX listings page tracks DexScreener data in real-time. All unified into one design — /defi, /bridge, /cex.',
+      cs: 'ZION DeFi ekosystém je plně operational na Base Mainnet. Jediný aktivní pool: wZION/USDT 0.3% (TX 0xe668219e…d9917bd). WETH pozice byla spálena a SOL pool vyčerpán — konsolidace na jeden primární pool s reálnou likviditou. Obousměrný bridge: lock ZION na L1 → mint wZION na Base, burn wZION → unlock ZION na L1 — 5/5 Guardian validátory, 60-block finalita. Live cenový graf na /defi čerpá OHLCV data z GeckoTerminalu. CEX listings page sleduje DexScreener data v reálném čase. Vše sjednoceno do jednoho designu — /defi, /bridge, /cex.',
+      en: 'ZION DeFi ecosystem is fully operational on Base Mainnet. Single active pool: wZION/USDT 0.3% (TX 0xe668219e…d9917bd). WETH position was burned and SOL pool depleted — consolidation to a single primary pool with real liquidity. Bidirectional bridge: lock ZION on L1 → mint wZION on Base, burn wZION → unlock ZION on L1 — 5/5 Guardian validators, 60-block finality. Live price chart on /defi pulls OHLCV data from GeckoTerminal. CEX listings page tracks DexScreener data in real-time. All unified into one design — /defi, /bridge, /cex.',
     },
     href: '/defi',
   },
@@ -259,8 +259,8 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       en: 'wZION DEX is live on Base Mainnet — swap, bridge & portfolio',
     },
     summary: {
-      cs: 'Uniswap V3 pool wZION/WETH nasazen na Base Mainnet s reálnou likviditou. Na zionterranova.com/defi nyní funguje přímý swap ETH↔wZION, burn bridge (wZION→ZION L1) a portfolio dashboard s live cenami z on-chain poolu.',
-      en: 'Uniswap V3 wZION/WETH pool deployed on Base Mainnet with real liquidity. zionterranova.com/defi now features direct ETH↔wZION swap, burn bridge (wZION→ZION L1), and a portfolio dashboard with live on-chain pool prices.',
+      cs: 'Počáteční Uniswap V3 pool wZION/WETH nasazen na Base Mainnet. WETH pozice později spálena — nyní aktivní pouze wZION/USDT 0.3% pool. Na zionterranova.com/defi funguje swap, bridge a portfolio dashboard s live cenami z on-chain poolu.',
+      en: 'Initial Uniswap V3 wZION/WETH pool deployed on Base Mainnet. WETH position later burned — now only wZION/USDT 0.3% pool is active. zionterranova.com/defi features swap, bridge, and a portfolio dashboard with live on-chain pool prices.',
     },
     href: '/defi',
   },
@@ -289,8 +289,8 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       en: 'ZION L2 DeFi contracts deployed — Bridge, DEX pool & wZION on Base',
     },
     summary: {
-      cs: 'wZION ERC-20, ZIONBridge a Uniswap V3 pool (wZION/WETH 0.3%) nasazeny na Base. Relay propojuje ZION L1 s Base. Bridge umožňuje lock/mint a burn/unlock. DEX pool s počáteční likviditou 50 wZION + 0.0005 WETH.',
-      en: 'wZION ERC-20, ZIONBridge, and Uniswap V3 pool (wZION/WETH 0.3%) deployed on Base. Relay connects ZION L1 with Base. Bridge enables lock/mint and burn/unlock. DEX pool seeded with 50 wZION + 0.0005 WETH.',
+      cs: 'wZION ERC-20, ZIONBridge a počáteční Uniswap V3 pool (wZION/WETH 0.3%) nasazeny na Base. WETH pozice později spálena — nyní aktivní wZION/USDT 0.3% pool. Relay propojuje ZION L1 s Base. Bridge umožňuje lock/mint a burn/unlock.',
+      en: 'wZION ERC-20, ZIONBridge, and initial Uniswap V3 pool (wZION/WETH 0.3%) deployed on Base. WETH position later burned — now wZION/USDT 0.3% pool is active. Relay connects ZION L1 with Base. Bridge enables lock/mint and burn/unlock.',
     },
     href: '/defi',
   },
@@ -304,8 +304,8 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       en: 'CoinGecko registration — ZION prepares for listing',
     },
     summary: {
-      cs: 'Zahájili jsme proces registrace ZION na CoinGecko. Požadavky: funkční blockchain s veřejným explorerem ✅, obchodovatelný token na DEX (wZION/WETH Uniswap V3 pool na Base) ✅, otevřený zdrojový kód ✅, dokumentace a whitepaper ✅. Čekáme na schválení a mainnet deployment na Base mainnet s reálnou likviditou.',
-      en: 'We have started the process of registering ZION on CoinGecko. Requirements: working blockchain with public explorer ✅, tradeable token on DEX (wZION/WETH Uniswap V3 pool on Base) ✅, open source code ✅, documentation and whitepaper ✅. Awaiting approval and Base mainnet deployment with real liquidity.',
+      cs: 'Zahájili jsme proces registrace ZION na CoinGecko. Požadavky: funkční blockchain s veřejným explorerem ✅, obchodovatelný token na DEX (wZION/USDT Uniswap V3 pool na Base) ✅, otevřený zdrojový kód ✅, dokumentace a whitepaper ✅. Čekáme na schválení a mainnet deployment na Base mainnet s reálnou likviditou.',
+      en: 'We have started the process of registering ZION on CoinGecko. Requirements: working blockchain with public explorer ✅, tradeable token on DEX (wZION/USDT Uniswap V3 pool on Base) ✅, open source code ✅, documentation and whitepaper ✅. Awaiting approval and Base mainnet deployment with real liquidity.',
     },
     href: '/roadmap',
   },
