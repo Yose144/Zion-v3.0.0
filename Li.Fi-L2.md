@@ -108,7 +108,7 @@ Integrovat **univerzální cross-chain swap + bridge** do Zion web app pomocí L
 - [x] **Session 11:** WalletContext toAddress pre-fill
 - [x] **Session 11:** Build + deploy na zionterranova.com (`6730e2ba` + `cecb9cfa` + `b54752d3`)
 
-### Fáze 1.5: Ankr Premium RPC (⚠️ Částečně — chybí API key)
+### Fáze 1.5: Ankr Premium RPC (✅ API key aktivován — free tier)
 
 **Co je hotovo:**
 - [x] `ankr.rs` — AnkrClient s eth_blockNumber, eth_getLogs, eth_sendRawTransaction, eth_call, eth_getBalance
@@ -116,17 +116,23 @@ Integrovat **univerzální cross-chain swap + bridge** do Zion web app pomocí L
 - [x] Fallback mechanism v evm_watcher (direct RPC → Ankr)
 - [x] Config file + `ANKR_API_KEY` env var support
 - [x] Health check
+- [x] **`ANKR_API_KEY` nastaven** v `V3/docker/.env` (free tier — vyšší rate limits než bez key)
+- [x] `docker-compose.v3-l2.yml` čte `${ANKR_API_KEY}` z env
+- [x] Ověřeno: API key funguje na eth, base, arbitrum, bsc, polygon
 
-**Co chybí:**
-- [ ] **`ANKR_API_KEY` nastavit** na Edge serveru (premium tier — vyšší rate limits)
+**Co chybí (premium tier — future):**
 - [ ] Ankr Advanced API (multichain token balances, NFT, staking) — zatím jen basic JSON-RPC
 - [ ] Ankr WebSocket support (zatím jen HTTP polling)
+- [ ] Premium API key pro produkční high-volume (free tier = ~30 req/s)
 
-**Postup:**
-1. Registrace na app.ankr.com → získání API key
-2. `ANKR_API_KEY=xxx` do `docker-compose.v3-l2.yml` env sekce
-3. Restart `zion-edge-bridge.service`
-4. Verify: `curl https://rpc.ankr.com/base/<KEY> -X POST -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'`
+**Aktivace na Edge serveru:**
+```bash
+cd V3/docker
+cp .env.example .env
+# Edit .env: ANKR_API_KEY=d036dcf6...
+docker compose -f docker-compose.v3-l2.yml up -d zion-bridge
+# Verify: docker logs zion-bridge | grep -i ankr
+```
 
 ### Fáze 2: wZION Multi-Chain Deploy (Plánované — deploy skript hotový)
 
