@@ -23,8 +23,8 @@ import SwapWidget from '@/components/SwapWidget';
 import LiFiWidget from '@/components/LiFiWidget';
 import BridgeBurnWidget from '@/components/BridgeBurnWidget';
 import DefiBalances from '@/components/DefiBalances';
-import { CONTRACTS, SEED_PRICE_USD } from '@/lib/defi-contracts';
-import { AlertTriangle, Droplets, TrendingUp } from 'lucide-react';
+import { CONTRACTS, SEED_PRICE_USD, CCA_AUCTION_PARAMS } from '@/lib/defi-contracts';
+import { AlertTriangle, Droplets, TrendingUp, Gavel, Clock, Trophy } from 'lucide-react';
 import { useNetworkStatus } from '@/hooks/useWebSocketSubscription';
 
 // ─── Price Sparkline (SVG, no deps) ──────────────────────────────────────────
@@ -136,6 +136,19 @@ export default function DefiPage() {
       governance: { wzion: number };
       bridge: { wzion: number };
     };
+  } | null>(null);
+  const [auctionData, setAuctionData] = useState<{
+    clearingPriceUsd: number;
+    currencyRaised: number;
+    totalCleared: number;
+    remainingSupply: number;
+    isGraduated: boolean;
+    wzionBalance: number;
+    usdcBalance: number;
+    currentBlock: number;
+    progressPct: number;
+    daysRemaining: number;
+    pctSold: number;
   } | null>(null);
 
   // ── WebSocket subscription for real-time network status ─────────────────────
@@ -249,12 +262,35 @@ export default function DefiPage() {
     };
     void refreshPools();
 
+    const refreshAuction = async () => {
+      try {
+        const res = await fetch('/api/defi/auction', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled && data.ok) setAuctionData({
+          clearingPriceUsd: data.clearingPriceUsd ?? 0,
+          currencyRaised: data.currencyRaised ?? 0,
+          totalCleared: data.totalCleared ?? 0,
+          remainingSupply: data.remainingSupply ?? 0,
+          isGraduated: data.isGraduated ?? false,
+          wzionBalance: data.wzionBalance ?? 0,
+          usdcBalance: data.usdcBalance ?? 0,
+          currentBlock: data.currentBlock ?? 0,
+          progressPct: data.progressPct ?? 0,
+          daysRemaining: data.daysRemaining ?? 0,
+          pctSold: data.pctSold ?? 0,
+        });
+      } catch { /* ignore */ }
+    };
+    void refreshAuction();
+
     const interval = setInterval(() => {
       void refreshSupply();
       void refreshPrice();
       void refreshBridge();
       void refreshPools();
       void refreshChart();
+      void refreshAuction();
     }, 60_000);
 
     return () => {
@@ -504,6 +540,190 @@ export default function DefiPage() {
                 {poolStats?.pools?.wzion_usdt?.active ? (cs ? 'aktivní' : 'active') : (poolStats ? (cs ? 'neaktivní' : 'inactive') : (cs ? 'načítám' : 'loading'))}
               </p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Uniswap CCA Auction ── */}
+      <section className="zion-container relative z-10 mb-8">
+        <div className="zion-rainbow-card p-6" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <Gavel className="h-6 w-6 text-amber-400" />
+              <div>
+                <h2 className="text-lg font-bold text-white">
+                  {cs ? 'Uniswap CCA Aukce' : 'Uniswap CCA Auction'}
+                </h2>
+                <p className="text-[10px] text-gray-500">
+                  {cs ? 'Continuous Clearing Auction · 66.47M wZION za USDC' : 'Continuous Clearing Auction · 66.47M wZION for USDC'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-semibold ${
+                auctionData?.isGraduated
+                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                  : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+              }`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${auctionData?.isGraduated ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
+                {auctionData?.isGraduated
+                  ? (cs ? 'Graduováno' : 'Graduated')
+                  : (cs ? 'Aktivní' : 'Active')}
+              </span>
+              <a
+                href={CCA_AUCTION_PARAMS.uniswapUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-linear-to-r from-amber-500 to-orange-500 px-4 py-2 text-xs font-semibold text-white hover:opacity-90 transition-opacity"
+              >
+                {cs ? 'Přiházet na Uniswap' : 'Bid on Uniswap'}
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
+          </div>
+
+          {/* Key metrics grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            {/* Clearing price */}
+            <div className="zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+              <div className="flex items-center gap-1.5 mb-1">
+                <TrendingUp className="h-3 w-3 text-amber-400" />
+                <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Vyklízecí cena' : 'Clearing Price'}</p>
+              </div>
+              <p className="text-lg font-bold text-white font-mono">
+                ${(auctionData?.clearingPriceUsd ?? 0).toFixed(7)}
+              </p>
+              <p className="text-[10px] text-gray-500">USDC / wZION</p>
+            </div>
+
+            {/* USDC raised */}
+            <div className="zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+              <div className="flex items-center gap-1.5 mb-1">
+                <Droplets className="h-3 w-3 text-emerald-400" />
+                <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'USDC vybráno' : 'USDC Raised'}</p>
+              </div>
+              <p className="text-lg font-bold text-white font-mono">
+                ${(auctionData?.currencyRaised ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+              </p>
+              <p className="text-[10px] text-gray-500">{cs ? 'celkem' : 'total'}</p>
+            </div>
+
+            {/* wZION sold */}
+            <div className="zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+              <div className="flex items-center gap-1.5 mb-1">
+                <Activity className="h-3 w-3 text-zion-gold" />
+                <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'wZION prodáno' : 'wZION Sold'}</p>
+              </div>
+              <p className="text-lg font-bold text-white font-mono">
+                {(auctionData?.totalCleared ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </p>
+              <p className="text-[10px] text-gray-500">
+                {cs ? 'z' : 'of'} {CCA_AUCTION_PARAMS.totalSupply.toLocaleString()} ({(auctionData?.pctSold ?? 0).toFixed(4)}%)
+              </p>
+            </div>
+
+            {/* Time remaining */}
+            <div className="zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+              <div className="flex items-center gap-1.5 mb-1">
+                <Clock className="h-3 w-3 text-orange-400" />
+                <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Zbývá' : 'Remaining'}</p>
+              </div>
+              <p className="text-lg font-bold text-white font-mono">
+                {(auctionData?.daysRemaining ?? 184).toFixed(0)}
+              </p>
+              <p className="text-[10px] text-gray-500">{cs ? 'dní (~6 měsíců)' : 'days (~6 months)'}</p>
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          <div className="mb-4">
+            <div className="flex justify-between text-[10px] text-gray-500 mb-1">
+              <span>{cs ? 'Blok' : 'Block'} {auctionData?.currentBlock?.toLocaleString() ?? '…'}</span>
+              <span>{(auctionData?.progressPct ?? 0).toFixed(3)}%</span>
+              <span>{cs ? 'Konec' : 'End'} {CCA_AUCTION_PARAMS.endBlock.toLocaleString()}</span>
+            </div>
+            <div className="h-2 bg-black/40 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-linear-to-r from-amber-500 to-orange-500 transition-all duration-500"
+                style={{ width: `${Math.min(100, auctionData?.progressPct ?? 0)}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Auction details + links */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            {/* Left: How it works */}
+            <div className="space-y-2">
+              <h3 className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">
+                {cs ? 'Jak CCA aukce funguje' : 'How CCA Auction Works'}
+              </h3>
+              <div className="flex gap-2 text-gray-300">
+                <span className="shrink-0 rounded-lg bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 text-amber-400 font-mono text-[9px]">1</span>
+                <p>{cs ? 'Účastníci přihazují USDC za wZION s max cenou' : 'Participants bid USDC for wZION with a max price'}</p>
+              </div>
+              <div className="flex gap-2 text-gray-300">
+                <span className="shrink-0 rounded-lg bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 text-amber-400 font-mono text-[9px]">2</span>
+                <p>{cs ? 'Vyklízecí cena se kontinuálně upravuje na základě poptávky' : 'Clearing price continuously adjusts based on demand'}</p>
+              </div>
+              <div className="flex gap-2 text-gray-300">
+                <span className="shrink-0 rounded-lg bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 text-amber-400 font-mono text-[9px]">3</span>
+                <p>{cs ? 'Po graduaci → LBP pool na Uniswap V4 + USDC pro tým' : 'After graduation → LBP pool on Uniswap V4 + USDC for team'}</p>
+              </div>
+              <div className="flex gap-2 text-gray-300">
+                <span className="shrink-0 rounded-lg bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 text-amber-400 font-mono text-[9px]">4</span>
+                <p>{cs ? 'Negrace? exitBid() vrátí USDC, sweepUnsoldTokens() vrátí wZION' : 'No graduation? exitBid() refunds USDC, sweepUnsoldTokens() returns wZION'}</p>
+              </div>
+            </div>
+
+            {/* Right: Contract info */}
+            <div className="space-y-2">
+              <h3 className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">
+                {cs ? 'Detaily kontraktu' : 'Contract Details'}
+              </h3>
+              <div className="flex justify-between">
+                <span className="text-gray-400">{cs ? 'Aukce' : 'Auction'}</span>
+                <a
+                  href={CCA_AUCTION_PARAMS.basescanUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-amber-400/80 hover:text-amber-400 inline-flex items-center gap-1"
+                >
+                  {CCA_AUCTION_PARAMS.auctionContract.slice(0, 8)}…{CCA_AUCTION_PARAMS.auctionContract.slice(-4)}
+                  <ExternalLink className="h-2.5 w-2.5" />
+                </a>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">{cs ? 'Token' : 'Token'}</span>
+                <span className="font-mono text-gray-300">wZION (18d)</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">{cs ? 'Měna' : 'Currency'}</span>
+                <span className="font-mono text-gray-300">USDC (6d, Base)</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">{cs ? 'Start blok' : 'Start block'}</span>
+                <span className="font-mono text-gray-300">{CCA_AUCTION_PARAMS.startBlock.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">{cs ? 'End blok' : 'End block'}</span>
+                <span className="font-mono text-gray-300">{CCA_AUCTION_PARAMS.endBlock.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">{cs ? 'Floor price' : 'Floor price'}</span>
+                <span className="font-mono text-gray-300">$0.00019/wZION</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Warning about 184-day duration */}
+          <div className="mt-4 flex items-start gap-3 rounded-lg bg-amber-500/5 border border-amber-500/15 p-3">
+            <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+            <p className="text-[10px] text-gray-400 leading-relaxed">
+              {cs
+                ? 'Poznámka: END_BLOCK je immutable a nelze změnit — aukce běží ~184 dní (zamýšleno 30). Po END_BLOCK lze exitBid() pro refund nebo sweepUnsoldTokens() pro vrácení neprodaných wZION. Viz AUCTION_CCA_BASE.md.'
+                : 'Note: END_BLOCK is immutable and cannot be changed — auction runs ~184 days (intended 30). After END_BLOCK, exitBid() for refund or sweepUnsoldTokens() to reclaim unsold wZION. See AUCTION_CCA_BASE.md.'}
+            </p>
           </div>
         </div>
       </section>
