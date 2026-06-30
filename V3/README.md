@@ -30,7 +30,7 @@ Pure-code scope for the bootstrap:
 - `L2/dao` — DAO governance daemon (proposal lifecycle, voting, treasury, humanitarian tithe), 6-decimal flowers (updated 3.0.3 fork)
 - `L2/atomic-swap` — HTLC cross-chain atomic swaps, 6-decimal flowers (updated 3.0.3 fork)
 - `L3/ncl` — Neural Consciousness Layer — decentralized AI compute marketplace
-- `L3/warp` — Universal cross-chain bridge (7 chain adapters: EVM, Bitcoin, Solana, Tron, Stellar, Cardano, Cosmos), 6-decimal flowers (updated 3.0.3 fork)
+- `L3/warp` — Universal cross-chain bridge (12 chain adapters: EVM, Bitcoin, Solana, Tron, Stellar, Cardano, Cosmos, Sui, Aptos, NEAR, TON, Lightning), 6-decimal flowers (updated 3.0.3 fork)
 - `L3/ai-native` — Autonomous AI agent framework (orchestrator, consciousness engine, pool optimizer, warp agent)
 - `DesktopApp/` — clean operator desktop shell for wallets and future runtime control, added explicitly by request and kept separate from legacy desktop-agent orchestration
 
@@ -43,7 +43,7 @@ Out of scope for the bootstrap:
 
 ## Current Status
 
-- workspace version: `3.0.3` (decimal fork — FLOWERS_PER_ZION 1e12→1e6, deployed 2026-06-27)
+- workspace version: `3.0.4` (DeFi contracts deployed on Base Mainnet 2026-06-29; TX unification plan in [`../3.0.4.md`](../3.0.4.md))
 - **Unified `zion` CLI operator baseline (2026-04-23):** top-level gateway now spans L1/L2/L3 plus deploy, explorer, monitor, guided workflows, and checksum-verified local CLI auto-update; canonical operator docs published in `V3/docs/CLI_GUIDE.md` and `V3/docs/CLI_FAQ.md`.
 - **Phase 18 UTXO coinbase + pool payout E2E deployed (2026-04-01):** `getBalance` combines account+UTXO for zion1 addresses (previously returned 0). `build_template()` generates UTXO coinbase with 4 outputs (89/5/5/1 split). Pool payout pipeline deployed with Ed25519 UTXO signing. Chain height 6801, miner balance 14.12B ZION.
 - **Humanitarian tithe verified on-chain (2026-04-01):** Per-block fee split is exact to the flower: 89% miner, 5% humanitarian ([12] zion1m4v5z...), 5% issobella ([13] zion170a37...), 1% pool_fee ([14] zion1y5u65...). Cumulative balances consistent across all tithe wallets.
@@ -113,7 +113,7 @@ Out of scope for the bootstrap:
 - `L1/native-libs` scaffold now exists for staged migration of native acceleration libraries (randomx, kawpow, autolykos) with platform build scripts and ABI header placeholders
 - `DesktopApp` now exists as a fresh Electron shell under `V3/`, reusing the testnet operator UX direction while keeping V3 runtime control, wallet roles, and process supervision isolated from legacy desktop-agent ballast
 - live smoke coverage now includes two miner sessions against the same pool instance, mempool-seeded template rotation, node restart validation from a persisted chain snapshot, two-node P2P block export/import rehearsal, and startup catch-up from `ZION_SEED_PEERS`
-- whole V3 workspace currently builds and tests green (~1,300 tests: 432 core, 95 cosmic-harmony, 59 miner, 29 pool, 4 native-ffi, 157 bridge, 65 dao, 15 atomic-swap, 43 ncl, 252 warp, 89 ai-native, plus doctests)
+- whole V3 workspace currently builds and tests green (~1,300+ tests: 432 core, 95 cosmic-harmony, 59 miner, 29 pool, 4 native-ffi, 157 bridge, 65 dao, 15 atomic-swap, 43 ncl, 488 warp, 89 ai-native, plus doctests)
 
 Operational references:
 
@@ -139,8 +139,14 @@ V3/
     atomic-swap/          # HTLC cross-chain swaps, 15 tests
   L3/
     ncl/                  # Neural Consciousness Layer, 43 tests
-    warp/                 # Universal cross-chain bridge (7 adapters), 252 tests
+    warp/                 # Universal cross-chain bridge (12 adapters), 488 tests
     ai-native/            # AI agent framework, 89 tests
+  L4/
+    oasis/                # Metaverse game layer (player, guild, quests, prizes)
+  L5/
+    free-world/           # Community layer (DAO client, L1 scanner)
+  L6/
+    issobella/            # Art/NFT layer (DAO client, L1 scanner)
   docker/
     Dockerfile.node
     Dockerfile.pool
