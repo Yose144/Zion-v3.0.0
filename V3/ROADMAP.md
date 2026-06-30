@@ -124,11 +124,12 @@ Verze **3.0.3** je nyní uzavřena. Všechny klíčové komponenty jsou funkčn�
 
 > **Runbook:** `V3/L3/warp/src/adapter/{aptos,near,sui,ton}.rs` + `V3/L3/warp/src/{aptos,near,sui,ton}_signer.rs`
 
-- [x] **Aptos adapter** — REST health check (ledger version), Ed25519 signer + SHA-256 address derivation, watch_events via account event API. BCS TX builder pending (needs `aptos-sdk`)
+- [x] **Aptos adapter** — REST health check (ledger version), Ed25519 signer + SHA-256 address derivation, watch_events via account event API. **BCS TX builder implemented** — `RawTransaction` + `SignedTransaction` BCS encoding + `POST /v1/transactions` submit. **Plně funkční**
 - [x] **NEAR adapter** — JSON-RPC health check (block height), borsh TX serialization (hand-rolled, no `near-sdk` dep), `broadcast_tx_async`, watch_events via receipt log scanning. **Plně funkční**
-- [x] **Sui adapter** — JSON-RPC health check (checkpoint seqno), Ed25519 signer + Sui address derivation (SHA-256 with flag byte), signature format (97 bytes base64). BCS TX builder pending (needs `sui-sdk`)
+- [x] **Sui adapter** — JSON-RPC health check (checkpoint seqno), Ed25519 signer + Sui address derivation (SHA-256 with flag byte), signature format (97 bytes base64). **BCS TX builder implemented** — `TransactionData::V1` + `ProgrammableTransaction` + `MoveCall` BCS encoding + `sui_executeTransactionBlock` submit. **Plně funkční**
 - [x] **TON adapter** — JSON-RPC health check (masterchain seqno), Ed25519 signer, watch_events via `getTransactions` for bridge account. TL-B + ADNL TX builder pending (needs `ton-sdk`/`tonweb`)
-- [x] 408 WARP tests pass (110 new: aptos + near + sui + ton adapters + signers)
+- [x] **BCS encoder** — pure Rust BCS (Binary Canonical Serialization) encoder/decoder for MoveVM chains (Aptos + Sui). No external dependency. 33 tests.
+- [x] 444 WARP tests pass (140 new: bcs + aptos BCS + sui BCS + adapters + signers)
 - [ ] Deploy wZION Move module on Aptos mainnet
 - [ ] Deploy wZION NEAR contract
 - [ ] Deploy wZION Sui package
