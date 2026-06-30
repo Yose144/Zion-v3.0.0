@@ -24,6 +24,21 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'uniswap-cca-auction-live',
+    date: '2026-06-30',
+    tag: { cs: 'Aukce', en: 'Auction' },
+    tagColor: 'text-amber-400',
+    title: {
+      cs: 'Uniswap CCA Aukce spuštěna! 66.47M wZION za USDC na Base',
+      en: 'Uniswap CCA Auction Live! 66.47M wZION for USDC on Base',
+    },
+    summary: {
+      cs: 'Uniswap Continuous Clearing Auction (CCA) je aktivní na Base Mainnet. 66,466,631 wZION vloženo do aukce, měna USDC, floor price $0.00019/wZION. Aukce běží ~184 dní (END_BLOCK immutable — zamýšleno 30 dní, ale end block nelze změnit). Po graduaci se automaticky vytvoří LBP pool na Uniswap V4 s objevenou cenou. Negrace? exitBid() vrátí USDC, sweepUnsoldTokens() vrátí neprodané wZION. Přihazuj přímo na app.uniswap.org nebo přes widget na /defi. Kontrakt: 0x4eD4…1f93. Detaily v AUCTION_CCA_BASE.md.',
+      en: 'Uniswap Continuous Clearing Auction (CCA) is active on Base Mainnet. 66,466,631 wZION deposited in the auction, currency USDC, floor price $0.00019/wZION. Auction runs ~184 days (END_BLOCK immutable — intended 30 days, but end block cannot be changed). After graduation, an LBP pool is automatically created on Uniswap V4 at the discovered price. No graduation? exitBid() refunds USDC, sweepUnsoldTokens() returns unsold wZION. Bid directly on app.uniswap.org or via the widget on /defi. Contract: 0x4eD4…1f93. Details in AUCTION_CCA_BASE.md.',
+    },
+    href: '/defi',
+  },
+  {
     slug: 'wzion-6-chains-live',
     date: '2026-06-30',
     tag: { cs: 'Bridge', en: 'Bridge' },
