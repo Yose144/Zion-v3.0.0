@@ -71,17 +71,17 @@ enabled                 = true
 gas_strategy            = "legacy"
 max_gas_gwei            = 5
 
-# -- Polygon PoS (Mainnet) — NOT DEPLOYED --
+# -- Polygon PoS (Mainnet) — DEPLOYED 2026-06-30 --
 [[evm_chains]]
 chain_id                = "polygon"
 name                    = "Polygon PoS (Mainnet)"
 evm_chain_id            = 137
-rpc_url                 = "https://polygon-rpc.com"
+rpc_url                 = "https://polygon-bor-rpc.publicnode.com"
 rpc_url_backup          = "wss://ws-mainnet.matic.network"
-wzion_address           = "0x0000000000000000000000000000000000000000"
-bridge_contract_address = "0x0000000000000000000000000000000000000000"
+wzion_address           = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+bridge_contract_address = "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721"
 finality_blocks         = 128
-enabled                 = false
+enabled                 = true
 gas_strategy            = "legacy"
 max_gas_gwei            = 250
 
