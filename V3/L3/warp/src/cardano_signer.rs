@@ -20,22 +20,26 @@
 //! using the `cardano-serialization-lib` or `pallas` crate. This implementation
 //! provides the signing infrastructure and Blockfrost submission path.
 
+use crate::cbor;
 use crate::error::{WarpError, WarpResult};
+use blake2::digest::consts::{U28, U32};
+use blake2::{Blake2b, Digest};
 use ed25519_dalek::{Signer, SigningKey};
-use sha2::{Digest, Sha256};
+
+/// Blake2b-224 (for Cardano payment key hashes + policy IDs)
+type Blake2b224 = Blake2b<U28>;
+/// Blake2b-256 (for Cardano TX body hashes)
+type Blake2b256 = Blake2b<U32>;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Cardano address derivation (simplified)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Derive a Cardano payment key hash from an Ed25519 public key.
-/// Cardano uses Blake2b-224 for payment key hashes, but we approximate with
-/// SHA-256 truncated to 28 bytes for this simplified implementation.
+/// Cardano uses Blake2b-224 for payment key hashes.
 pub fn payment_key_hash(pubkey: &[u8; 32]) -> [u8; 28] {
-    let hash = Sha256::digest(pubkey);
-    let mut pkh = [0u8; 28];
-    pkh.copy_from_slice(&hash[..28]);
-    pkh
+    let hash = Blake2b224::digest(pubkey);
+    hash.into()
 }
 
 /// Build a Cardano enterprise address (payment-only, no stake key).
@@ -79,6 +83,46 @@ fn bech32_encode_addr(hrp: &str, data: &[u8]) -> String {
         addr.push(charset.as_bytes()[v as usize] as char);
     }
     addr
+}
+
+/// Decode a bech32 address string back to raw bytes (strips HRP + checksum).
+fn decode_bech32_address(addr: &str) -> Result<Vec<u8>, String> {
+    let charset = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
+    // Find the last '1' separator
+    let pos = addr.rfind('1').ok_or("no separator in bech32")?;
+    if pos == 0 {
+        return Err("empty HRP in bech32".into());
+    }
+    let _hrp = &addr[..pos];
+    let data = &addr[pos + 1..];
+
+    // Convert characters to 5-bit values
+    let mut values: Vec<u8> = Vec::new();
+    for c in data.chars() {
+        let idx = charset.find(c).ok_or_else(|| format!("invalid char '{}' in bech32", c))?;
+        values.push(idx as u8);
+    }
+
+    // Strip 6-byte checksum
+    if values.len() < 6 {
+        return Err("bech32 data too short".into());
+    }
+    let data_values = &values[..values.len() - 6];
+
+    // Convert 5-bit groups back to 8-bit bytes
+    let mut bits: u32 = 0;
+    let mut bit_count: u32 = 0;
+    let mut result: Vec<u8> = Vec::new();
+    for &v in data_values {
+        bits = (bits << 5) | (v as u32);
+        bit_count += 5;
+        while bit_count >= 8 {
+            bit_count -= 8;
+            result.push(((bits >> bit_count) & 0xff) as u8);
+        }
+    }
+    // Ignore remaining bits (padding)
+    Ok(result)
 }
 
 fn bech32_polymod(values: &[u8]) -> u32 {
@@ -193,69 +237,212 @@ impl CardanoSigner {
         self.policy_key.sign(data).to_bytes()
     }
 
-    /// Derive the policy ID (hash of the policy script).
+    /// Derive the policy ID (Blake2b-224 hash of the policy script).
     pub fn policy_id(&self) -> String {
-        // Policy ID = Blake2b-224 hash of the policy script
-        // Simplified: use SHA-256 truncated to 28 bytes
         let policy_script = self.policy_key.verifying_key().to_bytes();
-        let hash = Sha256::digest(&policy_script);
-        hex::encode(&hash[..28])
+        let hash = Blake2b224::digest(&policy_script);
+        hex::encode(hash)
+    }
+
+    /// Derive the policy ID as raw 28 bytes (for CBOR encoding).
+    pub fn policy_id_bytes(&self) -> [u8; 28] {
+        let policy_script = self.policy_key.verifying_key().to_bytes();
+        Blake2b224::digest(&policy_script).into()
     }
 
     /// Submit a signed TX via Blockfrost REST API.
     ///
-    /// This builds a minimal Cardano TX that:
+    /// This builds a Cardano TX that:
     /// 1. Mints `amount` of the wZION native token (policy_id + asset_name)
     /// 2. Sends the minted tokens to the recipient address
-    /// 3. Includes metadata label 674 with WARP transfer info
+    /// 3. Pays the fee from the relay's UTXO
     ///
-    /// NOTE: This is a simplified implementation. A full implementation would
-    /// use CBOR-encoded TX bodies per CIP-0025. For production, use
-    /// `cardano-serialization-lib` or `pallas` crate.
+    /// Flow:
+    /// 1. Query UTXOs at our address via Blockfrost
+    /// 2. Build TX body with mint + output to recipient (CBOR)
+    /// 3. Compute TX body hash (Blake2b-256)
+    /// 4. Sign with payment key
+    /// 5. Build witness set (payment vkey + sig)
+    /// 6. CBOR-encode the final TX
+    /// 7. Submit via POST /tx/submit
     pub async fn submit_mint_tx(
         &self,
-        _client: &reqwest::Client,
-        _api_url: &str,
+        client: &reqwest::Client,
+        api_url: &str,
         recipient: &str,
         asset_name_hex: &str,
         amount: u64,
     ) -> WarpResult<String> {
-        // Build the TX CBOR (simplified — in production use pallas/CSL)
-        // For now, we log the intent and return an error indicating
-        // that a full CBOR TX builder is needed.
-        //
-        // The actual flow would be:
-        // 1. Query UTXOs at our address via Blockfrost
-        // 2. Build TX body with mint + output to recipient
-        // 3. Compute TX hash (Blake2b-256)
-        // 4. Sign with payment key
-        // 5. Build witness set (payment sig + policy sig)
-        // 6. CBOR-encode the final TX
-        // 7. Submit via POST /tx/submit
-
         let policy_id = self.policy_id();
+        let policy_id_bytes = self.policy_id_bytes();
+        let asset_name = hex::decode(asset_name_hex).map_err(|e| WarpError::AdapterError {
+            chain: "cardano".into(),
+            reason: format!("invalid asset_name hex: {}", e),
+        })?;
+
         tracing::info!(
-            "[WARP][cardano] Would mint {} of asset {} (policy {}) to {}",
-            amount,
-            asset_name_hex,
-            policy_id,
-            recipient
+            "[WARP][cardano] Minting {} of policy:{}:{} to {}",
+            amount, policy_id, asset_name_hex, recipient
         );
 
-        // Attempt Blockfrost TX submission
-        // POST {api_url}/tx/submit with Content-Type: application/cbor
-        // Body: CBOR-encoded signed TX
+        // 1. Query UTXOs at our address via Blockfrost
+        // GET /addresses/{address}/utxos?limit=1
+        let utxo_url = format!("{}/addresses/{}/utxos?limit=1", api_url, self.address);
+        let utxo_resp = client
+            .get(&utxo_url)
+            .send()
+            .await
+            .map_err(|e| WarpError::AdapterError {
+                chain: "cardano".into(),
+                reason: format!("UTXO query failed: {}", e),
+            })?;
 
-        // For now, return an error indicating the CBOR builder is needed
-        Err(WarpError::AdapterError {
+        if !utxo_resp.status().is_success() {
+            let status = utxo_resp.status();
+            let body = utxo_resp.text().await.unwrap_or_default();
+            return Err(WarpError::AdapterError {
+                chain: "cardano".into(),
+                reason: format!("UTXO query HTTP {}: {}", status, body),
+            });
+        }
+
+        let utxos: serde_json::Value = utxo_resp.json().await.map_err(|e| WarpError::AdapterError {
             chain: "cardano".into(),
-            reason: format!(
-                "Cardano TX CBOR builder not yet implemented — \
-                 would mint {} of policy:{}:{} to {} via Blockfrost. \
-                 Need pallas or cardano-serialization-lib for full CBOR TX construction.",
-                amount, policy_id, asset_name_hex, recipient
-            ),
-        })
+            reason: format!("UTXO parse: {}", e),
+        })?;
+
+        // Extract first UTXO: tx_hash + tx_index + amount (lovelace)
+        let first_utxo = utxos.as_array().and_then(|a| a.first()).ok_or_else(|| {
+            WarpError::AdapterError {
+                chain: "cardano".into(),
+                reason: "no UTXOs available at relay address — fund the relay first".into(),
+            }
+        })?;
+
+        let utxo_tx_hash_hex = first_utxo
+            .get("tx_hash")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let utxo_index = first_utxo
+            .get("output_index")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(0);
+        let utxo_lovelace = first_utxo
+            .get("amount")
+            .and_then(|v| v.as_array())
+            .and_then(|a| a.first())
+            .and_then(|v| v.get("quantity"))
+            .and_then(|v| v.as_u64())
+            .unwrap_or(0);
+
+        // Parse UTXO tx_hash into 32 bytes
+        let utxo_tx_hash = hex::decode(utxo_tx_hash_hex).map_err(|e| WarpError::AdapterError {
+            chain: "cardano".into(),
+            reason: format!("invalid UTXO tx_hash hex: {}", e),
+        })?;
+        if utxo_tx_hash.len() != 32 {
+            return Err(WarpError::AdapterError {
+                chain: "cardano".into(),
+                reason: format!("UTXO tx_hash must be 32 bytes, got {}", utxo_tx_hash.len()),
+            });
+        }
+        let mut utxo_tx_hash_arr = [0u8; 32];
+        utxo_tx_hash_arr.copy_from_slice(&utxo_tx_hash);
+
+        // 2. Build TX body CBOR
+        let fee = 170_000u64; // estimated fee
+        let ttl = chrono::Utc::now().timestamp() as u64 + 3600; // 1 hour TTL
+        let change = utxo_lovelace.saturating_sub(fee);
+
+        // Build inputs array (1 input)
+        let input_cbor = cbor::cardano_tx_input(&utxo_tx_hash_arr, utxo_index as u32);
+        let inputs_arr = {
+            let mut e = cbor::CborEncoder::new();
+            e.array_mut(1);
+            e.raw_mut(&input_cbor);
+            e.finish()
+        };
+
+        // Build outputs array (2 outputs: recipient + change)
+        // Decode recipient address from bech32 to bytes
+        let recipient_addr_bytes = decode_bech32_address(recipient)
+            .map_err(|e| WarpError::AdapterError {
+                chain: "cardano".into(),
+                reason: format!("invalid recipient address: {}", e),
+            })?;
+
+        let output1 = cbor::cardano_tx_output_multiasset(
+            &recipient_addr_bytes,
+            1_000_000, // minimum lovelace for multi-asset output
+            &policy_id_bytes,
+            &asset_name,
+            amount,
+        );
+        let change_addr_bytes = decode_bech32_address(&self.address)
+            .map_err(|e| WarpError::AdapterError {
+                chain: "cardano".into(),
+                reason: format!("invalid change address: {}", e),
+            })?;
+        let output2 = cbor::cardano_tx_output_simple(&change_addr_bytes, change);
+
+        let outputs_arr = {
+            let mut e = cbor::CborEncoder::new();
+            e.array_mut(2);
+            e.raw_mut(&output1);
+            e.raw_mut(&output2);
+            e.finish()
+        };
+
+        let body_cbor = cbor::cardano_tx_body(
+            &inputs_arr,
+            &outputs_arr,
+            fee,
+            ttl,
+            &policy_id_bytes,
+            &asset_name,
+            amount,
+        );
+
+        // 3. Compute TX body hash (Blake2b-256)
+        let body_hash = Blake2b256::digest(&body_cbor);
+
+        // 4. Sign with payment key
+        let payment_sig = self.sign_tx(&body_hash);
+
+        // 5. Build witness set (payment vkey + sig)
+        let payment_vkey = self.signing_key.verifying_key().to_bytes();
+        let witness_cbor = cbor::cardano_witness_set(&payment_vkey, &payment_sig);
+
+        // 6. CBOR-encode the final TX
+        let tx_cbor = cbor::cardano_transaction(&body_cbor, &witness_cbor);
+
+        // 7. Submit via POST /tx/submit
+        let submit_url = format!("{}/tx/submit", api_url);
+        let resp = client
+            .post(&submit_url)
+            .header("Content-Type", "application/cbor")
+            .body(tx_cbor)
+            .send()
+            .await
+            .map_err(|e| WarpError::AdapterError {
+                chain: "cardano".into(),
+                reason: format!("TX submit request failed: {}", e),
+            })?;
+
+        let status = resp.status();
+        let body = resp.text().await.unwrap_or_default();
+
+        if status.is_success() {
+            // Blockfrost returns the TX hash as a JSON string
+            let tx_hash = body.trim_matches('"').to_string();
+            tracing::info!("[WARP][cardano] TX submitted: {}", tx_hash);
+            Ok(tx_hash)
+        } else {
+            Err(WarpError::AdapterError {
+                chain: "cardano".into(),
+                reason: format!("TX submit HTTP {}: {}", status, body),
+            })
+        }
     }
 }
 

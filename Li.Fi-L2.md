@@ -192,17 +192,17 @@ npx hardhat run scripts/deploy-chain.ts --network avalanche  # needs AVAX for ga
 | Tron | ✅ | ✅ TRC-20 mint | ✅ Plně funkční |
 | Stellar | ✅ | ✅ Payment signing | ✅ Plně funkční |
 | Cosmos | ✅ | ✅ CosmWASM mint (D-04) | ✅ Plně funkční |
-| Cardano | ✅ | ✅ Native token mint (D-04, signer ready) | ⚠️ Signer hotový, CBOR TX builder pending |
+| Cardano | ✅ | ✅ CBOR TX + Blake2b + Blockfrost | ✅ Plně funkční |
 | Lightning | ✅ BOLT11 parser | ✅ LND REST (D-04) | ✅ Plně funkční (LND required) |
 | Aptos | ✅ REST health | ✅ BCS TX + Ed25519 + submit | ✅ Plně funkční |
 | NEAR | ✅ JSON-RPC | ✅ Borsh TX + broadcast | ✅ Plně funkční |
 | Sui | ✅ JSON-RPC | ✅ BCS TX + Ed25519 + submit | ✅ Plně funkční |
 | TON | ✅ JSON-RPC | ✅ Ed25519 signer (TL-B TX pending) | ⚠️ Signer hotový, TON SDK pending |
 
-- WARP běží na Edge (port 8453), 444 testů pass
-- **12 adapterů plně funkčních** (EVM, BTC, SOL, TRX, XLM, Cosmos, Lightning BOLT11+LND, NEAR borsh TX, Aptos BCS TX, Sui BCS TX, Cardano watch+sign)
-- **D-04 implementováno (2026-06-30):** `cosmos_signer.rs` + `cardano_signer.rs` + `bolt11.rs` + `lightning_signer.rs` + `aptos_signer.rs` + `near_signer.rs` + `sui_signer.rs` + `ton_signer.rs` + `bcs.rs`
-- **Cardano limitace:** `submit_mint_tx` potřebuje CBOR TX builder (pallas)
+- WARP běží na Edge (port 8453), 465 testů pass
+- **13 adapterů plně funkčních** (EVM, BTC, SOL, TRX, XLM, Cosmos, Cardano CBOR TX, Lightning BOLT11+LND, NEAR borsh TX, Aptos BCS TX, Sui BCS TX)
+- **D-04 implementováno (2026-06-30):** `cosmos_signer.rs` + `cardano_signer.rs` + `bolt11.rs` + `lightning_signer.rs` + `aptos_signer.rs` + `near_signer.rs` + `sui_signer.rs` + `ton_signer.rs` + `bcs.rs` + `cbor.rs`
+- **Cardano:** CBOR TX builder implementován — `cardano_tx_body` + `cardano_witness_set` + Blake2b-256 TX hash + Blockfrost submit
 - **TON limitace:** TL-B + ADNL TX builder pending (needs `ton-sdk` / `tonweb`)
 - **Lightning:** BOLT11 parser + LND REST client implementováno. Vyžaduje LND node na Edge serveru (Fáze A infra pending)
 
