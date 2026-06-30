@@ -39,6 +39,21 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     href: '/defi',
   },
   {
+    slug: 'warp-13-chain-families',
+    date: '2026-06-30',
+    tag: { cs: 'WARP', en: 'WARP' },
+    tagColor: 'text-purple-400',
+    title: {
+      cs: 'WARP pokrývá všech 13 chain rodin! — 408 testů prošlo',
+      en: 'WARP covers all 13 chain families! — 408 tests pass',
+    },
+    summary: {
+      cs: 'ZION WARP bridge má kompletní pokrytí: EVM (6 chainů), BTC, Solana, Tron, Stellar, Cosmos, Cardano, Lightning, Aptos, NEAR, Sui a TON. Nové adaptéry: Aptos (Ed25519), NEAR (borsh TX), Sui (Ed25519 + flag byte), TON (Ed25519 + getTransactions), Lightning (BOLT11 parser + LND REST). 408 testů prošlo, 110 nových. WARP je most mezi ZION L1 a celým blockchain vesmírem.',
+      en: 'ZION WARP bridge has complete coverage: EVM (6 chains), BTC, Solana, Tron, Stellar, Cosmos, Cardano, Lightning, Aptos, NEAR, Sui, and TON. New adapters: Aptos (Ed25519), NEAR (borsh TX), Sui (Ed25519 + flag byte), TON (Ed25519 + getTransactions), Lightning (BOLT11 parser + LND REST). 408 tests pass, 110 new. WARP is the bridge between ZION L1 and the entire blockchain universe.',
+    },
+    href: '/warp',
+  },
+  {
     slug: 'zion-3.0.3-decimal-fork',
     date: '2026-06-27',
     tag: { cs: 'Hard Fork', en: 'Hard Fork' },
