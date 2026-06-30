@@ -24,17 +24,17 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
-    slug: 'pancakeswap-v3-listing-prep',
+    slug: 'pancakeswap-v3-live',
     date: '2026-06-30',
     tag: { cs: 'DEX', en: 'DEX' },
     tagColor: 'text-amber-400',
     title: {
-      cs: 'PancakeSwap V3 listing příprava — wZION/USDT pool na Base',
-      en: 'PancakeSwap V3 listing prep — wZION/USDT pool on Base',
+      cs: 'PancakeSwap V3 LIVE! wZION/USDT pool na Base Mainnet',
+      en: 'PancakeSwap V3 LIVE! wZION/USDT pool on Base Mainnet',
     },
     summary: {
-      cs: 'Připravujeme wZION/USDT pool na PancakeSwap V3 (Base) — 2. největší DEX na Base s $115M denním volume. Pool s 0.25% fee (PancakeSwap standard), seed price $0.0002/wZION. Deploy skript deploy-pancakeswap-pool.ts je připraven v hardhat/scripts/. Po deployi bude wZION dostupný na 2 DEX platformách současně (Uniswap V4 + PancakeSwap V3) + LiFi agregátor s 30+ DEX. PancakeSwap podporuje multi-tier fees (0.01%–1%), MasterChef V3 farming rewards a Smart Router pro best execution. UI sekce na /defi je live s odkazy na swap a add liquidity.',
-      en: 'Preparing wZION/USDT pool on PancakeSwap V3 (Base) — 2nd largest DEX on Base with $115M daily volume. Pool with 0.25% fee (PancakeSwap standard), seed price $0.0002/wZION. Deploy script deploy-pancakeswap-pool.ts is ready in hardhat/scripts/. After deployment, wZION will be available on 2 DEX platforms simultaneously (Uniswap V4 + PancakeSwap V3) + LiFi aggregator with 30+ DEX. PancakeSwap supports multi-tier fees (0.01%–1%), MasterChef V3 farming rewards, and Smart Router for best execution. UI section on /defi is live with swap and add liquidity links.',
+      cs: 'wZION/USDT pool je LIVE na PancakeSwap V3 (Base) — 2. největší DEX na Base s $115M denním volume. Pool adresa 0x46cc98dec9d2a60f2850225c942d6017b82b6f47, 0.25% fee, seed price $0.0002/wZION, NFT pozice #2054747. wZION je nyní dostupný na 2 DEX platformách současně (Uniswap V4 + PancakeSwap V3) + LiFi agregátor s 30+ DEX. Swapujte na pancakeswap.finance nebo přidejte likviditu pro LP rewards. PancakeSwap podporuje multi-tier fees (0.01%–1%), MasterChef V3 farming a Smart Router pro best execution.',
+      en: 'wZION/USDT pool is LIVE on PancakeSwap V3 (Base) — 2nd largest DEX on Base with $115M daily volume. Pool address 0x46cc98dec9d2a60f2850225c942d6017b82b6f47, 0.25% fee, seed price $0.0002/wZION, NFT position #2054747. wZION is now available on 2 DEX platforms simultaneously (Uniswap V4 + PancakeSwap V3) + LiFi aggregator with 30+ DEX. Swap on pancakeswap.finance or add liquidity for LP rewards. PancakeSwap supports multi-tier fees (0.01%–1%), MasterChef V3 farming, and Smart Router for best execution.',
     },
     href: '/defi',
   },
