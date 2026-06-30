@@ -1,48 +1,93 @@
 'use client';
 
 import { useMemo } from 'react';
+import { LiFiWidgetLight, type WidgetLightConfig } from '@lifi/widget-light';
 import { useWallet } from '@/contexts/WalletContext';
 
 // wZION token address on Base
 const WZION_BASE = '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6';
 
-// LI.FI hosted widget URL
-const LIFI_WIDGET_URL = 'https://widget.li.fi';
+// Native ETH zero-address
+const NATIVE_ETH = '0x0000000000000000000000000000000000000000';
+
+// Chains allowed in the widget (EVM only — Fáze 2 will add more after wZION deploy)
+const ALLOWED_CHAINS = [8453, 1, 42161, 56, 137, 10, 43114];
+
+// Custom RPC URLs per chain — avoids public RPC rate-limits
+const RPC_URLS: Record<number, string[]> = {
+  8453:  ['https://mainnet.base.org'],
+  1:     ['https://eth.llamarpc.com'],
+  42161: ['https://arb1.arbitrum.io/rpc'],
+  56:    ['https://bsc-dataseed.binance.org'],
+  137:   ['https://polygon-rpc.com'],
+  10:    ['https://mainnet.optimism.io'],
+  43114: ['https://api.avax.network/ext/bc/C/rpc'],
+};
 
 /**
  * LiFiWidget — Cross-chain swap + bridge widget powered by LI.FI
  *
- * Uses the hosted LI.FI widget in an iframe. The widget has its own
- * built-in wallet connection (MetaMask, WalletConnect, etc.) so no
- * postMessage bridge is needed — it works standalone.
+ * Uses WidgetLight (postMessage bridge) from @lifi/widget-light for proper
+ * config delivery — no URL params hacking. Aggregates 30+ DEX and 20+ bridge
+ * protocols across 25+ chains.
  *
- * Aggregates 20+ bridges and 30+ DEXs across 25+ chains:
- * - Same-chain swaps on Base (Uniswap V3/V4, Aerodrome, PancakeSwap, SushiSwap)
- * - Cross-chain bridge (Ethereum, Arbitrum, BSC, Polygon, Optimism, etc.)
- * - Best price routing automatically
- * - wZION pre-configured as default from-token
+ * Config highlights:
+ * - slippage: 0.01 (1% as decimal 0-1) — fixed from incorrect '100'
+ * - routePriority: RECOMMENDED
+ * - useRelayerRoutes: true (gasless transactions)
+ * - feeConfig: 0.5% integrator fee (monetization)
+ * - chains: 7 EVM chains (Base, Eth, Arb, BSC, Polygon, OP, Avax)
+ * - sdkConfig.rpcUrls: custom RPC per chain
+ * - appearance: dark + custom theme matching Zion design
  */
 export default function LiFiWidget() {
   const { account } = useWallet();
 
-  // Build URL with config params for initial load
-  const widgetSrc = useMemo(() => {
-    const params = new URLSearchParams({
+  const config = useMemo<WidgetLightConfig>(() => {
+    const cfg: WidgetLightConfig = {
       integrator: 'ZionProtocol',
-      fromChain: '8453', // Base
+      // ── Form defaults ──
+      fromChain: 8453,   // Base
       fromToken: WZION_BASE,
-      toChain: '8453',
-      toToken: '0x0000000000000000000000000000000000000000', // native ETH
-      theme: 'dark',
-      fee: '0',
-      slippage: '100', // 1%
-    });
+      toChain: 8453,
+      toToken: NATIVE_ETH,
+      // ── Routing ──
+      slippage: 0.01,           // 1% (decimal 0-1, NOT basis points)
+      routePriority: 'RECOMMENDED',
+      useRelayerRoutes: true,   // gasless/relayer routes
+      // ── Chain filtering ──
+      chains: {
+        allow: ALLOWED_CHAINS,
+      },
+      // ── Fee monetization (0.5% integrator fee) ──
+      feeConfig: {
+        name: 'Zion Protocol',
+        fee: 0.005,              // 0.5% (decimal 0-1)
+        showFeePercentage: true,
+        showFeeTooltip: true,
+      },
+      // ── Appearance ──
+      appearance: 'dark',
+      theme: {
+        container: {
+          borderRadius: '12px',
+        },
+      },
+      // ── SDK config: custom RPCs ──
+      sdkConfig: {
+        rpcUrls: RPC_URLS,
+      },
+    };
 
+    // Pre-fill destination address if wallet is connected
     if (account) {
-      params.set('fromAddress', account);
+      cfg.toAddress = {
+        address: account,
+        chainType: 'EVM' as any,
+      };
     }
 
-    return `${LIFI_WIDGET_URL}?${params.toString()}`;
+    return cfg;
   }, [account]);
 
   return (
@@ -52,29 +97,29 @@ export default function LiFiWidget() {
           <path d="M3 12h4l3-9 4 18 3-9h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
         <h3 className="font-semibold text-white text-sm">
-          Cross-Chain Swap & Bridge
+          Cross-Chain Swap &amp; Bridge
         </h3>
         <span className="ml-auto text-[10px] text-white/40">Powered by LI.FI</span>
       </div>
 
       <div className="text-[11px] text-white/50 mb-3">
         Agreguje 20+ bridge protokolů a 30+ DEX napříč 25+ chainy. Nejlepší cena, automatický routing.
-        wZION je přednastavený jako výchozí token na Base.
+        wZION je přednastavený jako výchozí token na Base. Integrator fee 0.5%.
       </div>
 
-      {/* LI.FI Widget iframe — has built-in wallet connection */}
-      <iframe
-        src={widgetSrc}
+      {/* LI.FI WidgetLight — postMessage bridge with proper config */}
+      <LiFiWidgetLight
+        config={config}
+        iframeOrigin="https://widget.li.fi"
+        autoResize
         title="LI.FI Cross-Chain Swap"
-        width="100%"
-        height="640"
         style={{
+          width: '100%',
+          height: '640px',
           border: 'none',
           borderRadius: '12px',
           background: 'transparent',
         }}
-        allow="clipboard-read; clipboard-write; web3"
-        loading="lazy"
       />
 
       <div className="mt-3 flex flex-wrap gap-2 text-[10px] text-white/40">
