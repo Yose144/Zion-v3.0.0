@@ -630,8 +630,9 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_execute_mint_no_key_returns_error() {
-        // Ensure no relay key is set in the environment for this test.
+    async fn test_execute_mint_env_behaviour() {
+        // Combined test to avoid env-var interference between parallel tests.
+        // Part 1: no relay key → error mentioning the missing env var.
         std::env::remove_var("WARP_TON_RELAY_KEY");
         let adapter = TonAdapter::new();
         let inst = MintInstruction {
@@ -642,7 +643,7 @@ mod tests {
             warp_message_hash: String::new(),
         };
         let res = adapter.execute_mint(&inst).await;
-        assert!(res.is_err());
+        assert!(res.is_err(), "execute_mint should error without relay key");
         let msg = match res.unwrap_err() {
             WarpError::AdapterError { reason, .. } => reason,
             other => panic!("expected AdapterError, got {:?}", other),
@@ -652,34 +653,21 @@ mod tests {
             "error should mention the missing env var: {}",
             msg
         );
-    }
 
-    #[tokio::test]
-    async fn test_execute_mint_with_key_returns_ton_sdk_error() {
-        // Provide a valid 32-byte hex key so the signer loads, but the
-        // adapter must still refuse to construct a TON transaction.
-        std::env::set_var(
-            "WARP_TON_RELAY_KEY",
-            hex::encode([42u8; 32]),
-        );
-        let adapter = TonAdapter::new();
-        let inst = MintInstruction {
-            dest_chain: "ton".into(),
-            recipient: "EQRecipient".into(),
-            amount_dest_atomic: 1_000_000,
-            signatures: vec![],
-            warp_message_hash: String::new(),
-        };
-        let res = adapter.execute_mint(&inst).await;
-        assert!(res.is_err());
-        let msg = match res.unwrap_err() {
+        // Part 2: with a valid key → signer loads, but adapter must still
+        // refuse to construct a TON transaction (needs a TON SDK).
+        std::env::set_var("WARP_TON_RELAY_KEY", hex::encode([42u8; 32]));
+        let adapter2 = TonAdapter::new();
+        let res2 = adapter2.execute_mint(&inst).await;
+        assert!(res2.is_err(), "execute_mint should error even with key");
+        let msg2 = match res2.unwrap_err() {
             WarpError::AdapterError { reason, .. } => reason,
             other => panic!("expected AdapterError, got {:?}", other),
         };
         assert!(
-            msg.contains("ton-sdk") || msg.contains("tonweb") || msg.contains("tonlib"),
+            msg2.contains("ton-sdk") || msg2.contains("tonweb") || msg2.contains("tonlib"),
             "error should mention a TON SDK requirement: {}",
-            msg
+            msg2
         );
         std::env::remove_var("WARP_TON_RELAY_KEY");
     }
