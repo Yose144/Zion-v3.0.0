@@ -254,7 +254,7 @@ const ENDPOINTS: Endpoint[] = [
     method: "GET",
     path: "/api/defi/price",
     title: "ZION Price",
-    description: "ZION price feed from Uni V3 wZION/WETH pool on Base. Returns implied wZION price in WETH and approximate USD. Falls back to seed price ($0.0002) when pool uninitialised.",
+    description: "ZION price feed from Uni V3 wZION/USDT pool on Base. Returns implied wZION price in USDT and approximate USD. Falls back to seed price ($0.0002) when pool uninitialised.",
     params: [],
     exampleResponse: `{
   "price_usd": 0.0002,

@@ -1864,7 +1864,7 @@ export default function MissionControlDashboard() {
                   </span>
                 </div>
                 <p className="text-sm text-gray-400 mt-1">
-                  {wZIONPriceSource === 'live' ? 'Uniswap V3 wZION/WETH · Base' : 'Seed price · $0.0002 / ZION · FDV ~$28.8M'}
+                  {wZIONPriceSource === 'live' ? 'Uniswap V3 wZION/USDT · Base' : 'Seed price · $0.0002 / ZION · FDV ~$28.8M'}
                 </p>
               </div>
             </div>
