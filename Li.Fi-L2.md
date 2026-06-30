@@ -1,7 +1,7 @@
 # LI.FI L2 — Cross-Chain DEX + Bridge Integration Plan
 
-> **Status:** ✅ Fáze 1 hotová (WidgetLight migrace) · Fáze 2 plánovaná (Arbitrum P0) · Fáze 3 WARP D-04
-> **Poslední update:** 2026-06-30 (Session 11 — WidgetLight + slippage fix + fee monetizace)
+> **Status:** ✅ Fáze 1 hotová (WidgetLight) · ✅ Fáze 2: 4 chainy live (Base+BSC+Polygon+Arbitrum) · Fáze 3 WARP D-04
+> **Poslední update:** 2026-06-30 (Session 11 — 4-chain wZION deploy + Ankr API key)
 > **Owner:** Zion Protocol Team
 
 ---
@@ -140,14 +140,14 @@ docker compose -f docker-compose.v3-l2.yml up -d zion-bridge
 
 **Deploy skript:** `V3/L2/contracts/hardhat/scripts/deploy-chain.ts` (generický pro všechny EVM chainy)
 
-| Chain | Chain ID | Priorita | Gas Token | Min Gas | Poznámka |
-|-------|----------|----------|-----------|---------|----------|
-| **Arbitrum One** | 42161 | P0 | ETH | 0.005 | Největší L2, nízké gas, config už existuje |
-| **BSC** | 56 | P0 | BNB | 0.01 | Velký user base, nízké gas |
-| **Polygon** | 137 | P1 | POL | 0.05 | Multi-chain exposure |
-| **Optimism** | 10 | P1 | ETH | 0.005 | OP Stack, Base sibling |
-| **Avalanche** | 43114 | P2 | AVAX | 0.1 | Menší share |
-| **Ethereum Mainnet** | 1 | P3 | ETH | 0.02 | Pro DeFi integrace, vyšší gas |
+| Chain | Chain ID | Priorita | Gas Token | Min Gas | Status | Poznámka |
+|-------|----------|----------|-----------|---------|--------|----------|
+| **Arbitrum One** | 42161 | P0 | ETH | 0.005 | ✅ Deployed | wZION 0x0c49... + Bridge 0xa5a0... |
+| **BSC** | 56 | P0 | BNB | 0.01 | ✅ Deployed | wZION 0x0c49... + Bridge 0xa5a0... |
+| **Polygon** | 137 | P1 | POL | 0.05 | ✅ Deployed | wZION 0x0c49... + Bridge 0xa5a0... |
+| **Optimism** | 10 | P1 | ETH | 0.005 | ⬜ Pending | Needs ETH on OP |
+| **Avalanche** | 43114 | P2 | AVAX | 0.1 | ⬜ Pending | Needs AVAX on C-Chain |
+| **Ethereum Mainnet** | 1 | P3 | ETH | 0.02 | ⬜ Future | High gas, DeFi integrace |
 
 **Příkaz pro deploy:**
 ```bash
