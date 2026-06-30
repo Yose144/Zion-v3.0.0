@@ -1,4 +1,5 @@
 use crate::adapter::ChainAdapter;
+use crate::cardano_signer::CardanoSigner;
 use crate::error::{WarpError, WarpResult};
 use crate::protocol::{DepositProof, MintInstruction};
 use crate::types::ChainFamily;
@@ -324,13 +325,25 @@ impl ChainAdapter for CardanoAdapter {
     }
 
     async fn execute_mint(&self, instruction: &MintInstruction) -> WarpResult<String> {
-        Err(WarpError::AdapterError {
+        let asset = wzion_asset(&self.network).ok_or_else(|| WarpError::AdapterError {
             chain: "cardano".into(),
-            reason: format!(
-                "Signing service (D-04) pending — would mint {} wZION to {} on {}",
-                instruction.amount_dest_atomic, instruction.recipient, self.network
-            ),
-        })
+            reason: format!("no wZION asset configured for network '{}'", self.network),
+        })?;
+
+        let signer = CardanoSigner::from_env().map_err(|e| WarpError::AdapterError {
+            chain: "cardano".into(),
+            reason: format!("relay key unavailable: {}", e),
+        })?;
+
+        let amount = instruction.amount_dest_atomic as u64;
+        info!(
+            "[WARP][cardano] minting {} wZION to {} on {} (asset {})",
+            amount, instruction.recipient, self.network, asset
+        );
+
+        signer
+            .submit_mint_tx(&self.client, &self.api_url, &instruction.recipient, asset, amount)
+            .await
     }
 
     async fn current_height(&self) -> WarpResult<u64> {
@@ -405,7 +418,10 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_cardano_execute_mint_is_err() {
+    async fn test_cardano_execute_mint_no_key_is_err() {
+        // Without WARP_CARDANO_PAYMENT_KEY, execute_mint should error
+        std::env::remove_var("WARP_CARDANO_PAYMENT_KEY");
+        std::env::remove_var("WARP_CARDANO_POLICY_KEY");
         let inst = MintInstruction {
             dest_chain: "cardano".into(),
             recipient: "addr1xyz".into(),
