@@ -24,17 +24,17 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
-    slug: 'wzion-5-chains-live',
+    slug: 'wzion-6-chains-live',
     date: '2026-06-30',
     tag: { cs: 'Bridge', en: 'Bridge' },
     tagColor: 'text-zion-cyan',
     title: {
-      cs: 'wZION live na 5 chainech! — Base + BSC + Polygon + Arbitrum + Optimism',
-      en: 'wZION live on 5 chains! — Base + BSC + Polygon + Arbitrum + Optimism',
+      cs: 'wZION live na 6 chainech! — Base + BSC + Polygon + Arbitrum + Optimism + Avalanche',
+      en: 'wZION live on 6 chains! — Base + BSC + Polygon + Arbitrum + Optimism + Avalanche',
     },
     summary: {
-      cs: 'wZION ERC-20 a ZIONBridge nasazeny na 5 EVM chainech se stejnou adresou 0x0c49…02bb6 (deterministic deploy). ZIONBridge na všech chainech: 0xa5a0…1721. Bridge běží — lock ZION na L1 → mint wZION na jakémkoli z 5 chainů, burn wZION → unlock ZION na L1. Aktivní pool: wZION/USDT 0.3% na Base (TX 0xe668…17bd). Uniswap CCA aukce spuštěna: 66.47M wZION za USDC, 184-denní lock. LiFi Widget Light na /defi agreguje 30+ DEX a 20+ bridge protokolů napříč všemi chainy.',
-      en: 'wZION ERC-20 and ZIONBridge deployed on 5 EVM chains with the same address 0x0c49…02bb6 (deterministic deploy). ZIONBridge on all chains: 0xa5a0…1721. Bridge is running — lock ZION on L1 → mint wZION on any of the 5 chains, burn wZION → unlock ZION on L1. Active pool: wZION/USDT 0.3% on Base (TX 0xe668…17bd). Uniswap CCA auction launched: 66.47M wZION for USDC, 184-day lock. LiFi Widget Light on /defi aggregates 30+ DEX and 20+ bridge protocols across all chains.',
+      cs: 'wZION ERC-20 a ZIONBridge nasazeny na 6 EVM chainech se stejnou adresou 0x0c49…02bb6 (deterministic deploy). ZIONBridge na všech chainech: 0xa5a0…1721. Bridge běží — lock ZION na L1 → mint wZION na jakémkoli z 6 chainů, burn wZION → unlock ZION na L1. Aktivní pool: wZION/USDT 0.3% na Base (TX 0xe668…17bd). Uniswap CCA aukce spuštěna: 66.47M wZION za USDC, 184-denní lock. LiFi Widget Light na /defi agreguje 30+ DEX a 20+ bridge protokolů napříč všemi chainy.',
+      en: 'wZION ERC-20 and ZIONBridge deployed on 6 EVM chains with the same address 0x0c49…02bb6 (deterministic deploy). ZIONBridge on all chains: 0xa5a0…1721. Bridge is running — lock ZION on L1 → mint wZION on any of the 6 chains, burn wZION → unlock ZION on L1. Active pool: wZION/USDT 0.3% on Base (TX 0xe668…17bd). Uniswap CCA auction launched: 66.47M wZION for USDC, 184-day lock. LiFi Widget Light on /defi aggregates 30+ DEX and 20+ bridge protocols across all chains.',
     },
     href: '/bridge',
   },
