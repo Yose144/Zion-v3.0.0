@@ -1,7 +1,7 @@
 # LI.FI L2 — Cross-Chain DEX + Bridge Integration Plan
 
-> **Status:** ✅ Fáze 1 hotová (LI.FI widget integrovaný) · Fáze 2-3 plánované
-> **Poslední update:** 2026-06-30 (Session 10)
+> **Status:** ✅ Fáze 1 hotová (WidgetLight migrace) · Fáze 2 plánovaná (Arbitrum P0) · Fáze 3 WARP D-04
+> **Poslední update:** 2026-06-30 (Session 11 — WidgetLight + slippage fix + fee monetizace)
 > **Owner:** Zion Protocol Team
 
 ---
@@ -14,26 +14,33 @@ Integrovat **univerzální cross-chain swap + bridge** do Zion web app pomocí L
 
 ---
 
-## 2. Aktuální stav (po Session 10)
+## 2. Aktuální stav (po Session 11)
 
 ### ✅ Hotovo
 
 | Komponenta | Status | Popis |
 |------------|--------|-------|
-| `LiFiWidget.tsx` | ✅ Produkční | iframe widget z `widget.li.fi`, wZION jako výchozí token |
-| `/defi` page integrace | ✅ Produkční | Widget v swap tabu nad původním SwapWidget |
-| Chain podpora | ✅ 7 chainů | Base, Ethereum, Arbitrum, BSC, Polygon, Optimism, Avalanche |
+| `LiFiWidget.tsx` | ✅ WidgetLight | `@lifi/widget-light` postMessage bridge (místo plain iframe) |
+| Slippage fix | ✅ Opraveno | `0.01` (1% jako decimal 0-1) — původně `100` (= 10000%!) |
+| Fee monetizace | ✅ Aktivní | `feeConfig.fee: 0.005` (0.5% integrator fee na každý swap) |
+| Route priority | ✅ RECOMMENDED | `routePriority: 'RECOMMENDED'` + `useRelayerRoutes: true` (gasless) |
+| Chain filtering | ✅ 7 EVM chainů | Base, Ethereum, Arbitrum, BSC, Polygon, Optimism, Avalanche |
+| Custom RPC | ✅ Per-chain | 7 RPC URLs (mainnet.base.org, llamarpc, arbitrum.io, binance, etc.) |
+| Appearance | ✅ Dark + theme | `appearance: 'dark'` + custom `theme.container.borderRadius` |
+| WalletContext | ✅ toAddress pre-fill | Destination address z našeho WalletContext when connected |
 | DEX agregace na Base | ✅ Automatická | Uniswap V3/V4, Aerodrome, PancakeSwap, SushiSwap + 25 dalších |
 | Cross-chain bridge | ✅ Automatická | Stargate, Across, Hop, Synapse, deBridge, Squid, Portal/Wormhole + 13 dalších |
 | Build | ✅ Pass | `next build --webpack` prošel |
-| Git | ✅ Pushnuto | Commit `6eb314355` na main |
+| Deploy | ✅ Live | Commity `6730e2ba` + `cecb9cfa` + `b54752d3` — zionterranova.com |
+| Ankr RPC (L2 bridge) | ✅ Implementováno | `ankr.rs` — multi-chain HTTP JSON-RPC, fallback v evm_watcher |
 
 ### ⚠️ Omezení současné implementace
 
-- Widget je **hosted iframe** — závislost na `widget.li.fi` dostupnosti
-- wZION je přednastavený jen na **Base** (chain 8453) — na jiných chainech wZION neexistuje
-- Wallet connection je **oddělená** od našeho WalletContext (widget má vlastní)
-- Žádná **fee monetizace** (fee=0) — LI.FI podporuje custom fee pro integrátory
+- Widget je **hosted iframe** — závislost na `widget.li.fi` dostupnosti (WidgetLight to ale řeší lépe než plain iframe)
+- wZION je přednastavený jen na **Base** (chain 8453) — na jiných chainech wZION neexistuje (blokuje Fázi 2)
+- Wallet connection uvnitř widgetu je **oddělená** od našeho WalletContext (pouze toAddress pre-fill, ne sign)
+- **ANKR_API_KEY** není nastavena — free tier rate-limited (premium potřeba pro mainnet)
+- **Arbitrum One** v bridge-mainnet.toml = `enabled = false`, placeholder adresy
 
 ---
 
@@ -43,11 +50,13 @@ Integrovat **univerzální cross-chain swap + bridge** do Zion web app pomocí L
 ┌─ Zion Web App (Next.js) ─────────────────────────────────┐
 │                                                           │
 │  /defi page → Swap tab                                    │
-│  ├── LiFiWidget.tsx (iframe → widget.li.fi)              │
+│  ├── LiFiWidget.tsx (WidgetLight → widget.li.fi)         │
 │  │   ├── fromToken: wZION (Base)                         │
 │  │   ├── toToken: ETH (Base)                             │
 │  │   ├── chains: Base, Eth, Arb, BSC, Polygon, OP, Avax  │
-│  │   ├── theme: dark, slippage: 1%, fee: 0%              │
+│  │   ├── slippage: 0.01 (1%), fee: 0.005 (0.5%)         │
+│  │   ├── routePriority: RECOMMENDED, relayer: true       │
+│  │   ├── custom RPC per chain (7 URLs)                   │
 │  │   └── Built-in wallet: MetaMask, WalletConnect        │
 │  │                                                       │
 │  └── SwapWidget.tsx (původní Uniswap V3 — zachován)      │
@@ -82,13 +91,42 @@ Integrovat **univerzální cross-chain swap + bridge** do Zion web app pomocí L
 
 ## 4. Fáze rozvoje
 
-### Fáze 1: LI.FI Widget (✅ Hotovo — Session 10)
+### Fáze 1: LI.FI Widget (✅ Hotovo — Session 10 + 11)
 
 - [x] Install `@lifi/sdk`, `@lifi/widget`, `viem`
-- [x] Vytvořit `LiFiWidget.tsx` (iframe, wZION default)
+- [x] Vytvořit `LiFiWidget.tsx` (iframe, wZION default) — Session 10
 - [x] Integrovat do `/defi` page swap tab
 - [x] Build test pass
-- [x] Commit + push
+- [x] Commit + push (`6eb31435`)
+- [x] **Session 11:** Migrace na `@lifi/widget-light` WidgetLight (postMessage)
+- [x] **Session 11:** Slippage fix `100` → `0.01` (kritický bug — 10000% → 1%)
+- [x] **Session 11:** Fee monetizace `feeConfig.fee: 0.005` (0.5% integrator fee)
+- [x] **Session 11:** Route priority + gasless relayer routes
+- [x] **Session 11:** Chain filtering (7 EVM chainů)
+- [x] **Session 11:** Custom RPC per chain (7 URLs)
+- [x] **Session 11:** Dark appearance + custom theme
+- [x] **Session 11:** WalletContext toAddress pre-fill
+- [x] **Session 11:** Build + deploy na zionterranova.com (`6730e2ba` + `cecb9cfa` + `b54752d3`)
+
+### Fáze 1.5: Ankr Premium RPC (⚠️ Částečně — chybí API key)
+
+**Co je hotovo:**
+- [x] `ankr.rs` — AnkrClient s eth_blockNumber, eth_getLogs, eth_sendRawTransaction, eth_call, eth_getBalance
+- [x] Auto-chunking pro eth_getLogs (MAX_LOG_BLOCK_RANGE: 3,000)
+- [x] Fallback mechanism v evm_watcher (direct RPC → Ankr)
+- [x] Config file + `ANKR_API_KEY` env var support
+- [x] Health check
+
+**Co chybí:**
+- [ ] **`ANKR_API_KEY` nastavit** na Edge serveru (premium tier — vyšší rate limits)
+- [ ] Ankr Advanced API (multichain token balances, NFT, staking) — zatím jen basic JSON-RPC
+- [ ] Ankr WebSocket support (zatím jen HTTP polling)
+
+**Postup:**
+1. Registrace na app.ankr.com → získání API key
+2. `ANKR_API_KEY=xxx` do `docker-compose.v3-l2.yml` env sekce
+3. Restart `zion-edge-bridge.service`
+4. Verify: `curl https://rpc.ankr.com/base/<KEY> -X POST -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'`
 
 ### Fáze 2: wZION Multi-Chain Deploy (Plánované)
 
@@ -121,13 +159,29 @@ Integrovat **univerzální cross-chain swap + bridge** do Zion web app pomocí L
 
 ### Fáze 3: WARP D-04 — Non-EVM Chainy (Plánované)
 
-**Cíl:** Dokončit WARP `execute_mint()` pro non-EVM chainy (Solana, Bitcoin, Tron, Stellar, Cardano, Cosmos).
+**Cíl:** Dokončit WARP `execute_mint()` pro non-EVM chainy (Cardano, Cosmos) a implementovat Lightning adapter.
 
-**WARP status:**
-- 80% hotový, běží na Edge (port 9333)
-- 7 adapterů implementováno (EVM, Solana, BTC, Tron, Stellar, Cardano, Cosmos)
-- 252 testů pass
-- **Blocker:** `execute_mint()` vrací `NotImplemented("D-04")`
+**WARP status (přesný audit Session 11):**
+
+| Adapter | watch_events | execute_mint | Status |
+|---------|-------------|--------------|--------|
+| EVM (9 chainů) | ✅ | ✅ Live signing | ✅ Plně funkční |
+| Bitcoin | ✅ HTLC + OP_RETURN | ✅ P2WPKH BIP143 | ✅ Plně funkční (placeholder HTLC addr) |
+| Solana | ✅ | ✅ SPL mintTo | ✅ Plně funkční |
+| Tron | ✅ | ✅ TRC-20 mint | ✅ Plně funkční |
+| Stellar | ✅ | ✅ Payment signing | ✅ Plně funkční |
+| Cosmos | ✅ | ❌ D-04 stub | ⚠️ Částečně |
+| Cardano | ✅ | ❌ D-04 stub | ⚠️ Částečně |
+| Lightning | ❌ | ⚠️ BOLT11 placeholder | ⚠️ Stub |
+| Aptos | ✅ health | ❌ AdapterNotImplemented | ❌ Stub |
+| NEAR | ✅ health | ❌ AdapterNotImplemented | ❌ Stub |
+| Sui | ✅ health | ❌ AdapterNotImplemented | ❌ Stub |
+| TON | ✅ health | ❌ AdapterNotImplemented | ❌ Stub |
+
+- WARP běží na Edge (port 8453), 252+ testů pass
+- **6 adapterů plně funkčních** (EVM, BTC, SOL, TRX, XLM + Cosmos/Cardano watch)
+- **Blocker:** `execute_mint()` pro Cosmos/Cardano = "Signing service (D-04) pending"
+- **Lightning:** BOLT11 stub, žádný LND/CLN node — viz [WARP_LIGHTNING_PLAN.md](./docs/WARP_LIGHTNING_PLAN.md)
 
 **Potřebná práce:**
 1. Implement `execute_mint()` pro každý adapter (mint signing)

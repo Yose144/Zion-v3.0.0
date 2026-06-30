@@ -27,7 +27,8 @@ This file provides operating guidance to Devin, WARP, Copilot, and future automa
 - Hiranyagarbha / Hiran **v2.1** roadmap (historical): [`HiranV2.1/Hiran_v2.1.md`](./HiranV2.1/Hiran_v2.1.md); upgrade context: [`HIRANYAGARBHA_UPGRADE_PLAN.md`](./HIRANYAGARBHA_UPGRADE_PLAN.md).
 - Historical archive exists at `docs/2.9.9/archive/WARP.md`; treat it as legacy context, not current source of truth for V3 runtime behavior.
 - Genesis Regeneration Runbook: [`GENESIS_REGENERATION_RUNBOOK.md`](./GENESIS_REGENERATION_RUNBOOK.md) — complete guide for genesis key rotation and recovery procedures.
-- **LI.FI cross-chain DEX + bridge integration (2026-06-30):** [`Li.Fi-L2.md`](./Li.Fi-L2.md) — LI.FI widget integrated into `/defi` page (aggregates 30+ DEX + 20+ bridges across 25+ chains). Phase 1 complete (iframe widget, wZION default on Base). Phase 2: wZION deploy to Arbitrum/Ethereum/BSC. Phase 3: WARP D-04 for non-EVM chains (Solana, BTC). WARP (`V3/L3/warp/`) is 80% complete, `execute_mint()` stub pending.
+- **LI.FI cross-chain DEX + bridge integration (2026-06-30):** [`Li.Fi-L2.md`](./Li.Fi-L2.md) — LI.FI WidgetLight integrated into `/defi` page (aggregates 30+ DEX + 20+ bridges across 25+ chains). Phase 1 complete (WidgetLight postMessage, slippage fix, 0.5% fee, 7 EVM chains, custom RPC). Phase 1.5: Ankr premium API key pending. Phase 2: wZION deploy to Arbitrum/Ethereum/BSC. Phase 3: WARP D-04 for non-EVM chains. WARP (`V3/L3/warp/`) has 6 fully functional adapters (EVM, BTC, SOL, TRX, XLM + Cosmos/Cardano watch).
+- **WARP Lightning Network bridge plan (2026-06-30):** [`docs/WARP_LIGHTNING_PLAN.md`](./docs/WARP_LIGHTNING_PLAN.md) — Native ZION L1 ↔ BTC Lightning bridge via BOLT11 invoices. Lightning adapter stub exists (`V3/L3/warp/src/adapter/lightning.rs`), full implementation planned: LND node setup, BOLT11 parser, gRPC client, adapter replacement. 6-8 weeks to testnet E2E.
 
 ## Copilot agent quick-start (per-session checklist)
 

@@ -55,9 +55,14 @@
 | **Solana**    | Solana   | SPL Token      | 9        | ~12 sec      | 🟢 Signing live |
 | **Tron**      | Tron     | TRC-20         | 18       | ~57 sec      | 🟢 Signing live |
 | **Stellar**   | Stellar  | Stellar Asset  | 7        | ~5 sec       | � Signing live |
-| **Cardano**   | Cardano  | Native Token   | 6        | ~7 min       | 🟡 Skeleton |
-| **Cosmos**    | Cosmos   | IBC / CW20     | 6        | ~6 sec       | 🟡 Skeleton |
-| **Bitcoin**   | Bitcoin  | HTLC           | 8        | ~60 min      | � Signing live |
+| **Cardano**   | Cardano  | Native Token   | 6        | ~7 min       | 🟡 Skeleton (D-04) |
+| **Cosmos**    | Cosmos   | IBC / CW20     | 6        | ~6 sec       | 🟡 Skeleton (D-04) |
+| **Bitcoin**   | Bitcoin  | HTLC           | 8        | ~60 min      | 🟢 Signing live |
+| **Lightning** | Lightning| BOLT11         | 8        | ~instant     | 🟡 Stub (see [plan](./WARP_LIGHTNING_PLAN.md)) |
+| **Aptos**     | Aptos    | Coin           | 8        | ~1 sec       | 🔴 Stub |
+| **NEAR**      | NEAR     | FT             | 24       | ~1 sec       | 🔴 Stub |
+| **Sui**       | Sui      | Coin           | 9        | ~1 sec       | 🔴 Stub |
+| **TON**       | TON      | Jetton         | 9        | ~5 sec       | 🔴 Stub |
 
 ---
 
@@ -244,6 +249,7 @@ WARP extends it to the full multi-chain universe.
 | **Phase 6** ✅ | Tron TRC-20 `mint` — secp256k1, base58check, TronGrid REST | Done (2026-03-03) |
 | **Phase 7** ⬜ | Cardano native token + Plutus | 2026 Q3 |
 | **Phase 8** ⬜ | Cosmos IBC integration | 2026 Q4 |
+| **Phase 8.5** ⬜ | Lightning Network — BOLT11 + LND gRPC | 2026 Q3-Q4 |
 | **Phase 9** ⬜ | Full E2E testing + audit | 2027 Q1 |
 | **Phase 10** ⬜ | MainNet launch | 2027 Q2 |
 
