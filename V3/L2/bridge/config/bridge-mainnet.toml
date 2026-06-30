@@ -57,6 +57,7 @@ finality_blocks         = 10
 enabled                 = true
 gas_strategy            = "eip1559"
 max_gas_gwei            = 20
+start_block             = 478916300
 
 # -- BNB Smart Chain (Mainnet) — DEPLOYED 2026-06-30 --
 [[evm_chains]]
@@ -71,6 +72,7 @@ finality_blocks         = 15
 enabled                 = true
 gas_strategy            = "legacy"
 max_gas_gwei            = 5
+start_block             = 107248530
 
 # -- Polygon PoS (Mainnet) — DEPLOYED 2026-06-30 --
 [[evm_chains]]
@@ -85,6 +87,7 @@ finality_blocks         = 128
 enabled                 = true
 gas_strategy            = "legacy"
 max_gas_gwei            = 250
+start_block             = 89409648
 
 # -- Optimism (Mainnet) — DEPLOYED 2026-06-30 --
 [[evm_chains]]
@@ -99,6 +102,7 @@ finality_blocks         = 10
 enabled                 = true
 gas_strategy            = "eip1559"
 max_gas_gwei            = 20
+start_block             = 153610095
 
 # -- Avalanche C-Chain (Mainnet) — NOT DEPLOYED --
 [[evm_chains]]
