@@ -4097,7 +4097,7 @@ V4 NFT pozice deployeru (1 NFT v PositionManager po burn):
 - `@lifi/sdk`, `@lifi/widget`, `viem` přidány do package.json
 - Widget používá hosted iframe — žádné wagmi/viem peer dependency konflikty
 
-**WARP status:** Běží na Edge (port 9333), 80% hotový, `execute_mint()` stub (D-04) — dokončit později pro non-EVM chainy (Solana, BTC)
+**WARP status:** Běží na Edge (port 9333), 13 chain family adapterů implementováno (EVM, BTC, Solana, Tron, Stellar, Cosmos, Cardano, Lightning, Aptos, NEAR, Sui, TON), 408 testů pass. NEAR plně funkční (borsh TX + broadcast). Cardano/Aptos/Sui/TON mají signer ale potřebují TX builder (CBOR/BCS/TL-B). Lightning potřebuje LND node na Edge.
 
 ---
 
