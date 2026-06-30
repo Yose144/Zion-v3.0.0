@@ -88,6 +88,27 @@ export const CONTRACTS = {
   ZIONFarm:       '0x167B2753F5D8D9F8e62875cc9e379d7804308B08', // 1 wZION/s, 90d halving, 500K wZION pool
   // Uniswap CCA Auction — deployed 2026-06-30 on Base Mainnet
   CCAAuction:     '0x4eD4EbBaa975d20cEA746E3569802D51768e1f93', // 66.47M wZION for USDC, 184-day lock
+  // PancakeSwap V3 on Base — contracts (pool to be deployed)
+  PancakeV3Factory:           '0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865',
+  PancakeV3NFTPositionManager:'0x46A15B0b27311cedF172AB29E4f4766fbE7F4364',
+  PancakeV3SwapRouter:        '0x1b81D678ffb9C0263b24A97847620C99d213eB14',
+  PancakeV3QuoterV2:          '0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997',
+  PancakeV3SmartRouter:       '0x678Aa4bF4E210cf2166753e054d5b7c31cc7fa86',
+  // PancakeSwap V3 wZION/USDT pool — deployed via deploy-pancakeswap-pool.ts (set after deploy)
+  PancakeV3PoolUSDT:          '0x0000000000000000000000000000000000000000', // UPDATE after pool deploy
+} as const;
+
+/** PancakeSwap V3 config on Base */
+export const PANCAKE_V3 = {
+  factory:             '0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865',
+  nftPositionManager:  '0x46A15B0b27311cedF172AB29E4f4766fbE7F4364',
+  swapRouter:          '0x1b81D678ffb9C0263b24A97847620C99d213eB14',
+  quoterV2:            '0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997',
+  smartRouter:         '0x678Aa4bF4E210cf2166753e054d5b7c31cc7fa86',
+  feeTiers: { '0.01%': 100, '0.05%': 500, '0.25%': 2500, '1%': 10000 },
+  defaultFee: 2500, // 0.25% — PancakeSwap's standard tier
+  swapUrl: `https://pancakeswap.finance/swap?outputCurrency=0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6&chain=base`,
+  addLiquidityUrl: 'https://pancakeswap.finance/addLiquidity',
 } as const;
 
 /** CCA Auction immutable parameters (from AUCTION_CCA_BASE.md) */
