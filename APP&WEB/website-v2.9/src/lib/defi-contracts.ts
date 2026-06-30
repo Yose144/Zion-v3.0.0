@@ -94,8 +94,8 @@ export const CONTRACTS = {
   PancakeV3SwapRouter:        '0x1b81D678ffb9C0263b24A97847620C99d213eB14',
   PancakeV3QuoterV2:          '0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997',
   PancakeV3SmartRouter:       '0x678Aa4bF4E210cf2166753e054d5b7c31cc7fa86',
-  // PancakeSwap V3 wZION/USDT pool — deployed via deploy-pancakeswap-pool.ts (set after deploy)
-  PancakeV3PoolUSDT:          '0x0000000000000000000000000000000000000000', // UPDATE after pool deploy
+  // PancakeSwap V3 wZION/USDT pool — deployed 2026-06-30 on Base Mainnet
+  PancakeV3PoolUSDT:          '0x46cc98dec9d2a60f2850225c942d6017b82b6f47', // 0.25% fee, NFT #2054747
 } as const;
 
 /** PancakeSwap V3 config on Base */

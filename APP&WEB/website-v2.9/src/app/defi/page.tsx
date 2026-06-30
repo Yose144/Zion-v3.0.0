@@ -745,9 +745,9 @@ export default function DefiPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
-                {cs ? 'Připraveno' : 'Ready'}
+              <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-semibold bg-green-500/10 text-green-400 border border-green-500/20">
+                <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
+                {cs ? 'Live' : 'Live'}
               </span>
               <a
                 href={PANCAKE_V3.swapUrl}
@@ -764,9 +764,9 @@ export default function DefiPage() {
           {/* Info grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
             <div className="zion-rainbow-sub p-3" style={{ '--rc': '255, 199, 0' } as React.CSSProperties}>
-              <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Pool' : 'Pool'}</p>
-              <p className="text-sm font-semibold text-white">wZION / USDT</p>
-              <p className="text-[10px] text-gray-500">0.25% fee · Base Mainnet</p>
+              <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Pool adresa' : 'Pool address'}</p>
+              <p className="text-sm font-semibold text-white font-mono">0x46cc...6f47</p>
+              <p className="text-[10px] text-gray-500">wZION/USDT · 0.25% fee · NFT #2054747</p>
             </div>
             <div className="zion-rainbow-sub p-3" style={{ '--rc': '255, 199, 0' } as React.CSSProperties}>
               <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Cena' : 'Price'}</p>
@@ -799,6 +799,14 @@ export default function DefiPage() {
               {cs ? 'Přidat likviditu' : 'Add Liquidity'} <ExternalLink className="h-2.5 w-2.5" />
             </a>
             <a
+              href={`https://basescan.org/address/${CONTRACTS.PancakeV3PoolUSDT}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+            >
+              {cs ? 'Pool na Basescan' : 'Pool on Basescan'} <ExternalLink className="h-2.5 w-2.5" />
+            </a>
+            <a
               href={`https://basescan.org/address/${PANCAKE_V3.factory}`}
               target="_blank"
               rel="noopener noreferrer"
@@ -809,12 +817,12 @@ export default function DefiPage() {
           </div>
 
           {/* Status note */}
-          <div className="mt-4 flex items-start gap-3 rounded-lg bg-amber-500/5 border border-amber-500/15 p-3">
-            <Clock className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+          <div className="mt-4 flex items-start gap-3 rounded-lg bg-green-500/5 border border-green-500/15 p-3">
+            <Trophy className="h-4 w-4 text-green-400 shrink-0 mt-0.5" />
             <p className="text-[10px] text-gray-400 leading-relaxed">
               {cs
-                ? 'PancakeSwap V3 pool je připraven k deployi. Pool wZION/USDT s 0.25% fee bude vytvořen pomocí deploy-pancakeswap-pool.ts skriptu. Po deployi se zde zobrazí live data z poolu (cena, TVL, likvidita). PancakeSwap je 2. největší DEX na Base s $115M denním volume — výrazně zvyšuje viditelnost wZION.'
-                : 'PancakeSwap V3 pool is ready for deployment. The wZION/USDT pool with 0.25% fee will be created using the deploy-pancakeswap-pool.ts script. After deployment, live pool data (price, TVL, liquidity) will be displayed here. PancakeSwap is the 2nd largest DEX on Base with $115M daily volume — significantly increasing wZION visibility.'}
+                ? 'PancakeSwap V3 pool je LIVE na Base Mainnet! wZION/USDT pool s 0.25% fee je vytvořen a inicializován na ceně $0.0002/wZION. NFT pozice #2054747. wZION je nyní dostupný na 2 DEX platformách (Uniswap V4 + PancakeSwap V3) + LiFi agregátor s 30+ DEX. PancakeSwap je 2. největší DEX na Base s $115M denním volume.'
+                : 'PancakeSwap V3 pool is LIVE on Base Mainnet! wZION/USDT pool with 0.25% fee is created and initialized at $0.0002/wZION. NFT position #2054747. wZION is now available on 2 DEX platforms (Uniswap V4 + PancakeSwap V3) + LiFi aggregator with 30+ DEX. PancakeSwap is the 2nd largest DEX on Base with $115M daily volume.'}
             </p>
           </div>
         </div>
