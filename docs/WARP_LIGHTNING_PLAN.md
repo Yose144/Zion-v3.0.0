@@ -1,7 +1,7 @@
 # WARP Lightning — BTC Lightning Network Native Bridge Plan
 
-> **Status:** 📋 Plán — stub existuje (`adapter/lightning.rs`), implementace plánována
-> **Datum:** 2026-06-30 (Session 11)
+> **Status:** ✅ Fáze B/C/D IMPLEMENTED (2026-06-30) — BOLT11 parser + LND REST client + adapter replacement. Fáze A (LND node infra) pending.
+> **Datum:** 2026-06-30 (Session 11+12)
 > **Owner:** Zion Protocol Team
 > **Související:** [WARP_ARCHITECTURE.md](./WARP_ARCHITECTURE.md) · [Li.Fi-L2.md](../Li.Fi-L2.md) · [NATIVE_SWAP_DESIGN.md](./NATIVE_SWAP_DESIGN.md)
 

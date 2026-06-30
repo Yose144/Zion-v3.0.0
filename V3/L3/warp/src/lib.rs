@@ -17,6 +17,7 @@
 //! ```
 
 pub mod adapter;
+pub mod bolt11;
 pub mod btc_signer;
 pub mod cardano_signer;
 pub mod config;
@@ -25,6 +26,7 @@ pub mod db;
 pub mod error;
 pub mod evm_signer;
 pub mod fees;
+pub mod lightning_signer;
 pub mod metrics;
 pub mod protocol;
 pub mod registry;
