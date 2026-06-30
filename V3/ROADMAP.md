@@ -129,7 +129,9 @@ Verze **3.0.3** je nyní uzavřena. Všechny klíčové komponenty jsou funkčn�
 - [x] **Sui adapter** — JSON-RPC health check (checkpoint seqno), Ed25519 signer + Sui address derivation (SHA-256 with flag byte), signature format (97 bytes base64). **BCS TX builder implemented** — `TransactionData::V1` + `ProgrammableTransaction` + `MoveCall` BCS encoding + `sui_executeTransactionBlock` submit. **Plně funkční**
 - [x] **TON adapter** — JSON-RPC health check (masterchain seqno), Ed25519 signer, watch_events via `getTransactions` for bridge account. TL-B + ADNL TX builder pending (needs `ton-sdk`/`tonweb`)
 - [x] **BCS encoder** — pure Rust BCS (Binary Canonical Serialization) encoder/decoder for MoveVM chains (Aptos + Sui). No external dependency. 33 tests.
-- [x] 444 WARP tests pass (140 new: bcs + aptos BCS + sui BCS + adapters + signers)
+- [x] **CBOR encoder** — pure Rust CBOR (RFC 8949) encoder for Cardano TX construction. Implements uint/nint/bytes/text/array/map/tag/bool/null + Cardano TX helpers (tx_input, tx_output, tx_body, witness_set, transaction). 21 tests.
+- [x] **Cardano `submit_mint_tx`** — CBOR TX body (inputs + outputs + fee + ttl + mint) + Blake2b-256 body hash + Ed25519 witness + Blockfrost `/tx/submit`. Blake2b-224 for payment key hash + policy ID. **Plně funkční**
+- [x] 465 WARP tests pass (161 new: bcs + cbor + aptos BCS + sui BCS + cardano CBOR + adapters + signers)
 - [ ] Deploy wZION Move module on Aptos mainnet
 - [ ] Deploy wZION NEAR contract
 - [ ] Deploy wZION Sui package

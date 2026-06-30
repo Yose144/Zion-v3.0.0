@@ -39,6 +39,9 @@ bitcoin = { version = "0.31", default-features = false, features = ["std"] }
 stellar-strkey = "0.0.8"
 base64 = "0.22"
 
+# Cardano transaction signing (Blake2b-256 for TX body hash, CBOR encoding)
+blake2 = "0.10"
+
 [dev-dependencies]
 tokio = { version = "1", features = ["full", "test-util"] }
 tower = { version = "0.4", features = ["util"] }
