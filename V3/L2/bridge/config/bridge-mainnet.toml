@@ -44,16 +44,17 @@ gas_strategy            = "eip1559"
 max_gas_gwei            = 100
 start_block             = 47687000  # Set to ~current block at new 5/5 bridge deployment
 
-# -- Arbitrum One (Mainnet) — NOT DEPLOYED --
+# -- Arbitrum One (Mainnet) — DEPLOYED 2026-06-30 --
 [[evm_chains]]
 chain_id                = "arbitrum"
 name                    = "Arbitrum One (Mainnet)"
 evm_chain_id            = 42161
-rpc_url                 = "wss://arb-mainnet.g.alchemy.com/v2/YOUR_KEY"
-wzion_address           = "0x0000000000000000000000000000000000000000"
-bridge_contract_address = "0x0000000000000000000000000000000000000000"
+rpc_url                 = "https://arb1.arbitrum.io/rpc"
+rpc_url_backup          = "wss://arb-mainnet.g.alchemy.com/v2/YOUR_KEY"
+wzion_address           = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+bridge_contract_address = "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721"
 finality_blocks         = 10
-enabled                 = false
+enabled                 = true
 gas_strategy            = "eip1559"
 max_gas_gwei            = 20
 
