@@ -4,8 +4,20 @@ import { useMemo } from 'react';
 import { LiFiWidgetLight, type WidgetLightConfig } from '@lifi/widget-light';
 import { useWallet } from '@/contexts/WalletContext';
 
-// wZION token address on Base
-const WZION_BASE = '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6';
+// wZION token addresses per chain — populated as each chain is deployed
+// Base ✅ deployed | Others = null (will be filled after deploy-chain.ts runs)
+const WZION_ADDRESSES: Record<number, string | null> = {
+  8453:  '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6', // ✅ Base Mainnet
+  1:     null,  // Ethereum Mainnet (not deployed)
+  42161: null,  // Arbitrum One (not deployed)
+  56:    null,  // BNB Smart Chain (not deployed)
+  137:   null,  // Polygon PoS (not deployed)
+  10:    null,  // Optimism (not deployed)
+  43114: null,  // Avalanche C-Chain (not deployed)
+};
+
+// wZION on Base (default — the only chain with deployed wZION so far)
+const WZION_BASE = WZION_ADDRESSES[8453]!;
 
 // Native ETH zero-address
 const NATIVE_ETH = '0x0000000000000000000000000000000000000000';

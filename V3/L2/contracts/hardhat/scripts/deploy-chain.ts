@@ -1,35 +1,91 @@
 /**
- * deploy-arbitrum.ts — Deploy wZION + ZIONBridge on Arbitrum One Mainnet
+ * deploy-chain.ts — Deploy wZION + ZIONBridge on ANY EVM mainnet chain
  *
- * Deploys the same contract stack as Base but on Arbitrum One (chain 42161).
- * After deploy, grants BRIDGE_ROLE on wZION for ZIONBridge and configures
- * the 5/5 validator multisig.
+ * Generic multi-chain deploy script. Works for Arbitrum, BSC, Polygon,
+ * Optimism, Avalanche, and any future EVM chain added to hardhat.config.ts.
  *
  * Usage:
- *   npx hardhat run scripts/deploy-arbitrum.ts --network arbitrum
+ *   npx hardhat run scripts/deploy-chain.ts --network arbitrum
+ *   npx hardhat run scripts/deploy-chain.ts --network bsc
+ *   npx hardhat run scripts/deploy-chain.ts --network polygon
+ *   npx hardhat run scripts/deploy-chain.ts --network optimism
+ *   npx hardhat run scripts/deploy-chain.ts --network avalanche
  *
  * Required env vars:
- *   DEPLOYER_PRIVATE_KEY  — funded deployer (needs ~0.01 ETH on Arbitrum for gas)
- *   ARB_RPC               — Arbitrum RPC (default: https://arb1.arbitrum.io/rpc)
+ *   DEPLOYER_PRIVATE_KEY  — funded deployer (needs native gas token on target chain)
  *
- * Optional (defaults to Base mainnet validator set):
+ * Optional (defaults to Base mainnet validator set — same across all chains):
  *   VALIDATOR_1..5        — 5 validator addresses (default: same as Base)
  *   BRIDGE_THRESHOLD      — validator threshold (default: 5)
  *   GUARDIAN_ADDRESS      — guardian address (default: deployer)
  *
  * After deploy:
- *   1. Update bridge-mainnet.toml — Arbitrum section with real addresses
- *   2. Update LiFiWidget.tsx — wZION Arbitrum address
- *   3. Update bridge-api.ts — Arbitrum chain entry
+ *   1. Update bridge-mainnet.toml — target chain section with real addresses
+ *   2. Update LiFiWidget.tsx — wZION address for target chain
+ *   3. Update bridge-api.ts — target chain entry
  *   4. Restart zion-edge-bridge.service
- *   5. E2E test: lock ZION on L1 → mint wZION on Arbitrum
+ *   5. E2E test: lock ZION on L1 → mint wZION on target chain
  */
 
 import { ethers, network } from "hardhat";
 import * as fs from "fs";
 import * as path from "path";
 
-// ─── Validator defaults (same as Base mainnet) ───────────────────────────────
+// ─── Chain metadata ──────────────────────────────────────────────────────────
+
+interface ChainMeta {
+  name: string;
+  nativeSymbol: string;
+  minGasBalance: string;      // minimum native token needed for deploy
+  blockTimeMs: number;        // extra delay between TXs for RPC propagation
+  explorerUrl: (addr: string) => string;
+  finalityBlocks: number;     // for bridge-mainnet.toml
+}
+
+const CHAIN_META: Record<string, ChainMeta> = {
+  arbitrum: {
+    name: "Arbitrum One",
+    nativeSymbol: "ETH",
+    minGasBalance: "0.005",
+    blockTimeMs: 5000,
+    explorerUrl: (a) => `https://arbiscan.io/address/${a}`,
+    finalityBlocks: 10,
+  },
+  bsc: {
+    name: "BNB Smart Chain",
+    nativeSymbol: "BNB",
+    minGasBalance: "0.01",
+    blockTimeMs: 3000,
+    explorerUrl: (a) => `https://bscscan.com/address/${a}`,
+    finalityBlocks: 15,
+  },
+  polygon: {
+    name: "Polygon PoS",
+    nativeSymbol: "POL",
+    minGasBalance: "0.05",
+    blockTimeMs: 3000,
+    explorerUrl: (a) => `https://polygonscan.com/address/${a}`,
+    finalityBlocks: 128,
+  },
+  optimism: {
+    name: "Optimism",
+    nativeSymbol: "ETH",
+    minGasBalance: "0.005",
+    blockTimeMs: 4000,
+    explorerUrl: (a) => `https://optimistic.etherscan.io/address/${a}`,
+    finalityBlocks: 10,
+  },
+  avalanche: {
+    name: "Avalanche C-Chain",
+    nativeSymbol: "AVAX",
+    minGasBalance: "0.1",
+    blockTimeMs: 3000,
+    explorerUrl: (a) => `https://snowtrace.io/address/${a}`,
+    finalityBlocks: 12,
+  },
+};
+
+// ─── Validator defaults (same as Base mainnet — EVM address is deterministic) ─
 
 const DEFAULT_VALIDATORS = [
   "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186", // validator-1 (deployer)
@@ -48,23 +104,31 @@ async function main() {
   const { chainId } = await ethers.provider.getNetwork();
 
   console.log("\n" + "═".repeat(70));
-  console.log("  ZION Bridge Deploy — wZION + ZIONBridge on Arbitrum One");
+  console.log("  ZION Bridge Deploy — wZION + ZIONBridge");
   console.log("═".repeat(70));
-  console.log(`Network:  ${networkName} (chain ${chainId})`);
 
-  if (networkName !== "arbitrum") {
-    console.error(`❌ This script is for Arbitrum One mainnet only. Got: ${networkName}`);
+  const meta = CHAIN_META[networkName];
+  if (!meta) {
+    console.error(`❌ This script supports: ${Object.keys(CHAIN_META).join(", ")}`);
+    console.error(`   Got network: "${networkName}" — add it to CHAIN_META in this script`);
     process.exit(1);
   }
 
+  console.log(`Network:      ${networkName} (chain ${chainId})`);
+  console.log(`Chain name:   ${meta.name}`);
+  console.log(`Native token: ${meta.nativeSymbol}`);
+  console.log(`Finality:     ${meta.finalityBlocks} blocks`);
+
   const [deployer] = await ethers.getSigners();
   const balance = await ethers.provider.getBalance(deployer.address);
-  console.log(`Deployer: ${deployer.address}`);
-  console.log(`Balance:  ${ethers.formatEther(balance)} ETH`);
+  console.log(`Deployer:     ${deployer.address}`);
+  console.log(`Balance:      ${ethers.formatEther(balance)} ${meta.nativeSymbol}`);
 
-  if (balance < ethers.parseEther("0.005")) {
-    console.error("❌ Insufficient ETH balance on Arbitrum (need ≥ 0.005 ETH for gas)");
-    console.error("   Bridge ETH from Ethereum to Arbitrum via https://bridge.arbitrum.io");
+  const minBalance = ethers.parseEther(meta.minGasBalance);
+  if (balance < minBalance) {
+    console.error(`❌ Insufficient ${meta.nativeSymbol} balance (need ≥ ${meta.minGasBalance} ${meta.nativeSymbol} for gas)`);
+    console.error(`   Fund the deployer address on ${meta.name}:`);
+    console.error(`   ${meta.explorerUrl(deployer.address)}`);
     process.exit(1);
   }
 
@@ -93,7 +157,7 @@ async function main() {
   const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
   const waitForConfirm = async (tx: { wait: (confirms?: number) => Promise<any> }) => {
     const receipt = await tx.wait(2);
-    await sleep(5000); // Arbitrum has ~1s blocks, extra delay for RPC propagation
+    await sleep(meta.blockTimeMs);
     return receipt;
   };
 
@@ -101,16 +165,18 @@ async function main() {
 
   console.log("\n📜 Step 1: Deploying wZION (ERC-20)...");
   const WZION = await ethers.getContractFactory("WZION");
-  // constructor(admin, bridge, guardian) — bridge is placeholder, we'll grant role after ZIONBridge deploy
+  // constructor(admin, bridge, guardian) — bridge is placeholder (deployer),
+  // we'll grant BRIDGE_ROLE to ZIONBridge after it's deployed
   const wzion = await WZION.deploy(deployer.address, deployer.address, guardianAddr, {
     nonce: nextNonce(),
   });
   await wzion.waitForDeployment();
-  await sleep(5000);
+  await sleep(meta.blockTimeMs);
   const wzionAddr = await wzion.getAddress();
   console.log(`   ✅ wZION: ${wzionAddr}`);
   console.log(`      Name: Wrapped ZION | Symbol: wZION | Decimals: 18`);
   console.log(`      MAX_SUPPLY: 144,000,000,000 wZION`);
+  console.log(`      Explorer: ${meta.explorerUrl(wzionAddr)}`);
 
   // ── Step 2: Deploy ZIONBridge ──────────────────────────────────────────────
 
@@ -126,10 +192,11 @@ async function main() {
     { nonce: nextNonce() }
   );
   await bridge.waitForDeployment();
-  await sleep(5000);
+  await sleep(meta.blockTimeMs);
   const bridgeAddr = await bridge.getAddress();
   console.log(`   ✅ ZIONBridge: ${bridgeAddr}`);
   console.log(`      Validators: ${validators.length} | Threshold: ${threshold}`);
+  console.log(`      Explorer: ${meta.explorerUrl(bridgeAddr)}`);
 
   // ── Step 3: Grant BRIDGE_ROLE on wZION for ZIONBridge ──────────────────────
 
@@ -158,6 +225,7 @@ async function main() {
   const output = {
     network: networkName,
     chainId: Number(chainId),
+    chainName: meta.name,
     wzion: wzionAddr,
     bridge: bridgeAddr,
     config: {
@@ -165,35 +233,38 @@ async function main() {
       threshold,
       guardian: guardianAddr,
       deployer: deployer.address,
+      finalityBlocks: meta.finalityBlocks,
     },
     deployedAt,
   };
 
-  const outPath = path.join(__dirname, "..", "deployed-arbitrum.json");
+  const outPath = path.join(__dirname, "..", `deployed-${networkName}.json`);
   fs.writeFileSync(outPath, JSON.stringify(output, null, 2));
-  console.log(`\n📁 Deployment saved to: deployed-arbitrum.json`);
+  console.log(`\n📁 Deployment saved to: deployed-${networkName}.json`);
 
   // ── Summary ────────────────────────────────────────────────────────────────
 
   console.log("\n" + "═".repeat(70));
-  console.log("  ZION Arbitrum Deploy Summary");
+  console.log(`  ZION ${meta.name} Deploy Summary`);
   console.log("═".repeat(70));
-  console.log(`  Network:      ${networkName} (${chainId})`);
-  console.log(`  wZION:        ${wzionAddr}`);
-  console.log(`  ZIONBridge:   ${bridgeAddr}`);
-  console.log(`  Validators:   ${threshold}-of-${validators.length}`);
+  console.log(`  Network:       ${networkName} (${chainId})`);
+  console.log(`  wZION:         ${wzionAddr}`);
+  console.log(`  ZIONBridge:    ${bridgeAddr}`);
+  console.log(`  Validators:    ${threshold}-of-${validators.length}`);
+  console.log(`  Finality:      ${meta.finalityBlocks} blocks`);
   console.log("═".repeat(70));
 
   console.log("\n⚠️  Next steps:");
   console.log(`  1. Update V3/L2/bridge/config/bridge-mainnet.toml:`);
   console.log(`     - Set wzion_address = "${wzionAddr}"`);
   console.log(`     - Set bridge_contract_address = "${bridgeAddr}"`);
+  console.log(`     - Set finality_blocks = ${meta.finalityBlocks}`);
   console.log(`     - Set enabled = true`);
-  console.log(`  2. Update LiFiWidget.tsx — wZION Arbitrum address`);
-  console.log(`  3. Update bridge-api.ts — Arbitrum chain entry`);
+  console.log(`  2. Update LiFiWidget.tsx — wZION ${meta.name} address`);
+  console.log(`  3. Update bridge-api.ts — ${networkName} chain entry`);
   console.log(`  4. Restart zion-edge-bridge.service on Edge`);
-  console.log(`  5. E2E test: lock ZION on L1 → mint wZION on Arbitrum`);
-  console.log(`  6. Verify on Arbiscan: https://arbiscan.io/address/${wzionAddr}`);
+  console.log(`  5. E2E test: lock ZION on L1 → mint wZION on ${meta.name}`);
+  console.log(`  6. Verify on explorer: ${meta.explorerUrl(wzionAddr)}`);
 }
 
 main()

@@ -128,29 +128,44 @@ Integrovat **univerzální cross-chain swap + bridge** do Zion web app pomocí L
 3. Restart `zion-edge-bridge.service`
 4. Verify: `curl https://rpc.ankr.com/base/<KEY> -X POST -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'`
 
-### Fáze 2: wZION Multi-Chain Deploy (Plánované)
+### Fáze 2: wZION Multi-Chain Deploy (Plánované — deploy skript hotový)
 
 **Cíl:** wZION ERC-20 deploy na dalších EVM chainech aby LI.FI widget mohl swappovat wZION cross-chain.
 
-| Chain | Chain ID | Priorita | Úsilí | Poznámka |
-|-------|----------|----------|-------|----------|
-| **Arbitrum One** | 42161 | P0 | 2-3 dny | Největší L2, nízké gas, config už existuje |
-| **Ethereum Mainnet** | 1 | P1 | 2-3 dny | Pro DeFi integrace, vyšší gas |
-| **BSC** | 56 | P1 | 2-3 dny | Velký user base, nízké gas |
-| **Polygon** | 137 | P2 | 2-3 dny | Multi-chain exposure |
-| **Optimism** | 10 | P2 | 2-3 dny | OP Stack, Base sibling |
-| **Avalanche** | 43114 | P3 | 2-3 dny | Menší share |
+**Deploy skript:** `V3/L2/contracts/hardhat/scripts/deploy-chain.ts` (generický pro všechny EVM chainy)
 
-**Deploy kroky pro každý chain:**
+| Chain | Chain ID | Priorita | Gas Token | Min Gas | Poznámka |
+|-------|----------|----------|-----------|---------|----------|
+| **Arbitrum One** | 42161 | P0 | ETH | 0.005 | Největší L2, nízké gas, config už existuje |
+| **BSC** | 56 | P0 | BNB | 0.01 | Velký user base, nízké gas |
+| **Polygon** | 137 | P1 | POL | 0.05 | Multi-chain exposure |
+| **Optimism** | 10 | P1 | ETH | 0.005 | OP Stack, Base sibling |
+| **Avalanche** | 43114 | P2 | AVAX | 0.1 | Menší share |
+| **Ethereum Mainnet** | 1 | P3 | ETH | 0.02 | Pro DeFi integrace, vyšší gas |
+
+**Příkaz pro deploy:**
+```bash
+cd V3/L2/contracts/hardhat
+npx hardhat run scripts/deploy-chain.ts --network arbitrum   # needs ETH on Arbitrum
+npx hardhat run scripts/deploy-chain.ts --network bsc        # needs BNB for gas
+npx hardhat run scripts/deploy-chain.ts --network polygon    # needs POL for gas
+npx hardhat run scripts/deploy-chain.ts --network optimism   # needs ETH on OP
+npx hardhat run scripts/deploy-chain.ts --network avalanche  # needs AVAX for gas
+```
+
+**Deploy kroky pro každý chain (automatické v deploy-chain.ts):**
 1. Deploy `wZION.sol` na cílový chain
 2. Deploy `ZIONBridge.sol` (5/5 multisig)
 3. Grant `BRIDGE_ROLE` na wZION pro ZIONBridge
-4. Konfigurovat 5 validator adres
-5. Přidat chain do `bridge-mainnet.toml` (`enabled = true`)
-6. Aktualizovat `bridge-api.ts` s novými adresami
-7. Aktualizovat `LiFiWidget.tsx` — wZION adresy per chain
-8. Fund validatorů s native gas tokenem
-9. E2E test (lock→mint, burn→unlock)
+4. Renounce deployer's temporary BRIDGE_ROLE (security)
+5. Save `deployed-<chain>.json` s adresami
+
+**Po deploy (manuál):**
+6. Přidat chain do `bridge-mainnet.toml` (`enabled = true` + reálné adresy)
+7. Aktualizovat `LiFiWidget.tsx` — `WZION_ADDRESSES[chainId]` = reálná adresa
+8. Aktualizovat `bridge-api.ts` s novými adresami
+9. Fund validatorů s native gas tokenem
+10. E2E test (lock→mint, burn→unlock)
 
 **Predpoklady:**
 - 5 validator adres (už existují z Base deploy)
