@@ -129,7 +129,7 @@ Final checklist. Full procedure in [`V3/docs/MAINNET_LAUNCH_SEQUENCE.md`](./V3/d
 
 | # | Gate | Status |
 |---|------|--------|
-| 6.1 | TX unification deployed and stable | 🟡 Implemented; deploy/E2E pending |
+| 6.1 | TX unification deployed and stable | 🟡 Deployed on Edge; activation height 24000; E2E pending |
 | 6.2 | Bridge/wZION addresses consistent across all clients | 🔵 |
 | 6.3 | DeFi contracts verified + liquidity seeded | 🔵 |
 | 6.4 | Wallet SDK + mobile app published | 🔵 |
