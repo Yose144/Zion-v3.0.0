@@ -49,6 +49,7 @@ fn main() {
         nonce,
         signature,
         public_key,
+        memo: None,
     };
 
     // Submit via RPC

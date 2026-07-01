@@ -258,7 +258,7 @@ function bytesToHex(bytes: Uint8Array | Buffer | number[]): string {
  *   bytes[24..32] = nonce (u64 LE)
  *   XOR from + to address bytes cyclically into all 32 bytes
  */
-export function generateAccountTxId(from: string, to: string, amount: bigint, nonce: bigint): string {
+export function generateAccountTxId(from: string, to: string, amount: bigint, nonce: bigint, memo?: string): string {
   const bytes = Buffer.alloc(32);
 
   // Timestamp nanos (16 bytes = two u64 LE)
@@ -280,6 +280,14 @@ export function generateAccountTxId(from: string, to: string, amount: bigint, no
     bytes[i % 32] ^= allAddrBytes[i];
   }
 
+  // XOR-in memo bytes if present, so the tx_id commits to the memo.
+  if (memo) {
+    const memoBytes = Buffer.from(memo, 'utf8');
+    for (let i = 0; i < memoBytes.length; i++) {
+      bytes[i % 32] ^= memoBytes[i];
+    }
+  }
+
   return bytesToHex(bytes);
 }
 
@@ -292,6 +300,7 @@ export interface AccountTransaction {
   nonce: number;
   signature: string; // 64-byte Ed25519 signature hex
   public_key: string; // 32-byte raw Ed25519 public key hex
+  memo?: string; // Optional ASCII memo, max 256 bytes
 }
 
 /**
@@ -304,6 +313,7 @@ export interface AccountTransaction {
  * @param privateKey Raw 32-byte Ed25519 private key
  * @param nonce Unique nonce (default: Date.now() ms)
  * @param fee Fee in flowers (default: 1, L1 MIN_TX_FEE)
+ * @param memo Optional ASCII memo (max 256 bytes)
  */
 export async function buildAccountTransaction({
   fromAddress,
@@ -312,6 +322,7 @@ export async function buildAccountTransaction({
   privateKey,
   nonce,
   fee,
+  memo,
 }: {
   fromAddress: string;
   toAddress: string;
@@ -319,6 +330,7 @@ export async function buildAccountTransaction({
   privateKey: Uint8Array;
   nonce?: bigint;
   fee?: bigint;
+  memo?: string;
 }): Promise<AccountTransaction> {
   // Parse amount to flowers (bigint)
   let amountFlowers: bigint;
@@ -335,11 +347,21 @@ export async function buildAccountTransaction({
     amountFlowers = BigInt(Math.floor(Number(amountZion) * 1e6));
   }
 
+  if (memo) {
+    const memoBytes = Buffer.from(memo, 'utf8');
+    if (memoBytes.length > 256) {
+      throw new Error('memo exceeds 256 bytes');
+    }
+    if (!/^[ -]*$/.test(memo)) {
+      throw new Error('memo must be ASCII');
+    }
+  }
+
   const feeFlowers = fee != null ? fee : ACCOUNT_DEFAULT_FEE_FLOWERS;
   const txNonce = nonce != null ? nonce : BigInt(Date.now());
 
   // Generate tx_id
-  const txId = generateAccountTxId(fromAddress, toAddress, amountFlowers, txNonce);
+  const txId = generateAccountTxId(fromAddress, toAddress, amountFlowers, txNonce, memo);
 
   // Derive public key from private key
   const publicKey = await ed.getPublicKey(privateKey);
@@ -350,7 +372,7 @@ export async function buildAccountTransaction({
   const signature = await ed.sign(txIdBytes, privateKey);
   const signatureHex = bytesToHex(signature);
 
-  return {
+  const tx: AccountTransaction = {
     tx_id: txId,
     from: fromAddress,
     to: toAddress,
@@ -360,4 +382,8 @@ export async function buildAccountTransaction({
     signature: signatureHex,
     public_key: pubKeyHex,
   };
+  if (memo) {
+    tx.memo = memo;
+  }
+  return tx;
 }

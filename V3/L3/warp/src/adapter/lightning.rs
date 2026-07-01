@@ -96,15 +96,16 @@ impl LightningAdapter {
             Some(10_000) // default fee limit for any-amount invoices
         };
 
-        let resp = lnd
-            .send_payment(invoice, fee_limit, Some(60))
-            .await?;
+        let resp = lnd.send_payment(invoice, fee_limit, Some(60)).await?;
 
         // Return the payment preimage as proof
-        let preimage = resp.payment_preimage.unwrap_or_else(|| {
-            format!("paid_{}", &parsed.payment_hash_hex[..16])
-        });
-        info!("[WARP][LN] Payment settled: preimage={}", &preimage[..16.min(preimage.len())]);
+        let preimage = resp
+            .payment_preimage
+            .unwrap_or_else(|| format!("paid_{}", &parsed.payment_hash_hex[..16]));
+        info!(
+            "[WARP][LN] Payment settled: preimage={}",
+            &preimage[..16.min(preimage.len())]
+        );
         Ok(preimage)
     }
 
@@ -190,7 +191,10 @@ impl ChainAdapter for LightningAdapter {
         if !invoice.starts_with("lnbc") && !invoice.starts_with("lntb") {
             return Err(WarpError::InvalidAddress {
                 chain: "lightning".into(),
-                address: format!("expected BOLT11 invoice (lnbc.../lntb...), got: {}", &invoice[..invoice.len().min(40)]),
+                address: format!(
+                    "expected BOLT11 invoice (lnbc.../lntb...), got: {}",
+                    &invoice[..invoice.len().min(40)]
+                ),
             });
         }
 

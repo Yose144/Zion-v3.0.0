@@ -156,9 +156,7 @@ pub async fn run(cfg: &Config, cmd: NodeCmd) -> Result<()> {
             Ok(())
         }
         NodeCmd::Websocket { ws_cmd } => websocket_command(cfg, ws_cmd).await,
-        NodeCmd::Snapshot { output, target } => {
-            snapshot_command(cfg, output, &target).await
-        }
+        NodeCmd::Snapshot { output, target } => snapshot_command(cfg, output, &target).await,
     }
 }
 
@@ -172,11 +170,7 @@ pub async fn run(cfg: &Config, cmd: NodeCmd) -> Result<()> {
 ///
 /// This snapshot is used by the migration block builder to verify that
 /// all on-chain balances are accounted for before the decimal cutover.
-async fn snapshot_command(
-    cfg: &Config,
-    output: Option<String>,
-    target: &str,
-) -> Result<()> {
+async fn snapshot_command(cfg: &Config, output: Option<String>, target: &str) -> Result<()> {
     let (host, port) = cfg.target_rpc(target);
     ui::print_info(&format!("Exporting snapshot from {}:{}...", host, port));
 
@@ -194,7 +188,8 @@ async fn snapshot_command(
     let supply_info = node_rpc::call(host, port, "getSupplyInfo", json!({})).await?;
 
     // 3. Get tip block
-    let tip_block = node_rpc::call(host, port, "getBlockByHeight", json!({"height": height})).await?;
+    let tip_block =
+        node_rpc::call(host, port, "getBlockByHeight", json!({"height": height})).await?;
 
     // 4. Build snapshot JSON
     let snapshot = json!({
@@ -215,7 +210,11 @@ async fn snapshot_command(
     std::fs::write(&filename, json_str)?;
 
     ui::print_ok(&format!("Snapshot written to {}", filename));
-    ui::print_info(&format!("Height: {}, Hash: {}...", height, &tip_hash[..20.min(tip_hash.len())]));
+    ui::print_info(&format!(
+        "Height: {}, Hash: {}...",
+        height,
+        &tip_hash[..20.min(tip_hash.len())]
+    ));
     ui::print_info("Use this snapshot with the migration block builder to verify");
     ui::print_info("balance conservation before the 3.0.3 decimal cutover.");
 

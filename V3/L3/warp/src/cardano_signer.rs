@@ -99,7 +99,9 @@ fn decode_bech32_address(addr: &str) -> Result<Vec<u8>, String> {
     // Convert characters to 5-bit values
     let mut values: Vec<u8> = Vec::new();
     for c in data.chars() {
-        let idx = charset.find(c).ok_or_else(|| format!("invalid char '{}' in bech32", c))?;
+        let idx = charset
+            .find(c)
+            .ok_or_else(|| format!("invalid char '{}' in bech32", c))?;
         values.push(idx as u8);
     }
 
@@ -126,8 +128,7 @@ fn decode_bech32_address(addr: &str) -> Result<Vec<u8>, String> {
 }
 
 fn bech32_polymod(values: &[u8]) -> u32 {
-    let generator: [u32; 5] =
-        [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
+    let generator: [u32; 5] = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
     let mut chk: u32 = 1;
     for &v in values {
         let top = chk >> 25;
@@ -174,18 +175,16 @@ impl CardanoSigner {
     /// Load the relay payment key from `WARP_CARDANO_PAYMENT_KEY` (hex, 32 bytes).
     /// The policy key is loaded from `WARP_CARDANO_POLICY_KEY` (hex, 32 bytes).
     pub fn from_env() -> WarpResult<Self> {
-        let payment_hex = std::env::var("WARP_CARDANO_PAYMENT_KEY").map_err(|_| {
-            WarpError::AdapterError {
+        let payment_hex =
+            std::env::var("WARP_CARDANO_PAYMENT_KEY").map_err(|_| WarpError::AdapterError {
                 chain: "cardano".into(),
                 reason: "WARP_CARDANO_PAYMENT_KEY env var not set".into(),
-            }
-        })?;
-        let policy_hex = std::env::var("WARP_CARDANO_POLICY_KEY").map_err(|_| {
-            WarpError::AdapterError {
+            })?;
+        let policy_hex =
+            std::env::var("WARP_CARDANO_POLICY_KEY").map_err(|_| WarpError::AdapterError {
                 chain: "cardano".into(),
                 reason: "WARP_CARDANO_POLICY_KEY env var not set".into(),
-            }
-        })?;
+            })?;
 
         let payment_bytes = hex::decode(&payment_hex).map_err(|e| WarpError::AdapterError {
             chain: "cardano".into(),
@@ -282,20 +281,24 @@ impl CardanoSigner {
 
         tracing::info!(
             "[WARP][cardano] Minting {} of policy:{}:{} to {}",
-            amount, policy_id, asset_name_hex, recipient
+            amount,
+            policy_id,
+            asset_name_hex,
+            recipient
         );
 
         // 1. Query UTXOs at our address via Blockfrost
         // GET /addresses/{address}/utxos?limit=1
         let utxo_url = format!("{}/addresses/{}/utxos?limit=1", api_url, self.address);
-        let utxo_resp = client
-            .get(&utxo_url)
-            .send()
-            .await
-            .map_err(|e| WarpError::AdapterError {
-                chain: "cardano".into(),
-                reason: format!("UTXO query failed: {}", e),
-            })?;
+        let utxo_resp =
+            client
+                .get(&utxo_url)
+                .send()
+                .await
+                .map_err(|e| WarpError::AdapterError {
+                    chain: "cardano".into(),
+                    reason: format!("UTXO query failed: {}", e),
+                })?;
 
         if !utxo_resp.status().is_success() {
             let status = utxo_resp.status();
@@ -306,18 +309,24 @@ impl CardanoSigner {
             });
         }
 
-        let utxos: serde_json::Value = utxo_resp.json().await.map_err(|e| WarpError::AdapterError {
-            chain: "cardano".into(),
-            reason: format!("UTXO parse: {}", e),
-        })?;
+        let utxos: serde_json::Value =
+            utxo_resp
+                .json()
+                .await
+                .map_err(|e| WarpError::AdapterError {
+                    chain: "cardano".into(),
+                    reason: format!("UTXO parse: {}", e),
+                })?;
 
         // Extract first UTXO: tx_hash + tx_index + amount (lovelace)
-        let first_utxo = utxos.as_array().and_then(|a| a.first()).ok_or_else(|| {
-            WarpError::AdapterError {
-                chain: "cardano".into(),
-                reason: "no UTXOs available at relay address — fund the relay first".into(),
-            }
-        })?;
+        let first_utxo =
+            utxos
+                .as_array()
+                .and_then(|a| a.first())
+                .ok_or_else(|| WarpError::AdapterError {
+                    chain: "cardano".into(),
+                    reason: "no UTXOs available at relay address — fund the relay first".into(),
+                })?;
 
         let utxo_tx_hash_hex = first_utxo
             .get("tx_hash")
@@ -365,8 +374,8 @@ impl CardanoSigner {
 
         // Build outputs array (2 outputs: recipient + change)
         // Decode recipient address from bech32 to bytes
-        let recipient_addr_bytes = decode_bech32_address(recipient)
-            .map_err(|e| WarpError::AdapterError {
+        let recipient_addr_bytes =
+            decode_bech32_address(recipient).map_err(|e| WarpError::AdapterError {
                 chain: "cardano".into(),
                 reason: format!("invalid recipient address: {}", e),
             })?;
@@ -378,8 +387,8 @@ impl CardanoSigner {
             &asset_name,
             amount,
         );
-        let change_addr_bytes = decode_bech32_address(&self.address)
-            .map_err(|e| WarpError::AdapterError {
+        let change_addr_bytes =
+            decode_bech32_address(&self.address).map_err(|e| WarpError::AdapterError {
                 chain: "cardano".into(),
                 reason: format!("invalid change address: {}", e),
             })?;

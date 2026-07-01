@@ -342,7 +342,13 @@ impl ChainAdapter for CardanoAdapter {
         );
 
         signer
-            .submit_mint_tx(&self.client, &self.api_url, &instruction.recipient, asset, amount)
+            .submit_mint_tx(
+                &self.client,
+                &self.api_url,
+                &instruction.recipient,
+                asset,
+                amount,
+            )
             .await
     }
 

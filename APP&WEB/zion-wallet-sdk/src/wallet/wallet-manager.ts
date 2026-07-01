@@ -435,6 +435,7 @@ export class WalletManager {
       toAddress: options.toAddress,
       amountZion: options.amountZion,
       privateKey,
+      memo: options.memo,
     });
 
     return this.rpc.broadcastAccountTransaction(accountTx as unknown as Record<string, unknown>);

@@ -1,4 +1,4 @@
-﻿//! SQLite persistence for bridge state.
+//! SQLite persistence for bridge state.
 //!
 //! Stores processed lock/burn events, validator confirmations,
 //! timelocked operations, and bridge statistics for crash recovery.
@@ -36,7 +36,9 @@ impl BridgeDb {
         }
 
         let conn = Connection::open(path)?;
-        let db = Self { conn: Mutex::new(conn) };
+        let db = Self {
+            conn: Mutex::new(conn),
+        };
         db.init_tables()?;
         Ok(db)
     }
@@ -393,7 +395,11 @@ impl BridgeDb {
     /// Count total locks/burns by status.
     pub fn count_by_status(&self, table: &str, status: &str) -> Result<u64> {
         let query = format!("SELECT COUNT(*) FROM {} WHERE status = ?1", table);
-        let count: u64 = self.conn.lock().expect("db lock poisoned").query_row(&query, params![status], |r| r.get(0))?;
+        let count: u64 = self.conn.lock().expect("db lock poisoned").query_row(
+            &query,
+            params![status],
+            |r| r.get(0),
+        )?;
         Ok(count)
     }
 
@@ -618,7 +624,7 @@ mod tests {
             evm_chain: "base".into(),
             evm_burner: "0xaaabbbccc".into(),
             amount_wzion_wei: "1000000000000000000000".into(), // 1000 wZION
-            amount_flowers: 1_000_000_000,                      // 1000 ZION × 1e6 (post-3.0.3)
+            amount_flowers: 1_000_000_000,                     // 1000 ZION × 1e6 (post-3.0.3)
             l1_recipient: "zion1qrecipient".into(),
             burn_id: burn_id.into(),
             detected_at: Utc::now(),
@@ -854,7 +860,9 @@ mod tests {
         let count1 = db.increment_lock_retry("retry_tx", "RPC timeout").unwrap();
         assert_eq!(count1, 1);
 
-        let count2 = db.increment_lock_retry("retry_tx", "RPC timeout again").unwrap();
+        let count2 = db
+            .increment_lock_retry("retry_tx", "RPC timeout again")
+            .unwrap();
         assert_eq!(count2, 2);
     }
 
@@ -863,7 +871,9 @@ mod tests {
         let (db, _dir) = test_db();
         db.insert_burn(&sample_burn("retry_burn")).unwrap();
 
-        let count = db.increment_burn_retry("retry_burn", "gas too low").unwrap();
+        let count = db
+            .increment_burn_retry("retry_burn", "gas too low")
+            .unwrap();
         assert_eq!(count, 1);
     }
 
@@ -897,7 +907,8 @@ mod tests {
     fn test_get_retryable_burns() {
         let (db, _dir) = test_db();
         db.insert_burn(&sample_burn("b_retry")).unwrap();
-        db.update_burn_status("b_retry", BridgeStatus::Failed).unwrap();
+        db.update_burn_status("b_retry", BridgeStatus::Failed)
+            .unwrap();
 
         let retryable = db.get_retryable_burns(5).unwrap();
         assert_eq!(retryable.len(), 1);
@@ -916,23 +927,31 @@ mod tests {
             "1000000000000000000000000",
             "0xRecipient",
             "2026-01-01T00:00:00Z",
-        ).unwrap();
+        )
+        .unwrap();
 
         // Not expired yet (far future)
-        let not_expired = db.get_expired_timelocked_ops("2025-01-01T00:00:00Z").unwrap();
+        let not_expired = db
+            .get_expired_timelocked_ops("2025-01-01T00:00:00Z")
+            .unwrap();
         assert_eq!(not_expired.len(), 0);
 
         // Expired now
-        let expired = db.get_expired_timelocked_ops("2026-06-01T00:00:00Z").unwrap();
+        let expired = db
+            .get_expired_timelocked_ops("2026-06-01T00:00:00Z")
+            .unwrap();
         assert_eq!(expired.len(), 1);
         assert_eq!(expired[0].l1_tx_hash, "tl_tx_001");
         assert_eq!(expired[0].evm_chain, "base");
 
         // Mark as executed
-        db.mark_timelocked_executed("tl_tx_001", "0xExecTxHash").unwrap();
+        db.mark_timelocked_executed("tl_tx_001", "0xExecTxHash")
+            .unwrap();
 
         // Should no longer appear in expired (status = executed)
-        let after_exec = db.get_expired_timelocked_ops("2026-06-01T00:00:00Z").unwrap();
+        let after_exec = db
+            .get_expired_timelocked_ops("2026-06-01T00:00:00Z")
+            .unwrap();
         assert_eq!(after_exec.len(), 0);
     }
 
@@ -941,10 +960,28 @@ mod tests {
         let (db, _dir) = test_db();
 
         // Insert same hash twice — INSERT OR IGNORE must not fail or double-count
-        db.insert_timelocked_op("dup_tl", "base", "0xBridge", "100", "0xRec", "2026-01-01T00:00:00Z").unwrap();
-        db.insert_timelocked_op("dup_tl", "base", "0xBridge", "100", "0xRec", "2026-01-01T00:00:00Z").unwrap();
+        db.insert_timelocked_op(
+            "dup_tl",
+            "base",
+            "0xBridge",
+            "100",
+            "0xRec",
+            "2026-01-01T00:00:00Z",
+        )
+        .unwrap();
+        db.insert_timelocked_op(
+            "dup_tl",
+            "base",
+            "0xBridge",
+            "100",
+            "0xRec",
+            "2026-01-01T00:00:00Z",
+        )
+        .unwrap();
 
-        let expired = db.get_expired_timelocked_ops("2026-06-01T00:00:00Z").unwrap();
+        let expired = db
+            .get_expired_timelocked_ops("2026-06-01T00:00:00Z")
+            .unwrap();
         assert_eq!(expired.len(), 1, "Duplicate insert must be ignored");
     }
 
@@ -952,12 +989,22 @@ mod tests {
     fn test_timelocked_ops_mark_failed() {
         let (db, _dir) = test_db();
 
-        db.insert_timelocked_op("fail_tl", "base", "0xBridge", "100", "0xRec", "2026-01-01T00:00:00Z").unwrap();
-        db.mark_timelocked_failed("fail_tl", "gas price too high").unwrap();
+        db.insert_timelocked_op(
+            "fail_tl",
+            "base",
+            "0xBridge",
+            "100",
+            "0xRec",
+            "2026-01-01T00:00:00Z",
+        )
+        .unwrap();
+        db.mark_timelocked_failed("fail_tl", "gas price too high")
+            .unwrap();
 
         // Status is now 'failed' — should not appear in expired pending list
-        let expired = db.get_expired_timelocked_ops("2026-06-01T00:00:00Z").unwrap();
+        let expired = db
+            .get_expired_timelocked_ops("2026-06-01T00:00:00Z")
+            .unwrap();
         assert_eq!(expired.len(), 0);
     }
 }
-

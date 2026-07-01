@@ -110,7 +110,10 @@ impl L1BlockListener {
         // simply begin from 0 and will catch up once it recovers.
         match self.fetch_chain_height().await {
             Ok(h) => {
-                info!("L1BlockListener initial chain_height={}; starting from there", h);
+                info!(
+                    "L1BlockListener initial chain_height={}; starting from there",
+                    h
+                );
                 self.last_height = h;
             }
             Err(e) => {
@@ -235,8 +238,8 @@ impl L1BlockListener {
 
         let result = rpc_result(&val)?;
 
-        let block: BlockInfo = serde_json::from_value(result)
-            .map_err(|e| format!("failed to parse block: {}", e))?;
+        let block: BlockInfo =
+            serde_json::from_value(result).map_err(|e| format!("failed to parse block: {}", e))?;
 
         Ok(block)
     }

@@ -130,8 +130,8 @@ async fn main() {
         min_vote_weight: cfg.min_vote_weight,
         finality_blocks: cfg.finality_blocks,
     };
-    let scanner = L1Scanner::new(scanner_cfg, Arc::clone(&db))
-        .with_metrics(Arc::clone(&dao_metrics));
+    let scanner =
+        L1Scanner::new(scanner_cfg, Arc::clone(&db)).with_metrics(Arc::clone(&dao_metrics));
 
     let scanner_handle = tokio::spawn(async move {
         scanner.run().await;

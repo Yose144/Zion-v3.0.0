@@ -103,7 +103,7 @@ impl BitString {
         self.write_bit(true); // addr_std$10
         self.write_bit(false); // anycast: maybe no
         self.write_bit(false); // bounceable (no) — actually this is part of addr_std
-        // addr_std$10 anycast:(Maybe Anycast) workchain_id:int8 address:bits256
+                               // addr_std$10 anycast:(Maybe Anycast) workchain_id:int8 address:bits256
         self.write_uint((workchain as i8) as u64, 8);
         self.write_bytes(hash);
     }
@@ -422,7 +422,7 @@ pub fn build_internal_message(
         data.write_bit(true); // ihr_disabled
         data.write_bit(true); // bounce
         data.write_bit(false); // bounced
-        // src: addr_none
+                               // src: addr_none
         data.write_addr_none();
         // dest: addr_std
         data.write_addr_std(dest_workchain, dest_hash);
@@ -483,7 +483,7 @@ pub fn build_wallet_v2r2_external(
         // CommonMsgInfo: ext_in_msg_info$10
         outer_data.write_bit(true); // 1
         outer_data.write_bit(false); // 0 → ext_in_msg_info$10
-        // src: addr_none
+                                     // src: addr_none
         outer_data.write_addr_none();
         // dest: addr_std (wallet address)
         outer_data.write_addr_std(wallet_workchain, wallet_hash);
@@ -768,10 +768,8 @@ mod tests {
         let body = build_jetton_transfer_body(1, 1000, 0, &dest_hash);
         let msg = build_internal_message(0, &dest_hash, 50_000_000, body).unwrap();
 
-        let external = build_wallet_v2r2_external(
-            0, &wallet_hash, 0x29a9a317, 999999, 0, msg, &sig,
-        )
-        .unwrap();
+        let external =
+            build_wallet_v2r2_external(0, &wallet_hash, 0x29a9a317, 999999, 0, msg, &sig).unwrap();
 
         // Should have 1 ref (the message)
         assert_eq!(external.refs().len(), 1);

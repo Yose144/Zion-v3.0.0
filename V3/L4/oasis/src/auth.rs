@@ -124,11 +124,15 @@ impl WalletAuth {
     ///   5. Check the timestamp is within `TIMESTAMP_WINDOW_SECS` of now.
     pub fn verify(&self) -> Result<(), AuthError> {
         // 1. Parse signature (hex → 64 bytes).
-        let sig_bytes = hex::decode(&self.signature).map_err(|_| AuthError::InvalidFormat("signature hex"))?;
+        let sig_bytes =
+            hex::decode(&self.signature).map_err(|_| AuthError::InvalidFormat("signature hex"))?;
         if sig_bytes.len() != 64 {
             return Err(AuthError::InvalidFormat("signature length"));
         }
-        let sig_arr: [u8; 64] = sig_bytes.as_slice().try_into().map_err(|_| AuthError::InvalidFormat("signature length"))?;
+        let sig_arr: [u8; 64] = sig_bytes
+            .as_slice()
+            .try_into()
+            .map_err(|_| AuthError::InvalidFormat("signature length"))?;
         let signature = Signature::from_bytes(&sig_arr);
 
         // 2. Parse public key from the message prefix.
@@ -137,12 +141,17 @@ impl WalletAuth {
             .split(MSG_SEP)
             .next()
             .ok_or(AuthError::InvalidFormat("message prefix"))?;
-        let pk_bytes = hex::decode(pubkey_hex).map_err(|_| AuthError::InvalidFormat("pubkey hex"))?;
+        let pk_bytes =
+            hex::decode(pubkey_hex).map_err(|_| AuthError::InvalidFormat("pubkey hex"))?;
         if pk_bytes.len() != 32 {
             return Err(AuthError::InvalidFormat("pubkey length"));
         }
-        let pk_arr: [u8; 32] = pk_bytes.as_slice().try_into().map_err(|_| AuthError::InvalidFormat("pubkey length"))?;
-        let verifying_key = VerifyingKey::from_bytes(&pk_arr).map_err(|_| AuthError::InvalidSignature)?;
+        let pk_arr: [u8; 32] = pk_bytes
+            .as_slice()
+            .try_into()
+            .map_err(|_| AuthError::InvalidFormat("pubkey length"))?;
+        let verifying_key =
+            VerifyingKey::from_bytes(&pk_arr).map_err(|_| AuthError::InvalidSignature)?;
 
         // 3. Verify Ed25519 signature over the full message bytes.
         verifying_key
@@ -174,9 +183,7 @@ impl WalletAuth {
 
 /// Extract a single required header value as a string.
 fn header_str(headers: &HeaderMap, name: &'static str) -> Result<String, AuthError> {
-    let value = headers
-        .get(name)
-        .ok_or(AuthError::MissingHeader(name))?;
+    let value = headers.get(name).ok_or(AuthError::MissingHeader(name))?;
     value
         .to_str()
         .map(|s| s.trim().to_string())
@@ -389,7 +396,10 @@ mod tests {
 
         let mut headers = HeaderMap::new();
         headers.insert(HDR_ADDRESS, HeaderValue::from_str(&auth.address).unwrap());
-        headers.insert(HDR_SIGNATURE, HeaderValue::from_str(&auth.signature).unwrap());
+        headers.insert(
+            HDR_SIGNATURE,
+            HeaderValue::from_str(&auth.signature).unwrap(),
+        );
         headers.insert(HDR_MESSAGE, HeaderValue::from_str(&auth.message).unwrap());
         headers.insert(
             HDR_TIMESTAMP,
@@ -421,7 +431,10 @@ mod tests {
         let (auth, _) = make_valid_auth("login to OASIS", now_secs());
         let mut headers = HeaderMap::new();
         headers.insert(HDR_ADDRESS, HeaderValue::from_str(&auth.address).unwrap());
-        headers.insert(HDR_SIGNATURE, HeaderValue::from_str(&auth.signature).unwrap());
+        headers.insert(
+            HDR_SIGNATURE,
+            HeaderValue::from_str(&auth.signature).unwrap(),
+        );
         headers.insert(HDR_MESSAGE, HeaderValue::from_str(&auth.message).unwrap());
         headers.insert(HDR_TIMESTAMP, HeaderValue::from_static("not-a-number"));
 

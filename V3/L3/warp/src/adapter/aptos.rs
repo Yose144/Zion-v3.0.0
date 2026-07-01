@@ -118,8 +118,8 @@ impl AptosAdapter {
 
     /// Read configuration from env vars.
     pub fn from_env() -> Self {
-        let rpc_url = std::env::var("WARP_APTOS_RPC")
-            .unwrap_or_else(|_| DEFAULT_APTOS_RPC.to_string());
+        let rpc_url =
+            std::env::var("WARP_APTOS_RPC").unwrap_or_else(|_| DEFAULT_APTOS_RPC.to_string());
         let bridge_account = std::env::var("WARP_APTOS_BRIDGE_ACCOUNT")
             .unwrap_or_else(|_| DEFAULT_BRIDGE_ACCOUNT.to_string());
         let event_handle = std::env::var("WARP_APTOS_EVENT_HANDLE")
@@ -222,10 +222,12 @@ impl AptosAdapter {
         if resp.status() == reqwest::StatusCode::NOT_FOUND {
             return Ok(None);
         }
-        let resp = resp.error_for_status().map_err(|e| WarpError::AdapterError {
-            chain: "aptos".into(),
-            reason: format!("tx lookup HTTP status: {}", e),
-        })?;
+        let resp = resp
+            .error_for_status()
+            .map_err(|e| WarpError::AdapterError {
+                chain: "aptos".into(),
+                reason: format!("tx lookup HTTP status: {}", e),
+            })?;
         let tx: AptosTx = resp.json().await.map_err(|e| WarpError::AdapterError {
             chain: "aptos".into(),
             reason: format!("tx lookup parse: {}", e),
@@ -360,7 +362,9 @@ impl AptosAdapter {
             // ty_args: empty Vec<TypeTag>
             e.uleb128_mut(0);
             // args: Vec<Vec<u8>>
-            e.seq(&args, |e2, arg| { e2.bytes_mut(arg); });
+            e.seq(&args, |e2, arg| {
+                e2.bytes_mut(arg);
+            });
         });
         // max_gas_amount
         enc.u64_mut(max_gas);
@@ -424,19 +428,18 @@ impl AptosAdapter {
 
         if status.is_success() {
             // Parse the hash from the JSON response.
-            let v: serde_json::Value = serde_json::from_str(&body).map_err(|e| {
-                WarpError::AdapterError {
+            let v: serde_json::Value =
+                serde_json::from_str(&body).map_err(|e| WarpError::AdapterError {
                     chain: "aptos".into(),
                     reason: format!("submit TX response parse: {}", e),
-                }
-            })?;
-            let hash = v
-                .get("hash")
-                .and_then(|h| h.as_str())
-                .ok_or_else(|| WarpError::AdapterError {
-                    chain: "aptos".into(),
-                    reason: format!("submit TX response missing hash: {}", body),
                 })?;
+            let hash =
+                v.get("hash")
+                    .and_then(|h| h.as_str())
+                    .ok_or_else(|| WarpError::AdapterError {
+                        chain: "aptos".into(),
+                        reason: format!("submit TX response missing hash: {}", body),
+                    })?;
             Ok(hash.to_string())
         } else {
             Err(WarpError::AdapterError {
@@ -516,13 +519,14 @@ impl ChainAdapter for AptosAdapter {
 
         // 2. Get the sender account's current sequence_number
         let account = self.get_account(&signer.address).await?;
-        let sequence_number: u64 = account
-            .sequence_number
-            .parse()
-            .map_err(|e| WarpError::AdapterError {
-                chain: "aptos".into(),
-                reason: format!("sequence_number parse: {}", e),
-            })?;
+        let sequence_number: u64 =
+            account
+                .sequence_number
+                .parse()
+                .map_err(|e| WarpError::AdapterError {
+                    chain: "aptos".into(),
+                    reason: format!("sequence_number parse: {}", e),
+                })?;
 
         // 3. Parse the recipient address
         let recipient_addr = Self::parse_address_hex(&instruction.recipient)?;
@@ -553,8 +557,8 @@ impl ChainAdapter for AptosAdapter {
             "warp_bridge",
             "mint",
             vec![arg_recipient, arg_amount],
-            2000,    // max_gas_amount
-            100,     // gas_unit_price (octas)
+            2000, // max_gas_amount
+            100,  // gas_unit_price (octas)
             expiration,
             chain_id,
         );
@@ -577,10 +581,12 @@ impl ChainAdapter for AptosAdapter {
 
     async fn current_height(&self) -> WarpResult<u64> {
         let info = self.node_info().await?;
-        info.ledger_version.parse().map_err(|e| WarpError::AdapterError {
-            chain: "aptos".into(),
-            reason: format!("ledger_version parse: {}", e),
-        })
+        info.ledger_version
+            .parse()
+            .map_err(|e| WarpError::AdapterError {
+                chain: "aptos".into(),
+                reason: format!("ledger_version parse: {}", e),
+            })
     }
 
     async fn confirmations(&self, tx_hash: &str) -> WarpResult<u64> {
@@ -674,7 +680,10 @@ mod tests {
         };
         // Must return Ok(false), not an Err — graceful degradation.
         let result = a.health_check().await;
-        assert!(result.is_ok(), "health_check should not error on network failure");
+        assert!(
+            result.is_ok(),
+            "health_check should not error on network failure"
+        );
         assert_eq!(result.unwrap(), false);
     }
 
@@ -694,7 +703,10 @@ mod tests {
             warp_message_hash: String::new(),
         };
         let result = a.execute_mint(&inst).await;
-        assert!(result.is_err(), "execute_mint should error without relay key");
+        assert!(
+            result.is_err(),
+            "execute_mint should error without relay key"
+        );
         let err = result.unwrap_err();
         match err {
             WarpError::AdapterError { chain, reason } => {
@@ -714,7 +726,10 @@ mod tests {
         std::env::set_var("WARP_APTOS_RELAY_KEY", hex::encode(&[0x42u8; 32]));
         let a2 = AptosAdapter::with_rpc("http://127.0.0.1:1");
         let result2 = a2.execute_mint(&inst).await;
-        assert!(result2.is_err(), "execute_mint should error without network");
+        assert!(
+            result2.is_err(),
+            "execute_mint should error without network"
+        );
         let err2 = result2.unwrap_err();
         match err2 {
             WarpError::AdapterError { chain, reason } => {
@@ -734,14 +749,33 @@ mod tests {
     fn test_bcs_encode_raw_transaction_deterministic() {
         let sender = [0x01u8; 32];
         let module_addr = [0x02u8; 32];
-        let args = vec![vec![0xaa; 32], vec![0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]];
+        let args = vec![
+            vec![0xaa; 32],
+            vec![0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+        ];
         let raw1 = AptosAdapter::encode_raw_transaction(
-            &sender, 5, &module_addr, "warp_bridge", "mint",
-            args.clone(), 2000, 100, 99999, 1,
+            &sender,
+            5,
+            &module_addr,
+            "warp_bridge",
+            "mint",
+            args.clone(),
+            2000,
+            100,
+            99999,
+            1,
         );
         let raw2 = AptosAdapter::encode_raw_transaction(
-            &sender, 5, &module_addr, "warp_bridge", "mint",
-            args, 2000, 100, 99999, 1,
+            &sender,
+            5,
+            &module_addr,
+            "warp_bridge",
+            "mint",
+            args,
+            2000,
+            100,
+            99999,
+            1,
         );
         assert_eq!(raw1, raw2);
         // Verify structure:

@@ -114,12 +114,11 @@ pub struct CosmosSigner {
 impl CosmosSigner {
     /// Load the relay key from `WARP_COSMOS_RELAY_KEY` env var (hex, 32 bytes).
     pub fn from_env() -> WarpResult<Self> {
-        let key_hex = std::env::var("WARP_COSMOS_RELAY_KEY").map_err(|_| {
-            WarpError::AdapterError {
+        let key_hex =
+            std::env::var("WARP_COSMOS_RELAY_KEY").map_err(|_| WarpError::AdapterError {
                 chain: "cosmos".into(),
                 reason: "WARP_COSMOS_RELAY_KEY env var not set".into(),
-            }
-        })?;
+            })?;
         let key_bytes = hex::decode(&key_hex).map_err(|e| WarpError::AdapterError {
             chain: "cosmos".into(),
             reason: format!("invalid hex key: {}", e),
@@ -235,18 +234,21 @@ impl CosmosSigner {
                 reason: format!("encode response parse failed: {}", e),
             })?;
 
-        let tx_bytes_b64 = encode_resp["tx_bytes"]
-            .as_str()
-            .ok_or_else(|| WarpError::AdapterError {
-                chain: "cosmos".into(),
-                reason: "no tx_bytes in encode response".into(),
-            })?;
+        let tx_bytes_b64 =
+            encode_resp["tx_bytes"]
+                .as_str()
+                .ok_or_else(|| WarpError::AdapterError {
+                    chain: "cosmos".into(),
+                    reason: "no tx_bytes in encode response".into(),
+                })?;
 
         // Sign the tx_bytes
-        let tx_bytes = B64.decode(tx_bytes_b64).map_err(|e| WarpError::AdapterError {
-            chain: "cosmos".into(),
-            reason: format!("base64 decode tx_bytes: {}", e),
-        })?;
+        let tx_bytes = B64
+            .decode(tx_bytes_b64)
+            .map_err(|e| WarpError::AdapterError {
+                chain: "cosmos".into(),
+                reason: format!("base64 decode tx_bytes: {}", e),
+            })?;
         let signature = self.sign(&tx_bytes);
         let _sig_b64 = B64.encode(&signature);
 

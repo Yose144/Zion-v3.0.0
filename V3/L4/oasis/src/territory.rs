@@ -116,7 +116,11 @@ impl Territory {
     /// the territory was contested within the last `TERRITORY_DEFENSE_PERIOD`
     /// seconds (24h). On success, updates `last_contested` and resolves the
     /// battle.
-    pub fn contest(&mut self, attacking_guild: &str, attack_power: u64) -> Result<bool, TerritoryError> {
+    pub fn contest(
+        &mut self,
+        attacking_guild: &str,
+        attack_power: u64,
+    ) -> Result<bool, TerritoryError> {
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -200,7 +204,11 @@ impl std::fmt::Display for TerritoryError {
             Self::AtCapacity => write!(f, "Territory at full capacity"),
             Self::InsufficientLevel => write!(f, "Insufficient level to claim"),
             Self::CooldownActive { remaining_secs } => {
-                write!(f, "Territory contest cooldown active: {}s remaining", remaining_secs)
+                write!(
+                    f,
+                    "Territory contest cooldown active: {}s remaining",
+                    remaining_secs
+                )
             }
         }
     }
