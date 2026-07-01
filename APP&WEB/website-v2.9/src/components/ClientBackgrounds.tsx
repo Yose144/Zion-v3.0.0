@@ -3,7 +3,6 @@
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import BackgroundOrchestrator from './BackgroundOrchestrator';
-import WarpSpeedBackground from './WarpSpeedBackground';
 import { useObservatory } from '@/contexts/ObservatoryContext';
 
 const BACKGROUND_DISABLED_PREFIXES = [
@@ -15,6 +14,7 @@ const BACKGROUND_DISABLED_PREFIXES = [
   '/explorer',
   '/monitoring',
   '/network',
+  '/warp',
 ];
 
 export default function ClientBackgrounds() {
@@ -28,17 +28,6 @@ export default function ClientBackgrounds() {
     document.body.classList.toggle('warp-only-mode', isWarpOnlyMode);
     return () => document.body.classList.remove('warp-only-mode');
   }, [isWarpOnlyMode]);
-
-  if (pathname === '/warp') {
-    return (
-      <WarpSpeedBackground
-        starColor={[80, 230, 210]}
-        speed={24}
-        density={500}
-        backgroundGradient="radial-gradient(ellipse at center, #0a2e2a 0%, #020a0a 100%)"
-      />
-    );
-  }
 
   if (backgroundsDisabled) {
     return null;
