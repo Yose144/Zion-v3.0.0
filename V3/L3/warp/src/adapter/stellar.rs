@@ -9,9 +9,9 @@ use serde_json::{json, Value};
 use tracing::{debug, info, warn};
 
 // ─────────────────────────────────────────────────────────────────────────────
-// wZION Soroban contract ID per network
+// ZION Soroban contract ID per network
 // ─────────────────────────────────────────────────────────────────────────────
-fn wzion_contract(network: &str) -> Option<&'static str> {
+fn zion_contract(network: &str) -> Option<&'static str> {
     match network {
         "mainnet" => Some("CZIONXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"),
         "testnet" => Some("CZIONTEXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"),
@@ -259,10 +259,10 @@ impl ChainAdapter for StellarAdapter {
     }
 
     async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {
-        let contract = match wzion_contract(&self.network) {
+        let contract = match zion_contract(&self.network) {
             Some(c) => c,
             None => {
-                debug!("[WARP][stellar] No wZION contract configured");
+                debug!("[WARP][stellar] No ZION contract configured");
                 return Ok(vec![]);
             }
         };
@@ -358,10 +358,10 @@ mod tests {
     }
 
     #[test]
-    fn test_wzion_contract_mainnet() {
-        assert!(wzion_contract("mainnet").is_some());
-        assert!(wzion_contract("testnet").is_some());
-        assert!(wzion_contract("unknown").is_none());
+    fn test_zion_contract_mainnet() {
+        assert!(zion_contract("mainnet").is_some());
+        assert!(zion_contract("testnet").is_some());
+        assert!(zion_contract("unknown").is_none());
     }
 
     #[test]

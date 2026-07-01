@@ -15,8 +15,8 @@
 ///
 /// Environment Variables:
 ///   WARP_STELLAR_RELAY_KEY     — Stellar secret key (S... 56-char StrKey, required)
-///   WARP_STELLAR_WZION_ISSUER  — G... account issuing the wZION asset (required)
-///   WARP_STELLAR_ASSET_CODE    — asset code (default: "wZION")
+///   WARP_STELLAR_ZION_ISSUER   — G... account issuing the ZION asset (required)
+///   WARP_STELLAR_ASSET_CODE    — asset code (default: "ZION")
 ///   STELLAR_NETWORK            — "mainnet" | "testnet" | "futurenet" (default: mainnet)
 ///   WARP_STELLAR_FEE           — base fee in stroops (default: 100)
 use crate::error::{WarpError, WarpResult};
@@ -161,7 +161,7 @@ impl StellarSigner {
     }
 
     /// Sign and broadcast a classic Payment to send `amount_stroops` of Asset
-    /// (wZION) to `recipient` (G... address).
+    /// (ZION) to `recipient` (G... address).
     pub async fn send_payment(
         &self,
         client: &reqwest::Client,
@@ -170,11 +170,11 @@ impl StellarSigner {
         amount_stroops: i64,
     ) -> WarpResult<String> {
         let asset_code =
-            std::env::var("WARP_STELLAR_ASSET_CODE").unwrap_or_else(|_| "wZION".to_string());
+            std::env::var("WARP_STELLAR_ASSET_CODE").unwrap_or_else(|_| "ZION".to_string());
         let issuer_str =
-            std::env::var("WARP_STELLAR_WZION_ISSUER").map_err(|_| WarpError::AdapterError {
+            std::env::var("WARP_STELLAR_ZION_ISSUER").map_err(|_| WarpError::AdapterError {
                 chain: "stellar".into(),
-                reason: "WARP_STELLAR_WZION_ISSUER env var not set".into(),
+                reason: "WARP_STELLAR_ZION_ISSUER env var not set".into(),
             })?;
         let fee = std::env::var("WARP_STELLAR_FEE")
             .ok()
@@ -487,7 +487,7 @@ mod tests {
         let src = [1u8; 32];
         let dst = [2u8; 32];
         let iss = [3u8; 32];
-        let code = b"wZION\0\0\0\0\0\0\0"; // 12 bytes
+        let code = b"ZION\0\0\0\0\0\0\0\0"; // 12 bytes
         let tx = build_payment_tx(
             &src,
             &dst,
@@ -538,7 +538,7 @@ mod tests {
             &s1.pub_key_bytes,
             &[2u8; 32],
             ASSET_TYPE_ALPHANUM12,
-            b"wZION\0\0\0\0\0\0\0",
+            b"ZION\0\0\0\0\0\0\0\0",
             &[3u8; 32],
             100_000,
             5,
@@ -577,7 +577,7 @@ mod tests {
             &s.pub_key_bytes,
             &[2u8; 32],
             ASSET_TYPE_ALPHANUM12,
-            b"wZION\0\0\0\0\0\0\0",
+            b"ZION\0\0\0\0\0\0\0\0",
             &[3u8; 32],
             100_000,
             5,

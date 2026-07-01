@@ -1,6 +1,6 @@
 //! # NEAR Signer — D-04
 //!
-//! Signs and broadcasts NEAR function-call transactions for wZION minting.
+//! Signs and broadcasts NEAR function-call transactions for ZION minting.
 //!
 //! ## Design
 //! - Pure Rust: `ed25519-dalek v2` + `sha2` + `bs58` + `base64` (all in Cargo).
