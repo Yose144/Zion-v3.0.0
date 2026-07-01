@@ -1,7 +1,8 @@
 # ZION Atomic Swap Runbook
 
 **Created:** 2026-06-29
-**Status:** ✅ Escrow funded + E2E tested (2026-06-29)
+**Updated:** 2026-07-01
+**Status:** ✅ Escrow funded + E2E tested + account-model memo support (3.0.4)
 **Target:** ZION L1 ↔ Base (EVM) cross-chain HTLC swaps
 
 ---
@@ -121,17 +122,16 @@ grace_period_secs   = 300                 # 5 min grace before auto-refund
 | Daemon | ✅ | API :8452 healthy, L1 watcher scanning blocks |
 | EVM watcher | ✅ | Watching `0x3DE9...` for Locked/Claimed/Refunded events |
 
-### Known Limitation
+### Account-Model Memo Support (3.0.4)
 
-**L2 watcher scans only `utxo_transactions`, not `account_transactions`.**
+The atomic swap watcher now scans both `utxo_transactions` and `account_transactions`.
+Account-model transactions sent to the escrow address with `SWAP:LOCK/CLAIM/REFUND` memos
+are detected and processed the same way as UTXO outputs.
 
-The `L1Block` struct in `V3/L2/atomic-swap/src/types.rs` only deserializes `utxo_transactions`.
-Account-model transactions with memos are accepted to the L1 chain but not detected by the
-atomic swap watcher. This is a **roadmap item** — to fix:
-
-1. Add `account_transactions: Vec<L1AccountTransaction>` to `L1Block` struct
-2. Update `watcher.rs` `scan_block()` to iterate both `utxo_transactions` and `account_transactions`
-3. Same fix needed for DAO scanner (`V3/L2/dao/src/l1_scanner.rs`)
+Implementation:
+- `L1Block` in `V3/L2/atomic-swap/src/types.rs` includes `account_transactions: Vec<L1AccountTransaction>`.
+- `watcher.rs` iterates both UTXO outputs and account transactions, with deduplication by `tx_id`.
+- Same pattern applied to the bridge and DAO L1 watchers.
 
 ---
 
@@ -173,20 +173,19 @@ curl http://100.76.16.108:8452/swap/<hash_hex>
 
 ## E2E Test Script
 
-See: `APP&WEB/desktop-agent/atomic-swap-e2e.js`
+See: `APP&WEB/desktop-agent/atomic-swap-e2e.js` (create ad-hoc or use desktop-agent wallet UI)
+
+Manual E2E flow:
+1. Generate random 32-byte preimage → SHA-256 → hashlock
+2. Send LOCK TX (1 ZION to escrow, memo `SWAP:LOCK:<hash>:120:base:0xTest`)
+3. Wait ~30s for daemon detection
+4. Send CLAIM TX (memo `SWAP:CLAIM:<hash>:<preimage>`)
+5. Check final HTLC status via API
 
 ```bash
-cd APP&WEB/desktop-agent
 # Requires SSH tunnel: ssh -L 8452:127.0.0.1:8452 root@100.76.16.108 -N
-node atomic-swap-e2e.js
+curl http://127.0.0.1:8452/swap/<hash_hex>
 ```
-
-The script:
-1. Generates random 32-byte preimage → SHA-256 → hashlock
-2. Sends LOCK TX (1 ZION to escrow, memo `SWAP:LOCK:<hash>:120:base:0xTest`)
-3. Waits 30s for daemon detection
-4. Sends CLAIM TX (memo `SWAP:CLAIM:<hash>:<preimage>`)
-5. Checks final HTLC status via API
 
 ---
 
