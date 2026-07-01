@@ -123,16 +123,22 @@ Verze **3.0.3** je nyní uzavřena. Všechny klíčové komponenty jsou funkčn�
 #### P9 — WARP Aptos/NEAR/Sui/TON Adapters — ✅ IMPLEMENTED 2026-06-30
 
 > **Runbook:** `V3/L3/warp/src/adapter/{aptos,near,sui,ton}.rs` + `V3/L3/warp/src/{aptos,near,sui,ton}_signer.rs`
+>
+> **WARP Bridge Architecture:** WARP přenáší **native L1 ZION**, ne wZION.
+> - **Outbound (L1→chain):** User pošle ZION L1 TX na `BRIDGE_VAULT_ADDRESS` s memo `BRIDGE:<chain>:<recipient>` → ZION se zamkne v vault → WARP mintne wZION na dest chain (1:1 peg)
+> - **Inbound (chain→L1):** User spálí wZION na external chain → WARP validator set (3/5) podepíše unlock → `submitBridgeUnlock` na L1 → ZION se odemkne z vault → recipient
+> - **L1 RPC:** `getBridgeLocks`, `getBridgeVaultBalance`, `submitBridgeUnlock` (vše implementováno v `V3/L1/core/src/rpc.rs`)
+> - **Bridge vault:** `BRIDGE_VAULT_ADDRESS` = keyless address, ~100M ZION locked
 
 - [x] **Aptos adapter** — REST health check (ledger version), Ed25519 signer + SHA-256 address derivation, watch_events via account event API. **BCS TX builder implemented** — `RawTransaction` + `SignedTransaction` BCS encoding + `POST /v1/transactions` submit. **Plně funkční**
 - [x] **NEAR adapter** — JSON-RPC health check (block height), borsh TX serialization (hand-rolled, no `near-sdk` dep), `broadcast_tx_async`, watch_events via receipt log scanning. **Plně funkční**
 - [x] **Sui adapter** — JSON-RPC health check (checkpoint seqno), Ed25519 signer + Sui address derivation (SHA-256 with flag byte), signature format (97 bytes base64). **BCS TX builder implemented** — `TransactionData::V1` + `ProgrammableTransaction` + `MoveCall` BCS encoding + `sui_executeTransactionBlock` submit. **Plně funkční**
-- [x] **TON adapter** — JSON-RPC health check (masterchain seqno), Ed25519 signer, watch_events via `getTransactions` for bridge account. **TL-B Cell+BOC TX builder implemented** — `BitString` (bit-level buffer) + `Cell` (1023-bit data + 4 refs) + `serialize_boc` (Bag of Cells) + jetton transfer body + wallet V2R2 signing + `sendBase64Transaction`. **Plně funkční**
+- [x] **TON adapter** — JSON-RPC health check (masterchain seqno), Ed25519 signer, watch_events via `getTransactions` for bridge account. **TL-B Cell+BOC TX builder implemented** — `BitString` (bit-level buffer) + `Cell` (1023-bit data + 4 refs) + `serialize_boc` (Bag of Cells) + jetton transfer body + wallet V2R2 signing + `sendBase64Transaction`. **Plně funkční** — StateInit address derivation + CRC16-XMODEM + base64url decoder + seqno fetch via runMethod
 - [x] **BCS encoder** — pure Rust BCS (Binary Canonical Serialization) encoder/decoder for MoveVM chains (Aptos + Sui). No external dependency. 33 tests.
 - [x] **CBOR encoder** — pure Rust CBOR (RFC 8949) encoder for Cardano TX construction. Implements uint/nint/bytes/text/array/map/tag/bool/null + Cardano TX helpers (tx_input, tx_output, tx_body, witness_set, transaction). 21 tests.
 - [x] **TON Cell/BOC encoder** — pure Rust TL-B Cell serialization for TON. `BitString` (bit-level ops) + `Cell` (1023-bit data + 4 refs + SHA-256 hash) + `serialize_boc` (unified BOC format 0xb5ee00ed) + jetton transfer body + internal message + wallet V2R2 external message + signing hash. 23 tests.
 - [x] **Cardano `submit_mint_tx`** — CBOR TX body (inputs + outputs + fee + ttl + mint) + Blake2b-256 body hash + Ed25519 witness + Blockfrost `/tx/submit`. Blake2b-224 for payment key hash + policy ID. **Plně funkční**
-- [x] 488 WARP tests pass (cumulative — bcs + cbor + ton_cell + aptos BCS + sui BCS + cardano CBOR + ton TL-B + adapters + signers)
+- [x] 499 WARP tests pass (cumulative — bcs + cbor + ton_cell + aptos BCS + sui BCS + cardano CBOR + ton TL-B + adapters + signers + server)
 - [ ] Deploy wZION Move module on Aptos mainnet
 - [ ] Deploy wZION NEAR contract
 - [ ] Deploy wZION Sui package
