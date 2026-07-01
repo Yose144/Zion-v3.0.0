@@ -64,6 +64,17 @@ fn main() -> Result<()> {
         }
     }
 
+    // Account-model memo v1 hard-fork height override.
+    // For a fresh chain the compile-time constant (0 = active from genesis) is
+    // used. For a coordinated hard fork on an existing mainnet/testnet, set this
+    // to a future height before starting all nodes.
+    if let Ok(h_str) = std::env::var("ZION_ACCOUNT_TX_MEMO_V1_HEIGHT") {
+        if let Ok(h) = h_str.parse::<u64>() {
+            zion_cosmic_harmony::set_account_tx_memo_v1_activation_height(h);
+            eprintln!("account_tx_memo_v1_activation_height={h} (runtime override for hard fork)");
+        }
+    }
+
     let config = NodeServerConfig::from_env()?;
 
     // Guard: migration height should be set for non-dev networks.

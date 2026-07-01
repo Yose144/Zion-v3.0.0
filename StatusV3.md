@@ -147,6 +147,7 @@
 2. ✅ **L2 watcher update** (roadmap) — `L1Block` struct přidat `account_transactions` + watcher.rs skenovat i account-model memo TXs — **DONE 3.0.4**
 3. **Guardian mnemonics backup** — zkopírovat `ZION_DAO_GUARDIAN_KEYS.txt` na flash drive (`F:\`)
 4. ✅ **ATOMIC_SWAP_RUNBOOK.md** — dokumentace aktualizována pro 3.0.4 account memo
+5. **Deploy account-model memo v1 hard fork na Edge** — binárky připraveny, čeká na ruční deploy dle [`V3/docs/ACCOUNT_TX_MEMO_V1_DEPLOY_RUNBOOK.md`](./V3/docs/ACCOUNT_TX_MEMO_V1_DEPLOY_RUNBOOK.md). Aktuální výška chainu `23607`, navrhovaná aktivační výška `23700`.
 
 ### Commity
 
