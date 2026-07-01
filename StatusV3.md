@@ -1,6 +1,6 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** **2026-07-01** (**3.0.4 CANONICAL — docs audit + TX unification plan** — `CODE_VS_DOCS_AUDIT.md` odhalil 5 HIGH / 6 MEDIUM / 2 LOW discrepancies mezi docs a kódem; `3.0.4.md` komplexní plán pro sjednocení UTXO ↔ account TX (přidání memo pole do account TX, height-gated hard fork, rozšíření 3 L2 watcherů); `MAINNET_CONSTANTS.md` opraveno na post-3.0.3 hodnoty (DAO_TREASURY_LOCK_HEIGHT 525_600→144_000, BRIDGE_VAULT_ADDRESS, DAO_ADDRESS, BASE_REWARD/TAIL_REWARD/MIN_TX_FEE na 6-decimal scale); WARP test count sjednocen na 488, adapter count opraven na 12 (11 funkčních + TON watch-only); `V3/README.md` workspace layout doplněn o L4/L5/L6; `Li.Fi-L2.md` kontradikce "Nedeployed" opravena na "✅ Deployed"; **2026-06-30** (**MULTI-CHAIN wZION DEPLOY — 6 CHAINS LIVE** — wZION + ZIONBridge deploynuté na BSC (56), Polygon (137), Arbitrum (42161), Optimism (10), Avalanche (43114) — všechny se stejnou adresou `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` (deterministický deploy). ZIONBridge na všech nových chainech: `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721`. Bridge relay na Edge běží s 6 EVM watchery. Website zionterranova.com live s 6-chain LiFi widgetem. Ankr API key aktivován (free tier). Uniswap CCA aukce vytvořena (66.47M wZION, 184-day end block — immutable, nelze zkrátit); **2026-06-29** (**L2 + BRIDGE E2E VERIFICATION + DAO METRICS FIX** — kompletní E2E audit bridge relay/DB/validators/Uniswap V3/atomic swap/DAO/WARP, bridge DB cleanup (zacyklení relay vyřešeno), DAO scanner rebuild + Prometheus metrics counter fix, pool service stabilizován (KillMode=control-group + ExecStartPre), old bridge BRIDGE_ROLE revoked, 3/3 Uniswap V3 pozice in-range, všech 7 Edge services aktivních, website v3.6.0 healthy; **ATOMIC SWAP ACTIVATED + DAO SCANNER FIX + 3.0.4 DEFINED** — atomic-swap daemon aktivní s produkčním escrow keypair, SO_REUSEADDR fix, DAO L1 scanner opraven (DAO_L1_RPC env var bez /jsonrpc suffix), core-endpoints.ts atomicSwap port 8460→8452 opraven, 3.0.4 milestone definován v ROADMAP.md; **REVERSE BRIDGE E2E VERIFIED** — 100 wZION burn → 100 ZION unlock na L1 blok 20919, BRIDGE_VAULT_SEED fix, E2E confirmed 2026-06-29); **L1 MIGRATION RPC FIX + DASHBOARD POLISH + BRIDGE METRICS** — `ZION_MIGRATION_HEIGHT` env var nyní čtena node kódem, `scaled_amount()` helper v RPC normalizuje legacy 1e12 → 1e6 scale pro balance dotazy, MIGRATION_HEIGHT=18850, dashboard `ready_for_launch: True` 13/13 checklist, všechny balance korektní; full report: [`REPORT_3.0.3_FIXES.md`](./REPORT_3.0.3_FIXES.md)); **2026-06-27** (**3.0.3 DECIMAL FORK DEPLOYED ON EDGE** — kompletní ekosystém migrován z 12-decimal na 6-decimal flowers, DB preserved, MIGRATION_HEIGHT=17995, všechny 13 Edge services aktivní, chain height 18003+, protocol_version=zion-v3-node/3.0.3, flowers_per_zion=1,000,000); **2026-06-24** (EMERGENCY MINT COMPLETE — 99,999,899 wZION mintováno na Base Mainnet přes wZION.bridgeMint() po obejití DAILY_LIMIT bug na bridge kontraktu; DeFi web UI mainnet-ready — Staking/Farming/DAO pages s wallet connect, BridgeTracker pipeline komponenta, commit 107a121); **2026-06-23** (Multi-validator relay nasazen — 5/5 confirmací pro všech 6 locků, 24h timelock aktivní, wZION mintování čeká na expiry 2026-06-24 16:52 UTC); **2026-06-23** (100M ZION UTXO locks potvrzeno, memo bug opraven, relay čeká na validator key); **2026-06-22** (Bridge mainnet readiness — 5/5 validators funded, single-sig bridge blocker documented, testnet RPC + block-range fixes); **2026-06-18** (Git historie obnovena, root cleanup v3.0.2, L2/L3 kanonizace, L4 Oasis příprava); **2026-06-15** (Edge server full update — Rust + V3 rebuild + služby restart, bridge port fix, dashboard restart tlačítka fix); **2026-06-14** (Dashboard all-tabs fix, Payout/Wallets sekce, Restart Edge Pool SSH, UFW 8444 oprava — viz sekce níže); **2026-06-13** (Fire algorithm hard fork deployment — viz sekce níže); **2026-06-13** (Hiran v2.3 documentation cleanup — viz sekce níže); **2026-06-11** (Hard Genesis Reset #0 completed — viz sekce níže); **2026-06-11** (Pool stale share detection + dashboard tab fix — viz sekce níže); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
+> **Datum:** **2026-07-01** (**3.0.4 CANONICAL — docs audit + TX unification plan + root cleanup** — `docs/3.0.3/CODE_VS_DOCS_AUDIT.md` odhalil 5 HIGH / 6 MEDIUM / 2 LOW discrepancies mezi docs a kódem; `3.0.4.md` komplexní plán pro sjednocení UTXO ↔ account TX; `V3/docs/MAINNET_CONSTANTS.md` opraveno na post-3.0.3 hodnoty; WARP test count sjednocen na 499, adapter count opraven na 12; `V3/README.md` workspace layout doplněn o L4/L5/L6; `docs/3.0.3/Li.Fi-L2.md` kontradikce opravena; 39 historických `.md` přesunuto do `docs/3.0.3/`, root vyčištěn na 5 kanonických souborů; **2026-06-30** (**MULTI-CHAIN wZION DEPLOY — 6 CHAINS LIVE**); **2026-06-29** (**L2 + BRIDGE E2E VERIFICATION + DAO METRICS FIX**); **ATOMIC SWAP ACTIVATED + DAO SCANNER FIX + 3.0.4 DEFINED** — atomic-swap daemon aktivní, 3.0.4 milestone definován v `V3/ROADMAP.md`; **REVERSE BRIDGE E2E VERIFIED** — 100 wZION burn → 100 ZION unlock na L1 blok 20919; **L1 MIGRATION RPC FIX + DASHBOARD POLISH + BRIDGE METRICS** — `ZION_MIGRATION_HEIGHT` env var čtena node kódem, `scaled_amount()` helper v RPC normalizuje legacy 1e12 → 1e6 scale, MIGRATION_HEIGHT=18850; full report: [`docs/3.0.3/REPORT_3.0.3_FIXES.md`](./docs/3.0.3/REPORT_3.0.3_FIXES.md)); **2026-06-27** (**3.0.3 DECIMAL FORK DEPLOYED ON EDGE** — kompletní ekosystém migrován z 12-decimal na 6-decimal flowers, DB preserved, MIGRATION_HEIGHT=17995, všechny 13 Edge services aktivní, chain height 18003+, protocol_version=zion-v3-node/3.0.3, flowers_per_zion=1,000,000); **2026-06-24** (EMERGENCY MINT COMPLETE — 99,999,899 wZION mintováno na Base Mainnet; DeFi web UI mainnet-ready); **2026-06-23** (Multi-validator relay nasazen — 5/5 confirmací pro všech 6 locků, 24h timelock aktivní); **2026-06-23** (100M ZION UTXO locks potvrzeno, memo bug opraven); **2026-06-22** (Bridge mainnet readiness — 5/5 validators funded); **2026-06-18** (Git historie obnovena, root cleanup v3.0.2, L2/L3 kanonizace, L4 Oasis příprava); **2026-06-15** (Edge server full update); **2026-06-14** (Dashboard all-tabs fix); **2026-06-13** (Fire algorithm hard fork deployment); **2026-06-13** (Hiran v2.3 documentation cleanup); **2026-06-11** (Hard Genesis Reset #0 completed); **2026-06-11** (Pool stale share detection + dashboard tab fix); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
 > (sjednocení `StatusV3.md` ↔ `StatusV3-Part2.md` — TL;DR, roadmap §6, §8, §5
 > pyramida, odkazy).
 > **Předchozí update:** 2026-05-03 (genesis konsensus — merged na `main`)
@@ -28,25 +28,30 @@
 
 ### TL;DR
 
-- **Code-vs-Docs audit** — [`CODE_VS_DOCS_AUDIT.md`](./CODE_VS_DOCS_AUDIT.md) odhalil 5 HIGH / 6 MEDIUM / 2 LOW discrepancies mezi docs a kódem
+- **Code-vs-Docs audit** — [`docs/3.0.3/CODE_VS_DOCS_AUDIT.md`](./docs/3.0.3/CODE_VS_DOCS_AUDIT.md) odhalil 5 HIGH / 6 MEDIUM / 2 LOW discrepancies mezi docs a kódem
 - **MAINNET_CONSTANTS.md opraveno** — 6 stale hodnot aktualizováno na post-3.0.3: DAO_TREASURY_LOCK_HEIGHT (525_600→144_000), BRIDGE_VAULT_ADDRESS (empty v2-reset→real vault), DAO_ADDRESS (placeholder→real treasury), BASE_REWARD/TAIL_REWARD/MIN_TX_FEE (12-decimal→6-decimal scale)
-- **WARP counts sjednoceny** — test count 488 (was 252/408/465/487 in different docs), adapter count 12 (was 7/13 — 11 fully functional + TON watch-only)
+- **WARP counts sjednoceny** — test count 499 (was 252/408/465/487 in different docs), adapter count 12 (was 7/13 — 11 fully functional + TON watch-only)
 - **TX unification plán** — [`3.0.4.md`](./3.0.4.md) komplexní plán pro sjednocení UTXO ↔ account TX: přidání `memo` pole do account TX (L1 hard fork, height-gated), rozšíření 3 L2 watcherů (bridge/dao/atomic-swap) o account TX scanning, SDK/CLI/WARP updates
 - **V3/README.md** — workspace layout doplněn o L4/L5/L6, adapter count opraven, test count opraven, version 3.0.3→3.0.4
 - **Li.Fi-L2.md** — kontradikce "⚠️ Nedeployed" opravena na "✅ Deployed" (5 chainů deploynuto 2026-06-30)
-- **AGENTS.md** — WARP sekce opravena (12 adapters, 488 tests), 3.0.4 TX unification plan reference přidána
+- **AGENTS.md** — WARP sekce opravena (12 adapters, 499 tests), 3.0.4 TX unification plan reference přidána
+- **Root dokumentační cleanup** — 39 historických `.md` souborů přesunuto do [`docs/3.0.3/`](./docs/3.0.3/), root vyčištěn na 5 kanonických souborů: `3.0.4.md`, `StatusV3.md`, `AGENTS.md`, `README.md`, `LICENSE`; `README.md` přepsán jako thin landing page ukazující na `3.0.4.md`
 
 ### Zbývá (vyžaduje lidskou akci)
 
-1. **Bridge address 3-way inconsistency** (H1 z auditu) — `bridge-mainnet.toml` ukazuje na revoked contract pro 5 non-Base chainů; `BRIDGE_MAINNET_DEPLOY.md` a `ROADMAP.md` se neshodnou na Base bridge adrese. Vyžaduje owner rozhodnutí které adresy jsou live.
-2. **3.0.4 TX unification implementace** — plán v `3.0.4.md` čeká na schválení 5 blokujících otázek (§12)
+1. **Bridge address 3-way inconsistency** (H1 z auditu) — `bridge-mainnet.toml` ukazuje na revoked contract pro 5 non-Base chainů; `V3/docs/BRIDGE_MAINNET_DEPLOY.md` a `docs/3.0.3/ROADMAP.md` se neshodnou na Base bridge adrese. Vyžaduje owner rozhodnutí které adresy jsou live.
+2. **3.0.4 TX unification implementace** — plán v `3.0.4.md` čeká na schválení 5 blokujících otázek (§3.7)
 3. **Basescan verify** — získat API key, spustit `verify-base-mainnet-basescan.ts`
 4. **Guardian mnemonics backup** — flash drive `F:\`
+5. **Repo cleanup Fáze 1+2** — smazat `V3/config/` stale templates, vytvořit `V3/L1/types` crate pro sdílené watcher typy
 
 ### Commity
 
 - `966b54b0` — 3.0.4 TX unification plan + code-vs-docs audit
-- (tento commit) — 3.0.4 canonical docs update
+- `f1780fd0` — 3.0.4 canonical docs update (8 souborů)
+- `e963cf78` — 3.0.4.md kompletní dokumentace verze
+- `ac9c53c2` — Native ZION koncept + 499 WARP tests v 3.0.4.md
+- (tento commit) — root dokumentační cleanup: 39 souborů do `docs/3.0.3/`
 
 ---
 
@@ -331,7 +336,7 @@ Viz [Session 10 detail](#session-10--uniswap-v4-migration--defi-audit-2026-06-30
 ## Co je nového 2026-06-29 (Session 4) — Uniswap V3 Pools Created + Two-Sided WETH Liquidity + Bridge Fixes ✅
 
 > **Status:** ✅ DOKONČENO — Uniswap V3 pools na Base mainnet, aktivní likvidita, bridge stabilizovaný
-> **Details:** [`L2Complete.md`](./L2Complete.md)
+> **Details:** [`docs/3.0.3/L2Complete.md`](./docs/3.0.3/L2Complete.md)
 
 ### TL;DR
 
@@ -470,7 +475,7 @@ Viz [Session 10 detail](#session-10--uniswap-v4-migration--defi-audit-2026-06-30
 
 ## Co je nového 2026-06-28 — L1 Migration RPC Fix + Dashboard Polish + Bridge Metrics ✅
 
-> **Status:** ✅ DOKONČENO — 9 oprav napříč ekosystémem. Edge server `ready_for_launch: True`, checklist 13/13. Full report: [`REPORT_3.0.3_FIXES.md`](./REPORT_3.0.3_FIXES.md)
+> **Status:** ✅ DOKONČENO — 9 oprav napříč ekosystémem. Edge server `ready_for_launch: True`, checklist 13/13. Full report: [`docs/3.0.3/REPORT_3.0.3_FIXES.md`](./docs/3.0.3/REPORT_3.0.3_FIXES.md)
 
 ### TL;DR
 
@@ -895,7 +900,7 @@ Po poskytnutí klíče + restart relay → ~100M wZION mintnut na Base mainnet.
 
 ### Detailní zpráva
 
-Viz [`fixL1bridge100m.md`](./fixL1bridge100m.md) pro kompletní chronologii, root cause analýzu a technické detaily.
+Viz [`docs/3.0.3/fixL1bridge100m.md`](./docs/3.0.3/fixL1bridge100m.md) pro kompletní chronologii, root cause analýzu a technické detaily.
 
 ---
 
@@ -982,7 +987,7 @@ systemctl restart zion-edge-node1
 
 ## Co je nového 2026-06-19 (Automatizovaný re-audit V3 + Edge pool nález)
 
-> **Status:** AUDIT — workspace kompiluje, ale neprochází CI bránami; Edge pool má systemd/port konflikt. Detail viz [`/V3_AUDIT_SUMMARY.md`](./V3_AUDIT_SUMMARY.md).
+> **Status:** AUDIT — workspace kompiluje, ale neprochází CI bránami; Edge pool má systemd/port konflikt. Detail viz [`docs/3.0.3/V3_AUDIT_SUMMARY.md`](./docs/3.0.3/V3_AUDIT_SUMMARY.md).
 
 ### Zjištění auditu (zdrojový strom)
 | Brána | Výsledek | Detail |
@@ -3609,7 +3614,7 @@ nebo má konkrétní aktivační plán v
 | Aktivační plán hard fork věcí | [`V3/docs/audits/2026-04-V3_AUDIT_COMPLETION.md`](./V3/docs/audits/2026-04-V3_AUDIT_COMPLETION.md) |
 | Co rotovat / scrubnout | [`docs/SECURITY_NOTICE_2026-04-28.md`](./docs/SECURITY_NOTICE_2026-04-28.md) |
 | Operator guide | [`V3/docs/CLI_GUIDE.md`](./V3/docs/CLI_GUIDE.md) |
-| Roadmap | [`ROADMAP.md`](./ROADMAP.md), [`V3/ROADMAP.md`](./V3/ROADMAP.md) |
+| Roadmap | [`docs/3.0.3/ROADMAP.md`](./docs/3.0.3/ROADMAP.md) (legacy), [`V3/ROADMAP.md`](./V3/ROADMAP.md) (canonical) |
 | Předchozí status | [`STATUS.md`](./STATUS.md) (2026-04-07) |
 
 ---

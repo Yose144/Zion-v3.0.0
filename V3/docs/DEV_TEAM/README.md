@@ -18,7 +18,7 @@ Dev Team není jen skupina programátorů — je to **společenství Bodhisattv�
 |----------|-------|
 | [`VISHWAKARMA.md`](VISHWAKARMA.md) | Vedoucí týmu — archetyp, role, mise, slib |
 | [`STRUCTURE.md`](STRUCTURE.md) | Hierarchie týmu, úrovně, kompenzace, bounties |
-| [`ROADMAP.md`](ROADMAP.md) | Vývojářský plán 2025–2070 — 4 fáze |
+| [`V3/ROADMAP.md`](../../V3/ROADMAP.md) | Vývojářský plán 2025–2070 — 4 fáze (canonical engineering roadmap) |
 | [`STANDARDS.md`](STANDARDS.md) | Coding standards, review process, CI/CD, 10 přikázání |
 | [`ONBOARDING.md`](ONBOARDING.md) | Jak se připojit, první kroky, contribution guide |
 
