@@ -504,6 +504,14 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap_or_default()
                     .as_millis() as u64;
+                let chain_info = crate::rpc::node_rpc::call(
+                    &cfg.node.rpc_host,
+                    cfg.node.rpc_port,
+                    "getChainInfo",
+                    serde_json::json!({}),
+                )
+                .await?;
+                let chain_tip = chain_info["chain_height"].as_u64().unwrap_or(0);
                 let tx = zion_core::wallet::build_and_sign_account(
                     &signing_key,
                     &cfg.miner.wallet,
@@ -512,6 +520,7 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
                     fee,
                     nonce,
                     memo.clone(),
+                    chain_tip,
                 )
                 .map_err(|e| anyhow!("{e}"))?;
                 crate::rpc::node_rpc::call(
