@@ -178,9 +178,30 @@ watch -n 30 'curl -s -X POST http://127.0.0.1:8443 -H "Content-Type: application
 
 ## E2E tests after activation
 
-Use the desktop agent, CLI, or mobile app to send small account transactions with memos.
+A ready-to-run script is available at [`V3/scripts/ops/account-memo-e2e.sh`](../../V3/scripts/ops/account-memo-e2e.sh). It polls the node until the activation height is reached, then sends three account-model memo transactions and verifies the watchers detect them.
 
-### Bridge lock (account model)
+### Prerequisites
+
+Set these environment variables on Edge (e.g., in `/root/zion-e2e.env`):
+
+```bash
+export ZION_E2E_PASSWORD="..."
+ZION_E2E_WALLET_FILE=/root/...json     # funded wallet JSON (must have account balance)
+ZION_E2E_PASSWORD_ENV=ZION_E2E_PASSWORD
+ZION_E2E_EVM_ADDRESS=0x...             # your Base EVM address
+```
+
+### Run
+
+```bash
+cd /root/zion-2.9.6-main
+source /root/zion-e2e.env
+./V3/scripts/ops/account-memo-e2e.sh
+```
+
+### Manual CLI version
+
+#### Bridge lock (account model)
 
 ```bash
 zion wallet send \
@@ -191,47 +212,55 @@ zion wallet send \
   --memo "BRIDGE:base:0x<your_evm_address>"
 ```
 
-Wait for the bridge watcher to detect the lock and mint wZION on Base. Check the bridge API:
+Verify:
 
 ```bash
 curl http://127.0.0.1:8454/api/bridge/locks
 ```
 
-### DAO vote (account model)
+#### DAO vote (account model)
 
 ```bash
 zion wallet send \
-  --from <your-dao-address> \
+  --from <your-address> \
   --to zion1...dao_address... \
   --amount 1 \
   --fee 0.01 \
   --memo "DAO:vote:1:yes"
 ```
 
-Verify the DAO scanner records the vote:
+Verify:
 
 ```bash
 curl http://127.0.0.1:8456/api/dao/proposals/1
 ```
 
-### Atomic swap lock (account model)
-
-Use the desktop agent or the swap API to send a LOCK TX to the escrow address with memo:
-
-```
-SWAP:LOCK:<sha256_hash>:120:base:0x<counterparty>
-```
-
-Then send a CLAIM TX:
-
-```
-SWAP:CLAIM:<sha256_hash>:<preimage>
-```
-
-Check status:
+#### Atomic swap lock (account model)
 
 ```bash
-curl http://127.0.0.1:8452/swap/<hash_hex>
+PREIMAGE=$(openssl rand -hex 32)
+HASHLOCK=$(printf "%s" "$PREIMAGE" | xxd -r -p | sha256sum | cut -d' ' -f1)
+
+zion wallet send \
+  --from <your-address> \
+  --to zion1...swap_escrow... \
+  --amount 1 \
+  --fee 0.01 \
+  --memo "SWAP:LOCK:$HASHLOCK:120:base:0x<counterparty>"
+
+# After the daemon detects the lock, claim:
+zion wallet send \
+  --from <your-address> \
+  --to zion1...swap_escrow... \
+  --amount 1 \
+  --fee 0.01 \
+  --memo "SWAP:CLAIM:$HASHLOCK:$PREIMAGE"
+```
+
+Verify:
+
+```bash
+curl http://127.0.0.1:8452/swap/$HASHLOCK
 ```
 
 ---
