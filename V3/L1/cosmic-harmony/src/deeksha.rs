@@ -109,7 +109,9 @@ pub fn body_root_v2_active(height: u64) -> bool {
 /// `SWAP:`, `WARP:`) will scan both UTXO and account transactions.
 ///
 /// **V3 mainnet (fresh chain):** active from genesis (`0`). Use
-/// `--features testnet_fork_rehearsal` for a finite rehearsal height without
+/// `ZION_ACCOUNT_TX_MEMO_V1_HEIGHT` environment variable at runtime to set a
+/// non-zero activation height for a coordinated hard fork on an existing chain.
+/// Use `--features testnet_fork_rehearsal` for local rehearsals without
 /// changing production defaults.
 #[cfg(feature = "testnet_fork_rehearsal")]
 pub const ACCOUNT_TX_MEMO_V1_ACTIVATION_HEIGHT: u64 = TESTNET_REHEARSAL_COORDINATED_HEIGHT;
@@ -117,11 +119,35 @@ pub const ACCOUNT_TX_MEMO_V1_ACTIVATION_HEIGHT: u64 = TESTNET_REHEARSAL_COORDINA
 #[cfg(not(feature = "testnet_fork_rehearsal"))]
 pub const ACCOUNT_TX_MEMO_V1_ACTIVATION_HEIGHT: u64 = 0;
 
+static ACCOUNT_TX_MEMO_V1_HEIGHT_OVERRIDE: OnceLock<u64> = OnceLock::new();
+
+/// Set the runtime activation height for account-model memo v1.
+///
+/// This is intended for coordinated mainnet/testnet hard forks on an existing
+/// chain. It must be called once before any node/wallet logic runs. A value of
+/// `0` disables the override (falls back to the compile-time constant).
+pub fn set_account_tx_memo_v1_activation_height(height: u64) {
+    let _ = ACCOUNT_TX_MEMO_V1_HEIGHT_OVERRIDE.set(height);
+}
+
+/// Returns the effective account-model memo v1 activation height.
+///
+/// Uses the runtime override if set and non-zero, otherwise the compile-time
+/// constant.
+#[inline]
+#[allow(clippy::absurd_extreme_comparisons)]
+pub fn account_tx_memo_v1_activation_height() -> u64 {
+    *ACCOUNT_TX_MEMO_V1_HEIGHT_OVERRIDE
+        .get()
+        .filter(|&&h| h > 0)
+        .unwrap_or(&ACCOUNT_TX_MEMO_V1_ACTIVATION_HEIGHT)
+}
+
 /// Returns `true` once a height has crossed the account-model memo v1 gate.
 #[inline]
 #[allow(clippy::absurd_extreme_comparisons)]
 pub fn account_tx_memo_v1_active(height: u64) -> bool {
-    height >= ACCOUNT_TX_MEMO_V1_ACTIVATION_HEIGHT
+    height >= account_tx_memo_v1_activation_height()
 }
 
 // ============================================================================

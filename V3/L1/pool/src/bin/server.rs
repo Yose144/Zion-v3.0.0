@@ -4405,6 +4405,7 @@ fn execute_pool_payout(
                 net_amount as u64,
                 nonce,
                 None,
+                0,
             );
             let sig = zion_core::crypto::sign(signing_key, tx_id.as_bytes());
             let tx = AccountTransaction {
@@ -4742,6 +4743,7 @@ fn execute_fee_payout(
                 recipient.amount,
                 nonce,
                 None,
+                0,
             );
             let sig = zion_core::crypto::sign(signing_key, tx_id.as_bytes());
             let tx = AccountTransaction {

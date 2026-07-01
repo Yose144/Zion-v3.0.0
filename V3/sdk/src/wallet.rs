@@ -275,6 +275,7 @@ impl WalletClient {
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
             .as_millis() as u64;
+        let chain_tip = self.node.chain_info().await?.chain_height;
 
         let tx = wallet::build_and_sign_account(
             signing_key,
@@ -284,6 +285,7 @@ impl WalletClient {
             fee,
             nonce,
             memo,
+            chain_tip,
         )
         .map_err(|e| ZionSdkError::Other(format!("account build failed: {e}")))?;
 

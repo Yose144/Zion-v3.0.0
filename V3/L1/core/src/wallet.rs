@@ -331,14 +331,16 @@ pub fn build_batch_payout(
 // ── Account-model build & sign ─────────────────────────────────────────
 
 /// Generate a deterministic 64-hex-char tx_id for an account transaction.
-/// If a memo is provided, it is mixed into the preimage so the memo is
-/// covered by the signature.
+/// If a memo is provided and the account-model memo v1 gate is active at the
+/// given chain height, it is mixed into the preimage so the memo is covered by
+/// the signature.
 pub fn generate_account_tx_id(
     from: &str,
     to: &str,
     amount: u64,
     nonce: u64,
     memo: Option<&str>,
+    chain_height: u64,
 ) -> String {
     let mut bytes = [0u8; 32];
     let ts = SystemTime::now()
@@ -352,10 +354,13 @@ pub fn generate_account_tx_id(
     for (i, b) in from.bytes().chain(to.bytes()).enumerate() {
         bytes[i % 32] ^= b;
     }
-    // XOR-in memo bytes if present, so the tx_id commits to the memo.
+    // XOR-in memo bytes if the memo v1 gate is active, so the tx_id commits to
+    // the memo and the signature covers it.
     if let Some(m) = memo {
-        for (i, b) in m.bytes().enumerate() {
-            bytes[i % 32] ^= b;
+        if zion_cosmic_harmony::account_tx_memo_v1_active(chain_height) {
+            for (i, b) in m.bytes().enumerate() {
+                bytes[i % 32] ^= b;
+            }
         }
     }
     hex::encode(bytes)
@@ -365,6 +370,8 @@ pub fn generate_account_tx_id(
 ///
 /// Creates a [`crate::Transaction`] (account model) signed with Ed25519.
 /// The `nonce` must be unique per sender to prevent replay attacks.
+/// `chain_tip` is used to decide whether the account-model memo v1 hard fork
+/// is active when computing the signed tx_id.
 pub fn build_and_sign_account(
     signing_key: &SigningKey,
     from_address: &str,
@@ -373,6 +380,7 @@ pub fn build_and_sign_account(
     fee_zion: u64,
     nonce: u64,
     memo: Option<String>,
+    chain_tip: u64,
 ) -> Result<crate::Transaction, WalletError> {
     if !crypto::is_valid_address(to_address) {
         return Err(WalletError::InvalidAddress(to_address.to_string()));
@@ -395,6 +403,7 @@ pub fn build_and_sign_account(
         amount_zion as u64,
         nonce,
         memo.as_deref(),
+        chain_tip,
     );
     let pk_hex = crypto::to_hex(signing_key.verifying_key().as_bytes());
 
@@ -625,7 +634,7 @@ mod tests {
         let addr = derive_address(vk.as_bytes());
         let dest = derive_address(&[99u8; 32]);
 
-        let tx = build_and_sign_account(&sk, &addr, &dest, 1_000_000, 1_000, 42, None).unwrap();
+        let tx = build_and_sign_account(&sk, &addr, &dest, 1_000_000, 1_000, 42, None, 1).unwrap();
         assert_eq!(tx.from, addr);
         assert_eq!(tx.to, dest);
         assert_eq!(tx.amount_zion, 1_000_000);
@@ -644,7 +653,7 @@ mod tests {
         let dest = derive_address(&[99u8; 32]);
 
         let tx_no_memo =
-            build_and_sign_account(&sk, &addr, &dest, 1_000_000, 1_000, 42, None).unwrap();
+            build_and_sign_account(&sk, &addr, &dest, 1_000_000, 1_000, 42, None, 1).unwrap();
         let tx_with_memo = build_and_sign_account(
             &sk,
             &addr,
@@ -653,6 +662,7 @@ mod tests {
             1_000,
             42,
             Some("BRIDGE:base:0x1234".to_string()),
+            1,
         )
         .unwrap();
         assert!(tx_with_memo.memo.is_some());
@@ -667,7 +677,8 @@ mod tests {
     fn build_and_sign_account_rejects_invalid_address() {
         let (sk, vk) = generate_keypair();
         let addr = derive_address(vk.as_bytes());
-        let err = build_and_sign_account(&sk, &addr, "invalid", 1_000, 1_000, 1, None).unwrap_err();
+        let err =
+            build_and_sign_account(&sk, &addr, "invalid", 1_000, 1_000, 1, None, 1).unwrap_err();
         assert!(matches!(err, WalletError::InvalidAddress(_)));
     }
 
@@ -684,6 +695,7 @@ mod tests {
             1_000,
             1,
             Some("žluťoučký".to_string()),
+            1,
         )
         .unwrap_err();
         assert!(matches!(err, WalletError::InvalidMemo(_)));
