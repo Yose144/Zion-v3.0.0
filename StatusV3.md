@@ -4125,7 +4125,7 @@ V4 NFT pozice deployeru (1 NFT v PositionManager po burn):
 - `@lifi/sdk`, `@lifi/widget`, `viem` přidány do package.json
 - Widget používá hosted iframe — žádné wagmi/viem peer dependency konflikty
 
-**WARP status:** Běží na Edge (port 9333), 13 chain family adapterů implementováno (EVM, BTC, Solana, Tron, Stellar, Cosmos, Cardano, Lightning, Aptos, NEAR, Sui, TON), 487 testů pass. **Všech 13 adapterů plně funkčních** (EVM, BTC, SOL, TRX, XLM, Cosmos, Cardano CBOR TX, Lightning, NEAR, Aptos BCS TX, Sui BCS TX, TON TL-B Cell+BOC). Lightning potřebuje LND node na Edge.
+**WARP status:** Běží na Edge (port 9333), 13 chain family adapterů implementováno (EVM, BTC, Solana, Tron, Stellar, Cosmos, Cardano, Lightning, Aptos, NEAR, Sui, TON), 499 testů pass. **Všech 13 adapterů plně funkčních** (EVM, BTC, SOL, TRX, XLM, Cosmos, Cardano CBOR TX, Lightning, NEAR, Aptos BCS TX, Sui BCS TX, TON TL-B Cell+BOC). WARP přenáší **native L1 ZION** (ne wZION) — outbound: ZION se zamkne v bridge vault → wZION se mintne na dest chain (1:1 peg); inbound: wZION se spálí → ZION se odemkne z vault. L1 RPC: `getBridgeLocks` + `submitBridgeUnlock` (3/5 quorum). Lightning potřebuje LND node na Edge.
 
 ---
 
