@@ -174,7 +174,7 @@ struct TxStatusResp {
 // Adapter
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// NEAR adapter — JSON-RPC + Ed25519 signing for wZION minting.
+/// NEAR adapter — JSON-RPC + Ed25519 signing for ZION minting.
 pub struct NearAdapter {
     rpc_url: String,
     bridge_contract: String,
@@ -412,7 +412,7 @@ impl ChainAdapter for NearAdapter {
         let nonce = block.header.height + 1;
 
         info!(
-            "[WARP][near] minting {} wZION to {} via {} (nonce {})",
+            "[WARP][near] minting {} ZION to {} via {} (nonce {})",
             amount, instruction.recipient, self.bridge_contract, nonce
         );
 

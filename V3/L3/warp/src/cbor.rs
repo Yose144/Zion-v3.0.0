@@ -506,7 +506,7 @@ mod tests {
     fn test_cardano_tx_output_multiasset() {
         let addr = [0x01; 28];
         let policy = [0x02; 28];
-        let asset_name = b"wZION";
+        let asset_name = b"ZION";
         let cbor = cardano_tx_output_multiasset(&addr, 1_000_000, &policy, asset_name, 500);
         assert_eq!(cbor[0], 0xA2); // outer map of 2
         assert!(!cbor.is_empty());
@@ -554,7 +554,7 @@ mod tests {
             170_000,  // fee
             99999999, // ttl
             &[0x02; 28],
-            b"wZION",
+            b"ZION",
             500,
         );
         // Should start with map(5) = 0xA5

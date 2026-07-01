@@ -261,7 +261,7 @@ impl SolanaSigner {
     /// * `client`           — shared `reqwest::Client`
     /// * `rpc_url`          — Solana JSON-RPC endpoint
     /// * `recipient_wallet` — base58-encoded recipient wallet address (not ATA)
-    /// * `mint_addr`        — base58-encoded wZION SPL mint address
+    /// * `mint_addr`        — base58-encoded ZION SPL mint address
     /// * `amount`           — amount in raw token units (atomic)
     ///
     /// Returns the transaction signature as a base58 string.

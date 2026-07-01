@@ -1,6 +1,6 @@
 //! # Cardano Signer — D-04
 //!
-//! Signs and submits Cardano transactions for wZION native token minting.
+//! Signs and submits Cardano transactions for ZION native token minting.
 //!
 //! ## Design
 //! - Uses Blockfrost REST API for TX submission (no local cardano-cli needed).
@@ -253,7 +253,7 @@ impl CardanoSigner {
     /// Submit a signed TX via Blockfrost REST API.
     ///
     /// This builds a Cardano TX that:
-    /// 1. Mints `amount` of the wZION native token (policy_id + asset_name)
+    /// 1. Mints `amount` of the ZION native token (policy_id + asset_name)
     /// 2. Sends the minted tokens to the recipient address
     /// 3. Pays the fee from the relay's UTXO
     ///

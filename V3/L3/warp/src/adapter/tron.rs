@@ -8,16 +8,16 @@ use serde::Deserialize;
 use tracing::{debug, info, warn};
 
 // ─────────────────────────────────────────────────────────────────────────────
-// wZION TRC-20 contract address per network
+// ZION TRC-20 contract address per network
 // ─────────────────────────────────────────────────────────────────────────────
-fn wzion_contract(network: &str) -> Option<&'static str> {
+fn zion_contract(network: &str) -> Option<&'static str> {
     match network {
         "mainnet" => {
-            warn!("[WARP][tron] mainnet wZION contract is a placeholder — update after deployment");
+            warn!("[WARP][tron] mainnet ZION contract is a placeholder — update after deployment");
             Some("TWZIONxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
         }
         "nile" => {
-            warn!("[WARP][tron] nile testnet wZION contract is a placeholder");
+            warn!("[WARP][tron] nile testnet ZION contract is a placeholder");
             Some("TXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxtest")
         }
         _ => None,
@@ -82,7 +82,7 @@ struct TronTxInfo {
 // Adapter
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Tron adapter — TRC-20 wZION burn/mint via TronGrid REST API.
+/// Tron adapter — TRC-20 ZION burn/mint via TronGrid REST API.
 pub struct TronAdapter {
     network: String,
     api_url: String,
@@ -215,10 +215,10 @@ impl ChainAdapter for TronAdapter {
     }
 
     async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {
-        let contract = match wzion_contract(&self.network) {
+        let contract = match zion_contract(&self.network) {
             Some(c) => c,
             None => {
-                debug!("[WARP][tron] No wZION contract configured");
+                debug!("[WARP][tron] No ZION contract configured");
                 return Ok(vec![]);
             }
         };
@@ -233,13 +233,13 @@ impl ChainAdapter for TronAdapter {
     }
 
     async fn execute_mint(&self, instruction: &MintInstruction) -> WarpResult<String> {
-        let contract = match wzion_contract(&self.network) {
+        let contract = match zion_contract(&self.network) {
             Some(c) => c,
             None => {
                 return Err(WarpError::AdapterError {
                     chain: "tron".into(),
                     reason: format!(
-                        "no wZION contract configured for network '{}'",
+                        "no ZION contract configured for network '{}'",
                         self.network
                     ),
                 });
@@ -251,7 +251,7 @@ impl ChainAdapter for TronAdapter {
         })?;
         let amount = instruction.amount_dest_atomic as u64;
         info!(
-            "[WARP][tron] minting {} wZION to {} on {} (contract {})",
+            "[WARP][tron] minting {} ZION to {} on {} (contract {})",
             amount, instruction.recipient, self.network, contract
         );
         signer
@@ -310,8 +310,8 @@ mod tests {
     }
 
     #[test]
-    fn test_wzion_contract_mainnet() {
-        assert!(wzion_contract("mainnet").is_some());
+    fn test_zion_contract_mainnet() {
+        assert!(zion_contract("mainnet").is_some());
     }
 
     #[test]
