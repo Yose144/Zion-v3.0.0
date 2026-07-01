@@ -1963,6 +1963,13 @@ impl Transaction {
             Ok(v) if v.len() == 64 => v,
             _ => return false,
         };
+        // CRITICAL: the public key must derive to the sender address. Without
+        // this check, any account balance can be spent by signing with an
+        // unrelated key.
+        let derived_from = crypto::derive_address(&pk_bytes);
+        if derived_from != self.from {
+            return false;
+        }
         crypto::verify(&pk_bytes, self.tx_id.as_bytes(), &sig_bytes)
     }
 }
