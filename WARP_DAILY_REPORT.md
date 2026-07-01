@@ -2,7 +2,42 @@
 
 ## Souhrn
 
-Dnešní session **dokočila implementaci všech 13 WARP adapterů**. Byly implementovány tři nové serializační moduly (BCS, CBOR, TL-B Cell/BOC) a `execute_mint()` pro Aptos, Sui, Cardano i TON je nyní plně funkční. Žádný adapter už nevrací "not yet implemented" chybu.
+Dnešní session **dokočila implementaci všech 13 WARP adapterů** a vyjasnila architekturu. WARP přenáší **native L1 ZION** (ne wZION) — wZION je jen wrapped reprezentace na cílovém chainu (jako WBTC na Ethereum). Byly implementovány tři nové serializační moduly (BCS, CBOR, TL-B Cell/BOC) a `execute_mint()` pro Aptos, Sui, Cardano i TON je nyní plně funkční.
+
+## WARP Bridge Architecture
+
+### Outbound (ZION L1 → external chain)
+1. Uživatel pošle ZION L1 TX → output na `BRIDGE_VAULT_ADDRESS` + memo `BRIDGE:<dest_chain>:<recipient>`
+2. L1 node zaznamená "bridge lock" — ZION se **zamkne** v bridge vault (`getBridgeLocks` RPC)
+3. WARP watcher detekuje lock → router vytvoří outbound transfer
+4. WARP validator set podepíše mint instruction (quorum 3/5)
+5. WARP adapter na dest chain → `execute_mint()` → **mintne wZION** recipientovi (1:1 peg)
+
+### Inbound (external chain → ZION L1)
+1. Uživatel **spálí** wZION na external chain (`bridgeBurn` na EVM, ekvivalent na non-EVM)
+2. WARP watcher detekuje burn event → router vytvoří inbound transfer
+3. WARP validator set podepíše unlock instruction (quorum 3/5)
+4. WARP zavolá `submitBridgeUnlock` na L1 node → **odemkne ZION** z bridge vault → recipient
+
+### L1 RPC endpointy (již implementováno v `V3/L1/core/src/rpc.rs`)
+- `getBridgeLocks(from_height, to_height)` — scan bloků pro TX s output na BRIDGE_VAULT_ADDRESS
+- `getBridgeVaultBalance()` — celkový ZION zamčený v bridge vault
+- `submitBridgeUnlock(recipient, amount_flowers, burn_id, evm_chain, evm_tx_hash, validator_proofs)` — uvolní ZION z vault (vyžaduje 3/5 validator signatures)
+
+### Bridge vault
+`BRIDGE_VAULT_ADDRESS` = `crypto::derive_keyless_address("ZION Bridge Vault V3 Mainnet")` — keyless address, ~100M ZION locked.
+
+### wZION kontrakty (deploy nutný per chain)
+- EVM: ERC-20 s `bridgeMint(address, uint256, bytes32)` + `bridgeBurn(uint256, string)` events
+- Solana: SPL token s mint authority = WARP relay
+- Tron: TRC-20 s mint/burn
+- Stellar: issued asset (trustline)
+- Cosmos: CosmWASM contract s mint/burn
+- Cardano: native token (policy_id + asset_name)
+- Aptos/Sui: Move module s mint/burn
+- NEAR: contract s mint/burn
+- TON: jetton s mint/burn
+- Lightning: BTC Lightning (HTLC, no wZION — direct BTC channel)
 
 ## Co bylo implementováno
 
