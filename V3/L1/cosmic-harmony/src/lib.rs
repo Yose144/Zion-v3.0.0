@@ -20,14 +20,16 @@ pub use algorithms_npu::{
 };
 pub use algorithms_opt::{cosmic_harmony_with_height, meets_difficulty, Hash32, Hash64};
 pub use deeksha::{
-    body_root_v2_active, cosmic_harmony_ekam_deeksha, cosmic_harmony_ekam_deeksha_v2,
-    cosmic_harmony_ekam_deeksha_v3, ekam_find_nonce, ekam_self_test, ekam_v2_find_nonce,
-    ekam_v2_self_test, ekam_v3_find_nonce, ekam_v3_self_test, generate_ekam_test_vector,
-    generate_ekam_v2_test_vector, generate_ekam_v3_test_vector, hash_bytes_with_npu, init_npu,
-    tx_hash_v2_active, BODY_ROOT_V2_ACTIVATION_HEIGHT, CHV42_DUAL_SPIN_FORK_HEIGHT,
-    CHV_EKAM_FORK_HEIGHT, CHV_EKAM_V2_FORK_HEIGHT, EKAM_CANONICAL_TEST_VECTOR_HEX,
-    EKAM_FUSION_ROUNDS, EKAM_V2_CANONICAL_TEST_VECTOR_HEX, EKAM_V2_PASSES, EKAM_V2_RANDOM_READS,
-    EKAM_V2_SCRATCHPAD_SIZE, TX_HASH_V2_ACTIVATION_HEIGHT,
+    account_tx_memo_v1_activation_height, account_tx_memo_v1_active, body_root_v2_active,
+    cosmic_harmony_ekam_deeksha, cosmic_harmony_ekam_deeksha_v2, cosmic_harmony_ekam_deeksha_v3,
+    ekam_find_nonce, ekam_self_test, ekam_v2_find_nonce, ekam_v2_self_test, ekam_v3_find_nonce,
+    ekam_v3_self_test, generate_ekam_test_vector, generate_ekam_v2_test_vector,
+    generate_ekam_v3_test_vector, hash_bytes_with_npu, init_npu,
+    set_account_tx_memo_v1_activation_height, tx_hash_v2_active,
+    ACCOUNT_TX_MEMO_V1_ACTIVATION_HEIGHT, BODY_ROOT_V2_ACTIVATION_HEIGHT,
+    CHV42_DUAL_SPIN_FORK_HEIGHT, CHV_EKAM_FORK_HEIGHT, CHV_EKAM_V2_FORK_HEIGHT,
+    EKAM_CANONICAL_TEST_VECTOR_HEX, EKAM_FUSION_ROUNDS, EKAM_V2_CANONICAL_TEST_VECTOR_HEX,
+    EKAM_V2_PASSES, EKAM_V2_RANDOM_READS, EKAM_V2_SCRATCHPAD_SIZE, TX_HASH_V2_ACTIVATION_HEIGHT,
 };
 pub use deeksha_lite::{deeksha_lite_find_nonce, deeksha_lite_self_test, deeksha_lite_with_height};
 pub use deeksha_lite_fire::{
