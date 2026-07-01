@@ -33,7 +33,7 @@ Verze **3.0.3** je nyní uzavřena. Všechny klíčové komponenty jsou funkčn�
 ### Verze 3.0.4 — Milestone Definition
 
 **Target:** Q3 2026 (do 2026-09-30)
-**Kanon. runbook:** [`L2Complete.md`](../L2Complete.md) sekce "🚀 ZION 3.0.4 Upgrade Plan"
+**Kanon. runbook:** [`docs/3.0.3/L2Complete.md`](../../docs/3.0.3/L2Complete.md) sekce "🚀 ZION 3.0.4 Upgrade Plan"
 
 **Scope — co musí být hotové pro closure 3.0.4:**
 
@@ -219,7 +219,7 @@ Verze **3.0.3** je nyní uzavřena. Všechny klíčové komponenty jsou funkčn�
 | `MIGRATION_HEIGHT` | `18850` (Edge) |
 | `protocol_version` | `zion-v3-node/3.0.3` |
 
-Viz [`ZION_3.0.3_DECIMAL_FORK_PLAN.md`](../ZION_3.0.3_DECIMAL_FORK_PLAN.md) pro kompletní plán a [`StatusV3.md`](../StatusV3.md) pro deployment detaily.
+Viz [`docs/3.0.3/ZION_3.0.3_DECIMAL_FORK_PLAN.md`](../../docs/3.0.3/ZION_3.0.3_DECIMAL_FORK_PLAN.md) pro kompletní plán a [`StatusV3.md`](../StatusV3.md) pro deployment detaily.
 
 ---
 

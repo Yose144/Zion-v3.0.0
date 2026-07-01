@@ -192,7 +192,7 @@ Om Shanti. 🔧🙏"
 
 **Související:**
 - [`STRUCTURE.md`](STRUCTURE.md) — Struktura vývojářského týmu
-- [`ROADMAP.md`](ROADMAP.md) — Vývojářský plán
+- [`V3/ROADMAP.md`](../../V3/ROADMAP.md) — Vývojářský plán (canonical engineering roadmap)
 - [`STANDARDS.md`](STANDARDS.md) — Coding standards
 - Legacy: [`docs/docs2.9/ZION_OASIS/SACRED_TRINITY/15_VISHWAKARMA_DEV_LEAD.md`](../../../../docs/docs2.9/ZION_OASIS/SACRED_TRINITY/15_VISHWAKARMA_DEV_LEAD.md)
 
