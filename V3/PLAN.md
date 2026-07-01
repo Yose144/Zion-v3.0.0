@@ -709,6 +709,6 @@ cargo test -p zion-ai-native              # 89 testů (88 lib + 1 doctest)
 
 *Tento plán je živý dokument. Aktualizovat po každém sprintu.*
 
-*→ [ROADMAP.md](ROADMAP.md) — L1 fáze detail*  
+*→ [V3/ROADMAP.md](../V3/ROADMAP.md) — L1 fáze detail (canonical engineering roadmap)*  
 *→ [docs/L2_L3_MAINNET_PLAN.md](docs/L2_L3_MAINNET_PLAN.md) — L2/L3 technický detail*  
 *→ [README.md](README.md) — implementovaný stav*
