@@ -377,3 +377,119 @@ Každý blok ZION L1 v Protokolu Péče obsahuje:
 
 *"Ne ten kdo má největší sílu, ale ten kdo nejlépe opékuje, ten bude vést."*
 *— Protokol Péče*
+
+---
+
+## Původní zdroje — Proof-of-Care v archivu
+
+Proof-of-Care není nový koncept. Objevuje se napříč celou ZION historií — od filozofické vize TerraNova knihy přes technickou NPU mining studii až po website genesis page. Tento dokument je syntézou a evolucí těchto zdrojů.
+
+### 1. TerraNova kniha — filozofický základ
+
+**`docs/TerraNova/gemini/01-ZLATY-ZARODEK-A-VODY-CHAOSU.md`** (2026-04-26):
+> *"Kryptografie do té doby sloužila primárně k ochraně bohatství jedinců před jinými jedinci. ZION kryptografii otočil. [...] Byla to architektura Proof-of-Care. Těžba neudržovala v chodu jen síť, udržovala v chodu naději."*
+
+**`docs/TerraNova/gemini/full.md`** (kapitola 10 — Epilog):
+> *"Od momentu, kdy těžaři a první farmáři vzali otevřený ledger ZIONu a stáhli první prostředky generované nikoli elitami, nýbrž samotnou sítí jako Proof-of-Care, narušili tu osudnou trajektorii."*
+
+**`docs/TerraNova/gemini/09-KOSMICKE-DAO.md`**:
+> *"Architekti z Oortova oblaku [...] Sdíleli s námi jen dvě věci: matematiku zaručující bezdrátovou síť konsensu přes celou galaxii a etiku péče."*
+
+**`docs/TerraNova/ORG/en/04-AI-A-PECE.md`** (Part IV — AI and Care):
+> *"Care is the centre of architecture, because without it every society disintegrates faster than it admits."*
+
+> *"AI as gentle care infrastructure can help communities recognise long-term fatigue patterns, flag imbalances in shared load, coordinate energy and food supplies [...] but only as long as it remains a service layer. The moment it becomes an invisible centre of power, it betrays the very foundation of Terra Nova."*
+
+**`docs/TerraNova/ORG/C-ZJEVENI.md`** (Příloha C — Zjevení):
+> *"Terra Nova nevznikla jako protest vůči Babylonu. Vznikla jako alternativní architektura. Proof-of-Care distribuce odměn, transparentní ledger, komunitní správa — to jsou inženýrská řešení problému, který Zjevení popsalo v symbolickém jazyce."*
+
+### 2. NPU Hardware Mining Theory — technický základ
+
+**`docs/NPU_HARDWARE_MINING_THEORY.md`** (2026-04-02, 445 řádků):
+Detailní technická studie o NPU mining. Klíčové koncepty:
+
+- **RandomNPU** — generovat náhodné neuronové sítě per epoch (jako RandomX pro Monero, ale pro NPU)
+- **NPU HW landscape:** Apple ANE (38 TOPS), Intel NPU (48 TOPS), AMD XDNA 2 (50 TOPS), Qualcomm Hexagon (45 TOPS)
+- **Klíčový paradox:** "General-purpose NPU = existující komerční čip → mining na consumer HW, žádná ASIC výhoda"
+- **RandomNPU princip:** ASIC který zvládne náhodný compute graf = general-purpose NPU = komerční čip → žádná ASIC výhoda
+- **Neural Memory-Hard:** integrovat MLP do scratchpad passes — 3 simultánní ASIC bottlenecky (memory + compute + flexibility)
+- **ZION NPU VM Spec:** INT8 deterministic VM s kanonickým chováním (bit-exact na všem HW)
+
+**Klíčový závěr studie:**
+> *"Samotná velikost NPU (větší matice) nepomůže. ASIC resistance vyžaduje randomizaci compute grafu — nikoliv jen vah, ale struktury výpočtu. To je přesně to, co dělá RandomX pro x86: generuje náhodné programy, takže ASIC musí být general-purpose CPU. RandomNPU by dělal totéž pro neuronové inference."*
+
+### 3. TerraNova Opus 4.7 — NPU jako férový mining
+
+**`docs/TerraNova/Opus4.7/03-VOLNA-ENERGIE.md`** a **`docs/TerraNova/Opus4.7/A-NVIDIA.md`**:
+> *"Cosmic Harmony PoW je navržený pro křemík obecně, ne pro Nvidia konkrétně. NPU mixing stage používá INT8 MLP — operace, kterou umí každý moderní AI accelerator: Nvidia, AMD, Apple Neural Engine, Google TPU, Qualcomm Hexagon."*
+
+> *"CPU + GPU + NPU = férové. Žádná hardwarová třída není exklusivně privilegovaná. To znamená, že kdokoli s běžným notebookem může těžit."*
+
+> *"ZION Cosmic Harmony je první příklad vrstvy navržené explicitně tak, aby zůstala AI-rezistentní. Ne v tom smyslu, že by AI nemohla těžit. Naopak — NPU mixing dává AI hardwaru férové místo. Ale v tom smyslu, že rozhodnutí o platnosti bloku není nikdy AI-driven. Je deterministicky-výpočetní."*
+
+### 4. Website — Proof-of-Care DAO jako "planned"
+
+**`APP&WEB/website-v2.9/src/app/terranova/genesis/page.tsx`**:
+```tsx
+{ label: 'Proof-of-Care DAO', status: 'planned', icon: Users }
+{ label: 'ZION DAO', val: 'Plánováno — Proof-of-Care governance' }
+```
+
+Proof-of-Care je už na website jako "planned" feature pro ZION DAO governance.
+
+### 5. TerraNova bookData — Architecture as hierarchy of care
+
+**`APP&WEB/website-v2.9/src/app/terranova/bookData.ts`**:
+> *"L1 cares for the trustworthiness of the foundation. L2 cares for the passage of value. L3 cares for coordination and intelligence. L4 cares for culture and imagination. L5 cares for life in the physical world. L6 cares for the long horizon of humanity. That is how a technical stack begins to resemble a civilizational organism."*
+
+> *"The 89 / 5 / 5 / 1 split means the protocol's foundation carries four streams: freedom for those who computationally sustain the network, care for the humanitarian stream, horizon for Issobella, operational discipline for infrastructure. This is no longer mere tokenomics. It is philosophy translated into network rules."*
+
+### 6. L5 Governance — Care jako princip
+
+**`V3/L5/docs/GOVERNANCE/consciousness-admission-framework.md`**:
+> *"I vow to care for this land as I would care for my own body — neither exploiting it like a resource, nor abandoning it like a burden."*
+
+> Conflict Care Sub-circle — governance struktura založená na péči, ne na trestu.
+
+### 7. Cosmic Harmony kód — NPU Mix už běží
+
+**`V3/L1/cosmic-harmony/src/algorithms_npu.rs`**:
+NPU Mix je už implementován v současném PoW algoritmu — INT8 MLP s residual connection, 4 topologie rotující per epoch, deterministické váhy z genesis seedu. Toto je **technický základ** na kterém Proof-of-Care bude postaven.
+
+---
+
+## Syntéza — jak evoluZion.md propojuje zdroje
+
+| Původní koncept | Zdroj | evoluZion.md evoluce |
+|----------------|-------|---------------------|
+| "Architektura Proof-of-Care" | TerraNova kniha (gemini/01) | Plný Protokol Péče — consensus mechanismus |
+| "Etika péče" (Oortovi architekti) | TerraNova kniha (gemini/09) | Care proofs — každý blok produkuje péči |
+| "Care is the centre of architecture" | TerraNova ORG (04-AI-A-PECE) | Péče = consensus, ne side department |
+| RandomNPU (ASIC resistance) | NPU_HARDWARE_MINING_THEORY.md | NPU mining = caring computation |
+| "CPU+GPU+NPU = férové" | TerraNova Opus4.7 | Demokratizace — telefony jako validátory |
+| "Proof-of-Care DAO" (planned) | Website genesis page | Plná governance + consensus |
+| "Architecture as hierarchy of care" | bookData.ts (website) | L1-L6 = vrstvy péče o organismus |
+| NPU Mix (INT8 MLP v PoW) | cosmic-harmony/algorithms_npu.rs | Technický základ pro Proof-of-Care |
+| "I vow to care for this land" | L5 governance framework | Care vow = validator pledge |
+
+**Klíčový posun:** Původní koncepty řešily **proč** (filozofie) a **jak** (technická studie). evoluZion.md je spojuje do **kdy a co dál** — evoluce z PoW na Proof-of-Care, s konkrétními fázemi a reward distribution.
+
+---
+
+## Reference — kompletní seznam zdrojů
+
+| Dokument | Cesta | Typ | Rok |
+|----------|-------|-----|-----|
+| NPU Hardware Mining Theory | `docs/NPU_HARDWARE_MINING_THEORY.md` | Technická studie | 2026-04-02 |
+| TerraNova — Zlatý zárodek | `docs/TerraNova/gemini/01-ZLATY-ZARODEK-A-VODY-CHAOSU.md` | Filozofie | 2026-04 |
+| TerraNova — Kosmické DAO | `docs/TerraNova/gemini/09-KOSMICKE-DAO.md` | Filozofie | 2026-04 |
+| TerraNova — Epilog | `docs/TerraNova/gemini/full.md` (kap. 10) | Filozofie | 2026-04 |
+| TerraNova — AI a péče | `docs/TerraNova/ORG/en/04-AI-A-PECE.md` | Filozofie | 2026 |
+| TerraNova — Zjevení | `docs/TerraNova/ORG/C-ZJEVENI.md` | Filozofie | 2026 |
+| TerraNova Opus 4.7 — Volná energie | `docs/TerraNova/Opus4.7/03-VOLNA-ENERGIE.md` | Filozofie + tech | 2026-05 |
+| TerraNova Opus 4.7 — NVIDIA | `docs/TerraNova/Opus4.7/A-NVIDIA.md` | Filozofie + tech | 2026-05 |
+| Website genesis page | `APP&WEB/website-v2.9/src/app/terranova/genesis/page.tsx` | UI | 2026 |
+| Website bookData | `APP&WEB/website-v2.9/src/app/terranova/bookData.ts` | UI | 2026 |
+| L5 Governance framework | `V3/L5/docs/GOVERNANCE/consciousness-admission-framework.md` | Governance | 2026 |
+| Cosmic Harmony NPU Mix | `V3/L1/cosmic-harmony/src/algorithms_npu.rs` | Kód | 2026 |
+| evoluZion.md (tento dokument) | `evoluZion.md` | Syntéza + evoluce | 2026-06-30 |
