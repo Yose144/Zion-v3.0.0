@@ -700,4 +700,38 @@ mod tests {
         .unwrap_err();
         assert!(matches!(err, WalletError::InvalidMemo(_)));
     }
+
+    /// Regression test for CRITICAL 3.0.4 Finding 1: an account transaction
+    /// whose `public_key` does not derive to the `from` address must be
+    /// rejected, even if the Ed25519 signature is otherwise valid. Without the
+    /// from-address derivation check, any funded account could be spent by
+    /// signing with an unrelated key.
+    #[test]
+    fn verify_signature_rejects_public_key_not_matching_sender() {
+        // Victim owns a funded account.
+        let (victim_sk, victim_vk) = generate_keypair();
+        let victim_addr = derive_address(victim_vk.as_bytes());
+        let dest = derive_address(&[99u8; 32]);
+
+        // A genuine victim-signed transaction must verify.
+        let legit =
+            build_and_sign_account(&victim_sk, &victim_addr, &dest, 1_000_000, 1_000, 1, None, 1)
+                .unwrap();
+        assert!(legit.verify_signature(), "legit victim tx must verify");
+
+        // Attacker forges a transaction that spends from the victim address but
+        // signs it with their own unrelated key and presents their own pubkey.
+        let (attacker_sk, attacker_vk) = generate_keypair();
+        let mut forged = legit.clone();
+        let sig = crypto::sign(&attacker_sk, forged.tx_id.as_bytes());
+        forged.signature = crypto::to_hex(&sig);
+        forged.public_key = crypto::to_hex(attacker_vk.as_bytes());
+
+        // Signature is valid for (attacker_pk, tx_id) but the key does not
+        // derive to `from` (victim) → must be rejected.
+        assert!(
+            !forged.verify_signature(),
+            "forged tx with a key not matching the sender address must be rejected"
+        );
+    }
 }
