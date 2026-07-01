@@ -234,7 +234,7 @@ Viz [Session 10 detail](#session-10--uniswap-v4-migration--defi-audit-2026-06-30
 - **Escrow adresa:** `zion1y0j484d5e8r49785d253e8w0c2x4t3n792m5724` (nový produkční keypair, 2026-06-29); L1 watcher scanuje bloky, EVM watcher sleduje Base contract `0x3DE9Ad42716854083ab837706E3961d10B0e63Eb`
 - **DAO L1 scanner opraven** — `DAO_L1_RPC` env var měla `/jsonrpc` suffix → `normalize_rpc_addr()` neopravil HTTP prefix → TcpStream.connect selhával; opraveno na `127.0.0.1:8443`
 - **core-endpoints.ts opraven** — `atomicSwap` port byl 8460 (neexistující), opraven na 8452
-- **3.0.4 milestone definován** v ROADMAP.md — scope: ZIONStaking/ZIONFarm Base Mainnet deploy, DAO UI live connection, WARP UI, Bridge UI, Atomic Swap funding + E2E test
+- **3.0.4 milestone definován** v `V3/ROADMAP.md` — scope: ZIONStaking/ZIONFarm Base Mainnet deploy, DAO UI live connection, WARP UI, Bridge UI, Atomic Swap funding + E2E test
 
 ### Edge service stav (2026-06-29 18:41 UTC)
 
@@ -1392,7 +1392,7 @@ const TABS=['overview','charts','events','env','launch-day','wizard','services',
 
 ### Backup Infrastructure (completed)
 - **Edge:** `zion-edge-backup.sh` v2.0 — backs up node state, DAO DB + WAL, service DBs, systemd units, pool logs, git ref, health.json + MANIFEST.txt. Timer every 15 min.
-- **Local W11:** `scripts/local-core-backup.ps1` + `backup-local-core.bat` — backs up V3/data, all `.db` files, configs, git ref. Destination `C:\ZION-AutoBackups\`.
+- **Local W11:** `scripts/local-core-backup.ps1` + `ZionStart/windows/backup-local-core.bat` — backs up V3/data, all `.db` files, configs, git ref. Destination `C:\ZION-AutoBackups\`.
 - **Dashboard:** New Backups tab (`💾 Backups`) with `/api/backup/status` endpoint, KPI cards for Local Core + Edge Server, "Backup Now" + "Refresh" buttons, 15s auto-refresh.
 - **Bug fix:** PowerShell `ConvertTo-Json` Czech decimal comma locale bug fixed with `[System.Globalization.CultureInfo]::InvariantCulture` wrapper.
 
@@ -2811,7 +2811,7 @@ Desktop Agent (Hiran AI)   →  localhost:8002
 **Soubory:**
 - `dashboard/app.py` — Flask backend s API
 - `dashboard/dashboard.html` + `dashboard/dashboard.js` — frontend
-- `start-dashboard.bat` — rychlý start
+- `ZionStart/windows/start-dashboard.bat` — rychlý start
 - `install-dashboard-autostart.bat` — Windows autostart installer
 - `DASHBOARD_AUTOSTART.md` — návod
 
@@ -4159,7 +4159,7 @@ V4 NFT pozice deployeru (1 NFT v PositionManager po burn):
 **4. .bat soubory — IP canonical cleanup**
 - Princip: `77.42.71.94` (Edge public IP) = main, `100.76.16.108` (Tailscale VPN) = fallback v komentáři.
 - 12 souborů opraveno (miner + node + pool skripty).
-- `run-local-pool.bat` — pool wallet → canonical `zion16825y...` (byl `zion1w523a...`).
+- `ZionStart/windows/run-local-pool.bat` — pool wallet → canonical `zion16825y...` (byl `zion1w523a...`).
 - AGENTS.md aktualizován (Tailscale fallback notes, SSH endpoint).
 
 **5. Edge disk cleanup**

@@ -7,7 +7,7 @@
 
 title ZION CLI
 
-set "REPO_ROOT=%~dp0"
+set "REPO_ROOT=%~dp0..\.."
 if "%REPO_ROOT:~-1%"=="\" set "REPO_ROOT=%REPO_ROOT:~0,-1%"
 
 set "ZION_BIN=%REPO_ROOT%\V3\target\release\zion.exe"

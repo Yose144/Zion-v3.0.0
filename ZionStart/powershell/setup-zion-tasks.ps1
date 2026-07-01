@@ -9,7 +9,7 @@ foreach ($t in $tasks) {
 
 Write-Host ""
 Write-Host "=== Creating ZION-Start-Visible-Stack (on logon) ==="
-$action1 = New-ScheduledTaskAction -Execute "cmd" -Argument '/c start /d "C:\Users\yosef\Desktop\Zion\2.9.6-main" start-all-visible.bat'
+$action1 = New-ScheduledTaskAction -Execute "cmd" -Argument '/c start /d "C:\Users\yosef\Desktop\Zion\2.9.6-main" ZionStart\windows\start-all-visible.bat'
 $trigger1 = New-ScheduledTaskTrigger -AtLogon
 $principal1 = New-ScheduledTaskPrincipal -UserId "yosef" -LogonType Interactive -RunLevel Highest
 $settings1 = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable
@@ -17,7 +17,7 @@ Register-ScheduledTask -TaskName "ZION-Start-Visible-Stack" -Action $action1 -Tr
 
 Write-Host ""
 Write-Host "=== Creating ZION-AutoBackup-15min (every 15 minutes) ==="
-$action2 = New-ScheduledTaskAction -Execute "cmd" -Argument '/c start /d "C:\Users\yosef\Desktop\Zion\2.9.6-main" backup-local-core.bat'
+$action2 = New-ScheduledTaskAction -Execute "cmd" -Argument '/c start /d "C:\Users\yosef\Desktop\Zion\2.9.6-main" ZionStart\windows\backup-local-core.bat'
 $trigger2 = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 15) -RepetitionDuration ([System.TimeSpan]::MaxValue)
 $principal2 = New-ScheduledTaskPrincipal -UserId "yosef" -LogonType Interactive -RunLevel Highest
 $settings2 = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable
