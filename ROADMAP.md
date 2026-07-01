@@ -37,8 +37,10 @@ This is the **forward-looking** root roadmap. Historical detail lives in [`docs/
 - Documentation canonicalized: `3.0.4.md` is the single source of truth for the release
 - Root cleaned: `docs/3.0.3/`, `ZionStart/`, `scripts/audit/`, `scripts/ops/`, `V3/docker/`
 
+✅ **Resolved in 3.0.4**
+- Account-model TX memo field added (L1 hard fork); L2 watchers (bridge, DAO, atomic-swap) now scan `account_transactions` with memo.
+
 ⚠️ **Known limitations**
-- L2 watchers (bridge, DAO, atomic-swap) scan only `utxo_transactions`; account-model TXs have no `memo` field
 - Bridge contract addresses have a 3-way inconsistency across config/docs that needs owner decision
 - ~66.47M wZION locked in a Uniswap CCA auction with an immutable 184-day end block (intended 30 days)
 
@@ -51,7 +53,7 @@ These block all or part of the engineering work below.
 | # | Decision | Context | Where documented |
 |---|----------|---------|------------------|
 | D1 | **Bridge addresses** | Which contract is live on each non-Base chain? `bridge-mainnet.toml` points to revoked `0xa5a09b2...`; `V3/docs/BRIDGE_MAINNET_DEPLOY.md` shows a newer 5/5 bridge. | [`3.0.4.md`](./3.0.4.md) §5, [`docs/3.0.3/CODE_VS_DOCS_AUDIT.md`](./docs/3.0.3/CODE_VS_DOCS_AUDIT.md) H1 |
-| D2 | **TX unification activation** | Add `memo` field to account-model TX (L1 hard fork). 5 questions: activation height, charset, size limit, `BRIDGE_UNLOCK:` on account TX, and owner approval. | [`3.0.4.md`](./3.0.4.md) §3.7 |
+| D2 | **TX unification activation** | ✅ Approved + implemented — `memo` field added, height-gated activation, watchers updated. Deploy/E2E pending. | [`3.0.4.md`](./3.0.4.md) §3.5 |
 | D3 | **ETH budget for liquidity** | Need ≥0.80 ETH to seed wZION/WETH pool at target $0.00002/ZION. | [`docs/3.0.3/LIQUIDITY_PLAN.md`](./docs/3.0.3/LIQUIDITY_PLAN.md) |
 | D4 | **CCA auction** | 66.47M wZION locked until block 55,959,126 (~184 days). Immutable contract. Wait it out or run a new auction? | [`docs/3.0.3/AUCTION_CCA_BASE.md`](./docs/3.0.3/AUCTION_CCA_BASE.md) |
 | D5 | **Repo cleanup Phase 1+2** | Approve deleting `V3/config/` stale templates and creating `V3/L1/types` crate for shared watcher types. | [`3.0.4.md`](./3.0.4.md) §12 |
@@ -66,7 +68,7 @@ Goal: resolve all owner blockers and operational gaps so the chain is fully cons
 
 | # | Task | Status | Detail |
 |---|------|--------|--------|
-| 1.1 | **TX unification (L1 hard fork)** | 🔵 Blocked on D2 | Add `memo` to account-model `Transaction`, height-gated activation, extend 3 L2 watchers to scan `account_transactions`. See [`3.0.4.md`](./3.0.4.md) §3. |
+| 1.1 | **TX unification (L1 hard fork)** | ✅ Implemented | Add `memo` to account-model `Transaction`, height-gated activation, extend 3 L2 watchers to scan `account_transactions`. See [`3.0.4.md`](./3.0.4.md) §3. |
 | 1.2 | **DAO_TREASURY_LOCK_HEIGHT guard** | ✅ Done | Confirmed `144_000` in code; docs updated. |
 | 1.3 | **Migration height guard** | 🔵 Pending | Add fatal/warning if `ZION_MIGRATION_HEIGHT=0` outside dev/test. |
 
@@ -110,7 +112,7 @@ Goal: ship the user-facing stack (wallet, mobile, explorer, L4) before public la
 
 | # | Initiative | Status | Detail |
 |---|------------|--------|--------|
-| 5.1 | **Wallet SDK** (`@zion/sdk`) | 🔵 Planned | TypeScript SDK with memo support, tx signing, balance/history. Base for mobile + web. |
+| 5.1 | **Wallet SDK** (`@zion/sdk`) | ✅ Memo support added | TypeScript SDK with memo support, tx signing, balance/history. Base for mobile + web. |
 | 5.2 | **TX history RPC** | 🔵 Planned | Address-based index in L1 node; blocker for explorer. |
 | 5.3 | **Mobile app** | 🔵 Planned | QR, biometrics, deep linking, EAS build, device testing, store submission. |
 | 5.4 | **L4 OASIS backend** | 🔵 Planned | Guild wars, raid boss, OASIS token bridge, wallet signature auth. |
@@ -127,7 +129,7 @@ Final checklist. Full procedure in [`V3/docs/MAINNET_LAUNCH_SEQUENCE.md`](./V3/d
 
 | # | Gate | Status |
 |---|------|--------|
-| 6.1 | TX unification deployed and stable | 🔵 |
+| 6.1 | TX unification deployed and stable | 🟡 Implemented; deploy/E2E pending |
 | 6.2 | Bridge/wZION addresses consistent across all clients | 🔵 |
 | 6.3 | DeFi contracts verified + liquidity seeded | 🔵 |
 | 6.4 | Wallet SDK + mobile app published | 🔵 |

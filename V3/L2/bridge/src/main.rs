@@ -136,8 +136,8 @@ async fn main() -> Result<()> {
     let l1_shutdown = Arc::clone(&shutdown);
     let l1_lock_tx = lock_tx.clone();
     let _l1_handle = tokio::spawn(async move {
-        let mut watcher = L1Watcher::new(l1_config, Some(last_l1_height))
-            .with_metrics(Arc::clone(&l1_metrics));
+        let mut watcher =
+            L1Watcher::new(l1_config, Some(last_l1_height)).with_metrics(Arc::clone(&l1_metrics));
         loop {
             if l1_shutdown.load(Ordering::Relaxed) {
                 info!("L1 watcher: shutdown signal received");
@@ -162,11 +162,18 @@ async fn main() -> Result<()> {
         let handle = tokio::spawn(async move {
             loop {
                 if evm_shutdown.load(Ordering::Relaxed) {
-                    info!("[{}] EVM watcher: shutdown signal received", chain_config.name);
+                    info!(
+                        "[{}] EVM watcher: shutdown signal received",
+                        chain_config.name
+                    );
                     break;
                 }
-                let mut watcher = EvmWatcher::new(chain_config.clone(), ankr_config.clone(), start_block);
-                if let Err(e) = watcher.run(burn_tx_clone.clone(), Arc::clone(&evm_metrics)).await {
+                let mut watcher =
+                    EvmWatcher::new(chain_config.clone(), ankr_config.clone(), start_block);
+                if let Err(e) = watcher
+                    .run(burn_tx_clone.clone(), Arc::clone(&evm_metrics))
+                    .await
+                {
                     error!("[{}] EVM watcher crashed: {:?}", chain_config.name, e);
                     evm_metrics.errors.fetch_add(1, Ordering::Relaxed);
                     // Brief pause before restart
@@ -189,7 +196,11 @@ async fn main() -> Result<()> {
                 info!("Relayer: shutdown signal received");
                 break;
             }
-            let relayer = Relayer::new(Arc::clone(&relayer_config), Arc::clone(&relayer_metrics), Arc::clone(&relayer_db));
+            let relayer = Relayer::new(
+                Arc::clone(&relayer_config),
+                Arc::clone(&relayer_metrics),
+                Arc::clone(&relayer_db),
+            );
             if let Err(e) = relayer.run(lock_rx, burn_rx).await {
                 error!("Relayer crashed: {:?}", e);
                 relayer_metrics.errors.fetch_add(1, Ordering::Relaxed);
@@ -278,7 +289,10 @@ async fn recover_pending_locks(
                     lock.l1_tx_hash
                 );
                 // Reset to Pending so the relayer re-processes it
-                let _ = db.update_lock_status(&lock.l1_tx_hash, zion_bridge::types::BridgeStatus::Pending);
+                let _ = db.update_lock_status(
+                    &lock.l1_tx_hash,
+                    zion_bridge::types::BridgeStatus::Pending,
+                );
                 if lock_tx.send(lock).await.is_err() {
                     error!("Recovery: lock channel closed during startup");
                     break;
@@ -307,10 +321,8 @@ async fn recover_pending_burns(
                     burn.burn_id, burn.amount_wzion_wei, burn.status,
                 );
                 // Reset to Pending so the relayer re-processes it cleanly
-                let _ = db.update_burn_status(
-                    &burn.burn_id,
-                    zion_bridge::types::BridgeStatus::Pending,
-                );
+                let _ =
+                    db.update_burn_status(&burn.burn_id, zion_bridge::types::BridgeStatus::Pending);
                 if burn_tx.send(burn).await.is_err() {
                     error!("Recovery: burn channel closed during startup");
                     break;
@@ -328,7 +340,8 @@ async fn recover_pending_burns(
                     "🔄 Recovery: re-queueing failed burn {} for retry",
                     burn.burn_id
                 );
-                let _ = db.update_burn_status(&burn.burn_id, zion_bridge::types::BridgeStatus::Pending);
+                let _ =
+                    db.update_burn_status(&burn.burn_id, zion_bridge::types::BridgeStatus::Pending);
                 if burn_tx.send(burn).await.is_err() {
                     error!("Recovery: burn channel closed during startup");
                     break;

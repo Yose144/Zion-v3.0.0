@@ -26,8 +26,8 @@ pub mod genesis;
 pub mod ibd;
 pub mod launch;
 pub mod mempool_v2;
-pub mod migration;
 pub mod metrics;
+pub mod migration;
 pub mod node_builder;
 pub mod orphan;
 pub mod p2p_security;
@@ -395,6 +395,11 @@ pub struct Transaction {
     /// Ed25519 public key (hex, 64 chars). Required for non-coinbase transactions.
     #[serde(default)]
     pub public_key: String,
+    /// Optional protocol memo (account-model). When present, included in the
+    /// signed tx_id preimage. ASCII-only, max 256 bytes. Activated by
+    /// `ACCOUNT_TX_MEMO_V1_ACTIVATION_HEIGHT`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub memo: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1928,6 +1933,14 @@ impl Transaction {
         }
         if (self.fee_zion as u128) > self.amount_zion {
             return Err("transaction fee must not exceed transaction amount".to_string());
+        }
+        if let Some(ref memo) = self.memo {
+            if memo.len() > 256 {
+                return Err("transaction memo must not exceed 256 bytes".to_string());
+            }
+            if !memo.is_ascii() {
+                return Err("transaction memo must be ASCII only".to_string());
+            }
         }
         Ok(())
     }
@@ -3508,6 +3521,7 @@ impl ChainState {
                         nonce: next_height,
                         signature: String::new(),
                         public_key: String::new(),
+                        memo: None,
                     }
                 };
 
@@ -3539,6 +3553,7 @@ impl ChainState {
                     nonce: next_height,
                     signature: String::new(),
                     public_key: String::new(),
+                    memo: None,
                 };
                 selected_transactions.insert(0, coinbase_tx);
             }
@@ -4018,6 +4033,7 @@ mod tests {
             nonce,
             signature: String::new(),
             public_key: String::new(),
+            memo: None,
         };
         sign_test_tx(&mut tx);
         tx
@@ -4328,6 +4344,7 @@ mod tests {
                 nonce: 1,
                 signature: String::new(),
                 public_key: String::new(),
+                memo: None,
             },
         });
         assert!(matches!(
@@ -4349,6 +4366,7 @@ mod tests {
                 nonce: 2,
                 signature: String::new(),
                 public_key: String::new(),
+                memo: None,
             },
         });
         assert!(matches!(
@@ -4370,6 +4388,7 @@ mod tests {
             nonce: first.nonce,
             signature: String::new(),
             public_key: String::new(),
+            memo: None,
         };
         sign_test_tx(&mut reused_nonce);
         assert!(matches!(
@@ -5827,14 +5846,8 @@ mod tests {
     fn utxo_transaction_submits_to_mempool() {
         let mut runtime = NodeRuntime::new("node-utxo-mempool", NodeConfig::mainnet());
         let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000);
-        let utxo = make_signed_utxo_tx_spending(
-            fund_id,
-            0,
-            1_000_000,
-            &sk,
-            &vk,
-            "zion1destmempool",
-        );
+        let utxo =
+            make_signed_utxo_tx_spending(fund_id, 0, 1_000_000, &sk, &vk, "zion1destmempool");
         let tx_id = hex(&utxo.id);
 
         let resp = runtime.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo));
@@ -5850,8 +5863,7 @@ mod tests {
     fn utxo_transaction_appears_in_template() {
         let mut runtime = NodeRuntime::new("node-utxo-tmpl", NodeConfig::mainnet());
         let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000);
-        let utxo =
-            make_signed_utxo_tx_spending(fund_id, 0, 1_000_000, &sk, &vk, "zion1desttmpl");
+        let utxo = make_signed_utxo_tx_spending(fund_id, 0, 1_000_000, &sk, &vk, "zion1desttmpl");
         let tx_id = hex(&utxo.id);
 
         runtime.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo));
@@ -5866,8 +5878,7 @@ mod tests {
     fn utxo_transaction_mined_in_block() {
         let mut runtime = NodeRuntime::new("node-utxo-mine", NodeConfig::mainnet());
         let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000);
-        let utxo =
-            make_signed_utxo_tx_spending(fund_id, 0, 1_000_000, &sk, &vk, "zion1destmine");
+        let utxo = make_signed_utxo_tx_spending(fund_id, 0, 1_000_000, &sk, &vk, "zion1destmine");
         let tx_id = hex(&utxo.id);
 
         runtime.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo.clone()));
@@ -5920,8 +5931,7 @@ mod tests {
     fn utxo_transaction_rejects_duplicate_id() {
         let mut runtime = NodeRuntime::new("node-utxo-dup", NodeConfig::mainnet());
         let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000);
-        let utxo =
-            make_signed_utxo_tx_spending(fund_id, 0, 1_000_000, &sk, &vk, "zion1destdup");
+        let utxo = make_signed_utxo_tx_spending(fund_id, 0, 1_000_000, &sk, &vk, "zion1destdup");
 
         let first = runtime.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo.clone()));
         assert!(matches!(
@@ -5944,10 +5954,8 @@ mod tests {
     fn utxo_transaction_rejects_double_spend() {
         let mut runtime = NodeRuntime::new("node-utxo-dblspend", NodeConfig::mainnet());
         let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000);
-        let tx1 =
-            make_signed_utxo_tx_spending(fund_id, 0, 1_000_000, &sk, &vk, "zion1destdbl1");
-        let tx2 =
-            make_signed_utxo_tx_spending(fund_id, 0, 1_000_000, &sk, &vk, "zion1destdbl2"); // same input
+        let tx1 = make_signed_utxo_tx_spending(fund_id, 0, 1_000_000, &sk, &vk, "zion1destdbl1");
+        let tx2 = make_signed_utxo_tx_spending(fund_id, 0, 1_000_000, &sk, &vk, "zion1destdbl2"); // same input
 
         let first = runtime.submit_submitted_transaction(SubmittedTransaction::Utxo(tx1));
         assert!(matches!(
@@ -5971,14 +5979,8 @@ mod tests {
         let mut runtime = NodeRuntime::new("node-utxo-coexist", NodeConfig::mainnet());
         let account_tx = sample_transaction("tx-coexist", 5, 1);
         let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000);
-        let utxo = make_signed_utxo_tx_spending(
-            fund_id,
-            0,
-            1_000_000,
-            &sk,
-            &vk,
-            "zion1destcoexist",
-        );
+        let utxo =
+            make_signed_utxo_tx_spending(fund_id, 0, 1_000_000, &sk, &vk, "zion1destcoexist");
 
         runtime.handle_rpc_request(RpcRequest::SubmitTransaction {
             transaction: account_tx.clone(),
@@ -6014,8 +6016,7 @@ mod tests {
     fn utxo_mined_block_passes_peer_import() {
         let mut source = NodeRuntime::new("node-utxo-src", NodeConfig::mainnet());
         let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut source, 1_000_000);
-        let utxo =
-            make_signed_utxo_tx_spending(fund_id, 0, 1_000_000, &sk, &vk, "zion1destpeer");
+        let utxo = make_signed_utxo_tx_spending(fund_id, 0, 1_000_000, &sk, &vk, "zion1destpeer");
 
         source.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo.clone()));
         mine_one_block(&mut source);
@@ -6110,14 +6111,7 @@ mod tests {
     fn peer_import_rejects_utxo_with_bad_signature() {
         let mut source = NodeRuntime::new("node-utxo-badsig-src", NodeConfig::mainnet());
         let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut source, 1_000_000);
-        let utxo = make_signed_utxo_tx_spending(
-            fund_id,
-            0,
-            1_000_000,
-            &sk,
-            &vk,
-            "zion1destbadsig",
-        );
+        let utxo = make_signed_utxo_tx_spending(fund_id, 0, 1_000_000, &sk, &vk, "zion1destbadsig");
         source.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo));
         mine_one_block(&mut source);
 

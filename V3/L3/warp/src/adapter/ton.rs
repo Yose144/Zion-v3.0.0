@@ -187,8 +187,7 @@ impl TonAdapter {
     }
 
     pub fn from_env() -> Self {
-        let api_url =
-            std::env::var("WARP_TON_API").unwrap_or_else(|_| DEFAULT_API_URL.to_string());
+        let api_url = std::env::var("WARP_TON_API").unwrap_or_else(|_| DEFAULT_API_URL.to_string());
         let api_key = std::env::var("WARP_TON_API_KEY").ok();
         let bridge_account = std::env::var("WARP_TON_BRIDGE_ACCOUNT").ok();
         Self {
@@ -251,11 +250,10 @@ impl TonAdapter {
         let v = self
             .rpc("getAddressInformation", json!({ "address": address }))
             .await?;
-        let info: AddressInfo =
-            serde_json::from_value(v).map_err(|e| WarpError::AdapterError {
-                chain: "ton".into(),
-                reason: format!("getAddressInformation parse: {}", e),
-            })?;
+        let info: AddressInfo = serde_json::from_value(v).map_err(|e| WarpError::AdapterError {
+            chain: "ton".into(),
+            reason: format!("getAddressInformation parse: {}", e),
+        })?;
         let balance = info.balance.parse::<u64>().unwrap_or(0);
         Ok((balance, info.state))
     }
@@ -274,17 +272,17 @@ impl TonAdapter {
             )
             .await?;
         // TON Center returns an array directly in `result`.
-        let txs: Vec<TonTx> =
-            serde_json::from_value(v).map_err(|e| WarpError::AdapterError {
-                chain: "ton".into(),
-                reason: format!("getTransactions parse: {}", e),
-            })?;
+        let txs: Vec<TonTx> = serde_json::from_value(v).map_err(|e| WarpError::AdapterError {
+            chain: "ton".into(),
+            reason: format!("getTransactions parse: {}", e),
+        })?;
         Ok(txs)
     }
 
     /// `getTransactionInformation` → transaction details by hash.
     async fn get_transaction_info(&self, hash: &str) -> WarpResult<Value> {
-        self.rpc("getTransactionInformation", json!({ "hash": hash })).await
+        self.rpc("getTransactionInformation", json!({ "hash": hash }))
+            .await
     }
 
     /// Fetch the current seqno for a wallet V2R2 contract via `runMethod`.
@@ -447,7 +445,9 @@ impl ChainAdapter for TonAdapter {
         let amount = instruction.amount_dest_atomic;
         info!(
             "[WARP][ton] minting {} to {} (relay pubkey {})",
-            amount, instruction.recipient, signer.public_key_hex()
+            amount,
+            instruction.recipient,
+            signer.public_key_hex()
         );
 
         // 1. Parse recipient address (hex 32-byte hash + workchain)
@@ -455,17 +455,17 @@ impl ChainAdapter for TonAdapter {
 
         // 2. Build jetton transfer body cell
         let body_cell = ton_cell::build_jetton_transfer_body(
-            1,                  // query_id
-            amount as u64,      // amount
-            0,                  // dest workchain
+            1,             // query_id
+            amount as u64, // amount
+            0,             // dest workchain
             &recipient_hash,
         );
 
         // 3. Build internal message cell (wrapping the body)
         let internal_msg = ton_cell::build_internal_message(
-            0,                  // dest workchain
-            &recipient_hash,    // dest address hash
-            50_000_000,         // value (0.05 TON in nanoTON)
+            0,               // dest workchain
+            &recipient_hash, // dest address hash
+            50_000_000,      // value (0.05 TON in nanoTON)
             body_cell,
         )
         .map_err(|e| WarpError::AdapterError {
@@ -476,10 +476,7 @@ impl ChainAdapter for TonAdapter {
         // 4. Fetch wallet seqno from chain (via runMethod)
         let wallet_addr = signer.address_string();
         let seqno = self.get_wallet_seqno(&wallet_addr).await.unwrap_or(0);
-        info!(
-            "[WARP][ton] wallet {} seqno={}",
-            wallet_addr, seqno
-        );
+        info!("[WARP][ton] wallet {} seqno={}", wallet_addr, seqno);
 
         // 5. Compute wallet V2R2 signing hash
         let valid_until = (chrono::Utc::now().timestamp() as u32) + 3600; // 1 hour
@@ -514,7 +511,9 @@ impl ChainAdapter for TonAdapter {
         let boc_b64 = B64.encode(&boc);
 
         // 9. Submit via TON Center API
-        let v = self.rpc("sendBase64Transaction", json!({ "boc": boc_b64 })).await?;
+        let v = self
+            .rpc("sendBase64Transaction", json!({ "boc": boc_b64 }))
+            .await?;
 
         let result = v.as_str().unwrap_or("unknown");
         info!("[WARP][ton] TX submitted: {}", result);
@@ -531,9 +530,7 @@ impl ChainAdapter for TonAdapter {
         // finality is governed by masterchain block references. We approximate
         // confirmations as the difference between the current masterchain
         // seqno and the seqno at which the TX was included (if present).
-        let tx_seqno = tx_info["transaction_id"]["lt"]
-            .as_u64()
-            .unwrap_or(0);
+        let tx_seqno = tx_info["transaction_id"]["lt"].as_u64().unwrap_or(0);
         let now_seqno = self.get_masterchain_seqno().await.unwrap_or(tx_seqno);
         Ok(now_seqno.saturating_sub(tx_seqno))
     }

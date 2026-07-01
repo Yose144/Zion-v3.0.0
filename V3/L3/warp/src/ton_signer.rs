@@ -58,10 +58,7 @@ impl TonSigner {
         if bytes.len() != 32 {
             return Err(WarpError::AdapterError {
                 chain: "ton".into(),
-                reason: format!(
-                    "Ed25519 seed must be 32 bytes, got {}",
-                    bytes.len()
-                ),
+                reason: format!("Ed25519 seed must be 32 bytes, got {}", bytes.len()),
             });
         }
         let mut seed = [0u8; 32];
@@ -115,8 +112,8 @@ impl TonSigner {
         let data_hash = data_cell.hash();
 
         // 2. Get wallet code hash (from env or default)
-        let code_hash_hex =
-            std::env::var("WARP_TON_WALLET_CODE_HASH").unwrap_or_else(|_| DEFAULT_WALLET_V2R2_CODE_HASH.to_string());
+        let code_hash_hex = std::env::var("WARP_TON_WALLET_CODE_HASH")
+            .unwrap_or_else(|_| DEFAULT_WALLET_V2R2_CODE_HASH.to_string());
         let code_hash = hex::decode(&code_hash_hex).unwrap_or_else(|_| vec![0u8; 32]);
         let mut code_hash_arr = [0u8; 32];
         if code_hash.len() == 32 {
@@ -334,7 +331,11 @@ mod tests {
     fn test_signer_address_string_starts_with_eq() {
         let s = test_signer();
         let addr = s.address_string();
-        assert!(addr.starts_with("EQ"), "address should start with EQ: {}", addr);
+        assert!(
+            addr.starts_with("EQ"),
+            "address should start with EQ: {}",
+            addr
+        );
     }
 
     #[test]

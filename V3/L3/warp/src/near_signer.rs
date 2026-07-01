@@ -71,10 +71,7 @@ pub struct NearPublicKey {
 impl NearPublicKey {
     /// Display as `ed25519:<base58>`.
     pub fn to_display(&self) -> String {
-        format!(
-            "ed25519:{}",
-            bs58::encode(&self.bytes).into_string()
-        )
+        format!("ed25519:{}", bs58::encode(&self.bytes).into_string())
     }
 }
 
@@ -172,12 +169,13 @@ impl NearSigner {
             chain: "near".into(),
             reason: format!("hex decode failed: {}", e),
         })?;
-        let seed: [u8; 32] = bytes.as_slice().try_into().map_err(|_| {
-            WarpError::AdapterError {
+        let seed: [u8; 32] = bytes
+            .as_slice()
+            .try_into()
+            .map_err(|_| WarpError::AdapterError {
                 chain: "near".into(),
                 reason: format!("key must be 32 bytes, got {}", bytes.len()),
-            }
-        })?;
+            })?;
         Ok(Self {
             signing_key: SigningKey::from_bytes(&seed),
             account_id: account_id.to_string(),
@@ -401,11 +399,8 @@ mod tests {
             )
             .unwrap();
         // Must be valid base64
-        let decoded = base64::Engine::decode(
-            &base64::engine::general_purpose::STANDARD,
-            &b64,
-        )
-        .unwrap();
+        let decoded =
+            base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &b64).unwrap();
         // Decoded = unsigned tx || 1 || 64-byte sig  →  > 65 bytes
         assert!(decoded.len() > 65);
     }

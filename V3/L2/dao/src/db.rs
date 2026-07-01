@@ -299,8 +299,7 @@ impl DaoDb {
             .map_err(|e| DaoError::Internal(e.to_string()))?;
         }
 
-        tx.commit()
-            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        tx.commit().map_err(|e| DaoError::Internal(e.to_string()))?;
         Ok(inserted)
     }
 

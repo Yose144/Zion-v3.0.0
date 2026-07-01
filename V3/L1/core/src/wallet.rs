@@ -74,6 +74,7 @@ pub enum WalletError {
     InsufficientFunds { available: u64, needed: u64 },
     NoUtxos,
     InvalidAddress(String),
+    InvalidMemo(String),
     FeeTooLow { fee: u64, minimum: u64 },
     AmountTooSmall(u64),
     TooManyRecipients(usize),
@@ -88,6 +89,7 @@ impl std::fmt::Display for WalletError {
             }
             Self::NoUtxos => write!(f, "no spendable UTXOs"),
             Self::InvalidAddress(a) => write!(f, "invalid address: {a}"),
+            Self::InvalidMemo(m) => write!(f, "invalid memo: {m}"),
             Self::FeeTooLow { fee, minimum } => write!(f, "fee {fee} below minimum {minimum}"),
             Self::AmountTooSmall(a) => write!(f, "amount {a} too small"),
             Self::TooManyRecipients(n) => {
@@ -329,7 +331,15 @@ pub fn build_batch_payout(
 // ── Account-model build & sign ─────────────────────────────────────────
 
 /// Generate a deterministic 64-hex-char tx_id for an account transaction.
-pub fn generate_account_tx_id(from: &str, to: &str, amount: u64, nonce: u64) -> String {
+/// If a memo is provided, it is mixed into the preimage so the memo is
+/// covered by the signature.
+pub fn generate_account_tx_id(
+    from: &str,
+    to: &str,
+    amount: u64,
+    nonce: u64,
+    memo: Option<&str>,
+) -> String {
     let mut bytes = [0u8; 32];
     let ts = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -341,6 +351,12 @@ pub fn generate_account_tx_id(from: &str, to: &str, amount: u64, nonce: u64) -> 
     // XOR-in sender and recipient for uniqueness
     for (i, b) in from.bytes().chain(to.bytes()).enumerate() {
         bytes[i % 32] ^= b;
+    }
+    // XOR-in memo bytes if present, so the tx_id commits to the memo.
+    if let Some(m) = memo {
+        for (i, b) in m.bytes().enumerate() {
+            bytes[i % 32] ^= b;
+        }
     }
     hex::encode(bytes)
 }
@@ -356,12 +372,30 @@ pub fn build_and_sign_account(
     amount_zion: u128,
     fee_zion: u64,
     nonce: u64,
+    memo: Option<String>,
 ) -> Result<crate::Transaction, WalletError> {
     if !crypto::is_valid_address(to_address) {
         return Err(WalletError::InvalidAddress(to_address.to_string()));
     }
 
-    let tx_id = generate_account_tx_id(from_address, to_address, amount_zion as u64, nonce);
+    if let Some(ref m) = memo {
+        if m.len() > 256 {
+            return Err(WalletError::InvalidMemo(
+                "memo exceeds 256 bytes".to_string(),
+            ));
+        }
+        if !m.is_ascii() {
+            return Err(WalletError::InvalidMemo("memo must be ASCII".to_string()));
+        }
+    }
+
+    let tx_id = generate_account_tx_id(
+        from_address,
+        to_address,
+        amount_zion as u64,
+        nonce,
+        memo.as_deref(),
+    );
     let pk_hex = crypto::to_hex(signing_key.verifying_key().as_bytes());
 
     let key_bytes = signing_key.to_bytes();
@@ -377,6 +411,7 @@ pub fn build_and_sign_account(
         nonce,
         signature: crypto::to_hex(&sig),
         public_key: pk_hex,
+        memo,
     })
 }
 
@@ -590,22 +625,67 @@ mod tests {
         let addr = derive_address(vk.as_bytes());
         let dest = derive_address(&[99u8; 32]);
 
-        let tx = build_and_sign_account(&sk, &addr, &dest, 1_000_000, 1_000, 42).unwrap();
+        let tx = build_and_sign_account(&sk, &addr, &dest, 1_000_000, 1_000, 42, None).unwrap();
         assert_eq!(tx.from, addr);
         assert_eq!(tx.to, dest);
         assert_eq!(tx.amount_zion, 1_000_000);
         assert_eq!(tx.fee_zion, 1_000);
         assert_eq!(tx.nonce, 42);
+        assert!(tx.memo.is_none());
         assert!(!tx.signature.is_empty());
         assert!(!tx.public_key.is_empty());
         assert!(!tx.tx_id.is_empty());
     }
 
     #[test]
+    fn build_and_sign_account_with_memo() {
+        let (sk, vk) = generate_keypair();
+        let addr = derive_address(vk.as_bytes());
+        let dest = derive_address(&[99u8; 32]);
+
+        let tx_no_memo =
+            build_and_sign_account(&sk, &addr, &dest, 1_000_000, 1_000, 42, None).unwrap();
+        let tx_with_memo = build_and_sign_account(
+            &sk,
+            &addr,
+            &dest,
+            1_000_000,
+            1_000,
+            42,
+            Some("BRIDGE:base:0x1234".to_string()),
+        )
+        .unwrap();
+        assert!(tx_with_memo.memo.is_some());
+        assert_ne!(
+            tx_no_memo.tx_id, tx_with_memo.tx_id,
+            "memo must change tx_id"
+        );
+        assert!(tx_with_memo.verify_signature());
+    }
+
+    #[test]
     fn build_and_sign_account_rejects_invalid_address() {
         let (sk, vk) = generate_keypair();
         let addr = derive_address(vk.as_bytes());
-        let err = build_and_sign_account(&sk, &addr, "invalid", 1_000, 1_000, 1).unwrap_err();
+        let err = build_and_sign_account(&sk, &addr, "invalid", 1_000, 1_000, 1, None).unwrap_err();
         assert!(matches!(err, WalletError::InvalidAddress(_)));
+    }
+
+    #[test]
+    fn build_and_sign_account_rejects_non_ascii_memo() {
+        let (sk, vk) = generate_keypair();
+        let addr = derive_address(vk.as_bytes());
+        let dest = derive_address(&[99u8; 32]);
+        let err = build_and_sign_account(
+            &sk,
+            &addr,
+            &dest,
+            1_000,
+            1_000,
+            1,
+            Some("žluťoučký".to_string()),
+        )
+        .unwrap_err();
+        assert!(matches!(err, WalletError::InvalidMemo(_)));
     }
 }

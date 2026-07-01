@@ -4733,7 +4733,8 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
           fromAddress: fromAddr,
           toAddress: toAddr,
           amountZion: amt,
-          privateKeyDer
+          privateKeyDer,
+          memo: memo || undefined
         });
         txPayload = accountTx;
         txIdStr = accountTx.tx_id;

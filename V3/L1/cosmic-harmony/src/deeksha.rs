@@ -100,6 +100,30 @@ pub fn body_root_v2_active(height: u64) -> bool {
     height >= BODY_ROOT_V2_ACTIVATION_HEIGHT
 }
 
+/// Activation height for **account-model transaction memo v1**.
+///
+/// Below this height account transactions are accepted without a `memo` field.
+/// At/above this height, account transactions MAY include a `memo` field (up
+/// to 256 bytes, ASCII only) and the memo becomes part of the signed tx_id
+/// preimage. Watchers that parse protocols from memos (`BRIDGE:`, `DAO:`,
+/// `SWAP:`, `WARP:`) will scan both UTXO and account transactions.
+///
+/// **V3 mainnet (fresh chain):** active from genesis (`0`). Use
+/// `--features testnet_fork_rehearsal` for a finite rehearsal height without
+/// changing production defaults.
+#[cfg(feature = "testnet_fork_rehearsal")]
+pub const ACCOUNT_TX_MEMO_V1_ACTIVATION_HEIGHT: u64 = TESTNET_REHEARSAL_COORDINATED_HEIGHT;
+
+#[cfg(not(feature = "testnet_fork_rehearsal"))]
+pub const ACCOUNT_TX_MEMO_V1_ACTIVATION_HEIGHT: u64 = 0;
+
+/// Returns `true` once a height has crossed the account-model memo v1 gate.
+#[inline]
+#[allow(clippy::absurd_extreme_comparisons)]
+pub fn account_tx_memo_v1_active(height: u64) -> bool {
+    height >= ACCOUNT_TX_MEMO_V1_ACTIVATION_HEIGHT
+}
+
 // ============================================================================
 // CONSENSUS PARAMETERS
 // ============================================================================
