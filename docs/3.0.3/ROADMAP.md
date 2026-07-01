@@ -3,7 +3,9 @@
 > **From genesis to the stars.**
 >
 > This is the canonical roadmap for the v3.0.3 mainnet line (L1 Active, L2/L3 Ready, L4 Oasis in Prep).
-> Engineering details live in [`V3/ROADMAP.md`](V3/ROADMAP.md).
+> **This is the legacy v3.0.3 roadmap, kept for reference only.**  
+> Current forward roadmap: [`../ROADMAP.md`](../ROADMAP.md).  
+> Engineering details: [`../V3/ROADMAP.md`](../V3/ROADMAP.md).
 > Current operational status: [`StatusV3.md`](StatusV3.md).
 > 3.0.3 Decimal Fork Plan: [`ZION_3.0.3_DECIMAL_FORK_PLAN.md`](ZION_3.0.3_DECIMAL_FORK_PLAN.md).
 > Web upgrade guide: [`WEB_V2.9_TO_V3.0.3_UPGRADE.md`](WEB_V2.9_TO_V3.0.3_UPGRADE.md).

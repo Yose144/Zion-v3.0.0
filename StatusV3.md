@@ -234,7 +234,7 @@ Viz [Session 10 detail](#session-10--uniswap-v4-migration--defi-audit-2026-06-30
 - **Escrow adresa:** `zion1y0j484d5e8r49785d253e8w0c2x4t3n792m5724` (nový produkční keypair, 2026-06-29); L1 watcher scanuje bloky, EVM watcher sleduje Base contract `0x3DE9Ad42716854083ab837706E3961d10B0e63Eb`
 - **DAO L1 scanner opraven** — `DAO_L1_RPC` env var měla `/jsonrpc` suffix → `normalize_rpc_addr()` neopravil HTTP prefix → TcpStream.connect selhával; opraveno na `127.0.0.1:8443`
 - **core-endpoints.ts opraven** — `atomicSwap` port byl 8460 (neexistující), opraven na 8452
-- **3.0.4 milestone definován** v `V3/ROADMAP.md` — scope: ZIONStaking/ZIONFarm Base Mainnet deploy, DAO UI live connection, WARP UI, Bridge UI, Atomic Swap funding + E2E test
+- **3.0.4 milestone definován** v `V3/ROADMAP.md` (nyní detailní engineering plán; forward roadmap je nový [`ROADMAP.md`](./ROADMAP.md)) — scope: ZIONStaking/ZIONFarm Base Mainnet deploy, DAO UI live connection, WARP UI, Bridge UI, Atomic Swap funding + E2E test
 
 ### Edge service stav (2026-06-29 18:41 UTC)
 
@@ -3614,7 +3614,7 @@ nebo má konkrétní aktivační plán v
 | Aktivační plán hard fork věcí | [`V3/docs/audits/2026-04-V3_AUDIT_COMPLETION.md`](./V3/docs/audits/2026-04-V3_AUDIT_COMPLETION.md) |
 | Co rotovat / scrubnout | [`docs/SECURITY_NOTICE_2026-04-28.md`](./docs/SECURITY_NOTICE_2026-04-28.md) |
 | Operator guide | [`V3/docs/CLI_GUIDE.md`](./V3/docs/CLI_GUIDE.md) |
-| Roadmap | [`docs/3.0.3/ROADMAP.md`](./docs/3.0.3/ROADMAP.md) (legacy), [`V3/ROADMAP.md`](./V3/ROADMAP.md) (canonical) |
+| Roadmap | [`ROADMAP.md`](./ROADMAP.md) (forward), [`V3/ROADMAP.md`](./V3/ROADMAP.md) (engineering detail), [`docs/3.0.3/ROADMAP.md`](./docs/3.0.3/ROADMAP.md) (legacy) |
 | Předchozí status | [`STATUS.md`](./STATUS.md) (2026-04-07) |
 
 ---

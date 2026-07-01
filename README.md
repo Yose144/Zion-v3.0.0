@@ -23,7 +23,8 @@
 | **Complete 3.0.4 overview** | [`3.0.4.md`](3.0.4.md) |
 | **Live status + blockers** | [`StatusV3.md`](StatusV3.md) |
 | **V3 workspace code** | [`V3/`](V3/) |
-| **Engineering roadmap** | [`V3/ROADMAP.md`](V3/ROADMAP.md) |
+| **Forward roadmap** | [`ROADMAP.md`](ROADMAP.md) |
+| **Engineering detail** | [`V3/ROADMAP.md`](V3/ROADMAP.md) |
 | **Mainnet constants** | [`V3/docs/MAINNET_CONSTANTS.md`](V3/docs/MAINNET_CONSTANTS.md) |
 | **CLI guide** | [`V3/docs/CLI_GUIDE.md`](V3/docs/CLI_GUIDE.md) |
 | **Deploy runbook** | [`V3/docs/ZION_3.0.4_DEPLOY_RUNBOOK.md`](V3/docs/ZION_3.0.4_DEPLOY_RUNBOOK.md) |
