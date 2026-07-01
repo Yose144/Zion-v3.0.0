@@ -12,7 +12,7 @@
 
 title ZION OS Launcher
 
-set "REPO_ROOT=%~dp0"
+set "REPO_ROOT=%~dp0..\.."
 if "%REPO_ROOT:~-1%"=="\" set "REPO_ROOT=%REPO_ROOT:~0,-1%"
 
 echo ===========================================================

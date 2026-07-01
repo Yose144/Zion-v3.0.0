@@ -6,7 +6,7 @@
 
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 ZION_BIN="${REPO_ROOT}/V3/target/release/zion"
 
 echo "==========================================================="

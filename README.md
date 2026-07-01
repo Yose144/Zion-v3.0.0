@@ -27,6 +27,7 @@
 | **Mainnet constants** | [`V3/docs/MAINNET_CONSTANTS.md`](V3/docs/MAINNET_CONSTANTS.md) |
 | **CLI guide** | [`V3/docs/CLI_GUIDE.md`](V3/docs/CLI_GUIDE.md) |
 | **Deploy runbook** | [`V3/docs/ZION_3.0.4_DEPLOY_RUNBOOK.md`](V3/docs/ZION_3.0.4_DEPLOY_RUNBOOK.md) |
+| **W11 / Ubuntu launchers** | [`ZionStart/README.md`](ZionStart/README.md) |
 | **Agent rules** | [`AGENTS.md`](AGENTS.md) |
 | **Genesis regeneration** | [`docs/GENESIS_REGENERATION_RUNBOOK.md`](docs/GENESIS_REGENERATION_RUNBOOK.md) |
 | **Historical 3.0.3 docs** | [`docs/3.0.3/`](docs/3.0.3/) |
