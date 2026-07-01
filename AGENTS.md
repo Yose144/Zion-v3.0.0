@@ -9,7 +9,7 @@ This file provides operating guidance to Devin, WARP, Copilot, and future automa
 - For `V3` work, prefer changing only `V3/**` unless the task explicitly requires cross-tree sync.
 - Avoid incidental edits in `APP&WEB/**` when the task is unrelated to website, desktop, or mobile work.
 - If deployment behavior changes, update every source of operational truth together: compose files, Docker docs, runbooks, scripts, and status docs.
-- If docs disagree, use this order of truth: `StatusV3.md` → `V3/README.md` / `V3/ROADMAP.md` → `V3/docs/**` → older `STATUS.md`, root README, and archived docs.
+- If docs disagree, use this order of truth: `StatusV3.md` → `ROADMAP.md` / `V3/README.md` / `V3/ROADMAP.md` → `V3/docs/**` → older `STATUS.md`, root README, and archived docs.
 - Root README / older plans may still mention historical multi-server topology. Verify live topology against `StatusV3.md` before making operational claims.
 
 ## Existing guidance files to know
@@ -22,7 +22,7 @@ This file provides operating guidance to Devin, WARP, Copilot, and future automa
 - **Web v2.9 upgrade guide:** [`docs/3.0.3/WEB_V2.9_TO_V3.0.3_UPGRADE.md`](./docs/3.0.3/WEB_V2.9_TO_V3.0.3_UPGRADE.md) — file-by-file guide for website 3.0.3 decimal fork migration.
 - Canonical units state-of-the-world: [`docs/CANONICAL_UNITS_AUDIT.md`](./docs/CANONICAL_UNITS_AUDIT.md) — three coexisting RPC suffix conventions (`_flowers` ✅, `_atomic` ⚠️, mis-named `_zion` ❌) and recommended contract bump (§3b.5). **CLOSED at 3.0.3 cutover** — `_flowers` is now canonical, `_zion`/`_atomic` are deprecated aliases.
 - Current status and launch blockers: [`StatusV3.md`](./StatusV3.md) + [`StatusV3-Part2.md`](./StatusV3-Part2.md) (independent audit + 2026-05-07 cleanup).
-- Current V3 planning/status references: `V3/README.md`, `V3/ROADMAP.md`, and `V3/docs/**`.
+- Current planning/status references: `ROADMAP.md` (forward roadmap), `V3/README.md`, `V3/ROADMAP.md` (engineering detail), and `V3/docs/**`.
 - Hiran **v2.2** local inference setup (GGUF ready, llama-server.exe ready): [`HIRAN_LOCAL_SETUP.md`](./HIRAN_LOCAL_SETUP.md) — canonical guide for running inference locally. Use this, not v2.1 docs, for current runtime.
 - Hiranyagarbha / Hiran **v2.1** roadmap (historical): [`HiranV2.1/Hiran_v2.1.md`](./HiranV2.1/Hiran_v2.1.md); upgrade context: [`HIRANYAGARBHA_UPGRADE_PLAN.md`](./HIRANYAGARBHA_UPGRADE_PLAN.md).
 - Historical archive exists at `docs/2.9.9/archive/WARP.md`; treat it as legacy context, not current source of truth for V3 runtime behavior.
