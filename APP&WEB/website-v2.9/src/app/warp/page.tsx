@@ -25,41 +25,52 @@ import {
 } from 'lucide-react';
 
 const getWarpStats = (cs: boolean) => [
-  { label: cs ? 'Plánované koridory' : 'Corridors Planned', value: '4', detail: 'BTC · ETH · SOL · ZION L1', icon: CloudLightning },
-  { label: cs ? 'Živé koridory' : 'Live Corridors', value: '1', detail: cs ? 'Ethereum Lock/Mint — Base Mainnet' : 'Ethereum Lock/Mint — Base Mainnet', icon: CheckCircle2 },
+  { label: cs ? 'Chain rodiny' : 'Chain Families', value: '13', detail: cs ? 'EVM (6) · BTC · SOL · TRX · XLM · Cosmos · Cardano · Lightning · Aptos · NEAR · Sui · TON' : 'EVM (6) · BTC · SOL · TRX · XLM · Cosmos · Cardano · Lightning · Aptos · NEAR · Sui · TON', icon: Globe2 },
+  { label: cs ? 'Živé koridory' : 'Live Corridors', value: '1', detail: cs ? 'EVM Lock/Mint — Base Mainnet (6 chainů)' : 'EVM Lock/Mint — Base Mainnet (6 chains)', icon: CheckCircle2 },
   { label: cs ? 'Guardian runtime' : 'Guardian Runtime', value: '5/5', detail: cs ? '5 validatorů aktivních · quorum 2/5' : '5 validators active · quorum 2/5', icon: ShieldCheck },
-  { label: cs ? 'Fáze vývoje' : 'Development Phase', value: cs ? 'Fáze 2' : 'Phase 2', detail: cs ? 'ETH live · BTC + SOL v návrhu' : 'ETH live · BTC + SOL in design', icon: Globe2 },
+  { label: cs ? 'Testy' : 'Tests', value: '499', detail: cs ? '499 WARP testů prošlo · 0 chyb' : '499 WARP tests pass · 0 failures', icon: ShieldCheck },
 ];
 
 const getCorridorRows = (cs: boolean): { title: string; subtitle: string; live: boolean; entries: { label: string; value: string }[] }[] => [
   {
-    title: cs ? 'Ethereum Lock/Mint' : 'Ethereum Lock/Mint',
-    subtitle: 'wZION ERC-20 · Base Mainnet',
+    title: cs ? 'EVM Lock/Mint' : 'EVM Lock/Mint',
+    subtitle: cs ? 'wZION ERC-20 · 6 chainů · Base Mainnet' : 'wZION ERC-20 · 6 chains · Base Mainnet',
     live: true,
     entries: [
       { label: cs ? 'Validátoři' : 'Validators', value: cs ? '5/5 Guardian validators aktivních · quorum 2/5 · replay-safe' : '5/5 Guardian validators active · quorum 2/5 · replay-safe' },
-      { label: cs ? 'Stav' : 'Status', value: cs ? 'Živě na Base Mainnet (chain 8453) · wZION/USDT + wZION/WETH + wZION/SOL Uniswap V3 pools aktivní' : 'Live on Base Mainnet (chain 8453) · wZION/USDT + wZION/WETH + wZION/SOL Uniswap V3 pools active' },
+      { label: cs ? 'Chainy' : 'Chains', value: 'Base · BSC · Polygon · Arbitrum · Optimism · Avalanche' },
+      { label: cs ? 'Stav' : 'Status', value: cs ? 'Živě na Base (8453) · wZION/USDT na Uniswap V4 + PancakeSwap V3 · 6-chain bridge relay' : 'Live on Base (8453) · wZION/USDT on Uniswap V4 + PancakeSwap V3 · 6-chain bridge relay' },
       { label: cs ? 'Integrace' : 'Integration', value: cs ? 'EVM peněženky, DeFi swap, DAO treasury, LP stakes, CEX listings' : 'EVM wallets, DeFi swap, DAO treasury, LP stakes, CEX listings' },
     ],
   },
   {
     title: cs ? 'Bitcoin HTLC most' : 'Bitcoin HTLC Bridge',
-    subtitle: 'SegWit + Taproot',
+    subtitle: 'SegWit + Taproot · Lightning',
     live: false,
     entries: [
       { label: cs ? 'Bezpečnostní model' : 'Security Model', value: 'HTLC · 2-of-3 multi-sig · 24h timelock' },
-      { label: cs ? 'Stav' : 'Status', value: cs ? 'Návrh architektury — gated corridor, ne live launch slib' : 'Architecture design — gated corridor, not a live launch promise' },
+      { label: cs ? 'Stav' : 'Status', value: cs ? 'Adaptér implementován (BOLT11 + LND REST) · čeká na LND node deploy' : 'Adapter implemented (BOLT11 + LND REST) · awaiting LND node deploy' },
       { label: cs ? 'Use case' : 'Use cases', value: cs ? 'Trustless swapy, Lightning exity, OTC bridging' : 'Trustless swaps, Lightning exits, OTC bridging' },
     ],
   },
   {
     title: cs ? 'Solana SPL program' : 'Solana SPL Program',
-    subtitle: 'PDA-secured',
+    subtitle: 'PDA-secured · ZION SPL',
     live: false,
     entries: [
-      { label: cs ? 'Finalita' : 'Finality', value: cs ? 'Plánovaná integrace Tower BFT' : 'Tower BFT integration planned' },
-      { label: cs ? 'Stav' : 'Status', value: cs ? 'Výzkumná fáze — po BTC mostu' : 'Research phase — after BTC bridge' },
+      { label: cs ? 'Finalita' : 'Finality', value: cs ? 'Tower BFT integrace plánována' : 'Tower BFT integration planned' },
+      { label: cs ? 'Stav' : 'Status', value: cs ? 'Adaptér implementován · SPL mint s PDA · čeká na deploy' : 'Adapter implemented · SPL mint with PDA · awaiting deploy' },
       { label: cs ? 'Využití' : 'Utility', value: cs ? 'Game assety, routing likvidity, warp swapy' : 'Game assets, liquidity routing, warp swaps' },
+    ],
+  },
+  {
+    title: cs ? 'Non-EVM chainy' : 'Non-EVM Chains',
+    subtitle: cs ? 'ZION nativní · 10 rodin' : 'ZION native · 10 families',
+    live: false,
+    entries: [
+      { label: cs ? 'Implementováno' : 'Implemented', value: 'Tron · Stellar · Cosmos · Cardano · Aptos · Sui · NEAR · TON' },
+      { label: cs ? 'Stav' : 'Status', value: cs ? 'Adaptéry + signery hotové (499 testů) · čeká na kontrakt deploy per chain' : 'Adapters + signers ready (499 tests) · awaiting contract deploy per chain' },
+      { label: cs ? 'Token' : 'Token', value: cs ? 'ZION (ne wZION) — nativní reprezentace na non-EVM chainech' : 'ZION (not wZION) — native representation on non-EVM chains' },
     ],
   },
 ];
@@ -94,14 +105,14 @@ const getOnboarding = (cs: boolean) => [
 const getSwapPairs = (cs: boolean) => [
   {
     from: 'BTC',
-    to: 'wZION',
+    to: 'ZION',
     icon: Bitcoin,
     color: 'text-orange-400',
     bg: 'bg-orange-500/10',
     border: 'border-orange-500/20',
     status: 'planned',
-    desc: cs ? 'Bitcoin HTLC most — trustless swapy BTC ↔ wZION přes 2-of-3 multi-sig' : 'Bitcoin HTLC bridge — trustless BTC ↔ wZION swaps via 2-of-3 multi-sig',
-    eta: cs ? 'Po BTC corridor launch' : 'After BTC corridor launch',
+    desc: cs ? 'Bitcoin HTLC most — trustless swapy BTC ↔ ZION přes 2-of-3 multi-sig · Lightning exity' : 'Bitcoin HTLC bridge — trustless BTC ↔ ZION swaps via 2-of-3 multi-sig · Lightning exits',
+    eta: cs ? 'Adaptér hotov · čeká na LND node' : 'Adapter ready · awaiting LND node',
   },
   {
     from: 'ETH',
@@ -111,29 +122,29 @@ const getSwapPairs = (cs: boolean) => [
     bg: 'bg-cyan-500/10',
     border: 'border-cyan-500/20',
     status: 'live',
-    desc: cs ? 'Uniswap V3 na Base — wZION/USDT (0.3% fee) + wZION/WETH (1% fee) + wZION/SOL (0.01% fee)' : 'Uniswap V3 on Base — wZION/USDT (0.3% fee) + wZION/WETH (1% fee) + wZION/SOL (0.01% fee)',
+    desc: cs ? 'Uniswap V4 + PancakeSwap V3 na Base — wZION/USDT (0.3% + 0.25% fee) · 6-chain bridge' : 'Uniswap V4 + PancakeSwap V3 on Base — wZION/USDT (0.3% + 0.25% fee) · 6-chain bridge',
     eta: cs ? 'Dostupné nyní' : 'Available now',
   },
   {
     from: 'SOL',
-    to: 'wZION',
+    to: 'ZION',
     icon: Coins,
     color: 'text-purple-400',
     bg: 'bg-purple-500/10',
     border: 'border-purple-500/20',
     status: 'research',
-    desc: cs ? 'Solana SPL program — PDA-secured mint, Tower BFT finalita' : 'Solana SPL program — PDA-secured mint, Tower BFT finality',
-    eta: cs ? 'Výzkumná fáze — po BTC mostu' : 'Research phase — after BTC bridge',
+    desc: cs ? 'Solana SPL program — PDA-secured ZION mint, Tower BFT finalita' : 'Solana SPL program — PDA-secured ZION mint, Tower BFT finality',
+    eta: cs ? 'Adaptér hotov · čeká na deploy' : 'Adapter ready · awaiting deploy',
   },
   {
-    from: 'ZION',
+    from: 'ZION L1',
     to: 'wZION',
     icon: ArrowLeftRight,
     color: 'text-emerald-400',
     bg: 'bg-emerald-500/10',
     border: 'border-emerald-500/20',
     status: 'live',
-    desc: cs ? 'Nativní L1 ↔ L2 bridge — lock ZION na L1, mint wZION na Base (1:1 peg)' : 'Native L1 ↔ L2 bridge — lock ZION on L1, mint wZION on Base (1:1 peg)',
+    desc: cs ? 'Nativní L1 ↔ L2 bridge — lock ZION na L1, mint wZION na EVM chainech (1:1 peg)' : 'Native L1 ↔ L2 bridge — lock ZION on L1, mint wZION on EVM chains (1:1 peg)',
     eta: cs ? 'Dostupné nyní' : 'Available now',
   },
 ];
@@ -141,26 +152,26 @@ const getSwapPairs = (cs: boolean) => [
 const getRoadmap = (cs: boolean) => [
   {
     phase: cs ? 'Fáze 1 (Hotovo)' : 'Phase 1 (Done)',
-    title: cs ? 'Ethereum Corridor' : 'Ethereum Corridor',
-    desc: cs ? 'wZION ERC-20 na Base Mainnet, Uniswap V3 pools, 5/5 Guardian validators, bridge relay live' : 'wZION ERC-20 on Base Mainnet, Uniswap V3 pools, 5/5 Guardian validators, bridge relay live',
+    title: cs ? 'EVM Corridor — 6 chainů' : 'EVM Corridor — 6 chains',
+    desc: cs ? 'wZION ERC-20 na Base, BSC, Polygon, Arbitrum, Optimism, Avalanche · Uniswap V4 + PancakeSwap V3 · 5/5 Guardian validators · bridge relay live' : 'wZION ERC-20 on Base, BSC, Polygon, Arbitrum, Optimism, Avalanche · Uniswap V4 + PancakeSwap V3 · 5/5 Guardian validators · bridge relay live',
     done: true,
   },
   {
-    phase: cs ? 'Fáze 2 (Aktivní)' : 'Phase 2 (Active)',
-    title: cs ? 'DEX Liquidity + CEX Listings' : 'DEX Liquidity + CEX Listings',
-    desc: cs ? 'Seed liquidity na Uniswap V3, DexScreener integrace, CEX listing aplikace (XT.COM, Azbit, P2B, KuCoin, Gate.io)' : 'Seed liquidity on Uniswap V3, DexScreener integration, CEX listing applications (XT.COM, Azbit, P2B, KuCoin, Gate.io)',
+    phase: cs ? 'Fáze 2 (Hotovo)' : 'Phase 2 (Done)',
+    title: cs ? 'DEX Liquidity + CCA Auction' : 'DEX Liquidity + CCA Auction',
+    desc: cs ? 'wZION/USDT na Uniswap V4 (0.3%) + PancakeSwap V3 (0.25%) · Uniswap CCA aukce (66.47M wZION za USDC) · LiFi agregátor (30+ DEX) · DexScreener integrace' : 'wZION/USDT on Uniswap V4 (0.3%) + PancakeSwap V3 (0.25%) · Uniswap CCA auction (66.47M wZION for USDC) · LiFi aggregator (30+ DEX) · DexScreener integration',
     done: true,
   },
   {
-    phase: cs ? 'Fáze 3 (Plánováno)' : 'Phase 3 (Planned)',
-    title: cs ? 'Bitcoin HTLC Bridge' : 'Bitcoin HTLC Bridge',
-    desc: cs ? 'SegWit + Taproot HTLC most, 2-of-3 multi-sig, 24h timelock, Lightning exity, OTC bridging' : 'SegWit + Taproot HTLC bridge, 2-of-3 multi-sig, 24h timelock, Lightning exits, OTC bridging',
-    done: false,
+    phase: cs ? 'Fáze 3 (Hotovo)' : 'Phase 3 (Done)',
+    title: cs ? '13 Chain Family Adaptéry' : '13 Chain Family Adapters',
+    desc: cs ? 'WARP adaptéry + signery pro všech 13 chain rodin: EVM (6), BTC, Solana, Tron, Stellar, Cosmos, Cardano, Lightning (BOLT11+LND), Aptos, NEAR, Sui, TON · 499 testů prošlo' : 'WARP adapters + signers for all 13 chain families: EVM (6), BTC, Solana, Tron, Stellar, Cosmos, Cardano, Lightning (BOLT11+LND), Aptos, NEAR, Sui, TON · 499 tests pass',
+    done: true,
   },
   {
-    phase: cs ? 'Fáze 4 (Výzkum)' : 'Phase 4 (Research)',
-    title: cs ? 'Solana SPL + Multi-chain AMM' : 'Solana SPL + Multi-chain AMM',
-    desc: cs ? 'Solana SPL program s PDA-secured mint, Tower BFT finalita, AMM routing pro cross-chain swapy' : 'Solana SPL program with PDA-secured mint, Tower BFT finality, AMM routing for cross-chain swaps',
+    phase: cs ? 'Fáze 4 (Aktivní)' : 'Phase 4 (Active)',
+    title: cs ? 'Non-EVM Deploy + BTC Lightning' : 'Non-EVM Deploy + BTC Lightning',
+    desc: cs ? 'Deploy ZION kontraktů na non-EVM chainech (Solana, Tron, Stellar, Cosmos, Cardano, Aptos, Sui, NEAR, TON) · LND node setup pro Lightning · cross-chain AMM routing' : 'Deploy ZION contracts on non-EVM chains (Solana, Tron, Stellar, Cosmos, Cardano, Aptos, Sui, NEAR, TON) · LND node setup for Lightning · cross-chain AMM routing',
     done: false,
   },
 ];
@@ -236,8 +247,8 @@ export default function WarpPage() {
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
                 {cs
-                  ? 'Trustless Bitcoin swapy, Ethereum lock/mint na Base Mainnet, Solana SPL mint a AMM routing z jedné konzole. Ethereum corridor je živě — BTC a SOL v návrhu.'
-                  : 'Trustless Bitcoin swaps, Ethereum lock/mint on Base Mainnet, Solana SPL mint and AMM routing from one console. Ethereum corridor is live — BTC and SOL in design.'}
+                  ? 'WARP bridge pokrývá 13 chain rodin — EVM (6 chainů), BTC, Solana, Tron, Stellar, Cosmos, Cardano, Lightning, Aptos, NEAR, Sui, TON. EVM corridor je živě (6 chainů, 2 DEX). Non-EVM adaptéry hotové, čekají na kontrakt deploy.'
+                  : 'WARP bridge covers 13 chain families — EVM (6 chains), BTC, Solana, Tron, Stellar, Cosmos, Cardano, Lightning, Aptos, NEAR, Sui, TON. EVM corridor is live (6 chains, 2 DEX). Non-EVM adapters ready, awaiting contract deploy.'}
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link href="/defi" className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-zion-gold via-zion-purple to-zion-cyan px-6 py-3 text-sm font-semibold text-black">
@@ -337,8 +348,8 @@ export default function WarpPage() {
             <h2 className="text-3xl font-semibold text-white">{cs ? 'Swap mezi základními kryptoměnami' : 'Swap between base cryptocurrencies'}</h2>
             <p className="text-gray-400 max-w-2xl">
               {cs
-                ? 'Plánované cross-chain swapy mezi BTC, ETH, SOL a wZION. Ethereum a ZION L1 koridory jsou živé — BTC a SOL v návrhu.'
-                : 'Planned cross-chain swaps between BTC, ETH, SOL, and wZION. Ethereum and ZION L1 corridors are live — BTC and SOL in design.'}
+                ? 'Cross-chain swapy mezi BTC, ETH, SOL a ZION. EVM corridor je živě (6 chainů, 2 DEX) — non-EVM adaptéry hotové, čekají na deploy.'
+                : 'Cross-chain swaps between BTC, ETH, SOL, and ZION. EVM corridor is live (6 chains, 2 DEX) — non-EVM adapters ready, awaiting deploy.'}
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
