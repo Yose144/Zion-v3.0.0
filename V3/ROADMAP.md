@@ -1,6 +1,6 @@
 # ZION v3 Mainnet Roadmap
 
-Status date: **2026-07-01** (Account-model memo hard fork implemented, L2 watchers scan account_transactions, 3.0.4 closure — see supplement below)
+Status date: **2026-07-01** (Account-model memo hard fork deployed on Edge, activation height 24000, E2E pending — see supplement below)
 
 This file is the active source-of-truth for the clean `V3/` mainnet line.
 `V3/` is intentionally separated from the legacy root workspace. The legacy root remains migration source material and audit evidence, but new mainnet-track runtime work should land in `V3/`.
@@ -59,7 +59,7 @@ Verze **3.0.3** je nyní uzavřena. Všechny klíčové komponenty jsou funkčn�
 - [x] E2E test: LOCK TX (1 ZION, memo `SWAP:LOCK:<hash>:120:base:0xTest`) — **přijat do chainu** ✅
 - [x] E2E test: CLAIM TX (memo `SWAP:CLAIM:<hash>:<preimage>`) — **přijat do chainu** ✅
 - [x] Atomic swap daemon běží, API na :8452, L1 watcher skenuje bloky ✅
-- [x] **Account-model memo hard fork — DONE 2026-07-01:** `memo: Option<String>` přidáno do `Transaction` structu (`V3/L1/core/src/lib.rs:383-398`), height-gated activation (`ACCOUNT_TX_MEMO_V1_ACTIVATION_HEIGHT`), validace 256B ASCII. Bridge/atomic-swap/DAO watchers nyní skenují i `account_transactions`.
+- [x] **Account-model memo hard fork — DEPLOYED 2026-07-01:** `memo: Option<String>` přidáno do `Transaction` structu (`V3/L1/core/src/lib.rs:383-398`), height-gated activation (`ACCOUNT_TX_MEMO_V1_ACTIVATION_HEIGHT`) nastaveno na Edge na výšku `24000`, validace 256B ASCII. Bridge/atomic-swap/DAO watchers nyní skenují i `account_transactions`.
 - [x] Vytvoř `docs/ATOMIC_SWAP_RUNBOOK.md` ✅ (2026-06-29)
 
 #### P3 — DAO Guardians + Voting E2E — ✅ DONE 2026-06-29

@@ -1,8 +1,9 @@
 # ZION 3.0.4 — Account-Model Memo v1 Hard Fork Deploy Runbook
 
 **Target:** Edge mainnet (`100.76.16.108`)  
-**Current chain height:** `23607` (as of 2026-07-01, check `getChainInfo` before deploy)  
-**Proposed activation height:** `23700` (≈ 100 blocks / ~6 hours of margin — adjust as needed)  
+**Deploy commit:** `5074bf35`  
+**Activation height:** `24000` (set 2026-07-01; chain height was `23635` at deploy time)  
+**Status:** Deployed — services restarted, activation height loaded by both Edge nodes and pool  
 **Network:** Mainnet  
 **Repository:** `main` branch (`V3/` workspace)  
 
