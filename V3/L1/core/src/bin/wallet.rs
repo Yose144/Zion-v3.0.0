@@ -34,13 +34,14 @@ fn main() {
         "utxos" => cmd_utxos(args.get(2).map(|s| s.as_str())),
         "send" => {
             if args.len() < 4 {
-                eprintln!("Usage: wallet send <to_address> <amount_zion> [--fee <fee_flowers>]");
+                eprintln!("Usage: wallet send <to_address> <amount_zion> [--fee <fee_flowers>] [--memo <memo>]");
                 process::exit(1);
             }
             let fee = parse_flag(&args, "--fee")
                 .and_then(|v| v.parse::<u64>().ok())
                 .unwrap_or(1_000);
-            cmd_send(&args[2], &args[3], fee);
+            let memo = parse_flag(&args, "--memo");
+            cmd_send(&args[2], &args[3], fee, memo);
         }
         "bridge-lock" => {
             if args.len() < 4 {
@@ -243,7 +244,7 @@ fn cmd_utxos(address: Option<&str>) {
     }
 }
 
-fn cmd_send(to: &str, amount_str: &str, fee: u64) {
+fn cmd_send(to: &str, amount_str: &str, fee: u64, memo: Option<String>) {
     let sk = load_signing_key();
     let address = own_address(&sk);
     let amount_flowers = parse_zion_amount(amount_str);
@@ -255,6 +256,9 @@ fn cmd_send(to: &str, amount_str: &str, fee: u64) {
         format_zion(amount_flowers)
     );
     println!("fee:    {fee} flowers");
+    if let Some(ref m) = memo {
+        println!("memo:   {m}");
+    }
 
     // Fetch UTXOs
     let utxo_result = rpc_call("getUtxos", json!({ "address": address }));
@@ -286,7 +290,7 @@ fn cmd_send(to: &str, amount_str: &str, fee: u64) {
         to_address: to.to_string(),
         amount: amount_flowers,
         fee,
-        memo: None,
+        memo,
     };
 
     let result = zion_core::wallet::build_and_sign(&sk, &address, &params, &available, chain_tip)

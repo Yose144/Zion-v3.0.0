@@ -55,10 +55,11 @@ pub struct AptosSigner {
 impl AptosSigner {
     /// Load the relay key from `WARP_APTOS_RELAY_KEY` (hex, 32 bytes).
     pub fn from_env() -> WarpResult<Self> {
-        let key_hex = std::env::var("WARP_APTOS_RELAY_KEY").map_err(|_| WarpError::AdapterError {
-            chain: "aptos".into(),
-            reason: "WARP_APTOS_RELAY_KEY env var not set".into(),
-        })?;
+        let key_hex =
+            std::env::var("WARP_APTOS_RELAY_KEY").map_err(|_| WarpError::AdapterError {
+                chain: "aptos".into(),
+                reason: "WARP_APTOS_RELAY_KEY env var not set".into(),
+            })?;
         let key_bytes = hex::decode(&key_hex).map_err(|e| WarpError::AdapterError {
             chain: "aptos".into(),
             reason: format!("invalid hex key: {}", e),
@@ -127,7 +128,7 @@ mod tests {
         let addr = aptos_address_from_pubkey(&pubkey);
         assert!(addr.starts_with("0x"));
         assert_eq!(addr.len(), 2 + 64); // 0x + 64 hex chars
-        // lowercase hex
+                                        // lowercase hex
         assert_eq!(addr, addr.to_lowercase());
     }
 

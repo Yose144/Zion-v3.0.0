@@ -238,10 +238,7 @@ impl ChainAdapter for TronAdapter {
             None => {
                 return Err(WarpError::AdapterError {
                     chain: "tron".into(),
-                    reason: format!(
-                        "no ZION contract configured for network '{}'",
-                        self.network
-                    ),
+                    reason: format!("no ZION contract configured for network '{}'", self.network),
                 });
             }
         };

@@ -1,11 +1,11 @@
 # ZION v3 Mainnet Roadmap
 
-Status date: **2026-06-29** (Atomic Swap activated, DAO scanner fixed, 3.0.4 milestone defined — see supplement below)
+Status date: **2026-07-01** (Account-model memo hard fork implemented, L2 watchers scan account_transactions, 3.0.4 closure — see supplement below)
 
 This file is the active source-of-truth for the clean `V3/` mainnet line.
 `V3/` is intentionally separated from the legacy root workspace. The legacy root remains migration source material and audit evidence, but new mainnet-track runtime work should land in `V3/`.
 
-## Supplement — 2026-06-29 (3.0.4 Milestone Defined + Atomic Swap Activated)
+## Supplement — 2026-07-01 (3.0.4 Closure — Account Memo Hard Fork Implemented)
 
 ### 3.0.3 Closure — kanonický stav
 
@@ -59,7 +59,7 @@ Verze **3.0.3** je nyní uzavřena. Všechny klíčové komponenty jsou funkčn�
 - [x] E2E test: LOCK TX (1 ZION, memo `SWAP:LOCK:<hash>:120:base:0xTest`) — **přijat do chainu** ✅
 - [x] E2E test: CLAIM TX (memo `SWAP:CLAIM:<hash>:<preimage>`) — **přijat do chainu** ✅
 - [x] Atomic swap daemon běží, API na :8452, L1 watcher skenuje bloky ✅
-- [ ] **ROADMAP ITEM (L1 HARD FORK REQUIRED):** Account-model TXs nemají `memo` field v `Transaction` struct (`V3/L1/core/src/lib.rs:384-398`). Pouze UTXO TXs mají memo v `TxOutput` (`V3/L1/core/src/tx.rs:41-54`). Přidání memo fieldu do account-model TXs = L1 consensus change = hard fork. **Audit 2026-06-30:** Bridge/atomic-swap/DAO watchers správně skenují jen `utxo_transactions` protože account TXs nemají memo data. Viz audit report.
+- [x] **Account-model memo hard fork — DONE 2026-07-01:** `memo: Option<String>` přidáno do `Transaction` structu (`V3/L1/core/src/lib.rs:383-398`), height-gated activation (`ACCOUNT_TX_MEMO_V1_ACTIVATION_HEIGHT`), validace 256B ASCII. Bridge/atomic-swap/DAO watchers nyní skenují i `account_transactions`.
 - [x] Vytvoř `docs/ATOMIC_SWAP_RUNBOOK.md` ✅ (2026-06-29)
 
 #### P3 — DAO Guardians + Voting E2E — ✅ DONE 2026-06-29
@@ -68,7 +68,7 @@ Verze **3.0.3** je nyní uzavřena. Všechny klíčové komponenty jsou funkčn�
 - [x] Přidej `[[guardians]]` sekce do `dao-mainnet.toml` na Edge (5 guardian entries)
 - [x] Restart `zion-edge-dao.service` + ověř `/api/dao/health` → 200 OK ✅
 - [x] Voting E2E: `DAO:vote:1:yes` L1 memo TX odeslán z Aloha wallet (26.5M ZION voting weight) — **přijat do chainu** ✅
-- [ ] **ROADMAP ITEM (L1 HARD FORK REQUIRED):** DAO scanner skenuje jen `utxo_transactions` — account-model TXs nemají memo field (stejný root cause jako atomic swap watcher)
+- [x] **DAO scanner account-model memo — DONE 2026-07-01:** DAO scanner nyní skenuje `account_transactions` s memo a zpracovává `DAO:vote` / `DAO:propose` / `DAO:execute`.
 
 #### P4 — WARP UI Transfer Formulář
 

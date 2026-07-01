@@ -89,7 +89,7 @@
 | LOCK TX | ✅ | 1 ZION, memo `SWAP:LOCK:<hash>:120:base:0xTest` — přijat do chainu |
 | CLAIM TX | ✅ | memo `SWAP:CLAIM:<hash>:<preimage>` — přijat do chainu |
 | Daemon | ✅ | API :8452, L1 watcher skenuje bloky |
-| **Omezení** | ⚠️ | Watcher skenuje jen `utxo_transactions`, ne `account_transactions` (roadmap item) |
+| **Account-model memo** | ✅ | L2 watchers nyní skenují `account_transactions` s memo (3.0.4) |
 
 ### DAO Guardians (2026-06-29)
 
@@ -97,7 +97,20 @@
 - `dao-mainnet.toml` na Edge aktualizováno s `[[guardians]]` sekcemi
 - DAO service restartováno, `/api/dao/health` → 200 OK
 - Voting E2E: `DAO:vote:1:yes` memo TX odeslán z Aloha wallet (26.5M ZION voting weight)
-- **Omezení:** DAO scanner taky skenuje jen `utxo_transactions` (roadmap item)
+- ✅ DAO scanner nyní skenuje i `account_transactions` s memo (3.0.4)
+
+### TX Unification — Account-Model Memo (3.0.4)
+
+- L1 `Transaction` struct nyní obsahuje `memo: Option<String>` (max 256 bytes, ASCII-only).
+- `generate_account_tx_id` a `build_and_sign_account` zahrnují memo do deterministického `tx_id` i podpisu.
+- Aktivace height-gated: `ACCOUNT_TX_MEMO_V1_ACTIVATION_HEIGHT` v `deeksha.rs`.
+- CLI wallet (`V3/cli` + `V3/L1/core/src/bin/wallet.rs`) podporuje `--memo` flag.
+- SDK `WalletClient::send` / `send_utxo` / `send_account` přijímají `Option<String>` memo.
+- L2 watchers aktualizovány:
+  - `zion-bridge` skenuje `account_transactions` na locky do `bridge_address` s `BRIDGE:<chain>:<evm>` memo.
+  - `zion-dao` skenuje `account_transactions` pro `DAO:vote` / `DAO:propose` / `DAO:execute` memo.
+  - `zion-atomic-swap` skenuje `account_transactions` na `SWAP:LOCK/CLAIM/REFUND` memo.
+- APP&WEB account builders (zion-wallet-sdk, mobile-app, desktop-agent) podporují memo a validují ASCII/256B.
 
 ### Website rebuild v3.6.3
 
@@ -131,7 +144,7 @@
 ### Zbývá (vyžaduje lidskou akci)
 
 1. **Basescan verify** — získat API key na `basescan.org/myapikey`, spustit `verify-base-mainnet-basescan.ts`
-2. **L2 watcher update** (roadmap) — `L1Block` struct přidat `account_transactions` + watcher.rs skenovat i account-model memo TXs
+2. ✅ **L2 watcher update** (roadmap) — `L1Block` struct přidat `account_transactions` + watcher.rs skenovat i account-model memo TXs — **DONE 3.0.4**
 3. **Guardian mnemonics backup** — zkopírovat `ZION_DAO_GUARDIAN_KEYS.txt` na flash drive (`F:\`)
 4. **ATOMIC_SWAP_RUNBOOK.md** — vytvořit dokumentaci
 
@@ -1034,7 +1047,7 @@ Git tag `v3.0.2` (→ `31d12f34`) je oficiální linie; `main` je napřed s dal�
 | Log soubory | root | `logs/` | 5 |
 | Temp/test soubory | root | smazáno / archiv | 5 |
 
-**Ponecháno v rootu:** `.bat` soubory pro spuštění stacku, `README.md`, `ROADMAP.md`, `AGENTS.md`, `StatusV3.md`, `ZION_3.0.2_PLAN.md`.
+**Ponecháno v rootu:** `README.md`, `ROADMAP.md`, `AGENTS.md`, `StatusV3.md`, `ZION_3.0.2_PLAN.md`; spouštěcí skripty přesunuty do `ZionStart/`, operační/audit skripty do `scripts/`.
 
 ### L2/L3 Kanonizace
 

@@ -180,7 +180,10 @@ impl Relayer {
     async fn handle_l1_lock(&self, lock: L1LockEvent) -> Result<()> {
         info!(
             "📤 Processing L1→EVM lock: {} ZION → {} on {} (TX: {})",
-            crate::types::conversion::flowers_to_zion_display_at(lock.amount_flowers, lock.l1_block_height),
+            crate::types::conversion::flowers_to_zion_display_at(
+                lock.amount_flowers,
+                lock.l1_block_height
+            ),
             lock.evm_recipient,
             lock.target_chain,
             lock.l1_tx_hash,
@@ -190,7 +193,9 @@ impl Relayer {
         if let Err(e) = self.db.insert_lock(&lock) {
             warn!("DB: failed to persist lock {}: {}", lock.l1_tx_hash, e);
         }
-        let _ = self.db.update_lock_status(&lock.l1_tx_hash, BridgeStatus::Executing);
+        let _ = self
+            .db
+            .update_lock_status(&lock.l1_tx_hash, BridgeStatus::Executing);
 
         // ── Rate limit ────────────────────────────────────────────────
         match self.rate_limiter.check_and_record(&lock.l1_sender) {
@@ -339,7 +344,11 @@ impl Relayer {
             let validator_address = match derive_evm_address(key.as_str()) {
                 Ok(a) => a,
                 Err(e) => {
-                    warn!("   Validator key {} — failed to derive address: {}", idx + 1, e);
+                    warn!(
+                        "   Validator key {} — failed to derive address: {}",
+                        idx + 1,
+                        e
+                    );
                     continue;
                 }
             };
@@ -355,7 +364,11 @@ impl Relayer {
             info!("   Validator-{} nonce: {}", idx + 1, nonce);
 
             let gas_estimate = evm
-                .estimate_gas(&validator_address, &chain_config.bridge_contract_address, &calldata_hex)
+                .estimate_gas(
+                    &validator_address,
+                    &chain_config.bridge_contract_address,
+                    &calldata_hex,
+                )
                 .await
                 .unwrap_or(200_000);
             let gas_limit = gas_estimate * GAS_MARGIN_NUM / GAS_MARGIN_DEN;
@@ -384,7 +397,9 @@ impl Relayer {
                         tx_hash, idx + 1, chain_config.name, chain_config.bridge_contract_address,
                     );
                     last_tx_hash = tx_hash;
-                    self.metrics.evm_mints_submitted.fetch_add(1, Ordering::Relaxed);
+                    self.metrics
+                        .evm_mints_submitted
+                        .fetch_add(1, Ordering::Relaxed);
                 }
                 Err(e) => {
                     warn!("   Validator-{} — submitLockProof failed: {}", idx + 1, e);
@@ -398,23 +413,39 @@ impl Relayer {
         }
 
         if last_tx_hash.is_empty() {
-            let err_msg = format!("All validator key submissions failed for TX: {}", lock.l1_tx_hash);
+            let err_msg = format!(
+                "All validator key submissions failed for TX: {}",
+                lock.l1_tx_hash
+            );
             // Persist failure so recovery loop can retry
-            let retry_count = self.db.increment_lock_retry(&lock.l1_tx_hash, &err_msg).unwrap_or(0);
+            let retry_count = self
+                .db
+                .increment_lock_retry(&lock.l1_tx_hash, &err_msg)
+                .unwrap_or(0);
             if retry_count >= MAX_RELAY_RETRIES {
                 error!("   ☠️ Lock {} permanently failed after {} retries — manual intervention required",
                     lock.l1_tx_hash, retry_count);
-                let _ = self.db.update_lock_status(&lock.l1_tx_hash, BridgeStatus::Failed);
+                let _ = self
+                    .db
+                    .update_lock_status(&lock.l1_tx_hash, BridgeStatus::Failed);
             } else {
-                warn!("   ⚠️ Lock {} failed (retry {}/{}), will be retried on next startup",
-                    lock.l1_tx_hash, retry_count, MAX_RELAY_RETRIES);
-                let _ = self.db.update_lock_status(&lock.l1_tx_hash, BridgeStatus::Failed);
+                warn!(
+                    "   ⚠️ Lock {} failed (retry {}/{}), will be retried on next startup",
+                    lock.l1_tx_hash, retry_count, MAX_RELAY_RETRIES
+                );
+                let _ = self
+                    .db
+                    .update_lock_status(&lock.l1_tx_hash, BridgeStatus::Failed);
             }
-            self.metrics.errors.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            self.metrics
+                .errors
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             anyhow::bail!("{}", err_msg);
         }
         // Mark as executing (confirmed submission)
-        let _ = self.db.update_lock_status(&lock.l1_tx_hash, BridgeStatus::Executing);
+        let _ = self
+            .db
+            .update_lock_status(&lock.l1_tx_hash, BridgeStatus::Executing);
         let tx_hash = last_tx_hash;
 
         // ── Poll for receipt ──────────────────────────────────────────
@@ -478,7 +509,9 @@ impl Relayer {
         if let Err(e) = self.db.insert_burn(&burn) {
             warn!("DB: failed to persist burn {}: {}", burn.burn_id, e);
         }
-        let _ = self.db.update_burn_status(&burn.burn_id, BridgeStatus::Executing);
+        let _ = self
+            .db
+            .update_burn_status(&burn.burn_id, BridgeStatus::Executing);
 
         // ── Rate limit ────────────────────────────────────────────────
         match self.rate_limiter.check_and_record(&burn.evm_burner) {
@@ -774,7 +807,10 @@ impl Relayer {
             return Ok(());
         }
 
-        info!("⏰ Timelock poller: {} expired op(s) ready for executeTimelockedMint", expired.len());
+        info!(
+            "⏰ Timelock poller: {} expired op(s) ready for executeTimelockedMint",
+            expired.len()
+        );
 
         for op in expired {
             info!(
@@ -837,7 +873,11 @@ impl Relayer {
             let max_fee = (2 * base_fee + priority_fee).min(max_fee_cap);
             let max_priority = priority_fee.min(max_fee);
             let gas_estimate = evm
-                .estimate_gas(&validator_addr, &chain_config.bridge_contract_address, &calldata_hex)
+                .estimate_gas(
+                    &validator_addr,
+                    &chain_config.bridge_contract_address,
+                    &calldata_hex,
+                )
                 .await
                 .unwrap_or(120_000);
             let gas_limit = gas_estimate * GAS_MARGIN_NUM / GAS_MARGIN_DEN;
@@ -866,7 +906,9 @@ impl Relayer {
                         tx_hash, op.l1_tx_hash, op.evm_chain,
                     );
                     let _ = self.db.mark_timelocked_executed(&op.l1_tx_hash, &tx_hash);
-                    self.metrics.evm_mints_submitted.fetch_add(1, Ordering::Relaxed);
+                    self.metrics
+                        .evm_mints_submitted
+                        .fetch_add(1, Ordering::Relaxed);
                 }
                 Err(e) => {
                     let msg = format!("executeTimelockedMint TX submit failed: {}", e);

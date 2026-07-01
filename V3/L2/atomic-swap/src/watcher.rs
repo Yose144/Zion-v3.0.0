@@ -96,13 +96,18 @@ impl L1Watcher {
 
     async fn scan_block(&self, height: u64) -> SwapResult<()> {
         let block = self.fetch_block(height).await?;
+        let mut processed: std::collections::HashSet<String> = std::collections::HashSet::new();
+
         for tx in &block.utxo_transactions {
+            let tx_id = bytes_to_hex(&tx.id);
+            if !processed.insert(tx_id.clone()) {
+                continue;
+            }
             let sender = tx
                 .inputs
                 .first()
                 .and_then(|input| zion_address_from_public_key(&input.public_key))
                 .unwrap_or_else(|| "unknown".into());
-            let tx_id = bytes_to_hex(&tx.id);
             for output in &tx.outputs {
                 // Only consider outputs sent to the escrow address
                 if output.address != self.escrow_address {
@@ -124,6 +129,34 @@ impl L1Watcher {
                 }
             }
         }
+
+        for tx in &block.account_transactions {
+            if tx.to != self.escrow_address {
+                continue;
+            }
+            if !processed.insert(tx.tx_id.clone()) {
+                continue;
+            }
+            let memo = match &tx.memo {
+                Some(m) => m.as_str(),
+                None => continue,
+            };
+            let parsed = match SwapMemo::parse(memo) {
+                Some(m) => m,
+                None => continue,
+            };
+            let amount = tx.amount_zion as u64;
+            if let Err(e) = self
+                .handle_memo(parsed, tx.tx_id.clone(), tx.from.clone(), amount, height)
+                .await
+            {
+                error!(
+                    "Error handling memo '{}' in account tx {}: {e}",
+                    memo, tx.tx_id
+                );
+            }
+        }
+
         Ok(())
     }
 

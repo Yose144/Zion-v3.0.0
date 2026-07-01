@@ -52,7 +52,7 @@ mod tests {
 
         // 10% quorum, circulating = 1M ZION in flowers, need 100K votes
         let circulating = 1_000_000_000_000u64; // 1M ZION in flowers (6-decimal)
-                                                        // Add 200K ZION worth of votes
+                                                // Add 200K ZION worth of votes
         p.add_vote(VoteChoice::Yes, 200_000_000_000); // 200K ZION in flowers (6-decimal)
 
         assert!(check_quorum(&p, circulating).is_ok());
@@ -75,7 +75,7 @@ mod tests {
         );
 
         let circulating = 1_000_000_000_000u64; // 1M ZION in flowers (6-decimal)
-                                                        // Only 1 ZION voted — way below 10%
+                                                // Only 1 ZION voted — way below 10%
         p.add_vote(VoteChoice::Yes, 1_000_000);
 
         assert!(check_quorum(&p, circulating).is_err());

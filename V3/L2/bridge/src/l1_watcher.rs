@@ -61,6 +61,8 @@ struct L1Block {
     pub hash: String,
     #[serde(default)]
     pub utxo_transactions: Vec<L1Transaction>,
+    #[serde(default)]
+    pub account_transactions: Vec<L1AccountTransaction>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -69,6 +71,16 @@ struct L1Transaction {
     #[serde(default)]
     pub inputs: Vec<L1TxInput>,
     pub outputs: Vec<L1TxOutput>,
+}
+
+#[derive(Debug, Deserialize)]
+struct L1AccountTransaction {
+    pub tx_id: String,
+    pub from: String,
+    pub to: String,
+    pub amount_zion: u128,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub memo: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -120,8 +132,10 @@ impl L1Watcher {
     /// Update the shared metrics gauge with the latest processed L1 height.
     fn update_metrics(&self) {
         if let Some(ref m) = self.metrics {
-            m.last_l1_height
-                .store(self.last_processed_height, std::sync::atomic::Ordering::Relaxed);
+            m.last_l1_height.store(
+                self.last_processed_height,
+                std::sync::atomic::Ordering::Relaxed,
+            );
         }
     }
 
@@ -174,7 +188,10 @@ impl L1Watcher {
             self.config.finality_blocks, self.config.poll_interval_secs, self.last_processed_height,
         );
         if let Some(ref backup) = self.config.rpc_url_backup {
-            info!("   Backup RPC: {} (activates after {} consecutive errors)", backup, RPC_FAILOVER_THRESHOLD);
+            info!(
+                "   Backup RPC: {} (activates after {} consecutive errors)",
+                backup, RPC_FAILOVER_THRESHOLD
+            );
         }
 
         loop {
@@ -241,7 +258,10 @@ impl L1Watcher {
             if lock.l1_block_height <= finalized_height {
                 info!(
                     "✅ L1 Lock finalized: {} ZION from {} → {} (TX: {})",
-                    crate::types::conversion::flowers_to_zion_display_at(lock.amount_flowers, lock.l1_block_height),
+                    crate::types::conversion::flowers_to_zion_display_at(
+                        lock.amount_flowers,
+                        lock.l1_block_height
+                    ),
                     lock.l1_sender,
                     lock.evm_recipient,
                     tx_hash,
@@ -293,36 +313,17 @@ impl L1Watcher {
     /// Scan a block for transactions to the bridge lock address.
     fn scan_block_for_locks(&mut self, block: &L1Block) {
         let _block_hash = &block.hash;
+        let mut processed: std::collections::HashSet<String> = std::collections::HashSet::new();
 
         for tx in &block.utxo_transactions {
+            let tx_hash = hex::encode(tx.id);
+            if !processed.insert(tx_hash.clone()) {
+                continue;
+            }
             for output in &tx.outputs {
                 if output.address != self.config.bridge_address {
                     continue;
                 }
-
-                let (target_chain, evm_recipient) = self
-                    .parse_bridge_memo(output.memo.as_deref())
-                    .unwrap_or(("base".into(), String::new()));
-
-                let evm_recipient = if evm_recipient.is_empty() {
-                    // Fallback: use configured default recipient for locks without memo
-                    if let Some(ref default) = self.config.default_evm_recipient {
-                        warn!(
-                            "L1: Lock TX {} has no memo, using default EVM recipient: {}",
-                            hex::encode(tx.id),
-                            default,
-                        );
-                        default.clone()
-                    } else {
-                        warn!(
-                            "L1: Lock TX {} has no valid EVM recipient in memo and no default configured, skipping",
-                            hex::encode(tx.id),
-                        );
-                        continue;
-                    }
-                } else {
-                    evm_recipient
-                };
 
                 let sender = tx
                     .inputs
@@ -330,43 +331,99 @@ impl L1Watcher {
                     .and_then(|input| zion_address_from_public_key(&input.public_key))
                     .unwrap_or_default();
 
-                let tx_hash = hex::encode(tx.id);
-                let wzion_wei = crate::types::conversion::flowers_to_wzion_wei_at(
+                self.record_lock(
+                    block,
+                    &tx_hash,
+                    sender,
                     output.amount,
-                    block.height,
+                    output.memo.as_deref(),
                 );
-                let lock_event = L1LockEvent {
-                    l1_tx_hash: tx_hash.clone(),
-                    l1_block_height: block.height,
-                    l1_sender: sender,
-                    amount_flowers: output.amount,
-                    amount_wzion_wei: wzion_wei,
-                    target_chain,
-                    evm_recipient,
-                    detected_at: Utc::now(),
-                    status: BridgeStatus::Pending,
-                    confirmations: 0,
-                };
-
-                let scale_note = if block.height < crate::types::MIGRATION_HEIGHT {
-                    " (pre-3.0.3 legacy scale)"
-                } else {
-                    ""
-                };
-                info!(
-                    "🔒 L1 Lock detected: {} ZION at height {} (TX: {}) — waiting {} blocks for finality{}",
-                    crate::types::conversion::flowers_to_zion_display_at(output.amount, block.height),
-                    block.height,
-                    tx_hash,
-                    self.config.finality_blocks,
-                    scale_note,
-                );
-
-                self.pending_locks.insert(tx_hash, lock_event);
-                if let Some(ref m) = self.metrics {
-                    m.l1_locks_detected.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                }
             }
+        }
+
+        for tx in &block.account_transactions {
+            if tx.to != self.config.bridge_address {
+                continue;
+            }
+            if !processed.insert(tx.tx_id.clone()) {
+                continue;
+            }
+            let amount_flowers = tx.amount_zion as u64;
+            self.record_lock(
+                block,
+                &tx.tx_id,
+                tx.from.clone(),
+                amount_flowers,
+                tx.memo.as_deref(),
+            );
+        }
+    }
+
+    /// Record a bridge lock event from either a UTXO output or an account transaction.
+    fn record_lock(
+        &mut self,
+        block: &L1Block,
+        tx_hash: &str,
+        sender: String,
+        amount_flowers: u64,
+        memo: Option<&str>,
+    ) {
+        let (target_chain, evm_recipient) = self
+            .parse_bridge_memo(memo)
+            .unwrap_or(("base".into(), String::new()));
+
+        let evm_recipient = if evm_recipient.is_empty() {
+            // Fallback: use configured default recipient for locks without memo
+            if let Some(ref default) = self.config.default_evm_recipient {
+                warn!(
+                    "L1: Lock TX {} has no memo, using default EVM recipient: {}",
+                    tx_hash, default,
+                );
+                default.clone()
+            } else {
+                warn!(
+                    "L1: Lock TX {} has no valid EVM recipient in memo and no default configured, skipping",
+                    tx_hash,
+                );
+                return;
+            }
+        } else {
+            evm_recipient
+        };
+
+        let wzion_wei =
+            crate::types::conversion::flowers_to_wzion_wei_at(amount_flowers, block.height);
+        let lock_event = L1LockEvent {
+            l1_tx_hash: tx_hash.to_string(),
+            l1_block_height: block.height,
+            l1_sender: sender,
+            amount_flowers,
+            amount_wzion_wei: wzion_wei,
+            target_chain,
+            evm_recipient,
+            detected_at: Utc::now(),
+            status: BridgeStatus::Pending,
+            confirmations: 0,
+        };
+
+        let scale_note = if block.height < crate::types::MIGRATION_HEIGHT {
+            " (pre-3.0.3 legacy scale)"
+        } else {
+            ""
+        };
+        info!(
+            "🔒 L1 Lock detected: {} ZION at height {} (TX: {}) — waiting {} blocks for finality{}",
+            crate::types::conversion::flowers_to_zion_display_at(amount_flowers, block.height),
+            block.height,
+            tx_hash,
+            self.config.finality_blocks,
+            scale_note,
+        );
+
+        self.pending_locks.insert(tx_hash.to_string(), lock_event);
+        if let Some(ref m) = self.metrics {
+            m.l1_locks_detected
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         }
     }
 

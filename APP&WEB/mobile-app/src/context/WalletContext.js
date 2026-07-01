@@ -181,9 +181,10 @@ export const WalletProvider = ({children}) => {
    * @param {string} recipientAddress - Destination zion1 address
    * @param {number} amountZion - Amount in ZION (human units)
    * @param {string} password - Wallet password for key decryption
+   * @param {string} [memo] - Optional ASCII memo (max 256 bytes)
    * @returns {Promise<{txId: string, model: string}>}
    */
-  const sendZion = async (recipientAddress, amountZion, password) => {
+  const sendZion = async (recipientAddress, amountZion, password, memo) => {
     if (locked) throw new Error('Wallet is locked');
     if (!activeWallet) throw new Error('No active wallet');
     bumpActivity();
@@ -210,6 +211,7 @@ export const WalletProvider = ({children}) => {
         amountZion,
         utxos: freshUtxos,
         privateKey: Buffer.from(privateKey, 'hex'),
+        memo: memo || undefined,
       });
       // Ensure the signed tx carries an id + model tag for the offline queue.
       const txIdCandidate = txHash instanceof Buffer ? txHash.toString('hex') : txHash;
@@ -233,6 +235,7 @@ export const WalletProvider = ({children}) => {
         to: recipientAddress,
         amountZion,
         privateKey: Buffer.from(privateKey, 'hex'),
+        memo: memo || undefined,
       });
       accountTx._zionModel = 'account';
       try {

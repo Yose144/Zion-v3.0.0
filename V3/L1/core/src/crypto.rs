@@ -398,4 +398,3 @@ mod tests {
         assert!(from_hex("zzzz").is_none());
     }
 }
-

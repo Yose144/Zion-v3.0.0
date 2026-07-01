@@ -318,6 +318,17 @@ pub struct L1SpendableUtxo {
     pub height: u64,
 }
 
+/// Minimal L1 account transaction (deserialized from getBlockByHeight).
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct L1AccountTransaction {
+    pub tx_id: String,
+    pub from: String,
+    pub to: String,
+    pub amount_zion: u128,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub memo: Option<String>,
+}
+
 /// Minimal L1 block header (deserialized from getBlockByHeight).
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct L1Block {
@@ -326,6 +337,8 @@ pub struct L1Block {
     pub hash: String,
     #[serde(default)]
     pub utxo_transactions: Vec<L1UtxoTransaction>,
+    #[serde(default)]
+    pub account_transactions: Vec<L1AccountTransaction>,
 }
 
 pub fn canonical_utxo_tx_hash(

@@ -431,9 +431,8 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
                         let amt = item
                             .get("amount")
                             .and_then(|v| {
-                                v.as_u64().or_else(|| {
-                                    v.as_str().and_then(|s| s.parse::<u64>().ok())
-                                })
+                                v.as_u64()
+                                    .or_else(|| v.as_str().and_then(|s| s.parse::<u64>().ok()))
                             })
                             .unwrap_or(0);
                         if let Some(hash_bytes) = zion_core::crypto::from_hex(tx_hash_hex) {
@@ -476,12 +475,6 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
                 )
                 .await
             } else {
-                if memo.is_some() {
-                    return Err(anyhow!(
-                        "no spendable UTXOs for {} and --memo was provided; refusing account-model fallback to avoid accidental non-bridgeable transfer",
-                        cfg.miner.wallet
-                    ));
-                }
                 // ── Account-model fallback ───────────────────────────────
                 ui::print_info("No spendable UTXOs; falling back to account-model send.");
                 let balance_resp = crate::rpc::node_rpc::call(
@@ -518,6 +511,7 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
                     amount_flowers as u128,
                     fee,
                     nonce,
+                    memo.clone(),
                 )
                 .map_err(|e| anyhow!("{e}"))?;
                 crate::rpc::node_rpc::call(

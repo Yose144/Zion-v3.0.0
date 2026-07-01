@@ -454,7 +454,14 @@ impl OasisDb {
 
     // ── Raid Teams ──────────────────────────────────────────────────────────
 
-    pub fn save_raid_team(&self, id: &str, leader: &str, name: &str, members: &str, data: &str) -> OasisResult<()> {
+    pub fn save_raid_team(
+        &self,
+        id: &str,
+        leader: &str,
+        name: &str,
+        members: &str,
+        data: &str,
+    ) -> OasisResult<()> {
         let now = now_secs();
         let conn = self.conn.lock().unwrap();
         conn.execute(
@@ -462,7 +469,8 @@ impl OasisDb {
              VALUES (?1, ?2, ?3, ?4, ?5, ?6)
              ON CONFLICT(id) DO UPDATE SET members = excluded.members, data = excluded.data",
             params![id, leader, name, members, data, now],
-        ).map_err(OasisError::Database)?;
+        )
+        .map_err(OasisError::Database)?;
         Ok(())
     }
 
@@ -485,7 +493,12 @@ impl OasisDb {
 
     // ── Golden Egg Progress ──────────────────────────────────────────────────
 
-    pub fn save_clue_discovery(&self, address: &str, clue_id: u32, category: &str) -> OasisResult<()> {
+    pub fn save_clue_discovery(
+        &self,
+        address: &str,
+        clue_id: u32,
+        category: &str,
+    ) -> OasisResult<()> {
         let now = now_secs();
         let conn = self.conn.lock().unwrap();
         conn.execute(
@@ -510,7 +523,13 @@ impl OasisDb {
 
     // ── Territory State ──────────────────────────────────────────────────────
 
-    pub fn save_territory(&self, territory_id: u32, controller: &str, guild_id: Option<&str>, data: &str) -> OasisResult<()> {
+    pub fn save_territory(
+        &self,
+        territory_id: u32,
+        controller: &str,
+        guild_id: Option<&str>,
+        data: &str,
+    ) -> OasisResult<()> {
         let now = now_secs();
         let conn = self.conn.lock().unwrap();
         conn.execute(
@@ -548,7 +567,14 @@ impl OasisDb {
 
     // ── Challenge Submissions ────────────────────────────────────────────────
 
-    pub fn save_challenge(&self, id: &str, address: &str, challenge_id: &str, score: u32, data: &str) -> OasisResult<()> {
+    pub fn save_challenge(
+        &self,
+        id: &str,
+        address: &str,
+        challenge_id: &str,
+        score: u32,
+        data: &str,
+    ) -> OasisResult<()> {
         let now = now_secs();
         let conn = self.conn.lock().unwrap();
         conn.execute(
