@@ -65,6 +65,26 @@ fn main() -> Result<()> {
     }
 
     let config = NodeServerConfig::from_env()?;
+
+    // Guard: migration height should be set for non-dev networks.
+    let network_name = std::env::var("ZION_NETWORK").unwrap_or_else(|_| "mainnet".to_string());
+    let is_production = network_name != "devnet" && network_name != "test";
+    let migration_height = migration::migration_height();
+    if migration_height == 0 && is_production {
+        let has_existing_state = config
+            .state_path
+            .as_ref()
+            .map(|p| std::path::Path::new(p).exists())
+            .unwrap_or(false);
+        if has_existing_state {
+            return Err(anyhow!(
+                "ZION_MIGRATION_HEIGHT is 0 or unset on a production network ({network_name}) \
+                 with existing chain state. Set it to the correct migration height before starting the node."
+            ));
+        }
+        eprintln!("warning: ZION_MIGRATION_HEIGHT is 0 on {network_name}; fresh chain assumed");
+    }
+
     let miner_address = std::env::var("ZION_MINER_ADDRESS").unwrap_or_default();
     let humanitarian_address = std::env::var("ZION_HUMANITARIAN_WALLET").unwrap_or_default();
     let issobella_address = std::env::var("ZION_ISSOBELLA_WALLET").unwrap_or_default();
