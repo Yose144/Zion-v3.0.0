@@ -9,4 +9,4 @@ $env:ZION_GPU_WORK_SIZE='16384'
 $env:ZION_OCL_WORK_CAP='16384'
 $env:ZION_OCL_VRAM_PCT='35'
 
-.\V3\target\release\zion-miner.exe
+.\..\..\V3\target\release\zion-miner.exe

@@ -59,13 +59,13 @@ echo.
 start "ZION Dashboard :: http://127.0.0.1:8766" cmd /k "cd /d C:\Users\yosef\Desktop\Zion\2.9.6-main && python ZION_OS\dashboard\app.py"
 timeout /t 3 /nobreak >nul
 
-start "ZION Backup :: C:\ZION-AutoBackups" cmd /k "C:\Users\yosef\Desktop\Zion\2.9.6-main\backup-local-core.bat"
+start "ZION Backup :: C:\ZION-AutoBackups" cmd /k "C:\Users\yosef\Desktop\Zion\2.9.6-main\ZionStart\windows\backup-local-core.bat"
 timeout /t 2 /nobreak >nul
 
-start "ZION Node :: P2P 8333 RPC 8443" cmd /k "C:\Users\yosef\Desktop\Zion\2.9.6-main\start-node-window.bat"
+start "ZION Node :: P2P 8333 RPC 8443" cmd /k "C:\Users\yosef\Desktop\Zion\2.9.6-main\ZionStart\windows\start-node-window.bat"
 timeout /t 5 /nobreak >nul
 
-start "ZION GPU Miner :: 77.42.71.94:8444 [deeksha_lite_fire]" cmd /k "C:\Users\yosef\Desktop\Zion\2.9.6-main\start-miner-window.bat"
+start "ZION GPU Miner :: 77.42.71.94:8444 [deeksha_lite_fire]" cmd /k "C:\Users\yosef\Desktop\Zion\2.9.6-main\ZionStart\windows\start-miner-window.bat"
 timeout /t 8 /nobreak >nul
 
 :: ── Watchdog (pozadi, bezeslovne) ──────────────────────────────────────────

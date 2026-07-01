@@ -8,7 +8,7 @@
 
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$REPO_ROOT"
 
 mkdir -p logs V3/data
@@ -86,7 +86,7 @@ echo "  Dashboard : http://127.0.0.1:8766"
 echo "  Node RPC  : http://127.0.0.1:8443/jsonrpc"
 echo "  Logs      : ${REPO_ROOT}/logs/"
 echo ""
-echo "  To stop:  bash ${REPO_ROOT}/stop-all.sh"
+echo "  To stop:  bash ${REPO_ROOT}/ZionStart/ubuntu/stop-all.sh"
 echo "==========================================================="
 echo ""
 

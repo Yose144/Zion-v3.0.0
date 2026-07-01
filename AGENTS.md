@@ -457,7 +457,7 @@ The Edge server does NOT have a Rust toolchain. To deploy an updated miner binar
 
 **Local W11 backup:**
 - Script: `scripts/local-core-backup.ps1`
-- Launcher: `backup-local-core.bat`
+- Launcher: `ZionStart/windows/backup-local-core.bat`
 - Destination: `C:\ZION-AutoBackups\`
 - Includes: V3/data, all `.db` files, configs, git ref, health.json
 
@@ -731,7 +731,7 @@ If pool stops accepting connections:
   ```bash
   CARGO_TARGET_DIR="/c/Users/yosef/Desktop/Zion/2.9.6-main/V3/target3" cargo build --release --manifest-path V3/Cargo.toml -p zion-miner --features gpu-opencl
   ```
-- Canonical launch script: `start-miner-target3.bat` (reads from `V3/target3/release/`).
+- Canonical launch script: `ZionStart/windows/start-miner-target3.bat` (reads from `V3/target3/release/`).
 - Do NOT commit `target2/` or `target3/` to git.
 
 **GPU Benchmark Results (RX 5700 XT, gfx1010:xnack-, work_size=8192, 2026-06-07):**
