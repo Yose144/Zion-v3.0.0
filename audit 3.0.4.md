@@ -20,8 +20,8 @@
 | L1 tx_id preimage | memo v podpisu když je gate aktivní | ✅ | **PASS** |
 | L2 watchers | bridge + DAO + atomic-swap skenují account TX | ✅ | **PASS** |
 | L3 WARP adaptéry | 12 adapterů | ✅ | **PASS** |
-| L3 WARP testy | 499 testů prochází | ✅ **spuštěno** | **PASS** |
-| zion-core testy | `cargo test -p zion-core` prochází | ✅ **spuštěno** | **PASS** |
+| L3 WARP testy | 499 testů prochází | ✅ **spuštěno** (499/499) | **PASS** |
+| zion-core testy | `cargo test -p zion-core` prochází | ✅ **spuštěno** (503/503 lib) | **PASS** |
 | SDK memo | `send_transaction(... memo)` | ✅ | **PASS** |
 | CLI memo | `zion wallet send --memo` | ✅ | **PASS** |
 | Node env wiring | `ZION_ACCOUNT_TX_MEMO_V1_HEIGHT` | ✅ | **PASS** |
@@ -134,9 +134,10 @@ Tvrzení z `3.0.4.md` §4.1 (499 testů) **potvrzeno živým během**. ✅
 | Suite | Příkaz | Výsledek |
 |-------|--------|----------|
 | WARP | `cargo test -p zion-warp` | ✅ **499 passed; 0 failed** (+ 1 doc-test) |
-| zion-core | `cargo test -p zion-core` | ✅ **prošlo** (bin + doc-tests 0 failed; lib suite green, žádné compile errors) |
+| zion-core (lib) | `cargo test -p zion-core --lib` | ✅ **503 passed; 0 failed; 13 ignored** |
+| zion-core (bin) | `cargo test -p zion-core` | ✅ 0 failed |
 
-> Poznámka: kompilace `zion-core` z čistého stavu je časově náročná (velký crate); build proběhl bez chyb a bez `error[...]`.
+> Poznámka: kompilace `zion-core` z čistého stavu je časově náročná (velký crate, ~26 min); build proběhl bez chyb a bez `error[...]`.
 
 ---
 
