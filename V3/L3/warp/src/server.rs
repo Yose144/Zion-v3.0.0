@@ -405,4 +405,54 @@ mod tests {
             .unwrap();
         assert_eq!(res.status(), StatusCode::OK);
     }
+
+    #[tokio::test]
+    async fn test_chains_endpoint_returns_all_13_families() {
+        let app = create_router(make_state());
+        let res = app
+            .oneshot(
+                Request::builder()
+                    .uri("/chains")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let body = axum::body::to_bytes(res.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        assert_eq!(json["ok"], true);
+        let chains = json["data"].as_array().unwrap();
+        // All 13 chain families should be registered
+        assert!(
+            chains.len() >= 13,
+            "expected at least 13 chains, got {}",
+            chains.len()
+        );
+    }
+
+    #[tokio::test]
+    async fn test_health_returns_version() {
+        let app = create_router(make_state());
+        let res = app
+            .oneshot(
+                Request::builder()
+                    .uri("/health")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let body = axum::body::to_bytes(res.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        assert_eq!(json["ok"], true);
+        assert!(json["version"].as_str().is_some());
+        assert_eq!(json["transfers_total"], 0);
+        assert_eq!(json["transfers_pending"], 0);
+    }
 }
