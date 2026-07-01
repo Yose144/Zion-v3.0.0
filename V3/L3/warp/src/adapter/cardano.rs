@@ -8,16 +8,16 @@ use serde::Deserialize;
 use tracing::{debug, info, warn};
 
 // ─────────────────────────────────────────────────────────────────────────────
-// wZION Cardano Native Token (policy_id + asset_name hex)
+// ZION Cardano Native Token (policy_id + asset_name hex)
 // ─────────────────────────────────────────────────────────────────────────────
-fn wzion_asset(network: &str) -> Option<&'static str> {
+fn zion_asset(network: &str) -> Option<&'static str> {
     match network {
         "mainnet" => {
-            warn!("[WARP][cardano] mainnet wZION asset is a placeholder — update with real policy_id+asset_name after deployment");
+            warn!("[WARP][cardano] mainnet ZION asset is a placeholder — update with real policy_id+asset_name after deployment");
             Some("5a71011c726573745a494f4e")
         }
         "preprod" => {
-            warn!("[WARP][cardano] preprod wZION asset is a placeholder");
+            warn!("[WARP][cardano] preprod ZION asset is a placeholder");
             Some("5a71011c726573745a494f4e74")
         }
         _ => None,
@@ -221,12 +221,12 @@ impl CardanoAdapter {
             .and_then(|j| j["warp_dest"].as_str())
             .map(|s| s.to_string())?;
 
-        // Get UTXOs to determine amount of wZION burned/locked
+        // Get UTXOs to determine amount of ZION burned/locked
         let utxos = self.get_tx_utxos(&asset_tx.tx_hash).await.ok()?;
         let inputs = utxos.inputs.as_deref().unwrap_or_default();
         let outputs = utxos.outputs.as_deref().unwrap_or_default();
 
-        // Amount = sum of wZION in inputs - sum in outputs (burned quantity)
+        // Amount = sum of ZION in inputs - sum in outputs (burned quantity)
         let sum_in: u64 = inputs
             .iter()
             .flat_map(|u| u.amount.as_deref().unwrap_or_default())
@@ -294,10 +294,10 @@ impl ChainAdapter for CardanoAdapter {
     }
 
     async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {
-        let asset = match wzion_asset(&self.network) {
+        let asset = match zion_asset(&self.network) {
             Some(a) => a,
             None => {
-                debug!("[WARP][cardano] No wZION asset configured");
+                debug!("[WARP][cardano] No ZION asset configured");
                 return Ok(vec![]);
             }
         };
@@ -325,9 +325,9 @@ impl ChainAdapter for CardanoAdapter {
     }
 
     async fn execute_mint(&self, instruction: &MintInstruction) -> WarpResult<String> {
-        let asset = wzion_asset(&self.network).ok_or_else(|| WarpError::AdapterError {
+        let asset = zion_asset(&self.network).ok_or_else(|| WarpError::AdapterError {
             chain: "cardano".into(),
-            reason: format!("no wZION asset configured for network '{}'", self.network),
+            reason: format!("no ZION asset configured for network '{}'", self.network),
         })?;
 
         let signer = CardanoSigner::from_env().map_err(|e| WarpError::AdapterError {
@@ -337,7 +337,7 @@ impl ChainAdapter for CardanoAdapter {
 
         let amount = instruction.amount_dest_atomic as u64;
         info!(
-            "[WARP][cardano] minting {} wZION to {} on {} (asset {})",
+            "[WARP][cardano] minting {} ZION to {} on {} (asset {})",
             amount, instruction.recipient, self.network, asset
         );
 
@@ -395,10 +395,10 @@ mod tests {
     }
 
     #[test]
-    fn test_wzion_asset_mainnet() {
-        assert!(wzion_asset("mainnet").is_some());
-        assert!(wzion_asset("preprod").is_some());
-        assert!(wzion_asset("unknown").is_none());
+    fn test_zion_asset_mainnet() {
+        assert!(zion_asset("mainnet").is_some());
+        assert!(zion_asset("preprod").is_some());
+        assert!(zion_asset("unknown").is_none());
     }
 
     #[tokio::test]

@@ -9,16 +9,16 @@ use serde_json::{json, Value};
 use tracing::{debug, info, warn};
 
 // ─────────────────────────────────────────────────────────────────────────────
-// wZION SPL token mint address per cluster
+// ZION SPL token mint address per cluster
 // ─────────────────────────────────────────────────────────────────────────────
-fn wzion_mint(cluster: &str) -> Option<&'static str> {
+fn zion_mint(cluster: &str) -> Option<&'static str> {
     match cluster {
         "mainnet-beta" => {
-            warn!("[WARP][solana] mainnet-beta wZION mint is a placeholder — real SPL token not yet deployed");
+            warn!("[WARP][solana] mainnet-beta ZION mint is a placeholder — real SPL token not yet deployed");
             Some("ZIONmintXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
         }
         "devnet" => {
-            warn!("[WARP][solana] devnet wZION mint is a placeholder");
+            warn!("[WARP][solana] devnet ZION mint is a placeholder");
             Some("ZIONdevXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
         }
         _ => None,
@@ -86,7 +86,7 @@ async fn rpc(
 // Adapter
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Solana adapter — SPL Token burn/mint via Anchor wZION program.
+/// Solana adapter — SPL Token burn/mint via Anchor ZION program.
 /// Uses Solana JSON-RPC directly (no solana-client dependency).
 pub struct SolanaAdapter {
     cluster: String,
@@ -271,10 +271,10 @@ impl ChainAdapter for SolanaAdapter {
     }
 
     async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {
-        let mint = match wzion_mint(&self.cluster) {
+        let mint = match zion_mint(&self.cluster) {
             Some(m) => m,
             None => {
-                debug!("[WARP][solana] No wZION mint configured");
+                debug!("[WARP][solana] No ZION mint configured");
                 return Ok(vec![]);
             }
         };
@@ -300,12 +300,12 @@ impl ChainAdapter for SolanaAdapter {
     }
 
     async fn execute_mint(&self, instruction: &MintInstruction) -> WarpResult<String> {
-        let mint = match wzion_mint(&self.cluster) {
+        let mint = match zion_mint(&self.cluster) {
             Some(m) => m,
             None => {
                 return Err(WarpError::AdapterError {
                     chain: "solana".into(),
-                    reason: format!("no wZION mint configured for cluster '{}'", self.cluster),
+                    reason: format!("no ZION mint configured for cluster '{}'", self.cluster),
                 });
             }
         };
@@ -315,7 +315,7 @@ impl ChainAdapter for SolanaAdapter {
         })?;
         let amount = instruction.amount_dest_atomic as u64;
         info!(
-            "[WARP][solana] minting {} wZION to {} on {} (mint {})",
+            "[WARP][solana] minting {} ZION to {} on {} (mint {})",
             amount, instruction.recipient, self.cluster, mint
         );
         signer
@@ -363,8 +363,8 @@ mod tests {
     }
 
     #[test]
-    fn test_wzion_mint_mainnet() {
-        assert!(wzion_mint("mainnet-beta").is_some());
+    fn test_zion_mint_mainnet() {
+        assert!(zion_mint("mainnet-beta").is_some());
     }
 
     #[tokio::test]

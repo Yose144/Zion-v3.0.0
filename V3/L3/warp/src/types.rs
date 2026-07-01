@@ -372,7 +372,7 @@ mod tests {
 
     #[test]
     fn test_convert_decimals_evm_to_zion() {
-        // 1 wZION (18 dec) → ZION L1 (6 dec)
+        // 1 wZION (EVM, 18 dec) → ZION L1 (6 dec)
         let result = convert_decimals(1_000_000_000_000_000_000, 18, 6).unwrap();
         assert_eq!(result, 1_000_000);
     }
