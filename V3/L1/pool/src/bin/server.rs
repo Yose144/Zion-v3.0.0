@@ -147,7 +147,9 @@ fn main() -> Result<()> {
             );
         }
     } else {
-        println!("pplns_persistence: ZION_PPLNS_STATE_PATH not set — state will be lost on restart");
+        println!(
+            "pplns_persistence: ZION_PPLNS_STATE_PATH not set — state will be lost on restart"
+        );
     }
 
     let pplns_engine = Arc::new(Mutex::new(pplns_engine_inner));
@@ -224,22 +226,16 @@ fn main() -> Result<()> {
     if !pplns_state_path.is_empty() {
         let pplns_ref = Arc::clone(&pplns_engine);
         let state_path = pplns_state_path.clone();
-        let save_interval_s = parse_env_u64("ZION_PPLNS_SAVE_INTERVAL_S", 10)
-            .unwrap_or(10);
+        let save_interval_s = parse_env_u64("ZION_PPLNS_SAVE_INTERVAL_S", 10).unwrap_or(10);
         println!(
             "pplns_persistence: periodic save every {}s to {}",
             save_interval_s, state_path
         );
-        thread::spawn(move || {
-            loop {
-                thread::sleep(Duration::from_secs(save_interval_s));
-                let pplns = pplns_ref.lock().expect("pplns lock poisoned");
-                if let Err(e) = pplns.save_to_path(&state_path) {
-                    eprintln!(
-                        "pplns_persistence: save failed to {}: {}",
-                        state_path, e
-                    );
-                }
+        thread::spawn(move || loop {
+            thread::sleep(Duration::from_secs(save_interval_s));
+            let pplns = pplns_ref.lock().expect("pplns lock poisoned");
+            if let Err(e) = pplns.save_to_path(&state_path) {
+                eprintln!("pplns_persistence: save failed to {}: {}", state_path, e);
             }
         });
     }
@@ -343,10 +339,7 @@ fn main() -> Result<()> {
             if !pplns_state_path.is_empty() {
                 let pplns = pplns_engine.lock().expect("pplns lock poisoned");
                 match pplns.save_to_path(&pplns_state_path) {
-                    Ok(()) => println!(
-                        "pplns_persistence: final save OK to {}",
-                        pplns_state_path
-                    ),
+                    Ok(()) => println!("pplns_persistence: final save OK to {}", pplns_state_path),
                     Err(e) => eprintln!(
                         "pplns_persistence: final save FAILED to {}: {}",
                         pplns_state_path, e
@@ -4411,6 +4404,7 @@ fn execute_pool_payout(
                 &payout.address,
                 net_amount as u64,
                 nonce,
+                None,
             );
             let sig = zion_core::crypto::sign(signing_key, tx_id.as_bytes());
             let tx = AccountTransaction {
@@ -4422,6 +4416,7 @@ fn execute_pool_payout(
                 nonce,
                 signature: hex::encode(sig),
                 public_key: pk_hex.clone(),
+                memo: None,
             };
             match submit_account_transaction(node_rpc_addr, &tx) {
                 Ok(submitted_tx_id) => {
@@ -4746,6 +4741,7 @@ fn execute_fee_payout(
                 &recipient.address,
                 recipient.amount,
                 nonce,
+                None,
             );
             let sig = zion_core::crypto::sign(signing_key, tx_id.as_bytes());
             let tx = AccountTransaction {
@@ -4757,6 +4753,7 @@ fn execute_fee_payout(
                 nonce,
                 signature: hex::encode(sig),
                 public_key: pk_hex.clone(),
+                memo: None,
             };
             match submit_account_transaction(node_rpc_addr, &tx) {
                 Ok(submitted_tx_id) => {

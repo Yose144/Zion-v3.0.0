@@ -1163,16 +1163,16 @@ mod tests {
         assert_eq!(e2.unpaid_balance("bob"), bob_unpaid);
         assert_eq!(e2.address_for("alice"), Some("zion1alice"));
         assert_eq!(e2.stats().total_paid_flowers, e.stats().total_paid_flowers);
-        assert_eq!(e2.fee_stats().humanitarian_accumulated_flowers, e.fee_stats().humanitarian_accumulated_flowers);
+        assert_eq!(
+            e2.fee_stats().humanitarian_accumulated_flowers,
+            e.fee_stats().humanitarian_accumulated_flowers
+        );
     }
 
     #[test]
     fn save_and_load_roundtrip() {
         let dir = std::env::temp_dir();
-        let path = dir.join(format!(
-            "zion_pplns_test_{}.json",
-            std::process::id()
-        ));
+        let path = dir.join(format!("zion_pplns_test_{}.json", std::process::id()));
         // Clean up any leftover from a previous run.
         let _ = std::fs::remove_file(&path);
 

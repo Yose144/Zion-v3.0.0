@@ -22,8 +22,8 @@
 //! println!("total: {:.6} ZION", bal.total_zion);
 //!
 //! // Send 1 ZION via account model (auto-fallback from UTXO)
-//! let txid = wallet.send(&kp.signing_key, &kp.address, "zion1...", 1.0).await?;
-//! println!("txid: {}", txid);
+//! let result = wallet.send(&kp.signing_key, &kp.address, "zion1...", 1.0, None).await?;
+//! println!("txid: {}", result.txid);
 //! # Ok(())
 //! # }
 //! ```
@@ -153,10 +153,7 @@ impl WalletClient {
             .and_then(|b| b.as_str())
             .and_then(|s| s.parse::<u128>().ok())
             .unwrap_or(0);
-        let utxo_count = v
-            .get("utxo_count")
-            .and_then(|c| c.as_u64())
-            .unwrap_or(0);
+        let utxo_count = v.get("utxo_count").and_then(|c| c.as_u64()).unwrap_or(0);
         let total = account + utxo;
         let fpz = FLOWERS_PER_ZION as u128;
 
@@ -188,6 +185,7 @@ impl WalletClient {
         from_address: &str,
         to_address: &str,
         amount_zion: f64,
+        memo: Option<String>,
     ) -> Result<SendResult> {
         let amount_flowers = (amount_zion * FLOWERS_PER_ZION as f64) as u64;
         let fee = zion_core::fee::MIN_TX_FEE;
@@ -195,12 +193,29 @@ impl WalletClient {
         // Try UTXO model first
         let utxos = self.fetch_utxos(from_address).await?;
         if !utxos.is_empty() {
-            return self.send_utxo(signing_key, from_address, to_address, amount_flowers, fee, &utxos).await;
+            return self
+                .send_utxo(
+                    signing_key,
+                    from_address,
+                    to_address,
+                    amount_flowers,
+                    fee,
+                    memo,
+                    &utxos,
+                )
+                .await;
         }
 
         // Account-model fallback
-        self.send_account(signing_key, from_address, to_address, amount_flowers as u128, fee)
-            .await
+        self.send_account(
+            signing_key,
+            from_address,
+            to_address,
+            amount_flowers as u128,
+            fee,
+            memo,
+        )
+        .await
     }
 
     /// Send via UTXO model (explicit).
@@ -211,13 +226,14 @@ impl WalletClient {
         to_address: &str,
         amount_flowers: u64,
         fee: u64,
+        memo: Option<String>,
         utxos: &[SpendableUtxo],
     ) -> Result<SendResult> {
         let params = SendParams {
             to_address: to_address.to_string(),
             amount: amount_flowers,
             fee,
-            memo: None,
+            memo,
         };
         let built = wallet::build_and_sign(signing_key, from_address, &params, utxos, 0)
             .map_err(|e| ZionSdkError::Other(format!("UTXO build failed: {e}")))?;
@@ -243,6 +259,7 @@ impl WalletClient {
         to_address: &str,
         amount_flowers: u128,
         fee: u64,
+        memo: Option<String>,
     ) -> Result<SendResult> {
         // Check account balance
         let bal = self.balance_breakdown(from_address).await?;
@@ -266,6 +283,7 @@ impl WalletClient {
             amount_flowers,
             fee,
             nonce,
+            memo,
         )
         .map_err(|e| ZionSdkError::Other(format!("account build failed: {e}")))?;
 
@@ -295,8 +313,10 @@ impl WalletClient {
         if let Some(arr) = v.get("utxos").and_then(|u| u.as_array()) {
             for item in arr {
                 let tx_hash_hex = item.get("tx_hash").and_then(|v| v.as_str()).unwrap_or("");
-                let output_index =
-                    item.get("output_index").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
+                let output_index = item
+                    .get("output_index")
+                    .and_then(|v| v.as_u64())
+                    .unwrap_or(0) as u32;
                 let amount = item
                     .get("amount")
                     .and_then(|v| {
@@ -340,15 +360,9 @@ impl WalletClient {
             ));
         }
 
-        let built = wallet::build_batch_payout(
-            signing_key,
-            change_address,
-            recipients,
-            fee,
-            &utxos,
-            0,
-        )
-        .map_err(|e| ZionSdkError::Other(format!("batch payout build failed: {e}")))?;
+        let built =
+            wallet::build_batch_payout(signing_key, change_address, recipients, fee, &utxos, 0)
+                .map_err(|e| ZionSdkError::Other(format!("batch payout build failed: {e}")))?;
 
         let tx_value = serde_json::to_value(&built.transaction)
             .map_err(|e| ZionSdkError::Other(format!("serialize batch tx: {e}")))?;

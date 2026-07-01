@@ -36,11 +36,11 @@ use crate::error::{WarpError, WarpResult};
 /// BOLT11 uses: m = milli-BTC, u = micro-BTC, n = nano-BTC, p = pico-BTC
 pub fn bolt11_amount_to_msat(amount: u64, unit: Option<char>) -> u64 {
     match unit {
-        Some('m') => amount * 100_000_000,      // milli-BTC → 100,000,000 msat per mBTC
-        Some('u') => amount * 100_000,           // micro-BTC → 100,000 msat per µBTC
-        Some('n') => amount * 100,               // nano-BTC → 100 msat per nBTC
-        Some('p') => amount / 10,                // pico-BTC → 0.1 msat per pBTC
-        _ => 0,                                  // No amount = any-amount invoice
+        Some('m') => amount * 100_000_000, // milli-BTC → 100,000,000 msat per mBTC
+        Some('u') => amount * 100_000,     // micro-BTC → 100,000 msat per µBTC
+        Some('n') => amount * 100,         // nano-BTC → 100 msat per nBTC
+        Some('p') => amount / 10,          // pico-BTC → 0.1 msat per pBTC
+        _ => 0,                            // No amount = any-amount invoice
     }
 }
 
@@ -173,14 +173,14 @@ fn convert_bits(data: &[u8], from_bits: u32, to_bits: u32, pad: bool) -> WarpRes
 /// A parsed BOLT11 tagged field.
 #[derive(Debug, Clone, PartialEq)]
 pub enum TaggedField {
-    PaymentHash(Vec<u8>),           // 'p' — 32 bytes
-    Description(String),            // 'd' — UTF-8 memo
-    NodeId(Vec<u8>),                // 'n' — 33 bytes compressed pubkey
-    Expiry(u64),                    // 'x' — seconds (default 3600)
-    MinFinalCltvExpiry(u64),        // 'c' — blocks (default 18)
-    RoutingHint(Vec<u8>),           // 'r' — raw routing hint data
-    Features(Vec<u8>),              // '9' — feature bits
-    Unknown(u8, Vec<u8>),           // Unknown tag
+    PaymentHash(Vec<u8>),    // 'p' — 32 bytes
+    Description(String),     // 'd' — UTF-8 memo
+    NodeId(Vec<u8>),         // 'n' — 33 bytes compressed pubkey
+    Expiry(u64),             // 'x' — seconds (default 3600)
+    MinFinalCltvExpiry(u64), // 'c' — blocks (default 18)
+    RoutingHint(Vec<u8>),    // 'r' — raw routing hint data
+    Features(Vec<u8>),       // '9' — feature bits
+    Unknown(u8, Vec<u8>),    // Unknown tag
 }
 
 /// Parse a single tagged field from 5-bit data.
@@ -225,10 +225,7 @@ fn parse_tagged_field(data: &[u8]) -> WarpResult<(TaggedField, usize)> {
             if field_bytes.len() != 32 {
                 return Err(WarpError::InvalidAddress {
                     chain: "lightning".into(),
-                    address: format!(
-                        "payment hash must be 32 bytes, got {}",
-                        field_bytes.len()
-                    ),
+                    address: format!("payment hash must be 32 bytes, got {}", field_bytes.len()),
                 });
             }
             TaggedField::PaymentHash(field_bytes)

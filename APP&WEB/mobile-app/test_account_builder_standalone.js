@@ -56,7 +56,7 @@ function deriveAddress(pubKeyBytes) {
 /**
  * Generate tx_id — identical to desktop account-builder.js.
  */
-function generateAccountTxId(from, to, amountFlowers, nonce) {
+function generateAccountTxId(from, to, amountFlowers, nonce, memo) {
   const bytes = Buffer.alloc(32);
   const tsNanos = BigInt(Date.now()) * 1_000_000n;
   bytes.writeBigUInt64LE(tsNanos & 0xffffffffffffffffn, 0);
@@ -70,18 +70,36 @@ function generateAccountTxId(from, to, amountFlowers, nonce) {
   for (let i = 0; i < allAddr.length; i++) {
     bytes[i % 32] ^= allAddr[i];
   }
+
+  if (memo) {
+    const memoBytes = Buffer.from(memo, 'utf8');
+    for (let i = 0; i < memoBytes.length; i++) {
+      bytes[i % 32] ^= memoBytes[i];
+    }
+  }
+
   return bytesToHex(bytes);
 }
 
-async function buildAccountTransaction(from, to, amountFlowers, privateKey) {
+async function buildAccountTransaction(from, to, amountFlowers, privateKey, memo) {
+  if (memo) {
+    const memoBytes = Buffer.from(memo, 'utf8');
+    if (memoBytes.length > 256) {
+      throw new Error('memo exceeds 256 bytes');
+    }
+    if (!/^[\u0000-\u007f]*$/.test(memo)) {
+      throw new Error('memo must be ASCII');
+    }
+  }
+
   const feeFlowers = MIN_FEE_FLOWERS;
   const txNonce = BigInt(Date.now());
-  const txId = generateAccountTxId(from, to, amountFlowers, txNonce);
+  const txId = generateAccountTxId(from, to, amountFlowers, txNonce, memo);
 
   const pubKeyBytes = ed25519.getPublicKey(privateKey);
   const sig = ed25519.sign(Buffer.from(txId, 'utf8'), privateKey);
 
-  return {
+  const tx = {
     tx_id: txId,
     from,
     to,
@@ -91,6 +109,10 @@ async function buildAccountTransaction(from, to, amountFlowers, privateKey) {
     signature: bytesToHex(sig),
     public_key: bytesToHex(pubKeyBytes),
   };
+  if (memo) {
+    tx.memo = memo;
+  }
+  return tx;
 }
 
 async function verifyAccountTransaction(tx) {

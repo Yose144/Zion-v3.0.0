@@ -86,7 +86,8 @@ impl BridgeMetrics {
 
     /// Set bridge paused state (1 = paused, 0 = running).
     pub fn set_bridge_paused(&self, paused: bool) {
-        self.bridge_paused.store(if paused { 1 } else { 0 }, Ordering::SeqCst);
+        self.bridge_paused
+            .store(if paused { 1 } else { 0 }, Ordering::SeqCst);
     }
 
     /// Returns true if the bridge is currently paused by the watchdog.

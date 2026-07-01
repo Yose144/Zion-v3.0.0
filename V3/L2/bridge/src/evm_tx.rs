@@ -535,7 +535,11 @@ mod tests {
         let hex_input = format!("0x{}", "ab".repeat(32));
         let hash = hash_to_bytes32(&hex_input);
         let calldata = encode_execute_timelocked_mint(&hash);
-        assert_eq!(calldata.len(), 36, "executeTimelockedMint calldata must be exactly 36 bytes");
+        assert_eq!(
+            calldata.len(),
+            36,
+            "executeTimelockedMint calldata must be exactly 36 bytes"
+        );
     }
 
     #[test]
@@ -556,7 +560,10 @@ mod tests {
         let call2 = encode_execute_timelocked_mint(&hash);
         assert_eq!(&call1[0..4], &call2[0..4], "Selector must be deterministic");
         // Print for audit
-        println!("executeTimelockedMint selector: 0x{}", hex::encode(&call1[0..4]));
+        println!(
+            "executeTimelockedMint selector: 0x{}",
+            hex::encode(&call1[0..4])
+        );
     }
 
     #[test]

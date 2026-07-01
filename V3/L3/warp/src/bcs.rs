@@ -422,7 +422,9 @@ mod tests {
 
     #[test]
     fn test_encode_u128_le() {
-        let enc = BcsEncoder::new().u128(0x0123456789abcdef0123456789abcdef).finish();
+        let enc = BcsEncoder::new()
+            .u128(0x0123456789abcdef0123456789abcdef)
+            .finish();
         assert_eq!(enc.len(), 16);
         assert_eq!(enc[0], 0xef);
         assert_eq!(enc[15], 0x01);
@@ -493,7 +495,9 @@ mod tests {
     #[test]
     fn test_encode_option_none() {
         let mut enc = BcsEncoder::new();
-        enc.option::<u8>(None, |e, v| { e.u8_mut(*v); });
+        enc.option::<u8>(None, |e, v| {
+            e.u8_mut(*v);
+        });
         assert_eq!(enc.take_bytes(), vec![0x00]);
     }
 
@@ -501,7 +505,9 @@ mod tests {
     fn test_encode_option_some() {
         let val = 42u8;
         let mut enc = BcsEncoder::new();
-        enc.option(Some(&val), |e, v| { e.u8_mut(*v); });
+        enc.option(Some(&val), |e, v| {
+            e.u8_mut(*v);
+        });
         assert_eq!(enc.take_bytes(), vec![0x01, 42]);
     }
 
@@ -509,7 +515,9 @@ mod tests {
     fn test_encode_seq_u64() {
         let items = vec![1u64, 2u64, 3u64];
         let mut enc = BcsEncoder::new();
-        enc.seq(&items, |e, v| { e.u64_mut(*v); });
+        enc.seq(&items, |e, v| {
+            e.u64_mut(*v);
+        });
         let result = enc.take_bytes();
         // ULEB128(3) + 3 * 8 bytes LE
         assert_eq!(result[0], 3); // length
@@ -521,7 +529,9 @@ mod tests {
     #[test]
     fn test_encode_enum_variant() {
         let mut enc = BcsEncoder::new();
-        enc.enum_variant(2, |e| { e.u64_mut(99); });
+        enc.enum_variant(2, |e| {
+            e.u64_mut(99);
+        });
         let result = enc.take_bytes();
         // ULEB128(2) + u64(99) LE
         assert_eq!(result[0], 2);
@@ -591,7 +601,8 @@ mod tests {
 
     #[test]
     fn test_decode_overflow() {
-        let mut dec = BcsDecoder::new(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f]);
+        let mut dec =
+            BcsDecoder::new(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f]);
         // This is a valid but huge ULEB128
         let _ = dec.uleb128();
     }
@@ -636,7 +647,9 @@ mod tests {
     fn test_encode_seq_empty() {
         let items: Vec<u64> = vec![];
         let mut enc = BcsEncoder::new();
-        enc.seq(&items, |e, v| { e.u64_mut(*v); });
+        enc.seq(&items, |e, v| {
+            e.u64_mut(*v);
+        });
         assert_eq!(enc.take_bytes(), vec![0x00]); // ULEB128(0)
     }
 }

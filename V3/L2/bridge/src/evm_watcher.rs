@@ -256,7 +256,10 @@ impl EvmWatcher {
                     Ok(burn) => {
                         info!(
                             "🔥 BridgeBurn on {}: {} wZION → {} (burn_id: {})",
-                            self.config.name, burn.amount_wzion_wei, burn.l1_recipient, burn.burn_id,
+                            self.config.name,
+                            burn.amount_wzion_wei,
+                            burn.l1_recipient,
+                            burn.burn_id,
                         );
                         if let Err(e) = burn_tx.send(burn).await {
                             error!(
@@ -283,9 +286,10 @@ impl EvmWatcher {
 
     /// Update the shared metrics gauge with the latest processed EVM block.
     pub fn update_metrics(&self, metrics: &crate::metrics::BridgeMetrics) {
-        metrics
-            .last_evm_block
-            .store(self.last_processed_block, std::sync::atomic::Ordering::Relaxed);
+        metrics.last_evm_block.store(
+            self.last_processed_block,
+            std::sync::atomic::Ordering::Relaxed,
+        );
     }
 }
 

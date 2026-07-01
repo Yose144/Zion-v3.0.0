@@ -74,10 +74,7 @@ fn scaled_utxo_balance(rt: &NodeRuntime, address: &str) -> u128 {
             let tx_hash = crypto::to_hex(&utxo_tx.id);
             for (idx, output) in utxo_tx.outputs.iter().enumerate() {
                 if output.address == address {
-                    utxo_map.insert(
-                        (tx_hash.clone(), idx as u32),
-                        (output.amount, block.height),
-                    );
+                    utxo_map.insert((tx_hash.clone(), idx as u32), (output.amount, block.height));
                 }
             }
         }
@@ -602,7 +599,9 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
 
                         if is_recipient || is_sender {
                             // Calculate total amount sent to this address
-                            let received: u64 = utxo_tx.outputs.iter()
+                            let received: u64 = utxo_tx
+                                .outputs
+                                .iter()
                                 .filter(|o| o.address == address)
                                 .map(|o| o.amount)
                                 .sum();

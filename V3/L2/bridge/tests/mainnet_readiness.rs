@@ -204,7 +204,7 @@ fn base_mainnet_chain() -> EvmChainConfig {
         finality_blocks: 64, // Base mainnet: 64 blocks ≈ 128s
         enabled: true,       // 5/5 bridge deployed and migrated
         gas_strategy: "eip1559".into(),
-        max_gas_gwei: 100, // Higher gas limit for mainnet
+        max_gas_gwei: 100,             // Higher gas limit for mainnet
         start_block: Some(47_687_000), // Set to ~current Base mainnet block
     }
 }

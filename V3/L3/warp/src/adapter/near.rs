@@ -195,8 +195,8 @@ impl NearAdapter {
 
     /// Build from env vars.
     pub fn from_env() -> Self {
-        let rpc_url =
-            std::env::var("WARP_NEAR_RPC").unwrap_or_else(|_| "https://rpc.mainnet.near.org".into());
+        let rpc_url = std::env::var("WARP_NEAR_RPC")
+            .unwrap_or_else(|_| "https://rpc.mainnet.near.org".into());
         let bridge_contract =
             std::env::var("WARP_NEAR_BRIDGE_CONTRACT").unwrap_or_else(|_| "warp.near".into());
         Self {
@@ -263,13 +263,7 @@ impl NearAdapter {
 
     /// Query a TX status by hash + sender account id.
     async fn get_tx_status(&self, tx_hash: &str, sender: &str) -> WarpResult<TxStatusResp> {
-        let v = rpc(
-            &self.client,
-            &self.rpc_url,
-            "tx",
-            json!([tx_hash, sender]),
-        )
-        .await?;
+        let v = rpc(&self.client, &self.rpc_url, "tx", json!([tx_hash, sender])).await?;
         serde_json::from_value(v).map_err(|e| WarpError::AdapterError {
             chain: "near".into(),
             reason: format!("tx parse: {}", e),
@@ -380,7 +374,11 @@ impl ChainAdapter for NearAdapter {
                 }
             }
         }
-        info!("[WARP][near] {} WARP_DEPOSIT proofs found in block {}", proofs.len(), height);
+        info!(
+            "[WARP][near] {} WARP_DEPOSIT proofs found in block {}",
+            proofs.len(),
+            height
+        );
         Ok(proofs)
     }
 
@@ -445,13 +443,14 @@ impl ChainAdapter for NearAdapter {
         .await?;
 
         // `broadcast_tx_async` returns the tx hash as a base58 string
-        let tx_hash = result
-            .as_str()
-            .map(|s| s.to_string())
-            .ok_or_else(|| WarpError::AdapterError {
-                chain: "near".into(),
-                reason: "broadcast_tx_async: non-string result".into(),
-            })?;
+        let tx_hash =
+            result
+                .as_str()
+                .map(|s| s.to_string())
+                .ok_or_else(|| WarpError::AdapterError {
+                    chain: "near".into(),
+                    reason: "broadcast_tx_async: non-string result".into(),
+                })?;
 
         info!("[WARP][near] TX broadcast: {}", tx_hash);
         Ok(tx_hash)
@@ -665,13 +664,8 @@ mod tests {
     #[test]
     fn test_parse_bridge_deposit_log_missing_amount_returns_none() {
         let a = NearAdapter::new();
-        let res = a.parse_bridge_deposit_log(
-            "WARP_DEPOSIT dest=zion1abc",
-            "r1",
-            "warp.near",
-            1,
-            "h",
-        );
+        let res =
+            a.parse_bridge_deposit_log("WARP_DEPOSIT dest=zion1abc", "r1", "warp.near", 1, "h");
         assert!(res.is_none());
     }
 
@@ -679,13 +673,7 @@ mod tests {
     fn test_parse_bridge_deposit_log_default_dest() {
         let a = NearAdapter::new();
         let proof = a
-            .parse_bridge_deposit_log(
-                "WARP_DEPOSIT amount=1000",
-                "r1",
-                "warp.near",
-                1,
-                "h",
-            )
+            .parse_bridge_deposit_log("WARP_DEPOSIT amount=1000", "r1", "warp.near", 1, "h")
             .unwrap();
         assert_eq!(proof.amount_flowers, 1000);
         assert!(proof.memo.contains("zion1unknown"));
@@ -728,7 +716,10 @@ mod tests {
         });
         let c: ChunkResp = serde_json::from_value(json).unwrap();
         assert_eq!(c.receipts.len(), 1);
-        assert_eq!(c.receipts[0].logs[0], "WARP_DEPOSIT amount=42 dest=zion1test");
+        assert_eq!(
+            c.receipts[0].logs[0],
+            "WARP_DEPOSIT amount=42 dest=zion1test"
+        );
     }
 
     #[test]

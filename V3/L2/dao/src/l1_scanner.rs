@@ -52,6 +52,8 @@ struct BlockInfo {
     height: u64,
     #[serde(default)]
     utxo_transactions: Vec<UtxoTransaction>,
+    #[serde(default)]
+    account_transactions: Vec<AccountTransaction>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -61,6 +63,17 @@ struct UtxoTransaction {
     inputs: Vec<UtxoInput>,
     #[serde(default)]
     outputs: Vec<TxOutput>,
+}
+
+#[derive(Debug, Deserialize)]
+struct AccountTransaction {
+    tx_id: String,
+    from: String,
+    #[serde(default)]
+    #[allow(dead_code)]
+    to: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    memo: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -200,7 +213,13 @@ impl L1Scanner {
                 }
             };
 
+            let mut processed: std::collections::HashSet<String> = std::collections::HashSet::new();
+
             for tx in &block.utxo_transactions {
+                let txid = bytes_to_hex(&tx.id);
+                if !processed.insert(txid.clone()) {
+                    continue;
+                }
                 match self.process_tx(tx, height).await {
                     Ok(true) => {
                         events_found += 1;
@@ -209,7 +228,24 @@ impl L1Scanner {
                     }
                     Ok(false) => {}
                     Err(e) => {
-                        debug!("[DAO-SCANNER] TX {} error: {}", bytes_to_hex(&tx.id), e);
+                        debug!("[DAO-SCANNER] TX {} error: {}", txid, e);
+                    }
+                }
+            }
+
+            for tx in &block.account_transactions {
+                if !processed.insert(tx.tx_id.clone()) {
+                    continue;
+                }
+                match self.process_account_tx(tx, height).await {
+                    Ok(true) => {
+                        events_found += 1;
+                        self.events_processed
+                            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    }
+                    Ok(false) => {}
+                    Err(e) => {
+                        debug!("[DAO-SCANNER] Account TX {} error: {}", tx.tx_id, e);
                     }
                 }
             }
@@ -242,13 +278,42 @@ impl L1Scanner {
 
         let txid = bytes_to_hex(&tx.id);
 
+        self.process_dao_memo(
+            &sender,
+            &txid,
+            tx.outputs.iter().filter_map(|o| o.memo.as_deref()),
+            block_height,
+        )
+        .await
+    }
+
+    /// Returns `true` if this account TX contained a valid DAO memo that was processed.
+    async fn process_account_tx(
+        &self,
+        tx: &AccountTransaction,
+        block_height: u64,
+    ) -> DaoResult<bool> {
+        let sender = &tx.from;
+        let txid = &tx.tx_id;
+        let memo = tx.memo.as_deref();
+        self.process_dao_memo(sender, txid, memo.into_iter(), block_height)
+            .await
+    }
+
+    /// Process DAO memos for a sender/txid pair.
+    async fn process_dao_memo<'a>(
+        &self,
+        sender: &str,
+        txid: &str,
+        memos: impl Iterator<Item = &'a str>,
+        block_height: u64,
+    ) -> DaoResult<bool> {
         let mut any_processed = false;
 
-        for output in &tx.outputs {
-            let memo = match &output.memo {
-                Some(m) if !m.is_empty() => m,
-                _ => continue,
-            };
+        for memo in memos {
+            if memo.is_empty() {
+                continue;
+            }
 
             let parsed = match parse_dao_memo(memo) {
                 Some(p) => p,
@@ -264,7 +329,7 @@ impl L1Scanner {
                         DaoError::Internal(format!("Invalid proposal id: {}", proposal_id))
                     })?;
 
-                    let weight = self.get_balance_at(&sender, block_height).await?;
+                    let weight = self.get_balance_at(sender, block_height).await?;
                     if weight < self.config.min_vote_weight {
                         debug!(
                             "[DAO-SCANNER] Skipping dust vote from {} (weight {})",
@@ -292,7 +357,7 @@ impl L1Scanner {
                             _ => {}
                         }
 
-                        db.record_vote(pid, &sender, choice, weight, Some(&txid))?
+                        db.record_vote(pid, sender, choice, weight, Some(txid))?
                     };
 
                     if recorded {

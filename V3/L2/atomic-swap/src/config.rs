@@ -50,9 +50,9 @@ impl Default for SwapIdentity {
         Self {
             name: "ZION Atomic Swap Service".into(),
             network: "mainnet".into(),
-            min_lock_flowers: 1_000_000, // 1 ZION (1e6 scale)
+            min_lock_flowers: 1_000_000,     // 1 ZION (1e6 scale)
             max_lock_atomic: 10_000_000_000, // 10 000 ZION (1e6 scale)
-            release_fee_atomic: 2_000,           // 0.002 ZION
+            release_fee_atomic: 2_000,       // 0.002 ZION
         }
     }
 }

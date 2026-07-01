@@ -327,10 +327,7 @@ pub mod conversion {
         #[test]
         fn test_display_at_post_fork() {
             // 1e8 flowers at height 20000 (post-fork) = 100 ZION
-            assert_eq!(
-                flowers_to_zion_display_at(100_000_000, 20_000),
-                "100"
-            );
+            assert_eq!(flowers_to_zion_display_at(100_000_000, 20_000), "100");
         }
 
         #[test]

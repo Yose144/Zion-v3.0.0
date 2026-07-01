@@ -166,8 +166,7 @@ impl SuiAdapter {
     /// Read configuration from env vars.
     /// - `WARP_SUI_RPC` overrides the default mainnet endpoint.
     pub fn from_env() -> Self {
-        let rpc_url =
-            std::env::var("WARP_SUI_RPC").unwrap_or_else(|_| DEFAULT_SUI_RPC.to_string());
+        let rpc_url = std::env::var("WARP_SUI_RPC").unwrap_or_else(|_| DEFAULT_SUI_RPC.to_string());
         Self {
             rpc_url,
             client: reqwest::Client::builder()
@@ -254,7 +253,7 @@ impl SuiAdapter {
                 }
                 // commands: Vec<Command>
                 k.uleb128_mut(1); // single MoveCall command
-                // Command::MoveCall = variant 0
+                                  // Command::MoveCall = variant 0
                 k.enum_variant(0, |mc| {
                     // package: ObjectID (32 bytes)
                     mc.address_32_mut(package);
@@ -278,7 +277,7 @@ impl SuiAdapter {
             e.address_32_mut(sender);
             // gas_payment: Vec<ObjectRef>
             e.uleb128_mut(1); // single gas object
-            // ObjectRef: ObjectID(32) + SequenceNumber(u64) + ObjectDigest(32)
+                              // ObjectRef: ObjectID(32) + SequenceNumber(u64) + ObjectDigest(32)
             e.address_32_mut(gas_object_id);
             e.u64_mut(gas_version);
             e.address_32_mut(gas_digest);
@@ -305,12 +304,13 @@ impl SuiAdapter {
         for obj in &objects {
             let data = obj.get("data").unwrap_or(obj);
             let object_id = data.get("objectId").and_then(|v| v.as_str()).unwrap_or("");
-            let version = data
-                .get("version")
-                .and_then(|v| v.as_str())
-                .unwrap_or("0");
+            let version = data.get("version").and_then(|v| v.as_str()).unwrap_or("0");
             let digest = data.get("digest").and_then(|v| v.as_str()).unwrap_or("");
-            refs.push((object_id.to_string(), version.to_string(), digest.to_string()));
+            refs.push((
+                object_id.to_string(),
+                version.to_string(),
+                digest.to_string(),
+            ));
         }
         Ok(refs)
     }
@@ -338,16 +338,21 @@ impl SuiAdapter {
             &self.client,
             &self.rpc_url,
             "sui_executeTransactionBlock",
-            json!([tx_bytes_b64, vec![signature_b64], options, "WaitForEffectsCert"]),
+            json!([
+                tx_bytes_b64,
+                vec![signature_b64],
+                options,
+                "WaitForEffectsCert"
+            ]),
         )
         .await?;
-        let digest = v
-            .get("digest")
-            .and_then(|d| d.as_str())
-            .ok_or_else(|| WarpError::AdapterError {
-                chain: "sui".into(),
-                reason: format!("executeTransactionBlock response missing digest: {}", v),
-            })?;
+        let digest =
+            v.get("digest")
+                .and_then(|d| d.as_str())
+                .ok_or_else(|| WarpError::AdapterError {
+                    chain: "sui".into(),
+                    reason: format!("executeTransactionBlock response missing digest: {}", v),
+                })?;
         Ok(digest.to_string())
     }
 
@@ -408,11 +413,10 @@ impl SuiAdapter {
         if v.is_null() {
             return Ok(None);
         }
-        let tx: SuiTxBlock =
-            serde_json::from_value(v).map_err(|e| WarpError::AdapterError {
-                chain: "sui".into(),
-                reason: format!("tx block parse: {}", e),
-            })?;
+        let tx: SuiTxBlock = serde_json::from_value(v).map_err(|e| WarpError::AdapterError {
+            chain: "sui".into(),
+            reason: format!("tx block parse: {}", e),
+        })?;
         Ok(Some(tx))
     }
 
@@ -429,7 +433,10 @@ impl SuiAdapter {
         let amount = parsed
             .get("amount")
             .or_else(|| parsed.get("amount_flowers"))
-            .and_then(|a| a.as_u64().or_else(|| a.as_str().and_then(|s| s.parse().ok())))
+            .and_then(|a| {
+                a.as_u64()
+                    .or_else(|| a.as_str().and_then(|s| s.parse().ok()))
+            })
             .unwrap_or(0);
 
         let recipient = parsed
@@ -447,7 +454,10 @@ impl SuiAdapter {
 
         let checkpoint = parsed
             .get("checkpoint")
-            .and_then(|c| c.as_u64().or_else(|| c.as_str().and_then(|s| s.parse().ok())))
+            .and_then(|c| {
+                c.as_u64()
+                    .or_else(|| c.as_str().and_then(|s| s.parse().ok()))
+            })
             .unwrap_or(latest_checkpoint);
 
         Some(DepositProof {
@@ -537,12 +547,14 @@ impl ChainAdapter for SuiAdapter {
 
         // 1. Get gas object refs for the sender
         let gas_refs = self.get_gas_object_refs(&sender_addr).await?;
-        let (gas_id, gas_ver, gas_digest) = gas_refs.into_iter().next().ok_or_else(|| {
-            WarpError::AdapterError {
-                chain: "sui".into(),
-                reason: "no gas objects owned by sender — fund the relay account first".into(),
-            }
-        })?;
+        let (gas_id, gas_ver, gas_digest) =
+            gas_refs
+                .into_iter()
+                .next()
+                .ok_or_else(|| WarpError::AdapterError {
+                    chain: "sui".into(),
+                    reason: "no gas objects owned by sender — fund the relay account first".into(),
+                })?;
 
         // Parse gas object ref components
         let gas_id_bytes = Self::parse_address_hex(&gas_id)?;
@@ -572,8 +584,8 @@ impl ChainAdapter for SuiAdapter {
         let pure_args = vec![arg_recipient, arg_amount];
 
         // 5. Parse the bridge package ID from env or use default
-        let package_id = std::env::var("WARP_SUI_BRIDGE_PACKAGE")
-            .unwrap_or_else(|_| "0x2".to_string());
+        let package_id =
+            std::env::var("WARP_SUI_BRIDGE_PACKAGE").unwrap_or_else(|_| "0x2".to_string());
         let package_bytes = Self::parse_address_hex(&package_id)?;
 
         // 6. BCS-encode the TransactionData
@@ -596,7 +608,9 @@ impl ChainAdapter for SuiAdapter {
         let signature_b64 = signer.signature_b64(&tx_bytes);
 
         // 8. Submit via sui_executeTransactionBlock
-        let tx_digest = self.execute_transaction_block(&tx_bytes_b64, &signature_b64).await?;
+        let tx_digest = self
+            .execute_transaction_block(&tx_bytes_b64, &signature_b64)
+            .await?;
         info!("[WARP][sui] mint TX submitted: digest={}", tx_digest);
         Ok(tx_digest)
     }
@@ -606,12 +620,13 @@ impl ChainAdapter for SuiAdapter {
     }
 
     async fn confirmations(&self, tx_hash: &str) -> WarpResult<u64> {
-        let tx = self.get_transaction_block(tx_hash).await?.ok_or_else(|| {
-            WarpError::AdapterError {
-                chain: "sui".into(),
-                reason: format!("transaction {} not found", tx_hash),
-            }
-        })?;
+        let tx =
+            self.get_transaction_block(tx_hash)
+                .await?
+                .ok_or_else(|| WarpError::AdapterError {
+                    chain: "sui".into(),
+                    reason: format!("transaction {} not found", tx_hash),
+                })?;
 
         // Sui finality ladder: EXECUTED → CHECKPOINTED → CONFIRMED → FINAL.
         // Treat CHECKPOINTED+ as having a checkpoint number we can diff against
@@ -669,7 +684,7 @@ mod tests {
         let addr = sui_address_from_pubkey(&pk);
         assert!(addr.starts_with("0x"));
         assert_eq!(addr.len(), 66); // 0x + 64 hex chars
-        // Hex body must decode to 32 bytes.
+                                    // Hex body must decode to 32 bytes.
         let body = &addr[2..];
         assert_eq!(hex::decode(body).unwrap().len(), 32);
     }
@@ -758,12 +773,28 @@ mod tests {
         let gas_id = [0x03u8; 32];
         let gas_digest = [0x04u8; 32];
         let tx1 = SuiAdapter::encode_transaction_data(
-            &sender, &package, "bridge", "mint",
-            &pure_args, &gas_id, 5, &gas_digest, 50_000_000, 1000,
+            &sender,
+            &package,
+            "bridge",
+            "mint",
+            &pure_args,
+            &gas_id,
+            5,
+            &gas_digest,
+            50_000_000,
+            1000,
         );
         let tx2 = SuiAdapter::encode_transaction_data(
-            &sender, &package, "bridge", "mint",
-            &pure_args, &gas_id, 5, &gas_digest, 50_000_000, 1000,
+            &sender,
+            &package,
+            "bridge",
+            "mint",
+            &pure_args,
+            &gas_id,
+            5,
+            &gas_digest,
+            50_000_000,
+            1000,
         );
         assert_eq!(tx1, tx2);
         assert!(!tx1.is_empty());

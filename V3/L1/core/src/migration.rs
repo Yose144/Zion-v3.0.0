@@ -129,7 +129,6 @@ pub fn dao_treasury_address() -> String {
         .unwrap_or_else(|| "zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4".to_string())
 }
 
-
 /// Build the migration coinbase transaction.
 ///
 /// This transaction has:
@@ -166,6 +165,7 @@ pub fn build_migration_coinbase(
         nonce: 0,
         signature: String::new(), // signed by Genesis Creator key at cutover
         public_key: String::new(),
+        memo: None,
     }
 }
 
@@ -203,6 +203,7 @@ pub fn build_migration_transactions(
             nonce: i as u64 + 1,
             signature: String::new(), // signed at cutover
             public_key: String::new(),
+            memo: None,
         });
     }
 
@@ -243,7 +244,7 @@ pub fn validate_snapshot(entries: &[SnapshotEntry], mined_so_far: u64) -> Result
 /// 1. Block height == migration_height() + 1.
 /// 2. First transaction is the migration coinbase (from = "coinbase").
 /// 3. All credit transactions have from = "migration".
-/// 4. Sum of new_flowers + total_dust == floor(total_legacy / 10^6) + (total_legacy % 10^6)... 
+/// 4. Sum of new_flowers + total_dust == floor(total_legacy / 10^6) + (total_legacy % 10^6)...
 ///    Actually: sum of all outputs in new scale == floor(total_legacy / 10^6).
 ///    Dust is separate.
 pub fn validate_migration_block(block: &AcceptedBlock) -> Result<(), String> {

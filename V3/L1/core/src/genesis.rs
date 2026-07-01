@@ -282,6 +282,7 @@ pub fn genesis_block() -> AcceptedBlock {
                 nonce: i as u64,
                 signature: String::new(),
                 public_key: String::new(),
+                memo: None,
             });
         }
     }

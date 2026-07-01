@@ -132,11 +132,12 @@ impl LndClient {
         // Add macaroon header if provided
         if let Some(ref mac) = macaroon_hex {
             let mut headers = reqwest::header::HeaderMap::new();
-            let header_value = reqwest::header::HeaderValue::from_str(mac)
-                .map_err(|e| WarpError::AdapterError {
+            let header_value = reqwest::header::HeaderValue::from_str(mac).map_err(|e| {
+                WarpError::AdapterError {
                     chain: "lightning".into(),
                     reason: format!("invalid macaroon hex: {}", e),
-                })?;
+                }
+            })?;
             headers.insert("Grpc-Metadata-macaroon", header_value);
             builder = builder.default_headers(headers);
         }
@@ -293,8 +294,7 @@ impl LndClient {
     /// Check if an invoice has been settled (paid).
     pub async fn is_settled(&self, r_hash_hex: &str) -> WarpResult<bool> {
         let invoice = self.lookup_invoice(r_hash_hex).await?;
-        Ok(invoice.settled.unwrap_or(false)
-            || invoice.state.as_deref() == Some("SETTLED"))
+        Ok(invoice.settled.unwrap_or(false) || invoice.state.as_deref() == Some("SETTLED"))
     }
 
     // ── ListChannels ─────────────────────────────────────────────────────────
