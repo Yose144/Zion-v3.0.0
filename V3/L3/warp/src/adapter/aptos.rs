@@ -506,7 +506,7 @@ impl ChainAdapter for AptosAdapter {
 
         let amount = instruction.amount_dest_atomic as u64;
         info!(
-            "[WARP][aptos] minting {} wZION to {} from account {}",
+            "[WARP][aptos] minting {} ZION to {} from account {}",
             amount, instruction.recipient, signer.address
         );
 

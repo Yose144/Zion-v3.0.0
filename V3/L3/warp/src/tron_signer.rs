@@ -1,7 +1,7 @@
 //! # Tron TRC-20 Signer — Phase 6 (D-04)
 //!
 //! Signs and broadcasts Tron transactions for TRC-20 `mint` calls against the
-//! wZION contract.
+//! ZION contract.
 //!
 //! ## Design
 //! - No `tronweb` or heavy SDK dependency.
@@ -211,12 +211,12 @@ impl TronSigner {
         tron_address_from_key(&self.key)
     }
 
-    /// Mint TRC-20 wZION tokens by calling the contract's `mint(address,uint256)`.
+    /// Mint TRC-20 ZION tokens by calling the contract's `mint(address,uint256)`.
     ///
     /// # Arguments
     /// * `client`       — shared `reqwest::Client`
     /// * `api_url`      — TronGrid base URL (e.g. `https://api.trongrid.io`)
-    /// * `contract`     — wZION TRC-20 contract address (base58check)
+    /// * `contract`     — ZION TRC-20 contract address (base58check)
     /// * `recipient`    — destination Tron wallet address (base58check)
     /// * `amount`       — amount in raw token units (atomic, u64)
     ///

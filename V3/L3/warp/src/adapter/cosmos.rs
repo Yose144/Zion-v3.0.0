@@ -9,9 +9,9 @@ use serde_json::Value;
 use tracing::{debug, info, warn};
 
 // ─────────────────────────────────────────────────────────────────────────────
-// wZION CosmWASM contract address per network
+// ZION CosmWASM contract address per network
 // ─────────────────────────────────────────────────────────────────────────────
-fn wzion_contract(network: &str) -> Option<&'static str> {
+fn zion_contract(network: &str) -> Option<&'static str> {
     match network {
         "cosmoshub-4" => Some("cosmos1zionwarpxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"),
         "theta-testnet-001" => Some("cosmos1ziontexxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"),
@@ -245,10 +245,10 @@ impl ChainAdapter for CosmosAdapter {
     }
 
     async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {
-        let contract = match wzion_contract(&self.network) {
+        let contract = match zion_contract(&self.network) {
             Some(c) => c,
             None => {
-                debug!("[WARP][cosmos] No wZION contract configured");
+                debug!("[WARP][cosmos] No ZION contract configured");
                 return Ok(vec![]);
             }
         };
@@ -263,9 +263,9 @@ impl ChainAdapter for CosmosAdapter {
     }
 
     async fn execute_mint(&self, instruction: &MintInstruction) -> WarpResult<String> {
-        let contract = wzion_contract(&self.network).ok_or_else(|| WarpError::AdapterError {
+        let contract = zion_contract(&self.network).ok_or_else(|| WarpError::AdapterError {
             chain: "cosmos".into(),
-            reason: format!("no wZION contract configured for network '{}'", self.network),
+            reason: format!("no ZION contract configured for network '{}'", self.network),
         })?;
 
         let signer = CosmosSigner::from_env().map_err(|e| WarpError::AdapterError {
@@ -275,7 +275,7 @@ impl ChainAdapter for CosmosAdapter {
 
         let amount = instruction.amount_dest_atomic as u64;
         info!(
-            "[WARP][cosmos] minting {} wZION to {} on {} (contract {})",
+            "[WARP][cosmos] minting {} ZION to {} on {} (contract {})",
             amount, instruction.recipient, self.network, contract
         );
 
@@ -336,8 +336,8 @@ mod tests {
     }
 
     #[test]
-    fn test_wzion_contract_cosmoshub() {
-        assert!(wzion_contract("cosmoshub-4").is_some());
+    fn test_zion_contract_cosmoshub() {
+        assert!(zion_contract("cosmoshub-4").is_some());
     }
 
     #[test]
