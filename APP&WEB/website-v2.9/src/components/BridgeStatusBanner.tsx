@@ -144,7 +144,7 @@ export default function BridgeStatusBanner() {
                 <Zap className="h-4 w-4 text-emerald-400 shrink-0" />
                 <div>
                   <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Síť' : 'Network'}</p>
-                  <p className="text-sm font-bold text-white">Base Mainnet</p>
+                  <p className="text-sm font-bold text-white">6 chains · Base</p>
                 </div>
               </div>
             </div>
