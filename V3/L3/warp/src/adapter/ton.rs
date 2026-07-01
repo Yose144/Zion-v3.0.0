@@ -2,7 +2,7 @@ use crate::adapter::ChainAdapter;
 use crate::error::{WarpError, WarpResult};
 use crate::protocol::{DepositProof, MintInstruction};
 use crate::ton_cell;
-use crate::ton_signer::TonSigner;
+use crate::ton_signer::{decode_ton_address, TonSigner};
 use crate::types::ChainFamily;
 use async_trait::async_trait;
 use base64::{engine::general_purpose::STANDARD as B64, Engine};
@@ -82,11 +82,23 @@ struct AddressInfo {
 }
 
 /// Parse a TON address string into a 32-byte hash.
-/// Accepts hex format (0x...) or raw 64-char hex.
-/// For base64 addresses (EQ.../UQ...), use the TON SDK for proper decoding.
+/// Accepts both base64url format (EQ.../UQ.../kQ...) and hex format (0x...).
 fn parse_ton_address(addr: &str) -> WarpResult<[u8; 32]> {
+    // Try base64url format first (EQ.../UQ.../kQ...)
+    if addr.starts_with("EQ") || addr.starts_with("UQ") || addr.starts_with("kQ") {
+        match decode_ton_address(addr) {
+            Ok((_wc, hash)) => return Ok(hash),
+            Err(e) => {
+                return Err(WarpError::AdapterError {
+                    chain: "ton".into(),
+                    reason: format!("TON address decode failed: {}", e),
+                })
+            }
+        }
+    }
+
+    // Fall back to hex format (0x... or raw 64-char hex)
     let stripped = addr.strip_prefix("0x").unwrap_or(addr);
-    // If it's a 64-char hex string, parse directly
     if stripped.len() == 64 {
         let bytes = hex::decode(stripped).map_err(|e| WarpError::AdapterError {
             chain: "ton".into(),
@@ -105,8 +117,7 @@ fn parse_ton_address(addr: &str) -> WarpResult<[u8; 32]> {
         Err(WarpError::AdapterError {
             chain: "ton".into(),
             reason: format!(
-                "TON address must be 64-char hex (0x...), got '{}' (len={}). \
-                 For base64 addresses (EQ.../UQ...), use TON SDK.",
+                "TON address must be base64url (EQ.../UQ...) or 64-char hex, got '{}' (len={})",
                 addr,
                 addr.len()
             ),
@@ -276,6 +287,61 @@ impl TonAdapter {
         self.rpc("getTransactionInformation", json!({ "hash": hash })).await
     }
 
+    /// Fetch the current seqno for a wallet V2R2 contract via `runMethod`.
+    ///
+    /// Calls `getWalletData` (method id 0) on the wallet contract, which returns:
+    /// [seqno:uint32, balance:Grams, pubkey:bits256, wallet_code:^Cell]
+    ///
+    /// Returns 0 if the wallet hasn't been deployed yet (uninitialized state).
+    async fn get_wallet_seqno(&self, wallet_addr: &str) -> WarpResult<u32> {
+        let result = self
+            .rpc(
+                "runMethod",
+                json!({
+                    "address": wallet_addr,
+                    "method": "seqno",
+                    "params": []
+                }),
+            )
+            .await?;
+
+        // TON Center returns: { "result": { "gas_used": ..., "stack": [["num", "<hex>"]] } }
+        // The seqno is the first stack element as a hex-encoded big-endian uint.
+        if let Some(stack) = result["stack"].as_array() {
+            if let Some(first) = stack.get(0) {
+                if let Some(num_str) = first.get(1).and_then(|v| v.as_str()) {
+                    // Parse hex (may have 0x prefix)
+                    let clean = num_str.strip_prefix("0x").unwrap_or(num_str);
+                    if let Ok(bytes) = hex::decode(clean) {
+                        // Big-endian, take last 4 bytes
+                        let seqno = if bytes.len() >= 4 {
+                            u32::from_be_bytes([
+                                bytes[bytes.len() - 4],
+                                bytes[bytes.len() - 3],
+                                bytes[bytes.len() - 2],
+                                bytes[bytes.len() - 1],
+                            ])
+                        } else if bytes.is_empty() {
+                            0
+                        } else {
+                            let mut val: u32 = 0;
+                            for &b in &bytes {
+                                val = (val << 8) | b as u32;
+                            }
+                            val
+                        };
+                        return Ok(seqno);
+                    }
+                }
+            }
+        }
+
+        // If the wallet is uninitialized, the method call may fail or return
+        // an empty stack. Default to seqno=0.
+        debug!("[WARP][ton] wallet seqno not found in response, defaulting to 0");
+        Ok(0)
+    }
+
     /// Parse a WARP bridge inbound deposit from a TON transaction.
     ///
     /// TON bridge deposits carry the WARP memo in the incoming message
@@ -407,26 +473,34 @@ impl ChainAdapter for TonAdapter {
             reason: format!("internal message build failed: {}", e),
         })?;
 
-        // 4. Compute wallet V2R2 signing hash
+        // 4. Fetch wallet seqno from chain (via runMethod)
+        let wallet_addr = signer.address_string();
+        let seqno = self.get_wallet_seqno(&wallet_addr).await.unwrap_or(0);
+        info!(
+            "[WARP][ton] wallet {} seqno={}",
+            wallet_addr, seqno
+        );
+
+        // 5. Compute wallet V2R2 signing hash
         let valid_until = (chrono::Utc::now().timestamp() as u32) + 3600; // 1 hour
         let signing_hash = ton_cell::wallet_v2r2_signing_hash(
             0x29a9a317, // subwallet_id (mainnet V2R2)
             valid_until,
-            0,          // seqno (would need to fetch from chain)
+            seqno,
             &internal_msg,
         );
 
-        // 5. Sign with Ed25519
+        // 6. Sign with Ed25519
         let signature = signer.signing_key.sign(&signing_hash).to_bytes();
 
-        // 6. Build external message cell
+        // 7. Build external message cell
         let wallet_hash = signer.raw_address_hash();
         let external_cell = ton_cell::build_wallet_v2r2_external(
             signer.workchain(),
             &wallet_hash,
             0x29a9a317,
             valid_until,
-            0, // seqno
+            seqno,
             internal_msg,
             &signature,
         )
@@ -435,11 +509,11 @@ impl ChainAdapter for TonAdapter {
             reason: format!("external message build failed: {}", e),
         })?;
 
-        // 7. Serialize to BOC
+        // 8. Serialize to BOC
         let boc = ton_cell::serialize_boc(&external_cell);
         let boc_b64 = B64.encode(&boc);
 
-        // 8. Submit via TON Center API
+        // 9. Submit via TON Center API
         let v = self.rpc("sendBase64Transaction", json!({ "boc": boc_b64 })).await?;
 
         let result = v.as_str().unwrap_or("unknown");

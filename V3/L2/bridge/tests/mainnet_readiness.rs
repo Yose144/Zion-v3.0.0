@@ -1034,8 +1034,8 @@ fn test_parse_bridge_mainnet_toml() {
     let path = concat!(env!("CARGO_MANIFEST_DIR"), "/config/bridge-mainnet.toml");
     let cfg = BridgeConfig::load(path).expect("bridge-mainnet.toml must parse");
     assert_eq!(cfg.bridge.network, "mainnet");
-    // Base + Arbitrum entries; Base enabled now that 5/5 bridge is deployed
-    assert_eq!(cfg.evm_chains.len(), 2);
+    // Base + Arbitrum + BSC + Polygon + Optimism + Avalanche (6-chain bridge)
+    assert_eq!(cfg.evm_chains.len(), 6);
     let base = cfg
         .evm_chains
         .iter()
@@ -1053,7 +1053,7 @@ fn test_parse_bridge_mainnet_toml() {
     );
     assert_eq!(
         base.bridge_contract_address,
-        "0x5a1Df5961C166a79E0817329e2807Aac63Db57F5"
+        "0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467"
     );
     assert_eq!(cfg.metrics.log_level, "info");
     assert_eq!(cfg.validator.threshold, 5);
