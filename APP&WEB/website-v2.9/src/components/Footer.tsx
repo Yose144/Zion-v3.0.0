@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Github, MessageCircle, Globe, BookOpen, BookMarked, Compass, Map, Download, Pickaxe, FileText, Orbit, ArrowLeftRight, Gamepad2, Star, Wallet, Sprout, Brain, Building2 } from 'lucide-react';
+import { Github, MessageCircle, Globe, BookOpen, BookMarked, Compass, Map, Download, Pickaxe, FileText, Orbit, ArrowLeftRight, Gamepad2, Star, Wallet, Sprout, Brain, Building2, Sparkles } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 import { SITE_RELEASE_LABEL, SITE_RUNTIME_VERSION } from '@/lib/site';
@@ -52,6 +52,7 @@ export default function Footer() {
       links: [
         { href: '/wiki', label: tr('nav', 'wiki_group', lang), Icon: BookOpen },
         { href: '/terranova', label: tr('nav', 'terranova', lang), Icon: BookMarked },
+        { href: '/zohar', label: tr('nav', 'zohar', lang), Icon: Sparkles },
         { href: '/genesis', label: tr('nav', 'genesis', lang), Icon: Sprout },
         { href: '/docs', label: tr('nav', 'docs', lang), Icon: FileText },
       ],

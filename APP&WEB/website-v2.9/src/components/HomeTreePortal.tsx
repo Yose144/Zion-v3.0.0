@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight, Leaf, LoaderCircle, Sparkles } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
@@ -15,18 +16,18 @@ const TreeOfLifeSwitch = dynamic(() => import('@/components/TreeOfLifeSwitch'), 
   ),
 });
 
-/* ── Kabbalah Tree of Life — 10 Sephirot ── */
+/* ── Kabbalah Tree of Life — 10 Sephirot mapped to ZION layers ── */
 const sephirot = [
-  { id: 'keter',     name: 'Keter',     meaning: 'Koruna',       x: 50, y: 8,  color: '255, 255, 255' },
-  { id: 'chochmah',  name: 'Chochmah',  meaning: 'Moudrost',     x: 72, y: 22, color: '180, 220, 255' },
-  { id: 'binah',     name: 'Binah',     meaning: 'Porozumění',   x: 28, y: 22, color: '147, 51, 234' },
-  { id: 'chesed',    name: 'Chesed',    meaning: 'Milosrdenství',x: 72, y: 42, color: '6, 182, 212' },
-  { id: 'gevurah',   name: 'Gevurah',   meaning: 'Síla',         x: 28, y: 42, color: '239, 68, 68' },
-  { id: 'tiferet',   name: 'Tiferet',   meaning: 'Krása',        x: 50, y: 52, color: '251, 191, 36' },
-  { id: 'netzach',   name: 'Netzach',   meaning: 'Věčnost',      x: 72, y: 68, color: '16, 185, 129' },
-  { id: 'hod',       name: 'Hod',       meaning: 'Sláva',        x: 28, y: 68, color: '249, 115, 22' },
-  { id: 'yesod',     name: 'Yesod',     meaning: 'Základ',       x: 50, y: 80, color: '99, 102, 241' },
-  { id: 'malkuth',   name: 'Malkuth',   meaning: 'Království',   x: 50, y: 94, color: '34, 197, 94' },
+  { id: 'keter',     name: 'Keter',     meaning: 'Koruna',         zionLayer: 'L1 Consensus / Genesis',  x: 50, y: 8,  color: '255, 255, 255' },
+  { id: 'chochmah',  name: 'Chochmah',  meaning: 'Moudrost',       zionLayer: 'L1 Cosmic Harmony PoW',  x: 72, y: 22, color: '180, 220, 255' },
+  { id: 'binah',     name: 'Binah',     meaning: 'Porozumění',     zionLayer: 'L1 Validation',          x: 28, y: 22, color: '147, 51, 234' },
+  { id: 'chesed',    name: 'Chesed',    meaning: 'Milosrdenství',  zionLayer: 'L2 DeFi',                x: 72, y: 42, color: '6, 182, 212' },
+  { id: 'gevurah',   name: 'Gevurah',   meaning: 'Síla',           zionLayer: 'L2 DAO / Treasury Lock', x: 28, y: 42, color: '239, 68, 68' },
+  { id: 'tiferet',   name: 'Tiferet',   meaning: 'Krása',          zionLayer: 'L3 WARP / Bridge',       x: 50, y: 52, color: '251, 191, 36' },
+  { id: 'netzach',   name: 'Netzach',   meaning: 'Věčnost',        zionLayer: 'L3 AI / Hiran',          x: 72, y: 68, color: '16, 185, 129' },
+  { id: 'hod',       name: 'Hod',       meaning: 'Sláva',          zionLayer: 'L4 Oasis',               x: 28, y: 68, color: '249, 115, 22' },
+  { id: 'yesod',     name: 'Yesod',     meaning: 'Základ',         zionLayer: 'L5 Free World',          x: 50, y: 80, color: '99, 102, 241' },
+  { id: 'malkuth',   name: 'Malkuth',   meaning: 'Království',     zionLayer: 'L6 Issobella',           x: 50, y: 94, color: '34, 197, 94' },
 ];
 
 /* 22 connecting paths */
@@ -118,6 +119,14 @@ export default function HomeTreePortal() {
                     {cs ? 'Načíst interaktivní scénu' : 'Load interactive scene'}
                     <ArrowRight className="h-4 w-4" />
                   </button>
+                  <Link
+                    href="/zohar"
+                    className="inline-flex items-center gap-2 rounded-2xl border border-zion-gold/40 bg-zion-gold/5 px-5 py-3 text-sm font-semibold text-zion-gold transition-all hover:bg-zion-gold/10 hover:border-zion-gold/60"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    {cs ? 'Otevřít Zohar — Strom života ZIONu' : 'Open Zohar — Tree of Life of ZION'}
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
                 </div>
 
                 {/* Right: Kabbalah Tree visualization */}
@@ -176,6 +185,7 @@ export default function HomeTreePortal() {
                         <div className="absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-white/15 bg-black/95 px-2.5 py-1.5 text-center z-20">
                           <p className="text-[10px] font-bold text-white">{s.name}</p>
                           <p className="text-[8px] text-gray-400">{s.meaning}</p>
+                          <p className="text-[8px] font-semibold mt-0.5" style={{ color: `rgb(${s.color})` }}>{s.zionLayer}</p>
                         </div>
                       )}
                     </motion.div>
