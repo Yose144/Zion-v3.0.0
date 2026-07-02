@@ -1,7 +1,8 @@
 # ZION SecurityFirst — Kompletní zabezpečení Edge mainnet
 
 **Created:** 2026-07-02 (po F1 exploit a rollback)
-**Status:** PHASE 2 BIND HARDENING COMPLETE — 13/18 services on 127.0.0.1, 5 remaining need rebuild
+**Last Updated:** 2026-07-02 23:15 UTC (post-security-session: L2 deploy verified, F5 fuzz tests, node binary swap, env var fixes)
+**Status:** PHASE 2 COMPLETE + L2 PATCH DEPLOYED + F5 FUZZ TESTS — all Edge services on 127.0.0.1, L2 patch active, F5 fuzzed
 **Owner:** yosef + Devin
 
 > **UPDATE 2026-07-02 19:50 UTC — F5 CRITICAL: Account model nevaliduje sender balance**
@@ -24,7 +25,10 @@
 > - P2P path (`validate_peer_block`): reject TX s running balance (zohledňuje multi-TX bloky)
 > - Edge mainnet aktivace: `ZION_BALANCE_CHECK_HEIGHT=22394` (aktivní od bloku 22394)
 > - 3 regresní testy pass (RPC reject, RPC accept, peer-block reject)
-> - Commits: `69d12c7`, `fe8d449`
+> - **5 fuzz testů přidáno (commit `a5472ec6`):** 100 random unfunded senders, double-spend s mempool debit tracking, u64::MAX amount, 200 rapid-fire no-panic, self-send z empty address — vše PASS
+> - **Node2 F5 deploy:** Potvrzeno aktivní (`balance_check_activation_height=22394` v logu, restart 20:22:55 UTC)
+> - **Node binary swap (22:55 UTC):** Nejnovější binárka s fmt/clippy cleanup deploynuta na oba nody, F5 stále aktivní, chain height 22539
+> - Commits: `69d12c7`, `fe8d449`, `9863747`, `a5472ec6`
 
 ---
 
@@ -384,26 +388,46 @@ Internet
 - [x] F2.2: SSH config vyčištěn ✅ (PermitRootLogin prohibit-password, PasswordAuthentication no, X11Forwarding no, AllowUsers root)
 - [x] F2.4: AppArmor profil pro zion-node ✅ (loaded, enforce mode)
 - [x] F2.5: Audit hardhat .env + docker .env ✅ (chmod 600, SK scrubbed z docker/.env v repu)
-- [x] F2.7: Bind adresy — 0.0.0.0 → 127.0.0.1 ✅ (13/18 services, 5 remaining need rebuild)
-  - ✅ 127.0.0.1: oasis(8094), free-world(8095), issobella(8096), node1 RPC(8443), node2 RPC(8446), node1 WS(8445), node2 WS(8447), node1 metrics(9115), node2 metrics(9116), pool metrics(8455), warp(8453), agent(8767)
+- [x] F2.7: Bind adresy — 0.0.0.0 → 127.0.0.1 ✅ (ALL services on 127.0.0.1, 2026-07-02 23:00)
+  - ✅ 127.0.0.1: oasis(8094), free-world(8095), issobella(8096), node1 RPC(8443), node2 RPC(8446), node1 WS(8445), node2 WS(8447), node1 metrics(9115), node2 metrics(9116), pool metrics(8455), warp(8453), agent(8767), bridge metrics(9101), DAO(8450)
   - ✅ Tailscale IP: dashboard(8888)
-  - ⏳ 0.0.0.0 (UFW blokuje, bezpečné): P2P(8333,8334), pool(8444) — musí zůstat pro Tailscale minery
-  - ⏳ 0.0.0.0 (UFW blokuje, code change pending rebuild): bridge metrics(9101), DAO(8450)
-- [ ] F2.3: Tailscale ACL — DOC READY (viz výše), uživatel musí aplikovat přes admin console:
-  1. Otagovat zařízení: mainnetedge=tag:edge-server, jose--macbook-pro=tag:workstation, zionserver=tag:mining-server, zionserver-144=tag:legacy
-  2. Vložit ACL JSON na https://login.tailscale.com/admin/acls
-  3. Ověřit: `tailscale ping` z MacBooku na 100.76.16.108:22 (OK) a :8443 (deny)
-- [ ] F2.6: systemd User=zion — PENDING (riskantní, vyžaduje test)
+  - ✅ 0.0.0.0 (UFW blokuje, bezpečné): P2P(8333,8334), pool(8444) — musí zůstat pro Tailscale minery
+  - ✅ Env var names fix v service files: BRIDGE_METRICS_BIND→BRIDGE_METRICS_HOST, DAO_API_BIND→DAO_API_HOST (2026-07-02 22:50)
+- [x] F5.1: F5 fix deployed on node1 ✅ (block 22394, commit 69d12c7)
+- [x] F5.2: F5 fix deployed on node2 ✅ (potvrzeno 2026-07-02 22:55, balance_check_activation_height=22394 v logu)
+- [x] F5.3: F5 fuzz tests ✅ (commit a5472ec6, 5 testů — 100 random senders, double-spend, u64::MAX, rapid-fire, self-send)
+- [x] F5.4: Node binary swap ✅ (2026-07-02 22:55, nejnovější binárka s fmt/clippy cleanup, F5 aktivní, height 22539)
+- [x] L2.1: L2 security patch deployed ✅ (commit a8b3821e — binárky z 18:54, MD5 shoda ověřena 2026-07-02 22:45)
+  - ✅ Claimant guard (atomic-swap C1)
+  - ✅ Threshold 5/5 enforced (bridge H3)
+  - ✅ EVM reorg pause (bridge M1)
+  - ✅ Checked cast u128→u64 (bridge+swap H1)
+  - ✅ Composite dedup key (bridge H2)
+  - ✅ Escrow key zeroed on Drop (swap L2)
+  - ✅ Memo length cap 256B (dao L3)
+- [x] F3.1: RPC audit log ✅ (peer IP + method + tx_id logged, v node binárce od 20:22, potvrzeno strings output 22:45)
 - [x] F3.2: Block submitter log ✅ (ZION_LOG_BLOCK_SUBMITTER=1)
 - [x] F3.3: Forged TX monitor ✅ (cron každých 5 min, /var/log/zion-forged-tx-alerts.log)
 - [x] F3.4: Balance monitor ✅ (cron každých 5 min, /var/log/zion-balance-alerts.log, kontroluje 5 premine + 2 attacker adresy)
 - [x] F3.5: P2P peer alert ✅ (cron každých 2 min, /var/log/zion-peer-alerts.log, alert na neznámé IP)
-- [x] F3.1: RPC audit log ✅ (code change: peer IP + method + tx_id logged, pending rebuild)
 - [x] F2.8: Docker monitoring ports ✅ (UFW explicit deny 3100, 9090, 9100)
-- [ ] F4.1: Rotace premine klíčů (air-gapped) — PENDING
-- [ ] F4.2: Rotace pool payout SK — PENDING
-- [ ] F4.3: Rotace bridge validator keys — PENDING
-- [ ] F4.4: Rotace EVM deploy keys — PENDING
+- [x] OPS.1: Pool service konsolidace ✅ (duplikát stopped+disabled, TimeoutStopSec 15→60s)
+- [x] OPS.2: Atomic swap restart ✅ (byl mrtvý od F5 deploy, restartován)
+- [x] OPS.3: Edge git cleanup ✅ (4 .bak soubory s rotovanými secrets odstraněny)
+- [x] OPS.4: Dashboard health probes fix ✅ (commit 46106f38, EDGE_RPC_HOST pro Edge services)
+- [x] OPS.5: cargo fmt + clippy ✅ (commit 48bf387f, 0 warnings, 0 fmt diffs)
+- [ ] F2.3: Tailscale ACL — DOC READY (viz §F2.3 výše), uživatel musí aplikovat přes admin console:
+  1. Otagovat zařízení: mainnetedge=tag:edge-server, jose--macbook-pro=tag:workstation, zionserver=tag:mining-server, zionserver-144=tag:legacy
+  2. Vložit ACL JSON na https://login.tailscale.com/admin/acls
+  3. Ověřit: `tailscale ping` z MacBooku na 100.76.16.108:22 (OK) a :8443 (deny)
+- [ ] F2.6: systemd User=zion — PENDING (riskantní, vyžaduje test)
+- [ ] F4.1: Rotace premine klíčů (air-gapped) — PENDING — viz GENESIS_REGENERATION_RUNBOOK.md
+- [ ] F4.2: Rotace pool payout SK — PENDING — air-gapped
+- [ ] F4.3: Rotace bridge validator keys — PENDING — 2/5 pending provisioning
+- [ ] F4.4: Rotace EVM deploy keys — PENDING — air-gapped
+- [ ] F4.5: genesis.rs canonical wallets fix — PENDING — vyžaduje air-gapped key generation (NOT label-derived, those keys are public!)
+- [ ] F4.6: BFG git history scrub — PENDING — PREMINE_WALLETS_BACKUP.json v git history, před public launch
+- [ ] F4.7: Max TX amount cap (100M ZION) — PENDING — L1 consensus change, needs spec + audit
 
 ---
 
