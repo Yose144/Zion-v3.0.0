@@ -4,6 +4,21 @@
 **Status:** PHASE 2 BIND HARDENING COMPLETE — 13/18 services on 127.0.0.1, 5 remaining need rebuild
 **Owner:** yosef + Devin
 
+> **UPDATE 2026-07-02 19:50 UTC — F5 CRITICAL: Account model nevaliduje sender balance**
+>
+> Během escrow key rotation bylo objeveno, že account-model `validate_peer_block()` a RPC `submitAccountTransaction` **nevalidují zda sender má dostatečný balance**. TX z adresy s 0 balance byla přijata a potvrzena v bloku 22354, čímž vzniklo 100,002 ZION z ničeho (inflace).
+>
+> **Co se stalo:**
+> - `ZION_SWAP_ESCROW_KEY=0000...0001` (placeholder) derivuje na `zion1s2g3...` (0 balance)
+> - Migrace odeslala 100,002 ZION z `zion1s2g3...` → `zion1e0642...` (nová adresa)
+> - TX prošla protože account model nekontroluje sender balance
+> - Inflační 100,002 ZION spáleno na burn address `zion1n3570...` (blok 22362)
+> - Původní 100,002 ZION na `zion1y0j4...` zůstává (klíč neznámý, akceptováno jako ztráta)
+>
+> **Impact:** Kdokoliv s Ed25519 klíčem může vytvořit ZION z ničeho odesláním TX z prázdné adresy. Toto je **větší exploit než F1** — umožňuje neomezenou inflaci.
+>
+> **Fix needed (L1 consensus):** `validate_peer_block()` a `insert_transaction()` musí kontrolovat `sender_balance >= amount + fee` před přijetím TX. Vyžaduje explicit approval (AGENTS.md L1 pravidla).
+
 ---
 
 ## 1. Audit výsledky — nalezené problémy
