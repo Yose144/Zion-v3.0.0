@@ -75,6 +75,17 @@ fn main() -> Result<()> {
         }
     }
 
+    // F5: Account-model sender balance validation gate.
+    // Active from genesis (0) by default. For existing chains where historical
+    // blocks may contain TXs from addresses with insufficient balance, set
+    // ZION_BALANCE_CHECK_HEIGHT to a future height before starting all nodes.
+    if let Ok(h_str) = std::env::var("ZION_BALANCE_CHECK_HEIGHT") {
+        if let Ok(h) = h_str.parse::<u64>() {
+            zion_cosmic_harmony::set_balance_check_height(h);
+            eprintln!("balance_check_activation_height={h} (runtime override for F5 hard fork)");
+        }
+    }
+
     let config = NodeServerConfig::from_env()?;
 
     // Guard: migration height should be set for non-dev networks.
