@@ -247,7 +247,8 @@ pub async fn serve_metrics(metrics: Arc<BridgeMetrics>, port: u16) {
             get(|| async { axum::Json(serde_json::json!({"status": "ok"})) }),
         );
 
-    let addr = format!("0.0.0.0:{port}");
+    let bind_host = std::env::var("BRIDGE_METRICS_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
+    let addr = format!("{bind_host}:{port}");
     let listener = match tokio::net::TcpListener::bind(&addr).await {
         Ok(l) => l,
         Err(e) => {
