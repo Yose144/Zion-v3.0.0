@@ -127,7 +127,7 @@ mod tests {
 
     #[test]
     fn test_from_hex_valid() {
-        let hex_str = hex::encode(&[7u8; 32]);
+        let hex_str = hex::encode([7u8; 32]);
         let s = SuiSigner::from_hex(&hex_str).unwrap();
         assert_eq!(s.pubkey().len(), 32);
     }
@@ -176,7 +176,7 @@ mod tests {
         // address = SHA-256(0x00 || pubkey); verify it differs from SHA-256(pubkey)
         let pubkey = [9u8; 32];
         let addr_flag = sui_address_from_pubkey(&pubkey);
-        let plain = Sha256::digest(&pubkey);
+        let plain = Sha256::digest(pubkey);
         let addr_plain = format!("0x{}", hex::encode(plain));
         assert_ne!(addr_flag, addr_plain);
     }

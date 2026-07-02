@@ -156,11 +156,7 @@ impl Territory {
             .unwrap_or_default()
             .as_secs();
         let elapsed = now.saturating_sub(self.last_contested);
-        if elapsed >= TERRITORY_DEFENSE_PERIOD {
-            0
-        } else {
-            TERRITORY_DEFENSE_PERIOD - elapsed
-        }
+        TERRITORY_DEFENSE_PERIOD.saturating_sub(elapsed)
     }
 
     /// Is this territory controlled by a specific guild?

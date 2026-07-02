@@ -67,9 +67,9 @@ fn bech32_polymod(values: &[u8]) -> u32 {
     for &v in values {
         let top = chk >> 25;
         chk = ((chk & 0x1ffffff) << 5) ^ (v as u32);
-        for i in 0..5 {
+        for (i, &g) in generator.iter().enumerate() {
             if (top >> i) & 1 == 1 {
-                chk ^= generator[i];
+                chk ^= g;
             }
         }
     }
@@ -197,7 +197,7 @@ impl CosmosSigner {
                 "signer_infos": [{
                     "public_key": {
                         "@type": "/cosmos.crypto.secp256k1.PubKey",
-                        "key": B64.encode(&self.signing_key.verifying_key().to_bytes())
+                        "key": B64.encode(self.signing_key.verifying_key().to_bytes())
                     },
                     "mode_info": {
                         "single": {
@@ -250,7 +250,7 @@ impl CosmosSigner {
                 reason: format!("base64 decode tx_bytes: {}", e),
             })?;
         let signature = self.sign(&tx_bytes);
-        let _sig_b64 = B64.encode(&signature);
+        let _sig_b64 = B64.encode(signature);
 
         // Broadcast the signed TX
         let broadcast_body = serde_json::json!({

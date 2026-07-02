@@ -335,6 +335,7 @@ impl AptosAdapter {
     /// expiration_timestamp_secs: u64
     /// chain_id: u8
     /// ```
+    #[allow(clippy::too_many_arguments)]
     fn encode_raw_transaction(
         sender: &[u8; 32],
         sequence_number: u64,
@@ -684,7 +685,7 @@ mod tests {
             result.is_ok(),
             "health_check should not error on network failure"
         );
-        assert_eq!(result.unwrap(), false);
+        assert!(!result.unwrap());
     }
 
     // ── execute_mint (no key → error) ───────────────────────────────────────
@@ -723,7 +724,7 @@ mod tests {
 
         // Part 2: with a valid key → signer loads, BCS encoding works,
         // but node_info() fails (no network) → network error, NOT BCS error.
-        std::env::set_var("WARP_APTOS_RELAY_KEY", hex::encode(&[0x42u8; 32]));
+        std::env::set_var("WARP_APTOS_RELAY_KEY", hex::encode([0x42u8; 32]));
         let a2 = AptosAdapter::with_rpc("http://127.0.0.1:1");
         let result2 = a2.execute_mint(&inst).await;
         assert!(

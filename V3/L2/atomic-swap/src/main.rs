@@ -74,8 +74,12 @@ async fn main() -> anyhow::Result<()> {
     // skewed system clock can trigger premature refunds or lock funds
     // indefinitely. Warn loudly if the clock looks wrong (year < 2024 or
     // > 2100). Full block-height-based timelocks are a future design change.
-    let now_year = chrono::Utc::now().format("%Y").to_string().parse::<u32>().unwrap_or(0);
-    if now_year < 2024 || now_year > 2100 {
+    let now_year = chrono::Utc::now()
+        .format("%Y")
+        .to_string()
+        .parse::<u32>()
+        .unwrap_or(0);
+    if !(2024..=2100).contains(&now_year) {
         warn!(
             "⚠️ System clock reports year {} — HTLC timelocks depend on wall clock (M2). \
              Verify NTP sync before relying on refund/claim timing.",
