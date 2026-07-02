@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Wallet, Pickaxe, ArrowLeftRight, Sparkles, LogOut, Copy, Check } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLang } from '@/contexts/LanguageContext';
 import { useRouter } from 'next/navigation';
 import WalletOverview from '@/components/dashboard/WalletOverview';
 import MiningStats from '@/components/dashboard/MiningStats';
@@ -19,18 +20,19 @@ import DashboardAIChat from '@/components/dashboard/DashboardAIChat';
 
 type Tab = 'wallet' | 'mining' | 'transactions' | 'ai';
 
-const TABS: { id: Tab; label: string; icon: typeof Wallet }[] = [
-  { id: 'wallet', label: 'Wallet', icon: Wallet },
-  { id: 'mining', label: 'Mining', icon: Pickaxe },
-  { id: 'transactions', label: 'Transactions', icon: ArrowLeftRight },
-  { id: 'ai', label: 'AI Chat', icon: Sparkles },
-];
-
 export default function AccountPage() {
   const { user, logout, loading } = useAuth();
+  const { lang } = useLang();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>('wallet');
   const [copied, setCopied] = useState(false);
+
+  const TABS: { id: Tab; label: string; icon: typeof Wallet }[] = [
+    { id: 'wallet', label: lang === 'cs' ? 'Peněženka' : 'Wallet', icon: Wallet },
+    { id: 'mining', label: lang === 'cs' ? 'Těžení' : 'Mining', icon: Pickaxe },
+    { id: 'transactions', label: lang === 'cs' ? 'Transakce' : 'Transactions', icon: ArrowLeftRight },
+    { id: 'ai', label: lang === 'cs' ? 'AI Chat' : 'AI Chat', icon: Sparkles },
+  ];
 
   if (loading) {
     return (
@@ -58,7 +60,7 @@ export default function AccountPage() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-white mb-1">
-              {user.displayName || 'My Account'}
+              {user.displayName || (lang === 'cs' ? 'Můj účet' : 'My Account')}
             </h1>
             <button
               onClick={copyAddress}
@@ -75,7 +77,7 @@ export default function AccountPage() {
             }}
             className="inline-flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-2 text-xs font-medium text-red-400 hover:bg-red-500/10 transition-colors"
           >
-            <LogOut className="h-3.5 w-3.5" /> Logout
+            <LogOut className="h-3.5 w-3.5" /> {lang === 'cs' ? 'Odhlásit se' : 'Logout'}
           </button>
         </div>
       </div>

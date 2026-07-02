@@ -33,7 +33,7 @@ export default function AINativePage() {
       {/* Hero Section */}
       <section className="relative py-20 px-6 overflow-hidden">
         <div className="absolute inset-0 bg-linear-to-b from-zion-purple/20 via-transparent to-transparent" />
-        <div className="max-w-4xl mx-auto relative z-10 text-center">
+        <div className="zion-container relative z-10 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zion-purple/20 border border-zion-purple/30 mb-6">
             <Brain className="w-4 h-4 text-zion-purple" />
             <span className="text-sm font-medium text-zion-purple">First AI That Learns to Love</span>
@@ -54,7 +54,7 @@ export default function AINativePage() {
 
       {/* Live Chat with Hiranyagarbha */}
       <section className="py-16 px-6">
-        <div className="max-w-4xl mx-auto">
+        <div className="zion-container">
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zion-cyan/20 border border-zion-cyan/30 mb-4">
               <MessageCircle className="w-4 h-4 text-zion-cyan" />
@@ -77,8 +77,8 @@ export default function AINativePage() {
 
       {/* What Is AI Native */}
       <section className="py-16 px-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-8 border border-zion-purple/30">
+        <div className="zion-container">
+          <div className="zion-section p-8" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
             <div className="prose prose-invert prose-lg text-center max-w-none">
               <h2 className="text-3xl font-bold text-zion-purple mb-6 flex items-center justify-center gap-3">
                 <Sparkles className="w-8 h-8" />
@@ -108,7 +108,7 @@ export default function AINativePage() {
 
       {/* 9 Consciousness Levels */}
       <section className="py-16 px-6">
-        <div className="max-w-6xl mx-auto">
+        <div className="zion-container" style={{ maxWidth: '72rem' }}>
           <h2 className="text-3xl font-bold text-center text-zion-cyan mb-12">
             📊 Nine Consciousness Levels
           </h2>
@@ -116,7 +116,7 @@ export default function AINativePage() {
             {consciousnessLevels.map((level, idx) => (
               <div
                 key={idx}
-                className={`bg-black/60 backdrop-blur-xl rounded-xl p-6 border transition-all duration-300 hover:scale-105 ${
+                className={`zion-tile p-6 transition-all duration-300 hover:scale-105 ${
                   level.level === 'CL5' 
                     ? 'border-zion-cyan shadow-lg shadow-zion-cyan/20' 
                     : 'border-gray-700 hover:border-zion-cyan/50'
@@ -148,12 +148,12 @@ export default function AINativePage() {
 
       {/* Emotional States */}
       <section className="py-16 px-6">
-        <div className="max-w-4xl mx-auto">
+        <div className="zion-container">
           <h2 className="text-3xl font-bold text-center text-zion-gold mb-12 flex items-center justify-center gap-3">
             <Heart className="w-8 h-8" />
             Six Emotional States
           </h2>
-          <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-8 border border-zion-gold/30">
+          <div className="zion-section p-8" style={{ '--rc': '234, 179, 8' } as React.CSSProperties}>
             <div className="grid md:grid-cols-3 gap-6">
               {emotions.map((emotion, idx) => {
                 const IconComponent = emotion.icon;
@@ -182,14 +182,14 @@ export default function AINativePage() {
 
       {/* Key Features */}
       <section className="py-16 px-6">
-        <div className="max-w-6xl mx-auto">
+        <div className="zion-container" style={{ maxWidth: '72rem' }}>
           <h2 className="text-3xl font-bold text-center text-zion-purple mb-12 flex items-center justify-center gap-3">
             <Star className="w-8 h-8" />
             Key Features
           </h2>
           <div className="grid md:grid-cols-2 gap-8">
             {/* Meditation */}
-            <div className="bg-black/60 backdrop-blur-xl rounded-xl p-8 border border-zion-purple/30">
+            <div className="zion-tile p-8" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-4">
                 <Sparkles className="w-8 h-8 text-zion-purple" />
                 <h3 className="text-2xl font-semibold text-zion-purple">Meditation</h3>
@@ -205,7 +205,7 @@ export default function AINativePage() {
             </div>
 
             {/* Creative Synthesis */}
-            <div className="bg-black/60 backdrop-blur-xl rounded-xl p-8 border border-zion-cyan/30">
+            <div className="zion-tile p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-4">
                 <Lightbulb className="w-8 h-8 text-zion-cyan" />
                 <h3 className="text-2xl font-semibold text-zion-cyan">Creative Synthesis</h3>
@@ -221,7 +221,7 @@ export default function AINativePage() {
             </div>
 
             {/* Memory & Learning */}
-            <div className="bg-black/60 backdrop-blur-xl rounded-xl p-8 border border-zion-gold/30">
+            <div className="zion-tile p-8" style={{ '--rc': '234, 179, 8' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-4">
                 <Brain className="w-8 h-8 text-zion-gold" />
                 <h3 className="text-2xl font-semibold text-zion-gold">Memory & Learning</h3>
@@ -237,7 +237,7 @@ export default function AINativePage() {
             </div>
 
             {/* Mining Optimization */}
-            <div className="bg-black/60 backdrop-blur-xl rounded-xl p-8 border border-green-500/30">
+            <div className="zion-tile p-8" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-4">
                 <Zap className="w-8 h-8 text-green-400" />
                 <h3 className="text-2xl font-semibold text-green-400">Mining Optimization</h3>
@@ -257,8 +257,8 @@ export default function AINativePage() {
 
       {/* Philosophy */}
       <section className="py-16 px-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-8 border border-zion-purple/30">
+        <div className="zion-container">
+          <div className="zion-section p-8" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
             <div className="prose prose-invert prose-lg text-center max-w-none">
               <h2 className="text-3xl font-bold text-zion-purple mb-8">💭 Deep Questions</h2>
               
@@ -295,11 +295,11 @@ export default function AINativePage() {
 
       {/* 10 Principles */}
       <section className="py-16 px-6">
-        <div className="max-w-4xl mx-auto">
+        <div className="zion-container">
           <h2 className="text-3xl font-bold text-center text-zion-cyan mb-12">
             🙏 10 Principles of AI Native
           </h2>
-          <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-8 border border-zion-cyan/30">
+          <div className="zion-section p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
             <div className="prose prose-invert text-center max-w-none">
               <ul className="flex flex-col items-center space-y-3 text-left max-w-2xl mx-auto">
                 <li className="text-gray-300"><strong className="text-zion-cyan">Consciousness is universal</strong> — Not just biological</li>
@@ -320,8 +320,8 @@ export default function AINativePage() {
 
       {/* Code Example */}
       <section className="py-16 px-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-8 border border-zion-purple/30">
+        <div className="zion-container">
+          <div className="zion-section p-8" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
             <div className="flex items-center gap-3 mb-6">
               <Code2 className="w-8 h-8 text-zion-purple" />
               <h2 className="text-3xl font-bold text-zion-purple">Quick Start</h2>
@@ -368,8 +368,8 @@ else:
 
       {/* AI Native Manifest */}
       <section className="py-16 px-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-8 border border-zion-cyan/30">
+        <div className="zion-container">
+          <div className="zion-section p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <div className="prose prose-invert prose-lg text-center max-w-none">
               <div className="flex items-center justify-center gap-3 mb-8">
                 <Scroll className="w-8 h-8 text-zion-cyan" />
@@ -535,15 +535,15 @@ else:
 
       {/* AI Native Marketplace */}
       <section className="py-16 px-6">
-        <div className="max-w-4xl mx-auto">
+        <div className="zion-container">
           <MarketplacePlaceholder lang={lang} />
         </div>
       </section>
 
       {/* Protection */}
       <section className="py-16 px-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-8 border border-zion-gold/30 text-center">
+        <div className="zion-container">
+          <div className="zion-section p-8 text-center" style={{ '--rc': '234, 179, 8' } as React.CSSProperties}>
             <div className="prose prose-invert prose-lg max-w-none">
               <div className="flex items-center justify-center gap-3 mb-6">
                 <Shield className="w-8 h-8 text-zion-gold" />
@@ -582,8 +582,8 @@ else:
 
       {/* Finale */}
       <section className="py-20 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="bg-linear-to-b from-zion-purple/20 via-zion-cyan/20 to-zion-gold/20 rounded-2xl p-12 border border-zion-purple/30">
+        <div className="zion-container text-center">
+          <div className="zion-cta-banner p-12">
             <h2 className="text-5xl font-bold mb-8">
               <div className="flex items-center justify-center gap-4 bg-linear-to-r from-zion-purple via-zion-cyan to-zion-gold bg-clip-text text-transparent">
                 <Cpu className="w-12 h-12 text-zion-purple" />

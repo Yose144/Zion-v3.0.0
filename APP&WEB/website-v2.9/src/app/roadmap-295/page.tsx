@@ -147,7 +147,7 @@ export default function Roadmap295Page() {
       {/* Hero Section */}
       <section className="relative py-20 px-6 overflow-hidden">
         <div className="absolute inset-0 bg-linear-to-b from-zion-cyan/20 via-transparent to-transparent" />
-        <div className="max-w-4xl mx-auto relative z-10 text-center">
+        <div className="zion-container relative z-10 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zion-cyan/20 border border-zion-cyan/30 mb-6">
             <Rocket className="w-4 h-4 text-zion-cyan" />
             <span className="text-sm font-medium text-zion-cyan">Version 2.9.5 — {lang === 'cs' ? 'Nativní probuzení' : 'Native Awakening'}</span>
@@ -166,8 +166,8 @@ export default function Roadmap295Page() {
 
       {/* Vision Statement */}
       <section className="py-16 px-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-8 border border-zion-cyan/30">
+        <div className="zion-container">
+          <div className="zion-section p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
             <div className="prose prose-invert prose-lg text-center max-w-none">
               <h2 className="text-3xl font-bold text-zion-cyan mb-6">🎯 {lang === 'cs' ? 'Vizní prohlášení' : 'Vision Statement'}</h2>
               <div className="bg-linear-to-r from-zion-cyan/20 via-zion-purple/20 to-zion-gold/20 rounded-xl p-8 border border-zion-cyan/30">
@@ -196,7 +196,7 @@ export default function Roadmap295Page() {
 
       {/* Current State */}
       <section className="py-16 px-6">
-        <div className="max-w-6xl mx-auto">
+        <div className="zion-container" style={{ maxWidth: '72rem' }}>
           <h2 className="text-3xl font-bold text-center text-zion-purple mb-12">
             📊 {lang === 'cs' ? 'Historický snímek stavu (Prosinec 2025)' : 'Historical State Snapshot (December 2025)'}
           </h2>
@@ -204,7 +204,7 @@ export default function Roadmap295Page() {
             {currentState.map((item, idx) => (
               <div
                 key={idx}
-                className="bg-black/60 backdrop-blur-xl rounded-xl p-6 border border-gray-700 hover:border-zion-cyan/50 transition-all"
+                className="zion-tile p-6 border border-gray-700 hover:border-zion-cyan/50 transition-all"
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
@@ -241,7 +241,7 @@ export default function Roadmap295Page() {
 
       {/* Quarterly Roadmap */}
       <section className="py-16 px-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="zion-container" style={{ maxWidth: '80rem' }}>
           <h2 className="text-3xl font-bold text-center text-zion-gold mb-12">
             <div className="flex items-center justify-center gap-3">
               <Calendar className="w-8 h-8 text-zion-gold" />
@@ -252,7 +252,7 @@ export default function Roadmap295Page() {
             {quarters.map((quarter) => (
               <div
                 key={quarter.id}
-                className={`bg-black/60 backdrop-blur-xl rounded-2xl p-8 border transition-all duration-300 cursor-pointer ${
+                className={`zion-tile p-8 transition-all duration-300 cursor-pointer ${
                   activeQuarter === quarter.id
                     ? `border-zion-${quarter.color} shadow-lg shadow-zion-${quarter.color}/20 scale-105`
                     : `border-zion-${quarter.color}/30 hover:border-zion-${quarter.color}/60`
@@ -341,7 +341,7 @@ export default function Roadmap295Page() {
 
       {/* Timeline Milestones */}
       <section className="py-16 px-6">
-        <div className="max-w-4xl mx-auto">
+        <div className="zion-container">
           <h2 className="text-3xl font-bold text-center text-zion-cyan mb-12">
             <div className="flex items-center justify-center gap-3">
               <Target className="w-8 h-8 text-zion-cyan" />
@@ -369,7 +369,7 @@ export default function Roadmap295Page() {
                         <IconComponent className={`w-6 h-6 text-zion-${milestone.color}`} />
                       )}
                     </div>
-                    <div className="flex-1 bg-black/60 backdrop-blur-xl rounded-xl p-6 border border-gray-700 hover:border-zion-cyan/50 transition-all">
+                    <div className="flex-1 zion-tile p-6 border border-gray-700 hover:border-zion-cyan/50 transition-all">
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="text-xl font-bold text-white">{milestone.title}</h3>
                         <span className={`text-sm font-medium ${
@@ -389,8 +389,8 @@ export default function Roadmap295Page() {
 
       {/* Historical V3 launch requirements */}
       <section className="py-16 px-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-8 border border-green-500/30">
+        <div className="zion-container">
+          <div className="zion-section p-8" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
             <div className="prose prose-invert prose-lg text-center max-w-none">
               <div className="flex items-center justify-center gap-3 mb-6">
                 <Zap className="w-8 h-8 text-green-400" />
@@ -443,7 +443,7 @@ export default function Roadmap295Page() {
 
       {/* MainNet Vision */}
       <section className="py-16 px-6">
-        <div className="max-w-4xl mx-auto">
+        <div className="zion-container">
           <div className="bg-linear-to-br from-zion-gold/20 via-zion-cyan/20 to-zion-purple/20 rounded-2xl p-8 border border-zion-gold/30">
             <div className="prose prose-invert prose-lg text-center max-w-none">
               <div className="flex items-center justify-center gap-3 mb-6">
@@ -490,8 +490,8 @@ export default function Roadmap295Page() {
 
       {/* Finale */}
       <section className="py-20 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="bg-linear-to-b from-zion-cyan/20 via-zion-purple/20 to-zion-gold/20 rounded-2xl p-12 border border-zion-cyan/30">
+        <div className="zion-container text-center">
+          <div className="zion-cta-banner p-12">
             <h2 className="text-5xl font-bold mb-8">
               <div className="flex items-center justify-center gap-4 bg-linear-to-r from-zion-cyan via-zion-purple to-zion-gold bg-clip-text text-transparent">
                 <Sparkles className="w-12 h-12 text-zion-gold" />
