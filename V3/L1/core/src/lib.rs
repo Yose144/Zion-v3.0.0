@@ -5,7 +5,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 use zion_cosmic_harmony::{
-    account_tx_memo_v1_active, balance_check_active, balance_check_activation_height,
+    account_tx_memo_v1_active, balance_check_active,
     body_root_v2_active, cosmic_harmony_ekam_deeksha,
     cosmic_harmony_with_height, profile_name, profile_name_for_height, tx_hash_v2_active, NclStats,
     RevenueCollector, RevenueEvent, RevenueStats, CHV_EKAM_FORK_HEIGHT, EKAM_FUSION_ROUNDS,
@@ -4880,8 +4880,8 @@ mod tests {
     /// creating ZION from nothing.
     #[test]
     fn rpc_rejects_account_tx_with_insufficient_balance() {
-        // Enable F5 balance check from height 1 (genesis at 0 is always accepted).
-        zion_cosmic_harmony::set_balance_check_height(1);
+        // Enable F5 balance check from genesis (height 0).
+        zion_cosmic_harmony::set_balance_check_height(0);
         let mut runtime = NodeRuntime::new("node-f5-rpc", NodeConfig::mainnet());
         // Build a valid (signed) TX from a brand-new address with 0 balance.
         let tx = build_valid_account_tx("__f5_empty_sender__", "wallet.dest", 100, 1, 1);
@@ -4889,7 +4889,7 @@ mod tests {
             transaction: tx,
         });
         // Reset F5 gate so subsequent tests are unaffected.
-        zion_cosmic_harmony::set_balance_check_height(0);
+        zion_cosmic_harmony::set_balance_check_height(u64::MAX);
         match resp {
             RpcResponse::TransactionResult {
                 accepted: false,
@@ -4908,7 +4908,7 @@ mod tests {
     #[test]
     #[ignore = "slow PoW in debug build; run with --release --ignored"]
     fn peer_block_rejects_account_tx_with_insufficient_balance() {
-        zion_cosmic_harmony::set_balance_check_height(1);
+        zion_cosmic_harmony::set_balance_check_height(0);
         let mut source = NodeRuntime::new("node-f5-peer-src", NodeConfig::mainnet());
         // Build a TX from an empty address and mine it into a block.
         let tx = build_valid_account_tx("__f5_empty_peer__", "wallet.dest", 100, 1, 1);
@@ -4917,7 +4917,7 @@ mod tests {
         });
         // The RPC path should reject it first (F5 RPC guard).
         if matches!(submit_resp, RpcResponse::TransactionResult { accepted: false, .. }) {
-            zion_cosmic_harmony::set_balance_check_height(0);
+            zion_cosmic_harmony::set_balance_check_height(u64::MAX);
             return;
         }
         // If RPC somehow accepted it, mine and verify peer-block rejection.
@@ -4933,7 +4933,7 @@ mod tests {
         let block = source.accepted_blocks()[1].clone();
         let mut target = NodeRuntime::new("node-f5-peer-tgt", NodeConfig::mainnet());
         let result = target.import_peer_blocks(vec![block]);
-        zion_cosmic_harmony::set_balance_check_height(0);
+        zion_cosmic_harmony::set_balance_check_height(u64::MAX);
         let err = result.expect_err("F5: peer block with TX from empty address must be rejected");
         assert!(
             err.contains("insufficient balance"),
@@ -4942,13 +4942,19 @@ mod tests {
     }
 
     /// F5 positive: a TX from an address that DOES have sufficient balance
-    /// (e.g. funded by a coinbase output) must still be accepted.
+    /// (funded by a coinbase output) must still be accepted.
     #[test]
     fn rpc_accepts_account_tx_with_sufficient_balance() {
-        zion_cosmic_harmony::set_balance_check_height(1);
+        zion_cosmic_harmony::set_balance_check_height(0);
         let mut runtime = NodeRuntime::new("node-f5-pos", NodeConfig::mainnet());
-        // Mine a block to fund the miner address.
-        runtime.set_miner_address("wallet.f5_miner".to_string());
+        // Derive the zion1 address for the miner label so the coinbase
+        // output goes to the same address that build_valid_account_tx will
+        // use as the `from` field.
+        let (_miner_sk, miner_vk) =
+            crypto::keypair_from_canonical_label("wallet.f5_miner");
+        let miner_addr = crypto::derive_address(miner_vk.as_bytes());
+        runtime.set_miner_address(miner_addr.clone());
+        // Mine a block to fund the miner address via coinbase.
         let template = runtime.active_template();
         let nonce = find_valid_nonce(&template);
         let _ = runtime.handle_rpc_request(RpcRequest::SubmitCandidate {
@@ -4958,14 +4964,15 @@ mod tests {
             target_hex: template.target_hex,
             algorithm: "deeksha_lite_v1".to_string(),
         });
-        // Now build a TX from the funded miner address. The miner address
-        // is a wallet label; build_valid_account_tx derives the keypair from
-        // the same label, so the from address matches the coinbase recipient.
+        // Now build a TX from the funded miner address. The coinbase
+        // output went to miner_addr (a zion1 address), and
+        // build_valid_account_tx derives the same keypair from the same
+        // label, so the from address matches.
         let tx = build_valid_account_tx("wallet.f5_miner", "wallet.dest", 10, 1, 1);
         let resp = runtime.handle_rpc_request(RpcRequest::SubmitTransaction {
             transaction: tx,
         });
-        zion_cosmic_harmony::set_balance_check_height(0);
+        zion_cosmic_harmony::set_balance_check_height(u64::MAX);
         match resp {
             RpcResponse::TransactionResult { accepted: true, .. } => {}
             other => panic!(
