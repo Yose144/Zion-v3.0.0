@@ -8,7 +8,7 @@ The ZIONBridge contract uses a **5-of-5 Guardian multisig** for critical operati
 - Treasury / emergency pause
 
 > For testnet a 2-of-2 configuration is used. Mainnet is configured for 5-of-5 maximum security.
-> **Mainnet status:** New 5/5 `ZIONBridge` deployed at `0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88` and `BridgeValidator` at `0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627`. wZION `BRIDGE_ROLE` migrated. Mainnet is activated in config.
+> **Mainnet status:** Live 5/5 `ZIONBridge` at `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467` and `BridgeValidator` at `0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627`. wZION `BRIDGE_ROLE` migrated. Mainnet is activated in config. (Stale deployment `0x89504D6e...` has no BRIDGE_ROLE.)
 
 ## Guardian Wallet Requirements
 

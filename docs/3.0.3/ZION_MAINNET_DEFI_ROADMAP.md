@@ -11,7 +11,7 @@
 ### ✅ Done (2026-06-22)
 
 - **Base Mainnet 5/5 bridge deployed and migrated**
-  - New `ZIONBridge`: `0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88`
+  - New `ZIONBridge`: `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467`
   - New `BridgeValidator`: `0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627`
   - wZION `BRIDGE_ROLE` migrated from old single-sig bridge
   - Old bridge (`0xa5a09b2...`) no longer has mint/burn rights
@@ -37,7 +37,7 @@
 | Contract | Address | Role | Status |
 |----------|---------|------|--------|
 | wZION | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | Wrapped ZION ERC-20 | ✅ Live |
-| ZIONBridge (new) | `0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88` | 5/5 bridge controller | ✅ Deployed |
+| ZIONBridge (new) | `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467` | 5/5 bridge controller | ✅ Deployed |
 | BridgeValidator (new) | `0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627` | 5/5 guardian multisig | ✅ Deployed |
 | ZIONBridge (old) | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | Old single-sig bridge | ❌ Revoked |
 | UniV3Pool | `0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB` | wZION/WETH liquidity | ✅ Live |
@@ -252,7 +252,7 @@ npm run lint     # lint check
 
 ```bash
 # ZIONBridge threshold
-cast call 0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88 "threshold()" --rpc-url https://mainnet.base.org
+cast call 0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467 "threshold()" --rpc-url https://mainnet.base.org
 
 # BridgeValidator guardianCount
 cast call 0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627 "guardianCount()" --rpc-url https://mainnet.base.org
@@ -260,7 +260,7 @@ cast call 0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627 "guardianCount()" --rpc-url
 # wZION BRIDGE_ROLE for new bridge
 cast call 0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6 "hasRole(bytes32,address)" \
   0x884cd25c78fcaba8702ccc899479bf3878fb71f972b21ee3a9cc53627f13948a \
-  0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88 \
+  0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467 \
   --rpc-url https://mainnet.base.org
 ```
 

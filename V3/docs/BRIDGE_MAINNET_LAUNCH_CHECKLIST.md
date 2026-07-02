@@ -3,7 +3,7 @@
 > **Status:** ✅ Live — 5/5 bridge deployed and migrated  
 > **Target:** Base Mainnet (chain ID 8453)  
 > **Guardian model:** 5-of-5 multisig
-> **New contracts:** `ZIONBridge` at `0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88`, `BridgeValidator` at `0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627`
+> **Live contracts:** `ZIONBridge` at `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467`, `BridgeValidator` at `0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627`. (Stale deployment `0x89504D6e...` has no wZION BRIDGE_ROLE.)
 
 ## Phase 0 — Pre-Deploy (Done)
 
@@ -62,7 +62,7 @@ After deploy, update these files with **real mainnet addresses**:
 | # | Item | Status |
 |---|------|--------|
 | 1 | Verify wZION on BaseScan | `scripts/verify-bridge-base.sh base` |
-| 2 | Verify ZIONBridge on BaseScan | ✅ Deployed at `0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88` |
+| 2 | Verify ZIONBridge on BaseScan | ✅ Deployed at `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467` |
 | 3 | Verify BridgeValidator on BaseScan | ✅ Deployed at `0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627` |
 | 4 | Update `bridge-mainnet.toml` with real addresses | ✅ |
 | 5 | Configure validator threshold = 5, total = 5 | ✅ |
