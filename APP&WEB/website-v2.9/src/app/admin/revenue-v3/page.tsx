@@ -140,7 +140,7 @@ export default function RevenueSettings() {
       <div className="grid gap-6">
         
         {/* NCL AI Section */}
-        <section className="bg-gray-800/50 border border-purple-500/30 rounded-xl p-6">
+        <section className="zion-section p-6" style={{ '--rc': '168, 85, 247' } as React.CSSProperties}>
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-purple-300">🤖 {lang === 'cs' ? 'NCL Umělá Inteligence' : 'NCL Artificial Intelligence'}</h2>
                 <div className="flex items-center gap-2">
@@ -181,7 +181,7 @@ export default function RevenueSettings() {
         </section>
 
         {/* ZION Native Section */}
-        <section className="bg-gray-800/50 border border-blue-500/30 rounded-xl p-6">
+        <section className="zion-section p-6" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-blue-300">🌌 {lang === 'cs' ? 'ZION Nativní Chain' : 'ZION Native Chain'}</h2>
                 <div className="flex items-center gap-2">
@@ -201,7 +201,7 @@ export default function RevenueSettings() {
         </section>
 
         {/* ETC Stream */}
-        <section className="bg-gray-800/50 border border-green-500/30 rounded-xl p-6">
+        <section className="zion-section p-6" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
              <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-green-300">⛏️ {lang === 'cs' ? 'ETC (Externí)' : 'ETC (External)'}</h2>
                 <div className="flex items-center gap-2">
@@ -239,7 +239,7 @@ export default function RevenueSettings() {
         </section>
 
          {/* NXS Stream */}
-         <section className="bg-gray-800/50 border border-orange-500/30 rounded-xl p-6">
+         <section className="zion-section p-6" style={{ '--rc': '249, 115, 22' } as React.CSSProperties}>
              <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-orange-300">💎 {lang === 'cs' ? 'NXS (Externí)' : 'NXS (External)'}</h2>
                 <div className="flex items-center gap-2">

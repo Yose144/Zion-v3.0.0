@@ -57,7 +57,7 @@ export default function LoginPage() {
         </div>
 
         {/* Features */}
-        <div className="grid grid-cols-3 gap-3 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
           <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-center">
             <Shield className="h-5 w-5 text-zion-cyan mx-auto mb-2" />
             <p className="text-[10px] text-gray-400 uppercase tracking-wider">Secure</p>
