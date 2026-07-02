@@ -1,8 +1,8 @@
 # ZION Roadmap — From 3.0.4 to Public Mainnet Launch
 
-> **Version:** 3.0.4 canonical  
-> **Last updated:** 2026-07-01  
-> **One source of truth:** [`3.0.4.md`](./3.0.4.md) · Live status: [`StatusV3.md`](./StatusV3.md)  
+> **Version:** 3.0.4 canonical + security hardening  
+> **Last updated:** 2026-07-02  
+> **One source of truth:** [`3.0.4.md`](./3.0.4.md) · Live status: [`StatusV3.md`](./StatusV3.md) · Security: [`SecurityFirst.md`](./SecurityFirst.md)  
 > **Engineering detail:** [`V3/ROADMAP.md`](./V3/ROADMAP.md)
 
 ---
@@ -39,6 +39,23 @@ This is the **forward-looking** root roadmap. Historical detail lives in [`docs/
 
 ✅ **Resolved in 3.0.4**
 - Account-model TX memo field added (L1 hard fork); L2 watchers (bridge, DAO, atomic-swap) now scan `account_transactions` with memo.
+
+✅ **Security hardening (2026-07-02)** — viz [`SecurityFirst.md`](./SecurityFirst.md)
+- F1 exploit fix: `validate_peer_block` now calls `verify_signature()` for non-coinbase account TX (commit `9341344d`)
+- UFW hardened: only SSH/HTTP/HTTPS/Tailscale, Docker monitoring ports explicit deny
+- Private keys scrubbed from 5 files, file permissions 600, SSH keys-only
+- 13/18 services on 127.0.0.1, dashboard on Tailscale IP
+- AppArmor profile for zion-node (enforce mode)
+- 3 monitoring cron jobs (forged TX, balance, P2P peer alert)
+- RPC audit log code change (pending rebuild)
+- Tailscale ACL documentation (pending admin console apply)
+
+⚠️ **Pending security tasks**
+- F2.3: Tailscale ACL — apply via admin console (doc ready in SecurityFirst.md)
+- F2.6: systemd `User=zion` — test on one service first
+- F4.x: Key rotation (premine, pool, bridge, EVM) — air-gapped operation
+- Rebuild: bridge metrics (9101), DAO (8450) — env var code changes pending
+- Max TX amount cap (100M ZION) — L1 consensus change, needs spec + audit
 
 ⚠️ **Known limitations**
 - Bridge contract addresses have a 3-way inconsistency across config/docs that needs owner decision
