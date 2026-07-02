@@ -509,9 +509,7 @@ fn handle_p2p_stream(
             && !block_import_allowlist.is_empty()
             && !block_import_allowlist.contains(&source_ip)
         {
-            eprintln!(
-                "p2p_block_rejected_unallowed_peer source={source_addr} ip={source_ip}"
-            );
+            eprintln!("p2p_block_rejected_unallowed_peer source={source_addr} ip={source_ip}");
             lock_peer_sec(peer_sec).punish(
                 source_ip,
                 epoch_secs(),
@@ -606,7 +604,11 @@ fn handle_rpc_stream(
         .set_read_timeout(Some(Duration::from_secs(RPC_READ_TIMEOUT_SECS)))
         .ok();
     let reader_stream = stream.try_clone().context("failed to clone RPC stream")?;
-    let peer_addr = stream.peer_addr().ok().map(|a| a.to_string()).unwrap_or_else(|| "unknown".to_string());
+    let peer_addr = stream
+        .peer_addr()
+        .ok()
+        .map(|a| a.to_string())
+        .unwrap_or_else(|| "unknown".to_string());
     let mut reader = BufReader::new(reader_stream);
     let mut writer = stream;
 
@@ -820,7 +822,8 @@ fn handle_rpc_http(
     // ── Audit log: extract RPC method for security monitoring ──────────
     if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&body_str) {
         if let Some(method) = parsed.get("method").and_then(|m| m.as_str()) {
-            let tx_id = parsed.get("params")
+            let tx_id = parsed
+                .get("params")
                 .and_then(|p| p.get("transaction"))
                 .and_then(|t| t.get("tx_id"))
                 .and_then(|t| t.as_str())

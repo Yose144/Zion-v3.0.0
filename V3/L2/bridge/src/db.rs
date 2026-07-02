@@ -155,11 +155,9 @@ impl BridgeDb {
                     Ok((name, col_type))
                 })?;
                 let mut found = false;
-                for row in rows {
-                    if let Ok((name, col_type)) = row {
-                        if name == "amount_flowers" && col_type == "INTEGER" {
-                            found = true;
-                        }
+                for (name, col_type) in rows.flatten() {
+                    if name == "amount_flowers" && col_type == "INTEGER" {
+                        found = true;
                     }
                 }
                 found
@@ -175,7 +173,7 @@ impl BridgeDb {
                 ))?;
                 // Recreate indexes
                 let idx = if *table == "l1_locks" { "idx_locks_status" } else { "idx_burns_status" };
-                let status_col = if *table == "l1_locks" { "status" } else { "status" };
+                let status_col = "status"; // both tables use "status" column
                 conn.execute(&format!("CREATE INDEX IF NOT EXISTS {} ON {}({})", idx, table, status_col), [])?;
                 info!("Migration of {} complete", table);
             }

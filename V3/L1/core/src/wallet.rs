@@ -372,6 +372,7 @@ pub fn generate_account_tx_id(
 /// The `nonce` must be unique per sender to prevent replay attacks.
 /// `chain_tip` is used to decide whether the account-model memo v1 hard fork
 /// is active when computing the signed tx_id.
+#[allow(clippy::too_many_arguments)]
 pub fn build_and_sign_account(
     signing_key: &SigningKey,
     from_address: &str,

@@ -318,7 +318,11 @@ mod tests {
             "00000d094ab56366402ce89440efb12011a8ddf8544162422214423ea1541ba8",
         )
         .expect("canonical 22180 checkpoint must match");
-        assert!(verify_checkpoint(22_180, "00000dead00000000000000000000000000000000000000000000000000000bad").is_err());
+        assert!(verify_checkpoint(
+            22_180,
+            "00000dead00000000000000000000000000000000000000000000000000000bad"
+        )
+        .is_err());
     }
 
     #[test]

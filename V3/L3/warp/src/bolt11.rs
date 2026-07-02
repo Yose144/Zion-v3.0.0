@@ -61,9 +61,9 @@ fn bech32_polymod(values: &[u8]) -> u32 {
     for &v in values {
         let top = chk >> 25;
         chk = ((chk & 0x1ffffff) << 5) ^ (v as u32);
-        for i in 0..5 {
+        for (i, &g) in GEN.iter().enumerate() {
             if (top >> i) & 1 == 1 {
-                chk ^= GEN[i];
+                chk ^= g;
             }
         }
     }
@@ -324,26 +324,21 @@ impl Bolt11Invoice {
         }
 
         // Extract chain prefix (lnbc, lntb, lntbs, lnbcrt)
-        let prefix: String;
-        let amount_str: String;
-        if hrp.starts_with("lnbcrt") {
-            prefix = "lnbcrt".into();
-            amount_str = hrp[6..].to_string();
-        } else if hrp.starts_with("lnbc") {
-            prefix = "lnbc".into();
-            amount_str = hrp[4..].to_string();
-        } else if hrp.starts_with("lntbs") {
-            prefix = "lntbs".into();
-            amount_str = hrp[5..].to_string();
-        } else if hrp.starts_with("lntb") {
-            prefix = "lntb".into();
-            amount_str = hrp[4..].to_string();
-        } else {
-            return Err(WarpError::InvalidAddress {
-                chain: "lightning".into(),
-                address: format!("unknown HRP prefix: '{}'", hrp),
-            });
-        }
+        let (prefix, amount_str): (String, String) =
+            if let Some(stripped) = hrp.strip_prefix("lnbcrt") {
+                ("lnbcrt".into(), stripped.to_string())
+            } else if let Some(stripped) = hrp.strip_prefix("lnbc") {
+                ("lnbc".into(), stripped.to_string())
+            } else if let Some(stripped) = hrp.strip_prefix("lntbs") {
+                ("lntbs".into(), stripped.to_string())
+            } else if let Some(stripped) = hrp.strip_prefix("lntb") {
+                ("lntb".into(), stripped.to_string())
+            } else {
+                return Err(WarpError::InvalidAddress {
+                    chain: "lightning".into(),
+                    address: format!("unknown HRP prefix: '{}'", hrp),
+                });
+            };
 
         // Parse amount + unit
         let amount_msat = if amount_str.is_empty() {
