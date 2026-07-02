@@ -2607,7 +2607,7 @@ def _build_status_edge_primary() -> dict:
                    "miner_balances": []}
     try:
         # Direct Edge pool metrics probe (Tailscale IP, port 8455)
-        url = "http://100.76.16.108:8455/metrics"
+        url = f"http://{EDGE_RPC_HOST}:8455/metrics"
         with _urlreq.urlopen(url, timeout=3.0) as r:
             body = r.read().decode("utf-8", errors="ignore")
             for line in body.splitlines():
@@ -4050,7 +4050,7 @@ def get_pool_miners() -> dict:
     """Fetch active miners from Edge pool Prometheus metrics."""
     try:
         import urllib.request as _ur
-        with _ur.urlopen("http://100.76.16.108:8455/metrics", timeout=3.0) as r:
+        with _ur.urlopen(f"http://{EDGE_RPC_HOST}:8455/metrics", timeout=3.0) as r:
             body = r.read().decode("utf-8", errors="ignore")
     except Exception as e:
         return {"ok": False, "miners": [], "active_sessions": 0, "total_hashrate_khs": 0, "error": str(e)}
