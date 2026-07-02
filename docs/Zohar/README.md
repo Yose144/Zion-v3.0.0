@@ -37,6 +37,7 @@ Zohar je **syntézou** evoluZion.md (Strom života metafora) a TerraNova knihy
 | [README.md](./README.md) | Manifest | Tento soubor — vize, vztah ke knihám, čtecí pořadí |
 | [01-SEFIROT-VRSTVY.md](./01-SEFIROT-VRSTVY.md) | Mapování sefirot → vrstvy | 10 sefirot + Da'at napojeno na L1–L6 + 3 pilíře |
 | [02-ROADMAP.md](./02-ROADMAP.md) | Roadmapa implementace | Kdy a jak se Zohar propisuje do kódu, webu, governance |
+| [03-O-KNIZE-ZOHAR.md](./03-O-KNIZE-ZOHAR.md) | O knize Zohar | Historie, autor, struktura, vliv, vývoj sefirot od Sefer Yetzirah po Etz Chaim |
 
 ## Klíčová metafora
 
