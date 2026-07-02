@@ -150,6 +150,46 @@ pub fn account_tx_memo_v1_active(height: u64) -> bool {
     height >= account_tx_memo_v1_activation_height()
 }
 
+// ── F5: Account-model sender balance validation gate ───────────────────
+//
+// Below this height, account-model transactions are accepted without
+// checking that the sender has sufficient balance. At/above this height,
+// both the RPC path (insert_transaction) and the peer-block path
+// (validate_peer_block) reject transactions where
+// `sender_balance < amount + fee`.
+//
+// This closes the F5 inflation exploit (SEC-2026-07-02) where a TX from
+// an address with 0 balance was accepted, creating ZION from nothing.
+//
+// **Default: disabled (u64::MAX).** This preserves backward compatibility
+// with existing tests and chains. To enable on mainnet, set
+// `ZION_BALANCE_CHECK_HEIGHT` env var to the activation height (e.g. 22363
+// for the Edge mainnet hard fork after the burn TX).
+
+static BALANCE_CHECK_HEIGHT_OVERRIDE: std::sync::atomic::AtomicU64 =
+    std::sync::atomic::AtomicU64::new(0);
+
+/// Set the runtime activation height for F5 balance validation.
+/// Use 1 to enable from genesis (height 0 is always accepted), or a future
+/// height for a coordinated hard fork. The default (0) means disabled.
+pub fn set_balance_check_height(height: u64) {
+    BALANCE_CHECK_HEIGHT_OVERRIDE.store(height, std::sync::atomic::Ordering::Relaxed);
+}
+
+/// Returns the effective F5 balance-check activation height.
+/// Default is `u64::MAX` (disabled) unless overridden via `set_balance_check_height`.
+#[inline]
+pub fn balance_check_activation_height() -> u64 {
+    let h = BALANCE_CHECK_HEIGHT_OVERRIDE.load(std::sync::atomic::Ordering::Relaxed);
+    if h > 0 { h } else { u64::MAX }
+}
+
+/// Returns `true` once a height has crossed the F5 balance-check gate.
+#[inline]
+pub fn balance_check_active(height: u64) -> bool {
+    height >= balance_check_activation_height()
+}
+
 // ============================================================================
 // CONSENSUS PARAMETERS
 // ============================================================================
