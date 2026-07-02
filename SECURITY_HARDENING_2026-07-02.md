@@ -4,7 +4,7 @@
 > **Scope of this document:** consolidated security status after the F1 exploit,
 > live Edge verification, a full consensus-path re-audit, and the L1/L2 code
 > fixes landed in this change.
-> **Status:** ✅ L1 hardening code complete + tested · L2 patch in tree · Edge deploy pending (owner)
+> **Status:** ✅ L1 + L2 hardening deployed to Edge and verified live (2026-07-02 18:5x UTC)
 > **Cross-refs:** [`SecurityFirst.md`](./SecurityFirst.md) · [`SecurityBackup.md`](./SecurityBackup.md) · [`CRITICAL_3.0.4_SECURITY_FINDINGS.md`](./CRITICAL_3.0.4_SECURITY_FINDINGS.md) · [`PATCH_L2_SECURITY_2026-07-02.md`](./PATCH_L2_SECURITY_2026-07-02.md)
 
 ---
@@ -152,10 +152,11 @@ is **present in `main` and in the working tree**:
 
 Verification (per patch doc): `cargo test -p zion-atomic-swap -p zion-bridge -p zion-dao` → **324 passed**.
 
-**Not yet deployed to Edge** — the running L2 binaries (built 2026-07-01) predate
-`a8b3821e`. A rebuild + service swap is required to pick up the L2 changes and the
-bind-address fixes (bridge metrics `9101` and DAO `8450` still listen on `0.0.0.0`,
-currently protected by UFW only).
+**Deployed to Edge 2026-07-02** — bridge/dao/atomic-swap rebuilt from `f7896ac5`
+and swapped in; bridge and dao restarted cleanly (no `validate_runtime` errors).
+The **bind-address hardening is now live**: bridge metrics `9101` and DAO `8450`
+moved from `0.0.0.0` to `127.0.0.1` (verified via `ss -tlnp`). atomic-swap binary
+deployed but the service remains `inactive` (escrow migration pending, see §7).
 
 ---
 
@@ -165,15 +166,25 @@ currently protected by UFW only).
 |-------|--------|
 | `cargo check -p zion-core` | ✅ compiles |
 | `cargo test -p zion-core --lib checkpoint` | ✅ 19/19 pass (incl. new `finality_checkpoint_enforced`) |
-| Full `cargo test -p zion-core --lib` | 3 failures, **all pre-existing** (see §6) |
+| Full `cargo test -p zion-core --lib` | 496 passed, 10 failures **all pre-existing** (see §6) |
 
 ### 6. Pre-existing test debt (not introduced by this change)
 
-Three tests fail at `HEAD` **independently of this change**:
+Ten tests fail at `HEAD` **independently of this change** — every one panics with
+`"account transaction signature verification failed"` (none reference the A2
+guard message `"already-mined sender nonce"`), confirming A1/A2/A3 did not cause
+them:
 
 - `rpc::tests::live_submit_transaction_alias_accepts_object_payload`
 - `rpc::tests::live_submit_account_transaction_alias_accepts_object_payload`
 - `tests::e2e_transaction_relay_between_nodes`
+- `tests::rpc_submit_transaction_updates_mempool_and_template`
+- `tests::runtime_recovers_from_journal_when_snapshot_is_missing`
+- `tests::template_prioritizes_high_fee_transactions`
+- `tests::transaction_validation_rejects_bad_ids_and_sender_nonce_reuse`
+- `tests::utxo_and_account_transactions_coexist_in_template`
+- `tests::node_runtime_persists_and_restores_chain_state`
+- `tests::p2p_get_blocks_since_returns_accepted_blocks`
 
 **Root cause:** these fixtures use `from: "wallet.alpha"` with random test keypairs.
 The earlier F1 fix (`5cee33c4`) makes `verify_signature()` require
@@ -185,21 +196,44 @@ fixtures with keypair-derived `zion1...` addresses.
 
 ---
 
-## 7. Remaining operational hardening (owner)
+## 7. Deploy log + remaining operational hardening
 
-These require Edge SSH, Tailscale admin, or an air-gapped machine and are tracked
-in [`SecurityFirst.md`](./SecurityFirst.md):
+### Deployed 2026-07-02 (this session)
 
-1. **Deploy A1–A3 + L2 patch to Edge** — rebuild `zion-node`, `zion-bridge`,
-   `zion-atomic-swap`, `zion-dao`; swap binaries; restart. Coordinate the
-   `zion-node` restart with the backup node to avoid a transient fork.
-2. **Bind fixes** — bridge `9101` + DAO `8450` → `127.0.0.1` (ships with L2 rebuild).
-3. **Tailscale ACL** — apply tag-based ACL via admin console (doc ready in `SecurityFirst.md` §F2.3).
-4. **Key rotation (air-gapped)** — pool payout SK, bridge validator keys (2/5 pending),
-   EVM deploy keys, atomic-swap escrow key (still placeholder).
-5. **Git history scrub** — remove `PREMINE_WALLETS_BACKUP.json` from history (BFG).
-6. **systemd `User=zion`** — services still run as root.
-7. **Finding 2** — `MAINNET_CANONICAL_*_WALLET` constants in `genesis.rs` still
+1. ✅ **A1–A3 + L2 patch built and swapped on Edge** — `node` (with A1/A2/A3),
+   `zion-bridge`, `zion-dao`, `zion-atomic-swap` rebuilt from `f7896ac5`.
+   Old binaries preserved as `*.pre-a1a2a3` / `*.pre-l2patch` and in
+   `/root/backups/l1l2-deploy-2026-07-02/`.
+2. ✅ **Node restart verified** — chain advanced through the restart (22212 → 22329),
+   Genesis Creator 590M intact, node1↔backup and node2↔node1 peers healthy, no
+   checkpoint violations, no A3 rejections, no panics.
+3. ✅ **A3 allowlist widened for local topology** — `ZION_P2P_ALLOWED_PEERS` updated
+   to `127.0.0.1,100.86.102.5,100.76.16.108` in `edge-environment.sh` so node2
+   (which peers with node1 over loopback) is not rejected.
+4. ✅ **Bind hardening live** — bridge `9101` + DAO `8450` now on `127.0.0.1`.
+5. ✅ **`ZION_SWAP_BEARER_TOKEN` rotated** — the previous value was inadvertently
+   printed during inspection; a fresh 64-hex token was generated on Edge
+   (`secrets.conf`, chmod 600). atomic-swap is inactive so there was no impact.
+
+### ⚠️ Urgent follow-up (owner)
+
+- **`ZION_SWAP_ESCROW_KEY` exposure** — the escrow Ed25519 seed was inadvertently
+  printed during inspection. Its address (`zion1y0j484d5e8r49785d253e8w0c2x4t3n792m5724`)
+  holds **~100,002 ZION**. Rotating the key directly would strand those funds, so a
+  **fund migration is required**: move the escrow balance to a fresh escrow address
+  (signed with the current key while still valid), then switch the daemon to the new
+  key. Fund-affecting — owner must execute.
+
+### Remaining (owner — Tailscale / air-gapped)
+
+Tracked in [`SecurityFirst.md`](./SecurityFirst.md):
+
+1. **Tailscale ACL** — apply tag-based ACL via admin console (§F2.3).
+2. **Key rotation (air-gapped)** — pool payout SK, bridge validator keys (2/5 pending),
+   EVM deploy keys, and the atomic-swap escrow migration above.
+3. **Git history scrub** — remove `PREMINE_WALLETS_BACKUP.json` from history (BFG).
+4. **systemd `User=zion`** — services still run as root.
+5. **Finding 2** — `MAINNET_CANONICAL_*_WALLET` constants in `genesis.rs` still
    mismatch `canonical_address_for_label()` (L1 change, requires runbook).
 
 ---
