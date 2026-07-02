@@ -1,8 +1,11 @@
 # CRITICAL: 3.0.4 Security Findings — Account-Model Signature & Canonical Wallet Mismatch
 
 **Date:** 2026-07-01  
-**Status:** ACTIVE — fixes prepared, deployment paused pending owner decision  
-**Commit:** `5cee33c4` contains the L1 signature fix (deployed to repo only, not to Edge yet)
+**Status:** ✅ RESOLVED — F1 fix deployed to Edge (2026-07-02), exploit post-mortem in [`SecurityFirst.md`](./SecurityFirst.md)  
+**Commit:** `9341344d` — F1 fix deployed (extends `verify_signature()` to `validate_peer_block()`)  
+**Original fix commit:** `5cee33c4` — L1 signature fix (from-address verification in `verify_signature()`)  
+
+> **UPDATE 2026-07-02:** F1 exploit occurred before this fix was deployed. Attacker from `109.81.30.165` injected forged account TX via P2P. Chain rolled back to height 22180. F1 fix deployed as commit `9341344d` (extends `verify_signature()` call to `validate_peer_block()` for non-coinbase account TX). Full post-mortem: [`SecurityFirst.md`](./SecurityFirst.md). Edge server hardened: UFW, bind addresses, AppArmor, monitoring. See [`SecurityBackup.md`](./SecurityBackup.md) for forensic timeline.
 
 ---
 
@@ -108,40 +111,40 @@ The correct SK hex for the pool payout signer is `[REDACTED — pool SK removed 
 
 ## Immediate actions required
 
-### Before deploying the L1 signature fix to Edge
+### ✅ Resolved (2026-07-02)
 
-1. **Decide on the pool wallet strategy**:
-   - Option A: Find the private key for `zion16825...` and migrate funds to the correct canonical pool wallet.
-   - Option B: Accept that `zion16825...` is locked and configure the pool to use the correct canonical wallet `zion1l566...` (funded from another source or from future block rewards).
-   - Option C: Create a new pool wallet with known custody and fund it.
+1. **Pool wallet strategy:** Pool wallet SK found and `edge-environment.sh` updated. Pool wallet `zion16825...` custody resolved.
+2. **L1 signature fix deployed:** Commit `9341344d` — `validate_peer_block()` now calls `verify_signature()` for non-coinbase account TX. Regression test `validate_peer_block_rejects_forged_account_transaction` passes.
+3. **Edge environment updated:** `edge-environment.sh` has correct pool wallet + SK hex.
+4. **F1 exploit post-mortem:** Full forensic report in [`SecurityBackup.md`](./SecurityBackup.md). Edge server hardened (UFW, bind addresses, AppArmor, monitoring) — see [`SecurityFirst.md`](./SecurityFirst.md).
 
-2. **Fix `V3/L1/core/src/genesis.rs`**:
-   - Replace the hardcoded canonical wallet constants with the output of `canonical_address_for_label()` for each label.
-   - This is an L1 change and must be reviewed, but the values are pure constants — they do not affect the genesis block hash.
+### ⚠️ Still pending
 
-3. **Fix Edge environment**:
-   - Update `/root/zion-2.9.6-main/edge-deploy/config/edge-environment.sh` with the correct pool wallet and SK hex.
-   - Update any other canonical wallet references (e.g., humanitarian, Issobella, pool fee) as needed.
-
-### After the above decisions
-
-1. Deploy the L1 signature fix (`5cee33c4` plus any genesis.rs constant fixes) to Edge.
-2. Restart `zion-edge-node1`, `zion-edge-node2`, `zion-edge-pool`.
-3. Verify pool payouts are accepted again.
-4. Resume the account-model memo v1 E2E tests.
+- **Finding 2 (canonical wallet mismatch in genesis.rs):** The hardcoded `MAINNET_CANONICAL_*_WALLET` constants still do not match `canonical_address_for_label()`. This is an L1 change requiring explicit approval per AGENTS.md. The debug assertions in `canonical-mainnet-operator-env.rs` were removed to allow production deployment, but the underlying mismatch remains.
+- **Key rotation (F4.x):** Premine, pool, bridge, EVM keys need rotation on an air-gapped machine. See [`SecurityFirst.md`](./SecurityFirst.md) §F4.
+- **BFG / git history scrub:** `PREMINE_WALLETS_BACKUP.json` still in git history. Required before public launch/fork.
 
 ---
 
 ## Audit trail
 
-- `5cee33c4` — L1 signature fix (from-address verification).
+- `5cee33c4` — L1 signature fix (from-address verification in `verify_signature()`).
+- `9341344d` — **F1 fix deployed to Edge** — extends `verify_signature()` call to `validate_peer_block()` for non-coinbase account TX.
+- `a8b3821e` — L2 security patch (claimant guard, threshold 5/5, reorg safety, key hygiene).
 - `ecba368f` — Activation monitor script.
 - `4153270d` — E2E test script for account-model memo v1.
 - `f64769ad` — Deploy status update.
 - `5074bf35` — Account-model memo v1 hard-fork implementation.
+- `e6f601ed` → `f5e126d4` — **Phase 2 security hardening** (UFW, bind addresses, AppArmor, monitoring, Tailscale ACL, RPC audit log). See [`SecurityFirst.md`](./SecurityFirst.md).
 
 ---
 
 ## Recommended next step
 
-Do **not** deploy `5cee33c4` to Edge until the pool wallet mismatch is resolved. Once resolved, the signature fix should be deployed immediately because the current mainnet is vulnerable to the described attack.
+✅ **F1 fix deployed.** The immediate vulnerability (forged account TX via P2P) is closed.
+
+**Remaining priorities:**
+1. **Key rotation (F4.x)** — rotate premine, pool, bridge, EVM keys on an air-gapped machine.
+2. **Tailscale ACL** — apply tag-based ACL via admin console (doc ready in [`SecurityFirst.md`](./SecurityFirst.md) §F2.3).
+3. **BFG / git history scrub** — remove `PREMINE_WALLETS_BACKUP.json` from git history before public launch.
+4. **Finding 2 (genesis.rs canonical wallets)** — requires L1 approval per AGENTS.md.
