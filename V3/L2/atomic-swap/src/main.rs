@@ -24,7 +24,7 @@ use axum::{routing::get, routing::post, Router};
 use socket2::{Domain, Protocol, Socket, Type};
 use std::net::SocketAddr;
 use std::sync::Arc;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 use tracing_subscriber::EnvFilter;
 use zion_atomic_swap::{
     config::SwapConfig,
@@ -65,6 +65,23 @@ async fn main() -> anyhow::Result<()> {
             evm_watcher: None,
         }
     };
+
+    // L2 security patch: fail-fast on mainnet if bearer_token / escrow key
+    // are not set (C1 — open-access claim/refund endpoints are unsafe).
+    cfg.validate_runtime()?;
+
+    // M2: wall-clock sanity check. HTLC timelocks use Utc::now(); a badly
+    // skewed system clock can trigger premature refunds or lock funds
+    // indefinitely. Warn loudly if the clock looks wrong (year < 2024 or
+    // > 2100). Full block-height-based timelocks are a future design change.
+    let now_year = chrono::Utc::now().format("%Y").to_string().parse::<u32>().unwrap_or(0);
+    if now_year < 2024 || now_year > 2100 {
+        warn!(
+            "⚠️ System clock reports year {} — HTLC timelocks depend on wall clock (M2). \
+             Verify NTP sync before relying on refund/claim timing.",
+            now_year
+        );
+    }
 
     let cfg = Arc::new(cfg);
 

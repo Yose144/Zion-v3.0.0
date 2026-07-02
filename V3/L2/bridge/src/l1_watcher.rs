@@ -313,11 +313,15 @@ impl L1Watcher {
     /// Scan a block for transactions to the bridge lock address.
     fn scan_block_for_locks(&mut self, block: &L1Block) {
         let _block_hash = &block.hash;
-        let mut processed: std::collections::HashSet<String> = std::collections::HashSet::new();
+        // Composite dedup key: (tx_type, tx_id) so a UTXO tx and an account
+        // tx with the same id (shouldn't happen but RPC is external) cannot
+        // silently suppress each other (H2 security patch).
+        let mut processed: std::collections::HashSet<(char, String)> =
+            std::collections::HashSet::new();
 
         for tx in &block.utxo_transactions {
             let tx_hash = hex::encode(tx.id);
-            if !processed.insert(tx_hash.clone()) {
+            if !processed.insert(('u', tx_hash.clone())) {
                 continue;
             }
             for output in &tx.outputs {
@@ -345,10 +349,21 @@ impl L1Watcher {
             if tx.to != self.config.bridge_address {
                 continue;
             }
-            if !processed.insert(tx.tx_id.clone()) {
+            if !processed.insert(('a', tx.tx_id.clone())) {
                 continue;
             }
-            let amount_flowers = tx.amount_zion as u64;
+            // H1: checked cast — reject (skip) account tx whose amount
+            // exceeds u64 instead of silently truncating.
+            let amount_flowers = match u64::try_from(tx.amount_zion) {
+                Ok(a) => a,
+                Err(_) => {
+                    warn!(
+                        "L1 account tx {} amount {} exceeds u64 — skipping (H1 guard)",
+                        tx.tx_id, tx.amount_zion
+                    );
+                    continue;
+                }
+            };
             self.record_lock(
                 block,
                 &tx.tx_id,

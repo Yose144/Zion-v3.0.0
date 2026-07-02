@@ -145,7 +145,16 @@ impl L1Watcher {
                 Some(m) => m,
                 None => continue,
             };
-            let amount = tx.amount_zion as u64;
+            let amount = match u64::try_from(tx.amount_zion) {
+                Ok(a) => a,
+                Err(_) => {
+                    warn!(
+                        "account tx {} amount {} exceeds u64 — skipping (H1 guard)",
+                        tx.tx_id, tx.amount_zion
+                    );
+                    continue;
+                }
+            };
             if let Err(e) = self
                 .handle_memo(parsed, tx.tx_id.clone(), tx.from.clone(), amount, height)
                 .await
@@ -175,6 +184,7 @@ impl L1Watcher {
                 timeout_minutes,
                 counterparty_chain,
                 counterparty_addr,
+                claimant_address,
             } => {
                 // De-duplicate: if we already have this hash, skip
                 if self.db.get_htlc(&hash_hex)?.is_some() {
@@ -202,6 +212,7 @@ impl L1Watcher {
                     expires_at,
                     counterparty_chain,
                     counterparty_addr,
+                    claimant_address,
                     state: SwapState::Pending,
                     release_tx_id: None,
                     release_recipient: None,

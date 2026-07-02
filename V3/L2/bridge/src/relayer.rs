@@ -48,7 +48,7 @@ struct RpcResponse<T> {
 fn load_validator_key(config: &ValidatorConfig) -> anyhow::Result<Zeroizing<String>> {
     if let Ok(key) = std::env::var("ZION_VALIDATOR_PRIVATE_KEY") {
         if !key.trim().is_empty() {
-            tracing::info!("🔑 Validator key loaded from ZION_VALIDATOR_PRIVATE_KEY env var");
+            tracing::debug!("🔑 Validator key loaded from ZION_VALIDATOR_PRIVATE_KEY env var");
             return Ok(Zeroizing::new(key.trim().to_string()));
         }
     }
@@ -75,7 +75,7 @@ fn load_validator_key(config: &ValidatorConfig) -> anyhow::Result<Zeroizing<Stri
 
     let raw = std::fs::read_to_string(path)
         .map_err(|e| anyhow::anyhow!("Cannot read key file {:?}: {}", path, e))?;
-    tracing::info!("🔑 Validator key loaded from file {:?}", path);
+    tracing::debug!("🔑 Validator key loaded from file {:?}", path);
     Ok(Zeroizing::new(raw.trim().to_string()))
 }
 
@@ -96,7 +96,7 @@ fn load_all_validator_keys(config: &ValidatorConfig) -> Vec<Zeroizing<String>> {
         if let Ok(k) = std::env::var(&var) {
             let k = k.trim().to_string();
             if !k.is_empty() {
-                tracing::info!("🔑 Additional validator key loaded from {} env var", var);
+                tracing::debug!("🔑 Additional validator key loaded from {} env var", var);
                 keys.push(Zeroizing::new(k));
             }
         }
@@ -324,8 +324,38 @@ impl Relayer {
         let evm = EvmHttpClient::from_rpc_url(&rpc_url);
 
         // ── Get gas params once (shared across all validator TXs) ────
-        let base_fee = evm.get_gas_price().await.unwrap_or(2_000_000_000);
-        let priority_fee = evm.get_max_priority_fee().await.unwrap_or(1_500_000_000);
+        // M3: retry once before falling back to conservative defaults so a
+        // transient RPC blip does not underpay during congestion.
+        let base_fee = match evm.get_gas_price().await {
+            Ok(f) => f,
+            Err(e) => {
+                warn!("gas price RPC failed ({e}); retrying once");
+                match evm.get_gas_price().await {
+                    Ok(f) => f,
+                    Err(e2) => {
+                        warn!(
+                            "gas price RPC retry failed ({e2}); using conservative 2 gwei fallback"
+                        );
+                        2_000_000_000
+                    }
+                }
+            }
+        };
+        let priority_fee = match evm.get_max_priority_fee().await {
+            Ok(f) => f,
+            Err(e) => {
+                warn!("priority fee RPC failed ({e}); retrying once");
+                match evm.get_max_priority_fee().await {
+                    Ok(f) => f,
+                    Err(e2) => {
+                        warn!(
+                            "priority fee RPC retry failed ({e2}); using 1.5 gwei fallback"
+                        );
+                        1_500_000_000
+                    }
+                }
+            }
+        };
         let max_gas_gwei = chain_config.max_gas_gwei;
         let max_fee_cap = max_gas_gwei * 1_000_000_000;
         let max_fee = (2 * base_fee + priority_fee).min(max_fee_cap);

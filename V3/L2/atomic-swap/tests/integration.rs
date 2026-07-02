@@ -16,6 +16,7 @@ fn make_record(hash_hex: &str, preimage: Option<&str>, expires_in_sec: i64) -> H
         expires_at: Utc::now().timestamp() + expires_in_sec,
         counterparty_chain: "base".to_string(),
         counterparty_addr: "0x1234567890abcdef1234567890abcdef12345678".to_string(),
+        claimant_address: None,
         state: SwapState::Pending,
         preimage_hex: preimage.map(|p| p.to_string()),
         release_tx_id: None,

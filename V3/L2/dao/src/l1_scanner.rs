@@ -314,6 +314,17 @@ impl L1Scanner {
             if memo.is_empty() {
                 continue;
             }
+            // L3: reject oversized memos before parsing to bound CPU/alloc.
+            // L1 consensus already caps memo at 256 bytes (lib.rs:1937-1943),
+            // so anything larger is either a bug or a non-DAO payload.
+            if memo.len() > 256 {
+                debug!(
+                    "[DAO-SCANNER] Skipping oversized memo ({} bytes > 256) in tx {}",
+                    memo.len(),
+                    txid
+                );
+                continue;
+            }
 
             let parsed = match parse_dao_memo(memo) {
                 Some(p) => p,
