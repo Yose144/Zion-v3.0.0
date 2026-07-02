@@ -40,8 +40,10 @@ This is the **forward-looking** root roadmap. Historical detail lives in [`docs/
 ✅ **Resolved in 3.0.4**
 - Account-model TX memo field added (L1 hard fork); L2 watchers (bridge, DAO, atomic-swap) now scan `account_transactions` with memo.
 
-✅ **Security hardening (2026-07-02)** — viz [`SecurityFirst.md`](./SecurityFirst.md)
+✅ **Security hardening (2026-07-02)** — viz [`SecurityFirst.md`](./SecurityFirst.md) · [`F5_SECURITY_INCIDENT_REPORT_2026-07-02.md`](./F5_SECURITY_INCIDENT_REPORT_2026-07-02.md)
 - F1 exploit fix: `validate_peer_block` now calls `verify_signature()` for non-coinbase account TX (commit `9341344d`)
+- **F5 CRITICAL fix: Account-model sender balance validation** — `insert_transaction()` and `validate_peer_block()` now reject TX where `sender_balance < amount + fee`. Height-gated via `ZION_BALANCE_CHECK_HEIGHT=22394` on Edge mainnet. Commits `69d12c7`, `fe8d449`, `9863747`.
+- **Escrow key rotation:** New escrow keypair generated, `edge-environment.sh` updated, atomic-swap restarted. Inflationary 100,002 ZION burned to unspendable address.
 - UFW hardened: only SSH/HTTP/HTTPS/Tailscale, Docker monitoring ports explicit deny
 - Private keys scrubbed from 5 files, file permissions 600, SSH keys-only
 - 13/18 services on 127.0.0.1, dashboard on Tailscale IP
@@ -56,6 +58,10 @@ This is the **forward-looking** root roadmap. Historical detail lives in [`docs/
 - F4.x: Key rotation (premine, pool, bridge, EVM) — air-gapped operation
 - Rebuild: bridge metrics (9101), DAO (8450) — env var code changes pending
 - Max TX amount cap (100M ZION) — L1 consensus change, needs spec + audit
+- **F5: Deploy to zion-edge-node2** (follower node needs same binary + env var)
+- **F5: Fuzzing** — submit random TXs from random addresses to verify rejection
+- **F5: Pre-existing test failures** — 10 tests fail unrelated to F5 (port conflicts), investigate separately
+- **Long-term: UTXO-backed account model** (3.1.0+) to eliminate account-model balance bugs
 
 ⚠️ **Known limitations**
 - Bridge contract addresses have a 3-way inconsistency across config/docs that needs owner decision
