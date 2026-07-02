@@ -23,8 +23,8 @@
 - All deploy/fund scripts: `await sleep(3000)` after each TX (public Base RPC 1 in-flight limit)
 
 **Remaining:**
-- [ ] Basescan verify (needs `BASESCAN_API_KEY` from https://basescan.org/myapikey)
-- [ ] L2 watcher update: `L1Block` struct add `account_transactions` field + watcher.rs scan account-model memo TXs
+- [x] ✅ Basescan verify — COMPLETED 2026-07-02 (6/7 verified, ZIONBridge ❌ source mismatch). Viz [`BASESCAN_VERIFY_REPORT.md`](../../BASESCAN_VERIFY_REPORT.md)
+- [x] ✅ L2 watcher update — DONE 3.0.4 (account_transactions scanning)
 
 ---
 
@@ -123,8 +123,11 @@ npx hardhat run scripts/fund-farm.ts --network base
 ### Step 6: Verify on Basescan
 
 ```bash
+# Ensure BASESCAN_API_KEY is set in .env
 npx hardhat run scripts/verify-base-mainnet-basescan.ts --network base
 ```
+
+> **Result (2026-07-02):** 6/7 contracts verified. ZIONGovernance, ZIONTreasury, ZIONStaking, ZIONFarm verified via Etherscan V2 API. wZION + ZIONAtomicSwap already verified. ZIONBridge ❌ — source changed post-deploy. Full report: [`BASESCAN_VERIFY_REPORT.md`](../../BASESCAN_VERIFY_REPORT.md)
 
 ### Step 7: Update website config
 
@@ -308,25 +311,24 @@ curl http://127.0.0.1:8450/api/dao/proposals/<id>/votes | jq
 
 ## Post-Deploy Checklist
 
-- [ ] P1: ZIONStaking deployed + verified on Basescan
-- [ ] P1: ZIONFarm deployed + verified on Basescan
-- [ ] P1: ZIONGovernance deployed + verified on Basescan
-- [ ] P1: ZIONTreasury deployed + verified on Basescan
-- [ ] P1: Staking reward pool funded (100K wZION)
-- [ ] P1: Farm reward pool funded (500K wZION)
-- [ ] P1: `defi-contracts.ts` updated with real addresses
-- [ ] P1: Website /defi/staking shows live data
-- [ ] P1: Website /defi/farming shows live data
-- [ ] P2: Escrow funded (5-10 ZION)
-- [ ] P2: E2E swap test completed (L1 lock → EVM claim)
-- [ ] P2: `ATOMIC_SWAP_RUNBOOK.md` created
-- [ ] P3: 5-7 guardian keypairs generated
-- [ ] P3: Guardians added to dao-mainnet.toml
-- [ ] P3: DAO service restarted + co-admins verified
-- [ ] P3: Voting E2E test passed
-- [ ] Update `V3/ROADMAP.md` — mark P1/P2/P3 as complete
-- [ ] Update `L2Complete.md` — add 3.0.4 closure section
-- [ ] Update `StatusV3.md` — 3.0.4 milestone complete
+- [x] ✅ P1: ZIONStaking deployed + verified on Basescan (2026-07-02)
+- [x] ✅ P1: ZIONFarm deployed + verified on Basescan (2026-07-02)
+- [x] ✅ P1: ZIONGovernance deployed + verified on Basescan (2026-07-02)
+- [x] ✅ P1: ZIONTreasury deployed + verified on Basescan (2026-07-02)
+- [x] ✅ P1: Staking reward pool funded (100K wZION)
+- [x] ✅ P1: Farm reward pool funded (500K wZION)
+- [x] ✅ P1: `defi-contracts.ts` updated with real addresses
+- [x] ✅ P1: Website /defi/staking shows live data
+- [x] ✅ P1: Website /defi/farming shows live data
+- [x] ✅ P2: Escrow funded (100K ZION)
+- [x] ✅ P2: E2E swap test completed (L1 lock → EVM claim)
+- [x] ✅ P2: `ATOMIC_SWAP_RUNBOOK.md` created
+- [x] ✅ P3: 5 guardian keypairs generated
+- [x] ✅ P3: Guardians added to dao-mainnet.toml
+- [x] ✅ P3: DAO service restarted + co-admins verified
+- [x] ✅ P3: Voting E2E test passed
+- [x] ✅ Update `V3/ROADMAP.md` — mark P1/P2/P3 as complete
+- [x] ✅ Update `StatusV3.md` — 3.0.4 milestone complete
 
 ---
 
