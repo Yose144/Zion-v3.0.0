@@ -87,7 +87,7 @@
 
 1. ✅ **Bridge address 3-way inconsistency** (H1 z auditu) — vyřešeno 2026-07-02: Base live = `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467`, non-Base live = `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721`, `0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88` zastaralý bez BRIDGE_ROLE. Dashboard a configy sjednoceny.
 2. **3.0.4 TX unification implementace** — plán v `3.0.4.md` čeká na schválení 5 blokujících otázek (§3.7)
-3. **Basescan verify** — získat API key, spustit `verify-base-mainnet-basescan.ts`
+3. ✅ **Basescan verify** — COMPLETED 2026-07-02: 6/7 contracts verified (wZION, ZIONAtomicSwap already verified; ZIONGovernance, ZIONTreasury, ZIONStaking, ZIONFarm verified via Etherscan V2 API). ZIONBridge ❌ — source changed post-deploy, bytecode mismatch. Viz [`BASESCAN_VERIFY_REPORT.md`](./BASESCAN_VERIFY_REPORT.md).
 4. **Guardian mnemonics backup** — flash drive `F:\`
 5. **Repo cleanup Fáze 1+2** — smazat `V3/config/` stale templates, vytvořit `V3/L1/types` crate pro sdílené watcher typy
 
@@ -189,7 +189,7 @@
 
 ### Zbývá (vyžaduje lidskou akci)
 
-1. **Basescan verify** — získat API key na `basescan.org/myapikey`, spustit `verify-base-mainnet-basescan.ts`
+1. ✅ **Basescan verify** — COMPLETED 2026-07-02: 6/7 contracts verified. ZIONBridge ❌ (source changed post-deploy). Viz [`BASESCAN_VERIFY_REPORT.md`](./BASESCAN_VERIFY_REPORT.md).
 2. ✅ **L2 watcher update** (roadmap) — `L1Block` struct přidat `account_transactions` + watcher.rs skenovat i account-model memo TXs — **DONE 3.0.4**
 3. **Guardian mnemonics backup** — zkopírovat `ZION_DAO_GUARDIAN_KEYS.txt` na flash drive (`F:\`)
 4. ✅ **ATOMIC_SWAP_RUNBOOK.md** — dokumentace aktualizována pro 3.0.4 account memo
@@ -3366,8 +3366,8 @@ nebo má konkrétní aktivační plán v
 ### 1.4 Bridge L2 ↔ Base Mainnet (zion-bridge)
 
 - **Smart contracts** verifikované na BaseScan: `wZION` (ERC-20),
-  `ZIONBridge`, `ZIONStaking`, `ZIONGovernance`, `ZIONFarm`,
-  `ZIONAtomicSwap`. M-of-N threshold multisig (cílově 3/5; staging
+  `ZIONStaking`, `ZIONGovernance`, `ZIONFarm`, `ZIONTreasury`,
+  `ZIONAtomicSwap` (6/7 verified 2026-07-02). `ZIONBridge` ❌ — source changed post-deploy, bytecode mismatch. Viz [`BASESCAN_VERIFY_REPORT.md`](./BASESCAN_VERIFY_REPORT.md). M-of-N threshold multisig (cílově 3/5; staging
   config v `bridge-mainnet.toml` nyní `1/2`).
 - **Decimal fix:** `FLOWERS_TO_WEI_FACTOR = 1_000_000_000_000` (× 10¹², ne × 10⁶),
   oprava inflation buga. *(Note: 3.0.3 fork changed FLOWERS_PER_ZION from 1e12 to 1e6; bridge factor updated accordingly.)*
