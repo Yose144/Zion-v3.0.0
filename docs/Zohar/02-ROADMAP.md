@@ -45,7 +45,7 @@ která říká *proč* je každá vrstva kde je.
 
 ---
 
-## Fáze 1 — Website vizualizace (plán)
+## Fáze 1 — Website vizualizace (HOTOVO)
 
 **Co:** Nová React komponenta `/app/zohar` na website-v2.9 — interaktivní
 kabalistický strom se 10 sefirot propojenými s ZION vrstvami.
@@ -54,55 +54,51 @@ kabalistický strom se 10 sefirot propojenými s ZION vrstvami.
 viděla, že ZION není "jen blockchain", ale organismus s 10 aspekty.
 
 **Kde:**
-- `APP&WEB/website-v2.9/src/app/zohar/page.tsx` — route
-- `APP&WEB/website-v2.9/src/components/ZoharTreeOfLife.tsx` — komponenta (vedle
-  existujícího `InteractiveTreeOfLife.tsx` a `ConsciousnessTreeKabbalah.tsx`)
+- `APP&WEB/website-v2.9/src/app/zohar/page.tsx` — route ✅
+- `APP&WEB/website-v2.9/src/app/zohar/ZoharPageClient.tsx` — komponenta ✅
+- `APP&WEB/website-v2.9/src/components/HomeTreePortal.tsx` — vylepšeno o ZION vrstvy na hover + CTA na /zohar ✅
+- `APP&WEB/website-v2.9/src/components/Navigation.tsx` — /zohar v learn_group ✅
+- `APP&WEB/website-v2.9/src/components/Footer.tsx` — /zohar v wiki group ✅
+- `APP&WEB/website-v2.9/src/lib/translations.ts` — `zohar` key ✅
 
-**Funkce (MVP):**
-- SVG strom se 10 sefirot + Da'at
-- Klik na sefiru → modal s: kabalistický význam, ZION vrstva, stav emanace
-- 3 pilíře vizualizované barvou (Milosrdenství-modrá, Přísnost-červená, Rovnováha-zelená)
-- Live data: block height (Keter), TVL (Chesed), bridge volume (Tiferet),
-  active validators (Netzach horizont)
-- Odkazy na relevantní stránky: /explorer (Binah), /defi (Chesed), /warp (Tiferet)
+**Funkce:**
+- SVG strom se 10 sefirot + Da'at (skrytá, přerušovaná)
+- Klik na sefiru → detail panel (hebrejský název, ZION vrstva, cesta v kódu, emanace, otázka, status, pilíř)
+- 3 pilíře vizualizované barvou (Mercy-modrá, Severity-červená, Equilibrium-zlatá)
+- 22 cest mezi sefirot
+- Stav emanace (Live/Partial/Horizont) pro každou sefiru
+- Sekce "O knize Zohar" s historií, strukturou, genealogií vývoje sefirot, citátem, klíčovými koncepty (Ein Sof, Da'at, Sitra Ahra), Scholemem
+- Roadmapa 5 fází
+- Odkazy do docs/Zohar/ a evoluZion.md
 
-**Inspirační zdroje v repo:**
-- `APP&WEB/website-v2.9/src/components/InteractiveTreeOfLife.tsx` (Strom života v4)
-- `APP&WEB/website-v2.9/src/components/ConsciousnessTreeKabbalah.tsx` (kabala strom)
-- `APP&WEB/website-v2.9/src/components/HomeTreePortal.tsx` (portál)
-
-**Status:** čeká na schválení + implementaci. Netýká se L1.
+**Verifikace:** `tsc --noEmit` ✅, `eslint` ✅, `next build --webpack` ✅ (route `/zohar` v build output)
 
 ---
 
-## Fáze 2 — Governance vow (plán)
+## Fáze 2 — Sefirot Vow pro governance (HOTOVO — text)
 
 **Co:** Validator pledge / DAO admission vow strukturovaný jako "sefirot vow" —
-každý z 10 aspektů jako slib péče.
+11 slibů (10 sefirot + Da'at), jeden za aspekt péče.
 
 **Proč:** evoluZion.md mluví o "care vow" (`V3/L5/docs/GOVERNANCE/consciousness-admission-framework.md`).
-Zohar dává vow **strukturu** — ne jeden slib, ale 10 slibů (jeden za sefiru),
-které dohromady tvoří úplnou péči.
+Zohar dává vow **strukturu** — ne jeden slib, ale 11 slibů, které dohromady
+tvoří úplnou péči o protokol.
 
 **Kde:**
-- `V3/L5/docs/GOVERNANCE/sefirot-vow.md` — text vow
-- `V3/L2/dao/` — volitelné: on-chain vow hash při validator registraci (horizont)
+- `V3/L5/docs/GOVERNANCE/sefirot-vow.md` — text vow ✅
+- `V3/L2/dao/` — volitelné: on-chain `SefirotVowProposal` (budoucnost)
+- `V3/L2/contracts/hardhat/sol/` — Soulbound `sefirot_vow` token (budoucnost)
 
-**Vow struktura (návrh):**
-```
-1. Keter  — Slibuji ctít ústavu ZIONu (genesis, emission, fee split)
-2. Chokmah — Slibuji tvořit, ne plýtvat (užitečný compute, ne waste)
-3. Binah   — Slibuji validovat pravdivě (ne podvrhávat bloky)
-4. Chesed  — Slibuji dávání štědře (likvidita, yield, pomoc)
-5. Gevurah — Slibuji disciplínu (lock, multisig, fee burn)
-6. Tiferet — Slibuji harmonii mezi chainy (WARP bez preferencí)
-7. Netzach — Slibuji vytrvalou péči (monitoring, care proof)
-8. Hod     — Slibuji kulturu (Oasis jako prostor péče, ne hrubost)
-9. Yesod   — Slibuji komunitu (péče o půdu, ne jen cloud)
-10. Malkhut — Slibuji horizont (Issobella, děti, hvězdy)
-```
+**Vow struktura:**
+- 10 slibů (Keter → Malkhut) + Da'at (most)
+- Pro L1 miners, L2 DAO guardians, L3 WARP validators, L3 AI/Hiran, future PoC
+- Ceremonie: on-chain (required) + optional physical (L5 community)
+- Roční obnova, grace model ("break it a thousand times, renew a thousand and one")
+- 11 kategorií care tasks (preview Fáze 3)
 
-**Status:** čeká na governance schválení. Netýká se L1 consensus.
+**Status:** Text hotový. On-chain implementace (proposal, soulbound token) plánována.
+
+**Netýká se L1 consensus.**
 
 ---
 

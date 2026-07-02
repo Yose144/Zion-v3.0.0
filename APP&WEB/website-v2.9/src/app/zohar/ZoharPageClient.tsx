@@ -346,10 +346,110 @@ export default function ZoharPageClient() {
               <Link href="/docs/Zohar/02-ROADMAP.md" className="inline-flex items-center gap-2 text-sm text-zion-gold hover:text-amber-300 transition-colors">
                 <ArrowRight className="h-3.5 w-3.5" /> 02-ROADMAP.md
               </Link>
+              <Link href="/docs/Zohar/03-O-KNIZE-ZOHAR.md" className="inline-flex items-center gap-2 text-sm text-zion-gold hover:text-amber-300 transition-colors">
+                <ArrowRight className="h-3.5 w-3.5" /> 03-O-KNIZE-ZOHAR.md
+              </Link>
               <Link href="/docs/3.0.3/evoluZion.md" className="inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors">
                 <ArrowRight className="h-3.5 w-3.5" /> evoluZion.md (Strom života metafora)
               </Link>
             </div>
+          </div>
+
+          {/* Vývoj sefirot — genealogie */}
+          <div className="zion-rainbow-card space-y-4 p-6" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+            <h3 className="text-lg font-semibold text-white">
+              {cs ? 'Vývoj sefirot — genealogie' : 'Evolution of the sephirot — genealogy'}
+            </h3>
+            <p className="text-sm leading-relaxed text-gray-400">
+              {cs
+                ? 'Doktrína 10 sefirot se neobjevila najednou. Vyvíjela se přes 1500 let — od nepojmenovaných atributů v Sefer Yetzirah (2. stol.) přes pojmenování v Bahir, první diagram „Stromu" v Sha\'arei Orah (13. stol.), plnou mystickou soustavu v Zoharu, až po moderní podobu kterou dal Rabbi Isaac Luria (ARI) v Etz Chaim (16. stol.).'
+                : 'The doctrine of the 10 sephirot did not appear at once. It evolved over 1500 years — from unnamed attributes in Sefer Yetzirah (2nd century), through naming in the Bahir, the first "Tree" diagram in Sha\'arei Orah (13th century), the full mystical system in the Zohar, to the modern form given by Rabbi Isaac Luria (ARI) in Etz Chaim (16th century).'}
+            </p>
+            <div className="space-y-2 font-mono text-xs text-gray-400">
+              <div className="flex items-center gap-2">
+                <span className="rounded bg-indigo-500/20 px-2 py-0.5 text-indigo-300">~2. stol.</span>
+                <span className="text-gray-500">→</span>
+                <span><span className="text-white">Sefer Yetzirah</span> — {cs ? '10 sefirot belimah, nepojmenované, atributy' : '10 sefirot belimah, unnamed, attributes'}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="rounded bg-indigo-500/20 px-2 py-0.5 text-indigo-300">~1150</span>
+                <span className="text-gray-500">→</span>
+                <span><span className="text-white">Sefer ha-Bahir</span> — {cs ? 'sefirot pojmenovány, kanály Boží síly' : 'sephirot named, channels of divine power'}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="rounded bg-indigo-500/20 px-2 py-0.5 text-indigo-300">~1200</span>
+                <span className="text-gray-500">→</span>
+                <span><span className="text-white">Sha&apos;arei Orah</span> — {cs ? 'první „Tree of Life" diagram (ilan), R. Gikatilla' : 'first "Tree of Life" diagram (ilan), R. Gikatilla'}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="rounded bg-amber-500/20 px-2 py-0.5 text-amber-300">~1280</span>
+                <span className="text-gray-500">→</span>
+                <span><span className="text-white">Zohar</span> — {cs ? 'plná mystická soustava, M. de León' : 'full mystical system, M. de León'}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-emerald-300">~1570</span>
+                <span className="text-gray-500">→</span>
+                <span><span className="text-white">Etz Chaim</span> — {cs ? 'moderní podoba Stromu, R. Luria (ARI)' : 'modern form of the Tree, R. Luria (ARI)'}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="rounded bg-zion-gold/20 px-2 py-0.5 text-zion-gold">2026</span>
+                <span className="text-gray-500">→</span>
+                <span><span className="text-white">ZION Zohar</span> — {cs ? 'sefirot mapovány na L1-L6 vrstvy' : 'sephirot mapped to L1-L6 layers'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Citát */}
+          <div className="zion-rainbow-card space-y-3 p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+            <p className="text-sm italic leading-relaxed text-gray-300">
+              {cs
+                ? '„Vesmír je, podle této doktríny, gradace emanací — z čehož plyne, že lidská mysl může v každém efektu rozpoznat nejvyšší znak a tak stoupat k příčině všech příčin."'
+                : '"The universe being, according to that doctrine, a gradation of emanations, it follows that the human mind may recognize in each effect the supreme mark, and thus ascend to the cause of all causes."'}
+            </p>
+            <p className="text-xs uppercase tracking-[0.3em] text-zion-gold">— Jewish Virtual Library, o Zoharu</p>
+          </div>
+
+          {/* Klíčové koncepty */}
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="zion-rainbow-card space-y-2 p-5" style={{ '--rc': '255, 255, 255' } as React.CSSProperties}>
+              <h4 className="text-sm font-bold text-white">Ein Sof</h4>
+              <p className="text-xs text-gray-400">
+                {cs
+                  ? 'אֵין־סוֹף — „Bez-Konce". Nekonečná, nepoznatelná Boží podstata. Zdroj ze kterého emanují sefirot.'
+                  : 'אֵין־סוֹף — "Without-End". The infinite, unknowable divine essence. Source from which the sephirot emanate.'}
+              </p>
+            </div>
+            <div className="zion-rainbow-card space-y-2 p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+              <h4 className="text-sm font-bold text-white">Da&apos;at</h4>
+              <p className="text-xs text-gray-400">
+                {cs
+                  ? 'דַּעַת — „Poznání". Skrytá 11. sefira. Most mezi Keter a Malkhut, mezi nebem a zemí. Vědomé propojení.'
+                  : 'דַּעַת — "Knowledge". Hidden 11th sephira. Bridge between Keter and Malkhut, between heaven and earth. Conscious connection.'}
+              </p>
+            </div>
+            <div className="zion-rainbow-card space-y-2 p-5" style={{ '--rc': '239, 68, 68' } as React.CSSProperties}>
+              <h4 className="text-sm font-bold text-white">Sitra Ahra</h4>
+              <p className="text-xs text-gray-400">
+                {cs
+                  ? '„Druhá strana" — dualita dobra a zla uvnitř Božství. Gnostický vliv identifikovaný Scholemem (kruh Castile, ~1265).'
+                  : '"The Other Side" — duality of good and evil within the Godhead. Gnostic influence identified by Scholem (Castile circle, ~1265).'}
+              </p>
+            </div>
+          </div>
+
+          {/* Scholem box */}
+          <div className="zion-rainbow-card space-y-3 p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4 text-cyan-400" />
+              <h4 className="text-sm font-bold text-white">
+                {cs ? 'Gershom Scholem (1897–1982)' : 'Gershom Scholem (1897–1982)'}
+              </h4>
+            </div>
+            <p className="text-xs leading-relaxed text-gray-400">
+              {cs
+                ? 'Zakladatel akademického studia kabaly. V polovině 20. století prokázal, že většinu Zoharu napsal Mojžíš de León (~1280–1286), ne rabín Šim\'on bar Jochai (2. stol.). Důkazy: chyby v aramejské gramatice, stopy španělštiny, neznalost země Izrael. Orthodoxní židé tradici nadále obhajují.'
+                : 'Founder of academic Kabbalah study. In the mid-20th century he demonstrated that most of the Zohar was written by Moses de León (~1280–1286), not Rabbi Shimon bar Yochai (2nd century). Evidence: errors in Aramaic grammar, traces of Spanish, lack of knowledge of the land of Israel. Orthodox Jews continue to defend the tradition.'}
+            </p>
           </div>
         </motion.section>
 
