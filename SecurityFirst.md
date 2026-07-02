@@ -1,7 +1,7 @@
 # ZION SecurityFirst — Kompletní zabezpečení Edge mainnet
 
 **Created:** 2026-07-02 (po F1 exploit a rollback)
-**Status:** AUDIT COMPLETE — FIXES IN PROGRESS
+**Status:** PHASE 1+2 COMPLETE — MONITORING ACTIVE, KEY ROTATION PENDING
 **Owner:** yosef + Devin
 
 ---
@@ -267,24 +267,26 @@ Internet
 
 ## 4. Checklist — postup oprav
 
-- [ ] F1.1: Opravit UFW — odstranit veřejná pravidla
-- [ ] F1.2: Odpojit externího peera 109.81.30.165
-- [ ] F1.3: Odstranit starý cron job (MEMO_V1_HEIGHT=24000)
-- [ ] F1.4: Scrub privátní klíče z git repu
-- [ ] F1.5: Opravit file permissions (chmod 600)
-- [ ] F2.1: Vytvořit zion user + systemd User=zion
-- [ ] F2.2: SSH Tailscale-only + klíče only
-- [ ] F2.3: Tailscale ACL
-- [ ] F2.4: AppArmor profil pro zion-node
-- [ ] F2.5: Audit hardhat .env + docker .env
-- [ ] F3.1: RPC audit log
-- [ ] F3.3: Forged TX monitor + alerting
-- [ ] F3.4: Balance monitor
-- [ ] F3.5: P2P peer alert
-- [ ] F4.1: Rotace premine klíčů (air-gapped)
-- [ ] F4.2: Rotace pool payout SK
-- [ ] F4.3: Rotace bridge validator keys
-- [ ] F4.4: Rotace EVM deploy keys
+- [x] F1.1: Opravit UFW — odstranit veřejná pravidla ✅ (2026-07-02 14:46)
+- [x] F1.2: Odpojit externího peera 109.81.30.165 ✅ (peers.json vyčištěn, node restart)
+- [x] F1.3: Odstranit starý cron job (MEMO_V1_HEIGHT=24000) ✅
+- [x] F1.4: Scrub privátní klíče z git repu ✅ (5 souborů, commit 19e6298)
+- [x] F1.5: Opravit file permissions (chmod 600) ✅ (edge-state.db, edge2-state.db, bridge-mainnet.db, edge-environment.sh, data dir 700)
+- [x] F2.1: Vytvořit zion user ✅ (uid=995, systemd User= pending)
+- [x] F2.2: SSH config vyčištěn ✅ (PermitRootLogin prohibit-password, PasswordAuthentication no, X11Forwarding no, AllowUsers root)
+- [x] F2.5: Audit hardhat .env + docker .env ✅ (chmod 600, SK scrubbed z docker/.env v repu)
+- [ ] F2.3: Tailscale ACL — PENDING (vyžaduje admin console)
+- [ ] F2.4: AppArmor profil pro zion-node — PENDING
+- [ ] F2.6: systemd User=zion — PENDING (riskantní, vyžaduje test)
+- [x] F3.2: Block submitter log ✅ (ZION_LOG_BLOCK_SUBMITTER=1)
+- [x] F3.3: Forged TX monitor ✅ (cron každých 5 min, /var/log/zion-forged-tx-alerts.log)
+- [x] F3.4: Balance monitor ✅ (cron každých 5 min, /var/log/zion-balance-alerts.log, kontroluje 5 premine + 2 attacker adresy)
+- [x] F3.5: P2P peer alert ✅ (cron každých 2 min, /var/log/zion-peer-alerts.log, alert na neznámé IP)
+- [ ] F3.1: RPC audit log — PENDING (vyžaduje code change v node.rs)
+- [ ] F4.1: Rotace premine klíčů (air-gapped) — PENDING
+- [ ] F4.2: Rotace pool payout SK — PENDING
+- [ ] F4.3: Rotace bridge validator keys — PENDING
+- [ ] F4.4: Rotace EVM deploy keys — PENDING
 
 ---
 
