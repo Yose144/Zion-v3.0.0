@@ -3,7 +3,7 @@
     "edge-primary": {
       "id": "edge-primary",
       "name": "Edge Primary Node",
-      "host": "100.76.16.108",
+      "host": "127.0.0.1",
       "public_ip": "77.42.71.94",
       "rpc_port": 8443,
       "p2p_port": 8333,
@@ -24,7 +24,7 @@
       "location": "Local",
       "role": "backup",
       "connection": "local",
-      "auto_detect": true,
+      "auto_detect": false,
       "priority": 2
     },
     "macos-local": {
@@ -37,7 +37,7 @@
       "location": "Local",
       "role": "miner",
       "connection": "local",
-      "auto_detect": true,
+      "auto_detect": false,
       "priority": 3
     }
   },
@@ -45,7 +45,7 @@
     "edge-pool": {
       "id": "edge-pool",
       "name": "Edge Pool",
-      "host": "100.76.16.108",
+      "host": "127.0.0.1",
       "stratum_port": 8444,
       "metrics_port": 8455,
       "platform": "linux",
