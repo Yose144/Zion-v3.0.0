@@ -7846,12 +7846,14 @@ def _build_health_map() -> dict:
 
     # Extended services are topology-dependent.
     if TOPOLOGY == "edge-primary":
-        edge_tailscale_ip = status.get("pool_edge", {}).get("tailscale_ip") or EDGE_HOST
+        # When dashboard runs ON Edge, services are bound to 127.0.0.1 (post-hardening).
+        # When dashboard runs on Core, probe via Tailscale IP (only works if ports are public).
+        probe_host = EDGE_RPC_HOST if EDGE_IS_LOCAL else (status.get("pool_edge", {}).get("tailscale_ip") or EDGE_HOST)
         edge_public_ip = status.get("pool_edge", {}).get("public_ip") or EDGE_PUBLIC_IP
         ext_edge_ports = {
             "bridge": 9101,
             "dao": 8450,
-            "swap": 8888,
+            "swap": 8452,
             "warp": 8453,
             "hiranyagarbha": 8001,
             "hiran": 8002,
@@ -7859,8 +7861,8 @@ def _build_health_map() -> dict:
         for sid, port in ext_edge_ports.items():
             alive = False
             try:
-                alive = tcp_probe(edge_tailscale_ip, port, timeout=0.3)
-                if not alive and edge_public_ip and edge_public_ip != edge_tailscale_ip:
+                alive = tcp_probe(probe_host, port, timeout=0.3)
+                if not alive and not EDGE_IS_LOCAL and edge_public_ip and edge_public_ip != probe_host:
                     alive = tcp_probe(edge_public_ip, port, timeout=0.3)
             except Exception:
                 alive = False
