@@ -5,10 +5,10 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 use zion_cosmic_harmony::{
-    body_root_v2_active, cosmic_harmony_ekam_deeksha, cosmic_harmony_with_height, profile_name,
-    profile_name_for_height, tx_hash_v2_active, NclStats, RevenueCollector, RevenueEvent,
-    RevenueStats, CHV_EKAM_FORK_HEIGHT, EKAM_FUSION_ROUNDS, FIRE_FORK_HEIGHT,
-    TX_HASH_V2_ACTIVATION_HEIGHT,
+    account_tx_memo_v1_active, body_root_v2_active, cosmic_harmony_ekam_deeksha,
+    cosmic_harmony_with_height, profile_name, profile_name_for_height, tx_hash_v2_active, NclStats,
+    RevenueCollector, RevenueEvent, RevenueStats, CHV_EKAM_FORK_HEIGHT, EKAM_FUSION_ROUNDS,
+    FIRE_FORK_HEIGHT, TX_HASH_V2_ACTIVATION_HEIGHT,
 };
 
 pub use zion_cosmic_harmony::ExternalCoin;
@@ -2824,7 +2824,15 @@ impl ChainState {
                     }
                 } else {
                     transaction.validate()?;
-                    if !transaction.verify_signature() {
+                    // Height-gate the from-address signature verification: only
+                    // enforce for blocks at or after the account-model memo v1
+                    // hard fork. Historical blocks (pre-activation) may contain
+                    // account TXs where the public key does not derive to the
+                    // sender address, because that check was not enforced when
+                    // they were created.
+                    if account_tx_memo_v1_active(block.height)
+                        && !transaction.verify_signature()
+                    {
                         return Err("account transaction signature verification failed".to_string());
                     }
                     if !seen_sender_nonces.insert((transaction.from.clone(), transaction.nonce)) {
