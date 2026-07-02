@@ -271,6 +271,19 @@ impl BridgeConfig {
                     self.validator.threshold
                 );
             }
+            // H3 security patch: mainnet must use 5-of-5. An operator
+            // must not be able to silently lower the threshold in config.
+            if self.validator.total_validators != 5 || self.validator.threshold != 5 {
+                anyhow::bail!(
+                    "mainnet requires total_validators=5 AND threshold=5 (got {}-of-{}); \
+                     lowering the multisig threshold is a governance decision",
+                    self.validator.threshold,
+                    self.validator.total_validators
+                );
+            }
+            // L1 fail-fast: parse security limits at startup so a malformed
+            // config cannot silently disable limits at runtime.
+            self.parse_security_limits()?;
         }
 
         for chain in self.active_chains() {
@@ -302,6 +315,28 @@ impl BridgeConfig {
             }
         }
 
+        Ok(())
+    }
+
+    /// Parse the security limit strings once at startup so that a malformed
+    /// config fails fast instead of falling back to unsafe defaults at
+    /// runtime (L1 audit finding). Returns the parsed limits for the relayer
+    /// to reuse without re-parsing.
+    fn parse_security_limits(&self) -> anyhow::Result<()> {
+        for field in [
+            ("max_single_amount", self.security.max_single_amount.as_str()),
+            ("daily_limit", self.security.daily_limit.as_str()),
+            ("min_bridge_amount", self.security.min_bridge_amount.as_str()),
+            ("timelock_threshold", self.security.timelock_threshold.as_str()),
+        ] {
+            if field.1.parse::<u128>().is_err() {
+                anyhow::bail!(
+                    "security.{} = {:?} is not a valid u128 integer — fix config before mainnet",
+                    field.0,
+                    field.1
+                );
+            }
+        }
         Ok(())
     }
 }
@@ -631,10 +666,14 @@ log_level = "info"
     fn test_validate_runtime_mainnet_rejects_zero_contracts() {
         let mut cfg = BridgeConfig::default();
         cfg.bridge.network = "mainnet".into();
+        cfg.validator.threshold = 5;
+        cfg.validator.total_validators = 5;
         cfg.validator.validator_addresses = vec![
             "0x1111111111111111111111111111111111111111".into(),
             "0x2222222222222222222222222222222222222222".into(),
             "0x3333333333333333333333333333333333333333".into(),
+            "0x4444444444444444444444444444444444444444".into(),
+            "0x5555555555555555555555555555555555555555".into(),
         ];
         cfg.evm_chains = vec![EvmChainConfig {
             chain_id: "base".into(),
@@ -659,10 +698,14 @@ log_level = "info"
     fn test_validate_runtime_mainnet_requires_start_block() {
         let mut cfg = BridgeConfig::default();
         cfg.bridge.network = "mainnet".into();
+        cfg.validator.threshold = 5;
+        cfg.validator.total_validators = 5;
         cfg.validator.validator_addresses = vec![
             "0x1111111111111111111111111111111111111111".into(),
             "0x2222222222222222222222222222222222222222".into(),
             "0x3333333333333333333333333333333333333333".into(),
+            "0x4444444444444444444444444444444444444444".into(),
+            "0x5555555555555555555555555555555555555555".into(),
         ];
         cfg.evm_chains = vec![EvmChainConfig {
             chain_id: "base".into(),
@@ -687,10 +730,14 @@ log_level = "info"
     fn test_validate_runtime_mainnet_ok_when_guardrails_satisfied() {
         let mut cfg = BridgeConfig::default();
         cfg.bridge.network = "mainnet".into();
+        cfg.validator.threshold = 5;
+        cfg.validator.total_validators = 5;
         cfg.validator.validator_addresses = vec![
             "0x1111111111111111111111111111111111111111".into(),
             "0x2222222222222222222222222222222222222222".into(),
             "0x3333333333333333333333333333333333333333".into(),
+            "0x4444444444444444444444444444444444444444".into(),
+            "0x5555555555555555555555555555555555555555".into(),
         ];
         cfg.evm_chains = vec![EvmChainConfig {
             chain_id: "base".into(),
@@ -708,5 +755,23 @@ log_level = "info"
         }];
 
         assert!(cfg.validate_runtime().is_ok());
+    }
+
+    #[test]
+    fn test_validate_runtime_mainnet_rejects_lowered_threshold() {
+        // H3: mainnet must reject threshold < 5 even if everything else is valid.
+        let mut cfg = BridgeConfig::default();
+        cfg.bridge.network = "mainnet".into();
+        cfg.validator.threshold = 3;
+        cfg.validator.total_validators = 5;
+        cfg.validator.validator_addresses = vec![
+            "0x1111111111111111111111111111111111111111".into(),
+            "0x2222222222222222222222222222222222222222".into(),
+            "0x3333333333333333333333333333333333333333".into(),
+            "0x4444444444444444444444444444444444444444".into(),
+            "0x5555555555555555555555555555555555555555".into(),
+        ];
+        let err = cfg.validate_runtime().unwrap_err().to_string();
+        assert!(err.contains("5-of-5") || err.contains("threshold=5"));
     }
 }

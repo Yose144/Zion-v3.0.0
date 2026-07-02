@@ -241,11 +241,17 @@ impl EvmWatcher {
             let count = logs.len();
             total_events += count;
 
+            // M1: track reorgs. If any removed log is seen in this chunk,
+            // do NOT advance the cursor past it — stop and re-scan next
+            // iteration so the relayer does not build on inconsistent state.
+            let mut saw_reorg = false;
+
             for log in logs {
                 // Skip removed logs (chain reorg)
                 if log.removed == Some(true) {
-                    warn!(
-                        "[{}] Skipping removed log (chain reorg) in block {}",
+                    saw_reorg = true;
+                    error!(
+                        "[{}] Reorg detected: removed log in block {} — pausing cursor advance (M1)",
                         self.config.name,
                         log.block_number_u64()
                     );
@@ -277,8 +283,18 @@ impl EvmWatcher {
                 }
             }
 
-            self.last_processed_block = to_block;
-            from_block = to_block + 1;
+            // M1: only advance the cursor when no reorg was observed in
+            // this chunk. If a reorg happened, keep last_processed_block
+            // unchanged so the next poll re-scans the same range after the
+            // chain has settled.
+            if !saw_reorg {
+                self.last_processed_block = to_block;
+                from_block = to_block + 1;
+            } else {
+                // Stop scanning further chunks this iteration; the next
+                // poll will re-fetch from the pre-reorg cursor.
+                break;
+            }
         }
 
         Ok(total_events)
