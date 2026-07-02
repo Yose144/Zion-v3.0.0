@@ -125,11 +125,13 @@ Chain state:
 
 ## 7. Remaining Items
 
-- [ ] **Node 2 (`zion-edge-node2`)** — needs same binary deploy + env var
+- [x] **Node 2 (`zion-edge-node2`)** — ✅ DEPLOYED (potvrzeno 2026-07-02 22:55, `balance_check_activation_height=22394` v logu)
 - [ ] **Other nodes** — if any peers run old binary, they will accept invalid TXs but Edge will reject their blocks (consensus divergence risk)
-- [ ] **F5 fuzzing** — submit random TXs from random addresses to verify rejection
+- [x] **F5 fuzzing** — ✅ COMPLETE (commit `a5472ec6`, 5 fuzz testů — 100 random senders, double-spend, u64::MAX, rapid-fire, self-send, vše PASS)
+- [x] **Node binary swap** — ✅ COMPLETE (2026-07-02 22:55, nejnovější binárka s fmt/clippy cleanup, F5 aktivní, height 22539)
 - [ ] **Pre-existing test failures** — 10 tests fail unrelated to F5 (port conflicts with running Edge services, journal persistence). Investigate separately.
 - [ ] **Long-term: consider UTXO-backed account model** (Option 3 from architecture discussion) for 3.1.0+ to eliminate account-model balance bugs entirely
+- [ ] **Max TX amount cap** — 100M ZION cap pro dodatečnou ochranu i s F5 fix (L1 consensus change, needs spec + audit)
 
 ---
 
@@ -139,3 +141,4 @@ Chain state:
 2. **Placeholder keys are dangerous.** `ZION_SWAP_ESCROW_KEY=0000...0001` looked like a real key (64 hex chars, not all zeros) but derived to an empty address. All config keys should be validated against expected addresses on startup.
 3. **Hybrid UTXO/account models need balance checks on BOTH paths.** UTXO is inherently safe (inputs must exist), but account model needs explicit balance validation.
 4. **Height-gated fixes work well for live chains.** The `ZION_BALANCE_CHECK_HEIGHT` env var allowed a clean hard fork without chain rollback.
+5. **Label-derived addresses are PUBLIC keys.** `canonical_address_for_label()` derivuje klíče z veřejných labelů v source kódu — kdokoliv s přístupem k repu může utratit funds. Canonical wallets v `genesis.rs` musí být z **offline mnemonics**, nikoliv z label derivace. Pokus o "fix" genesis.rs adres na label-derived byl revertnut jako security downgrade.
