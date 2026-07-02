@@ -410,6 +410,24 @@ fn handle_p2p_stream(
     // Peer ID assigned after Hello handshake
     let mut peer_id: Option<String> = None;
 
+    // Transport-layer block-import allowlist (SEC-2026-07-02 F1 hardening).
+    //
+    // `ZION_P2P_ALLOWED_PEERS` is a comma-separated list of source IPs that
+    // are permitted to announce blocks. When set, blocks from any other
+    // source IP are rejected at the transport layer BEFORE consensus
+    // validation. This is defense-in-depth on top of the firewall
+    // (UFW/Tailscale) — if the firewall is ever misconfigured, an
+    // unauthenticated peer still cannot inject blocks. Empty/unset = open
+    // (any peer may announce blocks; consensus rules still apply).
+    let block_import_allowlist: Vec<IpAddr> = std::env::var("ZION_P2P_ALLOWED_PEERS")
+        .ok()
+        .map(|raw| {
+            raw.split(',')
+                .filter_map(|entry| entry.trim().parse::<IpAddr>().ok())
+                .collect()
+        })
+        .unwrap_or_default();
+
     loop {
         let line = match read_line(&mut reader) {
             Ok(line) => line,
@@ -471,6 +489,26 @@ fn handle_p2p_stream(
 
         // Detect AnnounceBlock / AnnounceTx for relay
         let is_announce = matches!(&message, P2pMessage::AnnounceBlock { .. });
+
+        // Transport-layer block-import allowlist enforcement (F1 hardening).
+        // Reject block announcements from source IPs that are not on the
+        // configured allowlist. Consensus validation still runs for allowed
+        // peers; this only blocks unauthorized sources from reaching it.
+        if is_announce
+            && !block_import_allowlist.is_empty()
+            && !block_import_allowlist.contains(&source_ip)
+        {
+            eprintln!(
+                "p2p_block_rejected_unallowed_peer source={source_addr} ip={source_ip}"
+            );
+            lock_peer_sec(peer_sec).punish(
+                source_ip,
+                epoch_secs(),
+                zion_core::p2p_security::BanReason::ProtocolViolation,
+            );
+            break;
+        }
+
         let announce_tx_info = match &message {
             P2pMessage::AnnounceTx { tx_id, transaction } => {
                 Some((tx_id.clone(), transaction.clone()))
