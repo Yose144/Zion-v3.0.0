@@ -136,16 +136,102 @@ useradd --system --no-create-home --shell /usr/sbin/nologin zion
 
 #### F2.3: Tailscale ACL
 
+**Krok 1:** Otaguj zařízení v Tailscale admin console (https://login.tailscale.com/admin/machines):
+
+| Zařízení | IP | Tag |
+|----------|-----|-----|
+| `mainnetedge` | 100.76.16.108 | `tag:edge-server` |
+| `jose--macbook-pro` | 100.100.46.39 | `tag:workstation` |
+| `zionserver` (Windows) | 100.86.102.5 | `tag:mining-server` |
+| `zionserver-144` | 100.74.34.40 | `tag:legacy` (offline, žádný přístup) |
+
+**Krok 2:** Aplikuj ACL v https://login.tailscale.com/admin/acls:
+
 ```json
-// V Tailscale admin console:
 {
+  "tagOwners": {
+    "tag:edge-server":    ["yosef.hubalek@gmail.com"],
+    "tag:workstation":    ["yosef.hubalek@gmail.com"],
+    "tag:mining-server":  ["yosef.hubalek@gmail.com"],
+    "tag:legacy":         ["yosef.hubalek@gmail.com"]
+  },
   "acls": [
-    {"action": "accept", "src": ["yosef.hubalek@gmail.com"], "dst": ["mainnetedge:22", "mainnetedge:*"]}
+    // ── Workstation (Yosef's MacBook) → Edge server ──────────────────
+    // SSH + dashboard only. No RPC, no P2P, no pool.
+    {
+      "action": "accept",
+      "src":    ["tag:workstation"],
+      "dst":    [
+        "tag:edge-server:22",     // SSH
+        "tag:edge-server:8888"    // Dashboard (Tailscale-bound)
+      ]
+    },
+
+    // ── Mining server (zionserver Windows) → Edge server ─────────────
+    // P2P (block propagation) + pool (mining submissions).
+    // No SSH, no dashboard, no RPC.
+    {
+      "action": "accept",
+      "src":    ["tag:mining-server"],
+      "dst":    [
+        "tag:edge-server:8333",   // P2P node1
+        "tag:edge-server:8334",   // P2P node2
+        "tag:edge-server:8444"    // Pool server (miners)
+      ]
+    },
+
+    // ── Edge server → Mining server ──────────────────────────────────
+    // P2P outbound (seed peer connection to zionserver:8333).
+    {
+      "action": "accept",
+      "src":    ["tag:edge-server"],
+      "dst":    ["tag:mining-server:8333"]
+    },
+
+    // ── Legacy server: NO ACCESS ─────────────────────────────────────
+    // zionserver-144 is offline 13d. No rules = no access (default deny).
+    // Re-tag as tag:workstation or tag:mining-server if brought back online.
   ],
+
+  // No Tailscale SSH (we use regular SSH with keys).
   "ssh": [],
-  "nodeAttrs": []
+
+  // No node attributes (no exit nodes, no subnet routers).
+  "nodeAttrs": [],
+
+  // No tests required for 4-device tailnet, but add for safety:
+  "tests": [
+    {
+      "src":    "tag:workstation",
+      "accept": ["tag:edge-server:22", "tag:edge-server:8888"],
+      "deny":   ["tag:edge-server:8333", "tag:edge-server:8444", "tag:edge-server:8443"]
+    },
+    {
+      "src":    "tag:mining-server",
+      "accept": ["tag:edge-server:8333", "tag:edge-server:8444"],
+      "deny":   ["tag:edge-server:22", "tag:edge-server:8888", "tag:edge-server:8443"]
+    }
+  ]
 }
 ```
+
+**Co to dělá:**
+- **Default deny** — jakékoliv nové zařízení v tailnetu nemá přístup nikam (musí být otagováno)
+- **Workstation** (MacBook) → jen SSH + dashboard na Edge
+- **Mining server** (zionserver) → jen P2P + pool na Edge
+- **Edge → Mining server** → jen P2P outbound (seed peer)
+- **Legacy** (zionserver-144) → žádný přístup
+- **Port 8443 (RPC)** — není v žádném ACL pravidle, takže není přístupný ani přes Tailscale
+- **Port 8444 (pool)** — jen pro tag:mining-server (ne pro workstation)
+
+**Co je vyloučeno (záměrně):**
+- RPC (8443/8446) — localhost only, nepřístupný přes Tailscale
+- Bridge metrics (9101) — localhost only (po rebuild)
+- DAO (8450) — localhost only (po rebuild)
+- WARP (8453) — localhost only
+- Agent (8767) — localhost only
+- Oasis/Free-world/Issobella (8094/8095/8096) — localhost only
+- Grafana/Prometheus (3100/9090/9100) — UFW explicit deny + localhost
 
 #### F2.4: AppArmor profil pro zion-node
 
@@ -251,7 +337,7 @@ Internet
        ├── zion-bridge :9101 (localhost only)
        ├── zion-dao :8450 (localhost only)
        ├── zion-warp :8453 (localhost only)
-       ├── zion-dashboard :8888 (Tailscale only)
+       ├── zion-dashboard :8888 (Tailscale only) + :8766 (localhost only)
        ├── zion-agent :8767 (localhost only)
        ├── zion-oasis :8094 (localhost only)
        ├── zion-free-world :8095 (localhost only)
@@ -281,7 +367,10 @@ Internet
   - ✅ Tailscale IP: dashboard(8888)
   - ⏳ 0.0.0.0 (UFW blokuje, bezpečné): P2P(8333,8334), pool(8444) — musí zůstat pro Tailscale minery
   - ⏳ 0.0.0.0 (UFW blokuje, code change pending rebuild): bridge metrics(9101), DAO(8450)
-- [ ] F2.3: Tailscale ACL — PENDING (vyžaduje admin console — viz ACL config výše)
+- [ ] F2.3: Tailscale ACL — DOC READY (viz výše), uživatel musí aplikovat přes admin console:
+  1. Otagovat zařízení: mainnetedge=tag:edge-server, jose--macbook-pro=tag:workstation, zionserver=tag:mining-server, zionserver-144=tag:legacy
+  2. Vložit ACL JSON na https://login.tailscale.com/admin/acls
+  3. Ověřit: `tailscale ping` z MacBooku na 100.76.16.108:22 (OK) a :8443 (deny)
 - [ ] F2.6: systemd User=zion — PENDING (riskantní, vyžaduje test)
 - [x] F3.2: Block submitter log ✅ (ZION_LOG_BLOCK_SUBMITTER=1)
 - [x] F3.3: Forged TX monitor ✅ (cron každých 5 min, /var/log/zion-forged-tx-alerts.log)
