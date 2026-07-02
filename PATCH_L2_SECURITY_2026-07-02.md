@@ -2,10 +2,10 @@
 
 > **Scope:** `V3/L2/**` (bridge, atomic-swap, dao). No L1 consensus changes.
 > **Verification:** `cargo test --manifest-path V3/Cargo.toml -p zion-atomic-swap -p zion-bridge -p zion-dao` → **324 passed, 0 failed**.
-> **Status:** ✅ Code complete + tested. Deploy pending (see §Deploy).
+> **Status:** ✅ DEPLOYED on Edge (2026-07-02 18:54, verified 23:00 UTC). All L2 security fixes active.
 > **Cross-ref:** F1 exploit post-mortem + Edge server hardening: [`SecurityFirst.md`](./SecurityFirst.md) · Forensic timeline: [`SecurityBackup.md`](./SecurityBackup.md) · L1 fix: [`CRITICAL_3.0.4_SECURITY_FINDINGS.md`](./CRITICAL_3.0.4_SECURITY_FINDINGS.md)
 
-> **UPDATE 2026-07-02:** This L2 patch (commit `a8b3821e`) was prepared alongside the F1 L1 fix. The F1 exploit (forged account TX via P2P) occurred before deployment, triggering a chain rollback to height 22180. Both L1 and L2 fixes are now in `main`. Edge server has been hardened (UFW, bind addresses 127.0.0.1, AppArmor, monitoring). L2 services (bridge, atomic-swap, DAO) are running on Edge but await rebuild to pick up the L2 patch code changes.
+> **UPDATE 2026-07-02 23:00 UTC:** L2 patch (commit `a8b3821e`) je **DEPLOYED na Edge**. MD5 shoda ověřena mezi `/usr/local/bin/zion-*` a `V3/target/release/zion-*` — binárky z 18:54 (build po commitu v 15:55) obsahují všechny L2 security fixy. Node binary swapnut na nejnovější verzi (22:55). Vše aktivní: claimant guard, threshold 5/5, reorg safety, key hygiene, checked cast, composite dedup, escrow key zeroing, memo cap.
 
 ## Findings addressed
 
@@ -74,11 +74,12 @@
 
 ---
 
-## Edge server status (2026-07-02)
+## Edge server status (2026-07-02 23:00 UTC)
 
-- **L2 services running:** bridge (port 9101), DAO (port 8450), atomic-swap (port 8452) — all active
-- **Bind addresses:** bridge metrics 9101 and DAO 8450 still on `0.0.0.0` (UFW blocks, code change pending rebuild). Atomic-swap 8452 on `127.0.0.1`.
-- **L2 patch NOT yet deployed:** The running binaries on Edge do not include commit `a8b3821e`. A rebuild + service swap is required.
-- **Edge hardening complete:** UFW (only SSH/HTTP/HTTPS/Tailscale), AppArmor (zion-node enforce), 13/18 services on 127.0.0.1, 3 monitoring cron jobs. See [`SecurityFirst.md`](./SecurityFirst.md).
+- **L2 services running:** bridge (port 9101), DAO (port 8450), atomic-swap (port 8452) — all active, all on 127.0.0.1
+- **L2 patch DEPLOYED:** MD5 shoda ověřena — binárky z 18:54 obsahují commit `a8b3821e`. Vše aktivní.
+- **Bind addresses:** ALL services on 127.0.0.1 (bridge 9101, DAO 8450, atomic-swap 8452). Env var names fix v service files (BRIDGE_METRICS_HOST, DAO_API_HOST).
+- **Node binary:** Swapnut na nejnovější verzi (22:55 UTC) s fmt/clippy cleanup + F5 fix + RPC audit log. F5 aktivní (height 22394), chain height 22539.
+- **Edge hardening complete:** UFW (only SSH/HTTP/HTTPS/Tailscale), AppArmor (zion-node enforce), ALL services on 127.0.0.1, 3 monitoring cron jobs. See [`SecurityFirst.md`](./SecurityFirst.md).
 - **Bridge validator keys:** 3/5 provisioned. 2/5 pending. See [`V3/docs/BRIDGE_MULTISIG.md`](./V3/docs/BRIDGE_MULTISIG.md).
-- **Atomic-swap escrow key:** `ZION_SWAP_ESCROW_KEY` was placeholder `0000...0001` — needs rotation. See [`SecurityFirst.md`](./SecurityFirst.md) §H7.
+- **Atomic-swap escrow key:** `ZION_SWAP_ESCROW_KEY` rotován (nový keypair, placeholder odstraněn). Inflační 100,002 ZION spáleno. See [`F5_SECURITY_INCIDENT_REPORT_2026-07-02.md`](./F5_SECURITY_INCIDENT_REPORT_2026-07-02.md).

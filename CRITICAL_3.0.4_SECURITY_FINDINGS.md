@@ -120,9 +120,10 @@ The correct SK hex for the pool payout signer is `a3bc7452beb612e2f3a59f85d31905
 
 ### ⚠️ Still pending
 
-- **Finding 2 (canonical wallet mismatch in genesis.rs):** The hardcoded `MAINNET_CANONICAL_*_WALLET` constants still do not match `canonical_address_for_label()`. This is an L1 change requiring explicit approval per AGENTS.md. The debug assertions in `canonical-mainnet-operator-env.rs` were removed to allow production deployment, but the underlying mismatch remains.
+- **Finding 2 (canonical wallet mismatch in genesis.rs):** The hardcoded `MAINNET_CANONICAL_*_WALLET` constants still do not match `canonical_address_for_label()`. **IMPORTANT:** Label-derived addresses have PUBLIC keys (anyone with repo access can derive the private key) — fixing this requires generating new keys on an **air-gapped machine** per `GENESIS_REGENERATION_RUNBOOK.md`, NOT simply replacing with label-derived addresses. An attempt to use label-derived addresses was made and reverted as a security downgrade (2026-07-02 23:10).
 - **Key rotation (F4.x):** Premine, pool, bridge, EVM keys need rotation on an air-gapped machine. See [`SecurityFirst.md`](./SecurityFirst.md) §F4.
 - **BFG / git history scrub:** `PREMINE_WALLETS_BACKUP.json` still in git history. Required before public launch/fork.
+- **Max TX amount cap (100M ZION):** Additional defense-in-depth even with F5 fix. L1 consensus change, needs spec + audit.
 
 ---
 
