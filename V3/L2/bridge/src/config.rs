@@ -324,10 +324,19 @@ impl BridgeConfig {
     /// to reuse without re-parsing.
     fn parse_security_limits(&self) -> anyhow::Result<()> {
         for field in [
-            ("max_single_amount", self.security.max_single_amount.as_str()),
+            (
+                "max_single_amount",
+                self.security.max_single_amount.as_str(),
+            ),
             ("daily_limit", self.security.daily_limit.as_str()),
-            ("min_bridge_amount", self.security.min_bridge_amount.as_str()),
-            ("timelock_threshold", self.security.timelock_threshold.as_str()),
+            (
+                "min_bridge_amount",
+                self.security.min_bridge_amount.as_str(),
+            ),
+            (
+                "timelock_threshold",
+                self.security.timelock_threshold.as_str(),
+            ),
         ] {
             if field.1.parse::<u128>().is_err() {
                 anyhow::bail!(

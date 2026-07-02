@@ -20,8 +20,8 @@ pub use algorithms_npu::{
 };
 pub use algorithms_opt::{cosmic_harmony_with_height, meets_difficulty, Hash32, Hash64};
 pub use deeksha::{
-    account_tx_memo_v1_activation_height, account_tx_memo_v1_active, balance_check_active,
-    balance_check_activation_height, body_root_v2_active,
+    account_tx_memo_v1_activation_height, account_tx_memo_v1_active,
+    balance_check_activation_height, balance_check_active, body_root_v2_active,
     cosmic_harmony_ekam_deeksha, cosmic_harmony_ekam_deeksha_v2, cosmic_harmony_ekam_deeksha_v3,
     ekam_find_nonce, ekam_self_test, ekam_v2_find_nonce, ekam_v2_self_test, ekam_v3_find_nonce,
     ekam_v3_self_test, generate_ekam_test_vector, generate_ekam_v2_test_vector,

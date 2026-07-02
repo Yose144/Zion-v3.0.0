@@ -86,7 +86,7 @@ impl Player {
     ///   - < 24h since last activity → consecutive (streak +1 once per day)
     ///   - 24h–48h → streak continues (same day boundary)
     ///   - > 48h → streak reset to 1
-    /// Also updates `last_active` to the current timestamp.
+    ///     > Also updates `last_active` to the current timestamp.
     pub fn touch(&mut self) {
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)

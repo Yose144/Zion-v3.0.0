@@ -174,7 +174,7 @@ mod tests {
     #[test]
     fn test_signer_from_env_wrong_length_err() {
         // 16 bytes instead of 32
-        std::env::set_var("WARP_APTOS_RELAY_KEY", hex::encode(&[0u8; 16]));
+        std::env::set_var("WARP_APTOS_RELAY_KEY", hex::encode([0u8; 16]));
         assert!(AptosSigner::from_env().is_err());
         std::env::remove_var("WARP_APTOS_RELAY_KEY");
     }

@@ -5,11 +5,10 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 use zion_cosmic_harmony::{
-    account_tx_memo_v1_active, balance_check_active,
-    body_root_v2_active, cosmic_harmony_ekam_deeksha,
-    cosmic_harmony_with_height, profile_name, profile_name_for_height, tx_hash_v2_active, NclStats,
-    RevenueCollector, RevenueEvent, RevenueStats, CHV_EKAM_FORK_HEIGHT, EKAM_FUSION_ROUNDS,
-    FIRE_FORK_HEIGHT, TX_HASH_V2_ACTIVATION_HEIGHT,
+    account_tx_memo_v1_active, balance_check_active, body_root_v2_active,
+    cosmic_harmony_ekam_deeksha, cosmic_harmony_with_height, profile_name, profile_name_for_height,
+    tx_hash_v2_active, NclStats, RevenueCollector, RevenueEvent, RevenueStats,
+    CHV_EKAM_FORK_HEIGHT, EKAM_FUSION_ROUNDS, FIRE_FORK_HEIGHT, TX_HASH_V2_ACTIVATION_HEIGHT,
 };
 
 pub use zion_cosmic_harmony::ExternalCoin;
@@ -2058,8 +2057,8 @@ impl ChainState {
                     balance = balance.saturating_add(tx.amount_zion as i128);
                 }
                 if tx.from == address {
-                    balance = balance
-                        .saturating_sub((tx.amount_zion + tx.fee_zion as u128) as i128);
+                    balance =
+                        balance.saturating_sub((tx.amount_zion + tx.fee_zion as u128) as i128);
                 }
             }
         }
@@ -2068,8 +2067,8 @@ impl ChainState {
         for entry in &self.mempool {
             if let Some(tx) = entry.as_account() {
                 if tx.from == address {
-                    balance = balance
-                        .saturating_sub((tx.amount_zion + tx.fee_zion as u128) as i128);
+                    balance =
+                        balance.saturating_sub((tx.amount_zion + tx.fee_zion as u128) as i128);
                 }
             }
         }
@@ -4885,9 +4884,7 @@ mod tests {
         let mut runtime = NodeRuntime::new("node-f5-rpc", NodeConfig::mainnet());
         // Build a valid (signed) TX from a brand-new address with 0 balance.
         let tx = build_valid_account_tx("__f5_empty_sender__", "wallet.dest", 100, 1, 1);
-        let resp = runtime.handle_rpc_request(RpcRequest::SubmitTransaction {
-            transaction: tx,
-        });
+        let resp = runtime.handle_rpc_request(RpcRequest::SubmitTransaction { transaction: tx });
         // Reset F5 gate so subsequent tests are unaffected.
         zion_cosmic_harmony::set_balance_check_height(u64::MAX);
         match resp {
@@ -4916,7 +4913,13 @@ mod tests {
             transaction: tx.clone(),
         });
         // The RPC path should reject it first (F5 RPC guard).
-        if matches!(submit_resp, RpcResponse::TransactionResult { accepted: false, .. }) {
+        if matches!(
+            submit_resp,
+            RpcResponse::TransactionResult {
+                accepted: false,
+                ..
+            }
+        ) {
             zion_cosmic_harmony::set_balance_check_height(u64::MAX);
             return;
         }
@@ -4950,8 +4953,7 @@ mod tests {
         // Derive the zion1 address for the miner label so the coinbase
         // output goes to the same address that build_valid_account_tx will
         // use as the `from` field.
-        let (_miner_sk, miner_vk) =
-            crypto::keypair_from_canonical_label("wallet.f5_miner");
+        let (_miner_sk, miner_vk) = crypto::keypair_from_canonical_label("wallet.f5_miner");
         let miner_addr = crypto::derive_address(miner_vk.as_bytes());
         runtime.set_miner_address(miner_addr.clone());
         // Mine a block to fund the miner address via coinbase.
@@ -4969,15 +4971,11 @@ mod tests {
         // build_valid_account_tx derives the same keypair from the same
         // label, so the from address matches.
         let tx = build_valid_account_tx("wallet.f5_miner", "wallet.dest", 10, 1, 1);
-        let resp = runtime.handle_rpc_request(RpcRequest::SubmitTransaction {
-            transaction: tx,
-        });
+        let resp = runtime.handle_rpc_request(RpcRequest::SubmitTransaction { transaction: tx });
         zion_cosmic_harmony::set_balance_check_height(u64::MAX);
         match resp {
             RpcResponse::TransactionResult { accepted: true, .. } => {}
-            other => panic!(
-                "F5 positive: TX from funded address must be accepted, got: {other:?}"
-            ),
+            other => panic!("F5 positive: TX from funded address must be accepted, got: {other:?}"),
         }
     }
 

@@ -36,7 +36,7 @@ impl BitString {
 
     pub fn with_capacity(bits: usize) -> Self {
         Self {
-            buf: Vec::with_capacity((bits + 7) / 8 + 1),
+            buf: Vec::with_capacity(bits.div_ceil(8) + 1),
             bit_len: 0,
         }
     }
@@ -116,7 +116,7 @@ impl BitString {
 
     /// Pad to byte boundary with zeros.
     pub fn pad_to_byte(&mut self) {
-        while self.bit_len % 8 != 0 {
+        while !self.bit_len.is_multiple_of(8) {
             self.write_bit(false);
         }
     }
@@ -196,8 +196,8 @@ impl Cell {
         let d1 = (self.refs.len() as u8) << 5;
 
         // d2 (data descriptor): bits 7-1 = data length in bytes, bit 0 = partially filled
-        let data_bytes = (self.data.bit_len() + 7) / 8;
-        let is_partial = self.data.bit_len() % 8 != 0;
+        let data_bytes = self.data.bit_len().div_ceil(8);
+        let is_partial = !self.data.bit_len().is_multiple_of(8);
         let d2 = ((data_bytes as u8) << 1) | (if is_partial { 1 } else { 0 });
 
         out.push(d1);
@@ -272,7 +272,7 @@ pub fn serialize_boc(root: &Cell) -> Vec<u8> {
         let d1 = (cell.refs().len() as u8) << 5;
         // Data descriptor
         let data_bits = cell.data().bit_len();
-        let data_bytes = (data_bits + 7) / 8;
+        let data_bytes = data_bits.div_ceil(8);
         let is_partial = data_bits % 8 != 0;
         let d2 = ((data_bytes as u8) << 1) | (if is_partial { 1 } else { 0 });
 
@@ -541,8 +541,8 @@ pub fn wallet_v2r2_signing_hash(
     // Descriptor bytes
     let d1 = 1u8 << 5; // 1 ref
     let data_bits = body_data.bit_len();
-    let data_bytes = (data_bits + 7) / 8;
-    let is_partial = data_bits % 8 != 0;
+    let data_bytes = data_bits.div_ceil(8);
+    let is_partial = !data_bits.is_multiple_of(8);
     let d2 = ((data_bytes as u8) << 1) | (if is_partial { 1 } else { 0 });
 
     repr.push(d1);

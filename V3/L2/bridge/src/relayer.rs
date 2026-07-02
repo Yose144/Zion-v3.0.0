@@ -348,9 +348,7 @@ impl Relayer {
                 match evm.get_max_priority_fee().await {
                     Ok(f) => f,
                     Err(e2) => {
-                        warn!(
-                            "priority fee RPC retry failed ({e2}); using 1.5 gwei fallback"
-                        );
+                        warn!("priority fee RPC retry failed ({e2}); using 1.5 gwei fallback");
                         1_500_000_000
                     }
                 }

@@ -219,6 +219,7 @@ impl WalletClient {
     }
 
     /// Send via UTXO model (explicit).
+    #[allow(clippy::too_many_arguments)]
     pub async fn send_utxo(
         &self,
         signing_key: &SigningKey,

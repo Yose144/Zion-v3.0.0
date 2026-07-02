@@ -124,9 +124,7 @@ impl SwapDb {
             .filter_map(|r| r.ok())
             .any(|name| name == "claimant_address");
         if !has_col {
-            conn.execute_batch(
-                "ALTER TABLE htlc_locks ADD COLUMN claimant_address TEXT;",
-            )?;
+            conn.execute_batch("ALTER TABLE htlc_locks ADD COLUMN claimant_address TEXT;")?;
         }
         Ok(())
     }

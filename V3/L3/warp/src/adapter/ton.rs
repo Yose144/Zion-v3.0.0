@@ -306,7 +306,7 @@ impl TonAdapter {
         // TON Center returns: { "result": { "gas_used": ..., "stack": [["num", "<hex>"]] } }
         // The seqno is the first stack element as a hex-encoded big-endian uint.
         if let Some(stack) = result["stack"].as_array() {
-            if let Some(first) = stack.get(0) {
+            if let Some(first) = stack.first() {
                 if let Some(num_str) = first.get(1).and_then(|v| v.as_str()) {
                     // Parse hex (may have 0x prefix)
                     let clean = num_str.strip_prefix("0x").unwrap_or(num_str);

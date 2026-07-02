@@ -72,8 +72,7 @@ fn main() {
         memo: Some("burn_inflationary_funds".to_string()),
     };
 
-    let rpc_addr =
-        std::env::var("ZION_RPC_ADDR").unwrap_or_else(|_| "127.0.0.1:8443".into());
+    let rpc_addr = std::env::var("ZION_RPC_ADDR").unwrap_or_else(|_| "127.0.0.1:8443".into());
     let payload = json!({
         "jsonrpc": "2.0",
         "id": 1,

@@ -133,9 +133,9 @@ fn bech32_polymod(values: &[u8]) -> u32 {
     for &v in values {
         let top = chk >> 25;
         chk = ((chk & 0x1ffffff) << 5) ^ (v as u32);
-        for i in 0..5 {
+        for (i, &g) in generator.iter().enumerate() {
             if (top >> i) & 1 == 1 {
-                chk ^= generator[i];
+                chk ^= g;
             }
         }
     }
@@ -239,14 +239,14 @@ impl CardanoSigner {
     /// Derive the policy ID (Blake2b-224 hash of the policy script).
     pub fn policy_id(&self) -> String {
         let policy_script = self.policy_key.verifying_key().to_bytes();
-        let hash = Blake2b224::digest(&policy_script);
+        let hash = Blake2b224::digest(policy_script);
         hex::encode(hash)
     }
 
     /// Derive the policy ID as raw 28 bytes (for CBOR encoding).
     pub fn policy_id_bytes(&self) -> [u8; 28] {
         let policy_script = self.policy_key.verifying_key().to_bytes();
-        Blake2b224::digest(&policy_script).into()
+        Blake2b224::digest(policy_script).into()
     }
 
     /// Submit a signed TX via Blockfrost REST API.

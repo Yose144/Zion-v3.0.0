@@ -217,6 +217,7 @@ impl NearSigner {
 
     /// Build a `FunctionCall` transaction, sign it, and return base64-encoded
     /// signed-transaction bytes ready for `broadcast_tx_async`.
+    #[allow(clippy::too_many_arguments)]
     pub fn build_signed_function_call_b64(
         &self,
         receiver_id: &str,
@@ -268,7 +269,7 @@ mod tests {
 
     #[test]
     fn test_from_hex_valid() {
-        let hex_str = hex::encode(&[7u8; 32]);
+        let hex_str = hex::encode([7u8; 32]);
         let s = NearSigner::from_hex(&hex_str, "relay.near").unwrap();
         assert_eq!(s.account_id, "relay.near");
         assert_eq!(s.public_key().bytes.len(), 32);
@@ -276,7 +277,7 @@ mod tests {
 
     #[test]
     fn test_from_hex_invalid_length() {
-        let bad = hex::encode(&[0u8; 16]);
+        let bad = hex::encode([0u8; 16]);
         assert!(NearSigner::from_hex(&bad, "x.near").is_err());
     }
 
@@ -295,7 +296,7 @@ mod tests {
     #[test]
     fn test_from_env_missing_account() {
         // key set but account missing
-        std::env::set_var("WARP_NEAR_RELAY_KEY", hex::encode(&[1u8; 32]));
+        std::env::set_var("WARP_NEAR_RELAY_KEY", hex::encode([1u8; 32]));
         std::env::remove_var("WARP_NEAR_ACCOUNT");
         assert!(NearSigner::from_env().is_err());
         std::env::remove_var("WARP_NEAR_RELAY_KEY");
