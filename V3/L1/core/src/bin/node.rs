@@ -557,11 +557,13 @@ fn handle_rpc_stream(
         .set_read_timeout(Some(Duration::from_secs(RPC_READ_TIMEOUT_SECS)))
         .ok();
     let reader_stream = stream.try_clone().context("failed to clone RPC stream")?;
+    let peer_addr = stream.peer_addr().ok().map(|a| a.to_string()).unwrap_or_else(|| "unknown".to_string());
     let mut reader = BufReader::new(reader_stream);
     let mut writer = stream;
 
     let line = read_line_limited(&mut reader, RPC_MAX_REQUEST_BYTES)?;
     println!("rpc_in={line}");
+    println!("rpc_audit peer={peer_addr} method={line}");
 
     // ── HTTP POST support for Electron/mobile clients ───────────────────
     // Desktop agent and mobile app send HTTP POST requests; detect and handle them.
@@ -765,6 +767,18 @@ fn handle_rpc_http(
         .context("failed to read HTTP body")?;
     let body_str = String::from_utf8_lossy(&body_buf);
     println!("rpc_http_in={body_str}");
+
+    // ── Audit log: extract RPC method for security monitoring ──────────
+    if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&body_str) {
+        if let Some(method) = parsed.get("method").and_then(|m| m.as_str()) {
+            let tx_id = parsed.get("params")
+                .and_then(|p| p.get("transaction"))
+                .and_then(|t| t.get("tx_id"))
+                .and_then(|t| t.as_str())
+                .unwrap_or("");
+            println!("rpc_audit_http method={method} tx_id={tx_id}");
+        }
+    }
 
     // Check if this is a submitTransaction request to extract the transaction for relay
     let submit_tx = if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&body_str) {
