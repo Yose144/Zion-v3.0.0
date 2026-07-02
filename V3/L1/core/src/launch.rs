@@ -81,8 +81,24 @@ pub fn checkpoints() -> Vec<Checkpoint> {
             height: 0,
             hash: frozen_genesis_hash(),
         },
+        // Post-incident finality checkpoint (SEC-2026-07-02 F1 exploit).
+        //
+        // The chain was rolled back to height 22180 after a forged
+        // account-model transaction was mined at height 22181. The
+        // account-tx signature gate (`ZION_ACCOUNT_TX_MEMO_V1_HEIGHT`)
+        // is set to 22181, so blocks BELOW 22181 do not enforce account
+        // signature verification. Without a checkpoint, a deep reorg
+        // below 22181 could replay unsigned/forged account transactions.
+        //
+        // This checkpoint pins the canonical block 22180 hash, making any
+        // reorg that attempts to replace block 22180 (and therefore any
+        // block below the signature gate) impossible. Append-only; never
+        // remove.
+        Checkpoint {
+            height: 22_180,
+            hash: "00000d094ab56366402ce89440efb12011a8ddf8544162422214423ea1541ba8".into(),
+        },
         // Future checkpoints added here as chain matures:
-        // Checkpoint { height: 10_000,  hash: "...".into() },
         // Checkpoint { height: 100_000, hash: "...".into() },
     ]
 }
@@ -289,9 +305,20 @@ mod tests {
     }
 
     #[test]
-    fn highest_checkpoint_is_genesis() {
-        // Until more checkpoints are added, highest is 0
-        assert_eq!(highest_checkpoint_height(), 0);
+    fn highest_checkpoint_is_post_incident_finality() {
+        // Genesis (0) plus the SEC-2026-07-02 finality checkpoint at 22180.
+        assert_eq!(highest_checkpoint_height(), 22_180);
+    }
+
+    #[test]
+    fn finality_checkpoint_enforced() {
+        // The canonical block 22180 hash must pass; any other hash is rejected.
+        verify_checkpoint(
+            22_180,
+            "00000d094ab56366402ce89440efb12011a8ddf8544162422214423ea1541ba8",
+        )
+        .expect("canonical 22180 checkpoint must match");
+        assert!(verify_checkpoint(22_180, "00000dead00000000000000000000000000000000000000000000000000000bad").is_err());
     }
 
     #[test]
