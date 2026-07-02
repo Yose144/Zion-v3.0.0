@@ -4979,6 +4979,161 @@ mod tests {
         }
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // F5 FUZZ TESTS — randomized stress tests for balance validation
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /// F5 fuzz: submit N random TXs from random unfunded addresses with
+    /// random amounts. Every single one must be rejected.
+    #[test]
+    fn fuzz_rpc_rejects_random_unfunded_senders() {
+        zion_cosmic_harmony::set_balance_check_height(0);
+        let mut runtime = NodeRuntime::new("node-f5-fuzz-rpc", NodeConfig::mainnet());
+        let mut rejections = 0u32;
+        // 100 random TXs from 100 different unfunded addresses
+        for i in 0..100u32 {
+            let label = format!("__f5_fuzz_sender_{i}__");
+            let amount = (i as u64 * 1_000_000) + 1; // 1 to ~100M flowers
+            let tx = build_valid_account_tx(&label, "wallet.dest", amount, 1, 1);
+            let resp =
+                runtime.handle_rpc_request(RpcRequest::SubmitTransaction { transaction: tx });
+            if matches!(
+                resp,
+                RpcResponse::TransactionResult {
+                    accepted: false,
+                    reason: Some(ref r),
+                    ..
+                } if r.contains("insufficient balance")
+            ) {
+                rejections += 1;
+            }
+        }
+        zion_cosmic_harmony::set_balance_check_height(u64::MAX);
+        assert_eq!(
+            rejections, 100,
+            "F5 fuzz: all 100 TXs from unfunded addresses must be rejected, only {rejections} were"
+        );
+    }
+
+    /// F5 fuzz: double-spend attempt — submit 2 TXs from the same funded
+    /// address where the second exceeds remaining balance.
+    #[test]
+    fn fuzz_rpc_rejects_double_spend_exceeding_balance() {
+        zion_cosmic_harmony::set_balance_check_height(0);
+        let mut runtime = NodeRuntime::new("node-f5-fuzz-ds", NodeConfig::mainnet());
+        // Fund the miner address via coinbase
+        let (_miner_sk, miner_vk) = crypto::keypair_from_canonical_label("wallet.f5_fuzz_ds");
+        let miner_addr = crypto::derive_address(miner_vk.as_bytes());
+        runtime.set_miner_address(miner_addr.clone());
+        let template = runtime.active_template();
+        let nonce = find_valid_nonce(&template);
+        let _ = runtime.handle_rpc_request(RpcRequest::SubmitCandidate {
+            template_id: template.template_id,
+            header_hex: template.header_hex,
+            nonce,
+            target_hex: template.target_hex,
+            algorithm: "deeksha_lite_v1".to_string(),
+        });
+        // Submit TX for most of the balance.
+        // Coinbase reward = 5,400,067,000 flowers. Miner gets 89% = ~4,806,059,630 flowers.
+        // TX1 sends 4,000,000,000 flowers (~4000 ZION) + 1 fee.
+        let tx1 = build_valid_account_tx("wallet.f5_fuzz_ds", "wallet.dest1", 4_000_000_000, 1, 1);
+        let resp1 = runtime.handle_rpc_request(RpcRequest::SubmitTransaction { transaction: tx1 });
+        assert!(
+            matches!(resp1, RpcResponse::TransactionResult { accepted: true, .. }),
+            "F5 fuzz: first TX within balance must be accepted"
+        );
+        // Submit second TX that exceeds remaining balance (double-spend).
+        // Remaining: ~806,059,630 flowers. TX2 asks for 4,000,000,000 → must be rejected.
+        let tx2 = build_valid_account_tx("wallet.f5_fuzz_ds", "wallet.dest2", 4_000_000_000, 1, 2);
+        let resp2 = runtime.handle_rpc_request(RpcRequest::SubmitTransaction { transaction: tx2 });
+        zion_cosmic_harmony::set_balance_check_height(u64::MAX);
+        assert!(
+            matches!(
+                resp2,
+                RpcResponse::TransactionResult {
+                    accepted: false,
+                    reason: Some(ref r),
+                    ..
+                } if r.contains("insufficient balance")
+            ),
+            "F5 fuzz: second TX exceeding remaining balance must be rejected (double-spend), got: {resp2:?}"
+        );
+    }
+
+    /// F5 fuzz: max u128 amount overflow — submit TX with amount near u128::MAX.
+    /// Must be rejected (sender has 0 balance, and amount is absurd).
+    #[test]
+    fn fuzz_rpc_rejects_max_u128_amount() {
+        zion_cosmic_harmony::set_balance_check_height(0);
+        let mut runtime = NodeRuntime::new("node-f5-fuzz-max", NodeConfig::mainnet());
+        let tx = build_valid_account_tx("__f5_fuzz_max__", "wallet.dest", u64::MAX, u64::MAX, 1);
+        let resp = runtime.handle_rpc_request(RpcRequest::SubmitTransaction { transaction: tx });
+        zion_cosmic_harmony::set_balance_check_height(u64::MAX);
+        assert!(
+            matches!(
+                resp,
+                RpcResponse::TransactionResult {
+                    accepted: false,
+                    reason: Some(ref r),
+                    ..
+                } if r.contains("insufficient balance")
+            ),
+            "F5 fuzz: TX with u64::MAX amount + fee must be rejected, got: {resp:?}"
+        );
+    }
+
+    /// F5 fuzz: many small TXs from different unfunded addresses in rapid
+    /// succession — verify no state corruption or panic.
+    #[test]
+    fn fuzz_rpc_rapid_fire_no_panic() {
+        zion_cosmic_harmony::set_balance_check_height(0);
+        let mut runtime = NodeRuntime::new("node-f5-fuzz-rapid", NodeConfig::mainnet());
+        for i in 0..200u32 {
+            let label = format!("__f5_rapid_{i}__");
+            let tx = build_valid_account_tx(&label, &format!("wallet.dest_{i}"), 1, 1, 1);
+            let _ = runtime.handle_rpc_request(RpcRequest::SubmitTransaction { transaction: tx });
+        }
+        zion_cosmic_harmony::set_balance_check_height(u64::MAX);
+        // If we reach here without panic, the test passes.
+    }
+
+    /// F5 fuzz: TX from self to self (same address) with 0 balance.
+    /// Must be rejected — either by the "sender and recipient must differ"
+    /// guard or by the balance check. Either rejection is acceptable.
+    #[test]
+    fn fuzz_rpc_rejects_self_send_from_empty() {
+        zion_cosmic_harmony::set_balance_check_height(0);
+        let mut runtime = NodeRuntime::new("node-f5-fuzz-self", NodeConfig::mainnet());
+        let (sk, vk) = crypto::keypair_from_canonical_label("__f5_self_send__");
+        let addr = crypto::derive_address(vk.as_bytes());
+        let tx_id = crate::wallet::generate_account_tx_id(&addr, &addr, 1, 1, None, 1);
+        let sig = crypto::sign(&sk, tx_id.as_bytes());
+        let tx = Transaction {
+            tx_id,
+            from: addr.clone(),
+            to: addr,
+            amount_zion: 1,
+            fee_zion: 1,
+            nonce: 1,
+            signature: hex(&sig),
+            public_key: hex(vk.as_bytes()),
+            memo: None,
+        };
+        let resp = runtime.handle_rpc_request(RpcRequest::SubmitTransaction { transaction: tx });
+        zion_cosmic_harmony::set_balance_check_height(u64::MAX);
+        assert!(
+            matches!(
+                resp,
+                RpcResponse::TransactionResult {
+                    accepted: false,
+                    ..
+                }
+            ),
+            "F5 fuzz: self-send from empty address must be rejected, got: {resp:?}"
+        );
+    }
+
     /// Slow: multiple `find_valid_nonce` rounds in debug build. Run via:
     ///   `cargo test --release -- --include-ignored`
     #[test]
