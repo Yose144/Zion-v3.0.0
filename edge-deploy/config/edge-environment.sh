@@ -59,3 +59,9 @@ ZION_POOL_PAYOUT_SK_HEX=340dcd963f5c1e77f8bd09984cf1b387570ba356b5559783b67817c0
 
 # Atomic Swap escrow key (testnet placeholder — rotate for mainnet)
 ZION_SWAP_ESCROW_KEY=0000000000000000000000000000000000000000000000000000000000000001
+
+# Account-model memo v1 hard fork activation height
+ZION_ACCOUNT_TX_MEMO_V1_HEIGHT=24000
+
+# Block retention window (Session 9 memory patch)
+ZION_BLOCK_RETENTION=10000
