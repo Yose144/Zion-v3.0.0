@@ -287,7 +287,8 @@ Internet
 - [x] F3.3: Forged TX monitor ✅ (cron každých 5 min, /var/log/zion-forged-tx-alerts.log)
 - [x] F3.4: Balance monitor ✅ (cron každých 5 min, /var/log/zion-balance-alerts.log, kontroluje 5 premine + 2 attacker adresy)
 - [x] F3.5: P2P peer alert ✅ (cron každých 2 min, /var/log/zion-peer-alerts.log, alert na neznámé IP)
-- [ ] F3.1: RPC audit log — PENDING (vyžaduje code change v node.rs)
+- [x] F3.1: RPC audit log ✅ (code change: peer IP + method + tx_id logged, pending rebuild)
+- [x] F2.8: Docker monitoring ports ✅ (UFW explicit deny 3100, 9090, 9100)
 - [ ] F4.1: Rotace premine klíčů (air-gapped) — PENDING
 - [ ] F4.2: Rotace pool payout SK — PENDING
 - [ ] F4.3: Rotace bridge validator keys — PENDING
