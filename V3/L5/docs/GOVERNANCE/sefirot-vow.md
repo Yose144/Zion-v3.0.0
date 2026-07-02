@@ -251,22 +251,66 @@ they will perform the care work honestly.
 
 | Component | Status | Path |
 |-----------|--------|------|
-| Vow text (this document) | ✅ Draft | `V3/L5/docs/GOVERNANCE/sefirot-vow.md` |
-| On-chain `SefirotVowProposal` | 🟡 Planned | `V3/L2/dao/` (future) |
-| Soulbound `sefirot_vow` token | 🟡 Planned | `V3/L2/contracts/hardhat/sol/` (future) |
-| Validator registry integration | 🟡 Planned | `V3/L1/core/src/` (future, requires L1 approval) |
-| Annual renewal flow | 🟡 Planned | `V3/L2/dao/` (future) |
+| Vow text (this document) | ✅ Done | `V3/L5/docs/GOVERNANCE/sefirot-vow.md` |
+| `SefirotVowToken` soulbound ERC-721 | ✅ Compiled + 19 tests pass | `V3/L2/contracts/hardhat/sol/SefirotVowToken.sol` |
+| `SefirotVowRegistry` on-chain proposal lifecycle | ✅ Compiled + 10 tests pass | `V3/L2/contracts/hardhat/sol/SefirotVowRegistry.sol` |
+| Deploy script (token) | ✅ Done | `V3/L2/contracts/hardhat/scripts/deploy-sefirot-vow.ts` |
+| Deploy script (registry) | ✅ Done | `V3/L2/contracts/hardhat/scripts/deploy-sefirot-vow-registry.ts` |
+| Test suite (token) | ✅ 19 passing | `V3/L2/contracts/hardhat/test/SefirotVowToken.test.ts` |
+| Test suite (registry) | ✅ 10 passing | `V3/L2/contracts/hardhat/test/SefirotVowRegistry.test.ts` |
+| Deploy on Base mainnet | 🔴 Pending | Requires owner approval + gas |
+| Bootstrap validators | 🔴 Pending | First 2-3 validators to authorize |
+| Annual renewal flow | 🟡 Implemented in contract | `SefirotVowToken.renew()` |
 | Care task dispatch (Fáze 3) | 🔴 Horizon | Depends on Protokol Péče consensus |
 
-### 7.1 What is safe to implement now
+### 7.1 Contract architecture
 
-- **Vow text** — done, this document
-- **DAO proposal format** — can be added to `V3/L2/dao/` without touching
-  L1 consensus
-- **Soulbound token contract** — can be deployed on Base mainnet (L2)
-  without touching L1
+```
+                    ┌──────────────────────────┐
+                    │  SefirotVowRegistry       │
+                    │  (proposal lifecycle)     │
+                    │                           │
+                    │  submitProposal()         │
+                    │  witness() / object()     │
+                    │  confirm() ───────────┐   │
+                    └───────────────────────┼───┘
+                                            │
+                                            ▼
+                    ┌──────────────────────────┐
+                    │  SefirotVowToken          │
+                    │  (soulbound ERC-721)      │
+                    │                           │
+                    │  mint()    ← only registry│
+                    │  renew()   ← validator    │
+                    │  suspend() ← registry     │
+                    │  revoke()  ← registry     │
+                    │  _update() blocks transfer│
+                    └──────────────────────────┘
+```
 
-### 7.2 What requires L1 approval
+### 7.2 What is safe to implement now (DONE)
+
+- ✅ Vow text — this document
+- ✅ `SefirotVowToken` — soulbound ERC-721, 19 tests pass
+- ✅ `SefirotVowRegistry` — proposal lifecycle, 10 tests pass
+- ✅ Deploy scripts for both contracts
+- ✅ Test suite for both contracts (29 tests total, all passing)
+
+### 7.3 What requires owner approval (next steps)
+
+- 🔴 **Deploy on Base mainnet** — requires gas + owner approval
+  ```bash
+  # 1. Deploy token
+  npx hardhat run scripts/deploy-sefirot-vow.ts --network base
+  # 2. Deploy registry (links to token)
+  SEFIROT_VOW_TOKEN_ADDRESS=<addr> \
+  INITIAL_VALIDATORS=<addr1>,<addr2> \
+  npx hardhat run scripts/deploy-sefirot-vow-registry.ts --network base
+  ```
+- 🔴 **Authorize bootstrap validators** — first 2-3 validators who will witness the first proposals
+- 🔴 **Verify on Basescan** — for transparency
+
+### 7.4 What requires L1 approval (horizon)
 
 - **Validator registry integration** — would touch `V3/L1/core/src/`,
   requires explicit human approval per AGENTS.md L1 Protocol Security
