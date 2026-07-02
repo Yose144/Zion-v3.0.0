@@ -167,11 +167,11 @@ pub fn account_tx_memo_v1_active(height: u64) -> bool {
 // for the Edge mainnet hard fork after the burn TX).
 
 static BALANCE_CHECK_HEIGHT_OVERRIDE: std::sync::atomic::AtomicU64 =
-    std::sync::atomic::AtomicU64::new(0);
+    std::sync::atomic::AtomicU64::new(u64::MAX);
 
 /// Set the runtime activation height for F5 balance validation.
-/// Use 1 to enable from genesis (height 0 is always accepted), or a future
-/// height for a coordinated hard fork. The default (0) means disabled.
+/// Use 0 to enable from genesis, or a future height for a coordinated hard fork.
+/// Default is u64::MAX (disabled).
 pub fn set_balance_check_height(height: u64) {
     BALANCE_CHECK_HEIGHT_OVERRIDE.store(height, std::sync::atomic::Ordering::Relaxed);
 }
@@ -180,8 +180,7 @@ pub fn set_balance_check_height(height: u64) {
 /// Default is `u64::MAX` (disabled) unless overridden via `set_balance_check_height`.
 #[inline]
 pub fn balance_check_activation_height() -> u64 {
-    let h = BALANCE_CHECK_HEIGHT_OVERRIDE.load(std::sync::atomic::Ordering::Relaxed);
-    if h > 0 { h } else { u64::MAX }
+    BALANCE_CHECK_HEIGHT_OVERRIDE.load(std::sync::atomic::Ordering::Relaxed)
 }
 
 /// Returns `true` once a height has crossed the F5 balance-check gate.
