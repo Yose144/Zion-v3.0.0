@@ -1,7 +1,31 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** **2026-07-02** (**SECURITY HARDENING PHASE 2 COMPLETE — F1 exploit post-mortem + comprehensive Edge server hardening** — viz [`SecurityFirst.md`](./SecurityFirst.md) pro plný záznam).  
+> **Datum:** **2026-07-02** (**F5 CRITICAL FIX DEPLOYED + ESCROW KEY ROTATION + F1 exploit post-mortem + comprehensive Edge server hardening** — viz [`SecurityFirst.md`](./SecurityFirst.md) a [`F5_SECURITY_INCIDENT_REPORT_2026-07-02.md`](./F5_SECURITY_INCIDENT_REPORT_2026-07-02.md) pro plný záznam).  
 > **Předchozí update:** 2026-07-02 (3.0.4 SECURITY FIX — F1 from-address verification extended to peer-block path + pool wallet custody resolved — `V3/L1/core/src/lib.rs` nyní volá `verify_signature()` v `validate_peer_block()` pro non-coinbase account TX; nový regresní test `validate_peer_block_rejects_forged_account_transaction`; pool wallet SK pro `zion16825...` nalezen a `edge-environment.sh` aktualizován; `canonical-mainnet-operator-env.rs` debug_asserty odstraněny; nový runbook `V3/docs/ZION_3.0.4_SECURITY_FIX_DEPLOY_RUNBOOK.md`).
+> 
+> ### F5 Critical Fix + Escrow Key Rotation (2026-07-02 19:30–20:30 UTC)
+> 
+> **F5 CRITICAL — Account model nevaliduje sender balance:** Během escrow key rotation bylo objeveno, že account-model TX path (RPC `insert_transaction` + P2P `validate_peer_block`) nekontroloval zda sender má dostatečný balance. TX z adresy s 0 balance byla přijata → 100,002 ZION vytvořeno z ničeho (inflace). **Větší exploit než F1** — umožňoval neomezenou inflaci.
+> 
+> **Escrow key rotation:**
+> - `ZION_SWAP_ESCROW_KEY=0000...0001` byl placeholder (derivuje na `zion1s2g3...`, 0 balance)
+> - Původní funded escrow `zion1y0j4...` (100,002 ZION) — klíč neznámý, akceptováno jako ztráta
+> - Nový escrow key vygenerován: `zion1e0642...` (SK uložen v `/root/escrow_new_key.env`, chmod 600)
+> - `edge-environment.sh` aktualizován, atomic-swap restartován
+> 
+> **Inflation remediation:**
+> - 100,002 ZION spáleno na burn address `zion1n3570...` (derived from `[0xFF; 32]`, unspendable)
+> - Burn TX potvrzen v bloku 22362
+> 
+> **F5 fix deployed:**
+> - `balance_check_active(height)` gate v cosmic-harmony (height-gated via `ZION_BALANCE_CHECK_HEIGHT`)
+> - `account_balance_for()` helper na ChainState (confirmed balance + pending mempool debits)
+> - RPC path: reject TX pokud `sender_balance < amount + fee`
+> - P2P path: reject TX s running balance (multi-TX bloky)
+> - Edge mainnet aktivace: `ZION_BALANCE_CHECK_HEIGHT=22394` (aktivní od bloku 22394)
+> - 3 regresní testy pass
+> - Commits: `69d12c7`, `fe8d449`, `9863747`
+> - Full report: [`F5_SECURITY_INCIDENT_REPORT_2026-07-02.md`](./F5_SECURITY_INCIDENT_REPORT_2026-07-02.md)
 > 
 > ### Security Hardening Summary (2026-07-02 Phase 2)
 > 
