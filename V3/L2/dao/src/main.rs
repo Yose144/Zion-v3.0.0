@@ -117,7 +117,8 @@ async fn main() {
         .layer(TraceLayer::new_for_http());
 
     // ── Bind address ───────────────────────────────────────────────────────
-    let addr: SocketAddr = format!("0.0.0.0:{}", cfg.api_port)
+    let bind_host = std::env::var("DAO_API_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
+    let addr: SocketAddr = format!("{}:{}", bind_host, cfg.api_port)
         .parse()
         .expect("Invalid api_port in DAO config");
 

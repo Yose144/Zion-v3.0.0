@@ -1,7 +1,7 @@
 # ZION SecurityFirst — Kompletní zabezpečení Edge mainnet
 
 **Created:** 2026-07-02 (po F1 exploit a rollback)
-**Status:** PHASE 1+2 COMPLETE — MONITORING ACTIVE, KEY ROTATION PENDING
+**Status:** PHASE 2 BIND HARDENING COMPLETE — 13/18 services on 127.0.0.1, 5 remaining need rebuild
 **Owner:** yosef + Devin
 
 ---
@@ -274,9 +274,14 @@ Internet
 - [x] F1.5: Opravit file permissions (chmod 600) ✅ (edge-state.db, edge2-state.db, bridge-mainnet.db, edge-environment.sh, data dir 700)
 - [x] F2.1: Vytvořit zion user ✅ (uid=995, systemd User= pending)
 - [x] F2.2: SSH config vyčištěn ✅ (PermitRootLogin prohibit-password, PasswordAuthentication no, X11Forwarding no, AllowUsers root)
+- [x] F2.4: AppArmor profil pro zion-node ✅ (loaded, enforce mode)
 - [x] F2.5: Audit hardhat .env + docker .env ✅ (chmod 600, SK scrubbed z docker/.env v repu)
-- [ ] F2.3: Tailscale ACL — PENDING (vyžaduje admin console)
-- [ ] F2.4: AppArmor profil pro zion-node — PENDING
+- [x] F2.7: Bind adresy — 0.0.0.0 → 127.0.0.1 ✅ (13/18 services, 5 remaining need rebuild)
+  - ✅ 127.0.0.1: oasis(8094), free-world(8095), issobella(8096), node1 RPC(8443), node2 RPC(8446), node1 WS(8445), node2 WS(8447), node1 metrics(9115), node2 metrics(9116), pool metrics(8455), warp(8453), agent(8767)
+  - ✅ Tailscale IP: dashboard(8888)
+  - ⏳ 0.0.0.0 (UFW blokuje, bezpečné): P2P(8333,8334), pool(8444) — musí zůstat pro Tailscale minery
+  - ⏳ 0.0.0.0 (UFW blokuje, code change pending rebuild): bridge metrics(9101), DAO(8450)
+- [ ] F2.3: Tailscale ACL — PENDING (vyžaduje admin console — viz ACL config výše)
 - [ ] F2.6: systemd User=zion — PENDING (riskantní, vyžaduje test)
 - [x] F3.2: Block submitter log ✅ (ZION_LOG_BLOCK_SUBMITTER=1)
 - [x] F3.3: Forged TX monitor ✅ (cron každých 5 min, /var/log/zion-forged-tx-alerts.log)
