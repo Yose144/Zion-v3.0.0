@@ -114,6 +114,20 @@ impl SwapDb {
             );
             "#,
         )?;
+        // Additive migration: claimant_address column (L2 security patch).
+        // Older DBs created without the column get it added; new DBs already
+        // have it via the CREATE above only if we add it there too. We use
+        // the additive ALTER for both paths to keep one source of truth.
+        let has_col: bool = conn
+            .prepare("PRAGMA table_info(htlc_locks)")?
+            .query_map([], |r| r.get::<_, String>(1))?
+            .filter_map(|r| r.ok())
+            .any(|name| name == "claimant_address");
+        if !has_col {
+            conn.execute_batch(
+                "ALTER TABLE htlc_locks ADD COLUMN claimant_address TEXT;",
+            )?;
+        }
         Ok(())
     }
 
@@ -125,9 +139,9 @@ impl SwapDb {
         conn.execute(
             r#"INSERT INTO htlc_locks
                (hash_hex, locker_address, amount_flowers, lock_tx_id, lock_block_height,
-                expires_at, counterparty_chain, counterparty_addr, state,
+                expires_at, counterparty_chain, counterparty_addr, claimant_address, state,
                 release_tx_id, release_recipient, preimage_hex, created_at, updated_at)
-               VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14)"#,
+               VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15)"#,
             params![
                 rec.hash_hex,
                 rec.locker_address,
@@ -137,6 +151,7 @@ impl SwapDb {
                 rec.expires_at,
                 rec.counterparty_chain,
                 rec.counterparty_addr,
+                rec.claimant_address,
                 state_to_str(&rec.state),
                 rec.release_tx_id,
                 rec.release_recipient,
@@ -155,8 +170,8 @@ impl SwapDb {
             .query_row(
                 r#"SELECT hash_hex, locker_address, amount_flowers, lock_tx_id,
                           lock_block_height, expires_at, counterparty_chain,
-                          counterparty_addr, state, release_tx_id, release_recipient,
-                          preimage_hex, created_at, updated_at
+                          counterparty_addr, claimant_address, state, release_tx_id,
+                          release_recipient, preimage_hex, created_at, updated_at
                    FROM htlc_locks WHERE hash_hex = ?1"#,
                 params![hash_hex],
                 row_to_record,
@@ -223,8 +238,8 @@ impl SwapDb {
         let mut stmt = conn.prepare(
             r#"SELECT hash_hex, locker_address, amount_flowers, lock_tx_id,
                       lock_block_height, expires_at, counterparty_chain,
-                      counterparty_addr, state, release_tx_id, release_recipient,
-                      preimage_hex, created_at, updated_at
+                      counterparty_addr, claimant_address, state, release_tx_id,
+                      release_recipient, preimage_hex, created_at, updated_at
                FROM htlc_locks
                WHERE state = 'pending' AND expires_at <= ?1"#,
         )?;
@@ -242,8 +257,8 @@ impl SwapDb {
         let mut stmt = conn.prepare(
             r#"SELECT hash_hex, locker_address, amount_flowers, lock_tx_id,
                       lock_block_height, expires_at, counterparty_chain,
-                      counterparty_addr, state, release_tx_id, release_recipient,
-                      preimage_hex, created_at, updated_at
+                      counterparty_addr, claimant_address, state, release_tx_id,
+                      release_recipient, preimage_hex, created_at, updated_at
                FROM htlc_locks WHERE state = 'pending'
                ORDER BY created_at DESC LIMIT ?1"#,
         )?;
@@ -317,9 +332,9 @@ fn str_to_state(s: &str) -> SwapState {
 }
 
 fn row_to_record(row: &rusqlite::Row<'_>) -> rusqlite::Result<HtlcRecord> {
-    let state_str: String = row.get(8)?;
-    let created_at: String = row.get(12)?;
-    let updated_at: String = row.get(13)?;
+    let state_str: String = row.get(9)?;
+    let created_at: String = row.get(13)?;
+    let updated_at: String = row.get(14)?;
     Ok(HtlcRecord {
         hash_hex: row.get(0)?,
         locker_address: row.get(1)?,
@@ -329,10 +344,11 @@ fn row_to_record(row: &rusqlite::Row<'_>) -> rusqlite::Result<HtlcRecord> {
         expires_at: row.get(5)?,
         counterparty_chain: row.get(6)?,
         counterparty_addr: row.get(7)?,
+        claimant_address: row.get(8)?,
         state: str_to_state(&state_str),
-        release_tx_id: row.get(9)?,
-        release_recipient: row.get(10)?,
-        preimage_hex: row.get(11)?,
+        release_tx_id: row.get(10)?,
+        release_recipient: row.get(11)?,
+        preimage_hex: row.get(12)?,
         created_at: created_at
             .parse()
             .unwrap_or_else(|_| chrono::DateTime::default()),
@@ -361,6 +377,7 @@ mod tests {
             expires_at: now.timestamp() + 7200,
             counterparty_chain: "btc".into(),
             counterparty_addr: "bc1qtest".into(),
+            claimant_address: None,
             state: SwapState::Pending,
             release_tx_id: None,
             release_recipient: None,
