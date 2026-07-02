@@ -189,18 +189,18 @@ fn main() -> Result<()> {
     // CRITICAL 3.0.4 Finding 1/2 guard: since the node now rejects account
     // transactions whose public key does not derive to the sender address, a
     // pool whose ZION_POOL_PAYOUT_SK_HEX does not derive to ZION_POOL_WALLET
-    // will have every payout silently rejected. Fail fast with a loud warning.
+    // will have every payout silently rejected. Fail fast.
     if let (Some(signing_key), Some(wallet_addr)) =
         (&config.pool_signing_key, &config.pool_wallet_address)
     {
         let derived = zion_core::crypto::derive_address(signing_key.verifying_key().as_bytes());
         if &derived != wallet_addr {
-            eprintln!(
-                "CRITICAL: ZION_POOL_PAYOUT_SK_HEX derives to {derived} but ZION_POOL_WALLET is \
+            return Err(anyhow!(
+                "ZION_POOL_PAYOUT_SK_HEX derives to {derived} but ZION_POOL_WALLET is \
                  {wallet_addr}. Account-model payouts will be REJECTED by the node \
                  (3.0.4 from-address verification). Fix the pool wallet/key configuration \
                  before mining."
-            );
+            ));
         }
     }
     if let Some(btc_wallet) = config.btc_wallet.as_deref() {
