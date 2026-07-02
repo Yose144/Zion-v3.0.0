@@ -15,7 +15,8 @@ const wzion = new ethers.Contract('0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6', 
   'function BRIDGE_ROLE() view returns (bytes32)'
 ], wallet);
 
-const bridgeContract = '0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88';
+// 2026-07-02: live Base ZIONBridge with wZION BRIDGE_ROLE is 0x72c8f0Dc...
+const bridgeContract = '0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467';
 
 (async () => {
   const BRIDGE_ROLE = await wzion.BRIDGE_ROLE();

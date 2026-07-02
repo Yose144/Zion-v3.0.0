@@ -2,6 +2,7 @@
 
 > Generated: 2026-06-22, updated 2026-06-23 finál (5/5 confirmací pro všech 6 locků, 24h timelock aktivní)
 > Scope: Base Mainnet 5/5 multisig bridge deployment
+> **Update 2026-07-02:** Current live Base ZIONBridge is `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467` (threshold=5, validatorCount=5). The `0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88` contract below is a stale 5/5 deployment without wZION BRIDGE_ROLE. See `audit 3.0.4.md` §7.1 for the full chain-by-chain verification.
 
 ## Executive Summary
 

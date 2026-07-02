@@ -23,7 +23,8 @@ const wzion = new ethers.Contract('0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6', 
 ], wallet);
 
 // Also check bridge contract for lock proof details
-const bridge = new ethers.Contract('0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88', [
+// 2026-07-02: live Base ZIONBridge is 0x72c8f0Dc...
+const bridge = new ethers.Contract('0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467', [
   'function getLockProofStatus(bytes32) view returns (uint8 confirmations, bool executed, bool timelocked, uint256 timelockExpiry, address recipient, uint256 amount)'
 ], provider);
 

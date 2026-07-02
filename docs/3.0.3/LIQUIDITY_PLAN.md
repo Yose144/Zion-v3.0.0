@@ -310,7 +310,7 @@ stakingContract.setRewardsDuration(365 days);
 
 ```bash
 # 1. Burn wZION na ZIONBridge (získá zpět L1 ZION)
-cast send 0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88 \
+cast send 0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467 \
   "burn(uint256,string)()" \
   1000000000000000000000 \   # 1000 wZION wei (18 decimals)
   "zion1<your_l1_address>" \
@@ -456,7 +456,7 @@ Fáze 3 (2027-Q2): Odemknutí + First Proposals
 | Contract | Address |
 |----------|---------|
 | wZION (ERC-20) | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` |
-| ZIONBridge (5/5) | `0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88` |
+| ZIONBridge (5/5) | `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467` |
 | BridgeValidator (5/5) | `0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627` |
 | UniV3Pool (wZION/WETH) | `0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB` |
 | ZIONStaking | TBD — ověřit deployment |

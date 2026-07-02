@@ -4,8 +4,9 @@ const {ethers} = require('ethers');
 const ROLE = ethers.utils ? ethers.utils.id('VALIDATOR_ROLE') : ethers.id('VALIDATOR_ROLE');
 console.log('VALIDATOR_ROLE:', ROLE);
 
+// 2026-07-02: live Base ZIONBridge is 0x72c8f0Dc...
 const provider = new ethers.providers.JsonRpcProvider('https://mainnet.base.org');
-const bridge = new ethers.Contract('0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88', [
+const bridge = new ethers.Contract('0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467', [
   'function hasRole(bytes32,address) view returns (bool)',
   'function threshold() view returns (uint8)',
   'function validatorCount() view returns (uint8)',

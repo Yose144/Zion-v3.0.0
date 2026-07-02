@@ -140,7 +140,7 @@ Cena se nastaví automaticky podle poměru wZION:WETH.
 | Kontrakt | Adresa |
 |----------|--------|
 | wZION (ERC-20) | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` |
-| ZIONBridge | `0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88` |
+| ZIONBridge | `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467` |
 | UniV3 Pool wZION/WETH | `0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB` |
 | UniV3 Factory | `0x33128a8fC17869897dcE68Ed026d694621f6FDfD` |
 | NonfungiblePositionManager | `0x03a520b32C04BF3bEef7BEb72E919cf822Ed34f1` |
