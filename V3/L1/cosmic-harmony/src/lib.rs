@@ -20,12 +20,13 @@ pub use algorithms_npu::{
 };
 pub use algorithms_opt::{cosmic_harmony_with_height, meets_difficulty, Hash32, Hash64};
 pub use deeksha::{
-    account_tx_memo_v1_activation_height, account_tx_memo_v1_active, body_root_v2_active,
+    account_tx_memo_v1_activation_height, account_tx_memo_v1_active, balance_check_active,
+    balance_check_activation_height, body_root_v2_active,
     cosmic_harmony_ekam_deeksha, cosmic_harmony_ekam_deeksha_v2, cosmic_harmony_ekam_deeksha_v3,
     ekam_find_nonce, ekam_self_test, ekam_v2_find_nonce, ekam_v2_self_test, ekam_v3_find_nonce,
     ekam_v3_self_test, generate_ekam_test_vector, generate_ekam_v2_test_vector,
     generate_ekam_v3_test_vector, hash_bytes_with_npu, init_npu,
-    set_account_tx_memo_v1_activation_height, tx_hash_v2_active,
+    set_account_tx_memo_v1_activation_height, set_balance_check_height, tx_hash_v2_active,
     ACCOUNT_TX_MEMO_V1_ACTIVATION_HEIGHT, BODY_ROOT_V2_ACTIVATION_HEIGHT,
     CHV42_DUAL_SPIN_FORK_HEIGHT, CHV_EKAM_FORK_HEIGHT, CHV_EKAM_V2_FORK_HEIGHT,
     EKAM_CANONICAL_TEST_VECTOR_HEX, EKAM_FUSION_ROUNDS, EKAM_V2_CANONICAL_TEST_VECTOR_HEX,

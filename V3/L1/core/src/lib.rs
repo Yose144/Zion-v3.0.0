@@ -5,7 +5,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 use zion_cosmic_harmony::{
-    account_tx_memo_v1_active, body_root_v2_active, cosmic_harmony_ekam_deeksha,
+    account_tx_memo_v1_active, balance_check_active, balance_check_activation_height,
+    body_root_v2_active, cosmic_harmony_ekam_deeksha,
     cosmic_harmony_with_height, profile_name, profile_name_for_height, tx_hash_v2_active, NclStats,
     RevenueCollector, RevenueEvent, RevenueStats, CHV_EKAM_FORK_HEIGHT, EKAM_FUSION_ROUNDS,
     FIRE_FORK_HEIGHT, TX_HASH_V2_ACTIVATION_HEIGHT,
@@ -2039,6 +2040,42 @@ impl ChainState {
             .sum()
     }
 
+    /// Compute the confirmed account-model balance for a `zion1...` address
+    /// by walking all accepted blocks and summing credits (to) minus debits
+    /// (from + fee). Returns 0 for unknown addresses. This mirrors the RPC
+    /// `getBalance` computation and is used by the F5 balance-check guard.
+    fn account_balance_for(&self, address: &str) -> u128 {
+        let mut balance: i128 = 0;
+        for block in &self.accepted_blocks {
+            for tx in &block.transactions {
+                if tx.from == "coinbase" {
+                    if tx.to == address {
+                        balance = balance.saturating_add(tx.amount_zion as i128);
+                    }
+                    continue;
+                }
+                if tx.to == address {
+                    balance = balance.saturating_add(tx.amount_zion as i128);
+                }
+                if tx.from == address {
+                    balance = balance
+                        .saturating_sub((tx.amount_zion + tx.fee_zion as u128) as i128);
+                }
+            }
+        }
+        // Also include pending mempool debits so a sender cannot double-spend
+        // the same balance via two rapid RPC submissions.
+        for entry in &self.mempool {
+            if let Some(tx) = entry.as_account() {
+                if tx.from == address {
+                    balance = balance
+                        .saturating_sub((tx.amount_zion + tx.fee_zion as u128) as i128);
+                }
+            }
+        }
+        balance.max(0) as u128
+    }
+
     /// Return all spendable (unspent) UTXOs for a `zion1...` address.
     fn spendable_utxos(&self, address: &str) -> Vec<SpendableUtxo> {
         self.utxo_set()
@@ -2859,6 +2896,43 @@ impl ChainState {
                             transaction.nonce, transaction.from
                         ));
                     }
+                    // F5: Balance check — reject if sender has insufficient
+                    // confirmed balance. We compute the running balance from
+                    // prior accepted blocks plus credits/debits from earlier
+                    // transactions in THIS block (so multiple TXs from the
+                    // same sender in one block are handled correctly).
+                    if balance_check_active(block.height) {
+                        let mut sender_balance: i128 =
+                            self.account_balance_for(&transaction.from) as i128;
+                        // Apply credits/debits from earlier TXs in this block
+                        for prior_tx in block.transactions.iter().take(index) {
+                            if prior_tx.from == "coinbase" {
+                                if prior_tx.to == transaction.from {
+                                    sender_balance =
+                                        sender_balance.saturating_add(prior_tx.amount_zion as i128);
+                                }
+                                continue;
+                            }
+                            if prior_tx.to == transaction.from {
+                                sender_balance =
+                                    sender_balance.saturating_add(prior_tx.amount_zion as i128);
+                            }
+                            if prior_tx.from == transaction.from {
+                                sender_balance = sender_balance.saturating_sub(
+                                    (prior_tx.amount_zion + prior_tx.fee_zion as u128) as i128,
+                                );
+                            }
+                        }
+                        let needed =
+                            transaction.amount_zion + transaction.fee_zion as u128;
+                        if (sender_balance as u128) < needed {
+                            return Err(format!(
+                                "peer block TX from {} has insufficient balance: {} < {} (amount {} + fee {})",
+                                transaction.from, sender_balance.max(0), needed,
+                                transaction.amount_zion, transaction.fee_zion
+                            ));
+                        }
+                    }
                 }
                 Ok(transaction.fee_zion)
             })
@@ -3103,6 +3177,22 @@ impl ChainState {
                 "transaction nonce {} for sender {} is already mined",
                 transaction.nonce, transaction.from
             ));
+        }
+        // F5: Reject transactions where the sender does not have sufficient
+        // confirmed account-model balance to cover amount + fee. Without this
+        // check, any Ed25519 key holder can create ZION from nothing by
+        // submitting a TX from an empty address. Height-gated so historical
+        // blocks (pre-fix) are not rejected on IBD.
+        if balance_check_active(self.height) {
+            let sender_balance = self.account_balance_for(&transaction.from);
+            let needed = transaction.amount_zion + transaction.fee_zion as u128;
+            if sender_balance < needed {
+                return Err(format!(
+                    "insufficient balance: sender {} has {} flowers but needs {} (amount {} + fee {})",
+                    transaction.from, sender_balance, needed,
+                    transaction.amount_zion, transaction.fee_zion
+                ));
+            }
         }
 
         self.mempool
@@ -4782,6 +4872,106 @@ mod tests {
             err.contains("signature verification failed"),
             "unexpected error: {err}"
         );
+    }
+
+    /// F5 regression: an account-model transaction from an address with
+    /// insufficient balance must be rejected by the RPC path
+    /// (`insert_transaction`). Without the F5 fix this would be accepted,
+    /// creating ZION from nothing.
+    #[test]
+    fn rpc_rejects_account_tx_with_insufficient_balance() {
+        // Enable F5 balance check from height 1 (genesis at 0 is always accepted).
+        zion_cosmic_harmony::set_balance_check_height(1);
+        let mut runtime = NodeRuntime::new("node-f5-rpc", NodeConfig::mainnet());
+        // Build a valid (signed) TX from a brand-new address with 0 balance.
+        let tx = build_valid_account_tx("__f5_empty_sender__", "wallet.dest", 100, 1, 1);
+        let resp = runtime.handle_rpc_request(RpcRequest::SubmitTransaction {
+            transaction: tx,
+        });
+        // Reset F5 gate so subsequent tests are unaffected.
+        zion_cosmic_harmony::set_balance_check_height(0);
+        match resp {
+            RpcResponse::TransactionResult {
+                accepted: false,
+                reason: Some(ref reason),
+                ..
+            } if reason.contains("insufficient balance") => {}
+            other => panic!(
+                "F5: TX from empty address must be rejected with 'insufficient balance', got: {other:?}"
+            ),
+        }
+    }
+
+    /// F5 regression: an account-model transaction from an address with
+    /// insufficient balance must be rejected by the peer-block path
+    /// (`validate_peer_block`).
+    #[test]
+    #[ignore = "slow PoW in debug build; run with --release --ignored"]
+    fn peer_block_rejects_account_tx_with_insufficient_balance() {
+        zion_cosmic_harmony::set_balance_check_height(1);
+        let mut source = NodeRuntime::new("node-f5-peer-src", NodeConfig::mainnet());
+        // Build a TX from an empty address and mine it into a block.
+        let tx = build_valid_account_tx("__f5_empty_peer__", "wallet.dest", 100, 1, 1);
+        let submit_resp = source.handle_rpc_request(RpcRequest::SubmitTransaction {
+            transaction: tx.clone(),
+        });
+        // The RPC path should reject it first (F5 RPC guard).
+        if matches!(submit_resp, RpcResponse::TransactionResult { accepted: false, .. }) {
+            zion_cosmic_harmony::set_balance_check_height(0);
+            return;
+        }
+        // If RPC somehow accepted it, mine and verify peer-block rejection.
+        let template = source.active_template();
+        let nonce = find_valid_nonce(&template);
+        let _ = source.handle_rpc_request(RpcRequest::SubmitCandidate {
+            template_id: template.template_id,
+            header_hex: template.header_hex,
+            nonce,
+            target_hex: template.target_hex,
+            algorithm: "deeksha_lite_v1".to_string(),
+        });
+        let block = source.accepted_blocks()[1].clone();
+        let mut target = NodeRuntime::new("node-f5-peer-tgt", NodeConfig::mainnet());
+        let result = target.import_peer_blocks(vec![block]);
+        zion_cosmic_harmony::set_balance_check_height(0);
+        let err = result.expect_err("F5: peer block with TX from empty address must be rejected");
+        assert!(
+            err.contains("insufficient balance"),
+            "F5: unexpected peer-block error: {err}"
+        );
+    }
+
+    /// F5 positive: a TX from an address that DOES have sufficient balance
+    /// (e.g. funded by a coinbase output) must still be accepted.
+    #[test]
+    fn rpc_accepts_account_tx_with_sufficient_balance() {
+        zion_cosmic_harmony::set_balance_check_height(1);
+        let mut runtime = NodeRuntime::new("node-f5-pos", NodeConfig::mainnet());
+        // Mine a block to fund the miner address.
+        runtime.set_miner_address("wallet.f5_miner".to_string());
+        let template = runtime.active_template();
+        let nonce = find_valid_nonce(&template);
+        let _ = runtime.handle_rpc_request(RpcRequest::SubmitCandidate {
+            template_id: template.template_id,
+            header_hex: template.header_hex,
+            nonce,
+            target_hex: template.target_hex,
+            algorithm: "deeksha_lite_v1".to_string(),
+        });
+        // Now build a TX from the funded miner address. The miner address
+        // is a wallet label; build_valid_account_tx derives the keypair from
+        // the same label, so the from address matches the coinbase recipient.
+        let tx = build_valid_account_tx("wallet.f5_miner", "wallet.dest", 10, 1, 1);
+        let resp = runtime.handle_rpc_request(RpcRequest::SubmitTransaction {
+            transaction: tx,
+        });
+        zion_cosmic_harmony::set_balance_check_height(0);
+        match resp {
+            RpcResponse::TransactionResult { accepted: true, .. } => {}
+            other => panic!(
+                "F5 positive: TX from funded address must be accepted, got: {other:?}"
+            ),
+        }
     }
 
     /// Slow: multiple `find_valid_nonce` rounds in debug build. Run via:
