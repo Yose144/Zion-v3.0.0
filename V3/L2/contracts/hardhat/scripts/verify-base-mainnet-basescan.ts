@@ -41,35 +41,52 @@ const EXISTING_CONTRACTS = {
 };
 
 // ─── New 3.0.4 contracts (read from deployed JSON files) ─────────────────────
+// Constructor signatures (must match exactly what was used at deploy time):
+//   ZIONGovernance(address _zionToken)
+//   ZIONTreasury(address _zionToken, address[] _signers, uint256 _required)
+//   ZIONStaking(address _wzion, address _admin, address _guardian, uint256 _aprBps)
+//   ZIONFarm(address _rewardToken, address _admin, address _guardian, uint256 _rewardPerSecond, uint256 _halvingInterval)
 function loadNewContracts(): Record<string, any> {
   const result: Record<string, any> = {};
   const defiPath = path.join(__dirname, "..", "deployed-defi.json");
   const farmPath = path.join(__dirname, "..", "deployed-farm-base.json");
+  const WZION_DEFAULT = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6";
 
   if (fs.existsSync(defiPath)) {
     const defi = JSON.parse(fs.readFileSync(defiPath, "utf8"));
+    const wzion = defi.wzion || WZION_DEFAULT;
+    const cfg = defi.config || {};
+
     if (defi.governance) {
+      // constructor(address _zionToken)
       result.ZIONGovernance = {
         address: defi.governance,
         contract: "sol/ZIONGovernance.sol:ZIONGovernance",
-        constructorArguments: [defi.wzion || "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6", DEPLOYER],
+        constructorArguments: [wzion],
       };
     }
     if (defi.treasury) {
+      // constructor(address _zionToken, address[] _signers, uint256 _required)
       result.ZIONTreasury = {
         address: defi.treasury,
         contract: "sol/ZIONTreasury.sol:ZIONTreasury",
-        constructorArguments: [defi.wzion || "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6", DEPLOYER],
+        constructorArguments: [
+          wzion,
+          cfg.treasurySigners || [DEPLOYER],
+          cfg.treasuryThreshold || 3,
+        ],
       };
     }
     if (defi.staking) {
+      // constructor(address _wzion, address _admin, address _guardian, uint256 _aprBps)
       result.ZIONStaking = {
         address: defi.staking,
         contract: "sol/ZIONStaking.sol:ZIONStaking",
         constructorArguments: [
-          defi.wzion || "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6",
-          DEPLOYER,                    // guardian
-          1200,                         // APR in bps (12%)
+          wzion,
+          DEPLOYER,                              // admin
+          cfg.guardian || DEPLOYER,               // guardian
+          cfg.stakingAprBps || 1200,              // APR in bps (12%)
         ],
       };
     }
@@ -77,16 +94,18 @@ function loadNewContracts(): Record<string, any> {
 
   if (fs.existsSync(farmPath)) {
     const farm = JSON.parse(fs.readFileSync(farmPath, "utf8"));
-    if (farm.farm) {
+    const farmAddr = farm.ZIONFarm || farm.farm;
+    if (farmAddr) {
+      // constructor(address _rewardToken, address _admin, address _guardian, uint256 _rewardPerSecond, uint256 _halvingInterval)
       result.ZIONFarm = {
-        address: farm.farm,
+        address: farmAddr,
         contract: "sol/ZIONFarm.sol:ZIONFarm",
         constructorArguments: [
-          farm.wzion || "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6",
-          DEPLOYER,                    // admin
-          DEPLOYER,                    // guardian
-          "1000000000000000000",       // 1 wZION/s reward rate
-          7776000,                     // 90-day halving
+          farm.rewardToken || WZION_DEFAULT,
+          farm.deployer || DEPLOYER,                       // admin
+          farm.deployer || DEPLOYER,                       // guardian (same as admin at deploy)
+          farm.rewardPerSecond || "1000000000000000000",   // 1 wZION/s
+          farm.halvingInterval || 7776000,                 // 90-day halving
         ],
       };
     }
