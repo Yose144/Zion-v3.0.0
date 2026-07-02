@@ -2,12 +2,10 @@
 #  ZION Bridge Relay Configuration — V3 Mainnet (Base)
 # ──────────────────────────────────────────────────────────────
 #
-#  WARNING: Mainnet contracts are NOT deployed yet.
-#  This template is configured for 5-of-5 validator multisig.
-#  Set `enabled = true` only after:
-#    - wZION, ZIONBridge, and BridgeValidator are deployed and verified
-#    - 5 mainnet validator addresses are provisioned
-#    - L1 bridge vault is funded and derivation verified
+#  Mainnet contracts are deployed and live. This template is configured for
+#  5-of-5 validator multisig. Base bridge: 0x72c8f0Dc...; non-Base bridges:
+#  0xa5a09b2C... on BSC/Polygon/Arbitrum/Optimism/Avalanche. Stale deployment
+#  0x89504D6e... has no wZION BRIDGE_ROLE.
 #
 #  Usage: ZION_BRIDGE_CONFIG=V3/config/bridge-mainnet.toml cargo run -p zion-bridge
 
@@ -43,18 +41,80 @@ gas_strategy            = "eip1559"
 max_gas_gwei            = 100
 start_block             = 47687000  # Set to ~current block at new 5/5 bridge deployment
 
-# -- Arbitrum One (Mainnet) — NOT DEPLOYED --
+# -- Arbitrum One (Mainnet) — DEPLOYED 2026-06-30 --
 [[evm_chains]]
 chain_id                = "arbitrum"
 name                    = "Arbitrum One (Mainnet)"
 evm_chain_id            = 42161
-rpc_url                 = "wss://arb-mainnet.g.alchemy.com/v2/YOUR_KEY"
-wzion_address           = "0x0000000000000000000000000000000000000000"
-bridge_contract_address = "0x0000000000000000000000000000000000000000"
+rpc_url                 = "https://arb1.arbitrum.io/rpc"
+rpc_url_backup          = "wss://arb-mainnet.g.alchemy.com/v2/YOUR_KEY"
+wzion_address           = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+bridge_contract_address = "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721"
 finality_blocks         = 10
-enabled                 = false
+enabled                 = true
 gas_strategy            = "eip1559"
 max_gas_gwei            = 20
+start_block             = 478916300
+
+# -- BNB Smart Chain (Mainnet) — DEPLOYED 2026-06-30 --
+[[evm_chains]]
+chain_id                = "bsc"
+name                    = "BNB Smart Chain (Mainnet)"
+evm_chain_id            = 56
+rpc_url                 = "https://bsc-dataseed.binance.org"
+rpc_url_backup          = "wss://bsc-ws-node.nariox.org"
+wzion_address           = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+bridge_contract_address = "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721"
+finality_blocks         = 15
+enabled                 = true
+gas_strategy            = "legacy"
+max_gas_gwei            = 5
+start_block             = 107248530
+
+# -- Polygon PoS (Mainnet) — DEPLOYED 2026-06-30 --
+[[evm_chains]]
+chain_id                = "polygon"
+name                    = "Polygon PoS (Mainnet)"
+evm_chain_id            = 137
+rpc_url                 = "https://polygon-bor-rpc.publicnode.com"
+rpc_url_backup          = "wss://ws-mainnet.matic.network"
+wzion_address           = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+bridge_contract_address = "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721"
+finality_blocks         = 128
+enabled                 = true
+gas_strategy            = "legacy"
+max_gas_gwei            = 250
+start_block             = 89409648
+
+# -- Optimism (Mainnet) — DEPLOYED 2026-06-30 --
+[[evm_chains]]
+chain_id                = "optimism"
+name                    = "Optimism (Mainnet)"
+evm_chain_id            = 10
+rpc_url                 = "https://mainnet.optimism.io"
+rpc_url_backup          = "wss://ws-mainnet.optimism.io"
+wzion_address           = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+bridge_contract_address = "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721"
+finality_blocks         = 10
+enabled                 = true
+gas_strategy            = "eip1559"
+max_gas_gwei            = 20
+start_block             = 153610095
+
+# -- Avalanche C-Chain (Mainnet) — DEPLOYED 2026-06-30 --
+[[evm_chains]]
+chain_id                = "avalanche"
+name                    = "Avalanche C-Chain (Mainnet)"
+evm_chain_id            = 43114
+rpc_url                 = "https://api.avax.network/ext/bc/C/rpc"
+rpc_url_backup          = "wss://api.avax.network/ext/bc/C/ws"
+wzion_address           = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+bridge_contract_address = "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721"
+finality_blocks         = 12
+enabled                 = true
+gas_strategy            = "eip1559"
+max_gas_gwei            = 50
+start_block             = 89126556
 
 # ── Validator Config ────────────────────────────────────────
 [validator]

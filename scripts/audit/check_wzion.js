@@ -23,7 +23,8 @@ const wzion = new ethers.Contract('0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6', 
   console.log('GUARDIAN_ROLE:', GUARDIAN);
 
   const deployer = '0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186';
-  const bridge = '0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88';
+  // 2026-07-02: live Base ZIONBridge with wZION BRIDGE_ROLE is 0x72c8f0Dc...
+  const bridge = '0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467';
 
   console.log('\n=== Role assignments ===');
   console.log('Deployer has ADMIN:', await wzion.hasRole(ADMIN, deployer));
