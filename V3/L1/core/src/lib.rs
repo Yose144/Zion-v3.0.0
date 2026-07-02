@@ -2841,6 +2841,24 @@ impl ChainState {
                             transaction.nonce, transaction.from
                         ));
                     }
+                    // Cross-block replay guard: reject an account nonce that was
+                    // already mined in a prior accepted block. Mirrors the RPC
+                    // `insert_transaction` "already mined" check so the peer-block
+                    // path is not weaker than the RPC path (F1-class parity).
+                    // Blocks are accepted one at a time in `accept_peer_blocks`,
+                    // so `self.accepted_blocks` reflects every prior block in the
+                    // same sync batch as well as the persisted chain.
+                    if self.accepted_blocks.iter().any(|prior| {
+                        prior.transactions.iter().any(|known| {
+                            known.from == transaction.from
+                                && known.nonce == transaction.nonce
+                        })
+                    }) {
+                        return Err(format!(
+                            "peer block reuses already-mined sender nonce {} for {}",
+                            transaction.nonce, transaction.from
+                        ));
+                    }
                 }
                 Ok(transaction.fee_zion)
             })
