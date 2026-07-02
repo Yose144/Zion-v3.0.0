@@ -170,9 +170,7 @@ impl SwapConfig {
                 );
             }
             if self.escrow_key_hex().is_none() {
-                anyhow::bail!(
-                    "mainnet requires ZION_SWAP_ESCROW_KEY env var (escrow signing key)"
-                );
+                anyhow::bail!("mainnet requires ZION_SWAP_ESCROW_KEY env var (escrow signing key)");
             }
         }
         Ok(())

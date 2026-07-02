@@ -225,6 +225,7 @@ impl SuiAdapter {
     /// gas_budget: u64
     /// gas_price: u64
     /// ```
+    #[allow(clippy::too_many_arguments)]
     fn encode_transaction_data(
         sender: &[u8; 32],
         package: &[u8; 32],
@@ -694,7 +695,7 @@ mod tests {
         // SHA-256(0x00 || pk) must differ from SHA-256(pk).
         let pk = [0x11u8; 32];
         let with_flag = sui_address_from_pubkey(&pk);
-        let plain = sha2::Sha256::digest(&pk);
+        let plain = sha2::Sha256::digest(pk);
         let plain_addr = format!("0x{}", hex::encode(plain));
         assert_ne!(with_flag, plain_addr);
     }
@@ -752,7 +753,7 @@ mod tests {
 
         // Part 2: with a valid key → signer loads, BCS encoding works,
         // but get_gas_object_refs() fails (no network) → network error, NOT BCS error.
-        std::env::set_var("WARP_SUI_RELAY_KEY", hex::encode(&[0x42u8; 32]));
+        std::env::set_var("WARP_SUI_RELAY_KEY", hex::encode([0x42u8; 32]));
         let a2 = SuiAdapter::with_rpc("http://127.0.0.1:1");
         let res2 = a2.execute_mint(&inst).await;
         assert!(res2.is_err(), "execute_mint should error without network");

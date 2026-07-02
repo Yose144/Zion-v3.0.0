@@ -215,8 +215,7 @@ impl PplnsEngine {
     pub fn save_to_path<P: AsRef<Path>>(&self, path: P) -> std::io::Result<()> {
         let path = path.as_ref();
         let snap = self.snapshot();
-        let json = serde_json::to_vec(&snap)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        let json = serde_json::to_vec(&snap).map_err(std::io::Error::other)?;
 
         // Atomic write: write to temp file, then rename.
         let tmp = path.with_extension("json.tmp");

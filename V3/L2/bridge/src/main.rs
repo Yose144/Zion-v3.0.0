@@ -60,15 +60,19 @@ async fn main() -> Result<()> {
     info!("   L1 ↔ EVM cross-chain bridge");
 
     // Post-3.0.3 safety: crash loud if old binary (12-decimal) is loaded
-    assert!(
-        zion_bridge::types::FLOWERS_PER_ZION == 1_000_000,
-        "FATAL: FLOWERS_PER_ZION != 1_000_000 — old pre-3.0.3 binary detected. \
+    const {
+        assert!(
+            zion_bridge::types::FLOWERS_PER_ZION == 1_000_000,
+            "FATAL: FLOWERS_PER_ZION != 1_000_000 — old pre-3.0.3 binary detected. \
          Update to v3.0.3+ before running bridge relay."
-    );
-    assert!(
-        zion_bridge::types::FLOWERS_TO_WEI_FACTOR == 1_000_000_000_000,
-        "FATAL: FLOWERS_TO_WEI_FACTOR != 1e12 — old pre-3.0.3 binary detected."
-    );
+        )
+    };
+    const {
+        assert!(
+            zion_bridge::types::FLOWERS_TO_WEI_FACTOR == 1_000_000_000_000,
+            "FATAL: FLOWERS_TO_WEI_FACTOR != 1e12 — old pre-3.0.3 binary detected."
+        )
+    };
 
     // Load config
     let config_path = std::env::var("ZION_BRIDGE_CONFIG").unwrap_or_else(|_| {
@@ -191,24 +195,21 @@ async fn main() -> Result<()> {
     let relayer_db = Arc::clone(&db);
     let relayer_shutdown = Arc::clone(&shutdown);
     let _relayer_handle = tokio::spawn(async move {
-        loop {
-            if relayer_shutdown.load(Ordering::Relaxed) {
-                info!("Relayer: shutdown signal received");
-                break;
-            }
-            let relayer = Relayer::new(
-                Arc::clone(&relayer_config),
-                Arc::clone(&relayer_metrics),
-                Arc::clone(&relayer_db),
-            );
-            if let Err(e) = relayer.run(lock_rx, burn_rx).await {
-                error!("Relayer crashed: {:?}", e);
-                relayer_metrics.errors.fetch_add(1, Ordering::Relaxed);
-            }
-            // Relayer channels are consumed on first run — restart not easily possible
-            // without recreating channels. The outer loop exists to catch panic recovery.
-            break;
+        if relayer_shutdown.load(Ordering::Relaxed) {
+            info!("Relayer: shutdown signal received");
+            return;
         }
+        let relayer = Relayer::new(
+            Arc::clone(&relayer_config),
+            Arc::clone(&relayer_metrics),
+            Arc::clone(&relayer_db),
+        );
+        if let Err(e) = relayer.run(lock_rx, burn_rx).await {
+            error!("Relayer crashed: {:?}", e);
+            relayer_metrics.errors.fetch_add(1, Ordering::Relaxed);
+        }
+        // Relayer channels are consumed on first run — restart not easily possible
+        // without recreating channels.
     });
 
     // ── Watchdog task ────────────────────────────────────────────────────────

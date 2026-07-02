@@ -27,8 +27,7 @@ fn main() {
     let mut arr = [0u8; 32];
     arr.copy_from_slice(&bytes);
     let old_sk = SigningKey::from_bytes(&arr);
-    let old_address =
-        zion_core::crypto::derive_address(old_sk.verifying_key().as_bytes());
+    let old_address = zion_core::crypto::derive_address(old_sk.verifying_key().as_bytes());
 
     eprintln!("OLD escrow address: {old_address}");
 
@@ -60,8 +59,7 @@ fn main() {
 
     let sig = zion_core::crypto::sign(&old_sk, tx_id.as_bytes());
     let signature = zion_core::crypto::to_hex(&sig);
-    let public_key =
-        zion_core::crypto::to_hex(old_sk.verifying_key().as_bytes());
+    let public_key = zion_core::crypto::to_hex(old_sk.verifying_key().as_bytes());
 
     eprintln!("TX details:");
     eprintln!("  from:       {old_address}");
@@ -85,8 +83,7 @@ fn main() {
     };
 
     // ── 4. Submit via RPC ───────────────────────────────────────────────
-    let rpc_addr =
-        std::env::var("ZION_RPC_ADDR").unwrap_or_else(|_| "127.0.0.1:8443".into());
+    let rpc_addr = std::env::var("ZION_RPC_ADDR").unwrap_or_else(|_| "127.0.0.1:8443".into());
     let payload = json!({
         "jsonrpc": "2.0",
         "id": 1,
