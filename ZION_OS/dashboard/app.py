@@ -174,6 +174,8 @@ def _is_edge_local() -> bool:
         return False
 
 EDGE_IS_LOCAL = _is_edge_local()
+# When dashboard runs ON Edge, use localhost for RPC/TCP probes (node binds to 127.0.0.1 after security hardening)
+EDGE_RPC_HOST = "127.0.0.1" if EDGE_IS_LOCAL else "100.76.16.108"
 
 def _run_edge_cmd(cmd: str, timeout: int = 8) -> subprocess.CompletedProcess:
     """Run a command on the Edge server — locally if we're on Edge, via SSH otherwise."""
@@ -973,7 +975,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "ports": {},
      "log": "miner.log", "start": "start-miner", "stop": None,
      "health_method": "log", "severity": "warning", "autoheal": True,
-     "health_endpoint": "http://100.76.16.108:8455/miners",
+     "health_endpoint": "http://127.0.0.1:8455/miners" if EDGE_IS_LOCAL else "http://100.76.16.108:8455/miners",
      "purpose": "Performs cosmic_harmony PoW hashing on GPU to find new blocks. Connects to Edge pool.",
      "child_says": "⛏️ The miner is like a digger — it digs for new gold (ZION coins)!",
      "depends_on": ["pool-edge"]},
@@ -1111,7 +1113,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "host": "100.76.16.108",
      "log": None, "start": None, "stop": None,
      "health_method": "http", "severity": "info", "autoheal": False,
-     "health_endpoint": "http://100.76.16.108:8767/api/status",
+     "health_endpoint": "http://127.0.0.1:8767/api/status" if EDGE_IS_LOCAL else "http://100.76.16.108:8767/api/status",
      "purpose": "ZION Agent on Edge — watchdog, telemetry, rig lifecycle manager.",
      "child_says": "🤖 The guardian robot watching over the Edge server!",
      "depends_on": ["edge-node1"]},
@@ -1329,6 +1331,10 @@ def check_service_health(svc: dict) -> dict:
 
     method = svc.get("health_method", "log")
     host = svc.get("host", "127.0.0.1")
+    # When dashboard runs ON Edge, use localhost for all Edge services
+    # (node/pool/L2 services bind to 127.0.0.1 after security hardening)
+    if EDGE_IS_LOCAL and host == "100.76.16.108":
+        host = "127.0.0.1"
     ports = svc.get("ports", {})
     open_ports = []
     closed_ports = []
@@ -2099,7 +2105,7 @@ def detect_nodes() -> dict:
 
 # ── Agent Node Discovery (Desktop Agent integration) ───────────────────────
 AGENT_API_BASE = "http://127.0.0.1:8767"  # local agent (Windows desktop)
-EDGE_AGENT_API_BASE = "http://100.76.16.108:8767"  # Edge server agent
+EDGE_AGENT_API_BASE = f"http://{EDGE_RPC_HOST}:8767"  # Edge server agent
 
 _discovered_nodes_cache: dict = {}
 _discovered_nodes_ts: float = 0.0
@@ -2507,15 +2513,17 @@ def _build_status_edge_primary() -> dict:
     local_rpc_info = None
 
     def _edge_rpc_call():
-        # Tailscale VPN only — public IP fallback removed to avoid 6+s Windows connect delays
-        r = rpc_call("100.76.16.108", 8443, "getChainInfo", {}, timeout=2.5)
+        # When dashboard runs ON Edge, use localhost (RPC bound to 127.0.0.1 after security hardening)
+        host = "127.0.0.1" if EDGE_IS_LOCAL else "100.76.16.108"
+        r = rpc_call(host, 8443, "getChainInfo", {}, timeout=2.5)
         if r and not r.get("_rpc_error"):
             return ("edge", r)
         return ("edge", None)
 
     def _edge_rpc_call_node2():
-        # Edge Node 2 follower — try Tailscale IP (works if dashboard runs on Edge)
-        r = rpc_call("100.76.16.108", 8446, "getChainInfo", {}, timeout=2.5)
+        # Edge Node 2 follower — use localhost when on Edge
+        host = "127.0.0.1" if EDGE_IS_LOCAL else "100.76.16.108"
+        r = rpc_call(host, 8446, "getChainInfo", {}, timeout=2.5)
         if r and not r.get("_rpc_error"):
             return ("edge2", r)
         return ("edge2", None)
@@ -4338,7 +4346,7 @@ def get_pool_wallet_status() -> dict:
 
 def fetch_pool_stats() -> dict:
     """Fetch live pool stats from routing metrics endpoint (port 8455)."""
-    host = "100.76.16.108" if TOPOLOGY == "edge-primary" else "127.0.0.1"
+    host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
     try:
         import urllib.request
         with urllib.request.urlopen(f"http://{host}:8455/stats", timeout=3) as r:
@@ -4348,7 +4356,7 @@ def fetch_pool_stats() -> dict:
 
 def fetch_pool_miners() -> list:
     """Fetch active miners from Edge pool, enriched with paid_total from Prometheus metrics."""
-    host = "100.76.16.108" if TOPOLOGY == "edge-primary" else "127.0.0.1"
+    host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
     miners = []
     try:
         import urllib.request
@@ -4767,7 +4775,7 @@ def build_payout_status() -> dict:
     _metrics_accept = None
     try:
         import urllib.request as _ur2
-        _mhost = "100.76.16.108" if TOPOLOGY == "edge-primary" else "127.0.0.1"
+        _mhost = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
         with _ur2.urlopen(f"http://{_mhost}:8455/metrics", timeout=1.5) as _r:
             for _ln in _r.read().decode("utf-8", errors="ignore").splitlines():
                 if _ln.startswith("zion_pool_accept_rate_pct "):
@@ -4895,7 +4903,7 @@ def get_network_topology() -> dict:
     edge_rpc_alive = False
     edge_height = None
     try:
-        info = rpc_call("100.76.16.108", 8443, "getChainInfo", {}, timeout=2)
+        info = rpc_call(EDGE_RPC_HOST, 8443, "getChainInfo", {}, timeout=2)
         if info and not info.get("_rpc_error"):
             edge_rpc_alive = True
             edge_height = info.get("chain_height")
@@ -8396,14 +8404,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/edge/infra":
             try:
                 import urllib.request as _ur
-                with _ur.urlopen("http://100.76.16.108:8888/api/infra", timeout=3.0) as r:
+                with _ur.urlopen(f"http://{EDGE_RPC_HOST}:8888/api/infra", timeout=3.0) as r:
                     self._json(json.loads(r.read()))
             except Exception as ex:
                 self._json({"error": str(ex), "reachable": False})
         elif route == "/api/edge/overview":
             try:
                 import urllib.request as _ur
-                with _ur.urlopen("http://100.76.16.108:8888/api/overview", timeout=3.0) as r:
+                with _ur.urlopen(f"http://{EDGE_RPC_HOST}:8888/api/overview", timeout=3.0) as r:
                     self._json(json.loads(r.read()))
             except Exception as ex:
                 self._json({"error": str(ex), "reachable": False})
@@ -8810,7 +8818,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 ts_status = "not_available"
             self._json({
                 "core": {"host": "127.0.0.1", "rpc_port": 8443, "alive": core_ok, "latency_ms": core_ms, "data": core_data},
-                "edge": {"host": "100.76.16.108", "rpc_port": 8443, "alive": edge_ok, "latency_ms": edge_ms, "data": edge_data},
+                "edge": {"host": EDGE_RPC_HOST, "rpc_port": 8443, "alive": edge_ok, "latency_ms": edge_ms, "data": edge_data},
                 "tailscale": ts_status,
                 "timestamp": _time.time(),
             })
