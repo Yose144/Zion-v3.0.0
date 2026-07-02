@@ -8,6 +8,7 @@ import {
   Menu, X, SignalHigh, Orbit, ChevronDown, LayoutDashboard, Pickaxe, Shield,
   HardHat, Download, Coins, ArrowLeftRight, Landmark, Wallet, BookOpen,
   Newspaper, Map, Sparkles, Rocket, Brain, Flower2, Globe2, Zap, Atom, Building2,
+  CircuitBoard,
 } from 'lucide-react';
 import NavAuthButton from './NavAuthButton';
 import BackgroundToggle from './BackgroundToggle';
@@ -43,6 +44,7 @@ export default function Navigation() {
       items: [
         { href: '/defi', label: tr('nav', 'defi', lang) },
         { href: '/cex', label: 'CEX' },
+        { href: '/warp', label: tr('nav', 'warp', lang) },
         { href: '/bridge', label: tr('nav', 'bridge', lang) },
         { href: '/dao', label: tr('nav', 'dao', lang) },
         { href: '/wallet', label: tr('nav', 'wallet', lang) },
@@ -77,6 +79,7 @@ export default function Navigation() {
     { href: '/download', icon: Download, color: '6, 182, 212', label: tr('nav', 'download', lang) },
     { href: '/defi', icon: Coins, color: '16, 185, 129', label: tr('nav', 'defi', lang) },
     { href: '/cex', icon: Building2, color: '236, 72, 153', label: 'CEX' },
+    { href: '/warp', icon: CircuitBoard, color: '99, 102, 241', label: tr('nav', 'warp', lang) },
     { href: '/bridge', icon: ArrowLeftRight, color: '59, 130, 246', label: tr('nav', 'bridge', lang) },
     { href: '/dao', icon: Landmark, color: '147, 51, 234', label: tr('nav', 'dao', lang) },
     { href: '/wallet', icon: Wallet, color: '236, 72, 153', label: tr('nav', 'wallet', lang) },
