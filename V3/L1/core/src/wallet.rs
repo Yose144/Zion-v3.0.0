@@ -714,9 +714,17 @@ mod tests {
         let dest = derive_address(&[99u8; 32]);
 
         // A genuine victim-signed transaction must verify.
-        let legit =
-            build_and_sign_account(&victim_sk, &victim_addr, &dest, 1_000_000, 1_000, 1, None, 1)
-                .unwrap();
+        let legit = build_and_sign_account(
+            &victim_sk,
+            &victim_addr,
+            &dest,
+            1_000_000,
+            1_000,
+            1,
+            None,
+            1,
+        )
+        .unwrap();
         assert!(legit.verify_signature(), "legit victim tx must verify");
 
         // Attacker forges a transaction that spends from the victim address but

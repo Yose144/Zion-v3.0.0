@@ -2824,6 +2824,9 @@ impl ChainState {
                     }
                 } else {
                     transaction.validate()?;
+                    if !transaction.verify_signature() {
+                        return Err("account transaction signature verification failed".to_string());
+                    }
                     if !seen_sender_nonces.insert((transaction.from.clone(), transaction.nonce)) {
                         return Err(format!(
                             "peer block reuses sender nonce {} for {}",
@@ -4012,6 +4015,31 @@ mod tests {
         tx.signature = hex(&sig);
         tx.public_key = hex(vk.as_bytes());
     }
+
+    /// Build a valid account transaction whose `from` address matches the signing key.
+    fn build_valid_account_tx(
+        from_label: &str,
+        to: &str,
+        amount: u64,
+        fee: u64,
+        nonce: u64,
+    ) -> Transaction {
+        let (sk, vk) = crypto::keypair_from_canonical_label(from_label);
+        let from = crypto::derive_address(vk.as_bytes());
+        let tx_id = crate::wallet::generate_account_tx_id(&from, to, amount, nonce, None, 1);
+        let sig = crypto::sign(&sk, tx_id.as_bytes());
+        Transaction {
+            tx_id,
+            from,
+            to: to.to_string(),
+            amount_zion: amount as u128,
+            fee_zion: fee,
+            nonce,
+            signature: hex(&sig),
+            public_key: hex(vk.as_bytes()),
+            memo: None,
+        }
+    }
     use zion_cosmic_harmony::{
         generate_ekam_test_vector, BODY_ROOT_V2_ACTIVATION_HEIGHT, EKAM_CANONICAL_TEST_VECTOR_HEX,
     };
@@ -4671,6 +4699,63 @@ mod tests {
             })
             .expect_err("conflicting height should fail");
         assert!(error.contains("conflicting peer block"));
+    }
+
+    /// Regression test for 3.0.4 CRITICAL Finding 1: a peer block containing an
+    /// account transaction whose public key does not derive to the `from` address
+    /// must be rejected, even if the Ed25519 signature is otherwise valid.
+    #[test]
+    fn validate_peer_block_rejects_forged_account_transaction() {
+        let mut source = NodeRuntime::new("node-forge-src", NodeConfig::mainnet());
+        let valid_tx =
+            build_valid_account_tx("__peer_block_test_victim__", "wallet.dest", 25, 1, 1);
+        let submit_response = source.handle_rpc_request(RpcRequest::SubmitTransaction {
+            transaction: valid_tx.clone(),
+        });
+        match submit_response {
+            RpcResponse::TransactionResult { accepted: true, .. } => {}
+            other => panic!("valid tx must be accepted by mempool: {other:?}"),
+        }
+
+        let template = source.active_template();
+        let nonce = find_valid_nonce(&template);
+        let candidate_response = source.handle_rpc_request(RpcRequest::SubmitCandidate {
+            template_id: template.template_id,
+            header_hex: template.header_hex,
+            nonce,
+            target_hex: template.target_hex,
+            algorithm: "deeksha_lite_v1".to_string(),
+        });
+        match candidate_response {
+            RpcResponse::SubmitResult { accepted: true, .. } => {}
+            other => panic!("block candidate must be accepted: {other:?}"),
+        }
+
+        let mut block = source.accepted_blocks()[1].clone(); // skip genesis
+        let tx_index = block
+            .transactions
+            .iter()
+            .position(|tx| tx.tx_id == valid_tx.tx_id)
+            .expect("valid tx must be in mined block");
+
+        // Forge the transaction: keep the same tx_id and content, but sign with
+        // an unrelated attacker key. The signature is valid for (attacker_pk, tx_id),
+        // but the key does not derive to the victim `from` address.
+        let mut forged_tx = valid_tx.clone();
+        let (attacker_sk, attacker_vk) = crypto::generate_keypair();
+        let sig = crypto::sign(&attacker_sk, forged_tx.tx_id.as_bytes());
+        forged_tx.signature = hex(&sig);
+        forged_tx.public_key = hex(attacker_vk.as_bytes());
+        block.transactions[tx_index] = forged_tx;
+
+        let mut target = NodeRuntime::new("node-forge-tgt", NodeConfig::mainnet());
+        let err = target
+            .import_peer_blocks(vec![block])
+            .expect_err("forged account tx must be rejected");
+        assert!(
+            err.contains("signature verification failed"),
+            "unexpected error: {err}"
+        );
     }
 
     /// Slow: multiple `find_valid_nonce` rounds in debug build. Run via:
