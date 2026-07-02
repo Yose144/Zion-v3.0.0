@@ -65,7 +65,7 @@ SERVICE_LOG_MAP = {
 # Load config
 def load_config() -> dict:
     defaults = {
-        "host": "0.0.0.0",
+        "host": "127.0.0.1",
         "port": 8766,
         "topology": "edge-primary",  # "edge-primary" or "local-dev"
         "log_rotation_max_bytes": 104857600,
@@ -7957,6 +7957,154 @@ def _recv_exact(conn: socket.socket, n: int) -> bytes:
     return data
 
 
+# ── Security Monitor ─────────────────────────────────────────────────────
+# Post-incident security panel: attacker watch, balance guard, alert feed
+
+# Attacker addresses from F1 exploit (SEC-2026-07-02)
+ATTACKER_ADDRESSES = [
+    {
+        "address": "zion1t3l7q3p8f457n335r083k8r3n6l5w4u2f2q83r2",
+        "label": "ATTACKER — 589M theft (block 22181)",
+        "expected_balance_zion": 0,
+    },
+    {
+        "address": "zion17758s76520t4c6c3v656g8a5p7d4x4c2d2032x0",
+        "label": "ATTACKER — 1 ZION probe (block 21959)",
+        "expected_balance_zion": 1.0,
+    },
+]
+
+# Premine wallets to guard (alert if balance drops below expected)
+PREMINE_GUARD = [
+    {"address": "zion16542q4l853a2z0u5r5w8y4m8k4558847h503736", "label": "Genesis Creator", "min_balance_zion": 589_000_000},
+    {"address": "zion13794g7k3m0f84637l2x0t855h3l258k8p3xp5t3", "label": "Bridge Seed (Slot 13)", "min_balance_zion": 399_000_000},
+    {"address": "zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4", "label": "DAO Treasury", "min_balance_zion": 2_400_000_000},
+    {"address": "zion1d3p5x622m327r060w5z0q5r203v837m6l8pa8x5", "label": "Core Dev Fund", "min_balance_zion": 990_000_000},
+    {"address": "zion1z7g4u3s2w3c5z5u4a60864m2y7q8e5j304g46r7", "label": "Children Future Fund", "min_balance_zion": 1_430_000_000},
+    {"address": "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604", "label": "Pool Wallet", "min_balance_zion": 0},
+]
+
+ALERT_LOG_FILES = {
+    "forged_tx": "/var/log/zion-forged-tx-alerts.log",
+    "balance": "/var/log/zion-balance-alerts.log",
+    "peer": "/var/log/zion-peer-alerts.log",
+}
+
+
+def _rpc_get_balance(address: str) -> dict | None:
+    """Query node RPC for balance. Returns None on error."""
+    try:
+        import urllib.request
+        payload = json.dumps({
+            "id": 1, "jsonrpc": "2.0",
+            "method": "getBalance", "params": {"address": address}
+        }).encode("utf-8")
+        req = urllib.request.Request(
+            "http://127.0.0.1:8443",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            return data.get("result")
+    except Exception:
+        return None
+
+
+def _read_alert_log(path: str, max_lines: int = 20) -> list[str]:
+    """Read last N lines from an alert log file."""
+    try:
+        with open(path, "r") as f:
+            lines = f.readlines()
+        return [l.rstrip() for l in lines[-max_lines:]]
+    except Exception:
+        return []
+
+
+def build_security_status() -> dict:
+    """Build security status for /api/security endpoint."""
+    # 1. Attacker address watch
+    attackers = []
+    for a in ATTACKER_ADDRESSES:
+        bal = _rpc_get_balance(a["address"])
+        if bal:
+            bal_flowers = int(bal.get("balance_flowers", 0))
+            bal_zion = flowers_to_zion(bal_flowers)
+            attackers.append({
+                "address": a["address"],
+                "label": a["label"],
+                "balance_zion": round(bal_zion, 6),
+                "balance_flowers": bal_flowers,
+                "expected_zion": a["expected_balance_zion"],
+                "status": "OK" if abs(bal_zion - a["expected_balance_zion"]) < 0.01 else "ALERT",
+            })
+        else:
+            attackers.append({
+                "address": a["address"],
+                "label": a["label"],
+                "balance_zion": None,
+                "status": "RPC_ERROR",
+            })
+
+    # 2. Premine balance guard
+    guards = []
+    for g in PREMINE_GUARD:
+        bal = _rpc_get_balance(g["address"])
+        if bal:
+            bal_flowers = int(bal.get("balance_flowers", 0))
+            bal_zion = flowers_to_zion(bal_flowers)
+            status = "OK" if bal_zion >= g["min_balance_zion"] else "ALERT"
+            guards.append({
+                "address": g["address"],
+                "label": g["label"],
+                "balance_zion": round(bal_zion, 2),
+                "min_balance_zion": g["min_balance_zion"],
+                "status": status,
+            })
+        else:
+            guards.append({
+                "address": g["address"],
+                "label": g["label"],
+                "balance_zion": None,
+                "status": "RPC_ERROR",
+            })
+
+    # 3. Alert logs
+    alerts = {}
+    for name, path in ALERT_LOG_FILES.items():
+        lines = _read_alert_log(path, 30)
+        alerts[name] = lines
+
+    # 4. Firewall status
+    fw_status = "unknown"
+    try:
+        result = subprocess.run(["ufw", "status"], capture_output=True, text=True, timeout=5)
+        fw_status = "active" if "Status: active" in result.stdout else "inactive"
+    except Exception:
+        pass
+
+    # 5. Overall security status
+    any_attacker_alert = any(a["status"] == "ALERT" for a in attackers)
+    any_guard_alert = any(g["status"] == "ALERT" for g in guards)
+    overall = "SECURE"
+    if any_attacker_alert:
+        overall = "CRITICAL — attacker funds moved!"
+    elif any_guard_alert:
+        overall = "WARNING — premine balance below threshold"
+    elif fw_status != "active":
+        overall = "WARNING — firewall inactive"
+
+    return {
+        "overall_status": overall,
+        "incident": "SEC-2026-07-02-F1 — 589M ZION theft (rolled back to block 22180)",
+        "attackers": attackers,
+        "premine_guard": guards,
+        "alert_logs": alerts,
+        "firewall": fw_status,
+        "timestamp": int(time.time()),
+    }
+
+
 # ── HTTP Handler ────────────────────────────────────────────────────────
 
 class DashboardHandler(BaseHTTPRequestHandler):
@@ -8304,6 +8452,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(build_checklist(build_status()))
         elif route == "/api/alerts":
             self._json({"alerts": build_alerts(build_status())})
+        elif route == "/api/security":
+            self._json(build_security_status())
         elif route == "/api/history":
             self._json({"samples": HISTORY.snapshot()})
         elif route == "/api/events":
