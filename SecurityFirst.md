@@ -17,7 +17,14 @@
 >
 > **Impact:** Kdokoliv s Ed25519 klíčem může vytvořit ZION z ničeho odesláním TX z prázdné adresy. Toto je **větší exploit než F1** — umožňuje neomezenou inflaci.
 >
-> **Fix needed (L1 consensus):** `validate_peer_block()` a `insert_transaction()` musí kontrolovat `sender_balance >= amount + fee` před přijetím TX. Vyžaduje explicit approval (AGENTS.md L1 pravidla).
+> **FIX DEPLOYED 2026-07-02 20:22 UTC:**
+> - `balance_check_active(height)` gate přidán do cosmic-harmony (height-gated via `ZION_BALANCE_CHECK_HEIGHT` env var)
+> - `account_balance_for()` helper na ChainState počítá confirmed balance + pending mempool debits
+> - RPC path (`insert_transaction`): reject TX pokud `sender_balance < amount + fee`
+> - P2P path (`validate_peer_block`): reject TX s running balance (zohledňuje multi-TX bloky)
+> - Edge mainnet aktivace: `ZION_BALANCE_CHECK_HEIGHT=22394` (aktivní od bloku 22394)
+> - 3 regresní testy pass (RPC reject, RPC accept, peer-block reject)
+> - Commits: `69d12c7`, `fe8d449`
 
 ---
 
