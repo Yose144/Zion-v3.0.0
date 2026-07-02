@@ -155,6 +155,29 @@ impl SwapConfig {
         Ok(cfg)
     }
 
+    /// Validate runtime safety constraints. Call after loading.
+    /// On mainnet, the HTTP API bearer_token MUST be set — otherwise the
+    /// `/swap/claim` and `/swap/refund` endpoints are open-access, which
+    /// combined with legacy (no-claimant) HTLC locks enables front-running
+    /// (C1 security patch).
+    pub fn validate_runtime(&self) -> anyhow::Result<()> {
+        let mainnet = self.swap.network.eq_ignore_ascii_case("mainnet");
+        if mainnet {
+            if self.api_bearer_token().is_none() {
+                anyhow::bail!(
+                    "mainnet requires api.bearer_token or ZION_SWAP_BEARER_TOKEN env var \
+                     (open-access claim/refund endpoints are unsafe — C1)"
+                );
+            }
+            if self.escrow_key_hex().is_none() {
+                anyhow::bail!(
+                    "mainnet requires ZION_SWAP_ESCROW_KEY env var (escrow signing key)"
+                );
+            }
+        }
+        Ok(())
+    }
+
     /// Resolve the escrow key: env var takes priority over TOML field.
     pub fn escrow_key_hex(&self) -> Option<String> {
         std::env::var("ZION_SWAP_ESCROW_KEY")

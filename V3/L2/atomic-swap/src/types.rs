@@ -153,6 +153,14 @@ pub struct HtlcRecord {
     /// Counterparty address (BTC address, EVM address, …).
     pub counterparty_addr: String,
 
+    /// Optional pre-committed ZION L1 claimant address. When set at LOCK
+    /// time, only this address may receive the released ZION on CLAIM —
+    /// prevents front-running by observers who steal the preimage from the
+    /// counterparty chain. When `None` (legacy memos), claims are still
+    /// accepted but mainnet requires `bearer_token` auth on the HTTP API.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub claimant_address: Option<String>,
+
     /// Current lifecycle state.
     pub state: SwapState,
 
@@ -193,12 +201,17 @@ impl HtlcRecord {
 /// A parsed L1 TX memo related to atomic swaps.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SwapMemo {
-    /// `SWAP:LOCK:<hash_hex>:<timeout_min>:<chain>:<counterparty_addr>`
+    /// `SWAP:LOCK:<hash_hex>:<timeout_min>:<chain>:<counterparty_addr>[:<claimant_zion>]`
+    ///
+    /// The optional 6th field `<claimant_zion>` pre-commits the ZION L1
+    /// address that may receive the claim. Recommended for all new locks;
+    /// when absent (legacy), mainnet enforces bearer_token auth instead.
     Lock {
         hash_hex: String,
         timeout_minutes: u64,
         counterparty_chain: String,
         counterparty_addr: String,
+        claimant_address: Option<String>,
     },
     /// `SWAP:CLAIM:<hash_hex>:<preimage_hex>`
     Claim {
@@ -212,13 +225,13 @@ pub enum SwapMemo {
 impl SwapMemo {
     /// Parse a raw memo string.  Returns `None` if not a swap memo.
     pub fn parse(memo: &str) -> Option<Self> {
-        let parts: Vec<&str> = memo.splitn(6, ':').collect();
+        let parts: Vec<&str> = memo.splitn(7, ':').collect();
         if parts.first() != Some(&"SWAP") {
             return None;
         }
         match parts.get(1).copied() {
             Some("LOCK") => {
-                // SWAP:LOCK:<hash>:<timeout>:<chain>:<addr>
+                // SWAP:LOCK:<hash>:<timeout>:<chain>:<addr>[:<claimant_zion>]
                 let hash_hex = parts.get(2).map(|s| s.to_string())?;
                 let timeout_minutes: u64 = parts.get(3)?.parse().ok()?;
                 let counterparty_chain = parts.get(4).map(|s| s.to_string())?;
@@ -232,11 +245,22 @@ impl SwapMemo {
                     // 0 … 7 days
                     return None;
                 }
+                // Optional pre-committed claimant ZION address (6th field).
+                // Must be a non-empty zion1 address; otherwise ignored.
+                let claimant_address = parts.get(6).and_then(|s| {
+                    let t = s.trim();
+                    if t.starts_with("zion1") && t.len() >= 8 {
+                        Some(t.to_string())
+                    } else {
+                        None
+                    }
+                });
                 Some(Self::Lock {
                     hash_hex,
                     timeout_minutes,
                     counterparty_chain,
                     counterparty_addr,
+                    claimant_address,
                 })
             }
             Some("CLAIM") => {
@@ -398,6 +422,24 @@ mod tests {
                 timeout_minutes: 120,
                 counterparty_chain: "btc".into(),
                 counterparty_addr: "bc1qtest".into(),
+                claimant_address: None,
+            }
+        );
+    }
+
+    #[test]
+    fn parse_lock_memo_with_claimant() {
+        let hash = "a".repeat(64);
+        let memo = format!("SWAP:LOCK:{hash}:120:btc:bc1qtest:zion1claimantaddr");
+        let parsed = SwapMemo::parse(&memo).unwrap();
+        assert_eq!(
+            parsed,
+            SwapMemo::Lock {
+                hash_hex: hash,
+                timeout_minutes: 120,
+                counterparty_chain: "btc".into(),
+                counterparty_addr: "bc1qtest".into(),
+                claimant_address: Some("zion1claimantaddr".into()),
             }
         );
     }

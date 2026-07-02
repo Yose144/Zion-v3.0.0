@@ -30,6 +30,20 @@ pub struct SwapExecutor {
     signing_key_bytes: [u8; 32],
 }
 
+impl Drop for SwapExecutor {
+    /// Zero the signing key bytes on drop so they are not recoverable
+    /// from a core/process dump after the executor is shut down (L2 audit).
+    fn drop(&mut self) {
+        // Use a simple volatile-style zero; we avoid pulling in the
+        // `zeroize` crate to keep the dependency footprint unchanged.
+        for b in self.signing_key_bytes.iter_mut() {
+            // Write in a way the optimizer is unlikely to elide.
+            unsafe { std::ptr::write_volatile(b, 0) };
+        }
+        std::sync::atomic::compiler_fence(std::sync::atomic::Ordering::SeqCst);
+    }
+}
+
 impl SwapExecutor {
     /// Create dummy executor for tests (in-memory mode, fake address).
     pub fn new_dummy() -> Self {
@@ -127,6 +141,21 @@ impl SwapExecutor {
             return Err(SwapError::TimelockExpired {
                 hash_hex: hash_hex.to_string(),
             });
+        }
+
+        // 3b. Guard: pre-committed claimant (C1 security patch).
+        // When the LOCK memo carried a claimant_address, only that address
+        // may receive the released ZION — prevents front-running by observers
+        // who steal the preimage from the counterparty chain.
+        if let Some(ref expected) = rec.claimant_address {
+            if expected != recipient {
+                warn!(
+                    "CLAIM {hash_hex} recipient {recipient} != committed claimant {expected} — rejected (C1)"
+                );
+                return Err(SwapError::Internal(format!(
+                    "recipient {recipient} does not match committed claimant {expected}"
+                )));
+            }
         }
 
         // 4. Verify preimage
