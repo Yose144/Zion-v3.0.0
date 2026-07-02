@@ -101,68 +101,9 @@ const config: HardhatUserConfig = {
   },
 
   etherscan: {
-    apiKey: {
-      base: process.env.BASESCAN_API_KEY || "",
-      "base-sepolia": process.env.BASESCAN_API_KEY || "",
-      arbitrum: process.env.ARBISCAN_API_KEY || "",
-      "arbitrum-sepolia": process.env.ARBISCAN_API_KEY || "",
-      bsc: process.env.BSCSCAN_API_KEY || "",
-      "bsc-testnet": process.env.BSCSCAN_API_KEY || "",
-      polygon: process.env.POLYGONSCAN_API_KEY || "",
-      "polygon-amoy": process.env.POLYGONSCAN_API_KEY || "",
-      optimisticEthereum: process.env.OPSCAN_API_KEY || "",
-      avalanche: process.env.SNOWTRACE_API_KEY || "",
-    },
-    customChains: [
-      {
-        network: "base",
-        chainId: 8453,
-        urls: {
-          apiURL: "https://api.basescan.org/api",
-          browserURL: "https://basescan.org",
-        },
-      },
-      {
-        network: "base-sepolia",
-        chainId: 84532,
-        urls: {
-          apiURL: "https://api-sepolia.basescan.org/api",
-          browserURL: "https://sepolia.basescan.org",
-        },
-      },
-      {
-        network: "arbitrum",
-        chainId: 42161,
-        urls: {
-          apiURL: "https://api.arbiscan.io/api",
-          browserURL: "https://arbiscan.io",
-        },
-      },
-      {
-        network: "arbitrum-sepolia",
-        chainId: 421614,
-        urls: {
-          apiURL: "https://api-sepolia.arbiscan.io/api",
-          browserURL: "https://sepolia.arbiscan.io",
-        },
-      },
-      {
-        network: "polygon",
-        chainId: 137,
-        urls: {
-          apiURL: "https://api.polygonscan.com/api",
-          browserURL: "https://polygonscan.com",
-        },
-      },
-      {
-        network: "polygon-amoy",
-        chainId: 80002,
-        urls: {
-          apiURL: "https://api-amoy.polygonscan.com/api",
-          browserURL: "https://amoy.polygonscan.com",
-        },
-      },
-    ],
+    // Etherscan V2 API — single key works across all chains.
+    // The plugin automatically routes to https://api.etherscan.io/v2/api?chainid=<id>
+    apiKey: process.env.BASESCAN_API_KEY || "",
   },
 };
 

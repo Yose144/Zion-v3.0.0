@@ -11,6 +11,11 @@ APP&WEB/desktop-agent/atomic-swap-e2e.js
 APP&WEB/desktop-agent/dao-vote-test.js
 APP&WEB/desktop-agent/send-to-escrow.js
 
+# Temporary scratch files (Devin sessions, ad-hoc scripts)
+.tmp_*
+decode_console.py
+/tmp_*.py
+
 # Build artifacts
 /target/
 **/target/
