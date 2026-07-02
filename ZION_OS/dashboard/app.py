@@ -3321,7 +3321,7 @@ def parse_premine_from_genesis(rpc_host: str = "127.0.0.1", rpc_port: int = 8443
             "index": i + 1,
             "address": addr,
             "label": labels[i] if i < len(labels) else f"Premine Output {i+1}",
-            "amount_zion": amount / 1_000_000,  # flowers -> ZION
+            "amount_zion": flowers_to_zion(amount),  # flowers -> ZION (auto-detects legacy 1e12)
             "source": "genesis",
             "category": "premine",
         })
