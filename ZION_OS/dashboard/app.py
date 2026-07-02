@@ -92,10 +92,43 @@ PORT = CONFIG["port"]
 TOPOLOGY = CONFIG["topology"]
 PAYOUT_HIGHWATER_FILE = DATA_DIR / "dashboard-payout-highwater.json"
 
-# ── Basic Auth (HTTP 401) ────────────────────────────────────────────────
-# Credentials from env vars (override config.json). Default: admin / root
-AUTH_USER = os.environ.get("DASHBOARD_AUTH_USER", "admin")
-AUTH_PASS = os.environ.get("DASHBOARD_AUTH_PASS", "root")
+# ── Basic Auth (HTTP 401) — multi-user ───────────────────────────────────
+# Supports multiple user accounts. Credentials are stored as SHA-256 hashes
+# for security. Plaintext passwords are NEVER stored on disk.
+#
+# Users are configured via the DASHBOARD_USERS env var (comma-separated
+# "user:sha256hex" pairs) or fall back to compiled defaults below.
+#
+# To generate a hash: python3 -c "import hashlib; print(hashlib.sha256(b'password').hexdigest())"
+import hashlib as _hashlib
+
+def _sha256(s: str) -> str:
+    return _hashlib.sha256(s.encode("utf-8")).hexdigest()
+
+# Default users (Yose + Issy) — hashed passwords
+_DEFAULT_USERS = {
+    "Yose":  _sha256("x3nityOne144"),
+    "Issy":  _sha256("8506204014"),
+}
+
+# Parse optional env override: DASHBOARD_USERS="user1:hash1,user2:hash2"
+DASHBOARD_USERS_ENV = os.environ.get("DASHBOARD_USERS", "")
+DASHBOARD_USERS: dict[str, str] = {}
+if DASHBOARD_USERS_ENV:
+    for pair in DASHBOARD_USERS_ENV.split(","):
+        pair = pair.strip()
+        if ":" in pair:
+            u, h = pair.split(":", 1)
+            DASHBOARD_USERS[u.strip()] = h.strip()
+else:
+    DASHBOARD_USERS = dict(_DEFAULT_USERS)
+
+# Legacy single-user env vars (backward compat — added as extra user if set)
+_legacy_user = os.environ.get("DASHBOARD_AUTH_USER", "")
+_legacy_pass = os.environ.get("DASHBOARD_AUTH_PASS", "")
+if _legacy_user and _legacy_pass:
+    DASHBOARD_USERS[_legacy_user] = _sha256(_legacy_pass)
+
 # Endpoints that skip auth (health checks, static assets)
 AUTH_EXEMPT_ROUTES = {"/api/health", "/health", "/favicon.ico"}
 
@@ -7932,7 +7965,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         pass
 
     def _check_auth(self):
-        """HTTP Basic Auth check. Returns True if authorized, sends 401 if not."""
+        """HTTP Basic Auth check (multi-user). Returns True if authorized, sends 401 if not."""
         parsed = urllib.parse.urlparse(self.path)
         route = parsed.path
         # Skip auth for health checks and static assets
@@ -7944,8 +7977,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
             try:
                 decoded = base64.b64decode(auth_header[6:]).decode("utf-8")
                 user, _, passwd = decoded.partition(":")
-                if user == AUTH_USER and passwd == AUTH_PASS:
-                    return True
+                # Look up user and compare SHA-256 hash (constant-time via compare_digest)
+                expected_hash = DASHBOARD_USERS.get(user)
+                if expected_hash is not None:
+                    import hmac as _hmac
+                    if _hmac.compare_digest(
+                        _sha256(passwd), expected_hash
+                    ):
+                        return True
             except Exception:
                 pass
         # Not authorized — send 401 challenge
@@ -10148,7 +10187,7 @@ if __name__ == "__main__":
     print("=" * 60)
     print(f"  Log directory : {LOG_DIR.absolute()}")
     print(f"  URL           : http://{HOST}:{PORT}")
-    print(f"  Auth          : {AUTH_USER} / {'***' if AUTH_PASS else '(none)'}")
+    print(f"  Auth          : {len(DASHBOARD_USERS)} user(s) — {', '.join(DASHBOARD_USERS.keys())}")
     print("  Press Ctrl+C to stop")
     print("=" * 60)
     # Background sampler and WS push temporarily disabled due to Windows
