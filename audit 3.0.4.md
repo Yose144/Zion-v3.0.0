@@ -143,17 +143,25 @@ Tvrzení z `3.0.4.md` §4.1 (499 testů) **potvrzeno živým během**. ✅
 
 ## 7. Otevřené / procesní položky (NEBLOKUJÍ kód)
 
-### 7.1 ⚠️ H1 — Nekonzistence bridge adres (owner rozhodnutí)
+### 7.1 ✅ H1 — Nekonzistence bridge adres (vyřešeno 2026-07-02)
 
-Napříč repozitářem existují **tři** ZIONBridge adresy:
+On-chain ověření `wZION.hasRole(BRIDGE_ROLE, bridge)` na všech 6 EVM chainech potvrdilo finální live adresy:
 
-| Adresa | Kde se používá | Kontext |
-|--------|----------------|---------|
-| `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467` | `bridge-mainnet.toml`, website `bridge-api.ts`, desktop-agent, `ROADMAP.md`, deploy runbook | Base „live" |
-| `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | non-Base chainy v `bridge-mainnet.toml`, staré Sepolia docs | markováno jinde jako „BRIDGE_ROLE revoked" |
-| `0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88` | `BRIDGE_MAINNET_READINESS.md`, `wZION_PLAN.md`, `DEFI_FULL_ROADMAP.md` | „new 5/5" |
+| Chain | Live bridge | Kde se používá | BRIDGE_ROLE |
+|-------|-------------|----------------|-------------|
+| Base | `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467` | `V3/L2/bridge/config/bridge-mainnet.toml`, website `bridge-api.ts`, dashboard | ✅ |
+| BSC | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | `V3/L2/bridge/config/bridge-mainnet.toml` | ✅ |
+| Polygon | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | `V3/L2/bridge/config/bridge-mainnet.toml` | ✅ |
+| Arbitrum | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | `V3/L2/bridge/config/bridge-mainnet.toml` | ✅ |
+| Optimism | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | `V3/L2/bridge/config/bridge-mainnet.toml` | ✅ |
+| Avalanche | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | `V3/L2/bridge/config/bridge-mainnet.toml` | ✅ |
 
-**Akce:** Owner musí rozhodnout, které adresy jsou live na každém chainu (deploynout nové 5/5 na non-Base, nebo opravit docs). Odpovídá H1 z `docs/3.0.3/CODE_VS_DOCS_AUDIT.md`.
+`0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88` je **zastaralý 5/5 bridge** — existuje na Base, ale nemá BRIDGE_ROLE a není používán. Dokumentace a dashboard aktualizovány.
+
+**Provedené změny:**
+- `ZION_OS/dashboard/app.py` — `/api/bridge/chains` vrací správnou Base adresu.
+- `V3/config/bridge-mainnet.toml` — synchronizován s live `V3/L2/bridge/config/bridge-mainnet.toml`.
+- Aktualizovány `StatusV3.md`, `hardforkfix.md`, `docs/3.0.3/BRIDGE_MAINNET_READINESS.md`, `docs/3.0.3/wZION_PLAN.md`, `docs/3.0.3/ZION_MAINNET_DEFI_ROADMAP.md`, `docs/3.0.3/CODE_VS_DOCS_AUDIT.md`.
 
 ### 7.2 ⚠️ Vnitřní rozpor v `3.0.4.md` (dokumentační chyba)
 

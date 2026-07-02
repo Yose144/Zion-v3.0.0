@@ -57,7 +57,7 @@ Verze 3.0.2 představuje přechod z čistého L1 mainnetu k **plně integrované
 - [x] Připravit mainnet konfiguraci pro 5/5 multisig
 - [x] Nahradit mainnet placeholder adresy reálnými adresami z webu
 - [x] Zafundovat 5 mainnet validator adresy ETH na Base (minimum done)
-- [x] Nasadit nový 5/5 `ZIONBridge` na 0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88
+- [x] Nasadit nový 5/5 `ZIONBridge` na 0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88 (later superseded by live `0x72c8f0Dc...`)
 - [x] Nasadit nový 5/5 `BridgeValidator` na 0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627
 - [x] Převést wZION BRIDGE_ROLE na nový 5/5 bridge
 - [x] Spustit mainnet bridge relay v3.0.2 na Edge serveru (L1 node + EVM watcher aktivní)

@@ -32,7 +32,7 @@ BRIDGE RELAY (Rust)
 
 SMART KONTRAKTY — Base Mainnet (deployed, ověřeno)
   ✅ wZION ERC-20: 0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6
-  ✅ ZIONBridge 5/5: 0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88
+  ✅ ZIONBridge 5/5 (live): 0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467
   ✅ BridgeValidator: 0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627
   ✅ ZIONStaking (12% APR, 7-day cooldown): deployed
   ✅ ZIONGovernance: deployed

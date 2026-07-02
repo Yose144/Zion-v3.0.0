@@ -34,7 +34,7 @@
 - **Pool wallet custody** — nalezen SK pro `zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604`, `edge-environment.sh` aktualizován; pool startup guard nyní projde.
 - **Operator-env fix** — `canonical-mainnet-operator-env.rs` odstranil debug_asserty, které panikařily v debug buildu kvůli offline-mnemonic vs label-derived adresám.
 - **Runbook** — `V3/docs/ZION_3.0.4_SECURITY_FIX_DEPLOY_RUNBOOK.md` popisuje koordinovaný deploy na Edge: backup, build, restart node1 → node2 → pool, verify guard, E2E.
-- **H1 bridge addresses** — autonomně řešeno v tomto sessionu přes dashboard a block explorer (výsledek vložen níže).
+- **H1 bridge addresses** — autonomně řešeno v tomto sessionu přes dashboard a block explorer (výsledek vložen níže). On-chain `wZION.hasRole(BRIDGE_ROLE, bridge)` potvrdilo: **Base live = `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467`**, **non-Base live = `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721`**, **`0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88` je zastaralý 5/5 bridge bez BRIDGE_ROLE**. Dashboard `app.py`, `V3/config/bridge-mainnet.toml` a dokumentace sjednoceny.
 
 ### Commity
 
@@ -59,7 +59,7 @@
 
 ### Zbývá (vyžaduje lidskou akci)
 
-1. **Bridge address 3-way inconsistency** (H1 z auditu) — `bridge-mainnet.toml` ukazuje na revoked contract pro 5 non-Base chainů; `V3/docs/BRIDGE_MAINNET_DEPLOY.md` a `docs/3.0.3/ROADMAP.md` se neshodnou na Base bridge adrese. Vyžaduje owner rozhodnutí které adresy jsou live.
+1. ✅ **Bridge address 3-way inconsistency** (H1 z auditu) — vyřešeno 2026-07-02: Base live = `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467`, non-Base live = `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721`, `0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88` zastaralý bez BRIDGE_ROLE. Dashboard a configy sjednoceny.
 2. **3.0.4 TX unification implementace** — plán v `3.0.4.md` čeká na schválení 5 blokujících otázek (§3.7)
 3. **Basescan verify** — získat API key, spustit `verify-base-mainnet-basescan.ts`
 4. **Guardian mnemonics backup** — flash drive `F:\`

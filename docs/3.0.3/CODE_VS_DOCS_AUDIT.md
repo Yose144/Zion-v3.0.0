@@ -31,20 +31,20 @@
 
 ## HIGH severity
 
-### H1 — Bridge contract address 3-way inconsistency
+### H1 — Bridge contract address 3-way inconsistency ✅ RESOLVED 2026-07-02
 
-The bridge contract address differs across three sources of truth, and the repo relay config points 5 of 6 chains at a **revoked** contract.
+On-chain `wZION.hasRole(BRIDGE_ROLE, bridge)` on all 6 chains confirmed the live configuration:
 
-| Source | Base address | Non-Base address |
-|--------|--------------|------------------|
-| `V3/L2/bridge/config/bridge-mainnet.toml` (lines 40, 55, 70, 85, 100, 115) | `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467` | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` |
-| `V3/docs/BRIDGE_MAINNET_DEPLOY.md` (lines 158, 160) | `0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88` ("new 5/5") | `0xa5a09b2C...` marked "❌ BRIDGE_ROLE revoked" |
-| `V3/ROADMAP.md` (line 24) | `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467` | — |
-| `AGENTS.md` / `Li.Fi-L2.md` | — | `0xa5a09b2C...` (presented as the live bridge) |
+| Chain | Live bridge | `BRIDGE_ROLE` |
+|-------|-------------|---------------|
+| Base | `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467` | ✅ |
+| BSC | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | ✅ |
+| Polygon | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | ✅ |
+| Arbitrum | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | ✅ |
+| Optimism | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | ✅ |
+| Avalanche | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | ✅ |
 
-**Impact:** If the relay runs with the repo config as-is, mint/burn on Arbitrum, BSC, Polygon, Optimism, Avalanche will hit a contract whose `BRIDGE_ROLE` was revoked. Base is internally consistent between config and ROADMAP, but `BRIDGE_MAINNET_DEPLOY.md` disagrees on what the "new 5/5" Base address is.
-
-**Action required (human):** Reconcile which address is the live 5/5 bridge on each chain. Either deploy new 5/5 bridges on the 5 non-Base chains and update the config, or correct the docs to reflect that those chains still use the single-sig bridge (and confirm `BRIDGE_ROLE` is actually still active there). This is L2/operational, not L1 consensus — but it affects real mainnet funds.
+`0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88` is a stale Base 5/5 deployment with no `BRIDGE_ROLE`. The repo relay config (`V3/L2/bridge/config/bridge-mainnet.toml`) was already correct; the stale `V3/config/bridge-mainnet.toml` and dashboard `app.py` have been synchronized, and docs (`BRIDGE_MAINNET_READINESS.md`, `wZION_PLAN.md`, `ZION_MAINNET_DEFI_ROADMAP.md`) updated to the live Base address.
 
 ### H2 — `DAO_TREASURY_LOCK_HEIGHT` stale in constants doc
 
@@ -160,7 +160,7 @@ These claims were checked and match the code — listed so the audit is auditabl
 
 ## Recommended fix order
 
-1. **H1 (bridge addresses)** — human decision required: which address is live on each chain? Then reconcile config + 3 docs. This is the only finding that can lose real funds.
+1. ✅ **H1 (bridge addresses)** — resolved 2026-07-02. Live addresses verified on-chain; config and docs reconciled.
 2. **H2–H4 + M3 (MAINNET_CONSTANTS.md)** — one pass to update the whole file to post-3.0.3 values. Pure doc edit, no code risk.
 3. **H5 + M1 (WARP counts/adapters)** — run `cargo test -p zion-warp`, record authoritative test count; change "13 adapters" → "12 adapters (11 fully functional + TON watch-only)".
 4. **M4 (Li.Fi-L2)** — delete the stale "Nedeployed" section.

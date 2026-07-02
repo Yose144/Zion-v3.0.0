@@ -20,7 +20,7 @@
 | F2-genesis | `MAINNET_CANONICAL_*` konstanty vs label | CRITICAL | ✅ VYŘEŠENO — zůstáváme u genesis.rs konstant (offline mnemonic), `operator-env` debug_asserty odstraněny | hotovo |
 | F2-assert | `operator-env` debug_assert ↔ genesis.rs komentář | HIGH | ✅ VYŘEŠENO — debug_asserty odstraněny, komentáře aktualizovány | hotovo |
 | Deploy | Nasazení F1 + pool guard fixu na Edge | — | ⏳ **Připraveno** — vyžaduje koordinovaný restart node1/2/pool | owner |
-| H1 | Bridge adresy (3 nekonzistentní) | HIGH | ⏳ Otevřeno (viz audit) | owner |
+| H1 | Bridge adresy (3 nekonzistentní) | HIGH | ✅ VYŘEŠENO — ověřeno přes dashboard + on-chain BRIDGE_ROLE; live: Base=0x72c8f0Dc..., non-Base=0xa5a09b2C...; 0x89504D6e... je zastaralý 5/5 bez BRIDGE_ROLE | hotovo |
 
 **Zbývající rozhodnutí před deploy:**
 1. **Koordinovaný deploy L1 peer-block fixu na Edge** — restart node1 → node2 → pool, všechny uzly musí být na novém kódu (hard fork).
@@ -133,12 +133,22 @@ Existuje přímý rozpor mezi dvěma místy v kódu:
 
 ## 5. Související otevřený item — H1 bridge adresy
 
-Tři nekonzistentní ZIONBridge adresy napříč configy/docs (viz [`audit 3.0.4.md`](./audit%203.0.4.md) §7.1):
-- `0x72c8f0Dc...` (Base live, bridge-mainnet.toml, website)
-- `0xa5a09b2C...` (non-Base, jinde „revoked")
-- `0x89504D6e...` („new 5/5")
+**Rozhodnuto.** Ověřeno on-chain přes `wZION.hasRole(BRIDGE_ROLE, bridge)` na všech 6 chainech:
 
-Owner musí rozhodnout, které jsou live na každém chainu. Neblokuje L1 hardfork, ale blokuje čistotu bridge configu.
+| Chain | wZION BRIDGE_ROLE | Adresa | Poznámka |
+|-------|-------------------|--------|----------|
+| Base | ✅ | `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467` | live, threshold=5, validatorCount=5, deployer 0xdde17506... |
+| BSC | ✅ | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | live, deployer 0xdde17506... |
+| Polygon | ✅ | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | live, deployer 0xdde17506... |
+| Arbitrum | ✅ | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | live, deployer 0xdde17506... |
+| Optimism | ✅ | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | live, deployer 0xdde17506... |
+| Avalanche | ✅ | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | live, deployer 0xdde17506... |
+| Base | ❌ | `0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88` | zastaralý 5/5 bridge, BRIDGE_ROLE revoked |
+
+Akce provedené v repu:
+- `ZION_OS/dashboard/app.py` — `/api/bridge/chains` vrací správnou Base adresu `0x72c8f0Dc...`.
+- `V3/config/bridge-mainnet.toml` — synchronizován s live `V3/L2/bridge/config/bridge-mainnet.toml` (non-Base chainy enabled s `0xa5a09b2C...`).
+- Dokumentace aktualizována v `StatusV3.md`, `audit 3.0.4.md`, `docs/3.0.3/BRIDGE_MAINNET_READINESS.md`, `docs/3.0.3/wZION_PLAN.md`, `docs/3.0.3/ZION_MAINNET_DEFI_ROADMAP.md`, `docs/3.0.3/CODE_VS_DOCS_AUDIT.md`.
 
 ---
 
@@ -150,7 +160,7 @@ Owner musí rozhodnout, které jsou live na každém chainu. Neblokuje L1 hardfo
 - [ ] **Koordinovaný deploy na Edge** — build `zion-core` + `zion-pool`, restart node1 → node2 → pool
 - [ ] **Ověřit pool startup guard** — nesmí hlásit CRITICAL, pool musí běžet
 - [ ] **Spustit account-memo E2E** (`V3/scripts/ops/account-memo-e2e.sh`)
-- [ ] **Vyřešit H1 bridge adresy** — rozhodnout, které kontrakty jsou live na Base/non-Base
+- [x] **Vyřešit H1 bridge adresy** — rozhodnuto: Base=0x72c8f0Dc..., non-Base=0xa5a09b2C..., 0x89504D6e... zastaralý
 
 ---
 
