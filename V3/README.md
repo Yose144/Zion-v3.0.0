@@ -10,6 +10,7 @@ Active planning for `V3/` now lives in `V3/ROADMAP.md`.
 Comprehensive mainnet completion plan (L1 finish + L2/L3 migration): `V3/PLAN.md`.
 
 Production upgrade plan (miner hardening, monitoring, infra, public release): `V3/docs/UPGRADE_PLAN.md`.
+Security hardening (F1 exploit post-mortem + Edge server hardening): [`SecurityFirst.md`](../SecurityFirst.md).
 Revenue system detail: `V3/docs/REVENUE_SYSTEM.md`.
 Native libs gap audit: `V3/docs/NATIVE_LIBS_GAP_V3.md`.
 Unified CLI operator guide: `V3/docs/CLI_GUIDE.md`.
