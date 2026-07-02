@@ -3232,27 +3232,32 @@ impl ChainState {
         if self.block_retention == 0 {
             return;
         }
+        // Genesis (height 0) is always at index 0 and must never be pruned.
+        // We prune blocks starting from index 1 (the oldest non-genesis block).
         while self.accepted_blocks.len() > self.block_retention {
-            // Never prune genesis (height 0) — needed for premine wallet discovery
-            if self.accepted_blocks.first().map(|b| b.height) == Some(0) {
+            // Determine which index to prune: skip genesis if it's at index 0
+            let genesis_at_start = self.accepted_blocks.first().map(|b| b.height) == Some(0);
+            let prune_idx = if genesis_at_start { 1 } else { 0 };
+            if prune_idx >= self.accepted_blocks.len() {
                 break;
             }
-            // Remove the oldest block (index 0)
-            let removed = self.accepted_blocks.remove(0);
+            let removed = self.accepted_blocks.remove(prune_idx);
 
             // Remove from height and template_id indexes
             self.accepted_by_height.remove(&removed.height);
             self.accepted_by_template_id.remove(&removed.template_id);
 
-            // Adjust address_tx_index: remove index 0 from all entries,
-            // then decrement all remaining indices by 1.
+            // Adjust address_tx_index: remove the pruned index from all entries,
+            // then decrement all indices greater than it.
             let mut empty_keys = Vec::new();
             for (addr, indices) in self.address_tx_index.iter_mut() {
-                // Remove the pruned block index (0) if present
-                indices.retain(|&idx| idx != 0);
-                // Decrement all remaining indices by 1
+                // Remove the pruned block index if present
+                indices.retain(|&idx| idx != prune_idx);
+                // Decrement all indices greater than prune_idx by 1
                 for idx in indices.iter_mut() {
-                    *idx -= 1;
+                    if *idx > prune_idx {
+                        *idx -= 1;
+                    }
                 }
                 if indices.is_empty() {
                     empty_keys.push(addr.clone());
