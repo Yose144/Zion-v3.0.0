@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZION — Maintenance</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  #starfield {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+  }
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+  }
+  .container {
+    max-width: 600px;
+  }
+  .logo {
+    font-size: clamp(2.5rem, 8vw, 4rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(90deg, #22d3ee, #a855f7, #f59e0b);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 60px rgba(168, 85, 247, 0.3);
+  }
+  .badge {
+    display: inline-block;
+    padding: 0.4rem 1.2rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(168, 85, 247, 0.4);
+    background: rgba(168, 85, 247, 0.1);
+    backdrop-filter: blur(12px);
+    color: #c084fc;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 2rem;
+  }
+  h1 {
+    font-size: clamp(1.5rem, 4vw, 2.2rem);
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: #fff;
+  }
+  p {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    color: #9ca3af;
+    margin-bottom: 0.5rem;
+  }
+  .version {
+    margin-top: 2rem;
+    font-size: 0.9rem;
+    color: #6b7280;
+  }
+  .pulse {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #22d3ee;
+    display: inline-block;
+    margin-right: 0.5rem;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+</style>
+</head>
+<body>
+<canvas id="starfield"></canvas>
+<div class="overlay">
+  <div class="container">
+    <div class="logo">ZION</div>
+    <div class="badge"><span class="pulse"></span>Security Upgrade 3.0.4</div>
+    <h1>We'll be back soon</h1>
+    <p>ZION is undergoing scheduled maintenance.</p>
+    <p>We're upgrading our security infrastructure to better serve you.</p>
+    <p>Thank you for your patience.</p>
+    <div class="version">ZION Maintenance &middot; Security Upgrade 3.0.4</div>
+  </div>
+</div>
+<script>
+(function () {
+  const canvas = document.getElementById('starfield');
+  const ctx = canvas.getContext('2d');
+  const STAR_COLOR = [255, 215, 0]; // gold
+  const DENSITY = 350;
+  const SPEED = 2;
+  const TRAIL_OPACITY = 0.08;
+  const FPS_LIMIT = 24;
+  const GRADIENT_ALPHA = 0.22;
+
+  let stars = [];
+  let cachedGradient = null;
+  let animationFrameId;
+  let lastFrameTime = 0;
+
+  function rebuildGradient() {
+    const g = ctx.createRadialGradient(
+      canvas.width * 0.5, canvas.height * 0.7, 0,
+      canvas.width * 0.5, canvas.height * 0.7, Math.max(canvas.width, canvas.height)
+    );
+    g.addColorStop(0, 'rgba(27, 39, 53, 1)');
+    g.addColorStop(1, 'rgba(9, 10, 15, 1)');
+    cachedGradient = g;
+  }
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    rebuildGradient();
+  }
+
+  function seedStars() {
+    stars = [];
+    for (let i = 0; i < DENSITY; i++) {
+      stars.push({
+        x: Math.random() * canvas.width - canvas.width / 2,
+        y: Math.random() * canvas.height - canvas.height / 2,
+        z: Math.random() * canvas.width,
+        size: Math.random() * 2 + 0.5,
+        px: 0,
+        py: 0,
+      });
+    }
+  }
+
+  function animate(timestamp) {
+    animationFrameId = requestAnimationFrame(animate);
+    const frameInterval = 1000 / FPS_LIMIT;
+    const delta = timestamp - lastFrameTime;
+    if (delta < frameInterval) return;
+    lastFrameTime = timestamp - (delta % frameInterval);
+
+    // Trail fade
+    ctx.fillStyle = 'rgba(0, 0, 0, ' + Math.min(Math.max(TRAIL_OPACITY * 0.5, 0.01), 0.15) + ')';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Radial gradient overlay (desktop-agent style)
+    if (cachedGradient) {
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.fillStyle = cachedGradient;
+      ctx.globalAlpha = GRADIENT_ALPHA;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.globalAlpha = 1;
+    }
+
+    const hw = canvas.width / 2;
+    const hh = canvas.height / 2;
+
+    for (let i = 0; i < stars.length; i++) {
+      const star = stars[i];
+      const prevX = (star.x / star.z) * canvas.width + hw;
+      const prevY = (star.y / star.z) * canvas.height + hh;
+
+      star.z -= SPEED;
+      if (star.z <= 0) {
+        star.z = canvas.width;
+        star.x = Math.random() * canvas.width - hw;
+        star.y = Math.random() * canvas.height - hh;
+        star.px = prevX;
+        star.py = prevY;
+        continue;
+      }
+
+      const x = (star.x / star.z) * canvas.width + hw;
+      const y = (star.y / star.z) * canvas.height + hh;
+      const size = (1 - star.z / canvas.width) * star.size * 2;
+      const brightness = 1 - star.z / canvas.width;
+      const alpha = Math.min(1, 0.08 + brightness * 0.92);
+
+      // Line trail (desktop-agent style)
+      ctx.strokeStyle = 'rgba(' + STAR_COLOR[0] + ',' + STAR_COLOR[1] + ',' + STAR_COLOR[2] + ',' + alpha + ')';
+      ctx.lineWidth = Math.max(0.5, size * 0.5);
+      ctx.beginPath();
+      ctx.moveTo(prevX, prevY);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+
+      // Bright head
+      ctx.fillStyle = 'rgba(' + STAR_COLOR[0] + ',' + STAR_COLOR[1] + ',' + STAR_COLOR[2] + ',' + Math.min(1, alpha + 0.15) + ')';
+      ctx.beginPath();
+      ctx.arc(x, y, Math.max(size * 0.65, 0.55), 0, Math.PI * 2);
+      ctx.fill();
+
+      star.px = x;
+      star.py = y;
+    }
+  }
+
+  resize();
+  seedStars();
+  animationFrameId = requestAnimationFrame(animate);
+
+  window.addEventListener('resize', function () {
+    resize();
+    seedStars();
+  });
+})();
+</script>
+</body>
+</html>
