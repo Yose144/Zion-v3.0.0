@@ -26,7 +26,7 @@ export default function Navigation() {
   const { lang, setLang } = useLang();
 
   const navItemMatches = (href: string) =>
-    pathname === href || (href === '/terranova' && pathname.startsWith('/terranova')) || (href === '/quantum-revolution' && pathname.startsWith('/quantum-revolution')) || (href === '/wiki' && pathname === '/wiki');
+    pathname === href || (href === '/terranova' && pathname.startsWith('/terranova')) || (href === '/quantum-revolution' && pathname.startsWith('/quantum-revolution')) || (href === '/zohar' && pathname.startsWith('/zohar')) || (href === '/wiki' && pathname === '/wiki');
   // Trimmed structure: 4 lean groups (≤5 items each). Secondary pages stay reachable via footer/direct URL.
   const navGroups: NavGroup[] = [
     {
@@ -67,6 +67,7 @@ export default function Navigation() {
         { href: '/roadmap', label: tr('nav', 'roadmap', lang) },
         { href: '/genesis', label: tr('nav', 'genesis', lang) },
         { href: '/terranova', label: tr('nav', 'terranova', lang) },
+        { href: '/zohar', label: tr('nav', 'zohar', lang) },
       ],
     },
   ];
@@ -89,6 +90,7 @@ export default function Navigation() {
     { href: '/genesis', icon: Sparkles, color: '251, 191, 36', label: tr('nav', 'genesis', lang) },
     { href: '/quantum-revolution', icon: Atom, color: '251, 191, 36', label: tr('nav', 'quantum_revolution', lang) },
     { href: '/terranova', icon: Globe2, color: '34, 197, 94', label: tr('nav', 'terranova', lang) },
+    { href: '/zohar', icon: Sparkles, color: '251, 191, 36', label: tr('nav', 'zohar', lang) },
     { href: '/l3-hiran', icon: Brain, color: '139, 92, 246', label: tr('nav', 'l3_hiran', lang) },
     { href: '/l4-oasis', icon: Flower2, color: '217, 70, 239', label: tr('nav', 'l4_oasis', lang) },
     { href: '/l5-free-world', icon: Rocket, color: '14, 165, 233', label: tr('nav', 'l5_free_world', lang) },
