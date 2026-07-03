@@ -1762,11 +1762,13 @@ mod tests {
         crypto::keypair_from_canonical_label("__test_dummy_signer_v1__")
     }
 
-    /// Generate a valid Ed25519 signature + public key hex for a given tx_id.
-    fn dummy_sig_for_tx_id(tx_id: &str) -> (String, String) {
+    /// Generate a valid Ed25519 signature + public key hex for a given tx_id,
+    /// plus the derived sender address that matches the public key.
+    fn dummy_sig_for_tx_id(tx_id: &str) -> (String, String, String) {
         let (sk, vk) = test_keypair();
         let sig = crypto::sign(&sk, tx_id.as_bytes());
-        (hex::encode(sig), hex::encode(vk.as_bytes()))
+        let from = crypto::derive_address(vk.as_bytes());
+        (hex::encode(sig), hex::encode(vk.as_bytes()), from)
     }
 
     static BRIDGE_ENV_MUTEX: std::sync::Mutex<()> = std::sync::Mutex::new(());
@@ -2354,13 +2356,13 @@ mod tests {
     fn live_submit_transaction_alias_accepts_object_payload() {
         let router = live_router();
         let tx_id = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-        let (sig, pk) = dummy_sig_for_tx_id(tx_id);
+        let (sig, pk, from) = dummy_sig_for_tx_id(tx_id);
         let resp = rpc_call(
             &router,
             "submitTransaction",
             json!({
                 "tx_id": tx_id,
-                "from": "wallet.alpha",
+                "from": from,
                 "to": "wallet.beta",
                 "amount_zion": 25,
                 "fee_zion": 5,
@@ -2381,13 +2383,13 @@ mod tests {
     fn live_submit_account_transaction_alias_accepts_object_payload() {
         let router = live_router();
         let tx_id = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
-        let (sig, pk) = dummy_sig_for_tx_id(tx_id);
+        let (sig, pk, from) = dummy_sig_for_tx_id(tx_id);
         let resp = rpc_call(
             &router,
             "submitAccountTransaction",
             json!({
                 "tx_id": tx_id,
-                "from": "wallet.alpha",
+                "from": from,
                 "to": "wallet.beta",
                 "amount_zion": 30,
                 "fee_zion": 5,
