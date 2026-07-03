@@ -129,7 +129,7 @@ Chain state:
 - [ ] **Other nodes** — if any peers run old binary, they will accept invalid TXs but Edge will reject their blocks (consensus divergence risk)
 - [x] **F5 fuzzing** — ✅ COMPLETE (commit `a5472ec6`, 5 fuzz testů — 100 random senders, double-spend, u64::MAX, rapid-fire, self-send, vše PASS)
 - [x] **Node binary swap** — ✅ COMPLETE (2026-07-02 22:55, nejnovější binárka s fmt/clippy cleanup, F5 aktivní, height 22539)
-- [ ] **Pre-existing test failures** — 10 tests fail unrelated to F5 (port conflicts with running Edge services, journal persistence). Investigate separately.
+- [x] **Pre-existing test failures** — ✅ FIXED (commit `649f7b5`, root cause: `sample_transaction()` used `from="wallet.alpha"` but signed with test keypair whose derived address is `zion1...`. After F1 signature check, all account TX submissions failed. Fix: derive `from` from test keypair. 513/513 tests pass, 0 failures.)
 - [ ] **Long-term: consider UTXO-backed account model** (Option 3 from architecture discussion) for 3.1.0+ to eliminate account-model balance bugs entirely
 - [ ] **Max TX amount cap** — 100M ZION cap pro dodatečnou ochranu i s F5 fix (L1 consensus change, needs spec + audit)
 
