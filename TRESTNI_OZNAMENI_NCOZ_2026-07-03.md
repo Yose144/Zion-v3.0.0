@@ -1,9 +1,14 @@
 # TRESTNÍ OZNÁMENÍ
 
-**Komu:** Policie ČR — Národní centrum pro kybernetickou kriminalitu (NCOZ)
-**Email:** ncoz@policie.cz
+**Komu:** Policie ČR — Národní centrála proti organizovanému zločinu (NCOZ)
+**Adresa:** PO BOX 41/NCOZ, 156 80 Praha 5 – Zbraslav
+**Telefon:** 974 836 933
+**Datová schránka:** eesyd9x
+**Email:** podatelna@policie.gov.cz (předmět: pro NCOZ)
 **Datum:** 2026-07-03
 **Předmět:** Trestní oznámení — neoprávněný přístup k počítačovým systémům a datům (§211 TZ ČR) a narušení provozu informačního systému (§230 TZ ČR)
+
+> **Poznámka:** Trestní oznámení lze podat i ústně do protokolu na kterémkoliv oddělení policie (ideálně SKPV v místě spáchání), nebo přes datovou schránku eesyd9x. Elektronické podání vyžaduje uznávaný elektronický podpis.
 
 ---
 
@@ -211,6 +216,18 @@ Yosef Hubálek
 | **TeamViewer GmbH** | support@teamviewer.com, privacy@teamviewer.com | Logy pro ID 708168736 |
 | **Hetzner Cloud** | abuse@hetzner.de | Network flow logy pro 77.42.71.94 |
 | **GitHub** | support@github.com | Logy přístupů (pokud útočník použil odcizený deploy klíč) |
+
+### NCOZ kontakty
+
+| Kanál | Hodnota |
+|-------|---------|
+| **Adresa** | PO BOX 41/NCOZ, 156 80 Praha 5 – Zbraslav |
+| **Telefon** | 974 836 933 |
+| **Datová schránka** | eesyd9x |
+| **Email** | podatelna@policie.gov.cz (předmět: pro NCOZ) |
+| **Web** | https://policie.gov.cz/clanek/ncoz-kontakty.aspx |
+
+> **Důležité:** NCOZ upozorňuje, že phishing emaily s nabídkou mimosoudního vyrovnání pod hlavičkou NCOZ NEJSOU od policie. Trestní oznámení podávejte výhradně přes `podatelna@policie.gov.cz`, datovou schránku, nebo osobně.
 
 ---
 
