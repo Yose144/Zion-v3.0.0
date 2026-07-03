@@ -34,6 +34,8 @@
 | **Genesis premine keys** | W11 filesystem (if any) | 🔴 COMPROMISED |
 | **EVM deploy keys** | hardhat .env on W11 | 🔴 COMPROMISED |
 | **GitHub credentials** | W11 browser/Git credential manager | 🔴 COMPROMISED |
+| **GitHub deploy key** | `/root/.ssh/github_deploy` on Edge | 🔴 COMPROMISED — atime 2026-07-02 14:08:53 confirms attacker read it |
+| **ZION source code** | GitHub repo `Yose144/Zion-v3.0.0` | 🔴 LIKELY CLONED — attacker had deploy key + 29h root access |
 | **Tailscale credentials** | W11 Tailscale client | ⚠️ Device may be enrolled |
 
 ### What Was NOT Compromised (Verified)
@@ -112,9 +114,16 @@ cd Zion-v3.0.0
 - [ ] Change GitHub password (from Ubuntu, not W11)
 - [ ] Enable 2FA on GitHub (if not already)
 - [ ] Revoke all existing SSH keys and PAT tokens on GitHub
+- [ ] Revoke all deploy keys for repository Yose144/Zion-v3.0.0
 - [ ] Generate new SSH key for GitHub: `ssh-keygen -t ed25519 -f ~/.ssh/github -C "ubuntu-20260703"`
 - [ ] Add new SSH key to GitHub account
 - [ ] Update git remote: `git remote set-url origin git@github.com:Yose144/Zion-v3.0.0.git`
+- [ ] Email GitHub support (`support@github.com`) requesting audit logs for deploy key usage (see `EVIDENCE/email_github.txt`)
+- [ ] Check GitHub access logs for any unauthorized clones from 109.81.30.165
+
+> **WARNING:** Attacker likely has full copy of ZION source code (had deploy key + 29h root access).
+> All security through obscurity is now void. Any hardcoded secrets, even in comments, must be
+> considered public. Audit the entire codebase for any leaked credentials.
 
 ---
 
