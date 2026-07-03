@@ -4179,9 +4179,15 @@ mod tests {
             tx_hex.push('0');
         }
         tx_hex.truncate(64);
+        // Derive the sender address from the test keypair so that
+        // verify_signature() (which checks derive_address(public_key) == from)
+        // passes. Using a bare label like "wallet.alpha" would fail the
+        // signature check enforced since the F1 hardening fix.
+        let (_, vk) = test_keypair();
+        let from = crypto::derive_address(vk.as_bytes());
         let mut tx = Transaction {
             tx_id: tx_hex,
-            from: "wallet.alpha".to_string(),
+            from: from.clone(),
             to: "wallet.beta".to_string(),
             amount_zion: 25,
             fee_zion,
