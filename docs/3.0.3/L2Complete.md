@@ -233,7 +233,7 @@
 | Relay detection | `zion-edge-bridge` | BridgeBurn event zachycen `2026-06-29T17:34:40` — INFO log ✅ |
 | 5/5 signatures | relay env | `ZION_VALIDATOR_EXTRA_KEYS` přidán do `/root/zion-validator-key.env` — 5 klíčů agregováno ✅ |
 | Validator pubkeys | L1 node drop-in | `ZION_BRIDGE_VALIDATOR_PUBKEYS` + `ZION_BRIDGE_VALIDATOR_THRESHOLD=5` v `/etc/systemd/system/zion-edge-node1.service.d/bridge-validators.conf` ✅ |
-| **BLOCKER resolved** | `V3/L1/core/src/fee.rs:135` | `BRIDGE_VAULT_ADDRESS` nyní odpovídá live vault `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0`; reverse bridge E2E prošel a unlock flow je funkční. |
+| **BLOCKER resolved** | `V3/L1/core/src/fee.rs:135` | `BRIDGE_VAULT_ADDRESS` nyní odpovídá live vault `zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7`; reverse bridge E2E prošel a unlock flow je funkční. |
 | wZION_PLAN.md aktualizace | `docs/` | USDT deployer=0 (vše v poolu: 26.66 USDT + 138K wZION), pool in-range ✅ |
 
 #### ✅ RESOLVED: BRIDGE_VAULT_ADDRESS alignment
@@ -243,13 +243,13 @@
 **Root cause:**
 ```
 V3/L1/core/src/fee.rs:135
-pub const BRIDGE_VAULT_ADDRESS: &str = "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0";
+pub const BRIDGE_VAULT_ADDRESS: &str = "zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7";
                                          ↑ live bridge vault adresa (aligned)
 ```
 
 ```
 V3/L2/bridge/config/bridge-mainnet.toml
-bridge_address = "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0"
+bridge_address = "zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7"
                    ↑ live vault kde je 99,999,999 ZION
                      (bridge posílal locky sem, ale kód v fee.rs neví o ní)
 ```
@@ -400,7 +400,7 @@ For 100K wZION in a 0.01% concentrated position ±5000 ticks around the target p
 ## 🌐 Network Info
 - **L1 (ZION):** Edge node `100.76.16.108`, RPC `127.0.0.1:8443`
 - **L2 (Base):** Chain ID 8453, RPC `https://mainnet.base.org`
-- **Bridge address (L1):** `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0`
+- **Bridge address (L1):** `zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7`
 - **Bridge contract (L2):** `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467`
 - **wZION (L2):** `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6`
 - **Deployer/recipient:** `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186`
@@ -751,7 +751,7 @@ Soubor: `APP&WEB/website-v2.9/src/app/api/warp/[...path]/route.ts`
 
 V `APP&WEB/website-v2.9/src/app/bridge/page.tsx` — tab `'lock'`:
 
-1. **Vault adresa** (copy button): `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0`
+1. **Vault adresa** (copy button): `zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7`
 2. **Memo generátor**: zadej MetaMask adresu → vygeneruj `BRIDGE:<evm_addr>`
 3. **Live tracker** — polling `/api/bridge/status`:
    - Zobraz: locks detected / relay confirmations (x/5) / EVM mint / complete

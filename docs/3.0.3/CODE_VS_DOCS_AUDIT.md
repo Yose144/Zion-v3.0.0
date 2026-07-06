@@ -55,7 +55,7 @@ On-chain `wZION.hasRole(BRIDGE_ROLE, bridge)` on all 6 chains confirmed the live
 ### H3 — `BRIDGE_VAULT_ADDRESS` stale in constants doc
 
 - **Doc:** <ref_snippet file="/Users/yeshuae/Projects/2.9.6/V3/docs/MAINNET_CONSTANTS.md" lines="85-85" /> has `zion106v7v0...` (the empty address from the accidental v2 genesis-reset seed)
-- **Code:** <ref_snippet file="/Users/yeshuae/Projects/2.9.6/V3/L1/core/src/fee.rs" lines="135-135" /> has `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0` (correct, from `BRIDGE_VAULT_SEED = "ZION Bridge Vault V3 Mainnet"` in <ref_snippet file="/Users/yeshuae/Projects/2.9.6/V3/L1/core/src/crypto.rs" lines="176-176" />)
+- **Code:** <ref_snippet file="/Users/yeshuae/Projects/2.9.6/V3/L1/core/src/fee.rs" lines="135-135" /> has `zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7` (correct, from `BRIDGE_VAULT_SEED = "ZION Bridge Vault V3 Mainnet v2 2026-07-06-HARD-RESET"` in <ref_snippet file="/Users/yeshuae/Projects/2.9.6/V3/L1/core/src/crypto.rs" lines="176-176" />)
 - **Note:** `bridge-mainnet.toml` line 24 also has the correct address. Only `MAINNET_CONSTANTS.md` is stale. The doc address is the **empty** vault — anyone following the doc would think ~100M ZION is at an address with no funds.
 
 ### H4 — `DAO_ADDRESS` placeholder in constants doc

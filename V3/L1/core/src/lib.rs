@@ -5,7 +5,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 use zion_cosmic_harmony::{
-    account_tx_memo_v1_active, balance_check_active, body_root_v2_active,
+    account_tx_memo_v1_active, body_root_v2_active,
     cosmic_harmony_ekam_deeksha, cosmic_harmony_with_height, profile_name, profile_name_for_height,
     tx_hash_v2_active, NclStats, RevenueCollector, RevenueEvent, RevenueStats,
     CHV_EKAM_FORK_HEIGHT, EKAM_FUSION_ROUNDS, FIRE_FORK_HEIGHT, TX_HASH_V2_ACTIVATION_HEIGHT,
@@ -15,6 +15,7 @@ pub use zion_cosmic_harmony::ExternalCoin;
 pub use zion_cosmic_harmony::NclStats as NclSnapshot;
 pub use zion_cosmic_harmony::RevenueSource;
 
+pub mod admin;
 pub mod chain;
 pub mod checkpoint;
 pub mod crypto;
@@ -688,6 +689,10 @@ struct ChainState {
     /// Maximum number of blocks to keep in memory. 0 = unlimited.
     /// Old blocks are pruned from in-memory caches but remain in LMDB.
     block_retention: usize,
+    /// Per-instance F5 balance-check activation height. Default `u64::MAX`
+    /// (disabled). Tests can set this to 0 to enable from genesis without
+    /// affecting parallel test runtimes.
+    balance_check_height: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1149,6 +1154,13 @@ impl NodeRuntime {
         self.miner_address = addr.clone();
         self.chain_state.miner_address = addr;
         self.rebuild_active_template();
+    }
+
+    /// Set the per-instance F5 balance-check activation height for the
+    /// underlying chain state. Use 0 to enable from genesis, or `u64::MAX`
+    /// to disable (default).
+    pub fn set_balance_check_height(&mut self, height: u64) {
+        self.chain_state.balance_check_height = height;
     }
 
     /// Set the WebSocket notifier for real-time event broadcasting.
@@ -1999,6 +2011,12 @@ impl ChainState {
             .collect()
     }
 
+    /// Returns `true` if F5 balance validation is active at the given height
+    /// for this chain state instance.
+    fn balance_check_active_at(&self, height: u64) -> bool {
+        height >= self.balance_check_height
+    }
+
     /// Build the full UTXO set from accepted blocks. Returns a map from
     /// (tx_hash_hex, output_index) → SpendableUtxo for all unspent outputs.
     fn utxo_set(&self) -> HashMap<(String, u32), SpendableUtxo> {
@@ -2151,6 +2169,7 @@ impl ChainState {
             bridge_unlock_replay_keys: HashSet::new(),
             address_tx_index: HashMap::new(),
             block_retention: DEFAULT_BLOCK_RETENTION,
+            balance_check_height: zion_cosmic_harmony::balance_check_activation_height(),
         };
         // Index genesis block (height 0) for address lookups.
         state.index_block_addresses(0);
@@ -2230,6 +2249,7 @@ impl ChainState {
             bridge_unlock_replay_keys: snapshot.bridge_unlock_replay_keys.into_iter().collect(),
             address_tx_index: HashMap::new(),
             block_retention: DEFAULT_BLOCK_RETENTION,
+            balance_check_height: zion_cosmic_harmony::balance_check_activation_height(),
         };
         chain_state.rebuild_mempool_index();
         chain_state.rebuild_address_tx_index();
@@ -2900,7 +2920,7 @@ impl ChainState {
                     // prior accepted blocks plus credits/debits from earlier
                     // transactions in THIS block (so multiple TXs from the
                     // same sender in one block are handled correctly).
-                    if balance_check_active(block.height) {
+                    if self.balance_check_active_at(block.height) {
                         let mut sender_balance: i128 =
                             self.account_balance_for(&transaction.from) as i128;
                         // Apply credits/debits from earlier TXs in this block
@@ -3182,7 +3202,7 @@ impl ChainState {
         // check, any Ed25519 key holder can create ZION from nothing by
         // submitting a TX from an empty address. Height-gated so historical
         // blocks (pre-fix) are not rejected on IBD.
-        if balance_check_active(self.height) {
+        if self.balance_check_active_at(self.height) {
             let sender_balance = self.account_balance_for(&transaction.from);
             let needed = transaction.amount_zion + transaction.fee_zion as u128;
             if sender_balance < needed {
@@ -4885,14 +4905,12 @@ mod tests {
     /// creating ZION from nothing.
     #[test]
     fn rpc_rejects_account_tx_with_insufficient_balance() {
-        // Enable F5 balance check from genesis (height 0).
-        zion_cosmic_harmony::set_balance_check_height(0);
         let mut runtime = NodeRuntime::new("node-f5-rpc", NodeConfig::mainnet());
+        // Enable F5 balance check from genesis (height 0) for this runtime only.
+        runtime.set_balance_check_height(0);
         // Build a valid (signed) TX from a brand-new address with 0 balance.
         let tx = build_valid_account_tx("__f5_empty_sender__", "wallet.dest", 100, 1, 1);
         let resp = runtime.handle_rpc_request(RpcRequest::SubmitTransaction { transaction: tx });
-        // Reset F5 gate so subsequent tests are unaffected.
-        zion_cosmic_harmony::set_balance_check_height(u64::MAX);
         match resp {
             RpcResponse::TransactionResult {
                 accepted: false,
@@ -4911,8 +4929,8 @@ mod tests {
     #[test]
     #[ignore = "slow PoW in debug build; run with --release --ignored"]
     fn peer_block_rejects_account_tx_with_insufficient_balance() {
-        zion_cosmic_harmony::set_balance_check_height(0);
         let mut source = NodeRuntime::new("node-f5-peer-src", NodeConfig::mainnet());
+        source.set_balance_check_height(0);
         // Build a TX from an empty address and mine it into a block.
         let tx = build_valid_account_tx("__f5_empty_peer__", "wallet.dest", 100, 1, 1);
         let submit_resp = source.handle_rpc_request(RpcRequest::SubmitTransaction {
@@ -4926,7 +4944,6 @@ mod tests {
                 ..
             }
         ) {
-            zion_cosmic_harmony::set_balance_check_height(u64::MAX);
             return;
         }
         // If RPC somehow accepted it, mine and verify peer-block rejection.
@@ -4941,8 +4958,8 @@ mod tests {
         });
         let block = source.accepted_blocks()[1].clone();
         let mut target = NodeRuntime::new("node-f5-peer-tgt", NodeConfig::mainnet());
+        target.set_balance_check_height(0);
         let result = target.import_peer_blocks(vec![block]);
-        zion_cosmic_harmony::set_balance_check_height(u64::MAX);
         let err = result.expect_err("F5: peer block with TX from empty address must be rejected");
         assert!(
             err.contains("insufficient balance"),
@@ -4954,8 +4971,8 @@ mod tests {
     /// (funded by a coinbase output) must still be accepted.
     #[test]
     fn rpc_accepts_account_tx_with_sufficient_balance() {
-        zion_cosmic_harmony::set_balance_check_height(0);
         let mut runtime = NodeRuntime::new("node-f5-pos", NodeConfig::mainnet());
+        runtime.set_balance_check_height(0);
         // Derive the zion1 address for the miner label so the coinbase
         // output goes to the same address that build_valid_account_tx will
         // use as the `from` field.
@@ -4978,7 +4995,6 @@ mod tests {
         // label, so the from address matches.
         let tx = build_valid_account_tx("wallet.f5_miner", "wallet.dest", 10, 1, 1);
         let resp = runtime.handle_rpc_request(RpcRequest::SubmitTransaction { transaction: tx });
-        zion_cosmic_harmony::set_balance_check_height(u64::MAX);
         match resp {
             RpcResponse::TransactionResult { accepted: true, .. } => {}
             other => panic!("F5 positive: TX from funded address must be accepted, got: {other:?}"),
@@ -4993,8 +5009,8 @@ mod tests {
     /// random amounts. Every single one must be rejected.
     #[test]
     fn fuzz_rpc_rejects_random_unfunded_senders() {
-        zion_cosmic_harmony::set_balance_check_height(0);
         let mut runtime = NodeRuntime::new("node-f5-fuzz-rpc", NodeConfig::mainnet());
+        runtime.set_balance_check_height(0);
         let mut rejections = 0u32;
         // 100 random TXs from 100 different unfunded addresses
         for i in 0..100u32 {
@@ -5014,7 +5030,6 @@ mod tests {
                 rejections += 1;
             }
         }
-        zion_cosmic_harmony::set_balance_check_height(u64::MAX);
         assert_eq!(
             rejections, 100,
             "F5 fuzz: all 100 TXs from unfunded addresses must be rejected, only {rejections} were"
@@ -5025,8 +5040,8 @@ mod tests {
     /// address where the second exceeds remaining balance.
     #[test]
     fn fuzz_rpc_rejects_double_spend_exceeding_balance() {
-        zion_cosmic_harmony::set_balance_check_height(0);
         let mut runtime = NodeRuntime::new("node-f5-fuzz-ds", NodeConfig::mainnet());
+        runtime.set_balance_check_height(0);
         // Fund the miner address via coinbase
         let (_miner_sk, miner_vk) = crypto::keypair_from_canonical_label("wallet.f5_fuzz_ds");
         let miner_addr = crypto::derive_address(miner_vk.as_bytes());
@@ -5053,7 +5068,6 @@ mod tests {
         // Remaining: ~806,059,630 flowers. TX2 asks for 4,000,000,000 → must be rejected.
         let tx2 = build_valid_account_tx("wallet.f5_fuzz_ds", "wallet.dest2", 4_000_000_000, 1, 2);
         let resp2 = runtime.handle_rpc_request(RpcRequest::SubmitTransaction { transaction: tx2 });
-        zion_cosmic_harmony::set_balance_check_height(u64::MAX);
         assert!(
             matches!(
                 resp2,
@@ -5071,11 +5085,10 @@ mod tests {
     /// Must be rejected (sender has 0 balance, and amount is absurd).
     #[test]
     fn fuzz_rpc_rejects_max_u128_amount() {
-        zion_cosmic_harmony::set_balance_check_height(0);
         let mut runtime = NodeRuntime::new("node-f5-fuzz-max", NodeConfig::mainnet());
+        runtime.set_balance_check_height(0);
         let tx = build_valid_account_tx("__f5_fuzz_max__", "wallet.dest", u64::MAX, u64::MAX, 1);
         let resp = runtime.handle_rpc_request(RpcRequest::SubmitTransaction { transaction: tx });
-        zion_cosmic_harmony::set_balance_check_height(u64::MAX);
         assert!(
             matches!(
                 resp,
@@ -5093,14 +5106,13 @@ mod tests {
     /// succession — verify no state corruption or panic.
     #[test]
     fn fuzz_rpc_rapid_fire_no_panic() {
-        zion_cosmic_harmony::set_balance_check_height(0);
         let mut runtime = NodeRuntime::new("node-f5-fuzz-rapid", NodeConfig::mainnet());
+        runtime.set_balance_check_height(0);
         for i in 0..200u32 {
             let label = format!("__f5_rapid_{i}__");
             let tx = build_valid_account_tx(&label, &format!("wallet.dest_{i}"), 1, 1, 1);
             let _ = runtime.handle_rpc_request(RpcRequest::SubmitTransaction { transaction: tx });
         }
-        zion_cosmic_harmony::set_balance_check_height(u64::MAX);
         // If we reach here without panic, the test passes.
     }
 
@@ -5109,8 +5121,8 @@ mod tests {
     /// guard or by the balance check. Either rejection is acceptable.
     #[test]
     fn fuzz_rpc_rejects_self_send_from_empty() {
-        zion_cosmic_harmony::set_balance_check_height(0);
         let mut runtime = NodeRuntime::new("node-f5-fuzz-self", NodeConfig::mainnet());
+        runtime.set_balance_check_height(0);
         let (sk, vk) = crypto::keypair_from_canonical_label("__f5_self_send__");
         let addr = crypto::derive_address(vk.as_bytes());
         let tx_id = crate::wallet::generate_account_tx_id(&addr, &addr, 1, 1, None, 1);
@@ -5127,7 +5139,6 @@ mod tests {
             memo: None,
         };
         let resp = runtime.handle_rpc_request(RpcRequest::SubmitTransaction { transaction: tx });
-        zion_cosmic_harmony::set_balance_check_height(u64::MAX);
         assert!(
             matches!(
                 resp,

@@ -82,7 +82,7 @@
 | `MAX_OUTPUT_AMOUNT` | `u64::MAX` | Single output cap |
 | `BURN_ADDRESS` | `zion1burn0000000000000000000000000000000dead` | Fee burn sink |
 | `DAO_ADDRESS` | `zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4` | DAO treasury address (main governance) |
-| `BRIDGE_VAULT_ADDRESS` | `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0` | L1 bridge vault (from `BRIDGE_VAULT_SEED = "ZION Bridge Vault V3 Mainnet"`) |
+| `BRIDGE_VAULT_ADDRESS` | `zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7` | L1 bridge vault (from `BRIDGE_VAULT_SEED = "ZION Bridge Vault V3 Mainnet v2 2026-07-06-HARD-RESET"`) |
 
 ---
 

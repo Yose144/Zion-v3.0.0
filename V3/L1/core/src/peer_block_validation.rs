@@ -474,11 +474,12 @@ pub(crate) fn validate_accepted_peer_block(
         )
         .map_err(|err| format!("peer block UTXO value conservation failed: {err}"))?;
 
-        // DAO Treasury timelock — premine outputs cannot be spent
-        // before their `unlock_height`. Bridge-unlock spends only the
-        // keyless vault, so this still flags general transactions
-        // that try to drain time-locked treasury balances.
-        validation::validate_premine_locks(&block.utxo_transactions, block.height, &utxo_lookup)
+        // DAO Treasury timelock + admin-lock — premine outputs cannot be spent
+        // before their `unlock_height` AND must be admin-unlocked (3-of-3 + DAO).
+        // Bridge-unlock spends only the keyless vault, so this still flags
+        // general transactions that try to drain locked treasury balances.
+        // Default: no admin unlocks (all admin-locked premine is frozen).
+        validation::validate_premine_locks(&block.utxo_transactions, block.height, &utxo_lookup, &|_| false)
             .map_err(|err| format!("peer block premine lock violation: {err}"))?;
 
         // UTXO fee floor for non-coinbase, non-bridge-unlock
