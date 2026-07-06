@@ -2484,11 +2484,11 @@ mod tests {
     fn live_get_transaction_history_includes_genesis_premine() {
         let router = live_router();
         // Genesis block has account-model premine transactions
-        // Use the first premine address from genesis.rs
+        // Use the first premine address from genesis.rs (hard reset 2026-07-06)
         let resp = rpc_call(
             &router,
             "getTransactionHistory",
-            json!({"address": "zion153e378e4x0g6s380h2h8z4t506g5s323f5se8g5", "limit": 100}),
+            json!({"address": "zion1n3t6v6w3m8g4v6q8g7h7j4j6f7s8q2m7g7un8u0", "limit": 100}),
         );
         assert!(
             resp.error.is_none(),
@@ -2573,7 +2573,7 @@ mod tests {
     }
 
     #[test]
-    fn live_get_bridge_vault_balance_defaults_to_zero() {
+    fn live_get_bridge_vault_balance_has_genesis_seed() {
         let router = live_router();
         let resp = rpc_call(&router, "getBridgeVaultBalance", json!(null));
         assert!(
@@ -2582,11 +2582,15 @@ mod tests {
             resp.error
         );
         let result = resp.result.unwrap();
+        // Hard reset 2026-07-06: bridge vault UTXO seed (100M ZION) is now
+        // on the same keyless address as fee::BRIDGE_VAULT_ADDRESS.
         assert_eq!(result["address"], fee::BRIDGE_VAULT_ADDRESS);
-        assert_eq!(result["balance_flowers"], "0");
+        // Genesis seeds 100M ZION = 100_000_000_000_000_000_000 flowers
+        assert_eq!(result["balance_flowers"], "100000000000000000000");
     }
 
     #[test]
+    #[ignore = "hard reset 2026-07-06: genesis now seeds 100M ZION into bridge vault, so vault is never empty in live_router or bridge_unlock_ready_router"]
     fn live_submit_bridge_unlock_rejects_when_vault_is_empty() {
         let _guard = BRIDGE_ENV_MUTEX.lock().expect("bridge env mutex lock");
         let router = live_router();

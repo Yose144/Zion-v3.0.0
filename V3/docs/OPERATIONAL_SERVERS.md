@@ -500,7 +500,7 @@ Helsinki: ZION_SEED_PEERS="prague:8333,usa:8333,singapore:8333"
 | 11 | Genesis Creator | `zion1x638z5x6d2d0y6u3f7y8g7j56054a4a2a2c7l8f` | 590M | NE |
 | 12 | Children Future Fund | `zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4` | 1.44B | NE |
 || 13 | Bridge Seed Fund | `zion1f6m2j0h0l773j4074324q5r528y475w4j7m9685` | 400M | NE |
-| 14 | Bridge Vault UTXO Seed | `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0` | 100M | NE |
+| 14 | Bridge Vault UTXO Seed | `zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7` | 100M | NE |
 
 > **Soubor `PREMINE_WALLETS_BACKUP.json`** obsahuje privátní klíče. **Nikdy na serveru, vždy offline.** BFG scrub před zveřejněním repa.
 

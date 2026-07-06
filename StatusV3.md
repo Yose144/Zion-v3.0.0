@@ -951,7 +951,7 @@ c4a4841  feat(bridge): multi-validator key support — relay submits all 5 keys 
 | **Celkem** | **~100,000,000 ZION** | — |
 
 - **Z:** `zion1r565v3k2u8p8t6n494p0n527c0m7a5s4s5ae0x7` (Bridge Vault UTXO Seed, genesis slot 14)
-- **Na:** `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0` (Bridge vault, keyless)
+- **Na:** `zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7` (Bridge vault, keyless — hard reset 2026-07-06)
 - **Memo:** `BRIDGE:base:0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186`
 
 ### Aktuální stav bridge vaultu
@@ -1004,7 +1004,7 @@ Viz [`docs/3.0.3/fixL1bridge100m.md`](./docs/3.0.3/fixL1bridge100m.md) pro kompl
 | Mainnet config | `V3/config/bridge-mainnet.toml` | ✅ 5/5, `enabled=true`, new addresses |
 | Website | `bridge-api.ts`, `defi-contracts.ts` | ✅ Points to new mainnet contracts |
 | Bridge relay | Edge server | ✅ v3.0.2 running with L1 node + EVM watcher |
-| L1 bridge vault | `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0` | ✅ ~100M ZION UTXO locks (6 TX s memo, bloky 11611–11612) + ~316 ZION uvízlý (account-model) |
+| L1 bridge vault | `zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7` | ✅ 100M ZION genesis premine (hard reset 2026-07-06) |
 | L1 UTXO lock (memo test) | txid `8eb0bb8c...` | ✅ Relay detected, `default_evm_recipient` fallback active |
 | wZION totalSupply | Base Mainnet | 300 wZION (54 in UniV3 pool, 0 on bridge, ~246 held by users/treasury) |
 
@@ -2456,7 +2456,7 @@ Pool nyní správně redistribuuje 89% miner reward mezi připojené minery:
 | **Amount** | 500,000,000 ZION |
 | **Unlock** | immediate (od genesis #0) |
 | **Účel** | EVM bridge liquidity — seed pro první L1→Base bridge operace |
-| **Bridge vault** | `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0` (keyless) |
+| **Bridge vault** | `zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7` (keyless — hard reset 2026-07-06) |
 
 **Změny:**
 - `genesis.rs` — 13 outputs, total 16.78B ZION (předtím 12 / 16.28B)
@@ -3404,8 +3404,8 @@ nebo má konkrétní aktivační plán v
   hodnota neopustí relayer. Errory eskalují přes `metrics.errors` a
   `🚫 Bridge unlock aborted: …` log s burn ID.
 - **Replay protection:** unique nonce per unlock TX, eviction po 24 h.
-- **L1 vault address:** `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0`
-  (keyless derivation z `"ZION Bridge Vault V3 Mainnet"` seed) —
+- **L1 vault address:** `zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7`
+  (keyless derivation z `"ZION Bridge Vault V3 Mainnet v2 2026-07-06-HARD-RESET"` seed) —
   operational.
 - **Test coverage:** **130 lib + 16 integration + 47 mainnet readiness** =
   **193 testů projde** (+5 z PR #27 nad 2026-04-29 baseline 188).
