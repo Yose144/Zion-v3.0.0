@@ -26,7 +26,7 @@
 | BridgeValidator (new, 5/5) | `0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627` | ✅ threshold = 5, guardianCount = 5 |
 | ZIONBridge (old, single-sig) | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | ❌ BRIDGE_ROLE revoked |
 | UniV3Pool | `0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB` | ✅ Listed on website, seed liquidity pending |
-| L1 bridge vault | `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0` | ✅ ~100M ZION (6 UTXO locků s memo, bloky 11611–11612) |
+| L1 bridge vault | `zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7` | ✅ ~100M ZION (6 UTXO locků s memo, bloky 11611–11612) |
 
 ---
 
@@ -109,7 +109,7 @@ c4a4841  feat(bridge): multi-validator key support — relay submits all 5 keys 
 [l1]
 rpc_url = "http://127.0.0.1:8443"
 rpc_url_backup = "http://77.42.71.94:8443"
-bridge_address = "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0"
+bridge_address = "zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7"
 finality_blocks = 60
 poll_interval_secs = 15
 start_block_height = 11300

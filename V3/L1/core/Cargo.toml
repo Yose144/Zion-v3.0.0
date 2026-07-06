@@ -40,6 +40,10 @@ path = "src/bin/get-canonical-addresses.rs"
 name = "get-genesis-hash"
 path = "src/bin/get-genesis-hash.rs"
 
+[[bin]]
+name = "gen-all-keys-mnemonic"
+path = "src/bin/gen-all-keys-mnemonic.rs"
+
 [dependencies]
 anyhow.workspace = true
 blake3.workspace = true
@@ -49,10 +53,14 @@ rand.workspace = true
 ripemd.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+thiserror.workspace = true
 sha2.workspace = true
 k256.workspace = true
 hex.workspace = true
 zeroize.workspace = true
+bip39.workspace = true
+hmac.workspace = true
+pbkdf2.workspace = true
 zion-cosmic-harmony = { path = "../cosmic-harmony" }
 tokio = { version = "1", features = ["full"] }
 tokio-tungstenite = "0.20"

@@ -1227,7 +1227,7 @@ mod tests {
 
     #[test]
     fn test_validate_l1_address_valid() {
-        assert!(validate_l1_address("zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0").is_ok());
+        assert!(validate_l1_address("zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7").is_ok());
     }
 
     #[test]

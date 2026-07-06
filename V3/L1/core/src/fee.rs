@@ -118,7 +118,7 @@ pub fn total_fees_burned(fees: &[u64]) -> u64 {
 pub const BURN_ADDRESS: &str = "zion1burn0000000000000000000000000000000dead";
 
 /// DAO treasury address (main — Community Governance, 2.5B ZION).
-pub const DAO_ADDRESS: &str = "zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4";
+pub const DAO_ADDRESS: &str = "zion1u5u7k43240d5l4d0x7q5m3c4a838z4k000cv3q0";
 
 /// Bridge vault address.
 ///
@@ -126,13 +126,12 @@ pub const DAO_ADDRESS: &str = "zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4";
 /// L1 must flow through a dedicated bridge authorization path rather than a
 /// normal wallet-controlled spend.
 ///
-/// Derived deterministically from seed `"ZION Bridge Vault V3 Mainnet"`
+/// Derived deterministically from seed `"ZION Bridge Vault V3 Mainnet v2 2026-07-06-HARD-RESET"`
 /// via SHA-256 → derive_address. See `crypto::bridge_vault_address()`.
 ///
-/// Live mainnet vault: ~100M ZION locked here (premine bridge TX, blocks 11611–11612).
-/// A previous commit accidentally used a different seed ("...v2_2026-06-03-GENESIS-RESET")
-/// generating `zion106v7v0...` (empty) — reverted 2026-06-29.
-pub const BRIDGE_VAULT_ADDRESS: &str = "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0";
+/// Hard reset 2026-07-06: new seed → new address.
+/// Old vault: zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0 (from "ZION Bridge Vault V3 Mainnet")
+pub const BRIDGE_VAULT_ADDRESS: &str = "zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7";
 
 // ── Tests ──────────────────────────────────────────────────────────────
 
