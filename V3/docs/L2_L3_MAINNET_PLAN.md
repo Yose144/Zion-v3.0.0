@@ -155,7 +155,7 @@ No core change needed — memo field exists in `tx.rs`.
 Define in `V3/L1/core/src/fee.rs`:
 
 ```rust
-pub const BRIDGE_VAULT_ADDRESS: &str = "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0";
+pub const BRIDGE_VAULT_ADDRESS: &str = "zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7";
 ```
 
 Bridge vault is a **special address** — no private key exists. Only the bridge oracle mechanism can release funds from it through a validated unlock path.
@@ -209,7 +209,7 @@ Response:
 
 ```json
 {
-  "address": "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0",
+  "address": "zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7",
   "balance_flowers": 123000000000000,
   "balance_zion": "123.000000000000"
 }
