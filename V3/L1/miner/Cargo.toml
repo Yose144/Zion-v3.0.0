@@ -51,7 +51,6 @@ testnet_fork_rehearsal = ["zion-core/testnet_fork_rehearsal", "zion-pool/testnet
 
 [dependencies]
 anyhow.workspace = true
-bincode.workspace = true
 blake3.workspace = true
 num_cpus = "1"
 rayon = "1"
@@ -63,7 +62,7 @@ zion-pool = { path = "../pool" }
 zion-cosmic-harmony = { path = "../cosmic-harmony" }
 zion-native-ffi = { path = "../native-ffi", optional = true }
 cudarc = { version = "0.12", optional = true, features = ["cuda-12040"] }
-metal = { version = "0.29", optional = true }
+metal = { version = "0.33", optional = true }
 block = { version = "0.1", optional = true }
 objc = { version = "0.2", optional = true }
 crossterm = "0.28"

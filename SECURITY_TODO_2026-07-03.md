@@ -6,6 +6,123 @@
 
 ---
 
+## Audit Delta — 2026-07-07 (V3 code + deps)
+
+### P0 (hoří)
+
+1. `RUSTSEC-2026-0185` (`quinn-proto 0.11.14`) - remote memory exhaustion
+    - Scope: všechny crates používající `reqwest` (warp/bridge/dao/oasis/cli/ai-native...)
+    - Důvod priority: síťově dosažitelný DoS v HTTP/3/QUIC stacku
+      - Akce:
+          - [x] Upgradovat dependency řetězec na `quinn-proto >= 0.11.15` přes `cargo update`/patch (provedeno 2026-07-07)
+          - [x] Ověřit build + smoke testy pro L2/L3 HTTP klienty (`cargo check --workspace` OK, 2026-07-07)
+
+2. Mainnet footgun v node konfiguraci: `ZION_SEED_PEERS=none|empty`
+    - Soubor: `V3/L1/core/src/bin/node.rs` (`NodeServerConfig::from_env`)
+    - Riziko: na mainnetu lze nechtěně vypnout strict seed allowlist a otevřít peer ingest mimo očekávané peery
+    - Akce:
+         - [x] Zablokovat `none|empty` override na `mainnet` (povolit jen pro testnet/devnet) (provedeno 2026-07-07)
+         - [x] Přidat explicitní warning/fail-fast při pokusu o disable allowlistu na mainnetu (provedeno 2026-07-07)
+
+### P1 (vysoká priorita)
+
+3. `RUSTSEC-2026-0204` (`crossbeam-epoch 0.9.18`) - invalid pointer deref
+    - Scope: hlavně miner cesta (`rayon`/`ocl` chain)
+      - Akce:
+          - [x] Upgradovat na `crossbeam-epoch >= 0.9.20` (provedeno 2026-07-07)
+                    - [x] Spustit miner regression build/test (`cargo check -p zion-miner` OK, 2026-07-07)
+
+4. Explicitní secrets v historických audit docs
+    - Soubor: `V3/docs/audits/2026-04-V3_AUDIT_COMPLETION.md` (řádek s prefixem `sk-proj-...`)
+    - Riziko: zbytečná reprodukce citlivého token patternu v repu
+      - Akce:
+          - [x] Redigovat na neutrální placeholder bez reálného prefixu/části klíče (provedeno 2026-07-07)
+
+### P2 (sledovat)
+
+5. `RUSTSEC-2026-0190` (`anyhow` downcast_mut unsound)
+    - Akce:
+   - [x] Upgradovat `anyhow` po ověření kompatibility v celém workspace (provedeno 2026-07-07)
+
+6. Unmaintained crates (`bincode 1.x`, `paste`, `number_prefix`) - tech debt/security hygiene
+    - Akce:
+       - [ ] Připravit migrační plán (není emergency hotfix)
+
+7. Pool OASIS hook hardening (process spawn -> internal HTTP client)
+    - Soubor: `V3/L1/pool/src/bin/server.rs`
+    - Stav:
+       - [x] Odstraněno externí volání `curl` (`Command::new`) (provedeno 2026-07-07)
+       - [x] Přidán localhost-only default target guard pro `ZION_OASIS_API_URL` (remote pouze při `ZION_OASIS_ALLOW_REMOTE=true`) (provedeno 2026-07-07)
+       - [x] Přidány timeouty a robustní status parsing pro best-effort POST (provedeno 2026-07-07)
+
+8. Rand unsound advisory cleanup
+    - Stav:
+       - [x] `rand 0.8.5 -> 0.8.6` (provedeno 2026-07-07)
+       - [x] `rand 0.9.2 -> 0.9.4` (provedeno 2026-07-07)
+
+9. CLI/TUI dependency migration (2nd wave)
+    - Stav:
+       - [x] `indicatif 0.17 -> 0.18.6` (provedeno 2026-07-07)
+       - [x] `ratatui 0.29 -> 0.30.2` (provedeno 2026-07-07)
+       - [x] `lru 0.12.5 -> 0.18.0` (transitive fix, provedeno 2026-07-07)
+       - [x] `number_prefix` odstraněn z dependency stromu (provedeno 2026-07-07)
+
+10. Metal dependency migration (2nd wave)
+    - Stav:
+       - [x] `metal 0.29 -> 0.33.0` (provedeno 2026-07-07)
+
+11. Residual advisories po patchi (non-critical, vyžadují větší migraci)
+    - `RUSTSEC-2025-0141` (`bincode 1.3.3`, unmaintained)
+            - Pozn.: přímé použití `bincode` v `zion-miner` bylo odstraněno (zůstává pouze transitive větev přes `heed-types` v `zion-core`) (provedeno 2026-07-07)
+    - `RUSTSEC-2024-0436` (`paste 1.0.15`, unmaintained)
+      (stále transitive přes `metal 0.33.0`)
+        - Audit gate (operational):
+             - [x] Přidán wrapper `V3/scripts/security-audit.sh` s explicitními `--ignore` kódy pro aktuální verzi cargo-audit (provedeno 2026-07-07)
+    - Další krok:
+       - [ ] Připravit oddělenou serializační roadmapu pro náhradu `bincode 1.x`.
+       - [ ] Monitorovat `metal` ekosystém na odstranění závislosti `paste` (nebo zvážit feature-level izolaci Metal backendu v release profilech).
+
+---
+
+## Komplexní code-level security audit — 2026-07-07
+
+Rozsah: celý `V3/**` (L1–L6, cli, sdk). Cíl: najít exploitovatelné vzory nezávisle na advisory DB.
+
+### Prověřené třídy zranitelností (OWASP-style)
+
+- Command / process injection
+    - [x] Ověřeno: jediné `Command::new` je `docker`/`which` v `cli/src/commands/doctor.rs` s hardcoded argumenty (bez shellu, bez user vstupu) — bezpečné
+    - [x] Pool OASIS hook už dříve zbaven externího `curl` (viz bod 7)
+- SQL injection (L2/L3 SQLite)
+    - [x] `dao/src/db.rs` `col` — pochází z `VoteChoice` enumu (hardcoded), parametrizované hodnoty — bezpečné
+    - [x] `bridge/src/db.rs` migrace — iterace přes hardcoded seznam tabulek — bezpečné
+    - [x] `bridge/src/db.rs` `count_by_status(table, ...)` — přidán whitelist `l1_locks | evm_burns` jako defense-in-depth (provedeno 2026-07-07)
+- SSRF / nevalidované URL
+    - [x] Pool OASIS target už guardován (localhost-only default, remote jen s explicitním opt-inem)
+    - [x] Ostatní HTTP klienti míří na konfigurované RPC/DAO endpointy (ne user-controlled path)
+- DoS / resource exhaustion (HTTP klienti bez timeoutu)
+    - [x] `issobella/src/dao_client.rs` — přidán request+connect timeout (provedeno 2026-07-07)
+    - [x] `free-world/src/dao_client.rs` — přidán request+connect timeout (provedeno 2026-07-07)
+    - [x] `cli/src/commands/free_world.rs` + `issobella.rs` — přidán request timeout (provedeno 2026-07-07)
+- Panicky na síťovém vstupu
+    - [x] Ověřeno: `unwrap()/expect()` jsou v mutex lock (poison), startup config fail-fast a GPU/OpenCL diag/test kódu — ne v hot-path parsingu síťového vstupu
+- Serializace / deserializace
+    - [x] Přímé `bincode` použití odstraněno z mineru (zbývá jen transitive přes `heed-types`)
+
+### Závěr auditu
+- Nebyla nalezena žádná nová přímo exploitovatelná code-level zranitelnost nad rámec již opravených bodů.
+- Provedena defense-in-depth hardening (SQL whitelist + HTTP timeouty).
+
+### Objektivně zbývá (nelze udělat autonomně z tohoto prostředí)
+- L1 consensus změny (vyžadují explicitní approval dle `AGENTS.md`):
+    - [x] F4.7 Max TX amount cap (`lib.rs`) — implementováno 2026-07-07 (code-ready, height-gated, defaultně vypnuto)
+    - [ ] F4.5 genesis.rs canonical wallets — air-gapped key regenerace
+- Air-gapped key rotace (F4.1–F4.4): premine, pool payout, bridge validator, EVM deploy
+- Ops / governance: Tailscale ACL (F2.3), BFG git history scrub (F4.6)
+
+
+---
+
 ## Hotové (2026-07-02)
 
 - [x] F1 fix deployed (commit `9341344d`)
@@ -109,11 +226,16 @@ git push origin --force --tags
 **Kdy:** Před public launch/fork
 **Risk:** HIGH — history rewrite, vyžaduje koordinaci
 
-### 8. Max TX Amount Cap (F4.7) — L1 consensus
-**Co:** Přidat max 100M ZION cap na TX amount (defense-in-depth i s F5 fix)
-**Proč:** I když F5 fix rejectuje TX z empty address, max cap omezuje damage pokud útočník najde jiný bypass
-**Jak:** L1 consensus change v `lib.rs` — `if transaction.amount_zion > 100_000_000 * 1_000_000 { reject }`
-**Needs:** Spec + audit + explicit approval per AGENTS.md
+### 8. Max TX Amount Cap (F4.7) — L1 consensus — ✅ IMPLEMENTOVÁNO 2026-07-07
+**Co:** Sanity cap na TX amount jako defense-in-depth nad F5.
+**Klíčová oprava návrhu:** Původní „100M ZION cap" by **kolidoval s premine** (DAO treasury 2,5 mld, OASIS 1,65 mld) i s budoucími legitimními platbami. Cap proto NENÍ 100M — je nastaven na **`emission::TOTAL_SUPPLY` (144 mld ZION)**, což je supply-invarianta: žádná legitimní transakce ji nepřekročí, ale inflační smetí (např. `u64::MAX`) padne.
+**Implementace (code-ready, height-gated, defaultně vypnuto):**
+- `cosmic-harmony/src/deeksha.rs`: `set_max_tx_amount_height` / `max_tx_amount_activation_height` / `max_tx_amount_active` (mirror F5 pattern, default `u64::MAX`)
+- `core/src/lib.rs`: pole `max_tx_amount_height`, metoda `max_tx_amount_active_at`, setter `set_max_tx_amount_height`, validace v **obou** cestách (`insert_transaction` + `validate_peer_block`)
+- Výjimky: `from == "genesis"` a `from == "coinbase"` + height-gate (genesis height 0 je pod aktivací)
+- `core/src/bin/node.rs`: env var `ZION_MAX_TX_AMOUNT_HEIGHT` (nastavit nad migrační height 18 850)
+- Testy: 4 nové (`f4_7_rejects_tx_above_total_supply`, `f4_7_allows_premine_sized_tx`, `f4_7_boundary_exactly_total_supply_passes_cap`, `f4_7_disabled_by_default`) — vše PASS, F5 regrese OK
+**Aktivace na mainnetu (pending, ops):** Nastavit `ZION_MAX_TX_AMOUNT_HEIGHT` na koordinovaný budoucí height na obou nodech (jako F5).
 
 ---
 
