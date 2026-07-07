@@ -47,6 +47,13 @@
 > - 3 cron jobs: forged TX monitor (5 min), height monitor (5 min), P2P alert (2 min)
 > - systemd watchdog timer (2 min) — RPC + TCP health, auto-restart
 >
+> **Security patch 3.0.4 (wave 1-2 + F4.7 aktivace, 2026-07-07):**
+> - Kanonický postup: [`SECURITY_PATCH_3.0.4_PLAN.md`](./SECURITY_PATCH_3.0.4_PLAN.md) (fáze 1-6)
+> - **Wave 1:** dependency hardening (quinn-proto ≥0.11.15 remote DoS, crossbeam-epoch, rand, advisory cleanup) + node seed-peer mainnet guard + pool OASIS hook bez `curl` + bridge SQL whitelist + HTTP timeouty + miner bez přímé bincode
+> - **Wave 2 (F4.7 max-tx-amount cap):** height-gated cap = `TOTAL_SUPPLY` (144B ZION, NE 100M — nekoliduje s premine), výjimky genesis/coinbase, obě validační cesty, 4 testy PASS
+> - ✅ **F4.7 AKTIVOVÁNO** na serveru (`ZION_MAX_TX_AMOUNT_HEIGHT=1`, 23:16) — log potvrzen, genesis hash nezměněn. F5 (`=0`) aktivní současně.
+> - Commity `690b6dfe`, `35e0f6d0`. Zbývá (owner, air-gapped): key rotace F4.1-4.5, git history scrub, finální audit.
+>
 > **DNS:**
 > - `dns.md` aktualizováno na pure zone file format pro Webglobe admin console
 > - Všechny A records → `62.171.141.136` (@, www, *, api, explorer, mining, testnet)
