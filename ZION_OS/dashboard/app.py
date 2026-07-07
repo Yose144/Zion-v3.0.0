@@ -2644,18 +2644,8 @@ def _build_status_edge_primary() -> dict:
     if n1.get("chain_height") and edge_node1_status.get("chain_height"):
         sync_gap = abs(n1["chain_height"] - edge_node1_status["chain_height"])
 
-    # Tailscale connectivity check — use `tailscale status` (fast, reliable)
-    # instead of `tailscale ping` (slow via DERP relay, causes false negatives)
-    tailscale_ok = False
-    try:
-        result = subprocess.run(["tailscale", "status", "--json"],
-                                  capture_output=True, text=True, timeout=3)
-        if result.returncode == 0:
-            import json as _json
-            _ts = _json.loads(result.stdout)
-            tailscale_ok = _ts.get("BackendState") == "Running"
-    except Exception:
-        pass
+    # v3.0.4: No Tailscale — single server topology, not needed
+    tailscale_ok = True  # N/A, always "ok" (no VPN required)
 
     miner_status = parse_miner_log()
 
@@ -2664,7 +2654,7 @@ def _build_status_edge_primary() -> dict:
     _edge_ports = {
         "bridge":     9101,
         "dao":        8450,
-        "warp":       8453,
+        "warp":       9333,
         "oasis":      8094,
         "free_world": 8095,
         "issobella":  8096,
@@ -2766,7 +2756,7 @@ def _build_status_edge_primary() -> dict:
             "pid_alive": issobella_health.get("pid_alive", False),
             "pid": issobella_health.get("pid"),
         },
-        "tailscale": {"vpn_ok": tailscale_ok, "edge_ip": "127.0.0.1"},
+        "tailscale": {"vpn_ok": True, "edge_ip": "127.0.0.1", "note": "No Tailscale (v3.0.4 single-server)"},
         "_build_time_ms": int(elapsed * 1000),
     }
 
@@ -4441,7 +4431,7 @@ def build_payout_status() -> dict:
     local_rpc_alive = check_port_open("127.0.0.1", 8443, timeout=1.0)
     edge_rpc_alive = check_port_open(edge_host, 8443, timeout=1.5) if is_edge else False
     edge_stats_alive = check_port_open(edge_host, 8455, timeout=1.5) if is_edge else False
-    tailscale_ok = check_port_open(edge_host, 8443, timeout=1.5) if is_edge else True
+    tailscale_ok = True  # v3.0.4: No Tailscale needed
 
     status["pool_health"] = {
         "local_rpc_ok": local_rpc_alive,
@@ -4848,7 +4838,7 @@ def get_network_topology() -> dict:
     except Exception:
         pass
     # Tailscale VPN check (quick TCP probe to edge RPC instead of ICMP ping)
-    tailscale_ok = check_port_open("127.0.0.1", 8443, timeout=1.5)
+    tailscale_ok = True  # v3.0.4: No Tailscale needed
     # Website
     web_alive = False
     try:
@@ -4888,7 +4878,7 @@ def get_network_topology() -> dict:
             "rpc": "0.0.0.0:8443",
             "pool": "0.0.0.0:8444",
         },
-        "tailscale": {"vpn_ok": tailscale_ok, "core_ip": "100.86.102.5", "edge_ip": "127.0.0.1"},
+        "tailscale": {"vpn_ok": True, "edge_ip": "127.0.0.1", "note": "No Tailscale (v3.0.4)"},
         "apps": {
             "website": {"url": "https://zionterranova.com", "alive": web_alive},
             "desktop_agent": {"rpc": "http://127.0.0.1:8443/jsonrpc", "alive": desktop_alive},
@@ -8710,7 +8700,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             ts_status = "unknown"
             try:
                 import subprocess as _sp
-                r = _sp.run(["tailscale", "status", "--json"], capture_output=True, text=True, timeout=3)
+                # v3.0.4: Tailscale not installed — skip
+                r = None
                 if r.returncode == 0:
                     ts_data = json.loads(r.stdout)
                     ts_status = "connected" if ts_data.get("BackendState") == "Running" else ts_data.get("BackendState", "unknown")
