@@ -86,6 +86,17 @@ fn main() -> Result<()> {
         }
     }
 
+    // F4.7: Max transaction amount cap gate. Rejects any non-genesis,
+    // non-coinbase TX whose amount exceeds TOTAL_SUPPLY. Disabled by default
+    // (u64::MAX). Set ZION_MAX_TX_AMOUNT_HEIGHT to a future height (above the
+    // 3.0.3 migration height) for a coordinated hard fork.
+    if let Ok(h_str) = std::env::var("ZION_MAX_TX_AMOUNT_HEIGHT") {
+        if let Ok(h) = h_str.parse::<u64>() {
+            zion_cosmic_harmony::set_max_tx_amount_height(h);
+            eprintln!("max_tx_amount_activation_height={h} (runtime override for F4.7 hard fork)");
+        }
+    }
+
     let config = NodeServerConfig::from_env()?;
 
     // Guard: migration height should be set for non-dev networks.
@@ -932,11 +943,7 @@ impl NodeServerConfig {
             node_config.websocket_bind = parse_endpoint_env(&value, "ZION_WEBSOCKET_BIND")?;
         }
         if let Ok(value) = std::env::var("ZION_SEED_PEERS") {
-            if value.eq_ignore_ascii_case("none") || value.eq_ignore_ascii_case("empty") {
-                node_config.seed_peers.clear();
-            } else {
-                node_config.seed_peers = parse_seed_peers_env(&value)?;
-            }
+            node_config.seed_peers = parse_seed_peers_override(node_config.network, &value)?;
         }
 
         let shared_accept_limit = parse_accept_limit_env("ZION_ACCEPT_LIMIT", None)?;
@@ -1016,6 +1023,21 @@ fn parse_seed_peers_env(value: &str) -> Result<Vec<PeerEndpoint>> {
         .filter(|entry| !entry.is_empty())
         .map(|entry| parse_endpoint_env(entry, "ZION_SEED_PEERS"))
         .collect::<Result<Vec<_>>>()
+}
+
+fn parse_seed_peers_override(
+    network: zion_core::NetworkId,
+    value: &str,
+) -> Result<Vec<PeerEndpoint>> {
+    if value.eq_ignore_ascii_case("none") || value.eq_ignore_ascii_case("empty") {
+        if network == zion_core::NetworkId::Mainnet {
+            return Err(anyhow!(
+                "ZION_SEED_PEERS=none|empty is not allowed on mainnet"
+            ));
+        }
+        return Ok(Vec::new());
+    }
+    parse_seed_peers_env(value)
 }
 
 fn bootstrap_peer_sync(runtime: &Arc<Mutex<NodeRuntime>>, batch_limit: u16) -> Result<()> {
@@ -1863,5 +1885,30 @@ mod tests {
     fn parse_network_name_rejects_unknown_network() {
         let error = parse_network_name("weirdnet").unwrap_err();
         assert!(error.to_string().contains("invalid ZION_NETWORK"));
+    }
+
+    #[test]
+    fn parse_seed_peers_override_rejects_none_on_mainnet() {
+        let error = parse_seed_peers_override(zion_core::NetworkId::Mainnet, "none").unwrap_err();
+        assert!(error.to_string().contains("not allowed on mainnet"));
+    }
+
+    #[test]
+    fn parse_seed_peers_override_allows_none_on_testnet() {
+        let peers = parse_seed_peers_override(zion_core::NetworkId::Testnet, "empty")
+            .expect("testnet empty seed peers should be allowed");
+        assert!(peers.is_empty());
+    }
+
+    #[test]
+    fn parse_seed_peers_override_parses_explicit_list() {
+        let peers = parse_seed_peers_override(
+            zion_core::NetworkId::Mainnet,
+            "127.0.0.1:8333,77.42.71.94:8333",
+        )
+        .expect("explicit seed peer list should parse");
+        assert_eq!(peers.len(), 2);
+        assert_eq!(peers[0].address(), "127.0.0.1:8333");
+        assert_eq!(peers[1].address(), "77.42.71.94:8333");
     }
 }

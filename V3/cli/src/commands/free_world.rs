@@ -18,7 +18,10 @@ pub enum FreeWorldCmd {
 
 pub async fn run(_cfg: &Config, cmd: FreeWorldCmd) -> Result<()> {
     let base = "http://127.0.0.1:8095";
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .unwrap_or_else(|_| reqwest::Client::new());
 
     match cmd {
         FreeWorldCmd::Status => {

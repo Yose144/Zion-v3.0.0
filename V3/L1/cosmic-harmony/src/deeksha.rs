@@ -189,6 +189,43 @@ pub fn balance_check_active(height: u64) -> bool {
     height >= balance_check_activation_height()
 }
 
+// ----------------------------------------------------------------------------
+// F4.7 — Max transaction amount cap (defense-in-depth on top of F5)
+// ----------------------------------------------------------------------------
+//
+// A sanity ceiling: no single non-genesis, non-coinbase transaction may move
+// more than the entire money supply (`emission::TOTAL_SUPPLY`). This bounds the
+// damage from any future inflation bug that fabricates an absurd amount, even
+// if it were to bypass the F5 sender-balance check.
+//
+// **Default: disabled (u64::MAX).** Enable on mainnet by setting
+// `ZION_MAX_TX_AMOUNT_HEIGHT` to a future activation height for a coordinated
+// hard fork (chosen above the 3.0.3 migration height so all checked amounts are
+// already in 6-decimal flowers scale).
+
+static MAX_TX_AMOUNT_HEIGHT_OVERRIDE: std::sync::atomic::AtomicU64 =
+    std::sync::atomic::AtomicU64::new(u64::MAX);
+
+/// Set the runtime activation height for the F4.7 max-tx-amount cap.
+/// Use 0 to enable from genesis, or a future height for a coordinated hard fork.
+/// Default is u64::MAX (disabled).
+pub fn set_max_tx_amount_height(height: u64) {
+    MAX_TX_AMOUNT_HEIGHT_OVERRIDE.store(height, std::sync::atomic::Ordering::Relaxed);
+}
+
+/// Returns the effective F4.7 max-tx-amount cap activation height.
+/// Default is `u64::MAX` (disabled) unless overridden via `set_max_tx_amount_height`.
+#[inline]
+pub fn max_tx_amount_activation_height() -> u64 {
+    MAX_TX_AMOUNT_HEIGHT_OVERRIDE.load(std::sync::atomic::Ordering::Relaxed)
+}
+
+/// Returns `true` once a height has crossed the F4.7 max-tx-amount gate.
+#[inline]
+pub fn max_tx_amount_active(height: u64) -> bool {
+    height >= max_tx_amount_activation_height()
+}
+
 // ============================================================================
 // CONSENSUS PARAMETERS
 // ============================================================================

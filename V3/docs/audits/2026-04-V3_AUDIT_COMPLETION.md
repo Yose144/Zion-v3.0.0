@@ -214,7 +214,7 @@ Ordered by criticality (step-by-step playbook: [`V3/docs/operational/AUDIT_CLOSE
 
 1. **ZION_KEYS rotation.** Not a code change. User must:
    - Revoke `ghp_7gxI3Y…` PAT at https://github.com/settings/tokens.
-   - Rotate `sk-proj-CsUPFBafi12A3…` at https://platform.openai.com/api-keys.
+  - Rotate `[REDACTED_OPENAI_API_KEY]` at https://platform.openai.com/api-keys.
    - Rotate the SSH deployment key on all production servers (legacy Prague 91.98.122.165 included).
    - See `SECURITY_NOTICE_2026-04-28.md` addendum for the full checklist.
    Merging this PR cleans HEAD but does **not** invalidate the leaked
