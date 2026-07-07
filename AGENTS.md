@@ -2,6 +2,8 @@
 
 This file provides operating guidance to Devin, WARP, Copilot, and future automated agents working in this repository.
 
+> **⚠️ SERVER MIGRATION 2026-07-07:** The old Edge server (`77.42.71.94`) is **DECOMMISSIONED**. All services have been rebuilt on a new server at **`62.171.141.136`** following the 3.0.4 hard genesis reset. New genesis hash: `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`. SSH: `ssh zion-new` (key: `~/.ssh/zion-new-server`). All references to `77.42.71.94` or `100.76.16.108` below are **historical** unless explicitly marked as updated. See [`StatusV3.md`](./StatusV3.md) § "3.0.4 Hard Genesis Reset" for current live topology. Web: `https://zionterranova.com` (Next.js Docker). Dashboard: `https://dashboard.zionterranova.com` (Basic Auth). Pool: `62.171.141.136:8444`. RPC (localhost only on server): `127.0.0.1:8443`.
+
 ## Scope and working area
 
 - This is a multi-layer monorepo, but **active mainnet-track development is in `V3/`**.
@@ -147,15 +149,14 @@ Run from repository root unless noted.
 
 PowerShell equivalents for W11 development. Build first: `cargo build --release --manifest-path V3/Cargo.toml --workspace`.
 
-- Node (edge-primary — local dev only, connects to Edge seed):
-  - `$env:ZION_NODE_ID='local-dev-node'; $env:ZION_P2P_BIND='0.0.0.0:8333'; $env:ZION_RPC_BIND='0.0.0.0:8443'; $env:ZION_SEED_PEERS='77.42.71.94:8333'; $env:ZION_NODE_STATE_PATH='V3/data/zion-node-state.db'; $env:ZION_MINER_ADDRESS='zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604'; $env:ZION_HUMANITARIAN_WALLET='zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4'; $env:ZION_ISSOBELLA_WALLET='zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702'; cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin node`
-  - **Tailscale fallback:** Set `$env:ZION_SEED_PEERS='100.76.16.108:8333'` if public IP is unreachable (Tailscale VPN).
+- Node (new server seed — local dev only, connects to new server):
+  - `$env:ZION_NODE_ID='local-dev-node'; $env:ZION_P2P_BIND='0.0.0.0:8333'; $env:ZION_RPC_BIND='0.0.0.0:8443'; $env:ZION_SEED_PEERS='62.171.141.136:8333'; $env:ZION_NODE_STATE_PATH='V3/data/zion-node-state.db'; $env:ZION_MINER_ADDRESS='zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604'; $env:ZION_HUMANITARIAN_WALLET='zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4'; $env:ZION_ISSOBELLA_WALLET='zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702'; $env:ZION_MIGRATION_HEIGHT='1'; cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin node`
+  - **Note:** `ZION_MIGRATION_HEIGHT=1` is required for fresh chain (genesis reset). Set to actual migration height if syncing existing chain.
 - Pool server (local-dev only):
   - `$env:ZION_POOL_BIND='0.0.0.0:8444'; $env:ZION_NODE_RPC_ADDR='127.0.0.1:8443'; $env:ZION_POOL_LOOP_COUNT='1000000'; $env:ZION_NONCE_COUNT='4096'; $env:ZION_NONCE_COUNT_GPU='262144'; $env:ZION_POOL_WALLET='zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604'; cargo run --release --manifest-path V3/Cargo.toml -p zion-pool --bin server`
   - **IMPORTANT:** Pool and miner binaries must be compiled from the same source version — protocol is not backward compatible. Always recompile pool after `cargo build` on miner.
-- Miner (edge-primary — connects to public pool):
-  - `$env:ZION_POOL_ADDR='77.42.71.94:8444'; $env:ZION_WORKER_NAME='<name>'; $env:ZION_MINER_ID='<id>'; $env:ZION_LOOP_COUNT='1000000'; $env:ZION_GPU_BACKEND='opencl'; $env:ZION_PAYOUT_ADDRESS='<zion1...address>'; $env:ZION_MINER_ALGORITHM='deeksha_lite_v1'; cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`
-  - **Tailscale fallback:** Set `$env:ZION_POOL_ADDR='100.76.16.108:8444'` if public IP is unreachable (Tailscale VPN).
+- Miner (connects to new server pool):
+  - `$env:ZION_POOL_ADDR='62.171.141.136:8444'; $env:ZION_WORKER_NAME='<name>'; $env:ZION_MINER_ID='<id>'; $env:ZION_LOOP_COUNT='1000000'; $env:ZION_GPU_BACKEND='opencl'; $env:ZION_PAYOUT_ADDRESS='<zion1...address>'; $env:ZION_MINER_ALGORITHM='deeksha_lite_v1'; cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`
   - **Fire mode (thermal):** Replace `deeksha_lite_v1` with `deeksha_lite_fire` above. Uses 512 KiB scratchpad, higher power draw.
   - **REQUIRED:** `ZION_PAYOUT_ADDRESS` must be a valid 44-char `zion1...` address — pool validates and rejects with "pool closed the connection" if missing or invalid (fallback to miner_id is not allowed).
   - **GPU compile:** `cargo build --release --manifest-path V3/Cargo.toml -p zion-miner --features gpu-opencl` (or `gpu-cuda`, `gpu-metal`)
@@ -325,119 +326,106 @@ In practice: **node is source of chain truth**, pool is coordination layer, mine
 - `scripts/autopilot-2.9.8.sh` encodes a practical validation/deploy sequence when tasks touch miner/desktop-agent/deploy pipelines.
 - If GitHub Actions jobs finish in seconds with no runner/steps, treat it as the known billing/infrastructure issue in `StatusV3.md`, not as code validation.
 
-## 6) Canonical Operational Settings (v3.0.0 Mainnet)
+## 6) Canonical Operational Settings (v3.0.4 Mainnet — Post Hard Reset)
 
 ### Network Topology
 
-Current live topology is **Edge-only (Hetzner VPS)**. The Core (local Windows PC) is currently unreachable due to Tailscale VPN failure and ISP issues. All canonical services run on Edge. Do not reference old multi-server topologies (Praha, SG, Helsinki, US, or Core-as-Backup) — those are deprecated.
+> **UPDATED 2026-07-07:** Old Edge server (`77.42.71.94`) is **DECOMMISSIONED**. All services rebuilt on new server following 3.0.4 hard genesis reset.
+
+Current live topology is **single-server (new VPS)**. The old Edge server was decommissioned after security compromise. All canonical services run on the new server.
 
 ```
-Edge (Hetzner VPS)
-77.42.71.94
+New Server (VPS)
+62.171.141.136
     |
-Node + Pool (PRIMARY)
-DAO + WARP + Website
-Public P2P: 8333/8334
+Node + Pool + Bridge + DAO + WARP + Dashboard + Web
+Public P2P: 8333
 Public Pool: 8444
+Public WARP: 9333
+Web: https://zionterranova.com (nginx → Docker Next.js)
+Dashboard: https://dashboard.zionterranova.com (nginx → Python)
 ```
 
 | Role | Host | Public IP | Ports |
 |------|------|-----------|-------|
-| Edge | Hetzner VPS | 77.42.71.94 | P2P: 8333/8334, RPC: 8443/8446, Pool: 8444, DAO: 8450, WARP: 8453, Web: 3000, Metrics: 8455/9090/9100/9102/9115/9116 |
+| New Server | VPS (Ubuntu 24.04.4) | 62.171.141.136 | P2P: 8333, RPC: 8443 (localhost), Pool: 8444, WS: 8445 (localhost), DAO: 8450 (localhost), WARP: 9333, Web: 80/443, Dashboard: 8766 (localhost) |
 
-### Canonical Ports & Services
+### Canonical Ports & Services (v3.0.4 — New Server)
 
-| Service | Port | Protocol | Notes |
-|---------|------|----------|-------|
-| Node P2P | 8333 | TCP | Peer-to-peer sync (Edge primary) |
-| Node 2 P2P | 8334 | TCP | Edge follower node |
-| Node RPC | 8443 | TCP | JSON-RPC 2.0, wallet queries (Edge) |
-| Node 1 WebSocket | 8445 | TCP | Node event stream (Edge) |
-| Node 2 RPC | 8446 | TCP | Edge follower node JSON-RPC |
-| Node 2 WebSocket | 8447 | TCP | Edge follower node event stream |
-| Pool Stratum | 8444 | TCP | Miner connections (Edge public-facing) |
-| DAO API | 8450 | HTTP | Edge DAO daemon Axum API |
-| Atomic Swap API | 8452 | HTTP | Edge HTLC swap daemon API (optional) |
-| WARP Relay API | 8453 | HTTP | Edge cross-chain relay Axum API |
-| Pool metrics | 8455 | HTTP | Prometheus metrics (pool, Edge) |
-| Node metrics | 9115 | HTTP | Prometheus metrics (Edge node) |
-| Node 2 metrics | 9116 | HTTP | Prometheus metrics (Edge follower node) |
-| Bridge metrics | 9102 | HTTP | Prometheus metrics (Edge bridge, optional) |
-| Prometheus | 9090 | HTTP | Edge monitoring stack (Docker host network) |
-| Grafana | 3100 | HTTP | Edge monitoring dashboards (Docker host network) |
-| Node Exporter | 9100 | HTTP | Edge host system metrics (Docker host network) |
-| Dashboard | 8766 | HTTP | Python Mainnet Launch dashboard (local PC) |
-| Infra Dashboard | 8888 | HTTP | Rust unified infrastructure dashboard (Edge) |
-| Website | 3000 | HTTP | Next.js website (Docker `zion-website`, Edge) |
-| Pool API Proxy | 8080 | HTTP | Edge pool REST proxy |
-| **OASIS** | **8094** | HTTP | L4 Consciousness Mining Game API (Edge) |
-| **Free World** | **8095** | HTTP | L5 Humanitarian Fund Scanner API (Edge) |
-| **Issobella** | **8096** | HTTP | L6 Space Fund Scanner API (Edge) |
-| **Hiranyagarbha API** | **8001** | HTTP | Orchestrator · RAG · Consciousness · NCL · Axum (Rust) |
-| **NCL (via Hiranyagarbha)** | **8001** | HTTP | Neural Compute Layer at `/ncl/*` (jobs, workers, leaderboard) |
-| **Hiran Inference** | **8002** | HTTP | OpenAI-compatible LLM API (llama-server.exe / serve.py) |
+| Service | Port | Bind | Protocol | Notes |
+|---------|------|------|----------|-------|
+| Node P2P | 8333 | 0.0.0.0 | TCP | Peer-to-peer sync |
+| Node RPC | 8443 | 127.0.0.1 | TCP | JSON-RPC 2.0 (via nginx /api/rpc) |
+| Node WebSocket | 8445 | 127.0.0.1 | TCP | Node event stream |
+| Node metrics | 9100 | 127.0.0.1 | HTTP | Prometheus metrics |
+| Pool Stratum | 8444 | 0.0.0.0 | TCP | Miner connections (public) |
+| Bridge metrics | 9101 | 127.0.0.1 | HTTP | Prometheus metrics (bridge) |
+| DAO API | 8450 | 127.0.0.1 | HTTP | DAO daemon API (via nginx /api/dao) |
+| WARP Relay | 9333 | 0.0.0.0 | HTTP | Cross-chain relay API |
+| Dashboard | 8766 | 127.0.0.1 | HTTP | ZION_OS Dashboard (via nginx, Basic Auth) |
+| Website (Next.js) | 3001 | 127.0.0.1 | HTTP | Docker `zion-web:nextjs` (via nginx) |
+| Nginx HTTP | 80 | 0.0.0.0 | HTTP | Redirect to HTTPS |
+| Nginx HTTPS | 443 | 0.0.0.0 | HTTP/2 | SSL Let's Encrypt, reverse proxy |
 
-### Canonical URLs & Endpoints
+### Canonical URLs & Endpoints (v3.0.4)
 
 | Purpose | URL |
 |---------|-----|
-| **Edge Pool (public mining)** | `77.42.71.94:8444` |
-| **Edge RPC (public)** | `http://77.42.71.94:8443/jsonrpc` |
-| **DAO API** | `http://77.42.71.94:8450` |
-| **WARP API** | `http://77.42.71.94:8453` |
+| **Pool (public mining)** | `62.171.141.136:8444` |
+| **RPC (server localhost only)** | `http://127.0.0.1:8443/jsonrpc` |
+| **RPC (via nginx proxy)** | `https://zionterranova.com/api/rpc` |
+| **DAO API (via nginx proxy)** | `https://zionterranova.com/api/dao` |
+| **WARP API** | `http://62.171.141.136:9333` |
 | **Website production** | `https://zionterranova.com` |
-| **Dashboard** | (offline — Core unreachable) |
-| **Edge Grafana** | `http://77.42.71.94:3100` |
-| **Edge Prometheus** | `http://77.42.71.94:9090` |
+| **Dashboard** | `https://dashboard.zionterranova.com` (Basic Auth: Yose/Issy) |
 
-### SSH Access
+### SSH Access (v3.0.4 — New Server)
 
-- **Edge server SSH key:** `ssh-key-zion-edge` (private), `ssh-key-zion-edge.pub` (public) — kept in root for operational access. Copy also exists at `~/.ssh/ssh-key-zion-edge` (non-empty).
+- **SSH config:** `ssh zion-new` (alias in `~/.ssh/config`)
+- **SSH key:** `~/.ssh/zion-new-server` (ed25519, fingerprint `SHA256:wnq2p9n17icqkpkJMAjPZto0axRtkVTVXPMBuD9tz64`)
+- **Password auth:** DISABLED (keys only)
 - **Never commit private keys.**
-- **SSH endpoint:** Public IP (main) — `ssh -i ssh-key-zion-edge root@77.42.71.94`. Tailscale fallback — `ssh -i ssh-key-zion-edge root@100.76.16.108`.
 
-### Edge Server Deployment (Autonomous 24/7)
+### New Server Deployment (Autonomous 24/7)
 
-The Edge server runs as the canonical primary node + pool. It must survive reboots without local PC intervention.
+The new server runs as the canonical primary node + pool + full stack. It must survive reboots without local PC intervention.
 
-**Systemd services** (installed via `edge-deploy/deploy-edge.sh`):
-- `zion-edge-node1.service` — Core node (P2P:8333, RPC:8443)
-- `zion-edge-node2.service` — Follower node (P2P:8334, RPC:8446)
-- `zion-edge-pool.service` — Mining pool (Stratum:8444)
-- `zion-edge-dao.service` — DAO daemon (API:8450)
-- `zion-edge-warp.service` — Cross-chain relay (API:8453)
-- `zion-edge-miner.service` — CPU miner (connects to localhost:8444)
-- `zion-edge-watchdog.service` — Health monitor (2-minute timer)
-- `hiran-inference.service` — LLM inference (API:8002, optional)
-- `hiranyagarbha.service` — Orchestrator (API:8001, optional)
+**Systemd services** (installed via `V3/deploy/new-server/`):
+- `zion-node.service` — Core node (P2P:8333, RPC:8443)
+- `zion-pool.service` — Mining pool (Stratum:8444)
+- `zion-bridge.service` — Bridge relay (L2)
+- `zion-dao.service` — DAO scanner (L2)
+- `zion-warp.service` — WARP relay (L3)
+- `zion-dashboard.service` — ZION_OS Dashboard (Python, port 8766)
+- `zion-watchdog.timer` — Health monitor (2-minute timer)
+- `nginx` — Reverse proxy + SSL (ports 80/443)
 
-**PM2 process:**
-- `zion-website` — Next.js website on port 3000
+**Docker container:**
+- `zion-web-next` — Next.js 16.2.9 website (image `zion-web:nextjs`, port 127.0.0.1:3001)
+- `zion-web:maintenance` — Maintenance page fallback image (available, not running)
 
-**Docker stack** (Edge-only, optional):
-- Prometheus (9090), Grafana (3100), Node Exporter (9100)
-- Alertmanager (configurable Discord/Slack/Email webhooks)
+**Environment file:** `/root/zion/edge-environment.sh` (chmod 600, `<REPLACE_*>` placeholders for air-gapped keys)
+
+**Data directory:** `/data/zion/` (state, bridge DB, DAO DB)
 
 **Persistence:**
-- Node state: `/root/zion-2.9.6-main/V3/data/zion-node-state.db`
-- Pool state: `/root/zion-2.9.6-main/V3/data/zion-pool-state.db`
-- DAO DB: `/root/zion-2.9.6-main/V3/data/dao.db`
-- Bridge DB: `/root/zion-2.9.6-main/V3/data/bridge.db`
-- Logs: `/root/zion-2.9.6-main/V3/logs/`
+- Node state: `/data/zion/state/`
+- Bridge DB: `/data/zion/bridge-mainnet.db`
+- DAO DB: `/data/zion/dao-mainnet.db`
+- Repo: `/root/zion/2.9.6/` (git clone at commit `690b6dfe`)
 
-### Edge Miner Build via WSL (Linux binary for Edge)
+### Miner Deployment (v3.0.4 — New Server)
 
-The Edge server does NOT have a Rust toolchain. To deploy an updated miner binary:
+The new server HAS a Rust toolchain (1.96.1 stable). To deploy an updated miner binary:
 
-1. **Build locally via WSL Ubuntu:**
+1. **Build on server:**
    ```bash
-   wsl -d Ubuntu -e bash -c "source ~/.cargo/env && cd /mnt/c/Users/yosef/Desktop/Zion/2.9.6-main && cargo build --release --manifest-path V3/Cargo.toml -p zion-miner"
+   ssh zion-new 'cd /root/zion/2.9.6 && source ~/.cargo/env && cargo build --release -p zion-miner'
    ```
 
-2. **Deploy to Edge:**
+2. **Or build locally and scp:**
    ```bash
-   scp V3/target/release/zion-miner root@100.76.16.108:/usr/local/bin/zion-miner-new
-   ssh root@100.76.16.108 "chmod +x /usr/local/bin/zion-miner-new && mv /usr/local/bin/zion-miner /usr/local/bin/zion-miner-old && mv /usr/local/bin/zion-miner-new /usr/local/bin/zion-miner"
+   scp V3/target/release/zion-miner zion-new:/usr/local/bin/zion-miner
    ```
 
 3. **Run headless CPU miner (required: `ZION_INTERACTIVE=false`):**

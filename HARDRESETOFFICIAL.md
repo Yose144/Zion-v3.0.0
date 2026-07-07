@@ -1,11 +1,44 @@
 # ZION V3 — Official Hard Reset Plan
 
-> **Verze:** 1.1 — 2026-07-06
-> **Status:** EXECUTING — Fáze 0-3 DONE (klíče, genesis.rs, L2/L3 config, bridge vault), Fáze 4-10 pending
+> **Verze:** 1.2 — 2026-07-07
+> **Status:** EXECUTING — Fáze 0-3 DONE (klíče, genesis.rs, L2/L3 config, bridge vault) + Fáze 4-8 DONE (nový server 62.171.141.136, full stack deployed, web + dashboard live). Fáze 9-10 pending (key rotation, git scrub).
 > **Kanonický postup:** [`docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md`](./docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md) — TENTO dokument je operační plán; kanonický runbook je v docs/3.0.4/.
 > **Security disclosure:** [`docs/security/SECURITY_DISCLOSURE_2026-07.md`](./docs/security/SECURITY_DISCLOSURE_2026-07.md) — veřejný bulletin ve formátu Ethereum Foundation.
 > **Kontext:** Post-security-incident (F1 + F5 + TeamViewer compromise). Attacker měl 47 min root na Edge, přístup ke zdrojákům, SSH klíčům, pool payout SK, escrow key, EVM deploy klíčům, DAO guardian mnemonics.
 > **Cíl:** Kompletní hard reset ZION V3 mainnetu od Genesis #0 s novými klíči, novým serverem, bez kompromitovaného materiálu.
+>
+> ### Update 2026-07-07 — Nový Server Deployed
+>
+> **Nový server:** `62.171.141.136` (Ubuntu 24.04.4 LTS, 4× AMD EPYC, 7.8 GB RAM, 145 GB disk)
+> **Nový genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` ✅
+>
+> **Deployované služby (všech 7 aktivních + enabled na boot):**
+> - zion-node (P2P 8333, RPC 127.0.0.1:8443, WS 127.0.0.1:8445, metrics 127.0.0.1:9100)
+> - zion-pool (Stratum 0.0.0.0:8444)
+> - zion-bridge (metrics 127.0.0.1:9101)
+> - zion-dao (API 127.0.0.1:8450)
+> - zion-warp (0.0.0.0:9333)
+> - zion-dashboard (127.0.0.1:8766, Basic Auth)
+> - nginx (80/443, SSL Let's Encrypt, HTTP/2, reverse proxy)
+>
+> **Web:** `https://zionterranova.com` — plný Next.js 16.2.9 web (Docker `zion-web:nextjs`, 73+ routes)
+> **Dashboard:** `https://dashboard.zionterranova.com` — ZION_OS Dashboard (Python3, Basic Auth)
+>
+> **Chain stav:** Height 0 (fresh genesis), premine 16.78B ZION, block reward 5400.067 ZION, fee split 89/5/5/1
+>
+> **OS hardening:** SSH klíče-only, UFW (22/80/443), fail2ban, Docker 29.6.1
+> **Monitoring:** 3 cron jobs + systemd watchdog timer (2 min)
+> **SSL:** Let's Encrypt (zionterranova.com, www.zionterranova.com, dashboard.zionterranova.com) — auto-renew
+>
+> **Starý Edge server (77.42.71.94):** DECOMMISSIONED
+>
+> **Pending (owner akce):**
+> 1. Air-gapped klíče (pool SK, bridge validator SKs, DAO guardian SKs, escrow key) — `<REPLACE_*>` v `edge-environment.sh`
+> 2. Minery — připojit k `62.171.141.136:8444`
+> 3. DNS aplikace — `dns.md` zónový soubor v Webglobe admin console
+> 4. F4.7 aktivace — `ZION_MAX_TX_AMOUNT_HEIGHT`
+> 5. Key rotation F4.x — premine, pool, bridge, EVM (air-gapped)
+> 6. Git history scrub — BFG pro staré commity s secrets
 
 ---
 
