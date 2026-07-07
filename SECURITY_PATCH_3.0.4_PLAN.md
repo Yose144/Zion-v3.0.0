@@ -67,9 +67,9 @@ Vše implementováno, otestováno, zdokumentováno v `SECURITY_TODO_2026-07-03.m
 
 ---
 
-## FÁZE 3 — Push + Edge rebuild + binary swap ⏳
+## FÁZE 3 — Push + nový server rebuild + binary swap ⏳
 
-> Provádí owner s asistencí agenta. Edge = `ssh -i ~/.ssh/ssh-key-zion-edge root@77.42.71.94` (Tailscale fallback `100.76.16.108`).
+> Provádí owner s asistencí agenta. Nový server = `ssh zion-new` (`62.171.141.136`, key `~/.ssh/zion-new-server`). Starý Edge (77.42.71.94) je DECOMMISSIONED.
 
 ### 3.1 Push do GitHubu
 
@@ -80,80 +80,84 @@ git commit -m "security(3.0.4): dependency hardening + F4.7 max-tx-amount cap (c
 git push origin main
 ```
 
-- [ ] Commit + push proveden
+- [x] Commit + push proveden (commit `690b6dfe`, 2026-07-07)
 - [ ] CI (pokud běží) zelená
 
-### 3.2 Edge pull + rebuild
+### 3.2 Nový server pull + rebuild
+
+> **Topologie 3.0.4:** starý Edge (77.42.71.94) je DECOMMISSIONED. Kanonický je **nový server `62.171.141.136`** — single-node, fresh chain (genesis height 0, migration height 1). Rust 1.96.1 je na serveru.
 
 ```bash
-ssh -i ~/.ssh/ssh-key-zion-edge root@77.42.71.94
-cd /root/zion-2.9.6-main && git pull origin main
+ssh zion-new                       # key ~/.ssh/zion-new-server
+cd /root/zion/2.9.6 && git pull origin main
 source ~/.cargo/env
 cargo build --release --manifest-path V3/Cargo.toml -p zion-core --bin node
 cargo build --release --manifest-path V3/Cargo.toml -p zion-pool --bin server
 ```
 
-- [ ] Build OK na Edge
-- [ ] `cargo test --manifest-path V3/Cargo.toml -p zion-core --lib f4_7` OK na Edge
+- [ ] Build OK na novém serveru
+- [ ] `cargo test --manifest-path V3/Cargo.toml -p zion-core --lib f4_7` OK
 
-### 3.3 Binary swap (pořadí: node2 → node1 → pool)
+### 3.3 Binary swap (single-node: node → pool)
 
-> **Před swapem: manuální backup!** Auto-backup je známý problém (height=0). Použít `/usr/local/bin/zion-edge-backup.sh` a ověřit MANIFEST.
+> **Před swapem: manuální backup!** Single-node topologie = žádný follower-kanárek, proto backup + rollback binárka jsou povinné.
 
 ```bash
-# Backup
-/usr/local/bin/zion-edge-backup.sh && ls -la /data/zion/backups/ | tail -3
+# Backup dat + binárek
+cp -a /data/zion/state /data/zion/state.bak-$(date +%Y%m%d-%H%M)
+cp /usr/local/bin/zion-node /usr/local/bin/zion-node.old
+cp /usr/local/bin/zion-pool-server /usr/local/bin/zion-pool-server.old
 
-# Swap node2 (follower — kanárek)
-systemctl stop zion-edge-node2
-cp V3/target/release/node /usr/local/bin/zion-node2   # dle skutečné cesty v unit filu
-systemctl start zion-edge-node2
-journalctl -u zion-edge-node2 -n 30 --no-pager   # ověřit sync, žádné erory
+# Swap node
+systemctl stop zion-node
+cp V3/target/release/node /usr/local/bin/zion-node
+systemctl start zion-node
+journalctl -u zion-node -n 40 --no-pager   # ověřit start, genesis hash, žádné erory
 
-# Po 15 min bez problémů: swap node1 (primary)
-systemctl stop zion-edge-node1 && cp ... && systemctl start zion-edge-node1
-
-# Pool (kompatibilní protokol se stejnou verzí!)
-systemctl restart zion-edge-pool
+# Pool (stejná verze — protokol není zpětně kompatibilní!)
+systemctl stop zion-pool
+cp V3/target/release/server /usr/local/bin/zion-pool-server
+systemctl start zion-pool
 ```
 
-- [ ] node2 swap + 15 min sledování OK
-- [ ] node1 swap + sync OK (height roste)
+- [ ] node swap OK — genesis hash `4f75a0df...`, height roste
 - [ ] pool restart OK, minery se připojují, `SHARE_ACCEPTED` v logu
-- [ ] `curl http://127.0.0.1:8443/jsonrpc` → getSupplyInfo odpovídá
+- [ ] `curl http://127.0.0.1:8443/jsonrpc -d '{"jsonrpc":"2.0","method":"getSupplyInfo","id":1}'` odpovídá
+- [ ] `systemctl is-active zion-node zion-pool zion-bridge zion-dao zion-warp zion-dashboard nginx` — vše active
 
-**Rollback:** starý binary zálohovaný jako `*-old`; `systemctl stop` → `mv` zpět → `start`. Chain state se nemění (F4.7 je vypnuté).
+**Rollback:** `systemctl stop zion-node` → `mv /usr/local/bin/zion-node.old /usr/local/bin/zion-node` → `start`. Chain state se nemění (F4.7 je vypnuté).
 
 ---
 
 ## FÁZE 4 — F4.7 aktivace na mainnetu (koordinovaný hard fork) ⏳
 
-> Stejný proces jako F5 (`ZION_BALANCE_CHECK_HEIGHT=22394`).
+> Stejný mechanismus jako F5 (`ZION_BALANCE_CHECK_HEIGHT`). Single-node → jeden systemd unit.
 
 ### 4.1 Volba aktivační výšky
 
 - Zjistit aktuální height: `curl -s http://127.0.0.1:8443/jsonrpc -d '{"jsonrpc":"2.0","method":"getHeight","id":1}'`
-- Aktivace = aktuální height + **~1440 bloků (~24 h)** rezerva.
-- Podmínka: aktivace **> migrační height 18 850** (všechny kontrolované částky v 1e6 scale). ✓ splněno automaticky (chain je nad 23 000).
+- Aktivace = aktuální height + **~1440 bloků (~24 h)** rezerva (dost času na doběh minerů).
+- Podmínka scale: aktivace **> migrační height (na novém řetězci = 1)** ✓ splněno triviálně (fresh chain, vše v 1e6 scale od genesis).
 
 - [ ] Aktivační height zvolen: `H_F47 = ______`
 
-### 4.2 Nasazení env varu na OBOU nodech
+### 4.2 Nasazení env varu na novém serveru
 
 ```bash
-# /etc/systemd/system/zion-edge-node1.service.d/f47.conf (a node2 obdobně)
+# /etc/systemd/system/zion-node.service.d/f47.conf
 [Service]
 Environment=ZION_MAX_TX_AMOUNT_HEIGHT=<H_F47>
 
 systemctl daemon-reload
-systemctl restart zion-edge-node2   # nejdřív follower
+systemctl restart zion-node
 # ověřit log: "max_tx_amount_activation_height=<H_F47> (runtime override for F4.7 hard fork)"
-systemctl restart zion-edge-node1
 ```
 
-- [ ] Drop-in na node1 + node2
-- [ ] Log potvrzuje aktivační height na obou
-- [ ] Po dosažení H_F47: smoke test — TX s absurdní částkou odmítnuta, běžná TX projde
+> Alternativně přidat řádek do `/root/zion/edge-environment.sh` (EnvironmentFile), pak `daemon-reload` + restart.
+
+- [ ] Drop-in / env přidán na zion-node
+- [ ] Log potvrzuje aktivační height
+- [ ] Po dosažení H_F47: smoke test — TX s absurdní částkou (> TOTAL_SUPPLY) odmítnuta, běžná TX projde
 
 ### 4.3 Dokumentace aktivace
 
@@ -176,14 +180,15 @@ systemctl restart zion-edge-node1
 
 ### 5.3 Bridge validator keys (F4.3)
 - [ ] Rotace 5/5 validator keys per `V3/docs/BRIDGE_MULTISIG.md`
-- [ ] Update `bridge-validators.conf` drop-in na Edge
+- [ ] Update validator SK v `/root/zion/edge-environment.sh` (`ZION_BRIDGE_VALIDATOR_SK_1..5`) na novém serveru
 
 ### 5.4 Premine + canonical wallets (F4.1 + F4.5) — NEJVYŠŠÍ riziko (consensus!)
 > Per `docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md`. **Label-derived adresy mají veřejné klíče — nikdy pro treasury.**
+> Pozn.: hard reset 2026-07-06 už proběhl (genesis `4f75a0df...`), takže tato fáze je jen pro případnou další rotaci, ne pro iniciální reset.
 - [ ] Nové BIP-39 mnemonics pro každý slot (air-gapped)
 - [ ] Mnemonics na flash disk (offline záloha ×2)
-- [ ] `genesis.rs` update + rebuild + koordinovaný redeploy všech nodů
-- [ ] Ověřit genesis hash na obou nodech
+- [ ] `genesis.rs` update + rebuild + redeploy na novém serveru
+- [ ] Ověřit genesis hash
 
 ---
 
@@ -195,9 +200,10 @@ systemctl restart zion-edge-node1
 - [ ] `git filter-repo --invert-paths --path PREMINE_WALLETS_BACKUP.json` (+ další leaked paths per `V3/scripts/git-filter-repo-leaked-paths-v2.sh`)
 - [ ] Force push po dohodě, všichni re-clone
 
-### 6.2 Tailscale ACL (F2.3)
-- [ ] Tag-based ACL per `SecurityFirst.md` §F2.3 (admin console)
-- [ ] Verify: SSH povolen, RPC 8443 deny z workstation
+### 6.2 Tailscale ACL (F2.3) — ✅ VYŘEŠENO JINAK (2026-07-07)
+> Tailscale byl při hard resetu na nový server **odstraněn jako attack surface** (commit `87d939c1`). Single-server topologie nepotřebuje VPN — přístup je jen přes SSH klíče + nginx SSL + Basic Auth + UFW (22/80/443). F2.3 tím odpadá.
+- [x] Tailscale odstraněn z nového serveru
+- [x] Dashboard/monitoring bez Tailscale závislosti
 
 ### 6.3 Zbylé advisories (dlouhodobé)
 - [ ] Serializační roadmapa: náhrada `bincode 1.x` (transitive přes `heed-types`) — plánovaná migrace storage vrstvy, samostatný PR
