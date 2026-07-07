@@ -39,17 +39,48 @@ timelock_hours      = 72                           # mainnet: longer timelock
 # Locked until DAO_TREASURY_LOCK_HEIGHT = 144_000 (≈100 days at 60s/block).
 
 treasury_addresses = [
-    "zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4",  # Community Governance (main) — 2.5B ZION
-    "zion1r5j0j7y444a8j402n8t8u2n8y323u6x4r2aw7l6",  # Grants & Bounties — 1.0B ZION
-    "zion1932843t398t095g4h3x2f3a5l0q40490k4fm2w8",  # Ecosystem Bootstrap — 0.5B ZION
+    "zion1u5u7k43240d5l4d0x7q5m3c4a838z4k000cv3q0",  # Community Governance (main) — 2.5B ZION (premine slot 6)
+    "zion1m8d235x268h8d887s036m8c3x7s356d3r37k6m6",  # Grants & Bounties — 1.0B ZION (premine slot 7)
+    "zion102s8k4k0w783d657j255z865e47054s342u87v3",  # Ecosystem Bootstrap — 0.5B ZION (premine slot 8)
 ]
 daily_spend_limit   = 50_000_000     # 50 M ZION (whole coins) — conservative start
 multisig_threshold  = 5
 multisig_total      = 7
 
 # ── Guardians ────────────────────────────────────────────────────────────────
-# Add guardian entries when provisioned:
-# [[guardians]]
-# name       = "guardian-1"
-# address    = "zion1..."
-# public_key = "ed25519hex..."
+# 7 DAO guardians — generated 2026-07-06 hard reset (BIP39 mnemonics in encrypted archive)
+
+[[guardians]]
+name       = "guardian-1"
+address    = "zion1v330m245u4j2v6z8t485c8f472f8u5z3a82q0y4"
+public_key = "0c159ab1e185313e0718965eed6c3b0fabe1b2c5fe58c3053f09a6f2dacef1f0"
+
+[[guardians]]
+name       = "guardian-2"
+address    = "zion186r522w0l538v030r0m297w43426z4v094lu5e8"
+public_key = "e4e6e97f41dc2d60aab8fded23fb39b2802a231c062633c115d52acfd2b320fb"
+
+[[guardians]]
+name       = "guardian-3"
+address    = "zion1g40723c645s038p0w7t8h0d7r8d325j7x0gc8j0"
+public_key = "bcb3d39dd7cd6add2a0f4f3f6482172c6ee934f77c2bafa58e8e471ff6782829"
+
+[[guardians]]
+name       = "guardian-4"
+address    = "zion1r3m3g8q6y4u2f8r4y2w4c3f02335d8j7v5dy064"
+public_key = "0fd644a5400b1af88ecdad7125fcf49b9401676a432e7d8a41ce9d8a7eea4e72"
+
+[[guardians]]
+name       = "guardian-5"
+address    = "zion1u53766x73897r0z0z854c4p2f7v773g3e0z27v7"
+public_key = "1cc022fb62f27f99b631f266f7de48641c4100e2c0af9613d3325ef53df39cec"
+
+[[guardians]]
+name       = "guardian-6"
+address    = "zion144r475y5u58508y7f0a8d4g5c3a593m5q23e3a2"
+public_key = "ac34a50d02139412f644424cb0ccfc78d9fb3c762eb478ac68c6e962fb90cef2"
+
+[[guardians]]
+name       = "guardian-7"
+address    = "zion1d8t2e3e3l3a684l578d894w5k8x2h2k3z6e63m7"
+public_key = "e6a284525be6555b60ca657e2df8bcb83da649b4c99c2e10760583eeb3f0699b"

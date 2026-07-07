@@ -89,7 +89,7 @@ Odstraněny duplikátní [13]/[14] záznamy (stará sada s jinými adresami, nep
 
 | # | Blocker | Řešení |
 |---|---------|--------|
-| 1 | Placeholder vault adresa | Deterministická keyless vault adresa z SHA-256("ZION Bridge Vault V3 Mainnet") → `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0` |
+| 1 | Placeholder vault adresa | Deterministická keyless vault adresa z SHA-256("ZION Bridge Vault V3 Mainnet v2 2026-07-06-HARD-RESET") → `zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7` |
 | 2 | Crypto validator proof | Již implementováno — `submitBridgeUnlock` má secp256k1 ECDSA verifikaci s allowlistem + threshold |
 | 3 | L1 wallet CLI | Nový `wallet.rs` binárka: keygen, info, send, balance přes raw TCP JSON-RPC |
 | 4 | Bridge mainnet config | `bridge-mainnet.toml` → `enabled=true`, nasazeno na Prague server |
