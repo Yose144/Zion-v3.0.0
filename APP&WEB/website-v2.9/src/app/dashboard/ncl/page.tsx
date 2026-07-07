@@ -380,7 +380,7 @@ export default function NCLDashboard() {
             <pre className="bg-black/60 border border-white/10 rounded-xl p-4 text-sm overflow-x-auto">
               <code className="text-emerald-400">
 {`./zion_miner \
-  --pool 77.42.71.94:8444 \
+  --pool ${process.env.NEXT_PUBLIC_ZION_POOL_HOST || 'pool.zionterranova.com'}:8444 \
   --wallet ZION_YOUR_ADDRESS \
   --ncl-enabled \
   --ncl-allocation 30`}

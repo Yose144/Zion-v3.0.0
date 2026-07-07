@@ -29,8 +29,13 @@ yarn-debug.log*
 yarn-error.log*
 
 # env files
-.env*.local
 .env
+.env*.local
+.env.production
+.env.production.local
+# Example templates are safe to commit
+!.env.local.example
+!.env.production.example
 
 # vercel
 .vercel

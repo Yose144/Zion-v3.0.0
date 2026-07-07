@@ -37,7 +37,7 @@ const minerSteps = [
   },
   {
     title: 'Start GPU miner (Edge pool)',
-    code: `ZION_POOL_ADDR=77.42.71.94:8444 \\
+    code: `ZION_POOL_ADDR=${SITE_POOL_PRIMARY} \\
 ZION_WORKER_NAME=my-worker \\
 ZION_MINER_ID=YOUR_ZION_ADDRESS \\
 ZION_LOOP_COUNT=1000000 \\
@@ -47,7 +47,7 @@ ZION_GPU_WORK_SIZE=4096 \\
   },
   {
     title: 'Start CPU miner (Edge pool)',
-    code: `ZION_POOL_ADDR=77.42.71.94:8444 \\
+    code: `ZION_POOL_ADDR=${SITE_POOL_PRIMARY} \\
 ZION_WORKER_NAME=my-worker \\
 ZION_MINER_ID=YOUR_ZION_ADDRESS \\
 ZION_LOOP_COUNT=1000000 \\

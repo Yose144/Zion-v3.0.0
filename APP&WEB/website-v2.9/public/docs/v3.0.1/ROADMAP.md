@@ -1286,7 +1286,7 @@ Progress:
 - ✅ G1: Mining guide (Sprint 5 — MINING_GUIDE.md: profiles, env vars, Docker/systemd, FAQ)
 - ✅ G2: Node operator guide (Sprint 5 — NODE_OPERATOR_GUIDE.md: deployment, monitoring, hardening)
 - ✅ D2: Block explorer + pool dashboard (live at zionterranova.com/explorer — Next.js 16, 7 pages, pool dashboard)
-- ⏳ E4: Seed nodes (Core + Edge topology: 100.76.16.108 + 77.42.71.94; multi-region expansion deferred to infra phase)
+- ⏳ E4: Seed nodes (Core + Edge topology: public Edge relay + private Core VPN; multi-region expansion deferred to infra phase)
 
 Status: mostly complete (seed node expansion pending)
 

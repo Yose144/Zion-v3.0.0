@@ -1977,11 +1977,11 @@ export default function MissionControlDashboard() {
                 <Stat label="Sync Status" value={(primaryStats?.status === 'OK' || primaryStats?.status === 'healthy') ? 'SYNCED ✓' : primaryHeight > 0 ? 'RUNNING' : '—'} color={(primaryStats?.status === 'OK' || primaryStats?.status === 'healthy') ? 'text-emerald-400' : 'text-gray-400'} />
               </div>
               <div className="grid gap-5 lg:grid-cols-2">
-                <ServerCard node={primaryNode} name="Edge VPS (Hetzner)" flag="🌐" ip="77.42.71.94 · pool :8444 + web + relay" />
+                <ServerCard node={primaryNode} name="Edge VPS (Hetzner)" flag="🌐" ip="Edge public host · pool :8444 + web + relay" />
                 <ServerCard node={data?.primary} name="Core PC (private VPN)" flag="🏠" ip="Private · consensus + RPC :8443" />
               </div>
               <div className="mt-5 zion-tile px-5 py-4 text-sm text-gray-300">
-                Core + Edge topologie: Edge VPS (Hetzner, 77.42.71.94) jako veřejný relay a pool, Core PC (privátní VPN) jako primární konsenzus uzel. Peer spojení přes privátní VPN tunel.
+                Core + Edge topologie: Edge VPS (Hetzner) jako veřejný relay a pool, Core PC (privátní VPN) jako primární konsenzus uzel. Peer spojení přes privátní VPN tunel.
               </div>
             </motion.section>
 
@@ -2414,7 +2414,7 @@ export default function MissionControlDashboard() {
                 <h3 className="text-sm font-semibold text-gray-300 mb-2 flex items-center gap-2"><Globe className="h-4 w-4 text-gray-400" /> Network Topology</h3>
                 <div className="grid md:grid-cols-2 gap-3 text-xs">
                   <div>
-                    <p className="text-gray-400 mb-1 font-semibold">Edge VPS (Hetzner) — 77.42.71.94</p>
+                    <p className="text-gray-400 mb-1 font-semibold">Edge VPS (Hetzner) — public host</p>
                     <p className="text-gray-500">Public relay · Pool :8444 · Website :443 · Prometheus scrape</p>
                     <p className="text-gray-500">VPN endpoint · Pool + Web + Monitoring stack</p>
                   </div>
@@ -2578,7 +2578,7 @@ export default function MissionControlDashboard() {
                     {[
                       { step: 'Feature Flag', desc: 'Testnet conditional compile: NPU_EPOCH_LENGTH=100', status: 'done', ref: '605cd38' },
                       { step: 'Docker Build', desc: 'zion-{core,pool,miner}:2.9.8-testnet images', status: 'done', ref: '3 images' },
-                      { step: 'Server Deploy', desc: '77.42.71.94 — full sync via SFTP + compose up', status: 'done', ref: '6 containers' },
+                      { step: 'Server Deploy', desc: 'Edge public host — full sync via SFTP + compose up', status: 'done', ref: '6 containers' },
                       { step: 'Core Health', desc: 'Chain height 4034+, 2 peers, synced', status: 'done', ref: 'healthy' },
                       { step: 'Pool Accept', desc: '10/10 shares accepted, 0 rejected (100%)', status: 'done', ref: '10 accepted' },
                       { step: 'Miner Verify', desc: '166 H/s, 256 KiB scratchpad confirmed in logs', status: 'done', ref: '256 KiB' },

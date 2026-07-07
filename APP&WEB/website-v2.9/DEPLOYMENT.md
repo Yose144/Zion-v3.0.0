@@ -5,11 +5,11 @@
 ## Current Production Status
 
 - **Live URL:** https://zionterranova.com
-- **Host:** Edge server (Hetzner VPS) — `77.42.71.94` / Tailscale: `mainnetedge`
+- **Host:** Edge server (Hetzner VPS) — DNS: `mainnetedge` / public entrypoint: `rpc.zionterranova.com`
 - **Runtime:** Docker container `zion-website` (host network mode, port 3000)
 - **Reverse proxy:** Caddy → `localhost:3000`
-- **Source on server:** `/root/zion-2.9.6-main/APP&WEB/website-v2.9`
-- **Compose file:** `/root/zion-web/docker-compose.yml`
+- **Source on server:** `/opt/zion/web`
+- **Compose file:** `/opt/zion/docker/docker-compose.yml`
 - **Current image:** `zion-website:v3.7.5-quantum-revolution`
 
 ## Build Requirements
@@ -27,8 +27,8 @@ The `package-lock.json` references `file:/zion-wallet-sdk/zion-wallet-sdk-1.0.0.
 ### Method 1: Automated script
 
 ```bash
-ssh root@mainnetedge
-cd /root/zion-2.9.6-main
+ssh deploy@mainnetedge
+cd /opt/zion/web
 bash scripts/deploy-edge-web.sh <version-tag>
 ```
 
@@ -44,20 +44,18 @@ The script (`scripts/deploy-edge-web.sh`):
 
 ```bash
 # 1. SSH to Edge via Tailscale
-ssh root@mainnetedge
+ssh deploy@mainnetedge
 
 # 2. Pull latest code
-cd /root/zion-2.9.6-main
+cd /opt/zion/web
 git pull origin main
 
 # 3. Install deps + build with webpack
-cd APP&WEB/website-v2.9
 npm install
 npx next build --webpack
 
 # 4. Build Docker image from host artifacts
-cd /root/zion-2.9.6-main
-docker build -t zion-website:<version> -f - APP\&WEB/website-v2.9 <<'EOF'
+docker build -t zion-website:<version> -f - . <<'EOF'
 FROM node:20-alpine
 WORKDIR /app
 COPY .next .next
@@ -71,10 +69,10 @@ CMD ["node", "node_modules/.bin/next", "start"]
 EOF
 
 # 5. Update compose file with new image tag
-sed -i 's|zion-website:OLD_TAG|zion-website:NEW_TAG|' /root/zion-web/docker-compose.yml
+sed -i 's|zion-website:OLD_TAG|zion-website:NEW_TAG|' /opt/zion/docker/docker-compose.yml
 
 # 6. Restart container
-docker compose -f /root/zion-web/docker-compose.yml up -d
+docker compose -f /opt/zion/docker/docker-compose.yml up -d
 
 # 7. Verify
 sleep 3
@@ -83,7 +81,7 @@ curl -s http://127.0.0.1:3000/api/health | jq
 
 ### Docker Compose File
 
-`/root/zion-web/docker-compose.yml`:
+`/opt/zion/docker/docker-compose.yml`:
 
 ```yaml
 services:
@@ -94,7 +92,12 @@ services:
     network_mode: host
     environment:
       - NODE_ENV=production
-      - ZION_DAO_API_KEY=zion-dao-edge-key-2026
+      - ZION_DAO_API_KEY=${ZION_DAO_API_KEY}
+      - ZION_WARP_API_KEY=${ZION_WARP_API_KEY}
+      - ZION_JWT_SECRET=${ZION_JWT_SECRET}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+    env_file:
+      - .env.production
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
       interval: 30s
@@ -125,8 +128,8 @@ curl -s https://zionterranova.com/quantum-revolution | head -5
 docker images | grep zion-website
 
 # Update compose to previous tag
-sed -i 's|zion-website:CURRENT|zion-website:PREVIOUS|' /root/zion-web/docker-compose.yml
-docker compose -f /root/zion-web/docker-compose.yml up -d
+sed -i 's|zion-website:CURRENT|zion-website:PREVIOUS|' /opt/zion/docker/docker-compose.yml
+docker compose -f /opt/zion/docker/docker-compose.yml up -d
 ```
 
 ## Dockerfiles
@@ -144,15 +147,17 @@ The **inline Dockerfile** approach (copying host artifacts) is the only working 
 ### Via Tailscale (recommended)
 
 ```bash
-ssh root@mainnetedge
+ssh deploy@mainnetedge
 ```
 
 Tailscale SSH authenticates via Tailscale identity — no SSH key needed.
 
 ### Via direct SSH (if Tailscale is down)
 
+Use a non-root deployment account and an SSH key stored in your local SSH agent:
+
 ```bash
-ssh -i ~/.ssh/ssh-key-zion-edge root@77.42.71.94
+ssh deploy@rpc.zionterranova.com
 ```
 
 ## Deployment History

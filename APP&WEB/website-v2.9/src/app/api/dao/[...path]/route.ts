@@ -23,9 +23,13 @@ async function proxyDao(request: Request, path: string[]) {
   const contentType = request.headers.get('content-type');
   const apiKey = request.headers.get('x-dao-key') ?? process.env.ZION_DAO_API_KEY;
 
+  if (!apiKey) {
+    return NextResponse.json({ success: false, error: 'DAO API key not configured' }, { status: 503 });
+  }
+
   if (accept) headers.set('accept', accept);
   if (contentType) headers.set('content-type', contentType);
-  if (apiKey) headers.set('x-dao-key', apiKey);
+  headers.set('x-dao-key', apiKey);
 
   const method = request.method.toUpperCase();
   const body = method === 'POST' ? await request.text() : undefined;

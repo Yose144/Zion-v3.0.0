@@ -44,7 +44,7 @@ function unauthorizedResponse(): Response {
 function getJwtSecret(): Uint8Array {
   const secret = process.env.ZION_JWT_SECRET;
   if (!secret) {
-    return new TextEncoder().encode('zion-dev-secret-ephemeral');
+    throw new Error('[FATAL] ZION_JWT_SECRET is required. Set it in .env.production or .env.local');
   }
   return new TextEncoder().encode(secret);
 }

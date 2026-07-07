@@ -1,9 +1,12 @@
 # Website v2.9 — Security & Legal Cleanup Plan
 
 **Created:** 2026-07-06  
+**Updated:** 2026-07-07  
 **Scope:** `APP&WEB/website-v2.9/` (Next.js 15 frontend + API routes)  
 **Goal:** Make the codebase audit-ready for (a) production security review, (b) potential open-source publication, and (c) legal/IP compliance.  
 **Overall Risk Level:** MEDIUM-HIGH (4 CRITICAL, 6 HIGH, 5 MEDIUM, 3 LOW)
+
+**Status:** Phase 1 code changes **DONE** — all hardcoded IPs removed from `src/`, `deploy/` scripts, and deployment docs. `npm run build` passes. Remaining before production deploy: DNS records + secret rotation (see §Implementation Checklist).
 
 ---
 

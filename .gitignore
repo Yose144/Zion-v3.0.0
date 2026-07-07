@@ -150,6 +150,8 @@ HiranV2.2/rag/chroma_db/
 
 # Runtime / env secrets
 .env.*
+!.env.local.example
+!.env.production.example
 run/
 
 # Exception: ZION_OS dashboard is part of the codebase, not runtime

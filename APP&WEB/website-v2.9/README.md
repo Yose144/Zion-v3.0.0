@@ -144,15 +144,14 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for the full guide.
 Quick summary:
 
 ```bash
-# On Edge server (77.42.71.94 via Tailscale SSH):
-ssh root@mainnetedge
-cd /root/zion-2.9.6-main
+# On Edge server (via Tailscale SSH):
+ssh deploy@mainnetedge
+cd /opt/zion/web
 git pull origin main
-cd APP&WEB/website-v2.9
+npm install
 npx next build --webpack          # ← MUST use --webpack
 # Build Docker image from host artifacts:
-cd /root/zion-2.9.6-main
-docker build -t zion-website:<version> -f - APP\&WEB/website-v2.9 <<'EOF'
+docker build -t zion-website:<version> -f - . <<'EOF'
 FROM node:20-alpine
 WORKDIR /app
 COPY .next .next
@@ -165,7 +164,7 @@ EXPOSE 3000
 CMD ["node", "node_modules/.bin/next", "start"]
 EOF
 # Restart container:
-docker compose -f /root/zion-web/docker-compose.yml up -d
+docker compose -f /opt/zion/docker/docker-compose.yml up -d
 ```
 
 Or use the automated script:
@@ -182,7 +181,7 @@ Part of ZION Blockchain v3.0 project
 
 - **Live Site:** https://zionterranova.com
 - **GitHub:** https://github.com/Yose144/Zion-v3.0.0
-- **Production Host:** 77.42.71.94 (Edge · Hetzner) via Tailscale
+- **Production Host:** Edge server (Hetzner) via Tailscale SSH (`mainnetedge`)
 
 ---
 
