@@ -392,6 +392,12 @@ impl BridgeDb {
 
     /// Count total locks/burns by status.
     pub fn count_by_status(&self, table: &str, status: &str) -> Result<u64> {
+        // Defense-in-depth: `table` is interpolated directly into SQL, so restrict
+        // it to the known bridge tables to prevent SQL injection if a future caller
+        // ever forwards untrusted input.
+        if !matches!(table, "l1_locks" | "evm_burns") {
+            anyhow::bail!("count_by_status: invalid table name: {table}");
+        }
         let query = format!("SELECT COUNT(*) FROM {} WHERE status = ?1", table);
         let count: u64 = self.conn.lock().expect("db lock poisoned").query_row(
             &query,
