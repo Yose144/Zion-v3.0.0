@@ -127,10 +127,9 @@ impl NodeConfig {
             pool_bind: PeerEndpoint::new("0.0.0.0", 8444),
             websocket_bind: PeerEndpoint::new("0.0.0.0", 8445),
             seed_peers: vec![
-                // Core + Edge topology — Edge public P2P entrypoint
-                PeerEndpoint::new("77.42.71.94", 8333),
-                // Tailscale fallback (private VPN between Core and Edge)
-                PeerEndpoint::new("100.76.16.108", 8333),
+                // 3.0.4 canonical mainnet server (public P2P entrypoint).
+                // Old Edge (77.42.71.94) decommissioned 2026-07-07 hard reset.
+                PeerEndpoint::new("62.171.141.136", 8333),
                 // Local fallback for same-machine or LAN bootstrap
                 PeerEndpoint::new("127.0.0.1", 8333),
             ],
@@ -4390,7 +4389,7 @@ mod tests {
         let config = NodeConfig::mainnet();
         assert_eq!(config.network, NetworkId::Mainnet);
         assert_eq!(config.p2p_bind.address(), "0.0.0.0:8333");
-        assert_eq!(config.seed_peers[0].address(), "77.42.71.94:8333");
+        assert_eq!(config.seed_peers[0].address(), "62.171.141.136:8333");
     }
 
     #[test]
