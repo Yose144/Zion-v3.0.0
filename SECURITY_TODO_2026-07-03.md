@@ -226,7 +226,7 @@ git push origin --force --tags
 - Výjimky: `from == "genesis"` a `from == "coinbase"` + height-gate (genesis height 0 je pod aktivací)
 - `core/src/bin/node.rs`: env var `ZION_MAX_TX_AMOUNT_HEIGHT` (nastavit nad migrační height — na novém řetězci = 1, tj. triviálně splněno)
 - Testy: 4 nové (`f4_7_rejects_tx_above_total_supply`, `f4_7_allows_premine_sized_tx`, `f4_7_boundary_exactly_total_supply_passes_cap`, `f4_7_disabled_by_default`) — vše PASS, F5 regrese OK
-**Aktivace na mainnetu (pending, ops):** Nastavit `ZION_MAX_TX_AMOUNT_HEIGHT` na koordinovaný budoucí height na novém serveru (`62.171.141.136`, single-node `zion-node.service`) — postup ve [`SECURITY_PATCH_3.0.4_PLAN.md`](./SECURITY_PATCH_3.0.4_PLAN.md) §Fáze 4.
+**Aktivace na mainnetu:** ✅ **AKTIVOVÁNO 2026-07-07 23:16** na novém serveru (`62.171.141.136`, `ZION_MAX_TX_AMOUNT_HEIGHT=1`, fresh chain). Log potvrzuje `max_tx_amount_activation_height=1`, genesis hash `4f75a0df...` nezměněn, 7/7 služeb active. F5 (`ZION_BALANCE_CHECK_HEIGHT=0`) aktivní současně.
 
 ---
 
