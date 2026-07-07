@@ -146,19 +146,10 @@ Rozsah: celý `V3/**` (L1–L6, cli, sdk). Cíl: najít exploitovatelné vzory n
 
 ## Pending — USER ACTION potřeba
 
-### 1. Tailscale ACL (F2.3)
-**Co:** Aplikovat tag-based ACL přes Tailscale admin console
-**Jak:**
-1. Jít na https://login.tailscale.com/admin/machines
-2. Otagovat zařízení:
-   - `mainnetedge` (100.76.16.108) → `tag:edge-server`
-   - `jose--macbook-pro` (100.100.46.39) → `tag:workstation`
-   - `zionserver` (100.86.102.5) → `tag:mining-server`
-   - `zionserver-144` (100.74.34.40) → `tag:legacy`
-3. Jít na https://login.tailscale.com/admin/acls
-4. Vložit ACL JSON z `SecurityFirst.md` §F2.3
-5. Ověřit: `tailscale ping` z MacBooku na 100.76.16.108:22 (OK) a :8443 (deny)
-**Doc:** `SecurityFirst.md` §F2.3
+> **Topologie 3.0.4 (2026-07-07):** Starý Edge (`77.42.71.94`) DECOMMISSIONED. Kanonický server `62.171.141.136` (`ssh zion-new`), single-node, env file `/root/zion/edge-environment.sh`. Kompletní postup: [`SECURITY_PATCH_3.0.4_PLAN.md`](./SECURITY_PATCH_3.0.4_PLAN.md).
+
+### 1. Tailscale ACL (F2.3) — ✅ VYŘEŠENO JINAK (2026-07-07)
+**Stav:** Při hard resetu na nový server byl Tailscale **odstraněn jako attack surface** (commit `87d939c1`). Single-server topologie nepotřebuje VPN — přístup jen přes SSH klíče + nginx SSL + Basic Auth + UFW (22/80/443). F2.3 tím odpadá, ACL v admin console není potřeba.
 
 ### 2. Key Rotation — Premine (F4.1)
 **Co:** Rotovat premine privátní klíče na air-gapped machine
@@ -233,9 +224,9 @@ git push origin --force --tags
 - `cosmic-harmony/src/deeksha.rs`: `set_max_tx_amount_height` / `max_tx_amount_activation_height` / `max_tx_amount_active` (mirror F5 pattern, default `u64::MAX`)
 - `core/src/lib.rs`: pole `max_tx_amount_height`, metoda `max_tx_amount_active_at`, setter `set_max_tx_amount_height`, validace v **obou** cestách (`insert_transaction` + `validate_peer_block`)
 - Výjimky: `from == "genesis"` a `from == "coinbase"` + height-gate (genesis height 0 je pod aktivací)
-- `core/src/bin/node.rs`: env var `ZION_MAX_TX_AMOUNT_HEIGHT` (nastavit nad migrační height 18 850)
+- `core/src/bin/node.rs`: env var `ZION_MAX_TX_AMOUNT_HEIGHT` (nastavit nad migrační height — na novém řetězci = 1, tj. triviálně splněno)
 - Testy: 4 nové (`f4_7_rejects_tx_above_total_supply`, `f4_7_allows_premine_sized_tx`, `f4_7_boundary_exactly_total_supply_passes_cap`, `f4_7_disabled_by_default`) — vše PASS, F5 regrese OK
-**Aktivace na mainnetu (pending, ops):** Nastavit `ZION_MAX_TX_AMOUNT_HEIGHT` na koordinovaný budoucí height na obou nodech (jako F5).
+**Aktivace na mainnetu (pending, ops):** Nastavit `ZION_MAX_TX_AMOUNT_HEIGHT` na koordinovaný budoucí height na novém serveru (`62.171.141.136`, single-node `zion-node.service`) — postup ve [`SECURITY_PATCH_3.0.4_PLAN.md`](./SECURITY_PATCH_3.0.4_PLAN.md) §Fáze 4.
 
 ---
 
