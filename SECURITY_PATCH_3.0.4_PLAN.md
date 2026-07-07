@@ -1,9 +1,26 @@
 # ZION 3.0.4 — MAX SECURITY PATCH PLAN (kanonický postup)
 
 **Vytvořeno:** 2026-07-07
-**Status:** FÁZE 1–2 HOTOVO (code-ready) · FÁZE 3–6 PENDING (aktivace + ops)
+**Status:** FÁZE 1–3 HOTOVO (kód nasazen na serveru) · FÁZE 4 STAGED (F4.7 připraven, vypnutý) · FÁZE 5–6 PENDING (ops + air-gapped)
 **Navazuje na:** `SECURITY_TODO_2026-07-03.md`, `SECURITY_RECOVERY_PLAN_2026-07-03.md`, `SecurityFirst.md`, `HARDRESETOFFICIAL.md`
 **Pravidlo:** Tento dokument je jediný zdroj pravdy pro pořadí kroků security patche 3.0.4. Každý krok se odškrtává zde.
+
+---
+
+## 📡 Skutečný stav serveru `62.171.141.136` (ověřeno 2026-07-07 přes `ssh zion-new`)
+
+| Fakt | Hodnota |
+|------|---------|
+| Git HEAD | `690b6dfe` (F4.7 commit) — **5 commitů za origin** (canonicalize + dashboard) |
+| Binárky | postavené z `690b6dfe` → **F4.7 kód JE v binárce** (`max_tx_amount_activation_height`, seed guard ověřeny přes `strings`) |
+| F5 balance check | ✅ **AKTIVNÍ od genesis** (`ZION_BALANCE_CHECK_HEIGHT=0`) |
+| F4.7 max-tx cap | ⏸️ **PŘIPRAVENÝ, VYPNUTÝ** (`# export ZION_MAX_TX_AMOUNT_HEIGHT=1440` — zakomentováno v `edge-environment.sh`) |
+| Seed peers | `ZION_SEED_PEERS="127.0.0.1:8333"` (single-node → hardcoded default irelevantní) |
+| Chain | **height 0** (fresh genesis, premine 16.78B), migration height 1 |
+| Mineři | žádní (pool 8444 bez připojení), web v **maintenance mode** → **pre-launch** |
+| Služby | 7/7 active (node, pool, bridge, dao, warp, dashboard, nginx) |
+
+**Závěr:** Deploy (Fáze 3) je fakticky hotový. Zbývá jen **aktivovat F4.7** (odkomentovat env + restart) a rozhodnout aktivační výšku pro fresh chain.
 
 ---
 
@@ -13,8 +30,8 @@
 |------|-------|------|-----|
 | 1 | Dependency + code hardening (advisories, guardy, timeouty) | ✅ HOTOVO 2026-07-07 | agent |
 | 2 | F4.7 Max TX amount cap — implementace (code-ready) | ✅ HOTOVO 2026-07-07 | agent |
-| 3 | Git push + Edge rebuild + binary swap | ⏳ PENDING | owner + agent |
-| 4 | F4.7 aktivace na mainnetu (koordinovaný hard fork) | ⏳ PENDING | owner |
+| 3 | Push + rebuild + binary swap na nový server | ✅ HOTOVO (server na `690b6dfe`, F4.7 binárky, F5 aktivní) | owner + agent |
+| 4 | F4.7 aktivace (odkomentovat env + restart) | ⏸️ STAGED — env připraven, chybí flip | owner |
 | 5 | Air-gapped key rotace (F4.1–F4.5) | ⏳ PENDING | owner (air-gapped) |
 | 6 | Git history scrub + Tailscale ACL + finální audit | ⏳ PENDING | owner |
 
@@ -129,33 +146,35 @@ systemctl start zion-pool
 
 ---
 
-## FÁZE 4 — F4.7 aktivace na mainnetu (koordinovaný hard fork) ⏳
+## FÁZE 4 — F4.7 aktivace (odkomentovat env + restart) ⏸️ STAGED
 
-> Stejný mechanismus jako F5 (`ZION_BALANCE_CHECK_HEIGHT`). Single-node → jeden systemd unit.
+> **Stav 2026-07-07:** Env var je už na serveru připraven, jen **zakomentovaný** v `/root/zion/edge-environment.sh`:
+> `# export ZION_MAX_TX_AMOUNT_HEIGHT=1440`. F5 (`ZION_BALANCE_CHECK_HEIGHT=0`) je aktivní od genesis. Stejný mechanismus. Single-node → jeden systemd unit.
 
-### 4.1 Volba aktivační výšky
+### 4.1 Volba aktivační výšky (fresh chain)
 
-- Zjistit aktuální height: `curl -s http://127.0.0.1:8443/jsonrpc -d '{"jsonrpc":"2.0","method":"getHeight","id":1}'`
-- Aktivace = aktuální height + **~1440 bloků (~24 h)** rezerva (dost času na doběh minerů).
-- Podmínka scale: aktivace **> migrační height (na novém řetězci = 1)** ✓ splněno triviálně (fresh chain, vše v 1e6 scale od genesis).
+- Chain je na **height 0** (genesis, žádní mineři, web v maintenance). Není potřeba ~24h buffer jako u běžícího mainnetu.
+- **Doporučení:** na fresh chainu aktivovat od **height 1** (`ZION_MAX_TX_AMOUNT_HEIGHT=1`) — genesis (height 0) je chráněný explicitním `from=="genesis"` guardem, takže cap platí od prvního mineného bloku. Konzistentní s F5 (aktivní od 0).
+- Alternativa: ponechat `1440` (staré nastavení pro mainnet-continuation) — funguje taky, jen cap naběhne později.
+- Podmínka scale: aktivace **> migrační height (=1)** — pro `=1` je cap aktivní od height 1, migrace je na height 1, obojí v 1e6 scale. ✓
 
-- [ ] Aktivační height zvolen: `H_F47 = ______`
+- [ ] Aktivační height zvolen: `H_F47 = 1` (doporučeno pro fresh chain)
 
-### 4.2 Nasazení env varu na novém serveru
+### 4.2 Aktivace na novém serveru
 
 ```bash
-# /etc/systemd/system/zion-node.service.d/f47.conf
-[Service]
-Environment=ZION_MAX_TX_AMOUNT_HEIGHT=<H_F47>
-
-systemctl daemon-reload
+ssh zion-new
+# Odkomentovat + nastavit hodnotu v env file:
+sed -i 's/^# export ZION_MAX_TX_AMOUNT_HEIGHT=.*/export ZION_MAX_TX_AMOUNT_HEIGHT=1/' /root/zion/edge-environment.sh
+grep ZION_MAX_TX_AMOUNT_HEIGHT /root/zion/edge-environment.sh   # ověřit
 systemctl restart zion-node
-# ověřit log: "max_tx_amount_activation_height=<H_F47> (runtime override for F4.7 hard fork)"
+journalctl -u zion-node --no-pager -n 20 | grep max_tx_amount
+# očekávaný log: "max_tx_amount_activation_height=1 (runtime override for F4.7 hard fork)"
 ```
 
-> Alternativně přidat řádek do `/root/zion/edge-environment.sh` (EnvironmentFile), pak `daemon-reload` + restart.
+> Pozn.: `edge-environment.sh` je EnvironmentFile pro systemd unit (ne systemd drop-in). Restart node stačí, `daemon-reload` není nutný pokud se nemění `.service` soubor.
 
-- [ ] Drop-in / env přidán na zion-node
+- [ ] Env odkomentován + hodnota nastavena na zion-node
 - [ ] Log potvrzuje aktivační height
 - [ ] Po dosažení H_F47: smoke test — TX s absurdní částkou (> TOTAL_SUPPLY) odmítnuta, běžná TX projde
 
