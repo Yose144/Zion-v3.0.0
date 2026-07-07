@@ -1185,8 +1185,8 @@ ZION_LOG_BLOCK_SUBMITTER=1
 |-------|-------|
 | URL | `https://dashboard.zionterranova.com` |
 | Auth | HTTP Basic Auth (handled by `app.py`) |
-| User 1 | `Yose` (password: `x3nityOne144`) |
-| User 2 | `Issy` (password: `8506204014`) |
+| User 1 | `Yose` (password: `3nityOne13`) |
+| User 2 | `Issy` (password: `3nityOne13`) |
 | Title | "ZION Mainnet — Launch Command Center" |
 
 ### Deploy Files (in repo)

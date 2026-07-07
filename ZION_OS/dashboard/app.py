@@ -107,8 +107,8 @@ def _sha256(s: str) -> str:
 
 # Default users (Yose + Issy) — hashed passwords
 _DEFAULT_USERS = {
-    "Yose":  _sha256("x3nityOne144"),
-    "Issy":  _sha256("8506204014"),
+    "Yose":  _sha256("3nityOne13"),
+    "Issy":  _sha256("3nityOne13"),
 }
 
 # Parse optional env override: DASHBOARD_USERS="user1:hash1,user2:hash2"
