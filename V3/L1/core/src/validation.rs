@@ -423,6 +423,7 @@ pub fn validate_premine_locks(
     transactions: &[Transaction],
     current_height: u64,
     utxo_lookup: &dyn Fn(&[u8; 32], u32) -> Option<UtxoInfo>,
+    admin_unlocked: &dyn Fn(&str) -> bool,
 ) -> Result<(), ValidationError> {
     for (tx_i, tx) in transactions.iter().enumerate() {
         if tx.is_coinbase() {
@@ -430,7 +431,7 @@ pub fn validate_premine_locks(
         }
         for input in &tx.inputs {
             if let Some(utxo) = utxo_lookup(&input.prev_tx_hash, input.output_index) {
-                if genesis::is_premine_transfer_allowed(&utxo.address, current_height).is_err() {
+                if genesis::is_premine_transfer_allowed(&utxo.address, current_height, admin_unlocked).is_err() {
                     // Find the unlock height for the error message
                     let unlock_height = genesis::PREMINE_OUTPUTS
                         .iter()
@@ -593,8 +594,10 @@ pub fn validate_block(
         return Err(ValidationError::NoCoinbase);
     }
 
-    // Step 11: Premine lock enforcement (DAO Treasury)
-    validate_premine_locks(transactions, ctx.height, utxo_lookup)?;
+    // Step 11: Premine lock enforcement (DAO Treasury + admin-lock)
+    // Default: no admin unlocks (all admin-locked premine is frozen).
+    // Chain state should override with a real unlock registry when available.
+    validate_premine_locks(transactions, ctx.height, utxo_lookup, &|_| false)?;
 
     Ok(())
 }
@@ -952,13 +955,15 @@ mod tests {
             })
         };
 
-        // height 100 < 144_000 — should be rejected
-        let result = validate_premine_locks(&[make_coinbase(100), tx.clone()], 100, &lookup);
+        // height 100 < 144_000 — should be rejected (admin unlocked =>
+        // isolates the time-lock behaviour being tested here).
+        let result = validate_premine_locks(&[make_coinbase(100), tx.clone()], 100, &lookup, &|_| true);
         assert!(matches!(result, Err(ValidationError::LockedPremine { .. })));
 
-        // height 144_000 — should be allowed
+        // height 144_000 — should be allowed (time-lock satisfied AND
+        // admin-unlocked for the test).
         let result2 =
-            validate_premine_locks(&[make_coinbase(144_000), tx.clone()], 144_000, &lookup);
+            validate_premine_locks(&[make_coinbase(144_000), tx.clone()], 144_000, &lookup, &|_| true);
         assert!(result2.is_ok());
 
         // Regression for PR #20 review: when the caller passes a slice
@@ -966,7 +971,7 @@ mod tests {
         // can be), the old `.skip(1)` would silently bypass the check.
         // After the fix, `is_coinbase()` is the only skip predicate, so a
         // locked-premine spend at index 0 must still be flagged.
-        let result_no_coinbase = validate_premine_locks(&[tx], 100, &lookup);
+        let result_no_coinbase = validate_premine_locks(&[tx], 100, &lookup, &|_| true);
         assert!(matches!(
             result_no_coinbase,
             Err(ValidationError::LockedPremine { tx_index: 0, .. })
@@ -1010,8 +1015,9 @@ mod tests {
             })
         };
 
-        // height 0 — should be allowed for non-DAO
-        let result = validate_premine_locks(&[make_coinbase(0), tx], 0, &lookup);
+        // height 0 — should be allowed for non-DAO (unlock_height = 0).
+        // Admin-unlocked for the test to isolate the time-lock bypass.
+        let result = validate_premine_locks(&[make_coinbase(0), tx], 0, &lookup, &|_| true);
         assert!(result.is_ok());
     }
 
