@@ -20,13 +20,13 @@ fn default_topology_matches_canonical_operational_settings() {
     assert_eq!(cfg.topology.core.pool_port, 8444);
     assert_eq!(cfg.topology.core.vpn_ip.as_deref(), Some("100.86.102.5"));
 
-    // Edge defaults: Hetzner VPS
-    assert_eq!(cfg.topology.edge.rpc_host, "100.76.16.108");
+    // Edge defaults: 3.0.4 canonical server (old Edge decommissioned)
+    assert_eq!(cfg.topology.edge.rpc_host, "62.171.141.136");
     assert_eq!(cfg.topology.edge.rpc_port, 8443);
     assert_eq!(cfg.topology.edge.p2p_port, 8333);
-    assert_eq!(cfg.topology.edge.pool_host, "77.42.71.94");
+    assert_eq!(cfg.topology.edge.pool_host, "62.171.141.136");
     assert_eq!(cfg.topology.edge.pool_port, 8444);
-    assert_eq!(cfg.topology.edge.vpn_ip.as_deref(), Some("100.76.16.108"));
+    assert_eq!(cfg.topology.edge.vpn_ip.as_deref(), None);
 }
 
 #[test]
@@ -36,7 +36,7 @@ fn legacy_node_and_pool_defaults_alias_to_core_and_edge() {
     assert_eq!(cfg.node.rpc_host, "127.0.0.1");
     assert_eq!(cfg.node.rpc_port, 8443);
     // pool should default to edge public pool
-    assert_eq!(cfg.pool.host, "77.42.71.94");
+    assert_eq!(cfg.pool.host, "62.171.141.136");
     assert_eq!(cfg.pool.port, 8444);
 }
 
@@ -60,15 +60,15 @@ fn target_rpc_resolves_core_aliases() {
 fn target_rpc_resolves_edge_aliases() {
     let cfg = Config::default();
     let (host, port) = cfg.target_rpc("edge");
-    assert_eq!(host, "100.76.16.108");
+    assert_eq!(host, "62.171.141.136");
     assert_eq!(port, 8443);
 
     let (host, port) = cfg.target_rpc("vpn");
-    assert_eq!(host, "100.76.16.108");
+    assert_eq!(host, "62.171.141.136");
     assert_eq!(port, 8443);
 
     let (host, port) = cfg.target_rpc("relay");
-    assert_eq!(host, "100.76.16.108");
+    assert_eq!(host, "62.171.141.136");
     assert_eq!(port, 8443);
 }
 
@@ -96,7 +96,7 @@ fn target_pool_resolves_core_and_edge() {
     assert_eq!(port, 8444);
 
     let (host, port) = cfg.target_pool("edge");
-    assert_eq!(host, "77.42.71.94");
+    assert_eq!(host, "62.171.141.136");
     assert_eq!(port, 8444);
 }
 
