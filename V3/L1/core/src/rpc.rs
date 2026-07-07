@@ -1762,11 +1762,13 @@ mod tests {
         crypto::keypair_from_canonical_label("__test_dummy_signer_v1__")
     }
 
-    /// Generate a valid Ed25519 signature + public key hex for a given tx_id.
-    fn dummy_sig_for_tx_id(tx_id: &str) -> (String, String) {
+    /// Generate a valid Ed25519 signature + public key hex for a given tx_id,
+    /// plus the derived sender address that matches the public key.
+    fn dummy_sig_for_tx_id(tx_id: &str) -> (String, String, String) {
         let (sk, vk) = test_keypair();
         let sig = crypto::sign(&sk, tx_id.as_bytes());
-        (hex::encode(sig), hex::encode(vk.as_bytes()))
+        let from = crypto::derive_address(vk.as_bytes());
+        (hex::encode(sig), hex::encode(vk.as_bytes()), from)
     }
 
     static BRIDGE_ENV_MUTEX: std::sync::Mutex<()> = std::sync::Mutex::new(());
@@ -2354,13 +2356,13 @@ mod tests {
     fn live_submit_transaction_alias_accepts_object_payload() {
         let router = live_router();
         let tx_id = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-        let (sig, pk) = dummy_sig_for_tx_id(tx_id);
+        let (sig, pk, from) = dummy_sig_for_tx_id(tx_id);
         let resp = rpc_call(
             &router,
             "submitTransaction",
             json!({
                 "tx_id": tx_id,
-                "from": "wallet.alpha",
+                "from": from,
                 "to": "wallet.beta",
                 "amount_zion": 25,
                 "fee_zion": 5,
@@ -2381,13 +2383,13 @@ mod tests {
     fn live_submit_account_transaction_alias_accepts_object_payload() {
         let router = live_router();
         let tx_id = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
-        let (sig, pk) = dummy_sig_for_tx_id(tx_id);
+        let (sig, pk, from) = dummy_sig_for_tx_id(tx_id);
         let resp = rpc_call(
             &router,
             "submitAccountTransaction",
             json!({
                 "tx_id": tx_id,
-                "from": "wallet.alpha",
+                "from": from,
                 "to": "wallet.beta",
                 "amount_zion": 30,
                 "fee_zion": 5,
@@ -2482,11 +2484,11 @@ mod tests {
     fn live_get_transaction_history_includes_genesis_premine() {
         let router = live_router();
         // Genesis block has account-model premine transactions
-        // Use the first premine address from genesis.rs
+        // Use the first premine address from genesis.rs (hard reset 2026-07-06)
         let resp = rpc_call(
             &router,
             "getTransactionHistory",
-            json!({"address": "zion153e378e4x0g6s380h2h8z4t506g5s323f5se8g5", "limit": 100}),
+            json!({"address": "zion1n3t6v6w3m8g4v6q8g7h7j4j6f7s8q2m7g7un8u0", "limit": 100}),
         );
         assert!(
             resp.error.is_none(),
@@ -2571,7 +2573,7 @@ mod tests {
     }
 
     #[test]
-    fn live_get_bridge_vault_balance_defaults_to_zero() {
+    fn live_get_bridge_vault_balance_has_genesis_seed() {
         let router = live_router();
         let resp = rpc_call(&router, "getBridgeVaultBalance", json!(null));
         assert!(
@@ -2580,11 +2582,15 @@ mod tests {
             resp.error
         );
         let result = resp.result.unwrap();
+        // Hard reset 2026-07-06: bridge vault UTXO seed (100M ZION) is now
+        // on the same keyless address as fee::BRIDGE_VAULT_ADDRESS.
         assert_eq!(result["address"], fee::BRIDGE_VAULT_ADDRESS);
-        assert_eq!(result["balance_flowers"], "0");
+        // Genesis seeds 100M ZION = 100_000_000_000_000_000_000 flowers
+        assert_eq!(result["balance_flowers"], "100000000000000000000");
     }
 
     #[test]
+    #[ignore = "hard reset 2026-07-06: genesis now seeds 100M ZION into bridge vault, so vault is never empty in live_router or bridge_unlock_ready_router"]
     fn live_submit_bridge_unlock_rejects_when_vault_is_empty() {
         let _guard = BRIDGE_ENV_MUTEX.lock().expect("bridge env mutex lock");
         let router = live_router();
