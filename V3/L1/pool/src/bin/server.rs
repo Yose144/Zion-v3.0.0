@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Context, Result};
 use std::collections::{HashMap, VecDeque};
 use std::fmt::Write as _;
-use std::io::{BufRead, BufReader, Write};
+use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{IpAddr, TcpListener, TcpStream};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
@@ -23,50 +23,55 @@ use zion_pool::{
 /// award XP to the miner.  This is a best-effort fire-and-forget call;
 /// failure is silently logged so the pool never blocks or errors.
 fn notify_oasis_block_mined(miner_address: &str, block_height: u64) {
-    let oasis_url = match std::env::var("ZION_OASIS_API_URL") {
+    let oasis_base_url = match std::env::var("ZION_OASIS_API_URL") {
         Ok(url) if !url.is_empty() => url,
         _ => return, // hook disabled — nothing to do
+    };
+
+    // Defense-in-depth: only allow localhost targets unless explicitly opted-in.
+    let allow_remote = std::env::var("ZION_OASIS_ALLOW_REMOTE")
+        .ok()
+        .map(|v| {
+            let normalized = v.trim().to_ascii_lowercase();
+            normalized == "1" || normalized == "true" || normalized == "yes"
+        })
+        .unwrap_or(false);
+
+    let (authority, base_path) = match parse_oasis_http_target(&oasis_base_url, allow_remote) {
+        Ok(target) => target,
+        Err(e) => {
+            println!(
+                "oasis_xp_hook_invalid_url url={} err={}",
+                oasis_base_url, e
+            );
+            return;
+        }
     };
 
     let body = format!(
         r#"{{"source":"block_mined","amount":500,"block_height":{}}}"#,
         block_height
     );
-    let url = format!("{}/api/v1/oasis/player/{}/xp", oasis_url, miner_address);
+    let path = format!(
+        "{}{}{}",
+        base_path,
+        "/api/v1/oasis/player/",
+        miner_address
+    );
+    let full_path = format!("{}/xp", path);
 
-    // Try curl first (available in most Docker images).
-    let curl_result = std::process::Command::new("curl")
-        .args([
-            "-s",
-            "-o",
-            "/dev/null",
-            "-w",
-            "%{http_code}",
-            "-X",
-            "POST",
-            "-H",
-            "Content-Type: application/json",
-            "-d",
-            &body,
-            &url,
-        ])
-        .output();
-
-    match curl_result {
-        Ok(out) => {
-            let code = String::from_utf8_lossy(&out.stdout);
-            let code = code.trim();
-            if code == "200" || code == "201" {
-                println!(
-                    "oasis_xp_awarded miner={} height={}",
-                    miner_address, block_height
-                );
-            } else {
-                println!(
-                    "oasis_xp_hook_failed miner={} height={} http_code={}",
-                    miner_address, block_height, code
-                );
-            }
+    match post_json_http(&authority, &full_path, &body, Duration::from_secs(3)) {
+        Ok(code) if code == 200 || code == 201 => {
+            println!(
+                "oasis_xp_awarded miner={} height={}",
+                miner_address, block_height
+            );
+        }
+        Ok(code) => {
+            println!(
+                "oasis_xp_hook_failed miner={} height={} http_code={}",
+                miner_address, block_height, code
+            );
         }
         Err(e) => {
             println!(
@@ -75,6 +80,74 @@ fn notify_oasis_block_mined(miner_address: &str, block_height: u64) {
             );
         }
     }
+}
+
+fn parse_oasis_http_target(url: &str, allow_remote: bool) -> Result<(String, String)> {
+    let trimmed = url.trim();
+    let without_scheme = trimmed
+        .strip_prefix("http://")
+        .ok_or_else(|| anyhow!("only http:// URLs are supported"))?;
+
+    let (authority_raw, path_raw) = match without_scheme.split_once('/') {
+        Some((host_port, path)) => (host_port, format!("/{}", path.trim_start_matches('/'))),
+        None => (without_scheme, String::new()),
+    };
+
+    let authority = authority_raw.trim().trim_end_matches('/');
+    if authority.is_empty() {
+        return Err(anyhow!("missing host:port"));
+    }
+
+    // Default to localhost-only to prevent accidental SSRF via env misconfiguration.
+    let host = authority
+        .split(':')
+        .next()
+        .map(str::trim)
+        .unwrap_or("");
+    let is_local = matches!(host, "127.0.0.1" | "localhost");
+    if !allow_remote && !is_local {
+        return Err(anyhow!(
+            "remote OASIS target blocked; set ZION_OASIS_ALLOW_REMOTE=true to override"
+        ));
+    }
+
+    Ok((authority.to_string(), path_raw))
+}
+
+fn post_json_http(authority: &str, path: &str, body: &str, timeout: Duration) -> Result<u16> {
+    let mut stream = TcpStream::connect(authority)
+        .with_context(|| format!("connect failed to {authority}"))?;
+    stream
+        .set_read_timeout(Some(timeout))
+        .context("set read timeout")?;
+    stream
+        .set_write_timeout(Some(timeout))
+        .context("set write timeout")?;
+
+    let request = format!(
+        "POST {path} HTTP/1.1\r\nHost: {authority}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+        body.len()
+    );
+    stream
+        .write_all(request.as_bytes())
+        .context("write request")?;
+    stream.flush().context("flush request")?;
+
+    let mut response = String::new();
+    stream
+        .read_to_string(&mut response)
+        .context("read response")?;
+    let status_line = response
+        .lines()
+        .next()
+        .ok_or_else(|| anyhow!("empty HTTP response"))?;
+    let status = status_line
+        .split_whitespace()
+        .nth(1)
+        .ok_or_else(|| anyhow!("missing HTTP status code"))?
+        .parse::<u16>()
+        .context("invalid HTTP status code")?;
+    Ok(status)
 }
 
 /// Best-effort fire-and-forget share relay to upstream/Core pool.
@@ -3488,6 +3561,63 @@ mod tests {
         std::env::remove_var("ZION_STREAM_ZION_PCT");
         std::env::remove_var("ZION_STREAM_BLAKE3_PCT");
         std::env::remove_var("ZION_STREAM_NCL_PCT");
+    }
+
+    #[test]
+    fn oasis_target_rejects_remote_without_override() {
+        let err = parse_oasis_http_target("http://77.42.71.94:8094", false)
+            .expect_err("remote URL must be blocked by default");
+        assert!(
+            err.to_string().contains("remote OASIS target blocked"),
+            "unexpected error: {err}"
+        );
+    }
+
+    #[test]
+    fn oasis_target_allows_remote_with_override() {
+        let (authority, path) = parse_oasis_http_target("http://77.42.71.94:8094/base", true)
+            .expect("remote URL should be allowed when override is enabled");
+        assert_eq!(authority, "77.42.71.94:8094");
+        assert_eq!(path, "/base");
+    }
+
+    #[test]
+    fn oasis_target_rejects_non_http_scheme() {
+        let err = parse_oasis_http_target("https://127.0.0.1:8094", true)
+            .expect_err("https should be rejected by parser");
+        assert!(
+            err.to_string().contains("only http:// URLs are supported"),
+            "unexpected error: {err}"
+        );
+    }
+
+    #[test]
+    fn post_json_http_reads_status_code() {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("bind local test listener");
+        let addr = listener.local_addr().expect("local addr");
+
+        let handle = thread::spawn(move || {
+            let (mut socket, _) = listener.accept().expect("accept local test connection");
+            let mut buf = [0u8; 2048];
+            let _ = socket.read(&mut buf).expect("read request bytes");
+            let response =
+                "HTTP/1.1 201 Created\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+            socket
+                .write_all(response.as_bytes())
+                .expect("write response bytes");
+            socket.flush().expect("flush response");
+        });
+
+        let status = post_json_http(
+            &addr.to_string(),
+            "/api/v1/oasis/player/test/xp",
+            r#"{"source":"block_mined","amount":500}"#,
+            Duration::from_secs(2),
+        )
+        .expect("post_json_http should parse status");
+        assert_eq!(status, 201);
+
+        handle.join().expect("test server thread join");
     }
 
     #[test]

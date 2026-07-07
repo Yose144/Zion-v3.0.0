@@ -693,6 +693,10 @@ struct ChainState {
     /// (disabled). Tests can set this to 0 to enable from genesis without
     /// affecting parallel test runtimes.
     balance_check_height: u64,
+    /// Per-instance F4.7 max-tx-amount cap activation height. Default `u64::MAX`
+    /// (disabled). When active, rejects any non-genesis, non-coinbase TX whose
+    /// amount exceeds `emission::TOTAL_SUPPLY`.
+    max_tx_amount_height: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1161,6 +1165,13 @@ impl NodeRuntime {
     /// to disable (default).
     pub fn set_balance_check_height(&mut self, height: u64) {
         self.chain_state.balance_check_height = height;
+    }
+
+    /// Set the per-instance F4.7 max-tx-amount cap activation height for the
+    /// underlying chain state. Use 0 to enable from genesis, or `u64::MAX`
+    /// to disable (default).
+    pub fn set_max_tx_amount_height(&mut self, height: u64) {
+        self.chain_state.max_tx_amount_height = height;
     }
 
     /// Set the WebSocket notifier for real-time event broadcasting.
@@ -2017,6 +2028,12 @@ impl ChainState {
         height >= self.balance_check_height
     }
 
+    /// Returns `true` if the F4.7 max-tx-amount cap is active at the given
+    /// height for this chain state instance.
+    fn max_tx_amount_active_at(&self, height: u64) -> bool {
+        height >= self.max_tx_amount_height
+    }
+
     /// Build the full UTXO set from accepted blocks. Returns a map from
     /// (tx_hash_hex, output_index) → SpendableUtxo for all unspent outputs.
     fn utxo_set(&self) -> HashMap<(String, u32), SpendableUtxo> {
@@ -2170,6 +2187,7 @@ impl ChainState {
             address_tx_index: HashMap::new(),
             block_retention: DEFAULT_BLOCK_RETENTION,
             balance_check_height: zion_cosmic_harmony::balance_check_activation_height(),
+            max_tx_amount_height: zion_cosmic_harmony::max_tx_amount_activation_height(),
         };
         // Index genesis block (height 0) for address lookups.
         state.index_block_addresses(0);
@@ -2250,6 +2268,7 @@ impl ChainState {
             address_tx_index: HashMap::new(),
             block_retention: DEFAULT_BLOCK_RETENTION,
             balance_check_height: zion_cosmic_harmony::balance_check_activation_height(),
+            max_tx_amount_height: zion_cosmic_harmony::max_tx_amount_activation_height(),
         };
         chain_state.rebuild_mempool_index();
         chain_state.rebuild_address_tx_index();
@@ -2915,6 +2934,23 @@ impl ChainState {
                             transaction.nonce, transaction.from
                         ));
                     }
+                    // F4.7: Max-tx-amount sanity cap. No single non-genesis,
+                    // non-coinbase TX may move more than the entire money supply
+                    // (`emission::TOTAL_SUPPLY`). Defense-in-depth on top of the
+                    // F5 balance check: bounds damage from any inflation bug that
+                    // fabricates an absurd amount. Height-gated so historical
+                    // blocks are never retroactively rejected; genesis (height 0)
+                    // is below any activation height and also guarded explicitly.
+                    if self.max_tx_amount_active_at(block.height)
+                        && transaction.from != "genesis"
+                        && transaction.from != "coinbase"
+                        && transaction.amount_zion > emission::TOTAL_SUPPLY
+                    {
+                        return Err(format!(
+                            "peer block TX from {} exceeds max allowed amount: {} > TOTAL_SUPPLY {}",
+                            transaction.from, transaction.amount_zion, emission::TOTAL_SUPPLY
+                        ));
+                    }
                     // F5: Balance check — reject if sender has insufficient
                     // confirmed balance. We compute the running balance from
                     // prior accepted blocks plus credits/debits from earlier
@@ -3195,6 +3231,22 @@ impl ChainState {
             return Err(format!(
                 "transaction nonce {} for sender {} is already mined",
                 transaction.nonce, transaction.from
+            ));
+        }
+        // F4.7: Max-tx-amount sanity cap. No single non-genesis, non-coinbase
+        // TX may move more than the entire money supply (`emission::TOTAL_SUPPLY`).
+        // Defense-in-depth on top of F5: bounds damage from any inflation bug.
+        // Height-gated; genesis/coinbase are guarded explicitly.
+        if self.max_tx_amount_active_at(self.height)
+            && transaction.from != "genesis"
+            && transaction.from != "coinbase"
+            && transaction.amount_zion > emission::TOTAL_SUPPLY
+        {
+            return Err(format!(
+                "transaction from {} exceeds max allowed amount: {} > TOTAL_SUPPLY {}",
+                transaction.from,
+                transaction.amount_zion,
+                emission::TOTAL_SUPPLY
             ));
         }
         // F5: Reject transactions where the sender does not have sufficient
@@ -5148,6 +5200,85 @@ mod tests {
                 }
             ),
             "F5 fuzz: self-send from empty address must be rejected, got: {resp:?}"
+        );
+    }
+
+    // ── F4.7: max-tx-amount cap ────────────────────────────────────────────
+
+    /// F4.7: a TX whose amount exceeds TOTAL_SUPPLY must be rejected once the
+    /// cap is active — the check runs before the F5 balance check, so any
+    /// sender (funded or not) is caught.
+    #[test]
+    fn f4_7_rejects_tx_above_total_supply() {
+        let mut runtime = NodeRuntime::new("node-f47-over", NodeConfig::mainnet());
+        runtime.set_max_tx_amount_height(0);
+        let over = (emission::TOTAL_SUPPLY as u64).saturating_add(1);
+        let tx = build_valid_account_tx("__f47_over__", "wallet.dest", over, 1, 1);
+        let resp = runtime.handle_rpc_request(RpcRequest::SubmitTransaction { transaction: tx });
+        assert!(
+            matches!(
+                resp,
+                RpcResponse::TransactionResult {
+                    accepted: false,
+                    reason: Some(ref r),
+                    ..
+                } if r.contains("exceeds max allowed amount")
+            ),
+            "F4.7: TX above TOTAL_SUPPLY must be rejected by the cap, got: {resp:?}"
+        );
+    }
+
+    /// F4.7: a premine-sized TX (2.5B ZION, the largest genesis slot) is far
+    /// below TOTAL_SUPPLY and must NOT be rejected by the cap. F5 is left
+    /// disabled here so we isolate the F4.7 behaviour — the TX is accepted.
+    #[test]
+    fn f4_7_allows_premine_sized_tx() {
+        let mut runtime = NodeRuntime::new("node-f47-premine", NodeConfig::mainnet());
+        runtime.set_max_tx_amount_height(0);
+        // 2.5B ZION in 6-decimal flowers = 2_500_000_000 * 1_000_000.
+        let premine_sized: u64 = 2_500_000_000 * emission::FLOWERS_PER_ZION;
+        assert!(
+            (premine_sized as u128) < emission::TOTAL_SUPPLY,
+            "test premise: premine slot must be below TOTAL_SUPPLY"
+        );
+        let tx = build_valid_account_tx("__f47_premine__", "wallet.dest", premine_sized, 1, 1);
+        let resp = runtime.handle_rpc_request(RpcRequest::SubmitTransaction { transaction: tx });
+        assert!(
+            matches!(resp, RpcResponse::TransactionResult { accepted: true, .. }),
+            "F4.7: premine-sized TX below TOTAL_SUPPLY must pass the cap, got: {resp:?}"
+        );
+    }
+
+    /// F4.7: a TX with amount exactly equal to TOTAL_SUPPLY is on the boundary
+    /// (cap rejects only `> TOTAL_SUPPLY`) and must NOT be rejected by the cap.
+    #[test]
+    fn f4_7_boundary_exactly_total_supply_passes_cap() {
+        let mut runtime = NodeRuntime::new("node-f47-boundary", NodeConfig::mainnet());
+        runtime.set_max_tx_amount_height(0);
+        let exact = emission::TOTAL_SUPPLY as u64;
+        let tx = build_valid_account_tx("__f47_boundary__", "wallet.dest", exact, 1, 1);
+        let resp = runtime.handle_rpc_request(RpcRequest::SubmitTransaction { transaction: tx });
+        assert!(
+            matches!(resp, RpcResponse::TransactionResult { accepted: true, .. }),
+            "F4.7: TX at exactly TOTAL_SUPPLY must pass the cap (cap is strict >), got: {resp:?}"
+        );
+    }
+
+    /// F4.7: disabled by default (u64::MAX activation height) — a huge TX is
+    /// not rejected by the cap on a runtime that never enabled it. Guarantees
+    /// backward compatibility with existing chains/tests.
+    #[test]
+    fn f4_7_disabled_by_default() {
+        let mut runtime = NodeRuntime::new("node-f47-default", NodeConfig::mainnet());
+        // Explicitly ensure both gates are off for this instance.
+        runtime.set_max_tx_amount_height(u64::MAX);
+        runtime.set_balance_check_height(u64::MAX);
+        let over = (emission::TOTAL_SUPPLY as u64).saturating_add(1);
+        let tx = build_valid_account_tx("__f47_default__", "wallet.dest", over, 1, 1);
+        let resp = runtime.handle_rpc_request(RpcRequest::SubmitTransaction { transaction: tx });
+        assert!(
+            matches!(resp, RpcResponse::TransactionResult { accepted: true, .. }),
+            "F4.7: cap disabled by default must accept (backward compat), got: {resp:?}"
         );
     }
 
