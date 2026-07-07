@@ -4,23 +4,24 @@ Emergency maintenance mode deploy script.
 
 Replaces the live Next.js website with a static nginx container serving
 public/maintenance.html on port 3000. To restore the website, run the
-normal deploy script (deploy_web.py) which overwrites docker-compose.yml
-with the Next.js image and restarts the container.
+normal deploy script which overwrites docker-compose.yml with the Next.js
+image and restarts the container.
 
 Usage:
-    python3 deploy_maintenance.py
+    ZION_EDGE_HOST=mainnetedge ZION_SSH_KEY=~/.ssh/id_ed25519 python3 deploy_maintenance.py
 
 Prerequisites:
-    - SSH key at /tmp/ssh-key-zion-edge
-    - maintenance.html uploaded to /root/zion-web/maintenance.html on Edge
-    - maintenance-nginx.conf uploaded to /root/zion-web/nginx.conf on Edge
+    - SSH key configured in ZION_SSH_KEY or default ~/.ssh/id_ed25519
+    - Remote host configured in ZION_EDGE_HOST or default mainnetedge
+    - maintenance.html uploaded to /opt/zion/web/maintenance.html on Edge
+    - maintenance-nginx.conf uploaded to /opt/zion/web/nginx.conf on Edge
 """
-import subprocess, time
+import os, subprocess, time
 
-SK = "/tmp/ssh-key-zion-edge"
-SO = f"-i {SK} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
-R = "root@100.76.16.108"
-REMOTE_WEB = "/root/zion-web"
+SK = os.environ.get("ZION_SSH_KEY", os.path.expanduser("~/.ssh/id_ed25519"))
+SO = f"-i {SK} -o StrictHostKeyChecking=accept-new"
+R = f"{os.environ.get('ZION_EDGE_USER', 'deploy')}@{os.environ.get('ZION_EDGE_HOST', 'mainnetedge')}"
+REMOTE_WEB = os.environ.get("ZION_REMOTE_WEB", "/opt/zion/web")
 
 compose = """services:
   zion-website:

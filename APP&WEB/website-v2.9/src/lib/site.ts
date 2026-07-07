@@ -12,24 +12,18 @@ export const SITE_NETWORK_LABEL = `${SITE_ENVIRONMENT_LABEL} · ${SITE_RELEASE_L
 
 // ── Infrastructure (Core + Edge topology, 2026-05-21) ──────────────────────
 // Edge relay — Hetzner VPS, public-facing node + pool stratum
-export const SITE_PRIMARY_HOST = process.env['ZION_' + 'RPC_' + 'HOST'] || '77.42.71.94';
+export const SITE_PRIMARY_HOST = process.env.NEXT_PUBLIC_ZION_RPC_HOST || 'rpc.zionterranova.com';
 export const SITE_PRIMARY_RPC_PORT = 8443;
 export const SITE_PRIMARY_RPC_URL = `${SITE_PRIMARY_HOST}:${SITE_PRIMARY_RPC_PORT}`;
 // Pool metrics API — runs locally on Edge (port 8455).
 // NOTE: 8080 was a legacy FastAPI gateway port, now decommissioned.
-export const SITE_PRIMARY_POOL_API_URL = process.env['ZION_' + 'POOL_' + 'API_' + 'URL'] || `http://127.0.0.1:8455`;
-export const SITE_PRIMARY_DAO_API_URL = process.env['ZION_' + 'DAO_' + 'API_' + 'URL'] || `http://127.0.0.1:8450`;
+export const SITE_PRIMARY_POOL_API_URL = process.env.ZION_POOL_API_URL || `http://127.0.0.1:8455`;
+export const SITE_PRIMARY_DAO_API_URL = process.env.ZION_DAO_API_URL || `http://127.0.0.1:8450`;
 
 // Edge pool stratum port is 8444 (ShareRelay architecture)
 export const SITE_POOL_PRIMARY = `${SITE_PRIMARY_HOST}:8444`;
 
-// Tailscale VPN tunnel — Core (local PC) ↔ Edge (VPS)
-// NOTE: Original Windows Core (100.86.102.5) offline since 2026-05-30.
-// Current active Core is zionserver-144 (Linux) at 100.74.34.40.
-export const SITE_CORE_TAILSCALE_IP = '100.74.34.40';
-export const SITE_EDGE_TAILSCALE_IP = '100.76.16.108';
-
-// Network topology descriptor (USA / Singapore / Helsinki decommissioned 2026-05)
+// Network topology descriptor (operational IPs are injected via environment variables only)
 export const SITE_NETWORK_TOPOLOGY = 'Core + Edge · Hetzner VPS (Edge relay) + local PC (Core via Tailscale VPN)';
 export const EKAM_GOLDEN_EGG_IMAGE = 'https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/themes/2147915250/settings_images/8802b3-c826-05c7-bcd2-12b608d18d1_ABOUT-ONENESS.webp';
 export const EKAM_BANNER_IMAGE = 'https://onenessoceania.org/wp-content/uploads/2024/04/Ekam-Banner.jpg';

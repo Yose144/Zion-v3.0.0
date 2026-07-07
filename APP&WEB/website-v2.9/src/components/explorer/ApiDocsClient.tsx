@@ -308,7 +308,7 @@ const ENDPOINTS: Endpoint[] = [
     params: [],
     exampleResponse: `{
   "timestamp": "2026-06-27T12:00:00Z",
-  "nodes": [ { "id": "edge-1", "host": "77.42.71.94", "online": true, "height": 18234, "peers": 12 } ],
+  "nodes": [ { "id": "edge-1", "host": "rpc.zionterranova.com", "online": true, "height": 18234, "peers": 12 } ],
   "summary": { "total": 3, "online": 3 }
 }`,
   },
