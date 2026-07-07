@@ -103,7 +103,7 @@ Rychlý sanity (Python): `5_400_067_000_000_000 * (4/5)**10 ≈ 5.79847779e14` f
 | `MAX_OUTPUT_AMOUNT` | u64::MAX | OK |
 | `BURN_ADDRESS` | `zion1burn0000…dead` | OK (provably unspendable, špatný checksum nutný k validaci) |
 | `DAO_ADDRESS` | `zion1dao0000…treasury` | OK |
-| `BRIDGE_VAULT_ADDRESS` | `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0` | keyless OK |
+| `BRIDGE_VAULT_ADDRESS` | `zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7` | keyless OK |
 | `MINER_PCT/HUMANITARIAN_PCT/ISSOBELLA_PCT/POOL_FEE_PCT` | 89 / 5 / 5 / 1 = 100 | OK (STATUS.md potvrzeno on‑chain na heightech 465/471/472) |
 
 100% fee‑burn (coinbase = subsidy only) je verifikované v `validate_peer_block` přes `expected_amount` srovnávané s `emission::fee_split(subsidy)` — fee se **nikam nepřičítá**, čili se efektivně burnuje.

@@ -8,7 +8,7 @@
 
 ## 1. Cíl
 
-Převést 100M ZION z Bridge Vault UTXO Seed (`zion1r565v3k2u8p8t6n494p0n527c0m7a5s4s5ae0x7`, genesis slot 14) na L1 bridge vault (`zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0`), aby bridge relay mohl zamintovat 100M wZION na Base mainnet (`0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186`) pro DEX likviditu.
+Převést 100M ZION z Bridge Vault UTXO Seed (`zion1r565v3k2u8p8t6n494p0n527c0m7a5s4s5ae0x7`, genesis slot 14) na L1 bridge vault (`zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7`), aby bridge relay mohl zamintovat 100M wZION na Base mainnet (`0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186`) pro DEX likviditu.
 
 ---
 
@@ -18,7 +18,7 @@ Převést 100M ZION z Bridge Vault UTXO Seed (`zion1r565v3k2u8p8t6n494p0n527c0m7
 
 - **Seed:** `"ZION Bridge Vault V3 Mainnet v2_2026-06-03-GENESIS-RESET"`
 - **Derivace:** `derive_keyless_address(seed)` → SHA-256 → checksum
-- **Adresa:** `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0`
+- **Adresa:** `zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7`
 - **Žádný private key neexistuje.** Nikdo nemůže utratit UTXO přímo.
 - **UTXO odemykání:** Pouze přes `submitBridgeUnlock` RPC s 5/5 validator multisig proofy.
 
@@ -284,7 +284,7 @@ f87adc9a fix(bridge): start L1 scan from recent block and wire config start_bloc
 [l1]
 rpc_url = "http://127.0.0.1:8443"
 rpc_url_backup = "http://77.42.71.94:8443"
-bridge_address = "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0"
+bridge_address = "zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7"
 finality_blocks = 60
 poll_interval_secs = 15
 start_block_height = 11300
