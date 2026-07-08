@@ -41,6 +41,10 @@ struct Cli {
     /// Show extended Hiran stats
     #[arg(long, default_value_t = false)]
     verbose: bool,
+
+    /// Output results as JSON (for dashboard/API consumption)
+    #[arg(long, default_value_t = false)]
+    json: bool,
 }
 
 fn main() {
@@ -60,6 +64,38 @@ fn main() {
         add_auto_validators(&mut sim, count);
     }
 
+    let (reports, errors) = sim.run_epochs(0, cli.epochs);
+
+    if cli.json {
+        let json_output = serde_json::json!({
+            "config": {
+                "epochs": cli.epochs,
+                "validators": count,
+                "block_reward": cli.block_reward,
+                "min_stake": cli.min_stake,
+                "min_care_score": cli.min_care_score,
+                "hiran_url": cli.hiran_url,
+                "hiran_stub_mode": cli.hiran_url.is_none(),
+                "reward_split": {
+                    "care_validators_bps": sim.reward_split.care_validators_bps,
+                    "humanitarian_bps": sim.reward_split.humanitarian_bps,
+                    "dao_treasury_bps": sim.reward_split.dao_treasury_bps,
+                    "warp_maintenance_bps": sim.reward_split.warp_maintenance_bps,
+                    "hiran_research_bps": sim.reward_split.hiran_research_bps,
+                },
+            },
+            "reports": &reports,
+            "errors": errors.iter().map(|e| e.to_string()).collect::<Vec<_>>(),
+            "summary": {
+                "total_accepted": reports.iter().map(|r| r.accepted_count()).sum::<usize>(),
+                "total_rejected": reports.iter().map(|r| r.rejected_count()).sum::<usize>(),
+                "total_payout": reports.iter().map(|r| r.total_payout()).sum::<u64>(),
+            },
+        });
+        println!("{}", serde_json::to_string_pretty(&json_output).unwrap());
+        return;
+    }
+
     println!("=== PoC-lab network simulation ===");
     println!(
         "epochs={} validators={} block_reward={} min_stake={} min_care_score={}",
@@ -76,8 +112,6 @@ fn main() {
     println!("  [S]  = Sefirot Vow only");
     println!("  [S+B]= Sefirot + Bodhisattva Vow (Guardian, +5% care bonus)");
     println!();
-
-    let (reports, errors) = sim.run_epochs(0, cli.epochs);
 
     for report in &reports {
         print_epoch_report(report, cli.verbose);

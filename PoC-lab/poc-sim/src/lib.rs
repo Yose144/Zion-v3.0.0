@@ -36,6 +36,7 @@ use poc_economics::{
     distribute_to_validators, final_care_score, CareScoreInput, EconomicsError,
     RewardDistribution, RewardSplit, ValidatorShare,
 };
+use serde::{Deserialize, Serialize};
 use poc_npu::{CpuReferenceBackend, HiranNpuBackend, NpuBackend, RandomNpuGenerator};
 use poc_registry::{RegistryError, ValidatorRegistry};
 use poc_tasks::{DummyExecutor, HiranTaskExecutor, TaskAssigner, TaskOutput, TaskRegistry};
@@ -69,7 +70,7 @@ pub struct SimulatedValidator {
 }
 
 /// Per-validator outcome for one epoch.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ValidatorEpochResult {
     pub validator_id: ValidatorId,
     pub name: String,
@@ -86,7 +87,7 @@ pub struct ValidatorEpochResult {
 }
 
 /// Full report for one simulated epoch.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EpochReport {
     pub epoch: u64,
     pub model_hash: [u8; 32],

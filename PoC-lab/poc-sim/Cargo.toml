@@ -21,6 +21,7 @@ poc-economics = { path = "../poc-economics" }
 poc-hiran     = { path = "../poc-hiran" }
 clap          = { workspace = true }
 serde         = { workspace = true }
+serde_json    = { workspace = true }
 thiserror     = { workspace = true }
 blake3        = { workspace = true }
 

@@ -10448,10 +10448,13 @@ class DashboardHandler(BaseHTTPRequestHandler):
                    "--epochs", str(epochs),
                    "--validators", str(validators),
                    "--block-reward", str(block_reward)]
-            if use_hiran == "1" or (use_hiran == "auto" and hiran_online):
+            use_live = use_hiran == "1" or (use_hiran == "auto" and hiran_online)
+            if use_live:
                 cmd.extend(["--hiran-url", "http://127.0.0.1:8002"])
+            # Live Hiran is slow (~5 tok/s CPU) — allow 300s for live, 30s for stub
+            timeout_sec = 300 if use_live else 30
             try:
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_sec)
                 if result.returncode != 0:
                     self._json({"ok": False, "error": result.stderr[:500]})
                 else:
@@ -10459,7 +10462,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     data["ok"] = True
                     self._json(data)
             except subprocess.TimeoutExpired:
-                self._json({"ok": False, "error": "Simulation timed out (120s limit)"})
+                self._json({"ok": False, "error": f"Simulation timed out ({timeout_sec}s limit). Use stub mode or fewer epochs for live Hiran."})
             except json.JSONDecodeError as e:
                 self._json({"ok": False, "error": f"JSON parse error: {e}", "raw": result.stdout[:500]})
             except Exception as e:
@@ -10606,9 +10609,9 @@ def _poc_dashboard_html() -> str:
       <div>
         <label class="text-xs text-gray-400 block mb-1">Hiran Mode</label>
         <select id="cfg-hiran" class="w-32">
+          <option value="0">Stub (fast)</option>
           <option value="auto">Auto (if online)</option>
-          <option value="1">Force Live</option>
-          <option value="0">Force Stub</option>
+          <option value="1">Force Live (slow)</option>
         </select>
       </div>
       <button id="run-btn" class="btn" onclick="runSimulation()">Run Simulation</button>
