@@ -142,33 +142,12 @@ EDGE_PUBLIC_IP = "62.171.141.136"  # Public IP (fallback if Tailscale down)
 def _is_edge_local() -> bool:
     """Detect if we're running on the Edge server itself."""
     try:
-        # Check hostname
+        # Check hostname — v3.0.4 edge server hostname is "vmi3425821"
         hostname = socket.gethostname()
-        if "edge" in hostname.lower() or "mainnet" in hostname.lower():
+        if "edge" in hostname.lower() or "mainnet" in hostname.lower() or "vmi" in hostname.lower():
             return True
-        # Check if EDGE_HOST matches any local interface
-        local_ips = set()
-        try:
-            local_ips.add(socket.gethostbyname(socket.gethostname()))
-        except Exception:
-            pass
-        # Check all interfaces
-        try:
-            hostname_full = socket.getfqdn()
-            local_ips.add(socket.gethostbyname(hostname_full))
-        except Exception:
-            pass
-        # Check Tailscale IP directly
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            s.settimeout(0.5)
-            s.connect((EDGE_HOST, 8443))
-            local_ip = s.getsockname()[0]
-            s.close()
-            if local_ip == EDGE_HOST:
-                return True
-        except Exception:
-            pass
+        # If hostname is something else (e.g. "zionserver-144"), we're NOT on edge
+        # even if 127.0.0.1:8443 is reachable (could be SSH tunnel)
         return False
     except Exception:
         return False
@@ -181,14 +160,19 @@ def _run_edge_cmd(cmd: str, timeout: int = 8) -> subprocess.CompletedProcess:
     """Run a command on the Edge server — locally if we're on Edge, via SSH otherwise."""
     if EDGE_IS_LOCAL:
         return subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=timeout)
-    # SSH path — requires key file
+    # v3.0.4: Use SSH config alias "zion-new" (key in ~/.ssh/zion-new-server)
     ssh_key = REPO_ROOT / "ssh-key-zion-edge"
-    if not ssh_key.exists():
-        raise FileNotFoundError(f"SSH key not found: {ssh_key}")
+    if ssh_key.exists():
+        return subprocess.run(
+            ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
+             "-o", "ConnectTimeout=3", "-o", "BatchMode=yes",
+             f"root@{EDGE_HOST}", cmd],
+            capture_output=True, text=True, timeout=timeout
+        )
+    # Fallback: use SSH config alias "zion-new" (configured in ~/.ssh/config)
     return subprocess.run(
-        ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
-         "-o", "ConnectTimeout=3", "-o", "BatchMode=yes",
-         f"root@{EDGE_HOST}", cmd],
+        ["ssh", "-o", "ConnectTimeout=3", "-o", "BatchMode=yes",
+         "zion-new", cmd],
         capture_output=True, text=True, timeout=timeout
     )
 
@@ -3703,13 +3687,9 @@ def get_edge_server_status() -> dict:
     if _edge_status_cache["data"] is not None and (now - _edge_status_cache["ts"]) < _EDGE_CACHE_TTL:
         return _edge_status_cache["data"]
 
-    ssh_key = REPO_ROOT / "ssh-key-zion-edge"
-    if not EDGE_IS_LOCAL and not ssh_key.exists():
-        return {"ok": False, "error": "SSH key not found"}
-
     try:
         # Single command: combine all metrics to avoid multiple calls
-        combined_cmd = "cat /proc/loadavg && free -m && df -h / | tail -1 && echo '===TOP===' && ps -eo rss,comm --sort=-rss | head -6 | tail -5 && echo '===SVC===' && systemctl is-active zion-edge-node1 zion-edge-node2 zion-pool-server zion-edge-dao zion-edge-warp zion-edge-bridge 2>/dev/null"
+        combined_cmd = "cat /proc/loadavg && free -m && df -h / | tail -1 && echo '===TOP===' && ps -eo rss,comm --sort=-rss | head -6 | tail -5 && echo '===SVC===' && systemctl is-active zion-node zion-pool zion-dao zion-warp zion-bridge nginx 2>/dev/null"
         result = _run_edge_cmd(combined_cmd, timeout=8)
         if result.returncode != 0:
             return {"ok": False, "error": result.stderr.strip() or "Edge command failed"}
@@ -3764,7 +3744,7 @@ def get_edge_server_status() -> dict:
 
         # Service status
         services = []
-        svc_names = ["node", "node2", "pool", "dao", "warp", "bridge"]
+        svc_names = ["node", "pool", "dao", "warp", "bridge", "nginx"]
         states = svc_part.splitlines() if svc_part else []
         for i, name in enumerate(svc_names):
             if i < len(states):
@@ -3796,10 +3776,6 @@ def get_edge_server_status() -> dict:
 def clear_edge_disk(aggressive: bool = False) -> dict:
     """Run edge-log-cleanup.sh on Edge server, plus Docker prune.
     Returns disk usage before/after and freed space."""
-    ssh_key = REPO_ROOT / "ssh-key-zion-edge"
-    if not EDGE_IS_LOCAL and not ssh_key.exists():
-        return {"ok": False, "error": "SSH key not found"}
-
     try:
         # Get disk usage before
         result = _run_edge_cmd("df -h / | tail -1 | awk '{print $5\" \"$4}'", timeout=8)
@@ -3852,26 +3828,22 @@ def clear_edge_disk(aggressive: bool = False) -> dict:
 def run_edge_action(action: str) -> dict:
     """Run an action on the Edge server (service restart, docker clean, etc.).
     Executes locally when on Edge, via SSH otherwise."""
-    ssh_key = REPO_ROOT / "ssh-key-zion-edge"
-    if not EDGE_IS_LOCAL and not ssh_key.exists():
-        return {"ok": False, "error": "SSH key not found"}
-
     # Map action → command
     ACTION_MAP = {
-        "restart-node1":          "systemctl restart zion-edge-node1",
-        "restart-node2":          "systemctl restart zion-edge-node2",
-        "restart-pool":           "systemctl restart zion-pool-server",
-        "restart-dao":            "systemctl restart zion-edge-dao",
-        "restart-warp":           "systemctl restart zion-edge-warp",
-        "restart-dashboard":      "systemctl restart zion-edge-dashboard",
-        "restart-hiran":          "systemctl restart zion-edge-hiran",
-        "restart-hiranyagarbha":  "systemctl restart zion-edge-hiranyagarbha",
-        "restart-bridge":         "systemctl restart zion-edge-bridge",
-        "restart-website":        "systemctl restart zion-website",
+        "restart-node1":          "systemctl restart zion-node",
+        "restart-node2":          "echo 'node2 not deployed on v3.0.4 single-server topology'",
+        "restart-pool":           "systemctl restart zion-pool",
+        "restart-dao":            "systemctl restart zion-dao",
+        "restart-warp":           "systemctl restart zion-warp",
+        "restart-dashboard":      "systemctl restart zion-dashboard",
+        "restart-hiran":          "systemctl restart zion-hiran-inference 2>/dev/null || echo 'hiran not deployed'",
+        "restart-hiranyagarbha":  "systemctl restart zion-hiranyagarbha 2>/dev/null || echo 'hiranyagarbha not deployed'",
+        "restart-bridge":         "systemctl restart zion-bridge",
+        "restart-website":        "systemctl restart zion-web 2>/dev/null || docker restart zion-web 2>/dev/null || echo 'web in maintenance mode'",
         "clean-docker":           "docker builder prune -af 2>&1; docker image prune -af 2>&1; docker container prune -f 2>&1",
         "security-audit":         "echo 'Security audit placeholder — run manually'",
-        "full-health":            "/usr/local/bin/edge-health-probe.sh 2>&1",
-        "memory-limit":           "sed -i '/^MemoryMax=/d' /etc/systemd/system/zion-edge-node1.service; echo 'MemoryMax=3G' >> /etc/systemd/system/zion-edge-node1.service; systemctl daemon-reload; systemctl restart zion-edge-node1",
+        "full-health":            "systemctl is-active zion-node zion-pool zion-dao zion-warp zion-bridge nginx 2>&1",
+        "memory-limit":           "echo 'Memory limits configured in systemd unit files'",
     }
 
     cmd = ACTION_MAP.get(action)
@@ -3959,19 +3931,29 @@ def get_edge_backup_path(filename: str) -> "Path | None":
     if local_cache.exists():
         return local_cache
     ssh_key = REPO_ROOT / "ssh-key-zion-edge"
-    if not ssh_key.exists():
-        return None
-    try:
-        subprocess.run(
-            ["scp", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
-             "-o", "ConnectTimeout=5", "-o", "BatchMode=yes",
-             f"root@{EDGE_HOST}:/root/zion-backups/{filename}",
-             str(local_cache)],
-            capture_output=True, timeout=120
-        )
+    if ssh_key.exists():
+        try:
+            subprocess.run(
+                ["scp", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
+                 "-o", "ConnectTimeout=5", "-o", "BatchMode=yes",
+                 f"root@{EDGE_HOST}:/root/zion-backups/{filename}",
+                 str(local_cache)],
+                capture_output=True, timeout=120
+            )
+        except Exception:
+            pass
+    else:
+        # v3.0.4: Fallback to SSH config alias "zion-new"
+        try:
+            subprocess.run(
+                ["scp", "-o", "ConnectTimeout=5", "-o", "BatchMode=yes",
+                 f"zion-new:/root/zion-backups/{filename}",
+                 str(local_cache)],
+                capture_output=True, timeout=120
+            )
+        except Exception:
+            pass
         return local_cache if local_cache.exists() else None
-    except Exception:
-        return None
 
 
 def get_pool_miners() -> dict:
@@ -7769,13 +7751,20 @@ def _build_health_map() -> dict:
         "bridge": 9101,       # Bridge metrics
         "dao": 8450,          # DAO API
         "warp": 9333,         # WARP Relay API (v3.0.4 port)
-        "nginx": 443,         # Nginx HTTPS
-        "web-next": 3001,     # Next.js Docker
         "dashboard": 8766,    # This dashboard
     }
     for sid, port in ext_ports.items():
         try:
             alive = tcp_probe("127.0.0.1", port, timeout=0.3)
+        except Exception:
+            alive = False
+        health[sid] = "up" if alive else "down"
+    # Nginx + web-next: check via SSH on Edge server (not tunneled locally)
+    for sid, cmd in [("nginx", "systemctl is-active nginx 2>/dev/null"),
+                     ("web-next", "systemctl is-active zion-web 2>/dev/null || docker inspect -f '{{.State.Running}}' zion-web 2>/dev/null")]:
+        try:
+            result = _run_edge_cmd(cmd, timeout=3)
+            alive = result.returncode == 0 and "active" in (result.stdout or "").strip() or "true" in (result.stdout or "").strip()
         except Exception:
             alive = False
         health[sid] = "up" if alive else "down"
@@ -8294,17 +8283,38 @@ class DashboardHandler(BaseHTTPRequestHandler):
             except Exception as ex:
                 self._json({"error": str(ex), "reachable": False})
         elif route == "/api/edge/infra":
+            # v3.0.4: Edge server doesn't expose a unified API on 8888.
+            # Build infra overview from individual service probes instead.
             try:
-                import urllib.request as _ur
-                with _ur.urlopen(f"http://{EDGE_RPC_HOST}:8888/api/infra", timeout=3.0) as r:
-                    self._json(json.loads(r.read()))
+                _ports = {"node_rpc": 8443, "pool_stratum": 8444, "dao": 8450,
+                          "warp": 9333, "bridge_metrics": 9101, "node_metrics": 9100,
+                          "nginx": 443, "dashboard": 8766}
+                _infra = {}
+                for _name, _port in _ports.items():
+                    _infra[_name] = tcp_probe(EDGE_RPC_HOST, _port, timeout=0.5)
+                _infra["reachable"] = any(_infra.values())
+                _infra["edge_host"] = EDGE_PUBLIC_IP
+                self._json(_infra)
             except Exception as ex:
                 self._json({"error": str(ex), "reachable": False})
         elif route == "/api/edge/overview":
+            # v3.0.4: Aggregate overview from build_status() + health instead of port 8888.
             try:
-                import urllib.request as _ur
-                with _ur.urlopen(f"http://{EDGE_RPC_HOST}:8888/api/overview", timeout=3.0) as r:
-                    self._json(json.loads(r.read()))
+                _st = build_status()
+                _health = _build_health_map()
+                _overview = {
+                    "reachable": True,
+                    "edge_host": EDGE_PUBLIC_IP,
+                    "topology": _st.get("topology", "edge-primary"),
+                    "chain_height": _st.get("edge_node", {}).get("chain_height"),
+                    "pool_running": _st.get("pool_edge", {}).get("running", False),
+                    "active_miners": _st.get("pool_edge", {}).get("active_miners"),
+                    "hashrate": _st.get("pool_edge", {}).get("hashrate"),
+                    "shares_accepted": _st.get("pool_edge", {}).get("shares_accepted"),
+                    "blocks_found": _st.get("pool_edge", {}).get("blocks_found"),
+                    "services": _health,
+                }
+                self._json(_overview)
             except Exception as ex:
                 self._json({"error": str(ex), "reachable": False})
         elif route == "/api/edge-status":
@@ -8760,9 +8770,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/swap/initiate":
             self._json({"ok": False, "error": "Swap initiation requires POST — use POST /api/swap/initiate"})
         elif route == "/api/warp/health":
-            alive = check_port_open("127.0.0.1", 8453, timeout=1.5)
-            health = fetch_service_json("127.0.0.1", 8453, "/health") if alive else {}
-            self._json({"ok": alive, "service": "warp", "port": 8453,
+            alive = check_port_open("127.0.0.1", 9333, timeout=1.5)
+            health = fetch_service_json("127.0.0.1", 9333, "/health") if alive else {}
+            self._json({"ok": alive, "service": "warp", "port": 9333,
                         "status": "online" if alive else "offline",
                         "version": health.get("version", "—") if health else "—",
                         "transfers_total": health.get("transfers_total", 0) if health else 0,
@@ -8811,18 +8821,18 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json({"ok": True, "missions": [], "total": 0, "note": "Issobella Space not yet deployed"})
         # ── L3 endpoints: WARP, AI agents, NCL ──
         elif route == "/api/l3/warp/chains":
-            warp_alive = check_port_open("127.0.0.1", 8453, timeout=1.5)
+            warp_alive = check_port_open("127.0.0.1", 9333, timeout=1.5)
             chains = []
             if warp_alive:
-                data = fetch_service_json("127.0.0.1", 8453, "/chains", timeout=2.0)
+                data = fetch_service_json("127.0.0.1", 9333, "/chains", timeout=2.0)
                 chains = data.get("data", []) if data else []
             self._json({"ok": warp_alive, "chains": chains, "total": len(chains),
                         "status": "online" if warp_alive else "offline"})
         elif route == "/api/l3/warp/transfers":
-            warp_alive = check_port_open("127.0.0.1", 8453, timeout=1.5)
+            warp_alive = check_port_open("127.0.0.1", 9333, timeout=1.5)
             transfers = []
             if warp_alive:
-                data = fetch_service_json("127.0.0.1", 8453, "/transfers", timeout=2.0)
+                data = fetch_service_json("127.0.0.1", 9333, "/transfers", timeout=2.0)
                 transfers = data.get("data", []) if data else []
             self._json({"ok": warp_alive, "transfers": transfers, "total": len(transfers),
                         "status": "online" if warp_alive else "offline"})
