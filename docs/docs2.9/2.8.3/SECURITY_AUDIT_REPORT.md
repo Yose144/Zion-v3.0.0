@@ -15,7 +15,7 @@
 {
   "host": "91.98.122.165",
   "username": "root",
-  "key_content": "-----BEGIN OPENSSH PRIVATE KEY-----\n..."
+  "key_content": "[REDACTED — SSH private key removed 2026-07-08 for security]"
 }
 ```
 
