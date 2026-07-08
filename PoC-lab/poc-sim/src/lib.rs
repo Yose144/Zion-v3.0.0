@@ -377,6 +377,24 @@ impl NetworkSimulator {
             network_health,
         })
     }
+
+    /// Runs multiple epochs sequentially and returns all reports.
+    /// Epochs are numbered `start_epoch..start_epoch + count`.
+    pub fn run_epochs(
+        &mut self,
+        start_epoch: u64,
+        count: u64,
+    ) -> (Vec<EpochReport>, Vec<SimError>) {
+        let mut reports = Vec::with_capacity(count as usize);
+        let mut errors = Vec::new();
+        for i in 0..count {
+            match self.run_epoch(start_epoch + i) {
+                Ok(r) => reports.push(r),
+                Err(e) => errors.push(e),
+            }
+        }
+        (reports, errors)
+    }
 }
 
 fn format_verification_error(e: &VerificationError) -> String {
@@ -627,5 +645,110 @@ mod tests {
     #[test]
     fn derive_network_health_healthy_with_no_alerts() {
         assert_eq!(derive_network_health(&[]), NetworkHealth::Healthy);
+    }
+
+    // ── Multi-epoch stress tests (Fáze 2c) ──────────────────────────────────
+
+    fn build_mixed_sim(seed: [u8; 32]) -> NetworkSimulator {
+        let mut sim = NetworkSimulator::new(seed, 10_000_000, 1000, 1_000_000);
+        sim.add_validator(honest_validator(1, "alice")).unwrap();
+        sim.add_validator(honest_validator(2, "bob")).unwrap();
+        sim.add_validator(honest_validator(3, "carol")).unwrap();
+        sim.add_validator(lazy_validator(4, "lazy-dave")).unwrap();
+        sim.add_validator(guardian_validator(5, "guardian-eve", "Prague")).unwrap();
+        sim
+    }
+
+    #[test]
+    fn run_epochs_returns_correct_count() {
+        let mut sim = build_mixed_sim([20u8; 32]);
+        let (reports, errors) = sim.run_epochs(0, 10);
+        assert_eq!(reports.len(), 10);
+        assert!(errors.is_empty());
+    }
+
+    #[test]
+    fn run_100_epochs_no_errors() {
+        let mut sim = build_mixed_sim([21u8; 32]);
+        let (reports, errors) = sim.run_epochs(0, 100);
+        assert_eq!(reports.len(), 100);
+        assert!(errors.is_empty());
+    }
+
+    #[test]
+    fn stress_test_total_payout_never_exceeds_block_reward() {
+        let mut sim = build_mixed_sim([22u8; 32]);
+        let (reports, _) = sim.run_epochs(0, 100);
+        for r in &reports {
+            assert!(r.total_payout() <= r.reward_distribution.care_validators);
+        }
+    }
+
+    #[test]
+    fn stress_test_lazy_validator_always_rejected() {
+        let mut sim = build_mixed_sim([23u8; 32]);
+        let (reports, _) = sim.run_epochs(0, 50);
+        for r in &reports {
+            let dave = r.validators.iter().find(|v| v.name == "lazy-dave").unwrap();
+            assert!(!dave.accepted);
+            assert_eq!(dave.payout, 0);
+        }
+    }
+
+    #[test]
+    fn stress_test_honest_validators_always_accepted() {
+        let mut sim = build_mixed_sim([24u8; 32]);
+        let (reports, _) = sim.run_epochs(0, 50);
+        for r in &reports {
+            for name in &["alice", "bob", "carol"] {
+                let v = r.validators.iter().find(|v| v.name == *name).unwrap();
+                assert!(v.accepted, "{name} rejected in epoch {}", r.epoch);
+            }
+        }
+    }
+
+    #[test]
+    fn stress_test_guardian_earns_more_than_regular() {
+        let mut sim = build_mixed_sim([25u8; 32]);
+        let (reports, _) = sim.run_epochs(0, 50);
+        for r in &reports {
+            let eve = r.validators.iter().find(|v| v.name == "guardian-eve").unwrap();
+            let alice = r.validators.iter().find(|v| v.name == "alice").unwrap();
+            if alice.accepted && eve.accepted {
+                assert!(eve.care_score >= alice.care_score);
+            }
+        }
+    }
+
+    #[test]
+    fn stress_test_network_health_never_critical_for_honest_network() {
+        let mut sim = build_mixed_sim([26u8; 32]);
+        let (reports, _) = sim.run_epochs(0, 100);
+        for r in &reports {
+            assert_ne!(r.network_health, NetworkHealth::Critical);
+        }
+    }
+
+    #[test]
+    fn run_epochs_epochs_are_sequential() {
+        let mut sim = build_mixed_sim([29u8; 32]);
+        let (reports, _) = sim.run_epochs(10, 5);
+        for (i, r) in reports.iter().enumerate() {
+            assert_eq!(r.epoch, 10 + i as u64);
+        }
+    }
+
+    #[test]
+    fn run_many_validators_100_epochs_performance() {
+        let mut sim = NetworkSimulator::new([30u8; 32], 10_000_000, 1000, 1_000_000);
+        for i in 0u8..10 {
+            sim.add_validator(honest_validator(i + 1, &format!("v{i}"))).unwrap();
+        }
+        let (reports, errors) = sim.run_epochs(0, 100);
+        assert_eq!(reports.len(), 100);
+        assert!(errors.is_empty());
+        for r in &reports {
+            assert_eq!(r.accepted_count(), 10);
+        }
     }
 }
