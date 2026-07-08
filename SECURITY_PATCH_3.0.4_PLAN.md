@@ -31,9 +31,9 @@
 | 1 | Dependency + code hardening (advisories, guardy, timeouty) | ✅ HOTOVO 2026-07-07 | agent |
 | 2 | F4.7 Max TX amount cap — implementace (code-ready) | ✅ HOTOVO 2026-07-07 | agent |
 | 3 | Push + rebuild + binary swap na nový server | ✅ HOTOVO (server na `690b6dfe`, F4.7 binárky, F5 aktivní) | owner + agent |
-| 4 | F4.7 aktivace (odkomentovat env + restart) | ✅ HOTOVO (aktivní od height 1, 2026-07-07) | agent |
+| 4 | F4.7 aktivace (odkomentovat env + restart) + smoke test | ✅ HOTOVO (aktivní od height 1, smoke test PASS 2026-07-08) | agent |
 | 5 | Air-gapped key rotace (F4.1–F4.5) | ⏳ PENDING | owner (air-gapped) |
-| 6 | Git history scrub + Tailscale ACL + finální audit | ⏳ PENDING | owner |
+| 6 | Git history scrub + Tailscale ACL + finální audit | 🟡 ČÁSTEČNĚ (6.1 ✅ scrub done, 6.2 ✅ Tailscale removed, 6.3-6.4 pending) | owner + agent |
 
 ---
 
@@ -176,7 +176,7 @@ journalctl -u zion-node --no-pager -n 20 | grep max_tx_amount
 
 - [x] Env odkomentován + hodnota nastavena na zion-node (bare formát `ZION_MAX_TX_AMOUNT_HEIGHT=1`, backup `edge-environment.sh.bak-f47-*`)
 - [x] Log potvrzuje aktivační height (`max_tx_amount_activation_height=1`, genesis hash `4f75a0df...` nezměněn, 7/7 služeb active)
-- [ ] Po prvním minutem bloku (height ≥ 1): smoke test — TX s absurdní částkou (> TOTAL_SUPPLY) odmítnuta, běžná TX projde
+- [x] Smoke test proveden 2026-07-08 (height 81): TX > TOTAL_SUPPLY (144B+1 flowers) odmítnuta F4.7 (`exceeds max allowed amount`), běžná TX (1000 ZION) prošla F4.7 → odmítnuta F5 (`insufficient balance`). F4.7 cap funguje korektně.
 
 ### 4.3 Dokumentace aktivace
 
@@ -213,11 +213,12 @@ journalctl -u zion-node --no-pager -n 20 | grep max_tx_amount
 
 ## FÁZE 6 — Historie + síť + finální audit ⏳
 
-### 6.1 BFG/filter-repo git history scrub (F4.6)
+### 6.1 BFG/filter-repo git history scrub (F4.6) — ✅ DONE 2026-07-08
 > **Destruktivní — vyžaduje plný backup + koordinaci všech collaborators.**
-- [ ] Backup repa (bundle + mirror clone)
-- [ ] `git filter-repo --invert-paths --path PREMINE_WALLETS_BACKUP.json` (+ další leaked paths per `V3/scripts/git-filter-repo-leaked-paths-v2.sh`)
-- [ ] Force push po dohodě, všichni re-clone
+- [x] Backup repa (`/tmp/zion-git-backup-before-scrub`, 1.2G)
+- [x] `git filter-repo --replace-text` — odstraněno 87 occurrences (SSH keys + 5 pool SKs) z celé historie
+- [x] Force push to origin, origin remote re-added manually
+- [ ] Všichni collaborators re-clone (ruční akce ownera)
 
 ### 6.2 Tailscale ACL (F2.3) — ✅ VYŘEŠENO JINAK (2026-07-07)
 > Tailscale byl při hard resetu na nový server **odstraněn jako attack surface** (commit `87d939c1`). Single-server topologie nepotřebuje VPN — přístup je jen přes SSH klíče + nginx SSL + Basic Auth + UFW (22/80/443). F2.3 tím odpadá.
