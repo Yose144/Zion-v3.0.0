@@ -3,7 +3,7 @@
 import requests, json
 
 BASE = "https://api.simplemining.net"
-TOKEN = "api-3fb4dbbd2a4ae13622b2a9d574e9c5d1fe2c69fde0db128ad60be3fb3f68d5ef"
+TOKEN = "api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8"
 headers = {
     "X-AUTH-TOKEN": TOKEN,
     "Content-Type": "application/merge-patch+json",

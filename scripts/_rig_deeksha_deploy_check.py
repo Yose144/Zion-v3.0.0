@@ -3,7 +3,7 @@
 import requests, json
 
 API = "https://api.simplemining.net"
-TOKEN = "api-e2667c110855caf4cd527ac383c1e18b457050a42a56df68caf678641236c168"
+TOKEN = "api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8"
 H = {"Authorization": f"Bearer {TOKEN}"}
 
 # 1) Get ZION-Deeksha-AMD group config
