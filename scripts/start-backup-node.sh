@@ -44,8 +44,14 @@ echo "  State: ${ZION_NODE_STATE_PATH}"
 echo "  Started: $(date)"
 echo "==========================================================="
 
-nohup "${REPO_ROOT}/V3/target/release/node" >> "${REPO_ROOT}/logs/node-backup.log" 2>&1 &
-PID=$!
-echo "[OK] Backup node started  PID=$PID"
-echo "[OK] Log: ${REPO_ROOT}/logs/node-backup.log"
-echo $PID > "${REPO_ROOT}/logs/node-backup.pid"
+if [[ "${1:-}" == "--foreground" ]]; then
+  # systemd mode — run in foreground, logs to stdout
+  exec "${REPO_ROOT}/V3/target/release/node"
+else
+  # standalone mode — background with nohup
+  nohup "${REPO_ROOT}/V3/target/release/node" >> "${REPO_ROOT}/logs/node-backup.log" 2>&1 &
+  PID=$!
+  echo "[OK] Backup node started  PID=$PID"
+  echo "[OK] Log: ${REPO_ROOT}/logs/node-backup.log"
+  echo $PID > "${REPO_ROOT}/logs/node-backup.pid"
+fi
