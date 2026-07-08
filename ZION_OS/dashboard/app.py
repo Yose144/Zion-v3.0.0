@@ -130,7 +130,7 @@ if _legacy_user and _legacy_pass:
     DASHBOARD_USERS[_legacy_user] = _sha256(_legacy_pass)
 
 # Endpoints that skip auth (health checks, static assets)
-AUTH_EXEMPT_ROUTES = {"/api/health", "/health", "/favicon.ico"}
+AUTH_EXEMPT_ROUTES = {"/api/health", "/health", "/favicon.ico", "/api/poc/html", "/api/poc/status"}
 
 # Edge server addresses (Hetzner VPS — always-on)
 EDGE_HOST = "127.0.0.1"   # Dashboard runs on same server (v3.0.4)
@@ -8788,40 +8788,84 @@ class DashboardHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
         elif route == "/api/topology":
-            # Real topology: ping Core+Edge, check Tailscale
+            # 3-node P2P topology (v3.0.4): Edge Node 1, Edge Node 2, Local Backup
             import time as _time
-            core_rpc = "http://127.0.0.1:8443/jsonrpc"
-            edge_rpc = "http://127.0.0.1:8443/jsonrpc"
-            def _ping_rpc(url, timeout=2):
-                try:
-                    import urllib.request as _ur
-                    body = json.dumps({"jsonrpc":"2.0","method":"zion_getStatus","params":[],"id":1}).encode()
-                    req = _ur.Request(url, data=body, headers={"Content-Type":"application/json"})
-                    t0 = _time.time()
-                    with _ur.urlopen(req, timeout=timeout) as r:
-                        d = json.loads(r.read())
-                        return True, round((_time.time()-t0)*1000), d.get("result", {})
-                except Exception as ex:
-                    return False, None, {"error": str(ex)[:60]}
-            core_ok, core_ms, core_data = _ping_rpc(core_rpc)
-            edge_ok, edge_ms, edge_data = _ping_rpc(edge_rpc)
-            # Check Tailscale status
-            ts_status = "unknown"
-            try:
-                import subprocess as _sp
-                # v3.0.4: Tailscale not installed — skip
-                r = None
-                if r.returncode == 0:
-                    ts_data = json.loads(r.stdout)
-                    ts_status = "connected" if ts_data.get("BackendState") == "Running" else ts_data.get("BackendState", "unknown")
-                else:
-                    ts_status = "not_running"
-            except Exception:
-                ts_status = "not_available"
+            from concurrent.futures import ThreadPoolExecutor, as_completed
+
+            def _probe_node(label, host, port):
+                """Probe a node via RPC getChainInfo + getNodeInfo, return status dict."""
+                t0 = _time.time()
+                chain = rpc_call(host, port, "getChainInfo", {}, timeout=2.5)
+                latency = round((_time.time() - t0) * 1000) if chain and not chain.get("_rpc_error") else None
+                alive = bool(chain and not chain.get("_rpc_error"))
+                height = None
+                tip_hash = None
+                node_id = None
+                p2p_bind = None
+                known_peers = 0
+                if alive:
+                    height = chain.get("chain_height") or chain.get("height") or chain.get("best_height")
+                    tip_hash = chain.get("tip_hash") or chain.get("best_hash")
+                    # Also get node info for peer count
+                    info = rpc_call(host, port, "getNodeInfo", {}, timeout=2.0)
+                    if info and not info.get("_rpc_error"):
+                        node_id = info.get("node_id")
+                        p2p_bind = info.get("p2p_bind")
+                        known_peers = info.get("known_peers", 0) or 0
+                return {
+                    "label": label,
+                    "host": host,
+                    "rpc_port": port,
+                    "alive": alive,
+                    "latency_ms": latency,
+                    "height": height,
+                    "tip_hash": tip_hash,
+                    "node_id": node_id,
+                    "p2p_bind": p2p_bind,
+                    "known_peers": known_peers,
+                }
+
+            with ThreadPoolExecutor(max_workers=3) as ex:
+                futs = {
+                    ex.submit(_probe_node, "Edge Node 1", "127.0.0.1", 8443),
+                    ex.submit(_probe_node, "Edge Node 2", "127.0.0.1", 8448),
+                    ex.submit(_probe_node, "Local Backup", "127.0.0.1", 8446),
+                }
+                results = {}
+                for fut in as_completed(futs, timeout=6.0):
+                    try:
+                        r = fut.result()
+                        results[r["label"]] = r
+                    except Exception:
+                        pass
+
+            edge1 = results.get("Edge Node 1", {})
+            edge2 = results.get("Edge Node 2", {})
+            local = results.get("Local Backup", {})
+
+            # Compute sync gaps
+            heights = [h for h in [edge1.get("height"), edge2.get("height"), local.get("height")] if h is not None]
+            max_h = max(heights) if heights else 0
+            min_h = min(heights) if heights else 0
+            sync_gap = max_h - min_h
+
+            # All 3 nodes in sync?
+            all_in_sync = sync_gap == 0 and len(heights) == 3
+
+            # Port checks (via SSH tunnel to Edge)
+            ports = {}
+            for name, port in [("node_p2p", 8333), ("node_rpc", 8443), ("pool_stratum", 8444),
+                               ("dashboard", 8766), ("hiran_inference", 8002), ("hiranyagarbha", 8001)]:
+                ports[name] = check_port_open("127.0.0.1", port, timeout=1.0)
+
             self._json({
-                "core": {"host": "127.0.0.1", "rpc_port": 8443, "alive": core_ok, "latency_ms": core_ms, "data": core_data},
-                "edge": {"host": EDGE_RPC_HOST, "rpc_port": 8443, "alive": edge_ok, "latency_ms": edge_ms, "data": edge_data},
-                "tailscale": ts_status,
+                "edge_node1": edge1,
+                "edge_node2": edge2,
+                "local_backup": local,
+                "sync_gap": sync_gap,
+                "all_in_sync": all_in_sync,
+                "max_height": max_h,
+                "ports": ports,
                 "timestamp": _time.time(),
             })
         elif route == "/api/hiran/status":
@@ -9987,6 +10031,75 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "total": 5,
                 "note": "5/5 multisig deployed on Base Mainnet — all 5 validators active",
             })
+        elif route == "/api/poc/status":
+            # PoC-lab status — check if poc-sim binary exists and Hiran is reachable
+            poc_sim_path = SCRIPT_DIR / ".." / ".." / "PoC-lab" / "target" / "debug" / "poc-sim"
+            poc_sim_exists = poc_sim_path.exists()
+            hiran_online = False
+            try:
+                import urllib.request as _ur
+                with _ur.urlopen("http://127.0.0.1:8002/health", timeout=2) as r:
+                    hiran_online = json.loads(r.read()).get("status") == "ok"
+            except Exception:
+                pass
+            self._json({
+                "ok": True,
+                "poc_sim_available": poc_sim_exists,
+                "poc_sim_path": str(poc_sim_path),
+                "hiran_online": hiran_online,
+                "hiran_url": "http://127.0.0.1:8002" if hiran_online else None,
+                "workspace": "PoC-lab",
+                "crates": ["poc-core", "poc-economics", "poc-hiran", "poc-npu",
+                           "poc-registry", "poc-sim", "poc-tasks", "poc-verifier"],
+            })
+        elif route == "/api/poc/run":
+            # Run poc-sim simulation and return JSON results
+            # Query params: epochs (default 3), validators (default 4),
+            #               hiran (1/0, default 1 if Hiran online), block_reward (default 1000000)
+            epochs = int(params.get("epochs", ["3"])[0])
+            validators = int(params.get("validators", ["4"])[0])
+            block_reward = int(params.get("block_reward", ["1000000"])[0])
+            use_hiran = params.get("hiran", ["auto"])[0]
+            poc_sim_path = SCRIPT_DIR / ".." / ".." / "PoC-lab" / "target" / "debug" / "poc-sim"
+            if not poc_sim_path.exists():
+                self._json({"ok": False, "error": "poc-sim binary not found. Run: cargo build -p poc-sim"})
+                return
+            # Check Hiran availability
+            hiran_online = False
+            try:
+                import urllib.request as _ur
+                with _ur.urlopen("http://127.0.0.1:8002/health", timeout=2) as r:
+                    hiran_online = json.loads(r.read()).get("status") == "ok"
+            except Exception:
+                pass
+            cmd = [str(poc_sim_path), "--json",
+                   "--epochs", str(epochs),
+                   "--validators", str(validators),
+                   "--block-reward", str(block_reward)]
+            use_live = use_hiran == "1" or (use_hiran == "auto" and hiran_online)
+            if use_live:
+                cmd.extend(["--hiran-url", "http://127.0.0.1:8002"])
+            # Live Hiran is slow (~5 tok/s CPU) — allow 300s for live, 30s for stub
+            timeout_sec = 300 if use_live else 30
+            _sp = __import__('subprocess')
+            try:
+                result = _sp.run(cmd, capture_output=True, text=True, timeout=timeout_sec)
+                if result.returncode != 0:
+                    self._json({"ok": False, "error": result.stderr[:500]})
+                else:
+                    data = json.loads(result.stdout)
+                    data["ok"] = True
+                    self._json(data)
+            except _sp.TimeoutExpired:
+                self._json({"ok": False, "error": f"Simulation timed out ({timeout_sec}s limit). Use stub mode or fewer epochs for live Hiran."})
+            except json.JSONDecodeError as e:
+                self._json({"ok": False, "error": f"JSON parse error: {e}", "raw": result.stdout[:500]})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)[:200]})
+        elif route == "/api/poc/html":
+            # Serve the PoC dashboard panel HTML (standalone page)
+            poc_html = _poc_dashboard_html()
+            self._html(poc_html)
         else:
             self.send_error(404)
 
@@ -10421,74 +10534,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     self._json(json.loads(r.read()))
             except Exception as e:
                 self._json({"ok": False, "offline": True, "error": str(e)[:120]})
-        elif route == "/api/poc/status":
-            # PoC-lab status — check if poc-sim binary exists and Hiran is reachable
-            poc_sim_path = SCRIPT_DIR / ".." / ".." / "PoC-lab" / "target" / "debug" / "poc-sim"
-            poc_sim_exists = poc_sim_path.exists()
-            hiran_online = False
-            try:
-                import urllib.request as _ur
-                with _ur.urlopen("http://127.0.0.1:8002/health", timeout=2) as r:
-                    hiran_online = json.loads(r.read()).get("status") == "ok"
-            except Exception:
-                pass
-            self._json({
-                "ok": True,
-                "poc_sim_available": poc_sim_exists,
-                "poc_sim_path": str(poc_sim_path),
-                "hiran_online": hiran_online,
-                "hiran_url": "http://127.0.0.1:8002" if hiran_online else None,
-                "workspace": "PoC-lab",
-                "crates": ["poc-core", "poc-economics", "poc-hiran", "poc-npu",
-                           "poc-registry", "poc-sim", "poc-tasks", "poc-verifier"],
-            })
-        elif route == "/api/poc/run":
-            # Run poc-sim simulation and return JSON results
-            # Query params: epochs (default 3), validators (default 4),
-            #               hiran (1/0, default 1 if Hiran online), block_reward (default 1000000)
-            epochs = int(params.get("epochs", ["3"])[0])
-            validators = int(params.get("validators", ["4"])[0])
-            block_reward = int(params.get("block_reward", ["1000000"])[0])
-            use_hiran = params.get("hiran", ["auto"])[0]
-            poc_sim_path = SCRIPT_DIR / ".." / ".." / "PoC-lab" / "target" / "debug" / "poc-sim"
-            if not poc_sim_path.exists():
-                self._json({"ok": False, "error": "poc-sim binary not found. Run: cargo build -p poc-sim"})
-                return
-            # Check Hiran availability
-            hiran_online = False
-            try:
-                import urllib.request as _ur
-                with _ur.urlopen("http://127.0.0.1:8002/health", timeout=2) as r:
-                    hiran_online = json.loads(r.read()).get("status") == "ok"
-            except Exception:
-                pass
-            cmd = [str(poc_sim_path), "--json",
-                   "--epochs", str(epochs),
-                   "--validators", str(validators),
-                   "--block-reward", str(block_reward)]
-            use_live = use_hiran == "1" or (use_hiran == "auto" and hiran_online)
-            if use_live:
-                cmd.extend(["--hiran-url", "http://127.0.0.1:8002"])
-            # Live Hiran is slow (~5 tok/s CPU) — allow 300s for live, 30s for stub
-            timeout_sec = 300 if use_live else 30
-            try:
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_sec)
-                if result.returncode != 0:
-                    self._json({"ok": False, "error": result.stderr[:500]})
-                else:
-                    data = json.loads(result.stdout)
-                    data["ok"] = True
-                    self._json(data)
-            except subprocess.TimeoutExpired:
-                self._json({"ok": False, "error": f"Simulation timed out ({timeout_sec}s limit). Use stub mode or fewer epochs for live Hiran."})
-            except json.JSONDecodeError as e:
-                self._json({"ok": False, "error": f"JSON parse error: {e}", "raw": result.stdout[:500]})
-            except Exception as e:
-                self._json({"ok": False, "error": str(e)[:200]})
-        elif route == "/api/poc/html":
-            # Serve the PoC dashboard panel HTML (standalone page)
-            poc_html = _poc_dashboard_html()
-            self._html(poc_html)
         else:
             self.send_error(404)
 
@@ -10646,10 +10691,12 @@ let rewardChart = null;
 let hiranChart = null;
 
 async function checkStatus() {
+  const badge = document.getElementById('status-badge');
+  if(!badge) return;
   try {
     const r = await fetch('/api/poc/status');
+    if(!r.ok){ badge.innerHTML = '<span class="badge badge-reject">API ' + r.status + '</span>'; return; }
     const d = await r.json();
-    const badge = document.getElementById('status-badge');
     let html = '';
     html += d.poc_sim_available
       ? '<span class="badge badge-accept">poc-sim ready</span> '
@@ -10659,27 +10706,38 @@ async function checkStatus() {
       : '<span class="badge badge-stub">Hiran offline (stub)</span>';
     badge.innerHTML = html;
   } catch(e) {
-    document.getElementById('status-badge').textContent = 'Status: error';
+    badge.innerHTML = '<span class="badge badge-reject">Status unavailable</span>';
   }
 }
 
 async function runSimulation() {
   const btn = document.getElementById('run-btn');
+  if(!btn) return;
   btn.disabled = true;
   btn.textContent = 'Running...';
   const area = document.getElementById('results-area');
+  if(!area){ btn.disabled = false; btn.textContent = 'Run Simulation'; return; }
   area.innerHTML = '<div class="spinner"></div><p class="text-center text-gray-400">Running simulation (live Hiran may take 10-60s)...</p>';
 
-  const epochs = document.getElementById('cfg-epochs').value;
-  const validators = document.getElementById('cfg-validators').value;
-  const reward = document.getElementById('cfg-reward').value;
-  const hiran = document.getElementById('cfg-hiran').value;
+  const epochs = document.getElementById('cfg-epochs')?.value || 3;
+  const validators = document.getElementById('cfg-validators')?.value || 4;
+  const reward = document.getElementById('cfg-reward')?.value || 1000000;
+  const hiran = document.getElementById('cfg-hiran')?.value || '0';
 
   try {
-    const r = await fetch(`/api/poc/run?epochs=${epochs}&validators=${validators}&block_reward=${reward}&hiran=${hiran}`);
+    const r = await fetch(`/api/poc/run?epochs=${encodeURIComponent(epochs)}&validators=${encodeURIComponent(validators)}&block_reward=${encodeURIComponent(reward)}&hiran=${encodeURIComponent(hiran)}`);
+    if(!r.ok){
+      const errText = await r.text().catch(() => '');
+      area.innerHTML = `<div class="glass card red">HTTP ${r.status}: ${errText.substring(0,200) || r.statusText}</div>`;
+      return;
+    }
     const d = await r.json();
-    if (!d.ok && d.error) {
+    if(d.error) {
       area.innerHTML = `<div class="glass card red">Error: ${d.error}</div>`;
+      return;
+    }
+    if(!d.reports) {
+      area.innerHTML = `<div class="glass card red">Invalid response: no reports field</div>`;
       return;
     }
     renderResults(d);
