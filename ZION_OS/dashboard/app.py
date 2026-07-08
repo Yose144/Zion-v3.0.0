@@ -2439,6 +2439,11 @@ def _build_status_edge_primary() -> dict:
             return ("edge", r)
         return ("edge", None)
 
+    def _edge_node2_rpc_call():
+        # Edge Node 2 (Follower) — RPC on port 8448 (via SSH tunnel)
+        r = rpc_call("127.0.0.1", 8448, "getChainInfo", {}, timeout=2.0)
+        return ("edge2", r if r and not r.get("_rpc_error") else None)
+
     def _local_backup_rpc_call():
         # Local backup node runs on port 8446 (RPC), P2P syncs from Edge
         r = rpc_call("127.0.0.1", 8446, "getChainInfo", {}, timeout=2.0)
@@ -2449,15 +2454,31 @@ def _build_status_edge_primary() -> dict:
         r = rpc_call("127.0.0.1", 8446, "getNodeInfo", {}, timeout=2.0)
         return ("local", r if r and not r.get("_rpc_error") else None)
 
+    def _edge_node2_nodeinfo_call():
+        r = rpc_call("127.0.0.1", 8448, "getNodeInfo", {}, timeout=2.0)
+        return ("edge2_info", r if r and not r.get("_rpc_error") else None)
+
     local_backup_info = None
-    with ThreadPoolExecutor(max_workers=3) as ex:
-        futures = {ex.submit(_edge_rpc_call), ex.submit(_local_backup_rpc_call), ex.submit(_local_rpc_call)}
+    edge_node2_info = None
+    edge_node2_nodeinfo = None
+    with ThreadPoolExecutor(max_workers=5) as ex:
+        futures = {
+            ex.submit(_edge_rpc_call),
+            ex.submit(_edge_node2_rpc_call),
+            ex.submit(_local_backup_rpc_call),
+            ex.submit(_local_rpc_call),
+            ex.submit(_edge_node2_nodeinfo_call),
+        }
         try:
             for fut in as_completed(futures, timeout=5.0):
                 try:
                     key, val = fut.result()
                     if key == "edge":
                         edge_rpc_info = val
+                    elif key == "edge2":
+                        edge_node2_info = val
+                    elif key == "edge2_info":
+                        edge_node2_nodeinfo = val
                     elif key == "local_backup":
                         local_backup_info = val
                     else:
@@ -2478,6 +2499,21 @@ def _build_status_edge_primary() -> dict:
         "protocol_version": edge_rpc_info.get("protocol_version") if edge_rpc_info else None,
         "consensus_profile": edge_rpc_info.get("consensus_profile") if edge_rpc_info else None,
         "accepted_blocks": edge_rpc_info.get("accepted_blocks") if edge_rpc_info else None,
+    }
+    edge_node2_status = {
+        "running": bool(edge_node2_info),
+        "chain_height": edge_node2_info.get("chain_height") if edge_node2_info else None,
+        "tip_hash": edge_node2_info.get("tip_hash") if edge_node2_info else None,
+        "known_peers": (edge_node2_nodeinfo or {}).get("known_peers", 0) if edge_node2_info else 0,
+        "mempool_size": edge_node2_info.get("mempool_transactions", 0) if edge_node2_info else 0,
+        "network": edge_node2_info.get("network") if edge_node2_info else None,
+        "protocol_version": edge_node2_info.get("protocol_version") if edge_node2_info else None,
+        "consensus_profile": edge_node2_info.get("consensus_profile") if edge_node2_info else None,
+        "accepted_blocks": edge_node2_info.get("accepted_blocks") if edge_node2_info else None,
+        "node_id": (edge_node2_nodeinfo or {}).get("node_id") if edge_node2_info else None,
+        "p2p_bind": (edge_node2_nodeinfo or {}).get("p2p_bind") if edge_node2_info else None,
+        "rpc_bind": (edge_node2_nodeinfo or {}).get("rpc_bind") if edge_node2_info else None,
+        "host": "127.0.0.1:8448",
     }
     local_backup_status = {
         "running": bool(local_backup_info),
@@ -2666,7 +2702,7 @@ def _build_status_edge_primary() -> dict:
         "node1": n1,
         "node2": {"running": False, "chain_height": None, "tip_hash": None, "known_peers": 0, "mempool_size": 0},
         "edge_node": edge_node1_status,
-        "edge_node2": {"running": False, "chain_height": None, "tip_hash": None, "known_peers": 0, "mempool_size": 0},
+        "edge_node2": edge_node2_status,
         "local_backup": local_backup_status,
         "pool": pool_status,
         "pool_edge": {
@@ -2862,6 +2898,7 @@ def build_checklist(status: dict) -> dict:
             {"id": "keys",       "label": "Offline key generation complete",          "ok": True},
             {"id": "env",        "label": "Env file assembled (.env.mainnet)",        "ok": True},
             {"id": "edge-node1", "label": "Edge Node 1 (Primary) running & reachable", "ok": status["edge_node"]["running"] and status["edge_node"]["chain_height"] is not None},
+            {"id": "edge-node2", "label": "Edge Node 2 (Follower) running & synced",  "ok": status.get("edge_node2", {}).get("running", False) and status.get("edge_node2", {}).get("known_peers", 0) > 0},
             {"id": "local-backup", "label": "Local Backup Node running & synced",      "ok": status.get("local_backup", {}).get("running", False) and status.get("local_backup", {}).get("known_peers", 0) > 0},
             {"id": "pool",       "label": "Edge Pool running & accepting miners",     "ok": status["pool"]["running"] and status["pool"]["active_sessions"] is not None},
             {"id": "pool-edge",  "label": "Edge Pool TCP reachable",                  "ok": status.get("pool_edge", {}).get("running", False)},
@@ -2968,6 +3005,7 @@ def build_alerts(status: dict) -> list:
     topology = status.get("topology", TOPOLOGY)
     n1, n2, pool, miner = status["node1"], status["node2"], status["pool"], status["miner"]
     edge_node1 = status.get("edge_node", {})
+    edge_node2 = status.get("edge_node2", {})
     local_backup = status.get("local_backup", {})
 
     def _sev(svc_id: str, default: str = "warning") -> str:
@@ -2984,6 +3022,24 @@ def build_alerts(status: dict) -> list:
             alerts.append({"severity": _sev("edge-node1", "warning"), "title": "Edge chain stuck at height 0",
                            "detail": "Edge node 1 is up but no blocks have been mined yet.",
                            "action": None})
+
+        # Edge Node 2 (Follower) alerts
+        if not edge_node2.get("running"):
+            alerts.append({"severity": _sev("edge-node2", "warning"), "title": "Edge Node 2 (Follower) not reachable",
+                           "detail": "Follower node on Edge (127.0.0.1:8448) is not responding. Check: ssh zion-new systemctl status zion-node2",
+                           "action": None})
+        elif edge_node2.get("chain_height") == 0:
+            alerts.append({"severity": _sev("edge-node2", "warning"), "title": "Edge Node 2 chain stuck at height 0",
+                           "detail": "Edge node 2 is up but no blocks have been synced yet.",
+                           "action": None})
+
+        # Sync gap: Edge Node 1 vs Edge Node 2
+        if edge_node1.get("running") and edge_node2.get("running") and edge_node1.get("chain_height") and edge_node2.get("chain_height"):
+            gap = abs(edge_node1["chain_height"] - edge_node2["chain_height"])
+            if gap > 10:
+                alerts.append({"severity": _sev("edge-node2", "warning"), "title": "Edge Node 2 far behind Node 1",
+                               "detail": f"Edge1@{edge_node1['chain_height']} vs Edge2@{edge_node2['chain_height']} — gap {gap}",
+                               "action": None})
 
         # Local Backup Node alerts
         if not local_backup.get("running"):
@@ -9089,12 +9145,13 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "node1_running": status["node1"]["running"],
                 "node2_running": status.get("local_backup", {}).get("running", False) if status.get("topology") == "edge-primary" else status["node2"]["running"],
                 "edge_node_running": status.get("edge_node", {}).get("running", False),
-                "edge_node2_running": False,  # deprecated — no edge node2 in v3.0.4
+                "edge_node2_running": status.get("edge_node2", {}).get("running", False),
+                "edge_node2_height": status.get("edge_node2", {}).get("chain_height"),
+                "edge_node2_peers": status.get("edge_node2", {}).get("known_peers", 0),
                 "local_backup_running": status.get("local_backup", {}).get("running", False),
                 "local_backup_height": status.get("local_backup", {}).get("chain_height"),
                 "local_backup_peers": status.get("local_backup", {}).get("known_peers", 0),
                 "edge_node_height": status.get("edge_node", {}).get("chain_height"),
-                "edge_node2_height": None,  # deprecated
                 "pool_running": status["pool"]["running"],
                 "miner_running": status["miner"]["running"],
                 "git_status": git_status,
@@ -10346,6 +10403,71 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     self._json(json.loads(r.read()))
             except Exception as e:
                 self._json({"ok": False, "offline": True, "error": str(e)[:120]})
+        elif route == "/api/poc/status":
+            # PoC-lab status — check if poc-sim binary exists and Hiran is reachable
+            poc_sim_path = SCRIPT_DIR / ".." / ".." / "PoC-lab" / "target" / "debug" / "poc-sim"
+            poc_sim_exists = poc_sim_path.exists()
+            hiran_online = False
+            try:
+                import urllib.request as _ur
+                with _ur.urlopen("http://127.0.0.1:8002/health", timeout=2) as r:
+                    hiran_online = json.loads(r.read()).get("status") == "ok"
+            except Exception:
+                pass
+            self._json({
+                "ok": True,
+                "poc_sim_available": poc_sim_exists,
+                "poc_sim_path": str(poc_sim_path),
+                "hiran_online": hiran_online,
+                "hiran_url": "http://127.0.0.1:8002" if hiran_online else None,
+                "workspace": "PoC-lab",
+                "crates": ["poc-core", "poc-economics", "poc-hiran", "poc-npu",
+                           "poc-registry", "poc-sim", "poc-tasks", "poc-verifier"],
+            })
+        elif route == "/api/poc/run":
+            # Run poc-sim simulation and return JSON results
+            # Query params: epochs (default 3), validators (default 4),
+            #               hiran (1/0, default 1 if Hiran online), block_reward (default 1000000)
+            epochs = int(params.get("epochs", ["3"])[0])
+            validators = int(params.get("validators", ["4"])[0])
+            block_reward = int(params.get("block_reward", ["1000000"])[0])
+            use_hiran = params.get("hiran", ["auto"])[0]
+            poc_sim_path = SCRIPT_DIR / ".." / ".." / "PoC-lab" / "target" / "debug" / "poc-sim"
+            if not poc_sim_path.exists():
+                self._json({"ok": False, "error": "poc-sim binary not found. Run: cargo build -p poc-sim"})
+                return
+            # Check Hiran availability
+            hiran_online = False
+            try:
+                import urllib.request as _ur
+                with _ur.urlopen("http://127.0.0.1:8002/health", timeout=2) as r:
+                    hiran_online = json.loads(r.read()).get("status") == "ok"
+            except Exception:
+                pass
+            cmd = [str(poc_sim_path), "--json",
+                   "--epochs", str(epochs),
+                   "--validators", str(validators),
+                   "--block-reward", str(block_reward)]
+            if use_hiran == "1" or (use_hiran == "auto" and hiran_online):
+                cmd.extend(["--hiran-url", "http://127.0.0.1:8002"])
+            try:
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+                if result.returncode != 0:
+                    self._json({"ok": False, "error": result.stderr[:500]})
+                else:
+                    data = json.loads(result.stdout)
+                    data["ok"] = True
+                    self._json(data)
+            except subprocess.TimeoutExpired:
+                self._json({"ok": False, "error": "Simulation timed out (120s limit)"})
+            except json.JSONDecodeError as e:
+                self._json({"ok": False, "error": f"JSON parse error: {e}", "raw": result.stdout[:500]})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)[:200]})
+        elif route == "/api/poc/html":
+            # Serve the PoC dashboard panel HTML (standalone page)
+            poc_html = _poc_dashboard_html()
+            self._html(poc_html)
         else:
             self.send_error(404)
 
@@ -10411,3 +10533,324 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\n  Stopping dashboard server...")
         server.shutdown()
+
+
+# ── PoC Dashboard HTML ──────────────────────────────────────────────────────────
+
+def _poc_dashboard_html() -> str:
+    """Standalone HTML page for PoC-lab dashboard."""
+    return r'''<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZION PoC-lab Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', system-ui, sans-serif; }
+  .glass { background: rgba(20,20,35,0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,215,0,0.15); }
+  .gold { color: #FFD700; }
+  .cyan { color: #00CED1; }
+  .green { color: #22c55e; }
+  .red { color: #ef4444; }
+  .orange { color: #f59e0b; }
+  .purple { color: #a855f7; }
+  .card { border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+  .badge { padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+  .badge-accept { background: rgba(34,197,94,0.2); color: #22c55e; }
+  .badge-reject { background: rgba(239,68,68,0.2); color: #ef4444; }
+  .badge-stub { background: rgba(168,85,247,0.2); color: #a855f7; }
+  .badge-live { background: rgba(0,206,209,0.2); color: #00CED1; }
+  .badge-guardian { background: rgba(255,215,0,0.2); color: #FFD700; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; padding: 8px; border-bottom: 1px solid rgba(255,215,0,0.2); font-size: 12px; color: #FFD700; }
+  td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
+  .spinner { border: 3px solid rgba(255,215,0,0.2); border-top: 3px solid #FFD700; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
+  @keyframes spin { 100% { transform: rotate(360deg); } }
+  input, select { background: rgba(30,30,50,0.8); border: 1px solid rgba(255,215,0,0.2); color: #e0e0e0; padding: 6px 10px; border-radius: 6px; }
+  input:focus, select:focus { outline: none; border-color: #FFD700; }
+  .btn { background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-weight: 700; padding: 8px 20px; border-radius: 8px; cursor: pointer; border: none; }
+  .btn:hover { opacity: 0.9; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+</style>
+</head>
+<body class="min-h-screen p-6">
+
+<div class="max-w-7xl mx-auto">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-3xl font-bold gold">ZION PoC-lab Dashboard</h1>
+      <p class="text-sm text-gray-400">Proof-of-Care Network Simulator &middot; Live Hiran AI Integration</p>
+    </div>
+    <div id="status-badge" class="text-sm">Loading...</div>
+  </div>
+
+  <!-- Config Panel -->
+  <div class="glass card">
+    <h2 class="text-lg font-semibold gold mb-3">Simulation Parameters</h2>
+    <div class="flex flex-wrap gap-4 items-end">
+      <div>
+        <label class="text-xs text-gray-400 block mb-1">Epochs</label>
+        <input id="cfg-epochs" type="number" value="3" min="1" max="100" class="w-20">
+      </div>
+      <div>
+        <label class="text-xs text-gray-400 block mb-1">Validators</label>
+        <input id="cfg-validators" type="number" value="4" min="1" max="64" class="w-20">
+      </div>
+      <div>
+        <label class="text-xs text-gray-400 block mb-1">Block Reward (flowers)</label>
+        <input id="cfg-reward" type="number" value="1000000" min="1" class="w-32">
+      </div>
+      <div>
+        <label class="text-xs text-gray-400 block mb-1">Hiran Mode</label>
+        <select id="cfg-hiran" class="w-32">
+          <option value="auto">Auto (if online)</option>
+          <option value="1">Force Live</option>
+          <option value="0">Force Stub</option>
+        </select>
+      </div>
+      <button id="run-btn" class="btn" onclick="runSimulation()">Run Simulation</button>
+    </div>
+  </div>
+
+  <!-- Results Area -->
+  <div id="results-area" class="mt-6">
+    <div class="glass card text-center text-gray-400 py-12">
+      Click "Run Simulation" to start a PoC network simulation.
+    </div>
+  </div>
+</div>
+
+<script>
+let careChart = null;
+let rewardChart = null;
+let hiranChart = null;
+
+async function checkStatus() {
+  try {
+    const r = await fetch('/api/poc/status');
+    const d = await r.json();
+    const badge = document.getElementById('status-badge');
+    let html = '';
+    html += d.poc_sim_available
+      ? '<span class="badge badge-accept">poc-sim ready</span> '
+      : '<span class="badge badge-reject">poc-sim NOT built</span> ';
+    html += d.hiran_online
+      ? '<span class="badge badge-live">Hiran LIVE</span>'
+      : '<span class="badge badge-stub">Hiran offline (stub)</span>';
+    badge.innerHTML = html;
+  } catch(e) {
+    document.getElementById('status-badge').textContent = 'Status: error';
+  }
+}
+
+async function runSimulation() {
+  const btn = document.getElementById('run-btn');
+  btn.disabled = true;
+  btn.textContent = 'Running...';
+  const area = document.getElementById('results-area');
+  area.innerHTML = '<div class="spinner"></div><p class="text-center text-gray-400">Running simulation (live Hiran may take 10-60s)...</p>';
+
+  const epochs = document.getElementById('cfg-epochs').value;
+  const validators = document.getElementById('cfg-validators').value;
+  const reward = document.getElementById('cfg-reward').value;
+  const hiran = document.getElementById('cfg-hiran').value;
+
+  try {
+    const r = await fetch(`/api/poc/run?epochs=${epochs}&validators=${validators}&block_reward=${reward}&hiran=${hiran}`);
+    const d = await r.json();
+    if (!d.ok && d.error) {
+      area.innerHTML = `<div class="glass card red">Error: ${d.error}</div>`;
+      return;
+    }
+    renderResults(d);
+  } catch(e) {
+    area.innerHTML = `<div class="glass card red">Fetch error: ${e.message}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Run Simulation';
+  }
+}
+
+function renderResults(data) {
+  const area = document.getElementById('results-area');
+  const cfg = data.config;
+  const sum = data.summary;
+  const reports = data.reports || [];
+  const hiranMode = cfg.hiran_stub_mode ? 'stub' : 'live';
+
+  let html = '';
+
+  // Summary cards
+  html += '<div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">';
+  html += summaryCard('Epochs', cfg.epochs, 'gold');
+  html += summaryCard('Validators', cfg.validators, 'cyan');
+  html += summaryCard('Accepted', sum.total_accepted, 'green');
+  html += summaryCard('Rejected', sum.total_rejected, 'red');
+  html += summaryCard('Total Payout', formatFlowers(sum.total_payout), 'purple');
+  html += '</div>';
+
+  // Hiran status banner
+  const hStats = reports.length > 0 ? reports[reports.length-1].hiran_stats : null;
+  if (hStats) {
+    html += `<div class="glass card mb-4">
+      <div class="flex items-center gap-4">
+        <span class="badge ${hStats.stub_mode ? 'badge-stub' : 'badge-live'}">Hiran ${hiranMode}</span>
+        <span class="text-sm">Validated: <b class="gold">${hStats.proofs_validated}</b></span>
+        <span class="text-sm">Accepted: <b class="green">${hStats.accepted}</b></span>
+        <span class="text-sm">Rejected: <b class="red">${hStats.rejected}</b></span>
+        <span class="text-sm">Uncertain: <b class="orange">${hStats.uncertain}</b></span>
+        <span class="text-sm">Avg Confidence: <b class="cyan">${(hStats.avg_confidence*100).toFixed(1)}%</b></span>
+      </div>
+    </div>`;
+  }
+
+  // Charts row
+  html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">';
+  html += '<div class="glass card"><h3 class="gold text-sm mb-2">Care Score per Validator (last epoch)</h3><canvas id="careChart" height="200"></canvas></div>';
+  html += '<div class="glass card"><h3 class="gold text-sm mb-2">Reward Distribution (last epoch)</h3><canvas id="rewardChart" height="200"></canvas></div>';
+  html += '</div>';
+
+  // Hiran confidence trend chart
+  if (reports.length > 0) {
+    html += '<div class="glass card mb-6"><h3 class="gold text-sm mb-2">Hiran Avg Confidence Trend</h3><canvas id="hiranChart" height="120"></canvas></div>';
+  }
+
+  // Epoch reports table
+  html += '<div class="glass card mb-6">';
+  html += '<h3 class="gold text-sm mb-3">Epoch Reports</h3>';
+  html += '<table><thead><tr><th>Epoch</th><th>Validator</th><th>Vow</th><th>Status</th><th>Care Score</th><th>Payout</th><th>Hiran Conf</th><th>NCL Bonus</th></tr></thead><tbody>';
+  for (const r of reports) {
+    for (const v of r.validators) {
+      const vow = v.dual_vow_bonus_applied ? '<span class="badge badge-guardian">S+B</span>' : '<span class="text-gray-400">S</span>';
+      const status = v.accepted
+        ? '<span class="badge badge-accept">ACCEPTED</span>'
+        : `<span class="badge badge-reject">REJECTED</span>`;
+      const hiranConf = v.hiran_verdict ? (v.hiran_verdict.confidence*100).toFixed(0)+'%' : '—';
+      const reject = v.rejection_reason ? `<span class="text-xs text-gray-500">${v.rejection_reason}</span>` : '';
+      html += `<tr>
+        <td class="cyan">${r.epoch}</td>
+        <td>${v.name} ${reject}</td>
+        <td>${vow}</td>
+        <td>${status}</td>
+        <td>${v.accepted ? v.care_score.toLocaleString() : '—'}</td>
+        <td class="${v.payout > 0 ? 'green' : 'text-gray-500'}">${v.payout > 0 ? formatFlowers(v.payout) : '—'}</td>
+        <td>${hiranConf}</td>
+        <td>${v.ncl_bonus > 0 ? formatFlowers(v.ncl_bonus) : '—'}</td>
+      </tr>`;
+    }
+  }
+  html += '</tbody></table></div>';
+
+  // Anomaly alerts
+  let totalAlerts = 0;
+  for (const r of reports) totalAlerts += (r.anomaly_alerts || []).length;
+  if (totalAlerts > 0) {
+    html += '<div class="glass card mb-6">';
+    html += '<h3 class="red text-sm mb-3">Anomaly Alerts</h3>';
+    html += '<table><thead><tr><th>Epoch</th><th>Type</th><th>Severity</th><th>Description</th><th>Action</th></tr></thead><tbody>';
+    for (const r of reports) {
+      for (const a of (r.anomaly_alerts || [])) {
+        const sevColor = a.severity === 'Critical' ? 'red' : a.severity === 'High' ? 'orange' : 'text-gray-400';
+        html += `<tr><td class="cyan">${r.epoch}</td><td>${a.anomaly_type}</td><td class="${sevColor}">${a.severity}</td><td>${a.description}</td><td>${a.recommended_action}</td></tr>`;
+      }
+    }
+    html += '</tbody></table></div>';
+  }
+
+  // Reward split config
+  const rs = cfg.reward_split;
+  html += `<div class="glass card mb-6">
+    <h3 class="gold text-sm mb-3">Reward Split Configuration (basis points)</h3>
+    <div class="flex gap-6 text-sm">
+      <span>Care Validators: <b class="gold">${rs.care_validators_bps} bps (${rs.care_validators_bps/100}%)</b></span>
+      <span>Humanitarian: <b class="cyan">${rs.humanitarian_bps} bps</b></span>
+      <span>DAO Treasury: <b class="purple">${rs.dao_treasury_bps} bps</b></span>
+      <span>WARP: <b class="text-gray-300">${rs.warp_maintenance_bps} bps</b></span>
+      <span>Hiran Research: <b class="orange">${rs.hiran_research_bps} bps</b></span>
+    </div>
+  </div>`;
+
+  // Raw JSON toggle
+  html += '<div class="glass card">';
+  html += '<h3 class="gold text-sm mb-2 cursor-pointer" onclick="toggleRaw()">Raw JSON (click to toggle)</h3>';
+  html += '<pre id="raw-json" class="text-xs text-gray-500 overflow-x-auto hidden">' + JSON.stringify(data, null, 2).replace(/</g,'&lt;') + '</pre>';
+  html += '</div>';
+
+  area.innerHTML = html;
+
+  // Render charts
+  renderCharts(reports);
+}
+
+function summaryCard(label, value, color) {
+  return `<div class="glass card text-center">
+    <div class="text-xs text-gray-400 mb-1">${label}</div>
+    <div class="text-2xl font-bold ${color}">${value}</div>
+  </div>`;
+}
+
+function formatFlowers(n) {
+  if (n >= 1000000) return (n/1000000).toFixed(2) + 'M';
+  if (n >= 1000) return (n/1000).toFixed(1) + 'K';
+  return n.toString();
+}
+
+function toggleRaw() {
+  const el = document.getElementById('raw-json');
+  el.classList.toggle('hidden');
+}
+
+function renderCharts(reports) {
+  if (reports.length === 0) return;
+  const last = reports[reports.length-1];
+
+  // Care score chart
+  const vNames = last.validators.map(v => v.name.substring(0, 20));
+  const vScores = last.validators.map(v => v.care_score);
+  const vColors = last.validators.map(v => v.accepted ? 'rgba(34,197,94,0.6)' : 'rgba(239,68,68,0.6)');
+
+  if (careChart) careChart.destroy();
+  const ctx1 = document.getElementById('careChart').getContext('2d');
+  careChart = new Chart(ctx1, {
+    type: 'bar',
+    data: { labels: vNames, datasets: [{ label: 'Care Score', data: vScores, backgroundColor: vColors, borderRadius: 4 }] },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { color: '#888' }, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { ticks: { color: '#888', font: { size: 10 } }, grid: { display: false } } } }
+  });
+
+  // Reward distribution chart
+  const rd = last.reward_distribution;
+  if (rewardChart) rewardChart.destroy();
+  const ctx2 = document.getElementById('rewardChart').getContext('2d');
+  rewardChart = new Chart(ctx2, {
+    type: 'doughnut',
+    data: {
+      labels: ['Care Validators', 'Humanitarian', 'DAO Treasury', 'WARP', 'Hiran Research'],
+      datasets: [{ data: [rd.care_validators, rd.humanitarian, rd.dao_treasury, rd.warp_maintenance, rd.hiran_research],
+        backgroundColor: ['#FFD700', '#00CED1', '#a855f7', '#6b7280', '#f59e0b'] }]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'right', labels: { color: '#ccc', font: { size: 11 } } } } }
+  });
+
+  // Hiran confidence trend
+  if (reports.length > 0 && document.getElementById('hiranChart')) {
+    const confs = reports.map(r => r.hiran_stats.avg_confidence * 100);
+    const epochs = reports.map(r => 'E' + r.epoch);
+    if (hiranChart) hiranChart.destroy();
+    const ctx3 = document.getElementById('hiranChart').getContext('2d');
+    hiranChart = new Chart(ctx3, {
+      type: 'line',
+      data: { labels: epochs, datasets: [{ label: 'Avg Confidence %', data: confs, borderColor: '#00CED1', backgroundColor: 'rgba(0,206,209,0.1)', fill: true, tension: 0.3 }] },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { min: 80, max: 100, ticks: { color: '#888', callback: v => v+'%' }, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { ticks: { color: '#888' }, grid: { display: false } } } }
+    });
+  }
+}
+
+// Init
+checkStatus();
+setInterval(checkStatus, 10000);
+</script>
+</body>
+</html>'''

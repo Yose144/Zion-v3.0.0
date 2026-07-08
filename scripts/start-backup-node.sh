@@ -22,7 +22,7 @@ export ZION_WEBSOCKET_BIND='127.0.0.1:8447'
 export ZION_NODE_STATE_PATH="${REPO_ROOT}/V3/data/zion-node-state.db"
 
 # ── Network — peer with Edge server ────────────────────────────────────────
-export ZION_SEED_PEERS='62.171.141.136:8333'
+export ZION_SEED_PEERS='62.171.141.136:8333,62.171.141.136:8334'
 
 # ── Wallets (same as Edge — constitutional emission) ───────────────────────
 export ZION_MINER_ADDRESS='zion1d6m0h2r8m7k8k2d8n072y7j3j4m0254323vq0e3'

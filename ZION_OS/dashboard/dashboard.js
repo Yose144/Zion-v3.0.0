@@ -1,6 +1,6 @@
 'use strict';
 
-const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','bridge-validators','genesis','blockers','ops','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','cex','warp-swap','payout','backups','topology','miner-live','settings','fleet','agent','warp','ai-agents','ncl-jobs'];
+const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','bridge-validators','genesis','blockers','ops','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','cex','warp-swap','payout','backups','topology','miner-live','settings','fleet','agent','warp','ai-agents','ncl-jobs','poc-lab'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
 let _payoutSseSource = null;  // EventSource for real-time payout events
@@ -179,6 +179,7 @@ function switchTab(name){
   if(name === 'warp'){ loadWarpPanel(); }
   if(name === 'ai-agents'){ loadAiAgentsPanel(); }
   if(name === 'ncl-jobs'){ loadNclJobsPanel(); }
+  if(name === 'poc-lab'){ pocCheckStatus(); }
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -239,7 +240,7 @@ async function refreshAll(){
     // Hero stats (topology-aware)
     const isEdge = statusData.topology === 'edge-primary';
     const live = isEdge
-      ? [statusData.node1, statusData.edge_node, statusData.local_backup, statusData.pool, statusData.miner].filter(x => x && x.running).length
+      ? [statusData.edge_node, statusData.edge_node2, statusData.local_backup, statusData.pool, statusData.miner].filter(x => x && x.running).length
       : [statusData.node1, statusData.node2, statusData.pool, statusData.miner].filter(x => x && x.running).length;
     document.getElementById('hero-services-up').textContent = live;
     document.getElementById('hero-blockers-open').textContent = blockersData.open;
@@ -300,11 +301,14 @@ function formatUptime(sec){
 
 function updateServiceCards(s){
   const en = s.edge_node, n1 = s.node1, n2 = s.node2, p = s.pool, m = s.miner;
+  const en2 = s.edge_node2 || {};
   const lb = s.local_backup || {};
   const isEdgePrimary = s.topology === 'edge-primary';
-  // Node2 data source: local_backup in edge-primary, legacy node2 otherwise
-  const n2data = isEdgePrimary ? (lb || n2) : n2;
-  // Topology-aware visibility: show both edge-node and node2 in edge-primary
+  // In edge-primary: node1 card = local_backup, node2 card = edge_node2 (follower)
+  // In local-dev: node1 = genesis, node2 = follower
+  const n1data = isEdgePrimary ? (lb || n1) : n1;
+  const n2data = isEdgePrimary ? (en2 || n2) : n2;
+  // Topology-aware visibility
   const node2Card = document.getElementById('card-node2');
   if(node2Card) node2Card.classList.toggle('hidden', false);
   const edgeNodeCard = document.getElementById('card-edge-node');
@@ -319,28 +323,27 @@ function updateServiceCards(s){
   const enp = document.getElementById('val-edge-node-peers');
   if(enp) enp.textContent = en ? (en.known_peers ?? '—') : '—';
 
-  // Local Backup Node
-  setBadge('badge-node1', n1.running); setCardLive('node1', n1.running);
+  // Local Backup Node (node1 card in edge-primary)
+  setBadge('badge-node1', n1data && n1data.running); setCardLive('node1', n1data && n1data.running);
   const n1h = document.getElementById('val-node1-height');
-  if(n1h) n1h.textContent = n1.chain_height ?? '—';
+  if(n1h) n1h.textContent = n1data ? (n1data.chain_height ?? '—') : '—';
   const n1id = document.getElementById('val-node1-id');
-  if(n1id) n1id.textContent = n1.node_id ?? '—';
+  if(n1id) n1id.textContent = n1data ? (n1data.node_id ?? '—') : '—';
   const n1p = document.getElementById('val-node1-peers');
-  if(n1p) n1p.textContent = n1.known_peers ?? '—';
+  if(n1p) n1p.textContent = n1data ? (n1data.known_peers ?? '—') : '—';
   const n1p2p = document.getElementById('val-node1-p2p');
-  if(n1p2p) n1p2p.textContent = n1.p2p_bind ?? '—';
+  if(n1p2p) n1p2p.textContent = n1data ? (n1data.p2p_bind ?? '—') : '—';
   const n1m = document.getElementById('val-node1-mempool');
-  if(n1m) n1m.textContent = n1.mempool_size ?? '—';
+  if(n1m) n1m.textContent = n1data ? (n1data.mempool_size ?? '—') : '—';
   const n1u = document.getElementById('val-node1-uptime');
-  if(n1u) n1u.textContent = formatUptime(n1.uptime_seconds);
-  // Sync status for Local Backup Node (edge-primary) or Node1 (local-dev)
+  if(n1u) n1u.textContent = formatUptime(n1data ? n1data.uptime_seconds : null);
+  // Sync status for Local Backup Node
   const n1syncEl = document.getElementById('val-node1-sync');
   if(n1syncEl){
     const refHeight = isEdgePrimary ? (en ? (en.chain_height ?? 0) : 0) : (n2 ? (n2.chain_height ?? 0) : 0);
-    const localH = n1.chain_height ?? 0;
+    const localH = n1data ? (n1data.chain_height ?? 0) : 0;
     const gap = refHeight > 0 && localH > 0 ? Math.abs(refHeight - localH) : null;
-    // Prefer server-computed sync_gap if available
-    const serverGap = n1.sync_gap ?? gap;
+    const serverGap = n1data ? (n1data.sync_gap ?? gap) : gap;
     const synced = serverGap !== null && serverGap !== undefined && serverGap <= 5;
     if(serverGap === null || serverGap === undefined){
       n1syncEl.textContent = localH > 0 ? 'Syncing…' : 'No data';
@@ -354,10 +357,10 @@ function updateServiceCards(s){
     }
   }
 
-  // Node 2 / Local Backup (edge-primary) — relabel card to "Local Backup"
-  const n2label = isEdgePrimary ? 'Local Backup' : 'Node 2';
+  // Node 2 card: Edge Node 2 (Follower) in edge-primary, Node 2 in local-dev
+  const n2label = isEdgePrimary ? 'Edge Node 2' : 'Node 2';
   const n2kicker = node2Card ? node2Card.querySelector('.zion-kicker') : null;
-  if(n2kicker) n2kicker.textContent = isEdgePrimary ? '🔷 ' + n2label : '🔶 Node 2';
+  if(n2kicker) n2kicker.textContent = isEdgePrimary ? '🔶 ' + n2label : '🔶 Node 2';
   setBadge('badge-node2', n2data && n2data.running); setCardLive('node2', n2data && n2data.running);
   const n2h = document.getElementById('val-node2-height');
   if(n2h) n2h.textContent = n2data ? (n2data.chain_height ?? '—') : '—';
@@ -616,7 +619,7 @@ function _renderEdgeServerCard(d) {
 async function edgeAction(action) {
   const ACTION_LABELS = {
     'restart-node1': 'Restart Edge Node 1',
-    'restart-node2': 'Restart Local Backup Node',
+    'restart-node2': 'Restart Edge Node 2',
     'restart-pool': 'Restart Edge Pool',
     'restart-dao': 'Restart Edge DAO',
     'restart-warp': 'Restart Edge WARP',
@@ -8522,5 +8525,205 @@ async function loadNclJobsPanel(){
     }
   } catch(e){
     console.warn('NCL jobs panel load failed:', e);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// PoC Lab — Proof-of-Care Simulator
+// ─────────────────────────────────────────────────────────────────────
+
+let _pocCareChart = null;
+let _pocRewardChart = null;
+let _pocHiranChart = null;
+
+async function pocCheckStatus(){
+  try{
+    const r = await fetch('/api/poc/status');
+    const d = await r.json();
+    const badge = document.getElementById('poc-status-badge');
+    if(!badge) return;
+    let html = '';
+    html += d.poc_sim_available
+      ? '<span class="px-2 py-0.5 rounded text-xs font-semibold bg-green-500/20 text-green-400">poc-sim ready</span> '
+      : '<span class="px-2 py-0.5 rounded text-xs font-semibold bg-red-500/20 text-red-400">poc-sim NOT built</span> ';
+    html += d.hiran_online
+      ? '<span class="px-2 py-0.5 rounded text-xs font-semibold bg-cyan-500/20 text-cyan-400">Hiran LIVE</span>'
+      : '<span class="px-2 py-0.5 rounded text-xs font-semibold bg-purple-500/20 text-purple-400">Hiran offline</span>';
+    badge.innerHTML = html;
+  }catch(e){
+    const badge = document.getElementById('poc-status-badge');
+    if(badge) badge.textContent = 'Status: error';
+  }
+}
+
+async function pocRunSim(){
+  const btn = document.getElementById('poc-run-btn');
+  if(!btn) return;
+  btn.disabled = true; btn.textContent = 'Running...';
+  const area = document.getElementById('poc-results');
+  if(area) area.innerHTML = '<div class="text-center py-8 text-gray-400 text-sm"><div class="inline-block w-8 h-8 border-2 border-yellow-500/30 border-t-yellow-500 rounded-full animate-spin mb-2"></div><br>Running simulation (live Hiran may take 10-60s)...</div>';
+
+  const epochs = document.getElementById('poc-epochs').value;
+  const validators = document.getElementById('poc-validators').value;
+  const reward = document.getElementById('poc-reward').value;
+  const hiran = document.getElementById('poc-hiran').value;
+
+  try{
+    const r = await fetch(`/api/poc/run?epochs=${epochs}&validators=${validators}&block_reward=${reward}&hiran=${hiran}`);
+    const d = await r.json();
+    if(!d.ok && d.error){
+      area.innerHTML = `<div class="text-red-400 text-sm p-4 bg-red-500/10 rounded">Error: ${d.error}</div>`;
+      return;
+    }
+    pocRenderResults(d, area);
+  }catch(e){
+    area.innerHTML = `<div class="text-red-400 text-sm p-4 bg-red-500/10 rounded">Fetch error: ${e.message}</div>`;
+  }finally{
+    btn.disabled = false; btn.textContent = '▶ Run Simulation';
+  }
+}
+
+function pocFmtFlowers(n){
+  if(n >= 1000000) return (n/1000000).toFixed(2)+'M';
+  if(n >= 1000) return (n/1000).toFixed(1)+'K';
+  return String(n);
+}
+
+function pocRenderResults(data, area){
+  const cfg = data.config, sum = data.summary, reports = data.reports || [];
+  const hiranMode = cfg.hiran_stub_mode ? 'stub' : 'live';
+  let html = '';
+
+  // Summary cards
+  html += '<div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">';
+  html += pocCard('Epochs', cfg.epochs, 'text-yellow-400');
+  html += pocCard('Validators', cfg.validators, 'text-cyan-400');
+  html += pocCard('Accepted', sum.total_accepted, 'text-green-400');
+  html += pocCard('Rejected', sum.total_rejected, 'text-red-400');
+  html += pocCard('Total Payout', pocFmtFlowers(sum.total_payout), 'text-purple-400');
+  html += '</div>';
+
+  // Hiran banner
+  const hStats = reports.length > 0 ? reports[reports.length-1].hiran_stats : null;
+  if(hStats){
+    html += `<div class="flex flex-wrap items-center gap-4 mb-4 text-xs bg-black/20 p-3 rounded-lg">
+      <span class="px-2 py-0.5 rounded font-semibold ${hStats.stub_mode ? 'bg-purple-500/20 text-purple-400' : 'bg-cyan-500/20 text-cyan-400'}">Hiran ${hiranMode}</span>
+      <span>Validated: <b class="text-yellow-400">${hStats.proofs_validated}</b></span>
+      <span>Accepted: <b class="text-green-400">${hStats.accepted}</b></span>
+      <span>Rejected: <b class="text-red-400">${hStats.rejected}</b></span>
+      <span>Uncertain: <b class="text-orange-400">${hStats.uncertain}</b></span>
+      <span>Avg Confidence: <b class="text-cyan-400">${(hStats.avg_confidence*100).toFixed(1)}%</b></span>
+    </div>`;
+  }
+
+  // Charts
+  html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">';
+  html += '<div class="bg-black/20 p-3 rounded-lg"><h3 class="text-yellow-400 text-xs mb-2 font-bold">Care Score per Validator (last epoch)</h3><canvas id="pocCareChart" height="180"></canvas></div>';
+  html += '<div class="bg-black/20 p-3 rounded-lg"><h3 class="text-yellow-400 text-xs mb-2 font-bold">Reward Distribution (last epoch)</h3><canvas id="pocRewardChart" height="180"></canvas></div>';
+  html += '</div>';
+  if(reports.length > 0){
+    html += '<div class="bg-black/20 p-3 rounded-lg mb-4"><h3 class="text-yellow-400 text-xs mb-2 font-bold">Hiran Avg Confidence Trend</h3><canvas id="pocHiranChart" height="100"></canvas></div>';
+  }
+
+  // Epoch table
+  html += '<div class="bg-black/20 p-3 rounded-lg mb-4 overflow-x-auto">';
+  html += '<h3 class="text-yellow-400 text-xs mb-2 font-bold">Epoch Reports</h3>';
+  html += '<table class="w-full text-xs text-left"><thead><tr class="text-gray-500 border-b border-white/10"><th class="py-2 px-2">Epoch</th><th class="py-2 px-2">Validator</th><th class="py-2 px-2">Vow</th><th class="py-2 px-2">Status</th><th class="py-2 px-2">Care Score</th><th class="py-2 px-2">Payout</th><th class="py-2 px-2">Hiran</th><th class="py-2 px-2">NCL</th></tr></thead><tbody>';
+  for(const r of reports){
+    for(const v of r.validators){
+      const vow = v.dual_vow_bonus_applied ? '<span class="px-1.5 py-0.5 rounded text-[10px] bg-yellow-500/20 text-yellow-400 font-bold">S+B</span>' : '<span class="text-gray-500">S</span>';
+      const status = v.accepted ? '<span class="px-1.5 py-0.5 rounded text-[10px] bg-green-500/20 text-green-400 font-bold">ACCEPTED</span>' : '<span class="px-1.5 py-0.5 rounded text-[10px] bg-red-500/20 text-red-400 font-bold">REJECTED</span>';
+      const hc = v.hiran_verdict ? (v.hiran_verdict.confidence*100).toFixed(0)+'%' : '—';
+      const rej = v.rejection_reason ? `<div class="text-[10px] text-gray-500">${v.rejection_reason}</div>` : '';
+      html += `<tr class="border-b border-white/5">
+        <td class="py-1.5 px-2 text-cyan-400">${r.epoch}</td>
+        <td class="py-1.5 px-2">${v.name}${rej}</td>
+        <td class="py-1.5 px-2">${vow}</td>
+        <td class="py-1.5 px-2">${status}</td>
+        <td class="py-1.5 px-2">${v.accepted ? v.care_score.toLocaleString() : '—'}</td>
+        <td class="py-1.5 px-2 ${v.payout > 0 ? 'text-green-400' : 'text-gray-500'}">${v.payout > 0 ? pocFmtFlowers(v.payout) : '—'}</td>
+        <td class="py-1.5 px-2">${hc}</td>
+        <td class="py-1.5 px-2">${v.ncl_bonus > 0 ? pocFmtFlowers(v.ncl_bonus) : '—'}</td>
+      </tr>`;
+    }
+  }
+  html += '</tbody></table></div>';
+
+  // Anomalies
+  let totalAlerts = 0;
+  for(const r of reports) totalAlerts += (r.anomaly_alerts || []).length;
+  if(totalAlerts > 0){
+    html += '<div class="bg-red-500/10 p-3 rounded-lg mb-4">';
+    html += '<h3 class="text-red-400 text-xs mb-2 font-bold">Anomaly Alerts</h3>';
+    html += '<table class="w-full text-xs text-left"><thead><tr class="text-gray-500 border-b border-white/10"><th class="py-2 px-2">Epoch</th><th class="py-2 px-2">Type</th><th class="py-2 px-2">Severity</th><th class="py-2 px-2">Description</th><th class="py-2 px-2">Action</th></tr></thead><tbody>';
+    for(const r of reports){
+      for(const a of (r.anomaly_alerts || [])){
+        const sev = a.severity === 'Critical' ? 'text-red-400' : a.severity === 'High' ? 'text-orange-400' : 'text-gray-400';
+        html += `<tr class="border-b border-white/5"><td class="py-1.5 px-2 text-cyan-400">${r.epoch}</td><td class="py-1.5 px-2">${a.anomaly_type}</td><td class="py-1.5 px-2 ${sev}">${a.severity}</td><td class="py-1.5 px-2">${a.description}</td><td class="py-1.5 px-2">${a.recommended_action}</td></tr>`;
+      }
+    }
+    html += '</tbody></table></div>';
+  }
+
+  // Reward split
+  const rs = cfg.reward_split;
+  html += `<div class="bg-black/20 p-3 rounded-lg mb-4 text-xs">
+    <h3 class="text-yellow-400 text-xs mb-2 font-bold">Reward Split (basis points)</h3>
+    <div class="flex flex-wrap gap-4">
+      <span>Care Validators: <b class="text-yellow-400">${rs.care_validators_bps} bps (${rs.care_validators_bps/100}%)</b></span>
+      <span>Humanitarian: <b class="text-cyan-400">${rs.humanitarian_bps} bps</b></span>
+      <span>DAO: <b class="text-purple-400">${rs.dao_treasury_bps} bps</b></span>
+      <span>WARP: <b class="text-gray-300">${rs.warp_maintenance_bps} bps</b></span>
+      <span>Hiran: <b class="text-orange-400">${rs.hiran_research_bps} bps</b></span>
+    </div>
+  </div>`;
+
+  area.innerHTML = html;
+  pocRenderCharts(reports);
+}
+
+function pocCard(label, value, color){
+  return `<div class="bg-black/20 p-3 rounded-lg text-center">
+    <div class="text-[10px] text-gray-400 mb-1">${label}</div>
+    <div class="text-xl font-bold ${color}">${value}</div>
+  </div>`;
+}
+
+function pocRenderCharts(reports){
+  if(reports.length === 0) return;
+  const last = reports[reports.length-1];
+  const vNames = last.validators.map(v => v.name.substring(0, 20));
+  const vScores = last.validators.map(v => v.care_score);
+  const vColors = last.validators.map(v => v.accepted ? 'rgba(34,197,94,0.6)' : 'rgba(239,68,68,0.6)');
+
+  if(_pocCareChart) _pocCareChart.destroy();
+  const c1 = document.getElementById('pocCareChart');
+  if(c1) _pocCareChart = new Chart(c1.getContext('2d'), {
+    type: 'bar',
+    data: { labels: vNames, datasets: [{ label: 'Care Score', data: vScores, backgroundColor: vColors, borderRadius: 4 }] },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { color: '#888' }, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { ticks: { color: '#888', font: { size: 9 } }, grid: { display: false } } } }
+  });
+
+  const rd = last.reward_distribution;
+  if(_pocRewardChart) _pocRewardChart.destroy();
+  const c2 = document.getElementById('pocRewardChart');
+  if(c2) _pocRewardChart = new Chart(c2.getContext('2d'), {
+    type: 'doughnut',
+    data: { labels: ['Care Validators', 'Humanitarian', 'DAO Treasury', 'WARP', 'Hiran Research'],
+      datasets: [{ data: [rd.care_validators, rd.humanitarian, rd.dao_treasury, rd.warp_maintenance, rd.hiran_research],
+        backgroundColor: ['#FFD700', '#00CED1', '#a855f7', '#6b7280', '#f59e0b'] }] },
+    options: { responsive: true, plugins: { legend: { position: 'right', labels: { color: '#ccc', font: { size: 10 } } } } }
+  });
+
+  if(reports.length > 0){
+    const confs = reports.map(r => r.hiran_stats.avg_confidence * 100);
+    const epochs = reports.map(r => 'E' + r.epoch);
+    if(_pocHiranChart) _pocHiranChart.destroy();
+    const c3 = document.getElementById('pocHiranChart');
+    if(c3) _pocHiranChart = new Chart(c3.getContext('2d'), {
+      type: 'line',
+      data: { labels: epochs, datasets: [{ label: 'Avg Confidence %', data: confs, borderColor: '#00CED1', backgroundColor: 'rgba(0,206,209,0.1)', fill: true, tension: 0.3 }] },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { min: 80, max: 100, ticks: { color: '#888', callback: v => v+'%' }, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { ticks: { color: '#888' }, grid: { display: false } } } }
+    });
   }
 }
