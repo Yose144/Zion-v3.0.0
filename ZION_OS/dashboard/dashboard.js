@@ -733,165 +733,226 @@ async function updateServiceTelemetryDetails(s){
   const container = document.getElementById('overview-telemetry-details');
   if(!container) return;
 
-  // Fetch live infra telemetry from Edge directly (CORS permissive on Edge infra dashboard)
-  let infra = null;
-  let overview = null;
+  // Fetch live service data from local /api/services (replaces old 100.76.16.108:8888 fetch)
+  let svcList = [];
   try {
-    const ctrl = new AbortController();
-    const tid = setTimeout(() => ctrl.abort(), 5000);
-    const [infraRes, ovRes] = await Promise.all([
-      fetch('http://100.76.16.108:8888/api/infra', { signal: ctrl.signal }).then(r => r.json()).catch(() => null),
-      fetch('http://100.76.16.108:8888/api/overview', { signal: ctrl.signal }).then(r => r.json()).catch(() => null),
-    ]);
-    clearTimeout(tid);
-    infra = infraRes;
-    overview = ovRes;
+    const svcRes = await fetch('/api/services', { signal: AbortSignal.timeout(5000) }).then(r => r.json());
+    svcList = svcRes.services || [];
   } catch(e) {
-    console.warn('Edge infra fetch failed:', e);
+    console.warn('Service list fetch failed:', e);
   }
+  const svcMap = {};
+  for(const svc of svcList) svcMap[svc.id] = svc;
 
   const isEdge = s.topology === 'edge-primary';
   const en = s.edge_node, n1 = s.node1, p = s.pool, m = s.miner;
-  const pe = s.pool_edge ?? {};
+  const en2 = s.edge_node2 ?? {};
+  const lb  = s.local_backup ?? {};
+  const pe  = s.pool_edge ?? {};
 
-  // Build service list — prefer Edge infra data when available
+  // Build service list from local status + services data
   const services = [];
 
-  // Node
-  const nodeInfra = infra?.node;
+  // Edge Node 1 (Primary)
   services.push({
-    key:'node', label:'Node', cls:'tdc-node',
-    running: isEdge ? (en && en.running) : (n1 && n1.running),
-    data: isEdge ? en : n1,
-    infra: nodeInfra,
-    fields: (d, i)=>[
+    key:'edge-node1', label:'Edge Node 1', cls:'tdc-node',
+    running: en && en.running,
+    data: en,
+    svc: svcMap['edge-node1'],
+    fields: (d, sv)=>[
       ['Height', d?.chain_height ?? '—'],
       ['Peers', d?.known_peers ?? '—'],
-      ['Chain', d?.network ?? d?.chain ?? 'ZION Mainnet'],
-      ['Version', d?.version ?? '—'],
-      ...(i ? [['Latency', i.latency_ms != null ? i.latency_ms + ' ms' : '—'], ['Endpoint', i.url ?? '—']] : []),
+      ['Network', d?.network ?? 'Mainnet'],
+      ['Protocol', d?.protocol_version ?? '—'],
+      ['Tip', d?.tip_hash ? d.tip_hash.slice(0,12)+'…' : '—'],
+      ...(sv ? [['Ports', (sv.ports_open?.length ?? 0)+'/'+((sv.ports_open?.length??0)+(sv.ports_closed?.length??0))], ['Details', sv.details ?? '—']] : []),
     ],
   });
 
-  // Edge Pool
-  const poolInfra = infra?.pool;
+  // Edge Node 2 (Follower)
   services.push({
-    key:'pool-edge', label:'Edge Pool', cls:'tdc-pool',
-    running: pe && pe.running,
-    data: pe,
-    infra: poolInfra,
-    fields: (d, i)=>[
-      ['Hashrate', d?.hashrate ? d.hashrate.toFixed(2) + ' KH/s' : '—'],
+    key:'edge-node2', label:'Edge Node 2', cls:'tdc-node',
+    running: en2 && en2.running,
+    data: en2,
+    svc: svcMap['edge-node2'],
+    fields: (d, sv)=>[
+      ['Height', d?.chain_height ?? '—'],
+      ['Peers', d?.known_peers ?? '—'],
+      ['Node ID', d?.node_id ?? '—'],
+      ['P2P', d?.p2p_bind ?? '—'],
+      ['Tip', d?.tip_hash ? d.tip_hash.slice(0,12)+'…' : '—'],
+      ...(sv ? [['Ports', (sv.ports_open?.length ?? 0)+'/'+((sv.ports_open?.length??0)+(sv.ports_closed?.length??0))], ['Details', sv.details ?? '—']] : []),
+    ],
+  });
+
+  // Local Backup
+  services.push({
+    key:'local-backup', label:'Local Backup', cls:'tdc-node',
+    running: lb && lb.running,
+    data: lb,
+    svc: svcMap['local-backup'],
+    fields: (d, sv)=>[
+      ['Height', d?.chain_height ?? '—'],
+      ['Peers', d?.known_peers ?? '—'],
+      ['Node ID', d?.node_id ?? '—'],
+      ['P2P', d?.p2p_bind ?? '—'],
+      ['Tip', d?.tip_hash ? d.tip_hash.slice(0,12)+'…' : '—'],
+      ...(sv ? [['Ports', (sv.ports_open?.length ?? 0)+'/'+((sv.ports_open?.length??0)+(sv.ports_closed?.length??0))], ['Details', sv.details ?? '—']] : []),
+    ],
+  });
+
+  // Pool
+  const poolSvc = svcMap['pool-edge'];
+  services.push({
+    key:'pool-edge', label:'Pool', cls:'tdc-pool',
+    running: (pe && pe.running) || (p && p.running),
+    data: pe && pe.running ? pe : p,
+    svc: poolSvc,
+    fields: (d, sv)=>[
+      ['Hashrate', d?.hashrate ? (typeof d.hashrate === 'number' ? d.hashrate.toFixed(2)+' KH/s' : d.hashrate) : '—'],
       ['Miners', d?.active_miners ?? '—'],
       ['Blocks', d?.blocks_found ?? '—'],
-      ['Port', d?.ports_open?.[0]?.split(':')[1] ?? '8444'],
-      ...(i ? [['Latency', i.latency_ms != null ? i.latency_ms + ' ms' : '—']] : []),
+      ['Port', d?.bind_addr ? d.bind_addr.split(':')[1] : '8444'],
+      ['Wallet', d?.pool_wallet ? d.pool_wallet.slice(0,16)+'…' : '—'],
+      ...(sv ? [['Ports', (sv.ports_open?.length ?? 0)+'/'+((sv.ports_open?.length??0)+(sv.ports_closed?.length??0))]] : []),
     ],
   });
 
+  // Miner
+  services.push({
+    key:'miner', label:'Miner', cls:'tdc-agent',
+    running: m && m.running,
+    data: m,
+    svc: svcMap['miner'],
+    fields: (d, sv)=>[
+      ['Hashrate', d?.hashrate ? (typeof d.hashrate === 'number' ? d.hashrate.toFixed(2)+' H/s' : d.hashrate) : '—'],
+      ['Backend', d?.gpu_backend ?? 'cpu'],
+      ['Device', d?.gpu_device ?? '—'],
+      ['Pool', d?.pool_addr ?? '—'],
+      ['Shares', d?.shares_accepted ?? '—'],
+      ...(sv ? [['Ports', (sv.ports_open?.length ?? 0)+'/'+((sv.ports_open?.length??0)+(sv.ports_closed?.length??0))]] : []),
+    ],
+  });
+
+  // Bridge
+  if(s.bridge || svcMap['bridge']){
+    const sv = svcMap['bridge'];
+    services.push({
+      key:'bridge', label:'Bridge', cls:'tdc-warp',
+      running: s.bridge ? s.bridge.running : (sv?.alive ?? false),
+      data: s.bridge || {},
+      svc: sv,
+      fields: (d, sv)=>[
+        ['Status', d?.status ?? (sv?.alive ? 'running' : '—')],
+        ['Ports', (sv?.ports_open?.length ?? 0)+' / '+((sv?.ports_open?.length??0)+(sv?.ports_closed?.length??0))],
+        ['Details', sv?.details ?? d?.details ?? '—'],
+      ],
+    });
+  }
+
   // DAO
-  const daoInfra = infra?.dao;
-  if(s.dao || daoInfra){
+  if(s.dao || svcMap['dao']){
+    const sv = svcMap['dao'];
     services.push({
       key:'dao', label:'DAO', cls:'tdc-dao',
-      running: s.dao ? s.dao.running : (daoInfra?.reachable ?? false),
+      running: s.dao ? s.dao.running : (sv?.alive ?? false),
       data: s.dao || {},
-      infra: daoInfra,
-      fields: (d, i)=>[
-        ['Status', d?.status ?? '—'],
-        ['Ports', (d?.ports_open?.length ?? 0) + ' / ' + ((d?.ports_open?.length ?? 0)+(d?.ports_closed?.length ?? 0))],
-        ...(i?.data ? [['Version', i.data.data?.version ?? '—'], ['Service', i.data.data?.data?.service ?? '—']] : []),
-        ...(i ? [['Latency', i.latency_ms != null ? i.latency_ms + ' ms' : '—']] : []),
+      svc: sv,
+      fields: (d, sv)=>[
+        ['Status', d?.status ?? (sv?.alive ? 'running' : '—')],
+        ['Ports', (sv?.ports_open?.length ?? 0)+' / '+((sv?.ports_open?.length??0)+(sv?.ports_closed?.length??0))],
+        ['Details', sv?.details ?? d?.details ?? '—'],
       ],
     });
   }
 
   // WARP
-  const warpInfra = infra?.warp;
-  if(s.warp || warpInfra){
+  if(s.warp || svcMap['warp']){
+    const sv = svcMap['warp'];
     services.push({
       key:'warp', label:'WARP', cls:'tdc-warp',
-      running: s.warp ? s.warp.running : (warpInfra?.reachable ?? false),
+      running: s.warp ? s.warp.running : (sv?.alive ?? false),
       data: s.warp || {},
-      infra: warpInfra,
-      fields: (d, i)=>[
-        ['Status', d?.status ?? '—'],
-        ['Ports', (d?.ports_open?.length ?? 0) + ' / ' + ((d?.ports_open?.length ?? 0)+(d?.ports_closed?.length ?? 0))],
-        ...(i?.data ? [['Transfers', i.data.transfers_total ?? '—'], ['Pending', i.data.transfers_pending ?? '—'], ['Version', i.data.version ?? '—']] : []),
-        ...(i ? [['Latency', i.latency_ms != null ? i.latency_ms + ' ms' : '—']] : []),
+      svc: sv,
+      fields: (d, sv)=>[
+        ['Status', d?.status ?? (sv?.alive ? 'running' : '—')],
+        ['Ports', (sv?.ports_open?.length ?? 0)+' / '+((sv?.ports_open?.length??0)+(sv?.ports_closed?.length??0))],
+        ['Details', sv?.details ?? d?.details ?? '—'],
       ],
     });
   }
 
-  // Bridge
-  const bridgeInfra = infra?.bridge;
-  if(bridgeInfra){
+  // Oasis
+  if(s.oasis || svcMap['oasis']){
+    const sv = svcMap['oasis'];
     services.push({
-      key:'bridge', label:'Bridge', cls:'tdc-warp',
-      running: bridgeInfra?.reachable ?? false,
-      data: {},
-      infra: bridgeInfra,
-      fields: (d, i)=>[
-        ['Status', i?.reachable ? 'Reachable' : 'Unreachable'],
-        ...(i ? [['Latency', i.latency_ms != null ? i.latency_ms + ' ms' : '—'], ['Endpoint', i.url ?? '—']] : []),
+      key:'oasis', label:'Oasis (L4)', cls:'tdc-dao',
+      running: s.oasis ? s.oasis.running : (sv?.alive ?? false),
+      data: s.oasis || {},
+      svc: sv,
+      fields: (d, sv)=>[
+        ['Status', d?.status ?? (sv?.alive ? 'running' : '—')],
+        ['Ports', (sv?.ports_open?.length ?? 0)+' / '+((sv?.ports_open?.length??0)+(sv?.ports_closed?.length??0))],
       ],
     });
   }
 
-  // Agent
-  const agentInfra = infra?.agent;
-  if(agentInfra){
+  // Free World
+  if(s.free_world || svcMap['free-world']){
+    const sv = svcMap['free-world'];
     services.push({
-      key:'agent', label:'Agent', cls:'tdc-agent',
-      running: agentInfra?.reachable ?? false,
-      data: {},
-      infra: agentInfra,
-      fields: (d, i)=>[
-        ['Status', i?.reachable ? 'Reachable' : 'Unreachable'],
-        ...(i?.data ? [['Mode', i.data.mode ?? '—'], ['GPUs', i.data.gpu_count ?? '—']] : []),
-        ...(i ? [['Latency', i.latency_ms != null ? i.latency_ms + ' ms' : '—']] : []),
+      key:'free-world', label:'Free World (L5)', cls:'tdc-dao',
+      running: s.free_world ? s.free_world.running : (sv?.alive ?? false),
+      data: s.free_world || {},
+      svc: sv,
+      fields: (d, sv)=>[
+        ['Status', d?.status ?? (sv?.alive ? 'running' : '—')],
+        ['Ports', (sv?.ports_open?.length ?? 0)+' / '+((sv?.ports_open?.length??0)+(sv?.ports_closed?.length??0))],
       ],
     });
   }
 
-  // Website
-  const webInfra = infra?.website;
-  if(webInfra){
+  // Issobella
+  if(s.issobella || svcMap['issobella']){
+    const sv = svcMap['issobella'];
     services.push({
-      key:'website', label:'Website', cls:'tdc-website',
-      running: webInfra?.reachable ?? false,
-      data: {},
-      infra: webInfra,
-      fields: (d, i)=>[
-        ['Status', i?.reachable ? 'Reachable' : 'Unreachable'],
-        ...(i ? [['Latency', i.latency_ms != null ? i.latency_ms + ' ms' : '—'], ['Endpoint', i.url ?? '—']] : []),
+      key:'issobella', label:'Issobella (L6)', cls:'tdc-dao',
+      running: s.issobella ? s.issobella.running : (sv?.alive ?? false),
+      data: s.issobella || {},
+      svc: sv,
+      fields: (d, sv)=>[
+        ['Status', d?.status ?? (sv?.alive ? 'running' : '—')],
+        ['Ports', (sv?.ports_open?.length ?? 0)+' / '+((sv?.ports_open?.length??0)+(sv?.ports_closed?.length??0))],
       ],
     });
   }
 
-  // Miner (local)
-  services.push({
-    key:'miner', label:'Miner', cls:'tdc-agent',
-    running: m && m.running,
-    data: m,
-    fields: (d)=>[
-      ['Hashrate', d?.hashrate ? d.hashrate.toFixed(2) + ' H/s' : '—'],
-      ['Backend', d?.gpu_backend ?? 'cpu'],
-      ['Device', d?.gpu_device ?? '—'],
-      ['Pool', d?.pool_addr ?? '—'],
-    ],
-  });
+  // Dashboard
+  if(svcMap['dashboard']){
+    const sv = svcMap['dashboard'];
+    services.push({
+      key:'dashboard', label:'Dashboard', cls:'tdc-website',
+      running: sv?.alive ?? false,
+      data: {},
+      svc: sv,
+      fields: (d, sv)=>[
+        ['Status', sv?.alive ? 'running' : 'stopped'],
+        ['Ports', (sv?.ports_open?.length ?? 0)+' / '+((sv?.ports_open?.length??0)+(sv?.ports_closed?.length??0))],
+        ['Details', sv?.details ?? '—'],
+      ],
+    });
+  }
 
   container.innerHTML = services.map(svc=>{
     const online = svc.running;
     const statusClass = online ? 'tdc-online' : 'tdc-offline';
     const statusText = online ? 'Online' : 'Offline';
     const d = svc.data || {};
-    const i = svc.infra || null;
-    const rows = svc.fields(d, i).map(([label,value])=>`
+    const sv = svc.svc || null;
+    const rows = svc.fields(d, sv).map(([label,value])=>`
       <div class="tdc-row">
         <div class="tdc-label">${escapeHtml(label)}</div>
-        <div class="tdc-value${String(value).length > 20 ? ' small' : ''}">${escapeHtml(value)}</div>
+        <div class="tdc-value${String(value).length > 20 ? ' small' : ''}">${escapeHtml(String(value))}</div>
       </div>
     `).join('');
 
@@ -904,11 +965,11 @@ async function updateServiceTelemetryDetails(s){
         <div class="tdc-body">
           <div class="tdc-row">
             <div class="tdc-label">Uptime</div>
-            <div class="tdc-value">${formatUptime(d?.uptime_seconds)}</div>
+            <div class="tdc-value">${formatUptime(d?.uptime_seconds ?? sv?.uptime_seconds)}</div>
           </div>
           <div class="tdc-row">
             <div class="tdc-label">PID</div>
-            <div class="tdc-value">${d?.pid ?? '—'}</div>
+            <div class="tdc-value">${d?.pid ?? sv?.pid ?? '—'}</div>
           </div>
           ${rows}
         </div>
