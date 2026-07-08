@@ -47,7 +47,7 @@ async function apiFetch(url, opts={}, timeoutMs=8000){
   const ctrl = new AbortController();
   const tid = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    const res = await fetch(url, { ...opts, signal: ctrl.signal });
+    const res = await fetch(url, { ...opts, signal: ctrl.signal, credentials: 'same-origin' });
     if(!res.ok) throw new Error('HTTP ' + res.status + ' on ' + url);
     return await res.json();
   } finally {
@@ -133,6 +133,7 @@ function switchTab(name){
   });
 
   // ── Auto-refresh timers ─────────────────────────────────────────────
+  if(name === 'overview'){ loadMempool(); loadMonitoringStatus(); }
   if(name === 'alerts'){ clearTabTimers('alerts'); loadAlertHistory(); if(!_alertsTimer) _alertsTimer = setInterval(loadAlertHistory, 8000); }
   else if(name === 'services'){ clearTabTimers('services'); loadServices(); if(!_servicesTimer) _servicesTimer = setInterval(loadServices, 5000); }
   else if(name === 'nodes'){ clearTabTimers('nodes'); loadCliNodeStatus(); if(!_nodesTimer) _nodesTimer = setInterval(loadCliNodeStatus, 6000); }

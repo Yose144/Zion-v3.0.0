@@ -3632,20 +3632,29 @@ def get_block_detail(height: int = None, hash_hex: str = None) -> dict:
 # ── Mempool detail ────────────────────────────────────────────────────
 
 def get_mempool_detail() -> dict:
-    """Fetch mempool transactions and stats."""
+    """Fetch mempool transactions and stats via getMempoolInfo RPC."""
     rpc_host, rpc_port = "127.0.0.1", 8443
+    # Try getMempoolInfo first (richer data)
+    info = rpc_call(rpc_host, rpc_port, "getMempoolInfo", {}, timeout=1.5)
+    if info and not info.get("_rpc_error"):
+        return {
+            "rpc_reachable": True,
+            "tx_count": info.get("size", 0),
+            "template_tx_count": info.get("template_transactions", 0),
+            "total_fees_zion": info.get("template_total_fees_zion", 0),
+            "transaction_model": info.get("transaction_model", "hybrid"),
+            "transactions": [],
+        }
+    # Fallback to getChainInfo
     info = rpc_call(rpc_host, rpc_port, "getChainInfo", {}, timeout=1.5)
     if not info or info.get("_rpc_error"):
         return {"rpc_reachable": False, "tx_count": 0, "transactions": []}
-    # Use data from getChainInfo (getMempool method is not implemented in node)
     mempool_txs = info.get("mempool_transactions", 0)
-    template_txs = info.get("active_template_transactions", 0)
-    total_fees = info.get("active_template_total_fees_zion", 0)
     return {
         "rpc_reachable": True,
         "tx_count": mempool_txs,
-        "template_tx_count": template_txs,
-        "total_fees_zion": total_fees,
+        "template_tx_count": 0,
+        "total_fees_zion": 0,
         "transactions": [],
     }
 
