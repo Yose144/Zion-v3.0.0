@@ -511,6 +511,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <button onclick="switchTab('ai-agents')" id="tab-ai-agents">AI Agents</button>
         <button onclick="switchTab('hiran')" id="tab-hiran">Hiran AI</button>
         <button onclick="switchTab('ncl-jobs')" id="tab-ncl-jobs">NCL Jobs</button>
+        <button onclick="switchTab('poc-lab')" id="tab-poc-lab">🧬 PoC Lab</button>
       </div>
     </div>
     <div class="nav-group">
@@ -5187,6 +5188,51 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     </div>
   </div>
 
+  <!-- ═════════ TAB: PoC Lab ═════════ -->
+  <div id="pane-poc-lab" class="hidden space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">🧬 PoC Lab — Proof-of-Care Simulator</h1>
+        <p class="text-xs text-gray-400 mt-1">Standalone Rust workspace simulating ZION Proof-of-Care consensus with live Hiran AI integration</p>
+      </div>
+      <div id="poc-status-badge" class="text-xs"></div>
+    </div>
+
+    <!-- Config -->
+    <div class="zion-panel p-5">
+      <h2 class="text-sm font-bold mb-3 text-yellow-400">Simulation Parameters</h2>
+      <div class="flex flex-wrap gap-4 items-end">
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Epochs</label>
+          <input id="poc-epochs" type="number" value="3" min="1" max="100" class="w-20 bg-black/40 border border-white/10 text-white px-2 py-1 rounded text-sm">
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Validators</label>
+          <input id="poc-validators" type="number" value="4" min="1" max="64" class="w-20 bg-black/40 border border-white/10 text-white px-2 py-1 rounded text-sm">
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Block Reward</label>
+          <input id="poc-reward" type="number" value="1000000" min="1" class="w-32 bg-black/40 border border-white/10 text-white px-2 py-1 rounded text-sm">
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Hiran Mode</label>
+          <select id="poc-hiran" class="w-36 bg-black/40 border border-white/10 text-white px-2 py-1 rounded text-sm">
+            <option value="auto">Auto (if online)</option>
+            <option value="1">Force Live</option>
+            <option value="0">Force Stub</option>
+          </select>
+        </div>
+        <button id="poc-run-btn" onclick="pocRunSim()" class="px-4 py-1.5 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-bold rounded-lg text-sm hover:opacity-90 transition">▶ Run Simulation</button>
+        <button onclick="window.open('/api/poc/html','_blank')" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs transition">↗ Open Full Page</button>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="poc-results" class="zion-panel p-5">
+      <div class="text-center text-gray-500 py-8 text-sm">Click "Run Simulation" to start.</div>
+    </div>
+  </div>
+
   </main>
   </div>
 
@@ -5201,7 +5247,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=74"></script>
+<script src="/dashboard.js?v=75"></script>
 <script>
 // ═══ ZION Theme — Auto-apply accent colors per pane ═══
 (function(){
