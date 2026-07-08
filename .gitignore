@@ -4,6 +4,9 @@ secrets/
 keys/
 *.key
 zion-validator-key.env
+newzionssh.md
+*ssh*.md
+*ssh*key*
 
 # Scripts with hardcoded private keys / mnemonics — DO NOT COMMIT
 revoke_old_bridge.js

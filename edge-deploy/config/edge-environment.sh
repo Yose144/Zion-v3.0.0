@@ -1,32 +1,26 @@
 # ZION Edge Server — Common Environment
-# Updated: 2026-06-11 - Hard Genesis Reset #0 completed, fee split verified
-#                        Added ZION_SEED_PEERS, ZION_NETWORK for mainnet
+# Updated: 2026-07-08 - Post 3.0.4 Hard Genesis Reset (new server 62.171.141.136)
+#                        Updated all addresses to hard-reset canonical addresses
+#                        Fixed env var name: ZION_POOL_SK → ZION_POOL_PAYOUT_SK_HEX
 #
 # This file contains SHARED environment variables for ALL Edge services.
 # Service-specific overrides (node ID, bind ports, state paths) are set
 # in each systemd service via Environment= directives.
 #
-# Edge runs:
-#   - Node 1 (Primary / Genesis) — P2P 8333, RPC 8443 (localhost)
-#   - Node 2 (Follower / P2P peer) — P2P 8334, RPC 8446 (localhost)
-#   - Pool (Primary) — connects to Node 1 RPC, Stratum 8444 public
-#   - Bridge, DAO, Atomic-Swap, WARP — all connect to Node 1 RPC
-#
-# Local PC (Core) runs:
-#   - Backup Node — syncs from Edge Node 1 via Tailscale
-#   - Miners — connect to Edge Pool via Tailscale
-#   - AI services (Hiran + Hiranyagarbha) — local GPU required
+# Server runs:
+#   - Node (Primary / Genesis) — P2P 8333, RPC 8443 (localhost)
+#   - Pool (Primary) — connects to Node RPC, Stratum 8444 public
+#   - Bridge, DAO, Atomic-Swap, WARP — all connect to Node RPC
 
 # ── Canonical Fee Split Addresses (89/5/5/1 burn model — no pool fee wallet) ──
-# NOTE: On Edge-Primary topology, ZION_MINER_ADDRESS MUST equal the pool
-# wallet so the node credits block rewards directly to the pool payout wallet.
+# NOTE: ZION_MINER_ADDRESS = default_miner canonical wallet (89% coinbase).
 # Local miners should set their own ZION_MINER_ADDRESS in launch scripts.
-ZION_MINER_ADDRESS=zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604
-ZION_HUMANITARIAN_WALLET=zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4
-ZION_ISSOBELLA_WALLET=zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702
+ZION_MINER_ADDRESS=zion1d6m0h2r8m7k8k2d8n072y7j3j4m0254323vq0e3
+ZION_HUMANITARIAN_WALLET=zion1e0u5q5s660k4m4a634p2c2v358r8g59564054z7
+ZION_ISSOBELLA_WALLET=zion1f7y7l5k678y0v408e8s654d2282346k375526t2
 # Network configuration
 ZION_NETWORK=Mainnet
-ZION_SEED_PEERS=100.86.102.5:8333
+ZION_SEED_PEERS=127.0.0.1:8333
 
 # Burn model: 1% pool fee is burned (never minted). Set to 0 so the pool
 # does not double-deduct — the protocol burn happens in core coinbase.
@@ -51,14 +45,23 @@ ZION_VARDIFF_MAX_DIFF=10000
 ZION_VARDIFF_TARGET_SECS=15
 ZION_VARDIFF_RETARGET_SHARES=6
 ZION_PPLNS_WINDOW_SIZE=500000
+ZION_PPLNS_STATE_PATH=/data/zion/pplns-state.json
 ZION_ROUTING_METRICS_BIND=0.0.0.0:8455
 
 # Pool wallet (Edge primary — handles all payouts)
-ZION_POOL_WALLET=zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604
+# Address: zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2 (pool_payout canonical wallet)
+ZION_POOL_WALLET=zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2
 ZION_POOL_PAYOUT_SK_HEX=<SET_VIA_SECURE_ENVIRONMENT_DO_NOT_COMMIT>
 
-# Atomic Swap escrow key (testnet placeholder — rotate for mainnet)
-ZION_SWAP_ESCROW_KEY=0000000000000000000000000000000000000000000000000000000000000001
+# Atomic Swap escrow key (air-gapped — set via secure environment)
+ZION_SWAP_ESCROW_KEY=<SET_VIA_SECURE_ENVIRONMENT_DO_NOT_COMMIT>
+
+# F4.7 max TX amount cap (active from height 1 on fresh chain)
+ZION_MAX_TX_AMOUNT_HEIGHT=1
+
+# F5 balance check (active from genesis on fresh chain — height 0)
+ZION_BALANCE_CHECK_HEIGHT=0
+ZION_MIGRATION_HEIGHT=1
 
 # Account-model memo v1 hard fork activation height
 ZION_ACCOUNT_TX_MEMO_V1_HEIGHT=22181

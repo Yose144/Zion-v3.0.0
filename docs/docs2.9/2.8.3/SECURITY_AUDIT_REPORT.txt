@@ -1354,7 +1354,7 @@
 /home/zion/ZION/.gitignore:4:# Všechny private keys a mnemonic zálohy
 /home/zion/ZION/.gitignore:5:*private_key*
 /home/zion/ZION/.gitignore:15:# Wallet soubory s private keys
-/home/zion/ZION/config/ssh_config.json:7:  "key_content": "[REDACTED — SSH private key removed for security]"
+/home/zion/ZION/config/ssh_config.json:7:  "key_content": "[REDACTED — SSH private key removed 2026-07-08 for security]"
 /home/zion/ZION/config/phase2_config.env:72:CERT_PRIVATE_KEY="$CERT_PATH/privkey.pem"
 /home/zion/ZION/config/example.yml:17:  private_keys: "external_backup_only"
 /home/zion/ZION/.web-temp/round_table_dashboard.html:510:                        "Private Key Protection",
@@ -3491,6 +3491,13 @@
 /home/zion/ZION/.venv_local/lib/python3.13/site-packages/ecdsa/test_keys.py:658:            "-----BEGIN PRIVATE KEY-----\n"
 /home/zion/ZION/.venv_local/lib/python3.13/site-packages/ecdsa/test_keys.py:754:            "-----BEGIN PRIVATE KEY-----\n"
 /home/zion/ZION/.venv_local/lib/python3.13/site-packages/ecdsa/test_keys.py:774:            b"-----BEGIN PRIVATE KEY-----\n"
-/home/zion/ZION/.venv_local/lib/python3.13/site-packages/ecdsa/test_keys.py:789:            b"[REDACTED — SSH private key removed for security]"
+/home/zion/ZION/.venv_local/lib/python3.13/site-packages/ecdsa/test_keys.py:789:            b"-----BEGIN OPENSSH PRIVATE KEY-----\n"
+/home/zion/ZION/.venv_local/lib/python3.13/site-packages/ecdsa/test_keys.py:820:            "-----BEGIN PRIVATE KEY-----\n"
+/home/zion/ZION/.venv_local/lib/python3.13/site-packages/ecdsa/test_keys.py:846:            b"-----BEGIN PRIVATE KEY-----\n"
+/home/zion/ZION/.venv_local/lib/python3.13/site-packages/ecdsa/test_keys.py:919:    "-----BEGIN EC PRIVATE KEY-----\n"
+/home/zion/ZION/.venv_local/lib/python3.13/site-packages/ecdsa/test_keys.py:1031:    "-----BEGIN EC PRIVATE KEY-----\n"
+/home/zion/ZION/.venv_local/lib/python3.13/site-packages/ecdsa/test_keys.py:1132:    pem = """-----BEGIN PRIVATE KEY-----
+/home/zion/ZION/docs/2.7.5/SECURITY_FINDINGS_WEEK2.md:546:2. Begin fixing CRIT-001 (private key encryption)
+/home/zion/ZION/config/ssh_config.json:7:  "key_content": "[REDACTED — SSH private key removed 2026-07-08 for security]"
 /home/zion/ZION/scripts/phase3.1_security_cleanup.sh:32:    "BEGIN.*PRIVATE.*KEY"
 /home/zion/ZION/scripts/phase3.1_security_cleanup.sh:33:    "aws.*access"
