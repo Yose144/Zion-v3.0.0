@@ -43,23 +43,41 @@ if not LOG_DIR.exists():
 
 # Unified service → log file mapping used by all log endpoints
 SERVICE_LOG_MAP = {
-    "node1":           "node1.log",
-    "node2":           "node2.log",
+    # Blockchain nodes
+    "node1":           "node1.log",           # legacy alias
+    "edge-node1":      "node1.log",            # Edge Node 1 (primary) — log forwarded via SSH tunnel
+    "node2":           "node2.log",            # legacy alias
+    "edge-node2":      "node2.log",            # Edge Node 2 (follower)
+    "local-backup":    "node-backup.log",      # Local backup node
+    "node-backup":     "node-backup.log",      # alias
+    # L1 services
     "pool":            "pool.log",
+    "pool-edge":       "pool.log",             # alias
     "miner":           "miner.log",
     "miner-low":       "miner-low.log",
     "miner-cpu":       "miner-cpu.log",
     "miner-gpu":       "miner-gpu.log",
+    # AI
     "hiranyagarbha":   "hiranyagarbha.log",
     "hiran":           "hiran-inference.log",
     "hiran-inference": "hiran-inference.log",
+    # L2
     "bridge":          "bridge.log",
     "dao-daemon":      "dao.log",
     "dao":             "dao.log",
     "atomic-swap":     "atomic-swap.log",
+    # L3
     "warp":            "warp.log",
+    # L4-L6
+    "oasis":           "oasis.log",
+    "free-world":      "free-world.log",
+    "issobella":       "issobella.log",
+    # Infrastructure
     "dashboard":       "dashboard.log",
     "control-audit":   "control-audit.txt",
+    "watchdog":        "watchdog.log",
+    "backup":          "backup.log",
+    "autostart":       "autostart.log",
 }
 
 # Load config
@@ -8580,23 +8598,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "hiranyagarbha": ("hiranyagarbha",         ""),
                 "hiran":         ("hiran-inference",       ""),
             }
-            # Determine the log file to tail as the default command
-            _TAIL_MAP = {
-                "node1":         str(LOG_DIR / "node1.log"),
-                "node2":         str(LOG_DIR / "node2.log"),
-                "pool":          str(LOG_DIR / "pool.log"),
-                "miner":         str(LOG_DIR / "miner.log"),
-                "miner-low":     str(LOG_DIR / "miner-low.log"),
-                "hiranyagarbha": str(LOG_DIR / "hiranyagarbha.log"),
-                "hiran":         str(LOG_DIR / "hiran-inference.log"),
-                "bridge":        str(LOG_DIR / "bridge.log"),
-                "dao-daemon":    str(LOG_DIR / "dao.log"),
-                "atomic-swap":   str(LOG_DIR / "atomic-swap.log"),
-                "warp":          str(LOG_DIR / "warp.log"),
-                "dashboard":     str(LOG_DIR / "dashboard.log"),
-                "control-audit": str(LOG_DIR / "control-audit.txt"),
-            }
-            log_file = _TAIL_MAP.get(svc_id, str(LOG_DIR / f"{svc_id}.log"))
+            # Determine the log file to tail — use SERVICE_LOG_MAP
+            _log_name = SERVICE_LOG_MAP.get(svc_id, f"{svc_id}.log")
+            log_file = str(LOG_DIR / _log_name)
             try:
                 if os.name == "nt":
                     # Windows: open Windows Terminal or fallback to PowerShell
@@ -8631,16 +8635,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
             return
         elif route == "/api/log-files":
             # List all log files on disk with size + mtime
-            SVC_LOG_MAP = {
-                "node1.log": "node1", "node2.log": "node2",
-                "pool.log": "pool", "miner.log": "miner",
-                "miner-low.log": "miner-low", "miner-cpu.log": "miner-cpu",
-                "miner-gpu.log": "miner-gpu",
-                "hiranyagarbha.log": "hiranyagarbha", "hiran-inference.log": "hiran",
-                "bridge.log": "bridge", "dao.log": "dao-daemon",
-                "atomic-swap.log": "atomic-swap", "warp.log": "warp",
-                "dashboard.log": "dashboard", "control-audit.txt": "control-audit",
-            }
+            # Reverse map from SERVICE_LOG_MAP (filename → service id)
+            _FILE_TO_SVC = {}
+            for _sid, _fn in SERVICE_LOG_MAP.items():
+                if _fn not in _FILE_TO_SVC:
+                    _FILE_TO_SVC[_fn] = _sid
             files = []
             if LOG_DIR.exists():
                 import datetime as _dt
@@ -8650,7 +8649,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                             st = fp.stat()
                             files.append({
                                 "name": fp.name,
-                                "svc_id": SVC_LOG_MAP.get(fp.name, fp.stem),
+                                "svc_id": _FILE_TO_SVC.get(fp.name, fp.stem),
                                 "size_kb": round(st.st_size / 1024, 1),
                                 "modified": _dt.datetime.fromtimestamp(st.st_mtime).strftime("%Y-%m-%d %H:%M"),
                             })
@@ -8664,24 +8663,18 @@ class DashboardHandler(BaseHTTPRequestHandler):
             svc_filt   = params.get("svc",   [""])[0].strip()
             results    = []
             MAX_HITS   = 500
-            SVC_LOG_MAP2 = {
-                "node1.log": "node1", "node2.log": "node2",
-                "pool.log": "pool", "miner.log": "miner",
-                "miner-low.log": "miner-low", "miner-cpu.log": "miner-cpu",
-                "miner-gpu.log": "miner-gpu",
-                "hiranyagarbha.log": "hiranyagarbha", "hiran-inference.log": "hiran",
-                "bridge.log": "bridge", "dao.log": "dao-daemon",
-                "atomic-swap.log": "atomic-swap", "warp.log": "warp",
-                "dashboard.log": "dashboard",
-                "control-audit.txt": "control-audit",
-            }
+            # Build reverse map from SERVICE_LOG_MAP (filename → service id)
+            _FILE_TO_SVC2 = {}
+            for _sid, _fn in SERVICE_LOG_MAP.items():
+                if _fn not in _FILE_TO_SVC2:
+                    _FILE_TO_SVC2[_fn] = _sid
             if LOG_DIR.exists():
                 for fp in sorted(LOG_DIR.iterdir()):
                     if len(results) >= MAX_HITS:
                         break
                     if fp.suffix not in (".log", ".txt") or not fp.is_file():
                         continue
-                    svc_id = SVC_LOG_MAP2.get(fp.name, fp.stem)
+                    svc_id = _FILE_TO_SVC2.get(fp.name, fp.stem)
                     if svc_filt and svc_id != svc_filt:
                         continue
                     try:

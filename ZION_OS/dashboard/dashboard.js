@@ -6281,22 +6281,34 @@ async function loadL6Missions() {
 // ═══════════════════════════════════════════════════════════════════════
 
 const LOG_SERVICES = [
-  { id: 'node1',         label: 'Node 1',       icon: '⛓️',  color: 'emerald', group: 'core'  },
-  { id: 'node2',         label: 'Node 2',       icon: '⛓️',  color: 'blue',    group: 'core'  },
-  { id: 'pool',          label: 'Pool',         icon: '🏊',  color: 'cyan',    group: 'core'  },
-  { id: 'miner',         label: 'Miner',        icon: '⛏️',  color: 'amber',   group: 'core'  },
-  { id: 'miner-low',     label: 'Miner Low',    icon: '⛏️',  color: 'amber',   group: 'core'  },
-  { id: 'hiranyagarbha', label: 'Hiranyagarbha',icon: '🧠',  color: 'purple',  group: 'ai'    },
-  { id: 'hiran',         label: 'Hiran AI',     icon: '🤖',  color: 'violet',  group: 'ai'    },
-  { id: 'bridge',        label: 'Bridge',       icon: '🌉',  color: 'indigo',  group: 'l2'    },
-  { id: 'dao-daemon',    label: 'DAO Daemon',   icon: '🗳️', color: 'purple',  group: 'l2'    },
-  { id: 'atomic-swap',   label: 'Atomic Swap',  icon: '⚡',  color: 'amber',   group: 'l2'    },
-  { id: 'warp',          label: 'WARP',         icon: '🌀',  color: 'cyan',    group: 'l3'    },
-  { id: 'dashboard',     label: 'Dashboard',    icon: '📊',  color: 'gray',    group: 'system'},
-  { id: 'control-audit', label: 'Audit Log',    icon: '📝',  color: 'gray',    group: 'system'},
+  // Blockchain nodes (3-node P2P)
+  { id: 'edge-node1',    label: 'Edge Node 1',   icon: '🌍', color: 'emerald', group: 'node'  },
+  { id: 'edge-node2',    label: 'Edge Node 2',   icon: '🔥', color: 'amber',   group: 'node'  },
+  { id: 'local-backup',  label: 'Local Backup',  icon: '💎', color: 'cyan',    group: 'node'  },
+  // L1 services
+  { id: 'pool',          label: 'Pool',          icon: '🏊', color: 'cyan',    group: 'L1'    },
+  { id: 'miner',         label: 'Miner',         icon: '⛏️', color: 'amber',   group: 'L1'    },
+  { id: 'miner-gpu',     label: 'Miner GPU',     icon: '⛏️', color: 'amber',   group: 'L1'    },
+  // AI
+  { id: 'hiranyagarbha', label: 'Hiranyagarbha', icon: '🧠', color: 'purple',  group: 'AI'    },
+  { id: 'hiran',         label: 'Hiran AI',      icon: '🤖', color: 'violet',  group: 'AI'    },
+  // L2
+  { id: 'bridge',        label: 'Bridge',        icon: '🌉', color: 'indigo',  group: 'L2'    },
+  { id: 'dao-daemon',    label: 'DAO Daemon',    icon: '🗳️', color: 'purple',  group: 'L2'    },
+  { id: 'atomic-swap',   label: 'Atomic Swap',   icon: '⚡', color: 'amber',   group: 'L2'    },
+  // L3
+  { id: 'warp',          label: 'WARP',          icon: '🌀', color: 'cyan',    group: 'L3'    },
+  // L4-L6
+  { id: 'oasis',         label: 'Oasis (L4)',    icon: '🏝️', color: 'emerald', group: 'L4'    },
+  { id: 'free-world',    label: 'Free World',    icon: '🕊️', color: 'blue',    group: 'L5'    },
+  { id: 'issobella',     label: 'Issobella',     icon: '🛰️', color: 'violet',  group: 'L6'    },
+  // Infrastructure
+  { id: 'dashboard',     label: 'Dashboard',     icon: '📊', color: 'gray',    group: 'infra' },
+  { id: 'watchdog',      label: 'Watchdog',      icon: '🐕', color: 'gray',    group: 'infra' },
+  { id: 'control-audit', label: 'Audit Log',     icon: '📝', color: 'gray',    group: 'infra' },
 ];
 
-let _logActiveSvc   = 'node1';
+let _logActiveSvc   = 'local-backup';
 let _logSseSource   = null;   // current EventSource
 let _logLineCount   = 0;
 let _logAutoScroll  = true;
@@ -6348,7 +6360,7 @@ function initLogPane() {
   });
 
   // Select first by default
-  logSelectSvc('node1');
+  logSelectSvc('local-backup');
   refreshLogFiles();
 }
 

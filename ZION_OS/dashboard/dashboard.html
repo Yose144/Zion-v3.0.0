@@ -3658,16 +3658,23 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         </select>
         <select id="log-svc-filter" class="bg-black/40 border border-white/10 rounded-lg px-2 py-2 text-xs text-white focus:outline-none">
           <option value="">All services</option>
-          <option value="node1">node1</option>
-          <option value="node2">node2</option>
+          <option value="edge-node1">edge-node1</option>
+          <option value="edge-node2">edge-node2</option>
+          <option value="local-backup">local-backup</option>
           <option value="pool">pool</option>
           <option value="miner">miner</option>
+          <option value="miner-gpu">miner-gpu</option>
           <option value="hiranyagarbha">hiranyagarbha</option>
           <option value="hiran">hiran</option>
           <option value="bridge">bridge</option>
           <option value="dao-daemon">dao-daemon</option>
           <option value="atomic-swap">atomic-swap</option>
           <option value="warp">warp</option>
+          <option value="oasis">oasis</option>
+          <option value="free-world">free-world</option>
+          <option value="issobella">issobella</option>
+          <option value="dashboard">dashboard</option>
+          <option value="watchdog">watchdog</option>
         </select>
         <button onclick="logSearchAll()" class="text-xs px-4 py-2 bg-emerald-700/50 hover:bg-emerald-600 rounded-lg font-semibold transition">Search</button>
         <button onclick="document.getElementById('log-search-results').innerHTML=''" class="text-xs px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">Clear</button>
@@ -5230,7 +5237,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=78"></script>
+<script src="/dashboard.js?v=79"></script>
 <script>
 // ═══ ZION Theme — Auto-apply accent colors per pane ═══
 (function(){
