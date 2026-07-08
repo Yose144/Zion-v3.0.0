@@ -71,16 +71,14 @@
     - Stav:
        - [x] `metal 0.29 -> 0.33.0` (provedeno 2026-07-07)
 
-11. Residual advisories po patchi (non-critical, vyžadují větší migraci)
+11. Residual advisories po patchi (non-critical, vyžadují větší migraci) — ✅ VYŘEŠENO 2026-07-08
     - `RUSTSEC-2025-0141` (`bincode 1.3.3`, unmaintained)
-            - Pozn.: přímé použití `bincode` v `zion-miner` bylo odstraněno (zůstává pouze transitive větev přes `heed-types` v `zion-core`) (provedeno 2026-07-07)
+            - **VYŘEŠENO:** `bincode` kompletně odstraněn z dependency stromu. `heed` `serde-bincode` feature vypnuta (`default-features = false, features = ["serde", "serde-json"]`). `bincode = "1"` odstraněn z workspace deps. Storage vrstva používá jen `Bytes`/`Str` typy. (provedeno 2026-07-08)
     - `RUSTSEC-2024-0436` (`paste 1.0.15`, unmaintained)
-      (stále transitive přes `metal 0.33.0`)
+      - **VYŘEŠENO:** `metal` přesunut na macOS-only target (`[target.'cfg(target_os = "macos")'.dependencies]`). Na Linuxu/Windows se `paste` nepullne. Cargo.lock je cross-platform (entry zůstává), ale runtime exposure = 0 na produkčním Linux serveru. (provedeno 2026-07-08)
         - Audit gate (operational):
              - [x] Přidán wrapper `V3/scripts/security-audit.sh` s explicitními `--ignore` kódy pro aktuální verzi cargo-audit (provedeno 2026-07-07)
-    - Další krok:
-       - [ ] Připravit oddělenou serializační roadmapu pro náhradu `bincode 1.x`.
-       - [ ] Monitorovat `metal` ekosystém na odstranění závislosti `paste` (nebo zvážit feature-level izolaci Metal backendu v release profilech).
+             - [x] `cargo audit` čistý — 0 advisories kromě 1 ignored (paste macOS-only) (ověřeno 2026-07-08)
 
 ---
 
@@ -204,18 +202,19 @@ Rozsah: celý `V3/**` (L1–L6, cli, sdk). Cíl: najít exploitovatelné vzory n
 | POOL_PAYOUT | `zion16825y2...` | `zion194e840...` |
 **Doc:** `CRITICAL_3.0.4_SECURITY_FINDINGS.md` Finding 2, `GENESIS_REGENERATION_RUNBOOK.md`
 
-### 7. BFG Git History Scrub (F4.6)
-**Co:** Odstranit `PREMINE_WALLETS_BACKUP.json` z git history
+### 7. Git History Scrub (F4.6) — ✅ DONE 2026-07-08
+**Co:** Odstranit secrets z git history
 **Jak:**
 ```bash
 # BACKUP FIRST!
-git filter-repo --invert-paths --path PREMINE_WALLETS_BACKUP.json
+git filter-repo --replace-text expressions.txt
 # Force push (koordinovat se všemi collaborators)
 git push origin --force --all
 git push origin --force --tags
 ```
-**Kdy:** Před public launch/fork
-**Risk:** HIGH — history rewrite, vyžaduje koordinaci
+**Výsledek:** 87 secret occurrences odstraněno (SSH klíče + 5 pool SKs). Backup v `/tmp/zion-git-backup-before-scrub`. Origin remote re-added po filter-repo.
+**Kdy:** ✅ Provedeno 2026-07-08
+**Risk:** HIGH — history rewrite, vyžaduje koordinaci — všichni collaborators musí re-clone
 
 ### 8. Max TX Amount Cap (F4.7) — L1 consensus — ✅ IMPLEMENTOVÁNO 2026-07-07
 **Co:** Sanity cap na TX amount jako defense-in-depth nad F5.

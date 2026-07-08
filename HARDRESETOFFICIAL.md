@@ -1,7 +1,7 @@
 # ZION V3 — Official Hard Reset Plan
 
 > **Verze:** 1.2 — 2026-07-07
-> **Status:** EXECUTING — Fáze 0-3 DONE (klíče, genesis.rs, L2/L3 config, bridge vault) + Fáze 4-8 DONE (nový server 62.171.141.136, full stack deployed, web + dashboard live). Fáze 9-10 pending (key rotation, git scrub).
+> **Status:** EXECUTING — Fáze 0-8 DONE (klíče, genesis.rs, L2/L3 config, bridge vault, nový server 62.171.141.136, full stack deployed, web + dashboard live). Fáze 9-10 pending (open-source publication, generační převod). Git history scrub DONE 2026-07-08 (87 secret occurrences removed). Security patch 3.0.4 Fáze 1-4+6 DONE (F4.7 aktivní, bincode odstraněn, audit čistý). Fáze 5 (air-gapped key rotace) pending — owner akce.
 > **Kanonický postup:** [`docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md`](./docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md) — TENTO dokument je operační plán; kanonický runbook je v docs/3.0.4/.
 > **Security disclosure:** [`docs/security/SECURITY_DISCLOSURE_2026-07.md`](./docs/security/SECURITY_DISCLOSURE_2026-07.md) — veřejný bulletin ve formátu Ethereum Foundation.
 > **Kontext:** Post-security-incident (F1 + F5 + TeamViewer compromise). Attacker měl 47 min root na Edge, přístup ke zdrojákům, SSH klíčům, pool payout SK, escrow key, EVM deploy klíčům, DAO guardian mnemonics.
@@ -620,19 +620,21 @@ Generated with [Devin](https://cli.devin.ai/docs)
 Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>"
 ```
 
-### 8.3 History scrub (separátní úkol)
+### 8.3 History scrub — ✅ DONE (2026-07-08)
 
-Po resetu je potřeba scrub git historie pro:
+Po resetu byl proveden scrub git historie pro:
 - Staré premine adresy (i když kompromitované, nechceme je v historii)
 - Staré canonical adresy
 - Starý bridge vault seed
 - Jakékoliv SK které se mohly dostat do commitů
 
 ```bash
-# Použít git filter-repo (NE BFG — méně bezpečný)
+# Použito git filter-repo (NE BFG — méně bezpečný)
 pip install git-filter-repo
 git filter-repo --replace-text expressions.txt
 ```
+
+**Výsledek (2026-07-08):** 87 secret occurrences odstraněno (SSH klíče + 5 různých pool SKs) z celé git historie. Force push to origin. Backup v `/tmp/zion-git-backup-before-scrub` (1.2G). Všichni collaborators musí re-clone.
 
 **Pozor:** Toto je destruktivní operace — vyžaduje explicitní approval.
 
