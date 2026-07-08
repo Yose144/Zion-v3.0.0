@@ -243,10 +243,16 @@ impl NetworkSimulator {
                 summary: format!("{} epoch {}", validator.name, epoch),
             };
 
-            // Get Hiran verdict via HiranTaskExecutor (records audit trail)
+            // Get Hiran verdict — use the verdict from the backend (which made the
+            // actual HTTP call if live, or returned stub_accepted if offline).
+            // HiranTaskExecutor is kept for audit-trail compatibility.
             let _ = hiran_executor.execute_with_hiran(validator.id, task);
-            let hiran_verdict = hiran_executor.verdict_for(&validator.id).cloned()
-                .unwrap_or_else(HiranVerdict::stub_accepted);
+            let hiran_verdict = if use_hiran_backend {
+                hiran_backend.last_verdict()
+            } else {
+                hiran_executor.verdict_for(&validator.id).cloned()
+                    .unwrap_or_else(HiranVerdict::stub_accepted)
+            };
 
             hiran_stats.record(&hiran_verdict);
 
@@ -750,5 +756,88 @@ mod tests {
         for r in &reports {
             assert_eq!(r.accepted_count(), 10);
         }
+    }
+
+    // ── Fáze 3d: integrační testy s MockHiranServer ────────────────────────
+
+    #[test]
+    fn sim_with_mock_hiran_server_all_accepted() {
+        use poc_hiran::MockHiranServer;
+        // Spustíme mock Hiran server (vždy accept)
+        let server = MockHiranServer::spawn_accepting();
+        let url = server.url();
+
+        let mut sim = NetworkSimulator::new([40u8; 32], 1_000_000, 1000, 1_000_000)
+            .with_hiran_url(url);
+        sim.add_validator(honest_validator(1, "alice")).unwrap();
+        sim.add_validator(honest_validator(2, "bob")).unwrap();
+
+        let report = sim.run_epoch(0).unwrap();
+        // Mock server je live (ne stub)
+        assert!(!report.hiran_stats.stub_mode, "mock server should run in live mode");
+        assert_eq!(report.hiran_stats.proofs_validated, 2);
+        assert_eq!(report.hiran_stats.accepted, 2);
+        assert_eq!(report.hiran_stats.rejected, 0);
+
+        server.shutdown();
+    }
+
+    #[test]
+    fn sim_with_mock_hiran_server_5_epochs() {
+        use poc_hiran::MockHiranServer;
+        let server = MockHiranServer::spawn_accepting();
+        let url = server.url();
+
+        let mut sim = NetworkSimulator::new([41u8; 32], 5_000_000, 1000, 1_000_000)
+            .with_hiran_url(url);
+        sim.add_validator(honest_validator(1, "alice")).unwrap();
+        sim.add_validator(honest_validator(2, "bob")).unwrap();
+        sim.add_validator(honest_validator(3, "carol")).unwrap();
+
+        let (reports, errors) = sim.run_epochs(0, 5);
+        assert_eq!(reports.len(), 5);
+        assert!(errors.is_empty(), "no errors expected with mock server");
+
+        for r in &reports {
+            assert!(!r.hiran_stats.stub_mode, "should be live mode in all epochs");
+            assert_eq!(r.hiran_stats.proofs_validated, 3);
+        }
+
+        server.shutdown();
+    }
+
+    #[test]
+    fn sim_fallback_to_stub_when_hiran_unreachable() {
+        // Zadáme URL kde nic neběží — backend musí přepnout na stub
+        let dead_url = "http://127.0.0.1:19998";
+        let mut sim = NetworkSimulator::new([42u8; 32], 1_000_000, 1000, 1_000_000)
+            .with_hiran_url(dead_url);
+        sim.add_validator(honest_validator(1, "alice")).unwrap();
+
+        // Musí proběhnout bez panicu — fallback na stub
+        let report = sim.run_epoch(0).unwrap();
+        // Epoch proběhla (Alice akceptována)
+        assert_eq!(report.accepted_count(), 1);
+    }
+
+    #[test]
+    fn sim_with_mock_hiran_server_rejecting_reduces_accepted() {
+        use poc_hiran::MockHiranServer;
+        // Mock server vždy odmítá
+        let server = MockHiranServer::spawn_rejecting();
+        let url = server.url();
+
+        let mut sim = NetworkSimulator::new([43u8; 32], 1_000_000, 1000, 1_000_000)
+            .with_hiran_url(url);
+        sim.add_validator(honest_validator(1, "alice")).unwrap();
+        sim.add_validator(honest_validator(2, "bob")).unwrap();
+
+        let report = sim.run_epoch(0).unwrap();
+        // Hiran odmítl všechny proofs
+        assert!(!report.hiran_stats.stub_mode);
+        assert_eq!(report.hiran_stats.rejected, 2);
+        assert_eq!(report.accepted_count(), 0, "all rejected by Hiran mock");
+
+        server.shutdown();
     }
 }

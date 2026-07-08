@@ -187,7 +187,12 @@ care_score = accuracy_weight * accuracy
 | — `ConsciousnessLevel` enum (L0 Dormant → L6 Grok) | ✅ `poc-core` + `poc-registry` |
 | — multi-epoch stress testy (100 epoch, lazy rejection) | ✅ `poc-sim` |
 | — CLI (`--epochs`, `--validators`, `--hiran-url`, …) | ✅ `poc-sim/src/main.rs` (clap) |
-| Care Task Dispatch v L1 | 🔴 Koncept (Fáze 3, vyžaduje hard fork) |
+| **PoC-lab Fáze 3 — Hiran HTTP client + MockHiranServer** | ✅ 135 testů PASS |
+| — `poc-hiran` crate: `HiranClient` trait + `LiveHiranClient` (ureq) + `StubHiranClient` | ✅ `poc-hiran` |
+| — `MockHiranServer` (tiny_http, accept/reject/threshold módy) | ✅ `poc-hiran` |
+| — `HiranNpuBackend` skutečný HTTP POST s graceful fallback | ✅ `poc-npu` |
+| — integrační testy `poc-sim` s `MockHiranServer` (4 scénáře) | ✅ `poc-sim` |
+| Care Task Dispatch v L1 | 🔴 Koncept (Fáze 4, vyžaduje hard fork) |
 | Reálné NPU Attestation (TEE/vendor quote) | 🔴 Koncept |
 | Integrace do L1 consensus | 🔴 Koncept (vyžaduje samostatné schválení) |
 
@@ -252,5 +257,5 @@ a [`PoC-lab/docs/ARCHITECTURE.md`](../../PoC-lab/docs/ARCHITECTURE.md).
 
 ---
 
-*PoC_CONCEPT.md · ZION Proof-of-Care · 2026-07-08 (Fáze 2)*  
+*PoC_CONCEPT.md · ZION Proof-of-Care · 2026-07-08 (Fáze 3)*  
 *Etz Chaim — Strom života*

@@ -14,6 +14,7 @@
 pub mod vm;
 
 use poc_core::{Hash, HiranVerdict, NpuAttestation, ValidationVerdict};
+use poc_hiran::{HiranClient, HiranRequest, LiveHiranClient, StubHiranClient};
 use thiserror::Error;
 use vm::{expand_input, ProgramConfig, RandomNpuProgram};
 
@@ -146,30 +147,31 @@ impl RandomNpuGenerator {
     }
 }
 
-/// Backend, který odesílá inference dotazy na živý Hiran HTTP API server.
+/// NPU backend integrující Hiran AI inference server pro Proof-of-Care validaci.
 ///
-/// # Stub mode (default)
+/// # Stub mode (výchozí, bez živého serveru)
 ///
-/// Pokud není URL serveru poskytnuta (`hiran_url = None`) nebo server není
-/// dostupný, backend automaticky přepne do stub módu:
 /// - Inference deleguje na [`CpuReferenceBackend`] (deterministické výsledky).
-/// - Vrácená attestace zaznamenává `stub=true`.
+/// - Vrácená attestace zaznamenává `backend = "hiran-stub"`.
 /// - Volání [`HiranNpuBackend::last_verdict`] vrátí `HiranVerdict::stub_accepted()`.
 ///
 /// Díky tomu všechny testy a simulace fungují beze změny i bez živého Hiranu.
 ///
 /// # Live mode
 ///
-/// Pokud je Hiran server dostupný, backend:
-/// 1. Odešle POST /infer s `model_hash` + `input` jako JSON.
-/// 2. Parsuje JSON odpověď na `HiranVerdict`.
-/// 3. Vrátí output + attestaci s `backend = "hiran-v2"`.
+/// Pokud je Hiran server dostupný (zadán `--hiran-url`), backend:
+/// 1. Spočítá CPU referenční output (deterministická INT8 VM).
+/// 2. Odešle `POST /v1/hiran/validate` se `HiranRequest` na Hiran server.
+/// 3. Převede `HiranResponse` na `HiranVerdict` a uloží do `last_verdict`.
+/// 4. Vrátí CPU output + attestaci s `backend = "hiran-v2"`.
 ///
-/// V této laboratorní verzi je live volání pouze zahrnuté v architektuře —
-/// skutečný HTTP call je stub, dokud se nepřipojí k reálnému Hiran serveru.
+/// Pokud HTTP volání selže (server nedostupný, timeout), backend automaticky
+/// přepne do stub módu pro daný request — simulace pokračuje bez přerušení.
 pub struct HiranNpuBackend {
     /// URL Hiran inference API. `None` → stub mode.
     pub hiran_url: Option<String>,
+    /// HTTP klient pro komunikaci s Hiran serverem.
+    client: Box<dyn HiranClient>,
     /// Poslední verdict z Hiran validace (nebo stub).
     last_verdict: std::sync::Mutex<HiranVerdict>,
 }
@@ -179,15 +181,21 @@ impl HiranNpuBackend {
     pub fn stub() -> Self {
         Self {
             hiran_url: None,
+            client: Box::new(StubHiranClient::accepting()),
             last_verdict: std::sync::Mutex::new(HiranVerdict::stub_accepted()),
         }
     }
 
     /// Vytvoří backend s URL live Hiran serveru.
-    /// Pokud server není dostupný při prvním volání, automaticky přepne do stub módu.
+    ///
+    /// Pokud server není dostupný při prvním volání `infer()`, automaticky
+    /// přepne do stub módu pro daný request.
     pub fn with_url(url: impl Into<String>) -> Self {
+        let url = url.into();
+        let client = Box::new(LiveHiranClient::new(&url));
         Self {
-            hiran_url: Some(url.into()),
+            hiran_url: Some(url),
+            client,
             last_verdict: std::sync::Mutex::new(HiranVerdict::stub_accepted()),
         }
     }
@@ -202,6 +210,12 @@ impl HiranNpuBackend {
     pub fn is_stub(&self) -> bool {
         self.hiran_url.is_none()
     }
+
+    /// Zkontroluje dostupnost Hiran serveru.
+    /// Vrátí `true` pokud server odpovídá na `/health`.
+    pub fn health_check(&self) -> bool {
+        self.client.health_check()
+    }
 }
 
 impl NpuBackend for HiranNpuBackend {
@@ -210,23 +224,36 @@ impl NpuBackend for HiranNpuBackend {
     }
 
     fn infer(&self, model_hash: Hash, input: &[u8]) -> Result<(Vec<u8>, NpuAttestation), NpuError> {
-        // Stub: delegate to CPU reference for deterministic lab output.
-        // TODO(phase-2): replace with real HTTP POST to hiran_url when live.
+        // Vždy spočítáme deterministický CPU output (referenční INT8 VM).
+        // Hiran validuje *kvalitu* proofs, nevyrábí output — výstup je vždy deterministický.
         let cpu = CpuReferenceBackend::new();
         let (output, mut att) = cpu.infer(model_hash, input)?;
         att.backend = self.name().into();
 
-        // In stub mode we always accept with confidence=1.0.
-        // In a future live integration this would be populated from the HTTP response.
+        // Pokud máme URL, zkusíme live validaci přes HTTP.
         let verdict = if self.hiran_url.is_some() {
-            // Live mode placeholder: simulate a successful response.
-            HiranVerdict {
-                verdict: ValidationVerdict::Accepted,
-                confidence: 0.95,
-                care_score_adjustment: 0,
-                flags: vec![],
-                reasoning: "hiran-live-stub: deterministic reference output".into(),
-                latency_ms: 1,
+            let output_hash = hex::encode(&output[..output.len().min(16)]);
+            let req = HiranRequest::validate_proof(
+                "poc-sim",
+                &hex::encode(&input[..input.len().min(8)]),
+                // Skóre odhadneme z výstupu (0–100 škála)
+                (output.iter().map(|&b| b as u32).sum::<u32>() % 101) as u32,
+                0,
+            ).with_output_hash(output_hash);
+
+            match self.client.validate(&req) {
+                Ok(resp) => hiran_response_to_verdict(resp),
+                Err(e) => {
+                    // Server nedostupný — přepneme na stub pro tento request
+                    HiranVerdict {
+                        verdict: ValidationVerdict::Accepted,
+                        confidence: 1.0,
+                        care_score_adjustment: 0,
+                        flags: vec!["hiran-fallback".into()],
+                        reasoning: format!("hiran unreachable ({e}), using stub fallback"),
+                        latency_ms: 0,
+                    }
+                }
             }
         } else {
             HiranVerdict::stub_accepted()
@@ -234,6 +261,27 @@ impl NpuBackend for HiranNpuBackend {
 
         *self.last_verdict.lock().unwrap() = verdict;
         Ok((output, att))
+    }
+}
+
+/// Převede `poc_hiran::HiranResponse` na `poc_core::HiranVerdict`.
+fn hiran_response_to_verdict(resp: poc_hiran::HiranResponse) -> HiranVerdict {
+    let verdict = if resp.accepted() {
+        if resp.is_uncertain() {
+            ValidationVerdict::Uncertain
+        } else {
+            ValidationVerdict::Accepted
+        }
+    } else {
+        ValidationVerdict::RejectedInvalid
+    };
+    HiranVerdict {
+        verdict,
+        confidence: resp.confidence,
+        care_score_adjustment: resp.care_score_adjustment,
+        flags: resp.flags,
+        reasoning: resp.reasoning,
+        latency_ms: resp.latency_ms,
     }
 }
 
