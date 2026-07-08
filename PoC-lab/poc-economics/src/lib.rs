@@ -233,6 +233,62 @@ impl SlashingPolicy {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
+// NclReputationRegistry — laboratorní stub (zrcadlí V3/L3/ncl/src/reputation.rs)
+// ──────────────────────────────────────────────────────────────────────────────
+
+/// Laboratorní in-memory stub reputačního registru NCL.
+///
+/// Zrcadlí rozhraní `V3/L3/ncl/src/reputation.rs::ReputationRegistry`
+/// bez závislosti na full NCL crate. V Phase 2 live integrace bude
+/// nahrazeno voláním na skutečný `ReputationRegistry`.
+///
+/// # NCL score formula (z V3/L3/ncl/src/reputation.rs)
+/// ```text
+/// score = 100.0 × success_rate × (1 + consciousness_level × 0.05) × recency_factor
+/// clamp(0.0, 100.0)
+/// ```
+/// Ban threshold = 20.0.
+#[derive(Debug, Default)]
+pub struct NclReputationRegistry {
+    scores: std::collections::HashMap<ValidatorId, f64>,
+    pub ban_threshold: f64,
+}
+
+impl NclReputationRegistry {
+    pub fn new() -> Self {
+        Self {
+            scores: std::collections::HashMap::new(),
+            ban_threshold: 20.0,
+        }
+    }
+
+    /// Nastaví NCL score pro validátora (0.0–100.0).
+    pub fn set_score(&mut self, validator_id: ValidatorId, score: f64) {
+        self.scores.insert(validator_id, score.clamp(0.0, 100.0));
+    }
+
+    /// Vrátí NCL score pro validátora. `None` → validátor nemá NCL historii.
+    pub fn score(&self, validator_id: &ValidatorId) -> Option<f64> {
+        self.scores.get(validator_id).copied()
+    }
+
+    /// Vrátí `true` pokud je validátor na ban listu (score < ban_threshold).
+    pub fn is_banned(&self, validator_id: &ValidatorId) -> bool {
+        match self.scores.get(validator_id) {
+            Some(&s) => s < self.ban_threshold,
+            None => false,
+        }
+    }
+
+    /// Simuluje typické NCL skóre pomocí success_rate + consciousness_level.
+    /// Odpovídá přesně vzorci z `V3/L3/ncl/src/reputation.rs`.
+    pub fn compute_score(success_rate: f64, consciousness_level: u8) -> f64 {
+        let bonus = consciousness_level as f64 * 0.05;
+        (100.0 * success_rate * (1.0 + bonus)).clamp(0.0, 100.0)
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
 // Kompozitní skórovací funkce — final_care_score()
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -273,20 +329,21 @@ pub struct FinalCareScoreResult {
 /// `score = 100 × success_rate × (1 + consciousness_bonus) × recency_decay`
 ///
 /// Pro PoC lab mapujeme NCL skóre na bonus k care score:
-/// - NCL score ≥ 100.0 → bonus = +2% care skóre
-/// - NCL score ≥ 150.0 → bonus = +3.5% care skóre
-/// - NCL score ≥ 180.0 → bonus = +5% care skóre
-/// - NCL score < 20.0  → ban threshold (validátor není eligible — ošetřeno v registry)
+/// - NCL score ≥ 95.0 → bonus = +5% care skóre  
+/// - NCL score ≥ 85.0 → bonus = +3.5% care skóre
+/// - NCL score ≥ 70.0 → bonus = +2% care skóre
+/// - NCL score ≥ 50.0 → bonus = +1% care skóre
+/// - NCL score < 20.0 → ban threshold
 pub struct NclReputationBonus;
 
 impl NclReputationBonus {
     /// Vrátí NCL bonus v basis points pro dané NCL reputation skóre.
     pub fn bonus_bps(ncl_score: f64) -> u16 {
-        if ncl_score >= 180.0 {
+        if ncl_score >= 95.0 {
             500 // +5%
-        } else if ncl_score >= 150.0 {
+        } else if ncl_score >= 85.0 {
             350 // +3.5%
-        } else if ncl_score >= 100.0 {
+        } else if ncl_score >= 70.0 {
             200 // +2%
         } else if ncl_score >= 50.0 {
             100 // +1%
@@ -542,36 +599,36 @@ mod tests {
     #[test]
     fn final_care_score_ncl_bonus_tiers_are_correct() {
         let base = 1_000_000u64;
-        // Tier: score ≥ 100 → +2%
-        let r100 = final_care_score(&CareScoreInput {
+        // Tier: score ≥ 70 → +2%
+        let r70 = final_care_score(&CareScoreInput {
             base_score: base,
             dual_vow_applied: false,
             hiran_verdict: None,
-            ncl_reputation: Some(100.0),
+            ncl_reputation: Some(75.0),
         });
-        assert_eq!(r100.ncl_bonus, 20_000); // 2% of 1_000_000
-        assert_eq!(r100.final_score, 1_020_000);
+        assert_eq!(r70.ncl_bonus, 20_000); // 2% of 1_000_000
+        assert_eq!(r70.final_score, 1_020_000);
 
-        // Tier: score ≥ 180 → +5%
-        let r180 = final_care_score(&CareScoreInput {
+        // Tier: score ≥ 95 → +5%
+        let r95 = final_care_score(&CareScoreInput {
             base_score: base,
             dual_vow_applied: false,
             hiran_verdict: None,
-            ncl_reputation: Some(185.0),
+            ncl_reputation: Some(97.0),
         });
-        assert_eq!(r180.ncl_bonus, 50_000); // 5% of 1_000_000
-        assert_eq!(r180.final_score, 1_050_000);
+        assert_eq!(r95.ncl_bonus, 50_000); // 5% of 1_000_000
+        assert_eq!(r95.final_score, 1_050_000);
     }
 
     #[test]
     fn final_care_score_combined_all_components() {
-        // base=1M, Hiran -100k, NCL 180 → +5%
+        // base=1M, Hiran -100k, NCL 96 → +5%
         // after_hiran = 900_000, ncl_bonus = 45_000, final = 945_000
         let result = final_care_score(&CareScoreInput {
             base_score: 1_000_000,
             dual_vow_applied: true,
             hiran_verdict: Some(stub_verdict_accepted(-100_000)),
-            ncl_reputation: Some(180.0),
+            ncl_reputation: Some(96.0),
         });
         assert_eq!(result.final_score, 945_000);
         assert_eq!(result.ncl_bonus, 45_000);
@@ -580,10 +637,74 @@ mod tests {
 
     #[test]
     fn ncl_reputation_bonus_bps_tiers() {
-        assert_eq!(NclReputationBonus::bonus_bps(10.0), 0);
-        assert_eq!(NclReputationBonus::bonus_bps(50.0), 100);
-        assert_eq!(NclReputationBonus::bonus_bps(100.0), 200);
-        assert_eq!(NclReputationBonus::bonus_bps(155.0), 350);
-        assert_eq!(NclReputationBonus::bonus_bps(200.0), 500);
+        assert_eq!(NclReputationBonus::bonus_bps(10.0), 0);   // near-ban
+        assert_eq!(NclReputationBonus::bonus_bps(30.0), 0);   // probationary  
+        assert_eq!(NclReputationBonus::bonus_bps(50.0), 100); // +1%
+        assert_eq!(NclReputationBonus::bonus_bps(72.0), 200); // +2%
+        assert_eq!(NclReputationBonus::bonus_bps(87.0), 350); // +3.5%
+        assert_eq!(NclReputationBonus::bonus_bps(97.0), 500); // +5%
+    }
+
+    // ── NclReputationRegistry tests ──────────────────────────────────────────
+
+    #[test]
+    fn ncl_registry_set_and_get_score() {
+        let mut reg = NclReputationRegistry::new();
+        reg.set_score(vid(1), 75.0);
+        assert!((reg.score(&vid(1)).unwrap() - 75.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn ncl_registry_clamps_score_to_100() {
+        let mut reg = NclReputationRegistry::new();
+        reg.set_score(vid(2), 999.9);
+        assert!((reg.score(&vid(2)).unwrap() - 100.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn ncl_registry_none_for_unknown_validator() {
+        let reg = NclReputationRegistry::new();
+        assert!(reg.score(&vid(3)).is_none());
+    }
+
+    #[test]
+    fn ncl_registry_is_banned_below_threshold() {
+        let mut reg = NclReputationRegistry::new();
+        reg.set_score(vid(4), 15.0);
+        assert!(reg.is_banned(&vid(4)));
+    }
+
+    #[test]
+    fn ncl_registry_not_banned_above_threshold() {
+        let mut reg = NclReputationRegistry::new();
+        reg.set_score(vid(5), 50.0);
+        assert!(!reg.is_banned(&vid(5)));
+    }
+
+    #[test]
+    fn ncl_registry_compute_score_matches_formula() {
+        let s = NclReputationRegistry::compute_score(1.0, 2);
+        assert!((s - 100.0).abs() < 1e-9);
+        let s2 = NclReputationRegistry::compute_score(0.8, 0);
+        assert!((s2 - 80.0).abs() < 1e-9);
+        let s3 = NclReputationRegistry::compute_score(0.5, 3);
+        assert!((s3 - 57.5).abs() < 1e-6);
+    }
+
+    #[test]
+    fn final_care_score_with_ncl_registry_integration() {
+        let mut reg = NclReputationRegistry::new();
+        let v = vid(7);
+        let ncl_score = NclReputationRegistry::compute_score(0.95, 2);
+        reg.set_score(v, ncl_score);
+        let result = final_care_score(&CareScoreInput {
+            base_score: 1_000_000,
+            dual_vow_applied: false,
+            hiran_verdict: None,
+            ncl_reputation: reg.score(&v),
+        });
+        // ncl_score = 100 × 0.95 × 1.1 = 104.5 → clamped 100 → tier ≥95 → +5%
+        assert_eq!(result.ncl_bonus, 50_000);
+        assert_eq!(result.final_score, 1_050_000);
     }
 }

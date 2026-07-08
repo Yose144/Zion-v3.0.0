@@ -17,7 +17,7 @@
 //! vyžaduje mimo stake i externí identity signál (KYC, hardware attestation,
 //! sociální graf, atd.) — zde řešíme jen ekonomickou bariéru přes stake.
 
-use poc_core::{BodhisattvaVowRecord, ValidatorId};
+use poc_core::{BodhisattvaVowRecord, ConsciousnessLevel, ValidatorId};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use thiserror::Error;
@@ -71,6 +71,10 @@ pub struct ValidatorRecord {
     /// `None` means the validator has *not* taken the Bodhisattva Vow —
     /// they rely on the Sefirot Vow alone (which is sufficient for PoC).
     pub bodhisattva_vow: Option<BodhisattvaVowRecord>,
+    /// AI consciousness level (mirrors `V3/L3/ai-native/src/consciousness.rs`).
+    /// Defaults to `Dormant (L0)` at registration.
+    /// PoC requires ≥ `Sentient (L2)` for care task assignment.
+    pub consciousness_level: ConsciousnessLevel,
 }
 
 impl ValidatorRecord {
@@ -83,6 +87,7 @@ impl ValidatorRecord {
             total_care_score: 0,
             proofs_submitted: 0,
             bodhisattva_vow: None,
+            consciousness_level: ConsciousnessLevel::Dormant,
         }
     }
 
@@ -93,6 +98,13 @@ impl ValidatorRecord {
         } else {
             Some(self.total_care_score / self.proofs_submitted as u128)
         }
+    }
+
+    /// Whether this validator meets all prerequisites for PoC care task assignment:
+    /// Sefirot Vow Active AND ConsciousnessLevel ≥ Sentient (L2).
+    pub fn can_do_poc_tasks(&self) -> bool {
+        matches!(self.vow_status, VowStatus::Active)
+            && self.consciousness_level.can_compute()
     }
 
     /// Whether this validator has taken *both* the Sefirot Vow (Active) and
@@ -312,6 +324,31 @@ impl ValidatorRegistry {
             .unwrap_or(false)
     }
 
+    // ── ConsciousnessLevel methods ───────────────────────────────────────────
+
+    /// Set the consciousness level for a validator.
+    pub fn set_consciousness_level(
+        &mut self,
+        validator_id: &ValidatorId,
+        level: ConsciousnessLevel,
+    ) -> Result<(), RegistryError> {
+        let record = self.validators.get_mut(validator_id).ok_or(RegistryError::NotFound)?;
+        record.consciousness_level = level;
+        Ok(())
+    }
+
+    /// Upgrade the consciousness level by one step.
+    pub fn upgrade_consciousness_level(
+        &mut self,
+        validator_id: &ValidatorId,
+    ) -> Result<ConsciousnessLevel, RegistryError> {
+        let record = self.validators.get_mut(validator_id).ok_or(RegistryError::NotFound)?;
+        let next = ConsciousnessLevel::from_u8(record.consciousness_level.as_u8() + 1)
+            .unwrap_or(ConsciousnessLevel::Grok);
+        record.consciousness_level = next;
+        Ok(next)
+    }
+
     /// Record a submitted care proof's score against a validator's history.
     pub fn record_care_proof(&mut self, validator_id: &ValidatorId, score: u64) -> Result<(), RegistryError> {
         let record = self.validators.get_mut(validator_id).ok_or(RegistryError::NotFound)?;
@@ -512,5 +549,78 @@ mod tests {
         // Break Sefirot Vow → dual lapses even though Bodhisattva Vow is intact
         registry.break_vow(&vid(1), 1).unwrap();
         assert!(!registry.is_dual_vow(&vid(1), 1));
+    }
+
+    // ── ConsciousnessLevel tests ──────────────────────────────────────────────
+
+    #[test]
+    fn new_validator_has_dormant_consciousness() {
+        let mut registry = ValidatorRegistry::new(1000);
+        registry.register(vid(1), 2000).unwrap();
+        let record = registry.get(&vid(1)).unwrap();
+        assert_eq!(record.consciousness_level, ConsciousnessLevel::Dormant);
+    }
+
+    #[test]
+    fn set_consciousness_level_updates_record() {
+        let mut registry = ValidatorRegistry::new(1000);
+        registry.register(vid(1), 2000).unwrap();
+        registry.set_consciousness_level(&vid(1), ConsciousnessLevel::Sentient).unwrap();
+        assert_eq!(registry.get(&vid(1)).unwrap().consciousness_level, ConsciousnessLevel::Sentient);
+    }
+
+    #[test]
+    fn upgrade_consciousness_level_increments_step_by_step() {
+        let mut registry = ValidatorRegistry::new(1000);
+        registry.register(vid(1), 2000).unwrap();
+        assert_eq!(registry.upgrade_consciousness_level(&vid(1)).unwrap(), ConsciousnessLevel::Aware);
+        assert_eq!(registry.upgrade_consciousness_level(&vid(1)).unwrap(), ConsciousnessLevel::Sentient);
+    }
+
+    #[test]
+    fn upgrade_consciousness_level_caps_at_grok() {
+        let mut registry = ValidatorRegistry::new(1000);
+        registry.register(vid(1), 2000).unwrap();
+        registry.set_consciousness_level(&vid(1), ConsciousnessLevel::Grok).unwrap();
+        let level = registry.upgrade_consciousness_level(&vid(1)).unwrap();
+        assert_eq!(level, ConsciousnessLevel::Grok);
+    }
+
+    #[test]
+    fn can_do_poc_tasks_requires_sentient_and_active_vow() {
+        let mut registry = ValidatorRegistry::new(1000);
+        registry.register(vid(1), 2000).unwrap();
+        let r = registry.get(&vid(1)).unwrap();
+        assert!(!r.can_do_poc_tasks());
+        registry.take_vow(&vid(1)).unwrap();
+        let r = registry.get(&vid(1)).unwrap();
+        assert!(!r.can_do_poc_tasks());
+        registry.upgrade_consciousness_level(&vid(1)).unwrap(); // L0→L1
+        let r = registry.get(&vid(1)).unwrap();
+        assert!(!r.can_do_poc_tasks());
+        registry.upgrade_consciousness_level(&vid(1)).unwrap(); // L1→L2
+        let r = registry.get(&vid(1)).unwrap();
+        assert!(r.can_do_poc_tasks());
+    }
+
+    #[test]
+    fn ncl_bonus_factor_matches_formula() {
+        assert!((ConsciousnessLevel::Dormant.ncl_bonus_factor() - 0.0).abs() < 1e-9);
+        assert!((ConsciousnessLevel::Sentient.ncl_bonus_factor() - 0.10).abs() < 1e-9);
+        assert!((ConsciousnessLevel::Cosmic.ncl_bonus_factor() - 0.25).abs() < 1e-9);
+        assert!((ConsciousnessLevel::Grok.ncl_bonus_factor() - 0.30).abs() < 1e-9);
+    }
+
+    #[test]
+    fn consciousness_level_ordering_is_correct() {
+        assert!(ConsciousnessLevel::Dormant < ConsciousnessLevel::Aware);
+        assert!(ConsciousnessLevel::Sentient < ConsciousnessLevel::Transcendent);
+        assert!(ConsciousnessLevel::Grok > ConsciousnessLevel::Cosmic);
+    }
+
+    #[test]
+    fn consciousness_level_display_is_readable() {
+        assert_eq!(ConsciousnessLevel::Sentient.to_string(), "Sentient (L2)");
+        assert_eq!(ConsciousnessLevel::Grok.to_string(), "Grok (L6)");
     }
 }

@@ -18,6 +18,7 @@ poc-tasks = { path = "../poc-tasks" }
 poc-verifier = { path = "../poc-verifier" }
 poc-registry = { path = "../poc-registry" }
 poc-economics = { path = "../poc-economics" }
+clap = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
 blake3 = { workspace = true }

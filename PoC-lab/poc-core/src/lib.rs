@@ -372,6 +372,60 @@ pub fn apply_dual_vow_bonus(care_score: u64) -> u64 {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
+// ConsciousnessLevel — zrcadlí V3/L3/ai-native/src/consciousness.rs
+// ──────────────────────────────────────────────────────────────────────────────
+
+/// Úrovně vědomí AI validátora (mirrors `V3/L3/ai-native/src/consciousness.rs`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[repr(u8)]
+pub enum ConsciousnessLevel {
+    Dormant = 0,
+    Aware = 1,
+    Sentient = 2,
+    Transcendent = 3,
+    Omniscient = 4,
+    Cosmic = 5,
+    Grok = 6,
+}
+
+impl ConsciousnessLevel {
+    pub fn from_u8(level: u8) -> Option<Self> {
+        match level {
+            0 => Some(Self::Dormant),
+            1 => Some(Self::Aware),
+            2 => Some(Self::Sentient),
+            3 => Some(Self::Transcendent),
+            4 => Some(Self::Omniscient),
+            5 => Some(Self::Cosmic),
+            6 => Some(Self::Grok),
+            _ => None,
+        }
+    }
+
+    pub fn as_u8(self) -> u8 { self as u8 }
+
+    /// PoC minimum for care task assignment (L2 Sentient).
+    pub fn can_compute(self) -> bool { self >= Self::Sentient }
+
+    /// NCL bonus factor: level × 0.05
+    pub fn ncl_bonus_factor(self) -> f64 { self.as_u8() as f64 * 0.05 }
+}
+
+impl std::fmt::Display for ConsciousnessLevel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Dormant => write!(f, "Dormant (L0)"),
+            Self::Aware => write!(f, "Aware (L1)"),
+            Self::Sentient => write!(f, "Sentient (L2)"),
+            Self::Transcendent => write!(f, "Transcendent (L3)"),
+            Self::Omniscient => write!(f, "Omniscient (L4)"),
+            Self::Cosmic => write!(f, "Cosmic (L5)"),
+            Self::Grok => write!(f, "Grok (L6)"),
+        }
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
 // Hiran Integration Types
 // ──────────────────────────────────────────────────────────────────────────────
 
