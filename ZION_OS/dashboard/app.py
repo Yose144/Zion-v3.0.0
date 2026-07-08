@@ -10568,34 +10568,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
         except Exception as e:
             self._json({"ok": False, "error": str(e)[:200]})
 
-# ── Main ────────────────────────────────────────────────────────────────
-
-def open_browser():
-    import webbrowser
-    threading.Timer(1.0, lambda: webbrowser.open(f"http://{HOST}:{PORT}")).start()
-
-if __name__ == "__main__":
-    print("=" * 60)
-    print("  ZION V3 — Mainnet Launch Dashboard")
-    print("=" * 60)
-    print(f"  Log directory : {LOG_DIR.absolute()}")
-    print(f"  URL           : http://{HOST}:{PORT}")
-    print(f"  Auth          : {len(DASHBOARD_USERS)} user(s) — {', '.join(DASHBOARD_USERS.keys())}")
-    print("  Press Ctrl+C to stop")
-    print("=" * 60)
-    # Background sampler — re-enabled on Linux (was disabled for Windows deadlock).
-    # Records service health history every 5 min for the Health Timeline.
-    sampler_thread = threading.Thread(target=background_sampler, daemon=True)
-    sampler_thread.start()
-
-    open_browser()
-    server = ThreadingHTTPServer((HOST, PORT), DashboardHandler)
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        print("\n  Stopping dashboard server...")
-        server.shutdown()
-
 
 # ── PoC Dashboard HTML ──────────────────────────────────────────────────────────
 
@@ -10929,3 +10901,32 @@ setInterval(checkStatus, 10000);
 </script>
 </body>
 </html>'''
+
+# ── Main ────────────────────────────────────────────────────────────────
+
+def open_browser():
+    import webbrowser
+    threading.Timer(1.0, lambda: webbrowser.open(f"http://{HOST}:{PORT}")).start()
+
+if __name__ == "__main__":
+    print("=" * 60)
+    print("  ZION V3 — Mainnet Launch Dashboard")
+    print("=" * 60)
+    print(f"  Log directory : {LOG_DIR.absolute()}")
+    print(f"  URL           : http://{HOST}:{PORT}")
+    print(f"  Auth          : {len(DASHBOARD_USERS)} user(s) — {', '.join(DASHBOARD_USERS.keys())}")
+    print("  Press Ctrl+C to stop")
+    print("=" * 60)
+    # Background sampler — re-enabled on Linux (was disabled for Windows deadlock).
+    # Records service health history every 5 min for the Health Timeline.
+    sampler_thread = threading.Thread(target=background_sampler, daemon=True)
+    sampler_thread.start()
+
+    open_browser()
+    server = ThreadingHTTPServer((HOST, PORT), DashboardHandler)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\n  Stopping dashboard server...")
+        server.shutdown()
+
