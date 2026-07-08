@@ -2439,34 +2439,33 @@ def _build_status_edge_primary() -> dict:
             return ("edge", r)
         return ("edge", None)
 
-    def _edge_rpc_call_node2():
-        # v3.0.4: No node2 on new server — skip probe
-        return ("edge2", None)
+    def _local_backup_rpc_call():
+        # Local backup node runs on port 8446 (RPC), P2P syncs from Edge
+        r = rpc_call("127.0.0.1", 8446, "getChainInfo", {}, timeout=2.0)
+        return ("local_backup", r if r and not r.get("_rpc_error") else None)
 
     def _local_rpc_call():
-        r = rpc_call("127.0.0.1", 8443, "getChainInfo", {}, timeout=1.5)
+        # Also probe getNodeInfo for richer data (node_id, p2p_bind, etc.)
+        r = rpc_call("127.0.0.1", 8446, "getNodeInfo", {}, timeout=2.0)
         return ("local", r if r and not r.get("_rpc_error") else None)
 
-    edge_rpc_info_node2 = None
+    local_backup_info = None
     with ThreadPoolExecutor(max_workers=3) as ex:
-        futures = {ex.submit(_edge_rpc_call), ex.submit(_edge_rpc_call_node2), ex.submit(_local_rpc_call)}
+        futures = {ex.submit(_edge_rpc_call), ex.submit(_local_backup_rpc_call), ex.submit(_local_rpc_call)}
         try:
             for fut in as_completed(futures, timeout=5.0):
                 try:
                     key, val = fut.result()
                     if key == "edge":
                         edge_rpc_info = val
-                    elif key == "edge2":
-                        edge_rpc_info_node2 = val
+                    elif key == "local_backup":
+                        local_backup_info = val
                     else:
                         local_rpc_info = val
                 except Exception:
                     pass
         except TimeoutError:
             pass
-
-    # NOTE: SSH fallback for node2 removed — caused Windows SSH deadlock.
-    # Edge Node 2 is probed via direct RPC (127.0.0.1:8446) in thread pool above.
 
     # ── Edge Node status ─────────────────────────────────────────────────────
     edge_node1_status = {
@@ -2480,29 +2479,35 @@ def _build_status_edge_primary() -> dict:
         "consensus_profile": edge_rpc_info.get("consensus_profile") if edge_rpc_info else None,
         "accepted_blocks": edge_rpc_info.get("accepted_blocks") if edge_rpc_info else None,
     }
-    edge_node2_status = {
-        "running": bool(edge_rpc_info_node2),
-        "chain_height": edge_rpc_info_node2.get("chain_height") if edge_rpc_info_node2 else None,
-        "tip_hash": edge_rpc_info_node2.get("tip_hash") if edge_rpc_info_node2 else None,
-        "known_peers": edge_rpc_info_node2.get("known_peers", 0) if edge_rpc_info_node2 else 0,
-        "mempool_size": edge_rpc_info_node2.get("mempool_transactions", 0) if edge_rpc_info_node2 else 0,
-        "network": edge_rpc_info_node2.get("network") if edge_rpc_info_node2 else None,
-        "protocol_version": edge_rpc_info_node2.get("protocol_version") if edge_rpc_info_node2 else None,
-        "consensus_profile": edge_rpc_info_node2.get("consensus_profile") if edge_rpc_info_node2 else None,
-        "accepted_blocks": edge_rpc_info_node2.get("accepted_blocks") if edge_rpc_info_node2 else None,
+    local_backup_status = {
+        "running": bool(local_backup_info),
+        "chain_height": local_backup_info.get("chain_height") if local_backup_info else None,
+        "tip_hash": local_backup_info.get("tip_hash") if local_backup_info else None,
+        "known_peers": (local_rpc_info or {}).get("known_peers", 0) if local_backup_info else 0,
+        "mempool_size": local_backup_info.get("mempool_transactions", 0) if local_backup_info else 0,
+        "network": local_backup_info.get("network") if local_backup_info else None,
+        "protocol_version": local_backup_info.get("protocol_version") if local_backup_info else None,
+        "consensus_profile": local_backup_info.get("consensus_profile") if local_backup_info else None,
+        "accepted_blocks": local_backup_info.get("accepted_blocks") if local_backup_info else None,
+        "node_id": (local_rpc_info or {}).get("node_id") if local_backup_info else None,
+        "p2p_bind": (local_rpc_info or {}).get("p2p_bind") if local_backup_info else None,
+        "rpc_bind": (local_rpc_info or {}).get("rpc_bind") if local_backup_info else None,
+        "host": "127.0.0.1:8446",
     }
 
-    # ── Local Backup Node ───────────────────────────────────────────────────
+    # ── Local Backup Node (n1) — uses local_backup_status ──────────────────
     n1 = parse_node_log("node1")
-    if local_rpc_info:
+    if local_backup_status["running"]:
         n1["running"] = True
-        if not n1.get("p2p_bind"):
-            n1["p2p_bind"] = "0.0.0.0:8333"
-        n1["chain_height"] = local_rpc_info.get("chain_height")
-        n1["known_peers"] = local_rpc_info.get("known_peers", n1.get("known_peers", 0))
-        n1["mempool_size"] = local_rpc_info.get("mempool_transactions", n1.get("mempool_size", 0))
-        n1["protocol_version"] = local_rpc_info.get("protocol_version")
-        n1["consensus_profile"] = local_rpc_info.get("consensus_profile")
+        n1["chain_height"] = local_backup_status["chain_height"]
+        n1["tip_hash"] = local_backup_status["tip_hash"]
+        n1["known_peers"] = local_backup_status["known_peers"]
+        n1["mempool_size"] = local_backup_status["mempool_size"]
+        n1["protocol_version"] = local_backup_status["protocol_version"]
+        n1["consensus_profile"] = local_backup_status["consensus_profile"]
+        n1["node_id"] = local_backup_status.get("node_id") or n1.get("node_id")
+        n1["p2p_bind"] = local_backup_status.get("p2p_bind") or "0.0.0.0:8333"
+        n1["rpc_bind"] = local_backup_status.get("rpc_bind") or "127.0.0.1:8446"
 
     # Proxy local height to Edge if Edge RPC failed entirely
     if edge_node1_status["chain_height"] is None and n1.get("chain_height"):
@@ -2659,9 +2664,10 @@ def _build_status_edge_primary() -> dict:
         "timestamp": datetime.now().isoformat(),
         "topology": "edge-primary",
         "node1": n1,
-        "node2": edge_node2_status if edge_node2_status.get("running") else {"running": False, "chain_height": None, "tip_hash": None, "known_peers": 0, "mempool_size": 0},
+        "node2": {"running": False, "chain_height": None, "tip_hash": None, "known_peers": 0, "mempool_size": 0},
         "edge_node": edge_node1_status,
-        "edge_node2": edge_node2_status,
+        "edge_node2": {"running": False, "chain_height": None, "tip_hash": None, "known_peers": 0, "mempool_size": 0},
+        "local_backup": local_backup_status,
         "pool": pool_status,
         "pool_edge": {
             "running": pool_edge_health["alive"],
@@ -2856,7 +2862,7 @@ def build_checklist(status: dict) -> dict:
             {"id": "keys",       "label": "Offline key generation complete",          "ok": True},
             {"id": "env",        "label": "Env file assembled (.env.mainnet)",        "ok": True},
             {"id": "edge-node1", "label": "Edge Node 1 (Primary) running & reachable", "ok": status["edge_node"]["running"] and status["edge_node"]["chain_height"] is not None},
-            {"id": "edge-node2", "label": "Edge Node 2 (Follower) running & synced",  "ok": status.get("edge_node2", {}).get("running", False)},
+            {"id": "local-backup", "label": "Local Backup Node running & synced",      "ok": status.get("local_backup", {}).get("running", False) and status.get("local_backup", {}).get("known_peers", 0) > 0},
             {"id": "pool",       "label": "Edge Pool running & accepting miners",     "ok": status["pool"]["running"] and status["pool"]["active_sessions"] is not None},
             {"id": "pool-edge",  "label": "Edge Pool TCP reachable",                  "ok": status.get("pool_edge", {}).get("running", False)},
             {"id": "chain",      "label": "Chain height advancing",                   "ok": status["edge_node"]["chain_height"] is not None and status["edge_node"]["chain_height"] > 0},
@@ -2864,7 +2870,7 @@ def build_checklist(status: dict) -> dict:
             {"id": "fee_split",  "label": "Fee split 89/5/5/1 (burn model) active",    "ok": status["pool"]["fee_split"] == "89/5/5/1"},
             {"id": "logs",       "label": "Log directory writable",                   "ok": LOG_DIR.exists()},
             # Optional local services (not counted in score, shown for info)
-            {"id": "node1",      "label": "Local Backup Node (optional)",             "ok": not status["node1"]["running"] or (status["node1"]["running"] and status["node1"]["p2p_bind"] is not None)},
+            {"id": "node1",      "label": "Local Backup Node P2P synced",             "ok": status.get("local_backup", {}).get("running", False) and status.get("local_backup", {}).get("known_peers", 0) > 0},
             {"id": "miner",      "label": "Local GPU miner (optional)",               "ok": True},
             {"id": "edge-backup","label": "Edge database auto-backup (optional)",     "ok": True},
         ]
@@ -2962,7 +2968,7 @@ def build_alerts(status: dict) -> list:
     topology = status.get("topology", TOPOLOGY)
     n1, n2, pool, miner = status["node1"], status["node2"], status["pool"], status["miner"]
     edge_node1 = status.get("edge_node", {})
-    edge_node2 = status.get("edge_node2", {})
+    local_backup = status.get("local_backup", {})
 
     def _sev(svc_id: str, default: str = "warning") -> str:
         svc = get_service(svc_id)
@@ -2979,37 +2985,32 @@ def build_alerts(status: dict) -> list:
                            "detail": "Edge node 1 is up but no blocks have been mined yet.",
                            "action": None})
 
-        # Edge Node 2 (Follower) alerts
-        if not edge_node2.get("running"):
-            alerts.append({"severity": _sev("edge-node2", "warning"), "title": "Edge Node 2 (Follower) not reachable",
-                           "detail": "Follower node on Edge (127.0.0.1:8334) is not responding. It should P2P sync from Edge Node 1.",
-                           "action": None})
-        elif edge_node2.get("chain_height") == 0:
-            alerts.append({"severity": _sev("edge-node2", "warning"), "title": "Edge Node 2 chain stuck at height 0",
-                           "detail": "Edge node 2 is up but no blocks have been synced yet.",
-                           "action": None})
-
-        # Sync gap: Edge Node 1 vs Edge Node 2
-        if edge_node1.get("running") and edge_node2.get("running") and edge_node1.get("chain_height") and edge_node2.get("chain_height"):
-            gap = abs(edge_node1["chain_height"] - edge_node2["chain_height"])
-            if gap > 10:
-                alerts.append({"severity": _sev("edge-node2", "warning"), "title": "Edge Node 2 far behind Node 1",
-                               "detail": f"Edge1@{edge_node1['chain_height']} vs Edge2@{edge_node2['chain_height']} — gap {gap}",
-                               "action": None})
-
-        # Local Backup Node alerts (optional in edge-primary — only warn if explicitly started but failing)
-        if n1["running"] and n1.get("p2p_bind") is None:
-            alerts.append({"severity": _sev("node1", "warning"), "title": "Local Backup Node misconfigured",
-                           "detail": "Local backup node is running but has no P2P bind. Check config.",
+        # Local Backup Node alerts
+        if not local_backup.get("running"):
+            alerts.append({"severity": _sev("node1", "warning"), "title": "Local Backup Node not reachable",
+                           "detail": "Backup node on 127.0.0.1:8446 is not responding. Check systemd: systemctl --user status zion-backup-node",
+                           "action": "restart-node1"})
+        elif local_backup.get("chain_height") == 0:
+            alerts.append({"severity": _sev("node1", "warning"), "title": "Local Backup Node chain stuck at height 0",
+                           "detail": "Backup node is up but no blocks have been synced yet. Check P2P connection to Edge.",
                            "action": "restart-node1"})
 
         # Sync gap: Edge primary vs local backup
-        if edge_node1.get("running") and n1["running"] and edge_node1.get("chain_height") and n1["chain_height"]:
-            gap = abs(edge_node1["chain_height"] - n1["chain_height"])
+        if edge_node1.get("running") and local_backup.get("running") and edge_node1.get("chain_height") and local_backup.get("chain_height"):
+            gap = abs(edge_node1["chain_height"] - local_backup["chain_height"])
             if gap > 10:
                 alerts.append({"severity": _sev("node1", "warning"), "title": "Backup node far behind Edge",
-                               "detail": f"Edge@{edge_node1['chain_height']} vs Local@{n1['chain_height']} — gap {gap}",
+                               "detail": f"Edge@{edge_node1['chain_height']} vs Local@{local_backup['chain_height']} — gap {gap}",
                                "action": "restart-node1"})
+            elif gap <= 2:
+                # Positive alert: synced
+                pass  # No alert needed — all good
+
+        # Local Backup Node P2P peer check
+        if local_backup.get("running") and local_backup.get("known_peers", 0) == 0:
+            alerts.append({"severity": _sev("node1", "warning"), "title": "Backup node has no P2P peers",
+                           "detail": "Local backup node is running but has 0 peers. Check SSH tunnel and Edge P2P (62.171.141.136:8333).",
+                           "action": "restart-node1"})
     else:  # local-dev
         # Node 1 (Genesis) alerts
         if not n1["running"]:
@@ -5648,9 +5649,11 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
         <div class="text-3xl font-bold mb-1 text-amber-400" id="val-node1-height">—</div><div class="text-xs text-gray-400 mb-2">Chain Height</div>
         <div class="text-xs font-mono text-gray-300 truncate mb-1" id="val-node1-id">—</div>
         <div class="text-xs text-gray-400 mb-1">Peers: <span id="val-node1-peers" class="text-white font-bold">—</span></div>
-        <div class="text-xs text-gray-400 mb-2">P2P: <span id="val-node1-p2p" class="font-mono">—</span></div>
+        <div class="text-xs text-gray-400 mb-1">P2P: <span id="val-node1-p2p" class="font-mono">—</span></div>
+        <div class="text-xs text-gray-400 mb-2">Sync: <span id="val-node1-sync" class="text-amber-400">—</span></div>
         <div class="flex gap-1 mt-2">
           <button onclick="controlAction('start-node1')" class="flex-1 text-xs px-2 py-1 bg-emerald-700 hover:bg-emerald-600 rounded transition">▶ Start</button>
+          <button onclick="controlAction('restart-node1')" class="flex-1 text-xs px-2 py-1 bg-amber-700 hover:bg-amber-600 rounded transition">⟳ Restart</button>
           <button onclick="copyToClipboard('zion node1')" class="text-xs px-2 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">📋</button>
         </div>
       </div>
@@ -7078,6 +7081,7 @@ async function refreshAll(){
 
 function updateServiceCards(s){
   const en=s.edge_node,n1=s.node1,n2=s.node2,p=s.pool,m=s.miner;
+  const lb=s.local_backup||{};
   // Topology-aware visibility
   const isEdgePrimary = s.topology === 'edge-primary';
   const node2Card = document.getElementById('card-node2');
@@ -7097,6 +7101,25 @@ function updateServiceCards(s){
   document.getElementById('val-node1-id').textContent=n1.node_id??'—';
   document.getElementById('val-node1-peers').textContent=n1.known_peers??'—';
   document.getElementById('val-node1-p2p').textContent=n1.p2p_bind??'—';
+  // Sync status for local backup node
+  const lbSyncEl=document.getElementById('val-node1-sync');
+  if(lbSyncEl){
+    const synced=en&&en.chain_height&&n1.chain_height&&n1.chain_height>=en.chain_height-2;
+    const tipMatch=en&&n1&&en.tip_hash&&n1.tip_hash&&en.tip_hash===n1.tip_hash;
+    if(n1.running&&synced){
+      lbSyncEl.textContent=tipMatch?'✓ Synced (tip match)':'✓ Synced';
+      lbSyncEl.className='text-emerald-400 font-bold';
+    }else if(n1.running&&n1.known_peers>0){
+      lbSyncEl.textContent='Syncing…';
+      lbSyncEl.className='text-amber-400';
+    }else if(n1.running){
+      lbSyncEl.textContent='No peers';
+      lbSyncEl.className='text-red-400';
+    }else{
+      lbSyncEl.textContent='Offline';
+      lbSyncEl.className='text-red-400';
+    }
+  }
   // Node 2 (Dev / Optional)
   if(!isEdgePrimary){
     setBadge('badge-node2',n2.running);setCardLive('node2',n2.running);
@@ -7175,7 +7198,7 @@ async function loadMainnetStatus(){
       {label:'Fee Split',value:res.fee_split_all_match?'✓ Canonical':'✗ Mismatch',ok:res.fee_split_all_match,icon:'💰'},
       {label:'Launch Date',value:res.days_to_launch>0?res.days_to_launch+' days':'LAUNCH DAY!',ok:res.days_to_launch>=0,icon:'🚀'},
       {label:'Checklist',value:res.checklist_passed+'/'+res.checklist_total+' ('+res.checklist_pass_rate+'%)',ok:res.checklist_pass_rate>=80,icon:'✅'},
-      {label:'Node Status',value:(res.topology==='edge-primary'?(res.edge_node_running?'E1✓':'E1✗')+' '+(res.edge_node2_running?'E2✓':'E2✗'):(res.node1_running?'N1✓':'N1✗')+' '+(res.node2_running?'N2✓':'N2✗')),ok:res.topology==='edge-primary'?(res.edge_node_running&&res.edge_node2_running):(res.node1_running&&res.node2_running),icon:'🔶'},
+      {label:'Node Status',value:(res.topology==='edge-primary'?(res.edge_node_running?'E1✓':'E1✗')+' '+(res.local_backup_running?'LB✓':'LB✗'):(res.node1_running?'N1✓':'N1✗')+' '+(res.node2_running?'N2✓':'N2✗')),ok:res.topology==='edge-primary'?(res.edge_node_running&&res.local_backup_running):(res.node1_running&&res.node2_running),icon:'🔶'},
       {label:'Pool Status',value:res.pool_running?'Running':'Stopped',ok:res.pool_running,icon:'⚡'},
       {label:'Git Status',value:res.git_status.clean?'Clean: '+res.git_status.branch:'Dirty: '+res.git_status.branch,ok:res.git_status.clean,icon:'📦'},
       {label:'Overall',value:res.ready_for_launch?'🎉 READY':'⏳ PREPARING',ok:res.ready_for_launch,icon:'🎯'},
@@ -8313,6 +8336,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     "shares_accepted": _st.get("pool_edge", {}).get("shares_accepted"),
                     "blocks_found": _st.get("pool_edge", {}).get("blocks_found"),
                     "services": _health,
+                    "local_backup": _st.get("local_backup", {}),
+                    "edge_node": _st.get("edge_node", {}),
                 }
                 self._json(_overview)
             except Exception as ex:
@@ -9060,13 +9085,16 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "checklist_passed": checklist["passed"],
                 "checklist_total": checklist["total"],
                 "node1_height": status["node1"]["chain_height"],
-                "node2_height": status.get("edge_node2", {}).get("chain_height") if status.get("topology") == "edge-primary" else status["node2"]["chain_height"],
+                "node2_height": status.get("local_backup", {}).get("chain_height") if status.get("topology") == "edge-primary" else status["node2"]["chain_height"],
                 "node1_running": status["node1"]["running"],
-                "node2_running": status.get("edge_node2", {}).get("running", False) if status.get("topology") == "edge-primary" else status["node2"]["running"],
+                "node2_running": status.get("local_backup", {}).get("running", False) if status.get("topology") == "edge-primary" else status["node2"]["running"],
                 "edge_node_running": status.get("edge_node", {}).get("running", False),
-                "edge_node2_running": status.get("edge_node2", {}).get("running", False),
+                "edge_node2_running": False,  # deprecated — no edge node2 in v3.0.4
+                "local_backup_running": status.get("local_backup", {}).get("running", False),
+                "local_backup_height": status.get("local_backup", {}).get("chain_height"),
+                "local_backup_peers": status.get("local_backup", {}).get("known_peers", 0),
                 "edge_node_height": status.get("edge_node", {}).get("chain_height"),
-                "edge_node2_height": status.get("edge_node2", {}).get("chain_height"),
+                "edge_node2_height": None,  # deprecated
                 "pool_running": status["pool"]["running"],
                 "miner_running": status["miner"]["running"],
                 "git_status": git_status,
@@ -9074,7 +9102,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     genesis_hash is not None and genesis_hash != "Unknown" and len(str(genesis_hash)) == 64,
                     all(fee_split_match.values()),
                     status.get("edge_node", {}).get("running", False) if status.get("topology") == "edge-primary" else status["node1"]["running"],
-                    status.get("edge_node2", {}).get("running", False) if status.get("topology") == "edge-primary" else status["node2"]["running"],
+                    status.get("local_backup", {}).get("running", False) if status.get("topology") == "edge-primary" else status["node2"]["running"],
                     status["pool"]["running"],
                     git_status["clean"],
                     checklist["pct"] >= 80
@@ -9417,6 +9445,122 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/health":
             # v2 client: GET /api/health → returns HealthMap {service: status}
             self._json(_build_health_map())
+        elif route == "/api/systemd":
+            # Local systemd user service status — autonomous monitoring
+            try:
+                import subprocess as _sp
+                services = ["zion-ssh-tunnel", "zion-backup-node", "zion-dashboard"]
+                result = {}
+                for svc in services:
+                    try:
+                        proc = _sp.run(
+                            ["systemctl", "--user", "is-active", svc],
+                            capture_output=True, text=True, timeout=3
+                        )
+                        active = proc.stdout.strip() == "active"
+                        # Get uptime
+                        proc2 = _sp.run(
+                            ["systemctl", "--user", "show", svc, "--property=ActiveEnterTimestamp,MainPID,ExecMainStatus"],
+                            capture_output=True, text=True, timeout=3
+                        )
+                        props = {}
+                        for line in proc2.stdout.strip().split("\n"):
+                            if "=" in line:
+                                k, v = line.split("=", 1)
+                                props[k] = v
+                        result[svc] = {
+                            "active": active,
+                            "status": proc.stdout.strip(),
+                            "pid": props.get("MainPID", "?"),
+                            "started": props.get("ActiveEnterTimestamp", ""),
+                            "exit_status": props.get("ExecMainStatus", ""),
+                        }
+                    except Exception as e:
+                        result[svc] = {"active": False, "status": "error", "error": str(e)}
+                # Backup timer
+                try:
+                    proc = _sp.run(
+                        ["systemctl", "--user", "list-timers", "zion-backup.timer", "--no-pager", "--plain"],
+                        capture_output=True, text=True, timeout=3
+                    )
+                    lines = [l for l in proc.stdout.strip().split("\n") if "zion-backup" in l]
+                    result["zion-backup-timer"] = {
+                        "active": bool(lines),
+                        "raw": lines[0] if lines else "",
+                    }
+                except Exception:
+                    result["zion-backup-timer"] = {"active": False, "raw": ""}
+                # Linger status
+                try:
+                    proc = _sp.run(
+                        ["loginctl", "show-user", os.environ.get("USER", "zionserver"), "--property=Linger"],
+                        capture_output=True, text=True, timeout=3
+                    )
+                    result["linger"] = "yes" in proc.stdout.lower()
+                except Exception:
+                    result["linger"] = None
+                self._json(result)
+            except Exception as ex:
+                self._json({"error": str(ex)})
+        elif route == "/api/autonomous/health":
+            # Autonomous health check — comprehensive system status with auto-restart recommendations
+            try:
+                _st = build_status()
+                _sysd = {}
+                import subprocess as _sp
+                for svc in ["zion-ssh-tunnel", "zion-backup-node", "zion-dashboard"]:
+                    try:
+                        proc = _sp.run(["systemctl", "--user", "is-active", svc],
+                                      capture_output=True, text=True, timeout=2)
+                        _sysd[svc] = proc.stdout.strip()
+                    except Exception:
+                        _sysd[svc] = "unknown"
+
+                _lb = _st.get("local_backup", {})
+                _en = _st.get("edge_node", {})
+                _pe = _st.get("pool_edge", {})
+
+                issues = []
+                if _sysd.get("zion-ssh-tunnel") != "active":
+                    issues.append({"svc": "ssh-tunnel", "severity": "critical",
+                                  "msg": "SSH tunnel down — edge services unreachable",
+                                  "action": "systemctl --user restart zion-ssh-tunnel"})
+                if _sysd.get("zion-backup-node") != "active":
+                    issues.append({"svc": "backup-node", "severity": "warning",
+                                  "msg": "Backup node service not active",
+                                  "action": "systemctl --user restart zion-backup-node"})
+                if _sysd.get("zion-dashboard") != "active":
+                    issues.append({"svc": "dashboard", "severity": "info",
+                                  "msg": "Dashboard service not active (but you're seeing this...)",
+                                  "action": "systemctl --user restart zion-dashboard"})
+                if _en.get("running") and _lb.get("running"):
+                    gap = abs((_en.get("chain_height") or 0) - (_lb.get("chain_height") or 0))
+                    if gap > 10:
+                        issues.append({"svc": "sync", "severity": "warning",
+                                      "msg": f"Backup node {gap} blocks behind edge",
+                                      "action": "systemctl --user restart zion-backup-node"})
+                if _lb.get("running") and _lb.get("known_peers", 0) == 0:
+                    issues.append({"svc": "p2p", "severity": "warning",
+                                  "msg": "Backup node has 0 P2P peers",
+                                  "action": "Check SSH tunnel + edge P2P"})
+                if not _pe.get("running"):
+                    issues.append({"svc": "pool", "severity": "warning",
+                                  "msg": "Edge pool not reachable",
+                                  "action": "Check edge pool service"})
+
+                self._json({
+                    "healthy": len(issues) == 0,
+                    "issues": issues,
+                    "systemd": _sysd,
+                    "edge_height": _en.get("chain_height"),
+                    "local_height": _lb.get("chain_height"),
+                    "sync_gap": abs((_en.get("chain_height") or 0) - (_lb.get("chain_height") or 0)) if _en.get("running") and _lb.get("running") else None,
+                    "p2p_peers": _lb.get("known_peers", 0),
+                    "pool_hashrate": _pe.get("hashrate"),
+                    "pool_miners": _pe.get("active_miners"),
+                })
+            except Exception as ex:
+                self._json({"error": str(ex), "healthy": False})
         elif route == "/api/blocks":
             # v2 client: GET /api/blocks?limit=N → returns array of BlockSummary
             limit = int(params.get("limit", ["20"])[0])
