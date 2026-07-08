@@ -6580,8 +6580,8 @@ function renderReadiness(data) {
 // FEATURE C — Service Health Timeline (24h heatmap)
 // ════════════════════════════════════════════════════════════════════════
 // All service IDs that backend can persist in health history (ordered by layer L1→L2→L3→Infra)
-const SERVICE_HISTORY_LABELS = ['node1','node2','pool','pool-edge','miner','bridge','dao','atomic-swap','warp','ncl','hiranyagarbha','ai-native','oasis','free-world','issobella','prometheus','grafana','dashboard'];
-const SVC_LABEL_MAP = { node1:'Node 1', node2:'Node 2', pool:'Pool', 'pool-edge':'Pool Edge', miner:'Miner', bridge:'Bridge', dao:'DAO', 'atomic-swap':'Atomic Swap', warp:'WARP', ncl:'NCL', hiranyagarbha:'Hiran API', 'ai-native':'AI Native', oasis:'OASIS', 'free-world':'Free World', issobella:'Issobella', prometheus:'Prometheus', grafana:'Grafana', dashboard:'Dashboard' };
+const SERVICE_HISTORY_LABELS = ['edge-node1','edge-node2','local-backup','pool-edge','miner','bridge','dao','warp','oasis','free-world','issobella','dashboard','nginx','web-next'];
+const SVC_LABEL_MAP = { 'edge-node1':'Edge Node 1', 'edge-node2':'Edge Node 2', 'local-backup':'Local Backup', 'pool-edge':'Pool Edge', miner:'Miner', bridge:'Bridge', dao:'DAO', warp:'WARP', oasis:'OASIS', 'free-world':'Free World', issobella:'Issobella', dashboard:'Dashboard', nginx:'Nginx', 'web-next':'Website' };
 const SVC_LEVEL_ORDER = { 'L1':0, 'L2':1, 'L3':2, 'L4':3, 'L5':4, 'L6':5, 'Infra':6 };
 let serviceHealthData = null;
 let healthRangeBuckets = 48; // default 4h

@@ -940,6 +940,24 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "Primary / Genesis node — P2P 8333, RPC 8443, WS 8445, metrics 9100. Fresh genesis v3.0.4.",
      "child_says": "🌍 The king node — source of chain truth!",
      "depends_on": []},
+    {"id": "edge-node2", "name": "ZION Node 2 (Follower)", "icon": "🔶", "level": "L1", "kind": "node",
+     "ports": {"p2p": 8334, "rpc": 8448, "ws": 8449, "metrics": 9116},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "rpc", "severity": "warning", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:8448/health",
+     "purpose": "Follower node — P2P 8334, RPC 8448. Syncs from Node 1 for redundancy.",
+     "child_says": "🔶 Follows Node 1 to keep a backup copy!",
+     "depends_on": ["edge-node1"]},
+    {"id": "local-backup", "name": "Local Backup Node", "icon": "🔷", "level": "L1", "kind": "node",
+     "ports": {"p2p": 8333, "rpc": 8446, "ws": 8447},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "rpc", "severity": "warning", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:8446/health",
+     "purpose": "Local backup node — P2P 8333, RPC 8446. Seeds from both Edge nodes.",
+     "child_says": "🔷 Local backup — keeps a copy safe at home!",
+     "depends_on": ["edge-node1"]},
     {"id": "pool-edge", "name": "ZION Pool (Primary)", "icon": "🌐", "level": "L1", "kind": "pool",
      "ports": {"stratum": 8444},
      "host": "127.0.0.1",
@@ -10520,14 +10538,10 @@ if __name__ == "__main__":
     print(f"  Auth          : {len(DASHBOARD_USERS)} user(s) — {', '.join(DASHBOARD_USERS.keys())}")
     print("  Press Ctrl+C to stop")
     print("=" * 60)
-    # Background sampler and WS push temporarily disabled due to Windows
-    # threading deadlock with nested ThreadPoolExecutors + TCP probes.
-    # Dashboard is fully functional on-demand via HTTP API.
-    # TODO: re-enable after root-causing the deadlock.
-    # sampler_thread = threading.Thread(target=background_sampler, daemon=True)
-    # sampler_thread.start()
-    # ws_thread = threading.Thread(target=_ws_push_loop, daemon=True)
-    # ws_thread.start()
+    # Background sampler — re-enabled on Linux (was disabled for Windows deadlock).
+    # Records service health history every 5 min for the Health Timeline.
+    sampler_thread = threading.Thread(target=background_sampler, daemon=True)
+    sampler_thread.start()
 
     open_browser()
     server = ThreadingHTTPServer((HOST, PORT), DashboardHandler)
