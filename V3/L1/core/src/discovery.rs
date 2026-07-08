@@ -36,15 +36,13 @@ pub const MAX_ANNOUNCE_AGE: u64 = 600;
 
 /// DNS seed hostnames for initial peer discovery.
 ///
-/// Core + Edge topology — configure additional seeds via ZION_SEED_PEERS env var.
+/// Single-server 3.0.4 topology — configure additional seeds via ZION_SEED_PEERS env var.
 pub const DNS_SEEDS: &[&str] = &[];
 
 /// Well-known bootstrap nodes for UDP announcements.
 pub const BOOTSTRAP_NODES: &[(&str, u16)] = &[
-    // Edge public entrypoint (Hetzner VPS)
-    ("77.42.71.94", 8335),
-    // Tailscale fallback (private VPN)
-    ("100.76.16.108", 8335),
+    // 3.0.4 canonical mainnet server (old Edge 77.42.71.94 decommissioned 2026-07-07).
+    ("62.171.141.136", 8335),
 ];
 
 // ── Types ──────────────────────────────────────────────────────────────

@@ -166,7 +166,7 @@ impl Default for NodeConfig {
 impl Default for PoolConfig {
     fn default() -> Self {
         Self {
-            host: "77.42.71.94".into(),
+            host: "62.171.141.136".into(),
             port: 8444,
         }
     }
@@ -197,12 +197,12 @@ impl Default for TopologyConfig {
                 vpn_ip: Some("100.86.102.5".into()),
             },
             edge: TopologyHostConfig {
-                rpc_host: "100.76.16.108".into(),
+                rpc_host: "62.171.141.136".into(),
                 rpc_port: 8443,
                 p2p_port: 8333,
-                pool_host: "77.42.71.94".into(),
+                pool_host: "62.171.141.136".into(),
                 pool_port: 8444,
-                vpn_ip: Some("100.76.16.108".into()),
+                vpn_ip: None,
             },
         }
     }

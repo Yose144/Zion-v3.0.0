@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -237,6 +237,28 @@ export default function ZoharPageClient() {
   const cs = lang === 'cs';
   const [selected, setSelected] = useState<Sephira | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
+
+  // Live tree health from /api/zohar/tree-health
+  const [treeHealth, setTreeHealth] = useState<any>(null);
+  const [healthLoading, setHealthLoading] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const res = await fetch('/api/zohar/tree-health', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled) setTreeHealth(data);
+      } catch {
+        // offline — keep static fallback
+      } finally {
+        if (!cancelled) setHealthLoading(false);
+      }
+    }
+    load();
+    const interval = setInterval(load, 30000); // refresh every 30s
+    return () => { cancelled = true; clearInterval(interval); };
+  }, []);
 
   return (
     <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 overflow-x-hidden">
@@ -776,7 +798,7 @@ export default function ZoharPageClient() {
           </div>
         </motion.section>
 
-        {/* ═══════ STAV EMANACE ═══════ */}
+        {/* ═══════ STAV EMANACE — LIVE ═══════ */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -786,48 +808,141 @@ export default function ZoharPageClient() {
         >
           <div className="text-center space-y-3">
             <p className="text-xs font-semibold uppercase tracking-[0.36em] text-emerald-400">
-              {cs ? 'Diagnostika organismu' : 'Organism diagnostics'}
+              {cs ? 'Diagnostika organismu — živá data' : 'Organism diagnostics — live data'}
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-white">
               {cs ? 'Stav emanace' : 'Emanation status'}
             </h2>
             <p className="mx-auto max-w-2xl text-sm text-gray-400">
               {cs
-                ? 'Které aspekty ZIONu jsou živé v runtime, které čekají na manifestaci. Strom života jako diagnostický nástroj.'
-                : 'Which aspects of ZION are alive in runtime, which await manifestation. The Tree of Life as a diagnostic tool.'}
+                ? 'Které aspekty ZIONu jsou živé v runtime, které čekají na manifestaci. Strom života jako diagnostický nástroj. Data z /api/zohar/tree-health — agregováno z blockchain, DeFi, bridge a NCL API.'
+                : 'Which aspects of ZION are alive in runtime, which await manifestation. The Tree of Life as a diagnostic tool. Data from /api/zohar/tree-health — aggregated from blockchain, DeFi, bridge and NCL APIs.'}
             </p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            {SEPHIROT.map((s) => (
-              <div
-                key={s.id}
-                className="rounded-xl border p-3 transition-all hover:scale-[1.02]"
-                style={{
-                  borderColor: `rgba(${s.color}, 0.25)`,
-                  backgroundColor: `rgba(${s.color}, 0.05)`,
-                }}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-white">{s.name}</span>
-                  <span
-                    className="h-2 w-2 rounded-full"
-                    style={{
-                      backgroundColor: `rgb(${s.color})`,
-                      opacity: s.status === 'live' ? 1 : s.status === 'partial' ? 0.5 : 0.25,
-                    }}
+
+          {/* Aggregate tree health + pillars */}
+          {treeHealth && (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="zion-rainbow-card space-y-2 p-5 text-center" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{cs ? 'Strom celkem' : 'Tree overall'}</p>
+                <p className="text-4xl font-bold text-zion-gold">{treeHealth.treeHealth}<span className="text-lg text-gray-500">/100</span></p>
+                <div className="mx-auto h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-linear-to-r from-zion-gold to-amber-400 transition-all duration-700"
+                    style={{ width: `${treeHealth.treeHealth}%` }}
                   />
                 </div>
-                <p className="mt-1 text-[10px] text-gray-500">{s.zionLayer}</p>
-                <p
-                  className="mt-1.5 text-[10px] font-semibold uppercase tracking-wider"
-                  style={{ color: `rgb(${s.color})` }}
-                >
-                  {STATUS_LABEL[s.status][cs ? 'cs' : 'en']}
-                </p>
               </div>
-            ))}
+              <div className="zion-rainbow-card space-y-2 p-5 text-center" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{cs ? 'Pilíř Milosrdenství' : 'Pillar of Mercy'}</p>
+                <p className="text-3xl font-bold text-cyan-400">{treeHealth.pillars.mercy}<span className="text-base text-gray-500">/100</span></p>
+                <p className="text-[10px] text-gray-500">{cs ? 'Chokmah, Chesed, Netzach' : 'Chokmah, Chesed, Netzach'}</p>
+              </div>
+              <div className="zion-rainbow-card space-y-2 p-5 text-center" style={{ '--rc': '239, 68, 68' } as React.CSSProperties}>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{cs ? 'Pilíř Přísnosti' : 'Pillar of Severity'}</p>
+                <p className="text-3xl font-bold text-red-400">{treeHealth.pillars.severity}<span className="text-base text-gray-500">/100</span></p>
+                <p className="text-[10px] text-gray-500">{cs ? 'Binah, Gevurah, Hod' : 'Binah, Gevurah, Hod'}</p>
+              </div>
+              <div className="zion-rainbow-card space-y-2 p-5 text-center" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{cs ? 'Pilíř Rovnováhy' : 'Pillar of Equilibrium'}</p>
+                <p className="text-3xl font-bold text-amber-400">{treeHealth.pillars.equilibrium}<span className="text-base text-gray-500">/100</span></p>
+                <p className="text-[10px] text-gray-500">{cs ? 'Keter, Tiferet, Yesod, Malkhut' : 'Keter, Tiferet, Yesod, Malkhut'}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Per-sephira health grid */}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {SEPHIROT.map((s) => {
+              const liveData = treeHealth?.sephirot?.find((ls: any) => ls.id === s.id);
+              const health = liveData?.health ?? 0;
+              const liveStatus = liveData?.status ?? s.status;
+              return (
+                <div
+                  key={s.id}
+                  className="rounded-xl border p-3 transition-all hover:scale-[1.02]"
+                  style={{
+                    borderColor: `rgba(${s.color}, 0.25)`,
+                    backgroundColor: `rgba(${s.color}, 0.05)`,
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-white">{s.name}</span>
+                    <span
+                      className="h-2 w-2 rounded-full"
+                      style={{
+                        backgroundColor: `rgb(${s.color})`,
+                        opacity: liveStatus === 'live' ? 1 : liveStatus === 'partial' ? 0.5 : 0.25,
+                      }}
+                    />
+                  </div>
+                  <p className="mt-1 text-[10px] text-gray-500">{s.zionLayer}</p>
+                  {/* Health bar */}
+                  <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{
+                        width: `${health}%`,
+                        backgroundColor: `rgb(${s.color})`,
+                      }}
+                    />
+                  </div>
+                  <div className="mt-1.5 flex items-center justify-between">
+                    <p
+                      className="text-[10px] font-semibold uppercase tracking-wider"
+                      style={{ color: `rgb(${s.color})` }}
+                    >
+                      {STATUS_LABEL[liveStatus as keyof typeof STATUS_LABEL]?.[cs ? 'cs' : 'en'] ?? STATUS_LABEL.horizon[cs ? 'cs' : 'en']}
+                    </p>
+                    {liveData && (
+                      <p className="text-[10px] font-mono text-gray-400">{health}/100</p>
+                    )}
+                  </div>
+                  {/* Key metric */}
+                  {liveData?.metrics && (
+                    <p className="mt-1 text-[9px] text-gray-600 truncate">
+                      {Object.entries(liveData.metrics).slice(0, 1).map(([k, v]) => (
+                        <span key={k}>{k}: {String(v)}</span>
+                      ))}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
           </div>
-          <div className="flex items-center justify-center gap-6 pt-2 text-xs text-gray-500">
+
+          {/* Da'at + sources */}
+          {treeHealth?.daat && (
+            <div className="zion-rainbow-card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between" style={{ '--rc': '255, 255, 255' } as React.CSSProperties}>
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-dashed border-white/30">
+                  <span className="text-xs font-bold text-gray-300">11</span>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-white">Da&apos;at — {cs ? 'most vědomí' : 'bridge of consciousness'}</p>
+                  <p className="text-xs text-gray-400">
+                    {cs ? 'Živých sefirot' : 'Live sephirot'}: {treeHealth.daat.metrics.live_sephirot}/{treeHealth.daat.metrics.total_sephirot}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-bold text-white">{treeHealth.daat.health}<span className="text-sm text-gray-500">/100</span></p>
+                <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'propojení mýtu a kódu' : 'myth-code connection'}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Loading + sources */}
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-2 text-xs text-gray-500">
+            {healthLoading && (
+              <span className="inline-flex items-center gap-2">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-zion-gold" />
+                {cs ? 'Načítám živá data…' : 'Loading live data…'}
+              </span>
+            )}
+            {treeHealth?.sources?.length > 0 && (
+              <span>{cs ? 'Zdroje:' : 'Sources:'} {treeHealth.sources.join(', ')}</span>
+            )}
             <span className="inline-flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-emerald-400" /> {cs ? 'Živé v runtime' : 'Live in runtime'}
             </span>

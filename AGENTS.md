@@ -2,6 +2,8 @@
 
 This file provides operating guidance to Devin, WARP, Copilot, and future automated agents working in this repository.
 
+> **⚠️ SERVER MIGRATION 2026-07-07:** The old Edge server (`77.42.71.94`) is **DECOMMISSIONED**. All services have been rebuilt on a new server at **`62.171.141.136`** following the 3.0.4 hard genesis reset. New genesis hash: `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`. SSH: `ssh zion-new` (key: `~/.ssh/zion-new-server`). All references to `77.42.71.94` or `100.76.16.108` below are **historical** unless explicitly marked as updated. See [`StatusV3.md`](./StatusV3.md) § "3.0.4 Hard Genesis Reset" for current live topology. Web: `https://zionterranova.com` (Next.js Docker). Dashboard: `https://dashboard.zionterranova.com` (Basic Auth). Pool: `62.171.141.136:8444`. RPC (localhost only on server): `127.0.0.1:8443`.
+
 ## Scope and working area
 
 - This is a multi-layer monorepo, but **active mainnet-track development is in `V3/`**.
@@ -29,11 +31,12 @@ This file provides operating guidance to Devin, WARP, Copilot, and future automa
 - Genesis Regeneration Runbook: [`GENESIS_REGENERATION_RUNBOOK.md`](./GENESIS_REGENERATION_RUNBOOK.md) — complete guide for genesis key rotation and recovery procedures.
 - **3.0.4 Hard Genesis Reset — CANONICAL RUNBOOK (2026-07-06):** [`docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md`](./docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md) — **THE** single source of truth for the complete hard reset. Covers all 10 phases: pre-flight, key generation, genesis.rs update, L2/L3 config, EVM revocation, new server, L1 wipe, verification, documentation, generational transfer. Replaces all prior runbooks (HARDRESETOFFICIAL.md, GENESIS_REGENERATION_RUNBOOK.md, docs/3.0.1Genesis/*) as the canonical procedure. New genesis hash: `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`. All 14 premine + 5 canonical + bridge vault addresses regenerated.
 - **Security Disclosure — ZION-2026-001 through ZION-2026-005 (2026-07-06):** [`docs/security/SECURITY_DISCLOSURE_2026-07.md`](./docs/security/SECURITY_DISCLOSURE_2026-07.md) — Public vulnerability disclosure in Ethereum Foundation format. 5 vulnerabilities catalogued (F1 forged P2P signatures, F5 unlimited inflation, C1-C8 server exposure, TeamViewer compromise, EVM key compromise). Disclosure policy, timeline, remediation status, what source code will be published. Machine-readable [`docs/security/vulnerabilities.json`](./docs/security/vulnerabilities.json). See also: [`HARDRESETOFFICIAL.md`](./HARDRESETOFFICIAL.md) (operational hard reset plan, status: EXECUTING).
-- **Security hardening — F1 + F5 EXPLOIT + PHASE 2 COMPLETE + L2 PATCH DEPLOYED + F5 FUZZED (2026-07-02):** [`SecurityFirst.md`](./SecurityFirst.md) · [`F5_SECURITY_INCIDENT_REPORT_2026-07-02.md`](./F5_SECURITY_INCIDENT_REPORT_2026-07-02.md) · [`PATCH_L2_SECURITY_2026-07-02.md`](./PATCH_L2_SECURITY_2026-07-02.md) — F1 exploit post-mortem (forged account TX via P2P from 109.81.30.165, rollback to 22180), comprehensive Edge server hardening: UFW (jen SSH/HTTP/HTTPS/Tailscale), private keys scrubbed z 5 souborů, file permissions 600, SSH klíče-only, **ALL služeb na 127.0.0.1**, AppArmor pro zion-node, 3 monitoring cron jobs, RPC audit log (v node binárce), Tailscale ACL doc (pending admin console apply). **L2 security patch DEPLOYED:** Commit `a8b3821e` — claimant guard, threshold 5/5, reorg safety, key hygiene, checked cast, composite dedup, escrow key zeroing, memo cap. MD5 shoda ověřena. **F1 fix deployed:** `validate_peer_block` nyní volá `verify_signature()` pro non-coinbase account TX (commit `9341344d`). **F5 CRITICAL fix deployed:** Account-model sender balance validation — `insert_transaction()` a `validate_peer_block()` nyní rejectují TX kde `sender_balance < amount + fee`. Height-gated via `ZION_BALANCE_CHECK_HEIGHT=22394` na Edge mainnet (obě nody). **F5 fuzz tests:** 5 testů (commit `a5472ec6`) — 100 random senders, double-spend, u64::MAX, rapid-fire, self-send, vše PASS. **Node binary swap:** Nejnovější binárka s fmt/clippy cleanup deploynuta (22:55 UTC), F5 aktivní, height 22539. Commits `69d12c7`, `fe8d449`, `9863747`, `46106f38`, `48bf387f`, `a5472ec6`. **Escrow key rotation:** Nový escrow keypair, inflační 100,002 ZION spáleno na unspendable burn address. **Pending:** Tailscale ACL (admin console), systemd User=zion, key rotation F4.x (air-gapped), genesis.rs canonical wallets (air-gapped, NOT label-derived), BFG git history scrub, max TX amount cap. **WARNING:** Label-derived canonical addresses have PUBLIC keys — nepoužívat pro treasury wallets!
+- **Security hardening — F1 + F5 EXPLOIT + PHASE 2 COMPLETE + L2 PATCH DEPLOYED + F5 FUZZED (2026-07-02):** [`SecurityFirst.md`](./SecurityFirst.md) · [`F5_SECURITY_INCIDENT_REPORT_2026-07-02.md`](./F5_SECURITY_INCIDENT_REPORT_2026-07-02.md) · [`PATCH_L2_SECURITY_2026-07-02.md`](./PATCH_L2_SECURITY_2026-07-02.md) — F1 exploit post-mortem (forged account TX via P2P from 109.81.30.165, rollback to 22180), comprehensive Edge server hardening: UFW (jen SSH/HTTP/HTTPS/Tailscale), private keys scrubbed z 5 souborů, file permissions 600, SSH klíče-only, **ALL služeb na 127.0.0.1**, AppArmor pro zion-node, 3 monitoring cron jobs, RPC audit log (v node binárce), Tailscale ACL doc (pending admin console apply). **L2 security patch DEPLOYED:** Commit `a8b3821e` — claimant guard, threshold 5/5, reorg safety, key hygiene, checked cast, composite dedup, escrow key zeroing, memo cap. MD5 shoda ověřena. **F1 fix deployed:** `validate_peer_block` nyní volá `verify_signature()` pro non-coinbase account TX (commit `9341344d`). **F5 CRITICAL fix deployed:** Account-model sender balance validation — `insert_transaction()` a `validate_peer_block()` nyní rejectují TX kde `sender_balance < amount + fee`. Height-gated via `ZION_BALANCE_CHECK_HEIGHT=22394` na Edge mainnet (obě nody). **F5 fuzz tests:** 5 testů (commit `a5472ec6`) — 100 random senders, double-spend, u64::MAX, rapid-fire, self-send, vše PASS. **Node binary swap:** Nejnovější binárka s fmt/clippy cleanup deploynuta (22:55 UTC), F5 aktivní, height 22539. Commits `69d12c7`, `fe8d449`, `9863747`, `46106f38`, `48bf387f`, `a5472ec6`. **Escrow key rotation:** Nový escrow keypair, inflační 100,002 ZION spáleno na unspendable burn address. **Pending:** Tailscale ACL (admin console), systemd User=zion, key rotation F4.x (air-gapped), genesis.rs canonical wallets (air-gapped, NOT label-derived), BFG git history scrub. **WARNING:** Label-derived canonical addresses have PUBLIC keys — nepoužívat pro treasury wallets!
+- **Security patch 3.0.4 wave 1-2 + F4.7 aktivace (2026-07-07):** [`SECURITY_PATCH_3.0.4_PLAN.md`](./SECURITY_PATCH_3.0.4_PLAN.md) (kanonický postup, fáze 1-6) · [`SECURITY_TODO_2026-07-03.md`](./SECURITY_TODO_2026-07-03.md) §Audit Delta. **Wave 1 (dependency + code hardening):** quinn-proto ≥0.11.15 (RUSTSEC-2026-0185 remote DoS), crossbeam-epoch ≥0.9.20, anyhow, rand, indicatif/ratatui/lru/metal advisory cleanup; node mainnet guard proti `ZION_SEED_PEERS=none|empty`; pool OASIS hook bez externího `curl` (interní HTTP + localhost-only guard + timeouty); bridge SQL whitelist v `count_by_status`; HTTP timeouty na dao_clientech; miner bez přímé `bincode` závislosti; audit wrapper `V3/scripts/security-audit.sh`. **Wave 2 (F4.7 max-tx-amount cap):** height-gated cap = `emission::TOTAL_SUPPLY` (144B ZION, NE 100M — nekoliduje s premine), výjimky genesis/coinbase, obě validační cesty (`insert_transaction` + `validate_peer_block`), 4 testy PASS. **AKTIVOVÁNO na serveru 62.171.141.136 (2026-07-07 23:16):** `ZION_MAX_TX_AMOUNT_HEIGHT=1` (bare EnvironmentFile formát), log `max_tx_amount_activation_height=1`, genesis hash `4f75a0df...` nezměněn, 7/7 služeb active. F5 (`ZION_BALANCE_CHECK_HEIGHT=0`) aktivní současně. Commity `690b6dfe`, `35e0f6d0`. **Canonicalizace topologie:** hardcoded seed peers (`lib.rs`, `discovery.rs`) + CLI topology defaults přesunuty ze starého Edge (77.42.71.94, decommissioned) na nový server (62.171.141.136), Tailscale odstraněn.
 - **LI.FI cross-chain DEX + bridge integration (2026-06-30):** [`docs/3.0.3/Li.Fi-L2.md`](./docs/3.0.3/Li.Fi-L2.md) — LI.FI WidgetLight integrated into `/defi` page (aggregates 30+ DEX + 20+ bridges across 25+ chains). Phase 1 complete (WidgetLight postMessage, slippage fix, 0.5% fee, 7 EVM chains, custom RPC). Phase 1.5: Ankr API key activated (free tier). **Phase 2: 6 chains live** — wZION deployed on Base (8453), BSC (56), Polygon (137), Arbitrum (42161), Optimism (10), Avalanche (43114) with same address `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` (deterministic deploy). ZIONBridge on BSC/Polygon/Arbitrum/Optimism/Avalanche: `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721`. Bridge relay running on Edge with 6 EVM watchers. Website live on zionterranova.com with 6-chain LiFi widget. **Phase 3: WARP D-04 COMPLETE** — WARP přenáší **native L1 ZION**. Token naming: EVM chains → **wZION** (ERC-20 wrapped, jako WBTC), non-EVM chains → **ZION** (nativní reprezentace). Outbound: user pošle ZION na `BRIDGE_VAULT_ADDRESS` s memo `BRIDGE:<chain>:<recipient>` → WARP mintne ZION/wZION na dest chain (1:1 peg). Inbound: user spálí ZION/wZION → WARP odemkne ZION z vault. L1 RPC: `getBridgeLocks` + `submitBridgeUnlock` (3/5 validator quorum). **12 chain adapters registered** (11 fully functional + TON watch-only) with pure-Rust serializers: BCS (`bcs.rs`) for Aptos+Sui, CBOR (`cbor.rs`) for Cardano, TL-B Cell+BOC (`ton_cell.rs`) for TON. **499 WARP tests pass**. WARP (`V3/L3/warp/`) covers all 12 chain families.
 - **WARP Lightning Network bridge (2026-06-30):** [`docs/WARP_LIGHTNING_PLAN.md`](./docs/WARP_LIGHTNING_PLAN.md) — Native ZION L1 ↔ BTC Lightning bridge via BOLT11 invoices. BOLT11 parser + LND REST client + adapter implemented (`bolt11.rs`, `lightning_signer.rs`, `adapter/lightning.rs`). Fáze A (LND node setup on Edge) pending — requires Docker container, bitcoind backend, channel opening.
 - **Vision documents (2026-06-30):** [`docs/3.0.3/nativeZion.md`](./docs/3.0.3/nativeZion.md) (WARP token naming: wZION EVM, ZION non-EVM) + [`docs/3.0.3/ZionDex.md`](./docs/3.0.3/ZionDex.md) (cross-chain DEX concept powered by WARP — path to Top 100) + [`docs/3.0.3/evoluZion.md`](./docs/3.0.3/evoluZion.md) (ZION as Tree of Life — evolution from PoW to Proof-of-Care / Protokol Péče, NPU-based caring computation, with full source references to TerraNova book + NPU_HARDWARE_MINING_THEORY.md + cosmic-harmony NPU Mix code).
-- **Zohar — kabalistický Strom života ZIONu (2026-07-03):** [`docs/Zohar/README.md`](./docs/Zohar/README.md) · [`docs/Zohar/01-SEFIROT-VRSTVY.md`](./docs/Zohar/01-SEFIROT-VRSTVY.md) · [`docs/Zohar/02-ROADMAP.md`](./docs/Zohar/02-ROADMAP.md) · [`docs/Zohar/03-O-KNIZE-ZOHAR.md`](./docs/Zohar/03-O-KNIZE-ZOHAR.md) — Mapování 10 sefirot + Da'at na ZION vrstvy L1-L6 (Keter=L1 Consensus, Chokmah=L1 PoW, Binah=L1 Validation, Chesed=L2 DeFi, Gevurah=L2 DAO, Tiferet=L3 WARP, Netzach=L3 AI/Hiran, Hod=L4 Oasis, Yesod=L5 Komunity, Malkhut=L6 Issobella). Tři pilíře: Milosrdenství (dávání) / Přísnost (disciplína) / Rovnováha (manifestace). Syntéza evoluZion.md (Strom života metafora) + TerraNova kniha (filosofie péče) v jazyce kabaly. **Fáze 0 (manifest) + Fáze 1 (web /app/zohar) hotové;** Fáze 2 (sefirot vow pro governance — [`V3/L5/docs/GOVERNANCE/sefirot-vow.md`](./V3/L5/docs/GOVERNANCE/sefirot-vow.md), 11 slibů pro validátory), Fáze 3 (care task kategorie pro Protokol Péče) a Fáze 4 (getTreeHealth RPC) plánovány. Čistá dokumentační/web/governance vrstva — netýká se L1 consensus kódu.
+- **Zohar — kabalistický Strom života ZIONu (2026-07-03):** [`docs/Zohar/README.md`](./docs/Zohar/README.md) · [`docs/Zohar/01-SEFIROT-VRSTVY.md`](./docs/Zohar/01-SEFIROT-VRSTVY.md) · [`docs/Zohar/02-ROADMAP.md`](./docs/Zohar/02-ROADMAP.md) · [`docs/Zohar/03-O-KNIZE-ZOHAR.md`](./docs/Zohar/03-O-KNIZE-ZOHAR.md) — Mapování 10 sefirot + Da'at na ZION vrstvy L1-L6 (Keter=L1 Consensus, Chokmah=L1 PoW, Binah=L1 Validation, Chesed=L2 DeFi, Gevurah=L2 DAO, Tiferet=L3 WARP, Netzach=L3 AI/Hiran, Hod=L4 Oasis, Yesod=L5 Komunity, Malkhut=L6 Issobella). Tři pilíře: Milosrdenství (dávání) / Přísnost (disciplína) / Rovnováha (manifestace). Syntéza evoluZion.md (Strom života metafora) + TerraNova kniha (filosofie péče) v jazyce kabaly. **Fáze 0 (manifest) + Fáze 1 (web /app/zohar) + Fáze 2 (sefirot vow — [`V3/L5/docs/GOVERNANCE/sefirot-vow.md`](./V3/L5/docs/GOVERNANCE/sefirot-vow.md), 11 slibů pro validátory) + Fáze 4 (getTreeHealth API — [`/api/zohar/tree-health`](./APP&WEB/website-v2.9/src/app/api/zohar/tree-health/route.ts), živá data z blockchain/DeFi/bridge/NCL API mapovaná na 10 sefirot health score) hotové.** Fáze 2 on-chain: `SefirotVowToken` (soulbound ERC-721, [`V3/L2/contracts/hardhat/sol/SefirotVowToken.sol`](./V3/L2/contracts/hardhat/sol/SefirotVowToken.sol), 19 tests pass) + `SefirotVowRegistry` (proposal lifecycle, [`V3/L2/contracts/hardhat/sol/SefirotVowRegistry.sol`](./V3/L2/contracts/hardhat/sol/SefirotVowRegistry.sol), 10 tests pass) — kompilováno, deploy na Base mainnet pending (vyžaduje owner approval + gas). Fáze 3 (care task kategorie pro Protokol Péče) horizont — závisí na L1 consensus (2028+). Čistá dokumentační/web/governance/L2-contract vrstva — netýká se L1 consensus kódu.
 - **Website maintenance mode (2026-07-03):** [`APP&WEB/website-v2.9/public/maintenance.html`](./APP&WEB/website-v2.9/public/maintenance.html) — static maintenance page s animovaným gold starfield canvasem (desktop-agent style: 350 hvězd, line trails, radial gradient overlay, 24 FPS). Deploy script: [`APP&WEB/website-v2.9/deploy/deploy_maintenance.py`](./APP&WEB/website-v2.9/deploy/deploy_maintenance.py) — nahradí Next.js kontejner za `nginx:alpine` servírující maintenance.html na portu 3000. Nginx config: [`APP&WEB/website-v2.9/deploy/maintenance-nginx.conf`](./APP&WEB/website-v2.9/deploy/maintenance-nginx.conf). **Aktuálně LIVE na zionterranova.com** (Security Upgrade 3.0.4). Pro obnovu webu: spusť normální deploy script který přepíše docker-compose.yml zpět na Next.js image. Edge cesty: maintenance page `/root/zion-web/maintenance.html`, nginx config `/root/zion-web/nginx.conf`, compose `/root/zion-web/docker-compose.yml`.
 - **Website design system unification (2026-07-03):** `APP&WEB/website-v2.9/src/app/globals.css` definuje unified design třídy: `.zion-container` (max-w-80rem wrapper), `.zion-section` (rounded panel s border + blur), `.zion-tile` (soft inner grid item s hover), `.zion-cta-banner` (gradient CTA sekce), `.zion-rainbow-card` / `.zion-rainbow-sub` (hero/feature cards s per-color `--rc` CSS variable). Audit 73 page.tsx souborů hotový. Refaktorované: `/ai-native`, `/roadmap-295`, `/admin/revenue-v3` (ad-hoc `bg-black/60 backdrop-blur-xl` → `zion-section`/`zion-tile`), `/account` (přidány CZ/EN překlady), `/login` (grid-cols-3 → responsive). Referenční implementace: `/admin/page.tsx`.
 
@@ -147,15 +150,14 @@ Run from repository root unless noted.
 
 PowerShell equivalents for W11 development. Build first: `cargo build --release --manifest-path V3/Cargo.toml --workspace`.
 
-- Node (edge-primary — local dev only, connects to Edge seed):
-  - `$env:ZION_NODE_ID='local-dev-node'; $env:ZION_P2P_BIND='0.0.0.0:8333'; $env:ZION_RPC_BIND='0.0.0.0:8443'; $env:ZION_SEED_PEERS='77.42.71.94:8333'; $env:ZION_NODE_STATE_PATH='V3/data/zion-node-state.db'; $env:ZION_MINER_ADDRESS='zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604'; $env:ZION_HUMANITARIAN_WALLET='zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4'; $env:ZION_ISSOBELLA_WALLET='zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702'; cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin node`
-  - **Tailscale fallback:** Set `$env:ZION_SEED_PEERS='100.76.16.108:8333'` if public IP is unreachable (Tailscale VPN).
+- Node (new server seed — local dev only, connects to new server):
+  - `$env:ZION_NODE_ID='local-dev-node'; $env:ZION_P2P_BIND='0.0.0.0:8333'; $env:ZION_RPC_BIND='0.0.0.0:8443'; $env:ZION_SEED_PEERS='62.171.141.136:8333'; $env:ZION_NODE_STATE_PATH='V3/data/zion-node-state.db'; $env:ZION_MINER_ADDRESS='zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604'; $env:ZION_HUMANITARIAN_WALLET='zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4'; $env:ZION_ISSOBELLA_WALLET='zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702'; $env:ZION_MIGRATION_HEIGHT='1'; cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin node`
+  - **Note:** `ZION_MIGRATION_HEIGHT=1` is required for fresh chain (genesis reset). Set to actual migration height if syncing existing chain.
 - Pool server (local-dev only):
   - `$env:ZION_POOL_BIND='0.0.0.0:8444'; $env:ZION_NODE_RPC_ADDR='127.0.0.1:8443'; $env:ZION_POOL_LOOP_COUNT='1000000'; $env:ZION_NONCE_COUNT='4096'; $env:ZION_NONCE_COUNT_GPU='262144'; $env:ZION_POOL_WALLET='zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604'; cargo run --release --manifest-path V3/Cargo.toml -p zion-pool --bin server`
   - **IMPORTANT:** Pool and miner binaries must be compiled from the same source version — protocol is not backward compatible. Always recompile pool after `cargo build` on miner.
-- Miner (edge-primary — connects to public pool):
-  - `$env:ZION_POOL_ADDR='77.42.71.94:8444'; $env:ZION_WORKER_NAME='<name>'; $env:ZION_MINER_ID='<id>'; $env:ZION_LOOP_COUNT='1000000'; $env:ZION_GPU_BACKEND='opencl'; $env:ZION_PAYOUT_ADDRESS='<zion1...address>'; $env:ZION_MINER_ALGORITHM='deeksha_lite_v1'; cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`
-  - **Tailscale fallback:** Set `$env:ZION_POOL_ADDR='100.76.16.108:8444'` if public IP is unreachable (Tailscale VPN).
+- Miner (connects to new server pool):
+  - `$env:ZION_POOL_ADDR='62.171.141.136:8444'; $env:ZION_WORKER_NAME='<name>'; $env:ZION_MINER_ID='<id>'; $env:ZION_LOOP_COUNT='1000000'; $env:ZION_GPU_BACKEND='opencl'; $env:ZION_PAYOUT_ADDRESS='<zion1...address>'; $env:ZION_MINER_ALGORITHM='deeksha_lite_v1'; cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`
   - **Fire mode (thermal):** Replace `deeksha_lite_v1` with `deeksha_lite_fire` above. Uses 512 KiB scratchpad, higher power draw.
   - **REQUIRED:** `ZION_PAYOUT_ADDRESS` must be a valid 44-char `zion1...` address — pool validates and rejects with "pool closed the connection" if missing or invalid (fallback to miner_id is not allowed).
   - **GPU compile:** `cargo build --release --manifest-path V3/Cargo.toml -p zion-miner --features gpu-opencl` (or `gpu-cuda`, `gpu-metal`)
@@ -203,13 +205,14 @@ docker compose -f V3/docker/docker-compose.v3-mainnet.yml up -d
   - `npm --prefix "APP&WEB/website-v2.9" run lint`
   - **Production build:** `npx next build --webpack` (MUST use `--webpack` — Next.js 16 Turbopack cannot resolve local `.tgz` deps)
   - **Theme system:** `.zion-rainbow-card` / `.zion-rainbow-sub` CSS classes with inline `style={{ '--rc': 'R, G, B' } as React.CSSProperties}`. Each page has its own accent color. See `APP&WEB/website-v2.9/README.md` for the full color map.
-  - **Edge deployment (production):**
-    - SSH via Tailscale: `ssh root@mainnetedge` (or `ssh -i ~/.ssh/ssh-key-zion-edge root@77.42.71.94`)
-    - Build runs on Edge server (`77.42.71.94`) inside `/root/zion-2.9.6-main/APP&WEB/website-v2.9`
-    - Docker image is built from host artifacts (`.next` + `node_modules` copied into `node:20-alpine` runner) — `npm install` inside Docker fails due to local `.tgz` dependency, so use the host-built artifacts
-    - Production compose file: `/root/zion-web/docker-compose.yml` uses `image: zion-website:<version>`, `network_mode: host`
-    - Caddy reverse proxies to `localhost:3000`
-    - Automated script: `bash scripts/deploy-edge-web.sh <version>` (pull, build, docker, restart, caddy reload)
+  - **Production deployment (v3.0.4 — new server):**
+    - SSH: `ssh zion-new` (key: `~/.ssh/zion-new-server`)
+    - Source on server: `/root/zion-web-next/` (extracted from tar, Dockerfile.production)
+    - Docker image: `zion-web:nextjs` (multi-stage build: node:22-alpine, 73+ Next.js routes)
+    - Docker compose: `/root/zion-web-next/docker-compose.yml` — port `127.0.0.1:3001`, restart `unless-stopped`
+    - Nginx reverse proxy: `https://zionterranova.com` → `127.0.0.1:3001` (SSL Let's Encrypt, HTTP/2, security headers)
+    - Maintenance fallback: `zion-web:maintenance` image (nginx:alpine + maintenance.html)
+    - CSP in `next.config.ts` updated to new server IP `62.171.141.136`
     - Full guide: `APP&WEB/website-v2.9/DEPLOYMENT.md`
 - Mobile app:
   - `npm --prefix "APP&WEB/mobile-app" install`
@@ -227,10 +230,10 @@ docker compose -f V3/docker/docker-compose.v3-mainnet.yml up -d
 - Web dashboard (Python):
   - `python ZION_OS/dashboard/app.py` → `http://127.0.0.1:8766`
   - `python ZION_OS/dashboard/metrics-collector/` — standalone Rust binary for native metrics polling
-  - **Pool Metrics Endpoint**: Running on Edge server port 8455 for real-time pool statistics
+  - **Pool Metrics Endpoint**: Running on new server, pool metrics via node metrics port 127.0.0.1:9100
   - **TABS sync (2026-06-14):** `dashboard.js` `TABS` array must match all `pane-*` IDs in `dashboard.html`. Currently 34 tabs. If you add a new `<div id="pane-foo">` in HTML, also add `'foo'` to `TABS` and optionally a handler in `switchTab()`.
   - **Payout API mapping:** `/api/payout` returns `data.miners` (not `data.miner_stats`); hashrate from `data.pool_stats.hashrate.pool` (H/s); paid amounts in ZION (already converted from flowers/1e12).
-  - **Edge Pool remote control:** `POST /api/control {"action":"restart-pool-edge"}` — SSH via Tailscale (100.76.16.108) or public IP (77.42.71.94). Requires `ssh-key-zion-edge` in repo root.
+  - **Pool remote control (v3.0.4):** `POST /api/control {"action":"restart-pool"}` — SSH via `ssh zion-new`. Dashboard runs on new server at 127.0.0.1:8766, proxied via nginx at `https://dashboard.zionterranova.com` (Basic Auth).
   - **UFW on Edge (2026-06-14):** Ports 8444 (stratum) and 8333 (P2P) changed from `LIMIT` to `ALLOW` — miners can now connect from public internet.
 
 ## High-level architecture (big picture)
@@ -264,7 +267,7 @@ cargo tauri dev --manifest-path src-tauri/Cargo.toml
 cd ZION_OS/agent
 cargo build --release
 sudo cp target/release/zion-agent /usr/local/bin/
-sudo systemctl enable --now zion-edge-agent
+sudo systemctl enable --now zion-agent
 ```
 
 **Documentation:**
@@ -325,119 +328,106 @@ In practice: **node is source of chain truth**, pool is coordination layer, mine
 - `scripts/autopilot-2.9.8.sh` encodes a practical validation/deploy sequence when tasks touch miner/desktop-agent/deploy pipelines.
 - If GitHub Actions jobs finish in seconds with no runner/steps, treat it as the known billing/infrastructure issue in `StatusV3.md`, not as code validation.
 
-## 6) Canonical Operational Settings (v3.0.0 Mainnet)
+## 6) Canonical Operational Settings (v3.0.4 Mainnet — Post Hard Reset)
 
 ### Network Topology
 
-Current live topology is **Edge-only (Hetzner VPS)**. The Core (local Windows PC) is currently unreachable due to Tailscale VPN failure and ISP issues. All canonical services run on Edge. Do not reference old multi-server topologies (Praha, SG, Helsinki, US, or Core-as-Backup) — those are deprecated.
+> **UPDATED 2026-07-07:** Old Edge server (`77.42.71.94`) is **DECOMMISSIONED**. All services rebuilt on new server following 3.0.4 hard genesis reset.
+
+Current live topology is **single-server (new VPS)**. The old Edge server was decommissioned after security compromise. All canonical services run on the new server.
 
 ```
-Edge (Hetzner VPS)
-77.42.71.94
+New Server (VPS)
+62.171.141.136
     |
-Node + Pool (PRIMARY)
-DAO + WARP + Website
-Public P2P: 8333/8334
+Node + Pool + Bridge + DAO + WARP + Dashboard + Web
+Public P2P: 8333
 Public Pool: 8444
+Public WARP: 9333
+Web: https://zionterranova.com (nginx → Docker Next.js)
+Dashboard: https://dashboard.zionterranova.com (nginx → Python)
 ```
 
 | Role | Host | Public IP | Ports |
 |------|------|-----------|-------|
-| Edge | Hetzner VPS | 77.42.71.94 | P2P: 8333/8334, RPC: 8443/8446, Pool: 8444, DAO: 8450, WARP: 8453, Web: 3000, Metrics: 8455/9090/9100/9102/9115/9116 |
+| New Server | VPS (Ubuntu 24.04.4) | 62.171.141.136 | P2P: 8333, RPC: 8443 (localhost), Pool: 8444, WS: 8445 (localhost), DAO: 8450 (localhost), WARP: 9333, Web: 80/443, Dashboard: 8766 (localhost) |
 
-### Canonical Ports & Services
+### Canonical Ports & Services (v3.0.4 — New Server)
 
-| Service | Port | Protocol | Notes |
-|---------|------|----------|-------|
-| Node P2P | 8333 | TCP | Peer-to-peer sync (Edge primary) |
-| Node 2 P2P | 8334 | TCP | Edge follower node |
-| Node RPC | 8443 | TCP | JSON-RPC 2.0, wallet queries (Edge) |
-| Node 1 WebSocket | 8445 | TCP | Node event stream (Edge) |
-| Node 2 RPC | 8446 | TCP | Edge follower node JSON-RPC |
-| Node 2 WebSocket | 8447 | TCP | Edge follower node event stream |
-| Pool Stratum | 8444 | TCP | Miner connections (Edge public-facing) |
-| DAO API | 8450 | HTTP | Edge DAO daemon Axum API |
-| Atomic Swap API | 8452 | HTTP | Edge HTLC swap daemon API (optional) |
-| WARP Relay API | 8453 | HTTP | Edge cross-chain relay Axum API |
-| Pool metrics | 8455 | HTTP | Prometheus metrics (pool, Edge) |
-| Node metrics | 9115 | HTTP | Prometheus metrics (Edge node) |
-| Node 2 metrics | 9116 | HTTP | Prometheus metrics (Edge follower node) |
-| Bridge metrics | 9102 | HTTP | Prometheus metrics (Edge bridge, optional) |
-| Prometheus | 9090 | HTTP | Edge monitoring stack (Docker host network) |
-| Grafana | 3100 | HTTP | Edge monitoring dashboards (Docker host network) |
-| Node Exporter | 9100 | HTTP | Edge host system metrics (Docker host network) |
-| Dashboard | 8766 | HTTP | Python Mainnet Launch dashboard (local PC) |
-| Infra Dashboard | 8888 | HTTP | Rust unified infrastructure dashboard (Edge) |
-| Website | 3000 | HTTP | Next.js website (Docker `zion-website`, Edge) |
-| Pool API Proxy | 8080 | HTTP | Edge pool REST proxy |
-| **OASIS** | **8094** | HTTP | L4 Consciousness Mining Game API (Edge) |
-| **Free World** | **8095** | HTTP | L5 Humanitarian Fund Scanner API (Edge) |
-| **Issobella** | **8096** | HTTP | L6 Space Fund Scanner API (Edge) |
-| **Hiranyagarbha API** | **8001** | HTTP | Orchestrator · RAG · Consciousness · NCL · Axum (Rust) |
-| **NCL (via Hiranyagarbha)** | **8001** | HTTP | Neural Compute Layer at `/ncl/*` (jobs, workers, leaderboard) |
-| **Hiran Inference** | **8002** | HTTP | OpenAI-compatible LLM API (llama-server.exe / serve.py) |
+| Service | Port | Bind | Protocol | Notes |
+|---------|------|------|----------|-------|
+| Node P2P | 8333 | 0.0.0.0 | TCP | Peer-to-peer sync |
+| Node RPC | 8443 | 127.0.0.1 | TCP | JSON-RPC 2.0 (via nginx /api/rpc) |
+| Node WebSocket | 8445 | 127.0.0.1 | TCP | Node event stream |
+| Node metrics | 9100 | 127.0.0.1 | HTTP | Prometheus metrics |
+| Pool Stratum | 8444 | 0.0.0.0 | TCP | Miner connections (public) |
+| Bridge metrics | 9101 | 127.0.0.1 | HTTP | Prometheus metrics (bridge) |
+| DAO API | 8450 | 127.0.0.1 | HTTP | DAO daemon API (via nginx /api/dao) |
+| WARP Relay | 9333 | 0.0.0.0 | HTTP | Cross-chain relay API |
+| Dashboard | 8766 | 127.0.0.1 | HTTP | ZION_OS Dashboard (via nginx, Basic Auth) |
+| Website (Next.js) | 3001 | 127.0.0.1 | HTTP | Docker `zion-web:nextjs` (via nginx) |
+| Nginx HTTP | 80 | 0.0.0.0 | HTTP | Redirect to HTTPS |
+| Nginx HTTPS | 443 | 0.0.0.0 | HTTP/2 | SSL Let's Encrypt, reverse proxy |
 
-### Canonical URLs & Endpoints
+### Canonical URLs & Endpoints (v3.0.4)
 
 | Purpose | URL |
 |---------|-----|
-| **Edge Pool (public mining)** | `77.42.71.94:8444` |
-| **Edge RPC (public)** | `http://77.42.71.94:8443/jsonrpc` |
-| **DAO API** | `http://77.42.71.94:8450` |
-| **WARP API** | `http://77.42.71.94:8453` |
+| **Pool (public mining)** | `62.171.141.136:8444` |
+| **RPC (server localhost only)** | `http://127.0.0.1:8443/jsonrpc` |
+| **RPC (via nginx proxy)** | `https://zionterranova.com/api/rpc` |
+| **DAO API (via nginx proxy)** | `https://zionterranova.com/api/dao` |
+| **WARP API** | `http://62.171.141.136:9333` |
 | **Website production** | `https://zionterranova.com` |
-| **Dashboard** | (offline — Core unreachable) |
-| **Edge Grafana** | `http://77.42.71.94:3100` |
-| **Edge Prometheus** | `http://77.42.71.94:9090` |
+| **Dashboard** | `https://dashboard.zionterranova.com` (Basic Auth: Yose/Issy) |
 
-### SSH Access
+### SSH Access (v3.0.4 — New Server)
 
-- **Edge server SSH key:** `ssh-key-zion-edge` (private), `ssh-key-zion-edge.pub` (public) — kept in root for operational access. Copy also exists at `~/.ssh/ssh-key-zion-edge` (non-empty).
+- **SSH config:** `ssh zion-new` (alias in `~/.ssh/config`)
+- **SSH key:** `~/.ssh/zion-new-server` (ed25519, fingerprint `SHA256:wnq2p9n17icqkpkJMAjPZto0axRtkVTVXPMBuD9tz64`)
+- **Password auth:** DISABLED (keys only)
 - **Never commit private keys.**
-- **SSH endpoint:** Public IP (main) — `ssh -i ssh-key-zion-edge root@77.42.71.94`. Tailscale fallback — `ssh -i ssh-key-zion-edge root@100.76.16.108`.
 
-### Edge Server Deployment (Autonomous 24/7)
+### New Server Deployment (Autonomous 24/7)
 
-The Edge server runs as the canonical primary node + pool. It must survive reboots without local PC intervention.
+The new server runs as the canonical primary node + pool + full stack. It must survive reboots without local PC intervention.
 
-**Systemd services** (installed via `edge-deploy/deploy-edge.sh`):
-- `zion-edge-node1.service` — Core node (P2P:8333, RPC:8443)
-- `zion-edge-node2.service` — Follower node (P2P:8334, RPC:8446)
-- `zion-edge-pool.service` — Mining pool (Stratum:8444)
-- `zion-edge-dao.service` — DAO daemon (API:8450)
-- `zion-edge-warp.service` — Cross-chain relay (API:8453)
-- `zion-edge-miner.service` — CPU miner (connects to localhost:8444)
-- `zion-edge-watchdog.service` — Health monitor (2-minute timer)
-- `hiran-inference.service` — LLM inference (API:8002, optional)
-- `hiranyagarbha.service` — Orchestrator (API:8001, optional)
+**Systemd services** (installed via `V3/deploy/new-server/`):
+- `zion-node.service` — Core node (P2P:8333, RPC:8443)
+- `zion-pool.service` — Mining pool (Stratum:8444)
+- `zion-bridge.service` — Bridge relay (L2)
+- `zion-dao.service` — DAO scanner (L2)
+- `zion-warp.service` — WARP relay (L3)
+- `zion-dashboard.service` — ZION_OS Dashboard (Python, port 8766)
+- `zion-watchdog.timer` — Health monitor (2-minute timer)
+- `nginx` — Reverse proxy + SSL (ports 80/443)
 
-**PM2 process:**
-- `zion-website` — Next.js website on port 3000
+**Docker container:**
+- `zion-web-next` — Next.js 16.2.9 website (image `zion-web:nextjs`, port 127.0.0.1:3001)
+- `zion-web:maintenance` — Maintenance page fallback image (available, not running)
 
-**Docker stack** (Edge-only, optional):
-- Prometheus (9090), Grafana (3100), Node Exporter (9100)
-- Alertmanager (configurable Discord/Slack/Email webhooks)
+**Environment file:** `/root/zion/edge-environment.sh` (chmod 600, `<REPLACE_*>` placeholders for air-gapped keys)
+
+**Data directory:** `/data/zion/` (state, bridge DB, DAO DB)
 
 **Persistence:**
-- Node state: `/root/zion-2.9.6-main/V3/data/zion-node-state.db`
-- Pool state: `/root/zion-2.9.6-main/V3/data/zion-pool-state.db`
-- DAO DB: `/root/zion-2.9.6-main/V3/data/dao.db`
-- Bridge DB: `/root/zion-2.9.6-main/V3/data/bridge.db`
-- Logs: `/root/zion-2.9.6-main/V3/logs/`
+- Node state: `/data/zion/state/`
+- Bridge DB: `/data/zion/bridge-mainnet.db`
+- DAO DB: `/data/zion/dao-mainnet.db`
+- Repo: `/root/zion/2.9.6/` (git clone at commit `690b6dfe`)
 
-### Edge Miner Build via WSL (Linux binary for Edge)
+### Miner Deployment (v3.0.4 — New Server)
 
-The Edge server does NOT have a Rust toolchain. To deploy an updated miner binary:
+The new server HAS a Rust toolchain (1.96.1 stable). To deploy an updated miner binary:
 
-1. **Build locally via WSL Ubuntu:**
+1. **Build on server:**
    ```bash
-   wsl -d Ubuntu -e bash -c "source ~/.cargo/env && cd /mnt/c/Users/yosef/Desktop/Zion/2.9.6-main && cargo build --release --manifest-path V3/Cargo.toml -p zion-miner"
+   ssh zion-new 'cd /root/zion/2.9.6 && source ~/.cargo/env && cargo build --release -p zion-miner'
    ```
 
-2. **Deploy to Edge:**
+2. **Or build locally and scp:**
    ```bash
-   scp V3/target/release/zion-miner root@100.76.16.108:/usr/local/bin/zion-miner-new
-   ssh root@100.76.16.108 "chmod +x /usr/local/bin/zion-miner-new && mv /usr/local/bin/zion-miner /usr/local/bin/zion-miner-old && mv /usr/local/bin/zion-miner-new /usr/local/bin/zion-miner"
+   scp V3/target/release/zion-miner zion-new:/usr/local/bin/zion-miner
    ```
 
 3. **Run headless CPU miner (required: `ZION_INTERACTIVE=false`):**
@@ -450,16 +440,16 @@ The Edge server does NOT have a Rust toolchain. To deploy an updated miner binar
    export ZION_MINER_ALGORITHM=deeksha_lite_v1
    export ZION_THREADS=2
    export ZION_INTERACTIVE=false
-   nohup /usr/local/bin/zion-miner >> /var/log/zion-edge-miner.log 2>&1 &
+   nohup /usr/local/bin/zion-miner >> /var/log/zion-miner.log 2>&1 &
    ```
 
-### Backup Infrastructure (Local + Edge)
+### Backup Infrastructure (Local + New Server)
 
-**Edge backup:**
-- Script: `/usr/local/bin/zion-edge-backup.sh` (v2.0)
-- Timer: `zion-edge-backup.timer` (every 15 min)
+**New server backup (v3.0.4):**
+- Script: TBD (create `zion-backup.sh` — backup `/data/zion/` + systemd units + nginx config + docker-compose)
 - Destination: `/data/zion/backups/`
-- Includes: node state, DAO DB + WAL, service DBs, systemd units, pool logs, git ref, health.json + MANIFEST.txt
+- Includes: node state, bridge DB, DAO DB, systemd units, nginx config, docker-compose, environment file
+- Recommended: `cron` job every 15 min or systemd timer
 
 **Local W11 backup:**
 - Script: `scripts/local-core-backup.ps1`
@@ -469,7 +459,7 @@ The Edge server does NOT have a Rust toolchain. To deploy an updated miner binar
 
 **Dashboard Backups tab:**
 - Endpoint: `/api/backup/status`
-- Shows: Local Core health + Edge health
+- Shows: Local Core health + server health
 - Auto-refresh: 15 seconds
 
 **Known issue — Czech locale:**
@@ -536,7 +526,7 @@ const zion = flowers / FLOWERS_PER_ZION; // = 590_000_000 ZION = 590 million
 
 **⚠️ Common mistake:** RPC returns `balance_flowers: "590000000000000"` which is 590 **million** ZION, not 590 billion. Always divide by 10^6 to get ZION.
 
-**⚠️ Live RPC contract drift (verified 2026-06-25 against `http://77.42.71.94:8443/jsonrpc`):**
+**⚠️ Live RPC contract drift (verified 2026-06-25 against old Edge `http://77.42.71.94:8443/jsonrpc` — HISTORICAL, server decommissioned):**
 
 The L1 wire format currently uses **three coexisting suffix conventions**.
 Until the next non-breaking contract bump lands, agents and clients MUST
@@ -624,66 +614,55 @@ If genesis corruption is suspected:
 4. Restart nodes if necessary
 5. Verify network synchronization
 
-### Edge Server Recovery
+### New Server Recovery (v3.0.4)
 
-If Edge server becomes unresponsive:
-1. SSH directly: `ssh -i ssh-key-zion-edge root@77.42.71.94`
-2. If SSH fails, use Hetzner console
-3. Check systemd services: `systemctl status zion-edge-node1 zion-edge-pool zion-edge-dao zion-edge-warp`
-4. Restart services if needed: `systemctl restart zion-node.service`
-5. Verify network connectivity and VPN status
-6. Check Hetzner snapshot if complete recovery needed
+If the new server (62.171.141.136) becomes unresponsive:
+1. SSH directly: `ssh zion-new` (key: `~/.ssh/zion-new-server`)
+2. If SSH fails, use VNC console: `95.111.232.25:63061` (RFB protocol, password `h4neV76S`)
+3. Check systemd services: `systemctl status zion-node zion-pool zion-bridge zion-dao zion-warp zion-dashboard nginx`
+4. Restart services if needed: `systemctl restart zion-node zion-pool`
+5. Verify network connectivity and UFW status: `ufw status`
+6. Check disk: `df -h /` (should be <80%, 145GB disk)
+7. Check Docker: `docker ps` (zion-web-next should be running)
 
-### Edge Server Log Management (CRITICAL — 2026-06-23)
+### New Server Log Management (v3.0.4)
 
-The Edge server (150GB disk) experienced a **100% disk full** incident on 2026-06-23 caused by unbounded syslog growth (76GB). Root cause: `zion-node` logs every RPC request/response to journald→rsyslog→/var/log/syslog, and the dashboard's 10-second refresh cycle generates hundreds of RPC calls per minute.
+The new server uses journald for all ZION services (no rsyslog RPC filter needed — services bind to 127.0.0.1 and dashboard is behind Basic Auth, reducing RPC noise).
 
-**Automated log management is deployed via `edge-deploy/`:**
+**Agent rules for new server log management:**
+1. **NEVER `rm -rf /var/log/*`** — always use `journalctl --vacuum-time=7d` or `journalctl --vacuum-size=1G`.
+2. **Before deploying new services**, verify they don't log at INFO/DEBUG level without rate limiting. Set `RUST_LOG=warn` for production services unless debugging.
+3. **If disk is >90% full**, run `journalctl --vacuum-size=500M` and investigate.
+4. **After server reboot**, verify: all services active (`systemctl is-active zion-node zion-pool zion-bridge zion-dao zion-warp zion-dashboard nginx`), `df -h /` < 80%, `docker ps` shows zion-web-next.
 
-| Component | Path on Edge | Purpose |
-|-----------|-------------|---------|
-| logrotate config | `/etc/logrotate.d/zion-edge` | Daily rotation of syslog (max 2G, keep 7), zion logs (max 500M, keep 14) |
-| journald limits | `/etc/systemd/journald.conf.d/zion-edge.conf` | SystemMaxUse=1G, SystemKeepFree=2G, MaxRetentionSec=14day |
-| rsyslog RPC filter | `/etc/rsyslog.d/10-zion-edge.conf` | Drops `rpc_in=`, `rpc_out=`, `jsonrpc_out=`, `rpc_client_addr=` lines from zion-node (keeps BLOCK_FOUND, errors, warnings) |
-| cleanup script | `/usr/local/bin/edge-log-cleanup.sh` | Runs every 6h via systemd timer; checks disk, vacuums journal, rotates runaway logs, truncates Docker logs |
-| systemd timer | `/etc/systemd/system/edge-log-cleanup.timer` | OnBootSec=5min, OnUnitActiveSec=6h |
+### New Server Service Management (v3.0.4)
 
-**Agent rules for Edge log management:**
-1. **NEVER `rm -rf /var/log/*`** — always use logrotate or the cleanup script.
-2. **NEVER truncate `/var/log/syslog` without rotating first** — use `logrotate --force /etc/logrotate.d/zion-edge` or the cleanup script.
-3. **Before deploying new services to Edge**, verify they don't log to syslog at INFO/DEBUG level without rate limiting. Set `RUST_LOG=warn` for production services unless debugging.
-4. **If disk is >90% full**, run `edge-log-cleanup.sh` manually and investigate the cause.
-5. **The rsyslog filter (`10-zion-edge.conf`) is critical** — if removed, syslog will fill the disk again within hours. Never delete it.
-6. **Deploy/update log automation**: `bash edge-deploy/scripts/deploy-edge-log-automation.sh` (run on Edge server).
-7. **Monitor disk via dashboard**: `/api/monitoring` shows Prometheus/Grafana status. If Prometheus targets are all `down`, node-exporter may have crashed due to disk pressure.
-8. **After Edge server reboot**, verify: `systemctl status edge-log-cleanup.timer` (should be active), `df -h /` (should be <80%), `journalctl --disk-usage` (should be <1G).
+All ZION services on the new server run as systemd units:
 
-### Edge Server Service Management
-
-All ZION services on Edge run as systemd units:
-
-| Service | Unit file | Port | Depends on |
-|---------|-----------|------|------------|
-| Node (primary) | `zion-edge-node1.service` | 8443 (RPC), 8333 (P2P) | network, tailscale |
-| Pool | `zion-edge-pool.service` | 8444, 8455 (metrics) | zion-edge-node1 |
-| Bridge | `zion-edge-bridge.service` | 8451 | zion-edge-node1 |
-| DAO | `zion-edge-dao.service` | 8450 | zion-edge-node1 |
-| Atomic Swap | `zion-edge-atomic-swap.service` | 8452 | zion-edge-node1 |
-| WARP | `zion-edge-warp.service` | 8449 | zion-edge-node1 |
-| Watchdog | `zion-edge-watchdog.service` | — | — |
-| Log Cleanup | `edge-log-cleanup.timer` | — | — |
+| Service | Unit file | Port(s) | Depends on |
+|---------|-----------|---------|------------|
+| Node | `zion-node.service` | 8333 (P2P), 8443 (RPC), 8445 (WS), 9100 (metrics) | network-online |
+| Pool | `zion-pool.service` | 8444 (Stratum) | zion-node |
+| Bridge | `zion-bridge.service` | 9101 (metrics) | zion-node |
+| DAO | `zion-dao.service` | 8450 (API) | zion-node |
+| WARP | `zion-warp.service` | 9333 | zion-node |
+| Dashboard | `zion-dashboard.service` | 8766 | zion-node |
+| Watchdog | `zion-watchdog.timer` | — (2-min interval) | — |
+| Nginx | `nginx.service` | 80, 443 | — |
+| Docker (web) | `docker.service` + compose | 127.0.0.1:3001 | — |
 
 **If a service shows red/down on dashboard:**
-1. SSH to Edge: `ssh root@100.76.16.108`
+1. SSH to new server: `ssh zion-new`
 2. Check: `systemctl status <service-name>`
 3. Check logs: `journalctl -u <service-name> -n 50 --no-pager`
 4. Restart: `systemctl restart <service-name>`
 5. Verify: `systemctl status <service-name>` and check the port is listening
 
-**Common Edge service issues:**
+**Common service issues (new server):**
 - Service `inactive (dead)` after reboot despite `enabled`: start manually with `systemctl start <service>`, check `Requires=` dependencies.
 - Service crashes on startup: check if disk is full (`df -h /`), check if required port is already in use (`ss -tlnp | grep <port>`).
-- Atomic Swap uses older binary in `/usr/local/bin/` — update from `V3/target/release/` after rebuilds.
+- Bridge/DAO fail with "No such file or directory": check that `ZION_BRIDGE_CONFIG` / `DAO_CONFIG` env vars point to correct config paths in `/root/zion/edge-environment.sh`.
+- `ProtectHome=true` in systemd unit blocks access to `/root/` — removed in v3.0.4 deploy.
 
 ### Pool Issues
 
@@ -694,42 +673,33 @@ If pool stops accepting connections:
 4. Restart pool service: `systemctl restart zion-pool.service`
 5. Verify miners can reconnect
 
-## Current Status (2026-06-06 01:30 UTC)
+## Current Status (2026-07-07 — Post Hard Reset)
 
-**System Status:**
-- ✅ Genesis Regeneration: Complete (2026-06-05 final reset)
-- ✅ Edge Node 1: Running (primary)
-- ✅ Edge Node 2: Running (follower)
-- ✅ Edge Pool: Running (fee split 89/5/5/1, PPLNS payouts active)
-- ✅ Edge DAO: Running (port 8450)
-- ✅ Edge WARP: Running (port 8453)
-- ✅ Edge Server: Operational (77.42.71.94)
-- ✅ Website: Running (Docker `zion-website`, port 3000)
-- ✅ Pool Metrics: Running on port 8455
-- ✅ Genesis Hash: `7543004c76b11416ef32e2f1f5a4c72f0178f841d4559bf476e29e15a9602728`
-- ✅ P2P Sync: Local ↔ Edge synced (height 33+), both active
+**System Status (new server 62.171.141.136):**
+- ✅ Hard Genesis Reset: Complete (2026-07-07) — new genesis hash `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
+- ✅ zion-node: Running (P2P 8333, RPC 127.0.0.1:8443, WS 127.0.0.1:8445, metrics 127.0.0.1:9100)
+- ✅ zion-pool: Running (Stratum 0.0.0.0:8444, fee split 89/5/5/1)
+- ✅ zion-bridge: Running (metrics 127.0.0.1:9101, 6 EVM chain watchers)
+- ✅ zion-dao: Running (API 127.0.0.1:8450)
+- ✅ zion-warp: Running (0.0.0.0:9333)
+- ✅ zion-dashboard: Running (127.0.0.1:8766, Basic Auth)
+- ✅ nginx: Running (80/443, SSL Let's Encrypt, HTTP/2)
+- ✅ Website: Running (Docker `zion-web:nextjs`, Next.js 16.2.9, 73+ routes, port 127.0.0.1:3001)
+- ✅ Dashboard: Running (`https://dashboard.zionterranova.com`, Basic Auth Yose/Issy)
+- ✅ Chain: Height 0 (fresh genesis), premine 16.78B ZION, block reward 5400.067 ZION
+- ✅ OS: SSH keys-only, UFW (22/80/443), fail2ban, Docker 29.6.1
+- ✅ Monitoring: 3 cron jobs + systemd watchdog timer (2 min)
+- ✅ SSL: 3 Let's Encrypt certs (zionterranova.com, www, dashboard) — auto-renew
 
-**Code Fixes DEPLOYED to Edge:**
-- ✅ `emission.rs`: `MINING_EMISSION` corrected to 127.22B (was 127.72B)
-- ✅ `genesis.rs`: Tests updated for 14 premine outputs + label derivation
-- ✅ `launch.rs`: Premine count check updated to 14 + diagnostic prints
-- ✅ `node_builder.rs`: Seed peer threshold for Edge-only topology
-- ✅ `rpc.rs`: Supply info test updated for 16.78B premine
-- ✅ `lib.rs`: Seed peer snapshot updated to 77.42.71.94
-- ✅ `miner/Cargo.toml`: `hex` crate added for `sha3_debug` build
+**Old Edge server (77.42.71.94): DECOMMISSIONED** — all services migrated to new server.
 
-**Known Issues:**
-- Auto-backup script produces empty state (height=0) — use manual backup before any restart
-
-**Recent Fixes (2026-06-05/06):**
-- ✅ Genesis keys regenerated (14 unique premine keypairs, no duplicates)
-- ✅ `genesis_tx_id` fixed to depend on address (prevents silent chain splits)
-- ✅ Fee split 89/5/5/1 verified on-chain in every block
-- ✅ PPLNS payout system tested and working (pool redistributes 89% miner reward)
-- ✅ All 10 failing tests fixed and passing locally
-- ✅ Canonical subsidy addresses verified deterministic
-- ✅ Edge node fully operational
-- ✅ **Edge node rebuilt and redeployed with latest code**
+**Pending (owner akce):**
+1. Air-gapped klíče (pool SK, bridge validator SKs ×5, DAO guardian SKs ×7, escrow key)
+2. Minery — připojit k `62.171.141.136:8444`
+3. DNS aplikace — `dns.md` zónový soubor v Webglobe admin console
+4. F4.7 aktivace — `ZION_MAX_TX_AMOUNT_HEIGHT`
+5. Key rotation F4.x — premine, pool, bridge, EVM (air-gapped)
+6. Git history scrub — BFG pro staré commity s secrets
 
 **Windows 11 GPU Miner Build Workaround (2026-06-07):**
 - `cargo build --release` fails on Windows 11 because `zion-miner.exe` in `V3/target/release/` is locked (Defender/antivirus).
@@ -762,7 +732,7 @@ If pool stops accepting connections:
 **Old vault (pre-hard-reset):** `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0` (seed: `"ZION Bridge Vault V3 Mainnet"`)
 This address is no longer active after the 2026-07-06 hard genesis reset.
 
-**Edge bridge-validators drop-in:** `/etc/systemd/system/zion-edge-node1.service.d/bridge-validators.conf`
+**Bridge validators drop-in (v3.0.4):** Validator keys configured via `ZION_BRIDGE_VALIDATOR_SK_1..5` in `/root/zion/edge-environment.sh` (placeholder `<REPLACE_EVM_VALIDATOR_SK_*>` — air-gapped generation pending).
 - `ZION_BRIDGE_VALIDATOR_PUBKEYS` = 5 compressed secp256k1 pubkeys (comma-separated)
 - `ZION_BRIDGE_VALIDATOR_THRESHOLD` = `5`
 
@@ -774,9 +744,12 @@ This address is no longer active after the 2026-07-06 hard genesis reset.
 
 | Resource | Value |
 |---|---|
-| Edge SSH | `ssh -i ~/.ssh/ssh-key-zion-edge root@77.42.71.94` |
-| Edge source | `/root/zion-2.9.6-main/` |
-| Edge Cargo | `source ~/.cargo/env` (must prefix every cargo command) |
+| New server SSH | `ssh zion-new` (key: `~/.ssh/zion-new-server`, ed25519) |
+| New server IP | `62.171.141.136` (Ubuntu 24.04.4 LTS) |
+| New server source | `/root/zion/2.9.6/` (git clone at commit `690b6dfe`) |
+| New server Cargo | `source ~/.cargo/env` (Rust 1.96.1 stable) |
+| New server VNC | `95.111.232.25:63061` (RFB, password `h4neV76S`) — fallback if SSH fails |
+| Environment file | `/root/zion/edge-environment.sh` (chmod 600, `<REPLACE_*>` placeholders) |
 | SMOS API key | `api-4c47dab57e0890d3a36527fdd6a487b306f37e813aa254cfae1013588ece513f` |
 | SMOS API base | `https://api.simplemining.net` (header: `X-AUTH-TOKEN: <key>`) |
 | SMOS rig ID | `518837` (name: ZionRig / vega-smos) |
@@ -788,10 +761,10 @@ This address is no longer active after the 2026-07-06 hard genesis reset.
 | Pool payout wallet | `zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604` |
 | Mining wallet (rig) | `zion1w2z3l0q2x5e3q752d3v8k5k3u366j5j3t79n5w3` |
 
-### CRITICAL: GLIBC incompatibility — ALWAYS build on rig, NOT on Edge
+### CRITICAL: GLIBC incompatibility — ALWAYS build on rig, NOT on new server
 
-**Edge runs Ubuntu 26.04 → produces binaries requiring GLIBC 2.32+.**
-**SMOS rig has GLIBC 2.31 → Edge-built binaries WILL NOT RUN on rig.**
+**New server runs Ubuntu 24.04 → produces binaries requiring GLIBC 2.39+.**
+**SMOS rig has GLIBC 2.31 → server-built binaries WILL NOT RUN on rig.**
 
 To verify: `strings <binary> | grep 'GLIBC_' | sort -u` — if you see `GLIBC_2.32` or higher, the binary is incompatible.
 
@@ -835,7 +808,7 @@ export ZION_MINER_ALGORITHM=deeksha_lite_v1
 export ZION_GPU_BACKEND=opencl
 export ZION_NO_GCN_S4_MODE=1
 export ZION_LOOP_COUNT=1000000
-export ZION_POOL_ADDR=77.42.71.94:8444
+export ZION_POOL_ADDR=62.171.141.136:8444
 export ZION_WORKER_NAME=vega-smos
 export ZION_PAYOUT_ADDRESS=zion1w2z3l0q2x5e3q752d3v8k5k3u366j5j3t79n5w3
 cd "$(dirname "$0")"
@@ -920,22 +893,29 @@ curl -s -X PATCH -H "X-AUTH-TOKEN: $API" \
 - Caddyfile: `/etc/caddy/Caddyfile` (or `/root/Caddyfile` — check `systemctl status caddy`)
 - After adding new zip: verify with `curl -sI https://zionterranova.com/zion-miner/<filename>.zip`
 
-### Edge systemd services
+### New server systemd services (v3.0.4)
 
 ```bash
 # Pool
-systemctl status zion-edge-pool.service
-journalctl -u zion-edge-pool.service -f
+systemctl status zion-pool.service
+journalctl -u zion-pool.service -f
 
 # Node
-systemctl status zion-edge-node.service
-journalctl -u zion-edge-node.service -f
+systemctl status zion-node.service
+journalctl -u zion-node.service -f
 
-# Pool binary location
-/root/zion-2.9.6-main/V3/target/release/zion-pool-server
+# All services
+systemctl status zion-node zion-pool zion-bridge zion-dao zion-warp zion-dashboard nginx
+
+# Binary locations
+/usr/local/bin/zion-node
+/usr/local/bin/zion-pool-server
+/usr/local/bin/zion-bridge
+/usr/local/bin/zion-dao
+/usr/local/bin/zion-warp-server
 
 # After rebuild, restart pool:
-systemctl restart zion-edge-pool.service
+systemctl restart zion-pool.service
 
 ---
 
@@ -955,7 +935,7 @@ zion-sm3042c-fire-vX.zip
 **Critical:** Each new version must use a **different ZIP filename** to bypass SMOS local cache.
 
 ### Docker Build (Ubuntu 20.04 → GLIBC 2.28 compatible)
-Build on Edge server (100.76.16.108) using `V3/Dockerfile.miner-smos`:
+Build on new server (62.171.141.136) using `V3/Dockerfile.miner-smos`:
 - Ubuntu 20.04 builder + runner
 - Rust 1.85.0
 - Remove bundled `libOpenCL.so` (compiled for newer GLIBC)
@@ -975,9 +955,9 @@ Build on Edge server (100.76.16.108) using `V3/Dockerfile.miner-smos`:
 
 ### SMOS Group Config (1773590 ZionLiteFire)
 ```
-http://77.42.71.94/zion-miner/zion-sm3042c-fire-v8.zip \
+http://62.171.141.136/zion-miner/zion-sm3042c-fire-v8.zip \
   --algorithm deeksha_lite_fire \
-  --pool 77.42.71.94:8444 \
+  --pool 62.171.141.136:8444 \
   --wallet zion1m883u5h7t8l2q6y44670c6q5l067v4u2a3ku332 \
   --worker vega-smos
 ```
@@ -1022,8 +1002,8 @@ http://77.42.71.94/zion-miner/zion-sm3042c-fire-v8.zip \
 - `deploy_*.py` — various deploy scripts (SMOS API)
 - `explore_smos_api.py` — SMOS API exploration
 
-### Pool Environment (Edge)
-File: `/root/zion-2.9.6-main/edge-deploy/config/edge-environment.sh`
+### Pool Environment (New Server v3.0.4)
+File: `/root/zion/edge-environment.sh` (v3.0.4 — new server, chmod 600, `<REPLACE_*>` placeholders for air-gapped keys)
 ```
 ZION_POOL_BIND=0.0.0.0:8444
 ZION_POOL_LOOP_COUNT=1000000
@@ -1031,5 +1011,243 @@ ZION_NONCE_COUNT=1048576
 ZION_NONCE_COUNT_GPU=524288
 ZION_JOB_TTL_MS=60000
 ```
-Restart after change: `systemctl restart zion-pool-server.service`
+Restart after change: `systemctl restart zion-pool.service`
+```
+
+---
+
+## New Server Complete Reference (v3.0.4 — 62.171.141.136)
+
+### Server Specs
+
+| Param | Value |
+|-------|-------|
+| IP | `62.171.141.136` |
+| Hostname | `vmi3425821` |
+| OS | Ubuntu 24.04.4 LTS |
+| CPU | 4× AMD EPYC |
+| RAM | 7.8 GB |
+| Disk | 145 GB (6% used) |
+| Rust | 1.96.1 stable (rustup) |
+| Docker | 29.6.1 + Compose v5.3.1 |
+
+### SSH Access
+
+| Param | Value |
+|-------|-------|
+| Alias | `ssh zion-new` (in `~/.ssh/config`) |
+| Key | `~/.ssh/zion-new-server` (ed25519) |
+| Fingerprint | `SHA256:wnq2p9n17icqkpkJMAjPZto0axRtkVTVXPMBuD9tz64` |
+| Password auth | DISABLED (keys only) |
+| VNC fallback | `95.111.232.25:63061` (RFB, password `h4neV76S`) |
+
+### Firewall (UFW)
+
+| Port | Protocol | Source | Purpose |
+|------|----------|--------|---------|
+| 22 | TCP | Anywhere | SSH |
+| 80 | TCP | Anywhere | HTTP (nginx redirect) |
+| 443 | TCP | Anywhere | HTTPS (nginx SSL) |
+
+All other ports (8333, 8444, 9333) are **not** in UFW — they bind to 0.0.0.0 but are blocked by firewall. P2P (8333) and Pool (8444) need UFW ALLOW when miners/peers connect from public internet.
+
+### fail2ban
+
+- Jail: `sshd` — SSH brute-force protection
+- Status: `fail2ban-client status sshd`
+
+### Genesis (v3.0.4 Hard Reset)
+
+| Param | Value |
+|-------|-------|
+| Genesis hash | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
+| Premine | 16,780,000,000 ZION |
+| Block reward | 5400.067 ZION |
+| Mining emission | 127,220,000,000 ZION |
+| Fee split | 89% miner / 5% humanitarian / 5% issobella / 1% burn |
+| Bridge vault seed | `"ZION Bridge Vault V3 Mainnet v2 2026-07-06-HARD-RESET"` |
+| Migration height | 1 (fresh chain, `ZION_MIGRATION_HEIGHT=1`) |
+
+### Binaries (in `/usr/local/bin/`)
+
+| Binary | Source | Size |
+|--------|--------|------|
+| `zion-node` | `cargo build --release -p zion-core --bin node` | 2.96 MB |
+| `zion-pool-server` | `cargo build --release -p zion-pool --bin server` | 2.20 MB |
+| `zion-bridge` | `cargo build --release -p zion-bridge` | 10.1 MB |
+| `zion-dao` | `cargo build --release -p zion-dao` | 5.47 MB |
+| `zion-warp-server` | `cargo build --release -p zion-warp` | 9.23 MB |
+
+### Data Directories
+
+| Path | Content |
+|------|---------|
+| `/data/zion/state/` | Node blockchain state |
+| `/data/zion/bridge-mainnet.db` | Bridge relay SQLite DB |
+| `/data/zion/dao-mainnet.db` | DAO scanner SQLite DB |
+| `/root/zion/2.9.6/` | Git repo (clone at commit `690b6dfe`) |
+| `/root/zion/edge-environment.sh` | Environment file (chmod 600) |
+| `/root/zion-web-next/` | Next.js web source + Dockerfile + docker-compose.yml |
+| `/root/zion-dashboard/` | ZION_OS dashboard (Python) |
+
+### Config Files
+
+| Config | Path | Purpose |
+|--------|------|---------|
+| Bridge | `/root/zion/2.9.6/V3/config/bridge-mainnet.toml` | Bridge relay config (6 EVM chains, DB path `/data/zion/bridge-mainnet.db`) |
+| DAO | `/root/zion/2.9.6/V3/L2/dao/config/dao-mainnet.toml` | DAO config (DB path `/data/zion/dao-mainnet.db`) |
+| WARP | `/root/zion/2.9.6/V3/L3/warp/config/warp-mainnet.toml` | WARP relay config |
+| Nginx | `/etc/nginx/sites-available/zion` | Reverse proxy + SSL + security headers |
+| Environment | `/root/zion/edge-environment.sh` | All env vars (chmod 600) |
+
+### Environment Variables (`edge-environment.sh`)
+
+Key variables (no `export` prefix — systemd `EnvironmentFile` format):
+
+```
+# L1 Node
+ZION_NODE_ID="zion-new-mainnet-primary"
+ZION_NODE_STATE_PATH="/data/zion/state"
+ZION_P2P_BIND="0.0.0.0:8333"
+ZION_RPC_BIND="127.0.0.1:8443"
+ZION_WEBSOCKET_BIND="127.0.0.1:8445"
+ZION_METRICS_BIND="127.0.0.1:9100"
+ZION_SEED_PEERS="127.0.0.1:8333"
+ZION_MIGRATION_HEIGHT=1
+
+# Pool
+ZION_POOL_BIND="0.0.0.0:8444"
+ZION_POOL_SK="<REPLACE_POOL_SK>"
+
+# Bridge
+ZION_BRIDGE_CONFIG="/root/zion/2.9.6/V3/config/bridge-mainnet.toml"
+ZION_BRIDGE_DB="/data/zion/bridge-mainnet.db"
+ZION_BRIDGE_VALIDATOR_SK_1..5="<REPLACE_EVM_VALIDATOR_SK_*>"
+
+# DAO
+DAO_CONFIG="/root/zion/2.9.6/V3/L2/dao/config/dao-mainnet.toml"
+ZION_DAO_BIND="127.0.0.1:8450"
+ZION_DAO_DB="/data/zion/dao-mainnet.db"
+ZION_DAO_GUARDIAN_SK_1..7="<REPLACE_GUARDIAN_SK_*>"
+
+# WARP
+ZION_WARP_CONFIG="/root/zion/2.9.6/V3/L3/warp/config/warp-mainnet.toml"
+ZION_WARP_DB="/data/zion/warp.db"
+
+# Logging
+RUST_LOG=info
+ZION_LOG_BLOCK_SUBMITTER=1
+```
+
+### Docker
+
+| Container | Image | Port | Purpose |
+|-----------|-------|------|---------|
+| `zion-web-next` | `zion-web:nextjs` | 127.0.0.1:3001 | Next.js 16.2.9 web (73+ routes) |
+| (fallback) | `zion-web:maintenance` | 127.0.0.1:3000 | Maintenance page (nginx:alpine) |
+
+**Docker compose:** `/root/zion-web-next/docker-compose.yml`
+- `restart: unless-stopped`
+- `read_only: true` (maintenance image only)
+- tmpfs for nginx cache
+
+### Nginx Reverse Proxy
+
+| Domain | Upstream | SSL Cert |
+|--------|----------|----------|
+| `zionterranova.com` | `127.0.0.1:3001` (Next.js) | Let's Encrypt (zionterranova.com + www) |
+| `dashboard.zionterranova.com` | `127.0.0.1:8766` (Dashboard) | Let's Encrypt (dashboard.zionterranova.com) |
+| `/api/rpc` | `127.0.0.1:8443` (node RPC) | (via main domain) |
+| `/api/dao` | `127.0.0.1:8450` (DAO API) | (via main domain) |
+
+**Security headers:** HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy
+**HTTP/2:** enabled
+**HTTP→HTTPS redirect:** enabled
+
+### Monitoring
+
+| Job | Interval | Script | Purpose |
+|-----|----------|--------|---------|
+| Forged TX monitor | 5 min | `/usr/local/bin/zion-monitor-forged.sh` | Scan node logs for forged/invalid signature |
+| Height monitor | 5 min | `/usr/local/bin/zion-monitor-height.sh` | Check RPC reachable, auto-restart node if down |
+| P2P alert | 2 min | `/usr/local/bin/zion-monitor-p2p.sh` | Alert on high P2P connection rate |
+| Watchdog | 2 min | `/usr/local/bin/zion-watchdog.sh` (systemd timer) | RPC + TCP health, auto-restart |
+
+### SSL Certificates (Let's Encrypt)
+
+| Domain | Cert Path | Expiry | Auto-renew |
+|--------|-----------|--------|------------|
+| `zionterranova.com` + `www.zionterranova.com` | `/etc/letsencrypt/live/zionterranova.com/` | 2026-10-05 | ✅ |
+| `dashboard.zionterranova.com` | `/etc/letsencrypt/live/dashboard.zionterranova.com/` | 2026-10-05 | ✅ |
+
+### Dashboard Access
+
+| Param | Value |
+|-------|-------|
+| URL | `https://dashboard.zionterranova.com` |
+| Auth | HTTP Basic Auth (handled by `app.py`) |
+| User 1 | `Yose` (password: `3nityOne13`) |
+| User 2 | `Issy` (password: `3nityOne13`) |
+| Title | "ZION Mainnet — Launch Command Center" |
+
+### Deploy Files (in repo)
+
+All deploy files are in `V3/deploy/new-server/`:
+
+| File | Purpose |
+|------|---------|
+| `edge-environment.sh` | Environment template (chmod 600, `<REPLACE_*>` placeholders) |
+| `zion-node.service` | systemd unit for zion-node |
+| `zion-pool.service` | systemd unit for zion-pool |
+| `zion-bridge.service` | systemd unit for zion-bridge |
+| `zion-dao.service` | systemd unit for zion-dao |
+| `zion-warp.service` | systemd unit for zion-warp |
+| `zion-watchdog.sh` | Health check script |
+| `zion-watchdog.service` | systemd oneshot for watchdog |
+| `zion-watchdog.timer` | systemd timer (2-min interval) |
+
+### Common Operations
+
+```bash
+# SSH
+ssh zion-new
+
+# Check all services
+systemctl is-active zion-node zion-pool zion-bridge zion-dao zion-warp zion-dashboard nginx
+
+# Check chain height
+curl -s http://127.0.0.1:8443/jsonrpc -d '{"jsonrpc":"2.0","method":"getSupplyInfo","id":1}' | python3 -c "import sys,json; d=json.load(sys.stdin)['result']; print(f'height={d[\"height\"]} supply={d[\"circulating_supply_zion\"]:,}ZION')"
+
+# Check genesis hash
+journalctl -u zion-node --no-pager -n 50 | grep tip_hash_hex | tail -1
+
+# Restart web (Docker)
+cd /root/zion-web-next && docker compose restart
+
+# Rebuild web from source
+cd /root/zion-web-next && docker compose down && docker compose build --no-cache && docker compose up -d
+
+# Switch to maintenance page
+cd /root/zion-web && docker compose up -d  # starts maintenance container on :3000
+# Then update nginx to proxy to :3000 instead of :3001
+
+# View logs
+journalctl -u zion-node -f
+journalctl -u zion-pool -f
+docker logs zion-web-next -f
+
+# Update environment
+vi /root/zion/edge-environment.sh
+systemctl daemon-reload
+systemctl restart zion-node zion-pool zion-bridge zion-dao zion-warp
+
+# Rebuild binaries after code change
+cd /root/zion/2.9.6 && source ~/.cargo/env
+cargo build --release -p zion-core --bin node -p zion-pool --bin server -p zion-bridge -p zion-dao -p zion-warp
+cp V3/target/release/node /usr/local/bin/zion-node
+cp V3/target/release/server /usr/local/bin/zion-pool-server
+cp V3/target/release/zion-bridge /usr/local/bin/zion-bridge
+cp V3/target/release/zion-dao /usr/local/bin/zion-dao
+cp V3/target/release/zion-warp-server /usr/local/bin/zion-warp-server
+systemctl restart zion-node zion-pool zion-bridge zion-dao zion-warp
 ```

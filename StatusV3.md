@@ -1,7 +1,92 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** **2026-07-02** (**F5 CRITICAL FIX DEPLOYED + ESCROW KEY ROTATION + F1 exploit post-mortem + comprehensive Edge server hardening** — viz [`SecurityFirst.md`](./SecurityFirst.md) a [`F5_SECURITY_INCIDENT_REPORT_2026-07-02.md`](./F5_SECURITY_INCIDENT_REPORT_2026-07-02.md) pro plný záznam).  
-> **Předchozí update:** 2026-07-02 (3.0.4 SECURITY FIX — F1 from-address verification extended to peer-block path + pool wallet custody resolved — `V3/L1/core/src/lib.rs` nyní volá `verify_signature()` v `validate_peer_block()` pro non-coinbase account TX; nový regresní test `validate_peer_block_rejects_forged_account_transaction`; pool wallet SK pro `zion16825...` nalezen a `edge-environment.sh` aktualizován; `canonical-mainnet-operator-env.rs` debug_asserty odstraněny; nový runbook `V3/docs/ZION_3.0.4_SECURITY_FIX_DEPLOY_RUNBOOK.md`).
+> **Datum:** **2026-07-07** (**3.0.4 HARD GENESIS RESET — NOVÝ SERVER 62.171.141.136 — FULL STACK DEPLOYED** — viz [`docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md`](./docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md) a [`HARDRESETOFFICIAL.md`](./HARDRESETOFFICIAL.md) pro plný záznam).
+> **Předchozí update:** 2026-07-02 (F5 CRITICAL FIX + ESCROW KEY ROTATION + F1 exploit post-mortem + Edge server hardening — viz [`SecurityFirst.md`](./SecurityFirst.md) a [`F5_SECURITY_INCIDENT_REPORT_2026-07-02.md`](./F5_SECURITY_INCIDENT_REPORT_2026-07-02.md)).
+>
+> ### 3.0.4 Hard Genesis Reset — Nový Server Deploy (2026-07-07)
+>
+> **INCIDENT:** Po sérii security incidentů (F1 forged TX exploit, F5 inflation exploit, kompromitace Edge serveru 77.42.71.94) bylo rozhodnuto o hard genesis resetu a přestavbě na novém serveru.
+>
+> **Nový server:** `62.171.141.136` (Ubuntu 24.04.4 LTS, 4× AMD EPYC, 7.8 GB RAM, 145 GB disk)
+>
+> **Nový genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` ✅
+>
+> **Bridge vault seed:** `"ZION Bridge Vault V3 Mainnet v2 2026-07-06-HARD-RESET"`
+>
+> **Deployované služby (všech 7 aktivních + enabled na boot):**
+>
+> | Služba | Port(s) | Bind | Stav |
+> |--------|---------|------|------|
+> | zion-node | 8333 (P2P), 8443 (RPC), 8445 (WS), 9100 (metrics) | P2P 0.0.0.0, zbytek 127.0.0.1 | ✅ active |
+> | zion-pool | 8444 (Stratum) | 0.0.0.0 | ✅ active |
+> | zion-bridge | 9101 (metrics) | 127.0.0.1 | ✅ active |
+> | zion-dao | 8450 (API) | 127.0.0.1 | ✅ active |
+> | zion-warp | 9333 | 0.0.0.0 | ✅ active |
+> | zion-dashboard | 8766 | 127.0.0.1 | ✅ active |
+> | nginx | 80, 443 | 0.0.0.0 | ✅ active |
+>
+> **Web + Dashboard:**
+> - `https://zionterranova.com` — plný Next.js 16.2.9 web (Docker `zion-web:nextjs`, 73+ routes, SSL Let's Encrypt, HTTP/2, security headers, CSP aktualizovaná na novou IP)
+> - `https://dashboard.zionterranova.com` — ZION_OS Dashboard (Python3 stdlib, Basic Auth, SSL Let's Encrypt)
+> - Maintenance page (Docker `zion-web:maintenance`) dostupná jako fallback
+>
+> **Blockchain stav:**
+> - Height: 0 (fresh genesis, čeká na minery)
+> - Premine: 16,780,000,000 ZION ✅
+> - Block reward: 5400.067 ZION
+> - Mining emission: 127,220,000,000 ZION
+> - Fee split: 89/5/5/1 burn model ✅
+>
+> **OS hardening:**
+> - SSH klíče-only (password auth disabled), nový klíč `~/.ssh/zion-new-server` (ed25519)
+> - UFW active — SSH 22, HTTP 80, HTTPS 443
+> - fail2ban active — sshd jail
+> - Docker 29.6.1 + Compose v5.3.1
+>
+> **Monitoring:**
+> - 3 cron jobs: forged TX monitor (5 min), height monitor (5 min), P2P alert (2 min)
+> - systemd watchdog timer (2 min) — RPC + TCP health, auto-restart
+>
+> **Security patch 3.0.4 (wave 1-2 + F4.7 aktivace, 2026-07-07):**
+> - Kanonický postup: [`SECURITY_PATCH_3.0.4_PLAN.md`](./SECURITY_PATCH_3.0.4_PLAN.md) (fáze 1-6)
+> - **Wave 1:** dependency hardening (quinn-proto ≥0.11.15 remote DoS, crossbeam-epoch, rand, advisory cleanup) + node seed-peer mainnet guard + pool OASIS hook bez `curl` + bridge SQL whitelist + HTTP timeouty + miner bez přímé bincode
+> - **Wave 2 (F4.7 max-tx-amount cap):** height-gated cap = `TOTAL_SUPPLY` (144B ZION, NE 100M — nekoliduje s premine), výjimky genesis/coinbase, obě validační cesty, 4 testy PASS
+> - ✅ **F4.7 AKTIVOVÁNO** na serveru (`ZION_MAX_TX_AMOUNT_HEIGHT=1`, 23:16) — log potvrzen, genesis hash nezměněn. F5 (`=0`) aktivní současně.
+> - Commity `690b6dfe`, `35e0f6d0`. Zbývá (owner, air-gapped): key rotace F4.1-4.5, git history scrub, finální audit.
+>
+> **DNS:**
+> - `dns.md` aktualizováno na pure zone file format pro Webglobe admin console
+> - Všechny A records → `62.171.141.136` (@, www, *, api, explorer, mining, testnet)
+> - Mail/DNS infra unchanged (MX, NS, SPF, DMARC, CAA → 62.109.151.33)
+> - Serial: `2026070701`
+>
+> **SSL certifikáty (Let's Encrypt, auto-renew):**
+> - `zionterranova.com` + `www.zionterranova.com` — expiruje 2026-10-05
+> - `dashboard.zionterranova.com` — expiruje 2026-10-05
+>
+> **Deploy soubory:**
+> - `V3/deploy/new-server/edge-environment.sh` — environment template (chmod 600, `<REPLACE_*>` placeholdery pro air-gapped klíče)
+> - `V3/deploy/new-server/zion-node.service` — systemd unit
+> - `V3/deploy/new-server/zion-pool.service` — systemd unit
+> - `V3/deploy/new-server/zion-bridge.service` — systemd unit
+> - `V3/deploy/new-server/zion-dao.service` — systemd unit
+> - `V3/deploy/new-server/zion-warp.service` — systemd unit
+> - `V3/deploy/new-server/zion-watchdog.sh` — health check script
+> - `V3/deploy/new-server/zion-watchdog.service` + `zion-watchdog.timer` — watchdog systemd
+>
+> **Pending (vyžaduje owner akci):**
+> 1. **Air-gapped klíče** — `edge-environment.sh` má `<REPLACE_*>` placeholdery:
+>    - `ZION_POOL_SK` — pool payout secret key
+>    - `ZION_BRIDGE_VALIDATOR_SK_1..5` — EVM validator keys (5/5 threshold)
+>    - `ZION_DAO_GUARDIAN_SK_1..7` — DAO guardian signing keys (7)
+>    - `ZION_SWAP_ESCROW_KEY` — atomic swap escrow key
+> 2. **Minery** — připojit k poolu `62.171.141.136:8444` (chain je na height 0, čeká na shares)
+> 3. **F4.7 aktivace** — `ZION_MAX_TX_AMOUNT_HEIGHT` (code-ready, default vypnuto)
+> 4. **DNS aplikace** — `dns.md` zónový soubor aplikovat v Webglobe admin console
+> 5. **Key rotation F4.x** — premine, pool, bridge, EVM (air-gapped operace)
+> 6. **Git history scrub** — BFG pro staré commity s secrets
+>
+> **Starý Edge server (77.42.71.94):** DECOMMISSIONED — všechny služby přesunuty na nový server.
 > 
 > ### F5 Critical Fix + Escrow Key Rotation (2026-07-02 19:30–20:30 UTC)
 > 

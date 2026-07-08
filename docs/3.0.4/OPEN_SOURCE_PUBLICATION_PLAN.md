@@ -124,8 +124,8 @@ zion-v3/                         # PUBLIC REPO
 
 | Soubor | Co upravit |
 |--------|-----------|
-| `V3/L1/core/src/lib.rs:131` | Seed peer `77.42.71.94` → nahradit za `seed1.zionterranova.com` nebo parametrizovat |
-| `V3/L1/core/src/discovery.rs:45` | Stejný IP → DNS |
+| `V3/L1/core/src/lib.rs:123` | ✅ Seed peer aktualizován na `62.171.141.136` (2026-07-07); před publikací → `seed1.zionterranova.com` nebo parametrizovat |
+| `V3/L1/core/src/discovery.rs:44` | ✅ Bootstrap node aktualizován na `62.171.141.136` (2026-07-07); před publikací → DNS |
 | `V3/README.md:277-278` | IP → DNS |
 | `V3/L2/bridge/config/bridge-mainnet.toml:20` | Backup RPC URL → placeholder |
 | `V3/cli/tests/topology_e2e.rs` | Hardcoded IP v testech → test constant |
@@ -159,7 +159,8 @@ zion-v3/                         # PUBLIC REPO
 - [ ] Pool payout SK v `scripts/setup-ubuntu-stack.sh` nahrazen placeholderem
 - [ ] `V3/docker/.env` smazán nebo nahrazen za `.env.example`
 - [ ] Dashboard hesla v `ZION_OS/dashboard/app.py` odstraněna
-- [ ] Všechny IP adresy `77.42.71.94` v V3/ nahrazeny DNS nebo env var
+- [x] Hardcoded IP `77.42.71.94` (decommissioned Edge) v L1 core seed/discovery nahrazen novým serverem `62.171.141.136` (2026-07-07)
+- [ ] Před publikací: `62.171.141.136` v V3/ nahrazeno DNS (`seed1.zionterranova.com`) nebo env var
 - [ ] `V3/SMOS_DEPLOY.md` smazán (SSH hesla)
 - [ ] Verify: `grep -rn "a3bc7452" .` vrátí 0 výsledků
 - [ ] Verify: `grep -rn "x3nityOne\|8506204014" .` vrátí 0 výsledků
