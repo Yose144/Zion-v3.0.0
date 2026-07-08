@@ -361,7 +361,7 @@ fn test_s4_memhard_exact() {
         difficulty_bits: 0x1f00ffff,
     };
 
-    let header_bytes = bincode::serialize(&header).unwrap();
+    let header_bytes = header.to_bytes();
     let test_nonce = 42u64;
     let _test_height = 0u64;
 

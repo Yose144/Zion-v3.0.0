@@ -43,10 +43,12 @@ pub struct DaoClient {
 
 impl DaoClient {
     pub fn new(config: DaoClientConfig) -> Self {
-        Self {
-            config,
-            http: reqwest::Client::new(),
-        }
+        let http = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(15))
+            .connect_timeout(std::time::Duration::from_secs(10))
+            .build()
+            .unwrap_or_else(|_| reqwest::Client::new());
+        Self { config, http }
     }
 
     /// Submit a mission/research funding request to the DAO treasury.

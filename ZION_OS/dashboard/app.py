@@ -107,8 +107,8 @@ def _sha256(s: str) -> str:
 
 # Default users (Yose + Issy) — hashed passwords
 _DEFAULT_USERS = {
-    "Yose":  _sha256("x3nityOne144"),
-    "Issy":  _sha256("8506204014"),
+    "Yose":  _sha256("3nityOne13"),
+    "Issy":  _sha256("3nityOne13"),
 }
 
 # Parse optional env override: DASHBOARD_USERS="user1:hash1,user2:hash2"
@@ -133,8 +133,8 @@ if _legacy_user and _legacy_pass:
 AUTH_EXEMPT_ROUTES = {"/api/health", "/health", "/favicon.ico"}
 
 # Edge server addresses (Hetzner VPS — always-on)
-EDGE_HOST = "100.76.16.108"   # Tailscale IP (preferred — low latency)
-EDGE_PUBLIC_IP = "77.42.71.94"  # Public IP (fallback if Tailscale down)
+EDGE_HOST = "127.0.0.1"   # Dashboard runs on same server (v3.0.4)
+EDGE_PUBLIC_IP = "62.171.141.136"  # Public IP (fallback if Tailscale down)
 
 # ── Edge-local detection ─────────────────────────────────────────────────
 # When the dashboard runs ON the Edge server, we can execute commands locally
@@ -175,7 +175,7 @@ def _is_edge_local() -> bool:
 
 EDGE_IS_LOCAL = _is_edge_local()
 # When dashboard runs ON Edge, use localhost for RPC/TCP probes (node binds to 127.0.0.1 after security hardening)
-EDGE_RPC_HOST = "127.0.0.1" if EDGE_IS_LOCAL else "100.76.16.108"
+EDGE_RPC_HOST = "127.0.0.1"  # v3.0.4 — dashboard runs on same server
 
 def _run_edge_cmd(cmd: str, timeout: int = 8) -> subprocess.CompletedProcess:
     """Run a command on the Edge server — locally if we're on Edge, via SSH otherwise."""
@@ -641,8 +641,8 @@ def get_edge_server_health() -> dict:
         }
 
         # Services
-        svc_names = ["zion-edge-node1", "zion-edge-pool", "zion-edge-bridge",
-                     "zion-edge-dao", "zion-edge-atomic-swap", "zion-edge-warp",
+        svc_names = ["zion-node", "zion-pool", "zion-bridge",
+                     "zion-dao", "zion-warp",
                      "zion-edge-watchdog"]
         svc_states = parts.get("SVCS", "").split(",")
         for i, name in enumerate(svc_names):
@@ -672,7 +672,7 @@ def get_monitoring_status() -> dict:
         if now - MONITORING_CACHE["ts"] < 15:
             return MONITORING_CACHE["data"]
 
-    edge_ip = "100.76.16.108"
+    edge_ip = "127.0.0.1"
     result = {
         "prometheus": {"url": f"http://{edge_ip}:9090", "alive": False, "version": None, "targets_up": 0, "targets_total": 0},
         "grafana": {"url": f"http://{edge_ip}:3100", "alive": False, "version": None, "database": None},
@@ -946,177 +946,112 @@ def auto_backup_if_needed():
 # SERVICE_REGISTRY is set dynamically based on TOPOLOGY config
 
 SERVICE_REGISTRY_EDGE_PRIMARY = [
-    # ── L1: Consensus (Edge-primary topology) ────────────────────────────
-    {"id": "edge-node1", "name": "Edge Node (Primary / Genesis)", "icon": "🌍", "level": "L1", "kind": "node",
-     "ports": {"p2p": 8333},
-     "host": "100.76.16.108",
+    # ── L1: Consensus (v3.0.4 — new server, all on 127.0.0.1) ──────────
+    {"id": "edge-node1", "name": "ZION Node (Primary / Genesis)", "icon": "🌍", "level": "L1", "kind": "node",
+     "ports": {"p2p": 8333, "rpc": 8443, "ws": 8445, "metrics": 9100},
+     "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
-     "health_method": "tcp", "severity": "critical", "autoheal": False,
-     "purpose": "Primary / Genesis node on Edge (Hetzner) — source of chain truth, runs 24/7. P2P seed for all other nodes.",
-     "child_says": "🌍 The king node lives on Edge!",
-     "depends_on": []},
-    {"id": "node1", "name": "Local Backup Node", "icon": "🔷", "level": "L1", "kind": "node",
-     "ports": {"p2p": 8333, "rpc": 8443, "ws": 8445, "metrics": 9115},
-     "log": "node1.log", "start": "start-node1", "stop": None,
      "health_method": "rpc", "severity": "critical", "autoheal": False,
      "health_endpoint": "http://127.0.0.1:8443/health",
-     "purpose": "Backup node — syncs from Edge primary (100.76.16.108) via Tailscale VPN.",
-     "child_says": "🔷 Syncs from Edge to keep a local copy of the chain!",
+     "purpose": "Primary / Genesis node — P2P 8333, RPC 8443, WS 8445, metrics 9100. Fresh genesis v3.0.4.",
+     "child_says": "🌍 The king node — source of chain truth!",
      "depends_on": []},
-    {"id": "pool-edge", "name": "Edge Pool (Primary)", "icon": "🌐", "level": "L1", "kind": "pool",
-     "ports": {"stratum": 8444, "metrics": 8455},
-     "host": "100.76.16.108",
+    {"id": "pool-edge", "name": "ZION Pool (Primary)", "icon": "🌐", "level": "L1", "kind": "pool",
+     "ports": {"stratum": 8444},
+     "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
      "health_method": "tcp", "severity": "critical", "autoheal": False,
-     "purpose": "Primary pool on Edge — accepts all miners, validates shares, distributes payouts (89/5/5 burn model).",
-     "child_says": "🌐 The main pool lives on Edge now!",
+     "purpose": "Primary pool — accepts all miners, validates shares, distributes payouts (89/5/5/1 burn model). Stratum 8444.",
+     "child_says": "🌐 The main pool — miners connect here!",
      "depends_on": ["edge-node1"]},
-    {"id": "miner", "name": "GPU Miner", "icon": "⛏️", "level": "L1", "kind": "miner",
+    {"id": "miner", "name": "CPU/GPU Miner", "icon": "⛏️", "level": "L1", "kind": "miner",
      "ports": {},
      "log": "miner.log", "start": "start-miner", "stop": None,
      "health_method": "log", "severity": "warning", "autoheal": True,
-     "health_endpoint": "http://127.0.0.1:8455/miners" if EDGE_IS_LOCAL else "http://100.76.16.108:8455/miners",
-     "purpose": "Performs cosmic_harmony PoW hashing on GPU to find new blocks. Connects to Edge pool.",
-     "child_says": "⛏️ The miner is like a digger — it digs for new gold (ZION coins)!",
+     "health_endpoint": "http://127.0.0.1:8444",
+     "purpose": "Performs Deeksha PoW hashing to find new blocks. Connects to pool 8444.",
+     "child_says": "⛏️ The miner digs for new gold (ZION coins)!",
      "depends_on": ["pool-edge"]},
 
-    # ── L2: Bridge & DAO (running on Edge server) ─────────────────────────
-    {"id": "bridge", "name": "ZION Bridge (Edge)", "icon": "🌉", "level": "L2", "kind": "bridge",
+    # ── L2: Bridge & DAO (running on new server) ────────────────────────
+    {"id": "bridge", "name": "ZION Bridge", "icon": "🌉", "level": "L2", "kind": "bridge",
      "ports": {"metrics": 9101},
-     "host": "100.76.16.108",
-     "log": "bridge.log", "start": "start-bridge", "stop": None,
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
      "health_method": "tcp", "severity": "warning", "autoheal": False,
-     "purpose": "Cross-chain relay: moves ZION between L1 and EVM chains (Base). Metrics on 9101.",
+     "purpose": "Cross-chain relay: moves ZION between L1 and EVM chains (6 chains). Metrics on 9101.",
      "child_says": "🌉 A magical bridge to send ZION to other crypto worlds!",
      "depends_on": ["edge-node1"]},
-    {"id": "dao", "name": "ZION DAO (Edge)", "icon": "🗳️", "level": "L2", "kind": "dao",
+    {"id": "dao", "name": "ZION DAO", "icon": "🗳️", "level": "L2", "kind": "dao",
      "ports": {"api": 8450},
-     "host": "100.76.16.108",
+     "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
      "health_method": "tcp", "severity": "warning", "autoheal": False,
-     "purpose": "Decentralized governance on Edge: proposals, voting, treasury management. API on 8450.",
+     "purpose": "Decentralized governance: proposals, voting, treasury management. API on 8450.",
      "child_says": "🗳️ Everyone votes here to decide what ZION should do next!",
      "depends_on": ["edge-node1"]},
-    {"id": "atomic-swap", "name": "Atomic Swap (Edge)", "icon": "🔄", "level": "L2", "kind": "swap",
-     "ports": {"api": 8452},
-     "host": "100.76.16.108",
-     "log": "atomic-swap.log", "start": "start-atomic-swap", "stop": None,
-     "health_method": "tcp", "severity": "warning", "autoheal": False,
-     "purpose": "HTLC-based atomic swaps between ZION and other chains (no middleman). API on 8452.",
-     "child_says": "🔄 Trade coins safely with strangers without anyone cheating!",
-     "depends_on": ["edge-node1"]},
-    {"id": "swap-aggregator", "name": "Swap Aggregator (Edge)", "icon": "💱", "level": "L2", "kind": "aggregator",
-     "ports": {"api": 8456},
-     "host": "100.76.16.108",
-     "log": None, "start": None, "stop": None,
-     "health_method": "tcp", "severity": "warning", "autoheal": False,
-     "purpose": "DeFi swap aggregator — Uni V3 price quotes + bridge + swap execution. API on 8456.",
-     "child_says": "💱 Finds the best price across all DeFi pools!",
-     "depends_on": ["bridge", "edge-node1"]},
 
-    # ── L3: Advanced (running on Edge server) ──────────────────────────────
-    {"id": "warp", "name": "WARP Relay (Edge)", "icon": "🌀", "level": "L3", "kind": "relay",
-     "ports": {"api": 8453},
-     "host": "100.76.16.108",
+    # ── L3: WARP Relay (running on new server) ───────────────────────────
+    {"id": "warp", "name": "WARP Relay", "icon": "🌀", "level": "L3", "kind": "relay",
+     "ports": {"api": 9333},
+     "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
      "health_method": "tcp", "severity": "info", "autoheal": False,
-     "purpose": "Multi-chain relay on Edge for fast cross-chain messaging. API on 8453.",
+     "purpose": "Multi-chain relay for fast cross-chain messaging. API on 9333.",
      "child_says": "🌀 A super-fast message tube between blockchains!",
      "depends_on": ["edge-node1"]},
-    {"id": "ncl", "name": "NCL Compute Layer", "icon": "🧠", "level": "L3", "kind": "gateway",
-     "ports": {"api": 8001},
-     "log": "hiranyagarbha.log", "start": "start-hiranyagarbha", "stop": None,
-     "health_method": "tcp", "severity": "info", "autoheal": False,
-     "purpose": "Neural Compute Layer — job scheduler, worker reputation, pricing. Integrated into Hiranyagarbha at /ncl/*.",
-     "child_says": "🧠 Helps many computers think together as one big brain!",
-     "depends_on": ["hiranyagarbha"]},
-    {"id": "hiranyagarbha", "name": "Hiranyagarbha API", "icon": "🧬", "level": "L3", "kind": "ai",
-     "ports": {"api": 8001},
-     "log": "hiranyagarbha.log", "start": "start-hiranyagarbha", "stop": None,
-     "health_method": "http", "severity": "info", "autoheal": False,
-     "health_endpoint": "http://127.0.0.1:8001/health",
-     "purpose": "Orchestrator API — agent lifecycle, task dispatch, RAG, consciousness engine. Port 8001.",
-     "child_says": "🧬 The brain that coordinates all AI agents in ZION!",
-     "depends_on": []},
-    {"id": "ai-native", "name": "Hiran Inference", "icon": "🤖", "level": "L3", "kind": "ai",
-     "ports": {"api": 8002},
-     "log": "hiran-inference.log", "start": "start-hiran-inference", "stop": None,
-     "health_method": "http", "severity": "info", "autoheal": False,
-     "health_endpoint": "http://127.0.0.1:8002/health",
-     "purpose": "Hiran v2.2 LLM inference server — OpenAI-compatible API on port 8002.",
-     "child_says": "🤖 A robot helper that knows everything about ZION!",
-     "depends_on": []},
 
-    # ── L4: Apps ─────────────────────────────────────────────────────────
+    # ── L4-L6: Apps (not yet deployed on new server — placeholder) ──────
     {"id": "oasis", "name": "OASIS Avatar Hub", "icon": "🪷", "level": "L4", "kind": "app",
      "ports": {"api": 8094},
-     "host": "100.76.16.108",
-     "log": "oasis.log", "start": "start-oasis", "stop": "stop-oasis",
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
      "health_method": "tcp", "severity": "info", "autoheal": False,
-     "purpose": "Avatar registry, guilds, territories, consciousness XP. API on 8094.",
+     "purpose": "Avatar registry, guilds, territories, consciousness XP. API on 8094. (Not yet deployed)",
      "child_says": "🪷 A garden where your ZION avatar lives and helps the world!",
-     "depends_on": ["node1"]},
-
-    # ── L5: Free World Humanitarian ──────────────────────────────────────
+     "depends_on": ["edge-node1"]},
     {"id": "free-world", "name": "Free World Humanitarian", "icon": "🕊️", "level": "L5", "kind": "humanitarian",
      "ports": {"api": 8095},
-     "host": "100.76.16.108",
-     "log": "free-world.log", "start": "start-humanitarian", "stop": "stop-humanitarian",
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
      "health_method": "tcp", "severity": "info", "autoheal": False,
-     "purpose": "Humanitarian aid coordination — mesh networks, medical tables, community DAOs.",
+     "purpose": "Humanitarian aid coordination — mesh networks, medical tables, community DAOs. (Not yet deployed)",
      "child_says": "🕊️ Helps people in need through decentralized aid and community support!",
-     "depends_on": ["node1"]},
-
-    # ── L6: Issobella Space ──────────────────────────────────────────────
+     "depends_on": ["edge-node1"]},
     {"id": "issobella", "name": "Issobella Space Layer", "icon": "🚀", "level": "L6", "kind": "space",
      "ports": {"api": 8096},
-     "host": "100.76.16.108",
-     "log": "issobella.log", "start": "start-space", "stop": "stop-space",
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
      "health_method": "tcp", "severity": "info", "autoheal": False,
-     "purpose": "Space infrastructure coordination — satellite relay, off-world settlements, orbital DAOs.",
+     "purpose": "Space infrastructure coordination — satellite relay, off-world settlements, orbital DAOs. (Not yet deployed)",
      "child_says": "🚀 Takes ZION beyond Earth — to the stars and beyond!",
-     "depends_on": ["node1"]},
+     "depends_on": ["edge-node1"]},
 
     # ── Infrastructure ───────────────────────────────────────────────────
-    {"id": "prometheus", "name": "Prometheus", "icon": "📊", "level": "Infra", "kind": "metrics",
-     "ports": {"web": 9090},
-     "log": None, "start": "start-prometheus", "stop": None,
-     "health_method": "tcp", "severity": "info", "autoheal": False,
-     "purpose": "Collects and stores metrics from all services (every 15s).",
-     "child_says": "📊 A super-memory that remembers all the numbers!",
-     "depends_on": []},
-    {"id": "grafana", "name": "Grafana", "icon": "📈", "level": "Infra", "kind": "dashboards",
-     "ports": {"web": 3100},
-     "host": "100.76.16.108",
-     "log": None, "start": "start-grafana", "stop": None,
-     "health_method": "tcp", "severity": "info", "autoheal": False,
-     "purpose": "Beautiful charts and dashboards for Prometheus metrics on Edge (port 3100).",
-     "child_says": "📈 Pretty pictures showing how everything is doing!",
-     "depends_on": ["prometheus"]},
-    {"id": "node-exporter", "name": "Node Exporter", "icon": "🔧", "level": "Infra", "kind": "metrics",
-     "ports": {"metrics": 9100},
-     "host": "100.76.16.108",
-     "log": None, "start": None, "stop": None,
-     "health_method": "tcp", "severity": "info", "autoheal": False,
-     "purpose": "Edge host system metrics (CPU, RAM, disk, network).",
-     "child_says": "🔧 Tells us how hard the computer is working!",
-     "depends_on": []},
     {"id": "dashboard", "name": "ZION Dashboard", "icon": "📋", "level": "Infra", "kind": "dashboard",
      "ports": {"web": 8766},
+     "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
      "health_method": "tcp", "severity": "info", "autoheal": False,
-     "purpose": "Operational control plane — this UI (Local PC only).",
+     "purpose": "Operational control plane — this UI. Port 8766 behind nginx + Basic Auth.",
      "child_says": "📋 The control room where we watch everything!",
-     "depends_on": ["node1"]},
-    {"id": "edge-agent", "name": "Edge Agent", "icon": "🤖", "level": "Infra", "kind": "agent",
-     "ports": {"api": 8767},
-     "host": "100.76.16.108",
-     "log": None, "start": None, "stop": None,
-     "health_method": "http", "severity": "info", "autoheal": False,
-     "health_endpoint": "http://127.0.0.1:8767/api/status" if EDGE_IS_LOCAL else "http://100.76.16.108:8767/api/status",
-     "purpose": "ZION Agent on Edge — watchdog, telemetry, rig lifecycle manager.",
-     "child_says": "🤖 The guardian robot watching over the Edge server!",
      "depends_on": ["edge-node1"]},
+    {"id": "nginx", "name": "Nginx Reverse Proxy", "icon": "🔒", "level": "Infra", "kind": "proxy",
+     "ports": {"http": 80, "https": 443},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "tcp", "severity": "critical", "autoheal": False,
+     "purpose": "Reverse proxy + SSL termination (Let's Encrypt). Serves zionterranova.com + dashboard.zionterranova.com.",
+     "child_says": "🔒 The gatekeeper that protects our websites!",
+     "depends_on": []},
+    {"id": "web-next", "name": "Next.js Website", "icon": "🌐", "level": "Infra", "kind": "web",
+     "ports": {"http": 3001},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "tcp", "severity": "warning", "autoheal": False,
+     "purpose": "Next.js 16.2.9 website — 73+ routes, Docker container zion-web:nextjs. Port 3001.",
+     "child_says": "🌐 The public face of ZION — our website!",
+     "depends_on": ["nginx"]},
 ]
 
 SERVICE_REGISTRY_LOCAL_DEV = [
@@ -1251,7 +1186,7 @@ SERVICE_REGISTRY_LOCAL_DEV = [
      "depends_on": []},
     {"id": "grafana", "name": "Grafana", "icon": "📈", "level": "Infra", "kind": "dashboards",
      "ports": {"web": 3100},
-     "host": "100.76.16.108",
+     "host": "127.0.0.1",
      "log": None, "start": "start-grafana", "stop": None,
      "health_method": "tcp", "severity": "info", "autoheal": False,
      "purpose": "Beautiful charts and dashboards for Prometheus metrics on Edge (port 3100).",
@@ -1259,7 +1194,7 @@ SERVICE_REGISTRY_LOCAL_DEV = [
      "depends_on": ["prometheus"]},
     {"id": "node-exporter", "name": "Node Exporter", "icon": "🔧", "level": "Infra", "kind": "metrics",
      "ports": {"metrics": 9100},
-     "host": "100.76.16.108",
+     "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
      "health_method": "tcp", "severity": "info", "autoheal": False,
      "purpose": "Edge host system metrics (CPU, RAM, disk, network).",
@@ -1333,7 +1268,7 @@ def check_service_health(svc: dict) -> dict:
     host = svc.get("host", "127.0.0.1")
     # When dashboard runs ON Edge, use localhost for all Edge services
     # (node/pool/L2 services bind to 127.0.0.1 after security hardening)
-    if EDGE_IS_LOCAL and host == "100.76.16.108":
+    if EDGE_IS_LOCAL and host == "127.0.0.1":
         host = "127.0.0.1"
     ports = svc.get("ports", {})
     open_ports = []
@@ -2225,7 +2160,7 @@ def get_miner_live_stats() -> dict:
         stats["current_diff"] = 64
         stats["gpu_backend"] = "cpu"
         stats["worker_name"] = "worker1"
-        stats["pool_addr"] = "77.42.71.94:8444"
+        stats["pool_addr"] = "62.171.141.136:8444"
 
     return {
         "hashrate": stats.get("hashrate"),
@@ -2248,7 +2183,7 @@ SETTINGS_FILE = DATA_DIR / "dashboard-settings.json"
 def load_dashboard_settings() -> dict:
     defaults = {
         "mining": {
-            "pool_addr": "77.42.71.94:8444",
+            "pool_addr": "62.171.141.136:8444",
             "worker_name": "worker1",
             "backend": "cpu",
             "threads": 2,
@@ -2256,7 +2191,7 @@ def load_dashboard_settings() -> dict:
             "work_size": 4096,
         },
         "node": {
-            "seed_peers": "77.42.71.94:8333",
+            "seed_peers": "62.171.141.136:8333",
             "rpc_bind": "0.0.0.0:8443",
             "p2p_bind": "0.0.0.0:8333",
             "node_id": "local-backup-node",
@@ -2514,18 +2449,14 @@ def _build_status_edge_primary() -> dict:
 
     def _edge_rpc_call():
         # When dashboard runs ON Edge, use localhost (RPC bound to 127.0.0.1 after security hardening)
-        host = "127.0.0.1" if EDGE_IS_LOCAL else "100.76.16.108"
+        host = "127.0.0.1" if EDGE_IS_LOCAL else "127.0.0.1"
         r = rpc_call(host, 8443, "getChainInfo", {}, timeout=2.5)
         if r and not r.get("_rpc_error"):
             return ("edge", r)
         return ("edge", None)
 
     def _edge_rpc_call_node2():
-        # Edge Node 2 follower — use localhost when on Edge
-        host = "127.0.0.1" if EDGE_IS_LOCAL else "100.76.16.108"
-        r = rpc_call(host, 8446, "getChainInfo", {}, timeout=2.5)
-        if r and not r.get("_rpc_error"):
-            return ("edge2", r)
+        # v3.0.4: No node2 on new server — skip probe
         return ("edge2", None)
 
     def _local_rpc_call():
@@ -2551,7 +2482,7 @@ def _build_status_edge_primary() -> dict:
             pass
 
     # NOTE: SSH fallback for node2 removed — caused Windows SSH deadlock.
-    # Edge Node 2 is probed via direct RPC (100.76.16.108:8446) in thread pool above.
+    # Edge Node 2 is probed via direct RPC (127.0.0.1:8446) in thread pool above.
 
     # ── Edge Node status ─────────────────────────────────────────────────────
     edge_node1_status = {
@@ -2665,6 +2596,13 @@ def _build_status_edge_primary() -> dict:
     # Mark pool as alive if we successfully fetched metrics
     if edge_metrics.get("active_miners") is not None:
         pool_edge_health = {"alive": True}
+    # v3.0.4 fallback: pool doesn't expose Prometheus metrics on 8455.
+    # Use TCP probe to stratum port 8444 instead.
+    if not pool_edge_health["alive"]:
+        try:
+            pool_edge_health = {"alive": tcp_probe("127.0.0.1", 8444, timeout=0.5)}
+        except Exception:
+            pool_edge_health = {"alive": False}
 
 
     edge_pool_wallet = os.environ.get("ZION_POOL_WALLET", "") or "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604"
@@ -2672,7 +2610,7 @@ def _build_status_edge_primary() -> dict:
     local_pool = parse_pool_log()
     pool_status = {
         "running": pool_edge_health["alive"],
-        "bind_addr": f"{pool_edge_svc.get('host', '100.76.16.108')}:8444" if pool_edge_svc else None,
+        "bind_addr": f"{pool_edge_svc.get('host', '127.0.0.1')}:8444" if pool_edge_svc else None,
         "loop_count": "1000000",
         "nonce_count": 4096,
         "pool_wallet": edge_pool_wallet,
@@ -2706,27 +2644,17 @@ def _build_status_edge_primary() -> dict:
     if n1.get("chain_height") and edge_node1_status.get("chain_height"):
         sync_gap = abs(n1["chain_height"] - edge_node1_status["chain_height"])
 
-    # Tailscale connectivity check — use `tailscale status` (fast, reliable)
-    # instead of `tailscale ping` (slow via DERP relay, causes false negatives)
-    tailscale_ok = False
-    try:
-        result = subprocess.run(["tailscale", "status", "--json"],
-                                  capture_output=True, text=True, timeout=3)
-        if result.returncode == 0:
-            import json as _json
-            _ts = _json.loads(result.stdout)
-            tailscale_ok = _ts.get("BackendState") == "Running"
-    except Exception:
-        pass
+    # v3.0.4: No Tailscale — single server topology, not needed
+    tailscale_ok = True  # N/A, always "ok" (no VPN required)
 
     miner_status = parse_miner_log()
 
     # ── L2/L3 Edge services health — TCP port check on Edge (fast, 0.5s) ────
-    _edge = "100.76.16.108"
+    _edge = "127.0.0.1"
     _edge_ports = {
         "bridge":     9101,
         "dao":        8450,
-        "warp":       8453,
+        "warp":       9333,
         "oasis":      8094,
         "free_world": 8095,
         "issobella":  8096,
@@ -2754,8 +2682,8 @@ def _build_status_edge_primary() -> dict:
         "pool_edge": {
             "running": pool_edge_health["alive"],
             "host": pool_edge_svc.get("host", "") if pool_edge_svc else "",
-            "public_ip": "77.42.71.94",
-            "tailscale_ip": "100.76.16.108",
+            "public_ip": "62.171.141.136",
+            "tailscale_ip": "127.0.0.1",
             "ports_open": pool_edge_health.get("ports_open", []),
             "ports_closed": pool_edge_health.get("ports_closed", []),
             "pid_alive": pool_edge_health.get("pid_alive", False),
@@ -2828,7 +2756,7 @@ def _build_status_edge_primary() -> dict:
             "pid_alive": issobella_health.get("pid_alive", False),
             "pid": issobella_health.get("pid"),
         },
-        "tailscale": {"vpn_ok": tailscale_ok, "edge_ip": "100.76.16.108"},
+        "tailscale": {"vpn_ok": True, "edge_ip": "127.0.0.1", "note": "No Tailscale (v3.0.4 single-server)"},
         "_build_time_ms": int(elapsed * 1000),
     }
 
@@ -3060,7 +2988,7 @@ def build_alerts(status: dict) -> list:
         # Edge Node 1 (Primary) alerts
         if not edge_node1.get("running"):
             alerts.append({"severity": _sev("edge-node1", "critical"), "title": "Edge Node 1 (Primary) not reachable",
-                           "detail": "Primary node on Edge (100.76.16.108:8333) is not responding. Check Tailscale VPN and Edge systemd services.",
+                           "detail": "Primary node on Edge (127.0.0.1:8333) is not responding. Check Tailscale VPN and Edge systemd services.",
                            "action": None})
         elif edge_node1.get("chain_height") == 0:
             alerts.append({"severity": _sev("edge-node1", "warning"), "title": "Edge chain stuck at height 0",
@@ -3070,7 +2998,7 @@ def build_alerts(status: dict) -> list:
         # Edge Node 2 (Follower) alerts
         if not edge_node2.get("running"):
             alerts.append({"severity": _sev("edge-node2", "warning"), "title": "Edge Node 2 (Follower) not reachable",
-                           "detail": "Follower node on Edge (100.76.16.108:8334) is not responding. It should P2P sync from Edge Node 1.",
+                           "detail": "Follower node on Edge (127.0.0.1:8334) is not responding. It should P2P sync from Edge Node 1.",
                            "action": None})
         elif edge_node2.get("chain_height") == 0:
             alerts.append({"severity": _sev("edge-node2", "warning"), "title": "Edge Node 2 chain stuck at height 0",
@@ -4499,11 +4427,11 @@ def build_payout_status() -> dict:
 
     # ── Topology-aware config discovery ───────────────────────────────
     is_edge = TOPOLOGY == "edge-primary"
-    edge_host = "100.76.16.108"
+    edge_host = "127.0.0.1"
     local_rpc_alive = check_port_open("127.0.0.1", 8443, timeout=1.0)
     edge_rpc_alive = check_port_open(edge_host, 8443, timeout=1.5) if is_edge else False
     edge_stats_alive = check_port_open(edge_host, 8455, timeout=1.5) if is_edge else False
-    tailscale_ok = check_port_open(edge_host, 8443, timeout=1.5) if is_edge else True
+    tailscale_ok = True  # v3.0.4: No Tailscale needed
 
     status["pool_health"] = {
         "local_rpc_ok": local_rpc_alive,
@@ -4910,7 +4838,7 @@ def get_network_topology() -> dict:
     except Exception:
         pass
     # Tailscale VPN check (quick TCP probe to edge RPC instead of ICMP ping)
-    tailscale_ok = check_port_open("100.76.16.108", 8443, timeout=1.5)
+    tailscale_ok = True  # v3.0.4: No Tailscale needed
     # Website
     web_alive = False
     try:
@@ -4942,15 +4870,15 @@ def get_network_topology() -> dict:
             "rpc": "0.0.0.0:8443",
         },
         "edge": {
-            "host": "100.76.16.108",
-            "public_ip": "77.42.71.94",
+            "host": "127.0.0.1",
+            "public_ip": "62.171.141.136",
             "alive": edge_rpc_alive,
             "height": edge_height,
             "p2p": "0.0.0.0:8333",
             "rpc": "0.0.0.0:8443",
             "pool": "0.0.0.0:8444",
         },
-        "tailscale": {"vpn_ok": tailscale_ok, "core_ip": "100.86.102.5", "edge_ip": "100.76.16.108"},
+        "tailscale": {"vpn_ok": True, "edge_ip": "127.0.0.1", "note": "No Tailscale (v3.0.4)"},
         "apps": {
             "website": {"url": "https://zionterranova.com", "alive": web_alive},
             "desktop_agent": {"rpc": "http://127.0.0.1:8443/jsonrpc", "alive": desktop_alive},
@@ -5188,7 +5116,7 @@ P0_BLOCKERS = [
     {"id": 2, "title": "Ankr API key (premium tier)", "owner": "Ops", "deadline": "T-7", "status": "OPEN", "severity": "critical",
      "detail": "bridge-mainnet.toml line 28: api_key=\"\". Requires premium Ankr account for EVM watcher reliability."},
     {"id": 3, "title": "Seed peer bootstrap mesh", "owner": "Ops", "deadline": "T-3", "status": "DONE", "severity": "info",
-     "detail": "Core + Edge topology active. Core (100.86.102.5) seeds Edge (100.76.16.108) via Tailscale VPN. Legacy multi-node mesh (Helsinki/US/SG/Prague) decommissioned."},
+     "detail": "Core + Edge topology active. Core (100.86.102.5) seeds Edge (127.0.0.1) via Tailscale VPN. Legacy multi-node mesh (Helsinki/US/SG/Prague) decommissioned."},
     {"id": 4, "title": "Premine wallet rotation", "owner": "Security", "deadline": "T-14", "status": "DONE", "severity": "info",
      "detail": "✅ Done 2026-05-14. Old 12 BIP-39 seeds burned, new addresses generated, public addresses in PREMINE_ADDRESSES_PUBLIC.txt."},
     {"id": 5, "title": "CI / GitHub Actions billing", "owner": "DevOps", "deadline": "T-14", "status": "OPEN", "severity": "warning",
@@ -5727,9 +5655,9 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
         <div class="text-3xl font-bold mb-1 text-amber-400" id="val-edge-node-height">—</div><div class="text-xs text-gray-400 mb-2">Chain Height</div>
         <div class="text-xs font-mono text-gray-300 truncate mb-1" id="val-edge-node-hash">—</div>
         <div class="text-xs text-gray-400 mb-1">Peers: <span id="val-edge-node-peers" class="text-white font-bold">—</span></div>
-        <div class="text-xs text-gray-400 mb-2">Host: <span id="val-edge-node-host" class="font-mono">100.76.16.108</span></div>
+        <div class="text-xs text-gray-400 mb-2">Host: <span id="val-edge-node-host" class="font-mono">127.0.0.1</span></div>
         <div class="flex gap-1 mt-2">
-          <button onclick="window.open('http://100.76.16.108:8443/jsonrpc','_blank')" class="flex-1 text-xs px-2 py-1 bg-zinc-700 hover:bg-zinc-600 rounded transition">🔗 RPC</button>
+          <button onclick="window.open('http://127.0.0.1:8443/jsonrpc','_blank')" class="flex-1 text-xs px-2 py-1 bg-zinc-700 hover:bg-zinc-600 rounded transition">🔗 RPC</button>
         </div>
       </div>
 
@@ -5764,7 +5692,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
         <div class="text-xs text-gray-400 mb-1">Shares: <span id="val-pool-shares" class="text-white">—</span></div>
         <div class="text-xs text-amber-400 mb-2" id="val-pool-fee">—</div>
         <div class="flex gap-1 mt-2">
-          <button onclick="window.open('http://77.42.71.94:8444','_blank')" class="flex-1 text-xs px-2 py-1 bg-zinc-700 hover:bg-zinc-600 rounded transition">🔗 Public</button>
+          <button onclick="window.open('http://62.171.141.136:8444','_blank')" class="flex-1 text-xs px-2 py-1 bg-zinc-700 hover:bg-zinc-600 rounded transition">🔗 Public</button>
         </div>
       </div>
 
@@ -6009,12 +5937,12 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
         <div class="flex items-center justify-between mb-2">
           <h3 class="text-sm font-bold uppercase tracking-wider text-gray-300">Grafana Dashboard</h3>
           <div class="flex gap-2">
-            <a href="http://100.76.16.108:3100" target="_blank" class="text-xs px-3 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">Open Grafana ↗</a>
-            <a href="http://100.76.16.108:9090" target="_blank" class="text-xs px-3 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">Open Prometheus ↗</a>
+            <a href="http://127.0.0.1:3100" target="_blank" class="text-xs px-3 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">Open Grafana ↗</a>
+            <a href="http://127.0.0.1:9090" target="_blank" class="text-xs px-3 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">Open Prometheus ↗</a>
             <button onclick="controlAction('start-monitoring')" class="text-xs px-3 py-1 bg-emerald-700 hover:bg-emerald-600 rounded transition">▶ Start Monitoring</button>
           </div>
         </div>
-        <iframe src="http://100.76.16.108:3100" id="grafana-iframe" class="w-full bg-zion-900 rounded-lg border border-zion-700" style="height:600px" onerror="this.style.display='none'" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+        <iframe src="http://127.0.0.1:3100" id="grafana-iframe" class="w-full bg-zion-900 rounded-lg border border-zion-700" style="height:600px" onerror="this.style.display='none'" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
         <div id="grafana-offline" class="hidden text-center text-gray-500 text-sm py-12">
           Grafana not running. Click <button onclick="controlAction('start-monitoring')" class="text-amber-400 underline">▶ Start Monitoring</button> to launch Prometheus + Grafana via Docker.
         </div>
@@ -7502,7 +7430,7 @@ async function renderWizard(){
   const steps=[
     {n:1,title:'Prepare environment',desc:'Generate keys (gen-keys), assemble .env file with all wallets and ZION_POOL_PAYOUT_SK_HEX.',done:cl.checks.find(c=>c.id==='env')?.ok,actions:[{label:'View env files',cb:`switchTab('env')`}]},
     {n:2,title:isEdge?'Start Local Backup Node':'Start Genesis Node',desc:isEdge?'Syncs from Edge primary via Tailscale VPN. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).':'Local genesis node. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).',done:cl.checks.find(c=>c.id==='node1')?.ok,actions:[{label:'▶ Start Node',cb:`controlAction('start-node1')`}]},
-    isEdge?{n:3,title:'Connect to Edge Pool',desc:'Edge (100.76.16.108) runs the primary pool. Verify VPN connectivity.',done:cl.checks.find(c=>c.id==='pool-edge')?.ok,actions:[{label:'Check Edge Pool',cb:`switchTab('overview')`}]}:{n:3,title:'Start Local Pool',desc:'Accepts miners, validates shares, distributes payouts (89/5/5 burn model).',done:cl.checks.find(c=>c.id==='pool')?.ok,actions:[{label:'▶ Start Pool',cb:`controlAction('start-pool')`}]},
+    isEdge?{n:3,title:'Connect to Edge Pool',desc:'Edge (127.0.0.1) runs the primary pool. Verify VPN connectivity.',done:cl.checks.find(c=>c.id==='pool-edge')?.ok,actions:[{label:'Check Edge Pool',cb:`switchTab('overview')`}]}:{n:3,title:'Start Local Pool',desc:'Accepts miners, validates shares, distributes payouts (89/5/5 burn model).',done:cl.checks.find(c=>c.id==='pool')?.ok,actions:[{label:'▶ Start Pool',cb:`controlAction('start-pool')`}]},
     {n:4,title:'Start GPU Miner',desc:'Connects to pool, performs cosmic_harmony hashing on GPU.',done:cl.checks.find(c=>c.id==='miner')?.ok,actions:[{label:'▶ Start Miner',cb:`controlAction('start-miner')`}]},
     {n:5,title:'Verify chain progression',desc:'Confirm node syncs with network and chain height advances.',done:cl.checks.find(c=>c.id==='chain')?.ok,actions:[{label:'View events',cb:`switchTab('events')`}]},
     {n:6,title:'Confirm fee split & payouts',desc:'Validate 89/5/5/1 burn-model distribution and payout wallet is funded.',done:cl.checks.find(c=>c.id==='fee_split')?.ok&&cl.checks.find(c=>c.id==='payout')?.ok,actions:[{label:'View payouts',cb:`switchTab('overview')`}]},
@@ -7823,72 +7751,34 @@ def _ws_push_loop():
 
 
 def _build_health_map() -> dict:
-    """Return {service: health_status} for all known services."""
+    """Return {service: health_status} for all known services (v3.0.4 — new server)."""
     status = build_status()
     health = {}
-    # Core services from build_status()
-    for key in ("edge_node", "node1", "node2", "pool", "pool_edge", "miner"):
-        s = status.get(key, {})
-        running = s.get("running", False)
-        # For services with known sub-conditions, report richer status
-        if key == "edge_node":
-            health["edge-node"] = "up" if running and s.get("chain_height") is not None else "down"
-        elif key == "node1":
-            health["node1"] = "up" if running and s.get("p2p_bind") else "down"
-        elif key == "node2":
-            health["node2"] = "up" if running and s.get("known_peers", 0) > 0 else "down"
-        elif key == "pool":
-            health["pool"] = "up" if running and s.get("active_sessions") is not None else "down"
-        elif key == "miner":
-            health["miner"] = "up" if running and s.get("hashrate") else "down"
-        else:
-            health[key] = "up" if running else "down"
+    # Core services — v3.0.4 new server (single node, no node2/local backup)
+    edge_node = status.get("edge_node", {})
+    health["edge-node"] = "up" if edge_node.get("running") and edge_node.get("chain_height") is not None else "down"
 
-    # Extended services are topology-dependent.
-    if TOPOLOGY == "edge-primary":
-        # When dashboard runs ON Edge, services are bound to 127.0.0.1 (post-hardening).
-        # When dashboard runs on Core, probe via Tailscale IP (only works if ports are public).
-        probe_host = EDGE_RPC_HOST if EDGE_IS_LOCAL else (status.get("pool_edge", {}).get("tailscale_ip") or EDGE_HOST)
-        edge_public_ip = status.get("pool_edge", {}).get("public_ip") or EDGE_PUBLIC_IP
-        ext_edge_ports = {
-            "bridge": 9101,
-            "dao": 8450,
-            "swap": 8452,
-            "warp": 8453,
-            "hiranyagarbha": 8001,
-            "hiran": 8002,
-        }
-        for sid, port in ext_edge_ports.items():
+    pool_edge = status.get("pool_edge", {})
+    health["pool-edge"] = "up" if pool_edge.get("running") else "down"
+
+    miner = status.get("miner", {})
+    health["miner"] = "up" if miner.get("running") and miner.get("hashrate") else "down"
+
+    # Extended services — TCP probes to 127.0.0.1 (all on same server)
+    ext_ports = {
+        "bridge": 9101,       # Bridge metrics
+        "dao": 8450,          # DAO API
+        "warp": 9333,         # WARP Relay API (v3.0.4 port)
+        "nginx": 443,         # Nginx HTTPS
+        "web-next": 3001,     # Next.js Docker
+        "dashboard": 8766,    # This dashboard
+    }
+    for sid, port in ext_ports.items():
+        try:
+            alive = tcp_probe("127.0.0.1", port, timeout=0.3)
+        except Exception:
             alive = False
-            try:
-                alive = tcp_probe(probe_host, port, timeout=0.3)
-                if not alive and not EDGE_IS_LOCAL and edge_public_ip and edge_public_ip != probe_host:
-                    alive = tcp_probe(edge_public_ip, port, timeout=0.3)
-            except Exception:
-                alive = False
-            health[sid] = "up" if alive else "down"
-    else:
-        # Local-dev mode keeps local probes/service-registry checks.
-        ext_map = {
-            "hiran": 8002,
-            "hiranyagarbha": 8001,
-            "bridge": None,
-            "dao": 8450,
-            "swap": 8888,
-            "warp": 9333,
-        }
-        for sid, port in ext_map.items():
-            svc = get_service(sid)
-            if svc:
-                h = check_service_health(svc)
-                health[sid] = "up" if h["alive"] else "down"
-            else:
-                # Fallback TCP probe
-                try:
-                    alive = tcp_probe("127.0.0.1", port, timeout=0.15)
-                    health[sid] = "up" if alive else "down"
-                except Exception:
-                    health[sid] = "unknown"
+        health[sid] = "up" if alive else "down"
     return health
 
 
@@ -8792,7 +8682,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             # Real topology: ping Core+Edge, check Tailscale
             import time as _time
             core_rpc = "http://127.0.0.1:8443/jsonrpc"
-            edge_rpc = "http://100.76.16.108:8443/jsonrpc"
+            edge_rpc = "http://127.0.0.1:8443/jsonrpc"
             def _ping_rpc(url, timeout=2):
                 try:
                     import urllib.request as _ur
@@ -8810,7 +8700,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             ts_status = "unknown"
             try:
                 import subprocess as _sp
-                r = _sp.run(["tailscale", "status", "--json"], capture_output=True, text=True, timeout=3)
+                # v3.0.4: Tailscale not installed — skip
+                r = None
                 if r.returncode == 0:
                     ts_data = json.loads(r.stdout)
                     ts_status = "connected" if ts_data.get("BackendState") == "Running" else ts_data.get("BackendState", "unknown")

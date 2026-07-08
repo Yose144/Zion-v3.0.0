@@ -134,20 +134,37 @@ Zohar jim dává **kategorie** — ne náhodný seznam, ale emanace 10 aspektů 
 
 ---
 
-## Fáze 4 — Diagnostika zdraví stromu (horizont)
+## Fáze 4 — Diagnostika zdraví stromu (HOTOVO — web API)
 
-**Co:** Dashboard / RPC endpoint `getTreeHealth` který vrací stav 10 sefirot
-jako health score — červeno/žluto/zeleno pro každou emanaci.
+**Co:** API endpoint `/api/zohar/tree-health` který vrací stav 10 sefirot
+jako health score 0-100, plus živou vizualizaci na `/zohar`.
 
 **Proč:** Zohar jako diagnostický nástroj (viz 01-SEFIROT-VRSTVY.md §Závěr).
 Ne "je ZION online?" ale "které aspekty organismu jsou zdravé, které nemocné?".
 
-**Kde (horizont):**
-- `V3/L1/core/src/rpc.rs` — `getTreeHealth` metoda
-- `ZION_OS/dashboard/` — strom-health widget
-- `APP&WEB/website-v2.9/src/app/zohar/` — live vizualizace
+**Kde:**
+- `APP&WEB/website-v2.9/src/app/api/zohar/tree-health/route.ts` — API endpoint ✅
+- `APP&WEB/website-v2.9/src/app/zohar/ZoharPageClient.tsx` — živá vizualizace ✅
 
-**Status:** HORIZONT — závisí na Fázi 1 (web) + Fázi 3 (care tasks).
+**Funkce:**
+- Agreguje data z existujících API: `/api/blockchain/stats`, `/api/defi/status`,
+  `/api/bridge/status`, `/api/ncl/status`
+- Mapuje každý datový bod na sefiru (Keter=emission %, Chokmah=hashrate,
+  Binah=peers, Chesed=pool liquidity, Gevurah=treasury lock, Tiferet=chains
+  active, Netzach=NCL workers, Hod/Yesod/Malkhut=horizon)
+- Vrací health score 0-100 pro každou sefiru + celkový treeHealth + skóre
+  3 pilířů (Mercy/Severity/Equilibrium) + Da'at score (propojení mýtu a kódu)
+- UI na /zohar: health bary pro každou sefiru, klíčová metrika, zdroje dat,
+  auto-refresh každých 30s
+
+**Verifikace:** `tsc --noEmit` ✅, `eslint` ✅, `next build --webpack` ✅
+(route `/api/zohar/tree-health` v build output jako `ƒ (Dynamic)`)
+
+**Status:** HOTOVO. Read-only — netýká se L1 consensus.
+
+**Pozn.:** Plná L1 RPC verze `getTreeHealth` (v `V3/L1/core/src/rpc.rs`)
+zůstává horizont — vyžaduje L1 approval. Web API verze je bezpečná
+read-only agregace existujících API.
 
 ---
 

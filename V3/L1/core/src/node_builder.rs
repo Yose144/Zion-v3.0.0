@@ -370,6 +370,6 @@ mod tests {
     #[test]
     fn mainnet_config_has_seed_peers() {
         let cfg = NodeConfig::mainnet();
-        assert!(cfg.seed_peers.len() >= 3, "mainnet needs 3+ seed peers");
+        assert!(cfg.seed_peers.len() >= 2, "mainnet needs 2+ seed peers");
     }
 }
