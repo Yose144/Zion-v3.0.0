@@ -239,7 +239,7 @@ async function refreshAll(){
     // Hero stats (topology-aware)
     const isEdge = statusData.topology === 'edge-primary';
     const live = isEdge
-      ? [statusData.node1, statusData.edge_node, statusData.edge_node2, statusData.pool, statusData.miner].filter(x => x && x.running).length
+      ? [statusData.node1, statusData.edge_node, statusData.local_backup, statusData.pool, statusData.miner].filter(x => x && x.running).length
       : [statusData.node1, statusData.node2, statusData.pool, statusData.miner].filter(x => x && x.running).length;
     document.getElementById('hero-services-up').textContent = live;
     document.getElementById('hero-blockers-open').textContent = blockersData.open;
@@ -300,10 +300,10 @@ function formatUptime(sec){
 
 function updateServiceCards(s){
   const en = s.edge_node, n1 = s.node1, n2 = s.node2, p = s.pool, m = s.miner;
-  const en2 = s.edge_node2;
+  const lb = s.local_backup || {};
   const isEdgePrimary = s.topology === 'edge-primary';
-  // Node2 data source: edge_node2 in edge-primary, legacy node2 otherwise
-  const n2data = isEdgePrimary ? (en2 || n2) : n2;
+  // Node2 data source: local_backup in edge-primary, legacy node2 otherwise
+  const n2data = isEdgePrimary ? (lb || n2) : n2;
   // Topology-aware visibility: show both edge-node and node2 in edge-primary
   const node2Card = document.getElementById('card-node2');
   if(node2Card) node2Card.classList.toggle('hidden', false);
@@ -354,10 +354,10 @@ function updateServiceCards(s){
     }
   }
 
-  // Node 2 / Edge Node 2
-  const n2label = isEdgePrimary ? 'Edge Node 2' : 'Node 2';
+  // Node 2 / Local Backup (edge-primary) — relabel card to "Local Backup"
+  const n2label = isEdgePrimary ? 'Local Backup' : 'Node 2';
   const n2kicker = node2Card ? node2Card.querySelector('.zion-kicker') : null;
-  if(n2kicker) n2kicker.textContent = isEdgePrimary ? '🔶 ' + n2label : '🔶 Node 2';
+  if(n2kicker) n2kicker.textContent = isEdgePrimary ? '🔷 ' + n2label : '🔶 Node 2';
   setBadge('badge-node2', n2data && n2data.running); setCardLive('node2', n2data && n2data.running);
   const n2h = document.getElementById('val-node2-height');
   if(n2h) n2h.textContent = n2data ? (n2data.chain_height ?? '—') : '—';
@@ -546,12 +546,12 @@ function _renderEdgeServerCard(d) {
 
   // Services grid
   const SVC_LABELS = {
-    'zion-edge-node1':   { icon: '🔷', label: 'Node 1', url: 'http://77.42.71.94:8443' },
-    'zion-edge-node2':   { icon: '🔶', label: 'Node 2', url: 'http://77.42.71.94:8446' },
-    'zion-pool-server':  { icon: '⚡', label: 'Pool',   url: 'http://77.42.71.94:8444' },
-    'zion-edge-dao':     { icon: '🏛️', label: 'DAO',    url: 'http://77.42.71.94:8450' },
-    'zion-edge-warp':    { icon: '🌀', label: 'WARP',   url: 'http://77.42.71.94:8453' },
-    'zion-edge-dashboard': { icon: '📊', label: 'Rust DB', url: 'http://77.42.71.94:8888' },
+    'zion-node':         { icon: '🔷', label: 'Node',   url: 'http://62.171.141.136:8443' },
+    'zion-pool':         { icon: '⚡', label: 'Pool',   url: 'http://62.171.141.136:8444' },
+    'zion-dao':          { icon: '🏛️', label: 'DAO',    url: 'http://62.171.141.136:8450' },
+    'zion-warp':         { icon: '🌀', label: 'WARP',   url: 'http://62.171.141.136:9333' },
+    'zion-bridge':       { icon: '🌉', label: 'Bridge', url: 'http://62.171.141.136:9101' },
+    'nginx':             { icon: '🌐', label: 'Nginx',  url: 'https://zionterranova.com' },
     'hiran-inference':   { icon: '🤖', label: 'Hiran',  url: null },
     'hiranyagarbha':     { icon: '🧠', label: 'Orch',   url: 'http://77.42.71.94:8001' },
   };
@@ -616,7 +616,7 @@ function _renderEdgeServerCard(d) {
 async function edgeAction(action) {
   const ACTION_LABELS = {
     'restart-node1': 'Restart Edge Node 1',
-    'restart-node2': 'Restart Edge Node 2',
+    'restart-node2': 'Restart Local Backup Node',
     'restart-pool': 'Restart Edge Pool',
     'restart-dao': 'Restart Edge DAO',
     'restart-warp': 'Restart Edge WARP',
