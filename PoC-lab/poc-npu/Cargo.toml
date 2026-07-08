@@ -8,10 +8,12 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-poc-core = { path = "../poc-core" }
-serde = { workspace = true }
+poc-core  = { path = "../poc-core" }
+poc-hiran = { path = "../poc-hiran" }
+serde     = { workspace = true }
 thiserror = { workspace = true }
-blake3 = { workspace = true }
+blake3    = { workspace = true }
+hex       = { workspace = true }
 
 [dev-dependencies]
 serde_json = { workspace = true }

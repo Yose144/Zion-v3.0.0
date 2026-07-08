@@ -1,5 +1,5 @@
 [workspace]
-members = ["poc-core", "poc-tasks", "poc-verifier", "poc-npu", "poc-registry", "poc-economics", "poc-sim"]
+members = ["poc-core", "poc-tasks", "poc-verifier", "poc-npu", "poc-registry", "poc-economics", "poc-sim", "poc-hiran"]
 resolver = "2"
 
 [workspace.package]
@@ -18,6 +18,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sha3 = "0.10"
 hex = "0.4"
+ureq = { version = "2.10", features = ["json"] }
 
 [profile.dev]
 opt-level = 0
