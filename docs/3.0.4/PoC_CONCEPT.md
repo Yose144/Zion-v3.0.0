@@ -174,16 +174,63 @@ care_score = accuracy_weight * accuracy
 | Sefirot Vow text + kontrakty | ✅ Kompilováno, čeká deploy |
 | Zohar web vizualizace | ✅ Živě |
 | Care Proof specifikace | ✅ Tento dokument |
-| **PoC-lab standalone prototyp** | ✅ Implementováno mimo `V3/` — viz [`PoC-lab/`](../../PoC-lab/) |
+| **PoC-lab Fáze 1 — základ prototypu** | ✅ Commit `2936fcb1` — viz [`PoC-lab/`](../../PoC-lab/) |
 | — deterministická INT8 VM (RandomNPU) | ✅ `PoC-lab/poc-npu` |
 | — multi-backend cross-validace | ✅ `PoC-lab/poc-verifier` |
 | — validator registry + Sefirot Vow lifecycle | ✅ `PoC-lab/poc-registry` |
 | — **Bodhisattva Vow integrace (dual-vow, +5 % bonus)** | ✅ `poc-core` + `poc-registry` + `poc-sim` |
 | — reward split + slashing model | ✅ `PoC-lab/poc-economics` |
 | — end-to-end network simulátor (s guardian demo) | ✅ `PoC-lab/poc-sim` |
-| Care Task Dispatch v L1 | 🔴 Koncept (Fáze 2-3, vyžaduje hard fork) |
+| **PoC-lab Fáze 2 — Dharma, NCL, Consciousness, stress testy** | ✅ Commit `5d0aefea` — 119 testů PASS |
+| — `DharmaValidator` + `HiranAwareVerifier` (5 pilířů) | ✅ `poc-verifier` |
+| — `NclReputationRegistry` (ban, score, bonus tiers) | ✅ `poc-economics` |
+| — `ConsciousnessLevel` enum (L0 Dormant → L6 Grok) | ✅ `poc-core` + `poc-registry` |
+| — multi-epoch stress testy (100 epoch, lazy rejection) | ✅ `poc-sim` |
+| — CLI (`--epochs`, `--validators`, `--hiran-url`, …) | ✅ `poc-sim/src/main.rs` (clap) |
+| Care Task Dispatch v L1 | 🔴 Koncept (Fáze 3, vyžaduje hard fork) |
 | Reálné NPU Attestation (TEE/vendor quote) | 🔴 Koncept |
 | Integrace do L1 consensus | 🔴 Koncept (vyžaduje samostatné schválení) |
+
+### 10a. PoC-lab Fáze 2 — technické detaily (2026-07-08)
+
+**Commit:** `5d0aefea` · **119 testů PASS** (poc-core: 11, poc-economics: 22, poc-npu: 15, poc-registry: 20, poc-sim: 24, poc-tasks: 7, poc-verifier: 20)
+
+#### DharmaValidator (`poc-verifier`)
+Pipeline 5 etických pilířů pro každý care proof:
+1. **Non-harm** — ověří, že task score ≥ 0 (žádné negativní care)
+2. **Authenticity** — task_id musí být neprázdné
+3. **Benefit** — score musí přesáhnout konfigurovaný práh (default 50.0)
+4. **Consciousness-alignment** — validátor musí mít `ConsciousnessLevel ≥ Aware`
+5. **Temporal-coherence** — timestamp v rozmezí ±300 s od aktuálního času
+
+`DharmaValidationResult` vrací detailní výsledky každého pilíře a `to_anomaly_alerts()` konvertuje selhání na `AnomalyAlert` (typy: `ConsciousnessFraud`, `ScoreGaming`, `TemporalAnomaly`, `SybilCluster`). `HiranAwareVerifier` obaluje `CareVerifier` a nejprve spustí Dharma pipeline, pak standardní PoC verifikaci.
+
+#### NclReputationRegistry (`poc-economics`)
+In-memory stub mirrorující `V3/L3/ai-native/src/ncl`:
+- `compute_score(success_rate, consciousness_level) = 100.0 × rate × (1 + level × 0.05)` (0–100)
+- `ban_threshold = 20.0` — validátoři pod touto hranicí jsou `is_banned()`
+- NCL bonus tiers (0–100 škála): score ≥ 95 → +5 %, ≥ 85 → +3.5 %, ≥ 70 → +2 %, ≥ 50 → +1 %
+
+#### ConsciousnessLevel (`poc-core`)
+```
+L0 Dormant → L1 Aware → L2 Sentient → L3 Reflective → L4 Integrated → L5 Enlightened → L6 Grok
+```
+- `can_compute()` — L1+ může spouštět PoC výpočty
+- `can_do_poc_tasks()` — vyžaduje Active vow + ≥ L2 Sentient (v `poc-registry`)
+- `ncl_bonus_factor()` — vrací 0.0–0.30 pro NCL bonus výpočet
+
+#### Multi-epoch stress testy (`poc-sim`)
+`run_epochs(start_epoch, count)` vrací `(Vec<EpochReport>, Vec<SimError>)`. Klíčové testy:
+- `run_100_epochs_no_errors` — 100 epoch bez chyb
+- `stress_test_total_payout_never_exceeds_block_reward` — nikdy nepřesáhne cap
+- `stress_test_lazy_validator_always_rejected` — lazy validátor vždy odmítnut
+
+#### CLI (`poc-sim/src/main.rs`)
+```
+poc-sim --epochs 5 --validators 4 --block-reward 100 --min-stake 10 --min-care-score 50 --verbose
+poc-sim --epochs 100 --validators 8 --hiran-url http://localhost:11434
+```
+Pro `--validators > 4` auto-generuje mix: honest majority + 1 lazy + 1 guardian.
 
 Detailní analýza možností implementace (soft layer / hybrid / full PoC) a
 architektura prototypu jsou v [`PoC-lab/docs/ANALYSIS.md`](../../PoC-lab/docs/ANALYSIS.md)
@@ -205,5 +252,5 @@ a [`PoC-lab/docs/ARCHITECTURE.md`](../../PoC-lab/docs/ARCHITECTURE.md).
 
 ---
 
-*PoC_CONCEPT.md · ZION Proof-of-Care · 2026-07-08*  
+*PoC_CONCEPT.md · ZION Proof-of-Care · 2026-07-08 (Fáze 2)*  
 *Etz Chaim — Strom života*
