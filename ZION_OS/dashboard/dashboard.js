@@ -2810,74 +2810,65 @@ async function loadTopology(){
     const data = await fetch('/api/topology', { signal: AbortSignal.timeout(8000) }).then(r=>r.json());
     const el = id => document.getElementById(id);
 
-    // ── Real-time status bar (new elements) ──────────────────────────────
-    // Core
-    if(el('topo-core-status')){
-      const alive = data.core?.alive;
-      el('topo-core-status').textContent = alive ? 'Online' : 'Offline';
-      el('topo-core-status').className   = alive ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold';
-    }
-    if(el('topo-core-latency')) el('topo-core-latency').textContent = data.core?.latency_ms ? data.core.latency_ms+'ms' : '—';
-    if(el('topo-core-height'))  el('topo-core-height').textContent  = data.core?.data?.height ?? data.core?.data?.result?.height ?? data.core?.height ?? '—';
+    // ── 3-node P2P topology (v3.0.4) ─────────────────────────────────────
+    const nodes = [
+      { key: 'edge_node1', prefix: 'topo-edge1' },
+      { key: 'edge_node2', prefix: 'topo-edge2' },
+      { key: 'local_backup', prefix: 'topo-local' },
+    ];
 
-    // Edge
-    if(el('topo-edge-status')){
-      const alive = data.edge?.alive;
-      el('topo-edge-status').textContent = alive ? 'Online' : 'Offline';
-      el('topo-edge-status').className   = alive ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold';
-    }
-    if(el('topo-edge-latency')) el('topo-edge-latency').textContent = data.edge?.latency_ms ? data.edge.latency_ms+'ms' : '—';
-    if(el('topo-edge-height'))  el('topo-edge-height').textContent  = data.edge?.data?.height ?? data.edge?.data?.result?.height ?? data.edge?.height ?? '—';
+    const heights = [];
+    for (const n of nodes) {
+      const info = data[n.key] || {};
+      const alive = info.alive;
+      const h = info.height ?? null;
+      if (h !== null) heights.push(h);
 
-    // Tailscale
-    if(el('topo-tailscale')){
-      const ts = data.tailscale?.vpn_ok != null
-        ? (data.tailscale.vpn_ok ? 'connected' : 'unreachable')
-        : (data.tailscale || 'unknown');
-      el('topo-tailscale').textContent = typeof ts === 'string' ? ts : 'unknown';
-      el('topo-tailscale').className = (ts === 'connected') ? 'text-emerald-400 font-bold' : 'text-amber-400';
-    }
-
-    // Sync gap
-    const coreH = data.core?.data?.height ?? data.core?.height ?? 0;
-    const edgeH = data.edge?.data?.height ?? data.edge?.height ?? 0;
-    const gap = Math.abs(coreH - edgeH);
-    if(el('topo-sync-gap')){
-      el('topo-sync-gap').textContent = gap + ' blocks';
-      el('topo-sync-gap').className   = gap === 0 ? 'text-emerald-400' : gap < 10 ? 'text-amber-400' : 'text-red-400';
+      // Status dot + text
+      const dot = el(n.prefix + '-dot');
+      if (dot) dot.className = 'w-3 h-3 rounded-full ' + (alive ? 'bg-emerald-400' : 'bg-red-500');
+      const st = el(n.prefix + '-status');
+      if (st) {
+        st.textContent = alive ? 'Online' : 'Offline';
+        st.className = 'text-[10px] font-bold ' + (alive ? 'text-emerald-400' : 'text-red-400');
+      }
+      // Details
+      if (el(n.prefix + '-height')) el(n.prefix + '-height').textContent = h !== null ? h.toLocaleString() : '—';
+      if (el(n.prefix + '-peers')) el(n.prefix + '-peers').textContent = info.known_peers != null ? info.known_peers : '—';
+      if (el(n.prefix + '-latency')) el(n.prefix + '-latency').textContent = info.latency_ms != null ? info.latency_ms + 'ms' : '—';
+      if (el(n.prefix + '-nodeid')) el(n.prefix + '-nodeid').textContent = info.node_id || '—';
     }
 
-    // ── Legacy elements (dots, icons, ports, apps, sync verdict) ─────────
-    const coreDot = el('topo-core-dot');
-    const edgeDot = el('topo-edge-dot');
-    if(coreDot) coreDot.className = 'w-3 h-3 rounded-full ' + (data.core?.alive ? 'bg-emerald-400' : 'bg-red-500');
-    if(edgeDot) edgeDot.className = 'w-3 h-3 rounded-full ' + (data.edge?.alive ? 'bg-emerald-400' : 'bg-red-500');
-    const tsIcon = el('topo-tailscale-icon');
-    const tsStatus = el('topo-tailscale-status');
-    if(tsIcon) tsIcon.textContent = data.tailscale?.vpn_ok ? '🟢' : '🔴';
-    if(tsStatus){ tsStatus.textContent = data.tailscale?.vpn_ok ? 'Connected' : 'Unreachable'; tsStatus.className = data.tailscale?.vpn_ok ? 'text-emerald-400 font-bold' : 'text-red-400'; }
+    // ── Sync gap (3-node) ─────────────────────────────────────────────────
+    const gap = data.sync_gap ?? 0;
+    const allInSync = data.all_in_sync;
+    if (el('topo-sync-gap')){
+      el('topo-sync-gap').textContent = gap;
+      el('topo-sync-gap').className = 'text-lg font-bold ' + (gap === 0 ? 'text-emerald-400' : gap < 10 ? 'text-amber-400' : 'text-red-400');
+    }
+    if (el('topo-sync-verdict')){
+      if (allInSync){ el('topo-sync-verdict').textContent = '✓ All 3 nodes synced'; el('topo-sync-verdict').className = 'font-bold text-sm text-emerald-400'; }
+      else if (gap <= 2){ el('topo-sync-verdict').textContent = 'Near sync ('+gap+' block gap)'; el('topo-sync-verdict').className = 'font-bold text-sm text-amber-400'; }
+      else { el('topo-sync-verdict').textContent = 'Out of sync ('+gap+' blocks behind)'; el('topo-sync-verdict').className = 'font-bold text-sm text-red-400'; }
+    }
+
+    // Sync bars (3 nodes)
+    const maxH = Math.max(...heights, 1);
+    const h1 = data.edge_node1?.height ?? 0;
+    const h2 = data.edge_node2?.height ?? 0;
+    const h3 = data.local_backup?.height ?? 0;
+    if (el('topo-sync-n1')) el('topo-sync-n1').textContent = h1 ? h1.toLocaleString() : '—';
+    if (el('topo-sync-n2')) el('topo-sync-n2').textContent = h2 ? h2.toLocaleString() : '—';
+    if (el('topo-sync-n3')) el('topo-sync-n3').textContent = h3 ? h3.toLocaleString() : '—';
+    if (el('topo-sync-bar-n1')) el('topo-sync-bar-n1').style.width = (h1/maxH*100)+'%';
+    if (el('topo-sync-bar-n2')) el('topo-sync-bar-n2').style.width = (h2/maxH*100)+'%';
+    if (el('topo-sync-bar-n3')) el('topo-sync-bar-n3').style.width = (h3/maxH*100)+'%';
+
+    // ── Port status ───────────────────────────────────────────────────────
     const portMap = {p2p:'node_p2p', rpc:'node_rpc', pool:'pool_stratum', dash:'dashboard', hiran:'hiran_inference', orch:'hiranyagarbha'};
     for(const [key, apiKey] of Object.entries(portMap)){
       const pe = el('topo-port-' + key);
       if(pe){ pe.textContent = data.ports?.[apiKey] ? 'Open' : 'Closed'; pe.className = 'text-xs font-bold ' + (data.ports?.[apiKey] ? 'text-emerald-400' : 'text-red-400'); }
-    }
-    const apps = data.apps || {};
-    const appMap = [['web', apps.website?.alive],['desktop', apps.desktop_agent?.alive],['mobile', apps.mobile_app?.alive],['cli', apps.cli?.alive]];
-    for(const [id, alive] of appMap){
-      const dot = el('app-' + id + '-dot');
-      const badge = el('app-' + id + '-badge');
-      if(dot) dot.className = 'w-3 h-3 rounded-full ' + (alive ? 'bg-emerald-400' : 'bg-red-500');
-      if(badge){ badge.textContent = alive ? 'Online' : 'Offline'; badge.className = 'text-[10px] px-2 py-0.5 rounded ' + (alive ? 'bg-emerald-700 text-emerald-300' : 'bg-red-700 text-red-300'); }
-    }
-    const maxH = Math.max(coreH, edgeH, 1);
-    if(el('topo-sync-n1')) el('topo-sync-n1').textContent = coreH.toLocaleString();
-    if(el('topo-sync-n2')) el('topo-sync-n2').textContent = edgeH.toLocaleString();
-    if(el('topo-sync-bar-n1')) el('topo-sync-bar-n1').style.width = (coreH/maxH*100)+'%';
-    if(el('topo-sync-bar-n2')) el('topo-sync-bar-n2').style.width = (edgeH/maxH*100)+'%';
-    if(el('topo-sync-verdict')){
-      if(gap === 0){ el('topo-sync-verdict').textContent = 'Fully synced'; el('topo-sync-verdict').className = 'font-bold text-emerald-400'; }
-      else if(gap <= 2){ el('topo-sync-verdict').textContent = 'Near sync ('+gap+' block gap)'; el('topo-sync-verdict').className = 'font-bold text-amber-400'; }
-      else { el('topo-sync-verdict').textContent = 'Out of sync ('+gap+' blocks behind)'; el('topo-sync-verdict').className = 'font-bold text-red-400'; }
     }
   } catch(e) { console.warn('loadTopology', e); }
   // Latency measurement
@@ -6918,35 +6909,64 @@ function renderMempoolSparkline(mempoolSize) {
 // ════════════════════════════════════════════════════════════════════════
 // FEATURE F — Network topology SVG map
 // ════════════════════════════════════════════════════════════════════════
+// ── 3-node P2P topology + service mesh (v3.0.4) ───────────────────────────
+// Layout: 3 blockchain nodes across the top, services branching down.
 const TOPO_NODES = [
-  { id:'node1', label:'Node 1', x:400, y:140, kind:'core' },
-  { id:'pool',  label:'Pool',   x:220, y:80,  kind:'core' },
-  { id:'miner1',label:'Miner 1',x:80,  y:50,  kind:'core' },
-  { id:'miner2',label:'Miner 2',x:80,  y:110, kind:'core' },
-  { id:'bridge',label:'Bridge', x:620, y:80,  kind:'L2' },
-  { id:'dao',   label:'DAO',    x:620, y:160, kind:'L2' },
-  { id:'atomic',label:'Atomic Swap', x:620, y:240, kind:'L2' },
-  { id:'web',   label:'Web',    x:400, y:260, kind:'L3' },
-  { id:'ai',    label:'AI Native', x:220, y:240, kind:'L3' },
+  // Row 1: Blockchain nodes (P2P mesh)
+  { id:'edge-node1',  label:'Edge Node 1',  x:300, y:55,  kind:'core' },
+  { id:'edge-node2',  label:'Edge Node 2',  x:520, y:55,  kind:'core' },
+  { id:'local-backup',label:'Local Backup',  x:120, y:55,  kind:'core' },
+  // Row 2: L1 services
+  { id:'pool-edge',   label:'Pool',          x:300, y:140, kind:'core' },
+  { id:'miner',       label:'Miner',         x:160, y:140, kind:'core' },
+  // Row 3: L2 services
+  { id:'bridge',      label:'Bridge',        x:440, y:140, kind:'L2' },
+  { id:'dao',         label:'DAO',           x:560, y:140, kind:'L2' },
+  // Row 4: L3-L6 services
+  { id:'warp',        label:'WARP',          x:680, y:140, kind:'L3' },
+  { id:'oasis',       label:'Oasis',         x:680, y:220, kind:'L4' },
+  { id:'free-world',  label:'Free World',    x:560, y:220, kind:'L5' },
+  { id:'issobella',   label:'Issobella',     x:440, y:220, kind:'L6' },
+  // Row 5: Infrastructure
+  { id:'dashboard',   label:'Dashboard',     x:300, y:220, kind:'L3' },
+  { id:'nginx',       label:'Nginx/Web',     x:160, y:220, kind:'L3' },
 ];
 
 const TOPO_EDGES = [
-  ['node1','pool'],['pool','miner1'],['pool','miner2'],
-  ['node1','bridge'],['node1','dao'],['node1','atomic'],
-  ['node1','web'],['node1','ai'],['bridge','dao'],['dao','atomic']
+  // P2P mesh (3-node)
+  ['edge-node1','edge-node2'],
+  ['edge-node1','local-backup'],
+  ['edge-node2','local-backup'],
+  // L1 service dependencies
+  ['edge-node1','pool-edge'],
+  ['pool-edge','miner'],
+  // L2 dependencies (on edge-node1)
+  ['edge-node1','bridge'],
+  ['edge-node1','dao'],
+  // L3-L6 dependencies
+  ['edge-node1','warp'],
+  ['edge-node1','oasis'],
+  ['edge-node1','free-world'],
+  ['edge-node1','issobella'],
+  // Infrastructure
+  ['edge-node1','dashboard'],
+  ['dashboard','nginx'],
 ];
 
 const TOPO_ID_MAP = {
-  node1:'node1', node:'node1', 'node-1':'node1',
-  pool:'pool',
-  miner:'miner1', miner1:'miner1', 'miner-1':'miner1',
-  miner2:'miner2', 'miner-2':'miner2',
+  'edge-node1':'edge-node1', 'edge_node1':'edge-node1', node1:'edge-node1', 'node-1':'edge-node1', node:'edge-node1',
+  'edge-node2':'edge-node2', 'edge_node2':'edge-node2', node2:'edge-node2', 'node-2':'edge-node2',
+  'local-backup':'local-backup', 'local_backup':'local-backup', localbackup:'local-backup',
+  'pool-edge':'pool-edge', 'pool_edge':'pool-edge', pool:'pool-edge',
+  miner:'miner', 'miner-1':'miner', miner1:'miner',
   bridge:'bridge',
   dao:'dao',
-  'atomic-swap':'atomic', 'atomic_swap':'atomic', atomicswap:'atomic',
-  web:'web', website:'web',
-  'ai-native':'ai', ai:'ai', ainative:'ai',
-  hiranyagarbha:'ai', hiran:'ai'
+  warp:'warp',
+  oasis:'oasis',
+  'free-world':'free-world', 'free_world':'free-world', freeworld:'free-world',
+  issobella:'issobella',
+  dashboard:'dashboard',
+  nginx:'nginx', 'web-next':'nginx', web:'nginx', website:'nginx',
 };
 
 function _statusColor(status) {
@@ -7039,7 +7059,7 @@ function renderTopology(services) {
     // Label
     svg += `<text x="${n.x}" y="${n.y+26}" text-anchor="middle" fill="#9ca3af" font-size="9" font-family="sans-serif">${escapeHtml(n.label)}</text>`;
     // Layer badge
-    const layerColors = {core:'#3b82f6', L2:'#f59e0b', L3:'#ec4899'};
+    const layerColors = {core:'#3b82f6', L2:'#f59e0b', L3:'#ec4899', L4:'#a855f7', L5:'#10b981', L6:'#06b6d4'};
     svg += `<text x="${n.x}" y="${n.y+37}" text-anchor="middle" fill="${layerColors[n.kind]||'#6b7280'}" font-size="7" font-family="sans-serif" opacity="0.8">${n.kind.toUpperCase()}</text>`;
     svg += `</g>`;
   }
@@ -8537,11 +8557,15 @@ let _pocRewardChart = null;
 let _pocHiranChart = null;
 
 async function pocCheckStatus(){
+  const badge = document.getElementById('poc-status-badge');
+  if(!badge) return;
   try{
     const r = await fetch('/api/poc/status');
+    if(!r.ok){
+      badge.innerHTML = `<span class="px-2 py-0.5 rounded text-xs font-semibold bg-red-500/20 text-red-400">API ${r.status}</span>`;
+      return;
+    }
     const d = await r.json();
-    const badge = document.getElementById('poc-status-badge');
-    if(!badge) return;
     let html = '';
     html += d.poc_sim_available
       ? '<span class="px-2 py-0.5 rounded text-xs font-semibold bg-green-500/20 text-green-400">poc-sim ready</span> '
@@ -8551,8 +8575,7 @@ async function pocCheckStatus(){
       : '<span class="px-2 py-0.5 rounded text-xs font-semibold bg-purple-500/20 text-purple-400">Hiran offline</span>';
     badge.innerHTML = html;
   }catch(e){
-    const badge = document.getElementById('poc-status-badge');
-    if(badge) badge.textContent = 'Status: error';
+    badge.innerHTML = '<span class="px-2 py-0.5 rounded text-xs font-semibold bg-orange-500/20 text-orange-400">Status unavailable</span>';
   }
 }
 
@@ -8561,18 +8584,28 @@ async function pocRunSim(){
   if(!btn) return;
   btn.disabled = true; btn.textContent = 'Running...';
   const area = document.getElementById('poc-results');
-  if(area) area.innerHTML = '<div class="text-center py-8 text-gray-400 text-sm"><div class="inline-block w-8 h-8 border-2 border-yellow-500/30 border-t-yellow-500 rounded-full animate-spin mb-2"></div><br>Running simulation (live Hiran may take 10-60s)...</div>';
+  if(!area){ btn.disabled = false; btn.textContent = '▶ Run Simulation'; return; }
+  area.innerHTML = '<div class="text-center py-8 text-gray-400 text-sm"><div class="inline-block w-8 h-8 border-2 border-yellow-500/30 border-t-yellow-500 rounded-full animate-spin mb-2"></div><br>Running simulation (live Hiran may take 10-60s)...</div>';
 
-  const epochs = document.getElementById('poc-epochs').value;
-  const validators = document.getElementById('poc-validators').value;
-  const reward = document.getElementById('poc-reward').value;
-  const hiran = document.getElementById('poc-hiran').value;
+  const epochs = document.getElementById('poc-epochs')?.value || 3;
+  const validators = document.getElementById('poc-validators')?.value || 4;
+  const reward = document.getElementById('poc-reward')?.value || 1000000;
+  const hiran = document.getElementById('poc-hiran')?.value || '0';
 
   try{
-    const r = await fetch(`/api/poc/run?epochs=${epochs}&validators=${validators}&block_reward=${reward}&hiran=${hiran}`);
+    const r = await fetch(`/api/poc/run?epochs=${encodeURIComponent(epochs)}&validators=${encodeURIComponent(validators)}&block_reward=${encodeURIComponent(reward)}&hiran=${encodeURIComponent(hiran)}`);
+    if(!r.ok){
+      const errText = await r.text().catch(() => '');
+      area.innerHTML = `<div class="text-red-400 text-sm p-4 bg-red-500/10 rounded">HTTP ${r.status}: ${errText.substring(0,200) || r.statusText}</div>`;
+      return;
+    }
     const d = await r.json();
-    if(!d.ok && d.error){
+    if(d.error){
       area.innerHTML = `<div class="text-red-400 text-sm p-4 bg-red-500/10 rounded">Error: ${d.error}</div>`;
+      return;
+    }
+    if(!d.reports){
+      area.innerHTML = `<div class="text-red-400 text-sm p-4 bg-red-500/10 rounded">Invalid response: no reports field</div>`;
       return;
     }
     pocRenderResults(d, area);

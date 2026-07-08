@@ -4499,132 +4499,115 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-gradient">🌐 Topology</h1>
-        <p class="text-xs text-gray-400 mt-1">Core vs Edge · Latency · Service mesh</p>
+        <p class="text-xs text-gray-400 mt-1">3-Node P2P Mesh · Sync Status · Service Ports</p>
       </div>
       <button onclick="loadTopology()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
     </div>
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <!-- Core vs Edge -->
-      <div class="zion-panel p-5">
-        <h2 class="text-lg font-bold mb-3">🌐 Network Topology</h2>
-        <div class="space-y-3">
-          <div class="flex items-center justify-between bg-black/20 rounded-lg p-3">
-            <div class="flex items-center gap-3">
-              <div id="topo-core-dot" class="w-3 h-3 rounded-full bg-gray-600"></div>
-              <div>
-                <div class="text-sm font-bold text-white">Core (Windows 11)</div>
-                <div class="text-xs text-gray-400">100.86.102.5 · P2P 8333 · RPC 8443</div>
-              </div>
+
+    <!-- 3-Node P2P Topology -->
+    <div class="zion-panel p-5">
+      <h2 class="text-lg font-bold mb-3">⛓️ 3-Node P2P Mesh</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <!-- Edge Node 1 -->
+        <div class="bg-black/20 rounded-lg p-4 border border-white/5">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <div id="topo-edge1-dot" class="w-3 h-3 rounded-full bg-gray-600"></div>
+              <span class="text-sm font-bold text-white">🌍 Edge Node 1</span>
             </div>
-            <div class="text-right">
-              <div id="topo-core-height" class="text-sm font-bold text-emerald-400">—</div>
-              <div class="text-[10px] text-gray-500">height</div>
-            </div>
+            <span id="topo-edge1-status" class="text-[10px] font-bold text-gray-400">—</span>
           </div>
-          <div class="flex items-center justify-center py-1">
-            <div class="text-[10px] text-gray-500 flex items-center gap-1">
-              <span id="topo-tailscale-icon">🔴</span> Tailscale VPN <span id="topo-tailscale-status" class="text-gray-600">checking…</span>
-            </div>
-          </div>
-          <div class="flex items-center justify-between bg-black/20 rounded-lg p-3">
-            <div class="flex items-center gap-3">
-              <div id="topo-edge-dot" class="w-3 h-3 rounded-full bg-gray-600"></div>
-              <div>
-                <div class="text-sm font-bold text-white">Edge (Hetzner)</div>
-                <div class="text-xs text-gray-400">100.76.16.108 / 77.42.71.94 · P2P 8333 · Pool 8444</div>
-              </div>
-            </div>
-            <div class="text-right">
-              <div id="topo-edge-height" class="text-sm font-bold text-emerald-400">—</div>
-              <div class="text-[10px] text-gray-500">height</div>
-            </div>
+          <div class="space-y-1 text-xs text-gray-400">
+            <div>Role: <span class="text-emerald-400 font-semibold">Primary / Genesis</span></div>
+            <div>Host: <span class="text-gray-300 font-mono">62.171.141.136</span></div>
+            <div>P2P: <span class="text-gray-300 font-mono">8333</span> · RPC: <span class="text-gray-300 font-mono">8443</span></div>
+            <div>Height: <span id="topo-edge1-height" class="text-emerald-400 font-bold">—</span></div>
+            <div>Peers: <span id="topo-edge1-peers" class="text-gray-300">—</span></div>
+            <div>Latency: <span id="topo-edge1-latency" class="text-gray-300">—</span></div>
+            <div>Node ID: <span id="topo-edge1-nodeid" class="text-gray-300 font-mono text-[10px]">—</span></div>
           </div>
         </div>
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mt-4">
-          <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Node P2P</div><div id="topo-port-p2p" class="text-xs font-bold text-gray-300">—</div></div>
-          <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Node RPC</div><div id="topo-port-rpc" class="text-xs font-bold text-gray-300">—</div></div>
-          <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Pool Stratum</div><div id="topo-port-pool" class="text-xs font-bold text-gray-300">—</div></div>
-          <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Dashboard</div><div id="topo-port-dash" class="text-xs font-bold text-gray-300">—</div></div>
-          <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Hiran AI</div><div id="topo-port-hiran" class="text-xs font-bold text-gray-300">—</div></div>
-          <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Hiranyagarbha</div><div id="topo-port-orch" class="text-xs font-bold text-gray-300">—</div></div>
+        <!-- Edge Node 2 -->
+        <div class="bg-black/20 rounded-lg p-4 border border-white/5">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <div id="topo-edge2-dot" class="w-3 h-3 rounded-full bg-gray-600"></div>
+              <span class="text-sm font-bold text-white">🔥 Edge Node 2</span>
+            </div>
+            <span id="topo-edge2-status" class="text-[10px] font-bold text-gray-400">—</span>
+          </div>
+          <div class="space-y-1 text-xs text-gray-400">
+            <div>Role: <span class="text-amber-400 font-semibold">Follower</span></div>
+            <div>Host: <span class="text-gray-300 font-mono">62.171.141.136</span></div>
+            <div>P2P: <span class="text-gray-300 font-mono">8334</span> · RPC: <span class="text-gray-300 font-mono">8448</span></div>
+            <div>Height: <span id="topo-edge2-height" class="text-emerald-400 font-bold">—</span></div>
+            <div>Peers: <span id="topo-edge2-peers" class="text-gray-300">—</span></div>
+            <div>Latency: <span id="topo-edge2-latency" class="text-gray-300">—</span></div>
+            <div>Node ID: <span id="topo-edge2-nodeid" class="text-gray-300 font-mono text-[10px]">—</span></div>
+          </div>
+        </div>
+        <!-- Local Backup -->
+        <div class="bg-black/20 rounded-lg p-4 border border-white/5">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <div id="topo-local-dot" class="w-3 h-3 rounded-full bg-gray-600"></div>
+              <span class="text-sm font-bold text-white">💎 Local Backup</span>
+            </div>
+            <span id="topo-local-status" class="text-[10px] font-bold text-gray-400">—</span>
+          </div>
+          <div class="space-y-1 text-xs text-gray-400">
+            <div>Role: <span class="text-cyan-400 font-semibold">Backup (zionserver)</span></div>
+            <div>Host: <span class="text-gray-300 font-mono">localhost</span></div>
+            <div>P2P: <span class="text-gray-300 font-mono">8333</span> · RPC: <span class="text-gray-300 font-mono">8446</span></div>
+            <div>Height: <span id="topo-local-height" class="text-emerald-400 font-bold">—</span></div>
+            <div>Peers: <span id="topo-local-peers" class="text-gray-300">—</span></div>
+            <div>Latency: <span id="topo-local-latency" class="text-gray-300">—</span></div>
+            <div>Node ID: <span id="topo-local-nodeid" class="text-gray-300 font-mono text-[10px]">—</span></div>
+          </div>
         </div>
       </div>
 
-      <!-- App Connect -->
-      <div class="zion-panel p-5">
-        <h2 class="text-lg font-bold mb-3">🔗 App Connectivity</h2>
-        <div class="space-y-2">
-          <div class="flex items-center justify-between bg-black/20 rounded-lg p-3">
-            <div class="flex items-center gap-3">
-              <div id="app-web-dot" class="w-3 h-3 rounded-full bg-gray-600"></div>
-              <div>
-                <div class="text-sm font-bold text-white">Website v2.9</div>
-                <div class="text-xs text-gray-400">https://zionterranova.com</div>
-              </div>
-            </div>
-            <span id="app-web-badge" class="text-[10px] px-2 py-0.5 rounded bg-gray-700 text-gray-300">?</span>
-          </div>
-          <div class="flex items-center justify-between bg-black/20 rounded-lg p-3">
-            <div class="flex items-center gap-3">
-              <div id="app-desktop-dot" class="w-3 h-3 rounded-full bg-gray-600"></div>
-              <div>
-                <div class="text-sm font-bold text-white">Desktop Agent</div>
-                <div class="text-xs text-gray-400">http://127.0.0.1:8443/jsonrpc</div>
-              </div>
-            </div>
-            <span id="app-desktop-badge" class="text-[10px] px-2 py-0.5 rounded bg-gray-700 text-gray-300">?</span>
-          </div>
-          <div class="flex items-center justify-between bg-black/20 rounded-lg p-3">
-            <div class="flex items-center gap-3">
-              <div id="app-mobile-dot" class="w-3 h-3 rounded-full bg-gray-600"></div>
-              <div>
-                <div class="text-sm font-bold text-white">Mobile App</div>
-                <div class="text-xs text-gray-400">Expo / React Native build</div>
-              </div>
-            </div>
-            <span id="app-mobile-badge" class="text-[10px] px-2 py-0.5 rounded bg-gray-700 text-gray-300">dev</span>
-          </div>
-          <div class="flex items-center justify-between bg-black/20 rounded-lg p-3">
-            <div class="flex items-center gap-3">
-              <div id="app-cli-dot" class="w-3 h-3 rounded-full bg-gray-600"></div>
-              <div>
-                <div class="text-sm font-bold text-white">zion-cli</div>
-                <div class="text-xs text-gray-400">cargo run -p zion-cli</div>
-              </div>
-            </div>
-            <span id="app-cli-badge" class="text-[10px] px-2 py-0.5 rounded bg-gray-700 text-gray-300">?</span>
-          </div>
+      <!-- Sync Status Bar -->
+      <div class="mt-4 bg-black/30 rounded-lg p-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="text-xs text-gray-400">Sync Status:</span>
+          <span id="topo-sync-verdict" class="font-bold text-sm text-gray-400">Checking...</span>
         </div>
-        <div class="mt-4 bg-black/30 rounded-lg p-3">
-          <div class="text-xs text-gray-400 mb-1">Quick Actions</div>
-          <div class="flex gap-2 flex-wrap">
-            <button onclick="controlAction('start-website')" class="text-[10px] px-2 py-1 bg-emerald-700/50 hover:bg-emerald-600 rounded font-semibold">▶ Web</button>
-            <button onclick="controlAction('start-desktop-agent')" class="text-[10px] px-2 py-1 bg-emerald-700/50 hover:bg-emerald-600 rounded font-semibold">▶ Desktop</button>
-            <button onclick="window.open('https://zionterranova.com','_blank')" class="text-[10px] px-2 py-1 bg-blue-700/50 hover:bg-blue-600 rounded font-semibold">Open Web</button>
-          </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-gray-500">Gap:</span>
+          <span id="topo-sync-gap" class="text-lg font-bold text-amber-400">—</span>
+          <span class="text-[10px] text-gray-500">blocks</span>
         </div>
       </div>
+
+      <!-- Port Status Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mt-4">
+        <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Node P2P</div><div id="topo-port-p2p" class="text-xs font-bold text-gray-300">—</div></div>
+        <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Node RPC</div><div id="topo-port-rpc" class="text-xs font-bold text-gray-300">—</div></div>
+        <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Pool Stratum</div><div id="topo-port-pool" class="text-xs font-bold text-gray-300">—</div></div>
+        <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Dashboard</div><div id="topo-port-dash" class="text-xs font-bold text-gray-300">—</div></div>
+        <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Hiran AI</div><div id="topo-port-hiran" class="text-xs font-bold text-gray-300">—</div></div>
+        <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Hiranyagarbha</div><div id="topo-port-orch" class="text-xs font-bold text-gray-300">—</div></div>
+      </div>
     </div>
-    <!-- Sync Gap & Health Timeline -->
+
+    <!-- Sync Gap Detail + Service Latency -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div class="zion-panel p-5">
-        <h3 class="text-sm font-bold mb-3 zion-kicker">Sync Gap (Node1 vs Node2)</h3>
-        <div class="flex items-center gap-4 mb-3">
-          <div class="flex-1">
-            <div class="flex justify-between text-[10px] text-gray-500 mb-1"><span>Node1</span><span id="topo-sync-n1">—</span></div>
+        <h3 class="text-sm font-bold mb-3 zion-kicker">Sync Gap (3-Node Comparison)</h3>
+        <div class="space-y-3">
+          <div>
+            <div class="flex justify-between text-[10px] text-gray-500 mb-1"><span>Edge Node 1</span><span id="topo-sync-n1">—</span></div>
             <div class="h-2.5 rounded-full bg-black/40 overflow-hidden"><div id="topo-sync-bar-n1" class="h-full rounded-full bg-emerald-500 transition-all" style="width:50%"></div></div>
           </div>
-          <div class="text-center">
-            <div id="topo-sync-gap" class="text-lg font-bold text-amber-400">0</div>
-            <div class="text-[10px] text-gray-500">gap</div>
+          <div>
+            <div class="flex justify-between text-[10px] text-gray-500 mb-1"><span>Edge Node 2</span><span id="topo-sync-n2">—</span></div>
+            <div class="h-2.5 rounded-full bg-black/40 overflow-hidden"><div id="topo-sync-bar-n2" class="h-full rounded-full bg-amber-500 transition-all" style="width:50%"></div></div>
           </div>
-          <div class="flex-1">
-            <div class="flex justify-between text-[10px] text-gray-500 mb-1"><span>Node2</span><span id="topo-sync-n2">—</span></div>
-            <div class="h-2.5 rounded-full bg-black/40 overflow-hidden"><div id="topo-sync-bar-n2" class="h-full rounded-full bg-purple-500 transition-all" style="width:50%"></div></div>
+          <div>
+            <div class="flex justify-between text-[10px] text-gray-500 mb-1"><span>Local Backup</span><span id="topo-sync-n3">—</span></div>
+            <div class="h-2.5 rounded-full bg-black/40 overflow-hidden"><div id="topo-sync-bar-n3" class="h-full rounded-full bg-cyan-500 transition-all" style="width:50%"></div></div>
           </div>
-        </div>
-        <div class="text-[10px] text-gray-500 mt-2">Sync health:
-          <span id="topo-sync-verdict" class="font-bold text-emerald-400">Checking...</span>
         </div>
       </div>
       <div class="zion-panel p-5">
@@ -5247,7 +5230,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=76"></script>
+<script src="/dashboard.js?v=77"></script>
 <script>
 // ═══ ZION Theme — Auto-apply accent colors per pane ═══
 (function(){
