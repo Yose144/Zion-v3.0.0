@@ -29,7 +29,7 @@ default = []
 gpu         = ["gpu-opencl"]                           # alias → OpenCL
 gpu-opencl  = ["dep:ocl"]                              # Ekam Deeksha + DCR Blake3
 gpu-cuda    = ["dep:cudarc"]                            # NVIDIA CUDA via cudarc
-gpu-metal   = ["dep:metal", "dep:block", "dep:objc"]                  # Apple Silicon Metal GPU
+gpu-metal   = ["dep:metal", "dep:block", "dep:objc"]                  # Apple Silicon Metal GPU (macOS only)
 gpu-all     = ["gpu-opencl", "gpu-cuda", "gpu-metal"]
 
 # Native algorithm acceleration (optional, requires C toolchain)
@@ -62,7 +62,10 @@ zion-pool = { path = "../pool" }
 zion-cosmic-harmony = { path = "../cosmic-harmony" }
 zion-native-ffi = { path = "../native-ffi", optional = true }
 cudarc = { version = "0.12", optional = true, features = ["cuda-12040"] }
+crossterm = "0.28"
+
+# Apple Silicon Metal GPU backend (macOS only — keeps `paste` transitive out of Linux/Windows lockfiles)
+[target.'cfg(target_os = "macos")'.dependencies]
 metal = { version = "0.33", optional = true }
 block = { version = "0.1", optional = true }
 objc = { version = "0.2", optional = true }
-crossterm = "0.28"
