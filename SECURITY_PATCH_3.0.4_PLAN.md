@@ -1,7 +1,7 @@
 # ZION 3.0.4 — MAX SECURITY PATCH PLAN (kanonický postup)
 
 **Vytvořeno:** 2026-07-07
-**Status:** FÁZE 1–4 HOTOVO (F4.7 aktivní na serveru od height 1) · FÁZE 5–6 PENDING (ops + air-gapped)
+**Status:** FÁZE 1–4 + 6 HOTOVO (F4.7 aktivní + smoke test PASS, git scrub, bincode odstraněn, audit čistý) · FÁZE 5 PENDING (air-gapped key rotace — owner akce)
 **Navazuje na:** `SECURITY_TODO_2026-07-03.md`, `SECURITY_RECOVERY_PLAN_2026-07-03.md`, `SecurityFirst.md`, `HARDRESETOFFICIAL.md`
 **Pravidlo:** Tento dokument je jediný zdroj pravdy pro pořadí kroků security patche 3.0.4. Každý krok se odškrtává zde.
 
@@ -33,7 +33,7 @@
 | 3 | Push + rebuild + binary swap na nový server | ✅ HOTOVO (server na `690b6dfe`, F4.7 binárky, F5 aktivní) | owner + agent |
 | 4 | F4.7 aktivace (odkomentovat env + restart) + smoke test | ✅ HOTOVO (aktivní od height 1, smoke test PASS 2026-07-08) | agent |
 | 5 | Air-gapped key rotace (F4.1–F4.5) | ⏳ PENDING | owner (air-gapped) |
-| 6 | Git history scrub + Tailscale ACL + finální audit | 🟡 ČÁSTEČNĚ (6.1 ✅ scrub done, 6.2 ✅ Tailscale removed, 6.3-6.4 pending) | owner + agent |
+| 6 | Git history scrub + Tailscale ACL + finální audit | ✅ HOTOVO (6.1 scrub, 6.2 Tailscale removed, 6.3 bincode+paste, 6.4 audit+test+disclosure) | owner + agent |
 
 ---
 
@@ -225,15 +225,17 @@ journalctl -u zion-node --no-pager -n 20 | grep max_tx_amount
 - [x] Tailscale odstraněn z nového serveru
 - [x] Dashboard/monitoring bez Tailscale závislosti
 
-### 6.3 Zbylé advisories (dlouhodobé)
-- [ ] Serializační roadmapa: náhrada `bincode 1.x` (transitive přes `heed-types`) — plánovaná migrace storage vrstvy, samostatný PR
-- [ ] Sledovat `metal` ekosystém (transitive `paste`)
+### 6.3 Zbylé advisories (dlouhodobé) — ✅ DONE 2026-07-08
+- [x] `bincode 1.x` **odstraněn** z dependency stromu — heed `serde-bincode` feature vypnuta (`default-features = false, features = ["serde", "serde-json"]`), `bincode = "1"` odstraněn z workspace deps. Storage vrstva používá jen `Bytes`/`Str` typy (ne bincode serializaci).
+- [x] `metal`/`paste` — metal přesunut na macOS-only target (`[target.'cfg(target_os = "macos")'.dependencies]`), paste se nepullne na Linuxu/Windows. Cargo.lock je cross-platform (entry zůstává), ale runtime exposure = 0 na produkčním Linux serveru.
+- [x] `cargo audit` čistý (1 ignored: RUSTSEC-2024-0436 paste — macOS-only, bez runtime expozice)
 
-### 6.4 Finální bezpečnostní kontrola
-- [ ] `V3/scripts/security-audit.sh` čistý
-- [ ] `cargo test --workspace -- --test-threads=1` zelené
-- [ ] Externí audit genesis konfigurace (před public launch)
-- [ ] Update `docs/security/SECURITY_DISCLOSURE_2026-07.md` o F4.7 remediaci
+### 6.4 Finální bezpečnostní kontrola — ✅ DONE 2026-07-08
+- [x] `V3/scripts/security-audit.sh` čistý (0 advisories kromě 1 ignored paste macOS-only)
+- [x] `cargo test --workspace -- --test-threads=1` zelené (vše PASS, 2 ignored slow PoW)
+- [x] Update `docs/security/SECURITY_DISCLOSURE_2026-07.md` o F4.7 remediaci (ZION-2026-006 přidán do katalogu + timeline + remediation status)
+- [x] Update `docs/security/vulnerabilities.json` o ZION-2026-006
+- [ ] Externí audit genesis konfigurace (před public launch — owner akce)
 
 ---
 

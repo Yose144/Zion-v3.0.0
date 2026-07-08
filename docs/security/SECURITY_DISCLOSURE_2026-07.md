@@ -2,9 +2,9 @@
 
 **Bulletin ID:** ZION-SEC-2026-07  
 **Published:** 2026-07-06  
-**Last Updated:** 2026-07-06  
+**Last Updated:** 2026-07-08  
 **Author:** ZION Core Team  
-**Status:** ACTIVE — hard reset in progress
+**Status:** ACTIVE — hard reset complete, security patch 3.0.4 deployed
 
 ---
 
@@ -210,6 +210,34 @@ The UTXO model is inherently safe — `validate_inputs_exist()` and `validate_va
 
 ---
 
+### ZION-2026-006: Max Transaction Amount Cap (F4.7) — Defense-in-Depth
+
+| Field | Value |
+|-------|-------|
+| **UID** | ZION-2026-006 |
+| **Severity** | LOW (defense-in-depth, not directly exploitable) |
+| **Type** | Consensus — missing sanity cap on transaction amount |
+| **Introduced** | v3.0.0 |
+| **Fixed** | v3.0.4 (commit `690b6dfe`) |
+| **Deployed** | 2026-07-07, activated at height 1 |
+| **Exploited** | No — defense-in-depth measure |
+
+**Description:** Prior to F4.7, there was no upper bound on the `amount_zion` field in account-model transactions beyond the F5 balance check. While F5 prevents inflation from zero-balance addresses, F4.7 adds a hard cap equal to `emission::TOTAL_SUPPLY` (144 billion ZION) as a second layer of defense. Any transaction attempting to move more than the entire money supply is rejected outright, before the F5 balance check runs.
+
+**Design decision:** The cap is set to `TOTAL_SUPPLY` (not 100M as initially proposed) to avoid colliding with legitimate premine-scale transfers (DAO treasury: 2.5B ZION, OASIS: 1.65B ZION). The cap is a supply-invariant: no legitimate transaction can exceed it, but inflationary garbage (e.g., `u64::MAX` or `u128::MAX`) is blocked.
+
+**Exceptions:** `from == "genesis"` and `from == "coinbase"` are exempt (genesis premine allocation and block rewards).
+
+**Height-gate:** `ZION_MAX_TX_AMOUNT_HEIGHT` environment variable (default `u64::MAX` = disabled). On the fresh chain post-hard-reset, activated at height 1.
+
+**Validation paths:** Both RPC (`insert_transaction()`) and P2P (`validate_peer_block()`) enforce the cap — parity ensured.
+
+**Tests:** 4 unit tests (`f4_7_rejects_tx_above_total_supply`, `f4_7_allows_premine_sized_tx`, `f4_7_boundary_exactly_total_supply_passes_cap`, `f4_7_disabled_by_default`). Live smoke test on production server (2026-07-08, height 81): TX with amount = TOTAL_SUPPLY + 1 rejected with `exceeds max allowed amount`; normal TX (1000 ZION) passed F4.7 and was rejected by F5 (insufficient balance).
+
+**Fix files:** `V3/L1/cosmic-harmony/src/deeksha.rs`, `V3/L1/core/src/lib.rs`, `V3/L1/core/src/bin/node.rs`
+
+---
+
 ## 3. Incident Timeline
 
 | Date | Time (UTC) | Event |
@@ -230,6 +258,10 @@ The UTXO model is inherently safe — `validate_inputs_exist()` and `validate_va
 | 2026-07-03 | - | Website put in maintenance mode (zionterranova.com). |
 | 2026-07-06 | - | Phase 0-3 complete: all keys regenerated, genesis.rs updated, L2/L3 configs updated, bridge vault rotated, 49 stale addresses fixed across codebase. All tests pass (148 bridge, 25 DAO, 552 L1 core). |
 | 2026-07-06 | - | This security disclosure published. |
+| 2026-07-07 | - | Security patch 3.0.4 wave 1-2: dependency hardening (quinn-proto, crossbeam-epoch, anyhow, rand, indicatif, ratatui, lru, metal) + F4.7 max-tx-amount cap implemented. F4.7 activated on production server (`ZION_MAX_TX_AMOUNT_HEIGHT=1`). |
+| 2026-07-08 | - | F4.7 smoke test on production (height 81): TX > TOTAL_SUPPLY rejected, normal TX passed F4.7 → rejected by F5. Cap confirmed working. |
+| 2026-07-08 | - | Git history scrub: 87 secret occurrences (SSH keys + pool SKs) removed via `git filter-repo`. Force pushed to origin. |
+| 2026-07-08 | - | `bincode 1.x` removed from dependency tree (heed `serde-bincode` feature disabled). `metal`/`paste` made macOS-only (target-gated). `cargo audit` clean (1 ignored: paste macOS-only). |
 
 ---
 
@@ -287,13 +319,27 @@ A targeted key rotation would leave the risk of an attacker having retained a ba
 
 | Phase | Status | Description |
 |-------|--------|-------------|
-| 4 | PENDING | EVM contract validator revocation / pause / abandonment |
-| 5 | PENDING | New server provisioning (fresh OS, hardened from day 1) |
-| 6 | PENDING | L1 hard reset: stop all services, wipe all DBs, start from Genesis #0 |
-| 7 | PENDING | Verification: genesis hash, block production, fee split, bridge, DAO |
-| 8 | PENDING | Documentation sync across all files |
-| 9 | PENDING | Open-source publication (see Section 8) |
-| 10 | PENDING | Generational transfer: Issobella continuity protocol |
+| 4 | ✅ DONE | EVM contract validator revocation / pause / abandonment |
+| 5 | ✅ DONE | New server provisioning (`62.171.141.136`, hardened, Tailscale removed) |
+| 6 | ✅ DONE | L1 hard reset: fresh genesis `4f75a0df...`, chain at height 80+ |
+| 7 | ✅ DONE | Verification: genesis hash, block production, fee split, 7/7 services active |
+| 8 | ✅ DONE | Documentation sync across all files |
+| 9 | PENDING | Open-source publication (see Section 8) — after key rotation (Fáze 5) |
+| 10 | FUTURE | Generational transfer: Issobella continuity protocol |
+
+### Security patch 3.0.4 status (2026-07-08)
+
+| Fáze | Status | Description |
+|-------|--------|-------------|
+| 1 | ✅ DONE | Dependency + code hardening (advisories, guardy, timeouty) |
+| 2 | ✅ DONE | F4.7 Max TX amount cap — implementace |
+| 3 | ✅ DONE | Push + rebuild + binary swap na nový server |
+| 4 | ✅ DONE | F4.7 aktivace + smoke test (height 1, verified height 81) |
+| 5 | ⏳ PENDING | Air-gapped key rotace (F4.1–F4.5) — requires owner on air-gapped machine |
+| 6.1 | ✅ DONE | Git history scrub (87 secret occurrences removed) |
+| 6.2 | ✅ DONE | Tailscale ACL (removed entirely — not needed for single-server) |
+| 6.3 | ✅ DONE | Residual advisories (bincode removed, paste macOS-only) |
+| 6.4 | ✅ DONE | Final security check (audit clean, cargo test green, disclosure updated) |
 
 ### Canonical runbook
 
@@ -345,17 +391,19 @@ The following will **never** be published:
 4. **SSH credentials** — server access keys (rotated)
 5. **Historical git objects containing secrets** — will be removed via BFG Repo-Cleaner before publication
 
-### Git history scrub (pre-publication)
+### Git history scrub — ✅ COMPLETED (2026-07-08)
 
-Before the source code is published, the following will be removed from git history:
+Git history was scrubbed using `git filter-repo --replace-text` on 2026-07-08. 87 secret occurrences were removed:
 
 | What | Files | Method |
 |------|-------|--------|
-| Pool payout SK hex | `setup-edge.sh`, `launch-stack.sh`, `start-pool.sh` | BFG `--replace-text` |
-| EVM private keys | `hardhat/.env`, `V3/docker/.env` | BFG `--delete-files` |
-| Edge environment secrets | `edge-environment.sh` | BFG `--replace-text` |
-| DAO guardian mnemonics | Any file referencing 12/24-word seeds | BFG `--replace-text` |
-| SSH private keys | `*.pem`, `ssh-key-*` | BFG `--delete-files` |
+| Pool payout SK hex | `setup-edge.sh`, `launch-stack.sh`, `start-pool.sh` | `git filter-repo --replace-text` |
+| EVM private keys | `hardhat/.env`, `V3/docker/.env` | `git filter-repo --replace-text` |
+| Edge environment secrets | `edge-environment.sh` | `git filter-repo --replace-text` |
+| DAO guardian mnemonics | Any file referencing 12/24-word seeds | `git filter-repo --replace-text` |
+| SSH private keys | `*.pem`, `ssh-key-*`, `newzionssh.md` | `git filter-repo --replace-text` |
+
+**Result:** 87 occurrences replaced across entire git history. Force pushed to origin. All collaborators must re-clone.
 
 ---
 
@@ -394,8 +442,9 @@ Source code will be published under a dual license:
 3. Fee split (89/5/5/1) is enforced in `emission.rs`
 4. F1 fix: `verify_signature()` is called for all account-model transactions in `validate_peer_block()`
 5. F5 fix: `account_balance_for()` balance check is enforced in both `insert_transaction()` and `validate_peer_block()`
-6. Bridge vault address is keyless (derived from seed, no corresponding private key)
-7. No secret keys in any source file or git history
+6. F4.7 fix: `max_tx_amount_active_at()` cap check rejects transactions where `amount_zion > emission::TOTAL_SUPPLY` (both RPC and P2P paths)
+7. Bridge vault address is keyless (derived from seed, no corresponding private key)
+8. No secret keys in any source file or git history (scrubbed via `git filter-repo`)
 
 ---
 
@@ -458,7 +507,7 @@ The following measures will be implemented as part of the hard reset and going f
 - [ ] Mandatory code review for all L1 consensus changes
 - [ ] Fuzz testing for all transaction validation paths
 - [ ] `cargo clippy` + `cargo fmt` enforced in CI
-- [ ] Max transaction amount cap (100M ZION) as additional inflation guard
+- [x] Max transaction amount cap (TOTAL_SUPPLY = 144B ZION) as additional inflation guard — F4.7, deployed 2026-07-07
 - [ ] Consider UTXO-backed account model for v3.1.0 (eliminate account-model balance bugs by design)
 
 ### Process
