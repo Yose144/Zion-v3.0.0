@@ -6,7 +6,7 @@ Current: CC=1097 MC=1000 P=186W → 15.78 MH/s
 import requests, json, time, base64, re
 
 API = "https://api.simplemining.net"
-TOKEN = "api-2ca5dec3ec452561ea893f8804e61e2f43b9ecd30d0614404a2e8e43b7d0212d"
+TOKEN = "api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8"
 RIG = 518837
 OC_ID = 128118  # "Vega" OC profile
 

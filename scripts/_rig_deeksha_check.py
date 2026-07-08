@@ -3,7 +3,7 @@
 import requests, json
 
 API = "https://api.simplemining.net"
-H = {"Authorization": "Bearer api-2ca5dec3ec452561ea893f8804e61e2f43b9ecd30d0614404a2e8e43b7d0212d"}
+H = {"Authorization": "Bearer api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8"}
 
 # Get ZION-Deeksha-AMD group config
 r = requests.get(f"{API}/rig-groups/1765707", headers=H)

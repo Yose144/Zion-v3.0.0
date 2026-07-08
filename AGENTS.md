@@ -750,10 +750,10 @@ This address is no longer active after the 2026-07-06 hard genesis reset.
 | New server Cargo | `source ~/.cargo/env` (Rust 1.96.1 stable) |
 | New server VNC | `95.111.232.25:63061` (RFB, password `h4neV76S`) — fallback if SSH fails |
 | Environment file | `/root/zion/edge-environment.sh` (chmod 600, `<REPLACE_*>` placeholders) |
-| SMOS API key | `api-4c47dab57e0890d3a36527fdd6a487b306f37e813aa254cfae1013588ece513f` |
+| SMOS API key | `api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8` (rotated 2026-07-08) |
 | SMOS API base | `https://api.simplemining.net` (header: `X-AUTH-TOKEN: <key>`) |
 | SMOS rig ID | `518837` (name: ZionRig / vega-smos) |
-| SMOS group ID | `1765707` (ZION-Deeksha-AMD) |
+| SMOS group ID | `1773590` (ZionLiteFire) — updated 2026-07-08 |
 | Rig GPU | AMD Vega 64 (gfx900:xnack-), GCN architecture |
 | Rig OS | SimpleMining OS, kernel 5.15.80-sm, **GLIBC 2.31** |
 | Rig SSH | `miner@<current_ip>` password: `omnity.company@gmail.com` (IP changes, behind NAT — use SMOS API to get it) |
@@ -775,7 +775,7 @@ To verify: `strings <binary> | grep 'GLIBC_' | sort -u` — if you see `GLIBC_2.
 **How to build on rig:**
 ```bash
 # Get rig IP from SMOS API first
-RIG_IP=$(curl -s -H "X-AUTH-TOKEN: api-4c47dab57e0890d3a36527fdd6a487b306f37e813aa254cfae1013588ece513f" \
+RIG_IP=$(curl -s -H "X-AUTH-TOKEN: api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8" \
   https://api.simplemining.net/rigs/518837 | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('ip',''))")
 echo "Rig IP: $RIG_IP"
 
@@ -835,7 +835,7 @@ The part before the first space is the URL; SMOS derives `MINER_PKG_NAME` from t
 ### SMOS API — useful calls
 
 ```bash
-API="api-4c47dab57e0890d3a36527fdd6a487b306f37e813aa254cfae1013588ece513f"
+API="api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8"
 BASE="https://api.simplemining.net"
 
 # Get rig details (incl. current IP)
