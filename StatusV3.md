@@ -190,21 +190,42 @@
 > - **Private keys scrubbed:** 5 souborů (`setup-edge.sh`, `launch-stack.sh`, `start-pool.sh`, `edge-environment.sh`, `V3/docker/.env`) — placeholder `ZION_POOL_SK=<REDACTED_ROTATE_IMMEDIATELY>`.
 > - **File permissions:** `chmod 600` pro `edge-state.db`, `edge2-state.db`, `bridge-mainnet.db`, `edge-environment.sh`; `chmod 700` pro data dir.
 > - **SSH hardening:** `PermitRootLogin prohibit-password`, `PasswordAuthentication no`, `X11Forwarding no`, `AllowUsers root`.
-> - **Bind addresses:** 13/18 služeb přesunuto na `127.0.0.1` (oasis, free-world, issobella, node RPC/WS/metrics, pool metrics, warp, agent, python dashboard). Dashboard na Tailscale IP `100.76.16.108:8888`. Zbývající na `0.0.0.0` (P2P 8333/8334, pool 8444) jsou UFW-blokovány a nezbytné pro Tailscale minery. Bridge metrics (9101) a DAO (8450) čekají na rebuild (code change v `metrics.rs` / `main.rs` — env vars `BRIDGE_METRICS_HOST` / `DAO_API_HOST`).
-> - **AppArmor:** Profil pro `zion-node` loaded v enforce mode.
-> - **Monitoring:** 3 cron jobs — forged TX monitor (5 min), balance monitor (5 min, 5 premine + 2 attacker adresy), P2P peer alert (2 min). `ZION_LOG_BLOCK_SUBMITTER=1` aktivní.
-> - **RPC audit log:** Code change v `node.rs` — peer IP + method + tx_id logováno pro každé RPC volání (pending rebuild).
-> - **Tailscale ACL:** Dokumentace v `SecurityFirst.md` F2.3 — tag-based ACL (tag:edge-server, tag:workstation, tag:mining-server, tag:legacy), default deny. **Uživatel musí aplikovat přes admin console.**
-> - **zion system user:** uid=995 vytvořen, `systemd User=zion` pending (riskantní, vyžaduje test).
+> - **Bind addresses (2026-07-09 audit):** Na `0.0.0.0` pouze P2P (8333, 8334), Pool (8444), SSH/HTTP/HTTPS. Vše ostatní na `127.0.0.1`: node RPC/WS/metrics (8443/8445/9100), node2 RPC/WS/metrics (8448/8449/9116), bridge (9101), DAO (8450), WARP (8453), oasis (8094), free-world (8095), issobella (8096), dashboard (8766), pool metrics (8455). SSH tunnel reverse forwards (8446/8447) na 127.0.0.1.
+> - **AppArmor:** ❌ Chybí na novém serveru — profil pro `zion-node` nebyl přenesen z starého Edge (pending).
+> - **Monitoring (2026-07-09):** 4 cron jobs — forged TX monitor (5 min), height monitor (5 min), P2P peer alert (2 min), **memory monitor (5 min, nový)**. `ZION_LOG_BLOCK_SUBMITTER=1` aktivní. Watchdog timer (2 min) — RPC + TCP health, auto-restart.
+> - **RPC audit log:** ✅ DONE (2026-07-09) — `rpc_audit` + `rpc_audit_http` logováno, verbose logging gated behind `ZION_RPC_DEBUG=1`
+> - **Tailscale:** ❌ REMOVED — odstraněno při hard resetu, topologie canonicalized na hardcoded seed peers
+> - **zion system user:** ❌ NOT CREATED na novém serveru — `systemd User=zion` pending (riskantní, vyžaduje test)
+> - **AppArmor zion-node:** ❌ MISSING na novém serveru — profil existoval na starém Edge, nebyl přenesen
 > 
-> **Pending:**
-> - F2.3: Tailscale ACL — aplikovat přes admin console (doc ready)
-> - F2.6: systemd `User=zion` — riskantní, test na jedné službě
-> - F4.x: Key rotation (premine, pool, bridge, EVM) — air-gapped operace
-> - Rebuild: bridge metrics (9101), DAO (8450), oasis metrics — env var code changes
-> - Max TX amount cap (100M ZION) — L1 consensus change, reverted, čeká na spec + audit
+> **Pending po hard reset audit (2026-07-09):**
 > 
-> **Edge server stav:** 12 služeb aktivních, chain height 22188+, mining funguje, UFW hardened, SSH klíče-only.
+> | # | Item | Kategorie | Stav | Blokuje? |
+> |---|------|-----------|------|----------|
+> | 1 | EVM validator SKs (F4.3) — aplikovat z encrypted archivu | security | ⏳ PENDING (owner air-gapped) | YES — bridge ops |
+> | 2 | Escrow SK (F4.x) — aplikovat z encrypted archivu | security | ⏳ PENDING (owner air-gapped) | YES — swap ops |
+> | 3 | EVM contract redeploy (ZION-2026-005) — nové kontrakty + multisig | security | ⏳ PENDING (owner) | YES — DeFi launch |
+> | 4 | Externí audit genesis konfigurace | security | ⏳ PENDING (owner) | YES — public launch |
+> | 5 | Re-clone repo (all collaborators) — git history přepsána | infra | ⏳ PENDING (owner + team) | NO |
+> | 6 | systemd `User=zion` (F2.6) — test na jedné službě | security | ⏳ PENDING (nice-to-have) | NO |
+> | 7 | AppArmor profil pro zion-node — vytvořit + načíst | security | ⏳ PENDING (nice-to-have) | NO |
+> | 8 | Grant BRIDGE_ROLE na wZION + Redeploy ZIONBridge | defi | ⏳ PENDING (owner) | YES — bridge ops |
+> | 9 | Deepen UniV3 liquidity + E2E test swap | defi | ⏳ PENDING (owner) | NO |
+> 
+> **✅ RESOLVED po hard resetu (již nepending):**
+> - ~~F2.3: Tailscale ACL~~ — Tailscale odstraněno, hardcoded seed peers
+> - ~~F4.7: Max TX amount cap~~ — aktivováno (`ZION_MAX_TX_AMOUNT_HEIGHT=1`)
+> - ~~F5: Balance check~~ — aktivováno (`ZION_BALANCE_CHECK_HEIGHT=0`)
+> - ~~Rebuild: bridge metrics (9101), DAO (8450)~~ — obě na 127.0.0.1, env var code changes deployed
+> - ~~RPC audit log~~ — deployed 2026-07-09
+> - ~~F4.6: Git history scrub~~ — done 2026-07-08
+> - ~~Fáze 6.3: bincode removal~~ — done
+> - ~~Fáze 6.4: cargo audit clean~~ — done
+> - ~~Memory leak~~ — fixed 2026-07-09 (block retention + handle draining + bounded channels)
+> - ~~WARP bind 0.0.0.0:9333~~ — fixed to 127.0.0.1:8453 (2026-07-09)
+> - ~~DB file permissions~~ — fixed to 600 (2026-07-09)
+> 
+> **Edge server stav (2026-07-09):** 10 služeb aktivních, chain height 740+, memory stabilní (~42MB Node1), UFW hardened, SSH klíče-only, 4 cron monitors + watchdog.
 > **Předchozí update:** 2026-07-01 (3.0.4 canonical docs audit + TX unification plan) — `docs/3.0.3/CODE_VS_DOCS_AUDIT.md` odhalil 5 HIGH / 6 MEDIUM / 2 LOW discrepancies mezi docs a kódem; `3.0.4.md` komplexní plán pro sjednocení UTXO ↔ account TX; `V3/docs/MAINNET_CONSTANTS.md` opraveno na post-3.0.3 hodnoty; WARP test count sjednocen na 499, adapter count opraven na 12; `V3/README.md` workspace layout doplněn o L4/L5/L6; `docs/3.0.3/Li.Fi-L2.md` kontradikce opravena; 39 historických `.md` přesunuto do `docs/3.0.3/`, root vyčištěn na 5 kanonických souborů; **2026-06-30** (**MULTI-CHAIN wZION DEPLOY — 6 CHAINS LIVE**); **2026-06-29** (**L2 + BRIDGE E2E VERIFICATION + DAO METRICS FIX**); **ATOMIC SWAP ACTIVATED + DAO SCANNER FIX + 3.0.4 DEFINED** — atomic-swap daemon aktivní, 3.0.4 milestone definován v `V3/ROADMAP.md`; **REVERSE BRIDGE E2E VERIFIED** — 100 wZION burn → 100 ZION unlock na L1 blok 20919; **L1 MIGRATION RPC FIX + DASHBOARD POLISH + BRIDGE METRICS** — `ZION_MIGRATION_HEIGHT` env var čtena node kódem, `scaled_amount()` helper v RPC normalizuje legacy 1e12 → 1e6 scale, MIGRATION_HEIGHT=18850; full report: [`docs/3.0.3/REPORT_3.0.3_FIXES.md`](./docs/3.0.3/REPORT_3.0.3_FIXES.md)); **2026-06-27** (**3.0.3 DECIMAL FORK DEPLOYED ON EDGE** — kompletní ekosystém migrován z 12-decimal na 6-decimal flowers, DB preserved, MIGRATION_HEIGHT=17995, všechny 13 Edge services aktivní, chain height 18003+, protocol_version=zion-v3-node/3.0.3, flowers_per_zion=1,000,000); **2026-06-24** (EMERGENCY MINT COMPLETE — 99,999,899 wZION mintováno na Base Mainnet; DeFi web UI mainnet-ready); **2026-06-23** (Multi-validator relay nasazen — 5/5 confirmací pro všech 6 locků, 24h timelock aktivní); **2026-06-23** (100M ZION UTXO locks potvrzeno, memo bug opraven); **2026-06-22** (Bridge mainnet readiness — 5/5 validators funded); **2026-06-18** (Git historie obnovena, root cleanup v3.0.2, L2/L3 kanonizace, L4 Oasis příprava); **2026-06-15** (Edge server full update); **2026-06-14** (Dashboard all-tabs fix); **2026-06-13** (Fire algorithm hard fork deployment); **2026-06-13** (Hiran v2.3 documentation cleanup); **2026-06-11** (Hard Genesis Reset #0 completed); **2026-06-11** (Pool stale share detection + dashboard tab fix); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
 > (sjednocení `StatusV3.md` ↔ `StatusV3-Part2.md` — TL;DR, roadmap §6, §8, §5
 > pyramida, odkazy).

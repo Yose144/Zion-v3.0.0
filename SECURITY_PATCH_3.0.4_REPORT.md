@@ -146,12 +146,23 @@ Hard reset s rotací proběhl 2026-07-06. Audit 2026-07-09 ověřil:
 
 ## Co zbývá (při cross-chain / DeFi operacích)
 
+**Audit 2026-07-09 — pending items po hard resetu:**
+
 1. **EVM validator SKs** — aplikovat z encrypted archivu na server (`ZION_BRIDGE_VALIDATOR_SK_1..5`) při spuštění cross-chain bridge operací
 2. **Escrow SK** — aplikovat z encrypted archivu na server (`ZION_SWAP_ESCROW_KEY`) při spuštění atomic swap
 3. **EVM contract redeploy** — ZION-2026-005: nové kontrakty s novými admin klíči + multisig
 4. **Externí audit genesis** před public launch
 5. **Re-clone repo** na všech strojích (git history byla přepsána filter-repo)
+6. **AppArmor profil** pro zion-node — chybí na novém serveru (nice-to-have)
+7. **systemd `User=zion`** — test na jedné službě (nice-to-have)
+
+**✅ Vyřešeno při auditu (2026-07-09):**
+- WARP bind `0.0.0.0:9333` → `127.0.0.1:8453` (security fix)
+- DB file permissions 644 → 600 (security fix)
+- Memory leak fix (block retention + handle draining + bounded channels + MALLOC_ARENA_MAX=1)
+- Memory monitoring cron job (5 min, auto-restart > 800MB)
+- RPC verbose logging gated behind `ZION_RPC_DEBUG=1`
 
 ---
 
-*Report vygenerován 2026-07-09. Detaily v `SECURITY_PATCH_3.0.4_PLAN.md`, `SECURITY_TODO_2026-07-03.md`, `docs/security/SECURITY_DISCLOSURE_2026-07.md`.*
+*Report vygenerován 2026-07-09, audit aktualizován 2026-07-09. Detaily v `SECURITY_PATCH_3.0.4_PLAN.md`, `SECURITY_TODO_2026-07-03.md`, `docs/security/SECURITY_DISCLOSURE_2026-07.md`.*
