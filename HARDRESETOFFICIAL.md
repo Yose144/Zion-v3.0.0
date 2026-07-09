@@ -1,7 +1,7 @@
 # ZION V3 — Official Hard Reset Plan
 
 > **Verze:** 1.2 — 2026-07-07
-> **Status:** EXECUTING — Fáze 0-8 DONE · Fáze 5 AUDITOVÁNO 2026-07-09 (key rotace proběhla, flash backup OK, pool payout SK aplikován, EVM/escrow placeholdery) · Security patch 3.0.4 FÁZE 1-6 HOTOVO (F4.7 aktivní, bincode odstraněn, audit čistý, edge rebuild 2026-07-09) · Fáze 9-10 pending (open-source publication, generační převod) · 3-node P2P mesh (Edge primary + follower + local backup, height 270+)
+> **Status:** EXECUTING — Fáze 0-8 DONE · Fáze 5 DONE ✅ (key rotace proběhla, flash backup OK, pool payout SK + escrow SK aplikovány, EVM/guardian SKs na flash disku) · Security patch 3.0.4 FÁZE 1-6 VŠE HOTOVO ✅ (F4.7 aktivní, bincode odstraněn, audit čistý, edge rebuild 2026-07-09) · AppArmor + systemd User=zion DONE (2026-07-10) · Stale IP cleanup DONE (69 souborů) · Fáze 9-10 pending (open-source publication, generační převod) · 3-node P2P mesh (Edge primary + follower + local backup, height 1194+)
 > **Kanonický postup:** [`docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md`](./docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md) — TENTO dokument je operační plán; kanonický runbook je v docs/3.0.4/.
 > **Security disclosure:** [`docs/security/SECURITY_DISCLOSURE_2026-07.md`](./docs/security/SECURITY_DISCLOSURE_2026-07.md) — veřejný bulletin ve formátu Ethereum Foundation.
 > **Kontext:** Post-security-incident (F1 + F5 + TeamViewer compromise). Attacker měl 47 min root na Edge, přístup ke zdrojákům, SSH klíčům, pool payout SK, escrow key, EVM deploy klíčům, DAO guardian mnemonics.
@@ -33,12 +33,15 @@
 > **Starý Edge server (77.42.71.94):** DECOMMISSIONED
 >
 > **Pending (owner akce):**
-> 1. Air-gapped klíče (pool SK, bridge validator SKs, DAO guardian SKs, escrow key) — `<REPLACE_*>` v `edge-environment.sh`
+> 1. ~~Air-gapped klíče~~ ✅ DONE — key rotation proběhla, escrow SK aplikován, EVM/guardian SKs na flash disku
 > 2. Minery — připojit k `62.171.141.136:8444`
 > 3. DNS aplikace — `dns.md` zónový soubor v Webglobe admin console
-> 4. F4.7 aktivace — `ZION_MAX_TX_AMOUNT_HEIGHT`
-> 5. Key rotation F4.x — premine, pool, bridge, EVM (air-gapped)
-> 6. Git history scrub — BFG pro staré commity s secrets
+> 4. ~~F4.7 aktivace~~ ✅ DONE — `ZION_MAX_TX_AMOUNT_HEIGHT=1` aktivní
+> 5. ~~Key rotation F4.x~~ ✅ DONE — owner air-gapped
+> 6. ~~Git history scrub~~ ✅ DONE — BFG scrub proběhl
+> 7. EVM contract redeploy (ZION-2026-005) — nové kontrakty s novými admin klíči + multisig
+> 8. Externí audit genesis konfigurace — před public launch
+> 9. Re-clone repo (all collaborators) — git history přepsána filter-repo
 
 ---
 

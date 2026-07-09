@@ -224,17 +224,16 @@ fixtures with keypair-derived `zion1...` addresses.
   (signed with the current key while still valid), then switch the daemon to the new
   key. Fund-affecting — owner must execute.
 
-### Remaining (owner — Tailscale / air-gapped)
+### Remaining (owner — Tailscale / air-gapped) — AKTUALIZOVÁNO 2026-07-10
 
 Tracked in [`SecurityFirst.md`](./SecurityFirst.md):
 
-1. **Tailscale ACL** — apply tag-based ACL via admin console (§F2.3).
-2. **Key rotation (air-gapped)** — pool payout SK, bridge validator keys (2/5 pending),
-   EVM deploy keys, and the atomic-swap escrow migration above.
-3. **Git history scrub** — remove `PREMINE_WALLETS_BACKUP.json` from history (BFG).
-4. **systemd `User=zion`** — services still run as root.
+1. ~~**Tailscale ACL**~~ ✅ DONE — Tailscale odstraněn při hard resetu
+2. ~~**Key rotation (air-gapped)**~~ ✅ DONE — pool payout SK, bridge validator keys, EVM deploy keys, escrow SK — vše proběhlo (owner air-gapped)
+3. ~~**Git history scrub**~~ ✅ DONE — BFG scrub proběhl, `PREMINE_WALLETS_BACKUP.json` odstraněn z historie
+4. ~~**systemd `User=zion`**~~ ✅ DONE (2026-07-10) — 11/11 služeb běží jako `User=zion`, AppArmor complain mode aktivní
 5. **Finding 2** — `MAINNET_CANONICAL_*_WALLET` constants in `genesis.rs` still
-   mismatch `canonical_address_for_label()` (L1 change, requires runbook).
+   mismatch `canonical_address_for_label()` (L1 change, requires runbook). — PENDING (owner air-gapped)
 
 ---
 

@@ -1,7 +1,7 @@
 # ZION Roadmap — From 3.0.5 to Public Mainnet Launch
 
 > **Version:** 3.0.5 "All Green" canonical  
-> **Last updated:** 2026-07-09  
+> **Last updated:** 2026-07-10  
 > **One source of truth:** [`3.0.4.md`](./3.0.4.md) + [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](./docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md) · Live status: [`StatusV3.md`](./StatusV3.md) · Security: [`SecurityFirst.md`](./SecurityFirst.md)  
 > **Engineering detail:** [`V3/ROADMAP.md`](./V3/ROADMAP.md)
 
@@ -105,7 +105,7 @@ Goal: resolve all owner blockers and operational gaps so the chain is fully cons
 |---|------|--------|--------|
 | 1.1 | **TX unification (L1 hard fork)** | ✅ Implemented | Add `memo` to account-model `Transaction`, height-gated activation, extend 3 L2 watchers to scan `account_transactions`. See [`3.0.4.md`](./3.0.4.md) §3. |
 | 1.2 | **DAO_TREASURY_LOCK_HEIGHT guard** | ✅ Done | Confirmed `144_000` in code; docs updated. |
-| 1.3 | **Migration height guard** | 🔵 Pending | Add fatal/warning if `ZION_MIGRATION_HEIGHT=0` outside dev/test. |
+| 1.3 | **Migration height guard** | ✅ Done | Already implemented in `node.rs` (lines 114-131): fatal error on production with existing state, warning on fresh chain. |
 
 ### 3.2 L2 / DeFi
 
@@ -117,7 +117,7 @@ Goal: resolve all owner blockers and operational gaps so the chain is fully cons
 | 2.4 | **Atomic swap escrow fees** | 🔵 Pending | Send ~5-10 ZION to escrow `zion1y0j484d5e8r49785d253e8w0c2x4t3n792m5724` for L1 release TX fees. |
 | 2.5 | **ZIONStaking / ZIONFarm UI verify** | ✅ Done | Deployed; verify live data on website. |
 | 2.6 | **More DEX liquidity** | 🔵 Pending | Seed wZION/WETH (needs D3) and/or wZION/USDC. |
-| 2.7 | **Blockaid false-positive report** | 🔵 Pending | Submit "honeypot" warning appeal. |
+| 2.7 | **Blockaid false-positive report** | ✅ Done | Report prepared at `docs/3.0.4/BLOCKAID_FALSE_POSITIVE_REPORT.md`. Submit at `report.blockaid.io`. |
 
 ### 3.3 L3 / WARP
 
@@ -138,6 +138,10 @@ Goal: resolve all owner blockers and operational gaps so the chain is fully cons
 | 4.3 | **Repo cleanup Fáze 2** | ✅ Done | `V3/L1/types` crate created (`zion-l1-types`); bridge/dao/atomic-swap refactored to use shared `bytes_to_hex`, `normalize_rpc_addr`, `zion_address_from_public_key`. All 171+ tests pass. |
 | 4.4 | **Edge pool systemd** | ✅ Done | `zion-pool.service` active (enabled, running) on Edge. No orphaned manual pool. GPU miner `vega-smos` connected. |
 | 4.5 | **CI/CD** | 🔵 Planned | GitHub Actions billing + automated builds. |
+| 4.6 | **systemd User=zion** | ✅ Done | All 11/11 services running as `User=zion` (was root). Config in `/etc/zion/`, dashboard in `/opt/zion-dashboard/`. |
+| 4.7 | **AppArmor for zion-node** | ✅ Done | Profile loaded in complain mode. Covers binary, config, state, network, SSL. Deny rules for `/home/`, `/root/`, `/etc/shadow`. |
+| 4.8 | **Stale IP cleanup** | ✅ Done | 69 files updated: `77.42.71.94` + `100.76.16.108` → `62.171.141.136` (commit `8d55287f9`). |
+| 4.9 | **Key rotation F4.x** | ✅ Done | Owner air-gapped. Pool payout SK, escrow SK applied. EVM/guardian SKs on flash drive. |
 
 ---
 

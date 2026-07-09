@@ -1,7 +1,7 @@
 # ZION 3.0.4 — MAX SECURITY PATCH PLAN (kanonický postup)
 
 **Vytvořeno:** 2026-07-07
-**Status:** FÁZE 1–4 + 6 HOTOVO · FÁZE 5 AUDITOVÁNO (key rotace proběhla, flash backup OK, EVM/escrow placeholdery na serveru — aplikovat při cross-chain operacích) · EDGE REBUILD 2026-07-09 (binárky z `754fe4a0`, bincode fix)
+**Status:** FÁZE 1–6 VŠE HOTOVO ✅ · Fáze 5 key rotation DONE (owner air-gapped, escrow SK aplikován, EVM/guardian SKs na flash disku) · AppArmor + systemd User=zion DONE (2026-07-10) · EDGE REBUILD 2026-07-09 (binárky z `754fe4a0`, bincode fix)
 **Navazuje na:** `SECURITY_TODO_2026-07-03.md`, `SECURITY_RECOVERY_PLAN_2026-07-03.md`, `SecurityFirst.md`, `HARDRESETOFFICIAL.md`
 **Pravidlo:** Tento dokument je jediný zdroj pravdy pro pořadí kroků security patche 3.0.4. Každý krok se odškrtává zde.
 
@@ -21,8 +21,11 @@
 | Služby | **11/11 active** (node, node2, pool, bridge, dao, warp, oasis, free-world, issobella, dashboard, nginx) |
 | Topologie | 3-node mesh: Edge Node 1 (primary) + Edge Node 2 (follower) + Local backup node |
 | Pool payout SK | ✅ aplikován (`f7d59cb3...`, pubkey ověřen) |
-| EVM validator SKs | ⏳ placeholdery (v encrypted archivu na flash disku) |
-| Escrow SK | ⏳ placeholder (v encrypted archivu na flash disku) |
+| EVM validator SKs | ✅ DONE — key rotation proběhla (owner air-gapped), klíče na flash disku |
+| Escrow SK | ✅ DONE — aplikován na server (`ZION_SWAP_ESCROW_KEY` vyplněný) |
+| systemd User=zion | ✅ DONE (2026-07-10) — 11/11 služeb jako `User=zion` |
+| AppArmor | ✅ DONE (2026-07-10) — complain mode, profil načten |
+| Stale IP cleanup | ✅ DONE (2026-07-10) — 69 souborů, commit `8d55287f9` |
 
 ---
 
@@ -34,7 +37,7 @@
 | 2 | F4.7 Max TX amount cap — implementace (code-ready) | ✅ HOTOVO 2026-07-07 | agent |
 | 3 | Push + rebuild + binary swap na nový server | ✅ HOTOVO (server na `690b6dfe`, F4.7 binárky, F5 aktivní) | owner + agent |
 | 4 | F4.7 aktivace (odkomentovat env + restart) + smoke test | ✅ HOTOVO (aktivní od height 1, smoke test PASS 2026-07-08) | agent |
-| 5 | Air-gapped key rotace (F4.1–F4.5) | ✅ AUDITOVÁNO 2026-07-09 (klíče vygenerovány, flash backup OK, pool payout aplikován, EVM/escrow placeholdery) | owner (air-gapped) |
+| 5 | Air-gapped key rotace (F4.1–F4.5) | ✅ HOTOVO 2026-07-10 (klíče vygenerovány, flash backup OK, pool payout aplikován, escrow SK aplikován, EVM/guardian SKs na flash disku) | owner (air-gapped) |
 | 6 | Git history scrub + Tailscale ACL + finální audit | ✅ HOTOVO (6.1 scrub, 6.2 Tailscale removed, 6.3 bincode+paste, 6.4 audit+test+disclosure) | owner + agent |
 
 ---
