@@ -1,6 +1,6 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** **2026-07-09** (**3.0.5 "ALL GREEN" COMPLETE — 11/11 SLUŽEB ACTIVE + E2E MEMO TESTY POTVRZENY + PROTOCOL 3.0.5** — viz [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](./docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md) pro plný český report a [`docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md`](./docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md) pro kanonický runbook).
+> **Datum:** **2026-07-09** (**3.0.5 "ALL GREEN" COMPLETE — 11/11 SLUŽEB ACTIVE + E2E MEMO TESTY POTVRZENY + PROTOCOL 3.0.5 + WEB DEPLOY OPTIMALIZACE** — viz [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](./docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md) pro plný český report a [`docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md`](./docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md) pro kanonický runbook).
 > **Předchozí update:** 2026-07-09 (MEMORY LEAK FIX DEPLOYED + 3.0.4 SECURITY PATCH COMPLETE — viz [`SECURITY_PATCH_3.0.4_REPORT.md`](./SECURITY_PATCH_3.0.4_REPORT.md)).
 > **Původní update:** 2026-07-07 (3.0.4 HARD GENESIS RESET — NOVÝ SERVER 62.171.141.136 — FULL STACK DEPLOYED — viz [`docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md`](./docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md) a [`HARDRESETOFFICIAL.md`](./HARDRESETOFFICIAL.md) pro plný záznam).
 >
@@ -21,15 +21,43 @@
 >
 > **Pending (mimo 3.0.5 scope):** 13× validator SK placeholder (F4.x air-gapped rotation), bridge EVM watcher eth_getLogs errors (BSC/Polygon RPC, non-critical), bridge validator.key missing (F4.x)
 >
+> ### Web Deploy Optimalizace — COMPLETE (2026-07-09)
+>
+> **Problém:** Docker image pro web (zion-web-next) byl 2.57 GB, deploy trval ~6+ minut, build cache 26.5 GB.
+>
+> **Root causes:** `node_modules` (1.26 GB) kopírovaný do runner stage, `.next` (725 MB) neoptimalizovaný, `--no-cache` v deploy.sh, `output: "standalone"` zakomentovaný v next.config.ts.
+>
+> **3 fixy aplikované:**
+> 1. **Standalone output** — `next.config.ts`: `output: "standalone"` povoleno; Dockerfile kopíruje pouze `.next/standalone` + `.next/static` + `public` místo `node_modules` + `.next`
+> 2. **Bez --no-cache** — `scripts/deploy.sh`: `--no-cache` odstraněno → Docker layer cache pro `npm install`
+> 3. **Build cache prune** — `docker builder prune -af` uvolnil 23 GB (26.5 GB → 3.3 GB)
+>
+> **Výsledek:**
+> - Image: **377 MB** (bylo 2.57 GB — **85% redukce**)
+> - Disk: 34G / 145G (24% used)
+> - Web: `https://zionterranova.com` = HTTP 200, 257 KB, 1.2s
+> - Container: `zion-web-next` Up, Next.js 16.2.9, standalone `node server.js`
+> - Další deploy bude výrazně rychlejší (npm install layer se cacheuje)
+>
+> **Soubory změněné:** `next.config.ts`, `Dockerfile`, `scripts/deploy.sh`
+>
+> ### Health Check — 2026-07-09 16:10 UTC+2
+>
+> **Node:** height 827, 828 accepted blocks, protocol `zion-v3-node/3.0.5`, 1 P2P peer, mempool 1 TX
+> **Supply:** 16.78B ZION circulating (16,780,000,000 premine + 4,465,855 mined), 144B total
+> **Služby:** 11/11 active (zion-node, zion-node2, zion-pool, zion-bridge, zion-dao, zion-atomic-swap, zion-warp, zion-oasis, zion-free-world, zion-issobella, zion-dashboard)
+> **Web:** HTTP 200 ✅ | **Dashboard:** HTTP 401 bez auth (správně) ✅ | **Docker:** zion-web-next Up
+> **RAM:** 2.2G / 7.8G used | **Disk:** 34G / 145G (24%)
+>
 > ### Topology Update — 3-Node P2P Mesh (2026-07-09)
 >
 > **Aktuální topologie (3 L1 nody, P2P mesh):**
 >
 > | Node | Server | RPC | P2P | Role | Height | Stav |
 > |------|--------|-----|-----|------|--------|------|
-> | zion-node (Node 1) | Edge `62.171.141.136` | 127.0.0.1:8443 | 0.0.0.0:8333 | Primary (mining) | 753+ | ✅ active |
-> | zion-node2 (Node 2) | Edge `62.171.141.136` | 127.0.0.1:8448 | — | Follower (P2P sync) | 753+ | ✅ active |
-> | zion-backup-node | Local `zionserver-144` | 127.0.0.1:8446 | 0.0.0.0:8333 | Backup (P2P peer) | 753+ | ✅ active |
+> | zion-node (Node 1) | Edge `62.171.141.136` | 127.0.0.1:8443 | 0.0.0.0:8333 | Primary (mining) | 827+ | ✅ active |
+> | zion-node2 (Node 2) | Edge `62.171.141.136` | 127.0.0.1:8448 | — | Follower (P2P sync) | 827+ | ✅ active |
+> | zion-backup-node | Local `zionserver-144` | 127.0.0.1:8446 | 0.0.0.0:8333 | Backup (P2P peer) | 827+ | ✅ active |
 >
 > **Edge server služby (11 aktivních + 1 timer + 1 Docker):**
 >
