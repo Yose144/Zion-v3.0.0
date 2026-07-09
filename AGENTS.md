@@ -2,7 +2,7 @@
 
 This file provides operating guidance to Devin, WARP, Copilot, and future automated agents working in this repository.
 
-> **⚠️ SERVER MIGRATION 2026-07-07:** The old Edge server (`77.42.71.94`) is **DECOMMISSIONED**. All services have been rebuilt on a new server at **`62.171.141.136`** following the 3.0.4 hard genesis reset. New genesis hash: `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`. SSH: `ssh zion-new` (key: `~/.ssh/zion-new-server`). All references to `77.42.71.94` or `100.76.16.108` below are **historical** unless explicitly marked as updated. See [`StatusV3.md`](./StatusV3.md) § "3.0.4 Hard Genesis Reset" for current live topology. Web: `https://zionterranova.com` (Next.js Docker). Dashboard: `https://dashboard.zionterranova.com` (Basic Auth). Pool: `62.171.141.136:8444`. RPC (localhost only on server): `127.0.0.1:8443`.
+> **⚠️ SERVER MIGRATION 2026-07-07:** The old Edge server (`77.42.71.94`) is **DECOMMISSIONED**. All services have been rebuilt on a new server at **`62.171.141.136`** following the 3.0.4 hard genesis reset. New genesis hash: `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`. SSH: `ssh zion-new` (key: `~/.ssh/zion-new-server`). All references to `77.42.71.94` or `100.76.16.108` below are **historical** unless explicitly marked as updated. See [`StatusV3.md`](./StatusV3.md) § "Topology Update — 3-Node P2P Mesh" for current live topology (3 nodes: Edge primary + Edge follower + Local backup, all at height 230). Web: `https://zionterranova.com` (Next.js Docker). Dashboard: `https://dashboard.zionterranova.com` (Basic Auth). Pool: `62.171.141.136:8444`. RPC (localhost only on server): `127.0.0.1:8443`.
 
 ## Scope and working area
 
@@ -333,42 +333,60 @@ In practice: **node is source of chain truth**, pool is coordination layer, mine
 
 ### Network Topology
 
+> **UPDATED 2026-07-09:** 3-node P2P mesh deployed. Edge server has 2 L1 nodes (primary + follower), local backup node is 3rd peer. All synced at height 230. Edge git re-cloned to latest `754fe4a0`.
+>
 > **UPDATED 2026-07-07:** Old Edge server (`77.42.71.94`) is **DECOMMISSIONED**. All services rebuilt on new server following 3.0.4 hard genesis reset.
 
-Current live topology is **single-server (new VPS)**. The old Edge server was decommissioned after security compromise. All canonical services run on the new server.
+Current live topology is **3-node P2P mesh** (Edge primary + Edge follower + Local backup). The old Edge server was decommissioned after security compromise.
 
 ```
-New Server (VPS)
-62.171.141.136
-    |
-Node + Pool + Bridge + DAO + WARP + Dashboard + Web
-Public P2P: 8333
-Public Pool: 8444
-Public WARP: 9333
+Edge Server (VPS) — 62.171.141.136
+    ├── Node 1 (primary, mining) — RPC 8443, P2P 8333
+    ├── Node 2 (follower) — RPC 8448, P2P sync from Node 1
+    ├── Pool (Stratum) — 8444
+    ├── Bridge (L2) — 9101
+    ├── DAO (L2) — 8450
+    ├── WARP (L3) — 9333
+    ├── OASIS (L4) — 8455
+    ├── Free World (L5)
+    ├── Dashboard — 8766
+    └── nginx — 80/443
+
+Local Machine — zionserver-144 (public IP 109.81.87.10)
+    ├── Backup Node — RPC 8446, P2P 8333 (peer to Edge)
+    ├── Dashboard — 8766
+    ├── Stack (L2/L3: free-world, ai-native-api, issobella, dao, oasis, atomic-swap, ollama)
+    └── SSH Tunnel — 9 local + 2 reverse forwards to Edge
+
 Web: https://zionterranova.com (nginx → Docker Next.js)
 Dashboard: https://dashboard.zionterranova.com (nginx → Python)
 ```
 
 | Role | Host | Public IP | Ports |
 |------|------|-----------|-------|
-| New Server | VPS (Ubuntu 24.04.4) | 62.171.141.136 | P2P: 8333, RPC: 8443 (localhost), Pool: 8444, WS: 8445 (localhost), DAO: 8450 (localhost), WARP: 9333, Web: 80/443, Dashboard: 8766 (localhost) |
+| Edge Node 1 (primary) | VPS (Ubuntu 24.04.4) | 62.171.141.136 | P2P: 8333, RPC: 8443 (localhost), Pool: 8444, WS: 8445, DAO: 8450, WARP: 9333, OASIS: 8455, Web: 80/443, Dashboard: 8766 |
+| Edge Node 2 (follower) | VPS (same) | 62.171.141.136 | RPC: 8448 (localhost) |
+| Local Backup Node | zionserver-144 | 109.81.87.10 | RPC: 8446 (localhost), P2P: 8333 |
 
 ### Canonical Ports & Services (v3.0.4 — New Server)
 
 | Service | Port | Bind | Protocol | Notes |
 |---------|------|------|----------|-------|
-| Node P2P | 8333 | 0.0.0.0 | TCP | Peer-to-peer sync |
-| Node RPC | 8443 | 127.0.0.1 | TCP | JSON-RPC 2.0 (via nginx /api/rpc) |
+| Node 1 P2P | 8333 | 0.0.0.0 | TCP | Peer-to-peer sync (primary) |
+| Node 1 RPC | 8443 | 127.0.0.1 | TCP | JSON-RPC 2.0 (via nginx /api/rpc) |
+| Node 2 RPC | 8448 | 127.0.0.1 | TCP | Follower node (P2P sync from Node 1) |
 | Node WebSocket | 8445 | 127.0.0.1 | TCP | Node event stream |
 | Node metrics | 9100 | 127.0.0.1 | HTTP | Prometheus metrics |
 | Pool Stratum | 8444 | 0.0.0.0 | TCP | Miner connections (public) |
 | Bridge metrics | 9101 | 127.0.0.1 | HTTP | Prometheus metrics (bridge) |
 | DAO API | 8450 | 127.0.0.1 | HTTP | DAO daemon API (via nginx /api/dao) |
 | WARP Relay | 9333 | 0.0.0.0 | HTTP | Cross-chain relay API |
+| OASIS (L4) | 8455 | 127.0.0.1 | HTTP | OASIS Avatar Hub |
 | Dashboard | 8766 | 127.0.0.1 | HTTP | ZION_OS Dashboard (via nginx, Basic Auth) |
 | Website (Next.js) | 3001 | 127.0.0.1 | HTTP | Docker `zion-web:nextjs` (via nginx) |
 | Nginx HTTP | 80 | 0.0.0.0 | HTTP | Redirect to HTTPS |
 | Nginx HTTPS | 443 | 0.0.0.0 | HTTP/2 | SSL Let's Encrypt, reverse proxy |
+| Local Backup Node RPC | 8446 | 127.0.0.1 | TCP | Backup node on zionserver-144 (via SSH tunnel reverse forward) |
 
 ### Canonical URLs & Endpoints (v3.0.4)
 
