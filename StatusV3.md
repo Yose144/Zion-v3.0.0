@@ -1,8 +1,25 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** **2026-07-09** (**MEMORY LEAK FIX DEPLOYED + 3.0.4 SECURITY PATCH COMPLETE — 3-NODE P2P MESH + F4.7 SMOKE TEST PASSED** — viz [`SECURITY_PATCH_3.0.4_REPORT.md`](./SECURITY_PATCH_3.0.4_REPORT.md) pro aktuální stav).
-> **Předchozí update:** 2026-07-07 (3.0.4 HARD GENESIS RESET — NOVÝ SERVER 62.171.141.136 — FULL STACK DEPLOYED — viz [`docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md`](./docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md) a [`HARDRESETOFFICIAL.md`](./HARDRESETOFFICIAL.md) pro plný záznam).
-> **Původní update:** 2026-07-02 (F5 CRITICAL FIX + ESCROW KEY ROTATION + F1 exploit post-mortem + Edge server hardening — viz [`SecurityFirst.md`](./SecurityFirst.md) a [`F5_SECURITY_INCIDENT_REPORT_2026-07-02.md`](./F5_SECURITY_INCIDENT_REPORT_2026-07-02.md)).
+> **Datum:** **2026-07-09** (**3.0.5 "ALL GREEN" COMPLETE — 11/11 SLUŽEB ACTIVE + E2E MEMO TESTY POTVRZENY + PROTOCOL 3.0.5** — viz [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](./docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md) pro plný český report a [`docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md`](./docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md) pro kanonický runbook).
+> **Předchozí update:** 2026-07-09 (MEMORY LEAK FIX DEPLOYED + 3.0.4 SECURITY PATCH COMPLETE — viz [`SECURITY_PATCH_3.0.4_REPORT.md`](./SECURITY_PATCH_3.0.4_REPORT.md)).
+> **Původní update:** 2026-07-07 (3.0.4 HARD GENESIS RESET — NOVÝ SERVER 62.171.141.136 — FULL STACK DEPLOYED — viz [`docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md`](./docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md) a [`HARDRESETOFFICIAL.md`](./HARDRESETOFFICIAL.md) pro plný záznam).
+>
+> ### 3.0.5 "All Green" Upgrade — COMPLETE (2026-07-09)
+>
+> **Protokol:** `zion-v3-node/3.0.5` (bumped z 3.0.3) ✅ potvrzeno na live node + v binárce
+>
+> **7 fází exekuováno (F1–F7):**
+> - **F1:** Protocol version bump 3.0.3→3.0.5 (`V3/L1/core/src/lib.rs:47`)
+> - **F2:** Docs reconcile — falešný commit hash opraven, aktivační výška 0, staré IP adresy nahrazeny
+> - **F3:** Operationalizace L2 watcherů — bridge, dao, warp, atomic-swap všechny BUILT + deploynuty + config opraven
+> - **F4:** Web repair — zion-web-next Docker restartován, zionterranova.com: 200
+> - **F5:** Watchdog timer enabled + active (2 min interval)
+> - **F6:** E2E memo testy — 3 account-model TXs s memos potvrzeny v bloku 752 (BRIDGE/DAO/SWAP), memo field intact, E2E SK shredded
+> - **F7:** All Green verify — 11/11 služeb active, 1 timer active, 1 Docker container Up
+>
+> **Commity:** `d425faec` (3.0.5 bump + docs), `6b930b7a` (L2/L3 config fixes), `91c201a8` (AGENTS.md update)
+>
+> **Pending (mimo 3.0.5 scope):** 13× validator SK placeholder (F4.x air-gapped rotation), bridge EVM watcher eth_getLogs errors (BSC/Polygon RPC, non-critical), bridge validator.key missing (F4.x)
 >
 > ### Topology Update — 3-Node P2P Mesh (2026-07-09)
 >
@@ -10,11 +27,11 @@
 >
 > | Node | Server | RPC | P2P | Role | Height | Stav |
 > |------|--------|-----|-----|------|--------|------|
-> | zion-node (Node 1) | Edge `62.171.141.136` | 127.0.0.1:8443 | 0.0.0.0:8333 | Primary (mining) | 660+ | ✅ active |
-> | zion-node2 (Node 2) | Edge `62.171.141.136` | 127.0.0.1:8448 | — | Follower (P2P sync) | 660+ | ✅ active |
-> | zion-backup-node | Local `zionserver-144` | 127.0.0.1:8446 | 0.0.0.0:8333 | Backup (P2P peer) | 660+ | ✅ active |
+> | zion-node (Node 1) | Edge `62.171.141.136` | 127.0.0.1:8443 | 0.0.0.0:8333 | Primary (mining) | 753+ | ✅ active |
+> | zion-node2 (Node 2) | Edge `62.171.141.136` | 127.0.0.1:8448 | — | Follower (P2P sync) | 753+ | ✅ active |
+> | zion-backup-node | Local `zionserver-144` | 127.0.0.1:8446 | 0.0.0.0:8333 | Backup (P2P peer) | 753+ | ✅ active |
 >
-> **Edge server služby (10 aktivních):**
+> **Edge server služby (11 aktivních + 1 timer + 1 Docker):**
 >
 > | Služba | Port(s) | Bind | Vrstva | Stav |
 > |--------|---------|------|--------|------|
@@ -23,10 +40,14 @@
 > | zion-pool | 8444 (Stratum) | 0.0.0.0 | L1 | ✅ active (mining) |
 > | zion-bridge | 9101 (metrics) | 127.0.0.1 | L2 | ✅ active |
 > | zion-dao | 8450 (API) | 127.0.0.1 | L2 | ✅ active |
-> | zion-warp | 9333 | 0.0.0.0 | L3 | ✅ active |
+> | zion-atomic-swap | 8452 (API) | 0.0.0.0 | L2 | ✅ active |
+> | zion-warp | 8453 | 0.0.0.0 | L3 | ✅ active |
 > | zion-oasis | 8455 | 127.0.0.1 | L4 | ✅ active |
 > | zion-free-world | — | — | L5 | ✅ active |
+> | zion-issobella | — | — | L6 | ✅ active |
 > | zion-dashboard | 8766 | 127.0.0.1 | — | ✅ active |
+> | zion-watchdog.timer | — | — | — | ✅ active (2 min) |
+> | zion-web-next (Docker) | — | — | — | ✅ Up |
 > | nginx | 80, 443 | 0.0.0.0 | — | ✅ active |
 >
 > **Local machine služby (`zionserver-144`, public IP 109.81.87.10):**

@@ -1,13 +1,15 @@
-# ZION TerraNova v3.0.4
+# ZION TerraNova v3.0.5
 
 > **Proof of Work Layer 1 for the next 100 years.**
 > From blockchain to the stars.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Status:** Mainnet Live · 3.0.4 DeFi Deployed · Edge Active · Public Launch: 31 December 2026
+**Status:** Mainnet Live · 3.0.5 "All Green" Complete · 11/11 Services Active · Public Launch: 31 December 2026
 
-**Canonical documentation for 3.0.4:** [`3.0.4.md`](3.0.4.md) — one source of truth for the entire release.
+**Canonical documentation for 3.0.5:** [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md) — full Czech report.  
+**Runbook:** [`docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md`](docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md) — canonical 7-phase runbook.  
+**3.0.4 release overview:** [`3.0.4.md`](3.0.4.md) — DeFi deploy + TX unification.
 
 **Operational status:** [`StatusV3.md`](StatusV3.md)  
 **Agent rules:** [`AGENTS.md`](AGENTS.md)  
@@ -20,7 +22,9 @@
 
 | What | Where |
 |------|-------|
-| **Complete 3.0.4 overview** | [`3.0.4.md`](3.0.4.md) |
+| **3.0.5 All Green report (CZ)** | [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md) |
+| **3.0.5 runbook** | [`docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md`](docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md) |
+| **3.0.4 release overview** | [`3.0.4.md`](3.0.4.md) |
 | **Live status + blockers** | [`StatusV3.md`](StatusV3.md) |
 | **V3 workspace code** | [`V3/`](V3/) |
 | **Forward roadmap** | [`ROADMAP.md`](ROADMAP.md) |
@@ -39,7 +43,7 @@
 
 ZION is a decentralized **Layer 1 blockchain** built from scratch in **Rust**, running a canonical Proof-of-Work consensus with CPU and GPU acceleration.
 
-v3.0.4 is the current mainnet line under [`V3/`](V3/). It features a 6-layer architecture, a **Decade Decay** emission schedule designed for **100+ years**, and dedicated funding for planetary-scale humanitarian and space projects.
+v3.0.5 is the current mainnet line under [`V3/`](V3/). It features a 6-layer architecture, a **Decade Decay** emission schedule designed for **100+ years**, and dedicated funding for planetary-scale humanitarian and space projects. The 3.0.5 "All Green" upgrade completed on 2026-07-09 — all 11 services active, protocol bumped to 3.0.5, E2E memo tests verified on live chain.
 
 ---
 
@@ -75,12 +79,12 @@ cargo run --manifest-path V3/Cargo.toml -p zion-cli -- --help
 
 ### Mine
 
-**Pool:** `77.42.71.94:8444` (Edge — public)  
-**RPC:** `77.42.71.94:8443`
+**Pool:** `62.171.141.136:8444` (Edge — public)  
+**RPC:** `62.171.141.136:8443` (localhost only on server)
 
 ```powershell
 # Windows (PowerShell) — GPU miner connecting to Edge pool
-$env:ZION_POOL_ADDR='77.42.71.94:8444'
+$env:ZION_POOL_ADDR='62.171.141.136:8444'
 $env:ZION_WORKER_NAME='my-rig-01'
 $env:ZION_MINER_ID='my-rig-01'
 $env:ZION_PAYOUT_ADDRESS='zion1<your-44-char-address>'   # REQUIRED
@@ -99,6 +103,7 @@ This repository has exactly one source of truth per topic:
 
 | Topic | Canonical Doc |
 |-------|---------------|
+| **3.0.5 All Green report (CZ)** | [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md) |
 | **3.0.4 release overview** | [`3.0.4.md`](3.0.4.md) |
 | **Live operational status** | [`StatusV3.md`](StatusV3.md) |
 | **Agent operating rules** | [`AGENTS.md`](AGENTS.md) |
@@ -113,25 +118,29 @@ All other root `.md` files were archived to [`docs/3.0.3/`](docs/3.0.3/) as part
 ## Network Topology
 
 ```
-Edge (Hetzner VPS)          Core (Windows 11)
-77.42.71.94                 Tailscale: 100.86.102.5
-    |                           |
-Node (PRIMARY)             Node (syncs from Edge, same genesis)
-Pool (PRIMARY)             GPU Miner → Edge pool
-DAO + WARP + Website       Dashboard + AI services
+Edge Server (Contabo VPS)       Core (Local machine)
+62.171.141.136                  zionserver-144 (109.81.87.10)
+    |                               |
+Node 1 (PRIMARY, mining)        Backup Node (P2P peer)
+Node 2 (Follower, P2P sync)     Dashboard + AI services
+Pool (PRIMARY, Stratum)
+Bridge + DAO + WARP + Atomic Swap
+Oasis + Free World + Issobella
+Dashboard + Watchdog
+Web (Docker: zion-web-next)
 Public P2P: 8333
 Public Pool: 8444
-Public RPC: 8443
+RPC: 127.0.0.1:8443 (localhost only)
 ```
 
-| Role | Host | Public IP | VPN IP | Ports |
-|------|------|-----------|--------|-------|
-| **Edge** | Hetzner VPS | `77.42.71.94` | `100.76.16.108` | P2P: 8333, Pool: 8444, RPC: 8443, Metrics: 8455/9115 |
-| **Core** | Windows 11 | — | `100.86.102.5` | P2P: 8333, RPC: 8443 |
+| Role | Host | Public IP | Ports |
+|------|------|-----------|-------|
+| **Edge** | Contabo VPS | `62.171.141.136` | P2P: 8333, Pool: 8444, RPC: 8443 (localhost), Web: 80/443 |
+| **Core** | Local machine | `109.81.87.10` | P2P: 8333, RPC: 8446 |
 
-- **Edge**: Primary 24/7 node + pool. Source of chain truth. Accepts public miner connections. DAO + WARP + Website.
-- **Core**: Local node (syncs from Edge, same genesis) + GPU miner → Edge pool. Dashboard + Hiran AI.
-- **Chain live since:** 2026-06-07 · **Current protocol:** 3.0.3 · **3.0.4 DeFi:** deployed on Base Mainnet.
+- **Edge**: Primary 24/7 node + pool. Source of chain truth. Accepts public miner connections. 11 services + watchdog timer + web Docker container.
+- **Core**: Local backup node (P2P peer, same genesis) + Dashboard + AI services.
+- **Chain live since:** 2026-07-07 (hard genesis reset) · **Current protocol:** `zion-v3-node/3.0.5` · **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
 
 ---
 
@@ -141,4 +150,4 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-*Last updated: 2026-07-01 · Version: v3.0.4 · Canonical doc: [`3.0.4.md`](3.0.4.md)*
+*Last updated: 2026-07-09 · Version: v3.0.5 "All Green" · Report: [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md)*
