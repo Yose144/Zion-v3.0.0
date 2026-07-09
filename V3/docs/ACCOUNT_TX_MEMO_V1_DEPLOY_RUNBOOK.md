@@ -1,11 +1,11 @@
 # ZION 3.0.4 — Account-Model Memo v1 Hard Fork Deploy Runbook
 
-**Target:** Edge mainnet (`100.76.16.108`)  
-**Deploy commit:** `5074bf35`  
-**Activation height:** `24000` (set 2026-07-01; chain height was `23635` at deploy time)  
-**Status:** Deployed — services restarted, activation height loaded by both Edge nodes and pool  
-**Network:** Mainnet  
-**Repository:** `main` branch (`V3/` workspace)  
+**Target:** Edge mainnet (`62.171.141.136`, `ssh zion-new`)
+**Deploy commits:** `db137efc` (account-model memo) + `f687d8ac` (runtime-configurable height)
+**Activation height:** `0` (active from genesis on fresh chain post 3.0.4 hard reset; no env override needed)
+**Status:** Deployed — code complete, memo v1 active from genesis. L2 watcher operationalizace in 3.0.5.
+**Network:** Mainnet
+**Repository:** `main` branch (`V3/` workspace)
 
 ---
 
@@ -36,7 +36,7 @@ Bridge contract addresses on non-Base chains remain an open owner decision (see 
 - [ ] `cargo test --manifest-path V3/Cargo.toml --workspace` passes on the deploy commit.
 - [ ] Choose an activation height `H` such that all operators can restart before `H`.
 - [ ] Announce `H` in operator channels / Discord.
-- [ ] SSH access to `100.76.16.108` confirmed.
+- [ ] SSH access to `62.171.141.136` (`ssh zion-new`) confirmed.
 - [ ] `secrets.conf` and `bridge-mainnet.toml`, `dao-mainnet.toml`, `swap-mainnet.toml` backups available.
 
 ---
@@ -103,7 +103,7 @@ For the pool service, add the same variable to its environment file (e.g., `/etc
 ### 1. Backup
 
 ```bash
-ssh root@100.76.16.108
+ssh zion-new
 
 # State DB
 sudo systemctl stop zion-edge-core.service
