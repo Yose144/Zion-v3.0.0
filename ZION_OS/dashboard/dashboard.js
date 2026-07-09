@@ -133,7 +133,7 @@ function switchTab(name){
   });
 
   // ── Auto-refresh timers ─────────────────────────────────────────────
-  if(name === 'overview'){ loadMempool(); loadMonitoringStatus(); updateChainStats(); updateRecentBlocks(); updateTopWallets(); }
+  if(name === 'overview'){ loadMempool(); loadMonitoringStatus(); updateChainStats(); updateRecentBlocks(); updateTopWallets(); updateBlockRewardBreakdown(); updateNetworkGrowth(); updateMinerLeaderboard(); updateDifficultyForecast(); }
   if(name === 'alerts'){ clearTabTimers('alerts'); loadAlertHistory(); if(!_alertsTimer) _alertsTimer = setInterval(loadAlertHistory, 8000); }
   else if(name === 'services'){ clearTabTimers('services'); loadServices(); if(!_servicesTimer) _servicesTimer = setInterval(loadServices, 5000); }
   else if(name === 'nodes'){ clearTabTimers('nodes'); loadCliNodeStatus(); if(!_nodesTimer) _nodesTimer = setInterval(loadCliNodeStatus, 6000); }
@@ -277,7 +277,7 @@ async function refreshAll(){
     if(currentTab === 'wallets') { loadWallets(); loadWalletStatus(); }
     if(currentTab === 'explorer') loadExplorer();
     if(currentTab === 'hiran') loadAiStatus();
-    if(currentTab === 'overview') { loadMempool(); loadMonitoringStatus(); updateChainStats(); updateRecentBlocks(); updateTopWallets(); }
+    if(currentTab === 'overview') { loadMempool(); loadMonitoringStatus(); updateChainStats(); updateRecentBlocks(); updateTopWallets(); updateBlockRewardBreakdown(); updateNetworkGrowth(); updateMinerLeaderboard(); updateDifficultyForecast(); }
     if(currentTab === 'controls') { loadMinerPerformance(); loadDepGraphControls(); }
     updateMainnetMetrics(statusData);
     updatePayouts(statusData.pool, statusData.topology);
@@ -1347,6 +1347,256 @@ async function updateTopWallets(){
     console.error('updateTopWallets error:', e);
   }
 }
+
+// ═══ Block Reward Breakdown ═══
+async function updateBlockRewardBreakdown(){
+  try {
+    const data = await fetch('/api/explorer').then(r => r.ok ? r.json() : null);
+    if(!data) return;
+    const reward = data.block_reward_zion || 5400;
+    // Parse fee split 89/5/5/1
+    const fsText = '89/5/5/1';
+    const parts = fsText.split('/').map(x => parseFloat(x) || 0);
+    const [minerPct, humPct, issoPct, poolPct] = parts;
+    const minerAmt = (reward * minerPct / 100).toFixed(1);
+    const humAmt = (reward * humPct / 100).toFixed(1);
+    const issoAmt = (reward * issoPct / 100).toFixed(1);
+    const poolAmt = (reward * poolPct / 100).toFixed(1);
+    const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+    set('reward-amt-miner', minerAmt + ' ZION');
+    set('reward-amt-humanitarian', humAmt + ' ZION');
+    set('reward-amt-issobella', issoAmt + ' ZION');
+    set('reward-amt-pool', poolAmt + ' ZION');
+  } catch(e){ console.error('updateBlockRewardBreakdown:', e); }
+}
+
+// ═══ Network Growth Chart (blocks per day) ═══
+let _networkGrowthChart = null;
+async function updateNetworkGrowth(){
+  try {
+    const data = await fetch('/api/explorer').then(r => r.ok ? r.json() : null);
+    if(!data) return;
+    const blocks = data.recent_blocks || [];
+    const badge = document.getElementById('network-growth-badge');
+    if(blocks.length === 0){
+      if(badge){ badge.textContent = 'No data'; }
+      return;
+    }
+
+    // Group blocks by day
+    const dayMap = {};
+    for(const b of blocks){
+      if(!b.timestamp) continue;
+      const d = new Date(b.timestamp * 1000);
+      const dayKey = d.toISOString().split('T')[0];
+      dayMap[dayKey] = (dayMap[dayKey] || 0) + 1;
+    }
+    const dayKeys = Object.keys(dayMap).sort();
+    const dayCounts = dayKeys.map(k => dayMap[k]);
+
+    const today = new Date().toISOString().split('T')[0];
+    const blocksToday = dayMap[today] || 0;
+    const avgDay = dayCounts.length > 0 ? (dayCounts.reduce((a,b)=>a+b,0) / dayCounts.length).toFixed(1) : '—';
+    const peak = dayCounts.length > 0 ? Math.max(...dayCounts) : '—';
+
+    const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+    set('ng-blocks-today', blocksToday);
+    set('ng-avg-day', avgDay);
+    set('ng-peak', peak);
+    if(badge){ badge.textContent = dayCounts.length + ' days'; badge.className = 'text-xs px-2 py-0.5 rounded-full bg-emerald-700 text-emerald-300'; }
+
+    // Draw bar chart
+    const canvas = document.getElementById('chart-network-growth');
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+    const W = rect.width, H = rect.height;
+    ctx.clearRect(0, 0, W, H);
+
+    if(dayCounts.length === 0) return;
+    const maxVal = Math.max(...dayCounts, 1);
+    const barW = W / dayCounts.length * 0.7;
+    const gap = W / dayCounts.length * 0.3;
+    const colors = ['#10b981', '#06b6d4', '#f59e0b', '#a855f7', '#ef4444', '#3b82f6'];
+    dayCounts.forEach((val, i) => {
+      const barH = (val / maxVal) * (H - 20);
+      const x = i * (barW + gap) + gap / 2;
+      const y = H - barH - 15;
+      ctx.fillStyle = colors[i % colors.length];
+      ctx.fillRect(x, y, barW, barH);
+      // Value label
+      ctx.fillStyle = '#888';
+      ctx.font = '9px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(val, x + barW / 2, H - 4);
+    });
+
+    // Legend
+    const legend = document.getElementById('network-growth-legend');
+    if(legend){
+      legend.innerHTML = dayKeys.map((k, i) =>
+        `<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm" style="background:${colors[i % colors.length]}"></span>${k.substring(5)}</span>`
+      ).join('');
+    }
+  } catch(e){ console.error('updateNetworkGrowth:', e); }
+}
+
+// ═══ Miner Leaderboard ═══
+async function updateMinerLeaderboard(){
+  try {
+    const data = await fetch('/api/pool/miners').then(r => r.ok ? r.json() : null);
+    if(!data) return;
+    const miners = data.miners || [];
+    const tbody = document.getElementById('miner-leaderboard-tbody');
+    const badge = document.getElementById('miner-leaderboard-badge');
+    if(!tbody) return;
+
+    if(badge){ badge.textContent = miners.length + ' active'; badge.className = 'text-xs px-2 py-0.5 rounded-full bg-emerald-700 text-emerald-300'; }
+
+    if(miners.length === 0){
+      tbody.innerHTML = '<tr><td colspan="5" class="text-gray-500 text-center py-4">No active miners</td></tr>';
+      return;
+    }
+
+    // Sort by hashrate descending
+    const sorted = miners.slice().sort((a, b) => (b.hashrate_hps || b.hashrate || 0) - (a.hashrate_hps || a.hashrate || 0));
+    tbody.innerHTML = sorted.map((m, i) => {
+      const name = m.worker_name || m.miner_id || ('Miner #' + (i+1));
+      const hr = m.hashrate_hps || m.hashrate || 0;
+      const hrStr = hr >= 1e6 ? (hr / 1e6).toFixed(2) + ' MH/s' : hr >= 1e3 ? (hr / 1e3).toFixed(2) + ' KH/s' : hr.toFixed(0) + ' H/s';
+      const validShares = m.valid_shares || m.accepted_shares || 0;
+      const invalidShares = m.invalid_shares || m.rejected_shares || 0;
+      const total = validShares + invalidShares;
+      const acceptPct = total > 0 ? ((validShares / total) * 100).toFixed(1) + '%' : '—';
+      const blocks = m.blocks_found || 0;
+      const rankColor = i === 0 ? 'text-amber-400' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-orange-400' : 'text-gray-400';
+      return `<tr class="border-b border-white/5 hover:bg-white/5 transition">
+        <td class="py-1.5 px-2 font-bold ${rankColor}">${i + 1}</td>
+        <td class="py-1.5 px-2 text-white">${name}${blocks > 0 ? ' <span class="text-[9px] text-emerald-400">('+blocks+' blk)</span>' : ''}</td>
+        <td class="py-1.5 px-2 text-right text-emerald-400 font-mono">${hrStr}</td>
+        <td class="py-1.5 px-2 text-right text-white font-mono">${validShares}</td>
+        <td class="py-1.5 px-2 text-right text-cyan-400 font-mono">${acceptPct}</td>
+      </tr>`;
+    }).join('');
+  } catch(e){ console.error('updateMinerLeaderboard:', e); }
+}
+
+// ═══ Difficulty Forecast ═══
+async function updateDifficultyForecast(){
+  try {
+    const data = await fetch('/api/explorer').then(r => r.ok ? r.json() : null);
+    if(!data) return;
+    const blocks = data.recent_blocks || [];
+    const badge = document.getElementById('diff-forecast-badge');
+    const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+
+    if(blocks.length < 2){
+      if(badge){ badge.textContent = 'Need more blocks'; }
+      return;
+    }
+
+    const recent = blocks.slice(-10);
+    const latest = recent[recent.length - 1];
+    const currentDiff = latest.difficulty || 0;
+    set('diff-current', currentDiff ? currentDiff.toLocaleString() : '—');
+
+    // Avg block time
+    const dts = [];
+    for(let i = 1; i < recent.length; i++){
+      dts.push(recent[i].timestamp - recent[i-1].timestamp);
+    }
+    const avgDt = dts.reduce((a,b)=>a+b,0) / dts.length;
+    set('diff-avg-block-time', avgDt > 0 ? avgDt.toFixed(1) + 's' : '—');
+
+    // Predicted next difficulty = current * (target / avg_block_time)
+    const targetBlockTime = 60; // 60 seconds target
+    let predictedDiff = currentDiff;
+    if(avgDt > 0){
+      predictedDiff = Math.round(currentDiff * (targetBlockTime / avgDt));
+    }
+    set('diff-predicted', predictedDiff.toLocaleString());
+
+    // Change %
+    if(currentDiff > 0){
+      const changePct = ((predictedDiff - currentDiff) / currentDiff * 100);
+      const sign = changePct >= 0 ? '+' : '';
+      set('diff-change', sign + changePct.toFixed(2) + '%');
+      const el = document.getElementById('diff-change');
+      if(el){
+        el.className = changePct > 5 ? 'font-mono font-bold text-emerald-400' :
+                      changePct < -5 ? 'font-mono font-bold text-red-400' :
+                      'font-mono font-bold text-amber-400';
+      }
+    }
+
+    // ETA to retarget (assume retarget every N blocks, or continuous)
+    // ZION uses continuous difficulty adjustment, so ETA = next block
+    set('diff-eta', 'Next block');
+
+    if(badge){ badge.textContent = 'Live'; badge.className = 'text-xs px-2 py-0.5 rounded-full bg-emerald-700 text-emerald-300'; }
+
+    // Draw difficulty trend sparkline
+    const canvas = document.getElementById('chart-diff-trend');
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+    const W = rect.width, H = rect.height;
+    ctx.clearRect(0, 0, W, H);
+
+    const diffs = recent.map(b => b.difficulty || 0).filter(d => d > 0);
+    if(diffs.length < 2) return;
+    const minD = Math.min(...diffs);
+    const maxD = Math.max(...diffs);
+    const range = maxD - minD || 1;
+
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    diffs.forEach((d, i) => {
+      const x = (i / (diffs.length - 1)) * W;
+      const y = H - ((d - minD) / range) * (H - 10) - 5;
+      if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // Fill area
+    ctx.lineTo(W, H);
+    ctx.lineTo(0, H);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(245, 158, 11, 0.15)';
+    ctx.fill();
+  } catch(e){ console.error('updateDifficultyForecast:', e); }
+}
+
+// ═══ Dark/Light Theme Toggle ═══
+function toggleTheme(){
+  const body = document.body;
+  body.classList.toggle('light-theme');
+  const isLight = body.classList.contains('light-theme');
+  const btn = document.getElementById('themeBtn');
+  if(btn) btn.textContent = isLight ? '☀️' : '🌙';
+  try { localStorage.setItem('zion-theme', isLight ? 'light' : 'dark'); } catch(e) {}
+}
+
+// Apply saved theme on load
+(function(){
+  try {
+    const saved = localStorage.getItem('zion-theme');
+    if(saved === 'light'){
+      document.body.classList.add('light-theme');
+      const btn = document.getElementById('themeBtn');
+      if(btn) btn.textContent = '☀️';
+    }
+  } catch(e) {}
+})();
 
 async function refreshPayout(){
   try{
