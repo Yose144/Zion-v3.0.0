@@ -5102,6 +5102,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "zeroize",
+ "zion-l1-types",
 ]
 
 [[package]]
@@ -5129,6 +5130,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "zeroize",
+ "zion-l1-types",
 ]
 
 [[package]]
@@ -5226,6 +5228,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "uuid",
+ "zion-l1-types",
 ]
 
 [[package]]
@@ -5270,6 +5273,17 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "uuid",
+]
+
+[[package]]
+name = "zion-l1-types"
+version = "3.0.4"
+dependencies = [
+ "hex",
+ "ripemd",
+ "serde",
+ "serde_json",
+ "sha2",
 ]
 
 [[package]]

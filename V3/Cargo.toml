@@ -5,6 +5,7 @@ members = [
     "L1/pool",
     "L1/miner",
     "L1/native-ffi",
+    "L1/types",
     "L2/bridge",
     "L2/dao",
     "L2/atomic-swap",

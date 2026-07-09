@@ -760,7 +760,7 @@ All ZION services on the new server run as systemd units:
 If pool stops accepting connections:
 1. Check pool logs: `journalctl -u zion-pool.service -f`
 2. Verify node RPC is accessible: `curl http://127.0.0.1:8443/jsonrpc`
-3. Check pool configuration: `V3/config/pool-mainnet.toml`
+3. Check pool configuration: `V3/L1/pool/config/pool-mainnet.toml`
 4. Restart pool service: `systemctl restart zion-pool.service`
 5. Verify miners can reconnect
 
@@ -1185,7 +1185,7 @@ All other ports (8333, 8444, 9333) are **not** in UFW — they bind to 0.0.0.0 b
 
 | Config | Path | Purpose |
 |--------|------|---------|
-| Bridge | `/root/zion/2.9.6/V3/config/bridge-mainnet.toml` | Bridge relay config (6 EVM chains, DB path `/data/zion/bridge-mainnet.db`) |
+| Bridge | `/root/zion/2.9.6/V3/L2/bridge/config/bridge-mainnet.toml` | Bridge relay config (6 EVM chains, DB path `/data/zion/bridge-mainnet.db`) |
 | DAO | `/root/zion/2.9.6/V3/L2/dao/config/dao-mainnet.toml` | DAO config (DB path `/data/zion/dao-mainnet.db`) |
 | WARP | `/root/zion/2.9.6/V3/L3/warp/config/warp-mainnet.toml` | WARP relay config |
 | Nginx | `/etc/nginx/sites-available/zion` | Reverse proxy + SSL + security headers |
@@ -1211,7 +1211,7 @@ ZION_POOL_BIND="0.0.0.0:8444"
 ZION_POOL_SK="<REPLACE_POOL_SK>"
 
 # Bridge
-ZION_BRIDGE_CONFIG="/root/zion/2.9.6/V3/config/bridge-mainnet.toml"
+ZION_BRIDGE_CONFIG="/root/zion/2.9.6/V3/L2/bridge/config/bridge-mainnet.toml"
 ZION_BRIDGE_DB="/data/zion/bridge-mainnet.db"
 ZION_BRIDGE_VALIDATOR_SK_1..5="<REPLACE_EVM_VALIDATOR_SK_*>"
 
