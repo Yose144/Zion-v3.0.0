@@ -997,8 +997,16 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
             <span id="prom-status-dot" class="w-2 h-2 rounded-full bg-gray-600"></span>
           </div>
           <div class="text-xs text-gray-400 mb-1">Endpoint: <span class="text-white font-mono">127.0.0.1:8455/metrics</span></div>
-          <div class="text-xs text-gray-400 mb-2">Total Shares: <span id="prom-targets" class="text-white font-mono">—</span></div>
-          <div class="text-xs text-gray-400">Pool Hashrate: <span id="prom-version" class="text-white font-mono">—</span></div>
+          <div class="text-xs text-gray-400 mb-2">Pool Hashrate: <span id="prom-version" class="text-white font-mono">—</span></div>
+          <div class="grid grid-cols-3 gap-2 mt-2">
+            <div class="text-center"><div class="text-[9px] text-gray-500">Sessions</div><div id="pm-active-sessions" class="text-sm font-bold text-emerald-400">—</div></div>
+            <div class="text-center"><div class="text-[9px] text-gray-500">Miners</div><div id="pm-miners-tracked" class="text-sm font-bold text-cyan-400">—</div></div>
+            <div class="text-center"><div class="text-[9px] text-gray-500">Blocks</div><div id="pm-blocks-found" class="text-sm font-bold text-amber-400">—</div></div>
+            <div class="text-center"><div class="text-[9px] text-gray-500">Accepted</div><div id="pm-accepted" class="text-sm font-bold text-emerald-400">—</div></div>
+            <div class="text-center"><div class="text-[9px] text-gray-500">Rejected</div><div id="pm-rejected" class="text-sm font-bold text-red-400">—</div></div>
+            <div class="text-center"><div class="text-[9px] text-gray-500">Submits</div><div id="pm-submits" class="text-sm font-bold text-white">—</div></div>
+          </div>
+          <div class="text-xs text-gray-400 mt-2">Total Shares: <span id="prom-targets" class="text-white font-mono">—</span></div>
         </div>
         <div class="bg-black/30 border border-white/5 rounded-lg p-3">
           <div class="flex items-center justify-between mb-2">
@@ -5521,7 +5529,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=87"></script>
+<script src="/dashboard.js?v=88"></script>
 <script>
 // ═══ ZION Theme — Auto-apply accent colors per pane ═══
 (function(){

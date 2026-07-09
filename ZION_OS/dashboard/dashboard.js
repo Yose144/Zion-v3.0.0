@@ -3565,36 +3565,45 @@ async function loadMempool(){
 async function loadMonitoringStatus(){
   try {
     const data = await apiFetch('/api/monitoring/status');
-    const prom = data.prometheus || {};
-    const graf = data.grafana || {};
+    const pm = data.pool_metrics || data.prometheus || {};
+    const bic = data.built_in_charts || data.grafana || {};
 
     // Badge
     const badge = document.getElementById('monitoring-status-badge');
     if(badge){
-      const allOk = prom.alive && graf.alive;
-      badge.textContent = allOk ? 'Online' : (prom.alive || graf.alive ? 'Partial' : 'Offline');
+      const allOk = pm.alive && bic.alive;
+      badge.textContent = allOk ? 'Online' : (pm.alive || bic.alive ? 'Partial' : 'Offline');
       badge.className = 'text-[10px] px-2 py-0.5 rounded-full ' + (allOk
         ? 'bg-emerald-600/20 text-emerald-300 border border-emerald-600/30'
-        : prom.alive || graf.alive
+        : pm.alive || bic.alive
           ? 'bg-amber-600/20 text-amber-300 border border-amber-600/30'
           : 'bg-red-600/20 text-red-300 border border-red-600/30');
     }
 
-    // Pool scraper dot + stats
+    // Pool Metrics dot + stats
     const promDot = document.getElementById('prom-status-dot');
-    if(promDot) promDot.className = 'w-2 h-2 rounded-full ' + (prom.alive ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]' : 'bg-red-500');
+    if(promDot) promDot.className = 'w-2 h-2 rounded-full ' + (pm.alive ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]' : 'bg-red-500');
     const promTargets = document.getElementById('prom-targets');
-    if(promTargets) promTargets.textContent = prom.shares != null ? prom.shares.toLocaleString() : '—';
+    if(promTargets) promTargets.textContent = pm.shares != null ? pm.shares.toLocaleString() : '—';
     const promVer = document.getElementById('prom-version');
-    if(promVer) promVer.textContent = prom.version || '—';
+    if(promVer) promVer.textContent = pm.hashrate || pm.version || '—';
+
+    // Extra pool metrics stats (accepted/rejected/blocks/sessions)
+    const setExtra = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+    setExtra('pm-active-sessions', pm.active_sessions != null ? pm.active_sessions : '—');
+    setExtra('pm-miners-tracked', pm.miners_tracked != null ? pm.miners_tracked : '—');
+    setExtra('pm-accepted', pm.accepted != null ? pm.accepted.toLocaleString() : '—');
+    setExtra('pm-rejected', pm.rejected != null ? pm.rejected.toLocaleString() : '—');
+    setExtra('pm-blocks-found', pm.blocks_found != null ? pm.blocks_found : '—');
+    setExtra('pm-submits', pm.submits != null ? pm.submits.toLocaleString() : '—');
 
     // Built-in charts dot + text
     const grafDot = document.getElementById('graf-status-dot');
-    if(grafDot) grafDot.className = 'w-2 h-2 rounded-full ' + (graf.alive ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]' : 'bg-red-500');
+    if(grafDot) grafDot.className = 'w-2 h-2 rounded-full ' + (bic.alive ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]' : 'bg-red-500');
     const grafVer = document.getElementById('graf-version');
-    if(grafVer) grafVer.textContent = graf.version || '—';
+    if(grafVer) grafVer.textContent = bic.version || '—';
     const grafDb = document.getElementById('graf-db');
-    if(grafDb) grafDb.textContent = graf.database || '—';
+    if(grafDb) grafDb.textContent = bic.database || '—';
   } catch(e) { console.error('loadMonitoringStatus error:', e); }
 }
 
@@ -6435,7 +6444,7 @@ async function loadL2Data() {
     const badge = document.getElementById('l2-bridge-badge');
     if(badge){ badge.className = ok ? 'text-[10px] px-2 py-0.5 rounded-full bg-emerald-700/50 text-emerald-300' : 'text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400'; badge.textContent = ok ? 'Online' : 'Offline'; }
     if(r.total_relays !== undefined) document.getElementById('l2-relays')?.setAttribute('data-val', r.total_relays);
-  } catch(e) {}
+  } catch(e) { console.warn('L2 bridge data:', e); }
 
   // DAO stats
   try {
@@ -6445,7 +6454,7 @@ async function loadL2Data() {
     if(el('l2-proposals')) el('l2-proposals').textContent = d.total_proposals ?? '—';
     if(el('l2-dao-active')) el('l2-dao-active').textContent = d.active ?? '—';
     if(el('l2-dao-passed')) el('l2-dao-passed').textContent = d.passed ?? '—';
-  } catch(e) {}
+  } catch(e) { console.warn('L2 DAO data:', e); }
 
   // Swap status
   try {
@@ -6458,7 +6467,7 @@ async function loadL2Data() {
     if(el('l2-swap-completed')) el('l2-swap-completed').textContent = r.completed ?? '—';
     if(el('l2-swap-refunded')) el('l2-swap-refunded').textContent = r.refunded ?? '—';
     if(el('l2-swaps')) el('l2-swaps').textContent = r.active_htlcs ?? '—';
-  } catch(e) {}
+  } catch(e) { console.warn('L2 swap data:', e); }
 
   // DeFi / Uniswap V3 pools — data z /api/cex/listings (proxuje na website DexScreener API)
   try {
@@ -6607,7 +6616,7 @@ async function loadL3Data() {
     if(el('l3-warp-relayed')) el('l3-warp-relayed').textContent = r.transfers_total ?? '—';
     if(el('l3-warp-pending')) el('l3-warp-pending').textContent = r.transfers_pending ?? '—';
     if(el('l3-warp-chains')) el('l3-warp-chains').textContent = '21';
-  } catch(e) {}
+  } catch(e) { console.warn('L3 WARP data:', e); }
 
   // NCL jobs
   try {
@@ -6624,7 +6633,7 @@ async function loadL3Data() {
     if(el('l3-ncl-jobs-2')) el('l3-ncl-jobs-2').textContent = jobs;
     if(el('l3-tflops')) el('l3-tflops').textContent = '—';
     if(el('l3-ncl-tflops-2')) el('l3-ncl-tflops-2').textContent = '—';
-  } catch(e) {}
+  } catch(e) { console.warn('L3 NCL data:', e); }
 
   // Hiran inference + AI agents
   try {
@@ -6636,7 +6645,7 @@ async function loadL3Data() {
     if(el('l3-hiran-model') && r.hiran_model) el('l3-hiran-model').textContent = r.hiran_model;
     if(el('l3-hiran-backend') && r.hiran_backend) el('l3-hiran-backend').textContent = r.hiran_backend;
     if(el('l3-agents')) el('l3-agents').textContent = r.orchestrator_agents ?? r.total ?? '—';
-  } catch(e) {}
+  } catch(e) { console.warn('L3 Hiran/AI data:', e); }
 }
 
 async function submitNclJob() {
@@ -6690,7 +6699,7 @@ async function loadL4Data() {
       el('l4-server-status').className = ok ? 'text-emerald-400' : 'text-gray-400';
     }
     if(el('l4-version')) el('l4-version').textContent = r.version ?? '—';
-  } catch(e) {}
+  } catch(e) { console.warn('L4 OASIS data:', e); }
 }
 
 async function loadL4Quests() {
@@ -6705,7 +6714,7 @@ async function loadL4Quests() {
         <div class="flex justify-between"><span class="text-purple-300 font-semibold">${q.name || 'Quest'}</span><span class="text-[10px] text-zion-gold">${q.reward || '—'} ZION</span></div>
         <div class="text-[10px] text-gray-500 mt-0.5">${q.description || ''}</div>
       </div>`).join('');
-  } catch(e) {}
+  } catch(e) { console.warn('L4 quests data:', e); }
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -6733,7 +6742,7 @@ async function loadL5Data() {
     if(el('l5-blocks-scanned')) el('l5-blocks-scanned').textContent = r.blocks_scanned ?? '—';
     const ok = r.ok;
     if(el('l5-status')){ el('l5-status').textContent = ok ? 'Online' : 'Offline'; el('l5-status').className = ok ? 'text-emerald-400' : 'text-gray-400'; }
-  } catch(e) {}
+  } catch(e) { console.warn('L5 Free World data:', e); }
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -6759,7 +6768,7 @@ async function loadL6Data() {
     if(el('l6-blocks-scanned')) el('l6-blocks-scanned').textContent = r.blocks_scanned ?? '—';
     const ok = r.ok;
     if(el('l6-api-status')){ el('l6-api-status').textContent = ok ? 'Online' : 'Offline'; el('l6-api-status').className = ok ? 'text-emerald-400' : 'text-gray-400'; }
-  } catch(e) {}
+  } catch(e) { console.warn('L6 Space data:', e); }
 }
 
 async function loadL6Missions() {
@@ -6775,7 +6784,7 @@ async function loadL6Missions() {
         <div class="text-gray-500 text-[10px]">${m.description || ''}</div>
         <div class="w-full bg-gray-800 rounded-full h-1 mt-1"><div class="bg-blue-500 h-1 rounded-full" style="width:${m.progress || 0}%"></div></div>
       </div>`).join('');
-  } catch(e) {}
+  } catch(e) { console.warn('L6 missions data:', e); }
 }
 
 // ═══════════════════════════════════════════════════════════════════════
