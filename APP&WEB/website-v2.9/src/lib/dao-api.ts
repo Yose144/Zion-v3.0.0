@@ -146,9 +146,9 @@ const PLACEHOLDER_STATS: DAOStats = {
   active: 0,
   passed: 0,
   executed: 0,
-  quorum_percent: 10,
-  multisig: '5-of-7',
-  voting_period_days: 7,
+  quorum_percent: 15,
+  multisig: '3-of-3',
+  voting_period_days: 14,
 };
 
 // ---------------------------------------------------------------------------
