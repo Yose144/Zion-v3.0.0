@@ -185,7 +185,7 @@ before launch and verifiable on-chain.
 | OASIS + Golden Egg / XP reward pool (5 slots) | 8.25B | None |
 | DAO Treasury (governance + grants + bootstrap) | 4.0B | ~1 year (block 525,600) |
 | Core Development + Network Infrastructure | 2.0B | None |
-| Genesis Creator (lifetime stewardship) | 0.59B | None |
+| Genesis Projects Steward (lifetime stewardship) | 0.59B | None |
 | Humanitarian — Children Future Fund | 1.44B | None |
 | Bridge Seed + Vault liquidity | 0.5B | None |
 

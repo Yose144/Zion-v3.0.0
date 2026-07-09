@@ -3356,7 +3356,7 @@ def parse_premine_from_genesis(rpc_host: str = "127.0.0.1", rpc_port: int = 8443
         "DAO Treasury — Ecosystem Bootstrap",
         "Core Development Fund",
         "Network Infrastructure — P2P Seed Nodes",
-        "Genesis Creator — Lifetime Rent",
+        "Genesis Projects — Dharma Temple, Piko de Ora + DAO",
         "Children Future Fund — Humanitarian DAO",
     ]
     for i, tx in enumerate(genesis.get("transactions", [])):
@@ -5184,7 +5184,7 @@ PREMINE_OUTPUTS = [
     # Infrastructure (3 slots = 2.59B)
     {"address": "zion1d3p5x622m327r060w5z0q5r203v837m6l8pa8x5", "purpose": "Core Development Fund", "amount_zion": 1_000_000_000, "category": "infrastructure", "unlock_height": None},
     {"address": "zion1r6r4s0u2e6u4t23767s05752d70660h2f29d2l7", "purpose": "Network Infrastructure — P2P Seed Nodes", "amount_zion": 1_000_000_000, "category": "infrastructure", "unlock_height": None},
-    {"address": "zion16542q4l853a2z0u5r5w8y4m8k4558847h503736", "purpose": "Genesis Creator — Lifetime Rent", "amount_zion": 590_000_000, "category": "infrastructure", "unlock_height": None},
+    {"address": "zion16542q4l853a2z0u5r5w8y4m8k4558847h503736", "purpose": "Genesis Projects — Dharma Temple, Piko de Ora + DAO", "amount_zion": 590_000_000, "category": "infrastructure", "unlock_height": None},
     # Humanitarian (1 slot = 1.44B)
     {"address": "zion1z7g4u3s2w3c5z5u4a60864m2y7q8e5j304g46r7", "purpose": "Children Future Fund — Humanitarian DAO", "amount_zion": 1_440_000_000, "category": "humanitarian", "unlock_height": None},
     # Bridge Seed Fund (1 slot = 0.4B) — immediate unlock for EVM bridge liquidity
@@ -7985,7 +7985,7 @@ ATTACKER_ADDRESSES = [
 
 # Premine wallets to guard (alert if balance drops below expected)
 PREMINE_GUARD = [
-    {"address": "zion16542q4l853a2z0u5r5w8y4m8k4558847h503736", "label": "Genesis Creator", "min_balance_zion": 589_000_000},
+    {"address": "zion16542q4l853a2z0u5r5w8y4m8k4558847h503736", "label": "Genesis Projects (Dharma Temple, Piko de Ora + DAO)", "min_balance_zion": 589_000_000},
     {"address": "zion13794g7k3m0f84637l2x0t855h3l258k8p3xp5t3", "label": "Bridge Seed (Slot 13)", "min_balance_zion": 399_000_000},
     {"address": "zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4", "label": "DAO Treasury", "min_balance_zion": 2_400_000_000},
     {"address": "zion1d3p5x622m327r060w5z0q5r203v837m6l8pa8x5", "label": "Core Dev Fund", "min_balance_zion": 990_000_000},

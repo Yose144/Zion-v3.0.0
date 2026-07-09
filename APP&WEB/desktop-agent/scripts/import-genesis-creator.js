@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Import Genesis Creator wallet into desktop agent
+ * Import Genesis Projects wallet into desktop agent
  * Script to import the canonical premine wallet (Slot 11) with 590M ZION
  *
  * Usage: node scripts/import-genesis-creator.js <password>
@@ -18,23 +18,23 @@ if (!PASSWORD) {
   process.exit(1);
 }
 
-// Genesis Creator wallet data (Slot 11)
+// Genesis Projects wallet data (Slot 11)
 const GENESIS_CREATOR = {
   secretKeyHex: '60a084869f413466c1bb68aaaaa617990c7a07d30ae64b229e178f8af580c0d3',
   publicKeyHex: '4608c3495ad13f1dbf68bebfbd476aa36bba797bd2da499a652b36bd75915bc5',
   address: 'zion16542q4l853a2z0u5r5w8y4m8k4558847h503736',
   balanceZION: 590_000_000, // 590 million
-  purpose: 'Genesis Creator — Lifetime Rent (Slot 11)'
+  purpose: 'Genesis Projects — Dharma Temple, Piko de Ora + DAO (Slot 11)'
 };
 
 console.log('═══════════════════════════════════════════════════════════');
-console.log('  Zion Desktop Agent — Genesis Creator Wallet Import');
+console.log('  Zion Desktop Agent — Genesis Projects Wallet Import');
 console.log('═══════════════════════════════════════════════════════════');
 console.log('');
 
 try {
   // Step 1: Import wallet from raw secret key
-  console.log('[1/4] Importing Genesis Creator wallet...');
+  console.log('[1/4] Importing Genesis Projects wallet...');
   const wallet = WalletGenerator.importPrivateKey(GENESIS_CREATOR.secretKeyHex);
 
   // Verify address matches
@@ -78,7 +78,7 @@ try {
   // Build wallet data object
   const walletData = {
     version: '2.9.6',
-    name: 'Genesis Creator (590M ZION)',
+    name: 'Genesis Projects (590M ZION)',
     address: wallet.address,
     publicKey: wallet.publicKey,
     encryptedPrivateKey: encrypted,
@@ -105,7 +105,7 @@ try {
   const CONFIG_PATH = path.join(USER_DATA_PATH, 'miner_config.json');
   
   const minerConfig = {
-    name: 'Genesis Creator',
+    name: 'Genesis Projects',
     address: wallet.address,
     publicKey: wallet.publicKey,
     privateKey: wallet.privateKey,
@@ -130,12 +130,12 @@ try {
   };
 
   fs.writeFileSync(CONFIG_PATH, JSON.stringify(minerConfig, null, 2));
-  console.log('  ✅ Config updated with Genesis Creator wallet');
+  console.log('  ✅ Config updated with Genesis Projects wallet');
   console.log('');
 
   // Success summary
   console.log('═══════════════════════════════════════════════════════════');
-  console.log('  ✅ SUCCESS — Genesis Creator wallet imported!');
+  console.log('  ✅ SUCCESS — Genesis Projects wallet imported!');
   console.log('═══════════════════════════════════════════════════════════');
   console.log('');
   console.log('  Wallet Address:', wallet.address);

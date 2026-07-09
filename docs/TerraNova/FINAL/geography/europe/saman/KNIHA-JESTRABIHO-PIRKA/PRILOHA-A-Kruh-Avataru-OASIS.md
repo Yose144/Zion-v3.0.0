@@ -10,7 +10,7 @@ V repozitáři ZION OASIS je rozšířený roster **201 avatarů** *(2026-05)*: 
 
 Žádný z původních **51** nebyl **z prvních národů Ameriky** — proto tato příloha.
 
-To je **mezera**, **kterou tato příloha vyplňuje** — **ne jako technická specifikace** (žádné ability stats, XP thresholds, NFT rarity — to bude doplněno později, **pokud se Genesis Creator a komunita rozhodnou tyto avatary do MMORPG zařadit**), **ale jako literární kruh**.
+To je **mezera**, **kterou tato příloha vyplňuje** — **ne jako technická specifikace** (žádné ability stats, XP thresholds, NFT rarity — to bude doplněno později, **pokud se Genesis Projects Steward a komunita rozhodnou tyto avatary do MMORPG zařadit**), **ale jako literární kruh**.
 
 Tady je **devět postav**, **které se objevily v Knize Jestřábího Pírka** — **a které mohou jednoho dne vstoupit do ZION OASIS jako questgiveři, učitelé, strážci míst, mentoři Duhových Bojovníků**.
 
@@ -180,7 +180,7 @@ Každá postava je **archetyp**, **ne kopie konkrétní historické osoby**. Pos
 
 ## Hierarchie a kontext OASIS
 
-Pokud Genesis Creator a komunita rozhodnou tyto avatary do OASIS zařadit (**není to nutnost**, **je to nabídka**), mohly by se vejít do existující struktury takto:
+Pokud Genesis Projects Steward a komunita rozhodnou tyto avatary do OASIS zařadit (**není to nutnost**, **je to nabídka**), mohly by se vejít do existující struktury takto:
 
 ```
 Hindu Deities (17)         — beze změny

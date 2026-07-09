@@ -279,7 +279,7 @@ The genesis block (height 0) contains 12 outputs with a total of 16.28 billion Z
 | 8 | DAO Ecosystem Bootstrap | 500,000,000 | 525,600 blocks (~1 year) |
 | 9 | Core Development Fund | 1,000,000,000 | None |
 | 10 | Network Infrastructure | 1,000,000,000 | None |
-| 11 | Genesis Creator | 590,000,000 | None |
+| 11 | Genesis Projects Steward | 590,000,000 | None |
 | 12 | Humanitarian — Children Future Fund | 1,440,000,000 | None |
 
 The DAO Treasury lock is enforced on-chain in `V3/L1/core/src/validation.rs` Step 11. Any transaction spending DAO Treasury outputs before block 525,600 is rejected by consensus.

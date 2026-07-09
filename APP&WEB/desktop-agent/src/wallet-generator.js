@@ -176,7 +176,7 @@ class ZionWalletGenerator {
    * Import ZION wallet from raw Ed25519 secret key (32 bytes).
    *
    * For premine/canonical wallets where you have the raw secret_key_hex
-   * (e.g., Genesis Creator slot). Converts to PKCS8 DER format used by
+   * (e.g., Genesis Projects slot). Converts to PKCS8 DER format used by
    * the rest of the desktop agent.
    *
    * @param {string} secretKeyHex - 64-char hex string (32 bytes raw Ed25519 seed)

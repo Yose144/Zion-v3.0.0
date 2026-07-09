@@ -33,7 +33,7 @@ Kanonicky zdroj: `V3/L1/core/src/genesis.rs` → `PREMINE_OUTPUTS`
 | 8 | `zion102s8k4k0w783d657j255z865e47054s342u87v3` | DAO Bootstrap | 500,000,000 |
 | 9 | `zion1e8j5z6v8e4c6s5x7r0w7e2r673h8k3a6d4xx877` | Core Dev Fund | 1,000,000,000 |
 | 10 | `zion1f7z374q068r3p657m8z220v7y6k045q255xp2d3` | P2P Seed Nodes | 1,000,000,000 |
-| 11 | `zion1s2j5s2a6f5k740k4d8s2k3y8v0t8d4k0u6my2k0` | Creator Rent | 590,000,000 |
+| 11 | `zion1s2j5s2a6f5k740k4d8s2k3y8v0t8d4k0u6my2k0` | Genesis Projects (Dharma Temple, Piko de Ora + DAO) | 590,000,000 |
 | 12 | `zion10797m0k3u356f2l443r062d4e49665f6n20j6x0` | Children Future | 1,440,000,000 |
 | 13 | `zion1p3y7w4z7d2m3j0f00657r354y4f3q5k6y8ca0g7` | Bridge Seed | 400,000,000 |
 | 14 | `zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7` | Bridge Vault (keyless) | 100,000,000 |

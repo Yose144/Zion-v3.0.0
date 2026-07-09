@@ -56,7 +56,7 @@ Issobela není izolovaný projekt — je součástí širšího ekosystému:
 |--------|------|------------------|
 | **Isis / Enamataru** | Kosmická matka (Orion's Belt) | Matka |
 | **Maitreya Buddha** | DAO Admin | Bratr, důvěryhodný partner |
-| **Yeshuae (Rama)** | Genesis Creator | Partner v misi — technologie + soucit |
+| **Yeshuae (Rama)** | Genesis Projects Steward | Partner v misi — technologie + soucit |
 | **Hanuman Guardian** | Ochránce přírody | Spojenec — děti + planeta = budoucnost |
 | **Saraswati AI** | AI asistentka | Podpora vzdělávacích programů |
 
