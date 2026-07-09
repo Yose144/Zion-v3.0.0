@@ -156,7 +156,7 @@ AUTH_EXEMPT_ROUTES = {"/api/health", "/health", "/favicon.ico", "/api/poc/html",
 
 # Edge server addresses (Hetzner VPS — always-on)
 EDGE_HOST = "127.0.0.1"   # Dashboard runs on same server (v3.0.4)
-EDGE_PUBLIC_IP = "62.171.141.136"  # Public IP (fallback if Tailscale down)
+EDGE_PUBLIC_IP = "62.171.141.136"  # Public IP (Edge server)
 
 # ── Edge-local detection ─────────────────────────────────────────────────
 # When the dashboard runs ON the Edge server, we can execute commands locally
@@ -323,6 +323,7 @@ class ServiceHealthHistory:
 SERVICE_HISTORY = ServiceHealthHistory()
 BLOCK_EVENTS: deque = deque(maxlen=50)
 LAST_BLOCK_EVENT_TIME = {"node1": 0, "node2": 0, "pool": 0}
+BLOCK_EVENTS_LOCK = threading.Lock()
 
 # ── Log Rotation ─────────────────────────────────────────────────────────
 LOG_ROTATION_LOCK = threading.Lock()
@@ -748,6 +749,7 @@ def append_alert(alert: dict):
 WATCHDOG_ENABLED = True
 WATCHDOG_RESTART_COOLDOWN_SEC = 300  # 5 min between auto-restarts per service
 WATCHDOG_LAST_RESTART = {}  # sid -> ts
+WATCHDOG_LOCK = threading.Lock()
 
 def watchdog_check():
     """Auto-restart critical services that have gone down unexpectedly. Topology-aware."""
@@ -770,9 +772,10 @@ def watchdog_check():
         if proc_info["alive"]:
             continue
         # Check cooldown
-        last_restart = WATCHDOG_LAST_RESTART.get(sid, 0)
-        if now - last_restart < WATCHDOG_RESTART_COOLDOWN_SEC:
-            continue
+        with WATCHDOG_LOCK:
+            last_restart = WATCHDOG_LAST_RESTART.get(sid, 0)
+            if now - last_restart < WATCHDOG_RESTART_COOLDOWN_SEC:
+                continue
         start_script = svc.get("start")
         if not start_script:
             continue
@@ -785,7 +788,8 @@ def watchdog_check():
             continue
         result = run_control(action)
         if result.get("ok"):
-            WATCHDOG_LAST_RESTART[sid] = now
+            with WATCHDOG_LOCK:
+                WATCHDOG_LAST_RESTART[sid] = now
             register_process(sid, result["pid"])
             append_alert({"severity": "warning", "title": f"Watchdog restarted {svc['name']}",
                           "detail": f"PID {proc_info['pid']} died. Auto-restarted at {datetime.now().isoformat()}",
@@ -1196,21 +1200,7 @@ SERVICE_REGISTRY_LOCAL_DEV = [
      "depends_on": ["node1"]},
 
     # ── Infrastructure ───────────────────────────────────────────────────
-    {"id": "prometheus", "name": "Prometheus", "icon": "📊", "level": "Infra", "kind": "metrics",
-     "ports": {"web": 9090},
-     "log": None, "start": "start-prometheus", "stop": None,
-     "health_method": "tcp", "severity": "info", "autoheal": False,
-     "purpose": "Collects and stores metrics from all services (every 15s).",
-     "child_says": "📊 A super-memory that remembers all the numbers!",
-     "depends_on": []},
-    {"id": "grafana", "name": "Grafana", "icon": "📈", "level": "Infra", "kind": "dashboards",
-     "ports": {"web": 3100},
-     "host": "127.0.0.1",
-     "log": None, "start": "start-grafana", "stop": None,
-     "health_method": "tcp", "severity": "info", "autoheal": False,
-     "purpose": "Beautiful charts and dashboards for Prometheus metrics on Edge (port 3100).",
-     "child_says": "📈 Pretty pictures showing how everything is doing!",
-     "depends_on": ["prometheus"]},
+    # Prometheus/Grafana removed — replaced by built-in pool metrics on :8455
     {"id": "node-exporter", "name": "Node Exporter", "icon": "🔧", "level": "Infra", "kind": "metrics",
      "ports": {"metrics": 9100},
      "host": "127.0.0.1",
@@ -2063,9 +2053,11 @@ EDGE_AGENT_API_BASE = f"http://{EDGE_RPC_HOST}:8767"  # Edge server agent
 
 _discovered_nodes_cache: dict = {}
 _discovered_nodes_ts: float = 0.0
+_discovered_nodes_lock = threading.Lock()
 
 _cached_rewards: dict = {}
 _cached_rewards_ts: float = 0.0
+_cached_rewards_lock = threading.Lock()
 
 AGENT_CACHE_TTL_SEC: float = 10.0
 
@@ -2073,8 +2065,9 @@ def fetch_agent_discovered_nodes() -> dict:
     """Poll desktop agent for newly discovered nodes on the local network."""
     global _discovered_nodes_cache, _discovered_nodes_ts
     now = time.time()
-    if _discovered_nodes_cache and (now - _discovered_nodes_ts) < AGENT_CACHE_TTL_SEC:
-        return _discovered_nodes_cache
+    with _discovered_nodes_lock:
+        if _discovered_nodes_cache and (now - _discovered_nodes_ts) < AGENT_CACHE_TTL_SEC:
+            return _discovered_nodes_cache
     try:
         req = urllib.request.Request(
             f"{AGENT_API_BASE}/api/nodes/discovered",
@@ -2083,8 +2076,9 @@ def fetch_agent_discovered_nodes() -> dict:
         )
         with urllib.request.urlopen(req, timeout=2.0) as r:
             data = json.loads(r.read().decode("utf-8"))
-            _discovered_nodes_cache = data
-            _discovered_nodes_ts = now
+            with _discovered_nodes_lock:
+                _discovered_nodes_cache = data
+                _discovered_nodes_ts = now
             return data
     except Exception as e:
         return {"count": 0, "nodes": [], "_error": str(e)}
@@ -2093,8 +2087,9 @@ def fetch_agent_rewards() -> dict:
     """Poll desktop agent for node-adoption rewards."""
     global _cached_rewards, _cached_rewards_ts
     now = time.time()
-    if _cached_rewards and (now - _cached_rewards_ts) < AGENT_CACHE_TTL_SEC:
-        return _cached_rewards
+    with _cached_rewards_lock:
+        if _cached_rewards and (now - _cached_rewards_ts) < AGENT_CACHE_TTL_SEC:
+            return _cached_rewards
     try:
         req = urllib.request.Request(
             f"{AGENT_API_BASE}/api/nodes/rewards",
@@ -2103,8 +2098,9 @@ def fetch_agent_rewards() -> dict:
         )
         with urllib.request.urlopen(req, timeout=2.0) as r:
             data = json.loads(r.read().decode("utf-8"))
-            _cached_rewards = data
-            _cached_rewards_ts = now
+            with _cached_rewards_lock:
+                _cached_rewards = data
+                _cached_rewards_ts = now
             return data
     except Exception as e:
         return {"total_points": 0, "adoptions": 0, "rewards": [], "_error": str(e)}
@@ -2597,7 +2593,7 @@ def _build_status_edge_primary() -> dict:
                    "fee_humanitarian": 0, "fee_issobella": 0, "fee_pool": 0, "fee_miner_pct": 89,
                    "miner_balances": []}
     try:
-        # Direct Edge pool metrics probe (Tailscale IP, port 8455)
+        # Direct Edge pool metrics probe (port 8455)
         url = f"http://{EDGE_RPC_HOST}:8455/metrics"
         with _urlreq.urlopen(url, timeout=3.0) as r:
             body = r.read().decode("utf-8", errors="ignore")
@@ -3051,7 +3047,7 @@ def build_alerts(status: dict) -> list:
         # Edge Node 1 (Primary) alerts
         if not edge_node1.get("running"):
             alerts.append({"severity": _sev("edge-node1", "critical"), "title": "Edge Node 1 (Primary) not reachable",
-                           "detail": "Primary node on Edge (127.0.0.1:8333) is not responding. Check Tailscale VPN and Edge systemd services.",
+                           "detail": "Primary node on Edge (127.0.0.1:8333) is not responding. Check Edge systemd services.",
                            "action": None})
         elif edge_node1.get("chain_height") == 0:
             alerts.append({"severity": _sev("edge-node1", "warning"), "title": "Edge chain stuck at height 0",
@@ -3236,25 +3232,27 @@ def scan_block_events():
         for line in lines:
             if m := re.search(r'relay_block height=(\d+) hash=([a-f0-9…]+)', line):
                 key = f"{name}-{m.group(1)}-{m.group(2)}"
-                if key not in (e["key"] for e in BLOCK_EVENTS):
-                    BLOCK_EVENTS.append({
-                        "key": key,
-                        "ts": int(time.time()),
-                        "source": name,
-                        "height": int(m.group(1)),
-                        "hash": m.group(2),
-                        "type": "block_relay",
-                    })
+                with BLOCK_EVENTS_LOCK:
+                    if key not in (e["key"] for e in BLOCK_EVENTS):
+                        BLOCK_EVENTS.append({
+                            "key": key,
+                            "ts": int(time.time()),
+                            "source": name,
+                            "height": int(m.group(1)),
+                            "hash": m.group(2),
+                            "type": "block_relay",
+                        })
     # Pool block_found events
     pool_lines = tail_log("pool.log", 500)
     for line in pool_lines:
         if m := re.search(r'BLOCK_FOUND.*height=(\d+)', line):
             key = f"pool-found-{m.group(1)}"
-            if key not in (e["key"] for e in BLOCK_EVENTS):
-                BLOCK_EVENTS.append({
-                    "key": key, "ts": int(time.time()), "source": "pool",
-                    "height": int(m.group(1)), "hash": None, "type": "block_found",
-                })
+            with BLOCK_EVENTS_LOCK:
+                if key not in (e["key"] for e in BLOCK_EVENTS):
+                    BLOCK_EVENTS.append({
+                        "key": key, "ts": int(time.time()), "source": "pool",
+                        "height": int(m.group(1)), "hash": None, "type": "block_found",
+                    })
 
 # ── Env file discovery ──────────────────────────────────────────────────
 
@@ -5199,7 +5197,7 @@ P0_BLOCKERS = [
     {"id": 2, "title": "Ankr API key (premium tier)", "owner": "Ops", "deadline": "T-7", "status": "OPEN", "severity": "critical",
      "detail": "bridge-mainnet.toml line 28: api_key=\"\". Requires premium Ankr account for EVM watcher reliability."},
     {"id": 3, "title": "Seed peer bootstrap mesh", "owner": "Ops", "deadline": "T-3", "status": "DONE", "severity": "info",
-     "detail": "Core + Edge topology active. Core (100.86.102.5) seeds Edge (127.0.0.1) via Tailscale VPN. Legacy multi-node mesh (Helsinki/US/SG/Prague) decommissioned."},
+     "detail": "Core + Edge topology active. Core (local backup) seeds Edge (127.0.0.1) via P2P. Legacy multi-node mesh decommissioned."},
     {"id": 4, "title": "Premine wallet rotation", "owner": "Security", "deadline": "T-14", "status": "DONE", "severity": "info",
      "detail": "✅ Done 2026-05-14. Old 12 BIP-39 seeds burned, new addresses generated, public addresses in PREMINE_ADDRESSES_PUBLIC.txt."},
     {"id": 5, "title": "CI / GitHub Actions billing", "owner": "DevOps", "deadline": "T-14", "status": "OPEN", "severity": "warning",
@@ -7531,7 +7529,7 @@ async function renderWizard(){
   const isEdge = st.topology === 'edge-primary';
   const steps=[
     {n:1,title:'Prepare environment',desc:'Generate keys (gen-keys), assemble .env file with all wallets and ZION_POOL_PAYOUT_SK_HEX.',done:cl.checks.find(c=>c.id==='env')?.ok,actions:[{label:'View env files',cb:`switchTab('env')`}]},
-    {n:2,title:isEdge?'Start Local Backup Node':'Start Genesis Node',desc:isEdge?'Syncs from Edge primary via Tailscale VPN. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).':'Local genesis node. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).',done:cl.checks.find(c=>c.id==='node1')?.ok,actions:[{label:'▶ Start Node',cb:`controlAction('start-node1')`}]},
+    {n:2,title:isEdge?'Start Local Backup Node':'Start Genesis Node',desc:isEdge?'Syncs from Edge primary via P2P. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).':'Local genesis node. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).',done:cl.checks.find(c=>c.id==='node1')?.ok,actions:[{label:'▶ Start Node',cb:`controlAction('start-node1')`}]},
     isEdge?{n:3,title:'Connect to Edge Pool',desc:'Edge (127.0.0.1) runs the primary pool. Verify VPN connectivity.',done:cl.checks.find(c=>c.id==='pool-edge')?.ok,actions:[{label:'Check Edge Pool',cb:`switchTab('overview')`}]}:{n:3,title:'Start Local Pool',desc:'Accepts miners, validates shares, distributes payouts (89/5/5 burn model).',done:cl.checks.find(c=>c.id==='pool')?.ok,actions:[{label:'▶ Start Pool',cb:`controlAction('start-pool')`}]},
     {n:4,title:'Start GPU Miner',desc:'Connects to pool, performs cosmic_harmony hashing on GPU.',done:cl.checks.find(c=>c.id==='miner')?.ok,actions:[{label:'▶ Start Miner',cb:`controlAction('start-miner')`}]},
     {n:5,title:'Verify chain progression',desc:'Confirm node syncs with network and chain height advances.',done:cl.checks.find(c=>c.id==='chain')?.ok,actions:[{label:'View events',cb:`switchTab('events')`}]},
@@ -8368,7 +8366,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json({
                 "status":    st,
                 "health":    _build_health_map(),
-                "events":    list(BLOCK_EVENTS)[-10:][::-1],
+                "events":    list(BLOCK_EVENTS)[-10:][::-1] if BLOCK_EVENTS else [],
                 "checklist": build_checklist(st),
             })
         elif route == "/api/v2/batch":
