@@ -26,7 +26,7 @@ ed25519.hashes.sha512 = sha512;
 const FLOWERS_PER_ZION = 1_000_000n;
 const MIN_FEE_FLOWERS = 1_000n;
 
-const EDGE_RPC_HOST = process.env.ZION_RPC_HOST || '77.42.71.94';
+const EDGE_RPC_HOST = process.env.ZION_RPC_HOST || '62.171.141.136';
 const EDGE_RPC_PORT = parseInt(process.env.ZION_RPC_PORT || '8443', 10);
 
 // ---------------------------------------------------------------------------

@@ -10,8 +10,7 @@ export interface RpcConfig {
 
 const DEFAULT_NODES = [
   'https://zionterranova.com',    // Edge primary (Caddy HTTPS proxy → 127.0.0.1:8443)
-  'http://77.42.71.94:8443',      // Edge direct (Hetzner VPS)
-  'http://100.76.16.108:8443',    // Edge VPN (Tailscale fallback)
+  'http://62.171.141.136:8443',      // Edge direct (Hetzner VPS)
 ];
 
 export class ZionRPC {
