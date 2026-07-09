@@ -21,7 +21,7 @@ ExecStart=/opt/zion/zion-core \
   --rpc-port 8444 \
   --p2p-port 8334 \
   --network testnet \
-  --peers "91.98.122.165:8334"
+  --peers "seed.zionterranova.com:8334"
 Restart=always
 RestartSec=10
 LimitNOFILE=65535

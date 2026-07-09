@@ -6,7 +6,7 @@ const MissionControlDashboard = dynamic(() => import('@/components/MissionContro
 
 export const metadata: Metadata = {
   title: `Mission Control · ZION ${SITE_RELEASE_LABEL}`,
-  description: 'Legacy Mission Control: launch status, blockers, pool metrics, roadmap, security gates, and Core + Edge topology telemetry.',
+  description: 'Legacy Mission Control: launch status, blockers, pool metrics, roadmap, security gates, and Edge server topology telemetry.',
   keywords: "ZION dashboard, mainnet, blockchain metrics, node status, mining pool, roadmap, security gate",
 };
 

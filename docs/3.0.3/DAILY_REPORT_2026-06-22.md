@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-Dnes jsme úspěšně dokončili **kompletní E2E wallet workflow** pro desktop agent i mobile app, včetně **Genesis Creator wallet import** (590M ZION). Všechny transakce jsou plně kompatibilní s V3 mainnet, včetně account modelu. Byla provedena strukturální konsolidace repozitáře (smazání duplicity APPS/, obnova mobile-app, sjednocení zion-wallet-sdk).
+Dnes jsme úspěšně dokončili **kompletní E2E wallet workflow** pro desktop agent i mobile app, včetně **Genesis Projects wallet import** (590M ZION). Všechny transakce jsou plně kompatibilní s V3 mainnet, včetně account modelu. Byla provedena strukturální konsolidace repozitáře (smazání duplicity APPS/, obnova mobile-app, sjednocení zion-wallet-sdk).
 
 ---
 
@@ -116,13 +116,13 @@ Výsledek: ✅ V2 BLAKE3 preimage matches desktop agent
 
 ---
 
-## 4. Genesis Creator Wallet Import (590M ZION)
+## 4. Genesis Projects Wallet Import (590M ZION)
 
 ### 🏛️ Import a konfigurace
 
-**Commit:** `d0f1c5d4` - Import Genesis Creator wallet (590M ZION) + canonical units doc
+**Commit:** `d0f1c5d4` - Import Genesis Projects wallet (590M ZION) + canonical units doc
 
-**Genesis Creator (Slot 11):**
+**Genesis Projects (Slot 11):**
 - **Address:** `zion16542q4l853a2z0u5r5w8y4m8k4558847h503736`
 - **Balance:** 590,000,000 ZION (account model)
 - **Private Key:** Encrypted with password `123456789`
@@ -248,7 +248,7 @@ node scripts/import-genesis-creator.js
 **Transactions verified:**
 - UTXO transaction: `3a4f7e...` (accepted)
 - Account transaction: `6b2c3d...` (accepted)
-- Genesis Creator balance: 590M ZION (verified)
+- Genesis Projects balance: 590M ZION (verified)
 
 **Endpoints tested:**
 - `getBalance` - ✅
@@ -280,7 +280,7 @@ node scripts/import-genesis-creator.js
 | Commit | Description | Files Changed |
 |--------|-------------|---------------|
 | `f8709437` | Fix import-genesis-creator creates miner_config.json | 1 |
-| `d0f1c5d4` | Import Genesis Creator wallet (590M ZION) + canonical units doc | 2 |
+| `d0f1c5d4` | Import Genesis Projects wallet (590M ZION) + canonical units doc | 2 |
 | `cda409cd` | Mobile Account model + auto-detect UTXO→account fallback | 5 |
 | `d867d9d2` | Rozšířit E2E report o mobile V3 + strukturu | 1 |
 | `36309404` | V3 compatible wallet (BLAKE3 v2 tx hash) + L2 audit | 19 |
@@ -311,7 +311,7 @@ node scripts/import-genesis-creator.js
 
 1. **Desktop Agent E2E** - Fully operational wallet workflow with UTXO + Account models
 2. **Mobile App V3** - Compatible with V3 mainnet (BLAKE3 v2 hash)
-3. **Genesis Creator Import** - 590M ZION wallet successfully imported
+3. **Genesis Projects Import** - 590M ZION wallet successfully imported
 4. **Canonical Units** - Complete documentation and verification
 5. **Structural Consolidation** - One source of truth in APP&WEB/
 6. **Live Mainnet Verification** - All transactions accepted on Edge
@@ -347,12 +347,12 @@ node scripts/import-genesis-creator.js
 Dnes byla úspěšně dokončena komplexní série úkolů:
 
 ✅ **E2E wallet workflow** pro desktop agent i mobile app  
-✅ **Genesis Creator wallet** (590M ZION) fully integrated  
+✅ **Genesis Projects wallet** (590M ZION) fully integrated  
 ✅ **Structural consolidation** - jeden zdroj pravdy  
 ✅ **Canonical units** - kompletní dokumentace  
 ✅ **Live mainnet verification** - všechny transakce accepted  
 
-Všechny cíle byly dosaženy. Desktop agent a mobile app jsou nyní plně funkční pro UTXO i account transactions. Genesis Creator wallet je připravená pro použití. Repozitář je konsolidovaný s jedním zdrojem pravdy v `APP&WEB/`.
+Všechny cíle byly dosaženy. Desktop agent a mobile app jsou nyní plně funkční pro UTXO i account transactions. Genesis Projects wallet je připravená pro použití. Repozitář je konsolidovaný s jedním zdrojem pravdy v `APP&WEB/`.
 
 ---
 

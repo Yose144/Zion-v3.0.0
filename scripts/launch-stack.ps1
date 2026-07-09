@@ -97,7 +97,7 @@ $env:ZION_MAX_SESSIONS_PER_IP='10'
 # The SK_HEX below corresponds to the OLD pool wallet. If you change the wallet,
 # you MUST also update the payout signing key.
 $env:ZION_POOL_WALLET='zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604'
-$env:ZION_POOL_PAYOUT_SK_HEX='b8d7341c97b9402b67ad2a961ef055c66e3b7fb2568cf48cc78f7b1ffd2098d0'
+$env:ZION_POOL_PAYOUT_SK_HEX='[REDACTED — pool SK removed for security]'
 $env:ZION_NONCE_COUNT='4096'
 $env:ZION_VARDIFF_START_DIFF='1'
 $env:ZION_VARDIFF_MAX_DIFF='1000000'

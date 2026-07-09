@@ -64,7 +64,7 @@ Nejrychlejší cesta vede přes Docker, viz [Quick Start →](#getting-started).
 
 ```bash
 ./zion-core --network testnet \
-  --peers "91.98.122.165:8334"
+  --peers "seed.zionterranova.com:8334"
 ```
 
 ---

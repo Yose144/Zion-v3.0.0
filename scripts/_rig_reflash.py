@@ -1,9 +1,10 @@
+import os
 #!/usr/bin/env python3
 """Flash rig to SMOS i068b — last stable image with proper Vega/GCN5 support."""
 import json, urllib.request, time, base64, re
 
 API = "https://api.simplemining.net"
-TOKEN = "api-2ca5dec3ec452561ea893f8804e61e2f43b9ecd30d0614404a2e8e43b7d0212d"
+TOKEN = os.environ.get("SIMPLEMINING_API_TOKEN", "")
 RIG = 518837
 
 def api(method, path, body=None):

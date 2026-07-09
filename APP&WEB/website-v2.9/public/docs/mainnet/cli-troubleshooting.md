@@ -96,7 +96,7 @@ zion config validate
 Potom nastav hodnotu znovu:
 
 ```bash
-zion config set node.rpc_host 91.98.122.165
+zion config set node.rpc_host seed.zionterranova.com
 ```
 
 ---

@@ -1,9 +1,10 @@
+import os
 #!/usr/bin/env python3
 """Check ZION-Deeksha-AMD group and rig status before Deeksha deployment."""
 import requests, json
 
 API = "https://api.simplemining.net"
-TOKEN = "api-e2667c110855caf4cd527ac383c1e18b457050a42a56df68caf678641236c168"
+TOKEN = os.environ.get("SIMPLEMINING_API_TOKEN", "")
 H = {"Authorization": f"Bearer {TOKEN}"}
 
 # 1) Get ZION-Deeksha-AMD group config

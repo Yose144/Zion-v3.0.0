@@ -11,6 +11,7 @@ use crate::evm_tx::{
     build_and_sign_eip1559_tx, derive_evm_address, encode_confirm_burn_release,
     encode_execute_timelocked_mint, encode_submit_lock_proof, hash_to_bytes32,
 };
+use zion_l1_types::normalize_rpc_addr;
 use crate::metrics::BridgeMetrics;
 use crate::rate_limiter::{RateLimitResult, RateLimiter};
 use crate::types::{BridgeStatus, EvmBurnEvent, L1LockEvent};
@@ -1134,17 +1135,6 @@ fn build_validator_proofs_checked(
     }
 
     Ok(proofs)
-}
-
-fn normalize_rpc_addr(value: &str) -> String {
-    let trimmed = value.trim().trim_end_matches('/');
-    let trimmed = trimmed.strip_suffix("/jsonrpc").unwrap_or(trimmed);
-    trimmed
-        .strip_prefix("tcp://")
-        .or_else(|| trimmed.strip_prefix("http://"))
-        .or_else(|| trimmed.strip_prefix("https://"))
-        .unwrap_or(trimmed)
-        .to_string()
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

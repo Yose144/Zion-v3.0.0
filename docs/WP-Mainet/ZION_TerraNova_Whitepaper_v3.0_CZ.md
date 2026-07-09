@@ -279,7 +279,7 @@ Genesis blok (height 0) obsahuje 12 výstupů s celkem 16,28 miliardy ZION:
 | 8 | DAO Ecosystem Bootstrap | 500 000 000 | 525 600 bloků (~1 rok) |
 | 9 | Core Development Fund | 1 000 000 000 | Žádný |
 | 10 | Network Infrastructure | 1 000 000 000 | Žádný |
-| 11 | Genesis Creator | 590 000 000 | Žádný |
+| 11 | Genesis Projects Steward | 590 000 000 | Žádný |
 | 12 | Humanitární — Children Future Fund | 1 440 000 000 | Žádný |
 
 DAO Treasury lock je vynucen on-chain v `V3/L1/core/src/validation.rs` krok 11. Jakákoliv transakce utrácející DAO Treasury výstupy před blokem 525 600 je konsensem zamítnuta.

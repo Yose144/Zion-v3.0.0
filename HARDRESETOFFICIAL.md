@@ -1,7 +1,7 @@
 # ZION V3 — Official Hard Reset Plan
 
 > **Verze:** 1.2 — 2026-07-07
-> **Status:** EXECUTING — Fáze 0-3 DONE (klíče, genesis.rs, L2/L3 config, bridge vault) + Fáze 4-8 DONE (nový server 62.171.141.136, full stack deployed, web + dashboard live). Fáze 9-10 pending (key rotation, git scrub).
+> **Status:** EXECUTING — Fáze 0-8 DONE · Fáze 5 AUDITOVÁNO 2026-07-09 (key rotace proběhla, flash backup OK, pool payout SK aplikován, EVM/escrow placeholdery) · Security patch 3.0.4 FÁZE 1-6 HOTOVO (F4.7 aktivní, bincode odstraněn, audit čistý, edge rebuild 2026-07-09) · Fáze 9-10 pending (open-source publication, generační převod) · 3-node P2P mesh (Edge primary + follower + local backup, height 270+)
 > **Kanonický postup:** [`docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md`](./docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md) — TENTO dokument je operační plán; kanonický runbook je v docs/3.0.4/.
 > **Security disclosure:** [`docs/security/SECURITY_DISCLOSURE_2026-07.md`](./docs/security/SECURITY_DISCLOSURE_2026-07.md) — veřejný bulletin ve formátu Ethereum Foundation.
 > **Kontext:** Post-security-incident (F1 + F5 + TeamViewer compromise). Attacker měl 47 min root na Edge, přístup ke zdrojákům, SSH klíčům, pool payout SK, escrow key, EVM deploy klíčům, DAO guardian mnemonics.
@@ -119,7 +119,7 @@ V3/target/release/gen-premine-wallets > /home/zionserver/zion-keys-2026-07-03/pr
 | 8 | dao_treasury | Ecosystem Bootstrap | 500,000,000 |
 | 9 | infrastructure | Core Development Fund | 1,000,000,000 |
 | 10 | infrastructure | Network Infrastructure — P2P Seed Nodes | 1,000,000,000 |
-| 11 | infrastructure | Genesis Creator — Lifetime Rent | 590,000,000 |
+| 11 | infrastructure | Genesis Projects — Dharma Temple, Piko de Ora + DAO | 590,000,000 |
 | 12 | humanitarian | Children Future Fund | 1,440,000,000 |
 | 13 | bridge_seed | Bridge Seed Fund — EVM Bridge Liquidity | 400,000,000 |
 | 14 | bridge_vault_utxo | Bridge Vault UTXO Seed | 100,000,000 |
@@ -620,19 +620,21 @@ Generated with [Devin](https://cli.devin.ai/docs)
 Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>"
 ```
 
-### 8.3 History scrub (separátní úkol)
+### 8.3 History scrub — ✅ DONE (2026-07-08)
 
-Po resetu je potřeba scrub git historie pro:
+Po resetu byl proveden scrub git historie pro:
 - Staré premine adresy (i když kompromitované, nechceme je v historii)
 - Staré canonical adresy
 - Starý bridge vault seed
 - Jakékoliv SK které se mohly dostat do commitů
 
 ```bash
-# Použít git filter-repo (NE BFG — méně bezpečný)
+# Použito git filter-repo (NE BFG — méně bezpečný)
 pip install git-filter-repo
 git filter-repo --replace-text expressions.txt
 ```
+
+**Výsledek (2026-07-08):** 87 secret occurrences odstraněno (SSH klíče + 5 různých pool SKs) z celé git historie. Force push to origin. Backup v `/tmp/zion-git-backup-before-scrub` (1.2G). Všichni collaborators musí re-clone.
 
 **Pozor:** Toto je destruktivní operace — vyžaduje explicitní approval.
 

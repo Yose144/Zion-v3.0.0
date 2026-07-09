@@ -444,7 +444,7 @@ class ZionRpcClient {
           humanitarian_tithe: 5,
           issobella_fund: 5,
           miner_share: 89,
-          version: '3.0.3',
+          version: '3.0.5',
           uptime_secs: payload.uptime_s ?? 0,
         },
         uptime_s: payload.uptime_s ?? 0,
@@ -778,7 +778,7 @@ class ZionRpcClient {
             invalid: metrics.rejected ?? 0,
           },
           blocks: { found: 0, pending: 0 },
-          pool: { fee: 5, version: '3.0.2' },
+          pool: { fee: 5, version: '3.0.5' },
           uptime_s: metrics.uptime_s ?? 0,
           routing: {
             submits: metrics.submits ?? 0,

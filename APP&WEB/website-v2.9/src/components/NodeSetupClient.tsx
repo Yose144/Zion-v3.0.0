@@ -25,6 +25,7 @@ import {
   Wifi,
   Zap,
 } from "lucide-react";
+import { SITE_PRIMARY_HOST } from "@/lib/site";
 
 /* ── copy helper ────────────────────────────────────────── */
 
@@ -100,7 +101,7 @@ const cliCommands = [
   { cmd: "zion-node --version", desc: "Check installed version" },
   { cmd: "zion-node --config mainnet.toml", desc: "Start with config file" },
   { cmd: "zion-node --network mainnet --rpc-port 8443", desc: "Override RPC port" },
-  { cmd: "zion-node --peers 77.42.71.94:8333", desc: "Manual peer (Edge VPS seed)" },
+  { cmd: `zion-node --peers ${SITE_PRIMARY_HOST}:8333`, desc: "Manual peer (Edge server seed)" },
   { cmd: "zion-node --log-level debug", desc: "Verbose logging" },
   { cmd: "zion-node --data-dir /custom/path", desc: "Custom data directory" },
 ];
@@ -318,7 +319,7 @@ file = "zion.log"
 
 [peers]
 bootstrap = [
-  "77.42.71.94:8333"
+  "${SITE_PRIMARY_HOST}:8333"
 ]`}
             />
           </div>
@@ -485,7 +486,7 @@ curl -s http://localhost:8443 \\
               },
               {
                 q: "No peers connecting",
-                a: "Verify firewall allows TCP 8333. Try manual peer: `--peers 77.42.71.94:8333` (Edge VPS seed). Check DNS resolution.",
+                a: `Verify firewall allows TCP 8333. Try manual peer: \`--peers ${SITE_PRIMARY_HOST}:8333\` (Edge server seed). Check DNS resolution.`,
               },
               {
                 q: "Sync stuck / slow",

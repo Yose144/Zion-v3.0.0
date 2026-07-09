@@ -2,7 +2,7 @@
 
 This file provides operating guidance to Devin, WARP, Copilot, and future automated agents working in this repository.
 
-> **⚠️ SERVER MIGRATION 2026-07-07:** The old Edge server (`77.42.71.94`) is **DECOMMISSIONED**. All services have been rebuilt on a new server at **`62.171.141.136`** following the 3.0.4 hard genesis reset. New genesis hash: `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`. SSH: `ssh zion-new` (key: `~/.ssh/zion-new-server`). All references to `77.42.71.94` or `100.76.16.108` below are **historical** unless explicitly marked as updated. See [`StatusV3.md`](./StatusV3.md) § "3.0.4 Hard Genesis Reset" for current live topology. Web: `https://zionterranova.com` (Next.js Docker). Dashboard: `https://dashboard.zionterranova.com` (Basic Auth). Pool: `62.171.141.136:8444`. RPC (localhost only on server): `127.0.0.1:8443`.
+> **⚠️ SERVER MIGRATION 2026-07-07:** The old Edge server (`77.42.71.94`) is **DECOMMISSIONED**. All services have been rebuilt on a new server at **`62.171.141.136`** following the 3.0.4 hard genesis reset. New genesis hash: `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`. SSH: `ssh zion-new` (key: `~/.ssh/zion-new-server`). All references to `77.42.71.94` or `100.76.16.108` below are **historical** unless explicitly marked as updated. See [`StatusV3.md`](./StatusV3.md) § "Topology Update — 3-Node P2P Mesh" for current live topology (3 nodes: Edge primary + Edge follower + Local backup, all at height 827+). Web: `https://zionterranova.com` (Next.js Docker, image 377 MB standalone). Dashboard: `https://dashboard.zionterranova.com` (Basic Auth). Pool: `62.171.141.136:8444`. RPC (localhost only on server): `127.0.0.1:8443`.
 
 ## Scope and working area
 
@@ -14,12 +14,84 @@ This file provides operating guidance to Devin, WARP, Copilot, and future automa
 - If docs disagree, use this order of truth: `StatusV3.md` → `ROADMAP.md` / `V3/README.md` / `V3/ROADMAP.md` → `V3/docs/**` → older `STATUS.md`, root README, and archived docs.
 - Root README / older plans may still mention historical multi-server topology. Verify live topology against `StatusV3.md` before making operational claims.
 
+## PUBLIC/ — Open-source public repository
+
+The `PUBLIC/` directory is a **separate Git repository** (`github.com/Zion-TerraNova/v3-Mainnet`) containing the public open-source release of ZION v3. It is **not** part of the root repo's git tree (listed in root `.gitignore`).
+
+- **Remote:** `https://github.com/Zion-TerraNova/v3-Mainnet.git` (public, MIT license)
+- **Local path:** `/home/zionserver/2.9.6-main/PUBLIC/`
+- **Current status:** **Mainnet Beta** — v3.0.4 live, official public launch 2026-12-31
+- **Network status badge:** `![Status: Mainnet Beta](https://img.shields.io/badge/Status-Mainnet_Beta-orange.svg)`
+
+### What's in PUBLIC/
+
+The PUBLIC repo contains a **curated subset** of the private repo — only files safe for public release:
+- `V3/` — L1 core, L2 contracts, bridge, DAO, atomic-swap, WARP, cosmic-harmony, pool, miner, CLI, docs
+- `docs/` — Whitepaper, Ethics & Philosophy, Bodhisattva Vow codex, genesis.md, legal docs (disclaimer, terms, privacy, jurisdiction, token disclosure), security disclosures, multilingual READMEs (EN/CS/ES/FR/PT)
+- `evoluZionV2.md` — PoW → Proof-of-Care vision
+- Root files: `README.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `LICENSE` (MIT), `Cargo.toml`
+
+### What's NOT in PUBLIC/ (stays private)
+
+- `APP&WEB/` — website, desktop agent, mobile app source
+- `ZION_OS/` — dashboard, monitoring, operational scripts
+- `docs/TerraNova/` — full TerraNova book manuscripts
+- `docs/Zohar/` — internal Zohar documentation
+- `docs/docs2.9/`, `docs/2.9.7/`, `archive/` — legacy/historical docs
+- `StatusV3.md`, `ROADMAP.md` — internal status and planning
+- Server configs, deploy scripts, environment files
+- Private keys, mnemonics, GPG private keys
+
+### Rules for PUBLIC/ edits
+
+1. **Never push secrets** — no private keys, mnemonics, server IPs (except public RPC), internal hostnames, SSH keys
+2. **Sync after private repo changes** — if you change `V3/` code or docs that exist in PUBLIC/, sync the change to PUBLIC/ and push both repos
+3. **Separate commits** — PUBLIC/ has its own git history; commit and push independently
+4. **GPG signing** — if `docs/genesis.md` is edited, re-sign with `gpg --detach-sign` using the Yose creator key (`9018F94ACE7C93CF549612E225557B7072678D25`, GNUPGHOME `/tmp/zion_gpg/`)
+5. **Release process** — see "GitHub Release process" below
+
+### GitHub Release process
+
+For future releases (e.g. v3.0.4-beta, v3.1.0, etc.):
+
+1. **Build binaries:** `cd V3 && cargo build --release` → binaries in `V3/target/release/`
+2. **Create archives:** Package binaries into tar.gz archives (e.g. `zion-all-3.0.4-linux-x86_64.tar.gz`)
+3. **Compute SHA256:** `sha256sum *.tar.gz > SHA256SUMS.txt`
+4. **Create release on GitHub:**
+   - Via `gh` CLI: `gh release create v3.0.4-beta --title "..." --notes "..." *.tar.gz SHA256SUMS.txt`
+   - Or via curl API if `gh` not available (needs PAT token)
+5. **Release notes template:** Include features list, download table with SHA256, installation instructions, "Windows binaries coming soon" note if applicable
+6. **Cross-platform:** Linux x86_64 built natively; Windows requires mingw-w64 (`x86_64-pc-windows-gnu` target + `mingw-w64` linker); macOS pending
+7. **Binaries to package:** `zion` (CLI), `zion-miner`, `zion-node`, `gen-pool-wallet`, `gen-pool-payout-wallet`, `zion-bridge`, `zion-dao`, `zion-atomic-swap`
+
+### Current PUBLIC/ commit history
+
+```
+1a9eb17 announce: Mainnet Beta — v3.0.4 live, official launch 31.12.2026
+7ffa51f Přejmenovat premine slot 11: Genesis Creator Lifetime Rent → Genesis Projects
+3753f69 Přidat ZION Codex Bodhisattva Vow
+b8d854 Přidat etiku a filozofii 4 knih ZION
+9c63260 Přidat evoluZionV2.md
+fb4bd13 Přidat právní dokumentaci pro open-source publikaci
+...
+```
+
+### Mainnet Beta announcement (2026-07-09)
+
+PUBLIC/ README files (EN + 4 translations) now include a **Network Status** section declaring:
+- ZION v3.0.4 is live as **Mainnet Beta**
+- Mining is active **at your own risk**
+- Network may contain bugs — no warranty
+- Genesis block and chain history are **permanent** (will not be reset if network passes security verification)
+- Official public launch: **31 December 2026**
+- LEGAL_DISCLAIMER.md §2.1 covers the Beta status legally
+
 ## Existing guidance files to know
 
 - Root guidance baseline: `.github/copilot-instructions.md` (applies repo-wide).
 - **How to work with Copilot efficiently (cost + capability map):** [`docs/3.0.3/COPILOT_COLLAB_PLAYBOOK.md`](./docs/3.0.3/COPILOT_COLLAB_PLAYBOOK.md) — Tier S/A/B/D capability map, 7 credit-saving habits, anti-patterns, quick reference card. Read this BEFORE starting a new Copilot session to scope the task correctly.
 - **3.0.3 decimal fork — DEPLOYED (2026-06-27) + RPC SCALE FIX (2026-06-28):** [`docs/3.0.3/ZION_3.0.3_DECIMAL_FORK_PLAN.md`](./docs/3.0.3/ZION_3.0.3_DECIMAL_FORK_PLAN.md) — Option E (in-place fork via migration block at H+1, preserves block hashes 0..H). Edge server deployed: MIGRATION_HEIGHT=18850 (updated from 17995 — migration block was never created, all blocks 0-18850 are in legacy 1e12 scale), protocol 3.0.3, flowers_per_zion=1e6, all 13 services active. RPC `scaled_amount()` helper normalizes pre-migration amounts to 1e6 scale for balance queries. Full fix report: [`docs/3.0.3/REPORT_3.0.3_FIXES.md`](./docs/3.0.3/REPORT_3.0.3_FIXES.md). Rollback: DB backup at `edge-state.db.bak-3.0.3-cutover`.
-- **3.0.4 DeFi deploy — COMPLETED (2026-06-29):** [`V3/docs/ZION_3.0.4_DEPLOY_RUNBOOK.md`](./V3/docs/ZION_3.0.4_DEPLOY_RUNBOOK.md) — DeFi contracts deployed on Base Mainnet: ZIONGovernance `0xB77eB4ab9468Ce03FBd7eCec70e976EFCfa623E8`, ZIONTreasury `0x455f465ac7e14fdA97dC46fdd74bCa78bfC0aEeD` (3-of-3 multisig), ZIONStaking `0xbd5cEe7878337d22188BFBaF9aa9F39A850Be78B` (12% APR, 100K wZION funded), ZIONFarm `0x167B2753F5D8D9F8e62875cc9e379d7804308B08` (1 wZION/s, 500K wZION funded). 5 DAO guardians provisioned. Website v3.6.3 with live DeFi pages. Atomic swap escrow funded 100K ZION. **Basescan verify — COMPLETED (2026-07-02):** 6/7 contracts verified on Basescan (wZION, ZIONAtomicSwap already verified; Governance, Treasury, Staking, Farm verified via Etherscan V2 API). ZIONBridge ❌ — source changed post-deploy, bytecode mismatch. **TX unification — COMPLETED (2026-07-01):** account-model `memo` field added (L1 hard fork, height-gated), all 3 L2 watchers (bridge, atomic-swap, DAO) now scan `account_transactions`. See [`3.0.4.md`](./3.0.4.md) §3. Guardian mnemonics: `C:\Users\yosef\Desktop\ZION_DAO_GUARDIAN_KEYS.txt` (backup to flash drive `F:\`).
+- **3.0.4 DeFi deploy — COMPLETED (2026-06-29):** [`V3/docs/ZION_3.0.4_DEPLOY_RUNBOOK.md`](./V3/docs/ZION_3.0.4_DEPLOY_RUNBOOK.md) — DeFi contracts deployed on Base Mainnet: ZIONGovernance `0xB77eB4ab9468Ce03FBd7eCec70e976EFCfa623E8`, ZIONTreasury `0x455f465ac7e14fdA97dC46fdd74bCa78bfC0aEeD` (3-of-3 multisig), ZIONStaking `0xbd5cEe7878337d22188BFBaF9aa9F39A850Be78B` (12% APR, 100K wZION funded), ZIONFarm `0x167B2753F5D8D9F8e62875cc9e379d7804308B08` (1 wZION/s, 500K wZION funded). 5 DAO guardians provisioned. Website v3.6.3 with live DeFi pages. Atomic swap escrow funded 100K ZION. **Basescan verify — 7/7 COMPLETED (2026-07-09):** All 7 contracts verified on Basescan (wZION, ZIONAtomicSwap already verified; Governance, Treasury, Staking, Farm verified 2026-07-02 via Etherscan V2 API; ZIONBridge verified 2026-07-09 via `forge verify-contract` with correct source `bridge/contracts/src/ZIONBridge.sol` OZ 4.9.6 + 5 validators threshold 5/5). See [`BASESCAN_VERIFY_REPORT.md`](./BASESCAN_VERIFY_REPORT.md). **TX unification — COMPLETED (2026-07-01):** account-model `memo` field added (L1 hard fork, height-gated), all 3 L2 watchers (bridge, atomic-swap, DAO) now scan `account_transactions`. See [`3.0.4.md`](./3.0.4.md) §3. **Guardian mnemonics backup — COMPLETED + VERIFIED (2026-07-09):** zkopírováno z flash disku na `/home/zionserver/Desktop/ZionKeys/` (OpenSSL encrypted). **USB backup audit — COMPLETED (2026-07-09):** 4/4 shodné soubory (SHA256 checksumy identické USB↔Desktop), 4/4 GPG podpisy Good (Yose, key `9018F94A...`), 13/13 premine + 5/5 canonical + 1/1 bridge vault adresy cross-checknuty s `genesis.rs` ✓, všechny soukromé soubory `chmod 600`. **DEPLOY-5/6/7 E2E memo testy — COMPLETED (2026-07-09):** 3 account-model TXs s memos (BRIDGE:base:..., DAO:vote:1:yes, SWAP:LOCK:...) odeslány a potvrzeny v bloku 752 na live mainnetu (62.171.141.136). Memo field intact v block data. Watchers korektně filtrují by recipient address (ne jen memo prefix) — správné security chování. E2E SK shredded po testech.
 - **3.1.0 pre-development audit:** [`docs/3.0.3/AUDIT_3.1.0_EXISTING_CODE.md`](./docs/3.0.3/AUDIT_3.1.0_EXISTING_CODE.md) — inventory of existing Wallet SDK, Mobile App, TX History RPC, and L4 Oasis code. All 4 components exist but need 3.0.3 fix (1e12→1e6) + completion. Read this BEFORE starting any 3.1.0 work to avoid duplication.
 - **Web v2.9 upgrade guide:** [`docs/3.0.3/WEB_V2.9_TO_V3.0.3_UPGRADE.md`](./docs/3.0.3/WEB_V2.9_TO_V3.0.3_UPGRADE.md) — file-by-file guide for website 3.0.3 decimal fork migration.
 - Canonical units state-of-the-world: [`docs/CANONICAL_UNITS_AUDIT.md`](./docs/CANONICAL_UNITS_AUDIT.md) — three coexisting RPC suffix conventions (`_flowers` ✅, `_atomic` ⚠️, mis-named `_zion` ❌) and recommended contract bump (§3b.5). **CLOSED at 3.0.3 cutover** — `_flowers` is now canonical, `_zion`/`_atomic` are deprecated aliases.
@@ -39,6 +111,7 @@ This file provides operating guidance to Devin, WARP, Copilot, and future automa
 - **Zohar — kabalistický Strom života ZIONu (2026-07-03):** [`docs/Zohar/README.md`](./docs/Zohar/README.md) · [`docs/Zohar/01-SEFIROT-VRSTVY.md`](./docs/Zohar/01-SEFIROT-VRSTVY.md) · [`docs/Zohar/02-ROADMAP.md`](./docs/Zohar/02-ROADMAP.md) · [`docs/Zohar/03-O-KNIZE-ZOHAR.md`](./docs/Zohar/03-O-KNIZE-ZOHAR.md) — Mapování 10 sefirot + Da'at na ZION vrstvy L1-L6 (Keter=L1 Consensus, Chokmah=L1 PoW, Binah=L1 Validation, Chesed=L2 DeFi, Gevurah=L2 DAO, Tiferet=L3 WARP, Netzach=L3 AI/Hiran, Hod=L4 Oasis, Yesod=L5 Komunity, Malkhut=L6 Issobella). Tři pilíře: Milosrdenství (dávání) / Přísnost (disciplína) / Rovnováha (manifestace). Syntéza evoluZion.md (Strom života metafora) + TerraNova kniha (filosofie péče) v jazyce kabaly. **Fáze 0 (manifest) + Fáze 1 (web /app/zohar) + Fáze 2 (sefirot vow — [`V3/L5/docs/GOVERNANCE/sefirot-vow.md`](./V3/L5/docs/GOVERNANCE/sefirot-vow.md), 11 slibů pro validátory) + Fáze 4 (getTreeHealth API — [`/api/zohar/tree-health`](./APP&WEB/website-v2.9/src/app/api/zohar/tree-health/route.ts), živá data z blockchain/DeFi/bridge/NCL API mapovaná na 10 sefirot health score) hotové.** Fáze 2 on-chain: `SefirotVowToken` (soulbound ERC-721, [`V3/L2/contracts/hardhat/sol/SefirotVowToken.sol`](./V3/L2/contracts/hardhat/sol/SefirotVowToken.sol), 19 tests pass) + `SefirotVowRegistry` (proposal lifecycle, [`V3/L2/contracts/hardhat/sol/SefirotVowRegistry.sol`](./V3/L2/contracts/hardhat/sol/SefirotVowRegistry.sol), 10 tests pass) — kompilováno, deploy na Base mainnet pending (vyžaduje owner approval + gas). Fáze 3 (care task kategorie pro Protokol Péče) horizont — závisí na L1 consensus (2028+). Čistá dokumentační/web/governance/L2-contract vrstva — netýká se L1 consensus kódu.
 - **Website maintenance mode (2026-07-03):** [`APP&WEB/website-v2.9/public/maintenance.html`](./APP&WEB/website-v2.9/public/maintenance.html) — static maintenance page s animovaným gold starfield canvasem (desktop-agent style: 350 hvězd, line trails, radial gradient overlay, 24 FPS). Deploy script: [`APP&WEB/website-v2.9/deploy/deploy_maintenance.py`](./APP&WEB/website-v2.9/deploy/deploy_maintenance.py) — nahradí Next.js kontejner za `nginx:alpine` servírující maintenance.html na portu 3000. Nginx config: [`APP&WEB/website-v2.9/deploy/maintenance-nginx.conf`](./APP&WEB/website-v2.9/deploy/maintenance-nginx.conf). **Aktuálně LIVE na zionterranova.com** (Security Upgrade 3.0.4). Pro obnovu webu: spusť normální deploy script který přepíše docker-compose.yml zpět na Next.js image. Edge cesty: maintenance page `/root/zion-web/maintenance.html`, nginx config `/root/zion-web/nginx.conf`, compose `/root/zion-web/docker-compose.yml`.
 - **Website design system unification (2026-07-03):** `APP&WEB/website-v2.9/src/app/globals.css` definuje unified design třídy: `.zion-container` (max-w-80rem wrapper), `.zion-section` (rounded panel s border + blur), `.zion-tile` (soft inner grid item s hover), `.zion-cta-banner` (gradient CTA sekce), `.zion-rainbow-card` / `.zion-rainbow-sub` (hero/feature cards s per-color `--rc` CSS variable). Audit 73 page.tsx souborů hotový. Refaktorované: `/ai-native`, `/roadmap-295`, `/admin/revenue-v3` (ad-hoc `bg-black/60 backdrop-blur-xl` → `zion-section`/`zion-tile`), `/account` (přidány CZ/EN překlady), `/login` (grid-cols-3 → responsive). Referenční implementace: `/admin/page.tsx`.
+- **PoC-lab Fáze 3 — Hiran HTTP integrace, MockHiranServer, live llama-server (2026-07-08):** [`PoC-lab/`](./PoC-lab/) — standalone Rust workspace (mimo `V3/`) implementující Proof-of-Care prototyp. **Fáze 1 (commit `2936fcb1`)** — kompletní základ: INT8 NPU VM (`poc-npu`), multi-backend cross-validace (`poc-verifier`), validator registry + Sefirot Vow lifecycle (`poc-registry`), reward split + slashing (`poc-economics`), E2E síťový simulátor s guardian/Bodhisattva Vow demo (`poc-sim`). **Fáze 2 (commit `5d0aefea`)** — 119 testů PASS: `DharmaValidator` (5-pilířový pipeline) + `HiranAwareVerifier` + `NclReputationRegistry` + `ConsciousnessLevel` enum + multi-epoch stress testy + CLI. **Fáze 3 (commit `75b79256` + nový commit)** — 145 testů PASS: `poc-hiran` nový crate (`HiranClient` trait, `LiveHiranClient` via `ureq` + `/v1/chat/completions`, `StubHiranClient`, `build_client()` factory, `MockHiranServer` via `tiny_http` na náhodném portu); `HiranNpuBackend` v `poc-npu` nyní volá živý HTTP endpoint; `poc-sim` výstup zobrazuje `hiran[live]` vs `hiran[stub]`; integrační testy `poc-sim/tests/integration_mock_hiran.rs` (6 testů — MockServer spawn/shutdown, 3 validátoři, multi-epoch, guardian bonus). **Live Hiran:** llama-server v2.2 Q4_K_M spuštěn lokálně na portu 8002 (`~5 tok/s` CPU), `poc-sim --hiran-url http://127.0.0.1:8002` ověřeno. Spec: [`docs/3.0.4/POC_HIRAN_INTEGRATION_SPEC.md`](./docs/3.0.4/POC_HIRAN_INTEGRATION_SPEC.md). Konceptuální základ: [`docs/3.0.4/PoC_CONCEPT.md`](./docs/3.0.4/PoC_CONCEPT.md). **Netýká se L1 consensus — čistě výzkumný prototyp.**
 
 ## Copilot agent quick-start (per-session checklist)
 
@@ -332,42 +405,60 @@ In practice: **node is source of chain truth**, pool is coordination layer, mine
 
 ### Network Topology
 
+> **UPDATED 2026-07-09:** 3-node P2P mesh deployed. Edge server has 2 L1 nodes (primary + follower), local backup node is 3rd peer. All synced at height 230. Edge git re-cloned to latest `754fe4a0`.
+>
 > **UPDATED 2026-07-07:** Old Edge server (`77.42.71.94`) is **DECOMMISSIONED**. All services rebuilt on new server following 3.0.4 hard genesis reset.
 
-Current live topology is **single-server (new VPS)**. The old Edge server was decommissioned after security compromise. All canonical services run on the new server.
+Current live topology is **3-node P2P mesh** (Edge primary + Edge follower + Local backup). The old Edge server was decommissioned after security compromise.
 
 ```
-New Server (VPS)
-62.171.141.136
-    |
-Node + Pool + Bridge + DAO + WARP + Dashboard + Web
-Public P2P: 8333
-Public Pool: 8444
-Public WARP: 9333
+Edge Server (VPS) — 62.171.141.136
+    ├── Node 1 (primary, mining) — RPC 8443, P2P 8333
+    ├── Node 2 (follower) — RPC 8448, P2P sync from Node 1
+    ├── Pool (Stratum) — 8444
+    ├── Bridge (L2) — 9101
+    ├── DAO (L2) — 8450
+    ├── WARP (L3) — 9333
+    ├── OASIS (L4) — 8455
+    ├── Free World (L5)
+    ├── Dashboard — 8766
+    └── nginx — 80/443
+
+Local Machine — zionserver-144 (public IP 109.81.87.10)
+    ├── Backup Node — RPC 8446, P2P 8333 (peer to Edge)
+    ├── Dashboard — 8766
+    ├── Stack (L2/L3: free-world, ai-native-api, issobella, dao, oasis, atomic-swap, ollama)
+    └── SSH Tunnel — 9 local + 2 reverse forwards to Edge
+
 Web: https://zionterranova.com (nginx → Docker Next.js)
 Dashboard: https://dashboard.zionterranova.com (nginx → Python)
 ```
 
 | Role | Host | Public IP | Ports |
 |------|------|-----------|-------|
-| New Server | VPS (Ubuntu 24.04.4) | 62.171.141.136 | P2P: 8333, RPC: 8443 (localhost), Pool: 8444, WS: 8445 (localhost), DAO: 8450 (localhost), WARP: 9333, Web: 80/443, Dashboard: 8766 (localhost) |
+| Edge Node 1 (primary) | VPS (Ubuntu 24.04.4) | 62.171.141.136 | P2P: 8333, RPC: 8443 (localhost), Pool: 8444, WS: 8445, DAO: 8450, WARP: 9333, OASIS: 8455, Web: 80/443, Dashboard: 8766 |
+| Edge Node 2 (follower) | VPS (same) | 62.171.141.136 | RPC: 8448 (localhost) |
+| Local Backup Node | zionserver-144 | 109.81.87.10 | RPC: 8446 (localhost), P2P: 8333 |
 
 ### Canonical Ports & Services (v3.0.4 — New Server)
 
 | Service | Port | Bind | Protocol | Notes |
 |---------|------|------|----------|-------|
-| Node P2P | 8333 | 0.0.0.0 | TCP | Peer-to-peer sync |
-| Node RPC | 8443 | 127.0.0.1 | TCP | JSON-RPC 2.0 (via nginx /api/rpc) |
+| Node 1 P2P | 8333 | 0.0.0.0 | TCP | Peer-to-peer sync (primary) |
+| Node 1 RPC | 8443 | 127.0.0.1 | TCP | JSON-RPC 2.0 (via nginx /api/rpc) |
+| Node 2 RPC | 8448 | 127.0.0.1 | TCP | Follower node (P2P sync from Node 1) |
 | Node WebSocket | 8445 | 127.0.0.1 | TCP | Node event stream |
 | Node metrics | 9100 | 127.0.0.1 | HTTP | Prometheus metrics |
 | Pool Stratum | 8444 | 0.0.0.0 | TCP | Miner connections (public) |
 | Bridge metrics | 9101 | 127.0.0.1 | HTTP | Prometheus metrics (bridge) |
 | DAO API | 8450 | 127.0.0.1 | HTTP | DAO daemon API (via nginx /api/dao) |
 | WARP Relay | 9333 | 0.0.0.0 | HTTP | Cross-chain relay API |
+| OASIS (L4) | 8455 | 127.0.0.1 | HTTP | OASIS Avatar Hub |
 | Dashboard | 8766 | 127.0.0.1 | HTTP | ZION_OS Dashboard (via nginx, Basic Auth) |
 | Website (Next.js) | 3001 | 127.0.0.1 | HTTP | Docker `zion-web:nextjs` (via nginx) |
 | Nginx HTTP | 80 | 0.0.0.0 | HTTP | Redirect to HTTPS |
 | Nginx HTTPS | 443 | 0.0.0.0 | HTTP/2 | SSL Let's Encrypt, reverse proxy |
+| Local Backup Node RPC | 8446 | 127.0.0.1 | TCP | Backup node on zionserver-144 (via SSH tunnel reverse forward) |
 
 ### Canonical URLs & Endpoints (v3.0.4)
 
@@ -386,7 +477,7 @@ Dashboard: https://dashboard.zionterranova.com (nginx → Python)
 - **SSH config:** `ssh zion-new` (alias in `~/.ssh/config`)
 - **SSH key:** `~/.ssh/zion-new-server` (ed25519, fingerprint `SHA256:wnq2p9n17icqkpkJMAjPZto0axRtkVTVXPMBuD9tz64`)
 - **Password auth:** DISABLED (keys only)
-- **Never commit private keys.**
+- **Never commit private keys.** Private SSH keys, Ed25519 signing keys, EVM private keys, and mnemonics must NEVER be placed in the repo root or any tracked directory — even if `.gitignore` covers them. The only valid location for SSH keys is `~/.ssh/` (chmod 600). A stray `newzionssh.md` containing the production SSH private key was found and deleted 2026-07-09; do not recreate it.
 
 ### New Server Deployment (Autonomous 24/7)
 
@@ -479,7 +570,7 @@ PowerShell `ConvertTo-Json` emits Czech decimal commas on Czech Windows. Fix: wr
 - DAO Treasury - Bootstrap (Slot 8): 0.5B (LOCKED height 525,600)
 - Core Development Fund (Slot 9): 1B
 - Network Infrastructure (Slot 10): 1B
-- Genesis Creator (Slot 11): 590M (0.59B)
+- Genesis Projects (Slot 11): 590M (0.59B)
 - Bridge Seed Fund (Slot 12): 0.4B
 - Humanitarian (Slot 13): 1.44B
 
@@ -489,7 +580,7 @@ PowerShell `ConvertTo-Json` emits Czech decimal commas on Czech Windows. Fix: wr
 - Pool Fee: `zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342`
 - Default Miner: `zion1w523a76830x2t5m7f3j023w265e8g5c400a4790`
 - Pool Payout: `zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604`
-- Genesis Creator: `zion16542q4l853a2z0u5r5w8y4m8k4558847h503736` (590M ZION, account model)
+- Genesis Projects: `zion16542q4l853a2z0u5r5w8y4m8k4558847h503736` (590M ZION, account model)
 - Bridge Vault: `zion106v7v0v0k3d500v0h7l636w0j4f5l4v044mh4a6` (100M ZION)
 - Bridge Seed Fund: `zion13794g7k3m0f84637l2x0t855h3l258k8p3xp5t3` (400M ZION)
 
@@ -515,12 +606,12 @@ PowerShell `ConvertTo-Json` emits Czech decimal commas on Czech Windows. Fix: wr
 - 0.001 ZION = `1_000` flowers (1 thousand)
 - 1 ZION = `1_000_000` flowers (1 million)
 - 1000 ZION = `1_000_000_000` flowers (1 billion)
-- Genesis Creator (Slot 11): 590 million ZION = `590_000_000_000_000` flowers (590 trillion)
+- Genesis Projects (Slot 11): 590 million ZION = `590_000_000_000_000` flowers (590 trillion)
 
 **Verification:**
 ```javascript
 const FLOWERS_PER_ZION = 1_000_000n;
-const flowers = 590_000_000_000_000n; // Genesis Creator balance
+const flowers = 590_000_000_000_000n; // Genesis Projects balance
 const zion = flowers / FLOWERS_PER_ZION; // = 590_000_000 ZION = 590 million
 ```
 
@@ -669,7 +760,7 @@ All ZION services on the new server run as systemd units:
 If pool stops accepting connections:
 1. Check pool logs: `journalctl -u zion-pool.service -f`
 2. Verify node RPC is accessible: `curl http://127.0.0.1:8443/jsonrpc`
-3. Check pool configuration: `V3/config/pool-mainnet.toml`
+3. Check pool configuration: `V3/L1/pool/config/pool-mainnet.toml`
 4. Restart pool service: `systemctl restart zion-pool.service`
 5. Verify miners can reconnect
 
@@ -750,10 +841,10 @@ This address is no longer active after the 2026-07-06 hard genesis reset.
 | New server Cargo | `source ~/.cargo/env` (Rust 1.96.1 stable) |
 | New server VNC | `95.111.232.25:63061` (RFB, password `h4neV76S`) — fallback if SSH fails |
 | Environment file | `/root/zion/edge-environment.sh` (chmod 600, `<REPLACE_*>` placeholders) |
-| SMOS API key | `api-4c47dab57e0890d3a36527fdd6a487b306f37e813aa254cfae1013588ece513f` |
+| SMOS API key | `api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8` (rotated 2026-07-08) |
 | SMOS API base | `https://api.simplemining.net` (header: `X-AUTH-TOKEN: <key>`) |
 | SMOS rig ID | `518837` (name: ZionRig / vega-smos) |
-| SMOS group ID | `1765707` (ZION-Deeksha-AMD) |
+| SMOS group ID | `1773590` (ZionLiteFire) — updated 2026-07-08 |
 | Rig GPU | AMD Vega 64 (gfx900:xnack-), GCN architecture |
 | Rig OS | SimpleMining OS, kernel 5.15.80-sm, **GLIBC 2.31** |
 | Rig SSH | `miner@<current_ip>` password: `omnity.company@gmail.com` (IP changes, behind NAT — use SMOS API to get it) |
@@ -775,7 +866,7 @@ To verify: `strings <binary> | grep 'GLIBC_' | sort -u` — if you see `GLIBC_2.
 **How to build on rig:**
 ```bash
 # Get rig IP from SMOS API first
-RIG_IP=$(curl -s -H "X-AUTH-TOKEN: api-4c47dab57e0890d3a36527fdd6a487b306f37e813aa254cfae1013588ece513f" \
+RIG_IP=$(curl -s -H "X-AUTH-TOKEN: api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8" \
   https://api.simplemining.net/rigs/518837 | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('ip',''))")
 echo "Rig IP: $RIG_IP"
 
@@ -835,7 +926,7 @@ The part before the first space is the URL; SMOS derives `MINER_PKG_NAME` from t
 ### SMOS API — useful calls
 
 ```bash
-API="api-4c47dab57e0890d3a36527fdd6a487b306f37e813aa254cfae1013588ece513f"
+API="api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8"
 BASE="https://api.simplemining.net"
 
 # Get rig details (incl. current IP)
@@ -1094,7 +1185,7 @@ All other ports (8333, 8444, 9333) are **not** in UFW — they bind to 0.0.0.0 b
 
 | Config | Path | Purpose |
 |--------|------|---------|
-| Bridge | `/root/zion/2.9.6/V3/config/bridge-mainnet.toml` | Bridge relay config (6 EVM chains, DB path `/data/zion/bridge-mainnet.db`) |
+| Bridge | `/root/zion/2.9.6/V3/L2/bridge/config/bridge-mainnet.toml` | Bridge relay config (6 EVM chains, DB path `/data/zion/bridge-mainnet.db`) |
 | DAO | `/root/zion/2.9.6/V3/L2/dao/config/dao-mainnet.toml` | DAO config (DB path `/data/zion/dao-mainnet.db`) |
 | WARP | `/root/zion/2.9.6/V3/L3/warp/config/warp-mainnet.toml` | WARP relay config |
 | Nginx | `/etc/nginx/sites-available/zion` | Reverse proxy + SSL + security headers |
@@ -1120,7 +1211,7 @@ ZION_POOL_BIND="0.0.0.0:8444"
 ZION_POOL_SK="<REPLACE_POOL_SK>"
 
 # Bridge
-ZION_BRIDGE_CONFIG="/root/zion/2.9.6/V3/config/bridge-mainnet.toml"
+ZION_BRIDGE_CONFIG="/root/zion/2.9.6/V3/L2/bridge/config/bridge-mainnet.toml"
 ZION_BRIDGE_DB="/data/zion/bridge-mainnet.db"
 ZION_BRIDGE_VALIDATOR_SK_1..5="<REPLACE_EVM_VALIDATOR_SK_*>"
 

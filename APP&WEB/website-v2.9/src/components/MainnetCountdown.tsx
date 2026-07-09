@@ -93,7 +93,7 @@ export default function MainnetCountdown({ embedded = false }: { embedded?: bool
               </div>
               <div className="flex-1">
                 <h2 className="text-sm font-bold text-white">Mainnet LIVE</h2>
-                <p className="text-[11px] text-gray-400">Core + Edge · Mining · Bridge</p>
+                <p className="text-[11px] text-gray-400">Edge server · Mining · Bridge</p>
               </div>
               <span className="text-xs font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2.5 py-1">
                 GO

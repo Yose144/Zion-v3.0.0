@@ -125,7 +125,7 @@ ZION implements **dharma-driven development** - technology in harmony with ethic
 
 **✅ Working:**
 - RandomX blockchain: Genesis `63c7c425...`, block time 120s, reward 333 ZION
-- Mining pool: Stratum on `77.42.31.72:3333` (when backend stable)
+- Mining pool: Stratum on `seed.zionterranova.com:3333` (when backend stable)
 - Windows miner: XMRig 6.21.3 with tunnel, 10+ threads, auto-restart
 - RPC infrastructure: Monero-compatible shim with retry/backoff
 
@@ -991,7 +991,7 @@ Technology must serve consciousness evolution, not the other way around. We reje
 
 **Multi-Region Cloud Deployment**:
 - **Americas**: AWS/GCP/Azure (USA, Brazil, Canada)
-- **Europe**: Digital Ocean/Hetzner (Germany, Netherlands, UK)
+- **Europe**: Digital Ocean/cloud VPS (Germany, Netherlands, UK)
 - **Asia-Pacific**: Vultr/Linode (Singapore, Japan, Australia)
 - **Africa**: Local providers (South Africa, Nigeria)
 

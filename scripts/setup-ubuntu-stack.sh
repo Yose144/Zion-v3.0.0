@@ -203,7 +203,7 @@ export ZION_VARDIFF_MAX_DIFF=1000000
 
 # Pool wallet
 export ZION_POOL_WALLET=zion1l56685k280p364g686j88644g3j4r375755e8p7
-export ZION_POOL_PAYOUT_SK_HEX=a3bc7452beb612e2f3a59f85d31905cc2e8e28f3450e4892c9c0ea445e913ee9
+export ZION_POOL_PAYOUT_SK_HEX=[REDACTED — pool SK removed for security]
 
 # Miner — AMD GPU OpenCL settings
 export ZION_GPU_BACKEND=opencl

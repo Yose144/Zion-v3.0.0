@@ -39,7 +39,7 @@ Stack obsahuje: `zion-core`, `zion-pool`, `zion-miner`, `zion-redis`.
   --rpc-port 8444 \
   --p2p-port 8334 \
   --network testnet \
-  --peers "91.98.122.165:8334,seed1.zionterranova.com:8334,seed2.zionterranova.com:8334,seed3.zionterranova.com:8334"
+  --peers "seed.zionterranova.com:8334,seed1.zionterranova.com:8334,seed2.zionterranova.com:8334,seed3.zionterranova.com:8334"
 ```
 
 ### 2. Spusť pool

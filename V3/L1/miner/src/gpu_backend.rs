@@ -178,8 +178,8 @@ pub type GpuBackend = GpuBackendManager;
 /// Selects the appropriate OpenCL miner based on the algorithm.
 pub fn create_gpu_backend(
     kind: GpuBackendKind,
-    _work_size: usize,
-    _algorithm: &str,
+    work_size: usize,
+    algorithm: &str,
 ) -> Result<Box<dyn GpuMiner>> {
     match kind {
         GpuBackendKind::Cpu => {

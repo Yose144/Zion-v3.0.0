@@ -326,7 +326,7 @@ export async function GET() {
     health: 0,
     metrics: {
       ue5_build: null,
-      consciousness_levels_doc: 'docs/3.0.3/evoluZion.md',
+      consciousness_levels_doc: 'docs/3.0.5/evoluZion.md',
       oasis_status: 'seed',
     },
     lastUpdated: now,

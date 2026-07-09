@@ -1,9 +1,10 @@
+import os
 #!/usr/bin/env python3
 """Full rig console + dmesg with decoded HTML."""
 import base64, json, html, re, requests
 
 API = "https://api.simplemining.net"
-TOKEN = "api-3fb4dbbd2a4ae13622b2a9d574e9c5d1fe2c69fde0db128ad60be3fb3f68d5ef"
+TOKEN = os.environ.get("SIMPLEMINING_API_TOKEN", "")
 RIG = 518837
 
 def api_get(path):

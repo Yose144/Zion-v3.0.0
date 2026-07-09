@@ -289,8 +289,8 @@ export async function GET() {
         detail: 'Live bloky 465, 471 a 472 potvrdily 89/5/5/1 split přímo na chainu, ne jen v pool accounting vrstvě.',
       },
       {
-        title: 'Core PC a Edge VPS drží tip po rolloutu',
-        detail: 'Core + Edge topologie zůstala po fee-split deployi bez divergence a s potvrzeným syncem.',
+        title: 'Edge server a Edge server drží tip po rolloutu',
+        detail: 'Edge server topologie zůstala po fee-split deployi bez divergence a s potvrzeným syncem.',
       },
       {
         title: 'Deploy runbook a operator guide jsou srovnané',
@@ -308,8 +308,8 @@ export async function GET() {
         detail: 'Live bloky 465, 471 a 472 potvrdily 89/5/5/1 split přímo na chainu, ne jen v pool accounting vrstvě.',
       },
       {
-        title: 'Core PC a Edge VPS drží tip po rolloutu',
-        detail: 'Core + Edge topologie zůstala po fee-split deployi bez divergence a s potvrzeným syncem.',
+        title: 'Edge server a Edge server drží tip po rolloutu',
+        detail: 'Edge server topologie zůstala po fee-split deployi bez divergence a s potvrzeným syncem.',
       },
       {
         title: 'BFG scrub a secret hygiene uzavřeny',
@@ -331,7 +331,7 @@ export async function GET() {
     next_48h: [
       {
         title: 'Launch Countdown — 31. prosince 2026',
-        detail: 'Příprava launch pokračuje. Core + Edge v testování, pool přijímá test shares, monitoring aktivní.',
+        detail: 'Příprava launch pokračuje. Edge server v testování, pool přijímá test shares, monitoring aktivní.',
       },
       {
         title: 'Post-Launch — L2/L3 roadmap',

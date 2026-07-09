@@ -164,7 +164,7 @@
 
 ```yaml
 # V3/docker/docker-compose.yml:74
-ZION_POOL_PAYOUT_SK_HEX=${ZION_POOL_PAYOUT_SK_HEX:-a3bc7452beb612e2f3a59f85d31905cc2e8e28f3450e4892c9c0ea445e913ee9}
+ZION_POOL_PAYOUT_SK_HEX=${ZION_POOL_PAYOUT_SK_HEX:-[REDACTED — pool SK removed for security]}
 ```
 
 **Defaultni hodnota je skutecny private key hex.** Kazdy, kdo spusti compose bez nastaveni env var, pouzije identicky signing key.

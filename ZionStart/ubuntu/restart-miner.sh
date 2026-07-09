@@ -20,11 +20,11 @@ if [[ -n "$MINER_PIDS" ]]; then
 fi
 
 # ── Network ─────────────────────────────────────────────────────────────────
-export ZION_POOL_ADDR='100.76.16.108:8444'
+export ZION_POOL_ADDR='62.171.141.136:8444'
 export ZION_LOOP_COUNT='1000000'
 export ZION_WORKER_NAME='worker1'
 export ZION_MINER_ID='ubuntu-gpu-miner-01'
-export ZION_PAYOUT_ADDRESS='zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604'
+export ZION_PAYOUT_ADDRESS='zion1k603m783j2w0l45506e0t4v7a797t7l0d78l3m2'
 
 # ── Algorithm ───────────────────────────────────────────────────────────────
 export ZION_MINER_ALGORITHM='deeksha_lite_fire'

@@ -99,12 +99,12 @@ const getHeroStats = (cs: boolean) => [
     label: cs ? 'Veřejné nody' : 'Public Nodes',
     value: '2',
     descriptor: cs
-      ? 'Edge relay (Hetzner VPS) + Core (privátní master)'
-      : 'Edge relay (Hetzner VPS) + Core (private master)',
+      ? 'Edge server (Edge server) + Core (privátní master)'
+      : 'Edge server (Edge server) + Core (private master)',
   },
   {
     label: cs ? 'P2P mesh' : 'P2P Mesh',
-    value: cs ? 'Core + Edge' : 'Core + Edge',
+    value: cs ? 'Edge server' : 'Edge server',
     descriptor: cs ? 'VPN tunel — Core ↔ Edge' : 'VPN tunnel — Core ↔ Edge',
   },
   {
@@ -114,26 +114,26 @@ const getHeroStats = (cs: boolean) => [
   },
   {
     label: cs ? 'Topologie' : 'Topology',
-    value: cs ? 'Core + Edge' : 'Core + Edge',
-    descriptor: cs ? 'Edge relay + Core master (PPLNS okno na Core)' : 'Edge relay + Core master (PPLNS window on Core)',
+    value: cs ? 'Edge server' : 'Edge server',
+    descriptor: cs ? 'Edge server (PPLNS okno na Core)' : 'Edge server (PPLNS window on Core)',
   },
   {
     label: cs ? 'Síť' : 'Network',
     value: 'V3 Mainnet',
     descriptor: cs
-      ? 'Mainnet launch countdown v3.0.3 · runtime v3.0.3'
-      : 'Mainnet launch countdown v3.0.3 · runtime v3.0.3',
+      ? 'Mainnet launch countdown v3.0.5 · runtime v3.0.5'
+      : 'Mainnet launch countdown v3.0.5 · runtime v3.0.5',
   },
 ];
 
 const getInfraFeatures = (cs: boolean) => [
   {
     icon: Server,
-    title: cs ? 'Edge relay (Hetzner VPS)' : 'Edge Relay (Hetzner VPS)',
+    title: cs ? 'Edge server (Edge server)' : 'Edge Relay (Edge server)',
     detail: cs
       ? 'Veřejný P2P + stratum relay — P2P 8333, Pool 8444, Node RPC 8443'
       : 'Public P2P + stratum relay — P2P 8333, Pool 8444, Node RPC 8443',
-    ip: '77.42.71.94',
+    ip: SITE_PRIMARY_HOST,
     status: cs ? 'Aktivní' : 'Active',
     color: 'text-emerald-400',
     border: 'border-emerald-500/30',
@@ -172,7 +172,7 @@ const getRuntimePanels = (cs: boolean) => [
     icon: Globe,
     label: 'P2P Peer',
     value: `${SITE_PRIMARY_HOST}:8333`,
-    detail: cs ? 'Veřejný Edge relay — Core sync přes privátní VPN' : 'Public Edge relay — Core sync via private VPN',
+    detail: cs ? 'Veřejný Edge server — Core sync přes privátní síť' : 'Public Edge server — Core sync via private network',
     accent: 'text-emerald-400',
   },
   {
@@ -214,8 +214,8 @@ const getGuideBlocks = (cs: boolean) => [
     icon: Globe,
     title: 'P2P Layer',
     description: cs
-      ? 'Nativní Rust P2P síť — Edge relay přijímá inbound z internetu, Core zůstává za privátní VPN.'
-      : 'Native Rust P2P network — Edge relay accepts inbound from the internet, Core stays behind private VPN.',
+      ? 'Nativní Rust P2P síť — Edge server přijímá inbound z internetu, Core zůstává za privátní síť.'
+      : 'Native Rust P2P network — Edge server accepts inbound from the internet, Core stays behind private network.',
     items: [
       `${cs ? 'Veřejný peer (Edge)' : 'Public peer (Edge)'}: ${SITE_PRIMARY_HOST}:8333`,
       cs ? 'Core peer (VPN): Privátní peer (neveřejný)' : 'Core peer (VPN): Private peer (non-public)',
@@ -225,13 +225,13 @@ const getGuideBlocks = (cs: boolean) => [
 ];
 
 const getNetworkFacts = (cs: boolean) => [
-  { text: cs ? 'Nativní Rust P2P — Edge relay veřejný' : 'Native Rust P2P — Edge relay public', done: true },
+  { text: cs ? 'Nativní Rust P2P — Edge server veřejný' : 'Native Rust P2P — Edge server public', done: true },
   {
-    text: cs ? 'Core + Edge topologie s privátním VPN tunelem' : 'Core + Edge topology with private VPN tunnel',
+    text: cs ? 'Edge server topologie s privátním VPN tunelem' : 'Edge server topology with private network tunnel',
     done: true,
   },
   {
-    text: cs ? 'Edge stratum endpoint: 77.42.71.94:8444 (ShareRelay)' : 'Edge stratum endpoint: 77.42.71.94:8444 (ShareRelay)',
+    text: cs ? `Edge stratum endpoint: ${SITE_POOL_PRIMARY} (ShareRelay)` : `Edge stratum endpoint: ${SITE_POOL_PRIMARY} (ShareRelay)`,
     done: true,
   },
   { text: cs ? 'JSON-RPC endpointy live (port 8443)' : 'JSON-RPC endpoints live (port 8443)', done: true },
@@ -1022,10 +1022,10 @@ function NetFAQSection({ cs }: { cs: boolean }) {
     { q: cs ? 'Jaký je cílový block time?' : 'What is the target block time?', a: cs ? '60 sekund. Obtížnost se dynamicky přizpůsobuje každý blok, aby udržela stabilní tempo.' : '60 seconds. Difficulty adjusts dynamically every block to maintain a stable pace.' },
     { q: cs ? 'Kolik ZION se vytěží za blok?' : 'How many ZION are mined per block?', a: cs ? `V první dekádě je odměna ${BLOCK_REWARD_ZION.toFixed(3)} ZION/blok. Každých 10 let (${BLOCKS_PER_DECADE.toLocaleString()} bloků) se odměna sníží o 20 % (Decade Decay).` : `In the first decade the reward is ${BLOCK_REWARD_ZION.toFixed(3)} ZION/block. Every 10 years (${BLOCKS_PER_DECADE.toLocaleString()} blocks) the reward decreases by 20% (Decade Decay).` },
     { q: cs ? 'Jaká je maximální zásoba?' : 'What is the maximum supply?', a: cs ? `Maximální supply je ${(TOTAL_SUPPLY_ZION / 1e9).toFixed(0)} miliard ZION včetně genesis premine ${(GENESIS_PREMINE_ZION / 1e9).toFixed(2)} mld ZION.` : `Maximum supply is ${(TOTAL_SUPPLY_ZION / 1e9).toFixed(0)} billion ZION including genesis premine of ${(GENESIS_PREMINE_ZION / 1e9).toFixed(2)}B ZION.` },
-    { q: cs ? 'Jak se připojit jako miner?' : 'How to connect as a miner?', a: cs ? 'Stáhněte si XMRig nebo Desktop Agent a použijte stratum+tcp://77.42.71.94:8444 jako pool adresu. Detaily najdete v Connection Guides výše.' : 'Download XMRig or the Desktop Agent and use stratum+tcp://77.42.71.94:8444 as the pool address. See the Connection Guides section above for details.' },
-    { q: cs ? 'Jak spustit vlastní full node?' : 'How to run your own full node?', a: cs ? 'Klonujte repo, spusťte cargo build --release v L1/core a pak ./target/release/ziond --p2p-bind-ip 0.0.0.0 --add-exclusive-node 77.42.71.94:21000. Docker compose je k dispozici v docker/docker-compose.mainnet.yml.' : 'Clone the repo, cargo build --release from L1/core and then ./target/release/ziond --p2p-bind-ip 0.0.0.0 --add-exclusive-node 77.42.71.94:21000. Docker compose is available in docker/docker-compose.mainnet.yml.' },
+    { q: cs ? 'Jak se připojit jako miner?' : 'How to connect as a miner?', a: cs ? `Stáhněte si XMRig nebo Desktop Agent a použijte stratum+tcp://${SITE_POOL_PRIMARY} jako pool adresu. Detaily najdete v Connection Guides výše.` : `Download XMRig or the Desktop Agent and use stratum+tcp://${SITE_POOL_PRIMARY} as the pool address. See the Connection Guides section above for details.` },
+    { q: cs ? 'Jak spustit vlastní full node?' : 'How to run your own full node?', a: cs ? `Klonujte repo, spusťte cargo build --release v L1/core a pak ./target/release/ziond --p2p-bind-ip 0.0.0.0 --add-exclusive-node ${SITE_PRIMARY_HOST}:21000. Docker compose je k dispozici v docker/docker-compose.mainnet.yml.` : `Clone the repo, cargo build --release from L1/core and then ./target/release/ziond --p2p-bind-ip 0.0.0.0 --add-exclusive-node ${SITE_PRIMARY_HOST}:21000. Docker compose is available in docker/docker-compose.mainnet.yml.` },
     { q: cs ? 'Jaký pool fee si ZION účtuje?' : 'What pool fee does ZION charge?', a: cs ? '89 % putuje minerovi, 5 % do humanitarian fondu, 5 % do fondu Issobella a 1 % pool provozní poplatek.' : '89% goes to the miner, 5% to the humanitarian fund, 5% to the Issobella fund, and 1% pool operational fee.' },
-    { q: cs ? 'Je síť veřejně spuštěna?' : 'Is the network publicly launched?', a: cs ? 'MainNet Genesis proběhl 11. června 2026. Veřejný plný launch je naplánován na 31. prosince 2026 (Silvestr). Core + Edge topologie běží, mining je aktivní, bridge se připravuje na Base Mainnet.' : 'MainNet Genesis took place on 11 June 2026. The public full launch is scheduled for 31 December 2026 (New Year\'s Eve). Core + Edge topology is live, mining is active, and the bridge is being prepared for Base Mainnet.' },
+    { q: cs ? 'Je síť veřejně spuštěna?' : 'Is the network publicly launched?', a: cs ? 'MainNet Genesis proběhl 11. června 2026. Veřejný plný launch je naplánován na 31. prosince 2026 (Silvestr). Edge server topologie běží, mining je aktivní, bridge se připravuje na Base Mainnet.' : 'MainNet Genesis took place on 11 June 2026. The public full launch is scheduled for 31 December 2026 (New Year\'s Eve). Edge server topology is live, mining is active, and the bridge is being prepared for Base Mainnet.' },
   ];
   return (
     <div className="divide-y divide-white/[0.06]">

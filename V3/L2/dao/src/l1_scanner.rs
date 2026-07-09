@@ -32,6 +32,9 @@ use tokio::sync::Mutex;
 use tokio::time::sleep;
 use tracing::{debug, info, warn};
 
+// Shared helpers from zion-l1-types (replaces previously duplicated copies).
+use zion_l1_types::{bytes_to_hex, normalize_rpc_addr, zion_address_from_public_key};
+
 use crate::db::DaoDb;
 use crate::error::{DaoError, DaoResult};
 use crate::types::{parse_dao_memo, DaoMemo};
@@ -271,7 +274,7 @@ impl L1Scanner {
             .inputs
             .first()
             .filter(|input| input.public_key.len() == 32)
-            .map(|input| zion_address_from_public_key(&input.public_key))
+            .map(|input| zion_address_from_public_key(&input.public_key).unwrap_or_default())
             .ok_or_else(|| {
                 DaoError::Internal("DAO memo tx missing valid sender public key".into())
             })?;
@@ -475,49 +478,6 @@ impl L1Scanner {
             .await?;
         Ok(bal.balance_flowers)
     }
-}
-
-fn normalize_rpc_addr(raw: &str) -> String {
-    raw.trim()
-        .trim_start_matches("http://")
-        .trim_start_matches("https://")
-        .trim_start_matches("tcp://")
-        .split('/')
-        .next()
-        .unwrap_or(raw)
-        .to_string()
-}
-
-fn bytes_to_hex(bytes: &[u8]) -> String {
-    bytes.iter().map(|byte| format!("{:02x}", byte)).collect()
-}
-
-fn zion_address_from_public_key(public_key: &[u8]) -> String {
-    use ripemd::Ripemd160;
-    use sha2::{Digest, Sha256};
-
-    const ALPHABET: &[u8; 32] = b"023456789acdefghjklmnpqrstuvwxyz";
-
-    let sha = Sha256::digest(public_key);
-    let key_hash = Ripemd160::digest(sha);
-
-    let mut body = String::with_capacity(40);
-    for &byte in key_hash.as_slice() {
-        body.push(ALPHABET[(byte % 32) as usize] as char);
-        body.push(ALPHABET[((byte / 32) % 32) as usize] as char);
-    }
-    body.truncate(35);
-
-    let mut hasher = Sha256::new();
-    hasher.update(b"zion1");
-    hasher.update(body.as_bytes());
-    let hash = hasher.finalize();
-    let mut checksum = String::with_capacity(4);
-    for &byte in &hash[..2] {
-        checksum.push(ALPHABET[(byte % 32) as usize] as char);
-        checksum.push(ALPHABET[((byte / 32) % 32) as usize] as char);
-    }
-    format!("zion1{body}{checksum}")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

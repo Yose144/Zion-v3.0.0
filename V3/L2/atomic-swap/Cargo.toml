@@ -54,6 +54,9 @@ chrono = { version = "0.4", features = ["serde"] }
 # TCP socket options (SO_REUSEADDR / SO_REUSEPORT for graceful restarts)
 socket2 = { version = "0.5", features = ["all"] }
 
+# Shared L1 types (address encoding, hex, RPC normalisation)
+zion-l1-types = { path = "../../L1/types" }
+
 [dev-dependencies]
 tokio-test = "0.4"
 tempfile = "3"

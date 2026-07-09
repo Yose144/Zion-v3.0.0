@@ -1,0 +1,20 @@
+[package]
+name = "poc-verifier"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+poc-core = { path = "../poc-core" }
+poc-npu = { path = "../poc-npu" }
+serde = { workspace = true }
+thiserror = { workspace = true }
+blake3 = { workspace = true }
+hex = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+poc-tasks = { path = "../poc-tasks" }

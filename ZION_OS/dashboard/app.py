@@ -29,6 +29,12 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 SCRIPT_DIR = Path(__file__).parent.resolve()
 REPO_ROOT = SCRIPT_DIR.parent.parent
 LOG_DIR = REPO_ROOT / "logs"
+# Fallback: try ./logs (relative to dashboard dir) for Edge server deployment
+if not LOG_DIR.exists():
+    LOG_DIR = SCRIPT_DIR / "logs"
+# Final fallback for legacy deployments
+if not LOG_DIR.exists():
+    LOG_DIR = Path("../logs")
 DATA_DIR = REPO_ROOT / "V3" / "data"
 SCRIPTS_DIR = REPO_ROOT / "scripts"
 V2_DIST = SCRIPT_DIR / "v2" / "dist"
@@ -38,29 +44,50 @@ CONFIG_FILE = SCRIPT_DIR / "config.json"
 # Cross-platform release binary directory + executable suffix
 RELEASE_BIN_DIR = REPO_ROOT / "V3" / "target" / "release"
 EXE_SUFFIX = ".exe" if os.name == "nt" else ""
-if not LOG_DIR.exists():
-    LOG_DIR = Path("../logs")
 
 # Unified service → log file mapping used by all log endpoints
 SERVICE_LOG_MAP = {
-    "node1":           "node1.log",
-    "node2":           "node2.log",
+    # Blockchain nodes
+    "node1":           "node1.log",           # legacy alias
+    "edge-node1":      "node1.log",            # Edge Node 1 (primary) — log forwarded via SSH tunnel
+    "node2":           "node2.log",            # legacy alias
+    "edge-node2":      "node2.log",            # Edge Node 2 (follower)
+    "local-backup":    "node-backup.log",      # Local backup node
+    "node-backup":     "node-backup.log",      # alias
+    # L1 services
     "pool":            "pool.log",
+    "pool-edge":       "pool.log",             # alias
     "miner":           "miner.log",
     "miner-low":       "miner-low.log",
     "miner-cpu":       "miner-cpu.log",
     "miner-gpu":       "miner-gpu.log",
+    # AI
     "hiranyagarbha":   "hiranyagarbha.log",
     "hiran":           "hiran-inference.log",
     "hiran-inference": "hiran-inference.log",
+    # L2
     "bridge":          "bridge.log",
     "dao-daemon":      "dao.log",
     "dao":             "dao.log",
     "atomic-swap":     "atomic-swap.log",
+    # L3
     "warp":            "warp.log",
+    # L4-L6
+    "oasis":           "oasis.log",
+    "free-world":      "free-world.log",
+    "issobella":       "issobella.log",
+    # Infrastructure
     "dashboard":       "dashboard.log",
     "control-audit":   "control-audit.txt",
+    "watchdog":        "watchdog.log",
+    "backup":          "backup.log",
+    "autostart":       "autostart.log",
 }
+
+# ── ANSI escape strip ─────────────────────────────────────────────────────
+_ANSI_RE = re.compile(r'\x1b\[[0-9;]*[mKABCDEFGHJSTfhilmnprsuABCD]')
+def strip_ansi(s: str) -> str:
+    return _ANSI_RE.sub('', s) if s else s
 
 # Load config
 def load_config() -> dict:
@@ -130,11 +157,11 @@ if _legacy_user and _legacy_pass:
     DASHBOARD_USERS[_legacy_user] = _sha256(_legacy_pass)
 
 # Endpoints that skip auth (health checks, static assets)
-AUTH_EXEMPT_ROUTES = {"/api/health", "/health", "/favicon.ico"}
+AUTH_EXEMPT_ROUTES = {"/api/health", "/health", "/favicon.ico", "/api/poc/html", "/api/poc/status"}
 
 # Edge server addresses (Hetzner VPS — always-on)
 EDGE_HOST = "127.0.0.1"   # Dashboard runs on same server (v3.0.4)
-EDGE_PUBLIC_IP = "62.171.141.136"  # Public IP (fallback if Tailscale down)
+EDGE_PUBLIC_IP = "62.171.141.136"  # Public IP (Edge server)
 
 # ── Edge-local detection ─────────────────────────────────────────────────
 # When the dashboard runs ON the Edge server, we can execute commands locally
@@ -142,33 +169,12 @@ EDGE_PUBLIC_IP = "62.171.141.136"  # Public IP (fallback if Tailscale down)
 def _is_edge_local() -> bool:
     """Detect if we're running on the Edge server itself."""
     try:
-        # Check hostname
+        # Check hostname — v3.0.4 edge server hostname is "vmi3425821"
         hostname = socket.gethostname()
-        if "edge" in hostname.lower() or "mainnet" in hostname.lower():
+        if "edge" in hostname.lower() or "mainnet" in hostname.lower() or "vmi" in hostname.lower():
             return True
-        # Check if EDGE_HOST matches any local interface
-        local_ips = set()
-        try:
-            local_ips.add(socket.gethostbyname(socket.gethostname()))
-        except Exception:
-            pass
-        # Check all interfaces
-        try:
-            hostname_full = socket.getfqdn()
-            local_ips.add(socket.gethostbyname(hostname_full))
-        except Exception:
-            pass
-        # Check Tailscale IP directly
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            s.settimeout(0.5)
-            s.connect((EDGE_HOST, 8443))
-            local_ip = s.getsockname()[0]
-            s.close()
-            if local_ip == EDGE_HOST:
-                return True
-        except Exception:
-            pass
+        # If hostname is something else (e.g. "zionserver-144"), we're NOT on edge
+        # even if 127.0.0.1:8443 is reachable (could be SSH tunnel)
         return False
     except Exception:
         return False
@@ -181,14 +187,19 @@ def _run_edge_cmd(cmd: str, timeout: int = 8) -> subprocess.CompletedProcess:
     """Run a command on the Edge server — locally if we're on Edge, via SSH otherwise."""
     if EDGE_IS_LOCAL:
         return subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=timeout)
-    # SSH path — requires key file
+    # v3.0.4: Use SSH config alias "zion-new" (key in ~/.ssh/zion-new-server)
     ssh_key = REPO_ROOT / "ssh-key-zion-edge"
-    if not ssh_key.exists():
-        raise FileNotFoundError(f"SSH key not found: {ssh_key}")
+    if ssh_key.exists():
+        return subprocess.run(
+            ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
+             "-o", "ConnectTimeout=3", "-o", "BatchMode=yes",
+             f"root@{EDGE_HOST}", cmd],
+            capture_output=True, text=True, timeout=timeout
+        )
+    # Fallback: use SSH config alias "zion-new" (configured in ~/.ssh/config)
     return subprocess.run(
-        ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
-         "-o", "ConnectTimeout=3", "-o", "BatchMode=yes",
-         f"root@{EDGE_HOST}", cmd],
+        ["ssh", "-o", "ConnectTimeout=3", "-o", "BatchMode=yes",
+         "zion-new", cmd],
         capture_output=True, text=True, timeout=timeout
     )
 
@@ -317,6 +328,7 @@ class ServiceHealthHistory:
 SERVICE_HISTORY = ServiceHealthHistory()
 BLOCK_EVENTS: deque = deque(maxlen=50)
 LAST_BLOCK_EVENT_TIME = {"node1": 0, "node2": 0, "pool": 0}
+BLOCK_EVENTS_LOCK = threading.Lock()
 
 # ── Log Rotation ─────────────────────────────────────────────────────────
 LOG_ROTATION_LOCK = threading.Lock()
@@ -666,46 +678,67 @@ def get_edge_server_health() -> dict:
 
 
 def get_monitoring_status() -> dict:
-    """Probe Edge Prometheus + Grafana APIs. Cached 15 s."""
+    """Scrape built-in pool metrics endpoint (Prometheus format on :8455). Cached 15 s."""
     now = time.time()
     with MONITORING_LOCK:
         if now - MONITORING_CACHE["ts"] < 15:
             return MONITORING_CACHE["data"]
 
-    edge_ip = "127.0.0.1"
+    metrics_host = "127.0.0.1"
+    metrics_port = 8455
     result = {
-        "prometheus": {"url": f"http://{edge_ip}:9090", "alive": False, "version": None, "targets_up": 0, "targets_total": 0},
-        "grafana": {"url": f"http://{edge_ip}:3100", "alive": False, "version": None, "database": None},
+        "prometheus": {"url": f"http://{metrics_host}:{metrics_port}/metrics", "alive": False, "version": None, "targets_up": 0, "targets_total": 0},
+        "grafana": {"url": "built-in", "alive": True, "version": "dashboard", "database": "internal"},
+        "pool_metrics": {"url": f"http://{metrics_host}:{metrics_port}/metrics", "alive": False, "hashrate": "0 H/s", "shares": 0, "active_sessions": 0, "miners_tracked": 0, "blocks_found": 0, "accepted": 0, "rejected": 0, "submits": 0},
+        "built_in_charts": {"alive": True, "version": "dashboard", "database": "internal"},
         "timestamp": now,
     }
 
-    # Prometheus health + targets
+    # Scrape pool metrics endpoint (Prometheus exposition format)
     try:
-        r = urllib.request.urlopen(f"http://{edge_ip}:9090/api/v1/targets", timeout=5)
-        data = json.loads(r.read().decode("utf-8"))
-        if data.get("status") == "success":
-            targets = data.get("data", {}).get("activeTargets", [])
-            up = sum(1 for t in targets if t.get("health") == "up")
-            result["prometheus"]["alive"] = True
-            result["prometheus"]["targets_up"] = up
-            result["prometheus"]["targets_total"] = len(targets)
-    except Exception:
-        pass
-
-    try:
-        r = urllib.request.urlopen(f"http://{edge_ip}:9090/-/healthy", timeout=3)
-        if r.status == 200:
-            result["prometheus"]["alive"] = True
-    except Exception:
-        pass
-
-    # Grafana health
-    try:
-        r = urllib.request.urlopen(f"http://{edge_ip}:3100/api/health", timeout=5)
-        data = json.loads(r.read().decode("utf-8"))
-        result["grafana"]["alive"] = True
-        result["grafana"]["version"] = data.get("version")
-        result["grafana"]["database"] = data.get("database")
+        r = urllib.request.urlopen(f"http://{metrics_host}:{metrics_port}/metrics", timeout=3)
+        body = r.read().decode("utf-8", errors="ignore")
+        result["prometheus"]["alive"] = True
+        result["pool_metrics"]["alive"] = True
+        shares = 0
+        hashrate_hps = 0.0
+        accepted = 0
+        rejected = 0
+        active_sessions = 0
+        miners_tracked = 0
+        blocks_found = 0
+        submits = 0
+        for line in body.splitlines():
+            line = line.strip()
+            if line.startswith("zion_pool_active_sessions "):
+                active_sessions = int(float(line.split()[-1]))
+                result["prometheus"]["targets_up"] = active_sessions
+            elif line.startswith("zion_pool_miners_tracked "):
+                miners_tracked = int(float(line.split()[-1]))
+                result["prometheus"]["targets_total"] = miners_tracked
+            elif line.startswith("zion_pool_accepted_total "):
+                accepted = int(float(line.split()[-1]))
+                shares += accepted
+            elif line.startswith("zion_pool_rejected_total "):
+                rejected = int(float(line.split()[-1]))
+                shares += rejected
+            elif line.startswith("zion_pool_hashrate_hps "):
+                hashrate_hps = float(line.split()[-1])
+            elif line.startswith("zion_pool_blocks_found "):
+                blocks_found = int(float(line.split()[-1]))
+            elif line.startswith("zion_pool_submits_total "):
+                submits = int(float(line.split()[-1]))
+        hr_str = f"{hashrate_hps/1000:.1f} KH/s" if hashrate_hps >= 1000 else f"{hashrate_hps:.1f} H/s"
+        result["prometheus"]["version"] = hr_str
+        result["prometheus"]["shares"] = shares
+        result["pool_metrics"]["hashrate"] = hr_str
+        result["pool_metrics"]["shares"] = shares
+        result["pool_metrics"]["active_sessions"] = active_sessions
+        result["pool_metrics"]["miners_tracked"] = miners_tracked
+        result["pool_metrics"]["blocks_found"] = blocks_found
+        result["pool_metrics"]["accepted"] = accepted
+        result["pool_metrics"]["rejected"] = rejected
+        result["pool_metrics"]["submits"] = submits
     except Exception:
         pass
 
@@ -747,6 +780,7 @@ def append_alert(alert: dict):
 WATCHDOG_ENABLED = True
 WATCHDOG_RESTART_COOLDOWN_SEC = 300  # 5 min between auto-restarts per service
 WATCHDOG_LAST_RESTART = {}  # sid -> ts
+WATCHDOG_LOCK = threading.Lock()
 
 def watchdog_check():
     """Auto-restart critical services that have gone down unexpectedly. Topology-aware."""
@@ -769,9 +803,10 @@ def watchdog_check():
         if proc_info["alive"]:
             continue
         # Check cooldown
-        last_restart = WATCHDOG_LAST_RESTART.get(sid, 0)
-        if now - last_restart < WATCHDOG_RESTART_COOLDOWN_SEC:
-            continue
+        with WATCHDOG_LOCK:
+            last_restart = WATCHDOG_LAST_RESTART.get(sid, 0)
+            if now - last_restart < WATCHDOG_RESTART_COOLDOWN_SEC:
+                continue
         start_script = svc.get("start")
         if not start_script:
             continue
@@ -784,7 +819,8 @@ def watchdog_check():
             continue
         result = run_control(action)
         if result.get("ok"):
-            WATCHDOG_LAST_RESTART[sid] = now
+            with WATCHDOG_LOCK:
+                WATCHDOG_LAST_RESTART[sid] = now
             register_process(sid, result["pid"])
             append_alert({"severity": "warning", "title": f"Watchdog restarted {svc['name']}",
                           "detail": f"PID {proc_info['pid']} died. Auto-restarted at {datetime.now().isoformat()}",
@@ -956,6 +992,24 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "Primary / Genesis node — P2P 8333, RPC 8443, WS 8445, metrics 9100. Fresh genesis v3.0.4.",
      "child_says": "🌍 The king node — source of chain truth!",
      "depends_on": []},
+    {"id": "edge-node2", "name": "ZION Node 2 (Follower)", "icon": "🔶", "level": "L1", "kind": "node",
+     "ports": {"p2p": 8334, "rpc": 8448, "ws": 8449, "metrics": 9116},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "rpc", "severity": "warning", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:8448/health",
+     "purpose": "Follower node — P2P 8334, RPC 8448. Syncs from Node 1 for redundancy.",
+     "child_says": "🔶 Follows Node 1 to keep a backup copy!",
+     "depends_on": ["edge-node1"]},
+    {"id": "local-backup", "name": "Local Backup Node", "icon": "🔷", "level": "L1", "kind": "node",
+     "ports": {"p2p": 8333, "rpc": 8446, "ws": 8447},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "rpc", "severity": "warning", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:8446/health",
+     "purpose": "Local backup node — P2P 8333, RPC 8446. Seeds from both Edge nodes.",
+     "child_says": "🔷 Local backup — keeps a copy safe at home!",
+     "depends_on": ["edge-node1"]},
     {"id": "pool-edge", "name": "ZION Pool (Primary)", "icon": "🌐", "level": "L1", "kind": "pool",
      "ports": {"stratum": 8444},
      "host": "127.0.0.1",
@@ -1177,21 +1231,7 @@ SERVICE_REGISTRY_LOCAL_DEV = [
      "depends_on": ["node1"]},
 
     # ── Infrastructure ───────────────────────────────────────────────────
-    {"id": "prometheus", "name": "Prometheus", "icon": "📊", "level": "Infra", "kind": "metrics",
-     "ports": {"web": 9090},
-     "log": None, "start": "start-prometheus", "stop": None,
-     "health_method": "tcp", "severity": "info", "autoheal": False,
-     "purpose": "Collects and stores metrics from all services (every 15s).",
-     "child_says": "📊 A super-memory that remembers all the numbers!",
-     "depends_on": []},
-    {"id": "grafana", "name": "Grafana", "icon": "📈", "level": "Infra", "kind": "dashboards",
-     "ports": {"web": 3100},
-     "host": "127.0.0.1",
-     "log": None, "start": "start-grafana", "stop": None,
-     "health_method": "tcp", "severity": "info", "autoheal": False,
-     "purpose": "Beautiful charts and dashboards for Prometheus metrics on Edge (port 3100).",
-     "child_says": "📈 Pretty pictures showing how everything is doing!",
-     "depends_on": ["prometheus"]},
+    # Prometheus/Grafana removed — replaced by built-in pool metrics on :8455
     {"id": "node-exporter", "name": "Node Exporter", "icon": "🔧", "level": "Infra", "kind": "metrics",
      "ports": {"metrics": 9100},
      "host": "127.0.0.1",
@@ -2044,9 +2084,11 @@ EDGE_AGENT_API_BASE = f"http://{EDGE_RPC_HOST}:8767"  # Edge server agent
 
 _discovered_nodes_cache: dict = {}
 _discovered_nodes_ts: float = 0.0
+_discovered_nodes_lock = threading.Lock()
 
 _cached_rewards: dict = {}
 _cached_rewards_ts: float = 0.0
+_cached_rewards_lock = threading.Lock()
 
 AGENT_CACHE_TTL_SEC: float = 10.0
 
@@ -2054,8 +2096,9 @@ def fetch_agent_discovered_nodes() -> dict:
     """Poll desktop agent for newly discovered nodes on the local network."""
     global _discovered_nodes_cache, _discovered_nodes_ts
     now = time.time()
-    if _discovered_nodes_cache and (now - _discovered_nodes_ts) < AGENT_CACHE_TTL_SEC:
-        return _discovered_nodes_cache
+    with _discovered_nodes_lock:
+        if _discovered_nodes_cache and (now - _discovered_nodes_ts) < AGENT_CACHE_TTL_SEC:
+            return _discovered_nodes_cache
     try:
         req = urllib.request.Request(
             f"{AGENT_API_BASE}/api/nodes/discovered",
@@ -2064,8 +2107,9 @@ def fetch_agent_discovered_nodes() -> dict:
         )
         with urllib.request.urlopen(req, timeout=2.0) as r:
             data = json.loads(r.read().decode("utf-8"))
-            _discovered_nodes_cache = data
-            _discovered_nodes_ts = now
+            with _discovered_nodes_lock:
+                _discovered_nodes_cache = data
+                _discovered_nodes_ts = now
             return data
     except Exception as e:
         return {"count": 0, "nodes": [], "_error": str(e)}
@@ -2074,8 +2118,9 @@ def fetch_agent_rewards() -> dict:
     """Poll desktop agent for node-adoption rewards."""
     global _cached_rewards, _cached_rewards_ts
     now = time.time()
-    if _cached_rewards and (now - _cached_rewards_ts) < AGENT_CACHE_TTL_SEC:
-        return _cached_rewards
+    with _cached_rewards_lock:
+        if _cached_rewards and (now - _cached_rewards_ts) < AGENT_CACHE_TTL_SEC:
+            return _cached_rewards
     try:
         req = urllib.request.Request(
             f"{AGENT_API_BASE}/api/nodes/rewards",
@@ -2084,8 +2129,9 @@ def fetch_agent_rewards() -> dict:
         )
         with urllib.request.urlopen(req, timeout=2.0) as r:
             data = json.loads(r.read().decode("utf-8"))
-            _cached_rewards = data
-            _cached_rewards_ts = now
+            with _cached_rewards_lock:
+                _cached_rewards = data
+                _cached_rewards_ts = now
             return data
     except Exception as e:
         return {"total_points": 0, "adoptions": 0, "rewards": [], "_error": str(e)}
@@ -2162,16 +2208,23 @@ def get_miner_live_stats() -> dict:
         stats["worker_name"] = "worker1"
         stats["pool_addr"] = "62.171.141.136:8444"
 
+    # Sanitize pool_addr: strip ANSI, replace decommissioned server IP
+    _DECOMMISSIONED_POOL_IPS = {"100.76.16.108", "77.42.71.94"}
+    raw_pool_addr = strip_ansi(stats.get("pool_addr") or "")
+    pool_host = raw_pool_addr.split(":")[0] if raw_pool_addr else ""
+    if not raw_pool_addr or pool_host in _DECOMMISSIONED_POOL_IPS:
+        raw_pool_addr = "62.171.141.136:8444"
+
     return {
         "hashrate": stats.get("hashrate"),
         "shares_accepted": stats.get("shares_accepted", 0),
         "shares_rejected": stats.get("shares_rejected", 0),
         "current_height": stats.get("current_height"),
         "current_diff": stats.get("current_diff"),
-        "gpu_backend": stats.get("gpu_backend", "cpu"),
-        "gpu_device": stats.get("gpu_device"),
-        "worker_name": stats.get("worker_name"),
-        "pool_addr": stats.get("pool_addr"),
+        "gpu_backend": strip_ansi(stats.get("gpu_backend", "cpu")),
+        "gpu_device": strip_ansi(stats.get("gpu_device") or ""),
+        "worker_name": strip_ansi(stats.get("worker_name") or ""),
+        "pool_addr": raw_pool_addr,
         "running": stats.get("running", False),
         "gpus": agent_gpu.get("gpus", []) if not agent_gpu.get("_error") else [],
         "timestamp": datetime.now().isoformat(),
@@ -2317,10 +2370,15 @@ def parse_miner_log() -> dict:
                 best_path = p
     if best_path:
         recent = tail_log(best_path.name, 200)
-        startup = head_log(best_path.name, 50)
+        # Read from both head and tail to find the most-recent startup block
+        # (log may have multiple sessions; the last session's startup data is
+        # in the tail region, while head_log would find the first/oldest one).
+        startup_head = head_log(best_path.name, 50)
+        startup_tail = tail_log(best_path.name, 300)  # large enough to include last startup
     else:
         recent = []
-        startup = []
+        startup_head = []
+        startup_tail = []
     # Process-based liveness: check PROCESS_REGISTRY first, then scan by exe name
     proc_check = check_process_for_service("miner")
     proc_alive = proc_check["alive"]
@@ -2344,17 +2402,19 @@ def parse_miner_log() -> dict:
         "current_diff": None,
         "recent_lines": recent[-10:],
     }
-    for line in startup:
+    # Parse startup fields from head first, then override with values from tail
+    # so that multi-session log files always reflect the most-recent session.
+    for line in startup_head + startup_tail:
         if m := re.search(r'miner_id=(\S+)', line):
-            status["miner_id"] = m.group(1)
+            status["miner_id"] = strip_ansi(m.group(1))
         if m := re.search(r'worker_name=(\S+)', line):
-            status["worker_name"] = m.group(1)
+            status["worker_name"] = strip_ansi(m.group(1))
         if m := re.search(r'pool_addr=(\S+)', line):
-            status["pool_addr"] = m.group(1)
+            status["pool_addr"] = strip_ansi(m.group(1))
         if m := re.search(r'backend=(\S+)', line):
-            status["gpu_backend"] = m.group(1)
+            status["gpu_backend"] = strip_ansi(m.group(1))
         if m := re.search(r'device="([^"]+)"', line):
-            status["gpu_device"] = m.group(1)
+            status["gpu_device"] = strip_ansi(m.group(1))
     nonce_samples2 = []  # (nonce_count, elapsed_ms) for throughput hashrate
     for line in recent:
         if m := re.search(r'gpu_backend=(\S+)', line):
@@ -2391,13 +2451,13 @@ def parse_miner_log() -> dict:
                 status["current_height"] = h
         if m := re.search(r'diff\s+(\d+)', line):
             status["current_diff"] = int(m.group(1))
-        # pool_addr from session log
+        # pool_addr from session log (also strip ANSI in recent lines)
         if m := re.search(r'pool_addr=(\S+)', line):
-            status["pool_addr"] = m.group(1)
+            status["pool_addr"] = strip_ansi(m.group(1))
         if m := re.search(r'miner_id=(\S+)', line):
-            status["miner_id"] = m.group(1)
+            status["miner_id"] = strip_ansi(m.group(1))
         if m := re.search(r'worker_name=(\S+)', line):
-            status["worker_name"] = m.group(1)
+            status["worker_name"] = strip_ansi(m.group(1))
         # Throughput: "no_solution  iteration=N  height=H  nonces=START..END  elapsed_ms=T"
         if m := re.search(r'nonces=(\d+)\.\.(\d+)\s+elapsed_ms=(\d+)', line):
             n_start, n_end, ms = int(m.group(1)), int(m.group(2)), int(m.group(3))
@@ -2455,17 +2515,36 @@ def _build_status_edge_primary() -> dict:
             return ("edge", r)
         return ("edge", None)
 
-    def _edge_rpc_call_node2():
-        # v3.0.4: No node2 on new server — skip probe
-        return ("edge2", None)
+    def _edge_node2_rpc_call():
+        # Edge Node 2 (Follower) — RPC on port 8448 (via SSH tunnel)
+        r = rpc_call("127.0.0.1", 8448, "getChainInfo", {}, timeout=2.0)
+        return ("edge2", r if r and not r.get("_rpc_error") else None)
+
+    def _local_backup_rpc_call():
+        # Local backup node runs on port 8446 (RPC), P2P syncs from Edge
+        r = rpc_call("127.0.0.1", 8446, "getChainInfo", {}, timeout=2.0)
+        return ("local_backup", r if r and not r.get("_rpc_error") else None)
 
     def _local_rpc_call():
-        r = rpc_call("127.0.0.1", 8443, "getChainInfo", {}, timeout=1.5)
+        # Also probe getNodeInfo for richer data (node_id, p2p_bind, etc.)
+        r = rpc_call("127.0.0.1", 8446, "getNodeInfo", {}, timeout=2.0)
         return ("local", r if r and not r.get("_rpc_error") else None)
 
-    edge_rpc_info_node2 = None
-    with ThreadPoolExecutor(max_workers=3) as ex:
-        futures = {ex.submit(_edge_rpc_call), ex.submit(_edge_rpc_call_node2), ex.submit(_local_rpc_call)}
+    def _edge_node2_nodeinfo_call():
+        r = rpc_call("127.0.0.1", 8448, "getNodeInfo", {}, timeout=2.0)
+        return ("edge2_info", r if r and not r.get("_rpc_error") else None)
+
+    local_backup_info = None
+    edge_node2_info = None
+    edge_node2_nodeinfo = None
+    with ThreadPoolExecutor(max_workers=5) as ex:
+        futures = {
+            ex.submit(_edge_rpc_call),
+            ex.submit(_edge_node2_rpc_call),
+            ex.submit(_local_backup_rpc_call),
+            ex.submit(_local_rpc_call),
+            ex.submit(_edge_node2_nodeinfo_call),
+        }
         try:
             for fut in as_completed(futures, timeout=5.0):
                 try:
@@ -2473,16 +2552,17 @@ def _build_status_edge_primary() -> dict:
                     if key == "edge":
                         edge_rpc_info = val
                     elif key == "edge2":
-                        edge_rpc_info_node2 = val
+                        edge_node2_info = val
+                    elif key == "edge2_info":
+                        edge_node2_nodeinfo = val
+                    elif key == "local_backup":
+                        local_backup_info = val
                     else:
                         local_rpc_info = val
                 except Exception:
                     pass
         except TimeoutError:
             pass
-
-    # NOTE: SSH fallback for node2 removed — caused Windows SSH deadlock.
-    # Edge Node 2 is probed via direct RPC (127.0.0.1:8446) in thread pool above.
 
     # ── Edge Node status ─────────────────────────────────────────────────────
     edge_node1_status = {
@@ -2497,28 +2577,49 @@ def _build_status_edge_primary() -> dict:
         "accepted_blocks": edge_rpc_info.get("accepted_blocks") if edge_rpc_info else None,
     }
     edge_node2_status = {
-        "running": bool(edge_rpc_info_node2),
-        "chain_height": edge_rpc_info_node2.get("chain_height") if edge_rpc_info_node2 else None,
-        "tip_hash": edge_rpc_info_node2.get("tip_hash") if edge_rpc_info_node2 else None,
-        "known_peers": edge_rpc_info_node2.get("known_peers", 0) if edge_rpc_info_node2 else 0,
-        "mempool_size": edge_rpc_info_node2.get("mempool_transactions", 0) if edge_rpc_info_node2 else 0,
-        "network": edge_rpc_info_node2.get("network") if edge_rpc_info_node2 else None,
-        "protocol_version": edge_rpc_info_node2.get("protocol_version") if edge_rpc_info_node2 else None,
-        "consensus_profile": edge_rpc_info_node2.get("consensus_profile") if edge_rpc_info_node2 else None,
-        "accepted_blocks": edge_rpc_info_node2.get("accepted_blocks") if edge_rpc_info_node2 else None,
+        "running": bool(edge_node2_info),
+        "chain_height": edge_node2_info.get("chain_height") if edge_node2_info else None,
+        "tip_hash": edge_node2_info.get("tip_hash") if edge_node2_info else None,
+        "known_peers": (edge_node2_nodeinfo or {}).get("known_peers", 0) if edge_node2_info else 0,
+        "mempool_size": edge_node2_info.get("mempool_transactions", 0) if edge_node2_info else 0,
+        "network": edge_node2_info.get("network") if edge_node2_info else None,
+        "protocol_version": edge_node2_info.get("protocol_version") if edge_node2_info else None,
+        "consensus_profile": edge_node2_info.get("consensus_profile") if edge_node2_info else None,
+        "accepted_blocks": edge_node2_info.get("accepted_blocks") if edge_node2_info else None,
+        "node_id": (edge_node2_nodeinfo or {}).get("node_id") if edge_node2_info else None,
+        "p2p_bind": (edge_node2_nodeinfo or {}).get("p2p_bind") if edge_node2_info else None,
+        "rpc_bind": (edge_node2_nodeinfo or {}).get("rpc_bind") if edge_node2_info else None,
+        "host": "127.0.0.1:8448",
+    }
+    local_backup_status = {
+        "running": bool(local_backup_info),
+        "chain_height": local_backup_info.get("chain_height") if local_backup_info else None,
+        "tip_hash": local_backup_info.get("tip_hash") if local_backup_info else None,
+        "known_peers": (local_rpc_info or {}).get("known_peers", 0) if local_backup_info else 0,
+        "mempool_size": local_backup_info.get("mempool_transactions", 0) if local_backup_info else 0,
+        "network": local_backup_info.get("network") if local_backup_info else None,
+        "protocol_version": local_backup_info.get("protocol_version") if local_backup_info else None,
+        "consensus_profile": local_backup_info.get("consensus_profile") if local_backup_info else None,
+        "accepted_blocks": local_backup_info.get("accepted_blocks") if local_backup_info else None,
+        "node_id": (local_rpc_info or {}).get("node_id") if local_backup_info else None,
+        "p2p_bind": (local_rpc_info or {}).get("p2p_bind") if local_backup_info else None,
+        "rpc_bind": (local_rpc_info or {}).get("rpc_bind") if local_backup_info else None,
+        "host": "127.0.0.1:8446",
     }
 
-    # ── Local Backup Node ───────────────────────────────────────────────────
+    # ── Local Backup Node (n1) — uses local_backup_status ──────────────────
     n1 = parse_node_log("node1")
-    if local_rpc_info:
+    if local_backup_status["running"]:
         n1["running"] = True
-        if not n1.get("p2p_bind"):
-            n1["p2p_bind"] = "0.0.0.0:8333"
-        n1["chain_height"] = local_rpc_info.get("chain_height")
-        n1["known_peers"] = local_rpc_info.get("known_peers", n1.get("known_peers", 0))
-        n1["mempool_size"] = local_rpc_info.get("mempool_transactions", n1.get("mempool_size", 0))
-        n1["protocol_version"] = local_rpc_info.get("protocol_version")
-        n1["consensus_profile"] = local_rpc_info.get("consensus_profile")
+        n1["chain_height"] = local_backup_status["chain_height"]
+        n1["tip_hash"] = local_backup_status["tip_hash"]
+        n1["known_peers"] = local_backup_status["known_peers"]
+        n1["mempool_size"] = local_backup_status["mempool_size"]
+        n1["protocol_version"] = local_backup_status["protocol_version"]
+        n1["consensus_profile"] = local_backup_status["consensus_profile"]
+        n1["node_id"] = local_backup_status.get("node_id") or n1.get("node_id")
+        n1["p2p_bind"] = local_backup_status.get("p2p_bind") or "0.0.0.0:8333"
+        n1["rpc_bind"] = local_backup_status.get("rpc_bind") or "127.0.0.1:8446"
 
     # Proxy local height to Edge if Edge RPC failed entirely
     if edge_node1_status["chain_height"] is None and n1.get("chain_height"):
@@ -2537,7 +2638,7 @@ def _build_status_edge_primary() -> dict:
                    "fee_humanitarian": 0, "fee_issobella": 0, "fee_pool": 0, "fee_miner_pct": 89,
                    "miner_balances": []}
     try:
-        # Direct Edge pool metrics probe (Tailscale IP, port 8455)
+        # Direct Edge pool metrics probe (port 8455)
         url = f"http://{EDGE_RPC_HOST}:8455/metrics"
         with _urlreq.urlopen(url, timeout=3.0) as r:
             body = r.read().decode("utf-8", errors="ignore")
@@ -2605,7 +2706,7 @@ def _build_status_edge_primary() -> dict:
             pool_edge_health = {"alive": False}
 
 
-    edge_pool_wallet = os.environ.get("ZION_POOL_WALLET", "") or "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604"
+    edge_pool_wallet = os.environ.get("ZION_POOL_WALLET", "") or "zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2"
     edge_fee_split = "89/5/5/1"
     local_pool = parse_pool_log()
     pool_status = {
@@ -2675,9 +2776,10 @@ def _build_status_edge_primary() -> dict:
         "timestamp": datetime.now().isoformat(),
         "topology": "edge-primary",
         "node1": n1,
-        "node2": edge_node2_status if edge_node2_status.get("running") else {"running": False, "chain_height": None, "tip_hash": None, "known_peers": 0, "mempool_size": 0},
+        "node2": {"running": False, "chain_height": None, "tip_hash": None, "known_peers": 0, "mempool_size": 0},
         "edge_node": edge_node1_status,
         "edge_node2": edge_node2_status,
+        "local_backup": local_backup_status,
         "pool": pool_status,
         "pool_edge": {
             "running": pool_edge_health["alive"],
@@ -2872,7 +2974,8 @@ def build_checklist(status: dict) -> dict:
             {"id": "keys",       "label": "Offline key generation complete",          "ok": True},
             {"id": "env",        "label": "Env file assembled (.env.mainnet)",        "ok": True},
             {"id": "edge-node1", "label": "Edge Node 1 (Primary) running & reachable", "ok": status["edge_node"]["running"] and status["edge_node"]["chain_height"] is not None},
-            {"id": "edge-node2", "label": "Edge Node 2 (Follower) running & synced",  "ok": status.get("edge_node2", {}).get("running", False)},
+            {"id": "edge-node2", "label": "Edge Node 2 (Follower) running & synced",  "ok": status.get("edge_node2", {}).get("running", False) and status.get("edge_node2", {}).get("known_peers", 0) > 0},
+            {"id": "local-backup", "label": "Local Backup Node running & synced",      "ok": status.get("local_backup", {}).get("running", False) and status.get("local_backup", {}).get("known_peers", 0) > 0},
             {"id": "pool",       "label": "Edge Pool running & accepting miners",     "ok": status["pool"]["running"] and status["pool"]["active_sessions"] is not None},
             {"id": "pool-edge",  "label": "Edge Pool TCP reachable",                  "ok": status.get("pool_edge", {}).get("running", False)},
             {"id": "chain",      "label": "Chain height advancing",                   "ok": status["edge_node"]["chain_height"] is not None and status["edge_node"]["chain_height"] > 0},
@@ -2880,7 +2983,7 @@ def build_checklist(status: dict) -> dict:
             {"id": "fee_split",  "label": "Fee split 89/5/5/1 (burn model) active",    "ok": status["pool"]["fee_split"] == "89/5/5/1"},
             {"id": "logs",       "label": "Log directory writable",                   "ok": LOG_DIR.exists()},
             # Optional local services (not counted in score, shown for info)
-            {"id": "node1",      "label": "Local Backup Node (optional)",             "ok": not status["node1"]["running"] or (status["node1"]["running"] and status["node1"]["p2p_bind"] is not None)},
+            {"id": "node1",      "label": "Local Backup Node P2P synced",             "ok": status.get("local_backup", {}).get("running", False) and status.get("local_backup", {}).get("known_peers", 0) > 0},
             {"id": "miner",      "label": "Local GPU miner (optional)",               "ok": True},
             {"id": "edge-backup","label": "Edge database auto-backup (optional)",     "ok": True},
         ]
@@ -2979,6 +3082,7 @@ def build_alerts(status: dict) -> list:
     n1, n2, pool, miner = status["node1"], status["node2"], status["pool"], status["miner"]
     edge_node1 = status.get("edge_node", {})
     edge_node2 = status.get("edge_node2", {})
+    local_backup = status.get("local_backup", {})
 
     def _sev(svc_id: str, default: str = "warning") -> str:
         svc = get_service(svc_id)
@@ -2988,7 +3092,7 @@ def build_alerts(status: dict) -> list:
         # Edge Node 1 (Primary) alerts
         if not edge_node1.get("running"):
             alerts.append({"severity": _sev("edge-node1", "critical"), "title": "Edge Node 1 (Primary) not reachable",
-                           "detail": "Primary node on Edge (127.0.0.1:8333) is not responding. Check Tailscale VPN and Edge systemd services.",
+                           "detail": "Primary node on Edge (127.0.0.1:8333) is not responding. Check Edge systemd services.",
                            "action": None})
         elif edge_node1.get("chain_height") == 0:
             alerts.append({"severity": _sev("edge-node1", "warning"), "title": "Edge chain stuck at height 0",
@@ -2998,7 +3102,7 @@ def build_alerts(status: dict) -> list:
         # Edge Node 2 (Follower) alerts
         if not edge_node2.get("running"):
             alerts.append({"severity": _sev("edge-node2", "warning"), "title": "Edge Node 2 (Follower) not reachable",
-                           "detail": "Follower node on Edge (127.0.0.1:8334) is not responding. It should P2P sync from Edge Node 1.",
+                           "detail": "Follower node on Edge (127.0.0.1:8448) is not responding. Check: ssh zion-new systemctl status zion-node2",
                            "action": None})
         elif edge_node2.get("chain_height") == 0:
             alerts.append({"severity": _sev("edge-node2", "warning"), "title": "Edge Node 2 chain stuck at height 0",
@@ -3013,19 +3117,32 @@ def build_alerts(status: dict) -> list:
                                "detail": f"Edge1@{edge_node1['chain_height']} vs Edge2@{edge_node2['chain_height']} — gap {gap}",
                                "action": None})
 
-        # Local Backup Node alerts (optional in edge-primary — only warn if explicitly started but failing)
-        if n1["running"] and n1.get("p2p_bind") is None:
-            alerts.append({"severity": _sev("node1", "warning"), "title": "Local Backup Node misconfigured",
-                           "detail": "Local backup node is running but has no P2P bind. Check config.",
+        # Local Backup Node alerts
+        if not local_backup.get("running"):
+            alerts.append({"severity": _sev("node1", "warning"), "title": "Local Backup Node not reachable",
+                           "detail": "Backup node on 127.0.0.1:8446 is not responding. Check systemd: systemctl --user status zion-backup-node",
+                           "action": "restart-node1"})
+        elif local_backup.get("chain_height") == 0:
+            alerts.append({"severity": _sev("node1", "warning"), "title": "Local Backup Node chain stuck at height 0",
+                           "detail": "Backup node is up but no blocks have been synced yet. Check P2P connection to Edge.",
                            "action": "restart-node1"})
 
         # Sync gap: Edge primary vs local backup
-        if edge_node1.get("running") and n1["running"] and edge_node1.get("chain_height") and n1["chain_height"]:
-            gap = abs(edge_node1["chain_height"] - n1["chain_height"])
+        if edge_node1.get("running") and local_backup.get("running") and edge_node1.get("chain_height") and local_backup.get("chain_height"):
+            gap = abs(edge_node1["chain_height"] - local_backup["chain_height"])
             if gap > 10:
                 alerts.append({"severity": _sev("node1", "warning"), "title": "Backup node far behind Edge",
-                               "detail": f"Edge@{edge_node1['chain_height']} vs Local@{n1['chain_height']} — gap {gap}",
+                               "detail": f"Edge@{edge_node1['chain_height']} vs Local@{local_backup['chain_height']} — gap {gap}",
                                "action": "restart-node1"})
+            elif gap <= 2:
+                # Positive alert: synced
+                pass  # No alert needed — all good
+
+        # Local Backup Node P2P peer check
+        if local_backup.get("running") and local_backup.get("known_peers", 0) == 0:
+            alerts.append({"severity": _sev("node1", "warning"), "title": "Backup node has no P2P peers",
+                           "detail": "Local backup node is running but has 0 peers. Check SSH tunnel and Edge P2P (62.171.141.136:8333).",
+                           "action": "restart-node1"})
     else:  # local-dev
         # Node 1 (Genesis) alerts
         if not n1["running"]:
@@ -3160,25 +3277,27 @@ def scan_block_events():
         for line in lines:
             if m := re.search(r'relay_block height=(\d+) hash=([a-f0-9…]+)', line):
                 key = f"{name}-{m.group(1)}-{m.group(2)}"
-                if key not in (e["key"] for e in BLOCK_EVENTS):
-                    BLOCK_EVENTS.append({
-                        "key": key,
-                        "ts": int(time.time()),
-                        "source": name,
-                        "height": int(m.group(1)),
-                        "hash": m.group(2),
-                        "type": "block_relay",
-                    })
+                with BLOCK_EVENTS_LOCK:
+                    if key not in (e["key"] for e in BLOCK_EVENTS):
+                        BLOCK_EVENTS.append({
+                            "key": key,
+                            "ts": int(time.time()),
+                            "source": name,
+                            "height": int(m.group(1)),
+                            "hash": m.group(2),
+                            "type": "block_relay",
+                        })
     # Pool block_found events
     pool_lines = tail_log("pool.log", 500)
     for line in pool_lines:
         if m := re.search(r'BLOCK_FOUND.*height=(\d+)', line):
             key = f"pool-found-{m.group(1)}"
-            if key not in (e["key"] for e in BLOCK_EVENTS):
-                BLOCK_EVENTS.append({
-                    "key": key, "ts": int(time.time()), "source": "pool",
-                    "height": int(m.group(1)), "hash": None, "type": "block_found",
-                })
+            with BLOCK_EVENTS_LOCK:
+                if key not in (e["key"] for e in BLOCK_EVENTS):
+                    BLOCK_EVENTS.append({
+                        "key": key, "ts": int(time.time()), "source": "pool",
+                        "height": int(m.group(1)), "hash": None, "type": "block_found",
+                    })
 
 # ── Env file discovery ──────────────────────────────────────────────────
 
@@ -3280,7 +3399,7 @@ def parse_premine_from_genesis(rpc_host: str = "127.0.0.1", rpc_port: int = 8443
         "DAO Treasury — Ecosystem Bootstrap",
         "Core Development Fund",
         "Network Infrastructure — P2P Seed Nodes",
-        "Genesis Creator — Lifetime Rent",
+        "Genesis Projects — Dharma Temple, Piko de Ora + DAO",
         "Children Future Fund — Humanitarian DAO",
     ]
     for i, tx in enumerate(genesis.get("transactions", [])):
@@ -3389,7 +3508,7 @@ def build_wallets() -> dict:
     #    fallback to .env files
     node_addrs = parse_node_startup_addresses()
     # Canonical Edge pool wallet (AGENTS.md) — always include
-    canonical_pool = "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604"
+    canonical_pool = "zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2"
     op_sources = [
         (canonical_pool, "Pool Canonical (Main Payout)", "canonical"),
         (node_addrs.get("miner") or find_env_value("ZION_MINER_ADDRESS"), "Miner Payout", "node"),
@@ -3555,20 +3674,29 @@ def get_block_detail(height: int = None, hash_hex: str = None) -> dict:
 # ── Mempool detail ────────────────────────────────────────────────────
 
 def get_mempool_detail() -> dict:
-    """Fetch mempool transactions and stats."""
+    """Fetch mempool transactions and stats via getMempoolInfo RPC."""
     rpc_host, rpc_port = "127.0.0.1", 8443
+    # Try getMempoolInfo first (richer data)
+    info = rpc_call(rpc_host, rpc_port, "getMempoolInfo", {}, timeout=1.5)
+    if info and not info.get("_rpc_error"):
+        return {
+            "rpc_reachable": True,
+            "tx_count": info.get("size", 0),
+            "template_tx_count": info.get("template_transactions", 0),
+            "total_fees_zion": info.get("template_total_fees_zion", 0),
+            "transaction_model": info.get("transaction_model", "hybrid"),
+            "transactions": [],
+        }
+    # Fallback to getChainInfo
     info = rpc_call(rpc_host, rpc_port, "getChainInfo", {}, timeout=1.5)
     if not info or info.get("_rpc_error"):
         return {"rpc_reachable": False, "tx_count": 0, "transactions": []}
-    # Use data from getChainInfo (getMempool method is not implemented in node)
     mempool_txs = info.get("mempool_transactions", 0)
-    template_txs = info.get("active_template_transactions", 0)
-    total_fees = info.get("active_template_total_fees_zion", 0)
     return {
         "rpc_reachable": True,
         "tx_count": mempool_txs,
-        "template_tx_count": template_txs,
-        "total_fees_zion": total_fees,
+        "template_tx_count": 0,
+        "total_fees_zion": 0,
         "transactions": [],
     }
 
@@ -3675,9 +3803,15 @@ def build_explorer() -> dict:
     total_premine = 16_780_000_000
     circulating_estimate = total_premine + estimated_mined
 
+    # Peer count from getChainInfo (field varies by node version)
+    peer_count = 0
+    if info:
+        peer_count = (info.get("peer_count") or info.get("peers") or
+                      info.get("connected_peers") or 0)
+
     return {
         "rpc_reachable": info is not None,
-        "network": info.get("network", "unknown") if info else "unknown",
+        "network": info.get("network", "Mainnet") if info else "Mainnet",
         "chain_height": chain_height,
         "tip_hash": info.get("tip_hash", "")[:20] + "…" if info else "—",
         "accepted_blocks": info.get("accepted_blocks", 0) if info else 0,
@@ -3689,6 +3823,8 @@ def build_explorer() -> dict:
         "premine_zion": total_premine,
         "genesis_hash": genesis.get("hash_hex", "")[:24] + "…" if genesis else "—",
         "recent_blocks": recent_blocks,
+        "peer_count": peer_count,
+        "protocol_version": info.get("protocol_version", "") if info else "",
     }
 
 # ── Edge server system status ───────────────────────────────────────────
@@ -3703,13 +3839,9 @@ def get_edge_server_status() -> dict:
     if _edge_status_cache["data"] is not None and (now - _edge_status_cache["ts"]) < _EDGE_CACHE_TTL:
         return _edge_status_cache["data"]
 
-    ssh_key = REPO_ROOT / "ssh-key-zion-edge"
-    if not EDGE_IS_LOCAL and not ssh_key.exists():
-        return {"ok": False, "error": "SSH key not found"}
-
     try:
         # Single command: combine all metrics to avoid multiple calls
-        combined_cmd = "cat /proc/loadavg && free -m && df -h / | tail -1 && echo '===TOP===' && ps -eo rss,comm --sort=-rss | head -6 | tail -5 && echo '===SVC===' && systemctl is-active zion-edge-node1 zion-edge-node2 zion-pool-server zion-edge-dao zion-edge-warp zion-edge-bridge 2>/dev/null"
+        combined_cmd = "cat /proc/loadavg && free -m && df -h / | tail -1 && echo '===TOP===' && ps -eo rss,comm --sort=-rss | head -6 | tail -5 && echo '===SVC===' && systemctl is-active zion-node zion-pool zion-dao zion-warp zion-bridge nginx 2>/dev/null"
         result = _run_edge_cmd(combined_cmd, timeout=8)
         if result.returncode != 0:
             return {"ok": False, "error": result.stderr.strip() or "Edge command failed"}
@@ -3764,7 +3896,7 @@ def get_edge_server_status() -> dict:
 
         # Service status
         services = []
-        svc_names = ["node", "node2", "pool", "dao", "warp", "bridge"]
+        svc_names = ["node", "pool", "dao", "warp", "bridge", "nginx"]
         states = svc_part.splitlines() if svc_part else []
         for i, name in enumerate(svc_names):
             if i < len(states):
@@ -3796,10 +3928,6 @@ def get_edge_server_status() -> dict:
 def clear_edge_disk(aggressive: bool = False) -> dict:
     """Run edge-log-cleanup.sh on Edge server, plus Docker prune.
     Returns disk usage before/after and freed space."""
-    ssh_key = REPO_ROOT / "ssh-key-zion-edge"
-    if not EDGE_IS_LOCAL and not ssh_key.exists():
-        return {"ok": False, "error": "SSH key not found"}
-
     try:
         # Get disk usage before
         result = _run_edge_cmd("df -h / | tail -1 | awk '{print $5\" \"$4}'", timeout=8)
@@ -3852,26 +3980,22 @@ def clear_edge_disk(aggressive: bool = False) -> dict:
 def run_edge_action(action: str) -> dict:
     """Run an action on the Edge server (service restart, docker clean, etc.).
     Executes locally when on Edge, via SSH otherwise."""
-    ssh_key = REPO_ROOT / "ssh-key-zion-edge"
-    if not EDGE_IS_LOCAL and not ssh_key.exists():
-        return {"ok": False, "error": "SSH key not found"}
-
     # Map action → command
     ACTION_MAP = {
-        "restart-node1":          "systemctl restart zion-edge-node1",
-        "restart-node2":          "systemctl restart zion-edge-node2",
-        "restart-pool":           "systemctl restart zion-pool-server",
-        "restart-dao":            "systemctl restart zion-edge-dao",
-        "restart-warp":           "systemctl restart zion-edge-warp",
-        "restart-dashboard":      "systemctl restart zion-edge-dashboard",
-        "restart-hiran":          "systemctl restart zion-edge-hiran",
-        "restart-hiranyagarbha":  "systemctl restart zion-edge-hiranyagarbha",
-        "restart-bridge":         "systemctl restart zion-edge-bridge",
-        "restart-website":        "systemctl restart zion-website",
+        "restart-node1":          "systemctl restart zion-node",
+        "restart-node2":          "echo 'node2 not deployed on v3.0.4 single-server topology'",
+        "restart-pool":           "systemctl restart zion-pool",
+        "restart-dao":            "systemctl restart zion-dao",
+        "restart-warp":           "systemctl restart zion-warp",
+        "restart-dashboard":      "systemctl restart zion-dashboard",
+        "restart-hiran":          "systemctl restart zion-hiran-inference 2>/dev/null || echo 'hiran not deployed'",
+        "restart-hiranyagarbha":  "systemctl restart zion-hiranyagarbha 2>/dev/null || echo 'hiranyagarbha not deployed'",
+        "restart-bridge":         "systemctl restart zion-bridge",
+        "restart-website":        "systemctl restart zion-web 2>/dev/null || docker restart zion-web 2>/dev/null || echo 'web in maintenance mode'",
         "clean-docker":           "docker builder prune -af 2>&1; docker image prune -af 2>&1; docker container prune -f 2>&1",
         "security-audit":         "echo 'Security audit placeholder — run manually'",
-        "full-health":            "/usr/local/bin/edge-health-probe.sh 2>&1",
-        "memory-limit":           "sed -i '/^MemoryMax=/d' /etc/systemd/system/zion-edge-node1.service; echo 'MemoryMax=3G' >> /etc/systemd/system/zion-edge-node1.service; systemctl daemon-reload; systemctl restart zion-edge-node1",
+        "full-health":            "systemctl is-active zion-node zion-pool zion-dao zion-warp zion-bridge nginx 2>&1",
+        "memory-limit":           "echo 'Memory limits configured in systemd unit files'",
     }
 
     cmd = ACTION_MAP.get(action)
@@ -3959,19 +4083,29 @@ def get_edge_backup_path(filename: str) -> "Path | None":
     if local_cache.exists():
         return local_cache
     ssh_key = REPO_ROOT / "ssh-key-zion-edge"
-    if not ssh_key.exists():
-        return None
-    try:
-        subprocess.run(
-            ["scp", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
-             "-o", "ConnectTimeout=5", "-o", "BatchMode=yes",
-             f"root@{EDGE_HOST}:/root/zion-backups/{filename}",
-             str(local_cache)],
-            capture_output=True, timeout=120
-        )
+    if ssh_key.exists():
+        try:
+            subprocess.run(
+                ["scp", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
+                 "-o", "ConnectTimeout=5", "-o", "BatchMode=yes",
+                 f"root@{EDGE_HOST}:/root/zion-backups/{filename}",
+                 str(local_cache)],
+                capture_output=True, timeout=120
+            )
+        except Exception:
+            pass
+    else:
+        # v3.0.4: Fallback to SSH config alias "zion-new"
+        try:
+            subprocess.run(
+                ["scp", "-o", "ConnectTimeout=5", "-o", "BatchMode=yes",
+                 f"zion-new:/root/zion-backups/{filename}",
+                 str(local_cache)],
+                capture_output=True, timeout=120
+            )
+        except Exception:
+            pass
         return local_cache if local_cache.exists() else None
-    except Exception:
-        return None
 
 
 def get_pool_miners() -> dict:
@@ -4087,12 +4221,12 @@ def get_pool_miners() -> dict:
 
 def get_backup_status() -> dict:
     r"""List backups + datadir sizes + last backup time.
-    Reads both manual backups (repo/backups) and auto-backups (C:\ZION-AutoBackups)."""
+    Reads both manual backups (repo/backups) and auto-backups (repo/backups/auto)."""
     manual_backups = []
     manual_dir = REPO_ROOT / "backups"
     total_backup_mb = 0
     if manual_dir.exists():
-        for f in sorted(manual_dir.glob("backup_*.zip"), key=lambda p: p.stat().st_mtime, reverse=True):
+        for f in sorted(manual_dir.glob("backup_*.tar.gz"), key=lambda p: p.stat().st_mtime, reverse=True):
             s = f.stat()
             size_mb = round(s.st_size / (1024*1024), 2)
             total_backup_mb += size_mb
@@ -4101,11 +4235,11 @@ def get_backup_status() -> dict:
                 "size_mb": size_mb,
                 "created": datetime.fromtimestamp(s.st_mtime).isoformat(),
             })
-    # Auto-backups
+    # Auto-backups (Linux path — was C:/ZION-AutoBackups on Windows)
     auto_backups = []
-    auto_dir = Path("C:/ZION-AutoBackups")
+    auto_dir = REPO_ROOT / "backups" / "auto"
     if auto_dir.exists():
-        for f in sorted(auto_dir.glob("zion-auto-*.zip"), key=lambda p: p.stat().st_mtime, reverse=True):
+        for f in sorted(auto_dir.glob("zion-auto-*.tar.gz"), key=lambda p: p.stat().st_mtime, reverse=True):
             s = f.stat()
             size_mb = round(s.st_size / (1024*1024), 2)
             total_backup_mb += size_mb
@@ -4114,14 +4248,34 @@ def get_backup_status() -> dict:
                 "size_mb": size_mb,
                 "created": datetime.fromtimestamp(s.st_mtime).isoformat(),
             })
-    # Datadir sizes
+    # Datadir sizes — per-service DB files (not all pointing to V3/data)
+    _data_dir = REPO_ROOT / "V3" / "data"
     datadirs = {}
-    for name, path in [("node1", REPO_ROOT / "V3" / "data"), ("node2", REPO_ROOT / "V3" / "data"), ("pool", REPO_ROOT / "V3" / "data"), ("dashboard", REPO_ROOT / "ZION_OS" / "dashboard")]:
-        if path.exists():
-            try:
-                total = sum(f.stat().st_size for f in path.rglob("*") if f.is_file())
-                datadirs[name] = round(total / (1024*1024), 2)
-            except Exception:
+    _db_map = {
+        "node1": "zion-node-state.db",
+        "node2": "zion-node2-state.db",
+        "pool": None,  # pool uses edge-state, tracked via node1
+        "dashboard": None,
+    }
+    for name, dbfile in _db_map.items():
+        if name == "dashboard":
+            dpath = REPO_ROOT / "ZION_OS" / "dashboard"
+            if dpath.exists():
+                try:
+                    total = sum(f.stat().st_size for f in dpath.rglob("*") if f.is_file())
+                    datadirs[name] = round(total / (1024*1024), 2)
+                except Exception:
+                    datadirs[name] = None
+            else:
+                datadirs[name] = None
+        elif dbfile:
+            fpath = _data_dir / dbfile
+            if fpath.exists():
+                try:
+                    datadirs[name] = round(fpath.stat().st_size / (1024*1024), 2)
+                except Exception:
+                    datadirs[name] = None
+            else:
                 datadirs[name] = None
         else:
             datadirs[name] = None
@@ -4443,14 +4597,31 @@ def build_payout_status() -> dict:
     }
 
     if is_edge:
-        # Canonical Edge pool wallets (AGENTS.md 2026-06-07)
-        status["pool_wallet"] = os.environ.get("ZION_POOL_WALLET") or "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604"
+        # Canonical Edge pool wallets (from edge-environment.sh, 3.0.4 hard reset)
+        status["pool_wallet"] = os.environ.get("ZION_POOL_WALLET") or "zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2"
         status["payout_enabled"] = True
         status["fee_split"] = "89/5/5/1"
-        status["humanitarian_wallet"] = os.environ.get("ZION_HUMANITARIAN_WALLET") or "zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4"
-        status["issobella_wallet"] = os.environ.get("ZION_ISSOBELLA_WALLET") or "zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702"
+        # Try env var first, then edge-environment.sh, then hardcoded canonical
+        _hum = os.environ.get("ZION_HUMANITARIAN_WALLET")
+        _iss = os.environ.get("ZION_ISSOBELLA_WALLET")
+        if not _hum or not _iss:
+            # Read from edge-environment.sh
+            for _envpath in ["/root/zion/edge-environment.sh", "/root/zion/edge-node2-environment.sh"]:
+                try:
+                    with open(_envpath) as _f:
+                        for _line in _f:
+                            if _line.startswith("ZION_HUMANITARIAN_WALLET="):
+                                _hum = _hum or _line.split("=", 1)[1].strip().strip('"')
+                            if _line.startswith("ZION_ISSOBELLA_WALLET="):
+                                _iss = _iss or _line.split("=", 1)[1].strip().strip('"')
+                    if _hum and _iss:
+                        break
+                except Exception:
+                    pass
+        status["humanitarian_wallet"] = _hum or "zion1e0u5q5s660k4m4a634p2c2v358r8g59564054z7"
+        status["issobella_wallet"] = _iss or "zion1f7y7l5k678y0v408e8s654d2282346k375526t2"
         status["pool_fee_wallet"] = ""
-        status["miner_wallet"] = os.environ.get("ZION_MINER_ADDRESS") or "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604"
+        status["miner_wallet"] = os.environ.get("ZION_MINER_ADDRESS") or "zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2"
     else:
         startup = head_log("pool.log", 50)
         for line in startup:
@@ -4478,6 +4649,25 @@ def build_payout_status() -> dict:
             status["humanitarian_wallet"] = os.environ.get("ZION_HUMANITARIAN_WALLET")
         if not status["issobella_wallet"]:
             status["issobella_wallet"] = os.environ.get("ZION_ISSOBELLA_WALLET")
+        # Fallback: read from local env files (backup-node.env has canonical addresses)
+        if not status["humanitarian_wallet"] or not status["issobella_wallet"]:
+            for _envpath in [str(REPO_ROOT / "scripts" / "backup-node.env"), "/root/zion/edge-environment.sh"]:
+                try:
+                    with open(_envpath) as _f:
+                        for _line in _f:
+                            if _line.startswith("ZION_HUMANITARIAN_WALLET=") and not status["humanitarian_wallet"]:
+                                status["humanitarian_wallet"] = _line.split("=", 1)[1].strip().strip('"')
+                            if _line.startswith("ZION_ISSOBELLA_WALLET=") and not status["issobella_wallet"]:
+                                status["issobella_wallet"] = _line.split("=", 1)[1].strip().strip('"')
+                    if status["humanitarian_wallet"] and status["issobella_wallet"]:
+                        break
+                except Exception:
+                    pass
+        # Final canonical fallback (3.0.4 hard reset addresses)
+        if not status["humanitarian_wallet"]:
+            status["humanitarian_wallet"] = "zion1e0u5q5s660k4m4a634p2c2v358r8g59564054z7"
+        if not status["issobella_wallet"]:
+            status["issobella_wallet"] = "zion1f7y7l5k678y0v408e8s654d2282346k375526t2"
         if not status["pool_fee_wallet"]:
             status["pool_fee_wallet"] = os.environ.get("ZION_POOL_FEE_WALLET")
 
@@ -5101,7 +5291,7 @@ PREMINE_OUTPUTS = [
     # Infrastructure (3 slots = 2.59B)
     {"address": "zion1d3p5x622m327r060w5z0q5r203v837m6l8pa8x5", "purpose": "Core Development Fund", "amount_zion": 1_000_000_000, "category": "infrastructure", "unlock_height": None},
     {"address": "zion1r6r4s0u2e6u4t23767s05752d70660h2f29d2l7", "purpose": "Network Infrastructure — P2P Seed Nodes", "amount_zion": 1_000_000_000, "category": "infrastructure", "unlock_height": None},
-    {"address": "zion16542q4l853a2z0u5r5w8y4m8k4558847h503736", "purpose": "Genesis Creator — Lifetime Rent", "amount_zion": 590_000_000, "category": "infrastructure", "unlock_height": None},
+    {"address": "zion16542q4l853a2z0u5r5w8y4m8k4558847h503736", "purpose": "Genesis Projects — Dharma Temple, Piko de Ora + DAO", "amount_zion": 590_000_000, "category": "infrastructure", "unlock_height": None},
     # Humanitarian (1 slot = 1.44B)
     {"address": "zion1z7g4u3s2w3c5z5u4a60864m2y7q8e5j304g46r7", "purpose": "Children Future Fund — Humanitarian DAO", "amount_zion": 1_440_000_000, "category": "humanitarian", "unlock_height": None},
     # Bridge Seed Fund (1 slot = 0.4B) — immediate unlock for EVM bridge liquidity
@@ -5116,7 +5306,7 @@ P0_BLOCKERS = [
     {"id": 2, "title": "Ankr API key (premium tier)", "owner": "Ops", "deadline": "T-7", "status": "OPEN", "severity": "critical",
      "detail": "bridge-mainnet.toml line 28: api_key=\"\". Requires premium Ankr account for EVM watcher reliability."},
     {"id": 3, "title": "Seed peer bootstrap mesh", "owner": "Ops", "deadline": "T-3", "status": "DONE", "severity": "info",
-     "detail": "Core + Edge topology active. Core (100.86.102.5) seeds Edge (127.0.0.1) via Tailscale VPN. Legacy multi-node mesh (Helsinki/US/SG/Prague) decommissioned."},
+     "detail": "Core + Edge topology active. Core (local backup) seeds Edge (127.0.0.1) via P2P. Legacy multi-node mesh decommissioned."},
     {"id": 4, "title": "Premine wallet rotation", "owner": "Security", "deadline": "T-14", "status": "DONE", "severity": "info",
      "detail": "✅ Done 2026-05-14. Old 12 BIP-39 seeds burned, new addresses generated, public addresses in PREMINE_ADDRESSES_PUBLIC.txt."},
     {"id": 5, "title": "CI / GitHub Actions billing", "owner": "DevOps", "deadline": "T-14", "status": "OPEN", "severity": "warning",
@@ -5666,9 +5856,11 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
         <div class="text-3xl font-bold mb-1 text-amber-400" id="val-node1-height">—</div><div class="text-xs text-gray-400 mb-2">Chain Height</div>
         <div class="text-xs font-mono text-gray-300 truncate mb-1" id="val-node1-id">—</div>
         <div class="text-xs text-gray-400 mb-1">Peers: <span id="val-node1-peers" class="text-white font-bold">—</span></div>
-        <div class="text-xs text-gray-400 mb-2">P2P: <span id="val-node1-p2p" class="font-mono">—</span></div>
+        <div class="text-xs text-gray-400 mb-1">P2P: <span id="val-node1-p2p" class="font-mono">—</span></div>
+        <div class="text-xs text-gray-400 mb-2">Sync: <span id="val-node1-sync" class="text-amber-400">—</span></div>
         <div class="flex gap-1 mt-2">
           <button onclick="controlAction('start-node1')" class="flex-1 text-xs px-2 py-1 bg-emerald-700 hover:bg-emerald-600 rounded transition">▶ Start</button>
+          <button onclick="controlAction('restart-node1')" class="flex-1 text-xs px-2 py-1 bg-amber-700 hover:bg-amber-600 rounded transition">⟳ Restart</button>
           <button onclick="copyToClipboard('zion node1')" class="text-xs px-2 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">📋</button>
         </div>
       </div>
@@ -5935,16 +6127,13 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
       </div>
       <div class="mt-6">
         <div class="flex items-center justify-between mb-2">
-          <h3 class="text-sm font-bold uppercase tracking-wider text-gray-300">Grafana Dashboard</h3>
+          <h3 class="text-sm font-bold uppercase tracking-wider text-gray-300">Pool Metrics Endpoint</h3>
           <div class="flex gap-2">
-            <a href="http://127.0.0.1:3100" target="_blank" class="text-xs px-3 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">Open Grafana ↗</a>
-            <a href="http://127.0.0.1:9090" target="_blank" class="text-xs px-3 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">Open Prometheus ↗</a>
-            <button onclick="controlAction('start-monitoring')" class="text-xs px-3 py-1 bg-emerald-700 hover:bg-emerald-600 rounded transition">▶ Start Monitoring</button>
+            <a href="http://127.0.0.1:8455" target="_blank" class="text-xs px-3 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">Open Pool Metrics ↗</a>
           </div>
         </div>
-        <iframe src="http://127.0.0.1:3100" id="grafana-iframe" class="w-full bg-zion-900 rounded-lg border border-zion-700" style="height:600px" onerror="this.style.display='none'" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
-        <div id="grafana-offline" class="hidden text-center text-gray-500 text-sm py-12">
-          Grafana not running. Click <button onclick="controlAction('start-monitoring')" class="text-amber-400 underline">▶ Start Monitoring</button> to launch Prometheus + Grafana via Docker.
+        <div class="text-center text-gray-500 text-sm py-12">
+          Pool metrics available at <a href="http://127.0.0.1:8455" target="_blank" class="text-teal-400 underline">127.0.0.1:8455/metrics</a> — Prometheus exposition format, no external Grafana needed.
         </div>
       </div>
     </div>
@@ -7096,6 +7285,7 @@ async function refreshAll(){
 
 function updateServiceCards(s){
   const en=s.edge_node,n1=s.node1,n2=s.node2,p=s.pool,m=s.miner;
+  const lb=s.local_backup||{};
   // Topology-aware visibility
   const isEdgePrimary = s.topology === 'edge-primary';
   const node2Card = document.getElementById('card-node2');
@@ -7115,6 +7305,25 @@ function updateServiceCards(s){
   document.getElementById('val-node1-id').textContent=n1.node_id??'—';
   document.getElementById('val-node1-peers').textContent=n1.known_peers??'—';
   document.getElementById('val-node1-p2p').textContent=n1.p2p_bind??'—';
+  // Sync status for local backup node
+  const lbSyncEl=document.getElementById('val-node1-sync');
+  if(lbSyncEl){
+    const synced=en&&en.chain_height&&n1.chain_height&&n1.chain_height>=en.chain_height-2;
+    const tipMatch=en&&n1&&en.tip_hash&&n1.tip_hash&&en.tip_hash===n1.tip_hash;
+    if(n1.running&&synced){
+      lbSyncEl.textContent=tipMatch?'✓ Synced (tip match)':'✓ Synced';
+      lbSyncEl.className='text-emerald-400 font-bold';
+    }else if(n1.running&&n1.known_peers>0){
+      lbSyncEl.textContent='Syncing…';
+      lbSyncEl.className='text-amber-400';
+    }else if(n1.running){
+      lbSyncEl.textContent='No peers';
+      lbSyncEl.className='text-red-400';
+    }else{
+      lbSyncEl.textContent='Offline';
+      lbSyncEl.className='text-red-400';
+    }
+  }
   // Node 2 (Dev / Optional)
   if(!isEdgePrimary){
     setBadge('badge-node2',n2.running);setCardLive('node2',n2.running);
@@ -7193,7 +7402,7 @@ async function loadMainnetStatus(){
       {label:'Fee Split',value:res.fee_split_all_match?'✓ Canonical':'✗ Mismatch',ok:res.fee_split_all_match,icon:'💰'},
       {label:'Launch Date',value:res.days_to_launch>0?res.days_to_launch+' days':'LAUNCH DAY!',ok:res.days_to_launch>=0,icon:'🚀'},
       {label:'Checklist',value:res.checklist_passed+'/'+res.checklist_total+' ('+res.checklist_pass_rate+'%)',ok:res.checklist_pass_rate>=80,icon:'✅'},
-      {label:'Node Status',value:(res.topology==='edge-primary'?(res.edge_node_running?'E1✓':'E1✗')+' '+(res.edge_node2_running?'E2✓':'E2✗'):(res.node1_running?'N1✓':'N1✗')+' '+(res.node2_running?'N2✓':'N2✗')),ok:res.topology==='edge-primary'?(res.edge_node_running&&res.edge_node2_running):(res.node1_running&&res.node2_running),icon:'🔶'},
+      {label:'Node Status',value:(res.topology==='edge-primary'?(res.edge_node_running?'E1✓':'E1✗')+' '+(res.local_backup_running?'LB✓':'LB✗'):(res.node1_running?'N1✓':'N1✗')+' '+(res.node2_running?'N2✓':'N2✗')),ok:res.topology==='edge-primary'?(res.edge_node_running&&res.local_backup_running):(res.node1_running&&res.node2_running),icon:'🔶'},
       {label:'Pool Status',value:res.pool_running?'Running':'Stopped',ok:res.pool_running,icon:'⚡'},
       {label:'Git Status',value:res.git_status.clean?'Clean: '+res.git_status.branch:'Dirty: '+res.git_status.branch,ok:res.git_status.clean,icon:'📦'},
       {label:'Overall',value:res.ready_for_launch?'🎉 READY':'⏳ PREPARING',ok:res.ready_for_launch,icon:'🎯'},
@@ -7429,7 +7638,7 @@ async function renderWizard(){
   const isEdge = st.topology === 'edge-primary';
   const steps=[
     {n:1,title:'Prepare environment',desc:'Generate keys (gen-keys), assemble .env file with all wallets and ZION_POOL_PAYOUT_SK_HEX.',done:cl.checks.find(c=>c.id==='env')?.ok,actions:[{label:'View env files',cb:`switchTab('env')`}]},
-    {n:2,title:isEdge?'Start Local Backup Node':'Start Genesis Node',desc:isEdge?'Syncs from Edge primary via Tailscale VPN. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).':'Local genesis node. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).',done:cl.checks.find(c=>c.id==='node1')?.ok,actions:[{label:'▶ Start Node',cb:`controlAction('start-node1')`}]},
+    {n:2,title:isEdge?'Start Local Backup Node':'Start Genesis Node',desc:isEdge?'Syncs from Edge primary via P2P. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).':'Local genesis node. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).',done:cl.checks.find(c=>c.id==='node1')?.ok,actions:[{label:'▶ Start Node',cb:`controlAction('start-node1')`}]},
     isEdge?{n:3,title:'Connect to Edge Pool',desc:'Edge (127.0.0.1) runs the primary pool. Verify VPN connectivity.',done:cl.checks.find(c=>c.id==='pool-edge')?.ok,actions:[{label:'Check Edge Pool',cb:`switchTab('overview')`}]}:{n:3,title:'Start Local Pool',desc:'Accepts miners, validates shares, distributes payouts (89/5/5 burn model).',done:cl.checks.find(c=>c.id==='pool')?.ok,actions:[{label:'▶ Start Pool',cb:`controlAction('start-pool')`}]},
     {n:4,title:'Start GPU Miner',desc:'Connects to pool, performs cosmic_harmony hashing on GPU.',done:cl.checks.find(c=>c.id==='miner')?.ok,actions:[{label:'▶ Start Miner',cb:`controlAction('start-miner')`}]},
     {n:5,title:'Verify chain progression',desc:'Confirm node syncs with network and chain height advances.',done:cl.checks.find(c=>c.id==='chain')?.ok,actions:[{label:'View events',cb:`switchTab('events')`}]},
@@ -7769,13 +7978,20 @@ def _build_health_map() -> dict:
         "bridge": 9101,       # Bridge metrics
         "dao": 8450,          # DAO API
         "warp": 9333,         # WARP Relay API (v3.0.4 port)
-        "nginx": 443,         # Nginx HTTPS
-        "web-next": 3001,     # Next.js Docker
         "dashboard": 8766,    # This dashboard
     }
     for sid, port in ext_ports.items():
         try:
             alive = tcp_probe("127.0.0.1", port, timeout=0.3)
+        except Exception:
+            alive = False
+        health[sid] = "up" if alive else "down"
+    # Nginx + web-next: check via SSH on Edge server (not tunneled locally)
+    for sid, cmd in [("nginx", "systemctl is-active nginx 2>/dev/null"),
+                     ("web-next", "systemctl is-active zion-web 2>/dev/null || docker inspect -f '{{.State.Running}}' zion-web 2>/dev/null")]:
+        try:
+            result = _run_edge_cmd(cmd, timeout=3)
+            alive = result.returncode == 0 and "active" in (result.stdout or "").strip() or "true" in (result.stdout or "").strip()
         except Exception:
             alive = False
         health[sid] = "up" if alive else "down"
@@ -7876,12 +8092,12 @@ ATTACKER_ADDRESSES = [
 
 # Premine wallets to guard (alert if balance drops below expected)
 PREMINE_GUARD = [
-    {"address": "zion16542q4l853a2z0u5r5w8y4m8k4558847h503736", "label": "Genesis Creator", "min_balance_zion": 589_000_000},
+    {"address": "zion16542q4l853a2z0u5r5w8y4m8k4558847h503736", "label": "Genesis Projects (Dharma Temple, Piko de Ora + DAO)", "min_balance_zion": 589_000_000},
     {"address": "zion13794g7k3m0f84637l2x0t855h3l258k8p3xp5t3", "label": "Bridge Seed (Slot 13)", "min_balance_zion": 399_000_000},
     {"address": "zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4", "label": "DAO Treasury", "min_balance_zion": 2_400_000_000},
     {"address": "zion1d3p5x622m327r060w5z0q5r203v837m6l8pa8x5", "label": "Core Dev Fund", "min_balance_zion": 990_000_000},
     {"address": "zion1z7g4u3s2w3c5z5u4a60864m2y7q8e5j304g46r7", "label": "Children Future Fund", "min_balance_zion": 1_430_000_000},
-    {"address": "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604", "label": "Pool Wallet", "min_balance_zion": 0},
+    {"address": "zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2", "label": "Pool Wallet", "min_balance_zion": 0},
 ]
 
 ALERT_LOG_FILES = {
@@ -8259,7 +8475,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json({
                 "status":    st,
                 "health":    _build_health_map(),
-                "events":    list(BLOCK_EVENTS)[-10:][::-1],
+                "events":    list(BLOCK_EVENTS)[-10:][::-1] if BLOCK_EVENTS else [],
                 "checklist": build_checklist(st),
             })
         elif route == "/api/v2/batch":
@@ -8294,17 +8510,40 @@ class DashboardHandler(BaseHTTPRequestHandler):
             except Exception as ex:
                 self._json({"error": str(ex), "reachable": False})
         elif route == "/api/edge/infra":
+            # v3.0.4: Edge server doesn't expose a unified API on 8888.
+            # Build infra overview from individual service probes instead.
             try:
-                import urllib.request as _ur
-                with _ur.urlopen(f"http://{EDGE_RPC_HOST}:8888/api/infra", timeout=3.0) as r:
-                    self._json(json.loads(r.read()))
+                _ports = {"node_rpc": 8443, "pool_stratum": 8444, "dao": 8450,
+                          "warp": 9333, "bridge_metrics": 9101, "node_metrics": 9100,
+                          "nginx": 443, "dashboard": 8766}
+                _infra = {}
+                for _name, _port in _ports.items():
+                    _infra[_name] = tcp_probe(EDGE_RPC_HOST, _port, timeout=0.5)
+                _infra["reachable"] = any(_infra.values())
+                _infra["edge_host"] = EDGE_PUBLIC_IP
+                self._json(_infra)
             except Exception as ex:
                 self._json({"error": str(ex), "reachable": False})
         elif route == "/api/edge/overview":
+            # v3.0.4: Aggregate overview from build_status() + health instead of port 8888.
             try:
-                import urllib.request as _ur
-                with _ur.urlopen(f"http://{EDGE_RPC_HOST}:8888/api/overview", timeout=3.0) as r:
-                    self._json(json.loads(r.read()))
+                _st = build_status()
+                _health = _build_health_map()
+                _overview = {
+                    "reachable": True,
+                    "edge_host": EDGE_PUBLIC_IP,
+                    "topology": _st.get("topology", "edge-primary"),
+                    "chain_height": _st.get("edge_node", {}).get("chain_height"),
+                    "pool_running": _st.get("pool_edge", {}).get("running", False),
+                    "active_miners": _st.get("pool_edge", {}).get("active_miners"),
+                    "hashrate": _st.get("pool_edge", {}).get("hashrate"),
+                    "shares_accepted": _st.get("pool_edge", {}).get("shares_accepted"),
+                    "blocks_found": _st.get("pool_edge", {}).get("blocks_found"),
+                    "services": _health,
+                    "local_backup": _st.get("local_backup", {}),
+                    "edge_node": _st.get("edge_node", {}),
+                }
+                self._json(_overview)
             except Exception as ex:
                 self._json({"error": str(ex), "reachable": False})
         elif route == "/api/edge-status":
@@ -8471,23 +8710,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "hiranyagarbha": ("hiranyagarbha",         ""),
                 "hiran":         ("hiran-inference",       ""),
             }
-            # Determine the log file to tail as the default command
-            _TAIL_MAP = {
-                "node1":         str(LOG_DIR / "node1.log"),
-                "node2":         str(LOG_DIR / "node2.log"),
-                "pool":          str(LOG_DIR / "pool.log"),
-                "miner":         str(LOG_DIR / "miner.log"),
-                "miner-low":     str(LOG_DIR / "miner-low.log"),
-                "hiranyagarbha": str(LOG_DIR / "hiranyagarbha.log"),
-                "hiran":         str(LOG_DIR / "hiran-inference.log"),
-                "bridge":        str(LOG_DIR / "bridge.log"),
-                "dao-daemon":    str(LOG_DIR / "dao.log"),
-                "atomic-swap":   str(LOG_DIR / "atomic-swap.log"),
-                "warp":          str(LOG_DIR / "warp.log"),
-                "dashboard":     str(LOG_DIR / "dashboard.log"),
-                "control-audit": str(LOG_DIR / "control-audit.txt"),
-            }
-            log_file = _TAIL_MAP.get(svc_id, str(LOG_DIR / f"{svc_id}.log"))
+            # Determine the log file to tail — use SERVICE_LOG_MAP
+            _log_name = SERVICE_LOG_MAP.get(svc_id, f"{svc_id}.log")
+            log_file = str(LOG_DIR / _log_name)
             try:
                 if os.name == "nt":
                     # Windows: open Windows Terminal or fallback to PowerShell
@@ -8522,16 +8747,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
             return
         elif route == "/api/log-files":
             # List all log files on disk with size + mtime
-            SVC_LOG_MAP = {
-                "node1.log": "node1", "node2.log": "node2",
-                "pool.log": "pool", "miner.log": "miner",
-                "miner-low.log": "miner-low", "miner-cpu.log": "miner-cpu",
-                "miner-gpu.log": "miner-gpu",
-                "hiranyagarbha.log": "hiranyagarbha", "hiran-inference.log": "hiran",
-                "bridge.log": "bridge", "dao.log": "dao-daemon",
-                "atomic-swap.log": "atomic-swap", "warp.log": "warp",
-                "dashboard.log": "dashboard", "control-audit.txt": "control-audit",
-            }
+            # Reverse map from SERVICE_LOG_MAP (filename → service id)
+            _FILE_TO_SVC = {}
+            for _sid, _fn in SERVICE_LOG_MAP.items():
+                if _fn not in _FILE_TO_SVC:
+                    _FILE_TO_SVC[_fn] = _sid
             files = []
             if LOG_DIR.exists():
                 import datetime as _dt
@@ -8541,7 +8761,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                             st = fp.stat()
                             files.append({
                                 "name": fp.name,
-                                "svc_id": SVC_LOG_MAP.get(fp.name, fp.stem),
+                                "svc_id": _FILE_TO_SVC.get(fp.name, fp.stem),
                                 "size_kb": round(st.st_size / 1024, 1),
                                 "modified": _dt.datetime.fromtimestamp(st.st_mtime).strftime("%Y-%m-%d %H:%M"),
                             })
@@ -8555,24 +8775,18 @@ class DashboardHandler(BaseHTTPRequestHandler):
             svc_filt   = params.get("svc",   [""])[0].strip()
             results    = []
             MAX_HITS   = 500
-            SVC_LOG_MAP2 = {
-                "node1.log": "node1", "node2.log": "node2",
-                "pool.log": "pool", "miner.log": "miner",
-                "miner-low.log": "miner-low", "miner-cpu.log": "miner-cpu",
-                "miner-gpu.log": "miner-gpu",
-                "hiranyagarbha.log": "hiranyagarbha", "hiran-inference.log": "hiran",
-                "bridge.log": "bridge", "dao.log": "dao-daemon",
-                "atomic-swap.log": "atomic-swap", "warp.log": "warp",
-                "dashboard.log": "dashboard",
-                "control-audit.txt": "control-audit",
-            }
+            # Build reverse map from SERVICE_LOG_MAP (filename → service id)
+            _FILE_TO_SVC2 = {}
+            for _sid, _fn in SERVICE_LOG_MAP.items():
+                if _fn not in _FILE_TO_SVC2:
+                    _FILE_TO_SVC2[_fn] = _sid
             if LOG_DIR.exists():
                 for fp in sorted(LOG_DIR.iterdir()):
                     if len(results) >= MAX_HITS:
                         break
                     if fp.suffix not in (".log", ".txt") or not fp.is_file():
                         continue
-                    svc_id = SVC_LOG_MAP2.get(fp.name, fp.stem)
+                    svc_id = _FILE_TO_SVC2.get(fp.name, fp.stem)
                     if svc_filt and svc_id != svc_filt:
                         continue
                     try:
@@ -8679,40 +8893,84 @@ class DashboardHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
         elif route == "/api/topology":
-            # Real topology: ping Core+Edge, check Tailscale
+            # 3-node P2P topology (v3.0.4): Edge Node 1, Edge Node 2, Local Backup
             import time as _time
-            core_rpc = "http://127.0.0.1:8443/jsonrpc"
-            edge_rpc = "http://127.0.0.1:8443/jsonrpc"
-            def _ping_rpc(url, timeout=2):
-                try:
-                    import urllib.request as _ur
-                    body = json.dumps({"jsonrpc":"2.0","method":"zion_getStatus","params":[],"id":1}).encode()
-                    req = _ur.Request(url, data=body, headers={"Content-Type":"application/json"})
-                    t0 = _time.time()
-                    with _ur.urlopen(req, timeout=timeout) as r:
-                        d = json.loads(r.read())
-                        return True, round((_time.time()-t0)*1000), d.get("result", {})
-                except Exception as ex:
-                    return False, None, {"error": str(ex)[:60]}
-            core_ok, core_ms, core_data = _ping_rpc(core_rpc)
-            edge_ok, edge_ms, edge_data = _ping_rpc(edge_rpc)
-            # Check Tailscale status
-            ts_status = "unknown"
-            try:
-                import subprocess as _sp
-                # v3.0.4: Tailscale not installed — skip
-                r = None
-                if r.returncode == 0:
-                    ts_data = json.loads(r.stdout)
-                    ts_status = "connected" if ts_data.get("BackendState") == "Running" else ts_data.get("BackendState", "unknown")
-                else:
-                    ts_status = "not_running"
-            except Exception:
-                ts_status = "not_available"
+            from concurrent.futures import ThreadPoolExecutor, as_completed
+
+            def _probe_node(label, host, port):
+                """Probe a node via RPC getChainInfo + getNodeInfo, return status dict."""
+                t0 = _time.time()
+                chain = rpc_call(host, port, "getChainInfo", {}, timeout=2.5)
+                latency = round((_time.time() - t0) * 1000) if chain and not chain.get("_rpc_error") else None
+                alive = bool(chain and not chain.get("_rpc_error"))
+                height = None
+                tip_hash = None
+                node_id = None
+                p2p_bind = None
+                known_peers = 0
+                if alive:
+                    height = chain.get("chain_height") or chain.get("height") or chain.get("best_height")
+                    tip_hash = chain.get("tip_hash") or chain.get("best_hash")
+                    # Also get node info for peer count
+                    info = rpc_call(host, port, "getNodeInfo", {}, timeout=2.0)
+                    if info and not info.get("_rpc_error"):
+                        node_id = info.get("node_id")
+                        p2p_bind = info.get("p2p_bind")
+                        known_peers = info.get("known_peers", 0) or 0
+                return {
+                    "label": label,
+                    "host": host,
+                    "rpc_port": port,
+                    "alive": alive,
+                    "latency_ms": latency,
+                    "height": height,
+                    "tip_hash": tip_hash,
+                    "node_id": node_id,
+                    "p2p_bind": p2p_bind,
+                    "known_peers": known_peers,
+                }
+
+            with ThreadPoolExecutor(max_workers=3) as ex:
+                futs = {
+                    ex.submit(_probe_node, "Edge Node 1", "127.0.0.1", 8443),
+                    ex.submit(_probe_node, "Edge Node 2", "127.0.0.1", 8448),
+                    ex.submit(_probe_node, "Local Backup", "127.0.0.1", 8446),
+                }
+                results = {}
+                for fut in as_completed(futs, timeout=6.0):
+                    try:
+                        r = fut.result()
+                        results[r["label"]] = r
+                    except Exception:
+                        pass
+
+            edge1 = results.get("Edge Node 1", {})
+            edge2 = results.get("Edge Node 2", {})
+            local = results.get("Local Backup", {})
+
+            # Compute sync gaps
+            heights = [h for h in [edge1.get("height"), edge2.get("height"), local.get("height")] if h is not None]
+            max_h = max(heights) if heights else 0
+            min_h = min(heights) if heights else 0
+            sync_gap = max_h - min_h
+
+            # All 3 nodes in sync?
+            all_in_sync = sync_gap == 0 and len(heights) == 3
+
+            # Port checks (via SSH tunnel to Edge)
+            ports = {}
+            for name, port in [("node_p2p", 8333), ("node_rpc", 8443), ("pool_stratum", 8444),
+                               ("dashboard", 8766), ("hiran_inference", 8002), ("hiranyagarbha", 8001)]:
+                ports[name] = check_port_open("127.0.0.1", port, timeout=1.0)
+
             self._json({
-                "core": {"host": "127.0.0.1", "rpc_port": 8443, "alive": core_ok, "latency_ms": core_ms, "data": core_data},
-                "edge": {"host": EDGE_RPC_HOST, "rpc_port": 8443, "alive": edge_ok, "latency_ms": edge_ms, "data": edge_data},
-                "tailscale": ts_status,
+                "edge_node1": edge1,
+                "edge_node2": edge2,
+                "local_backup": local,
+                "sync_gap": sync_gap,
+                "all_in_sync": all_in_sync,
+                "max_height": max_h,
+                "ports": ports,
                 "timestamp": _time.time(),
             })
         elif route == "/api/hiran/status":
@@ -8760,9 +9018,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/swap/initiate":
             self._json({"ok": False, "error": "Swap initiation requires POST — use POST /api/swap/initiate"})
         elif route == "/api/warp/health":
-            alive = check_port_open("127.0.0.1", 8453, timeout=1.5)
-            health = fetch_service_json("127.0.0.1", 8453, "/health") if alive else {}
-            self._json({"ok": alive, "service": "warp", "port": 8453,
+            alive = check_port_open("127.0.0.1", 9333, timeout=1.5)
+            health = fetch_service_json("127.0.0.1", 9333, "/health") if alive else {}
+            self._json({"ok": alive, "service": "warp", "port": 9333,
                         "status": "online" if alive else "offline",
                         "version": health.get("version", "—") if health else "—",
                         "transfers_total": health.get("transfers_total", 0) if health else 0,
@@ -8811,18 +9069,18 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json({"ok": True, "missions": [], "total": 0, "note": "Issobella Space not yet deployed"})
         # ── L3 endpoints: WARP, AI agents, NCL ──
         elif route == "/api/l3/warp/chains":
-            warp_alive = check_port_open("127.0.0.1", 8453, timeout=1.5)
+            warp_alive = check_port_open("127.0.0.1", 9333, timeout=1.5)
             chains = []
             if warp_alive:
-                data = fetch_service_json("127.0.0.1", 8453, "/chains", timeout=2.0)
+                data = fetch_service_json("127.0.0.1", 9333, "/chains", timeout=2.0)
                 chains = data.get("data", []) if data else []
             self._json({"ok": warp_alive, "chains": chains, "total": len(chains),
                         "status": "online" if warp_alive else "offline"})
         elif route == "/api/l3/warp/transfers":
-            warp_alive = check_port_open("127.0.0.1", 8453, timeout=1.5)
+            warp_alive = check_port_open("127.0.0.1", 9333, timeout=1.5)
             transfers = []
             if warp_alive:
-                data = fetch_service_json("127.0.0.1", 8453, "/transfers", timeout=2.0)
+                data = fetch_service_json("127.0.0.1", 9333, "/transfers", timeout=2.0)
                 transfers = data.get("data", []) if data else []
             self._json({"ok": warp_alive, "transfers": transfers, "total": len(transfers),
                         "status": "online" if warp_alive else "offline"})
@@ -9050,13 +9308,17 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "checklist_passed": checklist["passed"],
                 "checklist_total": checklist["total"],
                 "node1_height": status["node1"]["chain_height"],
-                "node2_height": status.get("edge_node2", {}).get("chain_height") if status.get("topology") == "edge-primary" else status["node2"]["chain_height"],
+                "node2_height": status.get("local_backup", {}).get("chain_height") if status.get("topology") == "edge-primary" else status["node2"]["chain_height"],
                 "node1_running": status["node1"]["running"],
-                "node2_running": status.get("edge_node2", {}).get("running", False) if status.get("topology") == "edge-primary" else status["node2"]["running"],
+                "node2_running": status.get("local_backup", {}).get("running", False) if status.get("topology") == "edge-primary" else status["node2"]["running"],
                 "edge_node_running": status.get("edge_node", {}).get("running", False),
                 "edge_node2_running": status.get("edge_node2", {}).get("running", False),
-                "edge_node_height": status.get("edge_node", {}).get("chain_height"),
                 "edge_node2_height": status.get("edge_node2", {}).get("chain_height"),
+                "edge_node2_peers": status.get("edge_node2", {}).get("known_peers", 0),
+                "local_backup_running": status.get("local_backup", {}).get("running", False),
+                "local_backup_height": status.get("local_backup", {}).get("chain_height"),
+                "local_backup_peers": status.get("local_backup", {}).get("known_peers", 0),
+                "edge_node_height": status.get("edge_node", {}).get("chain_height"),
                 "pool_running": status["pool"]["running"],
                 "miner_running": status["miner"]["running"],
                 "git_status": git_status,
@@ -9064,7 +9326,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     genesis_hash is not None and genesis_hash != "Unknown" and len(str(genesis_hash)) == 64,
                     all(fee_split_match.values()),
                     status.get("edge_node", {}).get("running", False) if status.get("topology") == "edge-primary" else status["node1"]["running"],
-                    status.get("edge_node2", {}).get("running", False) if status.get("topology") == "edge-primary" else status["node2"]["running"],
+                    status.get("local_backup", {}).get("running", False) if status.get("topology") == "edge-primary" else status["node2"]["running"],
                     status["pool"]["running"],
                     git_status["clean"],
                     checklist["pct"] >= 80
@@ -9407,6 +9669,122 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/health":
             # v2 client: GET /api/health → returns HealthMap {service: status}
             self._json(_build_health_map())
+        elif route == "/api/systemd":
+            # Local systemd user service status — autonomous monitoring
+            try:
+                import subprocess as _sp
+                services = ["zion-ssh-tunnel", "zion-backup-node", "zion-dashboard"]
+                result = {}
+                for svc in services:
+                    try:
+                        proc = _sp.run(
+                            ["systemctl", "--user", "is-active", svc],
+                            capture_output=True, text=True, timeout=3
+                        )
+                        active = proc.stdout.strip() == "active"
+                        # Get uptime
+                        proc2 = _sp.run(
+                            ["systemctl", "--user", "show", svc, "--property=ActiveEnterTimestamp,MainPID,ExecMainStatus"],
+                            capture_output=True, text=True, timeout=3
+                        )
+                        props = {}
+                        for line in proc2.stdout.strip().split("\n"):
+                            if "=" in line:
+                                k, v = line.split("=", 1)
+                                props[k] = v
+                        result[svc] = {
+                            "active": active,
+                            "status": proc.stdout.strip(),
+                            "pid": props.get("MainPID", "?"),
+                            "started": props.get("ActiveEnterTimestamp", ""),
+                            "exit_status": props.get("ExecMainStatus", ""),
+                        }
+                    except Exception as e:
+                        result[svc] = {"active": False, "status": "error", "error": str(e)}
+                # Backup timer
+                try:
+                    proc = _sp.run(
+                        ["systemctl", "--user", "list-timers", "zion-backup.timer", "--no-pager", "--plain"],
+                        capture_output=True, text=True, timeout=3
+                    )
+                    lines = [l for l in proc.stdout.strip().split("\n") if "zion-backup" in l]
+                    result["zion-backup-timer"] = {
+                        "active": bool(lines),
+                        "raw": lines[0] if lines else "",
+                    }
+                except Exception:
+                    result["zion-backup-timer"] = {"active": False, "raw": ""}
+                # Linger status
+                try:
+                    proc = _sp.run(
+                        ["loginctl", "show-user", os.environ.get("USER", "zionserver"), "--property=Linger"],
+                        capture_output=True, text=True, timeout=3
+                    )
+                    result["linger"] = "yes" in proc.stdout.lower()
+                except Exception:
+                    result["linger"] = None
+                self._json(result)
+            except Exception as ex:
+                self._json({"error": str(ex)})
+        elif route == "/api/autonomous/health":
+            # Autonomous health check — comprehensive system status with auto-restart recommendations
+            try:
+                _st = build_status()
+                _sysd = {}
+                import subprocess as _sp
+                for svc in ["zion-ssh-tunnel", "zion-backup-node", "zion-dashboard"]:
+                    try:
+                        proc = _sp.run(["systemctl", "--user", "is-active", svc],
+                                      capture_output=True, text=True, timeout=2)
+                        _sysd[svc] = proc.stdout.strip()
+                    except Exception:
+                        _sysd[svc] = "unknown"
+
+                _lb = _st.get("local_backup", {})
+                _en = _st.get("edge_node", {})
+                _pe = _st.get("pool_edge", {})
+
+                issues = []
+                if _sysd.get("zion-ssh-tunnel") != "active":
+                    issues.append({"svc": "ssh-tunnel", "severity": "critical",
+                                  "msg": "SSH tunnel down — edge services unreachable",
+                                  "action": "systemctl --user restart zion-ssh-tunnel"})
+                if _sysd.get("zion-backup-node") != "active":
+                    issues.append({"svc": "backup-node", "severity": "warning",
+                                  "msg": "Backup node service not active",
+                                  "action": "systemctl --user restart zion-backup-node"})
+                if _sysd.get("zion-dashboard") != "active":
+                    issues.append({"svc": "dashboard", "severity": "info",
+                                  "msg": "Dashboard service not active (but you're seeing this...)",
+                                  "action": "systemctl --user restart zion-dashboard"})
+                if _en.get("running") and _lb.get("running"):
+                    gap = abs((_en.get("chain_height") or 0) - (_lb.get("chain_height") or 0))
+                    if gap > 10:
+                        issues.append({"svc": "sync", "severity": "warning",
+                                      "msg": f"Backup node {gap} blocks behind edge",
+                                      "action": "systemctl --user restart zion-backup-node"})
+                if _lb.get("running") and _lb.get("known_peers", 0) == 0:
+                    issues.append({"svc": "p2p", "severity": "warning",
+                                  "msg": "Backup node has 0 P2P peers",
+                                  "action": "Check SSH tunnel + edge P2P"})
+                if not _pe.get("running"):
+                    issues.append({"svc": "pool", "severity": "warning",
+                                  "msg": "Edge pool not reachable",
+                                  "action": "Check edge pool service"})
+
+                self._json({
+                    "healthy": len(issues) == 0,
+                    "issues": issues,
+                    "systemd": _sysd,
+                    "edge_height": _en.get("chain_height"),
+                    "local_height": _lb.get("chain_height"),
+                    "sync_gap": abs((_en.get("chain_height") or 0) - (_lb.get("chain_height") or 0)) if _en.get("running") and _lb.get("running") else None,
+                    "p2p_peers": _lb.get("known_peers", 0),
+                    "pool_hashrate": _pe.get("hashrate"),
+                    "pool_miners": _pe.get("active_miners"),
+                })
+            except Exception as ex:
+                self._json({"error": str(ex), "healthy": False})
         elif route == "/api/blocks":
             # v2 client: GET /api/blocks?limit=N → returns array of BlockSummary
             limit = int(params.get("limit", ["20"])[0])
@@ -9758,6 +10136,75 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "total": 5,
                 "note": "5/5 multisig deployed on Base Mainnet — all 5 validators active",
             })
+        elif route == "/api/poc/status":
+            # PoC-lab status — check if poc-sim binary exists and Hiran is reachable
+            poc_sim_path = SCRIPT_DIR / ".." / ".." / "PoC-lab" / "target" / "debug" / "poc-sim"
+            poc_sim_exists = poc_sim_path.exists()
+            hiran_online = False
+            try:
+                import urllib.request as _ur
+                with _ur.urlopen("http://127.0.0.1:8002/health", timeout=2) as r:
+                    hiran_online = json.loads(r.read()).get("status") == "ok"
+            except Exception:
+                pass
+            self._json({
+                "ok": True,
+                "poc_sim_available": poc_sim_exists,
+                "poc_sim_path": str(poc_sim_path),
+                "hiran_online": hiran_online,
+                "hiran_url": "http://127.0.0.1:8002" if hiran_online else None,
+                "workspace": "PoC-lab",
+                "crates": ["poc-core", "poc-economics", "poc-hiran", "poc-npu",
+                           "poc-registry", "poc-sim", "poc-tasks", "poc-verifier"],
+            })
+        elif route == "/api/poc/run":
+            # Run poc-sim simulation and return JSON results
+            # Query params: epochs (default 3), validators (default 4),
+            #               hiran (1/0, default 1 if Hiran online), block_reward (default 1000000)
+            epochs = int(params.get("epochs", ["3"])[0])
+            validators = int(params.get("validators", ["4"])[0])
+            block_reward = int(params.get("block_reward", ["1000000"])[0])
+            use_hiran = params.get("hiran", ["auto"])[0]
+            poc_sim_path = SCRIPT_DIR / ".." / ".." / "PoC-lab" / "target" / "debug" / "poc-sim"
+            if not poc_sim_path.exists():
+                self._json({"ok": False, "error": "poc-sim binary not found. Run: cargo build -p poc-sim"})
+                return
+            # Check Hiran availability
+            hiran_online = False
+            try:
+                import urllib.request as _ur
+                with _ur.urlopen("http://127.0.0.1:8002/health", timeout=2) as r:
+                    hiran_online = json.loads(r.read()).get("status") == "ok"
+            except Exception:
+                pass
+            cmd = [str(poc_sim_path), "--json",
+                   "--epochs", str(epochs),
+                   "--validators", str(validators),
+                   "--block-reward", str(block_reward)]
+            use_live = use_hiran == "1" or (use_hiran == "auto" and hiran_online)
+            if use_live:
+                cmd.extend(["--hiran-url", "http://127.0.0.1:8002"])
+            # Live Hiran is slow (~5 tok/s CPU) — allow 300s for live, 30s for stub
+            timeout_sec = 300 if use_live else 30
+            _sp = __import__('subprocess')
+            try:
+                result = _sp.run(cmd, capture_output=True, text=True, timeout=timeout_sec)
+                if result.returncode != 0:
+                    self._json({"ok": False, "error": result.stderr[:500]})
+                else:
+                    data = json.loads(result.stdout)
+                    data["ok"] = True
+                    self._json(data)
+            except _sp.TimeoutExpired:
+                self._json({"ok": False, "error": f"Simulation timed out ({timeout_sec}s limit). Use stub mode or fewer epochs for live Hiran."})
+            except json.JSONDecodeError as e:
+                self._json({"ok": False, "error": f"JSON parse error: {e}", "raw": result.stdout[:500]})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)[:200]})
+        elif route == "/api/poc/html":
+            # Serve the PoC dashboard panel HTML (standalone page)
+            poc_html = _poc_dashboard_html()
+            self._html(poc_html)
         else:
             self.send_error(404)
 
@@ -10226,6 +10673,340 @@ class DashboardHandler(BaseHTTPRequestHandler):
         except Exception as e:
             self._json({"ok": False, "error": str(e)[:200]})
 
+
+# ── PoC Dashboard HTML ──────────────────────────────────────────────────────────
+
+def _poc_dashboard_html() -> str:
+    """Standalone HTML page for PoC-lab dashboard."""
+    return r'''<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZION PoC-lab Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', system-ui, sans-serif; }
+  .glass { background: rgba(20,20,35,0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,215,0,0.15); }
+  .gold { color: #FFD700; }
+  .cyan { color: #00CED1; }
+  .green { color: #22c55e; }
+  .red { color: #ef4444; }
+  .orange { color: #f59e0b; }
+  .purple { color: #a855f7; }
+  .card { border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+  .badge { padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+  .badge-accept { background: rgba(34,197,94,0.2); color: #22c55e; }
+  .badge-reject { background: rgba(239,68,68,0.2); color: #ef4444; }
+  .badge-stub { background: rgba(168,85,247,0.2); color: #a855f7; }
+  .badge-live { background: rgba(0,206,209,0.2); color: #00CED1; }
+  .badge-guardian { background: rgba(255,215,0,0.2); color: #FFD700; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; padding: 8px; border-bottom: 1px solid rgba(255,215,0,0.2); font-size: 12px; color: #FFD700; }
+  td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
+  .spinner { border: 3px solid rgba(255,215,0,0.2); border-top: 3px solid #FFD700; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
+  @keyframes spin { 100% { transform: rotate(360deg); } }
+  input, select { background: rgba(30,30,50,0.8); border: 1px solid rgba(255,215,0,0.2); color: #e0e0e0; padding: 6px 10px; border-radius: 6px; }
+  input:focus, select:focus { outline: none; border-color: #FFD700; }
+  .btn { background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-weight: 700; padding: 8px 20px; border-radius: 8px; cursor: pointer; border: none; }
+  .btn:hover { opacity: 0.9; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+</style>
+</head>
+<body class="min-h-screen p-6">
+
+<div class="max-w-7xl mx-auto">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-3xl font-bold gold">ZION PoC-lab Dashboard</h1>
+      <p class="text-sm text-gray-400">Proof-of-Care Network Simulator &middot; Live Hiran AI Integration</p>
+    </div>
+    <div id="status-badge" class="text-sm">Loading...</div>
+  </div>
+
+  <!-- Config Panel -->
+  <div class="glass card">
+    <h2 class="text-lg font-semibold gold mb-3">Simulation Parameters</h2>
+    <div class="flex flex-wrap gap-4 items-end">
+      <div>
+        <label class="text-xs text-gray-400 block mb-1">Epochs</label>
+        <input id="cfg-epochs" type="number" value="3" min="1" max="100" class="w-20">
+      </div>
+      <div>
+        <label class="text-xs text-gray-400 block mb-1">Validators</label>
+        <input id="cfg-validators" type="number" value="4" min="1" max="64" class="w-20">
+      </div>
+      <div>
+        <label class="text-xs text-gray-400 block mb-1">Block Reward (flowers)</label>
+        <input id="cfg-reward" type="number" value="1000000" min="1" class="w-32">
+      </div>
+      <div>
+        <label class="text-xs text-gray-400 block mb-1">Hiran Mode</label>
+        <select id="cfg-hiran" class="w-32">
+          <option value="0">Stub (fast)</option>
+          <option value="auto">Auto (if online)</option>
+          <option value="1">Force Live (slow)</option>
+        </select>
+      </div>
+      <button id="run-btn" class="btn" onclick="runSimulation()">Run Simulation</button>
+    </div>
+  </div>
+
+  <!-- Results Area -->
+  <div id="results-area" class="mt-6">
+    <div class="glass card text-center text-gray-400 py-12">
+      Click "Run Simulation" to start a PoC network simulation.
+    </div>
+  </div>
+</div>
+
+<script>
+let careChart = null;
+let rewardChart = null;
+let hiranChart = null;
+
+async function checkStatus() {
+  const badge = document.getElementById('status-badge');
+  if(!badge) return;
+  try {
+    const r = await fetch('/api/poc/status');
+    if(!r.ok){ badge.innerHTML = '<span class="badge badge-reject">API ' + r.status + '</span>'; return; }
+    const d = await r.json();
+    let html = '';
+    html += d.poc_sim_available
+      ? '<span class="badge badge-accept">poc-sim ready</span> '
+      : '<span class="badge badge-reject">poc-sim NOT built</span> ';
+    html += d.hiran_online
+      ? '<span class="badge badge-live">Hiran LIVE</span>'
+      : '<span class="badge badge-stub">Hiran offline (stub)</span>';
+    badge.innerHTML = html;
+  } catch(e) {
+    badge.innerHTML = '<span class="badge badge-reject">Status unavailable</span>';
+  }
+}
+
+async function runSimulation() {
+  const btn = document.getElementById('run-btn');
+  if(!btn) return;
+  btn.disabled = true;
+  btn.textContent = 'Running...';
+  const area = document.getElementById('results-area');
+  if(!area){ btn.disabled = false; btn.textContent = 'Run Simulation'; return; }
+  area.innerHTML = '<div class="spinner"></div><p class="text-center text-gray-400">Running simulation (live Hiran may take 10-60s)...</p>';
+
+  const epochs = document.getElementById('cfg-epochs')?.value || 3;
+  const validators = document.getElementById('cfg-validators')?.value || 4;
+  const reward = document.getElementById('cfg-reward')?.value || 1000000;
+  const hiran = document.getElementById('cfg-hiran')?.value || '0';
+
+  try {
+    const r = await fetch(`/api/poc/run?epochs=${encodeURIComponent(epochs)}&validators=${encodeURIComponent(validators)}&block_reward=${encodeURIComponent(reward)}&hiran=${encodeURIComponent(hiran)}`);
+    if(!r.ok){
+      const errText = await r.text().catch(() => '');
+      area.innerHTML = `<div class="glass card red">HTTP ${r.status}: ${errText.substring(0,200) || r.statusText}</div>`;
+      return;
+    }
+    const d = await r.json();
+    if(d.error) {
+      area.innerHTML = `<div class="glass card red">Error: ${d.error}</div>`;
+      return;
+    }
+    if(!d.reports) {
+      area.innerHTML = `<div class="glass card red">Invalid response: no reports field</div>`;
+      return;
+    }
+    renderResults(d);
+  } catch(e) {
+    area.innerHTML = `<div class="glass card red">Fetch error: ${e.message}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Run Simulation';
+  }
+}
+
+function renderResults(data) {
+  const area = document.getElementById('results-area');
+  const cfg = data.config;
+  const sum = data.summary;
+  const reports = data.reports || [];
+  const hiranMode = cfg.hiran_stub_mode ? 'stub' : 'live';
+
+  let html = '';
+
+  // Summary cards
+  html += '<div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">';
+  html += summaryCard('Epochs', cfg.epochs, 'gold');
+  html += summaryCard('Validators', cfg.validators, 'cyan');
+  html += summaryCard('Accepted', sum.total_accepted, 'green');
+  html += summaryCard('Rejected', sum.total_rejected, 'red');
+  html += summaryCard('Total Payout', formatFlowers(sum.total_payout), 'purple');
+  html += '</div>';
+
+  // Hiran status banner
+  const hStats = reports.length > 0 ? reports[reports.length-1].hiran_stats : null;
+  if (hStats) {
+    html += `<div class="glass card mb-4">
+      <div class="flex items-center gap-4">
+        <span class="badge ${hStats.stub_mode ? 'badge-stub' : 'badge-live'}">Hiran ${hiranMode}</span>
+        <span class="text-sm">Validated: <b class="gold">${hStats.proofs_validated}</b></span>
+        <span class="text-sm">Accepted: <b class="green">${hStats.accepted}</b></span>
+        <span class="text-sm">Rejected: <b class="red">${hStats.rejected}</b></span>
+        <span class="text-sm">Uncertain: <b class="orange">${hStats.uncertain}</b></span>
+        <span class="text-sm">Avg Confidence: <b class="cyan">${(hStats.avg_confidence*100).toFixed(1)}%</b></span>
+      </div>
+    </div>`;
+  }
+
+  // Charts row
+  html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">';
+  html += '<div class="glass card"><h3 class="gold text-sm mb-2">Care Score per Validator (last epoch)</h3><canvas id="careChart" height="200"></canvas></div>';
+  html += '<div class="glass card"><h3 class="gold text-sm mb-2">Reward Distribution (last epoch)</h3><canvas id="rewardChart" height="200"></canvas></div>';
+  html += '</div>';
+
+  // Hiran confidence trend chart
+  if (reports.length > 0) {
+    html += '<div class="glass card mb-6"><h3 class="gold text-sm mb-2">Hiran Avg Confidence Trend</h3><canvas id="hiranChart" height="120"></canvas></div>';
+  }
+
+  // Epoch reports table
+  html += '<div class="glass card mb-6">';
+  html += '<h3 class="gold text-sm mb-3">Epoch Reports</h3>';
+  html += '<table><thead><tr><th>Epoch</th><th>Validator</th><th>Vow</th><th>Status</th><th>Care Score</th><th>Payout</th><th>Hiran Conf</th><th>NCL Bonus</th></tr></thead><tbody>';
+  for (const r of reports) {
+    for (const v of r.validators) {
+      const vow = v.dual_vow_bonus_applied ? '<span class="badge badge-guardian">S+B</span>' : '<span class="text-gray-400">S</span>';
+      const status = v.accepted
+        ? '<span class="badge badge-accept">ACCEPTED</span>'
+        : `<span class="badge badge-reject">REJECTED</span>`;
+      const hiranConf = v.hiran_verdict ? (v.hiran_verdict.confidence*100).toFixed(0)+'%' : '—';
+      const reject = v.rejection_reason ? `<span class="text-xs text-gray-500">${v.rejection_reason}</span>` : '';
+      html += `<tr>
+        <td class="cyan">${r.epoch}</td>
+        <td>${v.name} ${reject}</td>
+        <td>${vow}</td>
+        <td>${status}</td>
+        <td>${v.accepted ? v.care_score.toLocaleString() : '—'}</td>
+        <td class="${v.payout > 0 ? 'green' : 'text-gray-500'}">${v.payout > 0 ? formatFlowers(v.payout) : '—'}</td>
+        <td>${hiranConf}</td>
+        <td>${v.ncl_bonus > 0 ? formatFlowers(v.ncl_bonus) : '—'}</td>
+      </tr>`;
+    }
+  }
+  html += '</tbody></table></div>';
+
+  // Anomaly alerts
+  let totalAlerts = 0;
+  for (const r of reports) totalAlerts += (r.anomaly_alerts || []).length;
+  if (totalAlerts > 0) {
+    html += '<div class="glass card mb-6">';
+    html += '<h3 class="red text-sm mb-3">Anomaly Alerts</h3>';
+    html += '<table><thead><tr><th>Epoch</th><th>Type</th><th>Severity</th><th>Description</th><th>Action</th></tr></thead><tbody>';
+    for (const r of reports) {
+      for (const a of (r.anomaly_alerts || [])) {
+        const sevColor = a.severity === 'Critical' ? 'red' : a.severity === 'High' ? 'orange' : 'text-gray-400';
+        html += `<tr><td class="cyan">${r.epoch}</td><td>${a.anomaly_type}</td><td class="${sevColor}">${a.severity}</td><td>${a.description}</td><td>${a.recommended_action}</td></tr>`;
+      }
+    }
+    html += '</tbody></table></div>';
+  }
+
+  // Reward split config
+  const rs = cfg.reward_split;
+  html += `<div class="glass card mb-6">
+    <h3 class="gold text-sm mb-3">Reward Split Configuration (basis points)</h3>
+    <div class="flex gap-6 text-sm">
+      <span>Care Validators: <b class="gold">${rs.care_validators_bps} bps (${rs.care_validators_bps/100}%)</b></span>
+      <span>Humanitarian: <b class="cyan">${rs.humanitarian_bps} bps</b></span>
+      <span>DAO Treasury: <b class="purple">${rs.dao_treasury_bps} bps</b></span>
+      <span>WARP: <b class="text-gray-300">${rs.warp_maintenance_bps} bps</b></span>
+      <span>Hiran Research: <b class="orange">${rs.hiran_research_bps} bps</b></span>
+    </div>
+  </div>`;
+
+  // Raw JSON toggle
+  html += '<div class="glass card">';
+  html += '<h3 class="gold text-sm mb-2 cursor-pointer" onclick="toggleRaw()">Raw JSON (click to toggle)</h3>';
+  html += '<pre id="raw-json" class="text-xs text-gray-500 overflow-x-auto hidden">' + JSON.stringify(data, null, 2).replace(/</g,'&lt;') + '</pre>';
+  html += '</div>';
+
+  area.innerHTML = html;
+
+  // Render charts
+  renderCharts(reports);
+}
+
+function summaryCard(label, value, color) {
+  return `<div class="glass card text-center">
+    <div class="text-xs text-gray-400 mb-1">${label}</div>
+    <div class="text-2xl font-bold ${color}">${value}</div>
+  </div>`;
+}
+
+function formatFlowers(n) {
+  if (n >= 1000000) return (n/1000000).toFixed(2) + 'M';
+  if (n >= 1000) return (n/1000).toFixed(1) + 'K';
+  return n.toString();
+}
+
+function toggleRaw() {
+  const el = document.getElementById('raw-json');
+  el.classList.toggle('hidden');
+}
+
+function renderCharts(reports) {
+  if (reports.length === 0) return;
+  const last = reports[reports.length-1];
+
+  // Care score chart
+  const vNames = last.validators.map(v => v.name.substring(0, 20));
+  const vScores = last.validators.map(v => v.care_score);
+  const vColors = last.validators.map(v => v.accepted ? 'rgba(34,197,94,0.6)' : 'rgba(239,68,68,0.6)');
+
+  if (careChart) careChart.destroy();
+  const ctx1 = document.getElementById('careChart').getContext('2d');
+  careChart = new Chart(ctx1, {
+    type: 'bar',
+    data: { labels: vNames, datasets: [{ label: 'Care Score', data: vScores, backgroundColor: vColors, borderRadius: 4 }] },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { color: '#888' }, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { ticks: { color: '#888', font: { size: 10 } }, grid: { display: false } } } }
+  });
+
+  // Reward distribution chart
+  const rd = last.reward_distribution;
+  if (rewardChart) rewardChart.destroy();
+  const ctx2 = document.getElementById('rewardChart').getContext('2d');
+  rewardChart = new Chart(ctx2, {
+    type: 'doughnut',
+    data: {
+      labels: ['Care Validators', 'Humanitarian', 'DAO Treasury', 'WARP', 'Hiran Research'],
+      datasets: [{ data: [rd.care_validators, rd.humanitarian, rd.dao_treasury, rd.warp_maintenance, rd.hiran_research],
+        backgroundColor: ['#FFD700', '#00CED1', '#a855f7', '#6b7280', '#f59e0b'] }]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'right', labels: { color: '#ccc', font: { size: 11 } } } } }
+  });
+
+  // Hiran confidence trend
+  if (reports.length > 0 && document.getElementById('hiranChart')) {
+    const confs = reports.map(r => r.hiran_stats.avg_confidence * 100);
+    const epochs = reports.map(r => 'E' + r.epoch);
+    if (hiranChart) hiranChart.destroy();
+    const ctx3 = document.getElementById('hiranChart').getContext('2d');
+    hiranChart = new Chart(ctx3, {
+      type: 'line',
+      data: { labels: epochs, datasets: [{ label: 'Avg Confidence %', data: confs, borderColor: '#00CED1', backgroundColor: 'rgba(0,206,209,0.1)', fill: true, tension: 0.3 }] },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { min: 80, max: 100, ticks: { color: '#888', callback: v => v+'%' }, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { ticks: { color: '#888' }, grid: { display: false } } } }
+    });
+  }
+}
+
+// Init
+checkStatus();
+setInterval(checkStatus, 10000);
+</script>
+</body>
+</html>'''
+
 # ── Main ────────────────────────────────────────────────────────────────
 
 def open_browser():
@@ -10241,14 +11022,10 @@ if __name__ == "__main__":
     print(f"  Auth          : {len(DASHBOARD_USERS)} user(s) — {', '.join(DASHBOARD_USERS.keys())}")
     print("  Press Ctrl+C to stop")
     print("=" * 60)
-    # Background sampler and WS push temporarily disabled due to Windows
-    # threading deadlock with nested ThreadPoolExecutors + TCP probes.
-    # Dashboard is fully functional on-demand via HTTP API.
-    # TODO: re-enable after root-causing the deadlock.
-    # sampler_thread = threading.Thread(target=background_sampler, daemon=True)
-    # sampler_thread.start()
-    # ws_thread = threading.Thread(target=_ws_push_loop, daemon=True)
-    # ws_thread.start()
+    # Background sampler — re-enabled on Linux (was disabled for Windows deadlock).
+    # Records service health history every 5 min for the Health Timeline.
+    sampler_thread = threading.Thread(target=background_sampler, daemon=True)
+    sampler_thread.start()
 
     open_browser()
     server = ThreadingHTTPServer((HOST, PORT), DashboardHandler)
@@ -10257,3 +11034,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\n  Stopping dashboard server...")
         server.shutdown()
+

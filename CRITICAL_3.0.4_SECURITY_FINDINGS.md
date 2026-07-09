@@ -94,7 +94,7 @@ The following addresses are produced by the current `crypto::canonical_address_f
 | `ZION_V3_MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_RECIPIENT_v1` | `zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702` | `zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702` |
 | `ZION_V3_MAINNET_CANONICAL_POOL_PAYOUT_SIGNER_v1` | `zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604` | `zion1l56685k280p364g686j88644g3j4r375755e8p7` |
 
-The correct SK hex for the pool payout signer is `a3bc7452beb612e2f3a59f85d31905cc2e8e28f3450e4892c9c0ea445e913ee9` (this is the value printed by the current `canonical-mainnet-operator-env` release binary; it matches the corrected address).
+The correct SK hex for the pool payout signer is `[REDACTED — pool SK removed for security]` (this is the value printed by the current `canonical-mainnet-operator-env` release binary; it matches the corrected address).
 
 ### Current Edge balances
 

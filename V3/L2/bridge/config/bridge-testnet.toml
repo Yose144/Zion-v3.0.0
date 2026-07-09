@@ -2,10 +2,10 @@
 #  ZION Bridge Relay Configuration — V3 TestNet (Base Sepolia)
 # ──────────────────────────────────────────────────────────────
 #
-#  Canonical config: also mirrored in V3/config/bridge-testnet.toml.
+#  Source of truth: archive/2.9.9/legacy-code/config/bridge-testnet.toml
 #  Base Sepolia deploy: 21.2.2026 (wZION), 23.2.2026 (ZIONBridge)
 #
-#  Usage: ZION_BRIDGE_CONFIG=V3/L2/bridge/config/bridge-testnet.toml cargo run -p zion-bridge
+#  Usage: ZION_BRIDGE_CONFIG=V3/config/bridge-testnet.toml cargo run -p zion-bridge
 
 [bridge]
 name    = "ZION Bridge Relay V3"

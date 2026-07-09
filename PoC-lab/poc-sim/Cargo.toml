@@ -1,0 +1,29 @@
+[package]
+name = "poc-sim"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "poc-sim"
+path = "src/main.rs"
+
+[dependencies]
+poc-core      = { path = "../poc-core" }
+poc-npu       = { path = "../poc-npu" }
+poc-tasks     = { path = "../poc-tasks" }
+poc-verifier  = { path = "../poc-verifier" }
+poc-registry  = { path = "../poc-registry" }
+poc-economics = { path = "../poc-economics" }
+poc-hiran     = { path = "../poc-hiran" }
+clap          = { workspace = true }
+serde         = { workspace = true }
+serde_json    = { workspace = true }
+thiserror     = { workspace = true }
+blake3        = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }

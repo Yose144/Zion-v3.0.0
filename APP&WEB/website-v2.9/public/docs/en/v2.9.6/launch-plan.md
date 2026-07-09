@@ -42,7 +42,7 @@ Genesis finalisation, premine distribution, seeds, mainnet config, DAO vote on e
 
 ## 3. Infrastructure
 
-Current testnet: Zion2 `91.98.122.165` primary + internal seeds.  
+Current testnet: Zion2 `seed.zionterranova.com` primary + internal seeds.  
 Mainnet target table in the Czech doc lists planned EU/US/APAC seeds and explorer — aspirational, not live 2026-03-12 topology.
 
 ---

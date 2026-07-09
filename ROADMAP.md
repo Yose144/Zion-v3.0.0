@@ -1,8 +1,8 @@
-# ZION Roadmap — From 3.0.4 to Public Mainnet Launch
+# ZION Roadmap — From 3.0.5 to Public Mainnet Launch
 
-> **Version:** 3.0.4 canonical + security hardening  
-> **Last updated:** 2026-07-02  
-> **One source of truth:** [`3.0.4.md`](./3.0.4.md) · Live status: [`StatusV3.md`](./StatusV3.md) · Security: [`SecurityFirst.md`](./SecurityFirst.md)  
+> **Version:** 3.0.5 "All Green" canonical  
+> **Last updated:** 2026-07-09  
+> **One source of truth:** [`3.0.4.md`](./3.0.4.md) + [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](./docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md) · Live status: [`StatusV3.md`](./StatusV3.md) · Security: [`SecurityFirst.md`](./SecurityFirst.md)  
 > **Engineering detail:** [`V3/ROADMAP.md`](./V3/ROADMAP.md)
 
 ---
@@ -22,9 +22,21 @@ This is the **forward-looking** root roadmap. Historical detail lives in [`docs/
 
 ---
 
-## 1. Current State — 3.0.4 Canonical (2026-07-01)
+## 1. Current State — 3.0.5 "All Green" (2026-07-09)
 
-✅ **Done**
+✅ **3.0.5 Done (2026-07-09)**
+- Protocol version bumped to `zion-v3-node/3.0.5` (from stale 3.0.3)
+- All 11 services active on live server (62.171.141.136): node, node2, pool, bridge, dao, atomic-swap, warp, oasis, free-world, issobella, dashboard
+- Watchdog timer active (2 min interval)
+- Web (Docker zion-web-next) Up — zionterranova.com: 200
+- E2E memo tests: 3 account-model TXs with memos confirmed in block 752 (BRIDGE/DAO/SWAP)
+- L2/L3 config fixes: bridge start height 0, backup RPC IP, DB paths unified to /data/zion/
+- Docs reconciled: fake commit hash fixed, activation height 0, old IPs replaced
+- **Web deploy optimalizace:** Docker image 2.57 GB → 377 MB (85% redukce) via standalone output + cache fix + build cache prune (23 GB freed)
+- **Health check 2026-07-09:** Chain height 827, 16.78B ZION circulating, 11/11 services active, RAM 2.2G/7.8G, disk 34G/145G
+- Report: [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](./docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md)
+
+✅ **Done (3.0.4 and earlier)**
 - DeFi contracts deployed on Base Mainnet: ZIONGovernance, ZIONTreasury, ZIONStaking, ZIONFarm
 - 5/5 validator bridge operational, ~100M wZION minted, reverse bridge E2E verified
 - Atomic swap daemon live, escrow funded, LOCK/CLAIM E2E passed
@@ -100,7 +112,7 @@ Goal: resolve all owner blockers and operational gaps so the chain is fully cons
 | # | Task | Status | Detail |
 |---|------|--------|--------|
 | 2.1 | **Resolve bridge addresses** | 🔴 Blocked on D1 | Update `bridge-mainnet.toml`, mobile/desktop clients, website, docs to one consistent set per chain. |
-| 2.2 | **Basescan verification** | ✅ Done | 6/7 contracts verified (wZION, ZIONAtomicSwap already verified; ZIONGovernance, ZIONTreasury, ZIONStaking, ZIONFarm verified 2026-07-02). ZIONBridge ❌ — source changed post-deploy, bytecode mismatch. |
+| 2.2 | **Basescan verification** | ✅ Done | **7/7 contracts verified** (wZION, ZIONAtomicSwap already verified; ZIONGovernance, ZIONTreasury, ZIONStaking, ZIONFarm verified 2026-07-02; ZIONBridge verified 2026-07-09 via `forge verify-contract`). |
 | 2.3 | **Validator ETH top-up** | 🔵 Pending | Top up 5 validators to ≥0.01 ETH each (~0.05 ETH total). |
 | 2.4 | **Atomic swap escrow fees** | 🔵 Pending | Send ~5-10 ZION to escrow `zion1y0j484d5e8r49785d253e8w0c2x4t3n792m5724` for L1 release TX fees. |
 | 2.5 | **ZIONStaking / ZIONFarm UI verify** | ✅ Done | Deployed; verify live data on website. |
@@ -113,7 +125,7 @@ Goal: resolve all owner blockers and operational gaps so the chain is fully cons
 |---|------|--------|--------|
 | 3.1 | **Deploy non-EVM contracts** | 🔵 Planned | Aptos Move module, NEAR contract, Sui package, TON jetton, Cardano native token, Cosmos CosmWASM. |
 | 3.2 | **Set relay keys on Edge** | 🔵 Pending | `WARP_<CHAIN>_RELAY_KEY` env vars for each non-EVM chain. |
-| 3.3 | **TON execute_mint fix** | 🔵 Pending | Replace watch-only with full TX construction via `ton-sdk`/`tonweb`/`tonlib`. |
+| 3.3 | **TON execute_mint fix** | ✅ Done | Full TX construction implemented via custom TL-B cell serialization (`ton_cell.rs`) + Ed25519 signing + BOC encoding + TON Center `sendBase64Transaction`. No external `ton-sdk`/`tonweb`/`tonlib` dependency needed. 60/60 tests pass. |
 | 3.4 | **Lightning Fáze A** | 🔵 Pending | LND node Docker + bitcoind backend + channel opening on Edge. |
 | 3.5 | **WARP UI activation** | ✅ Done | `/warp` transfer form live; activate multi-chain as contracts deploy. |
 
@@ -122,9 +134,9 @@ Goal: resolve all owner blockers and operational gaps so the chain is fully cons
 | # | Task | Status | Detail |
 |---|------|--------|--------|
 | 4.1 | **Guardian mnemonic backup** | 🔵 Pending | Copy `C:\Users\yosef\Desktop\ZION_DAO_GUARDIAN_KEYS.txt` to flash drive `F:\`. |
-| 4.2 | **Repo cleanup Fáze 1** | 🔵 Pending | Delete `V3/config/` stale templates; archive root `.js` helper scripts. |
-| 4.3 | **Repo cleanup Fáze 2** | 🔵 Pending | Create `V3/L1/types` crate for shared watcher types (bridge/dao/atomic-swap). |
-| 4.4 | **Edge pool systemd** | 🔵 Pending | Kill orphaned manual pool, re-enable `zion-edge-pool.service`. |
+| 4.2 | **Repo cleanup Fáze 1** | ✅ Done | `V3/config/` deleted; bridge config canonical path is `V3/L2/bridge/config/`; Edge env updated + bridge restarted. |
+| 4.3 | **Repo cleanup Fáze 2** | ✅ Done | `V3/L1/types` crate created (`zion-l1-types`); bridge/dao/atomic-swap refactored to use shared `bytes_to_hex`, `normalize_rpc_addr`, `zion_address_from_public_key`. All 171+ tests pass. |
+| 4.4 | **Edge pool systemd** | ✅ Done | `zion-pool.service` active (enabled, running) on Edge. No orphaned manual pool. GPU miner `vega-smos` connected. |
 | 4.5 | **CI/CD** | 🔵 Planned | GitHub Actions billing + automated builds. |
 
 ---
@@ -136,7 +148,7 @@ Goal: ship the user-facing stack (wallet, mobile, explorer, L4) before public la
 | # | Initiative | Status | Detail |
 |---|------------|--------|--------|
 | 5.1 | **Wallet SDK** (`@zion/sdk`) | ✅ Memo support added | TypeScript SDK with memo support, tx signing, balance/history. Base for mobile + web. |
-| 5.2 | **TX history RPC** | 🔵 Planned | Address-based index in L1 node; blocker for explorer. |
+| 5.2 | **TX history RPC** | ✅ Done | `getTransactionHistory` RPC implemented with O(1) in-memory `address_tx_index` (HashMap<address, Vec<block_idx>>). Covers account-model TXs, UTXO TXs (sender/recipient), and coinbase rewards. Pagination (offset/limit, cap 1000). 3/3 tests pass. |
 | 5.3 | **Mobile app** | 🔵 Planned | QR, biometrics, deep linking, EAS build, device testing, store submission. |
 | 5.4 | **L4 OASIS backend** | 🔵 Planned | Guild wars, raid boss, OASIS token bridge, wallet signature auth. |
 | 5.5 | **Desktop agent** | 🔵 Planned | Unify wallet core with mobile; Tauri v2 migration. |
@@ -152,11 +164,11 @@ Final checklist. Full procedure in [`V3/docs/MAINNET_LAUNCH_SEQUENCE.md`](./V3/d
 
 | # | Gate | Status |
 |---|------|--------|
-| 6.1 | TX unification deployed and stable | 🟡 Deployed on Edge; activation height 24000; E2E pending |
-| 6.2 | Bridge/wZION addresses consistent across all clients | 🔵 |
-| 6.3 | DeFi contracts verified + liquidity seeded | 🔵 |
+| 6.1 | TX unification deployed and stable | ✅ Account-model memo field deployed, E2E tested (block 752) |
+| 6.2 | Bridge/wZION addresses consistent across all clients | ✅ wZION 0x0c49... on all 6 EVM chains |
+| 6.3 | DeFi contracts verified + liquidity seeded | ✅ 7/7 verified on Basescan; Staking 100K + Farm 500K wZION funded; Bridge burn→unlock E2E confirmed (100 wZION→100 ZION block 891) |
 | 6.4 | Wallet SDK + mobile app published | 🔵 |
-| 6.5 | TX history RPC + explorer live | 🔵 |
+| 6.5 | TX history RPC + explorer live | ✅ getTransactionHistory RPC live (O(1) address index) |
 | 6.6 | L4 OASIS backend complete | 🔵 |
 | 6.7 | External audit complete | 🔵 |
 | 6.8 | 3 fresh mainnet nodes deployed, genesis hash consistent | 🔵 |
@@ -185,7 +197,10 @@ Final checklist. Full procedure in [`V3/docs/MAINNET_LAUNCH_SEQUENCE.md`](./V3/d
 |--------|-------|
 | V3 workspace tests | ~1,650+ |
 | WARP tests | 499 |
-| Edge services | 13 active |
+| Edge services | 11 active + 1 timer + 1 Docker |
+| Chain height | 827+ (2026-07-09) |
+| Circulating supply | 16.78B ZION |
+| Web image size | 377 MB (was 2.57 GB) |
 | Mainnet launch | 31 December 2026 |
 
 ---

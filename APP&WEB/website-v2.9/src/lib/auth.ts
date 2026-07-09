@@ -14,10 +14,7 @@ const ALG = 'HS256';
 function getSecret(): Uint8Array {
   const secret = process.env.ZION_JWT_SECRET;
   if (!secret) {
-    // Generate a random secret for development (not for production)
-    console.warn('[auth] ZION_JWT_SECRET not set — using random ephemeral secret');
-    const { randomBytes } = require('crypto');
-    return new Uint8Array(randomBytes(32));
+    throw new Error('[FATAL] ZION_JWT_SECRET is required. Set it in .env.production or .env.local');
   }
   return new TextEncoder().encode(secret);
 }

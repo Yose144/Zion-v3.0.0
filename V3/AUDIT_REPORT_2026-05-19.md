@@ -26,7 +26,7 @@
 **Location:** `V3/docker/docker-compose.yml:74`
 
 ```yaml
-- ZION_POOL_PAYOUT_SK_HEX=${ZION_POOL_PAYOUT_SK_HEX:-a3bc7452beb612e2f3a59f85d31905cc2e8e28f3450e4892c9c0ea445e913ee9}
+- ZION_POOL_PAYOUT_SK_HEX=${ZION_POOL_PAYOUT_SK_HEX:-[REDACTED — pool SK removed for security]}
 ```
 
 **Impact:** If an operator runs `docker compose up` without setting `ZION_POOL_PAYOUT_SK_HEX` in their `.env` file, the container falls back to this hardcoded secret key. Any pool payouts signed with this key are trivially stealable by anyone who reads the compose file or the public repo.

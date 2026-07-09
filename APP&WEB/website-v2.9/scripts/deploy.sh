@@ -7,11 +7,11 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO_ROOT="$(cd "$ROOT_DIR/../.." && pwd)"
 LOG_PREFIX="[deploy]"
 
-REMOTE_HOST="${REMOTE_HOST:-77.42.71.94}"
-REMOTE_USER="${REMOTE_USER:-root}"
-REMOTE_SRC="${REMOTE_SRC:-/root/zion-2.9.6-main/APP&WEB/website-v2.9}"
-REMOTE_COMPOSE="${REMOTE_COMPOSE:-/root/zion-2.9.6-main/docker}"
-SSH_KEY="${SSH_KEY:-$HOME/.ssh/ssh-key-zion-edge}"
+REMOTE_HOST="${REMOTE_HOST:-mainnetedge}"
+REMOTE_USER="${REMOTE_USER:-deploy}"
+REMOTE_SRC="${REMOTE_SRC:-/opt/zion/web}"
+REMOTE_COMPOSE="${REMOTE_COMPOSE:-/opt/zion/docker}"
+SSH_KEY="${SSH_KEY:-$HOME/.ssh/id_ed25519}"
 COMPOSE_FILE="docker-compose.website.yml"
 SKIP_SYNC=0
 DRY_RUN=0
@@ -23,11 +23,11 @@ Usage: scripts/deploy.sh [options]
 Docker-based website deployment: rsync source -> rebuild image -> recreate container.
 
 Options:
-  --host <hostname>        Target SSH host (default: $REMOTE_HOST or 77.42.71.94)
-  --user <user>            SSH user (default: $REMOTE_USER or root)
-  --remote-src <path>      Remote source path (default: /root/zion-2.9.6-main/APP&WEB/website-v2.9)
-  --remote-compose <path>  Remote Docker compose directory (default: /root/zion-2.9.6-main/docker)
-  --ssh-key <path>         SSH private key (default: $SSH_KEY or ~/.ssh/ssh-key-zion-edge)
+  --host <hostname>        Target SSH host (default: $REMOTE_HOST or mainnetedge)
+  --user <user>            SSH user (default: $REMOTE_USER or deploy)
+  --remote-src <path>      Remote source path (default: /opt/zion/web)
+  --remote-compose <path>  Remote Docker compose directory (default: /opt/zion/docker)
+  --ssh-key <path>         SSH private key (default: $SSH_KEY or ~/.ssh/id_ed25519)
   --skip-sync              Skip rsync (rebuild from existing remote source)
   --dry-run                Sync only; skip Docker rebuild
   -h, --help               Show this help
@@ -119,7 +119,7 @@ fi
 
 # --- Docker rebuild & recreate on server ---
 log "Building Docker image on $REMOTE_HOST"
-ssh $SSH_OPTS "$REMOTE" "cd $REMOTE_COMPOSE_SH && docker compose -f '$COMPOSE_FILE' build --no-cache website"
+ssh $SSH_OPTS "$REMOTE" "cd $REMOTE_COMPOSE_SH && docker compose -f '$COMPOSE_FILE' build website"
 
 log "Recreating container"
 ssh $SSH_OPTS "$REMOTE" "cd $REMOTE_COMPOSE_SH && docker compose -f '$COMPOSE_FILE' up -d website"

@@ -54,7 +54,7 @@ ZION V3 používá **Core + Edge** dvouvrstvou architekturu:
 
 | Vlastnost | Hodnota |
 |-----------|-------|
-| Provider | Hetzner Cloud |
+| Provider | cloud VPS |
 | OS | Ubuntu 22.04 LTS |
 | Role | 24/7 operační node pro všechny L1/L2/L3 non-AI služby |
 

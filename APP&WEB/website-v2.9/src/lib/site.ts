@@ -1,36 +1,29 @@
-export const SITE_VERSION = 'v3.0.3';
-export const SITE_RELEASE_NAME = 'from genesis to the star';
+export const SITE_VERSION = 'v3.0.5';
+export const SITE_RELEASE_NAME = 'All Green, Mainnet Beta';
 export const SITE_RELEASE_LABEL = `${SITE_VERSION} "${SITE_RELEASE_NAME}"`;
-export const SITE_RUNTIME_VERSION = 'v3.0.3';
+export const SITE_RUNTIME_VERSION = 'v3.0.5';
 export const SITE_RUNTIME_NAME = 'Deeksha/Ekam canonical · 6-decimal flowers';
 export const SITE_RUNTIME_LABEL = `${SITE_RUNTIME_VERSION} ${SITE_RUNTIME_NAME}`;
-export const SITE_ENVIRONMENT_LABEL = 'V3 Mainnet';
-export const SITE_PUBLIC_LAUNCH_STATUS = 'from genesis to the star';
+export const SITE_ENVIRONMENT_LABEL = 'V3 Mainnet Beta';
+export const SITE_PUBLIC_LAUNCH_STATUS = 'All Green, Mainnet Beta';
 export const SITE_LAUNCH_DATE = '2026-12-31T00:00:00Z';
 export const SITE_LAUNCH_DATE_DISPLAY = '31 December 2026 (New Year\'s Eve)';
 export const SITE_NETWORK_LABEL = `${SITE_ENVIRONMENT_LABEL} · ${SITE_RELEASE_LABEL}`;
 
-// ── Infrastructure (Core + Edge topology, 2026-05-21) ──────────────────────
-// Edge relay — Hetzner VPS, public-facing node + pool stratum
-export const SITE_PRIMARY_HOST = process.env['ZION_' + 'RPC_' + 'HOST'] || '77.42.71.94';
+// ── Infrastructure (Edge server topology, 2026-07-09) ──────────────────────
+// Edge server — cloud VPS, public-facing node + pool stratum
+export const SITE_PRIMARY_HOST = process.env.NEXT_PUBLIC_ZION_RPC_HOST || 'rpc.zionterranova.com';
 export const SITE_PRIMARY_RPC_PORT = 8443;
 export const SITE_PRIMARY_RPC_URL = `${SITE_PRIMARY_HOST}:${SITE_PRIMARY_RPC_PORT}`;
 // Pool metrics API — runs locally on Edge (port 8455).
-// NOTE: 8080 was a legacy FastAPI gateway port, now decommissioned.
-export const SITE_PRIMARY_POOL_API_URL = process.env['ZION_' + 'POOL_' + 'API_' + 'URL'] || `http://127.0.0.1:8455`;
-export const SITE_PRIMARY_DAO_API_URL = process.env['ZION_' + 'DAO_' + 'API_' + 'URL'] || `http://127.0.0.1:8450`;
+export const SITE_PRIMARY_POOL_API_URL = process.env.ZION_POOL_API_URL || `http://127.0.0.1:8455`;
+export const SITE_PRIMARY_DAO_API_URL = process.env.ZION_DAO_API_URL || `http://127.0.0.1:8450`;
 
 // Edge pool stratum port is 8444 (ShareRelay architecture)
 export const SITE_POOL_PRIMARY = `${SITE_PRIMARY_HOST}:8444`;
 
-// Tailscale VPN tunnel — Core (local PC) ↔ Edge (VPS)
-// NOTE: Original Windows Core (100.86.102.5) offline since 2026-05-30.
-// Current active Core is zionserver-144 (Linux) at 100.74.34.40.
-export const SITE_CORE_TAILSCALE_IP = '100.74.34.40';
-export const SITE_EDGE_TAILSCALE_IP = '100.76.16.108';
-
-// Network topology descriptor (USA / Singapore / Helsinki decommissioned 2026-05)
-export const SITE_NETWORK_TOPOLOGY = 'Core + Edge · Hetzner VPS (Edge relay) + local PC (Core via Tailscale VPN)';
+// Network topology descriptor (operational details are injected via environment variables only)
+export const SITE_NETWORK_TOPOLOGY = 'Edge server (cloud VPS)';
 export const EKAM_GOLDEN_EGG_IMAGE = 'https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/themes/2147915250/settings_images/8802b3-c826-05c7-bcd2-12b608d18d1_ABOUT-ONENESS.webp';
 export const EKAM_BANNER_IMAGE = 'https://onenessoceania.org/wp-content/uploads/2024/04/Ekam-Banner.jpg';
 export const EKAM_FOUNDERS_BANNER_IMAGE = 'https://onenessoceania.org/wp-content/uploads/2024/03/Sri-Amma-Bhagavan-1920x600-1.jpg';

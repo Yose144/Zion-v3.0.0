@@ -199,7 +199,7 @@ Tato příloha **zůstává literárním a etickým zdrojem** pro **Pacifický K
 
 ## Hierarchie a kontext OASIS
 
-Pokud Genesis Creator a komunita rozhodnou tyto avatary do OASIS zařadit (**není to nutnost**, **je to nabídka**), mohly by se vejít do existující struktury takto:
+Pokud Genesis Projects Steward a komunita rozhodnou tyto avatary do OASIS zařadit (**není to nutnost**, **je to nabídka**), mohly by se vejít do existující struktury takto:
 
 ```
 Hindu Deities (17)             — beze změny
