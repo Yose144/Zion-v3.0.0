@@ -14,16 +14,16 @@ const crypto = require('crypto');
 
 // ── Network Constants ───────────────────────────────────────────────────────
 // Mainnet Edge relay (Hetzner VPS, Prague) — public-facing pool + node
-const PRIMARY_MAINNET_HOST = '77.42.71.94';
+const PRIMARY_MAINNET_HOST = '62.171.141.136';
 const PRIMARY_POOL_PORT = 8444;
 const PRIMARY_RPC_PORT = 8443;
-// Edge VPN IP (Tailscale) for RPC access
-const EDGE_VPN_HOST = '100.76.16.108';
+// Edge VPN IP — Tailscale decommissioned, same host as primary
+const EDGE_VPN_HOST = '62.171.141.136';
 // Legacy alias kept for internal fallback references
 const PRIMARY_TESTNET_HOST = PRIMARY_MAINNET_HOST;
 // Default to public Edge read-only RPC for public miners.
 // Users with local Core node can override via Settings → RPC URL.
-const DEFAULT_RPC_URL = 'http://77.42.71.94:8443/jsonrpc';
+const DEFAULT_RPC_URL = 'http://62.171.141.136:8443/jsonrpc';
 
 // ── Logging: only miner metrics + errors go to console.log.
 // Everything else uses dbg() which outputs console.debug only when ZION_DEBUG=1.
@@ -3458,7 +3458,7 @@ function parseMinerOutput(output) {
     minerStats.threads = v3ThreadsMatch[1];
   }
 
-  // ─── V3 pool addr: "pool_addr=77.42.71.94:8444" ───
+  // ─── V3 pool addr: "pool_addr=62.171.141.136:8444" ───
   const v3PoolMatch = output.match(/^pool_addr=(.+)/m);
   if (v3PoolMatch) {
     minerStats.pool = v3PoolMatch[1].trim();

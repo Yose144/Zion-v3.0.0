@@ -25,7 +25,7 @@ let isRunning = false;
 let isStarting = false;
 
 // Mainnet Edge relay (Hetzner VPS, Prague) — public-facing pool + node
-const PRIMARY_MAINNET_HOST = '77.42.71.94';
+const PRIMARY_MAINNET_HOST = '62.171.141.136';
 const PRIMARY_POOL_PORT = 8444;
 const PRIMARY_RPC_PORT = 8443;
 // Legacy alias
@@ -3517,7 +3517,7 @@ function initBridgeView() {
       try {
         // Reuse wallet-send IPC with memo field (bridge lock TX)
         const result = await window.electronAPI?.walletSendTransaction?.({
-          rpcUrl: 'http://77.42.71.94:8443/jsonrpc',
+          rpcUrl: 'http://62.171.141.136:8443/jsonrpc',
           from,
           to: BRIDGE_VAULT,
           amount: amt,
@@ -4412,7 +4412,7 @@ function initCliView() {
   // Mining controls
   document.getElementById('cli-btn-mine-start')?.addEventListener('click', async () => {
     const wallet = document.getElementById('cli-mine-wallet').value.trim();
-    const pool = document.getElementById('cli-mine-pool').value.trim() || '77.42.71.94:8444';
+    const pool = document.getElementById('cli-mine-pool').value.trim() || '62.171.141.136:8444';
     if (!wallet) {
       appendCliOutput('Error: wallet address is required', true);
       return;

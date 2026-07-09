@@ -16,7 +16,7 @@ import { CONFIG } from '../constants/config';
 // Default RPC endpoints (with failover) — V3 mainnet canonical port 8443
 const DEFAULT_RPC_NODES = [
   'https://rpc.zionterranova.com',
-  'http://77.42.71.94:8443/jsonrpc',     // Edge (public primary)
+  'http://62.171.141.136:8443/jsonrpc',     // Edge (public primary)
 ];
 
 class BlockchainRPC {

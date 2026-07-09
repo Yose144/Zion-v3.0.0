@@ -9,12 +9,11 @@ export const CONFIG = {
       name: 'ZION Mainnet',
       chainId: 'zion-mainnet-1',
       rpcNodes: [
-        'http://77.42.71.94:8443/jsonrpc',
-        'http://100.76.16.108:8443/jsonrpc',
+        'http://62.171.141.136:8443/jsonrpc',
       ],
-      poolHost: '77.42.71.94',
+      poolHost: '62.171.141.136',
       poolPort: 8444,
-      poolHosts: [{ host: '77.42.71.94', name: 'Edge' }],
+      poolHosts: [{ host: '62.171.141.136', name: 'Edge' }],
       explorerUrl: 'https://explorer.zionterranova.com',
     },
     testnet: {
