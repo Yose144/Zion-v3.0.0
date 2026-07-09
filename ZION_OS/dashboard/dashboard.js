@@ -249,7 +249,7 @@ async function refreshAll(){
     document.getElementById('hero-chain-height').textContent = heroHeight ?? '—';
     document.getElementById('hero-status-kicker').textContent = blockersData.ready_for_launch
       ? '✅ Ready · All P0 Blockers Resolved'
-      : '⏳ Pre-Launch · ' + blockersData.open_critical + ' critical blockers';
+      : (heroHeight > 0 ? '🟢 Mainnet Live · ' + heroHeight + ' blocks' : '⏳ Pre-Launch · ' + blockersData.open_critical + ' critical blockers');
 
     updateServiceCards(statusData);
     await updateServiceTelemetryDetails(statusData);
