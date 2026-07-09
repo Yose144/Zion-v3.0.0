@@ -120,14 +120,14 @@
 > - `V3/deploy/new-server/zion-watchdog.sh` — health check script
 > - `V3/deploy/new-server/zion-watchdog.service` + `zion-watchdog.timer` — watchdog systemd
 >
-> **Pending (vyžaduje owner akci):**
-> 1. **Fáze 5 — Air-gapped key rotation** — rotace premine, pool, bridge, EVM, DAO, escrow klíčů na air-gapped machine. `edge-environment.sh` má `<REPLACE_*>` placeholdery:
->    - `ZION_POOL_SK` — pool payout secret key
->    - `ZION_BRIDGE_VALIDATOR_SK_1..5` — EVM validator keys (5/5 threshold)
->    - `ZION_DAO_GUARDIAN_SK_1..7` — DAO guardian signing keys (7)
->    - `ZION_SWAP_ESCROW_KEY` — atomic swap escrow key
-> 2. **Edge server binary rebuild** — edge repo re-cloned (2026-07-09, commit `754fe4a0`), ale běžící binárky jsou ze starého kódu. Rebuild + swap potřebný pro bincode fix a další security commity.
-> 3. **DNS aplikace** — `dns.md` zónový soubor aplikovat v Webglobe admin console (pokud ještě ne)
+> **Pending (při cross-chain / DeFi operacích):**
+> 1. **EVM validator SKs** — aplikovat z encrypted archivu na flash disku na server (`ZION_BRIDGE_VALIDATOR_SK_1..5`) při spuštění bridge operací. Aktuálně placeholdery.
+> 2. **Escrow SK** — aplikovat z encrypted archivu na server (`ZION_SWAP_ESCROW_KEY`) při spuštění atomic swap. Aktuálně placeholder.
+> 3. **EVM contract redeploy** — ZION-2026-005: nové kontrakty s novými admin klíči + multisig
+> 4. **Externí audit genesis** před public launch
+> 5. **Re-clone repo** na všech strojích (git history přepsána filter-repo)
+>
+> **Fáze 5 audit (2026-07-09):** Key rotace proběhla při hard resetu 2026-07-06. Všechny adresy ověřeny proti flash disku a genesis.rs. Pool payout SK aplikován a ověřen (pubkey derivace sedí). EVM/escrow SKs v encrypted archivu na flash disku (`/run/media/zionserver/ESD-USB/ZionKeys/zion-keys-2026-07-06/`). Edge binárky rebuildnuty 2026-07-09 z `754fe4a0`.
 >
 > **Starý Edge server (77.42.71.94):** DECOMMISSIONED — všechny služby přesunuty na nový server.
 > 
