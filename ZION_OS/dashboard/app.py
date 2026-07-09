@@ -4570,12 +4570,29 @@ def build_payout_status() -> dict:
     }
 
     if is_edge:
-        # Canonical Edge pool wallets (AGENTS.md 2026-06-07)
+        # Canonical Edge pool wallets (from edge-environment.sh, 3.0.4 hard reset)
         status["pool_wallet"] = os.environ.get("ZION_POOL_WALLET") or "zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2"
         status["payout_enabled"] = True
         status["fee_split"] = "89/5/5/1"
-        status["humanitarian_wallet"] = os.environ.get("ZION_HUMANITARIAN_WALLET") or "zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4"
-        status["issobella_wallet"] = os.environ.get("ZION_ISSOBELLA_WALLET") or "zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702"
+        # Try env var first, then edge-environment.sh, then hardcoded canonical
+        _hum = os.environ.get("ZION_HUMANITARIAN_WALLET")
+        _iss = os.environ.get("ZION_ISSOBELLA_WALLET")
+        if not _hum or not _iss:
+            # Read from edge-environment.sh
+            for _envpath in ["/root/zion/edge-environment.sh", "/root/zion/edge-node2-environment.sh"]:
+                try:
+                    with open(_envpath) as _f:
+                        for _line in _f:
+                            if _line.startswith("ZION_HUMANITARIAN_WALLET="):
+                                _hum = _hum or _line.split("=", 1)[1].strip().strip('"')
+                            if _line.startswith("ZION_ISSOBELLA_WALLET="):
+                                _iss = _iss or _line.split("=", 1)[1].strip().strip('"')
+                    if _hum and _iss:
+                        break
+                except Exception:
+                    pass
+        status["humanitarian_wallet"] = _hum or "zion1e0u5q5s660k4m4a634p2c2v358r8g59564054z7"
+        status["issobella_wallet"] = _iss or "zion1f7y7l5k678y0v408e8s654d2282346k375526t2"
         status["pool_fee_wallet"] = ""
         status["miner_wallet"] = os.environ.get("ZION_MINER_ADDRESS") or "zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2"
     else:
@@ -4605,6 +4622,25 @@ def build_payout_status() -> dict:
             status["humanitarian_wallet"] = os.environ.get("ZION_HUMANITARIAN_WALLET")
         if not status["issobella_wallet"]:
             status["issobella_wallet"] = os.environ.get("ZION_ISSOBELLA_WALLET")
+        # Fallback: read from local env files (backup-node.env has canonical addresses)
+        if not status["humanitarian_wallet"] or not status["issobella_wallet"]:
+            for _envpath in [str(REPO_ROOT / "scripts" / "backup-node.env"), "/root/zion/edge-environment.sh"]:
+                try:
+                    with open(_envpath) as _f:
+                        for _line in _f:
+                            if _line.startswith("ZION_HUMANITARIAN_WALLET=") and not status["humanitarian_wallet"]:
+                                status["humanitarian_wallet"] = _line.split("=", 1)[1].strip().strip('"')
+                            if _line.startswith("ZION_ISSOBELLA_WALLET=") and not status["issobella_wallet"]:
+                                status["issobella_wallet"] = _line.split("=", 1)[1].strip().strip('"')
+                    if status["humanitarian_wallet"] and status["issobella_wallet"]:
+                        break
+                except Exception:
+                    pass
+        # Final canonical fallback (3.0.4 hard reset addresses)
+        if not status["humanitarian_wallet"]:
+            status["humanitarian_wallet"] = "zion1e0u5q5s660k4m4a634p2c2v358r8g59564054z7"
+        if not status["issobella_wallet"]:
+            status["issobella_wallet"] = "zion1f7y7l5k678y0v408e8s654d2282346k375526t2"
         if not status["pool_fee_wallet"]:
             status["pool_fee_wallet"] = os.environ.get("ZION_POOL_FEE_WALLET")
 
