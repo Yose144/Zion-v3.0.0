@@ -557,7 +557,7 @@ function _renderEdgeServerCard(d) {
     'zion-bridge':       { icon: '🌉', label: 'Bridge', url: 'http://62.171.141.136:9101' },
     'nginx':             { icon: '🌐', label: 'Nginx',  url: 'https://zionterranova.com' },
     'hiran-inference':   { icon: '🤖', label: 'Hiran',  url: null },
-    'hiranyagarbha':     { icon: '🧠', label: 'Orch',   url: 'http://77.42.71.94:8001' },
+    'hiranyagarbha':     { icon: '🧠', label: 'Orch',   url: 'http://62.171.141.136:8001' },
   };
   // Also add PM2 processes (website)
   const pm2Labels = { 'zion-website': { icon: '🌐', label: 'Website', url: 'https://zionterranova.com' } };
@@ -631,7 +631,7 @@ async function edgeAction(action) {
     'full-health': 'Full Health Check',
   };
   const label = ACTION_LABELS[action] || action;
-  if(!confirm(`Run "${label}" on Edge server (77.42.71.94)?`)) return;
+  if(!confirm(`Run "${label}" on Edge server (62.171.141.136)?`)) return;
 
   toast(`Running: ${label}…`, 'success');
   try {
@@ -734,7 +734,7 @@ async function updateServiceTelemetryDetails(s){
   const container = document.getElementById('overview-telemetry-details');
   if(!container) return;
 
-  // Fetch live service data from local /api/services (replaces old 100.76.16.108:8888 fetch)
+  // Fetch live service data from local /api/services (replaces old 62.171.141.136:8888 fetch)
   let svcList = [];
   try {
     const svcRes = await fetch('/api/services', { signal: AbortSignal.timeout(5000) }).then(r => r.json());
@@ -3528,9 +3528,9 @@ async function renderWizard(){
   const steps = isEdge ? [
     { n: 1, title: 'Prepare environment', desc: 'Generate keys (gen-keys), assemble .env with all wallets and ZION_POOL_PAYOUT_SK_HEX.', done: C('env')?.ok, actions: [{ label: 'View env files', tab: 'env' }] },
     { n: 2, title: 'Start Local Backup Node', desc: 'Syncs from Edge primary via Tailscale VPN. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).', done: C('node1')?.ok, actions: [{ label: '▶ Start Backup Node', control: 'start-node1' }] },
-    { n: 3, title: 'Connect to Edge Pool', desc: 'Edge (100.76.16.108) runs the primary pool. Verify VPN connectivity.', done: C('pool-edge')?.ok, actions: [{ label: 'Check Edge Pool', tab: 'overview' }] },
+    { n: 3, title: 'Connect to Edge Pool', desc: 'Edge (62.171.141.136) runs the primary pool. Verify VPN connectivity.', done: C('pool-edge')?.ok, actions: [{ label: 'Check Edge Pool', tab: 'overview' }] },
     { n: 4, title: 'Start GPU Miner', desc: 'Connects to Edge pool, performs cosmic_harmony hashing on GPU.', done: C('miner')?.ok, actions: [{ label: '▶ Start Miner', control: 'start-miner' }] },
-    { n: 5, title: 'Start Monitoring', desc: 'Launch Prometheus + Grafana via Docker for metrics dashboards.', done: false, actions: [{ label: '▶ Start Monitoring', control: 'start-monitoring' }, { label: 'Open Grafana', href: 'http://100.76.16.108:3100' }] },
+    { n: 5, title: 'Start Monitoring', desc: 'Launch Prometheus + Grafana via Docker for metrics dashboards.', done: false, actions: [{ label: '▶ Start Monitoring', control: 'start-monitoring' }, { label: 'Open Grafana', href: 'http://62.171.141.136:3100' }] },
     { n: 6, title: 'Verify chain progression', desc: 'Confirm local backup node syncs with Edge and chain height advances.', done: C('chain')?.ok, actions: [{ label: 'View events', tab: 'events' }] },
     { n: 7, title: 'Confirm fee split & payouts', desc: 'Validate 89/5/5 burn-model distribution and payout wallet funded.', done: C('fee_split')?.ok && C('payout')?.ok, actions: [{ label: 'View payouts', tab: 'overview' }] },
   ] : [
@@ -3538,7 +3538,7 @@ async function renderWizard(){
     { n: 2, title: 'Start Genesis Node', desc: 'Local genesis node. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).', done: C('node1')?.ok, actions: [{ label: '▶ Start Node', control: 'start-node1' }] },
     { n: 3, title: 'Start Local Pool', desc: 'Accepts miners, validates shares, distributes payouts (89/5/5 burn model).', done: C('pool')?.ok, actions: [{ label: '▶ Start Pool', control: 'start-pool' }] },
     { n: 4, title: 'Start GPU Miner', desc: 'Connects to local pool, performs cosmic_harmony hashing on GPU.', done: C('miner')?.ok, actions: [{ label: '▶ Start Miner', control: 'start-miner' }] },
-    { n: 5, title: 'Start Monitoring', desc: 'Launch Prometheus + Grafana via Docker for metrics dashboards.', done: false, actions: [{ label: '▶ Start Monitoring', control: 'start-monitoring' }, { label: 'Open Grafana', href: 'http://100.76.16.108:3100' }] },
+    { n: 5, title: 'Start Monitoring', desc: 'Launch Prometheus + Grafana via Docker for metrics dashboards.', done: false, actions: [{ label: '▶ Start Monitoring', control: 'start-monitoring' }, { label: 'Open Grafana', href: 'http://62.171.141.136:3100' }] },
     { n: 6, title: 'Verify chain progression', desc: 'Confirm node is mining and chain height advances.', done: C('chain')?.ok, actions: [{ label: 'View events', tab: 'events' }] },
     { n: 7, title: 'Confirm fee split & payouts', desc: 'Validate 89/5/5 burn-model distribution and payout wallet funded.', done: C('fee_split')?.ok && C('payout')?.ok, actions: [{ label: 'View payouts', tab: 'overview' }] },
   ];

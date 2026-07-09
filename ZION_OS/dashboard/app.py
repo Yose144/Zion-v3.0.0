@@ -2670,7 +2670,7 @@ def _build_status_edge_primary() -> dict:
             pool_edge_health = {"alive": False}
 
 
-    edge_pool_wallet = os.environ.get("ZION_POOL_WALLET", "") or "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604"
+    edge_pool_wallet = os.environ.get("ZION_POOL_WALLET", "") or "zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2"
     edge_fee_split = "89/5/5/1"
     local_pool = parse_pool_log()
     pool_status = {
@@ -3470,7 +3470,7 @@ def build_wallets() -> dict:
     #    fallback to .env files
     node_addrs = parse_node_startup_addresses()
     # Canonical Edge pool wallet (AGENTS.md) — always include
-    canonical_pool = "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604"
+    canonical_pool = "zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2"
     op_sources = [
         (canonical_pool, "Pool Canonical (Main Payout)", "canonical"),
         (node_addrs.get("miner") or find_env_value("ZION_MINER_ADDRESS"), "Miner Payout", "node"),
@@ -4532,13 +4532,13 @@ def build_payout_status() -> dict:
 
     if is_edge:
         # Canonical Edge pool wallets (AGENTS.md 2026-06-07)
-        status["pool_wallet"] = os.environ.get("ZION_POOL_WALLET") or "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604"
+        status["pool_wallet"] = os.environ.get("ZION_POOL_WALLET") or "zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2"
         status["payout_enabled"] = True
         status["fee_split"] = "89/5/5/1"
         status["humanitarian_wallet"] = os.environ.get("ZION_HUMANITARIAN_WALLET") or "zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4"
         status["issobella_wallet"] = os.environ.get("ZION_ISSOBELLA_WALLET") or "zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702"
         status["pool_fee_wallet"] = ""
-        status["miner_wallet"] = os.environ.get("ZION_MINER_ADDRESS") or "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604"
+        status["miner_wallet"] = os.environ.get("ZION_MINER_ADDRESS") or "zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2"
     else:
         startup = head_log("pool.log", 50)
         for line in startup:
@@ -7998,7 +7998,7 @@ PREMINE_GUARD = [
     {"address": "zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4", "label": "DAO Treasury", "min_balance_zion": 2_400_000_000},
     {"address": "zion1d3p5x622m327r060w5z0q5r203v837m6l8pa8x5", "label": "Core Dev Fund", "min_balance_zion": 990_000_000},
     {"address": "zion1z7g4u3s2w3c5z5u4a60864m2y7q8e5j304g46r7", "label": "Children Future Fund", "min_balance_zion": 1_430_000_000},
-    {"address": "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604", "label": "Pool Wallet", "min_balance_zion": 0},
+    {"address": "zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2", "label": "Pool Wallet", "min_balance_zion": 0},
 ]
 
 ALERT_LOG_FILES = {
