@@ -18,7 +18,7 @@ echo "  ZION OS — Complete Stack Launcher (Linux)"
 echo "==========================================================="
 echo "  1. ZION Dashboard  :: http://127.0.0.1:8766"
 echo "  2. ZION Node       :: P2P 8333  RPC 8443  WS 8445"
-echo "  3. ZION GPU Miner  :: Pool 100.76.16.108:8444  (deeksha_lite_fire)"
+echo "  3. ZION GPU Miner  :: Pool 62.171.141.136:8444  (deeksha_lite_fire)"
 echo "==========================================================="
 echo ""
 
@@ -51,8 +51,8 @@ export ZION_P2P_BIND='0.0.0.0:8333'
 export ZION_RPC_BIND='0.0.0.0:8443'
 export ZION_WEBSOCKET_BIND='0.0.0.0:8445'
 export ZION_NODE_STATE_PATH="${REPO_ROOT}/V3/data/zion-node-state.db"
-export ZION_SEED_PEERS='100.76.16.108:8333'
-export ZION_MINER_ADDRESS='zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604'
+export ZION_SEED_PEERS='62.171.141.136:8333'
+export ZION_MINER_ADDRESS='zion1k603m783j2w0l45506e0t4v7a797t7l0d78l3m2'
 export ZION_HUMANITARIAN_WALLET='zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4'
 export ZION_ISSOBELLA_WALLET='zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702'
 nohup "${REPO_ROOT}/V3/target/release/node" > "${REPO_ROOT}/logs/node1.log" 2>&1 &
@@ -63,11 +63,11 @@ wait_port 127.0.0.1 8443 "Node RPC" 30
 # ── 3. Miner ───────────────────────────────────────────────────────────────
 echo ""
 echo "[3/3] Starting ZION GPU Miner..."
-export ZION_POOL_ADDR='100.76.16.108:8444'
+export ZION_POOL_ADDR='62.171.141.136:8444'
 export ZION_LOOP_COUNT='1000000'
 export ZION_WORKER_NAME='worker1'
 export ZION_MINER_ID='ubuntu-gpu-miner-01'
-export ZION_PAYOUT_ADDRESS='zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604'
+export ZION_PAYOUT_ADDRESS='zion1k603m783j2w0l45506e0t4v7a797t7l0d78l3m2'
 export ZION_MINER_ALGORITHM='deeksha_lite_fire'
 export ZION_GPU_BACKEND='opencl'
 export ZION_MINER_THREADS='1'
@@ -75,7 +75,7 @@ export ZION_GPU_WORK_SIZE='4096'
 export ZION_NONCE_COUNT='4096'
 nohup "${REPO_ROOT}/V3/target/release/zion-miner" > "${REPO_ROOT}/logs/miner.log" 2>&1 &
 MINER_PID=$!
-echo "       PID=$MINER_PID  Pool 100.76.16.108:8444"
+echo "       PID=$MINER_PID  Pool 62.171.141.136:8444"
 sleep 3
 
 echo ""
