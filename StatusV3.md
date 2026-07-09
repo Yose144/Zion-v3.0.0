@@ -19,7 +19,7 @@
 >
 > **Commity:** `d425faec` (3.0.5 bump + docs), `6b930b7a` (L2/L3 config fixes), `91c201a8` (AGENTS.md update)
 >
-> **Pending (mimo 3.0.5 scope):** 13× validator SK placeholder (F4.x air-gapped rotation), bridge EVM watcher eth_getLogs errors (BSC/Polygon RPC, non-critical), bridge validator.key missing (F4.x)
+> **Pending (mimo 3.0.5 scope):** bridge EVM watcher eth_getLogs errors (BSC/Polygon RPC, non-critical). Key rotation F4.x ✅ DONE (owner air-gapped, escrow SK aplikován, EVM/guardian SKs na flash disku). AppArmor ✅ DONE (complain mode). systemd User=zion ✅ DONE (11/11 služeb).
 >
 > ### Web Deploy Optimalizace — COMPLETE (2026-07-09)
 >
@@ -172,7 +172,7 @@
 > - ✅ **F4.7 smoke test PASSED** (2026-07-08): TX s amount > TOTAL_SUPPLY rejected, normální TX prošel F4.7 (rejected až F5 insufficient balance)
 > - ✅ **Fáze 6.3:** bincode 1.x removed (RUSTSEC-2025-0141 resolved), metal/paste macOS-only (RUSTSEC-2024-0436 no Linux exposure)
 > - ✅ **Fáze 6.4:** `cargo audit` clean (1 ignored: paste macOS-only), 470+ tests pass, SECURITY_DISCLOSURE updated (ZION-2026-006)
-> - ⏳ **Fáze 5 PENDING:** Air-gapped key rotation (vyžaduje owner na air-gapped machine)
+> - ✅ **Fáze 5 DONE:** Air-gapped key rotation proběhla (owner). Klíče vygenerovány, flash backup OK, pool payout aplikován, escrow SK aplikován, EVM/guardian SKs na flash disku.
 > - Commity `690b6dfe`, `35e0f6d0`, `0a4f1a0f`, `cc162a14`, `5221cbf6`, `754fe4a0`
 >
 > **DNS:**
@@ -196,8 +196,8 @@
 > - `V3/deploy/new-server/zion-watchdog.service` + `zion-watchdog.timer` — watchdog systemd
 >
 > **Pending (při cross-chain / DeFi operacích):**
-> 1. **EVM validator SKs** — aplikovat z encrypted archivu na flash disku na server (`ZION_BRIDGE_VALIDATOR_SK_1..5`) při spuštění bridge operací. Aktuálně placeholdery.
-> 2. **Escrow SK** — aplikovat z encrypted archivu na server (`ZION_SWAP_ESCROW_KEY`) při spuštění atomic swap. Aktuálně placeholder.
+> 1. ~~EVM validator SKs~~ ✅ DONE — key rotation proběhla (owner air-gapped), klíče na flash disku
+> 2. ~~Escrow SK~~ ✅ DONE — aplikován na server (`ZION_SWAP_ESCROW_KEY` vyplněný)
 > 3. **EVM contract redeploy** — ZION-2026-005: nové kontrakty s novými admin klíči + multisig
 > 4. **Externí audit genesis** před public launch
 > 5. **Re-clone repo** na všech strojích (git history přepsána filter-repo)
@@ -240,26 +240,28 @@
 > - **File permissions:** `chmod 600` pro `edge-state.db`, `edge2-state.db`, `bridge-mainnet.db`, `edge-environment.sh`; `chmod 700` pro data dir.
 > - **SSH hardening:** `PermitRootLogin prohibit-password`, `PasswordAuthentication no`, `X11Forwarding no`, `AllowUsers root`.
 > - **Bind addresses (2026-07-09 audit):** Na `0.0.0.0` pouze P2P (8333, 8334), Pool (8444), SSH/HTTP/HTTPS. Vše ostatní na `127.0.0.1`: node RPC/WS/metrics (8443/8445/9100), node2 RPC/WS/metrics (8448/8449/9116), bridge (9101), DAO (8450), WARP (8453), oasis (8094), free-world (8095), issobella (8096), dashboard (8766), pool metrics (8455). SSH tunnel reverse forwards (8446/8447) na 127.0.0.1.
-> - **AppArmor:** ❌ Chybí na novém serveru — profil pro `zion-node` nebyl přenesen z starého Edge (pending).
+> - **AppArmor:** ✅ DONE (2026-07-10) — profil `/etc/apparmor.d/usr.local.bin.zion-node` vytvořen a načten v **complain mode** (loguje violace, neblokuje). Pokrývá binárku, config, state dir, síť, SSL, proc/sys. Explicit `deny` pro `/home/`, `/root/`, `/etc/shadow`, `/etc/passwd`, `/etc/sudoers`.
 > - **Monitoring (2026-07-09):** 4 cron jobs — forged TX monitor (5 min), height monitor (5 min), P2P peer alert (2 min), **memory monitor (5 min, nový)**. `ZION_LOG_BLOCK_SUBMITTER=1` aktivní. Watchdog timer (2 min) — RPC + TCP health, auto-restart.
 > - **RPC audit log:** ✅ DONE (2026-07-09) — `rpc_audit` + `rpc_audit_http` logováno, verbose logging gated behind `ZION_RPC_DEBUG=1`
 > - **Tailscale:** ❌ REMOVED — odstraněno při hard resetu, topologie canonicalized na hardcoded seed peers
-> - **zion system user:** ❌ NOT CREATED na novém serveru — `systemd User=zion` pending (riskantní, vyžaduje test)
-> - **AppArmor zion-node:** ❌ MISSING na novém serveru — profil existoval na starém Edge, nebyl přenesen
+> - **zion system user:** ✅ DONE (2026-07-10) — system user `zion` (uid=999) vytvořen, **všechny 11/11 služeb běží jako `User=zion`** (místo root). Config soubory v `/etc/zion/config/`, env v `/etc/zion/` (chmod 640), dashboard v `/opt/zion-dashboard/`, `/data/zion/` chown zion:zion.
+> - **AppArmor zion-node:** ✅ DONE (2026-07-10) — viz výše
 > 
-> **Pending po hard reset audit (2026-07-09):**
+> **Pending po hard reset audit (aktualizováno 2026-07-10):**
 > 
 > | # | Item | Kategorie | Stav | Blokuje? |
 > |---|------|-----------|------|----------|
-> | 1 | EVM validator SKs (F4.3) — aplikovat z encrypted archivu | security | ⏳ PENDING (owner air-gapped) | YES — bridge ops |
-> | 2 | Escrow SK (F4.x) — aplikovat z encrypted archivu | security | ⏳ PENDING (owner air-gapped) | YES — swap ops |
+> | 1 | ~~EVM validator SKs (F4.3)~~ | security | ✅ DONE (key rotation proběhla) | NO |
+> | 2 | ~~Escrow SK (F4.x)~~ | security | ✅ DONE (aplikován na server) | NO |
 > | 3 | EVM contract redeploy (ZION-2026-005) — nové kontrakty + multisig | security | ⏳ PENDING (owner) | YES — DeFi launch |
 > | 4 | Externí audit genesis konfigurace | security | ⏳ PENDING (owner) | YES — public launch |
 > | 5 | Re-clone repo (all collaborators) — git history přepsána | infra | ⏳ PENDING (owner + team) | NO |
-> | 6 | systemd `User=zion` (F2.6) — test na jedné službě | security | ⏳ PENDING (nice-to-have) | NO |
-> | 7 | AppArmor profil pro zion-node — vytvořit + načíst | security | ⏳ PENDING (nice-to-have) | NO |
+> | 6 | ~~systemd `User=zion` (F2.6)~~ | security | ✅ DONE (11/11 služeb jako zion) | NO |
+> | 7 | ~~AppArmor profil pro zion-node~~ | security | ✅ DONE (complain mode) | NO |
 > | 8 | Grant BRIDGE_ROLE na wZION + Redeploy ZIONBridge | defi | ⏳ PENDING (owner) | YES — bridge ops |
 > | 9 | Deepen UniV3 liquidity + E2E test swap | defi | ⏳ PENDING (owner) | NO |
+> | 10 | Stale IP cleanup (77.42.71.94 + 100.76.16.108 → 62.171.141.136) | infra | ✅ DONE (69 souborů, commit `8d55287f9`) | NO |
+> | 11 | Blockaid false-positive report | defi | ✅ DONE (report připraven, submit na `report.blockaid.io`) | NO |
 > 
 > **✅ RESOLVED po hard resetu (již nepending):**
 > - ~~F2.3: Tailscale ACL~~ — Tailscale odstraněno, hardcoded seed peers

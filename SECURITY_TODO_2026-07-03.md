@@ -2,7 +2,7 @@
 
 **Created:** 2026-07-02 23:30 UTC
 **Context:** Po security session 2026-07-02 (F1 + F5 + L2 patch + fuzz tests + Edge ops)
-**Status:** AUDITOVÁNO 2026-07-09 — Fáze 5 (air-gapped key rotace) proběhla při hard resetu 2026-07-06. Všechny klíče vygenerovány, na flash disku, genesis.rs odpovídá. Pool payout SK aplikován na serveru. EVM/escrow SKs v encrypted archivu (aplikovat při cross-chain operacích). Security patch 3.0.4 FÁZE 1-6 HOTOVO.
+**Status:** VŠE HOTOVO ✅ (2026-07-10) — Fáze 5 (air-gapped key rotace) DONE. Všechny klíče vygenerovány, na flash disku, genesis.rs odpovídá. Pool payout SK + escrow SK aplikovány na serveru. EVM/guardian SKs na flash disku. BFG git history scrub DONE. systemd User=zion DONE (11/11 služeb). AppArmor DONE (complain mode). Security patch 3.0.4 FÁZE 1-6 VŠE HOTOVO.
 
 ---
 
@@ -114,9 +114,9 @@ Rozsah: celý `V3/**` (L1–L6, cli, sdk). Cíl: najít exploitovatelné vzory n
 ### Objektivně zbývá (nelze udělat autonomně z tohoto prostředí)
 - L1 consensus změny (vyžadují explicitní approval dle `AGENTS.md`):
     - [x] F4.7 Max TX amount cap (`lib.rs`) — implementováno 2026-07-07 (code-ready, height-gated, defaultně vypnuto)
-    - [ ] F4.5 genesis.rs canonical wallets — air-gapped key regenerace
-- Air-gapped key rotace (F4.1–F4.4): premine, pool payout, bridge validator, EVM deploy
-- Ops / governance: Tailscale ACL (F2.3), BFG git history scrub (F4.6)
+    - [x] F4.5 genesis.rs canonical wallets — ✅ DONE (air-gapped key regenerace proběhla při hard resetu)
+- [x] Air-gapped key rotace (F4.1–F4.4): premine, pool payout, bridge validator, EVM deploy — ✅ DONE (owner air-gapped)
+- [x] Ops / governance: ~~Tailscale ACL~~ (Tailscale removed), BFG git history scrub ✅ DONE
 
 
 ---
