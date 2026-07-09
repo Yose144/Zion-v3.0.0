@@ -3150,15 +3150,15 @@ async function loadMonitoringStatus(){
           : 'bg-red-600/20 text-red-300 border border-red-600/30');
     }
 
-    // Prometheus dot + text
+    // Pool scraper dot + stats
     const promDot = document.getElementById('prom-status-dot');
     if(promDot) promDot.className = 'w-2 h-2 rounded-full ' + (prom.alive ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]' : 'bg-red-500');
     const promTargets = document.getElementById('prom-targets');
-    if(promTargets) promTargets.textContent = prom.alive ? `${prom.targets_up}/${prom.targets_total} up` : '—';
+    if(promTargets) promTargets.textContent = prom.shares != null ? prom.shares.toLocaleString() : '—';
     const promVer = document.getElementById('prom-version');
     if(promVer) promVer.textContent = prom.version || '—';
 
-    // Grafana dot + text
+    // Built-in charts dot + text
     const grafDot = document.getElementById('graf-status-dot');
     if(grafDot) grafDot.className = 'w-2 h-2 rounded-full ' + (graf.alive ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]' : 'bg-red-500');
     const grafVer = document.getElementById('graf-version');

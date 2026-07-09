@@ -672,46 +672,41 @@ def get_edge_server_health() -> dict:
 
 
 def get_monitoring_status() -> dict:
-    """Probe Edge Prometheus + Grafana APIs. Cached 15 s."""
+    """Scrape built-in pool metrics endpoint (Prometheus format on :8455). Cached 15 s."""
     now = time.time()
     with MONITORING_LOCK:
         if now - MONITORING_CACHE["ts"] < 15:
             return MONITORING_CACHE["data"]
 
-    edge_ip = "127.0.0.1"
+    metrics_host = "127.0.0.1"
+    metrics_port = 8455
     result = {
-        "prometheus": {"url": f"http://{edge_ip}:9090", "alive": False, "version": None, "targets_up": 0, "targets_total": 0},
-        "grafana": {"url": f"http://{edge_ip}:3100", "alive": False, "version": None, "database": None},
+        "prometheus": {"url": f"http://{metrics_host}:{metrics_port}/metrics", "alive": False, "version": None, "targets_up": 0, "targets_total": 0},
+        "grafana": {"url": "built-in", "alive": True, "version": "dashboard", "database": "internal"},
         "timestamp": now,
     }
 
-    # Prometheus health + targets
+    # Scrape pool metrics endpoint (Prometheus exposition format)
     try:
-        r = urllib.request.urlopen(f"http://{edge_ip}:9090/api/v1/targets", timeout=5)
-        data = json.loads(r.read().decode("utf-8"))
-        if data.get("status") == "success":
-            targets = data.get("data", {}).get("activeTargets", [])
-            up = sum(1 for t in targets if t.get("health") == "up")
-            result["prometheus"]["alive"] = True
-            result["prometheus"]["targets_up"] = up
-            result["prometheus"]["targets_total"] = len(targets)
-    except Exception:
-        pass
-
-    try:
-        r = urllib.request.urlopen(f"http://{edge_ip}:9090/-/healthy", timeout=3)
-        if r.status == 200:
-            result["prometheus"]["alive"] = True
-    except Exception:
-        pass
-
-    # Grafana health
-    try:
-        r = urllib.request.urlopen(f"http://{edge_ip}:3100/api/health", timeout=5)
-        data = json.loads(r.read().decode("utf-8"))
-        result["grafana"]["alive"] = True
-        result["grafana"]["version"] = data.get("version")
-        result["grafana"]["database"] = data.get("database")
+        r = urllib.request.urlopen(f"http://{metrics_host}:{metrics_port}/metrics", timeout=3)
+        body = r.read().decode("utf-8", errors="ignore")
+        result["prometheus"]["alive"] = True
+        shares = 0
+        hashrate_hps = 0.0
+        for line in body.splitlines():
+            line = line.strip()
+            if line.startswith("zion_pool_active_sessions "):
+                result["prometheus"]["targets_up"] = int(float(line.split()[-1]))
+            elif line.startswith("zion_pool_miners_tracked "):
+                result["prometheus"]["targets_total"] = int(float(line.split()[-1]))
+            elif line.startswith("zion_pool_accepted_total "):
+                shares += int(float(line.split()[-1]))
+            elif line.startswith("zion_pool_rejected_total "):
+                shares += int(float(line.split()[-1]))
+            elif line.startswith("zion_pool_hashrate_hps "):
+                hashrate_hps = float(line.split()[-1])
+        result["prometheus"]["version"] = f"{max(0, hashrate_hps)/1000:.1f} KH/s"
+        result["prometheus"]["shares"] = shares
     except Exception:
         pass
 
