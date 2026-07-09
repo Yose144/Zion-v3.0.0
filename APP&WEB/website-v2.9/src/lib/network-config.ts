@@ -81,10 +81,35 @@ function safeJsonParse<T>(raw: string | undefined | null): T | null {
   }
 }
 
+function normalizeSeedNode(raw: any): SeedNodeConfig | null {
+  if (!raw || typeof raw !== 'object' || !raw.host) return null;
+  // Accept both `port` (flat) and `ports.rpc` (nested) env-var formats.
+  const flatPort = typeof raw.port === 'number' ? raw.port : undefined;
+  return {
+    id: raw.id ?? 'env-node',
+    name: raw.name ?? 'Env Node',
+    host: raw.host,
+    region: raw.region ?? 'EU',
+    lat: raw.lat ?? 50.08,
+    lon: raw.lon ?? 14.44,
+    ports: {
+      p2p: raw.ports?.p2p ?? 8333,
+      rpc: raw.ports?.rpc ?? flatPort ?? 8443,
+      stratum: raw.ports?.stratum ?? 0,
+      pool_api: raw.ports?.pool_api ?? 0,
+    },
+    rpcUrl: raw.rpcUrl,
+    poolApiUrl: raw.poolApiUrl,
+  };
+}
+
 export function getSeedNodesConfig(): SeedNodeConfig[] {
-  const fromEnv = safeJsonParse<SeedNodeConfig[]>(process.env['ZION_' + 'NETWORK_' + 'NODES_' + 'JSON']);
+  const fromEnv = safeJsonParse<any[]>(process.env['ZION_' + 'NETWORK_' + 'NODES_' + 'JSON']);
   if (Array.isArray(fromEnv) && fromEnv.length > 0) {
-    return fromEnv;
+    const normalized = fromEnv.map(normalizeSeedNode).filter((n): n is SeedNodeConfig => n !== null);
+    if (normalized.length > 0) {
+      return normalized;
+    }
   }
   return buildDefaultSeedNodes();
 }
