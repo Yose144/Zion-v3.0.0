@@ -1138,15 +1138,49 @@ async function updateChainStats(){
       set('chain-difficulty', latest.difficulty ? latest.difficulty.toLocaleString() : '—');
     }
 
-    // Block time (average of last 10 blocks)
+    // Block time (average of last 10 blocks) + variance + next block countdown
     if(blocks.length >= 2){
       const recent = blocks.slice(-10);
-      let totalDt = 0;
+      const dts = [];
       for(let i = 1; i < recent.length; i++){
-        totalDt += (recent[i].timestamp - recent[i-1].timestamp);
+        dts.push(recent[i].timestamp - recent[i-1].timestamp);
       }
-      const avgDt = totalDt / (recent.length - 1);
+      const avgDt = dts.reduce((a,b) => a+b, 0) / dts.length;
       set('chain-block-time', avgDt > 0 ? avgDt.toFixed(1) + 's' : '—');
+
+      // Variance = standard deviation / mean (coefficient of variation)
+      if(avgDt > 0 && dts.length > 1){
+        const variance = dts.reduce((sum, dt) => sum + Math.pow(dt - avgDt, 2), 0) / dts.length;
+        const stdDev = Math.sqrt(variance);
+        const cv = stdDev / avgDt;
+        if(cv < 0.3){
+          set('chain-block-variance', 'Stable');
+          const el = document.getElementById('chain-block-variance');
+          if(el) el.className = 'text-xl font-bold text-emerald-400';
+        } else if(cv < 0.6){
+          set('chain-block-variance', 'Variable');
+          const el = document.getElementById('chain-block-variance');
+          if(el) el.className = 'text-xl font-bold text-amber-400';
+        } else {
+          set('chain-block-variance', 'Volatile');
+          const el = document.getElementById('chain-block-variance');
+          if(el) el.className = 'text-xl font-bold text-red-400';
+        }
+      }
+
+      // Next block countdown = avgDt - (now - last_block_timestamp)
+      if(latest && latest.timestamp && avgDt > 0){
+        const nowSec = Math.floor(Date.now() / 1000);
+        const elapsed = nowSec - latest.timestamp;
+        const remaining = Math.max(0, Math.round(avgDt - elapsed));
+        set('chain-next-block', remaining + 's');
+        const el = document.getElementById('chain-next-block');
+        if(el){
+          if(remaining < 10) el.className = 'text-xl font-bold text-red-400 animate-pulse';
+          else if(remaining < 30) el.className = 'text-xl font-bold text-amber-400';
+          else el.className = 'text-xl font-bold text-emerald-400';
+        }
+      }
 
       // Network hashrate estimate = difficulty / avg_block_time (H/s)
       if(latest && latest.difficulty && avgDt > 0){
