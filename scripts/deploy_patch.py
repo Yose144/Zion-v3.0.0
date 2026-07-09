@@ -6,11 +6,11 @@ API = "https://api.simplemining.net"
 RIG = 518837
 GROUP = 1773590
 
-MINER_URL = "http://77.42.71.94/zion-miner/zion-sm3042c.zip"
+MINER_URL = "http://62.171.141.136/zion-miner/zion-sm3042c.zip"
 MINER_OPTS = (
     f"{MINER_URL} "
     f"--algorithm deeksha_lite_fire "
-    f"--pool 77.42.71.94:8444 "
+    f"--pool 62.171.141.136:8444 "
     f"--wallet zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604 "
     f"--worker vega-smos"
 )

@@ -21,7 +21,7 @@ export ZION_WEBSOCKET_BIND='0.0.0.0:8445'
 export ZION_NODE_STATE_PATH="${REPO_ROOT}/V3/data/zion-node-state.db"
 
 # ── Network ────────────────────────────────────────────────────────────────
-export ZION_SEED_PEERS='100.76.16.108:8333'
+export ZION_SEED_PEERS='62.171.141.136:8333'
 
 # ── Wallets (constitutional emission) ──────────────────────────────────────
 export ZION_MINER_ADDRESS='zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604'
@@ -30,7 +30,7 @@ export ZION_ISSOBELLA_WALLET='zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702'
 
 echo "==========================================================="
 echo "  ZION Node :: P2P 0.0.0.0:8333  RPC 0.0.0.0:8443  WS 0.0.0.0:8445"
-echo "  Seed: 100.76.16.108:8333 (Edge)"
+echo "  Seed: 62.171.141.136:8333 (Edge)"
 echo "==========================================================="
 echo ""
 

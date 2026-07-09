@@ -9,7 +9,7 @@ Protocol: JSON line-based (newline-delimited JSON over TCP).
   Miner -> Pool: {"type":"submit",...} (optional -- we send fake shares)
 
 Usage:
-  python stress_test_pool.py --host 77.42.71.94 --port 8444 --miners 1000 --batch-size 50 --batch-delay 1.0
+  python stress_test_pool.py --host 62.171.141.136 --port 8444 --miners 1000 --batch-size 50 --batch-delay 1.0
 
 Metrics collected:
   - Connection success rate
@@ -52,7 +52,7 @@ def err_inc(key, n=1):
         errors[key] += n
 
 # ── Pool metrics fetch ─────────────────────────────────────────────────
-def fetch_pool_metrics(host="100.76.16.108", port=8455):
+def fetch_pool_metrics(host="62.171.141.136", port=8455):
     """Fetch Prometheus metrics from pool."""
     try:
         url = f"http://{host}:{port}/metrics"
@@ -80,7 +80,7 @@ def get_pool_rss_ssh():
         result = sp.run(
             ["ssh", "-i", "ssh-key-zion-edge", "-o", "StrictHostKeyChecking=accept-new",
              "-o", "ConnectTimeout=5", "-o", "BatchMode=yes",
-             "root@100.76.16.108",
+             "root@62.171.141.136",
              "ps -C zion-pool-serve -o rss= --no-headers 2>/dev/null; echo '---'; ps -C zion-pool-serve -o %cpu= --no-headers 2>/dev/null"],
             capture_output=True, text=True, timeout=10
         )
@@ -188,14 +188,14 @@ def simulate_miner(host, port, miner_id, algo="deeksha_lite_v1", timeout=60):
 # ── Main ───────────────────────────────────────────────────────────────
 def main():
     parser = argparse.ArgumentParser(description="ZION Pool Stress Test")
-    parser.add_argument("--host", default="77.42.71.94", help="Pool host")
+    parser.add_argument("--host", default="62.171.141.136", help="Pool host")
     parser.add_argument("--port", type=int, default=8444, help="Pool port")
     parser.add_argument("--miners", type=int, default=1000, help="Number of miners to simulate")
     parser.add_argument("--batch-size", type=int, default=50, help="Miners per batch")
     parser.add_argument("--batch-delay", type=float, default=1.0, help="Delay between batches (seconds)")
     parser.add_argument("--hold-time", type=float, default=10.0, help="How long to hold connections (seconds)")
     parser.add_argument("--shares", type=int, default=0, help="Number of fake shares to submit (total)")
-    parser.add_argument("--metrics-host", default="100.76.16.108", help="Prometheus metrics host")
+    parser.add_argument("--metrics-host", default="62.171.141.136", help="Prometheus metrics host")
     parser.add_argument("--metrics-port", type=int, default=8455, help="Prometheus metrics port")
     parser.add_argument("--output", default=None, help="Output report file (default: stdout)")
     args = parser.parse_args()

@@ -36,7 +36,7 @@ api("PATCH", "/rigs/execute-command", {
     "rigIds": [RIG], "commandId": 7,
     "commandOptions": (
         "rm -f /tmp/test-download.zip && "
-        "curl -L -o /tmp/test-download.zip http://77.42.71.94/zion-miner/zion-sm3042c.zip && "
+        "curl -L -o /tmp/test-download.zip http://62.171.141.136/zion-miner/zion-sm3042c.zip && "
         "echo '=== SIZE ===' && ls -la /tmp/test-download.zip && "
         "echo '=== FILE TYPE ===' && head -c 4 /tmp/test-download.zip | xxd && "
         "echo '=== ZIP TEST ===' && unzip -t /tmp/test-download.zip"

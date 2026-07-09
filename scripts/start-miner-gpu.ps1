@@ -11,7 +11,7 @@ function Get-EnvOrDefault($name, $default) {
 }
 
 # Edge-primary topology: default to Edge pool via Tailscale VPN
-[Environment]::SetEnvironmentVariable('ZION_POOL_ADDR',       (Get-EnvOrDefault 'ZION_POOL_ADDR'       '100.76.16.108:8444'),       'Process')
+[Environment]::SetEnvironmentVariable('ZION_POOL_ADDR',       (Get-EnvOrDefault 'ZION_POOL_ADDR'       '62.171.141.136:8444'),       'Process')
 [Environment]::SetEnvironmentVariable('ZION_LOOP_COUNT',        (Get-EnvOrDefault 'ZION_LOOP_COUNT'        '1000000'),             'Process')
 [Environment]::SetEnvironmentVariable('ZION_MINER_THREADS',     (Get-EnvOrDefault 'ZION_MINER_THREADS'     '2'),                   'Process')
 [Environment]::SetEnvironmentVariable('ZION_WORKER_NAME',       (Get-EnvOrDefault 'ZION_WORKER_NAME'       'worker1'),             'Process')
