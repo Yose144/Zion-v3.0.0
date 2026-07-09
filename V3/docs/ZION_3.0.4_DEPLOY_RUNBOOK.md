@@ -23,7 +23,7 @@
 - All deploy/fund scripts: `await sleep(3000)` after each TX (public Base RPC 1 in-flight limit)
 
 **Remaining:**
-- [x] ✅ Basescan verify — COMPLETED 2026-07-02 (6/7 verified, ZIONBridge ❌ source mismatch). Viz [`BASESCAN_VERIFY_REPORT.md`](../../BASESCAN_VERIFY_REPORT.md)
+- [x] ✅ Basescan verify — COMPLETED 2026-07-09 (**7/7 verified**). ZIONBridge verified 2026-07-09 via `forge verify-contract` (correct source `bridge/contracts/src/ZIONBridge.sol` OZ 4.9.6, 5 validators threshold 5/5). Viz [`BASESCAN_VERIFY_REPORT.md`](../../BASESCAN_VERIFY_REPORT.md)
 - [x] ✅ L2 watcher update — DONE 3.0.4 (account_transactions scanning)
 
 ---
@@ -127,7 +127,7 @@ npx hardhat run scripts/fund-farm.ts --network base
 npx hardhat run scripts/verify-base-mainnet-basescan.ts --network base
 ```
 
-> **Result (2026-07-02):** 6/7 contracts verified. ZIONGovernance, ZIONTreasury, ZIONStaking, ZIONFarm verified via Etherscan V2 API. wZION + ZIONAtomicSwap already verified. ZIONBridge ❌ — source changed post-deploy. Full report: [`BASESCAN_VERIFY_REPORT.md`](../../BASESCAN_VERIFY_REPORT.md)
+> **Result (2026-07-09):** **7/7 contracts verified.** ZIONGovernance, ZIONTreasury, ZIONStaking, ZIONFarm verified 2026-07-02 via Etherscan V2 API. wZION + ZIONAtomicSwap already verified. ZIONBridge verified 2026-07-09 via `forge verify-contract` (correct source `bridge/contracts/src/ZIONBridge.sol` OZ 4.9.6, 5 validators threshold 5/5). Full report: [`BASESCAN_VERIFY_REPORT.md`](../../BASESCAN_VERIFY_REPORT.md)
 
 ### Step 7: Update website config
 

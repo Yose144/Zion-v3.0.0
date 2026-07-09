@@ -187,11 +187,12 @@ care_score = accuracy_weight * accuracy
 | — `ConsciousnessLevel` enum (L0 Dormant → L6 Grok) | ✅ `poc-core` + `poc-registry` |
 | — multi-epoch stress testy (100 epoch, lazy rejection) | ✅ `poc-sim` |
 | — CLI (`--epochs`, `--validators`, `--hiran-url`, …) | ✅ `poc-sim/src/main.rs` (clap) |
-| **PoC-lab Fáze 3 — Hiran HTTP client + MockHiranServer** | ✅ 135 testů PASS |
+| **PoC-lab Fáze 3 — Hiran HTTP client + MockHiranServer** | ✅ 145 testů PASS |
 | — `poc-hiran` crate: `HiranClient` trait + `LiveHiranClient` (ureq) + `StubHiranClient` | ✅ `poc-hiran` |
 | — `MockHiranServer` (tiny_http, accept/reject/threshold módy) | ✅ `poc-hiran` |
 | — `HiranNpuBackend` skutečný HTTP POST s graceful fallback | ✅ `poc-npu` |
-| — integrační testy `poc-sim` s `MockHiranServer` (4 scénáře) | ✅ `poc-sim` |
+| — integrační testy `poc-sim/tests/integration_mock_hiran.rs` (6 scénářů) | ✅ `poc-sim` |
+| — live ověření: `poc-sim --hiran-url http://127.0.0.1:8002` s llama-server v2.2 | ✅ ověřeno |
 | Care Task Dispatch v L1 | 🔴 Koncept (Fáze 4, vyžaduje hard fork) |
 | Reálné NPU Attestation (TEE/vendor quote) | 🔴 Koncept |
 | Integrace do L1 consensus | 🔴 Koncept (vyžaduje samostatné schválení) |
@@ -240,6 +241,65 @@ Pro `--validators > 4` auto-generuje mix: honest majority + 1 lazy + 1 guardian.
 Detailní analýza možností implementace (soft layer / hybrid / full PoC) a
 architektura prototypu jsou v [`PoC-lab/docs/ANALYSIS.md`](../../PoC-lab/docs/ANALYSIS.md)
 a [`PoC-lab/docs/ARCHITECTURE.md`](../../PoC-lab/docs/ARCHITECTURE.md).
+
+### 10b. PoC-lab Fáze 3 — technické detaily (2026-07-08)
+
+**145 testů PASS** (poc-core: 11, poc-economics: 22, poc-hiran: 13+3 doctests, poc-npu: 15, poc-registry: 20, poc-sim: 28+6 integration, poc-tasks: 7, poc-verifier: 19+1 e2e)
+
+#### poc-hiran crate (nový)
+
+Crate poskytuje HTTP most mezi PoC-lab simulátorem a Hiran AI inference serverem.
+
+**`HiranClient` trait** (`src/client.rs`):
+```rust
+pub trait HiranClient: Send + Sync {
+    fn validate(&self, req: &HiranRequest) -> Result<HiranResponse, HiranError>;
+    fn health_check(&self) -> bool;
+    fn is_stub(&self) -> bool;
+    fn server_url(&self) -> &str;
+}
+```
+
+**`LiveHiranClient`** — volá `/v1/chat/completions` (OpenAI-kompatibilní formát) přes `ureq` (sync, bez tokio). System prompt definuje JSON výstupní schéma. Odpověď parsuje z `choices[0].message.content` — podporuje markdown-wrapped JSON.
+
+**`StubHiranClient`** — deterministická náhrada pro offline testy. Konfigurovatelné accept/reject chování.
+
+**`build_client(url: Option<String>)`** — factory funkce: `Some(url)` → `LiveHiranClient`, `None` → `StubHiranClient`.
+
+**`MockHiranServer`** (`src/mock.rs`):
+- Spouští se na náhodném portu (`TcpListener::bind("127.0.0.1:0")`) ve vlastním vlákně via `tiny_http`
+- `spawn_accepting()` / `spawn_rejecting()` / `spawn_with_threshold(min_score)` / `spawn(behaviour)`
+- Routuje `GET /health` + `POST /v1/chat/completions` + `POST /v1/hiran/validate`
+- Odpovědi jsou zabaleny v OpenAI chat completion formátu (pro kompatibilitu s `LiveHiranClient`)
+- `shutdown()` signalizuje vláknu přes `AtomicBool` + wake-up GET request
+- `impl Drop` — automatický shutdown při pádu testu
+
+#### poc-npu: HiranNpuBackend s live HTTP
+
+`HiranNpuBackend::with_url(url)` vytvoří `LiveHiranClient` přes `build_client(Some(url))`. Při volání `infer()` odešle skutečný HTTP POST na Hiran server. Při HTTP chybě (server offline, timeout) padne zpět na stub výsledek — simulátor nikdy nepanikarizuje.
+
+`poc-sim` output prefix: `hiran[live]` pokud `hiran_url.is_some()`, jinak `hiran[stub]`.
+
+#### Integrační testy: `poc-sim/tests/integration_mock_hiran.rs` (6 testů)
+
+| Test | Popis |
+|------|-------|
+| `mock_hiran_server_integration_basic` | 2 honest validátoři, MockServer(Accept) → oba přijati, `stub_mode=false` |
+| `mock_hiran_server_lazy_validator_rejected_by_score` | lazy validátor odmítnut před Hiranem (score < min), síť zdravá |
+| `mock_hiran_server_multiple_epochs_consistent` | 3 validátoři × 3 epochy, vždy 3 přijati |
+| `mock_hiran_server_guardian_gets_higher_care_score` | guardian > regular care score při live MockServeru |
+| `mock_hiran_server_spawns_and_shuts_down_cleanly` | URL starts with `http://127.0.0.1:`, shutdown bez paniku |
+| `mock_hiran_server_stats_correct_after_one_epoch` | `proofs_validated >= 1`, `accepted >= 1`, `rejected == 0`, `stub_mode=false` |
+
+#### Live ověření s Hiran v2.2
+
+```
+llama-server -m hiran-v2.2.q4_k_m.gguf --port 8002 --host 127.0.0.1 -c 2048 --threads 12
+poc-sim --epochs 2 --validators 3 --hiran-url http://127.0.0.1:8002 --verbose --block-reward 100
+```
+
+Výstup: `hiran[live]: validated=4 accepted=4 warned=0 rejected=0 uncertain=0 avg_conf=0.962`
+Rychlost Hiran v2.2 Q4_K_M: ~22 tok/s prompt, ~5 tok/s generation (12 CPU jader).
 
 ---
 

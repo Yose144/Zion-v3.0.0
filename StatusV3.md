@@ -195,9 +195,9 @@
 ### Zbývá (vyžaduje lidskou akci)
 
 1. ✅ **Bridge address 3-way inconsistency** (H1 z auditu) — vyřešeno 2026-07-02: Base live = `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467`, non-Base live = `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721`, `0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88` zastaralý bez BRIDGE_ROLE. Dashboard a configy sjednoceny.
-2. **3.0.4 TX unification implementace** — plán v `3.0.4.md` čeká na schválení 5 blokujících otázek (§3.7)
-3. ✅ **Basescan verify** — COMPLETED 2026-07-02: 6/7 contracts verified (wZION, ZIONAtomicSwap already verified; ZIONGovernance, ZIONTreasury, ZIONStaking, ZIONFarm verified via Etherscan V2 API). ZIONBridge ❌ — source changed post-deploy, bytecode mismatch. Viz [`BASESCAN_VERIFY_REPORT.md`](./BASESCAN_VERIFY_REPORT.md).
-4. **Guardian mnemonics backup** — flash drive `F:\`
+2. ✅ **3.0.4 TX unification implementace** — COMPLETED 2026-07-01: account-model memo + L2 watchers + SDK + CLI. Otázky §3.7 vyřešeny (height 0, ASCII, 256B, UTXO only, schváleno). E2E testy DEPLOY-5/6/7 blokovány (F4.5).
+3. ✅ **Basescan verify** — COMPLETED 2026-07-09: **7/7 contracts verified** (wZION, ZIONAtomicSwap already verified; ZIONGovernance, ZIONTreasury, ZIONStaking, ZIONFarm verified 2026-07-02; ZIONBridge verified 2026-07-09 via `forge verify-contract` with correct source + 5 validators threshold 5/5). Viz [`BASESCAN_VERIFY_REPORT.md`](./BASESCAN_VERIFY_REPORT.md).
+4. ✅ **Guardian mnemonics backup** — COMPLETED 2026-07-09: zkopírováno z flash disku na `/home/zionserver/Desktop/ZionKeys/` (OpenSSL encrypted).
 5. **Repo cleanup Fáze 1+2** — smazat `V3/config/` stale templates, vytvořit `V3/L1/types` crate pro sdílené watcher typy
 
 ### Commity
@@ -298,9 +298,9 @@
 
 ### Zbývá (vyžaduje lidskou akci)
 
-1. ✅ **Basescan verify** — COMPLETED 2026-07-02: 6/7 contracts verified. ZIONBridge ❌ (source changed post-deploy). Viz [`BASESCAN_VERIFY_REPORT.md`](./BASESCAN_VERIFY_REPORT.md).
+1. ✅ **Basescan verify** — COMPLETED 2026-07-09: **7/7 contracts verified**. ZIONBridge verified 2026-07-09 via `forge verify-contract` (correct source `bridge/contracts/src/ZIONBridge.sol` OZ 4.9.6, 5 validators threshold 5/5). Viz [`BASESCAN_VERIFY_REPORT.md`](./BASESCAN_VERIFY_REPORT.md).
 2. ✅ **L2 watcher update** (roadmap) — `L1Block` struct přidat `account_transactions` + watcher.rs skenovat i account-model memo TXs — **DONE 3.0.4**
-3. **Guardian mnemonics backup** — zkopírovat `ZION_DAO_GUARDIAN_KEYS.txt` na flash drive (`F:\`)
+3. ✅ **Guardian mnemonics backup** — COMPLETED 2026-07-09: zkopírováno z flash disku na `/home/zionserver/Desktop/ZionKeys/` (OpenSSL encrypted).
 4. ✅ **ATOMIC_SWAP_RUNBOOK.md** — dokumentace aktualizována pro 3.0.4 account memo
 5. ✅ **Deploy account-model memo v1 hard fork na Edge** — deploy proveden autonomně 2026-07-01, commit `5074bf35`. Aktivační výška `24000` (chain height `23635` v době deploye). Služby `zion-edge-node1`, `zion-edge-node2`, `zion-edge-pool`, `zion-edge-bridge`, `zion-edge-dao`, `zion-edge-atomic-swap`, `zion-edge-warp` restartovány. E2E testy po dosažení výšky `24000` — viz [`V3/docs/ACCOUNT_TX_MEMO_V1_DEPLOY_RUNBOOK.md`](./V3/docs/ACCOUNT_TX_MEMO_V1_DEPLOY_RUNBOOK.md).
 
@@ -3476,7 +3476,7 @@ nebo má konkrétní aktivační plán v
 
 - **Smart contracts** verifikované na BaseScan: `wZION` (ERC-20),
   `ZIONStaking`, `ZIONGovernance`, `ZIONFarm`, `ZIONTreasury`,
-  `ZIONAtomicSwap` (6/7 verified 2026-07-02). `ZIONBridge` ❌ — source changed post-deploy, bytecode mismatch. Viz [`BASESCAN_VERIFY_REPORT.md`](./BASESCAN_VERIFY_REPORT.md). M-of-N threshold multisig (cílově 3/5; staging
+  `ZIONAtomicSwap`, `ZIONBridge` (**7/7 verified 2026-07-09**). ZIONBridge verified via `forge verify-contract` with correct source `bridge/contracts/src/ZIONBridge.sol` (OZ 4.9.6, solc 0.8.20, 5 validators threshold 5/5). Viz [`BASESCAN_VERIFY_REPORT.md`](./BASESCAN_VERIFY_REPORT.md). M-of-N threshold multisig (cílově 3/5; staging
   config v `bridge-mainnet.toml` nyní `1/2`).
 - **Decimal fix:** `FLOWERS_TO_WEI_FACTOR = 1_000_000_000_000` (× 10¹², ne × 10⁶),
   oprava inflation buga. *(Note: 3.0.3 fork changed FLOWERS_PER_ZION from 1e12 to 1e6; bridge factor updated accordingly.)*

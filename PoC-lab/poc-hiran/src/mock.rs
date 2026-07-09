@@ -169,10 +169,11 @@ fn run_server(listener: TcpListener, behaviour: MockBehaviour, shutdown: Arc<Ato
 
         let (status, body) = if method == "GET" && url == "/health" {
             (200, r#"{"status":"ok","mode":"mock"}"#.to_string())
-        } else if method == "POST" && url == "/v1/hiran/validate" {
+        } else if method == "POST" && (url == "/v1/chat/completions" || url == "/v1/hiran/validate") {
+            // Accept both OpenAI-compatible and legacy endpoint
             handle_validate(request.as_reader(), &behaviour)
         } else {
-            // Shutdown probe nebo neznámá cesta
+            // Shutdown probe or unknown path
             (200, r#"{"status":"ok"}"#.to_string())
         };
 
@@ -191,20 +192,16 @@ fn run_server(listener: TcpListener, behaviour: MockBehaviour, shutdown: Arc<Ato
 }
 
 fn handle_validate<R: std::io::Read>(mut reader: R, behaviour: &MockBehaviour) -> (u16, String) {
-    // Přečteme tělo requestu
     let mut body = String::new();
     if std::io::Read::read_to_string(&mut reader, &mut body).is_err() {
         let resp = HiranResponse::stub_rejected("mock: failed to read request body");
-        return (400, serde_json::to_string(&resp).unwrap_or_default());
+        return (400, wrap_in_chat_response(&resp));
     }
 
-    // Parsujeme care_score z JSON (pro ScoreThreshold behaviour)
-    let care_score: u32 = serde_json::from_str::<serde_json::Value>(&body)
-        .ok()
-        .and_then(|v| v["care_score"].as_u64())
-        .unwrap_or(0) as u32;
+    // Extract care_score from either direct JSON or chat completions user message.
+    let care_score: u32 = extract_care_score_from_request(&body);
 
-    let resp = match behaviour {
+    let hiran_resp = match behaviour {
         MockBehaviour::AlwaysAccept { confidence } => HiranResponse {
             accepted: true,
             confidence: *confidence,
@@ -229,7 +226,7 @@ fn handle_validate<R: std::io::Read>(mut reader: R, behaviour: &MockBehaviour) -
                 care_score_adjustment: if pass { 0 } else { -5 },
                 flags: if pass { vec![] } else { vec!["score_too_low".into()] },
                 reasoning: if pass {
-                    format!("mock: score {care_score} ≥ threshold {min_score}")
+                    format!("mock: score {care_score} >= threshold {min_score}")
                 } else {
                     format!("mock: score {care_score} < threshold {min_score}")
                 },
@@ -238,7 +235,42 @@ fn handle_validate<R: std::io::Read>(mut reader: R, behaviour: &MockBehaviour) -
         }
     };
 
-    (200, serde_json::to_string(&resp).unwrap_or_default())
+    (200, wrap_in_chat_response(&hiran_resp))
+}
+
+/// Wraps a HiranResponse as an OpenAI /v1/chat/completions response body.
+/// LiveHiranClient reads choices[0].message.content and parses it as JSON.
+fn wrap_in_chat_response(resp: &HiranResponse) -> String {
+    let inner = serde_json::to_string(resp).unwrap_or_default();
+    serde_json::json!({
+        "choices": [{"index": 0, "message": {"role": "assistant", "content": inner}, "finish_reason": "stop"}],
+        "model": "mock-hiran",
+        "object": "chat.completion"
+    }).to_string()
+}
+
+/// Extracts care_score from a request body.
+/// Handles direct {"care_score":N} and chat message "care_score=N" formats.
+fn extract_care_score_from_request(body: &str) -> u32 {
+    let v: serde_json::Value = serde_json::from_str(body).unwrap_or(serde_json::Value::Null);
+    if let Some(n) = v["care_score"].as_u64() {
+        return n as u32;
+    }
+    // Chat completions: search user message content for "care_score=NN"
+    if let Some(msgs) = v["messages"].as_array() {
+        for msg in msgs {
+            if let Some(content) = msg["content"].as_str() {
+                if let Some(pos) = content.find("care_score=") {
+                    let rest = &content[pos + "care_score=".len()..];
+                    let num: String = rest.chars().take_while(|c| c.is_ascii_digit()).collect();
+                    if let Ok(n) = num.parse::<u32>() {
+                        return n;
+                    }
+                }
+            }
+        }
+    }
+    0
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
