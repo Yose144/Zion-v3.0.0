@@ -1,6 +1,6 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** **2026-07-09** (**3.0.4 SECURITY PATCH COMPLETE — 3-NODE P2P MESH + F4.7 SMOKE TEST PASSED** — viz [`SECURITY_PATCH_3.0.4_REPORT.md`](./SECURITY_PATCH_3.0.4_REPORT.md) pro aktuální stav).
+> **Datum:** **2026-07-09** (**MEMORY LEAK FIX DEPLOYED + 3.0.4 SECURITY PATCH COMPLETE — 3-NODE P2P MESH + F4.7 SMOKE TEST PASSED** — viz [`SECURITY_PATCH_3.0.4_REPORT.md`](./SECURITY_PATCH_3.0.4_REPORT.md) pro aktuální stav).
 > **Předchozí update:** 2026-07-07 (3.0.4 HARD GENESIS RESET — NOVÝ SERVER 62.171.141.136 — FULL STACK DEPLOYED — viz [`docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md`](./docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md) a [`HARDRESETOFFICIAL.md`](./HARDRESETOFFICIAL.md) pro plný záznam).
 > **Původní update:** 2026-07-02 (F5 CRITICAL FIX + ESCROW KEY ROTATION + F1 exploit post-mortem + Edge server hardening — viz [`SecurityFirst.md`](./SecurityFirst.md) a [`F5_SECURITY_INCIDENT_REPORT_2026-07-02.md`](./F5_SECURITY_INCIDENT_REPORT_2026-07-02.md)).
 >
@@ -10,9 +10,9 @@
 >
 > | Node | Server | RPC | P2P | Role | Height | Stav |
 > |------|--------|-----|-----|------|--------|------|
-> | zion-node (Node 1) | Edge `62.171.141.136` | 127.0.0.1:8443 | 0.0.0.0:8333 | Primary (mining) | 230 | ✅ active |
-> | zion-node2 (Node 2) | Edge `62.171.141.136` | 127.0.0.1:8448 | — | Follower (P2P sync) | 230 | ✅ active |
-> | zion-backup-node | Local `zionserver-144` | 127.0.0.1:8446 | 0.0.0.0:8333 | Backup (P2P peer) | 230 | ✅ active |
+> | zion-node (Node 1) | Edge `62.171.141.136` | 127.0.0.1:8443 | 0.0.0.0:8333 | Primary (mining) | 660+ | ✅ active |
+> | zion-node2 (Node 2) | Edge `62.171.141.136` | 127.0.0.1:8448 | — | Follower (P2P sync) | 660+ | ✅ active |
+> | zion-backup-node | Local `zionserver-144` | 127.0.0.1:8446 | 0.0.0.0:8333 | Backup (P2P peer) | 660+ | ✅ active |
 >
 > **Edge server služby (10 aktivních):**
 >
@@ -39,6 +39,28 @@
 > | zion-ssh-tunnel | 9 local + 2 reverse SSH forwards to Edge | ✅ active |
 >
 > **SSH tunnel (local → edge):** 9 local forwards (8443-8448, 8450, 8455, 9100-9101, 9333) + 2 reverse forwards (8446-8447, backup node RPC → edge). Managed by `zion-ssh-tunnel.service` (systemd user unit).
+>
+> ### Memory Leak Fix — OOM Kill Resolution (2026-07-09)
+>
+> **INCIDENT:** zion-node na edge serveru byl 2x OOM-killed (RSS dorazil na 5GB, virtual memory 848GB). Node2 rostl ~77MB/hod.
+>
+> **Root cause:** `DEFAULT_BLOCK_RETENTION = 0` (unlimited) — `accepted_blocks` Vec rostl bez bounds. `known_peers` Vec a WebSocket channels také unbounded.
+>
+> **Code fixes (commit `348abc91`):**
+> - `DEFAULT_BLOCK_RETENTION`: 0 → 1000 (keep last 1000 blocks in memory, staré prunovány z cache, zůstávají v LMDB)
+> - `known_peers`: cap 1000, drain oldest při překročení
+> - WebSocket channels: `unbounded_channel` → `channel(256)` pro client msgs, `channel(64)` pro ping/text. `send()` → `try_send()` (drop if full místo unbounded accumulation)
+> - 556 tests pass, 0 failed
+>
+> **Edge mitigations (deployed):**
+> - 4GB swap file (`/swapfile`, in fstab)
+> - `MemoryHigh=2GB`, `MemoryMax=3GB` pro zion-node + zion-node2 (systemd cgroup)
+> - `ZION_BLOCK_RETENTION=1000` v obou env files (node1 + node2)
+> - Journald limited (SystemMaxUse=200M)
+> - 5 binaries rebuilt + swapped (node, pool-server, bridge, dao, warp-server)
+> - Old binaries backed up to `/usr/local/bin/zion-backup/memfix-20260709/`
+>
+> **Výsledek:** Node1 RSS 21MB (was 1076MB), Node2 RSS 16MB, total system 911MB (was 2.3GB). Chain height 660+, oba nody syncující, pool mining aktivní.
 >
 > ### 3.0.4 Hard Genesis Reset — Nový Server Deploy (2026-07-07)
 >
@@ -4199,11 +4221,12 @@ v OpenCL kernelu.
 
 **Implementace:**
 
-1. **`ZION_BLOCK_RETENTION` env var** (default 0 = unlimited)
+1. **`ZION_BLOCK_RETENTION` env var** (default 1000, 0 = unlimited)
    - Pokud >0, pouze posledních N bloků v RAM
    - Staré bloky odstraněny ze `accepted_blocks`, `accepted_by_height`, `accepted_by_template_id`, `address_tx_index`
    - Bloky zůstávají v LMDB/ChainStore persistent storage
    - `address_tx_index` indexy dekrementovány při pruning
+   - **Default changed 0 → 1000 (2026-07-09, commit `348abc91`)** — prevents OOM na long-running nodech
 
 2. **`ZION_LMDB_MAP_SIZE_MB` env var** (default 0 = 10 GB)
    - Parsed v `NodeServerConfig`, forward-looking pro LMDB migraci
