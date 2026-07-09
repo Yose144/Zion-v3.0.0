@@ -4,7 +4,7 @@
 **Previous audit:** 2026-03-21 (Sprint 5)  
 **Auditor:** autopilot + Devin  
 **Scope:** V3/L1 pool, miner, core, node + Edge server infrastructure  
-**Cross-ref:** [`SecurityFirst.md`](../../SecurityFirst.md) (full post-mortem) · [`SecurityBackup.md`](../../SecurityBackup.md) (forensic timeline) · [`CRITICAL_3.0.4_SECURITY_FINDINGS.md`](../../CRITICAL_3.0.4_SECURITY_FINDINGS.md)
+**Cross-ref:** [`docs/3.0.4/SecurityFirst.md`](../../docs/3.0.4/SecurityFirst.md) (full post-mortem) · [`docs/3.0.4/SecurityBackup.md`](../../docs/3.0.4/SecurityBackup.md) (forensic timeline) · [`docs/3.0.4/CRITICAL_3.0.4_SECURITY_FINDINGS.md`](../../docs/3.0.4/CRITICAL_3.0.4_SECURITY_FINDINGS.md)
 
 ---
 
@@ -140,9 +140,9 @@ Attacker from `109.81.30.165` connected to P2P port 8333 on Edge server and inje
 
 ### Forensic references
 
-- [`SecurityBackup.md`](../../SecurityBackup.md) — full forensic timeline, rollback record, attacker IP analysis
-- [`SecurityFirst.md`](../../SecurityFirst.md) — comprehensive security plan + Edge hardening
-- [`CRITICAL_3.0.4_SECURITY_FINDINGS.md`](../../CRITICAL_3.0.4_SECURITY_FINDINGS.md) — original findings (Finding 1 = this exploit)
+- [`docs/3.0.4/SecurityBackup.md`](../../docs/3.0.4/SecurityBackup.md) — full forensic timeline, rollback record, attacker IP analysis
+- [`docs/3.0.4/SecurityFirst.md`](../../docs/3.0.4/SecurityFirst.md) — comprehensive security plan + Edge hardening
+- [`docs/3.0.4/CRITICAL_3.0.4_SECURITY_FINDINGS.md`](../../docs/3.0.4/CRITICAL_3.0.4_SECURITY_FINDINGS.md) — original findings (Finding 1 = this exploit)
 
 ---
 
@@ -215,7 +215,7 @@ Code change in `V3/L1/core/src/bin/node.rs`:
 
 ### Tailscale ACL (pending admin console apply)
 
-Tag-based ACL with default deny. See [`SecurityFirst.md`](../../SecurityFirst.md) §F2.3 for full JSON config.
+Tag-based ACL with default deny. See [`docs/3.0.4/SecurityFirst.md`](../../docs/3.0.4/SecurityFirst.md) §F2.3 for full JSON config.
 
 | Tag | Device | Access to Edge |
 |-----|--------|----------------|

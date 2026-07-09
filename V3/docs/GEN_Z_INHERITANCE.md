@@ -527,7 +527,7 @@ zion-edge-backup      (Daily backup 03:00)
 
 **Proč:** Útočník měl zdroják + klíče. Jediná cesta = čistý řez.
 
-**Jak:** Viz `HARDRESETOFFICIAL.md`.
+**Jak:** Viz `docs/3.0.4/HARDRESETOFFICIAL.md`.
 
 ---
 
