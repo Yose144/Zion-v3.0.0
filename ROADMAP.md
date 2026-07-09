@@ -32,6 +32,8 @@ This is the **forward-looking** root roadmap. Historical detail lives in [`docs/
 - E2E memo tests: 3 account-model TXs with memos confirmed in block 752 (BRIDGE/DAO/SWAP)
 - L2/L3 config fixes: bridge start height 0, backup RPC IP, DB paths unified to /data/zion/
 - Docs reconciled: fake commit hash fixed, activation height 0, old IPs replaced
+- **Web deploy optimalizace:** Docker image 2.57 GB → 377 MB (85% redukce) via standalone output + cache fix + build cache prune (23 GB freed)
+- **Health check 2026-07-09:** Chain height 827, 16.78B ZION circulating, 11/11 services active, RAM 2.2G/7.8G, disk 34G/145G
 - Report: [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](./docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md)
 
 ✅ **Done (3.0.4 and earlier)**
@@ -195,7 +197,10 @@ Final checklist. Full procedure in [`V3/docs/MAINNET_LAUNCH_SEQUENCE.md`](./V3/d
 |--------|-------|
 | V3 workspace tests | ~1,650+ |
 | WARP tests | 499 |
-| Edge services | 13 active |
+| Edge services | 11 active + 1 timer + 1 Docker |
+| Chain height | 827+ (2026-07-09) |
+| Circulating supply | 16.78B ZION |
+| Web image size | 377 MB (was 2.57 GB) |
 | Mainnet launch | 31 December 2026 |
 
 ---
