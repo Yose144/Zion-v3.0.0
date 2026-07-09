@@ -2073,6 +2073,27 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
             <tbody id="explorer-blocks" class="text-xs font-mono"></tbody>
           </table>
         </div>
+        <div id="explorer-block-tx-detail" class="mt-4 hidden bg-black/40 rounded-lg p-4 border border-white/5">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-bold text-cyan-400">Block Transactions <span id="exbtx-height" class="text-white"></span></h3>
+            <button onclick="document.getElementById('explorer-block-tx-detail').classList.add('hidden')" class="text-[10px] px-2 py-0.5 bg-white/5 hover:bg-white/10 rounded transition">✕ Close</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+              <thead>
+                <tr class="text-gray-500 border-b border-white/10">
+                  <th class="py-1 px-2">TX ID</th>
+                  <th class="py-1 px-2">Type</th>
+                  <th class="py-1 px-2">From</th>
+                  <th class="py-1 px-2">To</th>
+                  <th class="py-1 px-2 text-right">Amount (ZION)</th>
+                  <th class="py-1 px-2 text-right">Fee</th>
+                </tr>
+              </thead>
+              <tbody id="exbtx-tbody" class="font-mono"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
       <!-- Mempool panel -->
       <div class="zion-panel p-5">
@@ -5529,7 +5550,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=88"></script>
+<script src="/dashboard.js?v=89"></script>
 <script>
 // ═══ ZION Theme — Auto-apply accent colors per pane ═══
 (function(){
