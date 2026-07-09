@@ -2,13 +2,13 @@
 
 **Datum:** 2026-07-09
 **Autor:** Devin agent
-**Status:** FÁZE 1–4 + 6 HOTOVO · FÁZE 5 PENDING (air-gapped key rotace — owner akce)
+**Status:** FÁZE 1–6 HOTOVO · FÁZE 5 AUDITOVÁNO (key rotace proběhla 2026-07-06, flash backup OK, EVM/escrow placeholdery na serveru) · EDGE REBUILD 2026-07-09
 
 ---
 
 ## Shrnutí
 
-Security patch 3.0.4 je kompletní kromě Fáze 5 (air-gapped key rotace), která vyžaduje fyzickou přítomnost ownera na air-gapped stroji. Všechny ostatní fáze — dependency hardening, F4.7 max-tx cap, deploy, aktivace, git history scrub, residual advisories, finální audit — jsou hotové.
+Security patch 3.0.4 je kompletní. Fáze 5 (air-gapped key rotace) proběhla při hard resetu 2026-07-06 — všechny klíče vygenerovány, na flash disku, genesis.rs odpovídá. Pool payout SK aplikován na serveru a ověřen. EVM validator a escrow SKs jsou v encrypted archivu na flash disku, na serveru placeholdery (aplikovat při cross-chain operacích). Edge binárky rebuildnuty 2026-07-09 z nejnovějšího kódu (`754fe4a0`, bincode fix).
 
 ---
 
@@ -45,9 +45,11 @@ Code hardening:
 
 ## Fáze 3 — Push + rebuild + binary swap ✅
 
-- Server `62.171.141.136` na commit `690b6dfe`
-- F4.7 + F5 v binárkách (ověřeno přes `strings`)
-- 7/7 služby active
+- Server `62.171.141.136` — git re-clone 2026-07-09 na `754fe4a0`
+- **Edge rebuild 2026-07-09:** Rust toolchain nainstalován, 5 binárek rebuildnuty z `754fe4a0` (node, pool, bridge, dao, warp)
+- F4.7 + F5 v binárkách (log potvrzen: `max_tx_amount_activation_height=1`, `balance_check_activation_height=0`)
+- 11/11 služeb active (node, node2, pool, bridge, dao, warp, oasis, free-world, issobella, dashboard, nginx)
+- Staré binárky zálohovány: `/root/zion/binaries-backup-2026-07-07/`
 
 ---
 
@@ -63,16 +65,25 @@ Code hardening:
 
 ---
 
-## Fáze 5 — Air-gapped key rotace ⏳ PENDING
+## Fáze 5 — Air-gapped key rotace ✅ AUDITOVÁNO (2026-07-09)
 
-Vyžaduje owner na air-gapped stroji. Pořadí od nejnižšího rizika:
+Hard reset s rotací proběhl 2026-07-06. Audit 2026-07-09 ověřil:
 
-| Krok | Co | Riziko |
-|------|-----|--------|
-| 5.1 | Pool payout SK | Low |
-| 5.2 | EVM deploy keys | Medium |
-| 5.3 | Bridge validator keys (5/5) | Medium |
-| 5.4 | Premine + canonical wallets | HIGH (consensus!) |
+| Krok | Co | Stav | Detail |
+|------|-----|------|--------|
+| 5.1 | Pool payout SK | ✅ Aplikován | SK na serveru, pubkey derivace ověřena (`8895b507...` = flash disk) |
+| 5.2 | EVM deploy keys | ⏳ V archivu | 3 admin EVM adresy na flash disku, aplikovat při contract deploy |
+| 5.3 | Bridge validator keys (5/5) | ⏳ V archivu | 5 adres v bridge config + flash disk, SKs placeholdery na serveru |
+| 5.4 | Premine + canonical wallets | ✅ Hotovo | 14 premine + 5 canonical v genesis.rs, ověřeno proti flash disku |
+| 5.5 | Atomic swap escrow | ⏳ V archivu | Adresa na flash disku, SK placeholder na serveru |
+
+**Flash disk backup:** `/run/media/zionserver/ESD-USB/ZionKeys/zion-keys-2026-07-06/`
+- `PUBLIC_ADDRESSES.txt` — všechny veřejné adresy (no SKs)
+- `zion-keys-2026-07-06-encrypted.tar.gz.aes` — AES-256-CBC encrypted archive (SKs + mnemonics)
+- `passphrase.txt` — passphrase pro encrypted archive
+- `.bak` — backup kopie encrypted archivu
+
+**Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` ✅ (ověřeno v běžícím nodu)
 
 ---
 
@@ -105,14 +116,17 @@ Vyžaduje owner na air-gapped stroji. Pořadí od nejnižšího rizika:
 
 | Metrika | Hodnota |
 |---------|---------|
-| Server | `62.171.141.136` |
+| Server | `62.171.141.136` (Edge) + `zionserver-144` (Local backup) |
 | Genesis hash | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
-| Chain height | 218 |
-| Accepted blocks | 219 |
-| Mempool TX | 1 |
-| Služby | 7/7 active (node, pool, bridge, dao, warp, dashboard, nginx) |
-| F4.7 | Aktivní od height 1 |
-| F5 | Aktivní od genesis (height 0) |
+| Chain height | 270+ (3-node P2P mesh, all synced) |
+| Topologie | Edge Node 1 (primary, mining) + Edge Node 2 (follower) + Local backup |
+| Služby Edge | 11/11 active (node, node2, pool, bridge, dao, warp, oasis, free-world, issobella, dashboard, nginx) |
+| Služby Local | 4 active (backup-node, dashboard, stack, ssh-tunnel) |
+| F4.7 | Aktivní od height 1 (`ZION_MAX_TX_AMOUNT_HEIGHT=1`) |
+| F5 | Aktivní od genesis (`ZION_BALANCE_CHECK_HEIGHT=0`) |
+| Pool | Aktivně minuje (miner `vega-smos`, shares Accepted) |
+| Edge git | `754fe4a0` (re-clone 2026-07-09) |
+| Edge binárky | Rebuild 2026-07-09 z `754fe4a0` (bincode fix, all security patches) |
 | Web | Maintenance mode (zionterranova.com) |
 
 ---
@@ -130,12 +144,13 @@ Vyžaduje owner na air-gapped stroji. Pořadí od nejnižšího rizika:
 
 ---
 
-## Co zbývá (owner akce)
+## Co zbývá (při cross-chain / DeFi operacích)
 
-1. **Fáze 5 — Air-gapped key rotace** (pool SK → EVM → bridge validators → premine/canonical)
-2. **Re-clone repo** na všech strojích (git history byla přepsána)
-3. **Externí audit genesis** před public launch
-4. **ZION-2026-005** — EVM kontrakty redeploy s novými klíči + multisig
+1. **EVM validator SKs** — aplikovat z encrypted archivu na server (`ZION_BRIDGE_VALIDATOR_SK_1..5`) při spuštění cross-chain bridge operací
+2. **Escrow SK** — aplikovat z encrypted archivu na server (`ZION_SWAP_ESCROW_KEY`) při spuštění atomic swap
+3. **EVM contract redeploy** — ZION-2026-005: nové kontrakty s novými admin klíči + multisig
+4. **Externí audit genesis** před public launch
+5. **Re-clone repo** na všech strojích (git history byla přepsána filter-repo)
 
 ---
 

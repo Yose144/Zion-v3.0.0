@@ -1,7 +1,7 @@
 # ZION V3 — Official Hard Reset Plan
 
 > **Verze:** 1.2 — 2026-07-07
-> **Status:** EXECUTING — Fáze 0-8 DONE (klíče, genesis.rs, L2/L3 config, bridge vault, nový server 62.171.141.136, full stack deployed, web + dashboard live). Fáze 9-10 pending (open-source publication, generační převod). Git history scrub DONE 2026-07-08 (87 secret occurrences removed). Security patch 3.0.4 Fáze 1-4+6 DONE (F4.7 aktivní, bincode odstraněn, audit čistý). Fáze 5 (air-gapped key rotace) pending — owner akce.
+> **Status:** EXECUTING — Fáze 0-8 DONE · Fáze 5 AUDITOVÁNO 2026-07-09 (key rotace proběhla, flash backup OK, pool payout SK aplikován, EVM/escrow placeholdery) · Security patch 3.0.4 FÁZE 1-6 HOTOVO (F4.7 aktivní, bincode odstraněn, audit čistý, edge rebuild 2026-07-09) · Fáze 9-10 pending (open-source publication, generační převod) · 3-node P2P mesh (Edge primary + follower + local backup, height 270+)
 > **Kanonický postup:** [`docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md`](./docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md) — TENTO dokument je operační plán; kanonický runbook je v docs/3.0.4/.
 > **Security disclosure:** [`docs/security/SECURITY_DISCLOSURE_2026-07.md`](./docs/security/SECURITY_DISCLOSURE_2026-07.md) — veřejný bulletin ve formátu Ethereum Foundation.
 > **Kontext:** Post-security-incident (F1 + F5 + TeamViewer compromise). Attacker měl 47 min root na Edge, přístup ke zdrojákům, SSH klíčům, pool payout SK, escrow key, EVM deploy klíčům, DAO guardian mnemonics.

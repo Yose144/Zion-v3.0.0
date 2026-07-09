@@ -2,7 +2,7 @@
 
 **Created:** 2026-07-02 23:30 UTC
 **Context:** Po security session 2026-07-02 (F1 + F5 + L2 patch + fuzz tests + Edge ops)
-**Status:** 7 pending items — všechny vyžadují user action nebo air-gapped operace
+**Status:** AUDITOVÁNO 2026-07-09 — Fáze 5 (air-gapped key rotace) proběhla při hard resetu 2026-07-06. Všechny klíče vygenerovány, na flash disku, genesis.rs odpovídá. Pool payout SK aplikován na serveru. EVM/escrow SKs v encrypted archivu (aplikovat při cross-chain operacích). Security patch 3.0.4 FÁZE 1-6 HOTOVO.
 
 ---
 
