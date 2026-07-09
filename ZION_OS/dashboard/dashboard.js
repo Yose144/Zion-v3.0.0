@@ -1255,7 +1255,7 @@ async function updateRecentBlocks(){
       const hashShort = b.hash ? b.hash.substring(0, 16) + '…' : '—';
       const ts = b.timestamp ? new Date(b.timestamp * 1000).toLocaleTimeString('en-GB') : '—';
       const diff = b.difficulty ? b.difficulty.toLocaleString() : '—';
-      return `<tr class="border-b border-white/5 hover:bg-white/5 transition">
+      return `<tr class="border-b border-white/5 hover:bg-cyan-500/10 transition cursor-pointer" onclick="showBlockTxDetail(${b.height})">
         <td class="py-1.5 px-2 font-bold text-cyan-400">${b.height}</td>
         <td class="py-1.5 px-2 font-mono text-gray-400 text-[10px]">${hashShort}</td>
         <td class="py-1.5 px-2 text-right text-white">${b.tx_count ?? '—'}</td>
@@ -1265,6 +1265,49 @@ async function updateRecentBlocks(){
     }).join('');
   } catch(e){
     console.error('updateRecentBlocks error:', e);
+  }
+}
+
+async function showBlockTxDetail(height){
+  try {
+    const detail = document.getElementById('recent-block-tx-detail');
+    const tbody = document.getElementById('rbtx-tbody');
+    const heightLabel = document.getElementById('rbtx-height');
+    if(!detail || !tbody) return;
+    tbody.innerHTML = '<tr><td colspan="6" class="text-gray-500 text-center py-2">Loading…</td></tr>';
+    detail.classList.remove('hidden');
+    if(heightLabel) heightLabel.textContent = `#${height}`;
+
+    const data = await fetch(`/api/block?height=${height}`).then(r => r.ok ? r.json() : null);
+    if(!data || !data.found){
+      tbody.innerHTML = '<tr><td colspan="6" class="text-gray-500 text-center py-2">Block not found</td></tr>';
+      return;
+    }
+
+    const txs = data.transactions || [];
+    if(txs.length === 0){
+      tbody.innerHTML = '<tr><td colspan="6" class="text-gray-500 text-center py-2">No transactions</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = txs.map(tx => {
+      const txIdShort = tx.tx_id ? tx.tx_id.substring(0, 16) + '…' : '—';
+      const fromShort = tx.from ? tx.from.substring(0, 16) + '…' : '—';
+      const toShort = tx.to ? tx.to.substring(0, 16) + '…' : '—';
+      const amt = tx.amount_zion ? (typeof tx.amount_zion === 'string' ? (parseFloat(tx.amount_zion) / 1e6).toFixed(4) : (tx.amount_zion / 1e6).toFixed(4)) : '—';
+      const fee = tx.fee_zion ? (typeof tx.fee_zion === 'string' ? (parseFloat(tx.fee_zion) / 1e6).toFixed(4) : (tx.fee_zion / 1e6).toFixed(4)) : '0';
+      const typeColor = tx.type === 'coinbase' ? 'text-emerald-400' : tx.type === 'transfer' ? 'text-cyan-400' : 'text-gray-400';
+      return `<tr class="border-b border-white/5">
+        <td class="py-1 px-2 text-gray-400 text-[10px]">${txIdShort}</td>
+        <td class="py-1 px-2 ${typeColor} font-bold">${tx.type || '—'}</td>
+        <td class="py-1 px-2 text-gray-400 text-[10px]">${fromShort}</td>
+        <td class="py-1 px-2 text-gray-400 text-[10px]">${toShort}</td>
+        <td class="py-1 px-2 text-right text-emerald-400">${amt}</td>
+        <td class="py-1 px-2 text-right text-gray-500">${fee}</td>
+      </tr>`;
+    }).join('');
+  } catch(e){
+    console.error('showBlockTxDetail error:', e);
   }
 }
 

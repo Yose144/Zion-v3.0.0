@@ -1178,6 +1178,27 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           </tbody>
         </table>
       </div>
+      <div id="recent-block-tx-detail" class="mt-3 hidden bg-black/40 rounded-lg p-3 border border-white/5">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-xs font-bold text-cyan-400">Block Transactions <span id="rbtx-height" class="text-white"></span></h3>
+          <button onclick="document.getElementById('recent-block-tx-detail').classList.add('hidden')" class="text-[10px] px-2 py-0.5 bg-white/5 hover:bg-white/10 rounded transition">✕ Close</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead>
+              <tr class="text-gray-500 border-b border-white/10">
+                <th class="py-1 px-2">TX ID</th>
+                <th class="py-1 px-2">Type</th>
+                <th class="py-1 px-2">From</th>
+                <th class="py-1 px-2">To</th>
+                <th class="py-1 px-2 text-right">Amount (ZION)</th>
+                <th class="py-1 px-2 text-right">Fee</th>
+              </tr>
+            </thead>
+            <tbody id="rbtx-tbody" class="font-mono"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <!-- Top Wallets + Mempool Live (side by side) -->
@@ -5357,7 +5378,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=85"></script>
+<script src="/dashboard.js?v=86"></script>
 <script>
 // ═══ ZION Theme — Auto-apply accent colors per pane ═══
 (function(){
