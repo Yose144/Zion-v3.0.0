@@ -13,7 +13,10 @@ import * as fs from "fs";
 import * as path from "path";
 
 const DEPLOYER = "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186";
-const VALIDATOR2 = "0x8cc6F931edDAf5F14D0071727Ed1640752B5c787";
+const VALIDATOR2 = "0x24d986841E56e5571489B25951eE8C1Ae761FA82";
+const VALIDATOR3 = "0x665c55eDCF25c2c5A1dfF1B20eE950cBDC58d3d0";
+const VALIDATOR4 = "0x8E644b3E9fabf52ee321Dc5b3d5Aa06d6e3E66C6";
+const VALIDATOR5 = "0x7e0D2eD71d78b9cfB5034a83333e82E304bc4Cb2";
 
 // ─── Already deployed (verify if not already) ────────────────────────────────
 const EXISTING_CONTRACTS = {
@@ -23,14 +26,19 @@ const EXISTING_CONTRACTS = {
     constructorArguments: [DEPLOYER, DEPLOYER, DEPLOYER], // admin, bridge/minter, guardian
   },
   ZIONBridge: {
-    address: "0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467", // v3 — updated 2026-06-29
+    address: "0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467", // v3 — deployed 2026-06-28, nonce 1387
     contract: "sol/ZIONBridge.sol:ZIONBridge",
+    // NOTE: The deployed bytecode matches V3/L2/bridge/contracts/src/ZIONBridge.sol (OZ 4.x),
+    // NOT the hardhat/sol/ version (OZ 5.x). The hardhat/sol/ copy has different constants.
+    // For Basescan verification, use the flattened source from bridge/contracts/src/ with:
+    //   solc 0.8.20, shanghai EVM, optimizer 200, viaIR=false, OZ 4.8.x-4.9.x
+    // Constructor args extracted from deployment tx 0x2e84e687da61c6889a699e81f741dfbd9e4318b7a2f360aeb05f745cba097975:
     constructorArguments: [
       DEPLOYER,                                             // admin
       DEPLOYER,                                             // guardian
       "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6",         // wZION address
-      [DEPLOYER, VALIDATOR2],                               // validators array
-      1,                                                    // threshold (initial; raised to 5 via setThreshold)
+      [DEPLOYER, VALIDATOR2, VALIDATOR3, VALIDATOR4, VALIDATOR5], // 5 validators
+      5,                                                    // threshold 5/5
     ],
   },
   ZIONAtomicSwap: {

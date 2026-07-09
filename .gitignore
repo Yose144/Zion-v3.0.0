@@ -344,3 +344,4 @@ V3/test_results.txt
 zion-sm3042c-fire-*.zip
 zion-sm3042c-fire-*/
 nul
+foundry.lock
