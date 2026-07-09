@@ -14,10 +14,10 @@
 // ─── Unit Conversion ─────────────────────────────────────────────────────────
 
 /**
- * 1 ZION = 1,000,000 flowers (6 decimal places) — v3.0.4 fork spec.
+ * 1 ZION = 1,000,000 flowers (6 decimal places) — v3.0.5 fork spec.
  *
- * Changed from 1e12 (12 decimals) to 1e6 (6 decimals) in the 3.0.4 decimal fork.
- * See `ZION_3.0.4_DECIMAL_FORK_PLAN.md` and `docs/CANONICAL_UNITS_AUDIT.md`.
+ * Changed from 1e12 (12 decimals) to 1e6 (6 decimals) in the 3.0.5 decimal fork.
+ * See `ZION_3.0.5_DECIMAL_FORK_PLAN.md` and `docs/CANONICAL_UNITS_AUDIT.md`.
  *
  * "Flowers" is the canonical sub-unit name used across L1 core (Rust),
  * RPC payloads (`balance_flowers`, `amount_flowers`, `fee_flowers`),
@@ -56,7 +56,7 @@ export function zionToAtomic(zion: number): number {
 /** Base block reward (Decade 1): 5,400.067 ZION per block */
 export const BLOCK_REWARD_ZION = 5_400.067;
 
-/** Block reward in flowers: 5,400,067,000 (5400.067 ZION × 1e6) — v3.0.4 Decade 1 */
+/** Block reward in flowers: 5,400,067,000 (5400.067 ZION × 1e6) — v3.0.5 Decade 1 */
 export const BLOCK_REWARD_ATOMIC = 5_400_067_000;
 
 /** Decay factor per decade: ×0.8 (-20%) */

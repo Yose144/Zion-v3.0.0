@@ -371,7 +371,7 @@ export default function ZoharPageClient() {
               <Link href="/docs/Zohar/03-O-KNIZE-ZOHAR.md" className="inline-flex items-center gap-2 text-sm text-zion-gold hover:text-amber-300 transition-colors">
                 <ArrowRight className="h-3.5 w-3.5" /> 03-O-KNIZE-ZOHAR.md
               </Link>
-              <Link href="/docs/3.0.4/evoluZion.md" className="inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors">
+              <Link href="/docs/3.0.5/evoluZion.md" className="inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors">
                 <ArrowRight className="h-3.5 w-3.5" /> evoluZion.md (Strom života metafora)
               </Link>
             </div>

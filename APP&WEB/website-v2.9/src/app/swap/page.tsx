@@ -223,7 +223,7 @@ export default function SwapPage() {
         <div className="text-center space-y-4">
           <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-400">
             <Sparkles className="h-3 w-3 animate-pulse" />
-            v3.0.4 · Atomic HTLC Swaps
+            v3.0.5 · Atomic HTLC Swaps
           </div>
           <h1 className="text-4xl sm:text-6xl font-bold tracking-tight">
             ZION <span className="text-gradient">Atomic Swap</span>
