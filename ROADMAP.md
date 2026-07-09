@@ -164,11 +164,11 @@ Final checklist. Full procedure in [`V3/docs/MAINNET_LAUNCH_SEQUENCE.md`](./V3/d
 
 | # | Gate | Status |
 |---|------|--------|
-| 6.1 | TX unification deployed and stable | 🟡 Deployed on Edge; activation height 24000; E2E pending |
-| 6.2 | Bridge/wZION addresses consistent across all clients | 🔵 |
-| 6.3 | DeFi contracts verified + liquidity seeded | 🔵 |
+| 6.1 | TX unification deployed and stable | ✅ Account-model memo field deployed, E2E tested (block 752) |
+| 6.2 | Bridge/wZION addresses consistent across all clients | ✅ wZION 0x0c49... on all 6 EVM chains |
+| 6.3 | DeFi contracts verified + liquidity seeded | ✅ 7/7 verified on Basescan; Staking 100K + Farm 500K wZION funded; Bridge burn→unlock E2E confirmed (100 wZION→100 ZION block 891) |
 | 6.4 | Wallet SDK + mobile app published | 🔵 |
-| 6.5 | TX history RPC + explorer live | 🔵 |
+| 6.5 | TX history RPC + explorer live | ✅ getTransactionHistory RPC live (O(1) address index) |
 | 6.6 | L4 OASIS backend complete | 🔵 |
 | 6.7 | External audit complete | 🔵 |
 | 6.8 | 3 fresh mainnet nodes deployed, genesis hash consistent | 🔵 |
