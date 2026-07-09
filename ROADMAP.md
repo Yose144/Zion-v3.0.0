@@ -136,7 +136,7 @@ Goal: resolve all owner blockers and operational gaps so the chain is fully cons
 | 4.1 | **Guardian mnemonic backup** | 🔵 Pending | Copy `C:\Users\yosef\Desktop\ZION_DAO_GUARDIAN_KEYS.txt` to flash drive `F:\`. |
 | 4.2 | **Repo cleanup Fáze 1** | ✅ Done | `V3/config/` deleted; bridge config canonical path is `V3/L2/bridge/config/`; Edge env updated + bridge restarted. |
 | 4.3 | **Repo cleanup Fáze 2** | ✅ Done | `V3/L1/types` crate created (`zion-l1-types`); bridge/dao/atomic-swap refactored to use shared `bytes_to_hex`, `normalize_rpc_addr`, `zion_address_from_public_key`. All 171+ tests pass. |
-| 4.4 | **Edge pool systemd** | 🔵 Pending | Kill orphaned manual pool, re-enable `zion-edge-pool.service`. |
+| 4.4 | **Edge pool systemd** | ✅ Done | `zion-pool.service` active (enabled, running) on Edge. No orphaned manual pool. GPU miner `vega-smos` connected. |
 | 4.5 | **CI/CD** | 🔵 Planned | GitHub Actions billing + automated builds. |
 
 ---
@@ -148,7 +148,7 @@ Goal: ship the user-facing stack (wallet, mobile, explorer, L4) before public la
 | # | Initiative | Status | Detail |
 |---|------------|--------|--------|
 | 5.1 | **Wallet SDK** (`@zion/sdk`) | ✅ Memo support added | TypeScript SDK with memo support, tx signing, balance/history. Base for mobile + web. |
-| 5.2 | **TX history RPC** | 🔵 Planned | Address-based index in L1 node; blocker for explorer. |
+| 5.2 | **TX history RPC** | ✅ Done | `getTransactionHistory` RPC implemented with O(1) in-memory `address_tx_index` (HashMap<address, Vec<block_idx>>). Covers account-model TXs, UTXO TXs (sender/recipient), and coinbase rewards. Pagination (offset/limit, cap 1000). 3/3 tests pass. |
 | 5.3 | **Mobile app** | 🔵 Planned | QR, biometrics, deep linking, EAS build, device testing, store submission. |
 | 5.4 | **L4 OASIS backend** | 🔵 Planned | Guild wars, raid boss, OASIS token bridge, wallet signature auth. |
 | 5.5 | **Desktop agent** | 🔵 Planned | Unify wallet core with mobile; Tauri v2 migration. |
