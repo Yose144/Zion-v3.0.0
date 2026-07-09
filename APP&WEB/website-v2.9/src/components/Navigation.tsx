@@ -67,7 +67,11 @@ export default function Navigation() {
         { href: '/roadmap', label: tr('nav', 'roadmap', lang) },
         { href: '/genesis', label: tr('nav', 'genesis', lang) },
         { href: '/terranova', label: tr('nav', 'terranova', lang) },
-        { href: '/zohar', label: tr('nav', 'zohar', lang) },
+        { href: '/zohar', label: tr('nav', 'zohar', lang), children: [
+          { href: '/zohar#evoluzion', label: 'evoluZion V2' },
+          { href: '/zohar#proof-of-care', label: 'Proof-of-Care' },
+          { href: '/zohar#bodhisattva', label: 'Bodhisattva Vow' },
+        ] },
       ],
     },
   ];
