@@ -79,11 +79,11 @@ struct ClientSession {
     addr: SocketAddr,
     subscriptions: HashSet<SubscriptionType>,
     /// Channel to send messages to this client
-    sender: tokio::sync::mpsc::UnboundedSender<WsMessage>,
+    sender: tokio::sync::mpsc::Sender<WsMessage>,
 }
 
 impl ClientSession {
-    fn new(addr: SocketAddr, sender: tokio::sync::mpsc::UnboundedSender<WsMessage>) -> Self {
+    fn new(addr: SocketAddr, sender: tokio::sync::mpsc::Sender<WsMessage>) -> Self {
         Self {
             addr,
             subscriptions: HashSet::new(),
@@ -105,14 +105,13 @@ impl ClientSession {
 
     /// Send a message to this client's outbound channel.
     ///
-    /// The body is synchronous (`UnboundedSender::send` does not block), so this
-    /// is intentionally a plain `fn`. It was previously `async`, which meant
-    /// callers in synchronous contexts (e.g. `broadcast`) dropped the returned
-    /// future without polling it — silently sending nothing.
+    /// Uses `try_send` (non-blocking) since the channel is bounded.
+    /// If the client is slow and the buffer is full, the message is dropped
+    /// rather than blocking or accumulating unbounded memory.
     fn send(&self, msg: WsMessage) -> Result<()> {
         self.sender
-            .send(msg)
-            .context("failed to send message to client")?;
+            .try_send(msg)
+            .context("failed to send message to client (channel full or closed)")?;
         Ok(())
     }
 }
@@ -174,8 +173,8 @@ impl WebSocketServer {
 
         println!("WebSocket client connected: {}", addr);
 
-        // Create channels for this client
-        let (tx, _rx) = tokio::sync::mpsc::unbounded_channel::<WsMessage>();
+        // Create channels for this client (bounded to prevent memory exhaustion)
+        let (tx, _rx) = tokio::sync::mpsc::channel::<WsMessage>(256);
         let (mut ws_sender, mut ws_receiver) = ws_stream.split();
 
         // Register client
@@ -188,8 +187,8 @@ impl WebSocketServer {
 
         // Spawn task to handle outgoing messages
         let _clients_clone = Arc::clone(&clients);
-        let (ping_tx, mut ping_rx) = tokio::sync::mpsc::unbounded_channel::<Vec<u8>>();
-        let (text_tx, mut text_rx) = tokio::sync::mpsc::unbounded_channel::<String>();
+        let (ping_tx, mut ping_rx) = tokio::sync::mpsc::channel::<Vec<u8>>(64);
+        let (text_tx, mut text_rx) = tokio::sync::mpsc::channel::<String>(64);
         let sender_task = tokio::spawn(async move {
             loop {
                 tokio::select! {
@@ -217,7 +216,7 @@ impl WebSocketServer {
                 }
                 Ok(Message::Ping(data)) => {
                     // Respond with pong via channel
-                    let _ = ping_tx.send(data);
+                    let _ = ping_tx.try_send(data);
                 }
                 Ok(Message::Close(_)) => {
                     println!("WebSocket client disconnected: {}", addr);
@@ -250,7 +249,7 @@ impl WebSocketServer {
         addr: SocketAddr,
         clients: &Arc<Mutex<HashMap<SocketAddr, ClientSession>>>,
         runtime: &Arc<Mutex<NodeRuntime>>,
-        text_tx: &tokio::sync::mpsc::UnboundedSender<String>,
+        text_tx: &tokio::sync::mpsc::Sender<String>,
     ) -> Result<()> {
         match msg {
             ClientMessage::Subscribe { subscription } => {
@@ -265,7 +264,7 @@ impl WebSocketServer {
                         subscription: subscription.clone(),
                     };
                     let json = serde_json::to_string(&confirmation).unwrap_or_default();
-                    let _ = text_tx.send(json);
+                    let _ = text_tx.try_send(json);
 
                     // If subscribing to address, send current state
                     if let SubscriptionType::Address(ref address) = subscription {
@@ -280,7 +279,7 @@ impl WebSocketServer {
                                 }),
                             };
                             let json = serde_json::to_string(&current_state).unwrap_or_default();
-                            let _ = text_tx.send(json);
+                            let _ = text_tx.try_send(json);
                         }
                     }
                 }
@@ -294,12 +293,12 @@ impl WebSocketServer {
 
                     let confirmation = WsMessage::Unsubscribed { subscription };
                     let json = serde_json::to_string(&confirmation).unwrap_or_default();
-                    let _ = text_tx.send(json);
+                    let _ = text_tx.try_send(json);
                 }
             }
             ClientMessage::Ping => {
                 let json = serde_json::to_string(&WsMessage::Pong).unwrap_or_default();
-                let _ = text_tx.send(json);
+                let _ = text_tx.try_send(json);
             }
             ClientMessage::Pong => {
                 // Client pong, no action needed
