@@ -395,6 +395,12 @@ fn main() -> Result<()> {
                 handle_rpc_stream(stream, &runtime, &seen, &seen_txs, &stats, &router)
             }));
             accepted = accepted.saturating_add(1);
+
+            // Periodically drain completed thread handles to prevent
+            // unbounded Vec growth (each JoinHandle retains thread metadata).
+            if handles.len() >= 128 {
+                handles.retain(|h| !h.is_finished());
+            }
         }
         for handle in handles {
             handle
