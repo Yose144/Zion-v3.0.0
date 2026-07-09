@@ -1085,6 +1085,46 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
     </div>
 
+    <!-- Chain Stats -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold flex items-center gap-2">⛓️ Chain Stats</h2>
+        <span id="chain-stats-badge" class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">Loading…</span>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Block Time</div>
+          <div id="chain-block-time" class="text-xl font-bold text-cyan-400">—</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">avg (10 blocks)</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Difficulty</div>
+          <div id="chain-difficulty" class="text-xl font-bold text-amber-400">—</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">current</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Block Reward</div>
+          <div id="chain-block-reward" class="text-xl font-bold text-emerald-400">—</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">ZION / block</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Mined</div>
+          <div id="chain-mined" class="text-xl font-bold text-zion-gold">—</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">ZION total</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Circulating</div>
+          <div id="chain-circulating" class="text-xl font-bold text-purple-400">—</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">ZION</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Supply Mined</div>
+          <div id="chain-supply-pct" class="text-xl font-bold text-blue-400">—</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">% of 144B</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Mempool Live -->
     <div class="zion-panel p-5">
       <div class="flex items-center justify-between mb-3">
@@ -5236,7 +5276,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=80"></script>
+<script src="/dashboard.js?v=81"></script>
 <script>
 // ═══ ZION Theme — Auto-apply accent colors per pane ═══
 (function(){
