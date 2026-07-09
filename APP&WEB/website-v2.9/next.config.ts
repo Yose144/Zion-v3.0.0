@@ -6,7 +6,7 @@ const rootDir = dirname(fileURLToPath(import.meta.url));
 const emptyModule = resolve(rootDir, 'src/lib/empty-module.ts');
 
 const nextConfig: NextConfig = {
-  // output: "standalone", // Disabled for local build on Windows (Next.js 16 bug with client-only)
+  output: "standalone", // Enabled — Docker build uses standalone (image 2.5GB→~200MB). Local dev unaffected (next dev ignores this).
   images: {
     unoptimized: true,
   },
