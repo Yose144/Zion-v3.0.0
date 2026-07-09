@@ -20,6 +20,7 @@ import MainnetCountdown from './MainnetCountdown';
 
 export default function Hero() {
   const { lang } = useLang();
+  const cs = lang === 'cs';
   const heroMetrics = [
     { label: tr('hero', 'metric_loc', lang),   value: '52 590', icon: Zap },
     { label: tr('hero', 'metric_nodes', lang), value: '2 / 2',   icon: Satellite },
@@ -54,6 +55,15 @@ export default function Hero() {
             <BrainCircuit className="w-3.5 h-3.5 animate-pulse" />
             {tr('hero', 'badge_chv4', lang)}
           </div>
+          <a
+            href="https://github.com/Zion-TerraNova/v3-Mainnet/tree/main"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="zion-kicker border-rose-500/25 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 transition-colors"
+          >
+            <ShieldHalf className="w-3.5 h-3.5 animate-pulse" />
+            {cs ? 'Mainnet Beta · Zdroj na GitHubu' : 'Mainnet Beta · Source on GitHub'}
+          </a>
         </motion.div>
 
         <div className="grid lg:grid-cols-[1.08fr_0.92fr] gap-12 xl:gap-20 items-start">
