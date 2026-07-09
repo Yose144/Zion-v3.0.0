@@ -134,8 +134,8 @@ Goal: resolve all owner blockers and operational gaps so the chain is fully cons
 | # | Task | Status | Detail |
 |---|------|--------|--------|
 | 4.1 | **Guardian mnemonic backup** | 🔵 Pending | Copy `C:\Users\yosef\Desktop\ZION_DAO_GUARDIAN_KEYS.txt` to flash drive `F:\`. |
-| 4.2 | **Repo cleanup Fáze 1** | 🔵 Pending | Delete `V3/config/` stale templates; archive root `.js` helper scripts. |
-| 4.3 | **Repo cleanup Fáze 2** | 🔵 Pending | Create `V3/L1/types` crate for shared watcher types (bridge/dao/atomic-swap). |
+| 4.2 | **Repo cleanup Fáze 1** | ✅ Done | `V3/config/` deleted; bridge config canonical path is `V3/L2/bridge/config/`; Edge env updated + bridge restarted. |
+| 4.3 | **Repo cleanup Fáze 2** | ✅ Done | `V3/L1/types` crate created (`zion-l1-types`); bridge/dao/atomic-swap refactored to use shared `bytes_to_hex`, `normalize_rpc_addr`, `zion_address_from_public_key`. All 171+ tests pass. |
 | 4.4 | **Edge pool systemd** | 🔵 Pending | Kill orphaned manual pool, re-enable `zion-edge-pool.service`. |
 | 4.5 | **CI/CD** | 🔵 Planned | GitHub Actions billing + automated builds. |
 
