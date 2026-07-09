@@ -581,7 +581,7 @@ export default function MonitoringClient() {
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <HardDrive className="h-5 w-5 text-zion-cyan" />
             Server Infrastructure
-            <span className="ml-2 text-xs text-gray-500 font-normal">Edge VPS · Hetzner</span>
+            <span className="ml-2 text-xs text-gray-500 font-normal">Edge server · cloud VPS</span>
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {/* CPU Load */}

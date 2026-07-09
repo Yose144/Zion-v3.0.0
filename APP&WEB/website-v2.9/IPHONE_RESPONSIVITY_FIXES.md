@@ -61,7 +61,7 @@
 
 ## Deployment Notes
 
-1. Deploy to Edge server via Tailscale (`mainnetedge`)
+1. Deploy to Edge server via SSH
 2. Clear browser cache on iPhone
 3. Test on multiple iPhone models:
    - iPhone SE (small screen)

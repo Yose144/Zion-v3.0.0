@@ -11,8 +11,8 @@ const getPhaseCards = (cs: boolean) => [
     progress: 100,
     highlights: [
       cs
-        ? 'Genesis 3.0.1 úspěšný 11. 6. 2026 — MainNet Core + Edge topologie běží'
-        : 'Genesis 3.0.1 successful 11 Jun 2026 — MainNet Core + Edge topology live',
+        ? 'Genesis 3.0.1 úspěšný 11. 6. 2026 — MainNet Edge server topologie běží'
+        : 'Genesis 3.0.1 successful 11 Jun 2026 — MainNet Edge server topology live',
       cs
         ? 'Pool aktivní, 89/5/5/1 split ověřen, explorer synchronizován'
         : 'Pool active, 89/5/5/1 split verified, explorer synced',
@@ -22,7 +22,7 @@ const getPhaseCards = (cs: boolean) => [
     ],
   },
   {
-    name: cs ? 'L2 Bridge, DeFi Run — v3.0.3' : 'L2 Bridge, DeFi Run — v3.0.3',
+    name: cs ? 'L2 Bridge, DeFi Run — v3.0.4' : 'L2 Bridge, DeFi Run — v3.0.4',
     window: cs ? 'Čvn 2026' : 'Jun 2026',
     progress: 100,
     highlights: [
@@ -111,12 +111,12 @@ export default function RoadmapPulse() {
           <div className="flex-1 space-y-3">
             <p className="text-sm uppercase tracking-[0.4em] text-zion-gold">{cs ? 'Roadmapa' : 'Roadmap'}</p>
             <h2 className="text-4xl md:text-5xl font-bold text-white">
-              3.0.3 <span className="text-gradient">Bridge, Defi Run</span>
+              3.0.4 <span className="text-gradient">Bridge, Defi Run</span>
             </h2>
             <p className="text-base sm:text-lg text-gray-300 max-w-2xl">
               {cs
-                ? 'MainNet Genesis 11. 6. 2026 úspěšný — public line 3.0.3 Bridge, Defi Run nad kanonickou runtime v3.0.3 Deeksha/Ekam. Decimal fork 1e12→1e6 (6-decimal flowers) dokončen. Core + Edge topologie běží, pool aktivní, mining live. Bridge a DeFi protokoly nasazeny na Base Mainnet, wZION token live. Veřejný launch zůstává naplánován na 31. prosinec 2026 (Silvestr). Prioritou je finální validace telemetrie, doladění dokumentace, bezpečnostní audit a provozní připravenost.'
-                : 'MainNet Genesis 11 Jun 2026 successful — public line 3.0.3 Bridge, Defi Run over the canonical v3.0.3 Deeksha/Ekam runtime. Decimal fork 1e12→1e6 (6-decimal flowers) complete. Core + Edge topology running, pool active, mining live. Bridge and DeFi protocols deployed on Base Mainnet, wZION token live. Public launch remains scheduled for 31 December 2026 (New Year\'s Eve). Priority is final telemetry validation, documentation polish, security audit, and operational readiness.'}
+                ? 'MainNet Genesis 11. 6. 2026 úspěšný — public line 3.0.4 Bridge, Defi Run nad kanonickou runtime v3.0.4 Deeksha/Ekam. Decimal fork 1e12→1e6 (6-decimal flowers) dokončen. Edge server topologie běží, pool aktivní, mining live. Bridge a DeFi protokoly nasazeny na Base Mainnet, wZION token live. Veřejný launch zůstává naplánován na 31. prosinec 2026 (Silvestr). Prioritou je finální validace telemetrie, doladění dokumentace, bezpečnostní audit a provozní připravenost.'
+                : 'MainNet Genesis 11 Jun 2026 successful — public line 3.0.4 Bridge, Defi Run over the canonical v3.0.4 Deeksha/Ekam runtime. Decimal fork 1e12→1e6 (6-decimal flowers) complete. Edge server topology running, pool active, mining live. Bridge and DeFi protocols deployed on Base Mainnet, wZION token live. Public launch remains scheduled for 31 December 2026 (New Year\'s Eve). Priority is final telemetry validation, documentation polish, security audit, and operational readiness.'}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-4">

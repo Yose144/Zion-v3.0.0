@@ -54,13 +54,13 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     href: '/warp',
   },
   {
-    slug: 'zion-3.0.3-decimal-fork',
+    slug: 'zion-3.0.4-decimal-fork',
     date: '2026-06-27',
     tag: { cs: 'Hard Fork', en: 'Hard Fork' },
     tagColor: 'text-rose-400',
     title: {
-      cs: 'ZION 3.0.3 — Decimal Fork: 10¹² → 10⁶ flowers, historie bloků zachována',
-      en: 'ZION 3.0.3 — Decimal Fork: 10¹² → 10⁶ flowers, block history preserved',
+      cs: 'ZION 3.0.4 — Decimal Fork: 10¹² → 10⁶ flowers, historie bloků zachována',
+      en: 'ZION 3.0.4 — Decimal Fork: 10¹² → 10⁶ flowers, block history preserved',
     },
     summary: {
       cs: 'Měníme FLOWERS_PER_ZION z 10¹² na 10⁶ — čistší jednotky jako Monero a Cardano. Bloky 0..H zůstávají, hashe se nemění, explorer vidí celou historii. Na bloku H+1 migration block: burn starých UTXO, nové s amount /10⁶. Nový protocol_version 2, nová emise, nové fees — vše v flowers (10⁶). Bridge factor se mění z 10⁶ na 10¹² pro 1:1 kompatibilitu. Stejný release uzamkne canonical RPC pojmenování.',
@@ -109,8 +109,8 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       en: 'TerraNova Genesis 3.0.1 — MainNet launched 11 Jun 2026 · public launch 31 Dec 2026',
     },
     summary: {
-      cs: 'Hard reset Genesis řetězce byl úspěšně proveden. Síť je stabilní, Core + Edge topologie běží, pool a mining jsou aktivní. Veřejný přístup pro všechny zůstává naplánován na Silvestra 31. 12. 2026.',
-      en: 'The Genesis chain hard reset was successfully completed. The network is stable, Core + Edge topology is running, pool and mining are active. Public access remains scheduled for New Year\'s Eve 31 Dec 2026.',
+      cs: 'Hard reset Genesis řetězce byl úspěšně proveden. Síť je stabilní, Edge server topologie běží, pool a mining jsou aktivní. Veřejný přístup pro všechny zůstává naplánován na Silvestra 31. 12. 2026.',
+      en: 'The Genesis chain hard reset was successfully completed. The network is stable, Edge server topology is running, pool and mining are active. Public access remains scheduled for New Year\'s Eve 31 Dec 2026.',
     },
     href: '/terranova',
   },
@@ -315,12 +315,12 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     tag: { cs: 'Mainnet', en: 'Mainnet' },
     tagColor: 'text-blue-400',
     title: {
-      cs: 'V3 Mainnet — Core + Edge topologie v provozu',
-      en: 'V3 Mainnet — Core + Edge topology operational',
+      cs: 'V3 Mainnet — Edge server topologie v provozu',
+      en: 'V3 Mainnet — Edge server topology operational',
     },
     summary: {
-      cs: 'ZION V3 mainnet běží v Core + Edge topologii (Core PC + Hetzner Edge VPS). Kanonický runtime v2.9.8 Ekam Deeksha, veřejný mining pool a Prometheus telemetrie. Chain height přes 470+ bloků.',
-      en: 'ZION V3 mainnet running in Core + Edge topology (Core PC + Hetzner Edge VPS). Canonical runtime v2.9.8 Ekam Deeksha, public mining pool, Prometheus telemetry. Chain height over 470+ blocks.',
+      cs: 'ZION V3 mainnet běží v Edge server topologii (Edge server). Kanonický runtime v2.9.8 Ekam Deeksha, veřejný mining pool a Prometheus telemetrie. Chain height přes 470+ bloků.',
+      en: 'ZION V3 mainnet running in Edge server topology (Edge server). Canonical runtime v2.9.8 Ekam Deeksha, public mining pool, Prometheus telemetry. Chain height over 470+ blocks.',
     },
     href: '/network',
   },

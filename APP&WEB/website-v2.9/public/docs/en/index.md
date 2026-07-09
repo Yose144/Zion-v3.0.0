@@ -100,7 +100,7 @@ XP and consciousness mechanics belong to **L4 OASIS** and do **not** change L1 c
 
 | Role | IP | P2P | RPC |
 |------|----|-----|-----|
-| Zion2 public host | 91.98.122.165 | :8334 | :8444 |
+| Zion2 public host | seed.zionterranova.com | :8334 | :8444 |
 
 Internal containers `zion-seed-1` and `zion-seed-2` run behind that host and are not separate public bootstrap entrypoints.
 

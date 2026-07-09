@@ -5,7 +5,7 @@
 ## Current Production Status
 
 - **Live URL:** https://zionterranova.com
-- **Host:** Edge server (Hetzner VPS) — DNS: `mainnetedge` / public entrypoint: `rpc.zionterranova.com`
+- **Host:** Edge server (cloud VPS) — public entrypoint: `rpc.zionterranova.com`
 - **Runtime:** Docker container `zion-website` (host network mode, port 3000)
 - **Reverse proxy:** Caddy → `localhost:3000`
 - **Source on server:** `/opt/zion/web`
@@ -27,7 +27,7 @@ The `package-lock.json` references `file:/zion-wallet-sdk/zion-wallet-sdk-1.0.0.
 ### Method 1: Automated script
 
 ```bash
-ssh deploy@mainnetedge
+ssh deploy@edge-server
 cd /opt/zion/web
 bash scripts/deploy-edge-web.sh <version-tag>
 ```
@@ -43,8 +43,8 @@ The script (`scripts/deploy-edge-web.sh`):
 ### Method 2: Manual deploy (recommended for control)
 
 ```bash
-# 1. SSH to Edge via Tailscale
-ssh deploy@mainnetedge
+# 1. SSH to Edge server
+ssh deploy@edge-server
 
 # 2. Pull latest code
 cd /opt/zion/web
@@ -144,21 +144,13 @@ The **inline Dockerfile** approach (copying host artifacts) is the only working 
 
 ## Connecting to Edge Server
 
-### Via Tailscale (recommended)
-
-```bash
-ssh deploy@mainnetedge
-```
-
-Tailscale SSH authenticates via Tailscale identity — no SSH key needed.
-
-### Via direct SSH (if Tailscale is down)
-
-Use a non-root deployment account and an SSH key stored in your local SSH agent:
+### Via SSH
 
 ```bash
 ssh deploy@rpc.zionterranova.com
 ```
+
+Use a non-root deployment account and an SSH key stored in your local SSH agent.
 
 ## Deployment History
 

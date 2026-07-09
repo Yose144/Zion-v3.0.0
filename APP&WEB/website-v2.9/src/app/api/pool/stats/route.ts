@@ -147,7 +147,7 @@ export async function GET() {
   const pplnsWindowUsed = firstMetricValue(promResults, 12) ?? 0;
   let pplnsTotalPaidFlowers = firstMetricValue(promResults, 13) ?? poolStats?.payouts?.total_paid_atomic ?? 0;
   // Sanity clamp: pre-hardfork pool servers accumulated total_paid in 12-decimal
-  // flowers (1 ZION = 1e12). After 3.0.3 fork, flowers are 6-decimal (1 ZION = 1e6).
+  // flowers (1 ZION = 1e12). After 3.0.4 fork, flowers are 6-decimal (1 ZION = 1e6).
   // Total paid can never exceed MINING_EMISSION (127.22B ZION × 1e6 = 127.22e15).
   // Values above are clearly pre-fork artifacts — divide by 1e6 to convert.
   const MINING_EMISSION_FLOWERS = TOTAL_SUPPLY_ZION * FLOWERS_PER_ZION; // 144e9 × 1e6 = 144e15
@@ -318,7 +318,7 @@ export async function GET() {
     },
     servers: [{
       id: 'primary',
-      name: 'Edge VPS',
+      name: 'Edge server',
       flag: '🇨🇿',
       host: SITE_PRIMARY_HOST,
       region: 'primary',

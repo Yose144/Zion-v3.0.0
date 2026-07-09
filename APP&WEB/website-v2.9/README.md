@@ -144,8 +144,8 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for the full guide.
 Quick summary:
 
 ```bash
-# On Edge server (via Tailscale SSH):
-ssh deploy@mainnetedge
+# On Edge server (via SSH):
+ssh deploy@edge-server
 cd /opt/zion/web
 git pull origin main
 npm install
@@ -181,7 +181,7 @@ Part of ZION Blockchain v3.0 project
 
 - **Live Site:** https://zionterranova.com
 - **GitHub:** https://github.com/Yose144/Zion-v3.0.0
-- **Production Host:** Edge server (Hetzner) via Tailscale SSH (`mainnetedge`)
+- **Production Host:** Edge server (cloud VPS)
 
 ---
 

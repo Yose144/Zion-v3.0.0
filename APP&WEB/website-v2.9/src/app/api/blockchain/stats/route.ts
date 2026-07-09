@@ -20,7 +20,7 @@ async function getNodeDatabaseSize(): Promise<number> {
     const candidates = [
       // Docker volume mount path (production deployment)
       '/app/edge-state.db',
-      // Edge server (Hetzner VPS) — direct path
+      // Edge server (Edge server) — direct path
       '/root/zion-2.9.6-main/data/edge-state.db',
       // Generic Linux deployment paths
       '/opt/zion/V3/data/zion-node-state.db',

@@ -1,5 +1,5 @@
 {
-  "version": "3.0.0",
+  "version": "3.0.4",
   "streams": {
     "zion": {
       "stream": 1,
@@ -47,7 +47,12 @@
       "configurable": true,
       "mode": "auto",
       "current_coin": "ERG",
-      "preferred_coins": ["ERG", "RVN", "KAS", "ALPH"]
+      "preferred_coins": [
+        "ERG",
+        "RVN",
+        "KAS",
+        "ALPH"
+      ]
     },
     "ncl": {
       "stream": 5,
@@ -62,7 +67,13 @@
   },
   "summary": {
     "enabled_streams": 5,
-    "stream_names": ["ZION", "ETC", "NXS", "Dynamic GPU", "NCL AI"],
+    "stream_names": [
+      "ZION",
+      "ETC",
+      "NXS",
+      "Dynamic GPU",
+      "NCL AI"
+    ],
     "total_target_share": 1.0
   }
 }

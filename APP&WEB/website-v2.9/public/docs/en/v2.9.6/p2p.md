@@ -1,7 +1,7 @@
 # 🌐 P2P network protocol v2.9.6
 
 > *ZION mainnet peer-to-peer communication.*
-> **Operational note (2026-03-12):** The live testnet currently runs on a single public host Zion2 (91.98.122.165) with internal seed containers, on the 2.9.8 Deeksha canonical path. The earlier 3-node Helsinki / USA / Asia topology is archived.
+> **Operational note (2026-03-12):** The live testnet currently runs on a single public host Zion2 (seed.zionterranova.com) with internal seed containers, on the 2.9.8 Deeksha canonical path. The earlier 3-node Helsinki / USA / Asia topology is archived.
 
 ---
 
@@ -25,11 +25,11 @@ ZION uses a custom P2P protocol over TCP with JSON-RPC messages.
 
 | Server | IP | Location | Role |
 |--------|-----|----------|------|
-| Zion2 (Primary) | `91.98.122.165:8334` | Germany (Hetzner) | Public host + pool + web |
+| Zion2 (Primary) | `seed.zionterranova.com:8334` | Germany (cloud VPS) | Public host + pool + web |
 | Internal seed 1 | — | Behind primary host | Seed container |
 | Internal seed 2 | — | Behind primary host | Seed container |
 
-Archived: `77.42.31.72` (Helsinki), `178.156.240.160` (USA), `5.223.43.93` (Asia), `46.225.126.243` (SeedDE), `5.78.178.227` (USA1).
+Archived: `seed.zionterranova.com` (Helsinki), `seed-us.zionterranova.com` (USA), `seed-asia.zionterranova.com` (Asia), `seed-de.zionterranova.com` (SeedDE), `seed-us1.zionterranova.com` (USA1).
 
 ### Mainnet (planned)
 
@@ -113,7 +113,7 @@ Transactions flow mempool → peer broadcast. Duplicates detected by tx ID.
 
 ```
          Zion2 public host
-          91.98.122.165
+          seed.zionterranova.com
             /      \
            /        \
           /          \
@@ -148,7 +148,7 @@ rpc_port = 8444
 
 [network.seeds]
 nodes = [
-    "91.98.122.165:8334",
+    "seed.zionterranova.com:8334",
     "seed1.zionterranova.com:8334",
     "seed2.zionterranova.com:8334",
     "seed3.zionterranova.com:8334",

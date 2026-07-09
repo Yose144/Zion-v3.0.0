@@ -77,8 +77,8 @@
 
 | Server | IP | Lokace | Služby |
 |--------|------|--------|--------|
-| Zion2 | 91.98.122.165 | Hetzner | Primary host, pool, web, API |
-| seed1.zionterranova.com | internal | Hetzner | Internal seed container |
+| Zion2 | seed.zionterranova.com | cloud VPS | Primary host, pool, web, API |
+| seed1.zionterranova.com | internal | cloud VPS | Internal seed container |
 
 ### Mainnet cíl
 

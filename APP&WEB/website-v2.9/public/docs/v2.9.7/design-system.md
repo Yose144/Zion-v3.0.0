@@ -46,11 +46,11 @@ All **transaction fees are burned**. There is no separate dev fee.
 
 The ZION public pool runs on the **primary Zion2 host** and uses Stratum v2 with PPLNS reward distribution.
 
-**Pool address:** `stratum+tcp://91.98.122.165:3333`
+**Pool address:** `stratum+tcp://seed.zionterranova.com:3333`
 
 ```bash
 zion-miner \
-  --pool stratum+tcp://91.98.122.165:3333 \
+  --pool stratum+tcp://seed.zionterranova.com:3333 \
   --wallet YOUR_ZION_ADDRESS \
   --threads 4
 ```
@@ -65,7 +65,7 @@ Connect directly to any seed node's RPC:
 
 ```bash
 zion-miner \
-  --rpc http://91.98.122.165:8444 \
+  --rpc http://seed.zionterranova.com:8444 \
   --wallet YOUR_ZION_ADDRESS \
   --solo
 ```
@@ -80,7 +80,7 @@ ZION supports dual mining — running **Cosmic Harmony Deeksha** alongside **Ver
 
 ```bash
 zion-miner \
-  --pool stratum+tcp://91.98.122.165:3333 \
+  --pool stratum+tcp://seed.zionterranova.com:3333 \
   --wallet YOUR_ZION_ADDRESS \
   --dual-pool stratum+tcp://VERUS_POOL:PORT \
   --dual-wallet YOUR_VRSC_ADDRESS
@@ -100,7 +100,7 @@ zion-wallet gen-mnemonic --out wallet.json --print
 zion-wallet address --from wallet.json
 
 # Check balance via RPC
-zion-wallet balance --address YOUR_ZION_ADDRESS --rpc http://91.98.122.165:8444
+zion-wallet balance --address YOUR_ZION_ADDRESS --rpc http://seed.zionterranova.com:8444
 ```
 
 Wallet files use Ed25519 key pairs (BIP39 seed → Ed25519). Keep the mnemonic phrase offline and secure.
@@ -126,7 +126,7 @@ curl -X POST http://localhost:8444/jsonrpc \
 ```
 
 Seed nodes for initial sync:
-- `91.98.122.165:8334` (Zion2 primary host)
+- `seed.zionterranova.com:8334` (Zion2 primary host)
 - `seed1.zionterranova.com:8334`
 - `seed2.zionterranova.com:8334`
 - `seed3.zionterranova.com:8334`
