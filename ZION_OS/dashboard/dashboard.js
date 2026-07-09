@@ -133,7 +133,7 @@ function switchTab(name){
   });
 
   // ── Auto-refresh timers ─────────────────────────────────────────────
-  if(name === 'overview'){ loadMempool(); loadMonitoringStatus(); }
+  if(name === 'overview'){ loadMempool(); loadMonitoringStatus(); updateChainStats(); }
   if(name === 'alerts'){ clearTabTimers('alerts'); loadAlertHistory(); if(!_alertsTimer) _alertsTimer = setInterval(loadAlertHistory, 8000); }
   else if(name === 'services'){ clearTabTimers('services'); loadServices(); if(!_servicesTimer) _servicesTimer = setInterval(loadServices, 5000); }
   else if(name === 'nodes'){ clearTabTimers('nodes'); loadCliNodeStatus(); if(!_nodesTimer) _nodesTimer = setInterval(loadCliNodeStatus, 6000); }
@@ -277,7 +277,7 @@ async function refreshAll(){
     if(currentTab === 'wallets') { loadWallets(); loadWalletStatus(); }
     if(currentTab === 'explorer') loadExplorer();
     if(currentTab === 'hiran') loadAiStatus();
-    if(currentTab === 'overview') { loadMempool(); loadMonitoringStatus(); }
+    if(currentTab === 'overview') { loadMempool(); loadMonitoringStatus(); updateChainStats(); }
     if(currentTab === 'controls') { loadMinerPerformance(); loadDepGraphControls(); }
     updateMainnetMetrics(statusData);
     updatePayouts(statusData.pool, statusData.topology);
@@ -1095,6 +1095,62 @@ function formatFlowers(v){
   if(!v && v !== 0) return '—';
   const zion = v / 1_000_000;
   return _zionFmt(zion) + ' ZION';
+}
+
+// ── Chain Stats (overview panel) ────────────────────────────────────────
+async function updateChainStats(){
+  try {
+    const data = await fetch('/api/explorer').then(r => r.ok ? r.json() : null);
+    if(!data) return;
+    const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+
+    // Badge
+    const badge = document.getElementById('chain-stats-badge');
+    if(badge){
+      badge.textContent = data.rpc_reachable ? 'Live' : 'Offline';
+      badge.className = data.rpc_reachable
+        ? 'text-xs px-2 py-0.5 rounded-full bg-emerald-700 text-emerald-300'
+        : 'text-xs px-2 py-0.5 rounded-full bg-red-700 text-red-300';
+    }
+
+    // Block reward
+    set('chain-block-reward', data.block_reward_zion ? data.block_reward_zion.toFixed(3) : '—');
+
+    // Difficulty (from most recent block)
+    const blocks = data.recent_blocks || [];
+    if(blocks.length > 0){
+      const latest = blocks[blocks.length - 1];
+      set('chain-difficulty', latest.difficulty ? latest.difficulty.toLocaleString() : '—');
+    }
+
+    // Block time (average of last 10 blocks)
+    if(blocks.length >= 2){
+      const recent = blocks.slice(-10);
+      let totalDt = 0;
+      for(let i = 1; i < recent.length; i++){
+        totalDt += (recent[i].timestamp - recent[i-1].timestamp);
+      }
+      const avgDt = totalDt / (recent.length - 1);
+      set('chain-block-time', avgDt > 0 ? avgDt.toFixed(1) + 's' : '—');
+    }
+
+    // Mined so far
+    const mined = data.estimated_circulating_zion ? (data.estimated_circulating_zion - data.premine_zion) : null;
+    if(mined != null){
+      set('chain-mined', fmtNum(mined));
+    }
+
+    // Circulating
+    set('chain-circulating', data.estimated_circulating_zion ? fmtNum(data.estimated_circulating_zion) : '—');
+
+    // Supply mined %
+    if(data.estimated_circulating_zion && data.total_supply_zion){
+      const pct = (data.estimated_circulating_zion / data.total_supply_zion * 100);
+      set('chain-supply-pct', pct.toFixed(4) + '%');
+    }
+  } catch(e){
+    console.error('updateChainStats error:', e);
+  }
 }
 
 async function refreshPayout(){
