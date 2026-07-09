@@ -1945,6 +1945,7 @@ let alertCache = [];
 let alertFilterActive = 'all';
 let _alertsTimer = null;
 let _backupsTimer = null;
+let walletsCache = [];
 
 async function loadAlertHistory(){
   try {
@@ -2332,6 +2333,9 @@ async function loadWallets(){
     const rpc = data.rpc || {};
     const pay = payoutRes.status === 'fulfilled' ? payoutRes.value : {};
 
+    // Cache for search filter
+    walletsCache = wallets;
+
     const stats = document.getElementById('wallets-stats');
     if(stats){
       stats.innerHTML = `
@@ -2350,6 +2354,14 @@ async function loadWallets(){
         <div class="zion-panel-soft p-3 text-center">
           <div class="text-lg font-bold text-emerald-400">${summary.with_live_balance || 0}</div>
           <div class="text-[10px] text-gray-400">Live Balance</div>
+        </div>
+        <div class="zion-panel-soft p-3 text-center">
+          <div class="text-lg font-bold text-zion-gold">${summary.total_premine_zion ? _zionFmt(summary.total_premine_zion) : '—'}</div>
+          <div class="text-[10px] text-gray-400">Premine ZION</div>
+        </div>
+        <div class="zion-panel-soft p-3 text-center">
+          <div class="text-lg font-bold text-zion-cyan">${summary.total_operational_zion != null ? _zionFmt(summary.total_operational_zion) : '—'}</div>
+          <div class="text-[10px] text-gray-400">Operational ZION</div>
         </div>
       `;
     }
@@ -2411,6 +2423,7 @@ async function loadWallets(){
         dao:   { label: '🗳️ DAO Treasury', color: 'text-zion-purple', bg: 'bg-zion-purple/10' },
         infrastructure: { label: '🏗️ Infrastructure', color: 'text-zion-cyan', bg: 'bg-zion-cyan/10' },
         humanitarian: { label: '💝 Humanitarian', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+        other: { label: '📦 Other', color: 'text-amber-400', bg: 'bg-amber-500/10' },
       };
       catDisplay.innerHTML = Object.entries(cats).map(([key, val]) => {
         const meta = catMeta[key] || { label: key, color: 'text-gray-300', bg: 'bg-white/5' };
@@ -2435,6 +2448,7 @@ async function loadWallets(){
         dao:   { label: '🗳️ DAO Treasury', color: '#9333ea' },
         infrastructure: { label: '🏗️ Infrastructure', color: '#06b6d4' },
         humanitarian: { label: '💝 Humanitarian', color: '#10b981' },
+        other: { label: '📦 Other', color: '#f59e0b' },
         bridge_seed: { label: '🌉 Bridge Seed', color: '#f59e0b' },
         bridge_vault_utxo: { label: '🔒 Bridge Vault UTXO', color: '#f97316' },
       };
@@ -2497,6 +2511,52 @@ async function loadWallets(){
   }
   // Also refresh online miners table
   refreshMinerBalances();
+}
+
+function filterWalletTable(){
+  const q = (document.getElementById('wallet-search')?.value || '').toLowerCase().trim();
+  const tbody = document.getElementById('wallets-table');
+  if(!tbody || !walletsCache.length) return;
+  const filtered = q ? walletsCache.filter(w =>
+    (w.address || '').toLowerCase().includes(q) ||
+    (w.label || '').toLowerCase().includes(q) ||
+    (w.category || '').toLowerCase().includes(q)
+  ) : walletsCache;
+  if(!filtered.length){
+    tbody.innerHTML = '<tr><td colspan="7" class="py-4 text-gray-500 italic text-center">No wallets match "'+escapeHtml(q)+'"</td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map((w, i) => {
+    const idx = w.index || (i + 1);
+    const addr = escapeHtml(w.address || '');
+    const shortAddr = addr.length > 36 ? addr.slice(0, 18) + '…' + addr.slice(-12) : addr;
+    const label = escapeHtml(w.label || '');
+    const isPremine = w.category === 'premine' || w.source === 'genesis' || w.source === 'premine';
+    const sourceBadge = isPremine
+      ? '<span class="px-1.5 py-0.5 rounded bg-zion-gold/20 text-zion-gold text-[10px]">genesis</span>'
+      : '<span class="px-1.5 py-0.5 rounded bg-zion-cyan/20 text-zion-cyan text-[10px]">' + escapeHtml(w.source || 'node') + '</span>';
+    const catBadge = isPremine
+      ? '<span class="text-zion-gold">premine</span>'
+      : '<span class="text-zion-cyan">operational</span>';
+    const premineAmt = w.amount_zion ? fmtNum(w.amount_zion) + ' ZION' : '—';
+    const balV = w.balance_zion;
+    const bal = balV !== null && balV !== undefined
+      ? (typeof balV === 'number' ? (_zionFmt(balV) + ' ZION') : balV)
+      : (w.rpc_ok === false ? '<span class="text-gray-600">unavailable</span>' : '—');
+    const balClass = balV !== null && balV !== undefined ? 'text-emerald-400 font-bold' : 'text-gray-500';
+    return `<tr class="border-b border-white/5 hover:bg-white/3 transition">
+      <td class="py-2 px-3 text-gray-500">${idx}</td>
+      <td class="py-2 px-3 font-semibold text-white">${label}</td>
+      <td class="py-2 px-3">
+        <span class="text-gray-300" title="${addr}">${shortAddr}</span>
+        <button data-copy="${addr}" class="copy-btn ml-1 text-[10px] text-zion-gold hover:underline">copy</button>
+      </td>
+      <td class="py-2 px-3">${sourceBadge}</td>
+      <td class="py-2 px-3">${catBadge}</td>
+      <td class="py-2 px-3 text-right text-zion-gold">${premineAmt}</td>
+      <td class="py-2 px-3 text-right ${balClass}">${bal}</td>
+    </tr>`;
+  }).join('');
 }
 
 // ─── Online Miners (Wallets tab) ────────────────────────────────────
@@ -2689,7 +2749,7 @@ async function loadPayoutTab(){
       // Use payout miners (richer: on_chain_balance, payout_address)
       const payoutMiners = (d.miners && d.miners.length > 0) ? d.miners : miners;
       if(payoutMiners.length === 0){
-        balTbody.innerHTML = '<tr><td colspan="6" class="text-gray-500 text-center py-4">No miners connected</td></tr>';
+        balTbody.innerHTML = '<tr><td colspan="8" class="text-gray-500 text-center py-4">No miners connected</td></tr>';
       } else {
         balTbody.innerHTML = payoutMiners.map(m => {
           const name = m.worker_name || m.miner_id || m.address || '—';
