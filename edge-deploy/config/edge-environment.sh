@@ -64,7 +64,9 @@ ZION_BALANCE_CHECK_HEIGHT=0
 ZION_MIGRATION_HEIGHT=1
 
 # Account-model memo v1 hard fork activation height
-ZION_ACCOUNT_TX_MEMO_V1_HEIGHT=22181
+# Fresh chain (post 3.0.4 hard reset) — active from genesis (default 0).
+# No override needed. Set to non-zero only for coordinated fork on existing chain.
+ZION_ACCOUNT_TX_MEMO_V1_HEIGHT=0
 
 # Block retention window (Session 9 memory patch)
 ZION_BLOCK_RETENTION=10000
