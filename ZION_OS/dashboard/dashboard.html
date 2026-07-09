@@ -400,7 +400,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           <span class="text-white">— one click, full stack.</span>
         </h2>
         <p class="text-sm md:text-base text-gray-400 mb-5 max-w-2xl">
-          Launches <strong class="text-zion-gold">Local Backup Node</strong> (syncs from Edge primary via Tailscale),
+          Launches <strong class="text-zion-gold">Local Backup Node</strong> (syncs from Edge primary via P2P),
           connects to <strong class="text-zion-purple">Edge Pool</strong> (89/5/5/1 burn model),
           starts the <strong class="text-zion-cyan">GPU Miner</strong>, plus <strong class="text-amber-300">Prometheus + Grafana</strong> monitoring.
           Edge (Hetzner) runs the primary 24/7 node + pool.
@@ -595,13 +595,13 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       <div class="flex items-center justify-between mb-4 relative z-10">
         <div class="flex items-center gap-3">
           <span class="zion-kicker">🌍 Edge Server</span>
-          <span class="text-[10px] font-mono text-gray-500">77.42.71.94 · 100.76.16.108</span>
+          <span class="text-[10px] font-mono text-gray-500">62.171.141.136</span>
           <span id="edge-h-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Loading…</span>
         </div>
         <div class="flex items-center gap-2">
           <span id="badge-edge-server" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
           <button onclick="refreshEdgeServerCard(true); updateEdgeHealth();" class="text-[10px] px-2.5 py-1 bg-zinc-700/50 hover:bg-zinc-600 rounded-md font-semibold transition" title="Force refresh">⟳</button>
-          <a href="http://77.42.71.94:3100" target="_blank" class="text-[10px] px-2.5 py-1 bg-purple-700/40 hover:bg-purple-600/60 rounded-md font-semibold transition text-purple-300">📊 Grafana</a>
+          <a href="http://62.171.141.136:3100" target="_blank" class="text-[10px] px-2.5 py-1 bg-purple-700/40 hover:bg-purple-600/60 rounded-md font-semibold transition text-purple-300">📊 Grafana</a>
         </div>
       </div>
 
@@ -710,9 +710,9 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
         <div class="text-[10px] text-gray-500 uppercase tracking-wider">External Links</div>
         <div class="flex flex-wrap gap-2">
-          <a href="http://77.42.71.94:9090" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-orange-700/40 hover:bg-orange-600/60 border border-orange-500/30 rounded-md font-semibold transition text-orange-300">🔥 Prometheus</a>
+          <a href="http://62.171.141.136:9090" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-orange-700/40 hover:bg-orange-600/60 border border-orange-500/30 rounded-md font-semibold transition text-orange-300">🔥 Prometheus</a>
           <a href="https://zionterranova.com" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-indigo-700/40 hover:bg-indigo-600/60 border border-indigo-500/30 rounded-md font-semibold transition text-indigo-300">🌐 Website</a>
-          <a href="http://77.42.71.94:8455" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-teal-700/40 hover:bg-teal-600/60 border border-teal-500/30 rounded-md font-semibold transition text-teal-300">📈 Pool Metrics</a>
+          <a href="http://62.171.141.136:8455" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-teal-700/40 hover:bg-teal-600/60 border border-teal-500/30 rounded-md font-semibold transition text-teal-300">📈 Pool Metrics</a>
         </div>
       </div>
     </div>
@@ -906,10 +906,9 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         </div>
         <div class="space-y-2 text-xs">
           <div class="flex justify-between"><span class="text-gray-400">Host</span><span id="val-pool-edge-host" class="font-mono text-white">—</span></div>
-          <div class="flex justify-between"><span class="text-gray-400">Public IP</span><span class="font-mono text-white">77.42.71.94</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Public IP</span><span class="font-mono text-white">62.171.141.136</span></div>
           <div class="flex justify-between"><span class="text-gray-400">Pool Port</span><span id="val-pool-edge-port" class="font-mono text-white">—</span></div>
           <div class="flex justify-between"><span class="text-gray-400">RPC Port</span><span class="font-mono text-white">8443</span></div>
-          <div class="flex justify-between"><span class="text-gray-400">Tailscale</span><span id="val-pool-edge-tailscale" class="font-mono text-white">100.76.16.108</span></div>
           <div class="flex justify-between"><span class="text-gray-400">Miners</span><span id="val-pool-edge-miners" class="text-emerald-400 font-bold">—</span></div>
           <div class="flex justify-between"><span class="text-gray-400">Hashrate</span><span id="val-pool-edge-hashrate" class="text-amber-400 font-bold">—</span></div>
           <div class="flex justify-between"><span class="text-gray-400">Blocks</span><span id="val-pool-edge-blocks" class="text-zion-gold font-bold">—</span></div>
@@ -934,7 +933,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           </div>
           <div class="text-xs text-gray-400 mb-1">Targets: <span id="prom-targets" class="text-white font-mono">—</span></div>
           <div class="text-xs text-gray-400 mb-2">Version: <span id="prom-version" class="text-white font-mono">—</span></div>
-          <a href="http://100.76.16.108:9090" target="_blank" class="inline-block text-[10px] px-2 py-1 bg-orange-500/10 text-orange-300 border border-orange-500/20 rounded hover:bg-orange-500/20 transition">Open Prometheus ↗</a>
+          <a href="http://62.171.141.136:9090" target="_blank" class="inline-block text-[10px] px-2 py-1 bg-orange-500/10 text-orange-300 border border-orange-500/20 rounded hover:bg-orange-500/20 transition">Open Prometheus ↗</a>
         </div>
         <div class="bg-black/30 border border-white/5 rounded-lg p-3">
           <div class="flex items-center justify-between mb-2">
@@ -943,7 +942,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           </div>
           <div class="text-xs text-gray-400 mb-1">Version: <span id="graf-version" class="text-white font-mono">—</span></div>
           <div class="text-xs text-gray-400 mb-2">Database: <span id="graf-db" class="text-white font-mono">—</span></div>
-          <a href="http://100.76.16.108:3100" target="_blank" class="inline-block text-[10px] px-2 py-1 bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 rounded hover:bg-cyan-500/20 transition">Open Grafana ↗</a>
+          <a href="http://62.171.141.136:3100" target="_blank" class="inline-block text-[10px] px-2 py-1 bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 rounded hover:bg-cyan-500/20 transition">Open Grafana ↗</a>
         </div>
       </div>
     </div>
@@ -3346,8 +3345,8 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       <div class="flex items-center justify-between mb-3">
         <h3 class="zion-kicker">Grafana Dashboard</h3>
         <div class="flex gap-2">
-          <a href="http://100.76.16.108:3100" target="_blank" class="zion-button-secondary text-xs">Open Grafana ↗</a>
-          <a href="http://100.76.16.108:9090" target="_blank" class="zion-button-secondary text-xs">Open Prometheus ↗</a>
+          <a href="http://62.171.141.136:3100" target="_blank" class="zion-button-secondary text-xs">Open Grafana ↗</a>
+          <a href="http://62.171.141.136:9090" target="_blank" class="zion-button-secondary text-xs">Open Prometheus ↗</a>
           <a href="http://127.0.0.1:8766" target="_blank" class="zion-button-secondary text-xs">Dashboard ↗</a>
           <button onclick="controlAction('start-monitoring')" class="zion-button-secondary text-xs" style="color:#86efac;">▶ Start Monitoring</button>
         </div>
@@ -3358,7 +3357,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
             <div class="font-semibold text-gray-200">Grafana embedding is unavailable here</div>
             <div class="text-xs text-gray-500 mt-1">This host blocks inline frames for Grafana, so the dashboard uses a safe fallback instead.</div>
           </div>
-          <a href="http://100.76.16.108:3100" target="_blank" class="zion-button-secondary text-xs">Open Grafana ↗</a>
+          <a href="http://62.171.141.136:3100" target="_blank" class="zion-button-secondary text-xs">Open Grafana ↗</a>
         </div>
       </div>
     </div>
@@ -3528,7 +3527,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <div class="zion-panel-soft p-4">
           <h3 class="text-sm font-bold mb-3">Mining Configuration</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div><label class="text-xs text-gray-400 block mb-1">Pool Address</label><input id="st-pool-addr" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="77.42.71.94:8444"></div>
+            <div><label class="text-xs text-gray-400 block mb-1">Pool Address</label><input id="st-pool-addr" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="62.171.141.136:8444"></div>
             <div><label class="text-xs text-gray-400 block mb-1">Worker Name</label><input id="st-worker" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="worker1"></div>
             <div><label class="text-xs text-gray-400 block mb-1">GPU Backend</label>
               <select id="st-backend" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white">
@@ -3549,7 +3548,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <div class="zion-panel-soft p-4">
           <h3 class="text-sm font-bold mb-3">Node Configuration</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div><label class="text-xs text-gray-400 block mb-1">Seed Peers</label><input id="st-seed-peers" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="77.42.71.94:8333"></div>
+            <div><label class="text-xs text-gray-400 block mb-1">Seed Peers</label><input id="st-seed-peers" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="62.171.141.136:8333"></div>
             <div><label class="text-xs text-gray-400 block mb-1">RPC Bind</label><input id="st-rpc-bind" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="0.0.0.0:8443"></div>
             <div><label class="text-xs text-gray-400 block mb-1">P2P Bind</label><input id="st-p2p-bind" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="0.0.0.0:8333"></div>
             <div><label class="text-xs text-gray-400 block mb-1">Node ID</label><input id="st-node-id" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="local-backup-node"></div>
@@ -3859,7 +3858,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     <div class="zion-panel p-5">
       <div class="flex items-center justify-between mb-3">
         <h3 class="text-sm font-bold">Relay Metrics (Edge Server)</h3>
-        <span class="text-[10px] text-gray-500" id="bridge-relay-host">100.76.16.108:8451</span>
+        <span class="text-[10px] text-gray-500" id="bridge-relay-host">62.171.141.136:8451</span>
       </div>
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <div class="bg-black/30 rounded-lg p-3 text-center">
@@ -3918,7 +3917,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <div class="bg-black/30 rounded p-2">
           <div class="text-gray-400 mb-1">L1 Unlock TX</div>
           <div class="font-mono text-emerald-400 text-[10px]">L1 blok 20919</div>
-          <div class="text-gray-500 mt-0.5">100 ZION → zion16825y… BRIDGE_UNLOCK memo</div>
+          <div class="text-gray-500 mt-0.5">100 ZION → zion1e4489… BRIDGE_UNLOCK memo</div>
         </div>
         <div class="bg-black/30 rounded p-2">
           <div class="text-gray-400 mb-1">confirmBurnRelease (Base)</div>
@@ -4022,7 +4021,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       <h3 class="text-sm font-bold mb-3">Multi-Validator Relay Architecture</h3>
       <div class="bg-black/30 rounded-lg p-4 border border-white/5">
         <p class="text-xs text-gray-300 mb-3">
-          Relay běžící na Edge serveru (<span class="font-mono text-cyan-400">100.76.16.108</span>) podporuje 5 privátních klíčů najednou.
+          Relay běžící na Edge serveru (<span class="font-mono text-cyan-400">62.171.141.136</span>) podporuje 5 privátních klíčů najednou.
           Pro každý L1 lock relay automaticky odešle <code class="text-zion-gold">submitLockProof</code> od všech 5 validátorů (500ms delay mezi TX).
         </p>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs font-mono">
