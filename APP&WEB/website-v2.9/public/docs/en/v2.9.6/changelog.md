@@ -27,7 +27,7 @@
 
 ### 🏗️ Infrastructure
 
-- Historical snapshot: Helsinki + Germany multi-node; current live model (2026-03-12): Zion2 `91.98.122.165` + internal seeds
+- Historical snapshot: Helsinki + Germany multi-node; current live model (2026-03-12): Zion2 `seed.zionterranova.com` + internal seeds
 
 ### 📦 Codebase & tests
 

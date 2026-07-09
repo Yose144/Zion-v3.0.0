@@ -327,7 +327,7 @@ Pokud je potřeba zásadní změna (genesis, algoritmus):
 | 8 | DAO Treasury (ecosystem) | 0.5B | Ecosystem bootstrap |
 | 9 | Core Development Fund | 1.0B | Vývoj protokolu |
 | 10 | Network Infrastructure | 1.0B | P2P seed nodes |
-| 11 | Genesis Creator Rent | 0.59B | Yose — lifetime rent |
+| 11 | Genesis Projects Fund | 0.59B | Dharma Temple, Piko de Ora + DAO |
 | 12 | Children Future Fund | 1.44B | Humanitarian DAO |
 | 13 | Bridge Seed Fund | 0.4B | EVM bridge liquidity |
 | 14 | Bridge Vault UTXO | 0.1B | Bridge unlock liquidity |
@@ -497,7 +497,7 @@ zion-edge-backup      (Daily backup 03:00)
 
 ### 11.1 F1 Exploit (2026-06-30)
 
-**Co se stalo:** Útočník z IP `109.81.30.165` zneužil `validate_peer_block()` — nevolalo `verify_signature()` pro account-model TX. Vyfalšoval 589M ZION z Genesis Creator walletu.
+**Co se stalo:** Útočník z IP `109.81.30.165` zneužil `validate_peer_block()` — nevolalo `verify_signature()` pro account-model TX. Vyfalšoval 589M ZION z Genesis Projects walletu.
 
 **Fix:** Height-gated signature verification. Chain rollback na block 22180.
 

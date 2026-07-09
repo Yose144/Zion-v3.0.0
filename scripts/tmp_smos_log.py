@@ -1,9 +1,10 @@
+import os
 import base64
 import json
 import re
 import urllib.request
 
-TOKEN = "api-3fb4dbbd2a4ae13622b2a9d574e9c5d1fe2c69fde0db128ad60be3fb3f68d5ef"
+TOKEN = os.environ.get("SIMPLEMINING_API_TOKEN", "")
 URL = "https://api.simplemining.net/rigs/518837"
 
 req = urllib.request.Request(URL, headers={"X-AUTH-TOKEN": TOKEN})

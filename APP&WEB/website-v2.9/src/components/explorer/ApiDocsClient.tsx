@@ -308,7 +308,7 @@ const ENDPOINTS: Endpoint[] = [
     params: [],
     exampleResponse: `{
   "timestamp": "2026-06-27T12:00:00Z",
-  "nodes": [ { "id": "edge-1", "host": "77.42.71.94", "online": true, "height": 18234, "peers": 12 } ],
+  "nodes": [ { "id": "edge-1", "host": "rpc.zionterranova.com", "online": true, "height": 18234, "peers": 12 } ],
   "summary": { "total": 3, "online": 3 }
 }`,
   },
@@ -496,7 +496,7 @@ export default function ApiDocsClient() {
               <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">{cs ? "ZION Blockchain API" : "ZION Blockchain API"}</h1>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-500/15 text-purple-300 border border-purple-500/30">
-                  v3.0.3
+                  v3.0.5
                 </span>
               </div>
               <p className="text-sm text-white/40 mt-1">{cs ? "JSON endpointy pro integraci a monitoring" : "JSON endpoints for integration and monitoring"}</p>
@@ -542,8 +542,8 @@ export default function ApiDocsClient() {
         {/* footer */}
         <p className="text-center text-xs text-white/30 pt-4">
           {cs
-            ? "ZION TerraNova v3.0.3 · API dokumentace · Vsechny endpointy vraci JSON"
-            : "ZION TerraNova v3.0.3 · API Documentation · All endpoints return JSON"}
+            ? "ZION TerraNova v3.0.5 · API dokumentace · Vsechny endpointy vraci JSON"
+            : "ZION TerraNova v3.0.5 · API Documentation · All endpoints return JSON"}
         </p>
       </div>
     </div>

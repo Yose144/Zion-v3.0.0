@@ -24,6 +24,22 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: '3.0.5-all-green-mainnet-beta-github-public',
+    date: '2026-07-09',
+    tag: { cs: 'Security', en: 'Security' },
+    tagColor: 'text-rose-400',
+    title: {
+      cs: 'ZION 3.0.5 "All Green" Mainnet Beta — hard reset po hacku, 11/11 služeb aktivních, zdroj na GitHubu',
+      en: 'ZION 3.0.5 "All Green" Mainnet Beta — hard reset after hack, 11/11 services active, source on GitHub',
+    },
+    summary: {
+      cs: 'Po bezpečnostním incidentu (ZION-2026-001 až 005: padělané P2P podpisy, neomezená inflace F5, expozice serveru) jsme provedli kompletní hard genesis reset (6. 7. 2026) a následný 3.0.5 "All Green" upgrade (9. 7. 2026). Nový genesis hash 4f75a0df…, všech 14 premine + 5 kanonických + bridge vault adres regenerováno z BIP39 mnemonik (air-gapped). 7 DeFi kontraktů na Base Mainnet ověřeno na Basescan (7/7). 5/5 EVM bridge validátorů, 6 chainů aktivních. WARP bridge pokrývá 13 chain rodin. 11/11 služeb aktivních, protocol 3.0.5, E2E memo testy potvrzeny. ZION běží jako Mainnet Beta — veřejný launch 31. 12. 2026. Těžba na vlastní nebezpečí. Zdrojový kód: github.com/Zion-TerraNova/v3-Mainnet.',
+      en: 'Following a security incident (ZION-2026-001 through 005: forged P2P signatures, unlimited inflation F5, server exposure) we performed a complete hard genesis reset (6 Jul 2026) and subsequent 3.0.5 "All Green" upgrade (9 Jul 2026). New genesis hash 4f75a0df…, all 14 premine + 5 canonical + bridge vault addresses regenerated from BIP39 mnemonics (air-gapped). 7 DeFi contracts on Base Mainnet verified on Basescan (7/7). 5/5 EVM bridge validators, 6 chains active. WARP bridge covers 13 chain families. 11/11 services active, protocol 3.0.5, E2E memo tests confirmed. ZION runs as Mainnet Beta — public launch 31 Dec 2026. Mining at your own risk. Source code: github.com/Zion-TerraNova/v3-Mainnet.',
+    },
+    href: 'https://github.com/Zion-TerraNova/v3-Mainnet/tree/main',
+    external: true,
+  },
+  {
     slug: 'defi-ecosystem-live',
     date: '2026-06-30',
     tag: { cs: 'DeFi', en: 'DeFi' },
@@ -54,13 +70,13 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     href: '/warp',
   },
   {
-    slug: 'zion-3.0.3-decimal-fork',
+    slug: 'zion-3.0.4-decimal-fork',
     date: '2026-06-27',
     tag: { cs: 'Hard Fork', en: 'Hard Fork' },
     tagColor: 'text-rose-400',
     title: {
-      cs: 'ZION 3.0.3 — Decimal Fork: 10¹² → 10⁶ flowers, historie bloků zachována',
-      en: 'ZION 3.0.3 — Decimal Fork: 10¹² → 10⁶ flowers, block history preserved',
+      cs: 'ZION 3.0.4 — Decimal Fork: 10¹² → 10⁶ flowers, historie bloků zachována',
+      en: 'ZION 3.0.4 — Decimal Fork: 10¹² → 10⁶ flowers, block history preserved',
     },
     summary: {
       cs: 'Měníme FLOWERS_PER_ZION z 10¹² na 10⁶ — čistší jednotky jako Monero a Cardano. Bloky 0..H zůstávají, hashe se nemění, explorer vidí celou historii. Na bloku H+1 migration block: burn starých UTXO, nové s amount /10⁶. Nový protocol_version 2, nová emise, nové fees — vše v flowers (10⁶). Bridge factor se mění z 10⁶ na 10¹² pro 1:1 kompatibilitu. Stejný release uzamkne canonical RPC pojmenování.',
@@ -109,8 +125,8 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       en: 'TerraNova Genesis 3.0.1 — MainNet launched 11 Jun 2026 · public launch 31 Dec 2026',
     },
     summary: {
-      cs: 'Hard reset Genesis řetězce byl úspěšně proveden. Síť je stabilní, Core + Edge topologie běží, pool a mining jsou aktivní. Veřejný přístup pro všechny zůstává naplánován na Silvestra 31. 12. 2026.',
-      en: 'The Genesis chain hard reset was successfully completed. The network is stable, Core + Edge topology is running, pool and mining are active. Public access remains scheduled for New Year\'s Eve 31 Dec 2026.',
+      cs: 'Hard reset Genesis řetězce byl úspěšně proveden. Síť je stabilní, Edge server topologie běží, pool a mining jsou aktivní. Veřejný přístup pro všechny zůstává naplánován na Silvestra 31. 12. 2026.',
+      en: 'The Genesis chain hard reset was successfully completed. The network is stable, Edge server topology is running, pool and mining are active. Public access remains scheduled for New Year\'s Eve 31 Dec 2026.',
     },
     href: '/terranova',
   },
@@ -315,12 +331,12 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     tag: { cs: 'Mainnet', en: 'Mainnet' },
     tagColor: 'text-blue-400',
     title: {
-      cs: 'V3 Mainnet — Core + Edge topologie v provozu',
-      en: 'V3 Mainnet — Core + Edge topology operational',
+      cs: 'V3 Mainnet — Edge server topologie v provozu',
+      en: 'V3 Mainnet — Edge server topology operational',
     },
     summary: {
-      cs: 'ZION V3 mainnet běží v Core + Edge topologii (Core PC + Hetzner Edge VPS). Kanonický runtime v2.9.8 Ekam Deeksha, veřejný mining pool a Prometheus telemetrie. Chain height přes 470+ bloků.',
-      en: 'ZION V3 mainnet running in Core + Edge topology (Core PC + Hetzner Edge VPS). Canonical runtime v2.9.8 Ekam Deeksha, public mining pool, Prometheus telemetry. Chain height over 470+ blocks.',
+      cs: 'ZION V3 mainnet běží v Edge server topologii (Edge server). Kanonický runtime v2.9.8 Ekam Deeksha, veřejný mining pool a Prometheus telemetrie. Chain height přes 470+ bloků.',
+      en: 'ZION V3 mainnet running in Edge server topology (Edge server). Canonical runtime v2.9.8 Ekam Deeksha, public mining pool, Prometheus telemetry. Chain height over 470+ blocks.',
     },
     href: '/network',
   },
@@ -357,6 +373,7 @@ const CARD_ACCENT: Record<string, { from: string; to: string; glow: string }> = 
   Listing:   { from: 'from-green-500/20', to: 'to-emerald-500/5', glow: 'shadow-green-500/10' },
   'Hard Fork': { from: 'from-rose-500/20', to: 'to-red-500/5', glow: 'shadow-rose-500/10' },
   History:    { from: 'from-amber-500/20', to: 'to-yellow-500/5', glow: 'shadow-amber-500/10' },
+  Security:   { from: 'from-rose-500/20', to: 'to-red-500/5', glow: 'shadow-rose-500/10' },
 };
 
 function getAccent(tag: string) {

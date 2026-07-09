@@ -52,7 +52,7 @@ export async function GET() {
     l1_unlocks_confirmed: 0,
     errors_total: 0,
     // Canonical vault info (updated 2026-06-29 — vault fix e6175b5b)
-    l1_vault_address: 'zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0',
+    l1_vault_address: 'zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7',
     bridge_e2e_confirmed: true,
     bridge_e2e_burn_tx: '0x70ad4d93ee3922210ae2783fed5af1c34bfe6080fb01089b18572e0ceaa8a719',
     bridge_e2e_unlock_block: 20919,

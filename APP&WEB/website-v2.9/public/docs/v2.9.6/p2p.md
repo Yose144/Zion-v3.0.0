@@ -1,7 +1,7 @@
 # 🌐 P2P síťový protokol v2.9.6
 
 > *Peer-to-peer komunikace ZION mainnetu.*
-> **Operational note (2026-03-12):** Aktuální live testnet běží na jednom veřejném hostu Zion2 (91.98.122.165) s interními seed kontejnery, na 2.9.8 Deeksha canonical path. Dřívější 3-node Helsinki/USA/Asia topologie je archivována.
+> **Operational note (2026-03-12):** Aktuální live testnet běží na jednom veřejném hostu Zion2 (seed.zionterranova.com) s interními seed kontejnery, na 2.9.8 Deeksha canonical path. Dřívější 3-node Helsinki/USA/Asia topologie je archivována.
 
 ---
 
@@ -25,11 +25,11 @@ ZION používá vlastní P2P protokol nad TCP s JSON-RPC zprávami.
 
 | Server | IP | Lokace | Role |
 |--------|------|--------|------|
-| Zion2 (Primary) | `91.98.122.165:8334` | Německo (Hetzner) | Public host + pool + web |
+| Zion2 (Primary) | `seed.zionterranova.com:8334` | Německo (cloud VPS) | Public host + pool + web |
 | Internal seed 1 | — | Za primárním hostem | Seed kontejner |
 | Internal seed 2 | — | Za primárním hostem | Seed kontejner |
 
-Archivováno: `77.42.31.72` (Helsinki), `178.156.240.160` (USA), `5.223.43.93` (Asia), `46.225.126.243` (SeedDE), `5.78.178.227` (USA1).
+Archivováno: `seed.zionterranova.com` (Helsinki), `seed-us.zionterranova.com` (USA), `seed-asia.zionterranova.com` (Asia), `seed-de.zionterranova.com` (SeedDE), `seed-us1.zionterranova.com` (USA1).
 
 ### Mainnet (plánováno)
 
@@ -113,7 +113,7 @@ Transakce se šíří mempool → peers broadcasting. Duplicate detection přes 
 
 ```
          Zion2 public host
-          91.98.122.165
+          seed.zionterranova.com
             /      \
            /        \
           /          \
@@ -148,7 +148,7 @@ rpc_port = 8444
 
 [network.seeds]
 nodes = [
-    "91.98.122.165:8334",
+    "seed.zionterranova.com:8334",
     "seed1.zionterranova.com:8334",
     "seed2.zionterranova.com:8334",
     "seed3.zionterranova.com:8334",

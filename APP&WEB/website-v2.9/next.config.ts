@@ -6,7 +6,7 @@ const rootDir = dirname(fileURLToPath(import.meta.url));
 const emptyModule = resolve(rootDir, 'src/lib/empty-module.ts');
 
 const nextConfig: NextConfig = {
-  // output: "standalone", // Disabled for local build on Windows (Next.js 16 bug with client-only)
+  output: "standalone", // Enabled — Docker build uses standalone (image 2.5GB→~200MB). Local dev unaffected (next dev ignores this).
   images: {
     unoptimized: true,
   },
@@ -89,7 +89,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https:",
               "font-src 'self' data:",
-              "connect-src 'self' https://*.zionterranova.com wss://*.zionterranova.com http://62.171.141.136:8443 http://62.171.141.136:8080 http://62.171.141.136:8444 http://62.171.141.136:8450 http://127.0.0.1:8443 http://127.0.0.1:8080 http://127.0.0.1:8444 http://127.0.0.1:8450 https://prod.spline.design https://*.spline.design https://sepolia.base.org https://mainnet.base.org https://base-rpc.publicnode.com https://open.spotify.com https://api.spotify.com https://*.li.fi https://li.fi",
+              "connect-src 'self' https://*.zionterranova.com wss://*.zionterranova.com http://127.0.0.1:8001 http://127.0.0.1:8002 https://prod.spline.design https://*.spline.design https://sepolia.base.org https://mainnet.base.org https://base-rpc.publicnode.com https://open.spotify.com https://api.spotify.com https://*.li.fi https://li.fi",
               "frame-src 'self' https://widget.li.fi https://li.fi https://*.li.fi https://open.spotify.com",
               "frame-ancestors 'none'",
               "base-uri 'self'",

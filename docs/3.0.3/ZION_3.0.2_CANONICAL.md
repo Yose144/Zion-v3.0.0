@@ -75,7 +75,7 @@ version strings (`V3/Cargo.toml`, bridge configs, READMEs, roadmap) are unified 
 | OASIS + Golden Egg/XP (slots 1–5) | 8.25B | None |
 | DAO Treasury (governance + grants + bootstrap) | 4.0B | Height 525,600 (~1 yr) |
 | Core Dev + Network Infrastructure | 2.0B | None |
-| Genesis Creator | 0.59B | None |
+| Genesis Projects (Dharma Temple, Piko de Ora + DAO) | 0.59B | None |
 | Humanitarian — Children Future Fund | 1.44B | None |
 | Bridge Seed Fund (account) | 0.4B | None |
 | Bridge Vault UTXO Seed | 0.1B | None |

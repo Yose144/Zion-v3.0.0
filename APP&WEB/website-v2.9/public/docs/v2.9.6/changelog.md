@@ -59,7 +59,7 @@
 
 - **Servery**:
   - Historical v2.9.6 snapshot: Helsinki + Germany multi-node testnet
-  - Current live model (2026-03-12): Zion2 primary host `91.98.122.165` + internal seed containers
+  - Current live model (2026-03-12): Zion2 primary host `seed.zionterranova.com` + internal seed containers
 - **Docker** — `docker-compose.native-2.9.5.yml` (bude aktualizován na 2.9.6)
 - **Config** — `config/mainnet.toml`, `testnet.toml`, `devnet.toml`
 

@@ -620,8 +620,8 @@ const CLI_PRESET = [
 const BOOT_SEQUENCE = [
   {
     command: 'zion version',
-    responseCs: 'zion v3.0.3 "from genesis to the star" · mainnet · 6-decimal flowers · build 2026-06-27',
-    responseEn: 'zion v3.0.3 "from genesis to the star" · mainnet · 6-decimal flowers · build 2026-06-27',
+    responseCs: 'zion v3.0.5 "All Green, Mainnet Beta" · mainnet · 6-decimal flowers · build 2026-06-27',
+    responseEn: 'zion v3.0.5 "All Green, Mainnet Beta" · mainnet · 6-decimal flowers · build 2026-06-27',
   },
   {
     command: 'zion status --layer all',
@@ -2146,7 +2146,7 @@ export default function TerraNovaBookClient() {
                           <div className="flex justify-between gap-2"><span className="text-gray-500">OASIS Golden Egg ×5</span><span className="text-zion-gold/80">8.25B ZION</span></div>
                           <div className="flex justify-between gap-2"><span className="text-gray-500">{cs ? 'DAO Pokladna' : 'DAO Treasury'} ×3</span><span className="text-zion-gold/80">4.00B ZION</span></div>
                           <div className="flex justify-between gap-2"><span className="text-gray-500">{cs ? 'Infrastruktura + Vývoj' : 'Infrastructure + Dev'} ×2</span><span className="text-zion-gold/80">2.00B ZION</span></div>
-                          <div className="flex justify-between gap-2"><span className="text-gray-500">{cs ? 'Genesis Creator (nájem)' : 'Genesis Creator (rent)'}</span><span className="text-zion-gold/80">0.59B ZION</span></div>
+                          <div className="flex justify-between gap-2"><span className="text-gray-500">{cs ? 'Genesis Projects (Dharma Temple, Piko de Ora + DAO)' : 'Genesis Projects (Dharma Temple, Piko de Ora + DAO)'}</span><span className="text-zion-gold/80">0.59B ZION</span></div>
                           <div className="flex justify-between gap-2"><span className="text-gray-500">{cs ? 'Humanitární DAO' : 'Humanitarian DAO'}</span><span className="text-zion-gold/80">1.44B ZION</span></div>
                           <div className="border-t border-white/8 pt-1.5 flex justify-between gap-2"><span className="text-gray-400 font-semibold">{cs ? 'Celkem genesis' : 'Total genesis'}</span><span className="text-zion-gold font-bold">16.28B ZION</span></div>
                         </div>
@@ -2245,7 +2245,7 @@ export default function TerraNovaBookClient() {
                             { label: cs ? 'DAO Pokladna ×3' : 'DAO Treasury ×3', amount: '4.00B' },
                             { label: cs ? 'Infrastruktura + Vývoj ×2' : 'Infrastructure + Dev ×2', amount: '2.00B' },
                             { label: cs ? 'Humanitární DAO' : 'Humanitarian DAO', amount: '1.44B' },
-                            { label: cs ? 'Genesis Creator (nájem)' : 'Genesis Creator (rent)', amount: '0.59B' },
+                            { label: cs ? 'Genesis Projects (Dharma Temple, Piko de Ora + DAO)' : 'Genesis Projects (Dharma Temple, Piko de Ora + DAO)', amount: '0.59B' },
                           ].map(({ label, amount }) => (
                             <div key={label} className="flex items-center justify-between gap-2">
                               <span className="flex items-center gap-1.5 text-gray-500">

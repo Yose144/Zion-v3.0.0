@@ -132,7 +132,7 @@ ZION_UPSTREAM_POOL_ADDR=100.86.102.5:8444  # ShareRelay → Core
 
 # Pool wallet (Edge vlastní — payouty z Edge poolu)
 ZION_POOL_WALLET=zion1a6z5a4m830w6s6k7r508n300n6z30022q6qt0n7
-ZION_POOL_PAYOUT_SK_HEX=edee1b2904f16b31b7553ea87e783946585c2cbe335a6e200eac60d12410049f
+ZION_POOL_PAYOUT_SK_HEX=[REDACTED — pool SK removed for security]
 
 # Fee split (shodné s Core)
 ZION_HUMANITARIAN_WALLET=zion1t4w447d7k4c600h3x893m5r55645w4p057yf4d7

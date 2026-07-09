@@ -555,8 +555,8 @@ export default function WarpPage() {
                   <ArrowRight className="h-4 w-4 text-zion-gold mt-0.5 shrink-0" />
                   <p className="text-sm text-gray-300">
                     {cs
-                      ? 'Pošlete ZION na zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0 s tímto memem.'
-                      : 'Send ZION to zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0 with this memo.'}
+                      ? 'Pošlete ZION na zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7 s tímto memem.'
+                      : 'Send ZION to zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7 with this memo.'}
                   </p>
                 </div>
               </div>

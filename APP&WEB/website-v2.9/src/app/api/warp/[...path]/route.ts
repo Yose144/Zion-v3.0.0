@@ -23,9 +23,13 @@ async function proxyWarp(request: Request, path: string[]) {
   const contentType = request.headers.get('content-type');
   const apiKey = request.headers.get('x-warp-key') ?? process.env.ZION_WARP_API_KEY;
 
+  if (!apiKey) {
+    return NextResponse.json({ success: false, error: 'WARP API key not configured' }, { status: 503 });
+  }
+
   if (accept) headers.set('accept', accept);
   if (contentType) headers.set('content-type', contentType);
-  if (apiKey) headers.set('x-warp-key', apiKey);
+  headers.set('x-warp-key', apiKey);
 
   const method = request.method.toUpperCase();
   const body = method === 'POST' ? await request.text() : undefined;

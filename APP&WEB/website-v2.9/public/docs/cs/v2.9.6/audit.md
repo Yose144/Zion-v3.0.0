@@ -82,7 +82,7 @@ Ověřeno přes 47 unit testů v `zion-cosmic-harmony-v3` crate:
 
 ## 4. Server audit
 
-### Helsinki (77.42.31.72)
+### Helsinki (seed.zionterranova.com)
 
 | Check | Status |
 |-------|--------|
@@ -93,7 +93,7 @@ Ověřeno přes 47 unit testů v `zion-cosmic-harmony-v3` crate:
 | Log rotation | ✅ logrotate configured |
 | Monitoring | 🔄 Basic uptime checks |
 
-### Germany (46.225.126.243)
+### Germany (seed-de.zionterranova.com)
 
 | Check | Status |
 |-------|--------|

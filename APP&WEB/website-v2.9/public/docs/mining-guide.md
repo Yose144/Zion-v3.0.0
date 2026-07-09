@@ -74,7 +74,7 @@ docker logs -f zion-miner
 
 ```bash
 ./target/release/zion-miner \
-  --pool 91.98.122.165:3333 \
+  --pool seed.zionterranova.com:3333 \
   --wallet "zion1qTVOJE_ADRESA" \
   --worker muj-rig \
   --algo cosmic_harmony
@@ -88,13 +88,13 @@ docker logs -f zion-miner
 
 | Pool | Stratum | Web |
 |------|---------|-----|
-| Zion2 (public host) | `91.98.122.165:3333` | `http://91.98.122.165:8080` |
+| Zion2 (public host) | `seed.zionterranova.com:3333` | `http://seed.zionterranova.com:8080` |
 
 ### Konfigurace
 
 ```bash
 ./zion-miner \
-  --pool 91.98.122.165:3333 \
+  --pool seed.zionterranova.com:3333 \
   --wallet "zion1qTVOJE_ADRESA" \
   --worker muj-rig
 ```
@@ -107,7 +107,7 @@ Spusť vlastní node + pool:
 
 ```bash
 ./zion-core --data-dir ./data --network testnet \
-  --peers "91.98.122.165:8334"
+  --peers "seed.zionterranova.com:8334"
 
 ./zion-pool --node localhost:8444 --stratum-port 3333
 

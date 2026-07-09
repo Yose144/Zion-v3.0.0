@@ -1,6 +1,6 @@
 'use strict';
 
-const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','bridge-validators','genesis','blockers','ops','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','cex','warp-swap','payout','backups','topology','miner-live','settings','fleet','agent','warp','ai-agents','ncl-jobs'];
+const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','bridge-validators','genesis','blockers','ops','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','cex','warp-swap','payout','backups','topology','miner-live','settings','fleet','agent','warp','ai-agents','ncl-jobs','poc-lab'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
 let _payoutSseSource = null;  // EventSource for real-time payout events
@@ -47,7 +47,7 @@ async function apiFetch(url, opts={}, timeoutMs=8000){
   const ctrl = new AbortController();
   const tid = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    const res = await fetch(url, { ...opts, signal: ctrl.signal });
+    const res = await fetch(url, { ...opts, signal: ctrl.signal, credentials: 'same-origin' });
     if(!res.ok) throw new Error('HTTP ' + res.status + ' on ' + url);
     return await res.json();
   } finally {
@@ -133,6 +133,7 @@ function switchTab(name){
   });
 
   // ── Auto-refresh timers ─────────────────────────────────────────────
+  if(name === 'overview'){ loadMempool(); loadMonitoringStatus(); updateChainStats(); updateRecentBlocks(); updateTopWallets(); updateBlockRewardBreakdown(); updateNetworkGrowth(); updateMinerLeaderboard(); updateDifficultyForecast(); }
   if(name === 'alerts'){ clearTabTimers('alerts'); loadAlertHistory(); if(!_alertsTimer) _alertsTimer = setInterval(loadAlertHistory, 8000); }
   else if(name === 'services'){ clearTabTimers('services'); loadServices(); if(!_servicesTimer) _servicesTimer = setInterval(loadServices, 5000); }
   else if(name === 'nodes'){ clearTabTimers('nodes'); loadCliNodeStatus(); if(!_nodesTimer) _nodesTimer = setInterval(loadCliNodeStatus, 6000); }
@@ -179,6 +180,7 @@ function switchTab(name){
   if(name === 'warp'){ loadWarpPanel(); }
   if(name === 'ai-agents'){ loadAiAgentsPanel(); }
   if(name === 'ncl-jobs'){ loadNclJobsPanel(); }
+  if(name === 'poc-lab'){ pocCheckStatus(); }
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -239,7 +241,7 @@ async function refreshAll(){
     // Hero stats (topology-aware)
     const isEdge = statusData.topology === 'edge-primary';
     const live = isEdge
-      ? [statusData.node1, statusData.edge_node, statusData.edge_node2, statusData.pool, statusData.miner].filter(x => x && x.running).length
+      ? [statusData.edge_node, statusData.edge_node2, statusData.local_backup, statusData.pool, statusData.miner].filter(x => x && x.running).length
       : [statusData.node1, statusData.node2, statusData.pool, statusData.miner].filter(x => x && x.running).length;
     document.getElementById('hero-services-up').textContent = live;
     document.getElementById('hero-blockers-open').textContent = blockersData.open;
@@ -247,7 +249,7 @@ async function refreshAll(){
     document.getElementById('hero-chain-height').textContent = heroHeight ?? '—';
     document.getElementById('hero-status-kicker').textContent = blockersData.ready_for_launch
       ? '✅ Ready · All P0 Blockers Resolved'
-      : '⏳ Pre-Launch · ' + blockersData.open_critical + ' critical blockers';
+      : (heroHeight > 0 ? '🟢 Mainnet Live · ' + heroHeight + ' blocks' : '⏳ Pre-Launch · ' + blockersData.open_critical + ' critical blockers');
 
     updateServiceCards(statusData);
     await updateServiceTelemetryDetails(statusData);
@@ -275,7 +277,7 @@ async function refreshAll(){
     if(currentTab === 'wallets') { loadWallets(); loadWalletStatus(); }
     if(currentTab === 'explorer') loadExplorer();
     if(currentTab === 'hiran') loadAiStatus();
-    if(currentTab === 'overview') { loadMempool(); loadMonitoringStatus(); }
+    if(currentTab === 'overview') { loadMempool(); loadMonitoringStatus(); updateChainStats(); updateRecentBlocks(); updateTopWallets(); updateBlockRewardBreakdown(); updateNetworkGrowth(); updateMinerLeaderboard(); updateDifficultyForecast(); }
     if(currentTab === 'controls') { loadMinerPerformance(); loadDepGraphControls(); }
     updateMainnetMetrics(statusData);
     updatePayouts(statusData.pool, statusData.topology);
@@ -300,11 +302,14 @@ function formatUptime(sec){
 
 function updateServiceCards(s){
   const en = s.edge_node, n1 = s.node1, n2 = s.node2, p = s.pool, m = s.miner;
-  const en2 = s.edge_node2;
+  const en2 = s.edge_node2 || {};
+  const lb = s.local_backup || {};
   const isEdgePrimary = s.topology === 'edge-primary';
-  // Node2 data source: edge_node2 in edge-primary, legacy node2 otherwise
+  // In edge-primary: node1 card = local_backup, node2 card = edge_node2 (follower)
+  // In local-dev: node1 = genesis, node2 = follower
+  const n1data = isEdgePrimary ? (lb || n1) : n1;
   const n2data = isEdgePrimary ? (en2 || n2) : n2;
-  // Topology-aware visibility: show both edge-node and node2 in edge-primary
+  // Topology-aware visibility
   const node2Card = document.getElementById('card-node2');
   if(node2Card) node2Card.classList.toggle('hidden', false);
   const edgeNodeCard = document.getElementById('card-edge-node');
@@ -319,28 +324,27 @@ function updateServiceCards(s){
   const enp = document.getElementById('val-edge-node-peers');
   if(enp) enp.textContent = en ? (en.known_peers ?? '—') : '—';
 
-  // Local Backup Node
-  setBadge('badge-node1', n1.running); setCardLive('node1', n1.running);
+  // Local Backup Node (node1 card in edge-primary)
+  setBadge('badge-node1', n1data && n1data.running); setCardLive('node1', n1data && n1data.running);
   const n1h = document.getElementById('val-node1-height');
-  if(n1h) n1h.textContent = n1.chain_height ?? '—';
+  if(n1h) n1h.textContent = n1data ? (n1data.chain_height ?? '—') : '—';
   const n1id = document.getElementById('val-node1-id');
-  if(n1id) n1id.textContent = n1.node_id ?? '—';
+  if(n1id) n1id.textContent = n1data ? (n1data.node_id ?? '—') : '—';
   const n1p = document.getElementById('val-node1-peers');
-  if(n1p) n1p.textContent = n1.known_peers ?? '—';
+  if(n1p) n1p.textContent = n1data ? (n1data.known_peers ?? '—') : '—';
   const n1p2p = document.getElementById('val-node1-p2p');
-  if(n1p2p) n1p2p.textContent = n1.p2p_bind ?? '—';
+  if(n1p2p) n1p2p.textContent = n1data ? (n1data.p2p_bind ?? '—') : '—';
   const n1m = document.getElementById('val-node1-mempool');
-  if(n1m) n1m.textContent = n1.mempool_size ?? '—';
+  if(n1m) n1m.textContent = n1data ? (n1data.mempool_size ?? '—') : '—';
   const n1u = document.getElementById('val-node1-uptime');
-  if(n1u) n1u.textContent = formatUptime(n1.uptime_seconds);
-  // Sync status for Local Backup Node (edge-primary) or Node1 (local-dev)
+  if(n1u) n1u.textContent = formatUptime(n1data ? n1data.uptime_seconds : null);
+  // Sync status for Local Backup Node
   const n1syncEl = document.getElementById('val-node1-sync');
   if(n1syncEl){
     const refHeight = isEdgePrimary ? (en ? (en.chain_height ?? 0) : 0) : (n2 ? (n2.chain_height ?? 0) : 0);
-    const localH = n1.chain_height ?? 0;
+    const localH = n1data ? (n1data.chain_height ?? 0) : 0;
     const gap = refHeight > 0 && localH > 0 ? Math.abs(refHeight - localH) : null;
-    // Prefer server-computed sync_gap if available
-    const serverGap = n1.sync_gap ?? gap;
+    const serverGap = n1data ? (n1data.sync_gap ?? gap) : gap;
     const synced = serverGap !== null && serverGap !== undefined && serverGap <= 5;
     if(serverGap === null || serverGap === undefined){
       n1syncEl.textContent = localH > 0 ? 'Syncing…' : 'No data';
@@ -354,7 +358,7 @@ function updateServiceCards(s){
     }
   }
 
-  // Node 2 / Edge Node 2
+  // Node 2 card: Edge Node 2 (Follower) in edge-primary, Node 2 in local-dev
   const n2label = isEdgePrimary ? 'Edge Node 2' : 'Node 2';
   const n2kicker = node2Card ? node2Card.querySelector('.zion-kicker') : null;
   if(n2kicker) n2kicker.textContent = isEdgePrimary ? '🔶 ' + n2label : '🔶 Node 2';
@@ -546,14 +550,14 @@ function _renderEdgeServerCard(d) {
 
   // Services grid
   const SVC_LABELS = {
-    'zion-edge-node1':   { icon: '🔷', label: 'Node 1', url: 'http://77.42.71.94:8443' },
-    'zion-edge-node2':   { icon: '🔶', label: 'Node 2', url: 'http://77.42.71.94:8446' },
-    'zion-pool-server':  { icon: '⚡', label: 'Pool',   url: 'http://77.42.71.94:8444' },
-    'zion-edge-dao':     { icon: '🏛️', label: 'DAO',    url: 'http://77.42.71.94:8450' },
-    'zion-edge-warp':    { icon: '🌀', label: 'WARP',   url: 'http://77.42.71.94:8453' },
-    'zion-edge-dashboard': { icon: '📊', label: 'Rust DB', url: 'http://77.42.71.94:8888' },
+    'zion-node':         { icon: '🔷', label: 'Node',   url: 'http://62.171.141.136:8443' },
+    'zion-pool':         { icon: '⚡', label: 'Pool',   url: 'http://62.171.141.136:8444' },
+    'zion-dao':          { icon: '🏛️', label: 'DAO',    url: 'http://62.171.141.136:8450' },
+    'zion-warp':         { icon: '🌀', label: 'WARP',   url: 'http://62.171.141.136:9333' },
+    'zion-bridge':       { icon: '🌉', label: 'Bridge', url: 'http://62.171.141.136:9101' },
+    'nginx':             { icon: '🌐', label: 'Nginx',  url: 'https://zionterranova.com' },
     'hiran-inference':   { icon: '🤖', label: 'Hiran',  url: null },
-    'hiranyagarbha':     { icon: '🧠', label: 'Orch',   url: 'http://77.42.71.94:8001' },
+    'hiranyagarbha':     { icon: '🧠', label: 'Orch',   url: 'http://62.171.141.136:8001' },
   };
   // Also add PM2 processes (website)
   const pm2Labels = { 'zion-website': { icon: '🌐', label: 'Website', url: 'https://zionterranova.com' } };
@@ -627,7 +631,7 @@ async function edgeAction(action) {
     'full-health': 'Full Health Check',
   };
   const label = ACTION_LABELS[action] || action;
-  if(!confirm(`Run "${label}" on Edge server (77.42.71.94)?`)) return;
+  if(!confirm(`Run "${label}" on Edge server (62.171.141.136)?`)) return;
 
   toast(`Running: ${label}…`, 'success');
   try {
@@ -730,165 +734,226 @@ async function updateServiceTelemetryDetails(s){
   const container = document.getElementById('overview-telemetry-details');
   if(!container) return;
 
-  // Fetch live infra telemetry from Edge directly (CORS permissive on Edge infra dashboard)
-  let infra = null;
-  let overview = null;
+  // Fetch live service data from local /api/services (replaces old 62.171.141.136:8888 fetch)
+  let svcList = [];
   try {
-    const ctrl = new AbortController();
-    const tid = setTimeout(() => ctrl.abort(), 5000);
-    const [infraRes, ovRes] = await Promise.all([
-      fetch('http://100.76.16.108:8888/api/infra', { signal: ctrl.signal }).then(r => r.json()).catch(() => null),
-      fetch('http://100.76.16.108:8888/api/overview', { signal: ctrl.signal }).then(r => r.json()).catch(() => null),
-    ]);
-    clearTimeout(tid);
-    infra = infraRes;
-    overview = ovRes;
+    const svcRes = await fetch('/api/services', { signal: AbortSignal.timeout(5000) }).then(r => r.json());
+    svcList = svcRes.services || [];
   } catch(e) {
-    console.warn('Edge infra fetch failed:', e);
+    console.warn('Service list fetch failed:', e);
   }
+  const svcMap = {};
+  for(const svc of svcList) svcMap[svc.id] = svc;
 
   const isEdge = s.topology === 'edge-primary';
   const en = s.edge_node, n1 = s.node1, p = s.pool, m = s.miner;
-  const pe = s.pool_edge ?? {};
+  const en2 = s.edge_node2 ?? {};
+  const lb  = s.local_backup ?? {};
+  const pe  = s.pool_edge ?? {};
 
-  // Build service list — prefer Edge infra data when available
+  // Build service list from local status + services data
   const services = [];
 
-  // Node
-  const nodeInfra = infra?.node;
+  // Edge Node 1 (Primary)
   services.push({
-    key:'node', label:'Node', cls:'tdc-node',
-    running: isEdge ? (en && en.running) : (n1 && n1.running),
-    data: isEdge ? en : n1,
-    infra: nodeInfra,
-    fields: (d, i)=>[
+    key:'edge-node1', label:'Edge Node 1', cls:'tdc-node',
+    running: en && en.running,
+    data: en,
+    svc: svcMap['edge-node1'],
+    fields: (d, sv)=>[
       ['Height', d?.chain_height ?? '—'],
       ['Peers', d?.known_peers ?? '—'],
-      ['Chain', d?.network ?? d?.chain ?? 'ZION Mainnet'],
-      ['Version', d?.version ?? '—'],
-      ...(i ? [['Latency', i.latency_ms != null ? i.latency_ms + ' ms' : '—'], ['Endpoint', i.url ?? '—']] : []),
+      ['Network', d?.network ?? 'Mainnet'],
+      ['Protocol', d?.protocol_version ?? '—'],
+      ['Tip', d?.tip_hash ? d.tip_hash.slice(0,12)+'…' : '—'],
+      ...(sv ? [['Ports', (sv.ports_open?.length ?? 0)+'/'+((sv.ports_open?.length??0)+(sv.ports_closed?.length??0))], ['Details', sv.details ?? '—']] : []),
     ],
   });
 
-  // Edge Pool
-  const poolInfra = infra?.pool;
+  // Edge Node 2 (Follower)
   services.push({
-    key:'pool-edge', label:'Edge Pool', cls:'tdc-pool',
-    running: pe && pe.running,
-    data: pe,
-    infra: poolInfra,
-    fields: (d, i)=>[
-      ['Hashrate', d?.hashrate ? d.hashrate.toFixed(2) + ' KH/s' : '—'],
+    key:'edge-node2', label:'Edge Node 2', cls:'tdc-node',
+    running: en2 && en2.running,
+    data: en2,
+    svc: svcMap['edge-node2'],
+    fields: (d, sv)=>[
+      ['Height', d?.chain_height ?? '—'],
+      ['Peers', d?.known_peers ?? '—'],
+      ['Node ID', d?.node_id ?? '—'],
+      ['P2P', d?.p2p_bind ?? '—'],
+      ['Tip', d?.tip_hash ? d.tip_hash.slice(0,12)+'…' : '—'],
+      ...(sv ? [['Ports', (sv.ports_open?.length ?? 0)+'/'+((sv.ports_open?.length??0)+(sv.ports_closed?.length??0))], ['Details', sv.details ?? '—']] : []),
+    ],
+  });
+
+  // Local Backup
+  services.push({
+    key:'local-backup', label:'Local Backup', cls:'tdc-node',
+    running: lb && lb.running,
+    data: lb,
+    svc: svcMap['local-backup'],
+    fields: (d, sv)=>[
+      ['Height', d?.chain_height ?? '—'],
+      ['Peers', d?.known_peers ?? '—'],
+      ['Node ID', d?.node_id ?? '—'],
+      ['P2P', d?.p2p_bind ?? '—'],
+      ['Tip', d?.tip_hash ? d.tip_hash.slice(0,12)+'…' : '—'],
+      ...(sv ? [['Ports', (sv.ports_open?.length ?? 0)+'/'+((sv.ports_open?.length??0)+(sv.ports_closed?.length??0))], ['Details', sv.details ?? '—']] : []),
+    ],
+  });
+
+  // Pool
+  const poolSvc = svcMap['pool-edge'];
+  services.push({
+    key:'pool-edge', label:'Pool', cls:'tdc-pool',
+    running: (pe && pe.running) || (p && p.running),
+    data: pe && pe.running ? pe : p,
+    svc: poolSvc,
+    fields: (d, sv)=>[
+      ['Hashrate', d?.hashrate ? (typeof d.hashrate === 'number' ? d.hashrate.toFixed(2)+' KH/s' : d.hashrate) : '—'],
       ['Miners', d?.active_miners ?? '—'],
       ['Blocks', d?.blocks_found ?? '—'],
-      ['Port', d?.ports_open?.[0]?.split(':')[1] ?? '8444'],
-      ...(i ? [['Latency', i.latency_ms != null ? i.latency_ms + ' ms' : '—']] : []),
+      ['Port', d?.bind_addr ? d.bind_addr.split(':')[1] : '8444'],
+      ['Wallet', d?.pool_wallet ? d.pool_wallet.slice(0,16)+'…' : '—'],
+      ...(sv ? [['Ports', (sv.ports_open?.length ?? 0)+'/'+((sv.ports_open?.length??0)+(sv.ports_closed?.length??0))]] : []),
     ],
   });
 
+  // Miner
+  services.push({
+    key:'miner', label:'Miner', cls:'tdc-agent',
+    running: m && m.running,
+    data: m,
+    svc: svcMap['miner'],
+    fields: (d, sv)=>[
+      ['Hashrate', d?.hashrate ? (typeof d.hashrate === 'number' ? d.hashrate.toFixed(2)+' H/s' : d.hashrate) : '—'],
+      ['Backend', d?.gpu_backend ?? 'cpu'],
+      ['Device', d?.gpu_device ?? '—'],
+      ['Pool', d?.pool_addr ?? '—'],
+      ['Shares', d?.shares_accepted ?? '—'],
+      ...(sv ? [['Ports', (sv.ports_open?.length ?? 0)+'/'+((sv.ports_open?.length??0)+(sv.ports_closed?.length??0))]] : []),
+    ],
+  });
+
+  // Bridge
+  if(s.bridge || svcMap['bridge']){
+    const sv = svcMap['bridge'];
+    services.push({
+      key:'bridge', label:'Bridge', cls:'tdc-warp',
+      running: s.bridge ? s.bridge.running : (sv?.alive ?? false),
+      data: s.bridge || {},
+      svc: sv,
+      fields: (d, sv)=>[
+        ['Status', d?.status ?? (sv?.alive ? 'running' : '—')],
+        ['Ports', (sv?.ports_open?.length ?? 0)+' / '+((sv?.ports_open?.length??0)+(sv?.ports_closed?.length??0))],
+        ['Details', sv?.details ?? d?.details ?? '—'],
+      ],
+    });
+  }
+
   // DAO
-  const daoInfra = infra?.dao;
-  if(s.dao || daoInfra){
+  if(s.dao || svcMap['dao']){
+    const sv = svcMap['dao'];
     services.push({
       key:'dao', label:'DAO', cls:'tdc-dao',
-      running: s.dao ? s.dao.running : (daoInfra?.reachable ?? false),
+      running: s.dao ? s.dao.running : (sv?.alive ?? false),
       data: s.dao || {},
-      infra: daoInfra,
-      fields: (d, i)=>[
-        ['Status', d?.status ?? '—'],
-        ['Ports', (d?.ports_open?.length ?? 0) + ' / ' + ((d?.ports_open?.length ?? 0)+(d?.ports_closed?.length ?? 0))],
-        ...(i?.data ? [['Version', i.data.data?.version ?? '—'], ['Service', i.data.data?.data?.service ?? '—']] : []),
-        ...(i ? [['Latency', i.latency_ms != null ? i.latency_ms + ' ms' : '—']] : []),
+      svc: sv,
+      fields: (d, sv)=>[
+        ['Status', d?.status ?? (sv?.alive ? 'running' : '—')],
+        ['Ports', (sv?.ports_open?.length ?? 0)+' / '+((sv?.ports_open?.length??0)+(sv?.ports_closed?.length??0))],
+        ['Details', sv?.details ?? d?.details ?? '—'],
       ],
     });
   }
 
   // WARP
-  const warpInfra = infra?.warp;
-  if(s.warp || warpInfra){
+  if(s.warp || svcMap['warp']){
+    const sv = svcMap['warp'];
     services.push({
       key:'warp', label:'WARP', cls:'tdc-warp',
-      running: s.warp ? s.warp.running : (warpInfra?.reachable ?? false),
+      running: s.warp ? s.warp.running : (sv?.alive ?? false),
       data: s.warp || {},
-      infra: warpInfra,
-      fields: (d, i)=>[
-        ['Status', d?.status ?? '—'],
-        ['Ports', (d?.ports_open?.length ?? 0) + ' / ' + ((d?.ports_open?.length ?? 0)+(d?.ports_closed?.length ?? 0))],
-        ...(i?.data ? [['Transfers', i.data.transfers_total ?? '—'], ['Pending', i.data.transfers_pending ?? '—'], ['Version', i.data.version ?? '—']] : []),
-        ...(i ? [['Latency', i.latency_ms != null ? i.latency_ms + ' ms' : '—']] : []),
+      svc: sv,
+      fields: (d, sv)=>[
+        ['Status', d?.status ?? (sv?.alive ? 'running' : '—')],
+        ['Ports', (sv?.ports_open?.length ?? 0)+' / '+((sv?.ports_open?.length??0)+(sv?.ports_closed?.length??0))],
+        ['Details', sv?.details ?? d?.details ?? '—'],
       ],
     });
   }
 
-  // Bridge
-  const bridgeInfra = infra?.bridge;
-  if(bridgeInfra){
+  // Oasis
+  if(s.oasis || svcMap['oasis']){
+    const sv = svcMap['oasis'];
     services.push({
-      key:'bridge', label:'Bridge', cls:'tdc-warp',
-      running: bridgeInfra?.reachable ?? false,
-      data: {},
-      infra: bridgeInfra,
-      fields: (d, i)=>[
-        ['Status', i?.reachable ? 'Reachable' : 'Unreachable'],
-        ...(i ? [['Latency', i.latency_ms != null ? i.latency_ms + ' ms' : '—'], ['Endpoint', i.url ?? '—']] : []),
+      key:'oasis', label:'Oasis (L4)', cls:'tdc-dao',
+      running: s.oasis ? s.oasis.running : (sv?.alive ?? false),
+      data: s.oasis || {},
+      svc: sv,
+      fields: (d, sv)=>[
+        ['Status', d?.status ?? (sv?.alive ? 'running' : '—')],
+        ['Ports', (sv?.ports_open?.length ?? 0)+' / '+((sv?.ports_open?.length??0)+(sv?.ports_closed?.length??0))],
       ],
     });
   }
 
-  // Agent
-  const agentInfra = infra?.agent;
-  if(agentInfra){
+  // Free World
+  if(s.free_world || svcMap['free-world']){
+    const sv = svcMap['free-world'];
     services.push({
-      key:'agent', label:'Agent', cls:'tdc-agent',
-      running: agentInfra?.reachable ?? false,
-      data: {},
-      infra: agentInfra,
-      fields: (d, i)=>[
-        ['Status', i?.reachable ? 'Reachable' : 'Unreachable'],
-        ...(i?.data ? [['Mode', i.data.mode ?? '—'], ['GPUs', i.data.gpu_count ?? '—']] : []),
-        ...(i ? [['Latency', i.latency_ms != null ? i.latency_ms + ' ms' : '—']] : []),
+      key:'free-world', label:'Free World (L5)', cls:'tdc-dao',
+      running: s.free_world ? s.free_world.running : (sv?.alive ?? false),
+      data: s.free_world || {},
+      svc: sv,
+      fields: (d, sv)=>[
+        ['Status', d?.status ?? (sv?.alive ? 'running' : '—')],
+        ['Ports', (sv?.ports_open?.length ?? 0)+' / '+((sv?.ports_open?.length??0)+(sv?.ports_closed?.length??0))],
       ],
     });
   }
 
-  // Website
-  const webInfra = infra?.website;
-  if(webInfra){
+  // Issobella
+  if(s.issobella || svcMap['issobella']){
+    const sv = svcMap['issobella'];
     services.push({
-      key:'website', label:'Website', cls:'tdc-website',
-      running: webInfra?.reachable ?? false,
-      data: {},
-      infra: webInfra,
-      fields: (d, i)=>[
-        ['Status', i?.reachable ? 'Reachable' : 'Unreachable'],
-        ...(i ? [['Latency', i.latency_ms != null ? i.latency_ms + ' ms' : '—'], ['Endpoint', i.url ?? '—']] : []),
+      key:'issobella', label:'Issobella (L6)', cls:'tdc-dao',
+      running: s.issobella ? s.issobella.running : (sv?.alive ?? false),
+      data: s.issobella || {},
+      svc: sv,
+      fields: (d, sv)=>[
+        ['Status', d?.status ?? (sv?.alive ? 'running' : '—')],
+        ['Ports', (sv?.ports_open?.length ?? 0)+' / '+((sv?.ports_open?.length??0)+(sv?.ports_closed?.length??0))],
       ],
     });
   }
 
-  // Miner (local)
-  services.push({
-    key:'miner', label:'Miner', cls:'tdc-agent',
-    running: m && m.running,
-    data: m,
-    fields: (d)=>[
-      ['Hashrate', d?.hashrate ? d.hashrate.toFixed(2) + ' H/s' : '—'],
-      ['Backend', d?.gpu_backend ?? 'cpu'],
-      ['Device', d?.gpu_device ?? '—'],
-      ['Pool', d?.pool_addr ?? '—'],
-    ],
-  });
+  // Dashboard
+  if(svcMap['dashboard']){
+    const sv = svcMap['dashboard'];
+    services.push({
+      key:'dashboard', label:'Dashboard', cls:'tdc-website',
+      running: sv?.alive ?? false,
+      data: {},
+      svc: sv,
+      fields: (d, sv)=>[
+        ['Status', sv?.alive ? 'running' : 'stopped'],
+        ['Ports', (sv?.ports_open?.length ?? 0)+' / '+((sv?.ports_open?.length??0)+(sv?.ports_closed?.length??0))],
+        ['Details', sv?.details ?? '—'],
+      ],
+    });
+  }
 
   container.innerHTML = services.map(svc=>{
     const online = svc.running;
     const statusClass = online ? 'tdc-online' : 'tdc-offline';
     const statusText = online ? 'Online' : 'Offline';
     const d = svc.data || {};
-    const i = svc.infra || null;
-    const rows = svc.fields(d, i).map(([label,value])=>`
+    const sv = svc.svc || null;
+    const rows = svc.fields(d, sv).map(([label,value])=>`
       <div class="tdc-row">
         <div class="tdc-label">${escapeHtml(label)}</div>
-        <div class="tdc-value${String(value).length > 20 ? ' small' : ''}">${escapeHtml(value)}</div>
+        <div class="tdc-value${String(value).length > 20 ? ' small' : ''}">${escapeHtml(String(value))}</div>
       </div>
     `).join('');
 
@@ -901,11 +966,11 @@ async function updateServiceTelemetryDetails(s){
         <div class="tdc-body">
           <div class="tdc-row">
             <div class="tdc-label">Uptime</div>
-            <div class="tdc-value">${formatUptime(d?.uptime_seconds)}</div>
+            <div class="tdc-value">${formatUptime(d?.uptime_seconds ?? sv?.uptime_seconds)}</div>
           </div>
           <div class="tdc-row">
             <div class="tdc-label">PID</div>
-            <div class="tdc-value">${d?.pid ?? '—'}</div>
+            <div class="tdc-value">${d?.pid ?? sv?.pid ?? '—'}</div>
           </div>
           ${rows}
         </div>
@@ -1013,7 +1078,7 @@ function updatePayouts(p, topology){
       : '<div class="text-gray-600 italic text-[10px]">No payout events yet</div>';
   }
 
-  // Fetch balance from /api/payout for overview panel
+  // Fetch balance + PPLNS from /api/payout for overview panel
   fetch('/api/payout')
     .then(r => r.ok ? r.json() : null)
     .then(pay => {
@@ -1021,6 +1086,21 @@ function updatePayouts(p, topology){
       const balEl = document.getElementById('payout-balance');
       if(balEl && pay.pool_wallet_balance != null){
         balEl.textContent = formatFlowers(pay.pool_wallet_balance);
+      }
+      // PPLNS stats
+      const ps = pay.pool_stats || {};
+      const pplns = ps.pplns || {};
+      const roundsEl = document.getElementById('payout-pplns-rounds');
+      if(roundsEl) roundsEl.textContent = pplns.payout_rounds ?? '—';
+      const paidEl = document.getElementById('payout-pplns-paid');
+      if(paidEl && pplns.total_paid_flowers != null){
+        const zion = pplns.total_paid_flowers / 1_000_000;
+        paidEl.textContent = _zionFmt(zion) + ' ZION';
+      }
+      const unpaidEl = document.getElementById('payout-pplns-unpaid');
+      if(unpaidEl && pplns.total_unpaid_flowers != null){
+        const zion = pplns.total_unpaid_flowers / 1_000_000;
+        unpaidEl.textContent = _zionFmt(zion) + ' ZION';
       }
     })
     .catch(() => {});
@@ -1031,6 +1111,498 @@ function formatFlowers(v){
   const zion = v / 1_000_000;
   return _zionFmt(zion) + ' ZION';
 }
+
+// ── Chain Stats (overview panel) ────────────────────────────────────────
+async function updateChainStats(){
+  try {
+    const data = await fetch('/api/explorer').then(r => r.ok ? r.json() : null);
+    if(!data) return;
+    const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+
+    // Badge
+    const badge = document.getElementById('chain-stats-badge');
+    if(badge){
+      badge.textContent = data.rpc_reachable ? 'Live' : 'Offline';
+      badge.className = data.rpc_reachable
+        ? 'text-xs px-2 py-0.5 rounded-full bg-emerald-700 text-emerald-300'
+        : 'text-xs px-2 py-0.5 rounded-full bg-red-700 text-red-300';
+    }
+
+    // Block reward
+    set('chain-block-reward', data.block_reward_zion ? data.block_reward_zion.toFixed(3) : '—');
+
+    // Difficulty (from most recent block)
+    const blocks = data.recent_blocks || [];
+    const latest = blocks.length > 0 ? blocks[blocks.length - 1] : null;
+    if(latest){
+      set('chain-difficulty', latest.difficulty ? latest.difficulty.toLocaleString() : '—');
+    }
+
+    // Block time (average of last 10 blocks) + variance + next block countdown
+    if(blocks.length >= 2){
+      const recent = blocks.slice(-10);
+      const dts = [];
+      for(let i = 1; i < recent.length; i++){
+        dts.push(recent[i].timestamp - recent[i-1].timestamp);
+      }
+      const avgDt = dts.reduce((a,b) => a+b, 0) / dts.length;
+      set('chain-block-time', avgDt > 0 ? avgDt.toFixed(1) + 's' : '—');
+
+      // Variance = standard deviation / mean (coefficient of variation)
+      if(avgDt > 0 && dts.length > 1){
+        const variance = dts.reduce((sum, dt) => sum + Math.pow(dt - avgDt, 2), 0) / dts.length;
+        const stdDev = Math.sqrt(variance);
+        const cv = stdDev / avgDt;
+        if(cv < 0.3){
+          set('chain-block-variance', 'Stable');
+          const el = document.getElementById('chain-block-variance');
+          if(el) el.className = 'text-xl font-bold text-emerald-400';
+        } else if(cv < 0.6){
+          set('chain-block-variance', 'Variable');
+          const el = document.getElementById('chain-block-variance');
+          if(el) el.className = 'text-xl font-bold text-amber-400';
+        } else {
+          set('chain-block-variance', 'Volatile');
+          const el = document.getElementById('chain-block-variance');
+          if(el) el.className = 'text-xl font-bold text-red-400';
+        }
+      }
+
+      // Next block countdown = avgDt - (now - last_block_timestamp)
+      if(latest && latest.timestamp && avgDt > 0){
+        const nowSec = Math.floor(Date.now() / 1000);
+        const elapsed = nowSec - latest.timestamp;
+        const remaining = Math.max(0, Math.round(avgDt - elapsed));
+        set('chain-next-block', remaining + 's');
+        const el = document.getElementById('chain-next-block');
+        if(el){
+          if(remaining < 10) el.className = 'text-xl font-bold text-red-400 animate-pulse';
+          else if(remaining < 30) el.className = 'text-xl font-bold text-amber-400';
+          else el.className = 'text-xl font-bold text-emerald-400';
+        }
+      }
+
+      // Network hashrate estimate = difficulty / avg_block_time (H/s)
+      if(latest && latest.difficulty && avgDt > 0){
+        const netHashrate = latest.difficulty / avgDt;
+        if(netHashrate >= 1e6){
+          set('chain-net-hashrate', (netHashrate / 1e6).toFixed(2) + ' MH/s');
+        } else if(netHashrate >= 1e3){
+          set('chain-net-hashrate', (netHashrate / 1e3).toFixed(2) + ' KH/s');
+        } else {
+          set('chain-net-hashrate', netHashrate.toFixed(1) + ' H/s');
+        }
+      }
+    }
+
+    // Mined so far
+    const mined = data.estimated_circulating_zion ? (data.estimated_circulating_zion - data.premine_zion) : null;
+    if(mined != null){
+      set('chain-mined', fmtNum(mined));
+    }
+
+    // Circulating
+    set('chain-circulating', data.estimated_circulating_zion ? fmtNum(data.estimated_circulating_zion) : '—');
+
+    // Supply mined %
+    if(data.estimated_circulating_zion && data.total_supply_zion){
+      const pct = (data.estimated_circulating_zion / data.total_supply_zion * 100);
+      set('chain-supply-pct', pct.toFixed(4) + '%');
+    }
+
+    // Emission rate (K ZION/day) = block_reward * blocks_per_hour * 24 / 1000
+    if(data.block_reward_zion && blocks.length >= 2){
+      const recent = blocks.slice(-10);
+      const dts = [];
+      for(let i = 1; i < recent.length; i++){
+        dts.push(recent[i].timestamp - recent[i-1].timestamp);
+      }
+      const avgDt = dts.reduce((a,b) => a+b, 0) / dts.length;
+      if(avgDt > 0){
+        const blocksPerHour = 3600 / avgDt;
+        const emissionPerDay = data.block_reward_zion * blocksPerHour * 24 / 1000;
+        set('chain-emission', emissionPerDay.toFixed(1));
+        set('chain-blocks-hr', blocksPerHour.toFixed(1));
+      }
+    }
+  } catch(e){
+    console.error('updateChainStats error:', e);
+  }
+}
+
+async function updateRecentBlocks(){
+  try {
+    const data = await fetch('/api/explorer').then(r => r.ok ? r.json() : null);
+    if(!data) return;
+    const blocks = data.recent_blocks || [];
+    const tbody = document.getElementById('recent-blocks-tbody');
+    const badge = document.getElementById('recent-blocks-badge');
+    if(!tbody) return;
+
+    if(badge){
+      badge.textContent = blocks.length + ' blocks';
+      badge.className = 'text-xs px-2 py-0.5 rounded-full bg-emerald-700 text-emerald-300';
+    }
+
+    if(blocks.length === 0){
+      tbody.innerHTML = '<tr><td colspan="5" class="text-gray-500 text-center py-4">No blocks yet</td></tr>';
+      return;
+    }
+
+    // Show newest first
+    const sorted = blocks.slice().reverse();
+    tbody.innerHTML = sorted.map(b => {
+      const hashShort = b.hash ? b.hash.substring(0, 16) + '…' : '—';
+      const ts = b.timestamp ? new Date(b.timestamp * 1000).toLocaleTimeString('en-GB') : '—';
+      const diff = b.difficulty ? b.difficulty.toLocaleString() : '—';
+      return `<tr class="border-b border-white/5 hover:bg-cyan-500/10 transition cursor-pointer" onclick="showBlockTxDetail(${b.height})">
+        <td class="py-1.5 px-2 font-bold text-cyan-400">${b.height}</td>
+        <td class="py-1.5 px-2 font-mono text-gray-400 text-[10px]">${hashShort}</td>
+        <td class="py-1.5 px-2 text-right text-white">${b.tx_count ?? '—'}</td>
+        <td class="py-1.5 px-2 text-right text-amber-400 font-mono">${diff}</td>
+        <td class="py-1.5 px-2 text-right text-gray-400 font-mono">${ts}</td>
+      </tr>`;
+    }).join('');
+  } catch(e){
+    console.error('updateRecentBlocks error:', e);
+  }
+}
+
+async function showBlockTxDetail(height){
+  try {
+    // Try Explorer tab first, then Overview tab
+    let detail = document.getElementById('explorer-block-tx-detail');
+    let tbody = document.getElementById('exbtx-tbody');
+    let heightLabel = document.getElementById('exbtx-height');
+    if(!detail){
+      detail = document.getElementById('recent-block-tx-detail');
+      tbody = document.getElementById('rbtx-tbody');
+      heightLabel = document.getElementById('rbtx-height');
+    }
+    if(!detail || !tbody) return;
+    tbody.innerHTML = '<tr><td colspan="6" class="text-gray-500 text-center py-2">Loading…</td></tr>';
+    detail.classList.remove('hidden');
+    if(heightLabel) heightLabel.textContent = `#${height}`;
+
+    const data = await fetch(`/api/block?height=${height}`).then(r => r.ok ? r.json() : null);
+    if(!data || !data.found){
+      tbody.innerHTML = '<tr><td colspan="6" class="text-gray-500 text-center py-2">Block not found</td></tr>';
+      return;
+    }
+
+    const txs = data.transactions || [];
+    if(txs.length === 0){
+      tbody.innerHTML = '<tr><td colspan="6" class="text-gray-500 text-center py-2">No transactions</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = txs.map(tx => {
+      const txIdShort = tx.tx_id ? tx.tx_id.substring(0, 16) + '…' : '—';
+      const fromShort = tx.from ? tx.from.substring(0, 16) + '…' : '—';
+      const toShort = tx.to ? tx.to.substring(0, 16) + '…' : '—';
+      const amt = tx.amount_zion ? (typeof tx.amount_zion === 'string' ? (parseFloat(tx.amount_zion) / 1e6).toFixed(4) : (tx.amount_zion / 1e6).toFixed(4)) : '—';
+      const fee = tx.fee_zion ? (typeof tx.fee_zion === 'string' ? (parseFloat(tx.fee_zion) / 1e6).toFixed(4) : (tx.fee_zion / 1e6).toFixed(4)) : '0';
+      const typeColor = tx.type === 'coinbase' ? 'text-emerald-400' : tx.type === 'transfer' ? 'text-cyan-400' : 'text-gray-400';
+      return `<tr class="border-b border-white/5">
+        <td class="py-1 px-2 text-gray-400 text-[10px]">${txIdShort}</td>
+        <td class="py-1 px-2 ${typeColor} font-bold">${tx.type || '—'}</td>
+        <td class="py-1 px-2 text-gray-400 text-[10px]">${fromShort}</td>
+        <td class="py-1 px-2 text-gray-400 text-[10px]">${toShort}</td>
+        <td class="py-1 px-2 text-right text-emerald-400">${amt}</td>
+        <td class="py-1 px-2 text-right text-gray-500">${fee}</td>
+      </tr>`;
+    }).join('');
+  } catch(e){
+    console.error('showBlockTxDetail error:', e);
+  }
+}
+
+async function updateTopWallets(){
+  try {
+    const data = await fetch('/api/wallets').then(r => r.ok ? r.json() : null);
+    if(!data) return;
+    const wallets = (data.wallets || []).slice().sort((a, b) => (b.balance_zion || 0) - (a.balance_zion || 0));
+    const tbody = document.getElementById('top-wallets-tbody');
+    const badge = document.getElementById('top-wallets-badge');
+    if(!tbody) return;
+
+    if(badge){
+      badge.textContent = wallets.length + ' wallets';
+      badge.className = 'text-xs px-2 py-0.5 rounded-full bg-emerald-700 text-emerald-300';
+    }
+
+    if(wallets.length === 0){
+      tbody.innerHTML = '<tr><td colspan="3" class="text-gray-500 text-center py-4">No wallets</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = wallets.slice(0, 8).map(w => {
+      const addrShort = w.address ? w.address.substring(0, 20) + '…' : '—';
+      const label = (w.label || '—').substring(0, 35);
+      const bal = w.balance_zion || 0;
+      const balStr = bal >= 1e9 ? (bal / 1e9).toFixed(2) + 'B' : bal >= 1e6 ? (bal / 1e6).toFixed(2) + 'M' : bal >= 1e3 ? (bal / 1e3).toFixed(1) + 'K' : bal.toFixed(1);
+      const cat = w.category || '';
+      const catColor = cat === 'premine' ? 'text-purple-400' : cat === 'operational' ? 'text-cyan-400' : 'text-gray-400';
+      return `<tr class="border-b border-white/5 hover:bg-white/5 transition">
+        <td class="py-1.5 px-2"><span class="text-white">${label}</span> <span class="${catColor} text-[9px]">(${cat})</span></td>
+        <td class="py-1.5 px-2 font-mono text-gray-400 text-[10px]">${addrShort}</td>
+        <td class="py-1.5 px-2 text-right text-emerald-400 font-bold font-mono">${balStr}</td>
+      </tr>`;
+    }).join('');
+  } catch(e){
+    console.error('updateTopWallets error:', e);
+  }
+}
+
+// ═══ Block Reward Breakdown ═══
+async function updateBlockRewardBreakdown(){
+  try {
+    const data = await fetch('/api/explorer').then(r => r.ok ? r.json() : null);
+    if(!data) return;
+    const reward = data.block_reward_zion || 5400;
+    // Parse fee split 89/5/5/1
+    const fsText = '89/5/5/1';
+    const parts = fsText.split('/').map(x => parseFloat(x) || 0);
+    const [minerPct, humPct, issoPct, poolPct] = parts;
+    const minerAmt = (reward * minerPct / 100).toFixed(1);
+    const humAmt = (reward * humPct / 100).toFixed(1);
+    const issoAmt = (reward * issoPct / 100).toFixed(1);
+    const poolAmt = (reward * poolPct / 100).toFixed(1);
+    const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+    set('reward-amt-miner', minerAmt + ' ZION');
+    set('reward-amt-humanitarian', humAmt + ' ZION');
+    set('reward-amt-issobella', issoAmt + ' ZION');
+    set('reward-amt-pool', poolAmt + ' ZION');
+  } catch(e){ console.error('updateBlockRewardBreakdown:', e); }
+}
+
+// ═══ Network Growth Chart (blocks per day) ═══
+let _networkGrowthChart = null;
+async function updateNetworkGrowth(){
+  try {
+    const data = await fetch('/api/explorer').then(r => r.ok ? r.json() : null);
+    if(!data) return;
+    const blocks = data.recent_blocks || [];
+    const badge = document.getElementById('network-growth-badge');
+    if(blocks.length === 0){
+      if(badge){ badge.textContent = 'No data'; }
+      return;
+    }
+
+    // Group blocks by day
+    const dayMap = {};
+    for(const b of blocks){
+      if(!b.timestamp) continue;
+      const d = new Date(b.timestamp * 1000);
+      const dayKey = d.toISOString().split('T')[0];
+      dayMap[dayKey] = (dayMap[dayKey] || 0) + 1;
+    }
+    const dayKeys = Object.keys(dayMap).sort();
+    const dayCounts = dayKeys.map(k => dayMap[k]);
+
+    const today = new Date().toISOString().split('T')[0];
+    const blocksToday = dayMap[today] || 0;
+    const avgDay = dayCounts.length > 0 ? (dayCounts.reduce((a,b)=>a+b,0) / dayCounts.length).toFixed(1) : '—';
+    const peak = dayCounts.length > 0 ? Math.max(...dayCounts) : '—';
+
+    const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+    set('ng-blocks-today', blocksToday);
+    set('ng-avg-day', avgDay);
+    set('ng-peak', peak);
+    if(badge){ badge.textContent = dayCounts.length + ' days'; badge.className = 'text-xs px-2 py-0.5 rounded-full bg-emerald-700 text-emerald-300'; }
+
+    // Draw bar chart
+    const canvas = document.getElementById('chart-network-growth');
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+    const W = rect.width, H = rect.height;
+    ctx.clearRect(0, 0, W, H);
+
+    if(dayCounts.length === 0) return;
+    const maxVal = Math.max(...dayCounts, 1);
+    const barW = W / dayCounts.length * 0.7;
+    const gap = W / dayCounts.length * 0.3;
+    const colors = ['#10b981', '#06b6d4', '#f59e0b', '#a855f7', '#ef4444', '#3b82f6'];
+    dayCounts.forEach((val, i) => {
+      const barH = (val / maxVal) * (H - 20);
+      const x = i * (barW + gap) + gap / 2;
+      const y = H - barH - 15;
+      ctx.fillStyle = colors[i % colors.length];
+      ctx.fillRect(x, y, barW, barH);
+      // Value label
+      ctx.fillStyle = '#888';
+      ctx.font = '9px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(val, x + barW / 2, H - 4);
+    });
+
+    // Legend
+    const legend = document.getElementById('network-growth-legend');
+    if(legend){
+      legend.innerHTML = dayKeys.map((k, i) =>
+        `<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm" style="background:${colors[i % colors.length]}"></span>${k.substring(5)}</span>`
+      ).join('');
+    }
+  } catch(e){ console.error('updateNetworkGrowth:', e); }
+}
+
+// ═══ Miner Leaderboard ═══
+async function updateMinerLeaderboard(){
+  try {
+    const data = await fetch('/api/pool/miners').then(r => r.ok ? r.json() : null);
+    if(!data) return;
+    const miners = data.miners || [];
+    const tbody = document.getElementById('miner-leaderboard-tbody');
+    const badge = document.getElementById('miner-leaderboard-badge');
+    if(!tbody) return;
+
+    if(badge){ badge.textContent = miners.length + ' active'; badge.className = 'text-xs px-2 py-0.5 rounded-full bg-emerald-700 text-emerald-300'; }
+
+    if(miners.length === 0){
+      tbody.innerHTML = '<tr><td colspan="5" class="text-gray-500 text-center py-4">No active miners</td></tr>';
+      return;
+    }
+
+    // Sort by hashrate descending
+    const sorted = miners.slice().sort((a, b) => (b.hashrate_hps || b.hashrate || 0) - (a.hashrate_hps || a.hashrate || 0));
+    tbody.innerHTML = sorted.map((m, i) => {
+      const name = m.worker_name || m.miner_id || ('Miner #' + (i+1));
+      const hr = m.hashrate_hps || m.hashrate || 0;
+      const hrStr = hr >= 1e6 ? (hr / 1e6).toFixed(2) + ' MH/s' : hr >= 1e3 ? (hr / 1e3).toFixed(2) + ' KH/s' : hr.toFixed(0) + ' H/s';
+      const validShares = m.valid_shares || m.accepted_shares || 0;
+      const invalidShares = m.invalid_shares || m.rejected_shares || 0;
+      const total = validShares + invalidShares;
+      const acceptPct = total > 0 ? ((validShares / total) * 100).toFixed(1) + '%' : '—';
+      const blocks = m.blocks_found || 0;
+      const rankColor = i === 0 ? 'text-amber-400' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-orange-400' : 'text-gray-400';
+      return `<tr class="border-b border-white/5 hover:bg-white/5 transition">
+        <td class="py-1.5 px-2 font-bold ${rankColor}">${i + 1}</td>
+        <td class="py-1.5 px-2 text-white">${name}${blocks > 0 ? ' <span class="text-[9px] text-emerald-400">('+blocks+' blk)</span>' : ''}</td>
+        <td class="py-1.5 px-2 text-right text-emerald-400 font-mono">${hrStr}</td>
+        <td class="py-1.5 px-2 text-right text-white font-mono">${validShares}</td>
+        <td class="py-1.5 px-2 text-right text-cyan-400 font-mono">${acceptPct}</td>
+      </tr>`;
+    }).join('');
+  } catch(e){ console.error('updateMinerLeaderboard:', e); }
+}
+
+// ═══ Difficulty Forecast ═══
+async function updateDifficultyForecast(){
+  try {
+    const data = await fetch('/api/explorer').then(r => r.ok ? r.json() : null);
+    if(!data) return;
+    const blocks = data.recent_blocks || [];
+    const badge = document.getElementById('diff-forecast-badge');
+    const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+
+    if(blocks.length < 2){
+      if(badge){ badge.textContent = 'Need more blocks'; }
+      return;
+    }
+
+    const recent = blocks.slice(-10);
+    const latest = recent[recent.length - 1];
+    const currentDiff = latest.difficulty || 0;
+    set('diff-current', currentDiff ? currentDiff.toLocaleString() : '—');
+
+    // Avg block time
+    const dts = [];
+    for(let i = 1; i < recent.length; i++){
+      dts.push(recent[i].timestamp - recent[i-1].timestamp);
+    }
+    const avgDt = dts.reduce((a,b)=>a+b,0) / dts.length;
+    set('diff-avg-block-time', avgDt > 0 ? avgDt.toFixed(1) + 's' : '—');
+
+    // Predicted next difficulty = current * (target / avg_block_time)
+    const targetBlockTime = 60; // 60 seconds target
+    let predictedDiff = currentDiff;
+    if(avgDt > 0){
+      predictedDiff = Math.round(currentDiff * (targetBlockTime / avgDt));
+    }
+    set('diff-predicted', predictedDiff.toLocaleString());
+
+    // Change %
+    if(currentDiff > 0){
+      const changePct = ((predictedDiff - currentDiff) / currentDiff * 100);
+      const sign = changePct >= 0 ? '+' : '';
+      set('diff-change', sign + changePct.toFixed(2) + '%');
+      const el = document.getElementById('diff-change');
+      if(el){
+        el.className = changePct > 5 ? 'font-mono font-bold text-emerald-400' :
+                      changePct < -5 ? 'font-mono font-bold text-red-400' :
+                      'font-mono font-bold text-amber-400';
+      }
+    }
+
+    // ETA to retarget (assume retarget every N blocks, or continuous)
+    // ZION uses continuous difficulty adjustment, so ETA = next block
+    set('diff-eta', 'Next block');
+
+    if(badge){ badge.textContent = 'Live'; badge.className = 'text-xs px-2 py-0.5 rounded-full bg-emerald-700 text-emerald-300'; }
+
+    // Draw difficulty trend sparkline
+    const canvas = document.getElementById('chart-diff-trend');
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+    const W = rect.width, H = rect.height;
+    ctx.clearRect(0, 0, W, H);
+
+    const diffs = recent.map(b => b.difficulty || 0).filter(d => d > 0);
+    if(diffs.length < 2) return;
+    const minD = Math.min(...diffs);
+    const maxD = Math.max(...diffs);
+    const range = maxD - minD || 1;
+
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    diffs.forEach((d, i) => {
+      const x = (i / (diffs.length - 1)) * W;
+      const y = H - ((d - minD) / range) * (H - 10) - 5;
+      if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // Fill area
+    ctx.lineTo(W, H);
+    ctx.lineTo(0, H);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(245, 158, 11, 0.15)';
+    ctx.fill();
+  } catch(e){ console.error('updateDifficultyForecast:', e); }
+}
+
+// ═══ Dark/Light Theme Toggle ═══
+function toggleTheme(){
+  const body = document.body;
+  body.classList.toggle('light-theme');
+  const isLight = body.classList.contains('light-theme');
+  const btn = document.getElementById('themeBtn');
+  if(btn) btn.textContent = isLight ? '☀️' : '🌙';
+  try { localStorage.setItem('zion-theme', isLight ? 'light' : 'dark'); } catch(e) {}
+}
+
+// Apply saved theme on load
+(function(){
+  try {
+    const saved = localStorage.getItem('zion-theme');
+    if(saved === 'light'){
+      document.body.classList.add('light-theme');
+      const btn = document.getElementById('themeBtn');
+      if(btn) btn.textContent = '☀️';
+    }
+  } catch(e) {}
+})();
 
 async function refreshPayout(){
   try{
@@ -1373,6 +1945,7 @@ let alertCache = [];
 let alertFilterActive = 'all';
 let _alertsTimer = null;
 let _backupsTimer = null;
+let walletsCache = [];
 
 async function loadAlertHistory(){
   try {
@@ -1760,6 +2333,9 @@ async function loadWallets(){
     const rpc = data.rpc || {};
     const pay = payoutRes.status === 'fulfilled' ? payoutRes.value : {};
 
+    // Cache for search filter
+    walletsCache = wallets;
+
     const stats = document.getElementById('wallets-stats');
     if(stats){
       stats.innerHTML = `
@@ -1778,6 +2354,14 @@ async function loadWallets(){
         <div class="zion-panel-soft p-3 text-center">
           <div class="text-lg font-bold text-emerald-400">${summary.with_live_balance || 0}</div>
           <div class="text-[10px] text-gray-400">Live Balance</div>
+        </div>
+        <div class="zion-panel-soft p-3 text-center">
+          <div class="text-lg font-bold text-zion-gold">${summary.total_premine_zion ? _zionFmt(summary.total_premine_zion) : '—'}</div>
+          <div class="text-[10px] text-gray-400">Premine ZION</div>
+        </div>
+        <div class="zion-panel-soft p-3 text-center">
+          <div class="text-lg font-bold text-zion-cyan">${summary.total_operational_zion != null ? _zionFmt(summary.total_operational_zion) : '—'}</div>
+          <div class="text-[10px] text-gray-400">Operational ZION</div>
         </div>
       `;
     }
@@ -1839,6 +2423,7 @@ async function loadWallets(){
         dao:   { label: '🗳️ DAO Treasury', color: 'text-zion-purple', bg: 'bg-zion-purple/10' },
         infrastructure: { label: '🏗️ Infrastructure', color: 'text-zion-cyan', bg: 'bg-zion-cyan/10' },
         humanitarian: { label: '💝 Humanitarian', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+        other: { label: '📦 Other', color: 'text-amber-400', bg: 'bg-amber-500/10' },
       };
       catDisplay.innerHTML = Object.entries(cats).map(([key, val]) => {
         const meta = catMeta[key] || { label: key, color: 'text-gray-300', bg: 'bg-white/5' };
@@ -1863,6 +2448,7 @@ async function loadWallets(){
         dao:   { label: '🗳️ DAO Treasury', color: '#9333ea' },
         infrastructure: { label: '🏗️ Infrastructure', color: '#06b6d4' },
         humanitarian: { label: '💝 Humanitarian', color: '#10b981' },
+        other: { label: '📦 Other', color: '#f59e0b' },
         bridge_seed: { label: '🌉 Bridge Seed', color: '#f59e0b' },
         bridge_vault_utxo: { label: '🔒 Bridge Vault UTXO', color: '#f97316' },
       };
@@ -1925,6 +2511,52 @@ async function loadWallets(){
   }
   // Also refresh online miners table
   refreshMinerBalances();
+}
+
+function filterWalletTable(){
+  const q = (document.getElementById('wallet-search')?.value || '').toLowerCase().trim();
+  const tbody = document.getElementById('wallets-table');
+  if(!tbody || !walletsCache.length) return;
+  const filtered = q ? walletsCache.filter(w =>
+    (w.address || '').toLowerCase().includes(q) ||
+    (w.label || '').toLowerCase().includes(q) ||
+    (w.category || '').toLowerCase().includes(q)
+  ) : walletsCache;
+  if(!filtered.length){
+    tbody.innerHTML = '<tr><td colspan="7" class="py-4 text-gray-500 italic text-center">No wallets match "'+escapeHtml(q)+'"</td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map((w, i) => {
+    const idx = w.index || (i + 1);
+    const addr = escapeHtml(w.address || '');
+    const shortAddr = addr.length > 36 ? addr.slice(0, 18) + '…' + addr.slice(-12) : addr;
+    const label = escapeHtml(w.label || '');
+    const isPremine = w.category === 'premine' || w.source === 'genesis' || w.source === 'premine';
+    const sourceBadge = isPremine
+      ? '<span class="px-1.5 py-0.5 rounded bg-zion-gold/20 text-zion-gold text-[10px]">genesis</span>'
+      : '<span class="px-1.5 py-0.5 rounded bg-zion-cyan/20 text-zion-cyan text-[10px]">' + escapeHtml(w.source || 'node') + '</span>';
+    const catBadge = isPremine
+      ? '<span class="text-zion-gold">premine</span>'
+      : '<span class="text-zion-cyan">operational</span>';
+    const premineAmt = w.amount_zion ? fmtNum(w.amount_zion) + ' ZION' : '—';
+    const balV = w.balance_zion;
+    const bal = balV !== null && balV !== undefined
+      ? (typeof balV === 'number' ? (_zionFmt(balV) + ' ZION') : balV)
+      : (w.rpc_ok === false ? '<span class="text-gray-600">unavailable</span>' : '—');
+    const balClass = balV !== null && balV !== undefined ? 'text-emerald-400 font-bold' : 'text-gray-500';
+    return `<tr class="border-b border-white/5 hover:bg-white/3 transition">
+      <td class="py-2 px-3 text-gray-500">${idx}</td>
+      <td class="py-2 px-3 font-semibold text-white">${label}</td>
+      <td class="py-2 px-3">
+        <span class="text-gray-300" title="${addr}">${shortAddr}</span>
+        <button data-copy="${addr}" class="copy-btn ml-1 text-[10px] text-zion-gold hover:underline">copy</button>
+      </td>
+      <td class="py-2 px-3">${sourceBadge}</td>
+      <td class="py-2 px-3">${catBadge}</td>
+      <td class="py-2 px-3 text-right text-zion-gold">${premineAmt}</td>
+      <td class="py-2 px-3 text-right ${balClass}">${bal}</td>
+    </tr>`;
+  }).join('');
 }
 
 // ─── Online Miners (Wallets tab) ────────────────────────────────────
@@ -2117,7 +2749,7 @@ async function loadPayoutTab(){
       // Use payout miners (richer: on_chain_balance, payout_address)
       const payoutMiners = (d.miners && d.miners.length > 0) ? d.miners : miners;
       if(payoutMiners.length === 0){
-        balTbody.innerHTML = '<tr><td colspan="6" class="text-gray-500 text-center py-4">No miners connected</td></tr>';
+        balTbody.innerHTML = '<tr><td colspan="8" class="text-gray-500 text-center py-4">No miners connected</td></tr>';
       } else {
         balTbody.innerHTML = payoutMiners.map(m => {
           const name = m.worker_name || m.miner_id || m.address || '—';
@@ -2554,6 +3186,8 @@ async function loadExplorer(){
     set('exp-blocks', data.accepted_blocks ?? '—');
     set('exp-mempool', data.mempool_size ?? '—');
     set('exp-reward', data.block_reward_zion ? data.block_reward_zion.toFixed(3) + ' ZION' : '—');
+    set('exp-peers', data.peer_count ?? '—');
+    set('exp-network', data.network ?? '—');
     set('exp-tip', data.tip_hash ?? '—');
     set('exp-genesis', data.genesis_hash ?? '—');
     set('exp-circulating', data.estimated_circulating_zion ? fmtNum(data.estimated_circulating_zion) + ' ZION' : '—');
@@ -2574,12 +3208,12 @@ async function loadExplorer(){
         tbody.innerHTML = '<tr><td colspan="5" class="py-4 text-gray-500 italic text-center">No blocks available. Start the node to see recent blocks.</td></tr>';
       } else {
         tbody.innerHTML = data.recent_blocks.slice().reverse().map(b => `
-          <tr class="border-b border-white/5 hover:bg-white/3 transition cursor-pointer" data-block-height="${b.height}" title="Click for block detail">
-            <td class="py-2 px-3 font-bold text-white">#${b.height}</td>
-            <td class="py-2 px-3 text-gray-300 truncate" title="${escapeHtml(b.hash || '')}">${escapeHtml(b.hash || '—')}</td>
+          <tr class="border-b border-white/5 hover:bg-cyan-500/10 transition cursor-pointer" data-block-height="${b.height}" onclick="showBlockTxDetail(${b.height})" title="Click for block detail">
+            <td class="py-2 px-3 font-bold text-cyan-400">#${b.height}</td>
+            <td class="py-2 px-3 text-gray-300 truncate" title="${escapeHtml(b.hash || '')}">${escapeHtml(b.hash ? b.hash.substring(0,20) + '…' : '—')}</td>
             <td class="py-2 px-3 text-gray-400">${b.timestamp ? new Date(b.timestamp * 1000).toLocaleString() : '—'}</td>
             <td class="py-2 px-3 text-right text-gray-300">${b.tx_count ?? 0}</td>
-            <td class="py-2 px-3 text-right text-gray-400">${b.difficulty ? b.difficulty.toLocaleString() : '—'}</td>
+            <td class="py-2 px-3 text-right text-amber-400">${b.difficulty ? b.difficulty.toLocaleString() : '—'}</td>
           </tr>
         `).join('');
       }
@@ -2807,74 +3441,65 @@ async function loadTopology(){
     const data = await fetch('/api/topology', { signal: AbortSignal.timeout(8000) }).then(r=>r.json());
     const el = id => document.getElementById(id);
 
-    // ── Real-time status bar (new elements) ──────────────────────────────
-    // Core
-    if(el('topo-core-status')){
-      const alive = data.core?.alive;
-      el('topo-core-status').textContent = alive ? 'Online' : 'Offline';
-      el('topo-core-status').className   = alive ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold';
-    }
-    if(el('topo-core-latency')) el('topo-core-latency').textContent = data.core?.latency_ms ? data.core.latency_ms+'ms' : '—';
-    if(el('topo-core-height'))  el('topo-core-height').textContent  = data.core?.data?.height ?? data.core?.data?.result?.height ?? data.core?.height ?? '—';
+    // ── 3-node P2P topology (v3.0.4) ─────────────────────────────────────
+    const nodes = [
+      { key: 'edge_node1', prefix: 'topo-edge1' },
+      { key: 'edge_node2', prefix: 'topo-edge2' },
+      { key: 'local_backup', prefix: 'topo-local' },
+    ];
 
-    // Edge
-    if(el('topo-edge-status')){
-      const alive = data.edge?.alive;
-      el('topo-edge-status').textContent = alive ? 'Online' : 'Offline';
-      el('topo-edge-status').className   = alive ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold';
-    }
-    if(el('topo-edge-latency')) el('topo-edge-latency').textContent = data.edge?.latency_ms ? data.edge.latency_ms+'ms' : '—';
-    if(el('topo-edge-height'))  el('topo-edge-height').textContent  = data.edge?.data?.height ?? data.edge?.data?.result?.height ?? data.edge?.height ?? '—';
+    const heights = [];
+    for (const n of nodes) {
+      const info = data[n.key] || {};
+      const alive = info.alive;
+      const h = info.height ?? null;
+      if (h !== null) heights.push(h);
 
-    // Tailscale
-    if(el('topo-tailscale')){
-      const ts = data.tailscale?.vpn_ok != null
-        ? (data.tailscale.vpn_ok ? 'connected' : 'unreachable')
-        : (data.tailscale || 'unknown');
-      el('topo-tailscale').textContent = typeof ts === 'string' ? ts : 'unknown';
-      el('topo-tailscale').className = (ts === 'connected') ? 'text-emerald-400 font-bold' : 'text-amber-400';
-    }
-
-    // Sync gap
-    const coreH = data.core?.data?.height ?? data.core?.height ?? 0;
-    const edgeH = data.edge?.data?.height ?? data.edge?.height ?? 0;
-    const gap = Math.abs(coreH - edgeH);
-    if(el('topo-sync-gap')){
-      el('topo-sync-gap').textContent = gap + ' blocks';
-      el('topo-sync-gap').className   = gap === 0 ? 'text-emerald-400' : gap < 10 ? 'text-amber-400' : 'text-red-400';
+      // Status dot + text
+      const dot = el(n.prefix + '-dot');
+      if (dot) dot.className = 'w-3 h-3 rounded-full ' + (alive ? 'bg-emerald-400' : 'bg-red-500');
+      const st = el(n.prefix + '-status');
+      if (st) {
+        st.textContent = alive ? 'Online' : 'Offline';
+        st.className = 'text-[10px] font-bold ' + (alive ? 'text-emerald-400' : 'text-red-400');
+      }
+      // Details
+      if (el(n.prefix + '-height')) el(n.prefix + '-height').textContent = h !== null ? h.toLocaleString() : '—';
+      if (el(n.prefix + '-peers')) el(n.prefix + '-peers').textContent = info.known_peers != null ? info.known_peers : '—';
+      if (el(n.prefix + '-latency')) el(n.prefix + '-latency').textContent = info.latency_ms != null ? info.latency_ms + 'ms' : '—';
+      if (el(n.prefix + '-nodeid')) el(n.prefix + '-nodeid').textContent = info.node_id || '—';
     }
 
-    // ── Legacy elements (dots, icons, ports, apps, sync verdict) ─────────
-    const coreDot = el('topo-core-dot');
-    const edgeDot = el('topo-edge-dot');
-    if(coreDot) coreDot.className = 'w-3 h-3 rounded-full ' + (data.core?.alive ? 'bg-emerald-400' : 'bg-red-500');
-    if(edgeDot) edgeDot.className = 'w-3 h-3 rounded-full ' + (data.edge?.alive ? 'bg-emerald-400' : 'bg-red-500');
-    const tsIcon = el('topo-tailscale-icon');
-    const tsStatus = el('topo-tailscale-status');
-    if(tsIcon) tsIcon.textContent = data.tailscale?.vpn_ok ? '🟢' : '🔴';
-    if(tsStatus){ tsStatus.textContent = data.tailscale?.vpn_ok ? 'Connected' : 'Unreachable'; tsStatus.className = data.tailscale?.vpn_ok ? 'text-emerald-400 font-bold' : 'text-red-400'; }
+    // ── Sync gap (3-node) ─────────────────────────────────────────────────
+    const gap = data.sync_gap ?? 0;
+    const allInSync = data.all_in_sync;
+    if (el('topo-sync-gap')){
+      el('topo-sync-gap').textContent = gap;
+      el('topo-sync-gap').className = 'text-lg font-bold ' + (gap === 0 ? 'text-emerald-400' : gap < 10 ? 'text-amber-400' : 'text-red-400');
+    }
+    if (el('topo-sync-verdict')){
+      if (allInSync){ el('topo-sync-verdict').textContent = '✓ All 3 nodes synced'; el('topo-sync-verdict').className = 'font-bold text-sm text-emerald-400'; }
+      else if (gap <= 2){ el('topo-sync-verdict').textContent = 'Near sync ('+gap+' block gap)'; el('topo-sync-verdict').className = 'font-bold text-sm text-amber-400'; }
+      else { el('topo-sync-verdict').textContent = 'Out of sync ('+gap+' blocks behind)'; el('topo-sync-verdict').className = 'font-bold text-sm text-red-400'; }
+    }
+
+    // Sync bars (3 nodes)
+    const maxH = Math.max(...heights, 1);
+    const h1 = data.edge_node1?.height ?? 0;
+    const h2 = data.edge_node2?.height ?? 0;
+    const h3 = data.local_backup?.height ?? 0;
+    if (el('topo-sync-n1')) el('topo-sync-n1').textContent = h1 ? h1.toLocaleString() : '—';
+    if (el('topo-sync-n2')) el('topo-sync-n2').textContent = h2 ? h2.toLocaleString() : '—';
+    if (el('topo-sync-n3')) el('topo-sync-n3').textContent = h3 ? h3.toLocaleString() : '—';
+    if (el('topo-sync-bar-n1')) el('topo-sync-bar-n1').style.width = (h1/maxH*100)+'%';
+    if (el('topo-sync-bar-n2')) el('topo-sync-bar-n2').style.width = (h2/maxH*100)+'%';
+    if (el('topo-sync-bar-n3')) el('topo-sync-bar-n3').style.width = (h3/maxH*100)+'%';
+
+    // ── Port status ───────────────────────────────────────────────────────
     const portMap = {p2p:'node_p2p', rpc:'node_rpc', pool:'pool_stratum', dash:'dashboard', hiran:'hiran_inference', orch:'hiranyagarbha'};
     for(const [key, apiKey] of Object.entries(portMap)){
       const pe = el('topo-port-' + key);
       if(pe){ pe.textContent = data.ports?.[apiKey] ? 'Open' : 'Closed'; pe.className = 'text-xs font-bold ' + (data.ports?.[apiKey] ? 'text-emerald-400' : 'text-red-400'); }
-    }
-    const apps = data.apps || {};
-    const appMap = [['web', apps.website?.alive],['desktop', apps.desktop_agent?.alive],['mobile', apps.mobile_app?.alive],['cli', apps.cli?.alive]];
-    for(const [id, alive] of appMap){
-      const dot = el('app-' + id + '-dot');
-      const badge = el('app-' + id + '-badge');
-      if(dot) dot.className = 'w-3 h-3 rounded-full ' + (alive ? 'bg-emerald-400' : 'bg-red-500');
-      if(badge){ badge.textContent = alive ? 'Online' : 'Offline'; badge.className = 'text-[10px] px-2 py-0.5 rounded ' + (alive ? 'bg-emerald-700 text-emerald-300' : 'bg-red-700 text-red-300'); }
-    }
-    const maxH = Math.max(coreH, edgeH, 1);
-    if(el('topo-sync-n1')) el('topo-sync-n1').textContent = coreH.toLocaleString();
-    if(el('topo-sync-n2')) el('topo-sync-n2').textContent = edgeH.toLocaleString();
-    if(el('topo-sync-bar-n1')) el('topo-sync-bar-n1').style.width = (coreH/maxH*100)+'%';
-    if(el('topo-sync-bar-n2')) el('topo-sync-bar-n2').style.width = (edgeH/maxH*100)+'%';
-    if(el('topo-sync-verdict')){
-      if(gap === 0){ el('topo-sync-verdict').textContent = 'Fully synced'; el('topo-sync-verdict').className = 'font-bold text-emerald-400'; }
-      else if(gap <= 2){ el('topo-sync-verdict').textContent = 'Near sync ('+gap+' block gap)'; el('topo-sync-verdict').className = 'font-bold text-amber-400'; }
-      else { el('topo-sync-verdict').textContent = 'Out of sync ('+gap+' blocks behind)'; el('topo-sync-verdict').className = 'font-bold text-red-400'; }
     }
   } catch(e) { console.warn('loadTopology', e); }
   // Latency measurement
@@ -3008,36 +3633,45 @@ async function loadMempool(){
 async function loadMonitoringStatus(){
   try {
     const data = await apiFetch('/api/monitoring/status');
-    const prom = data.prometheus || {};
-    const graf = data.grafana || {};
+    const pm = data.pool_metrics || data.prometheus || {};
+    const bic = data.built_in_charts || data.grafana || {};
 
     // Badge
     const badge = document.getElementById('monitoring-status-badge');
     if(badge){
-      const allOk = prom.alive && graf.alive;
-      badge.textContent = allOk ? 'Online' : (prom.alive || graf.alive ? 'Partial' : 'Offline');
+      const allOk = pm.alive && bic.alive;
+      badge.textContent = allOk ? 'Online' : (pm.alive || bic.alive ? 'Partial' : 'Offline');
       badge.className = 'text-[10px] px-2 py-0.5 rounded-full ' + (allOk
         ? 'bg-emerald-600/20 text-emerald-300 border border-emerald-600/30'
-        : prom.alive || graf.alive
+        : pm.alive || bic.alive
           ? 'bg-amber-600/20 text-amber-300 border border-amber-600/30'
           : 'bg-red-600/20 text-red-300 border border-red-600/30');
     }
 
-    // Prometheus dot + text
+    // Pool Metrics dot + stats
     const promDot = document.getElementById('prom-status-dot');
-    if(promDot) promDot.className = 'w-2 h-2 rounded-full ' + (prom.alive ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]' : 'bg-red-500');
+    if(promDot) promDot.className = 'w-2 h-2 rounded-full ' + (pm.alive ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]' : 'bg-red-500');
     const promTargets = document.getElementById('prom-targets');
-    if(promTargets) promTargets.textContent = prom.alive ? `${prom.targets_up}/${prom.targets_total} up` : '—';
+    if(promTargets) promTargets.textContent = pm.shares != null ? pm.shares.toLocaleString() : '—';
     const promVer = document.getElementById('prom-version');
-    if(promVer) promVer.textContent = prom.version || '—';
+    if(promVer) promVer.textContent = pm.hashrate || pm.version || '—';
 
-    // Grafana dot + text
+    // Extra pool metrics stats (accepted/rejected/blocks/sessions)
+    const setExtra = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+    setExtra('pm-active-sessions', pm.active_sessions != null ? pm.active_sessions : '—');
+    setExtra('pm-miners-tracked', pm.miners_tracked != null ? pm.miners_tracked : '—');
+    setExtra('pm-accepted', pm.accepted != null ? pm.accepted.toLocaleString() : '—');
+    setExtra('pm-rejected', pm.rejected != null ? pm.rejected.toLocaleString() : '—');
+    setExtra('pm-blocks-found', pm.blocks_found != null ? pm.blocks_found : '—');
+    setExtra('pm-submits', pm.submits != null ? pm.submits.toLocaleString() : '—');
+
+    // Built-in charts dot + text
     const grafDot = document.getElementById('graf-status-dot');
-    if(grafDot) grafDot.className = 'w-2 h-2 rounded-full ' + (graf.alive ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]' : 'bg-red-500');
+    if(grafDot) grafDot.className = 'w-2 h-2 rounded-full ' + (bic.alive ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]' : 'bg-red-500');
     const grafVer = document.getElementById('graf-version');
-    if(grafVer) grafVer.textContent = graf.version || '—';
+    if(grafVer) grafVer.textContent = bic.version || '—';
     const grafDb = document.getElementById('graf-db');
-    if(grafDb) grafDb.textContent = graf.database || '—';
+    if(grafDb) grafDb.textContent = bic.database || '—';
   } catch(e) { console.error('loadMonitoringStatus error:', e); }
 }
 
@@ -3472,9 +4106,9 @@ async function renderWizard(){
   const steps = isEdge ? [
     { n: 1, title: 'Prepare environment', desc: 'Generate keys (gen-keys), assemble .env with all wallets and ZION_POOL_PAYOUT_SK_HEX.', done: C('env')?.ok, actions: [{ label: 'View env files', tab: 'env' }] },
     { n: 2, title: 'Start Local Backup Node', desc: 'Syncs from Edge primary via Tailscale VPN. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).', done: C('node1')?.ok, actions: [{ label: '▶ Start Backup Node', control: 'start-node1' }] },
-    { n: 3, title: 'Connect to Edge Pool', desc: 'Edge (100.76.16.108) runs the primary pool. Verify VPN connectivity.', done: C('pool-edge')?.ok, actions: [{ label: 'Check Edge Pool', tab: 'overview' }] },
+    { n: 3, title: 'Connect to Edge Pool', desc: 'Edge (62.171.141.136) runs the primary pool. Verify VPN connectivity.', done: C('pool-edge')?.ok, actions: [{ label: 'Check Edge Pool', tab: 'overview' }] },
     { n: 4, title: 'Start GPU Miner', desc: 'Connects to Edge pool, performs cosmic_harmony hashing on GPU.', done: C('miner')?.ok, actions: [{ label: '▶ Start Miner', control: 'start-miner' }] },
-    { n: 5, title: 'Start Monitoring', desc: 'Launch Prometheus + Grafana via Docker for metrics dashboards.', done: false, actions: [{ label: '▶ Start Monitoring', control: 'start-monitoring' }, { label: 'Open Grafana', href: 'http://100.76.16.108:3100' }] },
+    { n: 5, title: 'Pool Metrics', desc: 'Built-in Prometheus exposition on port 8455 — no external monitoring needed.', done: C('pool-edge')?.ok, actions: [{ label: 'Open Pool Metrics', href: 'http://62.171.141.136:8455' }] },
     { n: 6, title: 'Verify chain progression', desc: 'Confirm local backup node syncs with Edge and chain height advances.', done: C('chain')?.ok, actions: [{ label: 'View events', tab: 'events' }] },
     { n: 7, title: 'Confirm fee split & payouts', desc: 'Validate 89/5/5 burn-model distribution and payout wallet funded.', done: C('fee_split')?.ok && C('payout')?.ok, actions: [{ label: 'View payouts', tab: 'overview' }] },
   ] : [
@@ -3482,7 +4116,7 @@ async function renderWizard(){
     { n: 2, title: 'Start Genesis Node', desc: 'Local genesis node. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).', done: C('node1')?.ok, actions: [{ label: '▶ Start Node', control: 'start-node1' }] },
     { n: 3, title: 'Start Local Pool', desc: 'Accepts miners, validates shares, distributes payouts (89/5/5 burn model).', done: C('pool')?.ok, actions: [{ label: '▶ Start Pool', control: 'start-pool' }] },
     { n: 4, title: 'Start GPU Miner', desc: 'Connects to local pool, performs cosmic_harmony hashing on GPU.', done: C('miner')?.ok, actions: [{ label: '▶ Start Miner', control: 'start-miner' }] },
-    { n: 5, title: 'Start Monitoring', desc: 'Launch Prometheus + Grafana via Docker for metrics dashboards.', done: false, actions: [{ label: '▶ Start Monitoring', control: 'start-monitoring' }, { label: 'Open Grafana', href: 'http://100.76.16.108:3100' }] },
+    { n: 5, title: 'Pool Metrics', desc: 'Built-in Prometheus exposition on port 8455 — no external monitoring needed.', done: C('pool')?.ok, actions: [{ label: 'Open Pool Metrics', href: 'http://62.171.141.136:8455' }] },
     { n: 6, title: 'Verify chain progression', desc: 'Confirm node is mining and chain height advances.', done: C('chain')?.ok, actions: [{ label: 'View events', tab: 'events' }] },
     { n: 7, title: 'Confirm fee split & payouts', desc: 'Validate 89/5/5 burn-model distribution and payout wallet funded.', done: C('fee_split')?.ok && C('payout')?.ok, actions: [{ label: 'View payouts', tab: 'overview' }] },
   ];
@@ -4606,12 +5240,12 @@ async function loadLaunchDayStatus(){
     const daysEl = document.getElementById('ld-days');
     if(daysEl){
       if(res.is_launch_day){
-        daysEl.textContent = 'DNES!';
+        daysEl.textContent = 'TODAY!';
         daysEl.className = 'text-3xl font-bold text-emerald-400 mb-1 animate-pulse';
       } else {
-        const ms = new Date('2026-06-20T12:00:00Z') - Date.now();
+        const ms = new Date('2026-12-31T12:00:00Z') - Date.now();
         const days = Math.ceil(ms / 86400000);
-        daysEl.textContent = days + ' dní';
+        daysEl.textContent = days > 0 ? days + ' days' : 'LAUNCH!';
         daysEl.className = 'text-3xl font-bold text-amber-400 mb-1';
       }
     }
@@ -5878,7 +6512,7 @@ async function loadL2Data() {
     const badge = document.getElementById('l2-bridge-badge');
     if(badge){ badge.className = ok ? 'text-[10px] px-2 py-0.5 rounded-full bg-emerald-700/50 text-emerald-300' : 'text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400'; badge.textContent = ok ? 'Online' : 'Offline'; }
     if(r.total_relays !== undefined) document.getElementById('l2-relays')?.setAttribute('data-val', r.total_relays);
-  } catch(e) {}
+  } catch(e) { console.warn('L2 bridge data:', e); }
 
   // DAO stats
   try {
@@ -5888,7 +6522,7 @@ async function loadL2Data() {
     if(el('l2-proposals')) el('l2-proposals').textContent = d.total_proposals ?? '—';
     if(el('l2-dao-active')) el('l2-dao-active').textContent = d.active ?? '—';
     if(el('l2-dao-passed')) el('l2-dao-passed').textContent = d.passed ?? '—';
-  } catch(e) {}
+  } catch(e) { console.warn('L2 DAO data:', e); }
 
   // Swap status
   try {
@@ -5901,7 +6535,7 @@ async function loadL2Data() {
     if(el('l2-swap-completed')) el('l2-swap-completed').textContent = r.completed ?? '—';
     if(el('l2-swap-refunded')) el('l2-swap-refunded').textContent = r.refunded ?? '—';
     if(el('l2-swaps')) el('l2-swaps').textContent = r.active_htlcs ?? '—';
-  } catch(e) {}
+  } catch(e) { console.warn('L2 swap data:', e); }
 
   // DeFi / Uniswap V3 pools — data z /api/cex/listings (proxuje na website DexScreener API)
   try {
@@ -6050,7 +6684,7 @@ async function loadL3Data() {
     if(el('l3-warp-relayed')) el('l3-warp-relayed').textContent = r.transfers_total ?? '—';
     if(el('l3-warp-pending')) el('l3-warp-pending').textContent = r.transfers_pending ?? '—';
     if(el('l3-warp-chains')) el('l3-warp-chains').textContent = '21';
-  } catch(e) {}
+  } catch(e) { console.warn('L3 WARP data:', e); }
 
   // NCL jobs
   try {
@@ -6067,7 +6701,7 @@ async function loadL3Data() {
     if(el('l3-ncl-jobs-2')) el('l3-ncl-jobs-2').textContent = jobs;
     if(el('l3-tflops')) el('l3-tflops').textContent = '—';
     if(el('l3-ncl-tflops-2')) el('l3-ncl-tflops-2').textContent = '—';
-  } catch(e) {}
+  } catch(e) { console.warn('L3 NCL data:', e); }
 
   // Hiran inference + AI agents
   try {
@@ -6079,7 +6713,7 @@ async function loadL3Data() {
     if(el('l3-hiran-model') && r.hiran_model) el('l3-hiran-model').textContent = r.hiran_model;
     if(el('l3-hiran-backend') && r.hiran_backend) el('l3-hiran-backend').textContent = r.hiran_backend;
     if(el('l3-agents')) el('l3-agents').textContent = r.orchestrator_agents ?? r.total ?? '—';
-  } catch(e) {}
+  } catch(e) { console.warn('L3 Hiran/AI data:', e); }
 }
 
 async function submitNclJob() {
@@ -6133,7 +6767,7 @@ async function loadL4Data() {
       el('l4-server-status').className = ok ? 'text-emerald-400' : 'text-gray-400';
     }
     if(el('l4-version')) el('l4-version').textContent = r.version ?? '—';
-  } catch(e) {}
+  } catch(e) { console.warn('L4 OASIS data:', e); }
 }
 
 async function loadL4Quests() {
@@ -6148,7 +6782,7 @@ async function loadL4Quests() {
         <div class="flex justify-between"><span class="text-purple-300 font-semibold">${q.name || 'Quest'}</span><span class="text-[10px] text-zion-gold">${q.reward || '—'} ZION</span></div>
         <div class="text-[10px] text-gray-500 mt-0.5">${q.description || ''}</div>
       </div>`).join('');
-  } catch(e) {}
+  } catch(e) { console.warn('L4 quests data:', e); }
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -6176,7 +6810,7 @@ async function loadL5Data() {
     if(el('l5-blocks-scanned')) el('l5-blocks-scanned').textContent = r.blocks_scanned ?? '—';
     const ok = r.ok;
     if(el('l5-status')){ el('l5-status').textContent = ok ? 'Online' : 'Offline'; el('l5-status').className = ok ? 'text-emerald-400' : 'text-gray-400'; }
-  } catch(e) {}
+  } catch(e) { console.warn('L5 Free World data:', e); }
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -6202,7 +6836,7 @@ async function loadL6Data() {
     if(el('l6-blocks-scanned')) el('l6-blocks-scanned').textContent = r.blocks_scanned ?? '—';
     const ok = r.ok;
     if(el('l6-api-status')){ el('l6-api-status').textContent = ok ? 'Online' : 'Offline'; el('l6-api-status').className = ok ? 'text-emerald-400' : 'text-gray-400'; }
-  } catch(e) {}
+  } catch(e) { console.warn('L6 Space data:', e); }
 }
 
 async function loadL6Missions() {
@@ -6218,7 +6852,7 @@ async function loadL6Missions() {
         <div class="text-gray-500 text-[10px]">${m.description || ''}</div>
         <div class="w-full bg-gray-800 rounded-full h-1 mt-1"><div class="bg-blue-500 h-1 rounded-full" style="width:${m.progress || 0}%"></div></div>
       </div>`).join('');
-  } catch(e) {}
+  } catch(e) { console.warn('L6 missions data:', e); }
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -6226,22 +6860,34 @@ async function loadL6Missions() {
 // ═══════════════════════════════════════════════════════════════════════
 
 const LOG_SERVICES = [
-  { id: 'node1',         label: 'Node 1',       icon: '⛓️',  color: 'emerald', group: 'core'  },
-  { id: 'node2',         label: 'Node 2',       icon: '⛓️',  color: 'blue',    group: 'core'  },
-  { id: 'pool',          label: 'Pool',         icon: '🏊',  color: 'cyan',    group: 'core'  },
-  { id: 'miner',         label: 'Miner',        icon: '⛏️',  color: 'amber',   group: 'core'  },
-  { id: 'miner-low',     label: 'Miner Low',    icon: '⛏️',  color: 'amber',   group: 'core'  },
-  { id: 'hiranyagarbha', label: 'Hiranyagarbha',icon: '🧠',  color: 'purple',  group: 'ai'    },
-  { id: 'hiran',         label: 'Hiran AI',     icon: '🤖',  color: 'violet',  group: 'ai'    },
-  { id: 'bridge',        label: 'Bridge',       icon: '🌉',  color: 'indigo',  group: 'l2'    },
-  { id: 'dao-daemon',    label: 'DAO Daemon',   icon: '🗳️', color: 'purple',  group: 'l2'    },
-  { id: 'atomic-swap',   label: 'Atomic Swap',  icon: '⚡',  color: 'amber',   group: 'l2'    },
-  { id: 'warp',          label: 'WARP',         icon: '🌀',  color: 'cyan',    group: 'l3'    },
-  { id: 'dashboard',     label: 'Dashboard',    icon: '📊',  color: 'gray',    group: 'system'},
-  { id: 'control-audit', label: 'Audit Log',    icon: '📝',  color: 'gray',    group: 'system'},
+  // Blockchain nodes (3-node P2P)
+  { id: 'edge-node1',    label: 'Edge Node 1',   icon: '🌍', color: 'emerald', group: 'node'  },
+  { id: 'edge-node2',    label: 'Edge Node 2',   icon: '🔥', color: 'amber',   group: 'node'  },
+  { id: 'local-backup',  label: 'Local Backup',  icon: '💎', color: 'cyan',    group: 'node'  },
+  // L1 services
+  { id: 'pool',          label: 'Pool',          icon: '🏊', color: 'cyan',    group: 'L1'    },
+  { id: 'miner',         label: 'Miner',         icon: '⛏️', color: 'amber',   group: 'L1'    },
+  { id: 'miner-gpu',     label: 'Miner GPU',     icon: '⛏️', color: 'amber',   group: 'L1'    },
+  // AI
+  { id: 'hiranyagarbha', label: 'Hiranyagarbha', icon: '🧠', color: 'purple',  group: 'AI'    },
+  { id: 'hiran',         label: 'Hiran AI',      icon: '🤖', color: 'violet',  group: 'AI'    },
+  // L2
+  { id: 'bridge',        label: 'Bridge',        icon: '🌉', color: 'indigo',  group: 'L2'    },
+  { id: 'dao-daemon',    label: 'DAO Daemon',    icon: '🗳️', color: 'purple',  group: 'L2'    },
+  { id: 'atomic-swap',   label: 'Atomic Swap',   icon: '⚡', color: 'amber',   group: 'L2'    },
+  // L3
+  { id: 'warp',          label: 'WARP',          icon: '🌀', color: 'cyan',    group: 'L3'    },
+  // L4-L6
+  { id: 'oasis',         label: 'Oasis (L4)',    icon: '🏝️', color: 'emerald', group: 'L4'    },
+  { id: 'free-world',    label: 'Free World',    icon: '🕊️', color: 'blue',    group: 'L5'    },
+  { id: 'issobella',     label: 'Issobella',     icon: '🛰️', color: 'violet',  group: 'L6'    },
+  // Infrastructure
+  { id: 'dashboard',     label: 'Dashboard',     icon: '📊', color: 'gray',    group: 'infra' },
+  { id: 'watchdog',      label: 'Watchdog',      icon: '🐕', color: 'gray',    group: 'infra' },
+  { id: 'control-audit', label: 'Audit Log',     icon: '📝', color: 'gray',    group: 'infra' },
 ];
 
-let _logActiveSvc   = 'node1';
+let _logActiveSvc   = 'local-backup';
 let _logSseSource   = null;   // current EventSource
 let _logLineCount   = 0;
 let _logAutoScroll  = true;
@@ -6293,7 +6939,7 @@ function initLogPane() {
   });
 
   // Select first by default
-  logSelectSvc('node1');
+  logSelectSvc('local-backup');
   refreshLogFiles();
 }
 
@@ -6577,8 +7223,8 @@ function renderReadiness(data) {
 // FEATURE C — Service Health Timeline (24h heatmap)
 // ════════════════════════════════════════════════════════════════════════
 // All service IDs that backend can persist in health history (ordered by layer L1→L2→L3→Infra)
-const SERVICE_HISTORY_LABELS = ['node1','node2','pool','pool-edge','miner','bridge','dao','atomic-swap','warp','ncl','hiranyagarbha','ai-native','oasis','free-world','issobella','prometheus','grafana','dashboard'];
-const SVC_LABEL_MAP = { node1:'Node 1', node2:'Node 2', pool:'Pool', 'pool-edge':'Pool Edge', miner:'Miner', bridge:'Bridge', dao:'DAO', 'atomic-swap':'Atomic Swap', warp:'WARP', ncl:'NCL', hiranyagarbha:'Hiran API', 'ai-native':'AI Native', oasis:'OASIS', 'free-world':'Free World', issobella:'Issobella', prometheus:'Prometheus', grafana:'Grafana', dashboard:'Dashboard' };
+const SERVICE_HISTORY_LABELS = ['edge-node1','edge-node2','local-backup','pool-edge','miner','bridge','dao','warp','oasis','free-world','issobella','dashboard','nginx','web-next'];
+const SVC_LABEL_MAP = { 'edge-node1':'Edge Node 1', 'edge-node2':'Edge Node 2', 'local-backup':'Local Backup', 'pool-edge':'Pool Edge', miner:'Miner', bridge:'Bridge', dao:'DAO', warp:'WARP', oasis:'OASIS', 'free-world':'Free World', issobella:'Issobella', dashboard:'Dashboard', nginx:'Nginx', 'web-next':'Website' };
 const SVC_LEVEL_ORDER = { 'L1':0, 'L2':1, 'L3':2, 'L4':3, 'L5':4, 'L6':5, 'Infra':6 };
 let serviceHealthData = null;
 let healthRangeBuckets = 48; // default 4h
@@ -6915,35 +7561,64 @@ function renderMempoolSparkline(mempoolSize) {
 // ════════════════════════════════════════════════════════════════════════
 // FEATURE F — Network topology SVG map
 // ════════════════════════════════════════════════════════════════════════
+// ── 3-node P2P topology + service mesh (v3.0.4) ───────────────────────────
+// Layout: 3 blockchain nodes across the top, services branching down.
 const TOPO_NODES = [
-  { id:'node1', label:'Node 1', x:400, y:140, kind:'core' },
-  { id:'pool',  label:'Pool',   x:220, y:80,  kind:'core' },
-  { id:'miner1',label:'Miner 1',x:80,  y:50,  kind:'core' },
-  { id:'miner2',label:'Miner 2',x:80,  y:110, kind:'core' },
-  { id:'bridge',label:'Bridge', x:620, y:80,  kind:'L2' },
-  { id:'dao',   label:'DAO',    x:620, y:160, kind:'L2' },
-  { id:'atomic',label:'Atomic Swap', x:620, y:240, kind:'L2' },
-  { id:'web',   label:'Web',    x:400, y:260, kind:'L3' },
-  { id:'ai',    label:'AI Native', x:220, y:240, kind:'L3' },
+  // Row 1: Blockchain nodes (P2P mesh)
+  { id:'edge-node1',  label:'Edge Node 1',  x:300, y:55,  kind:'core' },
+  { id:'edge-node2',  label:'Edge Node 2',  x:520, y:55,  kind:'core' },
+  { id:'local-backup',label:'Local Backup',  x:120, y:55,  kind:'core' },
+  // Row 2: L1 services
+  { id:'pool-edge',   label:'Pool',          x:300, y:140, kind:'core' },
+  { id:'miner',       label:'Miner',         x:160, y:140, kind:'core' },
+  // Row 3: L2 services
+  { id:'bridge',      label:'Bridge',        x:440, y:140, kind:'L2' },
+  { id:'dao',         label:'DAO',           x:560, y:140, kind:'L2' },
+  // Row 4: L3-L6 services
+  { id:'warp',        label:'WARP',          x:680, y:140, kind:'L3' },
+  { id:'oasis',       label:'Oasis',         x:680, y:220, kind:'L4' },
+  { id:'free-world',  label:'Free World',    x:560, y:220, kind:'L5' },
+  { id:'issobella',   label:'Issobella',     x:440, y:220, kind:'L6' },
+  // Row 5: Infrastructure
+  { id:'dashboard',   label:'Dashboard',     x:300, y:220, kind:'L3' },
+  { id:'nginx',       label:'Nginx/Web',     x:160, y:220, kind:'L3' },
 ];
 
 const TOPO_EDGES = [
-  ['node1','pool'],['pool','miner1'],['pool','miner2'],
-  ['node1','bridge'],['node1','dao'],['node1','atomic'],
-  ['node1','web'],['node1','ai'],['bridge','dao'],['dao','atomic']
+  // P2P mesh (3-node)
+  ['edge-node1','edge-node2'],
+  ['edge-node1','local-backup'],
+  ['edge-node2','local-backup'],
+  // L1 service dependencies
+  ['edge-node1','pool-edge'],
+  ['pool-edge','miner'],
+  // L2 dependencies (on edge-node1)
+  ['edge-node1','bridge'],
+  ['edge-node1','dao'],
+  // L3-L6 dependencies
+  ['edge-node1','warp'],
+  ['edge-node1','oasis'],
+  ['edge-node1','free-world'],
+  ['edge-node1','issobella'],
+  // Infrastructure
+  ['edge-node1','dashboard'],
+  ['dashboard','nginx'],
 ];
 
 const TOPO_ID_MAP = {
-  node1:'node1', node:'node1', 'node-1':'node1',
-  pool:'pool',
-  miner:'miner1', miner1:'miner1', 'miner-1':'miner1',
-  miner2:'miner2', 'miner-2':'miner2',
+  'edge-node1':'edge-node1', 'edge_node1':'edge-node1', node1:'edge-node1', 'node-1':'edge-node1', node:'edge-node1',
+  'edge-node2':'edge-node2', 'edge_node2':'edge-node2', node2:'edge-node2', 'node-2':'edge-node2',
+  'local-backup':'local-backup', 'local_backup':'local-backup', localbackup:'local-backup',
+  'pool-edge':'pool-edge', 'pool_edge':'pool-edge', pool:'pool-edge',
+  miner:'miner', 'miner-1':'miner', miner1:'miner',
   bridge:'bridge',
   dao:'dao',
-  'atomic-swap':'atomic', 'atomic_swap':'atomic', atomicswap:'atomic',
-  web:'web', website:'web',
-  'ai-native':'ai', ai:'ai', ainative:'ai',
-  hiranyagarbha:'ai', hiran:'ai'
+  warp:'warp',
+  oasis:'oasis',
+  'free-world':'free-world', 'free_world':'free-world', freeworld:'free-world',
+  issobella:'issobella',
+  dashboard:'dashboard',
+  nginx:'nginx', 'web-next':'nginx', web:'nginx', website:'nginx',
 };
 
 function _statusColor(status) {
@@ -7036,7 +7711,7 @@ function renderTopology(services) {
     // Label
     svg += `<text x="${n.x}" y="${n.y+26}" text-anchor="middle" fill="#9ca3af" font-size="9" font-family="sans-serif">${escapeHtml(n.label)}</text>`;
     // Layer badge
-    const layerColors = {core:'#3b82f6', L2:'#f59e0b', L3:'#ec4899'};
+    const layerColors = {core:'#3b82f6', L2:'#f59e0b', L3:'#ec4899', L4:'#a855f7', L5:'#10b981', L6:'#06b6d4'};
     svg += `<text x="${n.x}" y="${n.y+37}" text-anchor="middle" fill="${layerColors[n.kind]||'#6b7280'}" font-size="7" font-family="sans-serif" opacity="0.8">${n.kind.toUpperCase()}</text>`;
     svg += `</g>`;
   }
@@ -8292,16 +8967,19 @@ async function loadWarpPanel(){
     setText('warp-transfer-count', transfersResp.total || transfersData.length || 0);
 
     const chainsBody = document.getElementById('warp-chains-body');
+    const chainCountBadge = document.getElementById('warp-chain-count-badge');
+    if(chainCountBadge) chainCountBadge.textContent = `(${chainsData.length})`;
     if(chainsBody){
       if(Array.isArray(chainsData) && chainsData.length){
         chainsBody.innerHTML = chainsData.map(c => `
           <tr class="border-b border-white/5 hover:bg-white/5">
-            <td class="py-2 px-2 font-mono text-emerald-400">${escapeHtml(c.family || c.chain_id || c.id || '—')}</td>
-            <td class="py-2 px-2">${escapeHtml(c.name || '—')}</td>
-            <td class="py-2 px-2 text-right">${escapeHtml(c.decimals !== undefined ? c.decimals : '—')}</td>
+            <td class="py-2 px-2 font-mono text-emerald-400">${escapeHtml(c.name || c.id || '—')}</td>
+            <td class="py-2 px-2 text-gray-300">${escapeHtml(c.family || '—')}</td>
+            <td class="py-2 px-2 text-right text-gray-400">${c.decimals !== undefined ? c.decimals : '—'}</td>
+            <td class="py-2 px-2 text-right text-gray-400">${c.finality_blocks !== undefined ? c.finality_blocks + ' blk' : '—'}</td>
           </tr>`).join('');
       } else {
-        chainsBody.innerHTML = '<tr><td colspan="3" class="py-4 text-gray-500 italic text-center">No chains connected.</td></tr>';
+        chainsBody.innerHTML = '<tr><td colspan="4" class="py-4 text-gray-500 italic text-center">No chains connected.</td></tr>';
       }
     }
 
@@ -8522,5 +9200,218 @@ async function loadNclJobsPanel(){
     }
   } catch(e){
     console.warn('NCL jobs panel load failed:', e);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// PoC Lab — Proof-of-Care Simulator
+// ─────────────────────────────────────────────────────────────────────
+
+let _pocCareChart = null;
+let _pocRewardChart = null;
+let _pocHiranChart = null;
+
+async function pocCheckStatus(){
+  const badge = document.getElementById('poc-status-badge');
+  if(!badge) return;
+  try{
+    const r = await fetch('/api/poc/status');
+    if(!r.ok){
+      badge.innerHTML = `<span class="px-2 py-0.5 rounded text-xs font-semibold bg-red-500/20 text-red-400">API ${r.status}</span>`;
+      return;
+    }
+    const d = await r.json();
+    let html = '';
+    html += d.poc_sim_available
+      ? '<span class="px-2 py-0.5 rounded text-xs font-semibold bg-green-500/20 text-green-400">poc-sim ready</span> '
+      : '<span class="px-2 py-0.5 rounded text-xs font-semibold bg-red-500/20 text-red-400">poc-sim NOT built</span> ';
+    html += d.hiran_online
+      ? '<span class="px-2 py-0.5 rounded text-xs font-semibold bg-cyan-500/20 text-cyan-400">Hiran LIVE</span>'
+      : '<span class="px-2 py-0.5 rounded text-xs font-semibold bg-purple-500/20 text-purple-400">Hiran offline</span>';
+    badge.innerHTML = html;
+  }catch(e){
+    badge.innerHTML = '<span class="px-2 py-0.5 rounded text-xs font-semibold bg-orange-500/20 text-orange-400">Status unavailable</span>';
+  }
+}
+
+async function pocRunSim(){
+  const btn = document.getElementById('poc-run-btn');
+  if(!btn) return;
+  btn.disabled = true; btn.textContent = 'Running...';
+  const area = document.getElementById('poc-results');
+  if(!area){ btn.disabled = false; btn.textContent = '▶ Run Simulation'; return; }
+  area.innerHTML = '<div class="text-center py-8 text-gray-400 text-sm"><div class="inline-block w-8 h-8 border-2 border-yellow-500/30 border-t-yellow-500 rounded-full animate-spin mb-2"></div><br>Running simulation (live Hiran may take 10-60s)...</div>';
+
+  const epochs = document.getElementById('poc-epochs')?.value || 3;
+  const validators = document.getElementById('poc-validators')?.value || 4;
+  const reward = document.getElementById('poc-reward')?.value || 1000000;
+  const hiran = document.getElementById('poc-hiran')?.value || '0';
+
+  try{
+    const r = await fetch(`/api/poc/run?epochs=${encodeURIComponent(epochs)}&validators=${encodeURIComponent(validators)}&block_reward=${encodeURIComponent(reward)}&hiran=${encodeURIComponent(hiran)}`);
+    if(!r.ok){
+      const errText = await r.text().catch(() => '');
+      area.innerHTML = `<div class="text-red-400 text-sm p-4 bg-red-500/10 rounded">HTTP ${r.status}: ${errText.substring(0,200) || r.statusText}</div>`;
+      return;
+    }
+    const d = await r.json();
+    if(d.error){
+      area.innerHTML = `<div class="text-red-400 text-sm p-4 bg-red-500/10 rounded">Error: ${d.error}</div>`;
+      return;
+    }
+    if(!d.reports){
+      area.innerHTML = `<div class="text-red-400 text-sm p-4 bg-red-500/10 rounded">Invalid response: no reports field</div>`;
+      return;
+    }
+    pocRenderResults(d, area);
+  }catch(e){
+    area.innerHTML = `<div class="text-red-400 text-sm p-4 bg-red-500/10 rounded">Fetch error: ${e.message}</div>`;
+  }finally{
+    btn.disabled = false; btn.textContent = '▶ Run Simulation';
+  }
+}
+
+function pocFmtFlowers(n){
+  if(n >= 1000000) return (n/1000000).toFixed(2)+'M';
+  if(n >= 1000) return (n/1000).toFixed(1)+'K';
+  return String(n);
+}
+
+function pocRenderResults(data, area){
+  const cfg = data.config, sum = data.summary, reports = data.reports || [];
+  const hiranMode = cfg.hiran_stub_mode ? 'stub' : 'live';
+  let html = '';
+
+  // Summary cards
+  html += '<div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">';
+  html += pocCard('Epochs', cfg.epochs, 'text-yellow-400');
+  html += pocCard('Validators', cfg.validators, 'text-cyan-400');
+  html += pocCard('Accepted', sum.total_accepted, 'text-green-400');
+  html += pocCard('Rejected', sum.total_rejected, 'text-red-400');
+  html += pocCard('Total Payout', pocFmtFlowers(sum.total_payout), 'text-purple-400');
+  html += '</div>';
+
+  // Hiran banner
+  const hStats = reports.length > 0 ? reports[reports.length-1].hiran_stats : null;
+  if(hStats){
+    html += `<div class="flex flex-wrap items-center gap-4 mb-4 text-xs bg-black/20 p-3 rounded-lg">
+      <span class="px-2 py-0.5 rounded font-semibold ${hStats.stub_mode ? 'bg-purple-500/20 text-purple-400' : 'bg-cyan-500/20 text-cyan-400'}">Hiran ${hiranMode}</span>
+      <span>Validated: <b class="text-yellow-400">${hStats.proofs_validated}</b></span>
+      <span>Accepted: <b class="text-green-400">${hStats.accepted}</b></span>
+      <span>Rejected: <b class="text-red-400">${hStats.rejected}</b></span>
+      <span>Uncertain: <b class="text-orange-400">${hStats.uncertain}</b></span>
+      <span>Avg Confidence: <b class="text-cyan-400">${(hStats.avg_confidence*100).toFixed(1)}%</b></span>
+    </div>`;
+  }
+
+  // Charts
+  html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">';
+  html += '<div class="bg-black/20 p-3 rounded-lg"><h3 class="text-yellow-400 text-xs mb-2 font-bold">Care Score per Validator (last epoch)</h3><canvas id="pocCareChart" height="180"></canvas></div>';
+  html += '<div class="bg-black/20 p-3 rounded-lg"><h3 class="text-yellow-400 text-xs mb-2 font-bold">Reward Distribution (last epoch)</h3><canvas id="pocRewardChart" height="180"></canvas></div>';
+  html += '</div>';
+  if(reports.length > 0){
+    html += '<div class="bg-black/20 p-3 rounded-lg mb-4"><h3 class="text-yellow-400 text-xs mb-2 font-bold">Hiran Avg Confidence Trend</h3><canvas id="pocHiranChart" height="100"></canvas></div>';
+  }
+
+  // Epoch table
+  html += '<div class="bg-black/20 p-3 rounded-lg mb-4 overflow-x-auto">';
+  html += '<h3 class="text-yellow-400 text-xs mb-2 font-bold">Epoch Reports</h3>';
+  html += '<table class="w-full text-xs text-left"><thead><tr class="text-gray-500 border-b border-white/10"><th class="py-2 px-2">Epoch</th><th class="py-2 px-2">Validator</th><th class="py-2 px-2">Vow</th><th class="py-2 px-2">Status</th><th class="py-2 px-2">Care Score</th><th class="py-2 px-2">Payout</th><th class="py-2 px-2">Hiran</th><th class="py-2 px-2">NCL</th></tr></thead><tbody>';
+  for(const r of reports){
+    for(const v of r.validators){
+      const vow = v.dual_vow_bonus_applied ? '<span class="px-1.5 py-0.5 rounded text-[10px] bg-yellow-500/20 text-yellow-400 font-bold">S+B</span>' : '<span class="text-gray-500">S</span>';
+      const status = v.accepted ? '<span class="px-1.5 py-0.5 rounded text-[10px] bg-green-500/20 text-green-400 font-bold">ACCEPTED</span>' : '<span class="px-1.5 py-0.5 rounded text-[10px] bg-red-500/20 text-red-400 font-bold">REJECTED</span>';
+      const hc = v.hiran_verdict ? (v.hiran_verdict.confidence*100).toFixed(0)+'%' : '—';
+      const rej = v.rejection_reason ? `<div class="text-[10px] text-gray-500">${v.rejection_reason}</div>` : '';
+      html += `<tr class="border-b border-white/5">
+        <td class="py-1.5 px-2 text-cyan-400">${r.epoch}</td>
+        <td class="py-1.5 px-2">${v.name}${rej}</td>
+        <td class="py-1.5 px-2">${vow}</td>
+        <td class="py-1.5 px-2">${status}</td>
+        <td class="py-1.5 px-2">${v.accepted ? v.care_score.toLocaleString() : '—'}</td>
+        <td class="py-1.5 px-2 ${v.payout > 0 ? 'text-green-400' : 'text-gray-500'}">${v.payout > 0 ? pocFmtFlowers(v.payout) : '—'}</td>
+        <td class="py-1.5 px-2">${hc}</td>
+        <td class="py-1.5 px-2">${v.ncl_bonus > 0 ? pocFmtFlowers(v.ncl_bonus) : '—'}</td>
+      </tr>`;
+    }
+  }
+  html += '</tbody></table></div>';
+
+  // Anomalies
+  let totalAlerts = 0;
+  for(const r of reports) totalAlerts += (r.anomaly_alerts || []).length;
+  if(totalAlerts > 0){
+    html += '<div class="bg-red-500/10 p-3 rounded-lg mb-4">';
+    html += '<h3 class="text-red-400 text-xs mb-2 font-bold">Anomaly Alerts</h3>';
+    html += '<table class="w-full text-xs text-left"><thead><tr class="text-gray-500 border-b border-white/10"><th class="py-2 px-2">Epoch</th><th class="py-2 px-2">Type</th><th class="py-2 px-2">Severity</th><th class="py-2 px-2">Description</th><th class="py-2 px-2">Action</th></tr></thead><tbody>';
+    for(const r of reports){
+      for(const a of (r.anomaly_alerts || [])){
+        const sev = a.severity === 'Critical' ? 'text-red-400' : a.severity === 'High' ? 'text-orange-400' : 'text-gray-400';
+        html += `<tr class="border-b border-white/5"><td class="py-1.5 px-2 text-cyan-400">${r.epoch}</td><td class="py-1.5 px-2">${a.anomaly_type}</td><td class="py-1.5 px-2 ${sev}">${a.severity}</td><td class="py-1.5 px-2">${a.description}</td><td class="py-1.5 px-2">${a.recommended_action}</td></tr>`;
+      }
+    }
+    html += '</tbody></table></div>';
+  }
+
+  // Reward split
+  const rs = cfg.reward_split;
+  html += `<div class="bg-black/20 p-3 rounded-lg mb-4 text-xs">
+    <h3 class="text-yellow-400 text-xs mb-2 font-bold">Reward Split (basis points)</h3>
+    <div class="flex flex-wrap gap-4">
+      <span>Care Validators: <b class="text-yellow-400">${rs.care_validators_bps} bps (${rs.care_validators_bps/100}%)</b></span>
+      <span>Humanitarian: <b class="text-cyan-400">${rs.humanitarian_bps} bps</b></span>
+      <span>DAO: <b class="text-purple-400">${rs.dao_treasury_bps} bps</b></span>
+      <span>WARP: <b class="text-gray-300">${rs.warp_maintenance_bps} bps</b></span>
+      <span>Hiran: <b class="text-orange-400">${rs.hiran_research_bps} bps</b></span>
+    </div>
+  </div>`;
+
+  area.innerHTML = html;
+  pocRenderCharts(reports);
+}
+
+function pocCard(label, value, color){
+  return `<div class="bg-black/20 p-3 rounded-lg text-center">
+    <div class="text-[10px] text-gray-400 mb-1">${label}</div>
+    <div class="text-xl font-bold ${color}">${value}</div>
+  </div>`;
+}
+
+function pocRenderCharts(reports){
+  if(reports.length === 0) return;
+  const last = reports[reports.length-1];
+  const vNames = last.validators.map(v => v.name.substring(0, 20));
+  const vScores = last.validators.map(v => v.care_score);
+  const vColors = last.validators.map(v => v.accepted ? 'rgba(34,197,94,0.6)' : 'rgba(239,68,68,0.6)');
+
+  if(_pocCareChart) _pocCareChart.destroy();
+  const c1 = document.getElementById('pocCareChart');
+  if(c1) _pocCareChart = new Chart(c1.getContext('2d'), {
+    type: 'bar',
+    data: { labels: vNames, datasets: [{ label: 'Care Score', data: vScores, backgroundColor: vColors, borderRadius: 4 }] },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { color: '#888' }, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { ticks: { color: '#888', font: { size: 9 } }, grid: { display: false } } } }
+  });
+
+  const rd = last.reward_distribution;
+  if(_pocRewardChart) _pocRewardChart.destroy();
+  const c2 = document.getElementById('pocRewardChart');
+  if(c2) _pocRewardChart = new Chart(c2.getContext('2d'), {
+    type: 'doughnut',
+    data: { labels: ['Care Validators', 'Humanitarian', 'DAO Treasury', 'WARP', 'Hiran Research'],
+      datasets: [{ data: [rd.care_validators, rd.humanitarian, rd.dao_treasury, rd.warp_maintenance, rd.hiran_research],
+        backgroundColor: ['#FFD700', '#00CED1', '#a855f7', '#6b7280', '#f59e0b'] }] },
+    options: { responsive: true, plugins: { legend: { position: 'right', labels: { color: '#ccc', font: { size: 10 } } } } }
+  });
+
+  if(reports.length > 0){
+    const confs = reports.map(r => r.hiran_stats.avg_confidence * 100);
+    const epochs = reports.map(r => 'E' + r.epoch);
+    if(_pocHiranChart) _pocHiranChart.destroy();
+    const c3 = document.getElementById('pocHiranChart');
+    if(c3) _pocHiranChart = new Chart(c3.getContext('2d'), {
+      type: 'line',
+      data: { labels: epochs, datasets: [{ label: 'Avg Confidence %', data: confs, borderColor: '#00CED1', backgroundColor: 'rgba(0,206,209,0.1)', fill: true, tension: 0.3 }] },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { min: 80, max: 100, ticks: { color: '#888', callback: v => v+'%' }, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { ticks: { color: '#888' }, grid: { display: false } } } }
+    });
   }
 }

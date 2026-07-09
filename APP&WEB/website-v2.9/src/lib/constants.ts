@@ -14,10 +14,10 @@
 // ─── Unit Conversion ─────────────────────────────────────────────────────────
 
 /**
- * 1 ZION = 1,000,000 flowers (6 decimal places) — v3.0.3 fork spec.
+ * 1 ZION = 1,000,000 flowers (6 decimal places) — v3.0.5 fork spec.
  *
- * Changed from 1e12 (12 decimals) to 1e6 (6 decimals) in the 3.0.3 decimal fork.
- * See `ZION_3.0.3_DECIMAL_FORK_PLAN.md` and `docs/CANONICAL_UNITS_AUDIT.md`.
+ * Changed from 1e12 (12 decimals) to 1e6 (6 decimals) in the 3.0.5 decimal fork.
+ * See `ZION_3.0.5_DECIMAL_FORK_PLAN.md` and `docs/CANONICAL_UNITS_AUDIT.md`.
  *
  * "Flowers" is the canonical sub-unit name used across L1 core (Rust),
  * RPC payloads (`balance_flowers`, `amount_flowers`, `fee_flowers`),
@@ -56,7 +56,7 @@ export function zionToAtomic(zion: number): number {
 /** Base block reward (Decade 1): 5,400.067 ZION per block */
 export const BLOCK_REWARD_ZION = 5_400.067;
 
-/** Block reward in flowers: 5,400,067,000 (5400.067 ZION × 1e6) — v3.0.3 Decade 1 */
+/** Block reward in flowers: 5,400,067,000 (5400.067 ZION × 1e6) — v3.0.5 Decade 1 */
 export const BLOCK_REWARD_ATOMIC = 5_400_067_000;
 
 /** Decay factor per decade: ×0.8 (-20%) */
@@ -119,19 +119,19 @@ export const ISSOBELLA_FUND_PCT = 5;
 /** Pool operator fee: 1% of block reward */
 export const POOL_FEE_PCT = 1;
 
-// ─── Tithe Wallet Addresses (mainnet canonical, 2026-06-07) ────────────────
+// ─── Tithe Wallet Addresses (mainnet canonical, 2026-07-06 hard reset) ────
 
 /** Humanitarian fund wallet (Children Future Fund) — mainnet canonical */
-export const HUMANITARIAN_WALLET = 'zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4';
+export const HUMANITARIAN_WALLET = 'zion1e0u5q5s660k4m4a634p2c2v358r8g59564054z7';
 
 /** L5/L6 Issobella fund wallet — mainnet canonical */
-export const ISSOBELLA_WALLET = 'zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702';
+export const ISSOBELLA_WALLET = 'zion1f7y7l5k678y0v408e8s654d2282346k375526t2';
 
 /** Pool fee wallet — BURNED (no address; 1% is permanently removed at coinbase) */
 export const POOL_FEE_WALLET = '';
 
 /** Pool / miner payout wallet — mainnet canonical (receives 89% miner slice) */
-export const POOL_WALLET = 'zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604';
+export const POOL_WALLET = 'zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2';
 
 /** Miner reward per block in ZION (Decade 1) */
 export const MINER_REWARD_ZION = BLOCK_REWARD_ZION * MINER_SHARE_PCT / 100;

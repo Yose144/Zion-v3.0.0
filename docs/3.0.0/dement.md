@@ -935,13 +935,7 @@ Alternativně, pokud máš funkční SSH připojení z jiného stroje, můžeš 
 ✱ Did you know
   Press alt+↑/alt+↓ to rate a response (thumbs up/down)
 
-❭ -----BEGIN OPENSSH PRIVATE KEY-----
-  b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
-  QyNTUxOQAAACDgVuMFFyFaO3VCfZZBc30mMldycQjphTX/nsyTJTKTRAAAAJjamqs42pqr
-  OAAAAAtzc2gtZWQyNTUxOQAAACDgVuMFFyFaO3VCfZZBc30mMldycQjphTX/nsyTJTKTRA
-  AAAECIzDWsrXEVkku0r5a0Jh5mMb4h21Hf1qLMgBefBUOLx+BW4wUXIVo7dUJ9lkFzfSYy
-  V3JxCOmFNf+ezJMlMpNEAAAAEnppb24tZWRnZS0yMDI2MDUyMQECAw==
-  -----END OPENSSH PRIVATE KEY-----
+❭ [REDACTED — SSH private key removed for security]
 
 
 ⚠️ STOP! Právě jsi mi poslal privátní SSH klíč v chatu. To je vážné bezpečnostní riziko.

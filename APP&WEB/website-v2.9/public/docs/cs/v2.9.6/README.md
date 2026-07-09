@@ -129,7 +129,7 @@ Jediný PoW algoritmus: **Cosmic Harmony v3 (CHv3)**. Detaily: [consensus.md](co
 
 | Uzel | IP | Role | Porty |
 |------|-----|------|-------|
-| Zion2 (Primary) | 91.98.122.165 | Veřejný host + pool + web | P2P 8334, RPC 8444 |
+| Zion2 (Primary) | seed.zionterranova.com | Veřejný host + pool + web | P2P 8334, RPC 8444 |
 | Interní seedy | — | Kontejnery za primárním hostem | P2P 8334 |
 
 > 📋 P2P: [p2p.md](p2p.md)
@@ -150,9 +150,9 @@ cargo build --release
 ### Těžba (dual)
 
 ```bash
-./target/release/zion-miner --pool 91.98.122.165:3333 --wallet YOUR_ZION_ADDRESS \
+./target/release/zion-miner --pool seed.zionterranova.com:3333 --wallet YOUR_ZION_ADDRESS \
   --worker my-miner --threads 3 --group zion
-./target/release/zion-miner --pool 91.98.122.165:3333 --wallet YOUR_VRSC_ADDRESS \
+./target/release/zion-miner --pool seed.zionterranova.com:3333 --wallet YOUR_VRSC_ADDRESS \
   --worker vrsc --threads 1 --algo verushash --group vrsc
 ```
 

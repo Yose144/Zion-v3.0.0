@@ -64,7 +64,7 @@ The fastest route is Docker, see [Quick Start →](#getting-started). You can al
 
 ```bash
 ./zion-core --network testnet \
-  --peers "91.98.122.165:8334"
+  --peers "seed.zionterranova.com:8334"
 ```
 
 ---

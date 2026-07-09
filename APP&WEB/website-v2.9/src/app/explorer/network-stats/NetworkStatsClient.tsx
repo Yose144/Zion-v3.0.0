@@ -230,7 +230,7 @@ export default function NetworkStatsClient() {
                   <Globe className="h-3 w-3 text-emerald-400" /> {stats?.connected ? (cs ? "Online" : "Online") : (cs ? "Offline" : "Offline")}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Hash className="h-3 w-3 text-zion-gold" /> {stats?.version || "v3.0.3"}
+                  <Hash className="h-3 w-3 text-zion-gold" /> {stats?.version || "v3.0.5"}
                 </span>
               </div>
             </div>

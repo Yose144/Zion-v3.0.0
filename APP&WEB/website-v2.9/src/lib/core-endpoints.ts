@@ -1,20 +1,22 @@
 /**
- * Edge-only runtime endpoint constants (2026-06-07).
+ * Edge-only runtime endpoint constants (2026-07-09).
  *
- * Topology: Edge (Hetzner VPS) is the sole live server.
- * Core PC is unreachable due to Tailscale VPN failure.
- * All canonical services run on Edge; localhost references are valid
+ * Topology: Edge server (cloud VPS) is the sole live server.
+ * All canonical services run on Edge; localhost references are the default
  * because the Next.js website is deployed on the Edge server itself.
+ *
+ * For development or off-box testing, override the Edge host via the
+ * ZION_EDGE_HOST environment variable. Never hardcode production IPs here.
  */
 
-export const EDGE_TAILSCALE_IP = '100.76.16.108';
+const EDGE_HOST = process.env.ZION_EDGE_HOST || '127.0.0.1';
 
 export const CORE = {
-  /** Hiranyagarbha AI orchestrator — Edge (may be offline if not deployed) */
-  hiranyagarbha: `http://${EDGE_TAILSCALE_IP}:8001`,
+  /** Hiranyagarbha AI orchestrator — Edge (port 8001) */
+  hiranyagarbha: `http://${EDGE_HOST}:8001`,
 
-  /** Hiran v2.2 LLM inference — Edge (may be offline if not deployed) */
-  hiranInference: `http://${EDGE_TAILSCALE_IP}:8002`,
+  /** Hiran v2.2 LLM inference — Edge (port 8002) */
+  hiranInference: `http://${EDGE_HOST}:8002`,
 
   /** DAO API — runs locally on Edge (port 8450) */
   dao: `http://127.0.0.1:8450`,
@@ -23,7 +25,7 @@ export const CORE = {
   prometheus: `http://127.0.0.1:9090`,
 
   /** Bridge relay Prometheus metrics — runs on Edge host (port 9101) */
-  bridgeMetrics: `http://${EDGE_TAILSCALE_IP}:9101`,
+  bridgeMetrics: `http://${EDGE_HOST}:9101`,
 
   /** Dashboard Python Flask — runs locally on Edge (port 8766) */
   dashboard: `http://127.0.0.1:8766`,

@@ -85,5 +85,22 @@
     "CVE": null,
     "check": null,
     "commits": []
+  },
+  {
+    "name": "MaxTxAmountCap",
+    "uid": "ZION-2026-006",
+    "summary": "Defense-in-depth: no upper bound on account-model transaction amount beyond F5 balance check. F4.7 adds a hard cap equal to TOTAL_SUPPLY (144B ZION).",
+    "description": "Prior to F4.7, there was no sanity cap on the amount_zion field in account-model transactions. While F5 prevents inflation from zero-balance addresses, F4.7 adds a second layer: any transaction with amount > emission::TOTAL_SUPPLY is rejected outright. Cap set to TOTAL_SUPPLY (not 100M) to avoid colliding with legitimate premine-scale transfers. Exceptions: genesis and coinbase senders. Height-gated via ZION_MAX_TX_AMOUNT_HEIGHT. Both RPC and P2P paths enforce the cap. 4 unit tests + live smoke test on production (height 81).",
+    "links": [
+      "docs/security/SECURITY_DISCLOSURE_2026-07.md",
+      "SECURITY_PATCH_3.0.4_PLAN.md"
+    ],
+    "introduced": "v3.0.0",
+    "fixed": "v3.0.4",
+    "published": "2026-07-08",
+    "severity": "low",
+    "CVE": null,
+    "check": "zion-v3-node/(3\\.0\\.[0-3])",
+    "commits": ["690b6dfe"]
   }
 ]

@@ -11,6 +11,7 @@ import {
   ShieldHalf,
   Sparkles,
   Zap,
+  AlertTriangle,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
@@ -20,6 +21,7 @@ import MainnetCountdown from './MainnetCountdown';
 
 export default function Hero() {
   const { lang } = useLang();
+  const cs = lang === 'cs';
   const heroMetrics = [
     { label: tr('hero', 'metric_loc', lang),   value: '52 590', icon: Zap },
     { label: tr('hero', 'metric_nodes', lang), value: '2 / 2',   icon: Satellite },
@@ -53,6 +55,32 @@ export default function Hero() {
           <div className="zion-kicker border-pink-500/25 bg-pink-500/10 text-pink-300">
             <BrainCircuit className="w-3.5 h-3.5 animate-pulse" />
             {tr('hero', 'badge_chv4', lang)}
+          </div>
+          <a
+            href="https://github.com/Zion-TerraNova/v3-Mainnet/tree/main"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="zion-kicker border-rose-500/25 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 transition-colors"
+          >
+            <ShieldHalf className="w-3.5 h-3.5 animate-pulse" />
+            {cs ? 'Mainnet Beta · Zdroj na GitHubu' : 'Mainnet Beta · Source on GitHub'}
+          </a>
+        </motion.div>
+
+        {/* ─── Work in Progress warning ─── */}
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="mb-10 rounded-xl border border-amber-500/30 bg-amber-500/8 px-4 py-3"
+        >
+          <div className="flex items-start gap-2.5">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
+            <p className="text-xs leading-relaxed text-amber-200/80">
+              {cs
+                ? 'Tento projekt je v neustálém vývoji. Všechny funkce, vizualizace a koncepty se mohou kdykoli změnit. Síť běží v Mainnet Beta — těžba a používání na vlastní riziko. Nic zde není investiční doporučení.'
+                : 'This project is under constant development. All features, visualizations, and concepts may change at any time. The network runs in Mainnet Beta — mining and usage at your own risk. Nothing here is investment advice.'}
+            </p>
           </div>
         </motion.div>
 

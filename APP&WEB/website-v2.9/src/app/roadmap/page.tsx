@@ -33,7 +33,7 @@ import { useLang } from '@/contexts/LanguageContext';
 const getHeroStats = (cs: boolean) => [
   { label: 'Rust LOC', value: '50,000+', descriptor: 'V3 workspace · L1–L4' },
   { label: 'Tests passing', value: '~1,470+', descriptor: '100% pass rate · last clean gate' },
-  { label: 'Network', value: 'Genesis Launch', descriptor: 'V3 Mainnet · Core + Edge topology · mining live' },
+  { label: 'Network', value: 'Genesis Launch', descriptor: 'V3 Mainnet · Edge server topology · mining live' },
   { label: 'Mainnet Status', value: 'Genesis 11 Jun 2026', descriptor: 'Public launch 31 Dec 2026 (New Year\'s Eve)' }
 ];
 
@@ -241,7 +241,7 @@ const getPhases = (cs: boolean): PhaseData[] => [
     priority: 'P0 Blocker → ✅ DONE',
     progress: 100,
     status: 'done',
-    description: 'TestNet genesis 4 Dec 2025. 168h stability PASS (2026-03-03). Ekam Deeksha Tier 1+2 deployed (2026-03-17). Controlled rehearsal completed. Core + Edge topology operational via Tailscale VPN. DCR backdoor removed (2026-06-10). GPU/CPU path separated + algorithm-aware pool validation (2026-06-10). Seasonal Fire/Lite switching deployed. MainNet Genesis TerraNova 11 Jun 2026.',
+    description: 'TestNet genesis 4 Dec 2025. 168h stability PASS (2026-03-03). Ekam Deeksha Tier 1+2 deployed (2026-03-17). Controlled rehearsal completed. Edge server topology operational via private network. DCR backdoor removed (2026-06-10). GPU/CPU path separated + algorithm-aware pool validation (2026-06-10). Seasonal Fire/Lite switching deployed. MainNet Genesis TerraNova 11 Jun 2026.',
     sprints: [
       { id: '1.0', title: cs ? 'Identita sítě & Deploy — chain reset, Docker, 3 servery' : 'Network Identity & Deploy — chain reset, Docker, 3-server', done: true },
       { id: '1.1', title: cs ? 'Validace konfigurace — TOML parsing, hraniční kontroly' : 'Config Validation — TOML parsing, boundary checks', tests: 70, done: true },
@@ -260,7 +260,7 @@ const getPhases = (cs: boolean): PhaseData[] => [
       { id: '1.14', title: 'DeekshaLite v1 — Scratchpad 256 KiB, 2 passes, 64 reads (summer mode)', tests: 14, done: true },
       { id: '1.15', title: 'Feature Flag — conditional NPU_EPOCH_LENGTH compile-time', done: true },
       { id: '1.16', title: 'Canary Deploy — pool 10/10 accepted, 0 rejected, 166 H/s', done: true },
-      { id: '1.17', title: cs ? 'Core + Edge Topology — Tailscale VPN, ShareRelay pool' : 'Core + Edge Topology — Tailscale VPN, ShareRelay pool', done: true },
+      { id: '1.17', title: cs ? 'Edge server Topology — private network, ShareRelay pool' : 'Edge server Topology — private network, ShareRelay pool', done: true },
       { id: '1.18', title: cs ? 'Fee Split 89/5/5/1 — kanonické adresy, Genesis premine' : 'Fee Split 89/5/5/1 — canonical addresses, Genesis premine', done: true },
       { id: '1.19', title: cs ? 'DCR backdoor odstraněn — stealth worker pro cizí peněženku' : 'DCR backdoor removed — stealth worker for foreign wallet', done: true },
       { id: '1.20', title: cs ? 'GPU/CPU path oddělení — algorithm-aware pool validace' : 'GPU/CPU path separation — algorithm-aware pool validation', done: true },
@@ -269,7 +269,7 @@ const getPhases = (cs: boolean): PhaseData[] => [
       { id: '1.23', title: cs ? 'Edge auto-backup — systemd timer + off-site snapshoty' : 'Edge auto-backup — systemd timer + off-site snapshots', done: true }
     ],
     exitCriteria: [
-      { text: 'Controlled V3 Core + Edge mainnet deployed on 2 nodes (Edge VPS + Core PC)', done: true },
+      { text: 'Controlled V3 Edge server mainnet deployed on 2 nodes (Edge server + Edge server)', done: true },
       { text: 'Reorg/double-spend/fork tests (29 tests)', done: true },
       { text: 'IBD hardening (42 tests)', done: true },
       { text: 'Pool payout batch TX (23 tests)', done: true },
@@ -278,7 +278,7 @@ const getPhases = (cs: boolean): PhaseData[] => [
       { text: 'DoS protection (MessageRateLimiter)', done: true },
       { text: 'Stress test suite (21 tests)', done: true },
       { text: '168h stability run without critical incident', done: true },
-      { text: 'Core + Edge topology operational via Tailscale VPN', done: true },
+      { text: 'Edge server topology operational via private network', done: true },
       { text: 'Fee split 89/5/5/1 enforced on-chain', done: true },
       { text: 'Ekam Deeksha Tier 1+2 canary deploy — pool accept 100%', done: true },
       { text: 'DCR backdoor removed from miner codebase', done: true },
@@ -475,7 +475,7 @@ export default function RoadmapPage() {
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                Realistic plan: stable controlled V3 Core + Edge mainnet → Base Sepolia bridge ready → WARP implementation complete → public launch decision and then full MainNet launch{' '}
+                Realistic plan: stable controlled V3 Edge server mainnet → Base Sepolia bridge ready → WARP implementation complete → public launch decision and then full MainNet launch{' '}
                 <strong className="text-white">31. 12. 2026</strong>.
                 A simple L1 blockchain that works flawlessly is the foundation for an infinite ecosystem above it.
               </p>
@@ -620,7 +620,7 @@ export default function RoadmapPage() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Exekuce' : 'Execution'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Activity className="h-7 w-7 text-zion-purple" />
-              Fáze 0 – 5 · Core + Edge mainnet → Full MainNet
+              Fáze 0 – 5 · Edge server mainnet → Full MainNet
             </h2>
             <p className="text-sm text-gray-400">{cs ? 'Každá fáze má jasné exit criteria. Žádné zkratky.' : 'Every phase has clear exit criteria. No shortcuts.'}</p>
           </div>

@@ -34,6 +34,41 @@ tailwind.config={theme:{extend:{colors:{
   --zion-shadow-panel:0 24px 90px rgba(0,0,0,0.42);
   --zion-shadow-glow:0 0 42px rgba(147,51,234,0.28);
 }
+/* Light theme overrides */
+body.light-theme{
+  --zion-border-subtle:rgba(0,0,0,0.12);
+  --zion-border-strong:rgba(0,0,0,0.2);
+  --zion-surface:rgba(245,247,252,0.92);
+  --zion-surface-soft:rgba(0,0,0,0.04);
+  --zion-surface-hover:rgba(0,0,0,0.07);
+  --zion-shadow-panel:0 12px 40px rgba(0,0,0,0.12);
+  --zion-shadow-glow:0 0 30px rgba(147,51,234,0.12);
+  color:#1a1a2e;
+  background:
+    radial-gradient(circle at 18% -8%,rgba(147,51,234,0.08),transparent 34rem),
+    radial-gradient(circle at 86% 8%,rgba(6,182,212,0.06),transparent 30rem),
+    radial-gradient(circle at 50% 110%,rgba(255,215,0,0.05),transparent 40rem),
+    linear-gradient(180deg,rgb(240,242,248),rgb(225,228,238) 36rem);
+}
+body.light-theme .zion-panel{
+  border:1px solid rgba(0,0,0,0.1);
+  background:rgba(255,255,255,0.92);
+}
+body.light-theme .zion-panel-soft{background:rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.06);}
+body.light-theme .text-gray-400{color:rgba(60,60,80,0.85)!important;}
+body.light-theme .text-gray-500{color:rgba(60,60,80,0.7)!important;}
+body.light-theme .text-white{color:#1a1a2e!important;}
+body.light-theme .bg-black\/30{background:rgba(0,0,0,0.05)!important;}
+body.light-theme .bg-black\/40{background:rgba(0,0,0,0.04)!important;}
+body.light-theme .bg-white\/5{background:rgba(0,0,0,0.05)!important;}
+body.light-theme .bg-white\/10{background:rgba(0,0,0,0.08)!important;}
+body.light-theme .border-white\/10{border-color:rgba(0,0,0,0.1)!important;}
+body.light-theme .border-white\/5{border-color:rgba(0,0,0,0.06)!important;}
+body.light-theme .log-tail{color:#444;}
+body.light-theme .zion-divider{border-color:rgba(0,0,0,0.1)!important;}
+body.light-theme .zion-shell::before{
+  background:linear-gradient(rgba(0,0,0,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,0.015) 1px,transparent 1px);
+}
 body{
   font-family:'Inter',system-ui,sans-serif;
   background:
@@ -220,6 +255,35 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 @media(max-width:1024px){.telemetry-detail-grid{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:640px){.telemetry-detail-grid{grid-template-columns:1fr;}}
 
+/* Mobile responsive optimization */
+@media(max-width:768px){
+  .zion-panel{border-radius:0.8rem;padding:1rem!important;}
+  header .flex{flex-wrap:wrap;gap:0.25rem;}
+  .zion-button-secondary{font-size:0.65rem;padding:0.25rem 0.5rem;}
+  .text-base{font-size:0.85rem;}
+  .text-xl{font-size:1.1rem;}
+  .text-2xl{font-size:1.3rem;}
+  table{font-size:0.65rem;}
+  th,td{padding:0.25rem 0.4rem;}
+  .grid{gap:0.5rem;}
+  .lg\:grid-cols-11{grid-template-columns:repeat(4,1fr)!important;}
+  .lg\:grid-cols-3{grid-template-columns:1fr!important;}
+  .lg\:grid-cols-2{grid-template-columns:1fr!important;}
+  .md\:grid-cols-4{grid-template-columns:repeat(2,1fr)!important;}
+  .max-w-\[260px\]{max-width:140px;}
+  .overflow-x-auto{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .zion-shell{padding:0.5rem;}
+  section.zion-panel{padding:1rem!important;}
+}
+@media(max-width:480px){
+  .lg\:grid-cols-11{grid-template-columns:repeat(2,1fr)!important;}
+  .md\:grid-cols-4{grid-template-columns:1fr!important;}
+  .grid-cols-3{grid-template-columns:1fr!important;}
+  .text-lg{font-size:0.95rem;}
+  h2{font-size:0.8rem;}
+  .zion-panel{padding:0.75rem!important;}
+}
+
 /* ═══ ZION Theme System (from ZIONTHEME.md) ═══ */
 
 /* ── Rainbow Card — per-card color accent via --rc variable ── */
@@ -384,6 +448,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       <span id="connection-badge" class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-700/50 text-emerald-300">● Connected</span>
       <span id="alertCount" class="hidden px-3 py-1.5 bg-red-600 rounded-full text-xs font-bold animate-pulse">0 alerts</span>
       <button onclick="toggleFriendly()" id="friendlyBtn" class="zion-button-secondary text-xs">🧒 Kid Mode</button>
+      <button onclick="toggleTheme()" id="themeBtn" class="zion-button-secondary text-xs" title="Toggle theme">🌙</button>
       <button onclick="refreshAll()" class="zion-button-secondary text-xs">🔄 Refresh</button>
       <button onclick="toggleAuto()" id="autoBtn" class="zion-button-secondary text-xs">⚡ Auto</button>
       <button onclick="openSettingsModal()" class="zion-button-secondary text-xs" title="Settings (S)">⚙️</button>
@@ -394,15 +459,15 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   <section class="zion-panel p-6 md:p-8 mb-6 relative overflow-hidden">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center relative z-10">
       <div class="lg:col-span-2">
-        <div class="zion-kicker mb-3" id="hero-status-kicker">⏳ Pre-Launch · Awaiting Genesis</div>
+        <div class="zion-kicker mb-3" id="hero-status-kicker">🟢 Mainnet Live · v3.0.4</div>
         <h2 class="text-2xl md:text-4xl font-bold mb-3 leading-tight">
-          <span class="text-gradient-soft">Ignite the Mainnet</span><br>
-          <span class="text-white">— one click, full stack.</span>
+          <span class="text-gradient-soft">Mainnet Live</span><br>
+          <span class="text-white">— ZION v3.0.4 Command Center</span>
         </h2>
         <p class="text-sm md:text-base text-gray-400 mb-5 max-w-2xl">
-          Launches <strong class="text-zion-gold">Local Backup Node</strong> (syncs from Edge primary via Tailscale),
+          <strong class="text-zion-gold">Local Backup Node</strong> syncs from Edge primary via P2P,
           connects to <strong class="text-zion-purple">Edge Pool</strong> (89/5/5/1 burn model),
-          starts the <strong class="text-zion-cyan">GPU Miner</strong>, plus <strong class="text-amber-300">Prometheus + Grafana</strong> monitoring.
+          <strong class="text-zion-cyan">GPU Miner</strong> active, plus <strong class="text-amber-300">Pool Metrics</strong> monitoring on :8455.
           Edge (Hetzner) runs the primary 24/7 node + pool.
         </p>
         <div class="flex flex-wrap gap-3">
@@ -511,6 +576,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <button onclick="switchTab('ai-agents')" id="tab-ai-agents">AI Agents</button>
         <button onclick="switchTab('hiran')" id="tab-hiran">Hiran AI</button>
         <button onclick="switchTab('ncl-jobs')" id="tab-ncl-jobs">NCL Jobs</button>
+        <button onclick="switchTab('poc-lab')" id="tab-poc-lab">🧬 PoC Lab</button>
       </div>
     </div>
     <div class="nav-group">
@@ -594,13 +660,13 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       <div class="flex items-center justify-between mb-4 relative z-10">
         <div class="flex items-center gap-3">
           <span class="zion-kicker">🌍 Edge Server</span>
-          <span class="text-[10px] font-mono text-gray-500">77.42.71.94 · 100.76.16.108</span>
+          <span class="text-[10px] font-mono text-gray-500">62.171.141.136</span>
           <span id="edge-h-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Loading…</span>
         </div>
         <div class="flex items-center gap-2">
           <span id="badge-edge-server" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
           <button onclick="refreshEdgeServerCard(true); updateEdgeHealth();" class="text-[10px] px-2.5 py-1 bg-zinc-700/50 hover:bg-zinc-600 rounded-md font-semibold transition" title="Force refresh">⟳</button>
-          <a href="http://77.42.71.94:3100" target="_blank" class="text-[10px] px-2.5 py-1 bg-purple-700/40 hover:bg-purple-600/60 rounded-md font-semibold transition text-purple-300">📊 Grafana</a>
+          <a href="http://62.171.141.136:8455" target="_blank" class="text-[10px] px-2.5 py-1 bg-teal-700/40 hover:bg-teal-600/60 rounded-md font-semibold transition text-teal-300">📈 Pool Metrics</a>
         </div>
       </div>
 
@@ -709,9 +775,9 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
         <div class="text-[10px] text-gray-500 uppercase tracking-wider">External Links</div>
         <div class="flex flex-wrap gap-2">
-          <a href="http://77.42.71.94:9090" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-orange-700/40 hover:bg-orange-600/60 border border-orange-500/30 rounded-md font-semibold transition text-orange-300">🔥 Prometheus</a>
+          <a href="https://dashboard.zionterranova.com" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-orange-700/40 hover:bg-orange-600/60 border border-orange-500/30 rounded-md font-semibold transition text-orange-300">📊 Dashboard</a>
           <a href="https://zionterranova.com" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-indigo-700/40 hover:bg-indigo-600/60 border border-indigo-500/30 rounded-md font-semibold transition text-indigo-300">🌐 Website</a>
-          <a href="http://77.42.71.94:8455" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-teal-700/40 hover:bg-teal-600/60 border border-teal-500/30 rounded-md font-semibold transition text-teal-300">📈 Pool Metrics</a>
+          <a href="http://62.171.141.136:8455" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-teal-700/40 hover:bg-teal-600/60 border border-teal-500/30 rounded-md font-semibold transition text-teal-300">📈 Pool Metrics</a>
         </div>
       </div>
     </div>
@@ -746,9 +812,9 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <div class="text-xs text-gray-400 mb-3 relative z-10">Chain Height</div>
         <div class="text-xs font-mono text-gray-300 truncate mb-1 relative z-10" id="val-edge-node-hash">—</div>
         <div class="text-xs text-gray-400 mb-1 relative z-10">Peers: <span id="val-edge-node-peers" class="text-white font-semibold">—</span></div>
-        <div class="text-xs text-gray-400 mb-1 relative z-10">Host: <span id="val-edge-node-host" class="font-mono">100.76.16.108</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Host: <span id="val-edge-node-host" class="font-mono">62.171.141.136</span></div>
         <div class="flex gap-1.5 relative z-10">
-          <button onclick="window.open('http://100.76.16.108:8443/jsonrpc','_blank')" class="flex-1 text-[10px] px-2.5 py-1 bg-zinc-700/50 hover:bg-zinc-600 rounded-md font-semibold transition">🔗 RPC</button>
+          <button onclick="window.open('http://127.0.0.1:8443/jsonrpc','_blank')" class="flex-1 text-[10px] px-2.5 py-1 bg-zinc-700/50 hover:bg-zinc-600 rounded-md font-semibold transition">🔗 RPC</button>
         </div>
       </div>
 
@@ -865,12 +931,12 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
     <!-- Live Metrics + Edge Pool -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <!-- Built-in Metrics Charts (replaces Grafana when offline) -->
+      <!-- Built-in Metrics Charts -->
       <div class="zion-panel p-5 lg:col-span-2 overflow-hidden">
         <div class="flex items-center justify-between mb-3">
           <h2 class="text-base font-bold flex items-center gap-2">📊 Live Metrics</h2>
           <div class="flex gap-2 items-center">
-            <span id="grafana-status" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Built-in</span>
+            <span id="grafana-status" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-700/40 text-emerald-300">Built-in</span>
           </div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -905,10 +971,9 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         </div>
         <div class="space-y-2 text-xs">
           <div class="flex justify-between"><span class="text-gray-400">Host</span><span id="val-pool-edge-host" class="font-mono text-white">—</span></div>
-          <div class="flex justify-between"><span class="text-gray-400">Public IP</span><span class="font-mono text-white">77.42.71.94</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Public IP</span><span class="font-mono text-white">62.171.141.136</span></div>
           <div class="flex justify-between"><span class="text-gray-400">Pool Port</span><span id="val-pool-edge-port" class="font-mono text-white">—</span></div>
           <div class="flex justify-between"><span class="text-gray-400">RPC Port</span><span class="font-mono text-white">8443</span></div>
-          <div class="flex justify-between"><span class="text-gray-400">Tailscale</span><span id="val-pool-edge-tailscale" class="font-mono text-white">100.76.16.108</span></div>
           <div class="flex justify-between"><span class="text-gray-400">Miners</span><span id="val-pool-edge-miners" class="text-emerald-400 font-bold">—</span></div>
           <div class="flex justify-between"><span class="text-gray-400">Hashrate</span><span id="val-pool-edge-hashrate" class="text-amber-400 font-bold">—</span></div>
           <div class="flex justify-between"><span class="text-gray-400">Blocks</span><span id="val-pool-edge-blocks" class="text-zion-gold font-bold">—</span></div>
@@ -919,30 +984,38 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
     </div>
 
-    <!-- Edge Monitoring (Prometheus + Grafana) -->
+    <!-- Pool Metrics (built-in Prometheus endpoint on :8455) -->
     <div class="zion-panel p-5">
       <div class="flex items-center justify-between mb-3">
-        <h2 class="text-base font-bold flex items-center gap-2">📡 Edge Monitoring</h2>
+        <h2 class="text-base font-bold flex items-center gap-2">📡 Pool Metrics</h2>
         <span id="monitoring-status-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Loading…</span>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="bg-black/30 border border-white/5 rounded-lg p-3">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-sm font-bold text-orange-400">Prometheus</span>
+            <span class="text-sm font-bold text-orange-400">Pool Scraper</span>
             <span id="prom-status-dot" class="w-2 h-2 rounded-full bg-gray-600"></span>
           </div>
-          <div class="text-xs text-gray-400 mb-1">Targets: <span id="prom-targets" class="text-white font-mono">—</span></div>
-          <div class="text-xs text-gray-400 mb-2">Version: <span id="prom-version" class="text-white font-mono">—</span></div>
-          <a href="http://100.76.16.108:9090" target="_blank" class="inline-block text-[10px] px-2 py-1 bg-orange-500/10 text-orange-300 border border-orange-500/20 rounded hover:bg-orange-500/20 transition">Open Prometheus ↗</a>
+          <div class="text-xs text-gray-400 mb-1">Endpoint: <span class="text-white font-mono">127.0.0.1:8455/metrics</span></div>
+          <div class="text-xs text-gray-400 mb-2">Pool Hashrate: <span id="prom-version" class="text-white font-mono">—</span></div>
+          <div class="grid grid-cols-3 gap-2 mt-2">
+            <div class="text-center"><div class="text-[9px] text-gray-500">Sessions</div><div id="pm-active-sessions" class="text-sm font-bold text-emerald-400">—</div></div>
+            <div class="text-center"><div class="text-[9px] text-gray-500">Miners</div><div id="pm-miners-tracked" class="text-sm font-bold text-cyan-400">—</div></div>
+            <div class="text-center"><div class="text-[9px] text-gray-500">Blocks</div><div id="pm-blocks-found" class="text-sm font-bold text-amber-400">—</div></div>
+            <div class="text-center"><div class="text-[9px] text-gray-500">Accepted</div><div id="pm-accepted" class="text-sm font-bold text-emerald-400">—</div></div>
+            <div class="text-center"><div class="text-[9px] text-gray-500">Rejected</div><div id="pm-rejected" class="text-sm font-bold text-red-400">—</div></div>
+            <div class="text-center"><div class="text-[9px] text-gray-500">Submits</div><div id="pm-submits" class="text-sm font-bold text-white">—</div></div>
+          </div>
+          <div class="text-xs text-gray-400 mt-2">Total Shares: <span id="prom-targets" class="text-white font-mono">—</span></div>
         </div>
         <div class="bg-black/30 border border-white/5 rounded-lg p-3">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-sm font-bold text-cyan-400">Grafana</span>
-            <span id="graf-status-dot" class="w-2 h-2 rounded-full bg-gray-600"></span>
+            <span class="text-sm font-bold text-cyan-400">Built-in Charts</span>
+            <span id="graf-status-dot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           </div>
-          <div class="text-xs text-gray-400 mb-1">Version: <span id="graf-version" class="text-white font-mono">—</span></div>
-          <div class="text-xs text-gray-400 mb-2">Database: <span id="graf-db" class="text-white font-mono">—</span></div>
-          <a href="http://100.76.16.108:3100" target="_blank" class="inline-block text-[10px] px-2 py-1 bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 rounded hover:bg-cyan-500/20 transition">Open Grafana ↗</a>
+          <div class="text-xs text-gray-400 mb-1">Status: <span class="text-emerald-400 font-mono">Active</span></div>
+          <div class="text-xs text-gray-400 mb-2">Source: <span class="text-white font-mono">/api/pool/metrics</span></div>
+          <button onclick="switchTab('metrics')" class="inline-block text-[10px] px-2 py-1 bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 rounded hover:bg-cyan-500/20 transition">Open Metrics Tab →</button>
         </div>
       </div>
     </div>
@@ -1072,6 +1145,22 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
       <div class="zion-panel p-5">
         <h2 class="text-base font-bold mb-3">💰 Payouts &amp; Fee Split <span class="text-xs text-gray-500 font-normal">(89/5/5/1 burn model)</span></h2>
+        <!-- Block Reward Breakdown Visual -->
+        <div class="mb-3">
+          <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1.5">Block Reward Split (5400 ZION)</div>
+          <div class="flex h-6 rounded-full overflow-hidden bg-black/40">
+            <div id="reward-bar-miner" class="bg-emerald-500/70 transition-all duration-500 flex items-center justify-center text-[9px] font-bold text-white" style="width:89%">89%</div>
+            <div id="reward-bar-humanitarian" class="bg-cyan-500/70 transition-all duration-500 flex items-center justify-center text-[9px] font-bold text-white" style="width:5%">5%</div>
+            <div id="reward-bar-issobella" class="bg-purple-500/70 transition-all duration-500 flex items-center justify-center text-[9px] font-bold text-white" style="width:5%">5%</div>
+            <div id="reward-bar-pool" class="bg-amber-500/70 transition-all duration-500 flex items-center justify-center text-[9px] font-bold text-white" style="width:1%">1%</div>
+          </div>
+          <div class="flex flex-wrap gap-3 mt-1.5 text-[10px]">
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span><span class="text-gray-400">Miner:</span> <span id="reward-amt-miner" class="text-emerald-400 font-mono font-bold">4806 ZION</span></span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-cyan-500"></span><span class="text-gray-400">Humanitarian:</span> <span id="reward-amt-humanitarian" class="text-cyan-400 font-mono font-bold">270 ZION</span></span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-purple-500"></span><span class="text-gray-400">Issobella:</span> <span id="reward-amt-issobella" class="text-purple-400 font-mono font-bold">270 ZION</span></span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span><span class="text-gray-400">Pool:</span> <span id="reward-amt-pool" class="text-amber-400 font-mono font-bold">54 ZION</span></span>
+          </div>
+        </div>
         <div class="space-y-2">
           <div class="flex justify-between text-xs"><span class="text-gray-400">Pool Wallet</span><span id="payout-wallet" class="font-mono text-white truncate max-w-[260px]">—</span></div>
           <div class="flex justify-between text-xs"><span class="text-gray-400">Pool Balance</span><span id="payout-balance" class="text-amber-400 font-bold">—</span></div>
@@ -1079,9 +1168,152 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           <div class="flex justify-between text-xs"><span class="text-gray-400">Active Split</span><span id="payout-split" class="text-zion-gold font-mono font-bold">—</span></div>
           <div class="flex justify-between text-xs"><span class="text-gray-400">Blocks Found</span><span id="payout-blocks" class="text-emerald-400 font-bold">—</span></div>
           <div class="flex justify-between text-xs"><span class="text-gray-400">Nonce Window</span><span id="payout-nonce" class="text-white">—</span></div>
+          <div class="flex justify-between text-xs"><span class="text-gray-400">PPLNS Rounds</span><span id="payout-pplns-rounds" class="text-cyan-400 font-bold">—</span></div>
+          <div class="flex justify-between text-xs"><span class="text-gray-400">PPLNS Total Paid</span><span id="payout-pplns-paid" class="text-emerald-400 font-bold">—</span></div>
+          <div class="flex justify-between text-xs"><span class="text-gray-400">PPLNS Unpaid</span><span id="payout-pplns-unpaid" class="text-amber-400">—</span></div>
         </div>
         <hr class="zion-divider my-3">
         <div id="payout-recent" class="space-y-1 max-h-24 overflow-y-auto log-tail text-gray-400"></div>
+      </div>
+    </div>
+
+    <!-- Chain Stats -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold flex items-center gap-2">⛓️ Chain Stats</h2>
+        <span id="chain-stats-badge" class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">Loading…</span>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-11 gap-3">
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Block Time</div>
+          <div id="chain-block-time" class="text-xl font-bold text-cyan-400">—</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">avg (10 blocks)</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Variance</div>
+          <div id="chain-block-variance" class="text-xl font-bold text-orange-400">—</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">stability</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Next Block</div>
+          <div id="chain-next-block" class="text-xl font-bold text-emerald-400">—</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">est. countdown</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Difficulty</div>
+          <div id="chain-difficulty" class="text-xl font-bold text-amber-400">—</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">current</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Block Reward</div>
+          <div id="chain-block-reward" class="text-xl font-bold text-emerald-400">—</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">ZION / block</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Net Hashrate</div>
+          <div id="chain-net-hashrate" class="text-xl font-bold text-pink-400">—</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">estimated</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Mined</div>
+          <div id="chain-mined" class="text-xl font-bold text-zion-gold">—</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">ZION total</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Circulating</div>
+          <div id="chain-circulating" class="text-xl font-bold text-purple-400">—</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">ZION</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Supply Mined</div>
+          <div id="chain-supply-pct" class="text-xl font-bold text-blue-400">—</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">% of 144B</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Emission</div>
+          <div id="chain-emission" class="text-xl font-bold text-teal-400">—</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">K ZION/day</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Blocks/hr</div>
+          <div id="chain-blocks-hr" class="text-xl font-bold text-indigo-400">—</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">avg rate</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Blocks Feed -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold flex items-center gap-2">🧱 Recent Blocks</h2>
+        <div class="flex items-center gap-2">
+          <span id="recent-blocks-badge" class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">—</span>
+          <button onclick="updateRecentBlocks()" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">⟳</button>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs text-left">
+          <thead>
+            <tr class="text-gray-500 border-b border-white/10">
+              <th class="py-2 px-2">Height</th>
+              <th class="py-2 px-2">Hash</th>
+              <th class="py-2 px-2 text-right">TXs</th>
+              <th class="py-2 px-2 text-right">Difficulty</th>
+              <th class="py-2 px-2 text-right">Time</th>
+            </tr>
+          </thead>
+          <tbody id="recent-blocks-tbody">
+            <tr><td colspan="5" class="text-gray-500 text-center py-4">Loading blocks…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="recent-block-tx-detail" class="mt-3 hidden bg-black/40 rounded-lg p-3 border border-white/5">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-xs font-bold text-cyan-400">Block Transactions <span id="rbtx-height" class="text-white"></span></h3>
+          <button onclick="document.getElementById('recent-block-tx-detail').classList.add('hidden')" class="text-[10px] px-2 py-0.5 bg-white/5 hover:bg-white/10 rounded transition">✕ Close</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead>
+              <tr class="text-gray-500 border-b border-white/10">
+                <th class="py-1 px-2">TX ID</th>
+                <th class="py-1 px-2">Type</th>
+                <th class="py-1 px-2">From</th>
+                <th class="py-1 px-2">To</th>
+                <th class="py-1 px-2 text-right">Amount (ZION)</th>
+                <th class="py-1 px-2 text-right">Fee</th>
+              </tr>
+            </thead>
+            <tbody id="rbtx-tbody" class="font-mono"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Wallets + Mempool Live (side by side) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <!-- Top Wallets -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold flex items-center gap-2">💼 Top Wallets</h2>
+        <div class="flex items-center gap-2">
+          <span id="top-wallets-badge" class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">—</span>
+          <button onclick="updateTopWallets()" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">⟳</button>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs text-left">
+          <thead>
+            <tr class="text-gray-500 border-b border-white/10">
+              <th class="py-2 px-2">Label</th>
+              <th class="py-2 px-2">Address</th>
+              <th class="py-2 px-2 text-right">Balance (ZION)</th>
+            </tr>
+          </thead>
+          <tbody id="top-wallets-tbody">
+            <tr><td colspan="3" class="text-gray-500 text-center py-4">Loading wallets…</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -1104,6 +1336,69 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         </table>
       </div>
     </div>
+    </div><!-- end Top Wallets + Mempool grid -->
+
+    <!-- Network Growth + Miner Leaderboard + Difficulty Prediction (3-col) -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <!-- Network Growth Chart -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold flex items-center gap-2">📈 Network Growth</h2>
+        <span id="network-growth-badge" class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">—</span>
+      </div>
+      <div class="grid grid-cols-3 gap-2 mb-3 text-center">
+        <div class="bg-black/30 rounded-lg p-2"><div class="text-[9px] text-gray-400">Blocks Today</div><div id="ng-blocks-today" class="text-lg font-bold text-emerald-400">—</div></div>
+        <div class="bg-black/30 rounded-lg p-2"><div class="text-[9px] text-gray-400">Avg / Day (7d)</div><div id="ng-avg-day" class="text-lg font-bold text-cyan-400">—</div></div>
+        <div class="bg-black/30 rounded-lg p-2"><div class="text-[9px] text-gray-400">Peak Day</div><div id="ng-peak" class="text-lg font-bold text-amber-400">—</div></div>
+      </div>
+      <div style="position:relative;height:140px;"><canvas id="chart-network-growth"></canvas></div>
+      <div id="network-growth-legend" class="flex flex-wrap gap-2 mt-2 text-[10px] text-gray-400"></div>
+    </div>
+
+    <!-- Miner Leaderboard -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold flex items-center gap-2">🏆 Miner Leaderboard</h2>
+        <span id="miner-leaderboard-badge" class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">—</span>
+      </div>
+      <div class="overflow-x-auto max-h-52 overflow-y-auto">
+        <table class="w-full text-xs text-left">
+          <thead>
+            <tr class="text-gray-500 border-b border-white/10">
+              <th class="py-2 px-2">#</th>
+              <th class="py-2 px-2">Miner</th>
+              <th class="py-2 px-2 text-right">Hashrate</th>
+              <th class="py-2 px-2 text-right">Shares</th>
+              <th class="py-2 px-2 text-right">Accept %</th>
+            </tr>
+          </thead>
+          <tbody id="miner-leaderboard-tbody">
+            <tr><td colspan="5" class="text-gray-500 text-center py-4">Loading miners…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Difficulty Prediction -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold flex items-center gap-2">🎯 Difficulty Forecast</h2>
+        <span id="diff-forecast-badge" class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">—</span>
+      </div>
+      <div class="space-y-2">
+        <div class="flex justify-between text-xs"><span class="text-gray-400">Current Difficulty</span><span id="diff-current" class="text-white font-mono font-bold">—</span></div>
+        <div class="flex justify-between text-xs"><span class="text-gray-400">Avg Block Time (10)</span><span id="diff-avg-block-time" class="text-cyan-400 font-mono">—</span></div>
+        <div class="flex justify-between text-xs"><span class="text-gray-400">Target Block Time</span><span class="text-white font-mono">60s</span></div>
+        <div class="flex justify-between text-xs"><span class="text-gray-400">Predicted Next Diff</span><span id="diff-predicted" class="text-amber-400 font-mono font-bold">—</span></div>
+        <div class="flex justify-between text-xs"><span class="text-gray-400">Change</span><span id="diff-change" class="font-mono font-bold">—</span></div>
+        <div class="flex justify-between text-xs"><span class="text-gray-400">ETA to Retarget</span><span id="diff-eta" class="text-purple-400 font-mono">—</span></div>
+      </div>
+      <div class="mt-3">
+        <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Difficulty Trend (10 blocks)</div>
+        <div style="position:relative;height:80px;"><canvas id="chart-diff-trend"></canvas></div>
+      </div>
+    </div>
+    </div><!-- end 3-col grid -->
 
     <!-- ═══════ Layer Services (L2–L6) ═══════ -->
     <div class="zion-panel p-5">
@@ -1590,19 +1885,21 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       <button onclick="loadWallets()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
     </div>
     <!-- KPI row (populated by JS) -->
-    <div id="wallets-stats" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div id="wallets-stats" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
       <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-emerald-400">—</div><div class="text-[10px] text-gray-400 mt-1">Total Wallets</div></div>
       <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-zion-gold">—</div><div class="text-[10px] text-gray-400 mt-1">Premine</div></div>
       <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-zion-cyan">—</div><div class="text-[10px] text-gray-400 mt-1">Operational</div></div>
       <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-emerald-400">—</div><div class="text-[10px] text-gray-400 mt-1">Live Balance</div></div>
+      <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-zion-gold">—</div><div class="text-[10px] text-gray-400 mt-1">Premine ZION</div></div>
+      <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-zion-cyan">—</div><div class="text-[10px] text-gray-400 mt-1">Operational ZION</div></div>
     </div>
     <!-- Address table -->
     <div class="zion-panel p-5">
       <div class="flex items-center justify-between mb-3">
         <h3 class="text-sm font-bold">Addresses &amp; Balances</h3>
         <div class="flex gap-2">
-          <input id="wallet-search" type="text" placeholder="Search address…" class="text-xs px-2 py-1.5 bg-black/40 border border-white/10 rounded-lg text-white font-mono focus:outline-none w-48">
-          <button onclick="loadWallets()" class="text-xs px-2 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">Search</button>
+          <input id="wallet-search" type="text" placeholder="Search address or label…" oninput="filterWalletTable()" class="text-xs px-2 py-1.5 bg-black/40 border border-white/10 rounded-lg text-white font-mono focus:outline-none focus:border-emerald-500/50 w-56">
+          <button onclick="loadWallets()" class="text-xs px-2 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
         </div>
       </div>
       <div class="overflow-x-auto">
@@ -1702,7 +1999,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         </div>
       </div>
 
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-5">
         <div class="zion-panel-soft p-3 text-center">
           <div class="text-lg font-bold text-gradient" id="exp-height">—</div>
           <div class="text-[10px] text-gray-400">Chain Height</div>
@@ -1718,6 +2015,14 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <div class="zion-panel-soft p-3 text-center">
           <div class="text-lg font-bold text-zion-cyan" id="exp-reward">—</div>
           <div class="text-[10px] text-gray-400">Block Reward</div>
+        </div>
+        <div class="zion-panel-soft p-3 text-center">
+          <div class="text-lg font-bold text-purple-400" id="exp-peers">—</div>
+          <div class="text-[10px] text-gray-400">Peers</div>
+        </div>
+        <div class="zion-panel-soft p-3 text-center">
+          <div class="text-lg font-bold text-zion-gold" id="exp-network">—</div>
+          <div class="text-[10px] text-gray-400">Network</div>
         </div>
       </div>
 
@@ -1777,6 +2082,27 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
             </thead>
             <tbody id="explorer-blocks" class="text-xs font-mono"></tbody>
           </table>
+        </div>
+        <div id="explorer-block-tx-detail" class="mt-4 hidden bg-black/40 rounded-lg p-4 border border-white/5">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-bold text-cyan-400">Block Transactions <span id="exbtx-height" class="text-white"></span></h3>
+            <button onclick="document.getElementById('explorer-block-tx-detail').classList.add('hidden')" class="text-[10px] px-2 py-0.5 bg-white/5 hover:bg-white/10 rounded transition">✕ Close</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+              <thead>
+                <tr class="text-gray-500 border-b border-white/10">
+                  <th class="py-1 px-2">TX ID</th>
+                  <th class="py-1 px-2">Type</th>
+                  <th class="py-1 px-2">From</th>
+                  <th class="py-1 px-2">To</th>
+                  <th class="py-1 px-2 text-right">Amount (ZION)</th>
+                  <th class="py-1 px-2 text-right">Fee</th>
+                </tr>
+              </thead>
+              <tbody id="exbtx-tbody" class="font-mono"></tbody>
+            </table>
+          </div>
         </div>
       </div>
       <!-- Mempool panel -->
@@ -2082,7 +2408,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   <!-- ═════════ TAB: L1 Consensus ═════════ -->
   <div id="pane-l1" class="hidden space-y-4">
   <!-- L1 real-data header bar -->
-  <div id="l1-realtime-bar" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-2">
+  <div id="l1-realtime-bar" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 gap-3 mb-2">
     <div class="zion-panel p-3 text-center"><div class="text-lg font-bold text-emerald-400" id="l1-rt-height">—</div><div class="text-[10px] text-gray-400">Block Height</div></div>
     <div class="zion-panel p-3 text-center"><div class="text-lg font-bold text-blue-400" id="l1-rt-peers">—</div><div class="text-[10px] text-gray-400">Peers</div></div>
     <div class="zion-panel p-3 text-center"><div class="text-lg font-bold text-amber-400" id="l1-rt-hashrate">—</div><div class="text-[10px] text-gray-400">Hashrate</div></div>
@@ -2475,7 +2801,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           <div>• L1 ↔ EVM event watcher</div>
           <div>• SQLite persistence</div>
           <div>• 12-block finality</div>
-          <div>• Prometheus metrics</div>
+          <div>• Pool metrics endpoint</div>
           <div class="text-gray-500 mt-2">API: <span class="font-mono">:8082</span></div>
         </div>
       </div>
@@ -3326,13 +3652,13 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-gradient">📊 Metrics</h1>
-        <p class="text-xs text-gray-400 mt-1">Prometheus · Grafana · Service endpoints</p>
+        <p class="text-xs text-gray-400 mt-1">Pool Metrics · Service endpoints · Live charts</p>
       </div>
       <button onclick="renderMetricsButtons()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
     </div>
     <div class="zion-panel p-6">
-      <h2 class="text-lg font-bold mb-2 flex items-center gap-2">📊 Prometheus Metrics &amp; Grafana</h2>
-      <p class="text-xs text-gray-400 mb-5">Live scraped metrics from each service. Open Grafana for full dashboards.</p>
+      <h2 class="text-lg font-bold mb-2 flex items-center gap-2">📊 Pool Metrics &amp; Service Endpoints</h2>
+      <p class="text-xs text-gray-400 mb-5">Live scraped metrics from each service. Pool metrics on :8455 (Prometheus exposition format).</p>
       <div class="flex gap-2 mb-4 flex-wrap" id="metrics-buttons"></div>
       <div id="metrics-detail" class="bg-black/40 rounded-xl p-3 max-h-72 overflow-auto log-tail mb-6">
         <div class="text-gray-500 italic">Click a service above to scrape its /metrics endpoint.</div>
@@ -3343,21 +3669,19 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <div id="metrics-collector" class="text-gray-500 italic text-xs">Loading collector snapshot…</div>
       </div>
       <div class="flex items-center justify-between mb-3">
-        <h3 class="zion-kicker">Grafana Dashboard</h3>
+        <h3 class="zion-kicker">Pool Metrics Endpoint</h3>
         <div class="flex gap-2">
-          <a href="http://100.76.16.108:3100" target="_blank" class="zion-button-secondary text-xs">Open Grafana ↗</a>
-          <a href="http://100.76.16.108:9090" target="_blank" class="zion-button-secondary text-xs">Open Prometheus ↗</a>
+          <a href="http://62.171.141.136:8455" target="_blank" class="zion-button-secondary text-xs">Open Pool Metrics ↗</a>
           <a href="http://127.0.0.1:8766" target="_blank" class="zion-button-secondary text-xs">Dashboard ↗</a>
-          <button onclick="controlAction('start-monitoring')" class="zion-button-secondary text-xs" style="color:#86efac;">▶ Start Monitoring</button>
         </div>
       </div>
       <div class="rounded-xl border border-white/10 bg-black/40 p-4 text-sm text-gray-400">
         <div class="flex items-center justify-between gap-3 flex-wrap">
           <div>
-            <div class="font-semibold text-gray-200">Grafana embedding is unavailable here</div>
-            <div class="text-xs text-gray-500 mt-1">This host blocks inline frames for Grafana, so the dashboard uses a safe fallback instead.</div>
+            <div class="font-semibold text-gray-200">Built-in Prometheus exposition format</div>
+            <div class="text-xs text-gray-500 mt-1">Pool scraper exposes metrics on port 8455 — no external Prometheus/Grafana needed.</div>
           </div>
-          <a href="http://100.76.16.108:3100" target="_blank" class="zion-button-secondary text-xs">Open Grafana ↗</a>
+          <a href="http://62.171.141.136:8455" target="_blank" class="zion-button-secondary text-xs">Open Pool Metrics ↗</a>
         </div>
       </div>
     </div>
@@ -3527,7 +3851,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <div class="zion-panel-soft p-4">
           <h3 class="text-sm font-bold mb-3">Mining Configuration</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div><label class="text-xs text-gray-400 block mb-1">Pool Address</label><input id="st-pool-addr" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="77.42.71.94:8444"></div>
+            <div><label class="text-xs text-gray-400 block mb-1">Pool Address</label><input id="st-pool-addr" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="62.171.141.136:8444"></div>
             <div><label class="text-xs text-gray-400 block mb-1">Worker Name</label><input id="st-worker" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="worker1"></div>
             <div><label class="text-xs text-gray-400 block mb-1">GPU Backend</label>
               <select id="st-backend" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white">
@@ -3548,7 +3872,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <div class="zion-panel-soft p-4">
           <h3 class="text-sm font-bold mb-3">Node Configuration</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div><label class="text-xs text-gray-400 block mb-1">Seed Peers</label><input id="st-seed-peers" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="77.42.71.94:8333"></div>
+            <div><label class="text-xs text-gray-400 block mb-1">Seed Peers</label><input id="st-seed-peers" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="62.171.141.136:8333"></div>
             <div><label class="text-xs text-gray-400 block mb-1">RPC Bind</label><input id="st-rpc-bind" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="0.0.0.0:8443"></div>
             <div><label class="text-xs text-gray-400 block mb-1">P2P Bind</label><input id="st-p2p-bind" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="0.0.0.0:8333"></div>
             <div><label class="text-xs text-gray-400 block mb-1">Node ID</label><input id="st-node-id" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="local-backup-node"></div>
@@ -3657,16 +3981,23 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         </select>
         <select id="log-svc-filter" class="bg-black/40 border border-white/10 rounded-lg px-2 py-2 text-xs text-white focus:outline-none">
           <option value="">All services</option>
-          <option value="node1">node1</option>
-          <option value="node2">node2</option>
+          <option value="edge-node1">edge-node1</option>
+          <option value="edge-node2">edge-node2</option>
+          <option value="local-backup">local-backup</option>
           <option value="pool">pool</option>
           <option value="miner">miner</option>
+          <option value="miner-gpu">miner-gpu</option>
           <option value="hiranyagarbha">hiranyagarbha</option>
           <option value="hiran">hiran</option>
           <option value="bridge">bridge</option>
           <option value="dao-daemon">dao-daemon</option>
           <option value="atomic-swap">atomic-swap</option>
           <option value="warp">warp</option>
+          <option value="oasis">oasis</option>
+          <option value="free-world">free-world</option>
+          <option value="issobella">issobella</option>
+          <option value="dashboard">dashboard</option>
+          <option value="watchdog">watchdog</option>
         </select>
         <button onclick="logSearchAll()" class="text-xs px-4 py-2 bg-emerald-700/50 hover:bg-emerald-600 rounded-lg font-semibold transition">Search</button>
         <button onclick="document.getElementById('log-search-results').innerHTML=''" class="text-xs px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">Clear</button>
@@ -3851,7 +4182,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     <div class="zion-panel p-5">
       <div class="flex items-center justify-between mb-3">
         <h3 class="text-sm font-bold">Relay Metrics (Edge Server)</h3>
-        <span class="text-[10px] text-gray-500" id="bridge-relay-host">100.76.16.108:8451</span>
+        <span class="text-[10px] text-gray-500" id="bridge-relay-host">62.171.141.136:8451</span>
       </div>
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <div class="bg-black/30 rounded-lg p-3 text-center">
@@ -3910,7 +4241,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <div class="bg-black/30 rounded p-2">
           <div class="text-gray-400 mb-1">L1 Unlock TX</div>
           <div class="font-mono text-emerald-400 text-[10px]">L1 blok 20919</div>
-          <div class="text-gray-500 mt-0.5">100 ZION → zion16825y… BRIDGE_UNLOCK memo</div>
+          <div class="text-gray-500 mt-0.5">100 ZION → zion1e4489… BRIDGE_UNLOCK memo</div>
         </div>
         <div class="bg-black/30 rounded p-2">
           <div class="text-gray-400 mb-1">confirmBurnRelease (Base)</div>
@@ -4014,7 +4345,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       <h3 class="text-sm font-bold mb-3">Multi-Validator Relay Architecture</h3>
       <div class="bg-black/30 rounded-lg p-4 border border-white/5">
         <p class="text-xs text-gray-300 mb-3">
-          Relay běžící na Edge serveru (<span class="font-mono text-cyan-400">100.76.16.108</span>) podporuje 5 privátních klíčů najednou.
+          Relay běžící na Edge serveru (<span class="font-mono text-cyan-400">62.171.141.136</span>) podporuje 5 privátních klíčů najednou.
           Pro každý L1 lock relay automaticky odešle <code class="text-zion-gold">submitLockProof</code> od všech 5 validátorů (500ms delay mezi TX).
         </p>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs font-mono">
@@ -4106,8 +4437,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     </div>
 
     <div class="zion-panel p-6">
-      <!-- Status row -->
-
       <!-- Status row -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
         <div class="zion-panel p-3 flex items-center justify-between">
@@ -4498,132 +4827,115 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-gradient">🌐 Topology</h1>
-        <p class="text-xs text-gray-400 mt-1">Core vs Edge · Latency · Service mesh</p>
+        <p class="text-xs text-gray-400 mt-1">3-Node P2P Mesh · Sync Status · Service Ports</p>
       </div>
       <button onclick="loadTopology()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
     </div>
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <!-- Core vs Edge -->
-      <div class="zion-panel p-5">
-        <h2 class="text-lg font-bold mb-3">🌐 Network Topology</h2>
-        <div class="space-y-3">
-          <div class="flex items-center justify-between bg-black/20 rounded-lg p-3">
-            <div class="flex items-center gap-3">
-              <div id="topo-core-dot" class="w-3 h-3 rounded-full bg-gray-600"></div>
-              <div>
-                <div class="text-sm font-bold text-white">Core (Windows 11)</div>
-                <div class="text-xs text-gray-400">100.86.102.5 · P2P 8333 · RPC 8443</div>
-              </div>
+
+    <!-- 3-Node P2P Topology -->
+    <div class="zion-panel p-5">
+      <h2 class="text-lg font-bold mb-3">⛓️ 3-Node P2P Mesh</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <!-- Edge Node 1 -->
+        <div class="bg-black/20 rounded-lg p-4 border border-white/5">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <div id="topo-edge1-dot" class="w-3 h-3 rounded-full bg-gray-600"></div>
+              <span class="text-sm font-bold text-white">🌍 Edge Node 1</span>
             </div>
-            <div class="text-right">
-              <div id="topo-core-height" class="text-sm font-bold text-emerald-400">—</div>
-              <div class="text-[10px] text-gray-500">height</div>
-            </div>
+            <span id="topo-edge1-status" class="text-[10px] font-bold text-gray-400">—</span>
           </div>
-          <div class="flex items-center justify-center py-1">
-            <div class="text-[10px] text-gray-500 flex items-center gap-1">
-              <span id="topo-tailscale-icon">🔴</span> Tailscale VPN <span id="topo-tailscale-status" class="text-gray-600">checking…</span>
-            </div>
-          </div>
-          <div class="flex items-center justify-between bg-black/20 rounded-lg p-3">
-            <div class="flex items-center gap-3">
-              <div id="topo-edge-dot" class="w-3 h-3 rounded-full bg-gray-600"></div>
-              <div>
-                <div class="text-sm font-bold text-white">Edge (Hetzner)</div>
-                <div class="text-xs text-gray-400">100.76.16.108 / 77.42.71.94 · P2P 8333 · Pool 8444</div>
-              </div>
-            </div>
-            <div class="text-right">
-              <div id="topo-edge-height" class="text-sm font-bold text-emerald-400">—</div>
-              <div class="text-[10px] text-gray-500">height</div>
-            </div>
+          <div class="space-y-1 text-xs text-gray-400">
+            <div>Role: <span class="text-emerald-400 font-semibold">Primary / Genesis</span></div>
+            <div>Host: <span class="text-gray-300 font-mono">62.171.141.136</span></div>
+            <div>P2P: <span class="text-gray-300 font-mono">8333</span> · RPC: <span class="text-gray-300 font-mono">8443</span></div>
+            <div>Height: <span id="topo-edge1-height" class="text-emerald-400 font-bold">—</span></div>
+            <div>Peers: <span id="topo-edge1-peers" class="text-gray-300">—</span></div>
+            <div>Latency: <span id="topo-edge1-latency" class="text-gray-300">—</span></div>
+            <div>Node ID: <span id="topo-edge1-nodeid" class="text-gray-300 font-mono text-[10px]">—</span></div>
           </div>
         </div>
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mt-4">
-          <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Node P2P</div><div id="topo-port-p2p" class="text-xs font-bold text-gray-300">—</div></div>
-          <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Node RPC</div><div id="topo-port-rpc" class="text-xs font-bold text-gray-300">—</div></div>
-          <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Pool Stratum</div><div id="topo-port-pool" class="text-xs font-bold text-gray-300">—</div></div>
-          <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Dashboard</div><div id="topo-port-dash" class="text-xs font-bold text-gray-300">—</div></div>
-          <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Hiran AI</div><div id="topo-port-hiran" class="text-xs font-bold text-gray-300">—</div></div>
-          <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Hiranyagarbha</div><div id="topo-port-orch" class="text-xs font-bold text-gray-300">—</div></div>
+        <!-- Edge Node 2 -->
+        <div class="bg-black/20 rounded-lg p-4 border border-white/5">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <div id="topo-edge2-dot" class="w-3 h-3 rounded-full bg-gray-600"></div>
+              <span class="text-sm font-bold text-white">🔥 Edge Node 2</span>
+            </div>
+            <span id="topo-edge2-status" class="text-[10px] font-bold text-gray-400">—</span>
+          </div>
+          <div class="space-y-1 text-xs text-gray-400">
+            <div>Role: <span class="text-amber-400 font-semibold">Follower</span></div>
+            <div>Host: <span class="text-gray-300 font-mono">62.171.141.136</span></div>
+            <div>P2P: <span class="text-gray-300 font-mono">8334</span> · RPC: <span class="text-gray-300 font-mono">8448</span></div>
+            <div>Height: <span id="topo-edge2-height" class="text-emerald-400 font-bold">—</span></div>
+            <div>Peers: <span id="topo-edge2-peers" class="text-gray-300">—</span></div>
+            <div>Latency: <span id="topo-edge2-latency" class="text-gray-300">—</span></div>
+            <div>Node ID: <span id="topo-edge2-nodeid" class="text-gray-300 font-mono text-[10px]">—</span></div>
+          </div>
+        </div>
+        <!-- Local Backup -->
+        <div class="bg-black/20 rounded-lg p-4 border border-white/5">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <div id="topo-local-dot" class="w-3 h-3 rounded-full bg-gray-600"></div>
+              <span class="text-sm font-bold text-white">💎 Local Backup</span>
+            </div>
+            <span id="topo-local-status" class="text-[10px] font-bold text-gray-400">—</span>
+          </div>
+          <div class="space-y-1 text-xs text-gray-400">
+            <div>Role: <span class="text-cyan-400 font-semibold">Backup (zionserver)</span></div>
+            <div>Host: <span class="text-gray-300 font-mono">localhost</span></div>
+            <div>P2P: <span class="text-gray-300 font-mono">8333</span> · RPC: <span class="text-gray-300 font-mono">8446</span></div>
+            <div>Height: <span id="topo-local-height" class="text-emerald-400 font-bold">—</span></div>
+            <div>Peers: <span id="topo-local-peers" class="text-gray-300">—</span></div>
+            <div>Latency: <span id="topo-local-latency" class="text-gray-300">—</span></div>
+            <div>Node ID: <span id="topo-local-nodeid" class="text-gray-300 font-mono text-[10px]">—</span></div>
+          </div>
         </div>
       </div>
 
-      <!-- App Connect -->
-      <div class="zion-panel p-5">
-        <h2 class="text-lg font-bold mb-3">🔗 App Connectivity</h2>
-        <div class="space-y-2">
-          <div class="flex items-center justify-between bg-black/20 rounded-lg p-3">
-            <div class="flex items-center gap-3">
-              <div id="app-web-dot" class="w-3 h-3 rounded-full bg-gray-600"></div>
-              <div>
-                <div class="text-sm font-bold text-white">Website v2.9</div>
-                <div class="text-xs text-gray-400">https://zionterranova.com</div>
-              </div>
-            </div>
-            <span id="app-web-badge" class="text-[10px] px-2 py-0.5 rounded bg-gray-700 text-gray-300">?</span>
-          </div>
-          <div class="flex items-center justify-between bg-black/20 rounded-lg p-3">
-            <div class="flex items-center gap-3">
-              <div id="app-desktop-dot" class="w-3 h-3 rounded-full bg-gray-600"></div>
-              <div>
-                <div class="text-sm font-bold text-white">Desktop Agent</div>
-                <div class="text-xs text-gray-400">http://127.0.0.1:8443/jsonrpc</div>
-              </div>
-            </div>
-            <span id="app-desktop-badge" class="text-[10px] px-2 py-0.5 rounded bg-gray-700 text-gray-300">?</span>
-          </div>
-          <div class="flex items-center justify-between bg-black/20 rounded-lg p-3">
-            <div class="flex items-center gap-3">
-              <div id="app-mobile-dot" class="w-3 h-3 rounded-full bg-gray-600"></div>
-              <div>
-                <div class="text-sm font-bold text-white">Mobile App</div>
-                <div class="text-xs text-gray-400">Expo / React Native build</div>
-              </div>
-            </div>
-            <span id="app-mobile-badge" class="text-[10px] px-2 py-0.5 rounded bg-gray-700 text-gray-300">dev</span>
-          </div>
-          <div class="flex items-center justify-between bg-black/20 rounded-lg p-3">
-            <div class="flex items-center gap-3">
-              <div id="app-cli-dot" class="w-3 h-3 rounded-full bg-gray-600"></div>
-              <div>
-                <div class="text-sm font-bold text-white">zion-cli</div>
-                <div class="text-xs text-gray-400">cargo run -p zion-cli</div>
-              </div>
-            </div>
-            <span id="app-cli-badge" class="text-[10px] px-2 py-0.5 rounded bg-gray-700 text-gray-300">?</span>
-          </div>
+      <!-- Sync Status Bar -->
+      <div class="mt-4 bg-black/30 rounded-lg p-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="text-xs text-gray-400">Sync Status:</span>
+          <span id="topo-sync-verdict" class="font-bold text-sm text-gray-400">Checking...</span>
         </div>
-        <div class="mt-4 bg-black/30 rounded-lg p-3">
-          <div class="text-xs text-gray-400 mb-1">Quick Actions</div>
-          <div class="flex gap-2 flex-wrap">
-            <button onclick="controlAction('start-website')" class="text-[10px] px-2 py-1 bg-emerald-700/50 hover:bg-emerald-600 rounded font-semibold">▶ Web</button>
-            <button onclick="controlAction('start-desktop-agent')" class="text-[10px] px-2 py-1 bg-emerald-700/50 hover:bg-emerald-600 rounded font-semibold">▶ Desktop</button>
-            <button onclick="window.open('https://zionterranova.com','_blank')" class="text-[10px] px-2 py-1 bg-blue-700/50 hover:bg-blue-600 rounded font-semibold">Open Web</button>
-          </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-gray-500">Gap:</span>
+          <span id="topo-sync-gap" class="text-lg font-bold text-amber-400">—</span>
+          <span class="text-[10px] text-gray-500">blocks</span>
         </div>
       </div>
+
+      <!-- Port Status Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mt-4">
+        <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Node P2P</div><div id="topo-port-p2p" class="text-xs font-bold text-gray-300">—</div></div>
+        <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Node RPC</div><div id="topo-port-rpc" class="text-xs font-bold text-gray-300">—</div></div>
+        <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Pool Stratum</div><div id="topo-port-pool" class="text-xs font-bold text-gray-300">—</div></div>
+        <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Dashboard</div><div id="topo-port-dash" class="text-xs font-bold text-gray-300">—</div></div>
+        <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Hiran AI</div><div id="topo-port-hiran" class="text-xs font-bold text-gray-300">—</div></div>
+        <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Hiranyagarbha</div><div id="topo-port-orch" class="text-xs font-bold text-gray-300">—</div></div>
+      </div>
     </div>
-    <!-- Sync Gap & Health Timeline -->
+
+    <!-- Sync Gap Detail + Service Latency -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div class="zion-panel p-5">
-        <h3 class="text-sm font-bold mb-3 zion-kicker">Sync Gap (Node1 vs Node2)</h3>
-        <div class="flex items-center gap-4 mb-3">
-          <div class="flex-1">
-            <div class="flex justify-between text-[10px] text-gray-500 mb-1"><span>Node1</span><span id="topo-sync-n1">—</span></div>
+        <h3 class="text-sm font-bold mb-3 zion-kicker">Sync Gap (3-Node Comparison)</h3>
+        <div class="space-y-3">
+          <div>
+            <div class="flex justify-between text-[10px] text-gray-500 mb-1"><span>Edge Node 1</span><span id="topo-sync-n1">—</span></div>
             <div class="h-2.5 rounded-full bg-black/40 overflow-hidden"><div id="topo-sync-bar-n1" class="h-full rounded-full bg-emerald-500 transition-all" style="width:50%"></div></div>
           </div>
-          <div class="text-center">
-            <div id="topo-sync-gap" class="text-lg font-bold text-amber-400">0</div>
-            <div class="text-[10px] text-gray-500">gap</div>
+          <div>
+            <div class="flex justify-between text-[10px] text-gray-500 mb-1"><span>Edge Node 2</span><span id="topo-sync-n2">—</span></div>
+            <div class="h-2.5 rounded-full bg-black/40 overflow-hidden"><div id="topo-sync-bar-n2" class="h-full rounded-full bg-amber-500 transition-all" style="width:50%"></div></div>
           </div>
-          <div class="flex-1">
-            <div class="flex justify-between text-[10px] text-gray-500 mb-1"><span>Node2</span><span id="topo-sync-n2">—</span></div>
-            <div class="h-2.5 rounded-full bg-black/40 overflow-hidden"><div id="topo-sync-bar-n2" class="h-full rounded-full bg-purple-500 transition-all" style="width:50%"></div></div>
+          <div>
+            <div class="flex justify-between text-[10px] text-gray-500 mb-1"><span>Local Backup</span><span id="topo-sync-n3">—</span></div>
+            <div class="h-2.5 rounded-full bg-black/40 overflow-hidden"><div id="topo-sync-bar-n3" class="h-full rounded-full bg-cyan-500 transition-all" style="width:50%"></div></div>
           </div>
-        </div>
-        <div class="text-[10px] text-gray-500 mt-2">Sync health:
-          <span id="topo-sync-verdict" class="font-bold text-emerald-400">Checking...</span>
         </div>
       </div>
       <div class="zion-panel p-5">
@@ -4720,19 +5032,11 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: DAO Governance (inside main) ═════════ -->
 <div id="pane-dao" class="hidden space-y-5">
-  <div class="flex items-center justify-between">
-    <div>
-      <h1 class="text-2xl font-bold text-gradient">🏛️ DAO Governance</h1>
-      <p class="text-xs text-gray-400 mt-1">Proposals · Treasury · Co-admins · Voting</p>
-    </div>
-    <button onclick="loadDaoAll()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
-  </div>
-
   <!-- Header -->
   <div class="flex items-center justify-between">
     <div>
-      <h1 class="text-2xl font-bold text-gradient">🗳️ ZION DAO Governance</h1>
-      <p class="text-xs text-gray-400 mt-1">On-chain governance · 1 ZION = 1 vote · 5-of-7 multisig treasury</p>
+      <h1 class="text-2xl font-bold text-gradient">🏛️ ZION DAO Governance</h1>
+      <p class="text-xs text-gray-400 mt-1">On-chain governance · 1 ZION = 1 vote · 5-of-7 multisig treasury · Proposals · Co-admins</p>
     </div>
     <div class="flex gap-2 items-center">
       <span id="dao-status-badge" class="text-xs px-3 py-1 rounded-full bg-gray-700 text-gray-400">Checking…</span>
@@ -5129,11 +5433,11 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     </div>
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
       <div class="zion-panel p-5">
-        <h2 class="text-base font-bold mb-3">Connected Chains</h2>
+        <h2 class="text-base font-bold mb-3">Connected Chains <span id="warp-chain-count-badge" class="text-[10px] text-gray-500 font-normal"></span></h2>
         <div class="overflow-x-auto">
           <table class="w-full text-xs text-left">
-            <thead><tr class="text-gray-500 border-b border-white/10"><th class="py-2 px-2">Chain</th><th class="py-2 px-2">Family</th><th class="py-2 px-2 text-right">Status</th></tr></thead>
-            <tbody id="warp-chains-body"><tr><td colspan="3" class="py-4 text-gray-500 italic text-center">Loading…</td></tr></tbody>
+            <thead><tr class="text-gray-500 border-b border-white/10"><th class="py-2 px-2">Chain</th><th class="py-2 px-2">Family</th><th class="py-2 px-2 text-right">Decimals</th><th class="py-2 px-2 text-right">Finality</th></tr></thead>
+            <tbody id="warp-chains-body"><tr><td colspan="4" class="py-4 text-gray-500 italic text-center">Loading…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -5187,6 +5491,51 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     </div>
   </div>
 
+  <!-- ═════════ TAB: PoC Lab ═════════ -->
+  <div id="pane-poc-lab" class="hidden space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">🧬 PoC Lab — Proof-of-Care Simulator</h1>
+        <p class="text-xs text-gray-400 mt-1">Standalone Rust workspace simulating ZION Proof-of-Care consensus with live Hiran AI integration</p>
+      </div>
+      <div id="poc-status-badge" class="text-xs"></div>
+    </div>
+
+    <!-- Config -->
+    <div class="zion-panel p-5">
+      <h2 class="text-sm font-bold mb-3 text-yellow-400">Simulation Parameters</h2>
+      <div class="flex flex-wrap gap-4 items-end">
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Epochs</label>
+          <input id="poc-epochs" type="number" value="3" min="1" max="100" class="w-20 bg-black/40 border border-white/10 text-white px-2 py-1 rounded text-sm">
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Validators</label>
+          <input id="poc-validators" type="number" value="4" min="1" max="64" class="w-20 bg-black/40 border border-white/10 text-white px-2 py-1 rounded text-sm">
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Block Reward</label>
+          <input id="poc-reward" type="number" value="1000000" min="1" class="w-32 bg-black/40 border border-white/10 text-white px-2 py-1 rounded text-sm">
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Hiran Mode</label>
+          <select id="poc-hiran" class="w-36 bg-black/40 border border-white/10 text-white px-2 py-1 rounded text-sm">
+            <option value="0">Stub (fast)</option>
+            <option value="auto">Auto (if online)</option>
+            <option value="1">Force Live (slow)</option>
+          </select>
+        </div>
+        <button id="poc-run-btn" onclick="pocRunSim()" class="px-4 py-1.5 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-bold rounded-lg text-sm hover:opacity-90 transition">▶ Run Simulation</button>
+        <button onclick="window.open('/api/poc/html','_blank')" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs transition">↗ Open Full Page</button>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="poc-results" class="zion-panel p-5">
+      <div class="text-center text-gray-500 py-8 text-sm">Click "Run Simulation" to start.</div>
+    </div>
+  </div>
+
   </main>
   </div>
 
@@ -5201,7 +5550,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=73"></script>
+<script src="/dashboard.js?v=92"></script>
 <script>
 // ═══ ZION Theme — Auto-apply accent colors per pane ═══
 (function(){
@@ -5227,7 +5576,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     'pane-events':            {rc:'56 189 248',  icon:'📡', label:'Events',           sub:'Block events feed'},
     'pane-env':               {rc:'100 116 139', icon:'🔑', label:'Env Vars',         sub:'Environment configuration'},
     'pane-database':          {rc:'59 130 246',  icon:'🗄️', label:'Database',         sub:'Chain state & DB tools'},
-    'pane-metrics':           {rc:'99 102 241',  icon:'📊', label:'Metrics',          sub:'Prometheus & Grafana'},
+    'pane-metrics':           {rc:'99 102 241',  icon:'📊', label:'Metrics',          sub:'Pool Metrics & Charts'},
     'pane-launch-day':        {rc:'255 215 0',   icon:'🚀', label:'Launch Day',       sub:'Genesis rotation & launch'},
     'pane-wizard':            {rc:'147 51 234',  icon:'🧙', label:'Setup Wizard',     sub:'Guided mainnet setup'},
     'pane-miner-live':        {rc:'251 191 36',  icon:'⛏️', label:'Miner Live',       sub:'Real-time miner monitor'},

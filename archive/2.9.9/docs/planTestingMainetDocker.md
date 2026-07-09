@@ -92,7 +92,7 @@ V3/target/release/node.exe
 export ZION_POOL_BIND=0.0.0.0:8444
 export ZION_NODE_RPC_ADDR=127.0.0.1:8443
 export ZION_POOL_WALLET=zion1l56685k280p364g686j88644g3j4r375755e8p7
-export ZION_POOL_PAYOUT_SK_HEX=a3bc7452beb612e2f3a59f85d31905cc2e8e28f3450e4892c9c0ea445e913ee9
+export ZION_POOL_PAYOUT_SK_HEX=[REDACTED — pool SK removed for security]
 V3/target/release/server.exe
 
 # B3. GPU Miner (in new terminal)

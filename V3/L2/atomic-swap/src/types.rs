@@ -1,11 +1,12 @@
 //! Core HTLC types and V3 RPC helpers.
 
 use chrono::{DateTime, Utc};
-use ripemd::Ripemd160;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-const ZION_BASE32_ALPHABET: &[u8; 32] = b"023456789acdefghjklmnpqrstuvwxyz";
+// Re-export shared helpers from zion-l1-types (eliminates duplication across
+// bridge / dao / atomic-swap watchers).
+pub use zion_l1_types::{bytes_to_hex, normalize_rpc_addr, zion_address_from_public_key};
 
 // ─── Newtype wrappers ────────────────────────────────────────────────────────
 
@@ -48,53 +49,6 @@ impl SwapPreimage {
         h.update(self.0);
         SwapHash(h.finalize().into())
     }
-}
-
-pub fn bytes_to_hex(bytes: &[u8]) -> String {
-    hex::encode(bytes)
-}
-
-pub fn normalize_rpc_addr(value: &str) -> String {
-    let trimmed = value.trim().trim_end_matches('/');
-    let trimmed = trimmed.strip_suffix("/jsonrpc").unwrap_or(trimmed);
-    trimmed
-        .strip_prefix("tcp://")
-        .or_else(|| trimmed.strip_prefix("http://"))
-        .or_else(|| trimmed.strip_prefix("https://"))
-        .unwrap_or(trimmed)
-        .to_string()
-}
-
-fn compute_address_checksum(body_35: &str) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(b"zion1");
-    hasher.update(body_35.as_bytes());
-    let hash = hasher.finalize();
-    let mut checksum = String::with_capacity(4);
-    for &byte in &hash[..2] {
-        checksum.push(ZION_BASE32_ALPHABET[(byte % 32) as usize] as char);
-        checksum.push(ZION_BASE32_ALPHABET[((byte / 32) % 32) as usize] as char);
-    }
-    checksum
-}
-
-pub fn zion_address_from_public_key(public_key_bytes: &[u8]) -> Option<String> {
-    if public_key_bytes.len() != 32 {
-        return None;
-    }
-
-    let sha = Sha256::digest(public_key_bytes);
-    let key_hash = Ripemd160::digest(sha);
-
-    let mut data = String::with_capacity(40);
-    for &byte in key_hash.as_slice() {
-        data.push(ZION_BASE32_ALPHABET[(byte % 32) as usize] as char);
-        data.push(ZION_BASE32_ALPHABET[((byte / 32) % 32) as usize] as char);
-    }
-    data.truncate(35);
-
-    let checksum = compute_address_checksum(&data);
-    Some(format!("zion1{data}{checksum}"))
 }
 
 // ─── HTLC state machine ─────────────────────────────────────────────────────

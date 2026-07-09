@@ -290,7 +290,7 @@ This distribution is enforced in `V3/L1/core/src/emission.rs` (`fee_split`) and 
 | 8 | DAO Ecosystem Bootstrap | 500,000,000 | Ecosystem growth |
 | 9 | Core Development Fund | 1,000,000,000 | Ongoing development |
 | 10 | Network Infrastructure | 1,000,000,000 | Seed nodes & infrastructure |
-| 11 | Genesis Creator | 590,000,000 | Lifetime project stewardship |
+| 11 | Genesis Projects Steward | 590,000,000 | Lifetime project stewardship |
 | 12 | Humanitarian — Children Future Fund | 1,440,000,000 | Immediate humanitarian seed |
 || 13 | Bridge Seed Fund | 400,000,000 | Bridge operational budget |
 | 14 | Bridge Vault UTXO Seed | 100,000,000 | UTXO liquidity for bridge unlocks |

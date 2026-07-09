@@ -1,0 +1,28 @@
+[workspace]
+members = ["poc-core", "poc-tasks", "poc-verifier", "poc-npu", "poc-registry", "poc-economics", "poc-sim", "poc-hiran"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["ZION Core Team"]
+license = "MIT"
+repository = "https://github.com/Yose144/2.9.6"
+rust-version = "1.78"
+
+[workspace.dependencies]
+blake3 = "1.5"
+clap = { version = "4", features = ["derive"] }
+thiserror = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha3 = "0.10"
+hex = "0.4"
+ureq = { version = "2.10", features = ["json"] }
+
+[profile.dev]
+opt-level = 0
+
+[profile.release]
+opt-level = 3
+lto = "thin"

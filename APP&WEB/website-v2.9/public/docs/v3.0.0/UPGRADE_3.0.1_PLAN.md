@@ -34,7 +34,7 @@
 | G3 | **OASIS config** | `OasisConfig::load()` ignoruje path, vrací default | `V3/L4/oasis/src/config.rs:110` | P1 |
 | G4 | **WARP contract addresses** | Všechny adaptery (EVM, Solana, Bitcoin, Cardano, Tron) mají dummy adresy s `TODO` | `V3/L3/warp/src/adapter/*.rs` | P1 |
 | G5 | **Alertmanager notifikace** | Discord/Slack/Email šablony zakomentované — žádný real channel | `V3/docker/alertmanager/alertmanager.yml` | P1 |
-| G6 | **Tailscale ACL** | Šablona existuje, ale není aplikována na uzly | `scripts/tailscale-acl.hujson` | P2 |
+| G6 | **private network ACL** | Šablona existuje, ale není aplikována na uzly | `scripts/network-acl.hujson` | P2 |
 | G7 | **CI/CD** | Žádný GitHub Actions workflow pro V3 workspace | `.github/workflows/` — chybí | P1 |
 | G8 | **P2P DNS seeds** | Peer discovery jen přes hardcoded `ZION_SEED_PEERS` | `V3/L1/core/src/p2p*.rs` | P2 |
 | G9 | **GPU auto-tuning** | Uživatel musí ručně nastavit backend a work_size | `V3/L1/miner/src/main.rs` | P2 |
@@ -129,8 +129,8 @@
 #### T8: GPU miner auto-detection & tuning
 - **Úkol:** Na startup detekovat dostupné GPU platformy (OpenCL/CUDA/Metal) přes runtime probes; auto-vybrat nejlepší backend a `work_size` podle VRAM.
 
-#### T9: Tailscale ACL aplikace
-- **Úkol:** Dokumentovat krok-za-krokem v `scripts/tailscale-acl.hujson` header komentáři jak aplikovat ACL v Tailscale admin UI.
+#### T9: private network ACL aplikace
+- **Úkol:** Dokumentovat krok-za-krokem v `scripts/network-acl.hujson` header komentáři jak aplikovat ACL v network admin UI.
 
 ---
 

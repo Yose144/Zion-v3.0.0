@@ -158,7 +158,7 @@ v2.9.6 supports parallel dual-mining:
 
 | Node | IP | Role | Ports |
 |------|----|------|-------|
-| Zion2 (Primary) | 91.98.122.165 | Public host + Pool + Web | P2P 8334, RPC 8444 |
+| Zion2 (Primary) | seed.zionterranova.com | Public host + Pool + Web | P2P 8334, RPC 8444 |
 | Internal seeds | — | Seed containers (behind primary) | P2P 8334 |
 
 > 📋 P2P protocol: [p2p.md](p2p.md)
@@ -183,7 +183,7 @@ cargo build --release
 ```bash
 # CPU mining via pool
 ./target/release/zion-miner \
-  --pool 91.98.122.165:3333 \
+  --pool seed.zionterranova.com:3333 \
   --wallet YOUR_ZION_ADDRESS \
   --worker my-miner \
   --threads 3 \
@@ -191,7 +191,7 @@ cargo build --release
 
 # VRSC dual-mining (separate thread group)
 ./target/release/zion-miner \
-  --pool 91.98.122.165:3333 \
+  --pool seed.zionterranova.com:3333 \
   --wallet YOUR_VRSC_ADDRESS \
   --worker my-miner-vrsc \
   --threads 1 \

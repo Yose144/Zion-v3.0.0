@@ -38,7 +38,7 @@ export interface BridgeContractInfo {
 export const BRIDGE_CONTRACTS_SEPOLIA: BridgeContractInfo = {
   wzion_address: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
   bridge_address: '0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1',
-  l1_bridge_address: 'zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0',
+  l1_bridge_address: 'zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7',
   network: 'Base Sepolia Testnet',
   chain_id: 84532,
   explorer_base: 'https://sepolia.basescan.org/address/',
@@ -48,7 +48,7 @@ export const BRIDGE_CONTRACTS_SEPOLIA: BridgeContractInfo = {
 export const BRIDGE_CONTRACTS_MAINNET: BridgeContractInfo = {
   wzion_address: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
   bridge_address: '0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467',
-  l1_bridge_address: 'zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0',
+  l1_bridge_address: 'zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7',
   network: 'Base Mainnet',
   chain_id: 8453,
   explorer_base: 'https://basescan.org/address/',
@@ -58,7 +58,7 @@ export const BRIDGE_CONTRACTS_MAINNET: BridgeContractInfo = {
 export const BRIDGE_CONTRACTS_BSC: BridgeContractInfo = {
   wzion_address: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
   bridge_address: '0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721',
-  l1_bridge_address: 'zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0',
+  l1_bridge_address: 'zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7',
   network: 'BNB Smart Chain Mainnet',
   chain_id: 56,
   explorer_base: 'https://bscscan.com/address/',
@@ -68,7 +68,7 @@ export const BRIDGE_CONTRACTS_BSC: BridgeContractInfo = {
 export const BRIDGE_CONTRACTS_POLYGON: BridgeContractInfo = {
   wzion_address: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
   bridge_address: '0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721',
-  l1_bridge_address: 'zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0',
+  l1_bridge_address: 'zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7',
   network: 'Polygon PoS Mainnet',
   chain_id: 137,
   explorer_base: 'https://polygonscan.com/address/',
@@ -78,7 +78,7 @@ export const BRIDGE_CONTRACTS_POLYGON: BridgeContractInfo = {
 export const BRIDGE_CONTRACTS_ARBITRUM: BridgeContractInfo = {
   wzion_address: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
   bridge_address: '0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721',
-  l1_bridge_address: 'zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0',
+  l1_bridge_address: 'zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7',
   network: 'Arbitrum One Mainnet',
   chain_id: 42161,
   explorer_base: 'https://arbiscan.io/address/',
@@ -88,7 +88,7 @@ export const BRIDGE_CONTRACTS_ARBITRUM: BridgeContractInfo = {
 export const BRIDGE_CONTRACTS_OPTIMISM: BridgeContractInfo = {
   wzion_address: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
   bridge_address: '0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721',
-  l1_bridge_address: 'zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0',
+  l1_bridge_address: 'zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7',
   network: 'Optimism Mainnet',
   chain_id: 10,
   explorer_base: 'https://optimistic.etherscan.io/address/',
@@ -98,7 +98,7 @@ export const BRIDGE_CONTRACTS_OPTIMISM: BridgeContractInfo = {
 export const BRIDGE_CONTRACTS_AVALANCHE: BridgeContractInfo = {
   wzion_address: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
   bridge_address: '0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721',
-  l1_bridge_address: 'zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0',
+  l1_bridge_address: 'zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7',
   network: 'Avalanche C-Chain Mainnet',
   chain_id: 43114,
   explorer_base: 'https://snowtrace.io/address/',

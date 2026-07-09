@@ -292,7 +292,7 @@ A total of **16,280,000,000 ZION** (11.31 % of total supply) is reserved at gene
 | 8 | DAO Ecosystem Bootstrap | 500,000,000 | Ecosystem development (includes game-dev execution envelope) |
 | 9 | Core Development Fund | 1,000,000,000 | Ongoing development |
 | 10 | Network Infrastructure | 1,000,000,000 | P2P seed nodes & infrastructure |
-| 11 | Genesis Creator | 590,000,000 | Lifetime project stewardship |
+| 11 | Genesis Projects (Dharma Temple, Piko de Ora + DAO) | 590,000,000 | Dharma Temple, Piko de Ora + DAO |
 | 12 | Humanitarian DAO | 1,440,000,000 | Immediate humanitarian seed |
 
 **DAO Treasury time-lock:** All 4,000,000,000 ZION in the DAO treasury (#6-8) is locked until block height **525,600** (~1 year after genesis).

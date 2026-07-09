@@ -19,11 +19,9 @@ use crate::config::L1Config;
 use crate::types::{BridgeStatus, L1LockEvent};
 use anyhow::{anyhow, Context, Result};
 use chrono::Utc;
-use ripemd::Ripemd160;
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde_json::{json, Value};
-use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -31,7 +29,8 @@ use tokio::net::TcpStream;
 use tokio::sync::mpsc;
 use tracing::{debug, error, info, warn};
 
-const ZION_BASE32_ALPHABET: &[u8; 32] = b"023456789acdefghjklmnpqrstuvwxyz";
+// Shared helpers from zion-l1-types (replaces previously duplicated copies).
+use zion_l1_types::{normalize_rpc_addr, zion_address_from_public_key};
 
 /// Maximum per-block fetch retries before skipping (height not advanced).
 const BLOCK_FETCH_MAX_RETRIES: u32 = 3;
@@ -497,48 +496,6 @@ impl L1Watcher {
             .result
             .ok_or_else(|| anyhow!("RPC returned null result"))
     }
-}
-
-fn normalize_rpc_addr(value: &str) -> String {
-    let trimmed = value.trim().trim_end_matches('/');
-    let trimmed = trimmed.strip_suffix("/jsonrpc").unwrap_or(trimmed);
-    trimmed
-        .strip_prefix("tcp://")
-        .or_else(|| trimmed.strip_prefix("http://"))
-        .or_else(|| trimmed.strip_prefix("https://"))
-        .unwrap_or(trimmed)
-        .to_string()
-}
-
-fn compute_address_checksum(body_35: &str) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(b"zion1");
-    hasher.update(body_35.as_bytes());
-    let hash = hasher.finalize();
-    let mut checksum = String::with_capacity(4);
-    for &byte in &hash[..2] {
-        checksum.push(ZION_BASE32_ALPHABET[(byte % 32) as usize] as char);
-        checksum.push(ZION_BASE32_ALPHABET[((byte / 32) % 32) as usize] as char);
-    }
-    checksum
-}
-
-fn zion_address_from_public_key(public_key_bytes: &[u8]) -> Option<String> {
-    if public_key_bytes.len() != 32 {
-        return None;
-    }
-
-    let sha = Sha256::digest(public_key_bytes);
-    let key_hash = Ripemd160::digest(sha);
-
-    let mut body = String::with_capacity(40);
-    for &byte in key_hash.as_slice() {
-        body.push(ZION_BASE32_ALPHABET[(byte % 32) as usize] as char);
-        body.push(ZION_BASE32_ALPHABET[((byte / 32) % 32) as usize] as char);
-    }
-    body.truncate(35);
-    let checksum = compute_address_checksum(&body);
-    Some(format!("zion1{body}{checksum}"))
 }
 
 #[cfg(test)]

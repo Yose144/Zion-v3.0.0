@@ -1,0 +1,20 @@
+[package]
+name = "poc-hiran"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+description = "ZION PoC-lab — Hiran HTTP client + mock server for offline testing"
+
+[dependencies]
+poc-core   = { path = "../poc-core" }
+serde      = { workspace = true }
+serde_json = { workspace = true }
+thiserror  = { workspace = true }
+
+# Synchronous HTTP client (no async runtime needed in PoC-lab)
+ureq = { workspace = true }
+
+# Minimal HTTP server for MockHiranServer (used in src/mock.rs + tests)
+tiny_http = "0.12"

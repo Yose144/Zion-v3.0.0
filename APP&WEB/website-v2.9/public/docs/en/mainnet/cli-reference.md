@@ -115,7 +115,7 @@ zion deploy prune
 zion config path
 zion config show
 zion config validate
-zion config set node.rpc_host 91.98.122.165
+zion config set node.rpc_host seed.zionterranova.com
 ```
 
 ## 11) If `zion` is not in PATH
