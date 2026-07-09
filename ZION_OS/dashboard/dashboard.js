@@ -3186,6 +3186,8 @@ async function loadExplorer(){
     set('exp-blocks', data.accepted_blocks ?? '—');
     set('exp-mempool', data.mempool_size ?? '—');
     set('exp-reward', data.block_reward_zion ? data.block_reward_zion.toFixed(3) + ' ZION' : '—');
+    set('exp-peers', data.peer_count ?? '—');
+    set('exp-network', data.network ?? '—');
     set('exp-tip', data.tip_hash ?? '—');
     set('exp-genesis', data.genesis_hash ?? '—');
     set('exp-circulating', data.estimated_circulating_zion ? fmtNum(data.estimated_circulating_zion) + ' ZION' : '—');
@@ -5238,12 +5240,12 @@ async function loadLaunchDayStatus(){
     const daysEl = document.getElementById('ld-days');
     if(daysEl){
       if(res.is_launch_day){
-        daysEl.textContent = 'DNES!';
+        daysEl.textContent = 'TODAY!';
         daysEl.className = 'text-3xl font-bold text-emerald-400 mb-1 animate-pulse';
       } else {
-        const ms = new Date('2026-06-20T12:00:00Z') - Date.now();
+        const ms = new Date('2026-12-31T12:00:00Z') - Date.now();
         const days = Math.ceil(ms / 86400000);
-        daysEl.textContent = days + ' dní';
+        daysEl.textContent = days > 0 ? days + ' days' : 'LAUNCH!';
         daysEl.className = 'text-3xl font-bold text-amber-400 mb-1';
       }
     }

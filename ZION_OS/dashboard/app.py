@@ -84,6 +84,11 @@ SERVICE_LOG_MAP = {
     "autostart":       "autostart.log",
 }
 
+# ── ANSI escape strip ─────────────────────────────────────────────────────
+_ANSI_RE = re.compile(r'\x1b\[[0-9;]*[mKABCDEFGHJSTfhilmnprsuABCD]')
+def strip_ansi(s: str) -> str:
+    return _ANSI_RE.sub('', s) if s else s
+
 # Load config
 def load_config() -> dict:
     defaults = {
@@ -2203,16 +2208,23 @@ def get_miner_live_stats() -> dict:
         stats["worker_name"] = "worker1"
         stats["pool_addr"] = "62.171.141.136:8444"
 
+    # Sanitize pool_addr: strip ANSI, replace decommissioned server IP
+    _DECOMMISSIONED_POOL_IPS = {"100.76.16.108", "77.42.71.94"}
+    raw_pool_addr = strip_ansi(stats.get("pool_addr") or "")
+    pool_host = raw_pool_addr.split(":")[0] if raw_pool_addr else ""
+    if not raw_pool_addr or pool_host in _DECOMMISSIONED_POOL_IPS:
+        raw_pool_addr = "62.171.141.136:8444"
+
     return {
         "hashrate": stats.get("hashrate"),
         "shares_accepted": stats.get("shares_accepted", 0),
         "shares_rejected": stats.get("shares_rejected", 0),
         "current_height": stats.get("current_height"),
         "current_diff": stats.get("current_diff"),
-        "gpu_backend": stats.get("gpu_backend", "cpu"),
-        "gpu_device": stats.get("gpu_device"),
-        "worker_name": stats.get("worker_name"),
-        "pool_addr": stats.get("pool_addr"),
+        "gpu_backend": strip_ansi(stats.get("gpu_backend", "cpu")),
+        "gpu_device": strip_ansi(stats.get("gpu_device") or ""),
+        "worker_name": strip_ansi(stats.get("worker_name") or ""),
+        "pool_addr": raw_pool_addr,
         "running": stats.get("running", False),
         "gpus": agent_gpu.get("gpus", []) if not agent_gpu.get("_error") else [],
         "timestamp": datetime.now().isoformat(),
@@ -2358,10 +2370,15 @@ def parse_miner_log() -> dict:
                 best_path = p
     if best_path:
         recent = tail_log(best_path.name, 200)
-        startup = head_log(best_path.name, 50)
+        # Read from both head and tail to find the most-recent startup block
+        # (log may have multiple sessions; the last session's startup data is
+        # in the tail region, while head_log would find the first/oldest one).
+        startup_head = head_log(best_path.name, 50)
+        startup_tail = tail_log(best_path.name, 300)  # large enough to include last startup
     else:
         recent = []
-        startup = []
+        startup_head = []
+        startup_tail = []
     # Process-based liveness: check PROCESS_REGISTRY first, then scan by exe name
     proc_check = check_process_for_service("miner")
     proc_alive = proc_check["alive"]
@@ -2385,17 +2402,19 @@ def parse_miner_log() -> dict:
         "current_diff": None,
         "recent_lines": recent[-10:],
     }
-    for line in startup:
+    # Parse startup fields from head first, then override with values from tail
+    # so that multi-session log files always reflect the most-recent session.
+    for line in startup_head + startup_tail:
         if m := re.search(r'miner_id=(\S+)', line):
-            status["miner_id"] = m.group(1)
+            status["miner_id"] = strip_ansi(m.group(1))
         if m := re.search(r'worker_name=(\S+)', line):
-            status["worker_name"] = m.group(1)
+            status["worker_name"] = strip_ansi(m.group(1))
         if m := re.search(r'pool_addr=(\S+)', line):
-            status["pool_addr"] = m.group(1)
+            status["pool_addr"] = strip_ansi(m.group(1))
         if m := re.search(r'backend=(\S+)', line):
-            status["gpu_backend"] = m.group(1)
+            status["gpu_backend"] = strip_ansi(m.group(1))
         if m := re.search(r'device="([^"]+)"', line):
-            status["gpu_device"] = m.group(1)
+            status["gpu_device"] = strip_ansi(m.group(1))
     nonce_samples2 = []  # (nonce_count, elapsed_ms) for throughput hashrate
     for line in recent:
         if m := re.search(r'gpu_backend=(\S+)', line):
@@ -2432,13 +2451,13 @@ def parse_miner_log() -> dict:
                 status["current_height"] = h
         if m := re.search(r'diff\s+(\d+)', line):
             status["current_diff"] = int(m.group(1))
-        # pool_addr from session log
+        # pool_addr from session log (also strip ANSI in recent lines)
         if m := re.search(r'pool_addr=(\S+)', line):
-            status["pool_addr"] = m.group(1)
+            status["pool_addr"] = strip_ansi(m.group(1))
         if m := re.search(r'miner_id=(\S+)', line):
-            status["miner_id"] = m.group(1)
+            status["miner_id"] = strip_ansi(m.group(1))
         if m := re.search(r'worker_name=(\S+)', line):
-            status["worker_name"] = m.group(1)
+            status["worker_name"] = strip_ansi(m.group(1))
         # Throughput: "no_solution  iteration=N  height=H  nonces=START..END  elapsed_ms=T"
         if m := re.search(r'nonces=(\d+)\.\.(\d+)\s+elapsed_ms=(\d+)', line):
             n_start, n_end, ms = int(m.group(1)), int(m.group(2)), int(m.group(3))
@@ -3784,9 +3803,15 @@ def build_explorer() -> dict:
     total_premine = 16_780_000_000
     circulating_estimate = total_premine + estimated_mined
 
+    # Peer count from getChainInfo (field varies by node version)
+    peer_count = 0
+    if info:
+        peer_count = (info.get("peer_count") or info.get("peers") or
+                      info.get("connected_peers") or 0)
+
     return {
         "rpc_reachable": info is not None,
-        "network": info.get("network", "unknown") if info else "unknown",
+        "network": info.get("network", "Mainnet") if info else "Mainnet",
         "chain_height": chain_height,
         "tip_hash": info.get("tip_hash", "")[:20] + "…" if info else "—",
         "accepted_blocks": info.get("accepted_blocks", 0) if info else 0,
@@ -3798,6 +3823,8 @@ def build_explorer() -> dict:
         "premine_zion": total_premine,
         "genesis_hash": genesis.get("hash_hex", "")[:24] + "…" if genesis else "—",
         "recent_blocks": recent_blocks,
+        "peer_count": peer_count,
+        "protocol_version": info.get("protocol_version", "") if info else "",
     }
 
 # ── Edge server system status ───────────────────────────────────────────
