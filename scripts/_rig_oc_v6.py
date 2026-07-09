@@ -1,3 +1,4 @@
+import os
 #!/usr/bin/env python3
 """
 Vega OC v6 - restore PL=100 which kept MC=1000, push core up.
@@ -11,7 +12,7 @@ Now try: PL=100, Core=1250, VDDC=975 → expect CC~1150-1200, MC=1000, P~200-220
 import requests, json, time, base64, re
 
 API = "https://api.simplemining.net"
-TOKEN = "api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8"
+TOKEN = os.environ.get("SIMPLEMINING_API_TOKEN", "")
 RIG = 518837
 
 H_JSON = {"X-AUTH-TOKEN": TOKEN, "Content-Type": "application/json"}

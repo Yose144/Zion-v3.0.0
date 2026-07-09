@@ -1,9 +1,10 @@
+import os
 #!/usr/bin/env python3
 """Reflash rig to i066d (a21.50.2 driver, ROCm 5.16.16) + verify."""
 import requests, json, time
 
 API = "https://api.simplemining.net"
-TOKEN = "api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8"
+TOKEN = os.environ.get("SIMPLEMINING_API_TOKEN", "")
 RIG = 518837
 
 H = {

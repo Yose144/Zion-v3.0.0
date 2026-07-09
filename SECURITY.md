@@ -2,61 +2,97 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in ZION, please report it responsibly.
+**DO NOT open a public GitHub issue** to report a security vulnerability.
 
-**DO NOT open a public GitHub issue.**
+### How to Report
 
-### Contact
+| Channel | When to Use |
+|---------|-------------|
+| **GitHub Security Advisories** (preferred) | [github.com/Zion-TerraNova/v3-Mainnet/security/advisories](https://github.com/Zion-TerraNova/v3-Mainnet/security/advisories) — use "Report a vulnerability" |
+| **Email** | `security@zionterranova.com` — include your GitHub username so we can add you to a private advisory |
 
-- **Email:** security@zionterranova.com
-- **Response time:** We aim to acknowledge reports within 48 hours and provide an initial assessment within 7 days.
+**Do NOT include** exploit details or proof-of-concept in the initial email. Wait for a private advisory to be created, then share sensitive details there.
 
-### What to include
+### What to Include in Your Report
 
-- Description of the vulnerability
-- Steps to reproduce
-- Potential impact assessment
-- Suggested fix (if any)
+- A clear description of the vulnerability and affected component
+- Steps to reproduce (Foundry test, script, or transaction hash on testnet)
+- Your assessment of severity (see rubric below)
+- A way to contact you for follow-up questions
+- Your preferred attribution (handle, name, or anonymous)
 
-### Disclosure policy
+## Response Timeline
 
-ZION follows a **fix first, disclose second** policy:
+| Stage | Target |
+|-------|--------|
+| Acknowledgment | Within 48 hours |
+| Initial assessment | Within 7 days |
+| Fix development | Within 30 days (severity-dependent) |
+| Coordinated disclosure | After fix is deployed, timeline agreed with reporter |
 
-1. Reported vulnerabilities are evaluated and cross-checked
-2. Fixes are developed, tested, and deployed
-3. Public disclosure within 90 days of the fix being deployed
-4. For actively exploited vulnerabilities, disclosure may be immediate after fix deployment
+We commit to:
+- Not pursuing legal action against researchers acting in good faith
+- Coordinating disclosure timeline with the reporter
+- Crediting the reporter (if desired) in the security advisory
 
-### Scope
+## Scope
 
-The following are in scope for vulnerability reports:
+### In Scope
 
-| Component | Path | Description |
-|-----------|------|-------------|
-| L1 Consensus | `V3/L1/core/src/` | Block validation, transaction processing, P2P, RPC |
-| Mining / PoW | `V3/L1/cosmic-harmony/src/` | Hash algorithms, difficulty adjustment |
-| Pool Server | `V3/L1/pool/src/` | Mining pool, PPLNS payouts |
-| L2 Bridge | `V3/L2/bridge/src/` | L1-to-EVM bridge relay |
-| L2 DAO | `V3/L2/dao/src/` | Governance daemon |
-| L2 Atomic Swap | `V3/L2/atomic-swap/src/` | Cross-chain atomic swaps |
-| L3 WARP | `V3/L3/warp/src/` | Multi-chain bridge (12 chain families) |
-| EVM Contracts | `V3/L2/bridge/contracts/` | Solidity smart contracts |
-| Website | `APP&WEB/website-v2.9/` | Next.js frontend |
+| Component | Path |
+|-----------|------|
+| L1 consensus core | `V3/L1/core/` |
+| L1 mining pool | `V3/L1/pool/` |
+| L1 miner | `V3/L1/miner/` |
+| L2 smart contracts | `V3/L2/contracts/` |
+| L2 bridge relay | `V3/L2/bridge/` |
+| L2 DAO governance | `V3/L2/dao/` |
+| L2 atomic swap | `V3/L2/atomic-swap/` |
 
-### Out of scope
+### Out of Scope
 
+- Third-party services (SimpleMining, hosting providers, etc.)
+- Frontend / web application (separate repository)
+- Infrastructure / deployment configuration
 - Social engineering attacks
-- Denial of service (unless it affects consensus)
-- Issues in third-party dependencies (report upstream)
-- Vulnerabilities in archived/legacy code (`archive/`, `L1/`, `L2/`, `L3/` root dirs)
+- Attacks requiring physical access to validator hardware
 
-## Known Vulnerabilities
+## Severity Classification
 
-A machine-readable catalogue of disclosed vulnerabilities is maintained at:
+| Severity | Impact | Example |
+|----------|--------|---------|
+| **Critical** | Fund loss, consensus break, unauthorized minting | Ability to forge transactions or mint tokens |
+| **High** | Significant fund risk, DoS of network | Remote crash of all nodes, balance bypass |
+| **Medium** | Limited fund risk, degraded service | RPC leak of sensitive data, local DoS |
+| **Low** | Minimal impact | Information disclosure without fund risk |
 
-- [`docs/security/vulnerabilities.json`](./docs/security/vulnerabilities.json)
-- [`docs/security/SECURITY_DISCLOSURE_2026-07.md`](./docs/security/SECURITY_DISCLOSURE_2026-07.md)
+## Known Vulnerabilities (Disclosed)
 
-## Bug Bounty
+All previously identified vulnerabilities have been remediated. See:
+- [`docs/security/SECURITY_DISCLOSURE_2026-07.md`](docs/security/SECURITY_DISCLOSURE_2026-07.md) — ZION-2026-001 through ZION-2026-005
+- [`docs/security/vulnerabilities.json`](docs/security/vulnerabilities.json) — Machine-readable vulnerability data
 
-A formal bug bounty program will be announced after mainnet launch, funded from the DAO treasury.
+| ID | Title | Status |
+|----|-------|--------|
+| ZION-2026-001 | Forged P2P account TX signatures (F1) | ✅ Fixed |
+| ZION-2026-002 | Unlimited inflation via account model (F5) | ✅ Fixed |
+| ZION-2026-003 | Server exposure (C1-C8) | ✅ Fixed |
+| ZION-2026-004 | TeamViewer compromise | ✅ Fixed |
+| ZION-2026-005 | EVM key compromise | ✅ Fixed |
+
+## Supported Versions
+
+| Version | Supported | Status |
+|---------|-----------|--------|
+| 3.0.4 | ✅ | Current mainnet |
+| < 3.0.4 | ❌ | Not supported — upgrade required |
+
+## Security Best Practices for Node Operators
+
+1. **Never commit private keys** to any repository (public or private)
+2. **Use environment variables** for all sensitive configuration
+3. **Run services on localhost** (127.0.0.1) — do not expose RPC to public internet
+4. **Use SSH key-only authentication** — disable password login
+5. **Enable firewall** (UFW) — allow only P2P + SSH + HTTP/HTTPS
+6. **Regular security updates** — keep OS and dependencies patched
+7. **Air-gapped key management** — generate and store genesis/premine keys offline

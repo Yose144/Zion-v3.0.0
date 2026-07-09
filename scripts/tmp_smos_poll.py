@@ -1,10 +1,11 @@
+import os
 import base64
 import json
 import re
 import time
 import urllib.request
 
-TOKEN = "api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8"
+TOKEN = os.environ.get("SIMPLEMINING_API_TOKEN", "")
 URL = "https://api.simplemining.net/rigs/518837"
 
 for i in range(6):

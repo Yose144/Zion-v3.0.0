@@ -1,3 +1,4 @@
+import os
 #!/usr/bin/env python3
 """
 Vega OC v8 - careful push with REBOOT.
@@ -7,7 +8,7 @@ Now: Core=1200 Mem=1000 PL=100 VDDC=950 + REBOOT
 import requests, json, time, base64, re
 
 API = "https://api.simplemining.net"
-TOKEN = "api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8"
+TOKEN = os.environ.get("SIMPLEMINING_API_TOKEN", "")
 RIG = 518837
 
 H_JSON = {"X-AUTH-TOKEN": TOKEN, "Content-Type": "application/json"}
