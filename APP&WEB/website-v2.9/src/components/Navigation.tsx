@@ -166,18 +166,24 @@ export default function Navigation() {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-linear-to-r from-zion-purple/24 via-black/40 to-zion-cyan/24 blur-3xl opacity-80" />
+      {/* Rasta-tinted ambient glow — green → gold → amber, very subtle */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-linear-to-r from-emerald-500/12 via-zion-gold/14 to-amber-600/10 blur-3xl opacity-70" />
       <div className="relative mx-auto w-[min(90vw,1320px)] py-4">
-        <div className="zion-panel flex items-center justify-between gap-4 px-4 py-3 ring-1 ring-white/5 md:px-5">
+        <div className="zion-panel flex items-center justify-between gap-4 px-4 py-3 ring-1 ring-white/5 md:px-5"
+          style={{
+            boxShadow: '0 24px 90px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.04)',
+          }}
+        >
           <Link href="/" className="flex items-center space-x-3 group">
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center relative overflow-hidden border border-white/20 group-hover:border-zion-cyan/50 transition-colors bg-black/40 shadow-[0_12px_34px_rgba(0,0,0,0.35)]">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(111,255,240,0.15),transparent_60%)]" />
+            {/* Stargate logo — bigger, no white background */}
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center relative overflow-hidden border border-white/15 group-hover:border-zion-gold/50 transition-colors bg-transparent shadow-[0_8px_24px_rgba(0,0,0,0.3)]">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(111,255,240,0.08),transparent_65%)]" />
               <Image
-                src="/github-avatar.png"
-                alt="ZION TerraNova"
-                width={48}
-                height={48}
-                className="relative z-10 w-full h-full"
+                src="/stargate-icon.png"
+                alt="ZION TerraNova Stargate"
+                width={56}
+                height={56}
+                className="relative z-10 w-full h-full object-contain"
                 priority
               />
             </div>
@@ -198,7 +204,9 @@ export default function Navigation() {
                       type="button"
                       onClick={() => setOpenGroup(isActive ? null : group.title)}
                       className={`inline-flex items-center gap-1 rounded-2xl border px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] transition-all ${
-                        isActive ? 'border-white/18 bg-black/80 text-white shadow-[0_12px_30px_rgba(0,0,0,0.32)]' : 'border-white/10 bg-black/70 text-gray-300 hover:border-white/20 hover:bg-black hover:text-white'
+                        isActive
+                          ? 'border-zion-gold/30 bg-linear-to-br from-emerald-500/15 via-zion-gold/10 to-amber-600/12 text-white shadow-[0_12px_30px_rgba(0,0,0,0.32),0_0_18px_rgba(251,191,36,0.15)]'
+                          : 'border-white/10 bg-black/70 text-gray-300 hover:border-zion-gold/25 hover:bg-black hover:text-white'
                       }`}
                       aria-expanded={isActive}
                     >
@@ -209,8 +217,9 @@ export default function Navigation() {
                 })}
               </div>
               {activeGroup && (
-                <div className="absolute right-0 mt-3 w-[min(19rem,85vw)] rounded-3xl border border-white/10 bg-black/95 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl z-50">
-                  <p className="text-[10px] uppercase tracking-[0.4em] text-gray-500">{groupLabels[activeGroup.title] ?? activeGroup.title}</p>
+                <div className="absolute right-0 mt-3 w-[min(19rem,85vw)] rounded-3xl border border-zion-gold/15 bg-black/95 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.55),0_0_24px_rgba(251,191,36,0.08)] backdrop-blur-2xl z-50">
+                  <div className="mb-2 h-0.5 w-full rounded-full bg-linear-to-r from-emerald-500/40 via-zion-gold/50 to-amber-600/30" />
+                  <p className="text-[10px] uppercase tracking-[0.4em] text-zion-gold/70">{groupLabels[activeGroup.title] ?? activeGroup.title}</p>
                   <div className="mt-3 flex flex-col gap-1">
                     {activeGroup.items.map((item) => (
                       <div key={item.href}>
@@ -295,7 +304,9 @@ export default function Navigation() {
         </div>
 
         {/* ═══ SECOND ROW — mini icon quick nav ═══ */}
-        <div className="mt-2 hidden md:flex items-center justify-between gap-3">
+        <div className="mt-2 hidden md:flex items-center justify-between gap-3 relative">
+          {/* Subtle rasta accent line */}
+          <div className="pointer-events-none absolute -top-1 left-1/4 right-1/4 h-px bg-linear-to-r from-transparent via-zion-gold/20 to-transparent" />
           <div className="flex flex-1 items-center justify-center gap-1 flex-wrap">
             {miniLinks.map((ml) => {
               const isActive = navItemMatches(ml.href);
@@ -337,7 +348,7 @@ export default function Navigation() {
               aria-hidden="true"
             />
             {/* Slide-in panel */}
-            <div className="md:hidden fixed top-0 right-0 bottom-0 w-[min(320px,85vw)] bg-black/95 backdrop-blur-xl border-l border-white/10 z-50 overflow-y-auto overscroll-contain animate-[slideIn_0.25s_ease-out]">
+            <div className="md:hidden fixed top-0 right-0 bottom-0 w-[min(320px,85vw)] bg-black/95 backdrop-blur-xl border-l border-zion-gold/15 z-50 overflow-y-auto overscroll-contain animate-[slideIn_0.25s_ease-out]">
               <div className="flex items-center justify-between p-4 border-b border-white/10">
                 <span className="text-sm font-bold text-gradient">{tr('nav', 'menu_title', lang)}</span>
                 <button
@@ -348,6 +359,8 @@ export default function Navigation() {
                   <X size={20} className="text-white" />
                 </button>
               </div>
+              {/* Rasta accent line */}
+              <div className="h-0.5 w-full bg-linear-to-r from-emerald-500/40 via-zion-gold/50 to-amber-600/30" />
               <div className="p-4 space-y-2">
                 {/* Home shortcut — always visible */}
                 <Link
