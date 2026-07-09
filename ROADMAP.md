@@ -2,7 +2,7 @@
 
 > **Version:** 3.0.5 "All Green" canonical  
 > **Last updated:** 2026-07-10  
-> **One source of truth:** [`3.0.4.md`](./3.0.4.md) + [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](./docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md) · Live status: [`StatusV3.md`](./StatusV3.md) · Security: [`SecurityFirst.md`](./SecurityFirst.md)  
+> **One source of truth:** [`3.0.4.md`](./docs/3.0.4/3.0.4.md) + [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](./docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md) · Live status: [`StatusV3.md`](./StatusV3.md) · Security: [`SecurityFirst.md`](./docs/3.0.4/SecurityFirst.md)  
 > **Engineering detail:** [`V3/ROADMAP.md`](./V3/ROADMAP.md)
 
 ---
@@ -13,7 +13,7 @@ This is the **forward-looking** root roadmap. Historical detail lives in [`docs/
 
 | If you want... | Read... |
 |----------------|---------|
-| Complete 3.0.4 state | [`3.0.4.md`](./3.0.4.md) |
+| Complete 3.0.4 state | [`3.0.4.md`](./docs/3.0.4/3.0.4.md) |
 | Live status + blockers | [`StatusV3.md`](./StatusV3.md) |
 | Engineering tasks per layer | [`V3/ROADMAP.md`](./V3/ROADMAP.md) |
 | Start scripts | [`ZionStart/README.md`](./ZionStart/README.md) |
@@ -46,13 +46,13 @@ This is the **forward-looking** root roadmap. Historical detail lives in [`docs/
 - Lightning Network bridge code complete (BOLT11 + LND REST client)
 - Native ZION naming convention established: wZION on EVM, ZION on non-EVM
 - 3.0.3 decimal fork deployed, RPC scale normalization active
-- Documentation canonicalized: `3.0.4.md` is the single source of truth for the release
+- Documentation canonicalized: `docs/3.0.4/3.0.4.md` is the single source of truth for the release
 - Root cleaned: `docs/3.0.3/`, `ZionStart/`, `scripts/audit/`, `scripts/ops/`, `V3/docker/`
 
 ✅ **Resolved in 3.0.4**
 - Account-model TX memo field added (L1 hard fork); L2 watchers (bridge, DAO, atomic-swap) now scan `account_transactions` with memo.
 
-✅ **Security hardening (2026-07-02)** — viz [`SecurityFirst.md`](./SecurityFirst.md) · [`F5_SECURITY_INCIDENT_REPORT_2026-07-02.md`](./F5_SECURITY_INCIDENT_REPORT_2026-07-02.md)
+✅ **Security hardening (2026-07-02)** — viz [`SecurityFirst.md`](./docs/3.0.4/SecurityFirst.md) · [`F5_SECURITY_INCIDENT_REPORT_2026-07-02.md`](./docs/3.0.4/F5_SECURITY_INCIDENT_REPORT_2026-07-02.md)
 - F1 exploit fix: `validate_peer_block` now calls `verify_signature()` for non-coinbase account TX (commit `9341344d`)
 - **F5 CRITICAL fix: Account-model sender balance validation** — `insert_transaction()` and `validate_peer_block()` now reject TX where `sender_balance < amount + fee`. Height-gated via `ZION_BALANCE_CHECK_HEIGHT=22394` on Edge mainnet. Commits `69d12c7`, `fe8d449`, `9863747`.
 - **Escrow key rotation:** New escrow keypair generated, `edge-environment.sh` updated, atomic-swap restarted. Inflationary 100,002 ZION burned to unspendable address.
@@ -65,7 +65,7 @@ This is the **forward-looking** root roadmap. Historical detail lives in [`docs/
 - Tailscale ACL documentation (pending admin console apply)
 
 ⚠️ **Pending security tasks**
-- F2.3: Tailscale ACL — apply via admin console (doc ready in SecurityFirst.md)
+- F2.3: Tailscale ACL — apply via admin console (doc ready in docs/3.0.4/SecurityFirst.md)
 - F2.6: systemd `User=zion` — test on one service first
 - F4.x: Key rotation (premine, pool, bridge, EVM) — air-gapped operation
 - Rebuild: bridge metrics (9101), DAO (8450) — env var code changes pending
@@ -87,11 +87,11 @@ These block all or part of the engineering work below.
 
 | # | Decision | Context | Where documented |
 |---|----------|---------|------------------|
-| D1 | **Bridge addresses** | Which contract is live on each non-Base chain? `bridge-mainnet.toml` points to revoked `0xa5a09b2...`; `V3/docs/BRIDGE_MAINNET_DEPLOY.md` shows a newer 5/5 bridge. | [`3.0.4.md`](./3.0.4.md) §5, [`docs/3.0.3/CODE_VS_DOCS_AUDIT.md`](./docs/3.0.3/CODE_VS_DOCS_AUDIT.md) H1 |
-| D2 | **TX unification activation** | ✅ Approved + implemented — `memo` field added, height-gated activation, watchers updated. Deploy/E2E pending. | [`3.0.4.md`](./3.0.4.md) §3.5 |
+| D1 | **Bridge addresses** | Which contract is live on each non-Base chain? `bridge-mainnet.toml` points to revoked `0xa5a09b2...`; `V3/docs/BRIDGE_MAINNET_DEPLOY.md` shows a newer 5/5 bridge. | [`3.0.4.md`](./docs/3.0.4/3.0.4.md) §5, [`docs/3.0.3/CODE_VS_DOCS_AUDIT.md`](./docs/3.0.3/CODE_VS_DOCS_AUDIT.md) H1 |
+| D2 | **TX unification activation** | ✅ Approved + implemented — `memo` field added, height-gated activation, watchers updated. Deploy/E2E pending. | [`3.0.4.md`](./docs/3.0.4/3.0.4.md) §3.5 |
 | D3 | **ETH budget for liquidity** | Need ≥0.80 ETH to seed wZION/WETH pool at target $0.00002/ZION. | [`docs/3.0.3/LIQUIDITY_PLAN.md`](./docs/3.0.3/LIQUIDITY_PLAN.md) |
 | D4 | **CCA auction** | 66.47M wZION locked until block 55,959,126 (~184 days). Immutable contract. Wait it out or run a new auction? | [`docs/3.0.3/AUCTION_CCA_BASE.md`](./docs/3.0.3/AUCTION_CCA_BASE.md) |
-| D5 | **Repo cleanup Phase 1+2** | Approve deleting `V3/config/` stale templates and creating `V3/L1/types` crate for shared watcher types. | [`3.0.4.md`](./3.0.4.md) §12 |
+| D5 | **Repo cleanup Phase 1+2** | Approve deleting `V3/config/` stale templates and creating `V3/L1/types` crate for shared watcher types. | [`3.0.4.md`](./docs/3.0.4/3.0.4.md) §12 |
 
 ---
 
@@ -103,7 +103,7 @@ Goal: resolve all owner blockers and operational gaps so the chain is fully cons
 
 | # | Task | Status | Detail |
 |---|------|--------|--------|
-| 1.1 | **TX unification (L1 hard fork)** | ✅ Implemented | Add `memo` to account-model `Transaction`, height-gated activation, extend 3 L2 watchers to scan `account_transactions`. See [`3.0.4.md`](./3.0.4.md) §3. |
+| 1.1 | **TX unification (L1 hard fork)** | ✅ Implemented | Add `memo` to account-model `Transaction`, height-gated activation, extend 3 L2 watchers to scan `account_transactions`. See [`3.0.4.md`](./docs/3.0.4/3.0.4.md) §3. |
 | 1.2 | **DAO_TREASURY_LOCK_HEIGHT guard** | ✅ Done | Confirmed `144_000` in code; docs updated. |
 | 1.3 | **Migration height guard** | ✅ Done | Already implemented in `node.rs` (lines 114-131): fatal error on production with existing state, warning on fresh chain. |
 
@@ -209,4 +209,4 @@ Final checklist. Full procedure in [`V3/docs/MAINNET_LAUNCH_SEQUENCE.md`](./V3/d
 
 ---
 
-*Generated from [`docs/3.0.3/`](./docs/3.0.3/) + [`3.0.4.md`](./3.0.4.md) + [`V3/ROADMAP.md`](./V3/ROADMAP.md) + [`StatusV3.md`](./StatusV3.md).*
+*Generated from [`docs/3.0.3/`](./docs/3.0.3/) + [`3.0.4.md`](./docs/3.0.4/3.0.4.md) + [`V3/ROADMAP.md`](./V3/ROADMAP.md) + [`StatusV3.md`](./StatusV3.md).*
