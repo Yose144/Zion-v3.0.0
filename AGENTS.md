@@ -14,39 +14,59 @@ This file provides operating guidance to Devin, WARP, Copilot, and future automa
 - If docs disagree, use this order of truth: `StatusV3.md` → `ROADMAP.md` / `V3/README.md` / `V3/ROADMAP.md` → `V3/docs/**` → older `STATUS.md`, root README, and archived docs.
 - Root README / older plans may still mention historical multi-server topology. Verify live topology against `StatusV3.md` before making operational claims.
 
-## PUBLIC/ — Open-source public repository
+## public/ — Open-source public repository (git subtree)
 
-The `PUBLIC/` directory is a **separate Git repository** (`github.com/Zion-TerraNova/v3-Mainnet`) containing the public open-source release of ZION v3. It is **not** part of the root repo's git tree (listed in root `.gitignore`).
+The `public/` directory is a **git subtree** of the public repository `github.com/Zion-TerraNova/v3-Mainnet`, embedded directly in the private repo. Both repos are kept in sync via subtree push/pull — no separate clone needed.
 
-- **Remote:** `https://github.com/Zion-TerraNova/v3-Mainnet.git` (public, MIT license)
-- **Local path:** `/home/zionserver/2.9.6-main/PUBLIC/`
+- **Remote name:** `public` → `https://github.com/Zion-TerraNova/v3-Mainnet.git` (public, MIT license)
+- **Remote name:** `origin` → `https://github.com/Yose144/Zion-v3.0.0.git` (private)
+- **Local path:** `public/` (in repo root, tracked by `origin`)
 - **Current status:** **Mainnet Beta** — v3.0.4 live, official public launch 2026-12-31
 - **Network status badge:** `![Status: Mainnet Beta](https://img.shields.io/badge/Status-Mainnet_Beta-orange.svg)`
 
-### What's in PUBLIC/
+### Subtree commands
 
-The PUBLIC repo contains a **curated subset** of the private repo — only files safe for public release:
-- `V3/` — L1 core, L2 contracts, bridge, DAO, atomic-swap, WARP, cosmic-harmony, pool, miner, CLI, docs
-- `docs/` — Whitepaper, Ethics & Philosophy, Bodhisattva Vow codex, genesis.md, legal docs (disclaimer, terms, privacy, jurisdiction, token disclosure), security disclosures, multilingual READMEs (EN/CS/ES/FR/PT)
+```bash
+# Pull latest changes from public repo into public/
+git subtree pull --prefix=public public/main --squash
+
+# Push local changes in public/ to the public repo
+git subtree push --prefix=public public main
+
+# Fetch public remote (update refs without merging)
+git fetch public
+```
+
+### What's in public/
+
+The public repo contains a **curated subset** of the private repo — only files safe for public release:
+- `V3/` — L1 core, L2 contracts, bridge, DAO, atomic-swap, cosmic-harmony, pool, miner, CLI, SDK, docs
+- `docs/` — Whitepaper, Ethics & Philosophy, Bodhisattva Vow codex, genesis.md, legal docs (disclaimer, terms, privacy, jurisdiction, token disclosure), security disclosures, multilingual READMEs (EN/CS/ES/FR/PT), stargate assets
 - `evoluZionV2.md` — PoW → Proof-of-Care vision
-- Root files: `README.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `LICENSE` (MIT), `Cargo.toml`
+- Root files: `README.md`, `README_FULL.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `LICENSE` (MIT), `Cargo.toml`, `.gitignore`
 
-### What's NOT in PUBLIC/ (stays private)
+### What's NOT in public/ (stays private)
 
 - `APP&WEB/` — website, desktop agent, mobile app source
 - `ZION_OS/` — dashboard, monitoring, operational scripts
+- `ZionStart/` — bootstrap tooling
+- `PoC-lab/` — research/proof-of-concept code
+- `HiranV2.x/` — AI layer (IP protection)
+- `edge-deploy/` — server deploy configs
+- `scripts/` — ops scripts (285 files)
+- `docs/3.0.4/`, `docs/3.0.5/` — internal docs
 - `docs/TerraNova/` — full TerraNova book manuscripts
 - `docs/Zohar/` — internal Zohar documentation
 - `docs/docs2.9/`, `docs/2.9.7/`, `archive/` — legacy/historical docs
-- `StatusV3.md`, `ROADMAP.md` — internal status and planning
+- `3.0.5.md`, `StatusV3.md`, `ROADMAP.md`, `AGENTS.md` — internal status and planning
 - Server configs, deploy scripts, environment files
 - Private keys, mnemonics, GPG private keys
 
-### Rules for PUBLIC/ edits
+### Rules for public/ edits
 
-1. **Never push secrets** — no private keys, mnemonics, server IPs (except public RPC), internal hostnames, SSH keys
-2. **Sync after private repo changes** — if you change `V3/` code or docs that exist in PUBLIC/, sync the change to PUBLIC/ and push both repos
-3. **Separate commits** — PUBLIC/ has its own git history; commit and push independently
+1. **Never push secrets** — no private keys, mnemonics, server IPs (except public RPC `62.171.141.136`), internal hostnames, SSH keys
+2. **Sync after private repo changes** — if you change `V3/` code or docs that also exist in `public/`, sync the change to `public/` and push to both remotes
+3. **Two-step push** — commit to `origin` (private) first, then `git subtree push --prefix=public public main` to publish
 4. **GPG signing** — if `docs/genesis.md` is edited, re-sign with `gpg --detach-sign` using the Yose creator key (`9018F94ACE7C93CF549612E225557B7072678D25`, GNUPGHOME `/tmp/zion_gpg/`)
 5. **Release process** — see "GitHub Release process" below
 
@@ -54,31 +74,30 @@ The PUBLIC repo contains a **curated subset** of the private repo — only files
 
 For future releases (e.g. v3.0.4-beta, v3.1.0, etc.):
 
-1. **Build binaries:** `cd V3 && cargo build --release` → binaries in `V3/target/release/`
-2. **Create archives:** Package binaries into tar.gz archives (e.g. `zion-all-3.0.4-linux-x86_64.tar.gz`)
-3. **Compute SHA256:** `sha256sum *.tar.gz > SHA256SUMS.txt`
+1. **Build binaries:** `cargo build --release` → binaries in `target/release/`
+2. **Create archives:** Package binaries into tar.gz archives per platform (e.g. `zion-all-3.0.4-linux-x86_64.tar.gz`, `zion-cli-macos-aarch64.tar.gz`)
+3. **Compute SHA256:** `shasum -a 256 *.tar.gz > SHA256SUMS.txt`
 4. **Create release on GitHub:**
    - Via `gh` CLI: `gh release create v3.0.4-beta --title "..." --notes "..." *.tar.gz SHA256SUMS.txt`
    - Or via curl API if `gh` not available (needs PAT token)
-5. **Release notes template:** Include features list, download table with SHA256, installation instructions, "Windows binaries coming soon" note if applicable
-6. **Cross-platform:** Linux x86_64 built natively; Windows requires mingw-w64 (`x86_64-pc-windows-gnu` target + `mingw-w64` linker); macOS pending
-7. **Binaries to package:** `zion` (CLI), `zion-miner`, `zion-node`, `gen-pool-wallet`, `gen-pool-payout-wallet`, `zion-bridge`, `zion-dao`, `zion-atomic-swap`
+5. **Release notes template:** Include features list, download table with SHA256, installation instructions, platform availability
+6. **Cross-platform:**
+   - **Linux x86_64** — built natively on server
+   - **Windows x86_64** — cross-compiled with `x86_64-pc-windows-gnu` target + mingw-w64 linker
+   - **macOS aarch64** (Apple Silicon) — built natively on macOS
+   - **macOS x86_64** (Intel) — cross-compiled with `x86_64-apple-darwin` target
+7. **Binaries to package:** `zion` (CLI), `zion-miner`, `zion-node`, `zion-pool`, `zion-bridge`, `zion-dao`, `zion-atomic-swap`
 
-### Current PUBLIC/ commit history
+### Current release: v3.0.4-beta (2026-07-09)
 
-```
-1a9eb17 announce: Mainnet Beta — v3.0.4 live, official launch 31.12.2026
-7ffa51f Přejmenovat premine slot 11: Genesis Creator Lifetime Rent → Genesis Projects
-3753f69 Přidat ZION Codex Bodhisattva Vow
-b8d854 Přidat etiku a filozofii 4 knih ZION
-9c63260 Přidat evoluZionV2.md
-fb4bd13 Přidat právní dokumentaci pro open-source publikaci
-...
-```
+- **Tag:** `v3.0.4-beta` (prerelease)
+- **Assets:** 8 Linux x86_64 tar.gz + SHA256SUMS.txt
+- **Missing:** macOS (aarch64 + x86_64), Windows binaries (in `public/download/` but not in release)
+- **URL:** `https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.0.4-beta`
 
 ### Mainnet Beta announcement (2026-07-09)
 
-PUBLIC/ README files (EN + 4 translations) now include a **Network Status** section declaring:
+public/ README files (EN + 4 translations) include a **Network Status** section declaring:
 - ZION v3.0.4 is live as **Mainnet Beta**
 - Mining is active **at your own risk**
 - Network may contain bugs — no warranty
