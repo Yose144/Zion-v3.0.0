@@ -119,7 +119,7 @@ fi
 
 # --- Docker rebuild & recreate on server ---
 log "Building Docker image on $REMOTE_HOST"
-ssh $SSH_OPTS "$REMOTE" "cd $REMOTE_COMPOSE_SH && docker compose -f '$COMPOSE_FILE' build --no-cache website"
+ssh $SSH_OPTS "$REMOTE" "cd $REMOTE_COMPOSE_SH && docker compose -f '$COMPOSE_FILE' build website"
 
 log "Recreating container"
 ssh $SSH_OPTS "$REMOTE" "cd $REMOTE_COMPOSE_SH && docker compose -f '$COMPOSE_FILE' up -d website"

@@ -42,8 +42,8 @@ type LocalizedText = { cs: string; en: string };
 const docsPageCopy = {
   badge: { cs: 'Znalostní báze', en: 'Knowledge Base' },
   overviewNotice: {
-    cs: 'MainNet Genesis 11. 6. 2026 úspěšný — aktuální public line je 3.0.5 From Genesis to the Star nad kanonickou runtime v3.0.5 Deeksha/Ekam. Decimal fork 1e12→1e6 (6-decimal flowers) dokončen. Edge server topologie běží, pool aktivní, mining live. Veřejný launch zůstává na 31. prosince 2026 (Silvestr). Live Index na /docs#live-index je kanonický vstup pro síťový snapshot, baseline repa 2.9.6 a mapu release/runtime.',
-    en: 'MainNet Genesis 11 Jun 2026 successful — the current public line is 3.0.5 From Genesis to the Star over the canonical v3.0.5 Deeksha/Ekam runtime. Decimal fork 1e12→1e6 (6-decimal flowers) complete. Edge server topology is running, the pool is active, and mining is live. Public launch remains 31 December 2026 (New Year\'s Eve). Live Index at /docs#live-index is the canonical entry for the network snapshot, 2.9.6 repo baseline, and release/runtime map.',
+    cs: 'MainNet Genesis 11. 6. 2026 úspěšný — aktuální public line je 3.0.5 All Green, Mainnet Beta nad kanonickou runtime v3.0.5 Deeksha/Ekam. Decimal fork 1e12→1e6 (6-decimal flowers) dokončen. Edge server topologie běží, pool aktivní, mining live. Veřejný launch zůstává na 31. prosince 2026 (Silvestr). Live Index na /docs#live-index je kanonický vstup pro síťový snapshot, baseline repa 2.9.6 a mapu release/runtime.',
+    en: 'MainNet Genesis 11 Jun 2026 successful — the current public line is 3.0.5 All Green, Mainnet Beta over the canonical v3.0.5 Deeksha/Ekam runtime. Decimal fork 1e12→1e6 (6-decimal flowers) complete. Edge server topology is running, the pool is active, and mining is live. Public launch remains 31 December 2026 (New Year\'s Eve). Live Index at /docs#live-index is the canonical entry for the network snapshot, 2.9.6 repo baseline, and release/runtime map.',
   },
   githubLabel: { cs: 'GitHub', en: 'GitHub' },
   apiHealthLabel: { cs: 'Zdraví API', en: 'API Health' },
