@@ -1,7 +1,7 @@
 # deploy-edge.ps1 — Deploy ZION Edge Node to remote server
 # =========================================================
 # Usage:
-#   $env:ZION_EDGE_IP = "77.42.71.94"
+#   $env:ZION_EDGE_IP = "62.171.141.136"
 #   $env:CORE_TS_IP  = "100.x.y.z"      # Core Tailscale IP
 #   powershell -ExecutionPolicy Bypass -File scripts\deploy-edge.ps1
 #
@@ -20,7 +20,7 @@ param(
 
 if (-not $EdgeIp) {
     Write-Host "CHYBA: Nastav ZION_EDGE_IP" -ForegroundColor Red
-    Write-Host "Príklad: `$env:ZION_EDGE_IP = '77.42.71.94'" -ForegroundColor Yellow
+    Write-Host "Príklad: `$env:ZION_EDGE_IP = '62.171.141.136'" -ForegroundColor Yellow
     exit 1
 }
 

@@ -6,7 +6,7 @@
 #   bash edge-deploy/deploy-edge.sh
 #
 # Prerequisites:
-#   - Edge server reachable via SSH (77.42.71.94)
+#   - Edge server reachable via SSH (62.171.141.136)
 #   - SSH key at ../ssh-key-zion-edge
 #
 # Deploys:
@@ -19,7 +19,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 EDGE_USER="root"
-EDGE_HOST="77.42.71.94"
+EDGE_HOST="62.171.141.136"
 SSH_KEY="${REPO_ROOT}/ssh-key-zion-edge"
 REMOTE_ROOT="/root/zion-2.9.6-main"
 REMOTE_WEB="/root/APP\&WEB/website-v2.9"

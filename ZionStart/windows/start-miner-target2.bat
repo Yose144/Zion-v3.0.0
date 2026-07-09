@@ -8,8 +8,8 @@
 cd /d "C:\Users\yosef\Desktop\Zion\2.9.6-main"
 if not exist "logs" mkdir logs
 
-set ZION_POOL_ADDR=77.42.71.94:8444
-:: Fallback (Tailscale VPN): set ZION_POOL_ADDR=100.76.16.108:8444
+set ZION_POOL_ADDR=62.171.141.136:8444
+:: Fallback (Tailscale VPN): set ZION_POOL_ADDR=62.171.141.136:8444
 set ZION_LOOP_COUNT=1000000
 set ZION_WORKER_NAME=worker1
 set ZION_MINER_ID=w11-amd-gpu-miner-01

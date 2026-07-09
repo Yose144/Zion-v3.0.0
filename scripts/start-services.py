@@ -16,7 +16,7 @@ env_node.update({
     "ZION_P2P_BIND": "0.0.0.0:8333",
     "ZION_RPC_BIND": "0.0.0.0:8443",
     "ZION_NODE_STATE_PATH": "V3/data/zion-node-state.db",
-    "ZION_SEED_PEERS": "77.42.71.94:8333",
+    "ZION_SEED_PEERS": "62.171.141.136:8333",
     "ZION_MINER_ADDRESS": "zion1w523a76830x2t5m7f3j023w265e8g5c400a4790",
     "ZION_HUMANITARIAN_WALLET": "zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4",
     "ZION_ISSOBELLA_WALLET": "zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702",
@@ -24,7 +24,7 @@ env_node.update({
 
 env_miner = os.environ.copy()
 env_miner.update({
-    "ZION_POOL_ADDR": "77.42.71.94:8444",
+    "ZION_POOL_ADDR": "62.171.141.136:8444",
     "ZION_LOOP_COUNT": "1000000",
     "ZION_MINER_THREADS": "1",
     "ZION_WORKER_NAME": "worker1",

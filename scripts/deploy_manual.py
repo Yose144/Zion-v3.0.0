@@ -44,7 +44,7 @@ api("PATCH", "/rigs/execute-command", {
     "commandOptions": (
         "mkdir -p /root/miner/custom_miner && "
         "rm -f /root/miner/custom_miner.zip && "
-        "curl -s -L -o /root/miner/custom_miner.zip http://77.42.71.94/zion-miner/zion-sm3042c.zip && "
+        "curl -s -L -o /root/miner/custom_miner.zip http://62.171.141.136/zion-miner/zion-sm3042c.zip && "
         "echo 'DOWNLOAD_DONE'"
     ),
 })
@@ -77,7 +77,7 @@ for ln in text.splitlines()[-20:]:
 print(">> set miner options")
 api("PUT", f"/rig-groups/{GROUP}", {
     "customMiner": "",
-    "minerOptions": "--algorithm deeksha_lite_fire --pool 77.42.71.94:8444 --wallet zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604 --worker vega-smos"
+    "minerOptions": "--algorithm deeksha_lite_fire --pool 62.171.141.136:8444 --wallet zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604 --worker vega-smos"
 })
 time.sleep(2)
 

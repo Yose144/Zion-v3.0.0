@@ -33,7 +33,7 @@ time.sleep(5)
 print('>> download miner to rig')
 api('PATCH', '/rigs/execute-command', {
     'rigIds': [RIG], 'commandId': 7,
-    'commandOptions': 'curl -L -o /tmp/zion-sm3042c.zip http://77.42.71.94/zion-miner/zion-sm3042c.zip',
+    'commandOptions': 'curl -L -o /tmp/zion-sm3042c.zip http://62.171.141.136/zion-miner/zion-sm3042c.zip',
 })
 time.sleep(30)
 
