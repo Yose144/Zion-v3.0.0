@@ -12,6 +12,8 @@ import {
   Sparkles,
   Zap,
   AlertTriangle,
+  Github,
+  ExternalLink,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
@@ -56,14 +58,16 @@ export default function Hero() {
             <BrainCircuit className="w-3.5 h-3.5 animate-pulse" />
             {tr('hero', 'badge_chv4', lang)}
           </div>
+          {/* GitHub — highlighted badge */}
           <a
             href="https://github.com/Zion-TerraNova/v3-Mainnet/tree/main"
             target="_blank"
             rel="noopener noreferrer"
-            className="zion-kicker border-rose-500/25 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 transition-colors"
+            className="group inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-linear-to-r from-zion-gold/15 via-amber-500/10 to-zion-gold/15 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-zion-gold shadow-[0_0_20px_rgba(251,191,36,0.2)] hover:shadow-[0_0_28px_rgba(251,191,36,0.4)] hover:border-zion-gold/60 transition-all"
           >
-            <ShieldHalf className="w-3.5 h-3.5 animate-pulse" />
-            {cs ? 'Mainnet Beta · Zdroj na GitHubu' : 'Mainnet Beta · Source on GitHub'}
+            <Github className="h-4 w-4 transition-transform group-hover:rotate-12" />
+            {cs ? 'Mainnet Beta · GitHub' : 'Mainnet Beta · GitHub'}
+            <ExternalLink className="h-3 w-3 opacity-50 transition-opacity group-hover:opacity-100" />
           </a>
         </motion.div>
 

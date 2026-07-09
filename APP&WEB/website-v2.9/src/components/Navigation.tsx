@@ -8,7 +8,7 @@ import {
   Menu, X, SignalHigh, Orbit, ChevronDown, LayoutDashboard, Pickaxe, Shield,
   HardHat, Download, Coins, ArrowLeftRight, Landmark, Wallet, BookOpen,
   Newspaper, Map, Sparkles, Rocket, Brain, Flower2, Globe2, Zap, Atom, Building2,
-  CircuitBoard,
+  CircuitBoard, Github,
 } from 'lucide-react';
 import NavAuthButton from './NavAuthButton';
 import BackgroundToggle from './BackgroundToggle';
@@ -283,6 +283,17 @@ export default function Navigation() {
               <LayoutDashboard className="w-4 h-4 text-white" />
               <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">{tr('nav', 'dashboard', lang)}</span>
             </Link>
+            {/* GitHub — highlighted */}
+            <a
+              href="https://github.com/Zion-TerraNova/v3-Mainnet/tree/main"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-xl border border-zion-gold/30 bg-linear-to-br from-zion-gold/10 to-amber-600/8 inline-flex items-center justify-center shadow-[0_0_14px_rgba(251,191,36,0.15)] hover:shadow-[0_0_22px_rgba(251,191,36,0.35)] hover:border-zion-gold/50 transition-all group relative"
+              title="GitHub — Mainnet Beta"
+            >
+              <Github className="w-4 h-4 text-zion-gold" />
+              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-zion-gold/20 rounded px-2 py-0.5 text-zion-gold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">GitHub</span>
+            </a>
             <button
               onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
               className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/15 bg-black/75 text-xs font-semibold hover:border-white/30 hover:bg-black transition-colors text-gray-300 hover:text-white"
@@ -466,6 +477,17 @@ export default function Navigation() {
                     <Shield className="w-3 h-3 text-zion-gold shrink-0" /> {tr('nav', 'guardian', lang)}
                   </Link>
                 </div>
+                {/* GitHub — highlighted in mobile menu */}
+                <a
+                  href="https://github.com/Zion-TerraNova/v3-Mainnet/tree/main"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setIsOpen(false)}
+                  className="mt-2 rounded-xl border border-zion-gold/30 bg-linear-to-r from-zion-gold/10 to-amber-600/8 px-3 py-3 inline-flex items-center justify-center gap-2 min-h-[44px] text-zion-gold font-semibold shadow-[0_0_14px_rgba(251,191,36,0.12)]"
+                >
+                  <Github className="w-4 h-4" />
+                  GitHub · Mainnet Beta
+                </a>
               </div>
             </div>
           </>
