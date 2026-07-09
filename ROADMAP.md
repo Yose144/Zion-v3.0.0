@@ -125,7 +125,7 @@ Goal: resolve all owner blockers and operational gaps so the chain is fully cons
 |---|------|--------|--------|
 | 3.1 | **Deploy non-EVM contracts** | 🔵 Planned | Aptos Move module, NEAR contract, Sui package, TON jetton, Cardano native token, Cosmos CosmWASM. |
 | 3.2 | **Set relay keys on Edge** | 🔵 Pending | `WARP_<CHAIN>_RELAY_KEY` env vars for each non-EVM chain. |
-| 3.3 | **TON execute_mint fix** | 🔵 Pending | Replace watch-only with full TX construction via `ton-sdk`/`tonweb`/`tonlib`. |
+| 3.3 | **TON execute_mint fix** | ✅ Done | Full TX construction implemented via custom TL-B cell serialization (`ton_cell.rs`) + Ed25519 signing + BOC encoding + TON Center `sendBase64Transaction`. No external `ton-sdk`/`tonweb`/`tonlib` dependency needed. 60/60 tests pass. |
 | 3.4 | **Lightning Fáze A** | 🔵 Pending | LND node Docker + bitcoind backend + channel opening on Edge. |
 | 3.5 | **WARP UI activation** | ✅ Done | `/warp` transfer form live; activate multi-chain as contracts deploy. |
 
