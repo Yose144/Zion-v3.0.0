@@ -70,13 +70,13 @@ const t = {
 
   /* ─── Hero ─── */
   hero: {
-    badge_version:  { cs: 'V3 Mainnet · 3.0.3 From Genesis to the Star', en: 'V3 Mainnet · 3.0.3 From Genesis to the Star' },
-    badge_chv4:     { cs: 'Core + Edge topologie', en: 'Core + Edge topology' },
+    badge_version:  { cs: 'V3 Mainnet · 3.0.4 From Genesis to the Star', en: 'V3 Mainnet · 3.0.4 From Genesis to the Star' },
+    badge_chv4:     { cs: 'Edge server topologie', en: 'Edge server topology' },
     tagline:        { cs: 'Nativní Rust blockchain s Proof-of-Work konsensem', en: 'Native Rust blockchain with Proof-of-Work consensus' },
-    title_sub:      { cs: 'Genesis Live · Core + Edge · canonical runtime v3.0.3 Ekam Deeksha · 6-decimal flowers', en: 'Genesis Live · Core + Edge · canonical runtime v3.0.3 Ekam Deeksha · 6-decimal flowers' },
+    title_sub:      { cs: 'Genesis Live · Edge server · canonical runtime v3.0.4 Ekam Deeksha · 6-decimal flowers', en: 'Genesis Live · Edge server · canonical runtime v3.0.4 Ekam Deeksha · 6-decimal flowers' },
     description:    {
-      cs: 'ZION TerraNova mainnet launch countdown — 31. prosinec 2026 (Silvestr). Příprava V3 mainnet v Core + Edge topologii (Core PC + Hetzner Edge VPS), s veřejným poolem, mining binárkami a provozní telemetrií.',
-      en: 'ZION TerraNova mainnet launch countdown — 31 December 2026 (New Year\'s Eve). Preparing V3 mainnet in Core + Edge topology (Core PC + Hetzner Edge VPS), with public pool, mining binaries, and operational telemetry.',
+      cs: 'ZION TerraNova mainnet launch countdown — 31. prosinec 2026 (Silvestr). Příprava V3 mainnet v Edge server topologii (Edge server), s veřejným poolem, mining binárkami a provozní telemetrií.',
+      en: 'ZION TerraNova mainnet launch countdown — 31 December 2026 (New Year\'s Eve). Preparing V3 mainnet in Edge server topology (Edge server), with public pool, mining binaries, and operational telemetry.',
     },
     btn_start:      { cs: 'Začít těžit', en: 'Start Mining' },
     btn_docs:       { cs: 'Dokumentace', en: 'Docs' },
@@ -84,10 +84,10 @@ const t = {
     signal_l1:      { cs: 'L1 Jádro', en: 'L1 Core' },
     signal_nodes:   { cs: 'Validátor síť', en: 'Validator Grid' },
     signal_mainnet: { cs: 'Launch Countdown', en: 'Launch Countdown' },
-    signal_loc:     { cs: 'Core PC + Edge VPS · ShareRelay', en: 'Core PC + Edge VPS · ShareRelay' },
+    signal_loc:     { cs: 'Edge server + Edge server · ShareRelay', en: 'Edge server + Edge server · ShareRelay' },
     signal_target:  { cs: '31. prosince 2026', en: '31 December 2026' },
-    signal_status_l1: { cs: 'Genesis Launch active · runtime v3.0.3', en: 'Genesis Launch active · runtime v3.0.3' },
-    signal_status_nodes: { cs: 'Core + Edge online', en: 'Core + Edge online' },
+    signal_status_l1: { cs: 'Genesis Launch active · runtime v3.0.4', en: 'Genesis Launch active · runtime v3.0.4' },
+    signal_status_nodes: { cs: 'Edge server online', en: 'Edge server online' },
     signal_status_mainnet: { cs: 'Launch Countdown · 31. prosince 2026', en: 'Launch Countdown · 31 December 2026' },
     metric_loc:     { cs: 'Řádků kódu (Rust)', en: 'Rust LOC' },
     metric_nodes:   { cs: 'Nódy Online', en: 'Nodes Online' },
@@ -97,16 +97,16 @@ const t = {
     btn_warp:          { cs: 'Prozkoumat síť',      en: 'Explore Network' },
     btn_guardian_docs: { cs: 'Otevřít dokumentaci',   en: 'Open Docs' },
     btn_native_miner:  { cs: 'Stáhnout miner',          en: 'Download Miner' },
-    teaser_title: { cs: 'Živá Core + Edge síť', en: 'Live Core + Edge network' },
+    teaser_title: { cs: 'Živá Edge server síť', en: 'Live Edge server network' },
     teaser_badge: { cs: 'Aktivní', en: 'Active' },
     teaser_body: {
-      cs: 'Síťový stav, explorer, pool, downloady i dokumentace jsou na jednom místě. Homepage slouží jako veřejný vstup do Core + Edge mainnetu, ne jako oznámení produkčního launch.',
-      en: 'Network status, explorer, pool, downloads, and documentation live in one place. The homepage acts as a public entry point into the Core + Edge mainnet, not as a production launch announcement.',
+      cs: 'Síťový stav, explorer, pool, downloady i dokumentace jsou na jednom místě. Homepage slouží jako veřejný vstup do Edge server mainnetu, ne jako oznámení produkčního launch.',
+      en: 'Network status, explorer, pool, downloads, and documentation live in one place. The homepage acts as a public entry point into the Edge server mainnet, not as a production launch announcement.',
     },
     teaser_cta: { cs: 'Prozkoumat', en: 'Explore' },
     observatory_focus_label: { cs: 'Zaměření signálu', en: 'Signal focus' },
     observatory_scan_label: { cs: 'Aktuální scanline', en: 'Current scanline' },
-    version_pill_rehearsal: { cs: 'Core + Edge topologie', en: 'Core + Edge topology' },
+    version_pill_rehearsal: { cs: 'Edge server topologie', en: 'Edge server topology' },
     mode_deep_space_label: { cs: 'Hluboký vesmír', en: 'Deep Space' },
     mode_deep_space_desc: { cs: 'Let skrz kosmos', en: 'Flight through the cosmos' },
     mode_deep_space_signal: { cs: 'Lov interstelárních anomálií', en: 'Interstellar anomaly hunting' },
@@ -125,8 +125,8 @@ const t = {
     title: { cs: 'Launch Countdown — 31. prosince 2026', en: 'Launch Countdown — 31 December 2026' },
     target_date: { cs: 'Target: 31. prosince 2026', en: 'Target: December 31, 2026' },
     subtitle: {
-      cs: 'Příprava V3 Mainnet · Core + Edge topology · Mining test · Bridge v přípravě',
-      en: 'Preparing V3 Mainnet · Core + Edge topology · Mining test · Bridge in preparation',
+      cs: 'Příprava V3 Mainnet · Edge server topology · Mining test · Bridge v přípravě',
+      en: 'Preparing V3 Mainnet · Edge server topology · Mining test · Bridge in preparation',
     },
   },
 
@@ -403,8 +403,8 @@ const t = {
       p2p: {
         title: { cs: 'P2P síť', en: 'P2P Network' },
         desc:  {
-          cs: 'P2P peer discovery, propagace bloků a synchronizace mempolu přes Core + Edge topologii (Core PC + Hetzner Edge VPS) se ShareRelay protokolem.',
-          en: 'P2P peer discovery, block propagation, and mempool sync across the Core + Edge topology (Core PC + Hetzner Edge VPS) using the ShareRelay protocol.',
+          cs: 'P2P peer discovery, propagace bloků a synchronizace mempolu přes Edge server topologii (Edge server) se ShareRelay protokolem.',
+          en: 'P2P peer discovery, block propagation, and mempool sync across the Edge server topology (Edge server) using the ShareRelay protocol.',
         },
         badge: { cs: 'Živý', en: 'Live' },
       },
@@ -421,8 +421,8 @@ const t = {
       ph1: {
         phase: { cs: 'Fáze 1 · Nyní', en: 'Phase 1 · Now' },
         detail: {
-          cs: 'Core + Edge mainnet — Rust pool, Cosmic Harmony těžba, P2P sync. 92 % dokončeno.',
-          en: 'Core + Edge mainnet — Rust pool, Cosmic Harmony mining, P2P sync. 92 % done.',
+          cs: 'Edge server mainnet — Rust pool, Cosmic Harmony těžba, P2P sync. 92 % dokončeno.',
+          en: 'Edge server mainnet — Rust pool, Cosmic Harmony mining, P2P sync. 92 % done.',
         },
       },
       ph2: {
@@ -495,14 +495,14 @@ const t = {
       en: 'current docs, tools, and sources',
     },
     blurb: {
-      cs: 'Veškerý provozní kontext Core + Edge mainnetu na jedné ose — dokumentace, mining nástroje, explorer i zdrojový kód.',
-      en: 'Operational context for the Core + Edge mainnet in one spine — docs, mining tools, explorer, and source.',
+      cs: 'Veškerý provozní kontext Edge server mainnetu na jedné ose — dokumentace, mining nástroje, explorer i zdrojový kód.',
+      en: 'Operational context for the Edge server mainnet in one spine — docs, mining tools, explorer, and source.',
     },
     card_open: { cs: 'Otevřít', en: 'Open' },
     res_docs_title: { cs: 'Aktuální dokumentace', en: 'Current docs' },
     res_docs_body: {
-      cs: 'Otevře /docs s live přehledem Core + Edge topologie, maticí verzí 2.9.6 / 2.9.8 / 2.9.9 a launch blokery.',
-      en: 'Opens /docs with the Core + Edge topology snapshot, versions 2.9.6 / 2.9.8 / 2.9.9, and launch blockers.',
+      cs: 'Otevře /docs s live přehledem Edge server topologie, maticí verzí 2.9.6 / 2.9.8 / 2.9.9 a launch blokery.',
+      en: 'Opens /docs with the Edge server topology snapshot, versions 2.9.6 / 2.9.8 / 2.9.9, and launch blockers.',
     },
     res_download_title: { cs: 'Stáhnout minera', en: 'Miner downloads' },
     res_download_body: {

@@ -799,7 +799,7 @@ export default function DashboardMain() {
                 <Activity className="h-3 w-3 text-emerald-400" /> Auto-refresh 30s
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                <Globe className="h-3 w-3 text-zion-cyan" /> Core + Edge
+                <Globe className="h-3 w-3 text-zion-cyan" /> Edge server
               </span>
               {metricsSource === 'fallback' && (
                 <span className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-amber-400">

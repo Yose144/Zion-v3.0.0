@@ -96,7 +96,7 @@ ZION je navržen jako vícevrstvá civilizační infrastruktura — od PoW block
 
 | Region | RPC | P2P | Pool (Stratum) |
 |--------|-----|-----|----------------|
-| Zion2 | `91.98.122.165:8444` | `91.98.122.165:8334` | `91.98.122.165:3333` |
+| Zion2 | `seed.zionterranova.com:8444` | `seed.zionterranova.com:8334` | `seed.zionterranova.com:3333` |
 | DNS seed 1 | — | `seed1.zionterranova.com:8334` | — |
 | DNS seed 2 | — | `seed2.zionterranova.com:8334` | — |
 
@@ -108,7 +108,7 @@ RPC: `POST /jsonrpc` — standard JSON-RPC 2.0.
 
 ```bash
 # Těžba ZION na veřejném poolu
-zion-miner --pool stratum+tcp://91.98.122.165:3333 --wallet YOUR_ZION_ADDRESS
+zion-miner --pool stratum+tcp://seed.zionterranova.com:3333 --wallet YOUR_ZION_ADDRESS
 
 # Nová peněženka
 zion-wallet gen-mnemonic --out my-wallet.json --print

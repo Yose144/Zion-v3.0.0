@@ -909,7 +909,7 @@ Existing Monero wallets can connect with minimal modifications!
 **Seed Nodes:**
 ```yaml
 Production Seeds:
-  - 77.42.31.72:18080 (Hetzner, Germany)
+  - seed.zionterranova.com:18080 (cloud VPS, Germany)
   - seed2.zion.network:18080 (future)
   - seed3.zion.network:18080 (future)
 
@@ -4944,7 +4944,7 @@ cat > config.json << EOF
         {
             "algo": "rx/0",
             "coin": "ZION",
-            "url": "stratum+tcp://77.42.31.72:3333",
+            "url": "stratum+tcp://seed.zionterranova.com:3333",
             "user": "YOUR_ZION_ADDRESS",
             "pass": "x",
             "keepalive": true,
@@ -4958,7 +4958,7 @@ EOF
 ./xmrig --config=config.json
 
 # Expected output:
-# [2025-10-10 17:00:00.000]  net      use pool stratum+tcp://77.42.31.72:3333
+# [2025-10-10 17:00:00.000]  net      use pool stratum+tcp://seed.zionterranova.com:3333
 # [2025-10-10 17:00:01.234]  cpu      use profile rx (6 threads) scratchpad 2048 KB
 # [2025-10-10 17:00:02.456]  cpu      READY threads 6/6 (6) huge pages 100% 12/12 memory 12.0 MB
 # [2025-10-10 17:00:05.678]  miner    speed 10s/60s/15m 1234.5 1234.2 n/a H/s max 1235.0 H/s
@@ -6760,7 +6760,7 @@ Start Mining in 10 Minutes:
        {
          "pools": [{
            "algo": "rx/0",
-           "url": "stratum+tcp://77.42.31.72:3333",
+           "url": "stratum+tcp://seed.zionterranova.com:3333",
            "user": "YOUR_ZION_ADDRESS",
            "pass": "x"
          }]
@@ -6768,7 +6768,7 @@ Start Mining in 10 Minutes:
   
   4. Start Mining:
      - Run: `xmrig --config=config.json`
-     - Check pool stats: https://77.42.31.72:8080 (if live)
+     - Check pool stats: https://seed.zionterranova.com:8080 (if live)
   
   5. Level Up (Consciousness Game):
      - Join Discord: https://discord.gg/zion
@@ -7218,10 +7218,10 @@ Social Media:
   Forum: https://forum.zion.network
 
 Mining Pools:
-  Pool 1 (Main): stratum+tcp://77.42.31.72:3333
+  Pool 1 (Main): stratum+tcp://seed.zionterranova.com:3333
   Pool 2 (EU): TBD (coming Q1 2026)
   Pool 3 (Asia): TBD (coming Q1 2026)
-  Pool Stats: https://77.42.31.72:8080
+  Pool Stats: https://seed.zionterranova.com:8080
 
 Developer Resources:
   API Docs: https://api.zion.network/docs

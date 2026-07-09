@@ -103,7 +103,7 @@ zion config show
 zion config path
 zion config validate
 zion doctor
-zion config set node.rpc_host 91.98.122.165
+zion config set node.rpc_host seed.zionterranova.com
 
 zion monitor
 zion explorer

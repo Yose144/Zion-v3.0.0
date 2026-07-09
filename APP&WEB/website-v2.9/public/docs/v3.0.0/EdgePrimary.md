@@ -54,7 +54,7 @@ ZION V3 uses a **Core + Edge** two-tier architecture:
 
 | Property | Value |
 |----------|-------|
-| Provider | Hetzner Cloud |
+| Provider | cloud VPS |
 | OS | Ubuntu 22.04 LTS |
 | Role | 24/7 operational node for all L1/L2/L3 non-AI services |
 

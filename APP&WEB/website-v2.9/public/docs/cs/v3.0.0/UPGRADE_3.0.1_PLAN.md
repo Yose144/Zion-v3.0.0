@@ -32,7 +32,7 @@
 | G3 | OASIS konfigurace | Ignoruje path, vrací default | P1 |
 | G4 | WARP contract adresy | Dummy adresy ve všech adaptérech | P1 |
 | G5 | Alertmanager notifikace | Žádný real channel | P1 |
-| G6 | Tailscale ACL | Šablona neaplikovaná | P2 |
+| G6 | private network ACL | Šablona neaplikovaná | P2 |
 | G7 | CI/CD | Žádný GitHub Actions workflow | P1 |
 | G8 | P2P DNS seeds | Jen hardcoded seed peers | P2 |
 | G9 | GPU auto-tuning | Ruční nastavení backendu | P2 |
@@ -63,7 +63,7 @@
 
 ### 3.3 P2 — Nice-to-have
 
-- **T7:** Tailscale ACL aplikace
+- **T7:** private network ACL aplikace
 - **T8:** P2P DNS seed discovery
 - **T9:** GPU auto-tuning (backend + work_size)
 
@@ -79,7 +79,7 @@
 | T4 | WARP adapter testy procházejí s reálnými adresami |
 | T5 | Alertmanager odesílá notifikace do alespoň 1 channelu |
 | T6 | CI prochází: build, test, clippy, fmt, audit |
-| T7 | Tailscale ACL aplikována na všechny uzly |
+| T7 | private network ACL aplikována na všechny uzly |
 | T8 | P2P discovery funguje bez hardcoded seeds |
 | T9 | GPU miner auto-detekuje backend a optimalizuje work_size |
 

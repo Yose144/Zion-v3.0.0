@@ -32,7 +32,7 @@ cd 2.9.6
 
 ```bash
 export MINER_WALLET="zion1qTVOJE_ADRESA"
-export SEED_PEERS="91.98.122.165:8334"
+export SEED_PEERS="seed.zionterranova.com:8334"
 ```
 
 ### 3. Spusť stack
@@ -105,7 +105,7 @@ Binárky budou v `target/release/`:
   --rpc-port 8444 \
   --p2p-port 8334 \
   --network testnet \
-  --peers "91.98.122.165:8334"
+  --peers "seed.zionterranova.com:8334"
 ```
 
 ### 4. Spusť miner (druhý terminál)
@@ -130,7 +130,7 @@ Na stránce [Download](https://www.zionterranova.com/download) nebo přímo z [G
 ```bash
 chmod +x zion-core zion-miner
 ./zion-core --data-dir ./data --network testnet \
-  --peers "91.98.122.165:8334,seed1.zionterranova.com:8334"
+  --peers "seed.zionterranova.com:8334,seed1.zionterranova.com:8334"
 ```
 
 ---

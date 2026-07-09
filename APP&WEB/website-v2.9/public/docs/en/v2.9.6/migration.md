@@ -55,7 +55,7 @@ Strings `cosmic_harmony`, `cosmic_harmony_v1`, `cosmic_harmony_v2`, `cosmic_harm
 
 ```bash
 export ZION_SCHEDULER_PERMINER_MIN_MINERS=2
-./zion-miner --pool stratum+tcp://91.98.122.165:3333 \
+./zion-miner --pool stratum+tcp://seed.zionterranova.com:3333 \
              --user wallet.worker:p=zion,g=zion \
              --group zion
 ```

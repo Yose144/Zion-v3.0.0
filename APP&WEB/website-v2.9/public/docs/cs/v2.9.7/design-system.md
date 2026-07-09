@@ -46,11 +46,11 @@ Veškeré **transakční poplatky se pálí**. Není samostatný dev fee.
 
 Veřejný pool ZION běží na **primárním hostu Zion2** a používá Stratum v2 s PPLNS.
 
-**Adresa poolu:** `stratum+tcp://91.98.122.165:3333`
+**Adresa poolu:** `stratum+tcp://seed.zionterranova.com:3333`
 
 ```bash
 zion-miner \
-  --pool stratum+tcp://91.98.122.165:3333 \
+  --pool stratum+tcp://seed.zionterranova.com:3333 \
   --wallet VASE_ZION_ADRESA \
   --threads 4
 ```
@@ -65,7 +65,7 @@ Připojte se přímo na RPC seed uzlu:
 
 ```bash
 zion-miner \
-  --rpc http://91.98.122.165:8444 \
+  --rpc http://seed.zionterranova.com:8444 \
   --wallet VASE_ZION_ADRESA \
   --solo
 ```
@@ -80,7 +80,7 @@ Podpora dual mining — **Cosmic Harmony Deeksha** současně s **VerusHash**:
 
 ```bash
 zion-miner \
-  --pool stratum+tcp://91.98.122.165:3333 \
+  --pool stratum+tcp://seed.zionterranova.com:3333 \
   --wallet VASE_ZION_ADRESA \
   --dual-pool stratum+tcp://VERUS_POOL:PORT \
   --dual-wallet VASE_VRSC_ADRESA
@@ -95,7 +95,7 @@ Generujte peněženku lokálně — klíče neopouštějí stroj:
 ```bash
 zion-wallet gen-mnemonic --out wallet.json --print
 zion-wallet address --from wallet.json
-zion-wallet balance --address VASE_ADRESA --rpc http://91.98.122.165:8444
+zion-wallet balance --address VASE_ADRESA --rpc http://seed.zionterranova.com:8444
 ```
 
 Soubory používají Ed25519 (BIP39 seed → Ed25519). Mnemotechniku uchovávejte offline.
@@ -119,7 +119,7 @@ curl -X POST http://localhost:8444/jsonrpc \
 ```
 
 Seed uzly:
-- `91.98.122.165:8334` (Zion2)
+- `seed.zionterranova.com:8334` (Zion2)
 - `seed1.zionterranova.com:8334`
 - `seed2.zionterranova.com:8334`
 - `seed3.zionterranova.com:8334`

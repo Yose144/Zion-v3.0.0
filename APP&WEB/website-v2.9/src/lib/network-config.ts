@@ -27,11 +27,10 @@ export type MiningPoolConfig = {
   lon: number;
 };
 
-// Edge-only topology (Hetzner VPS).
-// Two nodes run on the same Edge VPS:
+// Edge-only topology (cloud VPS).
+// Two nodes run on the same Edge server:
 //   - Node 1 (Primary / Genesis) — P2P 8333, RPC 8443
 //   - Node 2 (Follower / P2P peer) — P2P 8334, RPC 8446
-// Core PC is unreachable via Tailscale since 2026-05-30.
 // NOTE: These are built lazily (functions) so that env-var overrides in site.ts
 // (which use bracket notation to avoid Next.js build-time inlining) are read
 // at runtime, not at build time.

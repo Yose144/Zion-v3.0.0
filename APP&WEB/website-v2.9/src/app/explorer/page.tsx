@@ -156,9 +156,9 @@ export default function ExplorerPage() {
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                Search blocks, transactions, and addresses on the current ZION TerraNova {SITE_RELEASE_LABEL} controlled V3 Core + Edge mainnet.
+                Search blocks, transactions, and addresses on the current ZION TerraNova {SITE_RELEASE_LABEL} controlled V3 Edge server mainnet.
                 Canonical runtime stays on {SITE_RUNTIME_LABEL}.
-                Smart hash resolver, live data from the current Edge VPS runtime, and auto-refresh every 10 seconds.
+                Smart hash resolver, live data from the current Edge server runtime, and auto-refresh every 10 seconds.
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
@@ -168,7 +168,7 @@ export default function ExplorerPage() {
                   <Activity className="h-3 w-3 text-emerald-400" /> {cs ? 'Auto-refresh 15 s' : 'Auto-Refresh 15s'}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Globe className="h-3 w-3 text-zion-cyan" /> Core + Edge
+                  <Globe className="h-3 w-3 text-zion-cyan" /> Edge server
                 </span>
               </div>
               <div className="flex flex-wrap gap-3">
@@ -400,8 +400,8 @@ export default function ExplorerPage() {
 
         <p className="text-center text-xs text-gray-600">
           {cs
-            ? `ZION TerraNova ${SITE_RELEASE_LABEL} - Blockchain Explorer Pro · Data v realnem case z nativniho Rust runtime · Core + Edge topologie`
-            : `ZION TerraNova ${SITE_RELEASE_LABEL} - Blockchain Explorer Pro · Real-time data from native Rust runtime · Core + Edge topology`}
+            ? `ZION TerraNova ${SITE_RELEASE_LABEL} - Blockchain Explorer Pro · Data v realnem case z nativniho Rust runtime · Edge server topologie`
+            : `ZION TerraNova ${SITE_RELEASE_LABEL} - Blockchain Explorer Pro · Real-time data from native Rust runtime · Edge server topology`}
         </p>
       </div>
     </div>

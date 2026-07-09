@@ -34,13 +34,13 @@ const getMissionMetrics = (cs: boolean) => [
   {
     label: 'Mainnet Status',
     value: 'ACTIVE',
-    description: 'Core + Edge Rust infrastructure operational',
+    description: 'Edge server Rust infrastructure operational',
     icon: Zap
   },
   {
     label: cs ? 'Zdravi poolu' : 'Pool Health',
     value: '100%',
-    description: 'Edge VPS pool + Core PC consensus node',
+    description: 'Edge server pool + Edge server consensus node',
     icon: ShieldCheck
   },
   {
@@ -60,7 +60,7 @@ const getMissionMetrics = (cs: boolean) => [
 const getRoadmapSlices = (cs: boolean) => [
   {
     title: 'Mainnet · 2026',
-    bullets: ['Native Rust blockchain + pool infrastructure', 'Core + Edge topology: Core PC consensus + Hetzner Edge VPS pool/relay', 'Real mining rewards · 5% humanitarian · 5% Issobella fund']
+    bullets: ['Native Rust blockchain + pool infrastructure', 'Edge server topology: Edge server consensus + Edge server pool/relay', 'Real mining rewards · 5% humanitarian · 5% Issobella fund']
   },
   {
     title: cs ? 'Q1-Q2 2026 · Zpevneni' : 'Q1-Q2 2026 · Hardening',
@@ -147,7 +147,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Mission control</p>
               <h1 className="text-5xl md:text-6xl font-semibold text-gradient">Live systems dashboard</h1>
               <p className="mt-4 text-lg text-gray-300 max-w-2xl">
-                Real-time telemetry from ZION {SITE_RELEASE_LABEL}: health checks, node status, blockchain vitals, and mining pool metrics across the Core + Edge topology.
+                Real-time telemetry from ZION {SITE_RELEASE_LABEL}: health checks, node status, blockchain vitals, and mining pool metrics across the Edge server topology.
               </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">

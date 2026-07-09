@@ -1,7 +1,7 @@
 /**
- * Edge-only runtime endpoint constants (2026-06-07).
+ * Edge-only runtime endpoint constants (2026-07-09).
  *
- * Topology: Edge (Hetzner VPS) is the sole live server.
+ * Topology: Edge server (cloud VPS) is the sole live server.
  * All canonical services run on Edge; localhost references are the default
  * because the Next.js website is deployed on the Edge server itself.
  *

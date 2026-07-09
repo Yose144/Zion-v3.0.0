@@ -32,7 +32,7 @@ cd 2.9.6
 
 ```bash
 export MINER_WALLET="zion1qYOUR_ADDRESS"
-export SEED_PEERS="91.98.122.165:8334"
+export SEED_PEERS="seed.zionterranova.com:8334"
 ```
 
 ### 3. Start the stack
@@ -105,7 +105,7 @@ The binaries will be in `target/release/`:
   --rpc-port 8444 \
   --p2p-port 8334 \
   --network testnet \
-  --peers "91.98.122.165:8334"
+  --peers "seed.zionterranova.com:8334"
 ```
 
 ### 4. Start the miner (second terminal)
@@ -129,7 +129,7 @@ You can get binaries for your OS from [Download](https://www.zionterranova.com/d
 ```bash
 chmod +x zion-core zion-miner
 ./zion-core --data-dir ./data --network testnet \
-  --peers "91.98.122.165:8334,seed1.zionterranova.com:8334"
+  --peers "seed.zionterranova.com:8334,seed1.zionterranova.com:8334"
 ```
 
 ---

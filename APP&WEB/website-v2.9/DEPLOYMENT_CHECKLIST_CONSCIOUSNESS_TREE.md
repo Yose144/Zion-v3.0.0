@@ -98,7 +98,7 @@ const result = await pool.query(`
 ### 4. Deploy to Production
 ```bash
 # SSH to server
-ssh root@91.98.122.165
+ssh deploy@rpc.zionterranova.com
 
 # Navigate to deploy workspace
 cd /root/zion-web-deploy/website-v2.9
@@ -231,7 +231,7 @@ If issues occur:
 ### Quick Rollback
 ```bash
 # SSH to server
-ssh root@91.98.122.165
+ssh deploy@rpc.zionterranova.com
 
 # Revert to previous version
 cd /root/zion-web-deploy/website-v2.9
