@@ -46,21 +46,25 @@
 >
 > **Root cause:** `DEFAULT_BLOCK_RETENTION = 0` (unlimited) — `accepted_blocks` Vec rostl bez bounds. `known_peers` Vec a WebSocket channels také unbounded.
 >
-> **Code fixes (commit `348abc91`):**
+> **Code fixes (commit `348abc91` + `22a160f9`):**
 > - `DEFAULT_BLOCK_RETENTION`: 0 → 1000 (keep last 1000 blocks in memory, staré prunovány z cache, zůstávají v LMDB)
 > - `known_peers`: cap 1000, drain oldest při překročení
 > - WebSocket channels: `unbounded_channel` → `channel(256)` pro client msgs, `channel(64)` pro ping/text. `send()` → `try_send()` (drop if full místo unbounded accumulation)
+> - RPC thread handle draining: `handles.retain(|h| !h.is_finished())` při 128+ handles (zabraňuje unbounded Vec růstu z ~83 req/s dashboard pollingu)
+> - RPC verbose logging gated behind `ZION_RPC_DEBUG=1` (default off — `rpc_http_in`, `rpc_http_out`, `p2p_in`, `p2p_out` se nelogují)
+> - `rpc_audit` log truncován na 120 znaků (zabraňuje logování full JSON body)
 > - 556 tests pass, 0 failed
 >
 > **Edge mitigations (deployed):**
 > - 4GB swap file (`/swapfile`, in fstab)
 > - `MemoryHigh=2GB`, `MemoryMax=3GB` pro zion-node + zion-node2 (systemd cgroup)
 > - `ZION_BLOCK_RETENTION=1000` v obou env files (node1 + node2)
+> - `MALLOC_ARENA_MAX=1` v obou env files (redukuje glibc malloc fragmentation z high-throughput RPC)
 > - Journald limited (SystemMaxUse=200M)
 > - 5 binaries rebuilt + swapped (node, pool-server, bridge, dao, warp-server)
 > - Old binaries backed up to `/usr/local/bin/zion-backup/memfix-20260709/`
 >
-> **Výsledek:** Node1 RSS 21MB (was 1076MB), Node2 RSS 16MB, total system 911MB (was 2.3GB). Chain height 660+, oba nody syncující, pool mining aktivní.
+> **Výsledek:** Node1 RSS stabilní ~33MB po 10 min (bylo ~60MB/min růst → 443MB v 7 min). Růst redukován z ~60MB/min na ~1.6MB/min (98% redukce). Chain height 734+, oba nody syncující, pool mining aktivní.
 >
 > ### 3.0.4 Hard Genesis Reset — Nový Server Deploy (2026-07-07)
 >
