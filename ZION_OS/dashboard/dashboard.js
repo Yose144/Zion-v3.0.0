@@ -1270,9 +1270,15 @@ async function updateRecentBlocks(){
 
 async function showBlockTxDetail(height){
   try {
-    const detail = document.getElementById('recent-block-tx-detail');
-    const tbody = document.getElementById('rbtx-tbody');
-    const heightLabel = document.getElementById('rbtx-height');
+    // Try Explorer tab first, then Overview tab
+    let detail = document.getElementById('explorer-block-tx-detail');
+    let tbody = document.getElementById('exbtx-tbody');
+    let heightLabel = document.getElementById('exbtx-height');
+    if(!detail){
+      detail = document.getElementById('recent-block-tx-detail');
+      tbody = document.getElementById('rbtx-tbody');
+      heightLabel = document.getElementById('rbtx-height');
+    }
     if(!detail || !tbody) return;
     tbody.innerHTML = '<tr><td colspan="6" class="text-gray-500 text-center py-2">Loading…</td></tr>';
     detail.classList.remove('hidden');
@@ -3140,12 +3146,12 @@ async function loadExplorer(){
         tbody.innerHTML = '<tr><td colspan="5" class="py-4 text-gray-500 italic text-center">No blocks available. Start the node to see recent blocks.</td></tr>';
       } else {
         tbody.innerHTML = data.recent_blocks.slice().reverse().map(b => `
-          <tr class="border-b border-white/5 hover:bg-white/3 transition cursor-pointer" data-block-height="${b.height}" title="Click for block detail">
-            <td class="py-2 px-3 font-bold text-white">#${b.height}</td>
-            <td class="py-2 px-3 text-gray-300 truncate" title="${escapeHtml(b.hash || '')}">${escapeHtml(b.hash || '—')}</td>
+          <tr class="border-b border-white/5 hover:bg-cyan-500/10 transition cursor-pointer" data-block-height="${b.height}" onclick="showBlockTxDetail(${b.height})" title="Click for block detail">
+            <td class="py-2 px-3 font-bold text-cyan-400">#${b.height}</td>
+            <td class="py-2 px-3 text-gray-300 truncate" title="${escapeHtml(b.hash || '')}">${escapeHtml(b.hash ? b.hash.substring(0,20) + '…' : '—')}</td>
             <td class="py-2 px-3 text-gray-400">${b.timestamp ? new Date(b.timestamp * 1000).toLocaleString() : '—'}</td>
             <td class="py-2 px-3 text-right text-gray-300">${b.tx_count ?? 0}</td>
-            <td class="py-2 px-3 text-right text-gray-400">${b.difficulty ? b.difficulty.toLocaleString() : '—'}</td>
+            <td class="py-2 px-3 text-right text-amber-400">${b.difficulty ? b.difficulty.toLocaleString() : '—'}</td>
           </tr>
         `).join('');
       }
