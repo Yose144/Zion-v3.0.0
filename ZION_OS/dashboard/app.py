@@ -29,6 +29,12 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 SCRIPT_DIR = Path(__file__).parent.resolve()
 REPO_ROOT = SCRIPT_DIR.parent.parent
 LOG_DIR = REPO_ROOT / "logs"
+# Fallback: try ./logs (relative to dashboard dir) for Edge server deployment
+if not LOG_DIR.exists():
+    LOG_DIR = SCRIPT_DIR / "logs"
+# Final fallback for legacy deployments
+if not LOG_DIR.exists():
+    LOG_DIR = Path("../logs")
 DATA_DIR = REPO_ROOT / "V3" / "data"
 SCRIPTS_DIR = REPO_ROOT / "scripts"
 V2_DIST = SCRIPT_DIR / "v2" / "dist"
@@ -38,8 +44,6 @@ CONFIG_FILE = SCRIPT_DIR / "config.json"
 # Cross-platform release binary directory + executable suffix
 RELEASE_BIN_DIR = REPO_ROOT / "V3" / "target" / "release"
 EXE_SUFFIX = ".exe" if os.name == "nt" else ""
-if not LOG_DIR.exists():
-    LOG_DIR = Path("../logs")
 
 # Unified service → log file mapping used by all log endpoints
 SERVICE_LOG_MAP = {
