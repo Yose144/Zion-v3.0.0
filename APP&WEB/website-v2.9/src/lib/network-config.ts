@@ -53,7 +53,7 @@ function buildDefaultSeedNodes(): SeedNodeConfig[] {
       region: 'EU',
       lat: 50.08,
       lon: 14.44,
-      ports: { p2p: 8334, rpc: 8446, stratum: 0, pool_api: 0 },
+      ports: { p2p: 8334, rpc: 8448, stratum: 0, pool_api: 0 },
     },
   ];
 }

@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
-const ISSOBELLA_WALLET = 'zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702';
+const ISSOBELLA_WALLET = 'zion1f7y7l5k678y0v408e8s654d2282346k375526t2';
 
 const getMissions = (cs: boolean) => [
   {
