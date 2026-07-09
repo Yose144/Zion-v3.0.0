@@ -1094,7 +1094,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <h2 class="text-base font-bold flex items-center gap-2">⛓️ Chain Stats</h2>
         <span id="chain-stats-badge" class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">Loading…</span>
       </div>
-      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-9 gap-3">
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-11 gap-3">
         <div class="bg-black/30 rounded-lg p-3 text-center">
           <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Block Time</div>
           <div id="chain-block-time" class="text-xl font-bold text-cyan-400">—</div>
@@ -1140,6 +1140,16 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           <div id="chain-supply-pct" class="text-xl font-bold text-blue-400">—</div>
           <div class="text-[10px] text-gray-500 mt-0.5">% of 144B</div>
         </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Emission</div>
+          <div id="chain-emission" class="text-xl font-bold text-teal-400">—</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">K ZION/day</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Blocks/hr</div>
+          <div id="chain-blocks-hr" class="text-xl font-bold text-indigo-400">—</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">avg rate</div>
+        </div>
       </div>
     </div>
 
@@ -1170,6 +1180,33 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
     </div>
 
+    <!-- Top Wallets + Mempool Live (side by side) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <!-- Top Wallets -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold flex items-center gap-2">💼 Top Wallets</h2>
+        <div class="flex items-center gap-2">
+          <span id="top-wallets-badge" class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">—</span>
+          <button onclick="updateTopWallets()" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">⟳</button>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs text-left">
+          <thead>
+            <tr class="text-gray-500 border-b border-white/10">
+              <th class="py-2 px-2">Label</th>
+              <th class="py-2 px-2">Address</th>
+              <th class="py-2 px-2 text-right">Balance (ZION)</th>
+            </tr>
+          </thead>
+          <tbody id="top-wallets-tbody">
+            <tr><td colspan="3" class="text-gray-500 text-center py-4">Loading wallets…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- Mempool Live -->
     <div class="zion-panel p-5">
       <div class="flex items-center justify-between mb-3">
@@ -1189,6 +1226,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         </table>
       </div>
     </div>
+    </div><!-- end Top Wallets + Mempool grid -->
 
     <!-- ═══════ Layer Services (L2–L6) ═══════ -->
     <div class="zion-panel p-5">

@@ -50,6 +50,18 @@ fn lock_peer_sec(m: &Mutex<PeerSecurity>) -> MutexGuard<'_, PeerSecurity> {
     })
 }
 
+/// Check if verbose RPC logging is enabled (full request/response bodies).
+/// Default: off. Set `ZION_RPC_DEBUG=1` to enable.
+/// When disabled, only audit logs (method + tx_id) are emitted.
+fn rpc_debug_enabled() -> bool {
+    static CACHED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *CACHED.get_or_init(|| {
+        std::env::var("ZION_RPC_DEBUG")
+            .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+            .unwrap_or(false)
+    })
+}
+
 fn main() -> Result<()> {
     // Read migration height from env (set by edge-deploy config).
     // This tells the node which blocks are pre-migration (legacy 1e12 scale)
@@ -371,7 +383,9 @@ fn main() -> Result<()> {
             let (stream, peer_addr) = rpc_listener
                 .accept()
                 .context("failed to accept RPC client")?;
-            println!("rpc_client_addr={peer_addr}");
+            if rpc_debug_enabled() {
+                println!("rpc_client_addr={peer_addr}");
+            }
             let runtime = Arc::clone(&rpc_runtime);
             let seen = Arc::clone(&rpc_seen);
             let seen_txs = Arc::clone(&rpc_seen_txs);
@@ -466,7 +480,9 @@ fn handle_p2p_stream(
             }
         }
 
-        println!("p2p_in={line}");
+        if rpc_debug_enabled() {
+            println!("p2p_in={line}");
+        }
         let message = match decode_p2p_message(&line) {
             Ok(m) => m,
             Err(e) => {
@@ -567,7 +583,9 @@ fn handle_p2p_stream(
         if writer.flush().is_err() {
             break;
         }
-        println!("p2p_out={}", response_line.trim());
+        if rpc_debug_enabled() {
+            println!("p2p_out={}", response_line.trim());
+        }
 
         // Relay newly accepted block to other peers (flood-fill)
         if is_announce {
@@ -624,8 +642,12 @@ fn handle_rpc_stream(
     let mut writer = stream;
 
     let line = read_line_limited(&mut reader, RPC_MAX_REQUEST_BYTES)?;
-    println!("rpc_in={line}");
-    println!("rpc_audit peer={peer_addr} method={line}");
+    if rpc_debug_enabled() {
+        println!("rpc_in={line}");
+    }
+    // Audit log: truncate to 120 chars to avoid excessive log volume
+    let audit_line = if line.len() > 120 { &line[..120] } else { line.as_str() };
+    println!("rpc_audit peer={peer_addr} method={audit_line}");
 
     // ── HTTP POST support for Electron/mobile clients ───────────────────
     // Desktop agent and mobile app send HTTP POST requests; detect and handle them.
@@ -660,7 +682,9 @@ fn handle_rpc_stream(
             .flush()
             .context("failed to flush JSON-RPC response")?;
         let trimmed = String::from_utf8_lossy(&response_bytes);
-        println!("jsonrpc_out={trimmed}");
+        if rpc_debug_enabled() {
+            println!("jsonrpc_out={trimmed}");
+        }
         return Ok(());
     }
 
@@ -686,7 +710,9 @@ fn handle_rpc_stream(
         .write_all(response_line.as_bytes())
         .context("failed to write RPC response")?;
     writer.flush().context("failed to flush RPC response")?;
-    println!("rpc_out={}", response_line.trim());
+    if rpc_debug_enabled() {
+        println!("rpc_out={}", response_line.trim());
+    }
 
     // Relay newly mined block to all peers
     if is_submit {
@@ -828,7 +854,9 @@ fn handle_rpc_http(
         .read_exact(&mut body_buf)
         .context("failed to read HTTP body")?;
     let body_str = String::from_utf8_lossy(&body_buf);
-    println!("rpc_http_in={body_str}");
+    if rpc_debug_enabled() {
+        println!("rpc_http_in={body_str}");
+    }
 
     // ── Audit log: extract RPC method for security monitoring ──────────
     if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&body_str) {
@@ -882,7 +910,9 @@ fn handle_rpc_http(
     // Route through JSON-RPC router
     let response_bytes = router.handle_raw(&body_buf);
     let resp_str = String::from_utf8_lossy(&response_bytes);
-    println!("rpc_http_out={resp_str}");
+    if rpc_debug_enabled() {
+        println!("rpc_http_out={resp_str}");
+    }
 
     // Relay accepted transaction to peers (same logic as line-delimited RPC)
     if let Some(submitted) = submit_tx {

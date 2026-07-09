@@ -500,7 +500,7 @@ The following measures will be implemented as part of the hard reset and going f
 - [ ] Hardware security module (HSM) or hardware wallet for pool payout signing
 - [ ] Multisig (3-of-5) for EVM contract admin operations
 - [ ] No secret keys in git history (enforced by pre-commit hook)
-- [ ] Encrypted key archive on offline media (USB + paper backup at separate location)
+- [x] Encrypted key archive on offline media (USB + paper backup at separate location) — ✅ COMPLETED 2026-07-09: USB (ESD-USB/ZionKeys/) + Desktop/ZionKeys/, SHA256 verified, GPG signed, 19/19 addresses cross-checked with genesis.rs
 
 ### Code quality
 

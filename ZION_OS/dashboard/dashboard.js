@@ -133,7 +133,7 @@ function switchTab(name){
   });
 
   // ── Auto-refresh timers ─────────────────────────────────────────────
-  if(name === 'overview'){ loadMempool(); loadMonitoringStatus(); updateChainStats(); updateRecentBlocks(); }
+  if(name === 'overview'){ loadMempool(); loadMonitoringStatus(); updateChainStats(); updateRecentBlocks(); updateTopWallets(); }
   if(name === 'alerts'){ clearTabTimers('alerts'); loadAlertHistory(); if(!_alertsTimer) _alertsTimer = setInterval(loadAlertHistory, 8000); }
   else if(name === 'services'){ clearTabTimers('services'); loadServices(); if(!_servicesTimer) _servicesTimer = setInterval(loadServices, 5000); }
   else if(name === 'nodes'){ clearTabTimers('nodes'); loadCliNodeStatus(); if(!_nodesTimer) _nodesTimer = setInterval(loadCliNodeStatus, 6000); }
@@ -277,7 +277,7 @@ async function refreshAll(){
     if(currentTab === 'wallets') { loadWallets(); loadWalletStatus(); }
     if(currentTab === 'explorer') loadExplorer();
     if(currentTab === 'hiran') loadAiStatus();
-    if(currentTab === 'overview') { loadMempool(); loadMonitoringStatus(); updateChainStats(); updateRecentBlocks(); }
+    if(currentTab === 'overview') { loadMempool(); loadMonitoringStatus(); updateChainStats(); updateRecentBlocks(); updateTopWallets(); }
     if(currentTab === 'controls') { loadMinerPerformance(); loadDepGraphControls(); }
     updateMainnetMetrics(statusData);
     updatePayouts(statusData.pool, statusData.topology);
@@ -1209,6 +1209,22 @@ async function updateChainStats(){
       const pct = (data.estimated_circulating_zion / data.total_supply_zion * 100);
       set('chain-supply-pct', pct.toFixed(4) + '%');
     }
+
+    // Emission rate (K ZION/day) = block_reward * blocks_per_hour * 24 / 1000
+    if(data.block_reward_zion && blocks.length >= 2){
+      const recent = blocks.slice(-10);
+      const dts = [];
+      for(let i = 1; i < recent.length; i++){
+        dts.push(recent[i].timestamp - recent[i-1].timestamp);
+      }
+      const avgDt = dts.reduce((a,b) => a+b, 0) / dts.length;
+      if(avgDt > 0){
+        const blocksPerHour = 3600 / avgDt;
+        const emissionPerDay = data.block_reward_zion * blocksPerHour * 24 / 1000;
+        set('chain-emission', emissionPerDay.toFixed(1));
+        set('chain-blocks-hr', blocksPerHour.toFixed(1));
+      }
+    }
   } catch(e){
     console.error('updateChainStats error:', e);
   }
@@ -1249,6 +1265,43 @@ async function updateRecentBlocks(){
     }).join('');
   } catch(e){
     console.error('updateRecentBlocks error:', e);
+  }
+}
+
+async function updateTopWallets(){
+  try {
+    const data = await fetch('/api/wallets').then(r => r.ok ? r.json() : null);
+    if(!data) return;
+    const wallets = (data.wallets || []).slice().sort((a, b) => (b.balance_zion || 0) - (a.balance_zion || 0));
+    const tbody = document.getElementById('top-wallets-tbody');
+    const badge = document.getElementById('top-wallets-badge');
+    if(!tbody) return;
+
+    if(badge){
+      badge.textContent = wallets.length + ' wallets';
+      badge.className = 'text-xs px-2 py-0.5 rounded-full bg-emerald-700 text-emerald-300';
+    }
+
+    if(wallets.length === 0){
+      tbody.innerHTML = '<tr><td colspan="3" class="text-gray-500 text-center py-4">No wallets</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = wallets.slice(0, 8).map(w => {
+      const addrShort = w.address ? w.address.substring(0, 20) + '…' : '—';
+      const label = (w.label || '—').substring(0, 35);
+      const bal = w.balance_zion || 0;
+      const balStr = bal >= 1e9 ? (bal / 1e9).toFixed(2) + 'B' : bal >= 1e6 ? (bal / 1e6).toFixed(2) + 'M' : bal >= 1e3 ? (bal / 1e3).toFixed(1) + 'K' : bal.toFixed(1);
+      const cat = w.category || '';
+      const catColor = cat === 'premine' ? 'text-purple-400' : cat === 'operational' ? 'text-cyan-400' : 'text-gray-400';
+      return `<tr class="border-b border-white/5 hover:bg-white/5 transition">
+        <td class="py-1.5 px-2"><span class="text-white">${label}</span> <span class="${catColor} text-[9px]">(${cat})</span></td>
+        <td class="py-1.5 px-2 font-mono text-gray-400 text-[10px]">${addrShort}</td>
+        <td class="py-1.5 px-2 text-right text-emerald-400 font-bold font-mono">${balStr}</td>
+      </tr>`;
+    }).join('');
+  } catch(e){
+    console.error('updateTopWallets error:', e);
   }
 }
 
