@@ -133,7 +133,7 @@ function switchTab(name){
   });
 
   // ── Auto-refresh timers ─────────────────────────────────────────────
-  if(name === 'overview'){ loadMempool(); loadMonitoringStatus(); updateChainStats(); }
+  if(name === 'overview'){ loadMempool(); loadMonitoringStatus(); updateChainStats(); updateRecentBlocks(); }
   if(name === 'alerts'){ clearTabTimers('alerts'); loadAlertHistory(); if(!_alertsTimer) _alertsTimer = setInterval(loadAlertHistory, 8000); }
   else if(name === 'services'){ clearTabTimers('services'); loadServices(); if(!_servicesTimer) _servicesTimer = setInterval(loadServices, 5000); }
   else if(name === 'nodes'){ clearTabTimers('nodes'); loadCliNodeStatus(); if(!_nodesTimer) _nodesTimer = setInterval(loadCliNodeStatus, 6000); }
@@ -277,7 +277,7 @@ async function refreshAll(){
     if(currentTab === 'wallets') { loadWallets(); loadWalletStatus(); }
     if(currentTab === 'explorer') loadExplorer();
     if(currentTab === 'hiran') loadAiStatus();
-    if(currentTab === 'overview') { loadMempool(); loadMonitoringStatus(); updateChainStats(); }
+    if(currentTab === 'overview') { loadMempool(); loadMonitoringStatus(); updateChainStats(); updateRecentBlocks(); }
     if(currentTab === 'controls') { loadMinerPerformance(); loadDepGraphControls(); }
     updateMainnetMetrics(statusData);
     updatePayouts(statusData.pool, statusData.topology);
@@ -1133,8 +1133,8 @@ async function updateChainStats(){
 
     // Difficulty (from most recent block)
     const blocks = data.recent_blocks || [];
-    if(blocks.length > 0){
-      const latest = blocks[blocks.length - 1];
+    const latest = blocks.length > 0 ? blocks[blocks.length - 1] : null;
+    if(latest){
       set('chain-difficulty', latest.difficulty ? latest.difficulty.toLocaleString() : '—');
     }
 
@@ -1147,6 +1147,18 @@ async function updateChainStats(){
       }
       const avgDt = totalDt / (recent.length - 1);
       set('chain-block-time', avgDt > 0 ? avgDt.toFixed(1) + 's' : '—');
+
+      // Network hashrate estimate = difficulty / avg_block_time (H/s)
+      if(latest && latest.difficulty && avgDt > 0){
+        const netHashrate = latest.difficulty / avgDt;
+        if(netHashrate >= 1e6){
+          set('chain-net-hashrate', (netHashrate / 1e6).toFixed(2) + ' MH/s');
+        } else if(netHashrate >= 1e3){
+          set('chain-net-hashrate', (netHashrate / 1e3).toFixed(2) + ' KH/s');
+        } else {
+          set('chain-net-hashrate', netHashrate.toFixed(1) + ' H/s');
+        }
+      }
     }
 
     // Mined so far
@@ -1165,6 +1177,44 @@ async function updateChainStats(){
     }
   } catch(e){
     console.error('updateChainStats error:', e);
+  }
+}
+
+async function updateRecentBlocks(){
+  try {
+    const data = await fetch('/api/explorer').then(r => r.ok ? r.json() : null);
+    if(!data) return;
+    const blocks = data.recent_blocks || [];
+    const tbody = document.getElementById('recent-blocks-tbody');
+    const badge = document.getElementById('recent-blocks-badge');
+    if(!tbody) return;
+
+    if(badge){
+      badge.textContent = blocks.length + ' blocks';
+      badge.className = 'text-xs px-2 py-0.5 rounded-full bg-emerald-700 text-emerald-300';
+    }
+
+    if(blocks.length === 0){
+      tbody.innerHTML = '<tr><td colspan="5" class="text-gray-500 text-center py-4">No blocks yet</td></tr>';
+      return;
+    }
+
+    // Show newest first
+    const sorted = blocks.slice().reverse();
+    tbody.innerHTML = sorted.map(b => {
+      const hashShort = b.hash ? b.hash.substring(0, 16) + '…' : '—';
+      const ts = b.timestamp ? new Date(b.timestamp * 1000).toLocaleTimeString('en-GB') : '—';
+      const diff = b.difficulty ? b.difficulty.toLocaleString() : '—';
+      return `<tr class="border-b border-white/5 hover:bg-white/5 transition">
+        <td class="py-1.5 px-2 font-bold text-cyan-400">${b.height}</td>
+        <td class="py-1.5 px-2 font-mono text-gray-400 text-[10px]">${hashShort}</td>
+        <td class="py-1.5 px-2 text-right text-white">${b.tx_count ?? '—'}</td>
+        <td class="py-1.5 px-2 text-right text-amber-400 font-mono">${diff}</td>
+        <td class="py-1.5 px-2 text-right text-gray-400 font-mono">${ts}</td>
+      </tr>`;
+    }).join('');
+  } catch(e){
+    console.error('updateRecentBlocks error:', e);
   }
 }
 
@@ -3601,7 +3651,7 @@ async function renderWizard(){
     { n: 2, title: 'Start Local Backup Node', desc: 'Syncs from Edge primary via Tailscale VPN. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).', done: C('node1')?.ok, actions: [{ label: '▶ Start Backup Node', control: 'start-node1' }] },
     { n: 3, title: 'Connect to Edge Pool', desc: 'Edge (62.171.141.136) runs the primary pool. Verify VPN connectivity.', done: C('pool-edge')?.ok, actions: [{ label: 'Check Edge Pool', tab: 'overview' }] },
     { n: 4, title: 'Start GPU Miner', desc: 'Connects to Edge pool, performs cosmic_harmony hashing on GPU.', done: C('miner')?.ok, actions: [{ label: '▶ Start Miner', control: 'start-miner' }] },
-    { n: 5, title: 'Start Monitoring', desc: 'Launch Prometheus + Grafana via Docker for metrics dashboards.', done: false, actions: [{ label: '▶ Start Monitoring', control: 'start-monitoring' }, { label: 'Open Grafana', href: 'http://62.171.141.136:3100' }] },
+    { n: 5, title: 'Pool Metrics', desc: 'Built-in Prometheus exposition on port 8455 — no external monitoring needed.', done: C('pool-edge')?.ok, actions: [{ label: 'Open Pool Metrics', href: 'http://62.171.141.136:8455' }] },
     { n: 6, title: 'Verify chain progression', desc: 'Confirm local backup node syncs with Edge and chain height advances.', done: C('chain')?.ok, actions: [{ label: 'View events', tab: 'events' }] },
     { n: 7, title: 'Confirm fee split & payouts', desc: 'Validate 89/5/5 burn-model distribution and payout wallet funded.', done: C('fee_split')?.ok && C('payout')?.ok, actions: [{ label: 'View payouts', tab: 'overview' }] },
   ] : [
@@ -3609,7 +3659,7 @@ async function renderWizard(){
     { n: 2, title: 'Start Genesis Node', desc: 'Local genesis node. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).', done: C('node1')?.ok, actions: [{ label: '▶ Start Node', control: 'start-node1' }] },
     { n: 3, title: 'Start Local Pool', desc: 'Accepts miners, validates shares, distributes payouts (89/5/5 burn model).', done: C('pool')?.ok, actions: [{ label: '▶ Start Pool', control: 'start-pool' }] },
     { n: 4, title: 'Start GPU Miner', desc: 'Connects to local pool, performs cosmic_harmony hashing on GPU.', done: C('miner')?.ok, actions: [{ label: '▶ Start Miner', control: 'start-miner' }] },
-    { n: 5, title: 'Start Monitoring', desc: 'Launch Prometheus + Grafana via Docker for metrics dashboards.', done: false, actions: [{ label: '▶ Start Monitoring', control: 'start-monitoring' }, { label: 'Open Grafana', href: 'http://62.171.141.136:3100' }] },
+    { n: 5, title: 'Pool Metrics', desc: 'Built-in Prometheus exposition on port 8455 — no external monitoring needed.', done: C('pool')?.ok, actions: [{ label: 'Open Pool Metrics', href: 'http://62.171.141.136:8455' }] },
     { n: 6, title: 'Verify chain progression', desc: 'Confirm node is mining and chain height advances.', done: C('chain')?.ok, actions: [{ label: 'View events', tab: 'events' }] },
     { n: 7, title: 'Confirm fee split & payouts', desc: 'Validate 89/5/5 burn-model distribution and payout wallet funded.', done: C('fee_split')?.ok && C('payout')?.ok, actions: [{ label: 'View payouts', tab: 'overview' }] },
   ];

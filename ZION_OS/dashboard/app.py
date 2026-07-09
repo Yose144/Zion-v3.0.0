@@ -6020,16 +6020,13 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
       </div>
       <div class="mt-6">
         <div class="flex items-center justify-between mb-2">
-          <h3 class="text-sm font-bold uppercase tracking-wider text-gray-300">Grafana Dashboard</h3>
+          <h3 class="text-sm font-bold uppercase tracking-wider text-gray-300">Pool Metrics Endpoint</h3>
           <div class="flex gap-2">
-            <a href="http://127.0.0.1:3100" target="_blank" class="text-xs px-3 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">Open Grafana ↗</a>
-            <a href="http://127.0.0.1:9090" target="_blank" class="text-xs px-3 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">Open Prometheus ↗</a>
-            <button onclick="controlAction('start-monitoring')" class="text-xs px-3 py-1 bg-emerald-700 hover:bg-emerald-600 rounded transition">▶ Start Monitoring</button>
+            <a href="http://127.0.0.1:8455" target="_blank" class="text-xs px-3 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">Open Pool Metrics ↗</a>
           </div>
         </div>
-        <iframe src="http://127.0.0.1:3100" id="grafana-iframe" class="w-full bg-zion-900 rounded-lg border border-zion-700" style="height:600px" onerror="this.style.display='none'" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
-        <div id="grafana-offline" class="hidden text-center text-gray-500 text-sm py-12">
-          Grafana not running. Click <button onclick="controlAction('start-monitoring')" class="text-amber-400 underline">▶ Start Monitoring</button> to launch Prometheus + Grafana via Docker.
+        <div class="text-center text-gray-500 text-sm py-12">
+          Pool metrics available at <a href="http://127.0.0.1:8455" target="_blank" class="text-teal-400 underline">127.0.0.1:8455/metrics</a> — Prometheus exposition format, no external Grafana needed.
         </div>
       </div>
     </div>

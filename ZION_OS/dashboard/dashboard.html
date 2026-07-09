@@ -601,7 +601,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <div class="flex items-center gap-2">
           <span id="badge-edge-server" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
           <button onclick="refreshEdgeServerCard(true); updateEdgeHealth();" class="text-[10px] px-2.5 py-1 bg-zinc-700/50 hover:bg-zinc-600 rounded-md font-semibold transition" title="Force refresh">⟳</button>
-          <a href="http://62.171.141.136:3100" target="_blank" class="text-[10px] px-2.5 py-1 bg-purple-700/40 hover:bg-purple-600/60 rounded-md font-semibold transition text-purple-300">📊 Grafana</a>
+          <a href="http://62.171.141.136:8455" target="_blank" class="text-[10px] px-2.5 py-1 bg-teal-700/40 hover:bg-teal-600/60 rounded-md font-semibold transition text-teal-300">📈 Pool Metrics</a>
         </div>
       </div>
 
@@ -710,7 +710,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
         <div class="text-[10px] text-gray-500 uppercase tracking-wider">External Links</div>
         <div class="flex flex-wrap gap-2">
-          <a href="http://62.171.141.136:9090" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-orange-700/40 hover:bg-orange-600/60 border border-orange-500/30 rounded-md font-semibold transition text-orange-300">🔥 Prometheus</a>
+          <a href="https://dashboard.zionterranova.com" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-orange-700/40 hover:bg-orange-600/60 border border-orange-500/30 rounded-md font-semibold transition text-orange-300">📊 Dashboard</a>
           <a href="https://zionterranova.com" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-indigo-700/40 hover:bg-indigo-600/60 border border-indigo-500/30 rounded-md font-semibold transition text-indigo-300">🌐 Website</a>
           <a href="http://62.171.141.136:8455" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-teal-700/40 hover:bg-teal-600/60 border border-teal-500/30 rounded-md font-semibold transition text-teal-300">📈 Pool Metrics</a>
         </div>
@@ -1094,7 +1094,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <h2 class="text-base font-bold flex items-center gap-2">⛓️ Chain Stats</h2>
         <span id="chain-stats-badge" class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">Loading…</span>
       </div>
-      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
         <div class="bg-black/30 rounded-lg p-3 text-center">
           <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Block Time</div>
           <div id="chain-block-time" class="text-xl font-bold text-cyan-400">—</div>
@@ -1111,6 +1111,11 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           <div class="text-[10px] text-gray-500 mt-0.5">ZION / block</div>
         </div>
         <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Net Hashrate</div>
+          <div id="chain-net-hashrate" class="text-xl font-bold text-pink-400">—</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">estimated</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center">
           <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Mined</div>
           <div id="chain-mined" class="text-xl font-bold text-zion-gold">—</div>
           <div class="text-[10px] text-gray-500 mt-0.5">ZION total</div>
@@ -1125,6 +1130,33 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           <div id="chain-supply-pct" class="text-xl font-bold text-blue-400">—</div>
           <div class="text-[10px] text-gray-500 mt-0.5">% of 144B</div>
         </div>
+      </div>
+    </div>
+
+    <!-- Recent Blocks Feed -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold flex items-center gap-2">🧱 Recent Blocks</h2>
+        <div class="flex items-center gap-2">
+          <span id="recent-blocks-badge" class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">—</span>
+          <button onclick="updateRecentBlocks()" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">⟳</button>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs text-left">
+          <thead>
+            <tr class="text-gray-500 border-b border-white/10">
+              <th class="py-2 px-2">Height</th>
+              <th class="py-2 px-2">Hash</th>
+              <th class="py-2 px-2 text-right">TXs</th>
+              <th class="py-2 px-2 text-right">Difficulty</th>
+              <th class="py-2 px-2 text-right">Time</th>
+            </tr>
+          </thead>
+          <tbody id="recent-blocks-tbody">
+            <tr><td colspan="5" class="text-gray-500 text-center py-4">Loading blocks…</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -3386,21 +3418,19 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <div id="metrics-collector" class="text-gray-500 italic text-xs">Loading collector snapshot…</div>
       </div>
       <div class="flex items-center justify-between mb-3">
-        <h3 class="zion-kicker">Grafana Dashboard</h3>
+        <h3 class="zion-kicker">Pool Metrics Endpoint</h3>
         <div class="flex gap-2">
-          <a href="http://62.171.141.136:3100" target="_blank" class="zion-button-secondary text-xs">Open Grafana ↗</a>
-          <a href="http://62.171.141.136:9090" target="_blank" class="zion-button-secondary text-xs">Open Prometheus ↗</a>
+          <a href="http://62.171.141.136:8455" target="_blank" class="zion-button-secondary text-xs">Open Pool Metrics ↗</a>
           <a href="http://127.0.0.1:8766" target="_blank" class="zion-button-secondary text-xs">Dashboard ↗</a>
-          <button onclick="controlAction('start-monitoring')" class="zion-button-secondary text-xs" style="color:#86efac;">▶ Start Monitoring</button>
         </div>
       </div>
       <div class="rounded-xl border border-white/10 bg-black/40 p-4 text-sm text-gray-400">
         <div class="flex items-center justify-between gap-3 flex-wrap">
           <div>
-            <div class="font-semibold text-gray-200">Grafana embedding is unavailable here</div>
-            <div class="text-xs text-gray-500 mt-1">This host blocks inline frames for Grafana, so the dashboard uses a safe fallback instead.</div>
+            <div class="font-semibold text-gray-200">Built-in Prometheus exposition format</div>
+            <div class="text-xs text-gray-500 mt-1">Pool scraper exposes metrics on port 8455 — no external Prometheus/Grafana needed.</div>
           </div>
-          <a href="http://62.171.141.136:3100" target="_blank" class="zion-button-secondary text-xs">Open Grafana ↗</a>
+          <a href="http://62.171.141.136:8455" target="_blank" class="zion-button-secondary text-xs">Open Pool Metrics ↗</a>
         </div>
       </div>
     </div>
@@ -5279,7 +5309,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=83"></script>
+<script src="/dashboard.js?v=84"></script>
 <script>
 // ═══ ZION Theme — Auto-apply accent colors per pane ═══
 (function(){
