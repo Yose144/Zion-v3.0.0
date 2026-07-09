@@ -1,3 +1,4 @@
+import os
 """
 ZION Enhanced Mining Pool - Advanced Stratum server with share validation
 Production-ready mining pool with real-time statistics and payout system
@@ -220,7 +221,7 @@ class ZionMiningPool:
                 host="localhost",
                 database="zion_pool",
                 user="zion",
-                password="zion_db_2675"
+                password=os.environ.get("ZION_DB_PASSWORD", "")
             )
             self.logger.info("Connected to PostgreSQL")
             

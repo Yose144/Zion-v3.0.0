@@ -1,3 +1,4 @@
+import os
 #!/usr/bin/env python3
 """
 Vega Rig Autopilot — 60-minute autonomous debug & tune cycle.
@@ -9,7 +10,7 @@ import json, time, sys, urllib.request, urllib.error, base64, re
 from datetime import datetime, timezone
 
 API = "https://api.simplemining.net"
-TOKEN = "api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8"
+TOKEN = os.environ.get("SIMPLEMINING_API_TOKEN", "")
 RIG = 518837
 GROUP = 1765707
 BASH_CMD_ID = 7

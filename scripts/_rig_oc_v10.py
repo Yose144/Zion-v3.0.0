@@ -1,3 +1,4 @@
+import os
 #!/usr/bin/env python3
 """
 Vega OC v10 - push higher: Core=1250 VDDC=975 → target ~220W, ~18 MH/s
@@ -6,7 +7,7 @@ Previous best: CC=1197 MC=950 P=198W → 17.17 MH/s
 import requests, json, time, base64, re
 
 API = "https://api.simplemining.net"
-TOKEN = "api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8"
+TOKEN = os.environ.get("SIMPLEMINING_API_TOKEN", "")
 RIG = 518837
 
 H_JSON = {"X-AUTH-TOKEN": TOKEN, "Content-Type": "application/json"}
