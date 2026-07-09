@@ -1,7 +1,7 @@
-export const SITE_VERSION = 'v3.0.4';
+export const SITE_VERSION = 'v3.0.5';
 export const SITE_RELEASE_NAME = 'from genesis to the star';
 export const SITE_RELEASE_LABEL = `${SITE_VERSION} "${SITE_RELEASE_NAME}"`;
-export const SITE_RUNTIME_VERSION = 'v3.0.4';
+export const SITE_RUNTIME_VERSION = 'v3.0.5';
 export const SITE_RUNTIME_NAME = 'Deeksha/Ekam canonical · 6-decimal flowers';
 export const SITE_RUNTIME_LABEL = `${SITE_RUNTIME_VERSION} ${SITE_RUNTIME_NAME}`;
 export const SITE_ENVIRONMENT_LABEL = 'V3 Mainnet';

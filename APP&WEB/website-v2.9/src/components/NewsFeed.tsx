@@ -24,17 +24,17 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
-    slug: '3.0.4-mainnet-beta-github-public',
+    slug: '3.0.5-all-green-mainnet-beta-github-public',
     date: '2026-07-09',
     tag: { cs: 'Security', en: 'Security' },
     tagColor: 'text-rose-400',
     title: {
-      cs: 'ZION 3.0.4 Mainnet Beta — hard reset po bezpečnostním incidentu, zdrojový kód veřejně na GitHubu',
-      en: 'ZION 3.0.4 Mainnet Beta — hard reset after security incident, source code now public on GitHub',
+      cs: 'ZION 3.0.5 "All Green" Mainnet Beta — hard reset po hacku, 11/11 služeb aktivních, zdroj na GitHubu',
+      en: 'ZION 3.0.5 "All Green" Mainnet Beta — hard reset after hack, 11/11 services active, source on GitHub',
     },
     summary: {
-      cs: 'Po bezpečnostním incidentu (ZION-2026-001 až 005: padělané P2P podpisy, neomezená inflace F5, expozice serveru) jsme provedli kompletní hard genesis reset (6. 7. 2026). Nový genesis hash 4f75a0df…, všech 14 premine + 5 kanonických + bridge vault adres regenerováno z BIP39 mnemonik (air-gapped). 7 DeFi kontraktů na Base Mainnet ověřeno na Basescan (7/7). 5/5 EVM bridge validátorů, 6 chainů aktivních. WARP bridge pokrývá 13 chain rodin. ZION nyní běží jako Mainnet Beta — veřejný launch zůstává naplánován na 31. 12. 2026. Zdrojový kód hlavní sítě je nyní veřejně dostupný: github.com/Zion-TerraNova/v3-Mainnet.',
-      en: 'Following a security incident (ZION-2026-001 through 005: forged P2P signatures, unlimited inflation F5, server exposure) we performed a complete hard genesis reset (6 Jul 2026). New genesis hash 4f75a0df…, all 14 premine + 5 canonical + bridge vault addresses regenerated from BIP39 mnemonics (air-gapped). 7 DeFi contracts on Base Mainnet verified on Basescan (7/7). 5/5 EVM bridge validators, 6 chains active. WARP bridge covers 13 chain families. ZION now runs as Mainnet Beta — public launch remains scheduled for 31 Dec 2026. The mainnet source code is now publicly available: github.com/Zion-TerraNova/v3-Mainnet.',
+      cs: 'Po bezpečnostním incidentu (ZION-2026-001 až 005: padělané P2P podpisy, neomezená inflace F5, expozice serveru) jsme provedli kompletní hard genesis reset (6. 7. 2026) a následný 3.0.5 "All Green" upgrade (9. 7. 2026). Nový genesis hash 4f75a0df…, všech 14 premine + 5 kanonických + bridge vault adres regenerováno z BIP39 mnemonik (air-gapped). 7 DeFi kontraktů na Base Mainnet ověřeno na Basescan (7/7). 5/5 EVM bridge validátorů, 6 chainů aktivních. WARP bridge pokrývá 13 chain rodin. 11/11 služeb aktivních, protocol 3.0.5, E2E memo testy potvrzeny. ZION běží jako Mainnet Beta — veřejný launch 31. 12. 2026. Těžba na vlastní nebezpečí. Zdrojový kód: github.com/Zion-TerraNova/v3-Mainnet.',
+      en: 'Following a security incident (ZION-2026-001 through 005: forged P2P signatures, unlimited inflation F5, server exposure) we performed a complete hard genesis reset (6 Jul 2026) and subsequent 3.0.5 "All Green" upgrade (9 Jul 2026). New genesis hash 4f75a0df…, all 14 premine + 5 canonical + bridge vault addresses regenerated from BIP39 mnemonics (air-gapped). 7 DeFi contracts on Base Mainnet verified on Basescan (7/7). 5/5 EVM bridge validators, 6 chains active. WARP bridge covers 13 chain families. 11/11 services active, protocol 3.0.5, E2E memo tests confirmed. ZION runs as Mainnet Beta — public launch 31 Dec 2026. Mining at your own risk. Source code: github.com/Zion-TerraNova/v3-Mainnet.',
     },
     href: 'https://github.com/Zion-TerraNova/v3-Mainnet/tree/main',
     external: true,

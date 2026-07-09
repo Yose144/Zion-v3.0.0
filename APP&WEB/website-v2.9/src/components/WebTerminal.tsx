@@ -126,7 +126,7 @@ The Golden Age begins. Peace & One Love 4ever.
 `;
 
 const WELCOME_TEXT = `${GENESIS_BANNER}
-ZION Web CLI v2.1.0 — v3.0.4 mainnet
+ZION Web CLI v2.1.0 — v3.0.5 mainnet
 6-decimal flowers (1 ZION = 1,000,000 flowers)
 Fee split: 89% miner / 5% humanitarian / 5% Issobella / 1% burned
 Type "help" or "?" for all commands. Press Tab for autocomplete.`;
