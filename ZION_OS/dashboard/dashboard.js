@@ -1078,7 +1078,7 @@ function updatePayouts(p, topology){
       : '<div class="text-gray-600 italic text-[10px]">No payout events yet</div>';
   }
 
-  // Fetch balance from /api/payout for overview panel
+  // Fetch balance + PPLNS from /api/payout for overview panel
   fetch('/api/payout')
     .then(r => r.ok ? r.json() : null)
     .then(pay => {
@@ -1086,6 +1086,21 @@ function updatePayouts(p, topology){
       const balEl = document.getElementById('payout-balance');
       if(balEl && pay.pool_wallet_balance != null){
         balEl.textContent = formatFlowers(pay.pool_wallet_balance);
+      }
+      // PPLNS stats
+      const ps = pay.pool_stats || {};
+      const pplns = ps.pplns || {};
+      const roundsEl = document.getElementById('payout-pplns-rounds');
+      if(roundsEl) roundsEl.textContent = pplns.payout_rounds ?? '—';
+      const paidEl = document.getElementById('payout-pplns-paid');
+      if(paidEl && pplns.total_paid_flowers != null){
+        const zion = pplns.total_paid_flowers / 1_000_000;
+        paidEl.textContent = _zionFmt(zion) + ' ZION';
+      }
+      const unpaidEl = document.getElementById('payout-pplns-unpaid');
+      if(unpaidEl && pplns.total_unpaid_flowers != null){
+        const zion = pplns.total_unpaid_flowers / 1_000_000;
+        unpaidEl.textContent = _zionFmt(zion) + ' ZION';
       }
     })
     .catch(() => {});
