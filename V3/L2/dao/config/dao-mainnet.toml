@@ -14,7 +14,7 @@ api_key  = ""             # set ZION_DAO_API_KEY env var for production
 
 # ── Database ─────────────────────────────────────────────────────────────────
 
-db_path = "/data/dao/dao.db"
+db_path = "/data/zion/dao-mainnet.db"
 
 # ── L1 Connection ────────────────────────────────────────────────────────────
 

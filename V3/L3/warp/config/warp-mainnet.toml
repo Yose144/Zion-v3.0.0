@@ -4,7 +4,7 @@
 node_id = "zion-edge-warp"
 listen_addr = "0.0.0.0"
 listen_port = 8453
-database_path = "data/warp-mainnet.db"
+database_path = "/data/zion/warp-mainnet.db"
 quorum = 3
 daily_limit_zion = 10000000
 timelock_threshold_zion = 1000000
