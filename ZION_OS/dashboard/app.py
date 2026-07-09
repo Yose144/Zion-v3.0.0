@@ -684,6 +684,8 @@ def get_monitoring_status() -> dict:
     result = {
         "prometheus": {"url": f"http://{metrics_host}:{metrics_port}/metrics", "alive": False, "version": None, "targets_up": 0, "targets_total": 0},
         "grafana": {"url": "built-in", "alive": True, "version": "dashboard", "database": "internal"},
+        "pool_metrics": {"url": f"http://{metrics_host}:{metrics_port}/metrics", "alive": False, "hashrate": "0 H/s", "shares": 0, "active_sessions": 0, "miners_tracked": 0, "blocks_found": 0, "accepted": 0, "rejected": 0, "submits": 0},
+        "built_in_charts": {"alive": True, "version": "dashboard", "database": "internal"},
         "timestamp": now,
     }
 
@@ -692,22 +694,46 @@ def get_monitoring_status() -> dict:
         r = urllib.request.urlopen(f"http://{metrics_host}:{metrics_port}/metrics", timeout=3)
         body = r.read().decode("utf-8", errors="ignore")
         result["prometheus"]["alive"] = True
+        result["pool_metrics"]["alive"] = True
         shares = 0
         hashrate_hps = 0.0
+        accepted = 0
+        rejected = 0
+        active_sessions = 0
+        miners_tracked = 0
+        blocks_found = 0
+        submits = 0
         for line in body.splitlines():
             line = line.strip()
             if line.startswith("zion_pool_active_sessions "):
-                result["prometheus"]["targets_up"] = int(float(line.split()[-1]))
+                active_sessions = int(float(line.split()[-1]))
+                result["prometheus"]["targets_up"] = active_sessions
             elif line.startswith("zion_pool_miners_tracked "):
-                result["prometheus"]["targets_total"] = int(float(line.split()[-1]))
+                miners_tracked = int(float(line.split()[-1]))
+                result["prometheus"]["targets_total"] = miners_tracked
             elif line.startswith("zion_pool_accepted_total "):
-                shares += int(float(line.split()[-1]))
+                accepted = int(float(line.split()[-1]))
+                shares += accepted
             elif line.startswith("zion_pool_rejected_total "):
-                shares += int(float(line.split()[-1]))
+                rejected = int(float(line.split()[-1]))
+                shares += rejected
             elif line.startswith("zion_pool_hashrate_hps "):
                 hashrate_hps = float(line.split()[-1])
-        result["prometheus"]["version"] = f"{max(0, hashrate_hps)/1000:.1f} KH/s"
+            elif line.startswith("zion_pool_blocks_found "):
+                blocks_found = int(float(line.split()[-1]))
+            elif line.startswith("zion_pool_submits_total "):
+                submits = int(float(line.split()[-1]))
+        hr_str = f"{hashrate_hps/1000:.1f} KH/s" if hashrate_hps >= 1000 else f"{hashrate_hps:.1f} H/s"
+        result["prometheus"]["version"] = hr_str
         result["prometheus"]["shares"] = shares
+        result["pool_metrics"]["hashrate"] = hr_str
+        result["pool_metrics"]["shares"] = shares
+        result["pool_metrics"]["active_sessions"] = active_sessions
+        result["pool_metrics"]["miners_tracked"] = miners_tracked
+        result["pool_metrics"]["blocks_found"] = blocks_found
+        result["pool_metrics"]["accepted"] = accepted
+        result["pool_metrics"]["rejected"] = rejected
+        result["pool_metrics"]["submits"] = submits
     except Exception:
         pass
 
@@ -4168,12 +4194,12 @@ def get_pool_miners() -> dict:
 
 def get_backup_status() -> dict:
     r"""List backups + datadir sizes + last backup time.
-    Reads both manual backups (repo/backups) and auto-backups (C:\ZION-AutoBackups)."""
+    Reads both manual backups (repo/backups) and auto-backups (repo/backups/auto)."""
     manual_backups = []
     manual_dir = REPO_ROOT / "backups"
     total_backup_mb = 0
     if manual_dir.exists():
-        for f in sorted(manual_dir.glob("backup_*.zip"), key=lambda p: p.stat().st_mtime, reverse=True):
+        for f in sorted(manual_dir.glob("backup_*.tar.gz"), key=lambda p: p.stat().st_mtime, reverse=True):
             s = f.stat()
             size_mb = round(s.st_size / (1024*1024), 2)
             total_backup_mb += size_mb
@@ -4182,11 +4208,11 @@ def get_backup_status() -> dict:
                 "size_mb": size_mb,
                 "created": datetime.fromtimestamp(s.st_mtime).isoformat(),
             })
-    # Auto-backups
+    # Auto-backups (Linux path — was C:/ZION-AutoBackups on Windows)
     auto_backups = []
-    auto_dir = Path("C:/ZION-AutoBackups")
+    auto_dir = REPO_ROOT / "backups" / "auto"
     if auto_dir.exists():
-        for f in sorted(auto_dir.glob("zion-auto-*.zip"), key=lambda p: p.stat().st_mtime, reverse=True):
+        for f in sorted(auto_dir.glob("zion-auto-*.tar.gz"), key=lambda p: p.stat().st_mtime, reverse=True):
             s = f.stat()
             size_mb = round(s.st_size / (1024*1024), 2)
             total_backup_mb += size_mb
@@ -4195,14 +4221,34 @@ def get_backup_status() -> dict:
                 "size_mb": size_mb,
                 "created": datetime.fromtimestamp(s.st_mtime).isoformat(),
             })
-    # Datadir sizes
+    # Datadir sizes — per-service DB files (not all pointing to V3/data)
+    _data_dir = REPO_ROOT / "V3" / "data"
     datadirs = {}
-    for name, path in [("node1", REPO_ROOT / "V3" / "data"), ("node2", REPO_ROOT / "V3" / "data"), ("pool", REPO_ROOT / "V3" / "data"), ("dashboard", REPO_ROOT / "ZION_OS" / "dashboard")]:
-        if path.exists():
-            try:
-                total = sum(f.stat().st_size for f in path.rglob("*") if f.is_file())
-                datadirs[name] = round(total / (1024*1024), 2)
-            except Exception:
+    _db_map = {
+        "node1": "zion-node-state.db",
+        "node2": "zion-node2-state.db",
+        "pool": None,  # pool uses edge-state, tracked via node1
+        "dashboard": None,
+    }
+    for name, dbfile in _db_map.items():
+        if name == "dashboard":
+            dpath = REPO_ROOT / "ZION_OS" / "dashboard"
+            if dpath.exists():
+                try:
+                    total = sum(f.stat().st_size for f in dpath.rglob("*") if f.is_file())
+                    datadirs[name] = round(total / (1024*1024), 2)
+                except Exception:
+                    datadirs[name] = None
+            else:
+                datadirs[name] = None
+        elif dbfile:
+            fpath = _data_dir / dbfile
+            if fpath.exists():
+                try:
+                    datadirs[name] = round(fpath.stat().st_size / (1024*1024), 2)
+                except Exception:
+                    datadirs[name] = None
+            else:
                 datadirs[name] = None
         else:
             datadirs[name] = None
