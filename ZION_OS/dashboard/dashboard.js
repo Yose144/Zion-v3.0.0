@@ -8905,16 +8905,19 @@ async function loadWarpPanel(){
     setText('warp-transfer-count', transfersResp.total || transfersData.length || 0);
 
     const chainsBody = document.getElementById('warp-chains-body');
+    const chainCountBadge = document.getElementById('warp-chain-count-badge');
+    if(chainCountBadge) chainCountBadge.textContent = `(${chainsData.length})`;
     if(chainsBody){
       if(Array.isArray(chainsData) && chainsData.length){
         chainsBody.innerHTML = chainsData.map(c => `
           <tr class="border-b border-white/5 hover:bg-white/5">
-            <td class="py-2 px-2 font-mono text-emerald-400">${escapeHtml(c.family || c.chain_id || c.id || '—')}</td>
-            <td class="py-2 px-2">${escapeHtml(c.name || '—')}</td>
-            <td class="py-2 px-2 text-right">${escapeHtml(c.decimals !== undefined ? c.decimals : '—')}</td>
+            <td class="py-2 px-2 font-mono text-emerald-400">${escapeHtml(c.name || c.id || '—')}</td>
+            <td class="py-2 px-2 text-gray-300">${escapeHtml(c.family || '—')}</td>
+            <td class="py-2 px-2 text-right text-gray-400">${c.decimals !== undefined ? c.decimals : '—'}</td>
+            <td class="py-2 px-2 text-right text-gray-400">${c.finality_blocks !== undefined ? c.finality_blocks + ' blk' : '—'}</td>
           </tr>`).join('');
       } else {
-        chainsBody.innerHTML = '<tr><td colspan="3" class="py-4 text-gray-500 italic text-center">No chains connected.</td></tr>';
+        chainsBody.innerHTML = '<tr><td colspan="4" class="py-4 text-gray-500 italic text-center">No chains connected.</td></tr>';
       }
     }
 

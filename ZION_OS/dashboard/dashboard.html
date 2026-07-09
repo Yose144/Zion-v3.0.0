@@ -2398,7 +2398,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   <!-- ═════════ TAB: L1 Consensus ═════════ -->
   <div id="pane-l1" class="hidden space-y-4">
   <!-- L1 real-data header bar -->
-  <div id="l1-realtime-bar" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-2">
+  <div id="l1-realtime-bar" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 gap-3 mb-2">
     <div class="zion-panel p-3 text-center"><div class="text-lg font-bold text-emerald-400" id="l1-rt-height">—</div><div class="text-[10px] text-gray-400">Block Height</div></div>
     <div class="zion-panel p-3 text-center"><div class="text-lg font-bold text-blue-400" id="l1-rt-peers">—</div><div class="text-[10px] text-gray-400">Peers</div></div>
     <div class="zion-panel p-3 text-center"><div class="text-lg font-bold text-amber-400" id="l1-rt-hashrate">—</div><div class="text-[10px] text-gray-400">Hashrate</div></div>
@@ -4428,8 +4428,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
     <div class="zion-panel p-6">
       <!-- Status row -->
-
-      <!-- Status row -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
         <div class="zion-panel p-3 flex items-center justify-between">
           <div>
@@ -5024,19 +5022,11 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: DAO Governance (inside main) ═════════ -->
 <div id="pane-dao" class="hidden space-y-5">
-  <div class="flex items-center justify-between">
-    <div>
-      <h1 class="text-2xl font-bold text-gradient">🏛️ DAO Governance</h1>
-      <p class="text-xs text-gray-400 mt-1">Proposals · Treasury · Co-admins · Voting</p>
-    </div>
-    <button onclick="loadDaoAll()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
-  </div>
-
   <!-- Header -->
   <div class="flex items-center justify-between">
     <div>
-      <h1 class="text-2xl font-bold text-gradient">🗳️ ZION DAO Governance</h1>
-      <p class="text-xs text-gray-400 mt-1">On-chain governance · 1 ZION = 1 vote · 5-of-7 multisig treasury</p>
+      <h1 class="text-2xl font-bold text-gradient">🏛️ ZION DAO Governance</h1>
+      <p class="text-xs text-gray-400 mt-1">On-chain governance · 1 ZION = 1 vote · 5-of-7 multisig treasury · Proposals · Co-admins</p>
     </div>
     <div class="flex gap-2 items-center">
       <span id="dao-status-badge" class="text-xs px-3 py-1 rounded-full bg-gray-700 text-gray-400">Checking…</span>
@@ -5433,11 +5423,11 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     </div>
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
       <div class="zion-panel p-5">
-        <h2 class="text-base font-bold mb-3">Connected Chains</h2>
+        <h2 class="text-base font-bold mb-3">Connected Chains <span id="warp-chain-count-badge" class="text-[10px] text-gray-500 font-normal"></span></h2>
         <div class="overflow-x-auto">
           <table class="w-full text-xs text-left">
-            <thead><tr class="text-gray-500 border-b border-white/10"><th class="py-2 px-2">Chain</th><th class="py-2 px-2">Family</th><th class="py-2 px-2 text-right">Status</th></tr></thead>
-            <tbody id="warp-chains-body"><tr><td colspan="3" class="py-4 text-gray-500 italic text-center">Loading…</td></tr></tbody>
+            <thead><tr class="text-gray-500 border-b border-white/10"><th class="py-2 px-2">Chain</th><th class="py-2 px-2">Family</th><th class="py-2 px-2 text-right">Decimals</th><th class="py-2 px-2 text-right">Finality</th></tr></thead>
+            <tbody id="warp-chains-body"><tr><td colspan="4" class="py-4 text-gray-500 italic text-center">Loading…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -5550,7 +5540,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=89"></script>
+<script src="/dashboard.js?v=90"></script>
 <script>
 // ═══ ZION Theme — Auto-apply accent colors per pane ═══
 (function(){
