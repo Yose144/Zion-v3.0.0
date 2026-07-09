@@ -362,11 +362,18 @@ Threshold: 5/5
 ### Faze 10: Offline zalohy
 
 ```
-[ ] Sifrovany archiv na USB flashdisk
-[ ] Fyzicka offline zaloha mnemonics
+[x] Sifrovany archiv na USB flashdisk (ESD-USB/ZionKeys/zion-keys-2026-07-06-encrypted.tar.gz.aes)
+[x] Fyzicka offline zaloha mnemonics
 [ ] Overit ze plaintext klice jsou shredovany
-[ ] PUBLIC_ADDRESSES.txt na bezpecnem miste
+[x] PUBLIC_ADDRESSES.txt na bezpecnem miste (Desktop/ZionKeys/ + USB/ZionKeys/)
 ```
+
+**USB backup audit — COMPLETED (2026-07-09):**
+- 4/4 soubory SHA256 checksumy identické USB ↔ Desktop ✓
+- 4/4 GPG podpisy Good (Yose, key `9018F94ACE7C93CF549612E225557B7072678D25`) ✓
+- 13/13 premine + 5/5 canonical + 1/1 bridge vault adresy cross-checknuty s `genesis.rs` ✓
+- Všechny soukromé soubory `chmod 600` ✓
+- Genesis hash `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` nezměněn ✓
 
 ---
 
