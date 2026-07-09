@@ -34,6 +34,41 @@ tailwind.config={theme:{extend:{colors:{
   --zion-shadow-panel:0 24px 90px rgba(0,0,0,0.42);
   --zion-shadow-glow:0 0 42px rgba(147,51,234,0.28);
 }
+/* Light theme overrides */
+body.light-theme{
+  --zion-border-subtle:rgba(0,0,0,0.12);
+  --zion-border-strong:rgba(0,0,0,0.2);
+  --zion-surface:rgba(245,247,252,0.92);
+  --zion-surface-soft:rgba(0,0,0,0.04);
+  --zion-surface-hover:rgba(0,0,0,0.07);
+  --zion-shadow-panel:0 12px 40px rgba(0,0,0,0.12);
+  --zion-shadow-glow:0 0 30px rgba(147,51,234,0.12);
+  color:#1a1a2e;
+  background:
+    radial-gradient(circle at 18% -8%,rgba(147,51,234,0.08),transparent 34rem),
+    radial-gradient(circle at 86% 8%,rgba(6,182,212,0.06),transparent 30rem),
+    radial-gradient(circle at 50% 110%,rgba(255,215,0,0.05),transparent 40rem),
+    linear-gradient(180deg,rgb(240,242,248),rgb(225,228,238) 36rem);
+}
+body.light-theme .zion-panel{
+  border:1px solid rgba(0,0,0,0.1);
+  background:rgba(255,255,255,0.92);
+}
+body.light-theme .zion-panel-soft{background:rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.06);}
+body.light-theme .text-gray-400{color:rgba(60,60,80,0.85)!important;}
+body.light-theme .text-gray-500{color:rgba(60,60,80,0.7)!important;}
+body.light-theme .text-white{color:#1a1a2e!important;}
+body.light-theme .bg-black\/30{background:rgba(0,0,0,0.05)!important;}
+body.light-theme .bg-black\/40{background:rgba(0,0,0,0.04)!important;}
+body.light-theme .bg-white\/5{background:rgba(0,0,0,0.05)!important;}
+body.light-theme .bg-white\/10{background:rgba(0,0,0,0.08)!important;}
+body.light-theme .border-white\/10{border-color:rgba(0,0,0,0.1)!important;}
+body.light-theme .border-white\/5{border-color:rgba(0,0,0,0.06)!important;}
+body.light-theme .log-tail{color:#444;}
+body.light-theme .zion-divider{border-color:rgba(0,0,0,0.1)!important;}
+body.light-theme .zion-shell::before{
+  background:linear-gradient(rgba(0,0,0,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,0.015) 1px,transparent 1px);
+}
 body{
   font-family:'Inter',system-ui,sans-serif;
   background:
@@ -220,6 +255,35 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 @media(max-width:1024px){.telemetry-detail-grid{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:640px){.telemetry-detail-grid{grid-template-columns:1fr;}}
 
+/* Mobile responsive optimization */
+@media(max-width:768px){
+  .zion-panel{border-radius:0.8rem;padding:1rem!important;}
+  header .flex{flex-wrap:wrap;gap:0.25rem;}
+  .zion-button-secondary{font-size:0.65rem;padding:0.25rem 0.5rem;}
+  .text-base{font-size:0.85rem;}
+  .text-xl{font-size:1.1rem;}
+  .text-2xl{font-size:1.3rem;}
+  table{font-size:0.65rem;}
+  th,td{padding:0.25rem 0.4rem;}
+  .grid{gap:0.5rem;}
+  .lg\:grid-cols-11{grid-template-columns:repeat(4,1fr)!important;}
+  .lg\:grid-cols-3{grid-template-columns:1fr!important;}
+  .lg\:grid-cols-2{grid-template-columns:1fr!important;}
+  .md\:grid-cols-4{grid-template-columns:repeat(2,1fr)!important;}
+  .max-w-\[260px\]{max-width:140px;}
+  .overflow-x-auto{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .zion-shell{padding:0.5rem;}
+  section.zion-panel{padding:1rem!important;}
+}
+@media(max-width:480px){
+  .lg\:grid-cols-11{grid-template-columns:repeat(2,1fr)!important;}
+  .md\:grid-cols-4{grid-template-columns:1fr!important;}
+  .grid-cols-3{grid-template-columns:1fr!important;}
+  .text-lg{font-size:0.95rem;}
+  h2{font-size:0.8rem;}
+  .zion-panel{padding:0.75rem!important;}
+}
+
 /* ═══ ZION Theme System (from ZIONTHEME.md) ═══ */
 
 /* ── Rainbow Card — per-card color accent via --rc variable ── */
@@ -384,6 +448,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       <span id="connection-badge" class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-700/50 text-emerald-300">● Connected</span>
       <span id="alertCount" class="hidden px-3 py-1.5 bg-red-600 rounded-full text-xs font-bold animate-pulse">0 alerts</span>
       <button onclick="toggleFriendly()" id="friendlyBtn" class="zion-button-secondary text-xs">🧒 Kid Mode</button>
+      <button onclick="toggleTheme()" id="themeBtn" class="zion-button-secondary text-xs" title="Toggle theme">🌙</button>
       <button onclick="refreshAll()" class="zion-button-secondary text-xs">🔄 Refresh</button>
       <button onclick="toggleAuto()" id="autoBtn" class="zion-button-secondary text-xs">⚡ Auto</button>
       <button onclick="openSettingsModal()" class="zion-button-secondary text-xs" title="Settings (S)">⚙️</button>
@@ -1072,6 +1137,22 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
       <div class="zion-panel p-5">
         <h2 class="text-base font-bold mb-3">💰 Payouts &amp; Fee Split <span class="text-xs text-gray-500 font-normal">(89/5/5/1 burn model)</span></h2>
+        <!-- Block Reward Breakdown Visual -->
+        <div class="mb-3">
+          <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1.5">Block Reward Split (5400 ZION)</div>
+          <div class="flex h-6 rounded-full overflow-hidden bg-black/40">
+            <div id="reward-bar-miner" class="bg-emerald-500/70 transition-all duration-500 flex items-center justify-center text-[9px] font-bold text-white" style="width:89%">89%</div>
+            <div id="reward-bar-humanitarian" class="bg-cyan-500/70 transition-all duration-500 flex items-center justify-center text-[9px] font-bold text-white" style="width:5%">5%</div>
+            <div id="reward-bar-issobella" class="bg-purple-500/70 transition-all duration-500 flex items-center justify-center text-[9px] font-bold text-white" style="width:5%">5%</div>
+            <div id="reward-bar-pool" class="bg-amber-500/70 transition-all duration-500 flex items-center justify-center text-[9px] font-bold text-white" style="width:1%">1%</div>
+          </div>
+          <div class="flex flex-wrap gap-3 mt-1.5 text-[10px]">
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span><span class="text-gray-400">Miner:</span> <span id="reward-amt-miner" class="text-emerald-400 font-mono font-bold">4806 ZION</span></span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-cyan-500"></span><span class="text-gray-400">Humanitarian:</span> <span id="reward-amt-humanitarian" class="text-cyan-400 font-mono font-bold">270 ZION</span></span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-purple-500"></span><span class="text-gray-400">Issobella:</span> <span id="reward-amt-issobella" class="text-purple-400 font-mono font-bold">270 ZION</span></span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span><span class="text-gray-400">Pool:</span> <span id="reward-amt-pool" class="text-amber-400 font-mono font-bold">54 ZION</span></span>
+          </div>
+        </div>
         <div class="space-y-2">
           <div class="flex justify-between text-xs"><span class="text-gray-400">Pool Wallet</span><span id="payout-wallet" class="font-mono text-white truncate max-w-[260px]">—</span></div>
           <div class="flex justify-between text-xs"><span class="text-gray-400">Pool Balance</span><span id="payout-balance" class="text-amber-400 font-bold">—</span></div>
@@ -1248,6 +1329,68 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
     </div>
     </div><!-- end Top Wallets + Mempool grid -->
+
+    <!-- Network Growth + Miner Leaderboard + Difficulty Prediction (3-col) -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <!-- Network Growth Chart -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold flex items-center gap-2">📈 Network Growth</h2>
+        <span id="network-growth-badge" class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">—</span>
+      </div>
+      <div class="grid grid-cols-3 gap-2 mb-3 text-center">
+        <div class="bg-black/30 rounded-lg p-2"><div class="text-[9px] text-gray-400">Blocks Today</div><div id="ng-blocks-today" class="text-lg font-bold text-emerald-400">—</div></div>
+        <div class="bg-black/30 rounded-lg p-2"><div class="text-[9px] text-gray-400">Avg / Day (7d)</div><div id="ng-avg-day" class="text-lg font-bold text-cyan-400">—</div></div>
+        <div class="bg-black/30 rounded-lg p-2"><div class="text-[9px] text-gray-400">Peak Day</div><div id="ng-peak" class="text-lg font-bold text-amber-400">—</div></div>
+      </div>
+      <div style="position:relative;height:140px;"><canvas id="chart-network-growth"></canvas></div>
+      <div id="network-growth-legend" class="flex flex-wrap gap-2 mt-2 text-[10px] text-gray-400"></div>
+    </div>
+
+    <!-- Miner Leaderboard -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold flex items-center gap-2">🏆 Miner Leaderboard</h2>
+        <span id="miner-leaderboard-badge" class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">—</span>
+      </div>
+      <div class="overflow-x-auto max-h-52 overflow-y-auto">
+        <table class="w-full text-xs text-left">
+          <thead>
+            <tr class="text-gray-500 border-b border-white/10">
+              <th class="py-2 px-2">#</th>
+              <th class="py-2 px-2">Miner</th>
+              <th class="py-2 px-2 text-right">Hashrate</th>
+              <th class="py-2 px-2 text-right">Shares</th>
+              <th class="py-2 px-2 text-right">Accept %</th>
+            </tr>
+          </thead>
+          <tbody id="miner-leaderboard-tbody">
+            <tr><td colspan="5" class="text-gray-500 text-center py-4">Loading miners…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Difficulty Prediction -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold flex items-center gap-2">🎯 Difficulty Forecast</h2>
+        <span id="diff-forecast-badge" class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">—</span>
+      </div>
+      <div class="space-y-2">
+        <div class="flex justify-between text-xs"><span class="text-gray-400">Current Difficulty</span><span id="diff-current" class="text-white font-mono font-bold">—</span></div>
+        <div class="flex justify-between text-xs"><span class="text-gray-400">Avg Block Time (10)</span><span id="diff-avg-block-time" class="text-cyan-400 font-mono">—</span></div>
+        <div class="flex justify-between text-xs"><span class="text-gray-400">Target Block Time</span><span class="text-white font-mono">60s</span></div>
+        <div class="flex justify-between text-xs"><span class="text-gray-400">Predicted Next Diff</span><span id="diff-predicted" class="text-amber-400 font-mono font-bold">—</span></div>
+        <div class="flex justify-between text-xs"><span class="text-gray-400">Change</span><span id="diff-change" class="font-mono font-bold">—</span></div>
+        <div class="flex justify-between text-xs"><span class="text-gray-400">ETA to Retarget</span><span id="diff-eta" class="text-purple-400 font-mono">—</span></div>
+      </div>
+      <div class="mt-3">
+        <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Difficulty Trend (10 blocks)</div>
+        <div style="position:relative;height:80px;"><canvas id="chart-diff-trend"></canvas></div>
+      </div>
+    </div>
+    </div><!-- end 3-col grid -->
 
     <!-- ═══════ Layer Services (L2–L6) ═══════ -->
     <div class="zion-panel p-5">
@@ -5378,7 +5521,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=86"></script>
+<script src="/dashboard.js?v=87"></script>
 <script>
 // ═══ ZION Theme — Auto-apply accent colors per pane ═══
 (function(){
