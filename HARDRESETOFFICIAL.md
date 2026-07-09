@@ -119,7 +119,7 @@ V3/target/release/gen-premine-wallets > /home/zionserver/zion-keys-2026-07-03/pr
 | 8 | dao_treasury | Ecosystem Bootstrap | 500,000,000 |
 | 9 | infrastructure | Core Development Fund | 1,000,000,000 |
 | 10 | infrastructure | Network Infrastructure — P2P Seed Nodes | 1,000,000,000 |
-| 11 | infrastructure | Genesis Creator — Lifetime Rent | 590,000,000 |
+| 11 | infrastructure | Genesis Projects — Dharma Temple, Piko de Ora + DAO | 590,000,000 |
 | 12 | humanitarian | Children Future Fund | 1,440,000,000 |
 | 13 | bridge_seed | Bridge Seed Fund — EVM Bridge Liquidity | 400,000,000 |
 | 14 | bridge_vault_utxo | Bridge Vault UTXO Seed | 100,000,000 |

@@ -1819,7 +1819,7 @@ const status = await bridge.getTransferStatus(tx.id);
 │    ├─ Children Future Fund:        1.0B             │
 │    ├─ Maitreya Buddha (Admin):     1.0B             │
 │    ├─ OASIS Fund:                  1.44B            │
-│    └─ Genesis Community Rent:      342.857M         │
+│    └─ Genesis Projects Fund:      342.857M         │
 │                                                       │
 │ TOTAL: 15,782,857,143 ZION ✅                        │
 └──────────────────────────────────────────────────────┘
@@ -1966,7 +1966,7 @@ Children Future Fund (1B ZION):
 
 Maitreya Buddha Admin (1B ZION):
 
-Genesis Community Rent (342.857M ZION):
+Genesis Projects Fund (342.857M ZION):
   Address: ZION_GENESIS_CREATOR_COMMUNITY_RENT_YESHUAE
   Purpose:
     - Original creator acknowledgment (Yeshuae Amon Ra)
@@ -2068,7 +2068,7 @@ Humanitarian Tithe (Desátek):
 Development Fee: 1%
   Purpose: Core team, infrastructure, audits
 
-Genesis Creator Fee: 0.33%
+Genesis Projects Fee: 0.33%
   Purpose: Original creator acknowledgment (Yeshuae Amon Ra)
   Note: Lifetime rent honoring innovation
 

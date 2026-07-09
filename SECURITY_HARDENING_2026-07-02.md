@@ -23,7 +23,7 @@ patch is present.
 | Check | Result |
 |-------|--------|
 | Chain height | 22212 (mining continued from rollback point 22180) |
-| Genesis Creator (Slot 11) balance | **590,000,000 ZION** ✅ restored |
+| Genesis Projects (Slot 11) balance | **590,000,000 ZION** ✅ restored |
 | Attacker address (589M) | **0 ZION** ✅ |
 | P2P peers | 1 only — `100.86.16.108`/`100.86.102.5` backup node via Tailscale ✅ no public peer |
 | F1 fix in live `zion-node` binary | ✅ present (2 markers, build 2026-07-02 13:38) |
@@ -205,7 +205,7 @@ fixtures with keypair-derived `zion1...` addresses.
    Old binaries preserved as `*.pre-a1a2a3` / `*.pre-l2patch` and in
    `/root/backups/l1l2-deploy-2026-07-02/`.
 2. ✅ **Node restart verified** — chain advanced through the restart (22212 → 22329),
-   Genesis Creator 590M intact, node1↔backup and node2↔node1 peers healthy, no
+   Genesis Projects 590M intact, node1↔backup and node2↔node1 peers healthy, no
    checkpoint violations, no A3 rejections, no panics.
 3. ✅ **A3 allowlist widened for local topology** — `ZION_P2P_ALLOWED_PEERS` updated
    to `127.0.0.1,100.86.102.5,100.76.16.108` in `edge-environment.sh` so node2

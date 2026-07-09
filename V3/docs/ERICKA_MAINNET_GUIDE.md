@@ -105,7 +105,7 @@ Při vytvoření blockchainu (genesis blok) bylo do 14 peněženek vloženo **16
 | 8 | DAO Bootstrap | `zion1932843t398t095g4h3x2f3a5l0q40490k4fm2w8` | 500,000,000 | ANO — 1 rok |
 | 9 | Core Dev Fund | `zion1q540v6y4f0s4v3n0f8t740t53494z56024u645c` | 1,000,000,000 | NE |
 | 10 | Seed Nodes | `zion1h4w39686t8w376g0x0y426e775q6p2q0v698v43` | 1,000,000,000 | NE |
-| 11 | Genesis Creator | `zion1x638z5x6d2d0y6u3f7y8g7j56054a4a2a2c7l8f` | 590,000,000 | NE |
+| 11 | Genesis Projects (Dharma Temple, Piko de Ora + DAO) | `zion1x638z5x6d2d0y6u3f7y8g7j56054a4a2a2c7l8f` | 590,000,000 | NE |
 | 12 | Children Future Fund | `zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4` | 1,440,000,000 | NE |
 || 13 | Bridge Seed Fund | `zion1f6m2j0h0l773j4074324q5r528y475w4j7m9685` | 400,000,000 | NE |
 | 14 | Bridge Vault UTXO Seed | `zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7` | 100,000,000 | NE |

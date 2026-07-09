@@ -292,7 +292,7 @@ A total of **16,780,000,000 ZION** (11.65 % of total supply) is reserved at gene
 | 8 | DAO Ecosystem Bootstrap | 500,000,000 | Ecosystem development (includes game-dev execution envelope) |
 | 9 | Core Development Fund | 1,000,000,000 | Ongoing development |
 | 10 | Network Infrastructure | 1,000,000,000 | P2P seed nodes & infrastructure |
-| 11 | Genesis Creator | 590,000,000 | Lifetime project stewardship |
+| 11 | Genesis Projects Steward | 590,000,000 | Lifetime project stewardship |
 | 12 | Humanitarian DAO | 1,440,000,000 | Immediate humanitarian seed |
 || 13 | Bridge Seed Fund | 400,000,000 | Bridge operational budget |
 | 14 | Bridge Vault UTXO Seed | 100,000,000 | UTXO liquidity for bridge unlocks |

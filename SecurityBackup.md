@@ -14,7 +14,7 @@ was exploited on **2026-06-30** to forge account-model transactions without
 access to private keys. The attacker mined blocks containing forged transactions
 that transferred funds from premine wallets to attacker-controlled addresses.
 
-**Total stolen: 589,000,001 ZION** (589M from Genesis Creator + 1 from Bridge Seed probe)
+**Total stolen: 589,000,001 ZION** (589M from Genesis Projects + 1 from Bridge Seed probe)
 
 The F1 security fix (peer-block signature verification) was deployed to Edge
 mainnet on 2026-07-02. No new forged transactions can occur post-fix.
@@ -74,7 +74,7 @@ A rollback is required to undo the damage.
 |------------|-------|-------|
 | 2026-06-30 15:39:23 | 21959 | **PROBE**: Forged 1 ZION from Bridge Seed (Slot 13) to `zion17758s76520t4c6c3v656g8a5p7d4x4c2d2032x0` |
 | 2026-06-30 16:31:41 | 22180 | Last clean block before main attack |
-| 2026-06-30 16:32:03 | 22181 | **MAIN ATTACK**: Forged 589,000,000 ZION from Genesis Creator (Slot 11) to `zion1t3l7q3p8f457n335r083k8r3n6l5w4u2f2q83r2` |
+| 2026-06-30 16:32:03 | 22181 | **MAIN ATTACK**: Forged 589,000,000 ZION from Genesis Projects (Slot 11) to `zion1t3l7q3p8f457n335r083k8r3n6l5w4u2f2q83r2` |
 | 2026-07-02 13:38 | — | F1 patch deployed to Edge |
 | 2026-07-02 14:07 | — | Forensic analysis confirms signatures are INVALID (forged) |
 
@@ -108,7 +108,7 @@ does NOT derive to the `from` address. This confirms the old code did not check
 TX ID:      ba079e82dfdd856e32283136772b687a31b8f4578b277635bb885f4190040706
 Block:      22181
 Timestamp:  2026-06-30T16:32:19Z
-From:       zion16542q4l853a2z0u5r5w8y4m8k4558847h503736 (Genesis Creator, Slot 11)
+From:       zion16542q4l853a2z0u5r5w8y4m8k4558847h503736 (Genesis Projects, Slot 11)
 To:         zion1t3l7q3p8f457n335r083k8r3n6l5w4u2f2q83r2 (ATTACKER)
 Amount:     589,000,000.00 ZION (589,000,000,000,000 flowers)
 Fee:        1,000 flowers (0.001 ZION)
@@ -142,7 +142,7 @@ Result: **INVALID SIGNATURE** — confirmed forged.
 
 ### Private Key Status
 
-The Genesis Creator private key is **NOT compromised**. The attacker did not need
+The Genesis Projects private key is **NOT compromised**. The attacker did not need
 it — they only needed the public key (derivable from the address) and the lack of
 signature verification in peer-block validation.
 
@@ -166,7 +166,7 @@ signature verification in peer-block validation.
 
 1. **Probe first**: Tested the exploit with 1 ZION from Bridge Seed (block 21959)
 2. **Waited 222 blocks** (~3.7 hours) to confirm the probe worked
-3. **Main attack**: Stole 589M ZION from Genesis Creator (block 22181)
+3. **Main attack**: Stole 589M ZION from Genesis Projects (block 22181)
 4. **Has not moved funds**: Both attacker addresses have zero outgoing transactions
 5. **Has mining capability**: The attacker mined valid blocks (PoW) containing the forged TXs
 
@@ -186,7 +186,7 @@ signature verification in peer-block validation.
 
 | Victim | Amount | Block |
 |--------|--------|-------|
-| Genesis Creator (Slot 11) | 589,000,000 ZION | 22181 |
+| Genesis Projects (Slot 11) | 589,000,000 ZION | 22181 |
 | Bridge Seed (Slot 13) | 1 ZION | 21959 |
 | **Total** | **589,000,001 ZION** | |
 
@@ -194,7 +194,7 @@ signature verification in peer-block validation.
 
 | Wallet | Pre-attack | Post-attack | Delta |
 |--------|-----------|-------------|-------|
-| Genesis Creator | 590,000,000 ZION | 999,999.999 ZION | −589,000,000 |
+| Genesis Projects | 590,000,000 ZION | 999,999.999 ZION | −589,000,000 |
 | Bridge Seed | 400,000,000 ZION | 399,999,998.999 ZION | −1.001 |
 
 ### Pool Payout Issue (Separate)
@@ -236,13 +236,13 @@ The wrong SK was configured in `edge-environment.sh`. This has been fixed.
 - [x] Truncate `edge-state.db` + `edge2-state.db` to block 22180 (removed 2515 blocks)
 - [x] Rebuild `active_template` for height 22181 (valid 160-char header)
 - [x] Restart all 12 services — all active
-- [x] Verify all premine balances restored (Genesis Creator: 590M ZION ✅)
+- [x] Verify all premine balances restored (Genesis Projects: 590M ZION ✅)
 - [x] Verify attacker addresses: 0 ZION ✅ (589M address), 1 ZION (probe address — pre-22180, kept)
 - [x] Mining resumed: chain at 22184, pool accepting shares
 
 ### Phase 4: Post-Rollback Verification (COMPLETED 2026-07-02 14:41 UTC)
 
-- [x] Genesis Creator: 590,000,000 ZION ✅
+- [x] Genesis Projects: 590,000,000 ZION ✅
 - [x] Bridge Seed: 399,999,998.999999 ZION ✅ (1.001 ZION lost to probe attack — pre-22180)
 - [x] OASIS: 1,650,000,000 ZION ✅
 - [x] DAO main: 2,500,000,000.000001 ZION ✅

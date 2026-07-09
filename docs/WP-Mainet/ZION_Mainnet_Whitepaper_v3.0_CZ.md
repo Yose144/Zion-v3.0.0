@@ -159,7 +159,7 @@ Při spuštění sítě bylo vytvořeno 16,28 miliardy ZION. Rozdělení je veř
 | 8 | DAO Ecosystem Bootstrap | 500 000 000 | Růst ekosystému |
 | 9 | Core Development Fund | 1 000 000 000 | Průběžný vývoj |
 | 10 | Network Infrastructure | 1 000 000 000 | Seed nody a infrastruktura |
-| 11 | Genesis Creator | 590 000 000 | Doživotní péče o projekt |
+| 11 | Genesis Projects Steward | 590 000 000 | Doživotní péče o projekt |
 | 12 | Humanitární — Children Future Fund | 1 440 000 000 | Okamžitý humanitární seed |
 
 **Časová pojistka:** Veškerých 4 000 000 000 ZION v DAO treasury (#6–8) je uzamčeno do bloku **525 600** (přibližně jeden rok po genesis). On-chain vynucení v `V3/L1/core/src/validation.rs` krok 11.

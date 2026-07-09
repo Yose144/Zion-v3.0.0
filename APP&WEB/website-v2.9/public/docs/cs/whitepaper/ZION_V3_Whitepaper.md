@@ -292,7 +292,7 @@ ZION lze získat **těžbou** nebo přijetím v transakci.
 | 8 | DAO Ecosystem Bootstrap | 500 000 000 | Rozvoj ekosystému |
 | 9 | Core Development Fund | 1 000 000 000 | Běžný vývoj |
 | 10 | Network Infrastructure | 1 000 000 000 | Seed uzly a infrastruktura |
-| 11 | Genesis Creator | 590 000 000 | Dlouhodobá správa projektu |
+| 11 | Genesis Projects (Dharma Temple, Piko de Ora + DAO) | 590 000 000 | Dharma Temple, Piko de Ora + DAO |
 | 12 | Humanitarian DAO | 1 440 000 000 | Humanitární seed |
 
 **Časový zámek DAO Treasury:** Všech **4 000 000 000 ZION** v položkách #6–8 je uzamčeno do výšky bloku **525 600** (~1 rok po genesis).

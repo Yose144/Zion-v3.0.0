@@ -109,7 +109,7 @@ months of "we should have done it earlier" tech debt.
 - Chain ID, peer protocol magic, P2P listen ports.
 - All canonical wallet addresses
   ([`AGENTS.md`](./AGENTS.md) — Humanitarian, ISSOBELLA, Pool Fee,
-  Default Miner, Pool Payout, Genesis Creator, Bridge Vault,
+  Default Miner, Pool Payout, Genesis Projects, Bridge Vault,
   Bridge Seed Fund).
 - Network topology (Edge VPS as primary).
 
@@ -602,7 +602,7 @@ Hetzner snapshot from Phase 0 is the worst-case restore.
    ✅ **1 release (3.0.3), drop in 3.0.4** (default recommendation).
 6. **Migration block signer.** ✅ **Genesis Creator key** —
    `zion16542q4l853a2z0u5r5w8y4m8k4558847h503736` (slot 11,
-   "Genesis Creator — Lifetime Rent").
+   "Genesis Projects — Dharma Temple, Piko de Ora + DAO").
 7. **Post-launch tag:** ✅ **`v3.0.3-mainnet`** (default).
 8. **DAO Treasury unlock height.** ✅ **144 000** (~100 days)
    confirmed by owner 2026-06-27.
