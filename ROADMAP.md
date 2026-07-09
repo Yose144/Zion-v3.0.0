@@ -1,8 +1,8 @@
-# ZION Roadmap — From 3.0.4 to Public Mainnet Launch
+# ZION Roadmap — From 3.0.5 to Public Mainnet Launch
 
-> **Version:** 3.0.4 canonical + security hardening  
-> **Last updated:** 2026-07-02  
-> **One source of truth:** [`3.0.4.md`](./3.0.4.md) · Live status: [`StatusV3.md`](./StatusV3.md) · Security: [`SecurityFirst.md`](./SecurityFirst.md)  
+> **Version:** 3.0.5 "All Green" canonical  
+> **Last updated:** 2026-07-09  
+> **One source of truth:** [`3.0.4.md`](./3.0.4.md) + [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](./docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md) · Live status: [`StatusV3.md`](./StatusV3.md) · Security: [`SecurityFirst.md`](./SecurityFirst.md)  
 > **Engineering detail:** [`V3/ROADMAP.md`](./V3/ROADMAP.md)
 
 ---
@@ -22,9 +22,19 @@ This is the **forward-looking** root roadmap. Historical detail lives in [`docs/
 
 ---
 
-## 1. Current State — 3.0.4 Canonical (2026-07-01)
+## 1. Current State — 3.0.5 "All Green" (2026-07-09)
 
-✅ **Done**
+✅ **3.0.5 Done (2026-07-09)**
+- Protocol version bumped to `zion-v3-node/3.0.5` (from stale 3.0.3)
+- All 11 services active on live server (62.171.141.136): node, node2, pool, bridge, dao, atomic-swap, warp, oasis, free-world, issobella, dashboard
+- Watchdog timer active (2 min interval)
+- Web (Docker zion-web-next) Up — zionterranova.com: 200
+- E2E memo tests: 3 account-model TXs with memos confirmed in block 752 (BRIDGE/DAO/SWAP)
+- L2/L3 config fixes: bridge start height 0, backup RPC IP, DB paths unified to /data/zion/
+- Docs reconciled: fake commit hash fixed, activation height 0, old IPs replaced
+- Report: [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](./docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md)
+
+✅ **Done (3.0.4 and earlier)**
 - DeFi contracts deployed on Base Mainnet: ZIONGovernance, ZIONTreasury, ZIONStaking, ZIONFarm
 - 5/5 validator bridge operational, ~100M wZION minted, reverse bridge E2E verified
 - Atomic swap daemon live, escrow funded, LOCK/CLAIM E2E passed
