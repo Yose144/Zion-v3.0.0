@@ -53,10 +53,11 @@ pub const MAX_TEMPLATE_TRANSACTIONS: usize = 16;
 pub const MAX_MEMPOOL_TRANSACTIONS: usize = 4_096;
 pub const MAX_TEMPLATE_UTXO_TRANSACTIONS: usize = 16;
 
-/// Default block retention window: 0 = unlimited (keep all blocks in memory).
-/// Set via `ZION_BLOCK_RETENTION` env var to cap memory usage.
+/// Default block retention window: keep last 1000 blocks in memory.
+/// Set via `ZION_BLOCK_RETENTION` env var (0 = unlimited, not recommended).
 /// When set, old blocks are pruned from in-memory caches but remain in LMDB.
-pub const DEFAULT_BLOCK_RETENTION: usize = 0;
+/// This prevents OOM on long-running nodes (each block ~100KB in memory).
+pub const DEFAULT_BLOCK_RETENTION: usize = 1000;
 
 pub mod bridge;
 pub use bridge::{
@@ -1239,6 +1240,10 @@ impl NodeRuntime {
             .all(|known| known.address() != peer.address())
         {
             self.known_peers.push(peer);
+            // Cap known_peers to prevent unbounded growth from peer announcements
+            if self.known_peers.len() > 1000 {
+                self.known_peers.drain(0..self.known_peers.len() - 1000);
+            }
         }
     }
 
