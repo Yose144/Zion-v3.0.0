@@ -456,7 +456,7 @@ export default function ZoharPageClient() {
   }, []);
 
   return (
-    <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 overflow-x-hidden">
+    <div className="zion-shell zion-page">
       {/* Background glows */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-gold/8" />
@@ -486,15 +486,15 @@ export default function ZoharPageClient() {
                   : 'ZION TerraNova is an experimental project under active development. All features, visualizations, roadmaps, and technical concepts on this page are proposals that may change at any time. evoluZion V2 (Proof-of-Care, NPU mining, Bodhisattva Vow) is a vision of the future, not current reality. The current network runs on Proof-of-Work (Mainnet Beta v3.0.5). Nothing on this page is investment advice.'}
               </p>
               <div className="flex flex-wrap gap-2 pt-1">
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-amber-300">
+                <span className="zion-badge zion-badge-amber">
                   <FlaskConical className="h-3 w-3" />
                   {cs ? 'Experimentální' : 'Experimental'}
                 </span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-orange-300">
+                <span className="zion-badge zion-badge-rasta">
                   <Construction className="h-3 w-3" />
                   {cs ? 'Aktivně se staví' : 'Actively building'}
                 </span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-rose-300">
+                <span className="zion-badge border-rose-500/30 bg-rose-500/10 text-rose-300">
                   {cs ? 'Mainnet Beta — riziko vlastní' : 'Mainnet Beta — at your own risk'}
                 </span>
               </div>
@@ -509,7 +509,7 @@ export default function ZoharPageClient() {
           transition={{ duration: 0.6 }}
           className="space-y-6 text-center"
         >
-          <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold/30 bg-zion-gold/5 px-4 py-2 text-xs uppercase tracking-[0.3em] text-zion-gold">
+          <div className="zion-kicker border-zion-gold/30 bg-zion-gold/10 text-zion-gold">
             <Sparkles className="h-4 w-4" />
             {cs ? 'Kabala · 10 Sephirot · 22 cest · 3 pilíře' : 'Kabbalah · 10 Sephirot · 22 paths · 3 pillars'}
           </div>

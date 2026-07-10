@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function ZionDexPage() {
   return (
-    <div className="pt-28 md:pt-32 pb-24 overflow-x-hidden">
+    <div className="zion-page">
       <div className="zion-container max-w-4xl space-y-12">
         {/* Hero */}
         <section

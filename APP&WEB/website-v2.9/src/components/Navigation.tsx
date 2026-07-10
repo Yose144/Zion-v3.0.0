@@ -190,40 +190,75 @@ export default function Navigation() {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50">
-      {/* Rasta-tinted ambient glow — green → gold → amber, very subtle */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-linear-to-r from-emerald-500/12 via-zion-gold/14 to-amber-600/10 blur-3xl opacity-70" />
+      {/* Rasta ambient glow — green → gold → amber */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-linear-to-r from-emerald-500/14 via-zion-gold/16 to-amber-600/12 blur-3xl opacity-75" />
       <div className="relative mx-auto w-[min(90vw,1320px)] py-2" data-nav-desktop>
         {/* ═══════════════════════════════════════════════════
-            FLOOR 1 — TOP BAR (logo + controls)
+            FLOOR 1 — MAIN BAR
+            Logo | 4 HERO icons (rasta) | lang + GitHub + auth + dashboard
             ═══════════════════════════════════════════════════ */}
-        <div className="zion-panel flex items-center justify-between gap-3 px-4 py-2 ring-1 ring-white/5 md:px-5"
+        <div className="zion-panel flex items-center justify-between gap-2 px-3 py-2 ring-1 ring-white/5 md:px-4"
           style={{
             boxShadow: '0 24px 90px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.04)',
           }}
         >
-          {/* Logo + version badge */}
-          <Link href="/" className="flex items-center space-x-3 group shrink-0">
-            <div className="w-11 h-11 rounded-2xl flex items-center justify-center relative overflow-hidden border border-white/15 group-hover:border-zion-gold/50 transition-colors bg-transparent shadow-[0_8px_24px_rgba(0,0,0,0.3)]">
+          {/* Rasta gradient top accent line */}
+          <div className="pointer-events-none absolute -top-px left-0 right-0 h-px rounded-t-2xl bg-linear-to-r from-emerald-500/50 via-zion-gold/60 to-amber-600/50" />
+
+          {/* Logo */}
+          <Link href="/" className="flex items-center space-x-2.5 group shrink-0">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center relative overflow-hidden border border-white/15 group-hover:border-zion-gold/50 transition-colors bg-transparent shadow-[0_8px_24px_rgba(0,0,0,0.3)]">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(111,255,240,0.08),transparent_65%)]" />
               <Image
                 src="/stargate-icon.png"
                 alt="ZION TerraNova Stargate"
-                width={44}
-                height={44}
+                width={40}
+                height={40}
                 className="relative z-10 w-full h-full object-contain"
                 priority
               />
             </div>
             <div className="hidden sm:flex flex-col leading-none">
               <span className="text-lg font-bold text-gradient-soft tracking-tight">ZION</span>
-              <span className="text-[9px] px-2 py-0.5 mt-1 rounded-full bg-white/6 border border-white/10 uppercase tracking-[0.22em] text-white/60">
+              <span className="text-[8px] px-1.5 py-0.5 mt-0.5 rounded-full bg-white/6 border border-white/10 uppercase tracking-[0.22em] text-white/60">
                 {SITE_RELEASE_LABEL}
               </span>
             </div>
           </Link>
 
-          {/* Right cluster: language + GitHub + auth + dashboard */}
-          <div className="flex items-center gap-2 shrink-0">
+          {/* 4 HERO icons — BIG, rasta colored, inline in main bar */}
+          <div className="hidden md:flex items-center justify-center gap-2">
+            {heroIcons.map((ml) => {
+              const isActive = navItemMatches(ml.href);
+              return (
+                <Link
+                  key={ml.href}
+                  href={ml.href}
+                  title={ml.label}
+                  className="group relative flex items-center gap-1.5 rounded-xl border-2 px-3 py-2 transition-all hover:scale-105 shrink-0"
+                  style={{
+                    borderColor: isActive ? `rgba(${ml.color}, 0.65)` : 'rgba(255,255,255,0.08)',
+                    backgroundColor: isActive ? `rgba(${ml.color}, 0.15)` : 'rgba(0,0,0,0.4)',
+                    boxShadow: isActive ? `0 0 16px rgba(${ml.color}, 0.3)` : 'none',
+                  }}
+                >
+                  <ml.icon
+                    className="w-4 h-4"
+                    style={{ color: isActive ? `rgb(${ml.color})` : `rgba(${ml.color}, 0.8)` }}
+                  />
+                  <span
+                    className="text-[11px] font-bold uppercase tracking-wider hidden lg:inline"
+                    style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.7)' }}
+                  >
+                    {ml.label}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Right cluster: lang + GitHub + auth + dashboard */}
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
               className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-white/15 bg-black/75 text-xs font-semibold hover:border-white/30 hover:bg-black transition-colors text-gray-300 hover:text-white"
@@ -264,46 +299,13 @@ export default function Navigation() {
         </div>
 
         {/* ═══════════════════════════════════════════════════
-            FLOOR 2 — HERO ICONS (4 BIG: Explorer, Pool, Network, Wallet)
+            FLOOR 2 — SECONDARY + TERTIARY ICONS + GROUP DROPDOWNS
             ═══════════════════════════════════════════════════ */}
-        <div className="mt-1.5 hidden md:flex items-center justify-center gap-3">
-          {heroIcons.map((ml) => {
-            const isActive = navItemMatches(ml.href);
-            return (
-              <Link
-                key={ml.href}
-                href={ml.href}
-                title={ml.label}
-                className="group relative flex items-center gap-2 rounded-2xl border-2 px-4 py-2.5 transition-all hover:scale-105 shrink-0"
-                style={{
-                  borderColor: isActive ? `rgba(${ml.color}, 0.6)` : 'rgba(255,255,255,0.08)',
-                  backgroundColor: isActive ? `rgba(${ml.color}, 0.14)` : 'rgba(0,0,0,0.4)',
-                  boxShadow: isActive ? `0 0 18px rgba(${ml.color}, 0.25)` : 'none',
-                }}
-              >
-                <ml.icon
-                  className="w-5 h-5"
-                  style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.75)' }}
-                />
-                <span
-                  className="text-xs font-bold uppercase tracking-wider"
-                  style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.7)' }}
-                >
-                  {ml.label}
-                </span>
-              </Link>
-            );
-          })}
-        </div>
+        <div className="mt-1 hidden md:flex items-center justify-between gap-2 relative">
+          {/* Rasta accent line */}
+          <div className="pointer-events-none absolute -top-0.5 left-1/4 right-1/4 h-px bg-linear-to-r from-transparent via-emerald-500/30 to-transparent" />
 
-        {/* ═══════════════════════════════════════════════════
-            FLOOR 3 — SECONDARY + TERTIARY ICONS + GROUP DROPDOWNS
-            ═══════════════════════════════════════════════════ */}
-        <div className="mt-1.5 hidden md:flex items-center justify-between gap-2 relative">
-          {/* Subtle rasta accent line */}
-          <div className="pointer-events-none absolute -top-0.5 left-1/4 right-1/4 h-px bg-linear-to-r from-transparent via-zion-gold/20 to-transparent" />
-
-          {/* Secondary + Tertiary icons */}
+          {/* Icons + group dropdowns */}
           <div className="flex items-center gap-1 flex-1 justify-center overflow-x-auto no-scrollbar min-w-0">
             {/* Secondary icons — medium */}
             {secondaryIcons.map((ml) => {
@@ -313,14 +315,14 @@ export default function Navigation() {
                   key={ml.href}
                   href={ml.href}
                   title={ml.label}
-                  className="group relative flex flex-col items-center justify-center w-9 h-9 rounded-xl border transition-all hover:scale-110 shrink-0"
+                  className="group relative flex flex-col items-center justify-center w-8 h-8 rounded-lg border transition-all hover:scale-110 shrink-0"
                   style={{
                     borderColor: isActive ? `rgba(${ml.color}, 0.5)` : 'rgba(255,255,255,0.06)',
                     backgroundColor: isActive ? `rgba(${ml.color}, 0.13)` : 'rgba(0,0,0,0.3)',
                   }}
                 >
                   <ml.icon
-                    className="w-4 h-4"
+                    className="w-3.5 h-3.5"
                     style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.55)' }}
                   />
                   <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] bg-black/95 border border-white/10 rounded px-1.5 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
@@ -330,8 +332,8 @@ export default function Navigation() {
               );
             })}
 
-            {/* Visual divider */}
-            <div className="mx-0.5 h-6 w-px bg-white/8 shrink-0" />
+            {/* Divider */}
+            <div className="mx-0.5 h-5 w-px bg-white/8 shrink-0" />
 
             {/* Tertiary icons — small */}
             {tertiaryIcons.map((ml) => {
@@ -348,7 +350,7 @@ export default function Navigation() {
                   }}
                 >
                   <ml.icon
-                    className="w-3.5 h-3.5"
+                    className="w-3 h-3"
                     style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.35)' }}
                   />
                   <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] bg-black/95 border border-white/10 rounded px-1.5 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
@@ -358,8 +360,8 @@ export default function Navigation() {
               );
             })}
 
-            {/* Visual divider */}
-            <div className="mx-1 h-6 w-px bg-white/8 shrink-0" />
+            {/* Divider */}
+            <div className="mx-1 h-5 w-px bg-white/8 shrink-0" />
 
             {/* Group dropdown buttons */}
             {navGroups.map((group) => {
@@ -391,7 +393,7 @@ export default function Navigation() {
             })}
           </div>
 
-          {/* Background toggle — far right */}
+          {/* Background toggle */}
           <div className="shrink-0">
             <BackgroundToggle placement="nav" />
           </div>

@@ -179,9 +179,9 @@ export default function ResonancePage() {
   const { lang } = useLang();
 
   return (
-    <main className="relative overflow-hidden">
+    <main className="relative overflow-hidden zion-page">
       {/* HERO */}
-      <section className="relative pt-32 pb-20">
+      <section className="relative">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-96 bg-[radial-gradient(ellipse_at_50%_0%,rgba(168,85,247,0.18),transparent_70%)]" />
         <div className="zion-container relative">
           <FadeIn>

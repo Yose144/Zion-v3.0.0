@@ -48,10 +48,10 @@ export default function WikiPage() {
   const sections = getSections(cs);
 
   return (
-    <main className="min-h-screen text-white">
+    <main className="zion-page text-white">
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-white/10">
-        <div className="zion-container relative pt-28 pb-16">
+        <div className="zion-container relative pb-16">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}

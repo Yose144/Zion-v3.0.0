@@ -452,7 +452,7 @@ export default function RoadmapPage() {
   const secTotal = securityChecklist.length;
 
   return (
-    <div className="pt-28 pb-24 overflow-x-hidden">
+    <div className="zion-page">
       <div className="zion-container max-w-7xl space-y-14">
 
         {/* ── HERO ── */}

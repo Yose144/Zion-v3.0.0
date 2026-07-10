@@ -126,8 +126,8 @@ const daoMetrics = [
 export default function DaoDashboardPage() {
   const { lang } = useLang();
   return (
-    <div className="text-white pb-20">
-      <div className="zion-container max-w-6xl pt-28 space-y-12">
+    <div className="zion-page text-white">
+      <div className="zion-container max-w-6xl space-y-12">
         <header className="rounded-[32px] border border-white/10 bg-gradient-to-r from-black/40 via-zion-purple/20 to-zion-gold/20 p-5 sm:p-8 md:p-10 shadow-2xl">
           <p className="text-xs uppercase tracking-[0.4em] text-gray-300">{lang === 'cs' ? 'DAO Ledger' : 'DAO Ledger'}</p>
           <h1 className="mt-3 text-4xl md:text-5xl font-semibold text-gradient">
