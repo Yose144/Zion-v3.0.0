@@ -321,7 +321,11 @@ export default function MinerDashboard({ address }: { address: string }) {
               <div className="flex items-center gap-3">
                 <div className={`h-3 w-3 rounded-full ${data.active ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]' : s.pending_balance > 0 ? 'bg-amber-400' : 'bg-red-400'}`} />
                 <span className={`text-xs font-semibold uppercase tracking-wider ${data.active ? 'text-emerald-400' : s.pending_balance > 0 ? 'text-amber-400' : 'text-red-400'}`}>
-                  {data.active ? (cs ? 'Aktivní' : 'Active') : (cs ? 'Neaktivní' : 'Inactive')}
+                  {data.active
+                    ? (cs ? 'Aktivní' : 'Active')
+                    : s.pending_balance > 0
+                      ? (cs ? 'Čeká na payout' : 'Pending payout')
+                      : (cs ? 'Neaktivní' : 'Inactive')}
                 </span>
                 {s.last_share_time > 0 && (
                   <span className="text-xs text-gray-500">· {cs ? 'poslední share' : 'last share'} {timeAgo(s.last_share_time, cs)}</span>
