@@ -54,7 +54,7 @@ Burn úspěšně zpracován — unlock proběhl v bloku 891. Status v DB opraven
 
 | TX Hash | Status | Height | Amount | Target | Recipient |
 |---------|--------|--------|--------|--------|-----------|
-| `a62d9350...` | ❌ Failed | 891 | 16,666,666.67 ZION | base | 0x9b5b9a6c... |
+| `a62d9350...` | ❌ Failed | 891 | 16,666,666.67 ZION | base | 0xdde17506... |
 
 **Root cause:** Všech 5 validatorů má 0 ETH na Base → nemohou platit gas za `submitLockProof` TX. Retry count: 12 (vyčerpáno).
 
