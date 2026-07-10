@@ -1,45 +1,45 @@
-# ZION CLI FAQ (jednoduše)
+# ZION CLI FAQ (simple)
 
-## Co je ZION CLI?
+## What is ZION CLI?
 
-`zion` je jeden binary, který umí všechno: wallet, node, miner, pool, status, doctor, monitor.
-Žádné 8 oddělených binárek — jeden soubor, interaktivní menu, hotovo.
+`zion` is a single binary that does everything: wallet, node, miner, pool, status, doctor, monitor.
+No eight separate binaries — one file, interactive menu, done.
 
-## Kde stáhnu binary?
+## Where do I download the binary?
 
-Na GitHub Releases:
+On GitHub Releases:
 
 https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.0.5-beta
 
-4 platformy: Linux x86_64, macOS Apple Silicon, macOS Intel, Windows x86_64.
-Pro ARM64 (Raspberry Pi) build ze zdrojů.
+Four platforms: Linux x86_64, macOS Apple Silicon, macOS Intel, Windows x86_64.
+For ARM64 (Raspberry Pi), build from source.
 
-## Musím mít GPU, aby CLI fungovalo?
+## Do I need a GPU for the CLI to work?
 
-Nemusíš.
+No.
 
-Základní operace (`status`, `doctor`, `wallet`, `node`) fungují i bez GPU.
-Těžba běží na CPU výchozím backendem.
+Basic operations (`status`, `doctor`, `wallet`, `node`) work without a GPU.
+Mining runs on the CPU backend by default.
 
-## Jaký je úplně první příkaz po spuštění terminálu?
+## What is the very first command after opening a terminal?
 
 ```bash
 zion
 ```
 
-Bez argumentů se otevře interaktivní menu.
-Nebo klasicky:
+Without arguments, the interactive menu opens.
+Or the classic way:
 
 ```bash
 zion doctor
 zion status
 ```
 
-## Můžu používat CLI bez interaktivního menu?
+## Can I use the CLI without the interactive menu?
 
-Ano.
+Yes.
 
-Menu je pohodlné pro začátečníka, ale všechny příkazy jdou spouštět klasicky:
+The menu is convenient for beginners, but all commands can also be run classically:
 
 ```bash
 zion wallet new --mnemonic --out my-wallet.json
@@ -47,7 +47,7 @@ zion node status
 zion mine start --pool stratum+tcp://pool.zionterranova.com:8444 --wallet YOUR_ADDRESS
 ```
 
-## Jaké vrstvy platí v dokumentaci?
+## What layers apply in the documentation?
 
 - L1 = blockchain, pool, miner
 - L2 = bridge, DAO, DeFi
@@ -56,51 +56,51 @@ zion mine start --pool stratum+tcp://pool.zionterranova.com:8444 --wallet YOUR_A
 - L5 = Free World
 - L6 = Issobella
 
-Komunitní CLI (`zion`) pokrývá L1 (wallet, node, mine, pool).
-L2/L3 služby jsou operátorské — běží na serveru.
+The community CLI (`zion`) covers L1 (wallet, node, mine, pool).
+L2/L3 services are operator-level — they run on the server.
 
-## Jak poznám, že je problém v node a ne ve webu?
+## How do I know whether the problem is in the node or on the web?
 
-Použij rychlý test:
+Use a quick test:
 
 ```bash
 zion node status
 ```
 
-Když node neběží nebo padá, explorer/web obvykle nemá odkud číst data.
+If the node is not running or is crashing, the explorer/web usually has no source from which to read data.
 
-## Jaké algoritmy těžby jsou k dispozici?
+## Which mining algorithms are available?
 
 **Ekam Deeksha** — dual-algo PoW: BLAKE3 + RandomNPU.
 
-Backendy:
+Backends:
 
-- `cpu` — výchozí, funguje všude
+- `cpu` — default, works everywhere
 - `opencl` — Linux/Windows GPU (AMD, NVIDIA)
 - `cuda` — NVIDIA GPU (Linux/Windows)
 - `metal` — macOS Apple Silicon GPU
 
-## Jaká je nejbezpečnější rutina pro laika?
+## What is the safest routine for a beginner?
 
-Před každou větší akcí:
+Before every bigger action:
 
 1. `zion doctor`
 2. `zion status`
 3. `zion wallet balance --address YOUR_ADDRESS`
 
-## Je ZION v produkci?
+## Is ZION in production?
 
-ZION je v **Mainnet Beta** — síť běží a produkuje bloky, ale může obsahovat chyby.
-Těž a transakuj na vlastní riziko. Oficiální veřejný launch: **31. prosince 2026**.
+ZION is in **Mainnet Beta** — the network is running and producing blocks, but it may contain bugs.
+Mine and transact at your own risk. Official public launch: **31 December 2026**.
 
-Genesis chain je **permanentní** — nebude resetována.
+The genesis chain is **permanent** — it will not be reset.
 
-## Jak ověřím SHA256 checksum?
+## How do I verify the SHA256 checksum?
 
 ```bash
 # Linux / macOS
 shasum -a 256 zion-cli-linux-x86_64.tar.gz
-# Porovnej s SHA256SUMS.txt
+# Compare with SHA256SUMS.txt
 
 # Windows
 Get-FileHash zion-cli-windows-x86_64.zip -Algorithm SHA256

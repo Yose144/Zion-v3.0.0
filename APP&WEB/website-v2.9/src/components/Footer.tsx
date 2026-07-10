@@ -35,7 +35,7 @@ export default function Footer() {
       title: tr('footer', 'group_layers', lang),
       links: [
         { href: '/defi', label: `L2 ${tr('nav', 'defi', lang)}` },
-        { href: '/cex', label: 'CEX Listings' },
+        { href: '/cex', label: tr('nav', 'cex_listings', lang) },
         { href: '/wallet', label: tr('nav', 'wallet', lang) },
         { href: '/dao', label: tr('nav', 'dao', lang) },
         { href: '/bridge', label: tr('nav', 'bridge', lang) },
@@ -52,7 +52,7 @@ export default function Footer() {
       links: [
         { href: '/wiki', label: tr('nav', 'wiki_group', lang) },
         { href: '/terranova', label: tr('nav', 'terranova', lang) },
-        { href: '/zohar', label: tr('nav', 'zohar', lang) },
+        { href: '/tree-of-life', label: tr('nav', 'tree_of_life', lang) },
         { href: '/genesis', label: tr('nav', 'genesis', lang) },
         { href: '/docs', label: tr('nav', 'docs', lang) },
       ],
@@ -130,7 +130,7 @@ export default function Footer() {
           </p>
           <div className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-xs text-gray-500">Test Mainnet Active</span>
+            <span className="text-xs text-gray-500">{tr('footer', 'test_mainnet_active', lang)}</span>
           </div>
         </div>
       </div>

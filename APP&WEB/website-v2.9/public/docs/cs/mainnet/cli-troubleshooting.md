@@ -9,7 +9,7 @@ zion status
 zion doctor
 ```
 
-Když `zion` není v PATH, rozbal archive a použij `./zion`:
+Když `zion` není v PATH, rozbal archiv a použij `./zion`:
 
 ```bash
 ./zion status
@@ -82,7 +82,7 @@ zion wallet balance --address YOUR_ADDRESS
 ```
 
 Pokud je zůstatek 0, zkontroluj adresu v Exploreru:
-https://zionterranova.com/exorer
+https://zionterranova.com/explorer
 
 Pokud jsi zapomněl wallet, importuj ze souboru:
 
@@ -102,7 +102,7 @@ zion node sync
 ```
 
 Pokud nemá peers, zkontroluj síťové připojení a firewall.
-Node potřebuje odchozí TCP port 8444 (pool stratum) a příchozí/příchozí P2P.
+Node potřebuje odchozí TCP port 8444 (pool stratum) a příchozí/odchozí P2P.
 
 ---
 
@@ -138,7 +138,7 @@ Použij plnou cestu:
 
 ## 8) Binary se nedá spustit (Windows)
 
-Otevři PowerShell v složce s `zion.exe`:
+Otevři PowerShell ve složce s `zion.exe`:
 
 ```powershell
 .\zion.exe
@@ -150,7 +150,7 @@ Pokud Windows blokuje spuštění (SmartScreen), klikni "More info" → "Run any
 
 ## 9) macOS: "cannot be opened because the developer cannot be verified"
 
-Otevřít přes pravý klik → Open, nebo:
+Otevři přes pravý klik → Open, nebo:
 
 ```bash
 xattr -d com.apple.quarantine zion

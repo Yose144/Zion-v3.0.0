@@ -1,64 +1,64 @@
 # CoinGecko Listing — Submission Checklist
 
-**Cíl:** Úspěšná registrace ZION na CoinGecko (+ CoinMarketCap)  
-**Target:** gated Q3–Q4 2026 window (jen pokud launch package dojde na GO)
+**Goal:** Successful registration of ZION on CoinGecko (+ CoinMarketCap)  
+**Target:** gated Q3–Q4 2026 window (only if the launch package reaches GO)
 
 ---
 
-## Co CoinGecko vyžaduje
+## What CoinGecko requires
 
-### 1. Základní informace
+### 1. Basic information
 
-| Položka | Požadavek | Stav | URL / Hodnota |
-|---------|-----------|------|---------------|
-| **Název coinu** | Přesný název | ✅ | ZION TerraNova |
-| **Ticker** | 3–5 znaků | ✅ | ZION |
-| **Website** | HTTPS, funkční | ✅ | https://zionterranova.com |
-| **Whitepaper** | Veřejná URL, EN | 🔄 | /docs (WP v2.9.7 EN) |
-| **GitHub** | Public repo, aktivní | ✅ | https://github.com/Zion-TerraNova |
-| **Block explorer** | Funkční, veřejný | 📋 | https://zionterranova.com/explorer |
-| **Algoritmus** | Název | ✅ | Cosmic Harmony v4 (CHv4) |
+| Item | Requirement | Status | URL / Value |
+|------|-------------|--------|-------------|
+| **Coin name** | Exact name | ✅ | ZION TerraNova |
+| **Ticker** | 3–5 characters | ✅ | ZION |
+| **Website** | HTTPS, working | ✅ | https://zionterranova.com |
+| **Whitepaper** | Public URL, EN | 🔄 | /docs (WP v2.9.7 EN) |
+| **GitHub** | Public repo, active | ✅ | https://github.com/Zion-TerraNova |
+| **Block explorer** | Working, public | 📋 | https://zionterranova.com/explorer |
+| **Algorithm** | Name | ✅ | Cosmic Harmony v4 (CHv4) |
 | **Consensus** | PoW / PoS / ... | ✅ | Proof of Work |
-| **Total supply** | Číslo | ✅ | 144 000 000 000 |
-| **Max supply** | Číslo nebo ∞ | ✅ | 144 000 000 000 |
-| **Block time** | Sekundy | ✅ | 60 s |
+| **Total supply** | Number | ✅ | 144 000 000 000 |
+| **Max supply** | Number or ∞ | ✅ | 144 000 000 000 |
+| **Block time** | Seconds | ✅ | 60 s |
 
-### 2. Vizuální assety
+### 2. Visual assets
 
-| Položka | Specifikace | Stav |
-|---------|-------------|------|
-| **Logo PNG** | 200×200 px, transparentní bg | 📋 |
+| Item | Specification | Status |
+|------|---------------|--------|
+| **Logo PNG** | 200×200 px, transparent bg | 📋 |
 | **Logo PNG small** | 64×64 px | 📋 |
-| **Logo SVG** | Volitelné, žádoucí | 📋 |
-| Banner image | 1400×400 px (volitelné) | 📋 |
+| **Logo SVG** | Optional, desirable | 📋 |
+| Banner image | 1400×400 px (optional) | 📋 |
 
-> Aktuální logo: `LogoStargate.jpg` — nutno překonvertovat na PNG s transparentním pozadím.
+> Current logo: `LogoStargate.jpg` — needs to be converted to PNG with transparent background.
 
-### 3. Sociální sítě a komunita
+### 3. Social media and community
 
-| Platforma | Požadavek | Stav | URL |
-|-----------|-----------|------|-----|
-| Twitter/X | Aktivní účet | 📋 | |
-| Telegram | Komunita nebo ANN | 📋 | |
-| Discord | Volitelné | 📋 | |
-| Reddit | Volitelné | 📋 | |
-| BitcoinTalk ANN | Doporučeno | 📋 | |
+| Platform | Requirement | Status | URL |
+|----------|-------------|--------|-----|
+| Twitter/X | Active account | 📋 | |
+| Telegram | Community or ANN | 📋 | |
+| Discord | Optional | 📋 | |
+| Reddit | Optional | 📋 | |
+| BitcoinTalk ANN | Recommended | 📋 | |
 
 ### 4. Circulating Supply API
 
-CoinGecko potřebuje live API endpoint pro circulating supply:
+CoinGecko needs a live API endpoint for circulating supply:
 
 ```
 GET https://zionterranova.com/api/supply
 → { "circulating": 16280000000, "total": 144000000000, "max": 144000000000 }
 ```
 
-**Implementace:**  
-Endpoint `/api/supply` (Next.js route) → volá `GET http://[node]:8443/supply` → vrací JSON.
+**Implementation:**  
+Endpoint `/api/supply` (Next.js route) → calls `GET http://[node]:8443/supply` → returns JSON.
 
-Status: 📋 nutno implementovat
+Status: 📋 needs to be implemented
 
-### 5. Popis (EN, max 500 znaků)
+### 5. Description (EN, max 500 characters)
 
 ```
 ZION TerraNova is a Proof-of-Work blockchain built entirely in native Rust. 
@@ -67,9 +67,9 @@ GPU/CPU mining with no halving. Designed for decentralization, humanitarian
 impact, and multi-chain interoperability via WARP bridges and L2 DeFi layer.
 ```
 
-*(476 znaků — OK)*
+*(476 characters — OK)*
 
-### 6. Delší popis (EN, max 2000 znaků)
+### 6. Long description (EN, max 2000 characters)
 
 ```
 ZION TerraNova is a from-scratch Proof-of-Work blockchain written in 52,590+ 
@@ -93,15 +93,15 @@ Public launch remains NO-GO until closure evidence is complete; CoinGecko prep s
 
 ---
 
-## CoinMarketCap – Specifické požadavky navíc
+## CoinMarketCap — Specific extra requirements
 
-| Položka | Detail |
-|---------|--------|
-| **CMC ID** | Automaticky přiděleno po schválení |
-| **Proof of Reserves** | Volitelné pro PoW coiny |
-| **Audit report** | Silně doporučeno (URL k auditu) |
-| **Exchanges** | Aspoň 1 trading pair (DEX stačí) |
-| **Trading pair** | ZION/USDC nebo ZION/ETH |
+| Item | Detail |
+|------|--------|
+| **CMC ID** | Assigned automatically after approval |
+| **Proof of Reserves** | Optional for PoW coins |
+| **Audit report** | Strongly recommended (audit URL) |
+| **Exchanges** | At least 1 trading pair (DEX is enough) |
+| **Trading pair** | ZION/USDC or ZION/ETH |
 
 ---
 
@@ -112,17 +112,17 @@ Public launch remains NO-GO until closure evidence is complete; CoinGecko prep s
 
 ---
 
-## Přípravný TODO (pro team)
+## Preparation TODO (for the team)
 
-- [ ] Vytvořit PNG logo 200×200, 64×64 (transparentní bg)
-- [ ] Spustit Twitter/X účet (@ZIONTerraNova nebo podobné)
-- [ ] Vytvořit Telegram skupinu/kanál
-- [ ] Implementovat `/api/supply` endpoint
-- [ ] Funkční block explorer `/explorer` (ne mockup)
-- [ ] Whitepaper v2.9.7 EN zveřejnit na webu
-- [ ] BitcoinTalk ANN thread (neplatný email stačí — thread je klíčový signál)
-- [ ] Aspoň 1 DEX trading pair při launchi (Uniswap/Base)
+- [ ] Create PNG logo 200×200, 64×64 (transparent bg)
+- [ ] Launch Twitter/X account (@ZIONTerraNova or similar)
+- [ ] Create Telegram group/channel
+- [ ] Implement `/api/supply` endpoint
+- [ ] Working block explorer `/explorer` (not a mockup)
+- [ ] Publish whitepaper v2.9.7 EN on the website
+- [ ] BitcoinTalk ANN thread (a throwaway email is enough — the thread is a key signal)
+- [ ] At least 1 DEX trading pair at launch (Uniswap/Base)
 
 ---
 
-*Viz take: [Public Launch Path](README.md) · [Architecture](../architecture/README.md) · [Whitepaper](../whitepaper/ZION_Whitepaper_v2.9.7.md)*
+*See also: [Public Launch Path](README.md) · [Architecture](../architecture/README.md) · [Whitepaper](../whitepaper/ZION_Whitepaper_v2.9.7.md)*

@@ -55,10 +55,10 @@ function formatDate(ts: number, locale: string) {
 function timeAgo(ts: number, cs: boolean) {
   if (!ts) return "—";
   const s = Math.max(0, Math.floor(Date.now() / 1000 - ts));
-  if (s < 60) return cs ? `pred ${s} s` : `${s}s ago`;
-  if (s < 3600) return cs ? `pred ${Math.floor(s / 60)} min` : `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return cs ? `pred ${Math.floor(s / 3600)} h` : `${Math.floor(s / 3600)}h ago`;
-  return cs ? `pred ${Math.floor(s / 86400)} d` : `${Math.floor(s / 86400)}d ago`;
+  if (s < 60) return cs ? `před ${s} s` : `${s}s ago`;
+  if (s < 3600) return cs ? `před ${Math.floor(s / 60)} min` : `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return cs ? `před ${Math.floor(s / 3600)} h` : `${Math.floor(s / 3600)}h ago`;
+  return cs ? `před ${Math.floor(s / 86400)} d` : `${Math.floor(s / 86400)}d ago`;
 }
 
 /* ── watchlist (localStorage) ────────────────────────────────── */
@@ -211,10 +211,10 @@ export default function AddressDetailClient() {
     (async () => {
       try {
         setError(null); setLoading(true); setData(null);
-        if (!addr) { setError(cs ? "Chybi adresa. Pouzijte ?addr=zion1... nebo ?addr=ZION..." : "Missing address. Use ?addr=zion1... or ?addr=ZION..."); return; }
+        if (!addr) { setError(cs ? "Chybí adresa. Použijte ?addr=zion1... nebo ?addr=ZION..." : "Missing address. Use ?addr=zion1... or ?addr=ZION..."); return; }
         const result = await apiClient<AddressData>(`/blockchain/address?addr=${encodeURIComponent(addr)}`, { cache: "no-store" });
         setData(result);
-      } catch (err) { setError(cs ? `Nepodarilo se nacist adresu: ${err}` : `Failed to load address: ${err}`); }
+      } catch (err) { setError(cs ? `Nepodařilo se načíst adresu: ${err}` : `Failed to load address: ${err}`); }
       finally { setLoading(false); }
     })();
   }, [addr, cs]);
@@ -244,7 +244,7 @@ export default function AddressDetailClient() {
             <h1 className="text-xl font-bold text-white mb-2">{cs ? 'Adresa nenalezena' : 'Address Not Found'}</h1>
             <p className="text-white/40 text-sm mb-6 font-mono break-all">{error || addr}</p>
             <button onClick={() => router.push("/explorer")} className="px-5 py-2.5 rounded-xl bg-white/[0.06] border border-white/[0.08] hover:bg-white/[0.10] transition-colors text-sm text-white/60 hover:text-white/90">
-              {cs ? '← Zpet do exploreru' : '← Back to Explorer'}
+              {cs ? '← Zpět do exploreru' : '← Back to Explorer'}
             </button>
           </div>
         </div>
@@ -278,9 +278,9 @@ export default function AddressDetailClient() {
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-bold text-white tracking-tight">{cs ? 'Adresa' : 'Address'}</h1>
               {isWatched && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-zion-gold/10 text-zion-gold border border-zion-gold/20" title={cs ? 'Sledovano' : 'Watched'}>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-zion-gold/10 text-zion-gold border border-zion-gold/20" title={cs ? 'Sledováno' : 'Watched'}>
                   <Star className="w-3 h-3 fill-current" />
-                  {cs ? 'Sledovano' : 'Watched'}
+                  {cs ? 'Sledováno' : 'Watched'}
                 </span>
               )}
               {data.known_label && (
@@ -295,7 +295,7 @@ export default function AddressDetailClient() {
               )}
               {data.is_miner && !data.known_label && (
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  ⛏ {cs ? 'Aktivni miner' : 'Active Miner'}
+                  ⛏ {cs ? 'Aktivní miner' : 'Active Miner'}
                 </span>
               )}
             </div>
@@ -309,7 +309,7 @@ export default function AddressDetailClient() {
                     ? "bg-zion-gold/10 text-zion-gold border-zion-gold/30 hover:bg-zion-gold/20"
                     : "bg-white/[0.04] text-white/60 border-white/[0.08] hover:bg-white/[0.08] hover:text-white/90"
                 }`}
-                title={isWatched ? (cs ? 'Prestat sledovat' : 'Unwatch') : (cs ? 'Sledovat' : 'Watch')}
+                title={isWatched ? (cs ? 'Přestat sledovat' : 'Unwatch') : (cs ? 'Sledovat' : 'Watch')}
               >
                 <Star className={`w-3.5 h-3.5 ${isWatched ? "fill-current" : ""}`} />
                 {isWatched ? (cs ? 'Unwatch' : 'Unwatch') : (cs ? 'Watch' : 'Watch')}
@@ -321,16 +321,16 @@ export default function AddressDetailClient() {
                   type="text"
                   value={labelValue}
                   onChange={(e) => setLabelValue(e.target.value)}
-                  placeholder={cs ? 'Volitelny popisek...' : 'Optional label...'}
+                  placeholder={cs ? 'Volitelný popisek...' : 'Optional label...'}
                   className="px-3 py-1.5 rounded-lg bg-black/40 border border-white/[0.08] text-[12px] text-white/80 placeholder:text-white/25 focus:outline-none focus:border-zion-gold/40 w-56"
                   onKeyDown={(e) => { if (e.key === 'Enter') confirmWatch(); if (e.key === 'Escape') { setShowLabelInput(false); setLabelValue(""); } }}
                   autoFocus
                 />
                 <button onClick={confirmWatch} className="px-3 py-1.5 rounded-lg bg-zion-gold/15 text-zion-gold border border-zion-gold/30 text-[11px] font-semibold hover:bg-zion-gold/25 transition-colors">
-                  {cs ? 'Pridat' : 'Add'}
+                  {cs ? 'Přidat' : 'Add'}
                 </button>
                 <button onClick={() => { setShowLabelInput(false); setLabelValue(""); }} className="px-3 py-1.5 rounded-lg text-white/40 text-[11px] hover:text-white/70 transition-colors">
-                  {cs ? 'Zrusit' : 'Cancel'}
+                  {cs ? 'Zrušit' : 'Cancel'}
                 </button>
               </div>
             )}
@@ -340,9 +340,9 @@ export default function AddressDetailClient() {
         {/* ── balance summary ──────────────────────────── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           {[
-            { label: cs ? "On-chain zustatek" : "On-Chain Balance", value: `${data.balance.total.toFixed(4)} ZION`, color: "text-white" },
+            { label: cs ? "On-chain zůstatek" : "On-Chain Balance", value: `${data.balance.total.toFixed(4)} ZION`, color: "text-white" },
             { label: cs ? "UTXOs" : "UTXOs", value: String(data.balance.utxo_count), color: "text-zion-cyan" },
-            { label: cs ? "Pool (ceka)" : "Pool (Pending)", value: `${data.balance.pool_pending.toFixed(4)} ZION`, color: "text-amber-400" },
+            { label: cs ? "Pool (čeká)" : "Pool (Pending)", value: `${data.balance.pool_pending.toFixed(4)} ZION`, color: "text-amber-400" },
             { label: cs ? "Pool (vyplaceno)" : "Pool (Paid)", value: `${data.balance.pool_paid.toFixed(2)} ZION`, color: "text-zion-gold" },
           ].map((s) => (
             <div key={s.label} className="zion-rainbow-sub rounded-[20px] bg-black/60 p-5" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
@@ -363,7 +363,7 @@ export default function AddressDetailClient() {
             <div className="zion-rainbow-sub rounded-[28px] bg-black/60 p-6 mb-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <h2 className="text-sm font-semibold text-white/70 mb-4 flex items-center gap-2">
                 <Activity className="w-4 h-4 text-purple-400" />
-                {cs ? 'Souhrn transakci' : 'Transaction Summary'}
+                {cs ? 'Souhrn transakcí' : 'Transaction Summary'}
               </h2>
               <div className="flex items-center gap-6 flex-wrap">
                 <div className="relative flex-shrink-0">
@@ -379,7 +379,7 @@ export default function AddressDetailClient() {
                   <div>
                     <div className="flex items-center gap-1.5 mb-1">
                       <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                      <p className="text-[10px] uppercase tracking-wider text-white/30">{cs ? 'Prijato' : 'Received'}</p>
+                      <p className="text-[10px] uppercase tracking-wider text-white/30">{cs ? 'Přijato' : 'Received'}</p>
                     </div>
                     <p className="text-lg font-bold text-emerald-400 tabular-nums">{received.toFixed(4)}</p>
                     <p className="text-[10px] text-white/30">ZION</p>
@@ -387,7 +387,7 @@ export default function AddressDetailClient() {
                   <div>
                     <div className="flex items-center gap-1.5 mb-1">
                       <span className="w-2 h-2 rounded-full bg-red-400" />
-                      <p className="text-[10px] uppercase tracking-wider text-white/30">{cs ? 'Odeslano' : 'Sent'}</p>
+                      <p className="text-[10px] uppercase tracking-wider text-white/30">{cs ? 'Odesláno' : 'Sent'}</p>
                     </div>
                     <p className="text-lg font-bold text-red-400 tabular-nums">{sent.toFixed(4)}</p>
                     <p className="text-[10px] text-white/30">ZION</p>
@@ -415,13 +415,13 @@ export default function AddressDetailClient() {
               {cs ? 'Detaily adresy' : 'Address Details'}
             </h2>
             <InfoRow label={cs ? 'Adresa' : 'Address'} value={addr} mono copy />
-            <InfoRow label={cs ? 'On-chain zustatek' : 'On-Chain Balance'} value={`${data.balance.total.toFixed(4)} ZION`} color="text-white" />
+            <InfoRow label={cs ? 'On-chain zůstatek' : 'On-Chain Balance'} value={`${data.balance.total.toFixed(4)} ZION`} color="text-white" />
             <InfoRow label="UTXOs" value={String(data.balance.utxo_count)} />
-            <InfoRow label={cs ? 'Pool (ceka)' : 'Pool Pending'} value={`${data.balance.pool_pending.toFixed(4)} ZION`} color="text-amber-400" />
+            <InfoRow label={cs ? 'Pool (čeká)' : 'Pool Pending'} value={`${data.balance.pool_pending.toFixed(4)} ZION`} color="text-amber-400" />
             <InfoRow label={cs ? 'Pool (vyplaceno)' : 'Pool Paid'} value={`${data.balance.pool_paid.toFixed(4)} ZION`} color="text-zion-gold" />
             <InfoRow label={cs ? 'Transakce' : 'Transactions'} value={String(data.transaction_count)} />
-            {data.first_seen > 0 && <InfoRow label={cs ? 'Prvni vyskyt' : 'First Seen'} value={formatDate(data.first_seen, locale)} />}
-            {data.last_seen > 0 && <InfoRow label={cs ? 'Naposledy aktivni' : 'Last Active'} value={formatDate(data.last_seen, locale)} />}
+            {data.first_seen > 0 && <InfoRow label={cs ? 'První výskyt' : 'First Seen'} value={formatDate(data.first_seen, locale)} />}
+            {data.last_seen > 0 && <InfoRow label={cs ? 'Naposledy aktivní' : 'Last Active'} value={formatDate(data.last_seen, locale)} />}
           </div>
 
           {/* ── Mining Stats card (or placeholder) ──────────── */}
@@ -429,12 +429,12 @@ export default function AddressDetailClient() {
             <div className="zion-rainbow-sub rounded-[28px] bg-black/60 p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
               <h2 className="text-sm font-semibold text-white/70 mb-4 flex items-center gap-2">
                 <Pickaxe className="w-4 h-4 text-emerald-400" />
-                {cs ? 'Statistiky tezby' : 'Mining Stats'}
+                {cs ? 'Statistiky těžby' : 'Mining Stats'}
               </h2>
               <InfoRow label="Hashrate (1h)" value={data.mining_stats.hashrate_formatted} color="text-emerald-400" />
-              <InfoRow label={cs ? 'Nalezene bloky' : 'Blocks Found'} value={String(data.mining_stats.blocks_found)} color="text-zion-gold" />
-              <InfoRow label={cs ? 'Prijate shares' : 'Accepted Shares'} value={data.mining_stats.accepted_shares.toLocaleString(locale)} />
-              <InfoRow label={cs ? 'Odmítnute shares' : 'Rejected Shares'} value={data.mining_stats.rejected_shares.toLocaleString(locale)} color="text-red-400" />
+              <InfoRow label={cs ? 'Nalezené bloky' : 'Blocks Found'} value={String(data.mining_stats.blocks_found)} color="text-zion-gold" />
+              <InfoRow label={cs ? 'Přijaté shares' : 'Accepted Shares'} value={data.mining_stats.accepted_shares.toLocaleString(locale)} />
+              <InfoRow label={cs ? 'Odmítnuté shares' : 'Rejected Shares'} value={data.mining_stats.rejected_shares.toLocaleString(locale)} color="text-red-400" />
               {data.mining_stats.worker_name && <InfoRow label={cs ? 'Worker' : 'Worker'} value={data.mining_stats.worker_name} mono />}
 
               {/* consciousness level */}
@@ -442,12 +442,12 @@ export default function AddressDetailClient() {
                 <div className="flex items-center gap-3">
                   <CIcon className={`w-6 h-6 ${cStyle.text}`} />
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-white/30">{cs ? 'Uroven vedomi' : 'Consciousness Level'}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-white/30">{cs ? 'Úroveň vědomí' : 'Consciousness Level'}</p>
                     <p className={`${cStyle.text} font-bold text-lg`}>{level.replace(/_/g, " ")}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] uppercase tracking-wider text-white/30">{cs ? 'Nasobic' : 'Multiplier'}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-white/30">{cs ? 'Násobič' : 'Multiplier'}</p>
                   <p className={`${cStyle.text} font-bold text-2xl tabular-nums`}>{data.mining_stats.consciousness_multiplier}×</p>
                 </div>
               </div>
@@ -455,8 +455,8 @@ export default function AddressDetailClient() {
           ) : (
             <div className="zion-rainbow-sub rounded-[28px] bg-black/60 p-6 flex flex-col items-center justify-center text-center" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
               <Pickaxe className="w-8 h-8 text-white/10 mb-3" />
-              <p className="text-white/30 text-sm">{cs ? 'Neni to aktivni miner' : 'Not an active miner'}</p>
-              <p className="text-white/15 text-xs mt-1">{cs ? 'Statistiky tezby se objevi, jakmile tato adresa zacne tezit.' : 'Mining stats will appear once this address starts mining.'}</p>
+              <p className="text-white/30 text-sm">{cs ? 'Není to aktivní miner' : 'Not an active miner'}</p>
+              <p className="text-white/15 text-xs mt-1">{cs ? 'Statistiky těžby se objeví, jakmile tato adresa začne těžit.' : 'Mining stats will appear once this address starts mining.'}</p>
             </div>
           )}
         </div>
@@ -472,7 +472,7 @@ export default function AddressDetailClient() {
                 href={`/explorer/transactions?address=${encodeURIComponent(addr)}`}
                 className="text-[11px] text-cyan-400 hover:text-cyan-300 transition-colors"
               >
-                {cs ? 'Zobrazit vse →' : 'View all →'}
+                {cs ? 'Zobrazit vše →' : 'View all →'}
               </Link>
             )}
           </div>
@@ -481,14 +481,14 @@ export default function AddressDetailClient() {
           <div className="grid grid-cols-[70px_1fr_100px_90px_120px] gap-3 px-5 py-2.5 border-b border-white/[0.04]">
             <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{cs ? 'Typ' : 'Type'}</span>
             <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">TX Hash</span>
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{cs ? 'Stari' : 'Age'}</span>
+            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{cs ? 'Stáří' : 'Age'}</span>
             <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">Fee</span>
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{cs ? 'Castka' : 'Amount'}</span>
+            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{cs ? 'Částka' : 'Amount'}</span>
           </div>
 
           {data.transactions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-2">
-              <p className="text-white/20 text-sm">{cs ? 'Nenalezeny zadne transakce' : 'No transactions found'}</p>
+              <p className="text-white/20 text-sm">{cs ? 'Nenalezeny žádné transakce' : 'No transactions found'}</p>
             </div>
           ) : (
             <>
@@ -504,7 +504,7 @@ export default function AddressDetailClient() {
                     <div className="flex items-center">
                       <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
                         t.type === "payout" ? "bg-emerald-500/15 text-emerald-400" : "bg-blue-500/15 text-blue-400"
-                      }`}>{t.type === 'payout' ? (cs ? 'vyplata' : 'payout') : (cs ? 'prevod' : t.type)}</span>
+                      }`}>{t.type === 'payout' ? (cs ? 'výplata' : 'payout') : (cs ? 'převod' : t.type)}</span>
                     </div>
 
                     {/* hash */}
@@ -545,7 +545,7 @@ export default function AddressDetailClient() {
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] text-[12px] font-semibold text-white/70 hover:text-white transition-colors"
                   >
                     <ChevronDown className="w-4 h-4" />
-                    {cs ? 'Nacist dalsi' : 'Load More'}
+                    {cs ? 'Načíst další' : 'Load More'}
                   </button>
                 )}
               </div>
@@ -571,13 +571,13 @@ export default function AddressDetailClient() {
               <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">#</span>
               <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">TX Hash</span>
               <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{cs ? 'Index' : 'Index'}</span>
-              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{cs ? 'Vyska' : 'Height'}</span>
-              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{cs ? 'Castka' : 'Amount'}</span>
+              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{cs ? 'Výška' : 'Height'}</span>
+              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{cs ? 'Částka' : 'Amount'}</span>
             </div>
 
             {data.utxos.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 gap-2">
-                <p className="text-white/20 text-sm">{cs ? 'Zadne UTXO nenalezeny' : 'No UTXOs found'}</p>
+                <p className="text-white/20 text-sm">{cs ? 'Žádné UTXO nenalezeny' : 'No UTXOs found'}</p>
               </div>
             ) : (
               data.utxos.map((u, idx) => (
@@ -609,7 +609,7 @@ export default function AddressDetailClient() {
           <div className="zion-rainbow-sub rounded-[28px] bg-black/60 p-6 mt-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
             <h2 className="text-sm font-semibold text-white/70 mb-4 flex items-center gap-2">
               <Star className="w-4 h-4 text-zion-gold fill-current" />
-              {cs ? 'Sledovane adresy' : 'Watchlist'} ({watchlist.length})
+              {cs ? 'Sledované adresy' : 'Watchlist'} ({watchlist.length})
             </h2>
             <div className="space-y-2">
               {watchlist.map((w) => {
@@ -624,9 +624,9 @@ export default function AddressDetailClient() {
                         </Link>
                         {w.label && <span className="text-[10px] text-white/40 truncate">— {w.label}</span>}
                       </div>
-                      <p className="text-[10px] text-white/25 mt-0.5">{cs ? 'Pridano' : 'Added'} {timeAgo(w.addedAt, cs)}</p>
+                      <p className="text-[10px] text-white/25 mt-0.5">{cs ? 'Přidáno' : 'Added'} {timeAgo(w.addedAt, cs)}</p>
                     </div>
-                    {current && <span className="text-[10px] uppercase tracking-wider text-zion-gold font-semibold flex-shrink-0">{cs ? 'Aktualni' : 'Current'}</span>}
+                    {current && <span className="text-[10px] uppercase tracking-wider text-zion-gold font-semibold flex-shrink-0">{cs ? 'Aktuální' : 'Current'}</span>}
                     <button
                       onClick={() => { const next = watchlist.filter((x) => x.address !== w.address); setWatchlist(next); saveWatchlist(next); }}
                       className="text-white/20 hover:text-red-400 transition-colors flex-shrink-0 text-[11px]"

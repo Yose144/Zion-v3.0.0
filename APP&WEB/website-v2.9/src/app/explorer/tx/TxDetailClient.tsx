@@ -37,10 +37,10 @@ const fmtDate = (ts: number, locale: string) => ts ? new Date(ts * 1000).toLocal
 const fmtAge = (ts: number, cs: boolean) => {
   if (!ts) return "";
   const s = Math.floor(Date.now() / 1000 - ts);
-  if (s < 60) return cs ? `pred ${s} s` : `${s}s ago`;
-  if (s < 3600) return cs ? `pred ${Math.floor(s / 60)} min ${s % 60} s` : `${Math.floor(s / 60)}m ${s % 60}s ago`;
-  if (s < 86400) return cs ? `pred ${Math.floor(s / 3600)} h` : `${Math.floor(s / 3600)}h ago`;
-  return cs ? `pred ${Math.floor(s / 86400)} d` : `${Math.floor(s / 86400)}d ago`;
+  if (s < 60) return cs ? `před ${s} s` : `${s}s ago`;
+  if (s < 3600) return cs ? `před ${Math.floor(s / 60)} min ${s % 60} s` : `${Math.floor(s / 60)}m ${s % 60}s ago`;
+  if (s < 86400) return cs ? `před ${Math.floor(s / 3600)} h` : `${Math.floor(s / 3600)}h ago`;
+  return cs ? `před ${Math.floor(s / 86400)} d` : `${Math.floor(s / 86400)}d ago`;
 };
 const truncHash = (h: string, n = 12) => h && h.length > n * 2 ? `${h.slice(0, n)}…${h.slice(-n)}` : h || "—";
 
@@ -90,11 +90,11 @@ export default function TxDetailClient() {
     (async () => {
       try {
         setError(null); setLoading(true); setTx(null); setRawJson(null);
-        if (!hash) { setError(cs ? "Chybi hash transakce" : "Missing transaction hash"); return; }
+        if (!hash) { setError(cs ? "Chybí hash transakce" : "Missing transaction hash"); return; }
         const data = await apiClient<Transaction>(`/blockchain/transactions?hash=${encodeURIComponent(hash)}`);
         setTx(data);
         try { setRawJson(JSON.stringify(data, null, 2)); } catch { setRawJson(null); }
-      } catch (err) { setError(cs ? `Nepodarilo se nacist transakci: ${err}` : `Failed to load transaction: ${err}`); }
+      } catch (err) { setError(cs ? `Nepodařilo se načíst transakci: ${err}` : `Failed to load transaction: ${err}`); }
       finally { setLoading(false); }
     })();
   }, [hash, cs]);
@@ -125,7 +125,7 @@ export default function TxDetailClient() {
           <h1 className="text-2xl font-bold text-white mb-2">{cs ? 'Transakce nenalezena' : 'Transaction Not Found'}</h1>
           <p className="text-gray-500 text-sm mb-6">{error || `Hash: ${hash}`}</p>
           <Link href="/explorer" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white hover:bg-white/10 transition">
-            <ArrowLeft className="h-4 w-4" /> {cs ? 'Zpet do exploreru' : 'Back to Explorer'}
+            <ArrowLeft className="h-4 w-4" /> {cs ? 'Zpět do exploreru' : 'Back to Explorer'}
           </Link>
         </div>
       </div>
@@ -167,7 +167,7 @@ export default function TxDetailClient() {
                 : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
             }`}>
               {tx.in_pool ? <Clock className="h-3 w-3" /> : <Shield className="h-3 w-3" />}
-              {tx.in_pool ? (cs ? 'Ceka' : 'Pending') : `${tx.confirmations.toLocaleString(locale)} ${cs ? 'potvrzeni' : 'Confirmations'}`}
+              {tx.in_pool ? (cs ? 'Čeká' : 'Pending') : `${tx.confirmations.toLocaleString(locale)} ${cs ? 'potvrzení' : 'Confirmations'}`}
             </span>
             {isCoinbase && (
               <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border bg-zion-gold/10 text-zion-gold border-zion-gold/20">
@@ -208,12 +208,12 @@ export default function TxDetailClient() {
         {/* Summary cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {(isV3Account ? [
-            { label: cs ? "Castka" : "Amount", value: `${tx.amount.toFixed(4)} ZION`, color: "text-white" },
+            { label: cs ? "Částka" : "Amount", value: `${tx.amount.toFixed(4)} ZION`, color: "text-white" },
             { label: "Fee", value: `${tx.fee.toFixed(6)} ZION`, color: "text-amber-400" },
             { label: "Nonce", value: `${tx.nonce ?? 0}`, color: "text-zion-cyan" },
             { label: cs ? "Model" : "Model", value: (tx.transaction_model ?? 'hybrid').toUpperCase(), color: "text-emerald-400" },
           ] : [
-            { label: cs ? "Castka" : "Amount", value: `${tx.amount.toFixed(4)} ZION`, color: "text-white" },
+            { label: cs ? "Částka" : "Amount", value: `${tx.amount.toFixed(4)} ZION`, color: "text-white" },
             { label: "Fee", value: `${tx.fee.toFixed(6)} ZION`, color: "text-amber-400" },
             { label: cs ? "Vstupy" : "Inputs", value: `${tx.inputs.length}`, color: "text-zion-cyan" },
             { label: cs ? "Vystupy" : "Outputs", value: `${tx.outputs.length}`, color: "text-emerald-400" },
@@ -235,14 +235,14 @@ export default function TxDetailClient() {
             <h2 className="text-lg font-semibold text-white">{cs ? 'Detaily transakce' : 'Transaction Details'}</h2>
           </div>
           <InfoRow label="TX Hash" value={tx.tx_hash} mono copyable />
-          <InfoRow label={cs ? 'Stav' : 'Status'} value={tx.in_pool ? (cs ? "Ceka (mempool)" : "Pending (Mempool)") : (cs ? 'Potvrzena' : 'Confirmed')}
+          <InfoRow label={cs ? 'Stav' : 'Status'} value={tx.in_pool ? (cs ? "Čeká (mempool)" : "Pending (Mempool)") : (cs ? 'Potvrzena' : 'Confirmed')}
             color={tx.in_pool ? "text-amber-400" : "text-emerald-400"} />
           {tx.block_height > 0 && (
             <InfoRow label={cs ? 'Blok' : 'Block'} value={`#${tx.block_height.toLocaleString(locale)}`}
               link={`/explorer/block?id=${tx.block_height}`} />
           )}
           <InfoRow label={cs ? 'Cas' : 'Timestamp'} value={`${fmtDate(tx.block_timestamp, locale)} (${fmtAge(tx.block_timestamp, cs)})`} />
-          <InfoRow label={cs ? 'Castka' : 'Amount'} value={`${tx.amount.toFixed(6)} ZION`} color="text-zion-gold" />
+          <InfoRow label={cs ? 'Částka' : 'Amount'} value={`${tx.amount.toFixed(6)} ZION`} color="text-zion-gold" />
           <InfoRow label="Fee" value={`${tx.fee.toFixed(6)} ZION`} color="text-amber-400" />
           {isV3Account ? (
             <>
@@ -250,13 +250,13 @@ export default function TxDetailClient() {
               <InfoRow label="To" value={tx.to ?? '—'} mono copyable link={`/explorer/address?id=${tx.to}`} />
               <InfoRow label="Nonce" value={`${tx.nonce ?? 0}`} />
               <InfoRow label={cs ? 'Model' : 'Model'} value={(tx.transaction_model ?? 'hybrid').toUpperCase()} color="text-emerald-400" />
-              {tx.public_key && <InfoRow label={cs ? 'Verejny klic' : 'Public Key'} value={tx.public_key} mono copyable />}
+              {tx.public_key && <InfoRow label={cs ? 'Veřejný klíč' : 'Public Key'} value={tx.public_key} mono copyable />}
               {tx.signature && <InfoRow label={cs ? 'Podpis' : 'Signature'} value={truncHash(tx.signature, 16)} mono copyable />}
             </>
           ) : (
             <>
               <InfoRow label={cs ? 'Verze' : 'Version'} value={tx.version.toString()} />
-              {tx.unlock_time > 0 && <InfoRow label={cs ? 'Cas odemceni' : 'Unlock Time'} value={tx.unlock_time.toString()} />}
+              {tx.unlock_time > 0 && <InfoRow label={cs ? 'Čas odemčení' : 'Unlock Time'} value={tx.unlock_time.toString()} />}
             </>
           )}
         </motion.div>
@@ -281,7 +281,7 @@ export default function TxDetailClient() {
                       <span className="text-zion-gold text-[10px] font-bold px-2 py-0.5 bg-zion-gold/10 rounded-md uppercase tracking-wider">
                         ⛏ Coinbase
                       </span>
-                      <span className="text-gray-500 text-xs">{cs ? 'Nove vytvorene mince' : 'New coins generated'}</span>
+                      <span className="text-gray-500 text-xs">{cs ? 'Nově vytvořené mince' : 'New coins generated'}</span>
                     </div>
                   ) : (
                     <>
@@ -301,7 +301,7 @@ export default function TxDetailClient() {
               ))}
               {!isCoinbase && tx.inputs.length > 0 && (
                 <div className="text-right text-sm font-semibold text-white pt-2 border-t border-white/[0.06]">
-                  {cs ? 'Celkem vstup:' : 'Total In:'} {totalInput.toFixed(4)} ZION
+                  {cs ? 'Celkem na vstupu:' : 'Total In:'} {totalInput.toFixed(4)} ZION
                 </div>
               )}
             </div>
@@ -314,7 +314,7 @@ export default function TxDetailClient() {
               <div className="h-8 w-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
                 <ArrowRight className="h-4 w-4 text-emerald-400" />
               </div>
-              <h3 className="text-lg font-semibold text-white">{cs ? 'Vystupy' : 'Outputs'} ({tx.outputs.length})</h3>
+              <h3 className="text-lg font-semibold text-white">{cs ? 'Výstupy' : 'Outputs'} ({tx.outputs.length})</h3>
             </div>
             <div className="space-y-2">
               {tx.outputs.map((out, i) => (
@@ -325,7 +325,7 @@ export default function TxDetailClient() {
                   </div>
                   {out.key && (
                     <div className="flex items-center text-gray-600 font-mono text-[11px] truncate">
-                      {cs ? 'Klic' : 'Key'}: {truncHash(out.key, 10)}
+                      {cs ? 'Klíč' : 'Key'}: {truncHash(out.key, 10)}
                       <CopyBtn text={out.key} />
                     </div>
                   )}
@@ -333,7 +333,7 @@ export default function TxDetailClient() {
               ))}
               {tx.outputs.length > 0 && (
                 <div className="text-right text-sm font-semibold text-zion-gold pt-2 border-t border-white/[0.06]">
-                  {cs ? 'Celkem vystup:' : 'Total Out:'} {totalOutput.toFixed(4)} ZION
+                  {cs ? 'Celkem na výstupu:' : 'Total Out:'} {totalOutput.toFixed(4)} ZION
                 </div>
               )}
             </div>
@@ -349,7 +349,7 @@ export default function TxDetailClient() {
               <div className="h-8 w-8 rounded-xl bg-gray-500/10 flex items-center justify-center">
                 <Hash className="h-4 w-4 text-gray-400" />
               </div>
-              <h3 className="text-lg font-semibold text-white">TX Extra ({tx.extra.length} {cs ? 'bajtu' : 'bytes'})</h3>
+              <h3 className="text-lg font-semibold text-white">TX Extra ({tx.extra.length} {cs ? 'bajtů' : 'bytes'})</h3>
             </div>
             <div className="bg-black/40 rounded-xl p-4 font-mono text-[11px] text-gray-500 break-all overflow-x-auto max-h-24 leading-relaxed">
               {tx.extra.map((b) => b.toString(16).padStart(2, "0")).join(" ")}

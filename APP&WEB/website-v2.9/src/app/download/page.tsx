@@ -19,12 +19,12 @@ const DownloadToolBrowser = dynamic(() => import('@/components/download/Download
 const DownloadFaq = dynamic(() => import('@/components/download/DownloadFaq'));
 
 const getDesktopAgentFeatures = (cs: boolean) => [
-  cs ? 'GUI dashboard s hashratem a zustatkem v realnem case' : 'GUI Dashboard with real-time hashrate & balance',
-  cs ? 'Tezba na jedno kliknuti — bez terminalu' : 'One-click mining — no terminal needed',
-  cs ? 'Vestaveny generator a sprava penezenek' : 'Built-in wallet generator & manager',
+  cs ? 'GUI dashboard s hashratem a zůstatkem v reálném čase' : 'GUI Dashboard with real-time hashrate & balance',
+  cs ? 'Těžba na jedno kliknutí — bez terminálu' : 'One-click mining — no terminal needed',
+  cs ? 'Vestavěný generátor a správa peněženek' : 'Built-in wallet generator & manager',
   cs ? 'Auto-updaty a integrace do system tray' : 'Auto-updates & system tray integration',
-  cs ? 'Vzdalene monitorovani a Gaming mode' : 'Remote monitoring & Gaming mode',
-  cs ? 'Dostupne pro Windows, macOS a Linux' : 'Available for Windows, macOS & Linux',
+  cs ? 'Vzdálené monitorování a Gaming mode' : 'Remote monitoring & Gaming mode',
+  cs ? 'Dostupné pro Windows, macOS a Linux' : 'Available for Windows, macOS & Linux',
 ];
 
 const getCliQuickstartSteps = (cs: boolean) => [
@@ -79,9 +79,9 @@ export default function DownloadPage() {
               {SITE_RELEASE_LABEL}
             </div>
             <div>
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? '4 platformy · jeden binary · interaktivní menu' : '4 platforms · one binary · interactive menu'}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? '4 platformy · jeden binární soubor · interaktivní menu' : '4 platforms · one binary · interactive menu'}</p>
               <h1 className="text-3xl sm:text-5xl font-semibold text-gradient leading-tight">
-                {cs ? 'Stahni. Tez. Vydelavej.' : 'Download. Mine. Earn.'}
+                {cs ? 'Stáhni. Těž. Vydělávej.' : 'Download. Mine. Earn.'}
               </h1>
             </div>
             <p className="text-lg text-gray-300">
@@ -151,7 +151,7 @@ export default function DownloadPage() {
           <div className="flex flex-col gap-2">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Brzy' : 'Coming Soon'}</p>
             <h2 className="text-3xl font-semibold text-white">Desktop Agent · {SITE_VERSION}</h2>
-            <p className="text-gray-400">{cs ? 'GUI na jedno kliknuti pro tezbu, spravu penezenky a monitoring — bez terminalu' : 'One-click GUI for mining, wallet management and monitoring — no terminal needed'}</p>
+            <p className="text-gray-400">{cs ? 'GUI na jedno kliknutí pro těžbu, správu peněženky a monitoring — bez terminálu' : 'One-click GUI for mining, wallet management and monitoring — no terminal needed'}</p>
           </div>
 
           <div className="relative overflow-hidden zion-rainbow-card p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
@@ -164,7 +164,7 @@ export default function DownloadPage() {
               <div>
                 <h3 className="text-2xl font-semibold text-white">ZION Desktop Agent</h3>
                 <p className="text-gray-400 mt-1">
-                  {cs ? 'Plna GUI aplikace s vestavenym minerem, penezenkou a dashboardem v realnem case. Brzy dostupna pro Windows, macOS a Linux.' : 'Full GUI application with built-in miner, wallet, and real-time dashboard. Available soon for Windows, macOS & Linux.'}
+                  {cs ? 'Plná GUI aplikace s vestavěným minerem, peněženkou a dashboardem v reálném čase. Brzy dostupná pro Windows, macOS a Linux.' : 'Full GUI application with built-in miner, wallet, and real-time dashboard. Available soon for Windows, macOS & Linux.'}
                 </p>
               </div>
             </div>
@@ -204,16 +204,16 @@ export default function DownloadPage() {
 
             <div className="mt-6 zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <p className="text-sm text-gray-300">
-                <span className="text-zion-gold font-semibold">💡 {cs ? 'Chcete predbezny pristup?' : 'Want early access?'}</span>{' '}
-                {cs ? 'Desktop Agent bude dostupny v nasem ' : 'The Desktop Agent will be available in our '}
+                <span className="text-zion-gold font-semibold">💡 {cs ? 'Chcete předběžný přístup?' : 'Want early access?'}</span>{' '}
+                {cs ? 'Desktop Agent bude dostupný v našem ' : 'The Desktop Agent will be available in our '}
                 <Link href="/shop" className="text-zion-gold underline hover:no-underline">
                   {cs ? 'Shopu' : 'Shop'}
                 </Link>{' '}
-                {cs ? 'jako premium download s prioritni podporou a auto-updaty. Pripojte se na ' : 'as a premium download with priority support and auto-updates. Join '}
+                {cs ? 'jako premium download s prioritní podporou a auto-updaty. Připojte se na ' : 'as a premium download with priority support and auto-updates. Join '}
                 <Link href="https://discord.gg/zion-terranova" target="_blank" className="text-zion-gold underline hover:no-underline">
                   Discord
                 </Link>{' '}
-                {cs ? 'a dostanete upozorneni pri launchi.' : 'to be notified when it launches.'}
+                {cs ? 'a dostanete upozornění při launchi.' : 'to be notified when it launches.'}
               </p>
             </div>
           </div>
@@ -222,8 +222,8 @@ export default function DownloadPage() {
         {/* ─── 3-step onboarding ─── */}
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Rychly start' : 'Quick Start'}</p>
-            <h2 className="text-3xl font-semibold text-white">{cs ? '3 kroky k tezbe' : '3 steps to mining'}</h2>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Rychlý start' : 'Quick Start'}</p>
+            <h2 className="text-3xl font-semibold text-white">{cs ? '3 kroky k těžbě' : '3 steps to mining'}</h2>
           </div>
           <div className="grid gap-6 md:grid-cols-3">
             {cliQuickstartSteps.map((step) => (
@@ -250,14 +250,14 @@ export default function DownloadPage() {
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Hardware' : 'Hardware'}</p>
-            <h2 className="text-3xl font-semibold text-white">{cs ? 'Systemove pozadavky' : 'System Requirements'}</h2>
+            <h2 className="text-3xl font-semibold text-white">{cs ? 'Systémové požadavky' : 'System Requirements'}</h2>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             {[
-              { label: cs ? 'Minimum' : 'Minimum', value: cs ? '2jadrovy CPU, 2 GB RAM, 100 MB disk' : '2-core CPU, 2 GB RAM, 100 MB disk' },
-              { label: cs ? 'Doporucene' : 'Recommended', value: cs ? '4+ jadrovy CPU, 4 GB RAM, 500 MB SSD' : '4+ core CPU, 4 GB RAM, 500 MB SSD' },
-              { label: cs ? 'Podporovane OS' : 'Supported OS', value: cs ? 'Windows 10/11, Linux (x86_64/ARM64), macOS (Apple Silicon)' : 'Windows 10/11, Linux (x86_64/ARM64), macOS (Apple Silicon)' },
-              { label: cs ? 'Sit' : 'Network', value: cs ? 'Stabilni internet, odchozi TCP port 8444 (pool stratum)' : 'Stable internet, outbound TCP port 8444 (pool stratum)' },
+              { label: cs ? 'Minimum' : 'Minimum', value: cs ? '2jádrový CPU, 2 GB RAM, 100 MB disk' : '2-core CPU, 2 GB RAM, 100 MB disk' },
+              { label: cs ? 'Doporučené' : 'Recommended', value: cs ? '4+ jádrový CPU, 4 GB RAM, 500 MB SSD' : '4+ core CPU, 4 GB RAM, 500 MB SSD' },
+              { label: cs ? 'Podporované OS' : 'Supported OS', value: cs ? 'Windows 10/11, Linux (x86_64/ARM64), macOS (Apple Silicon)' : 'Windows 10/11, Linux (x86_64/ARM64), macOS (Apple Silicon)' },
+              { label: cs ? 'Síť' : 'Network', value: cs ? 'Stabilní internet, odchozí TCP port 8444 (pool stratum)' : 'Stable internet, outbound TCP port 8444 (pool stratum)' },
             ].map((req) => (
               <div key={req.label} className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                 <div className="flex items-center gap-3">
@@ -275,9 +275,9 @@ export default function DownloadPage() {
         {/* ─── CTA ─── */}
         <section className="zion-cta-banner">
           <TerminalSquare className="mx-auto h-12 w-12 text-zion-gold" />
-          <h2 className="mt-6 text-3xl font-semibold text-white">{cs ? 'Pripraven tezit?' : 'Ready to mine?'}</h2>
+          <h2 className="mt-6 text-3xl font-semibold text-white">{cs ? 'Připraven těžit?' : 'Ready to mine?'}</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
-            {cs ? 'Pripojte se ke komunite pro podporu s tezbou, pomoc s penezenkou a aktuality projektu.' : 'Join our community for mining support, wallet help, and project updates.'}
+            {cs ? 'Připojte se ke komunitě pro podporu s těžbou, pomoc s peněženkou a aktuality projektu.' : 'Join our community for mining support, wallet help, and project updates.'}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link
@@ -286,7 +286,7 @@ export default function DownloadPage() {
               rel="noreferrer"
               className="inline-flex items-center gap-2 rounded-2xl bg-zion-purple/70 px-6 py-3 text-sm font-semibold text-white border border-zion-purple"
             >
-              {cs ? 'Pripojit Discord' : 'Join Discord'}
+              {cs ? 'Připojit se na Discord' : 'Join Discord'}
             </Link>
             <Link
               href="https://t.me/zionterranova"
@@ -307,7 +307,7 @@ export default function DownloadPage() {
               className="inline-flex items-center gap-2 rounded-2xl bg-white/10 border border-white/20 px-6 py-3 text-sm font-semibold text-white"
             >
               <ArrowDownToLine className="h-4 w-4" />
-              {cs ? 'Verejne downloady' : 'Public Downloads'}
+              {cs ? 'Veřejné downloady' : 'Public Downloads'}
             </Link>
           </div>
         </section>

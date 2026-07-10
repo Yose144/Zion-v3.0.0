@@ -9,9 +9,9 @@
 
 ## Live status — v3.0.5 All Green
 
-ZION MainNet is live as **Mainnet Beta**. The current runtime is **v3.0.5 Ekam Deeksha** with 6-decimal flowers and a new genesis hash after the July 2026 hard reset.
+ZION Mainnet is live as **Mainnet Beta**. The current runtime is **v3.0.5 Ekam Deeksha** with 6-decimal flowers and a new genesis hash after the July 2026 hard reset.
 
-- ✅ MainNet Core node — 3-node P2P mesh (Edge 1 + Edge 2 + Local Backup)
+- ✅ Mainnet Core node — 3-node P2P mesh (Edge 1 + Edge 2 + Local Backup)
 - ✅ Pool server active — `stratum+tcp://pool.zionterranova.com:8444`
 - ✅ CPU and GPU mining running (OpenCL/CUDA/Metal)
 - ✅ Ekam Deeksha dual-algo: `deeksha_lite_v1` / `deeksha_lite_fire`

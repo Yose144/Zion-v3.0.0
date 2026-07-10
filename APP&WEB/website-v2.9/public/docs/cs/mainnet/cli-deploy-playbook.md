@@ -2,11 +2,11 @@
 
 ## Bezpečné výchozí pořadí
 
-Pro runtime-changing akce preferuj:
+Pro akce měnící runtime postupuj takto:
 
-1. zkontrolovat aktuální stav,
-2. udělat nejmenší potřebný deploy krok,
-3. ověřit zasaženou vrstvu.
+1. zkontroluj aktuální stav,
+2. udělej nejmenší potřebný krok deploye,
+3. ověř zasaženou vrstvu.
 
 Základní sekvence:
 
@@ -17,7 +17,7 @@ zion status
 zion agent status
 ```
 
-## Běžné deploy flow
+## Běžný postup deploye
 
 ### Full server update
 
@@ -43,7 +43,7 @@ zion agent status
 zion logs ai-native
 ```
 
-## Ověření po deployi
+## Ověření po nasazení
 
 ```bash
 zion status
@@ -52,7 +52,7 @@ zion pool stats
 zion agent status
 ```
 
-Když se lokálně měnil website source, spusť i:
+Když se měnil lokální zdrojový kód webu, spusť i:
 
 ```bash
 cd APP&WEB/website-v2.9

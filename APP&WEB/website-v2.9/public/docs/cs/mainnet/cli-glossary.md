@@ -1,83 +1,83 @@
-# ZION CLI Slovnicek pojmu
+# ZION CLI Slovníček pojmů
 
-Strucne vysvetlivky pro verejnost a novacky.
+Stručné vysvětlivky pro veřejnost a nováčky.
 
 ## `zion`
 
-Hlavni CLI nastroj pro ovladani ZION stacku.
+Hlavní CLI nástroj pro ovládání ZION stacku.
 
 ## CLI
 
-Command Line Interface. Prikazy v terminalu.
+Command Line Interface. Příkazy v terminálu.
 
 ## L1
 
-Zakladni blockchain vrstva: node, pool, miner.
+Základní blockchain vrstva: node, pool, miner.
 
 ## L2
 
-Nadstavbove protokoly: bridge, DAO, DeFi.
+Nadstavbové protokoly: bridge, DAO, DeFi.
 
 ## L3
 
-AI Native, WARP, NCL (orchestrace a vyssi vrstva koordinace).
+AI Native, WARP, NCL (orchestrace a vyšší vrstva koordinace).
 
 ## Node
 
-Uzel blockchainu. Drzi chain data a poskytuje RPC.
+Uzel blockchainu. Drží chain data a poskytuje RPC.
 
 ## RPC
 
-Rozhrani, pres ktere aplikace (napr. web explorer) ctou data z node.
+Rozhraní, přes které aplikace (např. web explorer) čtou data z node.
 
 ## Pool
 
-Server, ktery koordinuje minery a prijima shares.
+Server, který koordinuje minery a přijímá shares.
 
 ## Miner
 
-Proces, ktery pocita hash a hleda validni vysledky pro PoW.
+Proces, který počítá hash a hledá validní výsledky pro PoW.
 
 ## Wallet
 
-Penezenka pro adresy, zustatek a transakce.
+Peněženka pro adresy, zůstatek a transakce.
 
 ## AI Native
 
-Aktualne hlavne orchestracni/control-plane vrstva. Nemusi znamenat tezky lokalni inference backend.
+Aktuálně hlavně orchestraci / control-plane vrstva. Nemusí znamenat těžký lokální inference backend.
 
 ## Fallback mode
 
-Sluzba bezi, ale model backend neni dostupny. Transparentni degradace je lepsi nez tichy pád.
+Služba běží, ale model backend není dostupný. Transparentní degradace je lepší než tichý pád.
 
 ## `zion status`
 
-Rychly souhrn zdravi stacku.
+Rychlý souhrn zdraví stacku.
 
 ## `zion doctor`
 
-Preflight kontrola pripravenosti: config, endpointy, zakladni diagnostika.
+Preflight kontrola připravenosti: config, endpointy, základní diagnostika.
 
 ## `zion logs <service>`
 
-Vypise logy konkretni sluzby (napr. `node`, `pool`, `ai-native`).
+Vypíše logy konkrétní služby (např. `node`, `pool`, `ai-native`).
 
 ## `zion deploy`
 
-Sada prikazu pro nasazeni a provozni akce na serveru.
+Sada příkazů pro nasazení a provozní akce na serveru.
 
 ## `zion update`
 
-Aktualizace lokalni CLI binarky.
+Aktualizace lokální CLI binárky.
 
 ## `zion deploy update`
 
-Aktualizace remote runtime/sluzeb na serveru.
+Aktualizace remote runtime / služeb na serveru.
 
 ## Health check
 
-Kontrolni endpoint/sluzba, ktera potvrzuje, ze aplikace bezi.
+Kontrolní endpoint / služba, která potvrzuje, že aplikace běží.
 
 ## Prune
 
-Cisteni nepouzivanych docker artefaktu (cache, dangling images). Neni to prvni krok diagnostiky incidentu.
+Čištění nepoužívaných Docker artefaktů (cache, dangling images). Není to první krok diagnostiky incidentu.

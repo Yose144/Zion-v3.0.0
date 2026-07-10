@@ -152,7 +152,7 @@ const getMarketplace = (cs: boolean) => [
     version: 'FP16 · ~15 GB',
     status: 'live',
     desc: cs
-      ? 'Domain-specific fine-tuned model pro ZION ekosystém. 5 stagí QLoRA tréninku.'
+      ? 'Domain-specific fine-tuned model pro ZION ekosystém. 5 fází QLoRA tréninku.'
       : 'Domain-specific fine-tuned model for ZION ecosystem. 5-stage QLoRA training.',
     tags: ['LLM', 'Fine-tuned', '8B'],
     color: 'border-cyan-500/30 bg-cyan-500/5',
@@ -162,7 +162,7 @@ const getMarketplace = (cs: boolean) => [
     version: 'DeepSpeed ZeRO-3 · 32B',
     status: 'planned',
     desc: cs
-      ? 'Full fine-tuning s hybridním RAG. 48K pairs, 9 stagí. 4x A100 80GB target.'
+      ? 'Full fine-tuning s hybridním RAG. 48K pairs, 9 fází. 4x A100 80GB target.'
       : 'Full fine-tuning with hybrid RAG. 48K pairs, 9 stages. 4x A100 80GB target.',
     tags: ['LLM', 'Full FT', '32B'],
     color: 'border-purple-500/30 bg-purple-500/5',
@@ -254,7 +254,7 @@ export default function L3HiranPage() {
             </div>
             <p className="text-lg text-gray-300">
               {cs
-                ? 'Orchestrací nástroj pro ZION AI. Domain-specific model (QLoRA 8B), hybridní RAG pipeline, fine-tuning marketplace a inference deployment na Vast.ai. Hiran v2.3 s 32B base a full fine-tuningem je ve vývoji.'
+                ? 'Orchestrační nástroj pro ZION AI. Domain-specific model (QLoRA 8B), hybridní RAG pipeline, fine-tuning marketplace a inference deployment na Vast.ai. Hiran v2.3 s 32B base a full fine-tuningem je ve vývoji.'
                 : 'Orchestration hub for ZION AI. Domain-specific model (QLoRA 8B), hybrid RAG pipeline, fine-tuning marketplace, and inference deployment on Vast.ai. Hiran v2.3 with 32B base and full fine-tuning is in development.'}
             </p>
             <div className="flex flex-wrap gap-3 text-xs">

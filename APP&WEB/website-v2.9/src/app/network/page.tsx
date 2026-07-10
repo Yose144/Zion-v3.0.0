@@ -174,7 +174,7 @@ const getInfraFeatures = (cs: boolean) => [
 const getRuntimePanels = (cs: boolean) => [
   {
     icon: Radio,
-    label: cs ? 'Verejny stratum' : 'Public Stratum',
+    label: cs ? 'Veřejný stratum' : 'Public Stratum',
     value: SITE_POOL_PRIMARY,
     detail: cs ? 'Primární těžební vstup — pool API 8455' : 'Primary mining ingress — pool API 8455',
     accent: 'text-zion-gold',
@@ -202,7 +202,7 @@ const getRuntimePanels = (cs: boolean) => [
     label: cs ? 'Kontext releasu' : 'Release Context',
     value: SITE_RELEASE_LABEL,
     detail: cs
-      ? `Veřejná linka nad ${SITE_RUNTIME_LABEL}; E2E memo testy potvrzeny v bloku 752`
+      ? `Veřejná linka nad ${SITE_RUNTIME_LABEL}; E2E memo testy potvrzené v bloku 752`
       : `Public line over ${SITE_RUNTIME_LABEL}; E2E memo tests confirmed in block 752`,
     accent: 'text-zion-purple',
   },
@@ -269,7 +269,7 @@ const getNetworkFacts = (cs: boolean) => [
     done: true,
   },
   { text: cs ? 'JSON-RPC endpointy live (8443, 8448, 8446)' : 'JSON-RPC endpoints live (8443, 8448, 8446)', done: true },
-  { text: cs ? 'E2E memo testy potvrzeny v bloku 752' : 'E2E memo tests confirmed in block 752', done: true },
+  { text: cs ? 'E2E memo testy potvrzené v bloku 752' : 'E2E memo tests confirmed in block 752', done: true },
   { text: cs ? 'F4.7 max-tx-amount cap + F5 sender balance check aktivní' : 'F4.7 max-tx-amount cap + F5 sender balance check active', done: true },
   { text: cs ? 'LWMA DAA — cíl 60s block time' : 'LWMA DAA — target 60s block time', done: true },
   { text: cs ? 'systemd služby s auto-restartem na Edge' : 'systemd services with auto-restart on Edge', done: true },
@@ -467,12 +467,12 @@ export default function NetworkPage() {
             <div className="space-y-5">
               <div className="zion-kicker border-cyan-400/35 bg-cyan-400/10 text-cyan-200">
                 <Radio className="h-4 w-4" />
-                {SITE_RELEASE_LABEL} · {cs ? 'Sit' : 'Network'}
+                {SITE_RELEASE_LABEL} · {cs ? 'Síť' : 'Network'}
               </div>
               <div>
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? 'Zivy stav' : 'Live Status'}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? 'Živý stav' : 'Live Status'}</p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  {cs ? 'P2P Sit' : 'P2P Network'}
+                  {cs ? 'P2P Síť' : 'P2P Network'}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
@@ -482,13 +482,13 @@ export default function NetworkPage() {
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200 backdrop-blur-sm">
-                  <Sparkles className="h-3 w-3 text-zion-gold" /> {cs ? 'Nativni Rust' : 'Native Rust'}
+                  <Sparkles className="h-3 w-3 text-zion-gold" /> {cs ? 'Nativní Rust' : 'Native Rust'}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200 backdrop-blur-sm">
                   <Orbit className="h-3 w-3 text-zion-cyan" /> Runtime: {SITE_RUNTIME_LABEL}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200 backdrop-blur-sm">
-                  <ShieldCheck className="h-3 w-3 text-emerald-400" /> {cs ? '1 verejny host · 2 interni seedy' : '1 Public Host · 2 Internal Seeds'}
+                  <ShieldCheck className="h-3 w-3 text-emerald-400" /> {cs ? '1 veřejný host · 2 interní seedy' : '1 Public Host · 2 Internal Seeds'}
                 </span>
               </div>
             </div>
@@ -511,12 +511,12 @@ export default function NetworkPage() {
         {/* ═══════ RUNTIME SNAPSHOT ═══════ */}
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Runtime prehled' : 'Runtime Snapshot'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Runtime přehled' : 'Runtime Snapshot'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Orbit className="h-7 w-7 text-zion-cyan" />
-              {cs ? 'Verejny povrch site' : 'Public Network Surface'}
+              {cs ? 'Veřejný povrch sítě' : 'Public Network Surface'}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Aktualni zivy footprint zredukovany na endpointy a role, ktere operatori potrebuji jako prvni.' : 'The current live footprint distilled to the endpoints and roles operators actually need first.'}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Aktuální živý footprint zredukovaný na endpointy a role, které operátoři potřebují jako první.' : 'The current live footprint distilled to the endpoints and roles operators actually need first.'}</p>
           </div>
 
           <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-4">
@@ -765,7 +765,7 @@ export default function NetworkPage() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Infrastruktura' : 'Infrastructure'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Shield className="h-7 w-7 text-zion-gold" />
-              {cs ? 'Aktualni runtime' : 'Current Runtime'}
+              {cs ? 'Aktuální runtime' : 'Current Runtime'}
             </h2>
             <p className="text-sm text-gray-400">{cs ? 'Aktuální veřejný runtime tvoří 3-uzlový P2P mesh v3.0.5 — Edge 1 (primary + pool), Edge 2 (follower) a Local Backup Node (Prague). Všechny uzly jsou ve syncu ≤2 bloků.' : 'Current public runtime is a 3-node v3.0.5 P2P mesh — Edge 1 (primary + pool), Edge 2 (follower), and Local Backup Node (Prague). All nodes are within ≤2 block sync.'}</p>
           </div>
@@ -840,7 +840,7 @@ export default function NetworkPage() {
               {
                 icon: FileText,
                 title: cs ? 'Memo E2E testy' : 'Memo E2E tests',
-                detail: cs ? '3 account-model TX s memy potvrzeny v bloku 752.' : '3 account-model TXs with memos confirmed in block 752.',
+                detail: cs ? '3 account-model TX s memy potvrzené v bloku 752.' : '3 account-model TXs with memos confirmed in block 752.',
               },
               {
                 icon: Activity,
@@ -886,7 +886,7 @@ export default function NetworkPage() {
         {/* ═══════ LIVE TELEMETRY ═══════ */}
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Ziva telemetrie' : 'Live Telemetry'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Živá telemetrie' : 'Live Telemetry'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Activity className="h-7 w-7 text-emerald-400" />
               {cs ? 'Stav nodu' : 'Node Status'}
@@ -908,9 +908,9 @@ export default function NetworkPage() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Geografie' : 'Geography'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Globe2 className="h-7 w-7 text-zion-cyan" />
-              {cs ? 'Mapa site a vyhledavac poolu' : 'Network Map & Pool Finder'}
+              {cs ? 'Mapa sítě a vyhledávač poolu' : 'Network Map & Pool Finder'}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Vizualizujte aktualni topologii a porovnejte ji s archivovanym multi-host rolloutem zachovanym v release dokumentaci.' : 'Visualize the current topology and compare it with the archived multi-host rollout preserved in release documentation.'}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Vizualizujte aktuální topologii a porovnejte ji s archivovaným multi-host rolloutem zachovaným v release dokumentaci.' : 'Visualize the current topology and compare it with the archived multi-host rollout preserved in release documentation.'}</p>
           </div>
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
             <div className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
@@ -926,12 +926,12 @@ export default function NetworkPage() {
         {/* ═══════ CONNECTION GUIDES ═══════ */}
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Pripojeni' : 'Connect'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Připojení' : 'Connect'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Layers className="h-7 w-7 text-zion-purple" />
-              {cs ? 'Pripojovaci navody' : 'Connection Guides'}
+              {cs ? 'Připojovací návody' : 'Connection Guides'}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Vse, co potrebujete k pripojeni minera, dotazovani RPC API nebo synchronizaci nodu.' : 'Everything you need to connect a miner, query the RPC API, or sync a node.'}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Vše, co potřebujete k připojení mineru, dotazování RPC API nebo synchronizaci nodu.' : 'Everything you need to connect a miner, query the RPC API, or sync a node.'}</p>
           </div>
           <div className="grid gap-5 lg:grid-cols-3">
             {guideBlocks.map((block) => (
@@ -961,7 +961,7 @@ export default function NetworkPage() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Stav' : 'Status'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <ShieldCheck className="h-7 w-7 text-emerald-400" />
-              {cs ? 'Pripravenost site' : 'Network Readiness'}
+              {cs ? 'Připravenost sítě' : 'Network Readiness'}
             </h2>
           </div>
           <div className="grid gap-2 md:grid-cols-3">
@@ -976,7 +976,7 @@ export default function NetworkPage() {
             <span className="font-mono text-emerald-400">{factsDone}</span>
             <span>/</span>
             <span className="font-mono">{factsTotal}</span>
-            <span>{cs ? 'dokonceno' : 'completed'}</span>
+            <span>{cs ? 'dokončeno' : 'completed'}</span>
             <div className="h-2 flex-1 max-w-xs rounded-full bg-white/10">
               <div className="h-2 rounded-full bg-emerald-400" style={{ width: `${(factsDone / factsTotal) * 100}%` }} />
             </div>
@@ -1010,10 +1010,10 @@ export default function NetworkPage() {
           }}
         >
           <Radio className="mx-auto h-12 w-12 text-emerald-400" />
-          <h2 className="mt-6 text-3xl font-semibold text-white">{cs ? 'Pripojte se k siti ZION' : 'Join the ZION Network'}</h2>
+          <h2 className="mt-6 text-3xl font-semibold text-white">{cs ? 'Připojte se k síti ZION' : 'Join the ZION Network'}</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
             {cs
-              ? 'Nativni Rust infrastruktura bezi 24/7 z aktualniho primarniho hostu s podporou interniho kvora. Pripojte svuj miner, spustte vlastni node nebo prozkoumejte blockchain, zatimco historicky kontext rollouta zustava zachovany v dokumentaci.'
+              ? 'Nativní Rust infrastruktura běží 24/7 z aktuálního primárního hostu s podporou interního kvora. Připojte svůj miner, spusťte vlastní node nebo prozkoumejte blockchain, zatímco historický kontext nasazení zůstává zachován v dokumentaci.'
               : 'Native Rust infrastructure running 24/7 from the current primary host with internal quorum support. Connect your miner, run your own node, or explore the blockchain while historical rollout context stays preserved in docs.'}
           </p>
           <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
@@ -1022,10 +1022,10 @@ export default function NetworkPage() {
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs">
             {[
               'Cosmic Harmony PoW',
-              cs ? 'Primarni host online' : 'Primary host live',
-              cs ? 'Interni seedy' : 'Internal seeds',
-              cs ? 'Docker nativne' : 'Docker native',
-              cs ? 'Archivovana multi-host historie' : 'Archived multi-host history',
+              cs ? 'Primární host online' : 'Primary host live',
+              cs ? 'Interní seedy' : 'Internal seeds',
+              cs ? 'Docker nativně' : 'Docker native',
+              cs ? 'Archivovaná multi-host historie' : 'Archived multi-host history',
             ].map((item) => (
               <span key={item} className="rounded-full bg-white/80 px-4 py-2 font-semibold text-gray-900">
                 {item}
@@ -1127,7 +1127,7 @@ function NetFAQSection({ cs }: { cs: boolean }) {
     { q: cs ? 'Jak se připojit jako miner?' : 'How to connect as a miner?', a: cs ? `Stáhněte si XMRig nebo Desktop Agent a použijte stratum+tcp://${SITE_POOL_PRIMARY} jako pool adresu. Detaily najdete v Connection Guides výše.` : `Download XMRig or the Desktop Agent and use stratum+tcp://${SITE_POOL_PRIMARY} as the pool address. See the Connection Guides section above for details.` },
     { q: cs ? 'Jak spustit vlastní full node?' : 'How to run your own full node?', a: cs ? `Klonujte repo, spusťte cargo build --release v V3/core a pak ./target/release/zion-node --p2p-bind-ip 0.0.0.0 --add-exclusive-node ${SITE_PRIMARY_HOST}:8333 --add-exclusive-node ${SITE_PRIMARY_HOST}:8334. Docker compose je k dispozici v docker/docker-compose.mainnet.yml.` : `Clone the repo, cargo build --release from V3/core and then ./target/release/zion-node --p2p-bind-ip 0.0.0.0 --add-exclusive-node ${SITE_PRIMARY_HOST}:8333 --add-exclusive-node ${SITE_PRIMARY_HOST}:8334. Docker compose is available in docker/docker-compose.mainnet.yml.` },
     { q: cs ? 'Jaký pool fee si ZION účtuje?' : 'What pool fee does ZION charge?', a: cs ? '89 % putuje minerovi, 5 % do humanitarian fondu, 5 % do fondu Issobella a 1 % pool provozní poplatek.' : '89% goes to the miner, 5% to the humanitarian fund, 5% to the Issobella fund, and 1% pool operational fee.' },
-    { q: cs ? 'Je síť veřejně spuštěna?' : 'Is the network publicly launched?', a: cs ? 'MainNet Genesis proběhl 11. června 2026. Veřejný plný launch je naplánován na 31. prosince 2026 (Silvestr). v3.0.5 "All Green" běží na 3-uzlovém P2P meshi s aktivním pool, bridge je nasazený na Base Mainnet a E2E memo testy byly potvrzeny v bloku 752.' : 'MainNet Genesis took place on 11 June 2026. The public full launch is scheduled for 31 December 2026 (New Year\'s Eve). v3.0.5 "All Green" runs on a 3-node P2P mesh with an active pool, the bridge is deployed on Base Mainnet, and E2E memo tests were confirmed in block 752.' },
+    { q: cs ? 'Je síť veřejně spuštěna?' : 'Is the network publicly launched?', a: cs ? 'MainNet Genesis proběhl 11. června 2026. Veřejný plný launch je naplánován na 31. prosince 2026 (Silvestr). v3.0.5 "All Green" běží na 3-uzlovém P2P meshi s aktivním poolem, bridge je nasazený na Base Mainnet a E2E memo testy byly potvrzené v bloku 752.' : 'MainNet Genesis took place on 11 June 2026. The public full launch is scheduled for 31 December 2026 (New Year\'s Eve). v3.0.5 "All Green" runs on a 3-node P2P mesh with an active pool, the bridge is deployed on Base Mainnet, and E2E memo tests were confirmed in block 752.' },
   ];
   return (
     <div className="divide-y divide-white/[0.06]">

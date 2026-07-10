@@ -1,15 +1,15 @@
 # Genesis Book of Awakening
 
-Genesis route na webu stále existuje jako samostatná narativní stránka.
+The genesis route on the website still exists as a standalone narrative page.
 
-- Přímý vstup: [/genesis](/genesis)
-- Typ obsahu: veřejná Genesis experience / Book of Awakening
-- Kontext: symbolický a narativní rámec ke zrození sítě ZION
+- Direct entry: [/genesis](/genesis)
+- Content type: public Genesis experience / Book of Awakening
+- Context: symbolic and narrative framework for the birth of the ZION network
 
-Pokud hledáš čistě provozní podklady k MainNet startu, pokračuj také sem:
+If you are looking for purely operational materials for the Mainnet start, also continue here:
 
-- MainNet launch plan
-- MainNet gate checklist
-- Whitepaper a roadmap materiály
+- Mainnet launch plan
+- Mainnet gate checklist
+- Whitepaper and roadmap materials
 
-Genesis zde ponecháváme mimo hlavní top navigaci, ale uvnitř dokumentace zůstává dohledatelná jako součást launch a origin story vrstvy.
+We leave Genesis here outside the main top navigation, but inside the documentation it remains findable as part of the launch and origin story layer.

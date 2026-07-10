@@ -74,7 +74,7 @@ const getPhaseCards = (cs: boolean) => [
 const getTimeline = (cs: boolean) => [
   {
     title: '⛏️ L1 TerraNova · 2026',
-    focus: cs ? 'Mainnet genesis, Cosmic Harmony v3/v4, UTXO, zasoba 144B ZION' : 'MainNet Genesis, Cosmic Harmony v3/v4, UTXO, 144B ZION supply',
+    focus: cs ? 'Mainnet genesis, Cosmic Harmony v3/v4, UTXO, zásoba 144B ZION' : 'MainNet Genesis, Cosmic Harmony v3/v4, UTXO, 144B ZION supply',
   },
   {
     title: '🌉 L2 Bridge, DAO & DeFi · 2026',
@@ -82,19 +82,19 @@ const getTimeline = (cs: boolean) => [
   },
   {
     title: '🧠 L3 AI Native, WARP & NCL · 2027–2028',
-    focus: cs ? 'Hiranyagarbha runtime, NCL compute lane, WARP relaye a agenticka orchestrace nad L1/L2' : 'Hiranyagarbha runtime, the NCL compute lane, WARP relays, and agentic orchestration above L1/L2',
+    focus: cs ? 'Hiranyagarbha runtime, NCL compute lane, WARP relaye a agentická orchestrace nad L1/L2' : 'Hiranyagarbha runtime, the NCL compute lane, WARP relays, and agentic orchestration above L1/L2',
   },
   {
     title: '🎮 L4 Oasis · 2029',
-    focus: cs ? 'Golden Egg, XP ekonomika, Winners program, herni vrstva' : 'Golden Egg, XP economy, Winners program, game layer',
+    focus: cs ? 'Golden Egg, XP ekonomika, Winners program, herní vrstva' : 'Golden Egg, XP economy, Winners program, game layer',
   },
   {
     title: '🌍 L5 Free World · 2030',
-    focus: cs ? 'Humanitarni mise, free-energy R&D, off-grid komunity' : 'Humanitarian missions, free energy R&D, off-grid communities',
+    focus: cs ? 'Humanitární mise, free-energy R&D, off-grid komunity' : 'Humanitarian missions, free energy R&D, off-grid communities',
   },
   {
     title: '🔭 L6 Issobella · 2040+',
-    focus: cs ? 'Orbitalni observator, LEO vyzkumna stanice, dlouhy mission layer' : 'Orbital observatory, LEO research station, long-range mission layer',
+    focus: cs ? 'Orbitální observatoř, LEO výzkumná stanice, dlouhodobý misijní layer' : 'Orbital observatory, LEO research station, long-range mission layer',
   },
 ];
 
@@ -111,12 +111,12 @@ export default function RoadmapPulse() {
           <div className="flex-1 space-y-3">
             <p className="text-sm uppercase tracking-[0.4em] text-zion-gold">{cs ? 'Roadmapa' : 'Roadmap'}</p>
             <h2 className="text-4xl md:text-5xl font-bold text-white">
-              3.0.5 <span className="text-gradient">Bridge, Defi Run</span>
+              3.0.5 <span className="text-gradient">Bridge, DeFi Run</span>
             </h2>
             <p className="text-base sm:text-lg text-gray-300 max-w-2xl">
               {cs
-                ? 'MainNet Genesis 11. 6. 2026 úspěšný — public line 3.0.5 Bridge, Defi Run nad kanonickou runtime v3.0.5 Deeksha/Ekam. Decimal fork 1e12→1e6 (6-decimal flowers) dokončen. Edge server topologie běží, pool aktivní, mining live. Bridge a DeFi protokoly nasazeny na Base Mainnet, wZION token live. Veřejný launch zůstává naplánován na 31. prosinec 2026 (Silvestr). Prioritou je finální validace telemetrie, doladění dokumentace, bezpečnostní audit a provozní připravenost.'
-                : 'MainNet Genesis 11 Jun 2026 successful — public line 3.0.5 Bridge, Defi Run over the canonical v3.0.5 Deeksha/Ekam runtime. Decimal fork 1e12→1e6 (6-decimal flowers) complete. Edge server topology running, pool active, mining live. Bridge and DeFi protocols deployed on Base Mainnet, wZION token live. Public launch remains scheduled for 31 December 2026 (New Year\'s Eve). Priority is final telemetry validation, documentation polish, security audit, and operational readiness.'}
+                ? 'MainNet Genesis 11. 6. 2026 úspěšný — public line 3.0.5 Bridge, DeFi Run nad kanonickou runtime v3.0.5 Deeksha/Ekam. Decimal fork 1e12→1e6 (6-decimal flowers) dokončen. Edge server topologie běží, pool aktivní, mining live. Bridge a DeFi protokoly nasazeny na Base Mainnet, wZION token live. Veřejný launch zůstává naplánován na 31. prosinec 2026 (Silvestr). Prioritou je finální validace telemetrie, doladění dokumentace, bezpečnostní audit a provozní připravenost.'
+                : 'MainNet Genesis 11 Jun 2026 successful — public line 3.0.5 Bridge, DeFi Run over the canonical v3.0.5 Deeksha/Ekam runtime. Decimal fork 1e12→1e6 (6-decimal flowers) complete. Edge server topology running, pool active, mining live. Bridge and DeFi protocols deployed on Base Mainnet, wZION token live. Public launch remains scheduled for 31 December 2026 (New Year\'s Eve). Priority is final telemetry validation, documentation polish, security audit, and operational readiness.'}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
@@ -124,7 +124,7 @@ export default function RoadmapPulse() {
               href="/roadmap"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan text-sm font-semibold"
             >
-              {cs ? 'Cela roadmapa' : 'Full Roadmap'}
+              {cs ? 'Celá roadmapa' : 'Full Roadmap'}
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
@@ -133,7 +133,7 @@ export default function RoadmapPulse() {
               style={{ '--rc': '249, 115, 22' } as React.CSSProperties}
             >
               <CalendarDays className="w-4 h-4 text-zion-cyan" />
-              {cs ? 'Pruzkumnik blockchainu' : 'Block Explorer'}
+              {cs ? 'Průzkumník blockchainu' : 'Block Explorer'}
             </Link>
           </div>
         </div>

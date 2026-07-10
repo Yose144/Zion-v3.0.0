@@ -16,7 +16,7 @@ const getCommunities = (cs: boolean) => [
     location: cs ? 'Střední Evropa' : 'Central Europe',
     status: 'planned',
     desc: cs
-      ? 'Pionýrská L5 komunita — permakultivní zahrada, lokální governance a ZION guardian node.'
+      ? 'Pionýrská L5 komunita — pernakulturní zahrada, lokální governance a ZION guardian node.'
       : 'Pioneer L5 community — permaculture garden, local governance and ZION guardian node.',
     tags: ['Permaculture', 'Guardian Node', 'DAO Circle'],
   },
@@ -68,7 +68,7 @@ const getProtocols = (cs: boolean) => [
     color: 'text-emerald-400',
   },
   {
-    title: cs ? 'Rezonance protokol' : 'Resonance Protocol',
+    title: cs ? 'Rezonanční protokol' : 'Resonance Protocol',
     desc: cs ? 'Zvukové ladění před governance, Fibonacci Time Capsules, Youth–Elder Bridge.' : 'Sound attunement before governance, Fibonacci Time Capsules, Youth–Elder Bridge.',
     icon: Leaf,
     color: 'text-rose-400',

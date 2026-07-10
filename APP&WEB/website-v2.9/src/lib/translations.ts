@@ -20,6 +20,8 @@ const t = {
     warp:       { cs: 'WARP',        en: 'WARP' },
     dao:        { cs: 'DAO',         en: 'DAO' },
     bridge:     { cs: 'Most',        en: 'Bridge' },
+    cex:        { cs: 'CEX',         en: 'CEX' },
+    cex_listings: { cs: 'CEX listinky', en: 'CEX Listings' },
     pool:       { cs: 'Pool',        en: 'Pool' },
     miner_stats: { cs: 'Statistiky minera', en: 'Miner Stats' },
     benchmarks: { cs: 'Benchmarky', en: 'Benchmarks' },
@@ -75,8 +77,8 @@ const t = {
     tagline:        { cs: 'Nativní Rust blockchain s Proof-of-Work konsensem', en: 'Native Rust blockchain with Proof-of-Work consensus' },
     title_sub:      { cs: 'Genesis Live · Edge server · canonical runtime v3.0.5 Ekam Deeksha · 6-decimal flowers', en: 'Genesis Live · Edge server · canonical runtime v3.0.5 Ekam Deeksha · 6-decimal flowers' },
     description:    {
-      cs: 'ZION TerraNova mainnet launch countdown — 31. prosinec 2026 (Silvestr). Příprava V3 mainnet v Edge server topologii (Edge server), s veřejným poolem, mining binárkami a provozní telemetrií.',
-      en: 'ZION TerraNova mainnet launch countdown — 31 December 2026 (New Year\'s Eve). Preparing V3 mainnet in Edge server topology (Edge server), with public pool, mining binaries, and operational telemetry.',
+      cs: 'Odpočítávání ke spuštění ZION TerraNova mainnetu — 31. prosince 2026 (Silvestr). Příprava V3 mainnetu v Edge server topologii (Edge server) s veřejným poolem, mining binárkami a provozní telemetrií.',
+      en: 'ZION TerraNova mainnet launch countdown — 31 December 2026 (New Year\'s Eve). Preparing the V3 mainnet in Edge server topology (Edge server), with public pool, mining binaries, and operational telemetry.',
     },
     btn_start:      { cs: 'Začít těžit', en: 'Start Mining' },
     btn_docs:       { cs: 'Dokumentace', en: 'Docs' },
@@ -409,7 +411,7 @@ const t = {
         badge: { cs: 'Živý', en: 'Live' },
       },
       explorer: {
-        title: { cs: 'Pruzkumnik blockchainu', en: 'Block Explorer' },
+        title: { cs: 'Průzkumník blockchainu', en: 'Block Explorer' },
         desc:  {
           cs: 'Real-time průzkumník bloků, transakcí a adres s live telemetrickým dashboardem a REST API.',
           en: 'Real-time block, transaction, and address explorer with live telemetry dashboard and REST API.',
@@ -469,7 +471,7 @@ const t = {
     features: {
       memory:  { cs: 'Paměť 4 MB — DDR5 bandwidth limited', en: '4 MB memory — DDR5 bandwidth limited' },
       feistel: { cs: '8-kolo Feistel perceptron mix', en: '8-round Feistel perceptron mix' },
-      asic:    { cs: 'Anti-ASIC bariéra — iregulér compute graph', en: 'Anti-ASIC barrier — irregular compute graph' },
+      asic:    { cs: 'Anti-ASIC bariéra — iregulární výpočetní graf', en: 'Anti-ASIC barrier — irregular compute graph' },
       gpu:     { cs: 'GPU-optimální: 32-wide warp per bloom round', en: 'GPU-optimal: 32-wide warp per bloom round' },
     },
   },

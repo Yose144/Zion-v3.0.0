@@ -31,17 +31,17 @@ function StatusDot({ status }: { status: string }) {
 function TypeBadge({ type, cs }: { type: string; cs: boolean }) {
   const map: Record<string, string> = { coinbase: "bg-zion-gold/15 text-zion-gold", payout: "bg-emerald-500/15 text-emerald-400", transfer: "bg-cyan-500/15 text-cyan-300" };
   const cls = map[type] || "bg-white/10 text-white/60";
-  const label = type === 'coinbase' ? 'coinbase' : type === 'payout' ? (cs ? 'vyplata' : 'payout') : type === 'transfer' ? (cs ? 'prevod' : 'transfer') : type;
+  const label = type === 'coinbase' ? 'coinbase' : type === 'payout' ? (cs ? 'výplata' : 'payout') : type === 'transfer' ? (cs ? 'převod' : 'transfer') : type;
   return <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${cls}`}>{label}</span>;
 }
 
 function timeAgo(ts: number, cs: boolean) {
   if (!ts) return "—";
   const s = Math.max(0, Math.floor(Date.now() / 1000 - ts));
-  if (s < 60) return cs ? `pred ${s} s` : `${s}s ago`;
-  if (s < 3600) return cs ? `pred ${Math.floor(s / 60)} min` : `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return cs ? `pred ${Math.floor(s / 3600)} h` : `${Math.floor(s / 3600)}h ago`;
-  return cs ? `pred ${Math.floor(s / 86400)} d` : `${Math.floor(s / 86400)}d ago`;
+  if (s < 60) return cs ? `před ${s} s` : `${s}s ago`;
+  if (s < 3600) return cs ? `před ${Math.floor(s / 60)} min` : `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return cs ? `před ${Math.floor(s / 3600)} h` : `${Math.floor(s / 3600)}h ago`;
+  return cs ? `před ${Math.floor(s / 86400)} d` : `${Math.floor(s / 86400)}d ago`;
 }
 
 /* ── types ───────────────────────────────────────────────────── */
@@ -160,7 +160,7 @@ export default function TransactionsPageClient() {
             <ArrowRightLeft className="w-4.5 h-4.5 text-cyan-400" />
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight">{cs ? 'Transakce' : 'Transactions'}</h1>
-          <span className="text-[11px] text-white/30 font-mono tabular-nums ml-1">{transactions.length} {cs ? 'nacteno' : 'loaded'}</span>
+          <span className="text-[11px] text-white/30 font-mono tabular-nums ml-1">{transactions.length} {cs ? 'načteno' : 'loaded'}</span>
           <button
             onClick={handleExportCsv}
             disabled={transactions.length === 0}
@@ -186,10 +186,10 @@ export default function TransactionsPageClient() {
             <span />
             <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">TX Hash</span>
             <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{cs ? 'Typ' : 'Type'}</span>
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{cs ? 'Stari' : 'Age'}</span>
+            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{cs ? 'Stáří' : 'Age'}</span>
             <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{cs ? 'Blok' : 'Block'}</span>
             <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">Fee</span>
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{cs ? 'Castka' : 'Amount'}</span>
+            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{cs ? 'Částka' : 'Amount'}</span>
           </div>
 
           {/* loading skeleton */}
@@ -209,8 +209,8 @@ export default function TransactionsPageClient() {
           {!loading && transactions.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
               <ArrowRightLeft className="w-10 h-10 text-white/10" />
-              <p className="text-white/30 text-sm">{cs ? 'Nenalezeny zadne transakce' : 'No transactions found'}</p>
-              {addressFilter && <Link href="/explorer/transactions" className="text-cyan-400 text-xs hover:underline">{cs ? 'Zrusit filtr' : 'Clear filter'}</Link>}
+              <p className="text-white/30 text-sm">{cs ? 'Nenalezeny žádné transakce' : 'No transactions found'}</p>
+              {addressFilter && <Link href="/explorer/transactions" className="text-cyan-400 text-xs hover:underline">{cs ? 'Zrušit filtr' : 'Clear filter'}</Link>}
             </div>
           )}
 
@@ -249,7 +249,7 @@ export default function TransactionsPageClient() {
                     #{tx.block_height?.toLocaleString()}
                   </Link>
                 ) : (
-                  <span className="text-[12px] text-amber-400/60 italic">{cs ? 'ceka' : 'pending'}</span>
+                  <span className="text-[12px] text-amber-400/60 italic">{cs ? 'čeká' : 'pending'}</span>
                 )}
               </div>
 
@@ -273,7 +273,7 @@ export default function TransactionsPageClient() {
                 disabled={loadingMore}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/4 border border-white/8 hover:bg-white/8 transition-colors text-sm text-white/60 hover:text-white/90 disabled:opacity-50"
               >
-                {loadingMore ? <><Loader2 className="w-4 h-4 animate-spin" /> {cs ? 'Nacitam…' : 'Loading…'}</> : cs ? 'Nacist dalsi transakce' : 'Load More Transactions'}
+                {loadingMore ? <><Loader2 className="w-4 h-4 animate-spin" /> {cs ? 'Načítám…' : 'Loading…'}</> : cs ? 'Načíst další transakce' : 'Load More Transactions'}
               </button>
             </div>
           )}

@@ -107,7 +107,7 @@ export default function AlgoManagerPage() {
               <h1 className="text-5xl md:text-6xl font-semibold text-gradient">{lang === 'cs' ? 'Správce algoritmů' : 'Algorithm manager'}</h1>
               <p className="mt-4 text-lg text-gray-300 max-w-2xl">
                 {lang === 'cs'
-                  ? 'Přepínání algoritmů a režim auto/manual. Aktuálně běží na mock datech, dokud se nedopojí pool API.'
+                  ? 'Přepínání algoritmů a režim auto/manual. Aktuálně běží na mock datech, dokud se nepřipojí pool API.'
                   : 'Algorithm switching and auto/manual mode. Currently running on mock data until pool API is connected.'}
               </p>
             </div>
@@ -160,7 +160,7 @@ export default function AlgoManagerPage() {
 
           <div className="mt-6 flex flex-wrap gap-4 text-sm text-gray-300">
             <div className="zion-tile px-4 py-3">
-              {lang === 'cs' ? 'Připojení mineři' : 'Connected miners'}: <span className="text-white font-semibold">{status.connectedMiners}</span>
+              {lang === 'cs' ? 'Připojení těžaři' : 'Connected miners'}: <span className="text-white font-semibold">{status.connectedMiners}</span>
             </div>
             <div className="zion-tile px-4 py-3">
               {lang === 'cs' ? 'Celkový hashrate' : 'Total hashrate'}: <span className="text-white font-semibold">{status.totalHashrate}</span>

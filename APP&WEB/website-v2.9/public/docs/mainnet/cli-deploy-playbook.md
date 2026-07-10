@@ -1,14 +1,14 @@
-# ZION CLI Deploy Playbook (bezpečný postup)
+# ZION CLI Deploy Playbook (safe procedure)
 
-Tento playbook je psaný pro člověka, který nechce "střelit naslepo".
+This playbook is written for anyone who doesn't want to "shoot blind".
 
-## Bezpečné pravidlo
+## Safe rule
 
-Nejdřív zjisti stav, potom udělej nejmenší možný zásah, pak ověř výsledek.
+First check the state, then make the smallest possible change, then verify the result.
 
 ---
 
-## 1) Před deployem
+## 1) Before deploy
 
 ```bash
 zion deploy status
@@ -16,11 +16,11 @@ zion status
 zion doctor
 ```
 
-Pokud něco padá už teď, nejdřív oprav runtime, teprve pak deploy.
+If something is already failing, fix the runtime first, then deploy.
 
 ---
 
-## 2) Nejčastější deploy scénáře
+## 2) Most common deploy scenarios
 
 ### A) Website-only deploy
 
@@ -30,7 +30,7 @@ zion deploy website
 zion logs website
 ```
 
-Po deployi ověř endpointy:
+After deploy, verify the endpoints:
 
 ```bash
 curl -sS https://zionterranova.com/api/health
@@ -45,7 +45,7 @@ zion deploy server
 zion status
 ```
 
-### C) Cílený restart jedné služby
+### C) Targeted restart of a single service
 
 ```bash
 zion restart node
@@ -55,7 +55,7 @@ zion node status
 
 ---
 
-## 3) Post-deploy kontrola (must-have)
+## 3) Post-deploy check (must-have)
 
 ```bash
 zion status
@@ -73,11 +73,11 @@ curl -sS "https://zionterranova.com/api/blockchain/blocks?limit=3"
 
 ---
 
-## 4) Kdy použít prune
+## 4) When to use prune
 
-`prune` používej, když řešíš plný disk nebo build cache odpad.
+Use `prune` when you are solving a full disk or stale build cache problem.
 
-Nikdy ho nepouštěj jako první krok incidentu.
+Never run it as the first step of an incident.
 
 ```bash
 zion deploy prune
@@ -85,15 +85,15 @@ zion deploy prune
 
 ---
 
-## 5) Nouzový mini-rollback mindset
+## 5) Emergency mini-rollback mindset
 
-Když se po deployi rozbije jedna vrstva:
+When one layer breaks after a deploy:
 
-1. zastav eskalaci,
-2. vrať službu do posledního zdravého stavu,
-3. teprve potom řeš detailní root-cause.
+1. stop escalation,
+2. return the service to the last healthy state,
+3. only then solve the detailed root cause.
 
-Prakticky:
+In practice:
 
 ```bash
 zion logs website
@@ -101,4 +101,4 @@ zion logs node
 zion status
 ```
 
-Rollback postup se může lišit podle služby, ale diagnostický vstup je vždy stejný.
+Rollback steps vary by service, but the diagnostic input is always the same.

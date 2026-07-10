@@ -81,8 +81,8 @@ const getAvatarTypes = (cs: boolean) => [
 ];
 
 const getGoldenEgg = (cs: boolean) => [
-  { label: cs ? 'Celkový prize pool' : 'Total Prize Pool', value: `${GOLDEN_EGG_PRIZE} ZION`, color: 'text-zion-gold' },
-  { label: cs ? 'Stop / Clues' : 'Clues', value: `${GOLDEN_EGG_CLUES}`, color: 'text-orange-400' },
+  { label: cs ? 'Celková výhra' : 'Total Prize Pool', value: `${GOLDEN_EGG_PRIZE} ZION`, color: 'text-zion-gold' },
+  { label: cs ? 'Stopy / indicie' : 'Clues', value: `${GOLDEN_EGG_CLUES}`, color: 'text-orange-400' },
   { label: cs ? 'Odhadovaný start' : 'Estimated Start', value: '2027', color: 'text-cyan-400' },
   { label: cs ? 'Typ' : 'Type', value: cs ? 'Celosvětová honba' : 'Global Treasure Hunt', color: 'text-purple-400' },
 ];
@@ -270,7 +270,7 @@ export default function L4OasisPage() {
           </div>
           <p className="text-sm text-gray-300 leading-relaxed">
             {cs
-              ? 'Golden Egg je masivní pokladová honba napříč celým ZION ekosystémem. 108 kryptických stop je ukryto v blockchainu, smart kontraktech, knihách TerraNova a fyzických lokacích. Vítěz získá 8,25 miliardy ZION — 50,7 % genesis reserve. Start plánován na 2027.'
+              ? 'Golden Egg je masivní honba za pokladem napříč celým ZION ekosystémem. 108 kryptických stop je ukryto v blockchainu, smart kontraktech, knihách TerraNova a fyzických lokacích. Vítěz získá 8,25 miliardy ZION — 50,7 % genesis rezervy. Start plánován na 2027.'
               : 'Golden Egg is a massive treasure hunt across the entire ZION ecosystem. 108 cryptic clues are hidden in the blockchain, smart contracts, TerraNova books, and physical locations. The winner receives 8.25 billion ZION — 50.7% of the genesis reserve. Launch planned for 2027.'}
           </p>
         </motion.section>

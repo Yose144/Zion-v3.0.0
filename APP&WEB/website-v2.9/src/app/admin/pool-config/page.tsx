@@ -274,7 +274,7 @@ export default function PoolConfigPage() {
         <div className="zion-rainbow-card p-6" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
           <p className="text-xs uppercase tracking-[0.3em] text-gray-400">CPU</p>
           <h2 className="mt-2 text-2xl font-semibold text-white">{lang === 'cs' ? 'CPU mining trasy' : 'CPU mining routes'}</h2>
-          <p className="mt-2 text-sm text-gray-300">{lang === 'cs' ? 'RandomX / CPU mineři (mock data)' : 'RandomX / CPU miners (mock data)'}</p>
+          <p className="mt-2 text-sm text-gray-300">{lang === 'cs' ? 'RandomX / CPU těžaři (mock data)' : 'RandomX / CPU miners (mock data)'}</p>
 
           <div className="mt-6 space-y-4">
             {cpuConfigs.map((config) => (
