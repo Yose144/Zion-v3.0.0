@@ -1,6 +1,6 @@
 # ZION Web v3.x — Deployment Guide
 
-> Last verified production deploy: 10 July 2026 (performance + mobile hotfix)
+> Last verified production deploy: 10 July 2026 (v3.0.5 E2E — pool/explorer/network update)
 
 ## Current Production Status
 
@@ -11,6 +11,7 @@
 - **Reverse proxy:** Caddy → `localhost:3000`
 - **Runtime source on server:** `/root/zion-web-runtime`
 - **Current image:** `zion-web:runtime`
+- **Live topology:** 3-node P2P mesh — Edge 1 (primary + pool), Edge 2 (follower), Local Backup (Prague via SSH tunnel)
 
 ## Build Requirements
 
@@ -142,6 +143,7 @@ ssh -i ~/.ssh/zion-new-server root@62.171.141.136
 
 | Date | Version | Changes |
 |---|---|---|
+| 2026-07-10 | v3.0.5-e2e | Pool, Explorer, Network pages updated to v3.0.5 E2E All Green; 3-node P2P mesh (Edge 1, Edge 2, Local Backup) added to network config/map; E2E memo block 752, F4.7/F5, 11/11 services surfaced |
 | 2026-07-10 | v3.0.5-hotfix | Mobile stargate sizing, nav + footer cleanup, lazy HolographicEarth/StargateLogo, smaller homepage HTML/JS bundle |
 | 2026-07-10 | v3.0.5 | Rasta navigation redesign, `.zion-page` layout system, fast runtime deploy |
 | 2026-06-27 | v3.7.5-quantum-revolution | New /quantum-revolution page + gold StoryTriptych card |

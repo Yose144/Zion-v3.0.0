@@ -128,7 +128,7 @@ export default async function Image() {
         >
           {[
             { label: 'Environment', value: SITE_ENVIRONMENT_LABEL },
-            { label: 'Public Hosts', value: '1' },
+            { label: 'Public Hosts', value: '3' },
             { label: 'Topology', value: SITE_NETWORK_TOPOLOGY },
           ].map((stat) => (
             <div

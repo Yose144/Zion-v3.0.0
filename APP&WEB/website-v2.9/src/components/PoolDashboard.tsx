@@ -366,8 +366,8 @@ export default function PoolDashboard() {
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
                 {cs
-                  ? 'Odměny PPLNS · 89 % pro minera · 5 % humanitární tithe · 5 % fond Issobella. Provozní telemetrie z veřejného pool runtime s automatickou obnovou každých 15 sekund.'
-                  : 'PPLNS rewards · 89% miner · 5% humanitarian · 5% Issobella fund. Operational telemetry from the public pool runtime with auto-refresh every 15 seconds.'}
+                  ? `Odměny PPLNS · 89 % pro minera · 5 % humanitární tithe · 5 % fond Issobella. Veřejný pool běží na Edge Node 1 jako součást v3.0.5 E2E sítě s 3-uzlovým P2P meshem, RPC audit logem a memory leak fixem.`
+                  : `PPLNS rewards · 89% miner · 5% humanitarian · 5% Issobella fund. The public pool runs on Edge Node 1 as part of the v3.0.5 E2E network with a 3-node P2P mesh, RPC audit log, and memory leak fix.`}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
@@ -377,7 +377,10 @@ export default function PoolDashboard() {
                   <Activity className="h-3 w-3 text-emerald-400" /> {cs ? 'Auto-refresh 15 s' : 'Auto-Refresh 15s'}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Globe className="h-3 w-3 text-zion-cyan" /> {data?.servers.length ?? 1} {cs ? 'veřejný pool host' : 'Public Pool Host'}
+                  <Globe className="h-3 w-3 text-zion-cyan" /> {cs ? 'Edge Node 1' : 'Edge Node 1'}
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-emerald-200">
+                  {cs ? 'All Green · 11/11 služeb' : 'All Green · 11/11 services'}
                 </span>
               </div>
             </div>
@@ -511,7 +514,7 @@ export default function PoolDashboard() {
               <Activity className="h-7 w-7 text-emerald-400" />
               {cs ? 'Statistiky poolu' : 'Pool Statistics'}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Metriky v reálném čase agregované z veřejného pool API na Zion2.' : 'Real-time metrics aggregated from the public pool API on Zion2.'}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Metriky v reálném čase agregované z veřejného pool API na Edge Node 1 (8455).' : 'Real-time metrics aggregated from the public pool API on Edge Node 1 (8455).'}</p>
           </div>
 
           {loading ? (
@@ -687,7 +690,7 @@ export default function PoolDashboard() {
               <TrendingUp className="h-7 w-7 text-zion-cyan" />
               {cs ? 'Přehled runtime poolu' : 'Pool Runtime Overview'}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Tok submitů, naplnění PPLNS enginu a payout throughput čerpané z živé telemetrie poolu.' : 'Submission flow, PPLNS engine fill, and payout throughput sourced from live pool telemetry.'}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Tok submitů, naplnění PPLNS enginu a payout throughput čerpané z živé telemetrie poolu v3.0.5.' : 'Submission flow, PPLNS engine fill, and payout throughput sourced from live v3.0.5 pool telemetry.'}</p>
           </div>
 
           <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
@@ -765,7 +768,7 @@ export default function PoolDashboard() {
                   </div>
                   {data?.aggregate?.hashrate !== undefined && data.aggregate.hashrate <= 0 && (
                     <p className="mt-2 text-xs text-zion-cyan/80">
-                      {cs ? 'Hashrate poolu zatím není v živém backend exporteru dostupný, proto stránka upřednostňuje routing, PPLNS a zdraví chain runtime.' : 'Pool hashrate is still unavailable on the live backend exporter, so the page prioritizes routing, PPLNS, and chain runtime health.'}
+                      {cs ? 'Hashrate poolu zatím není v živém backend exporteru dostupný, proto stránka upřednostňuje routing, PPLNS a zdraví chain runtime v3.0.5.' : 'Pool hashrate is still unavailable on the live backend exporter, so the page prioritizes routing, PPLNS, and v3.0.5 chain runtime health.'}
                     </p>
                   )}
                 </div>
@@ -951,7 +954,7 @@ export default function PoolDashboard() {
               <Box className="h-7 w-7 text-zion-gold" />
               {cs ? 'Poslední síťové bloky' : 'Recent Network Blocks'} ({data?.recent_blocks.length ?? 0})
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Nejnovější potvrzené chain bloky z aktuálního runtime. Veřejná atribuce vítěze poolu zatím není vystavena samostatně.' : 'Latest confirmed chain blocks from the current runtime. Public pool winner attribution is not exposed separately yet.'}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Nejnovější potvrzené chain bloky z aktuálního v3.0.5 runtime. Veřejná atribuce vítěze poolu zatím není vystavena samostatně.' : 'Latest confirmed chain blocks from the current v3.0.5 runtime. Public pool winner attribution is not exposed separately yet.'}</p>
           </div>
 
           <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
@@ -1243,7 +1246,7 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
             {[
               { icon: <Zap className="h-5 w-5 text-white" />, color: "from-purple-500/80 to-indigo-600/80", title: cs ? 'Deeksha PoW algoritmus' : 'Deeksha PoW Algorithm', desc: cs ? 'Nativní ZION PoW, CPU + GPU, odolný vůči ASIC. 3 varianty: Lite v1, Ekam v2, Fire.' : 'Native ZION PoW, CPU + GPU, ASIC-resistant. 3 variants: Lite v1, Ekam v2, Fire.' },
               { icon: <Heart className="h-5 w-5 text-white" />, color: "from-pink-500/80 to-rose-600/80", title: cs ? 'Humanitární mise' : 'Humanitarian Mission', desc: cs ? '5 % humanitární tithe + 5 % fond Issobella. Těžba pro vědomí.' : '5% humanitarian + 5% Issobella fund. Mining for consciousness.' },
-              { icon: <Server className="h-5 w-5 text-white" />, color: "from-blue-500/80 to-cyan-600/80", title: cs ? 'Skutečná pool infrastruktura' : 'Real Pool Infrastructure', desc: cs ? 'Edge server, skutečný stratum, PPLNS, živý monitoring.' : 'Edge server, real stratum, PPLNS, live monitoring.' },
+              { icon: <Server className="h-5 w-5 text-white" />, color: "from-blue-500/80 to-cyan-600/80", title: cs ? 'v3.0.5 pool infrastruktura' : 'v3.0.5 Pool Infrastructure', desc: cs ? 'Edge Node 1 pool, skutečný stratum, PPLNS, 3-uzlový mesh, RPC audit log.' : 'Edge Node 1 pool, real stratum, PPLNS, 3-node mesh, RPC audit log.' },
               { icon: <Shield className="h-5 w-5 text-white" />, color: "from-emerald-500/80 to-teal-600/80", title: cs ? 'PPLNS odměny' : 'PPLNS Rewards', desc: cs ? 'Férová distribuce odměn podle vašich odevzdaných shares. Bez luck variance.' : 'Fair reward distribution based on your contributed shares. No luck variance.' },
               { icon: <Zap className="h-5 w-5 text-white" />, color: "from-orange-500/80 to-amber-600/80", title: cs ? 'GPU akcelerace' : 'GPU Acceleration', desc: cs ? 'Podpora OpenCL/CUDA/Metal. RX 5700 XT: 18 KH/s na Fire.' : 'OpenCL/CUDA/Metal support. RX 5700 XT: 18 KH/s on Fire.' },
               { icon: <Signal className="h-5 w-5 text-white" />, color: "from-zion-cyan/80 to-blue-600/80", title: cs ? 'Monitoring v reálném čase' : 'Real-Time Monitoring', desc: cs ? 'Živý přehled hashratu, shares a výdělků přes webový dashboard a API.' : 'Live hashrate, shares, and earnings via web dashboard + API.' },
@@ -1381,7 +1384,9 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
             {cs ? 'Těžte ZION s Deeksha PoW — férový a transparentní PoW pool s humanitárním přesahem zabudovaným do každého bloku.' : 'Mine ZION with Deeksha PoW — a fair, transparent PoW pool with humanitarian impact built into every block.'}
           </p>
           <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
-            89% miner · 5% humanitarian · 5% Issobella fund · 1% pool fee · PPLNS · Launch Countdown to 31 December 2026
+            {cs
+              ? '89 % miner · 5 % humanitarian · 5 % Issobella fund · 1 % pool fee · PPLNS · v3.0.5 All Green · Public launch 31. prosince 2026'
+              : '89% miner · 5% humanitarian · 5% Issobella fund · 1% pool fee · PPLNS · v3.0.5 All Green · Public launch 31 December 2026'}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <a href="#start-mining" className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-cyan to-zion-purple px-6 py-3 text-sm font-semibold text-black">
@@ -1402,7 +1407,7 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          {cs ? `ZION TerraNova ${SITE_RELEASE_LABEL} — Mining Pool Pro · Data v reálném čase z primárního stratum endpointu · primární host Zion2` : `ZION TerraNova ${SITE_RELEASE_LABEL} — Mining Pool Pro · Real-time data from the primary stratum endpoint · Zion2 primary host`}
+          {cs ? `ZION TerraNova ${SITE_RELEASE_LABEL} — Mining Pool Pro · Data v reálném čase z primárního stratum endpointu · Edge Node 1 · v3.0.5 E2E All Green` : `ZION TerraNova ${SITE_RELEASE_LABEL} — Mining Pool Pro · Real-time data from the primary stratum endpoint · Edge Node 1 · v3.0.5 E2E All Green`}
           {lastUpdate && <> · {cs ? 'Poslední aktualizace' : 'Last update'}: {lastUpdate.toLocaleTimeString(cs ? 'cs-CZ' : 'en-US')}</>}
         </p>
       </div>
