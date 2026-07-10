@@ -156,19 +156,22 @@ export default function ExplorerPage() {
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                Search blocks, transactions, and addresses on the current ZION TerraNova {SITE_RELEASE_LABEL} controlled V3 Edge server mainnet.
-                Canonical runtime stays on {SITE_RUNTIME_LABEL}.
-                Smart hash resolver, live data from the current Edge server runtime, and auto-refresh every 10 seconds.
+                {cs
+                  ? `Prozkoumejte bloky, transakce a adresy na živém mainnetu ZION TerraNova ${SITE_RELEASE_LABEL}. Kanonický runtime běží na ${SITE_RUNTIME_LABEL} — 3-uzlový P2P mesh, account-model transakce s memo polem, E2E testy potvrzeny v bloku 752.`
+                  : `Search blocks, transactions, and addresses on the live ZION TerraNova ${SITE_RELEASE_LABEL} mainnet. Canonical runtime runs on ${SITE_RUNTIME_LABEL} — 3-node P2P mesh, account-model transactions with memo field, E2E tests confirmed in block 752.`}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Sparkles className="h-3 w-3 text-zion-gold" /> {cs ? 'Zive mainnet data' : 'Live Mainnet Data'}
+                  <Sparkles className="h-3 w-3 text-zion-gold" /> {cs ? 'Živá mainnet data' : 'Live Mainnet Data'}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <Activity className="h-3 w-3 text-emerald-400" /> {cs ? 'Auto-refresh 15 s' : 'Auto-Refresh 15s'}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Globe className="h-3 w-3 text-zion-cyan" /> Edge server
+                  <Globe className="h-3 w-3 text-zion-cyan" /> {cs ? '3-uzlový mesh' : '3-node mesh'}
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-emerald-200">
+                  {cs ? 'All Green · 11/11 služeb' : 'All Green · 11/11 services'}
                 </span>
               </div>
               <div className="flex flex-wrap gap-3">
@@ -285,6 +288,63 @@ export default function ExplorerPage() {
           </div>
         </motion.section>
 
+        {/* ═══════ 3.0.5 E2E LEDGER FEATURES ═══════ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12 }}
+        >
+          <div className="flex flex-col gap-2 mb-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">v3.0.5 E2E</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Sparkles className="h-7 w-7 text-zion-gold" />
+              {cs ? 'Ledger v3.0.5' : 'v3.0.5 Ledger'}
+            </h2>
+            <p className="text-sm text-gray-400">
+              {cs
+                ? 'Nové vlastnosti a bezpečnostní patche ověřené end-to-end na živém mainnetu.'
+                : 'New features and security patches verified end-to-end on the live mainnet.'}
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              {
+                title: cs ? 'Account-model memo' : 'Account-model memo',
+                detail: cs
+                  ? 'TX pole memo pro BRIDGE, DAO a SWAP — E2E potvrzeno v bloku 752.'
+                  : 'TX memo field for BRIDGE, DAO, and SWAP — E2E confirmed in block 752.',
+                accent: 'text-zion-cyan',
+              },
+              {
+                title: cs ? 'F4.7 + F5 patche' : 'F4.7 + F5 patches',
+                detail: cs
+                  ? 'Max-tx-amount cap a sender balance check aktivní od genesis.'
+                  : 'Max-tx-amount cap and sender balance check active from genesis.',
+                accent: 'text-emerald-400',
+              },
+              {
+                title: cs ? '3-uzlový RPC mesh' : '3-node RPC mesh',
+                detail: cs
+                  ? 'RPC auto-failover přes Edge 1 (8443), Edge 2 (8448), Backup (8446).'
+                  : 'RPC auto-failover across Edge 1 (8443), Edge 2 (8448), Backup (8446).',
+                accent: 'text-purple-400',
+              },
+              {
+                title: cs ? 'Memory leak fix' : 'Memory leak fix',
+                detail: cs
+                  ? 'Pool + node memory leak opraveny, watchdog hlídá zdraví.'
+                  : 'Pool + node memory leaks fixed, watchdog monitors health.',
+                accent: 'text-amber-400',
+              },
+            ].map((card) => (
+              <div key={card.title} className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+                <h3 className={`text-base font-semibold mb-1 ${card.accent}`}>{card.title}</h3>
+                <p className="text-sm text-gray-400">{card.detail}</p>
+              </div>
+            ))}
+          </div>
+        </motion.section>
+
         {/* ═══════ CHARTS ═══════ */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
@@ -337,7 +397,7 @@ export default function ExplorerPage() {
               <Globe className="h-7 w-7 text-zion-cyan" />
               {cs ? 'Sitovi peeri' : 'Network Peers'}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Konektivita aktualniho verejneho hostu s archivovanou historii multi-host validace.' : 'Current public host connectivity with archived multi-host validation history.'}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Konektivita 3-uzlového P2P meshe — Edge 1, Edge 2 a Local Backup Node v reálném čase.' : 'Connectivity of the 3-node P2P mesh — Edge 1, Edge 2, and Local Backup Node in real time.'}</p>
           </div>
           <Suspense fallback={<div className="zion-section animate-pulse h-[280px]" />}>
             <NetworkPeers />
@@ -378,7 +438,9 @@ export default function ExplorerPage() {
             {cs ? 'Blockchain data v realnem case z nativnich Rust nodu. Kazdy blok, transakce a adresa - plne transparentni, plne otevrene.' : 'Real-time blockchain data from native Rust nodes. Every block, transaction, and address - fully transparent, fully open.'}
           </p>
           <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
-            Decade Decay emise: 5,400 → 724 ZION/block · 100+ let + tail ∞ · All fees burned · 89/5/5/1 distribuce · Public launch target 31.12.2026
+            {cs
+              ? 'Decade Decay emise: 5,400 → 724 ZION/block · 100+ let + tail ∞ · Veškeré fee spáleno · 89/5/5/1 distribuce · Memo E2E potvrzeno v bloku 752 · Public launch 31.12.2026'
+              : 'Decade Decay emission: 5,400 → 724 ZION/block · 100+ years + tail ∞ · All fees burned · 89/5/5/1 distribution · Memo E2E confirmed in block 752 · Public launch 31.12.2026'}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link href="/network" className="inline-flex items-center gap-2 rounded-2xl bg-black/70 px-6 py-3 text-sm font-semibold text-white border border-white/20">
@@ -400,8 +462,8 @@ export default function ExplorerPage() {
 
         <p className="text-center text-xs text-gray-600">
           {cs
-            ? `ZION TerraNova ${SITE_RELEASE_LABEL} - Blockchain Explorer Pro · Data v realnem case z nativniho Rust runtime · Edge server topologie`
-            : `ZION TerraNova ${SITE_RELEASE_LABEL} - Blockchain Explorer Pro · Real-time data from native Rust runtime · Edge server topology`}
+            ? `ZION TerraNova ${SITE_RELEASE_LABEL} - Blockchain Explorer Pro · Živá data z 3-uzlového Rust runtime · v3.0.5 E2E All Green`
+            : `ZION TerraNova ${SITE_RELEASE_LABEL} - Blockchain Explorer Pro · Live data from 3-node Rust runtime · v3.0.5 E2E All Green`}
         </p>
       </div>
     </div>

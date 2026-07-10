@@ -23,7 +23,7 @@ export const SITE_PRIMARY_DAO_API_URL = process.env.ZION_DAO_API_URL || `http://
 export const SITE_POOL_PRIMARY = `${SITE_PRIMARY_HOST}:8444`;
 
 // Network topology descriptor (operational details are injected via environment variables only)
-export const SITE_NETWORK_TOPOLOGY = 'Edge server (cloud VPS)';
+export const SITE_NETWORK_TOPOLOGY = '3-node P2P mesh (Edge 1 + Edge 2 + Local Backup)';
 export const EKAM_GOLDEN_EGG_IMAGE = 'https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/themes/2147915250/settings_images/8802b3-c826-05c7-bcd2-12b608d18d1_ABOUT-ONENESS.webp';
 export const EKAM_BANNER_IMAGE = 'https://onenessoceania.org/wp-content/uploads/2024/04/Ekam-Banner.jpg';
 export const EKAM_FOUNDERS_BANNER_IMAGE = 'https://onenessoceania.org/wp-content/uploads/2024/03/Sri-Amma-Bhagavan-1920x600-1.jpg';
