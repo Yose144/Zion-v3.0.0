@@ -55,7 +55,7 @@ export async function GET(
   const active = lastShareTime > 0 && Math.floor(Date.now() / 1000) - lastShareTime < 600;
 
   let blocks: Array<{ height: number; hash: string; reward: number; timestamp: number; server: string }> = [];
-  const tipHeight = Math.max(0, (info?.height ?? 0) - 1);
+  const tipHeight = Math.max(0, info?.height ?? 0);
   if (tipHeight > 0) {
     try {
       const headers = await rpc.getBlockHeaders(Math.max(0, tipHeight - 199), tipHeight);
@@ -106,7 +106,7 @@ export async function GET(
       invalid_shares: invalidShares,
       efficiency,
       blocks_found: minerStats?.blocks_found ?? blocks.length,
-      total_paid: totalPaid,
+      total_paid: totalPaidAtomic,
       pending_balance: minerStats?.pending_balance ?? 0,
       last_share_time: lastShareTime,
     },
