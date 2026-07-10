@@ -191,33 +191,37 @@ export const WZION_ABI = [
 
 export const STAKING_ABI = [
   'function totalStaked() view returns (uint256)',
-  'function rewardPool() view returns (uint256)',
-  'function annualRateBps() view returns (uint256)',
-  'function cooldownPeriod() view returns (uint256)',
+  'function rewardPoolBalance() view returns (uint256)',
+  'function aprBps() view returns (uint256)',
+  'function cooldownSeconds() view returns (uint256)',
   'function paused() view returns (bool)',
-  'function stakeInfo(address) view returns (uint256 amount, uint256 rewardDebt, uint256 lastStakeTime, uint256 unstakeRequestTime)',
+  'function stakes(address) view returns (uint256 staked, uint256 rewardPerTokenPaid, uint256 pendingRewards, uint256 cooldownStarted, uint256 cooldownAmount)',
   'function earned(address) view returns (uint256)',
-  'function balanceOf(address) view returns (uint256)',
+  'function cooldownExpiresAt(address) view returns (uint256)',
   // Write functions
   'function stake(uint256 amount)',
-  'function requestUnstake()',
-  'function withdraw()',
+  'function queueUnstake(uint256 amount)',
+  'function unstake()',
   'function claimRewards()',
   'function emergencyWithdraw()',
 ] as const;
 
 export const FARM_ABI = [
   'function rewardPerSecond() view returns (uint256)',
-  'function poolLength() view returns (uint256)',
-  'function totalAllocPoint() view returns (uint256)',
-  'function poolInfo(uint256) view returns (address lpToken, uint256 allocPoint, uint256 lastRewardTime, uint256 accRewardPerShare)',
+  'function poolCount() view returns (uint256)',
+  'function totalAllocPoints() view returns (uint256)',
+  'function rewardPoolBalance() view returns (uint256)',
+  'function halvingInterval() view returns (uint256)',
+  'function nextHalvingTime() view returns (uint256)',
+  'function halvingCount() view returns (uint256)',
   'function paused() view returns (bool)',
-  'function userInfo(uint256, address) view returns (uint256 amount, uint256 rewardDebt)',
-  'function pendingReward(uint256, address) view returns (uint256)',
+  'function getPool(uint256 pid) view returns (address lpToken, uint256 allocPoints, uint256 lastRewardTime, uint256 accRewardPerShare, uint256 totalStaked, bool active, string name)',
+  'function getUser(uint256 pid, address account) view returns (uint256 staked, uint256 rewardDebt, uint256 pendingHarvest)',
+  'function pendingReward(uint256 pid, address account) view returns (uint256)',
   // Write functions
   'function deposit(uint256 pid, uint256 amount)',
   'function withdraw(uint256 pid, uint256 amount)',
-  'function claimReward(uint256 pid)',
+  'function harvest(uint256 pid)',
   'function emergencyWithdraw(uint256 pid)',
 ] as const;
 
@@ -231,8 +235,12 @@ export const SWAP_ABI = [
 export const GOVERNANCE_ABI = [
   'function proposalCount() view returns (uint256)',
   'function votingPeriod() view returns (uint256)',
-  'function quorumBps() view returns (uint256)',
-  'function paused() view returns (bool)',
+  'function timelockDuration() view returns (uint256)',
+  'function quorumPercentage() view returns (uint256)',
+  'function proposalThreshold() view returns (uint256)',
+  'function getProposal(uint256 proposalId) view returns (address proposer, string title, string description, string ipfsHash, uint256 forVotes, uint256 againstVotes, uint256 abstainVotes, uint8 currentState)',
+  'function state(uint256 proposalId) view returns (uint8)',
+  'function getReceipt(uint256 proposalId, address voter) view returns (bool hasVoted, uint8 support, uint256 votes)',
 ] as const;
 
 export const BRIDGE_ABI = [

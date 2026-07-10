@@ -34,6 +34,7 @@ export default function StakingPage() {
   const { connected, account, signer, isBaseMainnet, connect, switchToBase } = useWallet();
 
   const [amount, setAmount] = useState('');
+  const [unstakeAmount, setUnstakeAmount] = useState('');
   const [tab, setTab] = useState<'stake' | 'unstake' | 'claim'>('stake');
   const [bridgeOnline, setBridgeOnline] = useState(false);
 
@@ -46,7 +47,8 @@ export default function StakingPage() {
   const [userStaked, setUserStaked] = useState('0');
   const [userEarned, setUserEarned] = useState('0');
   const [userBalance, setUserBalance] = useState('0');
-  const [unstakeRequestTime, setUnstakeRequestTime] = useState(0);
+  const [cooldownStarted, setCooldownStarted] = useState(0);
+  const [cooldownAmount, setCooldownAmount] = useState(0);
   const [txPhase, setTxPhase] = useState<'idle' | 'approving' | 'staking' | 'unstaking' | 'claiming' | 'success' | 'error'>('idle');
   const [txHash, setTxHash] = useState<string | null>(null);
   const [txError, setTxError] = useState<string | null>(null);
@@ -72,9 +74,9 @@ export default function StakingPage() {
 
       const [ts, rp, apr, cd, ps] = await Promise.all([
         staking.totalStaked(),
-        staking.rewardPool(),
-        staking.annualRateBps(),
-        staking.cooldownPeriod(),
+        staking.rewardPoolBalance(),
+        staking.aprBps(),
+        staking.cooldownSeconds(),
         staking.paused(),
       ]);
       setTotalStaked(parseFloat(ethers.utils.formatEther(ts)).toLocaleString());
@@ -84,13 +86,14 @@ export default function StakingPage() {
       setPaused(ps);
 
       if (account) {
-        const info = await staking.stakeInfo(account);
-        setUserStaked(ethers.utils.formatEther(info.amount));
+        const info = await staking.stakes(account);
+        setUserStaked(ethers.utils.formatEther(info.staked));
         const earned = await staking.earned(account);
         setUserEarned(ethers.utils.formatEther(earned));
         const bal = await wzion.balanceOf(account);
         setUserBalance(ethers.utils.formatEther(bal));
-        setUnstakeRequestTime(Number(info.unstakeRequestTime));
+        setCooldownStarted(Number(info.cooldownStarted));
+        setCooldownAmount(Number(info.cooldownAmount));
       }
     } catch {
       // silent
@@ -106,8 +109,8 @@ export default function StakingPage() {
 
   // Cooldown check
   const now = Math.floor(Date.now() / 1000);
-  const cooldownPassed = unstakeRequestTime > 0 && now >= unstakeRequestTime + cooldownSecs;
-  const cooldownRemaining = unstakeRequestTime > 0 ? Math.max(0, unstakeRequestTime + cooldownSecs - now) : 0;
+  const cooldownPassed = cooldownStarted > 0 && now >= cooldownStarted + cooldownSecs;
+  const cooldownRemaining = cooldownStarted > 0 ? Math.max(0, cooldownStarted + cooldownSecs - now) : 0;
 
   // ── Stake ──────────────────────────────────────────────────────────────────
   const handleStake = async () => {
@@ -139,17 +142,19 @@ export default function StakingPage() {
     }
   };
 
-  // ── Request Unstake ────────────────────────────────────────────────────────
-  const handleRequestUnstake = async () => {
-    if (!signer) return;
+  // ── Queue Unstake (starts cooldown for specified amount) ──────────────────
+  const handleQueueUnstake = async () => {
+    if (!signer || !unstakeAmount) return;
     setTxPhase('unstaking');
     setTxError(null);
     try {
       const staking = new ethers.Contract(CONTRACTS.ZIONStaking, STAKING_ABI, signer);
-      const tx = await staking.requestUnstake();
+      const amt = ethers.utils.parseEther(unstakeAmount);
+      const tx = await staking.queueUnstake(amt);
       setTxHash(tx.hash);
       await tx.wait();
       setTxPhase('success');
+      setUnstakeAmount('');
       void refreshData();
     } catch (e: any) {
       setTxError(e?.reason || e?.message || 'Transaction failed');
@@ -157,14 +162,14 @@ export default function StakingPage() {
     }
   };
 
-  // ── Withdraw (after cooldown) ───────────────────────────────────────────────
-  const handleWithdraw = async () => {
+  // ── Unstake (withdraw after cooldown) ───────────────────────────────────────
+  const handleUnstake = async () => {
     if (!signer) return;
     setTxPhase('unstaking');
     setTxError(null);
     try {
       const staking = new ethers.Contract(CONTRACTS.ZIONStaking, STAKING_ABI, signer);
-      const tx = await staking.withdraw();
+      const tx = await staking.unstake();
       setTxHash(tx.hash);
       await tx.wait();
       setTxPhase('success');
@@ -409,19 +414,45 @@ export default function StakingPage() {
                   <div className="zion-rainbow-sub p-4" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
                     <p className="text-xs text-gray-500 mb-1">{cs ? 'Váš stake' : 'Your stake'}</p>
                     <p className="text-2xl font-bold text-emerald-400">{parseFloat(userStaked).toFixed(2)} wZION</p>
+                    {cooldownStarted > 0 && cooldownAmount > 0 && (
+                      <p className="text-[10px] text-amber-400 mt-1">
+                        {cs ? 'Čeká na cooldown' : 'In cooldown'}: {ethers.utils.formatEther(cooldownAmount)} wZION
+                      </p>
+                    )}
                   </div>
-                  {unstakeRequestTime === 0 ? (
-                    <button
-                      onClick={handleRequestUnstake}
-                      disabled={busy || parseFloat(userStaked) <= 0}
-                      className="w-full rounded-2xl bg-amber-500/20 border border-amber-500/30 px-6 py-3 text-sm font-semibold text-amber-300 hover:bg-amber-500/30 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                      {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-                      {cs ? 'Požádat o unstake' : 'Request Unstake'}
-                    </button>
+                  {cooldownStarted === 0 ? (
+                    <>
+                      <div>
+                        <label className="text-xs text-gray-500 uppercase tracking-wider mb-2 block">
+                          {cs ? 'Částka k unstake' : 'Amount to unstake'}
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={unstakeAmount}
+                            onChange={(e) => setUnstakeAmount(e.target.value)}
+                            placeholder="0.00"
+                            disabled={busy}
+                            className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/40 font-mono disabled:opacity-50"
+                          />
+                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-500">wZION</span>
+                        </div>
+                        <p className="text-[10px] text-gray-500 mt-1">
+                          {cs ? 'Dostupno' : 'Available'}: {parseFloat(userStaked).toFixed(2)} wZION
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleQueueUnstake}
+                        disabled={busy || !unstakeAmount || parseFloat(unstakeAmount) <= 0 || parseFloat(unstakeAmount) > parseFloat(userStaked)}
+                        className="w-full rounded-2xl bg-amber-500/20 border border-amber-500/30 px-6 py-3 text-sm font-semibold text-amber-300 hover:bg-amber-500/30 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+                        {cs ? 'Požádat o unstake' : 'Queue Unstake'}
+                      </button>
+                    </>
                   ) : cooldownPassed ? (
                     <button
-                      onClick={handleWithdraw}
+                      onClick={handleUnstake}
                       disabled={busy}
                       className="w-full rounded-2xl bg-red-500/20 border border-red-500/30 px-6 py-3 text-sm font-semibold text-red-300 hover:bg-red-500/30 transition-colors flex items-center justify-center gap-2"
                     >
