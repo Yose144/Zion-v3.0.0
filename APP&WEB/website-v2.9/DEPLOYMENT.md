@@ -1,161 +1,148 @@
-# ZION Web v3.7 — Deployment Guide
+# ZION Web v3.x — Deployment Guide
 
-> Last verified production deploy: 27 June 2026 (v3.7.5-quantum-revolution)
+> Last verified production deploy: 10 July 2026
 
 ## Current Production Status
 
 - **Live URL:** https://zionterranova.com
-- **Host:** Edge server (cloud VPS) — public entrypoint: `rpc.zionterranova.com`
-- **Runtime:** Docker container `zion-website` (host network mode, port 3000)
+- **Host:** New Edge server `62.171.141.136` (decommissioned: `77.42.71.94`)
+- **SSH:** `ssh zion-new` (key: `~/.ssh/zion-new-server`)
+- **Runtime:** Docker container `zion-web-next` (host network mode, port 3000)
 - **Reverse proxy:** Caddy → `localhost:3000`
-- **Source on server:** `/opt/zion/web`
-- **Compose file:** `/opt/zion/docker/docker-compose.yml`
-- **Current image:** `zion-website:v3.7.5-quantum-revolution`
+- **Runtime source on server:** `/root/zion-web-runtime`
+- **Current image:** `zion-web:runtime`
 
 ## Build Requirements
 
 > **CRITICAL:** Next.js 16 defaults to Turbopack, which cannot resolve the local `zion-wallet-sdk` `.tgz` dependency. **Always use `--webpack` flag** for production builds:
 
 ```bash
+npm run build   # package.json already adds --webpack
+# or explicitly:
 npx next build --webpack
 ```
 
-The `package-lock.json` references `file:/zion-wallet-sdk/zion-wallet-sdk-1.0.0.tgz` — this path only exists on the host after `npm install`, not inside Docker. Therefore the Docker image is built from **host-built artifacts** (`.next` + `node_modules` copied into `node:20-alpine`).
+`next.config.ts` uses `output: "standalone"`, which produces:
+- `.next/standalone/` — complete runtime (server.js + node_modules)
+- `.next/static/` — static assets
+- `public/` — public assets
+
+The project is therefore deployed by **building locally**, syncing the standalone output to the server, and running a tiny **runtime-only** Docker image.
 
 ## Deployment Steps
 
-### Method 1: Automated script
+### Method 1: Fast runtime deploy (recommended)
+
+Build locally, then ship only the pre-built standalone output. The server-side Docker build is now only a few COPY layers and takes ~10–15 seconds.
 
 ```bash
-ssh deploy@edge-server
-cd /opt/zion/web
-bash scripts/deploy-edge-web.sh <version-tag>
+# 1. Build locally (this is the slow part; run on dev machine)
+cd APP\&WEB/website-v2.9
+npm run build
+
+# 2. Sync standalone output + public assets to server
+rsync -avz --delete -e "ssh -i ~/.ssh/zion-new-server" \
+  .next/standalone .next/static public Dockerfile.runtime \
+  root@62.171.141.136:/root/zion-web-runtime/
+
+# 3. On server: stop old container, build tiny runtime image, restart
+ssh -i ~/.ssh/zion-new-server root@62.171.141.136 <<'REMOTECMD'
+cd /root/zion-web-runtime
+docker stop zion-web-next || true
+docker rm zion-web-next || true
+DOCKER_BUILDKIT=1 docker build -f Dockerfile.runtime -t zion-web:runtime .
+docker run -d --network host --name zion-web-next zion-web:runtime
+REMOTECMD
+
+# 4. Verify
+sleep 2
+curl -s https://zionterranova.com/api/health | jq
 ```
 
-The script (`scripts/deploy-edge-web.sh`):
-1. `git pull origin main`
-2. `npm install` on host
-3. `npm run build` on host (NOTE: script uses `npm run build` — may need `--webpack` flag if Turbopack fails)
-4. Builds Docker image from host artifacts
-5. Restarts container via docker compose
-6. Reloads Caddy
-
-### Method 2: Manual deploy (recommended for control)
+### Method 2: One-liner (local + remote)
 
 ```bash
-# 1. SSH to Edge server
-ssh deploy@edge-server
+ssh -i ~/.ssh/zion-new-server root@62.171.141.136 "rm -rf /root/zion-web-runtime && mkdir -p /root/zion-web-runtime" && \
+rsync -avz --delete -e "ssh -i ~/.ssh/zion-new-server" \
+  .next/standalone .next/static public Dockerfile.runtime \
+  root@62.171.141.136:/root/zion-web-runtime/ && \
+ssh -i ~/.ssh/zion-new-server root@62.171.141.136 \
+  "cd /root/zion-web-runtime && docker stop zion-web-next || true && docker rm zion-web-next || true && \
+   DOCKER_BUILDKIT=1 docker build -f Dockerfile.runtime -t zion-web:runtime . && \
+   docker run -d --network host --name zion-web-next zion-web:runtime"
+```
 
-# 2. Pull latest code
-cd /opt/zion/web
-git pull origin main
+### Runtime Dockerfile
 
-# 3. Install deps + build with webpack
-npm install
-npx next build --webpack
+`Dockerfile.runtime` (committed in repo):
 
-# 4. Build Docker image from host artifacts
-docker build -t zion-website:<version> -f - . <<'EOF'
+```dockerfile
 FROM node:20-alpine
 WORKDIR /app
-COPY .next .next
-COPY node_modules node_modules
-COPY package.json package.json
-COPY public public
 ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+COPY standalone ./
+COPY static ./.next/static
+COPY public ./public
 EXPOSE 3000
-CMD ["node", "node_modules/.bin/next", "start"]
-EOF
-
-# 5. Update compose file with new image tag
-sed -i 's|zion-website:OLD_TAG|zion-website:NEW_TAG|' /opt/zion/docker/docker-compose.yml
-
-# 6. Restart container
-docker compose -f /opt/zion/docker/docker-compose.yml up -d
-
-# 7. Verify
-sleep 3
-curl -s http://127.0.0.1:3000/api/health | jq
+CMD ["node", "server.js"]
 ```
 
-### Docker Compose File
-
-`/opt/zion/docker/docker-compose.yml`:
-
-```yaml
-services:
-  zion-website:
-    image: zion-website:<version>
-    container_name: zion-website
-    restart: unless-stopped
-    network_mode: host
-    environment:
-      - NODE_ENV=production
-      - ZION_DAO_API_KEY=${ZION_DAO_API_KEY}
-      - ZION_WARP_API_KEY=${ZION_WARP_API_KEY}
-      - ZION_JWT_SECRET=${ZION_JWT_SECRET}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
-    env_file:
-      - .env.production
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-```
+> **Why this is fast:** no `npm install`, no `next build`, no source copy. The heavy build runs once on the dev machine; the server only copies pre-built artifacts into a Node image.
 
 ## Verification
 
 ```bash
-# Health check
-curl -s http://127.0.0.1:3000/api/health | jq
+# Health check (from anywhere)
+curl -s https://zionterranova.com/api/health | jq
 
-# Container status
-docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}' | grep zion-website
+# Container status (on server)
+ssh -i ~/.ssh/zion-new-server root@62.171.141.136 \
+  "docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}' | grep zion-web-next"
 
 # Public URL
 curl -I https://zionterranova.com/
 
-# Specific page
-curl -s https://zionterranova.com/quantum-revolution | head -5
+# Specific pages
+curl -s https://zionterranova.com/ | head -5
+curl -s https://zionterranova.com/zohar | head -5
 ```
 
 ## Rollback
 
-```bash
-# List available images
-docker images | grep zion-website
+The previous image is overwritten on every deploy. To keep a rollback image, tag it before deploying:
 
-# Update compose to previous tag
-sed -i 's|zion-website:CURRENT|zion-website:PREVIOUS|' /opt/zion/docker/docker-compose.yml
-docker compose -f /opt/zion/docker/docker-compose.yml up -d
+```bash
+ssh -i ~/.ssh/zion-new-server root@62.171.141.136 \
+  "docker tag zion-web:runtime zion-web:runtime-backup-$(date +%Y%m%d-%H%M)"
 ```
+
+Or simply re-run the deploy with the previous git commit checked out locally.
 
 ## Dockerfiles
 
 | File | Purpose |
 |---|---|
-| `Dockerfile` | Legacy — uses `COPY ../zion-wallet-sdk` (broken with normal build context) |
-| `Dockerfile.production` | Self-contained — `npm ci` inside Docker (fails on `.tgz` path) |
-| Inline Dockerfile | Used by `deploy-edge-web.sh` — copies host-built `.next` + `node_modules` |
+| `Dockerfile` | Legacy multi-stage build — installs deps and builds inside Docker. **Slow on server.** |
+| `Dockerfile.runtime` | **Current** — runtime-only, copies locally built `.next/standalone`, `.next/static`, and `public`. |
 
-The **inline Dockerfile** approach (copying host artifacts) is the only working method due to the local `.tgz` dependency issue.
+Use `Dockerfile` only if you must build on the server (not recommended). `Dockerfile.runtime` is the production path.
 
 ## Connecting to Edge Server
 
-### Via SSH
-
 ```bash
-ssh deploy@rpc.zionterranova.com
+ssh zion-new   # configured in ~/.ssh/config with IdentityFile ~/.ssh/zion-new-server
+# or explicitly:
+ssh -i ~/.ssh/zion-new-server root@62.171.141.136
 ```
-
-Use a non-root deployment account and an SSH key stored in your local SSH agent.
 
 ## Deployment History
 
 | Date | Version | Changes |
 |---|---|---|
+| 2026-07-10 | v3.0.5 | Rasta navigation redesign, `.zion-page` layout system, fast runtime deploy |
 | 2026-06-27 | v3.7.5-quantum-revolution | New /quantum-revolution page + gold StoryTriptych card |
 | 2026-06-27 | v3.7.4-doge-fix | Fix Doge ATH timeline (7.5 years, not 2) |
 | 2026-06-27 | v3.7.3-rainbow-theme | ZION rainbow-card theme across all 53 pages |
@@ -163,6 +150,6 @@ Use a non-root deployment account and an SSH key stored in your local SSH agent.
 
 ---
 
-**Version:** v3.7.5  
-**Last updated:** 27 June 2026  
-**Status:** ✅ Deployed and verified on Edge
+**Version:** v3.0.5  
+**Last updated:** 10 July 2026  
+**Status:** ✅ Deployed and verified on 62.171.141.136
