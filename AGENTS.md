@@ -832,6 +832,10 @@ The pool server has been optimized for 1000+ concurrent miners. Six fixes were a
 - **F4b — LogChannel deadlock fix (post-deploy hotfix):** The original `LogChannel::spawn()` held `stdout.lock()` permanently for the entire lifetime of the background thread, causing any `println!` in the main thread to deadlock. Fixed by acquiring+dropping the lock per write cycle instead.
 - **F5 — Async payout execution:** Payout TX submission moved to a background thread (`execute_payout_async`). The miner thread that found a block is no longer blocked for 600ms-50s during N sequential RPC calls to the node.
 - **F6 — PPLNS persistence lock-split + dirty flag:** The persistence thread holds the PPLNS mutex only for snapshot clone + dirty-flag check. JSON serialization and file I/O happen outside the lock. A `dirty` flag on `PplnsEngine` skips saves entirely when no shares arrived since the last save cycle.
+- **P7 — Miner ID interning (u32 index):** `MinerRegistry` maps `String` miner IDs to compact `u32` indices. `WindowEntry` uses `u32` instead of `String`. All per-miner data (`unpaid`, `paid_per_miner`, `shares_per_miner`, `last_share_time_per_miner`, `addresses`) changed from `HashMap<String, T>` to `Vec<T>` indexed by u32. Zero String allocations in the hot path — critical for 10k miners (50k shares/sec).
+- **P8 — Incremental share weights:** Running `Vec<u128>` maintained on each `record_share`/eviction. `distribute_to_miners()` is O(active_miners) instead of O(window_len) — 50× faster at 10k miners with large windows.
+- **P9 — Configurable window size:** `ZION_PPLNS_WINDOW_SIZE` env var (default 500,000). For 10k miners, set to 5,000,000+.
+- **P10 — Backward-compatible snapshot:** `PplnsSnapshot` format unchanged (String-based HashMaps). u32↔String conversion happens only during `snapshot()`/`restore()`. Existing state files load without migration.
 - **F3 (per-session job tracking):** Deferred — too large a refactor for this pass.
 
 Full report: [`docs/3.0.5/POOL_PERF_REPORT_2026-07-11.md`](./docs/3.0.5/POOL_PERF_REPORT_2026-07-11.md)

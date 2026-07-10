@@ -24,6 +24,10 @@
 > | **F4b** | LogChannel deadlock fix (post-deploy hotfix) | `stdout.lock()` byl držen permanentně po celou dobu životnosti logging threadu → deadlock při jakémkoli `println!` v main threadu. Fix: lock acquire+drop per write cycle |
 > | **F5** | Async payout execution | Payout TX submission v background thread — miner thread není blokován po dobu N RPC calls (600ms-50s) |
 > | **F6** | PPLNS persistence lock-split + dirty flag | Lock držen jen pro snapshot clone; JSON serialize + file I/O mimo lock. Dirty flag přeskakuje save když nepřišly žádné shares |
+> | **P7** | Miner ID interning (u32 index) | `MinerRegistry` mapuje String→u32. `PplnsShare` používá u32 místo String. Per-miner data v Vec místo HashMap. Zero String alokací v hot path |
+> | **P8** | Incremental share weights | Running `Vec<u128>` aktualizovaný při record/evict. `distribute_to_miners()` je O(minerů) ne O(shares) — 50× rychlejší při 10k minerů |
+> | **P9** | Configurable window size | `ZION_PPLNS_WINDOW_SIZE` env var — pro 10k minerů nastavit 5M+ |
+> | **P10** | Backward-compat snapshot | PplnsSnapshot formát unchanged (String), konverze u32↔String jen při save/load |
 >
 > **Výsledky:**
 > - `cargo build --release -p zion-pool` — success
@@ -32,8 +36,9 @@
 > - Pool active, 1000+ shares accepted za 30s, PPLNS state restored (20 miners, 307B flowers total paid)
 > - Pool stabilní, žádné reconnect smyčky
 > - F4b deadlock fix deploynut a ověřeno: pool startuje bez zaseknutí, minéři aktivně posílají shares
+> - P7-P10 deploynut a ověřeno: PPLNS state restored (50 shares, 12 miners, 20 addresses), minéři aktivní
 >
-> **Commity:** `7da0219fb` (watchdog fix), `3080fb018` (watchdog fix report), `673632525` (F1-F6 optimizations), `F4b deadlock fix` (pending commit)
+> **Commity:** `7da0219fb` (watchdog fix), `3080fb018` (watchdog fix report), `673632525` (F1-F6 optimizations), `ef4928efb` (F4b deadlock fix), `P7-P10` (pending commit)
 >
 > **Soubory změněné:** `V3/L1/pool/src/bin/server.rs`, `V3/L1/pool/src/lib.rs`, `V3/L1/pool/src/pplns.rs`, `V3/deploy/new-server/zion-watchdog.sh`, `Cargo.toml` (workspace deps fix)
 >
