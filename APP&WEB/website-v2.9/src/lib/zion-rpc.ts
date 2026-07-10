@@ -808,10 +808,64 @@ class ZionRpcClient {
     return null;
   }
 
+  /** Scan on-chain account transactions for payouts from the pool wallet to a miner.
+   *  This is authoritative when the pool's internal DB loses telemetry or partial data. */
+  async getChainPayoutsForAddress(
+    address: string,
+    maxBlocks = 2000,
+  ): Promise<{ totalPaidAtomic: number; payouts: Array<{ amount: number; amount_zion: number; tx_id: string; timestamp: number; status: string }> }> {
+    const info = await this.getInfo().catch(() => null);
+    const tipHeight = Math.max(0, (info?.height ?? 1) - 1);
+    const scanStart = Math.max(0, tipHeight - maxBlocks + 1);
+    const poolWallet = (await import('@/lib/constants')).POOL_WALLET.toLowerCase();
+    const target = address.toLowerCase();
+
+    let totalPaidAtomic = 0n;
+    const payouts: Array<{ amount: number; amount_zion: number; tx_id: string; timestamp: number; status: string }> = [];
+
+    const BATCH_SIZE = 25;
+    for (let start = scanStart; start <= tipHeight; start += BATCH_SIZE) {
+      const batch: Promise<any>[] = [];
+      for (let h = start; h <= tipHeight && batch.length < BATCH_SIZE; h++) {
+        batch.push(this.rpcCall<any>('getBlockByHeight', { height: h }).catch(() => null));
+      }
+      const blocks = await Promise.all(batch);
+      for (const block of blocks) {
+        if (!block?.transactions) continue;
+        for (const tx of block.transactions) {
+          if (
+            typeof tx.from === 'string' &&
+            tx.from.toLowerCase() === poolWallet &&
+            typeof tx.to === 'string' &&
+            tx.to.toLowerCase() === target &&
+            tx.amount_zion
+          ) {
+            const amountAtomic = BigInt(tx.amount_zion);
+            totalPaidAtomic += amountAtomic;
+            payouts.push({
+              amount: Number(amountAtomic),
+              amount_zion: Number(amountAtomic) / ATOMIC_PER_ZION,
+              tx_id: tx.tx_id || tx.tx_hash || '',
+              timestamp: block.timestamp || 0,
+              status: 'confirmed',
+            });
+          }
+        }
+      }
+    }
+
+    payouts.sort((a, b) => b.timestamp - a.timestamp);
+    const total = Number(totalPaidAtomic);
+    return { totalPaidAtomic: Number.isFinite(total) ? total : 0, payouts };
+  }
+
   /** Get miner info by address — try V3 getBalance */
   async getMinerInfo(address: string): Promise<any> {
-    const statsPayload = await this.poolHttpGet<any>(`/api/v1/miner/${address}/stats`);
-    const payoutsPayload = await this.poolHttpGet<any>(`/api/v1/miner/${address}/payouts`);
+    const [statsPayload, payoutsPayload, chainPayouts] = await Promise.all([
+      this.poolHttpGet<any>(`/api/v1/miner/${address}/stats`),
+      this.poolHttpGet<any>(`/api/v1/miner/${address}/payouts`),
+      this.getChainPayoutsForAddress(address).catch(() => ({ totalPaidAtomic: 0, payouts: [] })),
+    ]);
 
     if (statsPayload?.ok && statsPayload?.stats) {
       const minerStats = statsPayload.stats;
@@ -819,19 +873,35 @@ class ZionRpcClient {
         ? payoutsPayload.pending_payouts
         : [];
 
+      const poolTotalPaidAtomic = minerStats.total_paid ?? 0;
+      const totalPaidAtomic = chainPayouts.totalPaidAtomic || poolTotalPaidAtomic;
+
+      const pending = pendingPayouts.map((payout: any) => ({
+        amount: payout.amount ?? payout.amount_atomic ?? 0,
+        tx_id: payout.tx_id,
+        timestamp: payout.created_ts ?? payout.updated_ts ?? 0,
+        status: payout.status ?? 'pending',
+      }));
+
+      const confirmed = chainPayouts.payouts.map((payout) => ({
+        amount: payout.amount_zion,
+        tx_id: payout.tx_id,
+        timestamp: payout.timestamp,
+        status: payout.status,
+      }));
+
+      const recentPayouts = [...pending, ...confirmed]
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, 50);
+
       return {
         address,
         balance: {
           pending: (minerStats.pending_balance ?? 0) / 1e6,
           locked: 0,
-          paid: (minerStats.total_paid ?? 0) / 1e6,
+          paid: totalPaidAtomic / 1e6,
         },
-        recent_payouts: pendingPayouts.map((payout: any) => ({
-          amount: payout.amount ?? payout.amount_atomic ?? 0,
-          tx_id: payout.tx_id,
-          timestamp: payout.created_ts ?? payout.updated_ts ?? 0,
-          status: payout.status ?? 'pending',
-        })),
+        recent_payouts: recentPayouts,
         blocks_found: minerStats.blocks_found ?? 0,
         accepted_shares: minerStats.valid_shares ?? 0,
         rejected_shares: minerStats.invalid_shares ?? 0,
@@ -847,10 +917,24 @@ class ZionRpcClient {
       return {
         address,
         balance: balance?.balance_zion ?? 0,
-        recent_payouts: [],
+        recent_payouts: chainPayouts.payouts.map((payout) => ({
+          amount: payout.amount_zion,
+          tx_id: payout.tx_id,
+          timestamp: payout.timestamp,
+          status: payout.status,
+        })),
       };
     } catch {
-      return { address, balance: 0, recent_payouts: [] };
+      return {
+        address,
+        balance: 0,
+        recent_payouts: chainPayouts.payouts.map((payout) => ({
+          amount: payout.amount_zion,
+          tx_id: payout.tx_id,
+          timestamp: payout.timestamp,
+          status: payout.status,
+        })),
+      };
     }
   }
 
