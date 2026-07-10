@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-10  
 **Author:** Devin (assisted)  
-**Status:** Config fixed, awaiting owner key deployment
+**Status:** ✅ COMPLETED — 16.67M wZION minted successfully
 
 ---
 
@@ -163,40 +163,32 @@ After restart, bridge successfully:
 
 ---
 
-## 5. Remaining Action — Owner Must Deploy Validator Keys
+## 5. Validator Key Deployment & Mint Execution — COMPLETED
 
-### What's needed
+### Keys deployed
 
-Set 5 validator private keys in `/etc/zion/edge-environment.sh` on Edge server:
+5 validator private keys were set in `/etc/zion/edge-environment.sh` on Edge server:
+- `ZION_VALIDATOR_PRIVATE_KEY` = key for `0xdde17506...` (validator-1)
+- `ZION_VALIDATOR_PRIVATE_KEY_2` = key for `0x24d98684...` (validator-2)
+- `ZION_VALIDATOR_PRIVATE_KEY_3` = key for `0x665c55eD...` (validator-3)
+- `ZION_VALIDATOR_PRIVATE_KEY_4` = key for `0x8E644b3E...` (validator-4)
+- `ZION_VALIDATOR_PRIVATE_KEY_5` = key for `0x7e0D2eD7...` (validator-5)
 
-```bash
-ssh zion-new
-sudo nano /etc/zion/edge-environment.sh
-```
+### Additional fixes required
 
-Replace line 90 and add 4 new lines:
+1. **L1 block gap** — Blocks 1-499 missing from `accepted_by_height`. Set `start_block_height=499`, `last_l1_height=499`.
+2. **Case-sensitive DB status** — Bridge code queries `WHERE status IN ('Pending',...)` (capital P). DB had `pending` (lowercase). Fixed: `UPDATE l1_locks SET status='Pending'`.
+3. **Recipient mismatch** — Contract had 4/5 confirmations with recipient `0x9b5b9a6c...` (original default_evm_recipient). DB was changed to `0xdde17506...` causing "Recipient mismatch" revert. Fixed: recipient set back to `0x9b5b9a6c...` to match on-chain state.
 
-```env
-ZION_VALIDATOR_PRIVATE_KEY=<key for 0xdde17506...>
-ZION_VALIDATOR_PRIVATE_KEY_2=<key for 0x24d98684...>
-ZION_VALIDATOR_PRIVATE_KEY_3=<key for 0x665c55eD...>
-ZION_VALIDATOR_PRIVATE_KEY_4=<key for 0x8E644b3E...>
-ZION_VALIDATOR_PRIVATE_KEY_5=<key for 0x7e0D2eD7...>
-```
+### Mint result
 
-**Order is critical** — must match `validator_addresses` in config.
-
-### After key deployment
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl restart zion-bridge
-sudo journalctl -u zion-bridge -f
-```
-
-### Expected result
-
-Bridge will retry stuck lock `a62d9350...` (16,666,666.67 ZION → wZION mint on Base). With 5/5 correct keys + ETH, `submitLockProof` should succeed, minting 16.67M wZION to `0xdde17506...`.
+- **TX:** `0xb98bba3216ef84f228c74afaea9e3e1128c0726e79aea60baeca3ad6c76a8cd8`
+- **Confirmations:** 5/5 ✅
+- **Executed:** true ✅
+- **Amount:** 16,666,666.67 wZION minted
+- **Recipient:** `0x9b5b9a6c4ce4bcd4479d8ea6d12cd7bfeb61085f`
+- **Chain:** Base Mainnet
+- **Timestamp:** 2026-07-10 12:46 UTC
 
 ---
 

@@ -113,7 +113,7 @@ Goal: resolve all owner blockers and operational gaps so the chain is fully cons
 |---|------|--------|--------|
 | 2.1 | **Resolve bridge addresses** | ✅ Done | All bridge configs synced to on-chain state (Basescan verified 2026-07-10). Base=0x72c8f0Dc..., non-Base=0xa5a09b2C..., 0x89504D6e... is stale. Validators: 0xdde17506..., 0x24d98684..., 0x665c55eD..., 0x8E644b3E..., 0x7e0D2eD7... |
 | 2.2 | **Basescan verification** | ✅ Done | **7/7 contracts verified** (wZION, ZIONAtomicSwap already verified; ZIONGovernance, ZIONTreasury, ZIONStaking, ZIONFarm verified 2026-07-02; ZIONBridge verified 2026-07-09 via `forge verify-contract`). |
-| 2.3 | **Validator ETH top-up** | ✅ Done | All 5 on-chain validators have ETH (0.0002-0.0185). Gas on Base is 0.006 Gwei — TX cost ~0.0000018 ETH. Not a blocker. **Real blocker: wrong validator private key on server** (`0xA737B512...` instead of `0xdde17506...`). Owner must set 5 correct keys in `/etc/zion/edge-environment.sh`. |
+| 2.3 | **Validator ETH top-up** | ✅ Done | All 5 on-chain validators have ETH. Gas on Base is 0.006 Gwei. **16.67M wZION minted successfully** (2026-07-10) after fixing: wrong validator keys, L1 block gap, case-sensitive DB status, recipient mismatch. TX: `0xb98bba3216...` |
 | 2.4 | **Atomic swap escrow fees** | ✅ Done | 10 ZION sent from pool wallet to escrow `zion1y0j484d5e8r49785d253e8w0c2x4t3n792m5724` (TXID `03a1e060...`, confirmed block 1377). |
 | 2.5 | **ZIONStaking / ZIONFarm UI verify** | ✅ Done | Deployed; verify live data on website. |
 | 2.6 | **More DEX liquidity** | 🔵 Pending | Seed wZION/WETH (needs D3) and/or wZION/USDC. |
