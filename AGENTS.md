@@ -822,6 +822,27 @@ If pool stops accepting connections:
 4. Restart pool service: `systemctl restart zion-pool.service`
 5. Verify miners can reconnect
 
+### Pool Scalability (F1-F6, 2026-07-11)
+
+The pool server has been optimized for 1000+ concurrent miners. Six fixes were applied (commit `673632525`):
+
+- **F1 — Thread handle reaping:** `handles.retain(|h| !h.is_finished())` runs when `handles.len() > 128` in the accept loop, preventing unbounded `Vec<JoinHandle>` memory growth.
+- **F2 — Atomic share counters:** `MiningPool` share counters changed from `u64` to `AtomicU64`. `record_accepted_share(&self)`, `record_rejected_share(&self)`, `record_stale_share(&self)` take `&self` (not `&mut self`), enabling lock-free updates.
+- **F4 — Batched logging channel (`LogChannel`):** Hot-path `println!` calls in the submit loop replaced with `log_ch.log(format!(...))` — an mpsc sync_channel (4096 capacity) + background thread that batches into 4KB chunks, flushing every 100ms. Eliminates per-share syscall overhead.
+- **F5 — Async payout execution:** Payout TX submission moved to a background thread (`execute_payout_async`). The miner thread that found a block is no longer blocked for 600ms-50s during N sequential RPC calls to the node.
+- **F6 — PPLNS persistence lock-split + dirty flag:** The persistence thread holds the PPLNS mutex only for snapshot clone + dirty-flag check. JSON serialization and file I/O happen outside the lock. A `dirty` flag on `PplnsEngine` skips saves entirely when no shares arrived since the last save cycle.
+- **F3 (per-session job tracking):** Deferred — too large a refactor for this pass.
+
+Full report: [`docs/3.0.5/POOL_PERF_REPORT_2026-07-11.md`](./docs/3.0.5/POOL_PERF_REPORT_2026-07-11.md)
+
+### Watchdog Fix (2026-07-11)
+
+The deployed watchdog script (`/usr/local/bin/zion-watchdog.sh`) had two bugs causing pool restarts every 2 minutes:
+1. `/dev/tcp/127.0.0.1:8444` — bash's `/dev/tcp` uses `/` separator, not `:`. Replaced with `nc -z -w3` (netcat).
+2. `getHeight` JSON-RPC method doesn't exist. Fixed to `getChainInfo` (returns `.result.chain_height`).
+
+Fixed script: `V3/deploy/new-server/zion-watchdog.sh`. Report: [`POOL_WATCHDOG_FIX_REPORT_2026-07-11.md`](./POOL_WATCHDOG_FIX_REPORT_2026-07-11.md)
+
 ## Current Status (2026-07-07 — Post Hard Reset)
 
 **System Status (new server 62.171.141.136):**
@@ -1225,7 +1246,7 @@ All other ports (8333, 8444, 9333) are **not** in UFW — they bind to 0.0.0.0 b
 | Binary | Source | Size |
 |--------|--------|------|
 | `zion-node` | `cargo build --release -p zion-core --bin node` | 2.96 MB |
-| `zion-pool-server` | `cargo build --release -p zion-pool --bin server` | 2.20 MB |
+| `zion-pool-server` | `cargo build --release -p zion-pool --bin server` | 2.35 MB |
 | `zion-bridge` | `cargo build --release -p zion-bridge` | 10.1 MB |
 | `zion-dao` | `cargo build --release -p zion-dao` | 5.47 MB |
 | `zion-warp-server` | `cargo build --release -p zion-warp` | 9.23 MB |
