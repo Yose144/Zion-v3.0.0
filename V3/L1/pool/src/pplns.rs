@@ -161,6 +161,10 @@ pub struct PplnsEngine {
     fee_issobella_flowers: u64,
     /// Accumulated pool operator fee (flowers).
     fee_pool_flowers: u64,
+    /// Dirty flag — set true whenever state changes, cleared by the
+    /// persistence thread after a successful save.  Avoids redundant
+    /// JSON serialize + file write when no shares arrived since last save.
+    dirty: bool,
 }
 
 /// Serializable snapshot of all PPLNS engine mutable state.
@@ -200,6 +204,7 @@ impl PplnsEngine {
             fee_humanitarian_flowers: 0,
             fee_issobella_flowers: 0,
             fee_pool_flowers: 0,
+            dirty: false,
         }
     }
 
@@ -235,6 +240,7 @@ impl PplnsEngine {
         self.fee_humanitarian_flowers = snap.fee_humanitarian_flowers;
         self.fee_issobella_flowers = snap.fee_issobella_flowers;
         self.fee_pool_flowers = snap.fee_pool_flowers;
+        self.dirty = false;
     }
 
     /// Save engine state to a JSON file (atomic write via temp + rename).
@@ -244,6 +250,30 @@ impl PplnsEngine {
         let json = serde_json::to_vec(&snap).map_err(std::io::Error::other)?;
 
         // Atomic write: write to temp file, then rename.
+        let tmp = path.with_extension("json.tmp");
+        std::fs::write(&tmp, &json)?;
+        std::fs::rename(&tmp, path)?;
+        Ok(())
+    }
+
+    /// Returns `true` if state has changed since the last save, and clears
+    /// the dirty flag.  The persistence thread calls this to decide whether
+    /// to save.  This avoids redundant JSON serialize + file I/O when no
+    /// shares have arrived since the last save cycle.
+    pub fn take_dirty(&mut self) -> bool {
+        std::mem::replace(&mut self.dirty, false)
+    }
+
+    /// Write a pre-captured snapshot to a JSON file (atomic write via temp +
+    /// rename).  This is a standalone function so the persistence thread can
+    /// snapshot under the lock, then serialize + write **outside** the lock,
+    /// avoiding blocking share submissions during file I/O.
+    pub fn write_snapshot_to_path<P: AsRef<Path>>(
+        snap: &PplnsSnapshot,
+        path: P,
+    ) -> std::io::Result<()> {
+        let path = path.as_ref();
+        let json = serde_json::to_vec(snap).map_err(std::io::Error::other)?;
         let tmp = path.with_extension("json.tmp");
         std::fs::write(&tmp, &json)?;
         std::fs::rename(&tmp, path)?;
@@ -283,6 +313,7 @@ impl PplnsEngine {
     pub fn register_address(&mut self, miner_id: &str, address: &str) {
         self.addresses
             .insert(miner_id.to_string(), address.to_string());
+        self.dirty = true;
     }
 
     /// Returns the registered payout address for a miner, if any.
@@ -309,6 +340,7 @@ impl PplnsEngine {
             .entry(miner_id.to_string())
             .or_default()
             .invalid += 1;
+        self.dirty = true;
     }
 
     /// Record that a miner found a block.
@@ -317,6 +349,7 @@ impl PplnsEngine {
             .entry(miner_id.to_string())
             .or_default()
             .blocks += 1;
+        self.dirty = true;
     }
 
     /// Record an accepted share with explicit difficulty weight.
@@ -362,6 +395,7 @@ impl PplnsEngine {
                 break;
             }
         }
+        self.dirty = true;
     }
 
     /// Like [`record_share`] but with an explicit timestamp (for testing).
@@ -400,6 +434,7 @@ impl PplnsEngine {
                 break;
             }
         }
+        self.dirty = true;
     }
 
     /// Number of shares currently in the window.
@@ -528,6 +563,7 @@ impl PplnsEngine {
                 *self.paid_per_miner.entry(payout.miner_id.clone()).or_insert(0) += payout.amount as u128;
             }
         }
+        self.dirty = true;
 
         payouts
     }
@@ -559,6 +595,7 @@ impl PplnsEngine {
         if self.payout_rounds > 0 {
             self.payout_rounds -= 1;
         }
+        self.dirty = true;
     }
 
     /// Get the unpaid balance for a miner (flowers).
@@ -653,6 +690,7 @@ impl PplnsEngine {
         self.fee_humanitarian_flowers = self.fee_humanitarian_flowers.saturating_add(humanitarian);
         self.fee_issobella_flowers = self.fee_issobella_flowers.saturating_add(issobella);
         self.fee_pool_flowers = self.fee_pool_flowers.saturating_add(pool);
+        self.dirty = true;
     }
 }
 
