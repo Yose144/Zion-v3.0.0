@@ -3,6 +3,10 @@
 > **Spuštěno:** 11. června 2026
 > **Síť:** zion-mainnet-1
 > **Stav:** MainNet Core live, pool aktivní, mining provozní
+>
+> **⚠️ Historický dokument.** Tahle stránka popisuje původní **v3.0.1 Genesis Launch** z 11. června 2026.
+> Aktuální veřejná linka je **v3.0.5 All Green / Mainnet Beta** běžící na novém genesis hash po hard resetu v červenci 2026.
+> Aktuální stav, časovou osu a shrnutí bezpečnostních incidentů najdete v [mainnet/README.md](../mainnet/README.md).
 
 ---
 
