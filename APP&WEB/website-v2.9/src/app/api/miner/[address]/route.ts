@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
 
+const ACTIVE_THRESHOLD_SECONDS = 600;
+
 export async function GET(
   _: Request,
   { params }: { params: Promise<{ address: string }> }
@@ -21,23 +23,31 @@ export async function GET(
       return NextResponse.json({ error: 'Miner not found' }, { status: 404 });
     }
 
-    const valid = poolStats?.shares?.valid ?? poolStats?.routing?.accepted ?? 0;
-    const invalid = poolStats?.shares?.invalid ?? poolStats?.routing?.rejected ?? 0;
+    const stats = minerInfo?.stats || {};
+    const balance = minerInfo?.balance || {};
+    const lastSeen = stats.last_seen || stats.last_share_time || 0;
+    const isActive =
+      lastSeen > 0 &&
+      Math.floor(Date.now() / 1000) - lastSeen < ACTIVE_THRESHOLD_SECONDS;
+
+    const valid = stats.valid_shares ?? 0;
+    const invalid = stats.invalid_shares ?? 0;
     const total = valid + invalid;
 
     return NextResponse.json({
       wallet_address: addr,
-      is_active: true,
+      is_active: isActive,
       stats: {
-        current_hashrate: 0,
-        total_shares: valid,
+        current_hashrate: stats.hashrate_1h ?? 0,
+        total_shares: stats.total_shares ?? valid + invalid,
         accepted_shares: valid,
         rejected_shares: invalid,
-        blocks_found: 0,
+        blocks_found: stats.blocks_found ?? 0,
+        last_seen: lastSeen,
       },
       balance: {
-        pending: 0,
-        total_earned: minerInfo.balance ?? 0,
+        pending: balance.pending ?? 0,
+        total_earned: balance.paid ?? minerInfo.balance ?? 0,
       },
       payments: [],
       efficiency: {
