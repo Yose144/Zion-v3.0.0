@@ -6,13 +6,16 @@ import {
   ScrollView,
   TouchableOpacity,
   Switch,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import GlassCard from '../components/common/GlassCard';
 import {colors, spacing, typography, borderRadius} from '../constants/theme';
 import {CONFIG} from '../constants/config';
+import {useSubscription} from '../hooks/useSubscription';
 
-const SettingsScreen = () => {
+const SettingsScreen = ({navigation}) => {
+  const {isPro, hasMinerBoost, restorePurchases, loading} = useSubscription();
   const [biometricEnabled, setBiometricEnabled] = React.useState(true);
   const [networkMode, setNetworkMode] = React.useState(CONFIG.NETWORK_MODE || 'mainnet');
   const [notifications, setNotifications] = React.useState({
@@ -82,6 +85,53 @@ const SettingsScreen = () => {
           icon="backup-restore"
           label="Backup Wallets"
           onPress={() => {}}
+          showArrow
+        />
+      </GlassCard>
+
+      {/* Premium / IAP */}
+      <GlassCard style={styles.card}>
+        <Text style={styles.sectionTitle}>Premium</Text>
+
+        {isPro ? (
+          <View style={styles.premiumActiveBadge}>
+            <Icon name="crown" size={20} color={colors.primary.gold} />
+            <Text style={styles.premiumActiveText}>ZION Pro Active</Text>
+          </View>
+        ) : (
+          <View style={styles.premiumInactiveBadge}>
+            <Icon name="crown-outline" size={20} color={colors.text.muted} />
+            <Text style={styles.premiumInactiveText}>Free Plan</Text>
+          </View>
+        )}
+
+        <SettingItem
+          icon="crown"
+          label={isPro ? 'Manage Subscription' : 'Upgrade to Pro'}
+          value={isPro ? 'Pro' : 'Unlock all features'}
+          onPress={() => navigation?.navigate('Paywall')}
+          showArrow
+        />
+
+        <SettingItem
+          icon="rocket-launch"
+          label="Miner Boost"
+          value={hasMinerBoost ? 'Owned' : 'Unlock GPU mining'}
+          onPress={() => navigation?.navigate('Paywall')}
+          showArrow
+        />
+
+        <SettingItem
+          icon="backup-restore"
+          label="Restore Purchases"
+          onPress={async () => {
+            try {
+              await restorePurchases();
+              Alert.alert('Restore Complete', 'Your purchases have been restored.');
+            } catch (err) {
+              Alert.alert('Restore Failed', err?.message || 'Please try again.');
+            }
+          }}
           showArrow
         />
       </GlassCard>
@@ -387,6 +437,40 @@ const styles = StyleSheet.create({
   footerSubtext: {
     ...typography.caption,
     textAlign: 'center',
+  },
+  premiumActiveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,215,0,0.1)',
+    borderRadius: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255,215,0,0.3)',
+  },
+  premiumActiveText: {
+    fontSize: 14,
+    color: colors.primary.gold,
+    fontWeight: '700',
+  },
+  premiumInactiveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  premiumInactiveText: {
+    fontSize: 14,
+    color: colors.text.muted,
+    fontWeight: '600',
   },
 });
 

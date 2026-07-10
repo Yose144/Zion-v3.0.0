@@ -1,22 +1,51 @@
 # ZION CLI FAQ (jednoduše)
 
-## Je ZION CLI jen "obal" kolem node?
+## Co je ZION CLI?
 
-Ne.
+`zion` je jeden binary, který umí všechno: wallet, node, miner, pool, status, doctor, monitor.
+Žádné 8 oddělených binárek — jeden soubor, interaktivní menu, hotovo.
 
-`zion` je jednotná vstupní brána pro více vrstev najednou: L1, L2, L3 i operace (deploy, logy, monitoring).
+## Kde stáhnu binary?
+
+Na GitHub Releases:
+
+https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.0.5-beta
+
+4 platformy: Linux x86_64, macOS Apple Silicon, macOS Intel, Windows x86_64.
+Pro ARM64 (Raspberry Pi) build ze zdrojů.
 
 ## Musím mít GPU, aby CLI fungovalo?
 
 Nemusíš.
 
-Základní operace (`status`, `doctor`, `node`, `pool`, `deploy`) fungují i bez GPU.
+Základní operace (`status`, `doctor`, `wallet`, `node`) fungují i bez GPU.
+Těžba běží na CPU výchozím backendem.
 
-## Co znamená, když je agent ve fallback režimu?
+## Jaký je úplně první příkaz po spuštění terminálu?
 
-Služba běží, ale backend model není dostupný.
+```bash
+zion
+```
 
-To je očekávané chování: systém je transparentní a nezamlčuje chybu.
+Bez argumentů se otevře interaktivní menu.
+Nebo klasicky:
+
+```bash
+zion doctor
+zion status
+```
+
+## Můžu používat CLI bez interaktivního menu?
+
+Ano.
+
+Menu je pohodlné pro začátečníka, ale všechny příkazy jdou spouštět klasicky:
+
+```bash
+zion wallet new --mnemonic --out my-wallet.json
+zion node status
+zion mine start --pool stratum+tcp://62.171.141.136:8444 --wallet YOUR_ADDRESS
+```
 
 ## Jaké vrstvy platí v dokumentaci?
 
@@ -27,21 +56,8 @@ To je očekávané chování: systém je transparentní a nezamlčuje chybu.
 - L5 = Free World
 - L6 = Issobella
 
-## Jaký je úplně první příkaz po spuštění terminálu?
-
-```bash
-zion doctor
-```
-
-Když `zion` nemáš v PATH:
-
-```bash
-cargo run --manifest-path V3/Cargo.toml -p zion-cli -- doctor
-```
-
-## Proč některé příkazy pracují se jmény služeb a ne kontejnerů?
-
-Protože CLI cílí na compose služby (source of truth), ne na náhodné názvy kontejnerů.
+Komunitní CLI (`zion`) pokrývá L1 (wallet, node, mine, pool).
+L2/L3 služby jsou operátorské — běží na serveru.
 
 ## Jak poznám, že je problém v node a ne ve webu?
 
@@ -49,32 +65,43 @@ Použij rychlý test:
 
 ```bash
 zion node status
-zion logs node
 ```
 
 Když node neběží nebo padá, explorer/web obvykle nemá odkud číst data.
 
-## Můžu používat CLI bez interaktivního menu?
+## Jaké algoritmy těžby jsou k dispozici?
 
-Ano.
+**Ekam Deeksha** — dual-algo PoW: BLAKE3 + RandomNPU.
 
-Menu je pohodlné pro začátečníka, ale všechny příkazy jdou spouštět klasicky:
+Backendy:
 
-```bash
-zion status
-zion node status
-zion pool stats
-```
-
-## Jaký je rozdíl mezi `zion update` a `zion deploy update`?
-
-- `zion update` = aktualizuje lokální CLI binárku.
-- `zion deploy update` = řeší runtime na serveru.
+- `cpu` — výchozí, funguje všude
+- `opencl` — Linux/Windows GPU (AMD, NVIDIA)
+- `cuda` — NVIDIA GPU (Linux/Windows)
+- `metal` — macOS Apple Silicon GPU
 
 ## Jaká je nejbezpečnější rutina pro laika?
 
 Před každou větší akcí:
 
-1. `zion config validate`
-2. `zion doctor`
-3. `zion status`
+1. `zion doctor`
+2. `zion status`
+3. `zion wallet balance --address YOUR_ADDRESS`
+
+## Je ZION v produkci?
+
+ZION je v **Mainnet Beta** — síť běží a produkuje bloky, ale může obsahovat chyby.
+Těž a transakuj na vlastní riziko. Oficiální veřejný launch: **31. prosince 2026**.
+
+Genesis chain je **permanentní** — nebude resetována.
+
+## Jak ověřím SHA256 checksum?
+
+```bash
+# Linux / macOS
+shasum -a 256 zion-cli-linux-x86_64.tar.gz
+# Porovnej s SHA256SUMS.txt
+
+# Windows
+Get-FileHash zion-cli-windows-x86_64.zip -Algorithm SHA256
+```

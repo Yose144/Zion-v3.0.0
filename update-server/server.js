@@ -19,7 +19,9 @@ import { readFileSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
-import { initDb, validateLicense, createLicense, listLicenses, revokeLicense, recordActivation, getReleaseInfo, saveReleaseInfo, getLatestRelease } from './db.js';
+import { initDb, validateLicense, createLicense, listLicenses, revokeLicense, recordActivation, saveReleaseInfo, getLatestRelease,
+         saveIapReceipt, getEntitlements, upsertEntitlement, listIapReceipts, getAllEntitlements, revokeEntitlement, productToEntitlement, computeExpiry } from './db.js';
+import { verifyReceipt } from './iap.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -271,6 +273,174 @@ server.post('/admin/publish-release', async (request, reply) => {
   }
 
   return { success: true, message: `Release ${version} for ${platform}-${arch} published` };
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// IAP ROUTES — Mobile In-App Purchase validation + entitlements
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── POST /api/iap/validate — Validate receipt and create entitlement ──────────
+// Body: { platform, productId, receiptData, transactionId, purchaseToken, deviceId }
+server.post('/api/iap/validate', async (request, reply) => {
+  const { platform, productId, receiptData, transactionId, purchaseToken, deviceId } = request.body || {};
+
+  if (!platform || !productId || !deviceId) {
+    return reply.code(400).send({ error: 'platform, productId, deviceId required' });
+  }
+  if (!transactionId) {
+    return reply.code(400).send({ error: 'transactionId required' });
+  }
+
+  // Map product ID to entitlement
+  const productMap = productToEntitlement(productId);
+  if (!productMap) {
+    return reply.code(400).send({ error: `Unknown product ID: ${productId}` });
+  }
+
+  // Verify receipt with Apple/Google (or skip in dev mode)
+  const verification = await verifyReceipt({ platform, productId, receiptData, purchaseToken, transactionId });
+  if (!verification.valid) {
+    return reply.code(403).send({ success: false, error: verification.error || 'Receipt verification failed' });
+  }
+
+  // Compute expiry
+  const expiresAt = verification.expiresDate || computeExpiry(productMap.expiresAt) || null;
+  const purchasedAt = verification.purchaseDate || new Date().toISOString();
+
+  // Save receipt
+  saveIapReceipt({
+    platform,
+    productId,
+    receiptData,
+    purchaseToken,
+    transactionId: verification.transactionId || transactionId,
+    entitlement: productMap.entitlement,
+    deviceId,
+    purchasedAt,
+    expiresAt,
+  });
+
+  // Create/update entitlement
+  const source = platform === 'ios' ? 'iap_apple' : 'iap_google';
+  upsertEntitlement({
+    deviceId,
+    iapTransaction: verification.transactionId || transactionId,
+    platform,
+    entitlement: productMap.entitlement,
+    source,
+    purchasedAt,
+    expiresAt,
+  });
+
+  return {
+    success: true,
+    entitlement: productMap.entitlement,
+    expiresAt,
+    productId,
+    transactionId: verification.transactionId || transactionId,
+  };
+});
+
+// ── GET /api/iap/entitlements — Get device's active entitlements ──────────────
+// Query: ?deviceId=<device_id>
+server.get('/api/iap/entitlements', async (request, reply) => {
+  const { deviceId } = request.query || {};
+  if (!deviceId) {
+    return reply.code(400).send({ error: 'deviceId required' });
+  }
+
+  const entitlements = getEntitlements(deviceId);
+  // Filter out expired
+  const now = new Date();
+  const active = entitlements.filter(e =>
+    e.status === 'active' &&
+    (!e.expires_at || new Date(e.expires_at) > now)
+  );
+
+  return {
+    success: true,
+    entitlements: active.map(e => ({
+      entitlement: e.entitlement,
+      status: e.status,
+      source: e.source,
+      expiresAt: e.expires_at,
+      purchasedAt: e.purchased_at,
+    })),
+  };
+});
+
+// ── POST /api/iap/restore — Restore purchases ─────────────────────────────────
+// Body: { deviceId, receipts: [{ platform, productId, receiptData, transactionId, purchaseToken }] }
+server.post('/api/iap/restore', async (request, reply) => {
+  const { deviceId, receipts } = request.body || {};
+  if (!deviceId || !Array.isArray(receipts)) {
+    return reply.code(400).send({ error: 'deviceId and receipts array required' });
+  }
+
+  const results = [];
+  for (const r of receipts) {
+    const productMap = productToEntitlement(r.productId);
+    if (!productMap) continue;
+
+    const verification = await verifyReceipt(r);
+    if (!verification.valid) {
+      results.push({ productId: r.productId, success: false, error: verification.error });
+      continue;
+    }
+
+    const expiresAt = verification.expiresDate || computeExpiry(productMap.expiresAt) || null;
+    const purchasedAt = verification.purchaseDate || new Date().toISOString();
+
+    saveIapReceipt({
+      platform: r.platform,
+      productId: r.productId,
+      receiptData: r.receiptData,
+      purchaseToken: r.purchaseToken,
+      transactionId: verification.transactionId || r.transactionId,
+      entitlement: productMap.entitlement,
+      deviceId,
+      purchasedAt,
+      expiresAt,
+    });
+
+    upsertEntitlement({
+      deviceId,
+      iapTransaction: verification.transactionId || r.transactionId,
+      platform: r.platform,
+      entitlement: productMap.entitlement,
+      source: r.platform === 'ios' ? 'iap_apple' : 'iap_google',
+      purchasedAt,
+      expiresAt,
+    });
+
+    results.push({ productId: r.productId, success: true, entitlement: productMap.entitlement });
+  }
+
+  const entitlements = getEntitlements(deviceId);
+  return { success: true, results, entitlements };
+});
+
+// ── Admin: GET /admin/iap/receipts — List all IAP receipts ────────────────────
+server.get('/admin/iap/receipts', async (request, reply) => {
+  if (!(await adminAuth(request, reply))) return;
+  return { receipts: listIapReceipts() };
+});
+
+// ── Admin: GET /admin/entitlements — List all entitlements ────────────────────
+server.get('/admin/entitlements', async (request, reply) => {
+  if (!(await adminAuth(request, reply))) return;
+  return { entitlements: getAllEntitlements() };
+});
+
+// ── Admin: POST /admin/entitlements/revoke — Revoke entitlement ───────────────
+server.post('/admin/entitlements/revoke', async (request, reply) => {
+  if (!(await adminAuth(request, reply))) return;
+  const { deviceId, entitlement } = request.body || {};
+  if (!deviceId || !entitlement) {
+    return reply.code(400).send({ error: 'deviceId and entitlement required' });
+  }
+  revokeEntitlement(deviceId, entitlement);
+  return { success: true, message: `Entitlement ${entitlement} revoked for device ${deviceId}` };
 });
 
 // ── Version comparison ────────────────────────────────────────────────────────

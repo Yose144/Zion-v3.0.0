@@ -21,7 +21,7 @@ The `public/` directory is a **git subtree** of the public repository `github.co
 - **Remote name:** `public` → `https://github.com/Zion-TerraNova/v3-Mainnet.git` (public, MIT license)
 - **Remote name:** `origin` → `https://github.com/Yose144/Zion-v3.0.0.git` (private)
 - **Local path:** `public/` (in repo root, tracked by `origin`)
-- **Current status:** **Mainnet Beta** — v3.0.4 live, official public launch 2026-12-31
+- **Current status:** **Mainnet Beta** — v3.0.5-beta live, official public launch 2026-12-31
 - **Network status badge:** `![Status: Mainnet Beta](https://img.shields.io/badge/Status-Mainnet_Beta-orange.svg)`
 
 ### Subtree commands
@@ -86,14 +86,20 @@ For future releases (e.g. v3.0.4-beta, v3.1.0, etc.):
    - **Windows x86_64** — cross-compiled with `x86_64-pc-windows-gnu` target + mingw-w64 linker
    - **macOS aarch64** (Apple Silicon) — built natively on macOS
    - **macOS x86_64** (Intel) — cross-compiled with `x86_64-apple-darwin` target
-7. **Binaries to package:** `zion` (CLI), `zion-miner`, `zion-node`, `zion-pool`, `zion-bridge`, `zion-dao`, `zion-atomic-swap`
+7. **Binaries to package:** Single `zion` binary (community CLI with wallet + node + mine + pool + status + doctor + monitor). Windows version has node + pool + miner embedded.
 
-### Current release: v3.0.4-beta (2026-07-09)
+### Current release: v3.0.5-beta (2026-07-10)
 
-- **Tag:** `v3.0.4-beta` (prerelease)
-- **Assets:** 8 Linux x86_64 tar.gz + SHA256SUMS.txt
-- **Missing:** macOS (aarch64 + x86_64), Windows binaries (in `public/download/` but not in release)
-- **URL:** `https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.0.4-beta`
+- **Tag:** `v3.0.5-beta` (prerelease)
+- **Name:** ZION v3.0.5-beta — Simplified Community CLI
+- **Assets:** 4 platform binaries + SHA256SUMS.txt
+  - `zion-cli-linux-x86_64.tar.gz` (2.3 MB)
+  - `zion-cli-macos-aarch64.tar.gz` (2.1 MB) — Apple Silicon
+  - `zion-cli-macos-x86_64.tar.gz` (2.3 MB) — Intel
+  - `zion-cli-windows-x86_64.zip` (4.7 MB) — node + pool + miner embedded
+- **Key change:** Single `zion` binary with interactive menu (replaces 8 separate binaries)
+- **Missing:** ARM64 (Raspberry Pi) — build from source: `cargo build --release -p zion-public`
+- **URL:** `https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.0.5-beta`
 
 ### Mainnet Beta announcement (2026-07-09)
 
@@ -366,6 +372,39 @@ sudo systemctl enable --now zion-agent
 - `ZION_OS/README.md` - Complete system documentation
 - `ZION_OS/docs/ARCHITECTURE.md` - System architecture & design decisions
 - `ZION_OS/docs/ROADMAP.md` - Development roadmap & milestones
+
+### AppPay — Cross-Platform Monetization + Auto-Update (2026-07-10)
+
+**AppPay** is the unified monetization and auto-update system for Desktop Agent (Electron) and Mobile App (React Native / Expo). See [`AppPay.md`](./AppPay.md) for the full plan.
+
+**Update Server** (`update-server/`): Fastify + SQLite server at `updates.zionterranova.com` that handles:
+- **Desktop:** License key validation + electron-updater `latest.yml` serving + binary download (license-gated via `X-License-Key` header)
+- **Mobile:** IAP receipt verification (Apple StoreKit 2 + Google Play Billing) + entitlement management
+- **Admin:** License generation, revocation, release upload, IAP receipt/entitlement listing
+
+**Desktop Agent auto-update (BUILT + TESTED):**
+- `electron-updater` generic provider → `https://updates.zionterranova.com/api/releases`
+- License key UI in Settings → Updates (input + Activate button)
+- IPC: `getLicenseKey`, `setLicenseKey`, `validateLicense`
+- Startup auto-check requires valid license key
+- Files: `APP&WEB/desktop-agent/src/main.js`, `preload.js`, `ui/index.html`, `ui/renderer.js`
+
+**Mobile App IAP (BUILT + TESTED):**
+- `react-native-iap` for StoreKit 2 (iOS) + Google Play Billing (Android)
+- `IAPService.js` — unified purchase flow, product fetching, restore
+- `LicenseService.js` — receipt validation with server, entitlement caching (AsyncStorage)
+- `IAPContext.js` — React context (isPro, hasMinerBoost, products, purchase, restore)
+- `PaywallScreen.js` — full paywall UI (Pro plans, Miner Boost, Donations, Restore)
+- `SettingsScreen.js` — Premium section with upgrade/restore
+- 6 IAP products: `zion.pro.lifetime` ($29.99), `zion.pro.yearly` ($9.99/yr), `zion.pro.monthly` ($1.99/mo), `zion.miner.boost` ($4.99), `zion.donate.5` ($4.99), `zion.donate.25` ($24.99)
+- Server endpoints: `POST /api/iap/validate`, `GET /api/iap/entitlements`, `POST /api/iap/restore`
+- Dev mode: server accepts receipts without Apple/Google verification (set `APPLE_SHARED_SECRET` + `GOOGLE_SERVICE_ACCOUNT_KEY_PATH` for production)
+
+**Pending (requires user action):**
+- Deploy update server on `62.171.141.136` + DNS `updates.zionterranova.com`
+- Buy Apple Developer Program ($99/yr) + Windows Code Signing cert ($60–200/yr)
+- Configure IAP products in App Store Connect + Google Play Console
+- Set `APPLE_SHARED_SECRET` + `GOOGLE_SERVICE_ACCOUNT_KEY_PATH` on server
 
 ## 1) Repository shape
 

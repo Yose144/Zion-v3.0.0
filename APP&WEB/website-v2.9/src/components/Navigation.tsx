@@ -8,7 +8,7 @@ import {
   Menu, X, SignalHigh, Orbit, ChevronDown, LayoutDashboard, Pickaxe, Shield,
   HardHat, Download, Coins, ArrowLeftRight, Landmark, Wallet, BookOpen,
   Newspaper, Map, Sparkles, Rocket, Brain, Flower2, Globe2, Zap, Atom, Building2,
-  CircuitBoard, Layers, Network as NetworkIcon,
+  CircuitBoard, Layers, Network as NetworkIcon, Github,
 } from 'lucide-react';
 import NavAuthButton from './NavAuthButton';
 import BackgroundToggle from './BackgroundToggle';
@@ -240,7 +240,7 @@ export default function Navigation() {
             })}
           </div>
 
-          {/* Right cluster: language + auth + dashboard */}
+          {/* Right cluster: language + GitHub + auth + dashboard */}
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
@@ -249,6 +249,16 @@ export default function Navigation() {
             >
               {lang === 'cs' ? tr('nav', 'language_toggle_desktop_cs', lang) : tr('nav', 'language_toggle_desktop_en', lang)}
             </button>
+            <Link
+              href="https://github.com/Zion-TerraNova/v3-Mainnet"
+              target="_blank"
+              rel="noreferrer"
+              title="GitHub"
+              className="p-2.5 rounded-xl border border-white/15 bg-black/85 inline-flex items-center justify-center shadow-[0_14px_38px_rgba(0,0,0,0.3)] transition-transform hover:-translate-y-0.5 hover:border-zion-gold/50 group relative"
+            >
+              <Github className="w-4 h-4 text-white" />
+              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">GitHub</span>
+            </Link>
             <NavAuthButton />
             <Link
               href="/dashboard"
