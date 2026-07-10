@@ -4,6 +4,7 @@ use std::fmt::Write as _;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{IpAddr, TcpListener, TcpStream};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -18,6 +19,130 @@ use zion_pool::pplns::{FeeConfig, PayoutEntry, PplnsConfig, PplnsEngine};
 use zion_pool::{
     decode_message, encode_message, MiningPool, PoolMessage, ShareDecision, ShareStatus,
 };
+
+// ---------------------------------------------------------------------------
+// LogChannel — batched async logging to reduce I/O on the hot path
+// ---------------------------------------------------------------------------
+// With 1000+ miners each generating 5-10 println! calls per share submission,
+// synchronous stdout writes (each a syscall + kernel buffer flush) become a
+// major bottleneck.  LogChannel sends log lines through an mpsc channel to a
+// background thread that batches them into 4 KB chunks and writes with a
+// single `write_all`, flushing at most every 100 ms.
+
+struct LogChannel {
+    tx: mpsc::SyncSender<String>,
+}
+
+impl LogChannel {
+    fn spawn() -> Self {
+        let (tx, rx) = mpsc::sync_channel::<String>(4096);
+        thread::spawn(move || {
+            let stdout = std::io::stdout();
+            let mut out = stdout.lock();
+            let mut buf = String::with_capacity(8192);
+            let flush_interval = Duration::from_millis(100);
+            loop {
+                match rx.recv_timeout(flush_interval) {
+                    Ok(line) => {
+                        buf.push_str(&line);
+                        buf.push('\n');
+                        // Flush if buffer exceeds 4 KB or channel is empty.
+                        while buf.len() >= 4096 {
+                            let _ = out.write_all(buf.as_bytes());
+                            let _ = out.flush();
+                            buf.clear();
+                            // Try to drain more without blocking.
+                            while let Ok(more) = rx.try_recv() {
+                                buf.push_str(&more);
+                                buf.push('\n');
+                                if buf.len() >= 8192 {
+                                    let _ = out.write_all(buf.as_bytes());
+                                    let _ = out.flush();
+                                    buf.clear();
+                                }
+                            }
+                            break;
+                        }
+                    }
+                    Err(mpsc::RecvTimeoutError::Timeout) => {
+                        if !buf.is_empty() {
+                            let _ = out.write_all(buf.as_bytes());
+                            let _ = out.flush();
+                            buf.clear();
+                        }
+                    }
+                    Err(mpsc::RecvTimeoutError::Disconnected) => {
+                        // Final flush on shutdown.
+                        if !buf.is_empty() {
+                            let _ = out.write_all(buf.as_bytes());
+                            let _ = out.flush();
+                        }
+                        break;
+                    }
+                }
+            }
+        });
+        Self { tx }
+    }
+
+    /// Send a log line.  Non-blocking: if the channel is full the line is
+    /// dropped (prefer dropping logs over blocking miner threads).
+    fn log(&self, line: String) {
+        let _ = self.tx.try_send(line);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// TemplateCache — shared block-template cache to reduce node RPC load
+// ---------------------------------------------------------------------------
+// Without this cache every miner thread calls `get_template` on every loop
+// iteration (once per share submission).  With 18+ miners that generates
+// 100+ RPC calls/sec, pinning a full CPU core on the node.  The cache is
+// shared across all sessions via Arc<Mutex<TemplateCache>> and only refetches
+// when the template is older than `ttl` (default 3 s) or when a fetch
+// explicitly fails.
+
+struct TemplateCache {
+    template: Option<BlockTemplate>,
+    fetched_at: Instant,
+    ttl: Duration,
+}
+
+impl TemplateCache {
+    fn new(ttl: Duration) -> Self {
+        Self {
+            template: None,
+            fetched_at: Instant::now(),
+            ttl,
+        }
+    }
+
+    /// Return a cached template if fresh enough, otherwise fetch from the
+    /// node.  On fetch failure we fall back to the stale cached template
+    /// (graceful degradation) so one bad RPC does not kill all sessions.
+    fn get_or_fetch(&mut self, node_rpc_addr: &str) -> Result<BlockTemplate> {
+        if let Some(ref t) = self.template {
+            if self.fetched_at.elapsed() < self.ttl {
+                return Ok(t.clone());
+            }
+        }
+        match fetch_node_template(node_rpc_addr) {
+            Ok(t) => {
+                self.template = Some(t.clone());
+                self.fetched_at = Instant::now();
+                Ok(t)
+            }
+            Err(e) => {
+                if let Some(ref t) = self.template {
+                    println!("template_cache: fetch failed ({e:#}), serving stale template height={}", t.height);
+                    Ok(t.clone())
+                } else {
+                    Err(e)
+                }
+            }
+        }
+    }
+}
 
 /// Notify the ZION OASIS L4 game server that a block was mined so it can
 /// award XP to the miner.  This is a best-effort fire-and-forget call;
@@ -154,6 +279,7 @@ fn relay_share_fire_and_forget(upstream_addr: &str, relay: &PoolMessage) -> Resu
 
 fn main() -> Result<()> {
     let config = ServerConfig::from_env()?;
+    let log_channel = Arc::new(LogChannel::spawn());
     let pool = Arc::new(Mutex::new(MiningPool::with_job_ttl(
         CoreRuntime::new_with_journal_replay(ConsensusConfig::default()),
         config.job_ttl_ms,
@@ -216,6 +342,9 @@ fn main() -> Result<()> {
     let pplns_engine = Arc::new(Mutex::new(pplns_engine_inner));
     let active_sessions = Arc::new(AtomicU64::new(0));
     let session_id_counter = Arc::new(AtomicU64::new(0));
+    let template_cache = Arc::new(Mutex::new(TemplateCache::new(
+        Duration::from_secs(3),
+    )));
     let listener = TcpListener::bind(&config.bind_addr)
         .with_context(|| format!("failed to bind pool listener on {}", config.bind_addr))?;
 
@@ -301,6 +430,11 @@ fn main() -> Result<()> {
     // Periodically saves the PPLNS engine state (unpaid balances, share
     // window, fee accumulators) to a JSON file so that miner earnings
     // survive pool restarts and crashes.
+    //
+    // F6 optimization: the lock is held only for the snapshot clone +
+    // dirty-flag check.  JSON serialization and file I/O happen outside
+    // the lock so share submissions are not blocked during disk writes.
+    // The dirty flag skips saves entirely when no shares arrived.
     if !pplns_state_path.is_empty() {
         let pplns_ref = Arc::clone(&pplns_engine);
         let state_path = pplns_state_path.clone();
@@ -311,8 +445,16 @@ fn main() -> Result<()> {
         );
         thread::spawn(move || loop {
             thread::sleep(Duration::from_secs(save_interval_s));
-            let pplns = pplns_ref.lock().expect("pplns lock poisoned");
-            if let Err(e) = pplns.save_to_path(&state_path) {
+            // Hold the lock only long enough to check dirty + snapshot.
+            let snapshot = {
+                let mut pplns = pplns_ref.lock().expect("pplns lock poisoned");
+                if !pplns.take_dirty() {
+                    continue; // no changes since last save — skip I/O
+                }
+                pplns.snapshot()
+            };
+            // Serialize + write outside the lock.
+            if let Err(e) = PplnsEngine::write_snapshot_to_path(&snapshot, &state_path) {
                 eprintln!("pplns_persistence: save failed to {}: {}", state_path, e);
             }
         });
@@ -411,6 +553,13 @@ fn main() -> Result<()> {
     let mut accepted = 0u32;
     let ip_sessions: Arc<Mutex<HashMap<IpAddr, u32>>> = Arc::new(Mutex::new(HashMap::new()));
     loop {
+        // Reap finished session threads to prevent unbounded `handles` Vec
+        // growth when miners connect/disconnect over time.  Without this, a
+        // pool running for days with thousands of sessions would accumulate
+        // millions of dead JoinHandle entries in memory.
+        if handles.len() > 128 {
+            handles.retain(|h: &thread::JoinHandle<Result<(), anyhow::Error>>| !h.is_finished());
+        }
         if shutdown.load(Ordering::SeqCst) {
             println!("shutdown_draining clients={}", handles.len());
             // Final PPLNS state save before exit.
@@ -470,6 +619,8 @@ fn main() -> Result<()> {
         let pplns_ref = Arc::clone(&pplns_engine);
         let active_sessions_ref = Arc::clone(&active_sessions);
         let session_id_ref = Arc::clone(&session_id_counter);
+        let template_cache_ref = Arc::clone(&template_cache);
+        let log_ch = Arc::clone(&log_channel);
         let config = config.clone();
         handles.push(thread::spawn(move || {
             let _ip_guard = ip_guard;
@@ -482,7 +633,9 @@ fn main() -> Result<()> {
                 pplns_ref,
                 active_sessions_ref,
                 session_id_ref,
+                template_cache_ref,
                 &config,
+                &log_ch,
             )
         }));
         accepted = accepted.saturating_add(1);
@@ -631,7 +784,9 @@ fn handle_client(
     pplns_engine: Arc<Mutex<PplnsEngine>>,
     active_sessions: Arc<AtomicU64>,
     session_id_counter: Arc<AtomicU64>,
+    template_cache: Arc<Mutex<TemplateCache>>,
     config: &ServerConfig,
+    log_ch: &LogChannel,
 ) -> Result<()> {
     let session_started = Instant::now();
     let session_id = session_id_counter.fetch_add(1, Ordering::Relaxed);
@@ -798,7 +953,10 @@ fn handle_client(
             .wrapping_add((iteration as u64).wrapping_mul(config.nonce_stride));
         let job = match config.node_rpc_addr.as_deref() {
             Some(node_rpc_addr) => {
-                let template = fetch_node_template(node_rpc_addr)?;
+                let template = template_cache
+                    .lock()
+                    .expect("template cache lock poisoned")
+                    .get_or_fetch(node_rpc_addr)?;
                 if template.height != last_template_height {
                     if last_template_height > 0 {
                         println!(
@@ -850,21 +1008,21 @@ fn handle_client(
         };
         let job_line = write_wire_message(&mut writer, &job_message)?;
 
-        println!(
+        log_ch.log(format!(
             "iteration={} miner={} height={} nonces={}..{}",
             iteration + 1,
             worker_name,
             job.height,
             start_nonce,
             start_nonce + job_nonce_count
-        );
-        println!("issued_job_id={}", job.job_id);
-        println!("wire_job={job_line}");
+        ));
+        log_ch.log(format!("issued_job_id={}", job.job_id));
+        log_ch.log(format!("wire_job={job_line}"));
 
         let (submit_line, submit_message) = read_wire_message(&mut reader)?;
         let iter_elapsed_ms = job_issued_at.elapsed().as_millis();
-        println!("wire_submit={submit_line}");
-        println!("iteration_elapsed_ms={iter_elapsed_ms}");
+        log_ch.log(format!("wire_submit={submit_line}"));
+        log_ch.log(format!("iteration_elapsed_ms={iter_elapsed_ms}"));
 
         let outcome = match submit_message {
             PoolMessage::Submit {
@@ -899,13 +1057,13 @@ fn handle_client(
                 // Log hash mismatch but use our own computed hash for validation
                 // (miner-submitted hash is cosmetic; we trust only our own seal).
                 if computed_hash != submitted_hash {
-                    println!(
+                    log_ch.log(format!(
                         "hash_mismatch_info miner={} job={} computed={} submitted={}",
                         worker_name,
                         job_id,
                         to_hex(&computed_hash),
                         hash_hex
-                    );
+                    ));
                 }
 
                 // Use submitted_hash for target validation (miner found this hash).
@@ -925,10 +1083,10 @@ fn handle_client(
                     } else {
                         "ttl-expired"
                     };
-                    println!(
+                    log_ch.log(format!(
                         "share_stale miner={} submitted_job={} current_job={} reason={}",
                         worker_name, job_id, job.job_id, reason
-                    );
+                    ));
                     pool.lock()
                         .expect("pool lock poisoned")
                         .record_stale_share();
@@ -946,10 +1104,10 @@ fn handle_client(
                     }
                 } else if !share_target.allows(target_hash) {
                     // Hash does not meet even the (easier) share target → reject.
-                    println!(
+                    log_ch.log(format!(
                         "share_below_target miner={} job={} diff={}",
                         worker_name, job_id, share_difficulty
-                    );
+                    ));
                     pool.lock()
                         .expect("pool lock poisoned")
                         .record_rejected_share();
@@ -1002,17 +1160,17 @@ fn handle_client(
                             );
                         }
                     }
-                    println!(
+                    log_ch.log(format!(
                         "valid_share miner={} job={} share_diff={}",
                         worker_name, job_id, share_difficulty
-                    );
+                    ));
 
                     // Vardiff retarget after each valid share submission.
                     if let Some(new_diff) = vardiff.record_submit() {
-                        println!(
+                        log_ch.log(format!(
                             "vardiff_retarget miner={} old_diff={} new_diff={}",
                             worker_name, share_difficulty, new_diff
-                        );
+                        ));
                         let set_diff_msg = PoolMessage::SetDifficulty {
                             difficulty: new_diff,
                             target_hex: to_hex(&vardiff.share_target().bytes),
@@ -1112,7 +1270,7 @@ fn handle_client(
 
                     // Track accepted/rejected in pool stats for bye_message.
                     {
-                        let mut p = pool.lock().expect("pool lock poisoned");
+                        let p = pool.lock().expect("pool lock poisoned");
                         if matches!(decision.status, ShareStatus::Accepted) {
                             p.record_accepted_share();
                         } else {
@@ -1209,104 +1367,37 @@ fn handle_client(
                             Vec::new()
                         }
                     };
-                    // Phase 18: Execute on-chain payout via UTXO batch transaction.
+                    // Phase 18: Execute on-chain payout asynchronously so the
+                    // miner thread that found the block is not blocked for the
+                    // duration of N sequential RPC calls to the node (which can
+                    // take 600ms+ with 12 miners, or 50s+ with 1000 miners).
                     if !payouts.is_empty() {
-                        // Record pending payouts in telemetry before attempting execution.
+                        // Record pending payouts in telemetry before spawning.
                         {
                             let mut telemetry = miner_telemetry
                                 .lock()
                                 .expect("miner telemetry lock poisoned");
                             telemetry.record_pending_payouts(job.height, &payouts);
                         }
-                        let mut payout_executed = false;
-                        let mut deferred_payouts: Vec<PayoutEntry> = Vec::new();
-                        if let Some(node_rpc_addr) = config.node_rpc_addr.as_deref() {
-                            if let Some(ref pool_wallet_addr) = config.pool_wallet_address {
-                                if let Some(ref signing_key) = config.pool_signing_key {
-                                    match execute_pool_payout(
-                                        node_rpc_addr,
-                                        pool_wallet_addr,
-                                        signing_key,
-                                        &payouts,
-                                        job.height,
-                                    ) {
-                                        Ok(outcome) => {
-                                            payout_executed = true;
-                                            deferred_payouts = outcome.deferred;
-                                            println!(
-                                                "payout_submitted height={} miners={} deferred={} tx_id={}",
-                                                job.height,
-                                                outcome.executed.len(),
-                                                deferred_payouts.len(),
-                                                outcome.tx_id
-                                            );
-                                            let mut telemetry = miner_telemetry
-                                                .lock()
-                                                .expect("miner telemetry lock poisoned");
-                                            telemetry.record_submitted_payouts(
-                                                job.height,
-                                                &outcome.executed,
-                                                &outcome.tx_id,
-                                            );
-                                            if !deferred_payouts.is_empty() {
-                                                telemetry.record_failed_payouts(
-                                                    job.height,
-                                                    &deferred_payouts,
-                                                    "deferred: insufficient pool payout wallet balance for full batch",
-                                                );
-                                            }
-                                        }
-                                        Err(err) => {
-                                            println!(
-                                                "payout_submit_failed height={} miners={} error={}",
-                                                job.height,
-                                                payouts.len(),
-                                                err
-                                            );
-                                            let mut telemetry = miner_telemetry
-                                                .lock()
-                                                .expect("miner telemetry lock poisoned");
-                                            telemetry.record_failed_payouts(
-                                                job.height,
-                                                &payouts,
-                                                &format!("{err}"),
-                                            );
-                                        }
-                                    }
-                                } else {
-                                    println!(
-                                        "payout_skipped height={} miners={} reason=missing_signing_key",
-                                        job.height, payouts.len()
-                                    );
-                                }
-                            }
-                        }
-                        // Rollback PPLNS unpaid balances if payout was not successfully
-                        // submitted to the node — prevents balance from vanishing.
-                        if !payout_executed {
-                            let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
-                            pplns.rollback_payouts(&payouts);
-                            println!(
-                                "pplns_rollback height={} miners={} reason=payout_not_executed",
-                                job.height,
-                                payouts.len()
+                        // Spawn a background thread for payout execution.
+                        let node_rpc_addr = config.node_rpc_addr.clone();
+                        let pool_wallet_addr = config.pool_wallet_address.clone();
+                        let signing_key = config.pool_signing_key.clone();
+                        let pplns_ref = Arc::clone(&pplns_engine);
+                        let telemetry_ref = Arc::clone(&miner_telemetry);
+                        let height = job.height;
+                        let payouts_clone = payouts.clone();
+                        thread::spawn(move || {
+                            execute_payout_async(
+                                node_rpc_addr,
+                                pool_wallet_addr,
+                                signing_key,
+                                &payouts_clone,
+                                height,
+                                &pplns_ref,
+                                &telemetry_ref,
                             );
-                        } else if !deferred_payouts.is_empty() {
-                            let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
-                            pplns.rollback_payouts(&deferred_payouts);
-                            println!(
-                                "pplns_partial_rollback height={} deferred_miners={} reason=insufficient_wallet_balance",
-                                job.height,
-                                deferred_payouts.len()
-                            );
-                        }
-                        // NOTE: Protocol fees (humanitarian / issobella / pool_fee)
-                        // are paid atomically by the core coinbase outputs at block
-                        // creation — see ChainState::build_template. The pool must
-                        // NOT pay them a second time here, otherwise the fee
-                        // recipients receive ~2x their share and miners are
-                        // short-changed. The previous drain_fees/execute_fee_payout
-                        // block was removed for this reason.
+                        });
                     }
                 }
                 {
@@ -1352,8 +1443,8 @@ fn handle_client(
                     .expect("pool lock poisoned")
                     .result_message(&decision);
                 let result_line = write_wire_message(&mut writer, &result_message)?;
-                println!("share_status={:?}", decision.status);
-                println!("wire_result={result_line}");
+                log_ch.log(format!("share_status={:?}", decision.status));
+                log_ch.log(format!("wire_result={result_line}"));
             }
             JobCompletion::NoSolution {
                 attempted_hashes,
@@ -1375,8 +1466,8 @@ fn handle_client(
                     status: "NoSolution".to_string(),
                 };
                 let result_line = write_wire_message(&mut writer, &result_message)?;
-                println!("share_status=NoSolution");
-                println!("wire_result={result_line}");
+                log_ch.log("share_status=NoSolution".to_string());
+                log_ch.log(format!("wire_result={result_line}"));
             }
         }
     }
@@ -3357,6 +3448,8 @@ mod tests {
         let routing_stats = Arc::new(Mutex::new(RoutingStats::new(config.routing_log_every)));
         let miner_telemetry = Arc::new(Mutex::new(MinerTelemetryRegistry::default()));
         let pplns = Arc::new(Mutex::new(PplnsEngine::new(PplnsConfig::default())));
+        let template_cache = Arc::new(Mutex::new(TemplateCache::new(Duration::from_secs(3))));
+        let log_ch = LogChannel::spawn();
 
         let handle = thread::spawn(move || -> Result<()> {
             let (stream, _) = listener.accept().context("accept pool test client")?;
@@ -3369,7 +3462,9 @@ mod tests {
                 pplns,
                 Arc::new(AtomicU64::new(0)),
                 Arc::new(AtomicU64::new(0)),
+                template_cache,
                 &config,
+                &log_ch,
             )
         });
 
@@ -4528,6 +4623,137 @@ struct PayoutExecutionOutcome {
     tx_id: String,
     executed: Vec<PayoutEntry>,
     deferred: Vec<PayoutEntry>,
+}
+
+/// Async payout execution — runs in a background thread so the miner thread
+/// that found the block is not blocked during N sequential RPC calls to the
+/// node.  Handles telemetry recording and PPLNS rollback on failure.
+fn execute_payout_async(
+    node_rpc_addr: Option<String>,
+    pool_wallet_addr: Option<String>,
+    signing_key: Option<ed25519_dalek::SigningKey>,
+    payouts: &[PayoutEntry],
+    height: u64,
+    pplns_engine: &Arc<Mutex<PplnsEngine>>,
+    miner_telemetry: &Arc<Mutex<MinerTelemetryRegistry>>,
+) {
+    let node_rpc_addr = match node_rpc_addr.as_deref() {
+        Some(a) => a,
+        None => {
+            println!(
+                "payout_skipped height={} miners={} reason=missing_node_rpc_addr",
+                height,
+                payouts.len()
+            );
+            let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
+            pplns.rollback_payouts(payouts);
+            println!(
+                "pplns_rollback height={} miners={} reason=payout_not_executed",
+                height,
+                payouts.len()
+            );
+            return;
+        }
+    };
+    let pool_wallet_addr = match pool_wallet_addr.as_deref() {
+        Some(a) => a,
+        None => {
+            println!(
+                "payout_skipped height={} miners={} reason=missing_pool_wallet_address",
+                height,
+                payouts.len()
+            );
+            let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
+            pplns.rollback_payouts(payouts);
+            println!(
+                "pplns_rollback height={} miners={} reason=payout_not_executed",
+                height,
+                payouts.len()
+            );
+            return;
+        }
+    };
+    let signing_key = match signing_key.as_ref() {
+        Some(k) => k,
+        None => {
+            println!(
+                "payout_skipped height={} miners={} reason=missing_signing_key",
+                height,
+                payouts.len()
+            );
+            let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
+            pplns.rollback_payouts(payouts);
+            println!(
+                "pplns_rollback height={} miners={} reason=payout_not_executed",
+                height,
+                payouts.len()
+            );
+            return;
+        }
+    };
+
+    let result = execute_pool_payout(
+        node_rpc_addr,
+        pool_wallet_addr,
+        signing_key,
+        payouts,
+        height,
+    );
+
+    match result {
+        Ok(outcome) => {
+            println!(
+                "payout_submitted height={} miners={} deferred={} tx_id={}",
+                height,
+                outcome.executed.len(),
+                outcome.deferred.len(),
+                outcome.tx_id
+            );
+            {
+                let mut telemetry = miner_telemetry
+                    .lock()
+                    .expect("miner telemetry lock poisoned");
+                telemetry.record_submitted_payouts(height, &outcome.executed, &outcome.tx_id);
+                if !outcome.deferred.is_empty() {
+                    telemetry.record_failed_payouts(
+                        height,
+                        &outcome.deferred,
+                        "deferred: insufficient pool payout wallet balance for full batch",
+                    );
+                }
+            }
+            if !outcome.deferred.is_empty() {
+                let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
+                pplns.rollback_payouts(&outcome.deferred);
+                println!(
+                    "pplns_partial_rollback height={} deferred_miners={} reason=insufficient_wallet_balance",
+                    height,
+                    outcome.deferred.len()
+                );
+            }
+        }
+        Err(err) => {
+            println!(
+                "payout_submit_failed height={} miners={} error={}",
+                height,
+                payouts.len(),
+                err
+            );
+            {
+                let mut telemetry = miner_telemetry
+                    .lock()
+                    .expect("miner telemetry lock poisoned");
+                telemetry.record_failed_payouts(height, payouts, &format!("{err}"));
+            }
+            let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
+            pplns.rollback_payouts(payouts);
+            println!(
+                "pplns_rollback height={} miners={} reason=payout_not_executed",
+                height,
+                payouts.len()
+            );
+        }
+    }
 }
 
 fn execute_pool_payout(

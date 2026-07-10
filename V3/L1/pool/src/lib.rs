@@ -4,6 +4,7 @@ pub mod revenue_proxy;
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use zion_core::{
@@ -174,10 +175,10 @@ struct TrackedJob {
 
 pub struct MiningPool {
     runtime: CoreRuntime,
-    accepted_shares: u64,
-    rejected_shares: u64,
-    stale_shares: u64,
-    next_job_id: u64,
+    accepted_shares: AtomicU64,
+    rejected_shares: AtomicU64,
+    stale_shares: AtomicU64,
+    next_job_id: AtomicU64,
     job_ttl_ms: u64,
     active_jobs: HashMap<u64, TrackedJob>,
 }
@@ -196,10 +197,10 @@ impl MiningPool {
     pub fn with_job_ttl(runtime: CoreRuntime, job_ttl_ms: u64) -> Self {
         Self {
             runtime,
-            accepted_shares: 0,
-            rejected_shares: 0,
-            stale_shares: 0,
-            next_job_id: 1,
+            accepted_shares: AtomicU64::new(0),
+            rejected_shares: AtomicU64::new(0),
+            stale_shares: AtomicU64::new(0),
+            next_job_id: AtomicU64::new(1),
             job_ttl_ms,
             active_jobs: HashMap::new(),
         }
@@ -220,14 +221,13 @@ impl MiningPool {
         nonce_count: u64,
     ) -> MiningJob {
         let job = MiningJob {
-            job_id: self.next_job_id,
+            job_id: self.next_job_id.fetch_add(1, Ordering::Relaxed),
             header,
             target,
             start_nonce,
             nonce_count,
             height: 0,
         };
-        self.next_job_id = self.next_job_id.wrapping_add(1);
         self.active_jobs.insert(
             job.job_id,
             TrackedJob {
@@ -257,7 +257,17 @@ impl MiningPool {
             nonce_count,
             height: template.height,
         };
-        self.next_job_id = self.next_job_id.max(template.template_id.wrapping_add(1));
+        // Advance next_job_id past the template ID to avoid collisions.
+        let current = self.next_job_id.load(Ordering::Relaxed);
+        let needed = template.template_id.wrapping_add(1);
+        if current < needed {
+            let _ = self.next_job_id.compare_exchange(
+                current,
+                needed,
+                Ordering::Relaxed,
+                Ordering::Relaxed,
+            );
+        }
         self.active_jobs.insert(
             job.job_id,
             TrackedJob {
@@ -335,7 +345,7 @@ impl MiningPool {
             algo,
         ) {
             Some(sealed_block) => {
-                self.accepted_shares += 1;
+                self.accepted_shares.fetch_add(1, Ordering::Relaxed);
                 self.runtime.record_revenue(
                     submission.revenue_source,
                     submission.revenue_value_usd,
@@ -347,7 +357,7 @@ impl MiningPool {
                 }
             }
             None => {
-                self.rejected_shares += 1;
+                self.rejected_shares.fetch_add(1, Ordering::Relaxed);
                 ShareDecision {
                     status: ShareStatus::RejectedLowDifficulty,
                     sealed_block: None,
@@ -391,7 +401,7 @@ impl MiningPool {
         F: FnOnce(MiningJob, MiningSolution, SealedBlock) -> ShareStatus,
     {
         let Some(tracked) = self.active_jobs.get(&solution.job_id).copied() else {
-            self.rejected_shares += 1;
+            self.rejected_shares.fetch_add(1, Ordering::Relaxed);
             return ShareDecision {
                 status: ShareStatus::InvalidJob,
                 sealed_block: None,
@@ -400,7 +410,7 @@ impl MiningPool {
 
         if Self::now_ms().saturating_sub(tracked.issued_at_ms) >= self.job_ttl_ms {
             self.active_jobs.remove(&solution.job_id);
-            self.rejected_shares += 1;
+            self.rejected_shares.fetch_add(1, Ordering::Relaxed);
             return ShareDecision {
                 status: ShareStatus::StaleJob,
                 sealed_block: None,
@@ -410,7 +420,7 @@ impl MiningPool {
         let job = tracked.job;
 
         if solution.candidate.header != job.header {
-            self.rejected_shares += 1;
+            self.rejected_shares.fetch_add(1, Ordering::Relaxed);
             return ShareDecision {
                 status: ShareStatus::JobMismatch,
                 sealed_block: None,
@@ -437,7 +447,7 @@ impl MiningPool {
         }
 
         if !job.target.allows(&solution.hash) {
-            self.rejected_shares += 1;
+            self.rejected_shares.fetch_add(1, Ordering::Relaxed);
             return ShareDecision {
                 status: ShareStatus::RejectedLowDifficulty,
                 sealed_block: None,
@@ -452,7 +462,7 @@ impl MiningPool {
 
         let final_status = finalize(job, solution, sealed_block);
         if matches!(final_status, ShareStatus::Accepted) {
-            self.accepted_shares += 1;
+            self.accepted_shares.fetch_add(1, Ordering::Relaxed);
             self.runtime.record_revenue(
                 submission.revenue_source,
                 submission.revenue_value_usd,
@@ -465,7 +475,7 @@ impl MiningPool {
             };
         }
 
-        self.rejected_shares += 1;
+        self.rejected_shares.fetch_add(1, Ordering::Relaxed);
         if matches!(
             final_status,
             ShareStatus::StaleJob
@@ -532,9 +542,9 @@ impl MiningPool {
 
     pub fn stats(&self) -> PoolStats {
         PoolStats {
-            accepted_shares: self.accepted_shares,
-            rejected_shares: self.rejected_shares,
-            stale_shares: self.stale_shares,
+            accepted_shares: self.accepted_shares.load(Ordering::Relaxed),
+            rejected_shares: self.rejected_shares.load(Ordering::Relaxed),
+            stale_shares: self.stale_shares.load(Ordering::Relaxed),
             active_jobs: self.active_jobs.len(),
             revenue: self.runtime.revenue_snapshot(),
         }
@@ -551,18 +561,18 @@ impl MiningPool {
 
     /// Increment the accepted-share counter (for two-tier vardiff flow where
     /// share validation is done externally).
-    pub fn record_accepted_share(&mut self) {
-        self.accepted_shares += 1;
+    pub fn record_accepted_share(&self) {
+        self.accepted_shares.fetch_add(1, Ordering::Relaxed);
     }
 
     /// Increment the rejected-share counter.
-    pub fn record_rejected_share(&mut self) {
-        self.rejected_shares += 1;
+    pub fn record_rejected_share(&self) {
+        self.rejected_shares.fetch_add(1, Ordering::Relaxed);
     }
 
     /// Increment the stale-share counter.
-    pub fn record_stale_share(&mut self) {
-        self.stale_shares += 1;
+    pub fn record_stale_share(&self) {
+        self.stale_shares.fetch_add(1, Ordering::Relaxed);
     }
 }
 
