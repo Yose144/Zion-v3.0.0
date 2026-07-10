@@ -14,9 +14,6 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true, // TS check v IDE, ne v Docker buildu — ušetří ~70s
   },
-  eslint: {
-    ignoreDuringBuilds: true, // ESLint v IDE, ne v Docker buildu
-  },
   transpilePackages: ['zion-wallet-sdk', '@noble/ed25519', '@noble/hashes'],
   turbopack: {
     root: rootDir,

@@ -8,7 +8,7 @@ import {
   Menu, X, SignalHigh, Orbit, ChevronDown, LayoutDashboard, Pickaxe, Shield,
   HardHat, Download, Coins, ArrowLeftRight, Landmark, Wallet, BookOpen,
   Newspaper, Map, Sparkles, Rocket, Brain, Flower2, Globe2, Zap, Atom, Building2,
-  CircuitBoard, Layers, Network as NetworkIcon, Github,
+  CircuitBoard, Layers, Network as NetworkIcon, Github, ArrowRightLeft,
 } from 'lucide-react';
 import NavAuthButton from './NavAuthButton';
 import BackgroundToggle from './BackgroundToggle';
@@ -48,6 +48,7 @@ export default function Navigation() {
       color: '16, 185, 129',
       items: [
         { href: '/defi', label: tr('nav', 'defi', lang) },
+        { href: '/ziondex', label: 'ZionDex' },
         { href: '/cex', label: 'CEX' },
         { href: '/warp', label: tr('nav', 'warp', lang) },
         { href: '/bridge', label: tr('nav', 'bridge', lang) },
@@ -87,30 +88,35 @@ export default function Navigation() {
 
   const activeGroup = navGroups.find((group) => group.title === openGroup);
 
-  /* ── Top-tier icon quick-nav (grouped by category for visual flow) ── */
-  const iconNav = [
+  /* ── Primary icons (core user flow: network → mine → wallet → defi → docs) ── */
+  const primaryIcons = [
     { href: '/network', icon: SignalHigh, color: '6, 182, 212', label: tr('nav', 'network', lang) },
     { href: '/explorer', icon: Orbit, color: '251, 191, 36', label: tr('nav', 'explorer', lang) },
     { href: '/pool', icon: Pickaxe, color: '168, 85, 247', label: tr('nav', 'pool', lang) },
     { href: '/mining', icon: HardHat, color: '245, 158, 11', label: tr('nav', 'mining', lang) },
     { href: '/download', icon: Download, color: '6, 182, 212', label: tr('nav', 'download', lang) },
     { href: '/defi', icon: Coins, color: '16, 185, 129', label: tr('nav', 'defi', lang) },
-    { href: '/cex', icon: Building2, color: '236, 72, 153', label: 'CEX' },
-    { href: '/warp', icon: CircuitBoard, color: '99, 102, 241', label: tr('nav', 'warp', lang) },
-    { href: '/bridge', icon: ArrowLeftRight, color: '59, 130, 246', label: tr('nav', 'bridge', lang) },
-    { href: '/dao', icon: Landmark, color: '147, 51, 234', label: tr('nav', 'dao', lang) },
     { href: '/wallet', icon: Wallet, color: '236, 72, 153', label: tr('nav', 'wallet', lang) },
     { href: '/docs', icon: BookOpen, color: '20, 184, 166', label: tr('nav', 'docs', lang) },
-    { href: '/news', icon: Newspaper, color: '249, 115, 22', label: tr('nav', 'news', lang) },
-    { href: '/roadmap', icon: Map, color: '99, 102, 241', label: tr('nav', 'roadmap', lang) },
-    { href: '/genesis', icon: Sparkles, color: '251, 191, 36', label: tr('nav', 'genesis', lang) },
-    { href: '/quantum-revolution', icon: Atom, color: '251, 191, 36', label: tr('nav', 'quantum_revolution', lang) },
-    { href: '/terranova', icon: Globe2, color: '34, 197, 94', label: tr('nav', 'terranova', lang) },
-    { href: '/zohar', icon: Sparkles, color: '251, 191, 36', label: tr('nav', 'zohar', lang) },
+  ];
+
+  /* ── Secondary icons (ecosystem: bridge, dao, layers, lore) ── */
+  const secondaryIcons = [
+    { href: '/bridge', icon: ArrowLeftRight, color: '59, 130, 246', label: tr('nav', 'bridge', lang) },
+    { href: '/ziondex', icon: ArrowRightLeft, color: '16, 185, 129', label: 'ZionDex' },
+    { href: '/dao', icon: Landmark, color: '147, 51, 234', label: tr('nav', 'dao', lang) },
+    { href: '/cex', icon: Building2, color: '236, 72, 153', label: 'CEX' },
+    { href: '/warp', icon: CircuitBoard, color: '99, 102, 241', label: tr('nav', 'warp', lang) },
     { href: '/l3-hiran', icon: Brain, color: '139, 92, 246', label: tr('nav', 'l3_hiran', lang) },
     { href: '/l4-oasis', icon: Flower2, color: '217, 70, 239', label: tr('nav', 'l4_oasis', lang) },
     { href: '/l5-free-world', icon: Rocket, color: '14, 165, 233', label: tr('nav', 'l5_free_world', lang) },
     { href: '/l6-issobella', icon: Zap, color: '244, 63, 94', label: tr('nav', 'l6_issobella', lang) },
+    { href: '/terranova', icon: Globe2, color: '34, 197, 94', label: tr('nav', 'terranova', lang) },
+    { href: '/zohar', icon: Sparkles, color: '251, 191, 36', label: tr('nav', 'zohar', lang) },
+    { href: '/news', icon: Newspaper, color: '249, 115, 22', label: tr('nav', 'news', lang) },
+    { href: '/roadmap', icon: Map, color: '99, 102, 241', label: tr('nav', 'roadmap', lang) },
+    { href: '/genesis', icon: Sparkles, color: '251, 191, 36', label: tr('nav', 'genesis', lang) },
+    { href: '/quantum-revolution', icon: Atom, color: '251, 191, 36', label: tr('nav', 'quantum_revolution', lang) },
   ];
 
   const groupLabels: Record<string, string> = {
@@ -212,26 +218,54 @@ export default function Navigation() {
             </div>
           </Link>
 
-          {/* Icon quick-nav — horizontal scroll on small screens */}
-          <div className="hidden md:flex flex-1 items-center justify-center gap-0.5 overflow-x-auto no-scrollbar min-w-0">
-            {iconNav.map((ml) => {
+          {/* Icon quick-nav — primary (large) + secondary (small, dimmed) */}
+          <div className="hidden md:flex flex-1 items-center justify-center gap-1 overflow-x-auto no-scrollbar min-w-0">
+            {/* Primary icons — core user flow */}
+            {primaryIcons.map((ml) => {
               const isActive = navItemMatches(ml.href);
               return (
                 <Link
                   key={ml.href}
                   href={ml.href}
                   title={ml.label}
-                  className="group relative flex flex-col items-center justify-center w-12 h-12 rounded-xl border transition-all hover:scale-110 shrink-0"
+                  className="group relative flex flex-col items-center justify-center w-11 h-11 rounded-xl border transition-all hover:scale-110 shrink-0"
                   style={{
-                    borderColor: isActive ? `rgba(${ml.color}, 0.5)` : 'rgba(255,255,255,0.06)',
-                    backgroundColor: isActive ? `rgba(${ml.color}, 0.12)` : 'rgba(0,0,0,0.4)',
+                    borderColor: isActive ? `rgba(${ml.color}, 0.55)` : 'rgba(255,255,255,0.07)',
+                    backgroundColor: isActive ? `rgba(${ml.color}, 0.14)` : 'rgba(0,0,0,0.4)',
                   }}
                 >
                   <ml.icon
-                    className="w-4 h-4"
-                    style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.55)' }}
+                    className="w-[18px] h-[18px]"
+                    style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.65)' }}
                   />
-                  {/* Tooltip */}
+                  <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[9px] bg-black/95 border border-white/10 rounded px-1.5 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                    {ml.label}
+                  </span>
+                </Link>
+              );
+            })}
+
+            {/* Visual divider */}
+            <div className="mx-1 h-7 w-px bg-white/10 shrink-0" />
+
+            {/* Secondary icons — ecosystem */}
+            {secondaryIcons.map((ml) => {
+              const isActive = navItemMatches(ml.href);
+              return (
+                <Link
+                  key={ml.href}
+                  href={ml.href}
+                  title={ml.label}
+                  className="group relative flex flex-col items-center justify-center w-9 h-9 rounded-lg border transition-all hover:scale-110 shrink-0"
+                  style={{
+                    borderColor: isActive ? `rgba(${ml.color}, 0.5)` : 'rgba(255,255,255,0.04)',
+                    backgroundColor: isActive ? `rgba(${ml.color}, 0.12)` : 'transparent',
+                  }}
+                >
+                  <ml.icon
+                    className="w-3.5 h-3.5"
+                    style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.4)' }}
+                  />
                   <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[9px] bg-black/95 border border-white/10 rounded px-1.5 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
                     {ml.label}
                   </span>
