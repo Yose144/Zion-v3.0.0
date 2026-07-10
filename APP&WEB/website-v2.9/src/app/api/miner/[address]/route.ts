@@ -23,31 +23,37 @@ export async function GET(
       return NextResponse.json({ error: 'Miner not found' }, { status: 404 });
     }
 
-    const stats = minerInfo?.stats || {};
-    const balance = minerInfo?.balance || {};
-    const lastSeen = stats.last_seen || stats.last_share_time || 0;
+    // getMinerInfo returns flat miner fields, not a nested stats object.
+    const lastSeen =
+      minerInfo.last_seen || minerInfo.last_share_time || 0;
     const isActive =
       lastSeen > 0 &&
       Math.floor(Date.now() / 1000) - lastSeen < ACTIVE_THRESHOLD_SECONDS;
 
-    const valid = stats.valid_shares ?? 0;
-    const invalid = stats.invalid_shares ?? 0;
+    const valid = minerInfo.accepted_shares ?? 0;
+    const invalid = minerInfo.rejected_shares ?? 0;
     const total = valid + invalid;
 
     return NextResponse.json({
       wallet_address: addr,
       is_active: isActive,
       stats: {
-        current_hashrate: stats.hashrate_1h ?? 0,
-        total_shares: stats.total_shares ?? valid + invalid,
+        current_hashrate: minerInfo.hashrate_1h ?? 0,
+        total_shares: valid + invalid,
         accepted_shares: valid,
         rejected_shares: invalid,
-        blocks_found: stats.blocks_found ?? 0,
+        blocks_found: minerInfo.blocks_found ?? 0,
         last_seen: lastSeen,
       },
       balance: {
-        pending: balance.pending ?? 0,
-        total_earned: balance.paid ?? minerInfo.balance ?? 0,
+        pending:
+          typeof minerInfo.balance === 'object'
+            ? minerInfo.balance.pending ?? 0
+            : 0,
+        total_earned:
+          typeof minerInfo.balance === 'object'
+            ? minerInfo.balance.paid ?? 0
+            : minerInfo.balance ?? 0,
       },
       payments: [],
       efficiency: {

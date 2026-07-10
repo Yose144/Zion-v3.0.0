@@ -3,6 +3,8 @@ import { getZionRpc } from '@/lib/zion-rpc';
 import { ATOMIC_UNITS_PER_ZION } from '@/lib/constants';
 import { SITE_PRIMARY_POOL_API_URL } from '@/lib/site';
 
+const ACTIVE_THRESHOLD_SECONDS = 600;
+
 async function fetchPoolApiJson<T = any>(path: string): Promise<T | null> {
   try {
     const response = await fetch(`${SITE_PRIMARY_POOL_API_URL}${path}`, {
@@ -74,6 +76,24 @@ export async function GET(
     }
   }
 
+  // Robust fallback: scan on-chain account transactions from the pool wallet
+  // so miner stats survive pool restarts / lost telemetry.
+  const chainPayouts = await rpc.getChainPayoutsForAddress(address).catch(() => ({ totalPaidAtomic: 0, payouts: [] }));
+
+  const poolTotalPaidAtomic = minerStats?.total_paid ?? 0;
+  const totalPaidAtomic = chainPayouts.totalPaidAtomic || poolTotalPaidAtomic;
+
+  const pendingPayoutRows = pendingPayouts.map((payout: any) => ({
+    amount: payout.amount_atomic ?? Math.round((payout.amount ?? 0) * ATOMIC_UNITS_PER_ZION),
+    tx_id: payout.tx_id,
+    timestamp: payout.created_ts ?? payout.updated_ts ?? 0,
+    status: payout.status ?? 'pending',
+  }));
+
+  const payouts = [...pendingPayoutRows, ...chainPayouts.payouts]
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(0, 50);
+
   return NextResponse.json({
     ok: true,
     address,
@@ -86,16 +106,11 @@ export async function GET(
       invalid_shares: invalidShares,
       efficiency,
       blocks_found: minerStats?.blocks_found ?? blocks.length,
-      total_paid: minerStats?.total_paid ?? 0,
-      pending_balance: minerStats?.pending_balance ?? balance?.balance_atomic ?? 0,
+      total_paid: totalPaid,
+      pending_balance: minerStats?.pending_balance ?? 0,
       last_share_time: lastShareTime,
     },
-    payouts: pendingPayouts.map((payout: any) => ({
-      amount: payout.amount_atomic ?? Math.round((payout.amount ?? 0) * ATOMIC_UNITS_PER_ZION),
-      tx_id: payout.tx_id,
-      timestamp: payout.created_ts ?? payout.updated_ts ?? 0,
-      status: payout.status ?? 'pending',
-    })),
+    payouts,
     blocks,
     servers: [{
       id: 'primary',
