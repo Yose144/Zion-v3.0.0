@@ -72,11 +72,11 @@ Všech 5 EVM validatorů má **0 ETH** na Base. To blokuje L1→EVM mint (16.6M 
 
 | # | Validator Address | ETH Balance |
 |---|---|---|
-| 1 | `0xA737B512B5EEc5B9E3E3f2476Eb1cFDF6750BA12` | 0 |
-| 2 | `0x7E263879c30f8C218A06be16ec66F7e9e1bFE879` | 0 |
-| 3 | `0xD4E4c264417b6959503EdBBC3347052C4ca3857d` | 0 |
-| 4 | `0x609E05c1E935d5617703912C5d5dd39d3C0C0417` | 0 |
-| 5 | `0x603b43E51892dD25b845aB7E9317EA303f506096` | 0 |
+| 1 | `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186` | 0.0095 ETH |
+| 2 | `0x24d986841E56e5571489B25951eE8C1Ae761FA82` | 0 |
+| 3 | `0x665c55eDCF25c2c5A1dfF1B20eE950cBDC58d3d0` | 0 |
+| 4 | `0x8E644b3E9FaBf52eE321DC5B3D5AA06d6e3E66C6` | 0 |
+| 5 | `0x7e0D2eD71d78B9CFB5034A83333e82e304bc4CB2` | 0 |
 
 **Požadováno:** ~0.001 ETH na validatora (~0.005 ETH total, ~$3). Po fundingu bridge automaticky retryne stuck lock.
 
@@ -138,7 +138,7 @@ Všech 5 EVM validatorů má **0 ETH** na Base. To blokuje L1→EVM mint (16.6M 
 
 | Metric | Value |
 |--------|-------|
-| Contract | `0x...` (EVM side) |
+| Contract | `0x3DE9Ad42716854083ab837706E3961d10B0e63Eb` |
 | Basescan | ✅ Verified |
 
 ---

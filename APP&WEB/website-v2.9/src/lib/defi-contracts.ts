@@ -63,6 +63,7 @@ export const CONTRACTS = {
   USDT:           '0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2',
   SOL:            '0x311935Cd80B76769bF2ecC9D8Ab7635b2139cf82',
   ZIONBridge:     '0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467',
+  ZIONAtomicSwap: '0x3DE9Ad42716854083ab837706E3961d10B0e63Eb',
   // Uniswap V4 — canonical (liquidity migrated from V3 to V4 on 2026-06-29)
   V4PoolManager:      '0x498581fF718922c3f8e6A244956aF099B2652b2b',
   V4PositionManager:  '0x7C5f5A4bBd8fD63184577525326123B519429BdC',

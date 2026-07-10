@@ -57,11 +57,11 @@ export async function GET() {
     bridge_e2e_burn_tx: '0x70ad4d93ee3922210ae2783fed5af1c34bfe6080fb01089b18572e0ceaa8a719',
     bridge_e2e_unlock_block: 20919,
     validator_threshold: '5/5',
-    // 6-chain bridge relay config
-    chains_active: 6,
-    chains: ['Base', 'BSC', 'Polygon', 'Arbitrum', 'Optimism', 'Avalanche'],
+    // 4-chain bridge relay config (BSC/Polygon disabled — public RPC rate limits)
+    chains_active: 4,
+    chains: ['Base', 'Arbitrum', 'Optimism', 'Avalanche'],
     wzion_address: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
-    bridge_contract: '0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721',
+    bridge_contract: '0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467',
     fetched_at: Date.now(),
   };
 
