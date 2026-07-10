@@ -26,7 +26,7 @@ export default function Navigation() {
   const { lang, setLang } = useLang();
 
   const navItemMatches = (href: string) =>
-    pathname === href || (href === '/terranova' && pathname.startsWith('/terranova')) || (href === '/quantum-revolution' && pathname.startsWith('/quantum-revolution')) || (href === '/zohar' && pathname.startsWith('/zohar')) || (href === '/wiki' && pathname === '/wiki');
+    pathname === href || (href === '/terranova' && pathname.startsWith('/terranova')) || (href === '/quantum-revolution' && pathname.startsWith('/quantum-revolution')) || (href === '/tree-of-life' && pathname.startsWith('/tree-of-life')) || (href === '/wiki' && pathname === '/wiki');
 
   /* ── 4 groups with icons + accent colors ── */
   const navGroups: NavGroup[] = [
@@ -77,10 +77,10 @@ export default function Navigation() {
         { href: '/roadmap', label: tr('nav', 'roadmap', lang) },
         { href: '/genesis', label: tr('nav', 'genesis', lang) },
         { href: '/terranova', label: tr('nav', 'terranova', lang) },
-        { href: '/zohar', label: tr('nav', 'zohar', lang), children: [
-          { href: '/zohar#evoluzion', label: 'evoluZion V2' },
-          { href: '/zohar#proof-of-care', label: 'Proof-of-Care' },
-          { href: '/zohar#bodhisattva', label: 'Bodhisattva Vow' },
+        { href: '/tree-of-life', label: tr('nav', 'tree_of_life', lang), children: [
+          { href: '/tree-of-life#evoluzion', label: 'evoluZion V2' },
+          { href: '/tree-of-life#proof-of-care', label: 'Proof-of-Care' },
+          { href: '/tree-of-life#bodhisattva', label: 'Bodhisattva Vow' },
         ] },
       ],
     },
@@ -88,12 +88,13 @@ export default function Navigation() {
 
   const activeGroup = navGroups.find((group) => group.title === openGroup);
 
-  /* ── HERO icons — 4 most important, RASTA colored ── */
+  /* ── HERO icons — top panel, RASTA colored ── */
   /* Rasta: green (emerald) → gold (zion-gold) → amber (amber-500) */
   const heroIcons = [
     { href: '/explorer', icon: Orbit, color: '16, 185, 129', label: tr('nav', 'explorer', lang) },       /* green */
     { href: '/pool', icon: Pickaxe, color: '251, 191, 36', label: tr('nav', 'pool', lang) },             /* gold */
     { href: '/network', icon: SignalHigh, color: '245, 158, 11', label: tr('nav', 'network', lang) },    /* amber */
+    { href: '/docs', icon: BookOpen, color: '99, 102, 241', label: tr('nav', 'docs', lang) },              /* indigo */
     { href: '/wallet', icon: Wallet, color: '34, 197, 94', label: tr('nav', 'wallet', lang) },           /* green */
   ];
 
@@ -102,7 +103,6 @@ export default function Navigation() {
     { href: '/mining', icon: HardHat, color: '245, 158, 11', label: tr('nav', 'mining', lang) },
     { href: '/defi', icon: Coins, color: '16, 185, 129', label: tr('nav', 'defi', lang) },
     { href: '/download', icon: Download, color: '251, 191, 36', label: tr('nav', 'download', lang) },
-    { href: '/docs', icon: BookOpen, color: '34, 197, 94', label: tr('nav', 'docs', lang) },
   ];
 
   /* ── Tertiary icons — small, rest of ecosystem ── */
@@ -117,7 +117,7 @@ export default function Navigation() {
     { href: '/l5-free-world', icon: Rocket, color: '14, 165, 233', label: tr('nav', 'l5_free_world', lang) },
     { href: '/l6-issobella', icon: Zap, color: '244, 63, 94', label: tr('nav', 'l6_issobella', lang) },
     { href: '/terranova', icon: Globe2, color: '34, 197, 94', label: tr('nav', 'terranova', lang) },
-    { href: '/zohar', icon: Sparkles, color: '251, 191, 36', label: tr('nav', 'zohar', lang) },
+    { href: '/tree-of-life', icon: Sparkles, color: '251, 191, 36', label: tr('nav', 'tree_of_life', lang) },
     { href: '/news', icon: Newspaper, color: '249, 115, 22', label: tr('nav', 'news', lang) },
     { href: '/roadmap', icon: Map, color: '99, 102, 241', label: tr('nav', 'roadmap', lang) },
     { href: '/genesis', icon: Sparkles, color: '251, 191, 36', label: tr('nav', 'genesis', lang) },
