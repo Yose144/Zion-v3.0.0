@@ -38,6 +38,14 @@ pub struct PayoutEntry {
     pub share_count: u64,
 }
 
+/// Cumulative per-miner shares and blocks (persistent across restarts).
+#[derive(Debug, Clone, Copy, PartialEq, Default, Serialize, Deserialize)]
+pub struct MinerShareStats {
+    pub valid: u64,
+    pub invalid: u64,
+    pub blocks: u64,
+}
+
 /// Fee split configuration for pool reward distribution.
 #[derive(Debug, Clone)]
 pub struct FeeConfig {
@@ -137,6 +145,12 @@ pub struct PplnsEngine {
     addresses: HashMap<String, String>,
     /// Accumulated unpaid balance per miner_id (flowers).
     unpaid: HashMap<String, u64>,
+    /// Cumulative paid amount per miner_id (flowers).
+    paid_per_miner: HashMap<String, u128>,
+    /// Cumulative share/block stats per miner_id.
+    shares_per_miner: HashMap<String, MinerShareStats>,
+    /// Last share timestamp (seconds) per miner_id.
+    last_share_time_per_miner: HashMap<String, u64>,
     /// Total block rewards distributed via this engine (flowers).
     total_paid_flowers: u128,
     /// Number of payout rounds executed.
@@ -160,6 +174,9 @@ pub struct PplnsSnapshot {
     pub window_total_difficulty: u128,
     pub addresses: HashMap<String, String>,
     pub unpaid: HashMap<String, u64>,
+    pub paid_per_miner: HashMap<String, u128>,
+    pub shares_per_miner: HashMap<String, MinerShareStats>,
+    pub last_share_time_per_miner: HashMap<String, u64>,
     pub total_paid_flowers: u128,
     pub payout_rounds: u64,
     pub fee_humanitarian_flowers: u64,
@@ -175,6 +192,9 @@ impl PplnsEngine {
             window_total_difficulty: 0,
             addresses: HashMap::new(),
             unpaid: HashMap::new(),
+            paid_per_miner: HashMap::new(),
+            shares_per_miner: HashMap::new(),
+            last_share_time_per_miner: HashMap::new(),
             total_paid_flowers: 0,
             payout_rounds: 0,
             fee_humanitarian_flowers: 0,
@@ -190,6 +210,9 @@ impl PplnsEngine {
             window_total_difficulty: self.window_total_difficulty,
             addresses: self.addresses.clone(),
             unpaid: self.unpaid.clone(),
+            paid_per_miner: self.paid_per_miner.clone(),
+            shares_per_miner: self.shares_per_miner.clone(),
+            last_share_time_per_miner: self.last_share_time_per_miner.clone(),
             total_paid_flowers: self.total_paid_flowers,
             payout_rounds: self.payout_rounds,
             fee_humanitarian_flowers: self.fee_humanitarian_flowers,
@@ -204,6 +227,9 @@ impl PplnsEngine {
         self.window_total_difficulty = snap.window_total_difficulty;
         self.addresses = snap.addresses;
         self.unpaid = snap.unpaid;
+        self.paid_per_miner = snap.paid_per_miner;
+        self.shares_per_miner = snap.shares_per_miner;
+        self.last_share_time_per_miner = snap.last_share_time_per_miner;
         self.total_paid_flowers = snap.total_paid_flowers;
         self.payout_rounds = snap.payout_rounds;
         self.fee_humanitarian_flowers = snap.fee_humanitarian_flowers;
@@ -277,6 +303,22 @@ impl PplnsEngine {
         self.record_share_with_diff(miner_id, worker_name, height, 1);
     }
 
+    /// Record a rejected/invalid share for a miner.
+    pub fn record_invalid_share(&mut self, miner_id: &str) {
+        self.shares_per_miner
+            .entry(miner_id.to_string())
+            .or_default()
+            .invalid += 1;
+    }
+
+    /// Record that a miner found a block.
+    pub fn record_block_found(&mut self, miner_id: &str) {
+        self.shares_per_miner
+            .entry(miner_id.to_string())
+            .or_default()
+            .blocks += 1;
+    }
+
     /// Record an accepted share with explicit difficulty weight.
     ///
     /// A share at difficulty 1000 contributes 1000× as much PPLNS weight
@@ -302,6 +344,15 @@ impl PplnsEngine {
             difficulty: diff,
         });
         self.window_total_difficulty += diff as u128;
+
+        // Persist cumulative share stats and last share timestamp.
+        let now_s = timestamp_ms / 1000;
+        self.last_share_time_per_miner
+            .insert(miner_id.to_string(), now_s);
+        self.shares_per_miner
+            .entry(miner_id.to_string())
+            .or_default()
+            .valid += 1;
 
         // Evict oldest shares until total difficulty fits the window limit.
         while self.window_total_difficulty > self.config.window_size as u128 {
@@ -473,6 +524,9 @@ impl PplnsEngine {
                 .iter()
                 .fold(0u128, |acc, p| acc.saturating_add(p.amount as u128));
             self.total_paid_flowers = self.total_paid_flowers.saturating_add(round_total);
+            for payout in &payouts {
+                *self.paid_per_miner.entry(payout.miner_id.clone()).or_insert(0) += payout.amount as u128;
+            }
         }
 
         payouts
@@ -493,6 +547,9 @@ impl PplnsEngine {
                 payout.miner_id.clone(),
                 current.saturating_add(payout.amount),
             );
+            if let Some(paid) = self.paid_per_miner.get_mut(&payout.miner_id) {
+                *paid = paid.saturating_sub(payout.amount as u128);
+            }
         }
 
         let round_total: u128 = payouts
@@ -507,6 +564,21 @@ impl PplnsEngine {
     /// Get the unpaid balance for a miner (flowers).
     pub fn unpaid_balance(&self, miner_id: &str) -> u64 {
         self.unpaid.get(miner_id).copied().unwrap_or(0)
+    }
+
+    /// Get the cumulative paid amount for a miner (flowers).
+    pub fn paid_per_miner(&self, miner_id: &str) -> u128 {
+        self.paid_per_miner.get(miner_id).copied().unwrap_or(0)
+    }
+
+    /// Get cumulative share/block stats for a miner.
+    pub fn share_stats(&self, miner_id: &str) -> MinerShareStats {
+        self.shares_per_miner.get(miner_id).copied().unwrap_or_default()
+    }
+
+    /// Get the last recorded share time (seconds) for a miner.
+    pub fn last_share_time(&self, miner_id: &str) -> u64 {
+        self.last_share_time_per_miner.get(miner_id).copied().unwrap_or(0)
     }
 
     /// Summary statistics.
