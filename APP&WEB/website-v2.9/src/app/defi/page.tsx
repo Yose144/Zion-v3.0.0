@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import { useState, useCallback, useEffect } from 'react';
 import {
   ArrowLeftRight,
@@ -16,6 +17,17 @@ import {
   Link2,
   Lock,
   CheckCircle2,
+  ArrowRight,
+  PiggyBank,
+  Sprout,
+  Scale,
+  Droplets,
+  AlertTriangle,
+  TrendingUp,
+  Gavel,
+  Clock,
+  Trophy,
+  ChefHat,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { useWallet } from '@/contexts/WalletContext';
@@ -23,8 +35,7 @@ import SwapWidget from '@/components/SwapWidget';
 import LiFiWidget from '@/components/LiFiWidget';
 import BridgeBurnWidget from '@/components/BridgeBurnWidget';
 import DefiBalances from '@/components/DefiBalances';
-import { CONTRACTS, SEED_PRICE_USD, CCA_AUCTION_PARAMS, PANCAKE_V3 } from '@/lib/defi-contracts';
-import { AlertTriangle, Droplets, TrendingUp, Gavel, Clock, Trophy, ChefHat } from 'lucide-react';
+import { CONTRACTS, SEED_PRICE_USD, CCA_AUCTION_PARAMS, PANCAKE_V3, DEFI_PRODUCTS } from '@/lib/defi-contracts';
 import { useNetworkStatus } from '@/hooks/useWebSocketSubscription';
 
 // ─── Price Sparkline (SVG, no deps) ──────────────────────────────────────────
@@ -450,6 +461,69 @@ export default function DefiPage() {
             <p className="text-[10px] text-gray-500">{cs ? 'aktivní' : 'active'}</p>
           </div>
         </div>
+      </section>
+
+      {/* ── DeFi Products ── */}
+      <section className="zion-container relative z-10 mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                <Layers className="h-5 w-5 text-zion-cyan" />
+                {cs ? 'DeFi produkty' : 'DeFi Products'}
+              </h2>
+              <p className="text-[12px] text-gray-500">
+                {cs ? 'Klikni na produkt pro více detailů' : 'Click a product for more details'}
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {DEFI_PRODUCTS.map((product) => {
+              const Icon =
+                product.icon === 'bridge' ? ArrowLeftRight :
+                product.icon === 'dex' ? Droplets :
+                product.icon === 'farm' ? Sprout :
+                product.icon === 'staking' ? PiggyBank :
+                Scale;
+              const live = product.status === 'live';
+              return (
+                <Link
+                  key={product.id}
+                  href={product.href}
+                  className="group zion-rainbow-sub p-5 transition-all duration-200 hover:scale-[1.02] block"
+                  style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+                >
+                  <div className={`flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br ${product.color} opacity-80 group-hover:opacity-100 transition mb-4`}>
+                    <Icon className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="text-sm font-semibold text-white">{cs ? product.nameCs : product.name}</h3>
+                    <span
+                      className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wider ${
+                        live
+                          ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
+                          : 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
+                      }`}
+                    >
+                      {live ? (cs ? 'live' : 'live') : (cs ? 'pending' : 'pending')}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-gray-400 leading-relaxed line-clamp-3">
+                    {cs ? product.descriptionCs : product.description}
+                  </p>
+                  <div className="mt-3 flex items-center gap-1 text-[10px] text-zion-cyan group-hover:text-white transition-colors">
+                    <span>{cs ? 'Otevřít' : 'Open'}</span>
+                    <ArrowRight className="h-3 w-3" />
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </motion.div>
       </section>
 
       {/* ── wZION/USDT Price Chart ── */}
