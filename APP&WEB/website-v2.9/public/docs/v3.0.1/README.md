@@ -4,9 +4,9 @@
 > **Network:** zion-mainnet-1
 > **Status:** MainNet Core live, pool active, mining operational
 >
-> **⚠️ Historical document.** Current release: **v3.0.5-beta** (Simplified Community CLI).
-> See [mainnet/README.md](../mainnet/README.md) for current status and
-> [GitHub Releases](https://github.com/Zion-TerraNova/v3-Mainnet/releases) for downloads.
+> **⚠️ Historical document.** This page describes the original **v3.0.1 Genesis Launch** on 11 June 2026.
+> The current public line is **v3.0.5 All Green / Mainnet Beta** running on a new genesis hash after the July 2026 hard reset.
+> See [mainnet/README.md](../mainnet/README.md) for the current status, transition timeline and security incident summary.
 
 ---
 

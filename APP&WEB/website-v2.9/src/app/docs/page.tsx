@@ -42,8 +42,8 @@ type LocalizedText = { cs: string; en: string };
 const docsPageCopy = {
   badge: { cs: 'Znalostní báze', en: 'Knowledge Base' },
   overviewNotice: {
-    cs: 'MainNet Genesis 11. 6. 2026 úspěšný — aktuální public line je 3.0.5 All Green, Mainnet Beta nad kanonickou runtime v3.0.5 Deeksha/Ekam. Decimal fork 1e12→1e6 (6-decimal flowers) dokončen. Edge server topologie běží, pool aktivní, mining live. Veřejný launch zůstává na 31. prosince 2026 (Silvestr). Live Index na /docs#live-index je kanonický vstup pro síťový snapshot, baseline repa 2.9.6 a mapu release/runtime.',
-    en: 'MainNet Genesis 11 Jun 2026 successful — the current public line is 3.0.5 All Green, Mainnet Beta over the canonical v3.0.5 Deeksha/Ekam runtime. Decimal fork 1e12→1e6 (6-decimal flowers) complete. Edge server topology is running, the pool is active, and mining is live. Public launch remains 31 December 2026 (New Year\'s Eve). Live Index at /docs#live-index is the canonical entry for the network snapshot, 2.9.6 repo baseline, and release/runtime map.',
+    cs: 'Aktuální veřejná linka je v3.0.5 All Green / Mainnet Beta nad kanonickou runtime v3.0.5 Deeksha/Ekam. Decimal fork 1e12→1e6 (6-decimal flowers) dokončen. Síť běží na novém genesis hash po hard resetu z července 2026 — viz hlavní dokument [Mainnet Status](#mainnet). Pool aktivní, mining live, 11/11 služeb green. Veřejný launch zůstává 31. prosince 2026.',
+    en: 'The current public line is v3.0.5 All Green / Mainnet Beta on the canonical v3.0.5 Deeksha/Ekam runtime. Decimal fork 1e12→1e6 (6-decimal flowers) complete. The network is running on a new genesis hash after the July 2026 hard reset — see the main document [Mainnet Status](#mainnet). Pool active, mining live, 11/11 services green. Public launch remains 31 December 2026.',
   },
   githubLabel: { cs: 'GitHub', en: 'GitHub' },
   apiHealthLabel: { cs: 'Zdraví API', en: 'API Health' },
@@ -52,7 +52,7 @@ const docsPageCopy = {
 const versionText: Record<string, { tag?: LocalizedText; description?: LocalizedText }> = {
   'v3.0.5': {
     tag: { cs: 'AKTUÁLNÍ', en: 'CURRENT' },
-    description: { cs: 'Current public line — decimal fork 1e12→1e6 (6-decimal flowers), MainNet Edge server live, pool aktivní, mining běží', en: 'Current public line — decimal fork 1e12→1e6 (6-decimal flowers), MainNet Edge server live, pool active, mining running' },
+    description: { cs: 'Current public line — v3.0.5 All Green / Mainnet Beta, nový genesis hash po červencovém hard resetu, 11/11 služeb active, E2E memo testy v bloku 752', en: 'Current public line — v3.0.5 All Green / Mainnet Beta, new genesis hash after the July hard reset, 11/11 services active, E2E memo tests in block 752' },
   },
   'v3.0.2': {
     tag: { cs: 'PŘEDCHOZÍ', en: 'PREVIOUS' },
@@ -126,7 +126,8 @@ const sectionTitles: Record<string, LocalizedText> = {
 };
 
 const docTitles: Record<string, LocalizedText> = {
-  'v301-readme': { cs: 'v3.0.1 Genesis — přehled', en: 'v3.0.1 Genesis Overview' },
+  'v301-readme': { cs: 'v3.0.1 Genesis — historický přehled', en: 'v3.0.1 Genesis Overview (historical)' },
+  'mainnet-public-release': { cs: 'Veřejný release — jak použít', en: 'Public Release — How to Use' },
   'v301-launch-sequence': { cs: 'MainNet Launch sekvence', en: 'MainNet Launch Sequence' },
   'v301-status': { cs: 'v3.0.1 Stav a KAT vektory', en: 'v3.0.1 Status & KAT Vectors' },
   'v301-roadmap': { cs: 'v3.0.1 Roadmap', en: 'v3.0.1 Roadmap' },
@@ -284,6 +285,7 @@ const sections: Section[] = [
     accentBorder: 'border-zion-gold/30',
     docs: [
       { id: 'v301-genesis', title: 'v3.0.5 — Current Public Line', file: 'v3.0.1/README.md' },
+      { id: 'mainnet-public-release', title: 'Public Release — How to Use', file: 'mainnet/public-release.md' },
       { id: 'v300-readiness', title: 'v3.0.0 — MainNet Ready', file: 'v3.0.0/README.md' },
       { id: 'v299-purecode', title: 'v2.9.9 — Pure Code line', file: 'v2.9.9/README.md' },
       { id: 'v298-canonical', title: 'v2.9.8 — Ekam canonical runtime', file: 'v2.9.8/README.md' },
