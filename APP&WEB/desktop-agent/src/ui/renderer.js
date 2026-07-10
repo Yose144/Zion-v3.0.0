@@ -3045,6 +3045,9 @@ let _bridgeEvmAddress = null;
 let _bridgeDirection  = 'L1toEVM';
 let _bridgeMemo       = null;
 
+// ── Auto-update state ────────────────────────────────────────────────────────
+let _updateState = { checking: false, available: false, downloaded: false, downloading: false };
+
 /** Called when Updates nav item is clicked (from switchView) */
 function initUpdateUI() {
   const checkBtn = document.getElementById('update-check-btn');
@@ -3199,6 +3202,9 @@ function initUpdateUI() {
           break;
         case 'error':
           _setUpdateStatus('Error', data.error || 'Update check failed', '#f87171');
+          break;
+        case 'no-license':
+          _setUpdateStatus('No License', data.message || 'Enter your license key', '#fcd34d');
           break;
       }
     });

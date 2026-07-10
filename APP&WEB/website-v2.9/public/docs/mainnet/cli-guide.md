@@ -2,14 +2,15 @@
 
 ## Co je ZION CLI
 
-`zion` je hlavní příkazová brána pro správu ZION stacku.
+`zion` je jeden binary, který umí všechno:
 
-Jedním nástrojem umíš řešit:
-
-- L1: node, pool, miner, wallet,
-- L2: bridge a DAO,
-- L3: AI Native, WARP, NCL,
-- operace: status, logy, deploy, monitoring.
+- **Wallet** — vytvoř, spravuj, posílej ZION
+- **Node** — spusť full L1 node, synchronizuj s sítí
+- **Miner** — těž CPU nebo GPU (Ekam Deeksha BLAKE3 + RandomNPU)
+- **Pool** — připoj se ke poolu, sleduj statistiky
+- **Status** — celkový stav sítě a tvého uzlu
+- **Doctor** — rychlá zdravotní kontrola
+- **Monitor** — live dashboard s hashrate a zůstatkem
 
 Pokud jsi úplný laik: ber to jako "ovládací panel v terminálu".
 
@@ -20,41 +21,35 @@ Pokud jsi úplný laik: ber to jako "ovládací panel v terminálu".
 Minimum:
 
 1. Otevřít Terminál (macOS) / PowerShell (Windows) / shell (Linux).
-2. Mít repo projektu (složka `2.9.6`) na disku.
-3. Mít nainstalovaný Rust (`cargo`) nebo připravený build server, kde CLI už je.
+2. Stáhnout `zion` binary z [GitHub Releases](https://github.com/Zion-TerraNova/v3-Mainnet/releases).
+3. Žádný Rust kompilátor není potřeba — binary je hotový.
 
-Rychlá kontrola:
+Pro ARM64 (Raspberry Pi, AWS Graviton) je potřeba build ze zdrojů:
 
 ```bash
-cargo --version
+git clone https://github.com/Zion-TerraNova/v3-Mainnet.git
+cd v3-Mainnet/V3
+cargo build --release -p zion-public
+# Binary → target/release/zion
 ```
-
-Když se vypíše verze, můžeš pokračovat.
 
 ---
 
-## Nejjednodušší první spuštění (bez instalace binárky)
+## Nejjednodušší první spuštění
 
-Z kořene repa:
-
-```bash
-cargo run --manifest-path V3/Cargo.toml -p zion-cli -- --help
-```
-
-První praktické příkazy:
+Po rozbalení archive:
 
 ```bash
-cargo run --manifest-path V3/Cargo.toml -p zion-cli -- status
-cargo run --manifest-path V3/Cargo.toml -p zion-cli -- doctor
+./zion
 ```
 
-Tohle je nejlepší start pro laiky: nemusíš nic instalovat do PATH.
+Bez argumentů se otevře interaktivní menu se šipkami.
 
 ---
 
-## Spuštění přes interaktivní menu
+## Interaktivní menu
 
-Po buildnutí CLI můžeš použít menu mód:
+Spuštění `zion` bez argumentů otevře menu:
 
 ```bash
 zion
@@ -68,9 +63,12 @@ zion menu
 
 Ovládání:
 
-- šipky = pohyb,
+- šipky ↑↓ = pohyb,
 - Enter = potvrzení,
-- menu tě po dokončení vrací zpět (nemusíš vše psát ručně).
+- Esc = zpět,
+- menu tě po dokončení vrací zpět.
+
+Menu tě provede: wallet → node → pool → miner, krok za krokem.
 
 ---
 
@@ -79,37 +77,22 @@ Ovládání:
 Pokud nevíš, kde začít, jed tímto pořadím:
 
 ```bash
-zion config validate
 zion doctor
 zion status
+zion wallet new --mnemonic --out my-wallet.json --print
 zion node status
 zion pool stats
-zion agent status
+zion mine start --pool stratum+tcp://62.171.141.136:8444 --wallet YOUR_ADDRESS
 ```
 
 Co čekat:
 
-- `config validate` ověří konfiguraci,
-- `doctor` udělá rychlý preflight,
-- `status` ukáže celkový stav služeb,
-- `node/pool/agent status` zúží problém na konkrétní vrstvu.
-
----
-
-## Když příkaz `zion` neexistuje
-
-Používej bezpečný fallback přes `cargo run`:
-
-```bash
-cargo run --manifest-path V3/Cargo.toml -p zion-cli -- status
-```
-
-Stejně tak pro další příkazy:
-
-```bash
-cargo run --manifest-path V3/Cargo.toml -p zion-cli -- node status
-cargo run --manifest-path V3/Cargo.toml -p zion-cli -- pool stats
-```
+- `doctor` udělá rychlý preflight (config, endpointy, připravenost),
+- `status` ukáže celkový stav sítě,
+- `wallet new` vytvoří peněženku s 24 slovy,
+- `node status` ukáže stav tvého uzlu,
+- `pool stats` ukáže stav poolu,
+- `mine start` začne těžit.
 
 ---
 
@@ -120,7 +103,7 @@ cargo run --manifest-path V3/Cargo.toml -p zion-cli -- pool stats
 ```bash
 zion status
 zion doctor
-zion logs node
+zion monitor
 ```
 
 ### Node / chain
@@ -128,7 +111,7 @@ zion logs node
 ```bash
 zion node status
 zion node peers
-zion node block 6801
+zion node sync
 ```
 
 ### Pool / mining
@@ -137,27 +120,27 @@ zion node block 6801
 zion pool stats
 zion mine status
 zion mine bench
+zion mine start --pool stratum+tcp://62.171.141.136:8444 --wallet YOUR_ADDRESS
+zion mine stop
 ```
 
-### Agent (L3)
+### Wallet
 
 ```bash
-zion agent status
-zion agent config
-zion agent ask "What is current L3 state?"
+zion wallet new --mnemonic --out my-wallet.json
+zion wallet balance --address YOUR_ADDRESS
+zion wallet send --to RECIPIENT --amount 1.5
+zion wallet import --file my-wallet.json
 ```
 
 ---
 
 ## Důležitá realita pro rok 2026
 
-AI Native vrstva je dnes hlavně orchestrátor/control-plane.
+ZION je v **Mainnet Beta** — síť běží a produkuje bloky, ale může obsahovat chyby.
+Těž a transakuj na vlastní riziko. Oficiální veřejný launch: **31. prosince 2026**.
 
-To znamená:
-
-- služba může být zdravá i když backend model běží ve fallback režimu,
-- fallback je lepší než tichý pád,
-- vždy nejdřív ověř služby (`status`, `doctor`, `logs`) a až pak řeš model.
+Genesis chain je **permanentní** — nebude resetována.
 
 ---
 
@@ -166,10 +149,10 @@ To znamená:
 Použij přesně toto pořadí:
 
 1. `zion status`
-2. `zion node status`
-3. `zion pool stats`
-4. `zion agent status`
-5. `zion logs <sluzba>`
+2. `zion doctor`
+3. `zion node status`
+4. `zion pool stats`
+5. `zion mine status`
 
 Nikdy nezačínej náhodným restartem všeho bez diagnostiky.
 
@@ -177,7 +160,6 @@ Nikdy nezačínej náhodným restartem všeho bez diagnostiky.
 
 ## Co číst dál
 
-- ZION CLI FAQ
-- ZION CLI Reference
-- ZION CLI Troubleshooting
-- ZION CLI Deploy Playbook
+- [ZION CLI Reference](cli-reference.md) — všechny příkazy
+- [ZION CLI Troubleshooting](cli-troubleshooting.md) — řešení problémů
+- [ZION CLI FAQ](cli-faq.md) — časté otázky

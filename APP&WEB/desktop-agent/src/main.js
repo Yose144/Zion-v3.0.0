@@ -1280,6 +1280,8 @@ function saveConfig(config) {
     return false;
   }
 }
+// Alias used by auto-update + license IPC handlers
+const saveConfigSync = saveConfig;
 
 // Normalize user-supplied RPC URL to canonical http://host:port/jsonrpc form.
 function normalizeRpcUrl(value) {

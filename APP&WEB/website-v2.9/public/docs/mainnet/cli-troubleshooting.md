@@ -9,11 +9,11 @@ zion status
 zion doctor
 ```
 
-Když `zion` není dostupné:
+Když `zion` není v PATH, rozbal archive a použij `./zion`:
 
 ```bash
-cargo run --manifest-path V3/Cargo.toml -p zion-cli -- status
-cargo run --manifest-path V3/Cargo.toml -p zion-cli -- doctor
+./zion status
+./zion doctor
 ```
 
 ---
@@ -25,15 +25,7 @@ Pokračuj tímto pořadím:
 ```bash
 zion node status
 zion pool stats
-zion agent status
-```
-
-Pak logy postižené služby:
-
-```bash
-zion logs node
-zion logs pool
-zion logs ai-native
+zion mine status
 ```
 
 ---
@@ -46,58 +38,71 @@ Ověř:
 
 ```bash
 zion node status
-zion logs node
 ```
 
 Když node neběží, web nemá odkud číst chain data.
+Zkus:
+
+```bash
+zion node start
+zion node sync
+```
 
 ---
 
-## 3) Agent je "degraded" nebo fallback
-
-To neznamená vždy pád služby.
+## 3) Těžba neběží nebo ukazuje 0 hashrate
 
 Ověř:
 
 ```bash
-zion agent status
-zion agent config
-zion logs ai-native
+zion mine status
+zion mine bench
 ```
 
-Interpretace:
+Pokud GPU nefunguje, zkus CPU backend:
 
-- služba běží + backend není dostupný = fallback (očekávané),
-- služba neběží = je nutný restart / deploy zásah.
+```bash
+zion mine start --pool stratum+tcp://62.171.141.136:8444 --wallet YOUR_ADDRESS --backend cpu
+```
+
+Pokud GPU chceš, ověř backend:
+
+- `opencl` — Linux/Windows GPU (AMD, NVIDIA)
+- `cuda` — NVIDIA GPU (Linux/Windows)
+- `metal` — macOS Apple Silicon GPU
 
 ---
 
-## 4) Start/stop/restart "nic neudělá"
+## 4) Wallet nefunguje / nelze odeslat
 
-Používej správné cíle (`node`, `pool`, `agent`, `bridge`, ...), ne názvy kontejnerů.
-
-Příklad:
+Ověř:
 
 ```bash
-zion restart node
-zion logs node
+zion wallet balance --address YOUR_ADDRESS
 ```
+
+Pokud je zůstatek 0, zkontroluj adresu v Exploreru:
+https://zionterranova.com/exorer
+
+Pokud jsi zapomněl wallet, importuj ze souboru:
+
+```bash
+zion wallet import --file my-wallet.json
+```
+
+Pokud jsi ztratil soubor i 24 slov, **peněženku nelze obnovit**.
 
 ---
 
-## 5) Změnil jsem config, ale neprojevilo se to
+## 5) Node se nesynchronizuje
 
 ```bash
-zion config path
-zion config show
-zion config validate
+zion node peers
+zion node sync
 ```
 
-Potom nastav hodnotu znovu:
-
-```bash
-zion config set node.rpc_host seed.zionterranova.com
-```
+Pokud nemá peers, zkontroluj síťové připojení a firewall.
+Node potřebuje odchozí TCP port 8444 (pool stratum) a příchozí/příchozí P2P.
 
 ---
 
@@ -106,9 +111,48 @@ zion config set node.rpc_host seed.zionterranova.com
 Drž se tohoto "anti-chaos" pořadí:
 
 1. `zion status`
-2. `zion node status`
-3. `zion pool stats`
-4. `zion agent status`
-5. `zion logs <sluzba>`
+2. `zion doctor`
+3. `zion node status`
+4. `zion pool stats`
+5. `zion mine status`
 
 Nespouštěj hned restart všeho. Nejprve diagnostika, pak zásah.
+
+---
+
+## 7) Binary se nedá spustit (Linux)
+
+```bash
+chmod +x zion
+./zion
+```
+
+Pokud dostaneš "command not found", jsi ve špatné složce.
+Použij plnou cestu:
+
+```bash
+/home/user/zion/zion status
+```
+
+---
+
+## 8) Binary se nedá spustit (Windows)
+
+Otevři PowerShell v složce s `zion.exe`:
+
+```powershell
+.\zion.exe
+```
+
+Pokud Windows blokuje spuštění (SmartScreen), klikni "More info" → "Run anyway".
+
+---
+
+## 9) macOS: "cannot be opened because the developer cannot be verified"
+
+Otevřít přes pravý klik → Open, nebo:
+
+```bash
+xattr -d com.apple.quarantine zion
+./zion
+```

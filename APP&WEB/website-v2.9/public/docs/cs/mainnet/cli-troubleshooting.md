@@ -1,73 +1,158 @@
-# ZION CLI Troubleshooting
+# ZION CLI Troubleshooting (pro laiky)
 
-## 1. `zion status` hlásí problém
+Tady je rychlý postup, když "něco nefunguje".
 
-Spusť:
+## 0) Univerzální první krok
 
 ```bash
 zion status
-zion node status
-zion agent status
+zion doctor
 ```
 
-Když selže node i agent, podezírej nejdřív host nebo deploy vrstvu.
-
-## 2. `zion agent` běží ve fallback režimu
-
-To obvykle znamená, že služba žije, ale model backend není dostupný.
-
-Zkontroluj:
+Když `zion` není v PATH, rozbal archive a použij `./zion`:
 
 ```bash
-zion agent status
-zion agent config
-zion logs ai-native
+./zion status
+./zion doctor
 ```
 
-## 3. Lifecycle příkazy míří jinam, než čekáš
+---
 
-CLI mapuje na compose service names, ne na odhadované názvy kontejnerů.
+## 1) `zion status` ukazuje chyby
 
-Důležité příklady:
+Pokračuj tímto pořadím:
 
-- `node` nebo `core` -> `core`
-- `agent` nebo `ai-native` -> `ai-native`
-- `monitoring` -> monitoring bundle
+```bash
+zion node status
+zion pool stats
+zion mine status
+```
 
-Nepodporovaný lifecycle target má teď selhat lokálně s jasným seznamem podporovaných targetů ještě před SSH voláním.
+---
 
-## 4. Veřejné docs po změně chybí
+## 2) Na webu nejsou bloky / explorer je prázdný
 
-Web čte markdowny z website public docs tree.
-
-Samotné repo docs nestačí.
+To bývá nejčastěji problém node RPC.
 
 Ověř:
 
 ```bash
-cd APP&WEB/website-v2.9
-npm run build
+zion node status
 ```
 
-## 5. Config změny se neprojevují
-
-Nejdřív zkontroluj aktivní soubor:
+Když node neběží, web nemá odkud číst chain data.
+Zkus:
 
 ```bash
-zion config path
-zion config show
+zion node start
+zion node sync
 ```
 
-Pak nastav hodnotu znovu nebo spusť:
+---
+
+## 3) Těžba neběží nebo ukazuje 0 hashrate
+
+Ověř:
 
 ```bash
-zion config init
+zion mine status
+zion mine bench
 ```
 
-## 6. Rychlé pořadí triage
+Pokud GPU nefunguje, zkus CPU backend:
+
+```bash
+zion mine start --pool stratum+tcp://62.171.141.136:8444 --wallet YOUR_ADDRESS --backend cpu
+```
+
+Pokud GPU chceš, ověř backend:
+
+- `opencl` — Linux/Windows GPU (AMD, NVIDIA)
+- `cuda` — NVIDIA GPU (Linux/Windows)
+- `metal` — macOS Apple Silicon GPU
+
+---
+
+## 4) Wallet nefunguje / nelze odeslat
+
+Ověř:
+
+```bash
+zion wallet balance --address YOUR_ADDRESS
+```
+
+Pokud je zůstatek 0, zkontroluj adresu v Exploreru:
+https://zionterranova.com/exorer
+
+Pokud jsi zapomněl wallet, importuj ze souboru:
+
+```bash
+zion wallet import --file my-wallet.json
+```
+
+Pokud jsi ztratil soubor i 24 slov, **peněženku nelze obnovit**.
+
+---
+
+## 5) Node se nesynchronizuje
+
+```bash
+zion node peers
+zion node sync
+```
+
+Pokud nemá peers, zkontroluj síťové připojení a firewall.
+Node potřebuje odchozí TCP port 8444 (pool stratum) a příchozí/příchozí P2P.
+
+---
+
+## 6) Nemám jistotu, co řešit první
+
+Drž se tohoto "anti-chaos" pořadí:
 
 1. `zion status`
-2. `zion node status`
-3. `zion pool stats`
-4. `zion agent status`
-5. `zion logs <affected-service>`
+2. `zion doctor`
+3. `zion node status`
+4. `zion pool stats`
+5. `zion mine status`
+
+Nespouštěj hned restart všeho. Nejprve diagnostika, pak zásah.
+
+---
+
+## 7) Binary se nedá spustit (Linux)
+
+```bash
+chmod +x zion
+./zion
+```
+
+Pokud dostaneš "command not found", jsi ve špatné složce.
+Použij plnou cestu:
+
+```bash
+/home/user/zion/zion status
+```
+
+---
+
+## 8) Binary se nedá spustit (Windows)
+
+Otevři PowerShell v složce s `zion.exe`:
+
+```powershell
+.\zion.exe
+```
+
+Pokud Windows blokuje spuštění (SmartScreen), klikni "More info" → "Run anyway".
+
+---
+
+## 9) macOS: "cannot be opened because the developer cannot be verified"
+
+Otevřít přes pravý klik → Open, nebo:
+
+```bash
+xattr -d com.apple.quarantine zion
+./zion
+```

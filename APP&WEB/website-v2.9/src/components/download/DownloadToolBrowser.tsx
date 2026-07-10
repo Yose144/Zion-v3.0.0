@@ -12,7 +12,7 @@ import {
   Terminal,
   Monitor,
   Apple,
-  Windows,
+  MonitorSmartphone,
   Menu as MenuIcon,
 } from 'lucide-react';
 import { SITE_POOL_PRIMARY } from '@/lib/site';
@@ -35,7 +35,7 @@ const PLATFORM_ICONS: Record<string, React.ReactNode> = {
   'linux-x86_64': <Terminal className="h-6 w-6" />,
   'macos-arm64': <Apple className="h-6 w-6" />,
   'macos-x86_64': <Monitor className="h-6 w-6" />,
-  'windows-x86_64': <Windows className="h-6 w-6" />,
+  'windows-x86_64': <MonitorSmartphone className="h-6 w-6" />,
 };
 
 const PLATFORM_COLORS: Record<string, string> = {

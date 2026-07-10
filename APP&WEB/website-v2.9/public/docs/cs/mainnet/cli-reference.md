@@ -1,123 +1,109 @@
-# ZION CLI Reference
+# ZION CLI Reference (praktická)
 
-## Účel
+Tento dokument je "tahák" s konkrétními příkazy.
 
-Tohle je příkazově orientovaný doplněk k hlavnímu CLI guide.
+Pokud jsi začátečník, používej nejdřív `Guide`, potom tento seznam.
 
-Použij ho, když potřebuješ konkrétní operátorské příklady pro aktuální surface `zion`.
-
-## Základní runtime control
+## 1) Základní kontrola
 
 ```bash
 zion status
 zion doctor
-zion logs node
-zion logs ai-native
-zion dashboard
+zion monitor
 ```
 
-## Lifecycle targety
+- `status` — celkový stav sítě a tvého uzlu
+- `doctor` — rychlá zdravotní kontrola (config, endpointy, připravenost)
+- `monitor` — live dashboard s hashrate a zůstatkem
 
-Aktuální top-level cíle:
-
-- `all`
-- `node` nebo `core`
-- `pool`
-- `miner`
-- `agent` nebo `ai-native`
-- `bridge`
-- `dao`
-- `website`
-- `redis`
-- `monitoring`
-
-Příklady:
+## 2) Wallet
 
 ```bash
-zion start ai-native
-zion restart bridge
-zion stop monitoring
+zion wallet new --mnemonic --out my-wallet.json --print
+zion wallet balance --address YOUR_ADDRESS
+zion wallet send --to RECIPIENT --amount 1.5
+zion wallet import --file my-wallet.json
+zion wallet address
 ```
 
-Když zadáš nepodporovaný target, CLI má teď selhat lokálně s výpisem podporovaných targetů ještě před vzdáleným compose voláním.
-
-## L1 příklady
+## 3) Node
 
 ```bash
 zion node status
 zion node peers
-zion node block 6801
-zion node rpc getChainInfo
+zion node sync
+zion node start
+zion node stop
+```
 
+## 4) Pool
+
+```bash
 zion pool stats
-zion pool miners
+zion pool connect --pool stratum+tcp://62.171.141.136:8444
+```
 
+## 5) Miner
+
+```bash
 zion mine status
 zion mine bench
 zion mine bench --ekam --backend opencl --work-size 8192
-
-zion wallet balance
-zion wallet send zion1example 1.25
+zion mine start --pool stratum+tcp://62.171.141.136:8444 --wallet YOUR_ADDRESS
+zion mine start --backend cuda
+zion mine start --backend metal
+zion mine stop
 ```
 
-`zion mine start` teď správně předává explicitní backendy jako `opencl`, `metal` a `cuda` do mineru a `zion mine bench --ekam` konečně volá reálný Ekam benchmark mód.
+Backendy:
 
-## L2 příklady
+- `cpu` — výchozí, funguje všude
+- `opencl` — Linux/Windows GPU (AMD, NVIDIA)
+- `cuda` — NVIDIA GPU (Linux/Windows)
+- `metal` — macOS Apple Silicon GPU
+
+## 6) AI (volitelné)
 
 ```bash
-zion bridge status
-zion bridge pending
-zion bridge transfer base zion1example 10
-
-zion dao status
-zion dao treasury
-zion dao vote 7 yes
+zion ai ask "What is the current block height?"
+zion ai chat
 ```
 
-## L3 příklady
+## 7) Interaktivní menu
 
 ```bash
-zion agent status
-zion agent config
-zion agent memory
-zion agent rag query "bridge"
-zion agent ask "Jaký je aktuální stav L3?"
-
-zion warp status
-zion warp stats
-
-zion ncl status
-zion ncl workers
-zion ncl submit ./job.json
+zion
+zion menu
 ```
 
-## Operations příklady
+Menu tě provede: wallet → node → pool → miner, krok za krokem.
+
+## 8) Verze a pomoc
 
 ```bash
-zion deploy status
-zion deploy server
-zion deploy website
-zion deploy prune
-
-zion config show
-zion config path
-zion config validate
-zion doctor
-zion config set node.rpc_host seed.zionterranova.com
-
-zion monitor
-zion explorer
-zion completions zsh
+zion --version
+zion --help
+zion wallet --help
+zion mine --help
 ```
 
-`zion doctor` je one-shot preflight pro operátorské instalace: config sanity, detekce lokální miner binárky, reachability node RPC a reachability AI Native.
+## 9) Build ze zdrojů (ARM64, vlastní build)
 
-## Doporučené pořadí operátora
+```bash
+git clone https://github.com/Zion-TerraNova/v3-Mainnet.git
+cd v3-Mainnet/V3
+cargo build --release -p zion-public
+# Binary → target/release/zion
+```
 
-Když je něco špatně, nejkratší věcná sekvence bývá:
+## 10) Platformy
 
-1. `zion status`
-2. `zion node status`
-3. `zion agent status`
-4. `zion logs <affected-service>`
-5. úzká command group pro postiženou vrstvu
+| Platforma | Stav | Soubor |
+|-----------|------|--------|
+| Linux x86_64 | ✅ Pre-built | `zion-cli-linux-x86_64.tar.gz` |
+| macOS Apple Silicon (M1–M4) | ✅ Pre-built | `zion-cli-macos-aarch64.tar.gz` |
+| macOS Intel x86_64 | ✅ Pre-built | `zion-cli-macos-x86_64.tar.gz` |
+| Windows x86_64 | ✅ Pre-built | `zion-cli-windows-x86_64.zip` |
+| Linux ARM64 | 🔧 Build ze zdrojů | `cargo build --release -p zion-public` |
+
+Stažení: https://github.com/Zion-TerraNova/v3-Mainnet/releases

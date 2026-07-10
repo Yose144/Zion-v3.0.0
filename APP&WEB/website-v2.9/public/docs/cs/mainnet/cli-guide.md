@@ -1,87 +1,165 @@
-# ZION CLI Guide
+# ZION CLI Guide (pro úplného začátečníka)
 
-## Co je `zion`
+## Co je ZION CLI
 
-`zion` je sjednocené operatorské CLI pro celý stack ZION.
+`zion` je jeden binary, který umí všechno:
 
-Pokrývá:
+- **Wallet** — vytvoř, spravuj, posílej ZION
+- **Node** — spusť full L1 node, synchronizuj s sítí
+- **Miner** — těž CPU nebo GPU (Ekam Deeksha BLAKE3 + RandomNPU)
+- **Pool** — připoj se ke poolu, sleduj statistiky
+- **Status** — celkový stav sítě a tvého uzlu
+- **Doctor** — rychlá zdravotní kontrola
+- **Monitor** — live dashboard s hashrate a zůstatkem
 
-- L1 node, pool, miner, wallet,
-- L2 bridge a DAO,
-- L3 AI Native, WARP a NCL,
-- deploy, monitor a explorer workflow.
+Pokud jsi úplný laik: ber to jako "ovládací panel v terminálu".
 
-## Aktuální pozice
+---
 
-Pro současný produkční stav je správné chápat CLI a AI Native hlavně jako orchestration vrstvu.
+## Co potřebuješ před prvním spuštěním
 
-To znamená:
+Minimum:
 
-- nejdřív řízení služeb, health a status,
-- pak integrace model backendů,
-- ne obráceně.
+1. Otevřít Terminál (macOS) / PowerShell (Windows) / shell (Linux).
+2. Stáhnout `zion` binary z [GitHub Releases](https://github.com/Zion-TerraNova/v3-Mainnet/releases).
+3. Žádný Rust kompilátor není potřeba — binary je hotový.
 
-## Základní příkazy
+Pro ARM64 (Raspberry Pi, AWS Graviton) je potřeba build ze zdrojů:
+
+```bash
+git clone https://github.com/Zion-TerraNova/v3-Mainnet.git
+cd v3-Mainnet/V3
+cargo build --release -p zion-public
+# Binary → target/release/zion
+```
+
+---
+
+## Nejjednodušší první spuštění
+
+Po rozbalení archive:
+
+```bash
+./zion
+```
+
+Bez argumentů se otevře interaktivní menu se šipkami.
+
+---
+
+## Interaktivní menu
+
+Spuštění `zion` bez argumentů otevře menu:
+
+```bash
+zion
+```
+
+Nebo explicitně:
+
+```bash
+zion menu
+```
+
+Ovládání:
+
+- šipky ↑↓ = pohyb,
+- Enter = potvrzení,
+- Esc = zpět,
+- menu tě po dokončení vrací zpět.
+
+Menu tě provede: wallet → node → pool → miner, krok za krokem.
+
+---
+
+## Absolutní první workflow (kopíruj a vlož)
+
+Pokud nevíš, kde začít, jed tímto pořadím:
+
+```bash
+zion doctor
+zion status
+zion wallet new --mnemonic --out my-wallet.json --print
+zion node status
+zion pool stats
+zion mine start --pool stratum+tcp://62.171.141.136:8444 --wallet YOUR_ADDRESS
+```
+
+Co čekat:
+
+- `doctor` udělá rychlý preflight (config, endpointy, připravenost),
+- `status` ukáže celkový stav sítě,
+- `wallet new` vytvoří peněženku s 24 slovy,
+- `node status` ukáže stav tvého uzlu,
+- `pool stats` ukáže stav poolu,
+- `mine start` začne těžit.
+
+---
+
+## Nejčastější příkazy pro běžného uživatele
+
+### Stav a zdraví
 
 ```bash
 zion status
+zion doctor
+zion monitor
+```
+
+### Node / chain
+
+```bash
 zion node status
+zion node peers
+zion node sync
+```
+
+### Pool / mining
+
+```bash
 zion pool stats
-zion wallet balance
-zion agent status
-zion bridge status
-zion dao treasury
-zion warp stats
-zion ncl workers
+zion mine status
+zion mine bench
+zion mine start --pool stratum+tcp://62.171.141.136:8444 --wallet YOUR_ADDRESS
+zion mine stop
 ```
 
-## Lifecycle služby
-
-Podporované top-level cíle pro `start`, `stop`, `restart`:
-
-- `all`
-- `node` nebo `core`
-- `pool`
-- `miner`
-- `agent` nebo `ai-native`
-- `bridge`
-- `dao`
-- `website`
-- `redis`
-- `monitoring`
-
-Příklady:
+### Wallet
 
 ```bash
-zion start ai-native
-zion restart bridge
-zion logs website
+zion wallet new --mnemonic --out my-wallet.json
+zion wallet balance --address YOUR_ADDRESS
+zion wallet send --to RECIPIENT --amount 1.5
+zion wallet import --file my-wallet.json
 ```
 
-## L3 agent
+---
 
-`zion agent` je vstupní bod pro Hiranyagarbha runtime.
+## Důležitá realita pro rok 2026
 
-Typické použití:
+ZION je v **Mainnet Beta** — síť běží a produkuje bloky, ale může obsahovat chyby.
+Těž a transakuj na vlastní riziko. Oficiální veřejný launch: **31. prosince 2026**.
 
-```bash
-zion agent status
-zion agent ask "Jaký je stav L3?"
-zion agent logs
-```
+Genesis chain je **permanentní** — nebude resetována.
 
-## Důležité omezení
+---
 
-Současný produkční host není stavěný na těžkou lokální AI inferenci.
+## Bezpečný postup při problému
 
-Proto je kanonická interpretace dnes:
+Použij přesně toto pořadí:
 
-- AI Native = orchestrator a control plane,
-- LLM backend = volitelná integrace,
-- fallback režim je přijatelný, pokud je transparentní.
+1. `zion status`
+2. `zion doctor`
+3. `zion node status`
+4. `zion pool stats`
+5. `zion mine status`
 
-## Související docs
+Nikdy nezačínej náhodným restartem všeho bez diagnostiky.
 
-- `ZION CLI Reference`
-- `ZION CLI Troubleshooting`
-- `ZION CLI Deploy Playbook`
+---
+
+## Co číst dál
+
+- [ZION CLI Reference](cli-reference.md) — všechny příkazy
+- [ZION CLI Troubleshooting](cli-troubleshooting.md) — řešení problémů
+- [ZION CLI FAQ](cli-faq.md) — časté otázky
