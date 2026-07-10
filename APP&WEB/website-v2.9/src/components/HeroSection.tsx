@@ -30,19 +30,36 @@ export default function HeroSection() {
             <div className="flex flex-col items-center pt-8 pb-10">
               <VisionBar />
 
-              <p className="mt-8 mb-6 text-sm font-bold uppercase tracking-[0.3em] text-zion-cyan/80">
+              {/* Nadpis nad stargate */}
+              <p className="mt-8 mb-8 text-sm font-bold uppercase tracking-[0.3em] text-zion-cyan/80">
                 ZION Stargate — Portál do Oasis
               </p>
 
-              <StargateLogo className="max-w-[280px]" />
-
-              <a
-                href="/l4-oasis"
-                className="mt-10 group inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/5 px-6 py-2.5 text-sm font-bold text-zion-cyan transition-all hover:border-zion-cyan/60 hover:bg-zion-cyan/10 hover:shadow-[0_8px_30px_rgba(111,255,240,0.2)]"
+              {/* Stargate — podle předlohy /doge-vs-zion */}
+              <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ duration: 0.8, ease: 'easeOut' }}
+                className="w-full max-w-[360px]"
               >
-                Vstoupit do Oasis
-                <span className="transition-transform group-hover:translate-x-1">→</span>
-              </a>
+                <StargateLogo className="w-full" />
+              </motion.div>
+
+              {/* Odkaz na Oasis pod stargate */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="mt-10 mb-12"
+              >
+                <a
+                  href="/l4-oasis"
+                  className="group inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/5 px-5 py-2 text-sm font-bold text-zion-cyan transition-all hover:border-zion-cyan/60 hover:bg-zion-cyan/10 hover:shadow-[0_8px_30px_rgba(111,255,240,0.2)]"
+                >
+                  Vstoupit do Oasis
+                  <span className="transition-transform group-hover:translate-x-1">→</span>
+                </a>
+              </motion.div>
             </div>
           </motion.div>
         )}
