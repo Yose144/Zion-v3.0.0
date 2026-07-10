@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
     const step = resolution || Math.max(1, Math.floor(blocksToFetch / 200));
     
     const startHeight = Math.max(0, chainHeight - blocksToFetch);
-    const endHeight = chainHeight - 1;
+    const endHeight = chainHeight;
 
     // Fetch headers in batches (RPC may limit range)
     const BATCH_SIZE = 500;

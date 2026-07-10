@@ -200,8 +200,8 @@ export async function GET() {
   }> = [];
   if (chainHeight > 0) {
     try {
-      const startHeight = Math.max(0, chainHeight - 10);
-      const endHeight = Math.max(0, chainHeight - 1);
+      const startHeight = Math.max(0, chainHeight - 9);
+      const endHeight = Math.max(0, chainHeight);
       const headers = await rpc.getBlockHeaders(startHeight, endHeight);
       recentBlocks = headers
         .slice()
