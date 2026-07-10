@@ -120,11 +120,11 @@ export default function HomeTreePortal() {
                     <ArrowRight className="h-4 w-4" />
                   </button>
                   <Link
-                    href="/zohar"
+                    href="/tree-of-life"
                     className="inline-flex items-center gap-2 rounded-2xl border border-zion-gold/40 bg-zion-gold/5 px-5 py-3 text-sm font-semibold text-zion-gold transition-all hover:bg-zion-gold/10 hover:border-zion-gold/60"
                   >
                     <Sparkles className="h-4 w-4" />
-                    {cs ? 'Otevřít Zohar — Strom života ZIONu' : 'Open Zohar — Tree of Life of ZION'}
+                    {cs ? 'Otevřít Strom života ZIONu' : 'Open Tree of Life of ZION'}
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </div>
