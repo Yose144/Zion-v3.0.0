@@ -44,6 +44,9 @@ function buildDefaultSeedNodes(): SeedNodeConfig[] {
       lat: 50.08,
       lon: 14.44,
       ports: { p2p: 8333, rpc: 8443, stratum: 8444, pool_api: 8455 },
+      // Server-side RPC connects over localhost (node binds 127.0.0.1 for security).
+      // `host` above stays public so UI/display shows the real endpoint.
+      rpcUrl: '127.0.0.1:8443',
       poolApiUrl: SITE_PRIMARY_POOL_API_URL,
     },
     {
@@ -54,6 +57,7 @@ function buildDefaultSeedNodes(): SeedNodeConfig[] {
       lat: 50.08,
       lon: 14.44,
       ports: { p2p: 8334, rpc: 8448, stratum: 0, pool_api: 0 },
+      rpcUrl: '127.0.0.1:8448',
     },
   ];
 }

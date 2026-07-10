@@ -338,6 +338,15 @@ function mapV3BlockToFull(block: any): ZionBlock {
 
 // ─── RPC Client ──────────────────────────────────────────────────────────────
 
+function parseHostPort(urlOrHost: string | undefined, fallbackHost: string, fallbackPort: number): { host: string; port: number } {
+  if (!urlOrHost) return { host: fallbackHost, port: fallbackPort };
+  // Strip protocol (http:// or tcp://) and path.
+  const stripped = urlOrHost.replace(/^https?:\/\//, '').replace(/^tcp:\/\//, '').split('/')[0];
+  const [host, portStr] = stripped.split(':');
+  const port = portStr ? parseInt(portStr, 10) : fallbackPort;
+  return { host: host || fallbackHost, port: Number.isNaN(port) ? fallbackPort : port };
+}
+
 class ZionRpcClient {
   private nodes: SeedNodeConfig[];
   private primaryIndex: number = 0;
@@ -356,7 +365,8 @@ class ZionRpcClient {
       const nodeIndex = (this.primaryIndex + attempt) % this.nodes.length;
       const node = this.nodes[nodeIndex];
       try {
-        const result = await tcpJsonRpc(node.host, node.ports.rpc, method, params) as T;
+        const { host, port } = parseHostPort(node.rpcUrl, node.host, node.ports.rpc);
+        const result = await tcpJsonRpc(host, port, method, params) as T;
         if (attempt > 0) this.primaryIndex = nodeIndex;
         return result;
       } catch (err: any) {
@@ -473,7 +483,8 @@ class ZionRpcClient {
   async rpcCallNode<T = any>(nodeId: string, method: string, params: Record<string, any> = {}): Promise<T> {
     const node = this.nodes.find(n => n.id === nodeId);
     if (!node) throw new Error(`Node ${nodeId} not found in config`);
-    return tcpJsonRpc(node.host, node.ports.rpc, method, params) as Promise<T>;
+    const { host, port } = parseHostPort(node.rpcUrl, node.host, node.ports.rpc);
+    return tcpJsonRpc(host, port, method, params) as Promise<T>;
   }
 
   /** Get info for a specific node (no failover). */
@@ -768,7 +779,8 @@ class ZionRpcClient {
     for (const node of this.nodes) {
       if (!node.ports.pool_api || node.ports.pool_api === 0) continue;
       try {
-        const metrics = await tcpPoolMetrics(node.host, node.ports.pool_api);
+        const { host, port } = parseHostPort(node.poolApiUrl, node.host, node.ports.pool_api);
+        const metrics = await tcpPoolMetrics(host, port);
         return {
           ok: true,
           hashrate: { pool: 0, pool_24h: 0 },
