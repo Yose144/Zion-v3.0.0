@@ -83,7 +83,7 @@ Menu vás provede:
 Pokud už máte peněženku, nejrychlejší cesta je:
 
 ```bash
-./zion miner --pool stratum+tcp://62.171.141.136:8444 \
+./zion miner --pool stratum+tcp://pool.zionterranova.com:8444 \
   --payout zion1VASA_ADRESA \
   --algo deeksha_lite_v1
 ```
@@ -95,7 +95,7 @@ Nahraďte `zion1VASA_ADRESA` vaší reálnou ZION adresou.
 Použijte `--backend opencl` pro AMD/NVIDIA na Linuxu/Windows, nebo `--backend metal` na Apple Silicon:
 
 ```bash
-./zion miner --pool stratum+tcp://62.171.141.136:8444 \
+./zion miner --pool stratum+tcp://pool.zionterranova.com:8444 \
   --payout zion1VASA_ADRESA \
   --algo deeksha_lite_fire \
   --backend opencl

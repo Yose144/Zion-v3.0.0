@@ -44,7 +44,7 @@ Menu je pohodlné pro začátečníka, ale všechny příkazy jdou spouštět kl
 ```bash
 zion wallet new --mnemonic --out my-wallet.json
 zion node status
-zion mine start --pool stratum+tcp://62.171.141.136:8444 --wallet YOUR_ADDRESS
+zion mine start --pool stratum+tcp://pool.zionterranova.com:8444 --wallet YOUR_ADDRESS
 ```
 
 ## Jaké vrstvy platí v dokumentaci?

@@ -33,7 +33,7 @@ In practical terms:
 | **v3.0.1 Genesis Launch** | 11 Jun 2026 | First public mainnet block (#0), dual-node Edge, pool and mining live. |
 | **v3.0.3 Decimal fork** | 27 Jun 2026 | `1e12` → `1e6` flower scale. All balances and RPC calls moved to 6-decimal `flowers`. |
 | **Security incidents** | 2–3 Jul 2026 | F1 forged P2P account TX exploit, F5 account-model balance-check bug, server compromise. Chain rolled back and old Edge server decommissioned. |
-| **v3.0.4 Hard Genesis Reset** | 6–7 Jul 2026 | New server `62.171.141.136`, new genesis hash, all keys regenerated, full stack redeployed. |
+| **v3.0.4 Hard Genesis Reset** | 6–7 Jul 2026 | New server provisioned, new genesis hash, all keys regenerated, full stack redeployed. |
 | **v3.0.5 All Green** | 9 Jul 2026 | Protocol version bumped to 3.0.5, L2 watchers operationalized, 11/11 services active, E2E memo tests confirmed in block 752. |
 
 ---
@@ -42,7 +42,7 @@ In practical terms:
 
 ### F1 — Forged account transaction via P2P
 
-An attacker at `109.81.30.165` injected a forged account-model transaction by bypassing signature verification in the peer-block path. The network rolled back to block 22180 and the signature check was hardened in `validate_peer_block`.
+An attacker at a compromised external peer injected a forged account-model transaction by bypassing signature verification in the peer-block path. The network rolled back to block 22180 and the signature check was hardened in `validate_peer_block`.
 
 ### F5 — Unlimited inflation in account model
 
@@ -54,10 +54,10 @@ A height-gated cap equal to `TOTAL_SUPPLY` (144B ZION) was added to prevent any 
 
 ### Server compromise & hard reset
 
-The original Edge server (`77.42.71.94`) and an EVM deploy key were compromised. As a result:
+The original Edge server and an EVM deploy key were compromised. As a result:
 
 - All L1/L2 keys were regenerated air-gapped.
-- A new server was provisioned at `62.171.141.136`.
+- A new server was provisioned with no public RPC/SSH exposure beyond the hardened web/DNS surface.
 - A **hard genesis reset** was performed on 6–7 July 2026 with a new genesis hash.
 - All services were rebuilt from a clean state.
 
@@ -76,7 +76,7 @@ After the reset, `zion-node` was OOM-killed twice because `accepted_blocks` and 
 | **Edge Node 1** | ✅ Active | Primary / mining, P2P 8333, RPC 8443 |
 | **Edge Node 2** | ✅ Active | Follower / P2P sync, RPC 8448 |
 | **Local Backup Node** | ✅ Active | Prague local machine via SSH reverse tunnel, RPC 8446 |
-| **Pool Server** | ✅ Active | `stratum+tcp://62.171.141.136:8444` |
+| **Pool Server** | ✅ Active | `stratum+tcp://pool.zionterranova.com:8444` |
 | **Web / Dashboard** | ✅ Active | `https://zionterranova.com` + `https://dashboard.zionterranova.com` |
 | **Bridge** | ✅ Active | L2, L1 watcher scanning from block 0 |
 | **DAO** | ✅ Active | L2, scanner running |
@@ -128,7 +128,7 @@ After the reset, `zion-node` was OOM-killed twice because `accepted_blocks` and 
 | `cuda` | Linux/Windows | NVIDIA GPU |
 | `metal` | macOS Apple Silicon | M1–M4 GPU |
 
-**Pool connection:** `stratum+tcp://62.171.141.136:8444`
+**Pool connection:** `stratum+tcp://pool.zionterranova.com:8444`
 
 **Required:** `ZION_PAYOUT_ADDRESS=<valid zion1... address>`
 

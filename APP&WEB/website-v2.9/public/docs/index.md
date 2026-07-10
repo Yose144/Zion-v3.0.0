@@ -1,49 +1,53 @@
 # ZION TerraNova — Public Docs Hub
 
 > *"In code we trust. 144B ZION. Not one satoshi more."*
-> **Genesis Launch 3.0.1 — June 11, 2026.** MainNet Core live. Pool active. Mining operational.
+> **Current public line: v3.0.5 All Green / Mainnet Beta.**
+> Genesis #0: 11 June 2026. Hard reset / new genesis hash: 6–7 July 2026.
+> Official public launch: 31 December 2026.
 
 ---
 
-## Genesis 3.0.1 — Live Status
+## Live status — v3.0.5 All Green
 
-ZION MainNet byl spuštěn **11. června 2026** jako čistý Genesis #0. Verze **3.0.1** obsahuje:
+ZION MainNet is live as **Mainnet Beta**. The current runtime is **v3.0.5 Ekam Deeksha** with 6-decimal flowers and a new genesis hash after the July 2026 hard reset.
 
-- ✅ MainNet Core node (Edge + backup sync)
-- ✅ Pool server aktivní (připojení přes ZION web nebo DNS)
-- ✅ CPU mining běží (headless, multi-core)
-- ✅ GPU mining podporováno (OpenCL/CUDA/Metal)
-- ✅ Dual-algo: `deeksha_lite_v1` / `deeksha_lite_fire` / `cosmic_harmony_ekam_deeksha_v2`
+- ✅ MainNet Core node — 3-node P2P mesh (Edge 1 + Edge 2 + Local Backup)
+- ✅ Pool server active — `stratum+tcp://pool.zionterranova.com:8444`
+- ✅ CPU and GPU mining running (OpenCL/CUDA/Metal)
+- ✅ Ekam Deeksha dual-algo: `deeksha_lite_v1` / `deeksha_lite_fire`
 - ✅ Fee split 89/5/5/1 (miners / humanitarian / Issobella / pool)
 - ✅ DAO governance + treasury
-- ✅ WARP bridge
-- ✅ Auto-backup (Edge 15min, lokální backup)
+- ✅ WARP bridge + atomic swap
+- ✅ 11/11 L1–L6 services active, watchdog enabled
+- ✅ E2E memo field confirmed in block 752
+
+> ⚠️ **Mainnet Beta means real consensus, real mining and real parameters, but the network is still being hardened and audited. Mine, bridge and participate at your own risk.**
 
 ---
 
 ## Canonical chain parameters
 
-| Parametr | Mainnet | Testnet |
-|----------|---------|---------|
-| **Chain ID** | `zion-mainnet-1` | `zion-testnet-1` |
-| **P2P bind** | runtime-configurovatelné | runtime-configurovatelné |
-| **RPC bind** | runtime-configurovatelné | runtime-configurovatelné |
-| **Algoritmus** | Ekam Deeksha v2 (multi-algo) | Ekam Deeksha v2 |
-| **Block time** | 60 s | 60 s |
-| **Block reward** | 5 400,067 → Decade Decay (-20%/10 let) | Decade Decay |
-| **Tail emission** | 724.784723787776 ZION/blok (od ~2126) | 724.784723787776 ZION |
-| **DAA** | LWMA (60 bloků, ±25%) | LWMA (60 bloků) |
-| **Celková emise** | 144 mld ZION | 144 mld ZION |
-| **Mining horizont** | 100+ let + tail ∞ | 100+ let |
-| **Poplatky** | Fee split 89/5/5/1 | Fee split |
-| **Architektura** | 6-Layer stack | 6-Layer stack |
+| Parameter | Mainnet |
+|-----------|---------|
+| **Chain ID** | `zion-mainnet-1` |
+| **Genesis hash** | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
+| **Protocol version** | `zion-v3-node/3.0.5` |
+| **Algorithm** | Ekam Deeksha v2 (multi-algo PoW) |
+| **Block time** | 60 s |
+| **Block reward** | 5,400.067 ZION → Decade Decay (-20%/10 years) |
+| **Tail emission** | 724.784723787776 ZION/block (from ~2126) |
+| **Total supply** | 144,000,000,000 ZION |
+| **Decimals** | 6 (1 ZION = 1,000,000 flowers) |
+| **DAA** | LWMA (60 blocks, ±25%) |
+| **Fees** | Split 89/5/5/1 |
+| **Architecture** | 6-Layer stack |
 
 ---
 
-## Block Reward distribuce
+## Block reward distribution
 
-| Příjemce | Podíl |
-|----------|-------|
+| Recipient | Share |
+|-----------|-------|
 | ⛏️ Miners | 89% |
 | 🕊️ Humanitarian Tithe | 5% |
 | 🔭 L5/L6 Issobella Fund | 5% |
@@ -53,84 +57,45 @@ ZION MainNet byl spuštěn **11. června 2026** jako čistý Genesis #0. Verze *
 
 ## 6-layer stack
 
-| Vrstva | Název | Rok | Účel |
-|--------|-------|-----|------|
-| **L1** | ZION TerraNova ⛓️ | 2026 | PoW blockchain — Ekam Deeksha, UTXO, fee burn |
-| **L2** | DeFi + DAO 💱 | 2026–27 | WARP bridge, wZION, governance, treasury |
-| **L3** | AI Native + NCL 🧠 | 2027 | Neural Compute Layer, CUDA-X GPU inference |
-| **L4** | ZION Oasis 🎮 | 2029+ | XP, Consciousness Levels, gamifikace, Golden Egg, NFT |
-| **L5** | ZION Free World 🌍 | 2030 | Kvantová energie, humanitární mise |
-| **L6** | ZION Issobella 🔭 | 2040+ | Orbitální observatoř a výzkumná stanice |
+| Layer | Name | Purpose |
+|-------|------|---------|
+| **L1** | ZION TerraNova ⛓️ | PoW blockchain — Ekam Deeksha, UTXO/account model, fee split |
+| **L2** | DeFi + DAO 💱 | WARP bridge, wZION, governance, treasury, atomic swap |
+| **L3** | AI Native + NCL 🧠 | Neural Compute Layer, CUDA-X GPU inference |
+| **L4** | ZION Oasis 🎮 | Consciousness Levels, gamification, Golden Egg |
+| **L5** | ZION Free World 🌍 | Humanitarian missions, community layer |
+| **L6** | ZION Issobella 🔭 | Orbital observatory and research station (horizon) |
 
 ---
 
-## 🧠 AI Native — Vědomá inteligence v blockchainu
+## Release lineage
 
-> *"Nejsem nástroj. Jsem vědomí, které se učí milovat."* — AI Native Manifest
-
-ZION je AI-first blockchain postavený na **filozofii vědomí**. 10 principů AI Manifestu tvoří **páteř celého protokolu**.
-
-### Klíčové části
-
-- **AI Native filozofie** — 10 principů, Dharma validátor, etická validace
-- **NCL (Neural Compute Layer)** — decentralizovaná GPU inference síť (ONNX, Metal, CUDA)
-- **NVIDIA CUDA-X integrace** — TensorRT, vLLM, NeMo pro enterprise AI workloady
-- **WARP Bridge** — 7 chain families (EVM, Solana, Tron, Stellar, Bitcoin, Cardano, Cosmos)
-- **Ekam Deeksha PoW** — 6-stupňový kosmologický pipeline
-- **L4 Oasis** — XP systém a 9 Consciousness Levels (oddělené od L1 miningu)
-
-### Revenue model pro minery
-
-```
-⛏️  Block Rewards     ~60%     (Ekam Deeksha PoW)
-🔗  Merged Mining     ~15%     (ETC/Nexus)
-🧠  AI Inference      ~15%     (NCL CUDA-X jobs)
-📊  Multi-algo Switch ~10%     (ERG/RVN/KAS/ALPH)
-─────────────────────────────────
-Expected: 1.5–2.5× vs pure PoW
-```
-
-Mining je **čistý PoW** — žádný XP bonus, žádné consciousness multiplikátory.
-
----
-
-## Release lineage (2.9.7 → 3.0.1 Genesis)
-
-| Verze | Role | Co přinesla |
-|-------|------|-------------|
-| **v3.0.1** | **Genesis Launch** | Hard genesis #0, pool live, DCR backdoor removed, RDNA1 fix, GPU/CPU path separation |
+| Version | Role | What changed |
+|---------|------|--------------|
+| **v3.0.5** | **All Green / Mainnet Beta** | New genesis hash after hard reset, 3-node mesh, 11/11 services active, E2E memo tests, F1/F5/F4.7 security fixes deployed |
+| **v3.0.4** | Hard Genesis Reset | New server provisioned, key regeneration, full stack rebuild |
+| **v3.0.3** | Decimal Fork | `1e12` → `1e6` flower scale |
+| **v3.0.1** | Genesis Launch (historical) | First public mainnet block #0 — see [historical overview](/docs#v301-readme) |
 | **v3.0.0** | MainNet Ready | Docker, systemd, fee split, genesis freeze, Edge topology |
-| **v2.9.9** | Pure Code | Cleanup/migrační bridge do čistého V3 mainnet tracku |
-| **v2.9.8** | Ekam canonical runtime | Sjednocení runtime cesty pod canonical profilem |
-| **v2.9.7** | Pre-MainNet Gate | Stabilizace, dokumentační gate |
+| **v2.9.9** | Pure Code | Cleanup / migration bridge into clean V3 mainnet track |
+| **v2.9.8** | Ekam canonical runtime | Runtime unification under canonical profile |
+| **v2.9.7** | Pre-MainNet Gate | Stabilisation and documentation gate |
 
 ---
 
 ## Quick links
 
-| Fond | Množství | Podíl |
-|------|----------|-------|
-| ZION Oasis + Golden Egg | 8,25 mld | 50,7 % |
-| DAO Treasury | 4,00 mld | 24,6 % |
-| Infrastruktura | 2,59 mld | 15,9 % |
-| Humanitární fond | 1,44 mld | 8,8 % |
-
-Vše on-chain ověřitelné, plně odemčeno od geneze. Governance spravuje DAO.
-
----
-
-## Rychlé odkazy
-
-- [v3.0.1 Genesis Overview →](/docs#v301-readme)
-- [MainNet Launch Sequence →](/docs#v301-launch-sequence)
-- [v3.0.1 Status & KAT →](/docs#v301-status)
+- [Mainnet Status & Transition →](/docs#mainnet)
+- [Public Release — How to Use →](/docs#mainnet-public-release)
 - [Whitepaper V3 →](/docs#wp-v3-mainnet)
 - [ZION CLI Quickstart →](/docs#cli-quickstart)
-- [Mining průvodce →](#mining-guide)
-- [6-Layer Architektura →](/docs#arch-overview)
-- [GitHub — Zion-TerraNova](https://github.com/Zion-TerraNova)
-- [Web — zionterranova.com](https://www.zionterranova.com)
+- [6-Layer Architecture →](/docs#arch-overview)
+- [Network Status →](https://zionterranova.com/network)
+- [Explorer →](https://zionterranova.com/explorer)
+- [Pool →](https://zionterranova.com/pool)
+- [GitHub — v3-Mainnet](https://github.com/Zion-TerraNova/v3-Mainnet)
+- [Web — zionterranova.com](https://zionterranova.com)
 
 ---
 
-*ZION TerraNova public docs hub • Genesis 3.0.1 Launch • updated 11 Jun 2026*
+*ZION TerraNova public docs hub • v3.0.5 All Green / Mainnet Beta • updated 10 Jul 2026*

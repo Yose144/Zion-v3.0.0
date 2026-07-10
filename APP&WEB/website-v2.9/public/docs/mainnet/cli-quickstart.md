@@ -73,7 +73,7 @@ To je tvoje záloha — bez ní nelze peněženku obnovit.
 ## Krok 5: Spusť těžbu
 
 ```bash
-zion mine start --pool stratum+tcp://62.171.141.136:8444 --wallet YOUR_ADDRESS
+zion mine start --pool stratum+tcp://pool.zionterranova.com:8444 --wallet YOUR_ADDRESS
 ```
 
 Sleduj hashrate a accepted shares v konzoli.

@@ -82,7 +82,7 @@ zion status
 zion wallet new --mnemonic --out my-wallet.json --print
 zion node status
 zion pool stats
-zion mine start --pool stratum+tcp://62.171.141.136:8444 --wallet YOUR_ADDRESS
+zion mine start --pool stratum+tcp://pool.zionterranova.com:8444 --wallet YOUR_ADDRESS
 ```
 
 Co čekat:
@@ -120,7 +120,7 @@ zion node sync
 zion pool stats
 zion mine status
 zion mine bench
-zion mine start --pool stratum+tcp://62.171.141.136:8444 --wallet YOUR_ADDRESS
+zion mine start --pool stratum+tcp://pool.zionterranova.com:8444 --wallet YOUR_ADDRESS
 zion mine stop
 ```
 
