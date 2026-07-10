@@ -206,18 +206,15 @@ health_check:
 
 ### Edge (Primary)
 - Host: MainnetEdge
-- VPN IP: 100.76.16.108
-- Public IP: 77.42.71.94
+- Public IP: 62.171.141.136
 - Services: Node, Pool, Bridge, DAO, Atomic Swap, WARP, Hiranyagarbha, Website, Monitoring
 
 ### Core (Backup)
 - Host: local-pc
-- VPN IP: 100.86.102.5
 - Services: Node, Miner, Mining Agent, Dashboard, Desktop Dashboard
 
 ### macOS (Miner)
 - Host: macos-local
-- VPN IP: 100.100.46.39
 - Services: Node, Miner, Mining Agent, Dashboard
 
 ## Logging
