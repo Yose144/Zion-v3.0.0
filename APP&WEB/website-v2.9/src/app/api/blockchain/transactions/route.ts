@@ -35,11 +35,22 @@ export async function GET(request: NextRequest) {
           // V3 account-model: amount_zion is string (flowers), fee_zion is number (flowers)
           const amountZion = tx.amount_zion ? Number(tx.amount_zion) / ATOMIC_UNITS_PER_ZION : 0;
           const feeZion = (tx.fee_zion ?? tx.fee ?? 0) / ATOMIC_UNITS_PER_ZION;
+
+          // Fetch block timestamp from the block if tx is confirmed
+          let blockTimestamp = tx.block_timestamp ?? 0;
+          if (!blockTimestamp && tx.block_height > 0) {
+            try {
+              const block = await rpc.getBlock(tx.block_height);
+              blockTimestamp = block?.timestamp ?? 0;
+            } catch { /* non-critical */ }
+          }
+
+          const chainInfo = await rpc.getInfo().catch(() => ({ height: 0 }));
           return NextResponse.json({
             tx_hash: tx.tx_hash,
             tx_id: tx.tx_id ?? tx.tx_hash,
             block_height: tx.block_height,
-            block_timestamp: tx.block_timestamp,
+            block_timestamp: blockTimestamp,
             in_pool: tx.in_pool,
             // V3 account-model fields
             from: tx.from ?? '',
@@ -58,7 +69,7 @@ export async function GET(request: NextRequest) {
             inputs: [],
             outputs: [],
             extra: tx.extra,
-            confirmations: tx.block_height > 0 ? (await rpc.getInfo().catch(() => ({ height: 0 }))).height - tx.block_height : 0,
+            confirmations: tx.block_height > 0 ? chainInfo.height - tx.block_height : 0,
             status: tx.in_pool ? 'pending' : 'confirmed',
           });
         }

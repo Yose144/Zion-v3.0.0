@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
         timestamp: header.timestamp,
         transactions: (header.num_txes || 0) + 1, // +1 for coinbase
         num_txes: header.num_txes || 0,
-        miner: '', // Will be resolved from coinbase tx when needed
+        miner: header.miner_address || '',
         reward: header.reward ? header.reward / ATOMIC_UNITS_PER_ZION : BLOCK_REWARD_ZION, // atomic → ZION
         difficulty: header.difficulty,
         block_size: header.block_size || 0,

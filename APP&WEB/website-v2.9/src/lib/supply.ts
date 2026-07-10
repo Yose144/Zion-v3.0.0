@@ -123,16 +123,24 @@ export async function resolveSupplySnapshot(rpc: RpcSupplyClient, chainHeight: n
 
   try {
     const supplyInfo = await rpc.rpcCall<Record<string, unknown>>('getSupplyInfo');
-    const reportedPremine = asFiniteNumber(supplyInfo?.premine);
+    // RPC getSupplyInfo returns fields with _zion suffix (e.g. premine_zion,
+    // mined_so_far_zion, circulating_supply_zion). Check both the suffixed
+    // and legacy unsuffixed names for robustness.
+    const reportedPremine =
+      asFiniteNumber(supplyInfo?.premine_zion) ??
+      asFiniteNumber(supplyInfo?.premine);
     if (reportedPremine != null && reportedPremine >= 0) {
       premineSupply = reportedPremine;
     }
 
     const reportedMined =
+      asFiniteNumber(supplyInfo?.mined_so_far_zion) ??
       asFiniteNumber(supplyInfo?.mined_supply) ??
       asFiniteNumber(supplyInfo?.emission_amount);
 
-    const reportedCirculating = asFiniteNumber(supplyInfo?.circulating_supply);
+    const reportedCirculating =
+      asFiniteNumber(supplyInfo?.circulating_supply_zion) ??
+      asFiniteNumber(supplyInfo?.circulating_supply);
     const minedFromCirculating = reportedCirculating == null
       ? null
       : reportedCirculating > premineSupply
