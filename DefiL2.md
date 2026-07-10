@@ -54,31 +54,23 @@ Burn úspěšně zpracován — unlock proběhl v bloku 891. Status v DB opraven
 
 | TX Hash | Status | Height | Amount | Target | Recipient |
 |---------|--------|--------|--------|--------|-----------|
-| `a62d9350...` | ❌ Failed | 891 | 16,666,666.67 ZION | base | 0xdde17506... |
+| `a62d9350...` | ✅ Completed | 891 | 16,666,666.67 ZION | base | 0x9b5b9a6c... |
 
-**Root cause (identifikováno 2026-07-10):** Dva problémy:
+**Mint úspěšně proveden (2026-07-10 12:46 UTC):** 16,666,666.67 wZION mintováno na `0x9b5b9a6c4ce4bcd4479d8ea6d12cd7bfeb61085f` na Base. TX: `0xb98bba3216ef84f228c74afaea9e3e1128c0726e79aea60baeca3ad6c76a8cd8`. Confirmations: 5/5, Executed: true.
 
-1. **Špatný validator private key na serveru** — `ZION_VALIDATOR_PRIVATE_KEY` v `/etc/zion/edge-environment.sh` obsahuje key pro `0xA737B512B5EEc5B9E3E3f2476Eb1cFDF6750BA12` (stará hard-reset adresa, **není** on-chain validátor, **0 ETH**). Bridge kontrakt tuto adresu nezná → `submitLockProof` by byl odmítnut i s ETH.
-2. **Chybějící L1 bloky 1-456** — po hard-resetu existuje jen genesis (block 0) a bloky 457+. Bridge se zasekla na `last_l1_height=400` při scanu neexistujících bloků.
+**Root cause & fix (2026-07-10):** Tři problémy blokovaly zpracování:
 
-**Opraveno (2026-07-10):**
-- `start_block_height` → 456, `last_l1_height` → 456 v DB
-- Stuck lock resetován na `pending`, `retry_count=0`
-- Bridge načetla stuck lock a zkoušela submit → selhalo na "insufficient funds" (0xA737B512... má 0 ETH)
-
-**Čeká na owner:** Nastavit 5 správných validator private keys v `/etc/zion/edge-environment.sh`:
-- `ZION_VALIDATOR_PRIVATE_KEY` = key pro `0xdde17506...` (validator-1)
-- `ZION_VALIDATOR_PRIVATE_KEY_2` = key pro `0x24d98684...` (validator-2)
-- `ZION_VALIDATOR_PRIVATE_KEY_3` = key pro `0x665c55eD...` (validator-3)
-- `ZION_VALIDATOR_PRIVATE_KEY_4` = key pro `0x8E644b3E...` (validator-4)
-- `ZION_VALIDATOR_PRIVATE_KEY_5` = key pro `0x7e0D2eD7...` (validator-5)
+1. **Špatný validator private key na serveru** — `ZION_VALIDATOR_PRIVATE_KEY` obsahoval key pro `0xA737B512...` (stará hard-reset adresa, 0 ETH, není on-chain validátor). Opraveno: nastaveno 5 správných klíčů pro on-chain validátory z `L2wallet.md`.
+2. **Chybějící L1 bloky 1-499** — po hard-resetu L1 node nemá bloky 1-499 v `accepted_by_height` mapě. Bridge se zasekla při scanu. Opraveno: `start_block_height=499`, `last_l1_height=499`.
+3. **Case-sensitive status v DB** — bridge kód hledá `'Pending'` (velké P) ale DB měla `pending` (malé p). Opraveno: `UPDATE l1_locks SET status='Pending'`.
+4. **Recipient mismatch** — kontrakt měl 4/5 confirmací s recipientem `0x9b5b9a6c...` z předchozích běhů. DB měla `0xdde17506...` → "Recipient mismatch". Opraveno: recipient v DB nastaven zpět na `0x9b5b9a6c...`.
 
 ### 2.4 Bridge DB State
 
 - **evm_burns:** 1 záznam (Completed)
-- **l1_locks:** 1 záznam (pending — čeká na správné validator keys)
+- **l1_locks:** 1 záznam (Completed — 16.67M wZION minted)
 - **validator_confirmations:** 0
-- **last_l1_height:** 456 (opraveno z 400)
+- **last_l1_height:** 499 (opraveno z 400)
 
 ---
 
