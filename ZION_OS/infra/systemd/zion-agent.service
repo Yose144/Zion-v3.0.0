@@ -1,6 +1,6 @@
 [Unit]
 Description=ZION OS Agent
-After=network-online.target docker.service tailscaled.service
+After=network-online.target docker.service
 Wants=network-online.target
 
 [Service]
