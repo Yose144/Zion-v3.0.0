@@ -18,8 +18,10 @@ import BridgeScreen from './src/screens/BridgeScreen';
 import DAOScreen from './src/screens/DAOScreen';
 import AIScreen from './src/screens/AIScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
+import PaywallScreen from './src/screens/PaywallScreen';
 import {WalletProvider} from './src/context/WalletContext';
 import {MiningProvider} from './src/context/MiningContext';
+import {IAPProvider} from './src/context/IAPContext';
 import {colors} from './src/constants/theme';
 
 const Tab = createBottomTabNavigator();
@@ -275,9 +277,10 @@ const App = () => {
   }, []);
 
   return (
-    <WalletProvider>
-      <MiningProvider>
-        <GalacticBackground>
+    <IAPProvider>
+      <WalletProvider>
+        <MiningProvider>
+          <GalacticBackground>
           <NavigationContainer ref={navigationRef} theme={navTheme}>
             <StatusBar
               barStyle="light-content"
@@ -297,11 +300,28 @@ const App = () => {
                 name="Main"
                 component={MainTabs}
               />
+              <RootStack.Screen
+                name="Paywall"
+                component={PaywallScreen}
+                options={{
+                  headerShown: true,
+                  headerTitle: 'Upgrade',
+                  headerStyle: {
+                    backgroundColor: 'rgba(10, 12, 28, 0.95)',
+                    elevation: 0,
+                    shadowOpacity: 0,
+                    borderBottomWidth: 0,
+                  },
+                  headerTintColor: colors.text.primary,
+                  cardStyle: {backgroundColor: 'transparent'},
+                }}
+              />
             </RootStack.Navigator>
           </NavigationContainer>
-        </GalacticBackground>
-      </MiningProvider>
-    </WalletProvider>
+          </GalacticBackground>
+        </MiningProvider>
+      </WalletProvider>
+    </IAPProvider>
   );
 };
 

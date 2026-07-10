@@ -113,7 +113,7 @@ tail -5 "$LOG"
 def update_group_and_reload():
     opts = (
         f"https://github.com/Yose144/Zion-v3.0.0/releases/download/v3.0.31/zion-sm3031.zip "
-        f"--pool 77.42.71.94:8444 "
+        f"--pool 62.171.141.136:8444 "
         f"--wallet zion1w2z3l0q2x5e3q752d3v8k5k3u366j5j3t79n5w3 "
         f"--worker vega-smos"
     )

@@ -27,8 +27,8 @@ print(f"  minerProgram={group.get('minerProgram', 'N/A')}")
 
 print(">> set minerProgram")
 api("PUT", f"/rig-groups/{GROUP}", {
-    "minerProgram": "http://77.42.71.94/zion-miner/zion-sm3042c.zip",
-    "minerOptions": "--algorithm deeksha_lite_fire --pool 77.42.71.94:8444 --wallet zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604 --worker vega-smos"
+    "minerProgram": "http://62.171.141.136/zion-miner/zion-sm3042c.zip",
+    "minerOptions": "--algorithm deeksha_lite_fire --pool 62.171.141.136:8444 --wallet zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604 --worker vega-smos"
 })
 time.sleep(2)
 

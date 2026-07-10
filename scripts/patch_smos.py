@@ -23,7 +23,7 @@ def api(method, path, body=None):
         return json.loads(raw) if raw.strip() else {}
 
 print(">> test PATCH customMiner")
-api("PATCH", f"/rig-groups/{GROUP}", {"customMiner": "http://77.42.71.94/zion-miner/zion-sm3042c.zip"})
+api("PATCH", f"/rig-groups/{GROUP}", {"customMiner": "http://62.171.141.136/zion-miner/zion-sm3042c.zip"})
 time.sleep(2)
 
 print(">> check group")

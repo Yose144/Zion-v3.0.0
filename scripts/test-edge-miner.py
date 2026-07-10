@@ -2,7 +2,7 @@
 """Test external miner connection to Edge pool."""
 import socket, json, sys
 
-EDGE_POOL = ("77.42.71.94", 8444)
+EDGE_POOL = ("62.171.141.136", 8444)
 
 def recv_messages(sock, timeout=3.0, max_wait=1.0):
     """Read all available JSON lines from socket with retry."""

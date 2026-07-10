@@ -1,8 +1,8 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
 > **Datum:** **2026-07-09** (**3.0.5 "ALL GREEN" COMPLETE — 11/11 SLUŽEB ACTIVE + E2E MEMO TESTY POTVRZENY + PROTOCOL 3.0.5 + WEB DEPLOY OPTIMALIZACE** — viz [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](./docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md) pro plný český report a [`docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md`](./docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md) pro kanonický runbook).
-> **Předchozí update:** 2026-07-09 (MEMORY LEAK FIX DEPLOYED + 3.0.4 SECURITY PATCH COMPLETE — viz [`SECURITY_PATCH_3.0.4_REPORT.md`](./SECURITY_PATCH_3.0.4_REPORT.md)).
-> **Původní update:** 2026-07-07 (3.0.4 HARD GENESIS RESET — NOVÝ SERVER 62.171.141.136 — FULL STACK DEPLOYED — viz [`docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md`](./docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md) a [`HARDRESETOFFICIAL.md`](./HARDRESETOFFICIAL.md) pro plný záznam).
+> **Předchozí update:** 2026-07-09 (MEMORY LEAK FIX DEPLOYED + 3.0.4 SECURITY PATCH COMPLETE — viz [`SECURITY_PATCH_3.0.4_REPORT.md`](./docs/3.0.4/SECURITY_PATCH_3.0.4_REPORT.md)).
+> **Původní update:** 2026-07-07 (3.0.4 HARD GENESIS RESET — NOVÝ SERVER 62.171.141.136 — FULL STACK DEPLOYED — viz [`docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md`](./docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md) a [`HARDRESETOFFICIAL.md`](./docs/3.0.4/HARDRESETOFFICIAL.md) pro plný záznam).
 >
 > ### 3.0.5 "All Green" Upgrade — COMPLETE (2026-07-09)
 >
@@ -19,7 +19,7 @@
 >
 > **Commity:** `d425faec` (3.0.5 bump + docs), `6b930b7a` (L2/L3 config fixes), `91c201a8` (AGENTS.md update)
 >
-> **Pending (mimo 3.0.5 scope):** 13× validator SK placeholder (F4.x air-gapped rotation), bridge EVM watcher eth_getLogs errors (BSC/Polygon RPC, non-critical), bridge validator.key missing (F4.x)
+> **Pending (mimo 3.0.5 scope):** bridge EVM watcher eth_getLogs errors (BSC/Polygon RPC, non-critical). Key rotation F4.x ✅ DONE (owner air-gapped, escrow SK aplikován, EVM/guardian SKs na flash disku). AppArmor ✅ DONE (complain mode). systemd User=zion ✅ DONE (11/11 služeb).
 >
 > ### Web Deploy Optimalizace — COMPLETE (2026-07-09)
 >
@@ -165,14 +165,14 @@
 > - systemd watchdog timer (2 min) — RPC + TCP health, auto-restart
 >
 > **Security patch 3.0.4 (COMPLETE — fáze 1-4 + 6 done, fáze 5 pending):**
-> - Kanonický postup: [`SECURITY_PATCH_3.0.4_PLAN.md`](./SECURITY_PATCH_3.0.4_PLAN.md) (fáze 1-6) · Report: [`SECURITY_PATCH_3.0.4_REPORT.md`](./SECURITY_PATCH_3.0.4_REPORT.md)
+> - Kanonický postup: [`SECURITY_PATCH_3.0.4_PLAN.md`](./docs/3.0.4/SECURITY_PATCH_3.0.4_PLAN.md) (fáze 1-6) · Report: [`SECURITY_PATCH_3.0.4_REPORT.md`](./docs/3.0.4/SECURITY_PATCH_3.0.4_REPORT.md)
 > - **Wave 1:** dependency hardening (quinn-proto ≥0.11.15 remote DoS, crossbeam-epoch, rand, advisory cleanup) + node seed-peer mainnet guard + pool OASIS hook bez `curl` + bridge SQL whitelist + HTTP timeouty + miner bez přímé bincode
 > - **Wave 2 (F4.7 max-tx-amount cap):** height-gated cap = `TOTAL_SUPPLY` (144B ZION, NE 100M — nekoliduje s premine), výjimky genesis/coinbase, obě validační cesty, 4 testy PASS
 > - ✅ **F4.7 AKTIVOVÁNO** na serveru (`ZION_MAX_TX_AMOUNT_HEIGHT=1`, 23:16) — log potvrzen, genesis hash nezměněn. F5 (`=0`) aktivní současně.
 > - ✅ **F4.7 smoke test PASSED** (2026-07-08): TX s amount > TOTAL_SUPPLY rejected, normální TX prošel F4.7 (rejected až F5 insufficient balance)
 > - ✅ **Fáze 6.3:** bincode 1.x removed (RUSTSEC-2025-0141 resolved), metal/paste macOS-only (RUSTSEC-2024-0436 no Linux exposure)
 > - ✅ **Fáze 6.4:** `cargo audit` clean (1 ignored: paste macOS-only), 470+ tests pass, SECURITY_DISCLOSURE updated (ZION-2026-006)
-> - ⏳ **Fáze 5 PENDING:** Air-gapped key rotation (vyžaduje owner na air-gapped machine)
+> - ✅ **Fáze 5 DONE:** Air-gapped key rotation proběhla (owner). Klíče vygenerovány, flash backup OK, pool payout aplikován, escrow SK aplikován, EVM/guardian SKs na flash disku.
 > - Commity `690b6dfe`, `35e0f6d0`, `0a4f1a0f`, `cc162a14`, `5221cbf6`, `754fe4a0`
 >
 > **DNS:**
@@ -196,8 +196,8 @@
 > - `V3/deploy/new-server/zion-watchdog.service` + `zion-watchdog.timer` — watchdog systemd
 >
 > **Pending (při cross-chain / DeFi operacích):**
-> 1. **EVM validator SKs** — aplikovat z encrypted archivu na flash disku na server (`ZION_BRIDGE_VALIDATOR_SK_1..5`) při spuštění bridge operací. Aktuálně placeholdery.
-> 2. **Escrow SK** — aplikovat z encrypted archivu na server (`ZION_SWAP_ESCROW_KEY`) při spuštění atomic swap. Aktuálně placeholder.
+> 1. ~~EVM validator SKs~~ ✅ DONE — key rotation proběhla (owner air-gapped), klíče na flash disku
+> 2. ~~Escrow SK~~ ✅ DONE — aplikován na server (`ZION_SWAP_ESCROW_KEY` vyplněný)
 > 3. **EVM contract redeploy** — ZION-2026-005: nové kontrakty s novými admin klíči + multisig
 > 4. **Externí audit genesis** před public launch
 > 5. **Re-clone repo** na všech strojích (git history přepsána filter-repo)
@@ -228,7 +228,7 @@
 > - Edge mainnet aktivace: `ZION_BALANCE_CHECK_HEIGHT=22394` (aktivní od bloku 22394)
 > - 3 regresní testy pass
 > - Commits: `69d12c7`, `fe8d449`, `9863747`
-> - Full report: [`F5_SECURITY_INCIDENT_REPORT_2026-07-02.md`](./F5_SECURITY_INCIDENT_REPORT_2026-07-02.md)
+> - Full report: [`F5_SECURITY_INCIDENT_REPORT_2026-07-02.md`](./docs/3.0.4/F5_SECURITY_INCIDENT_REPORT_2026-07-02.md)
 > 
 > ### Security Hardening Summary (2026-07-02 Phase 2)
 > 
@@ -240,26 +240,28 @@
 > - **File permissions:** `chmod 600` pro `edge-state.db`, `edge2-state.db`, `bridge-mainnet.db`, `edge-environment.sh`; `chmod 700` pro data dir.
 > - **SSH hardening:** `PermitRootLogin prohibit-password`, `PasswordAuthentication no`, `X11Forwarding no`, `AllowUsers root`.
 > - **Bind addresses (2026-07-09 audit):** Na `0.0.0.0` pouze P2P (8333, 8334), Pool (8444), SSH/HTTP/HTTPS. Vše ostatní na `127.0.0.1`: node RPC/WS/metrics (8443/8445/9100), node2 RPC/WS/metrics (8448/8449/9116), bridge (9101), DAO (8450), WARP (8453), oasis (8094), free-world (8095), issobella (8096), dashboard (8766), pool metrics (8455). SSH tunnel reverse forwards (8446/8447) na 127.0.0.1.
-> - **AppArmor:** ❌ Chybí na novém serveru — profil pro `zion-node` nebyl přenesen z starého Edge (pending).
+> - **AppArmor:** ✅ DONE (2026-07-10) — profil `/etc/apparmor.d/usr.local.bin.zion-node` vytvořen a načten v **complain mode** (loguje violace, neblokuje). Pokrývá binárku, config, state dir, síť, SSL, proc/sys. Explicit `deny` pro `/home/`, `/root/`, `/etc/shadow`, `/etc/passwd`, `/etc/sudoers`.
 > - **Monitoring (2026-07-09):** 4 cron jobs — forged TX monitor (5 min), height monitor (5 min), P2P peer alert (2 min), **memory monitor (5 min, nový)**. `ZION_LOG_BLOCK_SUBMITTER=1` aktivní. Watchdog timer (2 min) — RPC + TCP health, auto-restart.
 > - **RPC audit log:** ✅ DONE (2026-07-09) — `rpc_audit` + `rpc_audit_http` logováno, verbose logging gated behind `ZION_RPC_DEBUG=1`
 > - **Tailscale:** ❌ REMOVED — odstraněno při hard resetu, topologie canonicalized na hardcoded seed peers
-> - **zion system user:** ❌ NOT CREATED na novém serveru — `systemd User=zion` pending (riskantní, vyžaduje test)
-> - **AppArmor zion-node:** ❌ MISSING na novém serveru — profil existoval na starém Edge, nebyl přenesen
+> - **zion system user:** ✅ DONE (2026-07-10) — system user `zion` (uid=999) vytvořen, **všechny 11/11 služeb běží jako `User=zion`** (místo root). Config soubory v `/etc/zion/config/`, env v `/etc/zion/` (chmod 640), dashboard v `/opt/zion-dashboard/`, `/data/zion/` chown zion:zion.
+> - **AppArmor zion-node:** ✅ DONE (2026-07-10) — viz výše
 > 
-> **Pending po hard reset audit (2026-07-09):**
+> **Pending po hard reset audit (aktualizováno 2026-07-10):**
 > 
 > | # | Item | Kategorie | Stav | Blokuje? |
 > |---|------|-----------|------|----------|
-> | 1 | EVM validator SKs (F4.3) — aplikovat z encrypted archivu | security | ⏳ PENDING (owner air-gapped) | YES — bridge ops |
-> | 2 | Escrow SK (F4.x) — aplikovat z encrypted archivu | security | ⏳ PENDING (owner air-gapped) | YES — swap ops |
+> | 1 | ~~EVM validator SKs (F4.3)~~ | security | ✅ DONE (key rotation proběhla) | NO |
+> | 2 | ~~Escrow SK (F4.x)~~ | security | ✅ DONE (aplikován na server) | NO |
 > | 3 | EVM contract redeploy (ZION-2026-005) — nové kontrakty + multisig | security | ⏳ PENDING (owner) | YES — DeFi launch |
 > | 4 | Externí audit genesis konfigurace | security | ⏳ PENDING (owner) | YES — public launch |
 > | 5 | Re-clone repo (all collaborators) — git history přepsána | infra | ⏳ PENDING (owner + team) | NO |
-> | 6 | systemd `User=zion` (F2.6) — test na jedné službě | security | ⏳ PENDING (nice-to-have) | NO |
-> | 7 | AppArmor profil pro zion-node — vytvořit + načíst | security | ⏳ PENDING (nice-to-have) | NO |
+> | 6 | ~~systemd `User=zion` (F2.6)~~ | security | ✅ DONE (11/11 služeb jako zion) | NO |
+> | 7 | ~~AppArmor profil pro zion-node~~ | security | ✅ DONE (complain mode) | NO |
 > | 8 | Grant BRIDGE_ROLE na wZION + Redeploy ZIONBridge | defi | ⏳ PENDING (owner) | YES — bridge ops |
 > | 9 | Deepen UniV3 liquidity + E2E test swap | defi | ⏳ PENDING (owner) | NO |
+> | 10 | Stale IP cleanup (77.42.71.94 + 100.76.16.108 → 62.171.141.136) | infra | ✅ DONE (69 souborů, commit `8d55287f9`) | NO |
+> | 11 | Blockaid false-positive report | defi | ✅ DONE (report připraven, submit na `report.blockaid.io`) | NO |
 > 
 > **✅ RESOLVED po hard resetu (již nepending):**
 > - ~~F2.3: Tailscale ACL~~ — Tailscale odstraněno, hardcoded seed peers
@@ -325,7 +327,7 @@
 - **Code-vs-Docs audit** — [`docs/3.0.3/CODE_VS_DOCS_AUDIT.md`](./docs/3.0.3/CODE_VS_DOCS_AUDIT.md) odhalil 5 HIGH / 6 MEDIUM / 2 LOW discrepancies mezi docs a kódem
 - **MAINNET_CONSTANTS.md opraveno** — 6 stale hodnot aktualizováno na post-3.0.3: DAO_TREASURY_LOCK_HEIGHT (525_600→144_000), BRIDGE_VAULT_ADDRESS (empty v2-reset→real vault), DAO_ADDRESS (placeholder→real treasury), BASE_REWARD/TAIL_REWARD/MIN_TX_FEE (12-decimal→6-decimal scale)
 - **WARP counts sjednoceny** — test count 499 (was 252/408/465/487 in different docs), adapter count 12 (was 7/13 — 11 fully functional + TON watch-only)
-- **TX unification plán** — [`3.0.4.md`](./3.0.4.md) komplexní plán pro sjednocení UTXO ↔ account TX: přidání `memo` pole do account TX (L1 hard fork, height-gated), rozšíření 3 L2 watcherů (bridge/dao/atomic-swap) o account TX scanning, SDK/CLI/WARP updates
+- **TX unification plán** — [`3.0.4.md`](./docs/3.0.4/3.0.4.md) komplexní plán pro sjednocení UTXO ↔ account TX: přidání `memo` pole do account TX (L1 hard fork, height-gated), rozšíření 3 L2 watcherů (bridge/dao/atomic-swap) o account TX scanning, SDK/CLI/WARP updates
 - **V3/README.md** — workspace layout doplněn o L4/L5/L6, adapter count opraven, test count opraven, version 3.0.3→3.0.4
 - **Li.Fi-L2.md** — kontradikce "⚠️ Nedeployed" opravena na "✅ Deployed" (5 chainů deploynuto 2026-06-30)
 - **AGENTS.md** — WARP sekce opravena (12 adapters, 499 tests), 3.0.4 TX unification plan reference přidána
@@ -335,7 +337,7 @@
 
 1. ✅ **Bridge address 3-way inconsistency** (H1 z auditu) — vyřešeno 2026-07-02: Base live = `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467`, non-Base live = `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721`, `0x89504D6eD6993d726438E1A9C18aaC79e8d0eF88` zastaralý bez BRIDGE_ROLE. Dashboard a configy sjednoceny.
 2. ✅ **3.0.4 TX unification implementace** — COMPLETED 2026-07-01: account-model memo + L2 watchers + SDK + CLI. Otázky §3.7 vyřešeny (height 0, ASCII, 256B, UTXO only, schváleno). E2E testy DEPLOY-5/6/7 blokovány (F4.5).
-3. ✅ **Basescan verify** — COMPLETED 2026-07-09: **7/7 contracts verified** (wZION, ZIONAtomicSwap already verified; ZIONGovernance, ZIONTreasury, ZIONStaking, ZIONFarm verified 2026-07-02; ZIONBridge verified 2026-07-09 via `forge verify-contract` with correct source + 5 validators threshold 5/5). Viz [`BASESCAN_VERIFY_REPORT.md`](./BASESCAN_VERIFY_REPORT.md).
+3. ✅ **Basescan verify** — COMPLETED 2026-07-09: **7/7 contracts verified** (wZION, ZIONAtomicSwap already verified; ZIONGovernance, ZIONTreasury, ZIONStaking, ZIONFarm verified 2026-07-02; ZIONBridge verified 2026-07-09 via `forge verify-contract` with correct source + 5 validators threshold 5/5). Viz [`BASESCAN_VERIFY_REPORT.md`](./docs/3.0.4/BASESCAN_VERIFY_REPORT.md).
 4. ✅ **Guardian mnemonics backup + USB audit** — COMPLETED 2026-07-09: zkopírováno z flash disku na `/home/zionserver/Desktop/ZionKeys/` (OpenSSL encrypted). **USB backup audit COMPLETED (2026-07-09):** 4/4 SHA256 checksumy identické USB↔Desktop, 4/4 GPG podpisy Good (Yose, key `9018F94A...`), 13/13 premine + 5/5 canonical + 1/1 bridge vault adresy cross-checknuty s `genesis.rs` ✓, všechny soukromé soubory `chmod 600`.
 5. **Repo cleanup Fáze 1+2** — smazat `V3/config/` stale templates, vytvořit `V3/L1/types` crate pro sdílené watcher typy
 
@@ -437,7 +439,7 @@
 
 ### Zbývá (vyžaduje lidskou akci)
 
-1. ✅ **Basescan verify** — COMPLETED 2026-07-09: **7/7 contracts verified**. ZIONBridge verified 2026-07-09 via `forge verify-contract` (correct source `bridge/contracts/src/ZIONBridge.sol` OZ 4.9.6, 5 validators threshold 5/5). Viz [`BASESCAN_VERIFY_REPORT.md`](./BASESCAN_VERIFY_REPORT.md).
+1. ✅ **Basescan verify** — COMPLETED 2026-07-09: **7/7 contracts verified**. ZIONBridge verified 2026-07-09 via `forge verify-contract` (correct source `bridge/contracts/src/ZIONBridge.sol` OZ 4.9.6, 5 validators threshold 5/5). Viz [`BASESCAN_VERIFY_REPORT.md`](./docs/3.0.4/BASESCAN_VERIFY_REPORT.md).
 2. ✅ **L2 watcher update** (roadmap) — `L1Block` struct přidat `account_transactions` + watcher.rs skenovat i account-model memo TXs — **DONE 3.0.4**
 3. ✅ **Guardian mnemonics backup + USB audit** — COMPLETED 2026-07-09: zkopírováno z flash disku na `/home/zionserver/Desktop/ZionKeys/` (OpenSSL encrypted). USB backup audit: 4/4 SHA256 ✓, 4/4 GPG Good ✓, 19/19 adres cross-check ✓, chmod 600 ✓.
 4. ✅ **ATOMIC_SWAP_RUNBOOK.md** — dokumentace aktualizována pro 3.0.4 account memo
@@ -3615,7 +3617,7 @@ nebo má konkrétní aktivační plán v
 
 - **Smart contracts** verifikované na BaseScan: `wZION` (ERC-20),
   `ZIONStaking`, `ZIONGovernance`, `ZIONFarm`, `ZIONTreasury`,
-  `ZIONAtomicSwap`, `ZIONBridge` (**7/7 verified 2026-07-09**). ZIONBridge verified via `forge verify-contract` with correct source `bridge/contracts/src/ZIONBridge.sol` (OZ 4.9.6, solc 0.8.20, 5 validators threshold 5/5). Viz [`BASESCAN_VERIFY_REPORT.md`](./BASESCAN_VERIFY_REPORT.md). M-of-N threshold multisig (cílově 3/5; staging
+  `ZIONAtomicSwap`, `ZIONBridge` (**7/7 verified 2026-07-09**). ZIONBridge verified via `forge verify-contract` with correct source `bridge/contracts/src/ZIONBridge.sol` (OZ 4.9.6, solc 0.8.20, 5 validators threshold 5/5). Viz [`BASESCAN_VERIFY_REPORT.md`](./docs/3.0.4/BASESCAN_VERIFY_REPORT.md). M-of-N threshold multisig (cílově 3/5; staging
   config v `bridge-mainnet.toml` nyní `1/2`).
 - **Decimal fix:** `FLOWERS_TO_WEI_FACTOR = 1_000_000_000_000` (× 10¹², ne × 10⁶),
   oprava inflation buga. *(Note: 3.0.3 fork changed FLOWERS_PER_ZION from 1e12 to 1e6; bridge factor updated accordingly.)*

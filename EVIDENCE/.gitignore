@@ -1,5 +1,0 @@
-# Evidence files — contain sensitive logs, NOT for public git
-# Only the markdown reports (ABUSE_REPORT, TRESTNI_OZNAMENI) are committed
-*.txt
-*.tar.gz
-*.json

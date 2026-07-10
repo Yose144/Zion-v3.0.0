@@ -5,7 +5,7 @@
 # Then connect with: ssh zion-edge
 
 Host zion-edge
-    HostName 77.42.71.94
+    HostName 62.171.141.136
     User root
     IdentityFile ~/.ssh/ssh-key-zion-edge
     IdentitiesOnly yes

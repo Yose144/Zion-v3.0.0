@@ -1,12 +1,12 @@
 #!/bin/bash
 # Fire Algorithm Hard Fork Deployment Script for Edge Server
-# Run this on the Edge server (77.42.71.94) via SSH or console
+# Run this on the Edge server (62.171.141.136) via SSH or console
 
 set -e
 
 echo "============================================================"
 echo "  Fire Algorithm Hard Fork Deployment"
-echo "  Target: Edge Server (77.42.71.94)"
+echo "  Target: Edge Server (62.171.141.136)"
 echo "  Fork Height: Block 5000"
 echo "============================================================"
 echo ""

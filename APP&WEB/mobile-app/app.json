@@ -2,7 +2,7 @@
   "expo": {
     "name": "ZION Mobile",
     "slug": "zion-mobile",
-    "version": "3.0.0",
+    "version": "3.0.5",
     "orientation": "portrait",
     "platforms": ["ios", "android", "web"],
     "icon": "./assets/icon.png",
@@ -20,7 +20,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.zionterranova.mobile",
-      "buildNumber": "7",
+      "buildNumber": "8",
       "associatedDomains": [
         "applinks:zionterranova.com",
         "applinks:www.zionterranova.com"
@@ -34,7 +34,7 @@
     },
     "android": {
       "package": "com.zionterranova.mobile",
-      "versionCode": 7,
+      "versionCode": 8,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0a0c1c"

@@ -856,3 +856,14 @@ body.menu-open {
     grid-template-columns: repeat(1, minmax(0, 1fr));
   }
 }
+
+/* ── Hidden scrollbar for horizontal icon nav ── */
+@layer utilities {
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}

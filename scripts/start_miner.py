@@ -3,7 +3,7 @@ import os
 import time
 
 env = os.environ.copy()
-env["ZION_POOL_ADDR"] = "77.42.71.94:8444"
+env["ZION_POOL_ADDR"] = "62.171.141.136:8444"
 env["ZION_LOOP_COUNT"] = "1000000"
 env["ZION_MINER_THREADS"] = "1"
 env["ZION_WORKER_NAME"] = "worker1"

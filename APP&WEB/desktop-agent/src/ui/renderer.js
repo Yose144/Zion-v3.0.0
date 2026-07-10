@@ -1,4 +1,4 @@
-// ZION V3 Mainnet Ready v3.0.0 - Renderer Process
+// ZION V3 Mainnet Ready v3.0.5 "All Green" - Renderer Process
 // UI logic and state management
 
 // ── Logging: only user-visible events + errors in console.log.
@@ -25,7 +25,7 @@ let isRunning = false;
 let isStarting = false;
 
 // Mainnet Edge relay (Hetzner VPS, Prague) — public-facing pool + node
-const PRIMARY_MAINNET_HOST = '77.42.71.94';
+const PRIMARY_MAINNET_HOST = '62.171.141.136';
 const PRIMARY_POOL_PORT = 8444;
 const PRIMARY_RPC_PORT = 8443;
 // Legacy alias
@@ -1471,7 +1471,7 @@ function setupEventListeners() {
     addLogEntry('Mining started successfully', 'info');
     // Mining Console banner
     appendMiningConsole('─'.repeat(60));
-    appendMiningConsole(' * ZION V3 Mainnet Ready v3.0.0 — Mining started');
+    appendMiningConsole(' * ZION V3 Mainnet Ready v3.0.5 — Mining started');
     appendMiningConsole('─'.repeat(60));
   });
   
@@ -3045,12 +3045,77 @@ let _bridgeEvmAddress = null;
 let _bridgeDirection  = 'L1toEVM';
 let _bridgeMemo       = null;
 
-/** Called when Bridge nav item is clicked (from switchView) */
+// ── Auto-update state ────────────────────────────────────────────────────────
+let _updateState = { checking: false, available: false, downloaded: false, downloading: false };
+
+/** Called when Updates nav item is clicked (from switchView) */
 function initUpdateUI() {
   const checkBtn = document.getElementById('update-check-btn');
   const installBtn = document.getElementById('update-install-btn');
   const autoCheckbox = document.getElementById('update-auto-check');
+  const licenseInput = document.getElementById('license-key-input');
+  const licenseBtn = document.getElementById('license-activate-btn');
+  const licenseStatus = document.getElementById('license-status');
 
+  // ── License key activation ──────────────────────────────────────────────────
+  if (licenseBtn && !licenseBtn._bound) {
+    licenseBtn._bound = true;
+
+    // Load saved license key
+    window.electronAPI.getLicenseKey?.().then(result => {
+      if (result?.licenseKey && licenseInput) {
+        licenseInput.value = result.licenseKey;
+        if (licenseStatus) {
+          licenseStatus.textContent = 'License key active.';
+          licenseStatus.style.color = '#6ee7b7';
+        }
+      }
+    }).catch(() => {});
+
+    licenseBtn.addEventListener('click', async () => {
+      const key = licenseInput?.value?.trim();
+      if (!key) {
+        if (licenseStatus) {
+          licenseStatus.textContent = 'Please enter a license key.';
+          licenseStatus.style.color = '#f87171';
+        }
+        return;
+      }
+
+      licenseBtn.disabled = true;
+      licenseBtn.textContent = 'Validating...';
+      if (licenseStatus) {
+        licenseStatus.textContent = 'Validating license...';
+        licenseStatus.style.color = '#93c5fd';
+      }
+
+      try {
+        const result = await window.electronAPI.validateLicense(key);
+        if (result?.success && result?.licenseValid) {
+          if (licenseStatus) {
+            licenseStatus.textContent = 'License activated! You can now check for updates.';
+            licenseStatus.style.color = '#6ee7b7';
+          }
+          _setUpdateStatus('Ready', 'Click to check for updates', '#6ee7b7');
+        } else {
+          if (licenseStatus) {
+            licenseStatus.textContent = result?.error || 'Invalid license key.';
+            licenseStatus.style.color = '#f87171';
+          }
+        }
+      } catch (err) {
+        if (licenseStatus) {
+          licenseStatus.textContent = err?.message || 'Validation failed. Check your connection.';
+          licenseStatus.style.color = '#f87171';
+        }
+      } finally {
+        licenseBtn.disabled = false;
+        licenseBtn.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg> Activate';
+      }
+    });
+  }
+
+  // ── Check for updates ───────────────────────────────────────────────────────
   if (checkBtn && !checkBtn._bound) {
     checkBtn._bound = true;
     checkBtn.addEventListener('click', async () => {
@@ -3063,7 +3128,11 @@ function initUpdateUI() {
       try {
         const result = await window.electronAPI.checkForUpdates();
         if (!result?.success) {
-          _setUpdateStatus('Error', result?.error || 'Check failed', '#f87171');
+          if (result?.needsLicense) {
+            _setUpdateStatus('License Required', 'Enter your license key above', '#fcd34d');
+          } else {
+            _setUpdateStatus('Error', result?.error || 'Check failed', '#f87171');
+          }
         } else if (result.updateAvailable) {
           _updateState.available = true;
           _setUpdateStatus('Update Available!', `v${result.latestVersion} ready`, '#6ee7b7');
@@ -3133,6 +3202,9 @@ function initUpdateUI() {
           break;
         case 'error':
           _setUpdateStatus('Error', data.error || 'Update check failed', '#f87171');
+          break;
+        case 'no-license':
+          _setUpdateStatus('No License', data.message || 'Enter your license key', '#fcd34d');
           break;
       }
     });
@@ -3517,7 +3589,7 @@ function initBridgeView() {
       try {
         // Reuse wallet-send IPC with memo field (bridge lock TX)
         const result = await window.electronAPI?.walletSendTransaction?.({
-          rpcUrl: 'http://77.42.71.94:8443/jsonrpc',
+          rpcUrl: 'http://62.171.141.136:8443/jsonrpc',
           from,
           to: BRIDGE_VAULT,
           amount: amt,
@@ -4412,7 +4484,7 @@ function initCliView() {
   // Mining controls
   document.getElementById('cli-btn-mine-start')?.addEventListener('click', async () => {
     const wallet = document.getElementById('cli-mine-wallet').value.trim();
-    const pool = document.getElementById('cli-mine-pool').value.trim() || '77.42.71.94:8444';
+    const pool = document.getElementById('cli-mine-pool').value.trim() || '62.171.141.136:8444';
     if (!wallet) {
       appendCliOutput('Error: wallet address is required', true);
       return;

@@ -1,10 +1,10 @@
-# 📱 ZION TerraNova Mobile App v2.9
+# 📱 ZION TerraNova Mobile App v3.0.5 "All Green"
 
 **Where Technology Meets Spirit - Now in Your Pocket** 🌟
 
 ## 🎯 Overview
 
-ZION Mobile je React Native aplikace pro Android a iOS, která přináší sílu ZION blockchainu do mobilního prostředí. Primárně slouží jako **Wallet Manager** s rozšířenými funkcemi pro monitoring a experimentální mining.
+ZION Mobile je React Native / Expo aplikace pro Android a iOS, která přináší sílu ZION blockchainu do mobilního prostředí. Primárně slouží jako **Wallet Manager** s rozšířenými funkcemi pro monitoring, experimentální mining a **In-App Purchases** (Pro upgrade, Miner Boost, donations).
 
 ## ✨ Hlavní Funkce
 
@@ -12,9 +12,21 @@ ZION Mobile je React Native aplikace pro Android a iOS, která přináší sílu
 - ✅ **Generování wallet** - Vytvoření nové ZION adresy s private/public key
 - ✅ **Import/Export** - BIP39 mnemonic, private key, JSON keystore
 - ✅ **QR kódy** - Skenování a generování pro snadné platby
-- ✅ **Multi-wallet** - Správa více účtů najednou
+- ✅ **Multi-wallet** - Správa více účtů najednou (Pro: unlimited, Free: 1)
 - ✅ **Biometrická ochrana** - Face ID / Fingerprint unlock
 - ✅ **Backup** - Šifrovaný cloud backup (iCloud/Google Drive)
+
+### 💎 In-App Purchases (NEW v3.0.5)
+- ✅ **ZION Pro** - Lifetime ($29.99) / Yearly ($9.99) / Monthly ($1.99)
+  - Unlimited wallets, TX history export, advanced stats, no ads, priority support
+- ✅ **Miner Boost** ($4.99 one-time)
+  - GPU mining unlock, advanced auto-tuner, push notifications
+- ✅ **Donations** ($4.99 / $24.99)
+  - Support development, cosmetic badge
+- ✅ **StoreKit 2** (iOS) + **Google Play Billing** (Android) via `react-native-iap`
+- ✅ **Receipt validation** with update server (`updates.zionterranova.com/api/iap`)
+- ✅ **Restore purchases** across devices
+- ✅ **Offline entitlement caching** (AsyncStorage)
 
 ### 📊 Dashboard & Monitoring
 - 📈 **Pool Stats** - Real-time statistiky z mining poolu
@@ -33,6 +45,9 @@ ZION Mobile je React Native aplikace pro Android a iOS, která přináší sílu
 ### 🌐 Další Funkce
 - 🖥️ **Remote Miner Control** - Správa desktop minerů
 - 💱 **Transaction History** - Historie transakcí a rewards
+- 🌉 **wZION Bridge** - L1↔Base L2 bridging
+- 🏛️ **DAO Voting** - Governance participation
+- 🧠 **Hiran AI** - AI insights
 - 🌍 **Multi-language** - CZ, EN, další jazyky
 - 🌙 **Dark/Light Mode** - Přizpůsobení vzhledu
 

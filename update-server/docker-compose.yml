@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  zion-update-server:
+    build: .
+    container_name: zion-update-server
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - UPDATE_SERVER_PORT=3001
+      - UPDATE_SERVER_HOST=0.0.0.0
+      - UPDATE_ADMIN_TOKEN=${UPDATE_ADMIN_TOKEN}
+      - UPDATE_JWT_SECRET=${UPDATE_JWT_SECRET}
+      - UPDATE_DB_PATH=/app/data/licenses.db
+      - UPDATE_RELEASES_DIR=/app/data/releases
+    volumes:
+      - update-data:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3001/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  update-data:

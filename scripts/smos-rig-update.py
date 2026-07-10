@@ -8,7 +8,7 @@ GROUP = 1773590
 MINER_URL = "https://zionterranova.com/zion-miner/zion-sm3042c.zip"
 CUSTOM_MINER = MINER_URL  # Use customMiner field instead of options string
 MINER_OPTS = (
-    f"--pool 77.42.71.94:8444 "
+    f"--pool 62.171.141.136:8444 "
     f"--wallet zion1n0s6e756p7r360a0e47582n7r5t2e3t4e2wq5c8 "
     f"--worker vega-smos"
 )
