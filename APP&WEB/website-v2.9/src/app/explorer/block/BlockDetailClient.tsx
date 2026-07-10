@@ -29,6 +29,9 @@ interface BlockTx {
   timestamp?: number;
   inputs?: Array<{ type: string; amount: number; key_image?: string }>;
   outputs?: Array<{ amount: number; key: string }>;
+  from?: string;
+  to?: string;
+  nonce?: number;
 }
 
 interface BlockDetail {
@@ -386,8 +389,7 @@ export default function BlockDetailClient() {
                 <tr className="border-b border-white/[0.04]">
                   <th className="text-left text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-6 py-3">{cs ? 'Typ' : 'Type'}</th>
                   <th className="text-left text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3">Hash</th>
-                  <th className="text-right text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3 hidden sm:table-cell">{cs ? 'Vstupy' : 'Inputs'}</th>
-                  <th className="text-right text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3 hidden sm:table-cell">{cs ? 'Výstupy' : 'Outputs'}</th>
+                  <th className="text-left text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3 hidden lg:table-cell">From → To</th>
                   <th className="text-right text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3 hidden md:table-cell">Fee</th>
                   <th className="text-right text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-6 py-3">{cs ? 'Částka' : 'Amount'}</th>
                 </tr>
@@ -413,11 +415,24 @@ export default function BlockDetailClient() {
                         {tx.tx_hash && !tx.tx_hash.startsWith("coinbase_") && <CopyBtn text={tx.tx_hash} />}
                       </div>
                     </td>
-                    <td className="px-3 py-3 text-right hidden sm:table-cell">
-                      <span className="text-gray-500 text-xs">{tx.inputs?.length || 1}</span>
-                    </td>
-                    <td className="px-3 py-3 text-right hidden sm:table-cell">
-                      <span className="text-gray-500 text-xs">{tx.outputs?.length || 0}</span>
+                    <td className="px-3 py-3 hidden lg:table-cell">
+                      {tx.from && tx.to ? (
+                        <div className="flex items-center gap-1 text-xs font-mono">
+                          <Link href={`/explorer/address?addr=${tx.from}`} className="text-gray-500 hover:text-white transition truncate max-w-[140px]">
+                            {truncHash(tx.from, 8)}
+                          </Link>
+                          <ArrowRight className="h-3 w-3 text-gray-600 flex-shrink-0" />
+                          <Link href={`/explorer/address?addr=${tx.to}`} className="text-zion-cyan hover:text-white transition truncate max-w-[140px]">
+                            {truncHash(tx.to, 8)}
+                          </Link>
+                        </div>
+                      ) : tx.to ? (
+                        <Link href={`/explorer/address?addr=${tx.to}`} className="text-zion-cyan hover:text-white transition font-mono text-xs truncate max-w-[200px]">
+                          {truncHash(tx.to, 10)}
+                        </Link>
+                      ) : (
+                        <span className="text-gray-600 text-xs">—</span>
+                      )}
                     </td>
                     <td className="px-3 py-3 text-right hidden md:table-cell">
                       <span className="text-gray-500 text-xs tabular-nums">{tx.fee > 0 ? tx.fee.toFixed(6) : "—"}</span>

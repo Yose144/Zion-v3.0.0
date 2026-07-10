@@ -40,6 +40,17 @@ export interface ZionBlockHeader {
   miner_address?: string;
 }
 
+export interface ZionV3Transaction {
+  tx_id: string;
+  from: string;
+  to: string;
+  amount_zion: string;
+  fee_zion: number;
+  nonce: number;
+  public_key: string;
+  signature: string;
+}
+
 export interface ZionBlock extends ZionBlockHeader {
   miner_tx: {
     version: number;
@@ -52,6 +63,8 @@ export interface ZionBlock extends ZionBlockHeader {
     extra: number[];
   };
   tx_hashes: string[];
+  // V3 account-model: raw transactions array from getBlockByHeight
+  v3_transactions?: ZionV3Transaction[];
 }
 
 export interface ZionTransaction {
@@ -320,6 +333,7 @@ function mapV3BlockToHeader(block: any): ZionBlockHeader {
 function mapV3BlockToFull(block: any): ZionBlock {
   const header = mapV3BlockToHeader(block);
   const rewardZion = normalizeRewardZion(block.miner_reward_zion ?? block.subsidy_zion ?? block.reward);
+  const v3Txs: ZionV3Transaction[] = Array.isArray(block.transactions) ? block.transactions : [];
   return {
     ...header,
     miner_tx: {
@@ -333,6 +347,7 @@ function mapV3BlockToFull(block: any): ZionBlock {
       extra: [],
     },
     tx_hashes: (block.transaction_ids ?? []).slice(1),
+    v3_transactions: v3Txs,
   };
 }
 
@@ -747,8 +762,10 @@ class ZionRpcClient {
   async getCoinbaseTxSum(height: number, count: number): Promise<ZionEmission> {
     const chainInfo = await this.rpcCall<any>('getChainInfo');
     const chainHeight = chainInfo.chain_height ?? 0;
-    // BLOCK_REWARD_ATOMIC = 5,400,067,000,000,000 flowers (5400.067 ZION)
-    const BLOCK_REWARD_ATOMIC = 5_400_067_000_000_000;
+    // Post-3.0.3: 1 ZION = 1,000,000 flowers (6 decimals).
+    // BLOCK_REWARD_ATOMIC = 5,400,067,000 flowers (5400.067 ZION).
+    // Pre-3.0.3 used 12 decimals (5,400,067,000,000,000) — do NOT use that here.
+    const BLOCK_REWARD_ATOMIC = 5_400_067_000;
     return {
       emission_amount: chainHeight * BLOCK_REWARD_ATOMIC,
       fee_amount: 0,

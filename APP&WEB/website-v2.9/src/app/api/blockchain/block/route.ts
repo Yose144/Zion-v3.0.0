@@ -41,61 +41,86 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Block not found' }, { status: 404 });
     }
 
-    // Extract miner address from coinbase tx outputs
-    let minerAddress = '';
-    let baseReward = 0;
-    if (block.miner_tx?.vout) {
-      baseReward = block.miner_tx.vout.reduce((sum: number, out: any) => sum + (out.amount || 0), 0);
-      // First output usually goes to miner
-      if (block.miner_tx.vout.length > 0) {
-        minerAddress = block.miner_tx.vout[0]?.target?.key || '';
-      }
-    }
+    // Extract miner address from V3 block fields
+    let minerAddress = block.miner_address || '';
+    let baseReward = block.miner_reward_zion ?? block.subsidy_zion ?? block.reward ?? 0;
 
-    // Build transaction list
+    // Build transaction list from V3 transactions array (already in block response)
     const txs: any[] = [];
+    const v3Txs = block.v3_transactions ?? [];
 
-    // Coinbase TX
-    txs.push({
-      tx_hash: block.miner_tx_hash || `coinbase_${block.height}`,
-      type: 'coinbase',
-      fee: 0,
-      amount: block.reward ? block.reward / ATOMIC_UNITS_PER_ZION : baseReward / ATOMIC_UNITS_PER_ZION,
-      timestamp: block.timestamp,
-      inputs: [{ type: 'coinbase', height: block.height }],
-      outputs: (block.miner_tx?.vout || []).map((out: any) => ({
-        amount: out.amount / ATOMIC_UNITS_PER_ZION,
-        key: out.target?.key || '',
-      })),
-    });
+    if (v3Txs.length > 0) {
+      // Use the transactions array directly from the V3 RPC response
+      for (const tx of v3Txs) {
+        const isCoinbase = tx.from === 'coinbase';
+        const amountAtomic = Number(tx.amount_zion ?? 0);
+        const feeAtomic = Number(tx.fee_zion ?? 0);
+        txs.push({
+          tx_hash: tx.tx_id,
+          type: isCoinbase ? 'coinbase' : 'transfer',
+          fee: feeAtomic / ATOMIC_UNITS_PER_ZION,
+          amount: amountAtomic / ATOMIC_UNITS_PER_ZION,
+          timestamp: block.timestamp,
+          from: tx.from,
+          to: tx.to,
+          amount_zion: tx.amount_zion,
+          fee_zion: feeAtomic,
+          nonce: tx.nonce,
+          signature: tx.signature,
+          public_key: tx.public_key,
+          transaction_model: 'account',
+          inputs: isCoinbase
+            ? [{ type: 'coinbase', height: block.height }]
+            : [],
+          outputs: [{
+            amount: amountAtomic / ATOMIC_UNITS_PER_ZION,
+            key: tx.to,
+          }],
+        });
+      }
+    } else {
+      // Fallback: synthesize coinbase TX from block fields
+      txs.push({
+        tx_hash: block.miner_tx_hash || `coinbase_${block.height}`,
+        type: 'coinbase',
+        fee: 0,
+        amount: block.reward ? block.reward / ATOMIC_UNITS_PER_ZION : baseReward / ATOMIC_UNITS_PER_ZION,
+        timestamp: block.timestamp,
+        inputs: [{ type: 'coinbase', height: block.height }],
+        outputs: (block.miner_tx?.vout || []).map((out: any) => ({
+          amount: out.amount / ATOMIC_UNITS_PER_ZION,
+          key: out.target?.key || '',
+        })),
+      });
 
-    // Regular transactions (fetch details if hashes present)
-    if (block.tx_hashes && block.tx_hashes.length > 0) {
-      try {
-        const txDetails = await rpc.getTransactions(block.tx_hashes);
-        for (const tx of txDetails) {
-          const totalOut = tx.vout.reduce((sum, out) => sum + (out.amount || 0), 0);
-          txs.push({
-            tx_hash: tx.tx_hash,
-            type: 'transfer',
-            fee: tx.fee / ATOMIC_UNITS_PER_ZION,
-            amount: totalOut / ATOMIC_UNITS_PER_ZION,
-            timestamp: tx.block_timestamp || block.timestamp,
-            inputs: tx.vin.map((input: any) => ({
-              type: input.key ? 'key' : 'coinbase',
-              amount: input.key?.amount ? input.key.amount / ATOMIC_UNITS_PER_ZION : 0,
-              key_image: input.key?.k_image || '',
-            })),
-            outputs: tx.vout.map((out: any) => ({
-              amount: out.amount / ATOMIC_UNITS_PER_ZION,
-              key: out.target?.key || '',
-            })),
-          });
-        }
-      } catch {
-        // If we can't fetch tx details, still return block with hash list
-        for (const txHash of block.tx_hashes) {
-          txs.push({ tx_hash: txHash, type: 'transfer', fee: 0, amount: 0 });
+      // Regular transactions (fetch details if hashes present)
+      if (block.tx_hashes && block.tx_hashes.length > 0) {
+        try {
+          const txDetails = await rpc.getTransactions(block.tx_hashes);
+          for (const tx of txDetails) {
+            const totalOut = tx.vout.reduce((sum, out) => sum + (out.amount || 0), 0);
+            txs.push({
+              tx_hash: tx.tx_hash,
+              type: 'transfer',
+              fee: tx.fee / ATOMIC_UNITS_PER_ZION,
+              amount: totalOut / ATOMIC_UNITS_PER_ZION,
+              timestamp: tx.block_timestamp || block.timestamp,
+              inputs: tx.vin.map((input: any) => ({
+                type: input.key ? 'key' : 'coinbase',
+                amount: input.key?.amount ? input.key.amount / ATOMIC_UNITS_PER_ZION : 0,
+                key_image: input.key?.k_image || '',
+              })),
+              outputs: tx.vout.map((out: any) => ({
+                amount: out.amount / ATOMIC_UNITS_PER_ZION,
+                key: out.target?.key || '',
+              })),
+            });
+          }
+        } catch {
+          // If we can't fetch tx details, still return block with hash list
+          for (const txHash of block.tx_hashes) {
+            txs.push({ tx_hash: txHash, type: 'transfer', fee: 0, amount: 0 });
+          }
         }
       }
     }
