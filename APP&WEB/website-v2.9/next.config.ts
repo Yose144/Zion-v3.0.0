@@ -87,6 +87,10 @@ const nextConfig: NextConfig = {
       { source: '/pool/benchmarks', destination: '/pool', permanent: true },
       { source: '/zohar', destination: '/tree-of-life', permanent: true },
       { source: '/zohar/:path*', destination: '/tree-of-life/:path*', permanent: true },
+      // Explorer canonical slugs -> query-param pages
+      { source: '/explorer/tx/:hash', destination: '/explorer/tx?hash=:hash', permanent: true },
+      { source: '/explorer/address/:addr', destination: '/explorer/address?addr=:addr', permanent: true },
+      { source: '/explorer/block/:id', destination: '/explorer/block?id=:id', permanent: true },
     ];
   },
   // P1-33: Security headers — CSP, X-Frame-Options, HSTS, etc.
