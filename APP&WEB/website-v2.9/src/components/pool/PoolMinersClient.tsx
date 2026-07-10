@@ -284,7 +284,7 @@ function SortHeader({
 }
 
 /* ═══════════════════════ MAIN COMPONENT ═══════════════════════ */
-export default function PoolMinersClient() {
+export default function PoolMinersClient({ embedded = false }: { embedded?: boolean } = {}) {
   const { lang } = useLang();
   const cs = lang === "cs";
   const [data, setData] = useState<PoolData | null>(null);
@@ -455,23 +455,27 @@ export default function PoolMinersClient() {
   ];
 
   return (
-    <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 overflow-x-hidden">
-      {/* ── Subtle background glows ── */}
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-purple/8" />
-        <div className="absolute -right-40 top-2/3 h-[400px] w-[400px] rounded-full blur-[200px] bg-zion-cyan/6" />
-        <div className="absolute left-1/2 top-0 h-48 w-full -translate-x-1/2 bg-linear-to-b from-zion-purple/15 to-transparent" />
-      </div>
+    <div className={embedded ? "" : "zion-shell min-h-screen pt-28 md:pt-32 pb-24 overflow-x-hidden"}>
+      {!embedded && (
+        <>
+          {/* ── Subtle background glows ── */}
+          <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+            <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-purple/8" />
+            <div className="absolute -right-40 top-2/3 h-[400px] w-[400px] rounded-full blur-[200px] bg-zion-cyan/6" />
+            <div className="absolute left-1/2 top-0 h-48 w-full -translate-x-1/2 bg-linear-to-b from-zion-purple/15 to-transparent" />
+          </div>
+        </>
+      )}
 
-      <div className="relative z-10 zion-container max-w-7xl space-y-10">
+      <div className={embedded ? "space-y-10" : "relative z-10 zion-container max-w-7xl space-y-10"}>
 
-        {/* ═══════ A. HERO ═══════ */}
-        <motion.section
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="zion-rainbow-card p-6 md:p-10"
-          style={{ "--rc": "147, 51, 234" } as React.CSSProperties}
-        >
+        {!embedded && (
+          <motion.section
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="zion-rainbow-card p-6 md:p-10"
+            style={{ "--rc": "147, 51, 234" } as React.CSSProperties}
+          >
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple/40 bg-zion-purple/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-purple uppercase">
@@ -527,6 +531,7 @@ export default function PoolMinersClient() {
             </div>
           </div>
         </motion.section>
+        )}
 
         {/* ═══════ B. SEARCH BAR ═══════ */}
         <motion.section
@@ -820,38 +825,42 @@ export default function PoolMinersClient() {
           </>
         )}
 
-        {/* ═══════ G. CTA ═══════ */}
-        <motion.section
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.18 }}
-          className="zion-cta-banner p-10 text-center"
-        >
-          <Pickaxe className="mx-auto h-12 w-12 text-zion-purple" />
-          <h2 className="mt-6 text-3xl font-semibold text-white">{cs ? "Připojte se k žebříčku" : "Join the Leaderboard"}</h2>
-          <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
-            {cs
-              ? "Začněte těžit ZION a objevte se v žebříčku. PPLNS odměny, 89 % pro minera, humanitární mise v každém bloku."
-              : "Start mining ZION and appear on the leaderboard. PPLNS rewards, 89% miner share, humanitarian mission in every block."}
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <Link href="/pool" className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-purple to-zion-cyan px-6 py-3 text-sm font-semibold text-white">
-              <Pickaxe className="h-4 w-4" /> {cs ? "Hlavní stránka poolu" : "Pool Dashboard"}
-            </Link>
-            <a href="#search" onClick={(e) => { e.preventDefault(); (document.querySelector('input[type="text"]') as HTMLInputElement | null)?.focus(); }} className="inline-flex items-center gap-2 rounded-2xl bg-black/70 px-6 py-3 text-sm font-semibold text-white border border-white/20">
-              <Search className="h-4 w-4" /> {cs ? "Hledat minera" : "Search Miner"}
-            </a>
-            <Link href="/explorer" className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-6 py-3 text-sm font-semibold text-white border border-white/10">
-              <Server className="h-4 w-4" /> Explorer
-            </Link>
-          </div>
-        </motion.section>
+        {!embedded && (
+          <>
+            {/* ═══════ G. CTA ═══════ */}
+            <motion.section
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.18 }}
+              className="zion-cta-banner p-10 text-center"
+            >
+              <Pickaxe className="mx-auto h-12 w-12 text-zion-purple" />
+              <h2 className="mt-6 text-3xl font-semibold text-white">{cs ? "Připojte se k žebříčku" : "Join the Leaderboard"}</h2>
+              <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
+                {cs
+                  ? "Začněte těžit ZION a objevte se v žebříčku. PPLNS odměny, 89 % pro minera, humanitární mise v každém bloku."
+                  : "Start mining ZION and appear on the leaderboard. PPLNS rewards, 89% miner share, humanitarian mission in every block."}
+              </p>
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+                <Link href="/pool" className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-purple to-zion-cyan px-6 py-3 text-sm font-semibold text-white">
+                  <Pickaxe className="h-4 w-4" /> {cs ? "Hlavní stránka poolu" : "Pool Dashboard"}
+                </Link>
+                <a href="#search" onClick={(e) => { e.preventDefault(); (document.querySelector('input[type="text"]') as HTMLInputElement | null)?.focus(); }} className="inline-flex items-center gap-2 rounded-2xl bg-black/70 px-6 py-3 text-sm font-semibold text-white border border-white/20">
+                  <Search className="h-4 w-4" /> {cs ? "Hledat minera" : "Search Miner"}
+                </a>
+                <Link href="/explorer" className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-6 py-3 text-sm font-semibold text-white border border-white/10">
+                  <Server className="h-4 w-4" /> Explorer
+                </Link>
+              </div>
+            </motion.section>
 
-        <p className="text-center text-xs text-gray-600">
-          {cs
-            ? `ZION TerraNova ${SITE_RELEASE_LABEL} — Miner Leaderboard · Odhadovaný hashrate je počítán z distribuce aktivních minerů · Auto-refresh 15 s`
-            : `ZION TerraNova ${SITE_RELEASE_LABEL} — Miner Leaderboard · Estimated hashrate computed from active miner distribution · Auto-refresh 15s`}
-        </p>
+            <p className="text-center text-xs text-gray-600">
+              {cs
+                ? `ZION TerraNova ${SITE_RELEASE_LABEL} — Miner Leaderboard · Odhadovaný hashrate je počítán z distribuce aktivních minerů · Auto-refresh 15 s`
+                : `ZION TerraNova ${SITE_RELEASE_LABEL} — Miner Leaderboard · Estimated hashrate computed from active miner distribution · Auto-refresh 15s`}
+            </p>
+          </>
+        )}
       </div>
     </div>
   );

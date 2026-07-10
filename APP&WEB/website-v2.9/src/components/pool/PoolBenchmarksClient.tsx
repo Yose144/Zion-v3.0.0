@@ -123,7 +123,7 @@ function estimateBlocksPerDay(recent: { timestamp: number }[]): number {
    MAIN COMPONENT
    ═══════════════════════════════════════════════════════════ */
 
-export default function PoolBenchmarksClient() {
+export default function PoolBenchmarksClient({ embedded = false }: { embedded?: boolean } = {}) {
   const { lang } = useLang();
   const cs = lang === 'cs';
 
@@ -270,44 +270,44 @@ export default function PoolBenchmarksClient() {
      ═══════════════════════════════════════════════════════════ */
 
   return (
-    <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24">
-      <div className="zion-container max-w-7xl space-y-10">
-
-        {/* ── A. HERO ─────────────────────────────────────────────── */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="zion-rainbow-card p-8 md:p-10"
-          style={rcStyle}
-        >
-          <div className="flex flex-col md:flex-row md:items-center gap-6">
-            <div className="w-14 h-14 rounded-2xl bg-purple-500/15 flex items-center justify-center shrink-0">
-              <Gauge className="w-7 h-7 text-purple-400" />
-            </div>
-            <div className="flex-1">
-              <div className="zion-kicker mb-3" style={{ borderColor: 'rgba(147,51,234,0.3)' }}>
-                <Cpu className="w-3.5 h-3.5 text-purple-400" />
-                {cs ? 'Cosmic Harmony PoW' : 'Cosmic Harmony PoW'}
+    <div className={embedded ? "" : "zion-shell min-h-screen pt-28 md:pt-32 pb-24"}>
+      <div className={embedded ? "space-y-10" : "zion-container max-w-7xl space-y-10"}>
+        {!embedded && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="zion-rainbow-card p-8 md:p-10"
+            style={rcStyle}
+          >
+            <div className="flex flex-col md:flex-row md:items-center gap-6">
+              <div className="w-14 h-14 rounded-2xl bg-purple-500/15 flex items-center justify-center shrink-0">
+                <Gauge className="w-7 h-7 text-purple-400" />
               </div>
-              <h1 className="text-3xl md:text-5xl font-bold text-white mb-2">
-                {cs ? 'Hardwarové Benchmarky' : 'Hardware Benchmarks'}
-              </h1>
-              <p className="text-gray-400 text-base md:text-lg max-w-2xl">
-                {cs
-                  ? 'Cosmic Harmony PoW — výsledky GPU a CPU výkonu. Hashrate, energetická efektivita a porovnání ziskovosti.'
-                  : 'Cosmic Harmony PoW — GPU & CPU performance results. Hashrate, power efficiency, and profitability comparison.'}
-              </p>
+              <div className="flex-1">
+                <div className="zion-kicker mb-3" style={{ borderColor: 'rgba(147,51,234,0.3)' }}>
+                  <Cpu className="w-3.5 h-3.5 text-purple-400" />
+                  {cs ? 'Cosmic Harmony PoW' : 'Cosmic Harmony PoW'}
+                </div>
+                <h1 className="text-3xl md:text-5xl font-bold text-white mb-2">
+                  {cs ? 'Hardwarové Benchmarky' : 'Hardware Benchmarks'}
+                </h1>
+                <p className="text-gray-400 text-base md:text-lg max-w-2xl">
+                  {cs
+                    ? 'Cosmic Harmony PoW — výsledky GPU a CPU výkonu. Hashrate, energetická efektivita a porovnání ziskovosti.'
+                    : 'Cosmic Harmony PoW — GPU & CPU performance results. Hashrate, power efficiency, and profitability comparison.'}
+                </p>
+              </div>
+              <Link
+                href="/pool"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-purple-400/30 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 transition-colors text-sm font-medium shrink-0"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                {cs ? 'Zpět na Pool' : 'Back to Pool'}
+              </Link>
             </div>
-            <Link
-              href="/pool"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-purple-400/30 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 transition-colors text-sm font-medium shrink-0"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              {cs ? 'Zpět na Pool' : 'Back to Pool'}
-            </Link>
-          </div>
-        </motion.section>
+          </motion.section>
+        )}
 
         {/* ── A2. INFO BANNER ─────────────────────────────────────── */}
         <motion.section
@@ -808,39 +808,43 @@ ZION_GPU_BACKEND=opencl \\
           </div>
         </motion.section>
 
-        {/* ── I. CTA ──────────────────────────────────────────────── */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="zion-cta-banner"
-        >
-          <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
-            {cs ? 'Spusťte vlastní benchmark' : 'Run Your Own Benchmark'}
-          </h2>
-          <p className="text-white/70 mb-6 max-w-xl mx-auto">
-            {cs
-              ? 'Stáhněte si ZION miner, zkompilujte s GPU podporou a změřte svůj hardware v režimu --ekam-bench.'
-              : 'Download the ZION miner, compile with GPU support, and measure your hardware in --ekam-bench mode.'}
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link
-              href="/download"
-              className="zion-button-primary"
+        {!embedded && (
+          <>
+            {/* ── I. CTA ──────────────────────────────────────────────── */}
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="zion-cta-banner"
             >
-              <Download className="w-4 h-4" />
-              {cs ? 'Stáhnout Miner' : 'Download Miner'}
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link
-              href="/pool"
-              className="zion-button-secondary"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              {cs ? 'Zpět na Pool' : 'Back to Pool'}
-            </Link>
-          </div>
-        </motion.section>
+              <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
+                {cs ? 'Spusťte vlastní benchmark' : 'Run Your Own Benchmark'}
+              </h2>
+              <p className="text-white/70 mb-6 max-w-xl mx-auto">
+                {cs
+                  ? 'Stáhněte si ZION miner, zkompilujte s GPU podporou a změřte svůj hardware v režimu --ekam-bench.'
+                  : 'Download the ZION miner, compile with GPU support, and measure your hardware in --ekam-bench mode.'}
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Link
+                  href="/download"
+                  className="zion-button-primary"
+                >
+                  <Download className="w-4 h-4" />
+                  {cs ? 'Stáhnout Miner' : 'Download Miner'}
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+                <Link
+                  href="/pool"
+                  className="zion-button-secondary"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  {cs ? 'Zpět na Pool' : 'Back to Pool'}
+                </Link>
+              </div>
+            </motion.section>
+          </>
+        )}
 
       </div>
     </div>

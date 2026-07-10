@@ -41,6 +41,10 @@ const LiveToast = dynamic(() => import('@/components/explorer/LiveToast'));
 const Pool24hCharts = dynamic(() => import('@/components/pool/Pool24hCharts'));
 const PoolEventsFeed = dynamic(() => import('@/components/pool/PoolEventsFeed'));
 const PoolRewardDonut = dynamic(() => import('@/components/pool/PoolRewardDonut'));
+const PoolBlocksClient = dynamic(() => import('@/components/pool/PoolBlocksClient'));
+const PoolMinersClient = dynamic(() => import('@/components/pool/PoolMinersClient'));
+const PoolCalculatorClient = dynamic(() => import('@/components/pool/PoolCalculatorClient'));
+const PoolBenchmarksClient = dynamic(() => import('@/components/pool/PoolBenchmarksClient'));
 import { useLang } from '@/contexts/LanguageContext';
 import { usePolling } from '@/hooks/usePolling';
 import { SITE_POOL_PRIMARY, SITE_RELEASE_LABEL } from '@/lib/site';
@@ -269,6 +273,7 @@ export default function PoolDashboard() {
   const [activeOnly, setActiveOnly] = useState(true);
   const [miningMode, setMiningMode] = useState<'cpu' | 'gpu'>('cpu');
   const [minerOS, setMinerOS] = useState<'linux' | 'windows'>('linux');
+  const [activeTab, setActiveTab] = useState<'overview' | 'blocks' | 'miners' | 'calculator' | 'benchmarks'>('overview');
   const hashrateHistoryRef = useRef<{ts: number; value: number}[]>([]);
   const acceptRateHistoryRef = useRef<{ts: number; value: number}[]>([]);
   const activeMinersHistoryRef = useRef<{ts: number; value: number}[]>([]);
@@ -407,7 +412,7 @@ export default function PoolDashboard() {
           </div>
         </motion.section>
 
-        {/* ═══════ SUBPAGE NAVIGATION ═══════ */}
+        {/* ═══════ POOL TABS ═══════ */}
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -418,45 +423,35 @@ export default function PoolDashboard() {
               <span className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mr-1 hidden sm:inline">
                 {cs ? 'Pool sekce' : 'Pool sections'}
               </span>
-              <Link
-                href="/pool"
-                className="inline-flex items-center gap-2 rounded-xl border border-zion-cyan/30 bg-zion-cyan/10 px-4 py-2 text-sm font-semibold text-zion-cyan transition hover:bg-zion-cyan/20"
-              >
-                <Activity className="h-3.5 w-3.5" />
-                {cs ? 'Přehled' : 'Overview'}
-              </Link>
-              <Link
-                href="/pool/blocks"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-gray-300 transition hover:border-white/25 hover:text-white"
-              >
-                <Box className="h-3.5 w-3.5" />
-                {cs ? 'Bloky' : 'Blocks'}
-              </Link>
-              <Link
-                href="/pool/miners"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-gray-300 transition hover:border-white/25 hover:text-white"
-              >
-                <Users className="h-3.5 w-3.5" />
-                {cs ? 'Mineři' : 'Miners'}
-              </Link>
-              <Link
-                href="/pool/calculator"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-gray-300 transition hover:border-white/25 hover:text-white"
-              >
-                <TrendingUp className="h-3.5 w-3.5" />
-                {cs ? 'Kalkulačka' : 'Calculator'}
-              </Link>
-              <Link
-                href="/pool/benchmarks"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-gray-300 transition hover:border-white/25 hover:text-white"
-              >
-                <Cpu className="h-3.5 w-3.5" />
-                {cs ? 'Benchmarky' : 'Benchmarks'}
-              </Link>
+              {[
+                { id: 'overview', label: cs ? 'Přehled' : 'Overview', icon: Activity },
+                { id: 'blocks', label: cs ? 'Bloky' : 'Blocks', icon: Box },
+                { id: 'miners', label: cs ? 'Mineři' : 'Miners', icon: Users },
+                { id: 'calculator', label: cs ? 'Kalkulačka' : 'Calculator', icon: TrendingUp },
+                { id: 'benchmarks', label: cs ? 'Benchmarky' : 'Benchmarks', icon: Cpu },
+              ].map((tab) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                    className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition ${
+                      isActive
+                        ? 'border border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan hover:bg-zion-cyan/20'
+                        : 'border border-white/10 bg-white/5 text-gray-300 hover:border-white/25 hover:text-white'
+                    }`}
+                  >
+                    <tab.icon className="h-3.5 w-3.5" />
+                    {tab.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </motion.section>
 
+        {activeTab === 'overview' && (
+        <>
         {/* ═══════ MINER SEARCH ═══════ */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
@@ -1405,6 +1400,13 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
             </a>
           </div>
         </motion.section>
+        </>
+        )}
+
+        {activeTab === 'blocks' && <PoolBlocksClient embedded />}
+        {activeTab === 'miners' && <PoolMinersClient embedded />}
+        {activeTab === 'calculator' && <PoolCalculatorClient embedded />}
+        {activeTab === 'benchmarks' && <PoolBenchmarksClient embedded />}
 
         <p className="text-center text-xs text-gray-600">
           {cs ? `ZION TerraNova ${SITE_RELEASE_LABEL} — Mining Pool Pro · Data v reálném čase z primárního stratum endpointu · Edge Node 1 · v3.0.5 E2E All Green` : `ZION TerraNova ${SITE_RELEASE_LABEL} — Mining Pool Pro · Real-time data from the primary stratum endpoint · Edge Node 1 · v3.0.5 E2E All Green`}

@@ -78,6 +78,15 @@ const nextConfig: NextConfig = {
     };
     return config;
   },
+  // Redirect legacy pool subpages to unified /pool tabs
+  async redirects() {
+    return [
+      { source: '/pool/blocks', destination: '/pool', permanent: true },
+      { source: '/pool/miners', destination: '/pool', permanent: true },
+      { source: '/pool/calculator', destination: '/pool', permanent: true },
+      { source: '/pool/benchmarks', destination: '/pool', permanent: true },
+    ];
+  },
   // P1-33: Security headers — CSP, X-Frame-Options, HSTS, etc.
   async headers() {
     return [

@@ -125,7 +125,7 @@ interface PriceData {
 /* ═══════════════════════════════════════════════════════════
    MAIN COMPONENT
    ═══════════════════════════════════════════════════════════ */
-export default function PoolCalculatorClient() {
+export default function PoolCalculatorClient({ embedded = false }: { embedded?: boolean } = {}) {
   const { lang } = useLang();
   const cs = lang === 'cs';
 
@@ -267,57 +267,58 @@ export default function PoolCalculatorClient() {
 
   /* ═══════════════════════ RENDER ═══════════════════════ */
   return (
-    <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24">
-      <div className="zion-container max-w-7xl space-y-10">
-        {/* ════════ A. HERO ════════ */}
-        <motion.section
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="zion-rainbow-card p-8 md:p-10"
-          style={purpleStyle}
-        >
-          <div className="relative z-[1] flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-            <div className="space-y-3">
-              <span className="zion-kicker">
-                <Calculator className="h-3.5 w-3.5" />
-                {cs ? 'Kalkulačka odměn' : 'Reward Calculator'}
-              </span>
-              <h1 className="zion-section-title text-3xl md:text-5xl">
-                {cs ? 'Kalkulačka těžebních odměn' : 'Mining Reward Calculator'}
-              </h1>
-              <p className="zion-section-sub">
-                {cs
-                  ? 'Odhadněte své denní, měsíční a roční odměny z těžby ZION. Zadejte svůj výpočetní výkon, cenu elektřiny a získejte kompletní projekce ziskovosti včetně ROI.'
-                  : 'Estimate your daily, monthly, and yearly ZION mining rewards. Enter your hashrate, electricity cost, and get full profitability projections including ROI.'}
-              </p>
-              <div className="flex flex-wrap gap-3 pt-2">
-                <Link
-                  href="/pool"
-                  className="zion-button-secondary text-sm px-4 py-2.5"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  {cs ? 'Zpět na pool' : 'Back to Pool'}
-                </Link>
-                <Link
-                  href="/pool#start-mining"
-                  className="zion-button-primary text-sm px-4 py-2.5"
-                >
-                  <Zap className="h-4 w-4" />
-                  {cs ? 'Začít těžit' : 'Start Mining'}
-                </Link>
+    <div className={embedded ? "" : "zion-shell min-h-screen pt-28 md:pt-32 pb-24"}>
+      <div className={embedded ? "space-y-10" : "zion-container max-w-7xl space-y-10"}>
+        {!embedded && (
+          <motion.section
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="zion-rainbow-card p-8 md:p-10"
+            style={purpleStyle}
+          >
+            <div className="relative z-[1] flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+              <div className="space-y-3">
+                <span className="zion-kicker">
+                  <Calculator className="h-3.5 w-3.5" />
+                  {cs ? 'Kalkulačka odměn' : 'Reward Calculator'}
+                </span>
+                <h1 className="zion-section-title text-3xl md:text-5xl">
+                  {cs ? 'Kalkulačka těžebních odměn' : 'Mining Reward Calculator'}
+                </h1>
+                <p className="zion-section-sub">
+                  {cs
+                    ? 'Odhadněte své denní, měsíční a roční odměny z těžby ZION. Zadejte svůj výpočetní výkon, cenu elektřiny a získejte kompletní projekce ziskovosti včetně ROI.'
+                    : 'Estimate your daily, monthly, and yearly ZION mining rewards. Enter your hashrate, electricity cost, and get full profitability projections including ROI.'}
+                </p>
+                <div className="flex flex-wrap gap-3 pt-2">
+                  <Link
+                    href="/pool"
+                    className="zion-button-secondary text-sm px-4 py-2.5"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    {cs ? 'Zpět na pool' : 'Back to Pool'}
+                  </Link>
+                  <Link
+                    href="/pool#start-mining"
+                    className="zion-button-primary text-sm px-4 py-2.5"
+                  >
+                    <Zap className="h-4 w-4" />
+                    {cs ? 'Začít těžit' : 'Start Mining'}
+                  </Link>
+                </div>
               </div>
-            </div>
-            <div className="flex shrink-0 items-center justify-center">
-              <div className="relative">
-                <div className="absolute inset-0 rounded-full bg-purple-500/20 blur-3xl" />
-                <div className="relative grid h-28 w-28 place-items-center rounded-3xl border border-purple-400/30 bg-purple-500/10">
-                  <TrendingUp className="h-12 w-12 text-purple-300" />
+              <div className="flex shrink-0 items-center justify-center">
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-full bg-purple-500/20 blur-3xl" />
+                  <div className="relative grid h-28 w-28 place-items-center rounded-3xl border border-purple-400/30 bg-purple-500/10">
+                    <TrendingUp className="h-12 w-12 text-purple-300" />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </motion.section>
+          </motion.section>
+        )}
 
         {/* ════════ B. INPUT PANEL ════════ */}
         <motion.section
@@ -722,39 +723,43 @@ export default function PoolCalculatorClient() {
           </div>
         </motion.section>
 
-        {/* ════════ G. CTA ════════ */}
-        <motion.section
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.25 }}
-          className="zion-cta-banner"
-        >
-          <div className="relative z-[1] flex flex-col items-center gap-4 text-center">
-            <span className="zion-kicker">
-              <Sparkles className="h-3.5 w-3.5" />
-              {cs ? 'Připraveni těžit?' : 'Ready to mine?'}
-            </span>
-            <h2 className="zion-section-title text-2xl md:text-4xl">
-              {cs ? 'Začněte těžit ZION ještě dnes' : 'Start mining ZION today'}
-            </h2>
-            <p className="zion-section-sub mx-auto">
-              {cs
-                ? 'Připojte se k naší PPLNS pool s 89% podílem pro těžaře a podporujte humanitární těžbu.'
-                : 'Join our PPLNS pool with 89% miner share and support humanitarian mining.'}
-            </p>
-            <div className="flex flex-wrap justify-center gap-3 pt-2">
-              <Link href="/pool#start-mining" className="zion-button-primary text-sm px-5 py-3">
-                <Zap className="h-4 w-4" />
-                {cs ? 'Začít těžit' : 'Start Mining'}
-              </Link>
-              <Link href="/pool" className="zion-button-secondary text-sm px-5 py-3">
-                <Server className="h-4 w-4" />
-                {cs ? 'Statistiky poolu' : 'View Pool Stats'}
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-          </div>
-        </motion.section>
+        {!embedded && (
+          <>
+            {/* ════════ G. CTA ════════ */}
+            <motion.section
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.25 }}
+              className="zion-cta-banner"
+            >
+              <div className="relative z-[1] flex flex-col items-center gap-4 text-center">
+                <span className="zion-kicker">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {cs ? 'Připraveni těžit?' : 'Ready to mine?'}
+                </span>
+                <h2 className="zion-section-title text-2xl md:text-4xl">
+                  {cs ? 'Začněte těžit ZION ještě dnes' : 'Start mining ZION today'}
+                </h2>
+                <p className="zion-section-sub mx-auto">
+                  {cs
+                    ? 'Připojte se k naší PPLNS pool s 89% podílem pro těžaře a podporujte humanitární těžbu.'
+                    : 'Join our PPLNS pool with 89% miner share and support humanitarian mining.'}
+                </p>
+                <div className="flex flex-wrap justify-center gap-3 pt-2">
+                  <Link href="/pool#start-mining" className="zion-button-primary text-sm px-5 py-3">
+                    <Zap className="h-4 w-4" />
+                    {cs ? 'Začít těžit' : 'Start Mining'}
+                  </Link>
+                  <Link href="/pool" className="zion-button-secondary text-sm px-5 py-3">
+                    <Server className="h-4 w-4" />
+                    {cs ? 'Statistiky poolu' : 'View Pool Stats'}
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              </div>
+            </motion.section>
+          </>
+        )}
       </div>
     </div>
   );
