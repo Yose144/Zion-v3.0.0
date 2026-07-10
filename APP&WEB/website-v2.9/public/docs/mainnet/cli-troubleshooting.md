@@ -62,7 +62,7 @@ zion mine bench
 Pokud GPU nefunguje, zkus CPU backend:
 
 ```bash
-zion mine start --pool stratum+tcp://62.171.141.136:8444 --wallet YOUR_ADDRESS --backend cpu
+zion mine start --pool stratum+tcp://pool.zionterranova.com:8444 --wallet YOUR_ADDRESS --backend cpu
 ```
 
 Pokud GPU chceš, ověř backend:

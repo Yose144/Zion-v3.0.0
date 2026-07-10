@@ -33,7 +33,7 @@ V praxi to znamená:
 | **v3.0.1 Genesis Launch** | 11. 6. 2026 | První veřejný mainnet blok (#0), dual-node Edge, pool a mining live. |
 | **v3.0.3 Decimal fork** | 27. 6. 2026 | `1e12` → `1e6` flower scale. Všechny balance a RPC volání přešly na 6-desetinné `flowers`. |
 | **Bezpečnostní incidenty** | 2.–3. 7. 2026 | F1 exploit forgeovaných P2P account TX, F5 chybějící kontrola balance v account modelu, kompromitace serveru. Chain rollback a starý Edge server dekomisován. |
-| **v3.0.4 Hard Genesis Reset** | 6.–7. 7. 2026 | Nový server `62.171.141.136`, nový genesis hash, všechny klíče regenerovány, full stack redeployován. |
+| **v3.0.4 Hard Genesis Reset** | 6.–7. 7. 2026 | Nový server zprovozněn, nový genesis hash, všechny klíče regenerovány, full stack redeployován. |
 | **v3.0.5 All Green** | 9. 7. 2026 | Protocol version bumped na 3.0.5, L2 watchery operationalizovány, 11/11 služeb active, E2E memo testy potvrzeny v bloku 752. |
 
 ---
@@ -42,7 +42,7 @@ V praxi to znamená:
 
 ### F1 — Forgeovaná account transakce přes P2P
 
-Útočník z `109.81.30.165` injekoval forgeovanou account-model transakci obcházením ověření podpisu v peer-block cestě. Síť se rollbackovala na blok 22180 a podpisová kontrola byla zpřísněna v `validate_peer_block`.
+Útočník z kompromitovaného externího peera injekoval forgeovanou account-model transakci obcházením ověření podpisu v peer-block cestě. Síť se rollbackovala na blok 22180 a podpisová kontrola byla zpřísněna v `validate_peer_block`.
 
 ### F5 — Neomezená inflace v account modelu
 
@@ -54,10 +54,10 @@ Byl přidán height-gated cap rovný `TOTAL_SUPPLY` (144B ZION), který zabrán�
 
 ### Kompromitace serveru a hard reset
 
-Původní Edge server (`77.42.71.94`) a EVM deploy klíč byly kompromitovány. Výsledek:
+Původní Edge server a EVM deploy klíč byly kompromitovány. Výsledek:
 
 - Všechny L1/L2 klíče byly regenerovány air-gapped.
-- Byl zprovozněn nový server `62.171.141.136`.
+- Byl zprovozněn nový server bez veřejného RPC/SSH exposure, pouze hardened web/DNS surface.
 - Proveden **hard genesis reset** 6.–7. července 2026 s novým genesis hashem.
 - Všechny služby byly postaveny z čistého stavu.
 
@@ -76,7 +76,7 @@ Po resetu byl `zion-node` 2x OOM-killed, protože `accepted_blocks` a `known_pee
 | **Edge Node 1** | ✅ Active | Primary / mining, P2P 8333, RPC 8443 |
 | **Edge Node 2** | ✅ Active | Follower / P2P sync, RPC 8448 |
 | **Local Backup Node** | ✅ Active | Pražský lokální stroj přes SSH reverse tunnel, RPC 8446 |
-| **Pool Server** | ✅ Active | `stratum+tcp://62.171.141.136:8444` |
+| **Pool Server** | ✅ Active | `stratum+tcp://pool.zionterranova.com:8444` |
 | **Web / Dashboard** | ✅ Active | `https://zionterranova.com` + `https://dashboard.zionterranova.com` |
 | **Bridge** | ✅ Active | L2, L1 watcher scan od bloku 0 |
 | **DAO** | ✅ Active | L2, scanner běží |
@@ -128,7 +128,7 @@ Po resetu byl `zion-node` 2x OOM-killed, protože `accepted_blocks` a `known_pee
 | `cuda` | Linux/Windows | NVIDIA GPU |
 | `metal` | macOS Apple Silicon | M1–M4 GPU |
 
-**Pool připojení:** `stratum+tcp://62.171.141.136:8444`
+**Pool připojení:** `stratum+tcp://pool.zionterranova.com:8444`
 
 **Povinné:** `ZION_PAYOUT_ADDRESS=<platná zion1... adresa>`
 

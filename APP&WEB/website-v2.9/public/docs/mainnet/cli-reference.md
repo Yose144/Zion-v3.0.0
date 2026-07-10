@@ -40,7 +40,7 @@ zion node stop
 
 ```bash
 zion pool stats
-zion pool connect --pool stratum+tcp://62.171.141.136:8444
+zion pool connect --pool stratum+tcp://pool.zionterranova.com:8444
 ```
 
 ## 5) Miner
@@ -49,7 +49,7 @@ zion pool connect --pool stratum+tcp://62.171.141.136:8444
 zion mine status
 zion mine bench
 zion mine bench --ekam --backend opencl --work-size 8192
-zion mine start --pool stratum+tcp://62.171.141.136:8444 --wallet YOUR_ADDRESS
+zion mine start --pool stratum+tcp://pool.zionterranova.com:8444 --wallet YOUR_ADDRESS
 zion mine start --backend cuda
 zion mine start --backend metal
 zion mine stop

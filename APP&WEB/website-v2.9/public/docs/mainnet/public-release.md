@@ -83,7 +83,7 @@ The menu guides you through:
 If you already have a wallet, the fastest way to mine is:
 
 ```bash
-./zion miner --pool stratum+tcp://62.171.141.136:8444 \
+./zion miner --pool stratum+tcp://pool.zionterranova.com:8444 \
   --payout zion1YOUR_ADDRESS_HERE \
   --algo deeksha_lite_v1
 ```
@@ -95,7 +95,7 @@ Replace `zion1YOUR_ADDRESS_HERE` with your real ZION address.
 Use `--backend opencl` for AMD/NVIDIA on Linux/Windows, or `--backend metal` on Apple Silicon:
 
 ```bash
-./zion miner --pool stratum+tcp://62.171.141.136:8444 \
+./zion miner --pool stratum+tcp://pool.zionterranova.com:8444 \
   --payout zion1YOUR_ADDRESS_HERE \
   --algo deeksha_lite_fire \
   --backend opencl
