@@ -213,7 +213,7 @@ export default function SwapPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#070709] text-white pt-24 pb-20 px-4 overflow-hidden">
+    <div className="zion-page bg-[#070709] text-white px-4">
       {/* Background gradients */}
       <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] pointer-events-none" />

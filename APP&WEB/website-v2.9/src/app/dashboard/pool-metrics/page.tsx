@@ -12,8 +12,8 @@ export const metadata: Metadata = {
 
 export default function PoolMetricsPage() {
   return (
-    <div className="text-white pb-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28">
+    <div className="zion-page text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-8 h-8 rounded-lg bg-zion-gold/15 flex items-center justify-center">

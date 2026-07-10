@@ -83,9 +83,9 @@ export default function QuantumRevolutionClient() {
   const [activeChapter, setActiveChapter] = useState<string | null>(null);
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="zion-page">
       {/* ── Hero ── */}
-      <section className="relative px-4 pt-28 pb-12 md:pt-32 md:pb-16">
+      <section className="relative px-4 pb-12 md:pb-16">
         <div className="zion-container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

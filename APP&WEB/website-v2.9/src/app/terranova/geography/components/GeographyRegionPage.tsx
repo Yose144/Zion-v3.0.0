@@ -26,7 +26,7 @@ export default function GeographyRegionPage({ data }: { data: RegionData }) {
   const cs = lang === 'cs';
 
   return (
-    <div className="pt-28 md:pt-28 pb-24 overflow-x-hidden">
+    <div className="zion-page">
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute -left-40 top-1/3 h-[600px] w-[600px] rounded-full blur-[240px] bg-violet-500/8" />
         <div className="absolute -right-40 top-2/3 h-[500px] w-[500px] rounded-full blur-[200px] bg-purple-500/6" />

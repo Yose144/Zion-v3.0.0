@@ -228,7 +228,7 @@ export default function WarpPage() {
   };
 
   return (
-    <div className="pt-28 pb-24 overflow-x-hidden">
+    <div className="zion-page">
         <div className="zion-container max-w-6xl space-y-16">
 
         {/* ── Hero ── */}

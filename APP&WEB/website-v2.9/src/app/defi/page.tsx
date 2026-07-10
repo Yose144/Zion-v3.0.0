@@ -300,7 +300,7 @@ export default function DefiPage() {
   }, [fetchSupply]);
 
   return (
-    <div className="relative overflow-hidden bg-black text-white pt-28 pb-16">
+    <div className="zion-page bg-black text-white">
       {/* Background glows */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-36 -left-28 h-[520px] w-[520px] rounded-full bg-zion-purple/18 blur-3xl" />

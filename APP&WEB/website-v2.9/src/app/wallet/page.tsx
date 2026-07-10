@@ -78,7 +78,7 @@ export default function WalletPage() {
 
   if (!initialized) {
     return (
-      <div className="pt-28 pb-24 overflow-x-hidden">
+      <div className="zion-page">
         <div className="zion-container max-w-7xl">
           <div className="flex items-center justify-center min-h-[60vh]">
             <div className="text-center">
@@ -172,7 +172,7 @@ export default function WalletPage() {
   };
 
   return (
-    <div className="pt-28 pb-24 overflow-x-hidden">
+    <div className="zion-page">
       <div className="zion-container max-w-7xl space-y-16">
 
         {/* ── HERO ── */}

@@ -88,7 +88,7 @@ export default function L5FreeWorldPage() {
   const protocols = getProtocols(cs);
 
   return (
-    <div className="pt-28 pb-24 overflow-x-hidden">
+    <div className="zion-page">
       <div className="zion-container max-w-7xl space-y-16">
 
         {/* ── HERO ── */}

@@ -60,7 +60,7 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="relative mt-20 overflow-hidden border-t border-white/10 bg-[rgba(2,4,12,0.82)] backdrop-blur-xl">
+    <footer className="relative overflow-hidden border-t border-white/10 bg-[rgba(2,4,12,0.82)] backdrop-blur-xl">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-zion-gold/50 to-transparent" />
       <div className="pointer-events-none absolute -left-32 top-0 h-72 w-72 rounded-full bg-zion-purple/10 blur-3xl" />
       <div className="pointer-events-none absolute -right-32 bottom-0 h-72 w-72 rounded-full bg-zion-cyan/10 blur-3xl" />

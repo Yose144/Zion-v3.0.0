@@ -135,7 +135,7 @@ export default function ZahradaGenesisPage() {
   const cs = lang === 'cs';
 
   return (
-    <div className="pt-28 md:pt-28 pb-24 overflow-x-hidden">
+    <div className="zion-page">
       <div className="relative z-10 zion-container max-w-5xl">
 
         {/* Back nav */}

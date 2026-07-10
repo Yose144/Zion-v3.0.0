@@ -946,7 +946,7 @@ export default function TerraNovaBookClient() {
   }, [tocOpen, overlayOpen]);
 
   return (
-    <div className="zion-shell min-h-screen pt-24 md:pt-28 pb-24 overflow-x-hidden">
+    <div className="zion-shell zion-page">
       {/* ── Ambient background ── */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute -left-40 top-1/4 h-[600px] w-[600px] rounded-full blur-[240px] bg-zion-gold/6" />

@@ -121,7 +121,7 @@ export default function ExplorerPage() {
   const quickLinks = getQuickLinks(cs);
 
   return (
-    <div className="pt-28 md:pt-32 pb-24 overflow-x-hidden">
+    <div className="zion-page">
       {/* ── Subtle background glows ── */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-purple/8" />

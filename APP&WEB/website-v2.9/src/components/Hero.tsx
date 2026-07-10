@@ -63,7 +63,7 @@ export default function Hero() {
             href="https://github.com/Zion-TerraNova/v3-Mainnet/tree/main"
             target="_blank"
             rel="noopener noreferrer"
-            className="group inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-linear-to-r from-zion-gold/15 via-amber-500/10 to-zion-gold/15 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-zion-gold shadow-[0_0_20px_rgba(251,191,36,0.2)] hover:shadow-[0_0_28px_rgba(251,191,36,0.4)] hover:border-zion-gold/60 transition-all"
+            className="zion-kicker border-zion-gold/40 bg-zion-gold/10 text-zion-gold group"
           >
             <Github className="h-4 w-4 transition-transform group-hover:rotate-12" />
             {cs ? 'Mainnet Beta · GitHub' : 'Mainnet Beta · GitHub'}
