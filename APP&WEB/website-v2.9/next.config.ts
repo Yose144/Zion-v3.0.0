@@ -85,6 +85,8 @@ const nextConfig: NextConfig = {
       { source: '/pool/miners', destination: '/pool', permanent: true },
       { source: '/pool/calculator', destination: '/pool', permanent: true },
       { source: '/pool/benchmarks', destination: '/pool', permanent: true },
+      { source: '/zohar', destination: '/tree-of-life', permanent: true },
+      { source: '/zohar/:path*', destination: '/tree-of-life/:path*', permanent: true },
     ];
   },
   // P1-33: Security headers — CSP, X-Frame-Options, HSTS, etc.

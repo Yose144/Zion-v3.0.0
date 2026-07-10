@@ -20,6 +20,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/genesis', priority: 0.6, changeFrequency: 'monthly' as const },
     { path: '/docs', priority: 0.7, changeFrequency: 'weekly' as const },
     { path: '/miner-stats', priority: 0.6, changeFrequency: 'hourly' as const },
+    { path: '/tree-of-life', priority: 0.6, changeFrequency: 'monthly' as const },
   ];
 
   return routes.map((route) => ({
