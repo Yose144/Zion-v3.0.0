@@ -1185,51 +1185,6 @@ export default function DefiPage() {
           </div>
         </motion.div>
       </section>
-
-      {/* ── Uniswap Warning Notice ── */}
-      <section className="zion-container relative z-10 mb-20">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="zion-rainbow-card p-6 border-amber-500/20"
-          style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
-        >
-          <div className="flex items-start gap-4">
-            <AlertTriangle className="h-6 w-6 text-amber-400 shrink-0 mt-0.5" />
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-amber-300">
-                {cs ? 'Varování Uniswap UI: „Potential honeypot"' : 'Uniswap UI Warning: "Potential honeypot"'}
-              </h3>
-              <p className="text-xs text-gray-300 leading-relaxed">
-                {cs
-                  ? 'Uniswap zobrazuje toto varování od Blockaid, což je false positive. wZION je bridge token s BRIDGE_ROLE mintem a GUARDIAN_ROLE pauzou — standardní bezpečnostní model pro bridged tokeny. Žádné sell fees, žádná blacklist, žádné skryté mintování. Kontrakt je ověřený ERC-20 s OpenZeppelin AccessControl. Varování „Not listed on leading U.S. exchanges" je očekávané — ZION zatím není na Coinbase/Kraken/Gemini.'
-                  : 'Uniswap displays this warning from Blockaid, which is a false positive. wZION is a bridge token with BRIDGE_ROLE mint and GUARDIAN_ROLE pause — standard security model for bridged tokens. No sell fees, no blacklist, no hidden minting. The contract is a verified ERC-20 with OpenZeppelin AccessControl. The "Not listed on leading U.S. exchanges" warning is expected — ZION is not yet on Coinbase/Kraken/Gemini.'}
-              </p>
-              <p className="text-xs text-gray-400">
-                {cs ? 'Zdroj kontraktu: ' : 'Contract source: '}
-                <a
-                  href={`https://basescan.org/address/${CONTRACTS.wZION}#code`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-zion-cyan hover:underline inline-flex items-center gap-1"
-                >
-                  Basescan <ExternalLink className="h-3 w-3" />
-                </a>
-                {' · '}
-                <a
-                  href="https://support.uniswap.org/hc/en-us/articles/40074236290445-What-are-token-warnings"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-zion-cyan hover:underline inline-flex items-center gap-1"
-                >
-                  {cs ? 'Více o varováních Uniswap' : 'More about Uniswap warnings'} <ExternalLink className="h-3 w-3" />
-                </a>
-              </p>
-            </div>
-          </div>
-        </motion.div>
-      </section>
     </div>
   );
 }

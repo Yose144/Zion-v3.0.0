@@ -11,7 +11,6 @@ import {
   ShieldHalf,
   Sparkles,
   Zap,
-  AlertTriangle,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
@@ -65,23 +64,6 @@ export default function Hero() {
             <ShieldHalf className="w-3.5 h-3.5 animate-pulse" />
             {cs ? 'Mainnet Beta · Zdroj na GitHubu' : 'Mainnet Beta · Source on GitHub'}
           </a>
-        </motion.div>
-
-        {/* ─── Work in Progress warning ─── */}
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="mb-10 rounded-xl border border-amber-500/30 bg-amber-500/8 px-4 py-3"
-        >
-          <div className="flex items-start gap-2.5">
-            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
-            <p className="text-xs leading-relaxed text-amber-200/80">
-              {cs
-                ? 'Tento projekt je v neustálém vývoji. Všechny funkce, vizualizace a koncepty se mohou kdykoli změnit. Síť běží v Mainnet Beta — těžba a používání na vlastní riziko. Nic zde není investiční doporučení.'
-                : 'This project is under constant development. All features, visualizations, and concepts may change at any time. The network runs in Mainnet Beta — mining and usage at your own risk. Nothing here is investment advice.'}
-            </p>
-          </div>
         </motion.div>
 
         <div className="grid lg:grid-cols-[1.08fr_0.92fr] gap-12 xl:gap-20 items-start">
