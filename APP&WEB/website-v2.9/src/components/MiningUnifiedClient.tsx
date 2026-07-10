@@ -179,7 +179,7 @@ const faqItems = [
   { q: "What is Ekam Deeksha?", a: "Ekam Deeksha is ZION's dual-algo PoW consensus: BLAKE3 (primary, fast, ASIC-resistant) + RandomNPU (secondary, GPU-optimized NPU kernel). Both run on CPU and GPU. The algorithm uses a 256 KiB scratchpad with random reads for memory-hardness." },
   { q: "Node won't start / No peers connecting?", a: `Check Rust ≥ 1.75 (rustc --version). Ensure port 8333 is free (lsof -i :8333). Verify firewall allows TCP 8333. Try manual peers: --peers ${SITE_PRIMARY_HOST}:8333.` },
   { q: "Can I mine on Raspberry Pi?", a: "Yes! Build from source for linux-arm64. RPi 4/5 works well for CPU mining with the BLAKE3 hash." },
-  { q: "Where are the binaries?", a: "Pre-built Linux x86_64 binaries are on GitHub Releases (v3.0.4-beta). For macOS, Windows, and ARM64, build from source: git clone https://github.com/Zion-TerraNova/v3-Mainnet.git && cargo build --release" },
+  { q: "Where are the binaries?", a: "Pre-built binaries for Linux x86_64, macOS (Apple Silicon + Intel), and Windows x86_64 are on GitHub Releases (v3.0.5-beta). For ARM64 (Raspberry Pi), build from source: git clone https://github.com/Zion-TerraNova/v3-Mainnet.git && cargo build --release -p zion-public" },
 ];
 
 /* ═══════════════════════════════════════════════════════════
@@ -230,12 +230,12 @@ export default function MiningUnifiedClient() {
       color: 'text-zion-cyan border-zion-cyan/20 bg-zion-cyan/10',
       items: cs
         ? [
-            'Stahnete ZION CLI z GitHub Releases (Linux x86_64)',
+            'Stahnete ZION CLI z GitHub Releases (Linux, macOS, Windows)',
             'Spustte: zion wallet new --mnemonic --out my-wallet.json --print',
             'Zapiste si 24 slov na papir jako zalohu',
           ]
         : [
-            'Download ZION CLI from GitHub Releases (Linux x86_64)',
+            'Download ZION CLI from GitHub Releases (Linux, macOS, Windows)',
             'Run: zion wallet new --mnemonic --out my-wallet.json --print',
             'Write down 24 words on paper — your backup!',
           ],
@@ -322,7 +322,7 @@ export default function MiningUnifiedClient() {
         { q: 'Co je Ekam Deeksha?', a: 'Ekam Deeksha je dual-algo PoW konsensus ZIONu: BLAKE3 (primarni, rychly, ASIC-resistant) + RandomNPU (sekundarni, GPU NPU kernel). Obe bezi na CPU i GPU. Algoritmus pouziva 256 KiB scratchpad s nahodnymi cteni pro memory-hardness.' },
         { q: 'Node se nespusti / nepripojuji se peery?', a: `Zkontrolujte Rust ≥ 1.75 (rustc --version). Ujistete se, ze port 8333 je volny (lsof -i :8333). Overte firewall pro TCP 8333. Zkuste manualni peery: --peers ${SITE_PRIMARY_HOST}:8333.` },
         { q: 'Muzu tezit na Raspberry Pi?', a: 'Ano. Build ze zdroje pro linux-arm64. RPi 4/5 funguje dobre pro CPU tezbu s BLAKE3 hashem.' },
-        { q: 'Kde jsou binarky?', a: 'Predkompilovane Linux x86_64 binarky jsou na GitHub Releases (v3.0.4-beta). Pro macOS, Windows a ARM64 build ze zdroje: git clone https://github.com/Zion-TerraNova/v3-Mainnet.git && cargo build --release' },
+        { q: 'Kde jsou binarky?', a: 'Predkompilovane binarky pro Linux x86_64, macOS (Apple Silicon + Intel) a Windows x86_64 jsou na GitHub Releases (v3.0.5-beta). Pro ARM64 (Raspberry Pi) build ze zdroje: git clone https://github.com/Zion-TerraNova/v3-Mainnet.git && cargo build --release' },
       ]
     : faqItems;
 
@@ -361,8 +361,8 @@ export default function MiningUnifiedClient() {
             </div>
             <p className="text-white/50 max-w-2xl text-lg mt-4">
               {cs
-                ? 'Vse, co potrebujete - od prvni penezenky az po vlastni full node. Nativni Rust binarky pro Linux x86_64 z GitHub Releases. Ostatni platformy build ze zdroju.'
-                : 'Everything you need — from first wallet to running a full node. Native Rust binaries for Linux x86_64 from GitHub Releases. Other platforms: build from source.'}
+                ? 'Vse, co potrebujete - od prvni penezenky az po vlastni full node. Nativni Rust binarky pro Linux x86_64, macOS a Windows z GitHub Releases. ARM64 build ze zdroju.'
+                : 'Everything you need — from first wallet to running a full node. Native Rust binaries for Linux x86_64, macOS, and Windows from GitHub Releases. ARM64: build from source.'}
             </p>
 
             {/* In-page nav */}
@@ -451,7 +451,7 @@ export default function MiningUnifiedClient() {
             </p>
             <div className="rounded-xl bg-black/60 p-3 font-mono text-xs text-gray-300 overflow-x-auto">
               <span className="text-gray-500">$</span>{" "}
-              wget https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.4-beta/zion-cli-linux-x86_64.tar.gz
+              wget https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.5-beta/zion-cli-linux-x86_64.tar.gz
             </div>
             <div className="rounded-xl bg-black/60 p-3 font-mono text-xs text-gray-300 overflow-x-auto mt-2">
               <span className="text-gray-500">$</span>{" "}
@@ -557,10 +557,10 @@ export default function MiningUnifiedClient() {
                 <div className="space-y-4">
                   <CodeBlock
                     title={cs ? 'Moznost A - predkompilovana binarka (doporuceno)' : 'Option A — Pre-compiled binary (recommended)'}
-                    code={`# Download ZION CLI from GitHub Releases (Linux x86_64)
+                    code={`# Download ZION CLI from GitHub Releases (Linux, macOS, Windows)
 # → https://github.com/Zion-TerraNova/v3-Mainnet/releases
 
-wget https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.4-beta/zion-cli-linux-x86_64.tar.gz
+wget https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.5-beta/zion-cli-linux-x86_64.tar.gz
 tar xzf zion-cli-linux-x86_64.tar.gz
 chmod +x zion
 ./zion --version`}
@@ -568,8 +568,8 @@ chmod +x zion
                   <CodeBlock
                     title={cs ? 'Moznost B - build ze zdroje' : 'Option B — Build from source'}
                     code={`git clone https://github.com/Zion-TerraNova/v3-Mainnet.git
-cd v3-Mainnet
-cargo build --release -p zion-miner
+cd v3-Mainnet/V3
+cargo build --release -p zion-public
 ls -la target/release/zion-miner`}
                   />
                   <CodeBlock
@@ -613,8 +613,8 @@ ls -la target/release/zion-miner`}
                   <CodeBlock
                     code={`# Build from source with Metal backend
 git clone https://github.com/Zion-TerraNova/v3-Mainnet.git
-cd v3-Mainnet
-cargo build --release -p zion-miner --features metal
+cd v3-Mainnet/V3
+cargo build --release -p zion-public --features metal
 
 ./target/release/zion-miner \\
   --pool stratum+tcp://${POOL}:8444 \\
@@ -631,8 +631,8 @@ cargo build --release -p zion-miner --features metal
                   <CodeBlock
                     code={`# Requires NVIDIA Driver ≥ 535 + CUDA ≥ 12.0
 git clone https://github.com/Zion-TerraNova/v3-Mainnet.git
-cd v3-Mainnet
-cargo build --release -p zion-miner --features cuda
+cd v3-Mainnet/V3
+cargo build --release -p zion-public --features cuda
 
 ./target/release/zion-miner \\
   --pool stratum+tcp://${POOL}:8444 \\
@@ -649,8 +649,8 @@ cargo build --release -p zion-miner --features cuda
                   <CodeBlock
                     code={`# Requires AMD ROCm ≥ 5.0 or AMDGPU-PRO
 git clone https://github.com/Zion-TerraNova/v3-Mainnet.git
-cd v3-Mainnet
-cargo build --release -p zion-miner --features gpu-opencl
+cd v3-Mainnet/V3
+cargo build --release -p zion-public --features gpu-opencl
 
 ./target/release/zion-miner \\
   --pool stratum+tcp://${POOL}:8444 \\
@@ -881,13 +881,13 @@ cargo build --release -p zion-miner --features gpu-opencl
                 <h4 className="text-white font-medium">{cs ? 'Predkompilovana binarka (doporuceno)' : 'Pre-compiled Binary (recommended)'}</h4>
               </div>
               <CodeBlock
-                code={`# Download ZION Node from GitHub Releases (Linux x86_64)
+                code={`# Download ZION CLI from GitHub Releases (Linux, macOS, Windows)
 # → https://github.com/Zion-TerraNova/v3-Mainnet/releases
 
-wget https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.4-beta/zion-node-linux-x86_64.tar.gz
-tar xzf zion-node-linux-x86_64.tar.gz
-chmod +x zion-node
-./zion-node --version`}
+wget https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.5-beta/zion-cli-linux-x86_64.tar.gz
+tar xzf zion-cli-linux-x86_64.tar.gz
+chmod +x zion
+./zion --version`}
               />
             </div>
 
@@ -898,9 +898,9 @@ chmod +x zion-node
               </div>
               <CodeBlock
                 code={`git clone https://github.com/Zion-TerraNova/v3-Mainnet.git
-cd v3-Mainnet
-cargo build --release -p zion-node
-# Binary → target/release/zion-node`}
+cd v3-Mainnet/V3
+cargo build --release -p zion-public
+# Binary → target/release/zion`}
               />
             </div>
 
@@ -911,7 +911,7 @@ cargo build --release -p zion-node
               </div>
               <CodeBlock
                 code={`# ZION CLI contains node, miner, wallet, pool, bridge, dao as subcommands
-wget https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.4-beta/zion-cli-linux-x86_64.tar.gz
+wget https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.5-beta/zion-cli-linux-x86_64.tar.gz
 tar xzf zion-cli-linux-x86_64.tar.gz
 chmod +x zion
 ./zion node start --network mainnet`}

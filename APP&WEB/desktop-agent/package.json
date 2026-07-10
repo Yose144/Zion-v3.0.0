@@ -1,7 +1,7 @@
 {
   "name": "zion-desktop-agent",
-  "version": "3.0.3",
-  "description": "ZION V3 Mainnet v3.0.2 Desktop Agent - Plug-and-play miner + full node + unified CLI. One-click install with all binaries bundled.",
+  "version": "3.0.5",
+  "description": "ZION V3 Mainnet v3.0.5 'All Green' Desktop Agent - Plug-and-play miner + full node + unified CLI. One-click install with all binaries bundled.",
   "homepage": "https://zionterranova.com",
   "main": "src/main.js",
   "scripts": {
@@ -112,9 +112,9 @@
     },
     "publish": [
       {
-        "provider": "github",
-        "owner": "Yose144",
-        "repo": "2.9.6"
+        "provider": "generic",
+        "url": "https://updates.zionterranova.com/api/releases",
+        "channel": "latest"
       }
     ]
   }

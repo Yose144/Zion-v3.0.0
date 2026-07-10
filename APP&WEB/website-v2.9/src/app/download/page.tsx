@@ -18,8 +18,6 @@ import { SITE_POOL_PRIMARY, SITE_RELEASE_LABEL, SITE_VERSION } from '@/lib/site'
 const DownloadToolBrowser = dynamic(() => import('@/components/download/DownloadToolBrowser'));
 const DownloadFaq = dynamic(() => import('@/components/download/DownloadFaq'));
 
-const DOCS_URL = 'https://github.com/Zion-TerraNova/2.9.6/blob/main/docs/QUICK_START.md';
-
 const getDesktopAgentFeatures = (cs: boolean) => [
   cs ? 'GUI dashboard s hashratem a zustatkem v realnem case' : 'GUI Dashboard with real-time hashrate & balance',
   cs ? 'Tezba na jedno kliknuti — bez terminalu' : 'One-click mining — no terminal needed',
@@ -81,20 +79,24 @@ export default function DownloadPage() {
               {SITE_RELEASE_LABEL}
             </div>
             <div>
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? 'Linux x86_64 live · macOS / Windows / ARM64 ze zdrojů' : 'Linux x86_64 live · macOS / Windows / ARM64 from source'}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? '4 platformy · jeden binary · interaktivní menu' : '4 platforms · one binary · interactive menu'}</p>
               <h1 className="text-3xl sm:text-5xl font-semibold text-gradient leading-tight">
                 {cs ? 'Stahni. Tez. Vydelavej.' : 'Download. Mine. Earn.'}
               </h1>
             </div>
             <p className="text-lg text-gray-300">
-              {cs ? `ZION v3.0.4-beta — první veřejný mainnet release. 8 nativních Rust binárek pro Linux x86_64 dostupných přímo z GitHubu:` : `ZION v3.0.4-beta — first public mainnet release. 8 native Rust binaries for Linux x86_64 available directly from GitHub:`}{' '}
-              <span className="text-white font-semibold">node</span>,{' '}
-              <span className="text-zion-gold font-semibold">miner</span>,{' '}
-              <span className="text-zion-cyan font-semibold">cli</span>,{' '}
-              <span className="text-zion-purple font-semibold">pool</span>,{' '}
-              <span className="text-white font-semibold">bridge</span>,{' '}
-              <span className="text-white font-semibold">dao</span>,{' '}
-              <span className="text-white font-semibold">atomic-swap</span>{cs ? ' a all-in-one balíček. Ostatní platformy zkompiluj ze zdrojů.' : ' and all-in-one bundle. Other platforms: build from source.'}
+              {cs ? `ZION v3.0.5-beta — zjednodušený Community CLI. Jeden binary s interaktivním menu: ` : `ZION v3.0.5-beta — simplified Community CLI. One binary with an interactive menu: `}{' '}
+              <span className="text-white font-semibold">wallet</span>,{' '}
+              <span className="text-zion-gold font-semibold">node</span>,{' '}
+              <span className="text-zion-cyan font-semibold">miner</span>,{' '}
+              <span className="text-zion-purple font-semibold">pool</span>
+              {cs ? ' — vše v jednom. Dostupné pro ' : ' — all in one. Available for '}{' '}
+              <span className="text-emerald-400 font-semibold">Linux x86_64</span>,{' '}
+              <span className="text-purple-400 font-semibold">macOS Apple Silicon</span>,{' '}
+              <span className="text-indigo-400 font-semibold">macOS Intel</span>{' '}
+              {cs ? 'a ' : ' and '}{' '}
+              <span className="text-blue-400 font-semibold">Windows x86_64</span>
+              {cs ? '. ARM64 (Raspberry Pi) ze zdrojů.' : '. ARM64 (Raspberry Pi) from source.'}
             </p>
             <div className="flex flex-wrap gap-3">
               <Link
@@ -120,11 +122,11 @@ export default function DownloadPage() {
         <section className="space-y-6">
           <div className="flex flex-col gap-2">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Veřejný mainnet release' : 'Public mainnet release'}</p>
-            <h2 className="text-3xl font-semibold text-white">ZION v3.0.4-beta · Linux x86_64</h2>
+            <h2 className="text-3xl font-semibold text-white">ZION v3.0.5-beta · 4 platformy</h2>
             <p className="text-gray-400 max-w-3xl">
               {cs
-                ? 'První veřejný release ZION mainnetu. 8 nativních Rust binárek pro Linux x86_64 je dostupných přímo z GitHub Releases s SHA256 verifikací. Pro macOS, Windows a ARM64 platformy je k dispozici build ze zdrojů — návod níže.'
-                : 'First public ZION mainnet release. 8 native Rust binaries for Linux x86_64 are available directly from GitHub Releases with SHA256 verification. For macOS, Windows, and ARM64 platforms, build from source — instructions below.'}
+                ? 'Zjednodušený Community CLI — jeden binary s interaktivním menu pro wallet, node, miner a pool. Dostupný pro Linux x86_64, macOS (Apple Silicon + Intel) a Windows x86_64 přímo z GitHub Releases s SHA256 verifikací. ARM64 (Raspberry Pi) build ze zdrojů.'
+                : 'Simplified Community CLI — one binary with an interactive menu for wallet, node, miner, and pool. Available for Linux x86_64, macOS (Apple Silicon + Intel), and Windows x86_64 directly from GitHub Releases with SHA256 verification. ARM64 (Raspberry Pi) build from source.'}
             </p>
           </div>
 

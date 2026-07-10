@@ -1,4 +1,4 @@
-// ZION V3 Mainnet Ready v3.0.0 - Renderer Process
+// ZION V3 Mainnet Ready v3.0.5 "All Green" - Renderer Process
 // UI logic and state management
 
 // ── Logging: only user-visible events + errors in console.log.
@@ -1471,7 +1471,7 @@ function setupEventListeners() {
     addLogEntry('Mining started successfully', 'info');
     // Mining Console banner
     appendMiningConsole('─'.repeat(60));
-    appendMiningConsole(' * ZION V3 Mainnet Ready v3.0.0 — Mining started');
+    appendMiningConsole(' * ZION V3 Mainnet Ready v3.0.5 — Mining started');
     appendMiningConsole('─'.repeat(60));
   });
   
@@ -3045,12 +3045,74 @@ let _bridgeEvmAddress = null;
 let _bridgeDirection  = 'L1toEVM';
 let _bridgeMemo       = null;
 
-/** Called when Bridge nav item is clicked (from switchView) */
+/** Called when Updates nav item is clicked (from switchView) */
 function initUpdateUI() {
   const checkBtn = document.getElementById('update-check-btn');
   const installBtn = document.getElementById('update-install-btn');
   const autoCheckbox = document.getElementById('update-auto-check');
+  const licenseInput = document.getElementById('license-key-input');
+  const licenseBtn = document.getElementById('license-activate-btn');
+  const licenseStatus = document.getElementById('license-status');
 
+  // ── License key activation ──────────────────────────────────────────────────
+  if (licenseBtn && !licenseBtn._bound) {
+    licenseBtn._bound = true;
+
+    // Load saved license key
+    window.electronAPI.getLicenseKey?.().then(result => {
+      if (result?.licenseKey && licenseInput) {
+        licenseInput.value = result.licenseKey;
+        if (licenseStatus) {
+          licenseStatus.textContent = 'License key active.';
+          licenseStatus.style.color = '#6ee7b7';
+        }
+      }
+    }).catch(() => {});
+
+    licenseBtn.addEventListener('click', async () => {
+      const key = licenseInput?.value?.trim();
+      if (!key) {
+        if (licenseStatus) {
+          licenseStatus.textContent = 'Please enter a license key.';
+          licenseStatus.style.color = '#f87171';
+        }
+        return;
+      }
+
+      licenseBtn.disabled = true;
+      licenseBtn.textContent = 'Validating...';
+      if (licenseStatus) {
+        licenseStatus.textContent = 'Validating license...';
+        licenseStatus.style.color = '#93c5fd';
+      }
+
+      try {
+        const result = await window.electronAPI.validateLicense(key);
+        if (result?.success && result?.licenseValid) {
+          if (licenseStatus) {
+            licenseStatus.textContent = 'License activated! You can now check for updates.';
+            licenseStatus.style.color = '#6ee7b7';
+          }
+          _setUpdateStatus('Ready', 'Click to check for updates', '#6ee7b7');
+        } else {
+          if (licenseStatus) {
+            licenseStatus.textContent = result?.error || 'Invalid license key.';
+            licenseStatus.style.color = '#f87171';
+          }
+        }
+      } catch (err) {
+        if (licenseStatus) {
+          licenseStatus.textContent = err?.message || 'Validation failed. Check your connection.';
+          licenseStatus.style.color = '#f87171';
+        }
+      } finally {
+        licenseBtn.disabled = false;
+        licenseBtn.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg> Activate';
+      }
+    });
+  }
+
+  // ── Check for updates ───────────────────────────────────────────────────────
   if (checkBtn && !checkBtn._bound) {
     checkBtn._bound = true;
     checkBtn.addEventListener('click', async () => {
@@ -3063,7 +3125,11 @@ function initUpdateUI() {
       try {
         const result = await window.electronAPI.checkForUpdates();
         if (!result?.success) {
-          _setUpdateStatus('Error', result?.error || 'Check failed', '#f87171');
+          if (result?.needsLicense) {
+            _setUpdateStatus('License Required', 'Enter your license key above', '#fcd34d');
+          } else {
+            _setUpdateStatus('Error', result?.error || 'Check failed', '#f87171');
+          }
         } else if (result.updateAvailable) {
           _updateState.available = true;
           _setUpdateStatus('Update Available!', `v${result.latestVersion} ready`, '#6ee7b7');

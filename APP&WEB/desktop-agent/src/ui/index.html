@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- AUDIT-FIX E-04 (16 Feb 2026): Content Security Policy -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' ws://localhost:* wss://localhost:* http://localhost:* https://localhost:* http://62.171.141.136:* http://62.171.141.136:* https://openrouter.ai https://sepolia.basescan.org; object-src 'none'; base-uri 'self'; form-action 'self';">
-  <title>ZION V3 Mainnet v3.0.0</title>
+  <title>ZION V3 Mainnet v3.0.5</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
@@ -3784,7 +3784,7 @@
             <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Mining</div>
             <div class="web29-title-row">
               <h1 class="web29-title text-gradient">Dashboard</h1>
-              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>ZION V3 Mainnet v3.0.0 • Mainnet LIVE</div>
+              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>ZION V3 Mainnet v3.0.5 • Mainnet LIVE</div>
             </div>
           </div>
           <div class="header-badge-wrap">
@@ -4790,7 +4790,7 @@
                 <label class="mode-pill">
                   <input type="radio" name="miner-backend" value="rust" id="backend-rust" />
                   <div>
-                    <div class="mode-title">Rust (v3.0.0)</div>
+                    <div class="mode-title">Rust (v3.0.5)</div>
                     <p>Fast native Ekam miner • primary desktop backend</p>
                   </div>
                 </label>
@@ -4847,7 +4847,7 @@
           <div class="mining-console-body" id="console-body">
             <!-- Static miner panel — SRBMiner style, overwrites in place -->
             <div id="miner-static-panel" class="miner-static-panel view-hidden"></div>
-            <div class="mc-line"><span class="mc-info"> * </span><span class="mc-ok">ZION ZION V3 Mainnet v3.0.0</span> <span class="mc-info">— Cosmic Harmony Miner</span></div>
+            <div class="mc-line"><span class="mc-info"> * </span><span class="mc-ok">ZION ZION V3 Mainnet v3.0.5</span> <span class="mc-info">— Cosmic Harmony Miner</span></div>
             <div class="mc-line"><span class="mc-info"> * </span><span class="mc-info">Waiting for mining to start...</span></div>
           </div>
         </div>
@@ -5072,7 +5072,7 @@
           <div class="control-panel">
             <h2 class="inline-heading">
               <svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg>
-              <span>ZION V3 Mainnet v3.0.0</span>
+              <span>ZION V3 Mainnet v3.0.5</span>
             </h2>
             <p class="about-lead">
               <strong>Desktop Mining Agent</strong> — Professional mining software with one-click Rust miner, real-time statistics, and full wallet management.
@@ -5084,7 +5084,7 @@
                 <div class="info-card-kicker">
                   <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-info"></use></svg> VERSION
                 </div>
-                <div class="info-card-value version">3.0.0</div>
+                <div class="info-card-value version">3.0.5</div>
                 <div class="info-card-sub">V3 Mainnet Ready</div>
               </div>
               <div class="info-card algo">
@@ -5120,13 +5120,38 @@
               <span>Automatic Updates</span>
             </h2>
 
+            <!-- License key input -->
+            <div class="license-section" style="margin-bottom:20px;">
+              <label for="license-key-input" style="display:block; font-size:13px; color:#94a3b8; margin-bottom:6px;">
+                License Key
+              </label>
+              <div style="display:flex; gap:8px; align-items:center;">
+                <input
+                  type="text"
+                  id="license-key-input"
+                  class="wizard-input"
+                  placeholder="ZION-XXXX-XXXX-XXXX-XXXX"
+                  style="flex:1; font-family:monospace; letter-spacing:1px;"
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+                <button class="btn btn-primary" id="license-activate-btn" style="white-space:nowrap;">
+                  <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
+                  Activate
+                </button>
+              </div>
+              <div id="license-status" style="font-size:12px; color:#94a3b8; margin-top:6px;">
+                Enter your license key to enable auto-updates.
+              </div>
+            </div>
+
             <!-- Current version + status -->
             <div class="info-cards-grid" style="grid-template-columns: repeat(2, 1fr);">
               <div class="info-card version">
                 <div class="info-card-kicker">
                   <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-info"></use></svg> CURRENT VERSION
                 </div>
-                <div class="info-card-value version" id="update-current-ver">3.0.0</div>
+                <div class="info-card-value version" id="update-current-ver">3.0.5</div>
                 <div class="info-card-sub">V3 Mainnet Ready</div>
               </div>
               <div class="info-card network">
@@ -5134,7 +5159,7 @@
                   <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg> UPDATE STATUS
                 </div>
                 <div class="info-card-value network" id="update-status-label">Ready</div>
-                <div class="info-card-sub" id="update-status-sub">Click to check for updates</div>
+                <div class="info-card-sub" id="update-status-sub">Enter license key to check for updates</div>
               </div>
             </div>
 
@@ -5451,10 +5476,10 @@
                 <h4 style="margin:0 0 6px 0; color:#6ee7b7; font-size:14px;">Quick Start — Linux</h4>
                 <div style="background:rgba(0,0,0,.3); border-radius:8px; padding:12px 14px; font-family:monospace; font-size:12px; color:#e2e8f0; line-height:1.6; overflow-x:auto;">
                   <span style="color:#6b7280;"># AppImage</span><br/>
-                  chmod +x zion-desktop-agent-v3.0.0-linux-x64.AppImage<br/>
-                  ./zion-desktop-agent-v3.0.0-linux-x64.AppImage<br/><br/>
+                  chmod +x zion-desktop-agent-v3.0.5-linux-x64.AppImage<br/>
+                  ./zion-desktop-agent-v3.0.5-linux-x64.AppImage<br/><br/>
                   <span style="color:#6b7280;"># Nebo .deb</span><br/>
-                  sudo dpkg -i zion-desktop-agent-v3.0.0-linux-x64.deb<br/>
+                  sudo dpkg -i zion-desktop-agent-v3.0.5-linux-x64.deb<br/>
                   zion-miner<br/><br/>
                   <span style="color:#6b7280;"># Pokud miner nefunguje — nastavte permissions</span><br/>
                   chmod +x /opt/ZION\ Miner/resources/zion-universal-miner<br/>
