@@ -88,20 +88,21 @@ export default function Navigation() {
 
   const activeGroup = navGroups.find((group) => group.title === openGroup);
 
-  /* ── HERO icons — the 4 most important, BIG ── */
+  /* ── HERO icons — 4 most important, RASTA colored ── */
+  /* Rasta: green (emerald) → gold (zion-gold) → amber (amber-500) */
   const heroIcons = [
-    { href: '/explorer', icon: Orbit, color: '251, 191, 36', label: tr('nav', 'explorer', lang) },
-    { href: '/pool', icon: Pickaxe, color: '168, 85, 247', label: tr('nav', 'pool', lang) },
-    { href: '/network', icon: SignalHigh, color: '6, 182, 212', label: tr('nav', 'network', lang) },
-    { href: '/wallet', icon: Wallet, color: '236, 72, 153', label: tr('nav', 'wallet', lang) },
+    { href: '/explorer', icon: Orbit, color: '16, 185, 129', label: tr('nav', 'explorer', lang) },       /* green */
+    { href: '/pool', icon: Pickaxe, color: '251, 191, 36', label: tr('nav', 'pool', lang) },             /* gold */
+    { href: '/network', icon: SignalHigh, color: '245, 158, 11', label: tr('nav', 'network', lang) },    /* amber */
+    { href: '/wallet', icon: Wallet, color: '34, 197, 94', label: tr('nav', 'wallet', lang) },           /* green */
   ];
 
   /* ── Secondary icons — medium, core ecosystem ── */
   const secondaryIcons = [
     { href: '/mining', icon: HardHat, color: '245, 158, 11', label: tr('nav', 'mining', lang) },
     { href: '/defi', icon: Coins, color: '16, 185, 129', label: tr('nav', 'defi', lang) },
-    { href: '/download', icon: Download, color: '6, 182, 212', label: tr('nav', 'download', lang) },
-    { href: '/docs', icon: BookOpen, color: '20, 184, 166', label: tr('nav', 'docs', lang) },
+    { href: '/download', icon: Download, color: '251, 191, 36', label: tr('nav', 'download', lang) },
+    { href: '/docs', icon: BookOpen, color: '34, 197, 94', label: tr('nav', 'docs', lang) },
   ];
 
   /* ── Tertiary icons — small, rest of ecosystem ── */

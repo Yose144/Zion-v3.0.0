@@ -1208,6 +1208,7 @@ impl NodeRuntime {
             &self.chain_state.humanitarian_address,
             &self.chain_state.issobella_address,
             &self.chain_state.pool_fee_address,
+            self.chain_state.balance_check_height,
         );
     }
 
@@ -2114,6 +2115,33 @@ impl ChainState {
         balance.max(0) as u128
     }
 
+    /// Confirmed balance from accepted blocks only (no mempool subtraction).
+    /// Used by `validate_peer_block` where intra-block debits are handled
+    /// separately by the prior-TX loop.  Using `account_balance_for` there
+    /// would double-count the TX being validated (it's still in the mempool
+    /// during validation), requiring 2× the balance unnecessarily.
+    fn confirmed_balance_for(&self, address: &str) -> u128 {
+        let mut balance: i128 = 0;
+        for block in &self.accepted_blocks {
+            for tx in &block.transactions {
+                if tx.from == "coinbase" {
+                    if tx.to == address {
+                        balance = balance.saturating_add(tx.amount_zion as i128);
+                    }
+                    continue;
+                }
+                if tx.to == address {
+                    balance = balance.saturating_add(tx.amount_zion as i128);
+                }
+                if tx.from == address {
+                    balance =
+                        balance.saturating_sub((tx.amount_zion + tx.fee_zion as u128) as i128);
+                }
+            }
+        }
+        balance.max(0) as u128
+    }
+
     /// Return all spendable (unspent) UTXOs for a `zion1...` address.
     fn spendable_utxos(&self, address: &str) -> Vec<SpendableUtxo> {
         self.utxo_set()
@@ -2170,6 +2198,7 @@ impl ChainState {
             "",
             "",
             "",
+            u64::MAX,
         );
         let mut accepted_by_height = BTreeMap::new();
         accepted_by_height.insert(0, genesis.clone());
@@ -2465,6 +2494,7 @@ impl ChainState {
             &humanitarian_addr,
             &issobella_addr,
             &pool_fee_addr,
+            self.balance_check_height,
         );
         self.next_template_id = self.next_template_id.wrapping_add(1);
     }
@@ -2962,7 +2992,7 @@ impl ChainState {
                     // same sender in one block are handled correctly).
                     if self.balance_check_active_at(block.height) {
                         let mut sender_balance: i128 =
-                            self.account_balance_for(&transaction.from) as i128;
+                            self.confirmed_balance_for(&transaction.from) as i128;
                         // Apply credits/debits from earlier TXs in this block
                         for prior_tx in block.transactions.iter().take(index) {
                             if prior_tx.from == "coinbase" {
@@ -3292,6 +3322,7 @@ impl ChainState {
             &humanitarian_addr,
             &issobella_addr,
             &pool_fee_addr,
+            self.balance_check_height,
         );
         Ok(())
     }
@@ -3397,6 +3428,7 @@ impl ChainState {
             &humanitarian_addr,
             &issobella_addr,
             &pool_fee_addr,
+            self.balance_check_height,
         );
         Ok(())
     }
@@ -3622,6 +3654,7 @@ impl ChainState {
                     &humanitarian_addr,
                     &issobella_addr,
                     &pool_fee_addr,
+            self.balance_check_height,
                 );
                 return Ok(());
             };
@@ -3657,6 +3690,7 @@ impl ChainState {
                 &humanitarian_addr,
                 &issobella_addr,
                 &pool_fee_addr,
+            self.balance_check_height,
             );
         }
 
@@ -3690,9 +3724,17 @@ impl ChainState {
         issobella_address: &str,
         // The pool-fee 1% slot is burned (never minted), so no address is used.
         _pool_fee_address: &str,
+        balance_check_height: u64,
     ) -> TemplateState {
         let next_height = current_height.saturating_add(1);
         let mut selected_transactions = select_template_transactions(mempool);
+        // Filter out account TXs whose sender has insufficient confirmed
+        // balance — prevents mining blocks that would fail F5 validation.
+        // Only apply when the F5 balance check is active at this height.
+        if next_height >= balance_check_height {
+            selected_transactions =
+                filter_balance_sufficient(selected_transactions, accepted_blocks);
+        }
         let total_fees_zion: u64 = selected_transactions
             .iter()
             .map(|transaction| transaction.fee_zion)
@@ -4100,6 +4142,62 @@ fn select_template_transactions(mempool: &[RuntimeTransaction]) -> Vec<Transacti
     });
     selected.truncate(MAX_TEMPLATE_TRANSACTIONS);
     selected
+}
+
+/// Compute the confirmed balance for an address from accepted blocks only
+/// (does NOT subtract pending mempool debits, unlike `account_balance_for`).
+/// Used by `filter_balance_sufficient` to pre-validate template transactions.
+fn confirmed_balance_from_blocks(accepted_blocks: &[AcceptedBlock], address: &str) -> u128 {
+    let mut balance: i128 = 0;
+    for block in accepted_blocks {
+        for tx in &block.transactions {
+            if tx.from == "coinbase" {
+                if tx.to == address {
+                    balance = balance.saturating_add(tx.amount_zion as i128);
+                }
+                continue;
+            }
+            if tx.to == address {
+                balance = balance.saturating_add(tx.amount_zion as i128);
+            }
+            if tx.from == address {
+                balance =
+                    balance.saturating_sub((tx.amount_zion + tx.fee_zion as u128) as i128);
+            }
+        }
+    }
+    balance.max(0) as u128
+}
+
+/// Filter out account transactions whose sender has insufficient confirmed
+/// balance.  Transactions are already sorted by fee (descending) so the
+/// highest-fee TX from a sender is kept first, and subsequent TXs from the
+/// same sender are checked against the running balance after earlier
+/// debits.  This prevents the template from including TXs that would fail
+/// the F5 balance check in `validate_peer_block`, which caused 39% share
+/// rejection (miner finds block → node rejects due to insolvent mempool TX).
+fn filter_balance_sufficient(
+    transactions: Vec<Transaction>,
+    accepted_blocks: &[AcceptedBlock],
+) -> Vec<Transaction> {
+    let mut running_balances: HashMap<String, u128> = HashMap::new();
+    transactions
+        .into_iter()
+        .filter(|tx| {
+            if tx.from == "coinbase" || tx.from == "genesis" {
+                return true;
+            }
+            let balance = running_balances
+                .entry(tx.from.clone())
+                .or_insert_with(|| confirmed_balance_from_blocks(accepted_blocks, &tx.from));
+            let needed = tx.amount_zion + tx.fee_zion as u128;
+            if *balance < needed {
+                return false;
+            }
+            *balance -= needed;
+            true
+        })
+        .collect()
 }
 
 fn select_template_utxo_transactions(mempool: &[RuntimeTransaction]) -> Vec<tx::Transaction> {
@@ -4661,6 +4759,46 @@ mod tests {
         let template = runtime.active_template();
         assert_eq!(template.transaction_ids, vec![tx_high.tx_id, tx_low.tx_id]);
         assert_eq!(template.total_fees_zion, 8);
+    }
+
+    /// Regression test: when F5 balance check is active, the block template
+    /// must exclude mempool transactions whose sender has insufficient
+    /// confirmed balance.  Without this filter, the miner finds a block
+    /// but the node rejects it via `validate_peer_block`, causing high
+    /// share rejection rates.
+    #[test]
+    fn template_excludes_insolvent_tx_when_balance_check_active() {
+        let mut runtime = NodeRuntime::new("node-balance-filter", NodeConfig::mainnet());
+        runtime.set_balance_check_height(0);
+        let tx = sample_transaction("tx-insolvent", 1, 1);
+        let _ = runtime.handle_rpc_request(RpcRequest::SubmitTransaction {
+            transaction: tx.clone(),
+        });
+
+        let template = runtime.active_template();
+        // Sender has 0 confirmed balance → TX must be excluded from template
+        assert!(
+            !template.transaction_ids.contains(&tx.tx_id),
+            "insolvent TX should be filtered from template when balance check is active"
+        );
+    }
+
+    /// When balance check is NOT active (default), insolvent TXs are still
+    /// included in the template (backward compatibility with pre-F5 chains).
+    #[test]
+    fn template_includes_insolvent_tx_when_balance_check_inactive() {
+        let mut runtime = NodeRuntime::new("node-no-balance-check", NodeConfig::mainnet());
+        // balance_check_height defaults to u64::MAX (disabled)
+        let tx = sample_transaction("tx-insolvent-2", 1, 1);
+        let _ = runtime.handle_rpc_request(RpcRequest::SubmitTransaction {
+            transaction: tx.clone(),
+        });
+
+        let template = runtime.active_template();
+        assert!(
+            template.transaction_ids.contains(&tx.tx_id),
+            "insolvent TX should be included when balance check is inactive"
+        );
     }
 
     /// Slow: `find_valid_nonce` + template rotation in debug build.
