@@ -113,8 +113,8 @@ Goal: resolve all owner blockers and operational gaps so the chain is fully cons
 |---|------|--------|--------|
 | 2.1 | **Resolve bridge addresses** | 🔴 Blocked on D1 | Update `bridge-mainnet.toml`, mobile/desktop clients, website, docs to one consistent set per chain. |
 | 2.2 | **Basescan verification** | ✅ Done | **7/7 contracts verified** (wZION, ZIONAtomicSwap already verified; ZIONGovernance, ZIONTreasury, ZIONStaking, ZIONFarm verified 2026-07-02; ZIONBridge verified 2026-07-09 via `forge verify-contract`). |
-| 2.3 | **Validator ETH top-up** | 🔵 Pending | Top up 5 validators to ≥0.01 ETH each (~0.05 ETH total). |
-| 2.4 | **Atomic swap escrow fees** | 🔵 Pending | Send ~5-10 ZION to escrow `zion1y0j484d5e8r49785d253e8w0c2x4t3n792m5724` for L1 release TX fees. |
+| 2.3 | **Validator ETH top-up** | 🔴 Owner action needed | Top up 5 validators on Base with ≥0.001 ETH each (~0.005 ETH total). Addresses: `0xA737B512B5EEc5B9E3E3f2476Eb1cFDF6750BA12`, `0x7E263879c30f8C218A06be16ec66F7e9e1bFE879`, `0xD4E4c264417b6959503EdBBC3347052C4ca3857d`, `0x609E05c1E935d5617703912C5d5dd39d3C0C0417`, `0x603b43E51892dD25b845aB7E9317EA303f506096`. All currently 0 ETH — L1→EVM lock of 16.6M ZION stuck. |
+| 2.4 | **Atomic swap escrow fees** | ✅ Done | 10 ZION sent from pool wallet to escrow `zion1y0j484d5e8r49785d253e8w0c2x4t3n792m5724` (TXID `03a1e060...`, confirmed block 1377). |
 | 2.5 | **ZIONStaking / ZIONFarm UI verify** | ✅ Done | Deployed; verify live data on website. |
 | 2.6 | **More DEX liquidity** | 🔵 Pending | Seed wZION/WETH (needs D3) and/or wZION/USDC. |
 | 2.7 | **Blockaid false-positive report** | ✅ Done | Report prepared at `docs/3.0.4/BLOCKAID_FALSE_POSITIVE_REPORT.md`. Submit at `report.blockaid.io`. |
