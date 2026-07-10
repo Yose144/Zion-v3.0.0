@@ -88,20 +88,24 @@ export default function Navigation() {
 
   const activeGroup = navGroups.find((group) => group.title === openGroup);
 
-  /* ── Primary icons (core user flow: network → mine → wallet → defi → docs) ── */
-  const primaryIcons = [
-    { href: '/network', icon: SignalHigh, color: '6, 182, 212', label: tr('nav', 'network', lang) },
+  /* ── HERO icons — the 4 most important, BIG ── */
+  const heroIcons = [
     { href: '/explorer', icon: Orbit, color: '251, 191, 36', label: tr('nav', 'explorer', lang) },
     { href: '/pool', icon: Pickaxe, color: '168, 85, 247', label: tr('nav', 'pool', lang) },
-    { href: '/mining', icon: HardHat, color: '245, 158, 11', label: tr('nav', 'mining', lang) },
-    { href: '/download', icon: Download, color: '6, 182, 212', label: tr('nav', 'download', lang) },
-    { href: '/defi', icon: Coins, color: '16, 185, 129', label: tr('nav', 'defi', lang) },
+    { href: '/network', icon: SignalHigh, color: '6, 182, 212', label: tr('nav', 'network', lang) },
     { href: '/wallet', icon: Wallet, color: '236, 72, 153', label: tr('nav', 'wallet', lang) },
+  ];
+
+  /* ── Secondary icons — medium, core ecosystem ── */
+  const secondaryIcons = [
+    { href: '/mining', icon: HardHat, color: '245, 158, 11', label: tr('nav', 'mining', lang) },
+    { href: '/defi', icon: Coins, color: '16, 185, 129', label: tr('nav', 'defi', lang) },
+    { href: '/download', icon: Download, color: '6, 182, 212', label: tr('nav', 'download', lang) },
     { href: '/docs', icon: BookOpen, color: '20, 184, 166', label: tr('nav', 'docs', lang) },
   ];
 
-  /* ── Secondary icons (ecosystem: bridge, dao, layers, lore) ── */
-  const secondaryIcons = [
+  /* ── Tertiary icons — small, rest of ecosystem ── */
+  const tertiaryIcons = [
     { href: '/bridge', icon: ArrowLeftRight, color: '59, 130, 246', label: tr('nav', 'bridge', lang) },
     { href: '/ziondex', icon: ArrowRightLeft, color: '16, 185, 129', label: 'ZionDex' },
     { href: '/dao', icon: Landmark, color: '147, 51, 234', label: tr('nav', 'dao', lang) },
@@ -218,25 +222,26 @@ export default function Navigation() {
             </div>
           </Link>
 
-          {/* Icon quick-nav — primary (large) + secondary (small, dimmed) */}
-          <div className="hidden md:flex flex-1 items-center justify-center gap-1 overflow-x-auto no-scrollbar min-w-0">
-            {/* Primary icons — core user flow */}
-            {primaryIcons.map((ml) => {
+          {/* Icon quick-nav — 3 tiers: BIG hero / medium secondary / small tertiary */}
+          <div className="hidden md:flex flex-1 items-center justify-center gap-1.5 overflow-x-auto no-scrollbar min-w-0">
+            {/* ── HERO icons — BIG (Explorer, Pool, Network, Wallet) ── */}
+            {heroIcons.map((ml) => {
               const isActive = navItemMatches(ml.href);
               return (
                 <Link
                   key={ml.href}
                   href={ml.href}
                   title={ml.label}
-                  className="group relative flex flex-col items-center justify-center w-11 h-11 rounded-xl border transition-all hover:scale-110 shrink-0"
+                  className="group relative flex flex-col items-center justify-center w-14 h-14 rounded-2xl border-2 transition-all hover:scale-110 shrink-0"
                   style={{
-                    borderColor: isActive ? `rgba(${ml.color}, 0.55)` : 'rgba(255,255,255,0.07)',
-                    backgroundColor: isActive ? `rgba(${ml.color}, 0.14)` : 'rgba(0,0,0,0.4)',
+                    borderColor: isActive ? `rgba(${ml.color}, 0.6)` : 'rgba(255,255,255,0.08)',
+                    backgroundColor: isActive ? `rgba(${ml.color}, 0.16)` : 'rgba(0,0,0,0.45)',
+                    boxShadow: isActive ? `0 0 18px rgba(${ml.color}, 0.25)` : 'none',
                   }}
                 >
                   <ml.icon
-                    className="w-[18px] h-[18px]"
-                    style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.65)' }}
+                    className="w-6 h-6"
+                    style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.75)' }}
                   />
                   <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[9px] bg-black/95 border border-white/10 rounded px-1.5 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
                     {ml.label}
@@ -246,9 +251,9 @@ export default function Navigation() {
             })}
 
             {/* Visual divider */}
-            <div className="mx-1 h-7 w-px bg-white/10 shrink-0" />
+            <div className="mx-1 h-8 w-px bg-white/12 shrink-0" />
 
-            {/* Secondary icons — ecosystem */}
+            {/* ── Secondary icons — medium (Mining, DeFi, Download, Docs) ── */}
             {secondaryIcons.map((ml) => {
               const isActive = navItemMatches(ml.href);
               return (
@@ -256,15 +261,43 @@ export default function Navigation() {
                   key={ml.href}
                   href={ml.href}
                   title={ml.label}
-                  className="group relative flex flex-col items-center justify-center w-9 h-9 rounded-lg border transition-all hover:scale-110 shrink-0"
+                  className="group relative flex flex-col items-center justify-center w-10 h-10 rounded-xl border transition-all hover:scale-110 shrink-0"
                   style={{
-                    borderColor: isActive ? `rgba(${ml.color}, 0.5)` : 'rgba(255,255,255,0.04)',
-                    backgroundColor: isActive ? `rgba(${ml.color}, 0.12)` : 'transparent',
+                    borderColor: isActive ? `rgba(${ml.color}, 0.5)` : 'rgba(255,255,255,0.06)',
+                    backgroundColor: isActive ? `rgba(${ml.color}, 0.13)` : 'rgba(0,0,0,0.3)',
+                  }}
+                >
+                  <ml.icon
+                    className="w-4 h-4"
+                    style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.55)' }}
+                  />
+                  <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[9px] bg-black/95 border border-white/10 rounded px-1.5 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                    {ml.label}
+                  </span>
+                </Link>
+              );
+            })}
+
+            {/* Visual divider */}
+            <div className="mx-0.5 h-7 w-px bg-white/8 shrink-0" />
+
+            {/* ── Tertiary icons — small (ecosystem) ── */}
+            {tertiaryIcons.map((ml) => {
+              const isActive = navItemMatches(ml.href);
+              return (
+                <Link
+                  key={ml.href}
+                  href={ml.href}
+                  title={ml.label}
+                  className="group relative flex flex-col items-center justify-center w-8 h-8 rounded-lg border transition-all hover:scale-110 shrink-0"
+                  style={{
+                    borderColor: isActive ? `rgba(${ml.color}, 0.45)` : 'rgba(255,255,255,0.03)',
+                    backgroundColor: isActive ? `rgba(${ml.color}, 0.1)` : 'transparent',
                   }}
                 >
                   <ml.icon
                     className="w-3.5 h-3.5"
-                    style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.4)' }}
+                    style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.35)' }}
                   />
                   <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[9px] bg-black/95 border border-white/10 rounded px-1.5 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
                     {ml.label}
