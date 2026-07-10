@@ -245,7 +245,7 @@ impl PeerManager {
     /// Get peers sorted by score (highest first) for block download.
     pub fn peers_by_score(&self) -> Vec<&PeerState> {
         let mut peers: Vec<&PeerState> = self.peers.values().filter(|p| !p.banned).collect();
-        peers.sort_by(|a, b| b.score.cmp(&a.score));
+        peers.sort_by_key(|b| std::cmp::Reverse(b.score));
         peers
     }
 

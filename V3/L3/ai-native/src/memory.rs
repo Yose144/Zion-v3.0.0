@@ -233,7 +233,7 @@ impl AgentMemory {
     pub fn recall_all(&self) -> Vec<MemoryEntry> {
         let mut all = self.long_term.clone();
         all.extend(self.short_term.clone());
-        all.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
+        all.sort_by_key(|b| std::cmp::Reverse(b.timestamp));
         all
     }
 

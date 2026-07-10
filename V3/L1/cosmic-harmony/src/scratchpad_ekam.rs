@@ -572,7 +572,6 @@ fn xor_block_in_place(dest: &mut [u8], src: &[u8]) {
             unsafe {
                 xor_avx2(dest.as_mut_ptr(), src.as_ptr());
             }
-            return;
         }
     }
 

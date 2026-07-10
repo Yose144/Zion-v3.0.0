@@ -429,7 +429,7 @@ fn select_utxos_largest_first(
     target: u64,
 ) -> (Vec<&zion_core::wallet::SpendableUtxo>, u64) {
     let mut sorted: Vec<&zion_core::wallet::SpendableUtxo> = available.iter().collect();
-    sorted.sort_by(|a, b| b.amount.cmp(&a.amount));
+    sorted.sort_by_key(|b| std::cmp::Reverse(b.amount));
     let mut selected = Vec::new();
     let mut total: u64 = 0;
     for utxo in sorted {

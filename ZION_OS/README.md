@@ -107,7 +107,7 @@ ZION_OS/
 
 ## Edge Server Deployment
 
-All services run on the Edge server (`77.42.71.94`, Hetzner VPS):
+All services run on the Edge server (`62.171.141.136`, Contabo VPS):
 
 | Service | Port | Systemd Unit | Role |
 |---------|------|-------------|------|

@@ -652,7 +652,11 @@ fn handle_rpc_stream(
         println!("rpc_in={line}");
     }
     // Audit log: truncate to 120 chars to avoid excessive log volume
-    let audit_line = if line.len() > 120 { &line[..120] } else { line.as_str() };
+    let audit_line = if line.len() > 120 {
+        &line[..120]
+    } else {
+        line.as_str()
+    };
     println!("rpc_audit peer={peer_addr} method={audit_line}");
 
     // ── HTTP POST support for Electron/mobile clients ───────────────────

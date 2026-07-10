@@ -92,10 +92,19 @@ mod tests {
 
     #[test]
     fn test_normalize_rpc_addr() {
-        assert_eq!(normalize_rpc_addr("http://127.0.0.1:8443/jsonrpc"), "127.0.0.1:8443");
-        assert_eq!(normalize_rpc_addr("https://edge.zion:8443/"), "edge.zion:8443");
+        assert_eq!(
+            normalize_rpc_addr("http://127.0.0.1:8443/jsonrpc"),
+            "127.0.0.1:8443"
+        );
+        assert_eq!(
+            normalize_rpc_addr("https://edge.zion:8443/"),
+            "edge.zion:8443"
+        );
         assert_eq!(normalize_rpc_addr("tcp://1.2.3.4:9999"), "1.2.3.4:9999");
-        assert_eq!(normalize_rpc_addr("  127.0.0.1:8443/jsonrpc/  "), "127.0.0.1:8443");
+        assert_eq!(
+            normalize_rpc_addr("  127.0.0.1:8443/jsonrpc/  "),
+            "127.0.0.1:8443"
+        );
     }
 
     #[test]

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Github, MessageCircle, Globe, BookOpen, BookMarked, Compass, Map, Download, Pickaxe, FileText, Orbit, ArrowLeftRight, Gamepad2, Star, Wallet, Sprout, Brain, Building2, Sparkles } from 'lucide-react';
+import { Github, MessageCircle } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 import { SITE_RELEASE_LABEL, SITE_RUNTIME_VERSION } from '@/lib/site';
@@ -17,44 +17,44 @@ export default function Footer() {
     {
       title: tr('footer', 'group_info', lang),
       links: [
-        { href: '/', label: tr('nav', 'home', lang), Icon: Globe },
-        { href: '/news', label: tr('nav', 'news', lang), Icon: BookOpen },
-        { href: '/network', label: tr('nav', 'network', lang), Icon: Globe },
-        { href: '/explorer', label: tr('nav', 'explorer', lang), Icon: Compass },
-        { href: '/dashboard', label: tr('nav', 'dashboard', lang), Icon: Orbit },
-        { href: '/pool', label: tr('nav', 'pool', lang), Icon: Pickaxe },
-        { href: '/mining', label: tr('nav', 'mining', lang), Icon: Pickaxe },
-        { href: '/benchmarks', label: tr('nav', 'benchmarks', lang), Icon: Gamepad2 },
-        { href: '/miner-stats', label: tr('nav', 'miner_stats', lang), Icon: Star },
-        { href: '/download', label: tr('nav', 'download', lang), Icon: Download },
-        { href: '/roadmap', label: tr('nav', 'roadmap', lang), Icon: Map },
-        { href: '/api-reference', label: tr('nav', 'api', lang), Icon: FileText },
+        { href: '/', label: tr('nav', 'home', lang) },
+        { href: '/news', label: tr('nav', 'news', lang) },
+        { href: '/network', label: tr('nav', 'network', lang) },
+        { href: '/explorer', label: tr('nav', 'explorer', lang) },
+        { href: '/dashboard', label: tr('nav', 'dashboard', lang) },
+        { href: '/pool', label: tr('nav', 'pool', lang) },
+        { href: '/mining', label: tr('nav', 'mining', lang) },
+        { href: '/benchmarks', label: tr('nav', 'benchmarks', lang) },
+        { href: '/miner-stats', label: tr('nav', 'miner_stats', lang) },
+        { href: '/download', label: tr('nav', 'download', lang) },
+        { href: '/roadmap', label: tr('nav', 'roadmap', lang) },
+        { href: '/api-reference', label: tr('nav', 'api', lang) },
       ],
     },
     {
       title: tr('footer', 'group_layers', lang),
       links: [
-        { href: '/defi', label: `L2 ${tr('nav', 'defi', lang)}`, Icon: Wallet },
-        { href: '/cex', label: 'CEX Listings', Icon: Building2 },
-        { href: '/wallet', label: tr('nav', 'wallet', lang), Icon: Wallet },
-        { href: '/dao', label: tr('nav', 'dao', lang), Icon: Globe },
-        { href: '/bridge', label: tr('nav', 'bridge', lang), Icon: ArrowLeftRight },
-        { href: '/l3-hiran', label: tr('nav', 'l3_hiran', lang), Icon: Brain },
-        { href: '/warp', label: tr('nav', 'warp', lang), Icon: Orbit },
-        { href: '/ai-native', label: tr('nav', 'ai_native', lang), Icon: Star },
-        { href: '/l4-oasis', label: tr('nav', 'l4_oasis', lang), Icon: Gamepad2 },
-        { href: '/l5-free-world', label: tr('nav', 'l5_free_world', lang), Icon: Globe },
-        { href: '/l6-issobella', label: tr('nav', 'l6_issobella', lang), Icon: Star },
+        { href: '/defi', label: `L2 ${tr('nav', 'defi', lang)}` },
+        { href: '/cex', label: 'CEX Listings' },
+        { href: '/wallet', label: tr('nav', 'wallet', lang) },
+        { href: '/dao', label: tr('nav', 'dao', lang) },
+        { href: '/bridge', label: tr('nav', 'bridge', lang) },
+        { href: '/l3-hiran', label: tr('nav', 'l3_hiran', lang) },
+        { href: '/warp', label: tr('nav', 'warp', lang) },
+        { href: '/ai-native', label: tr('nav', 'ai_native', lang) },
+        { href: '/l4-oasis', label: tr('nav', 'l4_oasis', lang) },
+        { href: '/l5-free-world', label: tr('nav', 'l5_free_world', lang) },
+        { href: '/l6-issobella', label: tr('nav', 'l6_issobella', lang) },
       ],
     },
     {
       title: tr('footer', 'group_wiki', lang),
       links: [
-        { href: '/wiki', label: tr('nav', 'wiki_group', lang), Icon: BookOpen },
-        { href: '/terranova', label: tr('nav', 'terranova', lang), Icon: BookMarked },
-        { href: '/zohar', label: tr('nav', 'zohar', lang), Icon: Sparkles },
-        { href: '/genesis', label: tr('nav', 'genesis', lang), Icon: Sprout },
-        { href: '/docs', label: tr('nav', 'docs', lang), Icon: FileText },
+        { href: '/wiki', label: tr('nav', 'wiki_group', lang) },
+        { href: '/terranova', label: tr('nav', 'terranova', lang) },
+        { href: '/zohar', label: tr('nav', 'zohar', lang) },
+        { href: '/genesis', label: tr('nav', 'genesis', lang) },
+        { href: '/docs', label: tr('nav', 'docs', lang) },
       ],
     },
   ];
@@ -93,13 +93,13 @@ export default function Footer() {
             <div key={group.title}>
               <p className="text-xs uppercase tracking-[0.3em] text-gray-500 mb-4">{group.title}</p>
               <ul className="space-y-2.5">
-                {group.links.map(({ href, label, Icon }) => (
+                {group.links.map(({ href, label }) => (
                   <li key={href}>
                     <Link
                       href={href}
                       className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors group"
                     >
-                      <Icon className="w-3.5 h-3.5 text-gray-600 group-hover:text-zion-gold transition-colors" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-gray-600 group-hover:bg-zion-gold transition-colors" />
                       {label}
                     </Link>
                   </li>

@@ -197,7 +197,7 @@ export default function Navigation() {
             FLOOR 1 — MAIN BAR
             Logo | 4 HERO icons (rasta) | lang + GitHub + auth + dashboard
             ═══════════════════════════════════════════════════ */}
-        <div className="zion-panel flex items-center justify-between gap-2 px-3 py-2 ring-1 ring-white/5 md:px-4"
+        <div className="zion-panel flex items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 ring-1 ring-white/5 md:px-4"
           style={{
             boxShadow: '0 24px 90px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.04)',
           }}
@@ -206,8 +206,8 @@ export default function Navigation() {
           <div className="pointer-events-none absolute -top-px left-0 right-0 h-px rounded-t-2xl bg-linear-to-r from-emerald-500/50 via-zion-gold/60 to-amber-600/50" />
 
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2.5 group shrink-0">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center relative overflow-hidden border border-white/15 group-hover:border-zion-gold/50 transition-colors bg-transparent shadow-[0_8px_24px_rgba(0,0,0,0.3)]">
+          <Link href="/" className="flex items-center space-x-2 group shrink-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center relative overflow-hidden border border-white/15 group-hover:border-zion-gold/50 transition-colors bg-transparent shadow-[0_8px_24px_rgba(0,0,0,0.3)]">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(111,255,240,0.08),transparent_65%)]" />
               <Image
                 src="/stargate-icon.png"
@@ -219,8 +219,8 @@ export default function Navigation() {
               />
             </div>
             <div className="hidden sm:flex flex-col leading-none">
-              <span className="text-lg font-bold text-gradient-soft tracking-tight">ZION</span>
-              <span className="text-[8px] px-1.5 py-0.5 mt-0.5 rounded-full bg-white/6 border border-white/10 uppercase tracking-[0.22em] text-white/60">
+              <span className="text-base sm:text-lg font-bold text-gradient-soft tracking-tight">ZION</span>
+              <span className="text-[7px] sm:text-[8px] px-1 sm:px-1.5 py-0.5 mt-0.5 rounded-full bg-white/6 border border-white/10 uppercase tracking-[0.18em] sm:tracking-[0.22em] text-white/60">
                 {SITE_RELEASE_LABEL}
               </span>
             </div>
@@ -271,7 +271,7 @@ export default function Navigation() {
               target="_blank"
               rel="noreferrer"
               title="GitHub"
-              className="p-2 rounded-xl border border-zion-gold/30 bg-linear-to-br from-zion-gold/10 to-amber-600/8 inline-flex items-center justify-center shadow-[0_0_14px_rgba(251,191,36,0.15)] hover:shadow-[0_0_22px_rgba(251,191,36,0.35)] hover:border-zion-gold/50 transition-all group relative"
+              className="hidden md:inline-flex p-2 rounded-xl border border-zion-gold/30 bg-linear-to-br from-zion-gold/10 to-amber-600/8 items-center justify-center shadow-[0_0_14px_rgba(251,191,36,0.15)] hover:shadow-[0_0_22px_rgba(251,191,36,0.35)] hover:border-zion-gold/50 transition-all group relative"
             >
               <Github className="w-4 h-4 text-zion-gold" />
               <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-zion-gold/20 rounded px-2 py-0.5 text-zion-gold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">GitHub</span>
@@ -280,9 +280,9 @@ export default function Navigation() {
             <Link
               href="/dashboard"
               title={tr('nav', 'dashboard', lang)}
-              className="p-2 rounded-xl border border-white/15 bg-black/85 inline-flex items-center justify-center shadow-[0_14px_38px_rgba(0,0,0,0.3)] transition-transform hover:-translate-y-0.5 hover:border-zion-gold/50 group relative"
+              className="p-1.5 sm:p-2 rounded-xl border border-white/15 bg-black/85 inline-flex items-center justify-center shadow-[0_14px_38px_rgba(0,0,0,0.3)] transition-transform hover:-translate-y-0.5 hover:border-zion-gold/50 group relative"
             >
-              <LayoutDashboard className="w-4 h-4 text-white" />
+              <LayoutDashboard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
               <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">{tr('nav', 'dashboard', lang)}</span>
             </Link>
           </div>

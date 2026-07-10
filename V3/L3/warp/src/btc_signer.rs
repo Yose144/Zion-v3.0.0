@@ -295,7 +295,7 @@ fn select_utxos(
     feerate: u64,
 ) -> WarpResult<(Vec<MempoolUtxo>, u64)> {
     let mut sorted = utxos.to_vec();
-    sorted.sort_by(|a, b| b.value.cmp(&a.value));
+    sorted.sort_by_key(|b| std::cmp::Reverse(b.value));
 
     let mut selected: Vec<MempoolUtxo> = Vec::new();
     let mut total: u64 = 0;

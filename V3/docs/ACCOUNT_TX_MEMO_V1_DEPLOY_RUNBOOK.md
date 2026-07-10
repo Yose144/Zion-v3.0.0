@@ -91,7 +91,9 @@ Example for Edge services in `/etc/systemd/system/zion-edge-core.service` (or dr
 
 ```ini
 [Service]
-Environment="ZION_ACCOUNT_TX_MEMO_V1_HEIGHT=23700"
+# Fresh chain post-3.0.4 hard reset: active from genesis (0).
+# For a coordinated hard fork on an existing chain, set to a future height.
+Environment="ZION_ACCOUNT_TX_MEMO_V1_HEIGHT=0"
 ```
 
 For the pool service, add the same variable to its environment file (e.g., `/etc/default/zion-edge-pool` or the systemd unit).
