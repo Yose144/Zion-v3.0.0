@@ -17,6 +17,19 @@ const CALLS = {
   // Uni V3 Pool
   slot0:          '0x3850c7bd', // slot0()
   liquidity:      '0x1a686502', // liquidity()
+  // Staking
+  stakingTotalStaked:     '0x817b1cd2', // totalStaked()
+  stakingRewardPool:      '0x7a5c08ae', // rewardPoolBalance()
+  stakingAprBps:          '0x25ac1df2', // aprBps()
+  stakingCooldown:        '0xb8221bc4', // cooldownSeconds()
+  // Farm
+  farmRewardPerSecond:    '0x8f10369a', // rewardPerSecond()
+  farmPoolCount:          '0xf525cb68', // poolCount()
+  farmTotalAllocPoints:   '0x1fa36cbe', // totalAllocPoints()
+  farmRewardPool:         '0x7a5c08ae', // rewardPoolBalance()
+  // Governance
+  govProposalCount:       '0xda35c664', // proposalCount()
+  govVotingPeriod:        '0x02a251a3', // votingPeriod()
 };
 
 // Updated 2026-08-18 — active bridge + pool addresses
@@ -26,6 +39,9 @@ const CONTRACTS: Record<string, string> = {
   USDT:           '0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2',
   SOL:            '0x311935Cd80B76769bF2ecC9D8Ab7635b2139cf82',
   ZIONBridge:     '0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467',
+  ZIONStaking:    '0xbd5cEe7878337d22188BFBaF9aa9F39A850Be78B',
+  ZIONFarm:       '0x167B2753F5D8D9F8e62875cc9e379d7804308B08',
+  ZIONGovernance: '0xB77eB4ab9468Ce03FBd7eCec70e976EFCfa623E8',
   UniV3PoolWETH:  '0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699', // wZION/WETH 1%
   UniV3PoolUSDT:  '0x186b46c2f04153999d44D25179cD623fD62Bfda2', // wZION/USDT 0.3% — primary
   UniV3PoolSOL:   '0xF38c56bbBBBC6d9FA11E7DE84bF7Bb70e1e8D2b3', // wZION/SOL 0.01%
@@ -147,6 +163,16 @@ export async function GET() {
       slot0SolHex,
       liquiditySolHex,
       wethUsdHex,
+      stakingTotalStakedHex,
+      stakingRewardPoolHex,
+      stakingAprBpsHex,
+      stakingCooldownHex,
+      farmRewardPerSecondHex,
+      farmPoolCountHex,
+      farmTotalAllocHex,
+      farmRewardPoolHex,
+      govProposalCountHex,
+      govVotingPeriodHex,
     ] = await Promise.all([
       ethCall(CONTRACTS.wZION, CALLS.totalSupply),
       ethCall(CONTRACTS.ZIONBridge, CALLS.threshold),
@@ -158,6 +184,16 @@ export async function GET() {
       ethCall(CONTRACTS.UniV3PoolSOL, CALLS.slot0),
       ethCall(CONTRACTS.UniV3PoolSOL, CALLS.liquidity),
       ethCall(CHAINLINK_WETH_USD, LATEST_ROUND_DATA),
+      ethCall(CONTRACTS.ZIONStaking, CALLS.stakingTotalStaked),
+      ethCall(CONTRACTS.ZIONStaking, CALLS.stakingRewardPool),
+      ethCall(CONTRACTS.ZIONStaking, CALLS.stakingAprBps),
+      ethCall(CONTRACTS.ZIONStaking, CALLS.stakingCooldown),
+      ethCall(CONTRACTS.ZIONFarm, CALLS.farmRewardPerSecond),
+      ethCall(CONTRACTS.ZIONFarm, CALLS.farmPoolCount),
+      ethCall(CONTRACTS.ZIONFarm, CALLS.farmTotalAllocPoints),
+      ethCall(CONTRACTS.ZIONFarm, CALLS.farmRewardPool),
+      ethCall(CONTRACTS.ZIONGovernance, CALLS.govProposalCount),
+      ethCall(CONTRACTS.ZIONGovernance, CALLS.govVotingPeriod),
     ]);
 
     const wethUsd = wethUsdHex ? decodeChainlinkAnswer(wethUsdHex) : 2000;
@@ -171,6 +207,18 @@ export async function GET() {
     const usdtPoolActive = usdtSqrt !== null && usdtSqrt > 0n;
     const solPoolActive = solSqrt !== null && solSqrt > 0n;
 
+    // Staking on-chain data
+    const stakingAprBps = hexToNumber(stakingAprBpsHex);
+    const stakingCooldownSecs = hexToNumber(stakingCooldownHex);
+
+    // Farm on-chain data
+    const farmPoolCount = hexToNumber(farmPoolCountHex);
+    const farmTotalAlloc = hexToNumber(farmTotalAllocHex);
+
+    // Governance on-chain data
+    const govProposalCount = hexToNumber(govProposalCountHex);
+    const govVotingPeriod = hexToNumber(govVotingPeriodHex);
+
     return NextResponse.json({
       ok: true,
       network: 'base-mainnet',
@@ -182,16 +230,22 @@ export async function GET() {
           totalSupplyRaw: totalSupplyHex,
         },
         staking: {
-          totalStaked: '0',
-          apr: '—',
-          cooldownDays: 7,
+          totalStaked: hexToDecimal18(stakingTotalStakedHex),
+          rewardPool: hexToDecimal18(stakingRewardPoolHex),
+          apr: stakingAprBps > 0 ? `${(stakingAprBps / 100).toFixed(2)}%` : '—',
+          aprBps: stakingAprBps,
+          cooldownDays: Math.round(stakingCooldownSecs / 86400),
+          cooldownSeconds: stakingCooldownSecs,
         },
         farm: {
-          poolCount: 0,
-          rewardPerSecond: '0',
+          poolCount: farmPoolCount,
+          totalAllocPoints: farmTotalAlloc,
+          rewardPerSecond: hexToDecimal18(farmRewardPerSecondHex),
+          rewardPool: hexToDecimal18(farmRewardPoolHex),
         },
         governance: {
-          proposalCount: 0,
+          proposalCount: govProposalCount,
+          votingPeriod: govVotingPeriod,
         },
         bridge: {
           threshold: hexToNumber(thresholdHex),

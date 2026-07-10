@@ -35,9 +35,11 @@ const MAX_POOLS = 5;
 interface PoolData {
   pid: number;
   lpToken: string;
-  allocPoint: number;
+  allocPoints: number;
   lastRewardTime: number;
   accRewardPerShare: ethers.BigNumber;
+  totalStaked: number;
+  active: boolean;
   name: string;
   tvl: string; // formatted ether string
   tvlRaw: number; // numeric
@@ -48,9 +50,10 @@ interface PoolData {
 }
 
 /** Derive a human-readable pool name from its lpToken address. */
-function poolName(lpToken: string, pid: number): string {
+function poolName(lpToken: string, pid: number, onChainName?: string): string {
+  if (onChainName && onChainName.length > 0) return onChainName;
   const t = lpToken.toLowerCase();
-  if (t === CONTRACTS.wZION.toLowerCase()) return 'wZION Pool';
+  if (t === CONTRACTS.wZION.toLowerCase()) return 'wZION Single';
   if (t === CONTRACTS.UniV3Pool.toLowerCase()) return 'wZION/WETH LP';
   if (t === CONTRACTS.WETH.toLowerCase()) return 'WETH Pool';
   return `Pool #${pid}`;
@@ -98,8 +101,8 @@ export default function FarmingPage() {
 
       const [rps, plen, tap, ps] = await Promise.all([
         farm.rewardPerSecond(),
-        farm.poolLength(),
-        farm.totalAllocPoint(),
+        farm.poolCount(),
+        farm.totalAllocPoints(),
         farm.paused(),
       ]);
       setRewardPerSecond(ethers.utils.formatEther(rps));
@@ -108,35 +111,38 @@ export default function FarmingPage() {
       setTotalAllocPoint(Number(tap));
       setPaused(ps);
 
-      // Fetch up to MAX_POOLS pools (or poolLength, whichever is smaller)
+      // Fetch up to MAX_POOLS pools (or poolCount, whichever is smaller)
       const count = Math.min(MAX_POOLS, len);
       const fetched: PoolData[] = [];
       for (let pid = 0; pid < count; pid++) {
         try {
-          const info = await farm.poolInfo(pid);
+          const info = await farm.getPool(pid);
           const lpToken = info.lpToken;
-          const allocPoint = Number(info.allocPoint);
+          const allocPoints = Number(info.allocPoints);
           const lastRewardTime = Number(info.lastRewardTime);
           const accRewardPerShare = info.accRewardPerShare;
+          const poolTotalStaked = Number(info.totalStaked);
+          const active = info.active;
+          const onChainName = info.name;
 
           // TVL = LP token balance held by the farm contract
-          let tvlRaw = 0;
-          let tvl = '0';
+          let tvlRaw = poolTotalStaked;
+          let tvl = poolTotalStaked.toString();
           try {
             const lp = new ethers.Contract(lpToken, WZION_ABI, provider);
             const bal = await lp.balanceOf(CONTRACTS.ZIONFarm);
             tvl = ethers.utils.formatEther(bal);
             tvlRaw = parseFloat(tvl);
           } catch {
-            // silent — some LP tokens may not expose balanceOf cleanly
+            // fallback to pool.totalStaked
           }
 
-          // Estimated APR: (rewardPerSecond * allocPoint / totalAllocPoint) * YEAR / TVL * 100
+          // Estimated APR: (rewardPerSecond * allocPoints / totalAlloc) * YEAR / TVL * 100
           let apr: number | null = null;
           const tapNum = Number(tap);
           const rpsNum = parseFloat(ethers.utils.formatEther(rps));
-          if (tvlRaw > 0 && tapNum > 0 && allocPoint > 0) {
-            const annualReward = rpsNum * (allocPoint / tapNum) * SECONDS_PER_YEAR;
+          if (tvlRaw > 0 && tapNum > 0 && allocPoints > 0) {
+            const annualReward = rpsNum * (allocPoints / tapNum) * SECONDS_PER_YEAR;
             apr = (annualReward / tvlRaw) * 100;
           }
 
@@ -146,8 +152,8 @@ export default function FarmingPage() {
           let userRewardDebt = ethers.BigNumber.from(0);
           if (account) {
             try {
-              const ui = await farm.userInfo(pid, account);
-              userDeposited = ethers.utils.formatEther(ui.amount);
+              const ui = await farm.getUser(pid, account);
+              userDeposited = ethers.utils.formatEther(ui.staked);
               userRewardDebt = ui.rewardDebt;
               const pending = await farm.pendingReward(pid, account);
               userPending = ethers.utils.formatEther(pending);
@@ -159,10 +165,12 @@ export default function FarmingPage() {
           fetched.push({
             pid,
             lpToken,
-            allocPoint,
+            allocPoints,
             lastRewardTime,
             accRewardPerShare,
-            name: poolName(lpToken, pid),
+            totalStaked: poolTotalStaked,
+            active,
+            name: poolName(lpToken, pid, onChainName),
             tvl,
             tvlRaw,
             apr,
@@ -260,15 +268,15 @@ export default function FarmingPage() {
     }
   };
 
-  // ── Claim reward ────────────────────────────────────────────────────────────
-  const handleClaim = async () => {
+  // ── Harvest rewards ────────────────────────────────────────────────────────
+  const handleHarvest = async () => {
     if (!signer || !selectedPool) return;
     setTxPhase('claiming');
     setTxError(null);
     setTxHash(null);
     try {
       const farm = new ethers.Contract(CONTRACTS.ZIONFarm, FARM_ABI, signer);
-      const tx = await farm.claimReward(selectedPool.pid);
+      const tx = await farm.harvest(selectedPool.pid);
       setTxHash(tx.hash);
       await tx.wait();
       setTxPhase('success');
@@ -479,7 +487,7 @@ export default function FarmingPage() {
                         </div>
                         <div className="text-right">
                           <p className="text-[10px] text-gray-500 uppercase">Alloc</p>
-                          <p className="font-bold text-zion-gold">{p.allocPoint.toLocaleString()}</p>
+                          <p className="font-bold text-zion-gold">{p.allocPoints.toLocaleString()}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-[10px] text-gray-500 uppercase">{cs ? 'Odměna' : 'Pending'}</p>
@@ -638,7 +646,7 @@ export default function FarmingPage() {
                     <p className="text-2xl font-bold text-zion-gold">{fmt(selectedPool.userPending, 6)} wZION</p>
                   </div>
                   <button
-                    onClick={handleClaim}
+                    onClick={handleHarvest}
                     disabled={busy || parseFloat(selectedPool.userPending) <= 0}
                     className="rounded-2xl bg-zion-gold/20 border border-zion-gold/30 px-6 py-3 text-sm font-semibold text-zion-gold hover:bg-zion-gold/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
