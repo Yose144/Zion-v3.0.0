@@ -495,7 +495,7 @@ class ZionRpcClient {
       this.rpcCallNode<any>(nodeId, 'getPeerInfo').catch(() => null),
     ]);
     let difficulty = 0;
-    const tipHeight = (chainInfo.chain_height || 1) - 1;
+    const tipHeight = chainInfo.chain_height || 0;
     if (tipHeight >= 0) {
       try {
         const tip = await this.rpcCallNode<any>(nodeId, 'getBlockByHeight', { height: tipHeight });
@@ -1016,7 +1016,7 @@ class ZionRpcClient {
       throw new Error('Failed to get network info');
     }
 
-    const tipHeight = Math.max(0, info.height - 1);
+    const tipHeight = Math.max(0, info.height);
     const [lastBlock, poolStats] = await Promise.all([
       this.getBlockHeaderByHeight(tipHeight).catch(() => null),
       this.getPoolStats().catch(() => null),

@@ -27,7 +27,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Calculate range: latest blocks first
-    const endHeight = Math.max(0, chainHeight - 1 - offset);
+    // getInfo().height is the latest block height (0-based index).
+    const endHeight = Math.max(0, chainHeight - offset);
     const startHeight = Math.max(0, endHeight - limit + 1);
 
     if (startHeight > endHeight) {

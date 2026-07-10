@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Add coinbase transactions from recent blocks
-    const endHeight = Math.max(0, chainHeight - 1);
+    const endHeight = Math.max(0, chainHeight);
     const startHeight = Math.max(0, endHeight - 9); // Scan last 10 blocks for coinbase
     const headers = await rpc.getBlockHeaders(startHeight, endHeight);
 
