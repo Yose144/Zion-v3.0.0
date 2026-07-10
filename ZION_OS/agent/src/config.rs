@@ -62,7 +62,7 @@ impl Default for AgentConfig {
             },
             miner: MinerConfig {
                 binary_path: "/usr/bin/zion-miner".to_string(),
-                default_pool: "77.42.71.94:8444".to_string(),
+                default_pool: "62.171.141.136:8444".to_string(),
                 default_wallet: "".to_string(),
                 default_worker: "zion-rig".to_string(),
                 default_gpu_backend: "auto".to_string(),

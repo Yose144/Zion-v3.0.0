@@ -8,8 +8,8 @@ use tracing::{info, warn};
 
 const DISCOVERY_INTERVAL_SEC: u64 = 60;
 const RPC_TIMEOUT_SEC: u64 = 3;
-const EDGE_SEED: &str = "77.42.71.94:8333";
-const EDGE_RPC: &str = "http://77.42.71.94:8443";
+const EDGE_SEED: &str = "62.171.141.136:8333";
+const EDGE_RPC: &str = "http://62.171.141.136:8443";
 
 /// Stav jednoho objeveného uzlu
 #[derive(Debug, Serialize, Deserialize, Clone)]

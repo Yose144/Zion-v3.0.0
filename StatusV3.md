@@ -820,10 +820,10 @@ Viz [Session 10 detail](#session-10--uniswap-v4-migration--defi-audit-2026-06-30
 - `config.json` — bind `0.0.0.0:8766` (Tailscale access)
 
 #### Service files (commit `a7d426b1`)
-- `edge-deploy/systemd/zion-edge-node1.service` — `ZION_MIGRATION_HEIGHT=18850`
-- `edge-deploy/systemd/zion-edge-node2.service` — `ZION_MIGRATION_HEIGHT=18850`
-- `ZION_OS/infra/systemd/zion-edge-node1.service` — `ZION_MIGRATION_HEIGHT=18850`
-- `ZION_OS/infra/systemd/zion-edge-node2.service` — `ZION_MIGRATION_HEIGHT=18850`
+- `edge-deploy/systemd/zion-edge-node1.service` — `ZION_MIGRATION_HEIGHT=1` (fresh chain post-3.0.4 hard reset)
+- `edge-deploy/systemd/zion-edge-node2.service` — `ZION_MIGRATION_HEIGHT=1` (fresh chain post-3.0.4 hard reset)
+- `ZION_OS/infra/systemd/zion-edge-node1.service` — `ZION_MIGRATION_HEIGHT=1` (fresh chain post-3.0.4 hard reset)
+- `ZION_OS/infra/systemd/zion-edge-node2.service` — `ZION_MIGRATION_HEIGHT=1` (fresh chain post-3.0.4 hard reset)
 
 ### Edge verifikace
 

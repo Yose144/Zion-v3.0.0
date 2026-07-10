@@ -150,7 +150,7 @@ auto_update = "stable"
 
 [miner]
 binary_path = "/usr/local/bin/zion-miner"
-default_pool = "77.42.71.94:8444"
+default_pool = "62.171.141.136:8444"
 default_wallet = "zion1..."
 default_worker = "rig01"
 default_gpu_backend = "opencl"
