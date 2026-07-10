@@ -541,7 +541,7 @@ class ZionRpcClient {
 
     // Get tip block for difficulty
     let difficulty = 0;
-    const tipHeight = (chainInfo.chain_height || 1) - 1;
+    const tipHeight = chainInfo.chain_height || 0;
     if (tipHeight >= 0) {
       try {
         const tip = await this.rpcCall<any>('getBlockByHeight', { height: tipHeight });
@@ -582,7 +582,7 @@ class ZionRpcClient {
   /** Get last block header using chain height from getChainInfo */
   async getLastBlockHeader(): Promise<ZionBlockHeader> {
     const chainInfo = await this.rpcCall<any>('getChainInfo');
-    const height = Math.max(0, (chainInfo.chain_height ?? 1) - 1);
+    const height = Math.max(0, chainInfo.chain_height ?? 0);
     return this.getBlockHeaderByHeight(height);
   }
 
@@ -815,7 +815,7 @@ class ZionRpcClient {
     maxBlocks = 2000,
   ): Promise<{ totalPaidAtomic: number; payouts: Array<{ amount: number; amount_zion: number; tx_id: string; timestamp: number; status: string }> }> {
     const info = await this.getInfo().catch(() => null);
-    const tipHeight = Math.max(0, (info?.height ?? 1) - 1);
+    const tipHeight = Math.max(0, info?.height ?? 0);
     const scanStart = Math.max(0, tipHeight - maxBlocks + 1);
     const poolWallet = (await import('@/lib/constants')).POOL_WALLET.toLowerCase();
     const target = address.toLowerCase();
