@@ -1,8 +1,39 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** **2026-07-09** (**3.0.5 "ALL GREEN" COMPLETE — 11/11 SLUŽEB ACTIVE + E2E MEMO TESTY POTVRZENY + PROTOCOL 3.0.5 + WEB DEPLOY OPTIMALIZACE** — viz [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](./docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md) pro plný český report a [`docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md`](./docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md) pro kanonický runbook).
-> **Předchozí update:** 2026-07-09 (MEMORY LEAK FIX DEPLOYED + 3.0.4 SECURITY PATCH COMPLETE — viz [`SECURITY_PATCH_3.0.4_REPORT.md`](./docs/3.0.4/SECURITY_PATCH_3.0.4_REPORT.md)).
+> **Datum:** **2026-07-11** (**POOL WATCHDOG FIX + F1-F6 POOL SCALABILITY OPTIMIZATIONS — 1000+ MINER READY** — viz [`docs/3.0.5/POOL_PERF_REPORT_2026-07-11.md`](./docs/3.0.5/POOL_PERF_REPORT_2026-07-11.md) pro plný report).
+> **Předchozí update:** 2026-07-09 (3.0.5 "ALL GREEN" COMPLETE — 11/11 SLUŽEB ACTIVE + E2E MEMO TESTY POTVRZENY + PROTOCOL 3.0.5 + WEB DEPLOY OPTIMALIZACE — viz [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](./docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md)).
 > **Původní update:** 2026-07-07 (3.0.4 HARD GENESIS RESET — NOVÝ SERVER 62.171.141.136 — FULL STACK DEPLOYED — viz [`docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md`](./docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md) a [`HARDRESETOFFICIAL.md`](./docs/3.0.4/HARDRESETOFFICIAL.md) pro plný záznam).
+>
+> ### Pool Watchdog Fix + F1-F6 Scalability Optimizations — COMPLETE (2026-07-11)
+>
+> **Problém:** Pool byl restartován každé 2 minuty kvůli bugu v watchdog skriptu (`/dev/tcp/127.0.0.1:8444` používá `/` ne `:` jako separator, TCP check vždy selhal). Navíc pool kód měl několik bottlenecků které by limitovaly škálovatelnost na 1000+ minerů.
+>
+> **Watchdog fix:**
+> - `/dev/tcp` nahrazeno `nc -z -w3` (netcat) pro robustní TCP check
+> - `getHeight` JSON-RPC metoda opravena na `getChainInfo` (vrací `.result.chain_height`)
+> - Watchdog skript deploynut na server i do repa (`V3/deploy/new-server/zion-watchdog.sh`)
+> - Pool stabilní 5+ minut po fixu, žádné zbytečné restarty
+>
+> **F1-F6 pool performance optimalizace (commit `673632525`):**
+>
+> | Fix | Popis | Dopad na 1000 minerů |
+> |-----|-------|----------------------|
+> | **F1** | Thread handle reaping v accept loop | Zabraňuje neomezenému růstu `Vec<JoinHandle>` paměti |
+> | **F2** | Atomic share counters (`AtomicU64`) | Lock-free `record_accepted/rejected/stale_share(&self)` — bez `&mut self` |
+> | **F4** | `LogChannel` batched async logging | 4KB batched writes přes mpsc channel + background thread, 100ms flush. Eliminuje per-share `println!` syscalls |
+> | **F5** | Async payout execution | Payout TX submission v background thread — miner thread není blokován po dobu N RPC calls (600ms-50s) |
+> | **F6** | PPLNS persistence lock-split + dirty flag | Lock držen jen pro snapshot clone; JSON serialize + file I/O mimo lock. Dirty flag přeskakuje save když nepřišly žádné shares |
+>
+> **Výsledky:**
+> - `cargo build --release -p zion-pool` — success
+> - `cargo test -p zion-pool` — **106/106 tests pass** (73 lib + 33 bin)
+> - Binary deploynut na edge server (`/usr/local/bin/zion-pool-server`)
+> - Pool active, 1000+ shares accepted za 30s, PPLNS state restored (20 miners, 307B flowers total paid)
+> - Pool stabilní, žádné reconnect smyčky
+>
+> **Commity:** `7da0219fb` (watchdog fix), `3080fb018` (watchdog fix report), `673632525` (F1-F6 optimizations)
+>
+> **Soubory změněné:** `V3/L1/pool/src/bin/server.rs`, `V3/L1/pool/src/lib.rs`, `V3/L1/pool/src/pplns.rs`, `V3/deploy/new-server/zion-watchdog.sh`, `Cargo.toml` (workspace deps fix)
 >
 > ### 3.0.5 "All Green" Upgrade — COMPLETE (2026-07-09)
 >
