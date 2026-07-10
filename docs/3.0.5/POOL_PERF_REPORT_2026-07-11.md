@@ -145,6 +145,58 @@ With 1000 miners, the HashMaps are large and serialization + file I/O takes sign
 
 ---
 
+## 7. P7 — Miner ID Interning (u32 index)
+
+**Problem:** At 10k miners × 5 shares/sec = 50k shares/sec, each `record_share_with_diff` call allocated 3+ `String` objects (miner_id in `PplnsShare`, miner_id for `last_share_time_per_miner` HashMap key, miner_id for `shares_per_miner` HashMap key). That's 150k+ String allocations/sec. Additionally, all per-miner data used `HashMap<String, ...>` — O(hash + compare) for every lookup.
+
+**Fix:** Introduced `MinerRegistry` — a bidirectional map between `String` miner IDs and compact `u32` indices:
+- `id_to_index: HashMap<String, u32>` — lookup existing miner
+- `index_to_id: Vec<String>` — reverse lookup
+
+Internal `WindowEntry` uses `u32 miner_index` instead of `String miner_id` (32 → 8 bytes, no heap allocation). All per-miner data structures changed from `HashMap<String, T>` to `Vec<T>` indexed by `u32`:
+- `unpaid: Vec<u64>`
+- `paid_per_miner: Vec<u128>`
+- `shares_per_miner: Vec<MinerShareStats>`
+- `last_share_time_per_miner: Vec<u64>`
+- `addresses: Vec<Option<String>>`
+- `share_weights: Vec<u128>` (P8)
+
+**Hot path (`record_share_with_diff`):** Zero String allocations for miner_id. `lookup_or_register` returns existing u32 index (HashMap lookup, no alloc). Per-miner updates are O(1) array writes. Only `worker_name` still allocates (1 String per share, acceptable — worker names are short and per-share).
+
+**File:** `V3/L1/pool/src/pplns.rs` — `MinerRegistry`, `WindowEntry`, all per-miner Vecs
+
+---
+
+## 8. P8 — Incremental Share Weights
+
+**Problem:** `distribute_to_miners()` iterated the entire window to build `share_weights: HashMap<String, u128>` from scratch on every block found. With a large window (500k shares at low vardiff), this is O(window_len) per block.
+
+**Fix:** Added `share_weights: Vec<u128>` to `PplnsEngine`, maintained incrementally:
+- On `record_share_with_diff`: `share_weights[idx] += diff`
+- On eviction: `share_weights[evicted_idx] -= evicted.difficulty`
+
+`distribute_to_miners()` now iterates `share_weights` (O(unique_miners)) instead of the window (O(window_len)). At 10k miners with 500k shares, this is 50× faster.
+
+**File:** `V3/L1/pool/src/pplns.rs` — `share_weights` field + updates in `record_share_with_diff`, `record_share_at_diff`, `distribute_to_miners`, `restore`
+
+---
+
+## 9. P9 — Configurable Window Size
+
+**Already implemented:** `ZION_PPLNS_WINDOW_SIZE` env var (default 500,000). For 10k miners at diff 10,000, set to 5,000,000+ to ensure multiple shares per miner in the window.
+
+---
+
+## 10. P10 — Backward-Compatible Snapshot
+
+**Problem:** Changing internal representation from `HashMap<String, T>` to `Vec<T>` (u32-indexed) could break existing PPLNS state files.
+
+**Fix:** `PplnsSnapshot` struct unchanged — still uses `String` miner_ids and `HashMap` format for JSON serialization. Conversion happens only during `snapshot()` (u32→String) and `restore()` (String→u32 + rebuild registry + share_weights).
+
+**File:** `V3/L1/pool/src/pplns.rs` — `snapshot()` and `restore()` methods
+
+---
+
 ## 7. F3 — Per-Session Job Tracking (Deferred)
 
 **Status:** Skipped — too large a refactor for this pass. Would require restructuring the job issuance flow to track per-session job IDs for stale detection and vardiff management.
@@ -185,6 +237,6 @@ cargo test -p zion-pool              →  106/106 PASS
 |------|---------|
 | `V3/L1/pool/src/bin/server.rs` | F1 (thread reaping), F4 (LogChannel + hot-path log replacements), F4b (LogChannel deadlock fix — stdout lock scope), F5 (execute_payout_async + block-found handler), F6 (persistence thread lock-split), test fix (handle_client args) |
 | `V3/L1/pool/src/lib.rs` | F2 (AtomicU64 counters, &self methods) |
-| `V3/L1/pool/src/pplns.rs` | F6 (dirty flag, take_dirty, write_snapshot_to_path) |
+| `V3/L1/pool/src/pplns.rs` | F6 (dirty flag, take_dirty, write_snapshot_to_path), P7 (miner ID interning u32), P8 (incremental share_weights), P10 (backward-compat snapshot) |
 | `V3/deploy/new-server/zion-watchdog.sh` | Watchdog fix (nc + getChainInfo) |
 | `Cargo.toml` | Workspace deps fix (bip39/hmac/pbkdf2), stale members removed |
