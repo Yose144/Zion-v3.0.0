@@ -953,6 +953,10 @@ fn handle_client(
                     pool.lock()
                         .expect("pool lock poisoned")
                         .record_rejected_share();
+                    {
+                        let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
+                        pplns.record_invalid_share(&miner_id);
+                    }
                     let decision = ShareDecision {
                         status: ShareStatus::RejectedLowDifficulty,
                         sealed_block: None,
@@ -1184,6 +1188,10 @@ fn handle_client(
                             .lock()
                             .expect("miner telemetry lock poisoned");
                         telemetry.record_block_found(&miner_id, &worker_name);
+                    }
+                    {
+                        let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
+                        pplns.record_block_found(&miner_id);
                     }
                     let payouts = {
                         if job.height > 0 {
