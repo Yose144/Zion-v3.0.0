@@ -4,124 +4,106 @@ Tento dokument je "tahák" s konkrétními příkazy.
 
 Pokud jsi začátečník, používej nejdřív `Guide`, potom tento seznam.
 
-## 1) Základní kontrola stacku
+## 1) Základní kontrola
 
 ```bash
 zion status
 zion doctor
-zion logs node
-zion logs ai-native
+zion monitor
 ```
 
-## 2) Životní cyklus služeb (start/stop/restart)
+- `status` — celkový stav sítě a tvého uzlu
+- `doctor` — rychlá zdravotní kontrola (config, endpointy, připravenost)
+- `monitor` — live dashboard s hashrate a zůstatkem
 
-Podporované cíle:
-
-- `all`
-- `node` nebo `core`
-- `pool`
-- `miner`
-- `agent` nebo `ai-native`
-- `bridge`
-- `dao`
-- `website`
-- `redis`
-- `monitoring`
-
-Příklady:
+## 2) Wallet
 
 ```bash
-zion start ai-native
-zion restart bridge
-zion stop monitoring
+zion wallet new --mnemonic --out my-wallet.json --print
+zion wallet balance --address YOUR_ADDRESS
+zion wallet send --to RECIPIENT --amount 1.5
+zion wallet import --file my-wallet.json
+zion wallet address
 ```
 
-## 3) L1: Node
+## 3) Node
 
 ```bash
 zion node status
 zion node peers
-zion node blocks
-zion node block 6801
-zion node mempool
-zion node rpc getChainInfo
+zion node sync
+zion node start
+zion node stop
 ```
 
-## 4) L1: Pool
+## 4) Pool
 
 ```bash
 zion pool stats
-zion pool miners
-zion pool config
+zion pool connect --pool stratum+tcp://62.171.141.136:8444
 ```
 
-## 5) L1: Miner
+## 5) Miner
 
 ```bash
 zion mine status
 zion mine bench
 zion mine bench --ekam --backend opencl --work-size 8192
-zion mine start --backend opencl
+zion mine start --pool stratum+tcp://62.171.141.136:8444 --wallet YOUR_ADDRESS
+zion mine start --backend cuda
+zion mine start --backend metal
 zion mine stop
 ```
 
-## 6) Wallet
+Backendy:
+
+- `cpu` — výchozí, funguje všude
+- `opencl` — Linux/Windows GPU (AMD, NVIDIA)
+- `cuda` — NVIDIA GPU (Linux/Windows)
+- `metal` — macOS Apple Silicon GPU
+
+## 6) AI (volitelné)
 
 ```bash
-zion wallet new --set-default
-zion wallet address
-zion wallet balance
-zion wallet send zion1example 1.25
+zion ai ask "What is the current block height?"
+zion ai chat
 ```
 
-## 7) L2: Bridge + DAO
+## 7) Interaktivní menu
 
 ```bash
-zion bridge status
-zion bridge pending
-
-zion dao status
-zion dao treasury
-zion dao proposals
+zion
+zion menu
 ```
 
-## 8) L3: Agent + WARP + NCL
+Menu tě provede: wallet → node → pool → miner, krok za krokem.
+
+## 8) Verze a pomoc
 
 ```bash
-zion agent status
-zion agent config
-zion agent memory
-zion agent ask "What is current L3 state?"
-
-zion warp status
-zion warp stats
-
-zion ncl status
-zion ncl workers
+zion --version
+zion --help
+zion wallet --help
+zion mine --help
 ```
 
-## 9) Deploy a operace
+## 9) Build ze zdrojů (ARM64, vlastní build)
 
 ```bash
-zion deploy status
-zion deploy server
-zion deploy website
-zion deploy prune
+git clone https://github.com/Zion-TerraNova/v3-Mainnet.git
+cd v3-Mainnet/V3
+cargo build --release -p zion-public
+# Binary → target/release/zion
 ```
 
-## 10) Config
+## 10) Platformy
 
-```bash
-zion config path
-zion config show
-zion config validate
-zion config set node.rpc_host seed.zionterranova.com
-```
+| Platforma | Stav | Soubor |
+|-----------|------|--------|
+| Linux x86_64 | ✅ Pre-built | `zion-cli-linux-x86_64.tar.gz` |
+| macOS Apple Silicon (M1–M4) | ✅ Pre-built | `zion-cli-macos-aarch64.tar.gz` |
+| macOS Intel x86_64 | ✅ Pre-built | `zion-cli-macos-x86_64.tar.gz` |
+| Windows x86_64 | ✅ Pre-built | `zion-cli-windows-x86_64.zip` |
+| Linux ARM64 | 🔧 Build ze zdrojů | `cargo build --release -p zion-public` |
 
-## 11) Když `zion` není v PATH
-
-Použij stejný příkaz přes cargo:
-
-```bash
-cargo run --manifest-path V3/Cargo.toml -p zion-cli -- status
-```
+Stažení: https://github.com/Zion-TerraNova/v3-Mainnet/releases

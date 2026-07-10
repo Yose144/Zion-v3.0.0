@@ -19,7 +19,7 @@ db_path = "/data/dao/dao.db"
 # ── L1 Connection ────────────────────────────────────────────────────────────
 
 l1_rpc_url    = "127.0.0.1:8443"           # colocated with Core node
-l1_rpc_backup = "100.76.16.108:8443"       # Edge fallback (Tailscale VPN)
+l1_rpc_backup = "62.171.141.136:8443"       # Edge fallback (Tailscale VPN)
 
 # ── L1 Scanner ───────────────────────────────────────────────────────────────
 

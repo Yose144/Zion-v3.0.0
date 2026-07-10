@@ -17,7 +17,7 @@ echo  ZION OS - Complete Stack Launcher
 echo ===========================================================
 echo  1. ZION Dashboard  :: http://127.0.0.1:8766
 echo  2. ZION Node       :: P2P 8333  RPC 8443  WS 8445
-echo  3. ZION GPU Miner  :: Pool 77.42.71.94:8444  (deeksha_lite_fire)
+echo  3. ZION GPU Miner  :: Pool 62.171.141.136:8444  (deeksha_lite_fire)
 echo ===========================================================
 echo.
 
@@ -30,7 +30,7 @@ start "ZION Node :: P2P 8333 RPC 8443" cmd /k "C:\Users\yosef\Desktop\Zion\2.9.6
 timeout /t 5 /nobreak >nul
 
 echo [3/3] Spoustim ZION GPU Miner...
-start "ZION GPU Miner :: 77.42.71.94:8444 [deeksha_lite_fire]" cmd /k "C:\Users\yosef\Desktop\Zion\2.9.6-main\ZionStart\windows\start-miner-window.bat"
+start "ZION GPU Miner :: 62.171.141.136:8444 [deeksha_lite_fire]" cmd /k "C:\Users\yosef\Desktop\Zion\2.9.6-main\ZionStart\windows\start-miner-window.bat"
 timeout /t 2 /nobreak >nul
 
 echo.

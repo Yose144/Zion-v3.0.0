@@ -2,7 +2,7 @@
 set -e
 
 SRC='/mnt/c/Users/yosef/Desktop/Zion/2.9.6-main/APP&WEB/website-v2.9'
-REMOTE='root@100.76.16.108'
+REMOTE='root@62.171.141.136'
 REMOTE_DIR='/root/zion-2.9.6-main/APP&WEB/website-v2.9'
 SSH_KEY='/tmp/ssh-key-zion-edge'
 SSH_OPTS="-i $SSH_KEY -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"

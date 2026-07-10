@@ -8,7 +8,6 @@ import {
   BookOpen,
   Check,
   ChevronDown,
-  ChevronRight,
   Cog,
   Copy,
   Cpu,
@@ -77,40 +76,24 @@ function SectionAnchor({ id }: { id: string }) {
    DATA
    ═══════════════════════════════════════════════════════════ */
 
-const GH_GUIDE =
-  "https://github.com/Zion-TerraNova/2.9.6/blob/main/docs/MINING_GUIDE.md";
-const GH_RELEASE =
-  "https://github.com/Zion-TerraNova/2.9.6/releases/tag/v2.9.8";
+const GH_REPO = "https://github.com/Zion-TerraNova/v3-Mainnet";
+const GH_RELEASES_PAGE = `${GH_REPO}/releases`;
 const POOL = SITE_PRIMARY_HOST;
 
 /* ── Algorithms ── */
 const algorithms = [
   {
-    name: "Cosmic Harmony Deeksha",
+    name: "Ekam Deeksha — BLAKE3",
     type: "CPU + GPU",
-    memory: "256 KB",
-    bestFor: "Balanced mining, anti-ASIC",
+    memory: "Low",
+    bestFor: "Primary PoW hash — fast, ASIC-resistant",
     stratum: `stratum+tcp://${POOL}:8444`,
   },
   {
-    name: "RandomX",
-    type: "CPU",
-    memory: "2 GB",
-    bestFor: "CPU-optimized, Monero-proven",
-    stratum: `stratum+tcp://${POOL}:8444`,
-  },
-  {
-    name: "Yescrypt",
-    type: "CPU",
-    memory: "4 KB",
-    bestFor: "Low-memory devices, RPi",
-    stratum: `stratum+tcp://${POOL}:8444`,
-  },
-  {
-    name: "Autolykos v2",
+    name: "Ekam Deeksha — RandomNPU",
     type: "GPU",
-    memory: "2.5 GB",
-    bestFor: "GPU mining, Ergo-proven",
+    memory: "VRAM-dependent",
+    bestFor: "Secondary PoW hash — NPU kernel, GPU-optimized",
     stratum: `stratum+tcp://${POOL}:8444`,
   },
 ];
@@ -135,16 +118,16 @@ const guideTabs: {
   },
 ];
 
-/* ── Hardware comparison ── */
+/* ── Hardware comparison (real Ekam Deeksha benchmarks) ── */
 const hardware = [
-  { hw: "Raspberry Pi 5", hr: "~200 H/s", power: "10W", eff: "20 H/W" },
-  { hw: "Intel i7-12700K", hr: "~8 KH/s", power: "125W", eff: "64 H/W" },
-  { hw: "AMD Ryzen 9 7950X", hr: "~15 KH/s", power: "170W", eff: "88 H/W" },
-  { hw: "Apple M3 Pro", hr: "~12 KH/s", power: "30W", eff: "400 H/W" },
-  { hw: "Apple M4 Max", hr: "~22 KH/s", power: "40W", eff: "550 H/W" },
-  { hw: "NVIDIA RTX 4070", hr: "~85 MH/s", power: "200W", eff: "425 KH/W" },
-  { hw: "NVIDIA RTX 4090", hr: "~160 MH/s", power: "350W", eff: "457 KH/W" },
-  { hw: "AMD RX 7900 XTX", hr: "~130 MH/s", power: "300W", eff: "433 KH/W" },
+  { hw: "GTX 1060 3GB", hr: "5.9 KH/s", power: "120W", eff: "49 H/W" },
+  { hw: "GTX 1080 8GB", hr: "9.5 KH/s", power: "180W", eff: "53 H/W" },
+  { hw: "AMD RX 5600 XT", hr: "10.0 KH/s", power: "150W", eff: "67 H/W" },
+  { hw: "AMD RX 5700 XT", hr: "19.25 KH/s", power: "225W", eff: "86 H/W" },
+  { hw: "RTX 3060 12GB", hr: "16.5 KH/s", power: "170W", eff: "97 H/W" },
+  { hw: "RTX 5070 Ti 16GB", hr: "21.0 KH/s", power: "270W", eff: "78 H/W" },
+  { hw: "A100 SXM4 40GB", hr: "38.5 KH/s", power: "400W", eff: "96 H/W" },
+  { hw: "H100 SXM 80GB", hr: "81.7 KH/s", power: "700W", eff: "117 H/W" },
 ];
 
 /* ── Node setup data ── */
@@ -164,18 +147,18 @@ const ports = [
 ];
 
 const networkConfigs = [
-  { name: "Mainnet", file: "mainnet.toml", badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20", description: "Public rehearsal line — launch remains NO-GO" },
+  { name: "Mainnet", file: "mainnet.toml", badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20", description: "Mainnet Beta — live since July 2026" },
   { name: "Testnet", file: "testnet.toml", badge: "bg-zion-gold/10 text-zion-gold border-zion-gold/20", description: "Testing with free test coins" },
   { name: "Devnet", file: "devnet.toml", badge: "bg-zion-purple/10 text-zion-purple border-zion-purple/20", description: "Local development network" },
 ];
 
 const cliCommands = [
-  { cmd: "zion-node --version", desc: "Check installed version" },
-  { cmd: "zion-node --config mainnet.toml", desc: "Start with config file" },
-  { cmd: "zion-node --network mainnet --rpc-port 8443", desc: "Override RPC port" },
-  { cmd: `zion-node --peers ${POOL}:8333`, desc: "Manual peer list" },
-  { cmd: "zion-node --log-level debug", desc: "Verbose logging" },
-  { cmd: "zion-node --data-dir /custom/path", desc: "Custom data directory" },
+  { cmd: "zion node status", desc: "Check node status" },
+  { cmd: "zion --version", desc: "Check installed version" },
+  { cmd: "zion node start --network mainnet", desc: "Start mainnet node" },
+  { cmd: `zion node start --peers ${POOL}:8333`, desc: "Start with manual peer list" },
+  { cmd: "zion node start --log-level debug", desc: "Verbose logging" },
+  { cmd: "zion node start --data-dir /custom/path", desc: "Custom data directory" },
 ];
 
 /* ── In-page nav ── */
@@ -192,10 +175,11 @@ const sections = [
 const faqItems = [
   { q: "Do I need a Node to mine?", a: `No. Connect your miner to the public pool (${SITE_POOL_PRIMARY}). The pool handles blockchain communication. A node is only needed for solo mining or if you want to verify transactions yourself.` },
   { q: "Windows Defender blocks the binary?", a: 'Click "More info" → "Run anyway". The binaries are open-source (MIT license) but unsigned. You can also add C:\\ZION\\ to exclusions in Windows Security.' },
-  { q: "macOS says 'cannot be opened'?", a: "Run: xattr -d com.apple.quarantine zion-miner-macos-arm64 — or go to System Settings → Privacy & Security → Allow Anyway." },
-  { q: "What is Consciousness Mining?", a: "Your consciousness level (PHYSICAL → COSMIC) multiplies block rewards up to 15×. Level up by consistent mining, discovering blocks, and contributing to network health." },
+  { q: "macOS says 'cannot be opened'?", a: "Run: xattr -d com.apple.quarantine zion-miner — or go to System Settings → Privacy & Security → Allow Anyway." },
+  { q: "What is Ekam Deeksha?", a: "Ekam Deeksha is ZION's dual-algo PoW consensus: BLAKE3 (primary, fast, ASIC-resistant) + RandomNPU (secondary, GPU-optimized NPU kernel). Both run on CPU and GPU. The algorithm uses a 256 KiB scratchpad with random reads for memory-hardness." },
   { q: "Node won't start / No peers connecting?", a: `Check Rust ≥ 1.75 (rustc --version). Ensure port 8333 is free (lsof -i :8333). Verify firewall allows TCP 8333. Try manual peers: --peers ${SITE_PRIMARY_HOST}:8333.` },
-  { q: "Can I mine on Raspberry Pi?", a: "Yes! Download the linux-arm64 version. RPi 4/5 works well with Yescrypt algorithm for best perf/watt." },
+  { q: "Can I mine on Raspberry Pi?", a: "Yes! Build from source for linux-arm64. RPi 4/5 works well for CPU mining with the BLAKE3 hash." },
+  { q: "Where are the binaries?", a: "Pre-built binaries for Linux x86_64, macOS (Apple Silicon + Intel), and Windows x86_64 are on GitHub Releases (v3.0.5-beta). For ARM64 (Raspberry Pi), build from source: git clone https://github.com/Zion-TerraNova/v3-Mainnet.git && cargo build --release -p zion-public" },
 ];
 
 /* ═══════════════════════════════════════════════════════════
@@ -230,17 +214,11 @@ export default function MiningUnifiedClient() {
     type:
       index === 0
         ? 'CPU + GPU'
-        : index === 1
-          ? 'CPU'
-          : index === 2
-            ? 'CPU'
-            : 'GPU',
+        : 'GPU',
     bestFor: cs
       ? [
-          'Vyvazena tezba, anti-ASIC',
-          'CPU optimalizace, proverene Monerem',
-          'Zarizeni s nizkou pameti, RPi',
-          'GPU tezba, proverene Ergem',
+          'Primarni PoW hash — rychly, ASIC-resistant',
+          'Sekundarni PoW hash — NPU kernel, GPU-optimalizovany',
         ][index]
       : algo.bestFor,
   }));
@@ -252,13 +230,13 @@ export default function MiningUnifiedClient() {
       color: 'text-zion-cyan border-zion-cyan/20 bg-zion-cyan/10',
       items: cs
         ? [
-            'Stahnete zion-wallet pro svuj operacni system',
-            'Spustte: zion-wallet gen-mnemonic --out my-wallet.json --print',
+            'Stahnete ZION CLI z GitHub Releases (Linux, macOS, Windows)',
+            'Spustte: zion wallet new --mnemonic --out my-wallet.json --print',
             'Zapiste si 24 slov na papir jako zalohu',
           ]
         : [
-            'Download zion-wallet for your OS',
-            'Run: zion-wallet gen-mnemonic --out my-wallet.json --print',
+            'Download ZION CLI from GitHub Releases (Linux, macOS, Windows)',
+            'Run: zion wallet new --mnemonic --out my-wallet.json --print',
             'Write down 24 words on paper — your backup!',
           ],
     },
@@ -268,13 +246,13 @@ export default function MiningUnifiedClient() {
       color: 'text-zion-gold border-zion-gold/20 bg-zion-gold/10',
       items: cs
         ? [
-            'Stahnete zion-miner pro svuj operacni system',
-            `Spustte: zion-miner --pool stratum+tcp://${POOL}:8444 --wallet YOUR_ADDRESS`,
+            'Stahnte zion-miner z GitHub Releases nebo pouzijte zion-all',
+            `Spustte: zion mine start --pool stratum+tcp://${POOL}:8444 --wallet YOUR_ADDRESS`,
             'Sledujte hashrate a prijate shares',
           ]
         : [
-            'Download zion-miner for your OS',
-            `Run: zion-miner --pool stratum+tcp://${POOL}:8444 --wallet YOUR_ADDRESS`,
+            'Download zion-miner from GitHub Releases or use zion-all',
+            `Run: zion mine start --pool stratum+tcp://${POOL}:8444 --wallet YOUR_ADDRESS`,
             'Watch hashrate & accepted shares',
           ],
     },
@@ -284,14 +262,14 @@ export default function MiningUnifiedClient() {
       color: 'text-zion-purple border-zion-purple/20 bg-zion-purple/10',
       items: cs
         ? [
-            'Spustte: zion-wallet balance --address YOUR_ADDRESS',
+            'Spustte: zion wallet balance --address YOUR_ADDRESS',
             'Otevrete Explorer na zionterranova.com/explorer',
-            'Odeslani: zion-wallet send --to RECIPIENT --amount 100',
+            'Odeslani: zion wallet send --to RECIPIENT --amount 100',
           ]
         : [
-            'Run: zion-wallet balance --address YOUR_ADDRESS',
+            'Run: zion wallet balance --address YOUR_ADDRESS',
             'Visit Explorer at zionterranova.com/explorer',
-            'Send: zion-wallet send --to RECIPIENT --amount 100',
+            'Send: zion wallet send --to RECIPIENT --amount 100',
           ],
     },
   ];
@@ -308,7 +286,7 @@ export default function MiningUnifiedClient() {
     ...net,
     description: cs
       ? [
-          'Verejna rehearsal linie - launch zustava NO-GO',
+          'Mainnet Beta — live od cervence 2026',
           'Testovani s bezplatnymi test coinami',
           'Lokalni vyvojova sit',
         ][index]
@@ -340,10 +318,11 @@ export default function MiningUnifiedClient() {
     ? [
         { q: 'Potrebuji pro tezbu node?', a: `Ne. Pripojte miner do verejneho poolu (${SITE_POOL_PRIMARY}). Pool zajistuje komunikaci s blockchainem. Node je potreba jen pro solo tezbu nebo pokud chcete transakce overovat sami.` },
         { q: 'Windows Defender blokuje binarku?', a: 'Kliknete na "More info" a potom "Run anyway". Binarky jsou open-source (MIT), ale nepodepsane. Pripadne pridejte C:\\ZION\\ do vyjimek ve Windows Security.' },
-        { q: 'macOS hlasi, ze aplikaci nelze otevrit?', a: 'Spustte: xattr -d com.apple.quarantine zion-miner-macos-arm64 nebo v System Settings → Privacy & Security zvolte Allow Anyway.' },
-        { q: 'Co je Consciousness Mining?', a: 'Uroven vedomi (PHYSICAL → COSMIC) nasobí odmeny za blok az 15×. Uroven rostete konzistentni tezbou, nalezenymi bloky a prispevkem ke zdravi site.' },
+        { q: 'macOS hlasi, ze aplikaci nelze otevrit?', a: 'Spustte: xattr -d com.apple.quarantine zion-miner nebo v System Settings → Privacy & Security zvolte Allow Anyway.' },
+        { q: 'Co je Ekam Deeksha?', a: 'Ekam Deeksha je dual-algo PoW konsensus ZIONu: BLAKE3 (primarni, rychly, ASIC-resistant) + RandomNPU (sekundarni, GPU NPU kernel). Obe bezi na CPU i GPU. Algoritmus pouziva 256 KiB scratchpad s nahodnymi cteni pro memory-hardness.' },
         { q: 'Node se nespusti / nepripojuji se peery?', a: `Zkontrolujte Rust ≥ 1.75 (rustc --version). Ujistete se, ze port 8333 je volny (lsof -i :8333). Overte firewall pro TCP 8333. Zkuste manualni peery: --peers ${SITE_PRIMARY_HOST}:8333.` },
-        { q: 'Muzu tezit na Raspberry Pi?', a: 'Ano. Stahnete linux-arm64 verzi. RPi 4/5 funguje dobre s algoritmem Yescrypt pro nejlepsi pomer vykon/watt.' },
+        { q: 'Muzu tezit na Raspberry Pi?', a: 'Ano. Build ze zdroje pro linux-arm64. RPi 4/5 funguje dobre pro CPU tezbu s BLAKE3 hashem.' },
+        { q: 'Kde jsou binarky?', a: 'Predkompilovane binarky pro Linux x86_64, macOS (Apple Silicon + Intel) a Windows x86_64 jsou na GitHub Releases (v3.0.5-beta). Pro ARM64 (Raspberry Pi) build ze zdroje: git clone https://github.com/Zion-TerraNova/v3-Mainnet.git && cargo build --release' },
       ]
     : faqItems;
 
@@ -376,14 +355,14 @@ export default function MiningUnifiedClient() {
                   {cs ? 'Pruvodce tezbou a nodem' : 'Mining & Node Guide'}
                 </h1>
                 <p className="text-white/40 text-sm mt-0.5">
-                  {SITE_RELEASE_LABEL} · Cosmic Harmony v3 · {cs ? 'CPU / GPU / Pool / Solo tezba' : 'CPU / GPU / Pool / Solo'}
+                  {SITE_RELEASE_LABEL} · Ekam Deeksha dual-algo · {cs ? 'CPU / GPU / Pool / Solo tezba' : 'CPU / GPU / Pool / Solo'}
                 </p>
               </div>
             </div>
             <p className="text-white/50 max-w-2xl text-lg mt-4">
               {cs
-                ? 'Vse, co potrebujete - od prvni penezenky az po vlastni full node. Nativni Rust binarky pro Windows, Linux a macOS. Bez dalsich zavislosti.'
-                : 'Everything you need — from first wallet to running a full node. Native Rust binaries for Windows, Linux & macOS. No dependencies.'}
+                ? 'Vse, co potrebujete - od prvni penezenky az po vlastni full node. Nativni Rust binarky pro Linux x86_64, macOS a Windows z GitHub Releases. ARM64 build ze zdroju.'
+                : 'Everything you need — from first wallet to running a full node. Native Rust binaries for Linux x86_64, macOS, and Windows from GitHub Releases. ARM64: build from source.'}
             </p>
 
             {/* In-page nav */}
@@ -409,14 +388,14 @@ export default function MiningUnifiedClient() {
                 {cs ? 'Stahnout binarky' : 'Download Binaries'}
               </Link>
               <Link
-                href={GH_GUIDE}
+                href={GH_RELEASES_PAGE}
                 target="_blank"
                 rel="noreferrer"
                 className="zion-rainbow-sub inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-gray-300 hover:bg-white/10 transition-colors"
                 style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
               >
                 <Github className="h-4 w-4" />
-                {cs ? 'Plny navod na GitHubu' : 'Full Guide on GitHub'}
+                {cs ? 'GitHub Releases' : 'GitHub Releases'}
                 <ExternalLink className="h-3 w-3" />
               </Link>
               <Link
@@ -468,14 +447,18 @@ export default function MiningUnifiedClient() {
           {/* One-line install */}
           <div className="mt-6 zion-rainbow-sub p-5" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
             <p className="text-xs uppercase tracking-[0.3em] text-gray-500 mb-2">
-              {cs ? 'Jednoradkova instalace (Linux / macOS)' : 'One-line install (Linux / macOS)'}
+              {cs ? 'Rychla instalace (Linux x86_64)' : 'Quick install (Linux x86_64)'}
             </p>
             <div className="rounded-xl bg-black/60 p-3 font-mono text-xs text-gray-300 overflow-x-auto">
               <span className="text-gray-500">$</span>{" "}
-              curl -fsSL https://zionterranova.com/downloads/zion-cli-linux-x86_64 -o zion && chmod +x zion
+              wget https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.5-beta/zion-cli-linux-x86_64.tar.gz
+            </div>
+            <div className="rounded-xl bg-black/60 p-3 font-mono text-xs text-gray-300 overflow-x-auto mt-2">
+              <span className="text-gray-500">$</span>{" "}
+              tar xzf zion-cli-linux-x86_64.tar.gz && chmod +x zion && ./zion --version
             </div>
             <p className="text-xs text-gray-500 mt-2">
-              {cs ? 'Poznámka: ZION CLI je unifikovaná binárka — miner, node, wallet i pool jsou subpříkazy.' : 'Note: ZION CLI is a unified binary — miner, node, wallet and pool are subcommands.'}
+              {cs ? 'ZION CLI je unifikovaná binárka — miner, node, wallet, pool, bridge, dao jsou subpříkazy. Nebo stahnte zion-all pro všechny binárky.' : 'ZION CLI is a unified binary — miner, node, wallet, pool, bridge, dao are subcommands. Or download zion-all for all binaries.'}
             </p>
           </div>
         </motion.section>
@@ -493,8 +476,8 @@ export default function MiningUnifiedClient() {
           </h2>
           <p className="text-white/40 text-sm mb-5">
             {cs
-              ? 'Cosmic Harmony v3 rotuje RandomX + Yescrypt + Blake3 kvuli ASIC odolnosti. Pripojte se na port 8444 pro auto-algo nebo zvolte dedikovany port.'
-              : 'Cosmic Harmony v3 rotates RandomX + Yescrypt + Blake3 for ASIC resistance. Connect on port 8444 for auto-algo or pick a dedicated port.'}
+              ? 'Ekam Deeksha je dual-algo PoW konsensus: BLAKE3 (primarni, rychly, ASIC-resistant) + RandomNPU (sekundarni, GPU NPU kernel). Obe bezi na CPU i GPU. Algoritmus pouziva 256 KiB scratchpad s nahodnymi cteni pro memory-hardness.'
+              : 'Ekam Deeksha is a dual-algo PoW consensus: BLAKE3 (primary, fast, ASIC-resistant) + RandomNPU (secondary, GPU NPU kernel). Both run on CPU and GPU. The algorithm uses a 256 KiB scratchpad with random reads for memory-hardness.'}
           </p>
 
           <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
@@ -567,53 +550,42 @@ export default function MiningUnifiedClient() {
                   {cs ? 'CPU tezba se ZION Native Minerem' : 'CPU Mining with ZION Native Miner'}
                 </h3>
                 <p className="text-white/40 text-sm mb-5">
-                  {cs ? 'Funguje na libovolnem x86_64 nebo ARM64 CPU. Nejvhodnejsi algoritmy:' : 'Works on any x86_64 or ARM64 CPU. Best algos:'}{" "}
-                  <strong className="text-white/60">Cosmic Harmony v3</strong>,{" "}
-                  <strong className="text-white/60">RandomX</strong>,{" "}
-                  <strong className="text-white/60">Yescrypt</strong> {cs ? '(nizka pamet).' : '(low-memory).'}
+                  {cs ? 'Funguje na libovolnem x86_64 nebo ARM64 CPU. Algoritmus:' : 'Works on any x86_64 or ARM64 CPU. Algorithm:'}{" "}
+                  <strong className="text-white/60">Ekam Deeksha — BLAKE3</strong>{" "}
+                  {cs ? '(primarni hash, nizka pamet, rychly).' : '(primary hash, low memory, fast).'}
                 </p>
                 <div className="space-y-4">
                   <CodeBlock
                     title={cs ? 'Moznost A - predkompilovana binarka (doporuceno)' : 'Option A — Pre-compiled binary (recommended)'}
-                    code={`# Download ZION CLI (unified binary)
-# → https://zionterranova.com/downloads
+                    code={`# Download ZION CLI from GitHub Releases (Linux, macOS, Windows)
+# → https://github.com/Zion-TerraNova/v3-Mainnet/releases
 
-# Linux/macOS — manual download:
-curl -fsSL https://zionterranova.com/downloads/zion-cli-linux-x86_64 -o zion
+wget https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.5-beta/zion-cli-linux-x86_64.tar.gz
+tar xzf zion-cli-linux-x86_64.tar.gz
 chmod +x zion
-./zion mine --version`}
+./zion --version`}
                   />
                   <CodeBlock
                     title={cs ? 'Moznost B - build ze zdroje' : 'Option B — Build from source'}
-                    code={`git clone https://github.com/Zion-TerraNova/2.9.6.git
-cd 2.9.6
-cargo build --release -p zion-miner
+                    code={`git clone https://github.com/Zion-TerraNova/v3-Mainnet.git
+cd v3-Mainnet/V3
+cargo build --release -p zion-public
 ls -la target/release/zion-miner`}
                   />
                   <CodeBlock
                     title={cs ? 'Spusteni tezby (pool)' : 'Start mining (pool)'}
-                    code={`zion-miner \\
-  --algo cosmic_harmony \\
+                    code={`zion mine start \\
   --pool stratum+tcp://${POOL}:8444 \\
   --wallet YOUR_ZION_ADDRESS \\
   --threads $(nproc)`}
                   />
-                  <CodeBlock
-                    title={cs ? 'Alternativa: XMRig pro RandomX' : 'Alternative: XMRig for RandomX'}
-                    code={`./xmrig \\
-  -o stratum+tcp://${POOL}:3334 \\
-  -u YOUR_ZION_ADDRESS \\
-  -p x \\
-  -a rx/0 \\
-  --threads=$(nproc)`}
-                  />
                   <div className="rounded-xl bg-zion-cyan/5 border border-zion-cyan/10 p-4">
                     <h4 className="text-sm font-medium text-zion-cyan mb-2">💡 CPU Tips</h4>
                     <ul className="text-sm text-white/40 space-y-1">
-                      <li>• {cs ? 'Zapnete huge pages pro RandomX:' : 'Enable huge pages for RandomX:'} <code className="text-zion-cyan/60 text-xs">sudo sysctl -w vm.nr_hugepages=1280</code></li>
+                      <li>• {cs ? 'Ekam Deeksha BLAKE3 je rychly a nizko-pametovy — funguje i na slabych CPU' : 'Ekam Deeksha BLAKE3 is fast and low-memory — works on weak CPUs too'}</li>
                       <li>• {cs ? 'Nechte 1-2 jadra volna pro system pri tezbe 24/7' : 'Leave 1–2 cores free for system if mining 24/7'}</li>
                       <li>• {cs ? 'Sledujte teplotu: drzte pod 85°C' : 'Monitor temperature: keep below 85°C'}</li>
-                      <li>• {cs ? 'ARM64 (Raspberry Pi 4/5): pro nejlepsi vykon/watt pouzijte Yescrypt' : 'ARM64 (Raspberry Pi 4/5): use Yescrypt for best perf/watt'}</li>
+                      <li>• {cs ? 'ARM64 (Raspberry Pi 4/5): build ze zdroje, BLAKE3 bezi efektivne' : 'ARM64 (Raspberry Pi 4/5): build from source, BLAKE3 runs efficiently'}</li>
                     </ul>
                   </div>
                 </div>
@@ -630,7 +602,7 @@ ls -la target/release/zion-miner`}
                   {cs ? 'GPU tezba - Metal, CUDA a OpenCL' : 'GPU Mining — Metal, CUDA & OpenCL'}
                 </h3>
                 <p className="text-white/40 text-sm mb-5">
-                  {cs ? 'Apple Metal (M1-M4), NVIDIA CUDA (GTX/RTX), AMD OpenCL (RX/Vega).' : 'Apple Metal (M1–M4), NVIDIA CUDA (GTX/RTX), AMD OpenCL (RX/Vega).'}
+                  {cs ? 'Apple Metal (M1-M4), NVIDIA CUDA (GTX/RTX), AMD OpenCL (RX/Vega). Ekam Deeksha dual-algo: BLAKE3 + RandomNPU kernel.' : 'Apple Metal (M1–M4), NVIDIA CUDA (GTX/RTX), AMD OpenCL (RX/Vega). Ekam Deeksha dual-algo: BLAKE3 + RandomNPU kernel.'}
                 </p>
 
                 <div className="mb-6">
@@ -639,10 +611,12 @@ ls -la target/release/zion-miner`}
                     <h4 className="text-sm font-medium text-white/80">Metal (macOS)</h4>
                   </div>
                   <CodeBlock
-                    code={`cargo build --release -p zion-miner --features metal
+                    code={`# Build from source with Metal backend
+git clone https://github.com/Zion-TerraNova/v3-Mainnet.git
+cd v3-Mainnet/V3
+cargo build --release -p zion-public --features metal
 
 ./target/release/zion-miner \\
-  --algo cosmic_harmony \\
   --pool stratum+tcp://${POOL}:8444 \\
   --wallet YOUR_ZION_ADDRESS \\
   --gpu metal --gpu-intensity 80`}
@@ -656,11 +630,12 @@ ls -la target/release/zion-miner`}
                   </div>
                   <CodeBlock
                     code={`# Requires NVIDIA Driver ≥ 535 + CUDA ≥ 12.0
-cargo build --release -p zion-miner --features cuda
+git clone https://github.com/Zion-TerraNova/v3-Mainnet.git
+cd v3-Mainnet/V3
+cargo build --release -p zion-public --features cuda
 
 ./target/release/zion-miner \\
-  --algo autolykos2 \\
-  --pool stratum+tcp://${POOL}:3336 \\
+  --pool stratum+tcp://${POOL}:8444 \\
   --wallet YOUR_ZION_ADDRESS \\
   --gpu cuda --gpu-devices 0,1`}
                   />
@@ -673,11 +648,12 @@ cargo build --release -p zion-miner --features cuda
                   </div>
                   <CodeBlock
                     code={`# Requires AMD ROCm ≥ 5.0 or AMDGPU-PRO
-cargo build --release -p zion-miner --features opencl
+git clone https://github.com/Zion-TerraNova/v3-Mainnet.git
+cd v3-Mainnet/V3
+cargo build --release -p zion-public --features gpu-opencl
 
 ./target/release/zion-miner \\
-  --algo autolykos2 \\
-  --pool stratum+tcp://${POOL}:3336 \\
+  --pool stratum+tcp://${POOL}:8444 \\
   --wallet YOUR_ZION_ADDRESS \\
   --gpu opencl`}
                   />
@@ -686,11 +662,12 @@ cargo build --release -p zion-miner --features opencl
                 <div className="rounded-xl bg-zion-gold/5 border border-zion-gold/10 p-4">
                   <h4 className="text-sm font-medium text-zion-gold mb-2">⚡ GPU Tips</h4>
                   <ul className="text-sm text-white/40 space-y-1">
-                    <li>• {cs ? 'Autolykos v2 je pro GPU nejvhodnejsi - memory-hard a ASIC resistant' : 'Autolykos v2 is best for GPU — memory-hard, ASIC-resistant'}</li>
-                    <li>• {cs ? 'Cosmic Harmony v3 umi zaroven CPU i GPU tezbu' : 'Cosmic Harmony v3 works on CPU + GPU simultaneously'}</li>
+                    <li>• {cs ? 'Ekam Deeksha pouziva 256 KiB scratchpad s nahodnymi cteni — memory-hard, ASIC-resistant' : 'Ekam Deeksha uses 256 KiB scratchpad with random reads — memory-hard, ASIC-resistant'}</li>
+                    <li>• {cs ? 'BLAKE3 hash je primarni (rychly), RandomNPU kernel je sekundarni (GPU-optimalizovany)' : 'BLAKE3 hash is primary (fast), RandomNPU kernel is secondary (GPU-optimized)'}</li>
                     <li>• {cs ? 'Undervolt pro 20-30 % uspory energie' : 'Undervolt for 20–30% power saving'}</li>
                     <li>• {cs ? 'Drzte GPU pod 80°C a VRAM pod 95°C' : 'Keep GPU < 80°C, VRAM < 95°C'}</li>
                     <li>• <code className="text-zion-gold/60 text-xs">--gpu-intensity 60-80</code> {cs ? 'pro soubezne pouziti desktopu pri tezbe' : 'for desktop use while mining'}</li>
+                    <li>• {cs ? 'Benchmark: ' : 'Benchmark: '}<code className="text-zion-gold/60 text-xs">zion-miner --gpu-benchmark-all</code></li>
                   </ul>
                 </div>
               </div>
@@ -723,8 +700,7 @@ cargo build --release -p zion-miner --features opencl
 
                 <CodeBlock
                   title={cs ? 'Rychly start - pool tezba' : 'Quick start — Pool mining'}
-                  code={`zion-miner \\
-  --algo cosmic_harmony \\
+                  code={`zion mine start \\
   --pool stratum+tcp://${POOL}:8444 \\
   --wallet YOUR_ZION_ADDRESS \\
   --worker-name my-rig-01 \\
@@ -780,13 +756,12 @@ cargo build --release -p zion-miner --features opencl
 
                 <CodeBlock
                   title="Step 1 — Run your own full node"
-                  code={`zion-node --config config/mainnet.toml --rpc-port 8443`}
+                  code={`zion node start --network mainnet --rpc-port 8443`}
                 />
                 <div className="mt-4">
                   <CodeBlock
                     title={cs ? 'Krok 2 - tezba proti vlastnimu nodu' : 'Step 2 — Mine against your node'}
-                    code={`zion-miner \\
-  --algo cosmic_harmony \\
+                    code={`zion mine start \\
   --node http://127.0.0.1:8443 \\
   --wallet YOUR_ZION_ADDRESS \\
   --threads $(nproc) \\
@@ -830,7 +805,7 @@ cargo build --release -p zion-miner --features opencl
             <Zap className="w-6 h-6 text-zion-gold" />
             {cs ? 'Srovnani hardwaru' : 'Hardware Comparison'}
           </h2>
-          <p className="text-white/40 text-sm mb-5">{cs ? 'Priblizne hodnoty pro Cosmic Harmony v3 / RandomX / Autolykos v2.' : 'Approximate values for Cosmic Harmony v3 / RandomX / Autolykos v2.'}</p>
+          <p className="text-white/40 text-sm mb-5">{cs ? 'Realne benchmarky Ekam Deeksha (BLAKE3 + RandomNPU) — commit 9e307c4d, TPB=48, --use_fast_math.' : 'Real Ekam Deeksha benchmarks (BLAKE3 + RandomNPU) — commit 9e307c4d, TPB=48, --use_fast_math.'}</p>
 
           <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
             <div className="grid grid-cols-[1fr_100px_80px_100px] gap-2 px-6 py-3 border-b border-white/10 bg-white/[0.02] hidden md:grid">
@@ -906,13 +881,13 @@ cargo build --release -p zion-miner --features opencl
                 <h4 className="text-white font-medium">{cs ? 'Predkompilovana binarka (doporuceno)' : 'Pre-compiled Binary (recommended)'}</h4>
               </div>
               <CodeBlock
-                code={`# Download ZION CLI (unified binary)
-# → https://zionterranova.com/downloads
+                code={`# Download ZION CLI from GitHub Releases (Linux, macOS, Windows)
+# → https://github.com/Zion-TerraNova/v3-Mainnet/releases
 
-# Linux/macOS — manual download:
-curl -fsSL https://zionterranova.com/downloads/zion-cli-linux-x86_64 -o zion
+wget https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.5-beta/zion-cli-linux-x86_64.tar.gz
+tar xzf zion-cli-linux-x86_64.tar.gz
 chmod +x zion
-./zion node --version`}
+./zion --version`}
               />
             </div>
 
@@ -922,27 +897,24 @@ chmod +x zion
                 <h4 className="text-white font-medium">{cs ? 'Build ze zdrojoveho kodu' : 'Build from Source'}</h4>
               </div>
               <CodeBlock
-                code={`git clone https://github.com/Zion-TerraNova/2.9.6.git
-cd 2.9.6
-cargo build --release -p zion-node
-# Binary → target/release/zion-node`}
+                code={`git clone https://github.com/Zion-TerraNova/v3-Mainnet.git
+cd v3-Mainnet/V3
+cargo build --release -p zion-public
+# Binary → target/release/zion`}
               />
             </div>
 
             <div className="zion-rainbow-sub p-6" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-4">
                 <span className="flex items-center justify-center w-7 h-7 rounded-full bg-zion-purple/10 border border-zion-purple/20 text-zion-purple text-xs font-bold">3</span>
-                <h4 className="text-white font-medium">Docker</h4>
+                <h4 className="text-white font-medium">{cs ? 'ZION CLI (unifikovaná binárka)' : 'ZION CLI (unified binary)'}</h4>
               </div>
               <CodeBlock
-                code={`docker pull ghcr.io/zion-terranova/zion-node:2.9.8
-
-docker run -d \\
-  --name zion-node \\
-  -p 8333:8333 -p 8443:8443 \\
-  -v zion-data:/data \\
-  ghcr.io/zion-terranova/zion-node:2.9.8 \\
-  --config /etc/zion/mainnet.toml`}
+                code={`# ZION CLI contains node, miner, wallet, pool, bridge, dao as subcommands
+wget https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.5-beta/zion-cli-linux-x86_64.tar.gz
+tar xzf zion-cli-linux-x86_64.tar.gz
+chmod +x zion
+./zion node start --network mainnet`}
               />
             </div>
           </div>
@@ -986,7 +958,7 @@ rpc_port = 8443
 max_peers = 128
 
 [consensus]
-algorithm = "cosmic_harmony"
+algorithm = "ekam_deeksha"
 block_time = 60
 difficulty_adjustment = "per-block"
 
@@ -1162,13 +1134,13 @@ sudo ufw status`}
               {cs ? 'Pool dashboard' : 'Pool Dashboard'}
             </Link>
             <Link
-              href={GH_GUIDE}
+              href={GH_RELEASES_PAGE}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-2 rounded-2xl bg-white/10 border border-white/20 px-6 py-3 text-sm font-semibold text-white"
             >
               <Github className="h-4 w-4" />
-              {cs ? 'Plny navod na GitHubu' : 'Full Guide on GitHub'}
+              {cs ? 'GitHub Releases' : 'GitHub Releases'}
             </Link>
             <Link
               href="/explorer"

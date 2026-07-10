@@ -12,15 +12,15 @@
 #
 # Prerequisites:
 #   - SSH key for Edge server (~/.ssh/ssh-key-zion-edge or similar)
-#   - Edge server reachable via Tailscale (100.76.16.108) or public IP (77.42.71.94)
+#   - Edge server reachable via Tailscale (62.171.141.136) or public IP (62.171.141.136)
 #   - 3.0.3 code pushed to git on Edge server
 # =============================================================================
 
 set -euo pipefail
 
 # ── Configuration ────────────────────────────────────────────────────────
-EDGE_TS_IP="100.76.16.108"
-EDGE_PUBLIC_IP="77.42.71.94"
+EDGE_TS_IP="62.171.141.136"
+EDGE_PUBLIC_IP="62.171.141.136"
 EDGE_SSH_USER="root"
 EDGE_REPO="/root/zion-2.9.6-main"
 EDGE_DB="${EDGE_REPO}/data/edge-state.db"
@@ -286,6 +286,6 @@ ok "DB preserved at ${EDGE_DB}"
 ok "Backup at ${EDGE_BACKUP_DB}"
 echo ""
 info "Rollback: ./scripts/deploy-3.0.3-edge.sh --rollback"
-info "Verify:   curl -s http://77.42.71.94:8443 -d '{\"jsonrpc\":\"2.0\",\"method\":\"getNodeInfo\",\"params\":{},\"id\":1}' | jq ."
+info "Verify:   curl -s http://62.171.141.136:8443 -d '{\"jsonrpc\":\"2.0\",\"method\":\"getNodeInfo\",\"params\":{},\"id\":1}' | jq ."
 echo ""
 ok "Peace and One Love. — 3.0.3 fork complete"

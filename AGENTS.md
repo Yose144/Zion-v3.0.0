@@ -14,39 +14,59 @@ This file provides operating guidance to Devin, WARP, Copilot, and future automa
 - If docs disagree, use this order of truth: `StatusV3.md` → `ROADMAP.md` / `V3/README.md` / `V3/ROADMAP.md` → `V3/docs/**` → older `STATUS.md`, root README, and archived docs.
 - Root README / older plans may still mention historical multi-server topology. Verify live topology against `StatusV3.md` before making operational claims.
 
-## PUBLIC/ — Open-source public repository
+## public/ — Open-source public repository (git subtree)
 
-The `PUBLIC/` directory is a **separate Git repository** (`github.com/Zion-TerraNova/v3-Mainnet`) containing the public open-source release of ZION v3. It is **not** part of the root repo's git tree (listed in root `.gitignore`).
+The `public/` directory is a **git subtree** of the public repository `github.com/Zion-TerraNova/v3-Mainnet`, embedded directly in the private repo. Both repos are kept in sync via subtree push/pull — no separate clone needed.
 
-- **Remote:** `https://github.com/Zion-TerraNova/v3-Mainnet.git` (public, MIT license)
-- **Local path:** `/home/zionserver/2.9.6-main/PUBLIC/`
-- **Current status:** **Mainnet Beta** — v3.0.4 live, official public launch 2026-12-31
+- **Remote name:** `public` → `https://github.com/Zion-TerraNova/v3-Mainnet.git` (public, MIT license)
+- **Remote name:** `origin` → `https://github.com/Yose144/Zion-v3.0.0.git` (private)
+- **Local path:** `public/` (in repo root, tracked by `origin`)
+- **Current status:** **Mainnet Beta** — v3.0.5-beta live, official public launch 2026-12-31
 - **Network status badge:** `![Status: Mainnet Beta](https://img.shields.io/badge/Status-Mainnet_Beta-orange.svg)`
 
-### What's in PUBLIC/
+### Subtree commands
 
-The PUBLIC repo contains a **curated subset** of the private repo — only files safe for public release:
-- `V3/` — L1 core, L2 contracts, bridge, DAO, atomic-swap, WARP, cosmic-harmony, pool, miner, CLI, docs
-- `docs/` — Whitepaper, Ethics & Philosophy, Bodhisattva Vow codex, genesis.md, legal docs (disclaimer, terms, privacy, jurisdiction, token disclosure), security disclosures, multilingual READMEs (EN/CS/ES/FR/PT)
+```bash
+# Pull latest changes from public repo into public/
+git subtree pull --prefix=public public/main --squash
+
+# Push local changes in public/ to the public repo
+git subtree push --prefix=public public main
+
+# Fetch public remote (update refs without merging)
+git fetch public
+```
+
+### What's in public/
+
+The public repo contains a **curated subset** of the private repo — only files safe for public release:
+- `V3/` — L1 core, L2 contracts, bridge, DAO, atomic-swap, cosmic-harmony, pool, miner, CLI, SDK, docs
+- `docs/` — Whitepaper, Ethics & Philosophy, Bodhisattva Vow codex, genesis.md, legal docs (disclaimer, terms, privacy, jurisdiction, token disclosure), security disclosures, multilingual READMEs (EN/CS/ES/FR/PT), stargate assets
 - `evoluZionV2.md` — PoW → Proof-of-Care vision
-- Root files: `README.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `LICENSE` (MIT), `Cargo.toml`
+- Root files: `README.md`, `README_FULL.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `LICENSE` (MIT), `Cargo.toml`, `.gitignore`
 
-### What's NOT in PUBLIC/ (stays private)
+### What's NOT in public/ (stays private)
 
 - `APP&WEB/` — website, desktop agent, mobile app source
 - `ZION_OS/` — dashboard, monitoring, operational scripts
+- `ZionStart/` — bootstrap tooling
+- `PoC-lab/` — research/proof-of-concept code
+- `HiranV2.x/` — AI layer (IP protection)
+- `edge-deploy/` — server deploy configs
+- `scripts/` — ops scripts (285 files)
+- `docs/3.0.4/`, `docs/3.0.5/` — internal docs
 - `docs/TerraNova/` — full TerraNova book manuscripts
 - `docs/Zohar/` — internal Zohar documentation
 - `docs/docs2.9/`, `docs/2.9.7/`, `archive/` — legacy/historical docs
-- `StatusV3.md`, `ROADMAP.md` — internal status and planning
+- `3.0.5.md`, `StatusV3.md`, `ROADMAP.md`, `AGENTS.md` — internal status and planning
 - Server configs, deploy scripts, environment files
 - Private keys, mnemonics, GPG private keys
 
-### Rules for PUBLIC/ edits
+### Rules for public/ edits
 
-1. **Never push secrets** — no private keys, mnemonics, server IPs (except public RPC), internal hostnames, SSH keys
-2. **Sync after private repo changes** — if you change `V3/` code or docs that exist in PUBLIC/, sync the change to PUBLIC/ and push both repos
-3. **Separate commits** — PUBLIC/ has its own git history; commit and push independently
+1. **Never push secrets** — no private keys, mnemonics, server IPs (except public RPC `62.171.141.136`), internal hostnames, SSH keys
+2. **Sync after private repo changes** — if you change `V3/` code or docs that also exist in `public/`, sync the change to `public/` and push to both remotes
+3. **Two-step push** — commit to `origin` (private) first, then `git subtree push --prefix=public public main` to publish
 4. **GPG signing** — if `docs/genesis.md` is edited, re-sign with `gpg --detach-sign` using the Yose creator key (`9018F94ACE7C93CF549612E225557B7072678D25`, GNUPGHOME `/tmp/zion_gpg/`)
 5. **Release process** — see "GitHub Release process" below
 
@@ -54,31 +74,36 @@ The PUBLIC repo contains a **curated subset** of the private repo — only files
 
 For future releases (e.g. v3.0.4-beta, v3.1.0, etc.):
 
-1. **Build binaries:** `cd V3 && cargo build --release` → binaries in `V3/target/release/`
-2. **Create archives:** Package binaries into tar.gz archives (e.g. `zion-all-3.0.4-linux-x86_64.tar.gz`)
-3. **Compute SHA256:** `sha256sum *.tar.gz > SHA256SUMS.txt`
+1. **Build binaries:** `cargo build --release` → binaries in `target/release/`
+2. **Create archives:** Package binaries into tar.gz archives per platform (e.g. `zion-all-3.0.4-linux-x86_64.tar.gz`, `zion-cli-macos-aarch64.tar.gz`)
+3. **Compute SHA256:** `shasum -a 256 *.tar.gz > SHA256SUMS.txt`
 4. **Create release on GitHub:**
    - Via `gh` CLI: `gh release create v3.0.4-beta --title "..." --notes "..." *.tar.gz SHA256SUMS.txt`
    - Or via curl API if `gh` not available (needs PAT token)
-5. **Release notes template:** Include features list, download table with SHA256, installation instructions, "Windows binaries coming soon" note if applicable
-6. **Cross-platform:** Linux x86_64 built natively; Windows requires mingw-w64 (`x86_64-pc-windows-gnu` target + `mingw-w64` linker); macOS pending
-7. **Binaries to package:** `zion` (CLI), `zion-miner`, `zion-node`, `gen-pool-wallet`, `gen-pool-payout-wallet`, `zion-bridge`, `zion-dao`, `zion-atomic-swap`
+5. **Release notes template:** Include features list, download table with SHA256, installation instructions, platform availability
+6. **Cross-platform:**
+   - **Linux x86_64** — built natively on server
+   - **Windows x86_64** — cross-compiled with `x86_64-pc-windows-gnu` target + mingw-w64 linker
+   - **macOS aarch64** (Apple Silicon) — built natively on macOS
+   - **macOS x86_64** (Intel) — cross-compiled with `x86_64-apple-darwin` target
+7. **Binaries to package:** Single `zion` binary (community CLI with wallet + node + mine + pool + status + doctor + monitor). Windows version has node + pool + miner embedded.
 
-### Current PUBLIC/ commit history
+### Current release: v3.0.5-beta (2026-07-10)
 
-```
-1a9eb17 announce: Mainnet Beta — v3.0.4 live, official launch 31.12.2026
-7ffa51f Přejmenovat premine slot 11: Genesis Creator Lifetime Rent → Genesis Projects
-3753f69 Přidat ZION Codex Bodhisattva Vow
-b8d854 Přidat etiku a filozofii 4 knih ZION
-9c63260 Přidat evoluZionV2.md
-fb4bd13 Přidat právní dokumentaci pro open-source publikaci
-...
-```
+- **Tag:** `v3.0.5-beta` (prerelease)
+- **Name:** ZION v3.0.5-beta — Simplified Community CLI
+- **Assets:** 4 platform binaries + SHA256SUMS.txt
+  - `zion-cli-linux-x86_64.tar.gz` (2.3 MB)
+  - `zion-cli-macos-aarch64.tar.gz` (2.1 MB) — Apple Silicon
+  - `zion-cli-macos-x86_64.tar.gz` (2.3 MB) — Intel
+  - `zion-cli-windows-x86_64.zip` (4.7 MB) — node + pool + miner embedded
+- **Key change:** Single `zion` binary with interactive menu (replaces 8 separate binaries)
+- **Missing:** ARM64 (Raspberry Pi) — build from source: `cargo build --release -p zion-public`
+- **URL:** `https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.0.5-beta`
 
 ### Mainnet Beta announcement (2026-07-09)
 
-PUBLIC/ README files (EN + 4 translations) now include a **Network Status** section declaring:
+public/ README files (EN + 4 translations) include a **Network Status** section declaring:
 - ZION v3.0.4 is live as **Mainnet Beta**
 - Mining is active **at your own risk**
 - Network may contain bugs — no warranty
@@ -91,7 +116,7 @@ PUBLIC/ README files (EN + 4 translations) now include a **Network Status** sect
 - Root guidance baseline: `.github/copilot-instructions.md` (applies repo-wide).
 - **How to work with Copilot efficiently (cost + capability map):** [`docs/3.0.3/COPILOT_COLLAB_PLAYBOOK.md`](./docs/3.0.3/COPILOT_COLLAB_PLAYBOOK.md) — Tier S/A/B/D capability map, 7 credit-saving habits, anti-patterns, quick reference card. Read this BEFORE starting a new Copilot session to scope the task correctly.
 - **3.0.3 decimal fork — DEPLOYED (2026-06-27) + RPC SCALE FIX (2026-06-28):** [`docs/3.0.3/ZION_3.0.3_DECIMAL_FORK_PLAN.md`](./docs/3.0.3/ZION_3.0.3_DECIMAL_FORK_PLAN.md) — Option E (in-place fork via migration block at H+1, preserves block hashes 0..H). Edge server deployed: MIGRATION_HEIGHT=18850 (updated from 17995 — migration block was never created, all blocks 0-18850 are in legacy 1e12 scale), protocol 3.0.3, flowers_per_zion=1e6, all 13 services active. RPC `scaled_amount()` helper normalizes pre-migration amounts to 1e6 scale for balance queries. Full fix report: [`docs/3.0.3/REPORT_3.0.3_FIXES.md`](./docs/3.0.3/REPORT_3.0.3_FIXES.md). Rollback: DB backup at `edge-state.db.bak-3.0.3-cutover`.
-- **3.0.4 DeFi deploy — COMPLETED (2026-06-29):** [`V3/docs/ZION_3.0.4_DEPLOY_RUNBOOK.md`](./V3/docs/ZION_3.0.4_DEPLOY_RUNBOOK.md) — DeFi contracts deployed on Base Mainnet: ZIONGovernance `0xB77eB4ab9468Ce03FBd7eCec70e976EFCfa623E8`, ZIONTreasury `0x455f465ac7e14fdA97dC46fdd74bCa78bfC0aEeD` (3-of-3 multisig), ZIONStaking `0xbd5cEe7878337d22188BFBaF9aa9F39A850Be78B` (12% APR, 100K wZION funded), ZIONFarm `0x167B2753F5D8D9F8e62875cc9e379d7804308B08` (1 wZION/s, 500K wZION funded). 5 DAO guardians provisioned. Website v3.6.3 with live DeFi pages. Atomic swap escrow funded 100K ZION. **Basescan verify — 7/7 COMPLETED (2026-07-09):** All 7 contracts verified on Basescan (wZION, ZIONAtomicSwap already verified; Governance, Treasury, Staking, Farm verified 2026-07-02 via Etherscan V2 API; ZIONBridge verified 2026-07-09 via `forge verify-contract` with correct source `bridge/contracts/src/ZIONBridge.sol` OZ 4.9.6 + 5 validators threshold 5/5). See [`BASESCAN_VERIFY_REPORT.md`](./BASESCAN_VERIFY_REPORT.md). **TX unification — COMPLETED (2026-07-01):** account-model `memo` field added (L1 hard fork, height-gated), all 3 L2 watchers (bridge, atomic-swap, DAO) now scan `account_transactions`. See [`3.0.4.md`](./3.0.4.md) §3. **Guardian mnemonics backup — COMPLETED + VERIFIED (2026-07-09):** zkopírováno z flash disku na `/home/zionserver/Desktop/ZionKeys/` (OpenSSL encrypted). **USB backup audit — COMPLETED (2026-07-09):** 4/4 shodné soubory (SHA256 checksumy identické USB↔Desktop), 4/4 GPG podpisy Good (Yose, key `9018F94A...`), 13/13 premine + 5/5 canonical + 1/1 bridge vault adresy cross-checknuty s `genesis.rs` ✓, všechny soukromé soubory `chmod 600`. **DEPLOY-5/6/7 E2E memo testy — COMPLETED (2026-07-09):** 3 account-model TXs s memos (BRIDGE:base:..., DAO:vote:1:yes, SWAP:LOCK:...) odeslány a potvrzeny v bloku 752 na live mainnetu (62.171.141.136). Memo field intact v block data. Watchers korektně filtrují by recipient address (ne jen memo prefix) — správné security chování. E2E SK shredded po testech.
+- **3.0.4 DeFi deploy — COMPLETED (2026-06-29):** [`V3/docs/ZION_3.0.4_DEPLOY_RUNBOOK.md`](./V3/docs/ZION_3.0.4_DEPLOY_RUNBOOK.md) — DeFi contracts deployed on Base Mainnet: ZIONGovernance `0xB77eB4ab9468Ce03FBd7eCec70e976EFCfa623E8`, ZIONTreasury `0x455f465ac7e14fdA97dC46fdd74bCa78bfC0aEeD` (3-of-3 multisig), ZIONStaking `0xbd5cEe7878337d22188BFBaF9aa9F39A850Be78B` (12% APR, 100K wZION funded), ZIONFarm `0x167B2753F5D8D9F8e62875cc9e379d7804308B08` (1 wZION/s, 500K wZION funded). 5 DAO guardians provisioned. Website v3.6.3 with live DeFi pages. Atomic swap escrow funded 100K ZION. **Basescan verify — 7/7 COMPLETED (2026-07-09):** All 7 contracts verified on Basescan (wZION, ZIONAtomicSwap already verified; Governance, Treasury, Staking, Farm verified 2026-07-02 via Etherscan V2 API; ZIONBridge verified 2026-07-09 via `forge verify-contract` with correct source `bridge/contracts/src/ZIONBridge.sol` OZ 4.9.6 + 5 validators threshold 5/5). See [`BASESCAN_VERIFY_REPORT.md`](./docs/3.0.4/BASESCAN_VERIFY_REPORT.md). **TX unification — COMPLETED (2026-07-01):** account-model `memo` field added (L1 hard fork, height-gated), all 3 L2 watchers (bridge, atomic-swap, DAO) now scan `account_transactions`. See [`3.0.4.md`](./docs/3.0.4/3.0.4.md) §3. **Guardian mnemonics backup — COMPLETED + VERIFIED (2026-07-09):** zkopírováno z flash disku na `/home/zionserver/Desktop/ZionKeys/` (OpenSSL encrypted). **USB backup audit — COMPLETED (2026-07-09):** 4/4 shodné soubory (SHA256 checksumy identické USB↔Desktop), 4/4 GPG podpisy Good (Yose, key `9018F94A...`), 13/13 premine + 5/5 canonical + 1/1 bridge vault adresy cross-checknuty s `genesis.rs` ✓, všechny soukromé soubory `chmod 600`. **DEPLOY-5/6/7 E2E memo testy — COMPLETED (2026-07-09):** 3 account-model TXs s memos (BRIDGE:base:..., DAO:vote:1:yes, SWAP:LOCK:...) odeslány a potvrzeny v bloku 752 na live mainnetu (62.171.141.136). Memo field intact v block data. Watchers korektně filtrují by recipient address (ne jen memo prefix) — správné security chování. E2E SK shredded po testech.
 - **3.1.0 pre-development audit:** [`docs/3.0.3/AUDIT_3.1.0_EXISTING_CODE.md`](./docs/3.0.3/AUDIT_3.1.0_EXISTING_CODE.md) — inventory of existing Wallet SDK, Mobile App, TX History RPC, and L4 Oasis code. All 4 components exist but need 3.0.3 fix (1e12→1e6) + completion. Read this BEFORE starting any 3.1.0 work to avoid duplication.
 - **Web v2.9 upgrade guide:** [`docs/3.0.3/WEB_V2.9_TO_V3.0.3_UPGRADE.md`](./docs/3.0.3/WEB_V2.9_TO_V3.0.3_UPGRADE.md) — file-by-file guide for website 3.0.3 decimal fork migration.
 - Canonical units state-of-the-world: [`docs/CANONICAL_UNITS_AUDIT.md`](./docs/CANONICAL_UNITS_AUDIT.md) — three coexisting RPC suffix conventions (`_flowers` ✅, `_atomic` ⚠️, mis-named `_zion` ❌) and recommended contract bump (§3b.5). **CLOSED at 3.0.3 cutover** — `_flowers` is now canonical, `_zion`/`_atomic` are deprecated aliases.
@@ -101,10 +126,10 @@ PUBLIC/ README files (EN + 4 translations) now include a **Network Status** sect
 - Hiranyagarbha / Hiran **v2.1** roadmap (historical): [`HiranV2.1/Hiran_v2.1.md`](./HiranV2.1/Hiran_v2.1.md); upgrade context: [`HIRANYAGARBHA_UPGRADE_PLAN.md`](./HIRANYAGARBHA_UPGRADE_PLAN.md).
 - Historical archive exists at `docs/2.9.9/archive/WARP.md`; treat it as legacy context, not current source of truth for V3 runtime behavior.
 - Genesis Regeneration Runbook: [`GENESIS_REGENERATION_RUNBOOK.md`](./GENESIS_REGENERATION_RUNBOOK.md) — complete guide for genesis key rotation and recovery procedures.
-- **3.0.4 Hard Genesis Reset — CANONICAL RUNBOOK (2026-07-06):** [`docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md`](./docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md) — **THE** single source of truth for the complete hard reset. Covers all 10 phases: pre-flight, key generation, genesis.rs update, L2/L3 config, EVM revocation, new server, L1 wipe, verification, documentation, generational transfer. Replaces all prior runbooks (HARDRESETOFFICIAL.md, GENESIS_REGENERATION_RUNBOOK.md, docs/3.0.1Genesis/*) as the canonical procedure. New genesis hash: `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`. All 14 premine + 5 canonical + bridge vault addresses regenerated.
-- **Security Disclosure — ZION-2026-001 through ZION-2026-005 (2026-07-06):** [`docs/security/SECURITY_DISCLOSURE_2026-07.md`](./docs/security/SECURITY_DISCLOSURE_2026-07.md) — Public vulnerability disclosure in Ethereum Foundation format. 5 vulnerabilities catalogued (F1 forged P2P signatures, F5 unlimited inflation, C1-C8 server exposure, TeamViewer compromise, EVM key compromise). Disclosure policy, timeline, remediation status, what source code will be published. Machine-readable [`docs/security/vulnerabilities.json`](./docs/security/vulnerabilities.json). See also: [`HARDRESETOFFICIAL.md`](./HARDRESETOFFICIAL.md) (operational hard reset plan, status: EXECUTING).
-- **Security hardening — F1 + F5 EXPLOIT + PHASE 2 COMPLETE + L2 PATCH DEPLOYED + F5 FUZZED (2026-07-02):** [`SecurityFirst.md`](./SecurityFirst.md) · [`F5_SECURITY_INCIDENT_REPORT_2026-07-02.md`](./F5_SECURITY_INCIDENT_REPORT_2026-07-02.md) · [`PATCH_L2_SECURITY_2026-07-02.md`](./PATCH_L2_SECURITY_2026-07-02.md) — F1 exploit post-mortem (forged account TX via P2P from 109.81.30.165, rollback to 22180), comprehensive Edge server hardening: UFW (jen SSH/HTTP/HTTPS/Tailscale), private keys scrubbed z 5 souborů, file permissions 600, SSH klíče-only, **ALL služeb na 127.0.0.1**, AppArmor pro zion-node, 3 monitoring cron jobs, RPC audit log (v node binárce), Tailscale ACL doc (pending admin console apply). **L2 security patch DEPLOYED:** Commit `a8b3821e` — claimant guard, threshold 5/5, reorg safety, key hygiene, checked cast, composite dedup, escrow key zeroing, memo cap. MD5 shoda ověřena. **F1 fix deployed:** `validate_peer_block` nyní volá `verify_signature()` pro non-coinbase account TX (commit `9341344d`). **F5 CRITICAL fix deployed:** Account-model sender balance validation — `insert_transaction()` a `validate_peer_block()` nyní rejectují TX kde `sender_balance < amount + fee`. Height-gated via `ZION_BALANCE_CHECK_HEIGHT=22394` na Edge mainnet (obě nody). **F5 fuzz tests:** 5 testů (commit `a5472ec6`) — 100 random senders, double-spend, u64::MAX, rapid-fire, self-send, vše PASS. **Node binary swap:** Nejnovější binárka s fmt/clippy cleanup deploynuta (22:55 UTC), F5 aktivní, height 22539. Commits `69d12c7`, `fe8d449`, `9863747`, `46106f38`, `48bf387f`, `a5472ec6`. **Escrow key rotation:** Nový escrow keypair, inflační 100,002 ZION spáleno na unspendable burn address. **Pending:** Tailscale ACL (admin console), systemd User=zion, key rotation F4.x (air-gapped), genesis.rs canonical wallets (air-gapped, NOT label-derived), BFG git history scrub. **WARNING:** Label-derived canonical addresses have PUBLIC keys — nepoužívat pro treasury wallets!
-- **Security patch 3.0.4 wave 1-2 + F4.7 aktivace (2026-07-07):** [`SECURITY_PATCH_3.0.4_PLAN.md`](./SECURITY_PATCH_3.0.4_PLAN.md) (kanonický postup, fáze 1-6) · [`SECURITY_TODO_2026-07-03.md`](./SECURITY_TODO_2026-07-03.md) §Audit Delta. **Wave 1 (dependency + code hardening):** quinn-proto ≥0.11.15 (RUSTSEC-2026-0185 remote DoS), crossbeam-epoch ≥0.9.20, anyhow, rand, indicatif/ratatui/lru/metal advisory cleanup; node mainnet guard proti `ZION_SEED_PEERS=none|empty`; pool OASIS hook bez externího `curl` (interní HTTP + localhost-only guard + timeouty); bridge SQL whitelist v `count_by_status`; HTTP timeouty na dao_clientech; miner bez přímé `bincode` závislosti; audit wrapper `V3/scripts/security-audit.sh`. **Wave 2 (F4.7 max-tx-amount cap):** height-gated cap = `emission::TOTAL_SUPPLY` (144B ZION, NE 100M — nekoliduje s premine), výjimky genesis/coinbase, obě validační cesty (`insert_transaction` + `validate_peer_block`), 4 testy PASS. **AKTIVOVÁNO na serveru 62.171.141.136 (2026-07-07 23:16):** `ZION_MAX_TX_AMOUNT_HEIGHT=1` (bare EnvironmentFile formát), log `max_tx_amount_activation_height=1`, genesis hash `4f75a0df...` nezměněn, 7/7 služeb active. F5 (`ZION_BALANCE_CHECK_HEIGHT=0`) aktivní současně. Commity `690b6dfe`, `35e0f6d0`. **Canonicalizace topologie:** hardcoded seed peers (`lib.rs`, `discovery.rs`) + CLI topology defaults přesunuty ze starého Edge (77.42.71.94, decommissioned) na nový server (62.171.141.136), Tailscale odstraněn.
+- **3.0.4 Hard Genesis Reset — CANONICAL RUNBOOK (2026-07-06):** [`docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md`](./docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md) — **THE** single source of truth for the complete hard reset. Covers all 10 phases: pre-flight, key generation, genesis.rs update, L2/L3 config, EVM revocation, new server, L1 wipe, verification, documentation, generational transfer. Replaces all prior runbooks (docs/3.0.4/HARDRESETOFFICIAL.md, GENESIS_REGENERATION_RUNBOOK.md, docs/3.0.1Genesis/*) as the canonical procedure. New genesis hash: `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`. All 14 premine + 5 canonical + bridge vault addresses regenerated.
+- **Security Disclosure — ZION-2026-001 through ZION-2026-005 (2026-07-06):** [`docs/security/SECURITY_DISCLOSURE_2026-07.md`](./docs/security/SECURITY_DISCLOSURE_2026-07.md) — Public vulnerability disclosure in Ethereum Foundation format. 5 vulnerabilities catalogued (F1 forged P2P signatures, F5 unlimited inflation, C1-C8 server exposure, TeamViewer compromise, EVM key compromise). Disclosure policy, timeline, remediation status, what source code will be published. Machine-readable [`docs/security/vulnerabilities.json`](./docs/security/vulnerabilities.json). See also: [`HARDRESETOFFICIAL.md`](./docs/3.0.4/HARDRESETOFFICIAL.md) (operational hard reset plan, status: EXECUTING).
+- **Security hardening — F1 + F5 EXPLOIT + PHASE 2 COMPLETE + L2 PATCH DEPLOYED + F5 FUZZED (2026-07-02):** [`SecurityFirst.md`](./docs/3.0.4/SecurityFirst.md) · [`F5_SECURITY_INCIDENT_REPORT_2026-07-02.md`](./docs/3.0.4/F5_SECURITY_INCIDENT_REPORT_2026-07-02.md) · [`PATCH_L2_SECURITY_2026-07-02.md`](./docs/3.0.4/PATCH_L2_SECURITY_2026-07-02.md) — F1 exploit post-mortem (forged account TX via P2P from 109.81.30.165, rollback to 22180), comprehensive Edge server hardening: UFW (jen SSH/HTTP/HTTPS/Tailscale), private keys scrubbed z 5 souborů, file permissions 600, SSH klíče-only, **ALL služeb na 127.0.0.1**, AppArmor pro zion-node, 3 monitoring cron jobs, RPC audit log (v node binárce), Tailscale ACL doc (pending admin console apply). **L2 security patch DEPLOYED:** Commit `a8b3821e` — claimant guard, threshold 5/5, reorg safety, key hygiene, checked cast, composite dedup, escrow key zeroing, memo cap. MD5 shoda ověřena. **F1 fix deployed:** `validate_peer_block` nyní volá `verify_signature()` pro non-coinbase account TX (commit `9341344d`). **F5 CRITICAL fix deployed:** Account-model sender balance validation — `insert_transaction()` a `validate_peer_block()` nyní rejectují TX kde `sender_balance < amount + fee`. Height-gated via `ZION_BALANCE_CHECK_HEIGHT=22394` na Edge mainnet (obě nody). **F5 fuzz tests:** 5 testů (commit `a5472ec6`) — 100 random senders, double-spend, u64::MAX, rapid-fire, self-send, vše PASS. **Node binary swap:** Nejnovější binárka s fmt/clippy cleanup deploynuta (22:55 UTC), F5 aktivní, height 22539. Commits `69d12c7`, `fe8d449`, `9863747`, `46106f38`, `48bf387f`, `a5472ec6`. **Escrow key rotation:** Nový escrow keypair, inflační 100,002 ZION spáleno na unspendable burn address. **Pending:** ~~Tailscale ACL~~ (Tailscale removed), ~~systemd User=zion~~ ✅ DONE (2026-07-10, 11/11 služeb), ~~key rotation F4.x~~ ✅ DONE (owner air-gapped), ~~BFG git history scrub~~ ✅ DONE. **WARNING:** Label-derived canonical addresses have PUBLIC keys — nepoužívat pro treasury wallets!
+- **Security patch 3.0.4 wave 1-2 + F4.7 aktivace (2026-07-07):** [`SECURITY_PATCH_3.0.4_PLAN.md`](./docs/3.0.4/SECURITY_PATCH_3.0.4_PLAN.md) (kanonický postup, fáze 1-6) · [`SECURITY_TODO_2026-07-03.md`](./docs/3.0.4/SECURITY_TODO_2026-07-03.md) §Audit Delta. **Wave 1 (dependency + code hardening):** quinn-proto ≥0.11.15 (RUSTSEC-2026-0185 remote DoS), crossbeam-epoch ≥0.9.20, anyhow, rand, indicatif/ratatui/lru/metal advisory cleanup; node mainnet guard proti `ZION_SEED_PEERS=none|empty`; pool OASIS hook bez externího `curl` (interní HTTP + localhost-only guard + timeouty); bridge SQL whitelist v `count_by_status`; HTTP timeouty na dao_clientech; miner bez přímé `bincode` závislosti; audit wrapper `V3/scripts/security-audit.sh`. **Wave 2 (F4.7 max-tx-amount cap):** height-gated cap = `emission::TOTAL_SUPPLY` (144B ZION, NE 100M — nekoliduje s premine), výjimky genesis/coinbase, obě validační cesty (`insert_transaction` + `validate_peer_block`), 4 testy PASS. **AKTIVOVÁNO na serveru 62.171.141.136 (2026-07-07 23:16):** `ZION_MAX_TX_AMOUNT_HEIGHT=1` (bare EnvironmentFile formát), log `max_tx_amount_activation_height=1`, genesis hash `4f75a0df...` nezměněn, 7/7 služeb active. F5 (`ZION_BALANCE_CHECK_HEIGHT=0`) aktivní současně. Commity `690b6dfe`, `35e0f6d0`. **Canonicalizace topologie:** hardcoded seed peers (`lib.rs`, `discovery.rs`) + CLI topology defaults přesunuty ze starého Edge (77.42.71.94, decommissioned) na nový server (62.171.141.136), Tailscale odstraněn.
 - **LI.FI cross-chain DEX + bridge integration (2026-06-30):** [`docs/3.0.3/Li.Fi-L2.md`](./docs/3.0.3/Li.Fi-L2.md) — LI.FI WidgetLight integrated into `/defi` page (aggregates 30+ DEX + 20+ bridges across 25+ chains). Phase 1 complete (WidgetLight postMessage, slippage fix, 0.5% fee, 7 EVM chains, custom RPC). Phase 1.5: Ankr API key activated (free tier). **Phase 2: 6 chains live** — wZION deployed on Base (8453), BSC (56), Polygon (137), Arbitrum (42161), Optimism (10), Avalanche (43114) with same address `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` (deterministic deploy). ZIONBridge on BSC/Polygon/Arbitrum/Optimism/Avalanche: `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721`. Bridge relay running on Edge with 6 EVM watchers. Website live on zionterranova.com with 6-chain LiFi widget. **Phase 3: WARP D-04 COMPLETE** — WARP přenáší **native L1 ZION**. Token naming: EVM chains → **wZION** (ERC-20 wrapped, jako WBTC), non-EVM chains → **ZION** (nativní reprezentace). Outbound: user pošle ZION na `BRIDGE_VAULT_ADDRESS` s memo `BRIDGE:<chain>:<recipient>` → WARP mintne ZION/wZION na dest chain (1:1 peg). Inbound: user spálí ZION/wZION → WARP odemkne ZION z vault. L1 RPC: `getBridgeLocks` + `submitBridgeUnlock` (3/5 validator quorum). **12 chain adapters registered** (11 fully functional + TON watch-only) with pure-Rust serializers: BCS (`bcs.rs`) for Aptos+Sui, CBOR (`cbor.rs`) for Cardano, TL-B Cell+BOC (`ton_cell.rs`) for TON. **499 WARP tests pass**. WARP (`V3/L3/warp/`) covers all 12 chain families.
 - **WARP Lightning Network bridge (2026-06-30):** [`docs/WARP_LIGHTNING_PLAN.md`](./docs/WARP_LIGHTNING_PLAN.md) — Native ZION L1 ↔ BTC Lightning bridge via BOLT11 invoices. BOLT11 parser + LND REST client + adapter implemented (`bolt11.rs`, `lightning_signer.rs`, `adapter/lightning.rs`). Fáze A (LND node setup on Edge) pending — requires Docker container, bitcoind backend, channel opening.
 - **Vision documents (2026-06-30):** [`docs/3.0.3/nativeZion.md`](./docs/3.0.3/nativeZion.md) (WARP token naming: wZION EVM, ZION non-EVM) + [`docs/3.0.3/ZionDex.md`](./docs/3.0.3/ZionDex.md) (cross-chain DEX concept powered by WARP — path to Top 100) + [`docs/3.0.3/evoluZion.md`](./docs/3.0.3/evoluZion.md) (ZION as Tree of Life — evolution from PoW to Proof-of-Care / Protokol Péče, NPU-based caring computation, with full source references to TerraNova book + NPU_HARDWARE_MINING_THEORY.md + cosmic-harmony NPU Mix code).
@@ -347,6 +372,39 @@ sudo systemctl enable --now zion-agent
 - `ZION_OS/README.md` - Complete system documentation
 - `ZION_OS/docs/ARCHITECTURE.md` - System architecture & design decisions
 - `ZION_OS/docs/ROADMAP.md` - Development roadmap & milestones
+
+### AppPay — Cross-Platform Monetization + Auto-Update (2026-07-10)
+
+**AppPay** is the unified monetization and auto-update system for Desktop Agent (Electron) and Mobile App (React Native / Expo). See [`AppPay.md`](./AppPay.md) for the full plan.
+
+**Update Server** (`update-server/`): Fastify + SQLite server at `updates.zionterranova.com` that handles:
+- **Desktop:** License key validation + electron-updater `latest.yml` serving + binary download (license-gated via `X-License-Key` header)
+- **Mobile:** IAP receipt verification (Apple StoreKit 2 + Google Play Billing) + entitlement management
+- **Admin:** License generation, revocation, release upload, IAP receipt/entitlement listing
+
+**Desktop Agent auto-update (BUILT + TESTED):**
+- `electron-updater` generic provider → `https://updates.zionterranova.com/api/releases`
+- License key UI in Settings → Updates (input + Activate button)
+- IPC: `getLicenseKey`, `setLicenseKey`, `validateLicense`
+- Startup auto-check requires valid license key
+- Files: `APP&WEB/desktop-agent/src/main.js`, `preload.js`, `ui/index.html`, `ui/renderer.js`
+
+**Mobile App IAP (BUILT + TESTED):**
+- `react-native-iap` for StoreKit 2 (iOS) + Google Play Billing (Android)
+- `IAPService.js` — unified purchase flow, product fetching, restore
+- `LicenseService.js` — receipt validation with server, entitlement caching (AsyncStorage)
+- `IAPContext.js` — React context (isPro, hasMinerBoost, products, purchase, restore)
+- `PaywallScreen.js` — full paywall UI (Pro plans, Miner Boost, Donations, Restore)
+- `SettingsScreen.js` — Premium section with upgrade/restore
+- 6 IAP products: `zion.pro.lifetime` ($29.99), `zion.pro.yearly` ($9.99/yr), `zion.pro.monthly` ($1.99/mo), `zion.miner.boost` ($4.99), `zion.donate.5` ($4.99), `zion.donate.25` ($24.99)
+- Server endpoints: `POST /api/iap/validate`, `GET /api/iap/entitlements`, `POST /api/iap/restore`
+- Dev mode: server accepts receipts without Apple/Google verification (set `APPLE_SHARED_SECRET` + `GOOGLE_SERVICE_ACCOUNT_KEY_PATH` for production)
+
+**Pending (requires user action):**
+- Deploy update server on `62.171.141.136` + DNS `updates.zionterranova.com`
+- Buy Apple Developer Program ($99/yr) + Windows Code Signing cert ($60–200/yr)
+- Configure IAP products in App Store Connect + Google Play Console
+- Set `APPLE_SHARED_SECRET` + `GOOGLE_SERVICE_ACCOUNT_KEY_PATH` on server
 
 ## 1) Repository shape
 
@@ -785,12 +843,15 @@ If pool stops accepting connections:
 **Old Edge server (77.42.71.94): DECOMMISSIONED** — all services migrated to new server.
 
 **Pending (owner akce):**
-1. Air-gapped klíče (pool SK, bridge validator SKs ×5, DAO guardian SKs ×7, escrow key)
+1. ~~Air-gapped klíče~~ ✅ DONE — key rotation proběhla, escrow SK aplikován, EVM/guardian SKs na flash disku
 2. Minery — připojit k `62.171.141.136:8444`
 3. DNS aplikace — `dns.md` zónový soubor v Webglobe admin console
-4. F4.7 aktivace — `ZION_MAX_TX_AMOUNT_HEIGHT`
-5. Key rotation F4.x — premine, pool, bridge, EVM (air-gapped)
-6. Git history scrub — BFG pro staré commity s secrets
+4. ~~F4.7 aktivace~~ ✅ DONE — `ZION_MAX_TX_AMOUNT_HEIGHT=1` aktivní
+5. ~~Key rotation F4.x~~ ✅ DONE — owner air-gapped
+6. ~~Git history scrub~~ ✅ DONE — BFG scrub proběhl
+7. EVM contract redeploy (ZION-2026-005) — nové kontrakty s novými admin klíči + multisig
+8. Externí audit genesis konfigurace — před public launch
+9. Re-clone repo (all collaborators) — git history přepsána filter-repo
 
 **Windows 11 GPU Miner Build Workaround (2026-06-07):**
 - `cargo build --release` fails on Windows 11 because `zion-miner.exe` in `V3/target/release/` is locked (Defender/antivirus).

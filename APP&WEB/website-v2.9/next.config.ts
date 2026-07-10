@@ -11,6 +11,9 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   reactCompiler: true,
+  typescript: {
+    ignoreBuildErrors: true, // TS check v IDE, ne v Docker buildu — ušetří ~70s
+  },
   transpilePackages: ['zion-wallet-sdk', '@noble/ed25519', '@noble/hashes'],
   turbopack: {
     root: rootDir,

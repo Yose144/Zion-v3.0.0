@@ -101,7 +101,7 @@ The UTXO model is inherently safe — `validate_inputs_exist()` and `validate_va
 
 **Fix:** Added `account_balance_for()` helper to ChainState that computes confirmed balance minus pending mempool debits. Both RPC and P2P paths now reject transactions where `sender_balance < amount + fee`. Height-gated via `ZION_BALANCE_CHECK_HEIGHT` environment variable to avoid rejecting pre-fix blocks during IBD. 5 fuzz tests added (commit `a5472ec6`).
 
-**Full technical report:** [`F5_SECURITY_INCIDENT_REPORT_2026-07-02.md`](../../F5_SECURITY_INCIDENT_REPORT_2026-07-02.md)
+**Full technical report:** [`F5_SECURITY_INCIDENT_REPORT_2026-07-02.md`](../../docs/3.0.4/F5_SECURITY_INCIDENT_REPORT_2026-07-02.md)
 
 ---
 
@@ -175,7 +175,7 @@ The UTXO model is inherently safe — `validate_inputs_exist()` and `validate_va
 
 **Impact:** The combination of these issues created the attack surface that enabled ZION-2026-003. Any single misconfiguration alone would have been high-risk; together they represent a systemic failure to follow production security baselines.
 
-**Fix:** All mitigations applied 2026-07-02 (see [`SecurityFirst.md`](../../SecurityFirst.md)). Full remediation via new server deployment with hardened configuration from the start.
+**Fix:** All mitigations applied 2026-07-02 (see [`SecurityFirst.md`](../../docs/3.0.4/SecurityFirst.md)). Full remediation via new server deployment with hardened configuration from the start.
 
 ---
 
@@ -254,7 +254,7 @@ The UTXO model is inherently safe — `validate_inputs_exist()` and `validate_va
 | 2026-07-02 | 21:00 | Comprehensive server hardening (UFW, AppArmor, key scrub, service binding). |
 | 2026-07-02 | 22:55 | L2 security patch deployed. Node binary swap. F5 fuzz tests pass. |
 | 2026-07-03 | 00:00 | Decision: full hard genesis reset required. All key material considered compromised. |
-| 2026-07-03 | 01:00 | `HARDRESETOFFICIAL.md` created — operational hard reset plan. |
+| 2026-07-03 | 01:00 | `docs/3.0.4/HARDRESETOFFICIAL.md` created — operational hard reset plan. |
 | 2026-07-03 | - | Website put in maintenance mode (zionterranova.com). |
 | 2026-07-06 | - | Phase 0-3 complete: all keys regenerated, genesis.rs updated, L2/L3 configs updated, bridge vault rotated, 49 stale addresses fixed across codebase. All tests pass (148 bridge, 25 DAO, 552 L1 core). |
 | 2026-07-06 | - | This security disclosure published. |
@@ -355,9 +355,9 @@ In the spirit of radical transparency for a pre-launch project, ZION will publis
 
 1. **This disclosure document** — full vulnerability details, timeline, root cause analysis
 2. **Machine-readable vulnerability catalogue** — [`vulnerabilities.json`](./vulnerabilities.json) (Go Ethereum format)
-3. **F5 incident report** — [`F5_SECURITY_INCIDENT_REPORT_2026-07-02.md`](../../F5_SECURITY_INCIDENT_REPORT_2026-07-02.md)
-4. **Server hardening audit** — [`SecurityFirst.md`](../../SecurityFirst.md)
-5. **L2 security patch details** — [`PATCH_L2_SECURITY_2026-07-02.md`](../../PATCH_L2_SECURITY_2026-07-02.md)
+3. **F5 incident report** — [`F5_SECURITY_INCIDENT_REPORT_2026-07-02.md`](../../docs/3.0.4/F5_SECURITY_INCIDENT_REPORT_2026-07-02.md)
+4. **Server hardening audit** — [`SecurityFirst.md`](../../docs/3.0.4/SecurityFirst.md)
+5. **L2 security patch details** — [`PATCH_L2_SECURITY_2026-07-02.md`](../../docs/3.0.4/PATCH_L2_SECURITY_2026-07-02.md)
 
 ### After hard reset completion
 
@@ -549,11 +549,11 @@ We believe transparency builds trust. This disclosure is modeled after the pract
 |----------|------|-------------|
 | This bulletin | `docs/security/SECURITY_DISCLOSURE_2026-07.md` | Main disclosure |
 | Vulnerability catalogue | `docs/security/vulnerabilities.json` | Machine-readable (Geth format) |
-| F5 incident report | `F5_SECURITY_INCIDENT_REPORT_2026-07-02.md` | Detailed F5 write-up |
-| Server hardening | `SecurityFirst.md` | Full server audit + fixes |
-| L2 security patch | `PATCH_L2_SECURITY_2026-07-02.md` | Bridge/DAO/swap hardening |
+| F5 incident report | `docs/3.0.4/F5_SECURITY_INCIDENT_REPORT_2026-07-02.md` | Detailed F5 write-up |
+| Server hardening | `docs/3.0.4/SecurityFirst.md` | Full server audit + fixes |
+| L2 security patch | `docs/3.0.4/PATCH_L2_SECURITY_2026-07-02.md` | Bridge/DAO/swap hardening |
 | Hard reset runbook | `docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md` | Canonical 10-phase procedure |
-| Hard reset plan | `HARDRESETOFFICIAL.md` | Operational plan (status: EXECUTING) |
+| Hard reset plan | `docs/3.0.4/HARDRESETOFFICIAL.md` | Operational plan (status: EXECUTING) |
 
 ---
 

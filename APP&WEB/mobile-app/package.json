@@ -1,7 +1,7 @@
 {
   "name": "zion-mobile",
-  "version": "3.0.3",
-  "description": "ZION TerraNova Mobile Wallet & Mining Manager",
+  "version": "3.0.5",
+  "description": "ZION TerraNova Mobile Wallet & Mining Manager v3.0.5 'All Green'",
   "main": "index.js",
   "scripts": {
     "android": "react-native run-android",
@@ -39,6 +39,7 @@
     "react-native-crypto-js": "^1.0.0",
     "react-native-device-info": "^10.12.0",
     "react-native-gesture-handler": "^2.14.1",
+    "react-native-iap": "^12.15.0",
     "react-native-keychain": "^8.2.0",
     "react-native-linear-gradient": "^2.8.3",
     "react-native-permissions": "^4.1.0",

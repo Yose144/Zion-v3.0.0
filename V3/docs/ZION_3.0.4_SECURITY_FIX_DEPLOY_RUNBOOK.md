@@ -5,7 +5,7 @@
 **Status:** ✅ DEPLOYED (2026-07-02) — F1 fix live on Edge, chain height 22188+  
 **Network:** Mainnet  
 **Consensus impact:** Hard fork — all nodes must run the new binary before any block with a forged account transaction could be mined.  
-**Cross-ref:** [`SecurityFirst.md`](../../SecurityFirst.md) (full post-mortem + Edge hardening) · [`SecurityBackup.md`](../../SecurityBackup.md) (forensic timeline) · [`CRITICAL_3.0.4_SECURITY_FINDINGS.md`](../../CRITICAL_3.0.4_SECURITY_FINDINGS.md) (original findings)
+**Cross-ref:** [`docs/3.0.4/SecurityFirst.md`](../../docs/3.0.4/SecurityFirst.md) (full post-mortem + Edge hardening) · [`docs/3.0.4/SecurityBackup.md`](../../docs/3.0.4/SecurityBackup.md) (forensic timeline) · [`docs/3.0.4/CRITICAL_3.0.4_SECURITY_FINDINGS.md`](../../docs/3.0.4/CRITICAL_3.0.4_SECURITY_FINDINGS.md) (original findings)
 
 > **DEPLOY RECORD (2026-07-02):**
 > - F1 fix deployed as commit `9341344d` — `validate_peer_block()` now calls `verify_signature()` for non-coinbase account TX.
@@ -14,7 +14,7 @@
 > - Chain rolled back to height 22180. F1 fix deployed immediately after.
 > - Post-deploy: 12 services active, chain height 22188+, mining functional.
 > - Edge server hardened: UFW, bind addresses (13/18 on 127.0.0.1), AppArmor, monitoring cron jobs.
-> - See [`SecurityFirst.md`](../../SecurityFirst.md) for full hardening checklist.
+> - See [`docs/3.0.4/SecurityFirst.md`](../../docs/3.0.4/SecurityFirst.md) for full hardening checklist.
 
 ---
 
@@ -271,11 +271,11 @@ sudo systemctl start zion-edge-pool
 1. ✅ `StatusV3.md` — updated with security hardening summary (Phase 2)
 2. ✅ `ROADMAP.md` — security hardening section added
 3. ✅ `AGENTS.md` — SecurityFirst.md reference added
-4. ✅ `SecurityFirst.md` — full post-mortem + Edge hardening checklist
-5. ✅ `SecurityBackup.md` — forensic timeline + rollback record
-6. ✅ `CRITICAL_3.0.4_SECURITY_FINDINGS.md` — status updated to RESOLVED
+4. ✅ `docs/3.0.4/SecurityFirst.md` — full post-mortem + Edge hardening checklist
+5. ✅ `docs/3.0.4/SecurityBackup.md` — forensic timeline + rollback record
+6. ✅ `docs/3.0.4/CRITICAL_3.0.4_SECURITY_FINDINGS.md` — status updated to RESOLVED
 7. ✅ `V3/docs/SECURITY_CHECKLIST.md` — F1 post-mortem + Edge hardening sections added
-8. ✅ `PATCH_L2_SECURITY_2026-07-02.md` — Edge server status section added
+8. ✅ `docs/3.0.4/PATCH_L2_SECURITY_2026-07-02.md` — Edge server status section added
 
 ---
 

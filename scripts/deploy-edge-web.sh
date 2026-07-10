@@ -1,6 +1,6 @@
 #!/bin/bash
 # ZION Website Edge Deployment Script
-# Run this ON the Edge server (77.42.71.94) as root
+# Run this ON the Edge server (62.171.141.136) as root
 #
 # Prerequisites:
 #   - Docker + docker compose installed

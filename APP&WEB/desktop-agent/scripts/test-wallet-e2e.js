@@ -22,7 +22,7 @@ const WalletGenerator = require(path.join(__dirname, '..', 'src', 'wallet-genera
 const UtxoBuilder = require(path.join(__dirname, '..', 'src', 'utxo-builder'));
 const AccountBuilder = require(path.join(__dirname, '..', 'src', 'account-builder'));
 
-const RPC_HOST = process.env.ZION_RPC_HOST || '77.42.71.94';
+const RPC_HOST = process.env.ZION_RPC_HOST || '62.171.141.136';
 const RPC_PORT = parseInt(process.env.ZION_RPC_PORT || '8443', 10);
 
 function tcpRpcCall(method, params) {

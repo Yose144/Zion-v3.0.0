@@ -4,7 +4,7 @@
 import sys
 import requests
 
-RPC_URL = "http://77.42.71.94:8443/jsonrpc"
+RPC_URL = "http://62.171.141.136:8443/jsonrpc"
 ADDRESSES = [
     "zion13794g7k3m0f84637l2x0t855h3l258k8p3xp5t3",
     "zion1r565v3k2u8p8t6n494p0n527c0m7a5s4s5ae0x7",

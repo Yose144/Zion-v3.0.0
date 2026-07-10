@@ -2,7 +2,7 @@
   <img src="../assets/logo/Z.gif" alt="ZION" width="120"/>
 </p>
 
-<h1 align="center">ZION Desktop Mining Agent v2.9</h1>
+<h1 align="center">ZION Desktop Mining Agent v3.0.5</h1>
 
 <p align="center">
   <strong>Professional desktop application for ZION TerraNova mining with consciousness evolution tracking.</strong>
@@ -118,7 +118,7 @@ This exercises wallet generation, deterministic mnemonic recovery, encryption, b
 
 **First-time setup:**
 1. Enter your ZION wallet address
-2. Set pool: `pool.zionterranova.com:3333`
+2. Set pool: `62.171.141.136:8444`
 3. Choose worker name (e.g., `my-rig-01`)
 4. Select CPU/GPU and threads
 5. Click "Start Mining" ⛏️
@@ -128,19 +128,19 @@ This exercises wallet generation, deterministic mnemonic recovery, encryption, b
 **macOS:**
 ```bash
 npm run build:mac
-# Output: dist/ZION-Desktop-Agent-2.9.0.dmg
+# Output: dist/ZION-Desktop-Agent-3.0.5.dmg
 ```
 
 **Windows:**
 ```bash
 npm run build:win
-# Output: dist/ZION-Desktop-Agent-Setup-2.9.0.exe
+# Output: dist/ZION-Desktop-Agent-Setup-3.0.5.exe
 ```
 
 **Linux:**
 ```bash
 npm run build:linux
-# Output: dist/ZION-Desktop-Agent-2.9.0.AppImage
+# Output: dist/ZION-Desktop-Agent-3.0.5.AppImage
 ```
 
 ---
@@ -152,7 +152,7 @@ npm run build:linux
 On first launch, configure your settings:
 
 1. **Wallet Address**: Your ZION wallet (ZION_...)
-2. **Pool**: pool.zionterranova.com:3333 (default)
+2. **Pool**: 62.171.141.136:8444 (default)
 3. **Worker Name**: Identifier for this miner
 4. **Threads**: CPU cores to use
 5. **GPU**: Enable GPU mining (if available)
@@ -311,7 +311,7 @@ Edit `resources/config.json`:
 ```bash
 cd resources
 python3 zion_native_miner_v2_9.py \
-  --pool pool.zionterranova.com:3333 \
+  --pool 62.171.141.136:8444 \
   --wallet YOUR_ZION_ADDRESS \
   --worker my-worker
 ```
@@ -321,7 +321,7 @@ python3 zion_native_miner_v2_9.py \
 ## 🛠️ Development
 
 Built with:
-- **Electron** 34.0.0 - Desktop framework
+- **Electron** 39.2.7 - Desktop framework
 - **electron-builder** - Packaging
 - **Native HTML/CSS/JS** - No heavy frameworks
 
@@ -361,9 +361,9 @@ MIT - See LICENSE file
 ## Support
 
 - Website: https://zionterranova.com
-- Pool: pool.zionterranova.com:3333
+- Pool: 62.171.141.136:8444
 - Docs: https://zionterranova.com/docs
 
 ---
 
-**ZION TerraNova v2.9** - Where Technology Meets Spirit 🌟
+**ZION TerraNova v3.0.5** - Where Technology Meets Spirit 🌟

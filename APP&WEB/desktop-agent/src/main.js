@@ -1,4 +1,4 @@
-// ZION V3 Mainnet Ready v3.0.2 - Main Process
+// ZION V3 Mainnet Ready v3.0.5 "All Green" - Main Process
 // Electron main process with system tray, auto-start, GPU mining, IPC
 
 const { app, BrowserWindow, Tray, Menu, ipcMain, dialog, shell } = require('electron');
@@ -14,16 +14,16 @@ const crypto = require('crypto');
 
 // ── Network Constants ───────────────────────────────────────────────────────
 // Mainnet Edge relay (Hetzner VPS, Prague) — public-facing pool + node
-const PRIMARY_MAINNET_HOST = '77.42.71.94';
+const PRIMARY_MAINNET_HOST = '62.171.141.136';
 const PRIMARY_POOL_PORT = 8444;
 const PRIMARY_RPC_PORT = 8443;
-// Edge VPN IP (Tailscale) for RPC access
-const EDGE_VPN_HOST = '100.76.16.108';
+// Edge VPN IP — Tailscale decommissioned, same host as primary
+const EDGE_VPN_HOST = '62.171.141.136';
 // Legacy alias kept for internal fallback references
 const PRIMARY_TESTNET_HOST = PRIMARY_MAINNET_HOST;
 // Default to public Edge read-only RPC for public miners.
 // Users with local Core node can override via Settings → RPC URL.
-const DEFAULT_RPC_URL = 'http://77.42.71.94:8443/jsonrpc';
+const DEFAULT_RPC_URL = 'http://62.171.141.136:8443/jsonrpc';
 
 // ── Logging: only miner metrics + errors go to console.log.
 // Everything else uses dbg() which outputs console.debug only when ZION_DEBUG=1.
@@ -1280,6 +1280,8 @@ function saveConfig(config) {
     return false;
   }
 }
+// Alias used by auto-update + license IPC handlers
+const saveConfigSync = saveConfig;
 
 // Normalize user-supplied RPC URL to canonical http://host:port/jsonrpc form.
 function normalizeRpcUrl(value) {
@@ -1769,7 +1771,7 @@ function createWindow() {
     height: 800,
     minWidth: 800,
     minHeight: 600,
-    title: 'ZION Native Awakening v2.9.6',
+    title: 'ZION Native Awakening v3.0.5',
     backgroundColor: '#000000',
     ...(windowIcon ? { icon: windowIcon } : {}),
     show: true, // Always show window on manual start; startMinimized only applies to auto-start
@@ -1965,7 +1967,7 @@ function createTray() {
   
   trayMenu = Menu.buildFromTemplate([
     {
-      label: 'ZION Miner v3.0.0 Ekam Deeksha',
+      label: 'ZION Miner v3.0.5 Ekam Deeksha',
       enabled: false
     },
     { type: 'separator' },
@@ -2019,7 +2021,7 @@ function createTray() {
   ]);
 
   tray.setContextMenu(trayMenu);
-  tray.setToolTip('ZION Miner v3.0.0 Ekam Deeksha');
+  tray.setToolTip('ZION Miner v3.0.5 Ekam Deeksha');
   
   tray.on('click', () => {
     showWindow();
@@ -3372,7 +3374,7 @@ function parseMinerOutput(output) {
     minerStats.last_job_height = v3MiningMatch[2];
   }
 
-  // ─── V3 version banner: "version=3.0.0-dev" ───
+  // ─── V3 version banner: "version=3.0.5-dev" ───
   const v3VersionMatch = output.match(/^version=([\d.]+(?:-\w+)?)/m);
   if (v3VersionMatch) {
     minerStats.miner_version = v3VersionMatch[1];
@@ -3458,7 +3460,7 @@ function parseMinerOutput(output) {
     minerStats.threads = v3ThreadsMatch[1];
   }
 
-  // ─── V3 pool addr: "pool_addr=77.42.71.94:8444" ───
+  // ─── V3 pool addr: "pool_addr=62.171.141.136:8444" ───
   const v3PoolMatch = output.match(/^pool_addr=(.+)/m);
   if (v3PoolMatch) {
     minerStats.pool = v3PoolMatch[1].trim();
@@ -3930,7 +3932,7 @@ ipcMain.handle('get-gpu-info', () => {
   }
 });
 
-// ── Ekam Deeksha v3.0.0 — GPU device enumeration ──
+// ── Ekam Deeksha v3.0.5 — GPU device enumeration ──
 ipcMain.handle('get-gpu-devices', () => {
   try {
     const info = detectGPU();
@@ -3940,7 +3942,7 @@ ipcMain.handle('get-gpu-devices', () => {
   }
 });
 
-// ── Ekam Deeksha v3.0.0 — GPU benchmark (runs miner in benchmark mode) ──
+// ── Ekam Deeksha v3.0.5 — GPU benchmark (runs miner in benchmark mode) ──
 ipcMain.handle('run-gpu-benchmark', async (_event, options = {}) => {
   try {
     const gpuInfo = detectGPU();
@@ -4831,8 +4833,11 @@ ipcMain.handle('wallet-generate-qr', async (event, { text }) => {
 
 
 // ═══════════════════════════════════════════════════════════════════
-// AUTO-UPDATER — GitHub Releases via electron-updater (graceful)
+// AUTO-UPDATER — License-gated updates via custom update server
+// Server: https://updates.zionterranova.com/api/releases
+// electron-updater generic provider + X-License-Key header
 // ═══════════════════════════════════════════════════════════════════
+const UPDATE_SERVER_URL = 'https://updates.zionterranova.com/api/releases';
 let _autoUpdaterAvailable = false;
 let _autoUpdater = null;
 let _updateReady = false;
@@ -4862,6 +4867,12 @@ function _initAutoUpdater() {
 
     autoUpdater.autoDownload = false;
     autoUpdater.autoInstallOnAppQuit = true;
+
+    // Set license key header for update server authentication
+    const cfg = loadConfig();
+    if (cfg?.licenseKey) {
+      autoUpdater.requestHeaders = { 'X-License-Key': cfg.licenseKey };
+    }
 
     autoUpdater.on('checking-for-update', () => {
       _sendUpdateStatus('checking');
@@ -4909,14 +4920,27 @@ function _initAutoUpdater() {
   }
 }
 
-// IPC: Check for updates
+// IPC: Check for updates — uses license-gated update server
 ipcMain.handle('check-for-updates', async () => {
   try {
+    const cfg = loadConfig();
+    if (!cfg?.licenseKey) {
+      return {
+        success: false,
+        error: 'No license key configured. Enter your license key in Settings → Updates.',
+        needsLicense: true,
+      };
+    }
+
     const updater = _initAutoUpdater();
     if (!updater) {
-      // Fallback: check GitHub API directly
-      return await _checkGitHubRelease();
+      // Dev mode fallback: check update server API directly
+      return await _checkUpdateServer(cfg.licenseKey);
     }
+
+    // Update requestHeaders with current license key (in case it changed)
+    updater.requestHeaders = { 'X-License-Key': cfg.licenseKey };
+
     const result = await updater.checkForUpdates();
     return {
       success: true,
@@ -4928,12 +4952,14 @@ ipcMain.handle('check-for-updates', async () => {
       releaseDate: result?.updateInfo?.releaseDate || '',
     };
   } catch (err) {
-    // Fallback to GitHub API
+    // Fallback to direct API check
     try {
-      return await _checkGitHubRelease();
-    } catch {
-      return { success: false, error: err?.message || String(err) };
-    }
+      const cfg = loadConfig();
+      if (cfg?.licenseKey) {
+        return await _checkUpdateServer(cfg.licenseKey);
+      }
+    } catch { /* ignore */ }
+    return { success: false, error: err?.message || String(err) };
   }
 });
 
@@ -4983,37 +5009,121 @@ ipcMain.handle('set-update-auto-check', (event, enabled) => {
   }
 });
 
-// Fallback: Check GitHub releases directly (works without electron-updater)
-async function _checkGitHubRelease() {
+// ── License key IPC ───────────────────────────────────────────────────────────
+ipcMain.handle('get-license-key', () => {
+  try {
+    const cfg = loadConfig();
+    return { licenseKey: cfg?.licenseKey || '' };
+  } catch {
+    return { licenseKey: '' };
+  }
+});
+
+ipcMain.handle('set-license-key', (event, key) => {
+  try {
+    const cfg = loadConfig();
+    cfg.licenseKey = (key || '').trim() || undefined;
+    saveConfigSync(cfg);
+
+    // Update autoUpdater headers if already initialized
+    if (_autoUpdater && cfg.licenseKey) {
+      _autoUpdater.requestHeaders = { 'X-License-Key': cfg.licenseKey };
+    }
+
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err?.message || String(err) };
+  }
+});
+
+ipcMain.handle('validate-license', async (event, key) => {
+  try {
+    const licenseKey = (key || '').trim();
+    if (!licenseKey) {
+      return { success: false, error: 'License key required' };
+    }
+
+    // Check via update server API
+    const result = await _checkUpdateServer(licenseKey, true);
+    if (result?.licenseValid) {
+      // Save to config
+      const cfg = loadConfig();
+      cfg.licenseKey = licenseKey;
+      saveConfigSync(cfg);
+
+      if (_autoUpdater) {
+        _autoUpdater.requestHeaders = { 'X-License-Key': licenseKey };
+      }
+
+      return { success: true, licenseValid: true };
+    }
+    return { success: false, licenseValid: false, error: result?.error || 'Invalid license' };
+  } catch (err) {
+    return { success: false, error: err?.message || String(err) };
+  }
+});
+
+// Fallback: Check update server API directly (works in dev mode without electron-updater)
+async function _checkUpdateServer(licenseKey, validateOnly = false) {
   try {
     const https = require('https');
+    const http = require('http');
+    const url = new URL(UPDATE_SERVER_URL.replace('/api/releases', '/api/check-update'));
+    const client = url.protocol === 'https:' ? https : http;
+
+    const body = JSON.stringify({
+      licenseKey,
+      platform: process.platform,
+      arch: process.arch,
+      currentVersion: app.getVersion(),
+    });
+
     const data = await new Promise((resolve, reject) => {
-      const req = https.get('https://api.github.com/repos/Yose144/2.9.6/releases/latest', {
-        headers: { 'User-Agent': 'ZION-Desktop-Agent/' + app.getVersion() }
+      const req = client.request(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(body),
+          'X-License-Key': licenseKey,
+        },
+        timeout: 15000,
       }, (res) => {
-        let body = '';
-        res.on('data', (chunk) => body += chunk);
+        let respBody = '';
+        res.on('data', (chunk) => respBody += chunk);
         res.on('end', () => {
-          try { resolve(JSON.parse(body)); }
-          catch { reject(new Error('Invalid JSON')); }
+          try { resolve({ status: res.statusCode, json: JSON.parse(respBody) }); }
+          catch { reject(new Error('Invalid JSON response')); }
         });
       });
       req.on('error', reject);
-      req.setTimeout(10000, () => { req.destroy(); reject(new Error('Timeout')); });
+      req.on('timeout', () => { req.destroy(); reject(new Error('Timeout')); });
+      req.write(body);
+      req.end();
     });
 
-    const latestTag = (data.tag_name || '').replace(/^v/, '');
-    const currentVer = app.getVersion();
+    if (data.status === 403) {
+      return { success: false, error: data.json.error || 'Invalid or revoked license', licenseValid: false };
+    }
+    if (data.status === 404) {
+      return { success: false, error: data.json.error || 'No releases available', licenseValid: true };
+    }
+    if (data.status !== 200) {
+      return { success: false, error: data.json.error || `HTTP ${data.status}`, licenseValid: false };
+    }
+
+    if (validateOnly) {
+      return { success: true, licenseValid: true, ...data.json };
+    }
 
     return {
       success: true,
-      updateAvailable: latestTag && latestTag !== currentVer && _isNewerVersion(latestTag, currentVer),
-      currentVersion: currentVer,
-      latestVersion: latestTag || currentVer,
-      releaseNotes: data.body || '',
-      releaseDate: data.published_at || '',
-      htmlUrl: data.html_url || '',
-      assets: (data.assets || []).map(a => ({ name: a.name, url: a.browser_download_url, size: a.size })),
+      licenseValid: true,
+      updateAvailable: data.json.updateAvailable,
+      currentVersion: data.json.currentVersion || app.getVersion(),
+      latestVersion: data.json.latestVersion || app.getVersion(),
+      releaseNotes: data.json.releaseNotes || '',
+      releaseDate: data.json.releaseDate || '',
+      downloadUrl: data.json.downloadUrl || '',
     };
   } catch (err) {
     return { success: false, error: err?.message || String(err), currentVersion: app.getVersion() };
@@ -5461,7 +5571,7 @@ function _isNewerVersion(latest, current) {
 
 // App lifecycle
 app.whenReady().then(async () => {
-  console.log('ZION Native Awakening v3.0.0 started');
+  console.log('ZION Native Awakening v3.0.5 started');
 
   // Initialize auto-tuner
 
@@ -5524,25 +5634,33 @@ app.whenReady().then(async () => {
   createTray();
 
   // Auto-check for updates on startup (delayed 8s to not block UI)
+  // Requires license key — if not set, show "enter license" status
   setTimeout(() => {
     try {
       const startupCfg = loadConfig();
       if (startupCfg?.autoCheckUpdates !== false) {
-        dbg('[startup] Auto-checking for updates...');
+        if (!startupCfg?.licenseKey) {
+          dbg('[startup] No license key set — skipping auto-update check');
+          _sendUpdateStatus('no-license', { message: 'Enter your license key to check for updates' });
+          return;
+        }
+        dbg('[startup] Auto-checking for updates (license-gated)...');
         const updater = _initAutoUpdater();
         if (updater) {
           updater.checkForUpdates().catch(err => {
             dbg('[startup] Update check failed:', err?.message);
           });
         } else {
-          // Fallback to GitHub API check
-          _checkGitHubRelease().then(result => {
+          // Dev mode fallback: check update server API directly
+          _checkUpdateServer(startupCfg.licenseKey).then(result => {
             if (result?.updateAvailable) {
               _sendUpdateStatus('available', {
                 version: result.latestVersion,
                 releaseNotes: result.releaseNotes,
                 releaseDate: result.releaseDate,
               });
+            } else if (result?.licenseValid === false) {
+              _sendUpdateStatus('error', { error: 'Invalid or revoked license' });
             }
           }).catch(() => {});
         }

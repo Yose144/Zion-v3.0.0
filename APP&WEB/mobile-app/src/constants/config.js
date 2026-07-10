@@ -9,12 +9,11 @@ export const CONFIG = {
       name: 'ZION Mainnet',
       chainId: 'zion-mainnet-1',
       rpcNodes: [
-        'http://77.42.71.94:8443/jsonrpc',
-        'http://100.76.16.108:8443/jsonrpc',
+        'http://62.171.141.136:8443/jsonrpc',
       ],
-      poolHost: '77.42.71.94',
+      poolHost: '62.171.141.136',
       poolPort: 8444,
-      poolHosts: [{ host: '77.42.71.94', name: 'Edge' }],
+      poolHosts: [{ host: '62.171.141.136', name: 'Edge' }],
       explorerUrl: 'https://explorer.zionterranova.com',
     },
     testnet: {
@@ -174,6 +173,43 @@ export const CONFIG = {
     // Relay backend
     RELAY_API: 'https://api.zionterranova.com/api/wzion-bridge',
   },
+
+  // ── In-App Purchases ──────────────────────────────────────────────────────
+  IAP: {
+    // Product IDs (must match App Store Connect + Google Play Console)
+    PRODUCT_IDS: {
+      PRO_LIFETIME: 'zion.pro.lifetime',
+      PRO_YEARLY: 'zion.pro.yearly',
+      PRO_MONTHLY: 'zion.pro.monthly',
+      MINER_BOOST: 'zion.miner.boost',
+      DONATE_5: 'zion.donate.5',
+      DONATE_25: 'zion.donate.25',
+    },
+    // All product IDs as array (for fetchProducts)
+    ALL_PRODUCT_IDS: [
+      'zion.pro.lifetime',
+      'zion.pro.yearly',
+      'zion.pro.monthly',
+      'zion.miner.boost',
+      'zion.donate.5',
+      'zion.donate.25',
+    ],
+    // Entitlements (feature gates)
+    ENTITLEMENTS: {
+      PRO: 'pro',           // Unlimited wallets, TX export, advanced stats, no ads
+      MINER_BOOST: 'miner_boost', // GPU mining, auto-tuner, push notifications
+    },
+    // Update server for receipt validation
+    VALIDATION_URL: 'https://updates.zionterranova.com/api/iap',
+    // Subscription SKU groups (for getSubscriptions vs getProducts)
+    SUBSCRIPTION_IDS: ['zion.pro.yearly', 'zion.pro.monthly'],
+    ONE_TIME_IDS: ['zion.pro.lifetime', 'zion.miner.boost', 'zion.donate.5', 'zion.donate.25'],
+  },
+
+  // ── App version ───────────────────────────────────────────────────────────
+  VERSION: '3.0.5',
+  BUILD_NUMBER: '8',
+  CODENAME: 'All Green',
 };
 
 export default CONFIG;
