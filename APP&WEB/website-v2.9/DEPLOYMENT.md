@@ -143,6 +143,7 @@ ssh -i ~/.ssh/zion-new-server root@62.171.141.136
 
 | Date | Version | Changes |
 |---|---|---|
+| 2026-07-10 | v3.0.5-miner-ui | Added amber inactive-miner state and pending-balance banner to MinerDashboard and MinerStatsClient; corrected Czech diacritics across miner stats UI |
 | 2026-07-10 | v3.0.5-e2e-fix | Added canonical redirects for Explorer detail pages (`/explorer/tx/:hash`, `/explorer/address/:addr`, `/explorer/block/:id`); hardened pool miner search and `/miner-stats` query-param handling; full CZ/EN language correction across UI and docs |
 | 2026-07-10 | v3.0.5-e2e | Pool, Explorer, Network pages updated to v3.0.5 E2E All Green; 3-node P2P mesh (Edge 1, Edge 2, Local Backup) added to network config/map; E2E memo block 752, F4.7/F5, 11/11 services surfaced |
 | 2026-07-10 | v3.0.5-hotfix | Mobile stargate sizing, nav + footer cleanup, lazy HolographicEarth/StargateLogo, smaller homepage HTML/JS bundle |
