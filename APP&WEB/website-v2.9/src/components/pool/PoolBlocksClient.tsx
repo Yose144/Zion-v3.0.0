@@ -571,7 +571,7 @@ function HashrateTimeline({ data, height = 240, cs = false }: { data: DayBucket[
 }
 
 /* ═══════════════════════ MAIN COMPONENT ═══════════════════════ */
-export default function PoolBlocksClient() {
+export default function PoolBlocksClient({ embedded = false }: { embedded?: boolean } = {}) {
   const { lang } = useLang();
   const cs = lang === "cs";
 
@@ -702,40 +702,41 @@ export default function PoolBlocksClient() {
     v >= 1 ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" : v >= 0.8 ? "bg-amber-500/15 text-amber-300 border-amber-500/30" : "bg-rose-500/15 text-rose-300 border-rose-500/30";
 
   return (
-    <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24">
-      <div className="zion-container max-w-7xl space-y-10">
-        {/* ═══════ A. HERO ═══════ */}
-        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}>
-          <div className="zion-rainbow-card p-8 md:p-10" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-              <div className="flex items-start gap-4">
-                <div className="flex items-center justify-center h-14 w-14 rounded-2xl bg-linear-to-br from-purple-500/80 to-indigo-600/80 flex-shrink-0">
-                  <Pickaxe className="h-7 w-7 text-white" />
+    <div className={embedded ? "" : "zion-shell min-h-screen pt-28 md:pt-32 pb-24"}>
+      <div className={embedded ? "space-y-10" : "zion-container max-w-7xl space-y-10"}>
+        {!embedded && (
+          <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}>
+            <div className="zion-rainbow-card p-8 md:p-10" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                <div className="flex items-start gap-4">
+                  <div className="flex items-center justify-center h-14 w-14 rounded-2xl bg-linear-to-br from-purple-500/80 to-indigo-600/80 flex-shrink-0">
+                    <Pickaxe className="h-7 w-7 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.4em] text-gray-500 mb-1">
+                      {cs ? "Těžební pool · Historie" : "Mining Pool · History"}
+                    </p>
+                    <h1 className="text-3xl md:text-4xl font-bold text-white flex items-center gap-3">
+                      {cs ? "Historie bloků poolu" : "Pool Blocks History"}
+                    </h1>
+                    <p className="text-sm text-gray-400 mt-2 max-w-xl">
+                      {cs
+                        ? "Historický graf objevování bloků, trend štěstí, historie odměn a časová osa hashrate poolu vs sítě."
+                        : "Historical block discovery chart, luck trend, reward history, and pool vs network hashrate timeline."}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.4em] text-gray-500 mb-1">
-                    {cs ? "Těžební pool · Historie" : "Mining Pool · History"}
-                  </p>
-                  <h1 className="text-3xl md:text-4xl font-bold text-white flex items-center gap-3">
-                    {cs ? "Historie bloků poolu" : "Pool Blocks History"}
-                  </h1>
-                  <p className="text-sm text-gray-400 mt-2 max-w-xl">
-                    {cs
-                      ? "Historický graf objevování bloků, trend štěstí, historie odměn a časová osa hashrate poolu vs sítě."
-                      : "Historical block discovery chart, luck trend, reward history, and pool vs network hashrate timeline."}
-                  </p>
-                </div>
+                <Link
+                  href="/pool"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.03] text-sm text-gray-300 hover:text-white hover:border-white/20 transition-colors flex-shrink-0"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  {cs ? "Zpět na dashboard" : "Back to Dashboard"}
+                </Link>
               </div>
-              <Link
-                href="/pool"
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.03] text-sm text-gray-300 hover:text-white hover:border-white/20 transition-colors flex-shrink-0"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                {cs ? "Zpět na dashboard" : "Back to Dashboard"}
-              </Link>
             </div>
-          </div>
-        </motion.section>
+          </motion.section>
+        )}
 
         {/* ═══════ B. FILTER BAR ═══════ */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
@@ -1056,44 +1057,45 @@ export default function PoolBlocksClient() {
           </div>
         </motion.section>
 
-        {/* ═══════ I. CTA ═══════ */}
-        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.36 }}>
-          <div className="zion-cta-banner p-8 md:p-10" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-              <div className="flex items-start gap-4">
-                <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-linear-to-br from-purple-500/80 to-indigo-600/80 flex-shrink-0">
-                  <Pickaxe className="h-6 w-6 text-white" />
+        {!embedded && (
+          <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.36 }}>
+            <div className="zion-cta-banner p-8 md:p-10" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                <div className="flex items-start gap-4">
+                  <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-linear-to-br from-purple-500/80 to-indigo-600/80 flex-shrink-0">
+                    <Pickaxe className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-white">
+                      {cs ? "Začněte těžit nebo prozkoumejte blockchain" : "Start Mining or Explore the Chain"}
+                    </h3>
+                    <p className="text-sm text-gray-400 mt-1">
+                      {cs
+                        ? "Připojte se k poolu a těžte ZION, nebo prozkoumejte bloky a transakce v exploreru."
+                        : "Join the pool and mine ZION, or explore blocks and transactions in the explorer."}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-white">
-                    {cs ? "Začněte těžit nebo prozkoumejte blockchain" : "Start Mining or Explore the Chain"}
-                  </h3>
-                  <p className="text-sm text-gray-400 mt-1">
-                    {cs
-                      ? "Připojte se k poolu a těžte ZION, nebo prozkoumejte bloky a transakce v exploreru."
-                      : "Join the pool and mine ZION, or explore blocks and transactions in the explorer."}
-                  </p>
+                <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
+                  <Link
+                    href="/pool"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-linear-to-br from-purple-500/80 to-indigo-600/80 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    {cs ? "Dashboard poolu" : "Pool Dashboard"}
+                  </Link>
+                  <Link
+                    href="/explorer"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-white/10 bg-white/[0.03] text-sm text-gray-300 hover:text-white hover:border-white/20 transition-colors"
+                  >
+                    {cs ? "Blockchain Explorer" : "Blockchain Explorer"}
+                    <ExternalLink className="h-4 w-4" />
+                  </Link>
                 </div>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
-                <Link
-                  href="/pool"
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-linear-to-br from-purple-500/80 to-indigo-600/80 text-sm font-medium text-white hover:opacity-90 transition-opacity"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  {cs ? "Dashboard poolu" : "Pool Dashboard"}
-                </Link>
-                <Link
-                  href="/explorer"
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-white/10 bg-white/[0.03] text-sm text-gray-300 hover:text-white hover:border-white/20 transition-colors"
-                >
-                  {cs ? "Blockchain Explorer" : "Blockchain Explorer"}
-                  <ExternalLink className="h-4 w-4" />
-                </Link>
               </div>
             </div>
-          </div>
-        </motion.section>
+          </motion.section>
+        )}
       </div>
     </div>
   );
