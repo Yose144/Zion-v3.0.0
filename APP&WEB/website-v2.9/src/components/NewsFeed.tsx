@@ -24,6 +24,22 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'v3.0.5-beta-simplified-community-cli',
+    date: '2026-07-10',
+    tag: { cs: 'Release', en: 'Release' },
+    tagColor: 'text-emerald-400',
+    title: {
+      cs: 'ZION v3.0.5-beta — Simplified Community CLI: jeden binary, 4 platformy, interaktivní menu',
+      en: 'ZION v3.0.5-beta — Simplified Community CLI: one binary, 4 platforms, interactive menu',
+    },
+    summary: {
+      cs: 'Nový release v3.0.5-beta nahrazuje 8 oddělených binárek jedním `zion` binary s interaktivním menu (šipky + Enter). Wallet, node, miner, pool, status, doctor, monitor — vše v jednom. 4 platformy: Linux x86_64, macOS Apple Silicon (M1–M4), macOS Intel, Windows x86_64 (node + pool + miner embedded, 10 MB). GPU mining: Metal (macOS), OpenCL/CUDA (Linux), CPU fallback. SHA256 verifikace. Stáhni z GitHub Releases.',
+      en: 'New release v3.0.5-beta replaces 8 separate binaries with a single `zion` binary featuring an interactive arrow-key menu. Wallet, node, miner, pool, status, doctor, monitor — all in one. 4 platforms: Linux x86_64, macOS Apple Silicon (M1–M4), macOS Intel, Windows x86_64 (node + pool + miner embedded, 10 MB). GPU mining: Metal (macOS), OpenCL/CUDA (Linux), CPU fallback. SHA256 verification. Download from GitHub Releases.',
+    },
+    href: 'https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.0.5-beta',
+    external: true,
+  },
+  {
     slug: '3.0.5-all-green-mainnet-beta-github-public',
     date: '2026-07-09',
     tag: { cs: 'Security', en: 'Security' },
