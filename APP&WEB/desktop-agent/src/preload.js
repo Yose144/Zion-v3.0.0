@@ -1,4 +1,4 @@
-// ZION Ekam Deeksha v3.0.0 - Preload Script
+// ZION Ekam Deeksha v3.0.5 - Preload Script
 // IPC bridge between main process and renderer (security layer)
 
 const { contextBridge, ipcRenderer } = require('electron');
@@ -51,12 +51,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
 
 
-  // Auto-update
+  // Auto-update (license-gated)
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
   downloadUpdate: () => ipcRenderer.invoke('download-update'),
   installUpdate: () => ipcRenderer.invoke('install-update'),
   getUpdateSettings: () => ipcRenderer.invoke('get-update-settings'),
   setUpdateAutoCheck: (enabled) => ipcRenderer.invoke('set-update-auto-check', enabled),
+  // License key management
+  getLicenseKey: () => ipcRenderer.invoke('get-license-key'),
+  setLicenseKey: (key) => ipcRenderer.invoke('set-license-key', key),
+  validateLicense: (key) => ipcRenderer.invoke('validate-license', key),
   onUpdateStatus: (callback) => {
     ipcRenderer.on('update-status', (event, data) => callback(data));
   },
@@ -121,7 +125,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   nclSubmitJob: (data) => ipcRenderer.invoke('ncl-submit-job', data),
   nclGetPrice: () => ipcRenderer.invoke('ncl-get-price'),
 
-  // ── Ekam Deeksha v3.0.0 GPU + Dual Mining ──────────────────────────────
+  // ── Ekam Deeksha v3.0.5 GPU + Dual Mining ──────────────────────────────
   runGpuBenchmark: (options) => ipcRenderer.invoke('run-gpu-benchmark', options),
   getGpuDevices: () => ipcRenderer.invoke('get-gpu-devices'),
 

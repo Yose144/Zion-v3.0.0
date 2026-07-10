@@ -1,7 +1,7 @@
 /**
  * GitHub Release data for ZION v3-Mainnet public repo.
  * Source: https://github.com/Zion-TerraNova/v3-Mainnet/releases
- * Updated: 2026-07-10
+ * Updated: 2026-07-10 — v3.0.5-beta (single binary, 4 platforms)
  */
 
 export const GITHUB_REPO = 'Zion-TerraNova/v3-Mainnet';
@@ -14,7 +14,7 @@ export type ReleaseAsset = {
   description: string;
   sizeMB: number;
   downloadUrl: string;
-  category: 'cli' | 'node' | 'miner' | 'pool' | 'bridge' | 'dao' | 'swap' | 'all' | 'checksum';
+  platform: 'linux-x86_64' | 'macos-arm64' | 'macos-x86_64' | 'windows-x86_64' | 'checksum';
 };
 
 export type Release = {
@@ -22,92 +22,58 @@ export type Release = {
   name: string;
   publishedAt: string;
   prerelease: boolean;
-  commitHash: string;
   htmlUrl: string;
   assets: ReleaseAsset[];
 };
 
-const DL_BASE = `https://github.com/${GITHUB_REPO}/releases/download/v3.0.4-beta`;
+const DL_BASE = `https://github.com/${GITHUB_REPO}/releases/download/v3.0.5-beta`;
 
 export const LATEST_RELEASE: Release = {
-  tag: 'v3.0.4-beta',
-  name: 'ZION v3.0.4-beta — Mainnet Public Release',
-  publishedAt: '2026-07-09',
+  tag: 'v3.0.5-beta',
+  name: 'ZION v3.0.5-beta — Simplified Community CLI',
+  publishedAt: '2026-07-10',
   prerelease: true,
-  commitHash: '3753f69',
-  htmlUrl: `https://github.com/${GITHUB_REPO}/releases/tag/v3.0.4-beta`,
+  htmlUrl: `https://github.com/${GITHUB_REPO}/releases/tag/v3.0.5-beta`,
   assets: [
     {
       name: 'zion-cli-linux-x86_64.tar.gz',
-      label: 'ZION CLI',
-      description: 'Unified CLI wallet + node management',
-      sizeMB: 3.0,
+      label: 'Linux x86_64',
+      description: 'Single zion binary — interactive menu, wallet, node, mining, pool',
+      sizeMB: 2.3,
       downloadUrl: `${DL_BASE}/zion-cli-linux-x86_64.tar.gz`,
-      category: 'cli',
+      platform: 'linux-x86_64',
     },
     {
-      name: 'zion-node-linux-x86_64.tar.gz',
-      label: 'ZION Node',
-      description: 'Full L1 consensus node',
-      sizeMB: 1.2,
-      downloadUrl: `${DL_BASE}/zion-node-linux-x86_64.tar.gz`,
-      category: 'node',
+      name: 'zion-cli-macos-aarch64.tar.gz',
+      label: 'macOS Apple Silicon (M1–M4)',
+      description: 'Single zion binary for Apple Silicon Macs',
+      sizeMB: 2.1,
+      downloadUrl: `${DL_BASE}/zion-cli-macos-aarch64.tar.gz`,
+      platform: 'macos-arm64',
     },
     {
-      name: 'zion-miner-linux-x86_64.tar.gz',
-      label: 'ZION Miner',
-      description: 'GPU/CPU miner (Ekam Deeksha dual-algo)',
-      sizeMB: 0.6,
-      downloadUrl: `${DL_BASE}/zion-miner-linux-x86_64.tar.gz`,
-      category: 'miner',
+      name: 'zion-cli-macos-x86_64.tar.gz',
+      label: 'macOS Intel x86_64',
+      description: 'Single zion binary for Intel Macs',
+      sizeMB: 2.3,
+      downloadUrl: `${DL_BASE}/zion-cli-macos-x86_64.tar.gz`,
+      platform: 'macos-x86_64',
     },
     {
-      name: 'zion-pool-linux-x86_64.tar.gz',
-      label: 'ZION Pool',
-      description: 'Stratum mining pool (node + pool wallet tools)',
-      sizeMB: 0.4,
-      downloadUrl: `${DL_BASE}/zion-pool-linux-x86_64.tar.gz`,
-      category: 'pool',
-    },
-    {
-      name: 'zion-bridge-linux-x86_64.tar.gz',
-      label: 'ZION Bridge',
-      description: 'L1↔EVM bridge relay daemon',
-      sizeMB: 4.3,
-      downloadUrl: `${DL_BASE}/zion-bridge-linux-x86_64.tar.gz`,
-      category: 'bridge',
-    },
-    {
-      name: 'zion-dao-linux-x86_64.tar.gz',
-      label: 'ZION DAO',
-      description: 'DAO governance daemon',
-      sizeMB: 2.8,
-      downloadUrl: `${DL_BASE}/zion-dao-linux-x86_64.tar.gz`,
-      category: 'dao',
-    },
-    {
-      name: 'zion-atomic-swap-linux-x86_64.tar.gz',
-      label: 'ZION Atomic Swap',
-      description: 'HTLC atomic swap daemon',
-      sizeMB: 3.7,
-      downloadUrl: `${DL_BASE}/zion-atomic-swap-linux-x86_64.tar.gz`,
-      category: 'swap',
-    },
-    {
-      name: 'zion-all-linux-x86_64.tar.gz',
-      label: 'ZION All-in-One',
-      description: 'All binaries in one archive',
-      sizeMB: 16.1,
-      downloadUrl: `${DL_BASE}/zion-all-linux-x86_64.tar.gz`,
-      category: 'all',
+      name: 'zion-cli-windows-x86_64.zip',
+      label: 'Windows x86_64',
+      description: 'Single zion.exe — node + pool + miner embedded (10 MB)',
+      sizeMB: 4.7,
+      downloadUrl: `${DL_BASE}/zion-cli-windows-x86_64.zip`,
+      platform: 'windows-x86_64',
     },
     {
       name: 'SHA256SUMS.txt',
       label: 'SHA256 Checksums',
-      description: 'Verification checksums for all binaries',
+      description: 'Verification checksums for all downloads',
       sizeMB: 0.0,
       downloadUrl: `${DL_BASE}/SHA256SUMS.txt`,
-      category: 'checksum',
+      platform: 'checksum',
     },
   ],
 };
