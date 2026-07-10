@@ -81,19 +81,20 @@ export default function DownloadPage() {
               {SITE_RELEASE_LABEL}
             </div>
             <div>
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? '1 unifikovaná binárka · 4 platformy · Windows dostupný' : '1 unified binary · 4 platforms · Windows ready'}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? 'Linux x86_64 live · macOS / Windows / ARM64 ze zdrojů' : 'Linux x86_64 live · macOS / Windows / ARM64 from source'}</p>
               <h1 className="text-3xl sm:text-5xl font-semibold text-gradient leading-tight">
                 {cs ? 'Stahni. Tez. Vydelavej.' : 'Download. Mine. Earn.'}
               </h1>
             </div>
             <p className="text-lg text-gray-300">
-              {cs ? `ZION CLI v3.0.5 — oficiální release s Core+Edge topologií. Jedna unifikovaná binárka obsahuje celý stack:` : `ZION CLI v3.0.5 — official release with Core+Edge topology. One unified binary contains the whole stack:`}{' '}
+              {cs ? `ZION v3.0.4-beta — první veřejný mainnet release. 8 nativních Rust binárek pro Linux x86_64 dostupných přímo z GitHubu:` : `ZION v3.0.4-beta — first public mainnet release. 8 native Rust binaries for Linux x86_64 available directly from GitHub:`}{' '}
               <span className="text-white font-semibold">node</span>,{' '}
               <span className="text-zion-gold font-semibold">miner</span>,{' '}
-              <span className="text-zion-cyan font-semibold">wallet</span>,{' '}
+              <span className="text-zion-cyan font-semibold">cli</span>,{' '}
               <span className="text-zion-purple font-semibold">pool</span>,{' '}
               <span className="text-white font-semibold">bridge</span>,{' '}
-              <span className="text-white font-semibold">dao</span>{cs ? ' a další. Stáhněte si Windows build přímo níže, další platformy brzy.' : ' and more. Download the Windows build directly below, more platforms coming soon.'}
+              <span className="text-white font-semibold">dao</span>,{' '}
+              <span className="text-white font-semibold">atomic-swap</span>{cs ? ' a all-in-one balíček. Ostatní platformy zkompiluj ze zdrojů.' : ' and all-in-one bundle. Other platforms: build from source.'}
             </p>
             <div className="flex flex-wrap gap-3">
               <Link
@@ -101,16 +102,16 @@ export default function DownloadPage() {
                 className="zion-button-primary text-sm"
               >
                 <ArrowDownToLine className="h-4 w-4" />
-                {cs ? 'Verejne downloady' : 'Public Downloads'}
+                {cs ? 'Stáhnout binárky' : 'Download binaries'}
               </Link>
               <Link
-                href={DOCS_URL}
+                href="https://github.com/Zion-TerraNova/v3-Mainnet/releases"
                 target="_blank"
                 rel="noreferrer"
                 className="zion-button-secondary text-sm text-gray-300"
               >
-                📖 {cs ? 'Kompletni pruvodce (CZ/EN)' : 'Complete Guide (CZ/EN)'}
                 <ExternalLink className="h-3 w-3" />
+                {cs ? 'GitHub Releases' : 'GitHub Releases'}
               </Link>
             </div>
           </div>
@@ -118,12 +119,12 @@ export default function DownloadPage() {
 
         <section className="space-y-6">
           <div className="flex flex-col gap-2">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Operator gateway' : 'Operator gateway'}</p>
-            <h2 className="text-3xl font-semibold text-white">ZION CLI · Windows · Linux · macOS</h2>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Veřejný mainnet release' : 'Public mainnet release'}</p>
+            <h2 className="text-3xl font-semibold text-white">ZION v3.0.4-beta · Linux x86_64</h2>
             <p className="text-gray-400 max-w-3xl">
               {cs
-                ? 'ZION CLI je sjednocený vstup do celého stacku: node, pool, miner, agent, bridge, dao, deploy a monitoring. Veřejné binárky pro Windows, Linux x86_64, Linux ARM64 a macOS Apple Silicon jsou teď živé přímo v download surface níže.'
-                : 'ZION CLI is the unified entrypoint for the whole stack: node, pool, miner, agent, bridge, dao, deploy, and monitoring. Public binaries for Windows, Linux x86_64, Linux ARM64, and macOS Apple Silicon are now live directly in the download surface below.'}
+                ? 'První veřejný release ZION mainnetu. 8 nativních Rust binárek pro Linux x86_64 je dostupných přímo z GitHub Releases s SHA256 verifikací. Pro macOS, Windows a ARM64 platformy je k dispozici build ze zdrojů — návod níže.'
+                : 'First public ZION mainnet release. 8 native Rust binaries for Linux x86_64 are available directly from GitHub Releases with SHA256 verification. For macOS, Windows, and ARM64 platforms, build from source — instructions below.'}
             </p>
           </div>
 
@@ -132,7 +133,9 @@ export default function DownloadPage() {
               <span className="text-zion-cyan font-semibold">{cs ? 'Zdroj pravdy:' : 'Source of truth:'}</span>{' '}
               {cs ? 'operátorské příkazy, guide, FAQ, reference a troubleshooting jsou v sekci ' : 'operator commands, guide, FAQ, reference, and troubleshooting live in the '}
               <Link href="/docs" className="text-zion-cyan underline hover:no-underline">ZION CLI</Link>
-              {cs ? ' v dokumentaci. Pokud chcete checksum verifikaci, ke každé binárce je na serveru i odpovídající soubor .sha256.' : ' section of the docs. If you want checksum verification, each binary also has a matching .sha256 file on the server.'}
+              {cs ? ' v dokumentaci. Zdrojový kód je open-source na ' : ' section of the docs. Source code is open-source on '}
+              <Link href="https://github.com/Zion-TerraNova/v3-Mainnet" target="_blank" className="text-zion-cyan underline hover:no-underline">GitHub</Link>
+              {cs ? ' (MIT licence).' : ' (MIT license).'}
             </p>
           </div>
         </section>
