@@ -42,7 +42,7 @@ export default function MinerStatsClient() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const urlAddress = params.get('address');
+    const urlAddress = params.get('address') || params.get('addr');
     if (urlAddress) {
       setAddress(urlAddress);
       fetchStats(urlAddress);
