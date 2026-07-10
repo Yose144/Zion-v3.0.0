@@ -38,7 +38,6 @@ impl LogChannel {
         let (tx, rx) = mpsc::sync_channel::<String>(4096);
         thread::spawn(move || {
             let stdout = std::io::stdout();
-            let mut out = stdout.lock();
             let mut buf = String::with_capacity(8192);
             let flush_interval = Duration::from_millis(100);
             loop {
@@ -48,16 +47,20 @@ impl LogChannel {
                         buf.push('\n');
                         // Flush if buffer exceeds 4 KB or channel is empty.
                         while buf.len() >= 4096 {
+                            let mut out = stdout.lock();
                             let _ = out.write_all(buf.as_bytes());
                             let _ = out.flush();
+                            drop(out);
                             buf.clear();
                             // Try to drain more without blocking.
                             while let Ok(more) = rx.try_recv() {
                                 buf.push_str(&more);
                                 buf.push('\n');
                                 if buf.len() >= 8192 {
+                                    let mut out = stdout.lock();
                                     let _ = out.write_all(buf.as_bytes());
                                     let _ = out.flush();
+                                    drop(out);
                                     buf.clear();
                                 }
                             }
@@ -66,16 +69,20 @@ impl LogChannel {
                     }
                     Err(mpsc::RecvTimeoutError::Timeout) => {
                         if !buf.is_empty() {
+                            let mut out = stdout.lock();
                             let _ = out.write_all(buf.as_bytes());
                             let _ = out.flush();
+                            drop(out);
                             buf.clear();
                         }
                     }
                     Err(mpsc::RecvTimeoutError::Disconnected) => {
                         // Final flush on shutdown.
                         if !buf.is_empty() {
+                            let mut out = stdout.lock();
                             let _ = out.write_all(buf.as_bytes());
                             let _ = out.flush();
+                            drop(out);
                         }
                         break;
                     }
