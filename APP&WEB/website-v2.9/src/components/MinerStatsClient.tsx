@@ -168,11 +168,34 @@ export default function MinerStatsClient() {
           >
             {/* Activity Status */}
             <div className="max-w-2xl mx-auto mb-6 flex items-center justify-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${stats.is_active ? 'bg-green-400 animate-pulse' : 'bg-gray-500'}`} />
+              <div className={`w-3 h-3 rounded-full ${
+                stats.is_active
+                  ? 'bg-green-400 animate-pulse'
+                  : stats.balance.pending > 0
+                    ? 'bg-amber-400'
+                    : 'bg-gray-500'
+              }`} />
               <span className="text-gray-400">
-                {stats.is_active ? 'Active Mining' : 'Inactive'} · Last seen {formatDuration(stats.stats.time_since_last_share)}
+                {stats.is_active
+                  ? 'Active Mining'
+                  : stats.balance.pending > 0
+                    ? 'Inactive · pending balance'
+                    : 'Inactive'} · Last seen {formatDuration(stats.stats.time_since_last_share)}
               </span>
             </div>
+
+            {/* Inactive but pending balance banner */}
+            {!stats.is_active && stats.balance.pending > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="max-w-2xl mx-auto mb-8 p-4 bg-amber-900/20 border border-amber-500/50 rounded-xl text-amber-200 text-center"
+              >
+                This payout address is registered with the pool but has no active worker right now.
+                <br />
+                Pending balance: <span className="font-semibold">{stats.balance.pending.toFixed(6)} ZION</span>
+              </motion.div>
+            )}
 
             {/* Stats Cards Grid */}
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
