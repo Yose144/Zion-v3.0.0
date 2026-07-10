@@ -75,6 +75,33 @@ Low-frequency `println!` calls (startup, shutdown, session start/end, payout, ro
 
 **File:** `V3/L1/pool/src/bin/server.rs` — `LogChannel` struct + `handle_client` submit loop
 
+### F4b — LogChannel Deadlock Fix (post-deploy hotfix)
+
+**Bug:** The original `LogChannel::spawn()` acquired `stdout.lock()` once at thread start and held it for the entire lifetime of the background logging thread. This permanently held the stdout lock, causing any `println!` call in the main thread (e.g. startup messages like `fee_split`) to deadlock on `futex_wait`. The pool would print `revenue_replay_zion_blocks` (via `eprintln!` on stderr, unaffected) then hang before reaching `fee_split` (via `println!` on stdout).
+
+**Symptoms:** Pool appeared to hang on startup. `/proc/PID/task/*/stack` showed both threads in `futex_wait`. `eprintln!` output appeared but `println!` output did not.
+
+**Fix:** Changed to acquire the stdout lock only during each write+flush cycle, then `drop(out)` immediately:
+```rust
+// Before (deadlock):
+let mut out = stdout.lock();  // held forever
+loop { ... out.write_all(...); out.flush(); ... }
+
+// After (fixed):
+loop {
+    // ...
+    let mut out = stdout.lock();  // acquired per-write
+    out.write_all(buf.as_bytes());
+    out.flush();
+    drop(out);  // released immediately
+    // ...
+}
+```
+
+Applied to all 4 write paths in the logging thread: large buffer flush, timeout flush, disconnect final flush, and the inner drain loop.
+
+**File:** `V3/L1/pool/src/bin/server.rs` — `LogChannel::spawn()` method
+
 ---
 
 ## 5. F5 — Async Payout Execution
@@ -156,7 +183,7 @@ cargo test -p zion-pool              →  106/106 PASS
 
 | File | Changes |
 |------|---------|
-| `V3/L1/pool/src/bin/server.rs` | F1 (thread reaping), F4 (LogChannel + hot-path log replacements), F5 (execute_payout_async + block-found handler), F6 (persistence thread lock-split), test fix (handle_client args) |
+| `V3/L1/pool/src/bin/server.rs` | F1 (thread reaping), F4 (LogChannel + hot-path log replacements), F4b (LogChannel deadlock fix — stdout lock scope), F5 (execute_payout_async + block-found handler), F6 (persistence thread lock-split), test fix (handle_client args) |
 | `V3/L1/pool/src/lib.rs` | F2 (AtomicU64 counters, &self methods) |
 | `V3/L1/pool/src/pplns.rs` | F6 (dirty flag, take_dirty, write_snapshot_to_path) |
 | `V3/deploy/new-server/zion-watchdog.sh` | Watchdog fix (nc + getChainInfo) |

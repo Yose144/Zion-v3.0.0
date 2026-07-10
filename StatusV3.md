@@ -21,6 +21,7 @@
 > | **F1** | Thread handle reaping v accept loop | Zabraňuje neomezenému růstu `Vec<JoinHandle>` paměti |
 > | **F2** | Atomic share counters (`AtomicU64`) | Lock-free `record_accepted/rejected/stale_share(&self)` — bez `&mut self` |
 > | **F4** | `LogChannel` batched async logging | 4KB batched writes přes mpsc channel + background thread, 100ms flush. Eliminuje per-share `println!` syscalls |
+> | **F4b** | LogChannel deadlock fix (post-deploy hotfix) | `stdout.lock()` byl držen permanentně po celou dobu životnosti logging threadu → deadlock při jakémkoli `println!` v main threadu. Fix: lock acquire+drop per write cycle |
 > | **F5** | Async payout execution | Payout TX submission v background thread — miner thread není blokován po dobu N RPC calls (600ms-50s) |
 > | **F6** | PPLNS persistence lock-split + dirty flag | Lock držen jen pro snapshot clone; JSON serialize + file I/O mimo lock. Dirty flag přeskakuje save když nepřišly žádné shares |
 >
@@ -30,8 +31,9 @@
 > - Binary deploynut na edge server (`/usr/local/bin/zion-pool-server`)
 > - Pool active, 1000+ shares accepted za 30s, PPLNS state restored (20 miners, 307B flowers total paid)
 > - Pool stabilní, žádné reconnect smyčky
+> - F4b deadlock fix deploynut a ověřeno: pool startuje bez zaseknutí, minéři aktivně posílají shares
 >
-> **Commity:** `7da0219fb` (watchdog fix), `3080fb018` (watchdog fix report), `673632525` (F1-F6 optimizations)
+> **Commity:** `7da0219fb` (watchdog fix), `3080fb018` (watchdog fix report), `673632525` (F1-F6 optimizations), `F4b deadlock fix` (pending commit)
 >
 > **Soubory změněné:** `V3/L1/pool/src/bin/server.rs`, `V3/L1/pool/src/lib.rs`, `V3/L1/pool/src/pplns.rs`, `V3/deploy/new-server/zion-watchdog.sh`, `Cargo.toml` (workspace deps fix)
 >
