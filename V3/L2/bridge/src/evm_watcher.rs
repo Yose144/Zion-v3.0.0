@@ -38,6 +38,13 @@ const POLL_INTERVAL_SECS: u64 = 12;
 /// Ankr free-tier is 3500. We use 1500 to stay safely under all known limits.
 const MAX_BLOCK_RANGE: u64 = 1_500;
 
+/// Delay between consecutive `eth_getLogs` chunk requests within a single poll.
+/// Public RPC endpoints (mainnet.base.org, Ankr free-tier) rate-limit at
+/// ~3–5 req/s. A 250 ms gap keeps us safely under that threshold while
+/// still allowing catch-up scanning to complete in reasonable time.
+#[allow(dead_code)]
+const INTER_CHUNK_DELAY_MS: u64 = 250;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // EvmWatcher
 // ─────────────────────────────────────────────────────────────────────────────
@@ -290,6 +297,11 @@ impl EvmWatcher {
             if !saw_reorg {
                 self.last_processed_block = to_block;
                 from_block = to_block + 1;
+                // Rate-limit: pause between chunks to avoid public RPC throttling.
+                if from_block <= finalized_block {
+                    tokio::time::sleep(std::time::Duration::from_millis(INTER_CHUNK_DELAY_MS))
+                        .await;
+                }
             } else {
                 // Stop scanning further chunks this iteration; the next
                 // poll will re-fetch from the pre-reorg cursor.
