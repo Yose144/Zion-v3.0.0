@@ -56,29 +56,45 @@ Burn úspěšně zpracován — unlock proběhl v bloku 891. Status v DB opraven
 |---------|--------|--------|--------|--------|-----------|
 | `a62d9350...` | ❌ Failed | 891 | 16,666,666.67 ZION | base | 0xdde17506... |
 
-**Root cause:** Všech 5 validatorů má 0 ETH na Base → nemohou platit gas za `submitLockProof` TX. Retry count: 12 (vyčerpáno).
+**Root cause (identifikováno 2026-07-10):** Dva problémy:
+
+1. **Špatný validator private key na serveru** — `ZION_VALIDATOR_PRIVATE_KEY` v `/etc/zion/edge-environment.sh` obsahuje key pro `0xA737B512B5EEc5B9E3E3f2476Eb1cFDF6750BA12` (stará hard-reset adresa, **není** on-chain validátor, **0 ETH**). Bridge kontrakt tuto adresu nezná → `submitLockProof` by byl odmítnut i s ETH.
+2. **Chybějící L1 bloky 1-456** — po hard-resetu existuje jen genesis (block 0) a bloky 457+. Bridge se zasekla na `last_l1_height=400` při scanu neexistujících bloků.
+
+**Opraveno (2026-07-10):**
+- `start_block_height` → 456, `last_l1_height` → 456 v DB
+- Stuck lock resetován na `pending`, `retry_count=0`
+- Bridge načetla stuck lock a zkoušela submit → selhalo na "insufficient funds" (0xA737B512... má 0 ETH)
+
+**Čeká na owner:** Nastavit 5 správných validator private keys v `/etc/zion/edge-environment.sh`:
+- `ZION_VALIDATOR_PRIVATE_KEY` = key pro `0xdde17506...` (validator-1)
+- `ZION_VALIDATOR_PRIVATE_KEY_2` = key pro `0x24d98684...` (validator-2)
+- `ZION_VALIDATOR_PRIVATE_KEY_3` = key pro `0x665c55eD...` (validator-3)
+- `ZION_VALIDATOR_PRIVATE_KEY_4` = key pro `0x8E644b3E...` (validator-4)
+- `ZION_VALIDATOR_PRIVATE_KEY_5` = key pro `0x7e0D2eD7...` (validator-5)
 
 ### 2.4 Bridge DB State
 
 - **evm_burns:** 1 záznam (Completed)
-- **l1_locks:** 1 záznam (Failed — čeká na validator ETH funding)
+- **l1_locks:** 1 záznam (pending — čeká na správné validator keys)
 - **validator_confirmations:** 0
+- **last_l1_height:** 456 (opraveno z 400)
 
 ---
 
-## 3. Validator ETH Funding — BLOCKER
+## 3. Validator ETH Funding — Vyřešeno
 
-Všech 5 EVM validatorů má **0 ETH** na Base. To blokuje L1→EVM mint (16.6M ZION stuck).
+On-chain validátoři mají dost ETH na Base (gas price 0.006 Gwei, TX cost ~0.0000018 ETH):
 
-| # | Validator Address | ETH Balance |
-|---|---|---|
-| 1 | `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186` | 0.0095 ETH |
-| 2 | `0x24d986841E56e5571489B25951eE8C1Ae761FA82` | 0 |
-| 3 | `0x665c55eDCF25c2c5A1dfF1B20eE950cBDC58d3d0` | 0 |
-| 4 | `0x8E644b3E9FaBf52eE321DC5B3D5AA06d6e3E66C6` | 0 |
-| 5 | `0x7e0D2eD71d78B9CFB5034A83333e82e304bc4CB2` | 0 |
+| # | Validator Address | ETH Balance | TXs možných |
+|---|---|---|---|
+| 1 | `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186` | 0.0185 ETH | ~10,296 |
+| 2 | `0x24d986841E56e5571489B25951eE8C1Ae761FA82` | 0.000256 ETH | ~142 |
+| 3 | `0x665c55eDCF25c2c5A1dfF1B20eE950cBDC58d3d0` | 0.000259 ETH | ~143 |
+| 4 | `0x8E644b3E9FaBf52eE321DC5B3D5AA06d6e3E66C6` | 0.000260 ETH | ~144 |
+| 5 | `0x7e0D2eD71d78B9CFB5034A83333e82e304bc4CB2` | 0.000795 ETH | ~441 |
 
-**Požadováno:** ~0.001 ETH na validatora (~0.005 ETH total, ~$3). Po fundingu bridge automaticky retryne stuck lock.
+**ETH není problém.** Skutečný blocker je špatný private key na serveru (viz §2.3).
 
 ---
 
