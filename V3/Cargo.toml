@@ -11,12 +11,12 @@ members = [
     "L4/oasis",
     "L5/free-world",
     "sdk",
-    "cli",
+    "community-cli",
 ]
 resolver = "2"
 
 [workspace.package]
-version = "3.0.4"
+version = "3.0.5"
 edition = "2021"
 license = "MIT"
 authors = ["Yose144"]
