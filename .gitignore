@@ -1,5 +1,6 @@
 # Sensitive key files — NEVER commit
 5ELMWallets.md
+L2wallet.md
 secrets/
 keys/
 *.key
