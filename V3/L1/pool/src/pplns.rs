@@ -264,6 +264,14 @@ impl PplnsEngine {
         self.addresses.get(miner_id).map(|s| s.as_str())
     }
 
+    /// Returns all miner IDs registered to a given payout address.
+    pub fn miner_ids_for_address(&self, address: &str) -> Vec<&str> {
+        self.addresses
+            .iter()
+            .filter_map(|(miner_id, addr)| if addr == address { Some(miner_id.as_str()) } else { None })
+            .collect()
+    }
+
     /// Record an accepted share into the PPLNS window (difficulty = 1).
     pub fn record_share(&mut self, miner_id: &str, worker_name: &str, height: u64) {
         self.record_share_with_diff(miner_id, worker_name, height, 1);

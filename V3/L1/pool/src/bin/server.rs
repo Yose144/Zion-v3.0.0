@@ -2828,49 +2828,98 @@ fn build_miner_api_payload(
 ) -> Option<String> {
     let remainder = path.strip_prefix("/api/v1/miner/")?;
     let (address, suffix) = remainder.split_once('/')?;
-    let miner = telemetry.miners.get(address)?;
+    let suffix = suffix.split('?').next().unwrap_or(suffix);
+
+    // Resolve all miner IDs registered to this payout address.
+    let miner_ids = pplns_engine.miner_ids_for_address(address);
+    if miner_ids.is_empty() {
+        return None;
+    }
+
     let now_s = now_unix_seconds();
-    match suffix.split('?').next().unwrap_or(suffix) {
+
+    // Aggregate telemetry across all worker IDs for this payout address.
+    let mut hashrate_1h = 0.0;
+    let mut hashrate_24h = 0.0;
+    let mut valid_shares: u64 = 0;
+    let mut invalid_shares: u64 = 0;
+    let mut blocks_found: u64 = 0;
+    let mut total_paid: u64 = 0;
+    let mut pending_balance: u64 = 0;
+    let mut last_share_time: u64 = 0;
+    let mut last_seen: u64 = 0;
+    let mut first_seen: u64 = u64::MAX;
+    let mut completed_jobs: u64 = 0;
+    let mut no_solution_jobs: u64 = 0;
+    let mut workers = Vec::new();
+    let mut all_payouts = Vec::new();
+
+    for miner_id in miner_ids {
+        pending_balance += pplns_engine.unpaid_balance(miner_id);
+        if let Some(miner) = telemetry.miners.get(miner_id) {
+            hashrate_1h += miner.hashrate_for_window(HASHRATE_WINDOW_1H_S, now_s);
+            hashrate_24h += miner.hashrate_for_window(HASHRATE_WINDOW_24H_S, now_s);
+            valid_shares += miner.valid_shares;
+            invalid_shares += miner.invalid_shares;
+            blocks_found += miner.blocks_found;
+            total_paid += miner.paid_total_atomic;
+            last_share_time = last_share_time.max(miner.last_share_time_s);
+            last_seen = last_seen.max(miner.last_seen_s);
+            first_seen = first_seen.min(miner.first_seen_s);
+            completed_jobs += miner.completed_jobs;
+            no_solution_jobs += miner.no_solution_jobs;
+            if !miner.worker_name.is_empty() && !workers.contains(&miner.worker_name) {
+                workers.push(miner.worker_name.clone());
+            }
+            all_payouts.extend(miner.payouts.iter().cloned());
+        }
+    }
+
+    match suffix {
         "stats" => Some(
             serde_json::json!({
                 "ok": true,
                 "address": address,
                 "stats": {
-                    "hashrate_1h": miner.hashrate_for_window(HASHRATE_WINDOW_1H_S, now_s),
-                    "hashrate_24h": miner.hashrate_for_window(HASHRATE_WINDOW_24H_S, now_s),
-                    "total_shares": miner.total_shares(),
-                    "valid_shares": miner.valid_shares,
-                    "invalid_shares": miner.invalid_shares,
-                    "blocks_found": miner.blocks_found,
-                    "total_paid": miner.paid_total_atomic,
-                    "pending_balance": pplns_engine.unpaid_balance(address),
-                    "last_share_time": miner.last_share_time_s,
-                    "last_seen": miner.last_seen_s,
-                    "first_seen": miner.first_seen_s,
-                    "worker_name": miner.worker_name,
-                    "jobs_completed": miner.completed_jobs,
-                    "no_solution_jobs": miner.no_solution_jobs
+                    "hashrate_1h": hashrate_1h,
+                    "hashrate_24h": hashrate_24h,
+                    "total_shares": valid_shares + invalid_shares,
+                    "valid_shares": valid_shares,
+                    "invalid_shares": invalid_shares,
+                    "blocks_found": blocks_found,
+                    "total_paid": total_paid,
+                    "pending_balance": pending_balance,
+                    "last_share_time": last_share_time,
+                    "last_seen": last_seen,
+                    "first_seen": if first_seen == u64::MAX { 0 } else { first_seen },
+                    "worker_name": workers.join(", "),
+                    "jobs_completed": completed_jobs,
+                    "no_solution_jobs": no_solution_jobs
                 }
             })
             .to_string(),
         ),
-        "payouts" => Some(
-            serde_json::json!({
-                "ok": true,
-                "address": address,
-                "pending_payouts": miner.payouts.iter().map(|payout| serde_json::json!({
-                    "amount": payout.amount_atomic,
-                    "amount_atomic": payout.amount_atomic,
-                    "share_count": payout.share_count,
-                    "created_ts": payout.created_ts,
-                    "height": payout.height,
-                    "status": payout.status.clone(),
-                    "tx_id": payout.tx_id.clone(),
-                    "error": payout.error.clone()
-                })).collect::<Vec<_>>()
-            })
-            .to_string(),
-        ),
+        "payouts" => {
+            // Sort payouts newest first and dedupe by tx_id/height.
+            all_payouts.sort_by(|a, b| b.created_ts.cmp(&a.created_ts));
+            Some(
+                serde_json::json!({
+                    "ok": true,
+                    "address": address,
+                    "pending_payouts": all_payouts.iter().map(|payout| serde_json::json!({
+                        "amount": payout.amount_atomic,
+                        "amount_atomic": payout.amount_atomic,
+                        "share_count": payout.share_count,
+                        "created_ts": payout.created_ts,
+                        "height": payout.height,
+                        "status": payout.status.clone(),
+                        "tx_id": payout.tx_id.clone(),
+                        "error": payout.error.clone()
+                    })).collect::<Vec<_>>()
+                })
+                .to_string(),
+            )
+        }
         _ => None,
     }
 }
