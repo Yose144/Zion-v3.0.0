@@ -183,7 +183,7 @@ impl WarpRouter {
     /// List all transfers, most recent first.
     pub fn list_transfers(&self) -> Vec<WarpTransfer> {
         let mut v: Vec<WarpTransfer> = self.transfers.values().cloned().collect();
-        v.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+        v.sort_by_key(|b| std::cmp::Reverse(b.created_at));
         v
     }
 

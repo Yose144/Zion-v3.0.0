@@ -1,6 +1,6 @@
 [Unit]
 Description=ZION Edge Node 1 (Primary / Genesis)
-After=network-online.target tailscaled.service
+After=network-online.target
 Wants=network-online.target
 
 [Service]
@@ -13,7 +13,7 @@ Environment="ZION_P2P_BIND=0.0.0.0:8333"
 Environment="ZION_RPC_BIND=127.0.0.1:8443"
 Environment="ZION_SEED_PEERS=none"
 Environment="ZION_NODE_STATE_PATH=/root/zion-2.9.6-main/data/edge-state.db"
-Environment="ZION_MIGRATION_HEIGHT=18850"
+Environment="ZION_MIGRATION_HEIGHT=1"
 Environment="RUST_LOG=info,zion_core=debug"
 ExecStart=/root/zion-2.9.6-main/V3/target/release/node
 Restart=always

@@ -85,7 +85,7 @@ ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
         sed -i '/\"L5\/free-world\",/d;/\"L6\/issobella\",/d;/\"L4\/oasis\",/d' Cargo.toml 2>/dev/null || true
         sed -i '/\"L1\/native-ffi\",/d' Cargo.toml 2>/dev/null || true
     fi
-    cargo build --release --bin node --bin server --bin zion-dao --bin zion-warp-server 2>&1
+    cargo build --release --bin node --bin server --bin zion-bridge --bin zion-dao --bin zion-atomic-swap --bin zion-warp-server --bin zion-miner 2>&1
     # Build agent
     cd ${REMOTE_ROOT}/ZION_OS/agent
     cargo build --release 2>&1
@@ -109,7 +109,9 @@ SERVICES=(
     zion-edge-node1
     zion-edge-node2
     zion-edge-pool
+    zion-edge-bridge
     zion-edge-dao
+    zion-edge-atomic-swap
     zion-edge-warp
     zion-edge-watchdog
     zion-edge-miner
@@ -147,7 +149,7 @@ sleep 3
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-pool"
 sleep 3
 
-ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-dao zion-edge-warp || true"
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-bridge zion-edge-dao zion-edge-atomic-swap zion-edge-warp || true"
 
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-miner || true"
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-agent || true"
@@ -163,7 +165,7 @@ sleep 10
 
 echo ""
 echo "=== Deployment Status ==="
-for svc in zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-dao zion-edge-warp zion-edge-miner zion-edge-agent zion-edge-dashboard; do
+for svc in zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-bridge zion-edge-dao zion-edge-atomic-swap zion-edge-warp zion-edge-miner zion-edge-agent zion-edge-dashboard; do
     STATUS=$(ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl is-active ${svc}" 2>/dev/null || true)
     if [[ "$STATUS" == "active" ]]; then
         echo -e "${GREEN}  ${svc} : ACTIVE${NC}"

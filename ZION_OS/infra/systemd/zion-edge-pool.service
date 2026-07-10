@@ -1,6 +1,6 @@
 [Unit]
 Description=ZION Edge Pool (Primary)
-After=network-online.target tailscaled.service zion-edge-node1.service
+After=network-online.target zion-edge-node1.service
 Wants=network-online.target
 Requires=zion-edge-node1.service
 

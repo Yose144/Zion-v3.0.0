@@ -45,7 +45,7 @@ if [[ ! -d "$REPO_ROOT" ]]; then
 fi
 
 # ── Build binaries if missing ──
-BINS=(node server zion-bridge zion-dao zion-atomic-swap zion-warp-server)
+BINS=(node server zion-bridge zion-dao zion-atomic-swap zion-warp-server zion-miner)
 for bin in "${BINS[@]}"; do
     if [[ ! -f "$REPO_ROOT/V3/target/release/$bin" ]]; then
         echo "[WARN] Binary '$bin' not found. Building now..."

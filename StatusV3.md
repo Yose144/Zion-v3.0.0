@@ -19,7 +19,7 @@
 >
 > **Commity:** `d425faec` (3.0.5 bump + docs), `6b930b7a` (L2/L3 config fixes), `91c201a8` (AGENTS.md update)
 >
-> **Pending (mimo 3.0.5 scope):** bridge EVM watcher eth_getLogs errors (BSC/Polygon RPC, non-critical). Key rotation F4.x ✅ DONE (owner air-gapped, escrow SK aplikován, EVM/guardian SKs na flash disku). AppArmor ✅ DONE (complain mode). systemd User=zion ✅ DONE (11/11 služeb).
+> **Pending (mimo 3.0.5 scope):** bridge EVM watcher eth_getLogs errors (BSC/Polygon RPC, non-critical). Key rotation F4.x ✅ DONE (owner air-gapped, escrow SK aplikován, EVM/guardian SKs na flash disku). AppArmor ✅ DONE (complain mode). systemd User=zion ⚠️ NOT DEPLOYED — service files still use User=root.
 >
 > ### Web Deploy Optimalizace — COMPLETE (2026-07-09)
 >
@@ -244,7 +244,7 @@
 > - **Monitoring (2026-07-09):** 4 cron jobs — forged TX monitor (5 min), height monitor (5 min), P2P peer alert (2 min), **memory monitor (5 min, nový)**. `ZION_LOG_BLOCK_SUBMITTER=1` aktivní. Watchdog timer (2 min) — RPC + TCP health, auto-restart.
 > - **RPC audit log:** ✅ DONE (2026-07-09) — `rpc_audit` + `rpc_audit_http` logováno, verbose logging gated behind `ZION_RPC_DEBUG=1`
 > - **Tailscale:** ❌ REMOVED — odstraněno při hard resetu, topologie canonicalized na hardcoded seed peers
-> - **zion system user:** ✅ DONE (2026-07-10) — system user `zion` (uid=999) vytvořen, **všechny 11/11 služeb běží jako `User=zion`** (místo root). Config soubory v `/etc/zion/config/`, env v `/etc/zion/` (chmod 640), dashboard v `/opt/zion-dashboard/`, `/data/zion/` chown zion:zion.
+> - **zion system user:** ⚠️ NOT DONE (2026-07-10) — system user `zion` **nebyl vytvořen** — všechny 11/11 služeb stále běží jako `User=root` (místo zion). Config soubory v `/root/zion-2.9.6-main/edge-deploy/config/`, env v `/root/zion-2.9.6-main/edge-deploy/config/edge-environment.sh` (chmod 600), data v `/root/zion-2.9.6-main/data/`.
 > - **AppArmor zion-node:** ✅ DONE (2026-07-10) — viz výše
 > 
 > **Pending po hard reset audit (aktualizováno 2026-07-10):**
@@ -256,7 +256,7 @@
 > | 3 | EVM contract redeploy (ZION-2026-005) — nové kontrakty + multisig | security | ⏳ PENDING (owner) | YES — DeFi launch |
 > | 4 | Externí audit genesis konfigurace | security | ⏳ PENDING (owner) | YES — public launch |
 > | 5 | Re-clone repo (all collaborators) — git history přepsána | infra | ⏳ PENDING (owner + team) | NO |
-> | 6 | ~~systemd `User=zion` (F2.6)~~ | security | ✅ DONE (11/11 služeb jako zion) | NO |
+> | 6 | systemd `User=zion` (F2.6) | security | ⚠️ NOT DONE — service files still use User=root | NO |
 > | 7 | ~~AppArmor profil pro zion-node~~ | security | ✅ DONE (complain mode) | NO |
 > | 8 | Grant BRIDGE_ROLE na wZION + Redeploy ZIONBridge | defi | ⏳ PENDING (owner) | YES — bridge ops |
 > | 9 | Deepen UniV3 liquidity + E2E test swap | defi | ⏳ PENDING (owner) | NO |

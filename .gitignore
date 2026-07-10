@@ -345,3 +345,9 @@ zion-sm3042c-fire-*.zip
 zion-sm3042c-fire-*/
 nul
 foundry.lock
+
+# PUBLIC/ is a separate git repo (github.com/Zion-TerraNova/v3-Mainnet)
+PUBLIC/
+
+# OpenZeppelin submodule (vendored, not tracked)
+V3/L2/bridge/contracts/lib/openzeppelin-contracts/

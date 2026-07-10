@@ -2,13 +2,13 @@
 # Monitor ZION account-model memo v1 hard fork activation height.
 # Logs to stdout and can be used with a systemd timer to notify when ready.
 #
-# Usage: ZION_ACCOUNT_TX_MEMO_V1_HEIGHT=24000 ZION_NODE_RPC=http://127.0.0.1:8443 \
+# Usage: ZION_ACCOUNT_TX_MEMO_V1_HEIGHT=0 ZION_NODE_RPC=http://127.0.0.1:8443 \
 #          ./V3/scripts/ops/monitor-memo-activation.sh
 
 set -uo pipefail
 
 RPC="${ZION_NODE_RPC:-http://127.0.0.1:8443}"
-ACTIVATION_HEIGHT="${ZION_ACCOUNT_TX_MEMO_V1_HEIGHT:-24000}"
+ACTIVATION_HEIGHT="${ZION_ACCOUNT_TX_MEMO_V1_HEIGHT:-0}"
 LOG_FILE="${ZION_ACTIVATION_LOG:-/var/log/zion-memo-activation.log}"
 
 log() {

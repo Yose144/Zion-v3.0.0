@@ -376,7 +376,7 @@ fn seed_rag(state: &Arc<AppState>) -> anyhow::Result<()> {
 
     let mut rag = state.rag.lock().expect("rag lock poisoned");
     rag.store = VectorStore::new();
-    for ((id, content, meta), embedding) in entries.into_iter().zip(embeddings.into_iter()) {
+    for ((id, content, meta), embedding) in entries.into_iter().zip(embeddings) {
         let mut doc = RagDocument::new(id, content, embedding);
         doc.metadata = meta;
         rag.store.add(doc);

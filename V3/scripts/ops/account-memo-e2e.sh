@@ -12,7 +12,7 @@
 #   ZION_E2E_DAO_ADDRESS      - DAO treasury zion1... address (default: API lookup)
 #   ZION_E2E_SWAP_ESCROW     - atomic swap escrow zion1... address (default: API lookup)
 #   ZION_NODE_RPC             - L1 node RPC, default http://127.0.0.1:8443
-#   ZION_ACCOUNT_TX_MEMO_V1_HEIGHT - activation height (default: 24000)
+#   ZION_ACCOUNT_TX_MEMO_V1_HEIGHT - activation height (default: 0, active from genesis on fresh chain)
 #
 # Usage (run on Edge after deploy):
 #   export ZION_E2E_PASSWORD="..."
@@ -25,7 +25,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 RPC="${ZION_NODE_RPC:-http://127.0.0.1:8443}"
-ACTIVATION_HEIGHT="${ZION_ACCOUNT_TX_MEMO_V1_HEIGHT:-24000}"
+ACTIVATION_HEIGHT="${ZION_ACCOUNT_TX_MEMO_V1_HEIGHT:-0}"
 CLI="${ROOT}/V3/target/release/zion"
 BRIDGE_API="${ZION_BRIDGE_API:-http://127.0.0.1:8451}"
 DAO_API="${ZION_DAO_API:-http://127.0.0.1:8450}"

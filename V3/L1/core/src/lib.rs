@@ -5,10 +5,10 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 use zion_cosmic_harmony::{
-    account_tx_memo_v1_active, body_root_v2_active,
-    cosmic_harmony_ekam_deeksha, cosmic_harmony_with_height, profile_name, profile_name_for_height,
-    tx_hash_v2_active, NclStats, RevenueCollector, RevenueEvent, RevenueStats,
-    CHV_EKAM_FORK_HEIGHT, EKAM_FUSION_ROUNDS, FIRE_FORK_HEIGHT, TX_HASH_V2_ACTIVATION_HEIGHT,
+    account_tx_memo_v1_active, body_root_v2_active, cosmic_harmony_ekam_deeksha,
+    cosmic_harmony_with_height, profile_name, profile_name_for_height, tx_hash_v2_active, NclStats,
+    RevenueCollector, RevenueEvent, RevenueStats, CHV_EKAM_FORK_HEIGHT, EKAM_FUSION_ROUNDS,
+    FIRE_FORK_HEIGHT, TX_HASH_V2_ACTIVATION_HEIGHT,
 };
 
 pub use zion_cosmic_harmony::ExternalCoin;
@@ -3654,7 +3654,7 @@ impl ChainState {
                     &humanitarian_addr,
                     &issobella_addr,
                     &pool_fee_addr,
-            self.balance_check_height,
+                    self.balance_check_height,
                 );
                 return Ok(());
             };
@@ -3690,7 +3690,7 @@ impl ChainState {
                 &humanitarian_addr,
                 &issobella_addr,
                 &pool_fee_addr,
-            self.balance_check_height,
+                self.balance_check_height,
             );
         }
 
@@ -4161,8 +4161,7 @@ fn confirmed_balance_from_blocks(accepted_blocks: &[AcceptedBlock], address: &st
                 balance = balance.saturating_add(tx.amount_zion as i128);
             }
             if tx.from == address {
-                balance =
-                    balance.saturating_sub((tx.amount_zion + tx.fee_zion as u128) as i128);
+                balance = balance.saturating_sub((tx.amount_zion + tx.fee_zion as u128) as i128);
             }
         }
     }
@@ -4205,7 +4204,7 @@ fn select_template_utxo_transactions(mempool: &[RuntimeTransaction]) -> Vec<tx::
         .iter()
         .filter_map(|transaction| transaction.as_utxo().cloned())
         .collect();
-    selected.sort_by(|left, right| right.fee.cmp(&left.fee));
+    selected.sort_by_key(|right| std::cmp::Reverse(right.fee));
     selected.truncate(MAX_TEMPLATE_UTXO_TRANSACTIONS);
     selected
 }

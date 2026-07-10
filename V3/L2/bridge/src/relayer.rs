@@ -11,7 +11,6 @@ use crate::evm_tx::{
     build_and_sign_eip1559_tx, derive_evm_address, encode_confirm_burn_release,
     encode_execute_timelocked_mint, encode_submit_lock_proof, hash_to_bytes32,
 };
-use zion_l1_types::normalize_rpc_addr;
 use crate::metrics::BridgeMetrics;
 use crate::rate_limiter::{RateLimitResult, RateLimiter};
 use crate::types::{BridgeStatus, EvmBurnEvent, L1LockEvent};
@@ -27,6 +26,7 @@ use tokio::net::TcpStream;
 use tokio::sync::mpsc;
 use tracing::{error, info, warn};
 use zeroize::Zeroizing;
+use zion_l1_types::normalize_rpc_addr;
 
 /// Gas limit safety margin (multiply estimate by this fraction numerator/denominator).
 const GAS_MARGIN_NUM: u64 = 130; // 130%

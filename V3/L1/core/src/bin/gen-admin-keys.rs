@@ -14,7 +14,11 @@
 
 fn main() {
     let admins = [
-        ("Rama", "Protocol governance, emergency pause", "Maitreya Buddha"),
+        (
+            "Rama",
+            "Protocol governance, emergency pause",
+            "Maitreya Buddha",
+        ),
         ("Sita", "Treasury oversight, DAO guardian", "Sarah Issobela"),
         ("Hanuman", "Bridge admin, EVM multisig", "Elizabeth"),
     ];
@@ -77,8 +81,7 @@ fn main() {
 ///
 /// For production, replace with proper secp256k1 public key derivation.
 fn derive_evm_address(evm_sk_hex: &str) -> String {
-    let sk_bytes = zion_core::crypto::from_hex(evm_sk_hex)
-        .expect("invalid EVM secret key hex");
+    let sk_bytes = zion_core::crypto::from_hex(evm_sk_hex).expect("invalid EVM secret key hex");
     assert_eq!(sk_bytes.len(), 32, "EVM secret key must be 32 bytes");
 
     // Use blake3 as a stand-in for keccak256 (we don't have keccak in zion-core).

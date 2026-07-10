@@ -181,6 +181,7 @@ pub fn create_gpu_backend(
     work_size: usize,
     algorithm: &str,
 ) -> Result<Box<dyn GpuMiner>> {
+    let _ = algorithm;
     match kind {
         GpuBackendKind::Cpu => {
             anyhow::bail!("GPU backend requested but kind=cpu — use CPU mining path instead");

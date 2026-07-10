@@ -46,7 +46,7 @@ export default function TahitiFlower({
           alt="Tiare Tahiti — květina Francouzské Polynésie"
           width={96}
           height={96}
-          className="h-20 w-20 sm:h-24 sm:w-24 rounded-full object-cover border-2 border-cyan-200/30"
+          className="h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 rounded-full object-cover border-2 border-cyan-200/30"
           priority
         />
       </motion.div>

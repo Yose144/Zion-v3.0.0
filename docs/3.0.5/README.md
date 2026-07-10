@@ -2,10 +2,10 @@
 
 > **Verze:** 3.0.5
 > **Datum:** 2026-07-09
-> **Status:** 🟡 PLÁN — dokumentace připravena, čeká na exekuci
+> **Status:** ✅ COMPLETE — exekuováno 2026-07-09, 11/11 služeb aktivních
 > **Cíl:** **All Green** — dostat všechny komponenty (L1 + L2 + L3 + web + docs + verzování) do provozuschopného, ověřeného stavu
 > **Server:** `62.171.141.136` (`ssh zion-new`), genesis `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
-> **Chain height (audit):** 727
+> **Chain height (audit):** 1194+
 
 ## Co 3.0.5 je
 

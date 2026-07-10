@@ -174,7 +174,7 @@ impl DiscoveryEngine {
     /// Get all discovered peers, sorted by most recently seen.
     pub fn peers_by_recency(&self) -> Vec<&DiscoveredPeer> {
         let mut peers: Vec<&DiscoveredPeer> = self.peers.values().collect();
-        peers.sort_by(|a, b| b.last_seen_secs.cmp(&a.last_seen_secs));
+        peers.sort_by_key(|b| std::cmp::Reverse(b.last_seen_secs));
         peers
     }
 

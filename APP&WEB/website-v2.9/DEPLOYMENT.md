@@ -1,6 +1,6 @@
 # ZION Web v3.x — Deployment Guide
 
-> Last verified production deploy: 10 July 2026
+> Last verified production deploy: 10 July 2026 (performance + mobile hotfix)
 
 ## Current Production Status
 
@@ -142,6 +142,7 @@ ssh -i ~/.ssh/zion-new-server root@62.171.141.136
 
 | Date | Version | Changes |
 |---|---|---|
+| 2026-07-10 | v3.0.5-hotfix | Mobile stargate sizing, nav + footer cleanup, lazy HolographicEarth/StargateLogo, smaller homepage HTML/JS bundle |
 | 2026-07-10 | v3.0.5 | Rasta navigation redesign, `.zion-page` layout system, fast runtime deploy |
 | 2026-06-27 | v3.7.5-quantum-revolution | New /quantum-revolution page + gold StoryTriptych card |
 | 2026-06-27 | v3.7.4-doge-fix | Fix Doge ATH timeline (7.5 years, not 2) |

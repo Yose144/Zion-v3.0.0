@@ -368,7 +368,7 @@ impl DeekshaNetwork {
             self.event_count
         )];
         let mut sorted: Vec<&EkamFieldNode> = self.nodes.values().collect();
-        sorted.sort_by(|a, b| b.xp.cmp(&a.xp));
+        sorted.sort_by_key(|b| std::cmp::Reverse(b.xp));
         for node in sorted {
             lines.push(format!(
                 "  {} [{}] xp={} coeff={:.3} contrib={:.3}",

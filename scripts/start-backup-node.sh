@@ -25,7 +25,7 @@ export ZION_NODE_STATE_PATH="${REPO_ROOT}/V3/data/zion-node-state.db"
 export ZION_SEED_PEERS='62.171.141.136:8333,62.171.141.136:8334'
 
 # ── Wallets (same as Edge — constitutional emission) ───────────────────────
-export ZION_MINER_ADDRESS='zion1d6m0h2r8m7k8k2d8n072y7j3j4m0254323vq0e3'
+export ZION_MINER_ADDRESS='zion1l5q4q4s3s5r6p3f6a568z5f75787d8d7c5kq0g4'
 export ZION_HUMANITARIAN_WALLET='zion1e0u5q5s660k4m4a634p2c2v358r8g59564054z7'
 export ZION_ISSOBELLA_WALLET='zion1f7y7l5k678y0v408e8s654d2282346k375526t2'
 

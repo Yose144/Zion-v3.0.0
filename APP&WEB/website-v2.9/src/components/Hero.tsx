@@ -18,7 +18,7 @@ import {
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 import CosmicFlowers from './CosmicFlowers';
-import HolographicEarth from './HolographicEarth';
+import HolographicEarthLazy from './HolographicEarthLazy';
 import MainnetCountdown from './MainnetCountdown';
 
 export default function Hero() {
@@ -84,10 +84,10 @@ export default function Hero() {
               <p className="text-lg md:text-xl text-zion-cyan font-semibold mb-3 tracking-wide">
                 {tr('hero', 'tagline', lang)}
               </p>
-              <h1 className="text-4xl sm:text-5xl md:text-6xl xl:text-7xl font-extrabold leading-[1.06] tracking-tight">
+              <h1 className="text-3xl sm:text-5xl md:text-6xl xl:text-7xl font-extrabold leading-[1.06] tracking-tight">
                 <span className="text-gradient-soft">ZION</span>
                 <span className="block text-white mt-1">Terra Nova</span>
-                <span className="block text-xl sm:text-2xl md:text-3xl xl:text-4xl font-semibold text-white/60 mt-2 tracking-normal">
+                <span className="block text-lg sm:text-2xl md:text-3xl xl:text-4xl font-semibold text-white/60 mt-2 tracking-normal">
                   {tr('hero', 'title_sub', lang)}
                 </span>
               </h1>
@@ -124,18 +124,18 @@ export default function Hero() {
             </div>
 
             {/* metrics strip */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               {heroMetrics.map((metric, i) => (
                 <motion.div
                   key={metric.label}
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.5 + i * 0.1 }}
-                  className="zion-panel-soft zion-panel-hover group p-4 cursor-default"
+                  className="zion-panel-soft zion-panel-hover group p-2.5 sm:p-4 cursor-default min-w-0"
                 >
-                  <metric.icon className="w-4 h-4 text-zion-gold mb-2" />
-                  <div className="text-xl font-bold text-white">{metric.value}</div>
-                  <div className="text-xs uppercase tracking-wide text-gray-500 mt-0.5">{metric.label}</div>
+                  <metric.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-zion-gold mb-1.5 sm:mb-2" />
+                  <div className="text-lg sm:text-xl font-bold text-white truncate">{metric.value}</div>
+                  <div className="text-[9px] sm:text-xs uppercase tracking-wide text-gray-500 mt-0.5 leading-tight">{metric.label}</div>
                 </motion.div>
               ))}
             </div>
@@ -152,7 +152,7 @@ export default function Hero() {
             <div className="absolute -inset-6 rounded-[32px] bg-gradient-to-br from-violet-600/25 via-cyan-500/15 to-transparent blur-3xl pointer-events-none" />
 
             <div className="mb-4 z-10 mx-auto flex w-full max-w-sm justify-center lg:mx-0 lg:max-w-md">
-              <HolographicEarth className="w-full shrink-0" />
+              <HolographicEarthLazy className="w-full shrink-0" />
             </div>
 
             {/* Mainnet Countdown panel — sized to match HolographicEarth */}

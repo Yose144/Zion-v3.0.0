@@ -40,10 +40,7 @@ fn notify_oasis_block_mined(miner_address: &str, block_height: u64) {
     let (authority, base_path) = match parse_oasis_http_target(&oasis_base_url, allow_remote) {
         Ok(target) => target,
         Err(e) => {
-            println!(
-                "oasis_xp_hook_invalid_url url={} err={}",
-                oasis_base_url, e
-            );
+            println!("oasis_xp_hook_invalid_url url={} err={}", oasis_base_url, e);
             return;
         }
     };
@@ -52,12 +49,7 @@ fn notify_oasis_block_mined(miner_address: &str, block_height: u64) {
         r#"{{"source":"block_mined","amount":500,"block_height":{}}}"#,
         block_height
     );
-    let path = format!(
-        "{}{}{}",
-        base_path,
-        "/api/v1/oasis/player/",
-        miner_address
-    );
+    let path = format!("{}{}{}", base_path, "/api/v1/oasis/player/", miner_address);
     let full_path = format!("{}/xp", path);
 
     match post_json_http(&authority, &full_path, &body, Duration::from_secs(3)) {
@@ -99,11 +91,7 @@ fn parse_oasis_http_target(url: &str, allow_remote: bool) -> Result<(String, Str
     }
 
     // Default to localhost-only to prevent accidental SSRF via env misconfiguration.
-    let host = authority
-        .split(':')
-        .next()
-        .map(str::trim)
-        .unwrap_or("");
+    let host = authority.split(':').next().map(str::trim).unwrap_or("");
     let is_local = matches!(host, "127.0.0.1" | "localhost");
     if !allow_remote && !is_local {
         return Err(anyhow!(
@@ -115,8 +103,8 @@ fn parse_oasis_http_target(url: &str, allow_remote: bool) -> Result<(String, Str
 }
 
 fn post_json_http(authority: &str, path: &str, body: &str, timeout: Duration) -> Result<u16> {
-    let mut stream = TcpStream::connect(authority)
-        .with_context(|| format!("connect failed to {authority}"))?;
+    let mut stream =
+        TcpStream::connect(authority).with_context(|| format!("connect failed to {authority}"))?;
     stream
         .set_read_timeout(Some(timeout))
         .context("set read timeout")?;
@@ -2094,10 +2082,8 @@ impl RevenueScheduler {
                 continue;
             }
             match lane.source {
-                RevenueSource::Zion => {
-                    if self.auto_assign_include_zion {
-                        choices.push((SessionGroup::Zion, lane.weight));
-                    }
+                RevenueSource::Zion if self.auto_assign_include_zion => {
+                    choices.push((SessionGroup::Zion, lane.weight));
                 }
                 RevenueSource::Blake3External
                 | RevenueSource::KHeavyHashExternal
@@ -3600,8 +3586,7 @@ mod tests {
             let (mut socket, _) = listener.accept().expect("accept local test connection");
             let mut buf = [0u8; 2048];
             let _ = socket.read(&mut buf).expect("read request bytes");
-            let response =
-                "HTTP/1.1 201 Created\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+            let response = "HTTP/1.1 201 Created\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
             socket
                 .write_all(response.as_bytes())
                 .expect("write response bytes");
