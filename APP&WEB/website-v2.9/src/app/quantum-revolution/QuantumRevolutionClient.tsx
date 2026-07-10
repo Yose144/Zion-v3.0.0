@@ -28,7 +28,7 @@ import { useLang } from '@/contexts/LanguageContext';
 /* ── Mock chapter data (placeholder — will be replaced with real content) ── */
 const chapters = [
   { num: '1', titleCs: 'U Ohně Začíná Příběh', titleEn: 'The Story Begins at the Fire', subtitleCs: 'Strom Života, 144k Guardians, blockchain jako digitální Ma\u2019at', subtitleEn: 'Tree of Life, 144k Guardians, blockchain as digital Ma\u2019at', icon: Flame },
-  { num: '2', titleCs: 'Kvantová Magie', titleEn: 'Quantum Magic', subtitleCs: 'Dvouštěrbinový experiment, entanglement, QDL, Quantum Pulse', subtitleEn: 'Double-slit experiment, entanglement, QDL, Quantum Pulse', icon: Microscope },
+  { num: '2', titleCs: 'Kvantová Magie', titleEn: 'Quantum Magic', subtitleCs: 'Dvojštěrbinový experiment, entanglement, QDL, Quantum Pulse', subtitleEn: 'Double-slit experiment, entanglement, QDL, Quantum Pulse', icon: Microscope },
   { num: '3', titleCs: 'Devět Stupňů Vědomí', titleEn: 'Nine Levels of Consciousness', subtitleCs: 'CL1 Physical → CL9 On The Star (1× → 10× multiplier)', subtitleEn: 'CL1 Physical → CL9 On The Star (1× → 10× multiplier)', icon: Brain },
   { num: '4', titleCs: '10% Tithe', titleEn: '10% Tithe', subtitleCs: 'Ekonomie lásky — hard-coded v reward calculatoru', subtitleEn: 'Economy of love — hard-coded in the reward calculator', icon: Heart },
   { num: '5', titleCs: 'ZION OASIS', titleEn: 'ZION OASIS', subtitleCs: '$50M AAA MMORPG, Golden Egg s 1B ZION', subtitleEn: '$50M AAA MMORPG, Golden Egg with 1B ZION', icon: Gamepad2 },
@@ -58,7 +58,7 @@ const coreInsights = [
     icon: Brain,
     titleCs: 'QDL — AI s Duší',
     titleEn: 'QDL — AI with a Soul',
-    quoteCs: 'AI se neoptimalizuje pro maximalizaci hodnoty akcionáře, ale pro kolektivní rozkvět. AI kódovaná s láskou slouží lásce.',
+    quoteCs: 'AI se neoptimalizuje pro maximalizaci akcionářské hodnoty, ale pro kolektivní rozkvět. AI kódovaná s láskou slouží lásce.',
     quoteEn: 'AI does not optimize for shareholder value maximization, but for collective flourishing. AI coded with love serves love.',
   },
   {

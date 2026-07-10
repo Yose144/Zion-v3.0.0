@@ -2,10 +2,10 @@
 
 ## Co je ZION CLI
 
-`zion` je jeden binary, který umí všechno:
+`zion` je jedna binárka, která umí všechno:
 
 - **Wallet** — vytvoř, spravuj, posílej ZION
-- **Node** — spusť full L1 node, synchronizuj s sítí
+- **Node** — spusť full L1 node, synchronizuj se sítí
 - **Miner** — těž CPU nebo GPU (Ekam Deeksha BLAKE3 + RandomNPU)
 - **Pool** — připoj se ke poolu, sleduj statistiky
 - **Status** — celkový stav sítě a tvého uzlu
@@ -21,8 +21,8 @@ Pokud jsi úplný laik: ber to jako "ovládací panel v terminálu".
 Minimum:
 
 1. Otevřít Terminál (macOS) / PowerShell (Windows) / shell (Linux).
-2. Stáhnout `zion` binary z [GitHub Releases](https://github.com/Zion-TerraNova/v3-Mainnet/releases).
-3. Žádný Rust kompilátor není potřeba — binary je hotový.
+2. Stáhnout `zion` binárku z [GitHub Releases](https://github.com/Zion-TerraNova/v3-Mainnet/releases).
+3. Žádný Rust kompilátor není potřeba — binárka je hotová.
 
 Pro ARM64 (Raspberry Pi, AWS Graviton) je potřeba build ze zdrojů:
 
@@ -37,7 +37,7 @@ cargo build --release -p zion-public
 
 ## Nejjednodušší první spuštění
 
-Po rozbalení archive:
+Po rozbalení archivu:
 
 ```bash
 ./zion
@@ -74,7 +74,7 @@ Menu tě provede: wallet → node → pool → miner, krok za krokem.
 
 ## Absolutní první workflow (kopíruj a vlož)
 
-Pokud nevíš, kde začít, jed tímto pořadím:
+Pokud nevíš, kde začít, jdi tímto pořadím:
 
 ```bash
 zion doctor
@@ -138,7 +138,7 @@ zion wallet import --file my-wallet.json
 ## Důležitá realita pro rok 2026
 
 ZION je v **Mainnet Beta** — síť běží a produkuje bloky, ale může obsahovat chyby.
-Těž a transakuj na vlastní riziko. Oficiální veřejný launch: **31. prosince 2026**.
+Těž a transakuj na vlastní riziko. Oficiální veřejné spuštění: **31. prosince 2026**.
 
 Genesis chain je **permanentní** — nebude resetována.
 

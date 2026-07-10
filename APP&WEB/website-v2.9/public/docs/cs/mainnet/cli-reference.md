@@ -100,10 +100,10 @@ cargo build --release -p zion-public
 
 | Platforma | Stav | Soubor |
 |-----------|------|--------|
-| Linux x86_64 | ✅ Pre-built | `zion-cli-linux-x86_64.tar.gz` |
-| macOS Apple Silicon (M1–M4) | ✅ Pre-built | `zion-cli-macos-aarch64.tar.gz` |
-| macOS Intel x86_64 | ✅ Pre-built | `zion-cli-macos-x86_64.tar.gz` |
-| Windows x86_64 | ✅ Pre-built | `zion-cli-windows-x86_64.zip` |
+| Linux x86_64 | ✅ Předpřipravená binárka | `zion-cli-linux-x86_64.tar.gz` |
+| macOS Apple Silicon (M1–M4) | ✅ Předpřipravená binárka | `zion-cli-macos-aarch64.tar.gz` |
+| macOS Intel x86_64 | ✅ Předpřipravená binárka | `zion-cli-macos-x86_64.tar.gz` |
+| Windows x86_64 | ✅ Předpřipravená binárka | `zion-cli-windows-x86_64.zip` |
 | Linux ARM64 | 🔧 Build ze zdrojů | `cargo build --release -p zion-public` |
 
 Stažení: https://github.com/Zion-TerraNova/v3-Mainnet/releases

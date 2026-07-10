@@ -111,7 +111,7 @@ export default function RevenueSettings() {
       <div className="zion-container max-w-4xl space-y-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
-          {lang === 'cs' ? 'Cosmic Harmony v3 Nastavení Příjmů' : 'Cosmic Harmony v3 Revenue Settings'}
+          {lang === 'cs' ? 'Cosmic Harmony v3 — Nastavení příjmů' : 'Cosmic Harmony v3 Revenue Settings'}
         </h1>
         <div className="flex gap-4">
             <button 
@@ -142,7 +142,7 @@ export default function RevenueSettings() {
         {/* NCL AI Section */}
         <section className="zion-section p-6" style={{ '--rc': '168, 85, 247' } as React.CSSProperties}>
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-purple-300">🤖 {lang === 'cs' ? 'NCL Umělá Inteligence' : 'NCL Artificial Intelligence'}</h2>
+                <h2 className="text-xl font-bold text-purple-300">🤖 {lang === 'cs' ? 'NCL Umělá inteligence' : 'NCL Artificial Intelligence'}</h2>
                 <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-400">{lang === 'cs' ? 'Aktivní' : 'Enabled'}</span>
                     <input 
@@ -226,7 +226,7 @@ export default function RevenueSettings() {
                         />
                      </div>
                      <div>
-                        <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Wallet Adresa' : 'Wallet Address'}</label>
+                        <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Adresa peněženky' : 'Wallet Address'}</label>
                         <input 
                             type="text" 
                             value={config.streams.etc.pool.wallet}
@@ -264,7 +264,7 @@ export default function RevenueSettings() {
                         />
                      </div>
                      <div>
-                        <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Wallet Adresa' : 'Wallet Address'}</label>
+                        <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Adresa peněženky' : 'Wallet Address'}</label>
                         <input 
                             type="text" 
                             value={config.streams.nxs.pool.wallet}

@@ -49,7 +49,7 @@ export default function Navigation() {
       items: [
         { href: '/defi', label: tr('nav', 'defi', lang) },
         { href: '/ziondex', label: 'ZionDex' },
-        { href: '/cex', label: 'CEX' },
+        { href: '/cex', label: tr('nav', 'cex', lang) },
         { href: '/warp', label: tr('nav', 'warp', lang) },
         { href: '/bridge', label: tr('nav', 'bridge', lang) },
         { href: '/dao', label: tr('nav', 'dao', lang) },
@@ -110,7 +110,7 @@ export default function Navigation() {
     { href: '/bridge', icon: ArrowLeftRight, color: '59, 130, 246', label: tr('nav', 'bridge', lang) },
     { href: '/ziondex', icon: ArrowRightLeft, color: '16, 185, 129', label: 'ZionDex' },
     { href: '/dao', icon: Landmark, color: '147, 51, 234', label: tr('nav', 'dao', lang) },
-    { href: '/cex', icon: Building2, color: '236, 72, 153', label: 'CEX' },
+    { href: '/cex', icon: Building2, color: '236, 72, 153', label: tr('nav', 'cex', lang) },
     { href: '/warp', icon: CircuitBoard, color: '99, 102, 241', label: tr('nav', 'warp', lang) },
     { href: '/l3-hiran', icon: Brain, color: '139, 92, 246', label: tr('nav', 'l3_hiran', lang) },
     { href: '/l4-oasis', icon: Flower2, color: '217, 70, 239', label: tr('nav', 'l4_oasis', lang) },

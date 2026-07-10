@@ -105,7 +105,7 @@ const getTypeConfig = (cs: boolean) => ({
     bg: "bg-white/5",
     border: "border-white/10",
     text: "text-white/60",
-    label: cs ? "Drzitel" : "Holder",
+    label: cs ? "Držitel" : "Holder",
     icon: Wallet,
   },
 });
@@ -191,7 +191,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
                 accent: "text-zion-purple",
               },
               {
-                label: cs ? "Aktivni mineri" : "Active Miners",
+                label: cs ? "Aktivní mineři" : "Active Miners",
                 value: data.stats.miner_addresses.toLocaleString(locale),
                 icon: Pickaxe,
                 accent: "text-emerald-400",
@@ -226,7 +226,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
           >
             <h2 className="text-sm font-medium text-white/60 mb-4 flex items-center gap-2">
               <Gem className="w-4 h-4 text-zion-gold" />
-              {cs ? 'Distribuce zasoby' : 'Supply Distribution'}
+              {cs ? 'Distribuce zásoby' : 'Supply Distribution'}
             </h2>
             <div className="flex h-6 rounded-full overflow-hidden border border-white/10">
               {(() => {
@@ -247,7 +247,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
                     <div
                       className="bg-linear-to-r from-zion-cyan to-blue-500 transition-all"
                       style={{ width: `${minerPerc}%` }}
-                      title={`${cs ? 'Mineri' : 'Miners'}: ${minerPerc.toFixed(1)}%`}
+                      title={`${cs ? 'Mineři' : 'Miners'}: ${minerPerc.toFixed(1)}%`}
                     />
                     <div
                       className="bg-white/5 transition-all"
@@ -265,7 +265,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-full bg-zion-cyan" />
-                {cs ? 'Tezebni odmeny' : 'Mining rewards'}
+                {cs ? 'Těžební odměny' : 'Mining rewards'}
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-full bg-white/10" />
@@ -317,7 +317,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
               {cs ? 'Adresa' : 'Address'}
             </span>
             <span className="text-[11px] text-white/30 uppercase tracking-wider text-right">
-              {cs ? 'Zustatek (ZION)' : 'Balance (ZION)'}
+              {cs ? 'Zůstatek (ZION)' : 'Balance (ZION)'}
             </span>
             <span className="text-[11px] text-white/30 uppercase tracking-wider text-right hidden md:block">
               % Supply
@@ -331,7 +331,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
           {loading && (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="w-6 h-6 text-zion-gold animate-spin" />
-              <span className="ml-3 text-white/40 text-sm">{cs ? 'Nacitam…' : 'Loading…'}</span>
+              <span className="ml-3 text-white/40 text-sm">{cs ? 'Načítám…' : 'Loading…'}</span>
             </div>
           )}
 
@@ -443,7 +443,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
               >
                 Genesis Block
               </Link>
-              {cs ? '. Zustatky mineru vychazi z historie odmen poolu.' : '. Miner balances from pool reward history.'}
+              {cs ? '. Zůstatky minerů vycházejí z historie odměn poolu.' : '. Miner balances from pool reward history.'}
             </p>
           </div>
         )}

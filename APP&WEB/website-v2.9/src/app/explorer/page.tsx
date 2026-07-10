@@ -45,21 +45,21 @@ const RichListClient = dynamic(() => import("./richlist/RichListClient"));
 const getQuickLinks = (cs: boolean) => [
   {
     title: cs ? 'Archiv bloku' : 'Block Archive',
-    description: cs ? 'Kompletni ledger vsech validovanych bloku' : 'Complete ledger of all validated blocks',
+    description: cs ? 'Kompletní ledger všech validovaných bloků' : 'Complete ledger of all validated blocks',
     href: '/explorer/blocks',
     accent: 'from-zion-gold/80 to-amber-600/80',
     icon: Layers,
   },
   {
-    title: cs ? 'Tok transakci' : 'Transaction Feed',
-    description: cs ? 'Tok fondu a fee v realnem case' : 'Real-time flow of funds and fees',
+    title: cs ? 'Tok transakcí' : 'Transaction Feed',
+    description: cs ? 'Tok fondů a fee v reálném čase' : 'Real-time flow of funds and fees',
     href: '/explorer/transactions',
     accent: 'from-zion-cyan/80 to-blue-600/80',
     icon: Activity,
   },
   {
     title: cs ? 'Mempool' : 'Mempool',
-    description: cs ? 'Cekajici transakce, fee histogram, double-spend' : 'Pending transactions, fee histogram, double-spend',
+    description: cs ? 'Čekající transakce, fee histogram, double-spend' : 'Pending transactions, fee histogram, double-spend',
     href: '/explorer/mempool',
     accent: 'from-amber-500/80 to-orange-600/80',
     icon: Flame,
@@ -72,29 +72,29 @@ const getQuickLinks = (cs: boolean) => [
     icon: ArrowLeftRight,
   },
   {
-    title: cs ? 'Sitovi peeri' : 'Network Peers',
-    description: cs ? 'Globalni mapa konektivity nodu' : 'Global node connectivity map',
+    title: cs ? 'Síťoví peeri' : 'Network Peers',
+    description: cs ? 'Globální mapa konektivity nodů' : 'Global node connectivity map',
     href: '#peers',
     accent: 'from-purple-500/80 to-indigo-600/80',
     icon: Globe,
   },
   {
     title: cs ? 'Supply Dashboard' : 'Supply Dashboard',
-    description: cs ? 'Circulating, vytezeno, premine, Decade Decay' : 'Circulating, mined, premine, Decade Decay',
+    description: cs ? 'Circulating, vytěženo, premine, Decade Decay' : 'Circulating, mined, premine, Decade Decay',
     href: '/explorer/supply',
     accent: 'from-emerald-500/80 to-teal-600/80',
     icon: BarChart3,
   },
   {
     title: cs ? 'Grafy a analytika' : 'Charts & Analytics',
-    description: cs ? 'Historicka obtiznost, hashrate a emise' : 'Historical difficulty, hashrate & emission',
+    description: cs ? 'Historická obtížnost, hashrate a emise' : 'Historical difficulty, hashrate & emission',
     href: '#charts',
     accent: 'from-rose-500/80 to-pink-600/80',
     icon: TrendingUp,
   },
   {
     title: cs ? 'Network Stats' : 'Network Stats',
-    description: cs ? 'Hashrate, obtiznost, cas bloku, TX trendy' : 'Hashrate, difficulty, block time, TX trends',
+    description: cs ? 'Hashrate, obtížnost, čas bloku, TX trendy' : 'Hashrate, difficulty, block time, TX trends',
     href: '/explorer/network-stats',
     accent: 'from-violet-500/80 to-purple-600/80',
     icon: Network,
@@ -147,17 +147,17 @@ export default function ExplorerPage() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan uppercase">
                 <SearchCode className="h-4 w-4" />
-                {SITE_RELEASE_LABEL} · {cs ? 'Pruzkumnik Pro' : 'Explorer Pro'}
+                {SITE_RELEASE_LABEL} · {cs ? 'Průzkumník Pro' : 'Explorer Pro'}
               </div>
               <div>
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? 'Zive' : 'Real-Time'}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? 'Živé' : 'Real-Time'}</p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
                   {cs ? 'Průzkumník blockchainu' : 'Blockchain Explorer'}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
                 {cs
-                  ? `Prozkoumejte bloky, transakce a adresy na živém mainnetu ZION TerraNova ${SITE_RELEASE_LABEL}. Kanonický runtime běží na ${SITE_RUNTIME_LABEL} — 3-uzlový P2P mesh, account-model transakce s memo polem, E2E testy potvrzeny v bloku 752.`
+                  ? `Prozkoumejte bloky, transakce a adresy na živém mainnetu ZION TerraNova ${SITE_RELEASE_LABEL}. Kanonický runtime běží na ${SITE_RUNTIME_LABEL} — 3-uzlový P2P mesh, account-model transakce s memo polem, E2E testy potvrzené v bloku 752.`
                   : `Search blocks, transactions, and addresses on the live ZION TerraNova ${SITE_RELEASE_LABEL} mainnet. Canonical runtime runs on ${SITE_RUNTIME_LABEL} — 3-node P2P mesh, account-model transactions with memo field, E2E tests confirmed in block 752.`}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
@@ -199,9 +199,9 @@ export default function ExplorerPage() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Telemetrie' : 'Telemetry'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Activity className="h-7 w-7 text-emerald-400" />
-              {cs ? 'Sitove statistiky' : 'Network Statistics'}
+              {cs ? 'Síťové statistiky' : 'Network Statistics'}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Metriky v realnem case z blockchain daemonu ZION.' : 'Real-time metrics from the ZION blockchain daemon.'}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Metriky v reálném čase z blockchain daemonu ZION.' : 'Real-time metrics from the ZION blockchain daemon.'}</p>
           </div>
           <Suspense
             fallback={
@@ -232,7 +232,7 @@ export default function ExplorerPage() {
               <Layers className="h-7 w-7 text-zion-gold" />
               {cs ? 'Bloky a transakce' : 'Blocks & Transactions'}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Nejnovejsi potvrzene bloky a tok transakci ze chainu ZION.' : 'Latest confirmed blocks and transaction feed from the ZION chain.'}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Nejnovější potvrzené bloky a tok transakcí ze chainu ZION.' : 'Latest confirmed blocks and transaction feed from the ZION chain.'}</p>
           </div>
 
           <div className="grid gap-6 xl:grid-cols-3">
@@ -260,7 +260,7 @@ export default function ExplorerPage() {
                     <Compass className="h-4.5 w-4.5 text-zion-gold" />
                   </div>
                   <div>
-                    <h3 className="text-base font-semibold text-white">{cs ? 'Rychla navigace' : 'Quick Navigation'}</h3>
+                    <h3 className="text-base font-semibold text-white">{cs ? 'Rychlá navigace' : 'Quick Navigation'}</h3>
                     <p className="text-[11px] text-gray-500">{cs ? 'Skok do sekce' : 'Jump to section'}</p>
                   </div>
                 </div>
@@ -356,9 +356,9 @@ export default function ExplorerPage() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Analytika' : 'Analytics'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <BarChart3 className="h-7 w-7 text-purple-400" />
-              {cs ? 'Sitove grafy' : 'Network Charts'}
+              {cs ? 'Síťové grafy' : 'Network Charts'}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Historicke trendy obtiznosti, hashrate, emise a velikosti bloku.' : 'Historical difficulty, hashrate, emission, and block size trends.'}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Historické trendy obtížnosti, hashrate, emise a velikosti bloku.' : 'Historical difficulty, hashrate, emission, and block size trends.'}</p>
           </div>
           <Suspense fallback={<div className="zion-section animate-pulse h-[400px]" />}>
             <ExplorerCharts />
@@ -377,7 +377,7 @@ export default function ExplorerPage() {
               <Rocket className="h-7 w-7 text-zion-gold" />
               {cs ? 'Monitoring emise' : 'Emission Monitor'}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Sledujte postup tezby - Decade Decay: 5,400 -> 724 ZION/blok, 100+ let + tail ∞.' : 'Track mining progress - Decade Decay: 5,400 -> 724 ZION/block, 100+ years + tail ∞.'}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Sledujte postup těžby – Decade Decay: 5,400 -> 724 ZION/blok, 100+ let + tail ∞.' : 'Track mining progress - Decade Decay: 5,400 -> 724 ZION/block, 100+ years + tail ∞.'}</p>
           </div>
           <Suspense fallback={<div className="zion-section animate-pulse h-[280px]" />}>
             <EmissionMonitor />
@@ -392,10 +392,10 @@ export default function ExplorerPage() {
           id="peers"
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'P2P sit' : 'P2P Network'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'P2P síť' : 'P2P Network'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Globe className="h-7 w-7 text-zion-cyan" />
-              {cs ? 'Sitovi peeri' : 'Network Peers'}
+              {cs ? 'Síťoví peeri' : 'Network Peers'}
             </h2>
             <p className="text-sm text-gray-400">{cs ? 'Konektivita 3-uzlového P2P meshe — Edge 1, Edge 2 a Local Backup Node v reálném čase.' : 'Connectivity of the 3-node P2P mesh — Edge 1, Edge 2, and Local Backup Node in real time.'}</p>
           </div>
@@ -418,7 +418,7 @@ export default function ExplorerPage() {
               <TrendingUp className="h-7 w-7 text-zion-gold" />
               {cs ? 'Rich list' : 'Rich List'}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Top drzitele ZION podle zustatku - premine alokace, tezebni odmeny a ekonomika site.' : 'Top ZION holders by balance - premine allocations, mining rewards, and network economics.'}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Top držitelé ZION podle zůstatku – premine alokace, těžební odměny a ekonomika sítě.' : 'Top ZION holders by balance - premine allocations, mining rewards, and network economics.'}</p>
           </div>
           <Suspense fallback={<div className="zion-section animate-pulse h-[400px]" />}>
             <RichListClient embedded />
@@ -435,7 +435,7 @@ export default function ExplorerPage() {
           <SearchCode className="mx-auto h-12 w-12 text-zion-cyan" />
           <h2 className="mt-6 text-3xl font-semibold text-white">ZION TerraNova Explorer</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
-            {cs ? 'Blockchain data v realnem case z nativnich Rust nodu. Kazdy blok, transakce a adresa - plne transparentni, plne otevrene.' : 'Real-time blockchain data from native Rust nodes. Every block, transaction, and address - fully transparent, fully open.'}
+            {cs ? 'Blockchain data v reálném čase z nativních Rust nodů. Každý blok, transakce a adresa – plně transparentní, plně otevřené.' : 'Real-time blockchain data from native Rust nodes. Every block, transaction, and address - fully transparent, fully open.'}
           </p>
           <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
             {cs
@@ -444,7 +444,7 @@ export default function ExplorerPage() {
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link href="/network" className="inline-flex items-center gap-2 rounded-2xl bg-black/70 px-6 py-3 text-sm font-semibold text-white border border-white/20">
-              <Globe className="h-4 w-4" /> {cs ? 'Stav site' : 'Network Status'}
+              <Globe className="h-4 w-4" /> {cs ? 'Stav sítě' : 'Network Status'}
             </Link>
             <Link href="/roadmap" className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-cyan to-zion-purple px-6 py-3 text-sm font-semibold text-black">
               <Activity className="h-4 w-4" /> {cs ? 'Roadmapa' : 'Roadmap'}

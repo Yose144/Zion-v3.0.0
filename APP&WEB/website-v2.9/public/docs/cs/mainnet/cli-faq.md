@@ -2,17 +2,17 @@
 
 ## Co je ZION CLI?
 
-`zion` je jeden binary, který umí všechno: wallet, node, miner, pool, status, doctor, monitor.
-Žádné 8 oddělených binárek — jeden soubor, interaktivní menu, hotovo.
+`zion` je jedna binárka, která umí všechno: wallet, node, miner, pool, status, doctor, monitor.
+Žádných 8 oddělených binárek — jeden soubor, interaktivní menu, hotovo.
 
-## Kde stáhnu binary?
+## Kde stáhnu binárku?
 
 Na GitHub Releases:
 
 https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.0.5-beta
 
 4 platformy: Linux x86_64, macOS Apple Silicon, macOS Intel, Windows x86_64.
-Pro ARM64 (Raspberry Pi) build ze zdrojů.
+Pro ARM64 (Raspberry Pi) sestavte ze zdrojů.
 
 ## Musím mít GPU, aby CLI fungovalo?
 
@@ -91,7 +91,7 @@ Před každou větší akcí:
 ## Je ZION v produkci?
 
 ZION je v **Mainnet Beta** — síť běží a produkuje bloky, ale může obsahovat chyby.
-Těž a transakuj na vlastní riziko. Oficiální veřejný launch: **31. prosince 2026**.
+Těž a transakuj na vlastní riziko. Oficiální veřejné spuštění: **31. prosince 2026**.
 
 Genesis chain je **permanentní** — nebude resetována.
 

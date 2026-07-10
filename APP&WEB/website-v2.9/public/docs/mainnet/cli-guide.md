@@ -1,30 +1,30 @@
-# ZION CLI Guide (pro úplného začátečníka)
+# ZION CLI Guide (for absolute beginners)
 
-## Co je ZION CLI
+## What is ZION CLI
 
-`zion` je jeden binary, který umí všechno:
+`zion` is a single binary that does everything:
 
-- **Wallet** — vytvoř, spravuj, posílej ZION
-- **Node** — spusť full L1 node, synchronizuj s sítí
-- **Miner** — těž CPU nebo GPU (Ekam Deeksha BLAKE3 + RandomNPU)
-- **Pool** — připoj se ke poolu, sleduj statistiky
-- **Status** — celkový stav sítě a tvého uzlu
-- **Doctor** — rychlá zdravotní kontrola
-- **Monitor** — live dashboard s hashrate a zůstatkem
+- **Wallet** — create, manage, send ZION
+- **Node** — run a full L1 node, sync with the network
+- **Miner** — mine on CPU or GPU (Ekam Deeksha BLAKE3 + RandomNPU)
+- **Pool** — connect to a pool, watch statistics
+- **Status** — overall state of the network and your node
+- **Doctor** — quick health check
+- **Monitor** — live dashboard with hashrate and balance
 
-Pokud jsi úplný laik: ber to jako "ovládací panel v terminálu".
+If you are a complete beginner: think of it as a "control panel in the terminal".
 
 ---
 
-## Co potřebuješ před prvním spuštěním
+## What you need before the first run
 
 Minimum:
 
-1. Otevřít Terminál (macOS) / PowerShell (Windows) / shell (Linux).
-2. Stáhnout `zion` binary z [GitHub Releases](https://github.com/Zion-TerraNova/v3-Mainnet/releases).
-3. Žádný Rust kompilátor není potřeba — binary je hotový.
+1. Open Terminal (macOS) / PowerShell (Windows) / shell (Linux).
+2. Download the `zion` binary from [GitHub Releases](https://github.com/Zion-TerraNova/v3-Mainnet/releases).
+3. No Rust compiler is needed — the binary is ready.
 
-Pro ARM64 (Raspberry Pi, AWS Graviton) je potřeba build ze zdrojů:
+For ARM64 (Raspberry Pi, AWS Graviton) you need to build from source:
 
 ```bash
 git clone https://github.com/Zion-TerraNova/v3-Mainnet.git
@@ -35,46 +35,46 @@ cargo build --release -p zion-public
 
 ---
 
-## Nejjednodušší první spuštění
+## Easiest first run
 
-Po rozbalení archive:
+After extracting the archive:
 
 ```bash
 ./zion
 ```
 
-Bez argumentů se otevře interaktivní menu se šipkami.
+Without arguments, an interactive menu with arrow keys opens.
 
 ---
 
-## Interaktivní menu
+## Interactive menu
 
-Spuštění `zion` bez argumentů otevře menu:
+Running `zion` without arguments opens the menu:
 
 ```bash
 zion
 ```
 
-Nebo explicitně:
+Or explicitly:
 
 ```bash
 zion menu
 ```
 
-Ovládání:
+Controls:
 
-- šipky ↑↓ = pohyb,
-- Enter = potvrzení,
-- Esc = zpět,
-- menu tě po dokončení vrací zpět.
+- arrow keys ↑↓ = move,
+- Enter = confirm,
+- Esc = back,
+- the menu returns you back after completion.
 
-Menu tě provede: wallet → node → pool → miner, krok za krokem.
+The menu guides you through: wallet → node → pool → miner, step by step.
 
 ---
 
-## Absolutní první workflow (kopíruj a vlož)
+## Absolute first workflow (copy and paste)
 
-Pokud nevíš, kde začít, jed tímto pořadím:
+If you don't know where to start, follow this order:
 
 ```bash
 zion doctor
@@ -85,20 +85,20 @@ zion pool stats
 zion mine start --pool stratum+tcp://pool.zionterranova.com:8444 --wallet YOUR_ADDRESS
 ```
 
-Co čekat:
+What to expect:
 
-- `doctor` udělá rychlý preflight (config, endpointy, připravenost),
-- `status` ukáže celkový stav sítě,
-- `wallet new` vytvoří peněženku s 24 slovy,
-- `node status` ukáže stav tvého uzlu,
-- `pool stats` ukáže stav poolu,
-- `mine start` začne těžit.
+- `doctor` does a quick preflight (config, endpoints, readiness),
+- `status` shows the overall network state,
+- `wallet new` creates a wallet with 24 words,
+- `node status` shows the state of your node,
+- `pool stats` shows the pool state,
+- `mine start` starts mining.
 
 ---
 
-## Nejčastější příkazy pro běžného uživatele
+## Most common commands for a regular user
 
-### Stav a zdraví
+### State and health
 
 ```bash
 zion status
@@ -135,18 +135,18 @@ zion wallet import --file my-wallet.json
 
 ---
 
-## Důležitá realita pro rok 2026
+## Important reality for 2026
 
-ZION je v **Mainnet Beta** — síť běží a produkuje bloky, ale může obsahovat chyby.
-Těž a transakuj na vlastní riziko. Oficiální veřejný launch: **31. prosince 2026**.
+ZION is in **Mainnet Beta** — the network is running and producing blocks, but it may contain bugs.
+Mine and transact at your own risk. Official public launch: **31 December 2026**.
 
-Genesis chain je **permanentní** — nebude resetována.
+The genesis chain is **permanent** — it will not be reset.
 
 ---
 
-## Bezpečný postup při problému
+## Safe procedure when something is wrong
 
-Použij přesně toto pořadí:
+Use exactly this order:
 
 1. `zion status`
 2. `zion doctor`
@@ -154,12 +154,12 @@ Použij přesně toto pořadí:
 4. `zion pool stats`
 5. `zion mine status`
 
-Nikdy nezačínej náhodným restartem všeho bez diagnostiky.
+Never start with a random restart of everything without diagnosis.
 
 ---
 
-## Co číst dál
+## What to read next
 
-- [ZION CLI Reference](cli-reference.md) — všechny příkazy
-- [ZION CLI Troubleshooting](cli-troubleshooting.md) — řešení problémů
-- [ZION CLI FAQ](cli-faq.md) — časté otázky
+- [ZION CLI Reference](cli-reference.md) — all commands
+- [ZION CLI Troubleshooting](cli-troubleshooting.md) — problem solving
+- [ZION CLI FAQ](cli-faq.md) — frequently asked questions

@@ -24,7 +24,7 @@ export default function EkamDeekshaPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const chapters = [
-    { id: 'predmluva',  number: '',   title: lang === 'cs' ? 'Předmluva' : 'Preface',               subtitle: lang === 'cs' ? 'Druhý dech Quantové Revoluce' : 'Second Breath of the Quantum Revolution' },
+    { id: 'predmluva',  number: '',   title: lang === 'cs' ? 'Předmluva' : 'Preface',               subtitle: lang === 'cs' ? 'Druhý dech Kvantové Revoluce' : 'Second Breath of the Quantum Revolution' },
     { id: 'kapitel-1', number: '1',  title: lang === 'cs' ? 'Konec odděleného člověka' : 'The End of the Separate Human', subtitle: lang === 'cs' ? 'Krize odděleného self' : 'Crisis of the Separate Self' },
     { id: 'kapitel-2', number: '2',  title: lang === 'cs' ? 'Proč staré mapy nestačí' : 'Why Old Maps Are Not Enough',  subtitle: lang === 'cs' ? 'Čtyři limity moderního hledání' : 'Four Limits of Modern Seeking' },
     { id: 'kapitel-3', number: '3',  title: lang === 'cs' ? 'Historická linie' : 'Historical Lineage',         subtitle: 'Jeevashram · Satyaloka · Oneness' },
@@ -80,7 +80,7 @@ export default function EkamDeekshaPage() {
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-amber-300/30 bg-amber-300/10 mb-6">
               <Sparkles className="w-4 h-4 text-amber-300" />
-              <span className="text-sm text-amber-200 font-semibold">{lang === 'cs' ? 'Navazuje na Quantovou Revoluci' : 'Continues the Quantum Revolution'}</span>
+              <span className="text-sm text-amber-200 font-semibold">{lang === 'cs' ? 'Navazuje na Kvantovou Revoluci' : 'Continues the Quantum Revolution'}</span>
             </div>
             <h1 className="text-4xl sm:text-6xl md:text-7xl font-bold mb-6 text-gradient">
               Ekam Deeksha
@@ -90,7 +90,7 @@ export default function EkamDeekshaPage() {
             </p>
             <p className="text-base text-gray-500 max-w-2xl mx-auto leading-relaxed">
               {lang === 'cs'
-                ? 'Druhá kniha po Quantové Revoluci. Nepokračuje tím, že by přidala novou teorii. Obrací pohled dovnitř: co se musí stát ve vědomí člověka, aby se oddělený svět opravdu přestal reprodukovat.'
+                ? 'Druhá kniha po Kvantové Revoluci. Nepokračuje tím, že by přidala novou teorii. Obrací pohled dovnitř: co se musí stát ve vědomí člověka, aby se oddělený svět opravdu přestal reprodukovat.'
                 : 'The second book after the Quantum Revolution. It does not continue by adding new theory. It turns the gaze inward: what must happen in human consciousness for the separated world to truly stop reproducing itself.'}
             </p>
             <div className="mt-8 flex flex-wrap gap-3 justify-center">
@@ -175,11 +175,11 @@ export default function EkamDeekshaPage() {
             <section id="predmluva" className="mb-24 scroll-mt-24">
               <div className="mb-8 text-center">
                 <h2 className="text-4xl md:text-5xl font-bold text-amber-300 mb-3">{lang === 'cs' ? 'Předmluva' : 'Preface'}</h2>
-                <p className="text-gray-400 text-lg italic">{lang === 'cs' ? 'Druhý dech Quantové Revoluce' : 'Second Breath of the Quantum Revolution'}</p>
+                <p className="text-gray-400 text-lg italic">{lang === 'cs' ? 'Druhý dech Kvantové Revoluce' : 'Second Breath of the Quantum Revolution'}</p>
               </div>
               <div className="space-y-6 text-center">
                 <p className="text-xl leading-relaxed text-gray-300">
-                  {lang === 'cs' ? 'Quantová Revoluce pojmenovala civilizační práh.' : 'The Quantum Revolution named the civilizational threshold.'}<br />
+                  {lang === 'cs' ? 'Kvantová Revoluce pojmenovala civilizační práh.' : 'The Quantum Revolution named the civilizational threshold.'}<br />
                   {lang === 'cs' ? 'Ukázala, že starý svět se nevyčerpává náhodou —' : 'It showed that the old world does not exhaust itself by accident —'}<br />
                   {lang === 'cs' ? 'ale proto, že dosáhl mezí vlastního odděleného vědomí.' : 'but because it has reached the limits of its own separated consciousness.'}
                 </p>
@@ -537,7 +537,7 @@ export default function EkamDeekshaPage() {
                     {lang === 'cs' ? 'Hiranyagarbha inicializuje zárodek výpočtu z primordálního chaosu vstupních dat. Brahma rozvíjí stavový prostor do plné 256 KiB oblasti. Yantra vnáší geometriku posvátného vzorce. Karma aplikuje epochálně proměnné váhy — žádný výpočet není totožný s minulou epochou. Chit integruje vše do čistého stavu vědomí. Samadhi dosahuje finálního sjednocení — platného PoW.' : 'Hiranyagarbha initializes the seed of computation from the primordial chaos of input data. Brahma expands the state space into the full 256 KiB region. Yantra introduces the geometry of the sacred pattern. Karma applies epochally variable weights — no computation is identical to the previous epoch. Chit integrates everything into the pure state of consciousness. Samadhi achieves final unification — valid PoW.'}
                   </p>
                   <p className="text-sm leading-7 text-gray-300 mt-3">
-                    {lang === 'cs' ? 'Blockchain tak nese filozofii, která ho pojmenovala, přesně v technické struktuře svého důkazu práce. To je konvergence Quantové Revoluce a Ekam Deeksha: jedno v blocích, druhé ve vědomí.' : 'Thus the blockchain carries the philosophy that named it, precisely in the technical structure of its proof of work. This is the convergence of the Quantum Revolution and Ekam Deeksha: one in blocks, the other in consciousness.'}
+                    {lang === 'cs' ? 'Blockchain tak nese filozofii, která ho pojmenovala, přesně v technické struktuře svého důkazu práce. To je konvergence Kvantové Revoluce a Ekam Deeksha: jedno v blocích, druhé ve vědomí.' : 'Thus the blockchain carries the philosophy that named it, precisely in the technical structure of its proof of work. This is the convergence of the Quantum Revolution and Ekam Deeksha: one in blocks, the other in consciousness.'}
                   </p>
                 </div>
               </div>
@@ -609,7 +609,7 @@ export default function EkamDeekshaPage() {
                 <div className="my-10 p-8 zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                   <Globe className="w-8 h-8 text-amber-300 mx-auto mb-4" />
                   <p className="text-lg italic text-gray-300 leading-relaxed">
-                    {lang === 'cs' ? 'Quantová Revoluce ukázala, že civilizace z vnějšku nemůže být zachráněna bez vnitřní proměny člověka.' : 'The Quantum Revolution showed that civilization cannot be saved from the outside without the inner transformation of the human being.'}<br /><br />
+                    {lang === 'cs' ? 'Kvantová Revoluce ukázala, že civilizace z vnějšku nemůže být zachráněna bez vnitřní proměny člověka.' : 'The Quantum Revolution showed that civilization cannot be saved from the outside without the inner transformation of the human being.'}<br /><br />
                     {lang === 'cs' ? 'Ekam Deeksha ukazuje, jak tato vnitřní proměna vypadá —' : 'Ekam Deeksha shows what this inner transformation looks like —'}<br />
                     {lang === 'cs' ? 'v historii, v filozofii, v prostoru chrámu, v Deeksha přenosu,' : 'in history, in philosophy, in the space of the temple, in Deeksha transmission,'}<br />
                     {lang === 'cs' ? 'v zlatém zárodku Hiranyagarbhy' : 'in the golden seed of Hiranyagarbha'}<br />

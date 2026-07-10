@@ -1,10 +1,10 @@
-# ZION CLI Reference (praktická)
+# ZION CLI Reference (practical)
 
-Tento dokument je "tahák" s konkrétními příkazy.
+This document is a "cheat sheet" with concrete commands.
 
-Pokud jsi začátečník, používej nejdřív `Guide`, potom tento seznam.
+If you are a beginner, use the `Guide` first, then this list.
 
-## 1) Základní kontrola
+## 1) Basic check
 
 ```bash
 zion status
@@ -12,9 +12,9 @@ zion doctor
 zion monitor
 ```
 
-- `status` — celkový stav sítě a tvého uzlu
-- `doctor` — rychlá zdravotní kontrola (config, endpointy, připravenost)
-- `monitor` — live dashboard s hashrate a zůstatkem
+- `status` — overall state of the network and your node
+- `doctor` — quick health check (config, endpoints, readiness)
+- `monitor` — live dashboard with hashrate and balance
 
 ## 2) Wallet
 
@@ -55,30 +55,30 @@ zion mine start --backend metal
 zion mine stop
 ```
 
-Backendy:
+Backends:
 
-- `cpu` — výchozí, funguje všude
+- `cpu` — default, works everywhere
 - `opencl` — Linux/Windows GPU (AMD, NVIDIA)
 - `cuda` — NVIDIA GPU (Linux/Windows)
 - `metal` — macOS Apple Silicon GPU
 
-## 6) AI (volitelné)
+## 6) AI (optional)
 
 ```bash
 zion ai ask "What is the current block height?"
 zion ai chat
 ```
 
-## 7) Interaktivní menu
+## 7) Interactive menu
 
 ```bash
 zion
 zion menu
 ```
 
-Menu tě provede: wallet → node → pool → miner, krok za krokem.
+The menu guides you through: wallet → node → pool → miner, step by step.
 
-## 8) Verze a pomoc
+## 8) Version and help
 
 ```bash
 zion --version
@@ -87,7 +87,7 @@ zion wallet --help
 zion mine --help
 ```
 
-## 9) Build ze zdrojů (ARM64, vlastní build)
+## 9) Build from source (ARM64, custom build)
 
 ```bash
 git clone https://github.com/Zion-TerraNova/v3-Mainnet.git
@@ -96,14 +96,14 @@ cargo build --release -p zion-public
 # Binary → target/release/zion
 ```
 
-## 10) Platformy
+## 10) Platforms
 
-| Platforma | Stav | Soubor |
-|-----------|------|--------|
+| Platform | Status | File |
+|----------|--------|------|
 | Linux x86_64 | ✅ Pre-built | `zion-cli-linux-x86_64.tar.gz` |
 | macOS Apple Silicon (M1–M4) | ✅ Pre-built | `zion-cli-macos-aarch64.tar.gz` |
 | macOS Intel x86_64 | ✅ Pre-built | `zion-cli-macos-x86_64.tar.gz` |
 | Windows x86_64 | ✅ Pre-built | `zion-cli-windows-x86_64.zip` |
-| Linux ARM64 | 🔧 Build ze zdrojů | `cargo build --release -p zion-public` |
+| Linux ARM64 | 🔧 Build from source | `cargo build --release -p zion-public` |
 
-Stažení: https://github.com/Zion-TerraNova/v3-Mainnet/releases
+Download: https://github.com/Zion-TerraNova/v3-Mainnet/releases

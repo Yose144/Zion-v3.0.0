@@ -1,4 +1,4 @@
-# ZION MainNet — v3.0.5 All Green / Mainnet Beta
+# ZION Mainnet — v3.0.5 All Green / Mainnet Beta
 
 > **Genesis #0 launched:** June 11, 2026
 > **Current public line:** v3.0.5 (All Green)
@@ -75,7 +75,7 @@ After the reset, `zion-node` was OOM-killed twice because `accepted_blocks` and 
 |---------|--------|-------|
 | **Edge Node 1** | ✅ Active | Primary / mining, P2P 8333, RPC 8443 |
 | **Edge Node 2** | ✅ Active | Follower / P2P sync, RPC 8448 |
-| **Local Backup Node** | ✅ Active | Prague local machine via SSH reverse tunnel, RPC 8446 |
+| **Local Backup Node** | ✅ Active | Local machine in Prague via SSH reverse tunnel, RPC 8446 |
 | **Pool Server** | ✅ Active | `stratum+tcp://pool.zionterranova.com:8444` |
 | **Web / Dashboard** | ✅ Active | `https://zionterranova.com` + `https://dashboard.zionterranova.com` |
 | **Bridge** | ✅ Active | L2, L1 watcher scanning from block 0 |
@@ -174,4 +174,4 @@ After the reset, `zion-node` was OOM-killed twice because `accepted_blocks` and 
 
 ---
 
-*ZION TerraNova MainNet • v3.0.5 All Green / Mainnet Beta • updated 10 Jul 2026*
+*ZION TerraNova Mainnet • v3.0.5 All Green / Mainnet Beta • updated 10 Jul 2026*

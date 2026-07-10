@@ -9,19 +9,19 @@
 
 ## Živý stav — v3.0.5 All Green
 
-ZION MainNet běží jako **Mainnet Beta**. Aktuální runtime je **v3.0.5 Ekam Deeksha** s 6-desetinnými flowers a novým genesis hashem po hard resetu v červenci 2026.
+ZION Mainnet běží jako **Mainnet Beta**. Aktuální runtime je **v3.0.5 Ekam Deeksha** s přesností na 6 desetinných míst a novým genesis hashem po hard resetu v červenci 2026.
 
-- ✅ MainNet Core nód — 3-node P2P mesh (Edge 1 + Edge 2 + Local Backup)
+- ✅ Mainnet Core nód — 3-node P2P mesh (Edge 1 + Edge 2 + Local Backup)
 - ✅ Pool server aktivní — `stratum+tcp://pool.zionterranova.com:8444`
 - ✅ CPU a GPU mining v provozu (OpenCL/CUDA/Metal)
 - ✅ Ekam Deeksha dual-algo: `deeksha_lite_v1` / `deeksha_lite_fire`
 - ✅ Fee split 89/5/5/1 (mineři / humanitární desátek / Issobella / pool)
 - ✅ DAO governance + treasury
 - ✅ WARP bridge + atomic swap
-- ✅ 11/11 služeb L1–L6 active, watchdog aktivní
+- ✅ 11/11 služeb L1–L6 aktivních, watchdog aktivní
 - ✅ E2E memo pole potvrzeno v bloku 752
 
-> ⚠️ **Mainnet Beta znamená reálný konsensus, reálné těžení a reálné parametry, ale síť se stále tvrdí a audituje. Těžte, bridgujte a participujte na vlastní riziko.**
+> ⚠️ **Mainnet Beta znamená reálný konsensus, reálné těžení a reálné parametry, ale síť se stále zpevňuje a audituje. Těžte, bridgujte a participujte na vlastní riziko.**
 
 ---
 
@@ -72,14 +72,14 @@ ZION MainNet běží jako **Mainnet Beta**. Aktuální runtime je **v3.0.5 Ekam 
 
 | Verze | Role | Co přinesla |
 |-------|------|-------------|
-| **v3.0.5** | **All Green / Mainnet Beta** | Nový genesis hash po hard resetu, 3-node mesh, 11/11 služeb active, E2E memo testy, F1/F5/F4.7 security fixy nasazeny |
+| **v3.0.5** | **All Green / Mainnet Beta** | Nový genesis hash po hard resetu, 3-node mesh, 11/11 služeb aktivních, E2E memo testy, opravy zabezpečení F1/F5/F4.7 nasazeny |
 | **v3.0.4** | Hard Genesis Reset | Nový server zprovozněn, regenerace klíčů, full stack rebuild |
 | **v3.0.3** | Decimal Fork | `1e12` → `1e6` flower scale |
 | **v3.0.1** | Genesis Launch (historický) | První veřejný mainnet blok #0 — viz [historický přehled](/docs#v301-readme) |
 | **v3.0.0** | MainNet Ready | Docker, systemd, fee split, genesis freeze, Edge topologie |
 | **v2.9.9** | Pure Code | Cleanup / migrační bridge do čistého V3 mainnet tracku |
-| **v2.9.8** | Ekam kanonický runtime | Sjednocení runtime cesty pod canonical profilem |
-| **v2.9.7** | Pre-MainNet Gate | Stabilizace a dokumentační gate |
+| **v2.9.8** | Ekam kanonický runtime | Sjednocení runtime pod kanonickým profilem |
+| **v2.9.7** | Pre-MainNet Gate | Stabilizace a dokumentační předstartovní brána |
 
 ---
 

@@ -49,7 +49,7 @@ function ApiQuickstartPanels({ cs }: { cs: boolean }) {
       </h3>
       <p className="mt-2 text-sm text-gray-400">
         {cs
-          ? 'Základní panely pro první zapojení do runtime surface.'
+          ? 'Základní panely pro rychlé zapojení do runtime surface.'
           : 'Basic panels to get started with the runtime surface.'}
       </p>
       <div className="mt-6 grid gap-4 md:grid-cols-3">
@@ -79,7 +79,7 @@ function ApiQuickstartPanels({ cs }: { cs: boolean }) {
 
 const getApiStats = (cs: boolean) => [
   {
-    label: cs ? 'Prostředí core' : 'Core environment',
+    label: cs ? 'Core prostředí' : 'Core environment',
     value: 'V3 Test Mainnet',
     detail: cs ? 'kontrolovaná mainnet rehearsal linka' : 'controlled rehearsal line',
     icon: Shield,
@@ -101,72 +101,72 @@ const getApiStats = (cs: boolean) => [
 const getEndpointGroups = (cs: boolean) => [
   {
     title: cs ? 'Blockchainové jádro' : 'Blockchain Core',
-    description: cs ? 'Statistiky, bloky a RPC pro explorery, penezenky a validatory.' : 'Stats, blocks, and RPC for explorers, wallets, and validators.',
+    description: cs ? 'Statistiky, bloky a RPC pro explorery, peněženky a validátory.' : 'Stats, blocks, and RPC for explorers, wallets, and validators.',
     icon: Database,
     port: '443',
     endpoints: [
       {
         method: 'GET',
         path: '/api/blockchain/stats',
-        description: cs ? 'Snapshot vysky site, zasoby, fee okna a hashratu.' : 'Network height, supply, fee window, and hash rate snapshot.',
+        description: cs ? 'Snapshot výšky sítě, zásoby, fee okna a hashratu.' : 'Network height, supply, fee window, and hash rate snapshot.',
         latency: '45 ms avg'
       },
       {
         method: 'GET',
         path: '/api/blockchain/blocks?limit=50',
-        description: cs ? 'Strankovany tok bloku s metadaty o tezari, odmene a obtiznosti.' : 'Paginated block feed with miner, reward, and difficulty metadata.',
+        description: cs ? 'Stránkovaný tok bloků s metadaty o těžaři, odměně a obtížnosti.' : 'Paginated block feed with miner, reward, and difficulty metadata.',
         latency: '65 ms avg'
       },
       {
         method: 'GET',
         path: '/api/blockchain/transactions?limit=50',
-        description: cs ? 'Posledni transakce pro explorery a monitoring pipeline.' : 'Recent transactions for explorers and monitoring pipelines.',
+        description: cs ? 'Poslední transakce pro explorery a monitoring pipeline.' : 'Recent transactions for explorers and monitoring pipelines.',
         latency: '70 ms avg'
       }
     ]
   },
   {
-    title: cs ? 'Tezba a pool' : 'Mining & Pool',
-    description: cs ? 'Stratum telemetrie, dotazy na worker balance a historie vyplat.' : 'Stratum telemetry, worker balance queries, and payout history.',
+    title: cs ? 'Těžba a pool' : 'Mining & Pool',
+    description: cs ? 'Stratum telemetrie, dotazy na worker balance a historie výplat.' : 'Stratum telemetry, worker balance queries, and payout history.',
     icon: PlugZap,
     port: '443',
     endpoints: [
       {
         method: 'GET',
         path: '/pool/stats',
-        description: cs ? 'Snapshot zdravi poolu: mineri, hashrate a obtiznost.' : 'Pool health snapshot: miners, hashrate, and difficulty.',
+        description: cs ? 'Snapshot zdraví poolu: mineři, hashrate a obtížnost.' : 'Pool health snapshot: miners, hashrate, and difficulty.',
         latency: '58 ms avg'
       },
       {
         method: 'GET',
         path: '/pool/miner/{wallet}',
-        description: cs ? 'Statistiky workeru, balance a stav vyplat pro penezenku.' : 'Miner worker stats, balances, and payout state for a wallet.',
+        description: cs ? 'Statistiky workeru, balance a stav výplat pro peněženku.' : 'Miner worker stats, balances, and payout state for a wallet.',
         latency: '62 ms avg'
       }
     ]
   },
   {
     title: cs ? 'Observabilita a AI' : 'Observability & AI',
-    description: cs ? 'Health, doporuceni AI selectoru a alert hooky.' : 'Health, AI selector recommendations, and alert hooks.',
+    description: cs ? 'Health, doporučení AI selektoru a alert hooky.' : 'Health, AI selector recommendations, and alert hooks.',
     icon: SatelliteDish,
     port: '443',
     endpoints: [
       {
         method: 'GET',
         path: '/health',
-        description: cs ? 'Kompletni heartbeat sluzeb s verzi, block lagem a dependency kontrolami.' : 'Full service heartbeat with version, block lag, and dependency checks.',
+        description: cs ? 'Kompletní heartbeat služeb s verzi, block lagem a dependency kontrolami.' : 'Full service heartbeat with version, block lag, and dependency checks.',
         latency: '30 ms avg'
       },
       {
         method: 'GET',
         path: '/api/network',
-        description: cs ? 'Stav site vcetne konektivity, nodu a core sluzeb.' : 'Network status including connectivity, nodes, and core services.',
+        description: cs ? 'Stav sítě včetně konektivity, uzlů a core služeb.' : 'Network status including connectivity, nodes, and core services.',
         latency: '48 ms avg'
       },
       {
         method: 'GET',
         path: '/api/network/best-pool',
-        description: cs ? 'Vyber nejlepsiho poolu podle aktualnich podminek (read-only).' : 'Best pool selection based on current conditions (read-only).',
+        description: cs ? 'Výběr nejlepšího poolu podle aktuálních podmínek (read-only).' : 'Best pool selection based on current conditions (read-only).',
         latency: '90 ms avg'
       }
     ]
@@ -180,7 +180,7 @@ const getEndpointGroups = (cs: boolean) => [
       {
         method: 'GET',
         path: '/api/listing/coingecko',
-        description: cs ? 'CoinGecko-ready payload: odkazy, zasoba, tokenomika a ziva chain telemetrie.' : 'CoinGecko-ready payload: links, supply, tokenomics, and live chain telemetry.',
+        description: cs ? 'CoinGecko-ready payload: odkazy, zásoba, tokenomika a živá chain telemetrie.' : 'CoinGecko-ready payload: links, supply, tokenomics, and live chain telemetry.',
         latency: '55 ms avg'
       },
       {
@@ -206,7 +206,7 @@ export default function ApiReferencePage() {
           <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple/40 bg-zion-purple/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-zion-gold">
             <Sparkles className="h-4 w-4" /> API v2.9 · Orion Mesh
           </div>
-          <h1 className="mt-4 text-4xl md:text-5xl font-bold text-gradient">{cs ? 'API velitelsky panel' : 'API Command Deck'}</h1>
+          <h1 className="mt-4 text-4xl md:text-5xl font-bold text-gradient">{cs ? 'API velitelský panel' : 'API Command Deck'}</h1>
           <p className="mt-4 text-gray-300 max-w-3xl">
             {cs ? 'Jedno místo pro peněženky, explorery, AI orchestrátory a monitoring stacky. Stabilní schémata, velkorysé rate limity a hotové šablony pro cURL / TypeScript.' : 'One surface for wallets, explorers, AI orchestrators, and monitoring stacks. Stable schemas, generous rate limits, and ready-to-use cURL / TypeScript templates.'}
           </p>

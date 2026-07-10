@@ -6,10 +6,10 @@ Genesis route na webu stále existuje jako samostatná narativní stránka.
 - Typ obsahu: veřejná Genesis experience / Book of Awakening
 - Kontext: symbolický a narativní rámec ke zrození sítě ZION
 
-Pokud hledáš čistě provozní podklady k MainNet startu, pokračuj také sem:
+Pokud hledáš čistě provozní podklady k Mainnet startu, pokračuj také sem:
 
-- MainNet launch plan
-- MainNet gate checklist
+- Mainnet launch plan
+- Mainnet gate checklist
 - Whitepaper a roadmap materiály
 
 Genesis zde ponecháváme mimo hlavní top navigaci, ale uvnitř dokumentace zůstává dohledatelná jako součást launch a origin story vrstvy.

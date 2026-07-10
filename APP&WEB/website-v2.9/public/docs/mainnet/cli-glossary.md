@@ -1,83 +1,83 @@
-# ZION CLI Slovnicek pojmu
+# ZION CLI Glossary
 
-Strucne vysvetlivky pro verejnost a novacky.
+Brief explanations for the public and newcomers.
 
 ## `zion`
 
-Hlavni CLI nastroj pro ovladani ZION stacku.
+The main CLI tool for controlling the ZION stack.
 
 ## CLI
 
-Command Line Interface. Prikazy v terminalu.
+Command Line Interface. Commands in the terminal.
 
 ## L1
 
-Zakladni blockchain vrstva: node, pool, miner.
+Base blockchain layer: node, pool, miner.
 
 ## L2
 
-Nadstavbove protokoly: bridge, DAO, DeFi.
+Layer-2 protocols: bridge, DAO, DeFi.
 
 ## L3
 
-AI Native, WARP, NCL (orchestrace a vyssi vrstva koordinace).
+AI Native, WARP, NCL (orchestration and higher coordination layer).
 
 ## Node
 
-Uzel blockchainu. Drzi chain data a poskytuje RPC.
+Blockchain node. Holds chain data and provides RPC.
 
 ## RPC
 
-Rozhrani, pres ktere aplikace (napr. web explorer) ctou data z node.
+Interface through which applications (e.g. web explorer) read data from the node.
 
 ## Pool
 
-Server, ktery koordinuje minery a prijima shares.
+Server that coordinates miners and accepts shares.
 
 ## Miner
 
-Proces, ktery pocita hash a hleda validni vysledky pro PoW.
+Process that computes hashes and looks for valid PoW results.
 
 ## Wallet
 
-Penezenka pro adresy, zustatek a transakce.
+Wallet for addresses, balance and transactions.
 
 ## AI Native
 
-Aktualne hlavne orchestracni/control-plane vrstva. Nemusi znamenat tezky lokalni inference backend.
+Currently mainly an orchestration / control-plane layer. It does not have to mean a heavy local inference backend.
 
 ## Fallback mode
 
-Sluzba bezi, ale model backend neni dostupny. Transparentni degradace je lepsi nez tichy pád.
+The service is running, but the model backend is unavailable. Transparent degradation is better than a silent crash.
 
 ## `zion status`
 
-Rychly souhrn zdravi stacku.
+Quick summary of stack health.
 
 ## `zion doctor`
 
-Preflight kontrola pripravenosti: config, endpointy, zakladni diagnostika.
+Preflight readiness check: config, endpoints, basic diagnostics.
 
 ## `zion logs <service>`
 
-Vypise logy konkretni sluzby (napr. `node`, `pool`, `ai-native`).
+Prints logs for a specific service (e.g. `node`, `pool`, `ai-native`).
 
 ## `zion deploy`
 
-Sada prikazu pro nasazeni a provozni akce na serveru.
+Set of commands for deployment and operational actions on the server.
 
 ## `zion update`
 
-Aktualizace lokalni CLI binarky.
+Update of the local CLI binary.
 
 ## `zion deploy update`
 
-Aktualizace remote runtime/sluzeb na serveru.
+Update of remote runtime / services on the server.
 
 ## Health check
 
-Kontrolni endpoint/sluzba, ktera potvrzuje, ze aplikace bezi.
+Check endpoint / service that confirms the application is running.
 
 ## Prune
 
-Cisteni nepouzivanych docker artefaktu (cache, dangling images). Neni to prvni krok diagnostiky incidentu.
+Cleaning unused Docker artifacts (cache, dangling images). It is not the first step of incident diagnosis.

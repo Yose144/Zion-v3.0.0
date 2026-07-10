@@ -22,10 +22,10 @@ interface Block {
 
 const fmtAge = (ts: number, cs: boolean): string => {
   const s = Math.floor(Date.now() / 1000) - ts;
-  if (s < 60) return cs ? `pred ${s} s` : `${s}s ago`;
-  if (s < 3600) return cs ? `pred ${Math.floor(s / 60)} min ${s % 60} s` : `${Math.floor(s / 60)}m ${s % 60}s ago`;
-  if (s < 86400) return cs ? `pred ${Math.floor(s / 3600)} h ${Math.floor((s % 3600) / 60)} min` : `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m ago`;
-  return cs ? `pred ${Math.floor(s / 86400)} d` : `${Math.floor(s / 86400)}d ago`;
+  if (s < 60) return cs ? `před ${s} s` : `${s}s ago`;
+  if (s < 3600) return cs ? `před ${Math.floor(s / 60)} min ${s % 60} s` : `${Math.floor(s / 60)}m ${s % 60}s ago`;
+  if (s < 86400) return cs ? `před ${Math.floor(s / 3600)} h ${Math.floor((s % 3600) / 60)} min` : `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m ago`;
+  return cs ? `před ${Math.floor(s / 86400)} d` : `${Math.floor(s / 86400)}d ago`;
 };
 const fmtSize = (b: number): string => {
   if (b >= 1e6) return `${(b / 1e6).toFixed(1)} MB`;
@@ -112,7 +112,7 @@ export default function BlocksPage() {
           </div>
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-white">{cs ? 'Archiv bloku' : 'Block Archive'}</h1>
-            <p className="text-sm text-gray-500">{cs ? 'Kompletni historie blockchain bloku ZION' : 'Complete history of ZION blockchain blocks'}</p>
+            <p className="text-sm text-gray-500">{cs ? 'Kompletní historie blockchainových bloků ZION' : 'Complete history of ZION blockchain blocks'}</p>
           </div>
         </div>
 
@@ -122,13 +122,13 @@ export default function BlocksPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/6">
-                  <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3.5">{cs ? 'Vyska' : 'Height'}</th>
-                  <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5">{cs ? 'Stari' : 'Age'}</th>
+                  <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3.5">{cs ? 'Výška' : 'Height'}</th>
+                  <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5">{cs ? 'Stáří' : 'Age'}</th>
                   <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden md:table-cell">Hash</th>
                   <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5">Txs</th>
                   <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden sm:table-cell">{cs ? 'Velikost' : 'Size'}</th>
-                  <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden lg:table-cell">{cs ? 'Obtiznost' : 'Difficulty'}</th>
-                  <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3.5">{cs ? 'Odmena' : 'Reward'}</th>
+                  <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden lg:table-cell">{cs ? 'Obtížnost' : 'Difficulty'}</th>
+                  <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3.5">{cs ? 'Odměna' : 'Reward'}</th>
                 </tr>
               </thead>
               <tbody>
@@ -186,7 +186,7 @@ export default function BlocksPage() {
           {/* Footer / Load More */}
           <div className="px-6 py-4 border-t border-white/4 flex items-center justify-between flex-wrap gap-3">
             <p className="text-[11px] text-gray-600">
-              {cs ? `Zobrazeno ${blocks.length} bloku` : `Showing ${blocks.length} blocks`}
+              {cs ? `Zobrazeno ${blocks.length} bloků` : `Showing ${blocks.length} blocks`}
             </p>
             <div className="flex items-center gap-2">
               <button
@@ -208,7 +208,7 @@ export default function BlocksPage() {
                   ) : (
                     <ChevronDown className="h-3.5 w-3.5" />
                   )}
-                  {cs ? 'Nacist dalsi' : 'Load More'}
+                  {cs ? 'Načíst další' : 'Load More'}
                 </button>
               )}
             </div>

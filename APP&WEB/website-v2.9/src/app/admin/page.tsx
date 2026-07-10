@@ -16,8 +16,8 @@ export default function AdminDashboard() {
               <h1 className="text-5xl md:text-6xl font-semibold text-gradient">Admin</h1>
               <p className="mt-4 text-lg text-gray-300 max-w-2xl">
                 {lang === 'cs'
-                  ? 'Operátor pro mining pool, routing a NCL orchestrace. Záměrně bez dead-linků — jen stránky, které reálně existují.'
-                  : 'Operator for mining pool, routing and NCL orchestration. Intentionally no dead-links — only pages that actually exist.'}
+                  ? 'Operátor pro mining pool, routing a NCL orchestraci. Záměrně bez dead linků — jen stránky, které reálně existují.'
+                  : 'Operator for mining pool, routing and NCL orchestration. Intentionally no dead links — only pages that actually exist.'}
               </p>
             </div>
 

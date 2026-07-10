@@ -133,7 +133,7 @@ export default function L6IssobellaPage() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Vesmírný fond' : 'Space Fund'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Rocket className="h-7 w-7 text-rose-400" />
-              {cs ? 'L6 Issobella fond — 5 % block reward' : 'L6 Issobella Fund — 5% block reward'}
+              {cs ? 'Fond L6 Issobella — 5 % odměny za blok' : 'L6 Issobella Fund — 5% block reward'}
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-4 mb-6">

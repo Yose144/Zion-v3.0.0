@@ -35,14 +35,14 @@ const coreInsights = [
   {
     icon: Brain,
     title: 'QDL — AI s Duší',
-    quote: 'AI se neoptimalizuje pro maximalizaci hodnoty akcionáře, ale pro kolektivní rozkvět. AI kódovaná s láskou slouží lásce.',
+    quote: 'AI se neoptimalizuje pro maximalizaci akcionářské hodnoty, ale pro kolektivní rozkvět. AI kódovaná s láskou slouží lásce.',
     color: 'text-zion-gold',
     border: 'border-zion-gold/20',
     bg: 'bg-zion-gold/5',
   },
   {
     icon: Heart,
-    title: 'Vedoma tezba',
+    title: 'Vědomá těžba',
     quote: 'ZION odměňuje vědomí, ne jen hashrate. Dva těžaři, stejný HW — ale kdo roste, dostane 2× víc. Blockchain s duší.',
     color: 'text-emerald-400',
     border: 'border-emerald-400/20',

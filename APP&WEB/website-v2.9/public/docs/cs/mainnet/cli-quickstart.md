@@ -13,9 +13,9 @@ Do 10 minut:
 
 ---
 
-## Krok 1: Stáhni binary z GitHub Releases
+## Krok 1: Stáhni binárku z GitHub Releases
 
-Jeden `zion` binary pro všechny platformy:
+Jedna `zion` binárka pro všechny platformy:
 
 - **Linux x86_64** — `zion-cli-linux-x86_64.tar.gz`
 - **macOS Apple Silicon (M1–M4)** — `zion-cli-macos-aarch64.tar.gz`

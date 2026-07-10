@@ -143,7 +143,7 @@ const SECTIONS: SectionData[] = [
     titleCs: 'Most mládeže a starších',
     titleEn: 'Youth–Elder Bridge',
     descCs:
-      'Dvojitý vahový systém: standardní kvadratická váha návrhu se násobí Rezonančním koeficientem (1,0–1,5x) podle HRV koherence mladých a starších. Seedling Circle sleduje agregovaný frekvenční drift, Sprout Assembly hlasuje třemi kameny, Sapling Council má právo veta nad kurikulem.',
+      'Dvojitý váhový systém: standardní kvadratická váha návrhu se násobí Rezonančním koeficientem (1,0–1,5x) podle HRV koherence mladých a starších. Seedling Circle sleduje agregovaný frekvenční drift, Sprout Assembly hlasuje třemi kameny, Sapling Council má právo veta nad kurikulem.',
     descEn:
       'Dual-weight system: standard quadratic proposal weight is multiplied by a Resonance Coefficient (1.0–1.5x) based on HRV coherence of youth and elders. Seedling Circle tracks aggregate frequency drift, Sprout Assembly votes with three stones, Sapling Council holds curriculum veto.',
     color: '#34D399',
@@ -335,7 +335,7 @@ export default function ResonancePage() {
         <div className="zion-container relative">
           <FadeIn>
             <h2 className="text-3xl md:text-4xl font-bold text-gradient-soft mb-3">
-              {lang === 'cs' ? 'Tři brány přizvučení' : 'Three Gates of Attunement'}
+              {lang === 'cs' ? 'Tři brány naladění' : 'Three Gates of Attunement'}
             </h2>
             <p className="text-gray-400 max-w-2xl mb-12">
               {lang === 'cs'

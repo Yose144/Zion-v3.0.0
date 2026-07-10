@@ -1,15 +1,15 @@
-# ZION CLI Troubleshooting (pro laiky)
+# ZION CLI Troubleshooting (for beginners)
 
-Tady je rychlý postup, když "něco nefunguje".
+Here is a quick procedure for when "something doesn't work".
 
-## 0) Univerzální první krok
+## 0) Universal first step
 
 ```bash
 zion status
 zion doctor
 ```
 
-Když `zion` není v PATH, rozbal archive a použij `./zion`:
+When `zion` is not in PATH, extract the archive and use `./zion`:
 
 ```bash
 ./zion status
@@ -18,9 +18,9 @@ Když `zion` není v PATH, rozbal archive a použij `./zion`:
 
 ---
 
-## 1) `zion status` ukazuje chyby
+## 1) `zion status` shows errors
 
-Pokračuj tímto pořadím:
+Continue in this order:
 
 ```bash
 zion node status
@@ -30,18 +30,18 @@ zion mine status
 
 ---
 
-## 2) Na webu nejsou bloky / explorer je prázdný
+## 2) No blocks on the website / explorer is empty
 
-To bývá nejčastěji problém node RPC.
+This is most often a node RPC problem.
 
-Ověř:
+Check:
 
 ```bash
 zion node status
 ```
 
-Když node neběží, web nemá odkud číst chain data.
-Zkus:
+If the node is not running, the web has no source from which to read chain data.
+Try:
 
 ```bash
 zion node start
@@ -50,22 +50,22 @@ zion node sync
 
 ---
 
-## 3) Těžba neběží nebo ukazuje 0 hashrate
+## 3) Mining is not running or shows 0 hashrate
 
-Ověř:
+Check:
 
 ```bash
 zion mine status
 zion mine bench
 ```
 
-Pokud GPU nefunguje, zkus CPU backend:
+If the GPU does not work, try the CPU backend:
 
 ```bash
 zion mine start --pool stratum+tcp://pool.zionterranova.com:8444 --wallet YOUR_ADDRESS --backend cpu
 ```
 
-Pokud GPU chceš, ověř backend:
+If you want the GPU, verify the backend:
 
 - `opencl` — Linux/Windows GPU (AMD, NVIDIA)
 - `cuda` — NVIDIA GPU (Linux/Windows)
@@ -73,42 +73,42 @@ Pokud GPU chceš, ověř backend:
 
 ---
 
-## 4) Wallet nefunguje / nelze odeslat
+## 4) Wallet doesn't work / can't send
 
-Ověř:
+Check:
 
 ```bash
 zion wallet balance --address YOUR_ADDRESS
 ```
 
-Pokud je zůstatek 0, zkontroluj adresu v Exploreru:
-https://zionterranova.com/exorer
+If the balance is 0, check the address in the Explorer:
+https://zionterranova.com/explorer
 
-Pokud jsi zapomněl wallet, importuj ze souboru:
+If you forgot the wallet, import it from the file:
 
 ```bash
 zion wallet import --file my-wallet.json
 ```
 
-Pokud jsi ztratil soubor i 24 slov, **peněženku nelze obnovit**.
+If you lost both the file and the 24 words, **the wallet cannot be restored**.
 
 ---
 
-## 5) Node se nesynchronizuje
+## 5) Node is not syncing
 
 ```bash
 zion node peers
 zion node sync
 ```
 
-Pokud nemá peers, zkontroluj síťové připojení a firewall.
-Node potřebuje odchozí TCP port 8444 (pool stratum) a příchozí/příchozí P2P.
+If it has no peers, check network connection and firewall.
+The node needs outgoing TCP port 8444 (pool stratum) and incoming/outgoing P2P.
 
 ---
 
-## 6) Nemám jistotu, co řešit první
+## 6) Not sure what to solve first
 
-Drž se tohoto "anti-chaos" pořadí:
+Stick to this "anti-chaos" order:
 
 1. `zion status`
 2. `zion doctor`
@@ -116,19 +116,19 @@ Drž se tohoto "anti-chaos" pořadí:
 4. `zion pool stats`
 5. `zion mine status`
 
-Nespouštěj hned restart všeho. Nejprve diagnostika, pak zásah.
+Don't immediately restart everything. First diagnose, then act.
 
 ---
 
-## 7) Binary se nedá spustit (Linux)
+## 7) Binary cannot be run (Linux)
 
 ```bash
 chmod +x zion
 ./zion
 ```
 
-Pokud dostaneš "command not found", jsi ve špatné složce.
-Použij plnou cestu:
+If you get "command not found", you are in the wrong folder.
+Use the full path:
 
 ```bash
 /home/user/zion/zion status
@@ -136,21 +136,21 @@ Použij plnou cestu:
 
 ---
 
-## 8) Binary se nedá spustit (Windows)
+## 8) Binary cannot be run (Windows)
 
-Otevři PowerShell v složce s `zion.exe`:
+Open PowerShell in the folder with `zion.exe`:
 
 ```powershell
 .\zion.exe
 ```
 
-Pokud Windows blokuje spuštění (SmartScreen), klikni "More info" → "Run anyway".
+If Windows blocks execution (SmartScreen), click "More info" → "Run anyway".
 
 ---
 
 ## 9) macOS: "cannot be opened because the developer cannot be verified"
 
-Otevřít přes pravý klik → Open, nebo:
+Open via right-click → Open, or:
 
 ```bash
 xattr -d com.apple.quarantine zion
