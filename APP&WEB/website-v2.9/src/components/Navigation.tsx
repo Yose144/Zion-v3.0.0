@@ -191,121 +191,35 @@ export default function Navigation() {
     <nav className="fixed top-0 left-0 right-0 z-50">
       {/* Rasta-tinted ambient glow — green → gold → amber, very subtle */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-linear-to-r from-emerald-500/12 via-zion-gold/14 to-amber-600/10 blur-3xl opacity-70" />
-      <div className="relative mx-auto w-[min(90vw,1320px)] py-3" data-nav-desktop>
+      <div className="relative mx-auto w-[min(90vw,1320px)] py-2" data-nav-desktop>
         {/* ═══════════════════════════════════════════════════
-            TIER 1 — ICON ROW (top)
-            Logo + version | icon quick-nav | lang + auth + dashboard
+            FLOOR 1 — TOP BAR (logo + controls)
             ═══════════════════════════════════════════════════ */}
-        <div className="zion-panel flex items-center justify-between gap-3 px-4 py-2.5 ring-1 ring-white/5 md:px-5"
+        <div className="zion-panel flex items-center justify-between gap-3 px-4 py-2 ring-1 ring-white/5 md:px-5"
           style={{
             boxShadow: '0 24px 90px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.04)',
           }}
         >
           {/* Logo + version badge */}
           <Link href="/" className="flex items-center space-x-3 group shrink-0">
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center relative overflow-hidden border border-white/15 group-hover:border-zion-gold/50 transition-colors bg-transparent shadow-[0_8px_24px_rgba(0,0,0,0.3)]">
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center relative overflow-hidden border border-white/15 group-hover:border-zion-gold/50 transition-colors bg-transparent shadow-[0_8px_24px_rgba(0,0,0,0.3)]">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(111,255,240,0.08),transparent_65%)]" />
               <Image
                 src="/stargate-icon.png"
                 alt="ZION TerraNova Stargate"
-                width={48}
-                height={48}
+                width={44}
+                height={44}
                 className="relative z-10 w-full h-full object-contain"
                 priority
               />
             </div>
             <div className="hidden sm:flex flex-col leading-none">
-              <span className="text-xl font-bold text-gradient-soft tracking-tight">ZION</span>
+              <span className="text-lg font-bold text-gradient-soft tracking-tight">ZION</span>
               <span className="text-[9px] px-2 py-0.5 mt-1 rounded-full bg-white/6 border border-white/10 uppercase tracking-[0.22em] text-white/60">
                 {SITE_RELEASE_LABEL}
               </span>
             </div>
           </Link>
-
-          {/* Icon quick-nav — 3 tiers: BIG hero / medium secondary / small tertiary */}
-          <div className="hidden md:flex flex-1 items-center justify-center gap-1.5 overflow-x-auto no-scrollbar min-w-0">
-            {/* ── HERO icons — BIG (Explorer, Pool, Network, Wallet) ── */}
-            {heroIcons.map((ml) => {
-              const isActive = navItemMatches(ml.href);
-              return (
-                <Link
-                  key={ml.href}
-                  href={ml.href}
-                  title={ml.label}
-                  className="group relative flex flex-col items-center justify-center w-14 h-14 rounded-2xl border-2 transition-all hover:scale-110 shrink-0"
-                  style={{
-                    borderColor: isActive ? `rgba(${ml.color}, 0.6)` : 'rgba(255,255,255,0.08)',
-                    backgroundColor: isActive ? `rgba(${ml.color}, 0.16)` : 'rgba(0,0,0,0.45)',
-                    boxShadow: isActive ? `0 0 18px rgba(${ml.color}, 0.25)` : 'none',
-                  }}
-                >
-                  <ml.icon
-                    className="w-6 h-6"
-                    style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.75)' }}
-                  />
-                  <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[9px] bg-black/95 border border-white/10 rounded px-1.5 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
-                    {ml.label}
-                  </span>
-                </Link>
-              );
-            })}
-
-            {/* Visual divider */}
-            <div className="mx-1 h-8 w-px bg-white/12 shrink-0" />
-
-            {/* ── Secondary icons — medium (Mining, DeFi, Download, Docs) ── */}
-            {secondaryIcons.map((ml) => {
-              const isActive = navItemMatches(ml.href);
-              return (
-                <Link
-                  key={ml.href}
-                  href={ml.href}
-                  title={ml.label}
-                  className="group relative flex flex-col items-center justify-center w-10 h-10 rounded-xl border transition-all hover:scale-110 shrink-0"
-                  style={{
-                    borderColor: isActive ? `rgba(${ml.color}, 0.5)` : 'rgba(255,255,255,0.06)',
-                    backgroundColor: isActive ? `rgba(${ml.color}, 0.13)` : 'rgba(0,0,0,0.3)',
-                  }}
-                >
-                  <ml.icon
-                    className="w-4 h-4"
-                    style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.55)' }}
-                  />
-                  <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[9px] bg-black/95 border border-white/10 rounded px-1.5 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
-                    {ml.label}
-                  </span>
-                </Link>
-              );
-            })}
-
-            {/* Visual divider */}
-            <div className="mx-0.5 h-7 w-px bg-white/8 shrink-0" />
-
-            {/* ── Tertiary icons — small (ecosystem) ── */}
-            {tertiaryIcons.map((ml) => {
-              const isActive = navItemMatches(ml.href);
-              return (
-                <Link
-                  key={ml.href}
-                  href={ml.href}
-                  title={ml.label}
-                  className="group relative flex flex-col items-center justify-center w-8 h-8 rounded-lg border transition-all hover:scale-110 shrink-0"
-                  style={{
-                    borderColor: isActive ? `rgba(${ml.color}, 0.45)` : 'rgba(255,255,255,0.03)',
-                    backgroundColor: isActive ? `rgba(${ml.color}, 0.1)` : 'transparent',
-                  }}
-                >
-                  <ml.icon
-                    className="w-3.5 h-3.5"
-                    style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.35)' }}
-                  />
-                  <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[9px] bg-black/95 border border-white/10 rounded px-1.5 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
-                    {ml.label}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
 
           {/* Right cluster: language + GitHub + auth + dashboard */}
           <div className="flex items-center gap-2 shrink-0">
@@ -321,16 +235,16 @@ export default function Navigation() {
               target="_blank"
               rel="noreferrer"
               title="GitHub"
-              className="p-2.5 rounded-xl border border-white/15 bg-black/85 inline-flex items-center justify-center shadow-[0_14px_38px_rgba(0,0,0,0.3)] transition-transform hover:-translate-y-0.5 hover:border-zion-gold/50 group relative"
+              className="p-2 rounded-xl border border-zion-gold/30 bg-linear-to-br from-zion-gold/10 to-amber-600/8 inline-flex items-center justify-center shadow-[0_0_14px_rgba(251,191,36,0.15)] hover:shadow-[0_0_22px_rgba(251,191,36,0.35)] hover:border-zion-gold/50 transition-all group relative"
             >
-              <Github className="w-4 h-4 text-white" />
-              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">GitHub</span>
+              <Github className="w-4 h-4 text-zion-gold" />
+              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-zion-gold/20 rounded px-2 py-0.5 text-zion-gold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">GitHub</span>
             </Link>
             <NavAuthButton />
             <Link
               href="/dashboard"
               title={tr('nav', 'dashboard', lang)}
-              className="p-2.5 rounded-xl border border-white/15 bg-black/85 inline-flex items-center justify-center shadow-[0_14px_38px_rgba(0,0,0,0.3)] transition-transform hover:-translate-y-0.5 hover:border-zion-gold/50 group relative"
+              className="p-2 rounded-xl border border-white/15 bg-black/85 inline-flex items-center justify-center shadow-[0_14px_38px_rgba(0,0,0,0.3)] transition-transform hover:-translate-y-0.5 hover:border-zion-gold/50 group relative"
             >
               <LayoutDashboard className="w-4 h-4 text-white" />
               <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">{tr('nav', 'dashboard', lang)}</span>
@@ -349,26 +263,115 @@ export default function Navigation() {
         </div>
 
         {/* ═══════════════════════════════════════════════════
-            TIER 2 — GROUP PANELS (bottom)
-            4 group buttons with icons that expand into panels
+            FLOOR 2 — HERO ICONS (4 BIG: Explorer, Pool, Network, Wallet)
             ═══════════════════════════════════════════════════ */}
-        <div className="mt-2 hidden md:flex items-center justify-between gap-3 relative">
-          {/* Subtle rasta accent line */}
-          <div className="pointer-events-none absolute -top-1 left-1/4 right-1/4 h-px bg-linear-to-r from-transparent via-zion-gold/20 to-transparent" />
+        <div className="mt-1.5 hidden md:flex items-center justify-center gap-3">
+          {heroIcons.map((ml) => {
+            const isActive = navItemMatches(ml.href);
+            return (
+              <Link
+                key={ml.href}
+                href={ml.href}
+                title={ml.label}
+                className="group relative flex items-center gap-2 rounded-2xl border-2 px-4 py-2.5 transition-all hover:scale-105 shrink-0"
+                style={{
+                  borderColor: isActive ? `rgba(${ml.color}, 0.6)` : 'rgba(255,255,255,0.08)',
+                  backgroundColor: isActive ? `rgba(${ml.color}, 0.14)` : 'rgba(0,0,0,0.4)',
+                  boxShadow: isActive ? `0 0 18px rgba(${ml.color}, 0.25)` : 'none',
+                }}
+              >
+                <ml.icon
+                  className="w-5 h-5"
+                  style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.75)' }}
+                />
+                <span
+                  className="text-xs font-bold uppercase tracking-wider"
+                  style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.7)' }}
+                >
+                  {ml.label}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
 
-          {/* Group buttons */}
-          <div className="flex items-center gap-2 flex-1 justify-center">
+        {/* ═══════════════════════════════════════════════════
+            FLOOR 3 — SECONDARY + TERTIARY ICONS + GROUP DROPDOWNS
+            ═══════════════════════════════════════════════════ */}
+        <div className="mt-1.5 hidden md:flex items-center justify-between gap-2 relative">
+          {/* Subtle rasta accent line */}
+          <div className="pointer-events-none absolute -top-0.5 left-1/4 right-1/4 h-px bg-linear-to-r from-transparent via-zion-gold/20 to-transparent" />
+
+          {/* Secondary + Tertiary icons */}
+          <div className="flex items-center gap-1 flex-1 justify-center overflow-x-auto no-scrollbar min-w-0">
+            {/* Secondary icons — medium */}
+            {secondaryIcons.map((ml) => {
+              const isActive = navItemMatches(ml.href);
+              return (
+                <Link
+                  key={ml.href}
+                  href={ml.href}
+                  title={ml.label}
+                  className="group relative flex flex-col items-center justify-center w-9 h-9 rounded-xl border transition-all hover:scale-110 shrink-0"
+                  style={{
+                    borderColor: isActive ? `rgba(${ml.color}, 0.5)` : 'rgba(255,255,255,0.06)',
+                    backgroundColor: isActive ? `rgba(${ml.color}, 0.13)` : 'rgba(0,0,0,0.3)',
+                  }}
+                >
+                  <ml.icon
+                    className="w-4 h-4"
+                    style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.55)' }}
+                  />
+                  <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] bg-black/95 border border-white/10 rounded px-1.5 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                    {ml.label}
+                  </span>
+                </Link>
+              );
+            })}
+
+            {/* Visual divider */}
+            <div className="mx-0.5 h-6 w-px bg-white/8 shrink-0" />
+
+            {/* Tertiary icons — small */}
+            {tertiaryIcons.map((ml) => {
+              const isActive = navItemMatches(ml.href);
+              return (
+                <Link
+                  key={ml.href}
+                  href={ml.href}
+                  title={ml.label}
+                  className="group relative flex flex-col items-center justify-center w-7 h-7 rounded-lg border transition-all hover:scale-110 shrink-0"
+                  style={{
+                    borderColor: isActive ? `rgba(${ml.color}, 0.45)` : 'rgba(255,255,255,0.03)',
+                    backgroundColor: isActive ? `rgba(${ml.color}, 0.1)` : 'transparent',
+                  }}
+                >
+                  <ml.icon
+                    className="w-3.5 h-3.5"
+                    style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.35)' }}
+                  />
+                  <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] bg-black/95 border border-white/10 rounded px-1.5 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                    {ml.label}
+                  </span>
+                </Link>
+              );
+            })}
+
+            {/* Visual divider */}
+            <div className="mx-1 h-6 w-px bg-white/8 shrink-0" />
+
+            {/* Group dropdown buttons */}
             {navGroups.map((group) => {
               const isActive = openGroup === group.title;
               const groupHasActiveChild = group.items.some((item) => navItemMatches(item.href));
               return (
-                <div key={group.title} className="relative">
+                <div key={group.title} className="relative shrink-0">
                   <button
                     type="button"
                     onClick={() => setOpenGroup(isActive ? null : group.title)}
-                    className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] transition-all ${
+                    className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] transition-all ${
                       isActive
-                        ? 'border-zion-gold/30 bg-linear-to-br from-emerald-500/15 via-zion-gold/10 to-amber-600/12 text-white shadow-[0_12px_30px_rgba(0,0,0,0.32),0_0_18px_rgba(251,191,36,0.15)]'
+                        ? 'border-zion-gold/30 bg-linear-to-br from-emerald-500/15 via-zion-gold/10 to-amber-600/12 text-white shadow-[0_8px_20px_rgba(0,0,0,0.25),0_0_12px_rgba(251,191,36,0.12)]'
                         : groupHasActiveChild
                           ? 'border-white/20 bg-white/5 text-white'
                           : 'border-white/8 bg-black/60 text-gray-400 hover:border-zion-gold/25 hover:bg-black/80 hover:text-white'
@@ -376,11 +379,11 @@ export default function Navigation() {
                     aria-expanded={isActive}
                   >
                     <group.icon
-                      className="w-3.5 h-3.5"
+                      className="w-3 h-3"
                       style={{ color: isActive ? `rgb(${group.color})` : `rgba(${group.color}, 0.7)` }}
                     />
                     {groupLabels[group.title] ?? group.title}
-                    <ChevronDown className={`h-3 w-3 transition-transform ${isActive ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`h-2.5 w-2.5 transition-transform ${isActive ? 'rotate-180' : ''}`} />
                   </button>
                 </div>
               );
