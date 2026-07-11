@@ -5,7 +5,7 @@
 > 1. **B2b — Pool-side job multiplexing** (krátkodobý revenue z minerů na ZION poolu).  
 > 2. **C — True AuxPoW** (dlouhodobá bezpečnostní + revenue integrace).  
 > **Default BTC payout wallet:** `bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh`
-> **Build status:** `cargo test -p zion-auxpow` — 58 testů PASS, clippy čisté, release build OK.
+> **Build status:** `cargo test -p zion-auxpow` — 75 testů PASS, clippy čisté, release build OK.
 
 ---
 
@@ -47,6 +47,7 @@
 | `src/multiplexer.rs` | `JobMultiplexer` — spravuje externí klienta, připojí se, rotuje coiny, přebaluje joby |
 | `src/share_forwarder.rs` | `ShareForwarder` — přijme hash od mineru, zkontroluje target, pošle `mining.submit` |
 | `src/miner_harness.rs` | `mine()` — brute-force scan pro externí `JobPackage` (Blake3 / kHeavyHash) |
+| `src/dual_stratum.rs` | **Phase 2 prep** — `DualStratumJob`, `DualStratumMiner`, nonce split, share routing |
 | `src/types.rs` | `JobPackage`, `ShareForwardResult`, `SplitConfig` |
 
 `src/pool_adapter.rs` z původního draftu zatím není potřeba — adaptace na ZION `MiningJob` se udělá až při integraci do `V3/`.
@@ -146,9 +147,11 @@ Unit testy používají lokální `MockStratumServer` (bind na `127.0.0.1:0`), t
 
 | Soubor | Účel |
 |--------|------|
-| `src/true_auxpow.rs` | `validate_auxpow()`, `AuxPowData`, `AuxPowValidation`, `ParentAlgorithm`, Blake3 AuxPoW Merkle root |
+| `src/true_auxpow.rs` | `validate_auxpow()`, `validate_auxpow_full()`, `AuxPowData`, `AuxPowProofBuilder`, `ParentAlgorithm`, `ParentHeader` |
 
-`src/parent_chains.rs` z původního draftu byl sloučen do `src/true_auxpow.rs` jako `ParentAlgorithm` — pro POC stačí algoritmus rodiče, plné parsování DCR/ALPH headerů přijde později.
+| `src/parent_chains.rs` | **Phase 3 prep** — `DcrHeader` (180B), `AlphHeader`, `CoinbaseCommitment` (Namecoin-style magic), header parsing |
+
+`src/parent_chains.rs` byl znovu zaveden z `src/true_auxpow.rs` — nyní obsahuje parsování DCR/ALPH headerů a coinbase commitmentů.
 
 ### 3.3 Rozhraní
 
