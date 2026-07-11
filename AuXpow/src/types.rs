@@ -423,6 +423,8 @@ pub struct JobPackage {
     pub algorithm: String,
     pub header_bytes: Vec<u8>,
     pub target_bytes: [u8; 32],
+    /// Block timestamp (Unix seconds) required by kHeavyHash/KAS PowHash.
+    pub timestamp: u64,
     pub start_nonce: u64,
     pub nonce_count: u64,
 }

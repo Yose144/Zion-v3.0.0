@@ -78,21 +78,24 @@ async fn main() -> anyhow::Result<()> {
         }
     });
 
-    // 2) Wait for first job
+    // 2) Wait for first job + difficulty
     println!("[2/4] Waiting for first job (timeout {} ms)...", job_timeout_ms);
     let job = wait_for_job(client.clone(), Duration::from_millis(job_timeout_ms)).await?;
+    let difficulty = client.current_difficulty().await;
+    let share_target = client.share_target().await;
     println!(
-        "[2/4] Received job: id={} algorithm={} header_len={} target={}",
+        "[2/4] Received job: id={} algorithm={} header_len={} difficulty={} share_target={}",
         job.job_id,
         job.algorithm,
         job.header_bytes.len(),
-        hex::encode(&job.target_bytes[..4])
+        difficulty,
+        hex::encode(&share_target[..4])
     );
 
     // 3) Optionally mine
     if mine_secs > 0 {
         println!("[3/4] Mining for up to {} seconds...", mine_secs);
-        let found = mine_job(coin, &job, mine_secs).await;
+        let found = mine_job(coin, &job, share_target, mine_secs).await;
         match found {
             Some((nonce, hash)) => {
                 println!(
@@ -104,7 +107,7 @@ async fn main() -> anyhow::Result<()> {
                 if submit_enabled {
                     println!("[4/4] Submitting share...");
                     let forwarder = zion_auxpow::ShareForwarder::new(client.clone());
-                    let result = forwarder.try_forward(&job.job_id, nonce, &hash, &job.target_bytes).await?;
+                    let result = forwarder.try_forward(&job.job_id, nonce, &hash, &share_target).await?;
                     println!("[4/4] Submit result: {:?}", result);
                 } else {
                     println!("[4/4] Submission skipped (AUXPOW_E2E_SUBMIT != 1).");
@@ -156,6 +159,7 @@ async fn wait_for_job(
 async fn mine_job(
     coin: ExternalCoin,
     job: &zion_auxpow::ExternalJob,
+    share_target: [u8; 32],
     mine_secs: u64,
 ) -> Option<(u64, [u8; 32])> {
     let package = zion_auxpow::JobPackage {
@@ -163,7 +167,8 @@ async fn mine_job(
         external_job_id: job.job_id.clone(),
         algorithm: job.algorithm.clone(),
         header_bytes: job.header_bytes.clone(),
-        target_bytes: job.target_bytes,
+        target_bytes: share_target,
+        timestamp: job.timestamp.unwrap_or(0),
         start_nonce: 0,
         nonce_count: u64::MAX,
     };

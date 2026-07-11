@@ -54,7 +54,7 @@ impl ShareForwarder {
         nonce: u64,
         target: &[u8; 32],
     ) -> Result<ShareForwardResult> {
-        let hash = hash_blake3(header, nonce);
+        let hash = hash_blake3(header, 0, nonce);
         self.try_forward(job_id, nonce, &hash, target).await
     }
 }
@@ -163,7 +163,7 @@ mod tests {
 
         let forwarder = ShareForwarder::new(client);
         let target = [0xFFu8; 32]; // trivial target
-        let hash = hash_blake3(b"header", 42);
+        let hash = hash_blake3(b"header", 0, 42);
         let result = forwarder.try_forward("job_forward", 42, &hash, &target).await.unwrap();
         assert_eq!(result, ShareForwardResult::Accepted);
     }
@@ -180,7 +180,7 @@ mod tests {
 
         let forwarder = ShareForwarder::new(client);
         let target = [0xFFu8; 32];
-        let hash = hash_blake3(b"header", 7);
+        let hash = hash_blake3(b"header", 0, 7);
         let result = forwarder.try_forward("job_forward", 7, &hash, &target).await.unwrap();
         assert_eq!(result, ShareForwardResult::Rejected("low diff".to_string()));
     }
