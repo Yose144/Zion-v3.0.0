@@ -1,8 +1,38 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** **2026-07-11** (**POOL WATCHDOG FIX + F1-F6 POOL SCALABILITY OPTIMIZATIONS — 1000+ MINER READY** — viz [`docs/3.0.5/POOL_PERF_REPORT_2026-07-11.md`](./docs/3.0.5/POOL_PERF_REPORT_2026-07-11.md) pro plný report).
+> **Datum:** **2026-07-11** (**AUXPOW MERGE MINING — POOL SERVER + DASHBOARD INTEGRACE COMPLETE** — viz [`docs/3.0.5/AUXPOW_INTEGRATION_REPORT_2026-07-11.md`](./docs/3.0.5/AUXPOW_INTEGRATION_REPORT_2026-07-11.md) pro plný report).
+> **Předchozí update:** 2026-07-11 (**POOL WATCHDOG FIX + F1-F6 POOL SCALABILITY OPTIMIZATIONS — 1000+ MINER READY** — viz [`docs/3.0.5/POOL_PERF_REPORT_2026-07-11.md`](./docs/3.0.5/POOL_PERF_REPORT_2026-07-11.md) pro plný report).
 > **Předchozí update:** 2026-07-09 (3.0.5 "ALL GREEN" COMPLETE — 11/11 SLUŽEB ACTIVE + E2E MEMO TESTY POTVRZENY + PROTOCOL 3.0.5 + WEB DEPLOY OPTIMALIZACE — viz [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](./docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md)).
 > **Původní update:** 2026-07-07 (3.0.4 HARD GENESIS RESET — NOVÝ SERVER 62.171.141.136 — FULL STACK DEPLOYED — viz [`docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md`](./docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md) a [`HARDRESETOFFICIAL.md`](./docs/3.0.4/HARDRESETOFFICIAL.md) pro plný záznam).
+>
+> ### AuxPow Merge Mining — Pool Server + Dashboard Integrace COMPLETE (2026-07-11)
+
+> **Co:** Standalone `AuXpow` crate (Stratum v1 proxy + external hashers Blake3/kHeavyHash) integrovaný do pool serveru a dashboardu. Pool server nyní může merge-mine 11 externích coinů (DCR, ALPH, KAS, ERG, RVN, ETC, EVR, MEWC, FLUX, CLORE, XMR) s profit-switchingem a circuit breakerem.
+>
+> **Architektura:**
+> - `AuXpow/` crate — 5 souborů (types, external_hashers, auxpow_client, auxpow_scheduler, lib)
+> - Pool server spawnuje `AuxPowScheduler` na dedikovaném tokio runtime (env-gated `ZION_AUXPOW_ENABLED=1`)
+> - `/stats` API nově obsahuje `"auxpow"` sekci (13 polí: enabled, current_coin, current_pool, current_algorithm, shares_submitted/accepted/rejected, revenue_usd, consecutive_failures, circuit_open, uptime_secs, coin_switches, last_switch_ts)
+> - Dashboard Pool Miners tab — nová AuxPow karta (status, coin, algo, pool, shares, revenue, uptime, circuit breaker, coin switches)
+>
+> **Klíčové vlastnosti:**
+> - Profit-switching s hysteresis (15% threshold proti flapping)
+> - Circuit breaker (5 consecutive failures → 300s cooldown)
+> - Sync access methods (`stats_sync()`, `is_enabled_sync()`) pro non-tokio hostitele
+> - Zero overhead když disabled (no-op scheduler)
+> - 10 env variables pro konfiguraci (wallet, allocation, pool preference, region, etc.)
+>
+> **Testy:** 146/146 pass (40 auxpow + 73 pool lib + 33 pool server)
+>
+> **Deploy:** Edge server `62.171.141.136` — pool binary + dashboard files nasazeny, `/stats` vrací auxpow sekci (`enabled: false`), dashboard API předává auxpow data
+>
+> **Aktivace:** `ZION_AUXPOW_ENABLED=1` + `ZION_AUXPOW_WALLET=<wallet>` v `systemctl edit zion-pool.service`
+>
+> **Commity:** `44371aa10` (AuXpow crate), `0a49a3f48` (pool + dashboard integrace)
+>
+> **Soubory:** `AuXpow/` (nový crate), `V3/L1/pool/Cargo.toml`, `V3/L1/pool/src/bin/server.rs`, `ZION_OS/dashboard/app.py`, `ZION_OS/dashboard/dashboard.html`, `ZION_OS/dashboard/dashboard.js`, `AUXPOW_MERGE_MINING_PLAN.md`
+>
+> **Plán:** Phase 2 (miner dual-stratum) + Phase 3 (true AuxPow protocol hard fork) — viz [`AUXPOW_MERGE_MINING_PLAN.md`](./AUXPOW_MERGE_MINING_PLAN.md)
 >
 > ### Pool Watchdog Fix + F1-F6 Scalability Optimizations — COMPLETE (2026-07-11)
 >
