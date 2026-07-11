@@ -24,11 +24,13 @@ use zion_auxpow::{AuxPowScheduler, AuxPowStats};
 // ---------------------------------------------------------------------------
 // LogChannel — batched async logging to reduce I/O on the hot path
 // ---------------------------------------------------------------------------
-// With 1000+ miners each generating 5-10 println! calls per share submission,
+// With 1000+ miners each generating many log lines per share submission,
 // synchronous stdout writes (each a syscall + kernel buffer flush) become a
-// major bottleneck.  LogChannel sends log lines through an mpsc channel to a
-// background thread that batches them into 4 KB chunks and writes with a
-// single `write_all`, flushing at most every 100 ms.
+// major bottleneck and can fill /var/log/syslog rapidly.  LogChannel sends
+// log lines through an mpsc channel to a background thread that batches them into
+// 4 KB chunks and writes with a single `write_all`, flushing at most every 100 ms.
+// Per-share/per-job lines are further gated behind ZION_POOL_VERBOSE_LOGS=1 so
+// that production nodes emit only summary, error and block-found logs.
 
 struct LogChannel {
     tx: mpsc::SyncSender<String>,
@@ -98,6 +100,25 @@ impl LogChannel {
     fn log(&self, line: String) {
         let _ = self.tx.try_send(line);
     }
+
+    /// Send a log line only when verbose pool logging is enabled.
+    /// Use this for the per-share/per-job hot path to avoid filling syslog.
+    fn log_verbose(&self, line: String) {
+        if pool_verbose_logs_enabled() {
+            let _ = self.tx.try_send(line);
+        }
+    }
+}
+
+/// Check whether verbose per-share/per-job pool logging is enabled.
+/// Default: off. Set `ZION_POOL_VERBOSE_LOGS=1` to enable.
+fn pool_verbose_logs_enabled() -> bool {
+    static CACHED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *CACHED.get_or_init(|| {
+        std::env::var("ZION_POOL_VERBOSE_LOGS")
+            .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+            .unwrap_or(false)
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -1047,7 +1068,7 @@ fn handle_client(
         };
         let job_line = write_wire_message(&mut writer, &job_message)?;
 
-        log_ch.log(format!(
+        log_ch.log_verbose(format!(
             "iteration={} miner={} height={} nonces={}..{}",
             iteration + 1,
             worker_name,
@@ -1055,13 +1076,13 @@ fn handle_client(
             start_nonce,
             start_nonce + job_nonce_count
         ));
-        log_ch.log(format!("issued_job_id={}", job.job_id));
-        log_ch.log(format!("wire_job={job_line}"));
+        log_ch.log_verbose(format!("issued_job_id={}", job.job_id));
+        log_ch.log_verbose(format!("wire_job={job_line}"));
 
         let (submit_line, submit_message) = read_wire_message(&mut reader)?;
         let iter_elapsed_ms = job_issued_at.elapsed().as_millis();
-        log_ch.log(format!("wire_submit={submit_line}"));
-        log_ch.log(format!("iteration_elapsed_ms={iter_elapsed_ms}"));
+        log_ch.log_verbose(format!("wire_submit={submit_line}"));
+        log_ch.log_verbose(format!("iteration_elapsed_ms={iter_elapsed_ms}"));
 
         let outcome = match submit_message {
             PoolMessage::Submit {
@@ -1199,7 +1220,7 @@ fn handle_client(
                             );
                         }
                     }
-                    log_ch.log(format!(
+                    log_ch.log_verbose(format!(
                         "valid_share miner={} job={} share_diff={}",
                         worker_name, job_id, share_difficulty
                     ));
@@ -1482,8 +1503,8 @@ fn handle_client(
                     .expect("pool lock poisoned")
                     .result_message(&decision);
                 let result_line = write_wire_message(&mut writer, &result_message)?;
-                log_ch.log(format!("share_status={:?}", decision.status));
-                log_ch.log(format!("wire_result={result_line}"));
+                log_ch.log_verbose(format!("share_status={:?}", decision.status));
+                log_ch.log_verbose(format!("wire_result={result_line}"));
             }
             JobCompletion::NoSolution {
                 attempted_hashes,
@@ -1505,8 +1526,8 @@ fn handle_client(
                     status: "NoSolution".to_string(),
                 };
                 let result_line = write_wire_message(&mut writer, &result_message)?;
-                log_ch.log("share_status=NoSolution".to_string());
-                log_ch.log(format!("wire_result={result_line}"));
+                log_ch.log_verbose("share_status=NoSolution".to_string());
+                log_ch.log_verbose(format!("wire_result={result_line}"));
             }
         }
     }

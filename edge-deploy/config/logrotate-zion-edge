@@ -16,6 +16,7 @@
     notifempty
     compress
     delaycompress
+    su root syslog
     sharedscripts
     postrotate
         /usr/lib/rsyslog/rsyslog-rotate 2>/dev/null || true
@@ -34,6 +35,7 @@
     notifempty
     compress
     delaycompress
+    su root syslog
     sharedscripts
     postrotate
         /usr/lib/rsyslog/rsyslog-rotate 2>/dev/null || true
@@ -55,6 +57,7 @@
     notifempty
     compress
     delaycompress
+    su root syslog
     copytruncate
 }
 
@@ -67,5 +70,6 @@
     notifempty
     compress
     delaycompress
+    su root syslog
     copytruncate
 }

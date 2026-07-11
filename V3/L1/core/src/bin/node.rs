@@ -50,9 +50,9 @@ fn lock_peer_sec(m: &Mutex<PeerSecurity>) -> MutexGuard<'_, PeerSecurity> {
     })
 }
 
-/// Check if verbose RPC logging is enabled (full request/response bodies).
-/// Default: off. Set `ZION_RPC_DEBUG=1` to enable.
-/// When disabled, only audit logs (method + tx_id) are emitted.
+/// Check if verbose RPC logging is enabled (full request/response bodies +
+/// per-request audit logs). Default: off. Set `ZION_RPC_DEBUG=1` to enable.
+/// When disabled, no per-request RPC logs are emitted.
 fn rpc_debug_enabled() -> bool {
     static CACHED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
     *CACHED.get_or_init(|| {
@@ -651,13 +651,16 @@ fn handle_rpc_stream(
     if rpc_debug_enabled() {
         println!("rpc_in={line}");
     }
-    // Audit log: truncate to 120 chars to avoid excessive log volume
-    let audit_line = if line.len() > 120 {
-        &line[..120]
-    } else {
-        line.as_str()
-    };
-    println!("rpc_audit peer={peer_addr} method={audit_line}");
+    // Audit log: truncate to 120 chars. Emitted only when RPC debug is enabled
+    // to avoid flooding syslog with every RPC call (dashboard polling, pool, etc.).
+    if rpc_debug_enabled() {
+        let audit_line = if line.len() > 120 {
+            &line[..120]
+        } else {
+            line.as_str()
+        };
+        println!("rpc_audit peer={peer_addr} method={audit_line}");
+    }
 
     // ── HTTP POST support for Electron/mobile clients ───────────────────
     // Desktop agent and mobile app send HTTP POST requests; detect and handle them.
@@ -869,15 +872,17 @@ fn handle_rpc_http(
     }
 
     // ── Audit log: extract RPC method for security monitoring ──────────
-    if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&body_str) {
-        if let Some(method) = parsed.get("method").and_then(|m| m.as_str()) {
-            let tx_id = parsed
-                .get("params")
-                .and_then(|p| p.get("transaction"))
-                .and_then(|t| t.get("tx_id"))
-                .and_then(|t| t.as_str())
-                .unwrap_or("");
-            println!("rpc_audit_http method={method} tx_id={tx_id}");
+    if rpc_debug_enabled() {
+        if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&body_str) {
+            if let Some(method) = parsed.get("method").and_then(|m| m.as_str()) {
+                let tx_id = parsed
+                    .get("params")
+                    .and_then(|p| p.get("transaction"))
+                    .and_then(|t| t.get("tx_id"))
+                    .and_then(|t| t.as_str())
+                    .unwrap_or("");
+                println!("rpc_audit_http method={method} tx_id={tx_id}");
+            }
         }
     }
 
