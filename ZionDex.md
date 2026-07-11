@@ -1,9 +1,11 @@
 # ZionDex — Cross-Chain DEX Implementation Plan
 
-> **Status:** Active development plan
+> **Status:** Live Beta — Active development
 > **Created:** 2026-07-10
+> **Last updated:** 2026-07-12 (Non-EVM contracts + Lightning LND + Cross-chain AMM routing)
 > **Supersedes:** `docs/3.0.3/ZionDex.md` (concept/vision document)
 > **Goal:** First universal cross-chain DEX powered by native L1 bridge on 13 chain families
+> **Contract addresses:** [`docs/3.0.5/CONTRACT_ADDRESSES.md`](./docs/3.0.5/CONTRACT_ADDRESSES.md)
 
 ---
 
@@ -63,7 +65,7 @@ With ZionDex + WARP:
 | Component | Path | Status |
 |-----------|------|--------|
 | Atomic Swap daemon | `V3/L2/atomic-swap/` | ✅ Live, HTLC LOCK/CLAIM E2E passed |
-| **ZionDex Router** | `ZionDex/router/` | ✅ **Built** — 14/14 Rust tests, real Uni V3 prices, EVM signing, **L3 WARP API integration** (port 8453) |
+| **ZionDex Router** | `ZionDex/router/` | ✅ **Built** — 28/28 Rust tests (20 unit + 8 integration), real Uni V3 prices, EVM signing, **L3 WARP API integration** (port 8453), **cross-chain AMM routing** (`aggregator.rs` — Dijkstra path finding, top 3 paths, 30s price cache) |
 | **ZionDex AMM Contracts** | `ZionDex/contracts/` | ✅ **Built** — 7/7 Foundry tests, PoolManager + Hooks + Router + ZDX + Staking |
 | **TypeScript SDK** | `ZionDex/sdk/` | ✅ **Built** — `@zion/dex-sdk`, full type defs, swap + liquidity managers |
 | **Web Landing Page** | `APP&WEB/website-v2.9/src/app/ziondex/page.tsx` | ✅ **Live Beta** — marketing page, architecture, roadmap, CTA → `/dex` |
@@ -77,7 +79,7 @@ With ZionDex + WARP:
 | Atomic Swap UI | `APP&WEB/website-v2.9/src/app/swap/page.tsx` | ✅ Live, HTLC initiation/claim/refund |
 | Bridge UI | `APP&WEB/website-v2.9/src/app/bridge/page.tsx` | ✅ Live, burn wZION → unlock ZION |
 
-> **Implementation Status (2026-07-12):** ZionDex is **Live Beta** — backend (Router 14 tests, AMM 7 tests, SDK), frontend (`/dex` swap UI + `/dex/liquidity` + `/dex/portfolio`), mobile (React Native), desktop (Electron), and L3 WARP integration all complete. Landing page at `/ziondex`. Remaining: deploy AMM contracts on Base, security audit, intent-based execution. See `ZionDex/README.md` for full details.
+> **Implementation Status (2026-07-12):** ZionDex is **Live Beta** — backend (Router 28 tests, AMM 7 tests, SDK), frontend (`/dex` swap UI + `/dex/liquidity` + `/dex/portfolio`), mobile (React Native), desktop (Electron), L3 WARP integration, and cross-chain AMM routing (aggregator.rs) all complete. Landing page at `/ziondex`. Non-EVM ZION token contracts created for 9 chains. Lightning LND Docker setup ready. Remaining: deploy ZionDex Router on Edge (port 8454), deploy AMM contracts on Base, deploy non-EVM contracts to mainnet, security audit, intent-based execution. See `ZionDex/README.md` and [`docs/3.0.5/CONTRACT_ADDRESSES.md`](./docs/3.0.5/CONTRACT_ADDRESSES.md) for full details.
 
 ### 2.4 Token Model
 
@@ -963,25 +965,27 @@ User pays swap fee (0.15-0.30%)
 
 ## 10. WARP Chain Support Matrix
 
-| Chain | Family | Token Standard | Decimals | WARP Status | DEX Partner | ZionDex AMM |
-|-------|--------|----------------|----------|-------------|-------------|-------------|
-| Base | EVM | ERC-20 | 18 | 🟢 Live | Uniswap V4 | Phase 3 |
-| Arbitrum | EVM | ERC-20 | 18 | 🟢 Live | Uniswap V3 | Phase 5 |
-| BSC | EVM | BEP-20 | 18 | 🟢 Live | PancakeSwap | Phase 5 |
-| Polygon | EVM | ERC-20 | 18 | 🟢 Live | QuickSwap | Phase 5 |
-| Optimism | EVM | ERC-20 | 18 | 🟢 Live | Uniswap V3 | Phase 5 |
-| Avalanche | EVM | ERC-20 | 18 | 🟢 Live | TraderJoe | Phase 5 |
-| Solana | Solana | SPL Token | 9 | 🟢 Live | Raydium/Orca | Phase 5 |
-| Tron | Tron | TRC-20 | 18 | 🟢 Live | SunSwap | TBD |
-| Stellar | Stellar | Stellar Asset | 7 | 🟡 Signing | StellarX | TBD |
-| Bitcoin | Bitcoin | HTLC | 8 | 🟢 Live | N/A (HTLC) | N/A |
-| Cardano | Cardano | Native Token | 6 | 🟡 Skeleton | Minswap | TBD |
-| Cosmos | Cosmos | IBC/CW20 | 6 | 🟡 Skeleton | Osmosis | TBD |
-| Aptos | Aptos | Coin | 8 | 🔴 Stub | Liquidswap | TBD |
-| Sui | Sui | Coin | 9 | 🔴 Stub | Cetus | TBD |
-| NEAR | NEAR | FT | 24 | 🔴 Stub | Ref.Finance | TBD |
-| TON | TON | Jetton | 9 | 🔴 Stub | STON.fi | TBD |
-| Lightning | Lightning | BOLT11 | 8 | 🟡 Stub | N/A | N/A |
+| Chain | Family | Token Standard | Decimals | WARP Adapter | Contract | DEX Partner | ZionDex AMM |
+|-------|--------|----------------|----------|-------------|----------|-------------|-------------|
+| Base | EVM | ERC-20 | 18 | 🟢 Live | ✅ Deployed | Uniswap V4 | Phase 3 |
+| Arbitrum | EVM | ERC-20 | 18 | 🟢 Live | ✅ Deployed | Uniswap V3 | Phase 5 |
+| BSC | EVM | BEP-20 | 18 | 🟢 Live | ✅ Deployed | PancakeSwap | Phase 5 |
+| Polygon | EVM | ERC-20 | 18 | 🟢 Live | ✅ Deployed | QuickSwap | Phase 5 |
+| Optimism | EVM | ERC-20 | 18 | 🟢 Live | ✅ Deployed | Uniswap V3 | Phase 5 |
+| Avalanche | EVM | ERC-20 | 18 | 🟢 Live | ✅ Deployed | TraderJoe | Phase 5 |
+| Solana | Solana | SPL Token | 6 | 🟢 Live | 🟡 Created | Raydium/Orca | Phase 5 |
+| Tron | Tron | TRC-20 | 6 | 🟢 Live | 🟡 Created | SunSwap | TBD |
+| Stellar | Stellar | Stellar Asset | 6 | 🟢 Live | 🟡 Created | StellarX | TBD |
+| Bitcoin | Bitcoin | HTLC | 8 | 🟢 Live | 🔴 HTLC placeholder | N/A (HTLC) | N/A |
+| Cardano | Cardano | Native Token | 6 | 🟢 Live | 🟡 Created | Minswap | TBD |
+| Cosmos | Cosmos | IBC/CW20 | 6 | 🟢 Live | 🟡 Created | Osmosis | TBD |
+| Aptos | Aptos | Coin | 6 | 🟢 Live | 🟡 Created | Liquidswap | TBD |
+| Sui | Sui | Coin | 6 | 🟢 Live | 🟡 Created | Cetus | TBD |
+| NEAR | NEAR | FT | 6 | 🟢 Live | 🟡 Created | Ref.Finance | TBD |
+| TON | TON | Jetton | 9 | 🟢 Live | 🟡 Created | STON.fi | TBD |
+| Lightning | Lightning | BOLT11 | — | 🟡 Docker ready | N/A | N/A | N/A |
+
+> **Contract status legend:** ✅ Deployed on mainnet · 🟡 Created (source file ready, pending deploy) · 🔴 Placeholder (needs generation)
 
 ---
 
@@ -1044,6 +1048,7 @@ await dex.removeLiquidity({
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/quote` | Get price quote (no execution) |
+| GET | `/quote/multi` | Get top 3 cross-chain paths (multi-path quote) |
 | POST | `/swap` | Execute swap |
 | GET | `/swaps/:id` | Get swap status |
 | GET | `/swaps` | List user's swaps |
@@ -1059,21 +1064,23 @@ await dex.removeLiquidity({
 
 ```
 ZionDex/                        # ✅ BUILT — standalone directory (not under V3/)
-├── router/                     # ✅ Rust off-chain router (14/14 tests)
+├── router/                     # ✅ Rust off-chain router (28/28 tests)
 │   ├── Cargo.toml
 │   ├── src/
 │   │   ├── lib.rs
 │   │   ├── main.rs             # Server entry point (axum)
 │   │   ├── types.rs            # ChainId, TokenId, DexId, SwapPath
-│   │   ├── config.rs           # RouterConfig — chain/DEX registry
-│   │   ├── router.rs           # Path finding (6 strategies)
-│   │   ├── quote.rs            # Quote engine
-│   │   ├── price.rs            # ✅ Real Uni V3 price feed (slot0 + QuoterV2)
-│   │   ├── executor.rs         # ✅ EVM signing + L3 WARP API (port 8453)
-│   │   ├── api.rs              # HTTP REST + WebSocket (8 endpoints)
+│   │   ├── config.rs           # RouterConfig — chain/DEX registry, WARP URL
+│   │   ├── router.rs           # Path finding (6 strategies + aggregator)
+│   │   ├── aggregator.rs       # ✅ NEW — LiquidityAggregator (Dijkstra, top 3 paths)
+│   │   ├── quote.rs            # Quote engine + MultiPathQuote
+│   │   ├── price.rs            # Real Uni V3 price feed (slot0 + QuoterV2)
+│   │   ├── executor.rs         # EVM signing + L3 WARP API (port 8453)
+│   │   ├── api.rs              # HTTP REST + WebSocket (9 endpoints + /quote/multi)
 │   │   ├── db.rs               # SQLite swap state tracking
 │   │   └── monitor.rs          # WebSocket real-time updates
-│   └── tests/                  # 14 tests passing
+│   └── tests/
+│       └── aggregator.rs       # 8 integration tests (graph, path finding, fees)
 ├── contracts/                  # ✅ Solidity AMM (7/7 Foundry tests)
 │   ├── foundry.toml
 │   ├── src/
@@ -1098,20 +1105,55 @@ ZionDex/                        # ✅ BUILT — standalone directory (not under 
 │       └── ziondex.ts          # Main SDK entry point
 └── README.md                   # Full documentation
 
+V3/L2/bridge/contracts/non-evm/     # ✅ CREATED — 9 non-EVM ZION token contracts
+├── solana/
+│   ├── zion_spl_token.rs            # SPL Token (Anchor, 6 decimals)
+│   └── README.md
+├── tron/
+│   ├── ZionToken.sol                # TRC-20 (Solidity, 6 decimals)
+│   └── README.md
+├── stellar/
+│   ├── zion_asset.toml              # Native asset config
+│   ├── setup_zion_asset.py          # Asset issuance script
+│   └── README.md
+├── cardano/
+│   ├── mint_zion_token.hs           # Plutus minting policy (6 decimals)
+│   └── README.md
+├── cosmos/
+│   ├── zion_cw20.rs                 # CosmWasm CW20 (6 decimals)
+│   └── README.md
+├── aptos/
+│   ├── sources/zion_coin.move       # Aptos Move Coin (6 decimals)
+│   └── README.md
+├── sui/
+│   ├── sources/zion_coin.move       # Sui Move Coin (6 decimals)
+│   └── README.md
+├── near/
+│   ├── zion_token.rs                # NEP-141 fungible token (6 decimals)
+│   └── README.md
+└── ton/
+    ├── zion_jetton.fc               # TEP-74 jetton (FunC, 9 decimals)
+    └── README.md
+
+V3/L3/warp/docker/lightning/         # ✅ CREATED — LND Docker setup
+├── docker-compose.yml               # bitcoind testnet + LND v0.18.2 + Redis
+├── lnd.conf                         # REST 8080, gRPC 10009, keysend
+├── bitcoin.conf                     # testnet, ZMQ, pruned 2GB
+└── README.md                        # Full deployment guide
+
+V3/L3/warp/scripts/lightning/        # ✅ CREATED — Channel management
+├── open_channel.sh
+├── list_channels.sh
+├── get_macaroon.sh
+├── create_invoice.sh
+└── pay_invoice.sh
+
+edge-deploy/systemd/
+└── zion-edge-lnd.service            # ✅ CREATED — LND systemd service
+
 APP&WEB/website-v2.9/src/app/dex/   # ✅ Live Beta — swap UI + liquidity + portfolio
 APP&WEB/website-v2.9/src/app/ziondex/ # ✅ Live Beta — landing page
-├── page.tsx                        # Main DEX page
-├── swap/
-├── liquidity/
-├── bridge/
-├── portfolio/
-└── components/
-
 APP&WEB/mobile-app/src/screens/DexScreen.js # ✅ Built — React Native swap screen
-├── SwapScreen.tsx
-├── LiquidityScreen.tsx
-├── BridgeScreen.tsx
-└── PortfolioScreen.tsx
 ```
 
 ---
@@ -1153,10 +1195,558 @@ APP&WEB/mobile-app/src/screens/DexScreen.js # ✅ Built — React Native swap sc
 
 ---
 
-## 15. References
+## 16. Deployment Plan (2026-07-12)
 
+> **Goal:** Nasadit ZionDex Router + LND na Edge server, připravit kontrakty pro deploy na všechny chainy.
+> **Edge server:** `62.171.141.136` (SSH: `ssh zion-new`)
+> **Port map:** [`docs/3.0.5/CONTRACT_ADDRESSES.md`](./docs/3.0.5/CONTRACT_ADDRESSES.md) §7 — žádné konflikty ověřeny
+
+### Phase A: Edge Server Deploy (LND + ZionDex Router)
+
+#### A.1 — Lightning Network (LND) na Edge
+
+**Cíl:** Rozchodit LND node na testnet, otevřít kanály, napojit WARP adapter.
+
+**Krok 1: Sync repa na Edge**
+```bash
+ssh zion-new
+cd /root/Zion-v3.0.0  # nebo git pull
+git pull origin main
+```
+
+**Krok 2: Spustit Docker compose (bitcoind + LND)**
+```bash
+cd /root/Zion-v3.0.0/V3/L3/warp/docker/lightning
+docker compose up -d
+
+# Sleduj sync (testnet ~30 min)
+docker compose logs -f lnd
+```
+
+**Krok 3: Vytvořit LND wallet**
+```bash
+docker exec -it lnd lncli create
+# → Vygeneruje seed, password, ulož bezpečně
+```
+
+**Krok 4: Počkat na sync + otevřít kanál**
+```bash
+# Zkontroluj sync status
+docker exec -it lnd lncli getinfo
+
+# Otevři kanál (testnet, ACINQ node, 500k sats)
+/root/Zion-v3.0.0/V3/L3/warp/scripts/lightning/open_channel.sh
+
+# Zkontroluj kanály
+/root/Zion-v3.0.0/V3/L3/warp/scripts/lightning/list_channels.sh
+```
+
+**Krok 5: Extrahovat macaroon + nastavit env vars**
+```bash
+MACAROON=$(/root/Zion-v3.0.0/V3/L3/warp/scripts/lightning/get_macaroon.sh)
+
+# Přidat do /root/.env.warp
+cat >> /root/.env.warp << EOF
+WARP_LN_NODE_URL=https://127.0.0.1:8080
+WARP_LN_MACAROON=$MACAROON
+WARP_LN_TLS_CERT=/root/.lnd/tls.cert
+EOF
+
+# Restart WARP
+systemctl restart zion-warp
+```
+
+**Krok 6: Aktivovat systemd service**
+```bash
+cp /root/Zion-v3.0.0/edge-deploy/systemd/zion-edge-lnd.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable zion-edge-lnd
+systemctl start zion-edge-lnd
+systemctl status zion-edge-lnd
+```
+
+**Krok 7: Ověřit health check**
+```bash
+curl http://127.0.0.1:8453/health | jq '.adapters.lightning'
+# → { "status": "ok", "alias": "...", "channels": 1, "outbound_msat": 500000000 }
+```
+
+**Odhad:** 1-2 hodiny (sync je bottleneck)
+
+---
+
+#### A.2 — ZionDex Router na Edge (port 8454)
+
+**Cíl:** Běžící Router service na Edge, napojená na WARP (8453) + L1 node (9443).
+
+**Krok 1: Build Rust binárky na Edge**
+```bash
+ssh zion-new
+cd /root/Zion-v3.0.0/ZionDex/router
+cargo build --release --bin ziondex-router
+# → target/release/ziondex-router
+```
+
+**Krok 2: Vytvořit konfiguraci**
+```bash
+cat > /root/.env.ziondex << 'EOF'
+ZIONDEX_ROUTER_PORT=8454
+ZIONDEX_WARP_API_URL=http://127.0.0.1:8453
+ZIONDEX_L1_RPC_URL=http://127.0.0.1:9443
+ZIONDEX_BASE_RPC=https://mainnet.base.com
+ZIONDEX_ARB_RPC=https://arb1.arbitrum.io/rpc
+ZIONDEX_BSC_RPC=https://bsc-dataseed.binance.org
+ZIONDEX_POLY_RPC=https://polygon-rpc.com
+ZIONDEX_OP_RPC=https://mainnet.optimism.io
+ZIONDEX_AVAX_RPC=https://api.avax.network/ext/bc/C/rpc
+ZIONDEX_SOL_RPC=https://api.mainnet-beta.solana.com
+RUST_LOG=info
+EOF
+```
+
+**Krok 3: Vytvořit systemd service**
+```bash
+cat > /etc/systemd/system/zion-ziondex-router.service << 'EOF'
+[Unit]
+Description=ZionDex Router — Cross-chain DEX router
+After=network-online.target zion-warp.service
+Wants=network-online.target
+Requires=zion-warp.service
+
+[Service]
+Type=simple
+User=root
+EnvironmentFile=/root/.env.ziondex
+ExecStart=/root/Zion-v3.0.0/ZionDex/router/target/release/ziondex-router
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable zion-ziondex-router
+systemctl start zion-ziondex-router
+```
+
+**Krok 4: Ověřit**
+```bash
+# Health check
+curl http://127.0.0.1:8454/health
+# → { "status": "ok", "warp": "connected", "chains": [...] }
+
+// Multi-path quote test
+curl "http://127.0.0.1:8454/quote/multi?from_chain=base&from_token=wZION&to_chain=solana&to_token=USDC&amount=100"
+# → { "paths": [...3 paths...], "recommended_path_index": 0 }
+
+// Service status
+systemctl status zion-ziondex-router
+```
+
+**Krok 5: nginx proxy (optional — veřejný přístup)**
+```nginx
+# /etc/nginx/sites-available/ziondex.conf
+server {
+    listen 443 ssl http2;
+    server_name dex.zionterranova.com;
+
+    ssl_certificate /etc/letsencrypt/live/zionterranova.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/zionterranova.com/privkey.pem;
+
+    location / {
+        proxy_pass http://127.0.0.1:8454;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+```
+
+**Odhad:** 30-45 min (build je bottleneck)
+
+---
+
+### Phase B: Non-EVM Contract Deployment
+
+> **Předpoklad:** Každý chain potřebuje nativní token na gas fees.
+> **Adresy po deploy:** Vyplň v [`docs/3.0.5/CONTRACT_ADDRESSES.md`](./docs/3.0.5/CONTRACT_ADDRESSES.md)
+> **Po každém deploy:** `systemctl restart zion-warp` + `curl http://127.0.0.1:8453/health`
+
+#### B.1 — Bitcoin WARP HTLC (PRIORITY 1)
+
+**Co:** BTC je watch-only chain. User pošle BTC na HTLC address, WARP mintne ZION na L1.
+
+**Potřebné:**
+- 5 veřejných klíčů WARP validátorů (Ed25519 → secp256k1 konverze)
+- Vygenerovat 5-of-5 P2WSH multisig address
+
+**Steps:**
+```bash
+# 1. Získej 5 validator pubkeys (secp256k1)
+# Každý validator: openssl ecparam -genkey -name secp256k1 | openssl ec -pubout
+
+# 2. Vytvoř multisig address
+bitcoin-cli -mainnet createmultisig 5 '["pub1","pub2","pub3","pub4","pub5"]' bech32
+# → { "address": "bc1q...", "redeemScript": "..." }
+
+# 3. Nastav env vars na Edge
+echo "WARP_BTC_HTLC_ADDRESS=bc1q..." >> /root/.env.warp
+echo "WARP_BTC_RELAY_KEY=<WIF private key>" >> /root/.env.warp
+
+# 4. Restart WARP
+systemctl restart zion-warp
+
+# 5. Ověř
+curl http://127.0.0.1:8453/health | jq '.adapters.bitcoin'
+```
+
+**HTLC flow:**
+```
+User → BTC to HTLC address + OP_RETURN: WARP_INBOUND:bitcoin:<zion1_recipient>
+     → 6 confirmations
+     → WARP validators detect + sign
+     → submitBridgeUnlock on L1
+     → ZION minted to recipient
+```
+
+**Gas cost:** 0 (Bitcoin — jen TX fee pro relay)
+
+---
+
+#### B.2 — Solana SPL Token (PRIORITY 2)
+
+**Kontrakt:** `V3/L2/bridge/contracts/non-evm/solana/zion_spl_token.rs`
+**Potřebné:** ~2 SOL na deploy (mainnet)
+
+**Steps:**
+```bash
+# 1. Nainstaluj Anchor CLI
+npm install -g @coral-xyz/anchor-cli
+
+# 2. Build + deploy
+cd V3/L2/bridge/contracts/non-evm/solana
+anchor build
+anchor deploy --provider.cluster mainnet
+# → Program ID: <base58>
+
+# 3. Vytvoř ZION mint
+# (program automaticky vytvoří mint při první bridgeMint)
+
+# 4. Nastav env vars
+echo "WARP_SOL_ZION_MINT=<mint_pubkey>" >> /root/.env.warp
+echo "WARP_SOL_BRIDGE_PROGRAM=<program_id>" >> /root/.env.warp
+echo "WARP_SOL_RELAY_KEY=<base58_keypair>" >> /root/.env.warp
+
+# 5. Restart WARP
+systemctl restart zion-warp
+```
+
+**Gas cost:** ~2 SOL (~$300)
+
+---
+
+#### B.3 — Tron TRC-20 (PRIORITY 3)
+
+**Kontrakt:** `V3/L2/bridge/contracts/non-evm/tron/ZionToken.sol`
+**Potřebné:** ~500-1000 TRX na deploy + energy
+
+**Steps:**
+```bash
+# 1. Nainstaluj TronBox
+npm install -g tronbox
+
+# 2. Build + deploy
+cd V3/L2/bridge/contracts/non-evm/tron
+tronbox compile
+tronbox migrate --network mainnet
+# → Contract address: T...
+
+# 3. Nastav env vars
+echo "WARP_TRON_ZION_CONTRACT=<T_address>" >> /root/.env.warp
+echo "WARP_TRON_RELAY_KEY=<hex_private_key>" >> /root/.env.warp
+
+# 4. Restart WARP
+systemctl restart zion-warp
+```
+
+**Gas cost:** ~500-1000 TRX (~$50-100)
+
+---
+
+#### B.4 — Stellar Asset (PRIORITY 4)
+
+**Kontrakt:** `V3/L2/bridge/contracts/non-evm/stellar/zion_asset.toml` + `setup_zion_asset.py`
+**Potřebné:** ~10 XLM na account reserve
+
+**Steps:**
+```bash
+# 1. Nainstaluj Stellar CLI + Python SDK
+pip install stellar-sdk
+
+# 2. Vytvoř issuer account
+stellar keys generate issuer
+# → G... (public), S... (secret)
+
+# 3. Spusť setup script
+cd V3/L2/bridge/contracts/non-evm/stellar
+python3 setup_zion_asset.py --network mainnet --issuer-seed S...
+
+# 4. Nastav env vars
+echo "WARP_STELLAR_ZION_ISSUER=<G_pubkey>" >> /root/.env.warp
+echo "WARP_STELLAR_BRIDGE_ACCOUNT=<G_pubkey>" >> /root/.env.warp
+echo "WARP_STELLAR_RELAY_KEY=<base64_seed>" >> /root/.env.warp
+
+# 5. Restart WARP
+systemctl restart zion-warp
+```
+
+**Gas cost:** ~10 XLM (~$1)
+
+---
+
+#### B.5 — Cardano Native Token (PRIORITY 5)
+
+**Kontrakt:** `V3/L2/bridge/contracts/non-evm/cardano/mint_zion_token.hs`
+**Potřebné:** ~2 ADA na TX fee + UTxO
+
+**Steps:**
+```bash
+# 1. Nainstaluj cardano-cli
+# 2. Vygeneruj payment + policy keys
+cardano-cli address key-gen --verification-key-file pay.vkey --signing-key-file pay.skey
+cardano-cli address key-gen --verification-key-file policy.vkey --signing-key-file policy.skey
+
+# 3. Vytvoř policy script
+cat > policy.script << 'EOF'
+{ "type": "sig", "keyHash": "<policy_key_hash>" }
+EOF
+
+# 4. Mint ZION token
+cardano-cli transaction mint \
+  --mint "100000000000 ZION" \
+  --mint-script-file policy.script \
+  --tx-in <tx_hash>#0 \
+  --tx-out <payment_addr> + 100000000000 ZION \
+  --out-file mint.txbody \
+  --testnet-magic 1  # nebo --mainnet
+
+# 5. Nastav env vars
+echo "WARP_CARDANO_POLICY_ID=<policy_hash>" >> /root/.env.warp
+echo "WARP_CARDANO_PAYMENT_KEY=<hex_skey>" >> /root/.env.warp
+echo "WARP_CARDANO_POLICY_KEY=<hex_skey>" >> /root/.env.warp
+echo "BLOCKFROST_PROJECT_ID=<project_id>" >> /root/.env.warp
+
+# 6. Restart WARP
+systemctl restart zion-warp
+```
+
+**Gas cost:** ~2 ADA (~$0.70)
+
+---
+
+#### B.6 — Cosmos CW20 (PRIORITY 6)
+
+**Kontrakt:** `V3/L2/bridge/contracts/non-evm/cosmos/zion_cw20.rs`
+**Potřebné:** chain token na deploy (cosmoshub ~100 ATOM)
+
+**Steps:**
+```bash
+# 1. Build wasm
+cd V3/L2/bridge/contracts/non-evm/cosmos
+cargo build --release --target wasm32-unknown-unknown
+# → zion_cw20.wasm
+
+# 2. Upload code
+wasmd tx wasm store zion_cw20.wasm --from relay --chain-id cosmoshub-4 --gas auto
+# → Code ID: <N>
+
+# 3. Instantiate contract
+wasmd tx wasm instantiate <N> '{"name":"ZION","symbol":"ZION","decimals":6,"initial_balances":[]}' --from relay
+# → Contract address: cosmos1...
+
+# 4. Nastav env vars
+echo "WARP_COSMOS_ZION_CONTRACT=<cosmos1_addr>" >> /root/.env.warp
+echo "WARP_COSMOS_RELAY_KEY=<base64_key>" >> /root/.env.warp
+
+# 5. Restart WARP
+systemctl restart zion-warp
+```
+
+**Gas cost:** ~100 ATOM (~$500) — nebo použij cheaper chain (Archway/Nibiru)
+
+---
+
+#### B.7 — Aptos Move Coin (PRIORITY 7)
+
+**Kontrakt:** `V3/L2/bridge/contracts/non-evm/aptos/sources/zion_coin.move`
+**Potřebné:** ~1 APT na deploy
+
+**Steps:**
+```bash
+# 1. Nainstaluj Aptos CLI
+curl -fsSL https://aptos.dev/scripts/install_cli.py | python3
+
+# 2. Build + publish
+cd V3/L2/bridge/contracts/non-evm/aptos
+aptos move publish --named-addresses zion_coin=<bridge_account> --profile mainnet
+# → Package object ID: 0x...
+
+# 3. Nastav env vars
+echo "WARP_APTOS_BRIDGE_ACCOUNT=<0x_addr>" >> /root/.env.warp
+echo "WARP_APTOS_EVENT_HANDLE=<0x...::zion_coin::BridgeBurnEvent>" >> /root/.env.warp
+echo "WARP_APTOS_RELAY_KEY=<hex_ed25519_seed>" >> /root/.env.warp
+
+# 4. Restart WARP
+systemctl restart zion-warp
+```
+
+**Gas cost:** ~1 APT (~$8)
+
+---
+
+#### B.8 — Sui Move Coin (PRIORITY 8)
+
+**Kontrakt:** `V3/L2/bridge/contracts/non-evm/sui/sources/zion_coin.move`
+**Potřebné:** ~50 SUI na deploy
+
+**Steps:**
+```bash
+# 1. Nainstaluj Sui CLI
+cargo install --git https://github.com/MystenLabs/sui sui
+
+# 2. Build + publish
+cd V3/L2/bridge/contracts/non-evm/sui
+sui client publish --gas-budget 100000000
+# → Package ID: 0x...
+
+# 3. Nastav env vars
+echo "WARP_SUI_PACKAGE=<0x_package_id>" >> /root/.env.warp
+echo "WARP_SUI_RELAY_KEY=<hex_ed25519_seed>" >> /root/.env.warp
+
+# 4. Restart WARP
+systemctl restart zion-warp
+```
+
+**Gas cost:** ~50 SUI (~$100)
+
+---
+
+#### B.9 — NEAR NEP-141 (PRIORITY 9)
+
+**Kontrakt:** `V3/L2/bridge/contracts/non-evm/near/zion_token.rs`
+**Potřebné:** ~10 NEAR na account + storage
+
+**Steps:**
+```bash
+# 1. Build wasm
+cd V3/L2/bridge/contracts/non-evm/near
+cargo build --release --target wasm32-unknown-unknown
+# → zion_token.wasm
+
+# 2. Vytvoř account + deploy
+near create-account zion.near --masterAccount relay.near --initialBalance 10
+near deploy --accountId zion.near --wasmFile zion_token.wasm
+
+# 3. Nastav env vars
+echo "WARP_NEAR_ZION_CONTRACT=zion.near" >> /root/.env.warp
+echo "WARP_NEAR_SIGNER_ACCOUNT=relay.near" >> /root/.env.warp
+echo "WARP_NEAR_RELAY_KEY=<base64_ed25519>" >> /root/.env.warp
+
+# 4. Restart WARP
+systemctl restart zion-warp
+```
+
+**Gas cost:** ~10 NEAR (~$15)
+
+---
+
+#### B.10 — TON Jetton (PRIORITY 10)
+
+**Kontrakt:** `V3/L2/bridge/contracts/non-evm/ton/zion_jetton.fc`
+**Potřebné:** ~5 TON na deploy
+
+**Steps:**
+```bash
+# 1. Nainstaluj toncli nebo blueprint
+npm install -g @ton/blueprint
+
+# 2. Build + deploy
+cd V3/L2/bridge/contracts/non-evm/ton
+toncli deploy -n mainnet
+# → Jetton master: EQ...
+# → Bridge wallet: EQ...
+
+# 3. Nastav env vars
+echo "WARP_TON_JETTON_MASTER=<EQ_addr>" >> /root/.env.warp
+echo "WARP_TON_BRIDGE_WALLET=<EQ_addr>" >> /root/.env.warp
+echo "WARP_TON_RELAY_KEY=<hex_ed25519>" >> /root/.env.warp
+
+# 4. Restart WARP
+systemctl restart zion-warp
+```
+
+**Gas cost:** ~5 TON (~$12)
+
+---
+
+### Phase C: ZionDex AMM Contracts on Base (Q1 2027)
+
+**Cíl:** Deploy ZionDexPoolManager + Hooks + Router + ZDX + Staking na Base mainnet.
+
+**Kontrakty:** `ZionDex/contracts/`
+**Deploy script:** `ZionDex/contracts/script/DeployBase.s.sol`
+
+**Steps:**
+```bash
+cd ZionDex/contracts
+forge script script/DeployBase.s.sol --rpc-url $BASE_RPC --broadcast --verify
+# → PoolManager: 0x...
+# → Hooks: 0x...
+# → Router: 0x...
+# → ZDX: 0x...
+# → Staking: 0x...
+```
+
+**Po deploy:** Vyplň adresy v CONTRACT_ADDRESSES.md, restart ZionDex Router.
+
+---
+
+### Deployment Summary
+
+| Phase | Task | Est. Time | Est. Cost | Priority |
+|-------|------|-----------|-----------|----------|
+| A.1 | LND na Edge (testnet) | 1-2h | 0 (testnet) | P0 |
+| A.2 | ZionDex Router na Edge | 30-45min | 0 | P0 |
+| B.1 | BTC WARP HTLC | 30min | 0 (jen TX fee) | P1 |
+| B.2 | Solana SPL | 1h | ~$300 (2 SOL) | P2 |
+| B.3 | Tron TRC-20 | 1h | ~$50-100 | P2 |
+| B.4 | Stellar Asset | 30min | ~$1 (10 XLM) | P3 |
+| B.5 | Cardano Native | 1h | ~$0.70 (2 ADA) | P3 |
+| B.6 | Cosmos CW20 | 1h | ~$500 (100 ATOM) | P4 |
+| B.7 | Aptos Move | 1h | ~$8 (1 APT) | P4 |
+| B.8 | Sui Move | 1h | ~$100 (50 SUI) | P4 |
+| B.9 | NEAR NEP-141 | 1h | ~$15 (10 NEAR) | P4 |
+| B.10 | TON Jetton | 1h | ~$12 (5 TON) | P4 |
+| C | ZionDex AMM on Base | 1h | ~$50 (gas) | Q1 2027 |
+
+**Celkový odhad:** Phase A = 2-3h (hned), Phase B = 8-10h (postupně), Phase C = Q1 2027
+
+---
+
+## 17. References
+
+- **Contract addresses template:** [`docs/3.0.5/CONTRACT_ADDRESSES.md`](./docs/3.0.5/CONTRACT_ADDRESSES.md) — all chain addresses, env vars, deploy steps
 - **Existing concept doc:** `docs/3.0.3/ZionDex.md`
 - **WARP architecture:** `docs/WARP_ARCHITECTURE.md`
+- **WARP Lightning plan:** `docs/WARP_LIGHTNING_PLAN.md`
+- **Non-EVM contracts:** `V3/L2/bridge/contracts/non-evm/` — 9 chains, 19 files
+- **LND Docker setup:** `V3/L3/warp/docker/lightning/` — docker-compose, lnd.conf, bitcoin.conf
+- **LND scripts:** `V3/L3/warp/scripts/lightning/` — channel management
 - **Bridge config:** `V3/L2/bridge/config/bridge-mainnet.toml`
 - **Swap aggregator:** `V3/L2/swap-aggregator/src/orchestrator.rs`
 - **Atomic swap:** `V3/L2/atomic-swap/src/types.rs`
