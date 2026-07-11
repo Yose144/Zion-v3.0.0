@@ -38,6 +38,12 @@ pub struct ChainContracts {
     pub quoter_v2: Option<String>,
     /// Factory
     pub factory: Option<String>,
+    /// ZionDex AMM PoolManager (our custom AMM)
+    pub ziondex_pool_manager: Option<String>,
+    /// ZionDex AMM Router (user-facing)
+    pub ziondex_router: Option<String>,
+    /// ZionDex Hooks contract
+    pub ziondex_hooks: Option<String>,
 }
 
 /// DEX entry in the registry
@@ -82,6 +88,10 @@ impl Default for RouterConfig {
             swap_router: Some("0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45".into()),
             quoter_v2: Some("0x61fFE014bA17989E743c5F6cB21bF9697530B21e".into()),
             factory: Some("0x1F98431c8aD98523631AE4a59f267346ea31F984".into()),
+            // ZionDex AMM — will be set after deploy via DeployBase.s.sol
+            ziondex_pool_manager: None, // TODO: set after Base deploy
+            ziondex_router: None,
+            ziondex_hooks: None,
         });
 
         // Non-Base EVM chains (same wZION, different bridge)
@@ -93,6 +103,9 @@ impl Default for RouterConfig {
                 swap_router: None,
                 quoter_v2: None,
                 factory: None,
+                ziondex_pool_manager: None,
+                ziondex_router: None,
+                ziondex_hooks: None,
             });
         }
 
@@ -100,6 +113,37 @@ impl Default for RouterConfig {
 
         // Base DEXs
         dex_registry.insert(ChainId::Base, vec![
+            // ZionDex AMM — our custom AMM with ZION pair fee discount (0.15%)
+            DexEntry {
+                dex: DexId::ZionDexAmm,
+                pools: vec![
+                    // Pools will be created after deploy via ZionDexPoolManager.initialize()
+                    // Fee is 15 bps (0.15%) for ZION pairs — half of Uniswap's 30 bps
+                    PoolEntry {
+                        token_a: "wZION".into(),
+                        token_b: "USDT".into(),
+                        address: "0x0".into(), // TODO: set after pool initialization
+                        fee_bps: 15,
+                        chain: ChainId::Base,
+                    },
+                    PoolEntry {
+                        token_a: "wZION".into(),
+                        token_b: "WETH".into(),
+                        address: "0x0".into(), // TODO: set after pool initialization
+                        fee_bps: 15,
+                        chain: ChainId::Base,
+                    },
+                    PoolEntry {
+                        token_a: "wZION".into(),
+                        token_b: "USDC".into(),
+                        address: "0x0".into(), // TODO: set after pool initialization
+                        fee_bps: 15,
+                        chain: ChainId::Base,
+                    },
+                ],
+                enabled: false, // Enabled after AMM deploy + pool init
+            },
+            // Uniswap V3 — existing pools
             DexEntry {
                 dex: DexId::UniswapV3,
                 pools: vec![
@@ -189,11 +233,55 @@ impl RouterConfig {
         self.dex_registry.get(&chain).map(|v| v.as_slice()).unwrap_or(&[])
     }
 
-    /// Find a pool for a token pair on a chain
+    /// Find a pool for a token pair on a chain (only enabled DEXs)
     pub fn find_pool(&self, chain: ChainId, token_a: &str, token_b: &str) -> Option<&PoolEntry> {
-        self.dexs_for_chain(chain).iter().flat_map(|e| e.pools.iter()).find(|p| {
-            (p.token_a.eq_ignore_ascii_case(token_a) && p.token_b.eq_ignore_ascii_case(token_b))
-                || (p.token_a.eq_ignore_ascii_case(token_b) && p.token_b.eq_ignore_ascii_case(token_a))
-        })
+        self.dexs_for_chain(chain).iter()
+            .filter(|e| e.enabled) // Only search enabled DEXs
+            .flat_map(|e| e.pools.iter())
+            .find(|p| {
+                (p.token_a.eq_ignore_ascii_case(token_a) && p.token_b.eq_ignore_ascii_case(token_b))
+                    || (p.token_a.eq_ignore_ascii_case(token_b) && p.token_b.eq_ignore_ascii_case(token_a))
+            })
+    }
+
+    /// Find all pools for a token pair on a chain (across all DEXs, including disabled)
+    pub fn find_all_pools(&self, chain: ChainId, token_a: &str, token_b: &str) -> Vec<&PoolEntry> {
+        self.dexs_for_chain(chain).iter()
+            .flat_map(|e| e.pools.iter())
+            .filter(|p| {
+                (p.token_a.eq_ignore_ascii_case(token_a) && p.token_b.eq_ignore_ascii_case(token_b))
+                    || (p.token_a.eq_ignore_ascii_case(token_b) && p.token_b.eq_ignore_ascii_case(token_a))
+            })
+            .collect()
+    }
+
+    /// Enable a DEX on a chain (e.g., after AMM deploy)
+    pub fn enable_dex(&mut self, chain: ChainId, dex: DexId) {
+        if let Some(dexs) = self.dex_registry.get_mut(&chain) {
+            for entry in dexs.iter_mut() {
+                if entry.dex == dex {
+                    entry.enabled = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    /// Update pool address for a DEX (e.g., after pool initialization)
+    pub fn update_pool_address(&mut self, chain: ChainId, dex: DexId, token_a: &str, token_b: &str, new_address: String) {
+        if let Some(dexs) = self.dex_registry.get_mut(&chain) {
+            for entry in dexs.iter_mut() {
+                if entry.dex == dex {
+                    for pool in entry.pools.iter_mut() {
+                        if (pool.token_a.eq_ignore_ascii_case(token_a) && pool.token_b.eq_ignore_ascii_case(token_b))
+                            || (pool.token_a.eq_ignore_ascii_case(token_b) && pool.token_b.eq_ignore_ascii_case(token_a))
+                        {
+                            pool.address = new_address;
+                            return;
+                        }
+                    }
+                }
+            }
+        }
     }
 }

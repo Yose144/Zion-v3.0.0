@@ -11,6 +11,7 @@ import { Zap, Globe, Shield, TrendingUp, ArrowRight } from 'lucide-react';
 import CrossChainSwapWidget from '@/components/dex/CrossChainSwapWidget';
 import RecentSwaps from '@/components/dex/RecentSwaps';
 import TransactionStatus from '@/components/dex/TransactionStatus';
+import PriceChart from '@/components/dex/PriceChart';
 import Link from 'next/link';
 
 export default function DexPage() {
@@ -67,6 +68,11 @@ export default function DexPage() {
           <div className="lg:col-span-2">
             <CrossChainSwapWidget />
 
+            {/* Price chart */}
+            <div className="mt-6">
+              <PriceChart token="wZION" vsToken="USDT" />
+            </div>
+
             {/* Active swap status */}
             {activeSwapId && (
               <div className="mt-6">
@@ -93,6 +99,20 @@ export default function DexPage() {
             <div className="bg-zinc-900/60 border border-zinc-700/30 rounded-xl p-4">
               <h3 className="text-sm font-semibold text-white mb-3">Quick Links</h3>
               <div className="space-y-2">
+                <Link
+                  href="/dex/liquidity"
+                  className="flex items-center justify-between p-2 bg-zinc-800/40 rounded-lg hover:bg-zinc-800/60 transition-colors"
+                >
+                  <span className="text-sm text-zinc-300">Liquidity Pools</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
+                </Link>
+                <Link
+                  href="/dex/portfolio"
+                  className="flex items-center justify-between p-2 bg-zinc-800/40 rounded-lg hover:bg-zinc-800/60 transition-colors"
+                >
+                  <span className="text-sm text-zinc-300">My Portfolio</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
+                </Link>
                 <Link
                   href="/defi"
                   className="flex items-center justify-between p-2 bg-zinc-800/40 rounded-lg hover:bg-zinc-800/60 transition-colors"
