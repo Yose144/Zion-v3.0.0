@@ -554,6 +554,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <button onclick="switchTab('dao')" id="tab-dao">DAO Governance</button>
         <button onclick="switchTab('cex')" id="tab-cex">📊 CEX + DEX</button>
         <button onclick="switchTab('payout')" id="tab-payout">💰 Payouts</button>
+        <button onclick="switchTab('pool-miners')" id="tab-pool-miners">⛏️ Pool Miners</button>
         <button onclick="switchTab('wallets')" id="tab-wallets">💼 Wallets</button>
         <button onclick="switchTab('explorer')" id="tab-explorer">🔍 Explorer</button>
       </div>
@@ -1400,6 +1401,32 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     </div>
     </div><!-- end 3-col grid -->
 
+    <!-- Pool Connection History -->
+    <div class="zion-panel p-5 mb-4">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold flex items-center gap-2">🔌 Pool Connection History</h2>
+        <span id="pool-connection-history-badge" class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">—</span>
+      </div>
+      <div class="overflow-x-auto max-h-56 overflow-y-auto">
+        <table class="w-full text-xs text-left">
+          <thead>
+            <tr class="text-gray-500 border-b border-white/10">
+              <th class="py-2 px-2">Time</th>
+              <th class="py-2 px-2">Session</th>
+              <th class="py-2 px-2">Peer Address</th>
+              <th class="py-2 px-2">Miner ID</th>
+              <th class="py-2 px-2">Worker</th>
+              <th class="py-2 px-2 text-right">Active Sessions</th>
+              <th class="py-2 px-2 text-right">Duration</th>
+            </tr>
+          </thead>
+          <tbody id="pool-connection-history-tbody">
+            <tr><td colspan="7" class="text-gray-500 text-center py-4">Loading connection history…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- ═══════ Layer Services (L2–L6) ═══════ -->
     <div class="zion-panel p-5">
       <div class="flex items-center justify-between mb-4">
@@ -1559,6 +1586,21 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: Nodes ═════════ -->
   <div id="pane-nodes" class="hidden space-y-4">
+
+    <!-- ── All Nodes Panel (robust overview) ── -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold flex items-center gap-2"><span class="text-gradient">🌐 All Nodes</span></h2>
+        <div class="flex items-center gap-3">
+          <span id="all-nodes-sync-badge" class="text-xs px-2 py-1 rounded hidden"></span>
+          <span id="all-nodes-count" class="text-xs text-gray-400"></span>
+        </div>
+      </div>
+      <div id="all-nodes-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div class="text-gray-400 text-sm">Loading nodes...</div>
+      </div>
+    </div>
+
     <div class="zion-panel p-5">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-base font-bold flex items-center gap-2"><span class="text-gradient">🖥️ Multi-Node Detection</span></h2>
@@ -1845,6 +1887,41 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
     </div>
 
+    <!-- Pool Leaderboard (rich) -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h3 class="text-sm font-bold mb-0">🏆 Pool Miner Leaderboard</h3>
+          <div class="text-[10px] text-gray-400 mt-1">
+            Pending: <span id="pool-leaderboard-total-pending" class="text-amber-400 font-mono">—</span>
+            · Paid: <span id="pool-leaderboard-total-paid" class="text-cyan-400 font-mono">—</span>
+            · On-Chain: <span id="pool-leaderboard-total-onchain" class="text-zion-gold font-mono">—</span>
+          </div>
+        </div>
+        <span id="pool-leaderboard-badge" class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">—</span>
+      </div>
+      <div class="overflow-x-auto max-h-80 overflow-y-auto">
+        <table class="w-full text-xs text-left">
+          <thead>
+            <tr class="text-gray-500 border-b border-white/10">
+              <th class="py-2 px-2">Rank</th>
+              <th class="py-2 px-2">Miner</th>
+              <th class="py-2 px-2 text-right">Hashrate</th>
+              <th class="py-2 px-2 text-right">Valid Shares</th>
+              <th class="py-2 px-2 text-right">Blocks</th>
+              <th class="py-2 px-2 text-right">Pending</th>
+              <th class="py-2 px-2 text-right">Paid</th>
+              <th class="py-2 px-2 text-right">On-Chain</th>
+              <th class="py-2 px-2 text-right">Accept %</th>
+            </tr>
+          </thead>
+          <tbody id="pool-leaderboard-tbody">
+            <tr><td colspan="9" class="text-gray-500 text-center py-4">Loading leaderboard…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- Payout History Timeline -->
     <div class="zion-panel p-5">
       <h3 class="text-sm font-bold mb-3">Payout History</h3>
@@ -1871,6 +1948,212 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         </div>
       </div>
       <div class="mt-3 text-[10px] text-gray-500" id="payout-val-error">—</div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: Pool Miners ═════════ -->
+  <div id="pane-pool-miners" class="hidden space-y-4">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">⛏️ Pool Miners</h1>
+        <p class="text-xs text-gray-400 mt-1">Hashrate · Shares · PPLNS · Balances · Live sessions</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="pool-miners-last-updated" class="text-[10px] text-gray-500"></span>
+        <button onclick="loadPoolMinersTab()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+      </div>
+    </div>
+
+    <!-- KPI Row -->
+    <div id="pool-miners-kpi" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+      <div class="zion-panel p-3 text-center">
+        <div class="text-lg font-bold text-emerald-400" id="pm-kpi-active">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Active Miners</div>
+      </div>
+      <div class="zion-panel p-3 text-center">
+        <div class="text-lg font-bold text-zion-gold" id="pm-kpi-registered">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Registered</div>
+      </div>
+      <div class="zion-panel p-3 text-center">
+        <div class="text-lg font-bold text-amber-400" id="pm-kpi-hashrate">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Hashrate (Live)</div>
+        <div class="text-[9px] text-gray-500" id="pm-kpi-hashrate-1h">—</div>
+        <div class="text-[9px] text-gray-500" id="pm-kpi-hashrate-24h">—</div>
+      </div>
+      <div class="zion-panel p-3 text-center">
+        <div class="text-lg font-bold text-cyan-400" id="pm-kpi-accept">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Accept Rate</div>
+      </div>
+      <div class="zion-panel p-3 text-center">
+        <div class="text-lg font-bold text-purple-400" id="pm-kpi-paid">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Total Paid</div>
+      </div>
+      <div class="zion-panel p-3 text-center">
+        <div class="text-lg font-bold text-amber-400" id="pm-kpi-pending">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Pending</div>
+      </div>
+      <div class="zion-panel p-3 text-center">
+        <div class="text-lg font-bold text-zion-gold" id="pm-kpi-onchain">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">On-Chain</div>
+      </div>
+      <div class="zion-panel p-3 text-center">
+        <div class="text-lg font-bold text-emerald-400" id="pm-kpi-blocks">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Blocks Found</div>
+      </div>
+    </div>
+
+    <!-- Pool Info Bar -->
+    <div class="zion-panel p-3 flex items-center gap-6 text-xs">
+      <div class="flex items-center gap-2"><span class="text-gray-500">Uptime:</span><span id="pm-pool-uptime" class="font-mono text-emerald-400">—</span></div>
+      <div class="flex items-center gap-2"><span class="text-gray-500">Version:</span><span id="pm-pool-version" class="font-mono text-gray-300">—</span></div>
+      <div class="flex items-center gap-2"><span class="text-gray-500">PPLNS State:</span><span id="pm-pplns-state" class="font-mono text-gray-300">—</span></div>
+      <div class="flex items-center gap-2"><span class="text-gray-500">Window Entries:</span><span id="pm-pplns-window-entries" class="font-mono text-gray-300">—</span></div>
+    </div>
+
+    <!-- PPLNS + Fee Split + Wallet summary -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <!-- PPLNS Window -->
+      <div class="zion-panel p-4">
+        <h3 class="text-sm font-bold mb-3 flex items-center gap-2">🎯 PPLNS Window</h3>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between"><span class="text-gray-400">Window Size</span><span id="pm-pplns-size" class="font-mono text-white">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Window Used</span><span id="pm-pplns-used" class="font-mono text-white">—</span></div>
+          <!-- Utilization bar -->
+          <div class="pt-1">
+            <div class="w-full bg-black/40 rounded-full h-2 overflow-hidden">
+              <div id="pm-pplns-bar" class="bg-gradient-to-r from-emerald-500 to-cyan-500 h-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <div class="flex justify-between mt-1"><span class="text-[9px] text-gray-500">Utilization</span><span id="pm-pplns-util" class="text-[9px] text-cyan-400 font-mono">—</span></div>
+          </div>
+          <div class="flex justify-between"><span class="text-gray-400">Payout Rounds</span><span id="pm-pplns-rounds" class="font-mono text-white">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Registered Miners</span><span id="pm-pplns-registered" class="font-mono text-white">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Total Paid</span><span id="pm-pplns-paid" class="font-mono text-cyan-400">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Total Unpaid</span><span id="pm-pplns-unpaid" class="font-mono text-amber-400">—</span></div>
+        </div>
+      </div>
+      <!-- Fee Split -->
+      <div class="zion-panel p-4">
+        <h3 class="text-sm font-bold mb-3 flex items-center gap-2">💸 Fee Split</h3>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between"><span class="text-gray-400">Miner Share</span><span id="pm-fee-miner" class="font-mono text-emerald-400">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Humanitarian (5%)</span><span id="pm-fee-humanitarian" class="font-mono text-blue-400">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Issobella (5%)</span><span id="pm-fee-issobella" class="font-mono text-purple-400">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Pool Fee (1%)</span><span id="pm-fee-pool" class="font-mono text-amber-400">—</span></div>
+          <div class="border-t border-white/10 pt-2 mt-2 space-y-1">
+            <div class="flex justify-between"><span class="text-gray-500">Humanitarian Accumulated</span><span id="pm-fee-hum-acc" class="font-mono text-blue-300">—</span></div>
+            <div class="flex justify-between"><span class="text-gray-500">Issobella Accumulated</span><span id="pm-fee-iss-acc" class="font-mono text-purple-300">—</span></div>
+            <div class="flex justify-between"><span class="text-gray-500">Pool Fee Accumulated</span><span id="pm-fee-pool-acc" class="font-mono text-amber-300">—</span></div>
+          </div>
+          <div class="border-t border-white/10 pt-2 mt-1">
+            <div class="text-[9px] text-gray-500 mb-1">Wallets</div>
+            <div class="text-[9px] font-mono text-gray-400 truncate" id="pm-fee-hum-wallet" title="">—</div>
+            <div class="text-[9px] font-mono text-gray-400 truncate" id="pm-fee-iss-wallet" title="">—</div>
+          </div>
+        </div>
+      </div>
+      <!-- Pool Wallet + Share Stats combined -->
+      <div class="zion-panel p-4">
+        <h3 class="text-sm font-bold mb-3 flex items-center gap-2">💰 Pool Wallet & Shares</h3>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between"><span class="text-gray-400">Address</span><span id="pm-wallet-addr" class="font-mono text-white truncate max-w-[180px]">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Balance</span><span id="pm-wallet-balance" class="font-mono text-zion-gold">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Payouts Enabled</span><span id="pm-wallet-enabled" class="font-bold">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">UTXO Count</span><span id="pm-wallet-utxo" class="font-mono text-white">—</span></div>
+          <div class="border-t border-white/10 pt-2 mt-2 space-y-1">
+            <div class="flex justify-between"><span class="text-gray-400">Total Submits</span><span id="pm-shares-total" class="font-mono text-white">—</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Valid / Invalid / Stale</span><span class="font-mono"><span id="pm-shares-valid" class="text-emerald-400">—</span> / <span id="pm-shares-invalid" class="text-red-400">—</span> / <span id="pm-shares-stale" class="text-amber-400">—</span></span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Unique Payout Addrs</span><span id="pm-unique-addrs" class="font-mono text-white">—</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Routing Breakdown -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="zion-panel p-4">
+        <h3 class="text-sm font-bold mb-3 flex items-center gap-2">🔀 Routing Groups</h3>
+        <div id="pm-routing-groups" class="space-y-2 text-xs">
+          <div class="text-gray-500">Loading routing data…</div>
+        </div>
+      </div>
+      <div class="zion-panel p-4">
+        <h3 class="text-sm font-bold mb-3 flex items-center gap-2">📡 Share Sources</h3>
+        <div id="pm-routing-sources" class="space-y-2 text-xs">
+          <div class="text-gray-500">Loading source data…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search + Miners Table -->
+    <div class="zion-panel p-4">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-bold flex items-center gap-2">🏆 Miner Leaderboard</h3>
+        <span id="pool-miners-badge" class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">—</span>
+      </div>
+      <div class="mb-3">
+        <input type="text" id="pool-miners-search" placeholder="Search miner / worker / address…" class="w-full md:w-1/3 px-3 py-2 bg-black/30 border border-white/10 rounded-lg text-xs text-white focus:border-amber-500 focus:outline-none" oninput="filterPoolMinersTable()">
+      </div>
+      <div class="overflow-x-auto max-h-[480px] overflow-y-auto">
+        <table class="w-full text-xs text-left">
+          <thead>
+            <tr class="text-gray-500 border-b border-white/10">
+              <th class="py-2 px-2">Rank</th>
+              <th class="py-2 px-2">Miner</th>
+              <th class="py-2 px-2">Payout Address</th>
+              <th class="py-2 px-2 text-center">Status</th>
+              <th class="py-2 px-2 text-right">Hashrate</th>
+              <th class="py-2 px-2 text-right">Valid</th>
+              <th class="py-2 px-2 text-right">Invalid</th>
+              <th class="py-2 px-2 text-right">Accept %</th>
+              <th class="py-2 px-2 text-right">Blocks</th>
+              <th class="py-2 px-2 text-right">Pending</th>
+              <th class="py-2 px-2 text-right">Paid</th>
+              <th class="py-2 px-2 text-right">On-Chain</th>
+              <th class="py-2 px-2 text-right">Last Seen</th>
+            </tr>
+          </thead>
+          <tbody id="pool-miners-tbody">
+            <tr><td colspan="13" class="text-gray-500 text-center py-4">Loading miners…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Connection History -->
+    <div class="zion-panel p-4">
+      <h3 class="text-sm font-bold mb-3 flex items-center gap-2">🔌 Recent Connection Events</h3>
+      <div class="overflow-x-auto max-h-48 overflow-y-auto">
+        <table class="w-full text-xs text-left">
+          <thead>
+            <tr class="text-gray-500 border-b border-white/10">
+              <th class="py-2 px-2">Time</th>
+              <th class="py-2 px-2">Session</th>
+              <th class="py-2 px-2">Peer</th>
+              <th class="py-2 px-2">Miner ID</th>
+              <th class="py-2 px-2">Worker</th>
+              <th class="py-2 px-2">Duration</th>
+              <th class="py-2 px-2">Event</th>
+            </tr>
+          </thead>
+          <tbody id="pool-miners-events">
+            <tr><td colspan="7" class="text-gray-500 text-center py-4">Loading events…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Miner Detail Modal -->
+    <div id="pm-miner-modal" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center p-4" onclick="if(event.target===this)closeMinerModal()">
+      <div class="zion-panel p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-bold text-gradient">⛏️ Miner Detail</h3>
+          <button onclick="closeMinerModal()" class="text-gray-400 hover:text-white text-xl">✕</button>
+        </div>
+        <div id="pm-miner-modal-content" class="space-y-4">
+          <div class="text-gray-500 text-sm">Click a miner in the leaderboard to see details.</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -5550,7 +5833,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=92"></script>
+<script src="/dashboard.js?v=102"></script>
 <script>
 // ═══ ZION Theme — Auto-apply accent colors per pane ═══
 (function(){

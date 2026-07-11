@@ -984,16 +984,16 @@ def auto_backup_if_needed():
 SERVICE_REGISTRY_EDGE_PRIMARY = [
     # ── L1: Consensus (v3.0.4 — new server, all on 127.0.0.1) ──────────
     {"id": "edge-node1", "name": "ZION Node (Primary / Genesis)", "icon": "🌍", "level": "L1", "kind": "node",
-     "ports": {"p2p": 8333, "rpc": 8443, "ws": 8445, "metrics": 9100},
+     "ports": {"p2p": 8333, "rpc": 8443, "metrics": 9100},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
      "health_method": "rpc", "severity": "critical", "autoheal": False,
      "health_endpoint": "http://127.0.0.1:8443/health",
-     "purpose": "Primary / Genesis node — P2P 8333, RPC 8443, WS 8445, metrics 9100. Fresh genesis v3.0.4.",
+     "purpose": "Primary / Genesis node — P2P 8333, RPC 8443, metrics 9100. Fresh genesis v3.0.4.",
      "child_says": "🌍 The king node — source of chain truth!",
      "depends_on": []},
     {"id": "edge-node2", "name": "ZION Node 2 (Follower)", "icon": "🔶", "level": "L1", "kind": "node",
-     "ports": {"p2p": 8334, "rpc": 8448, "ws": 8449, "metrics": 9116},
+     "ports": {"p2p": 8334, "rpc": 8448, "metrics": 9116},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
      "health_method": "rpc", "severity": "warning", "autoheal": False,
@@ -1002,7 +1002,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "child_says": "🔶 Follows Node 1 to keep a backup copy!",
      "depends_on": ["edge-node1"]},
     {"id": "local-backup", "name": "Local Backup Node", "icon": "🔷", "level": "L1", "kind": "node",
-     "ports": {"p2p": 8333, "rpc": 8446, "ws": 8447},
+     "ports": {"p2p": 8333, "rpc": 8446},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
      "health_method": "rpc", "severity": "warning", "autoheal": False,
@@ -1111,7 +1111,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
 SERVICE_REGISTRY_LOCAL_DEV = [
     # ── L1: Consensus (Local-dev topology) ───────────────────────────────
     {"id": "node1", "name": "Node 1 (Genesis)", "icon": "🔷", "level": "L1", "kind": "node",
-     "ports": {"p2p": 8333, "rpc": 8443, "ws": 8445, "metrics": 9115},
+     "ports": {"p2p": 8333, "rpc": 8443, "metrics": 9115},
      "log": "node1.log", "start": "start-node1", "stop": None,
      "health_method": "rpc", "severity": "critical", "autoheal": False,
      "health_endpoint": "http://127.0.0.1:8443/health",
@@ -1119,7 +1119,7 @@ SERVICE_REGISTRY_LOCAL_DEV = [
      "child_says": "🔷 The genesis node starts the chain!",
      "depends_on": []},
     {"id": "node2", "name": "Node 2 (Follower)", "icon": "🔶", "level": "L1", "kind": "node",
-     "ports": {"p2p": 8334, "rpc": 8446, "ws": 8447, "metrics": 9116},
+     "ports": {"p2p": 8334, "rpc": 8446, "metrics": 9116},
      "log": "node2.log", "start": "start-node2", "stop": None,
      "health_method": "rpc", "severity": "warning", "autoheal": False,
      "health_endpoint": "http://127.0.0.1:8446/health",
@@ -2534,16 +2534,28 @@ def _build_status_edge_primary() -> dict:
         r = rpc_call("127.0.0.1", 8448, "getNodeInfo", {}, timeout=2.0)
         return ("edge2_info", r if r and not r.get("_rpc_error") else None)
 
+    def _edge_peerinfo_call():
+        r = rpc_call("127.0.0.1", 8443, "getPeerInfo", {}, timeout=2.0)
+        return ("edge_peers", r if r and not r.get("_rpc_error") else None)
+
+    def _edge_nodeinfo_call():
+        r = rpc_call("127.0.0.1", 8443, "getNodeInfo", {}, timeout=2.0)
+        return ("edge_info", r if r and not r.get("_rpc_error") else None)
+
     local_backup_info = None
     edge_node2_info = None
     edge_node2_nodeinfo = None
-    with ThreadPoolExecutor(max_workers=5) as ex:
+    edge_peers = None
+    edge_nodeinfo = None
+    with ThreadPoolExecutor(max_workers=7) as ex:
         futures = {
             ex.submit(_edge_rpc_call),
             ex.submit(_edge_node2_rpc_call),
             ex.submit(_local_backup_rpc_call),
             ex.submit(_local_rpc_call),
             ex.submit(_edge_node2_nodeinfo_call),
+            ex.submit(_edge_peerinfo_call),
+            ex.submit(_edge_nodeinfo_call),
         }
         try:
             for fut in as_completed(futures, timeout=5.0):
@@ -2555,6 +2567,10 @@ def _build_status_edge_primary() -> dict:
                         edge_node2_info = val
                     elif key == "edge2_info":
                         edge_node2_nodeinfo = val
+                    elif key == "edge_peers":
+                        edge_peers = val
+                    elif key == "edge_info":
+                        edge_nodeinfo = val
                     elif key == "local_backup":
                         local_backup_info = val
                     else:
@@ -2575,6 +2591,10 @@ def _build_status_edge_primary() -> dict:
         "protocol_version": edge_rpc_info.get("protocol_version") if edge_rpc_info else None,
         "consensus_profile": edge_rpc_info.get("consensus_profile") if edge_rpc_info else None,
         "accepted_blocks": edge_rpc_info.get("accepted_blocks") if edge_rpc_info else None,
+        "node_id": (edge_nodeinfo or {}).get("node_id") if edge_rpc_info else None,
+        "p2p_bind": (edge_nodeinfo or {}).get("p2p_bind") if edge_rpc_info else None,
+        "rpc_bind": (edge_nodeinfo or {}).get("rpc_bind") if edge_rpc_info else None,
+        "host": "127.0.0.1:8443",
     }
     edge_node2_status = {
         "running": bool(edge_node2_info),
@@ -2771,6 +2791,71 @@ def _build_status_edge_primary() -> dict:
     free_world_health = _health_map["free_world"]
     issobella_health  = _health_map["issobella"]
 
+    # ── Build all_nodes list for the All Nodes panel ──────────────────────────
+    # Combines our 3 known nodes + any external P2P peers discovered via getPeerInfo.
+    all_nodes = []
+    _our_node_keys = set()
+    for _label, _st, _role, _icon in [
+        ("Edge Node 1 (Primary)", edge_node1_status, "primary", "🌍"),
+        ("Edge Node 2 (Follower)", edge_node2_status, "follower", "🔶"),
+        ("Local Backup", local_backup_status, "backup", "🔷"),
+    ]:
+        if _st:
+            all_nodes.append({
+                "name": _label,
+                "role": _role,
+                "icon": _icon,
+                "running": _st.get("running", False),
+                "chain_height": _st.get("chain_height"),
+                "tip_hash": _st.get("tip_hash"),
+                "node_id": _st.get("node_id"),
+                "p2p_bind": _st.get("p2p_bind"),
+                "rpc_bind": _st.get("rpc_bind"),
+                "host": _st.get("host", ""),
+                "known_peers": _st.get("known_peers", 0),
+                "mempool_size": _st.get("mempool_size", 0),
+                "protocol_version": _st.get("protocol_version"),
+                "network": _st.get("network"),
+                "consensus_profile": _st.get("consensus_profile"),
+                "accepted_blocks": _st.get("accepted_blocks"),
+                "is_external": False,
+            })
+
+    # Add external P2P peers from getPeerInfo (these are nodes connecting from outside)
+    p2p_peer_list = []
+    if edge_peers:
+        p2p_peer_list = edge_peers.get("peers", [])
+        for peer in p2p_peer_list:
+            peer_addr = peer.get("address", "")
+            peer_host = peer.get("host", peer_addr.split(":")[0] if ":" in peer_addr else peer_addr)
+            # Skip our own internal nodes (127.0.0.1)
+            if peer_host == "127.0.0.1":
+                continue
+            all_nodes.append({
+                "name": f"External Peer ({peer_host})",
+                "role": "external",
+                "icon": "🌐",
+                "running": True,
+                "chain_height": None,
+                "tip_hash": None,
+                "node_id": None,
+                "p2p_bind": peer_addr,
+                "rpc_bind": None,
+                "host": peer_host,
+                "known_peers": 0,
+                "mempool_size": 0,
+                "protocol_version": None,
+                "network": None,
+                "consensus_profile": None,
+                "accepted_blocks": None,
+                "is_external": True,
+            })
+
+    # Compute sync status across all running nodes
+    running_heights = [n["chain_height"] for n in all_nodes if n["running"] and n["chain_height"] is not None]
+    max_height = max(running_heights) if running_heights else 0
+    all_in_sync = len(running_heights) >= 2 and all(h == running_heights[0] for h in running_heights)
+
     elapsed = time.time() - t0
     return {
         "timestamp": datetime.now().isoformat(),
@@ -2780,6 +2865,10 @@ def _build_status_edge_primary() -> dict:
         "edge_node": edge_node1_status,
         "edge_node2": edge_node2_status,
         "local_backup": local_backup_status,
+        "all_nodes": all_nodes,
+        "p2p_peers": p2p_peer_list,
+        "all_in_sync": all_in_sync,
+        "max_height": max_height,
         "pool": pool_status,
         "pool_edge": {
             "running": pool_edge_health["alive"],
@@ -4204,8 +4293,8 @@ def get_pool_miners() -> dict:
                 miner["pending_balance"] = payout_miner.get("pending_balance")
             if payout_miner.get("on_chain_balance_zion") is not None:
                 miner["on_chain_balance_zion"] = payout_miner.get("on_chain_balance_zion")
-            if payout_miner.get("address"):
-                miner["payout_address"] = payout_miner.get("address")
+            if payout_miner.get("payout_address"):
+                miner["payout_address"] = payout_miner.get("payout_address")
     except Exception:
         pass
 
@@ -4216,6 +4305,617 @@ def get_pool_miners() -> dict:
         "miners_tracked": miners_tracked,
         "total_hashrate_khs": total_hashrate_hps / 1000.0,
     }
+
+# ── Pool connection history (from Edge journald) ───────────────────────
+
+_POOL_HISTORY_CACHE = {"ts": 0, "data": []}
+_POOL_HISTORY_LOCK = threading.Lock()
+_POOL_HISTORY_TTL = 15  # seconds
+
+
+def _parse_journal_timestamp(line: str) -> float:
+    """Parse 'Jul 10 20:56:20' style timestamp into Unix seconds (current year)."""
+    try:
+        m = re.match(r"^(\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})", line.strip())
+        if not m:
+            return 0.0
+        ts_str = m.group(1)
+        now = datetime.now()
+        dt = datetime.strptime(f"{now.year} {ts_str}", "%Y %b %d %H:%M:%S")
+        # Handle year wrap around new year
+        if (now - dt).total_seconds() > 86400 * 180:
+            dt = dt.replace(year=now.year + 1)
+        return dt.timestamp()
+    except Exception:
+        return 0.0
+
+
+def get_pool_connection_history(limit: int = 100, since_hours: int = 24) -> dict:
+    """Fetch pool connection/disconnection events from Edge server journald.
+
+    Parses `peer_addr=`, `session_start`, `session_miner_id`, `session_worker_name`,
+    `session_duration_secs` and `wire_bye` lines produced by zion-pool-server.
+    """
+    global _POOL_HISTORY_CACHE
+    now = time.time()
+    with _POOL_HISTORY_LOCK:
+        if (
+            _POOL_HISTORY_CACHE.get("since_hours") == since_hours
+            and now - _POOL_HISTORY_CACHE["ts"] < _POOL_HISTORY_TTL
+        ):
+            return {"ok": True, "events": _POOL_HISTORY_CACHE["data"][:limit], "cached": True}
+
+    cmd = (
+        f"journalctl -u zion-pool --no-pager --since '{since_hours} hours ago' "
+        "| grep -E 'peer_addr=|session_start|session_miner_id|session_worker_name|session_duration_secs|wire_bye'"
+    )
+    try:
+        result = _run_edge_cmd(cmd, timeout=20)
+        if result.returncode != 0:
+            return {"ok": False, "events": [], "error": result.stderr.strip()[:120]}
+        raw = result.stdout.strip()
+    except Exception as e:
+        return {"ok": False, "events": [], "error": str(e)[:120]}
+
+    if not raw:
+        return {"ok": True, "events": [], "cached": False}
+
+    # Map session_id -> event dict. peer_addr is queued and matched to the next session_start.
+    sessions: dict[str, dict] = {}
+    pending_peers: list[dict] = []
+    events: list[dict] = []
+    # Track closest session_start for duration/miner_id lines (which lack session_id)
+    open_sessions: list[dict] = []
+
+    for line in raw.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        ts = _parse_journal_timestamp(line)
+
+        # peer_addr is logged before the worker thread spawns. Queue it.
+        if m := re.search(r"peer_addr=([\d.]+:\d+)", line):
+            pending_peers.append({"ts": ts, "peer_addr": m.group(1)})
+            continue
+
+        # session_start creates a new session. Pair it with oldest queued peer_addr.
+        if m := re.search(r"session_start\s+active_sessions=(\d+)\s+session_id=(\d+)", line):
+            active_sessions = int(m.group(1))
+            session_id = m.group(2)
+            peer = pending_peers.pop(0) if pending_peers else {"ts": ts, "peer_addr": ""}
+            event = {
+                "ts": ts,
+                "time": datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S"),
+                "session_id": session_id,
+                "active_sessions": active_sessions,
+                "peer_addr": peer.get("peer_addr", ""),
+                "miner_id": None,
+                "worker_name": None,
+                "duration_secs": None,
+                "bye": None,
+            }
+            sessions[session_id] = event
+            open_sessions.append(event)
+            events.append(event)
+            continue
+
+        # session_miner_id / session_worker_name / session_duration_secs / wire_bye
+        # do not contain session_id, so we attach them to the most recent session_start
+        # that is still missing these fields. This is best-effort for pool versions that
+        # do not log session_id on close.
+        if (m := re.search(r"session_miner_id=(\S+)", line)):
+            for s in reversed(open_sessions):
+                if s["miner_id"] is None:
+                    s["miner_id"] = m.group(1)
+                    break
+            continue
+        if (m := re.search(r"session_worker_name=(\S+)", line)):
+            for s in reversed(open_sessions):
+                if s["worker_name"] is None:
+                    s["worker_name"] = m.group(1)
+                    break
+            continue
+        if (m := re.search(r"session_duration_secs=(\d+)", line)):
+            for s in reversed(open_sessions):
+                if s["duration_secs"] is None:
+                    s["duration_secs"] = int(m.group(1))
+                    break
+            continue
+        if (m := re.search(r"wire_bye=(\S+)", line)):
+            for s in reversed(open_sessions):
+                if s["bye"] is None:
+                    s["bye"] = m.group(1)
+                    break
+            continue
+
+    # Sort by timestamp descending and cache
+    events.sort(key=lambda x: x["ts"], reverse=True)
+    with _POOL_HISTORY_LOCK:
+        _POOL_HISTORY_CACHE = {"ts": now, "since_hours": since_hours, "data": events}
+
+    return {"ok": True, "events": events[:limit], "cached": False}
+
+
+# ── Registered pool miners (from PPLNS state) with real balances ─────────
+
+_REGISTERED_MINERS_CACHE = {"ts": 0, "data": []}
+_REGISTERED_MINERS_LOCK = threading.Lock()
+_REGISTERED_MINERS_TTL = 15  # seconds
+
+
+def _fetch_pplns_state() -> dict:
+    """Load pplns-state.json from the Edge server."""
+    try:
+        result = _run_edge_cmd("cat /data/zion/pplns-state.json", timeout=10)
+        if result.returncode == 0 and result.stdout.strip():
+            return json.loads(result.stdout)
+    except Exception:
+        pass
+    return {}
+
+
+def _get_pool_active_miner_map() -> dict:
+    """Return a map miner_id -> active miner data from the pool /miners endpoint."""
+    try:
+        miners = fetch_pool_miners()
+        return {m.get("address") or m.get("miner_id"): m for m in miners if m.get("address") or m.get("miner_id")}
+    except Exception:
+        return {}
+
+
+def get_pool_registered_miners() -> dict:
+    """Return ALL miners registered in PPLNS state with real on-chain balances.
+
+    Combines:
+      - PPLNS address registry (miner_id -> payout_address) from pplns-state.json
+      - Active telemetry from pool /miners (hashrate, shares, last_seen, pending)
+      - Node RPC getBalance for each unique payout address
+
+    This is the authoritative E2E view: every registered miner, every real balance.
+    """
+    now = time.time()
+    with _REGISTERED_MINERS_LOCK:
+        cached = _REGISTERED_MINERS_CACHE.get("data")
+        if cached and (now - _REGISTERED_MINERS_CACHE.get("ts", 0)) < _REGISTERED_MINERS_TTL:
+            return {"ok": True, "miners": cached, "cached": True}
+
+    # 1. Load PPLNS state and active telemetry in parallel-ish
+    pplns_state = _fetch_pplns_state()
+    active_map = _get_pool_active_miner_map()
+    stats = fetch_pool_stats()
+
+    addresses = pplns_state.get("addresses") or {}
+    unpaid = pplns_state.get("unpaid") or {}
+
+    if not addresses:
+        # Fallback to active miners if PPLNS state is unavailable
+        miners = list(active_map.values())
+        enrich_miner_balances(miners)
+        with _REGISTERED_MINERS_LOCK:
+            _REGISTERED_MINERS_CACHE["data"] = miners
+            _REGISTERED_MINERS_CACHE["ts"] = now
+        return {"ok": True, "miners": miners, "cached": False, "fallback": True}
+
+    # 2. Build unique list of payout addresses and lookup balances once per address
+    unique_addrs = set()
+    for addr in addresses.values():
+        if addr and isinstance(addr, str) and addr.startswith("zion1"):
+            unique_addrs.add(addr)
+
+    balance_map = {}
+    for addr in unique_addrs:
+        try:
+            bal = rpc_call(EDGE_RPC_HOST, 8443, "getBalance", {"address": addr}, timeout=2.0)
+            if bal and not bal.get("_rpc_error"):
+                atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
+                balance_map[addr] = flowers_to_zion(atomic)
+        except Exception:
+            pass
+
+    # 3. Build per-miner records, preserving individual miner IDs even if they share an address
+    miners = []
+    pplns_stats = (stats.get("pplns") or {}) if isinstance(stats, dict) else {}
+    total_paid_flowers = pplns_stats.get("total_paid_flowers", 0)
+    for miner_id, payout_address in addresses.items():
+        active = active_map.get(miner_id)
+        on_chain = balance_map.get(payout_address, 0.0)
+        pending_atomic = int(unpaid.get(miner_id, 0)) if isinstance(unpaid, dict) else 0
+        # If active, use live telemetry; otherwise zero hashrate/shares
+        hashrate = active.get("hashrate") or active.get("hashrate_hps") or 0.0 if active else 0.0
+        hashrate_1h = active.get("hashrate_1h") or 0.0 if active else 0.0
+        hashrate_24h = active.get("hashrate_24h") or 0.0 if active else 0.0
+        valid_shares = active.get("valid_shares", 0) if active else 0
+        invalid_shares = active.get("invalid_shares", 0) if active else 0
+        blocks_found = active.get("blocks_found", 0) if active else 0
+        last_seen = active.get("last_seen", 0) if active else 0
+        last_share = active.get("last_share", 0) if active else 0
+        worker_name = active.get("worker_name", "") if active else ""
+        m = {
+            "miner_id": miner_id,
+            "worker_name": worker_name,
+            "payout_address": payout_address,
+            "hashrate_hps": hashrate,
+            "hashrate_1h": hashrate_1h,
+            "hashrate_24h": hashrate_24h,
+            "valid_shares": valid_shares,
+            "invalid_shares": invalid_shares,
+            "pending_balance": pending_atomic,
+            "pending_balance_zion": flowers_to_zion(pending_atomic),
+            "paid_total": 0.0,  # per-miner lifetime not tracked in PPLNS state; use pool stats total
+            "paid_total_atomic": 0,
+            "blocks_found": blocks_found,
+            "last_seen": last_seen,
+            "last_share": last_share,
+            "on_chain_balance_zion": on_chain,
+            "active": bool(active),
+        }
+        miners.append(m)
+
+    # 4. Aggregate paid total by address for display
+    # The pool /api/v1/miner/:address/payouts can give per-address paid total, but
+    # PPLNS state is authoritative for lifetime. We attach the global total_paid to
+    # each active miner for ranking; registered-only miners show 0 paid.
+    # Use pool stats as authoritative total paid for the whole PPLNS set.
+    total_paid_zion = flowers_to_zion(total_paid_flowers)
+    for m in miners:
+        if m["active"]:
+            m["paid_total"] = total_paid_zion
+            m["paid_total_atomic"] = total_paid_flowers
+
+    # Sort by hashrate desc, active first
+    miners.sort(key=lambda m: (not m["active"], -(m.get("hashrate_hps") or 0)))
+
+    # Compute totals (deduplicate on-chain balance per address)
+    unique_balances = {}
+    total_pending = 0.0
+    total_paid = 0.0
+    for m in miners:
+        addr = m.get("payout_address") or ""
+        if addr:
+            unique_balances[addr] = float(m.get("on_chain_balance_zion", 0) or 0)
+        total_pending += float(m.get("pending_balance_zion", 0) or 0)
+        total_paid += float(m.get("paid_total", 0) or 0)
+    totals = {
+        "pending_zion": total_pending,
+        "paid_zion": total_paid,
+        "on_chain_zion": sum(unique_balances.values()),
+    }
+
+    with _REGISTERED_MINERS_LOCK:
+        _REGISTERED_MINERS_CACHE["data"] = miners
+        _REGISTERED_MINERS_CACHE["ts"] = now
+    return {"ok": True, "miners": miners, "totals": totals, "cached": False, "registered_count": len(miners), "active_count": sum(1 for m in miners if m["active"])}
+
+
+def enrich_miner_balances(miners: list) -> list:
+    """Query node RPC for on-chain balance of each miner's payout address.
+
+    Updates each miner dict in-place with:
+      - on_chain_balance_zion (float)
+      - pending_balance_zion (float) if pending_balance is in atomic flowers
+    """
+    for m in miners:
+        addr = m.get("payout_address") or m.get("address") or ""
+        if addr and isinstance(addr, str) and addr.startswith("zion1"):
+            try:
+                bal = rpc_call(EDGE_RPC_HOST, 8443, "getBalance", {"address": addr}, timeout=2.0)
+                if bal and not bal.get("_rpc_error"):
+                    atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
+                    m["on_chain_balance_zion"] = flowers_to_zion(atomic)
+            except Exception:
+                pass
+        # Normalize pending_balance to ZION
+        pending = m.get("pending_balance")
+        if pending is not None:
+            try:
+                m["pending_balance_zion"] = flowers_to_zion(int(pending))
+            except Exception:
+                m["pending_balance_zion"] = 0.0
+    return miners
+
+
+def get_pool_leaderboard(limit: int = 50) -> dict:
+    """Return pool miners sorted by hashrate (desc) with rank, paid and on-chain balances."""
+    data = get_pool_miners()
+    if not data.get("ok"):
+        return data
+    miners = data.get("miners", [])
+    # Enrich with on-chain balances and normalize pending/paid
+    miners = enrich_miner_balances(miners)
+    sorted_miners = sorted(
+        miners,
+        key=lambda m: (m.get("hashrate_hps") or m.get("hashrate") or 0),
+        reverse=True,
+    )[:limit]
+    total_pending = 0.0
+    total_paid = 0.0
+    total_on_chain = 0.0
+    for i, m in enumerate(sorted_miners, start=1):
+        m["rank"] = i
+        if "paid_total" not in m:
+            m["paid_total"] = flowers_to_zion(m.get("paid_total_atomic", 0) or 0)
+        if m.get("pending_balance_zion") is None:
+            try:
+                m["pending_balance_zion"] = flowers_to_zion(int(m.get("pending_balance", 0) or 0))
+            except Exception:
+                m["pending_balance_zion"] = 0.0
+        if m.get("on_chain_balance_zion") is None:
+            m["on_chain_balance_zion"] = 0.0
+        total_pending += float(m.get("pending_balance_zion") or 0)
+        total_paid += float(m.get("paid_total") or 0)
+        total_on_chain += float(m.get("on_chain_balance_zion") or 0)
+    return {
+        "ok": True,
+        "miners": sorted_miners,
+        "active_sessions": data.get("active_sessions", 0),
+        "miners_tracked": data.get("miners_tracked", len(sorted_miners)),
+        "total_hashrate_khs": data.get("total_hashrate_khs", 0),
+        "totals": {
+            "pending_zion": total_pending,
+            "paid_zion": total_paid,
+            "on_chain_zion": total_on_chain,
+        },
+    }
+
+# ── Pool Miners Dashboard (combined view for dedicated Pool Miners tab) ──
+
+_POOL_DASHBOARD_CACHE = {"ts": 0, "data": {}}
+_POOL_DASHBOARD_LOCK = threading.Lock()
+_POOL_DASHBOARD_TTL = 5  # seconds
+
+
+def get_pool_miners_dashboard() -> dict:
+    """Return a comprehensive, robust Pool Miners view for the dedicated tab.
+
+    Combines pool stats, leaderboard (with on-chain balances), PPLNS summary,
+    connection history, pool wallet state, fee split, routing breakdown, and
+    pool info. Each sub-source is wrapped in a try/except so a partial failure
+    still yields a useful response.
+    """
+    now = time.time()
+    with _POOL_DASHBOARD_LOCK:
+        cached = _POOL_DASHBOARD_CACHE.get("data")
+        if cached and (now - _POOL_DASHBOARD_CACHE.get("ts", 0)) < _POOL_DASHBOARD_TTL:
+            return cached
+
+    result: dict = {"ok": True}
+
+    # 1. Pool stats from /stats endpoint (fee split, PPLNS, routing, blocks, hashrate, uptime)
+    try:
+        stats = fetch_pool_stats()
+        result["stats"] = stats
+    except Exception:
+        result["stats"] = {}
+
+    # 2. ALL registered miners (from PPLNS state) with real on-chain balances
+    try:
+        reg = get_pool_registered_miners()
+        result["miners"] = reg.get("miners", [])
+        result["active_sessions"] = reg.get("active_count", 0)
+        result["miners_tracked"] = reg.get("registered_count", len(result["miners"]))
+    except Exception:
+        result["miners"] = []
+        result["active_sessions"] = 0
+        result["miners_tracked"] = 0
+
+    # 3. PPLNS summary (extracted from stats)
+    try:
+        pplns = result.get("stats", {}).get("pplns", {})
+        if not isinstance(pplns, dict):
+            pplns = {}
+        window_size = pplns.get("window_size", 0) or 0
+        window_used = pplns.get("window_used", 0) or 0
+        result["pplns"] = {
+            "payout_rounds": pplns.get("payout_rounds", 0),
+            "registered_miners": pplns.get("registered_miners", 0),
+            "total_paid_flowers": pplns.get("total_paid_flowers", 0),
+            "total_paid_zion": flowers_to_zion(pplns.get("total_paid_flowers", 0) or 0),
+            "total_unpaid_flowers": pplns.get("total_unpaid_flowers", 0),
+            "total_unpaid_zion": flowers_to_zion(pplns.get("total_unpaid_flowers", 0) or 0),
+            "window_size": window_size,
+            "window_used": window_used,
+            "window_utilization_pct": round((window_used / window_size * 100), 2) if window_size > 0 else 0,
+        }
+    except Exception:
+        result["pplns"] = {}
+
+    # 4. Fee split (structured from API, not log scraping)
+    try:
+        fee_split = result.get("stats", {}).get("fee_split", {})
+        if not isinstance(fee_split, dict):
+            fee_split = {}
+        result["fee_split"] = {
+            "miner_pct": fee_split.get("miner_pct", 0),
+            "humanitarian_pct": fee_split.get("humanitarian_pct", 0),
+            "issobella_pct": fee_split.get("issobella_pct", 0),
+            "pool_fee_pct": fee_split.get("pool_fee_pct", 0),
+            "humanitarian_accumulated_zion": flowers_to_zion(fee_split.get("humanitarian_accumulated_flowers", 0) or 0),
+            "issobella_accumulated_zion": flowers_to_zion(fee_split.get("issobella_accumulated_flowers", 0) or 0),
+            "pool_fee_accumulated_zion": flowers_to_zion(fee_split.get("pool_fee_accumulated_flowers", 0) or 0),
+            "humanitarian_wallet": fee_split.get("humanitarian_wallet", ""),
+            "issobella_wallet": fee_split.get("issobella_wallet", ""),
+            "pool_fee_wallet": fee_split.get("pool_fee_wallet", ""),
+        }
+    except Exception:
+        result["fee_split"] = {}
+
+    # 5. Routing breakdown (groups + sources from API)
+    try:
+        routing = result.get("stats", {}).get("routing", {})
+        if not isinstance(routing, dict):
+            routing = {}
+        result["routing"] = {
+            "submits": routing.get("submits", 0),
+            "accepted": routing.get("accepted", 0),
+            "rejected": routing.get("rejected", 0),
+            "stale": routing.get("stale", 0),
+            "accept_rate_pct": routing.get("accept_rate_pct", 0),
+            "groups": routing.get("groups", {}),
+            "sources": routing.get("sources", {}),
+        }
+    except Exception:
+        result["routing"] = {}
+
+    # 6. Pool info (uptime, version, hashrate timeframes)
+    try:
+        s = result.get("stats", {})
+        hashrate = s.get("hashrate", {}) if isinstance(s.get("hashrate"), dict) else {}
+        result["pool_info"] = {
+            "uptime_s": s.get("uptime_s", 0),
+            "uptime_human": _format_uptime(s.get("uptime_s", 0)),
+            "version": s.get("pool", {}).get("version", "—"),
+            "hashrate_live": hashrate.get("pool", 0) or s.get("pool_hashrate", 0) or 0,
+            "hashrate_1h": hashrate.get("pool_1h", 0) or 0,
+            "hashrate_24h": hashrate.get("pool_24h", 0) or 0,
+        }
+    except Exception:
+        result["pool_info"] = {}
+
+    # 7. Pool wallet status
+    try:
+        result["pool_wallet"] = get_pool_wallet_status()
+    except Exception:
+        result["pool_wallet"] = {}
+
+    # 8. Recent connection history
+    try:
+        hist = get_pool_connection_history(limit=20, since_hours=24)
+        result["connection_history"] = hist.get("events", [])
+    except Exception:
+        result["connection_history"] = []
+
+    # 9. PPLNS persistence state info
+    try:
+        pplns_state = _fetch_pplns_state()
+        result["pplns_state"] = {
+            "loaded": bool(pplns_state),
+            "addresses_count": len(pplns_state.get("addresses", {})) if pplns_state else 0,
+            "window_entries": len(pplns_state.get("share_window", [])) if pplns_state else 0,
+        }
+    except Exception:
+        result["pplns_state"] = {"loaded": False, "addresses_count": 0, "window_entries": 0}
+
+    # 10. Computed summary aggregations
+    miners = result.get("miners", [])
+    stats = result.get("stats", {}) or {}
+    try:
+        unique_addresses = set()
+        unique_balances = {}  # deduplicate on-chain balance per payout address
+        valid_total = 0
+        invalid_total = 0
+        total_hash = 0.0
+        blocks_total = 0
+        total_pending = 0.0
+        top_miner = None
+        for i, m in enumerate(miners):
+            addr = m.get("payout_address") or m.get("address") or ""
+            if addr:
+                unique_addresses.add(addr)
+                unique_balances[addr] = float(m.get("on_chain_balance_zion", 0) or 0)
+            valid_total += int(m.get("valid_shares", 0) or 0)
+            invalid_total += int(m.get("invalid_shares", 0) or 0)
+            total_hash += float(m.get("hashrate_hps", 0) or 0)
+            blocks_total += int(m.get("blocks_found", 0) or 0)
+            total_pending += float(m.get("pending_balance_zion", 0) or 0)
+            if i == 0:
+                top_miner = m
+        total_shares = valid_total + invalid_total
+        accept_rate = (valid_total / total_shares * 100) if total_shares > 0 else 100.0
+        # On-chain total must be per unique address (many miners can share one address)
+        total_on_chain = sum(unique_balances.values())
+        # Prefer PPLNS total paid (authoritative lifetime) over sum of miner paid_total
+        pplns_paid_zion = result.get("pplns", {}).get("total_paid_zion", 0)
+        pplns_unpaid_zion = result.get("pplns", {}).get("total_unpaid_zion", 0)
+        result["totals"] = {
+            "pending_zion": total_pending,
+            "paid_zion": pplns_paid_zion,
+            "on_chain_zion": total_on_chain,
+        }
+        result["summary"] = {
+            "active_miners": result.get("active_sessions", 0),
+            "registered_miners": result.get("pplns", {}).get("registered_miners", 0),
+            "tracked_miners": result.get("miners_tracked", 0),
+            "displayed_miners": len(miners),
+            "total_hashrate_khs": total_hash / 1000.0,
+            "average_hashrate_khs": round(total_hash / 1000.0 / len(miners), 2) if miners else 0,
+            "total_valid_shares": valid_total,
+            "total_invalid_shares": invalid_total,
+            "total_shares": total_shares,
+            "accept_rate_pct": round(accept_rate, 2),
+            "blocks_found": blocks_total,
+            "total_paid_zion": pplns_paid_zion,
+            "total_pending_zion": pplns_unpaid_zion if pplns_unpaid_zion > total_pending else total_pending,
+            "total_on_chain_zion": total_on_chain,
+            "unique_payout_addresses": len(unique_addresses),
+            "top_miner": top_miner,
+            "fee_split": stats.get("fee_split", {}) if isinstance(stats, dict) else {},
+        }
+    except Exception:
+        result["summary"] = {}
+
+    with _POOL_DASHBOARD_LOCK:
+        _POOL_DASHBOARD_CACHE["data"] = result
+        _POOL_DASHBOARD_CACHE["ts"] = time.time()
+    return result
+
+
+def _format_uptime(seconds):
+    """Format seconds into human-readable uptime string."""
+    if not seconds or seconds <= 0:
+        return "—"
+    d = int(seconds // 86400)
+    h = int((seconds % 86400) // 3600)
+    m = int((seconds % 3600) // 60)
+    if d > 0:
+        return f"{d}d {h}h {m}m"
+    if h > 0:
+        return f"{h}h {m}m"
+    return f"{m}m"
+
+
+def get_pool_miner_detail(address: str) -> dict:
+    """Fetch per-miner detail from pool API: /api/v1/miner/:address/stats + /payouts."""
+    host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
+    result = {"ok": True, "address": address}
+    import urllib.request
+
+    # Stats
+    try:
+        with urllib.request.urlopen(f"http://{host}:8455/api/v1/miner/{address}/stats", timeout=5) as r:
+            data = json.loads(r.read().decode())
+            if data.get("ok"):
+                stats = data.get("stats", {})
+                result["stats"] = stats
+                result["stats"]["pending_balance_zion"] = flowers_to_zion(stats.get("pending_balance", 0) or 0)
+                result["stats"]["total_paid_zion"] = flowers_to_zion(stats.get("total_paid", 0) or 0)
+    except Exception as e:
+        result["stats"] = {"error": str(e)}
+
+    # On-chain balance
+    try:
+        bal = rpc_call(EDGE_RPC_HOST, 8443, "getBalance", {"address": address}, timeout=2.0)
+        if bal and not bal.get("_rpc_error"):
+            atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
+            result["on_chain_balance_zion"] = flowers_to_zion(atomic)
+        else:
+            result["on_chain_balance_zion"] = 0
+    except Exception:
+        result["on_chain_balance_zion"] = 0
+
+    # Payouts
+    try:
+        with urllib.request.urlopen(f"http://{host}:8455/api/v1/miner/{address}/payouts", timeout=5) as r:
+            data = json.loads(r.read().decode())
+            if data.get("ok"):
+                payouts = data.get("pending_payouts", [])
+                for p in payouts:
+                    p["amount_zion"] = flowers_to_zion(p.get("amount_atomic", 0) or 0)
+                result["payouts"] = payouts
+    except Exception as e:
+        result["payouts"] = []
+
+    return result
+
 
 # ── Backup status ────────────────────────────────────────────────────────
 
@@ -4378,9 +5078,7 @@ def calculate_emission_totals(height: int) -> dict:
 # ── Pool wallet / UTXO / payout status ───────────────────────────────────
 
 def get_pool_wallet_status() -> dict:
-    """Scrape pool.log for wallet, UTXO, payout, fee-split state."""
-    recent = tail_log("pool.log", 300)
-    startup = head_log("pool.log", 50)
+    """Get pool wallet status from pool /stats API (primary) + log scrape (fallback)."""
     status = {
         "pool_wallet": None,
         "payout_enabled": False,
@@ -4394,34 +5092,71 @@ def get_pool_wallet_status() -> dict:
         "shares_accepted": 0,
         "shares_rejected": 0,
     }
-    for line in startup:
-        if m := re.search(r'pool_wallet=(\S+)', line):
-            status["pool_wallet"] = m.group(1)
-        if m := re.search(r'payout=(\S+)', line):
-            status["payout_enabled"] = m.group(1).lower() in ("true", "enabled", "on")
-        if m := re.search(r'fee_split=([\d/]+)', line):
-            status["fee_split"] = m.group(1)
-    for line in recent:
-        if m := re.search(r'payout_submit_ok.*miners=(\d+)', line):
-            status["pending_payouts"] = int(m.group(1))
-        if m := re.search(r'payout_submit_failed.*error=(.+)', line):
-            status["last_payout_error"] = m.group(1).strip()
-        if m := re.search(r'BLOCK_FOUND.*height=(\d+)', line):
-            status["blocks_found"] = max(status["blocks_found"], int(m.group(1)))
-        if m := re.search(r'utxo_count=(\d+)', line):
-            status["utxo_count"] = int(m.group(1))
-        if m := re.search(r'balance_zion=(\d+\.?\d*)', line):
-            status["balance_zion"] = float(m.group(1))
-        if m := re.search(r'accepted\s+(\d+)/(\d+)', line):
-            status["shares_accepted"] = int(m.group(1))
-            status["shares_rejected"] = int(m.group(2))
-    # Fallback: try RPC for pool wallet balance
+
+    # ── Primary: fetch from pool /stats API (port 8455) ──────────────────
+    host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
+    try:
+        import urllib.request
+        with urllib.request.urlopen(f"http://{host}:8455/stats", timeout=3) as r:
+            stats = json.loads(r.read().decode())
+        # Blocks, shares, routing from /stats
+        blocks = stats.get("blocks", {})
+        if blocks.get("found"):
+            status["blocks_found"] = blocks["found"]
+        routing = stats.get("routing", {})
+        if routing.get("accepted"):
+            status["shares_accepted"] = routing["accepted"]
+        if routing.get("rejected") or routing.get("stale"):
+            status["shares_rejected"] = (routing.get("rejected") or 0) + (routing.get("stale") or 0)
+        payouts = stats.get("payouts", {})
+        if payouts.get("pending_miners"):
+            status["pending_payouts"] = payouts["pending_miners"]
+        # Fee split
+        fee = stats.get("fee_split", {})
+        if fee:
+            status["fee_split"] = f"{fee.get('miner_pct', 89)}/{fee.get('humanitarian_pct', 5)}/{fee.get('issobella_pct', 5)}/{fee.get('pool_fee_pct', 1)}"
+    except Exception:
+        pass
+
+    # ── Canonical pool wallet (from env or hardcoded 3.0.4) ─────────────
+    if not status["pool_wallet"]:
+        status["pool_wallet"] = os.environ.get("ZION_POOL_WALLET") or "zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2"
+    if not status["payout_enabled"]:
+        status["payout_enabled"] = True
+    if not status["fee_split"]:
+        status["fee_split"] = "89/5/5/1"
+
+    # ── Secondary: scrape pool.log for missing fields ────────────────────
+    if not status["pool_wallet"] or not status["fee_split"]:
+        recent = tail_log("pool.log", 300)
+        startup = head_log("pool.log", 50)
+        for line in startup:
+            if not status["pool_wallet"] and (m := re.search(r'pool_wallet=(\S+)', line)):
+                status["pool_wallet"] = m.group(1)
+            if not status["payout_enabled"] and (m := re.search(r'payout=(\S+)', line)):
+                status["payout_enabled"] = m.group(1).lower() in ("true", "enabled", "on")
+            if not status["fee_split"] and (m := re.search(r'fee_split=([\d/]+)', line)):
+                status["fee_split"] = m.group(1)
+        for line in recent:
+            if m := re.search(r'payout_submit_ok.*miners=(\d+)', line):
+                status["pending_payouts"] = max(status["pending_payouts"], int(m.group(1)))
+            if m := re.search(r'payout_submit_failed.*error=(.+)', line):
+                status["last_payout_error"] = m.group(1).strip()
+            if m := re.search(r'utxo_count=(\d+)', line):
+                status["utxo_count"] = int(m.group(1))
+            if m := re.search(r'balance_zion=(\d+\.?\d*)', line):
+                status["balance_zion"] = float(m.group(1))
+
+    # ── Tertiary: RPC for pool wallet balance ────────────────────────────
     wallet = status["pool_wallet"]
     if wallet and wallet.startswith("zion1"):
         bal = rpc_call("127.0.0.1", 8443, "getBalance", {"address": wallet})
         if bal and not bal.get("_rpc_error"):
             atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
             status["balance_zion"] = bal.get("balance_zion") if isinstance(bal.get("balance_zion"), (int, float)) else flowers_to_zion(atomic)
+            # UTXO count from RPC if available
+            if bal.get("utxo_count"):
+                status["utxo_count"] = bal["utxo_count"]
     return status
 
 # ── Payout System Status Builder ─────────────────────────────────────────
@@ -8430,6 +9165,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 body = js_path.read_bytes()
                 self.send_response(200)
                 self.send_header("Content-Type", "application/javascript; charset=utf-8")
+                self.send_header("Cache-Control", "no-cache, must-revalidate")
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)
@@ -8550,6 +9286,20 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(get_edge_server_status())
         elif route == "/api/pool/miners":
             self._json(get_pool_miners())
+        elif route == "/api/pool/connection-history":
+            limit = int(params.get("limit", ["100"])[0])
+            since = int(params.get("since_hours", ["24"])[0])
+            self._json(get_pool_connection_history(limit=limit, since_hours=since))
+        elif route == "/api/pool/leaderboard":
+            limit = int(params.get("limit", ["50"])[0])
+            self._json(get_pool_leaderboard(limit=limit))
+        elif route == "/api/pool/miners-dashboard":
+            self._json(get_pool_miners_dashboard())
+        elif route.startswith("/api/pool/miner-detail/"):
+            address = route.split("/api/pool/miner-detail/", 1)[1].split("?")[0]
+            self._json(get_pool_miner_detail(address))
+        elif route == "/api/pool/registered-miners":
+            self._json(get_pool_registered_miners())
         elif route == "/api/miner/live":
             self._json(get_miner_live_stats())
         elif route == "/api/miner/log-tail":
