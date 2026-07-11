@@ -1,8 +1,8 @@
 # ZION True AuxPoW Merge Mining — Comprehensive Analysis & Implementation Plan
 
-> **Datum:** 2026-07-11 (rev2 — ALPH-primary strategy)
+> **Datum:** 2026-07-11 (rev3 — DCR-primary, ALPH-secondary, multi-algo future)
 > **Status:** PLÁN — dokumentace před implementací
-> **Požadavky:** Dual-algo, fork-based (height-gated), multi-parent, ALPH-primary + DeFi integrace
+> **Požadavky:** Dual-algo, fork-based (height-gated), multi-parent, DCR-primary + ALPH-secondary + multi-algo future
 > **Závislost:** Hard fork ZION L1 consensus + pool + miner
 
 ---
@@ -15,7 +15,7 @@
 4. [Historical Context — CH v3 Revenue System (2.5–2.9.5)](#4-historical-context--ch-v3-revenue-system-25295)
 5. [True AuxPoW vs Current AuxPow Proxy](#5-true-auxpow-vs-current-auxpow-proxy)
 6. [Blake3 Coin Landscape & Algorithm Compatibility](#6-blake3-coin-landscape--algorithm-compatibility)
-7. [Parent Chain Strategy — ALPH Primary, DCR Secondary](#7-parent-chain-strategy--alph-primary-dcr-secondary)
+7. [Parent Chain Strategy — Revised After Deep Scan](#7-parent-chain-strategy--revised-after-deep-scan)
 8. [DeFi & DEX Integration Roadmap](#8-defi--dex-integration-roadmap)
 9. [Recommended Architecture](#9-recommended-architecture)
 10. [Block Format & Validation](#10-block-format--validation)
@@ -36,27 +36,29 @@
 
 ZION currently uses `deeksha_lite_v1` — a custom memory-hard PoW algorithm (256 KiB scratchpad, Keccak256→SHA3-512→AES-128 pipeline). No external blockchain uses this algorithm, making true merge mining impossible with the current single-algo design.
 
-This document analyzes the codebase and proposes a **dual-algo, height-gated fork, multi-parent** AuxPoW merge mining system with **Alephium (ALPH) as the primary parent chain**:
+This document analyzes the codebase and proposes a **dual-algo, height-gated fork, multi-parent** AuxPoW merge mining system with **Decred (DCR) as the primary parent chain**, Alephium (ALPH) as secondary, and a long-term multi-algorithm expansion path:
 
-- **Dual-algo:** ZION accepts both `deeksha_lite` blocks (existing CPU miners) AND `blake3` AuxPoW blocks (merge-mined with ALPH/DCR)
+- **Dual-algo:** ZION accepts both `deeksha_lite` blocks (existing CPU miners) AND `blake3` AuxPoW blocks (merge-mined with DCR/ALPH)
 - **Fork-based:** Activation at block height X (no genesis reset — chain history preserved)
-- **Multi-parent:** ALPH (primary — DeFi ecosystem, GPU mining, similar scale) + DCR (secondary — ASIC hashrate for chain security)
+- **Multi-parent:** DCR (primary — standard 180-byte header, 4-byte nonce, massive ASIC hashrate, proven Stratum) + ALPH (secondary — DeFi ecosystem, GPU mining, aligned economics) + future multi-algo support
 - **DeFi integration:** ZION token listing on Powfi DEX (ALPH ecosystem), ALPH Bridge cross-chain integration, shared liquidity
 
-**Why ALPH primary (not DCR):**
-- ALPH market cap ~$4.7M — similar to ZION (peer-to-peer partnership, not dwarfed by $563M DCR)
+**Why DCR primary (not ALPH):**
+- DCR has ~5 PH/s hashrate — massive free security for ZION chain
+- DCR has a standard 180-byte block header, 4-byte nonce, 32-byte `ExtraData` — easier AuxPoW integration
+- DCR Stratum protocol is well understood and already used by mining pools
+- DCR ASIC miners are stable and committed; DCR is a mature merge-mining host
+- Faster to ship than ALPH and provides more security than ALPH's complex sharded, 24-byte-nonce, double-Blake3 protocol
+
+**Why ALPH secondary:**
 - ALPH has a growing DeFi ecosystem (Powfi DEX with CLMM+CPMM, AlphBanX CDP, lending, launchpad)
 - ALPH uses sUTXO model + Ralph smart contracts — similar architecture to ZION
 - ALPH is GPU-minable (accessible for community, not ASIC-dominated like DCR)
 - ALPH has "Aligned Economics" — 100% fee burning, buybacks, staking rewards (same philosophy as ZION)
 - ALPH Bridge already connects 3 chains — natural path for ZION cross-chain integration
+- Best strategic partner for DeFi/bridge integration once the core AuxPoW architecture is proven with DCR
 
-**Why DCR secondary:**
-- DCR has ~5 PH/s hashrate — massive free security for ZION chain
-- DCR has DCRDEX (atomic swap DEX) — potential future ZION trading venue
-- DCR is ASIC-mined — different miner demographic than ALPH GPU miners
-
-This makes ZION a **dual merge-mined chain** — secured by both ALPH GPU hashrate and DCR ASIC hashrate, with a path to DeFi integration through the ALPH ecosystem.
+This makes ZION a **dual merge-mined chain** — first secured by DCR ASIC hashrate, later by ALPH GPU hashrate, with a path to multi-algorithm security and DeFi integration through the ALPH ecosystem.
 
 ---
 
@@ -66,8 +68,8 @@ This makes ZION a **dual merge-mined chain** — secured by both ALPH GPU hashra
 |-------------|--------|---------------------------|
 | **Dual-algo** | NOT Blake3-only replacement. ZION accepts both deeksha_lite AND blake3 AuxPoW blocks | Initial plan recommended Blake3-only (Option A) |
 | **Fork-based** | Height-gated activation at block X. NO genesis reset. Chain history preserved | Initial plan recommended genesis reset |
-| **Multi-parent** | ALPH (primary) + DCR (secondary). Not locked to single parent chain | Initial plan recommended DCR-only |
-| **ALPH primary** | Alephium as primary parent — DeFi ecosystem, similar scale, GPU mining, aligned economics | Initial plan had DCR as primary |
+| **Multi-parent** | DCR (primary) + ALPH (secondary) + future multi-algo. Not locked to single parent chain | Initial plan recommended DCR-only; rev2 draft recommended ALPH primary |
+| **DCR primary** | Decred as primary parent — standard 180-byte header, 4-byte nonce, well-understood Stratum, massive ASIC hashrate | Rev2 draft had ALPH as primary |
 | **DeFi integration** | Path to ZION listing on Powfi DEX, ALPH Bridge, shared liquidity | Not in initial plan |
 | **Revenue = ZION only** | No external coin revenue. Merge mining brings FREE chain security, not BTC payouts | Initial plan had BTC payout focus |
 | **Documentation first** | Comprehensive analysis BEFORE any implementation | — |
@@ -328,112 +330,202 @@ The original CH v3 design proposed submitting Keccak/SHA3 intermediates from the
 
 ### 6.1 Complete Blake3 Coin Ecosystem
 
-As of July 2026, only 3 active blockchains use Blake3 for PoW:
+Deep scan update (July 2026): Only **2 active blockchains** use Blake3 for PoW:
 
-| Coin | Ticker | Market Cap | Network Hashrate | Mining Hardware | Block Time | DeFi TVL |
-|------|--------|-----------|-----------------|----------------|------------|----------|
-| **Decred** | DCR | ~$563M | ~5 PH/s | ASIC (Goldshell, Antminer AL) | ~5 min | DCRDEX (atomic swaps) |
-| **Alephium** | ALPH | ~$4.7M | ~1 TH/s (est.) | GPU (RTX 4090 ~3 GH/s) | ~128s | $615K (Powfi DEX + others) |
-| **Quai Network** | QUAI | ~$15M | GPU (ProgPoW+Blake3) | GPU | ~1.1s | Early (EVM compatible) |
+| Coin | Ticker | Market Cap | Network Hashrate | Mining Hardware | Block Time | DeFi / Liquidity |
+|------|--------|-----------|-----------------|----------------|------------|------------------|
+| **Decred** | DCR | ~$195M | ~5 PH/s | ASIC (Goldshell, Antminer AL1) | ~5 min | DCRDEX (atomic swaps) |
+| **Alephium** | ALPH | ~$4.7M | ~1 TH/s (est.) | GPU (RTX 4090 ~3.5 GH/s) + ASIC | ~16s | ~$615K TVL (DefiLlama) |
 
-**Aggregated Blake3 hashrate:** ~5.4 PH/s (minerstat estimate)
+**Important correction:** Quai Network (QUAI) is **no longer Blake3**. QUAI mainnet (Feb 2025) launched with ProgPoW, then transitioned to **KawPoW + SHA-256 + Scrypt** merge mining (Project SOAP, 2026). QUAI cannot be a Blake3 parent chain for ZION.
 
-### 6.2 Why Blake3 Is the Only Merge Mining Option
+**Aggregated Blake3 hashrate:** ~5 PH/s from DCR plus ALPH GPU/ASIC hashrate. DCR dominates by orders of magnitude.
+
+### 6.2 Why Blake3 Is the Only Merge Mining Option (for current codebase)
 
 | Algorithm | Coins | Merge mining viable? | Problem |
 |-----------|-------|----------------------|---------|
-| kHeavyHash | KAS | ❌ | Only Kaspa uses it — no merge mining partner |
+| kHeavyHash | KAS | ❌ | Only Kaspa uses it |
 | Autolykos | ERG | ❌ | Only Ergo uses it |
-| KawPow | RVN, CLORE | ❌ | Different chains, same algo, but no AuxPoW infrastructure |
-| Ethash | ETC | ❌ | ETC doesn't support AuxPoW (unlike Bitcoin) |
+| KawPow | RVN, CLORE | ❌ | No AuxPoW infrastructure |
+| Ethash | ETC | ❌ | ETC doesn't support AuxPoW |
 | RandomX | XMR | ❌ | Monero doesn't support AuxPoW |
-| **Blake3** | **DCR, ALPH, QUAI** | **✅** | **3 active chains, pools, GPU+ASIC mining** |
+| **Blake3** | **DCR, ALPH** | **✅** | **2 active chains, pools, GPU+ASIC mining** |
 
-### 6.3 Alephium (ALPH) — Deep Dive
+### 6.3 Technical Feasibility of AuxPoW with DCR vs ALPH
 
-**Why ALPH is the ideal primary parent for ZION:**
+This is the critical finding of the deep scan.
+
+#### Decred (DCR) — Technically simpler
+
+**Block header:** Exactly 180 bytes, fixed layout.
+
+```rust
+// Decred header fields (180 bytes total)
+Version:        i32     4 bytes
+PrevBlock:      [u8;32] 32 bytes
+MerkleRoot:     [u8;32] 32 bytes
+StakeRoot:      [u8;32] 32 bytes
+VoteBits:       u16     2 bytes
+FinalState:     [u8;6]  6 bytes
+Voters:         u16     2 bytes
+FreshStake:     u8      1 byte
+Revocations:    u8      1 byte
+PoolSize:       u32     4 bytes
+Bits:           u32     4 bytes
+SBits:          i64     8 bytes
+Height:         u32     4 bytes
+Size:           u32     4 bytes
+Timestamp:      u32     4 bytes
+Nonce:          u32     4 bytes
+ExtraData:      [u8;32] 32 bytes
+StakeVersion:   u32     4 bytes
+```
+
+**PoW hash:** `blake3(serialize(header))` (DCP-0011, `PowHashV2` in `dcrd/wire/blockheader.go`).
+**Coinbase:** Bitcoin-like UTXO. Standard Stratum pools can modify `scriptSig` to include the AuxPoW commitment (`0xfa 0xbe 'm' 'm' + 32-byte ZION hash + 4-byte merkle size + 4-byte nonce`).
+**Merkle root:** Computed from regular transaction tree (`MerkleRoot`), not `StakeRoot`.
+**Nonce:** 4 bytes. `ExtraData` (32 bytes) is available for extra nonce / pool data.
+**Conclusion:** DCR is a well-understood, Stratum-compatible parent chain for standard AuxPoW.
+
+#### Alephium (ALPH) — Technically more complex
+
+**Block header:** Variable size due to `BlockDeps` (sharding). Mainnet has 4 groups, 16 chains, `depsNum = 2 * groups - 1 = 7`. Header serialization:
+
+```rust
+// Alephium header fields (mainnet, groups = 4)
+nonce:         24 bytes
+version:       1 byte
+blockDeps:     7 * 32 bytes = 224 bytes  // depends on group config
+depStateHash:  32 bytes
+txsHash:       32 bytes
+timestamp:     8 bytes
+target:        4 bytes
+-----------------------------------------
+headerBlob:    301 bytes (without nonce)
+full header:   325 bytes (with nonce)
+```
+
+**PoW hash:** `blake3(blake3(serialize(header)))` (double Blake3). The `headerBlob` from the `MinerApi` excludes the 24-byte nonce; the miner prepends the nonce and computes `blake3(blake3(nonce || headerBlob))`.
+**Coinbase:** sUTXO model. `coinbase = transactions.last` in block. Coinbase is an `AssetOutput` with `additionalData` (used for ghost/uncle data). There is no `scriptSig` in the Bitcoin sense.
+**Pool protocol:** ALPH uses a custom `MinerApi` (push-based JSON-RPC over TCP). The full node sends `headerBlob`, `txsBlob`, `targetBlob` to the pool. To insert a ZION commitment, the pool must:
+1. Deserialize the `txsBlob` and modify the coinbase `AssetOutput.additionalData` (or add a separate data output)
+2. Recompute `txsHash` and `depStateHash`
+3. Rebuild `headerBlob`
+4. Maintain the custom ALPH pool protocol in the ZION merge mining proxy
+
+**Conclusion:** ALPH AuxPoW is feasible but requires a custom ALPH pool/node integration. It is **not** a drop-in Stratum parent like DCR.
+
+### 6.4 Alephium (ALPH) — Deep Dive
+
+**Why ALPH is the ideal strategic partner for ZION (despite technical complexity):**
 
 #### Technology
-- **sUTXO model:** Stateful Unspent Transaction Output — combines UTXO security with smart contract statefulness. Similar to ZION's account model with memo support.
-- **Ralph language:** Purpose-built smart contract language for sUTXO. More secure than Solidity (no reentrancy, no overflow bugs). Audited by Trail of Bits.
-- **Sharded L1:** Alephium uses sharding for scalability (unlike DCR which is monolithic)
-- **PoLW (Proof-of-Less-Work):** Reduces energy consumption when network security is sufficient — innovative green mining
+- **sUTXO model:** Stateful UTXO — combines UTXO security with smart contract statefulness.
+- **Ralph language:** Purpose-built for sUTXO, audited by Trail of Bits.
+- **Sharded L1:** 4 groups, 16 chains on mainnet.
+- **PoLW (Proof-of-Less-Work):** Reduces energy consumption when security is sufficient.
 
 #### DeFi Ecosystem (live on mainnet)
 ```
 ALPH DeFi TVL: ~$615K (DefiLlama, July 2026)
-├── Powfi DEX          $??     CLMM + CPMM (core dApp, audited)
-├── AlphBanX           $329K   CDP (collateralized debt position)
+├── AlphBanX           $329K   CDP
 ├── Nightshade Finance  $95K   DEX
 ├── Linx App            $81K   Lending
 ├── Elexium             $68K   DEX
 ├── AYIN                 $39K   DEX
-├── AlphPad              $0    Launchpad
-└── Alephium Bridge      —     Cross-chain (3 chains connected)
+├── Alephium Bridge   $855K   Cross-chain (ETH, BSC, ALPH)
+└── 24h DEX volume:     ~$930   (very low, nascent)
 ```
 
-#### Aligned Economics (same philosophy as ZION)
-- **100% of transaction fees are BURNED** (deflationary — same as ZION fee burning)
-- **Powfi DEX fees → ALPH buybacks & burns + xALPH staker rewards**
-- **Staking (xALPH):** Lock ALPH → earn fees from DEX trading volume
-- **No intermediary token:** DEX fees go directly to ALPH stakers, not a separate governance token
-- **This mirrors ZION's model:** 89% miner / 5% humanitarian / 5% issobella / 1% pool — revenue stays in ecosystem
+#### Aligned Economics
+- 100% of transaction fees BURNED (deflationary — same as ZION)
+- Powfi DEX fees → ALPH buybacks & burns + xALPH staking
+- No intermediary token for DEX fee accrual
 
 #### Mining
-- **Algorithm:** Blake3
-- **GPU mining:** RTX 4090 ~3.1 GH/s, RTX 3080 Ti ~2.6 GH/s, AMD RX 6800 XT ~1.7 GH/s
-- **ASICs:** Bitmant Antminer AL1 (15.6 TH/s), Goldshell AL-BOX series — entering market 2026-2027
+- **Algorithm:** Blake3 (double Blake3 of header for PoW)
+- **GPU:** RTX 4090 ~3.5 GH/s, RTX 3080 Ti ~2.1 GH/s, RX 7900 XTX ~2.6 GH/s
+- **ASIC:** Bitmain Antminer AL1 Pro (15.6 TH/s), Goldshell AL-BOX series
 - **Pools:** 2miners (BTC payout), HeroMiners
-- **Block reward:** ~0.143 ALPH per block (decreasing schedule)
+- **Block reward:** ~0.143 ALPH per block, decreasing
 
 #### Bridge Infrastructure
-- **Alephium Bridge** already connects 3 chains
-- **Cross-chain transfers** are live and tested
-- **ZION could become the 4th connected chain** — natural integration path
+- Alephium Bridge connects Ethereum, BSC, and Alephium
+- ZION could integrate with the bridge as a 4th chain (long-term)
 
-### 6.4 Decred (DCR) — Deep Dive
+### 6.5 Decred (DCR) — Deep Dive
 
-**Why DCR is the ideal secondary parent for ZION:**
+**Why DCR is the technically simplest parent for ZION:**
 
 #### Technology
-- **Hybrid PoW/PoS:** 60% PoW / 30% PoS / 10% treasury — unique consensus
+- **Hybrid PoW/PoS:** 60% PoW / 30% PoS / 10% treasury
 - **DCP-0011:** Switched to Blake3 in October 2022
-- **BLAKE-256 (14 rounds):** Used for block hash (legacy), Blake3 for PoW
-- **UTXO model:** Bitcoin-like with privacy features (CoinShuffle++)
+- **BLAKE-256 (14 rounds):** Used for block ID, Blake3 for PoW
+- **UTXO model:** Bitcoin-like
 
 #### DeFi / DEX
 - **DCRDEX:** Decentralized exchange using atomic swaps — no trading fees, non-custodial
-- **Bison Wallet:** Multi-wallet with built-in DEX trading
-- **Atomic swaps:** Support BTC, LTC, BCH, ZEC and others
-- **No token:** DCRDEX has no intermediary token — pure peer-to-peer trading
-- **ZION could be listed on DCRDEX** via atomic swap integration
+- **Bison Wallet:** Multi-wallet with built-in DEX
+- **Atomic swaps:** BTC, LTC, BCH, ZEC, DCR, and others
+- **ZION listing path:** Atomic swap integration (long-term)
 
 #### Mining
-- **Algorithm:** Blake3 (since DCP-0011)
-- **ASIC mining:** Goldshell AL series, Antminer AL1 — high hashrate
-- **Network hashrate:** ~5 PH/s — **massive security for ZION if merge-mined**
-- **Pools:** 2miners (BTC payout), suprnova, HeroMiners
+- **Algorithm:** Blake3 (single Blake3 of 180-byte header for PoW)
+- **ASIC mining:** Goldshell AL series, Antminer AL1
+- **Network hashrate:** ~5 PH/s — massive security for ZION if merge-mined
+- **Pools:** 2miners (BTC payout), suprnova, f2pool, HeroMiners
 - **Block time:** ~5 minutes
-- **DCR nonce:** 4 bytes (uint32) — different from ZION's 8-byte nonce
+- **Nonce:** 4 bytes (uint32)
+
+#### Market & Liquidity
+- **Market cap:** ~$195M (CoinMarketCap, July 2026)
+- **24h volume:** ~$581K (low, but much higher than ALPH)
+- **64% of supply staked** in governance — low float, thin order books
+- **Treasury:** ~873K DCR (~$9.8M) self-funded from block rewards
 
 #### Governance
 - **Politeia:** On-chain governance system
-- **Treasury:** Self-funding from block rewards (10%)
 - **DCP-0013 (Jan 2026):** Treasury spending cap approved (99.98% support)
-- **Mature governance:** Could provide model for ZION DAO evolution
 
-### 6.5 Quai Network (QUAI) — Tertiary Option
+### 6.6 Quai Network (QUAI) — Status Update
 
-**Why QUAI is interesting but not priority:**
-- **Nativa merge mining:** Quai's 13-chain hierarchy IS merge mining (Prime → Region → Zone)
-- **EVM compatible:** ZION already has EVM bridge (Base Mainnet) — natural fit
-- **50,000 TPS target:** High throughput
-- **Blake3 + ProgPoW:** GPU-friendly, ASIC-resistant
-- **BUT:** Newer, less proven, smaller DeFi ecosystem, complex architecture
+**QUAI is no longer Blake3.** Mainnet launched Feb 2025 with ProgPoW, then transitioned to **KawPoW + SHA-256 + Scrypt** (Project SOAP, 2026). QUAI has its own native merge-mined hierarchy (Prime → Region → Zone) and merge-mined parachains.
 
-**Recommendation:** Monitor QUAI for future integration. Focus on ALPH + DCR first.
+**For ZION:**
+- QUAI cannot be a Blake3 parent chain.
+- QUAI could be a **multi-algorithm parent** (KawPoW/SHA/Scrypt) in the future.
+- This would require ZION to implement KawPoW, SHA-256, or Scrypt AuxPoW validation.
 
-### 6.6 Current ZION Pool Hashrate (Live Data, July 2026)
+**Recommendation:** Monitor QUAI for future **multi-algorithm** expansion, not Blake3.
+
+### 6.7 Multi-Algorithm AuxPoW: Beyond Blake3
+
+Deep scan found that multi-algorithm AuxPoW is technically possible, though rare:
+
+| Project | Algorithms | AuxPoW Status | Production-Ready? |
+|---------|-----------|---------------|-------------------|
+| **Myriadcoin** | 5 (SHA256d, Scrypt, Yescrypt, Argon2d, Myr-Groestl) | AuxPoW on SHA256d/Scrypt since 2014 | Yes (established) |
+| **WATTxChain** | 7 (SHA256d, Scrypt, Ethash, RandomX, Equihash, X11, kHeavyHash) | v0.1.7-dev, "compiles, ready for testing" | No (new, 2 stars, 1 contributor) |
+| **Quai Network** | 3 (KawPoW, SHA256, Scrypt) | Native merge-mined hierarchy + parachains | Yes (mainnet) |
+
+**Implication for ZION:** ZION could theoretically merge-mine with chains using these algorithms:
+
+| Algorithm | Example parent chains | Hardware | ZION implementation effort |
+|-----------|----------------------|----------|---------------------------|
+| SHA256d | BTC, BCH, BSV, NMC, DOGE | ASIC | High (needs SHA256d validator + pool) |
+| Scrypt | LTC, DOGE | ASIC | High |
+| Ethash | ETC, CLO | GPU | High |
+| RandomX | XMR, WOW | CPU | High |
+| Equihash | ZEC, ZEN, KMD | GPU/ASIC | High |
+| X11 | DASH, DGB-X11 | ASIC | High |
+| kHeavyHash | KAS, KLS, PYI | GPU/ASIC | High |
+
+**Tradeoff:** Multi-algorithm would give ZION access to 100× more hashrate and liquidity, but it is a **10-20× larger scope** than single Blake3 AuxPoW. ZION's `profit_router.rs` already lists these algorithms for external pool mining, but **AuxPoW validation** (proving work on another chain) is a separate and larger task.
+
+**Recommendation:** Implement single Blake3 AuxPoW first. Treat multi-algorithm as Phase 2 (post-mainnet) after the core architecture is proven.
+
+### 6.8 Current ZION Pool Hashrate (Live Data, July 2026)
 
 ```
 ZION Pool Metrics (live):
@@ -459,9 +551,9 @@ Top miners:
   local-miner         16 KH/s   (2 blocks)
 ```
 
-**Key insight:** ZION's 1.17 MH/s is adequate for chain security at current difficulty, but merge mining with ALPH (~1 TH/s) and DCR (~5 PH/s) would increase effective security by **~4,000,000×** — even if only 0.01% of parent hashrate includes ZION commitment.
+**Key insight:** ZION's 1.17 MH/s is adequate for current difficulty, but merge mining with DCR (~5 PH/s) and ALPH (~1 TH/s) would increase effective security by **~4,000,000×** — even if only 0.01% of parent hashrate includes ZION commitment.
 
-### 6.7 DeekshaLite — ZION's Native Algorithm (preserved)
+### 6.9 DeekshaLite — ZION's Native Algorithm (preserved)
 
 - **Memory-hard:** 256 KiB scratchpad, 2 passes, 64 random reads
 - **Pipeline:** Keccak256 → SHA3-512 → AES-128 CTR mix → Keccak256
@@ -473,70 +565,103 @@ Top miners:
 
 ---
 
-## 7. Parent Chain Strategy — ALPH Primary, DCR Secondary
+## 7. Parent Chain Strategy — Revised After Deep Scan
 
 ### 7.1 Strategy Overview
 
+The deep scan changed the landscape:
+
+- Only **2** Blake3 coins: DCR and ALPH. **QUAI is no longer Blake3** (KawPoW + SHA/Scrypt).
+- **DCR** is technically the simplest AuxPoW parent: fixed 180-byte header, standard Stratum, `blake3(header)`.
+- **ALPH** is technically more complex: variable header (BlockDeps), custom `MinerApi`, double `blake3(blake3(header))`.
+- **ALPH** has stronger DeFi / bridge integration potential for ZION.
+- **Multi-algorithm** AuxPoW is possible (Myriad, WATTx, QUAI) but is a 10-20× larger scope.
+
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│              ZION MULTI-PARENT MERGE MINING STRATEGY                  │
+│         ZION MERGE MINING STRATEGY (REVISED AFTER DEEP SCAN)          │
 ├──────────────────────────────────────────────────────────────────────┤
 │                                                                       │
-│  PRIMARY PARENT: Alephium (ALPH)                                     │
+│  PHASE 1 PRIMARY: Decred (DCR)                                       │
 │  ┌─────────────────────────────────────────────────────────────┐     │
-│  │  • Blake3 PoW — same algorithm, GPU mining                  │     │
-│  │  • Market cap ~$4.7M — peer-to-peer with ZION              │     │
-│  │  • DeFi ecosystem: Powfi DEX, AlphBanX, lending, bridge    │     │
-│  │  • sUTXO + Ralph smart contracts — similar to ZION         │     │
-│  │  • Aligned economics: fee burning, buybacks, staking       │     │
-│  │  • GPU mining — accessible for community                   │     │
-│  │  • Alephium Bridge → ZION cross-chain integration path     │     │
-│  │                                                             │     │
-│  │  → ZION AuxPoW blocks from ALPH hashrate (FREE security)   │     │
-│  │  → ZION token listing on Powfi DEX (future)                │     │
-│  │  → ALPH Bridge integration (future)                        │     │
+│  │  • Blake3 PoW, 180-byte fixed header                        │     │
+│  │  • Standard Stratum pools (2miners, f2pool)                 │     │
+│  │  • ~5 PH/s ASIC hashrate = massive security boost           │     │
+│  │  • Fastest path to live AuxPoW blocks                       │     │
 │  └─────────────────────────────────────────────────────────────┘     │
 │                                                                       │
-│  SECONDARY PARENT: Decred (DCR)                                      │
+│  PHASE 2 SECONDARY: Alephium (ALPH)                                  │
 │  ┌─────────────────────────────────────────────────────────────┐     │
-│  │  • Blake3 PoW (DCP-0011) — ASIC mining                     │     │
-│  │  • Network hashrate ~5 PH/s — massive free security        │     │
-│  │  • DCRDEX — atomic swap DEX (future ZION listing)          │     │
-│  │  • Mature governance (Politeia) — model for ZION DAO       │     │
-│  │  • ASIC miner demographic — different from ALPH GPU miners │     │
-│  │                                                             │     │
-│  │  → ZION AuxPoW blocks from DCR hashrate (FREE security)    │     │
-│  │  → DCRDEX atomic swap listing (future)                     │     │
+│  │  • Blake3 PoW, but custom MinerApi & sharded header         │     │
+│  │  ~1 TH/s GPU hashrate + ASIC emergence                      │     │
+│  │  • DeFi ecosystem: Powfi, AlphBanX, Bridge                  │     │
+│  │  • Strategic partner for ZION cross-chain DeFi              │     │
 │  └─────────────────────────────────────────────────────────────┘     │
 │                                                                       │
-│  TERTIARY (future): Quai Network (QUAI)                              │
+│  PHASE 3 (FUTURE): Multi-Algorithm                                    │
 │  ┌─────────────────────────────────────────────────────────────┐     │
-│  │  • Blake3 + ProgPoW — EVM compatible                       │     │
-│  │  • Native merge mining (13-chain hierarchy)                │     │
-│  │  • Monitor for future integration                          │     │
+│  │  • KawPoW, SHA256d, Scrypt, Ethash, RandomX, etc.           │     │
+│  │  • Quai, WATTx, Myriadcoin as reference models              │     │
+│  │  • 100× hashrate potential, but 10-20× scope               │     │
 │  └─────────────────────────────────────────────────────────────┘     │
 │                                                                       │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-### 7.2 Why ALPH Primary (not DCR)
+### 7.2 Revised Recommendation: DCR Primary, ALPH Secondary, Multi-Algo Future
 
-| Factor | ALPH | DCR | Winner |
-|--------|------|-----|--------|
-| **Market cap** | ~$4.7M | ~$563M | **ALPH** (peer scale, not dwarfed) |
-| **DeFi ecosystem** | Powfi DEX, CDP, lending, launchpad, bridge | DCRDEX (atomic swaps) | **ALPH** (richer DeFi) |
-| **Smart contracts** | Ralph (sUTXO, audited) | Bitcoin-like (limited) | **ALPH** (more capable) |
-| **Mining hardware** | GPU (RTX 4090, RX 6800 XT) | ASIC (Goldshell, Antminer) | **ALPH** (community-accessible) |
-| **Hashrate** | ~1 TH/s | ~5 PH/s | DCR (more security) |
-| **Fee model** | 100% burn + buybacks + staking | Treasury (10% of rewards) | **ALPH** (aligned with ZION) |
-| **Bridge** | 3 chains connected | Atomic swaps | **ALPH** (bridge infrastructure) |
-| **Block time** | ~128s | ~300s | **ALPH** (closer to ZION's 60s) |
-| **Governance** | DAO framework (planned) | Politeia (mature) | DCR (more mature) |
-| **Philosophy** | Aligned economics, deflationary | Hybrid PoW/PoS, treasury | **ALPH** (same as ZION) |
+| Phase | Parent | Hashrate | Technical Risk | DeFi Value | Priority |
+|-------|--------|----------|----------------|------------|----------|
+| **Phase 1** | **DCR** | ~5 PH/s | Low | Low | **Primary** |
+| **Phase 2** | **ALPH** | ~1 TH/s | High | High | **Secondary** |
+| **Phase 3** | **QUAI / Multi-algo** | Variable | Very high | TBD | **Future** |
 
-**Decision:** ALPH primary for DeFi integration + community alignment. DCR secondary for raw hashrate security.
+**Why this changed from rev2 (ALPH-primary):** The deep scan revealed that ALPH's custom pool protocol and variable sharded header make it a poor choice for the *first* AuxPoW implementation. DCR is faster to ship and provides more security. ALPH is still the right strategic partner for DeFi, but it should follow DCR once the core architecture is proven.
 
-### 7.3 Dual-Algo Design (unchanged from rev1)
+### 7.3 DCR vs ALPH — Technical Comparison
+
+| Factor | DCR | ALPH |
+|--------|-----|------|
+| **Header size** | 180 bytes fixed | 325 bytes (mainnet, 4 groups) — variable by group config |
+| **PoW hash** | `blake3(serialize(header))` | `blake3(blake3(serialize(header)))` |
+| **Nonce** | 4 bytes | 24 bytes |
+| **Coinbase** | Bitcoin UTXO with `scriptSig` | sUTXO `AssetOutput` with `additionalData` |
+| **Commitment location** | `scriptSig` (standard Stratum) | `additionalData` or extra output (custom protocol) |
+| **Pool protocol** | Standard Stratum (2miners) | Custom `MinerApi` (JSON-RPC over TCP, push-based) |
+| **Header rebuild** | Swap MerkleRoot, keep 180 bytes | Recompute `txsHash`, `depStateHash`, rebuild `headerBlob` |
+| **Maturity** | Proven since 2016, DCP-0011 2022 | Mainnet since 2024, mining pool ecosystem mature |
+| **Implementation effort** | ~3-4 days | ~7-10 days (custom ALPH integration) |
+
+### 7.4 DCR vs ALPH — Strategic Comparison
+
+| Factor | DCR | ALPH | Winner |
+|--------|-----|------|--------|
+| **Market cap** | ~$195M | ~$4.7M | DCR (larger, more liquid) |
+| **Network hashrate** | ~5 PH/s | ~1 TH/s | DCR (5,000× more security) |
+| **DeFi ecosystem** | DCRDEX only | Powfi, AlphBanX, Bridge | ALPH |
+| **Smart contracts** | Limited | Ralph (sUTXO, audited) | ALPH |
+| **Mining hardware** | ASIC | GPU + ASIC | ALPH (more accessible) |
+| **Fee model** | 10% treasury | 100% burn + buybacks | ALPH (more aligned with ZION) |
+| **Bridge** | Atomic swaps only | 3-chain bridge | ALPH |
+| **Block time** | ~300s | ~16s | ALPH (closer to ZION's 60s) |
+| **Technical risk** | Low | High | DCR |
+
+### 7.5 Multi-Parent Support (unchanged, updated)
+
+```rust
+pub enum ParentChain {
+    Decred,     // DCR — Phase 1 primary (lowest technical risk)
+    Alephium,   // ALPH — Phase 2 secondary (DeFi integration)
+    // Future: Quai (KawPoW), Bitcoin (SHA256d), Litecoin (Scrypt), etc.
+}
+```
+
+**How multi-parent works (Phase 1 → 2):**
+1. Phase 1: Pool connects to DCR pool only. ZION accepts DCR-based AuxPoW blocks.
+2. Phase 2: Pool adds ALPH pool. ZION accepts both DCR and ALPH AuxPoW blocks.
+3. Phase 2+ (future): Pool adds additional parent chains (multi-algorithm).
+
+### 7.6 Dual-Algo Design (unchanged)
 
 ```
 Pre-fork (height < AUXPOW_FORK_HEIGHT):
@@ -545,63 +670,37 @@ Pre-fork (height < AUXPOW_FORK_HEIGHT):
 
 Post-fork (height >= AUXPOW_FORK_HEIGHT):
   - deeksha_lite blocks: ACCEPTED (existing CPU miners continue)
-  - blake3 AuxPoW blocks: ACCEPTED (merge-mined with ALPH or DCR)
+  - blake3 AuxPoW blocks: ACCEPTED (merge-mined with DCR or ALPH)
   - Both block types compete on the same chain
   - Separate difficulty LWMA for each algorithm
 ```
 
-### 7.4 Multi-Parent Support
+### 7.7 Difficulty Balancing for Dual-Algo (unchanged)
 
-```rust
-pub enum ParentChain {
-    Alephium,   // ALPH — primary (DeFi ecosystem, GPU mining)
-    Decred,     // DCR — secondary (ASIC hashrate, DCRDEX)
-    // Future: Quai, other Blake3 chains
-}
-```
+**Separate LWMA per algorithm (recommended):**
+- Track `deeksha_lite` difficulty and `blake3_auxpow` difficulty independently.
+- Each algorithm has its own 60-block window.
+- Block time target: 60s combined (30s average per algorithm).
 
-**How multi-parent works:**
-1. Pool connects to ALPH pool AND DCR pool simultaneously
-2. Pool receives templates from both parent chains
-3. Pool picks the best parent based on:
-   - Profitability (which parent coin is more valuable?)
-   - Block timing (which parent will produce a block sooner?)
-   - ZION aux difficulty (which parent's target is closer to ZION's aux target?)
-4. Pool inserts ZION commitment into chosen parent's coinbase
-5. Miner hashes parent block header (Blake3 — same for both ALPH and DCR)
-6. If hash meets ZION aux target → AuxPoW block on ZION
-7. If hash meets parent target → block on parent chain too
-
-**Key:** The miner always hashes Blake3 regardless of which parent chain is used. The pool handles the parent selection and commitment insertion. The miner doesn't even need to know which parent chain they're mining for.
-
-### 7.5 Difficulty Balancing for Dual-Algo
-
-**Separate LWMA per algorithm (Recommended):**
-- Track deeksha_lite difficulty and blake3_auxpow difficulty independently
-- Each algorithm has its own 60-block window
-- Block time target: 60s combined (30s average per algorithm)
-- This is the approach used by Decred (separate PoW/PoS difficulty)
-
-### 7.6 Revenue Model — ZION Only
+### 7.8 Revenue Model — ZION Only
 
 **Critical principle:** Revenue system is for ZION only. Merge mining brings FREE chain security, not external revenue.
 
 ```
 Merge mining revenue flow:
-  ALPH/DCR miner hashes Blake3
-    → if meets parent target: parent block (miner keeps ALPH/DCP reward)
+  DCR/ALPH miner hashes Blake3
+    → if meets parent target: parent block (miner keeps DCR/ALPH reward)
     → if meets ZION aux target: ZION AuxPoW block (ZION block reward)
-    → if meets both: BOTH blocks (miner gets ALPH/DCR + ZION block reward)
+    → if meets both: BOTH blocks (miner gets DCR/ALPH + ZION block reward)
 
 ZION block reward split (same as standard blocks):
   89% → miner (who found the AuxPoW block)
   5%  → humanitarian fund
   5%  → issobella fund
   1%  → pool fee
-
-NO external BTC revenue. NO hashrate splitting. NO AuXpow proxy.
-The existing AuXpow Stratum proxy can be deprecated or kept for non-Blake3 coins.
 ```
+
+NO external BTC revenue in the ZION block reward. The existing `AuXpow` Stratum proxy for non-Blake3 coins remains a separate revenue stream.
 
 ---
 
@@ -616,9 +715,12 @@ The existing AuXpow Stratum proxy can be deprecated or kept for non-Blake3 coins
 │                                                                       │
 │  Phase A: Merge Mining (this plan)                                   │
 │  ┌─────────────────────────────────────────────────────────────┐     │
-│  │  • ZION AuxPoW blocks secured by ALPH hashrate              │     │
-│  │  • Pool connects to ALPH pool, inserts ZION commitment      │     │
-│  │  • ALPH GPU miners produce ZION blocks as free byproduct    │     │
+│  │  • ZION AuxPoW blocks secured by DCR (primary) + ALPH       │     │
+│  │    (secondary) hashrate                                     │     │
+│  │  • Pool connects to DCR pool (primary) + ALPH pool (sec)    │     │
+│  │    and inserts ZION commitment in parent coinbase           │     │
+│  │  • DCR ASICs + ALPH GPU miners produce ZION blocks as       │     │
+│  │    free byproduct                                           │     │
 │  │  • No DeFi integration yet — just chain security            │     │
 │  └─────────────────────────────────────────────────────────────┘     │
 │                              ↓                                       │
@@ -666,7 +768,7 @@ The existing AuXpow Stratum proxy can be deprecated or kept for non-Blake3 coins
 
 **This is what we're implementing now.** No DeFi integration yet — just chain security.
 
-- ZION AuxPoW blocks secured by ALPH (and DCR) hashrate
+- ZION AuxPoW blocks secured by DCR (primary) + ALPH (secondary) hashrate
 - Pool handles merge mining proxy
 - ZION chain grows from both deeksha_lite and Blake3 AuxPoW blocks
 - **No ALPH DeFi integration required** — just Stratum pool connection
@@ -806,7 +908,7 @@ Net result:
 │  ┌─────────────────────┐    ┌──────────────────────────────────────┐ │
 │  │  deeksha_lite PoW   │    │  Blake3 AuxPoW                       │ │
 │  │  (standard blocks)  │    │                                      │ │
-│  │                     │    │  Parent: ALPH (primary) or DCR (sec) │ │
+│  │                     │    │  Parent: DCR (primary) or ALPH (sec) │ │
 │  │  Existing miners    │    │  Pool inserts ZION commitment        │ │
 │  │  continue normally  │    │  into parent coinbase TX             │ │
 │  │                     │    │                                      │ │
@@ -1084,20 +1186,20 @@ chain_state:
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                      │
 │  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐          │
-│  │ ZION Node    │    │ ALPH Pool    │    │ DCR Pool     │          │
+│  │ ZION Node    │    │ DCR Pool     │    │ ALPH Pool    │          │
 │  │ RPC          │    │ (2miners)    │    │ (2miners)    │          │
 │  │ 127.0.0.1:   │    │ Stratum v1   │    │ Stratum v1   │          │
 │  │ 8443         │    │ (primary)    │    │ (secondary)  │          │
 │  └──────┬───────┘    └──────┬───────┘    └──────┬───────┘          │
 │         │                   │                   │                   │
 │         │ getauxblock       │ mining.notify     │ mining.notify     │
-│         │ (ZION template)   │ (ALPH template)   │ (DCR template)    │
+│         │ (ZION template)   │ (DCR template)    │ (ALPH template)   │
 │         ▼                   ▼                   ▼                   │
 │  ┌──────────────────────────────────────────────────────────────┐  │
 │  │              MERGE MINING ORCHESTRATOR                       │  │
 │  │                                                              │  │
 │  │  1. Get ZION aux template (getauxblock RPC)                 │  │
-│  │  2. Get parent template (ALPH or DCR, profit-switch)        │  │
+│  │  2. Get parent template (DCR or ALPH, profit-switch)        │  │
 │  │  3. Insert ZION block hash into parent coinbase script      │  │
 │  │  4. Build composite job: parent header + ZION commitment    │  │
 │  │  5. Send composite job to miners via Stratum                │  │
@@ -1113,7 +1215,7 @@ chain_state:
 │  │                                                              │  │
 │  │  Mining modes:                                               │  │
 │  │  1. Standard mode: deeksha_lite jobs (existing)             │  │
-│  │  2. AuxPoW mode: composite ALPH/DCR jobs (new)              │  │
+│  │  2. AuxPoW mode: composite DCR/ALPH jobs (new)              │  │
 │  │                                                              │  │
 │  │  Miner connects → pool decides which mode to assign          │  │
 │  │  based on miner capabilities and profit optimization         │  │
@@ -1503,13 +1605,13 @@ let best_parent = select_best_coin(&entries, current_parent, 5.0);  // 5% hyster
 **Goal:** Verify merge mining works on live network.
 
 **Steps:**
-1. Pool connects to ALPH pool (2miners, BTC wallet) — primary parent
-2. Pool receives ALPH templates + ZION aux templates
+1. Pool connects to DCR pool (2miners or another DCR pool) — primary parent
+2. Pool receives DCR templates + ZION aux templates
 3. Miner hashes Blake3 on composite jobs
-4. Verify: ALPH shares accepted on 2miners
+4. Verify: DCR shares accepted on parent pool
 5. Verify: ZION AuxPoW blocks accepted on ZION chain
 6. Monitor: ZION chain height grows from both standard and AuxPoW blocks
-7. (Secondary) Repeat with DCR pool to verify multi-parent support
+7. (Secondary) Repeat with ALPH pool to verify multi-parent support
 
 **Estimated total: 18-26 days**
 
