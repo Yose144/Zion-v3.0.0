@@ -848,6 +848,21 @@ The deployed watchdog script (`/usr/local/bin/zion-watchdog.sh`) had two bugs ca
 
 Fixed script: `V3/deploy/new-server/zion-watchdog.sh`. Report: [`POOL_WATCHDOG_FIX_REPORT_2026-07-11.md`](./POOL_WATCHDOG_FIX_REPORT_2026-07-11.md)
 
+### AuxPow Merge Mining (2026-07-11)
+
+**AuXpow crate** (`AuXpow/`) — standalone merge-mining system integrated into the V3 pool server. Enables the pool to mine external coins (DCR, ALPH, KAS, ERG, RVN, ETC, EVR, MEWC, FLUX, CLORE, XMR) via Stratum v1 proxy with profit-switching and circuit breaker.
+
+- **Crate:** `zion-auxpow` (workspace member, deps: blake3, tokio, sha3, serde, anyhow)
+- **Files:** `src/types.rs` (11 coins, config, stats, hysteresis), `src/external_hashers.rs` (Blake3, kHeavyHash), `src/auxpow_client.rs` (Stratum v1), `src/auxpow_scheduler.rs` (profit switcher + circuit breaker + mining loop)
+- **Pool integration:** `V3/L1/pool/src/bin/server.rs` — scheduler spawned on dedicated tokio runtime, env-gated `ZION_AUXPOW_ENABLED=1`. `/stats` API exposes 13-field `auxpow` section.
+- **Dashboard:** `ZION_OS/dashboard/` — AuxPow card in Pool Miners tab (status, coin, algo, pool, shares, revenue, uptime, circuit breaker, coin switches)
+- **Env vars:** `ZION_AUXPOW_ENABLED`, `ZION_AUXPOW_WALLET`, `ZION_AUXPOW_ALLOCATION`, `ZION_AUXPOW_POOL_PREFERENCE`, `ZION_AUXPOW_HYSTERESIS_PCT`, `ZION_AUXPOW_CB_THRESHOLD`, `ZION_AUXPOW_CB_RESET_SECS` (10 total)
+- **Tests:** 146/146 pass (40 auxpow + 73 pool lib + 33 pool server)
+- **Deployed:** Edge server `62.171.141.136` — pool binary + dashboard, `enabled: false` by default
+- **Plan:** [`AUXPOW_MERGE_MINING_PLAN.md`](./AUXPOW_MERGE_MINING_PLAN.md) — 3-phase approach (Phase 1 = stratum proxy ✅, Phase 2 = miner dual-stratum, Phase 3 = true AuxPow protocol hard fork)
+- **Report:** [`docs/3.0.5/AUXPOW_INTEGRATION_REPORT_2026-07-11.md`](./docs/3.0.5/AUXPOW_INTEGRATION_REPORT_2026-07-11.md)
+- **Commits:** `44371aa10` (crate), `0a49a3f48` (pool + dashboard integration)
+
 ## Current Status (2026-07-07 — Post Hard Reset)
 
 **System Status (new server 62.171.141.136):**
