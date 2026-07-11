@@ -744,25 +744,25 @@ APP&WEB/website-v2.9/src/app/dex/
 | Implement path finding algorithm | Backend | P0 | ✅ Done (6 strategies) |
 | Integrate WARP bridge API into router | Backend | P0 | ✅ Done (lock/burn + polling) |
 | Integrate Uniswap V3 QuoterV2 | Backend | P0 | ✅ Done (slot0 + liquidity + quote) |
-| Integrate Raydium/Orca SDK (Solana) | Backend | P1 | Pending |
+| Integrate Raydium/Orca SDK (Solana) | Backend | P1 | ✅ Done (Jupiter API aggregator) |
 | Implement swap execution (direct mode) | Backend | P0 | ✅ Done (EVM signing via ethers-rs) |
 | Implement WebSocket status streaming | Backend | P0 | ✅ Done (axum /stream) |
 | Build `/dex` page with SwapWidget | Frontend | P0 | ✅ Done |
 | Build ChainSelector + TokenSelector | Frontend | P0 | ✅ Done (16 chains) |
 | Build SwapPath visual component | Frontend | P0 | ✅ Done |
 | Build TransactionStatus component | Frontend | P0 | ✅ Done (real-time polling) |
-| Build PriceChart component | Frontend | P1 | Pending |
+| Build PriceChart component | Frontend | P1 | ✅ Done (SVG-based, 1h/24h/7d) |
 | Build RecentSwaps feed | Frontend | P1 | ✅ Done (auto-refresh) |
 | API: `/quote`, `/swap`, `/swaps/:id`, `/health` | Backend | P0 | ✅ Done (8 endpoints) |
 | Slippage protection + min_output enforcement | Backend | P0 | ✅ Done |
 | Fee estimation (gas + bridge + swap) | Backend | P0 | ✅ Done |
 | E2E test: USDC(Solana) → wZION(Base) | Backend | P0 | ✅ Unit test (14/14 passing) |
 | E2E test: wZION(Base) → ZION(Solana) | Backend | P0 | ✅ Unit test (14/14 passing) |
-| Mobile app: swap screen | Mobile | P1 | Pending |
+| Mobile app: swap screen | Mobile | P1 | ✅ Done (DexScreen.js) |
 | Desktop agent: swap tab | Desktop | P1 | Pending |
 | TypeScript SDK (`@zion/dex-sdk`) | Backend | P0 | ✅ Done |
 
-**Deliverable:** Users can swap any token on any chain to any token on any chain — one click. *(Backend + frontend complete — Solana execution pending)*
+**Deliverable:** Users can swap any token on any chain to any token on any chain — one click. *(Backend + frontend + mobile complete — desktop pending)*
 
 ### Phase 3: Custom AMM + ZDX Token (Q1 2027)
 
@@ -778,18 +778,18 @@ APP&WEB/website-v2.9/src/app/dex/
 | Foundry tests (unit + integration) | Backend | P0 | ✅ Done (7/7 passing) |
 | Deploy on Base mainnet | Backend | P0 | Pending (script ready) |
 | Basescan verification | Backend | P0 | Pending |
-| Integrate ZionDex AMM into Router | Backend | P0 | Pending |
-| Build `/dex/liquidity` page | Frontend | P0 | Pending |
-| Build AddLiquidity component | Frontend | P0 | Pending |
-| Build RemoveLiquidity component | Frontend | P0 | Pending |
-| Build PoolList component | Frontend | P0 | Pending |
-| Build Portfolio page | Frontend | P0 | Pending |
+| Integrate ZionDex AMM into Router | Backend | P0 | ✅ Done (config + DEX registry) |
+| Build `/dex/liquidity` page | Frontend | P0 | ✅ Done (PoolList + AddLiquidity + RemoveLiquidity) |
+| Build AddLiquidity component | Frontend | P0 | ✅ Done (tick range, amount inputs) |
+| Build RemoveLiquidity component | Frontend | P0 | ✅ Done (wallet connect placeholder) |
+| Build PoolList component | Frontend | P0 | ✅ Done (table with chain/dex/pair/fee/status) |
+| Build Portfolio page | Frontend | P0 | ✅ Done (stats + LP positions + swap history) |
 | ZDX token launch + airdrop to LPs | Business | P0 | Pending |
 | ZDX staking → share of DEX revenue | Backend | P1 | Pending |
 | Golden Ratio AMM research + prototyping | Research | P2 | Pending |
 | Security audit (internal + external) | Security | P0 | Pending |
 
-**Deliverable:** ZionDex AMM live on Base with ZION pair fee discounts, LP staking, ZDX governance. *(Contracts complete — deploy + frontend pending)*
+**Deliverable:** ZionDex AMM live on Base with ZION pair fee discounts, LP staking, ZDX governance. *(Contracts + frontend complete — deploy + ZDX launch pending)*
 
 ### Phase 4: Intent-Based Execution + Aggregator (Q2 2027)
 
