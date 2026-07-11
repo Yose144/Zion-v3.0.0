@@ -950,9 +950,16 @@ def get_launch_state() -> dict:
 
 # ── Auto-backup before log rotation ────────────────────────────────────
 BACKUP_BEFORE_ROTATE = True
+_BACKUP_THROTTLE_SECS = 4 * 3600  # minimum 4 hours between auto-backups
+_last_auto_backup_ts = 0.0
 
 def auto_backup_if_needed():
+    global _last_auto_backup_ts
     if not BACKUP_BEFORE_ROTATE:
+        return
+    # Throttle: only run at most once every 4 hours
+    now = time.time()
+    if now - _last_auto_backup_ts < _BACKUP_THROTTLE_SECS:
         return
     script = SCRIPTS_DIR / ("backup-chain" + _SCRIPT_EXT)
     if not script.exists():
@@ -973,6 +980,7 @@ def auto_backup_if_needed():
                 cwd=str(REPO_ROOT), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                 preexec_fn=os.setsid if hasattr(os, "setsid") else None
             )
+        _last_auto_backup_ts = now
         _log_control("auto-backup pre-rotate triggered")
     except Exception:
         pass
@@ -4310,7 +4318,7 @@ def get_pool_miners() -> dict:
 
 _POOL_HISTORY_CACHE = {"ts": 0, "data": []}
 _POOL_HISTORY_LOCK = threading.Lock()
-_POOL_HISTORY_TTL = 15  # seconds
+_POOL_HISTORY_TTL = 60  # seconds — journalctl is expensive, cache longer
 
 
 def _parse_journal_timestamp(line: str) -> float:
@@ -4346,11 +4354,11 @@ def get_pool_connection_history(limit: int = 100, since_hours: int = 24) -> dict
             return {"ok": True, "events": _POOL_HISTORY_CACHE["data"][:limit], "cached": True}
 
     cmd = (
-        f"journalctl -u zion-pool --no-pager --since '{since_hours} hours ago' "
+        f"journalctl -u zion-pool --no-pager --since '{since_hours} hours ago' -n 5000 "
         "| grep -E 'peer_addr=|session_start|session_miner_id|session_worker_name|session_duration_secs|wire_bye'"
     )
     try:
-        result = _run_edge_cmd(cmd, timeout=20)
+        result = _run_edge_cmd(cmd, timeout=10)
         if result.returncode != 0:
             return {"ok": False, "events": [], "error": result.stderr.strip()[:120]}
         raw = result.stdout.strip()
@@ -5089,6 +5097,102 @@ def get_servers_setup() -> dict:
     except Exception:
         pass
     result["firewall"] = firewall
+
+    # ── Backup system status ─────────────────────────────────────────
+    backup_info: dict = {"ok": True}
+    backup_dir = REPO_ROOT / "backups"
+
+    # Local backup timer
+    try:
+        r = subprocess.run(
+            ["systemctl", "--user", "is-active", "zion-backup.timer"],
+            capture_output=True, text=True, timeout=5,
+        )
+        backup_info["local_timer_active"] = r.stdout.strip() == "active"
+        r2 = subprocess.run(
+            ["systemctl", "--user", "is-enabled", "zion-backup.timer"],
+            capture_output=True, text=True, timeout=5,
+        )
+        backup_info["local_timer_enabled"] = r2.stdout.strip() == "enabled"
+        # Next trigger
+        r3 = subprocess.run(
+            ["systemctl", "--user", "show", "zion-backup.timer", "--property=NextElapseUSecRealtime"],
+            capture_output=True, text=True, timeout=5,
+        )
+        next_val = r3.stdout.strip().replace("NextElapseUSecRealtime=", "")
+        backup_info["local_next_trigger"] = next_val if next_val else "—"
+    except Exception:
+        backup_info["local_timer_active"] = False
+        backup_info["local_timer_enabled"] = False
+        backup_info["local_next_trigger"] = "—"
+
+    # Backup counts and sizes
+    try:
+        local_files = sorted(backup_dir.glob("backup_local_*.tar.gz"), key=lambda p: p.stat().st_mtime, reverse=True)
+        edge_files = sorted(backup_dir.glob("backup_edge_*.tar.gz"), key=lambda p: p.stat().st_mtime, reverse=True)
+        chain_files = sorted(backup_dir.glob("backup_2026-*.tar.gz"), key=lambda p: p.stat().st_mtime, reverse=True)
+        backup_info["local_count"] = len(local_files)
+        backup_info["edge_count"] = len(edge_files)
+        backup_info["chain_count"] = len(chain_files)
+        backup_info["local_latest"] = {
+            "name": local_files[0].name,
+            "size_mb": round(local_files[0].stat().st_size / (1024 * 1024), 1),
+            "ts": time.strftime("%Y-%m-%d %H:%M", time.localtime(local_files[0].stat().st_mtime)),
+        } if local_files else None
+        backup_info["edge_latest"] = {
+            "name": edge_files[0].name,
+            "size_mb": round(edge_files[0].stat().st_size / (1024 * 1024), 1),
+            "ts": time.strftime("%Y-%m-%d %H:%M", time.localtime(edge_files[0].stat().st_mtime)),
+        } if edge_files else None
+        backup_info["chain_latest"] = {
+            "name": chain_files[0].name,
+            "size_mb": round(chain_files[0].stat().st_size / (1024 * 1024), 1),
+            "ts": time.strftime("%Y-%m-%d %H:%M", time.localtime(chain_files[0].stat().st_mtime)),
+        } if chain_files else None
+        total_size = sum(f.stat().st_size for f in backup_dir.glob("*.tar.gz"))
+        backup_info["total_size_mb"] = round(total_size / (1024 * 1024), 1)
+    except Exception:
+        backup_info["local_count"] = 0
+        backup_info["edge_count"] = 0
+        backup_info["chain_count"] = 0
+        backup_info["total_size_mb"] = 0
+
+    # Edge backup contents (what files are in the latest edge backup)
+    try:
+        if edge_files:
+            r = subprocess.run(
+                ["tar", "-tzf", str(edge_files[0])],
+                capture_output=True, text=True, timeout=10,
+            )
+            backup_info["edge_contents"] = [l.strip() for l in r.stdout.strip().split("\n") if l.strip()]
+        else:
+            backup_info["edge_contents"] = []
+    except Exception:
+        backup_info["edge_contents"] = []
+
+    # Backup config
+    backup_info["interval_hours"] = 4
+    backup_info["retention"] = 20
+    backup_info["edge_files"] = [
+        "state", "state-node2", "bridge-mainnet.db", "dao-mainnet.db",
+        "atomic-swap.db", "warp-mainnet.db", "pplns-state.json",
+        "oasis.db", "free_world.db", "issobella.db", "peers.json",
+        "edge-environment.sh",
+    ]
+    backup_info["script"] = "scripts/backup-system.sh"
+
+    # Last backup log entries
+    try:
+        log_file = REPO_ROOT / "logs" / "backup.log"
+        if log_file.exists():
+            lines = log_file.read_text().strip().split("\n")
+            backup_info["last_log_entries"] = lines[-5:]
+        else:
+            backup_info["last_log_entries"] = []
+    except Exception:
+        backup_info["last_log_entries"] = []
+
+    result["backup"] = backup_info
 
     return result
 
@@ -11304,6 +11408,26 @@ class DashboardHandler(BaseHTTPRequestHandler):
             action = payload.get("action", "")
             env_overrides = payload.get("env")
             self._json(run_control(action, env_overrides))
+        elif route == "/api/servers-setup/backup-now":
+            try:
+                subprocess.Popen(
+                    ["bash", str(SCRIPTS_DIR / "backup-system.sh")],
+                    cwd=str(REPO_ROOT), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                    preexec_fn=os.setsid if hasattr(os, "setsid") else None,
+                )
+                self._json({"ok": True, "message": "Backup triggered"})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
+        elif route == "/api/servers-setup/chain-backup-now":
+            try:
+                subprocess.Popen(
+                    ["bash", str(SCRIPTS_DIR / "backup-chain.sh"), "-Name", "manual"],
+                    cwd=str(REPO_ROOT), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                    preexec_fn=os.setsid if hasattr(os, "setsid") else None,
+                )
+                self._json({"ok": True, "message": "Chain backup triggered"})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
         elif route == "/api/agent/control":
             # Proxy control commands to the Desktop Agent (miner start/stop/restart)
             action = payload.get("action", "")

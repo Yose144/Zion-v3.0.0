@@ -2370,7 +2370,7 @@ async function loadPoolMinersTab(){
   const badge = document.getElementById('pool-miners-badge');
   const eventsTbody = document.getElementById('pool-miners-events');
   try {
-    const data = await apiFetch('/api/pool/miners-dashboard');
+    const data = await apiFetch('/api/pool/miners-dashboard', {}, 15000);
     if(!data || !data.ok) throw new Error(data?.error || 'Failed to load');
     _poolMinersData = data;
 
@@ -10186,8 +10186,50 @@ async function loadServersSetup(){
         `<div class="flex justify-between"><span class="text-gray-400">${rule.port}</span><span class="text-white">${rule.action} ${rule.from}</span></div>`
       ).join('');
     }
+
+    // Backup system
+    const bk = d.backup || {};
+    _set('backup-timer-status', bk.local_timer_active ? '✅ Active' : '❌ Inactive');
+    _set('backup-interval', (bk.interval_hours || 4) + 'h');
+    _set('backup-next', bk.local_next_trigger || '—');
+    _set('backup-total-size', (bk.total_size_mb || 0) + ' MB');
+    _set('backup-local-info', (bk.local_count || 0) + ' files' + (bk.local_latest ? '\n' + bk.local_latest.name + ' (' + bk.local_latest.size_mb + ' MB, ' + bk.local_latest.ts + ')' : ''));
+    _set('backup-edge-info', (bk.edge_count || 0) + ' files' + (bk.edge_latest ? '\n' + bk.edge_latest.name + ' (' + bk.edge_latest.size_mb + ' MB, ' + bk.edge_latest.ts + ')' : ''));
+    _set('backup-chain-info', (bk.chain_count || 0) + ' files' + (bk.chain_latest ? '\n' + bk.chain_latest.name + ' (' + bk.chain_latest.size_mb + ' MB, ' + bk.chain_latest.ts + ')' : ''));
+    _set('backup-edge-contents', (bk.edge_contents || []).join('\n') || '—');
+    _set('backup-log', (bk.last_log_entries || []).join('\n') || '—');
   }catch(e){
     console.error('loadServersSetup error:', e);
+  }
+}
+
+async function triggerBackupNow(){
+  try{
+    const r = await fetch('/api/servers-setup/backup-now', {method:'POST'});
+    const d = await r.json();
+    if(d.ok){
+      alert('Backup triggered! Check status in a few seconds.');
+      setTimeout(() => loadServersSetup(), 3000);
+    } else {
+      alert('Backup failed: ' + (d.error || 'unknown'));
+    }
+  }catch(e){
+    alert('Backup error: ' + e.message);
+  }
+}
+
+async function triggerChainBackup(){
+  try{
+    const r = await fetch('/api/servers-setup/chain-backup-now', {method:'POST'});
+    const d = await r.json();
+    if(d.ok){
+      alert('Chain backup triggered!');
+      setTimeout(() => loadServersSetup(), 3000);
+    } else {
+      alert('Chain backup failed: ' + (d.error || 'unknown'));
+    }
+  }catch(e){
+    alert('Chain backup error: ' + e.message);
   }
 }
 

@@ -6,6 +6,6 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 User=root
-ExecStart=/root/zion-2.9.6-main/edge-deploy/scripts/backup-edge.sh
+ExecStart=/root/zion/2.9.6/ZION_OS/infra/scripts/backup-edge.sh
 StandardOutput=journal
 StandardError=journal
