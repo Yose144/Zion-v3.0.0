@@ -44,6 +44,9 @@ export const CONFIG = {
   POOL_URL: 'https://pool.zionterranova.com',
   API_URL: 'https://api.zionterranova.com',
 
+  // ZionDex Router API (cross-chain DEX)
+  ZIONDEX_ROUTER_URL: __DEV__ ? 'http://localhost:8454' : 'https://dex.zionterranova.com',
+
   // P2P network
   P2P_PORT: 8334,
 
