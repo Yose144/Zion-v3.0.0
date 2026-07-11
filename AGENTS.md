@@ -7,6 +7,7 @@ This file provides operating guidance to Devin, WARP, Copilot, and future automa
 ## Scope and working area
 
 - This is a multi-layer monorepo, but **active mainnet-track development is in `V3/`**.
+- **ZionDex backend** lives in `ZionDex/` (standalone, not under `V3/`) — cross-chain DEX router (Rust), AMM contracts (Solidity/Foundry), TypeScript SDK, and `/dex` frontend page. See `ZionDex/README.md` and `ZionDex.md` for details. Tests: 14/14 Rust (`cargo test` in `ZionDex/router/`), 7/7 Solidity (`forge test` in `ZionDex/contracts/`).
 - Treat legacy root trees (`L1/`, `L2/`, `L3/`, older docs/archive content) as migration/reference material unless a task explicitly targets them.
 - For `V3` work, prefer changing only `V3/**` unless the task explicitly requires cross-tree sync.
 - Avoid incidental edits in `APP&WEB/**` when the task is unrelated to website, desktop, or mobile work.
