@@ -7,7 +7,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Zap, Globe, Shield, TrendingUp, ArrowRight } from 'lucide-react';
+import { Zap, Globe, Shield, TrendingUp, ArrowRight, Info, Layers } from 'lucide-react';
 import CrossChainSwapWidget from '@/components/dex/CrossChainSwapWidget';
 import RecentSwaps from '@/components/dex/RecentSwaps';
 import TransactionStatus from '@/components/dex/TransactionStatus';
@@ -34,7 +34,7 @@ export default function DexPage() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-white">ZionDex</h1>
-                <p className="text-zinc-400">Cross-Chain DEX powered by native L1 bridge</p>
+                <p className="text-zinc-400">Cross-Chain DEX powered by L3 WARP bridge</p>
               </div>
             </div>
 
@@ -46,7 +46,7 @@ export default function DexPage() {
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900/60 border border-zinc-700/30 rounded-full">
                 <Shield className="w-3.5 h-3.5 text-green-500" />
-                <span className="text-xs text-zinc-300">Native bridge (no synthetic)</span>
+                <span className="text-xs text-zinc-300">L3 WARP bridge (no synthetic)</span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900/60 border border-zinc-700/30 rounded-full">
                 <TrendingUp className="w-3.5 h-3.5 text-blue-500" />
@@ -99,6 +99,16 @@ export default function DexPage() {
             <div className="bg-zinc-900/60 border border-zinc-700/30 rounded-xl p-4">
               <h3 className="text-sm font-semibold text-white mb-3">Quick Links</h3>
               <div className="space-y-2">
+                <Link
+                  href="/ziondex"
+                  className="flex items-center justify-between p-2 bg-zinc-800/40 rounded-lg hover:bg-zinc-800/60 transition-colors"
+                >
+                  <span className="flex items-center gap-2 text-sm text-zinc-300">
+                    <Info className="w-3.5 h-3.5 text-amber-500" />
+                    About ZionDex
+                  </span>
+                  <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
+                </Link>
                 <Link
                   href="/dex/liquidity"
                   className="flex items-center justify-between p-2 bg-zinc-800/40 rounded-lg hover:bg-zinc-800/60 transition-colors"
@@ -160,6 +170,13 @@ export default function DexPage() {
                   <span className="text-white">13</span>
                 </div>
                 <div className="flex justify-between">
+                  <span className="text-zinc-500">L3 WARP bridge</span>
+                  <span className="flex items-center gap-1 text-emerald-400">
+                    <Layers className="w-3 h-3" />
+                    port 8453
+                  </span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-zinc-500">ZION pair fee</span>
                   <span className="text-amber-400">0.15%</span>
                 </div>
@@ -170,6 +187,10 @@ export default function DexPage() {
                 <div className="flex justify-between">
                   <span className="text-zinc-500">Bridge fee</span>
                   <span className="text-zinc-300">0.50%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">Validator quorum</span>
+                  <span className="text-zinc-300">5/5 (Ed25519)</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-500">Max slippage</span>
@@ -185,9 +206,15 @@ export default function DexPage() {
       <div className="border-t border-zinc-800/50 mt-12">
         <div className="max-w-6xl mx-auto px-6 py-6 text-center">
           <p className="text-xs text-zinc-600">
-            ZionDex is in development. Router API at{' '}
-            <code className="text-zinc-400">localhost:8454</code>.
-            Contracts ready for Base mainnet deploy.
+            ZionDex Router API at{' '}
+            <code className="text-zinc-400">localhost:8454</code>
+            {' · '}
+            L3 WARP Bridge at{' '}
+            <code className="text-zinc-400">localhost:8453</code>
+            {' · '}
+            <Link href="/ziondex" className="text-amber-500/80 hover:text-amber-400">
+              Learn more →
+            </Link>
           </p>
         </div>
       </div>

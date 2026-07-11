@@ -184,7 +184,7 @@ Final checklist. Full procedure in [`V3/docs/MAINNET_LAUNCH_SEQUENCE.md`](./V3/d
 
 | Initiative | Target | Detail |
 |------------|--------|--------|
-| **ZionDex** | Q3 2027 | Cross-chain DEX router powered by WARP; custom AMM later. |
+| **ZionDex** | Q4 2026 → Q3 2027 | ✅ **Live Beta** — Cross-chain DEX router powered by L3 WARP (port 8453). Router (Rust, 14 tests), AMM contracts (7 tests), SDK, web/mobile/desktop UI all built. Custom AMM deploy + intent-based execution pending. |
 | **More EVM chains** | 2027 | Additional wZION deployments and bridge relays. |
 | **Non-EVM expansion** | 2027 | Full production WARP routes for Aptos, NEAR, Sui, TON, Cardano, Cosmos. |
 | **L5 Free World** | 2027–2028 | Genesis Garden, community blueprint, off-grid mesh. |
