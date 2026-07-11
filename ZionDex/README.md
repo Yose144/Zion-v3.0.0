@@ -1,6 +1,6 @@
-# ZionDex — Cross-Chain DEX Backend
+# ZionDex — Cross-Chain DEX
 
-> **Status:** Active development
+> **Status:** Active development — Backend + Frontend + Mobile + Desktop complete
 > **Created:** 2026-07-11
 > **Goal:** First universal cross-chain DEX powered by native L1 bridge on 13 chain families
 
@@ -16,8 +16,9 @@ ZionDex/
 │   │   ├── config.rs        # RouterConfig — chain registry, DEX registry
 │   │   ├── router.rs        # Path finding algorithm (6 strategies)
 │   │   ├── quote.rs         # Quote engine — price + slippage + fees
+│   │   ├── price.rs         # Uniswap V3 price feed (slot0 + QuoterV2)
 │   │   ├── executor.rs      # Swap execution (EVM + Solana + bridge)
-│   │   ├── api.rs           # HTTP REST + WebSocket server
+│   │   ├── api.rs           # HTTP REST + WebSocket server (9 endpoints)
 │   │   ├── db.rs            # SQLite swap state tracking
 │   │   └── monitor.rs       # WebSocket real-time updates
 │   └── tests/
@@ -45,7 +46,54 @@ ZionDex/
 │       ├── liquidity.ts      # Pool browser + LP management
 │       └── ziondex.ts        # Main SDK entry point
 │
-└── docs/            # Documentation
+└── (frontend in APP&WEB/)
+    ├── website-v2.9/src/app/dex/           # Next.js /dex page
+    │   ├── page.tsx                        # Main swap page
+    │   ├── layout.tsx
+    │   ├── liquidity/page.tsx              # Add/remove liquidity
+    │   └── portfolio/page.tsx              # User portfolio
+    ├── website-v2.9/src/components/dex/    # React components
+    │   ├── CrossChainSwapWidget.tsx        # Main swap UI
+    │   ├── ChainSelector.tsx               # 16-chain dropdown
+    │   ├── TokenSelector.tsx               # Chain-specific tokens
+    │   ├── SwapPathVisual.tsx              # Multi-step path viz
+    │   ├── PriceChart.tsx                  # SVG price chart
+    │   ├── TransactionStatus.tsx           # Real-time swap tracker
+    │   └── RecentSwaps.tsx                 # Live swap feed
+    ├── mobile-app/src/screens/DexScreen.js # React Native swap screen
+    └── desktop-agent/src/ui/               # Electron swap tab
+```
+
+## Frontend
+
+### Website (Next.js)
+```bash
+cd APP&WEB/website-v2.9
+npm install
+# Set env: NEXT_PUBLIC_ZIONDEX_ROUTER_URL=http://localhost:8454
+npm run dev
+# Visit http://localhost:3000/dex
+```
+
+Pages:
+- `/dex` — Cross-chain swap widget + price chart + recent swaps
+- `/dex/liquidity` — Pool list + add/remove liquidity
+- `/dex/portfolio` — LP positions + swap history
+
+### Mobile App (React Native)
+```bash
+cd APP&WEB/mobile-app
+npm install
+npx react-native run-android  # or run-ios
+# ZionDex tab in bottom navigation
+```
+
+### Desktop Agent (Electron)
+```bash
+cd APP&WEB/desktop-agent
+npm install
+npm start
+# ZionDex tab in left sidebar
 ```
 
 ## Router (Rust)
