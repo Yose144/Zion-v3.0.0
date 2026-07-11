@@ -438,7 +438,7 @@ impl AuxPowClient {
                 if let Some(u64s) = arr.get(1).and_then(|v| v.as_array()) {
                     if u64s.len() == 4 {
                         let job_id = arr
-                            .get(0)
+                            .first()
                             .and_then(|v| v.as_str())
                             .unwrap_or("")
                             .to_string();
@@ -455,7 +455,7 @@ impl AuxPowClient {
                         return Ok(ExternalJob {
                             job_id,
                             header_hex: hex::encode(&header_bytes),
-                            target_hex: hex::encode(&target_bytes),
+                            target_hex: hex::encode(target_bytes),
                             seed_hash: None,
                             block_number: None,
                             algorithm: self.profile.algorithm.clone(),
@@ -931,6 +931,280 @@ mod tests {
 
         client.disconnect().await.unwrap();
         mock_task.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn kas_round_trip_notify_and_submit() {
+        use crate::external_hashers::{hash_kheavyhash, meets_target};
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap().to_string();
+        let (host, port) = addr.rsplit_once(':').unwrap();
+        let port: u16 = port.parse().unwrap();
+
+        let server_task = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let (mut reader, mut writer) = socket.split();
+            let mut buf = vec![0u8; 4096];
+
+            async fn read_json(
+                reader: &mut tokio::net::tcp::ReadHalf<'_>,
+                buf: &mut [u8],
+            ) -> Value {
+                let n = reader.read(buf).await.unwrap();
+                serde_json::from_slice::<Value>(&buf[..n]).unwrap()
+            }
+
+            async fn write_json(writer: &mut tokio::net::tcp::WriteHalf<'_>, v: Value) {
+                writer
+                    .write_all((serde_json::to_string(&v).unwrap() + "\n").as_bytes())
+                    .await
+                    .unwrap();
+                writer.flush().await.unwrap();
+            }
+
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "mining.subscribe");
+            write_json(
+                &mut writer,
+                json!({"id": 1, "result": [true, "EthereumStratum/1.0.0"], "error": null}),
+            )
+            .await;
+
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "mining.authorize");
+            write_json(
+                &mut writer,
+                json!({"id": 2, "result": true, "error": null}),
+            )
+            .await;
+
+            write_json(
+                &mut writer,
+                json!({"id": null, "method": "set_extranonce", "params": ["abcd"]}),
+            )
+            .await;
+
+            write_json(
+                &mut writer,
+                json!({"id": null, "method": "mining.set_difficulty", "params": [4]}),
+            )
+            .await;
+
+            let pre_pow_hash = [42u8; 32];
+            let u64s: Vec<u64> = pre_pow_hash
+                .chunks_exact(8)
+                .map(|c| u64::from_le_bytes(c.try_into().unwrap()))
+                .collect();
+            let timestamp = 5_435_345_234u64;
+            write_json(
+                &mut writer,
+                json!({
+                    "id": null,
+                    "method": "mining.notify",
+                    "params": ["kas_job_1", u64s, timestamp]
+                }),
+            )
+            .await;
+
+            let submit = read_json(&mut reader, &mut buf).await;
+            assert_eq!(submit["method"], "mining.submit");
+            let params = submit["params"].as_array().unwrap();
+            assert_eq!(params.len(), 3);
+            assert!(params[0].as_str().unwrap().contains("kaspa:"));
+            assert_eq!(params[1], "kas_job_1");
+            let nonce_hex = params[2].as_str().unwrap();
+            assert_eq!(nonce_hex.len(), 16);
+
+            let nonce_bytes = hex::decode(nonce_hex).unwrap();
+            let full_nonce = u64::from_le_bytes(nonce_bytes.try_into().unwrap());
+            let hash = hash_kheavyhash(&pre_pow_hash, timestamp, full_nonce);
+            let target = super::difficulty_to_target(4.0);
+            assert!(
+                meets_target(&hash, &target),
+                "submitted nonce must produce hash meeting target"
+            );
+
+            write_json(
+                &mut writer,
+                json!({"id": 100, "result": true, "error": null}),
+            )
+            .await;
+
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        });
+
+        let mut profile = CoinProfile::default_for(ExternalCoin::KAS);
+        profile.pool_host = host.to_string();
+        profile.pool_port = port;
+        profile.worker_name = "test_worker".to_string();
+
+        let client = AuxPowClient::new(profile);
+        client
+            .connect("kaspa:qpzpfwcsqsxhxwup26r55fd0ghqlhyugz8cp6y3wxuddc02vcxtjg75pspnwz")
+            .await
+            .unwrap();
+
+        let job = client.wait_for_job(2000).await.unwrap().unwrap();
+        assert_eq!(job.job_id, "kas_job_1");
+        assert_eq!(job.header_bytes, [42u8; 32]);
+        assert_eq!(job.extranonce1, hex::decode("abcd").unwrap());
+
+        let mut found = None;
+        for nonce in 0..10_000u64 {
+            let hash = crate::external_hashers::hash_kheavyhash_extranonce(
+                &job.header_bytes,
+                job.timestamp.unwrap_or(0),
+                &job.extranonce1,
+                nonce,
+            );
+            if meets_target(&hash, &job.target_bytes) {
+                found = Some((nonce, hash));
+                break;
+            }
+        }
+        let (nonce, hash) = found.expect("should find a share at difficulty 4");
+
+        let result = client
+            .submit_share(&job.job_id, nonce, &hex::encode(hash))
+            .await
+            .unwrap();
+        assert_eq!(result, ShareResult::Accepted);
+
+        client.disconnect().await.unwrap();
+        server_task.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn alph_round_trip_notify_and_submit() {
+        use crate::external_hashers::{hash_blake3_alph, meets_target};
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap().to_string();
+        let (host, port) = addr.rsplit_once(':').unwrap();
+        let port: u16 = port.parse().unwrap();
+
+        let server_task = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let (mut reader, mut writer) = socket.split();
+            let mut buf = vec![0u8; 4096];
+
+            async fn read_json(
+                reader: &mut tokio::net::tcp::ReadHalf<'_>,
+                buf: &mut [u8],
+            ) -> Value {
+                let n = reader.read(buf).await.unwrap();
+                serde_json::from_slice::<Value>(&buf[..n]).unwrap()
+            }
+
+            async fn write_json(writer: &mut tokio::net::tcp::WriteHalf<'_>, v: Value) {
+                writer
+                    .write_all((serde_json::to_string(&v).unwrap() + "\n").as_bytes())
+                    .await
+                    .unwrap();
+                writer.flush().await.unwrap();
+            }
+
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "mining.subscribe");
+            write_json(
+                &mut writer,
+                json!({"id": 1, "result": [null, "6e14", 6], "error": null}),
+            )
+            .await;
+
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "mining.authorize");
+            write_json(
+                &mut writer,
+                json!({"id": 2, "result": true, "error": null}),
+            )
+            .await;
+
+            write_json(
+                &mut writer,
+                json!({"id": null, "method": "mining.set_difficulty", "params": [4]}),
+            )
+            .await;
+
+            let header_blob = hex::decode("aabbccdd").unwrap();
+            // Easy target so the CPU finds a share quickly.
+            let target_blob = hex::encode([0xFFu8; 32]);
+            write_json(
+                &mut writer,
+                json!({
+                    "id": null,
+                    "method": "mining.notify",
+                    "params": [{
+                        "jobId": "alph_job_1",
+                        "fromGroup": 3,
+                        "toGroup": 3,
+                        "txsBlob": "",
+                        "headerBlob": hex::encode(&header_blob),
+                        "targetBlob": target_blob
+                    }]
+                }),
+            )
+            .await;
+
+            let submit = read_json(&mut reader, &mut buf).await;
+            assert_eq!(submit["method"], "mining.submit");
+            let params = submit["params"].as_array().unwrap();
+            assert_eq!(params.len(), 2);
+            assert_eq!(params[0], "alph_job_1");
+            let nonce_hex = params[1].as_str().unwrap();
+            assert_eq!(nonce_hex.len(), 48);
+
+            let full_nonce = hex::decode(nonce_hex).unwrap();
+            let en1 = &full_nonce[..2];
+            let nonce_bytes = &full_nonce[2..10];
+            let nonce = u64::from_le_bytes(nonce_bytes.try_into().unwrap());
+            let hash = hash_blake3_alph(&header_blob, en1, nonce);
+            assert!(
+                meets_target(&hash, &[0xFFu8; 32]),
+                "submitted nonce must produce hash meeting target"
+            );
+
+            write_json(
+                &mut writer,
+                json!({"id": 100, "result": true, "error": null}),
+            )
+            .await;
+
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        });
+
+        let mut profile = CoinProfile::default_for(ExternalCoin::ALPH);
+        profile.pool_host = host.to_string();
+        profile.pool_port = port;
+        profile.worker_name = "test_worker".to_string();
+
+        let client = AuxPowClient::new(profile);
+        client.connect("14DLdim8A2o6AzFNgajvKgwWGpi9Fj4sP1RixdGteJNGJ").await.unwrap();
+
+        let job = client.wait_for_job(2000).await.unwrap().unwrap();
+        assert_eq!(job.job_id, "alph_job_1");
+        assert_eq!(job.header_bytes, hex::decode("aabbccdd").unwrap());
+        assert_eq!(job.extranonce1, hex::decode("6e14").unwrap());
+
+        let mut found = None;
+        for nonce in 0..10_000u64 {
+            let hash = hash_blake3_alph(&job.header_bytes, &job.extranonce1, nonce);
+            if meets_target(&hash, &job.target_bytes) {
+                found = Some((nonce, hash));
+                break;
+            }
+        }
+        let (nonce, hash) = found.expect("should find a share at difficulty 0.5");
+
+        let result = client
+            .submit_share(&job.job_id, nonce, &hex::encode(hash))
+            .await
+            .unwrap();
+        assert_eq!(result, ShareResult::Accepted);
+
+        client.disconnect().await.unwrap();
+        server_task.await.unwrap();
     }
 
     #[test]

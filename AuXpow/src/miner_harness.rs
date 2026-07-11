@@ -106,7 +106,7 @@ fn scan_kheavyhash(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare>
     // For Stratum pools that provide an extranonce1 prefix (e.g. 2miners KAS),
     // the full 8-byte nonce is extranonce1 || scanned suffix.  Otherwise fall
     // back to the legacy 64-bit nonce API.
-    if extranonce1.len() >= 1 && extranonce1.len() < 8 {
+    if !extranonce1.is_empty() && extranonce1.len() < 8 {
         for nonce in start..end {
             let hash = hash_kheavyhash_extranonce(header, timestamp, extranonce1, nonce);
             if meets_target(&hash, target) {

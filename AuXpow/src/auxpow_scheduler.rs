@@ -342,7 +342,7 @@ impl AuxPowScheduler {
                     }
                 }
                 ExternalAlgorithm::KHeavyHash => {
-                    if job.extranonce1.len() >= 1 && job.extranonce1.len() < 8 {
+                    if !job.extranonce1.is_empty() && job.extranonce1.len() < 8 {
                         hash_kheavyhash_extranonce(header, 0, &job.extranonce1, nonce)
                     } else {
                         hash_kheavyhash(header, 0, nonce)
