@@ -1,6 +1,6 @@
 'use strict';
 
-const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','bridge-validators','genesis','blockers','ops','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','cex','warp-swap','payout','pool-miners','revenue','backups','topology','miner-live','settings','fleet','agent','warp','ai-agents','ncl-jobs','poc-lab'];
+const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','bridge-validators','genesis','blockers','ops','servers-setup','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','cex','warp-swap','payout','pool-miners','revenue','backups','topology','miner-live','settings','fleet','agent','warp','ai-agents','ncl-jobs','poc-lab'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
 let _payoutSseSource = null;  // EventSource for real-time payout events
@@ -155,6 +155,7 @@ function switchTab(name){
   else if(name === 'payout'){ clearTabTimers(null); loadPayoutTab(); connectPayoutSse(); if(!_payoutTimer) _payoutTimer = setInterval(loadPayoutTab, 10000); }
   else if(name === 'pool-miners'){ clearTabTimers(null); loadPoolMinersTab(); if(!_poolMinersTimer) _poolMinersTimer = setInterval(loadPoolMinersTab, 10000); }
   else if(name === 'revenue'){ clearTabTimers(null); loadRevenueTab(); if(!_revenueTimer) _revenueTimer = setInterval(loadRevenueTab, 15000); }
+  else if(name === 'servers-setup'){ clearTabTimers(null); loadServersSetup(); }
   else { clearTabTimers(null); disconnectPayoutSse(); }
 
   if(name === 'charts') renderCharts();
@@ -10113,5 +10114,96 @@ function pocRenderCharts(reports){
       data: { labels: epochs, datasets: [{ label: 'Avg Confidence %', data: confs, borderColor: '#00CED1', backgroundColor: 'rgba(0,206,209,0.1)', fill: true, tension: 0.3 }] },
       options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { min: 80, max: 100, ticks: { color: '#888', callback: v => v+'%' }, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { ticks: { color: '#888' }, grid: { display: false } } } }
     });
+  }
+}
+
+// ── Servers Setup tab ───────────────────────────────────────────────────────
+async function loadServersSetup(){
+  try{
+    const r = await fetch('/api/servers-setup');
+    const d = await r.json();
+
+    // Server identity
+    _set('srv-ip', d.server?.ip || '—');
+    _set('srv-hostname', d.server?.hostname || '—');
+    _set('srv-os', d.server?.os || '—');
+    _set('srv-arch', d.server?.arch || '—');
+    _set('srv-uptime', d.server?.uptime || '—');
+
+    // Disk
+    _set('srv-disk-total', d.disk?.total || '—');
+    _set('srv-disk-used', d.disk?.used || '—');
+    _set('srv-disk-avail', d.disk?.avail || '—');
+    const diskPct = d.disk?.pct || 0;
+    _set('srv-disk-pct', diskPct + '%');
+    const diskBar = document.getElementById('srv-disk-bar');
+    if(diskBar){
+      diskBar.style.width = diskPct + '%';
+      diskBar.className = 'h-full transition-all ' + (diskPct > 80 ? 'bg-red-500' : diskPct > 60 ? 'bg-yellow-500' : 'bg-green-500');
+    }
+
+    // Memory
+    _set('srv-mem-total', d.memory?.total || '—');
+    _set('srv-mem-used', d.memory?.used || '—');
+    _set('srv-mem-free', d.memory?.free || '—');
+    const memPct = d.memory?.pct || 0;
+    _set('srv-mem-pct', memPct + '%');
+    const memBar = document.getElementById('srv-mem-bar');
+    if(memBar) memBar.style.width = memPct + '%';
+
+    // Services
+    const svcEl = document.getElementById('srv-services');
+    if(svcEl && d.services){
+      svcEl.innerHTML = d.services.map(s => {
+        const active = s.active;
+        const color = active ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30';
+        const dot = active ? '🟢' : '🔴';
+        return `<div class="flex items-center justify-between px-3 py-2 rounded-lg border ${color}">
+          <span class="font-mono">${dot} ${s.name}</span>
+          <span class="text-gray-400">${s.status || (active ? 'active' : 'inactive')}</span>
+        </div>`;
+      }).join('');
+    }
+
+    // Auto-patch status
+    _setBadge('srv-logrotate', d.auto_patch?.logrotate_hourly);
+    _setBadge('srv-journald', d.auto_patch?.journald_limit);
+    _setBadge('srv-rsyslog', d.auto_patch?.rsyslog_ratelimit);
+    _setBadge('srv-cleanup-cron', d.auto_patch?.cleanup_cron);
+    _set('srv-cleanup-last', d.auto_patch?.cleanup_last_run || '—');
+
+    // Monitoring
+    _setBadge('srv-fail2ban', d.monitoring?.fail2ban);
+    _setBadge('srv-ufw', d.monitoring?.ufw);
+    _setBadge('srv-nginx', d.monitoring?.nginx);
+    _setBadge('srv-docker', d.monitoring?.docker);
+    _setBadge('srv-watchdog', d.monitoring?.watchdog);
+
+    // Firewall
+    const fwEl = document.getElementById('srv-firewall');
+    if(fwEl && d.firewall){
+      fwEl.innerHTML = d.firewall.map(rule =>
+        `<div class="flex justify-between"><span class="text-gray-400">${rule.port}</span><span class="text-white">${rule.action} ${rule.from}</span></div>`
+      ).join('');
+    }
+  }catch(e){
+    console.error('loadServersSetup error:', e);
+  }
+}
+
+function _set(id, val){
+  const el = document.getElementById(id);
+  if(el) el.textContent = val;
+}
+
+function _setBadge(id, active){
+  const el = document.getElementById(id);
+  if(!el) return;
+  if(active){
+    el.textContent = '✅ Active';
+    el.className = 'font-mono px-2 py-0.5 rounded bg-green-500/20 text-green-400 border border-green-500/30';
+  }else{
+    el.textContent = '❌ Inactive';
+    el.className = 'font-mono px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30';
   }
 }

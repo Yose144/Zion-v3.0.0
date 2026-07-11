@@ -4940,6 +4940,159 @@ def get_revenue_dashboard() -> dict:
     return result
 
 
+def get_servers_setup() -> dict:
+    """Return server setup, services, disk health, and automation status for the Servers Setup tab."""
+    import subprocess, re, os
+
+    result: dict = {"ok": True}
+
+    # ── Server identity ──────────────────────────────────────────────
+    try:
+        hostname = subprocess.run(["hostname"], capture_output=True, text=True, timeout=5).stdout.strip()
+        # Get IP from hostname -I
+        ip_out = subprocess.run(["hostname", "-I"], capture_output=True, text=True, timeout=5).stdout.strip()
+        ip = ip_out.split()[0] if ip_out else "—"
+        # OS info
+        os_info = "—"
+        try:
+            with open("/etc/os-release") as f:
+                for line in f:
+                    if line.startswith("PRETTY_NAME="):
+                        os_info = line.split("=", 1)[1].strip().strip('"')
+                        break
+        except Exception:
+            pass
+        # Arch
+        arch = subprocess.run(["uname", "-m"], capture_output=True, text=True, timeout=5).stdout.strip()
+        # Uptime
+        uptime_str = "—"
+        try:
+            with open("/proc/uptime") as f:
+                uptime_secs = float(f.read().split()[0])
+            d = int(uptime_secs // 86400)
+            h = int((uptime_secs % 86400) // 3600)
+            m = int((uptime_secs % 3600) // 60)
+            uptime_str = f"{d}d {h}h {m}m"
+        except Exception:
+            pass
+        result["server"] = {"ip": ip, "hostname": hostname, "os": os_info, "arch": arch, "uptime": uptime_str}
+    except Exception:
+        result["server"] = {"ip": "—", "hostname": "—", "os": "—", "arch": "—", "uptime": "—"}
+
+    # ── Disk health ──────────────────────────────────────────────────
+    try:
+        df_out = subprocess.run(["df", "-h", "/"], capture_output=True, text=True, timeout=5).stdout
+        lines = df_out.strip().split("\n")
+        if len(lines) >= 2:
+            parts = lines[1].split()
+            result["disk"] = {
+                "total": parts[1],
+                "used": parts[2],
+                "avail": parts[3],
+                "pct": int(parts[4].rstrip("%")),
+            }
+        else:
+            result["disk"] = {"total": "—", "used": "—", "avail": "—", "pct": 0}
+    except Exception:
+        result["disk"] = {"total": "—", "used": "—", "avail": "—", "pct": 0}
+
+    # ── Memory ───────────────────────────────────────────────────────
+    try:
+        with open("/proc/meminfo") as f:
+            meminfo = {}
+            for line in f:
+                k, v = line.split(":", 1)
+                meminfo[k.strip()] = int(v.strip().split()[0])  # in kB
+        total_kb = meminfo.get("MemTotal", 0)
+        avail_kb = meminfo.get("MemAvailable", meminfo.get("MemFree", 0))
+        used_kb = total_kb - avail_kb
+        pct = int((used_kb / total_kb * 100)) if total_kb > 0 else 0
+        result["memory"] = {
+            "total": f"{total_kb // 1024} MB",
+            "used": f"{used_kb // 1024} MB",
+            "free": f"{avail_kb // 1024} MB",
+            "pct": pct,
+        }
+    except Exception:
+        result["memory"] = {"total": "—", "used": "—", "free": "—", "pct": 0}
+
+    # ── ZION services ────────────────────────────────────────────────
+    zion_services = [
+        "zion-node", "zion-node2", "zion-pool", "zion-bridge", "zion-dao",
+        "zion-atomic-swap", "zion-warp", "zion-oasis", "zion-free-world",
+        "zion-issobella", "zion-dashboard", "zion-watchdog",
+    ]
+    services = []
+    for svc in zion_services:
+        try:
+            r = subprocess.run(
+                ["systemctl", "is-active", svc + ".service"],
+                capture_output=True, text=True, timeout=5,
+            )
+            status = r.stdout.strip()
+            active = status == "active"
+            services.append({"name": svc, "active": active, "status": status})
+        except Exception:
+            services.append({"name": svc, "active": False, "status": "unknown"})
+    result["services"] = services
+
+    # ── Auto-patch status ────────────────────────────────────────────
+    def _svc_active(name):
+        try:
+            r = subprocess.run(["systemctl", "is-active", name], capture_output=True, text=True, timeout=5)
+            return r.stdout.strip() == "active"
+        except Exception:
+            return False
+
+    def _file_exists(path):
+        return os.path.exists(path)
+
+    # Check cleanup last run from syslog
+    cleanup_last = "—"
+    try:
+        r = subprocess.run(
+            ["journalctl", "-t", "zion-disk-cleanup", "--no-pager", "-n", "1", "--output=cat"],
+            capture_output=True, text=True, timeout=10,
+        )
+        if r.stdout.strip():
+            cleanup_last = r.stdout.strip()
+    except Exception:
+        pass
+
+    result["auto_patch"] = {
+        "logrotate_hourly": _svc_active("logrotate-hourly.timer"),
+        "journald_limit": _file_exists("/etc/systemd/journald.conf") and "SystemMaxUse=500M" in open("/etc/systemd/journald.conf").read(),
+        "rsyslog_ratelimit": _file_exists("/etc/rsyslog.d/49-zion-pool-ratelimit.conf"),
+        "cleanup_cron": _file_exists("/etc/cron.d/zion-disk-cleanup"),
+        "cleanup_last_run": cleanup_last,
+    }
+
+    # ── Monitoring ───────────────────────────────────────────────────
+    result["monitoring"] = {
+        "fail2ban": _svc_active("fail2ban"),
+        "ufw": _svc_active("ufw"),
+        "nginx": _svc_active("nginx"),
+        "docker": _svc_active("docker"),
+        "watchdog": _svc_active("zion-watchdog.service") or _file_exists("/usr/local/bin/zion-watchdog.sh"),
+    }
+
+    # ── Firewall rules ───────────────────────────────────────────────
+    firewall = []
+    try:
+        r = subprocess.run(["ufw", "status"], capture_output=True, text=True, timeout=5)
+        for line in r.stdout.strip().split("\n"):
+            line = line.strip()
+            if line and not line.startswith("Status") and not line.startswith("--") and not line.startswith("To"):
+                parts = line.split()
+                if len(parts) >= 3:
+                    firewall.append({"port": parts[0], "action": parts[1], "from": " ".join(parts[2:])})
+    except Exception:
+        pass
+    result["firewall"] = firewall
+
+    return result
+
+
 def _format_uptime(seconds):
     """Format seconds into human-readable uptime string."""
     if not seconds or seconds <= 0:
@@ -9378,6 +9531,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(get_pool_miners_dashboard())
         elif route == "/api/revenue":
             self._json(get_revenue_dashboard())
+        elif route == "/api/servers-setup":
+            self._json(get_servers_setup())
         elif route.startswith("/api/pool/miner-detail/"):
             address = route.split("/api/pool/miner-detail/", 1)[1].split("?")[0]
             self._json(get_pool_miner_detail(address))

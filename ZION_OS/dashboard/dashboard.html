@@ -593,6 +593,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       <button>🔧 Ops ▾</button>
       <div class="nav-dropdown">
         <button onclick="switchTab('ops')" id="tab-ops">Ops / Backup / CLI</button>
+        <button onclick="switchTab('servers-setup')" id="tab-servers-setup">🖥️ Servers Setup</button>
         <button onclick="switchTab('agent')" id="tab-agent">ZION Agent</button>
         <button onclick="switchTab('launch-day')" id="tab-launch-day">Launch Day</button>
         <button onclick="switchTab('wizard')" id="tab-wizard">Wizard</button>
@@ -2399,6 +2400,164 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           </table>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: Servers Setup ═════════ -->
+  <div id="pane-servers-setup" class="hidden space-y-4">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">🖥️ Servers Setup</h1>
+        <p class="text-xs text-gray-400 mt-1">Server config · Services · Automation · Disk health</p>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="loadServersSetup()" class="px-3 py-1.5 text-xs rounded-lg bg-zion-purple/20 hover:bg-zion-purple/30 text-zion-purple border border-zion-purple/30 transition">↻ Refresh</button>
+      </div>
+    </div>
+
+    <!-- Server Info Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <!-- Server Identity -->
+      <div class="panel-glass p-4 rounded-xl">
+        <h3 class="text-sm font-semibold text-zion-gold mb-3">📡 Server Identity</h3>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between"><span class="text-gray-400">IP</span><span id="srv-ip" class="font-mono text-white">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Hostname</span><span id="srv-hostname" class="font-mono text-white">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">OS</span><span id="srv-os" class="font-mono text-white">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Arch</span><span id="srv-arch" class="font-mono text-white">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Uptime</span><span id="srv-uptime" class="font-mono text-white">—</span></div>
+        </div>
+      </div>
+
+      <!-- Disk Health -->
+      <div class="panel-glass p-4 rounded-xl">
+        <h3 class="text-sm font-semibold text-zion-gold mb-3">💾 Disk Health</h3>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between"><span class="text-gray-400">Total</span><span id="srv-disk-total" class="font-mono text-white">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Used</span><span id="srv-disk-used" class="font-mono text-white">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Available</span><span id="srv-disk-avail" class="font-mono text-white">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Usage %</span><span id="srv-disk-pct" class="font-mono text-white">—</span></div>
+          <div class="mt-2">
+            <div class="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+              <div id="srv-disk-bar" class="bg-gradient-to-r from-green-500 to-yellow-500 h-full transition-all" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Memory -->
+      <div class="panel-glass p-4 rounded-xl">
+        <h3 class="text-sm font-semibold text-zion-gold mb-3">🧠 Memory</h3>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between"><span class="text-gray-400">Total RAM</span><span id="srv-mem-total" class="font-mono text-white">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Used</span><span id="srv-mem-used" class="font-mono text-white">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Free</span><span id="srv-mem-free" class="font-mono text-white">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Usage %</span><span id="srv-mem-pct" class="font-mono text-white">—</span></div>
+          <div class="mt-2">
+            <div class="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+              <div id="srv-mem-bar" class="bg-gradient-to-r from-blue-500 to-purple-500 h-full transition-all" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Services Status -->
+    <div class="panel-glass p-4 rounded-xl">
+      <h3 class="text-sm font-semibold text-zion-gold mb-3">⚙️ ZION Services</h3>
+      <div id="srv-services" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 text-xs">
+        <div class="text-gray-500 text-center py-4">Loading services…</div>
+      </div>
+    </div>
+
+    <!-- Automation & Auto-Patch Status -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- Disk Auto-Patch -->
+      <div class="panel-glass p-4 rounded-xl">
+        <h3 class="text-sm font-semibold text-zion-gold mb-3">🛡️ Disk Auto-Patch</h3>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between items-center">
+            <span class="text-gray-400">Logrotate (hourly)</span>
+            <span id="srv-logrotate" class="font-mono px-2 py-0.5 rounded bg-gray-700 text-gray-300">—</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-400">Journald limit (500M)</span>
+            <span id="srv-journald" class="font-mono px-2 py-0.5 rounded bg-gray-700 text-gray-300">—</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-400">Rsyslog rate-limit</span>
+            <span id="srv-rsyslog" class="font-mono px-2 py-0.5 rounded bg-gray-700 text-gray-300">—</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-400">Daily cleanup cron</span>
+            <span id="srv-cleanup-cron" class="font-mono px-2 py-0.5 rounded bg-gray-700 text-gray-300">—</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-400">Cleanup last run</span>
+            <span id="srv-cleanup-last" class="font-mono text-white">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Monitoring -->
+      <div class="panel-glass p-4 rounded-xl">
+        <h3 class="text-sm font-semibold text-zion-gold mb-3">📊 Monitoring</h3>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between items-center">
+            <span class="text-gray-400">Fail2Ban</span>
+            <span id="srv-fail2ban" class="font-mono px-2 py-0.5 rounded bg-gray-700 text-gray-300">—</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-400">UFW Firewall</span>
+            <span id="srv-ufw" class="font-mono px-2 py-0.5 rounded bg-gray-700 text-gray-300">—</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-400">Nginx</span>
+            <span id="srv-nginx" class="font-mono px-2 py-0.5 rounded bg-gray-700 text-gray-300">—</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-400">Docker</span>
+            <span id="srv-docker" class="font-mono px-2 py-0.5 rounded bg-gray-700 text-gray-300">—</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-400">Watchdog</span>
+            <span id="srv-watchdog" class="font-mono px-2 py-0.5 rounded bg-gray-700 text-gray-300">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Network & Firewall -->
+    <div class="panel-glass p-4 rounded-xl">
+      <h3 class="text-sm font-semibold text-zion-gold mb-3">🌐 Network & Firewall (UFW)</h3>
+      <div id="srv-firewall" class="text-xs font-mono text-gray-300 space-y-1">
+        <div class="text-gray-500">Loading firewall rules…</div>
+      </div>
+    </div>
+
+    <!-- Provisioning Checklist (reference) -->
+    <div class="panel-glass p-4 rounded-xl">
+      <h3 class="text-sm font-semibold text-zion-gold mb-3">📋 New Server Provisioning Checklist</h3>
+      <div class="text-xs text-gray-400 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
+        <div>✅ OS: Ubuntu 24.04 LTS</div>
+        <div>✅ SSH key-only auth</div>
+        <div>✅ UFW firewall (22/80/443/8333/8444)</div>
+        <div>✅ Fail2Ban (SSH protection)</div>
+        <div>✅ Rust toolchain (rustup)</div>
+        <div>✅ Docker + docker-compose</div>
+        <div>✅ Nginx + Let's Encrypt SSL</div>
+        <div>✅ ZION source code (V3 + AuXpow)</div>
+        <div>✅ Environment file (chmod 600)</div>
+        <div>✅ Data directory (/data/zion)</div>
+        <div>✅ systemd services (11 ZION services)</div>
+        <div>✅ Logrotate hourly + maxsize 2G</div>
+        <div>✅ Journald limit 500M</div>
+        <div>✅ Rsyslog rate-limiting</div>
+        <div>✅ Daily disk cleanup cron (04:00)</div>
+        <div>✅ Monitoring cron jobs (4 scripts)</div>
+      </div>
+      <p class="text-xs text-gray-500 mt-3">Full guide: <code class="text-zion-cyan">ServersSetup.md</code> in repo root</p>
     </div>
   </div>
 
