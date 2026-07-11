@@ -7,9 +7,13 @@
  * Requires authentication via Zion Wallet.
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback, type CSSProperties } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wallet, Pickaxe, ArrowLeftRight, Sparkles, LogOut, Copy, Check } from 'lucide-react';
+import Link from 'next/link';
+import {
+  Wallet, Pickaxe, ArrowLeftRight, Sparkles, LogOut, Copy, Check,
+  User, Activity, Shield, Globe2, Zap, TrendingUp, Bot,
+} from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLang } from '@/contexts/LanguageContext';
 import { useRouter } from 'next/navigation';
@@ -20,24 +24,169 @@ import DashboardAIChat from '@/components/dashboard/DashboardAIChat';
 
 type Tab = 'wallet' | 'mining' | 'transactions' | 'ai';
 
+const TABS: { id: Tab; labelCs: string; labelEn: string; icon: typeof Wallet; rc: string }[] = [
+  { id: 'wallet', labelCs: 'Peněženka', labelEn: 'Wallet', icon: Wallet, rc: '6, 182, 212' },
+  { id: 'mining', labelCs: 'Těžení', labelEn: 'Mining', icon: Pickaxe, rc: '147, 51, 234' },
+  { id: 'transactions', labelCs: 'Transakce', labelEn: 'Transactions', icon: ArrowLeftRight, rc: '255, 215, 0' },
+  { id: 'ai', labelCs: 'AI Chat', labelEn: 'AI Chat', icon: Sparkles, rc: '236, 72, 153' },
+];
+
+interface DashboardStats {
+  balance: number | null;
+  balanceLoading: boolean;
+  miningRewards: number | null;
+  miningLoading: boolean;
+  txCount: number | null;
+  txLoading: boolean;
+  aiSessions: number | null;
+  aiLoading: boolean;
+}
+
+function StatCard({
+  icon,
+  colorClass,
+  bgClass,
+  label,
+  value,
+  sub,
+  loading,
+  rc = '147, 51, 234',
+}: {
+  icon: React.ReactNode;
+  colorClass: string;
+  bgClass: string;
+  label: string;
+  value: string;
+  sub?: string;
+  loading?: boolean;
+  rc?: string;
+}) {
+  return (
+    <div className="zion-rainbow-card p-4 transition-colors" style={{ '--rc': rc } as CSSProperties}>
+      <div className={`flex items-center justify-center h-8 w-8 rounded-xl ${bgClass} mb-3 ${colorClass} [&>svg]:h-4 [&>svg]:w-4`}>
+        {icon}
+      </div>
+      <p className="text-[11px] text-gray-500 uppercase tracking-wider">{label}</p>
+      {loading ? (
+        <div className="mt-2 space-y-2 animate-pulse">
+          <div className="h-5 w-20 bg-white/5 rounded" />
+          {sub && <div className="h-3 w-12 bg-white/5 rounded" />}
+        </div>
+      ) : (
+        <>
+          <p className="text-lg font-bold text-white font-mono mt-0.5">{value}</p>
+          {sub && <p className="text-[11px] text-gray-500 mt-0.5">{sub}</p>}
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function AccountPage() {
   const { user, logout, loading } = useAuth();
   const { lang } = useLang();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>('wallet');
   const [copied, setCopied] = useState(false);
+  const [stats, setStats] = useState<DashboardStats>({
+    balance: null,
+    balanceLoading: true,
+    miningRewards: null,
+    miningLoading: true,
+    txCount: null,
+    txLoading: true,
+    aiSessions: null,
+    aiLoading: true,
+  });
 
-  const TABS: { id: Tab; label: string; icon: typeof Wallet }[] = [
-    { id: 'wallet', label: lang === 'cs' ? 'Peněženka' : 'Wallet', icon: Wallet },
-    { id: 'mining', label: lang === 'cs' ? 'Těžení' : 'Mining', icon: Pickaxe },
-    { id: 'transactions', label: lang === 'cs' ? 'Transakce' : 'Transactions', icon: ArrowLeftRight },
-    { id: 'ai', label: lang === 'cs' ? 'AI Chat' : 'AI Chat', icon: Sparkles },
-  ];
+  const cs = lang === 'cs';
+
+  const fetchStats = useCallback(async () => {
+    if (!user?.address) return;
+    const address = user.address;
+
+    setStats((s) => ({
+      ...s,
+      balanceLoading: true,
+      miningLoading: true,
+      txLoading: true,
+      aiLoading: true,
+    }));
+
+    // Balance
+    try {
+      const res = await fetch(`/api/blockchain/address/${address}`);
+      if (res.ok) {
+        const data = await res.json();
+        setStats((s) => ({
+          ...s,
+          balance: data.balance_zion ?? data.balance ?? 0,
+          balanceLoading: false,
+        }));
+      } else {
+        setStats((s) => ({ ...s, balanceLoading: false }));
+      }
+    } catch {
+      setStats((s) => ({ ...s, balanceLoading: false }));
+    }
+
+    // Mining rewards
+    try {
+      const res = await fetch(`/api/miner/${address}`);
+      if (res.ok) {
+        const data = await res.json();
+        const miner = data.miner ?? data;
+        setStats((s) => ({
+          ...s,
+          miningRewards: miner?.total_earned ?? 0,
+          miningLoading: false,
+        }));
+      } else {
+        setStats((s) => ({ ...s, miningLoading: false, miningRewards: 0 }));
+      }
+    } catch {
+      setStats((s) => ({ ...s, miningLoading: false, miningRewards: 0 }));
+    }
+
+    // Transactions
+    try {
+      const res = await fetch(`/api/blockchain/transactions?address=${address}&limit=50`);
+      if (res.ok) {
+        const data = await res.json();
+        const list = data.transactions ?? data.txs ?? data ?? [];
+        setStats((s) => ({
+          ...s,
+          txCount: Array.isArray(list) ? list.length : 0,
+          txLoading: false,
+        }));
+      } else {
+        setStats((s) => ({ ...s, txLoading: false, txCount: 0 }));
+      }
+    } catch {
+      setStats((s) => ({ ...s, txLoading: false, txCount: 0 }));
+    }
+
+    // AI sessions — no backend counter available yet, show placeholder
+    setStats((s) => ({ ...s, aiSessions: 0, aiLoading: false }));
+  }, [user?.address]);
+
+  useEffect(() => {
+    if (user?.address) {
+      void fetchStats();
+    }
+  }, [fetchStats, user?.address]);
 
   if (loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-8 w-8 rounded-full border-2 border-zion-cyan/30 border-t-zion-cyan animate-spin" />
+      <div className="zion-page bg-black text-white">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-36 -left-28 h-[520px] w-[520px] rounded-full bg-zion-purple/18 blur-3xl" />
+          <div className="absolute top-40 -right-24 h-[420px] w-[420px] rounded-full bg-zion-cyan/14 blur-3xl" />
+          <div className="absolute bottom-0 left-1/3 h-[420px] w-[620px] rounded-full bg-zion-gold/10 blur-3xl" />
+        </div>
+        <div className="zion-container relative z-10 flex min-h-[60vh] items-center justify-center">
+          <div className="h-8 w-8 rounded-full border-2 border-zion-cyan/30 border-t-zion-cyan animate-spin" />
+        </div>
       </div>
     );
   }
@@ -53,72 +202,295 @@ export default function AccountPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const formattedCreated = user.createdAt
+    ? new Date(user.createdAt).toLocaleDateString(cs ? 'cs-CZ' : 'en-US')
+    : '—';
+  const formattedLastLogin = user.lastLogin
+    ? new Date(user.lastLogin).toLocaleDateString(cs ? 'cs-CZ' : 'en-US')
+    : '—';
+
   return (
-    <div className="zion-container py-8 md:py-12">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white mb-1">
-              {user.displayName || (lang === 'cs' ? 'Můj účet' : 'My Account')}
-            </h1>
-            <button
-              onClick={copyAddress}
-              className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-mono text-gray-400 hover:border-white/20 transition-colors"
-            >
-              {user.address}
-              {copied ? <Check className="h-3 w-3 text-green-400" /> : <Copy className="h-3 w-3" />}
-            </button>
-          </div>
-          <button
-            onClick={async () => {
-              await logout();
-              router.push('/');
-            }}
-            className="inline-flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-2 text-xs font-medium text-red-400 hover:bg-red-500/10 transition-colors"
-          >
-            <LogOut className="h-3.5 w-3.5" /> {lang === 'cs' ? 'Odhlásit se' : 'Logout'}
-          </button>
-        </div>
+    <div className="zion-page bg-black text-white">
+      {/* Background glows */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-36 -left-28 h-[520px] w-[520px] rounded-full bg-zion-purple/18 blur-3xl" />
+        <div className="absolute top-40 -right-24 h-[420px] w-[420px] rounded-full bg-zion-cyan/14 blur-3xl" />
+        <div className="absolute bottom-0 left-1/3 h-[420px] w-[620px] rounded-full bg-zion-gold/10 blur-3xl" />
       </div>
 
-      {/* Tabs */}
-      <div className="mb-6 flex flex-wrap gap-2 border-b border-white/10 pb-px">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`relative inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors ${
-              activeTab === tab.id ? 'text-white' : 'text-gray-500 hover:text-gray-300'
-            }`}
+      <div className="zion-container relative z-10 space-y-10">
+
+        {/* ── HERO / HEADER ── */}
+        <section className="relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="zion-rainbow-card p-6 md:p-10"
+            style={{ '--rc': '147, 51, 234' } as CSSProperties}
           >
-            <tab.icon className="h-4 w-4" />
-            {tab.label}
-            {activeTab === tab.id && (
-              <motion.div
-                layoutId="active-tab"
-                className="absolute inset-x-0 -bottom-px h-0.5 bg-gradient-to-r from-zion-cyan to-zion-purple"
+            <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+              <div className="space-y-5">
+                <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-gold uppercase">
+                  <User className="h-4 w-4" />
+                  {cs ? 'Můj účet' : 'My Account'}
+                </div>
+
+                <div>
+                  <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
+                    {cs ? 'ZION L1 Dashboard' : 'ZION L1 Dashboard'}
+                  </p>
+                  <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
+                    {user.displayName || (cs ? 'Můj účet' : 'My Account')}
+                  </h1>
+                </div>
+
+                <button
+                  onClick={copyAddress}
+                  className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-mono text-gray-400 hover:border-white/20 transition-colors"
+                >
+                  {user.address}
+                  {copied ? <Check className="h-3 w-3 text-green-400" /> : <Copy className="h-3 w-3" />}
+                </button>
+
+                <div className="flex flex-wrap gap-3 text-xs">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-emerald-200">
+                    <Shield className="h-3 w-3" /> {cs ? 'Autentizováno' : 'Authenticated'}
+                  </span>
+                  <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-4 py-2 text-cyan-200">
+                    <Zap className="h-3 w-3" /> ZION L1
+                  </span>
+                  <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
+                    <Globe2 className="h-3 w-3" /> {cs ? 'On-Chain' : 'On-Chain'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Quick info side card */}
+              <div className="w-full lg:max-w-md space-y-3">
+                <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as CSSProperties}>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">
+                    {cs ? 'Rychlý přehled účtu' : 'Account Overview'}
+                  </p>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '255, 215, 0' } as CSSProperties}>
+                      <div className="flex items-center gap-2 text-sm text-gray-300">
+                        <Activity className="h-4 w-4 text-zion-gold" />
+                        {cs ? 'Přihlášení' : 'Logins'}
+                      </div>
+                      <span className="font-mono text-white">{user.loginCount ?? 0}</span>
+                    </div>
+                    <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
+                      <div className="flex items-center gap-2 text-sm text-gray-300">
+                        <Wallet className="h-4 w-4 text-zion-cyan" />
+                        {cs ? 'Adresa' : 'Address'}
+                      </div>
+                      <span className="font-mono text-white text-xs">
+                        {user.address.slice(0, 10)}…{user.address.slice(-6)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '16, 185, 129' } as CSSProperties}>
+                      <div className="flex items-center gap-2 text-sm text-gray-300">
+                        <TrendingUp className="h-4 w-4 text-emerald-400" />
+                        {cs ? 'Vytvořeno' : 'Created'}
+                      </div>
+                      <span className="font-mono text-white">{formattedCreated}</span>
+                    </div>
+                    <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '236, 72, 153' } as CSSProperties}>
+                      <div className="flex items-center gap-2 text-sm text-gray-300">
+                        <Sparkles className="h-4 w-4 text-pink-400" />
+                        {cs ? 'Poslední login' : 'Last Login'}
+                      </div>
+                      <span className="font-mono text-white">{formattedLastLogin}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={async () => {
+                    await logout();
+                    router.push('/');
+                  }}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-red-500/20 bg-red-500/5 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors"
+                >
+                  <LogOut className="h-3.5 w-3.5" /> {cs ? 'Odhlásit se' : 'Logout'}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </section>
+
+        {/* ── QUICK STATS ── */}
+        <section className="relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.04 }}
+          >
+            <div className="flex flex-col gap-2 mb-6">
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Telemetrie' : 'Telemetry'}</p>
+              <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+                <Activity className="h-7 w-7 text-emerald-400" />
+                {cs ? 'Statistiky účtu' : 'Account Statistics'}
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <StatCard
+                icon={<Wallet className="h-5 w-5" />}
+                colorClass="text-zion-cyan"
+                bgClass="bg-zion-cyan/10"
+                rc="6, 182, 212"
+                label={cs ? 'Zůstatek' : 'Balance'}
+                value={stats.balance !== null ? `${stats.balance.toFixed(8)} ZION` : '—'}
+                sub={cs ? 'on-chain' : 'on-chain'}
+                loading={stats.balanceLoading}
               />
-            )}
-          </button>
-        ))}
-      </div>
+              <StatCard
+                icon={<Pickaxe className="h-5 w-5" />}
+                colorClass="text-zion-gold"
+                bgClass="bg-zion-gold/10"
+                rc="255, 215, 0"
+                label={cs ? 'Odměny za těžení' : 'Mining Rewards'}
+                value={stats.miningRewards !== null ? `${stats.miningRewards.toFixed(8)} ZION` : '—'}
+                sub={cs ? 'celkem vytěženo' : 'total earned'}
+                loading={stats.miningLoading}
+              />
+              <StatCard
+                icon={<ArrowLeftRight className="h-5 w-5" />}
+                colorClass="text-emerald-400"
+                bgClass="bg-emerald-400/10"
+                rc="16, 185, 129"
+                label={cs ? 'Transakce' : 'Transactions'}
+                value={stats.txCount !== null ? String(stats.txCount) : '—'}
+                sub={cs ? 'posledních 50' : 'last 50'}
+                loading={stats.txLoading}
+              />
+              <StatCard
+                icon={<Bot className="h-5 w-5" />}
+                colorClass="text-pink-400"
+                bgClass="bg-pink-400/10"
+                rc="236, 72, 153"
+                label={cs ? 'AI relace' : 'AI Sessions'}
+                value={stats.aiSessions !== null ? String(stats.aiSessions) : '—'}
+                sub={cs ? 'Hiranyagarbha' : 'Hiranyagarbha'}
+                loading={stats.aiLoading}
+              />
+            </div>
+          </motion.div>
+        </section>
 
-      {/* Tab content */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.2 }}
-        >
-          {activeTab === 'wallet' && <WalletOverview address={user.address} />}
-          {activeTab === 'mining' && <MiningStats address={user.address} />}
-          {activeTab === 'transactions' && <TransactionHistory address={user.address} />}
-          {activeTab === 'ai' && <DashboardAIChat />}
-        </motion.div>
-      </AnimatePresence>
+        {/* ── TAB BAR ── */}
+        <section className="relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.02 }}
+            className="zion-rainbow-card p-4 md:p-5"
+            style={{ '--rc': '147, 51, 234' } as CSSProperties}
+          >
+            <div className="flex flex-wrap items-center gap-2 md:gap-3">
+              <span className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mr-1 hidden sm:inline">
+                {cs ? 'Sekce' : 'Sections'}
+              </span>
+              {TABS.map((t) => {
+                const Icon = t.icon;
+                const isActive = activeTab === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => setActiveTab(t.id)}
+                    className={`inline-flex items-center gap-2 rounded-xl px-3 md:px-4 py-2 text-sm font-medium transition ${
+                      isActive
+                        ? 'border border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan hover:bg-zion-cyan/20'
+                        : 'border border-white/10 bg-white/5 text-gray-300 hover:border-white/25 hover:text-white'
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {cs ? t.labelCs : t.labelEn}
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        </section>
+
+        {/* ── TAB CONTENT ── */}
+        <section className="relative z-10">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.3 }}
+            >
+              {activeTab === 'wallet' && (
+                <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
+                  <div className="flex items-center gap-2 mb-6">
+                    <Wallet className="h-5 w-5 text-zion-cyan" />
+                    <h2 className="text-lg font-bold text-white">{cs ? 'Přehled peněženky' : 'Wallet Overview'}</h2>
+                  </div>
+                  <WalletOverview address={user.address} />
+                </div>
+              )}
+              {activeTab === 'mining' && (
+                <div className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as CSSProperties}>
+                  <div className="flex items-center gap-2 mb-6">
+                    <Pickaxe className="h-5 w-5 text-purple-400" />
+                    <h2 className="text-lg font-bold text-white">{cs ? 'Statistiky těžení' : 'Mining Stats'}</h2>
+                  </div>
+                  <MiningStats address={user.address} />
+                </div>
+              )}
+              {activeTab === 'transactions' && (
+                <div className="zion-rainbow-card p-6" style={{ '--rc': '255, 215, 0' } as CSSProperties}>
+                  <div className="flex items-center gap-2 mb-6">
+                    <ArrowLeftRight className="h-5 w-5 text-zion-gold" />
+                    <h2 className="text-lg font-bold text-white">{cs ? 'Historie transakcí' : 'Transaction History'}</h2>
+                  </div>
+                  <TransactionHistory address={user.address} />
+                </div>
+              )}
+              {activeTab === 'ai' && (
+                <div className="zion-rainbow-card p-6" style={{ '--rc': '236, 72, 153' } as CSSProperties}>
+                  <div className="flex items-center gap-2 mb-6">
+                    <Sparkles className="h-5 w-5 text-pink-400" />
+                    <h2 className="text-lg font-bold text-white">{cs ? 'Hiranyagarbha AI' : 'Hiranyagarbha AI'}</h2>
+                  </div>
+                  <DashboardAIChat />
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </section>
+
+        {/* ── CTA BANNER ── */}
+        <section className="relative z-10">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="zion-cta-banner"
+          >
+            <h2 className="text-2xl font-semibold text-white text-center mb-6">
+              {cs ? 'Pokračuj ve ZION ekosystému' : 'Continue in the ZION ecosystem'}
+            </h2>
+            <div className="flex flex-wrap justify-center gap-4">
+              <Link href="/wallet" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '255, 215, 0' } as CSSProperties}>
+                <Wallet className="h-4 w-4 text-zion-gold" /> {cs ? 'Peněženka' : 'Wallet'}
+              </Link>
+              <Link href="/explorer" className="inline-flex items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 px-6 py-3 text-sm font-semibold text-emerald-200 hover:bg-emerald-500/10 transition-colors">
+                <Globe2 className="h-4 w-4" /> Explorer
+              </Link>
+              <Link href="/defi" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '147, 51, 234' } as CSSProperties}>
+                <TrendingUp className="h-4 w-4 text-purple-400" /> DeFi
+              </Link>
+            </div>
+          </motion.div>
+        </section>
+
+      </div>
     </div>
   );
 }
