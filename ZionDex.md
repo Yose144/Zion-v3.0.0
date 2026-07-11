@@ -753,16 +753,16 @@ APP&WEB/website-v2.9/src/app/dex/
 | Build TransactionStatus component | Frontend | P0 | ✅ Done (real-time polling) |
 | Build PriceChart component | Frontend | P1 | ✅ Done (SVG-based, 1h/24h/7d) |
 | Build RecentSwaps feed | Frontend | P1 | ✅ Done (auto-refresh) |
-| API: `/quote`, `/swap`, `/swaps/:id`, `/health` | Backend | P0 | ✅ Done (8 endpoints) |
+| API: `/quote`, `/swap`, `/swaps/:id`, `/health` | Backend | P0 | ✅ Done (9 endpoints) |
 | Slippage protection + min_output enforcement | Backend | P0 | ✅ Done |
 | Fee estimation (gas + bridge + swap) | Backend | P0 | ✅ Done |
 | E2E test: USDC(Solana) → wZION(Base) | Backend | P0 | ✅ Unit test (14/14 passing) |
 | E2E test: wZION(Base) → ZION(Solana) | Backend | P0 | ✅ Unit test (14/14 passing) |
 | Mobile app: swap screen | Mobile | P1 | ✅ Done (DexScreen.js) |
-| Desktop agent: swap tab | Desktop | P1 | Pending |
+| Desktop agent: swap tab | Desktop | P1 | ✅ Done (Electron dex-view) |
 | TypeScript SDK (`@zion/dex-sdk`) | Backend | P0 | ✅ Done |
 
-**Deliverable:** Users can swap any token on any chain to any token on any chain — one click. *(Backend + frontend + mobile complete — desktop pending)*
+**Deliverable:** Users can swap any token on any chain to any token on any chain — one click. *(Backend + frontend + mobile + desktop complete)*
 
 ### Phase 3: Custom AMM + ZDX Token (Q1 2027)
 

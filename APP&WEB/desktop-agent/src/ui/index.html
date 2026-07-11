@@ -3561,6 +3561,208 @@
       box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
     }
 
+    /* ── ZionDex View ──────────────────────────────────────────── */
+    .dex-container {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 20px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    @media (max-width: 768px) {
+      .dex-container { grid-template-columns: 1fr; }
+    }
+    .dex-swap-card {
+      background: rgba(20,20,30,0.6);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(10px);
+    }
+    .dex-swap-section {
+      margin-bottom: 12px;
+    }
+    .dex-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.4);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+    .dex-chain-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .dex-select {
+      flex: 1;
+      padding: 10px 12px;
+      background: rgba(10,10,15,0.8);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .dex-select:focus {
+      outline: none;
+      border-color: rgba(255,215,0,0.4);
+    }
+    .dex-token-select {
+      flex: 0 0 120px;
+    }
+    .dex-input {
+      width: 100%;
+      padding: 16px;
+      background: rgba(10,10,15,0.8);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      color: #fff;
+      font-size: 24px;
+      font-weight: 700;
+    }
+    .dex-input:focus {
+      outline: none;
+      border-color: rgba(255,215,0,0.4);
+    }
+    .dex-output {
+      width: 100%;
+      padding: 16px;
+      background: rgba(10,10,15,0.4);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 12px;
+      color: rgba(255,215,0,0.9);
+      font-size: 24px;
+      font-weight: 700;
+    }
+    .dex-quote-info {
+      font-size: 12px;
+      color: rgba(255,255,255,0.4);
+      margin-top: 4px;
+    }
+    .dex-swap-divider {
+      text-align: center;
+      margin: 4px 0;
+    }
+    .dex-swap-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(30,30,40,0.8);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,215,0,0.9);
+      font-size: 18px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .dex-swap-btn:hover {
+      transform: rotate(180deg);
+      background: rgba(40,40,50,0.8);
+    }
+    .dex-path {
+      margin-top: 16px;
+      padding: 12px;
+      background: rgba(10,10,15,0.4);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 10px;
+      font-size: 12px;
+    }
+    .dex-path-step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 0;
+    }
+    .dex-path-num {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(255,215,0,0.15);
+      color: rgba(255,215,0,0.9);
+      text-align: center;
+      line-height: 20px;
+      font-weight: 700;
+      font-size: 11px;
+    }
+    .dex-error {
+      margin-top: 12px;
+      padding: 10px;
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 10px;
+      color: #ef4444;
+      font-size: 13px;
+    }
+    .dex-execute-btn {
+      width: 100%;
+      margin-top: 16px;
+      padding: 16px;
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      border: none;
+      border-radius: 12px;
+      color: #000;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .dex-execute-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .dex-execute-btn:hover:not(:disabled) {
+      opacity: 0.9;
+    }
+    .dex-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .dex-recent-card, .dex-stats-card {
+      background: rgba(20,20,30,0.6);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .dex-recent-card h3, .dex-stats-card h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      margin: 0 0 12px 0;
+    }
+    .dex-recent-list {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .dex-empty {
+      text-align: center;
+      color: rgba(255,255,255,0.3);
+      font-size: 13px;
+      padding: 20px 0;
+    }
+    .dex-recent-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 12px;
+    }
+    .dex-recent-item:last-child { border-bottom: none; }
+    .dex-stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      font-size: 13px;
+      color: rgba(255,255,255,0.6);
+    }
+    .dex-stat-row span:last-child {
+      color: #fff;
+      font-weight: 500;
+    }
+
   </style>
 </head>
 <body>
@@ -3583,6 +3785,10 @@
       <path d="M4 10h16M4 14h16M7 6v12M17 6v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       <circle cx="7" cy="6" r="2" fill="none" stroke="currentColor" stroke-width="2"/>
       <circle cx="17" cy="18" r="2" fill="none" stroke="currentColor" stroke-width="2"/>
+    </symbol>
+
+    <symbol id="i-swap" viewBox="0 0 24 24">
+      <path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     </symbol>
 
     <symbol id="i-settings" viewBox="0 0 24 24">
@@ -4166,6 +4372,103 @@
                 </div>
                 <span class="status-note hidden" id="bridge-validator-copied">Copied!</span>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ZionDex View (hidden by default) -->
+      <div id="dex-view" class="view-shell view-hidden">
+        <div class="view-header">
+          <h1>ZionDex — Cross-Chain Swap</h1>
+          <p class="view-subtitle">Swap any token on any chain. Powered by native L1 bridge.</p>
+        </div>
+
+        <div class="dex-container">
+          <!-- Swap Widget -->
+          <div class="dex-swap-card">
+            <div class="dex-swap-section">
+              <label class="dex-label">FROM</label>
+              <div class="dex-chain-row">
+                <select id="dex-src-chain" class="dex-select">
+                  <option value="solana">Solana</option>
+                  <option value="base">Base</option>
+                  <option value="arbitrum">Arbitrum</option>
+                  <option value="bsc">BNB Chain</option>
+                  <option value="polygon">Polygon</option>
+                  <option value="optimism">Optimism</option>
+                  <option value="avalanche">Avalanche</option>
+                  <option value="tron">Tron</option>
+                  <option value="stellar">Stellar</option>
+                  <option value="cardano">Cardano</option>
+                  <option value="aptos">Aptos</option>
+                  <option value="sui">Sui</option>
+                  <option value="near">NEAR</option>
+                  <option value="ton">TON</option>
+                  <option value="zion">ZION L1</option>
+                </select>
+                <select id="dex-src-token" class="dex-select dex-token-select"></select>
+              </div>
+              <input type="number" id="dex-amount" class="dex-input" placeholder="0.0" value="100" />
+            </div>
+
+            <div class="dex-swap-divider">
+              <button id="dex-swap-direction" class="dex-swap-btn" title="Swap direction">⇅</button>
+            </div>
+
+            <div class="dex-swap-section">
+              <label class="dex-label">TO</label>
+              <div class="dex-chain-row">
+                <select id="dex-dest-chain" class="dex-select">
+                  <option value="base">Base</option>
+                  <option value="solana">Solana</option>
+                  <option value="arbitrum">Arbitrum</option>
+                  <option value="bsc">BNB Chain</option>
+                  <option value="polygon">Polygon</option>
+                  <option value="optimism">Optimism</option>
+                  <option value="avalanche">Avalanche</option>
+                  <option value="tron">Tron</option>
+                  <option value="stellar">Stellar</option>
+                  <option value="cardano">Cardano</option>
+                  <option value="aptos">Aptos</option>
+                  <option value="sui">Sui</option>
+                  <option value="near">NEAR</option>
+                  <option value="ton">TON</option>
+                  <option value="zion">ZION L1</option>
+                </select>
+                <select id="dex-dest-token" class="dex-select dex-token-select"></select>
+              </div>
+              <div id="dex-output" class="dex-output">0.0</div>
+              <div id="dex-quote-info" class="dex-quote-info">Enter amount to get quote</div>
+            </div>
+
+            <!-- Swap Path -->
+            <div id="dex-path" class="dex-path" style="display:none;"></div>
+
+            <!-- Error -->
+            <div id="dex-error" class="dex-error" style="display:none;"></div>
+
+            <!-- Execute -->
+            <button id="dex-execute" class="dex-execute-btn" disabled>Swap</button>
+          </div>
+
+          <!-- Sidebar -->
+          <div class="dex-sidebar">
+            <!-- Recent Swaps -->
+            <div class="dex-recent-card">
+              <h3>Recent Swaps</h3>
+              <div id="dex-recent-list" class="dex-recent-list">
+                <div class="dex-empty">No recent swaps</div>
+              </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="dex-stats-card">
+              <h3>ZionDex Stats</h3>
+              <div class="dex-stat-row"><span>Supported chains</span><span>13</span></div>
+              <div class="dex-stat-row"><span>ZION pair fee</span><span>0.15%</span></div>
+              <div class="dex-stat-row"><span>Standard fee</span><span>0.30%</span></div>
+              <div class="dex-stat-row"><span>Bridge fee</span><span>0.50%</span></div>
             </div>
           </div>
         </div>
@@ -6320,6 +6623,10 @@ Click a button above to run a command.
       <div class="nav-item" data-view="bridge">
         <svg class="icon" aria-hidden="true"><use href="#i-bridge"></use></svg>
         <span>Bridge</span>
+      </div>
+      <div class="nav-item" data-view="dex">
+        <svg class="icon" aria-hidden="true"><use href="#i-swap"></use></svg>
+        <span>ZionDex</span>
       </div>
       <div class="nav-item" data-view="defi">
         <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>

@@ -628,6 +628,7 @@ const _viewInitFns = {
   node:      () => initNodeView(),
   about:     () => { initUpdateUI(); initSecurityUI(); },
   bridge:    () => initBridgeView(),
+  dex:       () => initDexView(),
   defi:      () => initDefiView(),
   cli:       () => initCliView(),
 };
@@ -4082,6 +4083,229 @@ async function refreshDefiData() {
   const [status, pools] = await Promise.all([fetchDefiStatus(), fetchDefiPools()]);
   updateDefiUI(status);
   updateDefiPoolsUI(pools);
+}
+
+// ── ZionDex View ──────────────────────────────────────────────────────────
+let _dexInitDone = false;
+const DEX_ROUTER_URL = 'http://localhost:8454';
+
+const DEX_TOKENS = {
+  zion: ['ZION'],
+  base: ['wZION', 'USDT', 'USDC', 'WETH'],
+  arbitrum: ['wZION', 'USDC', 'WETH', 'ARB'],
+  bsc: ['wZION', 'USDT', 'BNB'],
+  polygon: ['wZION', 'USDC', 'WMATIC'],
+  optimism: ['wZION', 'USDC', 'WETH'],
+  avalanche: ['wZION', 'USDC', 'WAVAX'],
+  solana: ['ZION', 'USDC', 'SOL'],
+  tron: ['ZION', 'USDT', 'TRX'],
+  stellar: ['ZION', 'USDC', 'XLM'],
+  cardano: ['ZION', 'ADA'],
+  aptos: ['ZION', 'USDC', 'APT'],
+  sui: ['ZION', 'USDC', 'SUI'],
+  near: ['ZION', 'USDC', 'NEAR'],
+  ton: ['ZION', 'USDT', 'TON'],
+};
+
+let _dexQuoteTimer = null;
+let _dexCurrentQuote = null;
+
+function initDexView() {
+  if (_dexInitDone) return;
+  _dexInitDone = true;
+
+  const srcChain = document.getElementById('dex-src-chain');
+  const destChain = document.getElementById('dex-dest-chain');
+  const srcToken = document.getElementById('dex-src-token');
+  const destToken = document.getElementById('dex-dest-token');
+  const amountInput = document.getElementById('dex-amount');
+  const outputEl = document.getElementById('dex-output');
+  const quoteInfoEl = document.getElementById('dex-quote-info');
+  const pathEl = document.getElementById('dex-path');
+  const errorEl = document.getElementById('dex-error');
+  const executeBtn = document.getElementById('dex-execute');
+  const swapDirBtn = document.getElementById('dex-swap-direction');
+
+  // Populate token selects based on chain
+  function populateTokens(selectEl, chain) {
+    const tokens = DEX_TOKENS[chain] || [];
+    selectEl.innerHTML = '';
+    tokens.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t;
+      opt.textContent = t;
+      selectEl.appendChild(opt);
+    });
+    if (tokens.length > 0) selectEl.value = tokens[0];
+  }
+
+  populateTokens(srcToken, srcChain.value);
+  populateTokens(destToken, destChain.value);
+
+  // Fetch quote (debounced)
+  async function fetchQuote() {
+    const amount = parseFloat(amountInput.value);
+    if (!amount || amount <= 0) {
+      outputEl.textContent = '0.0';
+      quoteInfoEl.textContent = 'Enter amount to get quote';
+      pathEl.style.display = 'none';
+      executeBtn.disabled = true;
+      _dexCurrentQuote = null;
+      return;
+    }
+
+    quoteInfoEl.textContent = 'Fetching best price...';
+    errorEl.style.display = 'none';
+
+    try {
+      const resp = await fetch(`${DEX_ROUTER_URL}/quote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          src_chain: srcChain.value,
+          src_token: srcToken.value,
+          dest_chain: destChain.value,
+          dest_token: destToken.value,
+          amount: amountInput.value,
+        }),
+      });
+
+      if (!resp.ok) {
+        const text = await resp.text();
+        throw new Error(text);
+      }
+
+      const data = await resp.json();
+      _dexCurrentQuote = data;
+
+      const expectedOut = parseFloat(data.path.expected_output).toFixed(6);
+      const minOut = parseFloat(data.path.min_output).toFixed(6);
+      outputEl.textContent = expectedOut;
+      quoteInfoEl.textContent = `Min: ${minOut} · Fee: ${(data.path.total_fee_bps / 100).toFixed(2)}% · Impact: ${(data.path.price_impact_bps / 100).toFixed(2)}%`;
+
+      // Render path
+      if (data.path.steps && data.path.steps.length > 0) {
+        let html = '<div style="font-weight:600;margin-bottom:6px;color:rgba(255,255,255,0.6);">SWAP PATH</div>';
+        data.path.steps.forEach((step, i) => {
+          const desc = step.type === 'bridge'
+            ? `${step.from_chain} → ${step.to_chain} (${step.asset})`
+            : `${step.from_token} → ${step.to_token} on ${step.chain}`;
+          html += `<div class="dex-path-step"><span class="dex-path-num">${i + 1}</span><span>${desc}</span></div>`;
+        });
+        html += `<div style="margin-top:6px;color:rgba(255,255,255,0.4);">Est. time: ~${Math.ceil(data.path.estimated_time_secs / 60)} min</div>`;
+        pathEl.innerHTML = html;
+        pathEl.style.display = 'block';
+      }
+
+      executeBtn.disabled = false;
+    } catch (e) {
+      outputEl.textContent = '0.0';
+      quoteInfoEl.textContent = 'Quote failed';
+      errorEl.textContent = e.message || 'Failed to get quote';
+      errorEl.style.display = 'block';
+      executeBtn.disabled = true;
+      _dexCurrentQuote = null;
+    }
+  }
+
+  function debouncedQuote() {
+    clearTimeout(_dexQuoteTimer);
+    _dexQuoteTimer = setTimeout(fetchQuote, 500);
+  }
+
+  // Event listeners
+  srcChain.addEventListener('change', () => {
+    populateTokens(srcToken, srcChain.value);
+    debouncedQuote();
+  });
+  destChain.addEventListener('change', () => {
+    populateTokens(destToken, destChain.value);
+    debouncedQuote();
+  });
+  srcToken.addEventListener('change', debouncedQuote);
+  destToken.addEventListener('change', debouncedQuote);
+  amountInput.addEventListener('input', debouncedQuote);
+
+  // Swap direction
+  swapDirBtn.addEventListener('click', () => {
+    const tmpChain = srcChain.value;
+    const tmpToken = srcToken.value;
+    srcChain.value = destChain.value;
+    destChain.value = tmpChain;
+    populateTokens(srcToken, srcChain.value);
+    populateTokens(destToken, destChain.value);
+    srcToken.value = destToken.value;
+    destToken.value = tmpToken;
+    debouncedQuote();
+  });
+
+  // Execute swap
+  executeBtn.addEventListener('click', async () => {
+    if (!_dexCurrentQuote) return;
+    executeBtn.disabled = true;
+    executeBtn.textContent = 'Executing...';
+
+    try {
+      const resp = await fetch(`${DEX_ROUTER_URL}/swap`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          quote_id: _dexCurrentQuote.quote_id,
+          sender: 'desktop-user',
+          recipient: 'desktop-user',
+          max_slippage_bps: 200,
+        }),
+      });
+
+      if (!resp.ok) {
+        const text = await resp.text();
+        throw new Error(text);
+      }
+
+      const data = await resp.json();
+      errorEl.style.display = 'none';
+      quoteInfoEl.textContent = `Swap submitted! ID: ${data.swap_id.slice(0, 12)}...`;
+      executeBtn.textContent = 'Swap Again';
+      executeBtn.disabled = false;
+
+      // Refresh recent swaps
+      fetchRecentSwaps();
+    } catch (e) {
+      errorEl.textContent = e.message || 'Swap failed';
+      errorEl.style.display = 'block';
+      executeBtn.textContent = 'Retry';
+      executeBtn.disabled = false;
+    }
+  });
+
+  // Fetch recent swaps
+  async function fetchRecentSwaps() {
+    try {
+      const resp = await fetch(`${DEX_ROUTER_URL}/swaps?limit=10`);
+      if (!resp.ok) return;
+      const data = await resp.json();
+      const list = document.getElementById('dex-recent-list');
+      if (!Array.isArray(data) || data.length === 0) {
+        list.innerHTML = '<div class="dex-empty">No recent swaps</div>';
+        return;
+      }
+      list.innerHTML = data.map(s => `
+        <div class="dex-recent-item">
+          <span>${s.amount_in} ${s.src_chain} → ${s.dest_chain}</span>
+          <span style="color:${s.status === 'completed' ? '#22c55e' : s.status === 'failed' ? '#ef4444' : '#fbbf24'}">${s.status}</span>
+        </div>
+      `).join('');
+    } catch {
+      // Router not running
+    }
+  }
+
+  // Initial quote + recent swaps
+  debouncedQuote();
+  fetchRecentSwaps();
+
+  // Auto-refresh recent swaps every 15s
+  setInterval(fetchRecentSwaps, 15000);
 }
 
 function initDefiView() {
