@@ -130,6 +130,7 @@ fn pack_job(coin: ExternalCoin, job: &ExternalJob) -> JobPackage {
         algorithm: job.algorithm.clone(),
         header_bytes: job.header_bytes.clone(),
         target_bytes: job.target_bytes,
+        timestamp: job.timestamp.unwrap_or(0),
         start_nonce: 0,
         nonce_count: u64::MAX,
     }

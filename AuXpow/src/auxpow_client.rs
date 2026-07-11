@@ -66,6 +66,15 @@ pub struct ExternalJob {
     /// Raw target bytes (decoded from target_hex).
     #[serde(skip)]
     pub target_bytes: [u8; 32],
+    /// Block timestamp (Unix seconds) parsed from ntime, used by kHeavyHash/KAS.
+    #[serde(skip)]
+    pub timestamp: Option<u64>,
+    /// Network nbits/difficulty bits from notify, used for display/logging.
+    #[serde(skip)]
+    pub nbits: Option<String>,
+    /// Extra nonce 2 placeholder for standard stratum submit.
+    #[serde(skip)]
+    pub extranonce2: String,
 }
 
 /// Share submission result from the pool.
@@ -90,6 +99,10 @@ pub struct AuxPowClient {
     /// Shutdown signal.
     shutdown: Arc<Notify>,
     connected: Arc<Mutex<bool>>,
+    /// Latest difficulty received via mining.set_difficulty.
+    current_difficulty: Arc<Mutex<f64>>,
+    /// Wallet used during authorize; needed for some submit formats.
+    payout_wallet: Arc<Mutex<String>>,
 }
 
 impl AuxPowClient {
@@ -107,11 +120,14 @@ impl AuxPowClient {
             job_notify: Arc::new(Notify::new()),
             shutdown: Arc::new(Notify::new()),
             connected: Arc::new(Mutex::new(false)),
+            current_difficulty: Arc::new(Mutex::new(1.0)),
+            payout_wallet: Arc::new(Mutex::new(String::new())),
         }
     }
 
     /// Connect to the external pool and perform subscribe + authorize.
     pub async fn connect(&self, payout_wallet: &str) -> Result<()> {
+        *self.payout_wallet.lock().await = payout_wallet.to_string();
         let addr = self.profile.pool_address();
         info!(
             "AuxPow: connecting to {} ({}) for {}",
@@ -297,6 +313,7 @@ impl AuxPowClient {
                     if let Some(params) = msg.get("params") {
                         if let Some(diff) = params.get(0).and_then(|d| d.as_f64()) {
                             debug!("AuxPow: difficulty set to {:.2} for {}", diff, self.profile.coin);
+                            *self.current_difficulty.lock().await = diff;
                         }
                     }
                 }
@@ -310,16 +327,12 @@ impl AuxPowClient {
     }
 
     /// Parse `mining.notify` params into an `ExternalJob`.
+    ///
+    /// Supports two Stratum v1 variants:
+    ///   - Standard Bitcoin-like: [job_id, prevhash, coinbase1, coinbase2,
+    ///     branches, version, nbits, ntime, clean_jobs]
+    ///   - Simplified: [job_id, header_hex, target_hex]
     fn parse_notify_params(&self, params: &Value) -> Result<ExternalJob> {
-        // Stratum v1 mining.notify params:
-        // [job_id, prevhash, coinbase1, coinbase2, branches, version, nbits, ntime, clean_jobs]
-        //
-        // For Blake3 coins (DCR/ALPH), the format may differ.
-        // We store the raw params and let the hasher extract what it needs.
-        //
-        // Simplified: we take job_id and the first hex string as header,
-        // and nbits as target.
-
         let arr = params
             .as_array()
             .ok_or_else(|| anyhow!("notify params not array"))?;
@@ -333,27 +346,30 @@ impl AuxPowClient {
             .unwrap_or("unknown")
             .to_string();
 
-        // For DCR/ALPH stratum, params typically are:
-        // [job_id, header_hex, target_hex]
-        // or the standard format above.
-        //
-        // We try both formats.
-        let (header_hex, target_hex) = if arr.len() >= 3 {
-            // Try simplified format: [job_id, header, target]
+        // Try simplified format first: [job_id, header_hex, target_hex]
+        let (header_hex, target_hex, timestamp, nbits) = if arr.len() == 3
+            && arr[1].as_str().map(|s| s.len()) > Some(32)
+        {
             let h = arr[1].as_str().unwrap_or("");
-            let t = arr[2].as_str().unwrap_or("");
-            if !h.is_empty() && !t.is_empty() && h.len() > 32 {
-                (h.to_string(), t.to_string())
-            } else {
-                // Standard format: extract nbits as target
-                let nbits = arr
-                    .get(6)
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("ffffffff");
-                (arr[1].as_str().unwrap_or("").to_string(), nbits.to_string())
-            }
+            let t = arr[2].as_str().unwrap_or("ffffffff");
+            (h.to_string(), t.to_string(), None, None)
         } else {
-            bail!("insufficient notify params");
+            // Standard format
+            let header = arr.get(1).and_then(|v| v.as_str()).unwrap_or("");
+            let nbits = arr.get(6).and_then(|v| v.as_str()).map(String::from);
+            let ntime = arr
+                .get(7)
+                .and_then(|v| {
+                    if let Some(s) = v.as_str() {
+                        u64::from_str_radix(s.trim_start_matches("0x"), 16).ok()
+                    } else {
+                        v.as_u64()
+                    }
+                });
+            // For kHeavyHash/KAS the prevhash field is the 32-byte pre_pow_hash
+            // and the target comes from mining.set_difficulty.
+            let target = nbits.clone().unwrap_or_else(|| "ffffffff".to_string());
+            (header.to_string(), target, ntime, nbits)
         };
 
         let header_bytes = hex::decode(header_hex.trim_start_matches("0x"))
@@ -370,6 +386,9 @@ impl AuxPowClient {
             algorithm: self.profile.algorithm.clone(),
             header_bytes,
             target_bytes,
+            timestamp,
+            nbits,
+            extranonce2: String::new(),
         })
     }
 
@@ -395,17 +414,26 @@ impl AuxPowClient {
     /// Submit a share to the pool.
     ///
     /// Returns whether the pool accepted or rejected the share.
+    ///
+    /// The submit format is the standard Stratum v1 `[worker, job_id, nonce_hex]`.
+    ///
+    /// Some KAS pools accept `[job_id, nonce_hex]`, but zpool-style pools
+    /// expect the worker in params.  We send the worker explicitly.
     pub async fn submit_share(
         &self,
         job_id: &str,
         nonce: u64,
-        hash_hex: &str,
+        _hash_hex: &str,
     ) -> Result<ShareResult> {
-        let nonce_hex = format!("{:016x}", nonce);
+        let nonce_hex = format!("0x{:016x}", nonce);
+        let wallet = self.payout_wallet.lock().await.clone();
+        let worker = format!("{}.{}", wallet, self.profile.worker_name);
+        let params = json!([worker, job_id, nonce_hex]);
+
         let req = json!({
             "id": 100,
             "method": "mining.submit",
-            "params": [self.profile.worker_name.clone(), job_id, nonce_hex, hash_hex]
+            "params": params
         });
 
         let resp = self.send_request(&req).await?;
@@ -438,6 +466,23 @@ impl AuxPowClient {
         *self.connected.lock().await
     }
 
+    /// Return the most recent difficulty received via `mining.set_difficulty`.
+    ///
+    /// Defaults to `1.0` until the pool sends a difficulty notification.
+    pub async fn current_difficulty(&self) -> f64 {
+        *self.current_difficulty.lock().await
+    }
+
+    /// Compute the share target implied by the current difficulty.
+    ///
+    /// Uses the KAS/kHeavyHash convention where max target is the largest
+    /// 256-bit value (`0xFF..FF`).  The result saturates at max target, so
+    /// difficulties below 1.0 produce the easiest possible target.
+    pub async fn share_target(&self) -> [u8; 32] {
+        let difficulty = self.current_difficulty().await;
+        difficulty_to_target(difficulty)
+    }
+
     /// Disconnect from the pool.
     pub async fn disconnect(&self) -> Result<()> {
         *self.stream.lock().await = None;
@@ -459,6 +504,50 @@ impl AuxPowClient {
     pub fn protocol(&self) -> StratumProtocol {
         self.protocol
     }
+}
+
+/// Convert a Stratum difficulty value to a 32-byte big-endian target.
+///
+/// Uses the KAS/kHeavyHash convention: `target = max_target / difficulty`,
+/// where `max_target` is the largest 256-bit value.  The result saturates
+/// at `max_target`, so difficulties `<= 1.0` produce the easiest possible
+/// target (all bytes `0xFF`).
+pub fn difficulty_to_target(difficulty: f64) -> [u8; 32] {
+    use num_bigint::BigUint;
+
+    if difficulty <= 1.0 || !difficulty.is_finite() || difficulty.is_nan() {
+        return [0xFFu8; 32];
+    }
+
+    let max = BigUint::from_bytes_be(&[0xFFu8; 32]);
+    // Convert difficulty to a rational approximation.  Using its raw bits as
+    // a BigUint scaled by 2^52 gives an exact representation of a finite f64.
+    let bits = difficulty.to_bits();
+    let mantissa = bits & 0x000F_FFFF_FFFF_FFFF;
+    let exponent = ((bits >> 52) & 0x7FF) as i32 - 1023;
+    let significand = if exponent == -1023 {
+        // subnormal
+        BigUint::from(mantissa)
+    } else {
+        BigUint::from(mantissa | 0x0010_0000_0000_0000u64)
+    };
+    let mut diff_int = significand;
+    if exponent >= 0 {
+        diff_int <<= exponent as usize;
+    } else {
+        diff_int >>= (-exponent) as usize;
+    }
+
+    if diff_int == BigUint::from(0u32) {
+        return [0xFFu8; 32];
+    }
+
+    let target = &max / diff_int;
+    let bytes = target.to_bytes_be();
+    let mut out = [0u8; 32];
+    let start = out.len().saturating_sub(bytes.len());
+    out[start..].copy_from_slice(&bytes);
+    out
 }
 
 impl StratumProtocol {

@@ -103,10 +103,10 @@ pub(crate) enum JobAssignment {
 /// Keeps the AuXpow crate self-contained by only supporting algorithms that
 /// are already implemented here.  Integration with `V3/L1/miner` can extend
 /// the dispatcher through a trait or callback in the future.
-pub fn dispatch_hash(algorithm: &str, header: &[u8], nonce: u64) -> Result<[u8; 32]> {
+pub fn dispatch_hash(algorithm: &str, header: &[u8], timestamp: u64, nonce: u64) -> Result<[u8; 32]> {
     match algorithm {
-        "blake3" => Ok(hash_blake3(header, nonce)),
-        "kheavyhash" => Ok(hash_kheavyhash(header, nonce)),
+        "blake3" => Ok(hash_blake3(header, timestamp, nonce)),
+        "kheavyhash" => Ok(hash_kheavyhash(header, timestamp, nonce)),
         other => Err(anyhow!("dual-stratum: algorithm '{}' not supported by AuXpow hasher", other)),
     }
 }
@@ -127,15 +127,20 @@ impl DualStratumMiner {
         for nonce in range {
             match job.assign_nonce(nonce) {
                 JobAssignment::Zion => {
-                    let hash = dispatch_hash(&job.zion.algorithm, &job.zion.header_bytes, nonce)
+                    let hash = dispatch_hash(&job.zion.algorithm, &job.zion.header_bytes, 0, nonce)
                         .ok()?;
                     if meets_target(&hash, &job.zion.target_bytes) {
                         return Some(ShareDisposition::ZionShare { nonce, hash });
                     }
                 }
                 JobAssignment::External => {
-                    let hash = dispatch_hash(&job.external.algorithm, &job.external.header_bytes, nonce)
-                        .ok()?;
+                    let hash = dispatch_hash(
+                        &job.external.algorithm,
+                        &job.external.header_bytes,
+                        job.external.timestamp,
+                        nonce,
+                    )
+                    .ok()?;
                     if meets_target(&hash, &job.external.target_bytes) {
                         return Some(ShareDisposition::ExternalShare(FoundExternalShare {
                             external_coin: job.external.external_coin,
@@ -226,6 +231,7 @@ mod tests {
             algorithm: "blake3".to_string(),
             header_bytes: b"external_header".to_vec(),
             target_bytes: easy_target(),
+            timestamp: 0,
             start_nonce: 0,
             nonce_count: 1_000_000,
         }
@@ -321,7 +327,7 @@ mod tests {
 
     #[test]
     fn dispatch_rejects_unsupported_algorithm() {
-        let result = dispatch_hash("randomx", b"header", 0);
+        let result = dispatch_hash("randomx", b"header", 0, 0);
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("randomx"));
     }

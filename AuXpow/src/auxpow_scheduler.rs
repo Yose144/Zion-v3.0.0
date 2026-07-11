@@ -335,8 +335,8 @@ impl AuxPowScheduler {
         for offset in 0..sched_cfg.nonce_batch_size {
             let nonce = start_nonce.wrapping_add(offset);
             let hash = match algo {
-                ExternalAlgorithm::Blake3 => hash_blake3(header, nonce),
-                ExternalAlgorithm::KHeavyHash => hash_kheavyhash(header, nonce),
+                ExternalAlgorithm::Blake3 => hash_blake3(header, 0, nonce),
+                ExternalAlgorithm::KHeavyHash => hash_kheavyhash(header, 0, nonce),
             };
 
             if meets_target(&hash, target) {

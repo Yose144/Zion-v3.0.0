@@ -52,13 +52,14 @@ pub fn mine(job: &JobPackage, range: std::ops::Range<u64>) -> Result<Option<Foun
 
 fn scan<F>(job: &JobPackage, start: u64, end: u64, hash_fn: F) -> Option<FoundShare>
 where
-    F: Fn(&[u8], u64) -> [u8; 32],
+    F: Fn(&[u8], u64, u64) -> [u8; 32],
 {
     let header = &job.header_bytes;
     let target = &job.target_bytes;
+    let timestamp = job.timestamp;
 
     for nonce in start..end {
-        let hash = hash_fn(header, nonce);
+        let hash = hash_fn(header, timestamp, nonce);
         if meets_target(&hash, target) {
             return Some(FoundShare {
                 external_job_id: job.external_job_id.clone(),
@@ -87,6 +88,7 @@ mod tests {
             algorithm: "blake3".to_string(),
             header_bytes: b"harness_header".to_vec(),
             target_bytes: target,
+            timestamp: 0,
             start_nonce: 0,
             nonce_count: 1_000_000,
         }
@@ -99,6 +101,7 @@ mod tests {
             algorithm: "kheavyhash".to_string(),
             header_bytes: b"harness_header".to_vec(),
             target_bytes: [0x00u8; 32], // impossible
+            timestamp: 0,
             start_nonce: 0,
             nonce_count: 100,
         }
@@ -109,7 +112,7 @@ mod tests {
         let job = blake3_job_with_easy_target();
         let share = mine(&job, 0..10_000).unwrap().expect("share should be found");
         assert_eq!(share.external_job_id, "job_harness_dcr");
-        let recomputed = hash_blake3(&job.header_bytes, share.nonce);
+        let recomputed = hash_blake3(&job.header_bytes, job.timestamp, share.nonce);
         assert_eq!(share.hash, recomputed);
         assert!(meets_target(&share.hash, &job.target_bytes));
     }
@@ -129,6 +132,7 @@ mod tests {
             algorithm: "randomx".to_string(),
             header_bytes: vec![],
             target_bytes: [0xFFu8; 32],
+            timestamp: 0,
             start_nonce: 0,
             nonce_count: 10,
         };

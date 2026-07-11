@@ -89,6 +89,7 @@ pub struct JobPackage {
     pub algorithm: String,
     pub header_bytes: Vec<u8>,
     pub target_bytes: [u8; 32],
+    pub timestamp: u64,        // pro kHeavyHash/KAS PowHash
     pub start_nonce: u64,
     pub nonce_count: u64,
 }
@@ -283,14 +284,22 @@ Wallet: `bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh` (BTC, `c=BTC` password).
 - ✅ `mining.subscribe` — odpověď OK
 - ✅ `mining.authorize` jako `bc1q...zion_e2e` — autorizováno
 - ✅ `mining.set_difficulty` + `mining.notify` — job přijat (`id=61c2`, `algorithm=kheavyhash`, `header_len=32`, `target=ffffffff`)
-- ✅ CPU hash nalezl share během 2 s (`nonce=0`, hash začíná `d001cfccc6638815`)
-- ⚠️ Submit share: pool uzavřel spojení. Příčina není definitivně určena — buď nesedí formát `mining.submit` pro kHeavyHash (KAS-like), nebo share nesplnil skutečný pool difficulty (notify target `ffffffff` je síťový target, nikoli pool share target; `set_difficulty` se zatím nepoužívá pro výpočet share targetu).
+- ✅ CPU hash nalezl share během několika sekund (při `difficulty=0.5` je share target `0xffffffff...`, takže prakticky jakýkoliv hash projde)
+- ⚠️ Submit share: pool uzavře spojení. Bylo vyzkoušeno několik variant:
+  - klasický Stratum `[worker, job_id, nonce_hex]`
+  - nonce s `0x` prefixem
+  - nonce v little-endian i big-endian hex
+  - alternativní 80B work buffer (Pyrin-like) i oficiální Kaspa 80B buffer
+  - timestamp jako sekundy i jako milisekundy
+  - Všechny varianty končí stejně — pool spojení ukončí.
+- **Příčina:** zpool `heavyhash` algoritmus těží více kHeavyHash coinů (KAS/PYRIN/Sedra/...). Bez explicitního výběru coinu nelze spolehlivě určit, jaký přesný PoW-buffer, doménový řetězec a submit formát pool očekává. Náš `hash_kheavyhash()` je implementován podle oficiálního Kaspa `cSHAKE256("ProofOfWorkHash") → cSHAKE256("HeavyHash")` reference, ale proti živému zpool mixu to nestačí.
 
 ### 5.3 Co ještě chybí pro plně funkční E2E
 
-1. **Pool difficulty → share target** — `mining.set_difficulty` notifikace se musí převést na `target_bytes` pro kontrolu share.
-2. **Správný submit formát** — kHeavyHash/KAS stratum může vyžadovat jiné pořadí/typ polí v `mining.submit` (např. nonce jako little-endian hex, případně extra timestamp).
-3. **Algoritmová validace** — ověřit, že `hash_kheavyhash()` dává stejný výsledek jako reference (zatím není porovnáno proti známým vektorům).
+1. **Otestovat proti poolu s jednoznačným coinem** — např. `kas.2miners.com:2020` vyžaduje `kaspa:` adresu (ne BTC wallet). Pro BTC payout je nejlepší testovat Blake3 coin, pokud se najde pool s BTC payout a Stratum v1.
+2. **Případně přidat coin-specific heavyhash varianty** — pokud bude vybrán konkrétní coin (Pyrin, Sedra, …), doplnit jeho work-buffer a případně jiný doménový řetězec.
+3. **Blake3 E2E** — DCR/ALPH s BTC payout walletou by byla spolehlivější, protože `hash_blake3()` je standardní a jednoznačný.
+4. **Pool difficulty → share target** — implementováno pomocí `difficulty_to_target()`; pro `difficulty <= 1` vrací max target.
 
 ---
 
@@ -320,7 +329,8 @@ Wallet: `bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh` (BTC, `c=BTC` password).
 2. ✅ **Vybrat první živý coin** pro end-to-end demo — vybrán **zpool heavyhash** (kHeavyHash) s BTC payout walletou.
 3. ✅ **E2E test** proti reálnému externímu poolu — connect/subscribe/authorize/job nalezení share FUNKČNÍ; submit share vyžaduje doladění pool difficulty + submit formátu.
 4. **Doladit E2E submit:**
-   - Implementovat převod `mining.set_difficulty` → share target.
-   - Ověřit/opravit formát `mining.submit` pro kHeavyHash/KAS stratum.
+   - ✅ Implementovat převod `mining.set_difficulty` → share target (`difficulty_to_target`).
+   - ✅ Zprovoznit `hash_kheavyhash()` podle oficiální Kaspa reference.
+   - ⚠️ Zůstává problém: zpool `heavyhash` těží mix coinů (KAS/Pyrin/…). Potřeba buď najít pool s jednoznačným coinem, nebo implementovat coin-specific varianty.
 5. Doplnit `randomx` / `ethash` / `kawpow` hashe — buď vlastním Rust kódem, nebo feature-gated FFI.
 6. Pro C: doplnit reálné parsování DCR/ALPH headerů a získat reálná sample data z parent chainů.
