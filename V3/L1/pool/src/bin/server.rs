@@ -419,6 +419,8 @@ fn main() -> Result<()> {
     // compute, tracking USD revenue for PPLNS distribution.
     // The scheduler runs on a dedicated tokio runtime since the pool
     // server itself uses std::thread (not tokio).
+    // NOTE: The runtime must be kept alive for the lifetime of the pool
+    // server — if it's dropped, all spawned tasks are cancelled.
     let auxpow_scheduler: Arc<AuxPowScheduler> = {
         let sched = Arc::new(AuxPowScheduler::from_env());
         if sched.is_enabled_sync() {
@@ -430,6 +432,10 @@ fn main() -> Result<()> {
                 .context("failed to create auxpow tokio runtime")?;
             let sched_clone = Arc::clone(&sched);
             sched_clone.spawn_on(&auxpow_runtime);
+            // Leak the runtime so it stays alive for the lifetime of the process.
+            // This is intentional — the pool server runs forever and the runtime
+            // should never be dropped (which would cancel all auxpow tasks).
+            std::mem::forget(auxpow_runtime);
         } else {
             println!("auxpow: disabled (set ZION_AUXPOW_ENABLED=1 to enable)");
         }
