@@ -62,18 +62,16 @@ export default function LayerMenu({ cs }: { cs: boolean }) {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 + i * 0.06, duration: 0.5 }}
-              className="group relative flex flex-col items-center gap-2 rounded-2xl border p-4 transition-all duration-300 hover:scale-[1.03]"
-              style={{
-                borderColor: `rgba(${layer.rgb},0.2)`,
-                backgroundColor: `rgba(${layer.rgb},0.04)`,
-              }}
+              className="group relative flex flex-col items-center gap-2 zion-rainbow-sub p-4 transition-all duration-300 hover:scale-[1.03]"
+              style={{ '--rc': layer.rgb } as React.CSSProperties}
             >
               <div
                 className="absolute -top-6 -right-6 h-16 w-16 rounded-full blur-2xl opacity-20 group-hover:opacity-35 transition-opacity duration-500"
                 style={{ backgroundColor: layer.color }}
               />
               <span
-                className="relative z-10 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-black/20"
+                className="relative z-10 inline-flex h-10 w-10 items-center justify-center zion-rainbow-sub"
+                style={{ '--rc': layer.rgb } as React.CSSProperties}
               >
                 <Icon className="h-5 w-5" style={{ color: layer.color }} />
               </span>

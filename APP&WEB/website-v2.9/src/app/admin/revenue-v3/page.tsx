@@ -114,16 +114,16 @@ export default function RevenueSettings() {
           {lang === 'cs' ? 'Cosmic Harmony v3 — Nastavení příjmů' : 'Cosmic Harmony v3 Revenue Settings'}
         </h1>
         <div className="flex gap-4">
-            <button 
+            <button
                 onClick={fetchConfig}
-                className="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 transition"
+                className="zion-button-secondary"
                 disabled={saving}
             >
                 {lang === 'cs' ? 'Obnovit' : 'Refresh'}
             </button>
-            <button 
+            <button
                 onClick={handleSave}
-                className="px-6 py-2 rounded bg-green-600 hover:bg-green-500 font-bold transition shadow-lg shadow-green-900/20"
+                className="zion-button-primary"
                 disabled={saving}
             >
                 {saving ? (lang === 'cs' ? 'Ukládání...' : 'Saving...') : (lang === 'cs' ? 'Uložit konfiguraci' : 'Save Configuration')}
@@ -132,7 +132,10 @@ export default function RevenueSettings() {
       </div>
 
       {status && (
-        <div className={`p-4 rounded-lg border ${status.includes(lang === 'cs' ? 'Chyba' : 'Error') ? 'bg-red-900/20 border-red-500/50 text-red-200' : 'bg-green-900/20 border-green-500/50 text-green-200'}`}>
+        <div
+          className="zion-rainbow-card p-4"
+          style={{ '--rc': status.includes(lang === 'cs' ? 'Chyba' : 'Error') ? '239, 68, 68' : '16, 185, 129' } as React.CSSProperties}
+        >
           {status}
         </div>
       )}
@@ -140,13 +143,13 @@ export default function RevenueSettings() {
       <div className="grid gap-6">
         
         {/* NCL AI Section */}
-        <section className="zion-section p-6" style={{ '--rc': '168, 85, 247' } as React.CSSProperties}>
+        <section className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-purple-300">🤖 {lang === 'cs' ? 'NCL Umělá inteligence' : 'NCL Artificial Intelligence'}</h2>
                 <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-400">{lang === 'cs' ? 'Aktivní' : 'Enabled'}</span>
-                    <input 
-                        type="checkbox" 
+                    <input
+                        type="checkbox"
                         checked={config.streams.ncl.enabled}
                         onChange={(e) => updateStream('ncl', 'enabled', e.target.checked)}
                         className="w-5 h-5 rounded border-gray-600"
@@ -154,60 +157,60 @@ export default function RevenueSettings() {
                 </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div>
+                <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                     <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'NPU Alokace (0.0 - 1.0)' : 'NPU Allocation (0.0 - 1.0)'}</label>
-                    <input 
-                        type="number" 
+                    <input
+                        type="number"
                         step="0.05"
                         min="0"
                         max="1"
                         value={config.streams.ncl.npu_allocation}
                         onChange={(e) => updateStream('ncl', 'npu_allocation', parseFloat(e.target.value))}
-                        className="w-full bg-gray-900 border border-gray-700 rounded p-2"
+                        className="w-full bg-black/40 border border-white/10 rounded p-2 text-white"
                     />
                     <p className="text-xs text-gray-400 mt-1">{lang === 'cs' ? 'Procento NPU zdrojů věnovaných AI úkolům.' : 'Percentage of NPU resources dedicated to AI tasks.'}</p>
                 </div>
-                <div>
+                <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                     <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Cílový podíl příjmů' : 'Revenue Target Share'}</label>
-                    <input 
+                    <input
                         type="number"
                         step="0.01"
                         value={config.streams.ncl.target_share}
                         onChange={(e) => updateStream('ncl', 'target_share', parseFloat(e.target.value))}
-                        className="w-full bg-gray-900 border border-gray-700 rounded p-2"
+                        className="w-full bg-black/40 border border-white/10 rounded p-2 text-white"
                     />
                 </div>
             </div>
         </section>
 
         {/* ZION Native Section */}
-        <section className="zion-section p-6" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
+        <section className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-blue-300">🌌 {lang === 'cs' ? 'ZION Nativní Chain' : 'ZION Native Chain'}</h2>
                 <div className="flex items-center gap-2">
-                   <span className="text-gray-400">{lang === 'cs' ? 'Vždy aktivní' : 'Always Enabled'}</span>
+                   <span className="zion-badge zion-badge-green">{lang === 'cs' ? 'Vždy aktivní' : 'Always Enabled'}</span>
                 </div>
             </div>
-            <div>
+            <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                  <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Cílový podíl' : 'Target Share'}</label>
-                 <input 
+                 <input
                      type="number"
                      step="0.01"
                      value={config.streams.zion.target_share}
                      onChange={(e) => updateStream('zion', 'target_share', parseFloat(e.target.value))}
-                     className="w-full bg-gray-900 border border-gray-700 rounded p-2"
+                     className="w-full bg-black/40 border border-white/10 rounded p-2 text-white"
                  />
             </div>
         </section>
 
         {/* ETC Stream */}
-        <section className="zion-section p-6" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
+        <section className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
              <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-green-300">⛏️ {lang === 'cs' ? 'ETC (Externí)' : 'ETC (External)'}</h2>
                 <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-400">{lang === 'cs' ? 'Aktivní' : 'Enabled'}</span>
-                    <input 
-                        type="checkbox" 
+                    <input
+                        type="checkbox"
                         checked={config.streams.etc.enabled}
                         onChange={(e) => updateStream('etc', 'enabled', e.target.checked)}
                         className="w-5 h-5 rounded border-gray-600"
@@ -216,22 +219,22 @@ export default function RevenueSettings() {
             </div>
             <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                     <div>
+                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                         <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Pool Stratum URL' : 'Pool Stratum URL'}</label>
-                        <input 
-                            type="text" 
+                        <input
+                            type="text"
                             value={config.streams.etc.pool.stratum}
                             onChange={(e) => updatePool('etc', 'stratum', e.target.value)}
-                            className="w-full bg-gray-900 border border-gray-700 rounded p-2 font-mono text-sm"
+                            className="w-full bg-black/40 border border-white/10 rounded p-2 font-mono text-sm text-white"
                         />
                      </div>
-                     <div>
+                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                         <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Adresa peněženky' : 'Wallet Address'}</label>
-                        <input 
-                            type="text" 
+                        <input
+                            type="text"
                             value={config.streams.etc.pool.wallet}
                             onChange={(e) => updatePool('etc', 'wallet', e.target.value)}
-                            className="w-full bg-gray-900 border border-gray-700 rounded p-2 font-mono text-sm"
+                            className="w-full bg-black/40 border border-white/10 rounded p-2 font-mono text-sm text-white"
                         />
                      </div>
                 </div>
@@ -239,13 +242,13 @@ export default function RevenueSettings() {
         </section>
 
          {/* NXS Stream */}
-         <section className="zion-section p-6" style={{ '--rc': '249, 115, 22' } as React.CSSProperties}>
+         <section className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
              <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-orange-300">💎 {lang === 'cs' ? 'NXS (Externí)' : 'NXS (External)'}</h2>
                 <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-400">{lang === 'cs' ? 'Aktivní' : 'Enabled'}</span>
-                    <input 
-                        type="checkbox" 
+                    <input
+                        type="checkbox"
                         checked={config.streams.nxs.enabled}
                         onChange={(e) => updateStream('nxs', 'enabled', e.target.checked)}
                         className="w-5 h-5 rounded border-gray-600"
@@ -254,22 +257,22 @@ export default function RevenueSettings() {
             </div>
             <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                     <div>
+                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                         <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Pool Stratum URL' : 'Pool Stratum URL'}</label>
-                        <input 
-                            type="text" 
+                        <input
+                            type="text"
                             value={config.streams.nxs.pool.stratum}
                             onChange={(e) => updatePool('nxs', 'stratum', e.target.value)}
-                            className="w-full bg-gray-900 border border-gray-700 rounded p-2 font-mono text-sm"
+                            className="w-full bg-black/40 border border-white/10 rounded p-2 font-mono text-sm text-white"
                         />
                      </div>
-                     <div>
+                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                         <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Adresa peněženky' : 'Wallet Address'}</label>
-                        <input 
-                            type="text" 
+                        <input
+                            type="text"
                             value={config.streams.nxs.pool.wallet}
                             onChange={(e) => updatePool('nxs', 'wallet', e.target.value)}
-                            className="w-full bg-gray-900 border border-gray-700 rounded p-2 font-mono text-sm"
+                            className="w-full bg-black/40 border border-white/10 rounded p-2 font-mono text-sm text-white"
                         />
                      </div>
                 </div>

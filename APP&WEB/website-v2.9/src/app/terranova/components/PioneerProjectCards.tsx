@@ -151,7 +151,7 @@ export default function PioneerProjectCards({ cs }: { cs: boolean }) {
                     </div>
                   </div>
                 </div>
-                <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-gray-300">
+                <span className="zion-badge">
                   <Network className="h-3 w-3" />
                   {cs ? project.statusCs : project.statusEn}
                 </span>
@@ -190,7 +190,7 @@ export default function PioneerProjectCards({ cs }: { cs: boolean }) {
                 ))}
               </div>
 
-              <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-gray-300 transition-colors hover:bg-white/10">
+              <div className="zion-button-secondary">
                 <span>{cs ? 'Otevřít detail projektu' : 'Open project detail'}</span>
                 <ArrowRight className="h-4 w-4" />
               </div>
@@ -214,7 +214,7 @@ export default function PioneerProjectCards({ cs }: { cs: boolean }) {
             <Link
               key={project.title}
               href={project.href}
-              className="group zion-rainbow-sub p-5 transition-colors hover:border-white/20 hover:bg-black/30"
+              className="group zion-rainbow-sub p-5"
               style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
             >
               {CardContent}

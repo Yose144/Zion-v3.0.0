@@ -132,7 +132,7 @@ export default function ExplorerPage() {
       <div className="relative z-10 zion-container max-w-7xl space-y-14">
 
         {/* ── Live network ticker ── */}
-        <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+        <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
           <NetworkTicker />
         </div>
 
@@ -141,11 +141,11 @@ export default function ExplorerPage() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           className="zion-rainbow-card p-6 md:p-10"
-          style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
+          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-5">
-              <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan uppercase">
+              <div className="zion-badge text-zion-cyan border-zion-cyan/40 bg-zion-cyan/10">
                 <SearchCode className="h-4 w-4" />
                 {SITE_RELEASE_LABEL} · {cs ? 'Průzkumník Pro' : 'Explorer Pro'}
               </div>
@@ -161,24 +161,21 @@ export default function ExplorerPage() {
                   : `Search blocks, transactions, and addresses on the live ZION TerraNova ${SITE_RELEASE_LABEL} mainnet. Canonical runtime runs on ${SITE_RUNTIME_LABEL} — 3-node P2P mesh, account-model transactions with memo field, E2E tests confirmed in block 752.`}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Sparkles className="h-3 w-3 text-zion-gold" /> {cs ? 'Živá mainnet data' : 'Live Mainnet Data'}
+                <span className="zion-badge zion-badge-gold">
+                  <Sparkles className="h-3 w-3" /> {cs ? 'Živá mainnet data' : 'Live Mainnet Data'}
                 </span>
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Activity className="h-3 w-3 text-emerald-400" /> {cs ? 'Auto-refresh 15 s' : 'Auto-Refresh 15s'}
+                <span className="zion-badge zion-badge-green">
+                  <Activity className="h-3 w-3" /> {cs ? 'Auto-refresh 15 s' : 'Auto-Refresh 15s'}
                 </span>
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Globe className="h-3 w-3 text-zion-cyan" /> {cs ? '3-uzlový mesh' : '3-node mesh'}
+                <span className="zion-badge text-zion-cyan border-zion-cyan/40 bg-zion-cyan/10">
+                  <Globe className="h-3 w-3" /> {cs ? '3-uzlový mesh' : '3-node mesh'}
                 </span>
-                <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-emerald-200">
+                <span className="zion-badge zion-badge-green">
                   {cs ? 'All Green · 11/11 služeb' : 'All Green · 11/11 services'}
                 </span>
               </div>
               <div className="flex flex-wrap gap-3">
-                <Link
-                  href="/explorer/api-docs"
-                  className="inline-flex items-center gap-2 rounded-2xl bg-purple-500/15 border border-purple-500/30 px-5 py-2.5 text-sm font-semibold text-purple-300 hover:bg-purple-500/25 transition-colors"
-                >
+                <Link href="/explorer/api-docs" className="zion-button-secondary">
                   <Code className="h-4 w-4" /> {cs ? 'API dokumentace' : 'API Docs'}
                 </Link>
               </div>
@@ -443,17 +440,17 @@ export default function ExplorerPage() {
               : 'Decade Decay emission: 5,400 → 724 ZION/block · 100+ years + tail ∞ · All fees burned · 89/5/5/1 distribution · Memo E2E confirmed in block 752 · Public launch 31.12.2026'}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <Link href="/network" className="inline-flex items-center gap-2 rounded-2xl bg-black/70 px-6 py-3 text-sm font-semibold text-white border border-white/20">
+            <Link href="/network" className="zion-button-secondary">
               <Globe className="h-4 w-4" /> {cs ? 'Stav sítě' : 'Network Status'}
             </Link>
-            <Link href="/roadmap" className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-cyan to-zion-purple px-6 py-3 text-sm font-semibold text-black">
+            <Link href="/roadmap" className="zion-button-primary">
               <Activity className="h-4 w-4" /> {cs ? 'Roadmapa' : 'Roadmap'}
             </Link>
             <a
               href="https://github.com/Zion-TerraNova"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-6 py-3 text-sm font-semibold text-white border border-white/10"
+              className="zion-button-secondary"
             >
               <ExternalLink className="h-4 w-4" /> GitHub
             </a>

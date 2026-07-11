@@ -139,7 +139,7 @@ export default function PoolConfigPage() {
   return (
     <div className="pt-28 pb-20 overflow-x-hidden">
       <div className="zion-container max-w-7xl space-y-12">
-        <div className="zion-rainbow-card p-5 sm:p-8 md:p-10" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+        <div className="zion-rainbow-card p-5 sm:p-8 md:p-10" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{lang === 'cs' ? 'Routing' : 'Routing'}</p>
@@ -154,21 +154,19 @@ export default function PoolConfigPage() {
             <div className="flex flex-wrap gap-3">
               <button
                 onClick={testAllConnections}
-                className="zion-tile inline-flex items-center justify-center px-6 py-3 text-sm font-semibold hover:border-white/30"
+                className="zion-button-secondary"
               >
                 {lang === 'cs' ? 'Testovat spojení' : 'Test connections'}
               </button>
               <button
                 onClick={saveConfiguration}
-                className={`inline-flex items-center justify-center rounded-2xl border px-6 py-3 text-sm font-semibold transition-colors ${
-                  saved ? 'border-emerald-500/50 bg-white/10 text-white' : 'border-zion-gold/50 bg-white/10 text-white hover:border-white/30'
-                }`}
+                className="zion-button-primary"
               >
                 {saved ? (lang === 'cs' ? 'Uloženo' : 'Saved') : (lang === 'cs' ? 'Uložit' : 'Save')}
               </button>
               <Link
                 href="/admin"
-                className="zion-section inline-flex items-center justify-center px-6 py-3 text-sm font-semibold hover:border-white/30"
+                className="zion-button-secondary"
               >
                 {lang === 'cs' ? 'Zpět' : 'Back'}
               </Link>
@@ -176,7 +174,7 @@ export default function PoolConfigPage() {
           </div>
         </div>
 
-        <div className="zion-rainbow-card p-6" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+        <div className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
           <p className="text-xs uppercase tracking-[0.3em] text-gray-400">GPU</p>
           <h2 className="mt-2 text-2xl font-semibold text-white">{lang === 'cs' ? 'GPU mining trasy' : 'GPU mining routes'}</h2>
           <p className="mt-2 text-sm text-gray-300">{lang === 'cs' ? 'Multi-algo seznam (mock data)' : 'Multi-algo list (mock data)'}</p>
@@ -186,7 +184,7 @@ export default function PoolConfigPage() {
               <div
                 key={config.algo}
                 className={`zion-rainbow-sub p-5 ${config.enabled ? '' : 'opacity-70'}`}
-                style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
+                style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
               >
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <label className="flex items-center gap-3 cursor-pointer">
@@ -201,9 +199,9 @@ export default function PoolConfigPage() {
                         {config.coin}{' '}
                         <span className="text-sm text-gray-400">({config.algo.toUpperCase()})</span>
                       </p>
-                      <p className="text-xs text-gray-400">
+                      <span className={`zion-badge ${config.connectionStatus === 'connected' ? 'zion-badge-green' : config.connectionStatus === 'error' ? 'zion-badge-amber' : 'zion-badge-red'}`}>
                         {getStatusIcon(config.connectionStatus)} {config.connectionStatus}
-                      </p>
+                      </span>
                     </div>
                   </label>
 
@@ -212,7 +210,8 @@ export default function PoolConfigPage() {
                     <select
                       value={config.priority}
                       onChange={(e) => updateConfig(config.algo, 'priority', parseInt(e.target.value))}
-                      className="rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white"
+                      className="zion-rainbow-sub px-4 py-2 text-sm text-white disabled:opacity-50"
+                      style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
                       disabled={!config.enabled}
                     >
                       <option value={1}>{lang === 'cs' ? 'Vysoká' : 'High'}</option>
@@ -230,7 +229,8 @@ export default function PoolConfigPage() {
                       value={config.poolUrl}
                       onChange={(e) => updateConfig(config.algo, 'poolUrl', e.target.value)}
                       disabled={!config.enabled}
-                      className="mt-2 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white disabled:opacity-50"
+                      className="zion-rainbow-sub mt-2 w-full px-4 py-3 text-sm text-white disabled:opacity-50"
+                      style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
                       placeholder="pool.example.com:port"
                     />
                   </div>
@@ -241,7 +241,8 @@ export default function PoolConfigPage() {
                       value={config.wallet}
                       onChange={(e) => updateConfig(config.algo, 'wallet', e.target.value)}
                       disabled={!config.enabled}
-                      className="mt-2 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white disabled:opacity-50"
+                      className="zion-rainbow-sub mt-2 w-full px-4 py-3 text-sm text-white disabled:opacity-50"
+                      style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
                       placeholder={lang === 'cs' ? 'Wallet adresa' : 'Wallet address'}
                     />
                   </div>
@@ -253,14 +254,15 @@ export default function PoolConfigPage() {
                         value={config.workerPrefix}
                         onChange={(e) => updateConfig(config.algo, 'workerPrefix', e.target.value)}
                         disabled={!config.enabled}
-                        className="mt-2 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white disabled:opacity-50"
+                        className="zion-rainbow-sub mt-2 w-full px-4 py-3 text-sm text-white disabled:opacity-50"
+                        style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
                         placeholder="zion"
                       />
                     </div>
                     <button
                       onClick={() => testConnection(config.algo)}
                       disabled={!config.enabled || testing === config.algo}
-                      className="zion-tile inline-flex items-center justify-center px-5 py-3 text-sm font-semibold text-white hover:border-white/30 disabled:opacity-50"
+                      className="zion-button-secondary disabled:opacity-50"
                     >
                       {testing === config.algo ? '…' : (lang === 'cs' ? 'Test' : 'Test')}
                     </button>
@@ -271,7 +273,7 @@ export default function PoolConfigPage() {
           </div>
         </div>
 
-        <div className="zion-rainbow-card p-6" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+        <div className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
           <p className="text-xs uppercase tracking-[0.3em] text-gray-400">CPU</p>
           <h2 className="mt-2 text-2xl font-semibold text-white">{lang === 'cs' ? 'CPU mining trasy' : 'CPU mining routes'}</h2>
           <p className="mt-2 text-sm text-gray-300">{lang === 'cs' ? 'RandomX / CPU těžaři (mock data)' : 'RandomX / CPU miners (mock data)'}</p>
@@ -281,7 +283,7 @@ export default function PoolConfigPage() {
               <div
                 key={config.algo}
                 className={`zion-rainbow-sub p-5 ${config.enabled ? '' : 'opacity-70'}`}
-                style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
+                style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
               >
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <label className="flex items-center gap-3 cursor-pointer">
@@ -296,9 +298,9 @@ export default function PoolConfigPage() {
                         {config.coin}{' '}
                         <span className="text-sm text-gray-400">({config.algo.toUpperCase()})</span>
                       </p>
-                      <p className="text-xs text-gray-400">
+                      <span className={`zion-badge ${config.connectionStatus === 'connected' ? 'zion-badge-green' : config.connectionStatus === 'error' ? 'zion-badge-amber' : 'zion-badge-red'}`}>
                         {getStatusIcon(config.connectionStatus)} {config.connectionStatus}
-                      </p>
+                      </span>
                     </div>
                   </label>
                 </div>
@@ -311,7 +313,8 @@ export default function PoolConfigPage() {
                       value={config.poolUrl}
                       onChange={(e) => updateConfig(config.algo, 'poolUrl', e.target.value)}
                       disabled={!config.enabled}
-                      className="mt-2 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white disabled:opacity-50"
+                      className="zion-rainbow-sub mt-2 w-full px-4 py-3 text-sm text-white disabled:opacity-50"
+                      style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
                     />
                   </div>
                   <div>
@@ -321,7 +324,8 @@ export default function PoolConfigPage() {
                       value={config.wallet}
                       onChange={(e) => updateConfig(config.algo, 'wallet', e.target.value)}
                       disabled={!config.enabled}
-                      className="mt-2 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white disabled:opacity-50"
+                      className="zion-rainbow-sub mt-2 w-full px-4 py-3 text-sm text-white disabled:opacity-50"
+                      style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
                     />
                   </div>
                   <div className="flex items-end gap-3">
@@ -332,13 +336,14 @@ export default function PoolConfigPage() {
                         value={config.workerPrefix}
                         onChange={(e) => updateConfig(config.algo, 'workerPrefix', e.target.value)}
                         disabled={!config.enabled}
-                        className="mt-2 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white disabled:opacity-50"
+                        className="zion-rainbow-sub mt-2 w-full px-4 py-3 text-sm text-white disabled:opacity-50"
+                        style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
                       />
                     </div>
                     <button
                       onClick={() => testConnection(config.algo)}
                       disabled={!config.enabled || testing === config.algo}
-                      className="zion-tile inline-flex items-center justify-center px-5 py-3 text-sm font-semibold text-white hover:border-white/30 disabled:opacity-50"
+                      className="zion-button-secondary disabled:opacity-50"
                     >
                       {testing === config.algo ? '…' : (lang === 'cs' ? 'Test' : 'Test')}
                     </button>
@@ -349,7 +354,7 @@ export default function PoolConfigPage() {
           </div>
         </div>
 
-        <div className="zion-section p-6">
+        <div className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
           <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? 'Poznámky' : 'Notes'}</p>
           <h3 className="mt-2 text-2xl font-semibold text-white">{lang === 'cs' ? 'Konfigurační poznámky' : 'Configuration notes'}</h3>
           <ul className="mt-4 space-y-2 text-sm text-gray-300">
@@ -363,13 +368,13 @@ export default function PoolConfigPage() {
         <div className="flex flex-wrap gap-3">
           <Link
             href="/admin/algo-manager"
-            className="zion-tile inline-flex items-center justify-center px-6 py-3 text-sm font-semibold hover:border-white/30"
+            className="zion-button-secondary"
           >
             {lang === 'cs' ? 'Správce algoritmů →' : 'Algorithm manager →'}
           </Link>
           <Link
             href="/admin"
-            className="zion-section inline-flex items-center justify-center px-6 py-3 text-sm font-semibold hover:border-white/30"
+            className="zion-button-secondary"
           >
             ← {lang === 'cs' ? 'Admin' : 'Admin'}
           </Link>

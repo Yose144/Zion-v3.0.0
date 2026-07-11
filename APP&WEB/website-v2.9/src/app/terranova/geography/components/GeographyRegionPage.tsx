@@ -41,7 +41,7 @@ export default function GeographyRegionPage({ data }: { data: RegionData }) {
         >
           <Link
             href="/terranova"
-            className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-violet-400 transition-colors"
+            className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-zion-gold transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             {cs ? 'Zpět na Terra Nova' : 'Back to Terra Nova'}
@@ -54,18 +54,15 @@ export default function GeographyRegionPage({ data }: { data: RegionData }) {
           transition={{ duration: 0.7 }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card rounded-3xl md:rounded-4xl p-8 md:p-12 border border-violet-500/20 relative overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-900/30 via-purple-900/10 to-transparent" />
-            <div className="absolute -top-24 -left-24 w-64 h-64 rounded-full blur-[100px] bg-violet-500/15" />
-            <div className="absolute -bottom-16 -right-16 w-48 h-48 rounded-full blur-[80px] bg-purple-500/10" />
+          <div className="zion-rainbow-card p-8 md:p-12" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="relative z-10 space-y-3">
-              <span className="inline-flex items-center gap-1 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-[10px] font-semibold tracking-[0.3em] text-violet-400 uppercase">
+              <span className="zion-badge-gold">
                 {cs ? 'Kulturní vložky' : 'Cultural inserts'}
               </span>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">
                 {cs ? data.titleCs : data.titleEn}
               </h1>
-              <p className="text-lg text-violet-400 font-medium">
+              <p className="text-lg text-zion-gold font-medium">
                 {cs ? data.subtitleCs : data.subtitleEn}
               </p>
             </div>
@@ -97,13 +94,13 @@ export default function GeographyRegionPage({ data }: { data: RegionData }) {
                 className="relative zion-rainbow-sub p-5 space-y-3 overflow-hidden group hover:scale-[1.02] transition-transform duration-300"
                 style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
               >
-                <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-[50px] opacity-20 group-hover:opacity-35 transition-opacity duration-500 bg-violet-500" />
+                <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-[50px] opacity-20 group-hover:opacity-35 transition-opacity duration-500 bg-zion-gold" />
                 <div className="flex items-start justify-between relative z-10 gap-3">
-                  <span className="inline-flex h-11 w-11 items-center justify-center zion-tile">
-                    <FolderOpen className="h-5 w-5 text-violet-300" />
+                  <span className="inline-flex h-11 w-11 items-center justify-center zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+                    <FolderOpen className="h-5 w-5 text-zion-gold" />
                   </span>
                 </div>
-                <h3 className="font-bold relative z-10 text-violet-200">
+                <h3 className="font-bold relative z-10 text-zion-gold">
                   {cs ? insert.titleCs : insert.titleEn}
                 </h3>
                 <p className="text-gray-400 text-sm leading-relaxed relative z-10">

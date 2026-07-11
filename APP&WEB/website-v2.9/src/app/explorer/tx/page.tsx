@@ -11,7 +11,7 @@ export default function TxPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen relative overflow-hidden bg-linear-to-br from-gray-950 via-purple-950/20 to-gray-950" />
+        <div className="zion-shell overflow-hidden" />
       }
     >
       <TxDetailClient />
