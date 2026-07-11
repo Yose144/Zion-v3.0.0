@@ -1,11 +1,33 @@
 # AuXpow — Revenue B2b + True AuxPoW Design & Implementation
 
-> **Scope:** Všechny nové nápady, kód a dokumentace zůstávají v `AuXpow/` — žádné změny ve `V3/` dokud design není ověřen.  
-> **Cíl:** Nabídnout ZION poolu dvě revenue/bezpečnostní cesty, které se dají později integrovat do `V3/L1/pool`:  
-> 1. **B2b — Pool-side job multiplexing** (krátkodobý revenue z minerů na ZION poolu).  
-> 2. **C — True AuxPoW** (dlouhodobá bezpečnostní + revenue integrace).  
+> **Scope:** Všechny nové nápady, kód a dokumentace zůstávají v `AuXpow/` — žádné změny ve `V3/` dokud design není ověřen.
+> **Cíl:** Nabídnout ZION poolu dvě revenue/bezpečnostní cesty, které se dají později integrovat do `V3/L1/pool`:
+> 1. **B2b — Pool-side job multiplexing** (krátkodobý revenue z minerů na ZION poolu).
+> 2. **C — True AuxPoW** (dlouhodobá bezpečnostní + revenue integrace).
 > **Default BTC payout wallet:** `bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh`
-> **Build status:** `cargo test -p zion-auxpow` — 76 testů PASS, clippy čisté, release build OK.
+> **Build status:** `cargo test -p zion-auxpow` — **78 testů PASS**, clippy čisté, release build OK.
+
+---
+
+## 0. Aktuální stav (2026-07-11)
+
+| Komponenta | Stav | Poznámka |
+|------------|------|----------|
+| `AuxPowClient` (Stratum v1) | ✅ Hotovo | Single background reader, response routing, KAS/ALPH/DCR notify parsing |
+| `ExternalHashers` (Blake3, kHeavyHash) | ✅ Hotovo | Ověřeno proti rusty-kaspa test vektoru a luminousmining referenci |
+| `JobMultiplexer` (B2b) | ✅ Hotovo | Connect/disconnect/rotate, job packaging |
+| `ShareForwarder` (B2b) | ✅ Hotovo | Target check → submit, mock testy |
+| `MinerHarness` (CPU scan) | ✅ Hotovo | Blake3 + kHeavyHash + kHeavyHash+extranonce1 |
+| `DualStratumMiner` (Phase 2 prep) | ✅ Skeleton | Nonce split, share disposition, assignment counting |
+| `TrueAuxPoW` (C) | ✅ Skeleton | AuxPoW Merkle root, validation, proof builder |
+| `ParentChains` (DCR/ALPH headers) | ✅ Skeleton | DcrHeader 180B, AlphHeader, CoinbaseCommitment |
+| `AuxPowScheduler` (profit switch) | ✅ Hotovo | Hysteresis, circuit breaker, env config |
+| KAS E2E (connect/auth/notify/mine) | ✅ Funguje | 2miners, Kryptex, HeroMiners |
+| KAS E2E (live submit accept) | ⚠️ Nelze ověřit CPU | Pool difficulty 2^-44 až 2^-52; potřebný ASIC |
+| ALPH E2E (connect/auth/notify/mine) | ✅ Funguje | HeroMiners, WoolyPooly |
+| ALPH E2E (live submit accept) | ⚠️ Nelze ověřit CPU | WoolyPooly ~2^-43, HeroMiners ~2^224 |
+| DCR E2E | ❌ Pooly nedostupné | threepool.tech, miningandco, suprnova — všechny offline |
+| Integrace do V3 | ❌ Zatím ne | Až bude AuXpow plně ověřen |
 
 ---
 
@@ -20,7 +42,7 @@
 | **Pool musí posílat externí joby** | ✅ Ano | ✅ Ano (parent header v ZION jobu) |
 | **Pool musí forwardovat externí share** | ✅ Ano | ✅ Ano |
 | **Čas do produkce** | Týdny | Měsíce |
-| **Kde se vyvíjí** | `AuXpow/src/multiplexer.rs` | `AuXpow/src/true_auxpow.rs` |
+| **Kde se vyvíjí** | `src/multiplexer.rs` + `src/share_forwarder.rs` | `src/true_auxpow.rs` + `src/parent_chains.rs` |
 
 ---
 
@@ -28,7 +50,7 @@
 
 ### 2.1 Princip
 
-1. **ZION pool** udržuje externí Stratum spojení k 2miners/ZPool/MoneroOcean přes `AuxPowClient`.
+1. **ZION pool** udržuje externí Stratum spojení k 2miners/ZPool/WoolyPooly přes `AuxPowClient`.
 2. Pool stáhne externí `mining.notify` job (`job_id`, `header`, `target`).
 3. Pool přebalí externí job do vlastního `JobPackage` formátu, který rozumí ZION miner.
 4. Pool pošle minerovi `PoolMessage::Job` s `algorithm = "blake3"` (nebo `"kheavyhash"`, …).
@@ -42,15 +64,15 @@
 
 ### 2.2 Implementované moduly
 
-| Soubor | Účel |
-|--------|------|
-| `src/multiplexer.rs` | `JobMultiplexer` — spravuje externí klienta, připojí se, rotuje coiny, přebaluje joby |
-| `src/share_forwarder.rs` | `ShareForwarder` — přijme hash od mineru, zkontroluje target, pošle `mining.submit` |
-| `src/miner_harness.rs` | `mine()` — brute-force scan pro externí `JobPackage` (Blake3 / kHeavyHash) |
-| `src/dual_stratum.rs` | **Phase 2 prep** — `DualStratumJob`, `DualStratumMiner`, nonce split, share routing |
-| `src/types.rs` | `JobPackage`, `ShareForwardResult`, `SplitConfig` |
-
-`src/pool_adapter.rs` z původního draftu zatím není potřeba — adaptace na ZION `MiningJob` se udělá až při integraci do `V3/`.
+| Soubor | Účel | Stav |
+|--------|------|------|
+| `src/auxpow_client.rs` | `AuxPowClient` — Stratum v1 klient, single background reader, notify parsing pro KAS/ALPH/DCR, submit dialekty | ✅ |
+| `src/multiplexer.rs` | `JobMultiplexer` — spravuje externí klienta, připojí se, rotuje coiny, přebaluje joby | ✅ |
+| `src/share_forwarder.rs` | `ShareForwarder` — přijme hash od mineru, zkontroluje target, pošle `mining.submit` | ✅ |
+| `src/miner_harness.rs` | `mine()` — brute-force scan pro externí `JobPackage` (Blake3 / kHeavyHash / kHeavyHash+extranonce1) | ✅ |
+| `src/dual_stratum.rs` | **Phase 2 prep** — `DualStratumJob`, `DualStratumMiner`, nonce split, share routing | ✅ skeleton |
+| `src/auxpow_scheduler.rs` | `AuxPowScheduler` — profit-switch s hysteresis + circuit breaker, env config | ✅ |
+| `src/types.rs` | `JobPackage`, `ShareForwardResult`, `SplitConfig`, `ExternalCoin`, `CoinProfile`, `AuxPowConfig` | ✅ |
 
 ### 2.3 Rozhraní
 
@@ -60,6 +82,7 @@ pub struct JobMultiplexer { /* ... */ }
 
 impl JobMultiplexer {
     pub fn new(wallet: impl Into<String>, worker_name: impl Into<String>) -> Self;
+    pub fn with_preference(mut self, preference: PoolPreference, region: impl Into<String>) -> Self;
     pub async fn connect(&mut self, coin: ExternalCoin) -> Result<()>;
     pub async fn disconnect(&mut self);
     pub async fn current_job(&self) -> Option<JobPackage>;
@@ -80,6 +103,31 @@ impl ShareForwarder {
         hash: &[u8; 32],
         target: &[u8; 32],
     ) -> Result<ShareForwardResult>;
+    pub async fn try_forward_blake3(
+        &self,
+        job_id: &str,
+        header: &[u8],
+        nonce: u64,
+        target: &[u8; 32],
+    ) -> Result<ShareForwardResult>;
+}
+
+// src/auxpow_client.rs
+pub struct AuxPowClient { /* ... */ }
+
+impl AuxPowClient {
+    pub fn new(profile: CoinProfile) -> Self;
+    pub async fn connect(&self, payout_wallet: &str) -> Result<()>;
+    pub async fn current_job(&self) -> Option<ExternalJob>;
+    pub async fn wait_for_job(&self, timeout_ms: u64) -> Result<Option<ExternalJob>>;
+    pub async fn submit_share(&self, job_id: &str, nonce: u64, hash_hex: &str) -> Result<ShareResult>;
+    pub async fn is_connected(&self) -> bool;
+    pub async fn current_difficulty(&self) -> f64;
+    pub async fn extranonce1(&self) -> Vec<u8>;
+    pub async fn share_target(&self) -> [u8; 32];
+    pub async fn disconnect(&self) -> Result<()>;
+    pub fn profile(&self) -> &CoinProfile;
+    pub fn protocol(&self) -> StratumProtocol;
 }
 
 // src/types.rs
@@ -89,7 +137,7 @@ pub struct JobPackage {
     pub algorithm: String,
     pub header_bytes: Vec<u8>,
     pub target_bytes: [u8; 32],
-    pub timestamp: u64,        // pro kHeavyHash/KAS PowHash
+    pub timestamp: u64,
     pub start_nonce: u64,
     pub nonce_count: u64,
 }
@@ -131,6 +179,10 @@ Unit testy používají lokální `MockStratumServer` (bind na `127.0.0.1:0`), t
 - `share_forwarder::tests::share_below_target_is_not_forwarded` — pod-target share se nepošle.
 - `share_forwarder::tests::share_meeting_target_is_accepted` — share splňující target je přijat.
 - `share_forwarder::tests::share_meeting_target_can_be_rejected` — externí pool může odmítnout.
+- `auxpow_client::tests::client_connect_subscribe_authorize` — full connect/subscribe/authorize round-trip.
+- `auxpow_client::tests::client_rejected_share` — pool reject handling.
+- `auxpow_client::tests::kas_round_trip_notify_and_submit` — KAS notify parsing + submit formát.
+- `auxpow_client::tests::alph_round_trip_notify_and_submit` — ALPH notify parsing + submit formát.
 
 ---
 
@@ -146,13 +198,10 @@ Unit testy používají lokální `MockStratumServer` (bind na `127.0.0.1:0`), t
 
 ### 3.2 Implementované moduly
 
-| Soubor | Účel |
-|--------|------|
-| `src/true_auxpow.rs` | `validate_auxpow()`, `validate_auxpow_full()`, `AuxPowData`, `AuxPowProofBuilder`, `ParentAlgorithm`, `ParentHeader` |
-
-| `src/parent_chains.rs` | **Phase 3 prep** — `DcrHeader` (180B), `AlphHeader`, `CoinbaseCommitment` (Namecoin-style magic), header parsing |
-
-`src/parent_chains.rs` byl znovu zaveden z `src/true_auxpow.rs` — nyní obsahuje parsování DCR/ALPH headerů a coinbase commitmentů.
+| Soubor | Účel | Stav |
+|--------|------|------|
+| `src/true_auxpow.rs` | `validate_auxpow()`, `validate_auxpow_full()`, `AuxPowData`, `AuxPowProofBuilder`, `ParentAlgorithm`, `ParentHeader` | ✅ skeleton |
+| `src/parent_chains.rs` | `DcrHeader` (180B), `AlphHeader`, `CoinbaseCommitment` (Namecoin-style magic), header parsing | ✅ skeleton |
 
 ### 3.3 Rozhraní
 
@@ -210,15 +259,26 @@ Testy `true_auxpow::tests::*` ověřují:
 
 ## 4. Společné komponenty
 
-### 4.1 `ExternalAlgorithm` rozšíření
+### 4.1 `ExternalAlgorithm` a hashers
 
 V `src/external_hashers.rs` jsou hotové:
-- `hash_blake3(header, nonce)`
-- `hash_kheavyhash(header, nonce)`
-- `meets_target(hash, target)`
-- `parse_target_hex(hex)` / `hash_to_hex(hash)`
 
-Pro B2b miner harness jsou podporovány přímo `blake3` a `kheavyhash`. Těžké algoritmy (`randomx`, `autolykos`, `ethash`, `kawpow`, `zelhash`) zůstávají pro miner jako budoucí rozšíření — AuXpow crate jim prozatím pouze připravuje rozhraní a může je delegovat na GPU/FFI vrstvu, aniž by závisel na `V3/`.
+| Funkce | Algoritmus | Použití |
+|--------|-----------|---------|
+| `hash_blake3(header, timestamp, nonce)` | Blake3-256 | DCR, obecný Blake3 |
+| `hash_blake3_raw(input)` | Blake3-256 (raw) | Parent header hashing |
+| `hash_blake3_alph(header_blob, extranonce1, nonce)` | Double Blake3 | ALPH (WoolyPooly/HeroMiners) |
+| `hash_kheavyhash(pre_pow_hash, timestamp, nonce)` | kHeavyHash (cSHAKE256) | KAS |
+| `hash_kheavyhash_extranonce(pre_pow_hash, timestamp, nonce, en1)` | kHeavyHash + extranonce1 | KAS s pool extranonce |
+| `meets_target(hash, target)` | Target comparison | Všechny |
+| `parse_target_hex(hex)` | Hex → 32B target | Všechny |
+| `hash_to_hex(hash)` | 32B → hex string | Submit |
+
+**Reference ověření:**
+- `kheavyhash_known_vector` test — shoda s rusty-kaspa referencí (`cSHAKE256("ProofOfWorkHash") → cSHAKE256("HeavyHash")` přes 80B buffer).
+- `hash_blake3_alph` — shoda s luminousmining implementací (big-endian candidate nonce, double Blake3).
+
+Těžké algoritmy (`randomx`, `autolykos`, `ethash`, `kawpow`, `zelhash`) zůstávají pro miner jako budoucí rozšíření — AuXpow crate jim prozatím pouze připravuje rozhraní a může je delegovat na GPU/FFI vrstvu.
 
 ### 4.2 Coin selection / profit switching
 
@@ -226,9 +286,23 @@ Pro B2b miner harness jsou podporovány přímo `blake3` a `kheavyhash`. Těžk�
 - B2b: vybírá, který externí coin se aktuálně těží.
 - C: vybírá, který parent chain je aktuálně nejvýhodnější.
 
-### 4.3 Circuit breaker a health
+`AuxPowScheduler` má:
+- **Hysteresis** — zabraňuje flapping mezi coiny při malých rozdílech v profitu.
+- **Circuit breaker** — po N selháních disconnectne a po timeoutu se znovu pokusí.
+- **Env config** — `AuxPowConfig::from_env()` pro runtime konfiguraci.
 
-`AuxPowScheduler` už má circuit breaker. Stejný pattern se znovupoužije pro externí pool spojení v multiplexeru při pozdější integraci.
+### 4.3 Podporované coiny
+
+| Coin | Algoritmus | Protokol | BTC payout | E2E stav |
+|------|-----------|----------|-----------|----------|
+| KAS | kheavyhash | Stratum | ✅ (zpool) | connect/auth/notify ✅, submit ⚠️ |
+| ALPH | blake3 (double) | Stratum | ❌ (vlastní adresa) | connect/auth/notify ✅, submit ⚠️ |
+| DCR | blake3 | Stratum | ✅ (zpool) | pooly offline ❌ |
+| ERG | autolykos | EthStratum | TBD | TODO |
+| RVN | kawpow | EthStratum | TBD | TODO |
+| ETC | ethash | EthStratum | TBD | TODO |
+| XMR | randomx | Stratum | TBD | TODO |
+| FLUX | zelhash | Stratum | TBD | TODO |
 
 ---
 
@@ -246,17 +320,28 @@ cargo build -p zion-auxpow --release
 ```
 
 **Aktuální výsledek (2026-07-11):**
-- Unit testů: 76 PASS (přibyl test `kheavyhash_known_vector` ověřující shodu s rusty-kaspa)
+- Unit testů: **78 PASS** (0 failed, 0 ignored)
 - Clippy: čisté (žádná warning)
 - Release build: OK
 
+**Test pokrytí:**
+- `external_hashers::tests::*` — Blake3, kHeavyHash known vector, target comparison
+- `auxpow_client::tests::*` — connect/subscribe/authorize, KAS round-trip, ALPH round-trip, reject handling
+- `multiplexer::tests::*` — job receive, switch connect/disconnect
+- `share_forwarder::tests::*` — below target, accepted, rejected
+- `true_auxpow::tests::*` — Merkle root, validation, DCR vs ALPH
+- `types::tests::*` — coin identification, profit selection, hysteresis, config
+- `auxpow_scheduler::tests::*` — circuit breaker auto-reset
+- `miner_harness::tests::*` — harness returns none when no share
+- `dual_stratum::tests::*` — nonce split, assignment counting
+
 ---
 
-## 5. E2E test proti živému poolu
+## 6. E2E test proti živému poolu
 
-Nový nástroj: `AuXpow/examples/e2e_pool_test.rs`.
+Nástroj: `AuXpow/examples/e2e_pool_test.rs`.
 
-### 5.1 Použití
+### 6.1 Použití
 
 ```bash
 AUXPOW_E2E_RUN=1 \
@@ -271,69 +356,100 @@ Proměnné:
 - `AUXPOW_E2E_RUN=1` — povinné, bez něj nástroj skončí (bezpečnostní pojistka).
 - `AUXPOW_E2E_COIN` — výchozí `dcr`.
 - `AUXPOW_E2E_POOL` — nepovinný override host:port.
+- `AUXPOW_E2E_WALLET` — payout wallet (default podle coin).
 - `AUXPOW_E2E_MINE_SECS` — kolik sekund CPU-minovat (0 = jen connect/auth/job).
 - `AUXPOW_E2E_SUBMIT=1` — odeslat nalezený share (bez toho se jen vytěží a vypíše).
 - `AUXPOW_E2E_JOB_TIMEOUT_MS` — timeout na první job (default 30 000 ms).
 
-### 5.2 Výsledek testu 2026-07-11 — zpool heavyhash (historický)
+### 6.2 KAS E2E — 2miners, Kryptex, HeroMiners
 
-Pool: `heavyhash.mine.zpool.ca:5138` (zpool heavyhash / kHeavyHash).  
-Wallet: `bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh` (BTC, `c=BTC` password).
+**Adresa:** oficiální Kaspa adresa (`kaspa:qpzpfwcsqsxhxwup26r55fd0ghqlhyugz8cp6y3wxuddc02vcxtjg75pspnwz`) funguje pro autorizaci na všech třech poolech.
 
-- ✅ TCP connect
-- ✅ `mining.subscribe` — odpověď OK
-- ✅ `mining.authorize` jako `bc1q...zion_e2e` — autorizováno
-- ✅ `mining.set_difficulty` + `mining.notify` — job přijat (`id=61c2`, `algorithm=kheavyhash`, `header_len=32`, `target=ffffffff`)
-- ✅ CPU hash nalezl share během několika sekund (při `difficulty=0.5` je share target `0xffffffff...`, takže prakticky jakýkoliv hash projde)
-- ⚠️ Submit share: pool uzavře spojení. zpool `heavyhash` těží mix kHeavyHash coinů (KAS/Pyrin/…), bez explicitního výběru coinu nelze určit přesný PoW-buffer a submit formát.
-
-### 5.3 KAS E2E — 2miners & HeroMiners (aktualizace)
-
-**Adresa:** bylo ověřeno, že oficiální Kaspa adresa z dokumentace (`kaspa:qpzpfwcsqsxhxwup26r55fd0ghqlhyugz8cp6y3wxuddc02vcxtjg75pspnwz`) funguje pro autorizaci na `kas.2miners.com:2020` i `de.kaspa.herominers.com:1206`.
-
-**Protokol:** oba pooly používají standardní Stratum s `mining.subscribe`/`mining.authorize` a notify formátem `[jobId, [u64_le × 4], timestamp_ms]`. Dříve se mylně předpokládal EthereumStratum/1.0.0; klient nyní správně mapuje KAS na `StratumProtocol::Stratum`.
+**Protokol:** standardní Stratum s `mining.subscribe`/`mining.authorize` a notify formátem `[jobId, [u64_le × 4], timestamp_ms]`.
 
 **Hashování:**
 - `parse_notify_params` pro KAS rekonstruuje `pre_pow_hash` ze čtyř little-endian `u64` hodnot.
-- `hash_kheavyhash()` byl ověřen testem `kheavyhash_known_vector` proti rusty-kaspa referenci (`cSHAKE256("ProofOfWorkHash") → cSHAKE256("HeavyHash")` přes 80B buffer).
-- **Max target:** Kaspa stratum bridge (rusty-kaspa) používá pro převod Stratum difficulty na share target **224-bit max target** (`2^224 - 1`), nikoliv plný 256-bit. Proto `share_target()` pro KAS vrací `max_target / difficulty` s 32B hodnotou `[0u8; 4] || [0xFFu8; 28]`.
-- **Nonce formát:** bridge parsuje nonce parametr jako `u64::from_str_radix(nonce_hex, 16)`, tedy jako big-endian hex *číslo*. Lokálně se nonce ukládá jako little-endian bajty do hashe, ale do `mining.submit` musíme poslat hex reprezentaci celého 64-bit čísla, ne little-endian bajtový řetězec. `submit_share` pro KAS tedy odesílá `[wallet.worker, jobId, full_nonce_hex]` kde `full_nonce_hex = format!("{:016x}", u64::from_le_bytes(extranonce1 || nonce_le))`.
+- `hash_kheavyhash()` ověřen testem `kheavyhash_known_vector` proti rusty-kaspa referenci.
+- **Max target:** Kaspa stratum bridge používá **224-bit max target** (`2^224 - 1`). `share_target()` pro KAS vrací `max_target / difficulty` s 32B hodnotou `[0u8; 4] || [0xFFu8; 28]`.
+- **Nonce formát:** bridge parsuje nonce jako `u64::from_str_radix(nonce_hex, 16)` (big-endian hex číslo). `submit_share` pro KAS odesílá `[wallet.worker, jobId, full_nonce_hex]` kde `full_nonce_hex = format!("{:016x}", u64::from_le_bytes(extranonce1 || nonce_le))`.
 
 **Submit výsledek:**
-- `kas.2miners.com:2020` — autorizace OK, share target je správně 224-bit, ale při `difficulty=512` je pravděpodobnost nalezení share na CPU `2^(-44)` a nelze ověřit bez ASIC.
-- `kas.kryptex.network:7011` — autorizace OK (`difficulty=4096`), share target je nyní správně `0x00000000000fffff...` (224-bit max / 4096). CPU nenalezl share během 30s, protože pravděpodobnost je `2^(-44)`.
-- `de.kaspa.herominers.com:1206` — autorizace OK (`difficulty=4`), share target by byl `~2^222`, což je pro CPU prakticky nenalezitelné.
-- **Stav:** kryptografická část je hotová a ověřená proti rusty-kaspa referenci. Live submit nelze ověřit CPU; je třeba ASIC, nízký difficulty test pool, nebo packet capture fungujícího mineru.
+| Pool | Difficulty | Share target | CPU pravděpodobnost | Stav |
+|------|-----------|-------------|-------------------|------|
+| `kas.2miners.com:2020` | 512 | 224-bit / 512 | 2^-44 | ⚠️ nelze ověřit CPU |
+| `kas.kryptex.network:7011` | 4096 | `0x00000000000fffff...` | 2^-52 | ⚠️ nelze ověřit CPU |
+| `de.kaspa.herominers.com:1206` | 4 | ~2^222 | ~2^-222 | ⚠️ nelze ověřit CPU |
 
-### 5.4 ALPH E2E — HeroMiners (aktualizace)
+**Stav:** kryptografická část je hotová a ověřená proti rusty-kaspa referenci + mock round-trip testem. Live submit nelze ověřit CPU; je třeba ASIC, nízký difficulty test pool, nebo packet capture fungujícího mineru.
 
-**Generování adresy:** původní `alph_address_base58()` chybně přidávala 4B checksum podobně jako Bitcoin. Alephium base58 adresa je pouze `type_byte (0x00) || blake2b(pubkey, 32)` — žádný checksum. Po opravě gen_addrs.py autorizace na `de.alephium.herominers.com:1199` prochází.
+### 6.3 ALPH E2E — HeroMiners, WoolyPooly
 
-**Notify formát:** HeroMiners posílá objekt:
+**Generování adresy:** Alephium base58 adresa je `type_byte (0x00) || blake2b(pubkey, 32)` — žádný checksum. Po opravě `gen_addrs.py` autorizace na obou poolech prochází.
+
+**Notify formát:** objekt (nebo pole objektů pro WoolyPooly):
 ```json
 { "jobId": "...", "fromGroup": 3, "toGroup": 3, "txsBlob": "...", "headerBlob": "...", "targetBlob": "..." }
 ```
-`parse_notify_params` tento formát už parzuje.
+`parse_notify_params` zpracuje obě varianty (samotný objekt i pole objektů — vybere první).
 
 **Hashování a submit:**
-- `hash_blake3_alph()` počítá `blake3(blake3(24B_nonce || headerBlob))`, kde plný 24B nonce = `candidate.to_be_bytes() || nuly`. `candidate = extranonce1_base + scanned_nonce`, přičemž `extranonce1_base` je extranonce1 interpretováno jako big-endian číslo. To odpovídá implementaci luminousmining/WoolyPooly.
-- WoolyPooly posílá `mining.notify` jako pole objektů; klient vybírá první.
+- `hash_blake3_alph()` počítá `blake3(blake3(24B_nonce || headerBlob))`, kde plný 24B nonce = `candidate.to_be_bytes() || nuly`. `candidate = extranonce1_base + scanned_nonce`, `extranonce1_base` je extranonce1 interpretováno jako big-endian číslo. Odpovídá luminousmining implementaci.
 - `submit_share` pro ALPH odesílá JSON objekt `{jobId, fromGroup, toGroup, nonce, worker}`, kde `nonce` je plný 48-znakový hex a `worker = wallet.worker`.
 
 **Submit výsledek:**
-- `pool.woolypooly.com:3106` — autorizace OK, notify přijat, share target z `targetBlob` je ~`0x00000000001203af...` (pravděpodobnost ~2^-43). CPU nenalezne share během 30s. Submit formát je nyní shodný s luminousmining, ale live accept nelze ověřit bez GPU/ASIC nebo poolu s nízkou difficultou.
-- `de.alephium.herominers.com:1199` — autorizace OK, `targetBlob` vypadá jako network target (~2^224), což je pro CPU prakticky nenalezitelné.
+| Pool | Share target | CPU pravděpodobnost | Stav |
+|------|-------------|-------------------|------|
+| `pool.woolypooly.com:3106` | `0x00000000001203af...` | ~2^-43 | ⚠️ nelze ověřit CPU |
+| `de.alephium.herominers.com:1199` | ~2^224 (network target) | ~2^-224 | ⚠️ nelze ověřit CPU |
 
-### 5.5 Co ještě chybí pro plně funkční E2E
+**Stav:** submit formát ověřen proti luminousmining zdrojáku. Live accept nelze ověřit bez GPU/ASIC nebo poolu s nízkou difficultou.
 
-1. **KAS live submit** — kryptografická část je hotová a interně ověřená mock testy. CPU nenalezne share při reálné pool difficulty (2miners diff 512, Kryptex diff 4096, HeroMiners diff 4). Je třeba ASIC, nízký difficulty test pool, nebo packet capture fungujícího mineru.
-2. **ALPH live submit** — autorizace na HeroMiners/WoolyPooly funguje. Submit formát byl ověřen proti luminousmining zdrojáku (`{jobId, fromGroup, toGroup, nonce, worker}`). `targetBlob` na WoolyPooly (~2^-43) a HeroMiners (~2^224) je pro CPU prakticky nenalezitelný. Live accept nelze ověřit bez GPU/ASIC nebo test poolu s nízkou difficultou.
-3. **DCR E2E** — veřejné DCR pooly (`dcr.threepool.tech:5550`, `decred.miningandco.com:5550`) jsou stále nedostupné.
-4. **Architektura čtečky** — `AuxPowClient::connect()` nyní spouští jednu background poll smyčku, která je jediným čtenářem TCP streamu. Odpovědi na JSON-RPC požadavky jsou směrovány přes `pending_requests` mapu do `send_request()`, notifikace se dispatchují odděleně.
+### 6.4 DCR E2E
+
+Veřejné DCR pooly jsou všechny nedostupné:
+- `dcr.threepool.tech:5550` — DNS neexistuje
+- `decred.miningandco.com:5550` — connection refused
+- `dcr.suprnova.cc:3256` — connection refused
+
+DCR lze testovat přes zpool (`blake2s.mine.zpool.ca:5034`) s BTC payout, ale DCR používá Blake-256 (ne Blake3), takže vyžaduje vlastní hasher.
+
+### 6.5 Co ještě chybí pro plně funkční E2E
+
+1. **KAS live submit** — kryptografická část hotová, mock test PASS. CPU nenalezne share při reálné pool difficulty. Je třeba ASIC, nízký difficulty test pool, nebo packet capture.
+2. **ALPH live submit** — submit formát ověřen proti luminousmining. `targetBlob` je pro CPU nenalezitelný. Stejný problém jako KAS.
+3. **DCR E2E** — pooly offline. Alternativa: zpool s BTC payout, ale vyžaduje Blake-256 hasher (ne Blake3).
+4. **GPU/ASIC podpora** — miner harness je CPU-only. Pro reálnou difficultou je potřeba GPU (pro ALPH Blake3) nebo ASIC (pro KAS kHeavyHash).
 
 ---
 
-## 6. Integrační plán do V3 (až bude design hotový)
+## 7. Architektura `AuxPowClient`
+
+`AuxPowClient::connect()` spouští **jednu background poll smyčku**, která je jediným čtenářem TCP streamu:
+
+```
+TCP stream → poll_messages()
+                ├── JSON-RPC response (id matches) → pending_requests map → send_request() oneshot
+                └── notification (method field)     → handle_notification()
+                                                         ├── mining.set_difficulty → update difficulty
+                                                         ├── mining.notify         → parse + store job
+                                                         └── mining.set_extranonce → update extranonce1
+```
+
+**Výhody:**
+- Žádné race conditions při čtení z TCP.
+- `send_request()` čeká na odpověď přes `oneshot` channel — clean async API.
+- Notifikace se dispatchují odděleně od request/response cyklu.
+
+**Submit dialekty:**
+| Coin | Formát | Parametry |
+|------|--------|-----------|
+| KAS | `[wallet.worker, jobId, nonce_hex]` | nonce = big-endian hex číslo |
+| ALPH | `{jobId, fromGroup, toGroup, nonce, worker}` | nonce = plný 48 hex chars |
+| Standard (DCR/zpool) | `[wallet.worker, jobId, nonce_hex, extranonce2]` | standard Stratum v1 |
+
+---
+
+## 8. Integrační plán do V3 (až bude design hotový)
 
 > **Teď se NEintegruje do V3.** Až bude AuXpow crate hotový a otestovaný, následuje:
 
@@ -341,31 +457,44 @@ Wallet: `bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh` (BTC, `c=BTC` password).
 2. `V3/L1/pool/src/lib.rs` — `MiningPool` bude forwardovat externí share přes `AuXpow::ShareForwarder`.
 3. `V3/L1/miner/src/parallel.rs` — rozšířit `hash_candidate` o externí algoritmy (`blake3`, `kheavyhash`).
 4. `V3/L1/core/src/*` — až pro C (true AuxPoW) — přidat `AUXPOW_FORK_HEIGHT`, nový header format, validaci.
+5. `V3/L1/pool/src/config.rs` — přidat `AuxPowConfig` sekci (enable, split, coin preference, wallet).
 
 ---
 
-## 7. Bezpečnostní poznámky
+## 9. Bezpečnostní poznámky
 
 - Všechny nové moduly jsou **mimo V3** → nehrozí poškození mainnet poolu/nodu.
 - Externí payout wallet je **pouze public address** — žádné private keys v AuXpow.
 - Externí pool spojení používá circuit breaker, aby pool nezůstal viset na mrtvém endpointu.
 - Před integrací do V3 musí projít unit testy + E2E test na testnetu.
+- `gen_addrs.py` generuje pouze public adresy z public klíčů — žádné soukromé klíče.
 
 ---
 
-## 8. Otevřené otázky / next steps
+## 10. Next steps
 
-1. ✅ **Commit** implementovaných změn (`ebbdc7b1b`); push na `origin` čeká na explicitní pokyn.
-2. ✅ **Vybrat první živý coin** pro end-to-end demo — vybrán **zpool heavyhash** (kHeavyHash) s BTC payout walletou.
-3. ✅ **E2E test** proti reálnému externímu poolu — connect/subscribe/authorize/job nalezení share FUNKČNÍ; submit share vyžaduje doladění pool difficulty + submit formátu.
-4. **Doladit E2E submit:**
-   - ✅ Implementovat převod `mining.set_difficulty` → share target (`difficulty_to_target`).
-   - ✅ Zprovoznit `hash_kheavyhash()` podle oficiální Kaspa reference.
-   - ✅ Opravit KAS share target: rusty-kaspa bridge používá 224-bit max target (`2^224 - 1`), ne 256-bit.
-   - ✅ Opravit KAS submit nonce formát: big-endian hex číslo, ne little-endian bajtový řetězec.
-   - ✅ Implementovat Alephium Blake3 E2E pipeline (extranonce1, 24B nonce, double-Blake3, object-style notify).
-   - ✅ Opravit generování Alephium base58 adresy (bez checksumu); autorizace na HeroMiners ALPH nyní funguje.
-   - ✅ Předělat čtení z TCP streamu na jedinou background smyčku s routováním odpovědí.
-   - ⚠️ Zůstává problém: live KAS a ALPH submit nelze ověřit CPU při reálné pool difficulty (KAS 2^-44 až 2^-52, ALPH WoolyPooly ~2^-43, HeroMiners ~2^224). Je třeba GPU/ASIC, nízký difficulty test pool, nebo packet capture fungujícího mineru.
-5. Doplnit `randomx` / `ethash` / `kawpow` hashe — buď vlastním Rust kódem, nebo feature-gated FFI.
-6. Pro C: doplnit reálné parsování DCR/ALPH headerů a získat reálná sample data z parent chainů.
+### Hotovo ✅
+1. ✅ Commit implementovaných změn.
+2. ✅ Vybrat první živý coin — KAS (kHeavyHash) + ALPH (Blake3).
+3. ✅ E2E test — connect/subscribe/authorize/job/nalezení share FUNKČNÍ.
+4. ✅ Převod `mining.set_difficulty` → share target.
+5. ✅ `hash_kheavyhash()` podle oficiální Kaspa reference.
+6. ✅ KAS share target: 224-bit max target.
+7. ✅ KAS submit nonce formát: big-endian hex číslo.
+8. ✅ ALPH Blake3 E2E pipeline (extranonce1, 24B nonce, double-Blake3, object-style notify).
+9. ✅ ALPH base58 adresa (bez checksumu); autorizace na HeroMiners/WoolyPooly.
+10. ✅ Single background reader s routováním odpovědí.
+11. ✅ ALPH submit formát podle luminousmining (`{jobId, fromGroup, toGroup, nonce, worker}`).
+12. ✅ Mock round-trip testy pro KAS i ALPH (78 testů PASS).
+
+### Zbývá ⚠️
+1. ⚠️ **Live KAS submit accept** — CPU nenalezne share při reálné pool difficulty (2^-44 až 2^-52). Je třeba ASIC, nízký difficulty test pool, nebo packet capture fungujícího mineru.
+2. ⚠️ **Live ALPH submit accept** — WoolyPooly ~2^-43, HeroMiners ~2^224. Stejný problém.
+3. ⚠️ **DCR E2E** — pooly offline. Alternativa: zpool s BTC payout + Blake-256 hasher.
+4. ⚠️ **GPU/ASIC podpora** — miner harness je CPU-only. Pro reálnou difficultou je potřeba GPU (ALPH) nebo ASIC (KAS).
+
+### Budoucí rozšíření
+5. Doplnit `randomx` / `ethash` / `kawpow` / `autolykos` / `zelhash` hashe — vlastním Rust kódem nebo feature-gated FFI.
+6. Pro C (true AuxPoW): doplnit reálné parsování DCR/ALPH headerů a získat reálná sample data z parent chainů.
+7. Integrace do V3 pool serveru.
+8. Profit-switch scheduler napojit na live API (WhatToMine, MiningPoolStats) pro reálná profit data.
