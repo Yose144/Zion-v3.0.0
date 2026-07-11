@@ -50,6 +50,9 @@ Thumbs.db
 dashboard/
 !.env.example
 !dashboard/.env.example
+# But track the website dashboard pages
+!APP&WEB/website-v2.9/src/app/dashboard/
+!APP&WEB/website-v2.9/src/app/dashboard/**
 
 # Runtime / misc
 /APP/
