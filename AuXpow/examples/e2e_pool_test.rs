@@ -71,7 +71,9 @@ async fn main() -> anyhow::Result<()> {
     println!("[2/4] Waiting for first job (timeout {} ms)...", job_timeout_ms);
     let job = wait_for_job(client.clone(), Duration::from_millis(job_timeout_ms)).await?;
     let difficulty = client.current_difficulty().await;
-    let share_target = client.share_target().await;
+    // Use the target from the job itself (targetBlob for ALPH, computed from
+    // difficulty for KAS) rather than the generic share_target().
+    let share_target = job.target_bytes;
     println!(
         "[2/4] Received job: id={} algorithm={} header_len={} difficulty={} share_target={}",
         job.job_id,
@@ -154,7 +156,7 @@ async fn mine_job(
 ) -> Option<(String, u64, [u8; 32])> {
     let deadline = Instant::now() + Duration::from_secs(mine_secs);
     let mut window_start: u64 = 0;
-    let window_size: u64 = 5_000;
+    let window_size: u64 = 250_000;
 
     while Instant::now() < deadline {
         // Always mine on the most recent job so submissions are not stale.

@@ -78,23 +78,24 @@ pub fn hash_blake3_raw(input: &[u8]) -> [u8; 32] {
 ///
 /// Alephium block headers serialize with a 24-byte nonce at the front.  The
 /// pool sends `headerBlob` (header without nonce) and an `extranonce1`.  The
-/// full 24-byte nonce is `extranonce1 || nonce_sans_extranonce1`, and the PoW
-/// hash is `blake3(blake3(nonce || header_blob))`.
+/// full 24-byte nonce is the 64-bit candidate value (which includes the
+/// extranonce1 as its base) written big-endian at the front, followed by
+/// zeros.  The PoW hash is `blake3(blake3(nonce || header_blob))`.
 ///
-/// We scan a 64-bit nonce that is placed right after `extranonce1`; the rest
-/// of the 24-byte nonce is zero-padded.
+/// This matches the luminousmining / WoolyPooly Blake3 implementation where
+/// the candidate is `extranonce1_base + nonce` and the search value occupies
+/// the first 8 bytes of the 24-byte nonce in big-endian order.
 pub fn hash_blake3_alph(header_blob: &[u8], extranonce1: &[u8], nonce: u64) -> [u8; 32] {
+    let mut base_bytes = [0u8; 8];
+    let en1_len = extranonce1.len().min(8);
+    // extranonce1 is interpreted as a big-endian integer and placed at the
+    // low end of the 64-bit base (left-padded with zeros).
+    base_bytes[8 - en1_len..].copy_from_slice(&extranonce1[..en1_len]);
+    let base = u64::from_be_bytes(base_bytes);
+    let candidate = base.wrapping_add(nonce);
+
     let mut full_nonce = [0u8; 24];
-    let en1_len = extranonce1.len().min(24);
-    full_nonce[..en1_len].copy_from_slice(&extranonce1[..en1_len]);
-    // Place the scanned 64-bit nonce right after extranonce1.  The Alephium
-    // stratum spec and GPU miner treat the nonce as little-endian, so we
-    // encode the scanned value in LE bytes.
-    if en1_len + 8 <= 24 {
-        full_nonce[en1_len..en1_len + 8].copy_from_slice(&nonce.to_le_bytes());
-    } else {
-        full_nonce[16..24].copy_from_slice(&nonce.to_le_bytes());
-    }
+    full_nonce[..8].copy_from_slice(&candidate.to_be_bytes());
 
     let mut inner_input = Vec::with_capacity(24 + header_blob.len());
     inner_input.extend_from_slice(&full_nonce);

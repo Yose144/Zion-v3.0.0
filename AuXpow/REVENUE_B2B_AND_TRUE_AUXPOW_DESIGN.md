@@ -315,17 +315,19 @@ Wallet: `bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh` (BTC, `c=BTC` password).
 ```
 `parse_notify_params` tento formát už parzuje.
 
-**Hashování:**
-- `hash_blake3_alph()` počítá `blake3(blake3(24B_nonce || headerBlob))`, kde scanned nonce je v little-endian bajtech hned za `extranonce1`.
-- `submit_share` pro ALPH posílá `[jobId, hex(24B_full_nonce)]`.
+**Hashování a submit:**
+- `hash_blake3_alph()` počítá `blake3(blake3(24B_nonce || headerBlob))`, kde plný 24B nonce = `candidate.to_be_bytes() || nuly`. `candidate = extranonce1_base + scanned_nonce`, přičemž `extranonce1_base` je extranonce1 interpretováno jako big-endian číslo. To odpovídá implementaci luminousmining/WoolyPooly.
+- WoolyPooly posílá `mining.notify` jako pole objektů; klient vybírá první.
+- `submit_share` pro ALPH odesílá JSON objekt `{jobId, fromGroup, toGroup, nonce, worker}`, kde `nonce` je plný 48-znakový hex a `worker = wallet.worker`.
 
 **Submit výsledek:**
-- Autorizace OK, notify přijat, ale `targetBlob` vypadá jako network target (`0000000100...00`, tedy ~2^224), což je pro CPU prakticky nenalezitelné. Formát `mining.submit` (full 24B nonce vs. `nonceSansExtraNonce`) potřebuje ověřit proti známému mineru.
+- `pool.woolypooly.com:3106` — autorizace OK, notify přijat, share target z `targetBlob` je ~`0x00000000001203af...` (pravděpodobnost ~2^-43). CPU nenalezne share během 30s. Submit formát je nyní shodný s luminousmining, ale live accept nelze ověřit bez GPU/ASIC nebo poolu s nízkou difficultou.
+- `de.alephium.herominers.com:1199` — autorizace OK, `targetBlob` vypadá jako network target (~2^224), což je pro CPU prakticky nenalezitelné.
 
 ### 5.5 Co ještě chybí pro plně funkční E2E
 
 1. **KAS live submit** — kryptografická část je hotová a interně ověřená mock testy. CPU nenalezne share při reálné pool difficulty (2miners diff 512, Kryptex diff 4096, HeroMiners diff 4). Je třeba ASIC, nízký difficulty test pool, nebo packet capture fungujícího mineru.
-2. **ALPH live submit** — autorizace na HeroMiners funguje. Potřebujeme ověřit, zda `targetBlob` je share target (vypadá jako network target ~2^224) a jestli `mining.submit` očekává full 24B nonce nebo `nonceSansExtraNonce`. CPU by mělo zvládnout share při nízké difficultě, pokud `targetBlob` není network target.
+2. **ALPH live submit** — autorizace na HeroMiners/WoolyPooly funguje. Submit formát byl ověřen proti luminousmining zdrojáku (`{jobId, fromGroup, toGroup, nonce, worker}`). `targetBlob` na WoolyPooly (~2^-43) a HeroMiners (~2^224) je pro CPU prakticky nenalezitelný. Live accept nelze ověřit bez GPU/ASIC nebo test poolu s nízkou difficultou.
 3. **DCR E2E** — veřejné DCR pooly (`dcr.threepool.tech:5550`, `decred.miningandco.com:5550`) jsou stále nedostupné.
 4. **Architektura čtečky** — `AuxPowClient::connect()` nyní spouští jednu background poll smyčku, která je jediným čtenářem TCP streamu. Odpovědi na JSON-RPC požadavky jsou směrovány přes `pending_requests` mapu do `send_request()`, notifikace se dispatchují odděleně.
 
@@ -364,6 +366,6 @@ Wallet: `bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh` (BTC, `c=BTC` password).
    - ✅ Implementovat Alephium Blake3 E2E pipeline (extranonce1, 24B nonce, double-Blake3, object-style notify).
    - ✅ Opravit generování Alephium base58 adresy (bez checksumu); autorizace na HeroMiners ALPH nyní funguje.
    - ✅ Předělat čtení z TCP streamu na jedinou background smyčku s routováním odpovědí.
-   - ⚠️ Zůstává problém: live KAS submit nelze ověřit CPU při reálné pool difficulty (2^-44 až 2^-52 pravděpodobnost). ALPH live submit potřebuje ověřit `targetBlob` / submit formát.
+   - ⚠️ Zůstává problém: live KAS a ALPH submit nelze ověřit CPU při reálné pool difficulty (KAS 2^-44 až 2^-52, ALPH WoolyPooly ~2^-43, HeroMiners ~2^224). Je třeba GPU/ASIC, nízký difficulty test pool, nebo packet capture fungujícího mineru.
 5. Doplnit `randomx` / `ethash` / `kawpow` hashe — buď vlastním Rust kódem, nebo feature-gated FFI.
 6. Pro C: doplnit reálné parsování DCR/ALPH headerů a získat reálná sample data z parent chainů.
