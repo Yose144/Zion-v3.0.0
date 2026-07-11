@@ -747,12 +747,12 @@ APP&WEB/website-v2.9/src/app/dex/
 | Integrate Raydium/Orca SDK (Solana) | Backend | P1 | Pending |
 | Implement swap execution (direct mode) | Backend | P0 | ✅ Done (EVM signing via ethers-rs) |
 | Implement WebSocket status streaming | Backend | P0 | ✅ Done (axum /stream) |
-| Build `/dex` page with SwapWidget | Frontend | P0 | Pending |
-| Build ChainSelector + TokenSelector | Frontend | P0 | Pending |
-| Build SwapPath visual component | Frontend | P0 | Pending |
-| Build TransactionStatus component | Frontend | P0 | Pending |
+| Build `/dex` page with SwapWidget | Frontend | P0 | ✅ Done |
+| Build ChainSelector + TokenSelector | Frontend | P0 | ✅ Done (16 chains) |
+| Build SwapPath visual component | Frontend | P0 | ✅ Done |
+| Build TransactionStatus component | Frontend | P0 | ✅ Done (real-time polling) |
 | Build PriceChart component | Frontend | P1 | Pending |
-| Build RecentSwaps feed | Frontend | P1 | Pending |
+| Build RecentSwaps feed | Frontend | P1 | ✅ Done (auto-refresh) |
 | API: `/quote`, `/swap`, `/swaps/:id`, `/health` | Backend | P0 | ✅ Done (8 endpoints) |
 | Slippage protection + min_output enforcement | Backend | P0 | ✅ Done |
 | Fee estimation (gas + bridge + swap) | Backend | P0 | ✅ Done |
@@ -762,7 +762,7 @@ APP&WEB/website-v2.9/src/app/dex/
 | Desktop agent: swap tab | Desktop | P1 | Pending |
 | TypeScript SDK (`@zion/dex-sdk`) | Backend | P0 | ✅ Done |
 
-**Deliverable:** Users can swap any token on any chain to any token on any chain — one click. *(Backend complete — frontend pending)*
+**Deliverable:** Users can swap any token on any chain to any token on any chain — one click. *(Backend + frontend complete — Solana execution pending)*
 
 ### Phase 3: Custom AMM + ZDX Token (Q1 2027)
 
