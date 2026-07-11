@@ -245,9 +245,52 @@ cargo build -p zion-auxpow --release
 ```
 
 **Aktuální výsledek (2026-07-11):**
-- Unit testů: 58 PASS
+- Unit testů: 75 PASS
 - Clippy: čisté (žádná warning)
 - Release build: OK
+
+---
+
+## 5. E2E test proti živému poolu
+
+Nový nástroj: `AuXpow/examples/e2e_pool_test.rs`.
+
+### 5.1 Použití
+
+```bash
+AUXPOW_E2E_RUN=1 \
+AUXPOW_E2E_COIN=kas \
+AUXPOW_E2E_POOL=heavyhash.mine.zpool.ca:5138 \
+AUXPOW_E2E_MINE_SECS=2 \
+AUXPOW_E2E_SUBMIT=1 \
+cargo run -p zion-auxpow --example e2e_pool_test --release
+```
+
+Proměnné:
+- `AUXPOW_E2E_RUN=1` — povinné, bez něj nástroj skončí (bezpečnostní pojistka).
+- `AUXPOW_E2E_COIN` — výchozí `dcr`.
+- `AUXPOW_E2E_POOL` — nepovinný override host:port.
+- `AUXPOW_E2E_MINE_SECS` — kolik sekund CPU-minovat (0 = jen connect/auth/job).
+- `AUXPOW_E2E_SUBMIT=1` — odeslat nalezený share (bez toho se jen vytěží a vypíše).
+- `AUXPOW_E2E_JOB_TIMEOUT_MS` — timeout na první job (default 30 000 ms).
+
+### 5.2 Výsledek testu 2026-07-11
+
+Pool: `heavyhash.mine.zpool.ca:5138` (zpool heavyhash / kHeavyHash).  
+Wallet: `bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh` (BTC, `c=BTC` password).
+
+- ✅ TCP connect
+- ✅ `mining.subscribe` — odpověď OK
+- ✅ `mining.authorize` jako `bc1q...zion_e2e` — autorizováno
+- ✅ `mining.set_difficulty` + `mining.notify` — job přijat (`id=61c2`, `algorithm=kheavyhash`, `header_len=32`, `target=ffffffff`)
+- ✅ CPU hash nalezl share během 2 s (`nonce=0`, hash začíná `d001cfccc6638815`)
+- ⚠️ Submit share: pool uzavřel spojení. Příčina není definitivně určena — buď nesedí formát `mining.submit` pro kHeavyHash (KAS-like), nebo share nesplnil skutečný pool difficulty (notify target `ffffffff` je síťový target, nikoli pool share target; `set_difficulty` se zatím nepoužívá pro výpočet share targetu).
+
+### 5.3 Co ještě chybí pro plně funkční E2E
+
+1. **Pool difficulty → share target** — `mining.set_difficulty` notifikace se musí převést na `target_bytes` pro kontrolu share.
+2. **Správný submit formát** — kHeavyHash/KAS stratum může vyžadovat jiné pořadí/typ polí v `mining.submit` (např. nonce jako little-endian hex, případně extra timestamp).
+3. **Algoritmová validace** — ověřit, že `hash_kheavyhash()` dává stejný výsledek jako reference (zatím není porovnáno proti známým vektorům).
 
 ---
 
@@ -273,11 +316,11 @@ cargo build -p zion-auxpow --release
 
 ## 8. Otevřené otázky / next steps
 
-1. **Push** implementovaných změn na `origin`.
-2. **Vybrat první živý coin** pro end-to-end demo:
-   - DCR (Blake3) — nejjednodušší, rychlá CPU verifikace.
-   - KAS (kHeavyHash) — dobrý BTC payout přes 2miners.
-   - XMR (RandomX) — CPU-friendly, ale potřebuje RandomX VM (zatím neimplementováno v AuXpow).
-3. **E2E test** proti reálnému externímu poolu s konkrétní BTC payout walletou.
-4. Doplnit `randomx` / `ethash` / `kawpow` hashe — buď vlastním Rust kódem, nebo feature-gated FFI.
-5. Pro C: doplnit reálné parsování DCR/ALPH headerů a získat reálná sample data z parent chainů.
+1. ✅ **Push** implementovaných změn na `origin`.
+2. ✅ **Vybrat první živý coin** pro end-to-end demo — vybrán **zpool heavyhash** (kHeavyHash) s BTC payout walletou.
+3. ✅ **E2E test** proti reálnému externímu poolu — connect/subscribe/authorize/job nalezení share FUNKČNÍ; submit share vyžaduje doladění pool difficulty + submit formátu.
+4. **Doladit E2E submit:**
+   - Implementovat převod `mining.set_difficulty` → share target.
+   - Ověřit/opravit formát `mining.submit` pro kHeavyHash/KAS stratum.
+5. Doplnit `randomx` / `ethash` / `kawpow` hashe — buď vlastním Rust kódem, nebo feature-gated FFI.
+6. Pro C: doplnit reálné parsování DCR/ALPH headerů a získat reálná sample data z parent chainů.
