@@ -93,7 +93,7 @@ export default function L6IssobellaPage() {
       <div className="zion-container max-w-7xl space-y-16">
 
         {/* ── HERO ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
           <div className="space-y-5 max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-rose-500/40 bg-rose-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-rose-300 uppercase">
               <Rocket className="h-4 w-4" />
@@ -128,7 +128,7 @@ export default function L6IssobellaPage() {
         </motion.section>
 
         {/* ── Fund Info ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Vesmírný fond' : 'Space Fund'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -137,30 +137,30 @@ export default function L6IssobellaPage() {
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-4 mb-6">
-            <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{cs ? 'Podíl z bloku' : 'Block share'}</p>
               <p className="text-3xl font-bold text-rose-400">5%</p>
               <p className="text-xs text-gray-500 mt-1">{cs ? 'každý blok, navždy' : 'every block, forever'}</p>
             </div>
-            <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{cs ? 'Přibližně / měsíc' : 'Approx / month'}</p>
               <p className="text-3xl font-bold text-emerald-400">~11,7M</p>
               <p className="text-xs text-gray-500 mt-1">ZION</p>
             </div>
-            <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{cs ? 'Správa' : 'Governed by'}</p>
               <p className="text-2xl font-bold text-purple-400">DAO</p>
               <p className="text-xs text-gray-500 mt-1">{cs ? 'L6 Radou' : 'L6 Council'}</p>
             </div>
           </div>
-          <div className="zion-rainbow-sub p-4 text-sm text-gray-400 font-mono break-all" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+          <div className="zion-rainbow-sub p-4 text-sm text-gray-400 font-mono break-all" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
             <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Adresa fondu' : 'Fund wallet'}</p>
             {ISSOBELLA_WALLET}
           </div>
         </motion.section>
 
         {/* ── Missions / Vision ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Mise & Vize' : 'Missions & Vision'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -170,7 +170,7 @@ export default function L6IssobellaPage() {
           </div>
           <div className="grid md:grid-cols-3 gap-5">
             {missions.map((mission) => (
-              <div key={mission.name} className={`zion-rainbow-sub p-5`} style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+              <div key={mission.name} className={`zion-rainbow-sub p-5`} style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                 <div className="flex items-start justify-between mb-3">
                   <h3 className="font-semibold text-white">{mission.name}</h3>
                   <span className={`text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-semibold border ${mission.badgeColor}`}>
@@ -189,7 +189,7 @@ export default function L6IssobellaPage() {
         </motion.section>
 
         {/* ── Principles ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Principy' : 'Principles'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -199,7 +199,7 @@ export default function L6IssobellaPage() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {principles.map((p) => (
-              <div key={p.title} className="zion-rainbow-sub p-5" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+              <div key={p.title} className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                 <div className="flex items-center gap-2 mb-2">
                   <p.icon className={`h-5 w-5 ${p.color}`} />
                   <h3 className="font-semibold text-white">{p.title}</h3>
@@ -211,7 +211,7 @@ export default function L6IssobellaPage() {
         </motion.section>
 
         {/* ── Hiranyagarbha connection ── */}
-        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-cta-banner" style={{ borderColor: 'rgba(147, 51, 234, 0.35)', background: 'linear-gradient(90deg, rgba(147, 51, 234, 0.22), rgba(244, 63, 94, 0.12) 50%, rgba(147, 51, 234, 0.22))', boxShadow: '0 24px 80px rgba(147, 51, 234, 0.18)' }}>
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-cta-banner">
           <Sparkles className="h-12 w-12 text-purple-400 mx-auto mb-4" />
           <h2 className="text-3xl font-semibold text-white mb-4">Hiranyagarbha · {cs ? 'Zlatý zárodek' : 'Golden Egg'}</h2>
           <p className="text-gray-300 max-w-2xl mx-auto text-lg">
@@ -225,13 +225,13 @@ export default function L6IssobellaPage() {
         </motion.section>
 
         {/* ── Links ── */}
-        <motion.section initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="zion-cta-banner" style={{ borderColor: 'rgba(244, 63, 94, 0.35)', background: 'linear-gradient(90deg, rgba(244, 63, 94, 0.22), rgba(147, 51, 234, 0.12) 50%, rgba(244, 63, 94, 0.22))', boxShadow: '0 24px 80px rgba(244, 63, 94, 0.18)' }}>
+        <motion.section initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="zion-cta-banner">
           <h2 className="text-2xl font-semibold text-white text-center mb-6">{cs ? 'Více o L6 a ekosystému' : 'Learn more about L6 and the ecosystem'}</h2>
           <div className="flex flex-wrap justify-center gap-4">
-            <Link href="/dao" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+            <Link href="/dao" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <Crown className="h-4 w-4 text-zion-gold" /> DAO Governance
             </Link>
-            <Link href="/network" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+            <Link href="/network" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <Globe2 className="h-4 w-4 text-cyan-400" /> {cs ? 'Síť' : 'Network'}
             </Link>
             <Link href="/l5-free-world" className="inline-flex items-center gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/5 px-6 py-3 text-sm font-semibold text-amber-200 hover:bg-amber-500/10 transition-colors">

@@ -223,7 +223,7 @@ export default function L3HiranPage() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           className="zion-rainbow-card p-6 md:p-10"
-          style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
+          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
         >
           <div className="space-y-5 max-w-3xl">
             <div className="flex flex-wrap items-center gap-3">
@@ -277,7 +277,7 @@ export default function L3HiranPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="zion-rainbow-card p-8"
-          style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
+          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Modely' : 'Models'}</p>
@@ -288,7 +288,7 @@ export default function L3HiranPage() {
           </div>
           <div className="grid md:grid-cols-2 gap-5">
             {modelCards.map((model) => (
-              <div key={model.name} className="zion-rainbow-sub p-6" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
+              <div key={model.name} className="zion-rainbow-sub p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h3 className="text-lg font-bold text-white">{model.name}</h3>
@@ -326,7 +326,7 @@ export default function L3HiranPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="zion-rainbow-card p-8"
-          style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
+          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Trénink' : 'Training'}</p>
@@ -337,7 +337,7 @@ export default function L3HiranPage() {
           </div>
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
             {phases.map((phase) => (
-              <div key={phase.phase} className="zion-rainbow-sub p-5" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
+              <div key={phase.phase} className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                 <div className="mb-3 flex items-center justify-between">
                   <span className="text-sm font-bold text-white">{phase.phase}</span>
                   <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-300 border border-emerald-500/20">
@@ -365,7 +365,7 @@ export default function L3HiranPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="zion-rainbow-card p-8"
-          style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
+          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Architektura' : 'Architecture'}</p>
@@ -379,7 +379,7 @@ export default function L3HiranPage() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             {ragArch.map((item) => (
-              <div key={item.title} className="zion-rainbow-sub p-5" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
+              <div key={item.title} className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                 <item.icon className={`h-6 w-6 ${item.color} mb-3`} />
                 <h3 className="font-semibold text-white mb-2">{item.title}</h3>
                 <p className="text-sm text-gray-400">{item.desc}</p>
@@ -394,7 +394,7 @@ export default function L3HiranPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="zion-rainbow-card p-8"
-          style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
+          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
         >
           <div className="mx-auto max-w-3xl text-center mb-8">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-cyan-300">
@@ -421,7 +421,7 @@ export default function L3HiranPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="zion-rainbow-card p-8"
-          style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
+          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Marketplace' : 'Marketplace'}</p>
@@ -432,7 +432,7 @@ export default function L3HiranPage() {
           </div>
           <div className="grid gap-5 md:grid-cols-3">
             {marketplace.map((item) => (
-              <div key={item.name} className="zion-rainbow-sub p-5" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
+              <div key={item.name} className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                 <div className="mb-4 flex items-center justify-between">
                   <span className="text-lg font-bold text-white">{item.name}</span>
                   <span className={`rounded-full px-2.5 py-1 text-xs font-semibold border ${
@@ -461,7 +461,7 @@ export default function L3HiranPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="zion-rainbow-card p-8"
-          style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
+          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Operace' : 'Operations'}</p>
@@ -472,7 +472,7 @@ export default function L3HiranPage() {
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {orchestration.map((item) => (
-              <div key={item.title} className="zion-rainbow-sub p-5" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
+              <div key={item.title} className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                 <item.icon className={`h-6 w-6 ${item.color} mb-3`} />
                 <h3 className="font-semibold text-white mb-2">{item.title}</h3>
                 <p className="text-sm text-gray-400">{item.desc}</p>
@@ -486,8 +486,7 @@ export default function L3HiranPage() {
           initial={{ opacity: 0, scale: 0.98 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
-          className="zion-rainbow-card p-5 sm:p-8 md:p-10"
-          style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
+          className="zion-cta-banner"
         >
           <h2 className="text-2xl font-semibold text-white text-center mb-6">
             {cs ? 'Více o L3 a ekosystému' : 'Learn more about L3 and the ecosystem'}
@@ -496,7 +495,7 @@ export default function L3HiranPage() {
             <Link href="/ai-native" className="inline-flex items-center gap-2 rounded-2xl border border-cyan-500/30 bg-cyan-500/5 px-6 py-3 text-sm font-semibold text-cyan-200 hover:bg-cyan-500/10 transition-colors">
               <Brain className="h-4 w-4" /> AI Native
             </Link>
-            <Link href="/warp" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
+            <Link href="/warp" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <Globe className="h-4 w-4" /> L3 WARP
             </Link>
             <Link href="/l4-oasis" className="inline-flex items-center gap-2 rounded-2xl border border-orange-500/30 bg-orange-500/5 px-6 py-3 text-sm font-semibold text-orange-200 hover:bg-orange-500/10 transition-colors">
