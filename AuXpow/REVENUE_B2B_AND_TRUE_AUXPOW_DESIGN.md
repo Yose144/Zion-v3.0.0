@@ -312,10 +312,11 @@ Byla vyzkoušena ALPH pool `alph.kryptex.network:7010` (Blake3) s vygenerovanou 
 
 ### 5.3 Co ještě chybí pro plně funkční E2E
 
-1. **Doladit Alephium submit / nonce layout** — ověřit proti oficiálnímu `alephium-mining-pool` nebo známému mineru, jaký přesně formát nonce a submitu Kryptex očekává. Potenciálně vyzkoušet i jiné pooly (`alph.woolypooly.com`, `alph.herominers.com`).
-2. **KAS E2E** — pokud bude vygenerována `kaspa:` adresa, otestovat proti `kas.2miners.com:2020` a potvrdit, že `hash_kheavyhash()` dává akceptované share.
+1. **Doladit Alephium submit / nonce layout** — ověřit proti oficiálnímu `alephium-mining-pool` nebo známému mineru. Kryptex ALPH vyžaduje registrovaný username (ne wallet adresu), proto je pro ad-hoc testování lepší použít pooly jako `alph.woolypooly.com:3106` nebo HeroMiners. Problém: vygenerované bech32/base58 adresy jsou zatím odmítány jako "Invalid address"; je třeba ověřit/správně implementovat generování Alephium adresy.
+2. **KAS E2E** — `kas.2miners.com:2020` a `kas.kryptex.network:7011` používají `EthereumStratum/1.0.0`, takže je potřeba doplnit `eth_submitLogin` a příslušný `mining.submit` formát pro tento dialekt. Vygenerované `kaspa:` adresy jsou prozatím odmítány jako "Invalid address" / "Invalid login".
 3. **Pool difficulty → share target** — opraveno `difficulty_to_target()`; pro `difficulty=512` nyní vrací správný target `0x007fff...`.
-4. **DCR E2E** — Decred po DCP-0011 používá standardní Blake3; najít veřejný pool s přímým `address.name` přihlašováním.
+4. **Architektura čtečky** — `AuxPowClient::connect()` nyní spouští jednu background poll smyčku, která je jediným čtenářem TCP streamu. Odpovědi na JSON-RPC požadavky jsou směrovány přes `pending_requests` mapu do `send_request()`, notifikace se dispatchují odděleně.
+5. **DCR E2E** — Decred po DCP-0011 používá standardní Blake3; veřejné pooly `dcr.threepool.tech:5550` a `decred.miningandco.com:5550` jsou aktuálně nedostupné (DNS/connection refused).
 
 ---
 
@@ -348,6 +349,7 @@ Byla vyzkoušena ALPH pool `alph.kryptex.network:7010` (Blake3) s vygenerovanou 
    - ✅ Implementovat převod `mining.set_difficulty` → share target (`difficulty_to_target`).
    - ✅ Zprovoznit `hash_kheavyhash()` podle oficiální Kaspa reference.
    - ✅ Implementovat Alephium Blake3 E2E pipeline (extranonce1, 24B nonce, double-Blake3, object-style notify).
-   - ⚠️ Zůstává problém: zpool `heavyhash` těží mix coinů (KAS/Pyrin/…). ALPH submit zatím nevrací odpověď — potřeba doladit nonce layout/submit formát.
+   - ✅ Předělat čtení z TCP streamu na jedinou background smyčku s routováním odpovědí.
+   - ⚠️ Zůstává problém: zpool `heavyhash` těží mix coinů (KAS/Pyrin/…). ALPH/KAS live pooly vyžadují správné adresy a často jiný stratum dialekt (EthereumStratum/1.0.0).
 5. Doplnit `randomx` / `ethash` / `kawpow` hashe — buď vlastním Rust kódem, nebo feature-gated FFI.
 6. Pro C: doplnit reálné parsování DCR/ALPH headerů a získat reálná sample data z parent chainů.

@@ -11,7 +11,6 @@
 
 use anyhow::{anyhow, Result};
 use std::sync::Arc;
-use tokio::task::JoinHandle;
 use tracing::{info, warn};
 
 use crate::auxpow_client::{AuxPowClient, ExternalJob};
@@ -25,7 +24,6 @@ pub struct JobMultiplexer {
     preference: PoolPreference,
     region: String,
     active_client: Option<Arc<AuxPowClient>>,
-    poll_handle: Option<JoinHandle<()>>,
 }
 
 impl JobMultiplexer {
@@ -40,7 +38,6 @@ impl JobMultiplexer {
             preference: PoolPreference::Default,
             region: "eu".to_string(),
             active_client: None,
-            poll_handle: None,
         }
     }
 
@@ -65,20 +62,15 @@ impl JobMultiplexer {
         let client = Arc::new(AuxPowClient::new(profile));
         client.connect(&self.wallet).await?;
 
-        let poll = spawn_poll_loop(client.clone());
-
+        // AuxPowClient::connect now spawns the poll loop internally.
         self.active_client = Some(client);
-        self.poll_handle = Some(poll);
 
         info!("JobMultiplexer: connected to {}", coin);
         Ok(())
     }
 
-    /// Disconnect the active external client and stop the background poll loop.
+    /// Disconnect the active external client.
     pub async fn disconnect(&mut self) {
-        if let Some(handle) = self.poll_handle.take() {
-            handle.abort();
-        }
         if let Some(client) = self.active_client.take() {
             if let Err(e) = client.disconnect().await {
                 warn!("JobMultiplexer: disconnect error: {}", e);
@@ -117,9 +109,8 @@ impl JobMultiplexer {
 
 impl Drop for JobMultiplexer {
     fn drop(&mut self) {
-        if let Some(handle) = self.poll_handle.take() {
-            handle.abort();
-        }
+        // AuxPowClient::connect spawns the poll loop internally; dropping the
+        // Arc client will eventually stop it when the stream is closed.
     }
 }
 
@@ -135,24 +126,6 @@ fn pack_job(coin: ExternalCoin, job: &ExternalJob) -> JobPackage {
         start_nonce: 0,
         nonce_count: u64::MAX,
     }
-}
-
-fn spawn_poll_loop(client: Arc<AuxPowClient>) -> JoinHandle<()> {
-    tokio::spawn(async move {
-        loop {
-            match client.poll_messages().await {
-                Ok(()) => {}
-                Err(e) => {
-                    warn!(
-                        "JobMultiplexer: poll loop ended for {}: {}",
-                        client.profile().coin,
-                        e
-                    );
-                    break;
-                }
-            }
-        }
-    })
 }
 
 // ── Tests ────────────────────────────────────────────────────────────
@@ -242,7 +215,6 @@ mod tests {
         // Use a direct client because JobMultiplexer builds its own profile.
         let client = Arc::new(AuxPowClient::new(profile));
         client.connect("bc1qtest").await.unwrap();
-        let _poll = spawn_poll_loop(client.clone());
 
         // Wait for the notify to arrive.
         let job = client.wait_for_job(2000).await.unwrap().expect("no job received");
@@ -270,8 +242,7 @@ mod tests {
 
         let client = Arc::new(AuxPowClient::new(profile));
         client.connect("bc1qtest").await.unwrap();
-        mux.active_client = Some(client.clone());
-        mux.poll_handle = Some(spawn_poll_loop(client));
+        mux.active_client = Some(client);
 
         let job = mux.wait_for_job(2000).await.unwrap().expect("job");
         assert_eq!(job.external_coin, ExternalCoin::KAS);

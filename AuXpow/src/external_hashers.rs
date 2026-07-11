@@ -87,12 +87,13 @@ pub fn hash_blake3_alph(header_blob: &[u8], extranonce1: &[u8], nonce: u64) -> [
     let mut full_nonce = [0u8; 24];
     let en1_len = extranonce1.len().min(24);
     full_nonce[..en1_len].copy_from_slice(&extranonce1[..en1_len]);
-    let nonce_offset = en1_len + 12;
-    if nonce_offset + 8 <= 24 {
-        full_nonce[nonce_offset..nonce_offset + 8].copy_from_slice(&nonce.to_le_bytes());
+    // Place the scanned 64-bit nonce right after extranonce1.  The GPU miner
+    // increments the first bytes of the 24-byte nonce, so this keeps the
+    // scanned part as early as possible while preserving the pool's prefix.
+    if en1_len + 8 <= 24 {
+        full_nonce[en1_len..en1_len + 8].copy_from_slice(&nonce.to_be_bytes());
     } else {
-        // Fallback: put nonce at the very end.
-        full_nonce[16..24].copy_from_slice(&nonce.to_le_bytes());
+        full_nonce[16..24].copy_from_slice(&nonce.to_be_bytes());
     }
 
     let mut inner_input = Vec::with_capacity(24 + header_blob.len());

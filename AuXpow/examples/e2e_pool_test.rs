@@ -62,21 +62,10 @@ async fn main() -> anyhow::Result<()> {
 
     let client = Arc::new(AuxPowClient::new(profile));
 
-    // 1) Connect + subscribe + authorize
+    // 1) Connect + subscribe + authorize (poll loop is spawned internally)
     println!("[1/4] Connecting...");
     client.connect(&wallet).await?;
     println!("[1/4] Connected and authorized.");
-
-    // Spawn background poll loop so mining.notify jobs are received.
-    let poll_client = client.clone();
-    let _poll_handle = tokio::spawn(async move {
-        loop {
-            if let Err(e) = poll_client.poll_messages().await {
-                eprintln!("poll loop ended: {}", e);
-                break;
-            }
-        }
-    });
 
     // 2) Wait for first job + difficulty
     println!("[2/4] Waiting for first job (timeout {} ms)...", job_timeout_ms);
@@ -105,7 +94,7 @@ async fn main() -> anyhow::Result<()> {
                 );
 
                 if submit_enabled {
-                    println!("[4/4] Submitting share...");
+                    println!("[4/4] Submitting share (nonce={} hash_prefix={})...", nonce, hex::encode(&hash[..8]));
                     let forwarder = zion_auxpow::ShareForwarder::new(client.clone());
                     let result = forwarder.try_forward(&job.job_id, nonce, &hash, &share_target).await?;
                     println!("[4/4] Submit result: {:?}", result);

@@ -21,7 +21,9 @@ use tokio::time::Instant;
 use tracing::{error, info, warn};
 
 use crate::auxpow_client::{AuxPowClient, ShareResult};
-use crate::external_hashers::{hash_blake3, hash_kheavyhash, meets_target, ExternalAlgorithm};
+use crate::external_hashers::{
+    hash_blake3, hash_blake3_alph, hash_kheavyhash, meets_target, ExternalAlgorithm,
+};
 use crate::types::{
     select_best_coin, AuxPowConfig, AuxPowStats, CoinProfile, ExternalCoin,
 };
@@ -302,13 +304,8 @@ impl AuxPowScheduler {
         let job = match job {
             Some(j) => j,
             None => {
-                // No job yet, poll for messages
-                {
-                    let client_guard = self.client.lock().await;
-                    if let Some(client) = client_guard.as_ref() {
-                        let _ = client.poll_messages().await;
-                    }
-                }
+                // No job yet; the background poll loop will update current_job
+                // when mining.notify arrives.
                 tokio::time::sleep(Duration::from_millis(sched_cfg.poll_interval_ms)).await;
                 return Ok(());
             }
@@ -335,7 +332,14 @@ impl AuxPowScheduler {
         for offset in 0..sched_cfg.nonce_batch_size {
             let nonce = start_nonce.wrapping_add(offset);
             let hash = match algo {
-                ExternalAlgorithm::Blake3 => hash_blake3(header, 0, nonce),
+                ExternalAlgorithm::Blake3 => {
+                    // Alephium uses a 24-byte nonce + double-Blake3 PoW.
+                    if job.external_coin == ExternalCoin::ALPH {
+                        hash_blake3_alph(header, &job.extranonce1, nonce)
+                    } else {
+                        hash_blake3(header, 0, nonce)
+                    }
+                }
                 ExternalAlgorithm::KHeavyHash => hash_kheavyhash(header, 0, nonce),
             };
 
@@ -384,14 +388,7 @@ impl AuxPowScheduler {
             }
         }
 
-        // Poll for new messages
-        {
-            let client_guard = self.client.lock().await;
-            if let Some(client) = client_guard.as_ref() {
-                let _ = client.poll_messages().await;
-            }
-        }
-
+        // Background poll loop keeps current_job up to date.
         Ok(())
     }
 

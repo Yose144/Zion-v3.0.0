@@ -9,8 +9,9 @@ use serde::{Deserialize, Serialize};
 // ── External coin enumeration ────────────────────────────────────────
 
 /// Coins that ZION pool can profit-switch to for the multi-algo revenue slot.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ExternalCoin {
+    #[default]
     DCR,
     ALPH,
     KAS,
