@@ -16,7 +16,7 @@
 use anyhow::{anyhow, Result};
 
 use crate::external_hashers::{
-    hash_blake3, hash_blake3_alph, hash_kheavyhash, meets_target,
+    hash_blake3, hash_blake3_alph, hash_kheavyhash, hash_kheavyhash_extranonce, meets_target,
 };
 use crate::types::{ExternalCoin, JobPackage};
 
@@ -53,7 +53,7 @@ pub fn mine(job: &JobPackage, range: std::ops::Range<u64>) -> Result<Option<Foun
                 Ok(scan(job, start, end, hash_blake3))
             }
         }
-        "kheavyhash" => Ok(scan(job, start, end, hash_kheavyhash)),
+        "kheavyhash" => Ok(scan_kheavyhash(job, start, end)),
         other => Err(anyhow!("algorithm '{}' not supported by CPU harness", other)),
     }
 }
@@ -95,6 +95,42 @@ fn scan_blake3_alph(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare
         }
     }
     None
+}
+
+fn scan_kheavyhash(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
+    let header = &job.header_bytes;
+    let target = &job.target_bytes;
+    let timestamp = job.timestamp;
+    let extranonce1 = &job.extranonce1;
+
+    // For Stratum pools that provide an extranonce1 prefix (e.g. 2miners KAS),
+    // the full 8-byte nonce is extranonce1 || scanned suffix.  Otherwise fall
+    // back to the legacy 64-bit nonce API.
+    if extranonce1.len() >= 1 && extranonce1.len() < 8 {
+        for nonce in start..end {
+            let hash = hash_kheavyhash_extranonce(header, timestamp, extranonce1, nonce);
+            if meets_target(&hash, target) {
+                return Some(FoundShare {
+                    external_job_id: job.external_job_id.clone(),
+                    nonce,
+                    hash,
+                });
+            }
+        }
+        None
+    } else {
+        for nonce in start..end {
+            let hash = hash_kheavyhash(header, timestamp, nonce);
+            if meets_target(&hash, target) {
+                return Some(FoundShare {
+                    external_job_id: job.external_job_id.clone(),
+                    nonce,
+                    hash,
+                });
+            }
+        }
+        None
+    }
 }
 
 // ── Tests ────────────────────────────────────────────────────────────
