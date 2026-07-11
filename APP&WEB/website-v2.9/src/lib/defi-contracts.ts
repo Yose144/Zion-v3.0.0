@@ -64,16 +64,7 @@ export const CONTRACTS = {
   SOL:            '0x311935Cd80B76769bF2ecC9D8Ab7635b2139cf82',
   ZIONBridge:     '0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467',
   ZIONAtomicSwap: '0x3DE9Ad42716854083ab837706E3961d10B0e63Eb',
-  // Uniswap V4 — canonical (liquidity migrated from V3 to V4 on 2026-06-29)
-  V4PoolManager:      '0x498581fF718922c3f8e6A244956aF099B2652b2b',
-  V4PositionManager:  '0x7C5f5A4bBd8fD63184577525326123B519429BdC',
-  V4StateView:        '0xa3c0c9b65bad0b08107aa264b0f3db444b867a71',
-  V4Quoter:           '0x0d5e0f971ed27fbff6c2837bf31316121532048d',
-  V4UniversalRouter:  '0xFdf682F51fe81aa4898f0ae2163d8a55c127fbc7',
-  // V4 NFT Position IDs
-  NFT_Position_USDT: 2740371, // wZION/USDT 0.3% — ACTIVE (only active V4 position)
-  NFT_Position_WETH: 2740380, // ETH/wZION 0.3% — BURNED
-  // Uniswap V3 — legacy (pools empty, liquidity migrated to V4)
+  // Uniswap V3 — canonical (only source of real DEX liquidity)
   UniV3Factory:   '0x33128a8fC17869897dcE68Ed026d694621f6FDfD',
   UniV3PoolWETH:  '0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699',
   UniV3PoolUSDT:  '0x186b46c2f04153999d44D25179cD623fD62Bfda2',
@@ -82,6 +73,12 @@ export const CONTRACTS = {
   UniV3Router:    '0x2626664c2603336E57B271c5C0b26F421741e481',
   QuoterV2:       '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a',
   PositionManager:'0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1',
+  // Uniswap V4 — positions were burned; kept for reference only
+  V4PoolManager:      '0x498581fF718922c3f8e6A244956aF099B2652b2b',
+  V4PositionManager:  '0x7C5f5A4bBd8fD63184577525326123B519429BdC',
+  V4StateView:        '0xa3c0c9b65bad0b08107aa264b0f3db444b867a71',
+  V4Quoter:           '0x0d5e0f971ed27fbff6c2837bf31316121532048d',
+  V4UniversalRouter:  '0xFdf682F51fe81aa4898f0ae2163d8a55c127fbc7',
   // DeFi contracts — deployed 2026-06-29 on Base Mainnet
   ZIONGovernance: '0xB77eB4ab9468Ce03FBd7eCec70e976EFCfa623E8',
   ZIONTreasury:   '0x455f465ac7e14fdA97dC46fdd74bCa78bfC0aEeD', // 3-of-3 multisig
