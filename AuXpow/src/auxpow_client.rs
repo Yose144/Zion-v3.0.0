@@ -72,6 +72,9 @@ pub struct ExternalJob {
     /// Network nbits/difficulty bits from notify, used for display/logging.
     #[serde(skip)]
     pub nbits: Option<String>,
+    /// Extra nonce 1 provided by the pool (Alephium).
+    #[serde(skip)]
+    pub extranonce1: Vec<u8>,
     /// Extra nonce 2 placeholder for standard stratum submit.
     #[serde(skip)]
     pub extranonce2: String,
@@ -103,6 +106,8 @@ pub struct AuxPowClient {
     current_difficulty: Arc<Mutex<f64>>,
     /// Wallet used during authorize; needed for some submit formats.
     payout_wallet: Arc<Mutex<String>>,
+    /// Extra nonce 1 provided by the pool (Alephium uses 4 bytes).
+    extranonce1: Arc<Mutex<Vec<u8>>>,
 }
 
 impl AuxPowClient {
@@ -122,6 +127,7 @@ impl AuxPowClient {
             connected: Arc::new(Mutex::new(false)),
             current_difficulty: Arc::new(Mutex::new(1.0)),
             payout_wallet: Arc::new(Mutex::new(String::new())),
+            extranonce1: Arc::new(Mutex::new(Vec::new())),
         }
     }
 
@@ -166,9 +172,23 @@ impl AuxPowClient {
             "params": ["zion-auxpow/0.1", null]
         });
         let resp = self.send_request(&req).await?;
-        if resp.get("result").is_some() {
+        if let Some(result) = resp.get("result") {
             *self.subscribed.lock().await = true;
-            println!("auxpow: subscribed to {} — result={}", self.profile.coin, resp.get("result").unwrap_or(&serde_json::Value::Null));
+            println!("auxpow: subscribed to {} — result={}", self.profile.coin, result);
+
+            // Alephium/Kryptex returns extranonce1 as a plain hex string.
+            // Standard stratum returns [subscriptions, extranonce1, extranonce2_size].
+            let mut en1 = self.extranonce1.lock().await;
+            *en1 = if let Some(hex) = result.as_str() {
+                hex::decode(hex).unwrap_or_default()
+            } else if let Some(arr) = result.as_array() {
+                arr.get(1)
+                    .and_then(|v| v.as_str())
+                    .map(|hex| hex::decode(hex).unwrap_or_default())
+                    .unwrap_or_default()
+            } else {
+                Vec::new()
+            };
             Ok(())
         } else {
             bail!("subscribe failed: {:?}", resp.get("error"));
@@ -234,7 +254,11 @@ impl AuxPowClient {
         // Pools may send notifications (mining.set_difficulty, mining.notify)
         // between our request and the response — skip those.
         loop {
-            let resp = self.read_line().await?;
+            let resp = match timeout(Duration::from_secs(30), self.read_line()).await {
+                Ok(Ok(line)) => line,
+                Ok(Err(e)) => return Err(e),
+                Err(_) => bail!("send_request: timeout waiting for response"),
+            };
             let value: Value = serde_json::from_str(&resp)?;
 
             // Check if this is a notification (has "method" field, no matching id)
@@ -245,7 +269,7 @@ impl AuxPowClient {
                 if let Some(method) = value.get("method").and_then(|m| m.as_str()) {
                     if method == "mining.notify" {
                         if let Some(params) = value.get("params") {
-                            if let Ok(job) = self.parse_notify_params(params) {
+                            if let Ok(job) = self.parse_notify_params(params).await {
                                 *self.current_job.lock().await = Some(job);
                                 self.job_notify.notify_waiters();
                             }
@@ -300,7 +324,7 @@ impl AuxPowClient {
             match method {
                 "mining.notify" => {
                     if let Some(params) = msg.get("params") {
-                        let job = self.parse_notify_params(params)?;
+                        let job = self.parse_notify_params(params).await?;
                         debug!(
                             "AuxPow: received job {} for {}",
                             job.job_id, self.profile.coin
@@ -314,6 +338,13 @@ impl AuxPowClient {
                         if let Some(diff) = params.get(0).and_then(|d| d.as_f64()) {
                             debug!("AuxPow: difficulty set to {:.2} for {}", diff, self.profile.coin);
                             *self.current_difficulty.lock().await = diff;
+                        }
+                    }
+                }
+                "mining.set_extranonce" => {
+                    if let Some(params) = msg.get("params") {
+                        if let Some(hex) = params.get(0).and_then(|p| p.as_str()) {
+                            *self.extranonce1.lock().await = hex::decode(hex).unwrap_or_default();
                         }
                     }
                 }
@@ -332,10 +363,62 @@ impl AuxPowClient {
     ///   - Standard Bitcoin-like: [job_id, prevhash, coinbase1, coinbase2,
     ///     branches, version, nbits, ntime, clean_jobs]
     ///   - Simplified: [job_id, header_hex, target_hex]
-    fn parse_notify_params(&self, params: &Value) -> Result<ExternalJob> {
+    async fn parse_notify_params(&self, params: &Value) -> Result<ExternalJob> {
+        // Alephium (Blake3) sends notify params as [ {object} ], where the
+        // object contains: jobId, headerBlob, targetBlob, height, fromGroup,
+        // toGroup, txsBlob.
+        let inner = if let Some(arr) = params.as_array() {
+            if arr.len() == 1 && arr[0].is_object() {
+                &arr[0]
+            } else {
+                params
+            }
+        } else {
+            params
+        };
+
+        if let Some(obj) = inner.as_object() {
+            let job_id = obj
+                .get("jobId")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown")
+                .to_string();
+            let header_hex = obj
+                .get("headerBlob")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let target_hex = obj
+                .get("targetBlob")
+                .and_then(|v| v.as_str())
+                .unwrap_or("ffffffff")
+                .to_string();
+            let height = obj.get("height").and_then(|v| v.as_u64());
+
+            let header_bytes = hex::decode(header_hex.trim_start_matches("0x"))
+                .unwrap_or_default();
+            let target_bytes = crate::external_hashers::parse_target_hex(&target_hex)
+                .unwrap_or([0xFFu8; 32]);
+
+            return Ok(ExternalJob {
+                job_id,
+                header_hex,
+                target_hex,
+                seed_hash: None,
+                block_number: height,
+                algorithm: self.profile.algorithm.clone(),
+                header_bytes,
+                target_bytes,
+                timestamp: None,
+                nbits: None,
+                extranonce1: self.extranonce1.lock().await.clone(),
+                extranonce2: String::new(),
+            });
+        }
+
         let arr = params
             .as_array()
-            .ok_or_else(|| anyhow!("notify params not array"))?;
+            .ok_or_else(|| anyhow!("notify params not array or object"))?;
 
         if arr.is_empty() {
             bail!("empty notify params");
@@ -388,6 +471,7 @@ impl AuxPowClient {
             target_bytes,
             timestamp,
             nbits,
+            extranonce1: self.extranonce1.lock().await.clone(),
             extranonce2: String::new(),
         })
     }
@@ -415,20 +499,32 @@ impl AuxPowClient {
     ///
     /// Returns whether the pool accepted or rejected the share.
     ///
-    /// The submit format is the standard Stratum v1 `[worker, job_id, nonce_hex]`.
-    ///
-    /// Some KAS pools accept `[job_id, nonce_hex]`, but zpool-style pools
-    /// expect the worker in params.  We send the worker explicitly.
+    /// Supports two Stratum v1 submit dialects:
+    ///   - Standard / zpool / KAS: `[worker, job_id, nonce_hex]`
+    ///   - Alephium: `[job_id, nonce_hex, workerId]`
     pub async fn submit_share(
         &self,
         job_id: &str,
         nonce: u64,
         _hash_hex: &str,
     ) -> Result<ShareResult> {
-        let nonce_hex = format!("0x{:016x}", nonce);
-        let wallet = self.payout_wallet.lock().await.clone();
-        let worker = format!("{}.{}", wallet, self.profile.worker_name);
-        let params = json!([worker, job_id, nonce_hex]);
+        let is_alph = self.profile.algorithm.eq_ignore_ascii_case("blake3")
+            && self.profile.coin == ExternalCoin::ALPH;
+
+        let params = if is_alph {
+            // Alephium stratum: [jobId, nonceSansExtraNonce].
+            // Full 24-byte nonce = extranonce1 || 12 zero bytes || u64 nonce (LE).
+            // The submitted part is the 20-byte suffix.
+            let mut sans = [0u8; 20];
+            sans[12..20].copy_from_slice(&nonce.to_le_bytes());
+            let hex = hex::encode(sans);
+            json!([job_id, hex])
+        } else {
+            let hex = format!("0x{:016x}", nonce);
+            let wallet = self.payout_wallet.lock().await.clone();
+            let worker = format!("{}.{}", wallet, self.profile.worker_name);
+            json!([worker, job_id, hex])
+        };
 
         let req = json!({
             "id": 100,
@@ -471,6 +567,11 @@ impl AuxPowClient {
     /// Defaults to `1.0` until the pool sends a difficulty notification.
     pub async fn current_difficulty(&self) -> f64 {
         *self.current_difficulty.lock().await
+    }
+
+    /// Return the pool-provided extranonce1 bytes.
+    pub async fn extranonce1(&self) -> Vec<u8> {
+        self.extranonce1.lock().await.clone()
     }
 
     /// Compute the share target implied by the current difficulty.
@@ -531,11 +632,13 @@ pub fn difficulty_to_target(difficulty: f64) -> [u8; 32] {
     } else {
         BigUint::from(mantissa | 0x0010_0000_0000_0000u64)
     };
+    // significand has 52 fractional bits, so the integer value is
+    // significand * 2^(exponent - 52).
     let mut diff_int = significand;
-    if exponent >= 0 {
-        diff_int <<= exponent as usize;
+    if exponent >= 52 {
+        diff_int <<= (exponent - 52) as usize;
     } else {
-        diff_int >>= (-exponent) as usize;
+        diff_int >>= (52 - exponent) as usize;
     }
 
     if diff_int == BigUint::from(0u32) {

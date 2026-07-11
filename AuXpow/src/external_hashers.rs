@@ -74,6 +74,34 @@ pub fn hash_blake3_raw(input: &[u8]) -> [u8; 32] {
     *hasher.finalize().as_bytes()
 }
 
+/// Alephium-specific double-Blake3 PoW.
+///
+/// Alephium block headers serialize with a 24-byte nonce at the front.  The
+/// pool sends `headerBlob` (header without nonce) and an `extranonce1`.  The
+/// full 24-byte nonce is `extranonce1 || nonce_sans_extranonce1`, and the PoW
+/// hash is `blake3(blake3(nonce || header_blob))`.
+///
+/// We scan a 64-bit nonce that is placed right after `extranonce1`; the rest
+/// of the 24-byte nonce is zero-padded.
+pub fn hash_blake3_alph(header_blob: &[u8], extranonce1: &[u8], nonce: u64) -> [u8; 32] {
+    let mut full_nonce = [0u8; 24];
+    let en1_len = extranonce1.len().min(24);
+    full_nonce[..en1_len].copy_from_slice(&extranonce1[..en1_len]);
+    let nonce_offset = en1_len + 12;
+    if nonce_offset + 8 <= 24 {
+        full_nonce[nonce_offset..nonce_offset + 8].copy_from_slice(&nonce.to_le_bytes());
+    } else {
+        // Fallback: put nonce at the very end.
+        full_nonce[16..24].copy_from_slice(&nonce.to_le_bytes());
+    }
+
+    let mut inner_input = Vec::with_capacity(24 + header_blob.len());
+    inner_input.extend_from_slice(&full_nonce);
+    inner_input.extend_from_slice(header_blob);
+    let inner_hash = blake3::hash(&inner_input);
+    *blake3::hash(inner_hash.as_bytes()).as_bytes()
+}
+
 // ── kHeavyHash (Kaspa) ───────────────────────────────────────────────
 
 /// Compute kHeavyHash — Kaspa's PoW algorithm.

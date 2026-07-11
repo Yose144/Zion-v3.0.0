@@ -294,12 +294,28 @@ Wallet: `bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh` (BTC, `c=BTC` password).
   - Všechny varianty končí stejně — pool spojení ukončí.
 - **Příčina:** zpool `heavyhash` algoritmus těží více kHeavyHash coinů (KAS/PYRIN/Sedra/...). Bez explicitního výběru coinu nelze spolehlivě určit, jaký přesný PoW-buffer, doménový řetězec a submit formát pool očekává. Náš `hash_kheavyhash()` je implementován podle oficiálního Kaspa `cSHAKE256("ProofOfWorkHash") → cSHAKE256("HeavyHash")` reference, ale proti živému zpool mixu to nestačí.
 
+### 5.4 E2E proti Kryptex ALPH (Blake3)
+
+Byla vyzkoušena ALPH pool `alph.kryptex.network:7010` (Blake3) s vygenerovanou testovací ALPH adresou:
+
+- ✅ TCP connect
+- ✅ `mining.subscribe` — odpověď `"00000000"` (Alephium/Kryptex vrací extranonce1 jako plain hex string)
+- ✅ `mining.authorize` jako `17Kp3Ke7SkyzzFZ6ZJpAS2pPQcJgnzyJz3bcNjUroKt6x.zion_e2e`
+- ✅ `mining.set_difficulty` = 512 → `share_target = 0x007fffffffffffff...`
+- ✅ `mining.notify` — job přijat jako objekt `[{jobId, headerBlob, targetBlob, height, fromGroup, toGroup, txsBlob}]`, `header_len=302`
+- ✅ CPU hash nalezl share během několika sekund (`nonce=696`, hash začíná `004d4f62...`)
+- ⚠️ `mining.submit` ve formátu `[jobId, nonceSansExtraNonce]` (40 hex znaků = 20B suffix 24B nonce) zatím **nevrátilo odpověď** — spojení čeká na pool. Možné příčiny:
+  - Špatné umístění scanned nonce v 24B nonce (mělo by být na offsetu, který miner mění; používáme offset `en1_len + 12`).
+  - Špatná endianita nonce v `nonceSansExtraNonce`.
+  - Pool očekává jiný submit formát (např. s workerId nebo s `0x` prefixem).
+  - Kryptex stratum má specifickou variantu oproti oficiálnímu Alephium mining-pool.
+
 ### 5.3 Co ještě chybí pro plně funkční E2E
 
-1. **Otestovat proti poolu s jednoznačným coinem** — např. `kas.2miners.com:2020` vyžaduje `kaspa:` adresu (ne BTC wallet). Pro BTC payout je nejlepší testovat Blake3 coin, pokud se najde pool s BTC payout a Stratum v1.
-2. **Případně přidat coin-specific heavyhash varianty** — pokud bude vybrán konkrétní coin (Pyrin, Sedra, …), doplnit jeho work-buffer a případně jiný doménový řetězec.
-3. **Blake3 E2E** — DCR/ALPH s BTC payout walletou by byla spolehlivější, protože `hash_blake3()` je standardní a jednoznačný.
-4. **Pool difficulty → share target** — implementováno pomocí `difficulty_to_target()`; pro `difficulty <= 1` vrací max target.
+1. **Doladit Alephium submit / nonce layout** — ověřit proti oficiálnímu `alephium-mining-pool` nebo známému mineru, jaký přesně formát nonce a submitu Kryptex očekává. Potenciálně vyzkoušet i jiné pooly (`alph.woolypooly.com`, `alph.herominers.com`).
+2. **KAS E2E** — pokud bude vygenerována `kaspa:` adresa, otestovat proti `kas.2miners.com:2020` a potvrdit, že `hash_kheavyhash()` dává akceptované share.
+3. **Pool difficulty → share target** — opraveno `difficulty_to_target()`; pro `difficulty=512` nyní vrací správný target `0x007fff...`.
+4. **DCR E2E** — Decred po DCP-0011 používá standardní Blake3; najít veřejný pool s přímým `address.name` přihlašováním.
 
 ---
 
@@ -331,6 +347,7 @@ Wallet: `bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh` (BTC, `c=BTC` password).
 4. **Doladit E2E submit:**
    - ✅ Implementovat převod `mining.set_difficulty` → share target (`difficulty_to_target`).
    - ✅ Zprovoznit `hash_kheavyhash()` podle oficiální Kaspa reference.
-   - ⚠️ Zůstává problém: zpool `heavyhash` těží mix coinů (KAS/Pyrin/…). Potřeba buď najít pool s jednoznačným coinem, nebo implementovat coin-specific varianty.
+   - ✅ Implementovat Alephium Blake3 E2E pipeline (extranonce1, 24B nonce, double-Blake3, object-style notify).
+   - ⚠️ Zůstává problém: zpool `heavyhash` těží mix coinů (KAS/Pyrin/…). ALPH submit zatím nevrací odpověď — potřeba doladit nonce layout/submit formát.
 5. Doplnit `randomx` / `ethash` / `kawpow` hashe — buď vlastním Rust kódem, nebo feature-gated FFI.
 6. Pro C: doplnit reálné parsování DCR/ALPH headerů a získat reálná sample data z parent chainů.
