@@ -12,8 +12,6 @@ import {
   RefreshCw,
   BarChart3,
   Flame,
-  Wifi,
-  WifiOff,
   Link2,
   Lock,
   CheckCircle2,
@@ -28,6 +26,11 @@ import {
   Clock,
   Trophy,
   ChefHat,
+  Globe,
+  Sparkles,
+  Zap,
+  ShieldCheck,
+  HelpCircle,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { useWallet } from '@/contexts/WalletContext';
@@ -99,6 +102,49 @@ function PriceSparkline({
   );
 }
 
+// ─── Stat Card helper (matches /pool) ───────────────────────────────────────
+
+function StatCard({
+  icon,
+  colorClass,
+  bgClass,
+  borderClass,
+  label,
+  value,
+  sub,
+  tip,
+}: {
+  icon: React.ReactNode;
+  colorClass: string;
+  bgClass: string;
+  borderClass: string;
+  label: string;
+  value: string;
+  sub?: string;
+  tip?: string;
+}) {
+  return (
+    <div className={`zion-rainbow-card p-4 transition-colors ${borderClass}`} style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+      <div className={`flex items-center justify-center h-8 w-8 rounded-xl ${bgClass} mb-3 ${colorClass}`}>
+        {icon}
+      </div>
+      <div className="flex items-center gap-1 mb-0.5">
+        <p className="text-[11px] text-gray-500 uppercase tracking-wider">{label}</p>
+        {tip && (
+          <div className="relative group/tooltip">
+            <HelpCircle className="h-3 w-3 text-gray-600 cursor-help" />
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/tooltip:block w-44 rounded-lg border border-white/10 bg-black/90 backdrop-blur-xl px-2 py-1.5 text-[10px] text-gray-300 shadow-xl z-20">
+              {tip}
+            </div>
+          </div>
+        )}
+      </div>
+      <p className="text-lg font-bold text-white font-mono mt-0.5">{value}</p>
+      {sub && <p className="text-[11px] text-gray-500 mt-0.5">{sub}</p>}
+    </div>
+  );
+}
+
 // ─── DeFi Sections (same pattern as /pool) ──────────────────────────────────
 
 type SectionTab = 'overview' | 'swap' | 'earn' | 'bridge' | 'governance' | 'pools' | 'auction';
@@ -145,7 +191,7 @@ export default function DefiPage() {
     primary_price_usd: number;
     pools: {
       wzion_usdt: { pair: string; fee: number; feeLabel: string; active: boolean; nft_id: number; nft_owner: string | null; tick: number; balances: { wzion: number; usdt: number }; price_usd: number; tvl_usd: number };
-      wzion_weth: { pair: string; fee: number; feeLabel: string; active: boolean; nft_id: number; nft_owner: string | null; balances: { wzion: number; weth: number }; price_usd: number; tvl_usd: number };
+      wzion_weth: { pair: string; fee: number; feeLabel: string; active: boolean; nft_id: number; nft_owner: string | null; tick: number; balances: { wzion: number; weth: number }; price_usd: number; tvl_usd: number };
     };
     contracts?: {
       staking: { wzion: number };
@@ -170,7 +216,7 @@ export default function DefiPage() {
   } | null>(null);
 
   // ── WebSocket subscription for real-time network status ─────────────────────
-  const { data: networkStatus, isConnected: wsConnected } = useNetworkStatus(true);
+  const { data: _networkStatus, isConnected: wsConnected } = useNetworkStatus(true);
 
   // ── Fetch wZION total supply from API ──────────────────────────────────────
 
@@ -269,6 +315,7 @@ export default function DefiPage() {
               active: data.pools?.wzion_weth?.active ?? false,
               nft_id: data.pools?.wzion_weth?.nft_id ?? 0,
               nft_owner: data.pools?.wzion_weth?.nft_owner ?? null,
+              tick: data.pools?.wzion_weth?.tick ?? 0,
               balances: data.pools?.wzion_weth?.balances ?? { wzion: 0, weth: 0 },
               price_usd: data.pools?.wzion_weth?.price_usd ?? 0,
               tvl_usd: data.pools?.wzion_weth?.tvl_usd ?? 0,
@@ -326,113 +373,129 @@ export default function DefiPage() {
         <div className="absolute bottom-0 left-1/3 h-[420px] w-[620px] rounded-full bg-zion-gold/10 blur-3xl" />
       </div>
 
-      {/* ── Hero ── */}
+      {/* ═══════ HERO ═══════ */}
       <section className="zion-container relative z-10 mb-10">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
+          className="zion-rainbow-card p-6 md:p-10"
+          style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
-          <div className="mb-4 flex items-center gap-3">
-            <Layers className="h-5 w-5 text-zion-gold" />
-            <span className="text-xs uppercase tracking-[0.35em] text-gray-400">
-              ZION L2 · Base Mainnet
-            </span>
-          </div>
-
-          <h1 className="mb-4 text-4xl font-bold md:text-5xl lg:text-6xl">
-            <span className="text-gradient">DeFi Hub</span>
-          </h1>
-
-          <p className="mb-6 max-w-2xl text-lg leading-relaxed text-gray-300">
-            {cs
-              ? 'Swapuj, přemosťuj a spravuj wZION na Base. Reálné kontrakty, reálná likvidita.'
-              : 'Swap, bridge, and manage wZION on Base. Real contracts, real liquidity.'}
-          </p>
-
-          {/* Wallet bar + stats */}
-          <div className="flex flex-wrap items-center gap-3 text-sm">
-            {connected ? (
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5">
-                <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="font-mono text-xs text-emerald-300">
-                  {account?.slice(0, 6)}…{account?.slice(-4)}
-                </span>
-                {isBaseMainnet ? (
-                  <span className="text-[10px] text-gray-400">Base</span>
-                ) : (
-                  <button
-                    onClick={switchToBase}
-                    className="text-[10px] text-orange-400 hover:text-orange-300 underline"
-                  >
-                    {cs ? 'Přepnout na Base' : 'Switch to Base'}
-                  </button>
-                )}
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-5">
+              <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-gold uppercase">
+                <Sparkles className="h-4 w-4" />
+                {cs ? 'DeFi Hub · Base Mainnet' : 'DeFi Hub · Base Mainnet'}
               </div>
-            ) : (
-              <button
-                onClick={connect}
-                className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-1.5 text-sm text-white hover:bg-white/10 transition-colors"
-              >
-                <Wallet className="h-3.5 w-3.5" />
-                {cs ? 'Připojit peněženku' : 'Connect Wallet'}
-              </button>
-            )}
-
-            {/* WebSocket connection status */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
-              {wsConnected ? (
-                <>
-                  <Wifi className="h-3.5 w-3.5 text-emerald-400" />
-                  <span className="text-[10px] text-gray-400">Live</span>
-                </>
-              ) : (
-                <>
-                  <WifiOff className="h-3.5 w-3.5 text-orange-400" />
-                  <span className="text-[10px] text-gray-400">Polling</span>
-                </>
-              )}
+              <div>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? 'wZION ekosystém' : 'wZION ecosystem'}</p>
+                <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
+                  {cs ? 'Spravuj wZION' : 'Manage wZION'}
+                </h1>
+              </div>
+              <p className="text-lg text-gray-300 max-w-2xl">
+                {cs
+                  ? 'Swapuj, přemosťuj a spravuj wZION na Base. Reálné kontrakty, reálná likvidita, živé ceny z on-chain poolů.'
+                  : 'Swap, bridge, and manage wZION on Base. Real contracts, real liquidity, live prices from on-chain pools.'}
+              </p>
+              <div className="flex flex-wrap gap-3 text-xs">
+                <span className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 ${wsConnected ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200' : 'border-white/10 bg-white/5 text-gray-200'}`}>
+                  <Zap className={`h-3 w-3 ${wsConnected ? 'text-emerald-400' : 'text-zion-gold'}`} />
+                  {wsConnected ? (cs ? 'Živě' : 'Live') : (cs ? 'Polling' : 'Polling')}
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
+                  <RefreshCw className="h-3 w-3 text-emerald-400" /> {cs ? 'Auto-refresh 60 s' : 'Auto-Refresh 60s'}
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
+                  <Globe className="h-3 w-3 text-zion-cyan" /> Base
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-emerald-200">
+                  {cs ? 'wZION/USDT · Uniswap V4' : 'wZION/USDT · Uniswap V4'}
+                </span>
+              </div>
             </div>
 
-            {wZIONSupply && (
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
-                <Activity className="h-3.5 w-3.5 text-zion-gold" />
-                <span className="text-gray-300">wZION Supply:</span>
-                <span className="font-mono text-white">{wZIONSupply}</span>
+            {/* Quick info / connect side card */}
+            <div className="w-full lg:max-w-md space-y-3">
+              <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{cs ? 'Rychlý přehled' : 'Quick Overview'}</p>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '255, 215, 0' } as React.CSSProperties}>
+                    <div className="flex items-center gap-2 text-sm text-gray-300">
+                      <BarChart3 className="h-4 w-4 text-zion-gold" />
+                      {cs ? 'Cena' : 'Price'}
+                    </div>
+                    <span className="font-mono text-white">
+                      ${(poolStats?.primary_price_usd ?? wZIONPrice?.usd_per_wzion ?? SEED_PRICE_USD).toFixed(5)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+                    <div className="flex items-center gap-2 text-sm text-gray-300">
+                      <Droplets className="h-4 w-4 text-zion-cyan" />
+                      TVL
+                    </div>
+                    <span className="font-mono text-white">${(poolStats?.tvl_usd ?? 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+                    <div className="flex items-center gap-2 text-sm text-gray-300">
+                      <Activity className="h-4 w-4 text-emerald-400" />
+                      {cs ? 'Supply' : 'Supply'}
+                    </div>
+                    <span className="font-mono text-white">{wZIONSupply ?? '—'}</span>
+                  </div>
+                  {connected ? (
+                    <div className="flex items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="font-mono text-xs text-emerald-300">
+                          {account?.slice(0, 6)}…{account?.slice(-4)}
+                        </span>
+                      </div>
+                      {isBaseMainnet ? (
+                        <span className="text-[10px] text-gray-400">Base</span>
+                      ) : (
+                        <button
+                          onClick={switchToBase}
+                          className="text-[10px] text-orange-400 hover:text-orange-300 underline"
+                        >
+                          {cs ? 'Přepnout' : 'Switch'}
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <button
+                      onClick={connect}
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors"
+                    >
+                      <Wallet className="h-3.5 w-3.5" />
+                      {cs ? 'Připojit peněženku' : 'Connect Wallet'}
+                    </button>
+                  )}
+                </div>
+                <a
+                  href={`https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=${CONTRACTS.wZION}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors"
+                >
+                  {cs ? 'Otevřít Uniswap' : 'Open Uniswap'} <ExternalLink className="h-3.5 w-3.5" />
+                </a>
               </div>
-            )}
-            {/* Price badge — shows live Uni V3 price or seed price as fallback */}
-            {(wZIONPrice?.usd_per_wzion != null || true) && (
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
-                <BarChart3 className="h-3.5 w-3.5 text-emerald-400" />
-                <span className="text-gray-300">{cs ? 'Cena' : 'Price'}:</span>
-                <span className="font-mono text-white">
-                  ${(wZIONPrice?.usd_per_wzion ?? SEED_PRICE_USD).toFixed(5)}
-                </span>
-                {wZIONPrice?.usd_per_wzion != null && wZIONPrice.usd_per_wzion > 0 ? (
-                  <span className="text-[10px] text-emerald-400/70">live USDT</span>
-                ) : (
-                  <span className="text-[10px] text-amber-400/70">seed</span>
-                )}
-              </div>
-            )}
-
-            <a
-              href={`https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=${CONTRACTS.wZION}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-gray-400 hover:text-white transition-colors"
-            >
-              <span className="text-xs">Uniswap</span>
-              <ExternalLink className="h-3 w-3" />
-            </a>
+            </div>
           </div>
         </motion.div>
       </section>
 
-      {/* ═══════ DeFi SECTION TABS (same pattern as /pool) ═══════ */}
+      {/* ═══════ DeFi SECTION TABS ═══════ */}
       <section className="zion-container relative z-10 mb-8">
-        <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.02 }}
+          className="zion-rainbow-card p-4 md:p-5"
+          style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+        >
           <div className="flex flex-wrap items-center gap-2 md:gap-3">
             <span className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mr-1 hidden sm:inline">
               {cs ? 'DeFi sekce' : 'DeFi sections'}
@@ -456,56 +519,120 @@ export default function DefiPage() {
               );
             })}
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {activeTab === 'overview' && (
       <>
-        {/* ── Pool Stats Overview ── */}
+        {/* ═══════ DeFi TELEMETRY ═══════ */}
         <section className="zion-container relative z-10 mb-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="zion-rainbow-card p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="h-4 w-4 text-zion-gold" />
-                <span className="text-[10px] uppercase tracking-wider text-gray-400">{cs ? 'Cena' : 'Price'}</span>
-              </div>
-              <p className="text-xl font-bold text-white">
-                ${(poolStats?.primary_price_usd ?? wZIONPrice?.usd_per_wzion ?? SEED_PRICE_USD).toFixed(6)}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.04 }}
+          >
+            <div className="flex flex-col gap-2 mb-6">
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Telemetrie' : 'Telemetry'}</p>
+              <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+                <Activity className="h-7 w-7 text-emerald-400" />
+                {cs ? 'DeFi telemetrie' : 'DeFi Telemetry'}
+              </h2>
+              <p className="text-sm text-gray-400">
+                {cs
+                  ? 'Metriky wZION agregované z Base kontraktů, pool API a bridge relayeru v reálném čase.'
+                  : 'wZION metrics aggregated from Base contracts, pool API, and bridge relayer in real time.'}
               </p>
-              <p className="text-[10px] text-gray-500">USDT / wZION</p>
             </div>
-            <div className="zion-rainbow-card p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
-              <div className="flex items-center gap-2 mb-2">
-                <Droplets className="h-4 w-4 text-zion-cyan" />
-                <span className="text-[10px] uppercase tracking-wider text-gray-400">{cs ? 'TVL' : 'TVL'}</span>
-              </div>
-              <p className="text-xl font-bold text-white">${(poolStats?.tvl_usd ?? 0).toFixed(2)}</p>
-              <p className="text-[10px] text-gray-500">{cs ? 'celkem v poolech' : 'total in pools'}</p>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              <StatCard
+                icon={<TrendingUp className="h-5 w-5" />}
+                colorClass="text-zion-gold"
+                bgClass="bg-zion-gold/10"
+                borderClass="border-zion-gold/20"
+                label={cs ? 'Cena' : 'Price'}
+                value={`$${(poolStats?.primary_price_usd ?? wZIONPrice?.usd_per_wzion ?? SEED_PRICE_USD).toFixed(6)}`}
+                sub="USDT / wZION"
+                tip={cs ? 'Aktuální cena z primárního wZION/USDT poolu nebo seed cena.' : 'Current price from the primary wZION/USDT pool or seed price.'}
+              />
+              <StatCard
+                icon={<Droplets className="h-5 w-5" />}
+                colorClass="text-zion-cyan"
+                bgClass="bg-zion-cyan/10"
+                borderClass="border-zion-cyan/20"
+                label="TVL"
+                value={`$${(poolStats?.tvl_usd ?? 0).toFixed(2)}`}
+                sub={cs ? 'celkem v poolech' : 'total in pools'}
+              />
+              <StatCard
+                icon={<Activity className="h-5 w-5" />}
+                colorClass="text-emerald-400"
+                bgClass="bg-emerald-400/10"
+                borderClass="border-emerald-500/20"
+                label={cs ? 'Likvidita' : 'Liquidity'}
+                value={`${(poolStats?.total_wzion_liquidity ?? 0).toFixed(0)}`}
+                sub="wZION"
+              />
+              <StatCard
+                icon={<Layers className="h-5 w-5" />}
+                colorClass="text-purple-400"
+                bgClass="bg-purple-400/10"
+                borderClass="border-purple-500/20"
+                label={cs ? 'Pooly' : 'Pools'}
+                value={String(poolStats?.active_pools ?? 0)}
+                sub={cs ? 'aktivní' : 'active'}
+              />
+              <StatCard
+                icon={<Wallet className="h-5 w-5" />}
+                colorClass="text-pink-400"
+                bgClass="bg-pink-400/10"
+                borderClass="border-pink-500/20"
+                label={cs ? 'wZION Supply' : 'wZION Supply'}
+                value={wZIONSupply ?? '—'}
+                sub={cs ? 'celkový oběh' : 'total circulating'}
+              />
+              <StatCard
+                icon={<ArrowLeftRight className="h-5 w-5" />}
+                colorClass="text-orange-400"
+                bgClass="bg-orange-400/10"
+                borderClass="border-orange-500/20"
+                label={cs ? 'Bridge' : 'Bridge'}
+                value={bridgeStatus?.online ? (cs ? 'Online' : 'Online') : (cs ? 'Offline' : 'Offline')}
+                sub={cs ? '5/5 validátorů' : '5/5 validators'}
+              />
+              <StatCard
+                icon={<ShieldCheck className="h-5 w-5" />}
+                colorClass="text-blue-400"
+                bgClass="bg-blue-400/10"
+                borderClass="border-blue-500/20"
+                label={cs ? 'Validátoři' : 'Validators'}
+                value="5/5"
+                sub={cs ? 'Guardian relay' : 'Guardian relay'}
+              />
+              <StatCard
+                icon={<Gavel className="h-5 w-5" />}
+                colorClass="text-amber-400"
+                bgClass="bg-amber-400/10"
+                borderClass="border-amber-500/20"
+                label={cs ? 'Aukce' : 'Auction'}
+                value={`${(auctionData?.pctSold ?? 0).toFixed(2)}%`}
+                sub={cs ? 'prodáno CCA' : 'CCA sold'}
+              />
             </div>
-            <div className="zion-rainbow-card p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
-              <div className="flex items-center gap-2 mb-2">
-                <Activity className="h-4 w-4 text-emerald-400" />
-                <span className="text-[10px] uppercase tracking-wider text-gray-400">{cs ? 'Likvidita' : 'Liquidity'}</span>
-              </div>
-              <p className="text-xl font-bold text-white">{(poolStats?.total_wzion_liquidity ?? 0).toFixed(0)}</p>
-              <p className="text-[10px] text-gray-500">wZION</p>
-            </div>
-            <div className="zion-rainbow-card p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
-              <div className="flex items-center gap-2 mb-2">
-                <Layers className="h-4 w-4 text-zion-purple" />
-                <span className="text-[10px] uppercase tracking-wider text-gray-400">{cs ? 'Pooly' : 'Pools'}</span>
-              </div>
-              <p className="text-xl font-bold text-white">{poolStats?.active_pools ?? 0}</p>
-              <p className="text-[10px] text-gray-500">{cs ? 'aktivní' : 'active'}</p>
-            </div>
-          </div>
+          </motion.div>
         </section>
 
-        {/* ── wZION/USDT Price Chart ── */}
+        {/* ═══════ wZION/USDT Price Chart ═══════ */}
         <section className="zion-container relative z-10 mb-8">
-          <div className="zion-rainbow-card p-5" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.06 }}
+            className="zion-rainbow-card p-5 border-emerald-500/20"
+            style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+          >
             <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <TrendingUp className="h-4 w-4 text-zion-gold" />
                 <span className="text-sm font-semibold text-white">wZION / USDT</span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-zion-gold/20 text-zion-gold border border-zion-gold/30">
@@ -538,7 +665,6 @@ export default function DefiPage() {
               </div>
             </div>
 
-            {/* Price chart — GeckoTerminal OHLCV */}
             <div className="relative h-48 w-full">
               {chartPrices.length >= 2 ? (
                 <PriceSparkline prices={chartPrices} height={192} />
@@ -557,13 +683,12 @@ export default function DefiPage() {
               )}
             </div>
 
-            {/* Pool metrics row */}
             <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px]">
-              <div className="bg-black/30 rounded-lg p-2">
+              <div className="zion-rainbow-sub p-2" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                 <p className="text-gray-500 mb-0.5">TVL</p>
                 <p className="text-white font-mono">${(poolStats?.tvl_usd ?? 0).toFixed(2)}</p>
               </div>
-              <div className="bg-black/30 rounded-lg p-2">
+              <div className="zion-rainbow-sub p-2" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                 <p className="text-gray-500 mb-0.5">{cs ? 'Likvidita' : 'Liquidity'}</p>
                 <p className="text-white font-mono">
                   {(poolStats?.total_wzion_liquidity ?? 0) > 0
@@ -571,7 +696,7 @@ export default function DefiPage() {
                     : '—'}
                 </p>
               </div>
-              <div className="bg-black/30 rounded-lg p-2">
+              <div className="zion-rainbow-sub p-2" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                 <p className="text-gray-500 mb-0.5">USDT</p>
                 <p className="text-white font-mono">
                   {(poolStats?.pools?.wzion_usdt?.balances?.usdt ?? 0) > 0
@@ -579,35 +704,39 @@ export default function DefiPage() {
                     : '—'}
                 </p>
               </div>
-              <div className="bg-black/30 rounded-lg p-2">
+              <div className="zion-rainbow-sub p-2" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                 <p className="text-gray-500 mb-0.5">Tick</p>
                 <p className="text-white font-mono">{poolStats?.pools?.wzion_usdt?.tick ?? '—'}</p>
               </div>
-              <div className="bg-black/30 rounded-lg p-2">
+              <div className="zion-rainbow-sub p-2" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                 <p className="text-gray-500 mb-0.5">{cs ? 'Stav' : 'Status'}</p>
                 <p className={poolStats?.pools?.wzion_usdt?.active ? 'text-emerald-400' : 'text-amber-400'}>
                   {poolStats?.pools?.wzion_usdt?.active ? (cs ? 'aktivní' : 'active') : (poolStats ? (cs ? 'neaktivní' : 'inactive') : (cs ? 'načítám' : 'loading'))}
                 </p>
               </div>
             </div>
-          </div>
+          </motion.div>
         </section>
 
-        {/* ── Contract Addresses ── */}
+        {/* ═══════ Contract Addresses ═══════ */}
         <section className="zion-container relative z-10 mb-20">
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.08 }}
           >
-            <h2 className="mb-6 text-2xl font-bold">
-              {cs ? 'Kontrakty na Base Mainnet' : 'Base Mainnet Contracts'}
-            </h2>
-            <div className="overflow-hidden zion-rainbow-card" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+            <div className="flex flex-col gap-2 mb-6">
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Kontrakty' : 'Contracts'}</p>
+              <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+                <Layers className="h-7 w-7 text-zion-cyan" />
+                {cs ? 'Kontrakty na Base Mainnet' : 'Base Mainnet Contracts'}
+              </h2>
+            </div>
+            <div className="zion-section overflow-hidden p-0">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-white/10 bg-white/2">
+                    <tr className="border-b border-white/10 bg-white/5">
                       <th className="p-4 text-left font-medium text-gray-400">{cs ? 'Kontrakt' : 'Contract'}</th>
                       <th className="p-4 text-left font-medium text-gray-400">{cs ? 'Adresa' : 'Address'}</th>
                     </tr>
@@ -636,19 +765,18 @@ export default function DefiPage() {
           </motion.div>
         </section>
 
-        {/* ── CTA ── */}
+        {/* ═══════ CTA ═══════ */}
         <section className="zion-container relative z-10 text-center">
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="zion-rainbow-card p-8"
-            style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1 }}
+            className="zion-cta-banner"
           >
             <h2 className="text-2xl font-bold mb-3">
               {cs ? 'Obchoduj wZION' : 'Trade wZION'}
             </h2>
-            <p className="mx-auto mb-6 max-w-lg text-gray-300">
+            <p className="mx-auto mb-6 max-w-lg text-gray-100">
               {cs
                 ? 'wZION je k dispozici na Uniswap V3 (Base). Primární pool wZION/USDT s 0.3% fee.'
                 : 'wZION is available on Uniswap V3 (Base). Primary wZION/USDT pool with 0.3% fee.'}
@@ -658,7 +786,7 @@ export default function DefiPage() {
                 href={`https://app.uniswap.org/swap?chain=base&inputCurrency=${CONTRACTS.USDT}&outputCurrency=${CONTRACTS.wZION}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan px-6 py-3 font-semibold text-white shadow-[0_12px_35px_rgba(147,51,234,0.35)] transition-shadow hover:shadow-[0_18px_45px_rgba(147,51,234,0.45)]"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-zion-gold via-zion-purple to-zion-cyan px-6 py-3 text-sm font-semibold text-black"
               >
                 {cs ? 'Otevřít Uniswap' : 'Open Uniswap'}
                 <ExternalLink className="h-4 w-4" />
@@ -667,7 +795,7 @@ export default function DefiPage() {
                 href={`https://dexscreener.com/base/${CONTRACTS.UniV3PoolUSDT}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 px-6 py-3 text-white transition-colors hover:border-zion-cyan/45"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 bg-black/40 px-6 py-3 text-white transition-colors hover:border-zion-cyan/45"
               >
                 DexScreener
                 <ExternalLink className="h-4 w-4" />
@@ -677,7 +805,6 @@ export default function DefiPage() {
         </section>
       </>
       )}
-
 
       {activeTab === 'swap' && (
       <>
@@ -697,22 +824,28 @@ export default function DefiPage() {
               <p className="text-sm text-gray-400">{cs ? 'Swapuj, obchoduj na DEX a sleduj cenu wZION na Base Mainnet.' : 'Swap, trade on DEX, and track the wZION price on Base Mainnet.'}</p>
             </div>
 
-            <div className="grid gap-5 md:grid-cols-2">
+            <div className="grid gap-5 sm:grid-cols-2">
               <div
-                className="group zion-rainbow-sub p-6 block text-left w-full"
-                style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+                className="zion-rainbow-card p-5 border-cyan-500/20"
+                style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
               >
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br from-cyan-500/80 to-blue-600/80">
-                    <RefreshCw className="h-5 w-5 text-white" />
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/10 border border-cyan-500/20">
+                      <RefreshCw className="h-5 w-5 text-cyan-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-semibold text-white">{cs ? 'Swap wZION' : 'Swap wZION'}</h3>
+                      <p className="text-[11px] text-gray-500">{cs ? 'LiFi + Uniswap integrace' : 'LiFi + Uniswap integration'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-base font-semibold text-white">{cs ? 'Swap wZION' : 'Swap wZION'}</h3>
-                    <p className="text-[11px] text-gray-500">{cs ? 'LiFi + Uniswap integrace' : 'LiFi + Uniswap integration'}</p>
-                  </div>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 text-[10px] font-semibold text-emerald-400">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    {cs ? 'Živě' : 'Live'}
+                  </span>
                 </div>
-                <p className="text-sm text-gray-300 mb-3">{cs ? 'Okamžitý swap mezi wZION, ETH, USDT a dalšími tokeny. LiFi agreguje 30+ DEX a 20+ bridge.' : 'Instant swap between wZION, ETH, USDT, and other tokens. LiFi aggregates 30+ DEX and 20+ bridges.'}</p>
-                <div className="flex items-center gap-2 text-sm text-zion-cyan group-hover:text-white transition-colors">
+                <p className="text-sm text-gray-300 leading-relaxed mb-3">{cs ? 'Okamžitý swap mezi wZION, ETH, USDT a dalšími tokeny. LiFi agreguje 30+ DEX a 20+ bridge.' : 'Instant swap between wZION, ETH, USDT, and other tokens. LiFi aggregates 30+ DEX and 20+ bridges.'}</p>
+                <div className="flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors">
                   <span>{cs ? 'Swap níže' : 'Swap below'}</span>
                   <ArrowRight className="h-3.5 w-3.5" />
                 </div>
@@ -722,20 +855,26 @@ export default function DefiPage() {
                 href="https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group zion-rainbow-sub p-6 block transition-all duration-200 hover:scale-[1.01]"
-                style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+                className="zion-rainbow-card p-5 border-pink-500/20 transition-all duration-200 hover:scale-[1.01] block"
+                style={{ '--rc': '236, 72, 153' } as React.CSSProperties}
               >
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br from-pink-500/80 to-rose-600/80">
-                    <Droplets className="h-5 w-5 text-white" />
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-500/10 border border-pink-500/20">
+                      <Droplets className="h-5 w-5 text-pink-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-semibold text-white">{cs ? 'DEX Pooly' : 'DEX Pools'}</h3>
+                      <p className="text-[11px] text-gray-500">{cs ? 'Uniswap V3 + V4' : 'Uniswap V3 + V4'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-base font-semibold text-white">{cs ? 'DEX Pooly' : 'DEX Pools'}</h3>
-                    <p className="text-[11px] text-gray-500">{cs ? 'Uniswap V3 + V4' : 'Uniswap V3 + V4'}</p>
-                  </div>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 text-[10px] font-semibold text-emerald-400">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    {cs ? 'Živě' : 'Live'}
+                  </span>
                 </div>
-                <p className="text-sm text-gray-300 mb-3">{cs ? 'wZION/USDT primární pool a wZION/WETH sekundární. Migrace likvidity na Uniswap V4.' : 'wZION/USDT primary pool and wZION/WETH secondary. Liquidity migrated to Uniswap V4.'}</p>
-                <div className="flex items-center gap-2 text-sm text-zion-cyan group-hover:text-white transition-colors">
+                <p className="text-sm text-gray-300 leading-relaxed mb-3">{cs ? 'wZION/USDT primární pool a wZION/WETH sekundární. Migrace likvidity na Uniswap V4.' : 'wZION/USDT primary pool and wZION/WETH secondary. Liquidity migrated to Uniswap V4.'}</p>
+                <div className="flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors">
                   <span>{cs ? 'Otevřít Uniswap' : 'Open Uniswap'}</span>
                   <ExternalLink className="h-3.5 w-3.5" />
                 </div>
@@ -745,20 +884,26 @@ export default function DefiPage() {
                 href={CCA_AUCTION_PARAMS.uniswapUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group zion-rainbow-sub p-6 block transition-all duration-200 hover:scale-[1.01]"
-                style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+                className="zion-rainbow-card p-5 border-amber-500/20 transition-all duration-200 hover:scale-[1.01] block"
+                style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
               >
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br from-amber-500/80 to-orange-600/80">
-                    <Gavel className="h-5 w-5 text-white" />
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/20">
+                      <Gavel className="h-5 w-5 text-amber-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-semibold text-white">{cs ? 'CCA Aukce' : 'CCA Auction'}</h3>
+                      <p className="text-[11px] text-gray-500">{cs ? '66.47M wZION za USDC' : '66.47M wZION for USDC'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-base font-semibold text-white">{cs ? 'CCA Aukce' : 'CCA Auction'}</h3>
-                    <p className="text-[11px] text-gray-500">{cs ? '66.47M wZION za USDC' : '66.47M wZION for USDC'}</p>
-                  </div>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-3 py-1 text-[10px] font-semibold text-amber-400">
+                    <Clock className="h-3.5 w-3.5" />
+                    {cs ? 'Aktivní' : 'Active'}
+                  </span>
                 </div>
-                <p className="text-sm text-gray-300 mb-3">{cs ? 'Continuous Clearing Auction na Uniswap. Vyklízecí cena se kontinuálně upravuje podle poptávky.' : 'Continuous Clearing Auction on Uniswap. Clearing price continuously adjusts based on demand.'}</p>
-                <div className="flex items-center gap-2 text-sm text-zion-cyan group-hover:text-white transition-colors">
+                <p className="text-sm text-gray-300 leading-relaxed mb-3">{cs ? 'Continuous Clearing Auction na Uniswap. Vyklízecí cena se kontinuálně upravuje podle poptávky.' : 'Continuous Clearing Auction on Uniswap. Clearing price continuously adjusts based on demand.'}</p>
+                <div className="flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors">
                   <span>{cs ? 'Přihazovat' : 'Place bids'}</span>
                   <ExternalLink className="h-3.5 w-3.5" />
                 </div>
@@ -768,20 +913,26 @@ export default function DefiPage() {
                 href={PANCAKE_V3.swapUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group zion-rainbow-sub p-6 block transition-all duration-200 hover:scale-[1.01]"
-                style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+                className="zion-rainbow-card p-5 border-yellow-500/20 transition-all duration-200 hover:scale-[1.01] block"
+                style={{ '--rc': '255, 199, 0' } as React.CSSProperties}
               >
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br from-yellow-500/80 to-amber-600/80">
-                    <ChefHat className="h-5 w-5 text-white" />
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-500/10 border border-yellow-500/20">
+                      <ChefHat className="h-5 w-5 text-yellow-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-semibold text-white">PancakeSwap V3</h3>
+                      <p className="text-[11px] text-gray-500">{cs ? '2. největší DEX na Base' : '2nd largest DEX on Base'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-base font-semibold text-white">PancakeSwap V3</h3>
-                    <p className="text-[11px] text-gray-500">{cs ? '2. největší DEX na Base' : '2nd largest DEX on Base'}</p>
-                  </div>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 text-[10px] font-semibold text-emerald-400">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    {cs ? 'Živě' : 'Live'}
+                  </span>
                 </div>
-                <p className="text-sm text-gray-300 mb-3">{cs ? 'wZION/USDT pool na PancakeSwap V3. Další možnost likvidity a swapu pro wZION.' : 'wZION/USDT pool on PancakeSwap V3. Another liquidity and swap option for wZION.'}</p>
-                <div className="flex items-center gap-2 text-sm text-zion-cyan group-hover:text-white transition-colors">
+                <p className="text-sm text-gray-300 leading-relaxed mb-3">{cs ? 'wZION/USDT pool na PancakeSwap V3. Další možnost likvidity a swapu pro wZION.' : 'wZION/USDT pool on PancakeSwap V3. Another liquidity and swap option for wZION.'}</p>
+                <div className="flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors">
                   <span>{cs ? 'Swap na PancakeSwap' : 'Swap on PancakeSwap'}</span>
                   <ExternalLink className="h-3.5 w-3.5" />
                 </div>
@@ -790,37 +941,82 @@ export default function DefiPage() {
           </motion.div>
         </section>
 
-        {/* Real swap tools */}
+        {/* ═══════ Real Swap Widgets ═══════ */}
         <section className="zion-container relative z-10 mb-10">
-          <div className="space-y-6 max-w-5xl">
-            {/* LI.FI Cross-Chain Swap + Bridge — aggregates 30+ DEX and 20+ bridges */}
-            <LiFiWidget />
-            {/* Original Uniswap V3 swap widget — direct pool swap for wZION/ETH */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <SwapWidget />
-              <div className="space-y-6">
-                <DefiBalances />
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className="space-y-6 max-w-5xl"
+          >
+            <div className="zion-section">
+              <div className="flex items-center gap-2 mb-4">
+                <RefreshCw className="h-4 w-4 text-zion-cyan" />
+                <h3 className="text-sm font-semibold text-white uppercase tracking-wider">{cs ? 'Cross-chain swap' : 'Cross-chain Swap'}</h3>
+              </div>
+              <LiFiWidget />
+            </div>
+            <div className="zion-rainbow-card p-5 border-purple-500/20" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+              <div className="flex items-center gap-2 mb-4">
+                <Droplets className="h-4 w-4 text-zion-purple" />
+                <h3 className="text-sm font-semibold text-white uppercase tracking-wider">{cs ? 'Direct swap + zůstatky' : 'Direct Swap + Balances'}</h3>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <SwapWidget />
+                <div className="space-y-6">
+                  <DefiBalances />
+                </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </section>
       </>
       )}
-
 
       {activeTab === 'earn' && (
       <>
         {/* ═══════ EARN wZION ═══════ */}
         <section className="zion-container relative z-10 mb-10 space-y-8">
-          <StakingPanel />
-          <FarmingPanel />
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="flex flex-col gap-2 mb-2"
+          >
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Výnosy' : 'Yield'}</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <PiggyBank className="h-7 w-7 text-zion-gold" />
+              {cs ? 'Získej wZION' : 'Earn wZION'}
+            </h2>
+            <p className="text-sm text-gray-400">{cs ? 'Stakeuj nebo farm wZION a získej pravidelné odměny.' : 'Stake or farm wZION to earn regular rewards.'}</p>
+          </motion.div>
+
+          <div className="zion-section">
+            <div className="zion-rainbow-card p-4 mb-4 border-zion-gold/20" style={{ '--rc': '255, 215, 0' } as React.CSSProperties}>
+              <div className="flex items-center gap-2">
+                <Lock className="h-5 w-5 text-zion-gold" />
+                <h3 className="text-base font-semibold text-white">{cs ? 'Staking' : 'Staking'}</h3>
+              </div>
+            </div>
+            <StakingPanel />
+          </div>
+
+          <div className="zion-section">
+            <div className="zion-rainbow-card p-4 mb-4 border-emerald-500/20" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+              <div className="flex items-center gap-2">
+                <Sprout className="h-5 w-5 text-emerald-400" />
+                <h3 className="text-base font-semibold text-white">{cs ? 'Farming' : 'Farming'}</h3>
+              </div>
+            </div>
+            <FarmingPanel />
+          </div>
         </section>
       </>
       )}
 
       {activeTab === 'bridge' && (
       <>
-      {/* Bridge product card */}
+      {/* ═══════ BRIDGE PRODUCT ═══════ */}
       <section className="zion-container relative z-10 mb-10">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -839,33 +1035,78 @@ export default function DefiPage() {
           <div className="grid gap-5 md:grid-cols-2">
             <Link
               href="/bridge"
-              className="group zion-rainbow-sub p-6 block transition-all duration-200 hover:scale-[1.01]"
-              style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+              className="zion-rainbow-card p-6 border-emerald-500/20 transition-all duration-200 hover:scale-[1.01] block"
+              style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
             >
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br from-cyan-500/80 to-blue-600/80">
-                  <ArrowLeftRight className="h-5 w-5 text-white" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                  <ArrowLeftRight className="h-5 w-5 text-emerald-400" />
                 </div>
                 <div>
                   <h3 className="text-base font-semibold text-white">{cs ? 'wZION Bridge' : 'wZION Bridge'}</h3>
                   <p className="text-[11px] text-gray-500">{cs ? 'L1 ↔ Base · 5/5 validátorů' : 'L1 ↔ Base · 5/5 validators'}</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-300 mb-3">{cs ? 'Zamkni ZION na L1 a získej wZION na Base. Spal wZION pro odemčení zpět na L1. 1:1 peg, multi-validátorový relay.' : 'Lock ZION on L1 and receive wZION on Base. Burn wZION to unlock back to L1. 1:1 peg, multi-validator relay.'}</p>
-              <div className="flex items-center gap-2 text-sm text-zion-cyan group-hover:text-white transition-colors">
+              <p className="text-sm text-gray-300 leading-relaxed mb-3">{cs ? 'Zamkni ZION na L1 a získej wZION na Base. Spal wZION pro odemčení zpět na L1. 1:1 peg, multi-validátorový relay.' : 'Lock ZION on L1 and receive wZION on Base. Burn wZION to unlock back to L1. 1:1 peg, multi-validator relay.'}</p>
+              <div className="flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors">
                 <span>{cs ? 'Otevřít bridge' : 'Open bridge'}</span>
                 <ArrowRight className="h-3.5 w-3.5" />
               </div>
             </Link>
+
+            <div
+              className="zion-rainbow-card p-6 border-cyan-500/20"
+              style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <Flame className="h-5 w-5 text-cyan-400" />
+                <h3 className="font-semibold text-white text-sm">
+                  {cs ? 'Jak Bridge funguje' : 'How Bridge Works'}
+                </h3>
+              </div>
+              <div className="space-y-3 text-xs text-gray-300 leading-relaxed">
+                <div className="flex gap-3">
+                  <span className="shrink-0 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 text-emerald-400 font-mono text-[10px]">L1→L2</span>
+                  <p>{cs ? 'Zamkni ZION na L1 → relay mintne wZION na Base (1:1 peg)' : 'Lock ZION on L1 → relay mints wZION on Base (1:1 peg)'}</p>
+                </div>
+                <div className="flex gap-3">
+                  <span className="shrink-0 rounded-lg bg-orange-500/10 border border-orange-500/20 px-2 py-1 text-orange-400 font-mono text-[10px]">L2→L1</span>
+                  <p>{cs ? 'Spal wZION na Base → relay odemkne ZION na L1 (do ~5 min)' : 'Burn wZION on Base → relay unlocks ZION on L1 (within ~5 min)'}</p>
+                </div>
+              </div>
+              <div className="pt-4 flex flex-wrap gap-2">
+                <a
+                  href={`https://basescan.org/address/${CONTRACTS.ZIONBridge}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+                >
+                  Bridge Contract <ExternalLink className="h-2.5 w-2.5" />
+                </a>
+                <a
+                  href={`https://basescan.org/token/${CONTRACTS.wZION}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+                >
+                  wZION Token <ExternalLink className="h-2.5 w-2.5" />
+                </a>
+              </div>
+            </div>
           </div>
         </motion.div>
       </section>
 
-      {/* Bridge Vault Status + BridgeBurnWidget + How Bridge Works */}
+      {/* ═══════ Bridge Vault Status + Burn Widget ═══════ */}
       <section className="zion-container relative z-10 mb-20">
-        <div className="space-y-6 max-w-5xl">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="space-y-6 max-w-5xl"
+        >
           {/* Bridge Vault Status */}
-          <div className="zion-rainbow-card p-6" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 border-emerald-500/20" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="flex items-center gap-2 mb-4">
               <Lock className="h-5 w-5 text-zion-gold" />
               <h3 className="font-semibold text-white text-sm">
@@ -942,7 +1183,7 @@ export default function DefiPage() {
           {/* Burn widget + How it works */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <BridgeBurnWidget />
-            <div className="zion-rainbow-card p-6 space-y-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+            <div className="zion-rainbow-card p-6 space-y-4 border-cyan-500/20" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-2">
                 <Flame className="h-5 w-5 text-cyan-400" />
                 <h3 className="font-semibold text-white text-sm">
@@ -951,7 +1192,7 @@ export default function DefiPage() {
               </div>
               <div className="space-y-3 text-xs text-gray-300 leading-relaxed">
                 <div className="flex gap-3">
-                  <span className="shrink-0 rounded-lg bg-cyan-500/10 border border-cyan-500/20 px-2 py-1 text-cyan-400 font-mono text-[10px]">L1→L2</span>
+                  <span className="shrink-0 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 text-emerald-400 font-mono text-[10px]">L1→L2</span>
                   <p>{cs ? 'Zamkni ZION na L1 → relay mintne wZION na Base (1:1 peg)' : 'Lock ZION on L1 → relay mints wZION on Base (1:1 peg)'}</p>
                 </div>
                 <div className="flex gap-3">
@@ -979,27 +1220,312 @@ export default function DefiPage() {
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </section>
       </>
       )}
-
 
       {activeTab === 'governance' && (
       <>
         {/* ═══════ GOVERNANCE ═══════ */}
         <section className="zion-container relative z-10 mb-10">
-          <GovernancePanel />
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <div className="flex flex-col gap-2 mb-6">
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Governance' : 'Governance'}</p>
+              <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+                <Scale className="h-7 w-7 text-purple-400" />
+                {cs ? 'wZION Governance' : 'wZION Governance'}
+              </h2>
+              <p className="text-sm text-gray-400">{cs ? 'Hlasuj o parametrech protokolu a sleduj treasury na Base Mainnet.' : 'Vote on protocol parameters and monitor the treasury on Base Mainnet.'}</p>
+            </div>
+          </motion.div>
+          <div className="zion-section">
+            <div className="zion-rainbow-card p-4 mb-4 border-purple-500/20" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+              <div className="flex items-center gap-2">
+                <Scale className="h-5 w-5 text-purple-400" />
+                <h3 className="text-base font-semibold text-white">{cs ? 'Governance panel' : 'Governance Panel'}</h3>
+              </div>
+            </div>
+            <GovernancePanel />
+          </div>
         </section>
       </>
       )}
 
+      {activeTab === 'pools' && (
+      <>
+        {/* ═══════ DEX POOLS ═══════ */}
+        <section className="zion-container relative z-10 mb-10">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <div className="flex flex-col gap-2 mb-6">
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Likvidita' : 'Liquidity'}</p>
+              <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+                <Droplets className="h-7 w-7 text-zion-cyan" />
+                {cs ? 'DEX pooly' : 'DEX Pools'}
+              </h2>
+              <p className="text-sm text-gray-400">{cs ? 'wZION/USDT na Uniswap V4 a PancakeSwap V3.' : 'wZION/USDT on Uniswap V4 and PancakeSwap V3.'}</p>
+            </div>
+          </motion.div>
+        </section>
+
+        {/* ── PancakeSwap V3 ── */}
+        <section className="zion-container relative z-10 mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.04 }}
+            className="zion-rainbow-card p-6 border-yellow-500/20"
+            style={{ '--rc': '255, 199, 0' } as React.CSSProperties}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+              <div className="flex items-center gap-3">
+                <ChefHat className="h-6 w-6 text-yellow-400" />
+                <div>
+                  <h2 className="text-lg font-bold text-white">
+                    PancakeSwap V3
+                  </h2>
+                  <p className="text-[10px] text-gray-500">
+                    {cs ? '2. největší DEX na Base · $115M denní volume' : '2nd largest DEX on Base · $115M daily volume'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  {cs ? 'Live' : 'Live'}
+                </span>
+                <a
+                  href={PANCAKE_V3.swapUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-500 px-4 py-2 text-xs font-semibold text-white hover:opacity-90 transition-opacity"
+                >
+                  {cs ? 'Swap na PancakeSwap' : 'Swap on PancakeSwap'}
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+            </div>
+
+            {/* Info grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+              <div className="zion-rainbow-sub p-3" style={{ '--rc': '255, 199, 0' } as React.CSSProperties}>
+                <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Pool adresa' : 'Pool address'}</p>
+                <p className="text-sm font-semibold text-white font-mono">0x46cc...6f47</p>
+                <p className="text-[10px] text-gray-500">wZION/USDT · 0.25% fee · NFT #2054747</p>
+              </div>
+              <div className="zion-rainbow-sub p-3" style={{ '--rc': '255, 199, 0' } as React.CSSProperties}>
+                <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Cena' : 'Price'}</p>
+                <p className="text-sm font-semibold text-white font-mono">$0.0002</p>
+                <p className="text-[10px] text-gray-500">{cs ? 'seed price' : 'seed price'}</p>
+              </div>
+              <div className="zion-rainbow-sub p-3" style={{ '--rc': '255, 199, 0' } as React.CSSProperties}>
+                <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Fee tiers' : 'Fee tiers'}</p>
+                <p className="text-sm font-semibold text-white">0.01% · 0.05% · 0.25% · 1%</p>
+                <p className="text-[10px] text-gray-500">{cs ? 'multi-tier' : 'multi-tier'}</p>
+              </div>
+            </div>
+
+            {/* Links */}
+            <div className="flex flex-wrap gap-2">
+              <a
+                href={PANCAKE_V3.swapUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+              >
+                {cs ? 'Swap wZION' : 'Swap wZION'} <ExternalLink className="h-2.5 w-2.5" />
+              </a>
+              <a
+                href={PANCAKE_V3.addLiquidityUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+              >
+                {cs ? 'Přidat likviditu' : 'Add Liquidity'} <ExternalLink className="h-2.5 w-2.5" />
+              </a>
+              <a
+                href={`https://basescan.org/address/${CONTRACTS.PancakeV3PoolUSDT}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+              >
+                {cs ? 'Pool na Basescan' : 'Pool on Basescan'} <ExternalLink className="h-2.5 w-2.5" />
+              </a>
+              <a
+                href={`https://basescan.org/address/${PANCAKE_V3.factory}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+              >
+                {cs ? 'Factory kontrakt' : 'Factory Contract'} <ExternalLink className="h-2.5 w-2.5" />
+              </a>
+            </div>
+
+            {/* Status note */}
+            <div className="mt-4 flex items-start gap-3 rounded-lg bg-emerald-500/5 border border-emerald-500/15 p-3">
+              <Trophy className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+              <p className="text-[10px] text-gray-400 leading-relaxed">
+                {cs
+                  ? 'PancakeSwap V3 pool je LIVE na Base Mainnet! wZION/USDT pool s 0.25% fee je vytvořen a inicializován na ceně $0.0002/wZION. NFT pozice #2054747. wZION je nyní dostupný na 2 DEX platformách (Uniswap V4 + PancakeSwap V3) + LiFi agregátor s 30+ DEX. PancakeSwap je 2. největší DEX na Base s $115M denním volume.'
+                  : 'PancakeSwap V3 pool is LIVE on Base Mainnet! wZION/USDT pool with 0.25% fee is created and initialized at $0.0002/wZION. NFT position #2054747. wZION is now available on 2 DEX platforms (Uniswap V4 + PancakeSwap V3) + LiFi aggregator with 30+ DEX. PancakeSwap is the 2nd largest DEX on Base with $115M daily volume.'}
+              </p>
+            </div>
+          </motion.div>
+        </section>
+
+        {/* ── Active Pools Detail ── */}
+        <section className="zion-container relative z-10 mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.06 }}
+          >
+            <div className="flex flex-col gap-2 mb-4">
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Uniswap' : 'Uniswap'}</p>
+              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                <Droplets className="h-5 w-5 text-zion-cyan" />
+                {cs ? 'Uniswap V4 pooly' : 'Uniswap V4 pools'}
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* wZION/USDT — active V4 pool */}
+              <div
+                className="zion-rainbow-card p-4 border-zion-gold/20"
+                style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-semibold text-white">{poolStats?.pools?.wzion_usdt?.pair ?? 'wZION/USDT'}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-zion-gold/20 text-zion-gold border border-zion-gold/30">
+                      {cs ? 'primární' : 'primary'}
+                    </span>
+                    <span className="text-[10px] text-gray-400">{poolStats?.pools?.wzion_usdt?.feeLabel ?? '0.3%'}</span>
+                  </div>
+                </div>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">{cs ? 'Cena' : 'Price'}:</span>
+                    <span className="font-mono text-white">${(poolStats?.pools?.wzion_usdt?.price_usd ?? 0).toFixed(6)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">{cs ? 'Likvidita' : 'Liquidity'}:</span>
+                    <span className="font-mono text-white">
+                      {(poolStats?.pools?.wzion_usdt?.balances?.wzion ?? 0) > 0
+                        ? `${(poolStats!.pools.wzion_usdt.balances.wzion).toLocaleString(undefined, { maximumFractionDigits: 0 })} wZION`
+                        : '—'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">USDT:</span>
+                    <span className="font-mono text-white">
+                      {(poolStats?.pools?.wzion_usdt?.balances?.usdt ?? 0) > 0
+                        ? (poolStats!.pools.wzion_usdt.balances.usdt).toLocaleString(undefined, { maximumFractionDigits: 2 })
+                        : '—'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">TVL:</span>
+                    <span className="font-mono text-white">${(poolStats?.pools?.wzion_usdt?.tvl_usd ?? 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Tick:</span>
+                    <span className="font-mono text-white">{poolStats?.pools?.wzion_usdt?.tick ?? '—'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">{cs ? 'Stav' : 'Status'}:</span>
+                    <span className={poolStats?.pools?.wzion_usdt?.active ? 'text-emerald-400' : 'text-amber-400'}>
+                      {poolStats?.pools?.wzion_usdt?.active ? (cs ? 'aktivní' : 'active') : (cs ? 'načítám' : 'loading')}
+                    </span>
+                  </div>
+                  {poolStats?.pools?.wzion_usdt?.nft_owner && (
+                    <div className="pt-2 mt-2 border-t border-white/10 space-y-1">
+                      <p className="text-[10px] uppercase tracking-wider text-gray-500">
+                        {cs ? 'V4 NFT pozice' : 'V4 NFT position'}
+                      </p>
+                      <div className="flex justify-between text-[10px]">
+                        <span className="text-gray-500 font-mono">#{poolStats.pools.wzion_usdt.nft_id}</span>
+                        <span className="text-emerald-400 font-mono">
+                          {cs ? 'aktivní' : 'active'} · {poolStats.pools.wzion_usdt.nft_owner.slice(0, 8)}…{poolStats.pools.wzion_usdt.nft_owner.slice(-4)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* ETH/wZION — burned V4 position */}
+              <div
+                className="zion-rainbow-card p-4 opacity-50"
+                style={{ '--rc': '100, 100, 100' } as React.CSSProperties}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-semibold text-white">{poolStats?.pools?.wzion_weth?.pair ?? 'ETH/wZION'}</span>
+                  <span className="text-[10px] text-gray-400">{poolStats?.pools?.wzion_weth?.feeLabel ?? '0.3%'}</span>
+                </div>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">{cs ? 'Likvidita' : 'Liquidity'}:</span>
+                    <span className="font-mono text-gray-500">0</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">{cs ? 'Stav' : 'Status'}:</span>
+                    <span className="text-red-400/70">{cs ? 'vypálena' : 'burned'}</span>
+                  </div>
+                  <div className="pt-2 mt-2 border-t border-white/10 space-y-1">
+                    <p className="text-[10px] uppercase tracking-wider text-gray-600">
+                      {cs ? 'V4 NFT pozice' : 'V4 NFT position'}
+                    </p>
+                    <div className="flex justify-between text-[10px]">
+                      <span className="text-gray-600 font-mono">#{poolStats?.pools?.wzion_weth?.nft_id ?? 2740380}</span>
+                      <span className="text-red-400/70 font-mono">{cs ? 'spálena' : 'burned'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </section>
+      </>
+      )}
 
       {activeTab === 'auction' && (
       <>
+        {/* ═══════ CCA AUCTION ═══════ */}
+        <section className="zion-container relative z-10 mb-10">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <div className="flex flex-col gap-2 mb-6">
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Aukce' : 'Auction'}</p>
+              <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+                <Gavel className="h-7 w-7 text-amber-400" />
+                {cs ? 'Uniswap CCA Aukce' : 'Uniswap CCA Auction'}
+              </h2>
+              <p className="text-sm text-gray-400">{cs ? 'Continuous Clearing Auction · 66.47M wZION za USDC.' : 'Continuous Clearing Auction · 66.47M wZION for USDC.'}</p>
+            </div>
+          </motion.div>
+        </section>
+
         {/* ── Uniswap CCA Auction ── */}
         <section className="zion-container relative z-10 mb-8">
-          <div className="zion-rainbow-card p-6" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.04 }}
+            className="zion-rainbow-card p-6 border-amber-500/20"
+            style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
+          >
             {/* Header */}
             <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
               <div className="flex items-center gap-3">
@@ -1028,7 +1554,7 @@ export default function DefiPage() {
                   href={CCA_AUCTION_PARAMS.uniswapUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-linear-to-r from-amber-500 to-orange-500 px-4 py-2 text-xs font-semibold text-white hover:opacity-90 transition-opacity"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2 text-xs font-semibold text-white hover:opacity-90 transition-opacity"
                 >
                   {cs ? 'Přiházet na Uniswap' : 'Bid on Uniswap'}
                   <ExternalLink className="h-3 w-3" />
@@ -1098,7 +1624,7 @@ export default function DefiPage() {
               </div>
               <div className="h-2 bg-black/40 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-linear-to-r from-amber-500 to-orange-500 transition-all duration-500"
+                  className="h-full bg-gradient-to-r from-amber-500 to-orange-500 transition-all duration-500"
                   style={{ width: `${Math.min(100, auctionData?.progressPct ?? 0)}%` }}
                 />
               </div>
@@ -1178,217 +1704,10 @@ export default function DefiPage() {
                   : 'Note: END_BLOCK is immutable and cannot be changed — auction runs ~184 days (intended 30). After END_BLOCK, exitBid() for refund or sweepUnsoldTokens() to reclaim unsold wZION. See AUCTION_CCA_BASE.md.'}
               </p>
             </div>
-          </div>
+          </motion.div>
         </section>
       </>
       )}
-
-
-      {activeTab === 'pools' && (
-      <>
-        {/* ── PancakeSwap V3 ── */}
-        <section className="zion-container relative z-10 mb-8">
-          <div className="zion-rainbow-card p-6" style={{ '--rc': '255, 199, 0' } as React.CSSProperties}>
-            {/* Header */}
-            <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-              <div className="flex items-center gap-3">
-                <ChefHat className="h-6 w-6 text-amber-400" />
-                <div>
-                  <h2 className="text-lg font-bold text-white">
-                    PancakeSwap V3
-                  </h2>
-                  <p className="text-[10px] text-gray-500">
-                    {cs ? '2. největší DEX na Base · $115M denní volume' : '2nd largest DEX on Base · $115M daily volume'}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-semibold bg-green-500/10 text-green-400 border border-green-500/20">
-                  <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
-                  {cs ? 'Live' : 'Live'}
-                </span>
-                <a
-                  href={PANCAKE_V3.swapUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-linear-to-r from-amber-500 to-yellow-500 px-4 py-2 text-xs font-semibold text-white hover:opacity-90 transition-opacity"
-                >
-                  {cs ? 'Swap na PancakeSwap' : 'Swap on PancakeSwap'}
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </div>
-            </div>
-
-            {/* Info grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-              <div className="zion-rainbow-sub p-3" style={{ '--rc': '255, 199, 0' } as React.CSSProperties}>
-                <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Pool adresa' : 'Pool address'}</p>
-                <p className="text-sm font-semibold text-white font-mono">0x46cc...6f47</p>
-                <p className="text-[10px] text-gray-500">wZION/USDT · 0.25% fee · NFT #2054747</p>
-              </div>
-              <div className="zion-rainbow-sub p-3" style={{ '--rc': '255, 199, 0' } as React.CSSProperties}>
-                <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Cena' : 'Price'}</p>
-                <p className="text-sm font-semibold text-white font-mono">$0.0002</p>
-                <p className="text-[10px] text-gray-500">{cs ? 'seed price' : 'seed price'}</p>
-              </div>
-              <div className="zion-rainbow-sub p-3" style={{ '--rc': '255, 199, 0' } as React.CSSProperties}>
-                <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Fee tiers' : 'Fee tiers'}</p>
-                <p className="text-sm font-semibold text-white">0.01% · 0.05% · 0.25% · 1%</p>
-                <p className="text-[10px] text-gray-500">{cs ? 'multi-tier' : 'multi-tier'}</p>
-              </div>
-            </div>
-
-            {/* Links */}
-            <div className="flex flex-wrap gap-2">
-              <a
-                href={PANCAKE_V3.swapUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
-              >
-                {cs ? 'Swap wZION' : 'Swap wZION'} <ExternalLink className="h-2.5 w-2.5" />
-              </a>
-              <a
-                href={PANCAKE_V3.addLiquidityUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
-              >
-                {cs ? 'Přidat likviditu' : 'Add Liquidity'} <ExternalLink className="h-2.5 w-2.5" />
-              </a>
-              <a
-                href={`https://basescan.org/address/${CONTRACTS.PancakeV3PoolUSDT}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
-              >
-                {cs ? 'Pool na Basescan' : 'Pool on Basescan'} <ExternalLink className="h-2.5 w-2.5" />
-              </a>
-              <a
-                href={`https://basescan.org/address/${PANCAKE_V3.factory}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
-              >
-                {cs ? 'Factory kontrakt' : 'Factory Contract'} <ExternalLink className="h-2.5 w-2.5" />
-              </a>
-            </div>
-
-            {/* Status note */}
-            <div className="mt-4 flex items-start gap-3 rounded-lg bg-green-500/5 border border-green-500/15 p-3">
-              <Trophy className="h-4 w-4 text-green-400 shrink-0 mt-0.5" />
-              <p className="text-[10px] text-gray-400 leading-relaxed">
-                {cs
-                  ? 'PancakeSwap V3 pool je LIVE na Base Mainnet! wZION/USDT pool s 0.25% fee je vytvořen a inicializován na ceně $0.0002/wZION. NFT pozice #2054747. wZION je nyní dostupný na 2 DEX platformách (Uniswap V4 + PancakeSwap V3) + LiFi agregátor s 30+ DEX. PancakeSwap je 2. největší DEX na Base s $115M denním volume.'
-                  : 'PancakeSwap V3 pool is LIVE on Base Mainnet! wZION/USDT pool with 0.25% fee is created and initialized at $0.0002/wZION. NFT position #2054747. wZION is now available on 2 DEX platforms (Uniswap V4 + PancakeSwap V3) + LiFi aggregator with 30+ DEX. PancakeSwap is the 2nd largest DEX on Base with $115M daily volume.'}
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Active Pools Detail ── */}
-        <section className="zion-container relative z-10 mb-8">
-          <h2 className="mb-4 text-lg font-semibold text-white">
-            {cs ? 'Uniswap V4 pooly' : 'Uniswap V4 pools'}
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* wZION/USDT — active V4 pool */}
-            <div
-              className="zion-rainbow-card p-4 border-zion-gold/30"
-              style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-semibold text-white">{poolStats?.pools?.wzion_usdt?.pair ?? 'wZION/USDT'}</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-zion-gold/20 text-zion-gold border border-zion-gold/30">
-                  {cs ? 'primární' : 'primary'}
-                </span>
-                <span className="text-[10px] text-gray-400">{poolStats?.pools?.wzion_usdt?.feeLabel ?? '0.3%'}</span>
-              </div>
-              <div className="space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">{cs ? 'Cena' : 'Price'}:</span>
-                  <span className="font-mono text-white">${(poolStats?.pools?.wzion_usdt?.price_usd ?? 0).toFixed(6)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">{cs ? 'Likvidita' : 'Liquidity'}:</span>
-                  <span className="font-mono text-white">
-                    {(poolStats?.pools?.wzion_usdt?.balances?.wzion ?? 0) > 0
-                      ? `${(poolStats!.pools.wzion_usdt.balances.wzion).toLocaleString(undefined, { maximumFractionDigits: 0 })} wZION`
-                      : '—'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">USDT:</span>
-                  <span className="font-mono text-white">
-                    {(poolStats?.pools?.wzion_usdt?.balances?.usdt ?? 0) > 0
-                      ? (poolStats!.pools.wzion_usdt.balances.usdt).toLocaleString(undefined, { maximumFractionDigits: 2 })
-                      : '—'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">TVL:</span>
-                  <span className="font-mono text-white">${(poolStats?.pools?.wzion_usdt?.tvl_usd ?? 0).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Tick:</span>
-                  <span className="font-mono text-white">{poolStats?.pools?.wzion_usdt?.tick ?? '—'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">{cs ? 'Stav' : 'Status'}:</span>
-                  <span className={poolStats?.pools?.wzion_usdt?.active ? 'text-emerald-400' : 'text-amber-400'}>
-                    {poolStats?.pools?.wzion_usdt?.active ? (cs ? 'aktivní' : 'active') : (cs ? 'načítám' : 'loading')}
-                  </span>
-                </div>
-                {poolStats?.pools?.wzion_usdt?.nft_owner && (
-                  <div className="pt-2 mt-2 border-t border-white/10 space-y-1">
-                    <p className="text-[10px] uppercase tracking-wider text-gray-500">
-                      {cs ? 'V4 NFT pozice' : 'V4 NFT position'}
-                    </p>
-                    <div className="flex justify-between text-[10px]">
-                      <span className="text-gray-500 font-mono">#{poolStats.pools.wzion_usdt.nft_id}</span>
-                      <span className="text-emerald-400 font-mono">
-                        {cs ? 'aktivní' : 'active'} · {poolStats.pools.wzion_usdt.nft_owner.slice(0, 8)}…{poolStats.pools.wzion_usdt.nft_owner.slice(-4)}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* ETH/wZION — burned V4 position */}
-            <div
-              className="zion-rainbow-card p-4 opacity-50"
-              style={{ '--rc': '100, 100, 100' } as React.CSSProperties}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-semibold text-white">{poolStats?.pools?.wzion_weth?.pair ?? 'ETH/wZION'}</span>
-                <span className="text-[10px] text-gray-400">{poolStats?.pools?.wzion_weth?.feeLabel ?? '0.3%'}</span>
-              </div>
-              <div className="space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">{cs ? 'Likvidita' : 'Liquidity'}:</span>
-                  <span className="font-mono text-gray-500">0</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">{cs ? 'Stav' : 'Status'}:</span>
-                  <span className="text-red-400/70">{cs ? 'vypálena' : 'burned'}</span>
-                </div>
-                <div className="pt-2 mt-2 border-t border-white/10 space-y-1">
-                  <p className="text-[10px] uppercase tracking-wider text-gray-600">
-                    {cs ? 'V4 NFT pozice' : 'V4 NFT position'}
-                  </p>
-                  <div className="flex justify-between text-[10px]">
-                    <span className="text-gray-600 font-mono">#{poolStats?.pools?.wzion_weth?.nft_id ?? 2740380}</span>
-                    <span className="text-red-400/70 font-mono">{cs ? 'spálena' : 'burned'}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      </>
-      )}
-
 
     </div>
   );
