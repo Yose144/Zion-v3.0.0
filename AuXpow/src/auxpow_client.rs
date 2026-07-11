@@ -78,6 +78,12 @@ pub struct ExternalJob {
     /// External coin this job belongs to.
     #[serde(skip)]
     pub external_coin: ExternalCoin,
+    /// Alephium shard group indices (fromGroup / toGroup) from mining.notify.
+    #[serde(skip)]
+    pub from_group: u32,
+    /// Alephium shard group index (toGroup) from mining.notify.
+    #[serde(skip)]
+    pub to_group: u32,
     /// Extra nonce 1 provided by the pool (Alephium).
     #[serde(skip)]
     pub extranonce1: Vec<u8>,
@@ -197,7 +203,7 @@ impl AuxPowClient {
         let req = json!({
             "id": 1,
             "method": "mining.subscribe",
-            "params": ["zion-auxpow/0.1", null]
+            "params": ["zion-auxpow/0.1"]
         });
         let resp = self.send_request(&req).await?;
         if let Some(result) = resp.get("result") {
@@ -382,8 +388,10 @@ impl AuxPowClient {
         // object contains: jobId, headerBlob, targetBlob, height, fromGroup,
         // toGroup, txsBlob.
         let inner = if let Some(arr) = params.as_array() {
-            if arr.len() == 1 && arr[0].is_object() {
-                &arr[0]
+            if arr.iter().any(|v| v.is_object()) {
+                // Alephium/WoolyPooly sends mining.notify params as an array of
+                // job objects; pick the first one to mine.
+                arr.iter().find(|v| v.is_object()).unwrap()
             } else {
                 params
             }
@@ -397,6 +405,14 @@ impl AuxPowClient {
                 .and_then(|v| v.as_str())
                 .unwrap_or("unknown")
                 .to_string();
+            let from_group = obj
+                .get("fromGroup")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(0) as u32;
+            let to_group = obj
+                .get("toGroup")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(0) as u32;
             let header_hex = obj
                 .get("headerBlob")
                 .and_then(|v| v.as_str())
@@ -426,6 +442,8 @@ impl AuxPowClient {
                 timestamp: None,
                 nbits: None,
                 external_coin: self.profile.coin,
+                from_group,
+                to_group,
                 extranonce1: self.extranonce1.lock().await.clone(),
                 extranonce2: String::new(),
             });
@@ -464,6 +482,8 @@ impl AuxPowClient {
                             timestamp: Some(timestamp),
                             nbits: None,
                             external_coin: self.profile.coin,
+                            from_group: 0,
+                            to_group: 0,
                             extranonce1: self.extranonce1.lock().await.clone(),
                             extranonce2: String::new(),
                         });
@@ -528,6 +548,8 @@ impl AuxPowClient {
             timestamp,
             nbits,
             external_coin: self.profile.coin,
+            from_group: 0,
+            to_group: 0,
             extranonce1: self.extranonce1.lock().await.clone(),
             extranonce2: String::new(),
         })
@@ -562,7 +584,7 @@ impl AuxPowClient {
     ///
     /// Supports two Stratum v1 submit dialects:
     ///   - Standard / zpool / KAS: `[worker, job_id, nonce_hex]`
-    ///   - Alephium: `[job_id, nonce_hex, workerId]`
+    ///   - Alephium: JSON object `{jobId, fromGroup, toGroup, nonce, worker}`
     pub async fn submit_share(
         &self,
         job_id: &str,
@@ -575,21 +597,34 @@ impl AuxPowClient {
             && self.profile.coin == ExternalCoin::KAS;
 
         let params = if is_alph {
-            // Alephium/Kryptex: try submitting the full 24-byte nonce as hex.
-            // Full nonce = extranonce1 (pool prefix) || scanned nonce (8B LE)
-            // || zero padding to 24 bytes.  The scanned nonce is LE to match the
-            // GPU miner and the Alephium stratum spec.
+            // Alephium stratum submit uses a JSON object: {jobId, fromGroup,
+            // toGroup, nonce, worker}.  The nonce is the full 24-byte value
+            // (48 hex chars) composed of extranonce1 || scanned_nonce (LE) ||
+            // zero padding, matching the WoolyPooly/luminousminer Blake3
+            // implementation.
+            let job = self.current_job().await;
+            let (from_group, to_group) = job
+                .as_ref()
+                .map(|j| (j.from_group, j.to_group))
+                .unwrap_or((0, 0));
             let en1 = self.extranonce1.lock().await.clone();
+            let mut base_bytes = [0u8; 8];
+            let en1_len = en1.len().min(8);
+            base_bytes[8 - en1_len..].copy_from_slice(&en1[..en1_len]);
+            let base = u64::from_be_bytes(base_bytes);
+            let candidate = base.wrapping_add(nonce);
             let mut full = [0u8; 24];
-            let en1_len = en1.len().min(24);
-            full[..en1_len].copy_from_slice(&en1[..en1_len]);
-            if en1_len + 8 <= 24 {
-                full[en1_len..en1_len + 8].copy_from_slice(&nonce.to_le_bytes());
-            } else {
-                full[16..24].copy_from_slice(&nonce.to_le_bytes());
-            }
-            let hex = hex::encode(full);
-            json!([job_id, hex])
+            full[..8].copy_from_slice(&candidate.to_be_bytes());
+            let nonce_hex = hex::encode(full);
+            let wallet = self.payout_wallet.lock().await.clone();
+            let worker = format!("{}.{}", wallet, self.profile.worker_name);
+            json!({
+                "jobId": job_id,
+                "fromGroup": from_group,
+                "toGroup": to_group,
+                "nonce": nonce_hex,
+                "worker": worker,
+            })
         } else if is_kas {
             // Kaspa stratum bridge (used by 2miners, Kryptex, etc.) parses the
             // nonce param with `u64::from_str_radix(..., 16)`, i.e. as a
@@ -1153,17 +1188,22 @@ mod tests {
 
             let submit = read_json(&mut reader, &mut buf).await;
             assert_eq!(submit["method"], "mining.submit");
-            let params = submit["params"].as_array().unwrap();
-            assert_eq!(params.len(), 2);
-            assert_eq!(params[0], "alph_job_1");
-            let nonce_hex = params[1].as_str().unwrap();
+            let params = submit["params"].as_object().unwrap();
+            assert_eq!(params["jobId"], "alph_job_1");
+            assert_eq!(params["fromGroup"], 3);
+            assert_eq!(params["toGroup"], 3);
+            assert_eq!(params["worker"], "14DLdim8A2o6AzFNgajvKgwWGpi9Fj4sP1RixdGteJNGJ.test_worker");
+            let nonce_hex = params["nonce"].as_str().unwrap();
+            // full 24-byte nonce = 48 hex chars
             assert_eq!(nonce_hex.len(), 48);
 
             let full_nonce = hex::decode(nonce_hex).unwrap();
-            let en1 = &full_nonce[..2];
-            let nonce_bytes = &full_nonce[2..10];
-            let nonce = u64::from_le_bytes(nonce_bytes.try_into().unwrap());
-            let hash = hash_blake3_alph(&header_blob, en1, nonce);
+            let en1 = hex::decode("6e14").unwrap();
+            let candidate = u64::from_be_bytes(full_nonce[..8].try_into().unwrap());
+            let base_bytes = [0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0x6eu8, 0x14u8];
+            let base = u64::from_be_bytes(base_bytes);
+            let nonce = candidate.wrapping_sub(base);
+            let hash = hash_blake3_alph(&header_blob, &en1, nonce);
             assert!(
                 meets_target(&hash, &[0xFFu8; 32]),
                 "submitted nonce must produce hash meeting target"
