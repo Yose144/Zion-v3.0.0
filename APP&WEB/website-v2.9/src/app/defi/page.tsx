@@ -108,7 +108,6 @@ function StatCard({
   icon,
   colorClass,
   bgClass,
-  borderClass,
   label,
   value,
   sub,
@@ -117,14 +116,13 @@ function StatCard({
   icon: React.ReactNode;
   colorClass: string;
   bgClass: string;
-  borderClass: string;
   label: string;
   value: string;
   sub?: string;
   tip?: string;
 }) {
   return (
-    <div className={`zion-rainbow-card p-4 transition-colors ${borderClass}`} style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+    <div className="zion-rainbow-sub p-4" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
       <div className={`flex items-center justify-center h-8 w-8 rounded-xl ${bgClass} mb-3 ${colorClass}`}>
         {icon}
       </div>
@@ -415,17 +413,17 @@ export default function DefiPage() {
                   : 'Swap, bridge, and manage wZION on Base. Real contracts, real liquidity, live prices from on-chain pools.'}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
-                <span className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 ${wsConnected ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200' : 'border-white/10 bg-white/5 text-gray-200'}`}>
+                <span className={wsConnected ? 'zion-badge-green' : 'zion-badge'}>
                   <Zap className={`h-3 w-3 ${wsConnected ? 'text-emerald-400' : 'text-zion-gold'}`} />
                   {wsConnected ? (cs ? 'Živě' : 'Live') : (cs ? 'Polling' : 'Polling')}
                 </span>
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
+                <span className="zion-badge">
                   <RefreshCw className="h-3 w-3 text-emerald-400" /> {cs ? 'Auto-refresh 60 s' : 'Auto-Refresh 60s'}
                 </span>
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
+                <span className="zion-badge">
                   <Globe className="h-3 w-3 text-zion-cyan" /> Base
                 </span>
-                <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-emerald-200">
+                <span className="zion-badge-green">
                   {cs ? 'wZION/USDT · Uniswap V3' : 'wZION/USDT · Uniswap V3'}
                 </span>
               </div>
@@ -436,52 +434,54 @@ export default function DefiPage() {
               <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{cs ? 'Rychlý přehled' : 'Quick Overview'}</p>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '255, 215, 0' } as React.CSSProperties}>
+                  <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
-                      <BarChart3 className="h-4 w-4 text-zion-gold" />
+                      <BarChart3 className="h-4 w-4 text-amber-400" />
                       {cs ? 'Cena' : 'Price'}
                     </div>
                     <span className="font-mono text-white">
                       ${(poolStats?.primary_price_usd ?? wZIONPrice?.usd_per_wzion ?? SEED_PRICE_USD).toFixed(5)}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+                  <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
-                      <Droplets className="h-4 w-4 text-zion-cyan" />
+                      <Droplets className="h-4 w-4 text-amber-400" />
                       TVL
                     </div>
                     <span className="font-mono text-white">${(poolStats?.tvl_usd ?? 0).toFixed(2)}</span>
                   </div>
-                  <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+                  <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
-                      <Activity className="h-4 w-4 text-emerald-400" />
+                      <Activity className="h-4 w-4 text-amber-400" />
                       {cs ? 'Supply' : 'Supply'}
                     </div>
                     <span className="font-mono text-white">{wZIONSupply ?? '—'}</span>
                   </div>
                   {connected ? (
-                    <div className="flex items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2">
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                        <span className="font-mono text-xs text-emerald-300">
-                          {account?.slice(0, 6)}…{account?.slice(-4)}
-                        </span>
+                    <div className="zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                          <span className="font-mono text-xs text-emerald-300">
+                            {account?.slice(0, 6)}…{account?.slice(-4)}
+                          </span>
+                        </div>
+                        {isBaseMainnet ? (
+                          <span className="text-[10px] text-gray-400">Base</span>
+                        ) : (
+                          <button
+                            onClick={switchToBase}
+                            className="zion-button-secondary !px-2 !py-1 !text-[10px]"
+                          >
+                            {cs ? 'Přepnout' : 'Switch'}
+                          </button>
+                        )}
                       </div>
-                      {isBaseMainnet ? (
-                        <span className="text-[10px] text-gray-400">Base</span>
-                      ) : (
-                        <button
-                          onClick={switchToBase}
-                          className="text-[10px] text-orange-400 hover:text-orange-300 underline"
-                        >
-                          {cs ? 'Přepnout' : 'Switch'}
-                        </button>
-                      )}
                     </div>
                   ) : (
                     <button
                       onClick={connect}
-                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors"
+                      className="w-full zion-button-primary"
                     >
                       <Wallet className="h-3.5 w-3.5" />
                       {cs ? 'Připojit peněženku' : 'Connect Wallet'}
@@ -524,9 +524,10 @@ export default function DefiPage() {
                   onClick={() => setActiveTab(s.key)}
                   className={`inline-flex items-center gap-2 rounded-xl px-3 md:px-4 py-2 text-sm font-medium transition ${
                     isActive
-                      ? 'border border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan hover:bg-zion-cyan/20'
-                      : 'border border-white/10 bg-white/5 text-gray-300 hover:border-white/25 hover:text-white'
+                      ? 'zion-rainbow-sub'
+                      : 'border border-white/10 bg-black/40 text-gray-300 hover:border-white/25 hover:text-white'
                   }`}
+                  style={isActive ? ({ '--rc': '147, 51, 234' } as React.CSSProperties) : undefined}
                 >
                   <Icon className="h-3.5 w-3.5" />
                   {cs ? s.labelCs : s.labelEn}
@@ -546,7 +547,7 @@ export default function DefiPage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.03 }}
-              className="zion-rainbow-card p-4 border-amber-500/25 bg-amber-500/5"
+              className="zion-rainbow-card p-4"
               style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
             >
               <div className="flex items-start gap-3">
@@ -572,6 +573,8 @@ export default function DefiPage() {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.04 }}
+            className="zion-rainbow-card p-5 md:p-6"
+            style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
           >
             <div className="flex flex-col gap-2 mb-6">
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Telemetrie' : 'Telemetry'}</p>
@@ -591,7 +594,7 @@ export default function DefiPage() {
                 icon={<TrendingUp className="h-5 w-5" />}
                 colorClass="text-zion-gold"
                 bgClass="bg-zion-gold/10"
-                borderClass="border-zion-gold/20"
+
                 label={cs ? 'Cena' : 'Price'}
                 value={`$${(poolStats?.primary_price_usd ?? wZIONPrice?.usd_per_wzion ?? SEED_PRICE_USD).toFixed(6)}`}
                 sub="USDT / wZION"
@@ -601,7 +604,7 @@ export default function DefiPage() {
                 icon={<Droplets className="h-5 w-5" />}
                 colorClass="text-zion-cyan"
                 bgClass="bg-zion-cyan/10"
-                borderClass="border-zion-cyan/20"
+
                 label="TVL"
                 value={`$${(poolStats?.tvl_usd ?? 0).toFixed(2)}`}
                 sub={cs ? 'celkem v poolech' : 'total in pools'}
@@ -610,7 +613,7 @@ export default function DefiPage() {
                 icon={<Activity className="h-5 w-5" />}
                 colorClass="text-emerald-400"
                 bgClass="bg-emerald-400/10"
-                borderClass="border-emerald-500/20"
+
                 label={cs ? 'Likvidita' : 'Liquidity'}
                 value={`${(poolStats?.total_wzion_liquidity ?? 0).toFixed(0)}`}
                 sub="wZION"
@@ -619,7 +622,7 @@ export default function DefiPage() {
                 icon={<Layers className="h-5 w-5" />}
                 colorClass="text-purple-400"
                 bgClass="bg-purple-400/10"
-                borderClass="border-purple-500/20"
+
                 label={cs ? 'Pooly' : 'Pools'}
                 value={String(poolStats?.active_pools ?? 0)}
                 sub={cs ? 'aktivní' : 'active'}
@@ -628,7 +631,7 @@ export default function DefiPage() {
                 icon={<Wallet className="h-5 w-5" />}
                 colorClass="text-pink-400"
                 bgClass="bg-pink-400/10"
-                borderClass="border-pink-500/20"
+
                 label={cs ? 'wZION Supply' : 'wZION Supply'}
                 value={wZIONSupply ?? '—'}
                 sub={cs ? 'celkový oběh' : 'total circulating'}
@@ -637,7 +640,7 @@ export default function DefiPage() {
                 icon={<ArrowLeftRight className="h-5 w-5" />}
                 colorClass="text-orange-400"
                 bgClass="bg-orange-400/10"
-                borderClass="border-orange-500/20"
+
                 label={cs ? 'Bridge' : 'Bridge'}
                 value={bridgeStatus?.online ? (cs ? 'Online' : 'Online') : (cs ? 'Offline' : 'Offline')}
                 sub={cs ? '5/5 validátorů' : '5/5 validators'}
@@ -646,7 +649,7 @@ export default function DefiPage() {
                 icon={<ShieldCheck className="h-5 w-5" />}
                 colorClass="text-blue-400"
                 bgClass="bg-blue-400/10"
-                borderClass="border-blue-500/20"
+
                 label={cs ? 'Validátoři' : 'Validators'}
                 value="5/5"
                 sub={cs ? 'Guardian relay' : 'Guardian relay'}
@@ -655,7 +658,7 @@ export default function DefiPage() {
                 icon={<Gavel className="h-5 w-5" />}
                 colorClass="text-amber-400"
                 bgClass="bg-amber-400/10"
-                borderClass="border-amber-500/20"
+
                 label={cs ? 'Aukce' : 'Auction'}
                 value={`${(auctionData?.pctSold ?? 0).toFixed(2)}%`}
                 sub={cs ? 'prodáno CCA' : 'CCA sold'}
@@ -670,8 +673,8 @@ export default function DefiPage() {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.06 }}
-            className="zion-rainbow-card p-5 border-emerald-500/20"
-            style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+            className="zion-rainbow-card p-5"
+            style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
           >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2 flex-wrap">
@@ -726,11 +729,11 @@ export default function DefiPage() {
             </div>
 
             <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px]">
-              <div className="zion-rainbow-sub p-2" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+              <div className="zion-rainbow-sub p-2" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <p className="text-gray-500 mb-0.5">TVL</p>
                 <p className="text-white font-mono">${(poolStats?.tvl_usd ?? 0).toFixed(2)}</p>
               </div>
-              <div className="zion-rainbow-sub p-2" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+              <div className="zion-rainbow-sub p-2" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <p className="text-gray-500 mb-0.5">{cs ? 'Likvidita' : 'Liquidity'}</p>
                 <p className="text-white font-mono">
                   {(poolStats?.total_wzion_liquidity ?? 0) > 0
@@ -738,7 +741,7 @@ export default function DefiPage() {
                     : '—'}
                 </p>
               </div>
-              <div className="zion-rainbow-sub p-2" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+              <div className="zion-rainbow-sub p-2" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <p className="text-gray-500 mb-0.5">USDT</p>
                 <p className="text-white font-mono">
                   {(Number(poolStats?.pools?.wzion_usdt?.balances?.usdt ?? 0)) > 0
@@ -746,11 +749,11 @@ export default function DefiPage() {
                     : '—'}
                 </p>
               </div>
-              <div className="zion-rainbow-sub p-2" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+              <div className="zion-rainbow-sub p-2" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <p className="text-gray-500 mb-0.5">Tick</p>
                 <p className="text-white font-mono">{poolStats?.pools?.wzion_usdt?.tick ?? '—'}</p>
               </div>
-              <div className="zion-rainbow-sub p-2" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+              <div className="zion-rainbow-sub p-2" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <p className="text-gray-500 mb-0.5">{cs ? 'Stav' : 'Status'}</p>
                 <p className={poolStats?.pools?.wzion_usdt?.active ? 'text-emerald-400' : 'text-amber-400'}>
                   {poolStats?.pools?.wzion_usdt?.active ? (cs ? 'aktivní' : 'active') : (poolStats ? (cs ? 'neaktivní' : 'inactive') : (cs ? 'načítám' : 'loading'))}
@@ -774,7 +777,7 @@ export default function DefiPage() {
                 {cs ? 'Kontrakty na Base Mainnet' : 'Base Mainnet Contracts'}
               </h2>
             </div>
-            <div className="zion-section overflow-hidden p-0">
+            <div className="zion-rainbow-card overflow-hidden p-0" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -828,7 +831,7 @@ export default function DefiPage() {
                 href={`https://app.uniswap.org/swap?chain=base&inputCurrency=${CONTRACTS.USDT}&outputCurrency=${CONTRACTS.wZION}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-zion-gold via-zion-purple to-zion-cyan px-6 py-3 text-sm font-semibold text-black"
+                className="zion-button-primary"
               >
                 {cs ? 'Otevřít Uniswap' : 'Open Uniswap'}
                 <ExternalLink className="h-4 w-4" />
@@ -837,7 +840,7 @@ export default function DefiPage() {
                 href={`https://dexscreener.com/base/${CONTRACTS.UniV3PoolUSDT}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 bg-black/40 px-6 py-3 text-white transition-colors hover:border-zion-cyan/45"
+                className="zion-button-secondary"
               >
                 DexScreener
                 <ExternalLink className="h-4 w-4" />
@@ -868,13 +871,13 @@ export default function DefiPage() {
 
             <div className="grid gap-5 sm:grid-cols-2">
               <div
-                className="zion-rainbow-card p-5 border-cyan-500/20"
-                style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+                className="zion-rainbow-card p-5"
+                style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/10 border border-cyan-500/20">
-                      <RefreshCw className="h-5 w-5 text-cyan-400" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/20">
+                      <RefreshCw className="h-5 w-5 text-purple-400" />
                     </div>
                     <div>
                       <h3 className="text-base font-semibold text-white">{cs ? 'Swap wZION' : 'Swap wZION'}</h3>
@@ -897,13 +900,13 @@ export default function DefiPage() {
                 href="https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="zion-rainbow-card p-5 border-pink-500/20 transition-all duration-200 hover:scale-[1.01] block"
-                style={{ '--rc': '236, 72, 153' } as React.CSSProperties}
+                className="zion-rainbow-card p-5 transition-transform duration-200 hover:scale-[1.01] block"
+                style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-500/10 border border-pink-500/20">
-                      <Droplets className="h-5 w-5 text-pink-400" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/20">
+                      <Droplets className="h-5 w-5 text-amber-400" />
                     </div>
                     <div>
                       <h3 className="text-base font-semibold text-white">{cs ? 'DEX Pooly' : 'DEX Pools'}</h3>
@@ -926,7 +929,7 @@ export default function DefiPage() {
                 href={CCA_AUCTION_PARAMS.uniswapUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="zion-rainbow-card p-5 border-amber-500/20 transition-all duration-200 hover:scale-[1.01] block"
+                className="zion-rainbow-card p-5 transition-transform duration-200 hover:scale-[1.01] block"
                 style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between mb-4">
@@ -955,13 +958,13 @@ export default function DefiPage() {
                 href={PANCAKE_V3.swapUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="zion-rainbow-card p-5 border-yellow-500/20 transition-all duration-200 hover:scale-[1.01] block"
-                style={{ '--rc': '255, 199, 0' } as React.CSSProperties}
+                className="zion-rainbow-card p-5 transition-transform duration-200 hover:scale-[1.01] block"
+                style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-500/10 border border-yellow-500/20">
-                      <ChefHat className="h-5 w-5 text-yellow-400" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/20">
+                      <ChefHat className="h-5 w-5 text-amber-400" />
                     </div>
                     <div>
                       <h3 className="text-base font-semibold text-white">PancakeSwap V3</h3>
@@ -991,14 +994,14 @@ export default function DefiPage() {
             transition={{ delay: 0.05 }}
             className="space-y-6 max-w-5xl"
           >
-            <div className="zion-section">
+            <div className="zion-rainbow-card p-5 md:p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-4">
-                <RefreshCw className="h-4 w-4 text-zion-cyan" />
+                <RefreshCw className="h-4 w-4 text-purple-400" />
                 <h3 className="text-sm font-semibold text-white uppercase tracking-wider">{cs ? 'Cross-chain swap' : 'Cross-chain Swap'}</h3>
               </div>
               <LiFiWidget />
             </div>
-            <div className="zion-rainbow-card p-5 border-purple-500/20" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+            <div className="zion-rainbow-card p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-4">
                 <Droplets className="h-4 w-4 text-zion-purple" />
                 <h3 className="text-sm font-semibold text-white uppercase tracking-wider">{cs ? 'Direct swap + zůstatky' : 'Direct Swap + Balances'}</h3>
@@ -1033,20 +1036,20 @@ export default function DefiPage() {
             <p className="text-sm text-gray-400">{cs ? 'Stakeuj nebo farm wZION a získej pravidelné odměny.' : 'Stake or farm wZION to earn regular rewards.'}</p>
           </motion.div>
 
-          <div className="zion-section">
-            <div className="zion-rainbow-card p-4 mb-4 border-zion-gold/20" style={{ '--rc': '255, 215, 0' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-4 mb-4" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <div className="flex items-center gap-2">
-                <Lock className="h-5 w-5 text-zion-gold" />
+                <Lock className="h-5 w-5 text-amber-400" />
                 <h3 className="text-base font-semibold text-white">{cs ? 'Staking' : 'Staking'}</h3>
               </div>
             </div>
             <StakingPanel />
           </div>
 
-          <div className="zion-section">
-            <div className="zion-rainbow-card p-4 mb-4 border-emerald-500/20" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-4 mb-4" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <div className="flex items-center gap-2">
-                <Sprout className="h-5 w-5 text-emerald-400" />
+                <Sprout className="h-5 w-5 text-amber-400" />
                 <h3 className="text-base font-semibold text-white">{cs ? 'Farming' : 'Farming'}</h3>
               </div>
             </div>
@@ -1077,12 +1080,12 @@ export default function DefiPage() {
           <div className="grid gap-5 md:grid-cols-2">
             <Link
               href="/bridge"
-              className="zion-rainbow-card p-6 border-emerald-500/20 transition-all duration-200 hover:scale-[1.01] block"
-              style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+              className="zion-rainbow-card p-6 transition-transform duration-200 hover:scale-[1.01] block"
+              style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
             >
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                  <ArrowLeftRight className="h-5 w-5 text-emerald-400" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/20">
+                  <ArrowLeftRight className="h-5 w-5 text-purple-400" />
                 </div>
                 <div>
                   <h3 className="text-base font-semibold text-white">{cs ? 'wZION Bridge' : 'wZION Bridge'}</h3>
@@ -1097,11 +1100,11 @@ export default function DefiPage() {
             </Link>
 
             <div
-              className="zion-rainbow-card p-6 border-cyan-500/20"
-              style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+              className="zion-rainbow-card p-6"
+              style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
             >
               <div className="flex items-center gap-2 mb-4">
-                <Flame className="h-5 w-5 text-cyan-400" />
+                <Flame className="h-5 w-5 text-amber-400" />
                 <h3 className="font-semibold text-white text-sm">
                   {cs ? 'Jak Bridge funguje' : 'How Bridge Works'}
                 </h3>
@@ -1121,7 +1124,7 @@ export default function DefiPage() {
                   href={`https://basescan.org/address/${CONTRACTS.ZIONBridge}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+                  className="zion-button-secondary !px-3 !py-1.5 !text-[10px] !rounded-lg !text-gray-400 hover:!text-white"
                 >
                   Bridge Contract <ExternalLink className="h-2.5 w-2.5" />
                 </a>
@@ -1129,7 +1132,7 @@ export default function DefiPage() {
                   href={`https://basescan.org/token/${CONTRACTS.wZION}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+                  className="zion-button-secondary !px-3 !py-1.5 !text-[10px] !rounded-lg !text-gray-400 hover:!text-white"
                 >
                   wZION Token <ExternalLink className="h-2.5 w-2.5" />
                 </a>
@@ -1148,9 +1151,9 @@ export default function DefiPage() {
           className="space-y-6 max-w-5xl"
         >
           {/* Bridge Vault Status */}
-          <div className="zion-rainbow-card p-6 border-emerald-500/20" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
             <div className="flex items-center gap-2 mb-4">
-              <Lock className="h-5 w-5 text-zion-gold" />
+              <Lock className="h-5 w-5 text-purple-400" />
               <h3 className="font-semibold text-white text-sm">
                 {cs ? 'Bridge Vault · 100M ZION' : 'Bridge Vault · 100M ZION'}
               </h3>
@@ -1169,17 +1172,17 @@ export default function DefiPage() {
                 : '6 UTXO lock transactions (~16.67M ZION each) sent to the bridge vault in blocks 11611–11612. Relay mints wZION on Base after finality (60 blocks).'}
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="zion-rainbow-sub p-3" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+              <div className="zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Zamčeno' : 'Locked'}</p>
                 <p className="text-base font-semibold text-white mt-1">~100M</p>
                 <p className="text-[10px] text-gray-500">ZION</p>
               </div>
-              <div className="zion-rainbow-sub p-3" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+              <div className="zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Lock TX' : 'Lock TXs'}</p>
                 <p className="text-base font-semibold text-white mt-1">6</p>
                 <p className="text-[10px] text-gray-500">UTXO</p>
               </div>
-              <div className="zion-rainbow-sub p-3" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+              <div className="zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'wZION Mints' : 'wZION Mints'}</p>
                 <p className="text-base font-semibold text-white mt-1 flex items-center gap-1">
                   {bridgeStatus?.evm_mints_confirmed ?? '—'}
@@ -1189,7 +1192,7 @@ export default function DefiPage() {
                 </p>
                 <p className="text-[10px] text-gray-500">{cs ? 'potvrzeno' : 'confirmed'}</p>
               </div>
-              <div className="zion-rainbow-sub p-3" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+              <div className="zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'L1 Odemčeno' : 'L1 Unlocks'}</p>
                 <p className="text-base font-semibold text-white mt-1 flex items-center gap-1">
                   {bridgeStatus?.l1_unlocks_confirmed ?? '—'}
@@ -1199,7 +1202,7 @@ export default function DefiPage() {
                 </p>
                 <p className="text-[10px] text-gray-500">{cs ? 'potvrzeno' : 'confirmed'}</p>
               </div>
-              <div className="zion-rainbow-sub p-3" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+              <div className="zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <p className="text-[10px] uppercase tracking-wider text-gray-500">L1 {cs ? 'blok' : 'block'}</p>
                 <p className="text-base font-semibold text-white mt-1">{bridgeStatus?.last_l1_height ?? '—'}</p>
                 <p className="text-[10px] text-gray-500">{cs ? 'poslední scan' : 'last scan'}</p>
@@ -1225,9 +1228,9 @@ export default function DefiPage() {
           {/* Burn widget + How it works */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <BridgeBurnWidget />
-            <div className="zion-rainbow-card p-6 space-y-4 border-cyan-500/20" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+            <div className="zion-rainbow-card p-6 space-y-4" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-2">
-                <Flame className="h-5 w-5 text-cyan-400" />
+                <Flame className="h-5 w-5 text-amber-400" />
                 <h3 className="font-semibold text-white text-sm">
                   {cs ? 'Jak Bridge funguje' : 'How Bridge Works'}
                 </h3>
@@ -1247,7 +1250,7 @@ export default function DefiPage() {
                   href={`https://basescan.org/address/${CONTRACTS.ZIONBridge}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+                  className="zion-button-secondary !px-3 !py-1.5 !text-[10px] !rounded-lg !text-gray-400 hover:!text-white"
                 >
                   Bridge Contract <ExternalLink className="h-2.5 w-2.5" />
                 </a>
@@ -1255,7 +1258,7 @@ export default function DefiPage() {
                   href={`https://basescan.org/token/${CONTRACTS.wZION}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+                  className="zion-button-secondary !px-3 !py-1.5 !text-[10px] !rounded-lg !text-gray-400 hover:!text-white"
                 >
                   wZION Token <ExternalLink className="h-2.5 w-2.5" />
                 </a>
@@ -1285,10 +1288,10 @@ export default function DefiPage() {
               <p className="text-sm text-gray-400">{cs ? 'Hlasuj o parametrech protokolu a sleduj treasury na Base Mainnet.' : 'Vote on protocol parameters and monitor the treasury on Base Mainnet.'}</p>
             </div>
           </motion.div>
-          <div className="zion-section">
-            <div className="zion-rainbow-card p-4 mb-4 border-purple-500/20" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-4 mb-4" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <div className="flex items-center gap-2">
-                <Scale className="h-5 w-5 text-purple-400" />
+                <Scale className="h-5 w-5 text-amber-400" />
                 <h3 className="text-base font-semibold text-white">{cs ? 'Governance panel' : 'Governance Panel'}</h3>
               </div>
             </div>
@@ -1324,13 +1327,13 @@ export default function DefiPage() {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.04 }}
-            className="zion-rainbow-card p-6 border-yellow-500/20"
-            style={{ '--rc': '255, 199, 0' } as React.CSSProperties}
+            className="zion-rainbow-card p-6"
+            style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
               <div className="flex items-center gap-3">
-                <ChefHat className="h-6 w-6 text-yellow-400" />
+                <ChefHat className="h-6 w-6 text-amber-400" />
                 <div>
                   <h2 className="text-lg font-bold text-white">
                     PancakeSwap V3
@@ -1349,7 +1352,7 @@ export default function DefiPage() {
                   href={PANCAKE_V3.swapUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-500 px-4 py-2 text-xs font-semibold text-white hover:opacity-90 transition-opacity"
+                  className="zion-button-primary !px-4 !py-2 !text-xs"
                 >
                   {cs ? 'Swap na PancakeSwap' : 'Swap on PancakeSwap'}
                   <ExternalLink className="h-3 w-3" />
@@ -1359,17 +1362,17 @@ export default function DefiPage() {
 
             {/* Info grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-              <div className="zion-rainbow-sub p-3" style={{ '--rc': '255, 199, 0' } as React.CSSProperties}>
+              <div className="zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Pool adresa' : 'Pool address'}</p>
                 <p className="text-sm font-semibold text-white font-mono">0x46cc...6f47</p>
                 <p className="text-[10px] text-gray-500">wZION/USDT · 0.25% fee · NFT #2054747</p>
               </div>
-              <div className="zion-rainbow-sub p-3" style={{ '--rc': '255, 199, 0' } as React.CSSProperties}>
+              <div className="zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Cena' : 'Price'}</p>
                 <p className="text-sm font-semibold text-white font-mono">$0.0002</p>
                 <p className="text-[10px] text-gray-500">{cs ? 'seed price' : 'seed price'}</p>
               </div>
-              <div className="zion-rainbow-sub p-3" style={{ '--rc': '255, 199, 0' } as React.CSSProperties}>
+              <div className="zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Fee tiers' : 'Fee tiers'}</p>
                 <p className="text-sm font-semibold text-white">0.01% · 0.05% · 0.25% · 1%</p>
                 <p className="text-[10px] text-gray-500">{cs ? 'multi-tier' : 'multi-tier'}</p>
@@ -1382,7 +1385,7 @@ export default function DefiPage() {
                 href={PANCAKE_V3.swapUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+                className="zion-button-secondary !px-3 !py-1.5 !text-[10px] !rounded-lg !text-gray-400 hover:!text-white"
               >
                 {cs ? 'Swap wZION' : 'Swap wZION'} <ExternalLink className="h-2.5 w-2.5" />
               </a>
@@ -1390,7 +1393,7 @@ export default function DefiPage() {
                 href={PANCAKE_V3.addLiquidityUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+                className="zion-button-secondary !px-3 !py-1.5 !text-[10px] !rounded-lg !text-gray-400 hover:!text-white"
               >
                 {cs ? 'Přidat likviditu' : 'Add Liquidity'} <ExternalLink className="h-2.5 w-2.5" />
               </a>
@@ -1398,7 +1401,7 @@ export default function DefiPage() {
                 href={`https://basescan.org/address/${CONTRACTS.PancakeV3PoolUSDT}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+                className="zion-button-secondary !px-3 !py-1.5 !text-[10px] !rounded-lg !text-gray-400 hover:!text-white"
               >
                 {cs ? 'Pool na Basescan' : 'Pool on Basescan'} <ExternalLink className="h-2.5 w-2.5" />
               </a>
@@ -1406,14 +1409,14 @@ export default function DefiPage() {
                 href={`https://basescan.org/address/${PANCAKE_V3.factory}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+                className="zion-button-secondary !px-3 !py-1.5 !text-[10px] !rounded-lg !text-gray-400 hover:!text-white"
               >
                 {cs ? 'Factory kontrakt' : 'Factory Contract'} <ExternalLink className="h-2.5 w-2.5" />
               </a>
             </div>
 
             {/* Status note */}
-            <div className="mt-4 flex items-start gap-3 rounded-lg bg-amber-500/5 border border-amber-500/15 p-3">
+            <div className="mt-4 flex items-start gap-3 zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
               <p className="text-[10px] text-gray-400 leading-relaxed">
                 {cs
@@ -1441,13 +1444,13 @@ export default function DefiPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* wZION/USDT — active V3 pool */}
               <div
-                className="zion-rainbow-card p-4 border-zion-gold/20"
-                style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+                className="zion-rainbow-card p-4"
+                style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-semibold text-white">{poolStats?.pools?.wzion_usdt?.pair ?? 'wZION/USDT'}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-zion-gold/20 text-zion-gold border border-zion-gold/30">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
                       {cs ? 'primární' : 'primary'}
                     </span>
                     <span className="text-[10px] text-gray-400">{poolStats?.pools?.wzion_usdt?.feeLabel ?? '0.3%'}</span>
@@ -1494,7 +1497,7 @@ export default function DefiPage() {
               {/* ETH/wZION — initialized, no liquidity */}
               <div
                 className="zion-rainbow-card p-4 opacity-70"
-                style={{ '--rc': '100, 100, 100' } as React.CSSProperties}
+                style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-semibold text-white">{poolStats?.pools?.wzion_weth?.pair ?? 'ETH/wZION'}</span>
@@ -1515,7 +1518,7 @@ export default function DefiPage() {
               {/* wZION/SOL — initialized, no liquidity */}
               <div
                 className="zion-rainbow-card p-4 opacity-70"
-                style={{ '--rc': '100, 100, 100' } as React.CSSProperties}
+                style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-semibold text-white">{poolStats?.pools?.wzion_sol?.pair ?? 'wZION/SOL'}</span>
@@ -1564,7 +1567,7 @@ export default function DefiPage() {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.04 }}
-            className="zion-rainbow-card p-6 border-amber-500/20"
+            className="zion-rainbow-card p-6"
             style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
           >
             {/* Header */}
@@ -1595,7 +1598,7 @@ export default function DefiPage() {
                   href={CCA_AUCTION_PARAMS.uniswapUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2 text-xs font-semibold text-white hover:opacity-90 transition-opacity"
+                  className="zion-button-primary !px-4 !py-2 !text-xs"
                 >
                   {cs ? 'Přiházet na Uniswap' : 'Bid on Uniswap'}
                   <ExternalLink className="h-3 w-3" />
@@ -1737,7 +1740,7 @@ export default function DefiPage() {
             </div>
 
             {/* Warning about 184-day duration */}
-            <div className="mt-4 flex items-start gap-3 rounded-lg bg-amber-500/5 border border-amber-500/15 p-3">
+            <div className="mt-4 flex items-start gap-3 zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
               <p className="text-[10px] text-gray-400 leading-relaxed">
                 {cs

@@ -45,7 +45,7 @@ function StatCard({
   value,
   sub,
   tip,
-  rc = '147, 51, 234',
+  rc = '6, 182, 212',
 }: {
   icon: React.ReactNode;
   colorClass: string;
@@ -57,7 +57,7 @@ function StatCard({
   rc?: string;
 }) {
   return (
-    <div className="zion-rainbow-card p-4 transition-colors" style={{ '--rc': rc } as CSSProperties}>
+    <div className="zion-rainbow-sub p-4 transition-colors" style={{ '--rc': rc } as CSSProperties}>
       <div className={`flex items-center justify-center h-8 w-8 rounded-xl ${bgClass} mb-3 ${colorClass} [&>svg]:h-4 [&>svg]:w-4`}>
         {icon}
       </div>
@@ -323,12 +323,12 @@ export default function SwapPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="zion-rainbow-card p-6 md:p-10"
-          style={{ '--rc': '251, 191, 36' } as CSSProperties}
+          style={{ '--rc': '6, 182, 212' } as CSSProperties}
         >
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-5">
-              <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-gold uppercase">
-                <ArrowLeftRight className="h-4 w-4 text-zion-cyan" />
+              <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan uppercase">
+                <ArrowLeftRight className="h-4 w-4 text-zion-purple" />
                 {cs ? 'Atomic Swap · L1 ↔ EVM' : 'Atomic Swap · L1 ↔ EVM'}
               </div>
 
@@ -370,14 +370,14 @@ export default function SwapPage() {
 
             {/* Quick info side card */}
             <div className="w-full lg:max-w-md space-y-3">
-              <div className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
+              <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as CSSProperties}>
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">
                   {cs ? 'Rychlý přehled' : 'Quick Overview'}
                 </p>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '255, 215, 0' } as CSSProperties}>
+                  <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as CSSProperties}>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
-                      <Wallet className="h-4 w-4 text-zion-gold" />
+                      <Wallet className="h-4 w-4 text-zion-purple" />
                       {cs ? 'Escrow adresa' : 'Escrow Address'}
                     </div>
                     <span className="font-mono text-white text-xs truncate max-w-[160px]">
@@ -391,19 +391,19 @@ export default function SwapPage() {
                     </div>
                     <span className="font-mono text-white">{activeCount.toLocaleString()}</span>
                   </div>
-                  <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '16, 185, 129' } as CSSProperties}>
+                  <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as CSSProperties}>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
-                      <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                      <ShieldCheck className="h-4 w-4 text-zion-purple" />
                       {cs ? 'Celkem zamčeno' : 'Total Locked'}
                     </div>
                     <span className="font-mono text-white">{totalLocked.toLocaleString()} ZION</span>
                   </div>
-                  <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': escrowOnline ? '16, 185, 129' : '239, 68, 68' } as CSSProperties}>
+                  <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
-                      <Activity className={`h-4 w-4 ${escrowOnline ? 'text-emerald-400' : 'text-red-400'}`} />
+                      <Activity className={`h-4 w-4 ${escrowOnline ? 'text-zion-cyan' : 'text-red-400'}`} />
                       {cs ? 'Relayer' : 'Relayer'}
                     </div>
-                    <span className={`font-mono ${escrowOnline ? 'text-emerald-300' : 'text-red-300'}`}>
+                    <span className={`font-mono ${escrowOnline ? 'text-zion-cyan' : 'text-red-300'}`}>
                       {escrowOnline ? (cs ? 'Online' : 'Online') : (cs ? 'Offline' : 'Offline')}
                     </span>
                   </div>
@@ -437,7 +437,7 @@ export default function SwapPage() {
           {pendingLoading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {[...Array(8)].map((_, i) => (
-                <div key={i} className="zion-rainbow-card p-4 animate-pulse" style={{ '--rc': '147, 51, 234' } as CSSProperties}>
+                <div key={i} className="zion-rainbow-sub p-4 animate-pulse" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
                   <div className="h-8 w-8 bg-white/5 rounded-xl mb-3" />
                   <div className="h-3 w-16 bg-white/5 rounded mb-2" />
                   <div className="h-6 w-20 bg-white/5 rounded" />
@@ -448,9 +448,9 @@ export default function SwapPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               <StatCard
                 icon={<Lock className="h-5 w-5" />}
-                colorClass="text-amber-400"
-                bgClass="bg-amber-400/10"
-                rc="251, 191, 36"
+                colorClass="text-cyan-400"
+                bgClass="bg-cyan-400/10"
+                rc="6, 182, 212"
                 label={cs ? 'Celkem locků' : 'Total Locks'}
                 value={pendingHtlcs.length.toLocaleString()}
                 sub={cs ? 'Všechny HTLC' : 'All HTLCs'}
@@ -458,9 +458,9 @@ export default function SwapPage() {
               />
               <StatCard
                 icon={<Flame className="h-5 w-5" />}
-                colorClass="text-orange-400"
-                bgClass="bg-orange-400/10"
-                rc="249, 115, 22"
+                colorClass="text-purple-400"
+                bgClass="bg-purple-400/10"
+                rc="147, 51, 234"
                 label={cs ? 'Refundováno' : 'Refunded'}
                 value={refundedCount.toLocaleString()}
                 sub={cs ? 'Po vypršení' : 'After expiry'}
@@ -468,9 +468,9 @@ export default function SwapPage() {
               />
               <StatCard
                 icon={<CheckCircle2 className="h-5 w-5" />}
-                colorClass="text-emerald-400"
-                bgClass="bg-emerald-400/10"
-                rc="16, 185, 129"
+                colorClass="text-cyan-400"
+                bgClass="bg-cyan-400/10"
+                rc="6, 182, 212"
                 label={cs ? 'Uplatněno' : 'Claimed'}
                 value={claimedCount.toLocaleString()}
                 sub={cs ? 'Úspěšné swapy' : 'Successful swaps'}
@@ -488,9 +488,9 @@ export default function SwapPage() {
               />
               <StatCard
                 icon={<Wallet className="h-5 w-5" />}
-                colorClass="text-zion-gold"
-                bgClass="bg-zion-gold/10"
-                rc="255, 215, 0"
+                colorClass="text-purple-400"
+                bgClass="bg-purple-400/10"
+                rc="147, 51, 234"
                 label={cs ? 'Celkem ZION' : 'Total ZION'}
                 value={`${totalLocked.toLocaleString()} ZION`}
                 sub={cs ? 'Zamčeno v escrow' : 'Locked in escrow'}
@@ -500,7 +500,7 @@ export default function SwapPage() {
                 icon={<Clock className="h-5 w-5" />}
                 colorClass="text-purple-400"
                 bgClass="bg-purple-400/10"
-                rc="168, 85, 247"
+                rc="147, 51, 234"
                 label={cs ? 'Prům. timelock' : 'Avg Timelock'}
                 value={`${avgTimelock} min`}
                 sub={cs ? 'Na lock' : 'Per lock'}
@@ -508,9 +508,9 @@ export default function SwapPage() {
               />
               <StatCard
                 icon={<Shield className="h-5 w-5" />}
-                colorClass="text-green-400"
-                bgClass="bg-green-400/10"
-                rc="34, 197, 94"
+                colorClass="text-cyan-400"
+                bgClass="bg-cyan-400/10"
+                rc="6, 182, 212"
                 label={cs ? 'Hash algoritmus' : 'Hash Algorithm'}
                 value="SHA-256"
                 sub={cs ? 'Zabezpečení' : 'Security'}
@@ -518,9 +518,9 @@ export default function SwapPage() {
               />
               <StatCard
                 icon={<Sparkles className="h-5 w-5" />}
-                colorClass="text-pink-400"
-                bgClass="bg-pink-400/10"
-                rc="236, 72, 153"
+                colorClass="text-purple-400"
+                bgClass="bg-purple-400/10"
+                rc="147, 51, 234"
                 label={cs ? 'Protokol' : 'Protocol'}
                 value="v3.0.5"
                 sub={cs ? 'HTLC Atomic Swap' : 'HTLC Atomic Swap'}
@@ -538,7 +538,7 @@ export default function SwapPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.08 }}
           className="zion-rainbow-card p-4"
-          style={{ '--rc': '251, 191, 36' } as CSSProperties}
+          style={{ '--rc': '6, 182, 212' } as CSSProperties}
         >
           <div className="flex flex-wrap gap-2">
             {SECTIONS.map((s) => {
@@ -550,11 +550,12 @@ export default function SwapPage() {
                   onClick={() => setActiveTab(s.key)}
                   className={`inline-flex items-center gap-2 rounded-xl px-3 md:px-4 py-2 text-sm font-medium transition ${
                     isActive
-                      ? 'border border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan hover:bg-zion-cyan/20'
-                      : 'border border-white/10 bg-white/5 text-gray-300 hover:border-white/25 hover:text-white'
+                      ? 'zion-rainbow-sub'
+                      : 'border border-white/10 bg-black/30 text-gray-300 hover:border-white/25 hover:text-white'
                   }`}
+                  style={isActive ? ({ '--rc': '6, 182, 212' } as CSSProperties) : undefined}
                 >
-                  <Icon className="h-3.5 w-3.5" />
+                  <Icon className={`h-3.5 w-3.5 ${isActive ? 'text-zion-cyan' : 'text-gray-400'}`} />
                   {cs ? s.labelCs : s.labelEn}
                 </button>
               );
@@ -574,10 +575,10 @@ export default function SwapPage() {
               exit={{ opacity: 0, y: -16 }}
               transition={{ duration: 0.2 }}
               className="zion-rainbow-card p-6 md:p-8 space-y-6"
-              style={{ '--rc': '251, 191, 36' } as CSSProperties}
+              style={{ '--rc': '6, 182, 212' } as CSSProperties}
             >
               <div className="flex items-center gap-3">
-                <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                <div className="zion-rainbow-sub p-3 text-cyan-400" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
                   <Zap className="h-6 w-6" />
                 </div>
                 <div>
@@ -647,14 +648,14 @@ export default function SwapPage() {
 
                 <div className="space-y-4">
                   {/* Preimage Generator */}
-                  <div className="zion-rainbow-sub p-4 space-y-3" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
+                  <div className="zion-rainbow-sub p-4 space-y-3" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold text-gray-300">
                         {cs ? '1. Vygenerovat hash klíče' : '1. Generate Hash Keys'}
                       </span>
                       <button
                         onClick={handleGenerateKeys}
-                        className="text-xs px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-black font-semibold rounded-lg transition"
+                        className="zion-button-primary text-xs py-1.5 px-3"
                       >
                         {cs ? 'Generovat' : 'Generate'}
                       </button>
@@ -662,23 +663,23 @@ export default function SwapPage() {
 
                     {generatedPreimage && (
                       <div className="space-y-2 text-xs font-mono">
-                        <div className="zion-tile p-2 relative">
+                        <div className="zion-rainbow-sub p-2 relative" style={{ '--rc': '147, 51, 234' } as CSSProperties}>
                           <div className="text-[9px] text-gray-500 uppercase">Preimage (SAVE THIS!)</div>
                           <div className="text-white break-all pr-8 mt-1">{generatedPreimage}</div>
                           <button
                             onClick={() => handleCopy(generatedPreimage, 'preimage')}
-                            className="absolute right-2 top-2 p-1.5 hover:bg-white/10 rounded"
+                            className="zion-button-secondary absolute right-2 top-2 p-1.5"
                           >
                             <Copy className={`h-3 w-3 ${copied === 'preimage' ? 'text-emerald-400' : 'text-gray-400'}`} />
                           </button>
                         </div>
 
-                        <div className="zion-tile p-2 relative">
+                        <div className="zion-rainbow-sub p-2 relative" style={{ '--rc': '147, 51, 234' } as CSSProperties}>
                           <div className="text-[9px] text-gray-500 uppercase">Hashlock (SHA-256)</div>
-                          <div className="text-amber-400 break-all pr-8 mt-1">{generatedHash}</div>
+                          <div className="text-cyan-400 break-all pr-8 mt-1">{generatedHash}</div>
                           <button
                             onClick={() => handleCopy(generatedHash!, 'hash')}
-                            className="absolute right-2 top-2 p-1.5 hover:bg-white/10 rounded"
+                            className="zion-button-secondary absolute right-2 top-2 p-1.5"
                           >
                             <Copy className={`h-3 w-3 ${copied === 'hash' ? 'text-emerald-400' : 'text-gray-400'}`} />
                           </button>
@@ -689,8 +690,8 @@ export default function SwapPage() {
 
                   {/* Memo Builder */}
                   {generatedHash && initRecipient && (
-                    <div className="zion-rainbow-sub p-4 space-y-2 text-xs" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
-                      <div className="flex items-center gap-1.5 text-amber-400 font-semibold mb-1">
+                    <div className="zion-rainbow-sub p-4 space-y-2 text-xs" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
+                      <div className="flex items-center gap-1.5 text-cyan-400 font-semibold mb-1">
                         <Info className="h-4 w-4" />
                         {cs ? '2. Odeslat transakci na ZION L1' : '2. Send Transaction on ZION L1'}
                       </div>
@@ -699,13 +700,13 @@ export default function SwapPage() {
                           ? 'Pošli nativní ZION na escrow adresu se zadaným memo. Daemon automaticky detekuje lock.'
                           : 'Send native ZION to the escrow address with this exact memo. Daemon will auto-detect the lock.'}
                       </p>
-                      <div className="space-y-1.5 font-mono zion-tile p-3 relative">
+                      <div className="space-y-1.5 font-mono zion-rainbow-sub p-3 relative" style={{ '--rc': '147, 51, 234' } as CSSProperties}>
                         <div><span className="text-gray-500">Escrow:</span> <span className="text-white break-all">{escrowLoading ? 'Loading…' : (escrowAddress || 'Unavailable')}</span></div>
                         <div><span className="text-gray-500">Amount:</span> <span className="text-white">{initAmt} ZION</span></div>
-                        <div><span className="text-gray-500">Memo:</span> <span className="text-amber-400 break-all">{getSwapMemo()}</span></div>
+                        <div><span className="text-gray-500">Memo:</span> <span className="text-cyan-400 break-all">{getSwapMemo()}</span></div>
                         <button
                           onClick={() => handleCopy(getSwapMemo(), 'memo')}
-                          className="absolute right-2 top-2 p-1.5 hover:bg-white/10 rounded"
+                          className="zion-button-secondary absolute right-2 top-2 p-1.5"
                         >
                           <Copy className={`h-3.5 w-3.5 ${copied === 'memo' ? 'text-emerald-400' : 'text-gray-400'}`} />
                         </button>
@@ -725,10 +726,10 @@ export default function SwapPage() {
               exit={{ opacity: 0, y: -16 }}
               transition={{ duration: 0.2 }}
               className="zion-rainbow-card p-6 md:p-8 space-y-6"
-              style={{ '--rc': '168, 85, 247' } as CSSProperties}
+              style={{ '--rc': '147, 51, 234' } as CSSProperties}
             >
               <div className="flex items-center gap-3">
-                <div className="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
+                <div className="zion-rainbow-sub p-3 text-purple-400" style={{ '--rc': '147, 51, 234' } as CSSProperties}>
                   <Key className="h-6 w-6" />
                 </div>
                 <div>
@@ -795,7 +796,7 @@ export default function SwapPage() {
                   <button
                     onClick={handleClaim}
                     disabled={actionLoading}
-                    className="flex-1 py-3 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold rounded-xl transition flex items-center justify-center gap-2"
+                    className="flex-1 zion-button-primary disabled:opacity-50"
                   >
                     {actionLoading && <RefreshCw className="h-4 w-4 animate-spin" />}
                     {cs ? 'Uplatnit (Claim)' : 'Claim Swap'}
@@ -803,7 +804,7 @@ export default function SwapPage() {
                   <button
                     onClick={handleRefund}
                     disabled={actionLoading}
-                    className="py-3 px-6 bg-white/5 hover:bg-white/10 disabled:opacity-50 border border-white/10 text-white font-bold rounded-xl transition flex items-center justify-center gap-2"
+                    className="zion-button-secondary px-6 disabled:opacity-50"
                   >
                     {cs ? 'Refund' : 'Refund'}
                   </button>
@@ -816,11 +817,10 @@ export default function SwapPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className={`p-4 rounded-xl text-xs flex gap-2 border max-w-3xl ${
-                      actionMessage.success
-                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                        : 'bg-red-500/10 border-red-500/30 text-red-400'
+                    className={`p-4 rounded-xl text-xs flex gap-2 max-w-3xl zion-rainbow-sub ${
+                      actionMessage.success ? 'text-emerald-400' : 'text-red-400'
                     }`}
+                    style={{ '--rc': actionMessage.success ? '16, 185, 129' : '239, 68, 68' } as CSSProperties}
                   >
                     {actionMessage.success ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <Info className="h-4 w-4 shrink-0" />}
                     <span className="break-all">{actionMessage.text}</span>
@@ -840,9 +840,9 @@ export default function SwapPage() {
               className="space-y-6"
             >
               {/* Query panel */}
-              <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
+              <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
                 <h3 className="text-base font-bold flex items-center gap-2">
-                  <Search className="h-4 w-4 text-amber-400" />
+                  <Search className="h-4 w-4 text-cyan-400" />
                   {cs ? 'Vyhledat HTLC Lock' : 'Track HTLC Lock'}
                 </h3>
                 <form onSubmit={handleSearch} className="flex gap-2">
@@ -850,13 +850,13 @@ export default function SwapPage() {
                     type="text"
                     value={searchHash}
                     onChange={e => setSearchHash(e.target.value)}
-                    className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs text-white focus:border-amber-500 focus:outline-none"
+                    className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs text-white focus:border-cyan-500 focus:outline-none"
                     placeholder="Enter 64-character hashlock"
                   />
                   <button
                     type="submit"
                     disabled={searchLoading}
-                    className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition text-xs font-semibold"
+                    className="zion-button-secondary px-4 py-2 text-xs font-semibold"
                   >
                     {searchLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : (cs ? 'Hledat' : 'Search')}
                   </button>
@@ -865,7 +865,7 @@ export default function SwapPage() {
                 {searchError && <div className="text-xs text-red-400 font-medium">{searchError}</div>}
 
                 {searchResult && (
-                  <div className="zion-tile p-4 space-y-2 text-xs font-mono relative">
+                  <div className="zion-rainbow-sub p-4 space-y-2 text-xs font-mono relative" style={{ '--rc': '147, 51, 234' } as CSSProperties}>
                     <div className="flex justify-between">
                       <span className="text-gray-500">State:</span>
                       <span
@@ -907,11 +907,11 @@ export default function SwapPage() {
               </div>
 
               {/* Active pending locks table */}
-              <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '52, 211, 153' } as CSSProperties}>
+              <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-bold flex items-center gap-2">
-                      <Activity className="h-5 w-5 text-emerald-400" />
+                      <Activity className="h-5 w-5 text-cyan-400" />
                       {cs ? 'Aktivní HTLC Zámky' : 'Active HTLC Locks'}
                     </h3>
                     <p className="text-xs text-gray-500">
@@ -921,7 +921,7 @@ export default function SwapPage() {
                   <button
                     onClick={loadInitialData}
                     disabled={pendingLoading}
-                    className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition"
+                    className="zion-button-secondary p-2"
                   >
                     <RefreshCw className={`h-4 w-4 ${pendingLoading ? 'animate-spin' : ''}`} />
                   </button>
@@ -990,7 +990,7 @@ export default function SwapPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="zion-rainbow-card p-6 md:p-8"
-          style={{ '--rc': '168, 85, 247' } as CSSProperties}
+          style={{ '--rc': '147, 51, 234' } as CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'FAQ' : 'FAQ'}</p>
@@ -1002,7 +1002,7 @@ export default function SwapPage() {
 
           <div className="space-y-3">
             {faqs.map((f, i) => (
-              <div key={i} className="zion-rainbow-sub" style={{ '--rc': '168, 85, 247' } as CSSProperties}>
+              <div key={i} className="zion-rainbow-sub" style={{ '--rc': '147, 51, 234' } as CSSProperties}>
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   className="flex w-full items-center justify-between p-4 text-left"
@@ -1043,8 +1043,8 @@ export default function SwapPage() {
             <a href="/bridge" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '147, 51, 234' } as CSSProperties}>
               <ArrowLeftRight className="h-4 w-4 text-zion-cyan" /> {cs ? 'Bridge' : 'Bridge'}
             </a>
-            <a href="/defi" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
-              <TrendingUp className="h-4 w-4 text-zion-gold" /> {cs ? 'DeFi Hub' : 'DeFi Hub'}
+            <a href="/defi" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
+              <TrendingUp className="h-4 w-4 text-zion-cyan" /> {cs ? 'DeFi Hub' : 'DeFi Hub'}
             </a>
             <a href="/docs" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
               <ExternalLink className="h-4 w-4 text-cyan-400" /> {cs ? 'Dokumentace' : 'Documentation'}
