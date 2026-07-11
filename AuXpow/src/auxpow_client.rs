@@ -16,11 +16,12 @@ use anyhow::{anyhow, bail, Context, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::sync::Arc;
-use std::time::Duration;
+use std::collections::HashMap;
+use std::time::{Duration, Instant};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::TcpStream;
-use tokio::sync::{Mutex, Notify};
+use tokio::sync::{Mutex, Notify, oneshot};
 use tokio::time::timeout;
 use tracing::{debug, info, warn};
 
@@ -38,7 +39,9 @@ pub enum StratumProtocol {
 impl ExternalCoin {
     pub fn protocol(self) -> StratumProtocol {
         match self {
-            Self::DCR | Self::ALPH | Self::KAS | Self::FLUX | Self::XMR => StratumProtocol::Stratum,
+            Self::DCR | Self::FLUX | Self::XMR | Self::KAS | Self::ALPH => {
+                StratumProtocol::Stratum
+            }
             Self::ERG | Self::RVN | Self::ETC | Self::EVR | Self::MEWC | Self::CLORE => {
                 StratumProtocol::EthStratum
             }
@@ -72,6 +75,9 @@ pub struct ExternalJob {
     /// Network nbits/difficulty bits from notify, used for display/logging.
     #[serde(skip)]
     pub nbits: Option<String>,
+    /// External coin this job belongs to.
+    #[serde(skip)]
+    pub external_coin: ExternalCoin,
     /// Extra nonce 1 provided by the pool (Alephium).
     #[serde(skip)]
     pub extranonce1: Vec<u8>,
@@ -89,6 +95,7 @@ pub enum ShareResult {
 }
 
 /// Stratum v1 client for an external mining pool.
+#[derive(Clone)]
 pub struct AuxPowClient {
     profile: CoinProfile,
     protocol: StratumProtocol,
@@ -108,6 +115,9 @@ pub struct AuxPowClient {
     payout_wallet: Arc<Mutex<String>>,
     /// Extra nonce 1 provided by the pool (Alephium uses 4 bytes).
     extranonce1: Arc<Mutex<Vec<u8>>>,
+    /// Pending JSON-RPC responses keyed by request id.  The background poll
+    /// loop routes incoming responses here.
+    pending_requests: Arc<Mutex<HashMap<i64, oneshot::Sender<Value>>>>,
 }
 
 impl AuxPowClient {
@@ -128,6 +138,7 @@ impl AuxPowClient {
             current_difficulty: Arc::new(Mutex::new(1.0)),
             payout_wallet: Arc::new(Mutex::new(String::new())),
             extranonce1: Arc::new(Mutex::new(Vec::new())),
+            pending_requests: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -154,6 +165,23 @@ impl AuxPowClient {
         *self.stream.lock().await = Some(writer_half);
         *self.reader.lock().await = Some(buf_reader);
         *self.connected.lock().await = true;
+
+        // Spawn the background reader before the subscribe/authorize handshake
+        // so that responses are routed to send_request and notifications are
+        // dispatched from a single reader.
+        let client_clone = Arc::new(self.clone());
+        tokio::spawn(async move {
+            loop {
+                match client_clone.poll_messages().await {
+                    Ok(()) => {}
+                    Err(e) => {
+                        warn!("AuxPow: poll loop ended for {}: {}", client_clone.profile.coin, e);
+                        *client_clone.connected.lock().await = false;
+                        break;
+                    }
+                }
+            }
+        });
 
         // Subscribe
         self.subscribe().await?;
@@ -195,26 +223,36 @@ impl AuxPowClient {
         }
     }
 
-    /// Send `mining.authorize` with wallet.worker name.
-    /// For zpool coins, password is `c=BTC` to force BTC payout.
-    /// For 2miners coins, password is ignored (send `c=BTC` anyway, harmless).
+    /// Send `mining.authorize` or `eth_submitLogin` with wallet.worker name.
+    ///
+    /// Standard Stratum v1 uses `mining.authorize`.  EthereumStratum/1.0.0
+    /// pools (2miners, Kryptex KAS/ALPH, etc.) expect `eth_submitLogin`.
     async fn authorize(&self, payout_wallet: &str) -> Result<()> {
         let worker = format!("{}.{}", payout_wallet, self.profile.worker_name);
-        let password = "c=BTC";
+        let is_ethstratum = self.protocol == StratumProtocol::EthStratum;
+        let password = if is_ethstratum { "x" } else { "c=BTC" };
         println!(
-            "auxpow: authorizing worker={} password={} on {}",
-            worker, password, self.profile.coin
+            "auxpow: authorizing worker={} password={} on {} (protocol={})",
+            worker, password, self.profile.coin, self.protocol.as_str()
         );
+        let method = if is_ethstratum {
+            "eth_submitLogin"
+        } else {
+            "mining.authorize"
+        };
         let req = json!({
             "id": 2,
-            "method": "mining.authorize",
+            "method": method,
             "params": [worker, password]
         });
         let resp = self.send_request(&req).await?;
-        let ok = resp
-            .get("result")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(false);
+        let ok = if is_ethstratum {
+            // EthStratum may return result=true or result="0x..." for success.
+            resp.get("result").and_then(|v| v.as_bool()).unwrap_or(false)
+                || resp.get("result").and_then(|v| v.as_str()).is_some()
+        } else {
+            resp.get("result").and_then(|v| v.as_bool()).unwrap_or(false)
+        };
         if ok {
             *self.authorized.lock().await = true;
             println!("auxpow: authorized as {} on {}", worker, self.profile.coin);
@@ -232,13 +270,18 @@ impl AuxPowClient {
         }
     }
 
-    /// Send a JSON-RPC request and read the response.
-    /// Skips notifications (messages with `method` field) until it finds
-    /// a response with matching `id`.
+    /// Send a JSON-RPC request and read the response routed by the background
+    /// poll loop.  The poll loop is the sole reader of the TCP stream; it
+    /// either routes matching responses here or dispatches notifications.
     async fn send_request(&self, req: &Value) -> Result<Value> {
-        let req_id = req.get("id").cloned();
+        let req_id = req.get("id").and_then(|v| v.as_i64());
         let mut line = serde_json::to_string(req)?;
         line.push('\n');
+
+        let (tx, rx) = oneshot::channel();
+        if let Some(id) = req_id {
+            self.pending_requests.lock().await.insert(id, tx);
+        }
 
         {
             let mut stream_guard = self.stream.lock().await;
@@ -250,50 +293,14 @@ impl AuxPowClient {
             }
         }
 
-        // Read lines until we find a response with matching id.
-        // Pools may send notifications (mining.set_difficulty, mining.notify)
-        // between our request and the response — skip those.
-        loop {
-            let resp = match timeout(Duration::from_secs(30), self.read_line()).await {
-                Ok(Ok(line)) => line,
-                Ok(Err(e)) => return Err(e),
-                Err(_) => bail!("send_request: timeout waiting for response"),
-            };
-            let value: Value = serde_json::from_str(&resp)?;
-
-            // Check if this is a notification (has "method" field, no matching id)
-            if value.get("method").is_some() {
-                // It's a notification — dispatch it and keep reading
-                debug!("AuxPow: skipping notification during request: {}", value.get("method").unwrap_or(&serde_json::Value::Null));
-                // Handle the notification inline
-                if let Some(method) = value.get("method").and_then(|m| m.as_str()) {
-                    if method == "mining.notify" {
-                        if let Some(params) = value.get("params") {
-                            if let Ok(job) = self.parse_notify_params(params).await {
-                                *self.current_job.lock().await = Some(job);
-                                self.job_notify.notify_waiters();
-                            }
-                        }
-                    }
-                }
-                continue;
-            }
-
-            // Check if id matches (if request has an id)
-            if let Some(ref expected_id) = req_id {
-                if let Some(resp_id) = value.get("id") {
-                    if resp_id == expected_id {
-                        return Ok(value);
-                    }
-                    // Different id — keep reading (shouldn't happen normally)
-                    debug!("AuxPow: skipping response with mismatched id");
-                    continue;
-                }
-            }
-
-            // No id in request (shouldn't happen for our requests) — return first non-notification
-            return Ok(value);
-        }
+        let deadline = Instant::now() + Duration::from_secs(30);
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        let resp = match timeout(remaining, rx).await {
+            Ok(Ok(value)) => value,
+            Ok(Err(_)) => bail!("send_request: response channel closed"),
+            Err(_) => bail!("send_request: timeout waiting for response"),
+        };
+        Ok(resp)
     }
 
     /// Read a single line from the stratum stream.
@@ -311,16 +318,23 @@ impl AuxPowClient {
         }
     }
 
-    /// Read and dispatch incoming messages (jobs, etc.).
-    /// Call this in a loop in a background task.
+    /// Read and dispatch incoming messages (jobs, responses, etc.).
+    /// Call this in a loop in a background task.  It is the sole reader of the
+    /// stratum TCP stream.
     pub async fn poll_messages(&self) -> Result<()> {
         let line = self.read_line().await?;
         let msg: Value = serde_json::from_str(&line)?;
 
-        // Check if this is a notification (no "id" or id is null)
-        let method = msg.get("method").and_then(|m| m.as_str());
+        // If the message has an id matching a pending request, route it there.
+        if let Some(id) = msg.get("id").and_then(|v| v.as_i64()) {
+            if let Some(tx) = self.pending_requests.lock().await.remove(&id) {
+                let _ = tx.send(msg);
+                return Ok(());
+            }
+        }
 
-        if let Some(method) = method {
+        // Otherwise treat it as a notification.
+        if let Some(method) = msg.get("method").and_then(|m| m.as_str()) {
             match method {
                 "mining.notify" => {
                     if let Some(params) = msg.get("params") {
@@ -411,6 +425,7 @@ impl AuxPowClient {
                 target_bytes,
                 timestamp: None,
                 nbits: None,
+                external_coin: self.profile.coin,
                 extranonce1: self.extranonce1.lock().await.clone(),
                 extranonce2: String::new(),
             });
@@ -471,6 +486,7 @@ impl AuxPowClient {
             target_bytes,
             timestamp,
             nbits,
+            external_coin: self.profile.coin,
             extranonce1: self.extranonce1.lock().await.clone(),
             extranonce2: String::new(),
         })
@@ -483,6 +499,10 @@ impl AuxPowClient {
 
     /// Wait for a new job with timeout.
     pub async fn wait_for_job(&self, timeout_ms: u64) -> Result<Option<ExternalJob>> {
+        // Fast path: a job may have already arrived before we started waiting.
+        if let Some(job) = self.current_job().await {
+            return Ok(Some(job));
+        }
         let result = timeout(
             Duration::from_millis(timeout_ms),
             self.job_notify.notified(),
@@ -512,12 +532,18 @@ impl AuxPowClient {
             && self.profile.coin == ExternalCoin::ALPH;
 
         let params = if is_alph {
-            // Alephium stratum: [jobId, nonceSansExtraNonce].
-            // Full 24-byte nonce = extranonce1 || 12 zero bytes || u64 nonce (LE).
-            // The submitted part is the 20-byte suffix.
-            let mut sans = [0u8; 20];
-            sans[12..20].copy_from_slice(&nonce.to_le_bytes());
-            let hex = hex::encode(sans);
+            // Alephium/Kryptex: try submitting the full 24-byte nonce as hex.
+            // Full nonce = extranonce1 (4B) || scanned nonce (8B BE) || zeros (12B).
+            let en1 = self.extranonce1.lock().await.clone();
+            let mut full = [0u8; 24];
+            let en1_len = en1.len().min(24);
+            full[..en1_len].copy_from_slice(&en1[..en1_len]);
+            if en1_len + 8 <= 24 {
+                full[en1_len..en1_len + 8].copy_from_slice(&nonce.to_be_bytes());
+            } else {
+                full[16..24].copy_from_slice(&nonce.to_be_bytes());
+            }
+            let hex = hex::encode(full);
             json!([job_id, hex])
         } else {
             let hex = format!("0x{:016x}", nonce);
@@ -776,11 +802,8 @@ mod tests {
 
         assert!(client.is_connected().await);
 
-        // Wait for job notification
-        tokio::time::sleep(Duration::from_millis(50)).await;
-        client.poll_messages().await.unwrap();
-
-        let job = client.current_job().await;
+        // Wait for job notification (poll loop is running internally)
+        let job = client.wait_for_job(2000).await.unwrap();
         assert!(job.is_some());
         let job = job.unwrap();
         assert_eq!(job.job_id, "job_001");
@@ -815,9 +838,7 @@ mod tests {
         let client = AuxPowClient::new(profile);
         client.connect("bc1qtestwallet").await.unwrap();
 
-        tokio::time::sleep(Duration::from_millis(50)).await;
-        client.poll_messages().await.unwrap();
-
+        // Poll loop is running internally.
         let result = client
             .submit_share("job_001", 42, "abcdef0123456789")
             .await
