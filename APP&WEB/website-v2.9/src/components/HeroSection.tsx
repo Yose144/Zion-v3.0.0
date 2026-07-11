@@ -34,11 +34,11 @@ export default function HeroSection() {
             transition={{ duration: 0.6, ease: 'easeOut' }}
             className="w-full"
           >
-            <div className="flex flex-col items-center pt-4 sm:pt-8 pb-6 sm:pb-10">
+            <div className="flex flex-col items-center pt-3 sm:pt-6 pb-5 sm:pb-8">
               <VisionBar />
 
               {/* Nadpis nad stargate */}
-              <p className="mt-6 sm:mt-8 mb-4 sm:mb-8 text-xs sm:text-sm font-bold uppercase tracking-[0.25em] sm:tracking-[0.3em] text-zion-cyan/80 text-center px-4">
+              <p className="mt-4 sm:mt-8 mb-3 sm:mb-6 text-[10px] sm:text-xs font-bold uppercase tracking-[0.25em] sm:tracking-[0.3em] text-zion-cyan/80 text-center px-4">
                 ZION Stargate — Portál do Oasis
               </p>
 
@@ -47,7 +47,7 @@ export default function HeroSection() {
                 initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ duration: 0.8, ease: 'easeOut' }}
-                className="w-full px-4 max-w-[240px] sm:max-w-[300px] md:max-w-[360px]"
+                className="w-full px-4 max-w-[160px] sm:max-w-[220px] md:max-w-[300px]"
               >
                 <StargateLogo className="w-full" />
               </motion.div>
@@ -57,11 +57,12 @@ export default function HeroSection() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="mt-6 sm:mt-10 mb-8 sm:mb-12"
+                className="mt-4 sm:mt-8"
               >
                 <a
                   href="/l4-oasis"
-                  className="group inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/5 px-4 sm:px-5 py-2 text-xs sm:text-sm font-bold text-zion-cyan transition-all hover:border-zion-cyan/60 hover:bg-zion-cyan/10 hover:shadow-[0_8px_30px_rgba(111,255,240,0.2)]"
+                  className="zion-rainbow-card group inline-flex items-center gap-2 rounded-full px-4 sm:px-5 py-2 text-xs sm:text-sm font-bold text-cyan-300"
+                  style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
                 >
                   Vstoupit do Oasis
                   <span className="transition-transform group-hover:translate-x-1">→</span>

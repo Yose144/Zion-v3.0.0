@@ -28,12 +28,12 @@ export default function Navigation() {
   const navItemMatches = (href: string) =>
     pathname === href || (href === '/terranova' && pathname.startsWith('/terranova')) || (href === '/quantum-revolution' && pathname.startsWith('/quantum-revolution')) || (href === '/tree-of-life' && pathname.startsWith('/tree-of-life')) || (href === '/wiki' && pathname === '/wiki');
 
-  /* ── 4 groups with icons + accent colors ── */
+  /* ── 4 groups with icons + RASTA accent colors ── */
   const navGroups: NavGroup[] = [
     {
       title: tr('nav', 'network_group', lang),
       icon: NetworkIcon,
-      color: '6, 182, 212',
+      color: '16, 185, 129',
       items: [
         { href: '/network', label: tr('nav', 'network', lang) },
         { href: '/explorer', label: tr('nav', 'explorer', lang) },
@@ -45,7 +45,7 @@ export default function Navigation() {
     {
       title: tr('nav', 'defi_group', lang),
       icon: Coins,
-      color: '16, 185, 129',
+      color: '251, 191, 36',
       items: [
         { href: '/defi', label: tr('nav', 'defi', lang) },
         { href: '/ziondex', label: 'ZionDex' },
@@ -59,7 +59,7 @@ export default function Navigation() {
     {
       title: tr('nav', 'layers_group', lang),
       icon: Layers,
-      color: '139, 92, 246',
+      color: '239, 68, 68',
       items: [
         { href: '/l3-hiran', label: tr('nav', 'l3_hiran', lang) },
         { href: '/l4-oasis', label: tr('nav', 'l4_oasis', lang) },
@@ -70,7 +70,7 @@ export default function Navigation() {
     {
       title: tr('nav', 'learn_group', lang),
       icon: BookOpen,
-      color: '245, 158, 11',
+      color: '16, 185, 129',
       items: [
         { href: '/docs', label: tr('nav', 'docs', lang) },
         { href: '/news', label: tr('nav', 'news', lang) },
@@ -89,13 +89,13 @@ export default function Navigation() {
   const activeGroup = navGroups.find((group) => group.title === openGroup);
 
   /* ── HERO icons — top panel, RASTA colored ── */
-  /* Rasta: green (emerald) → gold (zion-gold) → amber (amber-500) */
+  /* Rasta: green (emerald) → gold (zion-gold) → red (rose/red) */
   const heroIcons = [
     { href: '/explorer', icon: Orbit, color: '16, 185, 129', label: tr('nav', 'explorer', lang) },       /* green */
-    { href: '/pool', icon: Pickaxe, color: '251, 191, 36', label: tr('nav', 'pool', lang) },             /* gold */
-    { href: '/network', icon: SignalHigh, color: '245, 158, 11', label: tr('nav', 'network', lang) },    /* amber */
-    { href: '/docs', icon: BookOpen, color: '99, 102, 241', label: tr('nav', 'docs', lang) },              /* indigo */
-    { href: '/wallet', icon: Wallet, color: '34, 197, 94', label: tr('nav', 'wallet', lang) },           /* green */
+    { href: '/pool', icon: Pickaxe, color: '251, 191, 36', label: tr('nav', 'pool', lang) },               /* gold */
+    { href: '/network', icon: SignalHigh, color: '239, 68, 68', label: tr('nav', 'network', lang) },      /* red */
+    { href: '/docs', icon: BookOpen, color: '16, 185, 129', label: tr('nav', 'docs', lang) },             /* green */
+    { href: '/wallet', icon: Wallet, color: '251, 191, 36', label: tr('nav', 'wallet', lang) },            /* gold */
   ];
 
   /* ── Secondary icons — medium, core ecosystem ── */
@@ -197,13 +197,14 @@ export default function Navigation() {
             FLOOR 1 — MAIN BAR
             Logo | 4 HERO icons (rasta) | lang + GitHub + auth + dashboard
             ═══════════════════════════════════════════════════ */}
-        <div className="zion-panel flex items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 ring-1 ring-white/5 md:px-4"
-          style={{
-            boxShadow: '0 24px 90px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.04)',
-          }}
-        >
+        <div className="relative rounded-2xl bg-linear-to-r from-emerald-500/60 via-zion-gold/70 to-red-500/60 p-[1px] shadow-[0_24px_90px_rgba(0,0,0,0.42)]">
           {/* Rasta gradient top accent line */}
-          <div className="pointer-events-none absolute -top-px left-0 right-0 h-px rounded-t-2xl bg-linear-to-r from-emerald-500/50 via-zion-gold/60 to-amber-600/50" />
+          <div className="pointer-events-none absolute -top-px left-2 right-2 h-px rounded-t-2xl bg-linear-to-r from-emerald-400/80 via-zion-gold/90 to-red-400/80" />
+          <div className="zion-panel relative flex items-center justify-between gap-1.5 sm:gap-2 rounded-[15px] bg-black/85 px-2 sm:px-3 py-1.5 sm:py-2 md:px-4"
+            style={{
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+            }}
+          >
 
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 group shrink-0">
@@ -296,6 +297,7 @@ export default function Navigation() {
           >
             {isOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
+          </div>
         </div>
 
         {/* ═══════════════════════════════════════════════════
@@ -303,7 +305,7 @@ export default function Navigation() {
             ═══════════════════════════════════════════════════ */}
         <div className="mt-1 hidden md:flex items-center justify-between gap-2 relative">
           {/* Rasta accent line */}
-          <div className="pointer-events-none absolute -top-0.5 left-1/4 right-1/4 h-px bg-linear-to-r from-transparent via-emerald-500/30 to-transparent" />
+          <div className="pointer-events-none absolute -top-0.5 left-1/6 right-1/6 h-px bg-linear-to-r from-transparent via-emerald-500/40 via-zion-gold/50 via-red-500/40 to-transparent" />
 
           {/* Icons + group dropdowns */}
           <div className="flex items-center gap-1 flex-1 justify-center overflow-x-auto no-scrollbar min-w-0">
@@ -372,12 +374,12 @@ export default function Navigation() {
                   <button
                     type="button"
                     onClick={() => setOpenGroup(isActive ? null : group.title)}
-                    className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] transition-all ${
+                    className={`group inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] transition-all ${
                       isActive
-                        ? 'border-zion-gold/30 bg-linear-to-br from-emerald-500/15 via-zion-gold/10 to-amber-600/12 text-white shadow-[0_8px_20px_rgba(0,0,0,0.25),0_0_12px_rgba(251,191,36,0.12)]'
+                        ? 'border-zion-gold/40 bg-linear-to-br from-emerald-500/15 via-zion-gold/12 to-red-500/12 text-white shadow-[0_8px_20px_rgba(0,0,0,0.25),0_0_12px_rgba(251,191,36,0.12)]'
                         : groupHasActiveChild
-                          ? 'border-white/20 bg-white/5 text-white'
-                          : 'border-white/8 bg-black/60 text-gray-400 hover:border-zion-gold/25 hover:bg-black/80 hover:text-white'
+                          ? 'border-emerald-500/30 bg-black/60 text-white hover:border-zion-gold/40'
+                          : 'border-white/8 bg-black/60 text-gray-400 hover:border-zion-gold/30 hover:bg-black/80 hover:text-white'
                     }`}
                     aria-expanded={isActive}
                   >
@@ -385,7 +387,7 @@ export default function Navigation() {
                       className="w-3 h-3"
                       style={{ color: isActive ? `rgb(${group.color})` : `rgba(${group.color}, 0.7)` }}
                     />
-                    {groupLabels[group.title] ?? group.title}
+                    <span className="group-hover:text-zion-gold transition-colors">{groupLabels[group.title] ?? group.title}</span>
                     <ChevronDown className={`h-2.5 w-2.5 transition-transform ${isActive ? 'rotate-180' : ''}`} />
                   </button>
                 </div>
@@ -401,8 +403,8 @@ export default function Navigation() {
 
         {/* ═══ GROUP DROPDOWN PANEL ═══ */}
         {activeGroup && (
-          <div className="mt-1 hidden md:block absolute left-1/2 -translate-x-1/2 w-[min(20rem,90vw)] rounded-3xl border border-zion-gold/15 bg-black/95 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.55),0_0_24px_rgba(251,191,36,0.08)] backdrop-blur-2xl z-50">
-            <div className="mb-2 h-0.5 w-full rounded-full bg-linear-to-r from-emerald-500/40 via-zion-gold/50 to-amber-600/30" />
+          <div className="mt-1 hidden md:block absolute left-1/2 -translate-x-1/2 w-[min(20rem,90vw)] rounded-3xl border border-zion-gold/20 bg-black/95 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.55),0_0_24px_rgba(251,191,36,0.1)] backdrop-blur-2xl z-50">
+            <div className="mb-2 h-0.5 w-full rounded-full bg-linear-to-r from-emerald-500/50 via-zion-gold/60 to-red-500/40" />
             <div className="flex items-center gap-2 mb-3">
               <activeGroup.icon className="w-4 h-4" style={{ color: `rgb(${activeGroup.color})` }} />
               <p className="text-[10px] uppercase tracking-[0.4em] text-zion-gold/70">{groupLabels[activeGroup.title] ?? activeGroup.title}</p>
@@ -448,19 +450,19 @@ export default function Navigation() {
               aria-hidden="true"
             />
             {/* Slide-in panel */}
-            <div className="md:hidden fixed top-0 right-0 bottom-0 w-[min(320px,85vw)] bg-black/95 backdrop-blur-xl border-l border-zion-gold/15 z-50 overflow-y-auto overscroll-contain animate-[slideIn_0.25s_ease-out]">
+            <div className="md:hidden fixed top-0 right-0 bottom-0 w-[min(320px,85vw)] bg-black/95 backdrop-blur-xl border-l-2 border-zion-gold/30 z-50 overflow-y-auto overscroll-contain animate-[slideIn_0.25s_ease-out]" style={{ borderImage: 'linear-gradient(to bottom, rgba(16,185,129,0.4), rgba(251,191,36,0.5), rgba(239,68,68,0.4)) 1' }}>
               <div className="flex items-center justify-between p-4 border-b border-white/10">
                 <span className="text-sm font-bold text-gradient">{tr('nav', 'menu_title', lang)}</span>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-2 rounded-xl border border-white/20 hover:border-white/40 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  className="p-2 rounded-xl border border-white/20 hover:border-zion-gold/50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                   aria-label={tr('nav', 'close_menu', lang)}
                 >
                   <X size={20} className="text-white" />
                 </button>
               </div>
               {/* Rasta accent line */}
-              <div className="h-0.5 w-full bg-linear-to-r from-emerald-500/40 via-zion-gold/50 to-amber-600/30" />
+              <div className="h-0.5 w-full bg-linear-to-r from-emerald-500/50 via-zion-gold/60 to-red-500/40" />
               <div className="p-4 space-y-2">
                 {/* Home shortcut — always visible */}
                 <Link
