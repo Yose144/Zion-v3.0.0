@@ -107,6 +107,23 @@ pub fn dispatch_hash(algorithm: &str, header: &[u8], timestamp: u64, nonce: u64)
     match algorithm {
         "blake3" => Ok(hash_blake3(header, timestamp, nonce)),
         "kheavyhash" => Ok(hash_kheavyhash(header, timestamp, nonce)),
+        "autolykos" => Ok(crate::external_hashers::hash_autolykos(
+            header,
+            nonce,
+            timestamp as u32,
+        )),
+        "kawpow" => {
+            let mut h32 = [0u8; 32];
+            let len = header.len().min(32);
+            h32[..len].copy_from_slice(&header[..len]);
+            let (_mix, final_hash) = crate::external_hashers::hash_kawpow(&h32, nonce, timestamp as u32);
+            Ok(final_hash)
+        }
+        "ethash" | "etchash" => Ok(crate::external_hashers::hash_ethash(
+            header,
+            nonce,
+            timestamp as u32,
+        )),
         other => Err(anyhow!("dual-stratum: algorithm '{}' not supported by AuXpow hasher", other)),
     }
 }

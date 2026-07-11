@@ -13,6 +13,10 @@ pub mod auxpow_client;
 pub mod auxpow_scheduler;
 pub mod dual_stratum;
 pub mod external_hashers;
+#[cfg(feature = "gpu-opencl")]
+pub mod gpu_miner;
+#[cfg(feature = "native-hashers")]
+pub mod native_ffi;
 pub mod miner_harness;
 pub mod multiplexer;
 pub mod parent_chains;
@@ -26,7 +30,9 @@ pub use dual_stratum::{
     AssignmentCounts, DualStratumJob, DualStratumMiner, FoundExternalShare, ShareDisposition,
     WorkPackage,
 };
-pub use external_hashers::{hash_blake3, hash_kheavyhash, ExternalAlgorithm};
+pub use external_hashers::{
+    hash_autolykos, hash_blake3, hash_ethash, hash_kawpow, hash_kheavyhash, ExternalAlgorithm,
+};
 pub use parent_chains::{
     AlphHeader, CoinbaseCommitment, DcrHeader, AUXPOW_COINBASE_MAGIC, AUXPOW_COMMITMENT_LEN,
     DCR_HEADER_SIZE,

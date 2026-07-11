@@ -5,6 +5,7 @@ edition = "2021"
 license = "MIT"
 authors = ["Yose144"]
 description = "AuxPow merge-mining module — stratum proxy + external hashers for ZION pool"
+build = "build.rs"
 
 [lib]
 path = "src/lib.rs"
@@ -25,5 +26,12 @@ num-bigint = "0.4"
 [dev-dependencies]
 tempfile = "3"
 
+[build-dependencies]
+cc = "1.0"
+
 [features]
 default = []
+# Compile C native hashers (blake3, kheavyhash, autolykos, kawpow, etchash)
+native-hashers = []
+# OpenCL GPU acceleration (requires OpenCL runtime)
+gpu-opencl = []

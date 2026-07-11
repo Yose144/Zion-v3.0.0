@@ -200,11 +200,23 @@ impl AuxPowClient {
 
     /// Send `mining.subscribe` and wait for response.
     async fn subscribe(&self) -> Result<()> {
-        let req = json!({
-            "id": 1,
-            "method": "mining.subscribe",
-            "params": ["zion-auxpow/0.1"]
-        });
+        let is_ethstratum = self.protocol == StratumProtocol::EthStratum;
+        let req = if is_ethstratum {
+            // EthStratum pools (ERG/RVN/ETC) use eth_subscribe or just
+            // mining.subscribe with different params.  Most accept the
+            // standard subscribe and then switch to eth_getWork.
+            json!({
+                "id": 1,
+                "method": "mining.subscribe",
+                "params": ["zion-auxpow/0.1"]
+            })
+        } else {
+            json!({
+                "id": 1,
+                "method": "mining.subscribe",
+                "params": ["zion-auxpow/0.1"]
+            })
+        };
         let resp = self.send_request(&req).await?;
         if let Some(result) = resp.get("result") {
             *self.subscribed.lock().await = true;
@@ -365,6 +377,44 @@ impl AuxPowClient {
                     if let Some(params) = msg.get("params") {
                         if let Some(hex) = params.get(0).and_then(|p| p.as_str()) {
                             *self.extranonce1.lock().await = hex::decode(hex).unwrap_or_default();
+                        }
+                    }
+                }
+                // EthStratum notify: params = [seed_hash, header_hash, boundary]
+                // where seed_hash and header_hash are 0x-prefixed hex strings.
+                "eth_getWork" => {
+                    if let Some(params) = msg.get("params") {
+                        if let Some(arr) = params.as_array() {
+                            if arr.len() >= 3 {
+                                let seed_hash = arr[0].as_str().unwrap_or("").to_string();
+                                let header_hex = arr[1].as_str().unwrap_or("").to_string();
+                                let target_hex = arr[2].as_str().unwrap_or("").to_string();
+                                let header_bytes = hex::decode(header_hex.trim_start_matches("0x"))
+                                    .unwrap_or_default();
+                                let target_bytes = crate::external_hashers::parse_target_hex(
+                                    target_hex.trim_start_matches("0x"),
+                                )
+                                .unwrap_or([0xFFu8; 32]);
+                                let job = ExternalJob {
+                                    job_id: header_hex.clone(),
+                                    header_hex,
+                                    target_hex,
+                                    seed_hash: Some(seed_hash),
+                                    block_number: None,
+                                    algorithm: self.profile.algorithm.clone(),
+                                    header_bytes,
+                                    target_bytes,
+                                    timestamp: None,
+                                    nbits: None,
+                                    external_coin: self.profile.coin,
+                                    from_group: 0,
+                                    to_group: 0,
+                                    extranonce1: self.extranonce1.lock().await.clone(),
+                                    extranonce2: String::new(),
+                                };
+                                *self.current_job.lock().await = Some(job);
+                                self.job_notify.notify_waiters();
+                            }
                         }
                     }
                 }
@@ -582,9 +632,10 @@ impl AuxPowClient {
     ///
     /// Returns whether the pool accepted or rejected the share.
     ///
-    /// Supports two Stratum v1 submit dialects:
+    /// Supports three Stratum submit dialects:
     ///   - Standard / zpool / KAS: `[worker, job_id, nonce_hex]`
     ///   - Alephium: JSON object `{jobId, fromGroup, toGroup, nonce, worker}`
+    ///   - EthStratum (ERG/RVN/ETC): `eth_submitWork` with `[nonce_hex, header_hash, mix_hash]`
     pub async fn submit_share(
         &self,
         job_id: &str,
@@ -595,8 +646,20 @@ impl AuxPowClient {
             && self.profile.coin == ExternalCoin::ALPH;
         let is_kas = self.profile.algorithm.eq_ignore_ascii_case("kheavyhash")
             && self.profile.coin == ExternalCoin::KAS;
+        let is_ethstratum = self.protocol == StratumProtocol::EthStratum;
 
-        let params = if is_alph {
+        let (method, params) = if is_ethstratum {
+            // EthStratum submit: eth_submitWork(nonce_hex, header_hash, mix_hash)
+            // The nonce is 0x-prefixed hex.  mix_hash is the PoW mix hash
+            // (for ethash/kawpow) or the final hash (for autolykos).
+            let nonce_hex = format!("0x{:016x}", nonce);
+            let mix_hex = if _hash_hex.starts_with("0x") {
+                _hash_hex.to_string()
+            } else {
+                format!("0x{}", _hash_hex)
+            };
+            ("eth_submitWork", json!([nonce_hex, job_id, mix_hex]))
+        } else if is_alph {
             // Alephium stratum submit uses a JSON object: {jobId, fromGroup,
             // toGroup, nonce, worker}.  The nonce is the full 24-byte value
             // (48 hex chars) composed of extranonce1 || scanned_nonce (LE) ||
@@ -618,13 +681,13 @@ impl AuxPowClient {
             let nonce_hex = hex::encode(full);
             let wallet = self.payout_wallet.lock().await.clone();
             let worker = format!("{}.{}", wallet, self.profile.worker_name);
-            json!({
+            ("mining.submit", json!({
                 "jobId": job_id,
                 "fromGroup": from_group,
                 "toGroup": to_group,
                 "nonce": nonce_hex,
                 "worker": worker,
-            })
+            }))
         } else if is_kas {
             // Kaspa stratum bridge (used by 2miners, Kryptex, etc.) parses the
             // nonce param with `u64::from_str_radix(..., 16)`, i.e. as a
@@ -643,17 +706,17 @@ impl AuxPowClient {
             }
             let full_nonce = u64::from_le_bytes(full);
             let hex = format!("{:016x}", full_nonce);
-            json!([worker, job_id, hex])
+            ("mining.submit", json!([worker, job_id, hex]))
         } else {
             let hex = format!("0x{:016x}", nonce);
             let wallet = self.payout_wallet.lock().await.clone();
             let worker = format!("{}.{}", wallet, self.profile.worker_name);
-            json!([worker, job_id, hex])
+            ("mining.submit", json!([worker, job_id, hex]))
         };
 
         let req = json!({
             "id": 100,
-            "method": "mining.submit",
+            "method": method,
             "params": params
         });
 

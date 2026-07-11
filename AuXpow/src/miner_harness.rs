@@ -6,17 +6,19 @@
 //! a later step.
 //!
 //! Supported algorithms:
-//!   - `blake3`  — DCR/ALPH
-//!   - `kheavyhash` — KAS
+//!   - `blake3`      — DCR/ALPH
+//!   - `kheavyhash`  — KAS
+//!   - `autolykos`   — ERG (pure-Rust fallback; use `native-hashers` for real)
+//!   - `kawpow`      — RVN/CLORE (pure-Rust fallback; use `native-hashers` for real)
+//!   - `ethash`      — ETC (pure-Rust fallback; use `native-hashers` for real)
 //!
-//! Future algorithms (`randomx`, `autolykos`, `ethash`, …) can be added behind
-//! feature flags or delegated to the GPU/FFI layer without changing the
-//! harness interface.
+//! `randomx` requires the RandomX VM and is not yet supported in the CPU harness.
 
 use anyhow::{anyhow, Result};
 
 use crate::external_hashers::{
-    hash_blake3, hash_blake3_alph, hash_kheavyhash, hash_kheavyhash_extranonce, meets_target,
+    hash_autolykos, hash_blake3, hash_blake3_alph, hash_ethash, hash_kawpow, hash_kheavyhash,
+    hash_kheavyhash_extranonce, meets_target,
 };
 use crate::types::{ExternalCoin, JobPackage};
 
@@ -54,6 +56,9 @@ pub fn mine(job: &JobPackage, range: std::ops::Range<u64>) -> Result<Option<Foun
             }
         }
         "kheavyhash" => Ok(scan_kheavyhash(job, start, end)),
+        "autolykos" => Ok(scan_autolykos(job, start, end)),
+        "kawpow" => Ok(scan_kawpow(job, start, end)),
+        "ethash" | "etchash" => Ok(scan_ethash(job, start, end)),
         other => Err(anyhow!("algorithm '{}' not supported by CPU harness", other)),
     }
 }
@@ -131,6 +136,62 @@ fn scan_kheavyhash(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare>
         }
         None
     }
+}
+
+fn scan_autolykos(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
+    let header = &job.header_bytes;
+    let target = &job.target_bytes;
+    let height = job.timestamp as u32; // reuse timestamp field for block height
+
+    for nonce in start..end {
+        let hash = hash_autolykos(header, nonce, height);
+        if meets_target(&hash, target) {
+            return Some(FoundShare {
+                external_job_id: job.external_job_id.clone(),
+                nonce,
+                hash,
+            });
+        }
+    }
+    None
+}
+
+fn scan_kawpow(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
+    let mut header = [0u8; 32];
+    let len = job.header_bytes.len().min(32);
+    header[..len].copy_from_slice(&job.header_bytes[..len]);
+    let target = &job.target_bytes;
+    let height = job.timestamp as u32;
+
+    for nonce in start..end {
+        let (_mix, hash) = hash_kawpow(&header, nonce, height);
+        if meets_target(&hash, target) {
+            return Some(FoundShare {
+                external_job_id: job.external_job_id.clone(),
+                nonce,
+                hash,
+            });
+        }
+    }
+    None
+}
+
+fn scan_ethash(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
+    let header = &job.header_bytes;
+    let target = &job.target_bytes;
+    let height = job.timestamp as u32;
+
+    for nonce in start..end {
+        let hash = hash_ethash(header, nonce, height);
+        if meets_target(&hash, target) {
+            return Some(FoundShare {
+                external_job_id: job.external_job_id.clone(),
+                nonce,
+                hash,
+            });
+        }
+    }
+    None
 }
 
 // ── Tests ────────────────────────────────────────────────────────────

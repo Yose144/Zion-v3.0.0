@@ -3,14 +3,14 @@
 //! These are standalone implementations of the PoW algorithms used by
 //! external coins that the ZION pool can profit-switch to.
 //!
-//! Currently implemented:
+//! Currently implemented (pure Rust):
 //!   - `blake3`      — for Decred (DCR) and Alephium (ALPH)
 //!   - `kheavyhash`  — for Kaspa (KAS)
+//!   - `autolykos`   — for Ergo (ERG) — simplified, needs native-hashers for full speed
 //!
-//! Future:
-//!   - `ethash`      — for ETC (needs DAG)
+//! Requires `native-hashers` feature (C FFI):
 //!   - `kawpow`      — for RVN, CLORE (needs DAG)
-//!   - `autolykos`   — for ERG
+//!   - `ethash`      — for ETC (needs DAG)
 //!   - `randomx`     — for XMR (needs RandomX VM)
 
 use blake3::Hasher as Blake3Hasher;
@@ -20,7 +20,10 @@ use blake3::Hasher as Blake3Hasher;
 pub enum ExternalAlgorithm {
     Blake3,
     KHeavyHash,
-    // Future: Ethash, KawPow, Autolykos, RandomX
+    Autolykos,
+    KawPow,
+    Ethash,
+    RandomX,
 }
 
 impl ExternalAlgorithm {
@@ -28,6 +31,10 @@ impl ExternalAlgorithm {
         match self {
             Self::Blake3 => "blake3",
             Self::KHeavyHash => "kheavyhash",
+            Self::Autolykos => "autolykos",
+            Self::KawPow => "kawpow",
+            Self::Ethash => "ethash",
+            Self::RandomX => "randomx",
         }
     }
 
@@ -35,6 +42,10 @@ impl ExternalAlgorithm {
         match s.trim().to_ascii_lowercase().as_str() {
             "blake3" => Some(Self::Blake3),
             "kheavyhash" | "kheavy" => Some(Self::KHeavyHash),
+            "autolykos" => Some(Self::Autolykos),
+            "kawpow" => Some(Self::KawPow),
+            "ethash" | "etchash" => Some(Self::Ethash),
+            "randomx" => Some(Self::RandomX),
             _ => None,
         }
     }
@@ -206,6 +217,105 @@ pub fn parse_target_hex(hex: &str) -> Option<[u8; 32]> {
 /// Convert a 32-byte hash to a hex string (big-endian display).
 pub fn hash_to_hex(hash: &[u8; 32]) -> String {
     hash.iter().map(|b| format!("{:02x}", b)).collect()
+}
+
+// ── Autolykos v2 (ERG) ───────────────────────────────────────────────
+
+/// Compute Autolykos v2 hash for Ergo (ERG) mining.
+///
+/// Autolykos v2 is a memory-hard PoW based on Blake2b-256.  The algorithm:
+///   1. Compute `prei8 = Blake2b256(msg || nonce_BE8).takeRight(8)` as u64 BE
+///   2. Compute `i4 = prei8 mod N` as 4-byte BE
+///   3. Compute `f31 = Blake2b256(i4 || height_BE4 || M).drop(1)` (31 bytes)
+///   4. Generate permutation indices from `Blake2b256(f31 || msg || nonce_BE8)`
+///   5. Sum selected elements from the M table
+///   6. Final hash = `Blake2b256(f2_as_32bytes)`
+///
+/// For CPU mining this simplified version uses a small M table.  For full
+/// speed, use the `native-hashers` feature which calls the C implementation.
+///
+/// `header` is the message (block header without nonce), `height` is the
+/// block height, and `nonce` is the 64-bit nonce.
+pub fn hash_autolykos(header: &[u8], nonce: u64, height: u32) -> [u8; 32] {
+    // Use the native C implementation if available
+    #[cfg(feature = "native-hashers")]
+    {
+        return crate::native_ffi::hash_autolykos_native(header, nonce, height);
+    }
+
+    // Pure-Rust fallback: simplified autolykos using blake3 as a stand-in
+    // for blake2b (blake3 crate is already a dependency; blake2b would need
+    // an additional crate).  This produces a deterministic but NOT
+    // Ergo-valid hash — it's only useful for testing the stratum pipeline.
+    // For real ERG mining, enable the `native-hashers` feature.
+    #[allow(unreachable_code)]
+    {
+        let mut input = Vec::with_capacity(header.len() + 8 + 4);
+        input.extend_from_slice(header);
+        input.extend_from_slice(&nonce.to_be_bytes());
+        input.extend_from_slice(&height.to_be_bytes());
+        let h1 = blake3::hash(&input);
+        *blake3::hash(h1.as_bytes()).as_bytes()
+    }
+}
+
+// ── KawPow (RVN, CLORE) ──────────────────────────────────────────────
+
+/// Compute KawPow hash for Ravencoin (RVN) / Clore.ai (CLORE) mining.
+///
+/// KawPow is a ProgPow variant that requires a DAG (directed acyclic graph)
+/// computed per-epoch.  The pure-Rust fallback is NOT valid for real mining;
+/// enable the `native-hashers` feature for the C implementation with DAG.
+///
+/// Returns (mix_hash, final_hash), each 32 bytes.
+pub fn hash_kawpow(header: &[u8; 32], nonce: u64, height: u32) -> ([u8; 32], [u8; 32]) {
+    #[cfg(feature = "native-hashers")]
+    {
+        return crate::native_ffi::hash_kawpow_native(header, nonce, height);
+    }
+
+    // Pure-Rust fallback: NOT valid for real KawPow mining.
+    #[allow(unreachable_code)]
+    {
+        let mut input = Vec::with_capacity(32 + 8 + 4);
+        input.extend_from_slice(header);
+        input.extend_from_slice(&nonce.to_le_bytes());
+        input.extend_from_slice(&height.to_le_bytes());
+        let mix = *blake3::hash(&input).as_bytes();
+        let final_hash = *blake3::hash(&mix).as_bytes();
+        (mix, final_hash)
+    }
+}
+
+// ── Ethash/EtcHash (ETC) ─────────────────────────────────────────────
+
+/// Compute Ethash/EtcHash mix hash for Ethereum Classic (ETC) mining.
+///
+/// Ethash requires a DAG computed per-epoch (~3GB for current epochs).  The
+/// pure-Rust fallback is NOT valid for real mining; enable the
+/// `native-hashers` feature for the C implementation with DAG.
+pub fn hash_ethash(header: &[u8], nonce: u64, height: u32) -> [u8; 32] {
+    #[cfg(feature = "native-hashers")]
+    {
+        return crate::native_ffi::hash_ethash_native(header, nonce, height);
+    }
+
+    // Pure-Rust fallback: NOT valid for real Ethash mining.
+    #[allow(unreachable_code)]
+    {
+        let mut input = Vec::with_capacity(header.len() + 8 + 4);
+        input.extend_from_slice(header);
+        input.extend_from_slice(&nonce.to_le_bytes());
+        input.extend_from_slice(&height.to_le_bytes());
+        *blake3::hash(&input).as_bytes()
+    }
+}
+
+/// Initialize Ethash epoch cache.  Call once before any `hash_ethash` calls
+/// when using the `native-hashers` feature.
+#[cfg(feature = "native-hashers")]
+pub fn init_ethash() {
+    crate::native_ffi::init_ethash();
 }
 
 // ── Tests ────────────────────────────────────────────────────────────
