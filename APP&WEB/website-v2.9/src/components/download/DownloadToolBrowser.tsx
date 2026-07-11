@@ -98,7 +98,7 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
       {/* ─── Release header ─── */}
       <div
         className="zion-rainbow-card p-5 sm:p-6"
-        style={{ '--rc': '250, 204, 21' } as React.CSSProperties}
+        style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
       >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
@@ -124,7 +124,7 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
             href={release.htmlUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-gray-200 hover:bg-white/10 transition-colors shrink-0"
+            className="zion-button-secondary text-sm"
           >
             <ExternalLink className="h-4 w-4" />
             {cs ? 'GitHub Release' : 'GitHub Release'}
@@ -175,7 +175,7 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
               <div
                 key={asset.name}
                 className="zion-rainbow-sub p-5 transition-colors"
-                style={{ '--rc': color } as React.CSSProperties}
+                style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 min-w-0">
@@ -203,8 +203,7 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
                     href={asset.downloadUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white transition-colors"
-                    style={{ backgroundColor: `rgba(${color}, 0.15)`, border: `1px solid rgba(${color}, 0.3)` }}
+                    className="zion-button-secondary text-sm"
                   >
                     <ArrowDownToLine className="h-4 w-4" />
                     {cs ? 'Stáhnout' : 'Download'}
@@ -219,7 +218,7 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
       {/* ─── Checksum + verification ─── */}
       <div
         className="zion-rainbow-sub p-5"
-        style={{ '--rc': '100, 116, 139' } as React.CSSProperties}
+        style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
       >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
@@ -243,7 +242,7 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
               href={checksum.downloadUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-gray-200 hover:bg-white/10 transition-colors shrink-0"
+              className="zion-button-secondary text-sm"
             >
               <ShieldCheck className="h-4 w-4" />
               SHA256SUMS.txt
@@ -285,7 +284,7 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
         </p>
         <div
           className="zion-rainbow-sub p-5 overflow-x-auto"
-          style={{ '--rc': '168, 85, 247' } as React.CSSProperties}
+          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
         >
           <table className="w-full text-sm">
             <tbody>

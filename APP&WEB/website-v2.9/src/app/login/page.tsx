@@ -58,17 +58,17 @@ export default function LoginPage() {
 
         {/* Features */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
-          <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-center">
+          <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
             <Shield className="h-5 w-5 text-zion-cyan mx-auto mb-2" />
             <p className="text-[10px] text-gray-400 uppercase tracking-wider">Secure</p>
             <p className="text-[10px] text-gray-600 mt-1">Ed25519 signature</p>
           </div>
-          <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-center">
+          <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
             <Lock className="h-5 w-5 text-zion-gold mx-auto mb-2" />
             <p className="text-[10px] text-gray-400 uppercase tracking-wider">Private</p>
             <p className="text-[10px] text-gray-600 mt-1">Keys never leave browser</p>
           </div>
-          <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-center">
+          <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
             <Sparkles className="h-5 w-5 text-zion-purple mx-auto mb-2" />
             <p className="text-[10px] text-gray-400 uppercase tracking-wider">No Email</p>
             <p className="text-[10px] text-gray-600 mt-1">Wallet = identity</p>
@@ -79,7 +79,7 @@ export default function LoginPage() {
         <button
           onClick={() => setShowModal(true)}
           disabled={loading}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-zion-cyan/30 bg-gradient-to-r from-zion-cyan/20 to-zion-purple/20 px-6 py-3.5 text-sm font-semibold text-white transition-all hover:from-zion-cyan/30 hover:to-zion-purple/30 disabled:opacity-50"
+          className="zion-button-primary w-full flex items-center justify-center gap-2 py-3.5 disabled:opacity-50"
         >
           <Wallet className="h-5 w-5" />
           Sign in with ZION Wallet
