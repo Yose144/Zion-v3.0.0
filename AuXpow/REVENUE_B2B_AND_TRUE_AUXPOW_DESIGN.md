@@ -5,7 +5,7 @@
 > 1. **B2b — Pool-side job multiplexing** (krátkodobý revenue z minerů na ZION poolu).  
 > 2. **C — True AuxPoW** (dlouhodobá bezpečnostní + revenue integrace).  
 > **Default BTC payout wallet:** `bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh`
-> **Build status:** `cargo test -p zion-auxpow` — 75 testů PASS, clippy čisté, release build OK.
+> **Build status:** `cargo test -p zion-auxpow` — 76 testů PASS, clippy čisté, release build OK.
 
 ---
 
@@ -246,7 +246,7 @@ cargo build -p zion-auxpow --release
 ```
 
 **Aktuální výsledek (2026-07-11):**
-- Unit testů: 75 PASS
+- Unit testů: 76 PASS (přibyl test `kheavyhash_known_vector` ověřující shodu s rusty-kaspa)
 - Clippy: čisté (žádná warning)
 - Release build: OK
 
@@ -275,7 +275,7 @@ Proměnné:
 - `AUXPOW_E2E_SUBMIT=1` — odeslat nalezený share (bez toho se jen vytěží a vypíše).
 - `AUXPOW_E2E_JOB_TIMEOUT_MS` — timeout na první job (default 30 000 ms).
 
-### 5.2 Výsledek testu 2026-07-11
+### 5.2 Výsledek testu 2026-07-11 — zpool heavyhash (historický)
 
 Pool: `heavyhash.mine.zpool.ca:5138` (zpool heavyhash / kHeavyHash).  
 Wallet: `bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh` (BTC, `c=BTC` password).
@@ -285,38 +285,47 @@ Wallet: `bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh` (BTC, `c=BTC` password).
 - ✅ `mining.authorize` jako `bc1q...zion_e2e` — autorizováno
 - ✅ `mining.set_difficulty` + `mining.notify` — job přijat (`id=61c2`, `algorithm=kheavyhash`, `header_len=32`, `target=ffffffff`)
 - ✅ CPU hash nalezl share během několika sekund (při `difficulty=0.5` je share target `0xffffffff...`, takže prakticky jakýkoliv hash projde)
-- ⚠️ Submit share: pool uzavře spojení. Bylo vyzkoušeno několik variant:
-  - klasický Stratum `[worker, job_id, nonce_hex]`
-  - nonce s `0x` prefixem
-  - nonce v little-endian i big-endian hex
-  - alternativní 80B work buffer (Pyrin-like) i oficiální Kaspa 80B buffer
-  - timestamp jako sekundy i jako milisekundy
-  - Všechny varianty končí stejně — pool spojení ukončí.
-- **Příčina:** zpool `heavyhash` algoritmus těží více kHeavyHash coinů (KAS/PYRIN/Sedra/...). Bez explicitního výběru coinu nelze spolehlivě určit, jaký přesný PoW-buffer, doménový řetězec a submit formát pool očekává. Náš `hash_kheavyhash()` je implementován podle oficiálního Kaspa `cSHAKE256("ProofOfWorkHash") → cSHAKE256("HeavyHash")` reference, ale proti živému zpool mixu to nestačí.
+- ⚠️ Submit share: pool uzavře spojení. zpool `heavyhash` těží mix kHeavyHash coinů (KAS/Pyrin/…), bez explicitního výběru coinu nelze určit přesný PoW-buffer a submit formát.
 
-### 5.4 E2E proti Kryptex ALPH (Blake3)
+### 5.3 KAS E2E — 2miners & HeroMiners (aktualizace)
 
-Byla vyzkoušena ALPH pool `alph.kryptex.network:7010` (Blake3) s vygenerovanou testovací ALPH adresou:
+**Adresa:** bylo ověřeno, že oficiální Kaspa adresa z dokumentace (`kaspa:qpzpfwcsqsxhxwup26r55fd0ghqlhyugz8cp6y3wxuddc02vcxtjg75pspnwz`) funguje pro autorizaci na `kas.2miners.com:2020` i `de.kaspa.herominers.com:1206`.
 
-- ✅ TCP connect
-- ✅ `mining.subscribe` — odpověď `"00000000"` (Alephium/Kryptex vrací extranonce1 jako plain hex string)
-- ✅ `mining.authorize` jako `17Kp3Ke7SkyzzFZ6ZJpAS2pPQcJgnzyJz3bcNjUroKt6x.zion_e2e`
-- ✅ `mining.set_difficulty` = 512 → `share_target = 0x007fffffffffffff...`
-- ✅ `mining.notify` — job přijat jako objekt `[{jobId, headerBlob, targetBlob, height, fromGroup, toGroup, txsBlob}]`, `header_len=302`
-- ✅ CPU hash nalezl share během několika sekund (`nonce=696`, hash začíná `004d4f62...`)
-- ⚠️ `mining.submit` ve formátu `[jobId, nonceSansExtraNonce]` (40 hex znaků = 20B suffix 24B nonce) zatím **nevrátilo odpověď** — spojení čeká na pool. Možné příčiny:
-  - Špatné umístění scanned nonce v 24B nonce (mělo by být na offsetu, který miner mění; používáme offset `en1_len + 12`).
-  - Špatná endianita nonce v `nonceSansExtraNonce`.
-  - Pool očekává jiný submit formát (např. s workerId nebo s `0x` prefixem).
-  - Kryptex stratum má specifickou variantu oproti oficiálnímu Alephium mining-pool.
+**Protokol:** oba pooly používají standardní Stratum s `mining.subscribe`/`mining.authorize` a notify formátem `[jobId, [u64_le × 4], timestamp_ms]`. Dříve se mylně předpokládal EthereumStratum/1.0.0; klient nyní správně mapuje KAS na `StratumProtocol::Stratum`.
 
-### 5.3 Co ještě chybí pro plně funkční E2E
+**Hashování:**
+- `parse_notify_params` pro KAS rekonstruuje `pre_pow_hash` ze čtyř little-endian `u64` hodnot.
+- `hash_kheavyhash()` byl ověřen testem `kheavyhash_known_vector` proti rusty-kaspa referenci (`cSHAKE256("ProofOfWorkHash") → cSHAKE256("HeavyHash")` přes 80B buffer).
+- `submit_share` pro KAS odesílá `[wallet.worker, jobId, full_nonce_hex]`, kde `full_nonce = extranonce1 || scanned_nonce_le` (8B celkem).
 
-1. **Doladit Alephium submit / nonce layout** — ověřit proti oficiálnímu `alephium-mining-pool` nebo známému mineru. Kryptex ALPH vyžaduje registrovaný username (ne wallet adresu), proto je pro ad-hoc testování lepší použít pooly jako `alph.woolypooly.com:3106` nebo HeroMiners. Problém: vygenerované bech32/base58 adresy jsou zatím odmítány jako "Invalid address"; je třeba ověřit/správně implementovat generování Alephium adresy.
-2. **KAS E2E** — `kas.2miners.com:2020` a `kas.kryptex.network:7011` používají `EthereumStratum/1.0.0`, takže je potřeba doplnit `eth_submitLogin` a příslušný `mining.submit` formát pro tento dialekt. Vygenerované `kaspa:` adresy jsou prozatím odmítány jako "Invalid address" / "Invalid login".
-3. **Pool difficulty → share target** — opraveno `difficulty_to_target()`; pro `difficulty=512` nyní vrací správný target `0x007fff...`.
+**Submit výsledek:**
+- `kas.2miners.com:2020` — autorizace OK, share se najde okamžitě (`difficulty=512`), ale vrací `Rejected("unknown")`.
+- `de.kaspa.herominers.com:1206` — autorizace OK (`difficulty=4`), share se najde, ale vrací `Invalid share`.
+- **Pravděpodobná příčina:** pooly používají pro share validaci jiný target než jednoduché `max_target / difficulty`. Zejména u 2miners (diff 512) je skutečný pool target pravděpodobně odvozen z kompaktního 64bit targetu nebo z network targetu, což je pro CPU příliš těžké. Náš hash je kryptograficky správný, ale nalezené share nesplňují poolův skutečný target (nebo jsou odmítnuty jako stale). Bez přístupu k logům poolu nebo k fungujícímu CPU mineru nelze dále pokračovat.
+
+### 5.4 ALPH E2E — HeroMiners (aktualizace)
+
+**Generování adresy:** původní `alph_address_base58()` chybně přidávala 4B checksum podobně jako Bitcoin. Alephium base58 adresa je pouze `type_byte (0x00) || blake2b(pubkey, 32)` — žádný checksum. Po opravě gen_addrs.py autorizace na `de.alephium.herominers.com:1199` prochází.
+
+**Notify formát:** HeroMiners posílá objekt:
+```json
+{ "jobId": "...", "fromGroup": 3, "toGroup": 3, "txsBlob": "...", "headerBlob": "...", "targetBlob": "..." }
+```
+`parse_notify_params` tento formát už parzuje.
+
+**Hashování:**
+- `hash_blake3_alph()` počítá `blake3(blake3(24B_nonce || headerBlob))`, kde scanned nonce je v little-endian bajtech hned za `extranonce1`.
+- `submit_share` pro ALPH posílá `[jobId, hex(24B_full_nonce)]`.
+
+**Submit výsledek:**
+- Autorizace OK, notify přijat, ale `targetBlob` vypadá jako network target (`0000000100...00`, tedy ~2^224), což je pro CPU prakticky nenalezitelné. Formát `mining.submit` (full 24B nonce vs. `nonceSansExtraNonce`) potřebuje ověřit proti známému mineru.
+
+### 5.5 Co ještě chybí pro plně funkční E2E
+
+1. **KAS live submit** — potřebujeme pool s nízkou difficultou, na kterém ověříme, že správně počítáme hash i formát nonce. Nebo porovnat traffic s fungujícím ASIC/FPGA minerem.
+2. **ALPH live submit** — potřebujeme ověřit submit formát proti HeroMiners (jestli očekává full 24B nonce nebo `nonceSansExtraNonce`) a zjistit, zda `targetBlob` je skutečně share target, nebo zda se share target počítá z `mining.set_difficulty` jinak.
+3. **DCR E2E** — veřejné DCR pooly (`dcr.threepool.tech:5550`, `decred.miningandco.com:5550`) jsou stále nedostupné.
 4. **Architektura čtečky** — `AuxPowClient::connect()` nyní spouští jednu background poll smyčku, která je jediným čtenářem TCP streamu. Odpovědi na JSON-RPC požadavky jsou směrovány přes `pending_requests` mapu do `send_request()`, notifikace se dispatchují odděleně.
-5. **DCR E2E** — Decred po DCP-0011 používá standardní Blake3; veřejné pooly `dcr.threepool.tech:5550` a `decred.miningandco.com:5550` jsou aktuálně nedostupné (DNS/connection refused).
 
 ---
 
@@ -342,14 +351,15 @@ Byla vyzkoušena ALPH pool `alph.kryptex.network:7010` (Blake3) s vygenerovanou 
 
 ## 8. Otevřené otázky / next steps
 
-1. ✅ **Push** implementovaných změn na `origin`.
+1. ✅ **Commit** implementovaných změn (`ebbdc7b1b`); push na `origin` čeká na explicitní pokyn.
 2. ✅ **Vybrat první živý coin** pro end-to-end demo — vybrán **zpool heavyhash** (kHeavyHash) s BTC payout walletou.
 3. ✅ **E2E test** proti reálnému externímu poolu — connect/subscribe/authorize/job nalezení share FUNKČNÍ; submit share vyžaduje doladění pool difficulty + submit formátu.
 4. **Doladit E2E submit:**
    - ✅ Implementovat převod `mining.set_difficulty` → share target (`difficulty_to_target`).
    - ✅ Zprovoznit `hash_kheavyhash()` podle oficiální Kaspa reference.
    - ✅ Implementovat Alephium Blake3 E2E pipeline (extranonce1, 24B nonce, double-Blake3, object-style notify).
+   - ✅ Opravit generování Alephium base58 adresy (bez checksumu); autorizace na HeroMiners ALPH nyní funguje.
    - ✅ Předělat čtení z TCP streamu na jedinou background smyčku s routováním odpovědí.
-   - ⚠️ Zůstává problém: zpool `heavyhash` těží mix coinů (KAS/Pyrin/…). ALPH/KAS live pooly vyžadují správné adresy a často jiný stratum dialekt (EthereumStratum/1.0.0).
+   - ⚠️ Zůstává problém: live submit na KAS a ALPH pooly stále vrací `Invalid share` / `unknown`. Pravděpodobnou příčinou je pool target nebo submit nonce formát, který nelze ověřit CPU těžbou při vysoké difficultě.
 5. Doplnit `randomx` / `ethash` / `kawpow` hashe — buď vlastním Rust kódem, nebo feature-gated FFI.
 6. Pro C: doplnit reálné parsování DCR/ALPH headerů a získat reálná sample data z parent chainů.
