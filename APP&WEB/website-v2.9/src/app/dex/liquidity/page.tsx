@@ -5,7 +5,7 @@
  * Shows pool list and add liquidity form
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type CSSProperties } from 'react';
 import { motion } from 'framer-motion';
 import { Droplets, Plus, Minus, ExternalLink, Loader2 } from 'lucide-react';
 import ChainSelector from '@/components/dex/ChainSelector';
@@ -80,13 +80,13 @@ export default function LiquidityPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a0a0f] via-[#0d0d18] to-[#0a0a0f]">
+    <div className="min-h-screen bg-black">
       {/* Header */}
       <div className="border-b border-zinc-800/50">
         <div className="max-w-6xl mx-auto px-6 py-8">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <div className="flex items-center gap-3 mb-2">
-              <Droplets className="w-6 h-6 text-blue-500" />
+              <Droplets className="w-6 h-6 text-cyan-500" />
               <h1 className="text-2xl font-bold text-white">Liquidity Pools</h1>
             </div>
             <p className="text-zinc-400 text-sm">Provide liquidity to ZionDex AMM pools and earn ZDX rewards</p>
@@ -103,9 +103,10 @@ export default function LiquidityPage() {
               onClick={() => setTab(t)}
               className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                 tab === t
-                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
+                  ? 'zion-rainbow-sub text-amber-400'
                   : 'bg-zinc-900/60 text-zinc-400 border border-zinc-700/30 hover:text-zinc-300'
               }`}
+              style={tab === t ? { '--rc': '245, 158, 11' } as CSSProperties : undefined}
             >
               {t === 'list' && 'Pool List'}
               {t === 'add' && 'Add Liquidity'}
@@ -116,7 +117,7 @@ export default function LiquidityPage() {
 
         {/* Pool List */}
         {tab === 'list' && (
-          <div className="bg-zinc-900/60 border border-zinc-700/30 rounded-xl overflow-hidden">
+          <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '245, 158, 11' } as CSSProperties}>
             <table className="w-full">
               <thead>
                 <tr className="border-b border-zinc-700/30">
@@ -150,11 +151,7 @@ export default function LiquidityPage() {
                         {(pool.fee_bps / 100).toFixed(2)}%
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${
-                          pool.enabled
-                            ? 'bg-green-500/10 text-green-400'
-                            : 'bg-zinc-500/10 text-zinc-500'
-                        }`}>
+                        <span className={pool.enabled ? 'zion-badge zion-badge-green' : 'zion-badge'}>
                           {pool.enabled ? 'Active' : 'Pending'}
                         </span>
                       </td>
@@ -169,9 +166,9 @@ export default function LiquidityPage() {
         {/* Add Liquidity */}
         {tab === 'add' && (
           <div className="max-w-lg mx-auto">
-            <div className="bg-zinc-900/80 border border-zinc-700/50 rounded-2xl p-6">
+            <div className="zion-rainbow-card p-6" style={{ '--rc': '245, 158, 11' } as CSSProperties}>
               <div className="flex items-center gap-2 mb-5">
-                <Plus className="w-5 h-5 text-green-500" />
+                <Plus className="w-5 h-5 text-amber-500" />
                 <h2 className="text-lg font-bold text-white">Add Liquidity</h2>
               </div>
 
@@ -191,7 +188,7 @@ export default function LiquidityPage() {
                       value={amountA}
                       onChange={e => setAmountA(e.target.value)}
                       placeholder="0.0"
-                      className="w-full px-4 py-3 bg-zinc-900/80 border border-zinc-700/50 rounded-xl text-lg font-bold text-white placeholder-zinc-600 focus:border-amber-500/50 focus:outline-none"
+                      className="w-full px-4 py-3 border-white/10 bg-white/5 rounded-xl text-lg font-bold text-white placeholder-zinc-600 focus:border-zion-cyan/50 focus:outline-none"
                     />
                   </div>
                   <div>
@@ -201,7 +198,7 @@ export default function LiquidityPage() {
                       value={amountB}
                       onChange={e => setAmountB(e.target.value)}
                       placeholder="0.0"
-                      className="w-full px-4 py-3 bg-zinc-900/80 border border-zinc-700/50 rounded-xl text-lg font-bold text-white placeholder-zinc-600 focus:border-amber-500/50 focus:outline-none"
+                      className="w-full px-4 py-3 border-white/10 bg-white/5 rounded-xl text-lg font-bold text-white placeholder-zinc-600 focus:border-zion-cyan/50 focus:outline-none"
                     />
                   </div>
                 </div>
@@ -214,7 +211,7 @@ export default function LiquidityPage() {
                       type="number"
                       value={tickLower}
                       onChange={e => setTickLower(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-zinc-900/80 border border-zinc-700/50 rounded-xl text-sm text-white focus:border-amber-500/50 focus:outline-none"
+                      className="w-full px-4 py-2.5 border-white/10 bg-white/5 rounded-xl text-sm text-white focus:border-zion-cyan/50 focus:outline-none"
                     />
                   </div>
                   <div>
@@ -223,26 +220,31 @@ export default function LiquidityPage() {
                       type="number"
                       value={tickUpper}
                       onChange={e => setTickUpper(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-zinc-900/80 border border-zinc-700/50 rounded-xl text-sm text-white focus:border-amber-500/50 focus:outline-none"
+                      className="w-full px-4 py-2.5 border-white/10 bg-white/5 rounded-xl text-sm text-white focus:border-zion-cyan/50 focus:outline-none"
                     />
                   </div>
                 </div>
 
-                <div className="text-xs text-zinc-500 bg-zinc-800/40 p-3 rounded-lg">
+                <div className="zion-rainbow-sub p-3 text-xs text-zinc-500" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
                   💡 Full range (-887220 to 887220) provides liquidity across all prices.
                   Narrow ranges concentrate liquidity for higher returns but more risk.
                 </div>
 
                 {result && (
-                  <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-xl text-sm text-green-400">
-                    {result}
+                  <div
+                    className="zion-rainbow-sub p-3 text-sm"
+                    style={{
+                      '--rc': result.startsWith('Error') ? '239, 68, 68' : '16, 185, 129',
+                    } as CSSProperties}
+                  >
+                    <span className={result.startsWith('Error') ? 'text-red-400' : 'text-green-400'}>{result}</span>
                   </div>
                 )}
 
                 <button
                   onClick={handleAddLiquidity}
                   disabled={!amountA || !amountB || submitting}
-                  className="w-full py-4 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-xl hover:from-green-400 hover:to-green-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="zion-button-primary w-full disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
                   {submitting ? 'Adding...' : 'Add Liquidity'}
@@ -255,9 +257,9 @@ export default function LiquidityPage() {
         {/* Remove Liquidity */}
         {tab === 'remove' && (
           <div className="max-w-lg mx-auto">
-            <div className="bg-zinc-900/80 border border-zinc-700/50 rounded-2xl p-6">
+            <div className="zion-rainbow-card p-6" style={{ '--rc': '245, 158, 11' } as CSSProperties}>
               <div className="flex items-center gap-2 mb-5">
-                <Minus className="w-5 h-5 text-orange-500" />
+                <Minus className="w-5 h-5 text-amber-500" />
                 <h2 className="text-lg font-bold text-white">Remove Liquidity</h2>
               </div>
               <div className="text-center py-12 text-zinc-500">

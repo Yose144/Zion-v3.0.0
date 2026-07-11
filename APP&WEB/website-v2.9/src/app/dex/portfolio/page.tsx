@@ -4,7 +4,7 @@
  * ZionDex Portfolio — user's LP positions and swap history
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type CSSProperties } from 'react';
 import { motion } from 'framer-motion';
 import { Wallet, TrendingUp, Droplets, Activity, Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -67,7 +67,7 @@ export default function PortfolioPage() {
     .reduce((sum, s) => sum + (parseFloat(s.amount_in) || 0), 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a0a0f] via-[#0d0d18] to-[#0a0a0f]">
+    <div className="min-h-screen bg-black">
       {/* Header */}
       <div className="border-b border-zinc-800/50">
         <div className="max-w-6xl mx-auto px-6 py-8">
@@ -84,7 +84,7 @@ export default function PortfolioPage() {
       <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Stats cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-zinc-900/60 border border-zinc-700/30 rounded-xl p-4">
+          <div className="zion-rainbow-sub p-4" style={{ '--rc': '245, 158, 11' } as CSSProperties}>
             <div className="flex items-center gap-2 mb-2">
               <Activity className="w-4 h-4 text-blue-500" />
               <span className="text-xs text-zinc-500 uppercase tracking-wider">Total Swaps</span>
@@ -92,7 +92,7 @@ export default function PortfolioPage() {
             <div className="text-2xl font-bold text-white">{totalSwaps}</div>
           </div>
 
-          <div className="bg-zinc-900/60 border border-zinc-700/30 rounded-xl p-4">
+          <div className="zion-rainbow-sub p-4" style={{ '--rc': '245, 158, 11' } as CSSProperties}>
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="w-4 h-4 text-green-500" />
               <span className="text-xs text-zinc-500 uppercase tracking-wider">Completed</span>
@@ -100,7 +100,7 @@ export default function PortfolioPage() {
             <div className="text-2xl font-bold text-green-400">{completedSwaps}</div>
           </div>
 
-          <div className="bg-zinc-900/60 border border-zinc-700/30 rounded-xl p-4">
+          <div className="zion-rainbow-sub p-4" style={{ '--rc': '245, 158, 11' } as CSSProperties}>
             <div className="flex items-center gap-2 mb-2">
               <Droplets className="w-4 h-4 text-blue-500" />
               <span className="text-xs text-zinc-500 uppercase tracking-wider">LP Positions</span>
@@ -108,7 +108,7 @@ export default function PortfolioPage() {
             <div className="text-2xl font-bold text-white">{positions.length}</div>
           </div>
 
-          <div className="bg-zinc-900/60 border border-zinc-700/30 rounded-xl p-4">
+          <div className="zion-rainbow-sub p-4" style={{ '--rc': '245, 158, 11' } as CSSProperties}>
             <div className="flex items-center gap-2 mb-2">
               <Wallet className="w-4 h-4 text-amber-500" />
               <span className="text-xs text-zinc-500 uppercase tracking-wider">Volume</span>
@@ -120,7 +120,7 @@ export default function PortfolioPage() {
         {/* LP Positions */}
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-white mb-4">Liquidity Positions</h2>
-          <div className="bg-zinc-900/60 border border-zinc-700/30 rounded-xl overflow-hidden">
+          <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '245, 158, 11' } as CSSProperties}>
             {positions.length === 0 ? (
               <div className="text-center py-12 text-zinc-500">
                 <Droplets className="w-8 h-8 mx-auto mb-2 opacity-50" />
@@ -157,7 +157,7 @@ export default function PortfolioPage() {
         {/* Swap History */}
         <div>
           <h2 className="text-lg font-semibold text-white mb-4">Swap History</h2>
-          <div className="bg-zinc-900/60 border border-zinc-700/30 rounded-xl overflow-hidden">
+          <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '245, 158, 11' } as CSSProperties}>
             {loading ? (
               <div className="text-center py-8">
                 <Loader2 className="w-5 h-5 animate-spin mx-auto text-zinc-500" />
@@ -185,11 +185,11 @@ export default function PortfolioPage() {
                   {swaps.map(swap => (
                     <tr key={swap.id} className="border-b border-zinc-800/30 hover:bg-zinc-800/30">
                       <td className="px-4 py-3">
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${
-                          swap.status === 'completed' ? 'bg-green-500/10 text-green-400' :
-                          swap.status === 'failed' ? 'bg-red-500/10 text-red-400' :
-                          'bg-amber-500/10 text-amber-400'
-                        }`}>
+                        <span className={
+                          swap.status === 'completed' ? 'zion-badge zion-badge-green' :
+                          swap.status === 'failed' ? 'zion-badge zion-badge-red' :
+                          'zion-badge zion-badge-amber'
+                        }>
                           {swap.status}
                         </span>
                       </td>

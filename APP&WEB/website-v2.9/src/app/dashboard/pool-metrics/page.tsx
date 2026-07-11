@@ -1,3 +1,4 @@
+import React from "react";
 import type { Metadata } from "next";
 import { Pickaxe, ExternalLink } from "lucide-react";
 
@@ -25,7 +26,7 @@ export default function PoolMetricsPage() {
           <p className="mt-2 text-sm text-gray-300">Hashrate · workers · shares · block discovery rate</p>
         </div>
 
-        <div className="rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl p-3 shadow-[0_30px_120px_rgba(0,0,0,0.45)]">
+        <div className="zion-rainbow-card p-3" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
           <iframe
             src={IFRAME_SRC}
             title="Pool Metrics Dashboard"

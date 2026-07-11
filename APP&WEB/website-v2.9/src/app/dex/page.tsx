@@ -5,7 +5,7 @@
  * Main entry point for cross-chain swaps via ZionDex Router
  */
 
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { motion } from 'framer-motion';
 import { Zap, Globe, Shield, TrendingUp, ArrowRight, Info, Layers } from 'lucide-react';
 import CrossChainSwapWidget from '@/components/dex/CrossChainSwapWidget';
@@ -18,10 +18,10 @@ export default function DexPage() {
   const [activeSwapId, setActiveSwapId] = useState<string | null>(null);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a0a0f] via-[#0d0d18] to-[#0a0a0f]">
+    <div className="min-h-screen bg-black">
       {/* Hero */}
       <div className="relative overflow-hidden border-b border-zinc-800/50">
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-blue-500/5" />
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-cyan-500/5" />
         <div className="relative max-w-6xl mx-auto px-6 py-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -96,12 +96,13 @@ export default function DexPage() {
             <RecentSwaps />
 
             {/* Quick links */}
-            <div className="bg-zinc-900/60 border border-zinc-700/30 rounded-xl p-4">
+            <div className="zion-rainbow-card p-4" style={{ '--rc': '245, 158, 11' } as CSSProperties}>
               <h3 className="text-sm font-semibold text-white mb-3">Quick Links</h3>
               <div className="space-y-2">
                 <Link
                   href="/ziondex"
-                  className="flex items-center justify-between p-2 bg-zinc-800/40 rounded-lg hover:bg-zinc-800/60 transition-colors"
+                  className="zion-rainbow-sub flex items-center justify-between p-2"
+                  style={{ '--rc': '6, 182, 212' } as CSSProperties}
                 >
                   <span className="flex items-center gap-2 text-sm text-zinc-300">
                     <Info className="w-3.5 h-3.5 text-amber-500" />
@@ -111,49 +112,56 @@ export default function DexPage() {
                 </Link>
                 <Link
                   href="/dex/liquidity"
-                  className="flex items-center justify-between p-2 bg-zinc-800/40 rounded-lg hover:bg-zinc-800/60 transition-colors"
+                  className="zion-rainbow-sub flex items-center justify-between p-2"
+                  style={{ '--rc': '6, 182, 212' } as CSSProperties}
                 >
                   <span className="text-sm text-zinc-300">Liquidity Pools</span>
                   <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
                 </Link>
                 <Link
                   href="/dex/portfolio"
-                  className="flex items-center justify-between p-2 bg-zinc-800/40 rounded-lg hover:bg-zinc-800/60 transition-colors"
+                  className="zion-rainbow-sub flex items-center justify-between p-2"
+                  style={{ '--rc': '6, 182, 212' } as CSSProperties}
                 >
                   <span className="text-sm text-zinc-300">My Portfolio</span>
                   <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
                 </Link>
                 <Link
                   href="/defi"
-                  className="flex items-center justify-between p-2 bg-zinc-800/40 rounded-lg hover:bg-zinc-800/60 transition-colors"
+                  className="zion-rainbow-sub flex items-center justify-between p-2"
+                  style={{ '--rc': '6, 182, 212' } as CSSProperties}
                 >
                   <span className="text-sm text-zinc-300">DeFi Hub</span>
                   <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
                 </Link>
                 <Link
                   href="/bridge"
-                  className="flex items-center justify-between p-2 bg-zinc-800/40 rounded-lg hover:bg-zinc-800/60 transition-colors"
+                  className="zion-rainbow-sub flex items-center justify-between p-2"
+                  style={{ '--rc': '6, 182, 212' } as CSSProperties}
                 >
                   <span className="text-sm text-zinc-300">Bridge (wZION ↔ ZION)</span>
                   <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
                 </Link>
                 <Link
                   href="/swap"
-                  className="flex items-center justify-between p-2 bg-zinc-800/40 rounded-lg hover:bg-zinc-800/60 transition-colors"
+                  className="zion-rainbow-sub flex items-center justify-between p-2"
+                  style={{ '--rc': '6, 182, 212' } as CSSProperties}
                 >
                   <span className="text-sm text-zinc-300">Atomic Swap (HTLC)</span>
                   <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
                 </Link>
                 <Link
                   href="/defi/staking"
-                  className="flex items-center justify-between p-2 bg-zinc-800/40 rounded-lg hover:bg-zinc-800/60 transition-colors"
+                  className="zion-rainbow-sub flex items-center justify-between p-2"
+                  style={{ '--rc': '6, 182, 212' } as CSSProperties}
                 >
                   <span className="text-sm text-zinc-300">Staking (12% APR)</span>
                   <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
                 </Link>
                 <Link
                   href="/defi/farming"
-                  className="flex items-center justify-between p-2 bg-zinc-800/40 rounded-lg hover:bg-zinc-800/60 transition-colors"
+                  className="zion-rainbow-sub flex items-center justify-between p-2"
+                  style={{ '--rc': '6, 182, 212' } as CSSProperties}
                 >
                   <span className="text-sm text-zinc-300">Farming (1 wZION/s)</span>
                   <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
@@ -162,7 +170,7 @@ export default function DexPage() {
             </div>
 
             {/* Stats */}
-            <div className="bg-zinc-900/60 border border-zinc-700/30 rounded-xl p-4">
+            <div className="zion-rainbow-sub p-4" style={{ '--rc': '245, 158, 11' } as CSSProperties}>
               <h3 className="text-sm font-semibold text-white mb-3">ZionDex Stats</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
