@@ -296,12 +296,14 @@ Wallet: `bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh` (BTC, `c=BTC` password).
 **Hashování:**
 - `parse_notify_params` pro KAS rekonstruuje `pre_pow_hash` ze čtyř little-endian `u64` hodnot.
 - `hash_kheavyhash()` byl ověřen testem `kheavyhash_known_vector` proti rusty-kaspa referenci (`cSHAKE256("ProofOfWorkHash") → cSHAKE256("HeavyHash")` přes 80B buffer).
-- `submit_share` pro KAS odesílá `[wallet.worker, jobId, full_nonce_hex]`, kde `full_nonce = extranonce1 || scanned_nonce_le` (8B celkem).
+- **Max target:** Kaspa stratum bridge (rusty-kaspa) používá pro převod Stratum difficulty na share target **224-bit max target** (`2^224 - 1`), nikoliv plný 256-bit. Proto `share_target()` pro KAS vrací `max_target / difficulty` s 32B hodnotou `[0u8; 4] || [0xFFu8; 28]`.
+- **Nonce formát:** bridge parsuje nonce parametr jako `u64::from_str_radix(nonce_hex, 16)`, tedy jako big-endian hex *číslo*. Lokálně se nonce ukládá jako little-endian bajty do hashe, ale do `mining.submit` musíme poslat hex reprezentaci celého 64-bit čísla, ne little-endian bajtový řetězec. `submit_share` pro KAS tedy odesílá `[wallet.worker, jobId, full_nonce_hex]` kde `full_nonce_hex = format!("{:016x}", u64::from_le_bytes(extranonce1 || nonce_le))`.
 
 **Submit výsledek:**
-- `kas.2miners.com:2020` — autorizace OK, share se najde okamžitě (`difficulty=512`), ale vrací `Rejected("unknown")`.
-- `de.kaspa.herominers.com:1206` — autorizace OK (`difficulty=4`), share se najde, ale vrací `Invalid share`.
-- **Pravděpodobná příčina:** pooly používají pro share validaci jiný target než jednoduché `max_target / difficulty`. Zejména u 2miners (diff 512) je skutečný pool target pravděpodobně odvozen z kompaktního 64bit targetu nebo z network targetu, což je pro CPU příliš těžké. Náš hash je kryptograficky správný, ale nalezené share nesplňují poolův skutečný target (nebo jsou odmítnuty jako stale). Bez přístupu k logům poolu nebo k fungujícímu CPU mineru nelze dále pokračovat.
+- `kas.2miners.com:2020` — autorizace OK, share target je správně 224-bit, ale při `difficulty=512` je pravděpodobnost nalezení share na CPU `2^(-44)` a nelze ověřit bez ASIC.
+- `kas.kryptex.network:7011` — autorizace OK (`difficulty=4096`), share target je nyní správně `0x00000000000fffff...` (224-bit max / 4096). CPU nenalezl share během 30s, protože pravděpodobnost je `2^(-44)`.
+- `de.kaspa.herominers.com:1206` — autorizace OK (`difficulty=4`), share target by byl `~2^222`, což je pro CPU prakticky nenalezitelné.
+- **Stav:** kryptografická část je hotová a ověřená proti rusty-kaspa referenci. Live submit nelze ověřit CPU; je třeba ASIC, nízký difficulty test pool, nebo packet capture fungujícího mineru.
 
 ### 5.4 ALPH E2E — HeroMiners (aktualizace)
 
@@ -322,8 +324,8 @@ Wallet: `bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh` (BTC, `c=BTC` password).
 
 ### 5.5 Co ještě chybí pro plně funkční E2E
 
-1. **KAS live submit** — potřebujeme pool s nízkou difficultou, na kterém ověříme, že správně počítáme hash i formát nonce. Nebo porovnat traffic s fungujícím ASIC/FPGA minerem.
-2. **ALPH live submit** — potřebujeme ověřit submit formát proti HeroMiners (jestli očekává full 24B nonce nebo `nonceSansExtraNonce`) a zjistit, zda `targetBlob` je skutečně share target, nebo zda se share target počítá z `mining.set_difficulty` jinak.
+1. **KAS live submit** — kryptografická část je hotová a interně ověřená mock testy. CPU nenalezne share při reálné pool difficulty (2miners diff 512, Kryptex diff 4096, HeroMiners diff 4). Je třeba ASIC, nízký difficulty test pool, nebo packet capture fungujícího mineru.
+2. **ALPH live submit** — autorizace na HeroMiners funguje. Potřebujeme ověřit, zda `targetBlob` je share target (vypadá jako network target ~2^224) a jestli `mining.submit` očekává full 24B nonce nebo `nonceSansExtraNonce`. CPU by mělo zvládnout share při nízké difficultě, pokud `targetBlob` není network target.
 3. **DCR E2E** — veřejné DCR pooly (`dcr.threepool.tech:5550`, `decred.miningandco.com:5550`) jsou stále nedostupné.
 4. **Architektura čtečky** — `AuxPowClient::connect()` nyní spouští jednu background poll smyčku, která je jediným čtenářem TCP streamu. Odpovědi na JSON-RPC požadavky jsou směrovány přes `pending_requests` mapu do `send_request()`, notifikace se dispatchují odděleně.
 
@@ -357,9 +359,11 @@ Wallet: `bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh` (BTC, `c=BTC` password).
 4. **Doladit E2E submit:**
    - ✅ Implementovat převod `mining.set_difficulty` → share target (`difficulty_to_target`).
    - ✅ Zprovoznit `hash_kheavyhash()` podle oficiální Kaspa reference.
+   - ✅ Opravit KAS share target: rusty-kaspa bridge používá 224-bit max target (`2^224 - 1`), ne 256-bit.
+   - ✅ Opravit KAS submit nonce formát: big-endian hex číslo, ne little-endian bajtový řetězec.
    - ✅ Implementovat Alephium Blake3 E2E pipeline (extranonce1, 24B nonce, double-Blake3, object-style notify).
    - ✅ Opravit generování Alephium base58 adresy (bez checksumu); autorizace na HeroMiners ALPH nyní funguje.
    - ✅ Předělat čtení z TCP streamu na jedinou background smyčku s routováním odpovědí.
-   - ⚠️ Zůstává problém: live submit na KAS a ALPH pooly stále vrací `Invalid share` / `unknown`. Pravděpodobnou příčinou je pool target nebo submit nonce formát, který nelze ověřit CPU těžbou při vysoké difficultě.
+   - ⚠️ Zůstává problém: live KAS submit nelze ověřit CPU při reálné pool difficulty (2^-44 až 2^-52 pravděpodobnost). ALPH live submit potřebuje ověřit `targetBlob` / submit formát.
 5. Doplnit `randomx` / `ethash` / `kawpow` hashe — buď vlastním Rust kódem, nebo feature-gated FFI.
 6. Pro C: doplnit reálné parsování DCR/ALPH headerů a získat reálná sample data z parent chainů.
