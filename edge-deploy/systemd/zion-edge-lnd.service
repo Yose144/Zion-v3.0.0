@@ -1,0 +1,26 @@
+[Unit]
+Description=ZION Edge LND (Lightning Network Daemon) — WARP Lightning Backend
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/zion-2.9.6-main/V3/L3/warp/docker/lightning
+ExecStart=/usr/bin/docker compose up lnd
+ExecStop=/usr/bin/docker compose stop lnd
+Restart=always
+RestartSec=15
+KillMode=process
+TimeoutStopSec=60
+StandardOutput=journal
+StandardError=journal
+
+# Security hardening
+NoNewPrivileges=false
+ProtectSystem=false
+ProtectHome=false
+
+[Install]
+WantedBy=multi-user.target

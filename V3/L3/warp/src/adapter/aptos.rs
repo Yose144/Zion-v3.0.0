@@ -35,13 +35,23 @@ const DEFAULT_APTOS_RPC: &str = "https://fullnode.mainnet.aptoslabs.com";
 
 /// Bridge module event handle on Aptos (Move resource path).
 /// Override with `WARP_APTOS_EVENT_HANDLE` env var.
-const DEFAULT_EVENT_HANDLE: &str = "warp_bridge";
+/// The ZION Move module (zion_coin.move) emits events on:
+///   - `mint_events` (BridgeMintEvent) — for L1→Aptos mints
+///   - `burn_events` (BridgeBurnEvent) — for Aptos→L1 burns
+const DEFAULT_EVENT_HANDLE: &str = "mint_events";
 /// Event field name for bridge deposit events.
 const DEFAULT_EVENT_FIELD: &str = "deposit_events";
 /// Bridge module account that hosts the event handle.
 /// Override with `WARP_APTOS_BRIDGE_ACCOUNT` env var.
+///
+/// Contract source: V3/L2/bridge/contracts/non-evm/aptos/sources/zion_coin.move
+/// Deployment steps: V3/L2/bridge/contracts/non-evm/aptos/README.md
+///
+/// After publishing the Move module and calling `initialize`, replace
+/// this placeholder with the real bridge admin account address.
+/// The bridge admin is the account that published the zion_coin module.
 const DEFAULT_BRIDGE_ACCOUNT: &str =
-    "0x0000000000000000000000000000000000000000000000000000000000000001";
+    "0x0000000000000000000000000000000000000000000000000000000000000001"; // TODO: replace after deploying zion_coin.move
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Serde response types

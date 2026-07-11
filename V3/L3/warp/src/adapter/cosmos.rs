@@ -9,12 +9,29 @@ use serde_json::Value;
 use tracing::{debug, info, warn};
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ZION CosmWASM contract address per network
+// ZION CosmWasm contract address per network
 // ─────────────────────────────────────────────────────────────────────────────
+// Contract source: V3/L2/bridge/contracts/non-evm/cosmos/zion_cw20.rs
+// Deployment steps: V3/L2/bridge/contracts/non-evm/cosmos/README.md
+//
+// After deploying the CW20 contract (zion_cw20.rs) to a CosmWasm-enabled
+// chain, replace the placeholder addresses below with the real bech32
+// contract address (e.g., cosmos1...).
 fn zion_contract(network: &str) -> Option<&'static str> {
     match network {
-        "cosmoshub-4" => Some("cosmos1zionwarpxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"),
-        "theta-testnet-001" => Some("cosmos1ziontexxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"),
+        "cosmoshub-4" => {
+            // TODO: Replace with real cosmoshub-4 ZION CW20 contract address.
+            // Deploy zion_cw20.rs via: wasmd tx wasm store + wasmd tx wasm instantiate
+            // The contract address will be a cosmos1... bech32 address.
+            warn!("[WARP][cosmos] cosmoshub-4 ZION contract is a placeholder — deploy CW20 from V3/L2/bridge/contracts/non-evm/cosmos/ and update this address");
+            Some("cosmos1zionwarpxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+        }
+        "theta-testnet-001" => {
+            // TODO: Replace with real theta-testnet ZION CW20 contract address.
+            // Deploy zion_cw20.rs to the theta testnet for testing.
+            warn!("[WARP][cosmos] theta-testnet ZION contract is a placeholder — deploy CW20 from V3/L2/bridge/contracts/non-evm/cosmos/ and update this address");
+            Some("cosmos1ziontexxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+        }
         _ => None,
     }
 }

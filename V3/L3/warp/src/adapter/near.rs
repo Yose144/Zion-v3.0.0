@@ -6,8 +6,14 @@
 //! - `WARP_NEAR_RPC`     — JSON-RPC endpoint (default `https://rpc.mainnet.near.org`)
 //! - `WARP_NEAR_ACCOUNT` — relay account id (e.g. `warp.near`)
 //! - `WARP_NEAR_RELAY_KEY` — hex-encoded 32-byte Ed25519 seed
-//! - `WARP_NEAR_BRIDGE_CONTRACT` — receiver contract for mint calls
+//! - `WARP_NEAR_BRIDGE_CONTRACT` — ZION NEP-141 token contract address
 //!   (default `warp.near`)
+//!
+//! Contract source: V3/L2/bridge/contracts/non-evm/near/zion_token.rs
+//! Deployment steps: V3/L2/bridge/contracts/non-evm/near/README.md
+//!
+//! After deploying the NEP-141 contract (zion_token.rs), set
+//! WARP_NEAR_BRIDGE_CONTRACT to the contract account ID (e.g. `zion.near`).
 //!
 //! ## JSON-RPC methods used
 //! | Method                | Params                          | Purpose                  |
@@ -199,6 +205,9 @@ impl NearAdapter {
             .unwrap_or_else(|_| "https://rpc.mainnet.near.org".into());
         let bridge_contract =
             std::env::var("WARP_NEAR_BRIDGE_CONTRACT").unwrap_or_else(|_| "warp.near".into());
+            // TODO: After deploying zion_token.rs (NEP-141), set this to the
+            // real contract account ID (e.g. "zion.near"). See:
+            // V3/L2/bridge/contracts/non-evm/near/README.md
         Self {
             rpc_url,
             bridge_contract,

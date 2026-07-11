@@ -1,7 +1,7 @@
 use crate::db::SharedDb;
 use crate::executor::Executor;
 use crate::monitor;
-use crate::quote::QuoteEngine;
+use crate::quote::{MultiPathQuote, QuoteEngine};
 use crate::types::*;
 use anyhow::Result;
 use axum::{
@@ -37,6 +37,7 @@ pub struct AppState {
 pub fn build_router(state: AppState) -> Router {
     Router::new()
         .route("/quote", post(quote_handler))
+        .route("/quote/multi", get(quote_multi_handler))
         .route("/swap", post(swap_handler))
         .route("/swaps/:id", get(get_swap_handler))
         .route("/swaps", get(list_swaps_handler))
@@ -65,6 +66,57 @@ async fn quote_handler(
         let db = state.db.lock().await;
         let _ = db.insert_quote(&response.quote_id, &req, &response);
     }
+
+    Ok(Json(response))
+}
+
+/// Query params for `GET /quote/multi`
+#[derive(Debug, Deserialize)]
+pub struct MultiQuoteQuery {
+    pub from_chain: String,
+    pub from_token: String,
+    pub to_chain: String,
+    pub to_token: String,
+    pub amount: String,
+}
+
+/// GET /quote/multi — get a multi-path quote with top-3 aggregated paths.
+///
+/// Query params: `from_chain`, `from_token`, `to_chain`, `to_token`, `amount`.
+/// Returns a [`MultiPathQuote`] with up to 3 paths ranked by output amount,
+/// each showing steps, expected output, fees, bridge time, and a risk score.
+async fn quote_multi_handler(
+    State(state): State<AppState>,
+    Query(params): Query<MultiQuoteQuery>,
+) -> Result<Json<MultiPathQuote>, (StatusCode, String)> {
+    info!(
+        "Multi-path quote request: {} {} → {} {} (amount: {})",
+        params.from_chain, params.from_token,
+        params.to_chain, params.to_token, params.amount
+    );
+
+    let src_chain: ChainId = params
+        .from_chain
+        .parse()
+        .map_err(|e: anyhow::Error| (StatusCode::BAD_REQUEST, format!("invalid from_chain: {}", e)))?;
+    let dest_chain: ChainId = params
+        .to_chain
+        .parse()
+        .map_err(|e: anyhow::Error| (StatusCode::BAD_REQUEST, format!("invalid to_chain: {}", e)))?;
+
+    let req = QuoteRequest {
+        src_chain,
+        src_token: params.from_token,
+        dest_chain,
+        dest_token: params.to_token,
+        amount: params.amount,
+    };
+
+    let response = state
+        .quote_engine
+        .quote_multi(&req)
+        .await
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
 
     Ok(Json(response))
 }

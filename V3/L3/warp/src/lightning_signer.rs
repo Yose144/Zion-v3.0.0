@@ -102,6 +102,14 @@ pub struct ListChannelsResponse {
     pub channels: Option<Vec<Channel>>,
 }
 
+#[derive(Debug, Deserialize)]
+#[allow(dead_code)]
+pub struct WalletBalanceResponse {
+    pub total_balance: Option<String>,
+    pub confirmed_balance: Option<String>,
+    pub unconfirmed_balance: Option<String>,
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // LND REST Client
 // ─────────────────────────────────────────────────────────────────────────────
@@ -330,6 +338,38 @@ impl LndClient {
             .filter_map(|s| s.parse::<u64>().ok())
             .sum();
         Ok(total * 1000) // LND returns satoshis, convert to msat
+    }
+
+    // ── WalletBalance ────────────────────────────────────────────────────────
+
+    /// Get on-chain wallet balance (confirmed + unconfirmed, in satoshis).
+    /// Calls LND REST: GET /v1/balance/blockchain
+    pub async fn wallet_balance_sat(&self) -> WarpResult<u64> {
+        let url = self.url("/v1/balance/blockchain");
+        debug!("[WARP][LN] WalletBalance → {}", url);
+        let resp: WalletBalanceResponse = self
+            .client
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| WarpError::AdapterError {
+                chain: "lightning".into(),
+                reason: format!("WalletBalance request failed: {}", e),
+            })?
+            .json()
+            .await
+            .map_err(|e| WarpError::AdapterError {
+                chain: "lightning".into(),
+                reason: format!("WalletBalance parse failed: {}", e),
+            })?;
+        // LND returns balance as string-encoded satoshis
+        let total = resp
+            .total_balance
+            .as_deref()
+            .or(resp.confirmed_balance.as_deref())
+            .and_then(|s| s.parse::<u64>().ok())
+            .unwrap_or(0);
+        Ok(total)
     }
 }
 

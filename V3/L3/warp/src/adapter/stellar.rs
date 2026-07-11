@@ -9,12 +9,31 @@ use serde_json::{json, Value};
 use tracing::{debug, info, warn};
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ZION Soroban contract ID per network
+// ZION Stellar asset issuer per network
 // ─────────────────────────────────────────────────────────────────────────────
+// Contract source: V3/L2/bridge/contracts/non-evm/stellar/zion_asset.toml
+// Setup script:    V3/L2/bridge/contracts/non-evm/stellar/setup_zion_asset.py
+// Deployment steps: V3/L2/bridge/contracts/non-evm/stellar/README.md
+//
+// ZION on Stellar is a native asset (code="ZION", issuer=bridge account).
+// The issuer account is a 5/5 multisig controlled by WARP validators.
+// After running setup_zion_asset.py, replace the placeholder issuer
+// addresses below with the real bridge account public key (G...).
 fn zion_contract(network: &str) -> Option<&'static str> {
     match network {
-        "mainnet" => Some("CZIONXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"),
-        "testnet" => Some("CZIONTEXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"),
+        "mainnet" => {
+            // TODO: Replace with real mainnet ZION issuer account (G...).
+            // Run: python setup_zion_asset.py --network mainnet
+            // The bridge issuer public key will be printed by the script.
+            warn!("[WARP][stellar] mainnet ZION issuer is a placeholder — run setup_zion_asset.py from V3/L2/bridge/contracts/non-evm/stellar/ and update this address");
+            Some("CZIONXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+        }
+        "testnet" => {
+            // TODO: Replace with real testnet ZION issuer account (G...).
+            // Run: python setup_zion_asset.py --network testnet
+            warn!("[WARP][stellar] testnet ZION issuer is a placeholder — run setup_zion_asset.py from V3/L2/bridge/contracts/non-evm/stellar/ and update this address");
+            Some("CZIONTEXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+        }
         _ => None,
     }
 }

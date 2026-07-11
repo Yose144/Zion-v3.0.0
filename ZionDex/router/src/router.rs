@@ -1,3 +1,4 @@
+use crate::aggregator::LiquidityAggregator;
 use crate::config::RouterConfig;
 use crate::price::PriceFeed;
 use crate::types::*;
@@ -8,12 +9,18 @@ use tracing::{debug, info};
 pub struct Router {
     config: RouterConfig,
     price_feed: PriceFeed,
+    aggregator: tokio::sync::Mutex<LiquidityAggregator>,
 }
 
 impl Router {
     pub fn new(config: RouterConfig) -> Self {
         let price_feed = PriceFeed::new(config.clone());
-        Self { config, price_feed }
+        let aggregator = LiquidityAggregator::new(config.clone());
+        Self {
+            config,
+            price_feed,
+            aggregator: tokio::sync::Mutex::new(aggregator),
+        }
     }
 
     /// Find the best swap path from src to dest
@@ -62,31 +69,49 @@ impl Router {
             }
         }
 
-        // Case 3: Single bridge (same token or bridge-equivalent, different chain)
-        if src_chain != dest_chain && is_bridge_equivalent(src_token, dest_token, src_chain, dest_chain) {
-            if let Some(path) = self.try_bridge_only(src_chain, dest_chain, src_token, amount).await? {
-                paths.push(path);
+        // Cross-chain: delegate to the liquidity aggregator, which compares
+        // routes across all enabled intermediate chains (e.g. via Base vs
+        // Arbitrum vs direct USDC bridge) and returns the top paths by output.
+        if src_chain != dest_chain {
+            match self.find_cross_chain_paths(src_chain, src_token, dest_chain, dest_token, amount).await {
+                Ok(agg_paths) => {
+                    for ap in agg_paths {
+                        paths.push(ap.to_swap_path(self.config.default_slippage_bps));
+                    }
+                }
+                Err(e) => {
+                    debug!("Aggregator found no cross-chain paths ({}); falling back to heuristics", e);
+                    // Fallback to the legacy single-path heuristics below.
+                }
             }
         }
 
-        // Case 4: Swap → Bridge → Swap (general cross-chain)
-        if src_chain != dest_chain {
+        // Legacy fallback heuristics (only add if the aggregator returned nothing).
+        if src_chain != dest_chain && paths.is_empty() {
+            // Case 3: Single bridge (same token or bridge-equivalent, different chain)
+            if is_bridge_equivalent(src_token, dest_token, src_chain, dest_chain) {
+                if let Some(path) = self.try_bridge_only(src_chain, dest_chain, src_token, amount).await? {
+                    paths.push(path);
+                }
+            }
+
+            // Case 4: Swap → Bridge → Swap (general cross-chain)
             if let Some(path) = self.try_swap_bridge_swap(src_chain, src_token, dest_chain, dest_token, amount).await? {
                 paths.push(path);
             }
-        }
 
-        // Case 5: Bridge → Swap (bridge ZION, then swap on dest chain)
-        if src_chain != dest_chain && src_token == &TokenId::zion() {
-            if let Some(path) = self.try_bridge_swap(src_chain, dest_chain, dest_token, amount).await? {
-                paths.push(path);
+            // Case 5: Bridge → Swap (bridge ZION, then swap on dest chain)
+            if src_token == &TokenId::zion() {
+                if let Some(path) = self.try_bridge_swap(src_chain, dest_chain, dest_token, amount).await? {
+                    paths.push(path);
+                }
             }
-        }
 
-        // Case 6: Swap → Bridge (swap to ZION, then bridge)
-        if src_chain != dest_chain && dest_token == &TokenId::zion() {
-            if let Some(path) = self.try_swap_bridge(src_chain, dest_chain, src_token, amount).await? {
-                paths.push(path);
+            // Case 6: Swap → Bridge (swap to ZION, then bridge)
+            if dest_token == &TokenId::zion() {
+                if let Some(path) = self.try_swap_bridge(src_chain, dest_chain, src_token, amount).await? {
+                    paths.push(path);
+                }
             }
         }
 
@@ -110,6 +135,22 @@ impl Router {
 
         debug!("Found {} paths", paths.len());
         Ok(paths)
+    }
+
+    /// Find cross-chain paths via the [`LiquidityAggregator`].
+    ///
+    /// Returns the aggregator's top-3 ranked paths. The caller is responsible
+    /// for converting [`crate::aggregator::AggregatedPath`] into [`SwapPath`]s.
+    async fn find_cross_chain_paths(
+        &self,
+        src_chain: ChainId,
+        src_token: &TokenId,
+        dest_chain: ChainId,
+        dest_token: &TokenId,
+        amount: &str,
+    ) -> Result<Vec<crate::aggregator::AggregatedPath>> {
+        let mut agg = self.aggregator.lock().await;
+        agg.find_optimal_paths(src_chain, src_token, dest_chain, dest_token, amount).await
     }
 
     /// Try a same-chain swap
