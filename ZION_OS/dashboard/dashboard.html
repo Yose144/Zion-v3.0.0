@@ -2559,6 +2559,55 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
       <p class="text-xs text-gray-500 mt-3">Full guide: <code class="text-zion-cyan">ServersSetup.md</code> in repo root</p>
     </div>
+
+    <!-- Backup System Status -->
+    <div class="bg-zion-dark/60 rounded-xl p-4 border border-zion-purple/20">
+      <h3 class="text-sm font-semibold text-zion-gold mb-3">💾 Backup System</h3>
+      <div id="backup-status-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+        <div class="bg-zion-dark/40 rounded-lg p-2">
+          <div class="text-gray-500">Timer</div>
+          <div id="backup-timer-status" class="text-zion-green font-mono">—</div>
+        </div>
+        <div class="bg-zion-dark/40 rounded-lg p-2">
+          <div class="text-gray-500">Interval</div>
+          <div id="backup-interval" class="text-zion-cyan font-mono">—</div>
+        </div>
+        <div class="bg-zion-dark/40 rounded-lg p-2">
+          <div class="text-gray-500">Next run</div>
+          <div id="backup-next" class="text-zion-cyan font-mono">—</div>
+        </div>
+        <div class="bg-zion-dark/40 rounded-lg p-2">
+          <div class="text-gray-500">Total size</div>
+          <div id="backup-total-size" class="text-zion-gold font-mono">—</div>
+        </div>
+      </div>
+      <div class="mt-3 grid grid-cols-3 gap-3 text-xs">
+        <div class="bg-zion-dark/40 rounded-lg p-2">
+          <div class="text-gray-500 mb-1">Local backups</div>
+          <div id="backup-local-info" class="text-zion-green font-mono">—</div>
+        </div>
+        <div class="bg-zion-dark/40 rounded-lg p-2">
+          <div class="text-gray-500 mb-1">Edge backups</div>
+          <div id="backup-edge-info" class="text-zion-green font-mono">—</div>
+        </div>
+        <div class="bg-zion-dark/40 rounded-lg p-2">
+          <div class="text-gray-500 mb-1">Chain backups</div>
+          <div id="backup-chain-info" class="text-zion-green font-mono">—</div>
+        </div>
+      </div>
+      <div class="mt-3">
+        <div class="text-xs text-gray-500 mb-1">Edge backup contents (latest):</div>
+        <div id="backup-edge-contents" class="text-xs text-zion-cyan font-mono bg-zion-dark/40 rounded-lg p-2 max-h-32 overflow-y-auto">—</div>
+      </div>
+      <div class="mt-3">
+        <div class="text-xs text-gray-500 mb-1">Last log entries:</div>
+        <div id="backup-log" class="text-xs text-gray-400 font-mono bg-zion-dark/40 rounded-lg p-2 max-h-24 overflow-y-auto">—</div>
+      </div>
+      <div class="mt-3 flex gap-2">
+        <button onclick="triggerBackupNow()" class="px-3 py-1.5 text-xs rounded-lg bg-zion-green/20 hover:bg-zion-green/30 text-zion-green border border-zion-green/30 transition">▶ Run backup now</button>
+        <button onclick="triggerChainBackup()" class="px-3 py-1.5 text-xs rounded-lg bg-zion-purple/20 hover:bg-zion-purple/30 text-zion-purple border border-zion-purple/30 transition">📦 Chain backup now</button>
+      </div>
+    </div>
   </div>
 
   <!-- ═════════ TAB: Wallets ═════════ -->
@@ -6237,7 +6286,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=102"></script>
+<script src="/dashboard.js?v=104"></script>
 <script>
 // ═══ ZION Theme — Auto-apply accent colors per pane ═══
 (function(){

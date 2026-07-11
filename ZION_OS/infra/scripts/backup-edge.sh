@@ -21,7 +21,7 @@
 
 set -euo pipefail
 
-REPO_ROOT="/root/zion-2.9.6-main"
+REPO_ROOT="/root/zion/2.9.6"
 BACKUP_DIR="/root/zion-backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 DAY_OF_WEEK=$(date +%u)  # 1=Monday, 7=Sunday
@@ -48,7 +48,8 @@ log "Backing up node state databases..."
 NODE_BACKUP="${BACKUP_DIR}/daily/node_state_${TIMESTAMP}"
 mkdir -p "${NODE_BACKUP}"
 
-for db in "${REPO_ROOT}/data/edge-state.db" "${REPO_ROOT}/data/edge2-state.db"; do
+# On the new Edge server, state DBs live in /data/zion/
+for db in "/data/zion/state" "/data/zion/state-node2"; do
     if [[ -f "$db" ]]; then
         cp "$db" "${NODE_BACKUP}/"
         log "${GREEN}  ✓ $(basename $db)${NC}"
@@ -57,20 +58,20 @@ for db in "${REPO_ROOT}/data/edge-state.db" "${REPO_ROOT}/data/edge2-state.db"; 
     fi
 done
 
-# ── 2. V3/data databases (bridge, dao, warp, pool, swap) ────────────────────
-log "Backing up V3/data databases..."
+# ── 2. /data/zion databases (bridge, dao, warp, pool, swap) ──────────────────
+log "Backing up /data/zion databases..."
 V3_BACKUP="${BACKUP_DIR}/daily/v3_data_${TIMESTAMP}"
 mkdir -p "${V3_BACKUP}"
 
-if [[ -d "${REPO_ROOT}/V3/data" ]]; then
-    for db in "${REPO_ROOT}/V3/data"/*.db; do
+if [[ -d "/data/zion" ]]; then
+    for db in /data/zion/*.db /data/zion/pplns-state.json; do
         if [[ -f "$db" ]]; then
             cp "$db" "${V3_BACKUP}/"
             log "${GREEN}  ✓ $(basename $db)${NC}"
         fi
     done
 else
-    log "${YELLOW}  ⚠  V3/data directory not found${NC}"
+    log "${YELLOW}  ⚠  /data/zion directory not found${NC}"
 fi
 
 # ── 3. Critical config files ───────────────────────────────────────────────
@@ -79,6 +80,8 @@ CONFIG_BACKUP="${BACKUP_DIR}/daily/config_${TIMESTAMP}"
 mkdir -p "${CONFIG_BACKUP}"
 
 for cfg in \
+    "/root/zion/edge-environment.sh" \
+    "/root/zion/edge-node2-environment.sh" \
     "${REPO_ROOT}/edge-deploy/config/edge-environment.sh" \
     "${REPO_ROOT}/V3/L2/bridge/config/bridge-mainnet.toml" \
     "${REPO_ROOT}/V3/L2/atomic-swap/config/swap-mainnet.toml" \
