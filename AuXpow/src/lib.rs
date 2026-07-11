@@ -11,20 +11,33 @@
 
 pub mod auxpow_client;
 pub mod auxpow_scheduler;
+pub mod dual_stratum;
 pub mod external_hashers;
 pub mod miner_harness;
 pub mod multiplexer;
+pub mod parent_chains;
 pub mod share_forwarder;
 pub mod true_auxpow;
 pub mod types;
 
 pub use auxpow_client::{AuxPowClient, ExternalJob, StratumProtocol};
 pub use auxpow_scheduler::{AuxPowScheduler, SchedulerConfig};
+pub use dual_stratum::{
+    AssignmentCounts, DualStratumJob, DualStratumMiner, FoundExternalShare, ShareDisposition,
+    WorkPackage,
+};
 pub use external_hashers::{hash_blake3, hash_kheavyhash, ExternalAlgorithm};
+pub use parent_chains::{
+    AlphHeader, CoinbaseCommitment, DcrHeader, AUXPOW_COINBASE_MAGIC, AUXPOW_COMMITMENT_LEN,
+    DCR_HEADER_SIZE,
+};
 pub use miner_harness::{mine, FoundShare};
 pub use multiplexer::JobMultiplexer;
 pub use share_forwarder::ShareForwarder;
-pub use true_auxpow::{validate_auxpow, AuxPowData, AuxPowValidation, ParentAlgorithm};
+pub use true_auxpow::{
+    validate_auxpow, validate_auxpow_full, AuxPowData, AuxPowFullValidation, AuxPowProofBuilder,
+    AuxPowValidation, ParentAlgorithm, ParentHeader,
+};
 pub use types::{
     AuxPowConfig, AuxPowStats, CoinProfile, ExternalCoin, JobPackage, PoolPreference, ProfitEntry,
     ShareForwardResult, SplitConfig,
