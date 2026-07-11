@@ -1047,11 +1047,11 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
 
     # ── L3: WARP Relay (running on new server) ───────────────────────────
     {"id": "warp", "name": "WARP Relay", "icon": "🌀", "level": "L3", "kind": "relay",
-     "ports": {"api": 9333},
+     "ports": {"api": 8453},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
      "health_method": "tcp", "severity": "info", "autoheal": False,
-     "purpose": "Multi-chain relay for fast cross-chain messaging. API on 9333.",
+     "purpose": "Multi-chain relay for fast cross-chain messaging. API on 8453.",
      "child_says": "🌀 A super-fast message tube between blockchains!",
      "depends_on": ["edge-node1"]},
 
@@ -1173,7 +1173,7 @@ SERVICE_REGISTRY_LOCAL_DEV = [
 
     # ── L3: Advanced ─────────────────────────────────────────────────────
     {"id": "warp", "name": "WARP Relay", "icon": "🌀", "level": "L3", "kind": "relay",
-     "ports": {"api": 9333},
+     "ports": {"api": 8453},
      "log": "warp.log", "start": "start-warp", "stop": "stop-warp",
      "health_method": "tcp", "severity": "info", "autoheal": False,
      "purpose": "Multi-chain relay for fast cross-chain messaging.",
@@ -2775,7 +2775,7 @@ def _build_status_edge_primary() -> dict:
     _edge_ports = {
         "bridge":     9101,
         "dao":        8450,
-        "warp":       9333,
+        "warp":       8453,
         "oasis":      8094,
         "free_world": 8095,
         "issobella":  8096,
@@ -4080,7 +4080,7 @@ def run_edge_action(action: str) -> dict:
         "restart-hiran":          "systemctl restart zion-hiran-inference 2>/dev/null || echo 'hiran not deployed'",
         "restart-hiranyagarbha":  "systemctl restart zion-hiranyagarbha 2>/dev/null || echo 'hiranyagarbha not deployed'",
         "restart-bridge":         "systemctl restart zion-bridge",
-        "restart-website":        "systemctl restart zion-web 2>/dev/null || docker restart zion-web 2>/dev/null || echo 'web in maintenance mode'",
+        "restart-website":        "systemctl restart zion-web-next 2>/dev/null || docker restart zion-web-next 2>/dev/null || echo 'web in maintenance mode'",
         "clean-docker":           "docker builder prune -af 2>&1; docker image prune -af 2>&1; docker container prune -f 2>&1",
         "security-audit":         "echo 'Security audit placeholder — run manually'",
         "full-health":            "systemctl is-active zion-node zion-pool zion-dao zion-warp zion-bridge nginx 2>&1",
@@ -8721,7 +8721,7 @@ def _build_health_map() -> dict:
     ext_ports = {
         "bridge": 9101,       # Bridge metrics
         "dao": 8450,          # DAO API
-        "warp": 9333,         # WARP Relay API (v3.0.4 port)
+        "warp": 8453,         # WARP Relay API (v3.0.5 port)
         "dashboard": 8766,    # This dashboard
     }
     for sid, port in ext_ports.items():
@@ -8732,7 +8732,7 @@ def _build_health_map() -> dict:
         health[sid] = "up" if alive else "down"
     # Nginx + web-next: check via SSH on Edge server (not tunneled locally)
     for sid, cmd in [("nginx", "systemctl is-active nginx 2>/dev/null"),
-                     ("web-next", "systemctl is-active zion-web 2>/dev/null || docker inspect -f '{{.State.Running}}' zion-web 2>/dev/null")]:
+                     ("web-next", "systemctl is-active zion-web-next 2>/dev/null || docker inspect -f '{{.State.Running}}' zion-web-next 2>/dev/null")]:
         try:
             result = _run_edge_cmd(cmd, timeout=3)
             alive = result.returncode == 0 and "active" in (result.stdout or "").strip() or "true" in (result.stdout or "").strip()
@@ -9259,7 +9259,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             # Build infra overview from individual service probes instead.
             try:
                 _ports = {"node_rpc": 8443, "pool_stratum": 8444, "dao": 8450,
-                          "warp": 9333, "bridge_metrics": 9101, "node_metrics": 9100,
+                          "warp": 8453, "bridge_metrics": 9101, "node_metrics": 9100,
                           "nginx": 443, "dashboard": 8766}
                 _infra = {}
                 for _name, _port in _ports.items():
@@ -9777,9 +9777,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/swap/initiate":
             self._json({"ok": False, "error": "Swap initiation requires POST — use POST /api/swap/initiate"})
         elif route == "/api/warp/health":
-            alive = check_port_open("127.0.0.1", 9333, timeout=1.5)
-            health = fetch_service_json("127.0.0.1", 9333, "/health") if alive else {}
-            self._json({"ok": alive, "service": "warp", "port": 9333,
+            alive = check_port_open("127.0.0.1", 8453, timeout=1.5)
+            health = fetch_service_json("127.0.0.1", 8453, "/health") if alive else {}
+            self._json({"ok": alive, "service": "warp", "port": 8453,
                         "status": "online" if alive else "offline",
                         "version": health.get("version", "—") if health else "—",
                         "transfers_total": health.get("transfers_total", 0) if health else 0,
@@ -9828,18 +9828,18 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json({"ok": True, "missions": [], "total": 0, "note": "Issobella Space not yet deployed"})
         # ── L3 endpoints: WARP, AI agents, NCL ──
         elif route == "/api/l3/warp/chains":
-            warp_alive = check_port_open("127.0.0.1", 9333, timeout=1.5)
+            warp_alive = check_port_open("127.0.0.1", 8453, timeout=1.5)
             chains = []
             if warp_alive:
-                data = fetch_service_json("127.0.0.1", 9333, "/chains", timeout=2.0)
+                data = fetch_service_json("127.0.0.1", 8453, "/chains", timeout=2.0)
                 chains = data.get("data", []) if data else []
             self._json({"ok": warp_alive, "chains": chains, "total": len(chains),
                         "status": "online" if warp_alive else "offline"})
         elif route == "/api/l3/warp/transfers":
-            warp_alive = check_port_open("127.0.0.1", 9333, timeout=1.5)
+            warp_alive = check_port_open("127.0.0.1", 8453, timeout=1.5)
             transfers = []
             if warp_alive:
-                data = fetch_service_json("127.0.0.1", 9333, "/transfers", timeout=2.0)
+                data = fetch_service_json("127.0.0.1", 8453, "/transfers", timeout=2.0)
                 transfers = data.get("data", []) if data else []
             self._json({"ok": warp_alive, "transfers": transfers, "total": len(transfers),
                         "status": "online" if warp_alive else "offline"})
