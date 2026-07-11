@@ -11,13 +11,25 @@ use tracing::{debug, info, warn};
 // ZION TRC-20 contract address per network
 // ─────────────────────────────────────────────────────────────────────────────
 fn zion_contract(network: &str) -> Option<&'static str> {
+    // ── ZION TRC-20 Contract Address ─────────────────────────────────────
+    // Contract source: V3/L2/bridge/contracts/non-evm/tron/ZionToken.sol
+    // Deployment steps: V3/L2/bridge/contracts/non-evm/tron/README.md
+    //
+    // After deploying the TRC-20 contract on Tron, replace the placeholder
+    // addresses below with the real T-address (starts with 'T').
+    // Constructor args: admin (multisig), bridge (relay contract), guardian.
     match network {
         "mainnet" => {
-            warn!("[WARP][tron] mainnet ZION contract is a placeholder — update after deployment");
+            // TODO: Replace with real mainnet ZION TRC-20 contract address.
+            // Deploy ZionToken.sol via TronBox/TronIDE to Tron mainnet.
+            // The deployed contract address will be a T-address (base58).
+            warn!("[WARP][tron] mainnet ZION contract is a placeholder — deploy contract from V3/L2/bridge/contracts/non-evm/tron/ and update this address");
             Some("TWZIONxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
         }
         "nile" => {
-            warn!("[WARP][tron] nile testnet ZION contract is a placeholder");
+            // TODO: Replace with real nile testnet ZION contract address.
+            // Deploy ZionToken.sol to Tron Nile testnet for testing.
+            warn!("[WARP][tron] nile testnet ZION contract is a placeholder — deploy contract from V3/L2/bridge/contracts/non-evm/tron/ and update this address");
             Some("TXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxtest")
         }
         _ => None,

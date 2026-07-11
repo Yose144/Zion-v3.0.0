@@ -11,13 +11,29 @@ use tracing::{debug, info, warn};
 // ZION Cardano Native Token (policy_id + asset_name hex)
 // ─────────────────────────────────────────────────────────────────────────────
 fn zion_asset(network: &str) -> Option<&'static str> {
+    // ── ZION Cardano Native Token (policy_id + asset_name hex) ───────────
+    // Contract source: V3/L2/bridge/contracts/non-evm/cardano/mint_zion_token.hs
+    // Deployment steps: V3/L2/bridge/contracts/non-evm/cardano/README.md
+    //
+    // The asset identifier is the concatenation of:
+    //   policy_id (28 bytes hex) + asset_name (4 bytes hex: "ZION" = 5a494f4e)
+    //
+    // After compiling and deploying the Plutus minting policy, compute the
+    // policy_id as the hash of the policy script, then replace the placeholder
+    // hex strings below with: <policy_id_hex>5a494f4e
     match network {
         "mainnet" => {
-            warn!("[WARP][cardano] mainnet ZION asset is a placeholder — update with real policy_id+asset_name after deployment");
+            // TODO: Replace with real mainnet policy_id + asset_name.
+            // Compile mint_zion_token.hs with the bridge multisig validator hash,
+            // then compute: cardano-cli transaction policyid --script-file zion_mint_policy.plutus
+            // The full asset hex = <policy_id_hex>5a494f4e
+            warn!("[WARP][cardano] mainnet ZION asset is a placeholder — deploy minting policy from V3/L2/bridge/contracts/non-evm/cardano/ and update with real policy_id+asset_name");
             Some("5a71011c726573745a494f4e")
         }
         "preprod" => {
-            warn!("[WARP][cardano] preprod ZION asset is a placeholder");
+            // TODO: Replace with real preprod policy_id + asset_name.
+            // Deploy the minting policy to Cardano preprod testnet first.
+            warn!("[WARP][cardano] preprod ZION asset is a placeholder — deploy minting policy from V3/L2/bridge/contracts/non-evm/cardano/ and update with real policy_id+asset_name");
             Some("5a71011c726573745a494f4e74")
         }
         _ => None,

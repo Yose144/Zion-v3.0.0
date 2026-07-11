@@ -7,6 +7,20 @@ use crate::types::ChainFamily;
 use async_trait::async_trait;
 use tracing::{debug, info, warn};
 
+/// Docker-compose file path for the Lightning stack (referenced in error messages).
+const LN_DOCKER_PATH: &str = "V3/L3/warp/docker/lightning/docker-compose.yml";
+
+/// Helper to build an error message that points to the Docker setup.
+fn ln_setup_error(reason: &str) -> WarpError {
+    WarpError::AdapterError {
+        chain: "lightning".into(),
+        reason: format!(
+            "{} — start LND via `docker compose -f {} up -d` and set WARP_LN_NODE_URL + WARP_LN_MACAROON (see V3/L3/warp/docker/lightning/README.md)",
+            reason, LN_DOCKER_PATH
+        ),
+    }
+}
+
 /// Bitcoin Lightning Network adapter.
 ///
 /// Bridges ZION L1 to Lightning via BOLT11 invoices:
@@ -14,6 +28,7 @@ use tracing::{debug, info, warn};
 /// - Inbound: Lightning payment triggers ZION mint on L1
 ///
 /// Requires a connected LND node (REST proxy on port 8080).
+/// See `V3/L3/warp/docker/lightning/` for Docker setup instructions.
 pub struct LightningAdapter {
     lnd: Option<LndClient>,
 }
@@ -62,9 +77,8 @@ impl LightningAdapter {
         memo: &str,
         expiry: Option<u64>,
     ) -> WarpResult<String> {
-        let lnd = self.lnd.as_ref().ok_or_else(|| WarpError::AdapterError {
-            chain: "lightning".into(),
-            reason: "LND not configured — set WARP_LN_NODE_URL + WARP_LN_MACAROON".into(),
+        let lnd = self.lnd.as_ref().ok_or_else(|| {
+            ln_setup_error("LND not configured — cannot create invoice")
         })?;
 
         let resp = lnd.add_invoice(amount_msat, memo, expiry).await?;
@@ -76,9 +90,8 @@ impl LightningAdapter {
 
     /// Pay a BOLT11 invoice for outbound transfers via LND.
     pub async fn pay_invoice(&self, invoice: &str) -> WarpResult<String> {
-        let lnd = self.lnd.as_ref().ok_or_else(|| WarpError::AdapterError {
-            chain: "lightning".into(),
-            reason: "LND not configured".into(),
+        let lnd = self.lnd.as_ref().ok_or_else(|| {
+            ln_setup_error("LND not configured — cannot pay invoice")
         })?;
 
         // Decode invoice first to validate it
@@ -111,9 +124,8 @@ impl LightningAdapter {
 
     /// Check if a payment hash has been settled.
     pub async fn is_payment_settled(&self, payment_hash_hex: &str) -> WarpResult<bool> {
-        let lnd = self.lnd.as_ref().ok_or_else(|| WarpError::AdapterError {
-            chain: "lightning".into(),
-            reason: "LND not configured".into(),
+        let lnd = self.lnd.as_ref().ok_or_else(|| {
+            ln_setup_error("LND not configured — cannot check payment status")
         })?;
         lnd.is_settled(payment_hash_hex).await
     }
@@ -133,25 +145,66 @@ impl ChainAdapter for LightningAdapter {
         let lnd = match self.lnd.as_ref() {
             Some(l) => l,
             None => {
-                warn!("[WARP][LN] Health check: LND not configured");
+                warn!(
+                    "[WARP][LN] Health check: LND not configured — start the Docker stack at {} and set WARP_LN_NODE_URL + WARP_LN_MACAROON",
+                    LN_DOCKER_PATH
+                );
                 return Ok(false);
             }
         };
-        match lnd.get_info().await {
-            Ok(info) => {
-                let synced = info.synced_to_chain.unwrap_or(false);
-                let channels = info.num_active_channels.unwrap_or(0);
-                info!(
-                    "[WARP][LN] Health OK — alias={:?} channels={} synced={} version={:?}",
-                    info.alias, channels, synced, info.version
-                );
-                Ok(synced && channels > 0)
-            }
+
+        // 1. Verify LND connectivity via GetInfo
+        let info = match lnd.get_info().await {
+            Ok(info) => info,
             Err(e) => {
-                warn!("[WARP][LN] Health FAIL: {}", e);
-                Ok(false)
+                warn!(
+                    "[WARP][LN] Health FAIL: cannot reach LND REST API — {} \
+                    (check docker compose -f {} up -d)",
+                    e, LN_DOCKER_PATH
+                );
+                return Ok(false);
             }
+        };
+
+        let synced = info.synced_to_chain.unwrap_or(false);
+        let channels = info.num_active_channels.unwrap_or(0);
+        let peers = info.num_peers.unwrap_or(0);
+
+        if !synced {
+            warn!(
+                "[WARP][LN] Health WARN: LND not synced to chain (alias={:?} version={:?}) \
+                — wait for bitcoind + LND IBD to complete",
+                info.alias, info.version
+            );
         }
+
+        // 2. Check channel balance (outbound capacity)
+        let outbound_msat = match lnd.outbound_capacity_msat().await {
+            Ok(cap) => cap,
+            Err(e) => {
+                warn!("[WARP][LN] Health WARN: cannot query channel balance — {}", e);
+                0
+            }
+        };
+
+        // 3. Check on-chain wallet balance
+        let onchain_sat = match lnd.wallet_balance_sat().await {
+            Ok(bal) => bal,
+            Err(e) => {
+                warn!("[WARP][LN] Health WARN: cannot query on-chain balance — {}", e);
+                0
+            }
+        };
+
+        info!(
+            "[WARP][LN] Health: alias={:?} channels={} peers={} synced={} \
+            outbound={}msat onchain={}sat version={:?}",
+            info.alias, channels, peers, synced, outbound_msat, onchain_sat, info.version
+        );
+
+        // Healthy = synced to chain AND has at least 1 active channel
+        // (on-chain balance and outbound capacity are reported but not strictly required)
+        Ok(synced && channels > 0)
     }
 
     async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {

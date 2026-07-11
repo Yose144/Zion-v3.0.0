@@ -33,6 +33,13 @@ const DEFAULT_SUI_RPC: &str = "https://fullnode.mainnet.sui.io";
 /// Substring used to recognise WARP bridge deposit events emitted by the
 /// Move bridge module. The fully-qualified event type looks like
 /// `0x<pkg>::bridge::DepositEvent` — we match on the module/event name.
+///
+/// Contract source: V3/L2/bridge/contracts/non-evm/sui/sources/zion_coin.move
+/// Deployment steps: V3/L2/bridge/contracts/non-evm/sui/README.md
+///
+/// After publishing the Sui Move package, replace the `0x2` placeholder
+/// package ID below with the real package object ID from `sui client publish`.
+/// The ZION coin module emits `BridgeMintEvent` and `BridgeBurnEvent`.
 const WARP_EVENT_TYPE_HINT: &str = "::bridge::DepositEvent";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -382,11 +389,16 @@ impl SuiAdapter {
 
     /// `sui_queryEvents` with a MoveModule filter, returning up to `limit` events.
     async fn query_events(&self, limit: u64) -> WarpResult<Vec<SuiEvent>> {
-        // Filter for Move events emitted by a `bridge` module. The package ID
-        // is intentionally broad (`0x2` is the Sui framework namespace placeholder)
-        // — we further filter client-side by event type hint. A production relay
-        // would pin the exact deployed package object ID.
-        let filter = json!({"MoveModule": {"module": "bridge", "package": "0x2"}});
+        // Filter for Move events emitted by the zion_coin bridge module.
+        //
+        // Contract: V3/L2/bridge/contracts/non-evm/sui/sources/zion_coin.move
+        //
+        // The package ID `0x2` is a placeholder — after deploying the Sui Move
+        // package, replace with the real package object ID from `sui client publish`.
+        // Set the WARP_SUI_PACKAGE env var or update this filter directly.
+        // The ZION coin module emits BridgeBurnEvent (for Aptos→L1 burns).
+        let package_id = std::env::var("WARP_SUI_PACKAGE").unwrap_or_else(|_| "0x2".into());
+        let filter = json!({"MoveModule": {"module": "zion_coin", "package": package_id}});
         let v = rpc(
             &self.client,
             &self.rpc_url,

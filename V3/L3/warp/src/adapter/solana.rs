@@ -12,13 +12,26 @@ use tracing::{debug, info, warn};
 // ZION SPL token mint address per cluster
 // ─────────────────────────────────────────────────────────────────────────────
 fn zion_mint(cluster: &str) -> Option<&'static str> {
+    // ── ZION SPL Token Mint Address ──────────────────────────────────────
+    // Contract source: V3/L2/bridge/contracts/non-evm/solana/zion_spl_token.rs
+    // Deployment steps: V3/L2/bridge/contracts/non-evm/solana/README.md
+    //
+    // After deploying the Anchor program and calling `initialize`, replace
+    // the placeholder addresses below with the real ZION mint PDA address.
+    // The mint PDA is derived from seeds [b"zion_mint"].
     match cluster {
         "mainnet-beta" => {
-            warn!("[WARP][solana] mainnet-beta ZION mint is a placeholder — real SPL token not yet deployed");
+            // TODO: Replace with real mainnet ZION mint after deployment.
+            // Deploy the Anchor program (zion_spl_token.rs) and call initialize
+            // with the 5 WARP validator public keys. The mint PDA address
+            // will be the output of `anchor keys list` for the zion_mint account.
+            warn!("[WARP][solana] mainnet-beta ZION mint is a placeholder — deploy contract from V3/L2/bridge/contracts/non-evm/solana/ and update this address");
             Some("ZIONmintXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
         }
         "devnet" => {
-            warn!("[WARP][solana] devnet ZION mint is a placeholder");
+            // TODO: Replace with real devnet ZION mint after test deployment.
+            // Use `anchor deploy --provider.cluster devnet` then call initialize.
+            warn!("[WARP][solana] devnet ZION mint is a placeholder — deploy contract from V3/L2/bridge/contracts/non-evm/solana/ and update this address");
             Some("ZIONdevXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
         }
         _ => None,
