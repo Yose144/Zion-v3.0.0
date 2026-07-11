@@ -182,16 +182,32 @@ export default function DefiPage() {
     last_l1_height: number;
     errors_total: number;
   } | null>(null);
+  interface PoolEntry {
+    pair: string;
+    dex: string;
+    fee: number;
+    feeLabel: string;
+    active: boolean;
+    tick: number;
+    balances: Record<string, number | string>;
+    price_usd: number;
+    tvl_usd: number;
+  }
+
   const [poolStats, setPoolStats] = useState<{
     tvl_usd: number;
     total_wzion_liquidity: number;
     active_pools: number;
+    total_pools: number;
     wzion_supply: number;
     deployer_wzion: number;
     primary_price_usd: number;
+    primary_dex: string;
     pools: {
-      wzion_usdt: { pair: string; fee: number; feeLabel: string; active: boolean; nft_id: number; nft_owner: string | null; tick: number; balances: { wzion: number; usdt: number }; price_usd: number; tvl_usd: number };
-      wzion_weth: { pair: string; fee: number; feeLabel: string; active: boolean; nft_id: number; nft_owner: string | null; tick: number; balances: { wzion: number; weth: number }; price_usd: number; tvl_usd: number };
+      wzion_usdt: PoolEntry;
+      wzion_weth: PoolEntry;
+      wzion_sol: PoolEntry;
+      ps_wzion_usdt: PoolEntry;
     };
     contracts?: {
       staking: { wzion: number };
@@ -288,43 +304,42 @@ export default function DefiPage() {
         const res = await fetch('/api/defi/pools', { cache: 'no-store' });
         if (!res.ok) return;
         const data = await res.json();
-        if (!cancelled && data.ok) setPoolStats({
-          tvl_usd: data.summary?.total_tvl_usd ?? 0,
-          total_wzion_liquidity: data.summary?.total_wzion_liquidity ?? 0,
-          active_pools: data.summary?.active_pools ?? 0,
-          wzion_supply: data.summary?.wzion_supply ?? 0,
-          deployer_wzion: data.summary?.deployer_wzion ?? 0,
-          primary_price_usd: data.pools?.wzion_usdt?.price_usd ?? 0,
-          pools: {
-            wzion_usdt: {
-              pair: data.pools?.wzion_usdt?.pair ?? 'wZION/USDT',
-              fee: data.pools?.wzion_usdt?.fee ?? 3000,
-              feeLabel: data.pools?.wzion_usdt?.feeLabel ?? '0.3%',
-              active: data.pools?.wzion_usdt?.active ?? false,
-              nft_id: data.pools?.wzion_usdt?.nft_id ?? 0,
-              nft_owner: data.pools?.wzion_usdt?.nft_owner ?? null,
-              tick: data.pools?.wzion_usdt?.tick ?? 0,
-              balances: data.pools?.wzion_usdt?.balances ?? { wzion: 0, usdt: 0 },
-              price_usd: data.pools?.wzion_usdt?.price_usd ?? 0,
-              tvl_usd: data.pools?.wzion_usdt?.tvl_usd ?? 0,
+        if (!cancelled && data.ok) {
+          const primary = data.pools?.wzion_usdt?.active ? data.pools.wzion_usdt : null;
+          setPoolStats({
+            tvl_usd: data.summary?.total_tvl_usd ?? 0,
+            total_wzion_liquidity: data.summary?.total_wzion_liquidity ?? 0,
+            active_pools: data.summary?.active_pools ?? 0,
+            total_pools: data.summary?.total_pools ?? 0,
+            wzion_supply: data.summary?.wzion_supply ?? 0,
+            deployer_wzion: data.summary?.deployer_wzion ?? 0,
+            primary_price_usd: primary?.price_usd ?? data.pools?.wzion_usdt?.price_usd ?? 0,
+            primary_dex: data.primary_dex ?? 'Uniswap V3',
+            pools: {
+              wzion_usdt: data.pools?.wzion_usdt ?? defaultPoolEntry('wZION/USDT', '0.3%'),
+              wzion_weth: data.pools?.wzion_weth ?? defaultPoolEntry('ETH/wZION', '1.0%'),
+              wzion_sol: data.pools?.wzion_sol ?? defaultPoolEntry('wZION/SOL', '0.01%'),
+              ps_wzion_usdt: data.pools?.ps_wzion_usdt ?? defaultPoolEntry('wZION/USDT', '0.25%'),
             },
-            wzion_weth: {
-              pair: data.pools?.wzion_weth?.pair ?? 'ETH/wZION',
-              fee: data.pools?.wzion_weth?.fee ?? 3000,
-              feeLabel: data.pools?.wzion_weth?.feeLabel ?? '0.3%',
-              active: data.pools?.wzion_weth?.active ?? false,
-              nft_id: data.pools?.wzion_weth?.nft_id ?? 0,
-              nft_owner: data.pools?.wzion_weth?.nft_owner ?? null,
-              tick: data.pools?.wzion_weth?.tick ?? 0,
-              balances: data.pools?.wzion_weth?.balances ?? { wzion: 0, weth: 0 },
-              price_usd: data.pools?.wzion_weth?.price_usd ?? 0,
-              tvl_usd: data.pools?.wzion_weth?.tvl_usd ?? 0,
-            },
-          },
-          contracts: data.contracts,
-        });
+            contracts: data.contracts,
+          });
+        }
       } catch { /* ignore */ }
     };
+
+    function defaultPoolEntry(pair: string, feeLabel: string): PoolEntry {
+      return {
+        pair,
+        dex: 'Uniswap V3',
+        fee: 0,
+        feeLabel,
+        active: false,
+        tick: 0,
+        balances: { wzion: 0, token1: 0, token1Symbol: 'USDT' },
+        price_usd: 0,
+        tvl_usd: 0,
+      };
+    }
     void refreshPools();
 
     const refreshAuction = async () => {
@@ -411,7 +426,7 @@ export default function DefiPage() {
                   <Globe className="h-3 w-3 text-zion-cyan" /> Base
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-emerald-200">
-                  {cs ? 'wZION/USDT · Uniswap V4' : 'wZION/USDT · Uniswap V4'}
+                  {cs ? 'wZION/USDT · Uniswap V3' : 'wZION/USDT · Uniswap V3'}
                 </span>
               </div>
             </div>
@@ -524,6 +539,33 @@ export default function DefiPage() {
 
       {activeTab === 'overview' && (
       <>
+        {/* ═══════ Low Liquidity Warning ═══════ */}
+        {(poolStats?.tvl_usd ?? 0) < 500 && (
+          <section className="zion-container relative z-10 mb-6">
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.03 }}
+              className="zion-rainbow-card p-4 border-amber-500/25 bg-amber-500/5"
+              style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
+            >
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="text-sm font-semibold text-amber-200 mb-1">
+                    {cs ? 'Nízká DEX likvidita' : 'Low DEX Liquidity'}
+                  </h3>
+                  <p className="text-xs text-gray-400 leading-relaxed">
+                    {cs
+                      ? `Aktuální aktivní likvidita na DEX je nízká (~$${(poolStats?.tvl_usd ?? 0).toFixed(2)} TVL). Velké swapy mohou mít výrazný price impact. Doporučujeme používat malé částky nebo přidat likviditu do Uniswap V3 wZION/USDT poolu.`
+                      : `Current active DEX liquidity is low (~$${(poolStats?.tvl_usd ?? 0).toFixed(2)} TVL). Large swaps may have significant price impact. Consider small amounts or add liquidity to the Uniswap V3 wZION/USDT pool.`}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          </section>
+        )}
+
         {/* ═══════ DeFi TELEMETRY ═══════ */}
         <section className="zion-container relative z-10 mb-8">
           <motion.div
@@ -699,8 +741,8 @@ export default function DefiPage() {
               <div className="zion-rainbow-sub p-2" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                 <p className="text-gray-500 mb-0.5">USDT</p>
                 <p className="text-white font-mono">
-                  {(poolStats?.pools?.wzion_usdt?.balances?.usdt ?? 0) > 0
-                    ? (poolStats!.pools.wzion_usdt.balances.usdt).toLocaleString(undefined, { maximumFractionDigits: 2 })
+                  {(Number(poolStats?.pools?.wzion_usdt?.balances?.usdt ?? 0)) > 0
+                    ? (Number(poolStats!.pools.wzion_usdt.balances.usdt)).toLocaleString(undefined, { maximumFractionDigits: 2 })
                     : '—'}
                 </p>
               </div>
@@ -865,7 +907,7 @@ export default function DefiPage() {
                     </div>
                     <div>
                       <h3 className="text-base font-semibold text-white">{cs ? 'DEX Pooly' : 'DEX Pools'}</h3>
-                      <p className="text-[11px] text-gray-500">{cs ? 'Uniswap V3 + V4' : 'Uniswap V3 + V4'}</p>
+                      <p className="text-[11px] text-gray-500">{cs ? 'Uniswap V3' : 'Uniswap V3'}</p>
                     </div>
                   </div>
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 text-[10px] font-semibold text-emerald-400">
@@ -873,7 +915,7 @@ export default function DefiPage() {
                     {cs ? 'Živě' : 'Live'}
                   </span>
                 </div>
-                <p className="text-sm text-gray-300 leading-relaxed mb-3">{cs ? 'wZION/USDT primární pool a wZION/WETH sekundární. Migrace likvidity na Uniswap V4.' : 'wZION/USDT primary pool and wZION/WETH secondary. Liquidity migrated to Uniswap V4.'}</p>
+                <p className="text-sm text-gray-300 leading-relaxed mb-3">{cs ? 'wZION/USDT primární pool na Uniswap V3. Sekundární pooly WETH/SOL jsou inicializované, ale bez aktivní likvidity.' : 'wZION/USDT primary pool on Uniswap V3. Secondary WETH/SOL pools are initialized but carry no active liquidity.'}</p>
                 <div className="flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors">
                   <span>{cs ? 'Otevřít Uniswap' : 'Open Uniswap'}</span>
                   <ExternalLink className="h-3.5 w-3.5" />
@@ -1271,7 +1313,7 @@ export default function DefiPage() {
                 <Droplets className="h-7 w-7 text-zion-cyan" />
                 {cs ? 'DEX pooly' : 'DEX Pools'}
               </h2>
-              <p className="text-sm text-gray-400">{cs ? 'wZION/USDT na Uniswap V4 a PancakeSwap V3.' : 'wZION/USDT on Uniswap V4 and PancakeSwap V3.'}</p>
+              <p className="text-sm text-gray-400">{cs ? 'wZION/USDT na Uniswap V3 a PancakeSwap V3. Aktuální aktivní likvidita: ~240 tis. wZION + ~44 USDT.' : 'wZION/USDT on Uniswap V3 and PancakeSwap V3. Current active liquidity: ~240k wZION + ~44 USDT.'}</p>
             </div>
           </motion.div>
         </section>
@@ -1371,12 +1413,12 @@ export default function DefiPage() {
             </div>
 
             {/* Status note */}
-            <div className="mt-4 flex items-start gap-3 rounded-lg bg-emerald-500/5 border border-emerald-500/15 p-3">
-              <Trophy className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+            <div className="mt-4 flex items-start gap-3 rounded-lg bg-amber-500/5 border border-amber-500/15 p-3">
+              <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
               <p className="text-[10px] text-gray-400 leading-relaxed">
                 {cs
-                  ? 'PancakeSwap V3 pool je LIVE na Base Mainnet! wZION/USDT pool s 0.25% fee je vytvořen a inicializován na ceně $0.0002/wZION. NFT pozice #2054747. wZION je nyní dostupný na 2 DEX platformách (Uniswap V4 + PancakeSwap V3) + LiFi agregátor s 30+ DEX. PancakeSwap je 2. největší DEX na Base s $115M denním volume.'
-                  : 'PancakeSwap V3 pool is LIVE on Base Mainnet! wZION/USDT pool with 0.25% fee is created and initialized at $0.0002/wZION. NFT position #2054747. wZION is now available on 2 DEX platforms (Uniswap V4 + PancakeSwap V3) + LiFi aggregator with 30+ DEX. PancakeSwap is the 2nd largest DEX on Base with $115M daily volume.'}
+                  ? 'PancakeSwap V3 pool byl vytvořen a inicializován, ale NFT pozice #2054747 byla spálena. V poolu aktuálně není žádná aktivní likvidita. Primární likvidita zůstává na Uniswap V3 wZION/USDT.'
+                  : 'PancakeSwap V3 pool was created and initialized, but NFT position #2054747 has been burned. There is currently no active liquidity in the pool. Primary liquidity remains on Uniswap V3 wZION/USDT.'}
               </p>
             </div>
           </motion.div>
@@ -1390,14 +1432,14 @@ export default function DefiPage() {
             transition={{ delay: 0.06 }}
           >
             <div className="flex flex-col gap-2 mb-4">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Uniswap' : 'Uniswap'}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Uniswap V3' : 'Uniswap V3'}</p>
               <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                 <Droplets className="h-5 w-5 text-zion-cyan" />
-                {cs ? 'Uniswap V4 pooly' : 'Uniswap V4 pools'}
+                {cs ? 'Uniswap V3 pooly' : 'Uniswap V3 pools'}
               </h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* wZION/USDT — active V4 pool */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* wZION/USDT — active V3 pool */}
               <div
                 className="zion-rainbow-card p-4 border-zion-gold/20"
                 style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
@@ -1419,16 +1461,16 @@ export default function DefiPage() {
                   <div className="flex justify-between">
                     <span className="text-gray-400">{cs ? 'Likvidita' : 'Liquidity'}:</span>
                     <span className="font-mono text-white">
-                      {(poolStats?.pools?.wzion_usdt?.balances?.wzion ?? 0) > 0
-                        ? `${(poolStats!.pools.wzion_usdt.balances.wzion).toLocaleString(undefined, { maximumFractionDigits: 0 })} wZION`
+                      {(Number(poolStats?.pools?.wzion_usdt?.balances?.wzion ?? 0)) > 0
+                        ? `${(Number(poolStats!.pools.wzion_usdt.balances.wzion)).toLocaleString(undefined, { maximumFractionDigits: 0 })} wZION`
                         : '—'}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">USDT:</span>
                     <span className="font-mono text-white">
-                      {(poolStats?.pools?.wzion_usdt?.balances?.usdt ?? 0) > 0
-                        ? (poolStats!.pools.wzion_usdt.balances.usdt).toLocaleString(undefined, { maximumFractionDigits: 2 })
+                      {(Number(poolStats?.pools?.wzion_usdt?.balances?.usdt ?? 0)) > 0
+                        ? (Number(poolStats!.pools.wzion_usdt.balances.usdt)).toLocaleString(undefined, { maximumFractionDigits: 2 })
                         : '—'}
                     </span>
                   </div>
@@ -1443,33 +1485,20 @@ export default function DefiPage() {
                   <div className="flex justify-between">
                     <span className="text-gray-400">{cs ? 'Stav' : 'Status'}:</span>
                     <span className={poolStats?.pools?.wzion_usdt?.active ? 'text-emerald-400' : 'text-amber-400'}>
-                      {poolStats?.pools?.wzion_usdt?.active ? (cs ? 'aktivní' : 'active') : (cs ? 'načítám' : 'loading')}
+                      {poolStats?.pools?.wzion_usdt?.active ? (cs ? 'aktivní' : 'active') : (cs ? 'neaktivní' : 'inactive')}
                     </span>
                   </div>
-                  {poolStats?.pools?.wzion_usdt?.nft_owner && (
-                    <div className="pt-2 mt-2 border-t border-white/10 space-y-1">
-                      <p className="text-[10px] uppercase tracking-wider text-gray-500">
-                        {cs ? 'V4 NFT pozice' : 'V4 NFT position'}
-                      </p>
-                      <div className="flex justify-between text-[10px]">
-                        <span className="text-gray-500 font-mono">#{poolStats.pools.wzion_usdt.nft_id}</span>
-                        <span className="text-emerald-400 font-mono">
-                          {cs ? 'aktivní' : 'active'} · {poolStats.pools.wzion_usdt.nft_owner.slice(0, 8)}…{poolStats.pools.wzion_usdt.nft_owner.slice(-4)}
-                        </span>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
 
-              {/* ETH/wZION — burned V4 position */}
+              {/* ETH/wZION — initialized, no liquidity */}
               <div
-                className="zion-rainbow-card p-4 opacity-50"
+                className="zion-rainbow-card p-4 opacity-70"
                 style={{ '--rc': '100, 100, 100' } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-semibold text-white">{poolStats?.pools?.wzion_weth?.pair ?? 'ETH/wZION'}</span>
-                  <span className="text-[10px] text-gray-400">{poolStats?.pools?.wzion_weth?.feeLabel ?? '0.3%'}</span>
+                  <span className="text-[10px] text-gray-400">{poolStats?.pools?.wzion_weth?.feeLabel ?? '1.0%'}</span>
                 </div>
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
@@ -1478,16 +1507,28 @@ export default function DefiPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">{cs ? 'Stav' : 'Status'}:</span>
-                    <span className="text-red-400/70">{cs ? 'vypálena' : 'burned'}</span>
+                    <span className="text-amber-400/70">{cs ? 'inicializovaný, bez likvidity' : 'initialized, no liquidity'}</span>
                   </div>
-                  <div className="pt-2 mt-2 border-t border-white/10 space-y-1">
-                    <p className="text-[10px] uppercase tracking-wider text-gray-600">
-                      {cs ? 'V4 NFT pozice' : 'V4 NFT position'}
-                    </p>
-                    <div className="flex justify-between text-[10px]">
-                      <span className="text-gray-600 font-mono">#{poolStats?.pools?.wzion_weth?.nft_id ?? 2740380}</span>
-                      <span className="text-red-400/70 font-mono">{cs ? 'spálena' : 'burned'}</span>
-                    </div>
+                </div>
+              </div>
+
+              {/* wZION/SOL — initialized, no liquidity */}
+              <div
+                className="zion-rainbow-card p-4 opacity-70"
+                style={{ '--rc': '100, 100, 100' } as React.CSSProperties}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-semibold text-white">{poolStats?.pools?.wzion_sol?.pair ?? 'wZION/SOL'}</span>
+                  <span className="text-[10px] text-gray-400">{poolStats?.pools?.wzion_sol?.feeLabel ?? '0.01%'}</span>
+                </div>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">{cs ? 'Likvidita' : 'Liquidity'}:</span>
+                    <span className="font-mono text-gray-500">0</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">{cs ? 'Stav' : 'Status'}:</span>
+                    <span className="text-amber-400/70">{cs ? 'inicializovaný, bez likvidity' : 'initialized, no liquidity'}</span>
                   </div>
                 </div>
               </div>
@@ -1647,7 +1688,7 @@ export default function DefiPage() {
                 </div>
                 <div className="flex gap-2 text-gray-300">
                   <span className="shrink-0 rounded-lg bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 text-amber-400 font-mono text-[9px]">3</span>
-                  <p>{cs ? 'Po graduaci → LBP pool na Uniswap V4 + USDC pro tým' : 'After graduation → LBP pool on Uniswap V4 + USDC for team'}</p>
+                  <p>{cs ? 'Po graduaci → LBP pool na Uniswap V3 + USDC pro tým' : 'After graduation → LBP pool on Uniswap V3 + USDC for team'}</p>
                 </div>
                 <div className="flex gap-2 text-gray-300">
                   <span className="shrink-0 rounded-lg bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 text-amber-400 font-mono text-[9px]">4</span>

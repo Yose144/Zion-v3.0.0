@@ -229,7 +229,9 @@ On-chain validátoři mají dost ETH na Base (gas price 0.006 Gwei, TX cost ~0.0
 
 ---
 
-## 11. DEX Likvidita — Uniswap V3 (2026-07-11)
+## 11. DEX Likvidita — Uniswap V3 (aktualizováno 2026-07-11)
+
+### Uniswap V3 wZION/USDT — primární aktivní pool
 
 | Metric | Value |
 |--------|-------|
@@ -242,7 +244,22 @@ On-chain validátoři mají dost ETH na Base (gas price 0.006 Gwei, TX cost ~0.0
 | USDT v poolu | 43.75 USDT |
 | Cena | $0.000183/wZION |
 | TVL | $87.49 |
+| Tick | -362,412 |
+| Status | ✅ aktivní |
 | NFT Position Manager | `0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1` (Base-specific) |
 | TX | `0xab727ebd612cc7612b68fe0c0761e46f76e187ef468383c304bb43fb2d65b172` |
 | Skript | `V3/L2/contracts/hardhat/scripts/add-uniswap-liquidity.ts` |
 | Basescan | https://basescan.org/address/0x186b46c2f04153999d44D25179cD623fD62Bfda2 |
+
+### Sekundární pooly — inicializované, bez likvidity
+
+| Pool | DEX | Fee | Status |
+|------|-----|-----|--------|
+| `0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699` | Uniswap V3 | 1.0% | ⚠️ inicializovaný, 0 likvidita |
+| `0xF38c56bbBBBC6d9FA11E7DE84bF7Bb70e1e8D2b3` | Uniswap V3 | 0.01% | ⚠️ inicializovaný, 0 likvidita |
+| `0x46cc98dec9d2a60f2850225c942d6017b82b6f47` | PancakeSwap V3 | 0.25% | ⚠️ pozice spálena, 0 likvidita |
+
+### Uniswap V4 — reference only
+
+V4 Position Manager NFT #2740371 a #2740380 byly spáleny. V4 PoolManager neobsahuje žádnou wZION likviditu. Web/API proto používá Uniswap V3 jako kanonický zdroj DEX dat.
+
