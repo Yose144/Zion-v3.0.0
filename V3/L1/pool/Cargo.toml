@@ -28,6 +28,7 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 zion-core = { path = "../core" }
 zion-cosmic-harmony = { path = "../cosmic-harmony" }
+zion-auxpow = { path = "../../../AuXpow" }
 
 [features]
 default = []

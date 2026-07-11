@@ -4795,6 +4795,15 @@ def get_pool_miners_dashboard() -> dict:
     except Exception:
         result["pplns_state"] = {"loaded": False, "addresses_count": 0, "window_entries": 0}
 
+    # 9b. AuxPow merge mining stats (from pool /stats auxpow section)
+    try:
+        auxpow = result.get("stats", {}).get("auxpow", {})
+        if not isinstance(auxpow, dict):
+            auxpow = {}
+        result["auxpow"] = auxpow
+    except Exception:
+        result["auxpow"] = {}
+
     # 10. Computed summary aggregations
     miners = result.get("miners", [])
     stats = result.get("stats", {}) or {}
