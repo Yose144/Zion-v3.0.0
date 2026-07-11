@@ -66,12 +66,18 @@ With ZionDex + WARP:
 | **ZionDex Router** | `ZionDex/router/` | ✅ **Built** — 14/14 Rust tests, real Uni V3 prices, EVM signing, **L3 WARP API integration** (port 8453) |
 | **ZionDex AMM Contracts** | `ZionDex/contracts/` | ✅ **Built** — 7/7 Foundry tests, PoolManager + Hooks + Router + ZDX + Staking |
 | **TypeScript SDK** | `ZionDex/sdk/` | ✅ **Built** — `@zion/dex-sdk`, full type defs, swap + liquidity managers |
+| **Web Landing Page** | `APP&WEB/website-v2.9/src/app/ziondex/page.tsx` | ✅ **Live Beta** — marketing page, architecture, roadmap, CTA → `/dex` |
+| **Web Swap UI** | `APP&WEB/website-v2.9/src/app/dex/page.tsx` | ✅ **Live Beta** — CrossChainSwapWidget, PriceChart, RecentSwaps, Quick Links |
+| **Liquidity UI** | `APP&WEB/website-v2.9/src/app/dex/liquidity/page.tsx` | ✅ **Built** — PoolList + AddLiquidity + RemoveLiquidity |
+| **Portfolio UI** | `APP&WEB/website-v2.9/src/app/dex/portfolio/page.tsx` | ✅ **Built** — LP positions + swap history + stats |
+| **Mobile Swap** | `APP&WEB/mobile-app/src/screens/DexScreen.js` | ✅ **Built** — React Native, bottom nav tab |
+| **Desktop Swap** | `APP&WEB/desktop-agent/src/ui/` | ✅ **Built** — Electron dex-view, sidebar nav |
 | Swap Aggregator (legacy) | `V3/L2/swap-aggregator/` | ⚠️ Skeleton — superseded by ZionDex Router |
 | LI.FI Widget | `APP&WEB/website-v2.9/src/app/defi/page.tsx` | ✅ Live, aggregates 30+ DEX + 20+ bridges |
 | Atomic Swap UI | `APP&WEB/website-v2.9/src/app/swap/page.tsx` | ✅ Live, HTLC initiation/claim/refund |
 | Bridge UI | `APP&WEB/website-v2.9/src/app/bridge/page.tsx` | ✅ Live, burn wZION → unlock ZION |
 
-> **Implementation Status (2026-07-11):** ZionDex backend is **functionally complete** — Router (Rust, 14 tests), AMM contracts (Solidity, 7 tests), and TypeScript SDK all built and passing. Remaining: deploy contracts on Base, build `/dex` frontend page, Solana swap execution, security audit. See `ZionDex/README.md` for full details.
+> **Implementation Status (2026-07-12):** ZionDex is **Live Beta** — backend (Router 14 tests, AMM 7 tests, SDK), frontend (`/dex` swap UI + `/dex/liquidity` + `/dex/portfolio`), mobile (React Native), desktop (Electron), and L3 WARP integration all complete. Landing page at `/ziondex`. Remaining: deploy AMM contracts on Base, security audit, intent-based execution. See `ZionDex/README.md` for full details.
 
 ### 2.4 Token Model
 
@@ -1092,7 +1098,8 @@ ZionDex/                        # ✅ BUILT — standalone directory (not under 
 │       └── ziondex.ts          # Main SDK entry point
 └── README.md                   # Full documentation
 
-APP&WEB/website-v2.9/src/app/dex/   # 🔲 Pending — frontend
+APP&WEB/website-v2.9/src/app/dex/   # ✅ Live Beta — swap UI + liquidity + portfolio
+APP&WEB/website-v2.9/src/app/ziondex/ # ✅ Live Beta — landing page
 ├── page.tsx                        # Main DEX page
 ├── swap/
 ├── liquidity/
@@ -1100,7 +1107,7 @@ APP&WEB/website-v2.9/src/app/dex/   # 🔲 Pending — frontend
 ├── portfolio/
 └── components/
 
-APP&WEB/mobile-app/src/screens/dex/ # 🔲 Pending — mobile
+APP&WEB/mobile-app/src/screens/DexScreen.js # ✅ Built — React Native swap screen
 ├── SwapScreen.tsx
 ├── LiquidityScreen.tsx
 ├── BridgeScreen.tsx
