@@ -120,7 +120,7 @@ impl AuxPowClient {
             self.profile.coin
         );
 
-        let stream = timeout(Duration::from_secs(10), TcpStream::connect(&addr))
+        let stream = timeout(Duration::from_secs(15), TcpStream::connect(&addr))
             .await
             .map_err(|_| anyhow!("connect timeout to {}", addr))?
             .context("TCP connect failed")?;
@@ -152,7 +152,7 @@ impl AuxPowClient {
         let resp = self.send_request(&req).await?;
         if resp.get("result").is_some() {
             *self.subscribed.lock().await = true;
-            debug!("AuxPow: subscribed to {}", self.profile.coin);
+            println!("auxpow: subscribed to {} — result={}", self.profile.coin, resp.get("result").unwrap_or(&serde_json::Value::Null));
             Ok(())
         } else {
             bail!("subscribe failed: {:?}", resp.get("error"));
@@ -160,12 +160,19 @@ impl AuxPowClient {
     }
 
     /// Send `mining.authorize` with wallet.worker name.
+    /// For zpool coins, password is `c=BTC` to force BTC payout.
+    /// For 2miners coins, password is ignored (send `c=BTC` anyway, harmless).
     async fn authorize(&self, payout_wallet: &str) -> Result<()> {
         let worker = format!("{}.{}", payout_wallet, self.profile.worker_name);
+        let password = "c=BTC";
+        println!(
+            "auxpow: authorizing worker={} password={} on {}",
+            worker, password, self.profile.coin
+        );
         let req = json!({
             "id": 2,
             "method": "mining.authorize",
-            "params": [worker, ""]
+            "params": [worker, password]
         });
         let resp = self.send_request(&req).await?;
         let ok = resp
@@ -174,15 +181,26 @@ impl AuxPowClient {
             .unwrap_or(false);
         if ok {
             *self.authorized.lock().await = true;
-            debug!("AuxPow: authorized as {}", worker);
+            println!("auxpow: authorized as {} on {}", worker, self.profile.coin);
             Ok(())
         } else {
-            bail!("authorize failed: {:?}", resp.get("error"));
+            let err = resp.get("error");
+            println!(
+                "auxpow: authorize FAILED for {} on {} — result={:?} error={:?}",
+                worker,
+                self.profile.coin,
+                resp.get("result"),
+                err
+            );
+            bail!("authorize failed: {:?}", err);
         }
     }
 
     /// Send a JSON-RPC request and read the response.
+    /// Skips notifications (messages with `method` field) until it finds
+    /// a response with matching `id`.
     async fn send_request(&self, req: &Value) -> Result<Value> {
+        let req_id = req.get("id").cloned();
         let mut line = serde_json::to_string(req)?;
         line.push('\n');
 
@@ -196,10 +214,46 @@ impl AuxPowClient {
             }
         }
 
-        // Read response
-        let resp = self.read_line().await?;
-        let value: Value = serde_json::from_str(&resp)?;
-        Ok(value)
+        // Read lines until we find a response with matching id.
+        // Pools may send notifications (mining.set_difficulty, mining.notify)
+        // between our request and the response — skip those.
+        loop {
+            let resp = self.read_line().await?;
+            let value: Value = serde_json::from_str(&resp)?;
+
+            // Check if this is a notification (has "method" field, no matching id)
+            if value.get("method").is_some() {
+                // It's a notification — dispatch it and keep reading
+                debug!("AuxPow: skipping notification during request: {}", value.get("method").unwrap_or(&serde_json::Value::Null));
+                // Handle the notification inline
+                if let Some(method) = value.get("method").and_then(|m| m.as_str()) {
+                    if method == "mining.notify" {
+                        if let Some(params) = value.get("params") {
+                            if let Ok(job) = self.parse_notify_params(params) {
+                                *self.current_job.lock().await = Some(job);
+                                self.job_notify.notify_waiters();
+                            }
+                        }
+                    }
+                }
+                continue;
+            }
+
+            // Check if id matches (if request has an id)
+            if let Some(ref expected_id) = req_id {
+                if let Some(resp_id) = value.get("id") {
+                    if resp_id == expected_id {
+                        return Ok(value);
+                    }
+                    // Different id — keep reading (shouldn't happen normally)
+                    debug!("AuxPow: skipping response with mismatched id");
+                    continue;
+                }
+            }
+
+            // No id in request (shouldn't happen for our requests) — return first non-notification
+            return Ok(value);
+        }
     }
 
     /// Read a single line from the stratum stream.

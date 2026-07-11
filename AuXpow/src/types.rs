@@ -98,6 +98,21 @@ impl ExternalCoin {
         }
     }
 
+    /// Whether this coin's default pool supports BTC wallet payout.
+    /// 2miners and zpool both support BTC payout. Others may not.
+    pub fn supports_btc_payout(self) -> bool {
+        matches!(
+            self,
+            Self::KAS | Self::ERG | Self::RVN | Self::ETC
+                | Self::EVR | Self::MEWC
+        )
+    }
+
+    /// Whether this coin's default pool is on zpool (requires c=BTC password).
+    pub fn is_zpool(self) -> bool {
+        matches!(self, Self::EVR | Self::MEWC)
+    }
+
     pub fn all() -> &'static [ExternalCoin] {
         &[
             Self::DCR,
@@ -295,6 +310,11 @@ pub struct AuxPowConfig {
     pub circuit_breaker_reset_secs: u64,
 }
 
+/// Default BTC wallet for external pool payouts.
+/// 2miners and zpool both support BTC payout — using a BTC wallet address
+/// as the Stratum username routes all mining revenue to this BTC address.
+pub const DEFAULT_BTC_WALLET: &str = "bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh";
+
 impl Default for AuxPowConfig {
     fn default() -> Self {
         Self {
@@ -305,7 +325,7 @@ impl Default for AuxPowConfig {
             region: "eu".to_string(),
             check_interval_secs: 300,
             hysteresis_pct: 10.0,
-            payout_wallet: String::new(),
+            payout_wallet: DEFAULT_BTC_WALLET.to_string(),
             worker_name: "zion_auxpow".to_string(),
             circuit_breaker_threshold: 10,
             circuit_breaker_reset_secs: 60,
@@ -430,6 +450,36 @@ mod tests {
     }
 
     #[test]
+    fn clore_pool_is_woolypooly() {
+        assert_eq!(ExternalCoin::CLORE.default_pool(), "clore.woolypooly.com:3090");
+    }
+
+    #[test]
+    fn kas_supports_btc_payout() {
+        assert!(ExternalCoin::KAS.supports_btc_payout());
+        assert!(ExternalCoin::ETC.supports_btc_payout());
+        assert!(ExternalCoin::EVR.supports_btc_payout());
+        assert!(!ExternalCoin::CLORE.supports_btc_payout());
+        assert!(!ExternalCoin::DCR.supports_btc_payout());
+        assert!(!ExternalCoin::XMR.supports_btc_payout());
+    }
+
+    #[test]
+    fn zpool_coins_identified() {
+        assert!(ExternalCoin::EVR.is_zpool());
+        assert!(ExternalCoin::MEWC.is_zpool());
+        assert!(!ExternalCoin::KAS.is_zpool());
+        assert!(!ExternalCoin::ETC.is_zpool());
+    }
+
+    #[test]
+    fn default_wallet_is_btc() {
+        let cfg = AuxPowConfig::default();
+        assert_eq!(cfg.payout_wallet, DEFAULT_BTC_WALLET);
+        assert!(cfg.payout_wallet.starts_with("bc1q"));
+    }
+
+    #[test]
     fn select_best_coin_picks_highest() {
         let entries = vec![
             ProfitEntry { coin: ExternalCoin::DCR, revenue_per_day_usd: 0.45, power_cost_usd: 0.08 },
@@ -468,6 +518,7 @@ mod tests {
         assert!(!cfg.enabled);
         assert_eq!(cfg.allocation_pct, 0.25);
         assert_eq!(cfg.check_interval_secs, 300);
+        assert_eq!(cfg.payout_wallet, DEFAULT_BTC_WALLET);
     }
 
     #[test]
@@ -475,15 +526,18 @@ mod tests {
         std::env::set_var("ZION_AUXPOW_ENABLED", "1");
         std::env::set_var("ZION_AUXPOW_COIN", "dcr");
         std::env::set_var("ZION_AUXPOW_ALLOCATION", "0.30");
+        std::env::set_var("ZION_AUXPOW_WALLET", "bc1qtestwallet");
 
         let cfg = AuxPowConfig::from_env();
         assert!(cfg.enabled);
         assert_eq!(cfg.force_coin, Some(ExternalCoin::DCR));
         assert!((cfg.allocation_pct - 0.30).abs() < 0.001);
+        assert_eq!(cfg.payout_wallet, "bc1qtestwallet");
 
         std::env::remove_var("ZION_AUXPOW_ENABLED");
         std::env::remove_var("ZION_AUXPOW_COIN");
         std::env::remove_var("ZION_AUXPOW_ALLOCATION");
+        std::env::remove_var("ZION_AUXPOW_WALLET");
     }
 
     #[test]
