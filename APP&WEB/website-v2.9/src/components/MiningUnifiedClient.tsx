@@ -449,11 +449,11 @@ export default function MiningUnifiedClient() {
             <p className="text-xs uppercase tracking-[0.3em] text-gray-500 mb-2">
               {cs ? 'Rychla instalace (Linux x86_64)' : 'Quick install (Linux x86_64)'}
             </p>
-            <div className="rounded-xl bg-black/60 p-3 font-mono text-xs text-gray-300 overflow-x-auto">
+            <div className="zion-rainbow-sub p-3 bg-black/40 font-mono text-xs text-gray-300 overflow-x-auto" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <span className="text-gray-500">$</span>{" "}
               wget https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.5-beta/zion-cli-linux-x86_64.tar.gz
             </div>
-            <div className="rounded-xl bg-black/60 p-3 font-mono text-xs text-gray-300 overflow-x-auto mt-2">
+            <div className="zion-rainbow-sub p-3 bg-black/40 font-mono text-xs text-gray-300 overflow-x-auto mt-2" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <span className="text-gray-500">$</span>{" "}
               tar xzf zion-cli-linux-x86_64.tar.gz && chmod +x zion && ./zion --version
             </div>
@@ -469,6 +469,8 @@ export default function MiningUnifiedClient() {
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
+          className="zion-rainbow-card p-8"
+          style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
         >
           <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
             <Layers className="w-6 h-6 text-zion-purple" />
@@ -512,6 +514,8 @@ export default function MiningUnifiedClient() {
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
+          className="zion-rainbow-card p-8"
+          style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
         >
           <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
             <BookOpen className="w-6 h-6 text-zion-gold" />
@@ -529,9 +533,10 @@ export default function MiningUnifiedClient() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm border whitespace-nowrap transition-all ${
                   activeTab === tab.id
-                    ? "bg-white/10 border-white/20 text-white font-medium"
-                    : "bg-white/5 border-white/10 text-white/40 hover:bg-white/10 hover:text-white/60"
+                    ? "zion-rainbow-sub border-zion-gold text-zion-gold font-medium"
+                    : "bg-black/60 border-white/10 text-white/50 hover:bg-white/10 hover:text-white/60"
                 }`}
+                style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
               >
                 <tab.icon
                   className={`w-4 h-4 ${activeTab === tab.id ? tab.color : ""}`}
@@ -579,7 +584,7 @@ ls -la target/release/zion-miner`}
   --wallet YOUR_ZION_ADDRESS \\
   --threads $(nproc)`}
                   />
-                  <div className="rounded-xl bg-zion-cyan/5 border border-zion-cyan/10 p-4">
+                  <div className="zion-rainbow-sub p-4" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                     <h4 className="text-sm font-medium text-zion-cyan mb-2">💡 CPU Tips</h4>
                     <ul className="text-sm text-white/40 space-y-1">
                       <li>• {cs ? 'Ekam Deeksha BLAKE3 je rychly a nizko-pametovy — funguje i na slabych CPU' : 'Ekam Deeksha BLAKE3 is fast and low-memory — works on weak CPUs too'}</li>
@@ -659,7 +664,7 @@ cargo build --release -p zion-public --features gpu-opencl
                   />
                 </div>
 
-                <div className="rounded-xl bg-zion-gold/5 border border-zion-gold/10 p-4">
+                <div className="zion-rainbow-sub p-4" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                   <h4 className="text-sm font-medium text-zion-gold mb-2">⚡ GPU Tips</h4>
                   <ul className="text-sm text-white/40 space-y-1">
                     <li>• {cs ? 'Ekam Deeksha pouziva 256 KiB scratchpad s nahodnymi cteni — memory-hard, ASIC-resistant' : 'Ekam Deeksha uses 256 KiB scratchpad with random reads — memory-hard, ASIC-resistant'}</li>
@@ -724,7 +729,7 @@ cargo build --release -p zion-public --features gpu-opencl
                   ))}
                 </div>
 
-                <div className="mt-5 rounded-xl bg-zion-purple/5 border border-zion-purple/10 p-4">
+                <div className="mt-5 zion-rainbow-sub p-4" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                   <h4 className="text-sm font-medium text-zion-purple mb-2">📊 {cs ? 'Sledujte sveho minera' : 'Monitor Your Miner'}</h4>
                   <p className="text-sm text-white/40">
                     {cs ? 'Sledujte hashrate, shares a payouty v ' : 'Track hashrate, shares, and payouts on the '}
@@ -747,7 +752,7 @@ cargo build --release -p zion-public --features gpu-opencl
                   {cs ? 'Tezte primo proti blockchainu. Ziskavate celou aktualni blokovou odmenu a fees za nalezeny blok, ale payouty jsou mene pravidelne nez u poolu.' : 'Mine directly against the blockchain. You get the full current block reward and fees when you find a block, but payouts are less frequent than with pool mining.'}
                 </p>
 
-                <div className="rounded-xl bg-amber-500/5 border border-amber-500/10 p-4 mb-5">
+                <div className="zion-rainbow-sub p-4 mb-5" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                   <h4 className="text-sm font-medium text-amber-400 mb-1">⚠️ {cs ? 'Kdo by mel tezit solo?' : 'Who should solo mine?'}</h4>
                   <p className="text-sm text-white/40">
                     {cs ? 'Doporuceno, pokud mate vyznamny hashrate (>10 % site). Jinak dava pool tezba stabilnejsi payouty.' : 'Recommended if you have significant hashrate (>10% of network). Otherwise, pool mining gives more consistent payouts.'}
@@ -770,7 +775,7 @@ cargo build --release -p zion-public --features gpu-opencl
                 </div>
 
                 <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-4">
+                  <div className="zion-rainbow-sub p-4" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                     <h4 className="text-sm font-medium text-emerald-400 mb-2">✅ {cs ? 'Vyhody' : 'Pros'}</h4>
                     <ul className="text-sm text-white/40 space-y-1">
                       <li>• {cs ? 'Plna aktualni blokova odmena + fees' : 'Full current block reward + fees'}</li>
@@ -779,7 +784,7 @@ cargo build --release -p zion-public --features gpu-opencl
                       <li>• {cs ? 'Soukromi - zadny pool nezna vasu adresu' : 'Privacy — no pool knows your address'}</li>
                     </ul>
                   </div>
-                  <div className="rounded-xl bg-red-500/5 border border-red-500/10 p-4">
+                  <div className="zion-rainbow-sub p-4" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                     <h4 className="text-sm font-medium text-red-400 mb-2">❌ {cs ? 'Nevyhody' : 'Cons'}</h4>
                     <ul className="text-sm text-white/40 space-y-1">
                       <li>• {cs ? 'Nepravidelne payouty (zalozene na stesti)' : 'Irregular payouts (luck-based)'}</li>
@@ -1052,7 +1057,7 @@ sudo ufw status`}
   -H "Content-Type: application/json" \\
   -d '{"jsonrpc":"2.0","id":1,"method":"getPeerCount"}' | jq .`}
             />
-            <div className="rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-4">
+            <div className="zion-rainbow-sub p-4" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <div className="flex items-start gap-3">
                 <Check className="w-5 h-5 text-emerald-400 mt-0.5 shrink-0" />
                 <div className="text-sm text-white/60">
@@ -1110,8 +1115,7 @@ sudo ufw status`}
           initial={{ opacity: 0, scale: 0.98 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
-          className="zion-rainbow-card p-10 text-center"
-          style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
+          className="zion-cta-banner"
         >
           <Pickaxe className="mx-auto h-12 w-12 text-zion-gold" />
           <h2 className="mt-6 text-3xl font-semibold text-white">{cs ? 'Pripraveni tezit ZION?' : 'Ready to mine ZION?'}</h2>
