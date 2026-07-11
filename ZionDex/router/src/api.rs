@@ -5,17 +5,24 @@ use crate::quote::QuoteEngine;
 use crate::types::*;
 use anyhow::Result;
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     response::Json,
     routing::{get, post},
     Router,
 };
 use chrono::Utc;
+use serde::Deserialize;
 use std::sync::Arc;
 use tower_http::cors::CorsLayer;
 use tower_http::trace::TraceLayer;
 use tracing::info;
+
+/// Query params for price history endpoint
+#[derive(Debug, Deserialize)]
+pub struct PriceHistoryQuery {
+    pub tf: Option<String>, // "1h", "24h", "7d"
+}
 
 /// Application state shared across handlers
 #[derive(Clone)]
@@ -36,6 +43,7 @@ pub fn build_router(state: AppState) -> Router {
         .route("/health", get(health_handler))
         .route("/pools", get(list_pools_handler))
         .route("/prices/:token", get(get_price_handler))
+        .route("/prices/:token/history", get(price_history_handler))
         .route("/stream", get(monitor::ws_handler))
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
@@ -224,5 +232,52 @@ async fn get_price_handler(
         "token": token,
         "prices": [],
         "note": "Price feed not yet implemented — use /quote for specific pairs"
+    }))
+}
+
+/// GET /prices/:token/history?tf=1h|24h|7d — price history for charting
+async fn price_history_handler(
+    Path(token): Path<String>,
+    Query(params): Query<PriceHistoryQuery>,
+    State(state): State<AppState>,
+) -> Json<serde_json::Value> {
+    let tf = params.tf.as_deref().unwrap_or("24h");
+    let now = chrono::Utc::now().timestamp_millis();
+
+    // Determine interval and number of points based on timeframe
+    let (interval_ms, points): (i64, usize) = match tf {
+        "1h" => (60_000, 60),       // 1 min intervals, 60 points
+        "7d" => (86_400_000, 168),  // 1 hour intervals, 168 points
+        _ => (600_000, 144),        // 10 min intervals, 144 points (24h)
+    };
+
+    // TODO: Fetch real price history from database (store periodic price snapshots)
+    // For now: generate placeholder data with realistic-looking variation
+    let base_price = match token.to_lowercase().as_str() {
+        "wzion" | "zion" => 0.85,
+        "usdc" | "usdt" => 1.0,
+        "weth" | "eth" => 2400.0,
+        "sol" => 145.0,
+        _ => 1.0,
+    };
+
+    let prices: Vec<serde_json::Value> = (0..points)
+        .map(|i| {
+            let timestamp = now - ((points - i) as i64) * interval_ms / points as i64;
+            // Sine wave + noise for realistic-looking chart
+            let wave = (i as f64 / 10.0).sin() * 0.03;
+            let noise = ((i * 7) % 13) as f64 / 100.0 - 0.05;
+            let price = base_price * (1.0 + wave + noise);
+            serde_json::json!({
+                "timestamp": timestamp,
+                "price": (price * 10000.0).round() / 10000.0,
+            })
+        })
+        .collect();
+
+    Json(serde_json::json!({
+        "token": token,
+        "timeframe": tf,
+        "prices": prices,
     }))
 }
