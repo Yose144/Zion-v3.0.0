@@ -417,9 +417,10 @@ export default function PoolDashboard() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.02 }}
+          className="zion-rainbow-card p-6 md:p-8"
+          style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
-          <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-            <div className="flex flex-wrap items-center gap-2 md:gap-3">
+          <div className="flex flex-wrap items-center gap-2 md:gap-3">
               <span className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mr-1 hidden sm:inline">
                 {cs ? 'Pool sekce' : 'Pool sections'}
               </span>
@@ -437,9 +438,10 @@ export default function PoolDashboard() {
                     onClick={() => setActiveTab(tab.id as typeof activeTab)}
                     className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition ${
                       isActive
-                        ? 'border border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan hover:bg-zion-cyan/20'
+                        ? 'zion-rainbow-sub text-white'
                         : 'border border-white/10 bg-white/5 text-gray-300 hover:border-white/25 hover:text-white'
                     }`}
+                    style={isActive ? ({ '--rc': '147, 51, 234' } as React.CSSProperties) : undefined}
                   >
                     <tab.icon className="h-3.5 w-3.5" />
                     {tab.label}
@@ -447,7 +449,6 @@ export default function PoolDashboard() {
                 );
               })}
             </div>
-          </div>
         </motion.section>
 
         {activeTab === 'overview' && (
@@ -457,6 +458,8 @@ export default function PoolDashboard() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.04 }}
+          className="zion-rainbow-card p-6 md:p-8"
+          style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <form
             onSubmit={(e) => {
@@ -470,8 +473,6 @@ export default function PoolDashboard() {
               setSearchError("");
               router.push(`/pool/miner/${addr}`);
             }}
-            className="zion-rainbow-card p-4 md:p-6"
-            style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
           >
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1 relative">
@@ -502,6 +503,8 @@ export default function PoolDashboard() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.06 }}
+          className="zion-rainbow-card p-6 md:p-8"
+          style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Telemetrie' : 'Telemetry'}</p>
@@ -559,7 +562,7 @@ export default function PoolDashboard() {
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6 text-center">
+            <div className="zion-rainbow-sub p-6 text-center" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <XCircle className="h-8 w-8 text-red-400 mx-auto mb-3" />
               <p className="text-gray-400">{cs ? 'Data poolu nejsou dostupná. Servery mohou být offline.' : 'Pool data unavailable. Servers may be offline.'}</p>
             </div>
@@ -572,6 +575,8 @@ export default function PoolDashboard() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.07 }}
+          className="zion-rainbow-card p-6 md:p-8"
+          style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Výkon' : 'Performance'}</p>
@@ -678,6 +683,8 @@ export default function PoolDashboard() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.08 }}
+          className="zion-rainbow-card p-6 md:p-8"
+          style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Provoz' : 'Operations'}</p>
@@ -754,7 +761,7 @@ export default function PoolDashboard() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-zion-cyan/20 bg-zion-cyan/10 p-4 text-sm text-zion-cyan">
+                <div className="zion-rainbow-sub p-4 text-sm text-zion-cyan" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                   <div className="flex items-center justify-between gap-3">
                     <span>{cs ? 'Stav telemetrie' : 'Telemetry status'}</span>
                     <span className="font-mono text-xs text-white">
@@ -777,6 +784,8 @@ export default function PoolDashboard() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
+          className="zion-rainbow-card p-6 md:p-8"
+          style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Infrastruktura' : 'Infrastructure'}</p>
@@ -863,6 +872,8 @@ export default function PoolDashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.18 }}
           id="miners"
+          className="zion-rainbow-card p-6 md:p-8"
+          style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Adresář' : 'Directory'}</p>
@@ -874,20 +885,22 @@ export default function PoolDashboard() {
             <div className="mt-1 inline-flex rounded-xl border border-white/10 bg-white/5 p-1">
               <button
                 onClick={() => setActiveOnly(true)}
-                className={`px-3 py-1.5 text-xs rounded-lg transition ${activeOnly ? 'bg-zion-cyan/20 text-zion-cyan' : 'text-gray-400 hover:text-white'}`}
+                className={`px-3 py-1.5 text-xs rounded-lg transition ${activeOnly ? 'zion-rainbow-sub text-white' : 'text-gray-400 hover:text-white'}`}
+                style={activeOnly ? ({ '--rc': '147, 51, 234' } as React.CSSProperties) : undefined}
               >
                 {cs ? 'Jen aktivní' : 'Active only'}
               </button>
               <button
                 onClick={() => setActiveOnly(false)}
-                className={`px-3 py-1.5 text-xs rounded-lg transition ${!activeOnly ? 'bg-zion-cyan/20 text-zion-cyan' : 'text-gray-400 hover:text-white'}`}
+                className={`px-3 py-1.5 text-xs rounded-lg transition ${!activeOnly ? 'zion-rainbow-sub text-white' : 'text-gray-400 hover:text-white'}`}
+                style={!activeOnly ? ({ '--rc': '147, 51, 234' } as React.CSSProperties) : undefined}
               >
                 {cs ? 'Všichni mineři' : 'All miners'}
               </button>
             </div>
           </div>
 
-          <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+          <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -904,7 +917,7 @@ export default function PoolDashboard() {
                     const isActive = now - m.last_share < 600;
                     const serverObj = data?.servers.find(s => s.id === m.server);
                     return (
-                      <tr key={m.address} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
+                      <tr key={m.address} className="border-b border-white/[0.04] transition-colors">
                         <td className="px-5 py-3.5 text-gray-500 font-mono">{i + 1}</td>
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-2">
@@ -942,6 +955,8 @@ export default function PoolDashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.22 }}
           id="blocks"
+          className="zion-rainbow-card p-6 md:p-8"
+          style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Ledger' : 'Ledger'}</p>
@@ -952,7 +967,7 @@ export default function PoolDashboard() {
             <p className="text-sm text-gray-400">{cs ? 'Nejnovější potvrzené chain bloky z aktuálního v3.0.5 runtime. Veřejná atribuce vítěze poolu zatím není vystavena samostatně.' : 'Latest confirmed chain blocks from the current v3.0.5 runtime. Public pool winner attribution is not exposed separately yet.'}</p>
           </div>
 
-          <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+          <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -967,7 +982,7 @@ export default function PoolDashboard() {
                 </thead>
                 <tbody>
                   {(data?.recent_blocks ?? []).map((b, i) => (
-                    <tr key={`${b.height}-${i}`} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
+                    <tr key={`${b.height}-${i}`} className="border-b border-white/[0.04] transition-colors">
                       <td className="px-5 py-3.5">
                         <Link href={`/explorer/block?height=${b.height}`} className="text-zion-cyan hover:text-white font-mono font-semibold transition-colors">
                           #{fmtNum(b.height)}
@@ -1002,6 +1017,8 @@ export default function PoolDashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.26 }}
           id="start-mining"
+          className="zion-rainbow-card p-6 md:p-8"
+          style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Začínáme' : 'Getting Started'}</p>
@@ -1025,7 +1042,7 @@ export default function PoolDashboard() {
                 </div>
               </div>
               <p className="text-sm text-gray-300 mb-3">{cs ? 'Stáhněte desktop peněženku ZION nebo použijte webovou peněženku pro vytvoření těžební adresy. Pool odmítne připojení bez platné payout adresy.' : 'Download the ZION desktop wallet or use the web wallet to generate your mining address. The pool rejects connections without a valid payout address.'}</p>
-              <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2.5 text-xs text-amber-200 flex items-start gap-2 mb-3">
+              <div className="zion-rainbow-sub p-3 text-xs text-amber-200 flex items-start gap-2 mb-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                 <Bell className="h-3.5 w-3.5 mt-0.5" />
                 <span>{cs ? 'Kritické: ZION_PAYOUT_ADDRESS musí být platná 44-znaková zion1... adresa. Pool odmítne spojení ("pool closed the connection") bez ní.' : 'Critical: ZION_PAYOUT_ADDRESS must be a valid 44-char zion1... address. The pool rejects the connection ("pool closed the connection") without it.'}</span>
               </div>
@@ -1114,18 +1131,34 @@ export default function PoolDashboard() {
               {/* Mode + OS toggles */}
               <div className="flex flex-wrap items-center gap-3 mb-4">
                 <div className="inline-flex rounded-xl border border-white/10 bg-white/5 p-1">
-                  <button onClick={() => setMiningMode('cpu')} className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${miningMode === 'cpu' ? 'bg-zion-cyan/20 text-zion-cyan' : 'text-gray-400 hover:text-white'}`}>
+                  <button
+                    onClick={() => setMiningMode('cpu')}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${miningMode === 'cpu' ? 'zion-rainbow-sub text-white' : 'text-gray-400 hover:text-white'}`}
+                    style={miningMode === 'cpu' ? ({ '--rc': '147, 51, 234' } as React.CSSProperties) : undefined}
+                  >
                     <Cpu className="h-3.5 w-3.5 inline mr-1.5" /> {cs ? 'CPU těžba' : 'CPU Mining'}
                   </button>
-                  <button onClick={() => setMiningMode('gpu')} className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${miningMode === 'gpu' ? 'bg-zion-cyan/20 text-zion-cyan' : 'text-gray-400 hover:text-white'}`}>
+                  <button
+                    onClick={() => setMiningMode('gpu')}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${miningMode === 'gpu' ? 'zion-rainbow-sub text-white' : 'text-gray-400 hover:text-white'}`}
+                    style={miningMode === 'gpu' ? ({ '--rc': '147, 51, 234' } as React.CSSProperties) : undefined}
+                  >
                     <Zap className="h-3.5 w-3.5 inline mr-1.5" /> {cs ? 'GPU těžba' : 'GPU Mining'}
                   </button>
                 </div>
                 <div className="inline-flex rounded-xl border border-white/10 bg-white/5 p-1">
-                  <button onClick={() => setMinerOS('linux')} className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${minerOS === 'linux' ? 'bg-zion-cyan/20 text-zion-cyan' : 'text-gray-400 hover:text-white'}`}>
+                  <button
+                    onClick={() => setMinerOS('linux')}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${minerOS === 'linux' ? 'zion-rainbow-sub text-white' : 'text-gray-400 hover:text-white'}`}
+                    style={minerOS === 'linux' ? ({ '--rc': '147, 51, 234' } as React.CSSProperties) : undefined}
+                  >
                     Linux/macOS
                   </button>
-                  <button onClick={() => setMinerOS('windows')} className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${minerOS === 'windows' ? 'bg-zion-cyan/20 text-zion-cyan' : 'text-gray-400 hover:text-white'}`}>
+                  <button
+                    onClick={() => setMinerOS('windows')}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${minerOS === 'windows' ? 'zion-rainbow-sub text-white' : 'text-gray-400 hover:text-white'}`}
+                    style={minerOS === 'windows' ? ({ '--rc': '147, 51, 234' } as React.CSSProperties) : undefined}
+                  >
                     Windows
                   </button>
                 </div>
@@ -1170,12 +1203,12 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
                   </div>
                 )}
                 {miningMode === 'gpu' && (
-                  <div className="rounded-xl border border-zion-cyan/20 bg-zion-cyan/10 px-3 py-2.5 text-xs text-zion-cyan/90 flex items-start gap-2">
+                  <div className="zion-rainbow-sub p-3 text-xs text-zion-cyan/90 flex items-start gap-2" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                     <Zap className="h-3.5 w-3.5 mt-0.5" />
                     <span>{cs ? 'GPU: ZION_GPU_BACKEND=opencl (nebo cuda, metal). ZION_NONCE_COUNT_GPU=262144 je kritické pro GPU hashrate. ZION_LOOP_COUNT=1000000 zabraňuje reconnectům.' : 'GPU: ZION_GPU_BACKEND=opencl (or cuda, metal). ZION_NONCE_COUNT_GPU=262144 is critical for GPU hashrate. ZION_LOOP_COUNT=1000000 prevents reconnects.'}</span>
                   </div>
                 )}
-                <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2.5 text-xs text-amber-200 flex items-start gap-2">
+                <div className="zion-rainbow-sub p-3 text-xs text-amber-200 flex items-start gap-2" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                   <Shield className="h-3.5 w-3.5 mt-0.5" />
                   <span>{cs ? 'Pool a miner binárky musí být zkompilovány ze stejné zdrojové verze — protokol není zpětně kompatibilní.' : 'Pool and miner binaries must be compiled from the same source version — protocol is not backward compatible.'}</span>
                 </div>
@@ -1212,7 +1245,7 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
                   <p className="text-lg font-bold text-white font-mono">{(data?.fee?.pool_fee ?? 1)}%</p>
                 </div>
               </div>
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 text-xs text-gray-300 mb-3">
+              <div className="zion-rainbow-sub p-3 text-xs text-gray-300 mb-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                 {cs ? 'Rozdělení coinbase: 89 % miner · 5 % humanitární tithe · 5 % fond Issobella · 1 % pool fee. PPLNS — férová distribuce podle odevzdaných shares.' : 'Coinbase split: 89% miner · 5% humanitarian tithe · 5% Issobella fund · 1% pool fee. PPLNS — fair distribution based on contributed shares.'}
               </div>
               <Link href="/pool/miner/YOUR_ADDRESS" className="inline-flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors">
@@ -1227,6 +1260,8 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.30 }}
+          className="zion-rainbow-card p-6 md:p-8"
+          style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Funkce' : 'Features'}</p>
@@ -1262,6 +1297,8 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.32 }}
+          className="zion-rainbow-card p-6 md:p-8"
+          style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Pro nástroje' : 'Pro Tools'}</p>
@@ -1287,7 +1324,7 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
                 <div className="flex items-center justify-between"><span className="text-gray-500">{cs ? 'Podíl v poolu' : 'Pool share'}</span><span className="text-zion-cyan font-mono">{mySharePct.toFixed(6)}%</span></div>
                 <div className="flex items-center justify-between"><span className="text-gray-500">{cs ? 'Pozorované bloky/den' : 'Observed blocks/day'}</span><span className="text-gray-200 font-mono">{blocksPerDay.toFixed(2)}</span></div>
                 <div className="flex items-center justify-between"><span className="text-gray-500">{cs ? 'Odměna / blok' : 'Reward / block'}</span><span className="text-gray-200 font-mono">{rewardPerBlock.toFixed(4)} ZION</span></div>
-                <div className="mt-3 rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2.5 flex items-center justify-between">
+                <div className="mt-3 zion-rainbow-sub p-3 flex items-center justify-between" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                   <span className="text-emerald-200 text-xs uppercase tracking-wider">{cs ? 'Odhad denní odměny' : 'Estimated daily reward'}</span>
                   <span className="text-emerald-300 font-bold font-mono">{myDailyZion.toFixed(4)} ZION</span>
                 </div>
@@ -1302,7 +1339,7 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
                   <pre className="block text-xs text-zion-cyan whitespace-pre-wrap break-all font-mono">{zionMinerFailoverCmd}</pre>
                   <div className="mt-2"><CopyButton text={zionMinerFailoverCmd} /></div>
                 </div>
-                <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2.5 text-xs text-amber-200 flex items-start gap-2">
+                <div className="zion-rainbow-sub p-3 text-xs text-amber-200 flex items-start gap-2" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                   <Shield className="h-3.5 w-3.5 mt-0.5" />
                   <span>{cs ? 'Pro failover přepněte ZION_POOL_ADDR na záložní endpoint a restartujte zion-miner. Pool a miner musí být ze stejné zdrojové verze.' : 'For failover, switch ZION_POOL_ADDR to the backup endpoint and restart zion-miner. Pool and miner must be from the same source version.'}</span>
                 </div>
@@ -1324,7 +1361,7 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
                   <span className="text-gray-200">Mission control</span>
                   <ExternalLink className="h-3.5 w-3.5 text-zion-gold" />
                 </a>
-                <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2.5 text-xs text-amber-200 flex items-start gap-2">
+                <div className="zion-rainbow-sub p-3 text-xs text-amber-200 flex items-start gap-2" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                   <Bell className="h-3.5 w-3.5 mt-0.5" />
                   <span>{cs ? 'Nastavte alert: pokud poslední share přesáhne 10 minut nebo míra přijetí klesne pod 95 %, přepněte na záložní endpoint.' : 'Set alert: if last share exceeds 10 minutes or accept rate drops below 95%, rotate to the backup endpoint.'}</span>
                 </div>
@@ -1338,6 +1375,8 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.34 }}
+          className="zion-rainbow-card p-6 md:p-8"
+          style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">FAQ</p>
@@ -1371,7 +1410,7 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.36 }}
-          className="rounded-4xl border border-zion-cyan/30 bg-linear-to-r from-zion-cyan/20 via-zion-purple/10 to-zion-cyan/20 p-10 text-center"
+          className="zion-cta-banner"
         >
           <Pickaxe className="mx-auto h-12 w-12 text-zion-cyan" />
           <h2 className="mt-6 text-3xl font-semibold text-white">{cs ? 'ZION těžební pool' : 'ZION Mining Pool'}</h2>
