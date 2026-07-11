@@ -78,8 +78,8 @@ export default function NetworkAlgorithmPanel({ cs }: { cs: boolean }) {
         {algorithms.map((algo) => (
           <div
             key={algo.id}
-            className={`zion-rainbow-sub p-6 transition-all ${algo.active ? 'border-emerald-400/30' : 'hover:border-white/20'}`}
-            style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+            className="zion-rainbow-sub p-6 transition-all"
+            style={{ '--rc': algo.active ? '251, 191, 36' : '6, 182, 212' } as React.CSSProperties}
           >
             <div className="flex items-center gap-3 mb-4">
               <div className="inline-flex h-10 w-10 items-center justify-center zion-tile">

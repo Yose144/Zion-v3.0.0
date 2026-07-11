@@ -903,7 +903,7 @@ export default function NetworkPage() {
         <NetworkEventsFeed cs={cs} />
 
         {/* ═══════ NETWORK MAP + POOL FINDER ═══════ */}
-        <section>
+        <section className="zion-section">
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Geografie' : 'Geography'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -1000,16 +1000,8 @@ export default function NetworkPage() {
         </section>
 
         {/* ═══════ CTA ═══════ */}
-        <section
-          className="zion-cta-banner"
-          style={{
-            borderColor: 'rgba(52, 211, 153, 0.35)',
-            background:
-              'linear-gradient(90deg, rgba(16, 185, 129, 0.25), rgba(6, 182, 212, 0.14) 50%, rgba(16, 185, 129, 0.25))',
-            boxShadow: '0 24px 80px rgba(16, 185, 129, 0.18)',
-          }}
-        >
-          <Radio className="mx-auto h-12 w-12 text-emerald-400" />
+        <section className="zion-cta-banner">
+          <Radio className="mx-auto h-12 w-12 text-zion-gold" />
           <h2 className="mt-6 text-3xl font-semibold text-white">{cs ? 'Připojte se k síti ZION' : 'Join the ZION Network'}</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
             {cs
@@ -1027,23 +1019,23 @@ export default function NetworkPage() {
               cs ? 'Docker nativně' : 'Docker native',
               cs ? 'Archivovaná multi-host historie' : 'Archived multi-host history',
             ].map((item) => (
-              <span key={item} className="rounded-full bg-white/80 px-4 py-2 font-semibold text-gray-900">
+              <span key={item} className="zion-badge-gold">
                 {item}
               </span>
             ))}
           </div>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <Link href="/explorer" className="inline-flex items-center gap-2 rounded-2xl bg-black/70 px-6 py-3 text-sm font-semibold text-white border border-white/20">
+            <Link href="/explorer" className="zion-button-secondary">
               <Activity className="h-4 w-4" /> {cs ? 'Explorer' : 'Explorer'}
             </Link>
-            <Link href="/roadmap" className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-emerald-400 to-zion-cyan px-6 py-3 text-sm font-semibold text-black">
+            <Link href="/roadmap" className="zion-button-primary">
               <Rocket className="h-4 w-4" /> {cs ? 'Roadmapa' : 'Roadmap'}
             </Link>
             <a
               href="https://github.com/Zion-TerraNova"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-6 py-3 text-sm font-semibold text-white border border-white/10"
+              className="zion-button-secondary"
             >
               <ExternalLink className="h-4 w-4" /> GitHub
             </a>

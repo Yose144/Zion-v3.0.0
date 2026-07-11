@@ -318,11 +318,11 @@ export default function NetworkHistoricalCharts() {
   );
 
   return (
-    <section className="zion-rainbow-card p-8" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+    <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-6">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Trendy' : 'Trends'}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-          <Activity className="h-7 w-7 text-purple-400" />
+          <Activity className="h-7 w-7 text-zion-cyan" />
           {cs ? 'Historické trendy' : 'Historical Trends'}
         </h2>
         <p className="text-sm text-gray-400">
@@ -335,11 +335,7 @@ export default function NetworkHistoricalCharts() {
       {/* Live data badge — only 24h real data is available */}
       <div className="flex flex-wrap items-center gap-2 mb-6">
         <span className="text-xs text-gray-500 mr-2">{cs ? 'Rozsah:' : 'Range:'}</span>
-        <div className="inline-flex rounded-xl border border-purple-400/20 bg-purple-500/5 p-1">
-          <span className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-purple-500/30 text-purple-100">
-            24h
-          </span>
-        </div>
+        <span className="zion-badge-gold">24h</span>
         <span className="text-[10px] text-emerald-400 ml-2">● {cs ? 'Živá data' : 'Live data'}</span>
       </div>
 
@@ -352,7 +348,7 @@ export default function NetworkHistoricalCharts() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
             className="zion-rainbow-sub p-5 flex flex-col"
-            style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+            style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
           >
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">

@@ -148,18 +148,17 @@ export default function NetworkStatus({ className }: { className?: string }) {
       </div>
 
       {/* Sync Status */}
-      <div className={`p-4 rounded-2xl border backdrop-blur ${
-        status.summary.inSync 
-          ? 'bg-emerald-500/10 border-emerald-400/40' 
-          : 'bg-yellow-500/10 border-yellow-400/40'
-      }`}>
+      <div
+        className="zion-rainbow-sub p-4"
+        style={{ '--rc': status.summary.inSync ? '52, 211, 153' : '251, 191, 36' } as React.CSSProperties}
+      >
         <div className="flex items-center gap-2">
           {status.summary.inSync ? (
-            <CheckCircle className="w-5 h-5 text-green-400" />
+            <CheckCircle className="w-5 h-5 text-emerald-400" />
           ) : (
-            <XCircle className="w-5 h-5 text-yellow-400" />
+            <XCircle className="w-5 h-5 text-amber-400" />
           )}
-          <span className={status.summary.inSync ? 'text-green-400' : 'text-yellow-400'}>
+          <span className={status.summary.inSync ? 'text-emerald-400' : 'text-amber-400'}>
             {status.summary.inSync ? (cs ? 'Sit je synchronizovana' : 'Network Synchronized') : (cs ? 'Synchronizuji...' : 'Synchronizing...')}
           </span>
         </div>
@@ -247,18 +246,18 @@ function SummaryCard({
   accent: 'green' | 'yellow' | 'blue' | 'purple' | 'gold';
   sub?: string;
 }) {
-  const accentMap: Record<'green' | 'yellow' | 'blue' | 'purple' | 'gold', { border: string; value: string }> = {
-    green: { border: 'border-emerald-400/40', value: 'text-emerald-200' },
-    yellow: { border: 'border-yellow-400/40', value: 'text-yellow-200' },
-    blue: { border: 'border-blue-400/40', value: 'text-blue-200' },
-    purple: { border: 'border-purple-400/40', value: 'text-purple-200' },
-    gold: { border: 'border-zion-gold/40', value: 'text-zion-gold' },
+  const accentMap: Record<'green' | 'yellow' | 'blue' | 'purple' | 'gold', { value: string }> = {
+    green: { value: 'text-emerald-200' },
+    yellow: { value: 'text-yellow-200' },
+    blue: { value: 'text-blue-200' },
+    purple: { value: 'text-purple-200' },
+    gold: { value: 'text-zion-gold' },
   };
 
   const accentClasses = accentMap[accent];
 
   return (
-    <div className={`p-4 rounded-2xl bg-black/40 backdrop-blur border ${accentClasses.border}`}>
+    <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
       <div className="flex items-center gap-2 mb-2 text-gray-400">
         <Icon className="w-4 h-4" />
         <span className="text-xs uppercase tracking-[0.3em]">{label}</span>
@@ -271,11 +270,10 @@ function SummaryCard({
 
 function NodeCard({ node, cs, locale, regionLabels }: { node: NodeStatus; cs: boolean; locale: string; regionLabels: Record<string, string> }) {
   return (
-    <div className={`p-4 rounded-2xl border transition-all ${
-      node.online 
-        ? 'bg-black/40 border-white/10 hover:border-zion-gold/40' 
-        : 'bg-red-900/20 border-red-500/40'
-    }`}>
+    <div
+      className="zion-rainbow-sub p-4 transition-all"
+      style={{ '--rc': node.online ? '6, 182, 212' : '248, 113, 113' } as React.CSSProperties}
+    >
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           {/* Status indicator */}

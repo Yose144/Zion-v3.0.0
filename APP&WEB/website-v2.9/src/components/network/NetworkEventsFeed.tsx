@@ -158,7 +158,7 @@ export default function NetworkEventsFeed({ cs }: { cs: boolean }) {
         </div>
         <button
           onClick={refresh}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-400 hover:text-white transition"
+          className="zion-button-secondary text-xs py-2 px-3"
         >
           <RefreshCw className="h-3.5 w-3.5" /> {cs ? 'Aktualizovat' : 'Refresh'}
         </button>

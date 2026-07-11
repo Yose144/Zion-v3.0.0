@@ -89,7 +89,7 @@ export default function PoolFinder() {
   }, []);
 
   return (
-    <div className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+    <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
       <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
         <Zap className="w-5 h-5 text-zion-gold" />
         {cs ? 'Najít nejlepší těžební pool' : 'Find Best Mining Pool'}
@@ -104,7 +104,7 @@ export default function PoolFinder() {
         <button
           onClick={detectLocation}
           disabled={loading}
-          className="flex items-center gap-2 px-5 py-2 rounded-2xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan text-black font-semibold shadow-[0_10px_30px_rgba(147,51,234,0.35)] transition disabled:opacity-60"
+          className="zion-button-primary disabled:opacity-60"
         >
           <Navigation2 className="w-4 h-4" />
           {loading ? (cs ? 'Zjišťuji polohu...' : 'Detecting...') : (cs ? 'Použít moji polohu' : 'Use My Location')}
@@ -112,7 +112,7 @@ export default function PoolFinder() {
 
         <button
           onClick={() => setUseManual(!useManual)}
-          className="flex items-center gap-2 px-4 py-2 rounded-2xl border border-white/10 text-white hover:border-zion-gold/50 transition"
+          className="zion-button-secondary"
         >
           <MapPin className="w-4 h-4" />
           {cs ? 'Zadat ručně' : 'Enter Manually'}
@@ -138,7 +138,7 @@ export default function PoolFinder() {
           />
           <button
             onClick={handleManualSearch}
-            className="px-4 py-2 rounded-xl bg-zion-cyan text-black font-semibold hover:opacity-90 transition-colors"
+            className="zion-button-primary"
           >
             {cs ? 'Hledat' : 'Search'}
           </button>
@@ -154,12 +154,12 @@ export default function PoolFinder() {
         >
           {/* Recommended Pool */}
           {result.recommended ? (
-          <div className="p-4 bg-linear-to-r from-zion-gold/25 via-zion-purple/10 to-transparent border border-zion-gold/40 rounded-2xl shadow-[0_10px_35px_rgba(212,175,55,0.2)]">
+          <div className="zion-rainbow-sub p-4" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <span className="text-lg">⭐</span>
                 <span className="font-semibold text-white">{result.recommended.name}</span>
-                <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded">
+                <span className="zion-badge-green">
                   {cs ? 'Doporučeno' : 'Recommended'}
                 </span>
               </div>
@@ -170,16 +170,16 @@ export default function PoolFinder() {
               )}
             </div>
 
-            <div className="flex items-center gap-2 bg-black/50 border border-white/10 p-3 rounded-2xl">
+            <div className="zion-rainbow-sub p-3 flex items-center gap-2" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
               <code className="text-sm text-zion-gold flex-1 font-mono">
                 {result.recommended.host}:{result.recommended.port}
               </code>
               <button
                 onClick={() => copyToClipboard(`${result.recommended!.host}:${result.recommended!.port}`)}
-                className="p-2 hover:bg-white/10 rounded transition-colors"
+                className="zion-button-secondary w-8 h-8 p-0 flex items-center justify-center"
               >
                 {copied ? (
-                  <Check className="w-4 h-4 text-green-400" />
+                  <Check className="w-4 h-4 text-emerald-400" />
                 ) : (
                   <Copy className="w-4 h-4 text-gray-400" />
                 )}
@@ -193,7 +193,7 @@ export default function PoolFinder() {
             )}
           </div>
           ) : (
-          <div className="p-4 bg-white/5 border border-white/10 rounded-2xl text-center">
+          <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '255, 255, 255' } as React.CSSProperties}>
             <p className="text-gray-400 text-sm">{cs ? 'Není k dispozici žádný doporučený pool. Zkuste zjistit svoji polohu.' : 'No recommended pool available. Try detecting your location.'}</p>
           </div>
           )}
@@ -206,9 +206,8 @@ export default function PoolFinder() {
               {result.pools.map((pool, index) => (
                 <div
                   key={pool.id}
-                  className={`p-3 rounded-lg flex items-center justify-between ${
-                    index === 0 ? 'bg-white/5 border border-white/15' : 'bg-black/40 border border-white/10'
-                  }`}
+                  className="zion-rainbow-sub p-3 flex items-center justify-between"
+                  style={{ '--rc': index === 0 ? '251, 191, 36' : '6, 182, 212' } as React.CSSProperties}
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-gray-500 font-mono text-sm">#{index + 1}</span>

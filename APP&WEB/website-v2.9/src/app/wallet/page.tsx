@@ -54,7 +54,7 @@ function StatCard({
   label,
   value,
   sub,
-  rc = '147, 51, 234',
+  rc = '251, 191, 36',
 }: {
   icon: React.ReactNode;
   colorClass: string;
@@ -65,7 +65,7 @@ function StatCard({
   rc?: string;
 }) {
   return (
-    <div className="zion-rainbow-card p-4 transition-colors" style={{ '--rc': rc } as CSSProperties}>
+    <div className="zion-rainbow-sub p-4 transition-colors" style={{ '--rc': rc } as CSSProperties}>
       <div className={`flex items-center justify-center h-8 w-8 rounded-xl ${bgClass} mb-3 ${colorClass} [&>svg]:h-4 [&>svg]:w-4`}>
         {icon}
       </div>
@@ -241,7 +241,7 @@ export default function WalletPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="zion-rainbow-card p-6 md:p-10"
-            style={{ '--rc': '251, 191, 36' } as CSSProperties}
+            style={{ '--rc': '147, 51, 234' } as CSSProperties}
           >
             <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
               <div className="space-y-5">
@@ -287,7 +287,7 @@ export default function WalletPage() {
                   <div className="space-y-3">
                     <div
                       className="flex items-center justify-between zion-rainbow-sub p-3"
-                      style={{ '--rc': '255, 215, 0' } as CSSProperties}
+                      style={{ '--rc': '251, 191, 36' } as CSSProperties}
                     >
                       <div className="flex items-center gap-2 text-sm text-gray-300">
                         <Wallet className="h-4 w-4 text-zion-gold" />
@@ -297,30 +297,30 @@ export default function WalletPage() {
                     </div>
                     <div
                       className="flex items-center justify-between zion-rainbow-sub p-3"
-                      style={{ '--rc': '6, 182, 212' } as CSSProperties}
+                      style={{ '--rc': '251, 191, 36' } as CSSProperties}
                     >
                       <div className="flex items-center gap-2 text-sm text-gray-300">
-                        <Copy className="h-4 w-4 text-zion-cyan" />
+                        <Copy className="h-4 w-4 text-zion-gold" />
                         {cs ? 'Adresa' : 'Address'}
                       </div>
                       <span className="font-mono text-white text-xs break-all max-w-[180px]">{activeAddress}</span>
                     </div>
                     <div
                       className="flex items-center justify-between zion-rainbow-sub p-3"
-                      style={{ '--rc': '16, 185, 129' } as CSSProperties}
+                      style={{ '--rc': '251, 191, 36' } as CSSProperties}
                     >
                       <div className="flex items-center gap-2 text-sm text-gray-300">
-                        <Activity className="h-4 w-4 text-emerald-400" />
+                        <Activity className="h-4 w-4 text-zion-gold" />
                         {cs ? 'Zůstatek' : 'Balance'}
                       </div>
                       <span className="font-mono text-white">{activeBalanceDisplay}</span>
                     </div>
                     <div
                       className="flex items-center justify-between zion-rainbow-sub p-3"
-                      style={{ '--rc': '147, 51, 234' } as CSSProperties}
+                      style={{ '--rc': '251, 191, 36' } as CSSProperties}
                     >
                       <div className="flex items-center gap-2 text-sm text-gray-300">
-                        <Usb className="h-4 w-4 text-purple-400" />
+                        <Usb className="h-4 w-4 text-zion-gold" />
                         {cs ? 'Hardware' : 'Hardware'}
                       </div>
                       <span className="font-mono text-white">{hardwareStatus}</span>
@@ -357,7 +357,6 @@ export default function WalletPage() {
                 icon={<Wallet className="h-5 w-5" />}
                 colorClass="text-zion-gold"
                 bgClass="bg-zion-gold/10"
-                rc="255, 215, 0"
                 label={cs ? 'Peněženky' : 'Wallets'}
                 value={String(walletCount)}
                 sub={cs ? 'celkem' : 'total'}
@@ -366,7 +365,6 @@ export default function WalletPage() {
                 icon={<Activity className="h-5 w-5" />}
                 colorClass="text-zion-cyan"
                 bgClass="bg-zion-cyan/10"
-                rc="6, 182, 212"
                 label={cs ? 'Aktivní zůstatek' : 'Active Balance'}
                 value={activeBalance}
                 sub="ZION"
@@ -375,7 +373,6 @@ export default function WalletPage() {
                 icon={<Fingerprint className="h-5 w-5" />}
                 colorClass="text-emerald-400"
                 bgClass="bg-emerald-400/10"
-                rc="16, 185, 129"
                 label={cs ? 'Kryptografie' : 'Cryptography'}
                 value={ed25519Type}
                 sub="Ed25519"
@@ -384,7 +381,6 @@ export default function WalletPage() {
                 icon={<Shield className="h-5 w-5" />}
                 colorClass="text-purple-400"
                 bgClass="bg-purple-400/10"
-                rc="147, 51, 234"
                 label={cs ? 'Zabezpečení' : 'Security'}
                 value={securityLevel}
                 sub={cs ? 'úroveň' : 'level'}
@@ -400,7 +396,7 @@ export default function WalletPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             className="zion-rainbow-card p-6 md:p-8"
-            style={{ '--rc': '236, 72, 153' } as CSSProperties}
+            style={{ '--rc': '147, 51, 234' } as CSSProperties}
           >
             <div className="flex flex-col gap-2 mb-6">
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Vlastnosti' : 'Features'}</p>
@@ -411,7 +407,7 @@ export default function WalletPage() {
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
               {features.map((f) => (
-                <div key={f.title} className="zion-rainbow-sub" style={{ '--rc': '236, 72, 153' } as CSSProperties}>
+                <div key={f.title} className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
                   <f.icon className={`h-8 w-8 ${f.color} mb-3`} />
                   <h3 className="font-semibold text-white mb-2">{f.title}</h3>
                   <p className="text-sm text-gray-400">{f.desc}</p>
@@ -425,7 +421,7 @@ export default function WalletPage() {
         <section className="relative z-10 max-w-4xl mx-auto">
           <div className="space-y-8">
             {error && (
-              <div className="bg-red-500/10 border border-red-500/20 text-red-300 px-4 py-3 rounded-2xl">
+              <div className="zion-rainbow-sub p-4 text-red-300" style={{ '--rc': '239, 68, 68' } as CSSProperties}>
                 {error}
               </div>
             )}
@@ -436,7 +432,7 @@ export default function WalletPage() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="zion-rainbow-card p-6"
-                style={{ '--rc': '236, 72, 153' } as CSSProperties}
+                style={{ '--rc': '147, 51, 234' } as CSSProperties}
               >
                 <div className="flex items-center justify-between mb-4">
                   <div>
@@ -461,15 +457,17 @@ export default function WalletPage() {
                   {balance !== null ? `${balance.toFixed(6)} ZION` : '---'}
                 </p>
                 {isHardwareWallet && (
-                  <div className="mt-4 flex items-start gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-                    <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-                    <div className="text-sm text-amber-200">
-                      <p className="font-medium">{cs ? 'Hardware peněženka — pouze pro sledování' : 'Hardware Wallet — Watch Only'}</p>
-                      <p className="text-amber-300/80 mt-1">
-                        {cs
-                          ? 'Trezor/Ledger firmware zatím nepodporuje podepisování transakcí pro ZION. Pro odeslání tokenů použijte software peněženku se stejným seedem (méně bezpečné) nebo počkejte na Ledger aplikaci.'
-                          : 'Trezor/Ledger firmware does not yet support transaction signing for ZION. To send tokens, use a software wallet with the same seed (less secure) or wait for the Ledger app.'}
-                      </p>
+                  <div className="mt-4 zion-rainbow-sub p-4" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                      <div className="text-sm text-amber-200">
+                        <p className="font-medium">{cs ? 'Hardware peněženka — pouze pro sledování' : 'Hardware Wallet — Watch Only'}</p>
+                        <p className="text-amber-300/80 mt-1">
+                          {cs
+                            ? 'Trezor/Ledger firmware zatím nepodporuje podepisování transakcí pro ZION. Pro odeslání tokenů použijte software peněženku se stejným seedem (méně bezpečné) nebo počkejte na Ledger aplikaci.'
+                            : 'Trezor/Ledger firmware does not yet support transaction signing for ZION. To send tokens, use a software wallet with the same seed (less secure) or wait for the Ledger app.'}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -490,11 +488,12 @@ export default function WalletPage() {
                   {wallets.map((w) => (
                     <div
                       key={w.id}
-                      className={`flex items-center justify-between p-3 rounded-xl border transition cursor-pointer ${
+                      className={`flex items-center justify-between cursor-pointer transition ${
                         activeWallet?.id === w.id
-                          ? 'bg-zion-gold/10 border-zion-gold/30'
-                          : 'bg-black/40 border-white/5 hover:border-white/15'
+                          ? 'zion-rainbow-sub p-3'
+                          : 'zion-panel-soft p-3 border border-white/5 hover:border-white/15'
                       }`}
+                      style={activeWallet?.id === w.id ? ({ '--rc': '251, 191, 36' } as CSSProperties) : undefined}
                       onClick={() => setActiveWallet(w.id)}
                     >
                       <div>
@@ -519,7 +518,7 @@ export default function WalletPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
               className="zion-rainbow-card p-6"
-              style={{ '--rc': '236, 72, 153' } as CSSProperties}
+              style={{ '--rc': '147, 51, 234' } as CSSProperties}
             >
               <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-6">
                 <span className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mr-1 hidden sm:inline">
@@ -534,9 +533,10 @@ export default function WalletPage() {
                       onClick={() => setTab(t.key)}
                       className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition ${
                         active
-                          ? 'border border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan hover:bg-zion-cyan/20'
+                          ? 'zion-rainbow-sub'
                           : 'border border-white/10 bg-white/5 text-gray-300 hover:border-white/25 hover:text-white'
                       }`}
+                      style={active ? ({ '--rc': '251, 191, 36' } as CSSProperties) : undefined}
                     >
                       <Icon className="h-3.5 w-3.5" />
                       {cs ? t.labelCs : t.labelEn}
@@ -547,7 +547,7 @@ export default function WalletPage() {
 
               {/* Create tab */}
               {tab === 'create' && (
-                <div className="zion-rainbow-sub p-5" style={{ '--rc': '255, 215, 0' } as CSSProperties}>
+                <div className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                     <Plus className="w-5 h-5 text-zion-gold" /> {cs ? 'Vytvořit novou peněženku' : 'Create New Wallet'}
                   </h3>
@@ -583,12 +583,12 @@ export default function WalletPage() {
 
               {/* Import tab */}
               {tab === 'import' && (
-                <div className="zion-rainbow-sub p-5" style={{ '--rc': '236, 72, 153' } as CSSProperties}>
+                <div className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <Import className="w-5 h-5 text-pink-400" /> {cs ? 'Importovat peněženku' : 'Import Wallet'}
+                    <Import className="w-5 h-5 text-zion-gold" /> {cs ? 'Importovat peněženku' : 'Import Wallet'}
                   </h3>
                   <div className="space-y-6">
-                    <div className="zion-rainbow-sub p-5" style={{ '--rc': '236, 72, 153' } as CSSProperties}>
+                    <div className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
                       <p className="text-sm font-medium text-gray-300 mb-3">{cs ? 'Z Mnemonic (BIP39)' : 'From Mnemonic (BIP39)'}</p>
                       <textarea
                         value={mnemonic}
@@ -613,7 +613,7 @@ export default function WalletPage() {
                         </button>
                       </div>
                     </div>
-                    <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
+                    <div className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
                       <p className="text-sm font-medium text-gray-300 mb-3">{cs ? 'Z Private Key (hex)' : 'From Private Key (hex)'}</p>
                       <input
                         type="text"
@@ -639,7 +639,7 @@ export default function WalletPage() {
                         </button>
                       </div>
                     </div>
-                    <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as CSSProperties}>
+                    <div className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
                       <p className="text-sm font-medium text-gray-300 mb-3">{cs ? 'Hardware peněženka (Watch-only)' : 'Hardware Wallet (Watch-only)'}</p>
                       <p className="text-xs text-gray-400 mb-3">{cs ? 'Importujte veřejný klíč z Trezoru nebo Ledgeru.' : 'Import public key from Trezor or Ledger.'}</p>
                       <div className="flex flex-wrap gap-3">
@@ -670,9 +670,9 @@ export default function WalletPage() {
 
               {/* Send tab */}
               {tab === 'send' && (
-                <div className="zion-rainbow-sub p-5" style={{ '--rc': '16, 185, 129' } as CSSProperties}>
+                <div className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <Send className="w-5 h-5 text-emerald-400" /> {cs ? 'Odeslat ZION' : 'Send ZION'}
+                    <Send className="w-5 h-5 text-zion-gold" /> {cs ? 'Odeslat ZION' : 'Send ZION'}
                   </h3>
                   {!activeWallet ? (
                     <p className="text-gray-500">{cs ? 'Nejprve vyberte nebo vytvořte peněženku.' : 'Select or create a wallet first.'}</p>
@@ -727,7 +727,7 @@ export default function WalletPage() {
                         {loading ? (cs ? 'Odesílání...' : 'Sending...') : (cs ? 'Odeslat ZION' : 'Send ZION')}
                       </button>
                       {txResult && (
-                        <p className="text-zion-cyan text-sm mt-2 bg-zion-cyan/10 p-3 rounded-2xl font-mono">{txResult}</p>
+                        <p className="text-zion-cyan text-sm mt-2 zion-rainbow-sub p-3 font-mono" style={{ '--rc': '251, 191, 36' } as CSSProperties}>{txResult}</p>
                       )}
                     </div>
                   )}
@@ -736,9 +736,9 @@ export default function WalletPage() {
 
               {/* Export tab */}
               {tab === 'export' && (
-                <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
+                <div className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <Download className="w-5 h-5 text-cyan-400" /> {cs ? 'Exportovat tajemství' : 'Export Wallet Secrets'}
+                    <Download className="w-5 h-5 text-zion-gold" /> {cs ? 'Exportovat tajemství' : 'Export Wallet Secrets'}
                   </h3>
                   {!activeWallet ? (
                     <p className="text-gray-500">{cs ? 'Nejprve vyberte peněženku.' : 'Select a wallet first.'}</p>
@@ -769,7 +769,7 @@ export default function WalletPage() {
                         </button>
                       </div>
                       {exportedSecret && (
-                        <div className="mt-4 bg-red-500/10 border border-red-500/20 rounded-2xl p-4">
+                        <div className="mt-4 zion-rainbow-sub p-4" style={{ '--rc': '239, 68, 68' } as CSSProperties}>
                           <div className="flex items-center justify-between mb-2">
                             <p className="text-red-300 text-sm font-medium">{cs ? 'Tajemství (nikdy nesdílejte!)' : 'Secret (never share!)'}</p>
                             <div className="flex gap-2">
@@ -806,14 +806,14 @@ export default function WalletPage() {
               {cs ? 'Více o ZION Wallet' : 'Learn more about ZION Wallet'}
             </h2>
             <div className="flex flex-wrap justify-center gap-4">
-              <Link href="/explorer" className="inline-flex items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 px-6 py-3 text-sm font-semibold text-emerald-200 hover:bg-emerald-500/10 transition-colors">
+              <Link href="/explorer" className="zion-button-secondary inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white">
                 <Globe2 className="h-4 w-4" /> Explorer
               </Link>
-              <Link href="/download" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '236, 72, 153' } as CSSProperties}>
+              <Link href="/download" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
                 <Download className="h-4 w-4 text-zion-gold" /> {cs ? 'Stáhnout' : 'Download'}
               </Link>
-              <Link href="/docs" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
-                <BookOpen className="h-4 w-4 text-cyan-400" /> {cs ? 'Dokumentace' : 'Documentation'}
+              <Link href="/docs" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
+                <BookOpen className="h-4 w-4 text-zion-gold" /> {cs ? 'Dokumentace' : 'Documentation'}
               </Link>
             </div>
           </motion.div>
