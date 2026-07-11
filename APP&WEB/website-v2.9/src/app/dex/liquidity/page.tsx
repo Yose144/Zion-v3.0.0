@@ -80,7 +80,7 @@ export default function LiquidityPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen">
       {/* Header */}
       <div className="border-b border-zinc-800/50">
         <div className="max-w-6xl mx-auto px-6 py-8">

@@ -152,7 +152,7 @@ export default function BridgePage() {
   const totalBridged = status ? status.evm_mints_confirmed : 0;
 
   return (
-    <div className="zion-page bg-black text-white">
+    <div className="zion-page text-white">
       {/* Background glows */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-36 -left-28 h-[520px] w-[520px] rounded-full bg-zion-purple/18 blur-3xl" />

@@ -178,7 +178,7 @@ export default function AccountPage() {
 
   if (loading) {
     return (
-      <div className="zion-page bg-black text-white">
+      <div className="zion-page text-white">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -top-36 -left-28 h-[520px] w-[520px] rounded-full bg-zion-purple/18 blur-3xl" />
           <div className="absolute top-40 -right-24 h-[420px] w-[420px] rounded-full bg-zion-cyan/14 blur-3xl" />
@@ -210,7 +210,7 @@ export default function AccountPage() {
     : '—';
 
   return (
-    <div className="zion-page bg-black text-white">
+    <div className="zion-page text-white">
       {/* Background glows */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-36 -left-28 h-[520px] w-[520px] rounded-full bg-zion-purple/18 blur-3xl" />

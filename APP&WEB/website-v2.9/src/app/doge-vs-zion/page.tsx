@@ -455,7 +455,7 @@ export default function DogeVsZionPage() {
   // ─── Hub page ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-black pb-12 pt-20 md:pt-24">
+    <div className="relative min-h-screen overflow-x-hidden pb-12 pt-20 md:pt-24">
       {/* Starfield */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         {Array.from({ length: 40 }).map((_, i) => (
@@ -1141,7 +1141,7 @@ function ZionDefenseWrapper({ onBack, muted, setMuted }: {
   setMuted: (f: (m: boolean) => boolean) => void;
 }) {
   return (
-    <div className="relative min-h-screen bg-black">
+    <div className="relative min-h-screen">
       {/* Back bar */}
       <div className="absolute top-20 left-0 right-0 z-20 px-4">
         <div className="zion-container flex items-center justify-between">

@@ -308,7 +308,7 @@ export default function SwapPage() {
   const escrowOnline = !escrowLoading && Boolean(escrowAddress);
 
   return (
-    <div className="zion-page bg-black text-white">
+    <div className="zion-page text-white">
       {/* Background glows */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-36 -left-28 h-[520px] w-[520px] rounded-full bg-amber-500/18 blur-3xl" />
