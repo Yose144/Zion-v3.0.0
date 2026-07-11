@@ -20,6 +20,7 @@ members = [
     "V3/L6/issobella",
     "V3/sdk",
     "V3/cli",
+    "AuXpow",
 ]
 resolver = "2"
 
