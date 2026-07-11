@@ -204,7 +204,7 @@ export default function TePikoOraPage() {
   const cs = lang === 'cs';
 
   return (
-    <div className="zion-page bg-black text-white">
+    <div className="zion-page text-white">
       <div className="relative z-10 mx-auto max-w-5xl px-4 md:px-8">
 
         {/* Back nav */}

@@ -116,7 +116,7 @@ export default function WalletPage() {
 
   if (!initialized) {
     return (
-      <div className="zion-page bg-black text-white">
+      <div className="zion-page text-white">
         <div className="zion-container max-w-7xl">
           <div className="flex items-center justify-center min-h-[60vh]">
             <div className="text-center">
@@ -224,7 +224,7 @@ export default function WalletPage() {
     : (cs ? 'Lokalní' : 'Local');
 
   return (
-    <div className="zion-page bg-black text-white">
+    <div className="zion-page text-white">
       {/* Background glows */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-36 -left-28 h-[520px] w-[520px] rounded-full bg-zion-gold/18 blur-3xl" />

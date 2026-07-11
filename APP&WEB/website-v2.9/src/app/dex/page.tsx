@@ -18,7 +18,7 @@ export default function DexPage() {
   const [activeSwapId, setActiveSwapId] = useState<string | null>(null);
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen">
       {/* Hero */}
       <div className="relative overflow-hidden border-b border-zinc-800/50">
         <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-cyan-500/5" />

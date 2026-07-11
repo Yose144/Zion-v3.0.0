@@ -241,7 +241,7 @@ export default function DaoPage() {
   const guardiansCount = 5;
 
   return (
-    <div className="zion-page bg-black text-white relative">
+    <div className="zion-page text-white relative">
       {/* Background glows */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-36 -left-28 h-[520px] w-[520px] rounded-full bg-zion-purple/18 blur-3xl" />
