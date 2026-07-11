@@ -75,7 +75,8 @@ const editions = [
   '🇧🇷 PT', '🇯🇵 JP', '🇮🇳 Hindi', '🕉️ Sanskrit', '🌺 Hawaiian', '🏛️ Latin',
 ];
 
-const RC = '251, 191, 36'; // gold
+const PURPLE = '147, 51, 234';
+const GOLD = '251, 191, 36';
 
 export default function QuantumRevolutionClient() {
   const { lang } = useLang();
@@ -92,17 +93,17 @@ export default function QuantumRevolutionClient() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="zion-rainbow-card p-8 md:p-12 space-y-6"
-            style={{ '--rc': RC } as React.CSSProperties}
+            style={{ '--rc': PURPLE } as React.CSSProperties}
           >
             {/* Eyebrow */}
             <div className="flex items-center gap-3">
               <div
-                className="flex h-12 w-12 items-center justify-center rounded-2xl border"
-                style={{ borderColor: `rgba(${RC}, 0.4)`, backgroundColor: `rgba(${RC}, 0.12)` }}
+                className="zion-rainbow-sub flex h-12 w-12 items-center justify-center"
+                style={{ '--rc': GOLD } as React.CSSProperties}
               >
-                <Atom className="h-6 w-6" style={{ color: `rgb(${RC})` }} />
+                <Atom className="h-6 w-6" style={{ color: `rgb(${GOLD})` }} />
               </div>
-              <p className="text-xs font-semibold uppercase tracking-[0.36em]" style={{ color: `rgba(${RC}, 0.8)` }}>
+              <p className="text-xs font-semibold uppercase tracking-[0.36em]" style={{ color: `rgba(${GOLD}, 0.8)` }}>
                 {cs ? 'Kniha, která to celé odstartovala' : 'The book that started it all'}
               </p>
             </div>
@@ -122,19 +123,19 @@ export default function QuantumRevolutionClient() {
 
             {/* Stats row */}
             <div className="flex flex-wrap gap-3 pt-2">
-              <span className="zion-rainbow-sub px-4 py-2 text-sm" style={{ '--rc': RC } as React.CSSProperties}>
+              <span className="zion-rainbow-sub px-4 py-2 text-sm" style={{ '--rc': GOLD } as React.CSSProperties}>
                 <strong className="text-white">10</strong>{' '}
                 <span className="text-gray-400">{cs ? 'kapitol' : 'chapters'}</span>
               </span>
-              <span className="zion-rainbow-sub px-4 py-2 text-sm" style={{ '--rc': RC } as React.CSSProperties}>
+              <span className="zion-rainbow-sub px-4 py-2 text-sm" style={{ '--rc': GOLD } as React.CSSProperties}>
                 <strong className="text-white">11</strong>{' '}
                 <span className="text-gray-400">{cs ? 'jazyků' : 'languages'}</span>
               </span>
-              <span className="zion-rainbow-sub px-4 py-2 text-sm" style={{ '--rc': RC } as React.CSSProperties}>
+              <span className="zion-rainbow-sub px-4 py-2 text-sm" style={{ '--rc': GOLD } as React.CSSProperties}>
                 <strong className="text-white">180</strong>{' '}
                 <span className="text-gray-400">{cs ? 'stran' : 'pages'}</span>
               </span>
-              <span className="zion-rainbow-sub px-4 py-2 text-sm" style={{ '--rc': RC } as React.CSSProperties}>
+              <span className="zion-rainbow-sub px-4 py-2 text-sm" style={{ '--rc': GOLD } as React.CSSProperties}>
                 <strong className="text-white">2026</strong>{' '}
                 <span className="text-gray-400">{cs ? 'vydání' : 'edition'}</span>
               </span>
@@ -147,7 +148,7 @@ export default function QuantumRevolutionClient() {
       <section className="px-4 py-8">
         <div className="zion-container space-y-6">
           <div className="text-center space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.36em]" style={{ color: `rgba(${RC}, 0.8)` }}>
+            <p className="text-xs font-semibold uppercase tracking-[0.36em]" style={{ color: `rgba(${GOLD}, 0.8)` }}>
               {cs ? 'Čtyři pilíře knihy' : 'Four pillars of the book'}
             </p>
             <h2 className="text-2xl font-bold text-white sm:text-3xl">
@@ -166,9 +167,9 @@ export default function QuantumRevolutionClient() {
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: i * 0.1 }}
                   className="zion-rainbow-sub p-5 space-y-3"
-                  style={{ '--rc': RC } as React.CSSProperties}
+                  style={{ '--rc': GOLD } as React.CSSProperties}
                 >
-                  <Icon className="h-7 w-7" style={{ color: `rgb(${RC})` }} />
+                  <Icon className="h-7 w-7" style={{ color: `rgb(${GOLD})` }} />
                   <h3 className="text-sm font-semibold text-white">
                     {cs ? insight.titleCs : insight.titleEn}
                   </h3>
@@ -187,7 +188,7 @@ export default function QuantumRevolutionClient() {
         <div className="zion-container space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <BookOpen className="h-5 w-5" style={{ color: `rgb(${RC})` }} />
+              <BookOpen className="h-5 w-5" style={{ color: `rgb(${GOLD})` }} />
               <h2 className="text-xl font-semibold text-white">
                 {cs ? '10 kapitol povídky u ohně' : '10 chapters of the fireside story'}
               </h2>
@@ -209,11 +210,11 @@ export default function QuantumRevolutionClient() {
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: i * 0.05 }}
                   onClick={() => setActiveChapter(isActive ? null : ch.num)}
-                  className={`zion-rainbow-sub p-4 cursor-pointer transition-all ${isActive ? 'ring-1' : ''}`}
-                  style={{ '--rc': RC } as React.CSSProperties}
+                  className={`cursor-pointer transition-all ${isActive ? 'zion-rainbow-sub !p-4' : 'zion-tile !p-4'}`}
+                  style={isActive ? ({ '--rc': GOLD } as React.CSSProperties) : undefined}
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <Icon className="h-4 w-4" style={{ color: `rgba(${RC}, 0.8)` }} />
+                    <Icon className="h-4 w-4" style={{ color: `rgba(${GOLD}, 0.8)` }} />
                     <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">
                       {cs ? 'Kap.' : 'Ch.'} {ch.num}
                     </span>
@@ -236,7 +237,7 @@ export default function QuantumRevolutionClient() {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               className="zion-rainbow-card p-6 md:p-8 overflow-hidden"
-              style={{ '--rc': RC } as React.CSSProperties}
+              style={{ '--rc': PURPLE } as React.CSSProperties}
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -268,7 +269,7 @@ export default function QuantumRevolutionClient() {
         <div className="zion-container">
           <div
             className="zion-rainbow-card p-6 md:p-8"
-            style={{ '--rc': RC } as React.CSSProperties}
+            style={{ '--rc': PURPLE } as React.CSSProperties}
           >
             <div className="grid gap-6 lg:grid-cols-[auto_1fr] lg:items-center">
               {/* Book cover */}
@@ -285,19 +286,14 @@ export default function QuantumRevolutionClient() {
                   width={220}
                   height={310}
                   className="rounded-2xl border shadow-[0_8px_40px_rgba(251,191,36,0.15)] transition-transform hover:scale-[1.03]"
-                  style={{ borderColor: `rgba(${RC}, 0.3)` }}
+                  style={{ borderColor: `rgba(${GOLD}, 0.3)` }}
                 />
               </a>
 
               {/* Amenti info */}
               <div className="space-y-4 text-center lg:text-left">
-                <div
-                  className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs uppercase tracking-[0.3em]"
-                  style={{ borderColor: `rgba(${RC}, 0.3)`, backgroundColor: `rgba(${RC}, 0.05)` }}
-                >
-                  <span className="font-semibold" style={{ color: `rgb(${RC})` }}>
-                    ⚛️ {cs ? 'Zdarma ke stažení' : 'Free download'}
-                  </span>
+                <div className="zion-badge zion-badge-amber">
+                  ⚛️ {cs ? 'Zdarma ke stažení' : 'Free download'}
                 </div>
                 <h3 className="text-xl font-bold text-white">
                   {cs ? 'Síně Amenti — Digitální Knihovna' : 'Halls of Amenti — Digital Library'}
@@ -312,11 +308,7 @@ export default function QuantumRevolutionClient() {
                     href="https://newearth.cz/V2/halls.html"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-black shadow-lg transition-all hover:shadow-xl"
-                    style={{
-                      background: `linear-gradient(to right, rgba(${RC}, 0.9), rgba(245, 158, 11, 0.8))`,
-                      boxShadow: `0 0 40px rgba(${RC}, 0.2)`,
-                    }}
+                    className="zion-button-primary"
                   >
                     <BookOpen className="h-4 w-4" />
                     {cs ? 'Vstoupit do Amenti Library' : 'Enter Amenti Library'}
@@ -325,7 +317,7 @@ export default function QuantumRevolutionClient() {
                     href="https://newearth.cz/V2/books/QuantumRevolution.zip"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold text-gray-300 transition-all hover:border-white/25 hover:text-white"
+                    className="zion-button-secondary"
                   >
                     <Download className="h-4 w-4" />
                     {cs ? 'Stáhnout vše (ZIP)' : 'Download all (ZIP)'}
@@ -344,10 +336,10 @@ export default function QuantumRevolutionClient() {
             {/* Book vs Reality verification */}
             <div
               className="zion-rainbow-card p-6 space-y-4"
-              style={{ '--rc': RC } as React.CSSProperties}
+              style={{ '--rc': PURPLE } as React.CSSProperties}
             >
               <div className="flex items-center gap-2 mb-1">
-                <Sparkles className="h-4 w-4" style={{ color: `rgb(${RC})` }} />
+                <Sparkles className="h-4 w-4" style={{ color: `rgb(${GOLD})` }} />
                 <span className="text-sm font-semibold text-white">
                   {cs ? 'Kniha vs. realita: 98% shoda' : 'Book vs. reality: 98% match'}
                 </span>
@@ -364,12 +356,8 @@ export default function QuantumRevolutionClient() {
                 ).map((tag) => (
                   <span
                     key={tag}
-                    className="text-[10px] rounded-full px-2.5 py-1 border"
-                    style={{
-                      backgroundColor: `rgba(${RC}, 0.1)`,
-                      color: `rgb(${RC})`,
-                      borderColor: `rgba(${RC}, 0.2)`,
-                    }}
+                    className="zion-rainbow-sub text-[10px] px-2.5 py-1"
+                    style={{ '--rc': GOLD } as React.CSSProperties}
                   >
                     {tag}
                   </span>
@@ -378,10 +366,7 @@ export default function QuantumRevolutionClient() {
             </div>
 
             {/* Quote + CTA */}
-            <div
-              className="zion-rainbow-card p-6 flex flex-col justify-between space-y-4"
-              style={{ '--rc': RC } as React.CSSProperties}
-            >
+            <div className="zion-cta-banner flex flex-col justify-between space-y-4">
               <blockquote className="text-center space-y-2">
                 <p className="text-base italic text-gray-300 leading-relaxed">
                   {cs
@@ -395,17 +380,14 @@ export default function QuantumRevolutionClient() {
               <div className="flex flex-wrap gap-3 justify-center">
                 <Link
                   href="/genesis#chapter-4"
-                  className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-black transition-all"
-                  style={{
-                    background: `linear-gradient(to right, rgba(${RC}, 0.9), rgba(245, 158, 11, 0.8))`,
-                  }}
+                  className="zion-button-primary"
                 >
                   <Sparkles className="h-4 w-4" />
                   {cs ? 'Genesis: AI a kvantum' : 'Genesis: AI and quantum'}
                 </Link>
                 <Link
                   href="/terranova"
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold text-gray-300 transition-all hover:border-white/25 hover:text-white"
+                  className="zion-button-secondary"
                 >
                   {cs ? 'Terra Nova' : 'Terra Nova'}
                   <ArrowRight className="h-4 w-4" />
@@ -427,7 +409,7 @@ export default function QuantumRevolutionClient() {
               <span
                 key={ed}
                 className="zion-rainbow-sub text-xs px-2.5 py-1"
-                style={{ '--rc': RC } as React.CSSProperties}
+                style={{ '--rc': GOLD } as React.CSSProperties}
               >
                 {ed}
               </span>
