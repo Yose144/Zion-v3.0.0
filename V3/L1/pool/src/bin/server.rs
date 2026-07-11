@@ -122,6 +122,26 @@ fn pool_verbose_logs_enabled() -> bool {
 }
 
 // ---------------------------------------------------------------------------
+// DeferredPayout — queued payout that will be retried by a background thread
+// ---------------------------------------------------------------------------
+// When a block is found the pool immediately tries to distribute the miner
+// share via an on-chain transaction.  However, the node may not have credited
+// the coinbase reward to the pool wallet yet (race condition between
+// submit_candidate_to_node and getBalance).  Instead of rolling back the PPLNS
+// balances and losing the payout, we queue it here.  A dedicated background
+// thread polls the queue every 2 s and retries until the balance is sufficient
+// or a maximum retry count is reached (default 300 = 10 minutes).
+
+struct DeferredPayout {
+    payouts: Vec<PayoutEntry>,
+    height: u64,
+    queued_at: Instant,
+    retry_count: u32,
+}
+
+type DeferredPayoutQueue = Arc<Mutex<Vec<DeferredPayout>>>;
+
+// ---------------------------------------------------------------------------
 // TemplateCache — shared block-template cache to reduce node RPC load
 // ---------------------------------------------------------------------------
 // Without this cache every miner thread calls `get_template` on every loop
@@ -605,6 +625,118 @@ fn main() -> Result<()> {
         .context("failed to set ctrl-c handler")?;
     }
 
+    // ── Deferred payout queue + background processor ───────────────────
+    // When a block is found and the pool wallet balance is not yet credited
+    // by the node (race condition), payouts are queued here instead of being
+    // rolled back.  A background thread retries every 2 s until the balance
+    // is sufficient or max retries (300 = 10 min) is reached.
+    let deferred_payouts: DeferredPayoutQueue = Arc::new(Mutex::new(Vec::new()));
+    {
+        let deferred_ref = Arc::clone(&deferred_payouts);
+        let pplns_ref = Arc::clone(&pplns_engine);
+        let telemetry_ref = Arc::clone(&miner_telemetry);
+        let node_rpc = config.node_rpc_addr.clone();
+        let pool_wallet = config.pool_wallet_address.clone();
+        let signing_key = config.pool_signing_key.clone();
+        let max_retries = parse_env_u64("ZION_PAYOUT_MAX_RETRIES", 300).unwrap_or(300) as u32;
+        let retry_interval_ms =
+            parse_env_u64("ZION_PAYOUT_RETRY_INTERVAL_MS", 2000).unwrap_or(2000);
+        println!(
+            "deferred_payout_processor: enabled max_retries={} interval_ms={}",
+            max_retries, retry_interval_ms
+        );
+        thread::spawn(move || loop {
+            thread::sleep(Duration::from_millis(retry_interval_ms));
+            let mut queue = deferred_ref.lock().expect("deferred lock poisoned");
+            if queue.is_empty() {
+                continue;
+            }
+            // Process oldest entry (FIFO).
+            let deferred = match queue.first_mut() {
+                Some(d) => d,
+                None => continue,
+            };
+            deferred.retry_count += 1;
+            let height = deferred.height;
+            let retry = deferred.retry_count;
+            let payouts = deferred.payouts.clone();
+            drop(queue);
+
+            if retry > max_retries {
+                // Permanent failure — rollback PPLNS balances.
+                let mut pplns = pplns_ref.lock().expect("pplns lock poisoned");
+                pplns.rollback_payouts(&payouts);
+                println!(
+                    "payout_deferred_giveup height={} miners={} reason=max_retries_exceeded",
+                    height,
+                    payouts.len()
+                );
+                let mut queue = deferred_ref.lock().expect("deferred lock poisoned");
+                queue.remove(0);
+                continue;
+            }
+
+            // Attempt payout if we have all required credentials.
+            let (rpc, wallet, key) = match (&node_rpc, &pool_wallet, &signing_key) {
+                (Some(r), Some(w), Some(k)) => (r, w, k),
+                _ => {
+                    println!(
+                        "payout_deferred_skip height={} reason=missing_credentials",
+                        height
+                    );
+                    continue;
+                }
+            };
+
+            match execute_pool_payout(rpc, wallet, key, &payouts, height) {
+                Ok(outcome) => {
+                    println!(
+                        "payout_deferred_success height={} executed={} deferred={} tx_id={} retry={}",
+                        height,
+                        outcome.executed.len(),
+                        outcome.deferred.len(),
+                        outcome.tx_id,
+                        retry
+                    );
+                    {
+                        let mut telemetry = telemetry_ref
+                            .lock()
+                            .expect("miner telemetry lock poisoned");
+                        telemetry.record_submitted_payouts(
+                            height,
+                            &outcome.executed,
+                            &outcome.tx_id,
+                        );
+                    }
+                    let mut queue = deferred_ref.lock().expect("deferred lock poisoned");
+                    if outcome.deferred.is_empty() {
+                        // Fully processed — remove from queue.
+                        queue.remove(0);
+                    } else {
+                        // Partial success — update with remaining deferred.
+                        if let Some(entry) = queue.first_mut() {
+                            entry.payouts = outcome.deferred;
+                            entry.retry_count = 0; // reset for remaining
+                        }
+                    }
+                }
+                Err(e) => {
+                    let err_str = format!("{e}");
+                    // Only log every 10th retry to avoid spam.
+                    if retry % 10 == 0 || retry <= 3 {
+                        println!(
+                            "payout_deferred_retry height={} miners={} retry={} error={}",
+                            height,
+                            payouts.len(),
+                            retry,
+                            err_str
+                        );
+                    }
+                }
+            }
+        });
+    }
+
     listener
         .set_nonblocking(true)
         .context("failed to set listener non-blocking")?;
@@ -681,6 +813,7 @@ fn main() -> Result<()> {
         let session_id_ref = Arc::clone(&session_id_counter);
         let template_cache_ref = Arc::clone(&template_cache);
         let log_ch = Arc::clone(&log_channel);
+        let deferred_ref = Arc::clone(&deferred_payouts);
         let config = config.clone();
         handles.push(thread::spawn(move || {
             let _ip_guard = ip_guard;
@@ -694,6 +827,7 @@ fn main() -> Result<()> {
                 active_sessions_ref,
                 session_id_ref,
                 template_cache_ref,
+                deferred_ref,
                 &config,
                 &log_ch,
             )
@@ -845,6 +979,7 @@ fn handle_client(
     active_sessions: Arc<AtomicU64>,
     session_id_counter: Arc<AtomicU64>,
     template_cache: Arc<Mutex<TemplateCache>>,
+    deferred_payouts: DeferredPayoutQueue,
     config: &ServerConfig,
     log_ch: &LogChannel,
 ) -> Result<()> {
@@ -1445,6 +1580,7 @@ fn handle_client(
                         let signing_key = config.pool_signing_key.clone();
                         let pplns_ref = Arc::clone(&pplns_engine);
                         let telemetry_ref = Arc::clone(&miner_telemetry);
+                        let deferred_ref = Arc::clone(&deferred_payouts);
                         let height = job.height;
                         let payouts_clone = payouts.clone();
                         thread::spawn(move || {
@@ -1456,6 +1592,7 @@ fn handle_client(
                                 height,
                                 &pplns_ref,
                                 &telemetry_ref,
+                                &deferred_ref,
                             );
                         });
                     }
@@ -4706,6 +4843,11 @@ struct PayoutExecutionOutcome {
 /// Async payout execution — runs in a background thread so the miner thread
 /// that found the block is not blocked during N sequential RPC calls to the
 /// node.  Handles telemetry recording and PPLNS rollback on failure.
+///
+/// If the payout fails due to insufficient balance (race condition: node
+/// hasn't credited the coinbase reward yet), the payouts are pushed onto the
+/// deferred payout queue instead of being rolled back.  A background thread
+/// retries deferred payouts until the balance is sufficient.
 fn execute_payout_async(
     node_rpc_addr: Option<String>,
     pool_wallet_addr: Option<String>,
@@ -4714,6 +4856,7 @@ fn execute_payout_async(
     height: u64,
     pplns_engine: &Arc<Mutex<PplnsEngine>>,
     miner_telemetry: &Arc<Mutex<MinerTelemetryRegistry>>,
+    deferred_payouts: &DeferredPayoutQueue,
 ) {
     let node_rpc_addr = match node_rpc_addr.as_deref() {
         Some(a) => a,
@@ -4811,25 +4954,51 @@ fn execute_payout_async(
             }
         }
         Err(err) => {
+            let err_str = format!("{err}");
             println!(
                 "payout_submit_failed height={} miners={} error={}",
                 height,
                 payouts.len(),
-                err
+                err_str
             );
             {
                 let mut telemetry = miner_telemetry
                     .lock()
                     .expect("miner telemetry lock poisoned");
-                telemetry.record_failed_payouts(height, payouts, &format!("{err}"));
+                telemetry.record_failed_payouts(height, payouts, &err_str);
             }
-            let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
-            pplns.rollback_payouts(payouts);
-            println!(
-                "pplns_rollback height={} miners={} reason=payout_not_executed",
-                height,
-                payouts.len()
-            );
+            // If the failure is due to insufficient balance (race condition:
+            // node hasn't credited the coinbase yet), queue for deferred retry
+            // instead of rolling back PPLNS balances.
+            let is_balance_issue = err_str.contains("deferring")
+                || err_str.contains("account balance")
+                || err_str.contains("insufficient");
+            if is_balance_issue {
+                deferred_payouts
+                    .lock()
+                    .expect("deferred lock poisoned")
+                    .push(DeferredPayout {
+                        payouts: payouts.to_vec(),
+                        height,
+                        queued_at: Instant::now(),
+                        retry_count: 0,
+                    });
+                println!(
+                    "payout_deferred_queued height={} miners={} reason=insufficient_balance_will_retry",
+                    height,
+                    payouts.len()
+                );
+            } else {
+                // Permanent failure (not balance-related) — rollback.
+                let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
+                pplns.rollback_payouts(payouts);
+                println!(
+                    "pplns_rollback height={} miners={} reason=permanent_failure: {}",
+                    height,
+                    payouts.len(),
+                    err_str
+                );
+            }
         }
     }
 }
