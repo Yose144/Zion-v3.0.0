@@ -348,6 +348,33 @@ impl AuxPowScheduler {
                         hash_kheavyhash(header, 0, nonce)
                     }
                 }
+                ExternalAlgorithm::Autolykos => {
+                    crate::external_hashers::hash_autolykos(
+                        header,
+                        nonce,
+                        job.timestamp.unwrap_or(0) as u32,
+                    )
+                }
+                ExternalAlgorithm::KawPow => {
+                    let mut h32 = [0u8; 32];
+                    let len = header.len().min(32);
+                    h32[..len].copy_from_slice(&header[..len]);
+                    let (_mix, final_hash) = crate::external_hashers::hash_kawpow(
+                        &h32,
+                        nonce,
+                        job.timestamp.unwrap_or(0) as u32,
+                    );
+                    final_hash
+                }
+                ExternalAlgorithm::Ethash => {
+                    crate::external_hashers::hash_ethash(header, nonce, job.timestamp.unwrap_or(0) as u32)
+                }
+                ExternalAlgorithm::RandomX => {
+                    // RandomX requires the RandomX VM — not yet implemented.
+                    // Fall back to blake3 as a placeholder so the scheduler
+                    // doesn't panic; shares will never meet a real target.
+                    hash_blake3(header, 0, nonce)
+                }
             };
 
             if meets_target(&hash, target) {

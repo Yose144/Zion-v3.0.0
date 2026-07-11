@@ -5,7 +5,7 @@
 > 1. **B2b — Pool-side job multiplexing** (krátkodobý revenue z minerů na ZION poolu).
 > 2. **C — True AuxPoW** (dlouhodobá bezpečnostní + revenue integrace).
 > **Default BTC payout wallet:** `bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh`
-> **Build status:** `cargo test -p zion-auxpow` — **78 testů PASS**, clippy čisté, release build OK.
+> **Build status:** `cargo test -p zion-auxpow` — **78 testů PASS** (default i `--features native-hashers`), clippy čisté, release build OK.
 
 ---
 
@@ -13,11 +13,13 @@
 
 | Komponenta | Stav | Poznámka |
 |------------|------|----------|
-| `AuxPowClient` (Stratum v1) | ✅ Hotovo | Single background reader, response routing, KAS/ALPH/DCR notify parsing |
-| `ExternalHashers` (Blake3, kHeavyHash) | ✅ Hotovo | Ověřeno proti rusty-kaspa test vektoru a luminousmining referenci |
+| `AuxPowClient` (Stratum v1 + EthStratum) | ✅ Hotovo | Single background reader, response routing, KAS/ALPH/DCR/ERG/RVN/ETC notify parsing |
+| `ExternalHashers` (Blake3, kHeavyHash, Autolykos, KawPow, Ethash) | ✅ Hotovo | Pure-Rust fallback + `native-hashers` C FFI; ověřeno proti rusty-kaspa a luminousmining |
+| `NativeFFI` (C hashers) | ✅ Hotovo | `csrc/` zkopírováno z V3/L1/native-ffi; `native-hashers` feature kompiluje C |
+| `GpuMiner` (OpenCL) | ✅ Skeleton | Kernel sources v `csrc/opencl/`; Rust API čeká na `opencl3`/`ocl` crate |
 | `JobMultiplexer` (B2b) | ✅ Hotovo | Connect/disconnect/rotate, job packaging |
 | `ShareForwarder` (B2b) | ✅ Hotovo | Target check → submit, mock testy |
-| `MinerHarness` (CPU scan) | ✅ Hotovo | Blake3 + kHeavyHash + kHeavyHash+extranonce1 |
+| `MinerHarness` (CPU scan) | ✅ Hotovo | Blake3 + kHeavyHash + Autolykos + KawPow + Ethash (pure-Rust fallback) |
 | `DualStratumMiner` (Phase 2 prep) | ✅ Skeleton | Nonce split, share disposition, assignment counting |
 | `TrueAuxPoW` (C) | ✅ Skeleton | AuxPoW Merkle root, validation, proof builder |
 | `ParentChains` (DCR/ALPH headers) | ✅ Skeleton | DcrHeader 180B, AlphHeader, CoinbaseCommitment |
@@ -263,22 +265,29 @@ Testy `true_auxpow::tests::*` ověřují:
 
 V `src/external_hashers.rs` jsou hotové:
 
-| Funkce | Algoritmus | Použití |
-|--------|-----------|---------|
-| `hash_blake3(header, timestamp, nonce)` | Blake3-256 | DCR, obecný Blake3 |
-| `hash_blake3_raw(input)` | Blake3-256 (raw) | Parent header hashing |
-| `hash_blake3_alph(header_blob, extranonce1, nonce)` | Double Blake3 | ALPH (WoolyPooly/HeroMiners) |
-| `hash_kheavyhash(pre_pow_hash, timestamp, nonce)` | kHeavyHash (cSHAKE256) | KAS |
-| `hash_kheavyhash_extranonce(pre_pow_hash, timestamp, nonce, en1)` | kHeavyHash + extranonce1 | KAS s pool extranonce |
-| `meets_target(hash, target)` | Target comparison | Všechny |
-| `parse_target_hex(hex)` | Hex → 32B target | Všechny |
-| `hash_to_hex(hash)` | 32B → hex string | Submit |
+| Funkce | Algoritmus | Použití | Native C |
+|--------|-----------|---------|----------|
+| `hash_blake3(header, timestamp, nonce)` | Blake3-256 | DCR, obecný Blake3 | ✅ `native-hashers` |
+| `hash_blake3_raw(input)` | Blake3-256 (raw) | Parent header hashing | ✅ `native-hashers` |
+| `hash_blake3_alph(header_blob, extranonce1, nonce)` | Double Blake3 | ALPH (WoolyPooly/HeroMiners) | ✅ `native-hashers` |
+| `hash_kheavyhash(pre_pow_hash, timestamp, nonce)` | kHeavyHash (cSHAKE256) | KAS | ✅ `native-hashers` |
+| `hash_kheavyhash_extranonce(pre_pow_hash, timestamp, nonce, en1)` | kHeavyHash + extranonce1 | KAS s pool extranonce | ✅ `native-hashers` |
+| `hash_autolykos(header, nonce, height)` | Autolykos v2 (Blake2b) | ERG | ✅ `native-hashers` |
+| `hash_kawpow(header, nonce, height)` | KawPow (ProgPow) | RVN, CLORE | ✅ `native-hashers` (DAG) |
+| `hash_ethash(header, nonce, height)` | Ethash/EtcHash | ETC | ✅ `native-hashers` (DAG) |
+| `meets_target(hash, target)` | Target comparison | Všechny | — |
+| `parse_target_hex(hex)` | Hex → 32B target | Všechny | — |
+| `hash_to_hex(hash)` | 32B → hex string | Submit | — |
+
+**Feature flagy:**
+- `native-hashers` — kompiluje C zdrojáky z `csrc/` (blake3, kheavyhash, autolykos, kawpow, etchash) přes `cc` crate. Pure-Rust fallback je vždy dostupný bez feature.
+- `gpu-opencl` — načítá OpenCL kernely z `csrc/opencl/` (blake3_alph, kheavyhash). Rust API skeleton v `src/gpu_miner.rs` čeká na `opencl3`/`ocl` crate dependency.
 
 **Reference ověření:**
-- `kheavyhash_known_vector` test — shoda s rusty-kaspa referencí (`cSHAKE256("ProofOfWorkHash") → cSHAKE256("HeavyHash")` přes 80B buffer).
+- `kheavyhash_known_vector` test — shoda s rusty-kaspa referencí.
 - `hash_blake3_alph` — shoda s luminousmining implementací (big-endian candidate nonce, double Blake3).
 
-Těžké algoritmy (`randomx`, `autolykos`, `ethash`, `kawpow`, `zelhash`) zůstávají pro miner jako budoucí rozšíření — AuXpow crate jim prozatím pouze připravuje rozhraní a může je delegovat na GPU/FFI vrstvu.
+**Poznámka:** KawPow a Ethash vyžadují DAG (directed acyclic graph) počítaný per-epoch. Pure-Rust fallback NENÍ validní pro reálný mining — produkuje deterministický hash, ale nesplňuje algoritmus. Pro reálný mining použijte `native-hashers` feature s C implementací, která obsahuje DAG.
 
 ### 4.2 Coin selection / profit switching
 
