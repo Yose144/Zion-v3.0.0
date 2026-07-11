@@ -15,8 +15,10 @@
 
 use anyhow::{anyhow, Result};
 
-use crate::external_hashers::{hash_blake3, hash_kheavyhash, meets_target};
-use crate::types::JobPackage;
+use crate::external_hashers::{
+    hash_blake3, hash_blake3_alph, hash_kheavyhash, meets_target,
+};
+use crate::types::{ExternalCoin, JobPackage};
 
 /// A share found by the harness.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -44,7 +46,13 @@ pub fn mine(job: &JobPackage, range: std::ops::Range<u64>) -> Result<Option<Foun
     }
 
     match algo {
-        "blake3" => Ok(scan(job, start, end, hash_blake3)),
+        "blake3" => {
+            if job.external_coin == ExternalCoin::ALPH {
+                Ok(scan_blake3_alph(job, start, end))
+            } else {
+                Ok(scan(job, start, end, hash_blake3))
+            }
+        }
         "kheavyhash" => Ok(scan(job, start, end, hash_kheavyhash)),
         other => Err(anyhow!("algorithm '{}' not supported by CPU harness", other)),
     }
@@ -60,6 +68,24 @@ where
 
     for nonce in start..end {
         let hash = hash_fn(header, timestamp, nonce);
+        if meets_target(&hash, target) {
+            return Some(FoundShare {
+                external_job_id: job.external_job_id.clone(),
+                nonce,
+                hash,
+            });
+        }
+    }
+    None
+}
+
+fn scan_blake3_alph(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
+    let header = &job.header_bytes;
+    let target = &job.target_bytes;
+    let extranonce1 = &job.extranonce1;
+
+    for nonce in start..end {
+        let hash = hash_blake3_alph(header, extranonce1, nonce);
         if meets_target(&hash, target) {
             return Some(FoundShare {
                 external_job_id: job.external_job_id.clone(),
@@ -89,6 +115,7 @@ mod tests {
             header_bytes: b"harness_header".to_vec(),
             target_bytes: target,
             timestamp: 0,
+            extranonce1: Vec::new(),
             start_nonce: 0,
             nonce_count: 1_000_000,
         }
@@ -102,6 +129,7 @@ mod tests {
             header_bytes: b"harness_header".to_vec(),
             target_bytes: [0x00u8; 32], // impossible
             timestamp: 0,
+            extranonce1: Vec::new(),
             start_nonce: 0,
             nonce_count: 100,
         }
@@ -133,6 +161,7 @@ mod tests {
             header_bytes: vec![],
             target_bytes: [0xFFu8; 32],
             timestamp: 0,
+            extranonce1: Vec::new(),
             start_nonce: 0,
             nonce_count: 10,
         };

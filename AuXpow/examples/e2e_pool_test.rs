@@ -89,7 +89,7 @@ async fn main() -> anyhow::Result<()> {
         job.algorithm,
         job.header_bytes.len(),
         difficulty,
-        hex::encode(&share_target[..4])
+        hex::encode(&share_target[..8])
     );
 
     // 3) Optionally mine
@@ -169,6 +169,7 @@ async fn mine_job(
         header_bytes: job.header_bytes.clone(),
         target_bytes: share_target,
         timestamp: job.timestamp.unwrap_or(0),
+        extranonce1: job.extranonce1.clone(),
         start_nonce: 0,
         nonce_count: u64::MAX,
     };
