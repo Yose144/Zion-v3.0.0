@@ -27,8 +27,8 @@ type Tab = 'wallet' | 'mining' | 'transactions' | 'ai';
 const TABS: { id: Tab; labelCs: string; labelEn: string; icon: typeof Wallet; rc: string }[] = [
   { id: 'wallet', labelCs: 'Peněženka', labelEn: 'Wallet', icon: Wallet, rc: '6, 182, 212' },
   { id: 'mining', labelCs: 'Těžení', labelEn: 'Mining', icon: Pickaxe, rc: '147, 51, 234' },
-  { id: 'transactions', labelCs: 'Transakce', labelEn: 'Transactions', icon: ArrowLeftRight, rc: '255, 215, 0' },
-  { id: 'ai', labelCs: 'AI Chat', labelEn: 'AI Chat', icon: Sparkles, rc: '236, 72, 153' },
+  { id: 'transactions', labelCs: 'Transakce', labelEn: 'Transactions', icon: ArrowLeftRight, rc: '251, 191, 36' },
+  { id: 'ai', labelCs: 'AI Chat', labelEn: 'AI Chat', icon: Sparkles, rc: '6, 182, 212' },
 ];
 
 interface DashboardStats {
@@ -231,7 +231,7 @@ export default function AccountPage() {
           >
             <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
               <div className="space-y-5">
-                <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-gold uppercase">
+                <div className="zion-badge-gold">
                   <User className="h-4 w-4" />
                   {cs ? 'Můj účet' : 'My Account'}
                 </div>
@@ -247,20 +247,20 @@ export default function AccountPage() {
 
                 <button
                   onClick={copyAddress}
-                  className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-mono text-gray-400 hover:border-white/20 transition-colors"
+                  className="zion-button-secondary rounded-full px-4 py-2 text-xs font-mono"
                 >
                   {user.address}
                   {copied ? <Check className="h-3 w-3 text-green-400" /> : <Copy className="h-3 w-3" />}
                 </button>
 
                 <div className="flex flex-wrap gap-3 text-xs">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-emerald-200">
+                  <span className="zion-badge-green">
                     <Shield className="h-3 w-3" /> {cs ? 'Autentizováno' : 'Authenticated'}
                   </span>
-                  <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-4 py-2 text-cyan-200">
+                  <span className="zion-badge-cyan">
                     <Zap className="h-3 w-3" /> ZION L1
                   </span>
-                  <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
+                  <span className="zion-badge">
                     <Globe2 className="h-3 w-3" /> {cs ? 'On-Chain' : 'On-Chain'}
                   </span>
                 </div>
@@ -273,7 +273,7 @@ export default function AccountPage() {
                     {cs ? 'Rychlý přehled účtu' : 'Account Overview'}
                   </p>
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '255, 215, 0' } as CSSProperties}>
+                    <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
                       <div className="flex items-center gap-2 text-sm text-gray-300">
                         <Activity className="h-4 w-4 text-zion-gold" />
                         {cs ? 'Přihlášení' : 'Logins'}
@@ -296,9 +296,9 @@ export default function AccountPage() {
                       </div>
                       <span className="font-mono text-white">{formattedCreated}</span>
                     </div>
-                    <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '236, 72, 153' } as CSSProperties}>
+                    <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
                       <div className="flex items-center gap-2 text-sm text-gray-300">
-                        <Sparkles className="h-4 w-4 text-pink-400" />
+                        <Sparkles className="h-4 w-4 text-zion-cyan" />
                         {cs ? 'Poslední login' : 'Last Login'}
                       </div>
                       <span className="font-mono text-white">{formattedLastLogin}</span>
@@ -311,7 +311,7 @@ export default function AccountPage() {
                     await logout();
                     router.push('/');
                   }}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-red-500/20 bg-red-500/5 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors"
+                  className="zion-button-secondary w-full items-center justify-center gap-2 text-red-400 hover:text-red-300"
                 >
                   <LogOut className="h-3.5 w-3.5" /> {cs ? 'Odhlásit se' : 'Logout'}
                 </button>
@@ -350,7 +350,7 @@ export default function AccountPage() {
                 icon={<Pickaxe className="h-5 w-5" />}
                 colorClass="text-zion-gold"
                 bgClass="bg-zion-gold/10"
-                rc="255, 215, 0"
+                rc="251, 191, 36"
                 label={cs ? 'Odměny za těžení' : 'Mining Rewards'}
                 value={stats.miningRewards !== null ? `${stats.miningRewards.toFixed(8)} ZION` : '—'}
                 sub={cs ? 'celkem vytěženo' : 'total earned'}
@@ -368,9 +368,9 @@ export default function AccountPage() {
               />
               <StatCard
                 icon={<Bot className="h-5 w-5" />}
-                colorClass="text-pink-400"
-                bgClass="bg-pink-400/10"
-                rc="236, 72, 153"
+                colorClass="text-zion-cyan"
+                bgClass="bg-zion-cyan/10"
+                rc="6, 182, 212"
                 label={cs ? 'AI relace' : 'AI Sessions'}
                 value={stats.aiSessions !== null ? String(stats.aiSessions) : '—'}
                 sub={cs ? 'Hiranyagarbha' : 'Hiranyagarbha'}
@@ -402,9 +402,10 @@ export default function AccountPage() {
                     onClick={() => setActiveTab(t.id)}
                     className={`inline-flex items-center gap-2 rounded-xl px-3 md:px-4 py-2 text-sm font-medium transition ${
                       isActive
-                        ? 'border border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan hover:bg-zion-cyan/20'
+                        ? 'zion-rainbow-sub'
                         : 'border border-white/10 bg-white/5 text-gray-300 hover:border-white/25 hover:text-white'
                     }`}
+                    style={isActive ? ({ '--rc': t.rc } as CSSProperties) : undefined}
                   >
                     <Icon className="h-3.5 w-3.5" />
                     {cs ? t.labelCs : t.labelEn}
@@ -444,7 +445,7 @@ export default function AccountPage() {
                 </div>
               )}
               {activeTab === 'transactions' && (
-                <div className="zion-rainbow-card p-6" style={{ '--rc': '255, 215, 0' } as CSSProperties}>
+                <div className="zion-rainbow-card p-6" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
                   <div className="flex items-center gap-2 mb-6">
                     <ArrowLeftRight className="h-5 w-5 text-zion-gold" />
                     <h2 className="text-lg font-bold text-white">{cs ? 'Historie transakcí' : 'Transaction History'}</h2>
@@ -453,9 +454,9 @@ export default function AccountPage() {
                 </div>
               )}
               {activeTab === 'ai' && (
-                <div className="zion-rainbow-card p-6" style={{ '--rc': '236, 72, 153' } as CSSProperties}>
+                <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
                   <div className="flex items-center gap-2 mb-6">
-                    <Sparkles className="h-5 w-5 text-pink-400" />
+                    <Sparkles className="h-5 w-5 text-zion-cyan" />
                     <h2 className="text-lg font-bold text-white">{cs ? 'Hiranyagarbha AI' : 'Hiranyagarbha AI'}</h2>
                   </div>
                   <DashboardAIChat />
@@ -477,14 +478,14 @@ export default function AccountPage() {
               {cs ? 'Pokračuj ve ZION ekosystému' : 'Continue in the ZION ecosystem'}
             </h2>
             <div className="flex flex-wrap justify-center gap-4">
-              <Link href="/wallet" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '255, 215, 0' } as CSSProperties}>
-                <Wallet className="h-4 w-4 text-zion-gold" /> {cs ? 'Peněženka' : 'Wallet'}
+              <Link href="/wallet" className="zion-button-primary">
+                <Wallet className="h-4 w-4" /> {cs ? 'Peněženka' : 'Wallet'}
               </Link>
-              <Link href="/explorer" className="inline-flex items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 px-6 py-3 text-sm font-semibold text-emerald-200 hover:bg-emerald-500/10 transition-colors">
+              <Link href="/explorer" className="zion-button-secondary">
                 <Globe2 className="h-4 w-4" /> Explorer
               </Link>
-              <Link href="/defi" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '147, 51, 234' } as CSSProperties}>
-                <TrendingUp className="h-4 w-4 text-purple-400" /> DeFi
+              <Link href="/defi" className="zion-button-secondary">
+                <TrendingUp className="h-4 w-4" /> DeFi
               </Link>
             </div>
           </motion.div>

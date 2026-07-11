@@ -474,7 +474,7 @@ export default function DogeVsZionPage() {
           </Link>
           <button
             onClick={() => setMuted((m) => !m)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 text-xs text-gray-400 hover:text-white transition-colors"
+            className="zion-button-secondary text-gray-400 hover:text-white !px-3 !py-1.5 !text-xs"
           >
             {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
           </button>
@@ -486,7 +486,7 @@ export default function DogeVsZionPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="relative overflow-hidden zion-rainbow-card"
-          style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+          style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
         >
           {/* Cosmic showdown background */}
           <ShowdownHero className="absolute inset-0 h-full w-full" />
@@ -522,7 +522,7 @@ export default function DogeVsZionPage() {
             >
               <Link
                 href="/l4-oasis"
-                className="group inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/5 px-5 py-2 text-sm font-bold text-zion-cyan transition-all hover:border-zion-cyan/60 hover:bg-zion-cyan/10 hover:shadow-[0_8px_30px_rgba(111,255,240,0.2)]"
+                className="zion-button-secondary group"
               >
                 {cs ? 'Vstoupit do Oasis' : 'Enter to Oasis'}
                 <span className="transition-transform group-hover:translate-x-1">→</span>
@@ -571,19 +571,19 @@ export default function DogeVsZionPage() {
               transition={{ delay: 0.7 }}
               className="mt-6 flex flex-wrap justify-center gap-3 text-xs"
             >
-              <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/50 px-3 py-1.5 backdrop-blur-sm">
+              <div className="zion-badge">
                 <Gamepad2 className="h-3.5 w-3.5 text-zion-cyan" />
-                <span className="text-gray-300">{GAMES.length} {cs ? 'her' : 'games'}</span>
+                <span>{GAMES.length} {cs ? 'her' : 'games'}</span>
               </div>
-              <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/50 px-3 py-1.5 backdrop-blur-sm">
+              <div className="zion-badge-gold">
                 <Trophy className="h-3.5 w-3.5 text-zion-gold" />
-                <span className="text-gray-300">
+                <span>
                   {Object.values(highScores).reduce((a, b) => a + b, 0)} {cs ? 'bodů' : 'pts'}
                 </span>
               </div>
-              <div className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 backdrop-blur-sm ${zion.connected ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-white/10 bg-black/50'}`}>
+              <div className={`zion-badge ${zion.connected ? 'zion-badge-green' : ''}`}>
                 <span className={`h-2 w-2 rounded-full ${zion.connected ? 'bg-emerald-400 animate-pulse' : 'bg-gray-500'}`} />
-                <span className="text-gray-300">{zion.connected ? (cs ? 'ZION online' : 'ZION live') : (cs ? 'ZION offline' : 'ZION offline')}</span>
+                <span>{zion.connected ? (cs ? 'ZION online' : 'ZION live') : (cs ? 'ZION offline' : 'ZION offline')}</span>
               </div>
             </motion.div>
           </div>
@@ -637,7 +637,7 @@ export default function DogeVsZionPage() {
               style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
             >
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl text-2xl bg-amber-500/15 border border-amber-500/40">
+                <div className="zion-rainbow-sub flex h-12 w-12 items-center justify-center rounded-xl text-2xl" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                   🐕
                 </div>
                 <div>
@@ -647,7 +647,7 @@ export default function DogeVsZionPage() {
               </div>
               <div className="space-y-2">
                 {metrics.map((m) => (
-                  <div key={m.label} className="flex items-center justify-between border-b border-white/5 pb-1.5">
+                  <div key={m.label} className="zion-rainbow-sub p-2.5 flex items-center justify-between" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                     <span className="text-xs text-gray-500">{cs ? m.labelCs : m.label}</span>
                     <span className="text-xs font-semibold text-amber-300 text-right">{m.doge}</span>
                   </div>
@@ -662,22 +662,22 @@ export default function DogeVsZionPage() {
               viewport={{ once: true }}
               transition={{ duration: 0.4 }}
               className="zion-rainbow-card p-5"
-              style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+              style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
             >
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl text-2xl bg-purple-500/15 border border-purple-500/40">
+                <div className="zion-rainbow-sub flex h-12 w-12 items-center justify-center rounded-xl text-2xl" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                   🌌
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-purple-400">ZION</h3>
+                  <h3 className="text-lg font-bold text-zion-gold">ZION</h3>
                   <p className="text-[10px] uppercase tracking-widest text-gray-500">ZION · Deeksha Lite · {zion.connected ? 'LIVE' : 'OFFLINE'}</p>
                 </div>
               </div>
               <div className="space-y-2">
                 {metrics.map((m) => (
-                  <div key={m.label} className="flex items-center justify-between border-b border-white/5 pb-1.5">
+                  <div key={m.label} className="zion-rainbow-sub p-2.5 flex items-center justify-between" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                     <span className="text-xs text-gray-500">{cs ? m.labelCs : m.label}</span>
-                    <span className="text-xs font-semibold text-emerald-300 text-right">{m.zion}</span>
+                    <span className="text-xs font-semibold text-zion-gold text-right">{m.zion}</span>
                   </div>
                 ))}
               </div>
@@ -690,12 +690,13 @@ export default function DogeVsZionPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.15 }}
-            className="mt-4 relative overflow-hidden rounded-2xl border border-amber-500/20 bg-gradient-to-r from-amber-500/5 via-purple-500/5 to-amber-500/5 p-5"
+            className="mt-4 zion-rainbow-sub p-5"
+            style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
           >
             <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
               {/* Left: Doge 2013 */}
               <div className="flex items-center gap-3 flex-1">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/15 border border-amber-500/30 text-lg">
+                <div className="zion-rainbow-sub flex h-10 w-10 items-center justify-center rounded-lg text-lg" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                   🐕
                 </div>
                 <div>
@@ -719,7 +720,7 @@ export default function DogeVsZionPage() {
 
               {/* Right: Doge now */}
               <div className="flex items-center gap-3 flex-1">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/15 border border-amber-500/30 text-lg">
+                <div className="zion-rainbow-sub flex h-10 w-10 items-center justify-center rounded-lg text-lg" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                   🐕
                 </div>
                 <div>
@@ -733,12 +734,12 @@ export default function DogeVsZionPage() {
 
               {/* ZION now = Doge 2013 */}
               <div className="flex items-center gap-3 flex-1">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/15 border border-purple-500/30 text-lg">
+                <div className="zion-rainbow-sub flex h-10 w-10 items-center justify-center rounded-lg text-lg" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                   🌌
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-purple-400">ZION · dnes</p>
-                  <p className="text-lg font-black text-purple-300">$0.0002</p>
+                  <p className="text-xs font-bold text-zion-gold">ZION · dnes</p>
+                  <p className="text-lg font-black text-zion-gold">$0.0002</p>
                 </div>
               </div>
             </div>
@@ -757,18 +758,18 @@ export default function DogeVsZionPage() {
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
             className="mt-6 zion-rainbow-sub p-5"
-            style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+            style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
           >
             <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
-              <Trophy className="h-4 w-4 text-emerald-400" />
+              <Trophy className="h-4 w-4 text-zion-gold" />
               {cs ? 'Výhody ZION' : 'ZION Advantages'}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {ZION_ADVANTAGES.map((adv) => {
                 const Icon = adv.icon;
                 return (
-                  <div key={adv.title} className="flex items-start gap-2.5 rounded-lg border border-white/5 bg-black/30 p-3">
-                    <Icon className="h-4 w-4 mt-0.5 shrink-0 text-emerald-400" />
+                  <div key={adv.title} className="zion-rainbow-sub p-3 flex items-start gap-2.5" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+                    <Icon className="h-4 w-4 mt-0.5 shrink-0 text-zion-gold" />
                     <div>
                       <p className="text-xs font-semibold text-white">{cs ? adv.titleCs : adv.title}</p>
                       <p className="text-[11px] text-gray-400 mt-0.5 leading-relaxed">{cs ? adv.descCs : adv.desc}</p>
@@ -806,8 +807,8 @@ export default function DogeVsZionPage() {
               const isZionWin = stat.winner === 'zion';
               const isDogeWin = stat.winner === 'doge';
               const isTie = stat.winner === 'tie';
-              const winnerColor = isZionWin ? 'text-emerald-400' : isDogeWin ? 'text-amber-400' : 'text-gray-400';
-              const winnerBg = isZionWin ? 'border-emerald-500/30 bg-emerald-500/5' : isDogeWin ? 'border-amber-500/30 bg-amber-500/5' : 'border-white/10 bg-black/30';
+              const winnerColor = isZionWin ? 'text-zion-gold' : isDogeWin ? 'text-amber-400' : 'text-gray-400';
+              const winnerRc = isZionWin ? '251, 191, 36' : isDogeWin ? '245, 158, 11' : '107, 114, 128';
               return (
                 <motion.div
                   key={idx}
@@ -815,9 +816,10 @@ export default function DogeVsZionPage() {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: idx * 0.08 }}
-                  className={`flex items-center gap-4 rounded-xl border p-4 ${winnerBg}`}
+                  className="zion-rainbow-sub p-4 flex items-center gap-4"
+                  style={{ '--rc': winnerRc } as React.CSSProperties}
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/5 border border-white/10">
+                  <div className="zion-rainbow-sub flex h-10 w-10 shrink-0 items-center justify-center" style={{ '--rc': winnerRc } as React.CSSProperties}>
                     <Icon className={`h-5 w-5 ${winnerColor}`} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -882,7 +884,7 @@ export default function DogeVsZionPage() {
               style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
             >
               <div className="flex items-center gap-3 mb-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl text-2xl bg-amber-500/15 border border-amber-500/40">
+                <div className="zion-rainbow-sub flex h-12 w-12 items-center justify-center rounded-xl text-2xl" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                   🐕
                 </div>
                 <div>
@@ -895,14 +897,7 @@ export default function DogeVsZionPage() {
                   ? 'Legendární klikárna, která to všechno začala. Těž Dogecoiny, najmi psy, let na měsíc. 100% time-waster, 0% kvantová odolnost.'
                   : 'The legendary clicker that started it all. Mine Dogecoins, hire dogs, go to the moon. 100% time-waster, 0% quantum resistance.'}
               </p>
-              <div
-                className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all group-hover:gap-3"
-                style={{
-                  backgroundColor: 'rgba(245,158,11,0.2)',
-                  color: '#f59e0b',
-                  border: '1px solid rgba(245,158,11,0.4)',
-                }}
-              >
+              <div className="zion-button-secondary group-hover:gap-3 text-xs !px-4 !py-2">
                 <ExternalLink className="h-3.5 w-3.5" />
                 {cs ? 'Hrát externě' : 'Play External'}
               </div>
@@ -915,15 +910,15 @@ export default function DogeVsZionPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4 }}
-              className="group relative overflow-hidden zion-rainbow-card p-5 text-left transition-all hover:scale-[1.02]"
-              style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+              className="group zion-rainbow-card p-5 text-left transition-all hover:scale-[1.02]"
+              style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
             >
               <div className="flex items-center gap-3 mb-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl text-2xl bg-purple-500/15 border border-purple-500/40">
+                <div className="zion-rainbow-sub flex h-12 w-12 items-center justify-center rounded-xl text-2xl" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                   ⭐
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-purple-400">Star Miner</h3>
+                  <h3 className="text-lg font-bold text-zion-gold">Star Miner</h3>
                   <p className="text-[10px] uppercase tracking-widest text-gray-500">{cs ? 'ZION odpověď' : 'ZION answer'}</p>
                 </div>
               </div>
@@ -932,14 +927,7 @@ export default function DogeVsZionPage() {
                   ? 'ZION odpověď na Doge Miner 2. Těž na hvězdě, stavej rigy od CPU po Cosmic Harmony, dosáhni Issobelly. 100% time-waster, 100% kvantová odolnost.'
                   : "ZION's answer to Doge Miner 2. Mine on the star, build rigs from CPU to Cosmic Harmony, reach Issobella. 100% time-waster, 100% quantum resistance."}
               </p>
-              <div
-                className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all group-hover:gap-3"
-                style={{
-                  backgroundColor: 'rgba(147,51,234,0.2)',
-                  color: '#a855f7',
-                  border: '1px solid rgba(147,51,234,0.4)',
-                }}
-              >
+              <div className="zion-button-primary group-hover:gap-3 text-xs !px-4 !py-2">
                 <Play className="h-3.5 w-3.5" />
                 {cs ? 'Hrát' : 'Play'}
               </div>
@@ -1047,15 +1035,7 @@ export default function DogeVsZionPage() {
                             : (cs ? 'Ještě nehráno' : 'Not played yet')}
                         </span>
                       </div>
-                      <div
-                        className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all group-hover:gap-3 group-hover:scale-105"
-                        style={{
-                          backgroundColor: `${game.color}25`,
-                          color: game.color,
-                          border: `1px solid ${game.color}40`,
-                          boxShadow: `0 0 15px ${game.glowColor}20`,
-                        }}
-                      >
+                      <div className="zion-button-primary group-hover:gap-3 text-xs !px-4 !py-2">
                         <Play className="h-3.5 w-3.5" />
                         {cs ? 'Hrát' : 'Play'}
                       </div>
@@ -1119,11 +1099,11 @@ export default function DogeVsZionPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.1 }}
-                className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/40 p-5 opacity-70"
-                style={{ '--rc': game.color } as React.CSSProperties}
+                className="zion-rainbow-sub p-5 opacity-70"
+                style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
               >
                 {/* Lock overlay */}
-                <div className="absolute top-3 right-3 flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 border border-white/10">
+                <div className="absolute top-3 right-3 zion-rainbow-sub flex h-8 w-8 items-center justify-center" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                   <Lock className="h-4 w-4 text-gray-500" />
                 </div>
 
@@ -1134,13 +1114,7 @@ export default function DogeVsZionPage() {
                 />
 
                 <div className="relative flex items-center gap-3 mb-3">
-                  <div
-                    className="flex h-12 w-12 items-center justify-center rounded-xl text-2xl grayscale"
-                    style={{
-                      backgroundColor: `${game.color}15`,
-                      border: `1px solid ${game.color}30`,
-                    }}
-                  >
+                  <div className="zion-rainbow-sub flex h-12 w-12 items-center justify-center rounded-xl text-2xl grayscale" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                     {game.emoji}
                   </div>
                   <h3 className="text-base font-bold text-gray-400">{cs ? game.titleCs : game.title}</h3>
@@ -1173,13 +1147,13 @@ function ZionDefenseWrapper({ onBack, muted, setMuted }: {
         <div className="zion-container flex items-center justify-between">
           <button
             onClick={onBack}
-            className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
+            className="zion-button-secondary gap-2 text-sm text-gray-400 hover:text-white !px-3 !py-1.5"
           >
             <ArrowLeft className="h-4 w-4" /> Arcade
           </button>
           <button
             onClick={() => setMuted((m) => !m)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 text-xs text-gray-400 hover:text-white transition-colors"
+            className="zion-button-secondary text-gray-400 hover:text-white !px-3 !py-1.5 !text-xs"
           >
             {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
           </button>
