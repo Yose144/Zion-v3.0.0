@@ -859,9 +859,14 @@ Fixed script: `V3/deploy/new-server/zion-watchdog.sh`. Report: [`POOL_WATCHDOG_F
 - **Env vars:** `ZION_AUXPOW_ENABLED`, `ZION_AUXPOW_WALLET`, `ZION_AUXPOW_ALLOCATION`, `ZION_AUXPOW_POOL_PREFERENCE`, `ZION_AUXPOW_HYSTERESIS_PCT`, `ZION_AUXPOW_CB_THRESHOLD`, `ZION_AUXPOW_CB_RESET_SECS` (10 total)
 - **Tests:** 146/146 pass (40 auxpow + 73 pool lib + 33 pool server)
 - **Deployed:** Edge server `62.171.141.136` — pool binary + dashboard, `enabled: false` by default
+- **Live tested:** 2026-07-11 — TCP connect + Stratum subscribe to `kas.2miners.com:2020` succeeded, authorize rejected dummy wallet (expected), circuit breaker tripped correctly after 5 failures
+- **Critical design notes:**
+  - Tokio runtime MUST be leaked via `std::mem::forget()` — if dropped, all spawned tasks are immediately cancelled
+  - Pool server has no `tracing` subscriber — use `println!` not `info!/warn!` for scheduler logging
+  - Pool addresses change frequently — 2miners delisted DCR/ALPH, KAS port 4444→2020, ERG port 3056→8888 (verified 2026-07-11)
 - **Plan:** [`AUXPOW_MERGE_MINING_PLAN.md`](./AUXPOW_MERGE_MINING_PLAN.md) — 3-phase approach (Phase 1 = stratum proxy ✅, Phase 2 = miner dual-stratum, Phase 3 = true AuxPow protocol hard fork)
 - **Report:** [`docs/3.0.5/AUXPOW_INTEGRATION_REPORT_2026-07-11.md`](./docs/3.0.5/AUXPOW_INTEGRATION_REPORT_2026-07-11.md)
-- **Commits:** `44371aa10` (crate), `0a49a3f48` (pool + dashboard integration)
+- **Commits:** `44371aa10` (crate), `0a49a3f48` (pool + dashboard integration), `7eb9f89cb` (docs), `f14500db3` (3 bug fixes: runtime leak, pool addresses, println logging)
 
 ## Current Status (2026-07-07 — Post Hard Reset)
 
