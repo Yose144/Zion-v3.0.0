@@ -48,7 +48,11 @@ export default function Navigation() {
       color: '251, 191, 36',
       items: [
         { href: '/defi', label: tr('nav', 'defi', lang) },
-        { href: '/ziondex', label: 'ZionDex' },
+        { href: '/ziondex', label: 'ZionDex', children: [
+          { href: '/dex', label: 'Swap Interface' },
+          { href: '/dex/liquidity', label: 'Liquidity Pools' },
+          { href: '/dex/portfolio', label: 'Portfolio' },
+        ] },
         { href: '/cex', label: tr('nav', 'cex', lang) },
         { href: '/warp', label: tr('nav', 'warp', lang) },
         { href: '/bridge', label: tr('nav', 'bridge', lang) },
@@ -109,6 +113,7 @@ export default function Navigation() {
   const tertiaryIcons = [
     { href: '/bridge', icon: ArrowLeftRight, color: '59, 130, 246', label: tr('nav', 'bridge', lang) },
     { href: '/ziondex', icon: ArrowRightLeft, color: '16, 185, 129', label: 'ZionDex' },
+    { href: '/dex', icon: Zap, color: '251, 191, 36', label: 'DEX Swap' },
     { href: '/dao', icon: Landmark, color: '147, 51, 234', label: tr('nav', 'dao', lang) },
     { href: '/cex', icon: Building2, color: '236, 72, 153', label: tr('nav', 'cex', lang) },
     { href: '/warp', icon: CircuitBoard, color: '99, 102, 241', label: tr('nav', 'warp', lang) },

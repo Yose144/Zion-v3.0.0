@@ -427,6 +427,17 @@ export default function DefiPage() {
                   {cs ? 'wZION/USDT · Uniswap V3' : 'wZION/USDT · Uniswap V3'}
                 </span>
               </div>
+              <div className="flex flex-wrap gap-3 pt-2">
+                <Link href="/dex" className="zion-button-primary text-sm">
+                  <Zap className="h-4 w-4" />
+                  {cs ? 'ZionDex Swap' : 'ZionDex Swap'}
+                  <ArrowRight className="h-3 w-3" />
+                </Link>
+                <Link href="/ziondex" className="zion-button-secondary text-sm">
+                  {cs ? 'O ZionDex' : 'About ZionDex'}
+                  <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
             </div>
 
             {/* Quick info / connect side card */}
