@@ -4779,7 +4779,7 @@ def get_pool_miners_dashboard() -> dict:
 
     # 8. Recent connection history
     try:
-        hist = get_pool_connection_history(limit=20, since_hours=24)
+        hist = get_pool_connection_history(limit=20, since_hours=1)
         result["connection_history"] = hist.get("events", [])
     except Exception:
         result["connection_history"] = []
@@ -9297,7 +9297,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(get_pool_miners())
         elif route == "/api/pool/connection-history":
             limit = int(params.get("limit", ["100"])[0])
-            since = int(params.get("since_hours", ["24"])[0])
+            since = int(params.get("since_hours", ["1"])[0])
             self._json(get_pool_connection_history(limit=limit, since_hours=since))
         elif route == "/api/pool/leaderboard":
             limit = int(params.get("limit", ["50"])[0])
