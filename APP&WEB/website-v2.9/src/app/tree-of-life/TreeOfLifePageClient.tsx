@@ -470,7 +470,8 @@ export default function TreeOfLifePageClient() {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 md:p-5"
+          className="zion-rainbow-sub p-4 md:p-5"
+          style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/20">
@@ -731,7 +732,10 @@ export default function TreeOfLifePageClient() {
 
           <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr] lg:items-start">
             {/* Tree SVG */}
-            <div className="relative mx-auto aspect-[3/4] w-full max-w-md overflow-hidden rounded-2xl border border-zion-gold/15 bg-[radial-gradient(circle_at_50%_15%,rgba(251,191,36,0.12),rgba(10,12,24,0.04)_30%,rgba(1,3,6,0.98)_75%)]">
+            <div
+              className="relative mx-auto aspect-[3/4] w-full max-w-md zion-rainbow-card"
+              style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
+            >
               {/* Paths */}
               <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
                 {PATHS.map(([from, to], i) => {
@@ -890,7 +894,7 @@ export default function TreeOfLifePageClient() {
                         </p>
                       </div>
 
-                      <div className="rounded-lg border border-white/10 bg-white/5 p-3">
+                      <div className="zion-rainbow-sub p-3" style={{ '--rc': selected.color } as React.CSSProperties}>
                         <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{cs ? 'Otázka' : 'Question'}</p>
                         <p className="mt-1 text-sm italic text-gray-300">
                           {cs ? selected.question.cs : selected.question.en}
@@ -935,15 +939,15 @@ export default function TreeOfLifePageClient() {
                         : 'Select a sephira on the tree to explore how the kabbalistic archetype maps to a ZION layer.'}
                     </p>
                     <div className="grid grid-cols-3 gap-2 pt-2 text-center">
-                      <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/5 p-2">
+                      <div className="zion-rainbow-sub p-2" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                         <p className="text-[9px] uppercase tracking-wider text-cyan-400">Mercy</p>
                         <p className="text-[10px] text-gray-500">3 sefirot</p>
                       </div>
-                      <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-2">
+                      <div className="zion-rainbow-sub p-2" style={{ '--rc': '239, 68, 68' } as React.CSSProperties}>
                         <p className="text-[9px] uppercase tracking-wider text-red-400">Severity</p>
                         <p className="text-[10px] text-gray-500">3 sefirot</p>
                       </div>
-                      <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-2">
+                      <div className="zion-rainbow-sub p-2" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                         <p className="text-[9px] uppercase tracking-wider text-amber-400">Equilibrium</p>
                         <p className="text-[10px] text-gray-500">4 sefirot</p>
                       </div>
@@ -1092,11 +1096,8 @@ export default function TreeOfLifePageClient() {
               return (
                 <div
                   key={s.id}
-                  className="rounded-xl border p-3 transition-all hover:scale-[1.02]"
-                  style={{
-                    borderColor: `rgba(${s.color}, 0.25)`,
-                    backgroundColor: `rgba(${s.color}, 0.05)`,
-                  }}
+                  className="zion-rainbow-sub p-3"
+                  style={{ '--rc': s.color } as React.CSSProperties}
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-white">{s.name}</span>
@@ -1438,11 +1439,8 @@ export default function TreeOfLifePageClient() {
               {CARE_TASKS.map((t) => (
                 <div
                   key={t.id}
-                  className="rounded-xl border p-4 transition-all hover:scale-[1.02]"
-                  style={{
-                    borderColor: `rgba(${t.color}, 0.25)`,
-                    backgroundColor: `rgba(${t.color}, 0.05)`,
-                  }}
+                  className="zion-rainbow-sub p-4"
+                  style={{ '--rc': t.color } as React.CSSProperties}
                 >
                   <div className="flex items-center gap-2">
                     <t.icon className="h-5 w-5" style={{ color: `rgb(${t.color})` }} />
@@ -1469,7 +1467,7 @@ export default function TreeOfLifePageClient() {
             </p>
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
               {NPU_CHIPS.map((c) => (
-                <div key={c.name} className="rounded-lg border border-white/10 bg-white/5 p-3 text-center">
+                <div key={c.name} className="zion-rainbow-sub p-3 text-center" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                   <p className="text-xs font-bold text-white">{c.name}</p>
                   <p className="text-[10px] text-gray-500">{c.device}</p>
                   <p className="mt-1 text-lg font-bold" style={{ color: `rgb(${c.color})` }}>{c.tops}<span className="text-xs text-gray-500"> TOPS</span></p>
@@ -1551,7 +1549,7 @@ export default function TreeOfLifePageClient() {
             <p className="text-sm text-gray-400">
               {cs ? 'Struktura care proof — AI inference output který prokazuje péči o síť:' : 'Care proof structure — AI inference output that proves care for the network:'}
             </p>
-            <pre className="overflow-x-auto rounded-lg border border-white/10 bg-black/40 p-4 text-xs text-gray-300"><code>{`struct CareProof {
+            <pre className="zion-rainbow-sub overflow-x-auto p-4 text-xs text-gray-300" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}><code>{`struct CareProof {
     validator_id: [u8; 32],     // Identifikátor validátora
     task_type: CareTask,        // Kategorie care tasku
     model_hash: [u8; 32],       // Hash AI modelu (Hiran version)
@@ -1605,7 +1603,7 @@ export default function TreeOfLifePageClient() {
             </h3>
             <div className="grid gap-3 sm:grid-cols-2">
               {FOUR_GREAT_VOWS.map((v, i) => (
-                <div key={i} className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+                <div key={i} className="zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                   <p className="text-sm italic text-gray-300">{cs ? v.cs : v.en}</p>
                 </div>
               ))}
@@ -1656,7 +1654,7 @@ export default function TreeOfLifePageClient() {
                   {b.mantra}
                 </p>
                 {/* Vow */}
-                <div className="rounded-lg border border-white/10 bg-white/5 p-3">
+                <div className="zion-rainbow-sub p-3" style={{ '--rc': b.color } as React.CSSProperties}>
                   <p className="text-xs italic leading-relaxed text-gray-300">
                     {cs ? b.vow.cs : b.vow.en}
                   </p>
@@ -1682,7 +1680,7 @@ export default function TreeOfLifePageClient() {
             </p>
             <div className="grid gap-2 sm:grid-cols-2">
               {EIGHT_PLEDGES.map((p) => (
-                <div key={p.num} className="flex items-start gap-3 rounded-lg border border-white/10 bg-white/5 p-3">
+                <div key={p.num} className="zion-rainbow-sub flex items-start gap-3 p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-[10px] font-bold text-amber-400">
                     {p.num}
                   </span>
