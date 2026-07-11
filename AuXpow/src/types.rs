@@ -408,6 +408,61 @@ pub struct AuxPowStats {
     pub coin_switches: u64,
 }
 
+// ── Pool-side multiplexing types ─────────────────────────────────────
+
+/// A job package prepared by the pool-side multiplexer for ZION miners.
+///
+/// This is the B2b interface: the ZION pool stays in charge, but the job
+/// content is taken from an external pool.  Miners hash `header_bytes`
+/// with the algorithm specified by `algorithm` and search nonces in
+/// `[start_nonce, start_nonce + nonce_count)`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct JobPackage {
+    pub external_coin: ExternalCoin,
+    pub external_job_id: String,
+    pub algorithm: String,
+    pub header_bytes: Vec<u8>,
+    pub target_bytes: [u8; 32],
+    pub start_nonce: u64,
+    pub nonce_count: u64,
+}
+
+/// Result of forwarding a share to the external pool.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ShareForwardResult {
+    /// Hash did not meet the external target — not submitted.
+    BelowTarget,
+    /// External pool accepted the share.
+    Accepted,
+    /// External pool rejected the share.
+    Rejected(String),
+    /// Unknown response from the external pool.
+    Unknown,
+    /// No active external connection.
+    NotConnected,
+}
+
+/// Simple revenue split between ZION and external coins.
+///
+/// Used when the operator wants a fixed percentage of miner time to be
+/// spent on external revenue rather than full profit switching.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct SplitConfig {
+    /// Weight for normal ZION jobs (0 = everything external).
+    pub zion_weight: u32,
+    /// Weight for external jobs (0 = only ZION).
+    pub external_weight: u32,
+}
+
+impl Default for SplitConfig {
+    fn default() -> Self {
+        Self {
+            zion_weight: 75,
+            external_weight: 25,
+        }
+    }
+}
+
 // ── Tests ────────────────────────────────────────────────────────────
 
 #[cfg(test)]
