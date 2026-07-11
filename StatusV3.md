@@ -1,9 +1,52 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** **2026-07-11** (**AUXPOW MERGE MINING — POOL SERVER + DASHBOARD INTEGRACE COMPLETE** — viz [`docs/3.0.5/AUXPOW_INTEGRATION_REPORT_2026-07-11.md`](./docs/3.0.5/AUXPOW_INTEGRATION_REPORT_2026-07-11.md) pro plný report).
+> **Datum:** **2026-07-12** (**ZIONDEX L3 WARP INTEGRATION + NON-EVM CONTRACTS + LIGHTNING LND + CROSS-CHAIN AMM ROUTING** — viz [`ZionDex.md`](./ZionDex.md) pro plný report).
+> **Předchozí update:** 2026-07-11 (**AUXPOW MERGE MINING — POOL SERVER + DASHBOARD INTEGRACE COMPLETE** — viz [`docs/3.0.5/AUXPOW_INTEGRATION_REPORT_2026-07-11.md`](./docs/3.0.5/AUXPOW_INTEGRATION_REPORT_2026-07-11.md) pro plný report).
 > **Předchozí update:** 2026-07-11 (**POOL WATCHDOG FIX + F1-F6 POOL SCALABILITY OPTIMIZATIONS — 1000+ MINER READY** — viz [`docs/3.0.5/POOL_PERF_REPORT_2026-07-11.md`](./docs/3.0.5/POOL_PERF_REPORT_2026-07-11.md) pro plný report).
 > **Předchozí update:** 2026-07-09 (3.0.5 "ALL GREEN" COMPLETE — 11/11 SLUŽEB ACTIVE + E2E MEMO TESTY POTVRZENY + PROTOCOL 3.0.5 + WEB DEPLOY OPTIMALIZACE — viz [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](./docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md)).
 > **Původní update:** 2026-07-07 (3.0.4 HARD GENESIS RESET — NOVÝ SERVER 62.171.141.136 — FULL STACK DEPLOYED — viz [`docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md`](./docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md) a [`HARDRESETOFFICIAL.md`](./docs/3.0.4/HARDRESETOFFICIAL.md) pro plný záznam).
+>
+> ### ZionDex L3 WARP Integration + Non-EVM Contracts + Lightning LND + Cross-Chain AMM Routing (2026-07-12)
+
+> **Co:** Tři hlavní milníky dodány paralelně — ZionDex Router napojen na reálné L3 WARP API (port 8453), non-EVM ZION token kontrakty pro 9 chainů, Lightning Network LND Docker setup, cross-chain AMM routing s Dijkstra path finding.
+>
+> **1. ZionDex → L3 WARP Integration:**
+> - `ZionDex/router/src/executor.rs` — `execute_bridge()` přepsáno pro reálné WARP REST API (POST /transfers/outbound, /transfers/inbound, polling /transfers/:id)
+> - `ZionDex/router/src/config.rs` — `bridge_api_url` → `127.0.0.1:8453` (WARP server)
+> - ZionDex.md aktualizováno — architektura, WARP endpoint tabulka, status "Live Beta"
+> - Web `/ziondex` landing page → "Live Beta" + 12 built items + architecture diagram
+> - Web `/dex` swap UI → L3 WARP branding, validator quorum stats, /ziondex link
+> - Navigation.tsx → ZionDex submenu (Swap, Liquidity, Portfolio) + DEX Swap ikona
+> - /defi page → "ZionDex Swap" CTA buttons
+> - Nasazeno na Edge: Docker rebuild + container restart, 5/5 pages 200 OK
+>
+> **2. Non-EVM ZION Token Contracts (9 chains):**
+> - `V3/L2/bridge/contracts/non-evm/` — 19 souborů:
+>   - Solana (SPL Anchor), Tron (TRC-20), Stellar (native asset + setup script), Cardano (Plutus minting policy), Cosmos (CosmWasm CW20), Aptos (Move Coin), Sui (Move Coin), NEAR (NEP-141), TON (TEP-74 jetton FunC)
+> - Všechny implementují bridgeMint/bridgeBurn s 5/5 WARP validator quorum, replay protection, max supply 144B ZION, min 100 ZION, emergency pause
+> - 9 WARP adapterů aktualizováno s odkazy na kontrakty a deployment instrukcemi
+>
+> **3. Lightning Network LND Setup:**
+> - `V3/L3/warp/docker/lightning/` — docker-compose.yml (bitcoind testnet + LND v0.18.2 + Redis), lnd.conf (REST 8080, gRPC 10009, keysend), bitcoin.conf (ZMQ, pruned 2GB)
+> - `V3/L3/warp/scripts/lightning/` — 5 skriptů (open_channel, list_channels, get_macaroon, create_invoice, pay_invoice)
+> - `edge-deploy/systemd/zion-edge-lnd.service` — systemd service
+> - `lightning.rs` aktualizován — Docker-aware error messages, enhanced health_check() (LND connectivity + channel balance + on-chain balance)
+> - `lightning_signer.rs` — wallet_balance_sat() method
+> - ROADMAP: Lightning Fáze A → 🟡 In Progress
+>
+> **4. Cross-Chain AMM Routing:**
+> - `ZionDex/router/src/aggregator.rs` (~740 řádků) — LiquidityAggregator s Dijkstra path finding
+> - LiquidityGraph s WARP bridge edges + AMM pool liquidity, vrací top 3 optimální cesty
+> - 30s price cache s USD-heuristic fallbacky, queryje WARP /chains (fallback na config registry)
+> - `quote.rs` — MultiPathQuote s top 3 cestami
+> - `api.rs` — GET /quote/multi endpoint
+> - `router.rs` — cross-chain path finding přes aggregator
+>
+> **Testy:** ZionDex Router 28/28 (20 unit + 8 integrace), WARP 499/499 (+ 1 ignored)
+>
+> **Commity:** `c54422094` (WARP API integration), `db9376f23` (web landing page), `03bcef653` (navigation + defi CTA), `dad8702db` (non-EVM contracts + LND + AMM routing — 47 files, +6930 řádků)
+>
+> **Co chybí:** Deploy non-EVM kontraktů na mainnet (relay keys + chain-specific deploy), LND node start na Edge (docker compose up + kanály), ZionDex Router service na Edge (port 8454)
 >
 > ### AuxPow Merge Mining — Pool Server + Dashboard Integrace COMPLETE + LIVE TEST + 3 BUG FIXES (2026-07-11)
 

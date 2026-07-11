@@ -1,7 +1,7 @@
 # ZION Roadmap — From 3.0.5 to Public Mainnet Launch
 
 > **Version:** 3.0.5 "All Green" canonical  
-> **Last updated:** 2026-07-10  
+> **Last updated:** 2026-07-12
 > **One source of truth:** [`3.0.4.md`](./docs/3.0.4/3.0.4.md) + [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](./docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md) · Live status: [`StatusV3.md`](./StatusV3.md) · Security: [`SecurityFirst.md`](./docs/3.0.4/SecurityFirst.md)  
 > **Engineering detail:** [`V3/ROADMAP.md`](./V3/ROADMAP.md)
 
@@ -123,7 +123,7 @@ Goal: resolve all owner blockers and operational gaps so the chain is fully cons
 
 | # | Task | Status | Detail |
 |---|------|--------|--------|
-| 3.1 | **Deploy non-EVM contracts** | 🔵 Planned | Aptos Move module, NEAR contract, Sui package, TON jetton, Cardano native token, Cosmos CosmWASM. |
+| 3.1 | **Deploy non-EVM contracts** | 🟡 In Progress | All 9 contract source files created in `V3/L2/bridge/contracts/non-evm/`: Solana (SPL Anchor), Tron (TRC-20), Stellar (native asset), Cardano (Plutus), Cosmos (CosmWasm CW20), Aptos (Move Coin), Sui (Move Coin), NEAR (NEP-141), TON (TEP-74 jetton). All implement bridgeMint/bridgeBurn with 5/5 quorum. 9 WARP adapters updated with contract references. Pending: deploy to mainnet (relay keys + chain-specific deploy). |
 | 3.2 | **Set relay keys on Edge** | 🔵 Pending | `WARP_<CHAIN>_RELAY_KEY` env vars for each non-EVM chain. |
 | 3.3 | **TON execute_mint fix** | ✅ Done | Full TX construction implemented via custom TL-B cell serialization (`ton_cell.rs`) + Ed25519 signing + BOC encoding + TON Center `sendBase64Transaction`. No external `ton-sdk`/`tonweb`/`tonlib` dependency needed. 60/60 tests pass. |
 | 3.4 | **Lightning Fáze A** | 🟡 In Progress | Docker setup created: `V3/L3/warp/docker/lightning/` (bitcoind testnet + LND + Redis). LND config: REST 8080, gRPC 10009, keysend enabled. Channel management scripts at `V3/L3/warp/scripts/lightning/`. `lightning.rs` adapter updated with Docker-aware error messages + enhanced health_check (LND connectivity, channel balance, on-chain balance). systemd service at `edge-deploy/systemd/zion-edge-lnd.service`. Pending: deploy to Edge, sync testnet, open channels, extract macaroon, configure WARP env vars. |
@@ -184,9 +184,9 @@ Final checklist. Full procedure in [`V3/docs/MAINNET_LAUNCH_SEQUENCE.md`](./V3/d
 
 | Initiative | Target | Detail |
 |------------|--------|--------|
-| **ZionDex** | Q4 2026 → Q3 2027 | ✅ **Live Beta** — Cross-chain DEX router powered by L3 WARP (port 8453). Router (Rust, 14 tests), AMM contracts (7 tests), SDK, web/mobile/desktop UI all built. Custom AMM deploy + intent-based execution pending. |
+| **ZionDex** | Q4 2026 → Q3 2027 | ✅ **Live Beta** — Cross-chain DEX router powered by L3 WARP (port 8453). Router (Rust, 28 tests), AMM contracts (7 tests), SDK, web/mobile/desktop UI all built. Cross-chain AMM routing with Dijkstra path finding (aggregator.rs). Custom AMM deploy + intent-based execution pending. |
 | **More EVM chains** | 2027 | Additional wZION deployments and bridge relays. |
-| **Non-EVM expansion** | 2027 | Full production WARP routes for Aptos, NEAR, Sui, TON, Cardano, Cosmos. |
+| **Non-EVM expansion** | 2027 | ✅ Contract source files created for 9 chains (Solana, Tron, Stellar, Cardano, Cosmos, Aptos, Sui, NEAR, TON). Pending: mainnet deploy + relay keys. |
 | **L5 Free World** | 2027–2028 | Genesis Garden, community blueprint, off-grid mesh. |
 | **L6 Issobella** | 2030+ | Space station concept, funding via 5% fee split. |
 | **Governance decentralization** | 2028–2030 | Move from Co-Admin to on-chain DAO. |
