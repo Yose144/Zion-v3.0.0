@@ -164,14 +164,15 @@ impl AuxPowScheduler {
             return Ok(());
         }
 
-        info!(
-            "AuxPow: scheduler started, allocation={:.0}%, wallet={}",
+        let wallet_display = if cfg.payout_wallet.is_empty() {
+            "<NOT SET>".to_string()
+        } else {
+            cfg.payout_wallet.clone()
+        };
+        println!(
+            "auxpow: scheduler started, allocation={:.0}%, wallet={}",
             cfg.allocation_pct * 100.0,
-            if cfg.payout_wallet.is_empty() {
-                "<NOT SET>"
-            } else {
-                &cfg.payout_wallet
-            }
+            wallet_display
         );
 
         loop {
@@ -180,7 +181,7 @@ impl AuxPowScheduler {
                 let mut cb = self.circuit.lock().await;
                 if cb.is_open() {
                     if cb.maybe_reset() {
-                        info!("AuxPow: circuit breaker reset, retrying...");
+                        println!("auxpow: circuit breaker reset, retrying...");
                     } else {
                         tokio::time::sleep(Duration::from_secs(5)).await;
                         continue;
@@ -191,21 +192,30 @@ impl AuxPowScheduler {
             // Select coin
             let coin = self.select_coin().await;
             if coin.is_none() {
-                warn!("AuxPow: no coin selected, waiting...");
+                println!("auxpow: no coin selected, waiting...");
                 tokio::time::sleep(Duration::from_secs(30)).await;
                 continue;
             }
             let coin = coin.unwrap();
 
             // Switch if needed
-            self.switch_coin(coin).await?;
+            if let Err(e) = self.switch_coin(coin).await {
+                println!("auxpow: switch_coin error: {:#}", e);
+                let tripped = self.circuit.lock().await.record_failure();
+                if tripped {
+                    println!("auxpow: circuit breaker tripped after failures");
+                }
+                let delay = self.scheduler_config.read().await.reconnect_delay_ms;
+                tokio::time::sleep(Duration::from_millis(delay)).await;
+                continue;
+            }
 
             // Mine
             if let Err(e) = self.mine_cycle().await {
-                warn!("AuxPow: mining error: {}", e);
+                println!("auxpow: mining error: {:#}", e);
                 let tripped = self.circuit.lock().await.record_failure();
                 if tripped {
-                    error!("AuxPow: circuit breaker tripped after failures");
+                    println!("auxpow: circuit breaker tripped after failures");
                 }
                 self.disconnect().await;
                 let delay = self.scheduler_config.read().await.reconnect_delay_ms;
@@ -236,16 +246,29 @@ impl AuxPowScheduler {
             return Ok(()); // already on this coin
         }
 
-        info!("AuxPow: switching to {} ({})", coin, coin.algorithm());
+        let pool_addr = coin.default_pool();
+        println!(
+            "auxpow: switching to {} ({}) pool={}",
+            coin,
+            coin.algorithm(),
+            pool_addr
+        );
 
         // Disconnect old client
         self.disconnect().await;
 
         // Connect to new pool
         let profile = CoinProfile::default_for(coin);
+        let pool_host = profile.pool_host.clone();
+        let pool_port = profile.pool_port;
         let client = AuxPowClient::new(profile);
         let cfg = self.config.read().await;
+        println!(
+            "auxpow: connecting to {}:{} as worker={}",
+            pool_host, pool_port, cfg.worker_name
+        );
         client.connect(&cfg.payout_wallet).await?;
+        println!("auxpow: connected to {} successfully", coin);
 
         *self.client.lock().await = Some(client);
         *self.current_coin.lock().await = Some(coin);

@@ -84,10 +84,10 @@ impl ExternalCoin {
 
     pub fn default_pool(self) -> &'static str {
         match self {
-            Self::DCR => "dcr.2miners.com:3333",
+            Self::DCR => "dcr.suprnova.cc:3256",
             Self::ALPH => "alph.2miners.com:4545",
-            Self::KAS => "kas.2miners.com:4444",
-            Self::ERG => "erg.2miners.com:3056",
+            Self::KAS => "kas.2miners.com:2020",
+            Self::ERG => "erg.2miners.com:8888",
             Self::RVN => "rvn.2miners.com:6060",
             Self::ETC => "etc.2miners.com:1010",
             Self::EVR => "evrprogpow.eu.mine.zpool.ca:1330",
@@ -424,8 +424,8 @@ mod tests {
         let p = CoinProfile::default_for(ExternalCoin::DCR);
         assert_eq!(p.ticker, "DCR");
         assert_eq!(p.algorithm, "blake3");
-        assert_eq!(p.pool_host, "dcr.2miners.com");
-        assert_eq!(p.pool_port, 3333);
+        assert_eq!(p.pool_host, "dcr.suprnova.cc");
+        assert_eq!(p.pool_port, 3256);
         assert!(p.enabled);
     }
 
