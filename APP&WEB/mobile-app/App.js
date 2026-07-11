@@ -15,6 +15,7 @@ import DashboardScreen from './src/screens/DashboardScreen';
 import MiningScreen from './src/screens/MiningScreen';
 import NetworkScreen from './src/screens/NetworkScreen';
 import BridgeScreen from './src/screens/BridgeScreen';
+import DexScreen from './src/screens/DexScreen';
 import DAOScreen from './src/screens/DAOScreen';
 import AIScreen from './src/screens/AIScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
@@ -95,6 +96,9 @@ const MainTabs = () => (
           case 'Bridge':
             iconName = 'swap-horizontal';
             break;
+          case 'Dex':
+            iconName = 'swap-horizontal-circle';
+            break;
           case 'DAO':
             iconName = 'vote-outline';
             break;
@@ -159,6 +163,11 @@ const MainTabs = () => (
       name="Bridge"
       component={BridgeScreen}
       options={{title: 'wZION Bridge'}}
+    />
+    <Tab.Screen
+      name="Dex"
+      component={DexScreen}
+      options={{title: 'ZionDex'}}
     />
     <Tab.Screen
       name="DAO"
