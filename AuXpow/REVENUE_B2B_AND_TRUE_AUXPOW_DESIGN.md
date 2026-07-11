@@ -1,5 +1,6 @@
 # AuXpow — Revenue B2b + True AuxPoW Design & Implementation
 
+> **Vývojový plán:** `AuXpowDev.md` (root) — kompletní fáze vývoje, milestones, technický dluh.
 > **Scope:** Všechny nové nápady, kód a dokumentace zůstávají v `AuXpow/` — žádné změny ve `V3/` dokud design není ověřen.
 > **Cíl:** Nabídnout ZION poolu dvě revenue/bezpečnostní cesty, které se dají později integrovat do `V3/L1/pool`:
 > 1. **B2b — Pool-side job multiplexing** (krátkodobý revenue z minerů na ZION poolu).
