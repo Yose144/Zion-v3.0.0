@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type CSSProperties } from "react";
 import { useLang } from "@/contexts/LanguageContext";
+
+const zionStyle = (rc: string): CSSProperties => ({ "--rc": rc } as CSSProperties);
 
 interface StreamConfig {
   stream: number;
@@ -258,11 +260,10 @@ export default function CH3SettingsPage() {
         {Object.entries(settings.streams).map(([key, stream]) => (
           <div
             key={key}
-            className={`relative overflow-hidden rounded-xl p-4 border ${
-              stream.enabled
-                ? "border-white/10 bg-white/5"
-                : "border-white/10 bg-black/40 opacity-60"
+            className={`zion-rainbow-card p-4 ${
+              stream.enabled ? "" : "opacity-60"
             }`}
+            style={zionStyle("251, 191, 36")}
           >
             {/* Gradient bar */}
             <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${STREAM_COLORS[key]}`} />
@@ -289,7 +290,7 @@ export default function CH3SettingsPage() {
             <div className="text-gray-400 text-sm">~{stream.target_share * 100}%</div>
             
             {key === "dynamic_gpu" && stream.current_coin && (
-              <div className="mt-2 text-xs bg-purple-900/50 px-2 py-1 rounded inline-block">
+              <div className="mt-2 text-xs zion-rainbow-sub px-2 py-1 inline-block" style={zionStyle("245, 158, 11")}>
                 Mining: {stream.current_coin}
               </div>
             )}
@@ -303,11 +304,12 @@ export default function CH3SettingsPage() {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-lg transition-colors ${
+            className={`px-4 py-2 font-bold transition-colors ${
               activeTab === tab
-                ? "bg-zion-gold text-black font-bold"
-                : "bg-black/40 text-gray-400 hover:bg-white/10"
+                ? "zion-rainbow-sub"
+                : "rounded-lg bg-black/40 text-gray-400 hover:bg-white/10"
             }`}
+            style={activeTab === tab ? zionStyle("251, 191, 36") : undefined}
           >
             {tab === "overview" && (lang === 'cs' ? '📊 Přehled' : '📊 Overview')}
             {tab === "merged" && (lang === 'cs' ? '💎 Merged Mining' : '💎 Merged Mining')}
@@ -318,7 +320,7 @@ export default function CH3SettingsPage() {
       </div>
 
       {/* Tab Content */}
-      <div className="bg-white/5 rounded-xl p-6 border border-white/10">
+      <div className="zion-rainbow-card p-6" style={zionStyle("251, 191, 36")}>
         {/* Overview Tab */}
         {activeTab === "overview" && (
           <div>
@@ -342,7 +344,7 @@ export default function CH3SettingsPage() {
             {/* Stream details */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {Object.entries(settings.streams).map(([key, stream]) => (
-                <div key={key} className="bg-black/40 rounded-lg p-4">
+                <div key={key} className="zion-rainbow-sub p-4" style={zionStyle("245, 158, 11")}>
                   <div className="flex items-center gap-3 mb-2">
                     <span className="text-2xl">{STREAM_ICONS[key]}</span>
                     <div>
@@ -370,7 +372,7 @@ export default function CH3SettingsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* ETC */}
-              <div className="bg-black/40 rounded-xl p-6">
+              <div className="zion-rainbow-card p-6" style={zionStyle("245, 158, 11")}>
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <span className="text-3xl">💎</span>
@@ -381,11 +383,12 @@ export default function CH3SettingsPage() {
                   </div>
                   <button
                     onClick={() => toggleStream("etc")}
-                    className={`px-4 py-2 rounded-lg font-bold ${
+                    className={`px-4 py-2 font-bold ${
                       settings.streams.etc.enabled
-                        ? "bg-emerald-600 text-white"
-                        : "bg-white/10 text-gray-400"
+                        ? "zion-rainbow-sub text-white"
+                        : "rounded-lg bg-black/40 text-gray-400"
                     }`}
+                    style={settings.streams.etc.enabled ? zionStyle("251, 191, 36") : undefined}
                   >
                     {settings.streams.etc.enabled ? (lang === 'cs' ? 'Zapnuto' : 'Enabled') : (lang === 'cs' ? 'Vypnuto' : 'Disabled')}
                   </button>
@@ -418,7 +421,7 @@ export default function CH3SettingsPage() {
               </div>
 
               {/* NXS */}
-              <div className="bg-black/40 rounded-xl p-6">
+              <div className="zion-rainbow-card p-6" style={zionStyle("245, 158, 11")}>
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <span className="text-3xl">🔷</span>
@@ -429,11 +432,12 @@ export default function CH3SettingsPage() {
                   </div>
                   <button
                     onClick={() => toggleStream("nxs")}
-                    className={`px-4 py-2 rounded-lg font-bold ${
+                    className={`px-4 py-2 font-bold ${
                       settings.streams.nxs.enabled
-                        ? "bg-emerald-600 text-white"
-                        : "bg-white/10 text-gray-400"
+                        ? "zion-rainbow-sub text-white"
+                        : "rounded-lg bg-black/40 text-gray-400"
                     }`}
+                    style={settings.streams.nxs.enabled ? zionStyle("251, 191, 36") : undefined}
                   >
                     {settings.streams.nxs.enabled ? (lang === 'cs' ? 'Zapnuto' : 'Enabled') : (lang === 'cs' ? 'Vypnuto' : 'Disabled')}
                   </button>
@@ -484,11 +488,12 @@ export default function CH3SettingsPage() {
                   <button
                     key={mode}
                     onClick={() => updateDynamicGPU("mode", mode)}
-                    className={`px-6 py-3 rounded-lg font-bold capitalize ${
+                    className={`px-6 py-3 font-bold capitalize ${
                       settings.streams.dynamic_gpu.mode === mode
-                        ? "bg-purple-600 text-white"
-                        : "bg-black/40 text-gray-400"
+                        ? "zion-rainbow-sub text-white"
+                        : "rounded-lg bg-black/40 text-gray-400"
                     }`}
+                    style={settings.streams.dynamic_gpu.mode === mode ? zionStyle("251, 191, 36") : undefined}
                   >
                     {mode === "auto" && "🤖 "}
                     {mode === "manual" && "👆 "}
@@ -525,13 +530,12 @@ export default function CH3SettingsPage() {
                           );
                         }
                       }}
-                      className={`p-4 rounded-xl border-2 transition-all ${
-                        isCurrent
-                          ? "border-zion-gold bg-zion-gold/10"
-                          : isSelected
-                          ? "border-purple-500 bg-purple-900/20"
-                          : "border-white/10 bg-black/40 hover:border-white/20"
+                      className={`p-4 rounded-xl transition-all ${
+                        isCurrent || isSelected
+                          ? "zion-rainbow-sub"
+                          : "bg-black/40 border border-white/10 hover:border-white/20"
                       }`}
+                      style={isCurrent ? zionStyle("251, 191, 36") : isSelected ? zionStyle("245, 158, 11") : undefined}
                     >
                       <div className={`font-bold text-xl ${coin.color}`}>{coin.id}</div>
                       <div className="text-gray-400 text-sm">{coin.name}</div>
@@ -645,7 +649,7 @@ export default function CH3SettingsPage() {
                   { id: "image_classification", name: "Image Classification", reward: "0.002" },
                   { id: "code_analysis", name: "Code Analysis", reward: "0.003" },
                 ].map((task) => (
-                  <div key={task.id} className="bg-black/40 rounded-lg p-4">
+                  <div key={task.id} className="zion-rainbow-sub p-4" style={zionStyle("245, 158, 11")}>
                     <div className="flex items-center gap-2 mb-2">
                       <input type="checkbox" defaultChecked className="w-4 h-4" />
                       <span className="font-medium">{task.name}</span>
@@ -669,7 +673,7 @@ export default function CH3SettingsPage() {
       )}
 
       {/* Save Button */}
-      <div className="mt-8 flex justify-end">
+      <div className="zion-cta-banner mt-8 flex justify-end">
         <button
           onClick={saveSettings}
           disabled={saving || !settings}

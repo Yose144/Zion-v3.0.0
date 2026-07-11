@@ -13,6 +13,9 @@ import { useLang } from "@/contexts/LanguageContext";
 import LifeTreeVisualization from "./LifeTreeVisualization";
 import GuardiansTreeClient from "@/components/GuardiansTreeClient";
 
+const emeraldVar = { '--rc': '16, 185, 129' } as React.CSSProperties;
+const goldVar = { '--rc': '251, 191, 36' } as React.CSSProperties;
+
 const daoNodes = [
   {
     name: "🌱 Community Guild",
@@ -128,7 +131,7 @@ export default function DaoDashboardPage() {
   return (
     <div className="zion-page text-white">
       <div className="zion-container max-w-6xl space-y-12">
-        <header className="rounded-[32px] border border-white/10 bg-gradient-to-r from-black/40 via-zion-purple/20 to-zion-gold/20 p-5 sm:p-8 md:p-10 shadow-2xl">
+        <header className="zion-rainbow-card p-5 sm:p-8 md:p-10" style={emeraldVar}>
           <p className="text-xs uppercase tracking-[0.4em] text-gray-300">{lang === 'cs' ? 'DAO Ledger' : 'DAO Ledger'}</p>
           <h1 className="mt-3 text-4xl md:text-5xl font-semibold text-gradient">
             {lang === 'cs' ? 'Tree of Life · DAO Strážci' : 'Tree of Life · DAO Guardians'}
@@ -142,7 +145,7 @@ export default function DaoDashboardPage() {
 
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {daoMetrics.map((metric) => (
-            <div key={metric.label} className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <div key={metric.label} className="zion-rainbow-sub p-5">
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? {
                 'Guardians initiated': 'Aktivní strážci',
                 'DAO Treasury': 'DAO Treasury',
@@ -155,7 +158,7 @@ export default function DaoDashboardPage() {
           ))}
         </section>
 
-        <section className="rounded-[32px] border border-white/10 bg-white/5 p-8">
+        <section className="zion-rainbow-card p-8" style={emeraldVar}>
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.4em] text-gray-400">{lang === 'cs' ? 'Strom života' : 'Tree of life'}</p>
@@ -166,14 +169,14 @@ export default function DaoDashboardPage() {
                   : 'Levels connect the energy map with DAO commitments. After adding guardians, the graph lights up and nodes connect to their governance responsibility.'}
               </p>
             </div>
-            <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/60 px-4 py-2 text-sm">
+            <div className="zion-rainbow-sub flex items-center gap-3 px-4 py-2 text-sm" style={emeraldVar}>
               <TreeDeciduous className="h-5 w-5 text-emerald-300" />
               <span>{lang === 'cs' ? 'Auto-refresh každých 60s (TODO)' : 'Auto-refresh every 60s (TODO)'}</span>
             </div>
           </div>
           <div className="mt-8 grid gap-6 lg:grid-cols-3">
             {treeLevels.map((node) => (
-              <div key={node.level} className={`rounded-2xl border border-white/10 bg-gradient-to-b ${node.color} p-5`}>
+              <div key={node.level} className="zion-rainbow-sub p-5" style={node.level === 'Crown' ? goldVar : emeraldVar}>
                 <div className="flex items-center gap-3">
                   {node.level === "Crown" && <Crown className="h-5 w-5 text-yellow-200" />}
                   {node.level === "Heart" && <Sparkles className="h-5 w-5 text-teal-200" />}
@@ -190,7 +193,7 @@ export default function DaoDashboardPage() {
                 <p className="mt-3 text-sm text-gray-50/90">{node.description}</p>
                 <div className="mt-4 space-y-3">
                   {node.guardians.map((guardian) => (
-                    <div key={guardian.name} className="rounded-xl border border-white/20 bg-black/40 p-3">
+                    <div key={guardian.name} className="zion-rainbow-sub p-3">
                       <p className="text-sm font-semibold text-zion-gold">{guardian.name}</p>
                       <p className="text-xs text-gray-200">{lang === 'cs' ? {
                         'Foundational': 'Základní',
@@ -207,7 +210,7 @@ export default function DaoDashboardPage() {
         </section>
 
         {/* 🌟 Interactive Kabbalah Consciousness Tree */}
-        <section className="rounded-[32px] border border-white/10 bg-gradient-to-b from-zion-purple/10 to-black/80 p-8">
+        <section className="zion-rainbow-card p-8" style={emeraldVar}>
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
             <div>
               <p className="text-xs uppercase tracking-[0.4em] text-gray-400">{lang === 'cs' ? 'Vědomostní těžba' : 'Consciousness Mining'}</p>
@@ -218,7 +221,7 @@ export default function DaoDashboardPage() {
                   : '9 consciousness levels mapped to 10 Sefirot. Each DAO circle corresponds to different consciousness levels. The interactive tree shows where you are on your journey from PHYSICAL (CL1) to the orbital horizon layer (CL9).'}
               </p>
             </div>
-            <div className="flex items-center gap-3 rounded-2xl border border-zion-gold/30 bg-zion-gold/10 px-4 py-2 text-sm">
+            <div className="zion-rainbow-sub flex items-center gap-3 px-4 py-2 text-sm" style={goldVar}>
               <Star className="h-5 w-5 text-zion-gold" />
               <span className="text-white">{lang === 'cs' ? 'Real-time DAO sledování' : 'Real-time DAO tracking'}</span>
             </div>
@@ -226,14 +229,14 @@ export default function DaoDashboardPage() {
           <GuardiansTreeClient />
         </section>
 
-        <section className="rounded-[32px] border border-white/10 bg-black/60 p-8">
+        <section className="zion-rainbow-card p-8" style={emeraldVar}>
           <div className="flex items-center gap-3 mb-6">
             <Star className="h-6 w-6 text-zion-gold" />
             <h2 className="text-3xl font-semibold">{lang === 'cs' ? 'Sál strážců' : 'Hall of Guardians'}</h2>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             {guardianHall.map((guardian) => (
-              <div key={guardian.name} className="rounded-2xl border border-white/10 bg-white/5 p-5">
+              <div key={guardian.name} className="zion-rainbow-sub p-5">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs uppercase tracking-[0.4em] text-gray-500">{lang === 'cs' ? {
@@ -257,28 +260,28 @@ export default function DaoDashboardPage() {
         </section>
 
         <section className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+          <div className="zion-rainbow-card p-6" style={emeraldVar}>
             <div className="flex items-center gap-3 mb-4">
               <Gem className="h-5 w-5 text-pink-200" />
               <h3 className="text-2xl font-semibold">{lang === 'cs' ? 'Výhody a mechaniky' : 'Perks & mechanics'}</h3>
             </div>
             <ul className="space-y-4 text-sm text-gray-200">
               {perks.map((perk) => (
-                <li key={perk.title} className="rounded-2xl border border-white/10 bg-black/40 p-4">
+                <li key={perk.title} className="zion-rainbow-sub p-4">
                   <p className="text-xs uppercase tracking-[0.3em] text-zion-gold">{perk.title}</p>
                   <p className="mt-2 text-gray-100">{perk.body}</p>
                 </li>
               ))}
             </ul>
           </div>
-          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+          <div className="zion-rainbow-card p-6" style={emeraldVar}>
             <div className="flex items-center gap-3 mb-4">
               <Sparkles className="h-5 w-5 text-emerald-200" />
               <h3 className="text-2xl font-semibold">{lang === 'cs' ? 'Co chystáme' : 'Coming soon'}</h3>
             </div>
             <ul className="space-y-4 text-sm text-gray-200">
               {upcoming.map((item) => (
-                <li key={item.title} className="rounded-2xl border border-white/10 bg-black/40 p-4">
+                <li key={item.title} className="zion-rainbow-sub p-4">
                   <p className="text-xs uppercase tracking-[0.3em] text-emerald-300">{item.title}</p>
                   <p className="mt-2 text-gray-100">{item.detail}</p>
                 </li>
