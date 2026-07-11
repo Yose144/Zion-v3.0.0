@@ -167,11 +167,11 @@ export default function DharmaTemplePage() {
           transition={{ duration: 0.7 }}
           className="mb-20 relative"
         >
-          <div className="relative zion-rainbow-card rounded-3xl md:rounded-[32px] p-6 md:p-10 overflow-hidden backdrop-blur-xl" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-8">
               {/* Icon column */}
               <div className="shrink-0">
-                <div className="relative flex h-28 w-28 items-center justify-center rounded-[32px] border border-white/10 bg-gradient-to-br from-white/10 via-black/50 to-black shadow-[0_0_60px_rgba(255,215,0,0.12)]">
+                <div className="relative flex h-28 w-28 items-center justify-center zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                   <Orbit className="relative z-10 h-10 w-10 text-zion-gold" />
                   <Mountain className="absolute bottom-5 right-5 h-4 w-4 text-zion-cyan" />
                 </div>
@@ -180,10 +180,10 @@ export default function DharmaTemplePage() {
               {/* Text column */}
               <div className="space-y-3 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-semibold tracking-[0.3em] text-gray-300 uppercase">
+                  <span className="zion-badge">
                     L5 · Terra Nova Pioneer
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-3 py-1 text-[10px] font-semibold tracking-[0.2em] text-zion-gold uppercase">
+                  <span className="zion-badge-gold">
                     🔵 {cs ? 'V přípravě' : 'Planning'}
                   </span>
                 </div>
@@ -232,7 +232,7 @@ export default function DharmaTemplePage() {
           transition={{ delay: 0.15, duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card rounded-3xl p-6 md:p-8 border border-white/10 relative overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="relative z-10 grid md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-3">
                 <h3 className="text-lg font-bold text-zion-gold">
@@ -256,7 +256,7 @@ export default function DharmaTemplePage() {
                   { label: cs ? 'Půda' : 'Soil', val: cs ? 'Vulkanická' : 'Volcanic' },
                   { label: cs ? 'Observatoř' : 'Observatory', val: 'ORM' },
                 ].map((s) => (
-                  <div key={s.label} className="text-center p-3 zion-tile">
+                  <div key={s.label} className="text-center p-3 zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                     <p className="text-gray-300 font-bold text-sm">{s.val}</p>
                     <p className="text-gray-600 text-[10px]">{s.label}</p>
                   </div>
@@ -298,7 +298,7 @@ export default function DharmaTemplePage() {
                   <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-[50px] bg-white/5 group-hover:bg-white/10 transition-opacity duration-500" />
 
                   <div className="flex items-start justify-between relative z-10 gap-3">
-                    <span className="inline-flex h-11 w-11 items-center justify-center zion-tile">
+                    <span className="inline-flex h-11 w-11 items-center justify-center zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                       <Icon className="h-5 w-5 text-zion-gold" />
                     </span>
                     <span
@@ -397,9 +397,9 @@ export default function DharmaTemplePage() {
             </h2>
           </div>
 
-          <div className="zion-section overflow-hidden">
+          <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             {/* Header row */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 text-center text-[10px] uppercase tracking-[0.3em] font-semibold bg-white/5 border-b border-white/10">
+            <div className="grid grid-cols-1 sm:grid-cols-3 text-center text-[10px] uppercase tracking-[0.3em] font-semibold border-b border-white/10">
               <div className="p-3 text-gray-500">{cs ? 'Dimenze' : 'Dimension'}</div>
               <div className="p-3 text-gray-300 sm:border-l border-white/10">🌿 Zahrada Genesis</div>
               <div className="p-3 text-zion-gold sm:border-l border-white/10">🕌 Dharma Temple</div>
@@ -437,18 +437,15 @@ export default function DharmaTemplePage() {
             <h2 className="text-2xl font-bold text-white">ZION Network</h2>
           </div>
 
-          <div className="zion-rainbow-card rounded-3xl p-6 md:p-8 border border-violet-500/15 relative overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-900/20 to-transparent" />
-            <div className="absolute -top-16 -left-16 w-40 h-40 rounded-full blur-[80px] bg-violet-500/10" />
-
+          <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="relative z-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {ZION_ITEMS.map((item) => (
                 <div
                   key={item.label}
                   className="flex items-center gap-3 zion-rainbow-sub p-3" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
                 >
-                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center zion-tile">
-                    <item.icon className="h-4 w-4 text-violet-200" />
+                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+                    <item.icon className="h-4 w-4 text-zion-gold" />
                   </span>
                   <div>
                     <p className="text-sm font-semibold text-white/80">{item.label}</p>
@@ -473,7 +470,7 @@ export default function DharmaTemplePage() {
           transition={{ delay: 0.45, duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card rounded-3xl p-6 md:p-8 border border-violet-500/15 space-y-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <h3 className="text-lg font-bold text-zion-gold">
               {cs ? 'Otevřené otázky — hledáme Guardians' : 'Open Questions — looking for Guardians'}
             </h3>
@@ -486,7 +483,7 @@ export default function DharmaTemplePage() {
                 cs ? 'Koordinace seed library se Zahradou Genesis' : 'Seed library coordination with Zahrada Genesis',
               ].map((q, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-gray-400">
-                  <span className="text-violet-500 shrink-0 mt-0.5">◇</span>
+                  <span className="text-zion-gold shrink-0 mt-0.5">◇</span>
                   {q}
                 </li>
               ))}
@@ -500,7 +497,7 @@ export default function DharmaTemplePage() {
               href="https://discord.gg/eatGYDbd"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-4 py-2 text-sm text-gray-300 transition-all duration-300"
+              className="zion-button-secondary"
             >
               <Users className="w-4 h-4" />
               {cs ? 'Připojit se na Discord' : 'Join Discord'}
@@ -517,14 +514,14 @@ export default function DharmaTemplePage() {
         >
           <Link
             href="/terranova/genesis"
-            className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/10 hover:bg-emerald-500/20 px-4 py-2 text-sm text-emerald-300 transition-all duration-300"
+            className="zion-button-secondary"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>{cs ? 'Zahrada Genesis' : 'Zahrada Genesis'}</span>
           </Link>
           <Link
             href="/terranova/te-piko-ora"
-            className="inline-flex items-center gap-2 rounded-xl border border-cyan-500/25 bg-cyan-500/10 hover:bg-cyan-500/20 px-4 py-2 text-sm text-cyan-300 transition-all duration-300"
+            className="zion-button-secondary"
           >
             <span>Te Pīko Ora</span>
             <ArrowRight className="w-4 h-4" />

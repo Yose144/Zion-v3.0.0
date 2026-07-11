@@ -961,7 +961,7 @@ export default function TerraNovaBookClient() {
           transition={{ duration: 0.65 }}
           className="mb-12 md:mb-16"
         >
-          <div className="relative overflow-hidden zion-rainbow-card p-5 sm:p-6 md:p-8" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+          <div className="relative overflow-hidden zion-rainbow-card p-5 sm:p-6 md:p-8" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full bg-zion-gold/10 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-20 left-10 h-52 w-52 rounded-full bg-zion-cyan/8 blur-3xl" />
 
@@ -971,7 +971,7 @@ export default function TerraNovaBookClient() {
                   {introSignals.map((signal) => (
                     <span
                       key={signal}
-                      className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-gray-300"
+                      className="zion-badge"
                     >
                       <Sparkles className="h-3 w-3 text-zion-gold" />
                       {signal}
@@ -999,7 +999,7 @@ export default function TerraNovaBookClient() {
                   {introNotes.map((note, index) => (
                     <div
                       key={note}
-                      className="zion-rainbow-sub p-4" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}
+                      className="zion-rainbow-sub p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
                     >
                       <p className="mb-2 text-[10px] uppercase tracking-[0.28em] text-gray-500">
                         {`${cs ? 'Vrstva' : 'Layer'} ${index + 1}`}
@@ -1015,7 +1015,7 @@ export default function TerraNovaBookClient() {
                       setTocOpen(false);
                       setOverlayMode('genesis');
                     }}
-                      className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-gold/90 to-amber-500/80 px-5 py-3 text-sm font-semibold text-black shadow-[0_0_40px_rgba(251,191,36,0.2)] transition-all hover:-translate-y-0.5 hover:shadow-[0_0_60px_rgba(251,191,36,0.35)]"
+                    className="zion-button-primary"
                   >
                     <BookOpen className="h-4 w-4" />
                     {cs ? 'Otevřít Genesis' : 'Open Genesis'}
@@ -1026,14 +1026,14 @@ export default function TerraNovaBookClient() {
                       setTocOpen(false);
                       setOverlayMode('cli');
                     }}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-zion-cyan/20 bg-zion-cyan/8 px-5 py-3 text-sm font-semibold text-zion-cyan transition-all hover:-translate-y-0.5 hover:bg-zion-cyan/12"
+                    className="zion-button-secondary"
                   >
                     <Terminal className="h-4 w-4" />
                     {cs ? 'Visual Zion CLI panel' : 'Visual ZION CLI Panel'}
                   </button>
                   <button
                     onClick={() => setTocOpen(true)}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-white/10"
+                    className="zion-button-secondary"
                   >
                     <List className="h-4 w-4" />
                     {cs ? 'Obsah Terra Novy' : 'Terra Nova Contents'}
@@ -1042,7 +1042,7 @@ export default function TerraNovaBookClient() {
               </div>
 
               <div className="space-y-4">
-                <div className="overflow-hidden zion-rainbow-sub shadow-[0_20px_80px_rgba(2,8,18,0.6)]" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+                <div className="overflow-hidden zion-rainbow-sub shadow-[0_20px_80px_rgba(2,8,18,0.6)]" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                   <div className="flex items-center justify-between border-b border-white/8 px-4 py-3">
                     <div className="flex items-center gap-2">
                       <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
@@ -1056,7 +1056,7 @@ export default function TerraNovaBookClient() {
                   </div>
 
                   <div className="space-y-4 px-4 py-4">
-                    <div className="zion-rainbow-sub p-4" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+                    <div className="zion-rainbow-sub p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                       <p className="mb-2 text-[10px] uppercase tracking-[0.28em] text-zion-cyan/70">
                         {cs ? 'Mainnet launch pulse' : 'Mainnet launch pulse'}
                       </p>
@@ -1065,7 +1065,7 @@ export default function TerraNovaBookClient() {
                       </pre>
                     </div>
 
-                    <div className="zion-rainbow-sub p-4" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+                    <div className="zion-rainbow-sub p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                       <p className="mb-3 text-[10px] uppercase tracking-[0.28em] text-gray-500">
                         {cs ? 'Živý terminál — ZION CLI' : 'Live Terminal — ZION CLI'}
                       </p>
@@ -1092,14 +1092,14 @@ export default function TerraNovaBookClient() {
                       <div className="mt-4 flex flex-wrap gap-2">
                         <button
                           onClick={() => setOverlayMode('cli')}
-                          className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/18 bg-zion-cyan/8 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-zion-cyan transition-colors hover:bg-zion-cyan/12"
+                          className="zion-button-secondary"
                         >
                           <Terminal className="h-3.5 w-3.5" />
                           {cs ? 'Rozbalit CLI overlay' : 'Expand CLI Overlay'}
                         </button>
                         <Link
                           href="/docs"
-                          className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/4 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-400 transition-colors hover:text-white hover:bg-white/8"
+                          className="zion-button-secondary"
                         >
                           <ArrowRight className="h-3.5 w-3.5" />
                           Real ZION CLI →
@@ -1152,14 +1152,14 @@ export default function TerraNovaBookClient() {
           </div>
 
           {/* ── Canonical branch banner ── */}
-          <div className="mb-6 overflow-hidden zion-rainbow-card" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+          <div className="mb-6 overflow-hidden zion-rainbow-card" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="px-5 py-3 flex items-center justify-between gap-3">
               <p className="text-[10px] uppercase tracking-[0.4em] text-zion-gold/60">
                 {cs ? 'Kanonická větev Terra Novy' : 'Canonical Terra Nova Branch'}
               </p>
               <button
                 onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
-                className="shrink-0 flex items-center gap-1 rounded-lg border border-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-gray-400 hover:border-zion-gold/40 hover:text-zion-gold transition-colors"
+                className="zion-button-secondary"
                 title={lang === 'cs' ? 'Switch to English' : 'Přepnout do češtiny'}
               >
                 {lang === 'cs' ? 'EN' : 'CS'}
@@ -1168,7 +1168,7 @@ export default function TerraNovaBookClient() {
           </div>
 
           <div className="flex flex-col gap-4">
-            <div className="relative min-h-[300px] overflow-hidden zion-rainbow-sub p-5 shadow-[0_0_80px_rgba(0,0,0,0.8)_inset,0_24px_90px_rgba(0,0,0,0.45)] md:p-6 md:min-h-[340px]" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+            <div className="relative min-h-[300px] overflow-hidden zion-rainbow-sub p-5 shadow-[0_0_80px_rgba(0,0,0,0.8)_inset,0_24px_90px_rgba(0,0,0,0.45)] md:p-6 md:min-h-[340px]" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
               <div className="pointer-events-none absolute inset-0">
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(56,189,248,0.04)_0%,rgba(0,0,0,0)_100%)]" />
                 {STARFIELD_POINTS.map((star, i) => (
@@ -1243,7 +1243,7 @@ export default function TerraNovaBookClient() {
               </div>
             </div>
 
-            <div className="overflow-hidden zion-rainbow-card p-4 md:p-6" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+            <div className="overflow-hidden zion-rainbow-card p-4 md:p-6" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
                 <div>
                   <p className="text-[10px] uppercase tracking-[0.3em] text-zion-gold/70">
@@ -1253,13 +1253,13 @@ export default function TerraNovaBookClient() {
                     {cs ? 'Interaktivní Zlatý Kompas' : 'Interactive Golden Compass'}
                   </p>
                 </div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5 text-[10px] uppercase tracking-[0.24em] text-emerald-200">
+                <div className="zion-badge-green">
                   <span className="h-2 w-2 rounded-full bg-emerald-300 animate-pulse" />
                   {cs ? 'Navigace online' : 'Navigation online'}
                 </div>
               </div>
 
-              <div className="mb-4 zion-rainbow-sub p-3 md:p-4" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+              <div className="mb-4 zion-rainbow-sub p-3 md:p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
                     {cs ? 'Body kompasu L1 až L6' : 'L1 to L6 Compass Nodes'}
@@ -1276,12 +1276,13 @@ export default function TerraNovaBookClient() {
                       <button
                         key={`node-${direction.id}`}
                         onClick={() => setCompassDir(index)}
-                        className="rounded-2xl border px-3 py-3 text-left transition-all"
+                        className="zion-rainbow-sub px-3 py-3 text-left transition-all"
                         style={{
-                          borderColor: isActive ? `rgba(${direction.rgb},0.42)` : 'rgba(255,255,255,0.08)',
-                          backgroundColor: isActive ? `rgba(${direction.rgb},0.12)` : 'rgba(255,255,255,0.02)',
+                          '--rc': direction.rgb,
+                          borderColor: isActive ? `rgba(${direction.rgb},0.42)` : undefined,
+                          backgroundColor: isActive ? `rgba(${direction.rgb},0.12)` : undefined,
                           color: isActive ? direction.color : 'rgba(255,255,255,0.72)',
-                        }}
+                        } as React.CSSProperties}
                       >
                         <div className="flex items-center gap-2">
                           <span
@@ -1307,12 +1308,12 @@ export default function TerraNovaBookClient() {
               </div>
 
               <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
-                <div className="zion-rainbow-sub p-3 md:p-4" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+                <div className="zion-rainbow-sub p-3 md:p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                   <IssobellaCompass selected={compassDir} onSelect={setCompassDir} cs={cs} />
                 </div>
 
                 <div className="space-y-3">
-                  <div className="zion-rainbow-sub p-4 min-h-[168px]" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+                  <div className="zion-rainbow-sub p-4 min-h-[168px]" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                     {selectedDirection ? (
                       <>
                         <p className="text-[10px] uppercase tracking-[0.28em]" style={{ color: selectedDirection.color }}>
@@ -1324,7 +1325,7 @@ export default function TerraNovaBookClient() {
                         <p className="mt-2 text-sm leading-relaxed text-gray-300">
                           {cs ? selectedDirection.descCs : selectedDirection.descEn}
                         </p>
-                        <div className="mt-3 zion-rainbow-sub px-3 py-2" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+                        <div className="mt-3 zion-rainbow-sub px-3 py-2" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                           <p className="text-[10px] uppercase tracking-[0.24em] text-gray-500">
                             {cs ? 'Technický bod' : 'Technical Point'}
                           </p>
@@ -1332,7 +1333,7 @@ export default function TerraNovaBookClient() {
                             {cs ? selectedDirection.techCs : selectedDirection.techEn}
                           </p>
                         </div>
-                        <div className="mt-3 zion-rainbow-sub px-3 py-2.5" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+                        <div className="mt-3 zion-rainbow-sub px-3 py-2.5" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                           <p className="text-[10px] uppercase tracking-[0.24em] text-gray-500">
                             {cs ? 'Checklist fáze' : 'Phase Checklist'}
                           </p>
@@ -1352,7 +1353,7 @@ export default function TerraNovaBookClient() {
                       </div>
                     )}
                   </div>
-                  <div className="zion-rainbow-sub p-4" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+                  <div className="zion-rainbow-sub p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <p className="text-[10px] uppercase tracking-[0.28em] text-emerald-300/80">
@@ -1508,7 +1509,8 @@ export default function TerraNovaBookClient() {
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: -8, scale: 0.985 }}
                             transition={{ duration: 0.22, ease: 'easeOut' }}
-                            className="rounded-2xl border border-emerald-300/15 bg-[linear-gradient(180deg,rgba(253,224,71,0.06),rgba(0,0,0,0.22))] px-4 py-3"
+                            className="zion-rainbow-sub px-4 py-3"
+                            style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
                           >
                             <p className="text-[10px] uppercase tracking-[0.24em] text-emerald-300/70">
                               {cs ? 'Aktivní paprsek' : 'Active spoke'}
@@ -1519,7 +1521,7 @@ export default function TerraNovaBookClient() {
                             <p className="mt-2 text-sm leading-relaxed text-gray-300">
                               {cs ? selectedDharmaSpoke.descCs : selectedDharmaSpoke.descEn}
                             </p>
-                            <div className="mt-3 zion-rainbow-sub px-3 py-2" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+                            <div className="mt-3 zion-rainbow-sub px-3 py-2" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                               <p className="text-[10px] uppercase tracking-[0.22em] text-gray-500">
                                 {cs ? 'ZION mapa' : 'ZION map'}
                               </p>
@@ -1537,11 +1539,12 @@ export default function TerraNovaBookClient() {
                             type="button"
                             onClick={() => setDharmaSpoke(index)}
                             key={spoke.id}
-                            className="rounded-2xl border px-3 py-2.5 text-left transition-all"
+                            className="zion-rainbow-sub px-3 py-2.5 text-left transition-all"
                             style={{
-                              borderColor: isActive ? 'rgba(253,224,71,0.35)' : 'rgba(255,255,255,0.08)',
-                              backgroundColor: isActive ? 'rgba(253,224,71,0.08)' : 'rgba(255,255,255,0.02)',
-                            }}
+                              '--rc': '251, 191, 36',
+                              borderColor: isActive ? 'rgba(253,224,71,0.35)' : undefined,
+                              backgroundColor: isActive ? 'rgba(253,224,71,0.08)' : undefined,
+                            } as React.CSSProperties}
                           >
                             <p className="text-[10px] uppercase tracking-[0.24em] text-emerald-300/70">
                               {index + 1}
@@ -1566,7 +1569,7 @@ export default function TerraNovaBookClient() {
                 </div>
               </div>
 
-              <div className="mt-8 zion-rainbow-sub p-6 md:p-8" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+              <div className="mt-8 zion-rainbow-sub p-6 md:p-8" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                 <PioneerProjectCards cs={cs} />
                 <div className="mt-8 pt-6 border-t border-white/5">
                   <GeographyMenu cs={cs} />
@@ -1587,7 +1590,7 @@ export default function TerraNovaBookClient() {
           transition={{ duration: 0.6 }}
           className="text-center mb-12 space-y-5"
         >
-          <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-4 py-1.5 text-xs font-semibold tracking-[0.3em] text-zion-gold uppercase">
+          <div className="zion-badge-gold">
             <BookOpen className="h-4 w-4" />
             {cs ? 'Čtvrtá kniha ZION' : 'Fourth Book of ZION'}
           </div>
@@ -1654,11 +1657,12 @@ export default function TerraNovaBookClient() {
                 <button
                   key={ch.id}
                   onClick={() => goTo(i)}
-                  className="group flex items-start gap-3 rounded-2xl border p-4 text-left transition-all duration-300"
+                  className="group flex items-start gap-3 zion-rainbow-sub p-4 text-left transition-all duration-300"
                   style={{
-                    borderColor: isActive ? `rgba(${ch.rgb},0.35)` : 'rgba(255,255,255,0.06)',
-                    backgroundColor: isActive ? `rgba(${ch.rgb},0.06)` : 'rgba(0,0,0,0.3)',
-                  }}
+                    '--rc': ch.rgb,
+                    borderColor: isActive ? `rgba(${ch.rgb},0.35)` : undefined,
+                    backgroundColor: isActive ? `rgba(${ch.rgb},0.06)` : undefined,
+                  } as React.CSSProperties}
                 >
                   <span
                     className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center self-start rounded-xl border text-xs font-bold transition-colors"
@@ -1692,7 +1696,7 @@ export default function TerraNovaBookClient() {
         {/* ═══════ CHAPTER READER ═══════ */}
         <div ref={contentRef} className="grid gap-4 md:gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start">
           <div className="lg:hidden sticky top-24 z-20 -mx-1 mb-2">
-            <div className="zion-rainbow-sub px-4 py-3" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub px-4 py-3" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-[10px] uppercase tracking-[0.28em] text-gray-500">
@@ -1705,7 +1709,7 @@ export default function TerraNovaBookClient() {
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
-                    className="rounded-lg border border-white/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 hover:border-zion-gold/40 hover:text-zion-gold transition-colors"
+                    className="zion-button-secondary"
                   >
                     {lang === 'cs' ? 'EN' : 'CS'}
                   </button>
@@ -1758,7 +1762,7 @@ export default function TerraNovaBookClient() {
                 </p>
               </div>
 
-              <div className="zion-rainbow-sub p-4" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+              <div className="zion-rainbow-sub p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                 <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-2">
                   {cs ? 'Aktivní kapitola' : 'Current Chapter'}
                 </p>
@@ -1800,7 +1804,7 @@ export default function TerraNovaBookClient() {
               <div className="relative mb-8 md:mb-10">
                 <div className="mb-4 flex flex-wrap items-start gap-3">
                   <span
-                    className="inline-flex max-w-full items-center rounded-2xl border px-3 py-2 text-left text-xs font-semibold uppercase leading-snug tracking-[0.22em] wrap-break-word"
+                    className="zion-badge"
                     style={{
                       borderColor: `rgba(${chapter.rgb},0.3)`,
                       color: chapter.color,
@@ -1811,7 +1815,7 @@ export default function TerraNovaBookClient() {
                     {!chapter.subtitleCs &&
                       chapterLabel}
                   </span>
-                  <span className="inline-flex max-w-full items-center rounded-2xl border border-white/10 bg-white/3 px-3 py-2 text-left text-[10px] uppercase leading-snug tracking-[0.24em] text-gray-500 wrap-break-word">
+                  <span className="zion-badge">
                     {cs ? meta.editionCs : meta.editionEn}
                   </span>
                   <span className="text-[10px] text-gray-600">
@@ -1924,8 +1928,7 @@ export default function TerraNovaBookClient() {
           <div className="flex items-center justify-center">
             <Link
               href="/docs"
-              className="zion-rainbow-sub inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
-              style={{ '--rc': '244, 63, 94' } as React.CSSProperties}
+              className="zion-button-secondary"
             >
               <BookOpen className="w-4 h-4" />
               {cs ? 'Dokumentace' : 'Documentation'}
@@ -2003,7 +2006,7 @@ export default function TerraNovaBookClient() {
                 </h3>
                 <button
                   onClick={() => setTocOpen(false)}
-                  className="p-1.5 rounded-lg border border-white/10 text-gray-400 hover:text-white transition-colors"
+                  className="zion-button-secondary p-1.5"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -2062,7 +2065,7 @@ export default function TerraNovaBookClient() {
               exit={{ opacity: 0, y: 16, scale: 0.98 }}
               transition={{ duration: 0.24 }}
               className="fixed inset-x-3 top-[6vh] z-70 mx-auto max-h-[88vh] w-full max-w-4xl overflow-hidden zion-rainbow-card shadow-[0_30px_120px_rgba(0,0,0,0.58)] sm:inset-x-4 sm:top-[8vh] sm:max-h-[84vh]"
-              style={{ '--rc': '244, 63, 94' } as React.CSSProperties}
+              style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
             >
               <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/8 px-4 py-4 sm:px-6">
                 <div>
@@ -2083,7 +2086,7 @@ export default function TerraNovaBookClient() {
                 <div className="flex flex-wrap items-center gap-2">
                   <button
                     onClick={() => setOverlayMode('genesis')}
-                    className="rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] transition-colors"
+                    className="zion-badge transition-colors"
                     style={{
                       borderColor:
                         overlayMode === 'genesis' ? 'rgba(251,191,36,0.35)' : 'rgba(255,255,255,0.1)',
@@ -2096,7 +2099,7 @@ export default function TerraNovaBookClient() {
                   </button>
                   <button
                     onClick={() => setOverlayMode('cli')}
-                    className="rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] transition-colors"
+                    className="zion-badge transition-colors"
                     style={{
                       borderColor:
                         overlayMode === 'cli' ? 'rgba(34,211,238,0.35)' : 'rgba(255,255,255,0.1)',
@@ -2109,7 +2112,7 @@ export default function TerraNovaBookClient() {
                   </button>
                   <button
                     onClick={() => setOverlayMode(null)}
-                    className="rounded-xl border border-white/10 p-2 text-gray-400 transition-colors hover:text-white"
+                    className="zion-button-secondary p-2"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -2119,7 +2122,7 @@ export default function TerraNovaBookClient() {
               <div className="max-h-[calc(84vh-84px)] overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">
                 {overlayMode === 'genesis' ? (
                   <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
-                    <div className="zion-rainbow-sub p-5" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+                    <div className="zion-rainbow-sub p-5" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                       <p className="text-[10px] uppercase tracking-[0.32em] text-zion-gold/70">
                         Genesis.md
                       </p>
@@ -2138,7 +2141,7 @@ export default function TerraNovaBookClient() {
                       </p>
 
                       {/* ── Premine Genesis ── */}
-                      <div className="mt-5 zion-rainbow-sub px-4 py-4" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+                      <div className="mt-5 zion-rainbow-sub px-4 py-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                         <p className="mb-3 text-[10px] uppercase tracking-[0.32em] text-zion-gold/70">
                           {cs ? 'Genesis premine · 16 280 000 000 ZION' : 'Genesis Premine · 16,280,000,000 ZION'}
                         </p>
@@ -2157,7 +2160,7 @@ export default function TerraNovaBookClient() {
                     </div>
 
                     <div className="space-y-4">
-                      <div className="zion-rainbow-sub p-5" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+                      <div className="zion-rainbow-sub p-5" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                         <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
                           {cs ? 'Proč je to tady' : 'Why It Lives Here'}
                         </p>
@@ -2170,7 +2173,7 @@ export default function TerraNovaBookClient() {
 
                       <Link
                         href="/genesis"
-                        className="inline-flex items-center gap-2 rounded-2xl border border-zion-gold/20 bg-zion-gold/8 px-4 py-3 text-sm font-semibold text-zion-gold transition-colors hover:bg-zion-gold/12"
+                        className="zion-button-secondary"
                         onClick={() => setOverlayMode(null)}
                       >
                         <BookOpen className="h-4 w-4" />
@@ -2181,7 +2184,7 @@ export default function TerraNovaBookClient() {
                   </div>
                 ) : (
                   <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
-                    <div className="overflow-hidden zion-rainbow-sub" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+                    <div className="overflow-hidden zion-rainbow-sub" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                       <div className="flex items-center justify-between border-b border-white/8 px-4 py-3">
                         <div className="flex items-center gap-2">
                           <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
@@ -2195,7 +2198,7 @@ export default function TerraNovaBookClient() {
                       </div>
                       <div className="space-y-3 p-4 font-mono text-[12px] text-gray-200">
                         {BOOT_SEQUENCE.map((line) => (
-                          <div key={line.command} className="zion-rainbow-sub px-3 py-3" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+                          <div key={line.command} className="zion-rainbow-sub px-3 py-3" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                             <div className="flex gap-3">
                               <span className="text-zion-gold">$</span>
                               <span className="break-all">{line.command}</span>
@@ -2206,7 +2209,7 @@ export default function TerraNovaBookClient() {
                           </div>
                         ))}
 
-                        <div className="zion-rainbow-sub p-4" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+                        <div className="zion-rainbow-sub p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                           <p className="text-[10px] uppercase tracking-[0.3em] text-zion-cyan/75">
                             {cs ? 'Ruční příkazy' : 'Manual Commands'}
                           </p>
@@ -2223,7 +2226,7 @@ export default function TerraNovaBookClient() {
                     </div>
 
                     <div className="space-y-4">
-                      <div className="zion-rainbow-sub p-5" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+                      <div className="zion-rainbow-sub p-5" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                         <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
                           {cs ? 'Proč je to tady' : 'Why It Lives Here'}
                         </p>
@@ -2235,7 +2238,7 @@ export default function TerraNovaBookClient() {
                       </div>
 
                       {/* ── Premine tabulka ── */}
-                      <div className="zion-rainbow-sub p-5" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+                      <div className="zion-rainbow-sub p-5" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                         <p className="text-[10px] uppercase tracking-[0.3em] text-zion-cyan/70">
                           {cs ? 'Genesis Premine · 16.28B ZION' : 'Genesis Premine · 16.28B ZION'}
                         </p>
@@ -2260,7 +2263,7 @@ export default function TerraNovaBookClient() {
                             <span className="text-zion-cyan font-bold tabular-nums">16.28B ZION</span>
                           </div>
                         </div>
-                        <div className="mt-3 zion-rainbow-sub px-3 py-2" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+                        <div className="mt-3 zion-rainbow-sub px-3 py-2" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                           <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-gray-600">
                             {cs ? 'split/blok: 89% miner · 5% humanitární · 5% issobella · 1% pool' : 'per-block split: 89% miner · 5% humanitarian · 5% issobella · 1% pool'}
                           </p>
@@ -2272,7 +2275,7 @@ export default function TerraNovaBookClient() {
                           setOverlayMode(null);
                           setTocOpen(true);
                         }}
-                        className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                        className="zion-button-secondary"
                       >
                         <List className="h-4 w-4" />
                         {cs ? 'Přejít do obsahu Terra Novy' : 'Open Terra Nova Contents'}
@@ -2280,7 +2283,7 @@ export default function TerraNovaBookClient() {
 
                       <Link
                         href="/docs"
-                        className="inline-flex items-center gap-2 rounded-2xl border border-zion-cyan/20 bg-zion-cyan/8 px-4 py-3 text-sm font-semibold text-zion-cyan transition-colors hover:bg-zion-cyan/12"
+                        className="zion-button-secondary"
                         onClick={() => setOverlayMode(null)}
                       >
                         <Terminal className="h-4 w-4" />

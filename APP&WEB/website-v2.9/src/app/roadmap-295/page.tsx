@@ -170,7 +170,7 @@ export default function Roadmap295Page() {
           <div className="zion-section p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
             <div className="prose prose-invert prose-lg text-center max-w-none">
               <h2 className="text-3xl font-bold text-zion-cyan mb-6">🎯 {lang === 'cs' ? 'Vizní prohlášení' : 'Vision Statement'}</h2>
-              <div className="bg-linear-to-r from-zion-cyan/20 via-zion-purple/20 to-zion-gold/20 rounded-xl p-8 border border-zion-cyan/30">
+              <div className="zion-rainbow-sub p-8" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                 <p className="text-3xl font-bold text-white mb-6">
                   ZION 2.9.5 = 100% {lang === 'cs' ? 'NATIVNÍ VĚDOMÍ' : 'NATIVE CONSCIOUSNESS'}
                 </p>
@@ -204,7 +204,8 @@ export default function Roadmap295Page() {
             {currentState.map((item, idx) => (
               <div
                 key={idx}
-                className="zion-tile p-6 border border-gray-700 hover:border-zion-cyan/50 transition-all"
+                className="zion-rainbow-sub p-6"
+                style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
@@ -249,16 +250,15 @@ export default function Roadmap295Page() {
             </div>
           </h2>
           <div className="grid lg:grid-cols-2 gap-8">
-            {quarters.map((quarter) => (
-              <div
-                key={quarter.id}
-                className={`zion-tile p-8 transition-all duration-300 cursor-pointer ${
-                  activeQuarter === quarter.id
-                    ? `border-zion-${quarter.color} shadow-lg shadow-zion-${quarter.color}/20 scale-105`
-                    : `border-zion-${quarter.color}/30 hover:border-zion-${quarter.color}/60`
-                }`}
-                onClick={() => setActiveQuarter(activeQuarter === quarter.id ? null : quarter.id)}
-              >
+            {quarters.map((quarter) => {
+              const rc = quarter.color === 'cyan' ? '6, 182, 212' : quarter.color === 'purple' ? '147, 51, 234' : quarter.color === 'gold' ? '255, 215, 0' : '34, 197, 94';
+              return (
+                <div
+                  key={quarter.id}
+                  className={`zion-rainbow-card p-8 cursor-pointer ${activeQuarter === quarter.id ? 'scale-105' : ''}`}
+                  style={{ '--rc': rc } as React.CSSProperties}
+                  onClick={() => setActiveQuarter(activeQuarter === quarter.id ? null : quarter.id)}
+                >
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <div className={`text-2xl font-bold text-zion-${quarter.color} mb-1`}>
@@ -278,11 +278,11 @@ export default function Roadmap295Page() {
                 <h3 className="text-xl font-bold text-white mb-4">{quarter.title}</h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                  <div className="bg-gray-900/50 rounded-lg p-3">
+                  <div className="zion-rainbow-sub p-3" style={{ '--rc': rc } as React.CSSProperties}>
                     <div className="text-xs text-gray-400 mb-1">{lang === 'cs' ? 'Rozpočet' : 'Budget'}</div>
                     <div className={`text-lg font-bold text-zion-${quarter.color}`}>{quarter.budget}</div>
                   </div>
-                  <div className="bg-gray-900/50 rounded-lg p-3">
+                  <div className="zion-rainbow-sub p-3" style={{ '--rc': rc } as React.CSSProperties}>
                     <div className="text-xs text-gray-400 mb-1">{lang === 'cs' ? 'Tým' : 'Team'}</div>
                     <div className="text-sm font-semibold text-white">{quarter.team}</div>
                   </div>
@@ -329,12 +329,13 @@ export default function Roadmap295Page() {
                 )}
 
                 <div className="mt-6 flex items-center justify-center">
-                  <button className={`text-xs text-zion-${quarter.color} hover:underline`}>
+                  <button className="zion-button-secondary text-xs">
                     {activeQuarter === quarter.id ? (lang === 'cs' ? 'Zobrazit méně' : 'Show less') : (lang === 'cs' ? 'Zobrazit více' : 'Show more')}
                   </button>
                 </div>
               </div>
-            ))}
+            );
+          })}
           </div>
         </div>
       </section>
@@ -355,6 +356,7 @@ export default function Roadmap295Page() {
             {/* Milestone Items */}
             <div className="space-y-8">
               {milestones.map((milestone, idx) => {
+                const rc = milestone.color === 'cyan' ? '6, 182, 212' : milestone.color === 'purple' ? '147, 51, 234' : milestone.color === 'gold' ? '255, 215, 0' : milestone.color === 'green' ? '34, 197, 94' : '255, 255, 255';
                 const IconComponent = milestone.icon;
                 return (
                   <div key={idx} className="relative flex items-start gap-6">
@@ -369,7 +371,7 @@ export default function Roadmap295Page() {
                         <IconComponent className={`w-6 h-6 text-zion-${milestone.color}`} />
                       )}
                     </div>
-                    <div className="flex-1 zion-tile p-6 border border-gray-700 hover:border-zion-cyan/50 transition-all">
+                    <div className="flex-1 zion-rainbow-sub p-6" style={{ '--rc': rc } as React.CSSProperties}>
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="text-xl font-bold text-white">{milestone.title}</h3>
                         <span className={`text-sm font-medium ${
@@ -390,7 +392,7 @@ export default function Roadmap295Page() {
       {/* Historical V3 launch requirements */}
       <section className="py-16 px-6">
         <div className="zion-container">
-          <div className="zion-section p-8" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
             <div className="prose prose-invert prose-lg text-center max-w-none">
               <div className="flex items-center justify-center gap-3 mb-6">
                 <Zap className="w-8 h-8 text-green-400" />
@@ -399,7 +401,7 @@ export default function Roadmap295Page() {
                 </h2>
               </div>
               <div className="text-gray-300 space-y-6">
-                <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-6">
+                <div className="zion-rainbow-sub p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                   <p className="text-2xl font-bold text-green-400 mb-4 flex items-center justify-center gap-2">
                     <Rocket className="w-8 h-8" />
                     <span>{lang === 'cs' ? '31. prosince 2025' : 'December 31, 2025'}</span>
@@ -444,7 +446,7 @@ export default function Roadmap295Page() {
       {/* MainNet Vision */}
       <section className="py-16 px-6">
         <div className="zion-container">
-          <div className="bg-linear-to-br from-zion-gold/20 via-zion-cyan/20 to-zion-purple/20 rounded-2xl p-8 border border-zion-gold/30">
+          <div className="zion-rainbow-card p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
             <div className="prose prose-invert prose-lg text-center max-w-none">
               <div className="flex items-center justify-center gap-3 mb-6">
                 <TrendingUp className="w-8 h-8 text-zion-gold" />
@@ -460,21 +462,21 @@ export default function Roadmap295Page() {
                   </span>
                 </p>
                 <div className="grid md:grid-cols-3 gap-6">
-                  <div className="bg-zion-gold/10 border border-zion-gold/30 rounded-xl p-6">
+                  <div className="zion-rainbow-sub p-6" style={{ '--rc': '255, 215, 0' } as React.CSSProperties}>
                     <div className="flex justify-center mb-3">
                       <Zap className="w-12 h-12 text-zion-gold" />
                     </div>
                     <div className="text-2xl font-bold text-zion-gold mb-2">1,000+ TPS</div>
                     <div className="text-sm text-gray-400">{lang === 'cs' ? 'Historický cíl' : 'Historical target'}</div>
                   </div>
-                  <div className="bg-zion-cyan/10 border border-zion-cyan/30 rounded-xl p-6">
+                  <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                     <div className="flex justify-center mb-3">
                       <Link2 className="w-12 h-12 text-zion-cyan" />
                     </div>
                     <div className="text-2xl font-bold text-zion-cyan mb-2">44 Chains</div>
                     <div className="text-sm text-gray-400">{lang === 'cs' ? 'Rainbow Bridge' : 'Rainbow Bridge'}</div>
                   </div>
-                  <div className="bg-zion-purple/10 border border-zion-purple/30 rounded-xl p-6">
+                  <div className="zion-rainbow-sub p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                     <div className="flex justify-center mb-3">
                       <Users className="w-12 h-12 text-zion-purple" />
                     </div>

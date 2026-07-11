@@ -100,7 +100,7 @@ export default function AlgoManagerPage() {
   return (
     <div className="pt-28 pb-20 overflow-x-hidden">
       <div className="zion-container max-w-7xl space-y-12">
-        <div className="zion-rainbow-card p-5 sm:p-8 md:p-10" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+        <div className="zion-rainbow-card p-5 sm:p-8 md:p-10" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{lang === 'cs' ? 'Mining routing' : 'Mining routing'}</p>
@@ -113,22 +113,18 @@ export default function AlgoManagerPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <div className="zion-tile px-4 py-3 text-sm text-gray-300">
+              <div className="zion-rainbow-sub px-4 py-3 text-sm text-gray-300" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                 {lang === 'cs' ? 'Auto-přepínání' : 'Auto-switch'}
               </div>
               <button
                 onClick={handleModeToggle}
-                className={`inline-flex items-center justify-center rounded-2xl border px-6 py-3 text-sm font-semibold transition-colors ${
-                  status.mode === 'auto'
-                    ? 'border-zion-gold/50 bg-white/10 text-white'
-                    : 'border-white/10 bg-black/40 text-gray-200 hover:border-white/30'
-                }`}
+                className={status.mode === 'auto' ? 'zion-button-primary' : 'zion-button-secondary'}
               >
                 {status.mode === 'auto' ? 'ON' : 'OFF'}
               </button>
               <Link
                 href="/admin"
-                className="zion-section inline-flex items-center justify-center px-6 py-3 text-sm font-semibold hover:border-white/30"
+                className="zion-button-secondary"
               >
                 {lang === 'cs' ? 'Zpět' : 'Back'}
               </Link>
@@ -136,22 +132,22 @@ export default function AlgoManagerPage() {
           </div>
 
           <div className="mt-10 grid gap-4 md:grid-cols-4">
-            <div className="zion-rainbow-sub p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? 'Režim' : 'Mode'}</p>
               <p className="mt-2 text-3xl font-semibold text-white">{status.mode.toUpperCase()}</p>
               <p className="text-sm text-gray-300">{status.mode === 'auto' ? (lang === 'cs' ? 'založeno na ziskovosti' : 'profitability based') : (lang === 'cs' ? 'řízeno operátorem' : 'operator controlled')}</p>
             </div>
-            <div className="zion-rainbow-sub p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? 'Aktivní' : 'Active'}</p>
               <p className="mt-2 text-3xl font-semibold text-white">{status.activeAlgo.toUpperCase()}</p>
               <p className="text-sm text-gray-300">{status.activeCoin}</p>
             </div>
-            <div className="zion-rainbow-sub p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? 'Zisk/den' : 'Profit/day'}</p>
               <p className="mt-2 text-3xl font-semibold text-white">${status.profitPerDay.toFixed(2)}</p>
               <p className="text-sm text-gray-300">{lang === 'cs' ? 'na GPU baseline' : 'per GPU baseline'}</p>
             </div>
-            <div className="zion-rainbow-sub p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? 'Další kontrola' : 'Next check'}</p>
               <p className="mt-2 text-3xl font-semibold text-white">{formatTime(countdown)}</p>
               <p className="text-sm text-gray-300">{lang === 'cs' ? 'scheduler tick' : 'scheduler tick'}</p>
@@ -159,16 +155,16 @@ export default function AlgoManagerPage() {
           </div>
 
           <div className="mt-6 flex flex-wrap gap-4 text-sm text-gray-300">
-            <div className="zion-tile px-4 py-3">
+            <div className="zion-rainbow-sub px-4 py-3" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               {lang === 'cs' ? 'Připojení těžaři' : 'Connected miners'}: <span className="text-white font-semibold">{status.connectedMiners}</span>
             </div>
-            <div className="zion-tile px-4 py-3">
+            <div className="zion-rainbow-sub px-4 py-3" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               {lang === 'cs' ? 'Celkový hashrate' : 'Total hashrate'}: <span className="text-white font-semibold">{status.totalHashrate}</span>
             </div>
           </div>
         </div>
 
-        <div className="zion-rainbow-card p-6" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+        <div className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
           <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? 'Ziskovost' : 'Profitability'}</p>
@@ -177,13 +173,13 @@ export default function AlgoManagerPage() {
             </div>
             <Link
               href="/admin/pool-config"
-              className="zion-tile inline-flex items-center justify-center px-6 py-3 text-sm font-semibold hover:border-white/30"
+              className="zion-button-secondary"
             >
               {lang === 'cs' ? 'Pool konfigurace →' : 'Pool configuration →'}
             </Link>
           </div>
 
-          <div className="mt-6 overflow-x-auto rounded-2xl border border-white/10">
+          <div className="zion-rainbow-sub p-0 mt-6 overflow-x-auto" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
             <table className="w-full text-sm">
               <thead className="bg-white/5">
                 <tr className="text-left text-gray-300">
@@ -200,24 +196,24 @@ export default function AlgoManagerPage() {
                   .filter(a => a.enabled)
                   .sort((a, b) => b.profitPerDay - a.profitPerDay)
                   .map((algo) => (
-                    <tr key={algo.algo} className="bg-black/30">
+                    <tr key={algo.algo}>
                       <td className="px-4 py-4 font-semibold text-white">{algo.algo.toUpperCase()}</td>
                       <td className="px-4 py-4">
-                        <span className="inline-flex items-center rounded-xl border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-white">
+                        <span className="zion-badge">
                           {algo.coin}
                         </span>
                       </td>
                       <td className="px-4 py-4 font-semibold text-white">${algo.profitPerDay.toFixed(2)}</td>
                       <td className="px-4 py-4">
-                        <span className={algo.trend24h > 0 ? 'text-emerald-300' : algo.trend24h < 0 ? 'text-red-300' : 'text-gray-400'}>
+                        <span className={algo.trend24h > 0 ? 'zion-badge zion-badge-green' : algo.trend24h < 0 ? 'zion-badge zion-badge-red' : 'zion-badge'}>
                           {getTrendIcon(algo.trend24h)} {algo.trend24h > 0 ? '+' : ''}{algo.trend24h}%
                         </span>
                       </td>
                       <td className="px-4 py-4">
                         {algo.isActive ? (
-                          <span className="text-emerald-300 font-semibold">{lang === 'cs' ? 'AKTIVNÍ' : 'ACTIVE'}</span>
+                          <span className="zion-badge zion-badge-green">{lang === 'cs' ? 'AKTIVNÍ' : 'ACTIVE'}</span>
                         ) : (
-                          <span className="text-gray-400">{lang === 'cs' ? 'Pohotovost' : 'Standby'}</span>
+                          <span className="zion-badge">{lang === 'cs' ? 'Pohotovost' : 'Standby'}</span>
                         )}
                       </td>
                       <td className="px-4 py-4">
@@ -226,7 +222,7 @@ export default function AlgoManagerPage() {
                         ) : (
                           <button
                             onClick={() => handleSwitch(algo.algo)}
-                            className="zion-tile inline-flex items-center justify-center px-4 py-2 text-xs font-semibold text-white hover:border-white/30"
+                            className="zion-button-secondary text-xs px-4 py-2"
                           >
                             {lang === 'cs' ? 'Přepnout' : 'Switch'}
                           </button>
@@ -239,12 +235,12 @@ export default function AlgoManagerPage() {
           </div>
         </div>
 
-        <div className="zion-rainbow-card p-6" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+        <div className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
           <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? 'Ladění' : 'Tuning'}</p>
           <h2 className="mt-2 text-2xl font-semibold text-white">{lang === 'cs' ? 'Nastavení' : 'Settings'}</h2>
 
           <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="zion-rainbow-sub p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? 'Práh přepnutí' : 'Switch threshold'}</p>
               <p className="mt-2 text-3xl font-semibold text-white">{settings.switchThreshold}%</p>
               <input
@@ -258,7 +254,7 @@ export default function AlgoManagerPage() {
               <p className="mt-2 text-sm text-gray-300">{lang === 'cs' ? 'min rozdíl zisku pro přepnutí' : 'min profit diff for switch'}</p>
             </div>
 
-            <div className="zion-rainbow-sub p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? 'Interval kontroly' : 'Check interval'}</p>
               <p className="mt-2 text-3xl font-semibold text-white">{settings.checkInterval} min</p>
               <input
@@ -272,7 +268,7 @@ export default function AlgoManagerPage() {
               <p className="mt-2 text-sm text-gray-300">{lang === 'cs' ? 'perioda přepočtu' : 'recalc period'}</p>
             </div>
 
-            <div className="zion-rainbow-sub p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? 'Min čas na algoritmu' : 'Min time on algo'}</p>
               <p className="mt-2 text-3xl font-semibold text-white">{settings.minTimeOnAlgo} min</p>
               <input

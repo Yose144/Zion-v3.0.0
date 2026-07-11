@@ -161,11 +161,11 @@ export default function ZahradaGenesisPage() {
           transition={{ duration: 0.7 }}
           className="mb-20 relative"
         >
-          <div className="relative zion-rainbow-card rounded-3xl md:rounded-[32px] p-6 md:p-10 overflow-hidden backdrop-blur-xl" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-8">
               {/* Icon column */}
               <div className="shrink-0">
-                <div className="relative flex h-28 w-28 items-center justify-center rounded-[32px] border border-white/10 bg-gradient-to-br from-white/10 via-black/50 to-black shadow-[0_0_60px_rgba(255,215,0,0.12)]">
+                <div className="relative flex h-28 w-28 items-center justify-center zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                   <div className="absolute inset-3 rounded-[26px] border border-white/5" />
                   <div className="absolute h-20 w-20 rounded-full bg-zion-gold/10 blur-2xl" />
                   <Leaf className="relative z-10 h-10 w-10 text-zion-gold" />
@@ -176,10 +176,10 @@ export default function ZahradaGenesisPage() {
               {/* Text column */}
               <div className="space-y-3 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-semibold tracking-[0.3em] text-gray-300 uppercase">
+                  <span className="zion-badge">
                     L5 · Terra Nova Pioneer
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-3 py-1 text-[10px] font-semibold tracking-[0.2em] text-zion-gold uppercase">
+                  <span className="zion-badge-gold">
                     🟡 {cs ? 'Aktivní rozvoj' : 'Active Development'}
                   </span>
                 </div>
@@ -253,7 +253,7 @@ export default function ZahradaGenesisPage() {
                   <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-[50px] bg-white/5 group-hover:bg-white/10 transition-colors duration-500" />
 
                   <div className="flex items-start justify-between relative z-10 gap-3">
-                    <span className="inline-flex h-11 w-11 items-center justify-center zion-tile">
+                    <span className="inline-flex h-11 w-11 items-center justify-center zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                       <Icon className="h-5 w-5" style={{ color: f.color }} />
                     </span>
                     <span
@@ -359,7 +359,7 @@ export default function ZahradaGenesisPage() {
             <div className="relative zion-rainbow-sub p-5 space-y-3 overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
               <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-[40px] bg-zion-gold/10" />
               <div className="flex items-center gap-2 relative z-10">
-                <span className="inline-flex h-9 w-9 items-center justify-center zion-tile">
+                <span className="inline-flex h-9 w-9 items-center justify-center zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                   <Sun className="h-4 w-4 text-zion-gold" />
                 </span>
                 <h3 className="font-bold text-zion-gold text-sm">{cs ? 'Energie' : 'Energy'}</h3>
@@ -385,7 +385,7 @@ export default function ZahradaGenesisPage() {
             <div className="relative zion-rainbow-sub p-5 space-y-3 overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
               <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-[40px] bg-zion-cyan/10" />
               <div className="flex items-center gap-2 relative z-10">
-                <span className="inline-flex h-9 w-9 items-center justify-center zion-tile">
+                <span className="inline-flex h-9 w-9 items-center justify-center zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                   <Droplets className="h-4 w-4 text-zion-cyan" />
                 </span>
                 <h3 className="font-bold text-zion-cyan text-sm">{cs ? 'Voda' : 'Water'}</h3>
@@ -411,7 +411,7 @@ export default function ZahradaGenesisPage() {
             <div className="relative zion-rainbow-sub p-5 space-y-3 overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
               <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-[40px] bg-emerald-500/10" />
               <div className="flex items-center gap-2 relative z-10">
-                <span className="inline-flex h-9 w-9 items-center justify-center zion-tile">
+                <span className="inline-flex h-9 w-9 items-center justify-center zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                   <Sprout className="h-4 w-4 text-emerald-400" />
                 </span>
                 <h3 className="font-bold text-emerald-400 text-sm">{cs ? 'Zahrada & Jídlo' : 'Garden & Food'}</h3>
@@ -451,7 +451,7 @@ export default function ZahradaGenesisPage() {
             </h2>
           </div>
 
-          <div className="zion-rainbow-card rounded-3xl p-6 md:p-8 border border-white/10 relative overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="relative z-10 grid md:grid-cols-2 gap-8">
               <div className="space-y-4">
                 <h3 className="text-zion-cyan font-bold text-sm uppercase tracking-widest">
@@ -500,7 +500,7 @@ export default function ZahradaGenesisPage() {
           transition={{ delay: 0.39, duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card rounded-3xl p-6 md:p-10 border border-white/10 relative overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="relative z-10 max-w-2xl space-y-4">
               <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500">
                 {cs ? 'Charakter místa' : 'Character of Place'}
@@ -525,7 +525,7 @@ export default function ZahradaGenesisPage() {
                   cs ? '🌳 Biologický čas' : '🌳 Biological time',
                   cs ? '🔥 Autentický záměr' : '🔥 Authentic intention',
                 ].map((tag) => (
-                  <span key={tag} className="rounded-full border border-white/8 bg-white/4 px-3 py-1 text-xs text-gray-400">
+                  <span key={tag} className="zion-badge">
                     {tag}
                   </span>
                 ))}
@@ -548,14 +548,14 @@ export default function ZahradaGenesisPage() {
             <h2 className="text-2xl font-bold text-white">ZION Network</h2>
           </div>
 
-          <div className="zion-rainbow-card rounded-3xl p-6 md:p-8 border border-white/10 relative overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="relative z-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {ZION_ITEMS.map((item) => (
                 <div
                   key={item.label}
                   className="flex items-center gap-3 zion-rainbow-sub p-3" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
                 >
-                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center zion-tile">
+                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                     <item.icon className="h-4 w-4 text-zion-gold" />
                   </span>
                   <div>
@@ -581,7 +581,7 @@ export default function ZahradaGenesisPage() {
           transition={{ delay: 0.5, duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card rounded-3xl p-6 md:p-8 border border-white/10 space-y-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <h3 className="text-lg font-bold text-zion-gold">
               {cs ? 'Zdroje a kontakt' : 'Resources & Contact'}
             </h3>
@@ -590,7 +590,7 @@ export default function ZahradaGenesisPage() {
                 href="https://www.newearth.cz/V2/camp.html"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-4 py-2 text-sm text-gray-300 transition-all duration-300"
+                className="zion-button-secondary"
               >
                 <Globe className="w-4 h-4" /> newearth.cz/camp
               </a>
@@ -598,7 +598,7 @@ export default function ZahradaGenesisPage() {
                 href="https://github.com/Zion-TerraNova"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-4 py-2 text-sm text-gray-300 transition-all duration-300"
+                className="zion-button-secondary"
               >
                 <Zap className="w-4 h-4" /> GitHub
               </a>
@@ -606,7 +606,7 @@ export default function ZahradaGenesisPage() {
                 href="https://discord.gg/eatGYDbd"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-4 py-2 text-sm text-gray-300 transition-all duration-300"
+                className="zion-button-secondary"
               >
                 <Users className="w-4 h-4" /> Discord
               </a>
@@ -635,7 +635,7 @@ export default function ZahradaGenesisPage() {
           </Link>
           <Link
             href="/terranova/dharma-temple"
-            className="inline-flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-4 py-2 text-sm text-gray-300 transition-all duration-300"
+            className="zion-button-secondary"
           >
             <span>{cs ? 'Dharma Temple' : 'Dharma Temple'}</span>
             <ArrowRight className="w-4 h-4" />

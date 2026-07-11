@@ -57,7 +57,8 @@ function ApiQuickstartPanels({ cs }: { cs: boolean }) {
           <Link
             key={p.href}
             href={p.href}
-            className="group zion-tile p-5 hover:bg-white/8 transition-colors"
+            className="group zion-rainbow-sub p-5"
+            style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
           >
             <div className="flex items-center gap-3">
               <p.icon className="h-5 w-5 text-zion-gold" />
@@ -202,8 +203,8 @@ export default function ApiReferencePage() {
   return (
     <div className="pt-28 pb-20 overflow-x-hidden">
       <div className="zion-container max-w-6xl space-y-12">
-        <section className="zion-rainbow-card p-8" style={{ '--rc': '168, 85, 247' } as React.CSSProperties}>
-          <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple/40 bg-zion-purple/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-zion-gold">
+        <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+          <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-zion-gold">
             <Sparkles className="h-4 w-4" /> API v2.9 · Orion Mesh
           </div>
           <h1 className="mt-4 text-4xl md:text-5xl font-bold text-gradient">{cs ? 'API velitelský panel' : 'API Command Deck'}</h1>
@@ -215,15 +216,13 @@ export default function ApiReferencePage() {
                 href="/health"
               target="_blank"
               rel="noreferrer"
-              className="zion-rainbow-sub inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-gray-100 hover:border-zion-gold/60"
-              style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
+              className="zion-button-primary"
             >
               <Server className="h-4 w-4 text-zion-gold" /> {cs ? 'Živé health' : 'Live health'}
             </a>
             <Link
               href="/docs"
-              className="zion-rainbow-sub inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-gray-100 hover:border-zion-gold/60"
-              style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
+              className="zion-button-secondary"
             >
               <ArrowUpRight className="h-4 w-4 text-zion-gold" /> {cs ? 'Plná dokumentace' : 'Full docs'}
             </Link>
@@ -234,7 +233,7 @@ export default function ApiReferencePage() {
           {apiStats.map((stat) => {
             const Icon = stat.icon;
             return (
-              <div key={stat.label} className="zion-tile p-5">
+              <div key={stat.label} className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                 <Icon className="h-5 w-5 text-zion-gold" />
                 <p className="mt-2 text-3xl font-semibold text-white">{stat.value}</p>
                 <p className="text-sm text-gray-400">{stat.label} · {stat.detail}</p>
@@ -256,7 +255,7 @@ export default function ApiReferencePage() {
                     </div>
                     <p className="mt-2 text-sm text-gray-400">{group.description}</p>
                   </div>
-                  <span className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-1 text-xs text-gray-300">
+                  <span className="zion-badge">
                     Port {group.port}
                   </span>
                 </div>
@@ -264,10 +263,11 @@ export default function ApiReferencePage() {
                   {group.endpoints.map((endpoint) => (
                     <div
                       key={`${group.title}-${endpoint.path}`}
-                      className="zion-tile p-4"
+                      className="zion-rainbow-sub p-4"
+                      style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
                     >
                       <div className="flex flex-wrap items-center gap-3">
-                        <span className="rounded-full bg-black/50 px-3 py-1 text-xs font-semibold text-zion-gold">
+                        <span className="zion-rainbow-sub px-3 py-1 text-xs font-semibold text-zion-gold" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                           {endpoint.method}
                         </span>
                         <code className="text-sm text-white/90">{endpoint.path}</code>
@@ -294,13 +294,13 @@ export default function ApiReferencePage() {
               href="https://github.com/Zion-TerraNova"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-2xl bg-black/70 px-6 py-3 text-sm font-semibold text-white border border-white/20"
+              className="zion-button-secondary"
             >
               {cs ? 'Otevřít GitHub repozitář' : 'Open GitHub repo'}
             </a>
             <Link
               href="/docs"
-              className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-gold to-zion-purple px-6 py-3 text-sm font-semibold text-black"
+              className="zion-button-primary"
             >
               {cs ? 'Projít dokumentaci' : 'Explore documentation'}
             </Link>

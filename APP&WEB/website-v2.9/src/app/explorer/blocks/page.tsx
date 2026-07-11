@@ -117,7 +117,7 @@ export default function BlocksPage() {
         </div>
 
         {/* Table */}
-        <div className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+        <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -192,7 +192,7 @@ export default function BlocksPage() {
               <button
                 onClick={handleExportCsv}
                 disabled={blocks.length === 0}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white hover:bg-white/10 disabled:opacity-50 transition"
+                className="zion-button-secondary text-xs py-2 px-4"
               >
                 <Download className="h-3.5 w-3.5" />
                 {cs ? 'Export CSV' : 'Export CSV'}
@@ -201,7 +201,7 @@ export default function BlocksPage() {
                 <button
                   onClick={() => { const np = page + 1; setPage(np); loadBlocks(np, true); }}
                   disabled={loadingMore}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white hover:bg-white/10 disabled:opacity-50 transition"
+                  className="zion-button-secondary text-xs py-2 px-4"
                 >
                   {loadingMore ? (
                     <span className="animate-spin h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full" />

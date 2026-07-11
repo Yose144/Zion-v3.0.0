@@ -238,20 +238,20 @@ export default function TePikoOraPage() {
           transition={{ duration: 0.6 }}
           className="mb-16"
         >
-          <div className="relative zion-rainbow-card rounded-3xl md:rounded-[32px] p-6 md:p-10 overflow-hidden backdrop-blur-xl" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start">
               {/* Ocean symbol */}
-              <div className="shrink-0 w-20 h-20 rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 via-black/50 to-black flex items-center justify-center text-4xl">
+              <div className="shrink-0 w-20 h-20 flex items-center justify-center text-4xl zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                 🌊
               </div>
 
               {/* Text column */}
               <div className="space-y-3 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-semibold tracking-[0.3em] text-gray-300 uppercase">
+                  <span className="zion-badge">
                     L5 · Terra Nova Pioneer
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-3 py-1 text-[10px] font-semibold tracking-[0.2em] text-zion-gold uppercase">
+                  <span className="zion-badge-gold">
                     📋 {cs ? 'Plánováno 2027+' : 'Planned 2027+'}
                   </span>
                 </div>
@@ -302,10 +302,10 @@ export default function TePikoOraPage() {
           transition={{ delay: 0.15, duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card rounded-3xl p-6 md:p-8 border border-white/10 relative overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="relative z-10 grid md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-3">
-                <h3 className="text-lg font-bold text-gray-300">
+                <h3 className="text-lg font-bold text-zion-gold">
                   {cs ? 'Francouzská Polynésie — Koruna Pacifiku' : 'French Polynesia — Crown of the Pacific'}
                 </h3>
                 <p className="text-gray-400 text-sm leading-relaxed">
@@ -326,7 +326,7 @@ export default function TePikoOraPage() {
                   { label: cs ? 'Oceán' : 'Ocean', val: '4M km²' },
                   { label: cs ? 'Kultura' : 'Culture', val: cs ? 'Polynésie' : 'Polynesia' },
                 ].map((s) => (
-                  <div key={s.label} className="text-center p-3 zion-tile">
+                  <div key={s.label} className="text-center p-3 zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                     <p className="text-gray-300 font-bold text-xs">{s.val}</p>
                     <p className="text-gray-600 text-[10px]">{s.label}</p>
                   </div>
@@ -352,8 +352,8 @@ export default function TePikoOraPage() {
             </h2>
           </div>
 
-          <div className="zion-section overflow-hidden">
-            <div className="grid grid-cols-1 sm:grid-cols-3 text-center text-[10px] uppercase tracking-[0.3em] font-semibold bg-white/5 border-b border-white/10">
+          <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+            <div className="grid grid-cols-1 sm:grid-cols-3 text-center text-[10px] uppercase tracking-[0.3em] font-semibold border-b border-white/10">
               <div className="p-3 text-gray-500">{cs ? 'Polynésie' : 'Polynesia'}</div>
               <div className="p-3 text-gray-300 sm:border-l border-white/10">{cs ? 'Princip' : 'Principle'}</div>
               <div className="p-3 text-gray-300 sm:border-l border-white/10">ZION</div>
@@ -419,11 +419,11 @@ export default function TePikoOraPage() {
                   style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
                 >
                   <div
-                    className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-[50px] opacity-20 group-hover:opacity-35 transition-opacity duration-500"
+                    className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-[50px] opacity-20 group-hover:opacity-35 transition-opacity duration-500 bg-zion-gold"
                     
                   />
                   <div className="flex items-start justify-between relative z-10 gap-3">
-                    <span className="inline-flex h-11 w-11 items-center justify-center zion-tile">
+                    <span className="inline-flex h-11 w-11 items-center justify-center zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                       <Icon className="h-5 w-5 text-zion-gold" />
                     </span>
                     <span
@@ -452,14 +452,12 @@ export default function TePikoOraPage() {
           transition={{ delay: 0.25, duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card rounded-3xl p-6 md:p-8 border border-amber-500/15 relative overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
-            <div className="absolute inset-0 bg-gradient-to-br from-amber-900/15 to-transparent" />
-            <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-[70px] bg-amber-500/10" />
+          <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
             <div className="relative z-10 space-y-4">
               <div className="flex items-center gap-3">
                 <span className="text-2xl">🗿</span>
                 <div>
-                  <h3 className="text-lg font-bold text-amber-400">
+                  <h3 className="text-lg font-bold text-zion-gold">
                     {cs ? 'Rapa Nui lekce — wayfinding škola' : 'Rapa Nui Lessons — wayfinding school'}
                   </h3>
                   <p className="text-gray-500 text-xs">
@@ -524,11 +522,8 @@ export default function TePikoOraPage() {
                   </div>
 
                   <div
-                    className="rounded-2xl border p-4 space-y-1"
-                    style={{
-                      borderColor: p.active ? 'rgba(34,211,238,0.2)' : 'rgba(255,255,255,0.06)',
-                      backgroundColor: p.active ? 'rgba(34,211,238,0.04)' : 'rgba(0,0,0,0.3)',
-                    }}
+                    className="zion-rainbow-sub p-4 space-y-1"
+                    style={{ '--rc': p.active ? '6, 182, 212' : '16, 185, 129' } as React.CSSProperties}
                   >
                     <div className="flex items-center gap-3">
                       <span
@@ -568,17 +563,15 @@ export default function TePikoOraPage() {
             <h2 className="text-2xl font-bold text-white">ZION Network</h2>
           </div>
 
-          <div className="zion-rainbow-card rounded-3xl p-6 md:p-8 border border-cyan-500/15 relative overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/20 to-transparent" />
-            <div className="absolute -top-16 -left-16 w-40 h-40 rounded-full blur-[80px] bg-cyan-500/10" />
+          <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="relative z-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {ZION_ITEMS.map((item) => (
                 <div
                   key={item.label}
                   className="flex items-center gap-3 zion-rainbow-sub p-3" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
                 >
-                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center zion-tile">
-                    <item.icon className="h-4 w-4 text-cyan-200" />
+                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+                    <item.icon className="h-4 w-4 text-zion-gold" />
                   </span>
                   <div>
                     <p className="text-sm font-semibold text-white/80">{item.label}</p>
@@ -603,8 +596,8 @@ export default function TePikoOraPage() {
           transition={{ delay: 0.45, duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card rounded-3xl p-6 md:p-8 border border-cyan-500/15 space-y-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
-            <h3 className="text-lg font-bold text-gray-300">
+          <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+            <h3 className="text-lg font-bold text-zion-gold">
               {cs ? 'Otevřené otázky — hledáme Guardians' : 'Open Questions — looking for Guardians'}
             </h3>
             <ul className="space-y-2">
@@ -616,7 +609,7 @@ export default function TePikoOraPage() {
                 cs ? 'Financování fáze 0 (ZION fond? Humanitární grant? Vlastní zdroje?)' : 'Phase 0 financing (ZION fund? Humanitarian grant? Own resources?)',
               ].map((q, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-gray-400">
-                  <span className="text-cyan-500 shrink-0 mt-0.5">◇</span>
+                  <span className="text-zion-gold shrink-0 mt-0.5">◇</span>
                   {q}
                 </li>
               ))}
@@ -630,7 +623,7 @@ export default function TePikoOraPage() {
               href="https://discord.gg/eatGYDbd"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-4 py-2 text-sm text-gray-300 transition-all duration-300"
+              className="zion-button-secondary"
             >
               <Users className="w-4 h-4" />
               {cs ? 'Připojit se na Discord' : 'Join Discord'}
@@ -647,7 +640,7 @@ export default function TePikoOraPage() {
         >
           <Link
             href="/terranova/dharma-temple"
-            className="inline-flex items-center gap-2 rounded-xl border border-violet-500/25 bg-violet-500/10 hover:bg-violet-500/20 px-4 py-2 text-sm text-violet-300 transition-all duration-300"
+            className="zion-button-secondary"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Dharma Temple</span>

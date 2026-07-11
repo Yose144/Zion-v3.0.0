@@ -78,9 +78,9 @@ export default function EkamDeekshaPage() {
       <div className="relative overflow-hidden border-b border-white/10 bg-linear-to-b from-amber-900/10 via-transparent to-transparent">
         <div className="zion-container py-20 relative">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-amber-300/30 bg-amber-300/10 mb-6">
+            <div className="zion-badge-gold mb-6">
               <Sparkles className="w-4 h-4 text-amber-300" />
-              <span className="text-sm text-amber-200 font-semibold">{lang === 'cs' ? 'Navazuje na Kvantovou Revoluci' : 'Continues the Quantum Revolution'}</span>
+              <span>{lang === 'cs' ? 'Navazuje na Kvantovou Revoluci' : 'Continues the Quantum Revolution'}</span>
             </div>
             <h1 className="text-4xl sm:text-6xl md:text-7xl font-bold mb-6 text-gradient">
               Ekam Deeksha
@@ -94,10 +94,10 @@ export default function EkamDeekshaPage() {
                 : 'The second book after the Quantum Revolution. It does not continue by adding new theory. It turns the gaze inward: what must happen in human consciousness for the separated world to truly stop reproducing itself.'}
             </p>
             <div className="mt-8 flex flex-wrap gap-3 justify-center">
-              <Link href="/ekam" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-white/15 bg-white/8 text-sm font-semibold text-white hover:border-amber-300/30 transition-colors">
+              <Link href="/ekam" className="zion-button-primary">
                 {lang === 'cs' ? 'Projít Ekam' : 'Explore Ekam'}
               </Link>
-              <Link href="/genesis" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-sky-300/20 bg-sky-300/8 text-sm font-semibold text-sky-100 hover:border-sky-200/30 transition-colors">
+              <Link href="/genesis" className="zion-button-secondary">
                 ZION Genesis Book
               </Link>
             </div>
@@ -232,8 +232,8 @@ export default function EkamDeekshaPage() {
                     ? 'Proto je dnes tolik technologií, ale málo klidu. Tolik komunikace, ale málo skutečného setkání. Tolik spirituality, ale málo skutečné proměny. Oddělené self umí recyklovat i to, co mělo být cestou ven. Umí z meditace udělat výkon. Umí z lásky udělat vlastnictví. Umí z osvobození udělat další projekt ega.'
                     : 'That is why there is so much technology today, but so little peace. So much communication, but so little real encounter. So much spirituality, but so little real transformation. The separate self can recycle even what was meant to be a way out. It can turn meditation into performance. It can turn love into possession. It can turn liberation into another ego project.'}
                 </p>
-                <div className="zion-rainbow-sub p-6 my-6" style={{ '--rc': '125, 211, 252' } as React.CSSProperties}>
-                  <p className="text-sky-200 font-semibold mb-2 flex items-center gap-2"><Layers className="w-4 h-4" /> {lang === 'cs' ? 'Základní teze' : 'Core Thesis'}</p>
+                <div className="zion-rainbow-sub p-6 my-6" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+                  <p className="text-amber-200 font-semibold mb-2 flex items-center gap-2"><Layers className="w-4 h-4 text-amber-300" /> {lang === 'cs' ? 'Základní teze' : 'Core Thesis'}</p>
                   <p className="text-gray-300 text-sm leading-7">
                     {lang === 'cs'
                       ? 'Utrpení nevzniká proto, že je svět nedokonalý, ale proto, že prožíváme sebe sama jako oddělené od života. Probuzení nezačíná ve správné doktríně, nýbrž v prasknutí tohoto omylu.'
@@ -273,7 +273,7 @@ export default function EkamDeekshaPage() {
                     { n: '03', title: lang === 'cs' ? 'Sen o technické spáse' : 'Dream of Technical Salvation',   body: lang === 'cs' ? 'Technologie bez vědomí nevede ke zrození nové civilizace, ale k urychlení starých mechanismů. Co je uvnitř nezralé, dostává pouze větší dosah.' : 'Technology without consciousness does not lead to the birth of a new civilization, but to the acceleration of old mechanisms. What is immature inside only gains greater reach.', Icon: Cpu },
                     { n: '04', title: lang === 'cs' ? 'Sebe-interpretace' : 'Self-Interpretation',       body: lang === 'cs' ? 'Porozumění mechanismu neznamená automaticky vystoupení z mechanismu. Sebepopis bez průlomu zkušenosti se může stát sofistikovanou formou stagnace.' : 'Understanding a mechanism does not automatically mean stepping out of it. Self-description without a breakthrough of experience can become a sophisticated form of stagnation.', Icon: Layers },
                   ] as const).map(({ n, title, body, Icon }) => (
-                    <div key={n} className="zion-tile p-5">
+                    <div key={n} className="zion-rainbow-sub p-5" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                       <div className="flex items-center gap-3 mb-3">
                         <span className="text-xs font-bold text-gray-500">{n}</span>
                         <Icon className="w-4 h-4 text-amber-300" />
@@ -311,7 +311,7 @@ export default function EkamDeekshaPage() {
                     { name: 'Oneness University', era: lang === 'cs' ? 'Globalizace' : 'Globalization',    text: lang === 'cs' ? 'Místní experiment se proměňuje v mezinárodně sdílenou cestu, která má vlastní jazyk, strukturu procesu i rituální infrastrukturu. Škola i nešola. Instituce i anti-instituce.' : 'The local experiment transforms into an internationally shared path with its own language, process structure and ritual infrastructure. School and non-school. Institution and anti-institution.' },
                     { name: 'Ekam',               era: lang === 'cs' ? 'Živé pole dnes' : 'Living Field Today', text: lang === 'cs' ? 'Za dnešní symbolikou chrámu, Golden Orb a planetárního pole nestojí marketingová improvizace, ale desítky let hledání adekvátního tvaru pro sdílení toho, co nelze redukovat na informaci.' : 'Behind today\'s symbolism of the temple, Golden Orb and planetary field stands not marketing improvisation, but decades of seeking an adequate form for sharing what cannot be reduced to information.' },
                   ] as const).map(({ name, era, text }) => (
-                    <div key={name} className="flex gap-4 zion-tile p-5">
+                    <div key={name} className="flex gap-4 zion-rainbow-sub p-5" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                       <div className="shrink-0 mt-3">
                         <div className="w-2 h-2 rounded-full bg-amber-300" />
                       </div>
@@ -345,15 +345,15 @@ export default function EkamDeekshaPage() {
                     : 'Amma and Bhagavan are not merely founders in the organizational sense in the Ekam lineage. They represent a functional principle that holds this lineage together — not organizationally, but symbolically and ontologically.'}
                 </p>
                 <div className="grid sm:grid-cols-2 gap-4 my-6">
-                  <div className="zion-rainbow-sub p-6" style={{ '--rc': '253, 164, 175' } as React.CSSProperties}>
-                    <Heart className="w-6 h-6 text-rose-300 mb-3" />
+                  <div className="zion-rainbow-sub p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+                    <Heart className="w-6 h-6 text-amber-300 mb-3" />
                     <h3 className="text-xl font-bold text-white mb-2">{lang === 'cs' ? 'Amma — princip lásky' : 'Amma — Principle of Love'}</h3>
                     <p className="text-sm leading-7 text-gray-300">
                       {lang === 'cs' ? 'Amma ztělesňuje bezpodmínečné přijetí. Láskyplnou přítomnost, která nehodnotí a neodmítá. V linii Ekam je tato energie popsána jako sídlo soucitu — schopnost přijmout člověka přesně tam, kde je, bez požadavku, že nejprve uspěje.' : 'Amma embodies unconditional acceptance. A loving presence that does not judge and does not reject. In the Ekam lineage, this energy is described as the abode of compassion — the ability to accept a person exactly where they are, without the demand that they first succeed.'}
                     </p>
                   </div>
-                  <div className="zion-rainbow-sub p-6" style={{ '--rc': '196, 181, 253' } as React.CSSProperties}>
-                    <Sun className="w-6 h-6 text-violet-300 mb-3" />
+                  <div className="zion-rainbow-sub p-6" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+                    <Sun className="w-6 h-6 text-amber-300 mb-3" />
                     <h3 className="text-xl font-bold text-white mb-2">{lang === 'cs' ? 'Bhagavan — princip vhledu' : 'Bhagavan — Principle of Insight'}</h3>
                     <p className="text-sm leading-7 text-gray-300">
                       {lang === 'cs' ? 'Bhagavan Sri Kalki reprezentuje pronikající jasnost, která vidí skrz iluze. Kde Amma zahřeje, Bhagavan osvítí. Dohromady tvoří pole, v němž může proměna vejít do obou svých pohybů: přijetí a osvobození.' : 'Bhagavan Sri Kalki represents penetrating clarity that sees through illusions. Where Amma warms, Bhagavan illuminates. Together they create a field in which transformation can enter both of its movements: acceptance and liberation.'}
@@ -438,7 +438,7 @@ export default function EkamDeekshaPage() {
                     ? 'Golden Orb — zlatá koule uprostřed chrámového pole — není dekorativní prvek. Je to kondenzovaný symbol klíčové teze: jako je semeno v jádru plodu, tak je zárodek jednoty v jádru odděleného já. Nezničitelný. Čekající.'
                     : 'Golden Orb — the golden sphere in the center of the temple field — is not a decorative element. It is a condensed symbol of the key thesis: as the seed is in the core of the fruit, so is the seed of unity in the core of the separate self. Indestructible. Waiting.'}
                 </p>
-                <div className="zion-tile p-6 my-4">
+                <div className="zion-rainbow-sub p-6 my-4" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                   <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{lang === 'cs' ? 'Ekam jako planetární pole' : 'Ekam as Planetary Field'}</p>
                   <p className="text-sm leading-7 text-gray-300">
                     {lang === 'cs' ? 'Fyzický chrám je jedním uzlem. Ekam pracuje s myšlenkou, že skupinová meditace v synchronizaci přes vzdálenost buduje globální pole vědomí — podobně, jak lokální sítě tvoří internet. Kritická masa probuzených vědomí se v této logice mění z osobního osvobození ve civilizační sílu.' : 'The physical temple is one node. Ekam works with the idea that group meditation in synchronization across distance builds a global field of consciousness — similarly to how local networks form the internet. In this logic, a critical mass of awakened consciousness transforms from personal liberation into civilizational force.'}
@@ -479,7 +479,7 @@ export default function EkamDeekshaPage() {
                     { dim: lang === 'cs' ? 'Linie Ekam' : 'Ekam Lineage',        t: lang === 'cs' ? 'Golden Orb jako centrum chrámu — kondenzovaný symbol zárodku nového vědomí.' : 'Golden Orb as the center of the temple — condensed symbol of the seed of new consciousness.' },
                     { dim: lang === 'cs' ? 'ZION PoW' : 'ZION PoW',          t: lang === 'cs' ? 'Ekam Deeksha hash pipeline začíná fází Hiranyagarbha — inicializací zlatého zárodku z hlavičky bloku.' : 'Ekam Deeksha hash pipeline begins with the Hiranyagarbha phase — initialization of the golden seed from the block header.' },
                   ] as const).map(({ dim, t }) => (
-                    <div key={dim} className="zion-tile p-4 text-center">
+                    <div key={dim} className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                       <p className="text-xs text-amber-300 font-semibold uppercase tracking-wider mb-2">{dim}</p>
                       <p className="text-sm text-gray-400 leading-6">{t}</p>
                     </div>
@@ -509,12 +509,12 @@ export default function EkamDeekshaPage() {
                 <div className="my-6 space-y-2">
                   <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{lang === 'cs' ? '6-stupňový pipeline Ekam Deeksha' : '6-Stage Ekam Deeksha Pipeline'}</p>
                   {algoSteps.map((step, i) => (
-                    <div key={step.id} className={`flex gap-4 rounded-xl border ${step.border} ${step.bg} p-4`}>
-                      <div className={`shrink-0 flex items-center justify-center w-8 h-8 rounded-full border ${step.border} text-xs font-bold ${step.color}`}>
+                    <div key={step.id} className="zion-rainbow-sub p-4 flex gap-4" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+                      <div className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full border border-amber-300/40 text-xs font-bold text-amber-300">
                         {i}
                       </div>
                       <div>
-                        <p className={`font-bold text-base ${step.color} mb-1`}>{step.name}</p>
+                        <p className="font-bold text-base text-amber-300 mb-1">{step.name}</p>
                         <p className="text-sm text-gray-400 leading-6">{step.desc}</p>
                       </div>
                     </div>
@@ -523,8 +523,8 @@ export default function EkamDeekshaPage() {
                 <p className="text-base font-semibold text-white mt-6 mb-3">{lang === 'cs' ? 'ASIC rezistence — dvouvrstvá ochrana' : 'ASIC Resistance — Two-Layer Protection'}</p>
                 <div className="grid sm:grid-cols-2 gap-4">
                   {algoTiers.map(({ tier, title, desc }) => (
-                    <div key={tier} className="zion-rainbow-sub p-5" style={{ '--rc': '125, 211, 252' } as React.CSSProperties}>
-                      <p className="text-xs font-bold text-sky-300 uppercase tracking-wider mb-1">{tier}</p>
+                    <div key={tier} className="zion-rainbow-sub p-5" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+                      <p className="text-xs font-bold text-amber-300 uppercase tracking-wider mb-1">{tier}</p>
                       <h3 className="text-lg font-semibold text-white mb-2">{title}</h3>
                       <p className="text-sm text-gray-400 leading-6">{desc}</p>
                     </div>
@@ -569,7 +569,7 @@ export default function EkamDeekshaPage() {
                     { n: 9,  step: lang === 'cs' ? 'Síťování' : 'Networking',                  desc: lang === 'cs' ? 'Propojení lokálních polí do vzájemně podporující se sítě. Od izolovaných ostrovů k archipelagu vědomí.' : 'Connecting local fields into a mutually supporting network. From isolated islands to an archipelago of consciousness.' },
                     { n: 10, step: lang === 'cs' ? 'Civilizační manifestace' : 'Civilizational Manifestation',   desc: lang === 'cs' ? 'Nové vzdělávání, nová ekonomika, nová politika — ne jako ideologický program, ale jako přirozený výsledek dostatečně mnoha proměněných lidí.' : 'New education, new economy, new politics — not as an ideological program, but as a natural result of sufficiently many transformed people.' },
                   ] as const).map(({ n, step, desc }) => (
-                    <div key={n} className="flex gap-4 zion-tile p-4">
+                    <div key={n} className="flex gap-4 zion-rainbow-sub p-4" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                       <div className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-amber-300/10 border border-amber-300/30 text-amber-300 text-xs font-bold">
                         {n}
                       </div>
@@ -628,16 +628,16 @@ export default function EkamDeekshaPage() {
             </section>
 
             {/* CTA */}
-            <div className="mb-20 border-t border-white/10 pt-28 text-center space-y-4">
-              <p className="text-gray-400 text-sm">{lang === 'cs' ? 'Prozkoumej dál' : 'Explore further'}</p>
+            <div className="zion-cta-banner mb-20">
+              <p className="text-gray-300 text-sm mb-4">{lang === 'cs' ? 'Prozkoumej dál' : 'Explore further'}</p>
               <div className="flex flex-wrap justify-center gap-3">
-                <Link href="/ekam" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-white/15 bg-white/8 text-sm font-semibold text-white hover:border-amber-300/30 transition-colors">
+                <Link href="/ekam" className="zion-button-primary">
                   {lang === 'cs' ? 'Ekam — virtuální prohlídka' : 'Ekam — Virtual Tour'}
                 </Link>
-                <Link href="/roadmap" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-sky-300/20 bg-sky-300/8 text-sm font-semibold text-sky-100 hover:border-sky-200/30 transition-colors">
+                <Link href="/roadmap" className="zion-button-secondary">
                   {lang === 'cs' ? 'Roadmap ZION' : 'ZION Roadmap'}
                 </Link>
-                <Link href="/docs" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-amber-300/20 bg-amber-300/8 text-sm font-semibold text-amber-100 hover:border-amber-200/30 transition-colors">
+                <Link href="/docs" className="zion-button-secondary">
                   {lang === 'cs' ? 'Dokumentace' : 'Documentation'}
                 </Link>
               </div>
