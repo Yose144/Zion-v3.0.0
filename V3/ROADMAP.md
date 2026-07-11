@@ -114,8 +114,9 @@ Verze **3.0.3** je nyní uzavřena. Všechny klíčové komponenty jsou funkčn�
 - [x] **BOLT11 invoice parser** (`bolt11.rs`) — pure Rust bech32 decode, tagged field parsing (p/d/n/x/c/r/9), amount multipliers (m/u/n/p), signature extraction
 - [x] **LND REST client** (`lightning_signer.rs`) — GetInfo, AddInvoice, SendPayment, LookupInvoice, ListChannels, outbound capacity monitoring
 - [x] **Lightning adapter** — nahrazen stub real implementací: `decode_invoice()`, `create_invoice()`, `pay_invoice()`, `is_payment_settled()`, `health_check()`, `watch_events()`, `execute_mint()`, `confirmations()`
-- [x] 488 WARP tests pass (cumulative — bolt11 + lightning_signer + lightning adapter included)
-- [ ] **LND node setup na Edge** (Fáze A) — Docker container, bitcoind backend, channel opening, macaroon generation
+- [x] 499 WARP tests pass (cumulative — bolt11 + lightning_signer + lightning adapter included)
+- [x] **LND node setup** (Fáze A) — Docker setup created: `V3/L3/warp/docker/lightning/` (bitcoind testnet + LND v0.18.2 + Redis), channel management scripts at `V3/L3/warp/scripts/lightning/`, systemd service at `edge-deploy/systemd/zion-edge-lnd.service`
+- [ ] **Deploy LND to Edge** — `docker compose up`, sync testnet, open channels, extract macaroon
 - [ ] Set `WARP_LN_NODE_URL` / `WARP_LN_MACAROON` env vars on Edge
 - [ ] Channel liquidity (0.5-1 BTC outbound)
 - [ ] Submarine swaps (Fáze E — future)
@@ -139,10 +140,16 @@ Verze **3.0.3** je nyní uzavřena. Všechny klíčové komponenty jsou funkčn�
 - [x] **TON Cell/BOC encoder** — pure Rust TL-B Cell serialization for TON. `BitString` (bit-level ops) + `Cell` (1023-bit data + 4 refs + SHA-256 hash) + `serialize_boc` (unified BOC format 0xb5ee00ed) + jetton transfer body + internal message + wallet V2R2 external message + signing hash. 23 tests.
 - [x] **Cardano `submit_mint_tx`** — CBOR TX body (inputs + outputs + fee + ttl + mint) + Blake2b-256 body hash + Ed25519 witness + Blockfrost `/tx/submit`. Blake2b-224 for payment key hash + policy ID. **Plně funkční**
 - [x] 499 WARP tests pass (cumulative — bcs + cbor + ton_cell + aptos BCS + sui BCS + cardano CBOR + ton TL-B + adapters + signers + server)
+- [x] **Non-EVM ZION token contracts created** (2026-07-12) — All 9 contract source files in `V3/L2/bridge/contracts/non-evm/`: Solana (SPL Anchor), Tron (TRC-20), Stellar (native asset + setup script), Cardano (Plutus minting policy), Cosmos (CosmWasm CW20), Aptos (Move Coin), Sui (Move Coin), NEAR (NEP-141), TON (TEP-74 jetton). All implement bridgeMint/bridgeBurn with 5/5 quorum, replay protection, max supply 144B, min 100 ZION, emergency pause.
 - [ ] Deploy wZION Move module on Aptos mainnet
 - [ ] Deploy wZION NEAR contract
 - [ ] Deploy wZION Sui package
 - [ ] Deploy wZION TON jetton
+- [ ] Deploy wZION SPL token on Solana
+- [ ] Deploy wZION TRC-20 on Tron
+- [ ] Issue wZION asset on Stellar
+- [ ] Mint wZION native token on Cardano
+- [ ] Deploy wZION CW20 on Cosmos
 - [ ] Set relay key env vars for each chain on Edge
 
 #### Nice to have (continued)
