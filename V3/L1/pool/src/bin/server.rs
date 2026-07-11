@@ -19,6 +19,7 @@ use zion_pool::pplns::{FeeConfig, PayoutEntry, PplnsConfig, PplnsEngine};
 use zion_pool::{
     decode_message, encode_message, MiningPool, PoolMessage, ShareDecision, ShareStatus,
 };
+use zion_auxpow::{AuxPowScheduler, AuxPowStats};
 
 // ---------------------------------------------------------------------------
 // LogChannel — batched async logging to reduce I/O on the hot path
@@ -412,12 +413,36 @@ fn main() -> Result<()> {
     println!("routing_log_every={}", config.routing_log_every);
     println!("max_sessions_per_ip={}", config.max_sessions_per_ip);
     let started_at = std::time::Instant::now();
+    // ── AuxPow scheduler (external merge mining) ───────────────────
+    // When ZION_AUXPOW_ENABLED=1, the scheduler connects to an external
+    // pool (e.g. DCR/ALPH via Blake3) and mines with the pool's own
+    // compute, tracking USD revenue for PPLNS distribution.
+    // The scheduler runs on a dedicated tokio runtime since the pool
+    // server itself uses std::thread (not tokio).
+    let auxpow_scheduler: Arc<AuxPowScheduler> = {
+        let sched = Arc::new(AuxPowScheduler::from_env());
+        if sched.is_enabled_sync() {
+            println!("auxpow: scheduler enabled, spawning background task");
+            let auxpow_runtime = tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .thread_name("auxpow")
+                .build()
+                .context("failed to create auxpow tokio runtime")?;
+            let sched_clone = Arc::clone(&sched);
+            sched_clone.spawn_on(&auxpow_runtime);
+        } else {
+            println!("auxpow: disabled (set ZION_AUXPOW_ENABLED=1 to enable)");
+        }
+        sched
+    };
+
     if let Some(metrics_bind) = config.routing_metrics_bind.as_deref() {
         println!("routing_metrics_bind={metrics_bind}");
         let routing_stats = Arc::clone(&routing_stats);
         let miner_telemetry_ref = Arc::clone(&miner_telemetry);
         let active_sessions_ref = Arc::clone(&active_sessions);
         let pplns_ref = Arc::clone(&pplns_engine);
+        let auxpow_ref = Arc::clone(&auxpow_scheduler);
         let metrics_bind = metrics_bind.to_string();
         thread::spawn(move || {
             if let Err(error) = serve_routing_metrics(
@@ -427,6 +452,7 @@ fn main() -> Result<()> {
                 started_at,
                 active_sessions_ref,
                 pplns_ref,
+                auxpow_ref,
             ) {
                 eprintln!("routing_metrics_error={error:#}");
             }
@@ -2576,6 +2602,7 @@ fn serve_routing_metrics(
     started_at: std::time::Instant,
     active_sessions: Arc<AtomicU64>,
     pplns_engine: Arc<Mutex<PplnsEngine>>,
+    auxpow_scheduler: Arc<AuxPowScheduler>,
 ) -> Result<()> {
     let listener = TcpListener::bind(bind_addr)
         .with_context(|| format!("failed to bind routing metrics listener on {bind_addr}"))?;
@@ -2622,7 +2649,8 @@ fn serve_routing_metrics(
                     .lock()
                     .expect("miner telemetry lock poisoned");
                 let pplns = pplns_engine.lock().expect("pplns lock poisoned");
-                let body = build_stats_payload(&stats, &telemetry, &pplns, sessions, uptime_s);
+                let auxpow_stats = auxpow_scheduler.stats_sync();
+                let body = build_stats_payload(&stats, &telemetry, &pplns, sessions, uptime_s, &auxpow_stats);
                 ("200 OK", "application/json", body)
             }
             p if p.starts_with("/miners") => {
@@ -2777,6 +2805,7 @@ fn build_stats_payload(
     pplns_engine: &PplnsEngine,
     active_sessions: u64,
     uptime_s: u64,
+    auxpow: &AuxPowStats,
 ) -> String {
     let now_s = now_unix_seconds();
     let pplns = pplns_engine.stats();
@@ -2881,6 +2910,21 @@ fn build_stats_payload(
             "miner_stats": "/api/v1/miner/:address/stats",
             "miner_payouts": "/api/v1/miner/:address/payouts",
             "metrics": "/metrics"
+        },
+        "auxpow": {
+            "enabled": auxpow.enabled,
+            "current_coin": auxpow.current_coin,
+            "current_pool": auxpow.current_pool,
+            "current_algorithm": auxpow.current_algorithm,
+            "shares_submitted": auxpow.shares_submitted,
+            "shares_accepted": auxpow.shares_accepted,
+            "shares_rejected": auxpow.shares_rejected,
+            "revenue_usd": auxpow.revenue_usd,
+            "consecutive_failures": auxpow.consecutive_failures,
+            "circuit_open": auxpow.circuit_open,
+            "uptime_secs": auxpow.uptime_secs,
+            "coin_switches": auxpow.coin_switches,
+            "last_switch_ts": auxpow.last_switch_ts
         }
     });
     json.to_string()

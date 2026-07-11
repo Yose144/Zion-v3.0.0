@@ -136,12 +136,24 @@ impl AuxPowScheduler {
     }
 
     /// Run the scheduler in a background task. Returns immediately.
+    /// Must be called from within a tokio runtime context.
     pub fn spawn(self: Arc<Self>) -> tokio::task::JoinHandle<()> {
         tokio::spawn(async move {
             if let Err(e) = self.run().await {
                 error!("AuxPow scheduler error: {}", e);
             }
         })
+    }
+
+    /// Run the scheduler on a specific tokio runtime (for use from
+    /// non-tokio hosts like the ZION pool server which uses std::thread).
+    pub fn spawn_on(self: Arc<Self>, runtime: &tokio::runtime::Runtime) {
+        let scheduler = self;
+        runtime.spawn(async move {
+            if let Err(e) = scheduler.run().await {
+                error!("AuxPow scheduler error: {}", e);
+            }
+        });
     }
 
     /// Main scheduler loop.
@@ -368,7 +380,7 @@ impl AuxPowScheduler {
         }
     }
 
-    /// Get current stats snapshot.
+    /// Get current stats snapshot (async).
     pub async fn stats(&self) -> AuxPowStats {
         let mut stats = self.stats.lock().await.clone();
         stats.uptime_secs = self.start_time.elapsed().as_secs();
@@ -378,6 +390,24 @@ impl AuxPowScheduler {
         let cfg = self.config.read().await;
         stats.enabled = cfg.enabled;
         stats
+    }
+
+    /// Get current stats snapshot (sync — uses blocking_lock for use
+    /// outside of a tokio runtime, e.g. from std::thread metrics handler).
+    pub fn stats_sync(&self) -> AuxPowStats {
+        let mut stats = self.stats.blocking_lock().clone();
+        stats.uptime_secs = self.start_time.elapsed().as_secs();
+        let cb = self.circuit.blocking_lock();
+        stats.consecutive_failures = cb.consecutive_failures;
+        stats.circuit_open = cb.is_open();
+        let cfg = self.config.blocking_read();
+        stats.enabled = cfg.enabled;
+        stats
+    }
+
+    /// Check if scheduler is enabled (sync — for use outside tokio runtime).
+    pub fn is_enabled_sync(&self) -> bool {
+        self.config.blocking_read().enabled
     }
 
     /// Get current coin.

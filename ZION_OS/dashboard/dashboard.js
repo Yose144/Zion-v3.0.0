@@ -2477,6 +2477,44 @@ async function loadPoolMinersTab(){
       sourcesEl.innerHTML = sh || '<div class="text-gray-500">No source data</div>';
     }
 
+    // AuxPow merge mining panel
+    const auxpow = (data.auxpow || (stats.auxpow) || {});
+    const auxEnabled = auxpow.enabled || false;
+    const auxBadge = document.getElementById('pm-auxpow-status-badge');
+    if(auxBadge){
+      if(auxEnabled){
+        auxBadge.textContent = auxpow.circuit_open ? '⛔ Circuit Open' : '🟢 Active';
+        auxBadge.className = 'text-[10px] px-2 py-0.5 rounded-full ' + (auxpow.circuit_open ? 'bg-red-900/50 text-red-400' : 'bg-emerald-900/50 text-emerald-400');
+      } else {
+        auxBadge.textContent = '⚪ Disabled';
+        auxBadge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400';
+      }
+    }
+    const auxEnabledEl = document.getElementById('pm-auxpow-enabled');
+    if(auxEnabledEl){
+      auxEnabledEl.textContent = auxEnabled ? (auxpow.circuit_open ? '⛔ Circuit Open' : '🟢 Active') : 'Disabled';
+      auxEnabledEl.className = 'font-bold ' + (auxEnabled && !auxpow.circuit_open ? 'text-emerald-400' : auxEnabled ? 'text-red-400' : 'text-gray-500');
+    }
+    set('pm-auxpow-coin', auxpow.current_coin || '—');
+    set('pm-auxpow-algo', auxpow.current_algorithm || '—');
+    const auxPoolEl = document.getElementById('pm-auxpow-pool');
+    if(auxPoolEl){ auxPoolEl.textContent = auxpow.current_pool || '—'; auxPoolEl.title = auxpow.current_pool || ''; }
+    set('pm-auxpow-submitted', (auxpow.shares_submitted || 0).toLocaleString());
+    set('pm-auxpow-accepted', (auxpow.shares_accepted || 0).toLocaleString());
+    set('pm-auxpow-rejected', (auxpow.shares_rejected || 0).toLocaleString());
+    set('pm-auxpow-revenue', auxpow.revenue_usd != null ? '$' + (auxpow.revenue_usd || 0).toFixed(4) : '—');
+    const auxUptime = auxpow.uptime_secs || 0;
+    set('pm-auxpow-uptime', auxUptime > 0 ? Math.floor(auxUptime/3600) + 'h ' + Math.floor((auxUptime%3600)/60) + 'm' : '—');
+    set('pm-auxpow-switches', auxpow.coin_switches != null ? auxpow.coin_switches : '—');
+    const lastSw = auxpow.last_switch_ts;
+    set('pm-auxpow-last-switch', lastSw ? new Date(lastSw).toLocaleString() : '—');
+    set('pm-auxpow-failures', auxpow.consecutive_failures != null ? auxpow.consecutive_failures : '—');
+    const auxCircuitEl = document.getElementById('pm-auxpow-circuit');
+    if(auxCircuitEl){
+      auxCircuitEl.textContent = auxpow.circuit_open ? '⛔ OPEN' : (auxEnabled ? '✅ Closed' : '—');
+      auxCircuitEl.className = 'font-bold ' + (auxpow.circuit_open ? 'text-red-400' : auxEnabled ? 'text-emerald-400' : 'text-gray-500');
+    }
+
     // Miners table
     const miners = data.miners || [];
     if(badge) badge.textContent = miners.length + ' ranked';

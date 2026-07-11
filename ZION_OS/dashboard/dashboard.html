@@ -2085,6 +2085,68 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
     </div>
 
+    <!-- AuxPow Merge Mining -->
+    <div class="zion-panel p-4">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-bold flex items-center gap-2">⚡ AuxPow Merge Mining</h3>
+        <span id="pm-auxpow-status-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">—</span>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+        <div class="space-y-1">
+          <div class="text-gray-400">Status</div>
+          <div id="pm-auxpow-enabled" class="font-bold text-gray-500">Disabled</div>
+        </div>
+        <div class="space-y-1">
+          <div class="text-gray-400">Current Coin</div>
+          <div id="pm-auxpow-coin" class="font-mono text-white">—</div>
+        </div>
+        <div class="space-y-1">
+          <div class="text-gray-400">Algorithm</div>
+          <div id="pm-auxpow-algo" class="font-mono text-cyan-400">—</div>
+        </div>
+        <div class="space-y-1">
+          <div class="text-gray-400">Pool</div>
+          <div id="pm-auxpow-pool" class="font-mono text-gray-300 text-[10px] truncate">—</div>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs mt-3 pt-3 border-t border-white/10">
+        <div class="space-y-1">
+          <div class="text-gray-400">Shares Submitted</div>
+          <div id="pm-auxpow-submitted" class="font-mono text-white">—</div>
+        </div>
+        <div class="space-y-1">
+          <div class="text-gray-400">Accepted / Rejected</div>
+          <div class="font-mono"><span id="pm-auxpow-accepted" class="text-emerald-400">—</span> / <span id="pm-auxpow-rejected" class="text-red-400">—</span></div>
+        </div>
+        <div class="space-y-1">
+          <div class="text-gray-400">Revenue (USD)</div>
+          <div id="pm-auxpow-revenue" class="font-mono text-zion-gold">—</div>
+        </div>
+        <div class="space-y-1">
+          <div class="text-gray-400">Uptime</div>
+          <div id="pm-auxpow-uptime" class="font-mono text-gray-300">—</div>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs mt-3 pt-3 border-t border-white/10">
+        <div class="space-y-1">
+          <div class="text-gray-400">Coin Switches</div>
+          <div id="pm-auxpow-switches" class="font-mono text-white">—</div>
+        </div>
+        <div class="space-y-1">
+          <div class="text-gray-400">Last Switch</div>
+          <div id="pm-auxpow-last-switch" class="font-mono text-gray-300 text-[10px]">—</div>
+        </div>
+        <div class="space-y-1">
+          <div class="text-gray-400">Consecutive Failures</div>
+          <div id="pm-auxpow-failures" class="font-mono text-amber-400">—</div>
+        </div>
+        <div class="space-y-1">
+          <div class="text-gray-400">Circuit Breaker</div>
+          <div id="pm-auxpow-circuit" class="font-bold text-gray-500">—</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Search + Miners Table -->
     <div class="zion-panel p-4">
       <div class="flex items-center justify-between mb-3">
