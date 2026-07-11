@@ -4888,6 +4888,58 @@ def get_pool_miners_dashboard() -> dict:
     return result
 
 
+def get_revenue_dashboard() -> dict:
+    """Return placeholder revenue dashboard data for the Revenue System tab.
+
+    Merges live AuxPow stats with a prepared revenue object. The revenue object
+    is intentionally placeholder / preview until the real revenue engine is wired.
+    """
+    result: dict = {"ok": True}
+
+    # AuxPow live stats (from pool /stats)
+    try:
+        stats = fetch_pool_stats()
+        auxpow = stats.get("auxpow", {}) if stats else {}
+        if not isinstance(auxpow, dict):
+            auxpow = {}
+        result["auxpow"] = auxpow
+    except Exception:
+        result["auxpow"] = {}
+
+    # Placeholder revenue object
+    result["revenue"] = {
+        "enabled": False,
+        "status": "Preview",
+        "strategy": "Multi-coin merge-mining + swap aggregator",
+        "total_usd": 0.0,
+        "daily_estimate_usd": 0.0,
+        "revenue_usd": result["auxpow"].get("revenue_usd", 0.0),
+        "current_algorithm": result["auxpow"].get("current_algorithm"),
+        "current_pool": result["auxpow"].get("current_pool"),
+        "current_coin": result["auxpow"].get("current_coin"),
+        "shares_submitted": result["auxpow"].get("shares_submitted", 0),
+        "shares_accepted": result["auxpow"].get("shares_accepted", 0),
+        "shares_rejected": result["auxpow"].get("shares_rejected", 0),
+        "uptime_secs": result["auxpow"].get("uptime_secs", 0),
+        "coin_switches": result["auxpow"].get("coin_switches", 0),
+        "last_switch_ts": result["auxpow"].get("last_switch_ts"),
+        "consecutive_failures": result["auxpow"].get("consecutive_failures", 0),
+        "circuit_open": result["auxpow"].get("circuit_open", False),
+        "miner_share_pct": 89,
+        "dao_share_pct": 5,
+        "humanitarian_share_pct": 5,
+        "pool_fee_pct": 1,
+        "last_distribution_ts": None,
+        "next_distribution_ts": None,
+        "distribution_cycle": "24h",
+        "accumulated_usd": 0.0,
+        "active_coins": ["KAS", "ALPH", "DCR"],
+        "coin_revenue": [],
+        "distributions": [],
+    }
+    return result
+
+
 def _format_uptime(seconds):
     """Format seconds into human-readable uptime string."""
     if not seconds or seconds <= 0:
@@ -9324,6 +9376,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(get_pool_leaderboard(limit=limit))
         elif route == "/api/pool/miners-dashboard":
             self._json(get_pool_miners_dashboard())
+        elif route == "/api/revenue":
+            self._json(get_revenue_dashboard())
         elif route.startswith("/api/pool/miner-detail/"):
             address = route.split("/api/pool/miner-detail/", 1)[1].split("?")[0]
             self._json(get_pool_miner_detail(address))

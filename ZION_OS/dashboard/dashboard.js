@@ -1,11 +1,12 @@
 'use strict';
 
-const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','bridge-validators','genesis','blockers','ops','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','cex','warp-swap','payout','pool-miners','backups','topology','miner-live','settings','fleet','agent','warp','ai-agents','ncl-jobs','poc-lab'];
+const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','bridge-validators','genesis','blockers','ops','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','cex','warp-swap','payout','pool-miners','revenue','backups','topology','miner-live','settings','fleet','agent','warp','ai-agents','ncl-jobs','poc-lab'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
 let _payoutSseSource = null;  // EventSource for real-time payout events
 let _payoutTimer = null;      // Fallback poll timer for payout tab
 let _poolMinersTimer = null;  // Pool Miners tab auto-refresh timer
+let _revenueTimer = null;     // Revenue System tab auto-refresh timer
 let _cexTimer = null;         // CEX panel auto-refresh timer
 let friendlyMode = false;
 let _overviewWidgetTimer = null;
@@ -120,6 +121,7 @@ function clearTabTimers(except){
   if(except !== 'dao') _daoTimer = null;
   if(except !== 'payout'){ clearInterval(_payoutTimer); _payoutTimer = null; }
   if(except !== 'pool-miners'){ clearInterval(_poolMinersTimer); _poolMinersTimer = null; }
+  if(except !== 'revenue'){ clearInterval(_revenueTimer); _revenueTimer = null; }
   if(except !== 'cex'){ clearInterval(_cexTimer); _cexTimer = null; }
 }
 
@@ -152,6 +154,7 @@ function switchTab(name){
   else if(name === 'warp-swap'){ clearTabTimers(null); loadWarpSwapPanel(); }
   else if(name === 'payout'){ clearTabTimers(null); loadPayoutTab(); connectPayoutSse(); if(!_payoutTimer) _payoutTimer = setInterval(loadPayoutTab, 10000); }
   else if(name === 'pool-miners'){ clearTabTimers(null); loadPoolMinersTab(); if(!_poolMinersTimer) _poolMinersTimer = setInterval(loadPoolMinersTab, 10000); }
+  else if(name === 'revenue'){ clearTabTimers(null); loadRevenueTab(); if(!_revenueTimer) _revenueTimer = setInterval(loadRevenueTab, 15000); }
   else { clearTabTimers(null); disconnectPayoutSse(); }
 
   if(name === 'charts') renderCharts();
@@ -2515,54 +2518,6 @@ async function loadPoolMinersTab(){
       auxCircuitEl.className = 'font-bold ' + (auxpow.circuit_open ? 'text-red-400' : auxEnabled ? 'text-emerald-400' : 'text-gray-500');
     }
 
-    // Revenue System panel (prepared / placeholder values)
-    const revenue = data.revenue || {
-      enabled: false,
-      status: 'Preview',
-      strategy: 'Multi-coin merge-mining + swap aggregator',
-      total_usd: 0,
-      daily_estimate_usd: 0,
-      miner_share_pct: 89,
-      dao_share_pct: 5,
-      humanitarian_share_pct: 5,
-      pool_fee_pct: 1,
-      last_distribution_ts: null,
-      next_distribution_ts: null,
-      active_coins: ['KAS', 'ALPH', 'DCR'],
-      circuit_open: false,
-    };
-    const revEnabled = revenue.enabled || false;
-    const revBadge = document.getElementById('pm-revenue-status-badge');
-    if(revBadge){
-      if(revEnabled){
-        revBadge.textContent = revenue.circuit_open ? '⛔ Circuit Open' : '🟢 Active';
-        revBadge.className = 'text-[10px] px-2 py-0.5 rounded-full ' + (revenue.circuit_open ? 'bg-red-900/50 text-red-400' : 'bg-emerald-900/50 text-emerald-400');
-      } else {
-        revBadge.textContent = '🔮 Preview';
-        revBadge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-amber-900/50 text-amber-400';
-      }
-    }
-    const revStatusEl = document.getElementById('pm-revenue-status');
-    if(revStatusEl){
-      revStatusEl.textContent = revEnabled ? (revenue.circuit_open ? '⛔ Circuit Open' : '🟢 Active') : '🔮 Preview';
-      revStatusEl.className = 'font-bold ' + (revEnabled && !revenue.circuit_open ? 'text-emerald-400' : revEnabled ? 'text-red-400' : 'text-amber-400');
-    }
-    set('pm-revenue-strategy', revenue.strategy || '—');
-    set('pm-revenue-total', revenue.total_usd != null ? '$' + Number(revenue.total_usd).toFixed(4) : '—');
-    set('pm-revenue-daily', revenue.daily_estimate_usd != null ? '$' + Number(revenue.daily_estimate_usd).toFixed(4) : '—');
-    set('pm-revenue-miner-share', revenue.miner_share_pct != null ? revenue.miner_share_pct + '%' : '—');
-    set('pm-revenue-dao-share', revenue.dao_share_pct != null ? revenue.dao_share_pct + '%' : '—');
-    set('pm-revenue-human-share', revenue.humanitarian_share_pct != null ? revenue.humanitarian_share_pct + '%' : '—');
-    set('pm-revenue-pool-fee', revenue.pool_fee_pct != null ? revenue.pool_fee_pct + '%' : '—');
-    set('pm-revenue-last-dist', revenue.last_distribution_ts ? new Date(revenue.last_distribution_ts).toLocaleString() : '—');
-    set('pm-revenue-next-dist', revenue.next_distribution_ts ? new Date(revenue.next_distribution_ts).toLocaleString() : '—');
-    set('pm-revenue-coins', (revenue.active_coins || []).join(', ') || '—');
-    const revCircuitEl = document.getElementById('pm-revenue-circuit');
-    if(revCircuitEl){
-      revCircuitEl.textContent = revenue.circuit_open ? '⛔ OPEN' : (revEnabled ? '✅ Closed' : '—');
-      revCircuitEl.className = 'font-bold ' + (revenue.circuit_open ? 'text-red-400' : revEnabled ? 'text-emerald-400' : 'text-gray-500');
-    }
-
     // Miners table
     const miners = data.miners || [];
     if(badge) badge.textContent = miners.length + ' ranked';
@@ -2633,6 +2588,125 @@ async function loadPoolMinersTab(){
     console.error('loadPoolMinersTab error:', e);
     if(tbody) tbody.innerHTML = '<tr><td colspan="13" class="text-red-400 text-center py-4 text-xs">Failed to load miners: ' + escapeHtml(e.message) + '</td></tr>';
     if(eventsTbody) eventsTbody.innerHTML = '<tr><td colspan="7" class="text-red-400 text-center py-4 text-xs">Failed to load events</td></tr>';
+  }
+}
+
+// ── Revenue System tab ─────────────────────────────────────────────────────
+async function loadRevenueTab(){
+  const set = _poolMinersSet; // reuse helper
+  try {
+    const data = await apiFetch('/api/revenue');
+    if(!data || !data.ok) throw new Error(data?.error || 'Failed to load');
+
+    const rev = data.revenue || {};
+    const auxpow = data.auxpow || {};
+    const enabled = rev.enabled || false;
+
+    // KPI row
+    const statusEl = document.getElementById('rev-kpi-status');
+    if(statusEl){
+      statusEl.textContent = enabled ? (rev.circuit_open ? '⛔ Circuit Open' : '🟢 Active') : '🔮 Preview';
+      statusEl.className = 'text-lg font-bold ' + (enabled && !rev.circuit_open ? 'text-emerald-400' : enabled ? 'text-red-400' : 'text-amber-400');
+    }
+    const totalEl = document.getElementById('rev-kpi-total');
+    if(totalEl) totalEl.textContent = rev.total_usd != null ? '$' + Number(rev.total_usd).toFixed(4) : '—';
+    const dailyEl = document.getElementById('rev-kpi-daily');
+    if(dailyEl) dailyEl.textContent = rev.daily_estimate_usd != null ? '$' + Number(rev.daily_estimate_usd).toFixed(4) : '—';
+    const coinsEl = document.getElementById('rev-kpi-coins');
+    if(coinsEl) coinsEl.textContent = (rev.active_coins || []).length || '—';
+
+    // Overview
+    set('rev-strategy', rev.strategy || '—');
+    set('rev-algo', rev.current_algorithm || auxpow.current_algorithm || '—');
+    set('rev-pool', rev.current_pool || auxpow.current_pool || '—');
+    set('rev-coin', rev.current_coin || auxpow.current_coin || '—');
+    set('rev-submitted', (rev.shares_submitted || auxpow.shares_submitted || 0).toLocaleString());
+    set('rev-accepted', (rev.shares_accepted || auxpow.shares_accepted || 0).toLocaleString());
+    set('rev-rejected', (rev.shares_rejected || auxpow.shares_rejected || 0).toLocaleString());
+    set('rev-revenue', rev.revenue_usd != null ? '$' + Number(rev.revenue_usd).toFixed(4) : '—');
+    const uptime = rev.uptime_secs || auxpow.uptime_secs || 0;
+    set('rev-uptime', uptime > 0 ? Math.floor(uptime/3600) + 'h ' + Math.floor((uptime%3600)/60) + 'm' : '—');
+
+    // Split bars
+    const minerPct = rev.miner_share_pct != null ? rev.miner_share_pct : 89;
+    const daoPct = rev.dao_share_pct != null ? rev.dao_share_pct : 5;
+    const humanPct = rev.humanitarian_share_pct != null ? rev.humanitarian_share_pct : 5;
+    const poolPct = rev.pool_fee_pct != null ? rev.pool_fee_pct : 1;
+    set('rev-split-miner', minerPct + '%');
+    set('rev-split-dao', daoPct + '%');
+    set('rev-split-human', humanPct + '%');
+    set('rev-split-pool', poolPct + '%');
+    const barMiner = document.getElementById('rev-bar-miner');
+    const barDao = document.getElementById('rev-bar-dao');
+    const barHuman = document.getElementById('rev-bar-human');
+    const barPool = document.getElementById('rev-bar-pool');
+    if(barMiner) barMiner.style.width = minerPct + '%';
+    if(barDao) barDao.style.width = daoPct + '%';
+    if(barHuman) barHuman.style.width = humanPct + '%';
+    if(barPool) barPool.style.width = poolPct + '%';
+
+    // Distribution
+    set('rev-last-dist', rev.last_distribution_ts ? new Date(rev.last_distribution_ts).toLocaleString() : '—');
+    set('rev-next-dist', rev.next_distribution_ts ? new Date(rev.next_distribution_ts).toLocaleString() : '—');
+    set('rev-cycle', rev.distribution_cycle || '24h');
+    set('rev-accumulated', rev.accumulated_usd != null ? '$' + Number(rev.accumulated_usd).toFixed(4) : '—');
+
+    // Circuit / strategies
+    const circuitEl = document.getElementById('rev-circuit');
+    if(circuitEl){
+      circuitEl.textContent = rev.circuit_open ? '⛔ OPEN' : (enabled ? '✅ Closed' : '—');
+      circuitEl.className = 'font-bold ' + (rev.circuit_open ? 'text-red-400' : enabled ? 'text-emerald-400' : 'text-gray-500');
+    }
+    set('rev-failures', rev.consecutive_failures != null ? rev.consecutive_failures : '—');
+    set('rev-switches', rev.coin_switches != null ? rev.coin_switches : '—');
+    set('rev-last-switch', rev.last_switch_ts ? new Date(rev.last_switch_ts).toLocaleString() : '—');
+
+    const mergeEnabled = rev.strategy && rev.strategy.toLowerCase().includes('merge');
+    const swapEnabled = rev.strategy && rev.strategy.toLowerCase().includes('swap');
+    const stakeEnabled = rev.strategy && rev.strategy.toLowerCase().includes('stake');
+    const bridgeEnabled = rev.strategy && rev.strategy.toLowerCase().includes('bridge');
+    set('rev-strat-merge', mergeEnabled ? '✅ Active' : '—');
+    set('rev-strat-swap', swapEnabled ? '✅ Active' : '—');
+    set('rev-strat-stake', stakeEnabled ? '✅ Active' : '—');
+    set('rev-strat-bridge', bridgeEnabled ? '✅ Active' : '—');
+
+    // Coin revenue placeholder table
+    const coinTbody = document.getElementById('rev-coin-tbody');
+    if(coinTbody){
+      const coins = rev.coin_revenue || [];
+      if(coins.length === 0){
+        coinTbody.innerHTML = '<tr><td colspan="5" class="text-gray-500 text-center py-4">No live coin revenue data yet — placeholder</td></tr>';
+      } else {
+        coinTbody.innerHTML = coins.map(c => `<tr class="border-b border-white/5">
+          <td class="py-2 px-2 font-bold text-white">${escapeHtml(c.coin || '—')}</td>
+          <td class="py-2 px-2 text-gray-300">${escapeHtml(c.algorithm || '—')}</td>
+          <td class="py-2 px-2 text-right font-mono text-white">${(c.shares || 0).toLocaleString()}</td>
+          <td class="py-2 px-2 text-right font-mono text-zion-gold">$${Number(c.revenue_usd || 0).toFixed(4)}</td>
+          <td class="py-2 px-2"><span class="${c.active ? 'text-emerald-400' : 'text-gray-500'}">${c.active ? 'Active' : 'Inactive'}</span></td>
+        </tr>`).join('');
+      }
+    }
+
+    // Distribution placeholder table
+    const distTbody = document.getElementById('rev-dist-tbody');
+    if(distTbody){
+      const dists = rev.distributions || [];
+      if(dists.length === 0){
+        distTbody.innerHTML = '<tr><td colspan="4" class="text-gray-500 text-center py-4">No distributions yet — placeholder</td></tr>';
+      } else {
+        distTbody.innerHTML = dists.map(d => `<tr class="border-b border-white/5">
+          <td class="py-2 px-2 text-gray-300 font-mono">${d.ts ? new Date(d.ts).toLocaleString() : '—'}</td>
+          <td class="py-2 px-2 text-right font-mono text-zion-gold">$${Number(d.amount_usd || 0).toFixed(4)}</td>
+          <td class="py-2 px-2 text-gray-300">${escapeHtml(d.recipient || '—')}</td>
+          <td class="py-2 px-2 text-gray-300">${escapeHtml(d.type || '—')}</td>
+        </tr>`).join('');
+      }
+    }
+
+    const updated = new Date().toLocaleTimeString();
+    set('revenue-last-updated', 'Updated ' + updated);
+  } catch(e) {
+    console.error('loadRevenueTab error:', e);
   }
 }
 

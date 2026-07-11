@@ -555,6 +555,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <button onclick="switchTab('cex')" id="tab-cex">📊 CEX + DEX</button>
         <button onclick="switchTab('payout')" id="tab-payout">💰 Payouts</button>
         <button onclick="switchTab('pool-miners')" id="tab-pool-miners">⛏️ Pool Miners</button>
+        <button onclick="switchTab('revenue')" id="tab-revenue">📈 Revenue System</button>
         <button onclick="switchTab('wallets')" id="tab-wallets">💼 Wallets</button>
         <button onclick="switchTab('explorer')" id="tab-explorer">🔍 Explorer</button>
       </div>
@@ -2147,68 +2148,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
     </div>
 
-    <!-- Revenue System -->
-    <div class="zion-panel p-4">
-      <div class="flex items-center justify-between mb-3">
-        <h3 class="text-sm font-bold flex items-center gap-2">💰 Revenue System</h3>
-        <span id="pm-revenue-status-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Preview</span>
-      </div>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-        <div class="space-y-1">
-          <div class="text-gray-400">Status</div>
-          <div id="pm-revenue-status" class="font-bold text-gray-500">Disabled</div>
-        </div>
-        <div class="space-y-1">
-          <div class="text-gray-400">Strategy</div>
-          <div id="pm-revenue-strategy" class="font-mono text-cyan-400">—</div>
-        </div>
-        <div class="space-y-1">
-          <div class="text-gray-400">Total Revenue (USD)</div>
-          <div id="pm-revenue-total" class="font-mono text-zion-gold">—</div>
-        </div>
-        <div class="space-y-1">
-          <div class="text-gray-400">Daily Estimate</div>
-          <div id="pm-revenue-daily" class="font-mono text-white">—</div>
-        </div>
-      </div>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs mt-3 pt-3 border-t border-white/10">
-        <div class="space-y-1">
-          <div class="text-gray-400">Miner Share</div>
-          <div id="pm-revenue-miner-share" class="font-mono text-emerald-400">—</div>
-        </div>
-        <div class="space-y-1">
-          <div class="text-gray-400">DAO Share</div>
-          <div id="pm-revenue-dao-share" class="font-mono text-amber-400">—</div>
-        </div>
-        <div class="space-y-1">
-          <div class="text-gray-400">Humanitarian Share</div>
-          <div id="pm-revenue-human-share" class="font-mono text-purple-400">—</div>
-        </div>
-        <div class="space-y-1">
-          <div class="text-gray-400">Pool Fee</div>
-          <div id="pm-revenue-pool-fee" class="font-mono text-gray-300">—</div>
-        </div>
-      </div>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs mt-3 pt-3 border-t border-white/10">
-        <div class="space-y-1">
-          <div class="text-gray-400">Last Distribution</div>
-          <div id="pm-revenue-last-dist" class="font-mono text-gray-300 text-[10px]">—</div>
-        </div>
-        <div class="space-y-1">
-          <div class="text-gray-400">Next Distribution</div>
-          <div id="pm-revenue-next-dist" class="font-mono text-gray-300 text-[10px]">—</div>
-        </div>
-        <div class="space-y-1">
-          <div class="text-gray-400">Active Coins</div>
-          <div id="pm-revenue-coins" class="font-mono text-white">—</div>
-        </div>
-        <div class="space-y-1">
-          <div class="text-gray-400">Circuit Breaker</div>
-          <div id="pm-revenue-circuit" class="font-bold text-gray-500">—</div>
-        </div>
-      </div>
-    </div>
-
     <!-- Search + Miners Table -->
     <div class="zion-panel p-4">
       <div class="flex items-center justify-between mb-3">
@@ -2276,6 +2215,188 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         </div>
         <div id="pm-miner-modal-content" class="space-y-4">
           <div class="text-gray-500 text-sm">Click a miner in the leaderboard to see details.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: Revenue System ═════════ -->
+  <div id="pane-revenue" class="hidden space-y-4">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">📈 Revenue System</h1>
+        <p class="text-xs text-gray-400 mt-1">AuxPoW merge-mining revenue · swap aggregator yield · DAO/humanitarian split</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="revenue-last-updated" class="text-[10px] text-gray-500"></span>
+        <button onclick="loadRevenueTab()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+      </div>
+    </div>
+
+    <!-- Status KPIs -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="zion-panel p-3 text-center">
+        <div class="text-lg font-bold text-emerald-400" id="rev-kpi-status">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Status</div>
+      </div>
+      <div class="zion-panel p-3 text-center">
+        <div class="text-lg font-bold text-zion-gold" id="rev-kpi-total">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Total Revenue USD</div>
+      </div>
+      <div class="zion-panel p-3 text-center">
+        <div class="text-lg font-bold text-cyan-400" id="rev-kpi-daily">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Daily Estimate</div>
+      </div>
+      <div class="zion-panel p-3 text-center">
+        <div class="text-lg font-bold text-amber-400" id="rev-kpi-coins">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Active Coins</div>
+      </div>
+    </div>
+
+    <!-- Main overview -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <!-- Revenue Overview -->
+      <div class="zion-panel p-4 lg:col-span-2">
+        <h3 class="text-sm font-bold mb-3 flex items-center gap-2">💰 Revenue Overview</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+          <div class="space-y-1">
+            <div class="text-gray-400">Strategy</div>
+            <div id="rev-strategy" class="font-mono text-cyan-400">—</div>
+          </div>
+          <div class="space-y-1">
+            <div class="text-gray-400">Current Algorithm</div>
+            <div id="rev-algo" class="font-mono text-white">—</div>
+          </div>
+          <div class="space-y-1">
+            <div class="text-gray-400">Current Pool</div>
+            <div id="rev-pool" class="font-mono text-gray-300 text-[10px] truncate">—</div>
+          </div>
+          <div class="space-y-1">
+            <div class="text-gray-400">Current Coin</div>
+            <div id="rev-coin" class="font-mono text-white">—</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs mt-3 pt-3 border-t border-white/10">
+          <div class="space-y-1">
+            <div class="text-gray-400">Shares Submitted</div>
+            <div id="rev-submitted" class="font-mono text-white">—</div>
+          </div>
+          <div class="space-y-1">
+            <div class="text-gray-400">Accepted / Rejected</div>
+            <div class="font-mono"><span id="rev-accepted" class="text-emerald-400">—</span> / <span id="rev-rejected" class="text-red-400">—</span></div>
+          </div>
+          <div class="space-y-1">
+            <div class="text-gray-400">Revenue USD</div>
+            <div id="rev-revenue" class="font-mono text-zion-gold">—</div>
+          </div>
+          <div class="space-y-1">
+            <div class="text-gray-400">Uptime</div>
+            <div id="rev-uptime" class="font-mono text-gray-300">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Share Split -->
+      <div class="zion-panel p-4">
+        <h3 class="text-sm font-bold mb-3 flex items-center gap-2">⚖️ Revenue Split</h3>
+        <div class="space-y-3 text-xs">
+          <div>
+            <div class="flex justify-between mb-1"><span class="text-gray-400">Miners</span><span id="rev-split-miner" class="font-mono text-emerald-400">—</span></div>
+            <div class="w-full bg-black/40 rounded-full h-2"><div id="rev-bar-miner" class="bg-emerald-500 h-full rounded-full" style="width: 0%"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between mb-1"><span class="text-gray-400">DAO Treasury</span><span id="rev-split-dao" class="font-mono text-amber-400">—</span></div>
+            <div class="w-full bg-black/40 rounded-full h-2"><div id="rev-bar-dao" class="bg-amber-500 h-full rounded-full" style="width: 0%"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between mb-1"><span class="text-gray-400">Humanitarian</span><span id="rev-split-human" class="font-mono text-purple-400">—</span></div>
+            <div class="w-full bg-black/40 rounded-full h-2"><div id="rev-bar-human" class="bg-purple-500 h-full rounded-full" style="width: 0%"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between mb-1"><span class="text-gray-400">Pool Fee</span><span id="rev-split-pool" class="font-mono text-gray-300">—</span></div>
+            <div class="w-full bg-black/40 rounded-full h-2"><div id="rev-bar-pool" class="bg-gray-500 h-full rounded-full" style="width: 0%"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Distribution + Circuit -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <!-- Distribution Schedule -->
+      <div class="zion-panel p-4">
+        <h3 class="text-sm font-bold mb-3 flex items-center gap-2">🗓️ Distributions</h3>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between"><span class="text-gray-400">Last Distribution</span><span id="rev-last-dist" class="font-mono text-gray-300">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Next Distribution</span><span id="rev-next-dist" class="font-mono text-gray-300">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Distribution Cycle</span><span id="rev-cycle" class="font-mono text-white">24h</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Accumulated (USD)</span><span id="rev-accumulated" class="font-mono text-zion-gold">—</span></div>
+        </div>
+      </div>
+
+      <!-- Circuit Breaker -->
+      <div class="zion-panel p-4">
+        <h3 class="text-sm font-bold mb-3 flex items-center gap-2">🔒 Circuit Breaker</h3>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between"><span class="text-gray-400">Status</span><span id="rev-circuit" class="font-bold">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Consecutive Failures</span><span id="rev-failures" class="font-mono text-amber-400">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Coin Switches</span><span id="rev-switches" class="font-mono text-white">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Last Switch</span><span id="rev-last-switch" class="font-mono text-gray-300 text-[10px]">—</span></div>
+        </div>
+      </div>
+
+      <!-- Active Strategies -->
+      <div class="zion-panel p-4">
+        <h3 class="text-sm font-bold mb-3 flex items-center gap-2">🧭 Active Strategies</h3>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between"><span class="text-gray-400">Merge Mining</span><span id="rev-strat-merge" class="font-mono text-emerald-400">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Swap Aggregator</span><span id="rev-strat-swap" class="font-mono text-emerald-400">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Staking Yield</span><span id="rev-strat-stake" class="font-mono text-gray-500">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Bridge Fees</span><span id="rev-strat-bridge" class="font-mono text-gray-500">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Placeholder tables -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <!-- Revenue by Coin -->
+      <div class="zion-panel p-4">
+        <h3 class="text-sm font-bold mb-3 flex items-center gap-2">🪙 Revenue by Coin (placeholder)</h3>
+        <div class="overflow-x-auto max-h-64 overflow-y-auto">
+          <table class="w-full text-xs text-left">
+            <thead>
+              <tr class="text-gray-500 border-b border-white/10">
+                <th class="py-2 px-2">Coin</th>
+                <th class="py-2 px-2">Algorithm</th>
+                <th class="py-2 px-2 text-right">Shares</th>
+                <th class="py-2 px-2 text-right">Revenue USD</th>
+                <th class="py-2 px-2">Status</th>
+              </tr>
+            </thead>
+            <tbody id="rev-coin-tbody">
+              <tr><td colspan="5" class="text-gray-500 text-center py-4">No live coin revenue data yet — placeholder</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Recent Distributions -->
+      <div class="zion-panel p-4">
+        <h3 class="text-sm font-bold mb-3 flex items-center gap-2">📤 Recent Distributions (placeholder)</h3>
+        <div class="overflow-x-auto max-h-64 overflow-y-auto">
+          <table class="w-full text-xs text-left">
+            <thead>
+              <tr class="text-gray-500 border-b border-white/10">
+                <th class="py-2 px-2">Time</th>
+                <th class="py-2 px-2 text-right">Amount USD</th>
+                <th class="py-2 px-2">Recipient</th>
+                <th class="py-2 px-2">Type</th>
+              </tr>
+            </thead>
+            <tbody id="rev-dist-tbody">
+              <tr><td colspan="4" class="text-gray-500 text-center py-4">No distributions yet — placeholder</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
