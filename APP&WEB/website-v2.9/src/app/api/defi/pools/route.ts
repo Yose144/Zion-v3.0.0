@@ -39,13 +39,13 @@ const GOVERNANCE = '0xB77eB4ab9468Ce03FBd7eCec70e976EFCfa623E8';
 const BRIDGE    = '0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467';
 const DEPLOYER  = '0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186';
 
-// Chainlink
-const CHAINLINK_WETH = '0x71041dddad3595F9CEdDCDcF2012034b68dF6aFA';
+// WETH/USDC Uniswap V3 pool (0.3% fee) — used for live ETH/USD price (Chainlink oracle not deployed on Base)
+const POOL_WETH_USDC = '0x6c561B446416E1A00E8E93E221854d6eA4171372';
+const USDC           = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
 
 // Function selectors
 const BALANCE_OF    = '0x70a08231';
 const TOTAL_SUPPLY  = '0x18160ddd';
-const LATEST_ROUND  = '0xfeaf968c';
 const SLOT0         = '0x3850c7bd';
 const LIQUIDITY     = '0x1a686502';
 
@@ -90,10 +90,27 @@ function toHuman(val: bigint, decimals: number): number {
 }
 
 function decodeChainlinkAnswer(hex: string): number {
+  // Kept for compatibility — no longer used (Chainlink oracle not deployed on Base)
   const clean = hex.startsWith('0x') ? hex.slice(2) : hex;
   const answer = BigInt('0x' + clean.slice(64, 128));
   const signed = answer >= 2n ** 255n ? answer - 2n ** 256n : answer;
   return Number(signed) / 1e8;
+}
+
+/**
+ * Fetch live ETH/USD from Uniswap V3 WETH/USDC 0.3% pool.
+ * Replaces broken Chainlink oracle (address 0x71041... has no code on Base).
+ */
+async function fetchEthUsdFromUniswap(): Promise<number> {
+  const slot0Hex = await ethCall(POOL_WETH_USDC, SLOT0);
+  const slot0 = decodeSlot0(slot0Hex);
+  if (!slot0 || slot0.sqrtPriceX96 === 0n) return 2000;
+  // WETH/USDC pool: token0 = WETH (18 dec), token1 = USDC (6 dec)
+  // price = (sqrtPriceX96 / 2^96)^2 * 10^(18-6) = USDC per WETH = ETH/USD
+  const Q96 = 2n ** 96n;
+  const sqrtNum = Number(slot0.sqrtPriceX96) / Number(Q96);
+  const ethUsd = sqrtNum * sqrtNum * 10 ** (18 - 6);
+  return ethUsd > 0 ? ethUsd : 2000;
 }
 
 interface Slot0 {
@@ -166,7 +183,8 @@ async function readV3Pool(
   const wzionBal = toHuman(hexToBigInt(wzionBalHex), TOKENS[WZION].decimals);
   const token1Bal = toHuman(hexToBigInt(token1BalHex), TOKENS[token1Address].decimals);
 
-  const active = wzionBal > 0 || token1Bal > 0;
+  // A pool is active only if it has actual liquidity (not just an initialization price)
+  const active = liquidity > 0n && (wzionBal > 0 || token1Bal > 0);
 
   let priceUsd = 0;
   if (slot0 && slot0.sqrtPriceX96 > 0n) {
@@ -200,10 +218,11 @@ async function readV3Pool(
 }
 
 export async function GET() {
-  // Fetch reference prices and contract balances in parallel
-  const [wethUsdHex, wzionSupplyHex, stakingHex, farmHex, treasuryHex, govHex, bridgeHex, deployerHex] =
+  // Fetch live ETH/USD from Uniswap WETH/USDC pool (replaces broken Chainlink oracle)
+  // and contract balances in parallel
+  const [wethUsd, wzionSupplyHex, stakingHex, farmHex, treasuryHex, govHex, bridgeHex, deployerHex] =
     await Promise.all([
-      ethCall(CHAINLINK_WETH, LATEST_ROUND),
+      fetchEthUsdFromUniswap(),
       ethCall(WZION, TOTAL_SUPPLY),
       ethCall(WZION, BALANCE_OF + encodeAddress(STAKING)),
       ethCall(WZION, BALANCE_OF + encodeAddress(FARM)),
@@ -213,10 +232,6 @@ export async function GET() {
       ethCall(WZION, BALANCE_OF + encodeAddress(DEPLOYER)),
     ]);
 
-  let wethUsd = 2000;
-  if (wethUsdHex) {
-    try { wethUsd = decodeChainlinkAnswer(wethUsdHex); } catch { /* keep fallback */ }
-  }
   const solUsd = TOKENS[SOL].usd;
 
   const wzionSupply = toHuman(hexToBigInt(wzionSupplyHex), 18);

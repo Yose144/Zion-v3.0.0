@@ -49,8 +49,9 @@ const CONTRACTS: Record<string, string> = {
   UniV3Factory:   '0x33128a8fC17869897dcE68Ed026d694621f6FDfD',
 };
 
-const CHAINLINK_WETH_USD = '0x71041dddad3595F9CEdDCDcF2012034b68dF6aFA';
+const CHAINLINK_WETH_USD = '0x71041dddad3595F9CEdDCDcF2012034b68dF6aFA'; // DEPRECATED — no code at this address on Base
 const LATEST_ROUND_DATA = '0xfeaf968c';
+const POOL_WETH_USDC = '0x6c561B446416E1A00E8E93E221854d6eA4171372'; // WETH/USDC 0.3% — live ETH/USD price
 
 async function ethCall(to: string, data: string): Promise<string | null> {
   try {
@@ -162,7 +163,7 @@ export async function GET() {
       liquidityUsdtHex,
       slot0SolHex,
       liquiditySolHex,
-      wethUsdHex,
+      wethUsdcSlot0Hex,
       stakingTotalStakedHex,
       stakingRewardPoolHex,
       stakingAprBpsHex,
@@ -183,7 +184,7 @@ export async function GET() {
       ethCall(CONTRACTS.UniV3PoolUSDT, CALLS.liquidity),
       ethCall(CONTRACTS.UniV3PoolSOL, CALLS.slot0),
       ethCall(CONTRACTS.UniV3PoolSOL, CALLS.liquidity),
-      ethCall(CHAINLINK_WETH_USD, LATEST_ROUND_DATA),
+      ethCall(POOL_WETH_USDC, CALLS.slot0), // live ETH/USD from Uniswap WETH/USDC pool
       ethCall(CONTRACTS.ZIONStaking, CALLS.stakingTotalStaked),
       ethCall(CONTRACTS.ZIONStaking, CALLS.stakingRewardPool),
       ethCall(CONTRACTS.ZIONStaking, CALLS.stakingAprBps),
@@ -196,16 +197,29 @@ export async function GET() {
       ethCall(CONTRACTS.ZIONGovernance, CALLS.govVotingPeriod),
     ]);
 
-    const wethUsd = wethUsdHex ? decodeChainlinkAnswer(wethUsdHex) : 2000;
-    const solUsd = 73.44; // fallback until Chainlink SOL/USD feed is wired
+    // Live ETH/USD from Uniswap V3 WETH/USDC pool (replaces broken Chainlink oracle)
+    let wethUsd = 2000;
+    const wethUsdcSqrt = decodeSqrtPriceX96(wethUsdcSlot0Hex);
+    if (wethUsdcSqrt && wethUsdcSqrt > 0n) {
+      // WETH/USDC pool: token0 = WETH (18 dec), token1 = USDC (6 dec)
+      // price = (sqrtPriceX96 / 2^96)^2 * 10^(18-6) = USDC per WETH = ETH/USD
+      wethUsd = sqrtPriceToUsdPerWzion(wethUsdcSqrt, 1, 6, 18);
+      if (wethUsd <= 0) wethUsd = 2000;
+    }
+    const solUsd = 73.44; // fallback — no reliable SOL/USD oracle on Base
 
     const wethSqrt = decodeSqrtPriceX96(slot0WethHex);
     const usdtSqrt = decodeSqrtPriceX96(slot0UsdtHex);
     const solSqrt = decodeSqrtPriceX96(slot0SolHex);
 
-    const wethPoolActive = wethSqrt !== null && wethSqrt > 0n;
-    const usdtPoolActive = usdtSqrt !== null && usdtSqrt > 0n;
-    const solPoolActive = solSqrt !== null && solSqrt > 0n;
+    const wethLiq = liquidityWethHex ? decodeUint128(liquidityWethHex) : 0n;
+    const usdtLiq = liquidityUsdtHex ? decodeUint128(liquidityUsdtHex) : 0n;
+    const solLiq  = liquiditySolHex ? decodeUint128(liquiditySolHex) : 0n;
+
+    // Pool is active only if it has actual liquidity (not just an initialization price)
+    const wethPoolActive = wethSqrt !== null && wethSqrt > 0n && wethLiq > 0n;
+    const usdtPoolActive = usdtSqrt !== null && usdtSqrt > 0n && usdtLiq > 0n;
+    const solPoolActive  = solSqrt  !== null && solSqrt  > 0n && solLiq  > 0n;
 
     // Staking on-chain data
     const stakingAprBps = hexToNumber(stakingAprBpsHex);
