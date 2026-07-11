@@ -2,7 +2,11 @@
 
 > **Status:** Active development — Backend + Frontend + Mobile + Desktop complete
 > **Created:** 2026-07-11
-> **Goal:** First universal cross-chain DEX powered by native L1 bridge on 13 chain families
+> **Goal:** First universal cross-chain DEX powered by L3 WARP bridge on 13 chain families
+>
+> **L3 WARP Integration:** ZionDex Router volá reálné WARP API na `127.0.0.1:8453`
+> (`V3/L3/warp/`) pro cross-chain přenosy. WARP podporuje 13 chain families:
+> EVM (9 chains), Solana, Bitcoin, Stellar, Cardano, Cosmos, Sui, Aptos, NEAR, TON, Tron, Lightning.
 
 ## Structure
 
@@ -17,7 +21,7 @@ ZionDex/
 │   │   ├── router.rs        # Path finding algorithm (6 strategies)
 │   │   ├── quote.rs         # Quote engine — price + slippage + fees
 │   │   ├── price.rs         # Uniswap V3 price feed (slot0 + QuoterV2)
-│   │   ├── executor.rs      # Swap execution (EVM + Solana + bridge)
+│   │   ├── executor.rs      # Swap execution (EVM + Solana + L3 WARP bridge)
 │   │   ├── api.rs           # HTTP REST + WebSocket server (9 endpoints)
 │   │   ├── db.rs            # SQLite swap state tracking
 │   │   └── monitor.rs       # WebSocket real-time updates
