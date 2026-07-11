@@ -63,7 +63,7 @@ With ZionDex + WARP:
 | Component | Path | Status |
 |-----------|------|--------|
 | Atomic Swap daemon | `V3/L2/atomic-swap/` | ✅ Live, HTLC LOCK/CLAIM E2E passed |
-| **ZionDex Router** | `ZionDex/router/` | ✅ **Built** — 14/14 Rust tests, real Uni V3 prices, EVM signing, WARP bridge API |
+| **ZionDex Router** | `ZionDex/router/` | ✅ **Built** — 14/14 Rust tests, real Uni V3 prices, EVM signing, **L3 WARP API integration** (port 8453) |
 | **ZionDex AMM Contracts** | `ZionDex/contracts/` | ✅ **Built** — 7/7 Foundry tests, PoolManager + Hooks + Router + ZDX + Staking |
 | **TypeScript SDK** | `ZionDex/sdk/` | ✅ **Built** — `@zion/dex-sdk`, full type defs, swap + liquidity managers |
 | Swap Aggregator (legacy) | `V3/L2/swap-aggregator/` | ⚠️ Skeleton — superseded by ZionDex Router |
@@ -104,20 +104,38 @@ With ZionDex + WARP:
 │    Path finding · Price discovery · Slippage calc · Fee estimation   │
 │    Intent-based execution · Solver competition · WebSocket streaming │
 ├──────────────┬──────────────┬──────────────┬────────────────────────┤
-│  AMM Layer   │  WARP Bridge │  Liquidity   │  Aggregator Layer      │
-│  (per-chain) │  (cross-chain)│  Layer       │  (3rd-party DEXs)     │
+│  AMM Layer   │  L3 WARP     │  Liquidity   │  Aggregator Layer      │
+│  (per-chain) │  Bridge      │  Layer       │  (3rd-party DEXs)     │
 ├──────────────┼──────────────┼──────────────┼────────────────────────┤
-│ ZionDex AMM  │  ZION L1     │  ZION/USDC   │  Uniswap V4 (EVM)     │
-│ (custom)     │  vault       │  ZION/ETH    │  Raydium (Solana)     │
-│              │  12 adapters │  ZION/BTC    │  SunSwap (Tron)       │
-│ Uni V4 hooks │  5/5 quorum  │  ZION/SOL    │  Minswap (Cardano)    │
-│ Concentrated │  TSS multisig│  ZION/ADA    │  STON.fi (TON)        │
-│ liquidity    │              │  ZION/TON    │  Liquidswap (Aptos)   │
-│              │              │  ...         │  Cetus (Sui)          │
+│ ZionDex AMM  │  WARP Router │  ZION/USDC   │  Uniswap V3 (EVM)     │
+│ (custom)     │  (port 8453) │  ZION/ETH    │  Raydium (Solana)     │
+│              │              │  ZION/SOL    │  SunSwap (Tron)       │
+│ Uni V4 hooks │  13 chain    │  ZION/ADA    │  Minswap (Cardano)    │
+│ Concentrated │  families   │  ZION/TON    │  STON.fi (TON)        │
+│ liquidity    │  5/5 quorum  │  ...         │  Liquidswap (Aptos)   │
+│              │  Ed25519 TSS │              │  Cetus (Sui)          │
 │              │              │              │  Ref.Finance (NEAR)   │
-│              │              │              │  LI.FI (aggregator)   │
+│              │              │              │  Jupiter (Solana agg) │
 └──────────────┴──────────────┴──────────────┴────────────────────────┘
 ```
+
+### L3 WARP Integration
+
+ZionDex Router se napojuje na **L3 WARP server** (`V3/L3/warp/`, port 8453) pro cross-chain přenosy:
+
+| WARP Endpoint | ZionDex Usage |
+|---------------|---------------|
+| `POST /transfers/outbound` | L1 → external chain (lock ZION, mint wrapped) |
+| `POST /transfers/inbound` | External chain → L1 (burn wrapped, unlock ZION) |
+| `GET /transfers/:id` | Poll transfer status until "completed" |
+| `GET /chains` | List enabled chains (13 chain families) |
+| `GET /health` | WARP server liveness check |
+
+**WARP status flow:** `Detected → AwaitingFinality → Validating → QuorumReached → Executing → Completed`
+
+**Memo format:** `WARP:1:<dest_chain>:<recipient_address>`
+
+**Decimal conversion:** ZION L1 (6 decimals, "flowers") ↔ EVM (18 decimals, wei) — factor 1e12
 
 ### 3.1 Cross-Chain Swap Flow
 
@@ -451,8 +469,8 @@ V3/L2/ziondex-contracts/
 **Tasks to complete:**
 
 ```rust
-// orchestrator.rs — replace placeholder bridge API
-- [ ] Integrate real WARP bridge API (lock ZION → mint wZION)
+// orchestrator.rs — ✅ DONE: Integrated real L3 WARP API
+- [x] Integrate real WARP bridge API (POST /transfers/outbound, /transfers/inbound, polling /transfers/:id)
 - [ ] Integrate Uniswap V4 QuoterV2 for accurate price quotes
 - [ ] EVM transaction signing and submission (ethers-rs)
 - [ ] Background worker with retry logic (3 retries, exponential backoff)
@@ -742,7 +760,7 @@ APP&WEB/website-v2.9/src/app/dex/
 |------|-------|----------|--------|
 | Build ZionDex Router crate (`ZionDex/router/`) | Backend | P0 | ✅ Done |
 | Implement path finding algorithm | Backend | P0 | ✅ Done (6 strategies) |
-| Integrate WARP bridge API into router | Backend | P0 | ✅ Done (lock/burn + polling) |
+| Integrate WARP bridge API into router | Backend | P0 | ✅ Done (L3 WARP REST API — /transfers/outbound, /transfers/inbound, polling /transfers/:id) |
 | Integrate Uniswap V3 QuoterV2 | Backend | P0 | ✅ Done (slot0 + liquidity + quote) |
 | Integrate Raydium/Orca SDK (Solana) | Backend | P1 | ✅ Done (Jupiter API aggregator) |
 | Implement swap execution (direct mode) | Backend | P0 | ✅ Done (EVM signing via ethers-rs) |
@@ -1045,7 +1063,7 @@ ZionDex/                        # ✅ BUILT — standalone directory (not under 
 │   │   ├── router.rs           # Path finding (6 strategies)
 │   │   ├── quote.rs            # Quote engine
 │   │   ├── price.rs            # ✅ Real Uni V3 price feed (slot0 + QuoterV2)
-│   │   ├── executor.rs         # ✅ EVM signing + WARP bridge API
+│   │   ├── executor.rs         # ✅ EVM signing + L3 WARP API (port 8453)
 │   │   ├── api.rs              # HTTP REST + WebSocket (8 endpoints)
 │   │   ├── db.rs               # SQLite swap state tracking
 │   │   └── monitor.rs          # WebSocket real-time updates

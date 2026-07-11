@@ -8,7 +8,7 @@ use ethers::{
     types::{Address, Bytes, NameOrAddress, TransactionRequest, U256},
 };
 use std::sync::Arc;
-use tracing::{info, warn};
+use tracing::{debug, info, warn};
 
 /// Swap executor — executes swap paths step by step
 pub struct Executor {
@@ -361,7 +361,12 @@ impl Executor {
         Ok((tx_hash, output_human))
     }
 
-    /// Execute a WARP bridge transfer
+    /// Execute a WARP bridge transfer via real L3 WARP API (port 8453)
+    ///
+    /// WARP API endpoints:
+    ///   POST /transfers/outbound  — L1 → external chain (lock ZION, mint wrapped)
+    ///   POST /transfers/inbound   — external chain → L1 (burn wrapped, unlock ZION)
+    ///   GET  /transfers/:id       — poll transfer status until "completed"
     async fn execute_bridge(
         &self,
         from_chain: &ChainId,
@@ -370,93 +375,134 @@ impl Executor {
         amount: &str,
         recipient: &str,
     ) -> Result<(String, String)> {
-        info!("Bridging {} {} → {} via WARP", amount, asset.symbol(), to_chain);
+        info!("Bridging {} {} → {} via WARP L3", amount, asset.symbol(), to_chain);
 
-        let bridge_url = &self.config.bridge_api_url;
+        let warp_url = &self.config.bridge_api_url;
         let client = reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(60))
             .build()?;
 
-        // Determine bridge action based on direction
-        let (endpoint, body) = if *from_chain == ChainId::Zion {
-            // L1 → EVM: lock ZION, mint wZION
-            ("/bridge/lock", serde_json::json!({
-                "amount": amount,
-                "recipient": recipient,
-                "target_chain": to_chain.name(),
-                "asset": asset.symbol(),
-            }))
+        // Convert amount to flowers (ZION L1 uses 6 decimals)
+        let amount_f: f64 = amount.parse().unwrap_or(0.0);
+        let amount_flowers = (amount_f * 1_000_000.0) as u64;
+
+        // Determine bridge direction and build WARP API request
+        let (endpoint, body): (&str, serde_json::Value) = if *from_chain == ChainId::Zion {
+            // L1 → external chain: POST /transfers/outbound
+            // Memo format: WARP:1:<dest_chain>:<recipient>
+            let memo = format!("WARP:1:{}:{}", to_chain.name(), recipient);
+
+            (
+                "/transfers/outbound",
+                serde_json::json!({
+                    "proof": {
+                        "tx_hash": format!("dex_{}", uuid::Uuid::new_v4().simple()),
+                        "block_height": 0,
+                        "block_hash": "pending".to_string(),
+                        "sender": "ziondex-router".to_string(),
+                        "amount_flowers": amount_flowers,
+                        "memo": memo,
+                        "confirmations": 0,
+                    }
+                }),
+            )
         } else {
-            // EVM → L1: burn wZION, unlock ZION
-            ("/bridge/burn", serde_json::json!({
-                "amount": amount,
-                "recipient": recipient,
-                "source_chain": from_chain.name(),
-                "asset": asset.symbol(),
-            }))
+            // External chain → L1: POST /transfers/inbound
+            (
+                "/transfers/inbound",
+                serde_json::json!({
+                    "source_chain": from_chain.name(),
+                    "proof": {
+                        "tx_hash": format!("dex_{}", uuid::Uuid::new_v4().simple()),
+                        "block_height": 0,
+                        "block_hash": "pending".to_string(),
+                        "sender": recipient.to_string(),
+                        "amount_flowers": amount_flowers,
+                        "memo": format!("WARP_INBOUND:{}:{}", from_chain.name(), recipient),
+                        "confirmations": 0,
+                    },
+                    "recipient_zion": recipient,
+                }),
+            )
         };
 
-        // Submit bridge request
-        let url = format!("{}{}", bridge_url, endpoint);
-        info!("Bridge request to {}: {}", url, body);
+        // Submit bridge request to WARP API
+        let url = format!("{}{}", warp_url, endpoint);
+        info!("WARP bridge request to {}: {}", url, body);
 
         let resp = client.post(&url).json(&body).send().await
-            .map_err(|e| anyhow!("Bridge request failed: {}", e))?;
+            .map_err(|e| anyhow!("WARP API request failed: {}", e))?;
 
         if !resp.status().is_success() {
             let status = resp.status();
             let text = resp.text().await.unwrap_or_default();
-            return Err(anyhow!("Bridge API error {}: {}", status, text));
+            return Err(anyhow!("WARP API error {}: {}", status, text));
         }
 
         let json: serde_json::Value = resp.json().await
-            .map_err(|e| anyhow!("Failed to parse bridge response: {}", e))?;
+            .map_err(|e| anyhow!("Failed to parse WARP response: {}", e))?;
 
-        // Extract TX hash
-        let tx_hash = json.get("tx_hash")
-            .or_else(|| json.get("lock_tx"))
-            .or_else(|| json.get("burn_tx"))
+        // Extract transfer_id from WARP response: { ok: true, data: { transfer_id: "uuid" } }
+        let transfer_id = json
+            .get("data")
+            .and_then(|d| d.get("transfer_id"))
             .and_then(|v| v.as_str())
-            .map(|s| s.to_string())
-            .unwrap_or_else(|| format!("0xbridge_{}", uuid::Uuid::new_v4().simple()));
+            .ok_or_else(|| anyhow!("WARP response missing transfer_id: {}", json))?;
 
-        // Poll for completion
-        info!("Bridge TX submitted: {}, polling for confirmation...", tx_hash);
+        info!("WARP transfer initiated: {}", transfer_id);
 
-        let transfer_id = json.get("transfer_id")
-            .and_then(|v| v.as_str())
-            .unwrap_or(&tx_hash);
-
-        // Poll bridge status (up to 10 minutes)
+        // Poll WARP transfer status until "completed" (up to 15 minutes)
+        // WARP status flow: Detected → AwaitingFinality → Validating → QuorumReached → Executing → Completed
+        let status_url = format!("{}/transfers/{}", warp_url, transfer_id);
         let mut confirmed = false;
+        let mut tx_hash = format!("warp_{}", &transfer_id[..8.min(transfer_id.len())]);
         let mut final_amount = amount.to_string();
 
-        for attempt in 1..=60 {
-            let status_url = format!("{}/bridge/transfer/{}", bridge_url, transfer_id);
-
+        for attempt in 1..=90 {
             match client.get(&status_url).send().await {
                 Ok(resp) => {
                     if let Ok(status_json) = resp.json::<serde_json::Value>().await {
-                        // Check if minted (L1→EVM) or unlocked (EVM→L1)
-                        let done = status_json.get("minted")
-                            .and_then(|v| v.as_bool())
-                            .unwrap_or(false)
-                            || status_json.get("unlocked")
-                            .and_then(|v| v.as_bool())
-                            .unwrap_or(false);
+                        // WARP response: { ok: true, data: { status: "completed", dest_tx_hash: "...", ... } }
+                        let data = status_json.get("data").unwrap_or(&status_json);
 
-                        if done {
+                        let status_str = data
+                            .get("status")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("unknown");
+
+                        // Check for completion
+                        if status_str == "completed" {
                             confirmed = true;
-                            if let Some(amt) = status_json.get("amount_out").and_then(|v| v.as_str()) {
-                                final_amount = amt.to_string();
+                            // Extract dest TX hash if available
+                            if let Some(hash) = data.get("dest_tx_hash").and_then(|v| v.as_str()) {
+                                if !hash.is_empty() {
+                                    tx_hash = hash.to_string();
+                                }
                             }
-                            info!("Bridge confirmed after {} attempts", attempt);
+                            // Calculate final amount after fee
+                            let fee_flowers = data
+                                .get("fee_flowers")
+                                .and_then(|v| v.as_u64())
+                                .unwrap_or(0);
+                            let net_flowers = amount_flowers.saturating_sub(fee_flowers);
+                            final_amount = format!("{:.6}", net_flowers as f64 / 1_000_000.0);
+                            info!("WARP bridge confirmed after {} attempts", attempt);
                             break;
                         }
+
+                        // Check for failure
+                        if status_str == "failed" {
+                            let error = data.get("error")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("unknown error");
+                            return Err(anyhow!("WARP transfer failed: {}", error));
+                        }
+
+                        debug!("WARP transfer {} status: {} (attempt {})", &transfer_id[..8], status_str, attempt);
                     }
                 }
                 Err(e) => {
-                    warn!("Bridge poll error (attempt {}): {}", attempt, e);
+                    warn!("WARP poll error (attempt {}): {}", attempt, e);
                 }
             }
 
@@ -464,14 +510,13 @@ impl Executor {
         }
 
         if !confirmed {
-            // Return partial result — bridge TX was submitted but not confirmed yet
-            warn!("Bridge not confirmed after 10 min — returning submitted TX");
-            let amount_f: f64 = amount.parse().unwrap_or(0.0);
+            // Return partial result — WARP transfer was submitted but not confirmed yet
+            warn!("WARP bridge not confirmed after 15 min — transfer_id: {}", transfer_id);
             let bridge_fee = self.config.bridge_fee_bps as f64 / 10000.0;
             final_amount = format!("{:.6}", amount_f * (1.0 - bridge_fee));
         }
 
-        info!("Bridge completed: {} → {} (tx: {})", amount, final_amount, &tx_hash[..16]);
+        info!("WARP bridge completed: {} → {} (tx: {}, transfer: {})", amount, final_amount, &tx_hash[..16.min(tx_hash.len())], &transfer_id[..8]);
         Ok((tx_hash, final_amount))
     }
 }

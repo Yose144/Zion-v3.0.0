@@ -7,7 +7,7 @@ use std::collections::HashMap;
 pub struct RouterConfig {
     /// RPC URLs for each chain
     pub rpc_urls: HashMap<ChainId, String>,
-    /// WARP bridge API URL
+    /// L3 WARP bridge API URL (default: http://127.0.0.1:8453)
     pub bridge_api_url: String,
     /// Contract addresses per chain
     pub contracts: HashMap<ChainId, ChainContracts>,
@@ -204,7 +204,7 @@ impl Default for RouterConfig {
 
         Self {
             rpc_urls,
-            bridge_api_url: "http://127.0.0.1:8443".into(),
+            bridge_api_url: "http://127.0.0.1:8453".into(), // L3 WARP server
             contracts,
             dex_registry,
             default_slippage_bps: 150,  // 1.5%
