@@ -1,0 +1,280 @@
+//! B2b pool-side job multiplexer.
+//!
+//! The multiplexer keeps ZION miners connected to the ZION pool, but the
+//! pool itself bridges to an external Stratum pool.  It receives external
+//! jobs, repackages them as [`JobPackage`], and hands them out to ZION miners
+//! through the normal ZION job distribution channel.
+//!
+//! This is the first POC path: **pool-side job multiplexing**.  It does not
+//! require any change to ZION consensus and does not redirect miners away from
+//! the ZION pool.
+
+use anyhow::{anyhow, Result};
+use std::sync::Arc;
+use tokio::task::JoinHandle;
+use tracing::{info, warn};
+
+use crate::auxpow_client::{AuxPowClient, ExternalJob};
+use crate::types::{CoinProfile, ExternalCoin, JobPackage, PoolPreference};
+
+/// Manages a single active external connection and exposes the current job
+/// as a ZION-compatible [`JobPackage`].
+pub struct JobMultiplexer {
+    wallet: String,
+    worker_name: String,
+    preference: PoolPreference,
+    region: String,
+    active_client: Option<Arc<AuxPowClient>>,
+    poll_handle: Option<JoinHandle<()>>,
+}
+
+impl JobMultiplexer {
+    /// Create a new multiplexer.
+    pub fn new(
+        wallet: impl Into<String>,
+        worker_name: impl Into<String>,
+    ) -> Self {
+        Self {
+            wallet: wallet.into(),
+            worker_name: worker_name.into(),
+            preference: PoolPreference::Default,
+            region: "eu".to_string(),
+            active_client: None,
+            poll_handle: None,
+        }
+    }
+
+    /// Apply pool preference and region used when resolving endpoints.
+    pub fn with_preference(mut self, preference: PoolPreference, region: impl Into<String>) -> Self {
+        self.preference = preference;
+        self.region = region.into();
+        self
+    }
+
+    /// Connect to the given external coin and start polling for jobs.
+    ///
+    /// If another coin is already active, it is disconnected first.
+    pub async fn connect(&mut self, coin: ExternalCoin) -> Result<()> {
+        self.disconnect().await;
+
+        let mut profile = CoinProfile::default_for(coin);
+        profile.worker_name.clone_from(&self.worker_name);
+        // TODO: apply preference/region mapping when multiple pools per coin exist
+        let _ = (self.preference, &self.region);
+
+        let client = Arc::new(AuxPowClient::new(profile));
+        client.connect(&self.wallet).await?;
+
+        let poll = spawn_poll_loop(client.clone());
+
+        self.active_client = Some(client);
+        self.poll_handle = Some(poll);
+
+        info!("JobMultiplexer: connected to {}", coin);
+        Ok(())
+    }
+
+    /// Disconnect the active external client and stop the background poll loop.
+    pub async fn disconnect(&mut self) {
+        if let Some(handle) = self.poll_handle.take() {
+            handle.abort();
+        }
+        if let Some(client) = self.active_client.take() {
+            if let Err(e) = client.disconnect().await {
+                warn!("JobMultiplexer: disconnect error: {}", e);
+            }
+        }
+    }
+
+    /// Return the currently active coin, if any.
+    pub fn active_coin(&self) -> Option<ExternalCoin> {
+        self.active_client
+            .as_ref()
+            .map(|c| c.profile().coin)
+    }
+
+    /// Return a handle to the active external client.
+    pub fn client(&self) -> Option<Arc<AuxPowClient>> {
+        self.active_client.clone()
+    }
+
+    /// Get the latest external job, repackaged for ZION miners.
+    pub async fn current_job(&self) -> Option<JobPackage> {
+        let client = self.active_client.as_ref()?;
+        let job = client.current_job().await?;
+        Some(pack_job(client.profile().coin, &job))
+    }
+
+    /// Wait for a new external job (or the first job) up to `timeout_ms`.
+    pub async fn wait_for_job(&self, timeout_ms: u64) -> Result<Option<JobPackage>> {
+        let client = self.active_client.as_ref().ok_or_else(|| anyhow!("not connected"))?;
+        match client.wait_for_job(timeout_ms).await? {
+            Some(job) => Ok(Some(pack_job(client.profile().coin, &job))),
+            None => Ok(None),
+        }
+    }
+}
+
+impl Drop for JobMultiplexer {
+    fn drop(&mut self) {
+        if let Some(handle) = self.poll_handle.take() {
+            handle.abort();
+        }
+    }
+}
+
+fn pack_job(coin: ExternalCoin, job: &ExternalJob) -> JobPackage {
+    JobPackage {
+        external_coin: coin,
+        external_job_id: job.job_id.clone(),
+        algorithm: job.algorithm.clone(),
+        header_bytes: job.header_bytes.clone(),
+        target_bytes: job.target_bytes,
+        start_nonce: 0,
+        nonce_count: u64::MAX,
+    }
+}
+
+fn spawn_poll_loop(client: Arc<AuxPowClient>) -> JoinHandle<()> {
+    tokio::spawn(async move {
+        loop {
+            match client.poll_messages().await {
+                Ok(()) => {}
+                Err(e) => {
+                    warn!(
+                        "JobMultiplexer: poll loop ended for {}: {}",
+                        client.profile().coin,
+                        e
+                    );
+                    break;
+                }
+            }
+        }
+    })
+}
+
+// ── Tests ────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::ExternalCoin;
+    use serde_json::json;
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    use tokio::net::TcpListener;
+
+    struct MockStratumServer {
+        listener: TcpListener,
+    }
+
+    impl MockStratumServer {
+        async fn bind() -> Self {
+            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+            Self { listener }
+        }
+
+        fn addr(&self) -> String {
+            self.listener.local_addr().unwrap().to_string()
+        }
+
+        async fn run(self, accept_share: bool) {
+            let (mut socket, _) = self.listener.accept().await.unwrap();
+            let (mut reader, mut writer) = socket.split();
+            let mut buf = vec![0u8; 4096];
+
+            // Subscribe
+            let n = reader.read(&mut buf).await.unwrap();
+            let req: serde_json::Value = serde_json::from_slice(&buf[..n]).unwrap();
+            assert_eq!(req["method"], "mining.subscribe");
+            let resp = json!({ "id": 1, "result": [["mining.set_difficulty", "sub"], 4], "error": null });
+            writer.write_all((serde_json::to_string(&resp).unwrap() + "\n").as_bytes()).await.unwrap();
+            writer.flush().await.unwrap();
+
+            // Authorize
+            let n = reader.read(&mut buf).await.unwrap();
+            let req: serde_json::Value = serde_json::from_slice(&buf[..n]).unwrap();
+            assert_eq!(req["method"], "mining.authorize");
+            let resp = json!({ "id": 2, "result": true, "error": null });
+            writer.write_all((serde_json::to_string(&resp).unwrap() + "\n").as_bytes()).await.unwrap();
+            writer.flush().await.unwrap();
+
+            // Notify
+            let notify = json!({
+                "id": null,
+                "method": "mining.notify",
+                "params": ["job_dcr_001", "aabbccddeeff00112233445566778899", "0000ffff"]
+            });
+            writer.write_all((serde_json::to_string(&notify).unwrap() + "\n").as_bytes()).await.unwrap();
+            writer.flush().await.unwrap();
+
+            // Submit
+            let n = reader.read(&mut buf).await.unwrap();
+            let req: serde_json::Value = serde_json::from_slice(&buf[..n]).unwrap();
+            assert_eq!(req["method"], "mining.submit");
+            let resp = if accept_share {
+                json!({ "id": 100, "result": true, "error": null })
+            } else {
+                json!({ "id": 100, "result": false, "error": { "code": -1, "message": "low diff" } })
+            };
+            writer.write_all((serde_json::to_string(&resp).unwrap() + "\n").as_bytes()).await.unwrap();
+            writer.flush().await.unwrap();
+        }
+    }
+
+    fn parse_addr(addr: &str) -> (String, u16) {
+        let pos = addr.rfind(':').unwrap();
+        (addr[..pos].to_string(), addr[pos + 1..].parse().unwrap())
+    }
+
+    #[tokio::test]
+    async fn multiplexer_receives_job_for_dcr() {
+        let server = MockStratumServer::bind().await;
+        let addr = server.addr();
+        tokio::spawn(server.run(true));
+
+        let mut profile = CoinProfile::default_for(ExternalCoin::DCR);
+        let (host, port) = parse_addr(&addr);
+        profile.pool_host = host;
+        profile.pool_port = port;
+
+        // Use a direct client because JobMultiplexer builds its own profile.
+        let client = Arc::new(AuxPowClient::new(profile));
+        client.connect("bc1qtest").await.unwrap();
+        let _poll = spawn_poll_loop(client.clone());
+
+        // Wait for the notify to arrive.
+        let job = client.wait_for_job(2000).await.unwrap().expect("no job received");
+        let package = pack_job(ExternalCoin::DCR, &job);
+        assert_eq!(package.external_coin, ExternalCoin::DCR);
+        assert_eq!(package.external_job_id, "job_dcr_001");
+        assert_eq!(package.algorithm, "blake3");
+    }
+
+    #[tokio::test]
+    async fn multiplexer_switch_connects_and_disconnects() {
+        let server = MockStratumServer::bind().await;
+        let addr = server.addr();
+        tokio::spawn(server.run(true));
+
+        let mut mux = JobMultiplexer::new("bc1qtest", "zion_test");
+        // Build a profile pointing at the mock server, then wrap it manually
+        // because `connect` uses `default_for`.  For this unit test we create
+        // a client directly and inject it.
+        let mut profile = CoinProfile::default_for(ExternalCoin::KAS);
+        let (host, port) = parse_addr(&addr);
+        profile.pool_host = host;
+        profile.pool_port = port;
+        profile.worker_name = "zion_test".to_string();
+
+        let client = Arc::new(AuxPowClient::new(profile));
+        client.connect("bc1qtest").await.unwrap();
+        mux.active_client = Some(client.clone());
+        mux.poll_handle = Some(spawn_poll_loop(client));
+
+        let job = mux.wait_for_job(2000).await.unwrap().expect("job");
+        assert_eq!(job.external_coin, ExternalCoin::KAS);
+
+        mux.disconnect().await;
+        assert!(mux.active_coin().is_none());
+    }
+}

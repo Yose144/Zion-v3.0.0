@@ -500,9 +500,11 @@ mod tests {
 
     #[tokio::test]
     async fn scheduler_stats_track_switches() {
-        let mut config = AuxPowConfig::default();
-        config.enabled = true;
-        config.force_coin = Some(ExternalCoin::DCR);
+        let config = AuxPowConfig {
+            enabled: true,
+            force_coin: Some(ExternalCoin::DCR),
+            ..Default::default()
+        };
 
         let scheduler = Arc::new(AuxPowScheduler::new(config, SchedulerConfig::default()));
 
