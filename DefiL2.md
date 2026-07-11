@@ -214,7 +214,7 @@ On-chain validátoři mají dost ETH na Base (gas price 0.006 Gwei, TX cost ~0.0
 | 2.3 | Validator ETH top-up | 🔴 Owner action needed |
 | 2.4 | Atomic swap escrow fees | ✅ Done (10 ZION) |
 | 2.5 | Staking/Farm UI verify | ✅ Done |
-| 2.6 | More DEX liquidity | 🔵 Pending |
+| 2.6 | More DEX liquidity | ✅ Done (Uniswap V3 wZION/USDT) |
 | 2.7 | Blockaid false-positive report | ✅ Done |
 
 ---
@@ -225,4 +225,24 @@ On-chain validátoři mají dost ETH na Base (gas price 0.006 Gwei, TX cost ~0.0
 2. **BSC/Polygon re-enable** — pořídit Ankr premium API key nebo vlastní node pro `eth_getLogs`.
 3. **DAO activation** — vytvořit první proposal, ověřit voting flow.
 4. **Atomic swap E2E test** — HTLC lock → claim/refund na mainnetu.
-5. **DEX liquidity** — seed wZION/WETH nebo wZION/USDC pool na Uniswap/SushiSwap na Base.
+5. ~~**DEX liquidity**~~ ✅ Done — Uniswap V3 wZION/USDT pool seeded (239,595 wZION + 43.75 USDT, $0.000183/wZION, TVL $87.49).
+
+---
+
+## 11. DEX Likvidita — Uniswap V3 (2026-07-11)
+
+| Metric | Value |
+|--------|-------|
+| Pool | `0x186b46c2f04153999d44D25179cD623fD62Bfda2` |
+| DEX | Uniswap V3 |
+| Fee | 0.3% |
+| token0 | wZION (`0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6`, 18 dec) |
+| token1 | USDT (`0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2`, 6 dec) |
+| wZION v poolu | 239,595 wZION |
+| USDT v poolu | 43.75 USDT |
+| Cena | $0.000183/wZION |
+| TVL | $87.49 |
+| NFT Position Manager | `0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1` (Base-specific) |
+| TX | `0xab727ebd612cc7612b68fe0c0761e46f76e187ef468383c304bb43fb2d65b172` |
+| Skript | `V3/L2/contracts/hardhat/scripts/add-uniswap-liquidity.ts` |
+| Basescan | https://basescan.org/address/0x186b46c2f04153999d44D25179cD623fD62Bfda2 |
