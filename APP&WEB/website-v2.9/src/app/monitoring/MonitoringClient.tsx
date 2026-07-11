@@ -249,15 +249,16 @@ async function fetchSparklines(): Promise<SparklineData> {
 
 /* ═══════════════════════ COMPONENTS ═══════════════════════ */
 
-function StatCard({ label, value, icon: Icon, accent = 'text-zion-cyan', sub }: {
+function StatCard({ label, value, icon: Icon, accent = 'text-zion-cyan', rc = '6, 182, 212', sub }: {
   label: string;
   value: string;
   icon: LucideIcon;
   accent?: string;
+  rc?: string;
   sub?: string;
 }) {
   return (
-    <div style={{ '--rc': '244, 63, 94' } as React.CSSProperties} className="zion-rainbow-sub rounded-xl bg-black/60 border border-white/10 p-4 flex flex-col gap-1.5 min-w-0">
+    <div style={{ '--rc': rc } as React.CSSProperties} className="zion-rainbow-sub p-4 flex flex-col gap-1.5 min-w-0">
       <div className="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-[0.2em] truncate">
         <Icon className={`h-4 w-4 shrink-0 ${accent}`} />
         <span className="truncate">{label}</span>
@@ -308,7 +309,7 @@ function GroupRow({ name, submits, accepted, color }: {
   const a = accepted ?? 0;
   const rate = s > 0 ? ((a / s) * 100) : 0;
   return (
-    <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5">
+    <div style={{ '--rc': '16, 185, 129' } as React.CSSProperties} className="zion-rainbow-sub p-3 flex items-center gap-3">
       <div className={`h-2.5 w-2.5 rounded-full ${color}`} />
       <div className="flex-1">
         <div className="flex items-center justify-between mb-1">
@@ -373,12 +374,12 @@ export default function MonitoringClient() {
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          style={{ '--rc': '244, 63, 94' } as React.CSSProperties}
-          className="zion-rainbow-card rounded-3xl bg-black/60 p-6 md:p-10"
+          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+          className="zion-rainbow-card p-6 md:p-10"
         >
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-emerald-400 uppercase">
+              <div className="zion-badge zion-badge-green">
                 <Monitor className="h-4 w-4" />
                 {SITE_RELEASE_LABEL} · {cs ? 'Monitoring' : 'Monitoring'}
               </div>
@@ -396,7 +397,7 @@ export default function MonitoringClient() {
                 href="/grafana/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-6 py-3 text-sm font-semibold text-white transition-colors"
+                className="zion-button-primary"
               >
                 <BarChart3 className="h-4 w-4" />
                 {cs ? 'Otevrit Grafana dashboard' : 'Open Grafana Dashboard'}
@@ -405,7 +406,7 @@ export default function MonitoringClient() {
               <button
                 onClick={refresh}
                 disabled={loading}
-                className="inline-flex items-center gap-2 rounded-xl border border-white/20 hover:border-white/40 px-5 py-3 text-sm font-medium text-gray-300 transition-colors"
+                className="zion-button-secondary"
               >
                 <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                 {cs ? 'Obnovit' : 'Refresh'}
@@ -448,6 +449,7 @@ export default function MonitoringClient() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
+          className="zion-section"
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Server className="h-5 w-5 text-zion-cyan" />
@@ -464,7 +466,7 @@ export default function MonitoringClient() {
           </div>
           {/* Sparkline */}
           {sparklines && sparklines.chainHeight.length > 1 && (
-            <div style={{ '--rc': '244, 63, 94' } as React.CSSProperties} className="mt-3 zion-rainbow-sub rounded-xl bg-black/40 border border-white/10 p-4">
+            <div style={{ '--rc': '6, 182, 212' } as React.CSSProperties} className="mt-3 zion-rainbow-sub p-4">
               <div className="text-xs text-gray-400 mb-2">{cs ? 'Vyska chainu — posledni 1 hodina' : 'Chain Height — last 1 hour'}</div>
               <Sparkline data={sparklines.chainHeight} color="#FFD700" height={40} />
             </div>
@@ -476,31 +478,32 @@ export default function MonitoringClient() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
+          className="zion-section"
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Cpu className="h-5 w-5 text-zion-gold" />
             {cs ? 'Mining pool' : 'Mining Pool'}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            <StatCard icon={Users}    label="Active Miners"    value={fmt(data?.poolActiveSessions)} accent="text-zion-gold" />
-            <StatCard icon={ArrowUpDown} label="Total Submits" value={fmt(data?.poolSubmitsTotal)} accent="text-sky-400" />
-            <StatCard icon={Sparkles} label="Accepted Shares"  value={fmt(data?.poolAcceptedTotal)} accent="text-emerald-400" />
-            <StatCard icon={Activity} label="Rejected Shares"  value={fmt(data?.poolRejectedTotal)} accent="text-red-400" />
-            <StatCard icon={Gauge}    label="Accept Rate"      value={fmtPct(data?.poolAcceptRate)} accent={data?.poolAcceptRate != null && data.poolAcceptRate >= 95 ? 'text-emerald-400' : 'text-amber-400'} />
-            <StatCard icon={Timer}    label="Pool Uptime"      value={fmtUptime(data?.poolUptime)} accent="text-zion-cyan" />
-            <StatCard icon={Heart}    label="PPLNS Miners"     value={fmt(data?.pplnsRegisteredMiners)} accent="text-pink-400" />
+            <StatCard icon={Users}    label="Active Miners"    value={fmt(data?.poolActiveSessions)} accent="text-zion-gold" rc="16, 185, 129" />
+            <StatCard icon={ArrowUpDown} label="Total Submits" value={fmt(data?.poolSubmitsTotal)} accent="text-sky-400" rc="16, 185, 129" />
+            <StatCard icon={Sparkles} label="Accepted Shares"  value={fmt(data?.poolAcceptedTotal)} accent="text-emerald-400" rc="16, 185, 129" />
+            <StatCard icon={Activity} label="Rejected Shares"  value={fmt(data?.poolRejectedTotal)} accent="text-red-400" rc="16, 185, 129" />
+            <StatCard icon={Gauge}    label="Accept Rate"      value={fmtPct(data?.poolAcceptRate)} accent={data?.poolAcceptRate != null && data.poolAcceptRate >= 95 ? 'text-emerald-400' : 'text-amber-400'} rc="16, 185, 129" />
+            <StatCard icon={Timer}    label="Pool Uptime"      value={fmtUptime(data?.poolUptime)} accent="text-zion-cyan" rc="16, 185, 129" />
+            <StatCard icon={Heart}    label="PPLNS Miners"     value={fmt(data?.pplnsRegisteredMiners)} accent="text-pink-400" rc="16, 185, 129" />
           </div>
           {/* Sparklines */}
           {sparklines && (sparklines.poolSessions.length > 1 || sparklines.shares.length > 1) && (
             <div className="mt-3 grid md:grid-cols-2 gap-3">
               {sparklines.poolSessions.length > 1 && (
-                <div style={{ '--rc': '244, 63, 94' } as React.CSSProperties} className="zion-rainbow-sub rounded-xl bg-black/40 border border-white/10 p-4">
+                <div style={{ '--rc': '16, 185, 129' } as React.CSSProperties} className="zion-rainbow-sub p-4">
                   <div className="text-xs text-gray-400 mb-2">{cs ? 'Aktivni mineri — posledni 1 hodina' : 'Active Miners — last 1 hour'}</div>
                   <Sparkline data={sparklines.poolSessions} color="#FFD700" height={36} />
                 </div>
               )}
               {sparklines.shares.length > 1 && (
-                <div style={{ '--rc': '244, 63, 94' } as React.CSSProperties} className="zion-rainbow-sub rounded-xl bg-black/40 border border-white/10 p-4">
+                <div style={{ '--rc': '16, 185, 129' } as React.CSSProperties} className="zion-rainbow-sub p-4">
                   <div className="text-xs text-gray-400 mb-2">{cs ? 'Prijate shares — posledni 1 hodina' : 'Accepted Shares — last 1 hour'}</div>
                   <Sparkline data={sparklines.shares} color="#10b981" height={36} />
                 </div>
@@ -514,8 +517,8 @@ export default function MonitoringClient() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          style={{ '--rc': '244, 63, 94' } as React.CSSProperties}
-          className="zion-rainbow-card rounded-2xl bg-black/40 border border-white/10 p-6"
+          style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+          className="zion-rainbow-card p-6"
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Network className="h-5 w-5 text-sky-400" />
@@ -534,20 +537,20 @@ export default function MonitoringClient() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          style={{ '--rc': '244, 63, 94' } as React.CSSProperties}
-          className="zion-rainbow-card rounded-2xl bg-black/40 border border-white/10 p-6"
+          style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+          className="zion-rainbow-card p-6"
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <CircleDollarSign className="h-5 w-5 text-pink-400" />
             {cs ? 'PPLNS vyplatni engine' : 'PPLNS Reward Engine'}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-            <div className="space-y-2 min-w-0">
+            <div style={{ '--rc': '16, 185, 129' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2 min-w-0">
               <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Window Size</div>
               <div className="text-base sm:text-xl font-mono font-bold text-pink-400 truncate">{fmt(data?.pplnsWindowSize)}</div>
               <div className="text-xs text-gray-500">maximum shares</div>
             </div>
-            <div className="space-y-2 min-w-0">
+            <div style={{ '--rc': '16, 185, 129' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2 min-w-0">
               <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Window Used</div>
               <div className="text-base sm:text-xl font-mono font-bold text-pink-300 truncate">{fmt(data?.pplnsWindowUsed)}</div>
               {pplnsWindowPct != null && (
@@ -555,15 +558,15 @@ export default function MonitoringClient() {
               )}
               <div className="text-xs text-gray-500">{pplnsWindowPct != null ? (cs ? `${pplnsWindowPct.toFixed(1)} % zaplneno` : `${pplnsWindowPct.toFixed(1)}% full`) : ''}</div>
             </div>
-            <div className="space-y-2 min-w-0">
+            <div style={{ '--rc': '16, 185, 129' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2 min-w-0">
               <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Registered Miners</div>
               <div className="text-base sm:text-xl font-mono font-bold text-emerald-400 truncate">{fmt(data?.pplnsRegisteredMiners)}</div>
             </div>
-            <div className="space-y-2 min-w-0">
+            <div style={{ '--rc': '16, 185, 129' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2 min-w-0">
               <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Total Paid</div>
               <div className="text-base sm:text-xl font-mono font-bold text-zion-gold truncate">{fmt(data?.pplnsTotalPaid)} <span className="text-xs text-gray-500">ZION</span></div>
             </div>
-            <div className="space-y-2 min-w-0">
+            <div style={{ '--rc': '16, 185, 129' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2 min-w-0">
               <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Payout Rounds</div>
               <div className="text-base sm:text-xl font-mono font-bold text-amber-400 truncate">{fmt(data?.pplnsPayoutRounds)}</div>
             </div>
@@ -575,8 +578,8 @@ export default function MonitoringClient() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          style={{ '--rc': '244, 63, 94' } as React.CSSProperties}
-          className="zion-rainbow-card rounded-2xl bg-black/40 border border-white/10 p-6"
+          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+          className="zion-rainbow-card p-6"
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <HardDrive className="h-5 w-5 text-zion-cyan" />
@@ -585,7 +588,7 @@ export default function MonitoringClient() {
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {/* CPU Load */}
-            <div className="space-y-2">
+            <div style={{ '--rc': '6, 182, 212' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2">
               <div className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
                 <Flame className="h-3 w-3" /> {cs ? 'CPU zatez' : 'CPU Load'}
               </div>
@@ -597,7 +600,7 @@ export default function MonitoringClient() {
             </div>
 
             {/* Memory */}
-            <div className="space-y-2">
+            <div style={{ '--rc': '6, 182, 212' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2">
               <div className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
                 <Cpu className="h-3 w-3" /> {cs ? 'Pamet' : 'Memory'}
               </div>
@@ -617,7 +620,7 @@ export default function MonitoringClient() {
             </div>
 
             {/* Disk */}
-            <div className="space-y-2">
+            <div style={{ '--rc': '6, 182, 212' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2">
               <div className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
                 <HardDrive className="h-3 w-3" /> Disk
               </div>
@@ -637,7 +640,7 @@ export default function MonitoringClient() {
             </div>
 
             {/* Server Uptime */}
-            <div className="space-y-2">
+            <div style={{ '--rc': '6, 182, 212' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2">
               <div className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
                 <Clock className="h-3 w-3" /> {cs ? 'Uptime serveru' : 'Server Uptime'}
               </div>
@@ -656,8 +659,8 @@ export default function MonitoringClient() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
-          style={{ '--rc': '244, 63, 94' } as React.CSSProperties}
-          className="zion-rainbow-card rounded-2xl bg-black/40 border border-white/10 p-6"
+          style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+          className="zion-rainbow-card p-6"
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Shield className="h-5 w-5 text-emerald-400" />
@@ -675,7 +678,7 @@ export default function MonitoringClient() {
               { name: 'API Proxy', ver: '/api/metrics', desc: cs ? 'Bezpecny allowlist query proxy' : 'Secure allowlisted query proxy', color: 'text-sky-400' },
               { name: cs ? 'Web' : 'Website', ver: SITE_VERSION, desc: `Next.js 16 + Tailwind CSS 4 · runtime ${SITE_RUNTIME_VERSION}`, color: 'text-pink-400' },
             ].map((s) => (
-              <div key={s.name} className="flex items-start gap-3 p-3 rounded-lg bg-white/5">
+              <div key={s.name} style={{ '--rc': '16, 185, 129' } as React.CSSProperties} className="zion-rainbow-sub p-3 flex items-start gap-3">
                 <div className={`mt-0.5 h-2 w-2 rounded-full ${s.color.replace('text-', 'bg-')}`} />
                 <div>
                   <div className="font-medium text-white">

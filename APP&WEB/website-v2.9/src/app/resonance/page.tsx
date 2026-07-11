@@ -186,11 +186,11 @@ export default function ResonancePage() {
         <div className="zion-container relative">
           <FadeIn>
             <div className="flex items-center gap-3 mb-6">
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-zion-purple">
+              <span className="zion-badge text-zion-purple">
                 <Sparkles className="h-3.5 w-3.5" />
                 L5 · Protocol
               </span>
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-gray-400">
+              <span className="zion-badge text-gray-400">
                 <AudioLines className="h-3.5 w-3.5" />
                 v1.0
               </span>
@@ -213,21 +213,13 @@ export default function ResonancePage() {
 
           <FadeIn delay={0.2}>
             <div className="mt-10 flex flex-wrap gap-4">
-              <Link
-                href="/docs"
-                className="zion-rainbow-sub group inline-flex items-center gap-2 px-5 py-3 text-sm font-semibold text-white transition hover:border-zion-purple/50 hover:bg-white/10"
-                style={{ '--rc': '217, 70, 239' } as React.CSSProperties}
-              >
-                <BookOpen className="h-4 w-4 text-zion-cyan" />
+              <Link href="/docs" className="zion-button-primary group">
+                <BookOpen className="h-4 w-4" />
                 {lang === 'cs' ? 'Dokumentace' : 'Documentation'}
                 <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
               </Link>
-              <Link
-                href="/terranova"
-                className="zion-rainbow-sub group inline-flex items-center gap-2 px-5 py-3 text-sm font-semibold text-white transition hover:border-zion-gold/50 hover:bg-white/10"
-                style={{ '--rc': '217, 70, 239' } as React.CSSProperties}
-              >
-                <TreePine className="h-4 w-4 text-zion-gold" />
+              <Link href="/terranova" className="zion-button-secondary group">
+                <TreePine className="h-4 w-4" />
                 Terra Nova
                 <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
               </Link>
@@ -256,10 +248,7 @@ export default function ResonancePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {FREQUENCIES.map((f, i) => (
               <FadeIn key={f.layer} delay={i * 0.05}>
-                <div
-                  className="zion-rainbow-sub rounded-3xl p-5"
-                  style={{ '--rc': '217, 70, 239', borderTop: `2px solid rgba(${f.rgb},0.6)` } as React.CSSProperties}
-                >
+                <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                   <div className="flex items-center justify-between mb-4">
                     <span
                       className="inline-flex items-center justify-center w-10 h-10 rounded-2xl text-sm font-bold"
@@ -280,10 +269,7 @@ export default function ResonancePage() {
 
             {/* Carrier wave card */}
             <FadeIn delay={FREQUENCIES.length * 0.05}>
-              <div
-                className="zion-rainbow-sub rounded-3xl p-5 flex flex-col justify-center items-center text-center"
-                style={{ '--rc': '217, 70, 239', borderTop: '2px solid rgba(251,191,36,0.6)' } as React.CSSProperties}
-              >
+              <div className="zion-rainbow-sub p-5 flex flex-col justify-center items-center text-center" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                 <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-500/15 text-amber-400 mb-3">
                   <Waves className="h-6 w-6" />
                 </span>
@@ -308,10 +294,7 @@ export default function ResonancePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {SECTIONS.map((s, i) => (
               <FadeIn key={s.titleEn} delay={i * 0.08}>
-                <div
-                  className="zion-rainbow-card rounded-3xl p-6 md:p-8 h-full"
-                  style={{ '--rc': '217, 70, 239', borderLeft: `3px solid rgba(${s.rgb},0.6)` } as React.CSSProperties}
-                >
+                <div className="zion-rainbow-card p-6 md:p-8 h-full" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                   <div className="flex items-center gap-3 mb-4">
                     <span
                       className="inline-flex items-center justify-center w-10 h-10 rounded-2xl"
@@ -384,10 +367,7 @@ export default function ResonancePage() {
               },
             ].map((g, i) => (
               <FadeIn key={g.gate} delay={i * 0.08}>
-                <div
-                  className="zion-rainbow-card rounded-3xl p-6 md:p-8 h-full"
-                  style={{ '--rc': '217, 70, 239', borderTop: `3px solid rgba(${g.rgb},0.6)` } as React.CSSProperties}
-                >
+                <div className="zion-rainbow-card p-6 md:p-8 h-full" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                   <div className="flex items-center gap-3 mb-4">
                     <span
                       className="inline-flex items-center justify-center w-10 h-10 rounded-2xl text-sm font-bold"
@@ -408,26 +388,25 @@ export default function ResonancePage() {
       {/* CLOSING CTA */}
       <section className="relative py-20 border-t border-white/5">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(ellipse_at_50%_0%,rgba(251,191,36,0.12),transparent_70%)]" />
-        <div className="zion-container relative text-center">
+        <div className="zion-container relative">
           <FadeIn>
-            <Flower2 className="h-10 w-10 text-zion-gold mx-auto mb-6" />
-            <h2 className="text-3xl md:text-4xl font-bold text-gradient-soft mb-4">
-              {lang === 'cs' ? 'Každý kontrakt je modlitba' : 'Every contract is a prayer'}
-            </h2>
-            <p className="text-gray-400 max-w-2xl mx-auto mb-8">
-              {lang === 'cs'
-                ? 'Protokol Rezonance nehlasuje — připravuje pole, ve kterém DAO jedná. Jako Oneness Hall v EKAM před osmi komorami, Rezonance je centrální kupole, kterou protéká veškerá governance.'
-                : 'The Resonance Protocol does not vote — it prepares the field in which the DAO acts. Like EKAM\'s Oneness Hall before the eight chambers, Resonance is the central dome through which all governance flows.'}
-            </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <Link
-                href="/docs"
-                className="group inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan px-6 py-3 text-sm font-semibold text-white shadow-[0_14px_38px_rgba(147,51,234,0.42)] transition-transform hover:-translate-y-0.5"
-              >
-                <BookOpen className="h-4 w-4" />
-                {lang === 'cs' ? 'Otevřít dokumentaci' : 'Open documentation'}
-                <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
-              </Link>
+            <div className="zion-cta-banner">
+              <Flower2 className="h-10 w-10 text-zion-gold mx-auto mb-6" />
+              <h2 className="text-3xl md:text-4xl font-bold text-gradient-soft mb-4">
+                {lang === 'cs' ? 'Každý kontrakt je modlitba' : 'Every contract is a prayer'}
+              </h2>
+              <p className="text-gray-400 max-w-2xl mx-auto mb-8">
+                {lang === 'cs'
+                  ? 'Protokol Rezonance nehlasuje — připravuje pole, ve kterém DAO jedná. Jako Oneness Hall v EKAM před osmi komorami, Rezonance je centrální kupole, kterou protéká veškerá governance.'
+                  : 'The Resonance Protocol does not vote — it prepares the field in which the DAO acts. Like EKAM\'s Oneness Hall before the eight chambers, Resonance is the central dome through which all governance flows.'}
+              </p>
+              <div className="flex flex-wrap justify-center gap-4">
+                <Link href="/docs" className="zion-button-primary group">
+                  <BookOpen className="h-4 w-4" />
+                  {lang === 'cs' ? 'Otevřít dokumentaci' : 'Open documentation'}
+                  <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
+                </Link>
+              </div>
             </div>
           </FadeIn>
         </div>

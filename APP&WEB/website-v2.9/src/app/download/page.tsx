@@ -71,10 +71,10 @@ export default function DownloadPage() {
         {/* ─── Hero ─── */}
         <section
           className="zion-rainbow-card p-5 sm:p-8 md:p-10"
-          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+          style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-6">
-            <div className="zion-kicker border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan">
+            <div className="zion-kicker border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
               <ArrowDownToLine className="h-4 w-4" />
               {SITE_RELEASE_LABEL}
             </div>
@@ -110,7 +110,7 @@ export default function DownloadPage() {
                 href="https://github.com/Zion-TerraNova/v3-Mainnet/releases"
                 target="_blank"
                 rel="noreferrer"
-                className="zion-button-secondary text-sm text-gray-300"
+                className="zion-button-secondary text-sm"
               >
                 <ExternalLink className="h-3 w-3" />
                 {cs ? 'GitHub Releases' : 'GitHub Releases'}
@@ -154,7 +154,7 @@ export default function DownloadPage() {
             <p className="text-gray-400">{cs ? 'GUI na jedno kliknutí pro těžbu, správu peněženky a monitoring — bez terminálu' : 'One-click GUI for mining, wallet management and monitoring — no terminal needed'}</p>
           </div>
 
-          <div className="relative overflow-hidden zion-rainbow-card p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+          <div className="relative overflow-hidden zion-rainbow-card p-8" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="absolute top-4 right-4 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-3 py-1 text-xs font-semibold tracking-wider text-zion-gold">
               🚧 {cs ? 'VE VYVOJI' : 'IN DEVELOPMENT'}
             </div>
@@ -181,21 +181,21 @@ export default function DownloadPage() {
             <div className="flex flex-wrap gap-3">
               <button
                 disabled
-                className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-semibold text-gray-500 cursor-not-allowed"
+                className="zion-button-secondary opacity-50 cursor-not-allowed text-sm"
               >
                 <Package className="h-4 w-4" />
                 {cs ? 'Windows — Brzy' : 'Windows — Coming Soon'}
               </button>
               <button
                 disabled
-                className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-semibold text-gray-500 cursor-not-allowed"
+                className="zion-button-secondary opacity-50 cursor-not-allowed text-sm"
               >
                 <Package className="h-4 w-4" />
                 {cs ? 'macOS — Brzy' : 'macOS — Coming Soon'}
               </button>
               <button
                 disabled
-                className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-semibold text-gray-500 cursor-not-allowed"
+                className="zion-button-secondary opacity-50 cursor-not-allowed text-sm"
               >
                 <Package className="h-4 w-4" />
                 {cs ? 'Linux — Brzy' : 'Linux — Coming Soon'}
@@ -284,7 +284,7 @@ export default function DownloadPage() {
               href="https://discord.gg/zion-terranova"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-2xl bg-zion-purple/70 px-6 py-3 text-sm font-semibold text-white border border-zion-purple"
+              className="zion-button-primary text-sm"
             >
               {cs ? 'Připojit se na Discord' : 'Join Discord'}
             </Link>
@@ -292,19 +292,19 @@ export default function DownloadPage() {
               href="https://t.me/zionterranova"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-2xl bg-zion-cyan/70 px-6 py-3 text-sm font-semibold text-white border border-zion-cyan"
+              className="zion-button-secondary text-sm"
             >
               Telegram
             </Link>
             <Link
               href="/docs"
-              className="inline-flex items-center gap-2 rounded-2xl bg-white/90 px-6 py-3 text-sm font-semibold text-gray-900"
+              className="zion-button-secondary text-sm"
             >
               {cs ? 'Dokumentace' : 'Documentation'}
             </Link>
             <Link
               href="#downloads"
-              className="inline-flex items-center gap-2 rounded-2xl bg-white/10 border border-white/20 px-6 py-3 text-sm font-semibold text-white"
+              className="zion-button-secondary text-sm"
             >
               <ArrowDownToLine className="h-4 w-4" />
               {cs ? 'Veřejné downloady' : 'Public Downloads'}
