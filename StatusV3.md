@@ -5,7 +5,7 @@
 > **Předchozí update:** 2026-07-09 (3.0.5 "ALL GREEN" COMPLETE — 11/11 SLUŽEB ACTIVE + E2E MEMO TESTY POTVRZENY + PROTOCOL 3.0.5 + WEB DEPLOY OPTIMALIZACE — viz [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](./docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md)).
 > **Původní update:** 2026-07-07 (3.0.4 HARD GENESIS RESET — NOVÝ SERVER 62.171.141.136 — FULL STACK DEPLOYED — viz [`docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md`](./docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md) a [`HARDRESETOFFICIAL.md`](./docs/3.0.4/HARDRESETOFFICIAL.md) pro plný záznam).
 >
-> ### AuxPow Merge Mining — Pool Server + Dashboard Integrace COMPLETE (2026-07-11)
+> ### AuxPow Merge Mining — Pool Server + Dashboard Integrace COMPLETE + LIVE TEST + 3 BUG FIXES (2026-07-11)
 
 > **Co:** Standalone `AuXpow` crate (Stratum v1 proxy + external hashers Blake3/kHeavyHash) integrovaný do pool serveru a dashboardu. Pool server nyní může merge-mine 11 externích coinů (DCR, ALPH, KAS, ERG, RVN, ETC, EVR, MEWC, FLUX, CLORE, XMR) s profit-switchingem a circuit breakerem.
 >
@@ -21,14 +21,26 @@
 > - Sync access methods (`stats_sync()`, `is_enabled_sync()`) pro non-tokio hostitele
 > - Zero overhead když disabled (no-op scheduler)
 > - 10 env variables pro konfiguraci (wallet, allocation, pool preference, region, etc.)
+> - **Dedicated tokio runtime leaked via `std::mem::forget()`** — runtime nesmí být dropped, jinak se všechny tasky okamžitě zruší
+> - **`println!` logging** — pool server nemá tracing subscriber, `info!/warn!/error!` jsou silent no-ops
 >
 > **Testy:** 146/146 pass (40 auxpow + 73 pool lib + 33 pool server)
 >
 > **Deploy:** Edge server `62.171.141.136` — pool binary + dashboard files nasazeny, `/stats` vrací auxpow sekci (`enabled: false`), dashboard API předává auxpow data
 >
-> **Aktivace:** `ZION_AUXPOW_ENABLED=1` + `ZION_AUXPOW_WALLET=<wallet>` v `systemctl edit zion-pool.service`
+> **Live test (2026-07-11 08:05–08:10 CEST):** AuxPow dočasně enabled s dummy wallet (`DsiXXXX...`). Scheduler vybral KAS (highest fallback profit). ✅ TCP connect to `kas.2miners.com:2020` + Stratum `mining.subscribe` succeeded. ❌ `mining.authorize` rejected dummy wallet (expected — KAS requires `kaspa:` address). Circuit breaker tripped po 5 failures (correct behavior). AuxPow disabled po testu.
 >
-> **Commity:** `44371aa10` (AuXpow crate), `0a49a3f48` (pool + dashboard integrace)
+> **3 bugs found + fixed during live test (commit `f14500db3`):**
+>
+> | Bug | Severity | Fix |
+> |-----|----------|-----|
+> | **Runtime drop** | Critical | `auxpow_runtime` byl local variable → dropped na konci scope → všechny tasky zrušeny. Fix: `std::mem::forget(auxpow_runtime)` |
+> | **Stale pool addresses** | High | 2miners delisted DCR/ALPH, KAS port 4444→2020, ERG port 3056→8888. Fix: Updated `default_pool()` + test assertions |
+> | **Silent tracing** | Medium | Pool server nemá tracing subscriber → `info!/warn!/error!` silent. Fix: `println!` v scheduler `run()` a `switch_coin()` |
+>
+> **Aktivace:** `ZION_AUXPOW_ENABLED=1` + `ZION_AUXPOW_WALLET=<real-wallet>` v environment. Viz [`docs/3.0.5/AUXPOW_INTEGRATION_REPORT_2026-07-11.md`](./docs/3.0.5/AUXPOW_INTEGRATION_REPORT_2026-07-11.md) §8 pro plný postup.
+>
+> **Commity:** `44371aa10` (AuXpow crate), `0a49a3f48` (pool + dashboard integrace), `7eb9f89cb` (docs), `f14500db3` (3 bug fixes z live testu)
 >
 > **Soubory:** `AuXpow/` (nový crate), `V3/L1/pool/Cargo.toml`, `V3/L1/pool/src/bin/server.rs`, `ZION_OS/dashboard/app.py`, `ZION_OS/dashboard/dashboard.html`, `ZION_OS/dashboard/dashboard.js`, `AUXPOW_MERGE_MINING_PLAN.md`
 >

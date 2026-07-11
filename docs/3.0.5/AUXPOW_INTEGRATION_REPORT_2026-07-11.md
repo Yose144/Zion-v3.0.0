@@ -1,8 +1,8 @@
 # AuxPow Merge Mining Integration Report
 
 **Date:** 2026-07-11
-**Commits:** `44371aa10` (AuXpow crate), `0a49a3f48` (pool + dashboard integration)
-**Server:** Edge `62.171.141.136` — deployed and verified
+**Commits:** `44371aa10` (AuXpow crate), `0a49a3f48` (pool + dashboard integration), `7eb9f89cb` (docs), `f14500db3` (live test fixes)
+**Server:** Edge `62.171.141.136` — deployed, live-tested, disabled pending real wallet
 **Tests:** 146/146 pass (40 auxpow + 73 pool lib + 33 pool server)
 
 ---
@@ -92,22 +92,25 @@ See [`AUXPOW_MERGE_MINING_PLAN.md`](../../AUXPOW_MERGE_MINING_PLAN.md) for the f
 
 ### 3.2 Supported External Coins (11)
 
-| Coin | Ticker | Algorithm | Default Pool |
-|------|--------|-----------|--------------|
-| Decred | DCR | Blake3 | dcr.2miners.com:3333 |
-| Alephium | ALPH | Blake3 | alph.2miners.com:4545 |
-| Kaspa | KAS | kHeavyHash | kas.2miners.com:4444 |
-| Ergo | ERG | Autolykos | erg.2miners.com:3056 |
-| Ravencoin | RVN | KawPow | rvn.2miners.com:6060 |
-| Ethereum Classic | ETC | Etchash | etc.2miners.com:1010 |
-| Evrmore | EVR | KawPow | meowpow.eu.mine.zpool.ca:1327 |
-| Flux | FLUX | ZelHash | flux.woolypooly.com:3000 |
-| Clore.ai | CLORE | KawPow | clore.woolypooly.com:3090 |
-| Monero | XMR | RandomX | gulf.moneroocean.stream:10001 |
+| Coin | Ticker | Algorithm | Default Pool | Verified |
+|------|--------|-----------|--------------|----------|
+| Decred | DCR | Blake3 | dcr.suprnova.cc:3256 | DNS OK, port refused (pool may be down) |
+| Alephium | ALPH | Blake3 | alph.2miners.com:4545 | Not tested (2miners may have delisted) |
+| Kaspa | KAS | kHeavyHash | kas.2miners.com:2020 | ✅ TCP connect + Stratum subscribe OK |
+| Ergo | ERG | Autolykos | erg.2miners.com:8888 | Not tested |
+| Ravencoin | RVN | KawPow | rvn.2miners.com:6060 | ✅ TCP connect OK |
+| Ethereum Classic | ETC | Etchash | etc.2miners.com:1010 | ✅ TCP connect OK |
+| Evrmore | EVR | KawPow | evrprogpow.eu.mine.zpool.ca:1330 | Not tested |
+| MeowCoin | MEWC | KawPow | meowpow.eu.mine.zpool.ca:1327 | Not tested |
+| Flux | FLUX | ZelHash | flux.woolypooly.com:3000 | Not tested |
+| Clore.ai | CLORE | KawPow | clore.woolypooly.com:3090 | Not tested |
+| Monero | XMR | RandomX | gulf.moneroocean.stream:10001 | ✅ TCP connect OK |
+
+> **Note:** Pool addresses verified 2026-07-11 from edge server. 2miners has delisted DCR and ALPH pools — DCR moved to suprnova.cc, ALPH address may be stale. KAS port changed 4444→2020, ERG port changed 3056→8888. Always verify pool addresses before enabling.
 
 ### 3.3 Key Design Decisions
 
-1. **Dedicated tokio runtime** — The pool server uses `std::thread`, not tokio. The scheduler runs on its own `tokio::runtime::Runtime` with `enable_all()` and thread name "auxpow".
+1. **Dedicated tokio runtime (leaked)** — The pool server uses `std::thread`, not tokio. The scheduler runs on its own `tokio::runtime::Runtime` with `enable_all()` and thread name "auxpow". The runtime is intentionally leaked via `std::mem::forget()` to keep it alive for the process lifetime — if dropped, all spawned tasks are immediately cancelled.
 
 2. **Sync access methods** — `stats_sync()` and `is_enabled_sync()` use `blocking_lock()` / `blocking_read()` for use from non-tokio threads (the pool's metrics handler runs in a std::thread).
 
@@ -116,6 +119,8 @@ See [`AUXPOW_MERGE_MINING_PLAN.md`](../../AUXPOW_MERGE_MINING_PLAN.md) for the f
 4. **Hysteresis** — `select_best_coin()` requires a new coin to be at least `ZION_AUXPOW_HYSTERESIS_PCT` (default 15%) more profitable than the current coin before switching. Prevents flapping.
 
 5. **Profit estimates** — `fallback_estimates()` provides static USD/hashrate estimates for all 11 coins. In production, these should be replaced with live API calls to CoinGecko/WhatToMine.
+
+6. **println! logging** — The pool server does not initialize a `tracing` subscriber, so `info!/warn!/error!` macros are silent no-ops. The scheduler uses `println!` for all operational logging, which appears in journald via systemd.
 
 ---
 
@@ -205,7 +210,7 @@ New AuxPow panel population logic in `loadPoolMinersTab()`:
 
 ## 7. Deployment Verification
 
-### 7.1 Edge Server (62.171.141.136)
+### 7.1 Edge Server (62.171.141.136) — Initial Deploy
 
 | Check | Result |
 |-------|--------|
@@ -218,7 +223,40 @@ New AuxPow panel population logic in `loadPoolMinersTab()`:
 | Binary backup | `/usr/local/bin/zion-pool-server.bak-20260711-*` (2 backups) |
 | Dashboard backup | `/root/zion-dashboard/*.bak-20260711-*` (3 backups) |
 
-### 7.2 Test Results
+### 7.2 Live Test (2026-07-11 08:05–08:10 CEST)
+
+AuxPow was temporarily enabled with `ZION_AUXPOW_ENABLED=1` and a dummy DCR wallet address (`DsiXXXX...`) to test connectivity.
+
+**Bugs found and fixed:**
+
+| Bug | Severity | Root Cause | Fix | Commit |
+|-----|----------|------------|-----|--------|
+| **Runtime drop** | Critical | `auxpow_runtime` was a local variable — dropped at end of scope, immediately cancelling all spawned tasks. Scheduler task was killed before it could connect. | `std::mem::forget(auxpow_runtime)` to keep runtime alive for process lifetime | `f14500db3` |
+| **Stale pool addresses** | High | 2miners delisted DCR/ALPH pools, changed KAS port 4444→2020, ERG port 3056→8888. DNS returned NXDOMAIN for `dcr.2miners.com`. | Updated `default_pool()` for DCR (suprnova.cc:3256), KAS (2020), ERG (8888) + test assertions | `f14500db3` |
+| **Silent tracing** | Medium | Pool server doesn't initialize a `tracing` subscriber. All `info!/warn!/error!` calls in scheduler were silent no-ops — impossible to debug. | Replaced with `println!` in scheduler `run()` loop and `switch_coin()` | `f14500db3` |
+
+**Live test log sequence (after all fixes):**
+
+```
+auxpow: scheduler enabled, spawning background task
+auxpow: scheduler started, allocation=30%, wallet=DsiXXXX...
+auxpow: switching to KAS (kheavyhash) pool=kas.2miners.com:2020
+auxpow: connecting to kas.2miners.com:2020 as worker=zion-pool
+auxpow: switch_coin error: authorize failed: None
+```
+
+**What worked:**
+- ✅ Scheduler started and selected KAS (highest fallback profit estimate)
+- ✅ TCP connect to `kas.2miners.com:2020` succeeded
+- ✅ Stratum `mining.subscribe` succeeded
+- ✅ Circuit breaker tripped after 5 consecutive authorize failures (correct behavior)
+
+**What failed (expected):**
+- ❌ Stratum `mining.authorize` rejected dummy wallet address `DsiXXXX...` — KAS pool requires a valid Kaspa address (starts with `kaspa:`)
+
+**Post-test state:** AuxPow disabled (`ZION_AUXPOW_ENABLED=0`), pool server stable, all ZION miners unaffected.
+
+### 7.3 Test Results
 
 | Suite | Tests | Result |
 |-------|-------|--------|
@@ -231,28 +269,46 @@ New AuxPow panel population logic in `loadPoolMinersTab()`:
 
 ## 8. Activation Procedure
 
+> **Prerequisite:** You need a valid wallet address for the external coin you want to mine. The scheduler auto-selects the most profitable coin, so ideally provide wallets for all supported coins. At minimum, provide a wallet for KAS (starts with `kaspa:`), ETC (starts with `0x`), RVN (starts with `R`), or XMR (starts with `4` or `8`).
+>
+> The dummy wallet test (`DsiXXXX...`) confirmed that pools reject invalid addresses at the `mining.authorize` step. This is expected behavior.
+
 To enable AuxPow merge mining on the edge server:
 
 ```bash
 ssh zion-new
 
-# 1. Edit the pool service to add env vars
-sudo systemctl edit zion-pool.service
+# 1. Edit the environment file (env vars are already added, just enable)
+sudo vi /etc/zion/edge-environment.sh
 
-# Add in the override section:
-[Service]
-Environment="ZION_AUXPOW_ENABLED=1"
-Environment="ZION_AUXPOW_WALLET=<your-external-pool-wallet>"
-Environment="ZION_AUXPOW_WORKER_NAME=zion-pool"
-Environment="ZION_AUXPOW_ALLOCATION=0.3"
+# Set these values:
+ZION_AUXPOW_ENABLED=1
+ZION_AUXPOW_WALLET=<real-wallet-address-for-selected-coin>
+ZION_AUXPOW_WORKER_NAME=zion-pool
+ZION_AUXPOW_ALLOCATION=0.3
+
+# Optional: force a specific coin instead of profit-switching
+# ZION_AUXPOW_COIN=kas   # Forces KAS regardless of profit estimates
 
 # 2. Reload systemd + restart pool
 sudo systemctl daemon-reload
 sudo systemctl restart zion-pool.service
 
-# 3. Verify
+# 3. Verify — check journald for auxpow logs
 journalctl -u zion-pool.service --since '1 min ago' | grep auxpow
+# Expected: "auxpow: scheduler enabled, spawning background task"
+#           "auxpow: scheduler started, allocation=30%, wallet=..."
+#           "auxpow: switching to KAS (kheavyhash) pool=kas.2miners.com:2020"
+#           "auxpow: connecting to kas.2miners.com:2020 as worker=zion-pool"
+#           "auxpow: connected to KAS successfully"
+
+# 4. Verify /stats API
 curl -s http://127.0.0.1:8455/stats | python3 -m json.tool | grep -A15 auxpow
+# Expected: "enabled": true, "current_coin": "KAS", "current_pool": "kas.2miners.com:2020"
+
+# 5. Monitor share submission
+journalctl -u zion-pool.service -f | grep auxpow
+# Watch for: "auxpow: share accepted for kheavyhash nonce=..."
 ```
 
 ---
@@ -294,13 +350,13 @@ Replace `fallback_estimates()` with live API calls to CoinGecko/WhatToMine for r
 |------|--------|-------|
 | `AuXpow/Cargo.toml` | `44371aa10` | New (crate manifest) |
 | `AuXpow/src/lib.rs` | `44371aa10` | New (module declarations) |
-| `AuXpow/src/types.rs` | `44371aa10` | New (11 coins, config, stats, profit switching) |
+| `AuXpow/src/types.rs` | `44371aa10` + `f14500db3` | New + updated pool addresses (DCR/KAS/ERG) |
 | `AuXpow/src/external_hashers.rs` | `44371aa10` | New (Blake3, kHeavyHash, target validation) |
 | `AuXpow/src/auxpow_client.rs` | `44371aa10` | New (Stratum v1 client) |
-| `AuXpow/src/auxpow_scheduler.rs` | `44371aa10` + `0a49a3f48` | New + `spawn_on()`/`stats_sync()` methods |
+| `AuXpow/src/auxpow_scheduler.rs` | `44371aa10` + `0a49a3f48` + `f14500db3` | New + `spawn_on()`/`stats_sync()` + println logging |
 | `Cargo.toml` | `44371aa10` | +`"AuXpow"` workspace member |
 | `V3/L1/pool/Cargo.toml` | `0a49a3f48` | +`zion-auxpow` dependency |
-| `V3/L1/pool/src/bin/server.rs` | `0a49a3f48` | +46 lines (scheduler spawn, stats integration) |
+| `V3/L1/pool/src/bin/server.rs` | `0a49a3f48` + `f14500db3` | +46 lines (scheduler spawn, stats) + runtime leak fix |
 | `ZION_OS/dashboard/app.py` | `0a49a3f48` | +9 lines (auxpow passthrough) |
 | `ZION_OS/dashboard/dashboard.html` | `0a49a3f48` | +62 lines (AuxPow card) |
 | `ZION_OS/dashboard/dashboard.js` | `0a49a3f48` | +38 lines (AuxPow panel logic) |
@@ -312,5 +368,7 @@ Replace `fallback_estimates()` with live API calls to CoinGecko/WhatToMine for r
 
 1. **`44371aa10`** — `feat(auxpow): standalone merge-mining crate — stratum proxy + external hashers`
 2. **`0a49a3f48`** — `feat(auxpow): integrate merge-mining into pool server + dashboard`
+3. **`7eb9f89cb`** — `docs(auxpow): integration report + plan + StatusV3 + AGENTS.md update`
+4. **`f14500db3`** — `fix(auxpow): runtime leak + updated pool addresses + println logging`
 
-Both pushed to `origin/main`.
+All pushed to `origin/main`.
