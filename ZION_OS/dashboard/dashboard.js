@@ -2515,6 +2515,54 @@ async function loadPoolMinersTab(){
       auxCircuitEl.className = 'font-bold ' + (auxpow.circuit_open ? 'text-red-400' : auxEnabled ? 'text-emerald-400' : 'text-gray-500');
     }
 
+    // Revenue System panel (prepared / placeholder values)
+    const revenue = data.revenue || {
+      enabled: false,
+      status: 'Preview',
+      strategy: 'Multi-coin merge-mining + swap aggregator',
+      total_usd: 0,
+      daily_estimate_usd: 0,
+      miner_share_pct: 89,
+      dao_share_pct: 5,
+      humanitarian_share_pct: 5,
+      pool_fee_pct: 1,
+      last_distribution_ts: null,
+      next_distribution_ts: null,
+      active_coins: ['KAS', 'ALPH', 'DCR'],
+      circuit_open: false,
+    };
+    const revEnabled = revenue.enabled || false;
+    const revBadge = document.getElementById('pm-revenue-status-badge');
+    if(revBadge){
+      if(revEnabled){
+        revBadge.textContent = revenue.circuit_open ? '⛔ Circuit Open' : '🟢 Active';
+        revBadge.className = 'text-[10px] px-2 py-0.5 rounded-full ' + (revenue.circuit_open ? 'bg-red-900/50 text-red-400' : 'bg-emerald-900/50 text-emerald-400');
+      } else {
+        revBadge.textContent = '🔮 Preview';
+        revBadge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-amber-900/50 text-amber-400';
+      }
+    }
+    const revStatusEl = document.getElementById('pm-revenue-status');
+    if(revStatusEl){
+      revStatusEl.textContent = revEnabled ? (revenue.circuit_open ? '⛔ Circuit Open' : '🟢 Active') : '🔮 Preview';
+      revStatusEl.className = 'font-bold ' + (revEnabled && !revenue.circuit_open ? 'text-emerald-400' : revEnabled ? 'text-red-400' : 'text-amber-400');
+    }
+    set('pm-revenue-strategy', revenue.strategy || '—');
+    set('pm-revenue-total', revenue.total_usd != null ? '$' + Number(revenue.total_usd).toFixed(4) : '—');
+    set('pm-revenue-daily', revenue.daily_estimate_usd != null ? '$' + Number(revenue.daily_estimate_usd).toFixed(4) : '—');
+    set('pm-revenue-miner-share', revenue.miner_share_pct != null ? revenue.miner_share_pct + '%' : '—');
+    set('pm-revenue-dao-share', revenue.dao_share_pct != null ? revenue.dao_share_pct + '%' : '—');
+    set('pm-revenue-human-share', revenue.humanitarian_share_pct != null ? revenue.humanitarian_share_pct + '%' : '—');
+    set('pm-revenue-pool-fee', revenue.pool_fee_pct != null ? revenue.pool_fee_pct + '%' : '—');
+    set('pm-revenue-last-dist', revenue.last_distribution_ts ? new Date(revenue.last_distribution_ts).toLocaleString() : '—');
+    set('pm-revenue-next-dist', revenue.next_distribution_ts ? new Date(revenue.next_distribution_ts).toLocaleString() : '—');
+    set('pm-revenue-coins', (revenue.active_coins || []).join(', ') || '—');
+    const revCircuitEl = document.getElementById('pm-revenue-circuit');
+    if(revCircuitEl){
+      revCircuitEl.textContent = revenue.circuit_open ? '⛔ OPEN' : (revEnabled ? '✅ Closed' : '—');
+      revCircuitEl.className = 'font-bold ' + (revenue.circuit_open ? 'text-red-400' : revEnabled ? 'text-emerald-400' : 'text-gray-500');
+    }
+
     // Miners table
     const miners = data.miners || [];
     if(badge) badge.textContent = miners.length + ' ranked';

@@ -4804,6 +4804,26 @@ def get_pool_miners_dashboard() -> dict:
     except Exception:
         result["auxpow"] = {}
 
+    # 9c. Revenue System (prepared / placeholder values)
+    try:
+        result["revenue"] = {
+            "enabled": False,
+            "status": "Preview",
+            "strategy": "Multi-coin merge-mining + swap aggregator",
+            "total_usd": 0.0,
+            "daily_estimate_usd": 0.0,
+            "miner_share_pct": 89,
+            "dao_share_pct": 5,
+            "humanitarian_share_pct": 5,
+            "pool_fee_pct": 1,
+            "last_distribution_ts": None,
+            "next_distribution_ts": None,
+            "active_coins": ["KAS", "ALPH", "DCR"],
+            "circuit_open": False,
+        }
+    except Exception:
+        result["revenue"] = {}
+
     # 10. Computed summary aggregations
     miners = result.get("miners", [])
     stats = result.get("stats", {}) or {}
