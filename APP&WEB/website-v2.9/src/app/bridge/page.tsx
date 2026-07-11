@@ -65,7 +65,7 @@ function StatCard({
 }) {
   return (
     <div
-      className="zion-rainbow-card p-4 transition-colors"
+      className="zion-rainbow-sub p-4 transition-colors"
       style={{ '--rc': rc } as CSSProperties}
     >
       <div
@@ -167,7 +167,7 @@ export default function BridgePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="zion-rainbow-card p-6 md:p-10"
-          style={{ '--rc': '147, 51, 234' } as CSSProperties}
+          style={{ '--rc': '6, 182, 212' } as CSSProperties}
         >
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-5">
@@ -251,7 +251,7 @@ export default function BridgePage() {
             <div className="w-full lg:max-w-md space-y-3">
               <div
                 className="zion-rainbow-sub p-5"
-                style={{ '--rc': '147, 51, 234' } as CSSProperties}
+                style={{ '--rc': '6, 182, 212' } as CSSProperties}
               >
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">
                   {cs ? 'Rychlý přehled' : 'Quick Overview'}
@@ -259,7 +259,7 @@ export default function BridgePage() {
                 <div className="space-y-3">
                   <div
                     className="flex items-center justify-between zion-rainbow-sub p-3"
-                    style={{ '--rc': '255, 215, 0' } as CSSProperties}
+                    style={{ '--rc': '251, 191, 36' } as CSSProperties}
                   >
                     <div className="flex items-center gap-2 text-sm text-gray-300">
                       <Wallet className="h-4 w-4 text-zion-gold" />
@@ -331,8 +331,8 @@ export default function BridgePage() {
               {[...Array(8)].map((_, i) => (
                 <div
                   key={i}
-                  className="zion-rainbow-card p-4 animate-pulse"
-                  style={{ '--rc': '147, 51, 234' } as CSSProperties}
+                  className="zion-rainbow-sub p-4 animate-pulse"
+                  style={{ '--rc': '6, 182, 212' } as CSSProperties}
                 >
                   <div className="h-8 w-8 bg-white/5 rounded-xl mb-3" />
                   <div className="h-3 w-16 bg-white/5 rounded mb-2" />
@@ -433,7 +433,7 @@ export default function BridgePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.02 }}
           className="zion-rainbow-card p-4 md:p-5"
-          style={{ '--rc': '147, 51, 234' } as CSSProperties}
+          style={{ '--rc': '6, 182, 212' } as CSSProperties}
         >
           <div className="flex flex-wrap items-center gap-2 md:gap-3">
             <span className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mr-1 hidden sm:inline">
@@ -446,11 +446,12 @@ export default function BridgePage() {
                 <button
                   key={t.key}
                   onClick={() => setTab(t.key)}
-                  className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition ${
+                  className={`inline-flex items-center gap-2 !px-4 !py-2 text-sm font-medium transition ${
                     active
-                      ? 'border border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan hover:bg-zion-cyan/20'
-                      : 'border border-white/10 bg-white/5 text-gray-300 hover:border-white/25 hover:text-white'
+                      ? 'zion-rainbow-sub text-zion-cyan'
+                      : 'zion-panel-soft text-gray-300 hover:text-white'
                   }`}
+                  style={active ? ({ '--rc': '6, 182, 212' } as CSSProperties) : undefined}
                 >
                   <Icon className="h-3.5 w-3.5" />
                   {cs ? t.labelCs : t.labelEn}
@@ -474,7 +475,7 @@ export default function BridgePage() {
               {/* Lock & Mint widget */}
               <div
                 className="zion-rainbow-card p-6"
-                style={{ '--rc': '16, 185, 129' } as CSSProperties}
+                style={{ '--rc': '6, 182, 212' } as CSSProperties}
               >
                 <div className="flex items-center gap-2 mb-6">
                   <Lock className="h-5 w-5 text-emerald-400" />
@@ -490,14 +491,14 @@ export default function BridgePage() {
                   </p>
                   <div
                     className="flex items-center gap-3 zion-rainbow-sub p-3"
-                    style={{ '--rc': '16, 185, 129' } as CSSProperties}
+                    style={{ '--rc': '6, 182, 212' } as CSSProperties}
                   >
-                    <code className="flex-1 font-mono text-sm text-emerald-300 break-all">
+                    <code className="flex-1 font-mono text-sm text-cyan-300 break-all">
                       {BRIDGE_CONTRACTS.l1_bridge_address}
                     </code>
                     <button
                       onClick={() => copyText(BRIDGE_CONTRACTS.l1_bridge_address, 'l1addr')}
-                      className="shrink-0 rounded-lg border border-white/10 bg-white/5 p-2 hover:bg-white/10 transition-colors"
+                      className="zion-button-secondary shrink-0 !p-2"
                     >
                       <Copy className="h-4 w-4 text-gray-400" />
                     </button>
@@ -514,7 +515,7 @@ export default function BridgePage() {
                   </p>
                   <div
                     className="zion-rainbow-sub p-1 mb-3"
-                    style={{ '--rc': '16, 185, 129' } as CSSProperties}
+                    style={{ '--rc': '6, 182, 212' } as CSSProperties}
                   >
                     <input
                       type="text"
@@ -526,12 +527,12 @@ export default function BridgePage() {
                   </div>
                   <div
                     className="flex items-center gap-3 zion-rainbow-sub p-3"
-                    style={{ '--rc': '16, 185, 129' } as CSSProperties}
+                    style={{ '--rc': '6, 182, 212' } as CSSProperties}
                   >
-                    <code className="flex-1 font-mono text-sm text-emerald-300 break-all">{memoString}</code>
+                    <code className="flex-1 font-mono text-sm text-cyan-300 break-all">{memoString}</code>
                     <button
                       onClick={() => copyText(memoString, 'memo')}
-                      className="shrink-0 rounded-lg border border-white/10 bg-white/5 p-2 hover:bg-white/10 transition-colors"
+                      className="zion-button-secondary shrink-0 !p-2"
                     >
                       <Copy className="h-4 w-4 text-gray-400" />
                     </button>
@@ -584,7 +585,7 @@ export default function BridgePage() {
                         text: cs
                           ? 'Relay ověří 60-block finalitu + Guardian threshold'
                           : 'Relay verifies 60-block finality + Guardian threshold',
-                        rc: '255, 215, 0',
+                        rc: '251, 191, 36',
                         color: 'text-zion-gold',
                       },
                       {
@@ -611,7 +612,7 @@ export default function BridgePage() {
 
                 <div
                   className="zion-rainbow-card p-6"
-                  style={{ '--rc': '59, 130, 246' } as CSSProperties}
+                  style={{ '--rc': '6, 182, 212' } as CSSProperties}
                 >
                   <h3 className="text-sm font-semibold text-white mb-3">
                     {cs ? 'Kontrakty' : 'Contracts'}
@@ -669,14 +670,14 @@ export default function BridgePage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div
                 className="zion-rainbow-card p-5"
-                style={{ '--rc': '249, 115, 22' } as CSSProperties}
+                style={{ '--rc': '251, 191, 36' } as CSSProperties}
               >
                 <BridgeBurnWidget />
               </div>
               <div className="space-y-6">
                 <div
                   className="zion-rainbow-card p-6"
-                  style={{ '--rc': '249, 115, 22' } as CSSProperties}
+                  style={{ '--rc': '251, 191, 36' } as CSSProperties}
                 >
                   <h3 className="text-sm font-semibold text-white mb-4">
                     {cs ? 'Jak to funguje' : 'How it works'}
@@ -688,15 +689,15 @@ export default function BridgePage() {
                         text: cs
                           ? 'Spal wZION na Base (burn(amount, l1Recipient))'
                           : 'Burn wZION on Base (burn(amount, l1Recipient))',
-                        rc: '249, 115, 22',
-                        color: 'text-orange-400',
+                        rc: '251, 191, 36',
+                        color: 'text-zion-gold',
                       },
                       {
                         icon: Shield,
                         text: cs
                           ? 'EVM watcher čeká 64-block finalitu'
                           : 'EVM watcher waits 64-block finality',
-                        rc: '255, 215, 0',
+                        rc: '251, 191, 36',
                         color: 'text-zion-gold',
                       },
                       {
@@ -760,7 +761,7 @@ export default function BridgePage() {
               <div
                 key={i}
                 className="zion-rainbow-card overflow-hidden"
-                style={{ '--rc': '59, 130, 246' } as CSSProperties}
+                style={{ '--rc': '6, 182, 212' } as CSSProperties}
               >
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}

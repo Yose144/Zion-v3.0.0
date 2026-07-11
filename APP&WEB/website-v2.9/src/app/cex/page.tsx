@@ -211,7 +211,7 @@ export default function CexPage() {
 
           {/* Quick stats */}
           <div className="flex flex-wrap items-center gap-3 text-sm">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5">
+            <div className="zion-rainbow-sub inline-flex items-center gap-2 px-4 py-1.5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <Activity className="h-3.5 w-3.5 text-zion-gold" />
               <span className="text-gray-300">{cs ? 'Cena DEX' : 'DEX Price'}:</span>
               <span className="font-mono text-white">${bestPrice.toFixed(6)}</span>
@@ -219,17 +219,17 @@ export default function CexPage() {
                 {dex?.source === 'dexscreener' ? 'live' : (dex?.source ?? 'seed')}
               </span>
             </div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5">
+            <div className="zion-rainbow-sub inline-flex items-center gap-2 px-4 py-1.5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <DollarSign className="h-3.5 w-3.5 text-zion-cyan" />
               <span className="text-gray-300">{cs ? 'DEX Volume 24h' : 'DEX Volume 24h'}:</span>
               <span className="font-mono text-white">{formatVolume(dex?.total_volume_24h ?? 0)}</span>
             </div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5">
+            <div className="zion-rainbow-sub inline-flex items-center gap-2 px-4 py-1.5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <DollarSign className="h-3.5 w-3.5 text-emerald-400" />
               <span className="text-gray-300">{cs ? 'DEX Likvidita' : 'DEX Liquidity'}:</span>
               <span className="font-mono text-white">{formatVolume(dex?.total_liquidity_usd ?? 0)}</span>
             </div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5">
+            <div className="zion-rainbow-sub inline-flex items-center gap-2 px-4 py-1.5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <Building2 className="h-3.5 w-3.5 text-zion-purple" />
               <span className="text-gray-300">{cs ? 'Burzy' : 'Exchanges'}:</span>
               <span className="font-mono text-white">{summary?.listed ?? 0}/{summary?.total_exchanges ?? 0}</span>
@@ -246,7 +246,7 @@ export default function CexPage() {
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
           className="zion-rainbow-card p-6"
-          style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
         >
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div>
@@ -266,7 +266,7 @@ export default function CexPage() {
               href={`https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=${CONTRACTS.wZION}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan px-6 py-3 font-semibold text-white shadow-lg transition-shadow hover:shadow-xl"
+              className="zion-button-primary"
             >
               {cs ? 'Otevřít Uniswap' : 'Open Uniswap'}
               <ExternalLink className="h-4 w-4" />
@@ -275,22 +275,22 @@ export default function CexPage() {
 
           {/* DEX aggregate stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="zion-rainbow-sub p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Cena' : 'Price'}</p>
               <p className="text-lg font-bold text-white mt-1">${bestPrice.toFixed(6)}</p>
               <p className="text-[10px] text-gray-500">USD / wZION</p>
             </div>
-            <div className="zion-rainbow-sub p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Volume 24h' : 'Volume 24h'}</p>
               <p className="text-lg font-bold text-white mt-1">{formatVolume(dex?.total_volume_24h ?? 0)}</p>
               <p className="text-[10px] text-gray-500">{cs ? 'celkem' : 'total'}</p>
             </div>
-            <div className="zion-rainbow-sub p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Likvidita' : 'Liquidity'}</p>
               <p className="text-lg font-bold text-white mt-1">{formatVolume(dex?.total_liquidity_usd ?? 0)}</p>
               <p className="text-[10px] text-gray-500">{cs ? 'v poolech' : 'in pools'}</p>
             </div>
-            <div className="zion-rainbow-sub p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Transakce 24h' : 'Txns 24h'}</p>
               <p className="text-lg font-bold text-white mt-1">{(dex?.total_txns_24h ?? 0).toLocaleString()}</p>
               <p className="text-[10px] text-gray-500">
@@ -303,7 +303,7 @@ export default function CexPage() {
 
           {/* Per-pair breakdown from DexScreener */}
           {dexPairs.length > 0 && (
-            <div className="overflow-hidden rounded-xl border border-white/10">
+            <div className="overflow-hidden zion-rainbow-sub" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/10 bg-white/2">
@@ -350,7 +350,8 @@ export default function CexPage() {
               href={`https://dexscreener.com/base/${CONTRACTS.UniV3PoolUSDT}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+              className="zion-rainbow-sub inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+              style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
             >
               <BarChart3 className="h-3 w-3" /> DexScreener <ExternalLink className="h-2.5 w-2.5" />
             </a>
@@ -358,7 +359,8 @@ export default function CexPage() {
               href={`https://basescan.org/token/${CONTRACTS.wZION}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+              className="zion-rainbow-sub inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+              style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
             >
               wZION Contract <ExternalLink className="h-2.5 w-2.5" />
             </a>
@@ -366,7 +368,8 @@ export default function CexPage() {
               href={`https://app.uniswap.org/pools?chain=base&token0=${CONTRACTS.wZION}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+              className="zion-rainbow-sub inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+              style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
             >
               Uniswap Pools <ExternalLink className="h-2.5 w-2.5" />
             </a>
@@ -391,7 +394,7 @@ export default function CexPage() {
             </div>
           </div>
 
-          <div className="overflow-hidden zion-rainbow-card" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+          <div className="overflow-hidden zion-rainbow-card" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -477,9 +480,9 @@ export default function CexPage() {
           <h2 className="mb-4 text-lg font-semibold text-white">{cs ? 'Jak koupit ZION' : 'How to Buy ZION'}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* DEX path */}
-            <div className="zion-rainbow-card p-6" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+            <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-3">
-                <span className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 text-[10px] font-mono text-emerald-400">DEX</span>
+                <span className="rounded-lg bg-cyan-500/10 border border-cyan-500/20 px-2 py-1 text-[10px] font-mono text-cyan-400">DEX</span>
                 <h3 className="font-semibold text-white text-sm">{cs ? 'Přes Uniswap (doporučeno)' : 'Via Uniswap (recommended)'}</h3>
               </div>
               <ol className="space-y-2 text-xs text-gray-300">
@@ -493,14 +496,14 @@ export default function CexPage() {
                 href={`https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=${CONTRACTS.wZION}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-4 inline-flex items-center gap-1.5 text-xs text-zion-cyan hover:text-white transition-colors"
+                className="zion-button-primary mt-4"
               >
                 {cs ? 'Otevřít Uniswap' : 'Open Uniswap'} <ArrowRight className="h-3 w-3" />
               </a>
             </div>
 
             {/* CEX path */}
-            <div className="zion-rainbow-card p-6" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+            <div className="zion-rainbow-card p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-3">
                 <span className="rounded-lg bg-amber-500/10 border border-amber-500/20 px-2 py-1 text-[10px] font-mono text-amber-400">CEX</span>
                 <h3 className="font-semibold text-white text-sm">{cs ? 'Přes Centralizovanou Burzu' : 'Via Centralized Exchange'}</h3>
@@ -516,9 +519,9 @@ export default function CexPage() {
             </div>
 
             {/* Bridge path */}
-            <div className="zion-rainbow-card p-6" style={{ '--rc': '124, 58, 237' } as React.CSSProperties}>
+            <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-3">
-                <span className="rounded-lg bg-purple-500/10 border border-purple-500/20 px-2 py-1 text-[10px] font-mono text-purple-400">Bridge</span>
+                <span className="rounded-lg bg-cyan-500/10 border border-cyan-500/20 px-2 py-1 text-[10px] font-mono text-cyan-400">Bridge</span>
                 <h3 className="font-semibold text-white text-sm">{cs ? 'L1 → L2 Bridge' : 'L1 → L2 Bridge'}</h3>
               </div>
               <ol className="space-y-2 text-xs text-gray-300">
@@ -530,7 +533,7 @@ export default function CexPage() {
               </ol>
               <a
                 href="/bridge"
-                className="mt-4 inline-flex items-center gap-1.5 text-xs text-zion-cyan hover:text-white transition-colors"
+                className="zion-button-secondary mt-4"
               >
                 {cs ? 'Otevřít Bridge' : 'Open Bridge'} <ArrowRight className="h-3 w-3" />
               </a>
@@ -550,7 +553,7 @@ export default function CexPage() {
           <h2 className="mb-4 text-lg font-semibold text-white">{cs ? 'Časté dotazy' : 'FAQ'}</h2>
           <div className="space-y-2 max-w-3xl">
             {FAQ_ITEMS.map((item, i) => (
-              <div key={i} className="zion-rainbow-card overflow-hidden" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+              <div key={i} className="zion-rainbow-card overflow-hidden" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   className="flex w-full items-center justify-between gap-4 p-4 text-left"
@@ -587,8 +590,7 @@ export default function CexPage() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ delay: 0.3 }}
-          className="zion-rainbow-card p-8"
-          style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+          className="zion-cta-banner"
         >
           <h2 className="text-2xl font-bold mb-3">{cs ? 'Začni obchodovat' : 'Start Trading'}</h2>
           <p className="mx-auto mb-6 max-w-lg text-gray-300">
@@ -599,14 +601,14 @@ export default function CexPage() {
           <div className="flex justify-center gap-4 flex-wrap">
             <a
               href="/defi"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan px-6 py-3 font-semibold text-white shadow-lg transition-shadow hover:shadow-xl"
+              className="zion-button-primary"
             >
               {cs ? 'DeFi Hub' : 'DeFi Hub'}
               <ArrowRight className="h-4 w-4" />
             </a>
             <a
               href="/bridge"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 px-6 py-3 text-white transition-colors hover:border-zion-cyan/45"
+              className="zion-button-secondary"
             >
               {cs ? 'Bridge' : 'Bridge'}
               <ArrowRight className="h-4 w-4" />

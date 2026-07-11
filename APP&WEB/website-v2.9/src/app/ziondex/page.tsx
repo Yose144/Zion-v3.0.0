@@ -1,3 +1,4 @@
+import React from 'react';
 import { Sparkles, Github, ArrowLeftRight, ArrowRightLeft, Coins } from 'lucide-react';
 
 export const metadata = {
@@ -167,21 +168,21 @@ export default function ZionDexPage() {
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <a
               href="/bridge"
-              className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500/80 px-6 py-3 text-sm font-semibold text-white border border-emerald-500"
+              className="zion-button-primary"
             >
               <ArrowLeftRight className="h-4 w-4" />
               WARP Bridge
             </a>
             <a
               href="/swap"
-              className="inline-flex items-center gap-2 rounded-2xl bg-white/10 border border-white/20 px-6 py-3 text-sm font-semibold text-white"
+              className="zion-button-secondary"
             >
               <ArrowRightLeft className="h-4 w-4" />
               Atomic Swap
             </a>
             <a
               href="/defi"
-              className="inline-flex items-center gap-2 rounded-2xl bg-white/10 border border-white/20 px-6 py-3 text-sm font-semibold text-white"
+              className="zion-button-secondary"
             >
               <Coins className="h-4 w-4" />
               DeFi Hub
