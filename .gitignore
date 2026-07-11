@@ -352,3 +352,10 @@ PUBLIC/
 
 # OpenZeppelin submodule (vendored, not tracked)
 V3/L2/bridge/contracts/lib/openzeppelin-contracts/
+ZionDex/router/target/
+ZionDex/sdk/node_modules/
+ZionDex/sdk/dist/
+ZionDex/contracts/out/
+ZionDex/contracts/cache/
+ZionDex/contracts/broadcast/
+*.db
