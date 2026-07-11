@@ -104,7 +104,7 @@ export default function LiquidityPage() {
               className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                 tab === t
                   ? 'zion-rainbow-sub text-amber-400'
-                  : 'bg-zinc-900/60 text-zinc-400 border border-zinc-700/30 hover:text-zinc-300'
+                  : 'border border-white/10 bg-white/5 text-gray-400 hover:text-white'
               }`}
               style={tab === t ? { '--rc': '245, 158, 11' } as CSSProperties : undefined}
             >

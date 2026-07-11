@@ -40,21 +40,21 @@ export default function DexPage() {
 
             {/* Feature badges */}
             <div className="flex flex-wrap gap-3 mt-6">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900/60 border border-zinc-700/30 rounded-full">
-                <Globe className="w-3.5 h-3.5 text-amber-500" />
-                <span className="text-xs text-zinc-300">13 chains</span>
+              <div className="zion-badge-gold">
+                <Globe className="w-3.5 h-3.5" />
+                <span className="text-xs">13 chains</span>
               </div>
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900/60 border border-zinc-700/30 rounded-full">
-                <Shield className="w-3.5 h-3.5 text-green-500" />
-                <span className="text-xs text-zinc-300">L3 WARP bridge (no synthetic)</span>
+              <div className="zion-badge-green">
+                <Shield className="w-3.5 h-3.5" />
+                <span className="text-xs">L3 WARP bridge (no synthetic)</span>
               </div>
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900/60 border border-zinc-700/30 rounded-full">
-                <TrendingUp className="w-3.5 h-3.5 text-blue-500" />
-                <span className="text-xs text-zinc-300">0.15% ZION pairs</span>
+              <div className="zion-badge-cyan">
+                <TrendingUp className="w-3.5 h-3.5" />
+                <span className="text-xs">0.15% ZION pairs</span>
               </div>
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900/60 border border-zinc-700/30 rounded-full">
-                <Zap className="w-3.5 h-3.5 text-amber-500" />
-                <span className="text-xs text-zinc-300">One-click cross-chain</span>
+              <div className="zion-badge-gold">
+                <Zap className="w-3.5 h-3.5" />
+                <span className="text-xs">One-click cross-chain</span>
               </div>
             </div>
           </motion.div>
