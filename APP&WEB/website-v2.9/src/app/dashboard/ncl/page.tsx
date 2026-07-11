@@ -58,9 +58,13 @@ const CONSCIOUSNESS_COLORS: Record<number, string> = {
   6: "text-amber-300",
 };
 
-function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+function rc(color: 'cyan' | 'purple'): React.CSSProperties {
+  return { '--rc': color === 'cyan' ? '6, 182, 212' : '147, 51, 234' } as React.CSSProperties;
+}
+
+function Card({ children, className = '', style }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
   return (
-    <div className={`rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 shadow-[0_30px_120px_rgba(0,0,0,0.45)] ${className}`}>
+    <div style={style} className={`zion-rainbow-card p-6 ${className}`}>
       {children}
     </div>
   );
@@ -164,7 +168,7 @@ export default function NCLDashboard() {
 
       {/* Status Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <Card>
+        <Card style={rc('cyan')}>
           <div className="flex items-center gap-2 mb-3">
             <Activity size={14} className="text-emerald-400" />
             <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">{lang === 'cs' ? 'Aktivní Workery' : 'Active Workers'}</span>
@@ -178,7 +182,7 @@ export default function NCLDashboard() {
           </div>
         </Card>
 
-        <Card>
+        <Card style={rc('cyan')}>
           <div className="flex items-center gap-2 mb-3">
             <Layers size={14} className="text-zion-cyan" />
             <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">{lang === 'cs' ? 'Dokončené úkoly' : 'Tasks Completed'}</span>
@@ -191,7 +195,7 @@ export default function NCLDashboard() {
           </div>
         </Card>
 
-        <Card>
+        <Card style={rc('cyan')}>
           <div className="flex items-center gap-2 mb-3">
             <Brain size={14} className="text-zion-gold" />
             <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">{lang === 'cs' ? 'Celkové NCL odměny' : 'Total NCL Rewards'}</span>
@@ -204,7 +208,7 @@ export default function NCLDashboard() {
           </div>
         </Card>
 
-        <Card className="relative overflow-hidden">
+        <Card style={rc('purple')}>
           <div className="absolute top-0 right-0 w-32 h-32 bg-zion-gold/5 rounded-full blur-3xl pointer-events-none" />
           <div className="text-xs text-zion-cyan font-medium uppercase tracking-wider mb-2">{lang === 'cs' ? 'Revenue Stream #5' : 'Revenue Stream #5'}</div>
           <div className="text-2xl font-bold text-white">NCL AI Bonus</div>
@@ -218,7 +222,7 @@ export default function NCLDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Workers List */}
         <div className="lg:col-span-2 space-y-4">
-          <Card>
+          <Card style={rc('cyan')}>
             <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
               <Layers size={14} className="text-zion-cyan" /> {lang === 'cs' ? 'Vaše Workery' : 'Your Workers'}
             </h2>
@@ -232,7 +236,8 @@ export default function NCLDashboard() {
                 {workers.map((worker) => (
                   <div
                     key={worker.worker_id}
-                    className="rounded-2xl border border-white/10 bg-white/5 p-4"
+                    style={rc('cyan')}
+                    className="zion-rainbow-sub p-4"
                   >
                     <div className="flex justify-between items-start mb-3">
                       <div>
@@ -280,7 +285,7 @@ export default function NCLDashboard() {
         </div>
 
         {/* Leaderboard */}
-        <Card>
+        <Card style={rc('purple')}>
           <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
             <Brain size={14} className="text-zion-gold" /> {lang === 'cs' ? 'NCL Žebříček' : 'NCL Leaderboard'}
           </h2>
@@ -292,9 +297,8 @@ export default function NCLDashboard() {
               leaderboard.map((entry) => (
                 <div
                   key={entry.rank}
-                  className={`flex items-center justify-between p-3 rounded-xl ${
-                    entry.rank <= 3 ? 'bg-zion-gold/10 border border-zion-gold/30' : 'bg-white/5'
-                  }`}
+                  style={rc(entry.rank <= 3 ? 'purple' : 'cyan')}
+                  className="zion-rainbow-sub flex items-center justify-between p-3"
                 >
                   <div className="flex items-center gap-3">
                     <div className={`text-lg font-bold font-mono ${
@@ -328,7 +332,7 @@ export default function NCLDashboard() {
       </div>
 
       {/* Revenue Streams Overview */}
-      <Card className="mt-4 relative overflow-hidden">
+      <Card style={rc('cyan')} className="mt-4">
         <div className="absolute top-0 right-0 w-40 h-40 bg-zion-gold/5 rounded-full blur-3xl pointer-events-none" />
         <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
           <Activity size={14} className="text-zion-cyan" /> {lang === 'cs' ? 'CH v3 Revenue Streams' : 'CH v3 Revenue Streams'}
@@ -344,11 +348,8 @@ export default function NCLDashboard() {
           ].map((stream, i) => (
             <div
               key={i}
-              className={`p-4 rounded-2xl ${
-                stream.highlight
-                  ? 'bg-zion-gold/10 border border-zion-gold/30'
-                  : 'bg-white/5 border border-white/10'
-              }`}
+              style={rc(stream.highlight ? 'purple' : 'cyan')}
+              className="zion-rainbow-sub p-4"
             >
               <div className={`text-xl font-bold text-${stream.color}`}>
                 {stream.name}
@@ -369,7 +370,7 @@ export default function NCLDashboard() {
       </Card>
 
       {/* Setup Instructions */}
-      <Card className="mt-4">
+      <Card style={rc('purple')} className="mt-4">
         <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
           <Brain size={14} className="text-zion-gold" /> {lang === 'cs' ? 'Povolit NCL na vašem mineru' : 'Enable NCL on Your Miner'}
         </h2>
@@ -377,7 +378,7 @@ export default function NCLDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <h3 className="text-xs text-zion-gold font-medium uppercase tracking-wider mb-2">{lang === 'cs' ? 'Možnost 1: Miner Flag' : 'Option 1: Miner Flag'}</h3>
-            <pre className="bg-black/60 border border-white/10 rounded-xl p-4 text-sm overflow-x-auto">
+            <pre style={rc('purple')} className="zion-rainbow-sub p-4 text-sm overflow-x-auto">
               <code className="text-emerald-400">
 {`./zion_miner \
   --pool ${process.env.NEXT_PUBLIC_ZION_POOL_HOST || 'pool.zionterranova.com'}:8444 \
@@ -390,7 +391,7 @@ export default function NCLDashboard() {
 
           <div>
             <h3 className="text-xs text-zion-cyan font-medium uppercase tracking-wider mb-2">{lang === 'cs' ? 'Možnost 2: Konfigurační soubor' : 'Option 2: Config File'}</h3>
-            <pre className="bg-black/60 border border-white/10 rounded-xl p-4 text-sm overflow-x-auto">
+            <pre style={rc('purple')} className="zion-rainbow-sub p-4 text-sm overflow-x-auto">
               <code className="text-emerald-400">
 {`# miner_config.json
 {
@@ -405,7 +406,7 @@ export default function NCLDashboard() {
           </div>
         </div>
 
-        <div className="mt-4 text-gray-400 text-sm">
+        <div style={rc('cyan')} className="zion-rainbow-sub mt-4 p-3 text-gray-400 text-sm">
           <span className="text-zion-gold">{lang === 'cs' ? 'Tip:' : 'Tip:'}</span> {lang === 'cs' ? 'Vyšší úrovně vědomí vydělávají více NCL odměn. Levelujte konzistentním miningem a komunitní účastí!' : 'Higher consciousness levels earn more NCL rewards. Level up by consistent mining and community participation!'}
         </div>
       </Card>
