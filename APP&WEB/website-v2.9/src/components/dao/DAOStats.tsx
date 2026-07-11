@@ -22,34 +22,30 @@ export default function DAOStats({ stats }: DAOStatsProps) {
       label: 'Treasury Balance',
       value: `${formatTreasury(stats.treasury_balance)} ZION`,
       icon: Coins,
-      color: 'text-yellow-400',
-      bgColor: 'bg-yellow-400/10',
-      borderColor: 'border-yellow-400/20'
+      color: 'text-zion-gold',
+      rc: '251, 191, 36',
     },
     {
       label: 'Total Proposals',
       value: stats.governance.total_proposals.toString(),
       icon: Gavel,
-      color: 'text-blue-400',
-      bgColor: 'bg-blue-400/10',
-      borderColor: 'border-blue-400/20'
+      color: 'text-emerald-400',
+      rc: '16, 185, 129',
     },
     {
       label: 'Active Voters',
       value: stats.governance.active_voters.toString(),
       icon: Users,
-      color: 'text-purple-400',
-      bgColor: 'bg-purple-400/10',
-      borderColor: 'border-purple-400/20'
+      color: 'text-zion-gold',
+      rc: '251, 191, 36',
     },
     {
       label: 'Humanitarian Projects',
       value: stats.humanitarian.total_proposals.toString(),
       icon: TrendingUp,
-      color: 'text-green-400',
-      bgColor: 'bg-green-400/10',
-      borderColor: 'border-green-400/20'
-    }
+      color: 'text-emerald-400',
+      rc: '16, 185, 129',
+    },
   ];
 
   return (
@@ -60,7 +56,8 @@ export default function DAOStats({ stats }: DAOStatsProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.1 }}
-          className={`rounded-2xl border ${stat.borderColor} ${stat.bgColor} p-6 backdrop-blur-xl`}
+          className="zion-rainbow-sub p-6"
+          style={{ '--rc': stat.rc } as React.CSSProperties}
         >
           <stat.icon className={`h-8 w-8 ${stat.color} mb-4`} />
           <p className="text-xs uppercase tracking-wider text-gray-400 mb-2">{stat.label}</p>

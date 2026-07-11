@@ -54,7 +54,7 @@ export default function ProposalCard({ proposal, onVote }: ProposalCardProps) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       className="zion-rainbow-sub p-5 transition-colors"
-      style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
+      style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
     >
       {/* Header */}
       <div className="flex items-start gap-3 mb-4">
@@ -105,15 +105,15 @@ export default function ProposalCard({ proposal, onVote }: ProposalCardProps) {
 
       {/* Vote counts */}
       <div className="grid grid-cols-3 gap-2 mb-4 text-center">
-        <div className="zion-tile p-2">
+        <div className="zion-rainbow-sub p-2" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
           <p className="text-xs font-semibold text-emerald-400">{formatNumber(votesFor)}</p>
           <p className="text-[10px] text-gray-500">For</p>
         </div>
-        <div className="zion-tile p-2">
+        <div className="zion-rainbow-sub p-2" style={{ '--rc': '239, 68, 68' } as React.CSSProperties}>
           <p className="text-xs font-semibold text-red-400">{formatNumber(votesAgainst)}</p>
           <p className="text-[10px] text-gray-500">Against</p>
         </div>
-        <div className="zion-tile p-2">
+        <div className="zion-rainbow-sub p-2" style={{ '--rc': '107, 114, 128' } as React.CSSProperties}>
           <p className="text-xs font-semibold text-gray-400">{formatNumber(votesAbstain)}</p>
           <p className="text-[10px] text-gray-500">Abstain</p>
         </div>
@@ -125,7 +125,7 @@ export default function ProposalCard({ proposal, onVote }: ProposalCardProps) {
           <button
             onClick={() => handleVote('for')}
             disabled={isVoting}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-50 transition-colors"
+            className="zion-button-primary flex-1 !px-3 !py-2 !text-xs disabled:opacity-50"
           >
             <ThumbsUp className="h-3.5 w-3.5" />
             For
@@ -133,7 +133,7 @@ export default function ProposalCard({ proposal, onVote }: ProposalCardProps) {
           <button
             onClick={() => handleVote('against')}
             disabled={isVoting}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-400 hover:bg-red-500/20 disabled:opacity-50 transition-colors"
+            className="zion-button-secondary flex-1 !px-3 !py-2 !text-xs disabled:opacity-50"
           >
             <ThumbsDown className="h-3.5 w-3.5" />
             Against
@@ -141,7 +141,7 @@ export default function ProposalCard({ proposal, onVote }: ProposalCardProps) {
           <button
             onClick={() => handleVote('abstain')}
             disabled={isVoting}
-            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-gray-400 hover:bg-white/10 disabled:opacity-50 transition-colors"
+            className="zion-button-secondary !px-3 !py-2 !text-xs disabled:opacity-50"
           >
             <Minus className="h-3.5 w-3.5" />
             Abstain

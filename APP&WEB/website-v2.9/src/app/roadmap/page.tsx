@@ -460,7 +460,7 @@ export default function RoadmapPage() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           className="zion-rainbow-card p-6 md:p-10"
-          style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
+          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-5">
@@ -493,7 +493,7 @@ export default function RoadmapPage() {
             </div>
             <div className="grid w-full gap-4 sm:grid-cols-2 lg:w-auto">
               {heroStats.map((chip) => (
-                <div key={chip.label} className="zion-rainbow-sub px-5 py-4" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+                <div key={chip.label} className="zion-rainbow-sub px-5 py-4" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                   <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{chip.label}</p>
                   <p className="text-3xl font-semibold text-white mt-2">{chip.value}</p>
                   <p className="text-sm text-gray-300">{chip.descriptor}</p>
@@ -509,7 +509,7 @@ export default function RoadmapPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.08 }}
           className="zion-rainbow-card p-8"
-          style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
+          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-8">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Architektura' : 'Architecture'}</p>
@@ -528,7 +528,7 @@ export default function RoadmapPage() {
                 viewport={{ once: true }}
                 transition={{ delay: 0.05 + idx * 0.06 }}
                 className={`relative overflow-hidden zion-rainbow-sub p-6${layer.active ? ' ring-1 ring-emerald-500/20' : ''}`}
-                style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
+                style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
               >
                 {layer.active && (
                   <div className={`absolute inset-0 bg-gradient-to-br ${layer.color} opacity-10 blur-2xl`} />
@@ -564,7 +564,7 @@ export default function RoadmapPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.12 }}
           className="zion-rainbow-card p-8"
-          style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
+          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Telemetrie' : 'Telemetry'}</p>
@@ -655,7 +655,7 @@ export default function RoadmapPage() {
                       {phase.id}
                     </div>
 
-                    <div className="flex-1 zion-rainbow-sub p-6" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+                    <div className="flex-1 zion-rainbow-sub p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                         <div>
                           <h3 className="text-xl font-semibold text-white">{cs ? 'Fáze' : 'Phase'} {phase.id} — {phase.title}</h3>
@@ -728,7 +728,7 @@ export default function RoadmapPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           className="zion-rainbow-card p-8"
-          style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
+          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Po launchi' : 'After Launch'}</p>
@@ -747,7 +747,7 @@ export default function RoadmapPage() {
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.05 }}
                 className="zion-rainbow-sub p-5"
-                style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
+                style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
               >
                 <h3 className="text-base font-semibold text-white">{block.title}</h3>
                 <p className="text-xs text-gray-500 mt-1">{block.sub}</p>
@@ -762,7 +762,7 @@ export default function RoadmapPage() {
               </motion.div>
             ))}
           </div>
-          <div className="mt-6 zion-rainbow-sub p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+          <div className="mt-6 zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
             <p className="text-xs uppercase tracking-[0.3em] text-gray-400 mb-3">Exchange Sequence</p>
             <div className="flex flex-wrap gap-3 text-sm">
               {[
@@ -787,7 +787,7 @@ export default function RoadmapPage() {
           transition={{ delay: 0.24 }}
           className="grid gap-6 lg:grid-cols-2"
         >
-          <div className="zion-rainbow-card p-8" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
             <div className="flex items-center gap-3 mb-5">
               <Lock className="h-6 w-6 text-zion-gold" />
               <div>
@@ -818,7 +818,7 @@ export default function RoadmapPage() {
             </div>
             <div className="space-y-4">
               {premineAllocation.map((row) => (
-                <div key={row.category} className="zion-rainbow-sub p-4" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+                <div key={row.category} className="zion-rainbow-sub p-4" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-semibold text-white">{row.category}</h4>
                     <span className="text-xs text-zion-gold font-mono">{row.share}</span>
@@ -845,7 +845,7 @@ export default function RoadmapPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.28 }}
           className="zion-rainbow-card p-8"
-          style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
+          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Bezpečnost' : 'Security'}</p>
@@ -883,7 +883,7 @@ export default function RoadmapPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.32 }}
           className="zion-rainbow-card p-8"
-          style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
+          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-8">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Timeline</p>
@@ -950,20 +950,20 @@ export default function RoadmapPage() {
             ))}
           </div>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <Link href="/defi" className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-zion-gold to-zion-purple px-6 py-3 text-sm font-semibold text-black">
+            <Link href="/defi" className="zion-button-primary">
               <Activity className="h-4 w-4" /> DeFi Hub
             </Link>
-            <Link href="/docs" className="inline-flex items-center gap-2 rounded-2xl bg-black/70 px-6 py-3 text-sm font-semibold text-white border border-white/20">
+            <Link href="/docs" className="zion-button-secondary">
               <BookOpen className="h-4 w-4" /> {cs ? 'Dokumentace' : 'Documentation'}
             </Link>
-            <Link href="/dashboard" className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-6 py-3 text-sm font-semibold text-white border border-white/10">
+            <Link href="/dashboard" className="zion-button-secondary">
               <Activity className="h-4 w-4" /> {cs ? 'Živý dashboard' : 'Live Dashboard'}
             </Link>
             <a
               href="https://github.com/Zion-TerraNova"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-6 py-3 text-sm font-semibold text-white border border-white/10"
+              className="zion-button-secondary"
             >
               <ExternalLink className="h-4 w-4" /> GitHub
             </a>
