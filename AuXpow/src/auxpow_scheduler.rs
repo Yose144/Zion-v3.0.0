@@ -22,7 +22,8 @@ use tracing::{error, info, warn};
 
 use crate::auxpow_client::{AuxPowClient, ShareResult};
 use crate::external_hashers::{
-    hash_blake3, hash_blake3_alph, hash_kheavyhash, meets_target, ExternalAlgorithm,
+    hash_blake3, hash_blake3_alph, hash_kheavyhash, hash_kheavyhash_extranonce, meets_target,
+    ExternalAlgorithm,
 };
 use crate::types::{
     select_best_coin, AuxPowConfig, AuxPowStats, CoinProfile, ExternalCoin,
@@ -340,7 +341,13 @@ impl AuxPowScheduler {
                         hash_blake3(header, 0, nonce)
                     }
                 }
-                ExternalAlgorithm::KHeavyHash => hash_kheavyhash(header, 0, nonce),
+                ExternalAlgorithm::KHeavyHash => {
+                    if job.extranonce1.len() >= 1 && job.extranonce1.len() < 8 {
+                        hash_kheavyhash_extranonce(header, 0, &job.extranonce1, nonce)
+                    } else {
+                        hash_kheavyhash(header, 0, nonce)
+                    }
+                }
             };
 
             if meets_target(&hash, target) {

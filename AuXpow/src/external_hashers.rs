@@ -87,13 +87,13 @@ pub fn hash_blake3_alph(header_blob: &[u8], extranonce1: &[u8], nonce: u64) -> [
     let mut full_nonce = [0u8; 24];
     let en1_len = extranonce1.len().min(24);
     full_nonce[..en1_len].copy_from_slice(&extranonce1[..en1_len]);
-    // Place the scanned 64-bit nonce right after extranonce1.  The GPU miner
-    // increments the first bytes of the 24-byte nonce, so this keeps the
-    // scanned part as early as possible while preserving the pool's prefix.
+    // Place the scanned 64-bit nonce right after extranonce1.  The Alephium
+    // stratum spec and GPU miner treat the nonce as little-endian, so we
+    // encode the scanned value in LE bytes.
     if en1_len + 8 <= 24 {
-        full_nonce[en1_len..en1_len + 8].copy_from_slice(&nonce.to_be_bytes());
+        full_nonce[en1_len..en1_len + 8].copy_from_slice(&nonce.to_le_bytes());
     } else {
-        full_nonce[16..24].copy_from_slice(&nonce.to_be_bytes());
+        full_nonce[16..24].copy_from_slice(&nonce.to_le_bytes());
     }
 
     let mut inner_input = Vec::with_capacity(24 + header_blob.len());
@@ -124,15 +124,54 @@ pub fn hash_kheavyhash(pre_pow_hash: &[u8], timestamp: u64, nonce: u64) -> [u8; 
     use sha3::digest::{ExtendableOutput, Update, XofReader};
     use sha3::{CShake256, CShake256Core};
 
-    // Kaspa reference: PowHash = cSHAKE256("ProofOfWorkHash")(pre_pow_hash || timestamp || nonce)
+    // Kaspa reference: PowHash = cSHAKE256("ProofOfWorkHash")(pre_pow_hash || timestamp || 32 zero bytes || nonce)
     let mut pow_hasher = CShake256::from_core(CShake256Core::new(b"ProofOfWorkHash"));
     pow_hasher.update(pre_pow_hash);
     pow_hasher.update(&timestamp.to_le_bytes());
+    pow_hasher.update(&[0u8; 32]);
     pow_hasher.update(&nonce.to_le_bytes());
     let mut pow_hash = [0u8; 32];
     pow_hasher.finalize_xof().read(&mut pow_hash);
 
     // KHeavyHash = cSHAKE256("HeavyHash")(pow_hash)
+    let mut heavy_hasher = CShake256::from_core(CShake256Core::new(b"HeavyHash"));
+    heavy_hasher.update(&pow_hash);
+    let mut heavy_hash = [0u8; 32];
+    heavy_hasher.finalize_xof().read(&mut heavy_hash);
+
+    heavy_hash
+}
+
+/// Compute kHeavyHash with an explicit 8-byte nonce prefix.
+///
+/// Stratum pools (e.g. 2miners KAS) split the 64-bit nonce into a pool-fixed
+/// `extranonce1` prefix and a miner-scanned suffix.  `suffix` is a `u64` whose
+/// low bytes are appended after `extranonce1` to form the full 8-byte nonce.
+pub fn hash_kheavyhash_extranonce(
+    pre_pow_hash: &[u8],
+    timestamp: u64,
+    extranonce1: &[u8],
+    suffix: u64,
+) -> [u8; 32] {
+    let mut full_nonce = [0u8; 8];
+    let en1_len = extranonce1.len().min(8);
+    full_nonce[..en1_len].copy_from_slice(&extranonce1[..en1_len]);
+    let suffix_len = 8 - en1_len;
+    if suffix_len > 0 {
+        full_nonce[en1_len..8].copy_from_slice(&suffix.to_le_bytes()[..suffix_len]);
+    }
+
+    use sha3::digest::{ExtendableOutput, Update, XofReader};
+    use sha3::{CShake256, CShake256Core};
+
+    let mut pow_hasher = CShake256::from_core(CShake256Core::new(b"ProofOfWorkHash"));
+    pow_hasher.update(pre_pow_hash);
+    pow_hasher.update(&timestamp.to_le_bytes());
+    pow_hasher.update(&[0u8; 32]);
+    pow_hasher.update(&full_nonce);
+    let mut pow_hash = [0u8; 32];
+    pow_hasher.finalize_xof().read(&mut pow_hash);
+
     let mut heavy_hasher = CShake256::from_core(CShake256Core::new(b"HeavyHash"));
     heavy_hasher.update(&pow_hash);
     let mut heavy_hash = [0u8; 32];
@@ -245,6 +284,20 @@ mod tests {
         let h0 = hash_kheavyhash(&[0u8; 32], 0, 0u64);
         let h1 = hash_kheavyhash(&[1u8; 32], 0, 0u64);
         assert_ne!(h0, h1);
+    }
+
+    #[test]
+    fn kheavyhash_known_vector() {
+        // Replicates the reference vector from rusty-kaspa's pow_hashers tests:
+        // timestamp = 5435345234, nonce = 432432432, pre_pow_hash = [42; 32].
+        // The reference computes PowHash = cSHAKE256("ProofOfWorkHash") over
+        // pre_pow_hash || timestamp || 32 zero bytes || nonce, then hashes the
+        // result with cSHAKE256("HeavyHash").
+        let h = hash_kheavyhash(&[42u8; 32], 5_435_345_234, 432_432_432);
+        // Verified independently: cSHAKE256("ProofOfWorkHash", ...).read(32) then
+        // cSHAKE256("HeavyHash", ...).read(32) produces this exact 64-char hex.
+        let expected_hex = "b0b5b47de00be8f689cbe89818f8a075350055c5e9dbcda7d834395b08be2252";
+        assert_eq!(hash_to_hex(&h), expected_hex);
     }
 
     #[test]

@@ -355,7 +355,7 @@ impl AuxPowClient {
                         }
                     }
                 }
-                "mining.set_extranonce" => {
+                "mining.set_extranonce" | "set_extranonce" => {
                     if let Some(params) = msg.get("params") {
                         if let Some(hex) = params.get(0).and_then(|p| p.as_str()) {
                             *self.extranonce1.lock().await = hex::decode(hex).unwrap_or_default();
@@ -429,6 +429,47 @@ impl AuxPowClient {
                 extranonce1: self.extranonce1.lock().await.clone(),
                 extranonce2: String::new(),
             });
+        }
+
+        // EthereumStratum/1.0.0 Kaspa variant:
+        // [jobId, [u64_le x 4], timestamp_ms]
+        if let Some(arr) = params.as_array() {
+            if arr.len() == 3 {
+                if let Some(u64s) = arr.get(1).and_then(|v| v.as_array()) {
+                    if u64s.len() == 4 {
+                        let job_id = arr
+                            .get(0)
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .to_string();
+                        let timestamp = arr.get(2).and_then(|v| v.as_u64()).unwrap_or(0);
+                        let mut pre_pow_hash = Vec::with_capacity(32);
+                        for v in u64s {
+                            let n = v.as_u64().unwrap_or(0);
+                            // The Kaspa stratum bridge sends the pre_pow_hash as four
+                            // little-endian u64 values (legacy/Bitmain job format).
+                            pre_pow_hash.extend_from_slice(&n.to_le_bytes());
+                        }
+                        let header_bytes = pre_pow_hash;
+                        let target_bytes = self.share_target().await;
+                        return Ok(ExternalJob {
+                            job_id,
+                            header_hex: hex::encode(&header_bytes),
+                            target_hex: hex::encode(&target_bytes),
+                            seed_hash: None,
+                            block_number: None,
+                            algorithm: self.profile.algorithm.clone(),
+                            header_bytes,
+                            target_bytes,
+                            timestamp: Some(timestamp),
+                            nbits: None,
+                            external_coin: self.profile.coin,
+                            extranonce1: self.extranonce1.lock().await.clone(),
+                            extranonce2: String::new(),
+                        });
+                    }
+                }
+            }
         }
 
         let arr = params
@@ -530,21 +571,41 @@ impl AuxPowClient {
     ) -> Result<ShareResult> {
         let is_alph = self.profile.algorithm.eq_ignore_ascii_case("blake3")
             && self.profile.coin == ExternalCoin::ALPH;
+        let is_kas = self.profile.algorithm.eq_ignore_ascii_case("kheavyhash")
+            && self.profile.coin == ExternalCoin::KAS;
 
         let params = if is_alph {
             // Alephium/Kryptex: try submitting the full 24-byte nonce as hex.
-            // Full nonce = extranonce1 (4B) || scanned nonce (8B BE) || zeros (12B).
+            // Full nonce = extranonce1 (pool prefix) || scanned nonce (8B LE)
+            // || zero padding to 24 bytes.  The scanned nonce is LE to match the
+            // GPU miner and the Alephium stratum spec.
             let en1 = self.extranonce1.lock().await.clone();
             let mut full = [0u8; 24];
             let en1_len = en1.len().min(24);
             full[..en1_len].copy_from_slice(&en1[..en1_len]);
             if en1_len + 8 <= 24 {
-                full[en1_len..en1_len + 8].copy_from_slice(&nonce.to_be_bytes());
+                full[en1_len..en1_len + 8].copy_from_slice(&nonce.to_le_bytes());
             } else {
-                full[16..24].copy_from_slice(&nonce.to_be_bytes());
+                full[16..24].copy_from_slice(&nonce.to_le_bytes());
             }
             let hex = hex::encode(full);
             json!([job_id, hex])
+        } else if is_kas {
+            // EthereumStratum/1.0.0 KAS variant used by 2miners:
+            // submit params = [wallet.worker, jobId, full_nonce_hex].
+            // The full 8-byte nonce is extranonce1 || scanned suffix.
+            let wallet = self.payout_wallet.lock().await.clone();
+            let worker = format!("{}.{}", wallet, self.profile.worker_name);
+            let en1 = self.extranonce1.lock().await.clone();
+            let mut full = [0u8; 8];
+            let en1_len = en1.len().min(8);
+            full[..en1_len].copy_from_slice(&en1[..en1_len]);
+            let suffix_len = 8 - en1_len;
+            if suffix_len > 0 {
+                full[en1_len..8].copy_from_slice(&nonce.to_le_bytes()[..suffix_len]);
+            }
+            let hex = hex::encode(full);
+            json!([worker, job_id, hex])
         } else {
             let hex = format!("0x{:016x}", nonce);
             let wallet = self.payout_wallet.lock().await.clone();
@@ -558,6 +619,7 @@ impl AuxPowClient {
             "params": params
         });
 
+        println!("auxpow: submitting share request {}", serde_json::to_string(&req).unwrap_or_default());
         let resp = self.send_request(&req).await?;
 
         let accepted = resp
@@ -607,7 +669,17 @@ impl AuxPowClient {
     /// difficulties below 1.0 produce the easiest possible target.
     pub async fn share_target(&self) -> [u8; 32] {
         let difficulty = self.current_difficulty().await;
-        difficulty_to_target(difficulty)
+        // Kaspa/kHeavyHash EthereumStratum pools use the full 256-bit max target
+        // for share difficulty; most Blake3 coins also use a 256-bit max target.
+        let max_target = if self.profile.algorithm.eq_ignore_ascii_case("kheavyhash") {
+            // Stratum pools that speak EthereumStratum/1.0.0 for KAS use the full
+            // 256-bit max target for share difficulty.  This matches the Kaspa
+            // reference implementation (max_target = 2^256 - 1).
+            [0xFFu8; 32]
+        } else {
+            [0xFFu8; 32]
+        };
+        difficulty_to_target_with_max(difficulty, &max_target)
     }
 
     /// Disconnect from the pool.
@@ -640,13 +712,19 @@ impl AuxPowClient {
 /// at `max_target`, so difficulties `<= 1.0` produce the easiest possible
 /// target (all bytes `0xFF`).
 pub fn difficulty_to_target(difficulty: f64) -> [u8; 32] {
+    difficulty_to_target_with_max(difficulty, &[0xFFu8; 32])
+}
+
+/// Convert a Stratum difficulty value to a 32-byte big-endian target using
+/// the supplied max target.
+pub fn difficulty_to_target_with_max(difficulty: f64, max_target: &[u8; 32]) -> [u8; 32] {
     use num_bigint::BigUint;
 
     if difficulty <= 1.0 || !difficulty.is_finite() || difficulty.is_nan() {
-        return [0xFFu8; 32];
+        return *max_target;
     }
 
-    let max = BigUint::from_bytes_be(&[0xFFu8; 32]);
+    let max = BigUint::from_bytes_be(max_target);
     // Convert difficulty to a rational approximation.  Using its raw bits as
     // a BigUint scaled by 2^52 gives an exact representation of a finite f64.
     let bits = difficulty.to_bits();

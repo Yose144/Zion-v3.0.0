@@ -84,19 +84,20 @@ async fn main() -> anyhow::Result<()> {
     // 3) Optionally mine
     if mine_secs > 0 {
         println!("[3/4] Mining for up to {} seconds...", mine_secs);
-        let found = mine_job(coin, &job, share_target, mine_secs).await;
+        let found = mine_job(coin, client.clone(), share_target, mine_secs).await;
         match found {
-            Some((nonce, hash)) => {
+            Some((job_id, nonce, hash)) => {
                 println!(
-                    "[3/4] Found potential share: nonce={} hash={}",
+                    "[3/4] Found potential share: job_id={} nonce={} hash={}",
+                    job_id,
                     nonce,
                     hex::encode(&hash[..8])
                 );
 
                 if submit_enabled {
-                    println!("[4/4] Submitting share (nonce={} hash_prefix={})...", nonce, hex::encode(&hash[..8]));
+                    println!("[4/4] Submitting share (job_id={} nonce={} hash_prefix={})...", job_id, nonce, hex::encode(&hash[..8]));
                     let forwarder = zion_auxpow::ShareForwarder::new(client.clone());
-                    let result = forwarder.try_forward(&job.job_id, nonce, &hash, &share_target).await?;
+                    let result = forwarder.try_forward(&job_id, nonce, &hash, &share_target).await?;
                     println!("[4/4] Submit result: {:?}", result);
                 } else {
                     println!("[4/4] Submission skipped (AUXPOW_E2E_SUBMIT != 1).");
@@ -147,27 +148,29 @@ async fn wait_for_job(
 
 async fn mine_job(
     coin: ExternalCoin,
-    job: &zion_auxpow::ExternalJob,
+    client: Arc<zion_auxpow::AuxPowClient>,
     share_target: [u8; 32],
     mine_secs: u64,
-) -> Option<(u64, [u8; 32])> {
-    let package = zion_auxpow::JobPackage {
-        external_coin: coin,
-        external_job_id: job.job_id.clone(),
-        algorithm: job.algorithm.clone(),
-        header_bytes: job.header_bytes.clone(),
-        target_bytes: share_target,
-        timestamp: job.timestamp.unwrap_or(0),
-        extranonce1: job.extranonce1.clone(),
-        start_nonce: 0,
-        nonce_count: u64::MAX,
-    };
-
+) -> Option<(String, u64, [u8; 32])> {
     let deadline = Instant::now() + Duration::from_secs(mine_secs);
     let mut window_start: u64 = 0;
-    let window_size: u64 = 100_000;
+    let window_size: u64 = 5_000;
 
     while Instant::now() < deadline {
+        // Always mine on the most recent job so submissions are not stale.
+        let job = client.current_job().await?;
+        let package = zion_auxpow::JobPackage {
+            external_coin: coin,
+            external_job_id: job.job_id.clone(),
+            algorithm: job.algorithm.clone(),
+            header_bytes: job.header_bytes.clone(),
+            target_bytes: share_target,
+            timestamp: job.timestamp.unwrap_or(0),
+            extranonce1: job.extranonce1.clone(),
+            start_nonce: 0,
+            nonce_count: u64::MAX,
+        };
+
         let window_end = window_start + window_size;
         let result = tokio::task::spawn_blocking({
             let package = package.clone();
@@ -179,7 +182,7 @@ async fn mine_job(
         .flatten();
 
         if let Some(share) = result {
-            return Some((share.nonce, share.hash));
+            return Some((job.job_id, share.nonce, share.hash));
         }
 
         window_start = window_end;
