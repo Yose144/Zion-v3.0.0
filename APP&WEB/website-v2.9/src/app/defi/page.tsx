@@ -35,6 +35,9 @@ import SwapWidget from '@/components/SwapWidget';
 import LiFiWidget from '@/components/LiFiWidget';
 import BridgeBurnWidget from '@/components/BridgeBurnWidget';
 import DefiBalances from '@/components/DefiBalances';
+import StakingPanel from '@/components/StakingPanel';
+import FarmingPanel from '@/components/FarmingPanel';
+import GovernancePanel from '@/components/GovernancePanel';
 import { CONTRACTS, SEED_PRICE_USD, CCA_AUCTION_PARAMS, PANCAKE_V3 } from '@/lib/defi-contracts';
 import { useNetworkStatus } from '@/hooks/useWebSocketSubscription';
 
@@ -808,66 +811,10 @@ export default function DefiPage() {
       {activeTab === 'earn' && (
       <>
         {/* ═══════ EARN wZION ═══════ */}
-        <section className="zion-container relative z-10 mb-10">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.05 }}
-          >
-            <div className="flex flex-col gap-2 mb-6">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Výnosy' : 'Earn'}</p>
-              <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-                <TrendingUp className="h-7 w-7 text-emerald-400" />
-                {cs ? 'Získej wZION' : 'Earn wZION'}
-              </h2>
-              <p className="text-sm text-gray-400">{cs ? 'Stakuj wZION pro fixní APR nebo vkládej LP tokeny do farmy.' : 'Stake wZION for fixed APR or deposit LP tokens into the farm.'}</p>
-            </div>
-
-            <div className="grid gap-5 md:grid-cols-2">
-            <Link
-              href="/defi/staking"
-              className="group zion-rainbow-sub p-6 block transition-all duration-200 hover:scale-[1.01]"
-              style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br from-emerald-500/80 to-green-600/80">
-                  <PiggyBank className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-base font-semibold text-white">{cs ? 'ZION Staking' : 'ZION Staking'}</h3>
-                  <p className="text-[11px] text-gray-500">{cs ? '12% APR · 7d cooldown' : '12% APR · 7d cooldown'}</p>
-                </div>
-              </div>
-              <p className="text-sm text-gray-300 mb-3">{cs ? 'Stakuj wZION a získej fixní 12% APR. 7denní cooldown pro bezpečný unstake. Odměnový fond 100K wZION.' : 'Stake wZION and earn fixed 12% APR. 7-day cooldown for safe unstaking. 100K wZION reward pool.'}</p>
-              <div className="flex items-center gap-2 text-sm text-zion-cyan group-hover:text-white transition-colors">
-                <span>{cs ? 'Stakovat wZION' : 'Stake wZION'}</span>
-                <ArrowRight className="h-3.5 w-3.5" />
-              </div>
-            </Link>
-
-            <Link
-              href="/defi/farming"
-              className="group zion-rainbow-sub p-6 block transition-all duration-200 hover:scale-[1.01]"
-              style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br from-green-500/80 to-emerald-600/80">
-                  <Sprout className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-base font-semibold text-white">{cs ? 'ZION Farm' : 'ZION Farm'}</h3>
-                  <p className="text-[11px] text-gray-500">{cs ? '1 wZION/s · 90d halving' : '1 wZION/s · 90d halving'}</p>
-                </div>
-              </div>
-              <p className="text-sm text-gray-300 mb-3">{cs ? 'Vkládej LP tokeny a získej wZION odměny. MasterChef-style distribuce s 500K wZION fondem.' : 'Deposit LP tokens and earn wZION rewards. MasterChef-style distribution with 500K wZION pool.'}</p>
-              <div className="flex items-center gap-2 text-sm text-zion-cyan group-hover:text-white transition-colors">
-                <span>{cs ? 'Farmit' : 'Start farming'}</span>
-                <ArrowRight className="h-3.5 w-3.5" />
-              </div>
-            </Link>
-          </div>
-        </motion.div>
-      </section>
+        <section className="zion-container relative z-10 mb-10 space-y-8">
+          <StakingPanel />
+          <FarmingPanel />
+        </section>
       </>
       )}
 
@@ -1040,45 +987,9 @@ export default function DefiPage() {
 
       {activeTab === 'governance' && (
       <>
-        {/* Governance product card */}
+        {/* ═══════ GOVERNANCE ═══════ */}
         <section className="zion-container relative z-10 mb-10">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.1 }}
-          >
-            <div className="flex flex-col gap-2 mb-6">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Infrastruktura' : 'Infrastructure'}</p>
-              <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-                <Scale className="h-7 w-7 text-rose-400" />
-                {cs ? 'Governance' : 'Governance'}
-              </h2>
-              <p className="text-sm text-gray-400">{cs ? 'Přenos mezi L1 a L2 a on-chain řízení protokolu.' : 'Move between L1 and L2 and govern the protocol on-chain.'}</p>
-            </div>
-
-            <div className="grid gap-5 md:grid-cols-2">
-              <Link
-                href="/defi/dao"
-                className="group zion-rainbow-sub p-6 block transition-all duration-200 hover:scale-[1.01]"
-                style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
-              >
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br from-rose-500/80 to-red-600/80">
-                    <Scale className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-semibold text-white">{cs ? 'Governance' : 'Governance'}</h3>
-                    <p className="text-[11px] text-gray-500">{cs ? 'On-chain hlasování' : 'On-chain voting'}</p>
-                  </div>
-                </div>
-                <p className="text-sm text-gray-300 mb-3">{cs ? 'Vytvářej návrhy, hlasuj a exekuuj rozhodnutí přes timelock. Hlasovací síla = wZION balance + stakovaný wZION.' : 'Create proposals, vote, and execute decisions via timelock. Voting power = wZION balance + staked wZION.'}</p>
-                <div className="flex items-center gap-2 text-sm text-zion-cyan group-hover:text-white transition-colors">
-                  <span>{cs ? 'Otevřít governance' : 'Open governance'}</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </div>
-              </Link>
-            </div>
-          </motion.div>
+          <GovernancePanel />
         </section>
       </>
       )}
