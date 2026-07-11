@@ -485,16 +485,16 @@ export default function NetworkTopology() {
   /* ── Loading ── */
   if (!status && !error) {
     return (
-      <section className="zion-rainbow-card p-8" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+      <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
         <div className="flex flex-col gap-2 mb-6">
           <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Topologie' : 'Topology'}</p>
           <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-            <Network className="h-7 w-7 text-purple-400" />
+            <Network className="h-7 w-7 text-zion-cyan" />
             {cs ? 'P2P síťová topologie' : 'P2P Mesh Topology'}
           </h2>
         </div>
         <div className="flex items-center justify-center h-64">
-          <Globe className="w-8 h-8 animate-spin text-purple-400" />
+          <Globe className="w-8 h-8 animate-spin text-zion-cyan" />
         </div>
       </section>
     );
@@ -503,11 +503,11 @@ export default function NetworkTopology() {
   /* ── No peers / error ── */
   if (error || (status && status.summary.online === 0)) {
     return (
-      <section className="zion-rainbow-card p-8" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+      <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
         <div className="flex flex-col gap-2 mb-6">
           <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Topologie' : 'Topology'}</p>
           <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-            <Network className="h-7 w-7 text-purple-400" />
+            <Network className="h-7 w-7 text-zion-cyan" />
             {cs ? 'P2P síťová topologie' : 'P2P Mesh Topology'}
           </h2>
         </div>
@@ -515,7 +515,7 @@ export default function NetworkTopology() {
           <p className="text-gray-400">{cs ? 'Žádné peery nejsou připojeny.' : 'No peers connected.'}</p>
           <button
             onClick={fetchStatus}
-            className="inline-flex items-center gap-2 rounded-2xl bg-purple-500/20 border border-purple-400/30 px-5 py-2.5 text-sm font-semibold text-purple-200 hover:bg-purple-500/30 transition-colors"
+            className="zion-button-secondary"
           >
             <RefreshCw className="h-4 w-4" />
             {cs ? 'Zkusit znovu' : 'Retry'}
@@ -526,11 +526,11 @@ export default function NetworkTopology() {
   }
 
   return (
-    <section className="zion-rainbow-card p-8" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+    <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-6">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Topologie' : 'Topology'}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-          <Network className="h-7 w-7 text-purple-400" />
+          <Network className="h-7 w-7 text-zion-cyan" />
           {cs ? 'P2P síťová topologie' : 'P2P Mesh Topology'}
         </h2>
         <p className="text-sm text-gray-400">
@@ -552,27 +552,27 @@ export default function NetworkTopology() {
         )}
       </div>
 
-      <div className="zion-rainbow-sub p-4" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+      <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
         <div className="relative">
           {/* Zoom controls */}
           <div className="absolute top-2 right-2 z-10 flex flex-col gap-1">
             <button
               onClick={() => handleZoomBtn(1.2)}
-              className="w-8 h-8 flex items-center justify-center rounded-lg bg-black/60 border border-white/10 text-white hover:bg-purple-500/30 transition-colors"
+              className="zion-button-secondary w-8 h-8 p-0 flex items-center justify-center"
               title={cs ? 'Přiblížit' : 'Zoom in'}
             >
               <ZoomIn className="w-4 h-4" />
             </button>
             <button
               onClick={() => handleZoomBtn(0.83)}
-              className="w-8 h-8 flex items-center justify-center rounded-lg bg-black/60 border border-white/10 text-white hover:bg-purple-500/30 transition-colors"
+              className="zion-button-secondary w-8 h-8 p-0 flex items-center justify-center"
               title={cs ? 'Oddálit' : 'Zoom out'}
             >
               <ZoomOut className="w-4 h-4" />
             </button>
             <button
               onClick={handleReset}
-              className="w-8 h-8 flex items-center justify-center rounded-lg bg-black/60 border border-white/10 text-white hover:bg-purple-500/30 transition-colors text-xs"
+              className="zion-button-secondary w-8 h-8 p-0 flex items-center justify-center text-xs"
               title={cs ? 'Resetovat' : 'Reset'}
             >
               ⟲

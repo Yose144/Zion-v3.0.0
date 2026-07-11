@@ -90,7 +90,7 @@ function StatCard({
   cs: boolean;
 }) {
   return (
-    <div className="zion-rainbow-sub p-4" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+    <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
       <div className="flex items-center gap-2 mb-2">
         <span className={color}>{icon}</span>
         <span className="text-[10px] uppercase tracking-wider text-gray-500">{label}</span>
@@ -303,27 +303,27 @@ export default function NetworkConsensusMetrics() {
 
   if (!stats || !metrics) {
     return (
-      <section className="zion-rainbow-card p-8" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+      <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
         <div className="flex flex-col gap-2 mb-6">
           <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Konsenzus' : 'Consensus'}</p>
           <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-            <GitBranch className="h-7 w-7 text-purple-400" />
+            <GitBranch className="h-7 w-7 text-zion-cyan" />
             {cs ? 'Konsenzus zdraví' : 'Consensus Health'}
           </h2>
         </div>
         <div className="flex items-center justify-center h-40">
-          <Activity className="w-8 h-8 animate-spin text-purple-400" />
+          <Activity className="w-8 h-8 animate-spin text-zion-cyan" />
         </div>
       </section>
     );
   }
 
   return (
-    <section className="zion-rainbow-card p-8" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+    <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-6">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Konsenzus' : 'Consensus'}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-          <GitBranch className="h-7 w-7 text-purple-400" />
+          <GitBranch className="h-7 w-7 text-zion-cyan" />
           {cs ? 'Konsenzus zdraví' : 'Consensus Health'}
         </h2>
         <p className="text-sm text-gray-400">
@@ -397,10 +397,10 @@ export default function NetworkConsensusMetrics() {
       </div>
 
       {/* Block timeline with finality markers */}
-      <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+      <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-purple-400" />
+            <Clock className="h-4 w-4 text-zion-cyan" />
             <span className="text-xs uppercase tracking-wider text-gray-500">
               {cs ? 'Časová osa bloků' : 'Block Timeline'}
             </span>
