@@ -1648,6 +1648,21 @@ fn handle_client(
         };
         let job_line = write_wire_message(&mut writer, &job_message)?;
 
+        if assignment.is_external() {
+            let coin = match &assignment {
+                WorkAssignment::External(j) => j.external_coin.ticker().to_string(),
+                _ => "unknown".to_string(),
+            };
+            println!(
+                "issued_external_job miner={} job_id={} coin={} algorithm={} height={}",
+                worker_name,
+                assignment.job_id(),
+                coin,
+                assignment.algorithm(),
+                assignment_height(&assignment)
+            );
+        }
+
         log_ch.log_verbose(format!(
             "iteration={} miner={} height={} nonces={}..{} algorithm={} external={}",
             iteration + 1,
