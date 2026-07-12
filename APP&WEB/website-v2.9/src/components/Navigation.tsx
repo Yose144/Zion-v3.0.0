@@ -194,18 +194,18 @@ export default function Navigation() {
   }, []);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50">
-      {/* Rasta ambient glow — green → gold → amber */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-linear-to-r from-emerald-500/14 via-zion-gold/16 to-amber-600/12 blur-3xl opacity-75" />
-      <div className="relative mx-auto w-[min(94vw,1150px)] py-1.5" data-nav-desktop>
+    <nav className="fixed top-16 sm:top-[4.5rem] md:top-20 left-0 right-0 z-50">
+      {/* Subtle ambient glow */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-linear-to-r from-emerald-500/10 via-zion-gold/12 to-amber-600/10 blur-2xl opacity-60" />
+      <div className="relative mx-auto w-[min(96vw,1080px)] py-1" data-nav-desktop>
         {/* ═══════════════════════════════════════════════════
             FLOOR 1 — MAIN BAR
             Logo | 4 HERO icons (rasta) | lang + GitHub + auth + dashboard
             ═══════════════════════════════════════════════════ */}
-        <div className="relative rounded-2xl bg-linear-to-r from-emerald-500/60 via-zion-gold/70 to-red-500/60 p-[1px] shadow-[0_24px_90px_rgba(0,0,0,0.42)]">
+        <div className="relative rounded-xl bg-linear-to-r from-emerald-500/50 via-zion-gold/60 to-red-500/50 p-[1px] shadow-[0_16px_60px_rgba(0,0,0,0.35)]">
           {/* Rasta gradient top accent line */}
-          <div className="pointer-events-none absolute -top-px left-2 right-2 h-px rounded-t-2xl bg-linear-to-r from-emerald-400/80 via-zion-gold/90 to-red-400/80" />
-          <div className="zion-panel relative flex items-center justify-between gap-1.5 sm:gap-2 rounded-[15px] bg-black/85 px-2 sm:px-2.5 py-1 md:py-1.5 md:px-3"
+          <div className="pointer-events-none absolute -top-px left-2 right-2 h-px rounded-t-xl bg-linear-to-r from-emerald-400/70 via-zion-gold/80 to-red-400/70" />
+          <div className="zion-panel relative flex items-center justify-between gap-1.5 rounded-[13px] bg-black/85 px-2 sm:px-3 py-1"
             style={{
               boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
             }}
