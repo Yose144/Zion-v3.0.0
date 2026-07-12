@@ -5121,9 +5121,11 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "blake3",
+ "cc",
  "chrono",
  "hex",
  "num-bigint",
+ "ocl",
  "serde",
  "serde_json",
  "sha3",
@@ -5215,6 +5217,7 @@ dependencies = [
  "tokio",
  "tokio-tungstenite 0.20.1",
  "zeroize",
+ "zion-auxpow",
  "zion-cosmic-harmony",
 ]
 
@@ -5329,6 +5332,7 @@ dependencies = [
  "ocl",
  "rayon",
  "serde_json",
+ "zion-auxpow",
  "zion-core",
  "zion-cosmic-harmony",
  "zion-native-ffi",

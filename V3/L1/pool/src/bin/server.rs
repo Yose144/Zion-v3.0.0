@@ -194,6 +194,13 @@ impl TemplateCache {
             }
         }
     }
+
+    /// Force the next `get_or_fetch` to fetch a fresh template from the node.
+    /// Called after a block is accepted so miners immediately get the next
+    /// height's template instead of re-mining the accepted block.
+    fn invalidate(&mut self) {
+        self.template = None;
+    }
 }
 
 /// Notify the ZION OASIS L4 game server that a block was mined so it can
@@ -1828,13 +1835,25 @@ fn handle_client(
                                 match submit_candidate_to_node(addr, mining_job, nonce, job_algorithm)
                                 {
                                     Ok(RpcResponse::SubmitResult { accepted: true, .. }) => {
+                                        println!(
+                                            "node_accepted_block height={} nonce={}",
+                                            job_height, nonce
+                                        );
                                         ShareStatus::Accepted
                                     }
                                     Ok(RpcResponse::SubmitResult {
                                         accepted: false,
                                         reason,
                                         ..
-                                    }) => map_node_rejection(reason.as_deref()),
+                                    }) => {
+                                        println!(
+                                            "node_rejected_block height={} nonce={} reason={}",
+                                            job_height,
+                                            nonce,
+                                            reason.as_deref().unwrap_or("unknown")
+                                        );
+                                        map_node_rejection(reason.as_deref())
+                                    }
                                     Ok(other) => {
                                         println!("node_rpc_unexpected={other:?}");
                                         ShareStatus::UpstreamRejected
@@ -1851,6 +1870,12 @@ fn handle_client(
                         // Record revenue for the block.
                         let block_accepted = matches!(node_status, ShareStatus::Accepted);
                         if block_accepted {
+                            // Invalidate template cache so the next iteration
+                            // fetches a fresh template (height+1) from the node.
+                            template_cache
+                                .lock()
+                                .expect("template cache lock poisoned")
+                                .invalidate();
                             // Dummy USD revenue (multi-chain compat).
                             pool.lock().expect("pool lock poisoned").record_revenue(
                                 revenue_source,
