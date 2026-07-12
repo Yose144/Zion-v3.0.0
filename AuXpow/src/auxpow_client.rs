@@ -353,22 +353,35 @@ impl AuxPowClient {
 
         // Otherwise treat it as a notification.
         if let Some(method) = msg.get("method").and_then(|m| m.as_str()) {
+            println!(
+                "auxpow_client: msg_method={} coin={}",
+                method, self.profile.coin
+            );
             match method {
                 "mining.notify" => {
                     if let Some(params) = msg.get("params") {
-                        let job = self.parse_notify_params(params).await?;
-                        debug!(
-                            "AuxPow: received job {} for {}",
-                            job.job_id, self.profile.coin
-                        );
-                        *self.current_job.lock().await = Some(job);
-                        self.job_notify.notify_waiters();
+                        match self.parse_notify_params(params).await {
+                            Ok(job) => {
+                                println!(
+                                    "auxpow_client: parsed job_id={} coin={} algo={} header_len={} target={}",
+                                    job.job_id, self.profile.coin, job.algorithm, job.header_bytes.len(), job.target_hex
+                                );
+                                *self.current_job.lock().await = Some(job);
+                                self.job_notify.notify_waiters();
+                            }
+                            Err(e) => {
+                                println!(
+                                    "auxpow_client: parse_notify_params failed coin={} err={} params={}",
+                                    self.profile.coin, e, params
+                                );
+                            }
+                        }
                     }
                 }
                 "mining.set_difficulty" => {
                     if let Some(params) = msg.get("params") {
                         if let Some(diff) = params.get(0).and_then(|d| d.as_f64()) {
-                            debug!("AuxPow: difficulty set to {:.2} for {}", diff, self.profile.coin);
+                            println!("auxpow_client: difficulty set to {:.2} for {}", diff, self.profile.coin);
                             *self.current_difficulty.lock().await = diff;
                         }
                     }
@@ -376,6 +389,10 @@ impl AuxPowClient {
                 "mining.set_extranonce" | "set_extranonce" => {
                     if let Some(params) = msg.get("params") {
                         if let Some(hex) = params.get(0).and_then(|p| p.as_str()) {
+                            println!(
+                                "auxpow_client: extranonce set to {} for {}",
+                                hex, self.profile.coin
+                            );
                             *self.extranonce1.lock().await = hex::decode(hex).unwrap_or_default();
                         }
                     }
@@ -412,6 +429,10 @@ impl AuxPowClient {
                                     extranonce1: self.extranonce1.lock().await.clone(),
                                     extranonce2: String::new(),
                                 };
+                                println!(
+                                    "auxpow_client: parsed eth_getWork job_id={} coin={}",
+                                    job.job_id, self.profile.coin
+                                );
                                 *self.current_job.lock().await = Some(job);
                                 self.job_notify.notify_waiters();
                             }
@@ -419,7 +440,10 @@ impl AuxPowClient {
                     }
                 }
                 _ => {
-                    debug!("AuxPow: unknown method '{}' from {}", method, self.profile.coin);
+                    println!(
+                        "auxpow_client: unknown method '{}' from {}",
+                        method, self.profile.coin
+                    );
                 }
             }
         }
