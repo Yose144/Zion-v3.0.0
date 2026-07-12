@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import TahitiFlower from './TahitiFlower';
@@ -16,12 +15,6 @@ const StargateLogo = dynamic(() => import('./StargateLogo'), {
 
 export default function AlohaOverlay() {
   const [expanded, setExpanded] = useState(false);
-  const pathname = usePathname();
-
-  // Aloha portal is only shown on the homepage
-  if (pathname !== '/') {
-    return null;
-  }
 
   return (
     <>
