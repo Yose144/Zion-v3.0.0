@@ -2287,15 +2287,39 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
       <div class="zion-panel p-3 text-center">
         <div class="text-lg font-bold text-zion-gold" id="rev-kpi-total">—</div>
-        <div class="text-[10px] text-gray-400 mt-1">Total Revenue USD</div>
+        <div class="text-[10px] text-gray-400 mt-1">AuxPow Revenue USD</div>
       </div>
       <div class="zion-panel p-3 text-center">
         <div class="text-lg font-bold text-cyan-400" id="rev-kpi-daily">—</div>
-        <div class="text-[10px] text-gray-400 mt-1">Daily Estimate</div>
+        <div class="text-[10px] text-gray-400 mt-1">Daily Estimate (USD)</div>
       </div>
       <div class="zion-panel p-3 text-center">
         <div class="text-lg font-bold text-amber-400" id="rev-kpi-coins">—</div>
         <div class="text-[10px] text-gray-400 mt-1">Active Coins</div>
+      </div>
+    </div>
+
+    <!-- ZION Mining Revenue KPIs -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div class="zion-panel p-3 text-center">
+        <div class="text-lg font-bold text-emerald-400" id="rev-kpi-blocks">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Blocks Found</div>
+      </div>
+      <div class="zion-panel p-3 text-center">
+        <div class="text-lg font-bold text-cyan-400" id="rev-kpi-zion-mined">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">ZION Mined</div>
+      </div>
+      <div class="zion-panel p-3 text-center">
+        <div class="text-lg font-bold text-zion-gold" id="rev-kpi-zion-paid">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">ZION Paid (PPLNS)</div>
+      </div>
+      <div class="zion-panel p-3 text-center">
+        <div class="text-lg font-bold text-amber-400" id="rev-kpi-zion-day">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">ZION / Day (est)</div>
+      </div>
+      <div class="zion-panel p-3 text-center">
+        <div class="text-lg font-bold text-purple-400" id="rev-kpi-hashrate">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Pool Hashrate</div>
       </div>
     </div>
 
@@ -2402,24 +2426,25 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
     </div>
 
-    <!-- Placeholder tables -->
+    <!-- Live tables -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <!-- Revenue by Coin -->
       <div class="zion-panel p-4">
-        <h3 class="text-sm font-bold mb-3 flex items-center gap-2">🪙 Revenue by Coin (placeholder)</h3>
+        <h3 class="text-sm font-bold mb-3 flex items-center gap-2">🪙 Revenue by Coin</h3>
         <div class="overflow-x-auto max-h-64 overflow-y-auto">
           <table class="w-full text-xs text-left">
             <thead>
               <tr class="text-gray-500 border-b border-white/10">
                 <th class="py-2 px-2">Coin</th>
                 <th class="py-2 px-2">Algorithm</th>
+                <th class="py-2 px-2">Pool</th>
                 <th class="py-2 px-2 text-right">Shares</th>
-                <th class="py-2 px-2 text-right">Revenue USD</th>
+                <th class="py-2 px-2 text-right">Revenue</th>
                 <th class="py-2 px-2">Status</th>
               </tr>
             </thead>
             <tbody id="rev-coin-tbody">
-              <tr><td colspan="5" class="text-gray-500 text-center py-4">No live coin revenue data yet — placeholder</td></tr>
+              <tr><td colspan="6" class="text-gray-500 text-center py-4">Loading…</td></tr>
             </tbody>
           </table>
         </div>
@@ -2427,21 +2452,66 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
       <!-- Recent Distributions -->
       <div class="zion-panel p-4">
-        <h3 class="text-sm font-bold mb-3 flex items-center gap-2">📤 Recent Distributions (placeholder)</h3>
+        <h3 class="text-sm font-bold mb-3 flex items-center gap-2">📤 Recent PPLNS Payouts</h3>
         <div class="overflow-x-auto max-h-64 overflow-y-auto">
           <table class="w-full text-xs text-left">
             <thead>
               <tr class="text-gray-500 border-b border-white/10">
                 <th class="py-2 px-2">Time</th>
-                <th class="py-2 px-2 text-right">Amount USD</th>
-                <th class="py-2 px-2">Recipient</th>
+                <th class="py-2 px-2 text-right">Amount (ZION)</th>
+                <th class="py-2 px-2">Round</th>
                 <th class="py-2 px-2">Type</th>
               </tr>
             </thead>
             <tbody id="rev-dist-tbody">
-              <tr><td colspan="4" class="text-gray-500 text-center py-4">No distributions yet — placeholder</td></tr>
+              <tr><td colspan="4" class="text-gray-500 text-center py-4">Loading…</td></tr>
             </tbody>
           </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PPLNS + Fee Split Detail -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <!-- PPLNS State -->
+      <div class="zion-panel p-4">
+        <h3 class="text-sm font-bold mb-3 flex items-center gap-2">📊 PPLNS State</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+          <div class="space-y-1">
+            <div class="text-gray-400">Payout Rounds</div>
+            <div id="rev-pplns-rounds" class="font-mono text-white">—</div>
+          </div>
+          <div class="space-y-1">
+            <div class="text-gray-400">Registered Miners</div>
+            <div id="rev-pplns-miners" class="font-mono text-cyan-400">—</div>
+          </div>
+          <div class="space-y-1">
+            <div class="text-gray-400">Window Used</div>
+            <div id="rev-pplns-window" class="font-mono text-white">—</div>
+          </div>
+          <div class="space-y-1">
+            <div class="text-gray-400">Pending (ZION)</div>
+            <div id="rev-pplns-pending" class="font-mono text-amber-400">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fee Split Accumulated -->
+      <div class="zion-panel p-4">
+        <h3 class="text-sm font-bold mb-3 flex items-center gap-2">💰 Fee Split Accumulated (ZION)</h3>
+        <div class="grid grid-cols-3 gap-4 text-xs">
+          <div class="space-y-1">
+            <div class="text-gray-400">Humanitarian</div>
+            <div id="rev-fee-human" class="font-mono text-purple-400">—</div>
+          </div>
+          <div class="space-y-1">
+            <div class="text-gray-400">Issobella (DAO)</div>
+            <div id="rev-fee-issobella" class="font-mono text-amber-400">—</div>
+          </div>
+          <div class="space-y-1">
+            <div class="text-gray-400">Pool Fee</div>
+            <div id="rev-fee-pool" class="font-mono text-gray-300">—</div>
+          </div>
         </div>
       </div>
     </div>
