@@ -13,8 +13,6 @@
 # See README.md for deployment instructions.
 # =============================================================================
 
-version: "3.8"
-
 services:
   # ---------------------------------------------------------------------------
   # bitcoind — Bitcoin Core (testnet, pruned for low disk usage)
@@ -24,8 +22,8 @@ services:
     container_name: zion-bitcoind
     restart: unless-stopped
     volumes:
-      - bitcoin-data:/root/.bitcoin
-      - ./bitcoin.conf:/root/.bitcoin/bitcoin.conf:ro
+      - bitcoin-data:/data/.bitcoin
+      - ./bitcoin.conf:/data/.bitcoin/bitcoin.conf:ro
     ports:
       - "18332:18332"   # testnet RPC
       - "18333:18333"   # testnet P2P
