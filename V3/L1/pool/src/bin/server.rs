@@ -388,6 +388,10 @@ async fn run_auxpow_bridge(
         // because this task has no other work besides forwarding shares.
         match mux.wait_for_job(5_000).await {
             Ok(Some(job)) => {
+                println!(
+                    "auxpow_bridge: queued job_id={} coin={} algo={} queue_len_before={}",
+                    job.external_job_id, job.external_coin, job.algorithm, bridge.job_queue.lock().expect("auxpow job queue lock poisoned").len()
+                );
                 let mut q = bridge.job_queue.lock().expect("auxpow job queue lock poisoned");
                 // Keep at most 2 jobs per algorithm to avoid stale work.
                 while q.len() >= 2 {
@@ -395,7 +399,10 @@ async fn run_auxpow_bridge(
                 }
                 q.push_front(job);
             }
-            Ok(None) => {}
+            Ok(None) => {
+                // No new job within the 5-second window; this is normal when
+                // the external pool has not yet issued a notify.
+            }
             Err(e) => {
                 eprintln!("auxpow_bridge: wait_for_job error: {}", e);
                 tokio::time::sleep(Duration::from_secs(1)).await;
