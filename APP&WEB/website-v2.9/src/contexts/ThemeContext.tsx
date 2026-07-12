@@ -122,8 +122,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.style.setProperty('--font-body', currentTheme.fonts.body);
     root.style.setProperty('--font-mono', currentTheme.fonts.mono);
 
-    // Update body background
-    document.body.style.background = currentTheme.colors.background;
+    // Update body text color; background is handled by BackgroundOrchestrator
     document.body.style.color = currentTheme.colors.text;
   }, [currentTheme]);
 
