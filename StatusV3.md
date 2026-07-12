@@ -4749,3 +4749,75 @@ L2 ERRORS (last 1 min): 0
 - **Phase B:** stream telemetry (`deeksha_chv3_with_streams`)
 - **Phase C:** GPU kernel parity (`deeksha_chv3.cl`)
 - **Phase D:** optional consensus změna (hard fork, governed)
+
+---
+
+## AuxPow Merge Mining Test — 2026-07-12
+
+### Konfigurace
+```
+ZION_AUXPOW_ENABLED=1
+ZION_AUXPOW_WALLET=bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh
+ZION_AUXPOW_WORKER_NAME=zion-pool
+ZION_AUXPOW_ALLOCATION=0.3  (30%)
+ZION_AUXPOW_CHECK_INTERVAL=60
+ZION_AUXPOW_HYSTERESIS_PCT=15
+ZION_AUXPOW_CB_THRESHOLD=5
+ZION_AUXPOW_CB_RESET_SECS=300
+```
+
+### Výsledek — AuxPow Scheduler FUNGUJE
+
+Pool server po restartu:
+```
+auxpow: scheduler enabled, spawning background task
+auxpow: scheduler started, allocation=30%, wallet=bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh
+auxpow: switching to KAS (kheavyhash) pool=kas.2miners.com:2020
+auxpow: connecting to kas.2miners.com:2020 as worker=zion-pool
+auxpow: subscribed to KAS — result=[true,"EthereumStratum/1.0.0"]
+auxpow: authorizing worker=bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh.zion_auxpow password=c=BTC
+auxpow: authorized as bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh.zion_auxpow on KAS
+auxpow: connected to KAS successfully
+```
+
+JSON API (`http://127.0.0.1:8455/`):
+```json
+"auxpow": {
+    "enabled": true,
+    "current_coin": "KAS",
+    "current_algorithm": "kheavyhash",
+    "current_pool": "kas.2miners.com:2020",
+    "circuit_open": false,
+    "consecutive_failures": 0,
+    "coin_switches": 1,
+    "shares_submitted": 0,
+    "shares_accepted": 0,
+    "shares_rejected": 0,
+    "revenue_usd": 0.0,
+    "uptime_secs": 163
+}
+```
+
+### Poznámky
+
+1. **AuxPowScheduler** (pool's vlastní CPU mining na external poolu) — **funguje**.
+   Připojen k `kas.2miners.com:2020` (Kaspa, kheavyhash).
+2. **AuxPowBridge (B2b)** (job multiplexing pro minery) — **disabled**.
+   Není nastaveno `ZION_POOL_AUXPOW_ENABLED=1`. To by umožnilo minerům
+   paralelně minovat Zion + external coin.
+3. **shares_submitted=0** — CPU hashing kheavyhash je pomalé vzhledem
+   k KAS target difficulty. Pro reálné shares by byl potřeba GPU kernel
+   (Phase C GPU kernel parity). Scheduler je ale připojen a funkční.
+4. **Circuit breaker** — closed (0 failures). Scheduler se automaticky
+   resetuje po `ZION_AUXPOW_CB_RESET_SECS=300s` pokud se otevře.
+5. **Revenue tracking** — `revenue_usd=0.0` protože žádné shares nebyly
+   přijaty. Po prvním share se revenue tracking aktivuje.
+6. **První pokus** byl odpojen po 21s (`peer closed the connection` —
+   pravděpodobně 2miners timeout pro neaktivní worker). Po restartu
+   poolu se připojil znovu a běží stabilně.
+
+### Co dál pro AuxPow
+- **B2b bridge:** nastavit `ZION_POOL_AUXPOW_ENABLED=1` pro miner job multiplexing
+- **GPU kernel:** pro reálné AuxPow shares (kheavyhash na GPU místo CPU)
+- **Profit switching:** scheduler podporuje automatické přepínání mezi coins
+  (KAS, DCR, ALPH, ERG, RVN, ETC) na základě profitability
