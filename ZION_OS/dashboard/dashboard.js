@@ -2649,7 +2649,7 @@ async function loadRevenueTab(){
     const auxpow = data.auxpow || {};
     const enabled = rev.enabled || false;
 
-    // KPI row
+    // KPI row — AuxPow
     const statusEl = document.getElementById('rev-kpi-status');
     if(statusEl){
       statusEl.textContent = enabled ? (rev.circuit_open ? '⛔ Circuit Open' : '🟢 Active') : '🔮 Preview';
@@ -2661,6 +2661,14 @@ async function loadRevenueTab(){
     if(dailyEl) dailyEl.textContent = rev.daily_estimate_usd != null ? '$' + Number(rev.daily_estimate_usd).toFixed(4) : '—';
     const coinsEl = document.getElementById('rev-kpi-coins');
     if(coinsEl) coinsEl.textContent = (rev.active_coins || []).length || '—';
+
+    // KPI row — ZION mining
+    set('rev-kpi-blocks', rev.blocks_found != null ? rev.blocks_found.toLocaleString() : '—');
+    set('rev-kpi-zion-mined', rev.zion_mined_total != null ? Number(rev.zion_mined_total).toLocaleString(undefined, {maximumFractionDigits: 2}) : '—');
+    set('rev-kpi-zion-paid', rev.zion_paid_total != null ? Number(rev.zion_paid_total).toLocaleString(undefined, {maximumFractionDigits: 2}) : '—');
+    set('rev-kpi-zion-day', rev.zion_per_day != null ? Number(rev.zion_per_day).toFixed(2) : '—');
+    const hashrate = rev.pool_hashrate || 0;
+    set('rev-kpi-hashrate', hashrate > 0 ? (hashrate > 1e6 ? (hashrate/1e6).toFixed(2) + ' MH/s' : hashrate > 1e3 ? (hashrate/1e3).toFixed(2) + ' KH/s' : hashrate.toFixed(0) + ' H/s') : '—');
 
     // Overview
     set('rev-strategy', rev.strategy || '—');
@@ -2717,35 +2725,49 @@ async function loadRevenueTab(){
     set('rev-strat-stake', stakeEnabled ? '✅ Active' : '—');
     set('rev-strat-bridge', bridgeEnabled ? '✅ Active' : '—');
 
-    // Coin revenue placeholder table
+    // PPLNS state
+    set('rev-pplns-rounds', rev.payout_rounds != null ? rev.payout_rounds.toLocaleString() : '—');
+    set('rev-pplns-miners', rev.registered_miners != null ? rev.registered_miners : '—');
+    const windowUsed = rev.pplns_window_used || 0;
+    const windowSize = rev.pplns_window_size || 0;
+    set('rev-pplns-window', windowSize > 0 ? windowUsed.toLocaleString() + ' / ' + windowSize.toLocaleString() : '—');
+    set('rev-pplns-pending', rev.zion_pending != null ? Number(rev.zion_pending).toFixed(4) : '—');
+
+    // Fee split accumulated (ZION)
+    set('rev-fee-human', rev.humanitarian_accumulated_zion != null ? Number(rev.humanitarian_accumulated_zion).toFixed(4) : '—');
+    set('rev-fee-issobella', rev.issobella_accumulated_zion != null ? Number(rev.issobella_accumulated_zion).toFixed(4) : '—');
+    set('rev-fee-pool', rev.pool_fee_accumulated_zion != null ? Number(rev.pool_fee_accumulated_zion).toFixed(4) : '—');
+
+    // Coin revenue table (live)
     const coinTbody = document.getElementById('rev-coin-tbody');
     if(coinTbody){
       const coins = rev.coin_revenue || [];
       if(coins.length === 0){
-        coinTbody.innerHTML = '<tr><td colspan="5" class="text-gray-500 text-center py-4">No live coin revenue data yet — placeholder</td></tr>';
+        coinTbody.innerHTML = '<tr><td colspan="6" class="text-gray-500 text-center py-4">No coin data</td></tr>';
       } else {
         coinTbody.innerHTML = coins.map(c => `<tr class="border-b border-white/5">
-          <td class="py-2 px-2 font-bold text-white">${escapeHtml(c.coin || '—')}</td>
+          <td class="py-2 px-2 font-bold ${c.active ? 'text-white' : 'text-gray-500'}">${escapeHtml(c.coin || '—')}</td>
           <td class="py-2 px-2 text-gray-300">${escapeHtml(c.algorithm || '—')}</td>
+          <td class="py-2 px-2 text-gray-400 text-[10px] truncate max-w-[120px]">${escapeHtml(c.pool || '—')}</td>
           <td class="py-2 px-2 text-right font-mono text-white">${(c.shares || 0).toLocaleString()}</td>
           <td class="py-2 px-2 text-right font-mono text-zion-gold">$${Number(c.revenue_usd || 0).toFixed(4)}</td>
-          <td class="py-2 px-2"><span class="${c.active ? 'text-emerald-400' : 'text-gray-500'}">${c.active ? 'Active' : 'Inactive'}</span></td>
+          <td class="py-2 px-2"><span class="${c.active ? 'text-emerald-400' : 'text-gray-500'}">${c.active ? '🟢 Active' : '⚪ Inactive'}</span></td>
         </tr>`).join('');
       }
     }
 
-    // Distribution placeholder table
+    // Distribution table (live PPLNS payouts)
     const distTbody = document.getElementById('rev-dist-tbody');
     if(distTbody){
       const dists = rev.distributions || [];
       if(dists.length === 0){
-        distTbody.innerHTML = '<tr><td colspan="4" class="text-gray-500 text-center py-4">No distributions yet — placeholder</td></tr>';
+        distTbody.innerHTML = '<tr><td colspan="4" class="text-gray-500 text-center py-4">No payouts yet</td></tr>';
       } else {
         distTbody.innerHTML = dists.map(d => `<tr class="border-b border-white/5">
-          <td class="py-2 px-2 text-gray-300 font-mono">${d.ts ? new Date(d.ts).toLocaleString() : '—'}</td>
-          <td class="py-2 px-2 text-right font-mono text-zion-gold">$${Number(d.amount_usd || 0).toFixed(4)}</td>
+          <td class="py-2 px-2 text-gray-300 font-mono text-[10px]">${d.ts ? new Date(d.ts).toLocaleString() : '—'}</td>
+          <td class="py-2 px-2 text-right font-mono text-zion-gold">${Number(d.amount_zion || 0).toFixed(4)}</td>
           <td class="py-2 px-2 text-gray-300">${escapeHtml(d.recipient || '—')}</td>
-          <td class="py-2 px-2 text-gray-300">${escapeHtml(d.type || '—')}</td>
+          <td class="py-2 px-2 text-gray-400">${escapeHtml(d.type || '—')}</td>
         </tr>`).join('');
       }
     }
