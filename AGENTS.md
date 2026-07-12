@@ -866,35 +866,43 @@ Fixed script: `V3/deploy/new-server/zion-watchdog.sh`. Report: [`POOL_WATCHDOG_F
 - **Crate:** `zion-auxpow` (workspace member, deps: blake3, tokio, sha3, serde, anyhow)
 - **Files:** `src/types.rs` (11 coins, config, stats, hysteresis), `src/external_hashers.rs` (Blake3, kHeavyHash), `src/auxpow_client.rs` (Stratum v1), `src/auxpow_scheduler.rs` (profit switcher + circuit breaker + mining loop)
 - **Pool integration:** `V3/L1/pool/src/bin/server.rs` — scheduler spawned on dedicated tokio runtime, env-gated `ZION_AUXPOW_ENABLED=1`. `/stats` API exposes 13-field `auxpow` section.
-- **Dashboard:** `ZION_OS/dashboard/` — AuxPow card in Pool Miners tab (status, coin, algo, pool, shares, revenue, uptime, circuit breaker, coin switches)
+- **Dashboard:** `ZION_OS/dashboard/` — AuxPow card in Pool Miners tab (status, coin, algo, pool, shares, revenue, uptime, circuit breaker, coin switches). **Expanded 2026-07-12** with 8 additional metrics: accept rate (with progress bar), revenue/hour estimate, shares/min, reject rate, supported coins list (KAS · ALPH · DCR), bridge queue depth, external jobs processed, ZION/Aux share ratio.
 - **Env vars:** `ZION_AUXPOW_ENABLED`, `ZION_AUXPOW_WALLET`, `ZION_AUXPOW_ALLOCATION`, `ZION_AUXPOW_POOL_PREFERENCE`, `ZION_AUXPOW_HYSTERESIS_PCT`, `ZION_AUXPOW_CB_THRESHOLD`, `ZION_AUXPOW_CB_RESET_SECS` (10 total)
 - **Tests:** 146/146 pass (40 auxpow + 73 pool lib + 33 pool server)
-- **Deployed:** Edge server `62.171.141.136` — pool binary + dashboard, `enabled: false` by default
-- **Live tested:** 2026-07-11 — TCP connect + Stratum subscribe to `kas.2miners.com:2020` succeeded, authorize rejected dummy wallet (expected), circuit breaker tripped correctly after 5 failures
+- **Deployed:** Edge server `62.171.141.136` — pool binary + dashboard, **LIVE & ACTIVE** (KAS merge-mining via `kas.2miners.com:2020`, kheavyhash algorithm, circuit breaker closed, 0 failures)
+- **Live tested:** 2026-07-11 — TCP connect + Stratum subscribe to `kas.2miners.com:2020` succeeded, authorize rejected dummy wallet (expected), circuit breaker tripped correctly after 5 failures. **2026-07-12 — fully operational** with real wallet `bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh`, authorized on KAS, scheduler running stable.
 - **Critical design notes:**
   - Tokio runtime MUST be leaked via `std::mem::forget()` — if dropped, all spawned tasks are immediately cancelled
   - Pool server has no `tracing` subscriber — use `println!` not `info!/warn!` for scheduler logging
   - Pool addresses change frequently — 2miners delisted DCR/ALPH, KAS port 4444→2020, ERG port 3056→8888 (verified 2026-07-11)
 - **Plan:** [`AUXPOW_MERGE_MINING_PLAN.md`](./AUXPOW_MERGE_MINING_PLAN.md) — 3-phase approach (Phase 1 = stratum proxy ✅, Phase 2 = miner dual-stratum, Phase 3 = true AuxPow protocol hard fork)
 - **Report:** [`docs/3.0.5/AUXPOW_INTEGRATION_REPORT_2026-07-11.md`](./docs/3.0.5/AUXPOW_INTEGRATION_REPORT_2026-07-11.md)
-- **Commits:** `44371aa10` (crate), `0a49a3f48` (pool + dashboard integration), `7eb9f89cb` (docs), `f14500db3` (3 bug fixes: runtime leak, pool addresses, println logging)
+- **Commits:** `44371aa10` (crate), `0a49a3f48` (pool + dashboard integration), `7eb9f89cb` (docs), `f14500db3` (3 bug fixes: runtime leak, pool addresses, println logging), `259e662be` (dashboard panel expansion — 8 new metrics)
 
-## Current Status (2026-07-07 — Post Hard Reset)
+## Current Status (2026-07-12 — Post Hard Reset + Chv3 + AuxPow Live)
 
 **System Status (new server 62.171.141.136):**
 - ✅ Hard Genesis Reset: Complete (2026-07-07) — new genesis hash `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
-- ✅ zion-node: Running (P2P 8333, RPC 127.0.0.1:8443, WS 127.0.0.1:8445, metrics 127.0.0.1:9100)
-- ✅ zion-pool: Running (Stratum 0.0.0.0:8444, fee split 89/5/5/1)
-- ✅ zion-bridge: Running (metrics 127.0.0.1:9101, 6 EVM chain watchers)
-- ✅ zion-dao: Running (API 127.0.0.1:8450)
+- ✅ zion-node: Running (P2P 8333, RPC 127.0.0.1:9443, WS 127.0.0.1:8445, metrics 127.0.0.1:9100) — **height 4036+** (synced from 3886→4035 via P2P + first pool-mined block 4036)
+- ✅ zion-node2: Running (follower, P2P 8334, RPC 127.0.0.1:8448)
+- ✅ zion-pool: Running (Stratum 0.0.0.0:8444, metrics 127.0.0.1:8455, fee split 89/5/5/1) — 11+ mineri, ~365 KH/s, 100% accept rate
+- ✅ zion-bridge: Running (metrics 127.0.0.1:9101, EVM: OP, Base, ARB, AVAX)
+- ✅ zion-dao: Running (API 127.0.0.1:8450, scanner → 127.0.0.1:9443)
 - ✅ zion-warp: Running (0.0.0.0:8453, 499 tests, 13 chain adapters)
+- ✅ zion-atomic-swap: Running (Base HTLC, scanner → 127.0.0.1:9443)
+- ✅ zion-dashboard: Running (127.0.0.1:8766, Basic Auth Yose/Issy)
+- ✅ zion-free-world: Running
+- ✅ zion-issobella: Running
+- ✅ zion-oasis: Running
+- ✅ zion-watchdog: Running (timer, 2 min interval, RPC → 127.0.0.1:9443)
 - 🔲 zion-ziondex-router: Pending deploy (127.0.0.1:8454, 28 tests, cross-chain AMM routing)
 - 🔲 zion-edge-lnd: Pending deploy (Docker: LND 8080/10009/9735 + bitcoind 18332/18333)
-- ✅ zion-dashboard: Running (127.0.0.1:8766, Basic Auth)
 - ✅ nginx: Running (80/443, SSL Let's Encrypt, HTTP/2)
 - ✅ Website: Running (Docker `zion-web:nextjs`, Next.js 16.2.9, 73+ routes, port 127.0.0.1:3001)
 - ✅ Dashboard: Running (`https://dashboard.zionterranova.com`, Basic Auth Yose/Issy)
-- ✅ Chain: Height 0 (fresh genesis), premine 16.78B ZION, block reward 5400.067 ZION
+- ✅ AuxPow: **LIVE & ACTIVE** — KAS merge-mining via `kas.2miners.com:2020` (kheavyhash), circuit breaker closed, scheduler stable
+- ✅ DeekshaChv3: Phase A deployed (alias, fork at H=4500) + Phase B deployed (stream telemetry)
+- ✅ Chain: Height 4036+ (post-hard-reset), premine 16.78B ZION, block reward 5400.067 ZION
 - ✅ OS: SSH keys-only, UFW (22/80/443), fail2ban, Docker 29.6.1
 - ✅ Monitoring: 3 cron jobs + systemd watchdog timer (2 min)
 - ✅ SSL: 3 Let's Encrypt certs (zionterranova.com, www, dashboard) — auto-renew
@@ -911,6 +919,30 @@ Fixed script: `V3/deploy/new-server/zion-watchdog.sh`. Report: [`POOL_WATCHDOG_F
 7. EVM contract redeploy (ZION-2026-005) — nové kontrakty s novými admin klíči + multisig
 8. Externí audit genesis konfigurace — před public launch
 9. Re-clone repo (all collaborators) — git history přepsána filter-repo
+
+### F5 Coinbase Balance Fix + Pool Logging + Template Cache (2026-07-12)
+
+**Root cause:** Node stuck at height 3886 — pool repeatedly found block 3887 but node silently rejected it. Debugging via manual RPC `submit_candidate` revealed: `"locally mined block failed validation: peer block TX from zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2 has insufficient balance: 394477888 < 480605963"`. The F5 balance check was incorrectly applied to **coinbase transactions** — coinbase TXs create new coins and have no sender balance to validate.
+
+**Fixes deployed (2026-07-12):**
+
+1. **F5 Coinbase Exempt** (`V3/L1/core/src/lib.rs`):
+   - `validate_peer_block()`: Added `transaction.from != "coinbase" && transaction.from != "genesis"` to F5 balance check condition
+   - `insert_transaction()`: Same exempt for mempool TXs (defense-in-depth)
+   - Coinbase and genesis TXs are now exempt from sender balance validation in both code paths
+
+2. **Pool: Node Rejection Logging** (`V3/L1/pool/src/bin/server.rs`):
+   - `submit_candidate_to_node()` now logs `node_rejected_block height=X nonce=Y reason=Z` when node rejects a block (previously silent — root cause was obscured)
+   - Also logs `node_accepted_block height=X nonce=Y` on successful submission for full visibility
+
+3. **Pool: Template Cache Invalidation** (`V3/L1/pool/src/bin/server.rs`):
+   - `TemplateCache::invalidate()` method added
+   - Called immediately after block acceptance (`block_accepted == true`) so miners get fresh template (height+1) without waiting for 3s TTL
+   - Prevents miners from working on stale template after a block is found
+
+**Result:** Node synced 3886→4035 via P2P from Node2, then accepted first pool-mined block 4036 (`node_accepted_block height=4036 nonce=21000320582`). Pool: 3100 shares, 100% accept rate, 0 rejected. AuxPow scheduler reconnected to KAS automatically.
+
+**Commits:** `259e662be` (dashboard AuxPow panel expansion — same deploy session)
 
 **Windows 11 GPU Miner Build Workaround (2026-06-07):**
 - `cargo build --release` fails on Windows 11 because `zion-miner.exe` in `V3/target/release/` is locked (Defender/antivirus).
