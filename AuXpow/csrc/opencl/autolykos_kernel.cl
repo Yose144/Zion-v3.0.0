@@ -1,10 +1,16 @@
 // Autolykos (Ergo) OpenCL placeholder kernel.
 //
-// This is a PHASE-2 SCAFFOLD.  It does NOT implement the real Autolykos
-// algorithm; it computes a SHA3-256 of (header_blob || nonce) and checks
+// NOTE: This is a PHASE-2 SCAFFOLD.  It does NOT implement the real Autolykos
+// v2 algorithm; it computes a SHA3-256 of (header_blob || nonce) and checks
 // the target.  It is functionally equivalent to the placeholder CPU hasher
 // in zion_auxpow::external_hashers so that pool validation stays in sync.
-// A production kernel would implement the full Autolykos memory-hard PoW.
+//
+// The real Autolykos v2 algorithm is memory-hard and requires a large
+// per-epoch dataset built from the block height / seed.
+//
+// References:
+//   - https://github.com/mhssamadani/Autolykos2_AMD_Miner
+//   - https://github.com/luminousmining/miner (sources/algo/autolykos_v2/opencl/)
 
 #define ROTL64(x, n) (((x) << (n)) | ((x) >> (64 - (n))))
 
