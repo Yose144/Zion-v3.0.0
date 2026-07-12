@@ -586,9 +586,14 @@ impl AuxPowClient {
                         v.as_u64()
                     }
                 });
-            // For kHeavyHash/KAS the prevhash field is the 32-byte pre_pow_hash
-            // and the target comes from mining.set_difficulty.
-            let target = nbits.clone().unwrap_or_else(|| "ffffffff".to_string());
+            // For kHeavyHash/KAS the prevhash field is the 32-byte pre_pow_hash.
+            // The share target is derived from the difficulty set by
+            // mining.set_difficulty, not from the network nbits field.
+            let target = if self.profile.algorithm.eq_ignore_ascii_case("kheavyhash") {
+                hex::encode(self.share_target().await)
+            } else {
+                nbits.clone().unwrap_or_else(|| "ffffffff".to_string())
+            };
             (header.to_string(), target, ntime, nbits)
         };
 
