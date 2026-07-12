@@ -1,27 +1,22 @@
 // kHeavyHash OpenCL kernel for Kaspa (KAS) mining.
 //
-// NOTE: This is a PHASE-2 SCAFFOLD.  It does NOT implement the real kHeavyHash
-// matrix multiply; it computes SHA3-256(pre_pow_hash || timestamp || nonce)
-// and checks the target, matching the CPU placeholder in
-// zion_auxpow::external_hashers.
+// Full implementation of the Kaspa consensus kHeavyHash algorithm:
+//   1. PowHash   = cSHAKE256("ProofOfWorkHash")(pre_pow_hash ‖ timestamp_le ‖ 32 zero bytes ‖ nonce_le)
+//   2. Matrix    = expand PowHash to 64 nibbles, multiply by fixed 64×64 matrix
+//                  (4-bit entries, generated from SHA3-256("KHeavyHash") via XoShiRo256++),
+//                  reduce each sum to bits 10–13, recombine to 32 bytes, XOR with PowHash
+//   3. HeavyHash = cSHAKE256("HeavyHash")(matrix_output)
 //
-// For a real implementation see the reference miners below.  The real
-// algorithm needs a deterministic 64x64 uint64 matrix generated from
-// pre_pow_hash and a uint64 matrix-vector multiply.
+// The 64×64 matrix is generated on the host (matching rusty-kaspa's Matrix::generate)
+// and passed as a __global buffer of 4096 u16 values (8192 bytes).
 //
 // References:
-//   - https://github.com/tmrlvi/kaspa-miner
-//   - https://github.com/ZorkNetwork/kheavyhash-miner
-//   - https://github.com/luminousmining/miner (sources/algo/kheavyhash/opencl/)
-//
-// kHeavyHash algorithm (Kaspa):
-//   1. pre_hash = SHA3-256(pre_pow_hash || timestamp || nonce)
-//   2. Expand pre_hash to 64-element vector using SHA3-256
-//   3. Matrix multiply: vec (1x64) × matrix (64x64) → result (1x64)
-//   4. XOR result with pre_hash-padded vector
-//   5. HeavyHash = SHA3-256(result_padded)
+//   - rusty-kaspa: https://github.com/kaspanet/rusty-kaspa
+//   - NIST SP 800-185 (cSHAKE)
+//   - Rust CPU reference: AuXpow/src/external_hashers.rs (hash_kheavyhash)
 
-// Keccak-f[1600] round constants (24 rounds)
+// ── Keccak-f[1600] ───────────────────────────────────────────────────
+
 __constant const ulong KECCAK_RC[24] = {
     0x0000000000000001UL, 0x0000000000008082UL, 0x800000000000808aUL,
     0x8000000080008000UL, 0x000000000000808bUL, 0x0000000080000001UL,
@@ -31,6 +26,16 @@ __constant const ulong KECCAK_RC[24] = {
     0x8000000000008003UL, 0x8000000000008002UL, 0x8000000000000080UL,
     0x000000000000800aUL, 0x800000008000000aUL, 0x8000000080008081UL,
     0x8000000000008080UL, 0x0000000080000001UL, 0x8000000080008008UL
+};
+
+// Keccak Rho rotation offsets
+__constant const uint KECCAK_RHO[24] = {
+    1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56, 8, 25, 43, 62, 18, 39, 61, 20, 44
+};
+
+// Keccak Pi permutation indices
+__constant const int KECCAK_PI[24] = {
+    10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4, 15, 23, 19, 13, 12, 2, 20, 14, 22, 9, 6, 1
 };
 
 #define ROTL64(x, n) (((x) << (n)) | ((x) >> (64 - (n))))
@@ -49,9 +54,9 @@ void keccak_f1600(ulong state[25]) {
         // Rho and Pi
         ulong temp = state[1];
         for (int t = 0; t < 24; t++) {
-            int idx = (t * 7 + 1) % 25;
+            int idx = KECCAK_PI[t];
             ulong tmp2 = state[idx];
-            state[idx] = ROTL64(temp, ((t+1)*(t+2)/2) % 64);
+            state[idx] = ROTL64(temp, KECCAK_RHO[t]);
             temp = tmp2;
         }
 
@@ -68,120 +73,200 @@ void keccak_f1600(ulong state[25]) {
     }
 }
 
-// SHA3-256: rate=136 bytes, output=32 bytes
-void sha3_256(__global const uchar *input, const uint len, uchar *output) {
+// ── SHA3-256 / cSHAKE256 ─────────────────────────────────────────────
+//
+// cSHAKE256(N, S, data) per NIST SP 800-185, matching the Rust sha3 crate's
+// CShake256Core::new(customization) which sets N="" (empty function name)
+// and S=customization_string.
+//
+// Construction:
+//   prefix = bytepad( encode_string(N) || encode_string(S), rate )
+//          = left_encode(rate) || encode_string(N) || encode_string(S) || 0x00…
+//   where encode_string(X) = left_encode(len(X)*8) || X
+//   and   left_encode(x)   = [num_value_bytes] || big_endian(x)  (stripping leading zeros)
+//
+// The prefix is exactly 136 bytes (one Keccak block for SHA3-256 rate).
+// It is absorbed first, then the data is absorbed with cSHAKE domain
+// separator 0x04 (not 0x06 as in plain SHA3).
+//
+// For N="" and S="ProofOfWorkHash" (15 bytes = 120 bits):
+//   left_encode(136)  = [0x01, 0x88]     (bytepad width = rate = 136)
+//   encode_string("") = left_encode(0) = [0x01, 0x00]
+//   encode_string(S)  = left_encode(120) || "ProofOfWorkHash"
+//                     = [0x01, 0x78] || "ProofOfWorkHash" (15 bytes)
+//   Total payload: 2 + 2 + 2 + 15 = 21 bytes, padded to 136 with zeros
+//
+// For N="" and S="HeavyHash" (9 bytes = 72 bits):
+//   left_encode(136)  = [0x01, 0x88]
+//   encode_string("") = [0x01, 0x00]
+//   encode_string(S)  = left_encode(72) || "HeavyHash"
+//                     = [0x01, 0x48] || "HeavyHash" (9 bytes)
+//   Total payload: 2 + 2 + 2 + 9 = 15 bytes, padded to 136 with zeros
+
+// Absorb one 136-byte block (17 lanes) into the Keccak state.
+inline void keccak_absorb_block(ulong state[25], const uchar *block) {
+    for (int i = 0; i < 17; i++) {
+        ulong lane = 0;
+        for (int j = 0; j < 8; j++)
+            lane |= ((ulong)block[i*8 + j]) << (j*8);
+        state[i] ^= lane;
+    }
+}
+
+// cSHAKE256 with a customization string S (function name N is empty).
+// Matches the Rust sha3 crate's CShake256Core::new(customization).
+//
+// The prefix (bytepad of encode_strings) is exactly 136 bytes = one Keccak
+// block, so it's absorbed in a single keccak_f1600 call.  Then the data
+// (which fits in a single block for our use cases) is absorbed with the
+// cSHAKE domain separator 0x04.
+void cshake256_custom(
+    const uchar *input,             // __private data to hash
+    const uint input_len,           // length of input
+    __constant const uchar *custom, // customization string S
+    const uint custom_len,          // length of S
+    uchar *output                   // 32-byte output
+) {
     ulong state[25];
     for (int i = 0; i < 25; i++) state[i] = 0;
 
-    // Absorb full blocks
-    uint offset = 0;
-    while (offset + 136 <= len) {
-        for (int i = 0; i < 17; i++) {
-            ulong block = 0;
-            for (int j = 0; j < 8; j++)
-                block |= ((ulong)input[offset + i*8 + j]) << (j*8);
-            state[i] ^= block;
-        }
-        keccak_f1600(state);
-        offset += 136;
-    }
+    // ── Build the 136-byte bytepad prefix ──
+    // prefix = left_encode(136) || encode_string("") || encode_string(S) || zeros
+    //        = left_encode(136) || left_encode(0) || left_encode(len(S)*8) || S || zeros
+    uchar prefix[136];
+    for (int i = 0; i < 136; i++) prefix[i] = 0;
+    uint pos = 0;
 
-    // Final block with padding
-    uchar padded[136];
-    for (int i = 0; i < 136; i++) padded[i] = 0;
-    uint remaining = len - offset;
-    for (int i = 0; i < remaining; i++) padded[i] = input[offset + i];
-    padded[remaining] = 0x06;  // SHA3 domain separator
-    padded[135] |= 0x80;
+    // left_encode(136) — bytepad width (= rate)
+    prefix[pos++] = 0x01;
+    prefix[pos++] = 0x88;
 
-    for (int i = 0; i < 17; i++) {
-        ulong block = 0;
-        for (int j = 0; j < 8; j++)
-            block |= ((ulong)padded[i*8 + j]) << (j*8);
-        state[i] ^= block;
+    // encode_string("") — left_encode(0) for empty function name N
+    prefix[pos++] = 0x01;
+    prefix[pos++] = 0x00;
+
+    // encode_string(S) — left_encode(custom_len * 8) || S
+    uint custom_bitlen = custom_len * 8;
+    if (custom_bitlen < 256) {
+        prefix[pos++] = 0x01;
+        prefix[pos++] = (uchar)custom_bitlen;
+    } else {
+        prefix[pos++] = 0x02;
+        prefix[pos++] = (uchar)(custom_bitlen >> 8);
+        prefix[pos++] = (uchar)(custom_bitlen & 0xFF);
     }
+    for (uint i = 0; i < custom_len; i++)
+        prefix[pos++] = custom[i];
+
+    // Remaining bytes are already zero (bytepad padding to 136)
+
+    // Absorb prefix block and permute
+    keccak_absorb_block(state, prefix);
     keccak_f1600(state);
 
-    // Squeeze 32 bytes
+    // ── Absorb data with cSHAKE padding (0x04 domain) ──
+    // Our data always fits in a single 136-byte block.
+    uchar data_block[136];
+    for (int i = 0; i < 136; i++) data_block[i] = 0;
+    for (uint i = 0; i < input_len; i++)
+        data_block[i] = input[i];
+    data_block[input_len] = 0x04;   // cSHAKE domain separator
+    data_block[135] |= 0x80;        // end-of-rate padding
+
+    keccak_absorb_block(state, data_block);
+    keccak_f1600(state);
+
+    // Squeeze 32 bytes (4 lanes)
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 8; j++)
             output[i*8 + j] = (uchar)(state[i] >> (j*8));
     }
 }
 
-// kHeavyHash matrix (64x64 u64 values, generated from seed)
-// In a real implementation, this would be precomputed and stored in
-// constant memory or a separate buffer.  For this simplified kernel,
-// we generate it on the fly.
+// ── Customization string constants ───────────────────────────────────
+// These are used as the customization string S in cSHAKE256 (N is empty).
+
+__constant const uchar CUSTOM_POW_HASH[] = {
+    'P', 'r', 'o', 'o', 'f', 'O', 'f', 'W', 'o', 'r', 'k', 'H', 'a', 's', 'h'
+};
+__constant const uint CUSTOM_POW_HASH_LEN = 15;
+
+__constant const uchar CUSTOM_HEAVY_HASH[] = {
+    'H', 'e', 'a', 'v', 'y', 'H', 'a', 's', 'h'
+};
+__constant const uint CUSTOM_HEAVY_HASH_LEN = 9;
+
+// ── Mining kernel ────────────────────────────────────────────────────
+//
+// Kernel arguments:
+//   pre_pow_hash  — 32-byte pre-pow hash from mining.notify
+//   timestamp     — block timestamp (little-endian u64)
+//   target        — 32-byte target (big-endian byte comparison)
+//   base_nonce    — first nonce in this batch
+//   matrix        — 64×64 u16 matrix (4096 values = 8192 bytes), generated
+//                   on the host from SHA3-256("KHeavyHash") via XoShiRo256++
+//   output_nonce  — single u64, written when a solution is found
+//   output_hash   — 32-byte hash of the winning nonce
+//   found         — atomic flag: 0 = not found, 1 = found
 __kernel void kheavyhash_mine(
-    __global const uchar *pre_pow_hash,  // 32 bytes
+    __global const uchar *pre_pow_hash,   // 32 bytes
     const ulong timestamp,
-    __global const uchar *target,
+    __global const uchar *target,          // 32 bytes
     ulong base_nonce,
+    __global const ushort *matrix,         // 64×64 = 4096 u16 values
     __global ulong *output_nonce,
     __global uchar *output_hash,
     __global volatile uint *found
 )
 {
-    if (atomic_load(found)) return;
+    if (*found) return;
 
     ulong nonce = base_nonce + (ulong)get_global_id(0);
 
-    // Step 1: pre_hash = SHA3-256(pre_pow_hash || timestamp_le || nonce_le)
-    // Input is 32 + 8 + 8 = 48 bytes
-    uchar input1[48];
-    for (int i = 0; i < 32; i++) input1[i] = pre_pow_hash[i];
-    for (int i = 0; i < 8; i++) input1[32 + i] = (uchar)(timestamp >> (i*8));
-    for (int i = 0; i < 8; i++) input1[40 + i] = (uchar)(nonce >> (i*8));
+    // ── Step 1: PowHash = cSHAKE256("ProofOfWorkHash")(pre_pow_hash ‖ timestamp_le ‖ 32 zero bytes ‖ nonce_le)
+    // Input is 32 + 8 + 32 + 8 = 80 bytes.
+    // We build it in a private buffer, then call cshake256_hash_private.
+    uchar pow_input[80];
+    for (int i = 0; i < 32; i++) pow_input[i] = pre_pow_hash[i];
+    for (int i = 0; i < 8; i++) pow_input[32 + i] = (uchar)(timestamp >> (i*8));
+    for (int i = 0; i < 32; i++) pow_input[40 + i] = 0;
+    for (int i = 0; i < 8; i++) pow_input[72 + i] = (uchar)(nonce >> (i*8));
 
-    uchar pre_hash[32];
-    sha3_256(input1, 48, pre_hash);
+    uchar pow_hash[32];
+    cshake256_custom(pow_input, 80, CUSTOM_POW_HASH, CUSTOM_POW_HASH_LEN, pow_hash);
 
-    // Step 2: Expand to 64 u64 elements
-    // First 4 from pre_hash, rest from SHA3-256(pre_hash || index)
-    ulong vec[64];
-    for (int i = 0; i < 4; i++) {
-        vec[i] = 0;
-        for (int j = 0; j < 8; j++)
-            vec[i] |= ((ulong)pre_hash[i*8 + j]) << (j*8);
+    // ── Step 2: Matrix multiply
+    // Expand PowHash to 64 nibbles: vec[2*i] = high nibble, vec[2*i+1] = low nibble
+    uchar vec[64];
+    for (int i = 0; i < 32; i++) {
+        vec[2 * i]     = pow_hash[i] >> 4;
+        vec[2 * i + 1] = pow_hash[i] & 0x0F;
     }
-    for (int i = 4; i < 64; i += 4) {
-        uchar seed[33];
-        for (int j = 0; j < 32; j++) seed[j] = pre_hash[j];
-        seed[32] = (uchar)i;
-        uchar h[32];
-        sha3_256(seed, 33, h);
-        for (int j = 0; j < 4 && i + j < 64; j++) {
-            vec[i + j] = 0;
-            for (int k = 0; k < 8; k++)
-                vec[i + j] |= ((ulong)h[j*8 + k]) << (k*8);
+
+    // Matrix-vector multiply: for each output byte i (0..31):
+    //   sum1 = Σ matrix[2*i][j]   * vec[j]
+    //   sum2 = Σ matrix[2*i+1][j] * vec[j]
+    //   product[i] = ((sum1 >> 10) << 4) | (sum2 >> 10)
+    uchar product[32];
+    for (int i = 0; i < 32; i++) {
+        uint sum1 = 0;
+        uint sum2 = 0;
+        for (int j = 0; j < 64; j++) {
+            sum1 += (uint)matrix[(2 * i) * 64 + j]     * (uint)vec[j];
+            sum2 += (uint)matrix[(2 * i + 1) * 64 + j] * (uint)vec[j];
         }
+        product[i] = (uchar)(((sum1 >> 10) << 4) | (sum2 >> 10));
     }
 
-    // Step 3: Matrix multiply (simplified — uses identity matrix as placeholder)
-    // A real implementation would use the actual Kaspa matrix.
-    ulong result[64];
-    for (int i = 0; i < 64; i++) result[i] = vec[i];  // Placeholder
+    // XOR product with original PowHash
+    for (int i = 0; i < 32; i++)
+        product[i] ^= pow_hash[i];
 
-    // Step 4: XOR with pre_hash-padded vector
-    for (int i = 0; i < 4; i++) {
-        ulong ph = 0;
-        for (int j = 0; j < 8; j++)
-            ph |= ((ulong)pre_hash[i*8 + j]) << (j*8);
-        result[i] ^= ph;
-    }
-
-    // Step 5: HeavyHash = SHA3-256(result_padded)
-    uchar result_bytes[64];
-    for (int i = 0; i < 8; i++) {
-        for (int j = 0; j < 8; j++)
-            result_bytes[i*8 + j] = (uchar)(vec[i] >> (j*8));  // Use vec for now
-    }
-
+    // ── Step 3: HeavyHash = cSHAKE256("HeavyHash")(product)
     uchar hash[32];
-    sha3_256(result_bytes, 64, hash);
+    cshake256_custom(product, 32, CUSTOM_HEAVY_HASH, CUSTOM_HEAVY_HASH_LEN, hash);
 
-    // Check target
+    // ── Step 4: Check target (big-endian byte comparison: hash <= target)
     int meets = 1;
     for (int i = 0; i < 32; i++) {
         if (hash[i] < target[i]) { meets = 1; break; }

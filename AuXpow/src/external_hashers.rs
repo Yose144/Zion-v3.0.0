@@ -568,6 +568,13 @@ mod tests {
         // The old (incorrect, no-matrix) hash was b0b5b47d… — verify we differ
         let old_wrong = "b0b5b47de00be8f689cbe89818f8a075350055c5e9dbcda7d834395b08be2252";
         assert_ne!(hash_to_hex(&h), old_wrong, "kHeavyHash with matrix must differ from no-matrix version");
+        // Verified against GPU OpenCL kernel: both produce
+        // 430ee3e8261c539b1ff403cc0adc3587e74753a24f628be52b9dea8a6cfe3e66
+        assert_eq!(
+            hash_to_hex(&h),
+            "430ee3e8261c539b1ff403cc0adc3587e74753a24f628be52b9dea8a6cfe3e66",
+            "kHeavyHash must match the verified GPU reference vector"
+        );
     }
 
     #[test]

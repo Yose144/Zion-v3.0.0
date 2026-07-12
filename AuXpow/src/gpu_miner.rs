@@ -6,7 +6,7 @@
 //!
 //! Currently supported GPU algorithms (when `gpu-opencl` is enabled):
 //!   - `blake3` / `blake3_alph` — Alephium double-Blake3 PoW
-//!   - `kheavyhash` / `kheavyhash_kas` — Kaspa kHeavyHash PoW (simplified)
+//!   - `kheavyhash` / `kheavyhash_kas` — Kaspa kHeavyHash PoW (full consensus)
 //!
 //! Other algorithms return `Ok(None)` or an unsupported error and fall back
 //! to the CPU miner.
@@ -70,6 +70,119 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
         "ethash" | "etchash" | "ethash_etc" => Some(("ethash_kernel.cl", "ethash_mine")),
         _ => None,
     }
+}
+
+// ── kHeavyHash matrix generation (host side) ─────────────────────────
+//
+// Generates the fixed 64×64 matrix of 4-bit values used by the Kaspa
+// kHeavyHash algorithm.  Matches rusty-kaspa's `Matrix::generate`:
+//   1. seed = SHA3-256("KHeavyHash")
+//   2. XoShiRo256++ PRNG seeded with `seed`
+//   3. Generate a 64×64 matrix where each entry is 4 bits (0–15)
+//   4. Retry until the matrix has full rank (64) over the reals
+
+struct XoShiRo256PlusPlus {
+    s: [u64; 4],
+}
+
+impl XoShiRo256PlusPlus {
+    fn new(seed: [u8; 32]) -> Self {
+        let mut s = [0u64; 4];
+        for i in 0..4 {
+            s[i] = u64::from_le_bytes(seed[i * 8..(i + 1) * 8].try_into().unwrap());
+        }
+        Self { s }
+    }
+
+    #[inline(always)]
+    fn next(&mut self) -> u64 {
+        let res = self.s[0].wrapping_add(self.s[0].wrapping_add(self.s[3]).rotate_left(23));
+        let t = self.s[1] << 17;
+        self.s[2] ^= self.s[0];
+        self.s[3] ^= self.s[1];
+        self.s[1] ^= self.s[2];
+        self.s[0] ^= self.s[3];
+        self.s[2] ^= t;
+        self.s[3] = self.s[3].rotate_left(45);
+        res
+    }
+}
+
+/// Generate the 64×64 kHeavyHash matrix as a flat array of 4096 u16 values
+/// (each in range 0–15).  The matrix is generated once and cached.
+fn generate_kheavy_matrix() -> [u16; 4096] {
+    use std::sync::OnceLock;
+    static MATRIX: OnceLock<[u16; 4096]> = OnceLock::new();
+    *MATRIX.get_or_init(|| {
+        use sha3::{Digest, Sha3_256};
+        let seed = Sha3_256::digest(b"KHeavyHash");
+        let mut rng = XoShiRo256PlusPlus::new(seed.into());
+
+        loop {
+            // Generate a 64×64 matrix of 4-bit values
+            let mut mat = [[0u16; 64]; 64];
+            for row in &mut mat {
+                let mut val = 0u64;
+                for (j, elem) in row.iter_mut().enumerate() {
+                    let shift = j % 16;
+                    if shift == 0 {
+                        val = rng.next();
+                    }
+                    *elem = ((val >> (4 * shift)) & 0x0F) as u16;
+                }
+            }
+
+            // Check rank == 64 (Gaussian elimination over the reals)
+            if compute_rank_64(&mat) == 64 {
+                // Flatten to [u16; 4096] (row-major: matrix[row*64 + col])
+                let mut flat = [0u16; 4096];
+                for i in 0..64 {
+                    for j in 0..64 {
+                        flat[i * 64 + j] = mat[i][j];
+                    }
+                }
+                return flat;
+            }
+        }
+    })
+}
+
+/// Compute the rank of a 64×64 matrix over the reals using Gaussian
+/// elimination.  Matches rusty-kaspa's `compute_rank`.
+fn compute_rank_64(mat: &[[u16; 64]; 64]) -> usize {
+    const EPS: f64 = 1e-9;
+    let mut m = [[0.0f64; 64]; 64];
+    for i in 0..64 {
+        for j in 0..64 {
+            m[i][j] = mat[i][j] as f64;
+        }
+    }
+    let mut rank = 0;
+    let mut row_selected = [false; 64];
+    for i in 0..64 {
+        let mut j = 0;
+        while j < 64 {
+            if !row_selected[j] && m[j][i].abs() > EPS {
+                break;
+            }
+            j += 1;
+        }
+        if j != 64 {
+            rank += 1;
+            row_selected[j] = true;
+            for p in (i + 1)..64 {
+                m[j][p] /= m[j][i];
+            }
+            for k in 0..64 {
+                if k != j && m[k][i].abs() > EPS {
+                    for p in (i + 1)..64 {
+                        m[k][p] -= m[j][p] * m[k][i];
+                    }
+                }
+            }
+        }
+    }
+    rank
 }
 
 impl GpuMiner {
@@ -414,6 +527,16 @@ impl GpuMiner {
             .copy_host_slice(target.as_slice())
             .build()?;
 
+        // Generate the 64×64 kHeavyHash matrix (4096 u16 values) on the host.
+        // This matches rusty-kaspa's Matrix::generate: seed = SHA3-256("KHeavyHash"),
+        // XoShiRo256++ PRNG, retry until full rank (64).
+        let matrix = generate_kheavy_matrix();
+        let matrix_buf: Buffer<u16> = Buffer::builder()
+            .queue(q.clone())
+            .len(4096)
+            .copy_host_slice(&matrix)
+            .build()?;
+
         let kernel = Kernel::builder()
             .program(pro_que.program())
             .name(kernel_name)
@@ -421,6 +544,7 @@ impl GpuMiner {
             .arg(timestamp)
             .arg(&target_buf)
             .arg(base_nonce)
+            .arg(&matrix_buf)
             .arg(output_nonce_buf)
             .arg(output_hash_buf)
             .arg(found_flag_buf)
