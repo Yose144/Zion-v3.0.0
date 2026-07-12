@@ -4875,6 +4875,60 @@ Total: 67 work units
 
 ---
 
+## DeekshaChv3 Phase C — GPU Kernel Parity + KAT — 2026-07-12
+
+### Co
+Phase C poskytuje dedikovaný OpenCL kernel pro `deeksha_chv3` s canonical
+názvem a KAT (Known Answer Test) vektory pro CPU↔GPU parity verifikaci.
+
+### Implementace
+
+**Nový OpenCL kernel (`deeksha_chv3.cl`):**
+- Bit-identical kopie `deeksha_lite.cl` s entry pointem `deeksha_chv3_mine`
+- Pipeline: Keccak256→MemoryHard→AesMix→KeccakFinal (4 steps)
+- 256 KiB scratchpad, 8192 blocks, 2 passes, 64 random reads
+- GCN-safe (union pro keccak state, rotate(long,long) pro AMD)
+
+**OpenCL kernel exports (`opencl_kernel.rs`):**
+- `DEEKSHA_CHV3_KERNEL` — kernel source constant
+- `DEEKSHA_CHV3_KERNEL_NAME` = `"deeksha_chv3_mine"`
+- `get_deeksha_chv3_kernel_source()` — getter
+- `has_deeksha_chv3_kernel()` — presence check
+- 4 new tests: kernel present, name matches, constants match lite
+
+**GPU backend dispatch (`gpu_backend.rs`):**
+- `OpenClDeekshaLiteMiner::new_chv3()` — constructor using chv3 kernel
+- `new_with_kernel(work_size, use_chv3)` — shared init logic
+- Dispatch: `"deeksha_chv3"` → `new_chv3()`, `"deeksha_lite_v1"` → `new()`
+- Kernel name parameterized (no hardcoded lite name)
+
+**KAT vectors (`deeksha_chv3.rs` — 5 new tests):**
+1. `chv3_kat_known_vector_1`: zeros[80] + nonce=0 → chv3 == lite
+2. `chv3_kat_known_vector_2`: pattern[80] + nonce=0x4242... → chv3 == lite
+3. `chv3_kat_known_vector_3`: realistic block header + nonce=12345 → chv3 == lite
+4. `chv3_kat_streams_parity`: with_streams hash == plain hash
+5. `chv3_kat_gpu_kernel_present`: kernel source + constants verified
+
+### Test results
+- **186 cosmic-harmony tests pass** (17 chv3 total: 6 Phase A + 6 Phase B + 5 Phase C)
+- Pool build: OK (2 warnings — pre-existing dead code)
+- Miner build: OK
+
+### Consensus safety
+- GPU kernel je bit-identical s `deeksha_lite.cl` (pouze název změněn)
+- KAT vektory verifikují chv3 == lite pro všechny test cases
+- Žádná změna hash outputu
+
+### Commit
+`1ef6709b4` — feat(chv3): Phase C — GPU kernel parity + KAT vectors
+
+### Edge deploy
+- Pool restart na nový binary, 1 blok found po restartu
+- AuxPow scheduler připojen k KAS, 0 failures
+- GPU kernel `deeksha_chv3_mine` dostupný pro miner dispatch
+
+---
+
 ## Session 2026-07-12 — F5 Coinbase Balance Fix + Pool Logging + Template Cache + AuxPow Dashboard Expansion
 
 ### Problém: Node stuck na 3886
