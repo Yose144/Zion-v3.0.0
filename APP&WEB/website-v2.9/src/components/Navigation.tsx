@@ -194,7 +194,7 @@ export default function Navigation() {
   }, []);
 
   return (
-    <nav className="fixed top-16 sm:top-[4.5rem] md:top-20 left-0 right-0 z-50">
+    <nav className="fixed top-20 sm:top-24 md:top-28 left-0 right-0 z-50">
       {/* Subtle ambient glow */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-linear-to-r from-emerald-500/10 via-zion-gold/12 to-amber-600/10 blur-2xl opacity-60" />
       <div className="relative mx-auto w-[min(96vw,1080px)] py-1" data-nav-desktop>
