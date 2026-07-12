@@ -60,9 +60,10 @@ const QUICK_COMMANDS: QuickCommand[] = [
   { label: 'dao proposals', icon: Boxes, desc: 'Governance', category: 'DAO & Bridge' },
   { label: 'bridge status', icon: GitBranch, desc: 'Bridge relay', category: 'DAO & Bridge' },
   // Wallet
-  { label: 'wallet balance', icon: Wallet, desc: 'Balance', category: 'Wallet' },
+  { label: 'wallet new', icon: Wallet, desc: 'Wallet info', category: 'Wallet' },
   // AI
   { label: 'ai status', icon: Sparkles, desc: 'AI health', category: 'AI' },
+  { label: 'ai ask what is zion', icon: Bot, desc: 'Ask Hiran AI', category: 'AI' },
   // Meta
   { label: 'status', icon: Activity, desc: 'Health check', category: 'Meta' },
   { label: 'version', icon: Terminal, desc: 'Versions', category: 'Meta' },
@@ -126,7 +127,7 @@ The Golden Age begins. Peace & One Love 4ever.
 `;
 
 const WELCOME_TEXT = `${GENESIS_BANNER}
-ZION Web CLI v2.1.0 — v3.0.5 mainnet
+ZION Web CLI v3.0.5-beta — Mainnet
 6-decimal flowers (1 ZION = 1,000,000 flowers)
 Fee split: 89% miner / 5% humanitarian / 5% Issobella / 1% burned
 Type "help" or "?" for all commands. Press Tab for autocomplete.`;
@@ -397,7 +398,7 @@ export default function WebTerminal() {
                   </span>
                 </p>
                 <p className="truncate text-[10px] text-gray-500 sm:text-xs">
-                  Web CLI v2.1.0 · node · pool · explorer · defi · mine · dao · bridge · ai
+                  Web CLI v3.0.5-beta · node · pool · explorer · defi · mine · dao · bridge · ai
                 </p>
               </div>
             </div>
