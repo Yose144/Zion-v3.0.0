@@ -3,7 +3,8 @@
 > **Working name:** `deeksha_chv3`
 > **Goal:** Sjednotit všechny revenue streamy do jednoho canonical algoritmu
 > podle `docs/2.9.8/COSMIC_HARMONY_DEEKSHA_SPEC.md`.
-> **Status:** Draft — čeká na implementaci po deploy validaci.
+> **Status:** Phase A DEPLOYED (2026-07-12) — soft fork active at block 4500.
+> **CHV3_FORK_HEIGHT:** 4500 (bit-identical alias over `deeksha_lite_v1`).
 
 ---
 
@@ -146,13 +147,33 @@ Stream telemetry už existuje a je consensus-safe (nemění hash output).
 
 ## 6) Migrace
 
-### Fáze A — Sjednocení dispatch (no consensus change)
+### Fáze A — Sjednocení dispatch (no consensus change) — ✅ DEPLOYED 2026-07-12
 
-1. Vytvořit `deeksha_chv3.rs` jako wrapper kolem existující `deeksha_v2`.
-2. Pool: změnit `ZION_POOL_ALGORITHM=deeksha_chv3` (alias na v2).
-3. Miner: alias `deeksha_chv3` → `deeksha_v2` hash funkce.
-4. GPU: alias `deeksha_chv3` → existující `cosmic_harmony_deeksha.cl`.
-5. **Žádná změna hash outputu** — chain pokračuje.
+**Implementováno a deploynuto na Edge (62.171.141.136).**
+
+1. ✅ Vytvořen `deeksha_chv3.rs` — wrapper kolem `deeksha_lite` (aktuální canonical).
+   - 6 parity testů: bit-identical s `deeksha_lite_v1`.
+   - `DEEKSHA_CHV3_PROFILE = "deeksha_chv3"`, `CHV3_FORK_HEIGHT = 4500`.
+2. ✅ Core: `hash_with_algorithm("deeksha_chv3")` → `deeksha_lite` (alias).
+3. ✅ Pool: `ActiveJob::algorithm()` opraven — používá `advertised_algorithm()`
+   místo hardcoded `"cosmic_harmony_ekam_deeksha_v2"` (bug fix — node nyní
+   přijímá bloky).
+4. ✅ Miner: `parallel.rs` CPU dispatch + `gpu_backend.rs` OpenCL dispatch.
+5. ✅ `profile_name_for_height()`:
+   - height < 4500 → `deeksha_lite_v1`
+   - 4500 ≤ h < 5000 → `deeksha_chv3` (Phase A alias)
+   - height ≥ 5000 → `deeksha_lite_fire` (Fire fork)
+6. ✅ `ConsensusConfig` rozšířen o `chv3_fork_height`.
+7. ✅ **Žádná změna hash outputu** — chain pokračuje, 100% share acceptance.
+
+**Commity:**
+- `6530b836f` — Phase A wrapper + dispatch alias + pool fix
+- `7dd81cfb7` — CHV3_FORK_HEIGHT=4500
+
+**Edge deploy výsledek:**
+- Pool: 12 mineri, 410 KH/s, 36+ bloků nalezeno, 99.97% acceptance.
+- Node: chain height 3922+, bloky přijímány.
+- L2 služby (bridge, dao, warp, atomic-swap): rebuild + restart, 0 errors.
 
 ### Fáze B — Telemetrie sjednocení
 

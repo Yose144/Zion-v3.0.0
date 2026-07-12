@@ -3024,7 +3024,11 @@ impl ChainState {
                     // prior accepted blocks plus credits/debits from earlier
                     // transactions in THIS block (so multiple TXs from the
                     // same sender in one block are handled correctly).
-                    if self.balance_check_active_at(block.height) {
+                    // Coinbase and genesis TXs are exempt — they create new
+                    // coins and have no sender balance to check.
+                    if self.balance_check_active_at(block.height)
+                        && transaction.from != "coinbase"
+                        && transaction.from != "genesis" {
                         let mut sender_balance: i128 =
                             self.confirmed_balance_for(&transaction.from) as i128;
                         // Apply credits/debits from earlier TXs in this block
@@ -3322,7 +3326,10 @@ impl ChainState {
         // check, any Ed25519 key holder can create ZION from nothing by
         // submitting a TX from an empty address. Height-gated so historical
         // blocks (pre-fix) are not rejected on IBD.
-        if self.balance_check_active_at(self.height) {
+        // Coinbase and genesis TXs are exempt — they create new coins.
+        if self.balance_check_active_at(self.height)
+            && transaction.from != "coinbase"
+            && transaction.from != "genesis" {
             let sender_balance = self.account_balance_for(&transaction.from);
             let needed = transaction.amount_zion + transaction.fee_zion as u128;
             if sender_balance < needed {

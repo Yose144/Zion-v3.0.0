@@ -4649,3 +4649,103 @@ V4 NFT pozice deployeru (1 NFT v PositionManager po burn):
 | Core PC (lokální) | `http://127.0.0.1:8766` | localhost |
 
 Auth: `admin:root` (HTTP Basic)
+
+---
+
+## Session 2026-07-12 — DeekshaChv3 Phase A + Edge Full Recovery
+
+### DeekshaChv3 Phase A — DEPLOYED
+
+**Co:** Sjednocení algorithm dispatch pod jeden canonical název `deeksha_chv3`.
+Phase A = bit-identical alias over `deeksha_lite_v1`, soft fork at block 4500.
+
+**CHV3_FORK_HEIGHT = 4500** (aktuální height ~3922, fork za ~578 bloků).
+
+`profile_name_for_height()` dispatch:
+- height < 4500 → `deeksha_lite_v1` (dnes)
+- 4500 ≤ h < 5000 → `deeksha_chv3` (Phase A alias)
+- height ≥ 5000 → `deeksha_lite_fire` (Fire fork)
+
+**Soubory:**
+- `V3/L1/cosmic-harmony/src/deeksha_chv3.rs` — wrapper + 6 parity testů
+- `V3/L1/cosmic-harmony/src/lib.rs` — `CHV3_FORK_HEIGHT`, `CHV3_PROFILE`, dispatch
+- `V3/L1/core/src/lib.rs` — `hash_with_algorithm("deeksha_chv3")` alias + `ConsensusConfig.chv3_fork_height`
+- `V3/L1/pool/src/bin/server.rs` — `ActiveJob::algorithm()` fix + template cache invalidation
+- `V3/L1/miner/src/parallel.rs` — CPU hash dispatch alias
+- `V3/L1/miner/src/gpu_backend.rs` — OpenCL kernel dispatch alias + benchmark
+
+**Pool bug fix:** `ActiveJob::algorithm()` pro Zion joby hardcoded `"cosmic_harmony_ekam_deeksha_v2"`
+místo pool's advertised algorithm. Node odmítal bloky kvůli algorithm mismatch.
+Opraveno na `zion_pool::advertised_algorithm()`. Po fixu node přijímá bloky.
+
+**Commity:**
+| Commit | Popis |
+|--------|-------|
+| `6530b836f` | feat(chv3): Phase A — deeksha_chv3 unified algorithm alias |
+| `7dd81cfb7` | feat(chv3): set CHV3_FORK_HEIGHT=4500 — soft fork activation |
+
+### Edge Full Recovery — 11/11 služeb active
+
+Po deploy CHV3 Phase A bylo 5 služeb inactive (zastaveny během deploy).
+Autonomně opraveno:
+
+| Služba | Problém | Řešení |
+|--------|---------|--------|
+| zion-bridge | L1 scanner `last_l1_height=1700` (bloky 1-2898 neexistují po 3.0.4 reset) | DB update → 3907, rebuild, restart |
+| zion-dao | Stopped během deploy | Rebuild + restart |
+| zion-warp | Stopped během deploy | Rebuild + restart |
+| zion-atomic-swap | L1 scanner `scan_height=2652` (bloky neexistují) | DB update → 3907, rebuild, restart |
+| zion-edge-backup | Script `backup-edge.sh` neměl execute permission | `chmod +x` |
+| zion-watchdog | Špatný RPC port (8443→9443) + endpoint (/health→/status) | sed fix |
+
+**L2/L3 rebuild:** `cargo build --release -p zion-bridge -p zion-dao -p zion-warp -p zion-atomic-swap`
+→ 5m 41s, všechny binárky deploynuty.
+
+### Edge Health Check (2026-07-12 19:07 CEST)
+
+```
+SERVICES (11/11 active):
+  zion-node            active   (chain height: 3922)
+  zion-node2           active   (follower)
+  zion-pool            active   (12 mineri, 410 KH/s, 36 bloků)
+  zion-bridge          active   (EVM: OP, Base, ARB, AVAX)
+  zion-dao             active   (scanner → 127.0.0.1:9443)
+  zion-warp            active   (port 8453)
+  zion-atomic-swap     active   (Base HTLC)
+  zion-dashboard       active
+  zion-free-world      active
+  zion-issobella       active
+  zion-oasis           active
+
+POOL:
+  submits: 58847, accepted: 58830 (99.97%), rejected: 17
+  active_sessions: 12, hashrate: 410 KH/s
+  blocks_found: 36
+
+L2 ERRORS (last 1 min): 0
+```
+
+### Topologie (aktuální)
+
+```
+┌─ EDGE (62.171.141.136) — ssh zion-new ─────────────────────┐
+│  Node1 (9443) height 3922+, v3.0.4 post-hard-reset          │
+│  Node2 (8448) follower                                     │
+│  Pool (8444) — 12 mineri, 410 KH/s                         │
+│  Bridge (9101) — EVM: OP, Base, ARB, AVAX                  │
+│  DAO (8450) — scanner → 127.0.0.1:9443                     │
+│  WARP (8453) — cross-chain relay                           │
+│  Atomic Swap (8452) — Base HTLC                            │
+│  Dashboard (8766) — systemd                                │
+│  Free World, Issobella, Oasis — systemd                    │
+│  Watchdog — timer (2 min interval)                         │
+│  Edge backup — timer (daily + weekly)                      │
+│  Prometheus metrics: Node :9100, Pool :8455                │
+│  Disk: ~46%                                                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Další kroky (až se přiblížíme bloku 4500)
+- **Phase B:** stream telemetry (`deeksha_chv3_with_streams`)
+- **Phase C:** GPU kernel parity (`deeksha_chv3.cl`)
+- **Phase D:** optional consensus změna (hard fork, governed)
