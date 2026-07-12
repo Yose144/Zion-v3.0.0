@@ -30,8 +30,10 @@ export default function BackgroundToggle({ placement = 'fixed' }: { placement?: 
     ? 'absolute right-0 top-full mt-2 w-72 bg-black/90 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden z-50'
     : 'fixed bottom-20 right-4 w-72 bg-black/90 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden z-50';
 
+  const currentLabel = backgroundConfig[mode]?.label || mode;
+
   return (
-    <div className="relative">
+    <div className="relative flex items-center gap-2">
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
         whileHover={{ scale: 1.08 }}
@@ -89,6 +91,11 @@ export default function BackgroundToggle({ placement = 'fixed' }: { placement?: 
 
         <CurrentIcon className="w-6 h-6" style={{ color: `rgb(${currentColor})` }} />
       </motion.button>
+
+      {/* Debug label to verify mode actually changes */}
+      <span className="text-[10px] uppercase tracking-wider text-white/70 font-medium hidden sm:inline">
+        {currentLabel}
+      </span>
 
       <AnimatePresence>
         {isOpen && (
