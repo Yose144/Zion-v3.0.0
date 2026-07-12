@@ -146,6 +146,7 @@ impl GpuBackendManager {
     /// Run a benchmark across all supported algorithms.
     pub fn benchmark_all(&mut self, secs: f64) -> Vec<(String, f64)> {
         let algos = vec![
+            "deeksha_chv3",
             "deeksha_lite_v1",
             "cosmic_harmony_ekam_deeksha_v2",
             "deeksha_lite_fire",
@@ -234,7 +235,7 @@ pub fn create_gpu_backend(
                 }
 
                 // Select miner based on algorithm
-                if algorithm == "deeksha_lite_v1" {
+                if algorithm == "deeksha_chv3" || algorithm == "deeksha_lite_v1" {
                     match opencl_deeksha_lite::OpenClDeekshaLiteMiner::new(work_size) {
                         Ok(miner) => return Ok(Box::new(miner)),
                         Err(e) => {

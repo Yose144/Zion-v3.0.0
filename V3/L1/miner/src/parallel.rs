@@ -19,6 +19,7 @@ use zion_cosmic_harmony::{cosmic_harmony_with_height, deeksha_lite, deeksha_lite
 ///
 /// | Algorithm             | Source         | Coins           |
 /// |-----------------------|----------------|-----------------|
+/// | `deeksha_chv3`        | cosmic-harmony | ZION (unified)  |
 /// | `deeksha_lite_v1`     | cosmic-harmony | ZION            |
 /// | `deeksha_lite_fire`   | cosmic-harmony | ZION (Metal)    |
 /// | `cosmic_harmony_v3`   | cosmic-harmony | ZION (full)     |
@@ -36,7 +37,7 @@ pub fn hash_candidate(candidate: &BlockCandidate, algorithm: &str) -> [u8; 32] {
 
     match algorithm {
         // ── ZION PoW algorithms ──────────────────────────────────
-        "deeksha_lite_v1" => deeksha_lite::deeksha_lite(&header_bytes, nonce),
+        "deeksha_chv3" | "deeksha_lite_v1" => deeksha_lite::deeksha_lite(&header_bytes, nonce),
         "deeksha_lite_fire" => deeksha_lite_fire::deeksha_lite_fire(&header_bytes, nonce),
         "cosmic_harmony_v3" | "cosmic_harmony_ekam_deeksha_v2" => {
             cosmic_harmony_with_height(&header_bytes, nonce, height).data

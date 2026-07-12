@@ -1,6 +1,7 @@
 pub mod algorithms_npu;
 pub mod algorithms_opt;
 pub mod deeksha;
+pub mod deeksha_chv3;
 pub mod deeksha_lite;
 pub mod deeksha_lite_fire;
 pub mod gpu;
@@ -34,6 +35,10 @@ pub use deeksha::{
     EKAM_V2_SCRATCHPAD_SIZE, TX_HASH_V2_ACTIVATION_HEIGHT,
 };
 pub use deeksha_lite::{deeksha_lite_find_nonce, deeksha_lite_self_test, deeksha_lite_with_height};
+pub use deeksha_chv3::{
+    deeksha_chv3_find_nonce, deeksha_chv3_hash, deeksha_chv3_self_test, deeksha_chv3_with_height,
+    DEEKSHA_CHV3_PROFILE,
+};
 pub use deeksha_lite_fire::{
     deeksha_lite_fire, deeksha_lite_fire_find_nonce, deeksha_lite_fire_self_test,
     deeksha_lite_fire_with_height, DEEKSHA_LITE_FIRE_PROFILE,

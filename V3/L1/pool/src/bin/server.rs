@@ -1129,7 +1129,10 @@ impl WorkAssignment {
 
     fn algorithm(&self) -> &str {
         match self {
-            Self::Zion(_) => "cosmic_harmony_ekam_deeksha_v2",
+            // Use the pool's canonical advertised algorithm for Zion jobs.
+            // This must match what miners use to compute shares, otherwise
+            // the node will compute a different hash and reject the block.
+            Self::Zion(_) => zion_pool::advertised_algorithm(),
             Self::External(j) => &j.algorithm,
         }
     }
