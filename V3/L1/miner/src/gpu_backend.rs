@@ -221,7 +221,13 @@ pub fn create_gpu_backend(
         GpuBackendKind::OpenCL | GpuBackendKind::Auto => {
             #[cfg(feature = "gpu-opencl")]
             {
-                // External AuxPoW algorithms (Blake3, kHeavyHash, ...)
+                // kHeavyHash GPU kernel is currently a placeholder; force CPU fallback
+                // so the miner produces valid Kaspa-compatible hashes.
+                if algorithm == "kheavyhash" || algorithm == "kheavyhash_kas" || algorithm == "kheavy" {
+                    anyhow::bail!("kheavyhash GPU kernel not yet implemented — using CPU fallback");
+                }
+
+                // External AuxPoW algorithms (Blake3, ...)
                 if is_external_algorithm(algorithm) {
                     match opencl_external::OpenClExternalMiner::new(algorithm, work_size) {
                         Ok(miner) => return Ok(Box::new(miner)),
