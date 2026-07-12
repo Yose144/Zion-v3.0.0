@@ -2129,6 +2129,31 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           <div id="pm-auxpow-uptime" class="font-mono text-gray-300">—</div>
         </div>
       </div>
+      <!-- Row 3: Extended metrics -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs mt-3 pt-3 border-t border-white/10">
+        <div class="space-y-1">
+          <div class="text-gray-400">Accept Rate</div>
+          <div class="flex items-center gap-2">
+            <span id="pm-auxpow-accept-rate" class="font-mono text-emerald-400">—</span>
+            <div class="flex-1 h-1.5 bg-black/40 rounded-full overflow-hidden">
+              <div id="pm-auxpow-accept-bar" class="h-full bg-emerald-500 rounded-full transition-all" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+        <div class="space-y-1">
+          <div class="text-gray-400">Revenue / Hour (est)</div>
+          <div id="pm-auxpow-rev-hour" class="font-mono text-zion-gold">—</div>
+        </div>
+        <div class="space-y-1">
+          <div class="text-gray-400">Shares / Min</div>
+          <div id="pm-auxpow-shares-min" class="font-mono text-cyan-400">—</div>
+        </div>
+        <div class="space-y-1">
+          <div class="text-gray-400">Reject Rate</div>
+          <div id="pm-auxpow-reject-rate" class="font-mono text-red-400">—</div>
+        </div>
+      </div>
+      <!-- Row 4: Circuit breaker + switches -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs mt-3 pt-3 border-t border-white/10">
         <div class="space-y-1">
           <div class="text-gray-400">Coin Switches</div>
@@ -2145,6 +2170,25 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <div class="space-y-1">
           <div class="text-gray-400">Circuit Breaker</div>
           <div id="pm-auxpow-circuit" class="font-bold text-gray-500">—</div>
+        </div>
+      </div>
+      <!-- Row 5: Supported coins + bridge status -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs mt-3 pt-3 border-t border-white/10">
+        <div class="space-y-1">
+          <div class="text-gray-400">Supported Coins</div>
+          <div id="pm-auxpow-coins" class="font-mono text-gray-300 text-[10px]">—</div>
+        </div>
+        <div class="space-y-1">
+          <div class="text-gray-400">Bridge Queue</div>
+          <div id="pm-auxpow-bridge-queue" class="font-mono text-white">—</div>
+        </div>
+        <div class="space-y-1">
+          <div class="text-gray-400">External Jobs</div>
+          <div id="pm-auxpow-ext-jobs" class="font-mono text-cyan-400">—</div>
+        </div>
+        <div class="space-y-1">
+          <div class="text-gray-400">ZION / Aux Ratio</div>
+          <div id="pm-auxpow-ratio" class="font-mono text-gray-300">—</div>
         </div>
       </div>
     </div>

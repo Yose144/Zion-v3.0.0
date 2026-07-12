@@ -2519,6 +2519,52 @@ async function loadPoolMinersTab(){
       auxCircuitEl.className = 'font-bold ' + (auxpow.circuit_open ? 'text-red-400' : auxEnabled ? 'text-emerald-400' : 'text-gray-500');
     }
 
+    // ── Extended AuxPow metrics ──────────────────────────────────────
+    const auxSubmitted = auxpow.shares_submitted || 0;
+    const auxAccepted = auxpow.shares_accepted || 0;
+    const auxRejected = auxpow.shares_rejected || 0;
+    const auxRevUsd = auxpow.revenue_usd || 0;
+
+    // Accept rate + progress bar
+    const auxAcceptRate = auxSubmitted > 0 ? (auxAccepted / auxSubmitted * 100) : (auxEnabled ? 100 : 0);
+    set('pm-auxpow-accept-rate', auxSubmitted > 0 ? auxAcceptRate.toFixed(1) + '%' : '—');
+    const auxAcceptBar = document.getElementById('pm-auxpow-accept-bar');
+    if(auxAcceptBar) auxAcceptBar.style.width = Math.min(auxAcceptRate, 100) + '%';
+
+    // Reject rate
+    const auxRejectRate = auxSubmitted > 0 ? (auxRejected / auxSubmitted * 100) : 0;
+    set('pm-auxpow-reject-rate', auxSubmitted > 0 ? auxRejectRate.toFixed(2) + '%' : '—');
+
+    // Revenue per hour (estimated from uptime)
+    const auxRevHour = auxUptime > 0 && auxRevUsd > 0 ? (auxRevUsd / auxUptime * 3600) : 0;
+    set('pm-auxpow-rev-hour', auxRevHour > 0 ? '$' + auxRevHour.toFixed(4) : '—');
+
+    // Shares per minute
+    const auxSharesMin = auxUptime > 0 ? (auxSubmitted / auxUptime * 60) : 0;
+    set('pm-auxpow-shares-min', auxSharesMin > 0 ? auxSharesMin.toFixed(1) : '—');
+
+    // Supported coins (static list — pool supports KAS, ALPH, DCR)
+    const auxCoins = auxEnabled ? (auxpow.supported_coins || ['KAS', 'ALPH', 'DCR']) : [];
+    set('pm-auxpow-coins', auxCoins.length > 0 ? auxCoins.join(' · ') : '—');
+
+    // Bridge queue depth (from pool stats if available)
+    const auxBridgeQueue = auxpow.bridge_queue_depth;
+    set('pm-auxpow-bridge-queue', auxBridgeQueue != null ? auxBridgeQueue : '—');
+
+    // External jobs processed (from routing stats)
+    const routing = stats.routing || data.routing || {};
+    const routingGroups = routing.groups || {};
+    const autoStats = routingGroups.auto || {};
+    const extJobs = autoStats.submitted || 0;
+    set('pm-auxpow-ext-jobs', extJobs > 0 ? extJobs.toLocaleString() : '—');
+
+    // ZION / Aux ratio (zion shares vs total shares)
+    const zionSubmits = (routingGroups.zion || {}).submits || 0;
+    const totalSubmits = routing.submits || (zionSubmits + extJobs);
+    const auxPct = totalSubmits > 0 ? (extJobs / totalSubmits * 100) : 0;
+    const zionPct = totalSubmits > 0 ? (zionSubmits / totalSubmits * 100) : 0;
+    set('pm-auxpow-ratio', totalSubmits > 0 ? zionPct.toFixed(0) + '% / ' + auxPct.toFixed(0) + '%' : '—');
+
     // Miners table
     const miners = data.miners || [];
     if(badge) badge.textContent = miners.length + ' ranked';
