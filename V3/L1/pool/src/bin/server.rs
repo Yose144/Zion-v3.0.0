@@ -383,15 +383,14 @@ async fn run_auxpow_bridge(
     }
 
     loop {
-        println!("auxpow_bridge: run_auxpow_bridge loop tick");
         // Pull new jobs from the multiplexer and push them to the queue.
         // wait_for_job blocks the tokio task until a job arrives, which is fine
         // because this task has no other work besides forwarding shares.
         match mux.wait_for_job(5_000).await {
             Ok(Some(job)) => {
                 println!(
-                    "auxpow_bridge: queued job_id={} coin={} algo={} queue_len_before={}",
-                    job.external_job_id, job.external_coin, job.algorithm, bridge.job_queue.lock().expect("auxpow job queue lock poisoned").len()
+                    "auxpow_bridge: queued job_id={} coin={} algo={}",
+                    job.external_job_id, job.external_coin, job.algorithm
                 );
                 let mut q = bridge.job_queue.lock().expect("auxpow job queue lock poisoned");
                 // Keep at most 2 jobs per algorithm to avoid stale work.
@@ -416,7 +415,13 @@ async fn run_auxpow_bridge(
             let result = if let Some(client) = mux.client() {
                 let forwarder = ShareForwarder::new(client);
                 match forwarder.try_forward(&req.external_job_id, req.nonce, &req.hash, &req.target).await {
-                    Ok(r) => r,
+                    Ok(r) => {
+                        println!(
+                            "auxpow_bridge: share_forwarded job_id={} nonce={} result={:?} elapsed_ms={}",
+                            req.external_job_id, req.nonce, r, started.elapsed().as_millis()
+                        );
+                        r
+                    }
                     Err(e) => {
                         eprintln!("auxpow_bridge: forward error: {}", e);
                         ShareForwardResult::Unknown
