@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import TahitiFlower from './TahitiFlower';
@@ -15,11 +15,22 @@ const StargateLogo = dynamic(() => import('./StargateLogo'), {
 
 export default function AlohaOverlay() {
   const [expanded, setExpanded] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  /* Hide Aloha flower while the nav shrinks into a thin bar */
+  useEffect(() => {
+    const onScroll = () => {
+      setScrolled(window.scrollY > 60);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   return (
     <>
-      {/* Aloha trigger — sits above the navigation bar */}
-      <div className="fixed top-1 left-0 right-0 z-[60] flex justify-center pointer-events-none">
+      {/* Aloha trigger — sits above the navigation bar, hides on scroll */}
+      <div className={`fixed top-1 left-0 right-0 z-[60] flex justify-center pointer-events-none transition-all duration-300 ${scrolled ? '-translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`}>
         <div className="pointer-events-auto scale-[0.55] sm:scale-[0.65] md:scale-75 origin-top">
           <TahitiFlower expanded={expanded} onToggle={() => setExpanded((v) => !v)} />
         </div>
