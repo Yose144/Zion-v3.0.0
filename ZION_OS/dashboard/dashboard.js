@@ -2552,15 +2552,15 @@ async function loadPoolMinersTab(){
     set('pm-auxpow-bridge-queue', auxBridgeQueue != null ? auxBridgeQueue : '—');
 
     // External jobs processed (from routing stats)
-    const routing = stats.routing || data.routing || {};
-    const routingGroups = routing.groups || {};
-    const autoStats = routingGroups.auto || {};
+    const auxRouting = stats.routing || data.routing || {};
+    const auxRoutingGroups = auxRouting.groups || {};
+    const autoStats = auxRoutingGroups.auto || {};
     const extJobs = autoStats.submitted || 0;
     set('pm-auxpow-ext-jobs', extJobs > 0 ? extJobs.toLocaleString() : '—');
 
     // ZION / Aux ratio (zion shares vs total shares)
-    const zionSubmits = (routingGroups.zion || {}).submits || 0;
-    const totalSubmits = routing.submits || (zionSubmits + extJobs);
+    const zionSubmits = (auxRoutingGroups.zion || {}).submits || 0;
+    const totalSubmits = auxRouting.submits || (zionSubmits + extJobs);
     const auxPct = totalSubmits > 0 ? (extJobs / totalSubmits * 100) : 0;
     const zionPct = totalSubmits > 0 ? (zionSubmits / totalSubmits * 100) : 0;
     set('pm-auxpow-ratio', totalSubmits > 0 ? zionPct.toFixed(0) + '% / ' + auxPct.toFixed(0) + '%' : '—');
