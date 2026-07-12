@@ -72,16 +72,36 @@ pub use stream_layers::{
 };
 
 pub const POW_PROFILE: &str = "deeksha_lite_v1";
+pub const CHV3_PROFILE: &str = "deeksha_chv3";
 pub const FIRE_PROFILE: &str = "deeksha_lite_fire";
-pub const FIRE_FORK_HEIGHT: u64 = 5000; // Fire algorithm hard fork at block 5000
 
+/// Block height at which `deeksha_chv3` becomes the canonical profile.
+///
+/// Phase A: `deeksha_chv3` is a bit-identical alias over `deeksha_lite_v1`,
+/// so this is a soft fork — no consensus change, no chain disruption.
+/// Miners advertising `deeksha_lite_v1` continue to work; the node accepts
+/// both names because `hash_with_algorithm` maps them to the same function.
+pub const CHV3_FORK_HEIGHT: u64 = 4500;
+
+/// Block height at which `deeksha_lite_fire` becomes the canonical profile.
+pub const FIRE_FORK_HEIGHT: u64 = 5000;
+
+/// Static canonical profile name (used for status/banner display).
+/// For height-aware dispatch use [`profile_name_for_height`].
 pub fn profile_name() -> &'static str {
     POW_PROFILE
 }
 
+/// Height-aware canonical profile name.
+///
+/// - height < 4500  → `deeksha_lite_v1` (current mainnet canonical)
+/// - 4500 ≤ h < 5000 → `deeksha_chv3` (unified alias, Phase A)
+/// - height ≥ 5000  → `deeksha_lite_fire` (Fire hard fork)
 pub fn profile_name_for_height(height: u64) -> &'static str {
     if height >= FIRE_FORK_HEIGHT {
         FIRE_PROFILE
+    } else if height >= CHV3_FORK_HEIGHT {
+        CHV3_PROFILE
     } else {
         POW_PROFILE
     }
@@ -94,5 +114,28 @@ mod tests {
     #[test]
     fn profile_is_set() {
         assert_eq!(profile_name(), "deeksha_lite_v1");
+    }
+
+    #[test]
+    fn profile_for_height_pre_chv3() {
+        assert_eq!(profile_name_for_height(0), "deeksha_lite_v1");
+        assert_eq!(profile_name_for_height(4499), "deeksha_lite_v1");
+    }
+
+    #[test]
+    fn profile_for_height_chv3_active() {
+        assert_eq!(profile_name_for_height(4500), "deeksha_chv3");
+        assert_eq!(profile_name_for_height(4999), "deeksha_chv3");
+    }
+
+    #[test]
+    fn profile_for_height_fire_active() {
+        assert_eq!(profile_name_for_height(5000), "deeksha_lite_fire");
+        assert_eq!(profile_name_for_height(9999), "deeksha_lite_fire");
+    }
+
+    #[test]
+    fn chv3_fork_height_is_4500() {
+        assert_eq!(CHV3_FORK_HEIGHT, 4500);
     }
 }

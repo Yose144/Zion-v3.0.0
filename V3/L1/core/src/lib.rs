@@ -7,8 +7,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use zion_cosmic_harmony::{
     account_tx_memo_v1_active, body_root_v2_active, cosmic_harmony_ekam_deeksha,
     cosmic_harmony_with_height, profile_name, profile_name_for_height, tx_hash_v2_active, NclStats,
-    RevenueCollector, RevenueEvent, RevenueStats, CHV_EKAM_FORK_HEIGHT, EKAM_FUSION_ROUNDS,
-    FIRE_FORK_HEIGHT, TX_HASH_V2_ACTIVATION_HEIGHT,
+    RevenueCollector, RevenueEvent, RevenueStats, CHV3_FORK_HEIGHT, CHV_EKAM_FORK_HEIGHT,
+    EKAM_FUSION_ROUNDS, FIRE_FORK_HEIGHT, TX_HASH_V2_ACTIVATION_HEIGHT,
 };
 
 pub use zion_cosmic_harmony::ExternalCoin;
@@ -290,6 +290,7 @@ impl DifficultyTarget {
 pub struct ConsensusConfig {
     pub profile: &'static str,
     pub ekam_fork_height: u64,
+    pub chv3_fork_height: u64,
     pub fire_fork_height: u64,
     pub fusion_rounds: usize,
     pub default_target: DifficultyTarget,
@@ -300,6 +301,7 @@ impl Default for ConsensusConfig {
         Self {
             profile: profile_name(),
             ekam_fork_height: CHV_EKAM_FORK_HEIGHT,
+            chv3_fork_height: CHV3_FORK_HEIGHT,
             fire_fork_height: FIRE_FORK_HEIGHT,
             fusion_rounds: EKAM_FUSION_ROUNDS,
             default_target: DifficultyTarget::MAX,
