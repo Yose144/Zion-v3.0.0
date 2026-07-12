@@ -3,7 +3,7 @@
 > **Working name:** `deeksha_chv3`
 > **Goal:** Sjednotit všechny revenue streamy do jednoho canonical algoritmu
 > podle `docs/2.9.8/COSMIC_HARMONY_DEEKSHA_SPEC.md`.
-> **Status:** Phase A+B+C DEPLOYED (2026-07-12) — soft fork active at block 4500.
+> **Status:** Phase A+B+C+D DEPLOYED (2026-07-12) — unified algorithm complete.
 > **CHV3_FORK_HEIGHT:** 4500 (bit-identical alias over `deeksha_lite_v1`).
 
 ---
@@ -228,13 +228,35 @@ Stream telemetry už existuje a je consensus-safe (nemění hash output).
 - AuxPow scheduler připojen k KAS, 0 failures.
 - GPU kernel `deeksha_chv3_mine` dostupný pro miner dispatch.
 
-### Fáze D — Consensus cleanup (optional, hard fork)
+### Fáze D — Consensus cleanup (name unification, no hard fork) — ✅ DEPLOYED 2026-07-12
 
-1. Pokud chceme změnit scratchpad z 256 KiB na 64 KiB (dle spec):
-   - `DEEKSHA_CHV3_FORK_HEIGHT = <height>`
-   - Nový kernel s 64 KiB scratchpadem.
-   - Hard fork.
-2. Pokud nechceme riskovat hard fork: nechat 256 KiB, jen sjednotit název.
+**Rozhodnutí:** Nechat 256 KiB scratchpad (žádný hard fork). Jen sjednotit název.
+
+**Implementováno a deploynuto na Edge.**
+
+1. ✅ `consensus_profile_for_height(height)` v core — height-aware canonical
+   profile name. `deeksha_chv3` pro height ≥ 4500, `deeksha_lite_v1` pod.
+2. ✅ `advertised_algorithm_for_height(height)` v pool — pool advertised
+   `deeksha_chv3` pro height ≥ 4500 v job assignments.
+3. ✅ `WorkAssignment::algorithm()` používá height-aware dispatch pro Zion jobs.
+4. ✅ Staré názvy (`deeksha_lite_v1`, `cosmic_harmony_ekam_deeksha_v2`)
+   zůstávají akceptované v `hash_with_algorithm` — backward compat.
+5. ✅ 7 nových Phase D testů (3 cosmic-harmony + 4 core):
+   - `chv3_is_canonical_at_fork_height`
+   - `lite_v1_still_used_below_chv3_fork`
+   - `chv3_and_lite_are_distinct_names`
+   - `consensus_profile_for_height_below_chv3`
+   - `consensus_profile_for_height_at_chv3`
+   - `consensus_profile_for_height_at_fire`
+   - `hash_with_chv3_equals_hash_with_lite_v1`
+6. ✅ **Žádný hard fork** — 256 KiB scratchpad preserved, hash output unchanged.
+
+**Commit:** `d6f282311` — feat(chv3): Phase D — name unification
+
+**Edge deploy výsledek:**
+- Pool restart na nový binary, 1 blok found po restartu.
+- AuxPow scheduler připojen k KAS, 0 failures.
+- Pool advertised `deeksha_lite_v1` (height < 4500), po height 4500 přepne na `deeksha_chv3`.
 
 ## 7) Revenue model (zachováno)
 
