@@ -6,9 +6,12 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import {
   Menu, X, SignalHigh, Orbit, ChevronDown, LayoutDashboard, Pickaxe, Shield,
-  Coins, Wallet, BookOpen, Github, Layers, Network as NetworkIcon,
+  HardHat, Download, Coins, ArrowLeftRight, Landmark, Wallet, BookOpen,
+  Newspaper, Map, Sparkles, Rocket, Brain, Flower2, Globe2, Zap, Atom, Building2,
+  CircuitBoard, Github, Layers, Network as NetworkIcon, ArrowRightLeft,
 } from 'lucide-react';
 import NavAuthButton from './NavAuthButton';
+import BackgroundToggle from './BackgroundToggle';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 import { SITE_RELEASE_LABEL } from '@/lib/site';
@@ -93,6 +96,32 @@ export default function Navigation() {
     { href: '/network', icon: SignalHigh, color: '239, 68, 68', label: tr('nav', 'network', lang) },      /* red */
     { href: '/docs', icon: BookOpen, color: '16, 185, 129', label: tr('nav', 'docs', lang) },             /* green */
     { href: '/wallet', icon: Wallet, color: '251, 191, 36', label: tr('nav', 'wallet', lang) },            /* gold */
+  ];
+
+  /* ── Secondary icons — medium, core ecosystem ── */
+  const secondaryIcons = [
+    { href: '/mining', icon: HardHat, color: '245, 158, 11', label: tr('nav', 'mining', lang) },
+    { href: '/defi', icon: Coins, color: '16, 185, 129', label: tr('nav', 'defi', lang) },
+    { href: '/download', icon: Download, color: '251, 191, 36', label: tr('nav', 'download', lang) },
+  ];
+
+  /* ── Tertiary icons — small, rest of ecosystem ── */
+  const tertiaryIcons = [
+    { href: '/bridge', icon: ArrowLeftRight, color: '59, 130, 246', label: tr('nav', 'bridge', lang) },
+    { href: '/ziondex', icon: ArrowRightLeft, color: '16, 185, 129', label: 'ZionDex' },
+    { href: '/dao', icon: Landmark, color: '147, 51, 234', label: tr('nav', 'dao', lang) },
+    { href: '/cex', icon: Building2, color: '236, 72, 153', label: tr('nav', 'cex', lang) },
+    { href: '/warp', icon: CircuitBoard, color: '99, 102, 241', label: tr('nav', 'warp', lang) },
+    { href: '/l3-hiran', icon: Brain, color: '139, 92, 246', label: tr('nav', 'l3_hiran', lang) },
+    { href: '/l4-oasis', icon: Flower2, color: '217, 70, 239', label: tr('nav', 'l4_oasis', lang) },
+    { href: '/l5-free-world', icon: Rocket, color: '14, 165, 233', label: tr('nav', 'l5_free_world', lang) },
+    { href: '/l6-issobella', icon: Zap, color: '244, 63, 94', label: tr('nav', 'l6_issobella', lang) },
+    { href: '/terranova', icon: Globe2, color: '34, 197, 94', label: tr('nav', 'terranova', lang) },
+    { href: '/tree-of-life', icon: Sparkles, color: '251, 191, 36', label: tr('nav', 'tree_of_life', lang) },
+    { href: '/news', icon: Newspaper, color: '249, 115, 22', label: tr('nav', 'news', lang) },
+    { href: '/roadmap', icon: Map, color: '99, 102, 241', label: tr('nav', 'roadmap', lang) },
+    { href: '/genesis', icon: Sparkles, color: '251, 191, 36', label: tr('nav', 'genesis', lang) },
+    { href: '/quantum-revolution', icon: Atom, color: '251, 191, 36', label: tr('nav', 'quantum_revolution', lang) },
   ];
 
   const groupLabels: Record<string, string> = {
@@ -271,9 +300,67 @@ export default function Navigation() {
           </div>
         </div>
 
-        {/* ═══ COMPACT TRANSPARENT FLOOR 2 — GROUP DROPDOWNS ONLY ═══ */}
-        <div className="mt-1 hidden md:flex justify-center">
-          <div className="flex items-center gap-1 rounded-2xl border border-white/[0.07] bg-black/20 backdrop-blur-md px-2 py-1 shadow-none">
+        {/* ═══ FLOOR 2 — MINI ICONS + GROUP DROPDOWNS + BACKGROUND TOGGLE ═══ */}
+        <div className="mt-1 hidden md:flex items-center justify-between gap-2 relative rounded-2xl border border-white/[0.07] bg-black/20 backdrop-blur-md px-2 py-1 shadow-none">
+          {/* Icons + group dropdowns */}
+          <div className="flex items-center gap-0.5 flex-1 justify-center overflow-x-auto no-scrollbar min-w-0">
+            {/* Secondary icons — medium */}
+            {secondaryIcons.map((ml) => {
+              const isActive = navItemMatches(ml.href);
+              return (
+                <Link
+                  key={ml.href}
+                  href={ml.href}
+                  title={ml.label}
+                  className="group relative flex flex-col items-center justify-center w-7 h-7 rounded-md border transition-all hover:scale-110 shrink-0"
+                  style={{
+                    borderColor: isActive ? `rgba(${ml.color}, 0.45)` : 'rgba(255,255,255,0.06)',
+                    backgroundColor: isActive ? `rgba(${ml.color}, 0.11)` : 'rgba(0,0,0,0.3)',
+                  }}
+                >
+                  <ml.icon
+                    className="w-3 h-3"
+                    style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.55)' }}
+                  />
+                  <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] bg-black/95 border border-white/10 rounded px-1.5 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                    {ml.label}
+                  </span>
+                </Link>
+              );
+            })}
+
+            {/* Divider */}
+            <div className="mx-0.5 h-4 w-px bg-white/[0.08] shrink-0" />
+
+            {/* Tertiary icons — small */}
+            {tertiaryIcons.map((ml) => {
+              const isActive = navItemMatches(ml.href);
+              return (
+                <Link
+                  key={ml.href}
+                  href={ml.href}
+                  title={ml.label}
+                  className="group relative flex flex-col items-center justify-center w-6 h-6 rounded-md border transition-all hover:scale-110 shrink-0"
+                  style={{
+                    borderColor: isActive ? `rgba(${ml.color}, 0.4)` : 'rgba(255,255,255,0.03)',
+                    backgroundColor: isActive ? `rgba(${ml.color}, 0.09)` : 'transparent',
+                  }}
+                >
+                  <ml.icon
+                    className="w-2.5 h-2.5"
+                    style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.35)' }}
+                  />
+                  <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] bg-black/95 border border-white/10 rounded px-1.5 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                    {ml.label}
+                  </span>
+                </Link>
+              );
+            })}
+
+            {/* Divider */}
+            <div className="mx-0.5 h-4 w-px bg-white/[0.08] shrink-0" />
+
+            {/* Group dropdown buttons */}
             {navGroups.map((group) => {
               const isActive = openGroup === group.title;
               const groupHasActiveChild = group.items.some((item) => navItemMatches(item.href));
@@ -282,25 +369,30 @@ export default function Navigation() {
                   <button
                     type="button"
                     onClick={() => setOpenGroup(isActive ? null : group.title)}
-                    className={`group inline-flex items-center gap-1 rounded-xl border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] transition-all ${
+                    className={`group inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] transition-all ${
                       isActive
-                        ? 'border-zion-gold/40 bg-zion-gold/10 text-white shadow-[0_0_12px_rgba(251,191,36,0.12)]'
+                        ? 'border-zion-gold/40 bg-linear-to-br from-emerald-500/15 via-zion-gold/12 to-red-500/12 text-white shadow-[0_8px_20px_rgba(0,0,0,0.25),0_0_12px_rgba(251,191,36,0.12)]'
                         : groupHasActiveChild
-                          ? 'border-emerald-500/30 bg-white/[0.04] text-white hover:border-zion-gold/40'
-                          : 'border-transparent text-gray-400 hover:border-white/10 hover:bg-white/[0.04] hover:text-white'
+                          ? 'border-emerald-500/30 bg-black/60 text-white hover:border-zion-gold/40'
+                          : 'border-white/8 bg-black/60 text-gray-400 hover:border-zion-gold/30 hover:bg-black/80 hover:text-white'
                     }`}
                     aria-expanded={isActive}
                   >
                     <group.icon
-                      className="w-3 h-3"
+                      className="w-2.5 h-2.5"
                       style={{ color: isActive ? `rgb(${group.color})` : `rgba(${group.color}, 0.7)` }}
                     />
                     <span className="group-hover:text-zion-gold transition-colors">{groupLabels[group.title] ?? group.title}</span>
-                    <ChevronDown className={`h-3 w-3 transition-transform ${isActive ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`h-2 w-2 transition-transform ${isActive ? 'rotate-180' : ''}`} />
                   </button>
                 </div>
               );
             })}
+          </div>
+
+          {/* Background toggle */}
+          <div className="shrink-0">
+            <BackgroundToggle placement="nav" />
           </div>
         </div>
 
