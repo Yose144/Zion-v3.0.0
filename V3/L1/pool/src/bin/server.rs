@@ -383,6 +383,19 @@ async fn run_auxpow_bridge(
     }
 
     loop {
+        // If the multiplexer has no active client (e.g. after a disconnect or
+        // failed initial connect), try to reconnect before waiting for jobs.
+        if mux.active_coin().is_none() {
+            let coin = cfg.force_coin.unwrap_or(ExternalCoin::KAS);
+            eprintln!("auxpow_bridge: no active connection, reconnecting to {}…", coin);
+            if let Err(e) = mux.connect(coin).await {
+                eprintln!("auxpow_bridge: reconnect to {} failed: {}", coin, e);
+                tokio::time::sleep(Duration::from_secs(5)).await;
+                continue;
+            }
+            println!("auxpow_bridge: reconnected to {}", coin);
+        }
+
         // Pull new jobs from the multiplexer and push them to the queue.
         // wait_for_job blocks the tokio task until a job arrives, which is fine
         // because this task has no other work besides forwarding shares.
@@ -405,7 +418,10 @@ async fn run_auxpow_bridge(
             }
             Err(e) => {
                 eprintln!("auxpow_bridge: wait_for_job error: {}", e);
-                tokio::time::sleep(Duration::from_secs(1)).await;
+                // The connection is likely dead — disconnect so the next
+                // iteration triggers a reconnect.
+                mux.disconnect().await;
+                tokio::time::sleep(Duration::from_secs(2)).await;
             }
         }
 
