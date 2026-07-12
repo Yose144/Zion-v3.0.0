@@ -45,11 +45,7 @@ export default function Navigation() {
       color: '251, 191, 36',
       items: [
         { href: '/defi', label: tr('nav', 'defi', lang) },
-        { href: '/ziondex', label: 'ZionDex', children: [
-          { href: '/dex', label: 'Swap Interface' },
-          { href: '/dex/liquidity', label: 'Liquidity Pools' },
-          { href: '/dex/portfolio', label: 'Portfolio' },
-        ] },
+        { href: '/ziondex', label: 'ZionDex' },
         { href: '/cex', label: tr('nav', 'cex', lang) },
         { href: '/warp', label: tr('nav', 'warp', lang) },
         { href: '/bridge', label: tr('nav', 'bridge', lang) },
