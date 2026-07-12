@@ -4929,6 +4929,76 @@ názvem a KAT (Known Answer Test) vektory pro CPU↔GPU parity verifikaci.
 
 ---
 
+## DeekshaChv3 Phase D — Name Unification (No Hard Fork) — 2026-07-12
+
+### Co
+Phase D sjednocuje název algoritmu na `deeksha_chv3` jako canonical pro
+height >= 4500. Scratchpad zůstává 256 KiB (žádný hard fork). Staré názvy
+zůstávají akceptované pro backward compat.
+
+### Rozhodnutí
+- **256 KiB scratchpad** — preserved (no hard fork, no consensus change)
+- **Name unification** — `deeksha_chv3` canonical pro height >= 4500
+- **Backward compat** — `deeksha_lite_v1` stále akceptován
+
+### Implementace
+
+**Core (`core/src/lib.rs`):**
+- `consensus_profile_for_height(height)` — height-aware canonical profile
+- 4 new Phase D tests
+
+**Cosmic-harmony (`cosmic-harmony/src/lib.rs`):**
+- 3 new Phase D tests pro name unification
+
+**Pool (`pool/src/lib.rs` + `pool/src/bin/server.rs`):**
+- `advertised_algorithm_for_height(height)` — pool advertised `deeksha_chv3`
+  pro height >= 4500, `deeksha_lite_v1` pod
+- `WorkAssignment::algorithm()` — height-aware dispatch pro Zion jobs
+
+### Consensus safety
+- **Žádný hard fork** — 256 KiB scratchpad preserved
+- **Žádná změna hash outputu** — oba názvy mapují na stejnou funkci
+- **Backward compat** — mineri co znají jen `deeksha_lite_v1` fungují dál
+
+### Test results
+- 189 cosmic-harmony tests pass (3 new Phase D)
+- 4 new core tests pass
+- Pool build: OK
+
+### Commit
+`d6f282311` — feat(chv3): Phase D — name unification (no hard fork, 256 KiB preserved)
+
+### Edge deploy
+- Pool restart na nový binary, 1 blok found po restartu
+- AuxPow scheduler připojen k KAS, 0 failures
+- Pool advertised `deeksha_lite_v1` (current height < 4500)
+- Po height 4500 automaticky přepne na `deeksha_chv3`
+
+---
+
+## DeekshaChv3 Unified Algorithm — Phase A+B+C+D Complete — 2026-07-12
+
+### Shrnutí
+
+| Phase | Co | Status | Commit |
+|-------|-----|--------|--------|
+| A | Alias wrapper (chv3 == lite bit-identical) | ✅ DEPLOYED | `aca83771a` |
+| B | Stream telemetry (revenue breakdown) | ✅ DEPLOYED | `f656782a1` |
+| C | GPU kernel parity + KAT vectors | ✅ DEPLOYED | `1ef6709b4` |
+| D | Name unification (no hard fork, 256 KiB) | ✅ DEPLOYED | `d6f282311` |
+
+### Výsledek
+- `deeksha_chv3` je canonical název pro height >= 4500
+- Bit-identical s `deeksha_lite_v1` (žádná změna hash)
+- GPU kernel `deeksha_chv3_mine` dostupný
+- Stream telemetry pro revenue tracking
+- 256 KiB scratchpad preserved (no hard fork)
+- Staré názory akceptovány (backward compat)
+- 189 cosmic-harmony tests + 4 core tests pass
+- Pool deploynut na Edge, bloky found, AuxPow connected
+
+---
+
 ## Session 2026-07-12 — F5 Coinbase Balance Fix + Pool Logging + Template Cache + AuxPow Dashboard Expansion
 
 ### Problém: Node stuck na 3886
