@@ -202,7 +202,7 @@ impl BlockCandidate {
     pub fn hash_with_algorithm(&self, algorithm: &str) -> [u8; 32] {
         let header_bytes = self.header.to_bytes();
         match algorithm {
-            "deeksha_lite_v1" => {
+            "deeksha_chv3" | "deeksha_lite_v1" => {
                 zion_cosmic_harmony::deeksha_lite::deeksha_lite(&header_bytes, self.nonce)
             }
             "deeksha_lite_fire" => zion_cosmic_harmony::deeksha_lite_fire::deeksha_lite_fire(
