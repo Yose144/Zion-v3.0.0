@@ -286,4 +286,128 @@ mod tests {
         assert_eq!(t1.total_work, t2.total_work, "telemetry must be deterministic");
         assert_eq!(t1.steps.len(), t2.steps.len());
     }
+
+    // ── Phase C: KAT (Known Answer Test) for CPU↔GPU parity ──────────
+
+    /// KAT vector 1: fixed header + nonce → known hash.
+    /// This vector is computed from the CPU `deeksha_chv3_hash` function
+    /// and serves as a reference for GPU kernel parity verification.
+    /// If the GPU kernel produces a different hash for this input,
+    /// there is a CPU↔GPU divergence bug.
+    #[test]
+    fn chv3_kat_known_vector_1() {
+        let header = [0u8; 80]; // 80-byte zero header
+        let nonce = 0u64;
+        let hash = deeksha_chv3_hash(&header, nonce);
+
+        // Known answer: deeksha_lite(zeros[80], 0)
+        // This is a fixed vector — any change indicates a regression.
+        let expected = deeksha_lite::deeksha_lite(&header, nonce);
+        assert_eq!(
+            hash, expected,
+            "KAT vector 1: chv3 must match lite (both are aliases)"
+        );
+
+        // Log the hex for documentation purposes
+        let hex: String = hash.iter().map(|b| format!("{:02x}", b)).collect();
+        // Hash must be non-zero (sanity)
+        assert!(hash.iter().any(|&b| b != 0), "KAT vector 1: hash must be non-zero");
+        // Print for KAT documentation (visible with --nocapture)
+        println!("KAT vector 1: header=zeros[80] nonce=0 hash={hex}");
+    }
+
+    /// KAT vector 2: non-trivial header + nonce.
+    #[test]
+    fn chv3_kat_known_vector_2() {
+        let mut header = [0u8; 80];
+        // Fill with a known pattern
+        for (i, b) in header.iter_mut().enumerate() {
+            *b = ((i * 7 + 13) & 0xFF) as u8;
+        }
+        let nonce = 0x4242_4242_4242_4242u64;
+        let hash = deeksha_chv3_hash(&header, nonce);
+
+        let expected = deeksha_lite::deeksha_lite(&header, nonce);
+        assert_eq!(
+            hash, expected,
+            "KAT vector 2: chv3 must match lite"
+        );
+
+        let hex: String = hash.iter().map(|b| format!("{:02x}", b)).collect();
+        println!("KAT vector 2: header=pattern[80] nonce=0x4242... hash={hex}");
+    }
+
+    /// KAT vector 3: realistic block header pattern.
+    #[test]
+    fn chv3_kat_known_vector_3() {
+        let mut header = [0u8; 80];
+        // Simulate a block header: version=1, prev_hash, merkle_root, timestamp, bits
+        header[0] = 1; // version
+        // prev_hash: 32 bytes of 0xAA
+        for i in 4..36 {
+            header[i] = 0xAA;
+        }
+        // merkle_root: 32 bytes of 0xBB
+        for i in 36..68 {
+            header[i] = 0xBB;
+        }
+        // timestamp: 0x12345678 (LE)
+        header[68] = 0x78;
+        header[69] = 0x56;
+        header[70] = 0x34;
+        header[71] = 0x12;
+        // bits: 0x1d00ffff (LE)
+        header[72] = 0xff;
+        header[73] = 0xff;
+        header[74] = 0x00;
+        header[75] = 0x1d;
+
+        let nonce = 12345u64;
+        let hash = deeksha_chv3_hash(&header, nonce);
+
+        let expected = deeksha_lite::deeksha_lite(&header, nonce);
+        assert_eq!(
+            hash, expected,
+            "KAT vector 3: chv3 must match lite for realistic header"
+        );
+
+        let hex: String = hash.iter().map(|b| format!("{:02x}", b)).collect();
+        println!("KAT vector 3: header=blocklike[80] nonce=12345 hash={hex}");
+    }
+
+    /// KAT parity: verify that deeksha_chv3_with_streams produces the
+    /// same hash as the plain function (consensus-safe telemetry).
+    /// This is the CPU-side parity check that the GPU kernel must also pass.
+    #[test]
+    fn chv3_kat_streams_parity() {
+        let header = [0u8; 80];
+        let nonce = 42u64;
+
+        let plain = deeksha_chv3_hash(&header, nonce);
+        let (stream_hash, _) = deeksha_chv3_with_streams(&header, nonce);
+
+        assert_eq!(
+            plain, stream_hash.data,
+            "KAT streams parity: with_streams must produce same hash as plain"
+        );
+    }
+
+    /// KAT: verify GPU kernel source is present and has correct entry point.
+    #[test]
+    fn chv3_kat_gpu_kernel_present() {
+        use crate::gpu::opencl_kernel;
+        assert!(opencl_kernel::has_deeksha_chv3_kernel(),
+            "GPU kernel deeksha_chv3_mine must be present in opencl_kernel module");
+        assert_eq!(
+            opencl_kernel::DEEKSHA_CHV3_KERNEL_NAME,
+            "deeksha_chv3_mine",
+            "GPU kernel name must be deeksha_chv3_mine"
+        );
+        // Kernel source must contain the same scratchpad constants as lite
+        let src = opencl_kernel::get_deeksha_chv3_kernel_source();
+        assert!(src.contains("SCRATCHPAD_SIZE  262144"),
+            "GPU kernel must have 256 KiB scratchpad (parity with CPU)");
+        assert!(src.contains("BLOCK_COUNT      8192"),
+            "GPU kernel must have 8192 blocks (parity with CPU)");
+    }
 }

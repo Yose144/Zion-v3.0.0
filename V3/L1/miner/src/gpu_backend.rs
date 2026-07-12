@@ -235,7 +235,18 @@ pub fn create_gpu_backend(
                 }
 
                 // Select miner based on algorithm
-                if algorithm == "deeksha_chv3" || algorithm == "deeksha_lite_v1" {
+                if algorithm == "deeksha_chv3" {
+                    // Phase C: use canonical deeksha_chv3.cl kernel
+                    match opencl_deeksha_lite::OpenClDeekshaLiteMiner::new_chv3(work_size) {
+                        Ok(miner) => return Ok(Box::new(miner)),
+                        Err(e) => {
+                            if kind == GpuBackendKind::OpenCL {
+                                anyhow::bail!("DeekshaChv3 OpenCL init failed: {e}");
+                            }
+                            println!("deeksha_chv3_opencl_unavailable reason=\"{e}\"");
+                        }
+                    }
+                } else if algorithm == "deeksha_lite_v1" {
                     match opencl_deeksha_lite::OpenClDeekshaLiteMiner::new(work_size) {
                         Ok(miner) => return Ok(Box::new(miner)),
                         Err(e) => {
@@ -1631,7 +1642,27 @@ pub mod opencl_deeksha_lite {
         }
 
         pub fn new(requested_work_size: usize) -> Result<Self> {
-            let kernel_src = opencl_kernel::get_deeksha_lite_kernel_source().to_string();
+            Self::new_with_kernel(requested_work_size, false)
+        }
+
+        /// Phase C: Create a DeekshaChv3 GPU miner using the canonical
+        /// `deeksha_chv3.cl` kernel source and `deeksha_chv3_mine` entry point.
+        /// Bit-identical to `new()` — only the kernel name/source differs.
+        pub fn new_chv3(requested_work_size: usize) -> Result<Self> {
+            Self::new_with_kernel(requested_work_size, true)
+        }
+
+        fn new_with_kernel(requested_work_size: usize, use_chv3: bool) -> Result<Self> {
+            let kernel_src = if use_chv3 {
+                opencl_kernel::get_deeksha_chv3_kernel_source().to_string()
+            } else {
+                opencl_kernel::get_deeksha_lite_kernel_source().to_string()
+            };
+            let kernel_name = if use_chv3 {
+                opencl_kernel::DEEKSHA_CHV3_KERNEL_NAME
+            } else {
+                opencl_kernel::DEEKSHA_LITE_KERNEL_NAME
+            };
             let (platform, device, platform_name, device_name) = Self::pick_device()?;
 
             let family = GpuDeviceFamily::from_name(&device_name);
@@ -1691,7 +1722,7 @@ pub mod opencl_deeksha_lite {
                 .len(actual_work_size * 32)
                 .build()?;
             let kernel = pro_que
-                .kernel_builder(opencl_kernel::DEEKSHA_LITE_KERNEL_NAME)
+                .kernel_builder(kernel_name)
                 .arg(&header_state_buf)
                 .arg(0u64)
                 .arg(0u32)
