@@ -12,13 +12,15 @@ export default function ClientBackgrounds() {
   const isWarpOnlyMode = mode === 'warp-speed';
 
   useEffect(() => {
+    // Ensure body background is transparent so canvas/CSS backgrounds show through
+    document.body.style.background = 'transparent';
     document.body.classList.toggle('warp-only-mode', isWarpOnlyMode);
     return () => document.body.classList.remove('warp-only-mode');
   }, [isWarpOnlyMode]);
 
   return (
     <>
-      <BackgroundOrchestrator variant={isHome ? 'home' : 'default'} />
+      <BackgroundOrchestrator key={mode} variant={isHome ? 'home' : 'default'} />
     </>
   );
 }
