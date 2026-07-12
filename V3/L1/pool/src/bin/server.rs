@@ -1895,6 +1895,30 @@ fn handle_client(
                                     pool_fee_pct,
                                     Some(block_hash_hex),
                                 );
+                            // Phase B: Stream telemetry — record per-step
+                            // revenue breakdown for the winning nonce.
+                            // Consensus-safe: does NOT change hash output.
+                            {
+                                let header_bytes = candidate.header.to_bytes();
+                                let (_stream_hash, telemetry) =
+                                    zion_cosmic_harmony::deeksha_chv3_with_streams(
+                                        &header_bytes,
+                                        nonce,
+                                    );
+                                // Verify stream hash matches computed hash
+                                // (sanity check — should always pass).
+                                debug_assert_eq!(_stream_hash.data, computed_hash);
+                                let revenue_handle = pool
+                                    .lock()
+                                    .expect("pool lock poisoned")
+                                    .runtime()
+                                    .revenue_handle();
+                                revenue_handle.track_deeksha_streams(
+                                    &telemetry,
+                                    revenue_value_usd,
+                                    Some(job_height),
+                                );
+                            }
                             // Notify OASIS L4 game server to award XP to the miner.
                             // Fire-and-forget via background thread so pool never blocks.
                             let miner_addr = miner_id.clone();
