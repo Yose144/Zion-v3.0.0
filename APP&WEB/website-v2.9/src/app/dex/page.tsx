@@ -215,10 +215,10 @@ export default function DexPage() {
         <div className="max-w-6xl mx-auto px-6 py-6 text-center">
           <p className="text-xs text-zinc-600">
             ZionDex Router API at{' '}
-            <code className="text-zinc-400">localhost:8454</code>
+            <code className="text-zinc-400">zionterranova.com/dex-api</code>
             {' · '}
             L3 WARP Bridge at{' '}
-            <code className="text-zinc-400">localhost:8453</code>
+            <code className="text-zinc-400">port 8453</code>
             {' · '}
             <Link href="/ziondex" className="text-amber-500/80 hover:text-amber-400">
               Learn more →
