@@ -3,6 +3,7 @@ pub mod api;
 pub mod config;
 pub mod db;
 pub mod executor;
+pub mod intent;
 pub mod monitor;
 pub mod price;
 pub mod quote;

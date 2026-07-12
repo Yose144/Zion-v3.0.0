@@ -7,6 +7,8 @@ import {ZionDexHooks} from "../src/ZionDexHooks.sol";
 import {ZionDexRouter} from "../src/ZionDexRouter.sol";
 import {ZDXToken} from "../src/ZDXToken.sol";
 import {ZionDexStaking} from "../src/ZionDexStaking.sol";
+import {SolverRegistry} from "../src/SolverRegistry.sol";
+import {IntentSettlement} from "../src/IntentSettlement.sol";
 
 /// @title DeployBase
 /// @notice Deploy all ZionDex contracts on Base mainnet
@@ -42,6 +44,22 @@ contract DeployBase is Script {
         // Note: ZDXToken.owner is the deployer — transfer to staking
         // In production: use AccessControl with MINTER_ROLE
 
+        // 7. Deploy SolverRegistry (Phase 4 — Intent-Based Execution)
+        SolverRegistry solverRegistry = new SolverRegistry(address(zdx));
+        console.log("SolverRegistry deployed:", address(solverRegistry));
+
+        // 8. Deploy IntentSettlement
+        IntentSettlement intentSettlement = new IntentSettlement(address(solverRegistry));
+        console.log("IntentSettlement deployed:", address(intentSettlement));
+
+        // 9. Authorize IntentSettlement to record solver executions
+        solverRegistry.setSettlementContract(address(intentSettlement));
+
+        // 10. Configure IntentSettlement: solverFeeBps = 10 (0.1%), feeRecipient = deployer
+        intentSettlement.setSolverFeeBps(10);
+        intentSettlement.setFeeRecipient(msg.sender);
+        console.log("IntentSettlement configured: solverFeeBps=10, feeRecipient=deployer");
+
         vm.stopBroadcast();
 
         // Write deployment addresses
@@ -52,7 +70,9 @@ contract DeployBase is Script {
             '"ZionDexPoolManager":"', addressToString(address(poolManager)), '",',
             '"ZionDexHooks":"', addressToString(address(hooks)), '",',
             '"ZionDexRouter":"', addressToString(address(router)), '",',
-            '"ZionDexStaking":"', addressToString(address(staking)), '"',
+            '"ZionDexStaking":"', addressToString(address(staking)), '",',
+            '"SolverRegistry":"', addressToString(address(solverRegistry)), '",',
+            '"IntentSettlement":"', addressToString(address(intentSettlement)), '"',
             '}}'
         ));
         vm.writeJson(json, "deployments/base.json");
