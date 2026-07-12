@@ -59,7 +59,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="cs" className="dark" style={{ maxWidth: '100%', overflowX: 'hidden' }}>
-      <body className={`${inter.variable} ${jetbrains.variable} antialiased bg-black text-white w-full`} style={{ maxWidth: '100%', overflowX: 'hidden' }}>
+      <body className={`${inter.variable} ${jetbrains.variable} antialiased text-white w-full`} style={{ maxWidth: '100%', overflowX: 'hidden', background: 'transparent' }}>
         <GlobalErrorBoundary>
           <ThemeProvider>
             <ObservatoryProvider>
