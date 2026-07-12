@@ -5066,29 +5066,50 @@ DONE. Jobs seen: {'deeksha_lite_v1': 1144, 'kheavyhash': 287, 'other': 0}
 - `/etc/zion/edge-environment.sh` nastaveno na `ZION_AUXPOW_ENABLED=1` a
   `ZION_POOL_AUXPOW_ENABLED=1`; proti opětovnému přepsání nastaven atribut
   `chattr +i` (změnu vyžaduje `chattr -i`).
-- **Reální mineri nejsou připojeni** (0 active miners, 9 registered). Důvod:
-  po několika restartech poolu a delším výpadku se SMOS rigy pravděpodobně
-  odpojily a nezauto reconnec.
+- Reální mineri se **znovu připojili** (8 total). Pool jim posílá ZION joby
+  a jejich hashrate je vidět (cca 330 KH/s). ZION shares se zapisují.
+- **KAS/kheavyhash share submission je stále 0**. Reální mineri dostávají
+  external joby (log `issued_external_job`), ale neposílají share zpět.
+  Příčina: miner software na SMOS rigách není kompatibilní s kheavyhash
+  joby přes ZION stratum — buď nepodporuje kheavyhash, nebo používá špatný
+  timestamp (hashuje s `timestamp=0` místo KAS block timestampu), nebo GPU
+  kheavyhash kernel je jen scaffold.
 
 ### Blokátor pro reálné E2E share streams
 
 Reální mineri (nano-02/03/04/05, vega-smos, workrr, 5070Ti) jsou spravováni
-přes SimpleMining OS / HiveOS. Je potřeba je restartovat/reloadnout aby se
-znovu připojily k poolu `62.171.141.136:8444`. Bez toho nelze otestovat
-skutečný share submission a revenue flow.
+přes SimpleMining OS / HiveOS. Pool strana je připravená:
+
+- External joby se přijímají z 2miners KAS.
+- Pool posílá externí joby minerům ve splitu 4:1 (ZION:KAS).
+- Pool nyní používá KAS **share target** z `mining.set_difficulty` místo
+  network nbits (díky fixu v `auxpow_client.rs`).
+- Pool nyní používá správný **timestamp** při validaci kheavyhash share
+  (díky fixu v `core/src/lib.rs`).
+
+Chybí: miner software na rigách musí:
+1. Přijmout job message s `algorithm=kheavyhash`.
+2. Použít `job.height` jako KAS block timestamp při hashování.
+3. Mít funkční kheavyhash GPU kernel (nebo alespoň CPU fallback).
 
 ### Commits
 
 - `c21665ace` — debug(auxpow): add println diagnostics for B2b bridge job flow
 - `2f9bc1f9e` — debug(auxpow): add poll loop lifecycle diagnostics
 - `ef4e36d2f` — cleanup(auxpow): remove verbose per-message debug prints, keep bridge metrics
+- `798f96503` — fix(auxpow): prevent wait_for_job busy loop in B2b bridge
+- `44ccf9020` — fix(auxpow): use KAS share target from difficulty, log external job issuance
+- `4c68f18b2` — fix(miner/core): pass KAS block timestamp to kHeavyHash
 
 ### Další kroky
 
-1. Restart SMOS/HiveOS rigů (vyžaduje API token / přístup k dashboardu).
-2. Ověřit že mineri přijímají kheavyhash joby.
+1. Sestavit a deploynout nový miner (`zion-miner`) na SMOS/HiveOS rigy.
+   Nutné potvrdit že miner podporuje kheavyhash a používá timestamp z jobu.
+2. Po deployi mineru sledovat `auxpow shares_submitted` / `shares_accepted`.
 3. Ověřit accepted shares na externím poolu (2miners worker stats).
 4. Ověřit revenue tracking a PPLNS v ZION poolu.
+5. Odebrat `chattr +i` z `/etc/zion/edge-environment.sh` až bude jasné
+   proč se soubor předtím přepisoval na `=0`.
 
 ---
 

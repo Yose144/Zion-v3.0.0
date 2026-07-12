@@ -1599,7 +1599,7 @@ fn handle_client(
                 if let Some(job) = job {
                     WorkAssignment::External(job)
                 } else {
-                    log_ch.log(format!(
+                    log_ch.log_verbose(format!(
                         "auxpow_no_job miner={} coin={} falling_back_to_zion",
                         worker_name, coin
                     ));
