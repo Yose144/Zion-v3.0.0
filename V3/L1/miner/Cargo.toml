@@ -61,6 +61,7 @@ zion-core = { path = "../core" }
 zion-pool = { path = "../pool" }
 zion-cosmic-harmony = { path = "../cosmic-harmony" }
 zion-native-ffi = { path = "../native-ffi", optional = true }
+zion-auxpow = { path = "../../../AuXpow" }
 cudarc = { version = "0.12", optional = true, features = ["cuda-12040"] }
 crossterm = "0.28"
 

@@ -4,23 +4,140 @@ use std::sync::Arc;
 use zion_core::{BlockCandidate, MiningJob, MiningSolution};
 use zion_cosmic_harmony::{cosmic_harmony_with_height, deeksha_lite, deeksha_lite_fire};
 
-/// Hash function selector for dual-algo support.
+/// Hash function selector for multi-algo support.
+///
+/// Supports all ZION PoW algorithms plus external merge-mining algorithms
+/// via `zion-auxpow` (pure-Rust) or `zion-native-ffi` (C acceleration).
+///
+/// # Algorithm dispatch priority
+///
+/// For each external algorithm, the function checks in order:
+/// 1. `zion-native-ffi` C implementation (if `native-*` feature enabled)
+/// 2. `zion-auxpow` pure-Rust fallback (always available)
+///
+/// # Supported algorithms
+///
+/// | Algorithm             | Source         | Coins           |
+/// |-----------------------|----------------|-----------------|
+/// | `deeksha_lite_v1`     | cosmic-harmony | ZION            |
+/// | `deeksha_lite_fire`   | cosmic-harmony | ZION (Metal)    |
+/// | `cosmic_harmony_v3`   | cosmic-harmony | ZION (full)     |
+/// | `blake3`              | auxpow/native  | DCR, ALPH       |
+/// | `kheavyhash`          | auxpow/native  | KAS             |
+/// | `autolykos`           | auxpow/native  | ERG             |
+/// | `kawpow`              | auxpow/native  | RVN, CLORE      |
+/// | `ethash` / `etchash`  | auxpow/native  | ETC             |
+/// | `verushash`           | native-ffi     | VRSC            |
+/// | `randomx`             | native-ffi     | XMR, ZEPH       |
 pub fn hash_candidate(candidate: &BlockCandidate, algorithm: &str) -> [u8; 32] {
+    let header_bytes = candidate.header.to_bytes();
+    let nonce = candidate.nonce;
+    let height = candidate.height;
+
     match algorithm {
-        "deeksha_lite_v1" => {
-            deeksha_lite::deeksha_lite(&candidate.header.to_bytes(), candidate.nonce)
+        // ── ZION PoW algorithms ──────────────────────────────────
+        "deeksha_lite_v1" => deeksha_lite::deeksha_lite(&header_bytes, nonce),
+        "deeksha_lite_fire" => deeksha_lite_fire::deeksha_lite_fire(&header_bytes, nonce),
+        "cosmic_harmony_v3" | "cosmic_harmony_ekam_deeksha_v2" => {
+            cosmic_harmony_with_height(&header_bytes, nonce, height).data
         }
-        "deeksha_lite_fire" => {
-            deeksha_lite_fire::deeksha_lite_fire(&candidate.header.to_bytes(), candidate.nonce)
+
+        // ── External algorithms: Blake3 (DCR, ALPH) ──────────────
+        "blake3" => {
+            #[cfg(feature = "native-blake3-algo")]
+            {
+                return zion_native_ffi::blake3_algo::mine(&header_bytes, nonce);
+            }
+            #[allow(unreachable_code)]
+            {
+                zion_auxpow::hash_blake3(&header_bytes, 0, nonce)
+            }
         }
-        _ => {
-            cosmic_harmony_with_height(
-                &candidate.header.to_bytes(),
-                candidate.nonce,
-                candidate.height,
-            )
-            .data
+
+        // ── External algorithms: kHeavyHash (KAS) ────────────────
+        "kheavyhash" | "kheavy" => {
+            #[cfg(feature = "native-kheavyhash")]
+            {
+                return zion_native_ffi::kheavyhash::mine(&header_bytes, nonce);
+            }
+            #[allow(unreachable_code)]
+            {
+                zion_auxpow::hash_kheavyhash(&header_bytes, 0, nonce)
+            }
         }
+
+        // ── External algorithms: Autolykos v2 (ERG) ─────────────
+        "autolykos" => {
+            #[cfg(feature = "native-autolykos")]
+            {
+                return zion_native_ffi::autolykos::hash(&header_bytes, nonce, height as u32);
+            }
+            #[allow(unreachable_code)]
+            {
+                zion_auxpow::hash_autolykos(&header_bytes, nonce, height as u32)
+            }
+        }
+
+        // ── External algorithms: KawPow (RVN, CLORE) ────────────
+        "kawpow" => {
+            let mut h32 = [0u8; 32];
+            let len = header_bytes.len().min(32);
+            h32[..len].copy_from_slice(&header_bytes[..len]);
+            #[cfg(feature = "native-kawpow")]
+            {
+                let (_mix, final_hash) = zion_native_ffi::kawpow::hash(&h32, nonce, height as u32);
+                return final_hash;
+            }
+            #[allow(unreachable_code)]
+            {
+                let (_mix, final_hash) = zion_auxpow::hash_kawpow(&h32, nonce, height as u32);
+                final_hash
+            }
+        }
+
+        // ── External algorithms: Ethash/EtcHash (ETC) ───────────
+        "ethash" | "etchash" => {
+            #[cfg(feature = "native-etchash")]
+            {
+                zion_native_ffi::etchash::init();
+                return zion_native_ffi::etchash::hash(&header_bytes, nonce, height as u32);
+            }
+            #[allow(unreachable_code)]
+            {
+                zion_auxpow::hash_ethash(&header_bytes, nonce, height as u32)
+            }
+        }
+
+        // ── External algorithms: VerusHash v2.2 (VRSC) ──────────
+        "verushash" => {
+            #[cfg(feature = "native-verushash")]
+            {
+                zion_native_ffi::verushash::init();
+                return zion_native_ffi::verushash::hash(&header_bytes, nonce);
+            }
+            #[allow(unreachable_code)]
+            {
+                // No pure-Rust fallback for VerusHash — use Blake3 as placeholder
+                deeksha_lite::deeksha_lite(&header_bytes, nonce)
+            }
+        }
+
+        // ── External algorithms: RandomX (XMR, ZEPH) ────────────
+        "randomx" => {
+            #[cfg(feature = "native-randomx")]
+            {
+                zion_native_ffi::randomx::init();
+                return zion_native_ffi::randomx::hash(&header_bytes, nonce);
+            }
+            #[allow(unreachable_code)]
+            {
+                // No pure-Rust fallback for RandomX — use Blake3 as placeholder
+                deeksha_lite::deeksha_lite(&header_bytes, nonce)
+            }
+        }
+
+        // ── Fallback: assume cosmic_harmony_v3 for unknown ───────
+        _ => cosmic_harmony_with_height(&header_bytes, nonce, height).data,
     }
 }
 

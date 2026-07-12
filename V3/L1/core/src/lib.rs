@@ -191,18 +191,50 @@ impl BlockCandidate {
         }
     }
 
-    /// Dual-algo hash — select algorithm by name.
-    /// "deeksha_lite_v1" uses the simplified GCN-friendly algorithm.
+    /// Multi-algo hash — select algorithm by name.
+    ///
+    /// ZION algorithms use `zion-cosmic-harmony`.  External merge-mining
+    /// algorithms delegate to `zion-auxpow` (pure-Rust) so the core crate
+    /// can validate shares without a C toolchain.
+    ///
+    /// For C-accelerated hashing, use `zion_miner::parallel::hash_candidate`
+    /// which checks `zion-native-ffi` first and falls back to `zion-auxpow`.
     pub fn hash_with_algorithm(&self, algorithm: &str) -> [u8; 32] {
+        let header_bytes = self.header.to_bytes();
         match algorithm {
             "deeksha_lite_v1" => {
-                zion_cosmic_harmony::deeksha_lite::deeksha_lite(&self.header.to_bytes(), self.nonce)
+                zion_cosmic_harmony::deeksha_lite::deeksha_lite(&header_bytes, self.nonce)
             }
             "deeksha_lite_fire" => zion_cosmic_harmony::deeksha_lite_fire::deeksha_lite_fire(
-                &self.header.to_bytes(),
+                &header_bytes,
                 self.nonce,
             ),
-            _ => cosmic_harmony_with_height(&self.header.to_bytes(), self.nonce, self.height).data,
+            "cosmic_harmony_v3" | "cosmic_harmony_ekam_deeksha_v2" => {
+                cosmic_harmony_with_height(&header_bytes, self.nonce, self.height).data
+            }
+            // ── External algorithms (pure-Rust via zion-auxpow) ──
+            "blake3" => zion_auxpow::hash_blake3(&header_bytes, 0, self.nonce),
+            "kheavyhash" | "kheavy" => {
+                zion_auxpow::hash_kheavyhash(&header_bytes, 0, self.nonce)
+            }
+            "autolykos" => {
+                zion_auxpow::hash_autolykos(&header_bytes, self.nonce, self.height as u32)
+            }
+            "kawpow" => {
+                let mut h32 = [0u8; 32];
+                let len = header_bytes.len().min(32);
+                h32[..len].copy_from_slice(&header_bytes[..len]);
+                zion_auxpow::hash_kawpow(&h32, self.nonce, self.height as u32).1
+            }
+            "ethash" | "etchash" => {
+                zion_auxpow::hash_ethash(&header_bytes, self.nonce, self.height as u32)
+            }
+            // VerusHash / RandomX have no pure-Rust fallback — use deeksha_lite
+            // as placeholder.  Real validation requires native-ffi feature.
+            "verushash" | "randomx" => {
+                zion_cosmic_harmony::deeksha_lite::deeksha_lite(&header_bytes, self.nonce)
+            }
+            _ => cosmic_harmony_with_height(&header_bytes, self.nonce, self.height).data,
         }
     }
 }
