@@ -56,14 +56,16 @@ pub fn hash_candidate(candidate: &BlockCandidate, algorithm: &str) -> [u8; 32] {
         }
 
         // ── External algorithms: kHeavyHash (KAS) ────────────────
+        // For KAS jobs the pool sends the block timestamp in the `height` field.
         "kheavyhash" | "kheavy" => {
             #[cfg(feature = "native-kheavyhash")]
             {
-                return zion_native_ffi::kheavyhash::mine(&header_bytes, nonce);
+                // Native FFI currently lacks a timestamp argument; fall back to
+                // the Rust implementation so the correct timestamp is used.
             }
             #[allow(unreachable_code)]
             {
-                zion_auxpow::hash_kheavyhash(&header_bytes, 0, nonce)
+                zion_auxpow::hash_kheavyhash(&header_bytes, height, nonce)
             }
         }
 

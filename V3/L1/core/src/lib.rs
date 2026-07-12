@@ -214,8 +214,9 @@ impl BlockCandidate {
             }
             // ── External algorithms (pure-Rust via zion-auxpow) ──
             "blake3" => zion_auxpow::hash_blake3(&header_bytes, 0, self.nonce),
+            // For KAS jobs the pool sends the block timestamp in the `height` field.
             "kheavyhash" | "kheavy" => {
-                zion_auxpow::hash_kheavyhash(&header_bytes, 0, self.nonce)
+                zion_auxpow::hash_kheavyhash(&header_bytes, self.height, self.nonce)
             }
             "autolykos" => {
                 zion_auxpow::hash_autolykos(&header_bytes, self.nonce, self.height as u32)
