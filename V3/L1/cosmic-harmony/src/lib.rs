@@ -139,4 +139,29 @@ mod tests {
     fn chv3_fork_height_is_4500() {
         assert_eq!(CHV3_FORK_HEIGHT, 4500);
     }
+
+    // ── Phase D: Name unification tests ──────────────────────────────
+
+    /// Phase D: chv3 is the canonical name for height >= 4500.
+    /// Old name (deeksha_lite_v1) is used below 4500 for backward compat.
+    #[test]
+    fn chv3_is_canonical_at_fork_height() {
+        assert_eq!(profile_name_for_height(4500), CHV3_PROFILE);
+        assert_eq!(profile_name_for_height(4999), CHV3_PROFILE);
+    }
+
+    /// Phase D: Below CHV3_FORK_HEIGHT, the old name is still used.
+    #[test]
+    fn lite_v1_still_used_below_chv3_fork() {
+        assert_eq!(profile_name_for_height(0), POW_PROFILE);
+        assert_eq!(profile_name_for_height(4499), POW_PROFILE);
+    }
+
+    /// Phase D: CHV3_PROFILE and POW_PROFILE are distinct strings.
+    #[test]
+    fn chv3_and_lite_are_distinct_names() {
+        assert_ne!(CHV3_PROFILE, POW_PROFILE);
+        assert_eq!(CHV3_PROFILE, "deeksha_chv3");
+        assert_eq!(POW_PROFILE, "deeksha_lite_v1");
+    }
 }

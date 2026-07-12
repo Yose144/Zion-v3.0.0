@@ -1136,10 +1136,12 @@ impl WorkAssignment {
 
     fn algorithm(&self) -> &str {
         match self {
-            // Use the pool's canonical advertised algorithm for Zion jobs.
-            // This must match what miners use to compute shares, otherwise
-            // the node will compute a different hash and reject the block.
-            Self::Zion(_) => zion_pool::advertised_algorithm(),
+            // Phase D: Use height-aware canonical algorithm name for Zion jobs.
+            // For height >= 4500 (CHV3_FORK_HEIGHT), advertises `deeksha_chv3`.
+            // Below 4500, advertises `deeksha_lite_v1` (backward compat).
+            // Both names map to the same hash function, so miners that only
+            // know `deeksha_lite_v1` continue to work seamlessly.
+            Self::Zion(j) => zion_pool::advertised_algorithm_for_height(j.height),
             Self::External(j) => &j.algorithm,
         }
     }
