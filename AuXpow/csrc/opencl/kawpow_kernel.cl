@@ -1,10 +1,17 @@
 // KawPow (RVN/CLORE/EVR/MEWC) OpenCL placeholder kernel.
 //
-// This is a PHASE-2 SCAFFOLD.  It does NOT implement the real KawPow
+// NOTE: This is a PHASE-2 SCAFFOLD.  It does NOT implement the real KawPow
 // ProgPoW-derived algorithm; it computes a SHA3-256 of (header_blob || nonce)
 // and checks the target.  It is functionally equivalent to the placeholder
 // CPU hasher in zion_auxpow::external_hashers.
-// A production kernel would implement the full KawPow DAG + ProgPoW loop.
+//
+// The real KawPow algorithm requires an Ethash-style DAG plus a per-block
+// generated ProgPoW program sequence (cache).  This is the most complex of the
+// external GPU algorithms to implement.
+//
+// References:
+//   - https://github.com/RavenCommunity/kawpowminer (libethash-cl/CLMiner_kernel.cl)
+//   - https://github.com/luminousmining/miner (sources/algo/kawpow/opencl/)
 
 #define ROTL64(x, n) (((x) << (n)) | ((x) >> (64 - (n))))
 

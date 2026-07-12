@@ -1,14 +1,25 @@
 // kHeavyHash OpenCL kernel for Kaspa (KAS) mining.
 //
+// NOTE: This is a PHASE-2 SCAFFOLD.  It does NOT implement the real kHeavyHash
+// matrix multiply; it computes SHA3-256(pre_pow_hash || timestamp || nonce)
+// and checks the target, matching the CPU placeholder in
+// zion_auxpow::external_hashers.
+//
+// For a real implementation see the reference miners below.  The real
+// algorithm needs a deterministic 64x64 uint64 matrix generated from
+// pre_pow_hash and a uint64 matrix-vector multiply.
+//
+// References:
+//   - https://github.com/tmrlvi/kaspa-miner
+//   - https://github.com/ZorkNetwork/kheavyhash-miner
+//   - https://github.com/luminousmining/miner (sources/algo/kheavyhash/opencl/)
+//
 // kHeavyHash algorithm (Kaspa):
 //   1. pre_hash = SHA3-256(pre_pow_hash || timestamp || nonce)
 //   2. Expand pre_hash to 64-element vector using SHA3-256
 //   3. Matrix multiply: vec (1x64) × matrix (64x64) → result (1x64)
 //   4. XOR result with pre_hash-padded vector
 //   5. HeavyHash = SHA3-256(result_padded)
-//
-// This is a simplified kernel for GPU mining.  A production version would
-// use optimized SHA3 (Keccak) with wavefront-level parallelism.
 
 // Keccak-f[1600] round constants (24 rounds)
 __constant const ulong KECCAK_RC[24] = {

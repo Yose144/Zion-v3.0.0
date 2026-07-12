@@ -1,10 +1,17 @@
 // Ethash / Etchash (ETC/ETHW) OpenCL placeholder kernel.
 //
-// This is a PHASE-2 SCAFFOLD.  It does NOT implement the real Ethash
+// NOTE: This is a PHASE-2 SCAFFOLD.  It does NOT implement the real Ethash
 // DAG-based algorithm; it computes a SHA3-256 of (header_blob || nonce)
 // and checks the target.  It is functionally equivalent to the placeholder
 // CPU hasher in zion_auxpow::external_hashers.
-// A production kernel would implement the full Ethash DAG lookup + FNV mix.
+//
+// The real Ethash algorithm requires a per-epoch light cache and a multi-GB
+// DAG that is looked up during hashing.
+//
+// References:
+//   - https://github.com/ethereum-mining/ethminer (libethash-cl/kernels/cl/ethash.cl)
+//   - https://github.com/Genoil/cpp-ethereum (libethash-cl/ethash_cl_miner_kernel.cl)
+//   - https://github.com/luminousmining/miner (sources/algo/ethash/opencl/)
 
 #define ROTL64(x, n) (((x) << (n)) | ((x) >> (64 - (n))))
 
