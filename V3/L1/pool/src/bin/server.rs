@@ -364,7 +364,7 @@ fn external_coin_to_algorithm(coin: ExternalCoin) -> &'static str {
 async fn run_auxpow_bridge(
     cfg: AuxPowIntegrationConfig,
     bridge: AuxPowBridge,
-    share_rx: std::sync::mpsc::Receiver<(ShareForwardRequest, tokio::sync::oneshot::Sender<ShareForwardOutcome>)>,
+    share_rx: std::sync::mpsc::Receiver<(ShareForwardRequest, std::sync::mpsc::Sender<ShareForwardOutcome>)>,
 ) {
     let mut mux = JobMultiplexer::new(&cfg.payout_wallet, &cfg.worker_name)
         .with_preference(cfg.pool_preference, &cfg.region);
@@ -2453,16 +2453,16 @@ struct ShareForwardOutcome {
 ///   and pushes fresh jobs into `job_queue`.
 /// * Session threads pop jobs from `job_queue` synchronously.
 /// * Session threads send `ShareForwardRequest`s via `share_tx`; the tokio
-///   side forwards them and returns the result via a oneshot channel.
+///   side forwards them and returns the result via a synchronous mpsc channel.
 #[derive(Clone)]
 struct AuxPowBridge {
     enabled: bool,
     job_queue: Arc<Mutex<VecDeque<JobPackage>>>,
-    share_tx: std::sync::mpsc::Sender<(ShareForwardRequest, tokio::sync::oneshot::Sender<ShareForwardOutcome>)>,
+    share_tx: std::sync::mpsc::Sender<(ShareForwardRequest, std::sync::mpsc::Sender<ShareForwardOutcome>)>,
 }
 
 impl AuxPowBridge {
-    fn new(enabled: bool) -> (Self, std::sync::mpsc::Receiver<(ShareForwardRequest, tokio::sync::oneshot::Sender<ShareForwardOutcome>)>) {
+    fn new(enabled: bool) -> (Self, std::sync::mpsc::Receiver<(ShareForwardRequest, std::sync::mpsc::Sender<ShareForwardOutcome>)>) {
         let (share_tx, share_rx) = std::sync::mpsc::channel();
         let bridge = Self {
             enabled,
@@ -2486,11 +2486,11 @@ impl AuxPowBridge {
         if !self.enabled {
             return None;
         }
-        let (tx, rx) = tokio::sync::oneshot::channel();
+        let (tx, rx) = std::sync::mpsc::channel();
         if self.share_tx.send((req, tx)).is_err() {
             return None;
         }
-        rx.blocking_recv().ok()
+        rx.recv().ok()
     }
 }
 
@@ -4234,6 +4234,7 @@ mod tests {
 
     fn spawn_pool_server(
         config: ServerConfig,
+        auxpow_bridge: Option<AuxPowBridge>,
     ) -> Result<(
         SocketAddr,
         AuxPowBridge,
@@ -4255,7 +4256,7 @@ mod tests {
         let template_cache = Arc::new(Mutex::new(TemplateCache::new(Duration::from_secs(3))));
         let log_ch = LogChannel::spawn();
         let deferred_payouts: DeferredPayoutQueue = Arc::new(Mutex::new(Vec::new()));
-        let auxpow_bridge = AuxPowBridge::new(config.auxpow_config.enabled).0;
+        let auxpow_bridge = auxpow_bridge.unwrap_or_else(|| AuxPowBridge::new(config.auxpow_config.enabled).0);
         let auxpow_bridge_for_session = auxpow_bridge.clone();
 
         let handle = thread::spawn(move || -> Result<()> {
@@ -4319,7 +4320,7 @@ mod tests {
             upstream_pool_addr: None,
             auxpow_config: AuxPowIntegrationConfig::default(),
         };
-        let (pool_addr, _auxpow_bridge, pool_handle) = spawn_pool_server(config)?;
+        let (pool_addr, _auxpow_bridge, pool_handle) = spawn_pool_server(config, None)?;
 
         let mut stream = TcpStream::connect(pool_addr).context("connect test miner to pool")?;
         let reader_stream = stream.try_clone().context("clone test miner stream")?;
@@ -4520,7 +4521,7 @@ mod tests {
                 worker_name: "zion_auxpow_test".to_string(),
             },
         };
-        let (pool_addr, auxpow_bridge, pool_handle) = spawn_pool_server(config.clone())
+        let (pool_addr, auxpow_bridge, pool_handle) = spawn_pool_server(config.clone(), None)
             .expect("spawn pool server with auxpow bridge");
 
         // Pre-seed the bridge queue with a synthetic KAS job.
@@ -4605,6 +4606,272 @@ mod tests {
         let (_, bye) = read_wire_message(&mut reader).expect("read bye");
         assert!(matches!(bye, PoolMessage::Bye { .. }));
 
+        pool_handle
+            .join()
+            .expect("pool test thread panicked")
+            .expect("pool test thread error");
+    }
+
+    /// Spawn a minimal mock Stratum v1 server that accepts subscribe/authorize,
+    /// sends one mining.notify job, and records any mining.submit it receives.
+    async fn spawn_mock_stratum_pool(
+        notify_job_id: &str,
+        notify_header: &str,
+        notify_target: &str,
+        accept_submit: bool,
+    ) -> (String, tokio::sync::mpsc::Receiver<serde_json::Value>) {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.expect("bind mock stratum");
+        let addr = listener.local_addr().unwrap().to_string();
+        let (submit_tx, submit_rx) = tokio::sync::mpsc::channel::<serde_json::Value>(4);
+
+        let notify = serde_json::json!({
+            "id": null,
+            "method": "mining.notify",
+            "params": [notify_job_id, notify_header, notify_target]
+        });
+        let notify_line = serde_json::to_string(&notify).unwrap() + "\n";
+
+        let accept_submit = accept_submit;
+        tokio::spawn(async move {
+            async fn read_json_message(
+                reader: &mut tokio::net::tcp::OwnedReadHalf,
+                buf: &mut [u8],
+            ) -> serde_json::Value {
+                let n = reader.read(buf).await.expect("read stratum message");
+                serde_json::from_slice::<serde_json::Value>(&buf[..n]).expect("parse stratum message")
+            }
+
+            let (socket, _) = listener.accept().await.expect("accept stratum client");
+            let (mut reader, mut writer) = socket.into_split();
+            let mut buf = vec![0u8; 4096];
+
+            // Subscribe
+            let req = read_json_message(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "mining.subscribe");
+            let resp = serde_json::json!({ "id": 1, "result": [["mining.set_difficulty", "sub"], 4], "error": null });
+            writer.write_all((serde_json::to_string(&resp).unwrap() + "\n").as_bytes()).await.unwrap();
+            writer.flush().await.unwrap();
+
+            // Authorize
+            let req = read_json_message(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "mining.authorize");
+            let resp = serde_json::json!({ "id": 2, "result": true, "error": null });
+            writer.write_all((serde_json::to_string(&resp).unwrap() + "\n").as_bytes()).await.unwrap();
+            writer.flush().await.unwrap();
+
+            // Send job
+            writer.write_all(notify_line.as_bytes()).await.unwrap();
+            writer.flush().await.unwrap();
+
+            // Wait for submit
+            let req = read_json_message(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "mining.submit");
+            let id = req.get("id").and_then(|v| v.as_i64()).unwrap_or(100);
+            let _ = submit_tx.send(req).await;
+            let resp = if accept_submit {
+                serde_json::json!({ "id": id, "result": true, "error": null })
+            } else {
+                serde_json::json!({ "id": id, "result": false, "error": { "code": -1, "message": "low diff" } })
+            };
+            writer.write_all((serde_json::to_string(&resp).unwrap() + "\n").as_bytes()).await.unwrap();
+            writer.flush().await.unwrap();
+        });
+
+        (addr, submit_rx)
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+    async fn auxpow_e2e_pool_server_forwards_external_share_to_stratum_pool() {
+        let _guard = env_lock().lock().expect("env lock");
+
+        // 1) Start mock external Stratum pool.
+        let (mock_pool_addr, mut submit_rx) = spawn_mock_stratum_pool(
+            "job_dcr_e2e_001",
+            "aabbccddeeff00112233445566778899",
+            "0000ffff",
+            true,
+        )
+        .await;
+
+        // 2) Build an AuxPowClient pointing at the mock server.
+        let mut profile = zion_auxpow::CoinProfile::default_for(zion_auxpow::ExternalCoin::DCR);
+        let (host, port_str) = mock_pool_addr.rsplit_once(':').unwrap();
+        profile.pool_host = host.to_string();
+        profile.pool_port = port_str.parse().unwrap();
+        profile.worker_name = "zion_e2e".to_string();
+
+        let client = std::sync::Arc::new(zion_auxpow::AuxPowClient::new(profile));
+        client.connect("bc1qtest").await.expect("connect to mock pool");
+
+        // Wait for the first job.
+        let external_job = client
+            .wait_for_job(3000)
+            .await
+            .expect("wait for job")
+            .expect("no job received");
+        let job_package = zion_auxpow::JobPackage {
+            external_coin: external_job.external_coin,
+            external_job_id: external_job.job_id.clone(),
+            algorithm: external_job.algorithm.clone(),
+            header_bytes: external_job.header_bytes.clone(),
+            target_bytes: external_job.target_bytes,
+            timestamp: external_job.timestamp.unwrap_or(0),
+            extranonce1: external_job.extranonce1.clone(),
+            start_nonce: 0,
+            nonce_count: 1_000_000,
+        };
+
+        // 3) Build the bridge and a background tokio task that forwards shares.
+        let (bridge, share_rx) = AuxPowBridge::new(true);
+        bridge
+            .job_queue
+            .lock()
+            .expect("auxpow job queue lock poisoned")
+            .push_front(job_package);
+
+        let client_for_forwarder = std::sync::Arc::clone(&client);
+        tokio::spawn(async move {
+            let forwarder = zion_auxpow::ShareForwarder::new(client_for_forwarder);
+            // Process the single share this test submits.
+            let (req, reply_tx) = match tokio::task::spawn_blocking(move || share_rx.recv()).await {
+                Ok(Ok(pair)) => pair,
+                Ok(Err(_)) => return,
+                Err(_) => return,
+            };
+            let started = std::time::Instant::now();
+            let result = match forwarder
+                .try_forward(&req.external_job_id, req.nonce, &req.hash, &req.target)
+                .await
+            {
+                Ok(r) => r,
+                Err(e) => {
+                    eprintln!("e2e_forward_error: {e}");
+                    zion_auxpow::ShareForwardResult::Unknown
+                }
+            };
+            let outcome = ShareForwardOutcome {
+                result,
+                elapsed_ms: started.elapsed().as_millis() as u64,
+            };
+            let _ = reply_tx.send(outcome);
+        });
+
+        // 4) Start the ZION pool server with this bridge.
+        let config = ServerConfig {
+            bind_addr: "127.0.0.1:0".to_string(),
+            accept_limit: Some(1),
+            node_rpc_addr: None,
+            loop_count: 1,
+            job_ttl_ms: 15_000,
+            start_nonce: 42,
+            nonce_count: 64,
+            nonce_count_gpu: 64,
+            nonce_stride: 64,
+            timestamp: 1_762_100_200,
+            target: DifficultyTarget::MAX,
+            revenue_source: RevenueSource::Blake3External,
+            revenue_value_usd: 1.25,
+            user_default_group: SessionGroup::Revenue,
+            backend_miner_ids: Vec::new(),
+            backend_worker_hints: Vec::new(),
+            routing_log_every: 0,
+            routing_metrics_bind: None,
+            max_sessions_per_ip: 0,
+            pool_wallet_address: None,
+            pool_signing_key: None,
+            session_read_timeout_secs: 300,
+            vardiff_start_difficulty: 1,
+            vardiff_target_secs: 10,
+            vardiff_retarget_shares: 6,
+            vardiff_min_difficulty: 1,
+            vardiff_max_difficulty: 0,
+            btc_wallet: None,
+            revenue_proxy_addr: None,
+            revenue_proxy_coin: "DCR".to_string(),
+            fee_config: FeeConfig::default(),
+            upstream_pool_addr: None,
+            auxpow_config: AuxPowIntegrationConfig {
+                enabled: true,
+                split: None,
+                force_coin: Some(zion_auxpow::ExternalCoin::DCR),
+                pool_preference: zion_auxpow::PoolPreference::Default,
+                region: "eu".to_string(),
+                payout_wallet: "bc1qtest".to_string(),
+                worker_name: "zion_auxpow_e2e".to_string(),
+            },
+        };
+        let (pool_addr, _bridge_for_server, pool_handle) = spawn_pool_server(config, Some(bridge))
+            .expect("spawn pool server for e2e");
+
+        // 5) Connect a miner and read the external job.
+        let mut stream = TcpStream::connect(pool_addr).expect("connect test miner to pool");
+        let reader_stream = stream.try_clone().expect("clone test miner stream");
+        let mut reader = std::io::BufReader::new(reader_stream);
+
+        write_wire_message(
+            &mut stream,
+            &PoolMessage::Hello {
+                miner_id: "e2e-miner".to_string(),
+                worker_name: "rig-e2e".to_string(),
+                algorithm: "blake3".to_string(),
+                payout_address: "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604".to_string(),
+                backend: "cpu".to_string(),
+            },
+        )
+        .expect("write hello");
+
+        let (_, welcome) = read_wire_message(&mut reader).expect("read welcome");
+        assert!(matches!(welcome, PoolMessage::Welcome { .. }));
+        let (_, _set_diff) = read_wire_message(&mut reader).expect("read set difficulty");
+        assert!(matches!(_set_diff, PoolMessage::SetDifficulty { .. }));
+        let (_, job_message) = read_wire_message(&mut reader).expect("read job");
+        let job_id = match &job_message {
+            PoolMessage::Job { job_id, algorithm, .. } => {
+                assert_eq!(algorithm, "blake3");
+                *job_id
+            }
+            other => panic!("expected Job message, got {other:?}"),
+        };
+
+        // 6) Submit a share. The hash is cosmetic; the pool recomputes it.
+        write_wire_message(
+            &mut stream,
+            &PoolMessage::Submit {
+                job_id,
+                miner_id: "e2e-miner".to_string(),
+                worker_name: "rig-e2e".to_string(),
+                nonce: 42,
+                hash_hex: "00".repeat(32),
+                attempted_hashes: Some(64),
+                elapsed_ms: Some(1000),
+            },
+        )
+        .expect("write submit");
+
+        // Read result (accepted/rejected) and bye.
+        let (_, result) = read_wire_message(&mut reader).expect("read result");
+        assert!(matches!(result, PoolMessage::Result { accepted: true, .. }), "share should be accepted: {result:?}");
+
+        // 7) Verify the mock external pool received mining.submit.
+        let submit_req = tokio::time::timeout(std::time::Duration::from_secs(5), submit_rx.recv())
+            .await
+            .expect("timeout waiting for submit")
+            .expect("submit channel closed");
+        assert_eq!(submit_req["method"], "mining.submit");
+        assert_eq!(
+            submit_req["params"][0].as_str().unwrap_or(""),
+            "bc1qtest.zion_e2e"
+        );
+        assert_eq!(
+            submit_req["params"][1].as_str().unwrap_or(""),
+            "job_dcr_e2e_001"
+        );
+
+        // Clean shutdown: miner disconnects, pool handle finishes.
+        drop(stream);
         pool_handle
             .join()
             .expect("pool test thread panicked")
