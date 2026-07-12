@@ -4999,6 +4999,96 @@ zůstávají akceptované pro backward compat.
 
 ---
 
+## AuxPow E2E with B2b Bridge — 2026-07-12
+
+### Cíl
+Nastavit a ověřit AuxPow B2b bridge (pool-side job multiplexing) tak, aby
+mineri připojení k ZION poolu dostávali externí joby (KAS/kheavyhash) a jejich
+share byly forwardovány zpět na externí pool.
+
+### Konfigurace na Edge
+
+Přidáno do `/etc/zion/edge-environment.sh`:
+
+```bash
+# === AUXPOW B2B BRIDGE (pool-side job multiplexing) ===
+ZION_POOL_AUXPOW_ENABLED=1
+ZION_POOL_AUXPOW_WALLET=bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh
+ZION_POOL_AUXPOW_WORKER_NAME=zion-pool
+ZION_POOL_AUXPOW_COIN=KAS
+ZION_POOL_AUXPOW_SPLIT_ZION=4
+ZION_POOL_AUXPOW_SPLIT_EXTERNAL=1
+```
+
+A také potvrzeno:
+
+```bash
+ZION_AUXPOW_ENABLED=1
+ZION_AUXPOW_WALLET=bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh
+ZION_AUXPOW_WORKER_NAME=zion-pool
+```
+
+### Co je B2b bridge
+
+- `AuxPowScheduler` (worker `zion_auxpow`) — pool vlastním výpočtem mine na
+  KAS, CPU-only, revenue tracking pro PPLNS.
+- `AuxPowBridge` (worker `zion-pool`) — pool multiplexuje externí joby ke svým
+  minerům. Když miner najde share na externím jobu, pool ho forwarduje na
+  externí pool.
+- Split 4:1 = 80% ZION jobů, 20% KAS/kheavyhash jobů.
+
+### Implementační změny
+
+- `AuXpow/src/auxpow_client.rs`: přidána podpora pro `set_extranonce` bez prefixu
+  `mining.` (2miners KAS pool posílá `set_extranonce`). Zachováno `println!` pro
+  chyby poll loop (pool server nemá tracing subscriber, `warn!` je silent).
+- `V3/L1/pool/src/bin/server.rs`: log když bridge zařadí externí job do queue,
+  log při forwardu share na externí pool.
+
+### Test miner (Python)
+
+Vytvořen `/tmp/test_miner.py` na Edge — minimální ZION stratum client který
+přijímá joby a posílá `no_solution`. Výsledek 60s běhu:
+
+```
+DONE. Jobs seen: {'deeksha_lite_v1': 1144, 'kheavyhash': 287, 'other': 0}
+```
+
+- Ratio ~4:1 odpovídá konfiguraci.
+- Bridge úspěšně přijímá KAS joby a posílá je minerům.
+- Share forward flow je připraven, ale bez reálného GPU není otestovaný.
+
+### Aktuální stav Edge
+
+- Pool běží (PID se mění při restardech, nyní aktivní).
+- AuxPow scheduler: připojen k KAS, 0 shares (CPU-only, očekáváno).
+- B2b bridge: enabled, připojen k KAS, joby přijímány.
+- **Reální mineri nejsou připojeni** (0 active miners). Důvod: po několika
+  restartech poolu a delším výpadku se SMOS rigy pravděpodobně odpojily a
+  nezauto reconnec.
+
+### Blokátor pro reálné E2E share streams
+
+Reální mineri (nano-02/03/04/05, vega-smos, workrr, 5070Ti) jsou spravováni
+přes SimpleMining OS / HiveOS. Je potřeba je restartovat/reloadnout aby se
+znovu připojily k poolu `62.171.141.136:8444`. Bez toho nelze otestovat
+skutečný share submission a revenue flow.
+
+### Commits
+
+- `c21665ace` — debug(auxpow): add println diagnostics for B2b bridge job flow
+- `2f9bc1f9e` — debug(auxpow): add poll loop lifecycle diagnostics
+- `ef4e36d2f` — cleanup(auxpow): remove verbose per-message debug prints, keep bridge metrics
+
+### Další kroky
+
+1. Restart SMOS/HiveOS rigů (vyžaduje API token / přístup k dashboardu).
+2. Ověřit že mineri přijímají kheavyhash joby.
+3. Ověřit accepted shares na externím poolu (2miners worker stats).
+4. Ověřit revenue tracking a PPLNS v ZION poolu.
+
+---
+
 ## Session 2026-07-12 — F5 Coinbase Balance Fix + Pool Logging + Template Cache + AuxPow Dashboard Expansion
 
 ### Problém: Node stuck na 3886
