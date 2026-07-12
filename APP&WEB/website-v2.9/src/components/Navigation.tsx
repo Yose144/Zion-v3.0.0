@@ -316,7 +316,7 @@ export default function Navigation() {
         </div>
 
         {/* ═══ FLOOR 2 — MINI ICONS + GROUP DROPDOWNS + BACKGROUND TOGGLE ═══ */}
-        <div className={`hidden md:flex items-center justify-between gap-2 relative rounded-2xl border border-white/[0.07] bg-black/20 backdrop-blur-md px-2 py-1 shadow-none overflow-hidden transition-all duration-300 ${scrolled ? 'mt-0 h-0 opacity-0 py-0 px-0 border-0' : 'mt-1 h-auto opacity-100'}`}>
+        <div className={`hidden md:flex items-center justify-between gap-2 relative rounded-2xl border border-white/[0.07] bg-black/20 backdrop-blur-md px-2 py-1 shadow-none transition-all duration-300 ${scrolled ? 'mt-0 h-0 opacity-0 py-0 px-0 border-0 overflow-hidden' : 'mt-1 h-auto opacity-100 overflow-visible'}`}>
           {/* Icons + group dropdowns */}
           <div className="flex items-center gap-0.5 flex-1 justify-center overflow-x-auto no-scrollbar min-w-0">
             {/* Secondary icons — medium */}
