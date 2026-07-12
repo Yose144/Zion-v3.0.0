@@ -26,8 +26,8 @@ export default function AlohaOverlay() {
   return (
     <>
       {/* Aloha trigger — sits above the navigation bar */}
-      <div className="fixed top-0 left-0 right-0 z-[60] flex justify-center pointer-events-none">
-        <div className="pointer-events-auto -mt-3 sm:-mt-4">
+      <div className="fixed top-1 left-0 right-0 z-[60] flex justify-center pointer-events-none">
+        <div className="pointer-events-auto scale-[0.55] sm:scale-[0.65] md:scale-75 origin-top">
           <TahitiFlower expanded={expanded} onToggle={() => setExpanded((v) => !v)} />
         </div>
       </div>

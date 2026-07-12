@@ -1,4 +1,4 @@
-/* Spacer below the fixed navigation — keeps content clear of the nav bar. */
+/* Spacer below the fixed navigation + Aloha flower — keeps content clear. */
 export default function HeroSection() {
-  return <div className="h-14 sm:h-16 md:h-18" />;
+  return <div className="h-[7.5rem] sm:h-[8rem] md:h-[9rem]" />;
 }
