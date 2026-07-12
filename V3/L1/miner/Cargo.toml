@@ -27,7 +27,7 @@ default = []
 
 # GPU backends (feature-gated)
 gpu         = ["gpu-opencl"]                           # alias → OpenCL
-gpu-opencl  = ["dep:ocl"]                              # Ekam Deeksha + DCR Blake3
+gpu-opencl  = ["dep:ocl", "zion-auxpow/gpu-opencl"]    # Ekam Deeksha + external Blake3/kHeavyHash
 gpu-cuda    = ["dep:cudarc"]                            # NVIDIA CUDA via cudarc
 gpu-metal   = ["dep:metal", "dep:block", "dep:objc"]                  # Apple Silicon Metal GPU (macOS only)
 gpu-all     = ["gpu-opencl", "gpu-cuda", "gpu-metal"]
@@ -61,7 +61,7 @@ zion-core = { path = "../core" }
 zion-pool = { path = "../pool" }
 zion-cosmic-harmony = { path = "../cosmic-harmony" }
 zion-native-ffi = { path = "../native-ffi", optional = true }
-zion-auxpow = { path = "../../../AuXpow" }
+zion-auxpow = { path = "../../../AuXpow", default-features = false }
 cudarc = { version = "0.12", optional = true, features = ["cuda-12040"] }
 crossterm = "0.28"
 

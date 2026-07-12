@@ -149,6 +149,12 @@ impl GpuBackendManager {
             "deeksha_lite_v1",
             "cosmic_harmony_ekam_deeksha_v2",
             "deeksha_lite_fire",
+            // External AuxPoW algorithms
+            "blake3",
+            "kheavyhash",
+            "autolykos",
+            "kawpow",
+            "ethash",
         ];
         let mut results = Vec::new();
         for algo in algos {
@@ -174,14 +180,39 @@ impl GpuBackendManager {
 /// Alias for backward compatibility.
 pub type GpuBackend = GpuBackendManager;
 
+/// Set of external AuxPoW algorithms that are handled by `zion_auxpow` GPU miner.
+fn is_external_algorithm(algorithm: &str) -> bool {
+    matches!(
+        algorithm,
+        "blake3"
+            | "blake3_alph"
+            | "blake3_dcr"
+            | "kheavyhash"
+            | "kheavyhash_kas"
+            | "autolykos"
+            | "autolykos_erg"
+            | "kawpow"
+            | "kawpow_rvn"
+            | "kawpow_clore"
+            | "kawpow_evr"
+            | "kawpow_mewc"
+            | "ethash"
+            | "etchash"
+            | "ethash_etc"
+            | "verushash"
+            | "randomx"
+    )
+}
+
 /// Try to create the best available GPU backend.
 /// Selects the appropriate OpenCL miner based on the algorithm.
 pub fn create_gpu_backend(
     kind: GpuBackendKind,
-    _work_size: usize,
+    work_size: usize,
     algorithm: &str,
 ) -> Result<Box<dyn GpuMiner>> {
     let _ = algorithm;
+    let _ = work_size;
     match kind {
         GpuBackendKind::Cpu => {
             anyhow::bail!("GPU backend requested but kind=cpu — use CPU mining path instead");
@@ -189,6 +220,19 @@ pub fn create_gpu_backend(
         GpuBackendKind::OpenCL | GpuBackendKind::Auto => {
             #[cfg(feature = "gpu-opencl")]
             {
+                // External AuxPoW algorithms (Blake3, kHeavyHash, ...)
+                if is_external_algorithm(algorithm) {
+                    match opencl_external::OpenClExternalMiner::new(algorithm, work_size) {
+                        Ok(miner) => return Ok(Box::new(miner)),
+                        Err(e) => {
+                            if kind == GpuBackendKind::OpenCL {
+                                anyhow::bail!("External OpenCL init failed: {e}");
+                            }
+                            println!("external_opencl_unavailable algorithm={algorithm} reason=\"{e}\"");
+                        }
+                    }
+                }
+
                 // Select miner based on algorithm
                 if algorithm == "deeksha_lite_v1" {
                     match opencl_deeksha_lite::OpenClDeekshaLiteMiner::new(work_size) {
@@ -3179,6 +3223,138 @@ pub mod metal_deeksha_lite_fire {
                 nonce = nonce.wrapping_add(self.batch_size as u64);
             }
 
+            let elapsed = start.elapsed().as_secs_f64();
+            let khps = if elapsed > 0.0 {
+                total as f64 / elapsed / 1_000.0
+            } else {
+                0.0
+            };
+            Ok((total, elapsed, khps))
+        }
+    }
+}
+
+/// OpenCL miner for external AuxPoW algorithms (Blake3, kHeavyHash, etc.).
+/// Delegates to `zion_auxpow::gpu_miner::GpuMiner`.
+#[cfg(feature = "gpu-opencl")]
+pub mod opencl_external {
+    use super::*;
+    use std::time::Instant;
+    use zion_auxpow::gpu_miner::{GpuFoundShare, GpuMiner as AuxPowGpuMiner};
+
+    pub struct OpenClExternalMiner {
+        algorithm: String,
+        miner: AuxPowGpuMiner,
+        work_size: usize,
+    }
+
+    impl OpenClExternalMiner {
+        pub fn new(algorithm: &str, work_size: usize) -> Result<Self> {
+            let miner = AuxPowGpuMiner::new()
+                .map_err(|e| anyhow::anyhow!("auxpow_gpu_init_failed algorithm={algorithm} err={e}"))?;
+            Ok(Self {
+                algorithm: algorithm.to_string(),
+                miner,
+                work_size,
+            })
+        }
+    }
+
+    impl GpuMiner for OpenClExternalMiner {
+        fn device_name(&self) -> String {
+            format!("opencl_auxpow_{}", self.algorithm)
+        }
+
+        fn backend_kind(&self) -> GpuBackendKind {
+            GpuBackendKind::OpenCL
+        }
+
+        fn algorithm(&self) -> String {
+            self.algorithm.clone()
+        }
+
+        fn update_epoch(&mut self, _height: u64) -> Result<()> {
+            Ok(())
+        }
+
+        fn mine_batch(
+            &mut self,
+            header: MiningHeader,
+            target: DifficultyTarget,
+            nonce_start: u64,
+            batch_size: u64,
+        ) -> Result<GpuBatchResult> {
+            let header_bytes = header.to_bytes();
+            let actual_batch = batch_size.min(self.work_size as u64);
+
+            let found = match self.algorithm.as_str() {
+                "blake3"
+                | "blake3_alph"
+                | "blake3_dcr"
+                | "autolykos"
+                | "autolykos_erg"
+                | "kawpow"
+                | "kawpow_rvn"
+                | "kawpow_clore"
+                | "kawpow_evr"
+                | "kawpow_mewc"
+                | "ethash"
+                | "etchash"
+                | "ethash_etc" => self.miner.mine(
+                    &self.algorithm,
+                    &header_bytes,
+                    &[],
+                    &target.bytes,
+                    nonce_start,
+                    actual_batch,
+                ),
+                "kheavyhash" | "kheavyhash_kas" => {
+                    // Timestamp comes from header.timestamp (8 bytes LE)
+                    let timestamp = header.timestamp.to_le_bytes().to_vec();
+                    self.miner.mine(
+                        &self.algorithm,
+                        &header_bytes,
+                        &timestamp,
+                        &target.bytes,
+                        nonce_start,
+                        actual_batch,
+                    )
+                }
+                other => anyhow::bail!("unsupported external GPU algorithm: {other}"),
+            }
+            .map_err(|e| anyhow::anyhow!("auxpow_gpu_mine_failed algorithm={} err={}", self.algorithm, e))?;
+
+            if let Some(GpuFoundShare { nonce, hash }) = found {
+                Ok(GpuBatchResult {
+                    solutions: vec![(nonce, hash)],
+                    nonces_tested: actual_batch,
+                })
+            } else {
+                Ok(GpuBatchResult {
+                    solutions: Vec::new(),
+                    nonces_tested: actual_batch,
+                })
+            }
+        }
+
+        fn benchmark(&mut self, secs: f64) -> Result<(u64, f64, f64)> {
+            let header = MiningHeader {
+                version: 3,
+                previous_hash: [0xAA; 32],
+                merkle_root: [0xBB; 32],
+                timestamp: 1_762_000_200,
+                difficulty_bits: 0x1f00ffff,
+            };
+            let target = DifficultyTarget::MAX;
+
+            let start = Instant::now();
+            let mut total = 0u64;
+            let mut nonce = 0u64;
+            while start.elapsed().as_secs_f64() < secs {
+                let result = self.mine_batch(header, target, nonce, self.work_size as u64)?;
+                total += result.nonces_tested;
+                nonce = nonce.wrapping_add(self.work_size as u64);
+            }
             let elapsed = start.elapsed().as_secs_f64();
             let khps = if elapsed > 0.0 {
                 total as f64 / elapsed / 1_000.0
