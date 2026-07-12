@@ -49,7 +49,7 @@ import {
 
 const FETCH_TIMEOUT = 8000;
 const CLEAR_MARKER = '__CLEAR__';
-const WEB_CLI_VERSION = 'v2.1.0';
+const WEB_CLI_VERSION = 'v3.0.5-beta';
 
 interface CliResponse {
   ok: boolean;
