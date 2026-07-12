@@ -53,10 +53,17 @@ pub fn mine_blake3_native(header: &[u8], nonce: u64) -> [u8; 32] {
 
 unsafe extern "C" {
     pub fn kheavyhash_hash(input: *const u8, len: usize, output: *mut u8);
-    pub fn kheavyhash_mine(header: *const u8, header_len: usize, nonce: u64, output: *mut u8);
+    pub fn kheavyhash_mine(
+        pre_pow_hash: *const u8,
+        pre_pow_hash_len: usize,
+        timestamp: u64,
+        nonce: u64,
+        output: *mut u8,
+    );
     pub fn kheavyhash_verify(
-        header: *const u8,
-        header_len: usize,
+        pre_pow_hash: *const u8,
+        pre_pow_hash_len: usize,
+        timestamp: u64,
         nonce: u64,
         target: *const u8,
     ) -> i32;
@@ -65,6 +72,9 @@ unsafe extern "C" {
 }
 
 /// Compute kHeavyHash of `input` using the C implementation.
+///
+/// This treats `input` as the data absorbed by the ProofOfWorkHash cSHAKE
+/// (no timestamp / nonce), then runs the matrix step and the HeavyHash cSHAKE.
 pub fn hash_kheavyhash_native(input: &[u8]) -> [u8; 32] {
     let mut out = [0u8; 32];
     unsafe {
@@ -73,11 +83,21 @@ pub fn hash_kheavyhash_native(input: &[u8]) -> [u8; 32] {
     out
 }
 
-/// Mining variant: hash `(header || nonce_le)` using the C implementation.
-pub fn mine_kheavyhash_native(header: &[u8], nonce: u64) -> [u8; 32] {
+/// Mining variant: compute the full kHeavyHash for a Kaspa block candidate
+/// using the C implementation.
+///
+/// `pre_pow_hash` is the 32-byte pre-pow hash, `timestamp` is the block
+/// timestamp (Unix seconds), and `nonce` is the 64-bit nonce.
+pub fn mine_kheavyhash_native(pre_pow_hash: &[u8], timestamp: u64, nonce: u64) -> [u8; 32] {
     let mut out = [0u8; 32];
     unsafe {
-        kheavyhash_mine(header.as_ptr(), header.len(), nonce, out.as_mut_ptr());
+        kheavyhash_mine(
+            pre_pow_hash.as_ptr(),
+            pre_pow_hash.len(),
+            timestamp,
+            nonce,
+            out.as_mut_ptr(),
+        );
     }
     out
 }
