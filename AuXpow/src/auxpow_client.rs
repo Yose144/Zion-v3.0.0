@@ -124,6 +124,9 @@ pub struct AuxPowClient {
     /// Pending JSON-RPC responses keyed by request id.  The background poll
     /// loop routes incoming responses here.
     pending_requests: Arc<Mutex<HashMap<i64, oneshot::Sender<Value>>>>,
+    /// Last job id returned by `wait_for_job`, so callers do not receive the
+    /// same job repeatedly in a busy loop.
+    last_waited_job_id: Arc<Mutex<Option<String>>>,
 }
 
 impl AuxPowClient {
@@ -145,6 +148,7 @@ impl AuxPowClient {
             payout_wallet: Arc::new(Mutex::new(String::new())),
             extranonce1: Arc::new(Mutex::new(Vec::new())),
             pending_requests: Arc::new(Mutex::new(HashMap::new())),
+            last_waited_job_id: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -618,18 +622,32 @@ impl AuxPowClient {
     }
 
     /// Wait for a new job with timeout.
+    /// The first call returns the current job if one exists. Subsequent calls
+    /// wait until the current job id differs from the last returned id.
     pub async fn wait_for_job(&self, timeout_ms: u64) -> Result<Option<ExternalJob>> {
-        // Fast path: a job may have already arrived before we started waiting.
+        let last_id = self.last_waited_job_id.lock().await.clone();
+
+        // Fast path: a job may have already arrived before we started waiting
+        // and is different from the one we already returned.
         if let Some(job) = self.current_job().await {
-            return Ok(Some(job));
+            if last_id.as_deref() != Some(job.job_id.as_str()) {
+                *self.last_waited_job_id.lock().await = Some(job.job_id.clone());
+                return Ok(Some(job));
+            }
         }
+
         let result = timeout(
             Duration::from_millis(timeout_ms),
             self.job_notify.notified(),
         )
         .await;
         if result.is_ok() {
-            Ok(self.current_job().await)
+            if let Some(job) = self.current_job().await {
+                *self.last_waited_job_id.lock().await = Some(job.job_id.clone());
+                Ok(Some(job))
+            } else {
+                Ok(None)
+            }
         } else {
             Ok(None)
         }
