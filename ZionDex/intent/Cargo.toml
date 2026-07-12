@@ -1,0 +1,44 @@
+[package]
+name = "ziondex-intent"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "ZionDex Intent-Based Execution core — swap intents, signing, Dutch auction engine, and solvers"
+
+# Keep this crate independent (like the router crate)
+[workspace]
+
+[dependencies]
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# EVM (ethers-rs for EIP-712 signing/verification + U256)
+ethers = { version = "2", features = ["rustls"] }
+
+# Solana (ed25519 signing)
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+
+# Crypto / utils
+sha2 = "0.10"
+hex = "0.4"
+
+# Identifiers / time
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+# Errors / logging
+thiserror = "1"
+tracing = "0.1"
+
+# HTTP client (for SimpleSolver talking to the Router API)
+reqwest = { version = "0.12", features = ["json"] }
+
+# Async trait support
+async-trait = "0.1"
+
+[dev-dependencies]
+tokio-test = "0.4"

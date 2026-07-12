@@ -35,6 +35,12 @@ pub struct AppState {
 
 /// Build the axum router
 pub fn build_router(state: AppState) -> Router {
+    // Intent store for Phase 4 (in-memory; persisted to DB in production)
+    let intent_store: crate::intent::SharedIntentStore =
+        std::sync::Arc::new(tokio::sync::Mutex::new(
+            crate::intent::IntentStore::default(),
+        ));
+
     Router::new()
         .route("/quote", post(quote_handler))
         .route("/quote/multi", get(quote_multi_handler))
@@ -46,6 +52,8 @@ pub fn build_router(state: AppState) -> Router {
         .route("/prices/:token", get(get_price_handler))
         .route("/prices/:token/history", get(price_history_handler))
         .route("/stream", get(monitor::ws_handler))
+        // Phase 4 — Intent-Based Execution
+        .merge(crate::intent::intent_routes(intent_store.clone(), state.db.clone()))
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .with_state(state)
