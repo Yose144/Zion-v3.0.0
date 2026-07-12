@@ -81,6 +81,7 @@ export default function BackgroundOrchestrator({ variant = 'default' }: { varian
   if (mode === 'warp-speed') {
     return (
       <WarpSpeedBackground
+        key={mode}
         starColor={[111, 255, 240]}
         speed={24}
         density={520}
@@ -113,13 +114,13 @@ export default function BackgroundOrchestrator({ variant = 'default' }: { varian
   return (
     <>
       {shouldRenderWarpStarfield && (
-        <StarfieldBackground {...starfieldConfig} />
+        <StarfieldBackground key={`starfield-${mode}`} {...starfieldConfig} />
       )}
-      {shouldRenderMatrixRain && <MatrixRain />}
-      {shouldRenderCyberGrid && <CyberGrid />}
+      {shouldRenderMatrixRain && <MatrixRain key={`matrix-${mode}`} />}
+      {shouldRenderCyberGrid && <CyberGrid key={`cyber-${mode}`} />}
 
-      <QuantumBubbles mode={mode} density={bubbleDensity} />
-      {overlayClass && <div className={overlayClass} />}
+      <QuantumBubbles key={`bubbles-${mode}`} mode={mode} density={bubbleDensity} />
+      {overlayClass && <div key={`overlay-${mode}`} className={overlayClass} />}
     </>
   );
 }

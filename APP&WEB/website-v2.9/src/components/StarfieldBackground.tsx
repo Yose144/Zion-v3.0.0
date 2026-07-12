@@ -90,6 +90,8 @@ export default function StarfieldBackground({
 
     resize();
     seedStars();
+    // Force clear canvas on mount/re-mount to avoid stale visuals from previous mode
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     let animationFrameId: number;
     const frameInterval = fpsLimit > 0 ? 1000 / fpsLimit : 0;
