@@ -3,7 +3,7 @@
 > **Working name:** `deeksha_chv3`
 > **Goal:** Sjednotit všechny revenue streamy do jednoho canonical algoritmu
 > podle `docs/2.9.8/COSMIC_HARMONY_DEEKSHA_SPEC.md`.
-> **Status:** Phase A DEPLOYED (2026-07-12) — soft fork active at block 4500.
+> **Status:** Phase A+B DEPLOYED (2026-07-12) — soft fork active at block 4500.
 > **CHV3_FORK_HEIGHT:** 4500 (bit-identical alias over `deeksha_lite_v1`).
 
 ---
@@ -175,12 +175,29 @@ Stream telemetry už existuje a je consensus-safe (nemění hash output).
 - Node: chain height 3922+, bloky přijímány.
 - L2 služby (bridge, dao, warp, atomic-swap): rebuild + restart, 0 errors.
 
-### Fáze B — Telemetrie sjednocení
+### Fáze B — Telemetrie sjednocení — ✅ DEPLOYED 2026-07-12
 
-1. Pool: používat `deeksha_chv3_with_streams()` pro revenue tracking.
-2. AuxPow: revenue events automaticky mapovány na `RevenueSource::*External`.
-3. NCL: `track_ncl_task_detailed()` už existuje.
-4. Dashboard: sjednocený revenue pohled (Zion + External + NCL).
+**Implementováno a deploynuto na Edge.**
+
+1. ✅ `deeksha_chv3_with_streams()` — vrací `(Hash32, DeekshaStreamTelemetry)`.
+   - Deleguje na `deeksha_lite_v1_with_streams` (bit-identical hash).
+   - Pipeline: Keccak256→MemoryHard→AesMix→KeccakFinal (4 steps).
+   - Stream breakdown: KeccakBonus, Zion, DeekshaLite.
+2. ✅ `deeksha_chv3_with_streams_height()` — height-aware varianta (Phase D ready).
+3. ✅ `deeksha_chv3_find_nonce_with_streams()` — nonce search s telemetry capture.
+4. ✅ Pool: po block acceptance volá `track_deeksha_streams()` na revenue collectoru.
+   - Počítá telemetry pro winning nonce z block headeru.
+   - `debug_assert` verifikuje stream hash == computed hash.
+   - Revenue se rozdělí proporcionalně across streamy.
+5. ✅ 6 nových Phase B testů (12 total, všechny pass).
+6. ✅ **Žádná změna hash outputu** — consensus-safe.
+
+**Commit:** `f656782a1` — feat(chv3): Phase B — stream telemetry
+
+**Edge deploy výsledek:**
+- Pool restart na nový binary, 1 blok found ihned po restartu.
+- AuxPow scheduler se znovu připojil k KAS (kas.2miners.com:2020).
+- Stream telemetry se zaznamenává pro každý accepted block.
 
 ### Fáze C — GPU parity
 

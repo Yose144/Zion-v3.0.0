@@ -4821,3 +4821,54 @@ JSON API (`http://127.0.0.1:8455/`):
 - **GPU kernel:** pro reálné AuxPow shares (kheavyhash na GPU místo CPU)
 - **Profit switching:** scheduler podporuje automatické přepínání mezi coins
   (KAS, DCR, ALPH, ERG, RVN, ETC) na základě profitability
+
+---
+
+## DeekshaChv3 Phase B — Stream Telemetry — 2026-07-12
+
+### Co
+Phase B přidává consensus-safe stream telemetrii do `deeksha_chv3` unified algoritmu.
+Pool nyní zaznamenává per-step revenue breakdown pro každý accepted block.
+
+### Implementace
+
+**Nové funkce v `deeksha_chv3.rs`:**
+- `deeksha_chv3_with_streams(header, nonce) → (Hash32, DeekshaStreamTelemetry)`
+- `deeksha_chv3_with_streams_height(header, nonce, height) → (Hash32, DeekshaStreamTelemetry)`
+- `deeksha_chv3_find_nonce_with_streams(header, start, count, target) → Option<(nonce, hash, telemetry)>`
+
+**Pool integrace (`pool/src/bin/server.rs`):**
+Po block acceptance se vypočítá stream telemetry pro winning nonce a zavolá
+`track_deeksha_streams()` na revenue collectoru. Revenue se rozdělí proporcionalně
+across streamy (KeccakBonus, Zion, DeekshaLite).
+
+**Pipeline breakdown (deeksha_lite_v1 alias):**
+```
+Step 1: Keccak256    → RevenueSource::KeccakBonus  (5 work units)
+Step 2: MemoryHard   → RevenueSource::Zion          (55 work units)
+Step 3: AesMix       → RevenueSource::DeekshaLite   (5 work units)
+Step 4: KeccakFinal  → RevenueSource::Zion          (2 work units)
+Total: 67 work units
+```
+
+**Testy:** 12 total (6 Phase A + 6 Phase B), všechny pass.
+- Stream parity (with_streams == plain hash)
+- Step count (4 steps)
+- Height invariance (height neovlivňuje hash v Phase A/B)
+- Stream breakdown (keccak_bonus + zion + deeksha_lite)
+- Nonce search s telemetry
+- Determinism
+
+### Consensus safety
+- Hash output je UNCHANGED — `with_streams` produkuje stejný `Hash32`
+- Telemetry je additive (records steps, nemění hash)
+- `debug_assert` verifikuje stream hash == computed hash
+
+### Commit
+`f656782a1` — feat(chv3): Phase B — stream telemetry for unified revenue accounting
+
+### Edge deploy
+- Pool binary deploynut, restart úspěšný
+- 1 blok found ihned po restartu (height 4035)
+- AuxPow scheduler se znovu připojil k KAS
+- Stream telemetry se zaznamenává pro každý accepted block
