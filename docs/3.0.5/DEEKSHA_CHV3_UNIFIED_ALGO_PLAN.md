@@ -3,7 +3,7 @@
 > **Working name:** `deeksha_chv3`
 > **Goal:** Sjednotit všechny revenue streamy do jednoho canonical algoritmu
 > podle `docs/2.9.8/COSMIC_HARMONY_DEEKSHA_SPEC.md`.
-> **Status:** Phase A+B DEPLOYED (2026-07-12) — soft fork active at block 4500.
+> **Status:** Phase A+B+C DEPLOYED (2026-07-12) — soft fork active at block 4500.
 > **CHV3_FORK_HEIGHT:** 4500 (bit-identical alias over `deeksha_lite_v1`).
 
 ---
@@ -199,11 +199,34 @@ Stream telemetry už existuje a je consensus-safe (nemění hash output).
 - AuxPow scheduler se znovu připojil k KAS (kas.2miners.com:2020).
 - Stream telemetry se zaznamenává pro každý accepted block.
 
-### Fáze C — GPU parity
+### Fáze C — GPU parity — ✅ DEPLOYED 2026-07-12
 
-1. Napsat `deeksha_chv3.cl` — jeden kernel, parity-verified.
-2. Odstranit `deeksha_lite.cl`, `deeksha_lite_fire.cl` (nebo je deprecate).
-3. KAT (known-answer test) pro CPU↔GPU parity.
+**Implementováno a deploynuto na Edge.**
+
+1. ✅ `deeksha_chv3.cl` — canonical OpenCL kernel (bit-identical copy of
+   `deeksha_lite.cl` with entry point `deeksha_chv3_mine`).
+   - Pipeline: Keccak256→MemoryHard→AesMix→KeccakFinal (4 steps).
+   - 256 KiB scratchpad, 8192 blocks, 2 passes, 64 random reads.
+2. ✅ `opencl_kernel.rs` — export `DEEKSHA_CHV3_KERNEL`,
+   `DEEKSHA_CHV3_KERNEL_NAME`, `get_deeksha_chv3_kernel_source()`.
+3. ✅ `gpu_backend.rs` — `OpenClDeekshaLiteMiner::new_chv3()` constructor
+   using chv3 kernel source/name. Dispatch pro `"deeksha_chv3"` algorithm
+   nyní používá canonical kernel přímo.
+4. ✅ 5 KAT (Known Answer Test) vectors v `deeksha_chv3.rs`:
+   - `chv3_kat_known_vector_1`: zeros[80] + nonce=0
+   - `chv3_kat_known_vector_2`: pattern[80] + nonce=0x4242...
+   - `chv3_kat_known_vector_3`: realistic block header + nonce=12345
+   - `chv3_kat_streams_parity`: with_streams == plain hash
+   - `chv3_kat_gpu_kernel_present`: kernel source + constants verified
+5. ✅ 4 new kernel presence/parity tests v `opencl_kernel.rs`.
+6. ✅ **186 cosmic-harmony tests pass** (17 chv3: 6 Phase A + 6 Phase B + 5 Phase C).
+
+**Commit:** `1ef6709b4` — feat(chv3): Phase C — GPU kernel parity + KAT vectors
+
+**Edge deploy výsledek:**
+- Pool restart na nový binary, 1 blok found po restartu.
+- AuxPow scheduler připojen k KAS, 0 failures.
+- GPU kernel `deeksha_chv3_mine` dostupný pro miner dispatch.
 
 ### Fáze D — Consensus cleanup (optional, hard fork)
 
