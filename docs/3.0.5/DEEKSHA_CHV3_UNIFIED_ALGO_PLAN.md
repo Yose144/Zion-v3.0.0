@@ -1,0 +1,225 @@
+# DeekshaChv3 — Unified Algorithm Plan
+
+> **Working name:** `deeksha_chv3`
+> **Goal:** Sjednotit všechny revenue streamy do jednoho canonical algoritmu
+> podle `docs/2.9.8/COSMIC_HARMONY_DEEKSHA_SPEC.md`.
+> **Status:** Draft — čeká na implementaci po deploy validaci.
+
+---
+
+## 1) Problém
+
+Aktuálně běží několik algoritmů paralelně:
+
+| Algoritmus | Soubor | Pipeline | Použití |
+|-----------|--------|----------|---------|
+| `cosmic_harmony_ekam_deeksha_v2` | `deeksha.rs` | Keccak→SHA3→Matrix→MemHard→NPU→Fusion | Canonical mainnet PoW |
+| `deeksha_lite_v1` | `deeksha_lite.rs` | Keccak→MemHard(256K)→AES→Keccak | Pool default (`ZION_POOL_ALGORITHM=deeksha_lite_v1`) |
+| `deeksha_lite_fire` | `deeksha_lite_fire.rs` | Keccak→MemHard(512K)→AES10→Thermal→Keccak | Winter heating mode |
+| External (Blake3/kHeavyHash/...) | `AuXpow/external_hashers.rs` | Per-coin hashers | AuxPow merge mining |
+
+To vytváří:
+- **Pool/miner divergence** — pool používá `deeksha_lite_v1`, ale canonical consensus je `deeksha_v2`.
+- **Multi-branch runtime dispatch** — miner musí vědět, který algoritmu použít pro jaký height.
+- **Revenue fragmentation** — každý algoritmus má vlastní RevenueSource, ale ne sjednocenou telemetrii.
+
+## 2) Cíl
+
+Jeden canonical algoritmus `deeksha_chv3` který:
+
+1. **Je canonical PoW** — jediný hash pro consensus, žádné branch dispatch.
+2. **Má vestavěnou revenue telemetrii** — stream layers jsou součástí hash funkce.
+3. **Podporuje externí merge mining** — AuxPow streamy jsou first-class občané.
+4. **Je GPU-friendly** — OpenCL kernel je parity-verified proti CPU.
+5. **NPU mix je optional** — CPU fallback je bit-identický.
+
+## 3) Consensus parametry (single source of truth)
+
+Z `COSMIC_HARMONY_DEEKSHA_SPEC.md`:
+
+```rust
+pub const DEEKSHA_CHV3_SCRATCHPAD_SIZE: usize = 64 * 1024;  // 64 KiB
+pub const DEEKSHA_CHV3_BLOCK_COUNT: usize = 1024;
+pub const DEEKSHA_CHV3_PASSES: usize = 2;
+pub const DEEKSHA_CHV3_RANDOM_READS: usize = 64;
+pub const DEEKSHA_CHV3_BACKWARD_PASSES: usize = 0;
+pub const DEEKSHA_CHV3_KABALA_READS: usize = 0;
+pub const DEEKSHA_CHV3_FORK_HEIGHT: u64 = 0;  // active from genesis
+```
+
+**Poznámka:** Aktuální mainnet běží na `deeksha_lite_v1` (256 KiB scratchpad).
+`deeksha_chv3` používá 64 KiB — to je **změna consensus parametrů** a vyžaduje
+hard fork nebo nový genesis. Pokud chceme zachovat aktuální chain, musíme
+buď:
+- (A) ponechat `deeksha_lite_v1` jako canonical a `deeksha_chv3` je jen název
+  pro sjednocenou telemetrii/dispatch, nebo
+- (B) provést hard fork s novým `DEEKSHA_CHV3_FORK_HEIGHT`.
+
+**Doporučení:** (A) pro teď — sjednotit dispatch a telemetrii, ne měnit hash.
+
+## 4) Pipeline (sjednocená)
+
+```
+Input: block_header[0..80] || nonce_le[0..8]
+  │
+  ├─ Step 1: Keccak-256                    → RevenueSource::KeccakBonus
+  ├─ Step 2: SHA3-512                       → RevenueSource::Sha3Bonus
+  ├─ Step 3: GoldenMatrix                   → RevenueSource::Zion
+  ├─ Step 4: MemoryHard (64 KiB / 2 / 64)  → RevenueSource::Zion
+  ├─ Step 5: NPU Mix (optional, CPU fallback identical)
+  │                                         → RevenueSource::NclAi
+  ├─ Step 6: CosmicFusion                   → RevenueSource::Zion
+  │
+  └─ Output: Hash32
+```
+
+To je přesně `cosmic_harmony_ekam_deeksha_v2` pipeline.
+`deeksha_lite_v1` pipeline je **jiná** (AES mix místo GoldenMatrix+NPU+Fusion).
+
+## 5) Architektura sjednocení
+
+### 5.1 Nový modul: `deeksha_chv3.rs`
+
+```rust
+// V3/L1/cosmic-harmony/src/deeksha_chv3.rs
+
+/// Canonical unified DeekshaChv3 hash.
+/// This IS the consensus hash — no dispatch, no branches.
+pub fn deeksha_chv3_hash(
+    block_header: &[u8],
+    nonce: u64,
+    block_height: u64,
+) -> Hash32 {
+    // Identical to cosmic_harmony_ekam_deeksha_v2
+    // but with a single canonical name.
+}
+
+/// Find nonce with stream telemetry.
+pub fn deeksha_chv3_find_nonce(
+    block_header: &[u8],
+    target: &[u8; 32],
+    start_nonce: u64,
+    count: u64,
+    block_height: u64,
+) -> Option<(u64, Hash32, DeekshaStreamTelemetry)> {
+    // ...
+}
+```
+
+### 5.2 Pool: jeden algoritmus
+
+```bash
+# Edge environment
+ZION_POOL_ALGORITHM=deeksha_chv3  # místo deeksha_lite_v1
+```
+
+Pool server volá `deeksha_chv3_hash()` pro validaci shares. Žádný dispatch
+podle algorithm stringu.
+
+### 5.3 Miner: jeden algoritmus
+
+Miner používá `deeksha_chv3_find_nonce()` nebo GPU kernel
+`deeksha_chv3.cl`. Žádné přepínání mezi lite/fire/v2.
+
+### 5.4 GPU: jeden kernel
+
+`V3/L1/cosmic-harmony/src/gpu/kernels/deeksha_chv3.cl` — jeden OpenCL kernel,
+parity-verified proti CPU.
+
+### 5.5 AuxPow: first-class stream
+
+AuxPow merge mining je **stále samostatný** proces (externí pool má vlastní
+hash algoritmus), ale revenue telemetry je sjednocená:
+
+```
+RevenueSource::Zion           ← deeksha_chv3 canonical mining (50%)
+RevenueSource::Blake3External ← AuxPow DCR/ALPH stream
+RevenueSource::KHeavyHashExternal ← AuxPow KAS stream
+RevenueSource::NclAi          ← NPU/AI compute stream (25%)
+...
+```
+
+### 5.6 Stream telemetry (v `stream_layers.rs`)
+
+Stream telemetry už existuje a je consensus-safe (nemění hash output).
+`deeksha_chv3_with_streams()` bude jediný entry point.
+
+## 6) Migrace
+
+### Fáze A — Sjednocení dispatch (no consensus change)
+
+1. Vytvořit `deeksha_chv3.rs` jako wrapper kolem existující `deeksha_v2`.
+2. Pool: změnit `ZION_POOL_ALGORITHM=deeksha_chv3` (alias na v2).
+3. Miner: alias `deeksha_chv3` → `deeksha_v2` hash funkce.
+4. GPU: alias `deeksha_chv3` → existující `cosmic_harmony_deeksha.cl`.
+5. **Žádná změna hash outputu** — chain pokračuje.
+
+### Fáze B — Telemetrie sjednocení
+
+1. Pool: používat `deeksha_chv3_with_streams()` pro revenue tracking.
+2. AuxPow: revenue events automaticky mapovány na `RevenueSource::*External`.
+3. NCL: `track_ncl_task_detailed()` už existuje.
+4. Dashboard: sjednocený revenue pohled (Zion + External + NCL).
+
+### Fáze C — GPU parity
+
+1. Napsat `deeksha_chv3.cl` — jeden kernel, parity-verified.
+2. Odstranit `deeksha_lite.cl`, `deeksha_lite_fire.cl` (nebo je deprecate).
+3. KAT (known-answer test) pro CPU↔GPU parity.
+
+### Fáze D — Consensus cleanup (optional, hard fork)
+
+1. Pokud chceme změnit scratchpad z 256 KiB na 64 KiB (dle spec):
+   - `DEEKSHA_CHV3_FORK_HEIGHT = <height>`
+   - Nový kernel s 64 KiB scratchpadem.
+   - Hard fork.
+2. Pokud nechceme riskovat hard fork: nechat 256 KiB, jen sjednotit název.
+
+## 7) Revenue model (zachováno)
+
+```
+ZION_ALLOCATION       = 50%  → deeksha_chv3 canonical mining
+MULTI_ALGO_ALLOCATION = 25%  → AuxPow external coins (profit-switched)
+NCL_ALLOCATION        = 25%  → NPU/AI compute tasks
+```
+
+Fee struktura:
+- Zion: 5% (merged mining fee)
+- External: 2% (Blake3/kHeavyHash/Ethash/KawPow/Autolykos)
+- NCL: 10%
+
+Protocol fee split pro ZION blocks:
+- 89% miner / 5% humanitarian / 5% issobella / 1% pool (burned)
+
+## 8) Co se nemění
+
+- **Hash output** — `deeksha_chv3` = `deeksha_v2` bit-identicky.
+- **Chain history** — žádný reset, žádný re-index.
+- **AuxPow protokol** — externí mining zůstává přes Stratum v1 proxy.
+- **Revenue model** — 50/25/25 zůstává.
+- **Fee split** — 89/5/5/1 zůstává.
+
+## 9) Co se mění
+
+- **Jeden název** — `deeksha_chv3` místo `deeksha_lite_v1` / `deeksha_v2` / `fire`.
+- **Jeden kernel** — `deeksha_chv3.cl` místo 3 různých `.cl` souborů.
+- **Sjednocená telemetrie** — `DeekshaStreamTelemetry` pro každý hash.
+- **Čistší dispatch** — žádné `match algorithm { "deeksha_lite_v1" => ..., "cosmic_harmony" => ... }`.
+
+## 10) Test plán
+
+1. **Parity test:** `deeksha_chv3_hash(h, n, height) == cosmic_harmony_ekam_deeksha_v2(h, n, height)`.
+2. **Stream test:** telemetry se zaznamená pro každý step.
+3. **Pool test:** pool s `deeksha_chv3` přijímá shares od existujících minerů.
+4. **GPU test:** CPU↔GPU parity pro 1000 nonceů.
+5. **AuxPow test:** externí shares se forwardují a revenue se trackuje.
+6. **E2E test:** pool + miner + AuxPow + NCL → sjednocený revenue report.
+
+## 11) Rollout
+
+1. **Deploy** aktualizovaného pool binary na Edge (AuxPow fixy).
+2. **Test** že pool startuje a minery se připojují.
+3. **Fáze A** — alias `deeksha_chv3` → `deeksha_v2` (no-op change).
+4. **Fáze B** — telemetrie sjednocení.
+5. **Fáze C** — GPU kernel parity.
+6. **Fáze D** — optional consensus cleanup (hard fork, až když bude governance ready).
