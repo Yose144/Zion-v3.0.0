@@ -62,6 +62,7 @@ bip39.workspace = true
 hmac.workspace = true
 pbkdf2.workspace = true
 zion-cosmic-harmony = { path = "../cosmic-harmony" }
+zion-auxpow = { path = "../../../AuXpow" }
 tokio = { version = "1", features = ["full"] }
 tokio-tungstenite = "0.20"
 futures-util = "0.3"
