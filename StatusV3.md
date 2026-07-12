@@ -4872,3 +4872,105 @@ Total: 67 work units
 - 1 blok found ihned po restartu (height 4035)
 - AuxPow scheduler se znovu připojil k KAS
 - Stream telemetry se zaznamenává pro každý accepted block
+
+---
+
+## Session 2026-07-12 — F5 Coinbase Balance Fix + Pool Logging + Template Cache + AuxPow Dashboard Expansion
+
+### Problém: Node stuck na 3886
+
+Pool opakovaně foundoval block 3887 (stejný nonce 1638685, stejný hash) ale node ho tiše odmítal.
+Node logy neukazovaly žádnou aktivitu kromě P2P. Pool logy ukazovaly `BLOCK_FOUND` ale žádný
+`submit_candidate` response.
+
+### Root cause debugging
+
+1. **Manual RPC test** přes simple line protokol (`{"method":"get_template"}`) vrátil template height=3887.
+2. **Manual submit_candidate** s nonce 1638685 odhalil chybu:
+   ```
+   "locally mined block failed validation: peer block TX from zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2 has insufficient balance: 394477888 < 480605963 (amount 480605962 + fee 1)"
+   ```
+3. **F5 balance check** v `validate_peer_block()` kontroloval **coinbase TXs** — coinbase nemá sender balance (vytváří nové mince).
+
+### Fix 1: F5 Coinbase Balance Exempt (`V3/L1/core/src/lib.rs`)
+
+```rust
+// Před:
+if self.balance_check_active_at(block.height) {
+    // ... balance check pro VŠECHNY TXs včetně coinbase
+}
+
+// Po:
+if self.balance_check_active_at(block.height)
+    && transaction.from != "coinbase"
+    && transaction.from != "genesis" {
+    // ... balance check jen pro non-coinbase TXs
+}
+```
+
+Stejný exempt přidán i do `insert_transaction()` (mempool TX path) pro defense-in-depth.
+
+### Fix 2: Pool Node Rejection Logging (`V3/L1/pool/src/bin/server.rs`)
+
+`submit_candidate_to_node()` dříve tiše zahodil rejection reason. Nyní loguje:
+- `node_accepted_block height=X nonce=Y` — na úspěšném submitu
+- `node_rejected_block height=X nonce=Y reason=Z` — na odmítnutí (dříve silent)
+
+### Fix 3: Template Cache Invalidation (`V3/L1/pool/src/bin/server.rs`)
+
+`TemplateCache` má 3s TTL. Po block accept se nyní volá `invalidate()` aby mineri
+ihned dostali fresh template (height+1) bez čekání na TTL expiraci.
+
+```rust
+if block_accepted {
+    template_cache.lock().expect("...").invalidate();
+    // ... record revenue, etc.
+}
+```
+
+### Fix 4: AuxPow Dashboard Panel Expansion
+
+Rozšířen AuxPow panel v dashboardu o 8 nových metrik:
+- Accept rate s progress barem
+- Revenue / hour (odhad z revenue_usd / uptime)
+- Shares / min
+- Reject rate
+- Supported coins (KAS · ALPH · DCR)
+- Bridge queue depth
+- External jobs processed (z routing auto group)
+- ZION / Aux share ratio
+
+**Soubory:** `ZION_OS/dashboard/dashboard.html` (+44 lines), `ZION_OS/dashboard/dashboard.js` (+46 lines)
+
+### Deploy a výsledek
+
+1. Build na Edge: `cargo build --release -p zion-core --bin node -p zion-pool --bin server` → 24s (inkrementální)
+2. Node1 + pool zastaveny, binárky deploynuty (`/usr/local/bin/zion-node`, `/usr/local/bin/zion-pool-server`)
+3. Node1 restart → **syncnul 3886→4035** přes P2P z Node2 (149 bloků za ~2 min)
+4. Pool restart → AuxPow scheduler se znovu připojil k KAS
+5. **První pool-mined block accepted:** `node_accepted_block height=4036 nonce=21000320582`
+6. Pool stats: 3100 shares, 100% accept rate, 0 rejected, 11 active mineri, ~365 KH/s
+
+### Commity
+| Commit | Popis |
+|--------|-------|
+| `259e662be` | feat(dashboard): expand AuxPow panel with extended metrics |
+
+### Topologie (aktuální)
+```
+┌─ EDGE (62.171.141.136) — ssh zion-new ─────────────────────┐
+│  Node1 (9443) height 4036+, F5 coinbase fix deployed        │
+│  Node2 (8448) follower                                     │
+│  Pool (8444) — 11 mineri, 365 KH/s, 100% accept            │
+│  AuxPow — KAS live (kas.2miners.com:2020, kheavyhash)      │
+│  Bridge (9101) — EVM: OP, Base, ARB, AVAX                  │
+│  DAO (8450) — scanner → 127.0.0.1:9443                     │
+│  WARP (8453) — cross-chain relay                           │
+│  Atomic Swap (8452) — Base HTLC                            │
+│  Dashboard (8766) — AuxPow panel expanded (21 metrics)     │
+│  Free World, Issobella, Oasis — systemd                    │
+│  Watchdog — timer (2 min interval)                         │
+│  Edge backup — timer (daily + weekly)                      │
+│  Prometheus metrics: Node :9100, Pool :8455                │
+└─────────────────────────────────────────────────────────────┘
+```
