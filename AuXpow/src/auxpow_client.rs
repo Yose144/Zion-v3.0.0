@@ -176,12 +176,23 @@ impl AuxPowClient {
         // so that responses are routed to send_request and notifications are
         // dispatched from a single reader.
         let client_clone = Arc::new(self.clone());
+        println!(
+            "auxpow_client: spawning poll loop for {} on {}",
+            self.profile.coin, addr
+        );
         tokio::spawn(async move {
+            println!(
+                "auxpow_client: poll loop started for {} on {}",
+                client_clone.profile.coin, client_clone.profile.pool_address()
+            );
             loop {
                 match client_clone.poll_messages().await {
                     Ok(()) => {}
                     Err(e) => {
-                        warn!("AuxPow: poll loop ended for {}: {}", client_clone.profile.coin, e);
+                        println!(
+                            "auxpow_client: poll loop ended for {}: {}",
+                            client_clone.profile.coin, e
+                        );
                         *client_clone.connected.lock().await = false;
                         break;
                     }

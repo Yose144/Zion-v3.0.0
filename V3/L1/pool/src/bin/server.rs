@@ -383,6 +383,7 @@ async fn run_auxpow_bridge(
     }
 
     loop {
+        println!("auxpow_bridge: run_auxpow_bridge loop tick");
         // Pull new jobs from the multiplexer and push them to the queue.
         // wait_for_job blocks the tokio task until a job arrives, which is fine
         // because this task has no other work besides forwarding shares.
