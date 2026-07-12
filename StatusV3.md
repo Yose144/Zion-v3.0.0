@@ -5063,9 +5063,12 @@ DONE. Jobs seen: {'deeksha_lite_v1': 1144, 'kheavyhash': 287, 'other': 0}
 - Pool běží (PID se mění při restardech, nyní aktivní).
 - AuxPow scheduler: připojen k KAS, 0 shares (CPU-only, očekáváno).
 - B2b bridge: enabled, připojen k KAS, joby přijímány.
-- **Reální mineri nejsou připojeni** (0 active miners). Důvod: po několika
-  restartech poolu a delším výpadku se SMOS rigy pravděpodobně odpojily a
-  nezauto reconnec.
+- `/etc/zion/edge-environment.sh` nastaveno na `ZION_AUXPOW_ENABLED=1` a
+  `ZION_POOL_AUXPOW_ENABLED=1`; proti opětovnému přepsání nastaven atribut
+  `chattr +i` (změnu vyžaduje `chattr -i`).
+- **Reální mineri nejsou připojeni** (0 active miners, 9 registered). Důvod:
+  po několika restartech poolu a delším výpadku se SMOS rigy pravděpodobně
+  odpojily a nezauto reconnec.
 
 ### Blokátor pro reálné E2E share streams
 
