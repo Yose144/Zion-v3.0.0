@@ -981,6 +981,15 @@ pub fn consensus_profile() -> &'static str {
     profile_name()
 }
 
+/// Height-aware canonical profile name.
+///
+/// - height < 4500  → `deeksha_lite_v1`
+/// - 4500 ≤ h < 5000 → `deeksha_chv3` (unified canonical, Phase D)
+/// - height ≥ 5000  → `deeksha_lite_fire`
+pub fn consensus_profile_for_height(height: u64) -> &'static str {
+    profile_name_for_height(height)
+}
+
 pub fn node_protocol_version() -> &'static str {
     NODE_PROTOCOL_VERSION
 }
@@ -4473,6 +4482,39 @@ mod tests {
         let h2 = candidate.hash_with_algorithm("deeksha_lite_fire");
         assert_eq!(h1, h2);
         assert_ne!(h1, [0u8; 32]);
+    }
+
+    // ── Phase D: Height-aware profile dispatch tests ─────────────────
+
+    #[test]
+    fn consensus_profile_for_height_below_chv3() {
+        assert_eq!(consensus_profile_for_height(0), "deeksha_lite_v1");
+        assert_eq!(consensus_profile_for_height(4499), "deeksha_lite_v1");
+    }
+
+    #[test]
+    fn consensus_profile_for_height_at_chv3() {
+        assert_eq!(consensus_profile_for_height(4500), "deeksha_chv3");
+        assert_eq!(consensus_profile_for_height(4999), "deeksha_chv3");
+    }
+
+    #[test]
+    fn consensus_profile_for_height_at_fire() {
+        assert_eq!(consensus_profile_for_height(5000), "deeksha_lite_fire");
+        assert_eq!(consensus_profile_for_height(9999), "deeksha_lite_fire");
+    }
+
+    /// Phase D: chv3 and lite_v1 produce identical hashes (alias).
+    #[test]
+    fn hash_with_chv3_equals_hash_with_lite_v1() {
+        let candidate = BlockCandidate {
+            header: sample_header(),
+            nonce: 42,
+            height: 4500,
+        };
+        let h_chv3 = candidate.hash_with_algorithm("deeksha_chv3");
+        let h_lite = candidate.hash_with_algorithm("deeksha_lite_v1");
+        assert_eq!(h_chv3, h_lite, "chv3 and lite_v1 must produce identical hashes");
     }
 
     #[test]

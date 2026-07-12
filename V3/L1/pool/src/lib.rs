@@ -8,14 +8,27 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use zion_core::{
-    consensus_profile, BlockCandidate, BlockTemplate, CoreRuntime, DifficultyTarget, MiningHeader,
-    MiningJob, MiningSolution, RevenueSnapshot, RevenueSource, SealedBlock,
+    consensus_profile, consensus_profile_for_height, BlockCandidate, BlockTemplate, CoreRuntime,
+    DifficultyTarget, MiningHeader, MiningJob, MiningSolution, RevenueSnapshot, RevenueSource,
+    SealedBlock,
 };
 
 pub const PROTOCOL_VERSION: &str = "zion-v3-stratum/0.2";
 
 pub fn advertised_algorithm() -> &'static str {
     consensus_profile()
+}
+
+/// Height-aware advertised algorithm name.
+///
+/// Phase D: For height ≥ CHV3_FORK_HEIGHT (4500), the pool advertises
+/// `deeksha_chv3` as the canonical algorithm name. Below 4500, it
+/// advertises `deeksha_lite_v1` (backward compat).
+///
+/// Miners that only know `deeksha_lite_v1` continue to work because
+/// `hash_with_algorithm` maps both names to the same function.
+pub fn advertised_algorithm_for_height(height: u64) -> &'static str {
+    consensus_profile_for_height(height)
 }
 
 pub fn protocol_version() -> &'static str {
