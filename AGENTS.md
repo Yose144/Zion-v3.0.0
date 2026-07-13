@@ -864,22 +864,22 @@ Fixed script: `V3/deploy/new-server/zion-watchdog.sh`. Report: [`POOL_WATCHDOG_F
 **AuXpow crate** (`AuXpow/`) — standalone merge-mining system integrated into the V3 pool server. Enables the pool to mine external coins (DCR, ALPH, KAS, ERG, RVN, ETC, EVR, MEWC, FLUX, CLORE, XMR) via Stratum v1 proxy with profit-switching and circuit breaker.
 
 - **Crate:** `zion-auxpow` (workspace member, deps: blake3, tokio, sha3, serde, anyhow)
-- **Files:** `src/types.rs` (11 coins, config, stats, hysteresis), `src/external_hashers.rs` (Blake3, kHeavyHash), `src/auxpow_client.rs` (Stratum v1), `src/auxpow_scheduler.rs` (profit switcher + circuit breaker + mining loop)
+- **Files:** `src/types.rs` (11 coins, config, stats, hysteresis), `src/external_hashers.rs` (Blake3, kHeavyHash, RandomX target), `src/auxpow_client.rs` (Stratum v1 incl. Monero/RandomX), `src/auxpow_scheduler.rs` (profit switcher + circuit breaker + mining loop)
 - **Pool integration:** `V3/L1/pool/src/bin/server.rs` — scheduler spawned on dedicated tokio runtime, env-gated `ZION_AUXPOW_ENABLED=1`. `/stats` API exposes 13-field `auxpow` section.
 - **Dashboard:** `ZION_OS/dashboard/` — AuxPow card in Pool Miners tab (status, coin, algo, pool, shares, revenue, uptime, circuit breaker, coin switches). **Expanded 2026-07-12** with 8 additional metrics: accept rate (with progress bar), revenue/hour estimate, shares/min, reject rate, supported coins list (KAS · ALPH · DCR), bridge queue depth, external jobs processed, ZION/Aux share ratio.
 - **Env vars:** `ZION_AUXPOW_ENABLED`, `ZION_AUXPOW_WALLET`, `ZION_AUXPOW_ALLOCATION`, `ZION_AUXPOW_POOL_PREFERENCE`, `ZION_AUXPOW_HYSTERESIS_PCT`, `ZION_AUXPOW_CB_THRESHOLD`, `ZION_AUXPOW_CB_RESET_SECS` (10 total)
-- **Tests:** 146/146 pass (40 auxpow + 73 pool lib + 33 pool server)
-- **Deployed:** Edge server `62.171.141.136` — pool binary + dashboard, **LIVE & ACTIVE** (KAS merge-mining via `kas.2miners.com:2020`, kheavyhash algorithm, circuit breaker closed, 0 failures)
-- **Live tested:** 2026-07-11 — TCP connect + Stratum subscribe to `kas.2miners.com:2020` succeeded, authorize rejected dummy wallet (expected), circuit breaker tripped correctly after 5 failures. **2026-07-12 — fully operational** with real wallet `bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh`, authorized on KAS, scheduler running stable.
+- **Tests:** 196/196 pass (85 auxpow + 73 pool lib + 38 pool server)
+- **Deployed:** Edge server `62.171.141.136` — pool binary + dashboard, **LIVE** (RVN E2E ✅ via `rvn.2miners.com:6060`, XMR pool-side ready via `gulf.moneroocean.stream:10001`)
+- **Live tested:** 2026-07-12 — RVN/KawPow fully operational with real BTC wallet, shares counted under `src_kawpow` and forwarded to 2miners. **2026-07-13 — XMR/RandomX** pool connected, authorized, and queuing external RandomX jobs; awaits SMOS rig with RandomX-capable custom miner.
 - **Critical design notes:**
   - Tokio runtime MUST be leaked via `std::mem::forget()` — if dropped, all spawned tasks are immediately cancelled
   - Pool server has no `tracing` subscriber — use `println!` not `info!/warn!` for scheduler logging
   - Pool addresses change frequently — 2miners delisted DCR/ALPH, KAS port 4444→2020, ERG port 3056→8888 (verified 2026-07-11)
 - **Plan:** [`AUXPOW_MERGE_MINING_PLAN.md`](./AUXPOW_MERGE_MINING_PLAN.md) — 3-phase approach (Phase 1 = stratum proxy ✅, Phase 2 = miner dual-stratum, Phase 3 = true AuxPow protocol hard fork)
-- **Report:** [`docs/3.0.5/AUXPOW_INTEGRATION_REPORT_2026-07-11.md`](./docs/3.0.5/AUXPOW_INTEGRATION_REPORT_2026-07-11.md)
-- **Commits:** `44371aa10` (crate), `0a49a3f48` (pool + dashboard integration), `7eb9f89cb` (docs), `f14500db3` (3 bug fixes: runtime leak, pool addresses, println logging), `259e662be` (dashboard panel expansion — 8 new metrics)
+- **Reports:** [`docs/3.0.5/AUXPOW_INTEGRATION_REPORT_2026-07-11.md`](./docs/3.0.5/AUXPOW_INTEGRATION_REPORT_2026-07-11.md), [`RVN_AUXPOW_E2E_REPORT.md`](./RVN_AUXPOW_E2E_REPORT.md), [`XMR_AUXPOW_E2E_REPORT.md`](./XMR_AUXPOW_E2E_REPORT.md)
+- **Commits:** `44371aa10` (crate), `0a49a3f48` (pool + dashboard integration), `7eb9f89cb` (docs), `f14500db3` (3 bug fixes: runtime leak, pool addresses, println logging), `259e662be` (dashboard panel expansion — 8 new metrics), `8e616846e` (RVN pool fixes), `ac513d61f` (XMR/RandomX support)
 
-## Current Status (2026-07-12 — Post Hard Reset + Chv3 + AuxPow Live)
+## Current Status (2026-07-13 — Post Hard Reset + Chv3 + AuxPow RVN/XMR Live)
 
 **System Status (new server 62.171.141.136):**
 - ✅ Hard Genesis Reset: Complete (2026-07-07) — new genesis hash `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
@@ -900,7 +900,7 @@ Fixed script: `V3/deploy/new-server/zion-watchdog.sh`. Report: [`POOL_WATCHDOG_F
 - ✅ nginx: Running (80/443, SSL Let's Encrypt, HTTP/2)
 - ✅ Website: Running (Docker `zion-web:nextjs`, Next.js 16.2.9, 73+ routes, port 127.0.0.1:3001)
 - ✅ Dashboard: Running (`https://dashboard.zionterranova.com`, Basic Auth Yose/Issy)
-- ✅ AuxPow: **LIVE & ACTIVE** — KAS merge-mining via `kas.2miners.com:2020` (kheavyhash), circuit breaker closed, scheduler stable
+- ✅ AuxPow: **LIVE** — RVN/KawPow E2E ✅ via `rvn.2miners.com:6060`, XMR/RandomX pool-side ready via `gulf.moneroocean.stream:10001` (awaiting RandomX rig miner)
 - ✅ DeekshaChv3: Phase A deployed (alias, fork at H=4500) + Phase B deployed (stream telemetry)
 - ✅ Chain: Height 4036+ (post-hard-reset), premine 16.78B ZION, block reward 5400.067 ZION
 - ✅ OS: SSH keys-only, UFW (22/80/443), fail2ban, Docker 29.6.1

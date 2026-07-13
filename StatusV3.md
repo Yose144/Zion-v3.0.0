@@ -184,12 +184,12 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | ALPH | blake3 (double) | Stratum | connect/auth/notify ✅, submit ⚠️ (CPU) |
 | DCR | blake3 | Stratum | pooly offline ❌ |
 | ERG | autolykos | EthStratum | protocol ✅ (R6), live E2E TODO |
-| RVN | kawpow | Stratum | connect/auth/notify ✅, submit ⚠️ (CPU) |
+| RVN | kawpow | Stratum | live E2E ✅ (GPU, shares forwarded to 2miners) |
 | ETC | ethash | Stratum | connect/auth/notify ✅, submit ⚠️ (CPU) |
 | EVR | autolykos | EthStratum | protocol ✅ (R6), live E2E TODO |
 | MEWC | kawpow | EthStratum | protocol ✅ (R6), live E2E TODO |
 | CLORE | kawpow | EthStratum | protocol ✅ (R6), live E2E TODO |
-| XMR | randomx | Stratum | TODO |
+| XMR | randomx | Stratum | connect/auth/notify ✅, submit ⚠️ (needs RandomX rig miner) |
 | FLUX | zelhash | Stratum | TODO |
 
 ### Stream Profit Env Vars
