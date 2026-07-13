@@ -376,8 +376,19 @@ async fn run_auxpow_bridge(
     let mut mux = JobMultiplexer::new(&cfg.payout_wallet, &cfg.worker_name)
         .with_preference(cfg.pool_preference, &cfg.region);
 
+    // Helper closure: select the wallet for a given coin (per-coin override
+    // takes precedence over the default payout_wallet).
+    let coin_wallets = cfg.coin_wallets.clone();
+    let select_wallet = |coin: ExternalCoin| -> String {
+        coin_wallets
+            .get(coin.ticker())
+            .cloned()
+            .unwrap_or_else(|| cfg.payout_wallet.clone())
+    };
+
     // Initial coin selection: force_coin wins, otherwise default to KAS.
     let initial_coin = cfg.force_coin.unwrap_or(ExternalCoin::KAS);
+    mux.set_wallet(select_wallet(initial_coin));
     if let Err(e) = mux.connect(initial_coin).await {
         eprintln!("auxpow_bridge: initial connect to {} failed: {}", initial_coin, e);
     }
@@ -387,6 +398,7 @@ async fn run_auxpow_bridge(
         // failed initial connect), try to reconnect before waiting for jobs.
         if mux.active_coin().is_none() {
             let coin = cfg.force_coin.unwrap_or(ExternalCoin::KAS);
+            mux.set_wallet(select_wallet(coin));
             eprintln!("auxpow_bridge: no active connection, reconnecting to {}…", coin);
             if let Err(e) = mux.connect(coin).await {
                 eprintln!("auxpow_bridge: reconnect to {} failed: {}", coin, e);
@@ -2460,6 +2472,9 @@ struct AuxPowIntegrationConfig {
     payout_wallet: String,
     /// Worker name suffix sent to the external pool.
     worker_name: String,
+    /// Per-coin wallet overrides (e.g. DCR requires a DCR address, not BTC).
+    /// Key = coin ticker (uppercase), Value = wallet address.
+    coin_wallets: std::collections::HashMap<String, String>,
 }
 
 impl Default for AuxPowIntegrationConfig {
@@ -2472,6 +2487,7 @@ impl Default for AuxPowIntegrationConfig {
             region: "eu".to_string(),
             payout_wallet: zion_auxpow::types::DEFAULT_BTC_WALLET.to_string(),
             worker_name: "zion_auxpow".to_string(),
+            coin_wallets: std::collections::HashMap::new(),
         }
     }
 }
@@ -2499,6 +2515,16 @@ impl AuxPowIntegrationConfig {
         }
         if let Ok(v) = std::env::var("ZION_POOL_AUXPOW_WORKER_NAME") {
             cfg.worker_name = v;
+        }
+        // Per-coin wallet overrides: ZION_POOL_AUXPOW_WALLET_DCR, _KAS, _ALPH, etc.
+        for coin in ExternalCoin::all() {
+            let key = format!("ZION_POOL_AUXPOW_WALLET_{}", coin.ticker());
+            if let Ok(v) = std::env::var(&key) {
+                if !v.trim().is_empty() {
+                    cfg.coin_wallets
+                        .insert(coin.ticker().to_string(), v.trim().to_string());
+                }
+            }
         }
         cfg
     }

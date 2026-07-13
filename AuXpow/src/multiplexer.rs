@@ -48,6 +48,12 @@ impl JobMultiplexer {
         self
     }
 
+    /// Override the wallet address (used before connecting to a coin that
+    /// requires a coin-specific address, e.g. DCR requires a DCR wallet).
+    pub fn set_wallet(&mut self, wallet: impl Into<String>) {
+        self.wallet = wallet.into();
+    }
+
     /// Connect to the given external coin and start polling for jobs.
     ///
     /// If another coin is already active, it is disconnected first.
