@@ -1,6 +1,6 @@
 # Non-EVM ZION Token Contracts — Deploy Guide
 
-> **Status:** 🔴 Contracts created, NOT deployed
+> **Status:** 🟡 2/9 deployed (Solana ✅, Stellar ✅)
 > **Last updated:** 2026-07-13
 > **Parent doc:** [`docs/3.0.5/CONTRACT_ADDRESSES.md`](../../../docs/3.0.5/CONTRACT_ADDRESSES.md)
 
@@ -18,25 +18,29 @@ After deploying each contract, update:
 
 Start with chains that have the cheapest gas + most mature tooling:
 
-| # | Chain | Token Standard | Gas Token | Est. Deploy Cost | CLI Tool |
-|---|-------|---------------|-----------|-----------------|----------|
-| 1 | Solana | SPL Token | SOL | ~0.1 SOL | `solana-cli` + `anchor` |
-| 2 | NEAR | NEP-141 | NEAR | ~0.1 NEAR | `near-cli` |
-| 3 | Cosmos | CW20 | ATOM | ~5000 ATOM | `wasmd` |
-| 4 | Aptos | Move Coin | APT | ~0.5 APT | `aptos-cli` |
-| 5 | Sui | Move Coin | SUI | ~1 SUI | `sui-cli` |
-| 6 | Tron | TRC-20 | TRX | ~100 TRX | `tronbox` |
-| 7 | Stellar | Native Asset | XLM | ~10 XLM | `stellar-sdk` (Python) |
-| 8 | TON | TEP-74 Jetton | TON | ~0.5 TON | `toncli` |
-| 9 | Cardano | Native Token | ADA | ~2 ADA | `cardano-cli` |
+| # | Chain | Token Standard | Gas Token | Est. Deploy Cost | CLI Tool | Status |
+|---|-------|---------------|-----------|-----------------|----------|--------|
+| 1 | Solana | SPL Token | SOL | ~0.002 SOL | `solana-cli` + `spl-token-cli` | ✅ Deployed |
+| 2 | Stellar | Native Asset | XLM | ~0.00003 XLM | `stellar-sdk` (Python) | ✅ Deployed |
+| 3 | NEAR | NEP-141 | NEAR | ~0.1 NEAR | `near-cli` | 🔴 Pending |
+| 4 | Cosmos | CW20 | ATOM | ~5000 ATOM | `wasmd` | 🔴 Pending |
+| 5 | Aptos | Move Coin | APT | ~0.5 APT | `aptos-cli` | 🔴 Pending |
+| 6 | Sui | Move Coin | SUI | ~1 SUI | `sui-cli` | 🔴 Pending |
+| 7 | Tron | TRC-20 | TRX | ~500-1000 TRX | `tronbox` | 🔴 Pending (needs TRX) |
+| 8 | TON | TEP-74 Jetton | TON | ~0.5 TON | `toncli` | 🔴 Pending |
+| 9 | Cardano | Native Token | ADA | ~2 ADA | `cardano-cli` | 🔴 Pending |
 
 ## Per-Chain Deploy Instructions
 
-### 1. Solana (SPL Token)
+### 1. Solana (SPL Token) — ✅ DEPLOYED 2026-07-13
+
+**Mint:** `HgfQZpH2JAqPdR3PcP4dEE8WRhznXh1QhJBiiwcHfT8H`
+**Decimals:** 6
+**Supply:** 1,000,000,000 ZION (1B)
+**Mint authority:** Deployer keypair (TODO: transfer to WARP multisig)
 
 **Contract:** `solana/zion_spl_token.rs` (Anchor program)
-**Decimals:** 6
-**CLI tools:** `solana-cli`, `anchor`
+**CLI tools:** `solana-cli`, `spl-token-cli`
 
 ```bash
 # Install tools
@@ -238,7 +242,15 @@ WARP_TRON_RPC=https://api.trongrid.io
 
 ---
 
-### 7. Stellar (Native Asset)
+### 7. Stellar (Native Asset) — ✅ DEPLOYED 2026-07-13
+
+**Asset:** `ZION:GDDXUOJ7ERSHHDMUKS6PBIDSXV2PB5J7GOFOKMHW6BRVAS46CFSPAYJT`
+**Issuer:** `GDDXUOJ7ERSHHDMUKS6PBIDSXV2PB5J7GOFOKMHW6BRVAS46CFSPAYJT`
+**TX:** `5c1d2ba0834f815dae0e769df89e4fdc0392da2145e1df8848603db42386ec95`
+**Ledger:** 63451614
+**Flags:** auth_required, auth_revocable, auth_immutable
+**Home domain:** zionterranova.com
+**Cost:** ~0.00003 XLM (TX fee only)
 
 **Contract:** `stellar/zion_asset.toml` + `stellar/setup_zion_asset.py`
 **Decimals:** 6 (Stellar integer amounts, 1 ZION = 1000000 units)

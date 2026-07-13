@@ -5120,6 +5120,7 @@ name = "zion-auxpow"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "blake2",
  "blake3",
  "cc",
  "chrono",
@@ -5128,6 +5129,7 @@ dependencies = [
  "ocl",
  "serde",
  "serde_json",
+ "sha2",
  "sha3",
  "tokio",
  "tracing",

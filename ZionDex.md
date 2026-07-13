@@ -2,7 +2,7 @@
 
 > **Status:** Live Beta — Active development
 > **Created:** 2026-07-10
-> **Last updated:** 2026-07-12 (Phase 4 Intent-Based Execution + Non-EVM contracts + Lightning LND + Cross-chain AMM routing)
+> **Last updated:** 2026-07-13 (Phase 4 Intent-Based Execution + Non-EVM deploy: Solana + Stellar + Lightning LND + Cross-chain AMM routing)
 > **Supersedes:** `docs/3.0.3/ZionDex.md` (concept/vision document)
 > **Goal:** First universal cross-chain DEX powered by native L1 bridge on 13 chain families
 > **Contract addresses:** [`docs/3.0.5/CONTRACT_ADDRESSES.md`](./docs/3.0.5/CONTRACT_ADDRESSES.md)
@@ -81,7 +81,7 @@ With ZionDex + WARP:
 | Atomic Swap UI | `APP&WEB/website-v2.9/src/app/swap/page.tsx` | ✅ Live, HTLC initiation/claim/refund |
 | Bridge UI | `APP&WEB/website-v2.9/src/app/bridge/page.tsx` | ✅ Live, burn wZION → unlock ZION |
 
-> **Implementation Status (2026-07-12):** ZionDex is **Live Beta** — backend (Router 37 tests, AMM 7 tests, SDK), frontend (`/dex` swap UI + `/dex/liquidity` + `/dex/portfolio`), mobile (React Native), desktop (Electron), L3 WARP integration, cross-chain AMM routing (aggregator.rs), and **Phase 4 Intent-Based Execution** (intent crate 12 tests, solver daemon 19 tests, IntentSettlement + SolverRegistry contracts 13 tests, Router intent API 9 tests — **88 tests total**) all complete. Landing page at `/ziondex`. Non-EVM ZION token contracts created for 9 chains. Lightning LND Docker stack deployed on Edge (testnet, syncing). ZionDex Router deployed on Edge (port 8454, health OK). Remaining: deploy IntentSettlement + SolverRegistry on Base (needs ETH), provision solver keys + start solver daemon (port 8455), deploy non-EVM contracts to mainnet, frontend intent UI, security audit. See `ZionDex/README.md` and [`docs/3.0.5/CONTRACT_ADDRESSES.md`](./docs/3.0.5/CONTRACT_ADDRESSES.md) for full details.
+> **Implementation Status (2026-07-13):** ZionDex is **Live Beta** — backend (Router 37 tests, AMM 7 tests, SDK), frontend (`/dex` swap UI + `/dex/liquidity` + `/dex/portfolio`, mobile (React Native), desktop (Electron), L3 WARP integration, cross-chain AMM routing (aggregator.rs), and **Phase 4 Intent-Based Execution** (intent crate 12 tests, solver daemon 19 tests, IntentSettlement + SolverRegistry contracts 13 tests, Router intent API 9 tests — **88 tests total**) all complete. Landing page at `/ziondex`. **Non-EVM ZION tokens deployed: 2/9** (Solana SPL `HgfQZpH2JAqPdR3PcP4dEE8WRhznXh1QhJBiiwcHfT8H`, Stellar native `ZION:GDDXUOJ7ERSHHDMUKS6PBIDSXV2PB5J7GOFOKMHW6BRVAS46CFSPAYJT`). Lightning LND Docker stack deployed on Edge (testnet, syncing). ZionDex Router deployed on Edge (port 8454, nginx `/dex-api` proxy, health OK). Remaining: deploy IntentSettlement + SolverRegistry on Base (needs ETH), provision solver keys + start solver daemon (port 8455), deploy 7 more non-EVM contracts (Tron, Cardano, Cosmos, Aptos, Sui, NEAR, TON), frontend intent UI, security audit. See `ZionDex/README.md` and [`docs/3.0.5/CONTRACT_ADDRESSES.md`](./docs/3.0.5/CONTRACT_ADDRESSES.md) for full details.
 
 ### 2.4 Token Model
 
@@ -1462,7 +1462,7 @@ server {
 >
 > **📋 Souhrnný deploy guide:** [`V3/L2/bridge/contracts/non-evm/DEPLOY.md`](./V3/L2/bridge/contracts/non-evm/DEPLOY.md) — per-chain instrukce, CLI tools, env vars, post-deploy checklist
 >
-> **Status (2026-07-13):** Všech 9 kontraktů vytvořeno + WARP adaptéry implementovány s TODO placeholders. Deploy pending — viz DEPLOY.md pro pořadí a cost estimate.
+> **Status (2026-07-13):** **2/9 non-EVM deployed** — Solana SPL Token ✅ (`HgfQZpH2JAqPdR3PcP4dEE8WRhznXh1QhJBiiwcHfT8H`), Stellar native asset ✅ (`ZION:GDDXUOJ7ERSHHDMUKS6PBIDSXV2PB5J7GOFOKMHW6BRVAS46CFSPAYJT`). 7 remaining (Tron, Cardano, Cosmos, Aptos, Sui, NEAR, TON). Viz DEPLOY.md pro pořadí a cost estimate.
 
 #### B.1 — Bitcoin WARP HTLC (PRIORITY 1)
 
