@@ -1,8 +1,8 @@
 # AuxPow Multi-Algorithm GPU Mining — Complete Report & Plan
 
-> **Status:** 2026-07-13 (rev2 — CHv3 stream integration) | DCR Blake3 E2E verified (share accepted by WoolyPooly)
+> **Status:** 2026-07-13 (rev2.2 — stream profit system implemented) | DCR Blake3 E2E verified (share accepted by WoolyPooly)
 > **Author:** Devin + Yose | **Repo:** `Zion-v3.0.0`
-> **Main goal:** Rozchodit revenue system ze stream multi-algo GPU miningu v Deeksha Chv3
+> **Main goal:** Rozchodit revenue system ze stream multi-algo GPU miningu v Deeksha Chv3 — všechny streamy uvnitř Deeksha Chv3 pipeline
 
 ---
 
@@ -560,7 +560,9 @@ ZION Miner (GPU rig)
 | Priority | Fáze | Effort | Impact |
 |----------|------|--------|--------|
 | **R0** | Opravit broken Edge config (ETC→DCR) | 30min | Unblocks DCR revenue |
-| **R1** | **Automatický profit-based coin switching** | **4-8h** | **Pool přepíná coiny podle profitability** |
+| **R1** | **Stream profit system — weighted pipeline** | **DONE ✅** | **Stream weights v job messages, profit computation** |
+| **R1b** | **Live API fetching (NiceHash/WhatToMine)** | **2-4h** | **Reálná profit data místo fallback** |
+| **R1c** | **GPU kernel parametrizace** | **2-4h** | **Kernel aplikuje weights na work distribution** |
 | **R2** | DCR revenue live | 1-2h | 1st external revenue stream |
 | **R3** | ALPH + KAS E2E | 2-4h | 3 external coins live |
 | **R4** | Stream telemetry revenue report | 2-4h | Sjednocený revenue accounting |
@@ -668,60 +670,101 @@ auxpow: submitting share request {"id":100,"method":"mining.submit",
 - [ ] Restart pool, ověřit DCR jobs flow + share forwarding
 - [ ] Ověřit `RevenueCollector::track_event(Blake3External)` se volá při accepted share
 
-### Fáze R1: Automatický profit-based coin switching (HLAVNÍ CÍL, 4-8h)
+### Fáze R1: Stream profit system — weighted pipeline (IMPLEMENTED ✅)
 
-**Cíl:** Pool B2b bridge automaticky přepíná mezi externími pooly podle
-aktuální profitability. Ne statický `force_coin`, ale dynamický switching.
+**Commit:** `50df9b414` — `feat(chv3): stream profit system — weighted pipeline for Deeksha Chv3`
+
+**Architektura:** Všechny revenue streamy žijí UVNITR Deeksha Chv3 pipeline.
+GPU vždy běží Deeksha Chv3, ale pipeline se parametrizuje podle ziskovosti
+streamů. Pool posílá stream weights minerovi v job messages.
+
+**Co bylo implementováno:**
+
+1. **`V3/L1/cosmic-harmony/src/stream_profit.rs`** (566 řádků, nový modul):
+   - `StreamProfitEntry` / `StreamProfitSnapshot` — profit data per stream
+   - `StreamWeights` — normalizované váhy (0.0–1.0) pro pipeline kroky
+   - `StreamProfitConfig` — konfigurace z env proměnných
+   - `from_profit()` — výpočet vah z profit dat s hysteresí (15% default)
+   - `to_step_multipliers()` — mapování vah na `DeekshaStep` work multipliers
+   - Fallback estimates pro 6 interních streamů: Zion, KeccakBonus, Sha3Bonus,
+     NclAi, DeekshaLite, ThermalBonus
+
+2. **`PoolMessage::Job`** rozšířeno o `stream_weights` pole:
+   - Formát: `"zion:50.0,keccak_bonus:15.0,ncl_ai:25.0"`
+   - `#[serde(default)]` — backward kompatibilní s minery, které pole neznají
+
+3. **`RevenueScheduler`** v `server.rs`:
+   - Drží `StreamProfitConfig` + `StreamWeights`
+   - `stream_weights_string()` — serializuje váhy do job messages
+   - `update_stream_weights()` — aplikuje nový profit snapshot s hysteresí
+   - Background thread pravidelně (120s) aktualizuje profit data
+
+4. **Miner** (`main.rs`):
+   - `read_next_job` přijímá a loguje `stream_weights` z job messages
+
+**Env proměnné:**
+```
+ZION_STREAM_PROFIT_SWITCH=true          # enable profit-based weights
+ZION_STREAM_PROFIT_API_PROVIDER=fallback # nicehash|whattomine|coingecko|fallback
+ZION_STREAM_PROFIT_INTERVAL=120          # refresh interval (sekundy)
+ZION_STREAM_HYSTERESIS_PCT=15.0          # min improvement % pro switch
+ZION_STREAM_PROFIT_SOURCES=zion,keccak_bonus,sha3_bonus,ncl_ai
+```
+
+**Testy:** 8 nových stream_profit testů, 197 cosmic-harmony, 38 pool, workspace ✓
+
+**Co chybí (další fáze):**
+- [ ] Live API fetching (NiceHash/WhatToMine) — datové struktury jsou připravené,
+      stačí doplnit HTTP client a naplnit `StreamProfitSnapshot` z reálných API dat
+- [ ] GPU kernel parametrizace — miner zatím weights jen loguje, kernel je ještě
+      neaplikuje na work distribution
+- [ ] Pipeline step multipliers v OpenCL kernelu — `to_step_multipliers()` je
+      připravené, ale kernel ještě nemá parametrizované počty kol
+
+### Fáze R1b: Live API fetching (NEXT, 2-4h)
+
+**Cíl:** Naplnit `StreamProfitSnapshot` z reálných API dat místo fallback estimates.
 
 **Co implementovat:**
 
-1. **Live profitability API client** (`AuXpow/src/profit_api.rs` — NOVÝ):
-   - Přidat `reqwest` do `AuXpow/Cargo.toml`
-   - WhatToMine API: `https://whattomine.com/coins.json` — refresh každých 5 min
-   - Fallback: CoinGecko API pro ceny + pool difficulty APIs
+1. **Přidat `reqwest` do `V3/L1/cosmic-harmony/Cargo.toml`** (nebo pool Cargo.toml)
+   - `reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }`
+
+2. **API clients** (v `stream_profit.rs` nebo nový `profit_api.rs`):
+   - NiceHash API: hash-power marketplace prices pro Keccak/SHA3 algos
+   - WhatToMine API: `https://whattomine.com/coins.json` pro coin profitability
+   - CoinGecko API: token prices pro NCL/AI compute pricing
    - Fallback: static `fallback_estimates()` když API nedostupné
-   - Cache výsledky 5 min (zabraňuje API rate limit)
-   - `ProfitApiClient::fetch_estimates() -> Vec<ProfitEntry>`
+   - Cache výsledky (zabraňuje API rate limit)
 
-2. **Profit-based coin switching v B2b bridge** (`server.rs:run_auxpow_bridge`):
-   - Periodicky (každých 5 min) zavolat `profit_api.fetch_estimates()`
-   - `select_best_coin(entries, current, hysteresis_pct)` — s hysteresis 15%
-   - Pokud vybraný coin != current → `mux.disconnect()` + `mux.connect(new_coin)`
-   - Log: `auxpow_bridge: profit switch DCR→KAS (profit $0.85 vs $0.45, +88%)`
-   - Respektovat `force_coin` pokud je nastavený (override profit)
-   - Respektovat circuit breaker — nepřepínat pokud current coin je healthy
-
-3. **Profit config env vars:**
-   - `ZION_AUXPOW_PROFIT_SWITCH=1` — enable profit-based switching (default: false)
-   - `ZION_AUXPOW_PROFIT_API=whattomine` — API source (whattomine / coingecko / static)
-   - `ZION_AUXPOW_PROFIT_INTERVAL=300` — refresh interval sekundy (default 5 min)
-   - `ZION_AUXPOW_HYSTERESIS_PCT=15` — min improvement % pro switch (default 15)
-   - `ZION_AUXPOW_PROFIT_COINS=DCR,KAS,ALPH` — whitelist coinů pro profit switching
+3. **Background fetcher** v `server.rs`:
+   - Nahradit `StreamProfitSnapshot::fallback()` v background threadu
+   - `profit_api.fetch_estimates() -> StreamProfitSnapshot`
+   - Error handling: API timeout → keep last snapshot, log warning
 
 4. **API endpoint pro profit status:**
-   - `GET /api/v1/profit/status` → current coin, profit estimates, last switch
-   - `GET /api/v1/profit/estimates` → live ProfitEntry[] z API
+   - `GET /api/v1/profit/status` → current weights, profit estimates, last update
+   - `GET /api/v1/profit/estimates` → live StreamProfitSnapshot JSON
 
-**Soubory ke změně:**
-- `AuXpow/Cargo.toml` — přidat `reqwest = { version = "0.12", features = ["json"] }`
-- `AuXpow/src/profit_api.rs` — NOVÝ, live API client
-- `AuXpow/src/lib.rs` — `pub mod profit_api;`
-- `V3/L1/pool/src/bin/server.rs:run_auxpow_bridge()` — přidat profit switching loop
-- `V3/L1/pool/Cargo.toml` — pokud pool potřebuje reqwest přímo
+### Fáze R1c: GPU kernel parametrizace (2-4h, po R1b)
 
-**Architecture:**
-```
-run_auxpow_bridge() loop:
-  ├── Every 5 min: profit_api.fetch_estimates()
-  ├── select_best_coin(entries, current, hysteresis=15%)
-  ├── If new_coin != current AND no force_coin:
-  │   ├── mux.disconnect()
-  │   ├── mux.set_wallet(select_wallet(new_coin))
-  │   ├── mux.connect(new_coin)
-  │   └── log: "profit switch {old}→{new} (profit {old}$ vs {new}$, {pct}%)"
-  ├── Continue: wait_for_job() → queue → share forwarding
-  └── Circuit breaker: nepřepínat pokud current coin healthy
-```
+**Cíl:** GPU kernel aplikuje stream weights na work distribution.
+
+**Co implementovat:**
+
+1. **OpenCL kernel parametrizace** (`deeksha_lite.cl`):
+   - Přidat `__constant float stream_weights[6]` parameter
+   - Keccak step: `if (stream_weights[KECCAK_BONUS] > threshold) { extra rounds }`
+   - NPU step: `if (stream_weights[NCL_AI] > threshold) { extra NPU work }`
+   - Base hash se nemění — extra práce je AFTER base hash jako byproduct
+
+2. **Miner GPU backend** (`gpu_backend.rs`):
+   - `ensure_algorithm()` předá stream weights do kernelu
+   - Kernel argument: `stream_weights` buffer
+
+3. **Byproduct submission** (future):
+   - Extra Keccak hashe → NiceHash Keccak hash-power orders
+   - Extra NPU work → NCL AI compute marketplace
 
 ### Fáze R2: DCR revenue live (1-2h, po R0)
 
