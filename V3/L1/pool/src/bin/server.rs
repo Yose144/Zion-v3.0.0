@@ -1646,7 +1646,16 @@ fn handle_client(
         let network_target = DifficultyTarget {
             bytes: assignment.target_bytes(),
         };
-        let share_target = vardiff.share_target();
+        // For external AuxPoW jobs, use the external pool's target as the
+        // share target (the external pool sets the difficulty).  For ZION
+        // jobs, use the vardiff share target.
+        let share_target = if assignment.is_external() {
+            DifficultyTarget {
+                bytes: assignment.target_bytes(),
+            }
+        } else {
+            vardiff.share_target()
+        };
         let share_difficulty = vardiff.current_difficulty;
         let job_nonce_count = if backend == "opencl" || backend == "cuda" || backend == "metal" {
             config.nonce_count_gpu
