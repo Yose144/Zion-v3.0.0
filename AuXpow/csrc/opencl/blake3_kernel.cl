@@ -79,10 +79,10 @@ void blake3_compress8(
     for (int i = 0; i < 8; i++) state[i] = chain[i];
     for (int i = 0; i < 8; i++) state[8 + i] = BLAKE3_IV[i];
 
-    state[8]  = (uint)(counter & 0xFFFFFFFFuL);
-    state[9]  = (uint)(counter >> 32);
-    state[10] = block_len;
-    state[11] = flags;
+    state[12] = (uint)(counter & 0xFFFFFFFFuL);
+    state[13] = (uint)(counter >> 32);
+    state[14] = block_len;
+    state[15] = flags;
 
     uint msg[16];
     for (int i = 0; i < 16; i++) {
@@ -115,10 +115,10 @@ void blake3_compress16(
     for (int i = 0; i < 8; i++) state[i] = chain[i];
     for (int i = 0; i < 8; i++) state[8 + i] = BLAKE3_IV[i];
 
-    state[8]  = (uint)(counter & 0xFFFFFFFFuL);
-    state[9]  = (uint)(counter >> 32);
-    state[10] = block_len;
-    state[11] = flags;
+    state[12] = (uint)(counter & 0xFFFFFFFFuL);
+    state[13] = (uint)(counter >> 32);
+    state[14] = block_len;
+    state[15] = flags;
 
     uint msg[16];
     for (int i = 0; i < 16; i++) {
