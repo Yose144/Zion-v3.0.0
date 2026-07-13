@@ -325,6 +325,156 @@ EXPORT uint32_t kawpow_get_epoch(uint32_t height) {
     return height / KAWPOW_EPOCH_LENGTH;
 }
 
+/* ============================================================================
+ * DAG GENERATOR — light cache → full DAG (graph expansion)
+ *
+ * KawPow (ProgPoW-derived) uses the same DAG structure as Ethash, but with
+ * KAWPOW_EPOCH_LENGTH=7500 (vs Ethash's 30000).  The DAG generation algorithm
+ * is identical: light cache → 64-byte nodes via 256-parent FNV-1a mixing.
+ *
+ * Each DAG *entry* is 128 bytes = 2 x 64-byte "nodes".
+ * ============================================================================ */
+
+#define KAWPOW_CACHE_ROUNDS    3
+#define KAWPOW_DATASET_PARENTS 256
+#define KAWPOW_HASH_BYTES      64
+#define KAWPOW_MIX_BYTES       128
+
+/* Get cache size for epoch (KawPow/ProgPoW sizing) */
+static uint64_t kawpow_get_cache_size(uint32_t epoch) {
+    /* ProgPoW/KawPow uses the same sizing formula as Ethash:
+     * 16 MB + epoch * 128 KB, rounded to 64-byte boundary */
+    uint64_t size = 16ULL * 1024 * 1024 + (uint64_t)epoch * 128 * 1024;
+    return (size / 64) * 64;
+}
+
+/* Get dataset (DAG) size for epoch in bytes */
+static uint64_t kawpow_get_dataset_size(uint32_t epoch) {
+    /* Same formula as Ethash: 1 GB + epoch * 8 MB, rounded to 128-byte boundary */
+    uint64_t size = 1024ULL * 1024 * 1024 + (uint64_t)epoch * 8 * 1024 * 1024;
+    return (size / KAWPOW_DAG_NODE) * KAWPOW_DAG_NODE;
+}
+
+/* Generate seed hash for epoch by keccak256-chaining (same as Ethash) */
+static void kawpow_get_seedhash(uint32_t epoch, uint8_t seed[32]) {
+    memset(seed, 0, 32);
+    for (uint32_t i = 0; i < epoch; i++) {
+        keccak256(seed, 32, seed);
+    }
+}
+
+/* Calculate a single 64-byte DAG node from the light cache.
+ * Same algorithm as Ethash: init from cache, mix 256 parents with FNV-1a,
+ * then keccak-512. */
+static void kawpow_calc_dag_node(
+    uint64_t node_index,
+    const uint8_t *cache,
+    uint64_t cache_items,
+    uint8_t *out64)  /* 64-byte output */
+{
+    /* Step 1: init = cache[node_index % cache_items] (64 bytes) */
+    uint8_t mix[64];
+    memcpy(mix, cache + (node_index % cache_items) * 64, 64);
+
+    /* Step 2: mix with 256 parents */
+    for (uint32_t p = 0; p < KAWPOW_DATASET_PARENTS; p++) {
+        uint32_t mix_first = *(const uint32_t *)(const void *)mix;
+        uint32_t parent_idx = fnv1a((uint32_t)(node_index ^ p), mix_first) % (uint32_t)cache_items;
+        const uint8_t *parent = cache + (uint64_t)parent_idx * 64;
+
+        /* FNV-1a per 32-bit word (16 words in 64 bytes) */
+        for (int j = 0; j < 16; j++) {
+            uint32_t *mix_w = (uint32_t *)(void *)(mix + j * 4);
+            uint32_t parent_w = *(const uint32_t *)(const void *)(parent + j * 4);
+            *mix_w = fnv1a(*mix_w, parent_w);
+        }
+    }
+
+    /* Step 3: keccak-512(mix) -> output (64 bytes) */
+    keccak512(mix, 64, out64);
+}
+
+typedef void (*kawpow_dag_progress_cb)(uint32_t percent);
+
+/* Generate the full KawPow DAG for a given epoch.
+ * The caller owns the returned buffer and must free() it.
+ *
+ *   epoch             — epoch number (height / KAWPOW_EPOCH_LENGTH)
+ *   dag_size_entries  — output: number of 128-byte entries
+ *   progress_cb       — optional progress callback (0..100), may be NULL
+ *   returns           — malloc'd DAG buffer (dag_size_entries * 128 bytes),
+ *                       or NULL on error.  Caller must free().
+ */
+EXPORT uint8_t *kawpow_generate_dag(
+    uint32_t epoch,
+    uint64_t *dag_size_entries,
+    kawpow_dag_progress_cb progress_cb)
+{
+    if (!dag_size_entries) return NULL;
+    *dag_size_entries = 0;
+
+    /* Build the light cache for this epoch */
+    uint8_t seed[32];
+    kawpow_get_seedhash(epoch, seed);
+
+    uint64_t cache_size = kawpow_get_cache_size(epoch);
+    uint64_t cache_items = cache_size / 64;
+
+    uint8_t *cache = (uint8_t *)malloc(cache_size);
+    if (!cache) return NULL;
+
+    /* Generate cache: seed first item, chain with keccak-512 */
+    keccak512(seed, 32, cache);
+    for (uint64_t i = 1; i < cache_items; i++) {
+        keccak512(cache + (i - 1) * 64, 64, cache + i * 64);
+    }
+
+    /* RANDMEMOHASH mixing rounds (3 rounds) */
+    for (int r = 0; r < KAWPOW_CACHE_ROUNDS; r++) {
+        for (uint64_t i = 0; i < cache_items; i++) {
+            uint32_t v = *(uint32_t *)(void *)&cache[i * 64] % (uint32_t)cache_items;
+            uint64_t prev = (i + cache_items - 1) % cache_items;
+            uint8_t tmp[64];
+            for (int j = 0; j < 64; j++)
+                tmp[j] = cache[prev * 64 + j] ^ cache[v * 64 + j];
+            keccak512(tmp, 64, cache + i * 64);
+        }
+    }
+
+    /* Calculate DAG size */
+    uint64_t ds_entries = kawpow_get_dataset_size(epoch) / KAWPOW_DAG_NODE;
+    uint64_t ds_bytes   = ds_entries * KAWPOW_DAG_NODE;
+
+    /* Allocate DAG buffer */
+    uint8_t *dag = (uint8_t *)malloc(ds_bytes);
+    if (!dag) {
+        free(cache);
+        return NULL;
+    }
+
+    /* Generate each 128-byte DAG entry = 2 x 64-byte nodes */
+    uint64_t total_nodes = ds_entries * 2;
+    uint64_t progress_step = (total_nodes / 100) + 1;
+    for (uint64_t n = 0; n < total_nodes; n++) {
+        kawpow_calc_dag_node(n, cache, cache_items, dag + n * 64);
+        if (progress_cb && (n % progress_step == 0)) {
+            progress_cb((uint32_t)(n * 100 / total_nodes));
+        }
+    }
+
+    *dag_size_entries = ds_entries;
+    free(cache);  /* light cache no longer needed after DAG is built */
+
+    if (progress_cb) progress_cb(100);
+
+    return dag;
+}
+
+/* Free a DAG buffer generated by kawpow_generate_dag. */
+EXPORT void kawpow_free_dag(uint8_t *dag) {
+    free(dag);
+}
+
 /* ── Benchmark (uses a small synthetic DAG) ────────────────────────── */
 
 EXPORT double kawpow_benchmark_cpu(int iterations) {

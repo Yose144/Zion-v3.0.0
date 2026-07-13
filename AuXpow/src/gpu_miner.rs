@@ -40,6 +40,10 @@ use std::time::Instant;
 pub struct GpuFoundShare {
     pub nonce: u64,
     pub hash: [u8; 32],
+    /// Mix hash for Ethash/KawPow (the intermediate compressed mix hash
+    /// needed for `eth_submitWork`).  None for algorithms that don't
+    /// produce a mix hash (blake3, kheavyhash, autolykos).
+    pub mix_hash: Option<[u8; 32]>,
 }
 
 /// Cached Ethash DAG uploaded to the GPU device.
@@ -351,6 +355,10 @@ impl GpuMiner {
             .queue(q.clone())
             .len(32)
             .build()?;
+        let output_mix_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .build()?;
         let found_flag_buf: Buffer<u32> = Buffer::builder()
             .queue(q.clone())
             .len(1)
@@ -431,6 +439,7 @@ impl GpuMiner {
                     dag.size_entries,
                     &output_nonce_buf,
                     &output_hash_buf,
+                    &output_mix_buf,
                     &found_flag_buf,
                 )?
             }
@@ -445,6 +454,7 @@ impl GpuMiner {
                     batch_size,
                     &output_nonce_buf,
                     &output_hash_buf,
+                    &output_mix_buf,
                     &found_flag_buf,
                 )?
             }
@@ -487,17 +497,31 @@ impl GpuMiner {
         output_hash_buf.read(&mut hash).enq()?;
 
         let hash_arr: [u8; 32] = hash.try_into().expect("32 bytes from GPU");
+
+        // Read mix hash for Ethash/KawPow (needed for eth_submitWork).
+        let mix_hash = if matches!(algorithm, "ethash" | "etchash" | "ethash_etc"
+            | "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc")
+        {
+            let mut mix = vec![0u8; 32];
+            output_mix_buf.read(&mut mix).enq()?;
+            Some(mix.try_into().expect("32 bytes mix from GPU"))
+        } else {
+            None
+        };
+
         println!(
-            "auxpow_gpu_share_found algorithm={} nonce={} hash_first8={:016x} elapsed_ms={}",
+            "auxpow_gpu_share_found algorithm={} nonce={} hash_first8={:016x} has_mix={} elapsed_ms={}",
             algorithm,
             nonce[0],
             u64::from_le_bytes(hash_arr[0..8].try_into().unwrap()),
+            mix_hash.is_some(),
             start.elapsed().as_millis()
         );
 
         Ok(Some(GpuFoundShare {
             nonce: nonce[0],
             hash: hash_arr,
+            mix_hash,
         }))
     }
 
@@ -763,6 +787,7 @@ impl GpuMiner {
         batch_size: u64,
         output_nonce_buf: &Buffer<u64>,
         output_hash_buf: &Buffer<u8>,
+        output_mix_buf: &Buffer<u8>,
         found_flag_buf: &Buffer<u32>,
     ) -> Result<Kernel> {
         let q = pro_que.queue().clone();
@@ -822,6 +847,7 @@ impl GpuMiner {
             .arg(dag_entries)
             .arg(output_nonce_buf)
             .arg(output_hash_buf)
+            .arg(output_mix_buf)
             .arg(found_flag_buf)
             .build()
             .map_err(|e| anyhow!("kernel build failed: {e}"))?;
@@ -975,6 +1001,7 @@ impl GpuMiner {
         dag_size_entries: u64,
         output_nonce_buf: &Buffer<u64>,
         output_hash_buf: &Buffer<u8>,
+        output_mix_buf: &Buffer<u8>,
         found_flag_buf: &Buffer<u32>,
     ) -> Result<Kernel> {
         let q = pro_que.queue().clone();
@@ -1011,6 +1038,7 @@ impl GpuMiner {
             .arg(dag_size_entries)
             .arg(output_nonce_buf)
             .arg(output_hash_buf)
+            .arg(output_mix_buf)
             .arg(found_flag_buf)
             .build()
             .map_err(|e| anyhow!("kernel build failed: {e}"))?;

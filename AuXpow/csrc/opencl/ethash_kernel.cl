@@ -183,7 +183,8 @@ inline uint fnv1a(uint a, uint b) {
 //   dag           — precomputed DAG buffer (__global ulong *), 16 u64 per entry
 //   dag_size      — number of 128-byte DAG entries
 //   output_nonce  — single u64, written when a solution is found
-//   output_hash   — 32-byte hash of the winning nonce
+//   output_hash   — 32-byte final hash of the winning nonce
+//   output_mix    — 32-byte compressed mix hash (for eth_submitWork)
 //   found         — atomic flag: 0 = not found, 1 = found
 //
 // Each work-item computes Ethash for nonce = nonce_base + get_global_id(0) * stride.
@@ -196,6 +197,7 @@ __kernel void ethash_mine(
     const ulong dag_size,                 // number of 128-byte entries
     __global ulong *output_nonce,
     __global uchar *output_hash,
+    __global uchar *output_mix,           // 32-byte compressed mix hash
     __global volatile uint *found
 )
 {
@@ -266,6 +268,13 @@ __kernel void ethash_mine(
         if (old == 0u) {
             *output_nonce = nonce;
             for (int i = 0; i < 32; i++) output_hash[i] = hash[i];
+            // Write the compressed mix hash (cmix) for eth_submitWork.
+            for (int i = 0; i < 8; i++) {
+                output_mix[i*4]     = (uchar)(cmix[i]);
+                output_mix[i*4 + 1] = (uchar)(cmix[i] >> 8);
+                output_mix[i*4 + 2] = (uchar)(cmix[i] >> 16);
+                output_mix[i*4 + 3] = (uchar)(cmix[i] >> 24);
+            }
         }
     }
 }

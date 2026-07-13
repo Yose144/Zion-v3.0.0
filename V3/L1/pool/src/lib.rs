@@ -73,6 +73,10 @@ pub enum PoolMessage {
         attempted_hashes: Option<u64>,
         #[serde(default)]
         elapsed_ms: Option<u64>,
+        /// Mix hash for Ethash/KawPow shares (eth_submitWork).  None for
+        /// algorithms that don't produce a mix hash.
+        #[serde(default)]
+        mix_hash_hex: Option<String>,
     },
     NoSolution {
         job_id: u64,
@@ -519,6 +523,27 @@ impl MiningPool {
             hash_hex: to_hex(&solution.hash),
             attempted_hashes: None,
             elapsed_ms: None,
+            mix_hash_hex: None,
+        }
+    }
+
+    /// Like `solution_message` but includes a mix hash for Ethash/KawPow.
+    pub fn solution_message_with_mix(
+        &self,
+        miner_id: &str,
+        worker_name: &str,
+        solution: MiningSolution,
+        mix_hash: &[u8; 32],
+    ) -> PoolMessage {
+        PoolMessage::Submit {
+            job_id: solution.job_id,
+            miner_id: miner_id.to_string(),
+            worker_name: worker_name.to_string(),
+            nonce: solution.candidate.nonce,
+            hash_hex: to_hex(&solution.hash),
+            attempted_hashes: None,
+            elapsed_ms: None,
+            mix_hash_hex: Some(to_hex(mix_hash)),
         }
     }
 
@@ -981,6 +1006,7 @@ mod tests {
                 hash_hex: "bb".repeat(32),
                 attempted_hashes: Some(100),
                 elapsed_ms: Some(250),
+                mix_hash_hex: None,
             },
             PoolMessage::NoSolution {
                 job_id: 42,

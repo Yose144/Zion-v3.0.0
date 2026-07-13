@@ -1448,16 +1448,29 @@ fn handle_client(
 ) -> Result<()> {
     let session_started = Instant::now();
     let session_id = session_id_counter.fetch_add(1, Ordering::Relaxed);
-    active_sessions.fetch_add(1, Ordering::Relaxed);
-    let session_count = active_sessions.load(Ordering::Relaxed);
-    let _guard = SessionGuard(Arc::clone(&active_sessions));
-    println!("session_start active_sessions={session_count} session_id={session_id}");
 
     let reader_stream = stream.try_clone().context("failed to clone tcp stream")?;
     let mut reader = BufReader::new(reader_stream);
     let mut writer = stream;
 
-    let (hello_line, hello_message) = read_wire_message(&mut reader)?;
+    // Read hello BEFORE logging session_start — TCP probes (health checks,
+    // dashboard polls) connect and immediately close without sending a hello.
+    // Logging session_start for those creates noise and inflates session counts.
+    let (hello_line, hello_message) = match read_wire_message(&mut reader) {
+        Ok(pair) => pair,
+        Err(_) => {
+            // Connection closed before hello — likely a health check / TCP probe.
+            // Decrement ip_sessions counter (already incremented in accept loop)
+            // and return quietly without logging session_start.
+            return Ok(());
+        }
+    };
+
+    // Only now — after we have a valid hello — count this as an active session.
+    active_sessions.fetch_add(1, Ordering::Relaxed);
+    let session_count = active_sessions.load(Ordering::Relaxed);
+    let _guard = SessionGuard(Arc::clone(&active_sessions));
+    println!("session_start active_sessions={session_count} session_id={session_id}");
     println!("wire_hello={}", hello_line);
 
     // ── Inter-pool ShareRelay (Edge → Core) ─────────────────────────────
@@ -4509,6 +4522,7 @@ mod tests {
                 hash_hex: "00".repeat(32),
                 attempted_hashes: Some(128),
                 elapsed_ms: Some(1000),
+                mix_hash_hex: None,
             },
         )?;
 
@@ -4994,6 +5008,7 @@ mod tests {
                 hash_hex: "00".repeat(32),
                 attempted_hashes: Some(64),
                 elapsed_ms: Some(1000),
+                mix_hash_hex: None,
             },
         )
         .expect("write submit");

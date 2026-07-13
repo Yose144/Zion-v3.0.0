@@ -17,6 +17,8 @@ pub mod external_hashers;
 pub mod gpu_miner;
 #[cfg(feature = "native-hashers")]
 pub mod native_ffi;
+#[cfg(feature = "native-hashers")]
+pub use native_ffi::{generate_ethash_dag, generate_kawpow_dag, EthashDag, KawpowDag};
 pub mod miner_harness;
 pub mod multiplexer;
 pub mod parent_chains;

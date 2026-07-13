@@ -38,7 +38,7 @@ impl ShareForwarder {
             return Ok(ShareForwardResult::BelowTarget);
         }
         let hash_hex = hash_to_hex(hash);
-        match self.client.submit_share(job_id, nonce, &hash_hex).await {
+        match self.client.submit_share(job_id, nonce, &hash_hex, None).await {
             Ok(ShareResult::Accepted) => Ok(ShareForwardResult::Accepted),
             Ok(ShareResult::Rejected(reason)) => Ok(ShareForwardResult::Rejected(reason)),
             Ok(ShareResult::Unknown) => Ok(ShareForwardResult::Unknown),

@@ -90,6 +90,9 @@ pub struct ExternalJob {
     /// Extra nonce 2 placeholder for standard stratum submit.
     #[serde(skip)]
     pub extranonce2: String,
+    /// Ethash/KawPow epoch derived from seed_hash (for DAG management).
+    #[serde(skip)]
+    pub epoch: Option<u32>,
 }
 
 /// Share submission result from the pool.
@@ -593,6 +596,25 @@ impl AuxPowClient {
                                     target_hex.trim_start_matches("0x"),
                                 )
                                 .unwrap_or([0xFFu8; 32]);
+
+                                // Derive epoch from seed hash for DAG management.
+                                let epoch = if seed_hash.len() >= 2 {
+                                    let seed_bytes = hex::decode(
+                                        seed_hash.trim_start_matches("0x"),
+                                    ).unwrap_or_default();
+                                    if seed_bytes.len() == 32 {
+                                        let seed_arr: [u8; 32] = seed_bytes[..32].try_into().unwrap();
+                                        crate::external_hashers::ethash_epoch_from_seed_hash(
+                                            &seed_arr,
+                                            crate::external_hashers::ETHASH_MAX_EPOCH_SEARCH,
+                                        )
+                                    } else {
+                                        None
+                                    }
+                                } else {
+                                    None
+                                };
+
                                 let job = ExternalJob {
                                     job_id: header_hex.clone(),
                                     header_hex,
@@ -609,6 +631,7 @@ impl AuxPowClient {
                                     to_group: 0,
                                     extranonce1: self.extranonce1.lock().await.clone(),
                                     extranonce2: String::new(),
+                                    epoch: None,
                                 };
                                 *self.current_job.lock().await = Some(job);
                                 self.job_notify.notify_waiters();
@@ -694,6 +717,7 @@ impl AuxPowClient {
                 to_group,
                 extranonce1: self.extranonce1.lock().await.clone(),
                 extranonce2: String::new(),
+                epoch: None,
             });
         }
 
@@ -734,6 +758,7 @@ impl AuxPowClient {
                             to_group: 0,
                             extranonce1: self.extranonce1.lock().await.clone(),
                             extranonce2: String::new(),
+                            epoch: None,
                         });
                     }
                 }
@@ -805,6 +830,7 @@ impl AuxPowClient {
             to_group: 0,
             extranonce1: self.extranonce1.lock().await.clone(),
             extranonce2: String::new(),
+            epoch: None,
         })
     }
 
@@ -853,11 +879,16 @@ impl AuxPowClient {
     ///   - Standard / zpool / KAS: `[worker, job_id, nonce_hex]`
     ///   - Alephium: JSON object `{jobId, fromGroup, toGroup, nonce, worker}`
     ///   - EthStratum (ERG/RVN/ETC): `eth_submitWork` with `[nonce_hex, header_hash, mix_hash]`
+    ///
+    /// `mix_hash_hex` is the PoW mix hash for Ethash/KawPow (needed for
+    /// eth_submitWork).  If `None`, the `_hash_hex` (final hash) is used as
+    /// a fallback (correct for Autolykos, incorrect for Ethash/KawPow).
     pub async fn submit_share(
         &self,
         job_id: &str,
         nonce: u64,
         _hash_hex: &str,
+        mix_hash_hex: Option<&str>,
     ) -> Result<ShareResult> {
         let is_alph = self.profile.algorithm.eq_ignore_ascii_case("blake3")
             && self.profile.coin == ExternalCoin::ALPH;
@@ -870,10 +901,13 @@ impl AuxPowClient {
             // The nonce is 0x-prefixed hex.  mix_hash is the PoW mix hash
             // (for ethash/kawpow) or the final hash (for autolykos).
             let nonce_hex = format!("0x{:016x}", nonce);
-            let mix_hex = if _hash_hex.starts_with("0x") {
-                _hash_hex.to_string()
+            // Use the real mix hash if provided (from GPU kernel), otherwise
+            // fall back to the final hash (Autolykos path).
+            let mix_src = mix_hash_hex.unwrap_or(_hash_hex);
+            let mix_hex = if mix_src.starts_with("0x") {
+                mix_src.to_string()
             } else {
-                format!("0x{}", _hash_hex)
+                format!("0x{}", mix_src)
             };
             ("eth_submitWork", json!([nonce_hex, job_id, mix_hex]))
         } else if is_alph {
@@ -1208,7 +1242,7 @@ mod tests {
 
         // Submit a share
         let result = client
-            .submit_share("job_001", 42, "abcdef0123456789")
+            .submit_share("job_001", 42, "abcdef0123456789", None)
             .await
             .unwrap();
         assert_eq!(result, ShareResult::Accepted);
@@ -1238,7 +1272,7 @@ mod tests {
 
         // Poll loop is running internally.
         let result = client
-            .submit_share("job_001", 42, "abcdef0123456789")
+            .submit_share("job_001", 42, "abcdef0123456789", None)
             .await
             .unwrap();
 
@@ -1385,7 +1419,7 @@ mod tests {
         );
 
         let result = client
-            .submit_share(&job.job_id, nonce, &hex::encode(hash))
+            .submit_share(&job.job_id, nonce, &hex::encode(hash), None)
             .await
             .unwrap();
         assert_eq!(result, ShareResult::Accepted);
@@ -1522,7 +1556,7 @@ mod tests {
         let (nonce, hash) = found.expect("should find a share at difficulty 0.5");
 
         let result = client
-            .submit_share(&job.job_id, nonce, &hex::encode(hash))
+            .submit_share(&job.job_id, nonce, &hex::encode(hash), None)
             .await
             .unwrap();
         assert_eq!(result, ShareResult::Accepted);
