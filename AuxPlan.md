@@ -77,7 +77,9 @@ ale coin je nastaven na ETC. **Akce:** Přepnout na `ZION_POOL_AUXPOW_COIN=DCR`
 
 ## 1B. Current Status Update (2026-07-13 session)
 
-- **DCR share target fixed**: switched from full `2^256-1` to Decred mainnet PoW limit `2^224-1`, matching `dcrpool`/`gominer` (`DiffToTarget(net.PowLimit, difficulty)`). A long CPU E2E run against `decred.cedric-crispin.com:4494` (`x,d=4`, diff 4) is in progress to confirm acceptance.
+- **DCR share target fixed**: switched from full `2^256-1` to Decred mainnet PoW limit `2^224-1`, matching `dcrpool`/`gominer` (`DiffToTarget(net.PowLimit, difficulty)`).
+- **DCR OpenCL E2E verified locally**: A rebuilt OpenCL `zion-miner` connected to a rebuilt local ZION pool (pointed at a mock DCR Stratum server on `127.0.0.1:4494`) found and submitted DCR shares that were accepted by the mock upstream. In a 15-second run it produced multiple `SHARE_ACCEPTED` results (e.g., nonces 2626, 2080, 2596) with no `GPU_CPU_MISMATCH` warnings after the CPU audit was corrected.
+- **Local testing helper**: For fast local/mock tests, set `ZION_AUXPOW_DCR_MAX_TARGET=full` on the pool. This replaces the 224-bit DCR max target with the full 256-bit max target, so a difficulty-4 share target becomes easy and shares appear within the first nonce window. **Do not use on mainnet** — it is strictly a local/integration flag.
 - **ALPH updates**: default pool corrected to live WoolyPooly endpoint `pool.woolypooly.com:3106`; share target corrected to Alephium pool convention `2^226-1` (`diff1TargetNumZero=30`). Low-diff pool `alephium.cedric-crispin.com:4084` (`x,d=1`) works, but job expiry (~10s) makes CPU verification difficult.
 - **KAS**: low-diff endpoint `kaspa.cedric-crispin.com:4114` (`x,d=4`) works, but kHeavyHash CPU is ~0.35 MH/s — too slow for quick verification.
 - **Next critical goal**: verify end-to-end revenue flow with **external GPU miners** connected through the ZION pool. CPU E2E is only a code sanity check; real revenue requires a GPU rig submitting shares that the pool forwards and the external pool accepts.
@@ -250,6 +252,7 @@ SessionGroup::Auto     → weighted round-robin across all lanes
 | **CLORE** | KawPow | `kawpow_mine` | FFI w/ DAG | `eth_submitWork` | — | **PARTIAL** |
 | **FLUX** | ZelHash | **MISSING** | **MISSING** | Stratum v1 | — | **TODO** |
 | **XMR** | RandomX | **MISSING** | **STUB** | Stratum v1 | — | **TODO** (CPU-only) |
+| **VRSC** | VerusHash v2.2 | **TODO** | **STUB** (Keccak placeholder) | ZcashStratum | — | **IN PROGRESS** — viz `AUXPOW_VRSC_B2B_PLAN.md` |
 
 ### 2.2 Infrastructure Status
 
@@ -329,7 +332,7 @@ ZION Miner (GPU rig)
 | `hash_ethash_native_with_dag()` | `native_ffi.rs` | Ethash (C FFI + DAG) | **EXISTS** |
 | RandomX | `randomx_stub.c` | XMR | **STUB** |
 
-### 3.4 Coin Profiles (11 coins)
+### 3.4 Coin Profiles (12 coins)
 
 | Coin | Ticker | Algo | Default Pool | Protocol | Wallet |
 |------|--------|------|-------------|----------|-------|
@@ -344,6 +347,7 @@ ZION Miner (GPU rig)
 | Flux | FLUX | zelhash | flux.woolypooly.com:3000 | Stratum v1 | BTC wallet |
 | Clore.ai | CLORE | kawpow | clore.woolypooly.com:3090 | EthStratum | BTC wallet |
 | Monero | XMR | randomx | moneroocean.stream:10001 | Stratum v1 | XMR wallet |
+| **Verus** | **VRSC** | **verushash** | **eu.luckpool.net:3956** | **ZcashStratum** | **VRSC wallet** |
 
 ### 3.5 Pool Environment Variables
 
@@ -874,14 +878,35 @@ ZION_STREAM_PROFIT_SOURCES=zion,keccak_bonus,sha3_bonus,ncl_ai
 **Odblokováno:** 4 coiny — ERG (Autolykos), EVR, MEWC, CLORE (KawPow)
 **Testy:** 81/81 prošlo (3 nové EthStratum testy)
 
-### Fáze R7: True AuxPow consensus (20-40h, future)
+### Fáze R7: True AuxPow consensus — ZASTARALÉ / REEVALUOVÁNO
 
-- [ ] DCR header parsing + coinbase commitment
-- [ ] Integrate `true_auxpow.rs` into `V3/L1/core` consensus
-- [ ] Height-gated fork logic pro AuxPoW blocks
-- [ ] New ZION header fields pro AuxPoW data
-- [ ] Aux Merkle tree validation
-- [ ] Viz `AUXPOW_TRUE_MERGE_MINING_PLAN.md` pro detaily
+> **⚠️ UPDATE 2026-07-13:** Původní R7 plán (DCR/Blake3 true merge mining) je **zastaralý**.
+> Blake3 je ASIC-dominated (5 PH/s DCR ASICs) — true merge mining s DCR by zabilo
+> ZION ASIC resistance. VerusHash v2.2 je ASIC/GPU resistant, ale true merge mining
+> vyžaduje stejný PoW algoritmus na obou chainech (ZION by musel opustit Deeksha).
+>
+> **Nová vize:** ZION zůstává s Deeksha PoW. B2b revenue (VRSC, RVN, KAS, etc.)
+> pokrývá revenue potřeby bez consensus změn. True merge mining není prioritou.
+>
+> Pokud ZION v budoucnu chce true merge mining, ideální partner je **Verus PBaaS
+> chain** — ale to vyžaduje přepnutí ZION PoW na VerusHash. Viz `AUXPOW_VRSC_B2B_PLAN.md`.
+
+**Původní plán (archivováno):**
+- [ ] ~~DCR header parsing + coinbase commitment~~
+- [ ] ~~Integrate `true_auxpow.rs` into `V3/L1/core` consensus~~
+- [ ] ~~Height-gated fork logic pro AuxPoW blocks~~
+- [ ] ~~New ZION header fields pro AuxPoW data~~
+- [ ] ~~Aux Merkle tree validation~~
+- [ ] ~~Viz `AUXPOW_TRUE_MERGE_MINING_PLAN.md` pro detaily~~
+
+**Nová R7 (B2b VRSC revenue):**
+- [x] Research Verus (VRSC) — VerusHash v2.2, ASIC/GPU resistant, PBaaS merge mining
+- [x] Design doc: `AUXPOW_VRSC_B2B_PLAN.md`
+- [ ] Fáze 2a: Port VerusHash C++ (Haraka+CLHash) z 2.9.9 do V3 native-ffi
+- [ ] Fáze 2b: build.rs update (AES-NI/ARM flagy)
+- [ ] Fáze 1: VRSC do ExternalCoin + VerusHash do ExternalAlgorithm + ZcashStratum
+- [ ] Fáze 3: ZcashStratum protokol handler (notify/submit/PBaaS v7+)
+- [ ] Fáze 4: Bridge + profit router + testy
 
 ---
 
@@ -924,6 +949,7 @@ ZION_STREAM_PROFIT_SOURCES=zion,keccak_bonus,sha3_bonus,ncl_ai
 | ETC (Ethash) | EthashExternal | 2% |
 | XMR (RandomX) | RandomXExternal | 2% |
 | FLUX (ZelHash) | ZelHashExternal | 2% |
+| VRSC (VerusHash) | VerusHashExternal | 1% (LuckPool) |
 
 ### 10.3 Revenue flow — end to end
 
@@ -1018,8 +1044,9 @@ Z archivních dokumentů (`docs/ChV3.md`, `docs/docs2.9/2.9.5/WORK_REPORT_07_FEB
 | Plán | Velikost | Focus | Status |
 |------|----------|-------|--------|
 | `AuxPlan.md` (tento) | 18KB→rev2 | B2b multi-algo GPU mining + CHv3 stream integrace | **AKTIVNÍ** |
-| `AUXPOW_TRUE_MERGE_MINING_PLAN.md` | 90KB | True AuxPoW consensus (DCR primary, ALPH secondary) | Referenční |
-| `AUXPOW_TRUE_MERGE_MINING_PLAN_CS.md` | 93KB | Czech translation of true merge mining plan | Referenční |
+| `AUXPOW_VRSC_B2B_PLAN.md` | ~12KB | VRSC B2b revenue integration (VerusHash, ZcashStratum, LuckPool) | **AKTIVNÍ** |
+| `AUXPOW_TRUE_MERGE_MINING_PLAN.md` | 90KB | True AuxPoW consensus (DCR primary, ALPH secondary) | **ZASTARALÉ** — ASIC conflict |
+| `AUXPOW_TRUE_MERGE_MINING_PLAN_CS.md` | 93KB | Czech translation of true merge mining plan | **ZASTARALÉ** |
 | `AUXPOW_MERGE_MINING_PLAN.md` | 26KB | Starší merge mining plan | Historický |
 | `AuXpow/REVENUE_B2B_AND_TRUE_AUXPOW_DESIGN.md` | — | B2b + true AuxPoW design doc | Referenční |
 | `docs/3.0.5/DEEKSHA_CHV3_UNIFIED_ALGO_PLAN.md` | 15KB | CHv3 unified algorithm (Phase A-D) | ✅ DEPLOYED |

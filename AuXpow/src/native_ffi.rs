@@ -696,3 +696,35 @@ pub fn generate_kawpow_dag(epoch: u32) -> Option<KawpowDag> {
         })
     }
 }
+
+// ── VerusHash v2.2 (VRSC) ────────────────────────────────────────────
+
+unsafe extern "C" {
+    fn verushash_init();
+    fn verushash_hash(
+        header: *const u8,
+        header_len: usize,
+        nonce: u64,
+        output: *mut u8,
+    );
+}
+
+/// Initialize VerusHash lookup tables (Haraka round constants, CLHash keys).
+/// Must be called once before any `hash_verushash_native` calls.
+pub fn init_verushash() {
+    unsafe {
+        verushash_init();
+    }
+}
+
+/// Compute VerusHash v2.2 using the native C++ implementation.
+///
+/// Calls the Haraka+CLHash pipeline from VerusCoin upstream.
+/// Returns a 32-byte hash.
+pub fn hash_verushash_native(header: &[u8], nonce: u64) -> [u8; 32] {
+    let mut out = [0u8; 32];
+    unsafe {
+        verushash_hash(header.as_ptr(), header.len(), nonce, out.as_mut_ptr());
+    }
+    out
+}

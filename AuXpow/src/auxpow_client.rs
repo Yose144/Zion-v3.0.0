@@ -37,6 +37,9 @@ pub enum StratumProtocol {
     Stratum,
     /// EthStratum / ETH-proxy variant (eth_submitWork, eth_getWork)
     EthStratum,
+    /// Zcash/Equihash Stratum (mining.notify with solution field, 5-param submit)
+    /// Used by VRSC (Verus) and other Equihash-based coins.
+    ZcashStratum,
 }
 
 impl ExternalCoin {
@@ -54,6 +57,11 @@ impl ExternalCoin {
             // eth_getWork + eth_submitWork).
             Self::ERG | Self::EVR | Self::MEWC | Self::CLORE => {
                 StratumProtocol::EthStratum
+            }
+            // VRSC (Verus) uses Zcash/Equihash Stratum with solution field
+            // and 5-param submit: [worker, job_id, ntime, nonce2, solution]
+            Self::VRSC => {
+                StratumProtocol::ZcashStratum
             }
         }
     }
@@ -157,6 +165,15 @@ pub struct AuxPowClient {
     eth_getwork_polling: Arc<Mutex<bool>>,
     /// Next JSON-RPC id for eth_getWork polling requests.
     next_rpc_id: Arc<Mutex<i64>>,
+    /// ZcashStratum (VRSC): per-job solution hex from mining.notify params[8].
+    /// Used to reconstruct the solution field in the 5-param mining.submit.
+    job_solution: Arc<Mutex<HashMap<String, String>>>,
+    /// ZcashStratum (VRSC): per-job ntime from mining.notify params[5].
+    job_ntime: Arc<Mutex<HashMap<String, String>>>,
+    /// ZcashStratum (VRSC): per-job header prefix (version|prevhash|merkle|reserved|ntime|nbits).
+    job_header_prefix: Arc<Mutex<HashMap<String, String>>>,
+    /// ZcashStratum (VRSC): latest job_id from upstream (for stale share detection).
+    latest_job_id: Arc<Mutex<Option<String>>>,
 }
 
 impl AuxPowClient {
@@ -181,6 +198,10 @@ impl AuxPowClient {
             last_waited_job_id: Arc::new(Mutex::new(None)),
             eth_getwork_polling: Arc::new(Mutex::new(false)),
             next_rpc_id: Arc::new(Mutex::new(200)),
+            job_solution: Arc::new(Mutex::new(HashMap::new())),
+            job_ntime: Arc::new(Mutex::new(HashMap::new())),
+            job_header_prefix: Arc::new(Mutex::new(HashMap::new())),
+            latest_job_id: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -368,11 +389,27 @@ impl AuxPowClient {
 
     /// Subscribe using inline read (for reconnect).
     async fn subscribe_inline(&self) -> Result<()> {
-        let req = json!({
-            "id": 1,
-            "method": "mining.subscribe",
-            "params": ["zion-auxpow/0.1"]
-        });
+        let is_zcash = self.protocol == StratumProtocol::ZcashStratum;
+        let req = if is_zcash {
+            let addr = self.profile.pool_address();
+            let (host, port) = {
+                let mut parts = addr.split(':');
+                let h = parts.next().unwrap_or("");
+                let p = parts.next().unwrap_or("");
+                (h, p)
+            };
+            json!({
+                "id": 1,
+                "method": "mining.subscribe",
+                "params": ["zion-auxpow/0.1", null, host, port]
+            })
+        } else {
+            json!({
+                "id": 1,
+                "method": "mining.subscribe",
+                "params": ["zion-auxpow/0.1"]
+            })
+        };
         let resp = self.send_request_inline(&req).await?;
         if let Some(result) = resp.get("result") {
             *self.subscribed.lock().await = true;
@@ -398,14 +435,18 @@ impl AuxPowClient {
     async fn authorize_inline(&self, payout_wallet: &str) -> Result<()> {
         let worker = format!("{}.{}", payout_wallet, self.profile.worker_name);
         let is_ethstratum = self.protocol == StratumProtocol::EthStratum;
+        let is_zcash = self.protocol == StratumProtocol::ZcashStratum;
         let password = if !self.profile.password.is_empty() {
             self.profile.password.as_str()
+        } else if is_zcash {
+            "d=0.01"
         } else if is_ethstratum {
             "x"
         } else if self.profile.coin == ExternalCoin::DCR {
-            // DCR (WoolyPooly) expects the payout address as the username and a
-            // plain password.
-            "x"
+            // DCR (WoolyPooly / zpool) accepts a starting share difficulty in the
+            // password. Use d=4 for fast local testing; the upstream pool will
+            // raise it via vardiff once shares are accepted.
+            self.profile.password.as_str()
         } else if self.profile.coin == ExternalCoin::XMR {
             // MoneroOcean expects a wallet.worker username and a fixed/starting
             // difficulty in the password.
@@ -439,6 +480,18 @@ impl AuxPowClient {
         if ok {
             *self.authorized.lock().await = true;
             println!("auxpow: authorized as {} on {}", worker, self.profile.coin);
+
+            // ZcashStratum: send mining.extranonce.subscribe after authorize.
+            if is_zcash {
+                let ex_req = json!({
+                    "id": 3,
+                    "method": "mining.extranonce.subscribe",
+                    "params": []
+                });
+                if let Err(e) = self.send_request_inline(&ex_req).await {
+                    debug!("auxpow: extranonce.subscribe (inline) failed for {}: {}", self.profile.coin, e);
+                }
+            }
             Ok(())
         } else {
             let err = resp.get("error");
@@ -453,7 +506,23 @@ impl AuxPowClient {
     /// Send `mining.subscribe` and wait for response.
     async fn subscribe(&self) -> Result<()> {
         let is_ethstratum = self.protocol == StratumProtocol::EthStratum;
-        let req = if is_ethstratum {
+        let is_zcash = self.protocol == StratumProtocol::ZcashStratum;
+        let req = if is_zcash {
+            // ZcashStratum (VRSC/LuckPool): subscribe with [user_agent, null, host, port].
+            // The host/port helps the pool select the appropriate extranonce size.
+            let addr = self.profile.pool_address();
+            let (host, port) = {
+                let mut parts = addr.split(':');
+                let h = parts.next().unwrap_or("");
+                let p = parts.next().unwrap_or("");
+                (h, p)
+            };
+            json!({
+                "id": 1,
+                "method": "mining.subscribe",
+                "params": ["zion-auxpow/0.1", null, host, port]
+            })
+        } else if is_ethstratum {
             // EthStratum pools (ERG/RVN/ETC) use eth_subscribe or just
             // mining.subscribe with different params.  Most accept the
             // standard subscribe and then switch to eth_getWork.
@@ -500,14 +569,20 @@ impl AuxPowClient {
     async fn authorize(&self, payout_wallet: &str) -> Result<()> {
         let worker = format!("{}.{}", payout_wallet, self.profile.worker_name);
         let is_ethstratum = self.protocol == StratumProtocol::EthStratum;
+        let is_zcash = self.protocol == StratumProtocol::ZcashStratum;
         let password = if !self.profile.password.is_empty() {
             self.profile.password.as_str()
+        } else if is_zcash {
+            // ZcashStratum (VRSC/LuckPool): password specifies starting vardiff.
+            // d=0.01 gives frequent shares on low hashrate; pool will raise via vardiff.
+            "d=0.01"
         } else if is_ethstratum {
             "x"
         } else if self.profile.coin == ExternalCoin::DCR {
-            // DCR (WoolyPooly) expects the payout address as the username and a
-            // plain password.
-            "x"
+            // DCR (WoolyPooly / zpool) accepts a starting share difficulty in the
+            // password. Use d=4 for fast local testing; the upstream pool will
+            // raise it via vardiff once shares are accepted.
+            self.profile.password.as_str()
         } else if self.profile.coin == ExternalCoin::XMR {
             // MoneroOcean expects a wallet.worker username and a fixed/starting
             // difficulty in the password.
@@ -542,6 +617,19 @@ impl AuxPowClient {
         if ok {
             *self.authorized.lock().await = true;
             println!("auxpow: authorized as {} on {}", worker, self.profile.coin);
+
+            // ZcashStratum: send mining.extranonce.subscribe after authorize
+            // (LuckPool expects this to enable push extranonce updates).
+            if is_zcash {
+                let ex_req = json!({
+                    "id": 3,
+                    "method": "mining.extranonce.subscribe",
+                    "params": []
+                });
+                if let Err(e) = self.send_request(&ex_req).await {
+                    debug!("auxpow: extranonce.subscribe failed for {}: {}", self.profile.coin, e);
+                }
+            }
             Ok(())
         } else {
             let err = resp.get("error");
@@ -701,6 +789,12 @@ impl AuxPowClient {
                             }
                         }
                     }
+                }
+                "client.reconnect" => {
+                    // ZcashStratum pools may send client.reconnect to request
+                    // a reconnection.  Break the poll loop to trigger reconnect.
+                    warn!("AuxPow: {} requested client.reconnect", self.profile.coin);
+                    bail!("client.reconnect requested by pool");
                 }
                 _ => {
                     debug!("AuxPow: unknown method '{}' from {}", method, self.profile.coin);
@@ -1054,6 +1148,120 @@ impl AuxPowClient {
             }
         }
 
+        // ZcashStratum (VRSC / VerusHash / LuckPool):
+        // mining.notify params = [job_id, version, prevhash, merkle, reserved,
+        //   ntime, nbits, clean_jobs, solution]
+        // where solution is the Equihash/VerusHash solution hex (params[8]).
+        // The blob for hashing = header_prefix(108B) + varint(fd4005) + solution(1344B).
+        // We store the solution and ntime per job_id for submit reconstruction.
+        if self.protocol == StratumProtocol::ZcashStratum {
+            if let Some(arr) = params.as_array() {
+                if arr.len() >= 8 {
+                    let as_s = |idx: usize| -> String {
+                        arr.get(idx)
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .trim_start_matches("0x")
+                            .to_string()
+                    };
+
+                    let job_id = as_s(0);
+                    let version = as_s(1);
+                    let prevhash = as_s(2);
+                    let merkle = as_s(3);
+                    let reserved = as_s(4);
+                    let ntime = as_s(5);
+                    let nbits = as_s(6);
+                    let clean_jobs = arr.get(7).and_then(|v| v.as_bool()).unwrap_or(false);
+                    let maybe_solution = as_s(8);
+
+                    if !job_id.is_empty() {
+                        *self.latest_job_id.lock().await = Some(job_id.clone());
+                    }
+
+                    // VerusHash 2.2 solution: pad to exactly 1344 bytes (2688 hex).
+                    // LuckPool sends ~229B; ccminer pads with zeros to 1344B.
+                    let effective_solution = if self.profile.algorithm.eq_ignore_ascii_case("verushash") {
+                        if !maybe_solution.is_empty() {
+                            let mut sol = maybe_solution.clone();
+                            if sol.len() < 2688 {
+                                sol.push_str(&"0".repeat(2688 - sol.len()));
+                            } else if sol.len() > 2688 {
+                                sol.truncate(2688);
+                            }
+                            sol
+                        } else {
+                            "00".repeat(1344)
+                        }
+                    } else {
+                        maybe_solution.clone()
+                    };
+
+                    // Clean jobs: invalidate old job state.
+                    if clean_jobs {
+                        self.job_solution.lock().await.clear();
+                        self.job_ntime.lock().await.clear();
+                        self.job_header_prefix.lock().await.clear();
+                    }
+
+                    // Store per-job data for submit reconstruction.
+                    if !job_id.is_empty() {
+                        if !effective_solution.is_empty() {
+                            self.job_solution.lock().await.insert(job_id.clone(), effective_solution.clone());
+                        }
+                        let header_prefix = format!("{}{}{}{}{}{}", version, prevhash, merkle, reserved, ntime, nbits);
+                        if !header_prefix.is_empty() {
+                            self.job_header_prefix.lock().await.insert(job_id.clone(), header_prefix);
+                        }
+                        self.job_ntime.lock().await.insert(job_id.clone(), ntime.clone());
+                    }
+
+                    // Build the hashing blob:
+                    // header_prefix(108B=216hex) + varint(fd4005=3B=6hex) + solution(1344B=2688hex)
+                    let blob = if self.profile.algorithm.eq_ignore_ascii_case("verushash") {
+                        format!("{}{}{}{}{}{}fd4005{}", version, prevhash, merkle, reserved, ntime, nbits, effective_solution)
+                    } else {
+                        format!("{}{}{}{}{}{}{}", version, prevhash, merkle, reserved, ntime, nbits, effective_solution)
+                    };
+
+                    let header_bytes = hex::decode(&blob).unwrap_or_default();
+                    let target_bytes = self.share_target().await;
+                    let target_hex = hex::encode(target_bytes);
+
+                    // Parse ntime as u64 for the timestamp field.
+                    let timestamp = u64::from_str_radix(&ntime, 16).ok();
+
+                    println!(
+                        "auxpow: VRSC notify — job={} blob_len={} sol_len={} ntime={} clean={}",
+                        job_id,
+                        header_bytes.len(),
+                        effective_solution.len() / 2,
+                        ntime,
+                        clean_jobs,
+                    );
+
+                    return Ok(ExternalJob {
+                        job_id,
+                        header_hex: blob,
+                        target_hex,
+                        seed_hash: None,
+                        block_number: None,
+                        algorithm: self.profile.algorithm.clone(),
+                        header_bytes,
+                        target_bytes,
+                        timestamp,
+                        nbits: Some(nbits),
+                        external_coin: self.profile.coin,
+                        from_group: 0,
+                        to_group: 0,
+                        extranonce1: self.extranonce1.lock().await.clone(),
+                        extranonce2: String::new(),
+                        epoch: None,
+                    });
+                }
+            }
+        }
+
         let arr = params
             .as_array()
             .ok_or_else(|| anyhow!("notify params not array or object"))?;
@@ -1350,6 +1558,124 @@ impl AuxPowClient {
             let worker = format!("{}.{}", wallet, self.profile.worker_name);
             let nonce_hex = format!("{:08x}", (nonce & 0xFFFFFFFF) as u32);
             ("mining.submit", json!([worker, job_id, nonce_hex]))
+        } else if self.protocol == StratumProtocol::ZcashStratum {
+            // ZcashStratum (VRSC / VerusHash / LuckPool) submit:
+            // mining.submit params = [worker, job_id, ntime, nonce2, solution_with_varint]
+            //
+            // nonce2 = extranonce1 + miner_nonce(LE) padded to 32 bytes total
+            //   (nonce2_bytes = 32 - len(extranonce1_bytes))
+            // solution_with_varint = fd4005 + solution(1344B) with:
+            //   - PBaaS v7+ nonceSpace embedded in last 15 bytes (bytes 1329-1343)
+            //   - MMR roots restored from original job solution (bytes 8-72)
+
+            // Stale share detection: drop if job_id != latest_job_id.
+            {
+                let latest = self.latest_job_id.lock().await.clone();
+                if let Some(ref cur) = latest {
+                    if !cur.is_empty() && job_id != *cur {
+                        warn!(
+                            "auxpow: dropping stale VRSC share: job={} (latest={}) nonce={}",
+                            job_id, cur, nonce
+                        );
+                        return Ok(ShareResult::Rejected("stale job".to_string()));
+                    }
+                }
+            }
+
+            let wallet = self.payout_wallet.lock().await.clone();
+            let worker = format!("{}.{}", wallet, self.profile.worker_name);
+
+            // ntime from stored job data, or from current job, or current time.
+            let ntime = {
+                let job_ntime = self.job_ntime.lock().await.get(job_id).cloned();
+                if let Some(nt) = job_ntime {
+                    nt
+                } else if let Some(job) = self.current_job().await {
+                    job.timestamp
+                        .map(|t| format!("{:08x}", t))
+                        .unwrap_or_else(|| format!("{:08x}", chrono::Utc::now().timestamp() as u32))
+                } else {
+                    format!("{:08x}", chrono::Utc::now().timestamp() as u32)
+                }
+            };
+
+            // Build nonce2: extranonce1 (hex) + miner_nonce(LE 4B) + zero padding.
+            let en1_hex = hex::encode(self.extranonce1.lock().await.clone());
+            let nonce2_4b = {
+                let padded = format!("{:0>8x}", nonce & 0xFFFFFFFF);
+                if let Ok(val) = u32::from_str_radix(&padded, 16) {
+                    hex::encode(val.to_le_bytes())
+                } else {
+                    padded
+                }
+            };
+            let nonce2_str = {
+                let en_bytes = en1_hex.len() / 2;
+                let nonce2_bytes = 32usize.saturating_sub(en_bytes);
+                let nonce2_hex_len = nonce2_bytes * 2;
+                let mut out = nonce2_4b.clone();
+                if out.len() < nonce2_hex_len {
+                    out.push_str(&"0".repeat(nonce2_hex_len - out.len()));
+                } else if out.len() > nonce2_hex_len {
+                    out.truncate(nonce2_hex_len);
+                }
+                out
+            };
+
+            // Build solution_with_varint for VerusHash 2.2.
+            let solution_with_varint = if self.profile.algorithm.eq_ignore_ascii_case("verushash") {
+                let solution_raw = self.job_solution.lock().await.get(job_id).cloned()
+                    .unwrap_or_else(|| "00".repeat(1344));
+
+                // Ensure solution is exactly 2688 hex (1344 bytes).
+                let mut sol = if solution_raw.len() == 2688 {
+                    solution_raw.clone()
+                } else if solution_raw.len() > 2688 {
+                    solution_raw[..2688].to_string()
+                } else {
+                    format!("{}{}", solution_raw, "0".repeat((2688 - solution_raw.len()) / 2))
+                };
+
+                // PBaaS v7+ nonceSpace embedding: write extranonce1 + miner_nonce
+                // into last 15 bytes (30 hex chars) of solution at offset 2658.
+                if !en1_hex.is_empty() {
+                    let mut nonce_space = en1_hex.clone();
+                    if nonce_space.len() < 22 {
+                        nonce_space.push_str(&"0".repeat(22 - nonce_space.len()));
+                    }
+                    nonce_space.push_str(&nonce2_4b);
+                    if nonce_space.len() > 30 {
+                        nonce_space.truncate(30);
+                    } else if nonce_space.len() < 30 {
+                        nonce_space.push_str(&"0".repeat(30 - nonce_space.len()));
+                    }
+                    if sol.len() >= 2688 {
+                        sol.replace_range(2658..2688, &nonce_space);
+                    }
+                }
+
+                // Restore MMR roots from original job solution (bytes 8-72 = hex 16..144).
+                let orig_sol = self.job_solution.lock().await.get(job_id).cloned();
+                if let Some(orig) = orig_sol {
+                    if orig.len() >= 144 && sol.len() >= 144 {
+                        sol.replace_range(16..144, &orig[16..144]);
+                    }
+                }
+
+                // Prepend varint: fd4005 = 1344 in ZCash compact varint.
+                format!("fd4005{}", sol)
+            } else {
+                // Non-VerusHash ZcashStratum: use mix_hash or hash as solution.
+                let s = mix_hash_hex.unwrap_or(_hash_hex);
+                s.trim_start_matches("0x").to_string()
+            };
+
+            println!(
+                "auxpow: VRSC submit — job={} ntime={} nonce2_len={} sol_len={} (expected 2694)",
+                job_id, ntime, nonce2_str.len(), solution_with_varint.len()
+            );
+
+            ("mining.submit", json!([worker, job_id, ntime, nonce2_str, solution_with_varint]))
         } else if self.profile.coin == ExternalCoin::DCR {
             // DCR Blake3: standard Stratum v1 submit with 5 params:
             //   [worker, job_id, extranonce2, ntime, nonce]
@@ -1444,9 +1770,20 @@ impl AuxPowClient {
         } else if self.profile.coin == ExternalCoin::DCR {
             // Decred mainnet PoW limit is 2^224 - 1 (same byte pattern as KAS).
             // This matches gominer/dcrpool DiffToTarget(net.PowLimit, difficulty).
-            let mut t = [0u8; 32];
-            t[4..].fill(0xFF);
-            t
+            // For local/integration testing against a mock pool, set
+            // ZION_AUXPOW_DCR_MAX_TARGET=full to use the full 256-bit max target
+            // and obtain shares quickly.
+            if std::env::var("ZION_AUXPOW_DCR_MAX_TARGET")
+                .as_deref()
+                .unwrap_or("")
+                .eq_ignore_ascii_case("full")
+            {
+                [0xFFu8; 32]
+            } else {
+                let mut t = [0u8; 32];
+                t[4..].fill(0xFF);
+                t
+            }
         } else if self.profile.coin == ExternalCoin::ALPH {
             // Alephium pools (e.g. alephium/mining-pool) define difficulty 1 as a
             // target with 30 leading zero bits (diff1TargetNumZero=30), so the
@@ -1743,6 +2080,7 @@ impl StratumProtocol {
         match self {
             Self::Stratum => "stratum",
             Self::EthStratum => "ethstratum",
+            Self::ZcashStratum => "zcashstratum",
         }
     }
 }
@@ -2623,6 +2961,134 @@ mod tests {
         server_task.await.unwrap();
     }
 
+    #[tokio::test]
+    async fn vrsc_zcashstratum_notify_and_submit() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap().to_string();
+        let (host, port) = addr.rsplit_once(':').unwrap();
+        let port: u16 = port.parse().unwrap();
+
+        // ZcashStratum notify params:
+        // [job_id, version, prevhash, merkle, reserved, ntime, nbits, clean_jobs, solution]
+        let job_id = "vrsc_job_001";
+        let version = "20000000";
+        let prevhash = "ab".repeat(32);
+        let merkle = "cd".repeat(32);
+        let reserved = "00".repeat(32);
+        let ntime = "65a3f1c0";
+        let nbits = "1d00ffff";
+        let solution_short = "ee".repeat(114); // 229B = 458 hex (LuckPool PBaaS v7+)
+
+        let server_task = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let (mut reader, mut writer) = socket.split();
+            let mut buf = vec![0u8; 65536];
+
+            async fn read_json(
+                reader: &mut tokio::net::tcp::ReadHalf<'_>,
+                buf: &mut [u8],
+            ) -> Value {
+                let n = reader.read(buf).await.unwrap();
+                serde_json::from_slice::<Value>(&buf[..n]).unwrap()
+            }
+
+            async fn write_json(writer: &mut tokio::net::tcp::WriteHalf<'_>, v: Value) {
+                writer
+                    .write_all((serde_json::to_string(&v).unwrap() + "\n").as_bytes())
+                    .await
+                    .unwrap();
+                writer.flush().await.unwrap();
+            }
+
+            // mining.subscribe (ZcashStratum: 4 params with host/port)
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "mining.subscribe");
+            assert_eq!(req["params"].as_array().unwrap().len(), 4);
+            write_json(
+                &mut writer,
+                json!({"id": 1, "result": [["mining.notify", "session"], "a1b2c3d4"], "error": null}),
+            )
+            .await;
+
+            // mining.authorize (password should be d=0.01 for VRSC)
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "mining.authorize");
+            assert_eq!(req["params"][1].as_str().unwrap(), "d=0.01");
+            write_json(&mut writer, json!({"id": 2, "result": true, "error": null})).await;
+
+            // mining.extranonce.subscribe (ZcashStratum post-authorize)
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "mining.extranonce.subscribe");
+            write_json(&mut writer, json!({"id": 3, "result": true, "error": null})).await;
+
+            // mining.set_difficulty
+            write_json(
+                &mut writer,
+                json!({"id": null, "method": "mining.set_difficulty", "params": [0.01]}),
+            )
+            .await;
+
+            // mining.notify (ZcashStratum format with 9 params)
+            write_json(
+                &mut writer,
+                json!({
+                    "id": null,
+                    "method": "mining.notify",
+                    "params": [
+                        job_id, version, prevhash, merkle, reserved,
+                        ntime, nbits, true, solution_short
+                    ]
+                }),
+            )
+            .await;
+
+            // mining.submit (5 params: worker, job_id, ntime, nonce2, solution)
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "mining.submit");
+            let params = req["params"].as_array().unwrap();
+            assert_eq!(params.len(), 5, "VRSC submit must have 5 params");
+            assert_eq!(params[1].as_str().unwrap(), job_id);
+            assert_eq!(params[2].as_str().unwrap(), ntime);
+            // nonce2 = 32 bytes total - extranonce1(4 bytes) = 28 bytes = 56 hex chars
+            let nonce2 = params[3].as_str().unwrap();
+            assert_eq!(nonce2.len(), 56, "nonce2 must be 28 bytes (56 hex chars) with 4-byte extranonce1");
+            // solution_with_varint should start with fd4005 and be 2694 hex chars
+            let solution = params[4].as_str().unwrap();
+            assert!(solution.starts_with("fd4005"), "solution must start with varint fd4005");
+            assert_eq!(solution.len(), 2694, "solution_with_varint must be 2694 hex chars (3 varint + 1344 solution)");
+
+            write_json(
+                &mut writer,
+                json!({"id": req["id"].as_i64().unwrap(), "result": true, "error": null}),
+            )
+            .await;
+
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        });
+
+        let mut profile = CoinProfile::default_for(ExternalCoin::VRSC);
+        profile.pool_host = host.to_string();
+        profile.pool_port = port;
+
+        let client = Arc::new(AuxPowClient::new(profile));
+        client.connect("vRSCtestWallet123").await.unwrap();
+
+        let job = client.wait_for_job(5000).await.unwrap().unwrap();
+        assert_eq!(job.job_id, job_id);
+        assert_eq!(job.external_coin, ExternalCoin::VRSC);
+        assert_eq!(job.algorithm, "verushash");
+        // Blob = header_prefix(108B=216hex) + varint(6hex) + solution(2688hex) = 2910 hex
+        assert_eq!(job.header_hex.len(), 2910, "VRSC blob must be 2910 hex chars (108+3+1344 bytes)");
+        assert_eq!(job.header_bytes.len(), 1455, "VRSC blob must be 1455 bytes");
+
+        // Submit a share with nonce 0x1234abcd
+        let result = client.submit_share(job_id, 0x1234abcd, "deadbeef", None).await.unwrap();
+        assert_eq!(result, ShareResult::Accepted);
+
+        client.disconnect().await.unwrap();
+        server_task.await.unwrap();
+    }
+
     #[test]
     fn protocol_mapping() {
         assert_eq!(ExternalCoin::DCR.protocol(), StratumProtocol::Stratum);
@@ -2636,12 +3102,14 @@ mod tests {
         assert_eq!(ExternalCoin::EVR.protocol(), StratumProtocol::EthStratum);
         assert_eq!(ExternalCoin::MEWC.protocol(), StratumProtocol::EthStratum);
         assert_eq!(ExternalCoin::CLORE.protocol(), StratumProtocol::EthStratum);
+        assert_eq!(ExternalCoin::VRSC.protocol(), StratumProtocol::ZcashStratum);
     }
 
     #[test]
     fn protocol_as_str() {
         assert_eq!(StratumProtocol::Stratum.as_str(), "stratum");
         assert_eq!(StratumProtocol::EthStratum.as_str(), "ethstratum");
+        assert_eq!(StratumProtocol::ZcashStratum.as_str(), "zcashstratum");
     }
 
     #[test]

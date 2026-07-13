@@ -63,6 +63,7 @@ pub fn mine(job: &JobPackage, range: std::ops::Range<u64>) -> Result<Option<Foun
         "autolykos" => Ok(scan_autolykos(job, start, end)),
         "kawpow" => Ok(scan_kawpow(job, start, end)),
         "ethash" | "etchash" => Ok(scan_ethash(job, start, end)),
+        "verushash" => Ok(scan_verushash(job, start, end)),
         other => Err(anyhow!("algorithm '{}' not supported by CPU harness", other)),
     }
 }
@@ -94,6 +95,7 @@ pub fn mine_best(job: &JobPackage, range: std::ops::Range<u64>) -> Result<Option
         "autolykos" => Ok(scan_autolykos_best(job, start, end)),
         "kawpow" => Ok(scan_kawpow_best(job, start, end)),
         "ethash" | "etchash" => Ok(scan_ethash_best(job, start, end)),
+        "verushash" => Ok(scan_verushash_best(job, start, end)),
         other => Err(anyhow!("algorithm '{}' not supported by CPU harness", other)),
     }
 }
@@ -235,6 +237,23 @@ fn scan_ethash(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
 
     for nonce in start..end {
         let hash = hash_ethash(header, nonce, height);
+        if meets_target(&hash, target) {
+            return Some(FoundShare {
+                external_job_id: job.external_job_id.clone(),
+                nonce,
+                hash,
+            });
+        }
+    }
+    None
+}
+
+fn scan_verushash(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
+    let header = &job.header_bytes;
+    let target = &job.target_bytes;
+
+    for nonce in start..end {
+        let hash = crate::external_hashers::hash_verushash(header, nonce);
         if meets_target(&hash, target) {
             return Some(FoundShare {
                 external_job_id: job.external_job_id.clone(),
@@ -463,6 +482,27 @@ fn scan_ethash_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare
     let mut best: Option<FoundShare> = None;
     for nonce in start..end {
         let hash = hash_ethash(header, nonce, height);
+        if best
+            .as_ref()
+            .map(|b| is_hash_better(&hash, &b.hash, false))
+            .unwrap_or(true)
+        {
+            best = Some(FoundShare {
+                external_job_id: job.external_job_id.clone(),
+                nonce,
+                hash,
+            });
+        }
+    }
+    best
+}
+
+fn scan_verushash_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
+    let header = &job.header_bytes;
+
+    let mut best: Option<FoundShare> = None;
+    for nonce in start..end {
+        let hash = crate::external_hashers::hash_verushash(header, nonce);
         if best
             .as_ref()
             .map(|b| is_hash_better(&hash, &b.hash, false))

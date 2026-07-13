@@ -375,6 +375,9 @@ impl AuxPowScheduler {
                     // doesn't panic; shares will never meet a real target.
                     hash_blake3(header, 0, nonce)
                 }
+                ExternalAlgorithm::VerusHash => {
+                    crate::external_hashers::hash_verushash(header, nonce)
+                }
             };
 
             let meets = if job.external_coin == ExternalCoin::DCR {

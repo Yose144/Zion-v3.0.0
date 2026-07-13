@@ -66,6 +66,9 @@ pub enum ExternalCoin {
     CLORE,
     /// Monero — RandomX. CPU coin. MoneroOcean, XMR→BTC.
     XMR,
+    /// Verus — VerusHash v2.2 (Haraka+CLHash). CPU coin. LuckPool.
+    /// B2b revenue stream: ASIC/GPU resistant, PBaaS merge mining.
+    VRSC,
 }
 
 impl ExternalCoin {
@@ -83,6 +86,7 @@ impl ExternalCoin {
             Self::FLUX => "FLUX",
             Self::CLORE => "CLORE",
             Self::XMR => "XMR",
+            Self::VRSC => "VRSC",
         }
     }
 
@@ -100,6 +104,7 @@ impl ExternalCoin {
             Self::FLUX => "zelhash",
             Self::CLORE => "kawpow",
             Self::XMR => "randomx",
+            Self::VRSC => "verushash",
         }
     }
 
@@ -111,7 +116,7 @@ impl ExternalCoin {
 
     /// Whether this coin is CPU-minable (no GPU required).
     pub fn is_cpu(self) -> bool {
-        matches!(self, Self::XMR)
+        matches!(self, Self::XMR | Self::VRSC)
     }
 
     /// Parse from a case-insensitive string. Accepts ticker, full name, and
@@ -129,6 +134,7 @@ impl ExternalCoin {
             "flux" | "zelhash" => Some(Self::FLUX),
             "clore" | "clore.ai" => Some(Self::CLORE),
             "xmr" | "monero" | "randomx" => Some(Self::XMR),
+            "vrsc" | "verus" | "verushash" => Some(Self::VRSC),
             _ => None,
         }
     }
@@ -148,6 +154,7 @@ impl ExternalCoin {
             Self::FLUX => "flux.woolypooly.com:3000",
             Self::CLORE => "clore.woolypooly.com:3090",
             Self::XMR => "gulf.moneroocean.stream:10001",
+            Self::VRSC => "eu.luckpool.net:3956",
         }
     }
 
@@ -260,6 +267,7 @@ impl ExternalCoin {
             Self::FLUX => StratumProtocol::Stratum,
             Self::CLORE => StratumProtocol::EthStratum,
             Self::XMR => StratumProtocol::Stratum,
+            Self::VRSC => StratumProtocol::ZcashStratum,
         }
     }
 
@@ -277,6 +285,7 @@ impl ExternalCoin {
             Self::FLUX,
             Self::CLORE,
             Self::XMR,
+            Self::VRSC,
         ]
     }
 
@@ -297,6 +306,7 @@ impl ExternalCoin {
             Self::ERG => RevenueSource::AutolykosExternal,
             Self::XMR => RevenueSource::RandomXExternal,
             Self::FLUX => RevenueSource::ZelHashExternal,
+            Self::VRSC => RevenueSource::VerusHashExternal,
         }
     }
 }
@@ -315,6 +325,9 @@ pub enum StratumProtocol {
     Stratum,
     /// EthStratum / ETH-proxy variant (eth_submitWork, eth_getWork)
     EthStratum,
+    /// Zcash/Equihash-style Stratum — used by VRSC/VerusHash pools (LuckPool).
+    /// Uses mining.subscribe/authorize/notify/set_target and 5-param submit.
+    ZcashStratum,
 }
 
 impl StratumProtocol {
@@ -322,6 +335,7 @@ impl StratumProtocol {
         match self {
             Self::Stratum => "stratum",
             Self::EthStratum => "ethstratum",
+            Self::ZcashStratum => "zcashstratum",
         }
     }
 }
@@ -453,6 +467,11 @@ pub fn fallback_estimates() -> Vec<ProfitEntry> {
             coin: ExternalCoin::XMR,
             revenue_per_day_usd: 0.12,
             power_cost_usd: 0.03,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::VRSC,
+            revenue_per_day_usd: 0.08,
+            power_cost_usd: 0.01,
         },
     ]
 }
