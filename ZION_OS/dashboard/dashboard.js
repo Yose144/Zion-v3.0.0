@@ -9862,7 +9862,8 @@ async function loadWarpSwapPanel(){
     {from:'ETH', to:'wZION', icon:'💧', color:'text-cyan-400', bg:'bg-cyan-500/10', border:'border-cyan-500/20', status:'live', desc:'Uniswap V3 · Base · wZION/WETH + wZION/USDC'},
     {from:'ZION', to:'wZION', icon:'🔄', color:'text-emerald-400', bg:'bg-emerald-500/10', border:'border-emerald-500/20', status:'live', desc:'L1 ↔ L2 bridge · 5/5 validators · 1:1 peg'},
     {from:'BTC', to:'wZION', icon:'₿', color:'text-orange-400', bg:'bg-orange-500/10', border:'border-orange-500/20', status:'planned', desc:'HTLC · SegWit + Taproot · 2-of-3 multi-sig'},
-    {from:'SOL', to:'wZION', icon:'◎', color:'text-purple-400', bg:'bg-purple-500/10', border:'border-purple-500/20', status:'research', desc:'SPL program · PDA-secured · Tower BFT'},
+    {from:'SOL', to:'wZION', icon:'◎', color:'text-purple-400', bg:'bg-purple-500/10', border:'border-purple-500/20', status:'live', desc:'SPL Token · mint HgfQZp… · Tower BFT · 1B supply'},
+    {from:'XLM', to:'wZION', icon:'✦', color:'text-blue-400', bg:'bg-blue-500/10', border:'border-blue-500/20', status:'live', desc:'Stellar native asset · issuer GDDXUOJ7… · 1B supply'},
   ];
   const statusStyle = {
     live:     {label:'Live',     color:'text-emerald-400', bg:'bg-emerald-500/10', border:'border-emerald-500/20'},
@@ -9897,7 +9898,7 @@ async function loadWarpSwapPanel(){
     {phase:'Phase 1 (Done)', title:'Ethereum Corridor', desc:'wZION ERC-20 on Base Mainnet, Uniswap V3 pools, 5/5 Guardian validators, bridge relay live', done:true},
     {phase:'Phase 2 (Active)', title:'DEX Liquidity + CEX Listings', desc:'Seed liquidity on Uniswap V3, DexScreener integration, CEX listing applications (XT.COM, Azbit, P2B, KuCoin, Gate.io)', done:true},
     {phase:'Phase 3 (Planned)', title:'Bitcoin HTLC Bridge', desc:'SegWit + Taproot HTLC bridge, 2-of-3 multi-sig, 24h timelock, Lightning exits, OTC bridging', done:false},
-    {phase:'Phase 4 (Research)', title:'Solana SPL + Multi-chain AMM', desc:'Solana SPL program with PDA-secured mint, Tower BFT finality, AMM routing for cross-chain swaps', done:false},
+    {phase:'Phase 4 (Deployed)', title:'Solana SPL + Stellar Native + Multi-chain AMM', desc:'Solana SPL Token deployed (mint HgfQZp…) · Stellar native asset deployed (issuer GDDXUOJ7…) · AMM routing for cross-chain swaps', done:true},
   ];
   const roadmapEl = document.getElementById('warp-swap-roadmap');
   if(roadmapEl){

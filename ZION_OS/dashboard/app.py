@@ -4975,9 +4975,17 @@ def get_revenue_dashboard() -> dict:
 
     # ── Coin revenue table (live) ──────────────────────────────────────
     SUPPORTED_COINS = [
-        ("KAS", "kheavyhash", "kas.2miners.com:2020"),
-        ("ALPH", "blake3", "pool.woolypooly.com:3094"),
-        ("DCR", "blake3", "pool.dcrstats.com:3354"),
+        ("KAS",  "kheavyhash",  "kas.2miners.com:2020"),
+        ("ALPH", "blake3",      "alph.2miners.com:4545"),
+        ("DCR",  "blake3",      "dcr.suprnova.cc:3256"),
+        ("ERG",  "autolykos",   "erg.2miners.com:8888"),
+        ("RVN",  "kawpow",      "rvn.2miners.com:6060"),
+        ("ETC",  "ethash",      "etc.2miners.com:1010"),
+        ("FLUX", "zelhash",     "flux.woolypooly.com:3000"),
+        ("CLORE","kawpow",      "clore.woolypooly.com:3090"),
+        ("EVR",  "evrprogpow",  "evrprogpow.eu.mine.zpool.ca:1330"),
+        ("MEWC", "meowpow",     "meowpow.eu.mine.zpool.ca:1327"),
+        ("XMR",  "randomx",     "gulf.moneroocean.stream:10001"),
     ]
     current_coin = auxpow.get("current_coin", "")
     coin_revenue = []
@@ -5071,7 +5079,7 @@ def get_revenue_dashboard() -> dict:
         "next_distribution_ts": None,  # no scheduled next — PPLNS pays per block
         "distribution_cycle": "Per-block (PPLNS)",
         "accumulated_usd": round(total_usd, 6),
-        "active_coins": [c[0] for c in SUPPORTED_COINS],
+        "active_coins": [c[0] for c in SUPPORTED_COINS],  # 11 supported coins
         "coin_revenue": coin_revenue,
         "distributions": distributions,
     }
