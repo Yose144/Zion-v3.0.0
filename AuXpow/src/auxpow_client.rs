@@ -983,12 +983,22 @@ impl AuxPowClient {
             let hex = format!("{:016x}", full_nonce);
             ("mining.submit", json!([worker, job_id, hex]))
         } else if self.profile.coin == ExternalCoin::DCR {
-            // DCR Blake3: nonce is 4 bytes, submitted as 8-char hex (no 0x prefix).
-            // WoolyPooly expects the nonce as a hex string of the 4-byte LE nonce.
+            // DCR Blake3: standard Stratum v1 submit with 5 params:
+            //   [worker, job_id, extranonce2, ntime, nonce]
+            // extranonce2 is empty (coinbase2 is empty for DCR Blake3).
+            // ntime is from the notify. nonce is 4-byte LE as hex string.
             let wallet = self.payout_wallet.lock().await.clone();
             let worker = format!("{}.{}", wallet, self.profile.worker_name);
-            let nonce_hex = format!("{:08x}", nonce as u32);
-            ("mining.submit", json!([worker, job_id, nonce_hex]))
+            let job = self.current_job().await;
+            let ntime = job
+                .as_ref()
+                .and_then(|j| j.timestamp)
+                .map(|t| format!("{:08x}", t))
+                .unwrap_or_else(|| "00000000".to_string());
+            // Nonce as LE byte hex (e.g. nonce=14 → "0e000000")
+            let nonce_le_bytes = (nonce as u32).to_le_bytes();
+            let nonce_hex = hex::encode(nonce_le_bytes);
+            ("mining.submit", json!([worker, job_id, "", ntime, nonce_hex]))
         } else {
             let hex = format!("0x{:016x}", nonce);
             let wallet = self.payout_wallet.lock().await.clone();
