@@ -1726,22 +1726,12 @@ fn handle_client(
 
         let assignment = match desired_external_coin {
             Some(coin) if should_issue_external_job(iteration, &config.auxpow_config) => {
-                // Try to pop a job of the desired coin from the bridge queue.
+                // Try to use the freshest external job from the bridge queue.
+                // pop_job returns a clone and leaves the job in the queue so
+                // fast miners don't drain it between upstream notify messages.
                 // If none is available, fall back to ZION so the session keeps
                 // hashing instead of stalling.
-                let mut job = auxpow_bridge.pop_job();
-                if let Some(ref j) = job {
-                    if j.external_coin != coin {
-                        // If the queued job is for a different coin, put it back
-                        // and look for a matching one (simple scan, queue is tiny).
-                        auxpow_bridge
-                            .job_queue
-                            .lock()
-                            .expect("auxpow job queue lock poisoned")
-                            .push_front(j.clone());
-                        job = None;
-                    }
-                }
+                let job = auxpow_bridge.pop_job().filter(|j| j.external_coin == coin);
                 if let Some(job) = job {
                     WorkAssignment::External(job)
                 } else {
@@ -2744,12 +2734,19 @@ impl AuxPowBridge {
         (bridge, share_rx)
     }
 
-    /// Try to pop the freshest external job from the queue.
+    /// Return a clone of the freshest external job from the queue.
+    ///
+    /// We keep the job in the queue so multiple sessions (and successive
+    /// iterations of the same session) can mine the same external work unit
+    /// until the bridge pushes a newer job.  This prevents fast miners from
+    /// draining the single-slot queue and falling back to ZION jobs between
+    /// external pool notify messages.
     fn pop_job(&self) -> Option<JobPackage> {
         if !self.enabled {
             return None;
         }
-        self.job_queue.lock().expect("auxpow job queue lock poisoned").pop_front()
+        let q = self.job_queue.lock().expect("auxpow job queue lock poisoned");
+        q.front().cloned()
     }
 
     /// Send a share to be forwarded upstream.  Blocks until the tokio task

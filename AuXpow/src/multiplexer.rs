@@ -62,8 +62,29 @@ impl JobMultiplexer {
 
         let mut profile = CoinProfile::default_for(coin);
         profile.worker_name.clone_from(&self.worker_name);
+
+        // Optional overrides for testing / low-difficulty pools.  Production
+        // deployments normally rely on CoinProfile defaults + pool preference.
+        if let Ok(host) = std::env::var("ZION_POOL_AUXPOW_POOL_HOST") {
+            if !host.trim().is_empty() {
+                profile.pool_host = host.trim().to_string();
+            }
+        }
+        if let Ok(port) = std::env::var("ZION_POOL_AUXPOW_POOL_PORT") {
+            if let Ok(p) = port.trim().parse::<u16>() {
+                profile.pool_port = p;
+            }
+        }
+        if let Ok(password) = std::env::var("ZION_POOL_AUXPOW_POOL_PASSWORD") {
+            profile.password = password;
+        }
         // TODO: apply preference/region mapping when multiple pools per coin exist
         let _ = (self.preference, &self.region);
+
+        info!(
+            "JobMultiplexer: connecting to {} at {}:{} as worker={}",
+            coin, profile.pool_host, profile.pool_port, profile.worker_name
+        );
 
         let client = Arc::new(AuxPowClient::new(profile));
         client.connect(&self.wallet).await?;
