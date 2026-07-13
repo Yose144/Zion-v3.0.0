@@ -1,7 +1,8 @@
 # ZION Whitepaper Index & Archive Catalog
 
 > **Complete inventory of all whitepaper and philosophical documents found across the repository.**  
-> **Canonical mainnet version:** `ZION_Mainnet_Whitepaper_v3.0_Canonical.md` (this directory).
+> **Canonical mainnet version:** `ZION_Mainnet_Whitepaper_v3.0.5_Canonical.md` (this directory).  
+> **Czech canonical version:** `../../docs/WP-Mainet/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md`.
 
 ---
 
@@ -11,12 +12,15 @@ These are the authoritative documents for the V3 mainnet line. Treat all others 
 
 | # | Document | Language | Status | Key Content |
 |---|----------|----------|--------|-------------|
-| 1 | **`ZION_Mainnet_Whitepaper_v3.0_Canonical.md`** | EN | **CANONICAL** | Complete V3 mainnet whitepaper — Ekam Deeksha v2, Decade Decay, 89/5/5/1 split, L1–L6, revenue system, ~1,470 tests |
-| 2 | **`MAINNET_CONSTANTS.md`** | EN | **CANONICAL** | All `pub const` values extracted from `V3/L1/core/src/` and `V3/L1/cosmic-harmony/src/` — 60+ parameters |
-| 3 | `ZION_V3_Whitepaper.md` (`V3/docs/`) | EN | **Active** | Pre-canonical V3 WP — overlaps with canonical; contains L5/L6 detail and roadmap |
-| 4 | `WHITEPAPER_v3.0_TECHNICAL.md` (`docs/WP3.0/`) | EN / CS | Active | Technical version for CoinGecko/developers — Decade Decay, consciousness mining, bridge, NCL |
-| 5 | `WHITEPAPER_v3.0_LAYMAN.md` (`docs/WP3.0/`) | EN / CS | Active | Layperson version for general public |
-| 6 | `ZION_V3_Whitepaper.md` (`docs/WP3.0/`) | EN | Active | Short V3 overview |
+| 1 | **`ZION_Mainnet_Whitepaper_v3.0.5_Canonical.md`** | EN | **CANONICAL 3.0.5** | Complete V3 mainnet whitepaper — Ekam Deeksha v2, Decade Decay, 89/5/5/1 burn, L1–L6, AuxPoW, ZionDex, 3.0.3/3.0.4/3.0.5 history, ~1,600 tests |
+| 2 | **`../../docs/WP-Mainet/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md`** | CS | **CANONICAL 3.0.5** | Czech translation of the canonical 3.0.5 whitepaper |
+| 3 | `ZION_Mainnet_Whitepaper_v3.0_Canonical.md` | EN | Superseded by 3.0.5 | Previous canonical; retained for archive |
+| 4 | `../../docs/WP-Mainet/ZION_Mainnet_Whitepaper_v3.0_CZ.md` | CS | Superseded by 3.0.5 | Previous Czech canonical; retained for archive |
+| 5 | **`MAINNET_CONSTANTS.md`** | EN | **CANONICAL** | All `pub const` values extracted from `V3/L1/core/src/` and `V3/L1/cosmic-harmony/src/` — 60+ parameters |
+| 6 | `ZION_V3_Whitepaper.md` (`V3/docs/`) | EN | **Active** | Pre-canonical V3 WP — overlaps with canonical; contains L5/L6 detail and roadmap |
+| 7 | `WHITEPAPER_v3.0_TECHNICAL.md` (`docs/WP3.0/`) | EN / CS | Active | Technical version for CoinGecko/developers — Decade Decay, consciousness mining, bridge, NCL |
+| 8 | `WHITEPAPER_v3.0_LAYMAN.md` (`docs/WP3.0/`) | EN / CS | Active | Layperson version for general public |
+| 9 | `ZION_V3_Whitepaper.md` (`docs/WP3.0/`) | EN | Active | Short V3 overview |
 
 ---
 
@@ -179,17 +183,19 @@ Found in `docs/docs2.9/` — migration source material and philosophical roots.
 | v2.8.3 | Lite WP | 144B | RandomX + CryptoNote | Multi-chain Dharma Ecosystem |
 | v2.9.5 | Full WP | 144B | CosmicHarmony v3 | Rust rewrite, CHv3/CHv4, bridge |
 | v2.9.7 | Update | 144B | CosmicHarmony v3 | Code freeze, 168h stability |
-| **v3.0** | **Canonical** | **144B** | **Ekam Deeksha v2** | **Clean-room Rust, UTXO, 6-decimal flowers, BLAKE3, on-chain fee split (updated 3.0.3 fork)** |
+| v3.0 | Canonical | 144B | Ekam Deeksha v2 | Clean-room Rust, UTXO, 6-decimal flowers, BLAKE3, on-chain fee split |
+| **v3.0.5** | **Canonical** | **144B** | **Ekam Deeksha v2** | **Mainnet Beta — hard genesis reset, DeFi deploy, AuxPoW, ZionDex, non-EVM tokens** |
 
 ---
 
 ## How to Use This Index
 
-1. **For mainnet technical truth:** Read `ZION_Mainnet_Whitepaper_v3.0_Canonical.md` + `MAINNET_CONSTANTS.md` + `StatusV3.md` + `V3/ROADMAP.md`
-2. **For legacy context / philosophy:** Browse `docs/docs2.9/WHITEPAPER_2025/` and `CORE/philosophy/`
-3. **For NCL/AI detail:** Read `docs/2.9.5/ZION_NCL_WHITEPAPER_v1.0.md`
-4. **For revenue system:** Read `REVENUE_IMPLEMENTATION_PLAN.md` + `REVENUE_DEEP_ANALYSIS.md`
+1. **For mainnet technical truth:** Read `ZION_Mainnet_Whitepaper_v3.0.5_Canonical.md` + `MAINNET_CONSTANTS.md` + `StatusV3.md` + `V3/ROADMAP.md` + `3.0.5.md`
+2. **For Czech mainnet summary:** Read `../../docs/WP-Mainet/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md`
+3. **For legacy context / philosophy:** Browse `docs/docs2.9/WHITEPAPER_2025/` and `CORE/philosophy/`
+4. **For NCL/AI detail:** Read `docs/2.9.5/ZION_NCL_WHITEPAPER_v1.0.md`
+5. **For revenue system:** Read `REVENUE_IMPLEMENTATION_PLAN.md` + `REVENUE_DEEP_ANALYSIS.md`
 
 ---
 
-*Index compiled 2026-05-19 — 116 unique whitepaper/documents catalogued.*
+*Index compiled 2026-07-13 — 118 unique whitepaper/documents catalogued (including 3.0.5 canonical EN + CS).*

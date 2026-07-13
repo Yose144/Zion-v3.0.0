@@ -208,7 +208,7 @@ Template:
 ### Pro učení Blockchainu
 
 - [Mastering Bitcoin](https://github.com/bitcoinbook/bitcoinbook) (Andreas Antonopoulos)
-- [ZION Whitepaper](../../docs/ZION_Mainnet_Whitepaper_v3.0_Canonical.md)
+- [ZION Whitepaper](../../ZION_Mainnet_Whitepaper_v3.0.5_Canonical.md)
 - [AGENTS.md](../../../../AGENTS.md) — naše pravidla
 
 ### Pro učení Dharma

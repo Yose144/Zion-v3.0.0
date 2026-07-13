@@ -674,7 +674,7 @@ The dashboard provides real-time monitoring of:
 - [ ] `AGENTS.md` — new genesis hash, regeneration notes, backup/restore integration
 - [ ] `README.md` — updated premine table
 - [ ] `V3/docs/ZION_V3_Whitepaper.md` — new genesis references
-- [ ] `V3/docs/ZION_Mainnet_Whitepaper_v3.0_Canonical.md` — new genesis references
+- [ ] `V3/docs/ZION_Mainnet_Whitepaper_v3.0.5_Canonical.md` — new genesis references
 - [ ] `V3/docs/ERICKA_MAINNET_GUIDE.md` — new addresses
 - [ ] `V3/docs/MAINNET_CONSTANTS.md` — new addresses
 - [ ] `V3/docs/OPERATIONAL_SERVERS.md` — new addresses

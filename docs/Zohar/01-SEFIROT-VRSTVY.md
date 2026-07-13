@@ -79,7 +79,7 @@ schválení a runbooku.
 emission schedule. Vše ostatní je evoluce.
 
 **Zdroj v docs:** [`GENESIS_REGENERATION_RUNBOOK.md`](../../GENESIS_REGENERATION_RUNBOOK.md),
-[`V3/docs/ZION_Mainnet_Whitepaper_v3.0_Canonical.md`](../../V3/docs/ZION_Mainnet_Whitepaper_v3.0_Canonical.md)
+[`V3/docs/ZION_Mainnet_Whitepaper_v3.0.5_Canonical.md`](../../V3/docs/ZION_Mainnet_Whitepaper_v3.0.5_Canonical.md)
 
 ---
 
