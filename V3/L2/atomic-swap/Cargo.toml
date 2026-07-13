@@ -52,7 +52,7 @@ zeroize = { version = "1.7", features = ["zeroize_derive"] }
 chrono = { version = "0.4", features = ["serde"] }
 
 # TCP socket options (SO_REUSEADDR / SO_REUSEPORT for graceful restarts)
-socket2 = { version = "0.5", features = ["all"] }
+socket2 = { version = "0.6", features = ["all"] }
 
 # Shared L1 types (address encoding, hex, RPC normalisation)
 zion-l1-types = { path = "../../L1/types" }
