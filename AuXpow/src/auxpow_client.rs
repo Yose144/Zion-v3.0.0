@@ -7,7 +7,10 @@
 //!   4. `mining.submit` — submit shares (job_id, nonce, hash)
 //!
 //! Also supports EthStratum variant (eth_getWork / eth_submitWork) for
-//! Ethash/KawPow coins. (TODO — currently only Stratum v1 is implemented.)
+//! Ethash/Autolykos coins (ERG, EVR, MEWC, CLORE).  EthStratum pools use
+//! `eth_submitLogin` for auth, push `eth_getWork` notifications (or respond
+//! to periodic `eth_getWork` polling requests), and accept `eth_submitWork`
+//! for share submission.
 //!
 //! The client is designed to be used by the `AuxPowScheduler` which
 //! manages profit-switching and circuit breaker logic.
@@ -150,6 +153,10 @@ pub struct AuxPowClient {
     /// Last job id returned by `wait_for_job`, so callers do not receive the
     /// same job repeatedly in a busy loop.
     last_waited_job_id: Arc<Mutex<Option<String>>>,
+    /// Whether eth_getWork polling is active (EthStratum-only).
+    eth_getwork_polling: Arc<Mutex<bool>>,
+    /// Next JSON-RPC id for eth_getWork polling requests.
+    next_rpc_id: Arc<Mutex<i64>>,
 }
 
 impl AuxPowClient {
@@ -172,6 +179,8 @@ impl AuxPowClient {
             extranonce1: Arc::new(Mutex::new(Vec::new())),
             pending_requests: Arc::new(Mutex::new(HashMap::new())),
             last_waited_job_id: Arc::new(Mutex::new(None)),
+            eth_getwork_polling: Arc::new(Mutex::new(false)),
+            next_rpc_id: Arc::new(Mutex::new(200)),
         }
     }
 
@@ -226,6 +235,14 @@ impl AuxPowClient {
         // Subscribe + Authorize
         self.subscribe().await?;
         self.authorize(payout_wallet).await?;
+
+        // For EthStratum pools, start periodic eth_getWork polling.
+        // Some pools push eth_getWork as a notification; others require
+        // the client to poll.  We do both — the poll loop handles push
+        // notifications, and this background task sends periodic requests.
+        if self.protocol == StratumProtocol::EthStratum {
+            self.start_eth_getwork_polling().await;
+        }
 
         info!("AuxPow: connected and authorized for {}", self.profile.coin);
         Ok(())
@@ -640,52 +657,13 @@ impl AuxPowClient {
                     if let Some(params) = msg.get("params") {
                         if let Some(arr) = params.as_array() {
                             if arr.len() >= 3 {
-                                let seed_hash = arr[0].as_str().unwrap_or("").to_string();
-                                let header_hex = arr[1].as_str().unwrap_or("").to_string();
-                                let target_hex = arr[2].as_str().unwrap_or("").to_string();
-                                let header_bytes = hex::decode(header_hex.trim_start_matches("0x"))
-                                    .unwrap_or_default();
-                                let target_bytes = crate::external_hashers::parse_target_hex(
-                                    target_hex.trim_start_matches("0x"),
-                                )
-                                .unwrap_or([0xFFu8; 32]);
-
-                                // Derive epoch from seed hash for DAG management.
-                                let epoch = if seed_hash.len() >= 2 {
-                                    let seed_bytes = hex::decode(
-                                        seed_hash.trim_start_matches("0x"),
-                                    ).unwrap_or_default();
-                                    if seed_bytes.len() == 32 {
-                                        let seed_arr: [u8; 32] = seed_bytes[..32].try_into().unwrap();
-                                        crate::external_hashers::ethash_epoch_from_seed_hash(
-                                            &seed_arr,
-                                            crate::external_hashers::ETHASH_MAX_EPOCH_SEARCH,
-                                        )
-                                    } else {
-                                        None
-                                    }
-                                } else {
-                                    None
-                                };
-
-                                let job = ExternalJob {
-                                    job_id: header_hex.clone(),
-                                    header_hex,
-                                    target_hex,
-                                    seed_hash: Some(seed_hash),
-                                    block_number: None,
-                                    algorithm: self.profile.algorithm.clone(),
-                                    header_bytes,
-                                    target_bytes,
-                                    timestamp: None,
-                                    nbits: None,
-                                    external_coin: self.profile.coin,
-                                    from_group: 0,
-                                    to_group: 0,
-                                    extranonce1: self.extranonce1.lock().await.clone(),
-                                    extranonce2: String::new(),
-                                    epoch,
-                                };
+                                let job = self
+                                    .parse_eth_getwork_params(
+                                        arr[0].as_str().unwrap_or(""),
+                                        arr[1].as_str().unwrap_or(""),
+                                        arr[2].as_str().unwrap_or(""),
+                                    )
+                                    .await;
                                 *self.current_job.lock().await = Some(job);
                                 self.job_notify.notify_waiters();
                             }
@@ -1303,6 +1281,7 @@ impl AuxPowClient {
 
     /// Disconnect from the pool.
     pub async fn disconnect(&self) -> Result<()> {
+        *self.eth_getwork_polling.lock().await = false;
         *self.stream.lock().await = None;
         *self.reader.lock().await = None;
         *self.connected.lock().await = false;
@@ -1311,6 +1290,182 @@ impl AuxPowClient {
         self.shutdown.notify_waiters();
         info!("AuxPow: disconnected from {}", self.profile.coin);
         Ok(())
+    }
+
+    // ── EthStratum methods ──────────────────────────────────────────
+
+    /// Start a background task that periodically sends `eth_getWork`
+    /// requests to the pool.  This is used for EthStratum pools that
+    /// do not push job notifications and require polling.
+    async fn start_eth_getwork_polling(&self) {
+        *self.eth_getwork_polling.lock().await = true;
+        let client_clone = Arc::new(self.clone());
+        tokio::spawn(async move {
+            // Initial fetch immediately after connect.
+            if let Err(e) = client_clone.request_eth_getwork().await {
+                debug!("auxpow: initial eth_getWork for {}: {}", client_clone.profile.coin, e);
+            }
+            loop {
+                // Poll every 3 seconds — fast enough to catch new jobs,
+                // slow enough to avoid rate limiting.
+                tokio::time::sleep(Duration::from_secs(3)).await;
+
+                // Stop if polling was disabled (disconnect).
+                if !*client_clone.eth_getwork_polling.lock().await {
+                    break;
+                }
+                if !*client_clone.connected.lock().await {
+                    break;
+                }
+
+                if let Err(e) = client_clone.request_eth_getwork().await {
+                    debug!(
+                        "auxpow: eth_getWork poll for {}: {} — will retry",
+                        client_clone.profile.coin, e
+                    );
+                }
+            }
+        });
+    }
+
+    /// Send an `eth_getWork` request and parse the response into a job.
+    ///
+    /// The response format is the same as the notification:
+    ///   `[seed_hash, header_hash, target]`
+    /// where all three are 0x-prefixed hex strings.
+    pub async fn request_eth_getwork(&self) -> Result<()> {
+        let id = {
+            let mut next = self.next_rpc_id.lock().await;
+            let id = *next;
+            *next += 1;
+            id
+        };
+        let req = json!({
+            "id": id,
+            "method": "eth_getWork",
+            "params": []
+        });
+        let resp = self.send_request(&req).await?;
+        // The response has "result" = [seed_hash, header_hash, target]
+        // (same format as the notification params).
+        if let Some(result) = resp.get("result") {
+            if let Some(arr) = result.as_array() {
+                if arr.len() >= 3 {
+                    let job = self
+                        .parse_eth_getwork_params(
+                            arr[0].as_str().unwrap_or(""),
+                            arr[1].as_str().unwrap_or(""),
+                            arr[2].as_str().unwrap_or(""),
+                        )
+                        .await;
+                    *self.current_job.lock().await = Some(job);
+                    self.job_notify.notify_waiters();
+                    return Ok(());
+                }
+            }
+            // Some pools return result=null when no work is available yet.
+            debug!(
+                "auxpow: eth_getWork response for {} has unexpected result: {:?}",
+                self.profile.coin, result
+            );
+        }
+        // If result is null/missing, just skip — we'll retry on next poll.
+        Ok(())
+    }
+
+    /// Parse eth_getWork params (seed_hash, header_hex, target_hex) into
+    /// an `ExternalJob`.  Shared between notification and polling paths.
+    async fn parse_eth_getwork_params(
+        &self,
+        seed_hash: &str,
+        header_hex: &str,
+        target_hex: &str,
+    ) -> ExternalJob {
+        let header_bytes = hex::decode(header_hex.trim_start_matches("0x"))
+            .unwrap_or_default();
+        let target_bytes = crate::external_hashers::parse_target_hex(
+            target_hex.trim_start_matches("0x"),
+        )
+        .unwrap_or([0xFFu8; 32]);
+
+        // Derive epoch from seed hash for DAG management.
+        let epoch = if seed_hash.len() >= 2 {
+            let seed_bytes = hex::decode(seed_hash.trim_start_matches("0x"))
+                .unwrap_or_default();
+            if seed_bytes.len() == 32 {
+                let seed_arr: [u8; 32] = seed_bytes[..32].try_into().unwrap();
+                crate::external_hashers::ethash_epoch_from_seed_hash(
+                    &seed_arr,
+                    crate::external_hashers::ETHASH_MAX_EPOCH_SEARCH,
+                )
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        ExternalJob {
+            job_id: header_hex.to_string(),
+            header_hex: header_hex.to_string(),
+            target_hex: target_hex.to_string(),
+            seed_hash: Some(seed_hash.to_string()),
+            block_number: None,
+            algorithm: self.profile.algorithm.clone(),
+            header_bytes,
+            target_bytes,
+            timestamp: None,
+            nbits: None,
+            external_coin: self.profile.coin,
+            from_group: 0,
+            to_group: 0,
+            extranonce1: self.extranonce1.lock().await.clone(),
+            extranonce2: String::new(),
+            epoch,
+        }
+    }
+
+    /// Submit hashrate to the pool via `eth_submitHashrate`.
+    ///
+    /// Some EthStratum pools expect periodic hashrate reports for
+    /// statistics and pool dashboard display.  The hashrate is in H/s
+    /// (hashes per second).
+    pub async fn submit_hashrate(&self, hashrate_hps: u64) -> Result<bool> {
+        if self.protocol != StratumProtocol::EthStratum {
+            return Ok(false);
+        }
+        let id = {
+            let mut next = self.next_rpc_id.lock().await;
+            let id = *next;
+            *next += 1;
+            id
+        };
+        // eth_submitHashrate params: [hashrate_hex, miner_id]
+        // hashrate_hex is 0x-prefixed 32-byte hex of the hashrate value.
+        let hashrate_hex = format!("0x{:064x}", hashrate_hps);
+        let miner_id = format!(
+            "{}-{}",
+            self.profile.coin,
+            self.profile.worker_name
+        );
+        let req = json!({
+            "id": id,
+            "method": "eth_submitHashrate",
+            "params": [hashrate_hex, miner_id]
+        });
+        let resp = self.send_request(&req).await?;
+        let ok = resp
+            .get("result")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+        if !ok {
+            debug!(
+                "auxpow: eth_submitHashrate for {} not accepted: {:?}",
+                self.profile.coin,
+                resp.get("error")
+            );
+        }
+        Ok(ok)
     }
 
     /// Get the coin profile.
@@ -1853,6 +2008,312 @@ mod tests {
         server_task.await.unwrap();
     }
 
+    #[tokio::test]
+    async fn erg_ethstratum_round_trip() {
+        // Mock EthStratum server for ERG (Autolykos).
+        // Flow: mining.subscribe → eth_submitLogin → eth_getWork (poll) →
+        //       eth_submitWork → accept.
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap().to_string();
+        let (host, port) = addr.rsplit_once(':').unwrap();
+        let port: u16 = port.parse().unwrap();
+
+        let server_task = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let (mut reader, mut writer) = socket.split();
+            let mut buf = vec![0u8; 8192];
+
+            async fn read_json(
+                reader: &mut tokio::net::tcp::ReadHalf<'_>,
+                buf: &mut [u8],
+            ) -> Value {
+                let n = reader.read(buf).await.unwrap();
+                serde_json::from_slice::<Value>(&buf[..n]).unwrap()
+            }
+
+            async fn write_json(writer: &mut tokio::net::tcp::WriteHalf<'_>, v: Value) {
+                writer
+                    .write_all((serde_json::to_string(&v).unwrap() + "\n").as_bytes())
+                    .await
+                    .unwrap();
+                writer.flush().await.unwrap();
+            }
+
+            // 1. Read mining.subscribe
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "mining.subscribe");
+            write_json(
+                &mut writer,
+                json!({"id": 1, "result": [true, "EthereumStratum/1.0.0"], "error": null}),
+            )
+            .await;
+
+            // 2. Read eth_submitLogin
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "eth_submitLogin");
+            write_json(
+                &mut writer,
+                json!({"id": 2, "result": true, "error": null}),
+            )
+            .await;
+
+            // 3. Read eth_getWork (initial poll) and respond with a job.
+            //    ERG Autolykos: seed_hash is 32 bytes, header is 32 bytes,
+            //    target is 32 bytes — all 0x-prefixed hex.
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "eth_getWork");
+            let req_id = req["id"].as_i64().unwrap();
+            let seed = "0x".to_string() + &"11".repeat(32);
+            let header = "0x".to_string() + &"22".repeat(32);
+            let target = "0x".to_string() + &"ff".repeat(32);
+            write_json(
+                &mut writer,
+                json!({
+                    "id": req_id,
+                    "result": [seed, header, target],
+                    "error": null
+                }),
+            )
+            .await;
+
+            // 4. Read eth_submitWork
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "eth_submitWork");
+            let params = req["params"].as_array().unwrap();
+            assert_eq!(params.len(), 3);
+            // nonce_hex (0x-prefixed), header_hash (job_id), mix_hash
+            assert!(params[0].as_str().unwrap().starts_with("0x"));
+            assert!(params[1].as_str().unwrap().starts_with("0x"));
+            assert!(params[2].as_str().unwrap().starts_with("0x"));
+
+            let req_id = req["id"].as_i64().unwrap();
+            write_json(
+                &mut writer,
+                json!({"id": req_id, "result": true, "error": null}),
+            )
+            .await;
+
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        });
+
+        let mut profile = CoinProfile::default_for(ExternalCoin::ERG);
+        profile.pool_host = host.to_string();
+        profile.pool_port = port;
+        profile.worker_name = "test_worker".to_string();
+
+        let client = AuxPowClient::new(profile);
+        client.connect("9ewyQvX7YJ1PqgJpK5qGjxRwJZQjWxJr5QJ1PqgJpK5qGjxRwJZQ").await.unwrap();
+
+        // Wait for the eth_getWork polling to fetch a job.
+        let job = client.wait_for_job(5000).await.unwrap().unwrap();
+        assert!(job.job_id.starts_with("0x"));
+        assert_eq!(job.header_bytes.len(), 32);
+        assert_eq!(job.target_bytes, [0xFFu8; 32]);
+        assert!(job.seed_hash.is_some());
+
+        // Submit a share via eth_submitWork.
+        let mix_hash = [0xAAu8; 32];
+        let result = client
+            .submit_share(&job.job_id, 42, &hex::encode(mix_hash), Some(&hex::encode(mix_hash)))
+            .await
+            .unwrap();
+        assert_eq!(result, ShareResult::Accepted);
+
+        client.disconnect().await.unwrap();
+        server_task.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn erg_ethstratum_push_notification() {
+        // Test eth_getWork as a push notification (not polling).
+        // The server pushes eth_getWork without the client requesting it.
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap().to_string();
+        let (host, port) = addr.rsplit_once(':').unwrap();
+        let port: u16 = port.parse().unwrap();
+
+        let server_task = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let (mut reader, mut writer) = socket.split();
+            let mut buf = vec![0u8; 8192];
+
+            async fn read_json(
+                reader: &mut tokio::net::tcp::ReadHalf<'_>,
+                buf: &mut [u8],
+            ) -> Value {
+                let n = reader.read(buf).await.unwrap();
+                serde_json::from_slice::<Value>(&buf[..n]).unwrap()
+            }
+
+            async fn write_json(writer: &mut tokio::net::tcp::WriteHalf<'_>, v: Value) {
+                writer
+                    .write_all((serde_json::to_string(&v).unwrap() + "\n").as_bytes())
+                    .await
+                    .unwrap();
+                writer.flush().await.unwrap();
+            }
+
+            // 1. Subscribe
+            let _req = read_json(&mut reader, &mut buf).await;
+            write_json(
+                &mut writer,
+                json!({"id": 1, "result": [true, "EthereumStratum/1.0.0"], "error": null}),
+            )
+            .await;
+
+            // 2. eth_submitLogin
+            let _req = read_json(&mut reader, &mut buf).await;
+            write_json(
+                &mut writer,
+                json!({"id": 2, "result": true, "error": null}),
+            )
+            .await;
+
+            // 3. The client will send eth_getWork (polling). Respond with a job.
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "eth_getWork");
+            let req_id = req["id"].as_i64().unwrap();
+            let seed = "0x".to_string() + &"ab".repeat(32);
+            let header = "0x".to_string() + &"cd".repeat(32);
+            let target = "0x".to_string() + &"ff".repeat(32);
+            write_json(
+                &mut writer,
+                json!({"id": req_id, "result": [seed, header, target], "error": null}),
+            )
+            .await;
+
+            // 4. Also push an eth_getWork notification (id=null, method=eth_getWork)
+            //    to test the notification path.
+            let seed2 = "0x".to_string() + &"33".repeat(32);
+            let header2 = "0x".to_string() + &"44".repeat(32);
+            let target2 = "0x".to_string() + &"ee".repeat(32);
+            write_json(
+                &mut writer,
+                json!({
+                    "id": null,
+                    "method": "eth_getWork",
+                    "params": [seed2, header2, target2]
+                }),
+            )
+            .await;
+
+            tokio::time::sleep(Duration::from_millis(500)).await;
+        });
+
+        let mut profile = CoinProfile::default_for(ExternalCoin::ERG);
+        profile.pool_host = host.to_string();
+        profile.pool_port = port;
+
+        let client = AuxPowClient::new(profile);
+        client.connect("testwallet").await.unwrap();
+
+        // The first job comes from polling. Wait for it.
+        let job1 = client.wait_for_job(5000).await.unwrap().unwrap();
+        assert!(job1.header_hex.contains("cdcdcd"));
+
+        // The second job comes from the push notification.
+        let job2 = client.wait_for_job(5000).await.unwrap().unwrap();
+        assert!(job2.header_hex.contains("444444"));
+
+        client.disconnect().await.unwrap();
+        server_task.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn eth_submit_hashrate_test() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap().to_string();
+        let (host, port) = addr.rsplit_once(':').unwrap();
+        let port: u16 = port.parse().unwrap();
+
+        let server_task = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let (mut reader, mut writer) = socket.split();
+            let mut buf = vec![0u8; 8192];
+
+            async fn read_json(
+                reader: &mut tokio::net::tcp::ReadHalf<'_>,
+                buf: &mut [u8],
+            ) -> Value {
+                let n = reader.read(buf).await.unwrap();
+                serde_json::from_slice::<Value>(&buf[..n]).unwrap()
+            }
+
+            async fn write_json(writer: &mut tokio::net::tcp::WriteHalf<'_>, v: Value) {
+                writer
+                    .write_all((serde_json::to_string(&v).unwrap() + "\n").as_bytes())
+                    .await
+                    .unwrap();
+                writer.flush().await.unwrap();
+            }
+
+            // Subscribe
+            let _req = read_json(&mut reader, &mut buf).await;
+            write_json(
+                &mut writer,
+                json!({"id": 1, "result": [true, "EthereumStratum/1.0.0"], "error": null}),
+            )
+            .await;
+
+            // eth_submitLogin
+            let _req = read_json(&mut reader, &mut buf).await;
+            write_json(
+                &mut writer,
+                json!({"id": 2, "result": true, "error": null}),
+            )
+            .await;
+
+            // eth_getWork (initial poll)
+            let req = read_json(&mut reader, &mut buf).await;
+            let req_id = req["id"].as_i64().unwrap();
+            write_json(
+                &mut writer,
+                json!({
+                    "id": req_id,
+                    "result": [
+                        "0x".to_string() + &"11".repeat(32),
+                        "0x".to_string() + &"22".repeat(32),
+                        "0x".to_string() + &"ff".repeat(32),
+                    ],
+                    "error": null
+                }),
+            )
+            .await;
+
+            // eth_submitHashrate
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "eth_submitHashrate");
+            let params = req["params"].as_array().unwrap();
+            assert_eq!(params.len(), 2);
+            assert!(params[0].as_str().unwrap().starts_with("0x"));
+            let req_id = req["id"].as_i64().unwrap();
+            write_json(
+                &mut writer,
+                json!({"id": req_id, "result": true, "error": null}),
+            )
+            .await;
+
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        });
+
+        let mut profile = CoinProfile::default_for(ExternalCoin::ERG);
+        profile.pool_host = host.to_string();
+        profile.pool_port = port;
+
+        let client = AuxPowClient::new(profile);
+        client.connect("testwallet").await.unwrap();
+
+        // Wait for the initial job from polling.
+        let _job = client.wait_for_job(5000).await.unwrap().unwrap();
+
+        // Submit hashrate.
+        let ok = client.submit_hashrate(50_000_000).await.unwrap();
+        assert!(ok);
+
+        client.disconnect().await.unwrap();
+        server_task.await.unwrap();
+    }
+
     #[test]
     fn protocol_mapping() {
         assert_eq!(ExternalCoin::DCR.protocol(), StratumProtocol::Stratum);
@@ -1860,7 +2321,12 @@ mod tests {
         assert_eq!(ExternalCoin::KAS.protocol(), StratumProtocol::Stratum);
         assert_eq!(ExternalCoin::ETC.protocol(), StratumProtocol::Stratum);
         assert_eq!(ExternalCoin::RVN.protocol(), StratumProtocol::Stratum);
+        assert_eq!(ExternalCoin::FLUX.protocol(), StratumProtocol::Stratum);
+        assert_eq!(ExternalCoin::XMR.protocol(), StratumProtocol::Stratum);
         assert_eq!(ExternalCoin::ERG.protocol(), StratumProtocol::EthStratum);
+        assert_eq!(ExternalCoin::EVR.protocol(), StratumProtocol::EthStratum);
+        assert_eq!(ExternalCoin::MEWC.protocol(), StratumProtocol::EthStratum);
+        assert_eq!(ExternalCoin::CLORE.protocol(), StratumProtocol::EthStratum);
     }
 
     #[test]
