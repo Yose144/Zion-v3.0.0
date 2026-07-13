@@ -879,4 +879,36 @@ mod tests {
         assert!(desc.contains("keccak_bonus"));
         assert!(desc.contains("ncl_ai"));
     }
+
+    #[test]
+    fn parse_job_weights_string_percentage() {
+        let s = "zion:50,keccak_bonus:10,sha3_bonus:0,ncl_ai:25,deeksha_lite:15";
+        let w = StreamWeights::parse(s).expect("valid weights string");
+        assert!((w.weight_for(RevenueSource::Zion) - 0.50).abs() < 0.001);
+        assert!((w.weight_for(RevenueSource::KeccakBonus) - 0.10).abs() < 0.001);
+        assert!(w.weight_for(RevenueSource::Sha3Bonus) < 0.001);
+        assert!((w.weight_for(RevenueSource::NclAi) - 0.25).abs() < 0.001);
+        assert!((w.weight_for(RevenueSource::DeekshaLite) - 0.15).abs() < 0.001);
+        assert!(w.weight_for(RevenueSource::ThermalBonus) < 0.001);
+    }
+
+    #[test]
+    fn parse_job_weights_string_fraction() {
+        let s = "zion:0.6,ncl_ai:0.4";
+        let w = StreamWeights::parse(s).expect("valid weights string");
+        assert!((w.weight_for(RevenueSource::Zion) - 0.6).abs() < 0.001);
+        assert!((w.weight_for(RevenueSource::NclAi) - 0.4).abs() < 0.001);
+    }
+
+    #[test]
+    fn parse_job_weights_rejects_duplicate() {
+        let s = "zion:0.5,zion:0.5";
+        assert!(StreamWeights::parse(s).is_err());
+    }
+
+    #[test]
+    fn parse_job_weights_rejects_out_of_range() {
+        assert!(StreamWeights::parse("zion:101").is_err());
+        assert!(StreamWeights::parse("zion:-0.1").is_err());
+    }
 }

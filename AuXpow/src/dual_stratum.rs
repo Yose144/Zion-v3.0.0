@@ -249,6 +249,7 @@ mod tests {
             header_bytes: b"external_header".to_vec(),
             target_bytes: easy_target(),
             timestamp: 0,
+            block_number: None,
             extranonce1: Vec::new(),
             start_nonce: 0,
             nonce_count: 1_000_000,

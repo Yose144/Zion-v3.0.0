@@ -168,6 +168,7 @@ async fn mine_job(
             header_bytes: job.header_bytes.clone(),
             target_bytes: share_target,
             timestamp: job.timestamp.unwrap_or(0),
+            block_number: job.block_number,
             extranonce1: job.extranonce1.clone(),
             start_nonce: 0,
             nonce_count: u64::MAX,

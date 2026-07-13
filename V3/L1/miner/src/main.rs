@@ -1387,7 +1387,7 @@ fn run_remote_session(
             VERBOSE.store(c.verbose, Ordering::Relaxed);
         }
 
-        let (job_line, mut job, algorithm, raw_header_bytes, _stream_weights) = match read_next_job(&mut reader) {
+        let (job_line, mut job, algorithm, raw_header_bytes, stream_weights_str) = match read_next_job(&mut reader) {
             Ok(result) => result,
             Err(e) => {
                 let err_str = format!("{e:#}");
@@ -1459,6 +1459,24 @@ fn run_remote_session(
                 }
             }
         }
+
+        // Propagate stream-profit weights to the GPU backend so it can
+        // distribute work across Deeksha pipeline steps.
+        if let Some(g) = gpu_ref.as_mut() {
+            if !stream_weights_str.is_empty() {
+                match zion_cosmic_harmony::stream_profit::StreamWeights::parse(&stream_weights_str) {
+                    Ok(weights) => {
+                        if let Err(e) = g.set_stream_weights(&weights) {
+                            println!("stream_weights_apply_error job={} err=\"{e}\"", job.job_id);
+                        }
+                    }
+                    Err(e) => {
+                        println!("stream_weights_parse_error job={} err=\"{e}\" raw=\"{}\"", job.job_id, stream_weights_str);
+                    }
+                }
+            }
+        }
+
         // GPU-first, CPU-fallback nonce scan (respect interactive overrides)
         let can_gpu = gpu_ref.is_some() && gpu_on;
         let mut gpu_nonces_tested = 0u64;

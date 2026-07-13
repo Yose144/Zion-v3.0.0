@@ -5,7 +5,7 @@ import json, os, sys, time, urllib.request, base64, re
 API = "https://api.simplemining.net"
 RIG = 518837
 GROUP = 1773590
-MINER_URL = "https://zionterranova.com/zion-miner/zion-sm-gpu-etc2.zip"
+MINER_URL = "https://zionterranova.com/zion-miner/zion-sm-gpu-rvn.zip"
 CUSTOM_MINER = MINER_URL
 # SMOS custom miner format: minerOptions = "URL arg1 arg2 ... argX"
 # The URL goes FIRST, followed by the miner arguments.
@@ -75,7 +75,9 @@ if __name__ == "__main__":
     api("PATCH", "/rigs/execute-command", {
         "rigIds": [RIG], "commandId": 7,
         "commandOptions": (
-            "rm -rf /root/miner/custom_zion-sm-gpu-etc2 "
+            "rm -rf /root/miner/custom_zion-sm-gpu-rvn "
+            "/root/miner/custom_zion-sm-gpu-etc3 "
+            "/root/miner/custom_zion-sm-gpu-etc2 "
             "/root/miner/custom_zion-sm-gpu-etc "
             "/root/miner/custom_zion-sm-gpu "
             "/root/miner/custom_zion-miner-v3.0.32-gpu "
