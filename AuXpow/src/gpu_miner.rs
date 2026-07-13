@@ -522,7 +522,26 @@ impl GpuMiner {
             other => anyhow::bail!("unsupported GPU algorithm: {other}"),
         };
 
-        let global_work_size = (batch_size as usize).min(self.work_size).max(1);
+        // Batch nonce scanning: optimized kernels scan multiple nonces per
+        // work-item (8 for blake3/kheavyhash/zelhash, 4 for autolykos/ethash/kawpow).
+        // Adjust global_work_size accordingly.
+        let batch_factor = match algorithm {
+            "autolykos" | "autolykos_erg" | "ethash" | "etchash" | "ethash_etc"
+            | "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" => 4,
+            _ => 8, // blake3, kheavyhash, zelhash
+        };
+        // Work-group size: 128 for memory-bound algos, 256 for compute-bound.
+        let wg_size = match algorithm {
+            "autolykos" | "autolykos_erg" | "ethash" | "etchash" | "ethash_etc"
+            | "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" => 128,
+            _ => 256,
+        };
+        // Round global_work_size up to a multiple of wg_size (required by
+        // reqd_work_group_size attribute in the optimized kernels).
+        let raw_gws = ((batch_size as usize) / batch_factor)
+            .min(self.work_size)
+            .max(1);
+        let global_work_size = ((raw_gws + wg_size - 1) / wg_size) * wg_size;
         let start = Instant::now();
         unsafe {
             kernel

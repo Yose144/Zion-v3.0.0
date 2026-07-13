@@ -8,11 +8,12 @@
 // point keeps the ALPH double-Blake3 semantics because ALPH is the primary
 // blake3_external coin.
 //
-// Each work-item scans one nonce.  The 24-byte nonce is:
+// Each work-item scans 8 nonces (batched) to amortize launch overhead and
+// improve GPU occupancy.  The 24-byte nonce is:
 //   bytes[0..8]  = candidate (big-endian u64)
 //   bytes[8..24] = zeros
 //
-// candidate = base + global_id
+// candidate = base + global_id * 8 + batch_index
 //
 // The kernel writes the 32-byte hash to `output` if it meets the target
 // (byte-wise LE comparison: hash[0..32] <= target[0..32]).
@@ -49,6 +50,7 @@ __constant const uint MSG_SCHEDULE[7][16] = {
 void blake3_round(uint state[16], const uint msg[16], int round) {
     __constant const uint *s = MSG_SCHEDULE[round];
     uint m[16];
+    #pragma unroll
     for (int i = 0; i < 16; i++) m[i] = msg[s[i]];
 
     G(m, state[0], state[4], state[8],  state[12], m[0], m[1]);
@@ -77,7 +79,9 @@ void blake3_compress8(
     uint out8[8]
 ) {
     uint state[16];
+    #pragma unroll
     for (int i = 0; i < 8; i++) state[i] = chain[i];
+    #pragma unroll
     for (int i = 0; i < 8; i++) state[8 + i] = BLAKE3_IV[i];
 
     state[12] = (uint)(counter & 0xFFFFFFFFuL);
@@ -86,6 +90,7 @@ void blake3_compress8(
     state[15] = flags;
 
     uint msg[16];
+    #pragma unroll
     for (int i = 0; i < 16; i++) {
         int j = i * 4;
         msg[i] = (uint)block[j]
@@ -94,10 +99,12 @@ void blake3_compress8(
                | ((uint)block[j + 3] << 24);
     }
 
+    #pragma unroll
     for (int r = 0; r < 7; r++) {
         blake3_round(state, msg, r);
     }
 
+    #pragma unroll
     for (int i = 0; i < 8; i++) {
         out8[i] = state[i] ^ state[i + 8];
     }
@@ -113,7 +120,9 @@ void blake3_compress16(
     uint out16[16]
 ) {
     uint state[16];
+    #pragma unroll
     for (int i = 0; i < 8; i++) state[i] = chain[i];
+    #pragma unroll
     for (int i = 0; i < 8; i++) state[8 + i] = BLAKE3_IV[i];
 
     state[12] = (uint)(counter & 0xFFFFFFFFuL);
@@ -122,6 +131,7 @@ void blake3_compress16(
     state[15] = flags;
 
     uint msg[16];
+    #pragma unroll
     for (int i = 0; i < 16; i++) {
         int j = i * 4;
         msg[i] = (uint)block[j]
@@ -130,10 +140,12 @@ void blake3_compress16(
                | ((uint)block[j + 3] << 24);
     }
 
+    #pragma unroll
     for (int r = 0; r < 7; r++) {
         blake3_round(state, msg, r);
     }
 
+    #pragma unroll
     for (int i = 0; i < 8; i++) {
         out16[i]     = state[i] ^ state[i + 8];
         out16[i + 8] = state[i + 8] ^ chain[i];
@@ -149,6 +161,7 @@ void blake3_inner(
     uint inner_out[8]
 ) {
     uint chain[8];
+    #pragma unroll
     for (int i = 0; i < 8; i++) chain[i] = BLAKE3_IV[i];
 
     uint total_len = 24u + header_len;
@@ -162,13 +175,29 @@ void blake3_inner(
     // Build a local 360-byte buffer: nonce || header, zero-padded.
     // This is small enough for private memory on modern GPUs.
     uchar msg[360];
+    #pragma unroll
     for (int i = 0; i < 24; i++) msg[i] = nonce[i];
-    for (int i = 0; i < (int)header_len; i++) msg[24 + i] = header_blob[i];
+
+    // Vectorized header loading: use vload4 to load the header in 4-byte chunks
+    // instead of byte-by-byte, improving memory throughput.
+    uint h4 = header_len / 4u;
+    #pragma unroll 8
+    for (uint i = 0u; i < h4; i++) {
+        uchar4 v = vload4(i, header_blob);
+        msg[24 + i * 4 + 0] = v.s0;
+        msg[24 + i * 4 + 1] = v.s1;
+        msg[24 + i * 4 + 2] = v.s2;
+        msg[24 + i * 4 + 3] = v.s3;
+    }
+    for (uint i = h4 * 4u; i < header_len; i++) {
+        msg[24 + i] = header_blob[i];
+    }
     for (int i = (int)(24u + header_len); i < 360; i++) msg[i] = 0;
 
     for (uint b = 0u; b < full_blocks; b++) {
         uchar block[64];
         int off = (int)(b * 64u);
+        #pragma unroll
         for (int i = 0; i < 64; i++) block[i] = msg[off + i];
         uint flags = (b == 0u) ? CHUNK_START : 0u;
         blake3_compress8(chain, block, 0u, 64u, flags, chain);
@@ -187,12 +216,14 @@ void blake3_inner(
         // chaining value. Use compress16 with ROOT and keep the first 8 words.
         uint out16[16];
         blake3_compress16(chain, block, 0u, tail_len, flags | ROOT, out16);
+        #pragma unroll
         for (int i = 0; i < 8; i++) {
             inner_out[i] = out16[i];
         }
     }
 }
 
+__attribute__((reqd_work_group_size(256, 1, 1)))
 __kernel void blake3_alph_mine(
     __global const uchar *header_blob,
     const uint header_len,
@@ -203,56 +234,72 @@ __kernel void blake3_alph_mine(
     __global volatile uint *found
 )
 {
-    if (*found) return;
+    // Prefetch target into private memory (registers) once so the comparison
+    // loop never reads global memory.
+    uchar tgt[32];
+    #pragma unroll
+    for (int i = 0; i < 32; i++) tgt[i] = target[i];
 
-    ulong candidate = base_nonce + (ulong)get_global_id(0);
+    // Batch nonce scanning: each work-item scans 8 nonces to amortize kernel
+    // launch overhead and improve GPU occupancy.
+    for (int batch = 0; batch < 8; batch++) {
+        // Early exit: bail out as soon as any work-item finds a solution.
+        if (*found) return;
 
-    uchar nonce[24];
-    nonce[0] = (uchar)(candidate >> 56);
-    nonce[1] = (uchar)(candidate >> 48);
-    nonce[2] = (uchar)(candidate >> 40);
-    nonce[3] = (uchar)(candidate >> 32);
-    nonce[4] = (uchar)(candidate >> 24);
-    nonce[5] = (uchar)(candidate >> 16);
-    nonce[6] = (uchar)(candidate >> 8);
-    nonce[7] = (uchar)(candidate);
-    for (int i = 8; i < 24; i++) nonce[i] = 0;
+        ulong candidate = base_nonce + (ulong)get_global_id(0) * 8uL + (ulong)batch;
 
-    uint inner[8];
-    blake3_inner(nonce, header_blob, header_len, inner);
+        uchar nonce[24];
+        nonce[0] = (uchar)(candidate >> 56);
+        nonce[1] = (uchar)(candidate >> 48);
+        nonce[2] = (uchar)(candidate >> 40);
+        nonce[3] = (uchar)(candidate >> 32);
+        nonce[4] = (uchar)(candidate >> 24);
+        nonce[5] = (uchar)(candidate >> 16);
+        nonce[6] = (uchar)(candidate >> 8);
+        nonce[7] = (uchar)(candidate);
+        #pragma unroll
+        for (int i = 8; i < 24; i++) nonce[i] = 0;
 
-    // Outer blake3(inner_hash) with ROOT flag.
-    uchar block[64];
-    for (int i = 0; i < 32; i++) {
-        block[i] = (uchar)(inner[i / 4] >> ((i % 4) * 8));
-    }
-    for (int i = 32; i < 64; i++) block[i] = 0;
+        uint inner[8];
+        blake3_inner(nonce, header_blob, header_len, inner);
 
-    uint chain[8];
-    for (int i = 0; i < 8; i++) chain[i] = BLAKE3_IV[i];
+        // Outer blake3(inner_hash) with ROOT flag.
+        uchar block[64];
+        #pragma unroll
+        for (int i = 0; i < 32; i++) {
+            block[i] = (uchar)(inner[i / 4] >> ((i % 4) * 8));
+        }
+        for (int i = 32; i < 64; i++) block[i] = 0;
 
-    uint out16[16];
-    blake3_compress16(chain, block, 0u, 32u, CHUNK_START | CHUNK_END | ROOT, out16);
+        uint chain[8];
+        #pragma unroll
+        for (int i = 0; i < 8; i++) chain[i] = BLAKE3_IV[i];
 
-    uchar hash[32];
-    for (int i = 0; i < 8; i++) {
-        hash[i * 4 + 0] = (uchar)(out16[i]);
-        hash[i * 4 + 1] = (uchar)(out16[i] >> 8);
-        hash[i * 4 + 2] = (uchar)(out16[i] >> 16);
-        hash[i * 4 + 3] = (uchar)(out16[i] >> 24);
-    }
+        uint out16[16];
+        blake3_compress16(chain, block, 0u, 32u, CHUNK_START | CHUNK_END | ROOT, out16);
 
-    int meets = 1;
-    for (int i = 0; i < 32; i++) {
-        if (hash[i] < target[i]) { meets = 1; break; }
-        if (hash[i] > target[i]) { meets = 0; break; }
-    }
+        uchar hash[32];
+        #pragma unroll
+        for (int i = 0; i < 8; i++) {
+            hash[i * 4 + 0] = (uchar)(out16[i]);
+            hash[i * 4 + 1] = (uchar)(out16[i] >> 8);
+            hash[i * 4 + 2] = (uchar)(out16[i] >> 16);
+            hash[i * 4 + 3] = (uchar)(out16[i] >> 24);
+        }
 
-    if (meets) {
-        uint old = atomic_xchg(found, 1u);
-        if (old == 0u) {
-            *output_nonce = candidate;
-            for (int i = 0; i < 32; i++) output_hash[i] = hash[i];
+        int meets = 1;
+        for (int i = 0; i < 32; i++) {
+            if (hash[i] < tgt[i]) { meets = 1; break; }
+            if (hash[i] > tgt[i]) { meets = 0; break; }
+        }
+
+        if (meets) {
+            uint old = atomic_xchg(found, 1u);
+            if (old == 0u) {
+                *output_nonce = candidate;
+                #pragma unroll
+                for (int i = 0; i < 32; i++) output_hash[i] = hash[i];
+            }
         }
     }
 }
@@ -268,6 +315,7 @@ __kernel void blake3_alph_mine(
 // little-endian 256-bit integer, so the kernel reverses the hash bytes
 // before comparing to the big-endian target bytes supplied by the pool.
 
+__attribute__((reqd_work_group_size(256, 1, 1)))
 __kernel void blake3_dcr_mine(
     __global const uchar *header_blob,
     const uint header_len,
@@ -278,79 +326,108 @@ __kernel void blake3_dcr_mine(
     __global volatile uint *found
 )
 {
-    if (*found) return;
+    // Prefetch target into private memory (registers) once so the comparison
+    // loop never reads global memory.
+    uchar tgt[32];
+    #pragma unroll
+    for (int i = 0; i < 32; i++) tgt[i] = target[i];
 
-    ulong nonce = base_nonce + (ulong)get_global_id(0);
+    // Batch nonce scanning: each work-item scans 8 nonces to amortize kernel
+    // launch overhead and improve GPU occupancy.
+    for (int batch = 0; batch < 8; batch++) {
+        // Early exit: bail out as soon as any work-item finds a solution.
+        if (*found) return;
 
-    // Build the full 180-byte DCR block header.
-    uchar full_header[180];
-    for (int i = 0; i < 180; i++) full_header[i] = 0;
-    uint copy_len = header_len < 180u ? header_len : 180u;
-    for (uint i = 0u; i < copy_len; i++) full_header[i] = header_blob[i];
+        ulong nonce = base_nonce + (ulong)get_global_id(0) * 8uL + (ulong)batch;
 
-    // Insert the 4-byte little-endian nonce at offset 140.
-    full_header[140] = (uchar)(nonce);
-    full_header[141] = (uchar)(nonce >> 8);
-    full_header[142] = (uchar)(nonce >> 16);
-    full_header[143] = (uchar)(nonce >> 24);
+        // Build the full 180-byte DCR block header.
+        uchar full_header[180];
+        for (int i = 0; i < 180; i++) full_header[i] = 0;
+        uint copy_len = header_len < 180u ? header_len : 180u;
 
-    const uint total_len = 180u;
-
-    // Blake3 hash of full_header[0..total_len]
-    uint chain[8];
-    for (int i = 0; i < 8; i++) chain[i] = BLAKE3_IV[i];
-
-    uint full_blocks = total_len / 64u;
-    uint tail_len = total_len % 64u;
-    if (tail_len == 0u && full_blocks > 0u) {
-        tail_len = 64u;
-        full_blocks -= 1u;
-    }
-
-    for (uint b = 0u; b < full_blocks; b++) {
-        uchar block[64];
-        int off = (int)(b * 64u);
-        for (int i = 0; i < 64; i++) block[i] = full_header[off + i];
-        uint flags = (b == 0u) ? CHUNK_START : 0u;
-        blake3_compress8(chain, block, 0u, 64u, flags, chain);
-    }
-
-    // Last/tail block
-    {
-        uchar block[64];
-        int off = (int)(full_blocks * 64u);
-        for (int i = 0; i < 64; i++) {
-            int idx = off + i;
-            block[i] = (idx < (int)total_len) ? full_header[idx] : 0;
+        // Vectorized header loading: use vload4 to load the header in 4-byte
+        // chunks instead of byte-by-byte, improving memory throughput.
+        uint c4 = copy_len / 4u;
+        #pragma unroll 8
+        for (uint i = 0u; i < c4; i++) {
+            uchar4 v = vload4(i, header_blob);
+            full_header[i * 4 + 0] = v.s0;
+            full_header[i * 4 + 1] = v.s1;
+            full_header[i * 4 + 2] = v.s2;
+            full_header[i * 4 + 3] = v.s3;
         }
-        uint flags = (full_blocks == 0u) ? (CHUNK_START | CHUNK_END) : CHUNK_END;
-        // Root compression: use compress16 to get full 16-word output
-        uint out16[16];
-        blake3_compress16(chain, block, 0u, tail_len, flags | ROOT, out16);
-
-        // Store hash as little-endian bytes to match DCP-0011 ordering.
-        uchar hash[32];
-        for (int i = 0; i < 8; i++) {
-            hash[i * 4 + 0] = (uchar)(out16[i]);
-            hash[i * 4 + 1] = (uchar)(out16[i] >> 8);
-            hash[i * 4 + 2] = (uchar)(out16[i] >> 16);
-            hash[i * 4 + 3] = (uchar)(out16[i] >> 24);
+        for (uint i = c4 * 4u; i < copy_len; i++) {
+            full_header[i] = header_blob[i];
         }
 
-        // DCR compares the hash as a little-endian integer against the
-        // big-endian target bytes: reverse the hash before comparing.
-        int meets = 1;
-        for (int i = 0; i < 32; i++) {
-            uchar h = hash[31 - i];
-            if (h < target[i]) { meets = 1; break; }
-            if (h > target[i]) { meets = 0; break; }
+        // Insert the 4-byte little-endian nonce at offset 140.
+        full_header[140] = (uchar)(nonce);
+        full_header[141] = (uchar)(nonce >> 8);
+        full_header[142] = (uchar)(nonce >> 16);
+        full_header[143] = (uchar)(nonce >> 24);
+
+        const uint total_len = 180u;
+
+        // Blake3 hash of full_header[0..total_len]
+        uint chain[8];
+        #pragma unroll
+        for (int i = 0; i < 8; i++) chain[i] = BLAKE3_IV[i];
+
+        uint full_blocks = total_len / 64u;
+        uint tail_len = total_len % 64u;
+        if (tail_len == 0u && full_blocks > 0u) {
+            tail_len = 64u;
+            full_blocks -= 1u;
         }
 
-        if (meets) {
-            uint old = atomic_xchg(found, 1u);
-            if (old == 0u) {
-                *output_nonce = nonce;
-                for (int i = 0; i < 32; i++) output_hash[i] = hash[i];
+        for (uint b = 0u; b < full_blocks; b++) {
+            uchar block[64];
+            int off = (int)(b * 64u);
+            #pragma unroll
+            for (int i = 0; i < 64; i++) block[i] = full_header[off + i];
+            uint flags = (b == 0u) ? CHUNK_START : 0u;
+            blake3_compress8(chain, block, 0u, 64u, flags, chain);
+        }
+
+        // Last/tail block
+        {
+            uchar block[64];
+            int off = (int)(full_blocks * 64u);
+            for (int i = 0; i < 64; i++) {
+                int idx = off + i;
+                block[i] = (idx < (int)total_len) ? full_header[idx] : 0;
+            }
+            uint flags = (full_blocks == 0u) ? (CHUNK_START | CHUNK_END) : CHUNK_END;
+            // Root compression: use compress16 to get full 16-word output
+            uint out16[16];
+            blake3_compress16(chain, block, 0u, tail_len, flags | ROOT, out16);
+
+            // Store hash as little-endian bytes to match DCP-0011 ordering.
+            uchar hash[32];
+            #pragma unroll
+            for (int i = 0; i < 8; i++) {
+                hash[i * 4 + 0] = (uchar)(out16[i]);
+                hash[i * 4 + 1] = (uchar)(out16[i] >> 8);
+                hash[i * 4 + 2] = (uchar)(out16[i] >> 16);
+                hash[i * 4 + 3] = (uchar)(out16[i] >> 24);
+            }
+
+            // DCR compares the hash as a little-endian integer against the
+            // big-endian target bytes: reverse the hash before comparing.
+            int meets = 1;
+            for (int i = 0; i < 32; i++) {
+                uchar h = hash[31 - i];
+                if (h < tgt[i]) { meets = 1; break; }
+                if (h > tgt[i]) { meets = 0; break; }
+            }
+
+            if (meets) {
+                uint old = atomic_xchg(found, 1u);
+                if (old == 0u) {
+                    *output_nonce = nonce;
+                    #pragma unroll
+                    for (int i = 0; i < 32; i++) output_hash[i] = hash[i];
+                }
             }
         }
     }

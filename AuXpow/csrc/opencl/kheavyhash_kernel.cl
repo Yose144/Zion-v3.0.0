@@ -208,7 +208,16 @@ __constant const uint CUSTOM_HEAVY_HASH_LEN = 9;
 //   output_nonce  — single u64, written when a solution is found
 //   output_hash   — 32-byte hash of the winning nonce
 //   found         — atomic flag: 0 = not found, 1 = found
-__kernel void kheavyhash_mine(
+//
+// Optimizations:
+//   1. Batch nonce scanning — each work-item scans 8 nonces
+//   2. reqd_work_group_size(256, 1, 1) hint for occupancy tuning
+//   3. Early exit — *found check at top of each batch iteration
+//   4. Matrix in __local memory — copied once per work-group
+//   5. Vectorized XOR — ulong4 vload4/vstore4 for product^=pow_hash
+//   6. Prefetched header — pre_pow_hash loaded to private memory once
+__kernel __attribute__((reqd_work_group_size(256, 1, 1)))
+void kheavyhash_mine(
     __global const uchar *pre_pow_hash,   // 32 bytes
     const ulong timestamp,
     __global const uchar *target,          // 32 bytes
@@ -219,65 +228,92 @@ __kernel void kheavyhash_mine(
     __global volatile uint *found
 )
 {
-    if (*found) return;
+    // ── Optimization 6: Prefetch header into private memory once ──
+    uchar hdr[32];
+    for (int i = 0; i < 32; i++) hdr[i] = pre_pow_hash[i];
 
-    ulong nonce = base_nonce + (ulong)get_global_id(0);
+    // Prefetch target into private memory once (read every batch iteration)
+    uchar tgt[32];
+    for (int i = 0; i < 32; i++) tgt[i] = target[i];
 
-    // ── Step 1: PowHash = cSHAKE256("ProofOfWorkHash")(pre_pow_hash ‖ timestamp_le ‖ 32 zero bytes ‖ nonce_le)
-    // Input is 32 + 8 + 32 + 8 = 80 bytes.
-    // We build it in a private buffer, then call cshake256_hash_private.
-    uchar pow_input[80];
-    for (int i = 0; i < 32; i++) pow_input[i] = pre_pow_hash[i];
-    for (int i = 0; i < 8; i++) pow_input[32 + i] = (uchar)(timestamp >> (i*8));
-    for (int i = 0; i < 32; i++) pow_input[40 + i] = 0;
-    for (int i = 0; i < 8; i++) pow_input[72 + i] = (uchar)(nonce >> (i*8));
-
-    uchar pow_hash[32];
-    cshake256_custom(pow_input, 80, CUSTOM_POW_HASH, CUSTOM_POW_HASH_LEN, pow_hash);
-
-    // ── Step 2: Matrix multiply
-    // Expand PowHash to 64 nibbles: vec[2*i] = high nibble, vec[2*i+1] = low nibble
-    uchar vec[64];
-    for (int i = 0; i < 32; i++) {
-        vec[2 * i]     = pow_hash[i] >> 4;
-        vec[2 * i + 1] = pow_hash[i] & 0x0F;
-    }
-
-    // Matrix-vector multiply: for each output byte i (0..31):
-    //   sum1 = Σ matrix[2*i][j]   * vec[j]
-    //   sum2 = Σ matrix[2*i+1][j] * vec[j]
-    //   product[i] = ((sum1 >> 10) << 4) | (sum2 >> 10)
-    uchar product[32];
-    for (int i = 0; i < 32; i++) {
-        uint sum1 = 0;
-        uint sum2 = 0;
-        for (int j = 0; j < 64; j++) {
-            sum1 += (uint)matrix[(2 * i) * 64 + j]     * (uint)vec[j];
-            sum2 += (uint)matrix[(2 * i + 1) * 64 + j] * (uint)vec[j];
+    // ── Optimization 4: Copy 64×64 matrix to __local memory once per work-group ──
+    // 4096 u16 values / 256 work-items = 16 values per work-item
+    __local ushort lmatrix[4096];
+    {
+        uint lid = get_local_id(0);
+        for (int i = 0; i < 16; i++) {
+            uint idx = lid * 16 + i;
+            lmatrix[idx] = matrix[idx];
         }
-        product[i] = (uchar)(((sum1 >> 10) << 4) | (sum2 >> 10));
     }
+    barrier(CLK_LOCAL_MEM_FENCE);
 
-    // XOR product with original PowHash
-    for (int i = 0; i < 32; i++)
-        product[i] ^= pow_hash[i];
+    // ── Optimization 1: Batch nonce scanning — 8 nonces per work-item ──
+    for (int batch = 0; batch < 8; batch++) {
+        // ── Optimization 3: Early exit at top of each batch iteration ──
+        if (*found) return;
 
-    // ── Step 3: HeavyHash = cSHAKE256("HeavyHash")(product)
-    uchar hash[32];
-    cshake256_custom(product, 32, CUSTOM_HEAVY_HASH, CUSTOM_HEAVY_HASH_LEN, hash);
+        ulong nonce = base_nonce + (ulong)get_global_id(0) * 8 + (ulong)batch;
 
-    // ── Step 4: Check target (big-endian byte comparison: hash <= target)
-    int meets = 1;
-    for (int i = 0; i < 32; i++) {
-        if (hash[i] < target[i]) { meets = 1; break; }
-        if (hash[i] > target[i]) { meets = 0; break; }
-    }
+        // ── Step 1: PowHash = cSHAKE256("ProofOfWorkHash")(pre_pow_hash ‖ timestamp_le ‖ 32 zero bytes ‖ nonce_le)
+        // Input is 32 + 8 + 32 + 8 = 80 bytes.
+        uchar pow_input[80];
+        for (int i = 0; i < 32; i++) pow_input[i] = hdr[i];
+        for (int i = 0; i < 8; i++) pow_input[32 + i] = (uchar)(timestamp >> (i * 8));
+        for (int i = 0; i < 32; i++) pow_input[40 + i] = 0;
+        for (int i = 0; i < 8; i++) pow_input[72 + i] = (uchar)(nonce >> (i * 8));
 
-    if (meets) {
-        uint old = atomic_xchg(found, 1u);
-        if (old == 0u) {
-            *output_nonce = nonce;
-            for (int i = 0; i < 32; i++) output_hash[i] = hash[i];
+        uchar pow_hash[32];
+        cshake256_custom(pow_input, 80, CUSTOM_POW_HASH, CUSTOM_POW_HASH_LEN, pow_hash);
+
+        // ── Step 2: Matrix multiply
+        // Expand PowHash to 64 nibbles: vec[2*i] = high nibble, vec[2*i+1] = low nibble
+        uchar vec[64];
+        for (int i = 0; i < 32; i++) {
+            vec[2 * i]     = pow_hash[i] >> 4;
+            vec[2 * i + 1] = pow_hash[i] & 0x0F;
+        }
+
+        // Matrix-vector multiply: for each output byte i (0..31):
+        //   sum1 = Σ matrix[2*i][j]   * vec[j]
+        //   sum2 = Σ matrix[2*i+1][j] * vec[j]
+        //   product[i] = ((sum1 >> 10) << 4) | (sum2 >> 10)
+        // Reads from __local lmatrix instead of __global matrix.
+        uchar product[32];
+        for (int i = 0; i < 32; i++) {
+            uint sum1 = 0;
+            uint sum2 = 0;
+            for (int j = 0; j < 64; j++) {
+                sum1 += (uint)lmatrix[(2 * i) * 64 + j]     * (uint)vec[j];
+                sum2 += (uint)lmatrix[(2 * i + 1) * 64 + j] * (uint)vec[j];
+            }
+            product[i] = (uchar)(((sum1 >> 10) << 4) | (sum2 >> 10));
+        }
+
+        // ── Optimization 5: Vectorized XOR — product ^= pow_hash via ulong4 ──
+        // 32 bytes = 4 × 8-byte ulongs = one ulong4
+        ulong4 pv = vload4(0, (const __private ulong *)product);
+        ulong4 hv = vload4(0, (const __private ulong *)pow_hash);
+        pv ^= hv;
+        vstore4(pv, 0, (__private ulong *)product);
+
+        // ── Step 3: HeavyHash = cSHAKE256("HeavyHash")(product)
+        uchar hash[32];
+        cshake256_custom(product, 32, CUSTOM_HEAVY_HASH, CUSTOM_HEAVY_HASH_LEN, hash);
+
+        // ── Step 4: Check target (big-endian byte comparison: hash <= target)
+        int meets = 1;
+        for (int i = 0; i < 32; i++) {
+            if (hash[i] < tgt[i]) { meets = 1; break; }
+            if (hash[i] > tgt[i]) { meets = 0; break; }
+        }
+
+        if (meets) {
+            uint old = atomic_xchg(found, 1u);
+            if (old == 0u) {
+                *output_nonce = nonce;
+                for (int i = 0; i < 32; i++) output_hash[i] = hash[i];
+            }
         }
     }
 }
