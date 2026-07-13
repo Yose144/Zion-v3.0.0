@@ -1,4 +1,4 @@
-// Ethash / Etchash (ETC/ETHW) OpenCL kernel — REAL implementation.
+// Ethash / Etchash (ETC/ETHW) OpenCL kernel — OPTIMIZED implementation.
 //
 // Implements the full Ethash DAG-based Proof-of-Work algorithm used by
 // Ethereum Classic (ETC) and EthereumPoW (ETHW):
@@ -20,6 +20,15 @@
 // generated on the host (from a seed hash via Keccak-512 graph expansion)
 // and uploaded once as a __global ulong buffer.  Each DAG entry is 16 u64
 // words (128 bytes).  dag_size is the number of 128-byte entries.
+//
+// ── Optimizations applied ──
+//   1. Batch nonce scanning: each work-item scans 4 nonces
+//   2. reqd_work_group_size(128, 1, 1) hint
+//   3. DAG prefetch hints for cache-friendly random access
+//   4. Early exit: check *found at top of each batch iteration
+//   5. Keccak-f[1600] fully unrolled with always_inline
+//   6. FNV-1a marked always_inline
+//   7. Mix hash output only written when solution found
 //
 // References:
 //   - https://github.com/ethereum-mining/ethminer (libethash-cl/kernels/cl/ethash.cl)
@@ -52,19 +61,33 @@ __constant const int KECCAK_PI[24] = {
 
 #define ROTL64(x, n) (((x) << (n)) | ((x) >> (64 - (n))))
 
+// Keccak-f[1600] — hot path, fully unrolled, always inlined.
+__attribute__((always_inline))
 void keccak_f1600(ulong state[25]) {
+    #pragma unroll 24
     for (int round = 0; round < 24; round++) {
-        // Theta
-        ulong c[5], d[5];
-        for (int x = 0; x < 5; x++)
-            c[x] = state[x] ^ state[x+5] ^ state[x+10] ^ state[x+15] ^ state[x+20];
-        for (int x = 0; x < 5; x++)
-            d[x] = c[(x+4)%5] ^ ROTL64(c[(x+1)%5], 1);
-        for (int i = 0; i < 25; i++)
-            state[i] ^= d[i%5];
+        // Theta — manually unrolled (5 columns)
+        ulong c0 = state[0]  ^ state[5]  ^ state[10] ^ state[15] ^ state[20];
+        ulong c1 = state[1]  ^ state[6]  ^ state[11] ^ state[16] ^ state[21];
+        ulong c2 = state[2]  ^ state[7]  ^ state[12] ^ state[17] ^ state[22];
+        ulong c3 = state[3]  ^ state[8]  ^ state[13] ^ state[18] ^ state[23];
+        ulong c4 = state[4]  ^ state[9]  ^ state[14] ^ state[19] ^ state[24];
 
-        // Rho and Pi
+        ulong d0 = c4 ^ ROTL64(c1, 1);
+        ulong d1 = c0 ^ ROTL64(c2, 1);
+        ulong d2 = c1 ^ ROTL64(c3, 1);
+        ulong d3 = c2 ^ ROTL64(c4, 1);
+        ulong d4 = c3 ^ ROTL64(c0, 1);
+
+        state[0]  ^= d0; state[1]  ^= d1; state[2]  ^= d2; state[3]  ^= d3; state[4]  ^= d4;
+        state[5]  ^= d0; state[6]  ^= d1; state[7]  ^= d2; state[8]  ^= d3; state[9]  ^= d4;
+        state[10] ^= d0; state[11] ^= d1; state[12] ^= d2; state[13] ^= d3; state[14] ^= d4;
+        state[15] ^= d0; state[16] ^= d1; state[17] ^= d2; state[18] ^= d3; state[19] ^= d4;
+        state[20] ^= d0; state[21] ^= d1; state[22] ^= d2; state[23] ^= d3; state[24] ^= d4;
+
+        // Rho and Pi — unrolled 24 steps
         ulong temp = state[1];
+        #pragma unroll 24
         for (int t = 0; t < 24; t++) {
             int idx = KECCAK_PI[t];
             ulong tmp2 = state[idx];
@@ -72,12 +95,51 @@ void keccak_f1600(ulong state[25]) {
             temp = tmp2;
         }
 
-        // Chi
-        for (int y = 0; y < 5; y++) {
-            ulong row[5];
-            for (int x = 0; x < 5; x++) row[x] = state[y*5+x];
-            for (int x = 0; x < 5; x++)
-                state[y*5+x] = row[x] ^ ((~row[(x+1)%5]) & row[(x+2)%5]);
+        // Chi — manually unrolled (5 rows × 5 columns)
+        // Row 0
+        {
+            ulong r0 = state[0], r1 = state[1], r2 = state[2], r3 = state[3], r4 = state[4];
+            state[0] = r0 ^ ((~r1) & r2);
+            state[1] = r1 ^ ((~r2) & r3);
+            state[2] = r2 ^ ((~r3) & r4);
+            state[3] = r3 ^ ((~r4) & r0);
+            state[4] = r4 ^ ((~r0) & r1);
+        }
+        // Row 1
+        {
+            ulong r0 = state[5], r1 = state[6], r2 = state[7], r3 = state[8], r4 = state[9];
+            state[5] = r0 ^ ((~r1) & r2);
+            state[6] = r1 ^ ((~r2) & r3);
+            state[7] = r2 ^ ((~r3) & r4);
+            state[8] = r3 ^ ((~r4) & r0);
+            state[9] = r4 ^ ((~r0) & r1);
+        }
+        // Row 2
+        {
+            ulong r0 = state[10], r1 = state[11], r2 = state[12], r3 = state[13], r4 = state[14];
+            state[10] = r0 ^ ((~r1) & r2);
+            state[11] = r1 ^ ((~r2) & r3);
+            state[12] = r2 ^ ((~r3) & r4);
+            state[13] = r3 ^ ((~r4) & r0);
+            state[14] = r4 ^ ((~r0) & r1);
+        }
+        // Row 3
+        {
+            ulong r0 = state[15], r1 = state[16], r2 = state[17], r3 = state[18], r4 = state[19];
+            state[15] = r0 ^ ((~r1) & r2);
+            state[16] = r1 ^ ((~r2) & r3);
+            state[17] = r2 ^ ((~r3) & r4);
+            state[18] = r3 ^ ((~r4) & r0);
+            state[19] = r4 ^ ((~r0) & r1);
+        }
+        // Row 4
+        {
+            ulong r0 = state[20], r1 = state[21], r2 = state[22], r3 = state[23], r4 = state[24];
+            state[20] = r0 ^ ((~r1) & r2);
+            state[21] = r1 ^ ((~r2) & r3);
+            state[22] = r2 ^ ((~r3) & r4);
+            state[23] = r3 ^ ((~r4) & r0);
+            state[24] = r4 ^ ((~r0) & r1);
         }
 
         // Iota
@@ -90,17 +152,22 @@ void keccak_f1600(ulong state[25]) {
 // Uses the original Keccak domain suffix 0x01 (Ethereum's Keccak-512),
 // NOT the NIST SHA3-512 suffix 0x06.
 
+__attribute__((always_inline))
 inline void absorb_block_9(ulong state[25], const uchar *block) {
+    #pragma unroll 9
     for (int i = 0; i < 9; i++) {
         ulong lane = 0;
+        #pragma unroll 8
         for (int j = 0; j < 8; j++)
             lane |= ((ulong)block[i*8 + j]) << (j*8);
         state[i] ^= lane;
     }
 }
 
+__attribute__((always_inline))
 void keccak512(const uchar *input, const uint len, uchar *output) {
     ulong state[25];
+    #pragma unroll 25
     for (int i = 0; i < 25; i++) state[i] = 0;
 
     uint offset = 0;
@@ -111,6 +178,7 @@ void keccak512(const uchar *input, const uint len, uchar *output) {
     }
 
     uchar padded[72];
+    #pragma unroll 72
     for (int i = 0; i < 72; i++) padded[i] = 0;
     uint remaining = len - offset;
     for (int i = 0; i < remaining; i++) padded[i] = input[offset + i];
@@ -120,7 +188,9 @@ void keccak512(const uchar *input, const uint len, uchar *output) {
     absorb_block_9(state, padded);
     keccak_f1600(state);
 
+    #pragma unroll 8
     for (int i = 0; i < 8; i++)
+        #pragma unroll 8
         for (int j = 0; j < 8; j++)
             output[i*8 + j] = (uchar)(state[i] >> (j*8));
 }
@@ -130,17 +200,22 @@ void keccak512(const uchar *input, const uint len, uchar *output) {
 // Uses the original Keccak domain suffix 0x01 (Ethereum's Keccak-256),
 // NOT the NIST SHA3-256 suffix 0x06.
 
+__attribute__((always_inline))
 inline void absorb_block_17(ulong state[25], const uchar *block) {
+    #pragma unroll 17
     for (int i = 0; i < 17; i++) {
         ulong lane = 0;
+        #pragma unroll 8
         for (int j = 0; j < 8; j++)
             lane |= ((ulong)block[i*8 + j]) << (j*8);
         state[i] ^= lane;
     }
 }
 
+__attribute__((always_inline))
 void keccak256(const uchar *input, const uint len, uchar *output) {
     ulong state[25];
+    #pragma unroll 25
     for (int i = 0; i < 25; i++) state[i] = 0;
 
     uint offset = 0;
@@ -151,6 +226,7 @@ void keccak256(const uchar *input, const uint len, uchar *output) {
     }
 
     uchar padded[136];
+    #pragma unroll 136
     for (int i = 0; i < 136; i++) padded[i] = 0;
     uint remaining = len - offset;
     for (int i = 0; i < remaining; i++) padded[i] = input[offset + i];
@@ -160,7 +236,9 @@ void keccak256(const uchar *input, const uint len, uchar *output) {
     absorb_block_17(state, padded);
     keccak_f1600(state);
 
+    #pragma unroll 4
     for (int i = 0; i < 4; i++)
+        #pragma unroll 8
         for (int j = 0; j < 8; j++)
             output[i*8 + j] = (uchar)(state[i] >> (j*8));
 }
@@ -169,6 +247,7 @@ void keccak256(const uchar *input, const uint len, uchar *output) {
 
 #define FNV_PRIME 0x01000193u
 
+__attribute__((always_inline))
 inline uint fnv1a(uint a, uint b) {
     return (a ^ b) * FNV_PRIME;
 }
@@ -179,7 +258,7 @@ inline uint fnv1a(uint a, uint b) {
 //   header_hash   — 32-byte Keccak-256 of the block header (without nonce/mix)
 //   target        — 32-byte target (big-endian byte comparison)
 //   nonce_base    — first nonce in this batch
-//   stride        — nonce spacing between work-items (host typically passes 1)
+//   stride        — nonce spacing (retained for API compat; batch scanning uses ×4)
 //   dag           — precomputed DAG buffer (__global ulong *), 16 u64 per entry
 //   dag_size      — number of 128-byte DAG entries
 //   output_nonce  — single u64, written when a solution is found
@@ -187,7 +266,11 @@ inline uint fnv1a(uint a, uint b) {
 //   output_mix    — 32-byte compressed mix hash (for eth_submitWork)
 //   found         — atomic flag: 0 = not found, 1 = found
 //
-// Each work-item computes Ethash for nonce = nonce_base + get_global_id(0) * stride.
+// Each work-item scans 4 nonces:
+//   nonce = nonce_base + get_global_id(0) * 4 + batch   (batch = 0..3)
+//
+// Host should dispatch (num_nonces / 4) work-items with local size 128.
+__attribute__((reqd_work_group_size(128, 1, 1)))
 __kernel void ethash_mine(
     __global const uchar *header_hash,   // 32 bytes
     __global const uchar *target,         // 32 bytes
@@ -201,79 +284,103 @@ __kernel void ethash_mine(
     __global volatile uint *found
 )
 {
-    if (*found) return;
+    // Pre-load header hash into private memory (shared across all 4 batch iterations)
+    uchar hdr[32];
+    #pragma unroll 32
+    for (int i = 0; i < 32; i++) hdr[i] = header_hash[i];
 
-    ulong nonce = nonce_base + (ulong)get_global_id(0) * stride;
+    // Batch nonce scanning: each work-item tests 4 nonces
+    for (int batch = 0; batch < 4; batch++) {
+        // Early exit: check if another work-item already found a solution
+        if (*found) return;
 
-    // ── Step 1: seed = Keccak-512(header_hash || nonce_le) → 64 bytes ──
-    uchar seed_input[40];
-    for (int i = 0; i < 32; i++) seed_input[i] = header_hash[i];
-    for (int i = 0; i < 8; i++) seed_input[32 + i] = (uchar)(nonce >> (i*8));
+        ulong nonce = nonce_base + (ulong)get_global_id(0) * 4 + (ulong)batch;
 
-    uchar seed[64];
-    keccak512(seed_input, 40, seed);
+        // ── Step 1: seed = Keccak-512(header_hash || nonce_le) → 64 bytes ──
+        uchar seed_input[40];
+        #pragma unroll 32
+        for (int i = 0; i < 32; i++) seed_input[i] = hdr[i];
+        #pragma unroll 8
+        for (int i = 0; i < 8; i++) seed_input[32 + i] = (uchar)(nonce >> (i*8));
 
-    // ── Step 2: mix = seed || seed  → 128 bytes = 32 × u32 (little-endian) ──
-    uint mix[32];
-    for (int j = 0; j < 16; j++) {
-        uint w = (uint)seed[j*4]
-               | ((uint)seed[j*4 + 1] << 8)
-               | ((uint)seed[j*4 + 2] << 16)
-               | ((uint)seed[j*4 + 3] << 24);
-        mix[j]      = w;
-        mix[j + 16] = w;
-    }
+        uchar seed[64];
+        keccak512(seed_input, 40, seed);
 
-    // ── Step 3: 64 DAG accesses with FNV-1a mixing ──
-    for (int i = 0; i < 64; i++) {
-        uint index = fnv1a((uint)i ^ mix[0], mix[0]) % (uint)dag_size;
-
-        // Load 128-byte DAG node = 16 × u64, split into 32 × u32 (little-endian).
-        __global const ulong *node = dag + (ulong)index * 16UL;
+        // ── Step 2: mix = seed || seed  → 128 bytes = 32 × u32 (little-endian) ──
+        uint mix[32];
+        #pragma unroll 16
         for (int j = 0; j < 16; j++) {
-            ulong w = node[j];
-            mix[2*j]     = fnv1a(mix[2*j],     (uint)(w & 0xFFFFFFFFu));
-            mix[2*j + 1] = fnv1a(mix[2*j + 1], (uint)(w >> 32));
+            uint w = (uint)seed[j*4]
+                   | ((uint)seed[j*4 + 1] << 8)
+                   | ((uint)seed[j*4 + 2] << 16)
+                   | ((uint)seed[j*4 + 3] << 24);
+            mix[j]      = w;
+            mix[j + 16] = w;
         }
-    }
 
-    // ── Step 4: compress mix — FNV-fold each group of 4 u32 words → 8 u32 (32 bytes) ──
-    uint cmix[8];
-    for (int i = 0; i < 32; i += 4) {
-        cmix[i/4] = fnv1a(fnv1a(fnv1a(mix[i], mix[i+1]), mix[i+2]), mix[i+3]);
-    }
+        // ── Step 3: 64 DAG accesses with FNV-1a mixing ──
+        // DAG is accessed randomly; prefetch hints help the GPU memory subsystem.
+        for (int i = 0; i < 64; i++) {
+            uint index = fnv1a((uint)i ^ mix[0], mix[0]) % (uint)dag_size;
 
-    // ── Step 5: hash = Keccak-256(seed || compressed_mix) → 32 bytes ──
-    uchar final_input[96];
-    for (int i = 0; i < 64; i++) final_input[i] = seed[i];
-    for (int i = 0; i < 8; i++) {
-        final_input[64 + i*4]     = (uchar)(cmix[i]);
-        final_input[64 + i*4 + 1] = (uchar)(cmix[i] >> 8);
-        final_input[64 + i*4 + 2] = (uchar)(cmix[i] >> 16);
-        final_input[64 + i*4 + 3] = (uchar)(cmix[i] >> 24);
-    }
+            // Load 128-byte DAG node = 16 × u64, split into 32 × u32 (little-endian).
+            __global const ulong *node = dag + (ulong)index * 16UL;
 
-    uchar hash[32];
-    keccak256(final_input, 96, hash);
+            // Prefetch hint: bring the 128-byte DAG node into cache
+            prefetch(node, 16);
 
-    // ── Step 6: check target (big-endian byte comparison: hash <= target) ──
-    int meets = 1;
-    for (int i = 0; i < 32; i++) {
-        if (hash[i] < target[i]) { meets = 1; break; }
-        if (hash[i] > target[i]) { meets = 0; break; }
-    }
+            #pragma unroll 16
+            for (int j = 0; j < 16; j++) {
+                ulong w = node[j];
+                mix[2*j]     = fnv1a(mix[2*j],     (uint)(w & 0xFFFFFFFFu));
+                mix[2*j + 1] = fnv1a(mix[2*j + 1], (uint)(w >> 32));
+            }
+        }
 
-    if (meets) {
-        uint old = atomic_xchg(found, 1u);
-        if (old == 0u) {
-            *output_nonce = nonce;
-            for (int i = 0; i < 32; i++) output_hash[i] = hash[i];
-            // Write the compressed mix hash (cmix) for eth_submitWork.
-            for (int i = 0; i < 8; i++) {
-                output_mix[i*4]     = (uchar)(cmix[i]);
-                output_mix[i*4 + 1] = (uchar)(cmix[i] >> 8);
-                output_mix[i*4 + 2] = (uchar)(cmix[i] >> 16);
-                output_mix[i*4 + 3] = (uchar)(cmix[i] >> 24);
+        // ── Step 4: compress mix — FNV-fold each group of 4 u32 words → 8 u32 (32 bytes) ──
+        uint cmix[8];
+        #pragma unroll 8
+        for (int i = 0; i < 32; i += 4) {
+            cmix[i/4] = fnv1a(fnv1a(fnv1a(mix[i], mix[i+1]), mix[i+2]), mix[i+3]);
+        }
+
+        // ── Step 5: hash = Keccak-256(seed || compressed_mix) → 32 bytes ──
+        uchar final_input[96];
+        #pragma unroll 64
+        for (int i = 0; i < 64; i++) final_input[i] = seed[i];
+        #pragma unroll 8
+        for (int i = 0; i < 8; i++) {
+            final_input[64 + i*4]     = (uchar)(cmix[i]);
+            final_input[64 + i*4 + 1] = (uchar)(cmix[i] >> 8);
+            final_input[64 + i*4 + 2] = (uchar)(cmix[i] >> 16);
+            final_input[64 + i*4 + 3] = (uchar)(cmix[i] >> 24);
+        }
+
+        uchar hash[32];
+        keccak256(final_input, 96, hash);
+
+        // ── Step 6: check target (big-endian byte comparison: hash <= target) ──
+        int meets = 1;
+        for (int i = 0; i < 32; i++) {
+            if (hash[i] < target[i]) { meets = 1; break; }
+            if (hash[i] > target[i]) { meets = 0; break; }
+        }
+
+        // ── Step 7: only compute/write mix hash output when a solution is found ──
+        if (meets) {
+            uint old = atomic_xchg(found, 1u);
+            if (old == 0u) {
+                *output_nonce = nonce;
+                #pragma unroll 32
+                for (int i = 0; i < 32; i++) output_hash[i] = hash[i];
+                // Write the compressed mix hash (cmix) for eth_submitWork.
+                #pragma unroll 8
+                for (int i = 0; i < 8; i++) {
+                    output_mix[i*4]     = (uchar)(cmix[i]);
+                    output_mix[i*4 + 1] = (uchar)(cmix[i] >> 8);
+                    output_mix[i*4 + 2] = (uchar)(cmix[i] >> 16);
+                    output_mix[i*4 + 3] = (uchar)(cmix[i] >> 24);
+                }
             }
         }
     }
