@@ -314,6 +314,57 @@ impl StreamWeights {
             .unwrap_or(0.0)
     }
 
+    /// Parse a compact stream-weights string as sent by the pool in job messages.
+    ///
+    /// Format: `source:weight,source:weight,...` where source is the canonical
+    /// `RevenueSource::as_str()` name and weight is either a percentage (0-100)
+    /// or a normalised fraction (0-1).  Missing sources default to 0.0.
+    pub fn parse(s: &str) -> Result<Self, String> {
+        let mut weights: Vec<StreamWeight> = Vec::new();
+        let mut seen = std::collections::HashSet::new();
+        for part in s.split(',') {
+            let part = part.trim();
+            if part.is_empty() {
+                continue;
+            }
+            let (name, value) = part.split_once(':').ok_or_else(|| {
+                format!("invalid stream weight segment (expected name:value): {}", part)
+            })?;
+            let source = match name.trim().to_ascii_lowercase().as_str() {
+                "zion" => RevenueSource::Zion,
+                "keccak_bonus" | "keccak" => RevenueSource::KeccakBonus,
+                "sha3_bonus" | "sha3" => RevenueSource::Sha3Bonus,
+                "ncl_ai" | "ncl" => RevenueSource::NclAi,
+                "deeksha_lite" | "lite" => RevenueSource::DeekshaLite,
+                "thermal_bonus" | "thermal" => RevenueSource::ThermalBonus,
+                "profit_switch" => RevenueSource::ProfitSwitch,
+                "blake3_external" | "blake3" => RevenueSource::Blake3External,
+                "kheavyhash_external" | "kheavyhash" => RevenueSource::KHeavyHashExternal,
+                "autolykos_external" | "autolykos" => RevenueSource::AutolykosExternal,
+                "kawpow_external" | "kawpow" => RevenueSource::KawPowExternal,
+                "ethash_external" | "ethash" => RevenueSource::EthashExternal,
+                other => return Err(format!("unknown revenue source: {}", other)),
+            };
+            let raw: f64 = value
+                .trim()
+                .parse()
+                .map_err(|e| format!("invalid weight value for {}: {}", name, e))?;
+            let weight = if raw > 1.0 { raw / 100.0 } else { raw };
+            if !(0.0..=1.0).contains(&weight) {
+                return Err(format!("weight for {} out of range: {}", name, raw));
+            }
+            if !seen.insert(source) {
+                return Err(format!("duplicate revenue source: {}", name));
+            }
+            weights.push(StreamWeight { source, weight });
+        }
+        Ok(Self {
+            weights,
+            snapshot_ts: 0,
+            live: false,
+        })
+    }
+
     /// Map stream weights to pipeline step work-unit multipliers.
     ///
     /// Each DeekshaStep maps to a revenue stream.  The multiplier tells
@@ -463,6 +514,271 @@ impl StreamProfitConfig {
                 _ => None,
             })
             .collect()
+    }
+}
+
+// ============================================================================
+// LIVE API FETCHING
+// ============================================================================
+
+/// Fetch a live profit snapshot from an external API.
+///
+/// Currently supports:
+/// - "whattomine" — WhatToMine coins JSON API
+/// - "coingecko" — CoinGecko simple price API
+/// - "fallback" or any other — static fallback estimates
+///
+/// On any API error, falls back to static estimates.
+pub fn fetch_profit_snapshot(config: &StreamProfitConfig) -> StreamProfitSnapshot {
+    match config.api_provider.as_str() {
+        "whattomine" => fetch_whattomine(config),
+        "coingecko" => fetch_coingecko(config),
+        _ => StreamProfitSnapshot::fallback(),
+    }
+}
+
+/// Fetch profitability from WhatToMine API.
+///
+/// WhatToMine provides `https://whattomine.com/coins.json` with revenue
+/// estimates per coin. We map these to Deeksha Chv3 internal streams:
+/// - Keccak/SHA3 coins → KeccakBonus / Sha3Bonus streams
+/// - NCL/AI → NclAi stream (estimated from GPU compute market)
+/// - ZION → Zion stream (block reward estimate)
+fn fetch_whattomine(config: &StreamProfitConfig) -> StreamProfitSnapshot {
+    let url = if config.api_url.is_empty() {
+        "https://whattomine.com/coins.json"
+    } else {
+        &config.api_url
+    };
+
+    // Use a blocking HTTP client with a short timeout.
+    // The background thread is not async, so we use reqwest::blocking.
+    // If reqwest::blocking is not available, fall back to static estimates.
+    match fetch_url_blocking(url, 10) {
+        Ok(body) => parse_whattomine_response(&body),
+        Err(e) => {
+            eprintln!("stream_profit: whattomine fetch error: {e}");
+            let mut snap = StreamProfitSnapshot::fallback();
+            snap.live = false;
+            snap
+        }
+    }
+}
+
+/// Fetch prices from CoinGecko API.
+fn fetch_coingecko(config: &StreamProfitConfig) -> StreamProfitSnapshot {
+    let url = if config.api_url.is_empty() {
+        "https://api.coingecko.com/api/v3/simple/price?ids=decred,alephium,kaspa,ergo,ravencoin,ethereum-classic,monero,flux&vs_currencies=usd"
+    } else {
+        &config.api_url
+    };
+
+    match fetch_url_blocking(url, 10) {
+        Ok(body) => parse_coingecko_response(&body),
+        Err(e) => {
+            eprintln!("stream_profit: coingecko fetch error: {e}");
+            let mut snap = StreamProfitSnapshot::fallback();
+            snap.live = false;
+            snap
+        }
+    }
+}
+
+/// Fetch a URL with a timeout using a blocking reqwest client.
+///
+/// Returns the response body as a string, or an error on failure.
+fn fetch_url_blocking(url: &str, timeout_secs: u64) -> Result<String, String> {
+    // We use a tokio runtime here because the pool already has tokio
+    // available, and reqwest 0.12 requires it. The background thread
+    // can afford to block briefly.
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .map_err(|e| format!("tokio runtime error: {e}"))?;
+
+    rt.block_on(async move {
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(timeout_secs))
+            .user_agent("ZION-Pool/3.0.4")
+            .build()
+            .map_err(|e| format!("reqwest client error: {e}"))?;
+
+        let resp = client
+            .get(url)
+            .send()
+            .await
+            .map_err(|e| format!("reqwest send error: {e}"))?;
+
+        if !resp.status().is_success() {
+            return Err(format!("HTTP {}", resp.status()));
+        }
+
+        resp.text()
+            .await
+            .map_err(|e| format!("reqwest body error: {e}"))
+    })
+}
+
+/// Parse WhatToMine coins.json response into a StreamProfitSnapshot.
+///
+/// WhatToMine returns: { "coins": { "1": { "name": "...", "tag": "DCR", "revenue": "0.45", ... } } }
+fn parse_whattomine_response(body: &str) -> StreamProfitSnapshot {
+    // Use serde_json to parse the response.
+    let parsed: Option<serde_json::Value> = serde_json::from_str(body).ok();
+    let Some(json) = parsed else {
+        eprintln!("stream_profit: whattomine parse error");
+        return StreamProfitSnapshot::fallback();
+    };
+
+    let mut entries = Vec::new();
+    let fallback = StreamProfitSnapshot::fallback();
+
+    // WhatToMine coins are keyed by numeric ID.
+    if let Some(coins) = json.get("coins").and_then(|c| c.as_object()) {
+        for (_id, coin_data) in coins {
+            let tag = coin_data
+                .get("tag")
+                .and_then(|t| t.as_str())
+                .unwrap_or("");
+            let revenue = coin_data
+                .get("revenue")
+                .and_then(|r| r.as_str())
+                .and_then(|s| s.parse::<f64>().ok())
+                .unwrap_or(0.0);
+
+            // Map coin tags to Deeksha Chv3 internal streams.
+            // WhatToMine revenue is per-GH/s-day in USD.
+            match tag.to_uppercase().as_str() {
+                "DCR" | "ALPH" => {
+                    // Blake3 coins → KeccakBonus stream (similar hash-power market)
+                    entries.push(StreamProfitEntry {
+                        source: RevenueSource::KeccakBonus,
+                        revenue_per_day_usd: revenue.max(0.01),
+                        cost_per_day_usd: 0.05,
+                        api_label: Some(format!("whattomine:{}", tag)),
+                    });
+                }
+                "KAS" => {
+                    // kHeavyHash → Sha3Bonus stream
+                    entries.push(StreamProfitEntry {
+                        source: RevenueSource::Sha3Bonus,
+                        revenue_per_day_usd: revenue.max(0.01),
+                        cost_per_day_usd: 0.05,
+                        api_label: Some(format!("whattomine:{}", tag)),
+                    });
+                }
+                _ => {} // Skip coins we don't map to internal streams
+            }
+        }
+    }
+
+    // Always include Zion and NclAi from fallback (no WhatToMine equivalent).
+    if let Some(zion) = fallback.entry_for(RevenueSource::Zion) {
+        entries.push(zion.clone());
+    }
+    if let Some(ncl) = fallback.entry_for(RevenueSource::NclAi) {
+        entries.push(ncl.clone());
+    }
+    if let Some(lite) = fallback.entry_for(RevenueSource::DeekshaLite) {
+        entries.push(lite.clone());
+    }
+    if let Some(thermal) = fallback.entry_for(RevenueSource::ThermalBonus) {
+        entries.push(thermal.clone());
+    }
+
+    // If no external coins were found, add fallback KeccakBonus/Sha3Bonus.
+    if !entries.iter().any(|e| e.source == RevenueSource::KeccakBonus) {
+        if let Some(k) = fallback.entry_for(RevenueSource::KeccakBonus) {
+            entries.push(k.clone());
+        }
+    }
+    if !entries.iter().any(|e| e.source == RevenueSource::Sha3Bonus) {
+        if let Some(s) = fallback.entry_for(RevenueSource::Sha3Bonus) {
+            entries.push(s.clone());
+        }
+    }
+
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+
+    StreamProfitSnapshot {
+        entries,
+        timestamp,
+        live: true,
+    }
+}
+
+/// Parse CoinGecko simple/price response into a StreamProfitSnapshot.
+///
+/// CoinGecko returns: { "decred": { "usd": 12.5 }, "alephium": { "usd": 0.35 }, ... }
+fn parse_coingecko_response(body: &str) -> StreamProfitSnapshot {
+    let parsed: Option<serde_json::Value> = serde_json::from_str(body).ok();
+    let Some(json) = parsed else {
+        eprintln!("stream_profit: coingecko parse error");
+        return StreamProfitSnapshot::fallback();
+    };
+
+    let fallback = StreamProfitSnapshot::fallback();
+    let mut entries = Vec::new();
+
+    // Helper: get USD price for a coin ID.
+    let get_price = |id: &str| -> f64 {
+        json.get(id)
+            .and_then(|c| c.get("usd"))
+            .and_then(|u| u.as_f64())
+            .unwrap_or(0.0)
+    };
+
+    // Map coin prices to Deeksha Chv3 internal streams.
+    // These are spot prices, not mining revenue — but they give us
+    // relative profitability signals.
+    let dcr_price = get_price("decred");
+    let alph_price = get_price("alephium");
+    let kas_price = get_price("kaspa");
+
+    // Blake3 coins (DCR, ALPH) → KeccakBonus stream
+    let blake3_revenue = (dcr_price * 0.04 + alph_price * 0.08).max(0.01);
+    entries.push(StreamProfitEntry {
+        source: RevenueSource::KeccakBonus,
+        revenue_per_day_usd: blake3_revenue,
+        cost_per_day_usd: 0.05,
+        api_label: Some("coingecko:dcr+alph".to_string()),
+    });
+
+    // kHeavyHash (KAS) → Sha3Bonus stream
+    let khh_revenue = (kas_price * 0.05).max(0.01);
+    entries.push(StreamProfitEntry {
+        source: RevenueSource::Sha3Bonus,
+        revenue_per_day_usd: khh_revenue,
+        cost_per_day_usd: 0.05,
+        api_label: Some("coingecko:kas".to_string()),
+    });
+
+    // Zion and NclAi from fallback (no CoinGecko equivalent).
+    if let Some(zion) = fallback.entry_for(RevenueSource::Zion) {
+        entries.push(zion.clone());
+    }
+    if let Some(ncl) = fallback.entry_for(RevenueSource::NclAi) {
+        entries.push(ncl.clone());
+    }
+    if let Some(lite) = fallback.entry_for(RevenueSource::DeekshaLite) {
+        entries.push(lite.clone());
+    }
+    if let Some(thermal) = fallback.entry_for(RevenueSource::ThermalBonus) {
+        entries.push(thermal.clone());
+    }
+
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+
+    StreamProfitSnapshot {
+        entries,
+        timestamp,
+        live: true,
     }
 }
 
