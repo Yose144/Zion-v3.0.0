@@ -7,9 +7,10 @@ OUT="/var/www/zion-miner/zion-miner-${VERSION}.zip"
 WORK="/tmp/zion-miner-${VERSION}"
 
 echo "=== Docker SMOS build ${VERSION} ==="
-docker run --rm \
+CONTAINER="zion-miner-build-${VERSION}"
+docker rm -f "${CONTAINER}" >/dev/null 2>&1 || true
+docker run --name "${CONTAINER}" \
   -v "${REPO}:/src:ro" \
-  -v /tmp/zion-docker-out:/out \
   ubuntu:20.04 bash -c '
     set -euo pipefail
     export DEBIAN_FRONTEND=noninteractive
@@ -23,11 +24,16 @@ docker run --rm \
     # Do not link bundled libOpenCL.so (needs glibc 2.34); use system ICD on SMOS
     rm -f /build/V3/L1/native-libs/libOpenCL.so /build/V3/L1/native-libs/libOpenCL.so.1
     cd /build/V3
-    cargo build --release -p zion-miner --features 'gpu-opencl native-hashers' --bin zion-miner
+    cargo build --release -p zion-miner --features '"'"'gpu-opencl native-hashers'"'"' --bin zion-miner
+    mkdir -p /out
     cp target/release/zion-miner /out/zion-miner
     chmod +x /out/zion-miner
     ls -la /out/zion-miner
   '
+
+mkdir -p /tmp/zion-docker-out
+docker cp "${CONTAINER}:/out/zion-miner" /tmp/zion-docker-out/zion-miner
+docker rm -f "${CONTAINER}" >/dev/null 2>&1 || true
 
 BIN="/tmp/zion-docker-out/zion-miner"
 if [[ ! -f /root/check-glibc.py ]]; then
