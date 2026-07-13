@@ -23,6 +23,9 @@ use zion_auxpow::{
     AuxPowScheduler, AuxPowStats, ExternalCoin, JobMultiplexer, JobPackage, ShareForwardResult,
     ShareForwarder, SplitConfig,
 };
+use zion_cosmic_harmony::{
+    fetch_live_profit_estimates, select_best_coin, ExternalCoin as ChExternalCoin,
+};
 use zion_cosmic_harmony::stream_profit::{
     fetch_profit_snapshot, StreamProfitConfig, StreamProfitSnapshot, StreamWeights,
 };
@@ -375,8 +378,8 @@ fn external_coin_to_revenue_source(coin: ExternalCoin) -> RevenueSource {
 /// divided by an assumed daily share count at difficulty 1.  In production
 /// this would be replaced by actual payout data from the external pool.
 fn estimate_external_share_usd(coin: ExternalCoin) -> f64 {
-    // Use fallback_estimates to get the daily revenue per 100 MH/s.
-    let estimates = zion_cosmic_harmony::fallback_estimates();
+    // Use live estimates (falls back to static on API failure).
+    let estimates = fetch_live_profit_estimates();
     let ch_coin = auxpow_to_ch_external_coin(coin);
     let daily_revenue = estimates
         .iter()
@@ -384,44 +387,40 @@ fn estimate_external_share_usd(coin: ExternalCoin) -> f64 {
         .map(|e| e.revenue_per_day_usd)
         .unwrap_or(0.10);
     // Assume ~10000 shares/day at reference hashrate (conservative).
-    // This gives a per-share value in the range $0.00001–$0.0001.
     daily_revenue / 10_000.0
 }
 
 /// Convert `zion_auxpow::ExternalCoin` to `zion_cosmic_harmony::ExternalCoin`.
-///
-/// Both enums have identical variants but are distinct types because they
-/// are defined in separate crates.  This function bridges the gap.
-fn auxpow_to_ch_external_coin(coin: ExternalCoin) -> zion_cosmic_harmony::ExternalCoin {
+fn auxpow_to_ch_external_coin(coin: ExternalCoin) -> ChExternalCoin {
     match coin {
-        ExternalCoin::DCR => zion_cosmic_harmony::ExternalCoin::DCR,
-        ExternalCoin::ALPH => zion_cosmic_harmony::ExternalCoin::ALPH,
-        ExternalCoin::KAS => zion_cosmic_harmony::ExternalCoin::KAS,
-        ExternalCoin::ERG => zion_cosmic_harmony::ExternalCoin::ERG,
-        ExternalCoin::RVN => zion_cosmic_harmony::ExternalCoin::RVN,
-        ExternalCoin::ETC => zion_cosmic_harmony::ExternalCoin::ETC,
-        ExternalCoin::EVR => zion_cosmic_harmony::ExternalCoin::EVR,
-        ExternalCoin::MEWC => zion_cosmic_harmony::ExternalCoin::MEWC,
-        ExternalCoin::FLUX => zion_cosmic_harmony::ExternalCoin::FLUX,
-        ExternalCoin::CLORE => zion_cosmic_harmony::ExternalCoin::CLORE,
-        ExternalCoin::XMR => zion_cosmic_harmony::ExternalCoin::XMR,
+        ExternalCoin::DCR => ChExternalCoin::DCR,
+        ExternalCoin::ALPH => ChExternalCoin::ALPH,
+        ExternalCoin::KAS => ChExternalCoin::KAS,
+        ExternalCoin::ERG => ChExternalCoin::ERG,
+        ExternalCoin::RVN => ChExternalCoin::RVN,
+        ExternalCoin::ETC => ChExternalCoin::ETC,
+        ExternalCoin::EVR => ChExternalCoin::EVR,
+        ExternalCoin::MEWC => ChExternalCoin::MEWC,
+        ExternalCoin::FLUX => ChExternalCoin::FLUX,
+        ExternalCoin::CLORE => ChExternalCoin::CLORE,
+        ExternalCoin::XMR => ChExternalCoin::XMR,
     }
 }
 
 /// Convert `zion_cosmic_harmony::ExternalCoin` to `zion_auxpow::ExternalCoin`.
-fn ch_to_auxpow_external_coin(coin: zion_cosmic_harmony::ExternalCoin) -> ExternalCoin {
+fn ch_to_auxpow_external_coin(coin: ChExternalCoin) -> ExternalCoin {
     match coin {
-        zion_cosmic_harmony::ExternalCoin::DCR => ExternalCoin::DCR,
-        zion_cosmic_harmony::ExternalCoin::ALPH => ExternalCoin::ALPH,
-        zion_cosmic_harmony::ExternalCoin::KAS => ExternalCoin::KAS,
-        zion_cosmic_harmony::ExternalCoin::ERG => ExternalCoin::ERG,
-        zion_cosmic_harmony::ExternalCoin::RVN => ExternalCoin::RVN,
-        zion_cosmic_harmony::ExternalCoin::ETC => ExternalCoin::ETC,
-        zion_cosmic_harmony::ExternalCoin::EVR => ExternalCoin::EVR,
-        zion_cosmic_harmony::ExternalCoin::MEWC => ExternalCoin::MEWC,
-        zion_cosmic_harmony::ExternalCoin::FLUX => ExternalCoin::FLUX,
-        zion_cosmic_harmony::ExternalCoin::CLORE => ExternalCoin::CLORE,
-        zion_cosmic_harmony::ExternalCoin::XMR => ExternalCoin::XMR,
+        ChExternalCoin::DCR => ExternalCoin::DCR,
+        ChExternalCoin::ALPH => ExternalCoin::ALPH,
+        ChExternalCoin::KAS => ExternalCoin::KAS,
+        ChExternalCoin::ERG => ExternalCoin::ERG,
+        ChExternalCoin::RVN => ExternalCoin::RVN,
+        ChExternalCoin::ETC => ExternalCoin::ETC,
+        ChExternalCoin::EVR => ExternalCoin::EVR,
+        ChExternalCoin::MEWC => ExternalCoin::MEWC,
+        ChExternalCoin::FLUX => ExternalCoin::FLUX,
+        ChExternalCoin::CLORE => ExternalCoin::CLORE,
+        ChExternalCoin::XMR => ExternalCoin::XMR,
     }
 }
 
@@ -461,10 +460,10 @@ async fn run_auxpow_bridge(
 
     // Initial coin selection: force_coin wins, otherwise use profit-based selection.
     let initial_coin = cfg.force_coin.unwrap_or_else(|| {
-        let estimates = zion_cosmic_harmony::fallback_estimates();
+        let estimates = fetch_live_profit_estimates();
         ch_to_auxpow_external_coin(
-            zion_cosmic_harmony::select_best_coin(&estimates, None, cfg.hysteresis_pct)
-                .unwrap_or(zion_cosmic_harmony::ExternalCoin::KAS),
+            select_best_coin(&estimates, None, cfg.hysteresis_pct)
+                .unwrap_or(ChExternalCoin::KAS),
         )
     });
     mux.set_wallet(select_wallet(initial_coin));
@@ -481,10 +480,10 @@ async fn run_auxpow_bridge(
         // failed initial connect), try to reconnect before waiting for jobs.
         if mux.active_coin().is_none() {
             let coin = cfg.force_coin.unwrap_or_else(|| {
-                let estimates = zion_cosmic_harmony::fallback_estimates();
+                let estimates = fetch_live_profit_estimates();
                 ch_to_auxpow_external_coin(
-                    zion_cosmic_harmony::select_best_coin(&estimates, None, cfg.hysteresis_pct)
-                        .unwrap_or(zion_cosmic_harmony::ExternalCoin::KAS),
+                    select_best_coin(&estimates, None, cfg.hysteresis_pct)
+                        .unwrap_or(ChExternalCoin::KAS),
                 )
             });
             mux.set_wallet(select_wallet(coin));
@@ -501,10 +500,10 @@ async fn run_auxpow_bridge(
         // profitability and switch to the best coin if hysteresis allows.
         if cfg.force_coin.is_none() && last_profit_check.elapsed() >= profit_check_interval {
             last_profit_check = Instant::now();
-            let estimates = zion_cosmic_harmony::fallback_estimates();
+            let estimates = fetch_live_profit_estimates();
             let current = mux.active_coin().map(auxpow_to_ch_external_coin);
             if let Some(best) =
-                zion_cosmic_harmony::select_best_coin(&estimates, current, cfg.hysteresis_pct)
+                select_best_coin(&estimates, current, cfg.hysteresis_pct)
             {
                 if current != Some(best) {
                     println!(

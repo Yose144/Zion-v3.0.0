@@ -457,6 +457,128 @@ pub fn fallback_estimates() -> Vec<ProfitEntry> {
     ]
 }
 
+// ── Live profit fetching ─────────────────────────────────────────────
+
+/// Fetch live profitability estimates from WhatToMine API.
+///
+/// WhatToMine provides `https://whattomine.com/coins.json` with per-coin
+/// revenue estimates in USD per GH/s-day.  We map the coin tags to our
+/// `ExternalCoin` enum and return `Vec<ProfitEntry>`.
+///
+/// On any error (network, parse, empty), falls back to `fallback_estimates()`.
+pub fn fetch_live_profit_estimates() -> Vec<ProfitEntry> {
+    let url = "https://whattomine.com/coins.json";
+    match fetch_url_blocking_internal(url, 10) {
+        Ok(body) => parse_whattomine_for_external_coins(&body),
+        Err(e) => {
+            eprintln!("profit_router: whattomine fetch error: {e}");
+            fallback_estimates()
+        }
+    }
+}
+
+/// Parse WhatToMine coins.json response into `Vec<ProfitEntry>`.
+///
+/// WhatToMine returns: `{ "coins": { "1": { "tag": "DCR", "revenue": "0.45", ... } } }`
+fn parse_whattomine_for_external_coins(body: &str) -> Vec<ProfitEntry> {
+    let parsed: Option<serde_json::Value> = serde_json::from_str(body).ok();
+    let Some(json) = parsed else {
+        eprintln!("profit_router: whattomine parse error");
+        return fallback_estimates();
+    };
+
+    let mut entries = Vec::new();
+    let fallback = fallback_estimates();
+
+    if let Some(coins) = json.get("coins").and_then(|c| c.as_object()) {
+        for (_id, coin_data) in coins {
+            let tag = coin_data
+                .get("tag")
+                .and_then(|t| t.as_str())
+                .unwrap_or("");
+            let revenue = coin_data
+                .get("revenue")
+                .and_then(|r| r.as_str())
+                .and_then(|s| s.parse::<f64>().ok())
+                .unwrap_or(0.0);
+
+            // Map WhatToMine coin tags to our ExternalCoin enum.
+            if let Some(coin) = tag_to_external_coin(tag) {
+                // Use the fallback power cost for this coin.
+                let power_cost = fallback
+                    .iter()
+                    .find(|e| e.coin == coin)
+                    .map(|e| e.power_cost_usd)
+                    .unwrap_or(0.10);
+                entries.push(ProfitEntry {
+                    coin,
+                    revenue_per_day_usd: revenue.max(0.01),
+                    power_cost_usd: power_cost,
+                });
+            }
+        }
+    }
+
+    // If we got fewer entries than fallback, merge in any missing coins.
+    for fb in &fallback {
+        if !entries.iter().any(|e| e.coin == fb.coin) {
+            entries.push(fb.clone());
+        }
+    }
+
+    if entries.is_empty() {
+        fallback_estimates()
+    } else {
+        entries
+    }
+}
+
+/// Map a WhatToMine coin tag to our `ExternalCoin` enum.
+fn tag_to_external_coin(tag: &str) -> Option<ExternalCoin> {
+    match tag.to_uppercase().as_str() {
+        "DCR" => Some(ExternalCoin::DCR),
+        "ALPH" => Some(ExternalCoin::ALPH),
+        "KAS" => Some(ExternalCoin::KAS),
+        "ERG" => Some(ExternalCoin::ERG),
+        "RVN" => Some(ExternalCoin::RVN),
+        "ETC" => Some(ExternalCoin::ETC),
+        "XMR" => Some(ExternalCoin::XMR),
+        "FLUX" => Some(ExternalCoin::FLUX),
+        "CLORE" => Some(ExternalCoin::CLORE),
+        _ => None, // EVR, MEWC not on WhatToMine
+    }
+}
+
+/// Fetch a URL with a timeout using a blocking reqwest client.
+fn fetch_url_blocking_internal(url: &str, timeout_secs: u64) -> Result<String, String> {
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .map_err(|e| format!("tokio runtime error: {e}"))?;
+
+    rt.block_on(async move {
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(timeout_secs))
+            .user_agent("ZION-Pool/3.0.4")
+            .build()
+            .map_err(|e| format!("reqwest client error: {e}"))?;
+
+        let resp = client
+            .get(url)
+            .send()
+            .await
+            .map_err(|e| format!("reqwest send error: {e}"))?;
+
+        if !resp.status().is_success() {
+            return Err(format!("HTTP {}", resp.status()));
+        }
+
+        resp.text()
+            .await
+            .map_err(|e| format!("reqwest body error: {e}"))
+    })
+}
+
 // ── Coin selection ───────────────────────────────────────────────────
 
 /// Pick the most profitable coin from `entries`, applying hysteresis:
