@@ -669,6 +669,7 @@ fn main() -> Result<()> {
         let active_sessions_ref = Arc::clone(&active_sessions);
         let pplns_ref = Arc::clone(&pplns_engine);
         let auxpow_ref = Arc::clone(&auxpow_scheduler);
+        let revenue_scheduler_ref = Arc::clone(&revenue_scheduler);
         let metrics_bind = metrics_bind.to_string();
         thread::spawn(move || {
             if let Err(error) = serve_routing_metrics(
@@ -679,6 +680,7 @@ fn main() -> Result<()> {
                 active_sessions_ref,
                 pplns_ref,
                 auxpow_ref,
+                revenue_scheduler_ref,
             ) {
                 eprintln!("routing_metrics_error={error:#}");
             }
@@ -3684,6 +3686,7 @@ fn serve_routing_metrics(
     active_sessions: Arc<AtomicU64>,
     pplns_engine: Arc<Mutex<PplnsEngine>>,
     auxpow_scheduler: Arc<AuxPowScheduler>,
+    revenue_scheduler: Arc<Mutex<RevenueScheduler>>,
 ) -> Result<()> {
     let listener = TcpListener::bind(bind_addr)
         .with_context(|| format!("failed to bind routing metrics listener on {bind_addr}"))?;
@@ -3731,7 +3734,8 @@ fn serve_routing_metrics(
                     .expect("miner telemetry lock poisoned");
                 let pplns = pplns_engine.lock().expect("pplns lock poisoned");
                 let auxpow_stats = auxpow_scheduler.stats_sync();
-                let body = build_stats_payload(&stats, &telemetry, &pplns, sessions, uptime_s, &auxpow_stats);
+                let rev_sched = revenue_scheduler.lock().expect("revenue scheduler lock poisoned");
+                let body = build_stats_payload(&stats, &telemetry, &pplns, sessions, uptime_s, &auxpow_stats, &rev_sched);
                 ("200 OK", "application/json", body)
             }
             p if p.starts_with("/miners") => {
@@ -3887,6 +3891,7 @@ fn build_stats_payload(
     active_sessions: u64,
     uptime_s: u64,
     auxpow: &AuxPowStats,
+    revenue_scheduler: &RevenueScheduler,
 ) -> String {
     let now_s = now_unix_seconds();
     let pplns = pplns_engine.stats();
@@ -4006,6 +4011,22 @@ fn build_stats_payload(
             "uptime_secs": auxpow.uptime_secs,
             "coin_switches": auxpow.coin_switches,
             "last_switch_ts": auxpow.last_switch_ts
+        },
+        "stream_profit": {
+            "enabled": revenue_scheduler.stream_profit_config.enabled,
+            "provider": revenue_scheduler.stream_profit_config.api_provider,
+            "interval_secs": revenue_scheduler.stream_profit_config.interval_secs,
+            "hysteresis_pct": revenue_scheduler.stream_profit_config.hysteresis_pct,
+            "enabled_sources": revenue_scheduler.stream_profit_config.enabled_sources,
+            "weights": revenue_scheduler.stream_weights.weights.iter().map(|w| {
+                serde_json::json!({
+                    "source": w.source.as_str(),
+                    "weight_pct": (w.weight * 100.0 * 10.0).round() / 10.0
+                })
+            }).collect::<Vec<_>>(),
+            "weights_string": revenue_scheduler.stream_weights_string(),
+            "live": revenue_scheduler.stream_weights.live,
+            "description": revenue_scheduler.stream_weights.describe(),
         }
     });
     json.to_string()

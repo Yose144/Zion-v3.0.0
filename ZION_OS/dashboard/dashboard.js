@@ -2641,6 +2641,8 @@ async function loadPoolMinersTab(){
 // ── Revenue System tab ─────────────────────────────────────────────────────
 async function loadRevenueTab(){
   const set = _poolMinersSet; // reuse helper
+  // Load AuxPow configuration panel once per tab visit
+  loadAuxPowConfig();
   try {
     const data = await apiFetch('/api/revenue');
     if(!data || !data.ok) throw new Error(data?.error || 'Failed to load');
@@ -2772,10 +2774,189 @@ async function loadRevenueTab(){
       }
     }
 
+    // ── Stream weights display (Deeksha Chv3 pipeline) ─────────────
+    const streamStatus = document.getElementById('rev-stream-status');
+    const streamBars = document.getElementById('rev-stream-weights-bars');
+    if(streamStatus && streamBars){
+      const spEnabled = rev.stream_profit_enabled || false;
+      const spLive = rev.stream_profit_live || false;
+      const spProvider = rev.stream_profit_provider || 'fallback';
+      const spWeights = rev.stream_profit_weights || [];
+
+      streamStatus.textContent = spEnabled
+        ? (spLive ? `🟢 Live (${spProvider})` : `🔮 ${spProvider}`)
+        : '⚪ Disabled';
+      streamStatus.className = 'text-[10px] ' + (spEnabled && spLive ? 'text-emerald-400' : spEnabled ? 'text-amber-400' : 'text-gray-500');
+
+      if(spWeights.length === 0){
+        streamBars.innerHTML = '<div class="text-xs text-gray-500">No stream weights — pool offline or stream profit disabled</div>';
+      } else {
+        const colors = {
+          zion: 'bg-emerald-500',
+          keccak_bonus: 'bg-cyan-500',
+          sha3_bonus: 'bg-blue-500',
+          ncl_ai: 'bg-purple-500',
+          deeksha_lite: 'bg-amber-500',
+          thermal_bonus: 'bg-red-500',
+        };
+        streamBars.innerHTML = spWeights.map(w => {
+          const pct = Number(w.weight_pct || 0).toFixed(1);
+          const color = colors[w.source] || 'bg-zion-gold';
+          const label = (w.source || '').replace(/_/g, ' ');
+          return `<div class="space-y-1">
+            <div class="flex justify-between text-[10px]"><span class="text-gray-400">${escapeHtml(label)}</span><span class="font-mono text-white">${pct}%</span></div>
+            <div class="w-full bg-black/40 rounded-full h-1.5"><div class="${color} h-full rounded-full transition-all" style="width: ${pct}%"></div></div>
+          </div>`;
+        }).join('');
+      }
+    }
+
     const updated = new Date().toLocaleTimeString();
     set('revenue-last-updated', 'Updated ' + updated);
   } catch(e) {
     console.error('loadRevenueTab error:', e);
+  }
+}
+
+// ── AuxPow / external pool configuration panel ─────────────────────────────
+async function loadAuxPowConfig(){
+  const loading = document.getElementById('rev-auxpow-config-loading');
+  const form = document.getElementById('rev-auxpow-config-form');
+  const coinSel = document.getElementById('rev-auxpow-coin');
+  const prefSel = document.getElementById('rev-auxpow-preference');
+  const walletsDiv = document.getElementById('rev-auxpow-coin-wallets');
+  if(!loading || !form) return;
+  try {
+    const data = await apiFetch('/api/pool/auxpow');
+    if(!data || !data.ok) throw new Error(data?.error || 'Failed');
+    const cfg = data.config || {};
+    const coins = data.supported_coins || [];
+    const prefs = data.supported_preferences || [];
+
+    if(coinSel){
+      coinSel.innerHTML = '<option value="">— select coin —</option>' +
+        coins.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+      coinSel.value = cfg.coin || '';
+    }
+    if(prefSel){
+      prefSel.innerHTML = prefs.map(p => {
+        const label = p === 'default' ? 'Default' : p.charAt(0).toUpperCase() + p.slice(1);
+        return `<option value="${escapeHtml(p)}">${escapeHtml(label)}</option>`;
+      }).join('');
+      prefSel.value = cfg.pool_preference || 'default';
+    }
+    if(walletsDiv){
+      walletsDiv.innerHTML = coins.map(c => `
+        <div class="space-y-1">
+          <label class="text-gray-400 block">${escapeHtml(c)} wallet</label>
+          <input type="text" data-coin="${escapeHtml(c)}" value="${escapeHtml((cfg.coin_wallets || {})[c] || '')}" placeholder="${escapeHtml(c)} address" class="rev-auxpow-coin-wallet w-full bg-black/30 border border-white/10 rounded px-2 py-1 text-white focus:border-zion-gold outline-none font-mono text-[10px]">
+        </div>
+      `).join('');
+    }
+
+    const modeSel = document.getElementById('rev-auxpow-mode');
+    if(modeSel) modeSel.value = cfg.mode || 'zion';
+    const regionIn = document.getElementById('rev-auxpow-region');
+    if(regionIn) regionIn.value = cfg.region || 'eu';
+    const walletIn = document.getElementById('rev-auxpow-wallet');
+    if(walletIn) walletIn.value = cfg.wallet || '';
+    const workerIn = document.getElementById('rev-auxpow-worker');
+    if(workerIn) workerIn.value = cfg.worker_name || 'zion_auxpow';
+    const splitZion = document.getElementById('rev-auxpow-split-zion');
+    if(splitZion){
+      splitZion.value = cfg.split_zion != null ? cfg.split_zion : 50;
+      updateAuxPowSplitLabels();
+    }
+
+    if(modeSel && coinSel){
+      const onMode = () => {
+        const disabled = modeSel.value !== 'force';
+        coinSel.disabled = disabled;
+        if(disabled) coinSel.value = '';
+      };
+      modeSel.onchange = onMode;
+      onMode();
+    }
+    if(splitZion) splitZion.oninput = updateAuxPowSplitLabels;
+
+    const toggleBtn = document.getElementById('rev-auxpow-toggle-coins');
+    if(toggleBtn && walletsDiv){
+      toggleBtn.onclick = () => {
+        const hidden = walletsDiv.classList.contains('hidden');
+        walletsDiv.classList.toggle('hidden');
+        toggleBtn.textContent = hidden ? 'Hide per-coin wallets' : 'Show per-coin wallets';
+      };
+    }
+
+    // ── Stream profit config controls ─────────────────────────────
+    const spEnabled = document.getElementById('rev-stream-enabled');
+    const spProvider = document.getElementById('rev-stream-provider');
+    const spInterval = document.getElementById('rev-stream-interval');
+    const spHysteresis = document.getElementById('rev-stream-hysteresis');
+    const spSources = document.getElementById('rev-stream-sources');
+    if(spEnabled) spEnabled.value = cfg.stream_profit_enabled ? 'true' : 'false';
+    if(spProvider) spProvider.value = cfg.stream_profit_provider || 'fallback';
+    if(spInterval) spInterval.value = cfg.stream_profit_interval || '120';
+    if(spHysteresis) spHysteresis.value = cfg.stream_profit_hysteresis || '15.0';
+    if(spSources) spSources.value = cfg.stream_profit_sources || 'zion,keccak_bonus,sha3_bonus,ncl_ai';
+
+    loading.classList.add('hidden');
+    form.classList.remove('hidden');
+  } catch(e) {
+    if(loading) loading.textContent = 'Error loading config: ' + e.message;
+  }
+}
+
+function updateAuxPowSplitLabels(){
+  const slider = document.getElementById('rev-auxpow-split-zion');
+  const zionPct = document.getElementById('rev-auxpow-split-zion-pct');
+  const extPct = document.getElementById('rev-auxpow-split-ext-pct');
+  if(!slider || !zionPct || !extPct) return;
+  const z = parseInt(slider.value, 10) || 0;
+  zionPct.textContent = z;
+  extPct.textContent = 100 - z;
+}
+
+async function applyAuxPowConfig(restart=false){
+  const status = document.getElementById('rev-auxpow-status');
+  try {
+    const mode = document.getElementById('rev-auxpow-mode')?.value || 'zion';
+    const coinWallets = {};
+    document.querySelectorAll('.rev-auxpow-coin-wallet').forEach(inp => {
+      const c = inp.getAttribute('data-coin');
+      if(c && inp.value.trim()) coinWallets[c] = inp.value.trim();
+    });
+    const splitZionVal = parseInt(document.getElementById('rev-auxpow-split-zion')?.value || '50', 10);
+    const payload = {
+      mode: mode,
+      coin: document.getElementById('rev-auxpow-coin')?.value || '',
+      pool_preference: document.getElementById('rev-auxpow-preference')?.value || 'default',
+      region: document.getElementById('rev-auxpow-region')?.value || 'eu',
+      split_zion: splitZionVal,
+      split_external: 100 - splitZionVal,
+      wallet: document.getElementById('rev-auxpow-wallet')?.value?.trim() || '',
+      worker_name: document.getElementById('rev-auxpow-worker')?.value?.trim() || 'zion_auxpow',
+      coin_wallets: coinWallets,
+      // Stream profit config
+      stream_profit_enabled: document.getElementById('rev-stream-enabled')?.value === 'true',
+      stream_profit_provider: document.getElementById('rev-stream-provider')?.value || 'fallback',
+      stream_profit_interval: parseInt(document.getElementById('rev-stream-interval')?.value || '120', 10),
+      stream_profit_hysteresis: parseFloat(document.getElementById('rev-stream-hysteresis')?.value || '15.0'),
+      stream_profit_sources: document.getElementById('rev-stream-sources')?.value?.trim() || 'zion,keccak_bonus,sha3_bonus,ncl_ai',
+    };
+    if(status) { status.textContent = 'Saving…'; status.className = 'text-xs text-amber-400'; }
+    const res = await apiFetch('/api/pool/auxpow', {method:'POST', body: JSON.stringify(payload)}, 20000);
+    if(!res || !res.ok) throw new Error(res?.error || 'Save failed');
+    if(status) { status.textContent = 'Saved.'; status.className = 'text-xs text-emerald-400'; }
+    if(restart){
+      if(status) { status.textContent = 'Restarting pool…'; status.className = 'text-xs text-amber-400'; }
+      const restartRes = await apiFetch('/api/pool/auxpow/restart', {method:'POST'}, 40000);
+      if(!restartRes || !restartRes.ok) throw new Error(restartRes?.error || 'Restart failed');
+      if(status) { status.textContent = 'Pool restarted.'; status.className = 'text-xs text-emerald-400'; }
+    }
+    setTimeout(() => { loadAuxPowConfig(); loadRevenueTab(); }, 1000);
+  } catch(e) {
+    if(status) { status.textContent = 'Error: ' + e.message; status.className = 'text-xs text-red-400'; }
   }
 }
 
