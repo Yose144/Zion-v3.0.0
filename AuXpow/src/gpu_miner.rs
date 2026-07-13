@@ -44,6 +44,9 @@ pub struct GpuFoundShare {
     /// needed for `eth_submitWork`).  None for algorithms that don't
     /// produce a mix hash (blake3, kheavyhash, autolykos).
     pub mix_hash: Option<[u8; 32]>,
+    /// Equihash solution for ZelHash/FLUX (52 bytes compressed).
+    /// None for non-Equihash algorithms.
+    pub solution: Option<Vec<u8>>,
 }
 
 /// Cached Ethash DAG uploaded to the GPU device.
@@ -105,6 +108,7 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
             Some(("kawpow_kernel.cl", "kawpow_mine"))
         }
         "ethash" | "etchash" | "ethash_etc" => Some(("ethash_kernel.cl", "ethash_mine")),
+        "zelhash" | "zelhash_flux" => Some(("zelhash_kernel.cl", "zelhash_mine")),
         _ => None,
     }
 }
@@ -381,6 +385,10 @@ impl GpuMiner {
             .queue(q.clone())
             .len(32)
             .build()?;
+        let output_solution_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(52)  // Equihash 125,4 compressed solution
+            .build()?;
         let found_flag_buf: Buffer<u32> = Buffer::builder()
             .queue(q.clone())
             .len(1)
@@ -500,6 +508,17 @@ impl GpuMiner {
                 &output_hash_buf,
                 &found_flag_buf,
             )?,
+            "zelhash" | "zelhash_flux" => Self::build_zelhash_kernel(
+                pro_que,
+                kernel_name,
+                header,
+                target,
+                base_nonce,
+                &output_nonce_buf,
+                &output_hash_buf,
+                &output_solution_buf,
+                &found_flag_buf,
+            )?,
             other => anyhow::bail!("unsupported GPU algorithm: {other}"),
         };
 
@@ -539,6 +558,15 @@ impl GpuMiner {
             None
         };
 
+        // Read Equihash solution for ZelHash/FLUX (52 bytes).
+        let solution = if matches!(algorithm, "zelhash" | "zelhash_flux") {
+            let mut sol = vec![0u8; 52];
+            output_solution_buf.read(&mut sol).enq()?;
+            Some(sol)
+        } else {
+            None
+        };
+
         println!(
             "auxpow_gpu_share_found algorithm={} nonce={} hash_first8={:016x} has_mix={} elapsed_ms={}",
             algorithm,
@@ -552,6 +580,7 @@ impl GpuMiner {
             nonce: nonce[0],
             hash: hash_arr,
             mix_hash,
+            solution,
         }))
     }
 
@@ -838,6 +867,61 @@ impl GpuMiner {
             .map_err(|e| anyhow!("kernel build failed: {e}"))?;
 
         let _ = batch_size;
+
+        Ok(kernel)
+    }
+
+    /// Build the ZelHash (Equihash 125,4) kernel for FLUX mining.
+    ///
+    /// The `header` is the block header prefix (without nonce/solution).
+    /// The kernel appends a 32-byte nonce, computes Blake2b-512 with
+    /// ZelProof personalization, and checks the resulting hash against
+    /// the target.  The 52-byte Equihash solution is written to
+    /// `output_solution_buf`.
+    #[allow(clippy::too_many_arguments)]
+    fn build_zelhash_kernel(
+        pro_que: &ProQue,
+        kernel_name: &str,
+        header: &[u8],
+        target: &[u8; 32],
+        base_nonce: u64,
+        output_nonce_buf: &Buffer<u64>,
+        output_hash_buf: &Buffer<u8>,
+        output_solution_buf: &Buffer<u8>,
+        found_flag_buf: &Buffer<u32>,
+    ) -> Result<Kernel> {
+        let q = pro_que.queue().clone();
+
+        // Pad header to 243 bytes (max: 211 header + 32 nonce)
+        let header_len = header.len().min(243);
+        let mut header_padded = vec![0u8; 243];
+        header_padded[..header_len].copy_from_slice(&header[..header_len]);
+
+        let header_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(header_padded.len())
+            .copy_host_slice(&header_padded)
+            .build()?;
+        let target_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .copy_host_slice(target.as_slice())
+            .build()?;
+
+        let kernel = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name(kernel_name)
+            .arg(&header_buf)
+            .arg(header_len as u32)
+            .arg(&target_buf)
+            .arg(base_nonce)
+            .arg(output_nonce_buf)
+            .arg(output_hash_buf)
+            .arg(output_solution_buf)
+            .arg(found_flag_buf)
+            .build()
+            .map_err(|e| anyhow!("ZelHash kernel build failed: {e}"))?;
 
         Ok(kernel)
     }
@@ -1328,7 +1412,40 @@ mod tests {
                 kernels.iter().any(|k| k.contains("autolykos")),
                 "autolykos kernel should exist"
             );
+            assert!(
+                kernels.iter().any(|k| k.contains("zelhash")),
+                "zelhash kernel should exist"
+            );
         }
+    }
+
+    /// Verify zelhash_kernel.cl file exists on disk.
+    #[test]
+    fn zelhash_kernel_file_exists() {
+        let kernel_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("csrc/opencl/zelhash_kernel.cl");
+        assert!(
+            kernel_path.exists(),
+            "zelhash_kernel.cl must exist at csrc/opencl/"
+        );
+        let source = std::fs::read_to_string(&kernel_path).unwrap();
+        assert!(source.contains("zelhash_mine"), "kernel must define zelhash_mine");
+        assert!(source.contains("blake2b_compress"), "kernel must have blake2b");
+        assert!(source.contains("ZelProof"), "kernel must use ZelProof personalization");
+    }
+
+    /// Verify kernel_info maps zelhash correctly.
+    #[test]
+    fn zelhash_kernel_info_correct() {
+        assert_eq!(
+            kernel_info("zelhash"),
+            Some(("zelhash_kernel.cl", "zelhash_mine"))
+        );
+        assert_eq!(
+            kernel_info("zelhash_flux"),
+            Some(("zelhash_kernel.cl", "zelhash_mine"))
+        );
+        assert_eq!(kernel_info("unknown_algo"), None);
     }
 
     /// Verify the host BLAKE2b-256 (used by Autolykos v2 table generation)
