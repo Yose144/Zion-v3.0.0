@@ -7,6 +7,8 @@
 //! Currently supported GPU algorithms (when `gpu-opencl` is enabled):
 //!   - `blake3` / `blake3_alph` — Alephium double-Blake3 PoW
 //!   - `kheavyhash` / `kheavyhash_kas` — Kaspa kHeavyHash PoW (full consensus)
+//!   - `autolykos` / `autolykos_erg` — Ergo Autolykos v2 PoW (BLAKE2b-256 +
+//!     memory-hard table lookups; table precomputed on the host)
 //!
 //! Other algorithms return `Ok(None)` or an unsupported error and fall back
 //! to the CPU miner.
@@ -40,6 +42,19 @@ pub struct GpuFoundShare {
     pub hash: [u8; 32],
 }
 
+/// Cached Ethash DAG uploaded to the GPU device.
+///
+/// The DAG is a per-epoch precomputed buffer of 128-byte entries (16 × u64
+/// words each).  It is generated on the host and uploaded once via
+/// [`GpuMiner::set_ethash_dag`].  `size_entries` is the number of 128-byte
+/// entries (matches the `dag_size` kernel argument).
+#[derive(Clone)]
+struct EthashDag {
+    buf: Buffer<u64>,
+    size_entries: u64,
+    epoch: u32,
+}
+
 /// OpenCL GPU miner for external PoW algorithms.
 pub struct GpuMiner {
     platform: Platform,
@@ -52,6 +67,8 @@ pub struct GpuMiner {
     proques: HashMap<String, ProQue>,
     /// Default work size (number of work-items per batch).
     work_size: usize,
+    /// Cached Ethash DAG buffer (set via `set_ethash_dag` before mining ETC).
+    ethash_dag: Option<EthashDag>,
 }
 
 /// Maps an algorithm name to its kernel file and entry function.
@@ -185,6 +202,90 @@ fn compute_rank_64(mat: &[[u16; 64]; 64]) -> usize {
     rank
 }
 
+// ── Autolykos v2 table generation (host side) ────────────────────────
+//
+// Generates the precomputed table of M u64 elements used by the Ergo
+// Autolykos v2 PoW.  The table is derived from the block header and height:
+//   seed = SHA-256(header)                       (32 bytes)
+//   table[i] = gen_element(i, seed, height)      for i in 0..M
+//
+// `gen_element` produces a deterministic 64-bit element via BLAKE2b-256:
+//   elem = BLAKE2b256(seed || be64(i) || be32(height))
+//   table[i] = u64::from_be_bytes(elem[0..8])
+//
+// The table is expensive to generate (O(M) BLAKE2b hashes), so it is cached
+// keyed by (height, table_size) in a process-wide static map and regenerated
+// only when the height (or table size) changes.  Ergo mainnet uses M = 2^26
+// (67M entries / 512 MB); the default here is 2^23 (8M entries / 64 MB) for
+// practicality, overridable via the `ZION_AUTOLYKOS_TABLE_SIZE` env var.
+//
+// References:
+//   - Ergo Autolykos v2 whitepaper (ErgoPow.tex)
+//   - https://docs.ergoplatform.com/mining/algo-technical/
+
+/// Default Autolykos v2 table size (number of u64 entries).  A power of two
+/// is required by the kernel (which uses `& (M - 1)` for the modulo).  The
+/// Ergo mainnet value is `1 << 26` (512 MB); override with the
+/// `ZION_AUTOLYKOS_TABLE_SIZE` environment variable.
+fn autolykos_table_size() -> usize {
+    std::env::var("ZION_AUTOLYKOS_TABLE_SIZE")
+        .ok()
+        .and_then(|v| v.trim().parse::<usize>().ok())
+        .unwrap_or(1 << 23)
+}
+
+/// Process-wide cache of Autolykos v2 tables, keyed by `(height, table_size)`.
+type AutolykosTableCache = std::collections::HashMap<(u32, usize), Vec<u64>>;
+
+fn autolykos_table_cache() -> &'static std::sync::Mutex<AutolykosTableCache> {
+    use std::sync::OnceLock;
+    static CACHE: OnceLock<std::sync::Mutex<AutolykosTableCache>> = OnceLock::new();
+    CACHE.get_or_init(|| std::sync::Mutex::new(AutolykosTableCache::new()))
+}
+
+/// Generate a single Autolykos v2 table element.
+///
+/// `elem = BLAKE2b256(seed || be64(i) || be32(height))`, returning the first
+/// 8 bytes as a big-endian u64.
+fn gen_autolykos_element(i: u64, seed: &[u8; 32], height: u32) -> u64 {
+    use blake2::digest::{Update, VariableOutput};
+    let mut hasher = blake2::Blake2bVar::new(32).expect("blake2b256");
+    hasher.update(seed);
+    hasher.update(&i.to_be_bytes());
+    hasher.update(&height.to_be_bytes());
+    let mut out = [0u8; 32];
+    hasher
+        .finalize_variable(&mut out)
+        .expect("blake2b256 finalize");
+    u64::from_be_bytes(out[0..8].try_into().unwrap())
+}
+
+/// Generate the full Autolykos v2 table (M u64 entries) from the header and
+/// height.  `seed = SHA-256(header)`.
+fn generate_autolykos_table(header: &[u8], height: u32, table_size: usize) -> Vec<u64> {
+    use sha2::Digest;
+    let mut h = sha2::Sha256::new();
+    h.update(header);
+    let seed: [u8; 32] = h.finalize().into();
+
+    let mut table = vec![0u64; table_size];
+    for i in 0..table_size {
+        table[i] = gen_autolykos_element(i as u64, &seed, height);
+    }
+    table
+}
+
+/// Ensure the Autolykos v2 table for `(height, table_size)` is present in the
+/// process-wide cache, generating it on a cache miss.  Called from `mine()`
+/// before building the kernel (and before borrowing `self` for the ProQue).
+fn ensure_autolykos_table(header: &[u8], height: u32, table_size: usize) {
+    let mut cache = autolykos_table_cache().lock().unwrap();
+    if !cache.contains_key(&(height, table_size)) {
+        let table = generate_autolykos_table(header, height, table_size);
+        cache.insert((height, table_size), table);
+    }
+}
+
 impl GpuMiner {
     /// Create a new GPU miner, initializing OpenCL on the first available
     /// GPU device.
@@ -204,6 +305,7 @@ impl GpuMiner {
             platform_name,
             proques: HashMap::new(),
             work_size,
+            ethash_dag: None,
         })
     }
 
@@ -229,6 +331,14 @@ impl GpuMiner {
         let (kernel_file, kernel_name) = kernel_info(algorithm)
             .with_context(|| format!("GPU kernel not available for algorithm {algorithm}"))?;
 
+        // Ethash needs the per-epoch DAG; clone the Arc-backed buffer handle
+        // before borrowing `self` for the ProQue below.
+        let ethash_dag = if matches!(algorithm, "ethash" | "etchash" | "ethash_etc") {
+            self.ethash_dag.clone()
+        } else {
+            None
+        };
+
         let pro_que = self.ensure_proque(kernel_file)?;
         let q = pro_que.queue().clone();
 
@@ -249,14 +359,7 @@ impl GpuMiner {
 
         // Build a kernel for this call.
         let kernel = match algorithm {
-            "blake3"
-            | "blake3_alph"
-            | "blake3_dcr"
-            | "autolykos"
-            | "autolykos_erg"
-            | "ethash"
-            | "etchash"
-            | "ethash_etc" => Self::build_header_nonce_kernel(
+            "blake3" | "blake3_alph" | "blake3_dcr" => Self::build_header_nonce_kernel(
                 pro_que,
                 kernel_name,
                 header,
@@ -267,6 +370,70 @@ impl GpuMiner {
                 &output_hash_buf,
                 &found_flag_buf,
             )?,
+            "autolykos" | "autolykos_erg" => {
+                // Prepare (and cache) the Autolykos v2 precomputed table.
+                // `extra` carries the block height as a little-endian u32 in
+                // its first 4 bytes, optionally followed by a little-endian
+                // u32 table-size override in bytes 4..8.
+                let height: u32 = if extra.len() >= 4 {
+                    u32::from_le_bytes(extra[..4].try_into().unwrap())
+                } else {
+                    0
+                };
+                let table_size: usize = if extra.len() >= 8 {
+                    u32::from_le_bytes(extra[4..8].try_into().unwrap()) as usize
+                } else {
+                    autolykos_table_size()
+                };
+                let table_size = table_size.next_power_of_two().max(1);
+
+                ensure_autolykos_table(header, height, table_size);
+                let table_buf = {
+                    let cache = autolykos_table_cache().lock().unwrap();
+                    let table = cache
+                        .get(&(height, table_size))
+                        .expect("autolykos table must be cached");
+                    Buffer::<u64>::builder()
+                        .queue(q.clone())
+                        .len(table.len())
+                        .copy_host_slice(table)
+                        .build()?
+                };
+
+                Self::build_autolykos_kernel(
+                    pro_que,
+                    kernel_name,
+                    header,
+                    target,
+                    base_nonce,
+                    &table_buf,
+                    table_size as u32,
+                    &output_nonce_buf,
+                    &output_hash_buf,
+                    &found_flag_buf,
+                )?
+            }
+            "ethash" | "etchash" | "ethash_etc" => {
+                // Ethash requires the per-epoch DAG to be uploaded first.
+                let dag = ethash_dag.ok_or_else(|| {
+                    anyhow!(
+                        "Ethash DAG not set; call GpuMiner::set_ethash_dag() \
+                         before mining ETC/ETHW"
+                    )
+                })?;
+                Self::build_ethash_kernel(
+                    pro_que,
+                    kernel_name,
+                    header,
+                    target,
+                    base_nonce,
+                    &dag.buf,
+                    dag.size_entries,
+                    &output_nonce_buf,
+                    &output_hash_buf,
+                    &found_flag_buf,
+                )?
+            }
             "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" => {
                 Self::build_kawpow_kernel(
                     pro_que,
@@ -344,6 +511,52 @@ impl GpuMiner {
         batch_size: u64,
     ) -> Result<Option<GpuFoundShare>> {
         self.mine(algorithm, header, &[], target, base_nonce, batch_size)
+    }
+
+    /// Upload the per-epoch Ethash DAG to the GPU device.
+    ///
+    /// The DAG must be generated on the host (from the epoch seed hash via
+    /// Keccak-512 graph expansion) and passed here as a slice of little-endian
+    /// `u64` words.  Each 128-byte DAG entry is 16 `u64` words, so
+    /// `dag.len()` must equal `16 * size_entries`.  `epoch` is stored only to
+    /// detect stale DAGs.  Call this once per epoch before mining ETC/ETHW.
+    pub fn set_ethash_dag(&mut self, dag: &[u64], size_entries: u64, epoch: u32) -> Result<()> {
+        let expected_len = (size_entries as usize)
+            .checked_mul(16)
+            .ok_or_else(|| anyhow!("dag_size_entries overflow"))?;
+        if dag.len() != expected_len {
+            return Err(anyhow!(
+                "Ethash DAG length mismatch: got {} u64 words, expected {} (16 * {} entries)",
+                dag.len(),
+                expected_len,
+                size_entries
+            ));
+        }
+
+        let q = {
+            let pro_que = self.ensure_proque("ethash_kernel.cl")?;
+            pro_que.queue().clone()
+        };
+
+        let buf: Buffer<u64> = Buffer::builder()
+            .queue(q)
+            .len(dag.len())
+            .copy_host_slice(dag)
+            .build()
+            .map_err(|e| anyhow!("failed to allocate Ethash DAG buffer: {e}"))?;
+
+        self.ethash_dag = Some(EthashDag {
+            buf,
+            size_entries,
+            epoch,
+        });
+
+        Ok(())
+    }
+
+    /// Returns the epoch of the currently uploaded Ethash DAG, if any.
+    pub fn ethash_dag_epoch(&self) -> Option<u32> {
+        self.ethash_dag.as_ref().map(|d| d.epoch)
     }
 
     /// Get the path to the OpenCL kernel source files.
@@ -646,6 +859,125 @@ impl GpuMiner {
             .map_err(|e| anyhow!("kernel build failed: {e}"))?;
 
         let _ = batch_size;
+
+        Ok(kernel)
+    }
+
+    /// Build the Autolykos v2 mining kernel.
+    ///
+    /// The precomputed table (generated on the host from `SHA-256(header)` and
+    /// the block height) is passed in as `table_buf`.  The kernel signature
+    /// (in `autolykos_kernel.cl`) is, in order:
+    ///   header (__global uchar *), header_len (u32), target (__global uchar *),
+    ///   base_nonce (u64), table (__global ulong *), table_size (u32),
+    ///   output_nonce, output_hash, found.
+    #[allow(clippy::too_many_arguments)]
+    fn build_autolykos_kernel(
+        pro_que: &ProQue,
+        kernel_name: &str,
+        header: &[u8],
+        target: &[u8; 32],
+        base_nonce: u64,
+        table_buf: &Buffer<u64>,
+        table_size: u32,
+        output_nonce_buf: &Buffer<u64>,
+        output_hash_buf: &Buffer<u8>,
+        found_flag_buf: &Buffer<u32>,
+    ) -> Result<Kernel> {
+        let q = pro_que.queue().clone();
+
+        // The kernel reads up to 112 header bytes; pad to a fixed 128-byte
+        // buffer (the kernel clamps the length itself).
+        let header_len = header.len().min(128);
+        let mut header_padded = vec![0u8; 128];
+        header_padded[..header_len].copy_from_slice(&header[..header_len]);
+
+        let header_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(header_padded.len())
+            .copy_host_slice(&header_padded)
+            .build()?;
+        let target_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .copy_host_slice(target.as_slice())
+            .build()?;
+
+        let kernel = Kernel::builder()
+            .program(pro_que.program())
+            .name(kernel_name)
+            .arg(&header_buf)
+            .arg(header_len as u32)
+            .arg(&target_buf)
+            .arg(base_nonce)
+            .arg(table_buf)
+            .arg(table_size)
+            .arg(output_nonce_buf)
+            .arg(output_hash_buf)
+            .arg(found_flag_buf)
+            .build()
+            .map_err(|e| anyhow!("kernel build failed: {e}"))?;
+
+        Ok(kernel)
+    }
+
+    /// Build the Ethash mining kernel.
+    ///
+    /// The DAG buffer must already be uploaded via [`Self::set_ethash_dag`]
+    /// and is passed in here.  The kernel signature (in `ethash_kernel.cl`)
+    /// is, in order:
+    ///   header_hash (32 bytes), target (32 bytes), nonce_base (u64),
+    ///   stride (u64), dag (__global ulong *), dag_size (u64),
+    ///   output_nonce, output_hash, found.
+    #[allow(clippy::too_many_arguments)]
+    fn build_ethash_kernel(
+        pro_que: &ProQue,
+        kernel_name: &str,
+        header: &[u8],
+        target: &[u8; 32],
+        base_nonce: u64,
+        dag_buf: &Buffer<u64>,
+        dag_size_entries: u64,
+        output_nonce_buf: &Buffer<u64>,
+        output_hash_buf: &Buffer<u8>,
+        found_flag_buf: &Buffer<u32>,
+    ) -> Result<Kernel> {
+        let q = pro_que.queue().clone();
+
+        // Ethash header_hash is exactly 32 bytes (Keccak-256 of the block
+        // header without nonce/mix).
+        let mut header_hash = [0u8; 32];
+        let copy_len = header.len().min(32);
+        header_hash[..copy_len].copy_from_slice(&header[..copy_len]);
+
+        let header_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .copy_host_slice(&header_hash)
+            .build()?;
+        let target_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .copy_host_slice(target.as_slice())
+            .build()?;
+
+        // stride = 1 → contiguous nonces (one per work-item).
+        let stride: u64 = 1;
+
+        let kernel = Kernel::builder()
+            .program(pro_que.program())
+            .name(kernel_name)
+            .arg(&header_buf)
+            .arg(&target_buf)
+            .arg(base_nonce)
+            .arg(stride)
+            .arg(dag_buf)
+            .arg(dag_size_entries)
+            .arg(output_nonce_buf)
+            .arg(output_hash_buf)
+            .arg(found_flag_buf)
+            .build()
+            .map_err(|e| anyhow!("kernel build failed: {e}"))?;
 
         Ok(kernel)
     }
