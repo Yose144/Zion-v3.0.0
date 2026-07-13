@@ -33,7 +33,7 @@ sha3 = "0.10"
 rlp = "0.5"
 
 # Bitcoin transaction signing (P2WPKH, BIP143 sighash, WIF key loading)
-bitcoin = { version = "0.31", default-features = false, features = ["std"] }
+bitcoin = { version = "0.32", default-features = false, features = ["std"] }
 
 # Stellar transaction signing (StrKey parsing, XDR encoding, ed25519)
 stellar-strkey = "0.0.8"
