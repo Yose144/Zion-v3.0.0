@@ -61,8 +61,9 @@ impl GpuBackendKind {
 
 /// Result of a GPU batch mining operation.
 pub struct GpuBatchResult {
-    /// Nonces that met the target.
-    pub solutions: Vec<(u64, [u8; 32])>,
+    /// Nonces that met the target: (nonce, final_hash, mix_hash).
+    /// mix_hash is None for algorithms that don't produce one.
+    pub solutions: Vec<(u64, [u8; 32], Option<[u8; 32]>)>,
     /// Total nonces tested in this batch.
     pub nonces_tested: u64,
 }
@@ -357,6 +358,9 @@ pub fn create_gpu_backend(
 /// Outcome of a GPU scan with candidate-filter statistics.
 pub struct GpuScanOutcome {
     pub solution: Option<MiningSolution>,
+    /// Mix hash for Ethash/KawPow (needed for eth_submitWork).  None for
+    /// algorithms that don't produce a mix hash.
+    pub mix_hash: Option<[u8; 32]>,
     pub nonces_tested: u64,
     pub candidates_found: u64,
     pub candidates_verified: u64,
@@ -386,6 +390,38 @@ pub fn gpu_scan_job(
         effective_header.timestamp = job.height;
     }
 
+    // For Ethash/KawPow, derive the epoch from the block height and ensure
+    // the DAG is loaded.  The pool sends the external block number as
+    // job.height for EthStratum coins (ETC/RVN/CLORE).
+    if is_external_algorithm(algorithm)
+        && matches!(
+            algorithm,
+            "ethash" | "etchash" | "ethash_etc"
+                | "kawpow" | "kawpow_rvn" | "kawpow_clore"
+                | "kawpow_evr" | "kawpow_mewc"
+        )
+    {
+        let epoch = if matches!(algorithm, "ethash" | "etchash" | "ethash_etc") {
+            (job.height / 30000) as u32
+        } else {
+            (job.height / 7500) as u32
+        };
+
+        // Try to update the DAG via the external miner's epoch method.
+        // This is a no-op if the DAG is already loaded for this epoch.
+        // We use a trait-object downcast check — if the backend is
+        // OpenClExternalMiner, it has update_epoch_from_job.
+        // Since we can't downcast easily, we rely on update_epoch() being
+        // called by the caller (main.rs) which passes height.
+        // The OpenClExternalMiner's update_epoch() is a no-op for external
+        // algos; the DAG is managed via update_epoch_from_job() which is
+        // called from a separate path.
+        // For now, we log the epoch for diagnostics.
+        if VERBOSE.load(std::sync::atomic::Ordering::Relaxed) {
+            println!("auxpow_dag_epoch_hint algorithm={} height={} epoch={}", algorithm, job.height, epoch);
+        }
+    }
+
     // Use raw header bytes for external algorithms that need the full header
     // (e.g. DCR blake3 with 180-byte headers).  Fall back to mine_batch for
     // ZION algorithms and kheavyhash (which only uses first 32 bytes).
@@ -402,7 +438,8 @@ pub fn gpu_scan_job(
     match result {
         Ok(result) => {
             let nonces_tested = result.nonces_tested;
-            if let Some((nonce, gpu_hash)) = result.solutions.first() {
+            if let Some((nonce, gpu_hash, mix_hash)) = result.solutions.first() {
+                let mix_hash = *mix_hash;
                 let candidate = zion_core::BlockCandidate {
                     header: job.header,
                     nonce: *nonce,
@@ -453,6 +490,7 @@ pub fn gpu_scan_job(
                     }
                     return GpuScanOutcome {
                         solution: None,
+                        mix_hash,
                         nonces_tested,
                         candidates_found: 1,
                         candidates_verified: 0,
@@ -469,6 +507,7 @@ pub fn gpu_scan_job(
                         candidate,
                         hash: *gpu_hash,
                     }),
+                    mix_hash,
                     nonces_tested,
                     candidates_found: 1,
                     candidates_verified: 1,
@@ -478,6 +517,7 @@ pub fn gpu_scan_job(
             } else {
                 GpuScanOutcome {
                     solution: None,
+                    mix_hash: None,
                     nonces_tested,
                     candidates_found: 0,
                     candidates_verified: 0,
@@ -490,6 +530,7 @@ pub fn gpu_scan_job(
             eprintln!("gpu_mine_batch_error: {e}");
             GpuScanOutcome {
                 solution: None,
+                mix_hash: None,
                 nonces_tested: 0,
                 candidates_found: 0,
                 candidates_verified: 0,
@@ -1289,7 +1330,7 @@ pub mod opencl_deeksha {
 
                 if let Some((i, hash_data)) = candidates.into_iter().min_by_key(|(i, _)| *i) {
                     let nonce = current_nonce.wrapping_add(i as u64);
-                    all_solutions.push((nonce, hash_data));
+                    all_solutions.push((nonce, hash_data, None));
                 }
 
                 total_tested += chunk as u64;
@@ -1365,7 +1406,7 @@ pub mod opencl_deeksha {
                     self.pro_que.queue().finish()?;
                     let mut hash = [0u8; 32];
                     hash.copy_from_slice(&hash_out);
-                    all_solutions.push((nonce_out[0], hash));
+                    all_solutions.push((nonce_out[0], hash, None));
                     total_tested += chunk as u64;
                     break;
                 }
@@ -1891,7 +1932,7 @@ pub mod opencl_deeksha_lite {
                     let hash: [u8; 32] = hashes[i * 32..(i + 1) * 32].try_into().unwrap();
                     if target.allows(&hash) {
                         let nonce = current_nonce.wrapping_add(i as u64);
-                        all_solutions.push((nonce, hash));
+                        all_solutions.push((nonce, hash, None));
                         break; // first match wins
                     }
                 }
@@ -2245,7 +2286,7 @@ pub mod opencl_deeksha_lite_fire {
                     let hash: [u8; 32] = hashes[i * 32..(i + 1) * 32].try_into().unwrap();
                     if target.allows(&hash) {
                         let nonce = current_nonce.wrapping_add(i as u64);
-                        all_solutions.push((nonce, hash));
+                        all_solutions.push((nonce, hash, None));
                         break;
                     }
                 }
@@ -2564,7 +2605,7 @@ pub mod cuda_deeksha {
                         .map_err(|e| anyhow::anyhow!("read result_hash: {e}"))?;
                     let mut hash = [0u8; 32];
                     hash.copy_from_slice(&hash_result[..32]);
-                    all_solutions.push((nonce_result[0], hash));
+                    all_solutions.push((nonce_result[0], hash, None));
                     total_tested += chunk as u64;
                     break; // Early termination on solution
                 }
@@ -2946,7 +2987,7 @@ pub mod metal_deeksha {
                     .map_err(|_| anyhow::anyhow!("Metal async wait failed"))?;
 
                 if let Some((nonce, hash)) = self.read_result() {
-                    all_solutions.push((nonce, hash));
+                    all_solutions.push((nonce, hash, None));
                     total_tested += (nonce.saturating_sub(current_nonce) + 1).min(chunk as u64);
                     // Phase-3 optimization: do NOT break on first solution.
                     // With pool diff=1 we find a share after ~200-500 nonces,
@@ -3252,7 +3293,7 @@ pub mod metal_deeksha_lite_fire {
                     .map_err(|_| anyhow::anyhow!("Metal Fire async wait failed"))?;
 
                 if let Some((nonce, hash)) = self.read_result() {
-                    all_solutions.push((nonce, hash));
+                    all_solutions.push((nonce, hash, None));
                     total_tested += (nonce.saturating_sub(current_nonce) + 1).min(chunk as u64);
                 }
 
@@ -3322,6 +3363,16 @@ pub mod opencl_external {
         algorithm: String,
         miner: AuxPowGpuMiner,
         work_size: usize,
+        /// Cached Ethash DAG epoch (None = no DAG loaded).
+        ethash_dag_epoch: Option<u32>,
+        /// Cached KawPow DAG epoch (None = no DAG loaded).
+        kawpow_dag_epoch: Option<u32>,
+        /// Cached KawPow DAG data (stored as u64 lanes for GPU upload).
+        kawpow_dag_data: Option<Vec<u64>>,
+        /// Cached KawPow DAG entry count.
+        kawpow_dag_entries: Option<u64>,
+        /// Current epoch hint from the job (set by update_epoch_from_job).
+        current_epoch_hint: Option<u32>,
     }
 
     impl OpenClExternalMiner {
@@ -3332,7 +3383,102 @@ pub mod opencl_external {
                 algorithm: algorithm.to_string(),
                 miner,
                 work_size,
+                ethash_dag_epoch: None,
+                kawpow_dag_epoch: None,
+                kawpow_dag_data: None,
+                kawpow_dag_entries: None,
+                current_epoch_hint: None,
             })
+        }
+
+        /// Ensure the Ethash DAG is loaded for the given epoch.
+        /// Generates and uploads the DAG if not already cached for this epoch.
+        #[cfg(feature = "native-hashers")]
+        fn ensure_ethash_dag(&mut self, epoch: u32) -> Result<()> {
+            if self.ethash_dag_epoch == Some(epoch) {
+                return Ok(());  // DAG already loaded for this epoch
+            }
+
+            println!(
+                "auxpow_ethash_dag_generating epoch={} algorithm={} (this may take several minutes)...",
+                epoch, self.algorithm
+            );
+
+            let dag = zion_auxpow::generate_ethash_dag(epoch)
+                .ok_or_else(|| anyhow::anyhow!("ethash_dag_generation_failed epoch={}", epoch))?;
+
+            let dag_u64 = dag.as_u64_slice().to_vec();
+            let dag_entries = dag.dag_size_entries;
+
+            println!(
+                "auxpow_ethash_dag_generated epoch={} entries={} size_mb={}",
+                epoch, dag_entries, dag_u64.len() * 8 / (1024 * 1024)
+            );
+
+            self.miner.set_ethash_dag(&dag_u64, dag_entries, epoch)?;
+            self.ethash_dag_epoch = Some(epoch);
+
+            // Keep the DAG alive — but we transferred the data to GPU already.
+            // The C-allocated buffer is freed when `dag` drops.
+            // We need to keep a reference to prevent Drop from freeing it
+            // before the GPU is done.  However, set_ethash_dag copies the data
+            // to a GPU buffer, so the host buffer can be freed.
+            // Actually, looking at gpu_miner.rs, set_ethash_dag creates a
+            // Buffer::copy_host_slice which copies to GPU memory.  So the
+            // host buffer (dag) can be safely dropped after this call.
+            Ok(())
+        }
+
+        /// Ensure the KawPow DAG is loaded for the given epoch.
+        #[cfg(feature = "native-hashers")]
+        fn ensure_kawpow_dag(&mut self, epoch: u32) -> Result<()> {
+            if self.kawpow_dag_epoch == Some(epoch) {
+                return Ok(());
+            }
+
+            println!(
+                "auxpow_kawpow_dag_generating epoch={} algorithm={} (this may take several minutes)...",
+                epoch, self.algorithm
+            );
+
+            let dag = zion_auxpow::generate_kawpow_dag(epoch)
+                .ok_or_else(|| anyhow::anyhow!("kawpow_dag_generation_failed epoch={}", epoch))?;
+
+            let dag_entries = dag.dag_size_entries;
+            let dag_u64 = dag.as_u64_slice().to_vec();
+
+            println!(
+                "auxpow_kawpow_dag_generated epoch={} entries={} size_mb={}",
+                epoch, dag_entries, dag_u64.len() * 8 / (1024 * 1024)
+            );
+
+            // For KawPow, the DAG is passed via the `extra` parameter in mine().
+            // We store it in a thread-local or static for the mine() call.
+            // Actually, the gpu_miner build_kawpow_kernel reads DAG from extra.
+            // We need to pass it as extra data.  Let's store it in the struct.
+            // But mine() takes &self, so we need to clone the data.
+            // We'll store the DAG as a Vec<u64> in the struct.
+            self.kawpow_dag_data = Some(dag_u64);
+            self.kawpow_dag_entries = Some(dag_entries);
+            self.kawpow_dag_epoch = Some(epoch);
+
+            Ok(())
+        }
+
+        /// Update the epoch hint from the job (called before mine_batch).
+        /// If the epoch changed, triggers DAG regeneration.
+        pub fn update_epoch_from_job(&mut self, epoch: Option<u32>) -> Result<()> {
+            if let Some(ep) = epoch {
+                self.current_epoch_hint = Some(ep);
+                if matches!(self.algorithm.as_str(), "ethash" | "etchash" | "ethash_etc") {
+                    #[cfg(feature = "native-hashers")]
+                    self.ensure_ethash_dag(ep)?;
+                } else if matches!(self.algorithm.as_str(), "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc") {
+                    #[cfg(feature = "native-hashers")]
+                    self.ensure_kawpow_dag(ep)?;
+                }
+            }
+            Ok(())
         }
     }
 
@@ -3349,8 +3495,21 @@ pub mod opencl_external {
             self.algorithm.clone()
         }
 
-        fn update_epoch(&mut self, _height: u64) -> Result<()> {
-            Ok(())
+        fn update_epoch(&mut self, height: u64) -> Result<()> {
+            // For Ethash/KawPow, derive epoch from block height and ensure DAG.
+            // The pool sends the external block number as `height` for
+            // EthStratum coins (ETC/RVN/CLORE).
+            let epoch = if matches!(self.algorithm.as_str(), "ethash" | "etchash" | "ethash_etc") {
+                Some((height / 30000) as u32)
+            } else if matches!(
+                self.algorithm.as_str(),
+                "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
+            ) {
+                Some((height / 7500) as u32)
+            } else {
+                None
+            };
+            self.update_epoch_from_job(epoch)
         }
 
         fn mine_batch(
@@ -3369,11 +3528,6 @@ pub mod opencl_external {
                 | "blake3_dcr"
                 | "autolykos"
                 | "autolykos_erg"
-                | "kawpow"
-                | "kawpow_rvn"
-                | "kawpow_clore"
-                | "kawpow_evr"
-                | "kawpow_mewc"
                 | "ethash"
                 | "etchash"
                 | "ethash_etc" => self.miner.mine(
@@ -3384,6 +3538,36 @@ pub mod opencl_external {
                     nonce_start,
                     actual_batch,
                 ),
+                "kawpow"
+                | "kawpow_rvn"
+                | "kawpow_clore"
+                | "kawpow_evr"
+                | "kawpow_mewc" => {
+                    // KawPow needs the DAG passed via `extra`:
+                    //   bytes 0..8   : dag_entries (u64 LE)
+                    //   bytes 8..    : DAG data as u64 lanes (16 lanes per entry)
+                    if let (Some(dag_data), Some(dag_entries)) =
+                        (&self.kawpow_dag_data, self.kawpow_dag_entries)
+                    {
+                        let mut extra = Vec::with_capacity(8 + dag_data.len() * 8);
+                        extra.extend_from_slice(&dag_entries.to_le_bytes());
+                        for &lane in dag_data.iter() {
+                            extra.extend_from_slice(&lane.to_le_bytes());
+                        }
+                        self.miner.mine(
+                            &self.algorithm,
+                            &header_bytes,
+                            &extra,
+                            &target.bytes,
+                            nonce_start,
+                            actual_batch,
+                        )
+                    } else {
+                        anyhow::bail!(
+                            "kawpow_dag_not_loaded — call update_epoch_from_job() with epoch before mining"
+                        )
+                    }
+                }
                 "kheavyhash" | "kheavyhash_kas" => {
                     // KAS external jobs send a 32-byte pre_pow_hash in header_hex.
                     // The pool pads it to 80 bytes (MiningHeader); the pre_pow_hash
@@ -3405,9 +3589,9 @@ pub mod opencl_external {
             }
             .map_err(|e| anyhow::anyhow!("auxpow_gpu_mine_failed algorithm={} err={}", self.algorithm, e))?;
 
-            if let Some(GpuFoundShare { nonce, hash }) = found {
+            if let Some(GpuFoundShare { nonce, hash, mix_hash }) = found {
                 Ok(GpuBatchResult {
-                    solutions: vec![(nonce, hash)],
+                    solutions: vec![(nonce, hash, mix_hash)],
                     nonces_tested: actual_batch,
                 })
             } else {
@@ -3445,9 +3629,9 @@ pub mod opencl_external {
                     )
                 })?;
 
-            if let Some(GpuFoundShare { nonce, hash }) = found {
+            if let Some(GpuFoundShare { nonce, hash, mix_hash }) = found {
                 Ok(GpuBatchResult {
-                    solutions: vec![(nonce, hash)],
+                    solutions: vec![(nonce, hash, mix_hash)],
                     nonces_tested: actual_batch,
                 })
             } else {

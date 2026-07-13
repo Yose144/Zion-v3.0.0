@@ -983,6 +983,7 @@ fn run_local_session(
         let can_gpu = gpu_ref.is_some();
         let mut gpu_nonces_tested = 0u64;
         let mut cpu_nonces_tested = 0u64;
+        let mut gpu_mix_hash: Option<[u8; 32]> = None;
         let scan_result = if can_gpu {
             let g = gpu_ref.unwrap();
             if let Err(e) = g.update_epoch(job.height) {
@@ -995,6 +996,7 @@ fn run_local_session(
             } else {
                 let result = gpu_backend::gpu_scan_job(g, job, &current_algorithm, &raw_header_bytes);
                 gpu_nonces_tested = result.nonces_tested;
+                gpu_mix_hash = result.mix_hash;
                 result.solution
             }
         } else {
@@ -1108,11 +1110,20 @@ fn run_local_session(
         let submit_started_at = Instant::now();
 
         let job_line = encode_message(&pool.job_message(job, &current_algorithm))?;
-        let submit_line = encode_message(&pool.solution_message(
-            &config.miner_id,
-            &config.worker_name,
-            solution,
-        ))?;
+        let submit_line = if let Some(mh) = gpu_mix_hash {
+            encode_message(&pool.solution_message_with_mix(
+                &config.miner_id,
+                &config.worker_name,
+                solution,
+                &mh,
+            ))?
+        } else {
+            encode_message(&pool.solution_message(
+                &config.miner_id,
+                &config.worker_name,
+                solution,
+            ))?
+        };
         let result_line = encode_message(&pool.result_message(&decision))?;
         telemetry.record_submit_latency(submit_started_at.elapsed());
         last_result_line = Some(result_line.clone());
@@ -1452,6 +1463,7 @@ fn run_remote_session(
         let can_gpu = gpu_ref.is_some() && gpu_on;
         let mut gpu_nonces_tested = 0u64;
         let mut cpu_nonces_tested = 0u64;
+        let mut gpu_mix_hash: Option<[u8; 32]> = None;
         let scan_result = if can_gpu {
             let g = gpu_ref.unwrap();
             if let Err(e) = g.update_epoch(job.height) {
@@ -1464,6 +1476,7 @@ fn run_remote_session(
             } else {
                 let result = gpu_backend::gpu_scan_job(g, job, &current_algorithm, &raw_header_bytes);
                 gpu_nonces_tested = result.nonces_tested;
+                gpu_mix_hash = result.mix_hash;
                 result.solution
             }
         } else if cpu_on {
@@ -1599,6 +1612,9 @@ fn run_remote_session(
         }
 
         let submit_started_at = Instant::now();
+        let mix_hash_hex = gpu_mix_hash.map(|mh| {
+            mh.iter().map(|b| format!("{:02x}", b)).collect::<String>()
+        });
         let submit_message = PoolMessage::Submit {
             job_id: solution.job_id,
             miner_id: config.miner_id.clone(),
@@ -1607,6 +1623,7 @@ fn run_remote_session(
             hash_hex: hex(&solution.hash),
             attempted_hashes: Some(tested),
             elapsed_ms: Some(job_started_at.elapsed().as_millis() as u64),
+            mix_hash_hex,
         };
         let submit_line = write_wire_message(&mut writer, &submit_message)?;
         let (result_line_raw, result_message) = read_next_result(&mut reader)?;

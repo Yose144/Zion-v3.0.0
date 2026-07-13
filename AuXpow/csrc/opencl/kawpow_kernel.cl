@@ -183,7 +183,8 @@ void keccak256(const uchar *input, const uint len, uchar *output) {
 //                   dag[index * 16 + lane] accesses lane within entry.
 //   dag_entries   — number of 128-byte DAG entries (dag_size / 128)
 //   output_nonce  — single u64, written when a solution is found
-//   output_hash   — 32-byte hash of the winning nonce
+//   output_hash   — 32-byte final hash of the winning nonce
+//   output_mix    — 32-byte compressed mix hash (for eth_submitWork)
 //   found         — atomic flag: 0 = not found, 1 = found
 __kernel void kawpow_mine(
     __global const uchar *header_hash,  // 32 bytes
@@ -193,6 +194,7 @@ __kernel void kawpow_mine(
     const ulong dag_entries,            // number of 128-byte entries
     __global ulong *output_nonce,
     __global uchar *output_hash,
+    __global uchar *output_mix,         // 32-byte compressed mix hash
     __global volatile uint *found
 )
 {
@@ -276,6 +278,8 @@ __kernel void kawpow_mine(
         if (old == 0u) {
             *output_nonce = nonce;
             for (int i = 0; i < 32; i++) output_hash[i] = hash[i];
+            // Write the compressed mix hash for eth_submitWork.
+            for (int i = 0; i < 32; i++) output_mix[i] = mix_bytes[i];
         }
     }
 }

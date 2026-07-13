@@ -393,7 +393,7 @@ impl AuxPowScheduler {
                 let client = client_guard.as_ref().ok_or_else(|| {
                     anyhow::anyhow!("no client connected")
                 })?;
-                client.submit_share(&job.job_id, nonce, &hash_hex).await
+                client.submit_share(&job.job_id, nonce, &hash_hex, None).await
             };
 
             let mut stats = self.stats.lock().await;

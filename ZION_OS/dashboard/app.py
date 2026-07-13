@@ -2725,11 +2725,11 @@ def _build_status_edge_primary() -> dict:
     # Mark pool as alive if we successfully fetched metrics
     if edge_metrics.get("active_miners") is not None:
         pool_edge_health = {"alive": True}
-    # v3.0.4 fallback: pool doesn't expose Prometheus metrics on 8455.
-    # Use TCP probe to stratum port 8444 instead.
+    # Fallback: TCP probe to pool metrics port 8455 (NOT stratum port 8444,
+    # which would create a spurious session on the pool server).
     if not pool_edge_health["alive"]:
         try:
-            pool_edge_health = {"alive": tcp_probe("127.0.0.1", 8444, timeout=0.5)}
+            pool_edge_health = {"alive": tcp_probe("127.0.0.1", 8455, timeout=0.5)}
         except Exception:
             pool_edge_health = {"alive": False}
 
@@ -6289,7 +6289,7 @@ def get_network_topology() -> dict:
         "ports": {
             "node_p2p": check_port_open("127.0.0.1", 8333),
             "node_rpc": check_port_open("127.0.0.1", 8443),
-            "pool_stratum": check_port_open("127.0.0.1", 8444),
+            "pool_stratum": check_port_open("127.0.0.1", 8455),  # metrics port, not stratum 8444
             "dashboard": check_port_open("127.0.0.1", 8766),
             "hiranyagarbha": check_port_open("127.0.0.1", 8001),
             "hiran_inference": check_port_open("127.0.0.1", 8002),

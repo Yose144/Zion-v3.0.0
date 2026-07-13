@@ -574,6 +574,153 @@ EXPORT double ethash_benchmark(int32_t iterations) {
     return secs > 0.0 ? iterations / secs : 0.0;
 }
 
+/* ============================================================================
+ * DAG GENERATOR — light cache → full DAG (graph expansion)
+ *
+ * Implements the standard Ethash dataset generation:
+ *   1. Build the light cache (already done by _ctx_init_epoch)
+ *   2. For each DAG node i (128 bytes = 16 x u64):
+ *      a. Start with a copy of cache[i % cache_items]
+ *      b. Mix with 256 parent nodes (ETHASH_DATASET_PARENTS) using FNV-1a
+ *         index selection and keccak-512 mixing
+ *   3. The result is the full DAG buffer
+ *
+ * The caller owns the returned buffer and must free() it.
+ * Returns NULL on allocation failure or if the cache is not initialized.
+ *
+ * Parameters:
+ *   epoch            — epoch number (determines cache + DAG size)
+ *   dag_size_entries — output: number of 128-byte entries generated
+ *   progress_cb      — optional callback called after each 1% of DAG generated
+ *                      (may be NULL); receives percentage 0..100
+ * Returns:
+ *   pointer to DAG buffer (dag_size_entries * 128 bytes), or NULL on error.
+ *   Caller must free() the returned pointer.
+ * ============================================================================ */
+
+typedef void (*dag_progress_cb)(uint32_t percent);
+
+/* Calculate a single 64-byte DAG node from the light cache.
+ * Each DAG *entry* is 128 bytes = 2 x 64-byte "nodes".
+ * node_index refers to the 64-byte node, not the 128-byte entry.
+ * So DAG entry e = node(2*e) || node(2*e + 1). */
+static void ethash_calc_dag_node(
+    uint64_t node_index,
+    const uint8_t *cache,
+    uint64_t cache_items,
+    uint8_t *out64)  /* 64-byte output */
+{
+    /* Step 1: init = cache[node_index % cache_items] (64 bytes) */
+    uint8_t mix[64];
+    memcpy(mix, cache + (node_index % cache_items) * 64, 64);
+
+    /* Step 2: mix with 256 parents */
+    for (uint32_t p = 0; p < ETHASH_DATASET_PARENTS; p++) {
+        uint32_t mix_first = *(const uint32_t *)(const void *)mix;
+        uint32_t parent_idx = fnv1a((uint32_t)(node_index ^ p), mix_first) % (uint32_t)cache_items;
+        const uint8_t *parent = cache + (uint64_t)parent_idx * 64;
+
+        /* FNV-1a per 32-bit word (16 words in 64 bytes) */
+        for (int j = 0; j < 16; j++) {
+            uint32_t *mix_w = (uint32_t *)(void *)(mix + j * 4);
+            uint32_t parent_w = *(const uint32_t *)(const void *)(parent + j * 4);
+            *mix_w = fnv1a(*mix_w, parent_w);
+        }
+    }
+
+    /* Step 3: keccak-512(mix) -> output (64 bytes) */
+    keccak512(mix, 64, out64);
+}
+
+/* Generate the full DAG for a given epoch.
+ * The caller owns the returned buffer and must free() it.
+ *
+ *   epoch             — epoch number
+ *   dag_size_entries  — output: number of 128-byte entries
+ *   progress_cb       — optional progress callback (0..100), may be NULL
+ *   returns           — malloc'd DAG buffer (dag_size_entries * 128 bytes),
+ *                       or NULL on error.  Caller must free().
+ */
+EXPORT uint8_t *ethash_generate_dag(
+    uint32_t epoch,
+    uint64_t *dag_size_entries,
+    dag_progress_cb progress_cb)
+{
+    if (!dag_size_entries) return NULL;
+    *dag_size_entries = 0;
+
+    /* Initialize the light cache for this epoch (full size, not capped) */
+    if (!g_ctx) {
+        g_ctx = (ethash_ctx_t *)calloc(1, sizeof(ethash_ctx_t));
+        if (!g_ctx) return NULL;
+    }
+
+    /* If cache is for a different epoch, rebuild it (full size) */
+    if (!g_ctx->initialized || g_ctx->epoch != epoch) {
+        if (g_ctx->cache) { free(g_ctx->cache); g_ctx->cache = NULL; }
+        g_ctx->epoch = epoch;
+        ethash_get_seedhash(epoch, g_ctx->seed);
+
+        /* Full cache size (not capped at 64 MB for DAG generation) */
+        uint64_t full_cache = ethash_get_cache_size(epoch);
+        g_ctx->cache_size  = full_cache;
+        g_ctx->cache_items = full_cache / 64;
+
+        g_ctx->cache = (uint8_t *)malloc(full_cache);
+        if (!g_ctx->cache) return NULL;
+
+        /* Generate cache: seed first item, chain with keccak-512 */
+        keccak512(g_ctx->seed, 32, g_ctx->cache);
+        for (uint64_t i = 1; i < g_ctx->cache_items; i++) {
+            keccak512(g_ctx->cache + (i - 1) * 64, 64, g_ctx->cache + i * 64);
+        }
+
+        /* RANDMEMOHASH mixing rounds (3 rounds) */
+        for (int r = 0; r < ETHASH_CACHE_ROUNDS; r++) {
+            for (uint64_t i = 0; i < g_ctx->cache_items; i++) {
+                uint32_t v = *(uint32_t *)(void *)&g_ctx->cache[i * 64] % (uint32_t)g_ctx->cache_items;
+                uint64_t prev = (i + g_ctx->cache_items - 1) % g_ctx->cache_items;
+                uint8_t tmp[64];
+                for (int j = 0; j < 64; j++)
+                    tmp[j] = g_ctx->cache[prev * 64 + j] ^ g_ctx->cache[v * 64 + j];
+                keccak512(tmp, 64, g_ctx->cache + i * 64);
+            }
+        }
+        g_ctx->initialized = 1;
+    }
+
+    /* Calculate DAG size */
+    uint64_t ds_entries = ethash_get_dataset_size(epoch) / ETHASH_DAG_ENTRY_BYTES;
+    uint64_t ds_bytes   = ds_entries * ETHASH_DAG_ENTRY_BYTES;
+
+    /* Allocate DAG buffer */
+    uint8_t *dag = (uint8_t *)malloc(ds_bytes);
+    if (!dag) return NULL;
+
+    /* Generate each 128-byte DAG entry = 2 x 64-byte canonical nodes */
+    uint64_t total_nodes = ds_entries * 2;  /* 2 nodes per entry */
+    uint64_t progress_step = (total_nodes / 100) + 1;
+    for (uint64_t n = 0; n < total_nodes; n++) {
+        ethash_calc_dag_node(n, g_ctx->cache, g_ctx->cache_items,
+                              dag + n * 64);
+        if (progress_cb && (n % progress_step == 0)) {
+            progress_cb((uint32_t)(n * 100 / total_nodes));
+        }
+    }
+
+    *dag_size_entries = ds_entries;
+
+    if (progress_cb) progress_cb(100);
+
+    return dag;
+}
+
+/* Free a DAG buffer generated by ethash_generate_dag.
+ * This is just free() but exported for FFI safety. */
+EXPORT void ethash_free_dag(uint8_t *dag) {
+    free(dag);
+}
+
 /* Cleanup */
 EXPORT void ethash_cleanup(void) {
     if (g_ctx) {
