@@ -711,7 +711,7 @@ fn main() -> Result<()> {
     let metrics = Arc::new(Mutex::new(MinerMetricsSnapshot::from_config(&config)));
 
     // ── Interactive control + hashrate tracker ──
-    let interactive = parse_bool_env("ZION_INTERACTIVE", true);
+    let interactive = parse_bool_env("ZION_INTERACTIVE", false);
     let control = Arc::new(Mutex::new(MinerControl::new(
         &config.algorithm,
         config.threads,
