@@ -135,7 +135,7 @@ void blake3_compress16(
 
     for (int i = 0; i < 8; i++) {
         out16[i]     = state[i] ^ state[i + 8];
-        out16[i + 8] = state[i] ^ state[i + 8];
+        out16[i + 8] = state[i + 8] ^ chain[i];
     }
 }
 
@@ -196,7 +196,7 @@ __kernel void blake3_alph_mine(
     __global volatile uint *found
 )
 {
-    if (atomic_load(found)) return;
+    if (*found) return;
 
     ulong candidate = base_nonce + (ulong)get_global_id(0);
 

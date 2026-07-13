@@ -225,9 +225,9 @@ __kernel void kawpow_mine(
         uint idx_seed = fnv1a((uint)i ^ mix[0], mix[0]);
         ulong index = (ulong)idx_seed % dag_entries;
 
-        // Load 128-byte DAG node = 16 uint32 values (16 ulong lanes)
-        // dag[index * 16 + lane] is a ulong; we need uint32 values.
-        // Each ulong lane = 2 uint32 values (little-endian).
+        // Load first 64 bytes of 128-byte DAG node = 16 uint32 (8 ulong lanes).
+        // KawPow uses a 16-uint32 mix; only the first half of each 128-byte
+        // DAG entry participates in FNV-1a mixing (matches C reference).
         uint dag_node[16];
         for (int lane = 0; lane < 8; lane++) {
             ulong val = dag[index * 16 + lane];
