@@ -39,10 +39,16 @@ pub enum StratumProtocol {
 impl ExternalCoin {
     pub fn protocol(self) -> StratumProtocol {
         match self {
-            Self::DCR | Self::FLUX | Self::XMR | Self::KAS | Self::ALPH => {
+            // 2miners ETC uses standard Stratum v1 (mining.subscribe +
+            // mining.authorize + mining.notify), NOT EthStratum.
+            // The notify params carry [seed_hash, header_hash, target, clean].
+            Self::DCR | Self::FLUX | Self::XMR | Self::KAS | Self::ALPH
+            | Self::ETC => {
                 StratumProtocol::Stratum
             }
-            Self::ERG | Self::RVN | Self::ETC | Self::EVR | Self::MEWC | Self::CLORE => {
+            // ERG/RVN/CLORE/EVR/MEWC use EthStratum (eth_submitLogin +
+            // eth_getWork + eth_submitWork).
+            Self::ERG | Self::RVN | Self::EVR | Self::MEWC | Self::CLORE => {
                 StratumProtocol::EthStratum
             }
         }
@@ -307,7 +313,8 @@ impl AuxPowClient {
                     }
                     "mining.notify" => {
                         if let Some(params) = parsed.get("params") {
-                            if let Ok(job) = self.parse_notify_params(params).await {
+                            let notify_height = parsed.get("height").and_then(|v| v.as_u64());
+                            if let Ok(job) = self.parse_notify_params(params, notify_height).await {
                                 *self.current_job.lock().await = Some(job);
                                 self.job_notify.notify_waiters();
                             }
@@ -553,7 +560,10 @@ impl AuxPowClient {
             match method {
                 "mining.notify" => {
                     if let Some(params) = msg.get("params") {
-                        let job = self.parse_notify_params(params).await?;
+                        // 2miners ETC sends a top-level "height" field in
+                        // mining.notify — extract it for DAG epoch derivation.
+                        let notify_height = msg.get("height").and_then(|v| v.as_u64());
+                        let job = self.parse_notify_params(params, notify_height).await?;
                         debug!(
                             "AuxPow: received job {} for {}",
                             job.job_id, self.profile.coin
@@ -631,7 +641,7 @@ impl AuxPowClient {
                                     to_group: 0,
                                     extranonce1: self.extranonce1.lock().await.clone(),
                                     extranonce2: String::new(),
-                                    epoch: None,
+                                    epoch,
                                 };
                                 *self.current_job.lock().await = Some(job);
                                 self.job_notify.notify_waiters();
@@ -654,7 +664,7 @@ impl AuxPowClient {
     ///   - Standard Bitcoin-like: [job_id, prevhash, coinbase1, coinbase2,
     ///     branches, version, nbits, ntime, clean_jobs]
     ///   - Simplified: [job_id, header_hex, target_hex]
-    async fn parse_notify_params(&self, params: &Value) -> Result<ExternalJob> {
+    async fn parse_notify_params(&self, params: &Value, notify_height: Option<u64>) -> Result<ExternalJob> {
         // Debug: log raw notify params for DCR to diagnose format issues.
         if self.profile.coin == ExternalCoin::DCR {
             println!(
@@ -769,6 +779,85 @@ impl AuxPowClient {
                         });
                     }
                 }
+            }
+        }
+
+        // ETC / Ethash Stratum v1 hybrid (2miners):
+        // mining.notify params = [seed_hash, header_hash, boundary, target, clean_jobs]
+        // where seed_hash and header_hash are 0x-prefixed 32-byte hex strings,
+        // boundary is the share target, target is the network target, and
+        // clean_jobs is a bool.  The top-level "height" field gives the block
+        // height for DAG epoch derivation (height / 30000).
+        // NOTE: 2miners sends the same value for seed_hash and header_hash;
+        // the real DAG seed hash is derived from the epoch, not from arr[0].
+        if let Some(arr) = params.as_array() {
+            if arr.len() >= 3
+                && self.profile.coin == ExternalCoin::ETC
+                && arr[0].as_str().map(|s| s.starts_with("0x") && s.len() == 66).unwrap_or(false)
+                && arr[1].as_str().map(|s| s.starts_with("0x") && s.len() == 66).unwrap_or(false)
+            {
+                let seed_hash = arr[0].as_str().unwrap_or("").to_string();
+                let header_hex = arr[1].as_str().unwrap_or("").to_string();
+                let target_hex = arr[2].as_str().unwrap_or("").to_string();
+
+                let header_bytes = hex::decode(header_hex.trim_start_matches("0x"))
+                    .unwrap_or_default();
+                let target_bytes = crate::external_hashers::parse_target_hex(
+                    target_hex.trim_start_matches("0x"),
+                )
+                .unwrap_or([0xFFu8; 32]);
+
+                // Derive epoch from block height (height / 30000 for Ethash/Etchash).
+                // Fall back to seed hash search if height is not available.
+                let epoch = if let Some(height) = notify_height {
+                    let e = (height / crate::external_hashers::ETHASH_EPOCH_LENGTH as u64) as u32;
+                    println!(
+                        "auxpow: ETC epoch={} from height={}",
+                        e, height
+                    );
+                    Some(e)
+                } else {
+                    // Fall back: try to find epoch from seed hash.
+                    let seed_bytes = hex::decode(seed_hash.trim_start_matches("0x"))
+                        .unwrap_or_default();
+                    if seed_bytes.len() == 32 {
+                        let seed_arr: [u8; 32] = seed_bytes[..32].try_into().unwrap();
+                        crate::external_hashers::ethash_epoch_from_seed_hash(
+                            &seed_arr,
+                            crate::external_hashers::ETHASH_MAX_EPOCH_SEARCH,
+                        )
+                    } else {
+                        None
+                    }
+                };
+
+                println!(
+                    "auxpow: ETC notify — seed={}, header={}, target={}, epoch={:?}, height={:?}",
+                    &seed_hash[..16.min(seed_hash.len())],
+                    &header_hex[..16.min(header_hex.len())],
+                    &target_hex[..16.min(target_hex.len())],
+                    epoch,
+                    notify_height,
+                );
+
+                return Ok(ExternalJob {
+                    job_id: header_hex.clone(),
+                    header_hex,
+                    target_hex,
+                    seed_hash: Some(seed_hash),
+                    block_number: notify_height,
+                    algorithm: self.profile.algorithm.clone(),
+                    header_bytes,
+                    target_bytes,
+                    timestamp: None,
+                    nbits: None,
+                    external_coin: self.profile.coin,
+                    from_group: 0,
+                    to_group: 0,
+                    extranonce1: self.extranonce1.lock().await.clone(),
+                    extranonce2: String::new(),
+                    epoch,
+                });
             }
         }
 
@@ -982,6 +1071,21 @@ impl AuxPowClient {
             let full_nonce = u64::from_le_bytes(full);
             let hex = format!("{:016x}", full_nonce);
             ("mining.submit", json!([worker, job_id, hex]))
+        } else if self.profile.coin == ExternalCoin::ETC {
+            // ETC on 2miners uses Stratum v1 mining.submit with 4 params:
+            //   [worker, job_id, nonce_hex, mix_hash_hex]
+            // job_id = header_hash from notify, nonce = 0x-prefixed hex,
+            // mix_hash = 0x-prefixed 32-byte PoW mix hash from GPU kernel.
+            let wallet = self.payout_wallet.lock().await.clone();
+            let worker = format!("{}.{}", wallet, self.profile.worker_name);
+            let nonce_hex = format!("0x{:016x}", nonce);
+            let mix_src = mix_hash_hex.unwrap_or(_hash_hex);
+            let mix_hex = if mix_src.starts_with("0x") {
+                mix_src.to_string()
+            } else {
+                format!("0x{}", mix_src)
+            };
+            ("mining.submit", json!([worker, job_id, nonce_hex, mix_hex]))
         } else if self.profile.coin == ExternalCoin::DCR {
             // DCR Blake3: standard Stratum v1 submit with 5 params:
             //   [worker, job_id, extranonce2, ntime, nonce]
@@ -1611,7 +1715,7 @@ mod tests {
         assert_eq!(ExternalCoin::DCR.protocol(), StratumProtocol::Stratum);
         assert_eq!(ExternalCoin::ALPH.protocol(), StratumProtocol::Stratum);
         assert_eq!(ExternalCoin::KAS.protocol(), StratumProtocol::Stratum);
-        assert_eq!(ExternalCoin::ETC.protocol(), StratumProtocol::EthStratum);
+        assert_eq!(ExternalCoin::ETC.protocol(), StratumProtocol::Stratum);
         assert_eq!(ExternalCoin::RVN.protocol(), StratumProtocol::EthStratum);
     }
 

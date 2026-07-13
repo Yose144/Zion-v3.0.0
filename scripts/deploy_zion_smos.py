@@ -5,13 +5,17 @@ import json, os, sys, time, urllib.request, base64, re
 API = "https://api.simplemining.net"
 RIG = 518837
 GROUP = 1773590
-MINER_URL = "https://zionterranova.com/zion-miner/zion-sm3042c.zip"
+MINER_URL = "https://zionterranova.com/zion-miner/zion-sm-gpu-etc2.zip"
 CUSTOM_MINER = MINER_URL
+# SMOS custom miner format: minerOptions = "URL arg1 arg2 ... argX"
+# The URL goes FIRST, followed by the miner arguments.
 MINER_OPTS = (
+    MINER_URL + " "
     "--algorithm deeksha_lite_fire "
     "--pool 62.171.141.136:8444 "
-    "--wallet zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604 "
+    "--wallet zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2 "
     "--worker vega-smos "
+    "--gpu opencl "
     "--api-enable"
 )
 
@@ -64,14 +68,17 @@ if __name__ == "__main__":
     with urllib.request.urlopen(req, timeout=30) as r:
         print(f"   HTTP {r.status} len={r.headers.get('Content-Length')}")
 
-    print(f">> update group {GROUP} with customMiner + minerOptions")
+    print(f">> update group {GROUP} with customMiner URL + minerOptions")
     api("PUT", f"/rig-groups/{GROUP}", {"customMiner": CUSTOM_MINER, "minerOptions": MINER_OPTS})
 
     print(">> clear cached miner on rig")
     api("PATCH", "/rigs/execute-command", {
         "rigIds": [RIG], "commandId": 7,
         "commandOptions": (
-            "rm -rf /root/miner/custom_zion-miner-v3.0.32-gpu "
+            "rm -rf /root/miner/custom_zion-sm-gpu-etc2 "
+            "/root/miner/custom_zion-sm-gpu-etc "
+            "/root/miner/custom_zion-sm-gpu "
+            "/root/miner/custom_zion-miner-v3.0.32-gpu "
             "/root/miner/custom_zion-sm3031 "
             "/var/tmp/miner/custom_* ; echo CACHE_CLEARED"
         ),

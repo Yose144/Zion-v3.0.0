@@ -442,7 +442,7 @@ async fn run_auxpow_bridge(
             let started = Instant::now();
             let result = if let Some(client) = mux.client() {
                 let forwarder = ShareForwarder::new(client);
-                match forwarder.try_forward(&req.external_job_id, req.nonce, &req.hash, &req.target).await {
+                match forwarder.try_forward(&req.external_job_id, req.nonce, &req.hash, &req.target, req.mix_hash.as_ref()).await {
                     Ok(r) => {
                         println!(
                             "auxpow_bridge: share_forwarded job_id={} nonce={} result={:?} elapsed_ms={}",
@@ -1362,6 +1362,7 @@ fn handle_external_share(
     hash: &[u8; 32],
     worker_name: &str,
     job_id: String,
+    mix_hash: Option<[u8; 32]>,
 ) -> ShareDecision {
     let external_job = match assignment {
         WorkAssignment::External(j) => j,
@@ -1378,6 +1379,7 @@ fn handle_external_share(
         nonce,
         hash: *hash,
         target: external_job.target_bytes,
+        mix_hash,
     };
 
     match bridge.forward(forward_req) {
@@ -1625,10 +1627,17 @@ fn handle_client(
             .next_lane_for_group(session_group);
 
         let desired_external_coin = if config.auxpow_config.enabled {
-            config
-                .auxpow_config
-                .force_coin
-                .or_else(|| revenue_source_to_external_coin(revenue_source))
+            // For sessions explicitly assigned to the Zion group, never
+            // override with an external coin — the miner asked for ZION work.
+            // For Revenue/Auto groups, prefer force_coin then revenue_source.
+            if session_group == SessionGroup::Zion {
+                None
+            } else {
+                config
+                    .auxpow_config
+                    .force_coin
+                    .or_else(|| revenue_source_to_external_coin(revenue_source))
+            }
         } else {
             None
         };
@@ -1754,7 +1763,7 @@ fn handle_client(
                 hash_hex,
                 attempted_hashes,
                 elapsed_ms,
-                mix_hash_hex: _,
+                mix_hash_hex,
             } => {
                 if submit_miner_id != miner_id || submit_worker_name != worker_name {
                     println!(
@@ -1904,6 +1913,10 @@ fn handle_client(
                     // For external jobs this means the share meets the external pool's
                     // target and should be forwarded upstream.
                     let decision = if assignment.is_external() {
+                        // Parse mix_hash from hex if present (Ethash/KawPow).
+                        let mix_hash = mix_hash_hex
+                            .as_deref()
+                            .and_then(|h| parse_hash_hex(h).ok());
                         handle_external_share(
                             &assignment,
                             &auxpow_bridge,
@@ -1911,6 +1924,7 @@ fn handle_client(
                             target_hash,
                             &worker_name,
                             job_id.to_string(),
+                            mix_hash,
                         )
                     } else if network_target.allows(target_hash) {
                         // Block found! Submit to the node.
@@ -2597,6 +2611,8 @@ struct ShareForwardRequest {
     nonce: u64,
     hash: [u8; 32],
     target: [u8; 32],
+    /// Mix hash for Ethash/KawPow (eth_submitWork).  None for other algorithms.
+    mix_hash: Option<[u8; 32]>,
 }
 
 /// Result of a share-forward request returned to the session handler.
@@ -4681,6 +4697,7 @@ mod tests {
                 region: "eu".to_string(),
                 payout_wallet: "bc1qtest".to_string(),
                 worker_name: "zion_auxpow_test".to_string(),
+                coin_wallets: std::collections::HashMap::new(),
             },
         };
         let (pool_addr, auxpow_bridge, pool_handle) = spawn_pool_server(config.clone(), None)
@@ -4905,7 +4922,7 @@ mod tests {
             };
             let started = std::time::Instant::now();
             let result = match forwarder
-                .try_forward(&req.external_job_id, req.nonce, &req.hash, &req.target)
+                .try_forward(&req.external_job_id, req.nonce, &req.hash, &req.target, req.mix_hash.as_ref())
                 .await
             {
                 Ok(r) => r,
@@ -4963,6 +4980,7 @@ mod tests {
                 region: "eu".to_string(),
                 payout_wallet: "bc1qtest".to_string(),
                 worker_name: "zion_auxpow_e2e".to_string(),
+                coin_wallets: std::collections::HashMap::new(),
             },
         };
         let (pool_addr, _bridge_for_server, pool_handle) = spawn_pool_server(config, Some(bridge))

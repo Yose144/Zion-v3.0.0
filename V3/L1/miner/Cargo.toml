@@ -46,6 +46,9 @@ native-all = [
     "native-blake3-algo", "native-cosmic-harmony", "native-verushash", "native-randomx",
 ]
 
+# AuXpow native hashers (DAG generation for Ethash/KawPow via C FFI)
+native-hashers = ["zion-auxpow/native-hashers"]
+
 # Hard-fork rehearsal: same consensus gates as node/pool (`V3/docs/operational/AUDIT_CLOSEOUT_1_THROUGH_6.md`).
 testnet_fork_rehearsal = ["zion-core/testnet_fork_rehearsal", "zion-pool/testnet_fork_rehearsal"]
 
