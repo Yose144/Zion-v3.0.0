@@ -1,7 +1,7 @@
 # ZION WARP — Contract Addresses & Configuration
 
-> **Status:** 🟡 Template — vyplň adresy po deploy kontraktů
-> **Last updated:** 2026-07-12
+> **Status:** 🟢 EVM + LND + ZionDex deployed · 🟡 Non-EVM contracts ready, pending deploy
+> **Last updated:** 2026-07-13
 > **Purpose:** Jednotné místo pro všechny kontrakt adresy, relay klíče, RPC endpointy a env vars pro WARP bridge
 >
 > **Jak používat:**
@@ -82,13 +82,19 @@ WARP validators sledují BTC blockchain, po 6 confirmations mintne ZION na L1.
 
 ---
 
-## 3. Lightning Network (BTC L2) — 🟡 DOCKER READY
+## 3. Lightning Network (BTC L2) — ✅ DEPLOYED (testnet)
 
 | Položka | Env Var | Hodnota | Status |
 |---------|---------|---------|--------|
-| **LND REST URL** | `WARP_LN_NODE_URL` | `https://127.0.0.1:8080` | 🔴 Not set (LND neběží) |
-| **LND macaroon** | `WARP_LN_MACAROON` | hex-encoded admin macaroon | 🔴 Not set |
-| **LND TLS cert** | `WARP_LN_TLS_CERT` | `/root/.lnd/tls.cert` | 🔴 Not set |
+| **LND REST URL** | `WARP_LN_NODE_URL` | `https://127.0.0.1:8080` | ✅ Live (Docker) |
+| **LND gRPC URL** | `ZION_LN_GRPC_URL` | `127.0.0.1:10009` | ✅ Live (Docker) |
+| **LND macaroon** | `WARP_LN_MACAROON` / `ZION_LN_MACAROON` | hex-encoded admin macaroon | ✅ Extracted |
+| **LND TLS cert** | `WARP_LN_TLS_CERT` / `ZION_LN_TLS_CERT` | `/root/.lnd/tls.cert` | ✅ Extracted |
+| **LND pubkey** | `ZION_LN_PUBKEY` | `<node pubkey>` | ✅ Set |
+| **LND network** | `ZION_LN_NETWORK` | `testnet` | ✅ (mainnet pending) |
+| **Deposit address** | `ZION_LN_DEPOSIT_ADDRESS` | `<on-chain addr>` | ✅ Set |
+| **systemd service** | `zion-lnd.service` | — | ✅ Active |
+| **Docker stack** | bitcoind + LND + Redis | — | ✅ Running (testnet, syncing) |
 
 ### LND Setup (Docker)
 - **Docker compose:** `V3/L3/warp/docker/lightning/docker-compose.yml`
@@ -281,24 +287,44 @@ Kontrakty jsou v `V3/L2/bridge/contracts/non-evm/`. Po deploy doplň adresy ní�
 
 ---
 
-## 6. ZionDex Router (na Edge — pending deploy)
+## 6. ZionDex Router (na Edge) — ✅ DEPLOYED
 
 | Položka | Hodnota | Status |
 |---------|---------|--------|
-| **Router API** | `http://127.0.0.1:8454` | 🔴 Not deployed |
+| **Router API (internal)** | `http://127.0.0.1:8454` | ✅ Live |
+| **Router API (public)** | `https://zionterranova.com/dex-api` | ✅ Live (nginx proxy) |
 | **WARP API URL** | `http://127.0.0.1:8453` | ✅ WARP běží |
 | **L1 RPC URL** | `http://127.0.0.1:9443` | ✅ Node běží |
-| **Endpoints** | `GET /quote`, `GET /quote/multi`, `POST /execute`, `GET /health` | ✅ Implementováno |
-| **systemd service** | `zion-ziondex-router.service` | 🔴 Not created |
+| **Endpoints** | `GET /quote`, `GET /quote/multi`, `POST /swap`, `GET /health`, `GET /pools`, `GET /prices/:token`, `GET /swaps`, `WS /stream` | ✅ Implementováno |
+| **Phase 4 — Intent API** | `POST /intent`, `GET /intent/:id`, `POST /intent/:id/bid`, `GET /intent/:id/bids`, `POST /intent/:id/settle`, `POST /intent/:id/cancel`, `GET /intents` | ✅ Implementováno |
+| **systemd service** | `zion-dex.service` | ✅ Active |
+| **Config** | `/root/ziondex-router.toml` | ✅ |
+| **Tests** | 37/37 Rust tests (20 unit + 8 integration + 9 intent) | ✅ |
+
+### ZionDex Phase 3+4 Contracts (na Base) — 🔴 PENDING DEPLOY
+
+| Kontrakt | Address | Status |
+|----------|---------|--------|
+| **ZionDexPoolManager** | `0x...` | 🔴 Pending (script ready) |
+| **ZionDexHooks** | `0x...` | 🔴 Pending |
+| **ZionDexRouter** | `0x...` | 🔴 Pending |
+| **ZDXToken** | `0x...` | 🔴 Pending |
+| **ZionDexStaking** | `0x...` | 🔴 Pending |
+| **SolverRegistry** | `0x...` | 🔴 Pending (Phase 4) |
+| **IntentSettlement** | `0x...` | 🔴 Pending (Phase 4) |
+
+**Deploy script:** `ZionDex/contracts/script/DeployBase.s.sol`
+**Test results:** 20/20 Foundry tests passing (7 PoolManager + 13 IntentSettlement)
+**Deployer address:** `0xA737B512B5EEc5B9E3E3f2476Eb1cFDF6750BA12` (needs ETH on Base)
 
 ---
 
-## 7. Edge Server Port Map (2026-07-12)
+## 7. Edge Server Port Map (2026-07-13)
 
 | Port | Service | Bind | Status |
 |------|---------|------|--------|
 | 80 | nginx (HTTP→HTTPS redirect) | 0.0.0.0 | ✅ |
-| 443 | nginx (HTTPS, zionterranova.com) | 0.0.0.0 | ✅ |
+| 443 | nginx (HTTPS, zionterranova.com + /dex-api proxy) | 0.0.0.0 | ✅ |
 | 3000 | Next.js web (Docker) | 0.0.0.0 | ✅ |
 | 8094 | zion-oasis | 127.0.0.1 | ✅ |
 | 8095 | zion-free-world | 127.0.0.1 | ✅ |
@@ -309,35 +335,72 @@ Kontrakty jsou v `V3/L2/bridge/contracts/non-evm/`. Po deploy doplň adresy ní�
 | 8445 | zion-node WS | 127.0.0.1 | ✅ |
 | 8450 | zion-dao | 127.0.0.1 | ✅ |
 | **8453** | **zion-warp** | **0.0.0.0** | ✅ |
-| **8454** | **zion-ziondex-router** | **127.0.0.1** | 🔴 Free |
-| 8455 | zion-pool metrics | 127.0.0.1 | ✅ |
+| **8454** | **zion-dex (ZionDex Router)** | **0.0.0.0** | ✅ Live |
+| **8455** | **ziondex-solver (Phase 4)** | **0.0.0.0** | 🔴 Free (pending keys) |
 | 8766 | dashboard (python) | 127.0.0.1 | ✅ |
 | 9443 | zion-node RPC | 127.0.0.1 | ✅ |
-| **8080** | **LND REST** | **127.0.0.1** | 🔴 Free (Docker) |
-| **10009** | **LND gRPC** | **127.0.0.1** | 🔴 Free (Docker) |
-| **9735** | **LND Lightning P2P** | **0.0.0.0** | 🔴 Free (Docker) |
-| 18332 | bitcoind RPC (testnet) | 127.0.0.1 | 🔴 Free (Docker) |
-| 18333 | bitcoind P2P (testnet) | 0.0.0.0 | 🔴 Free (Docker) |
-| 28332 | bitcoind ZMQ rawtx | 127.0.0.1 | 🔴 Free (Docker) |
-| 28333 | bitcoind ZMQ rawblock | 127.0.0.1 | 🔴 Free (Docker) |
+| **8080** | **LND REST** | **127.0.0.1** | ✅ Docker (zion-lnd) |
+| **10009** | **LND gRPC** | **127.0.0.1** | ✅ Docker (zion-lnd) |
+| **9735** | **LND Lightning P2P** | **0.0.0.0** | ✅ Docker (zion-lnd) |
+| 18332 | bitcoind RPC (testnet) | 127.0.0.1 | ✅ Docker (zion-lnd) |
+| 18333 | bitcoind P2P (testnet) | 0.0.0.0 | ✅ Docker (zion-lnd) |
+| 28332 | bitcoind ZMQ rawtx | 127.0.0.1 | ✅ Docker (zion-lnd) |
+| 28333 | bitcoind ZMQ rawblock | 127.0.0.1 | ✅ Docker (zion-lnd) |
 
-**Žádné konflikty.** Porty 8454 (ZionDex), 8080/10009/9735 (LND), 18332-28333 (bitcoind) jsou volné.
+**Žádné konflikty.** Port 8455 (solver daemon) je volný — pending provision solver keys.
 
 ---
 
 ## 8. Deploy Checklist (pořadí)
 
-1. **BTC WARP HTLC** — vygeneruj 5-of-5 multisig P2WSH address, nastav `WARP_BTC_HTLC_ADDRESS` + `WARP_BTC_RELAY_KEY`
-2. **LND na Edge** — `docker compose up`, sync, open channels, macaroon
-3. **ZionDex Router na Edge** — build, systemd, port 8454
-4. **Solana** — `anchor deploy`, nastav `WARP_SOL_ZION_MINT` + `WARP_SOL_BRIDGE_PROGRAM`
-5. **Tron** — `tronbox migrate`, nastav `WARP_TRON_ZION_CONTRACT`
-6. **Stellar** — `setup_zion_asset.py`, nastav `WARP_STELLAR_ZION_ISSUER`
-7. **Cardano** — `cardano-cli mint`, nastav `WARP_CARDANO_POLICY_ID`
-8. **Cosmos** — `wasmd store-code`, nastav `WARP_COSMOS_ZION_CONTRACT`
-9. **Aptos** — `aptos move publish`, nastav `WARP_APTOS_BRIDGE_ACCOUNT`
-10. **Sui** — `sui client publish`, nastav `WARP_SUI_PACKAGE`
-11. **NEAR** — `near deploy`, nastav `WARP_NEAR_ZION_CONTRACT`
-12. **TON** — `toncli deploy`, nastav `WARP_TON_JETTON_MASTER`
+### ✅ Hotovo
+1. ~~**LND na Edge** — `docker compose up`, sync, open channels, macaroon~~ ✅ Done (zion-lnd systemd, testnet syncing)
+2. ~~**ZionDex Router na Edge** — build, systemd, port 8454~~ ✅ Done (zion-dex.service active, nginx /dex-api proxy)
+3. ~~**ZionDex Phase 4 — Intent crate + Solver daemon + Contracts~~ ✅ Done (88 tests passing, commit `f32c81501`)
 
-Po každém deploy: `systemctl restart zion-warp` + `curl http://127.0.0.1:8453/health`
+### 🔴 Pending
+4. **BTC WARP HTLC** — vygeneruj 5-of-5 multisig P2WSH address, nastav `WARP_BTC_HTLC_ADDRESS` + `WARP_BTC_RELAY_KEY`
+5. **ZionDex Phase 3+4 contracts na Base** — `forge script DeployBase.s.sol --rpc-url base --broadcast` (needs ETH on deployer `0xA737B512...`)
+6. **Solver daemon na Edge** — `cargo build --release` v `ZionDex/solver/`, provision solver key, systemd service na port 8455
+7. **Solana** — `anchor deploy`, nastav `WARP_SOL_ZION_MINT` + `WARP_SOL_BRIDGE_PROGRAM` + `WARP_SOL_RELAY_KEY`
+8. **Tron** — `tronbox migrate --network mainnet`, nastav `WARP_TRON_ZION_CONTRACT` + `WARP_TRON_RELAY_KEY`
+9. **Stellar** — `python3 setup_zion_asset.py --network mainnet`, nastav `WARP_STELLAR_ZION_ISSUER` + `WARP_STELLAR_BRIDGE_ACCOUNT` + `WARP_STELLAR_RELAY_KEY`
+10. **Cardano** — `cardano-cli transaction mint ...`, nastav `WARP_CARDANO_POLICY_ID` + `WARP_CARDANO_POLICY_SCRIPT` + `BLOCKFROST_PROJECT_ID` + payment/policy keys
+11. **Cosmos** — `wasmd store-code zion_cw20.wasm --from relay --chain-id cosmoshub-4`, nastav `WARP_COSMOS_ZION_CONTRACT` + `WARP_COSMOS_RELAY_KEY`
+12. **Aptos** — `aptos move publish --named-addresses zion_coin=<bridge_account> --profile mainnet`, nastav `WARP_APTOS_BRIDGE_ACCOUNT` + `WARP_APTOS_RELAY_KEY`
+13. **Sui** — `sui client publish --gas-budget 100000000`, nastav `WARP_SUI_PACKAGE` + `WARP_SUI_RELAY_KEY`
+14. **NEAR** — `near deploy --accountId zion.near --wasmFile zion_token.wasm`, nastav `WARP_NEAR_ZION_CONTRACT` + `WARP_NEAR_RELAY_KEY` + `WARP_NEAR_SIGNER_ACCOUNT`
+15. **TON** — `toncli deploy -n mainnet`, nastav `WARP_TON_JETTON_MASTER` + `WARP_TON_BRIDGE_WALLET` + `WARP_TON_RELAY_KEY`
+
+### Po každém deploy
+```bash
+# 1. Nastav env vars v /root/.env.warp
+# 2. Restart WARP
+systemctl restart zion-warp
+# 3. Ověř
+curl http://127.0.0.1:8453/health
+# 4. Ověř specifický chain adapter
+curl http://127.0.0.1:8453/health/<chain>
+```
+
+### CLI tools potřebné pro non-EVM deploy
+```bash
+# Solana
+sh -c "$(curl -sSfL https://release.solana.com/v1.18.0/install)"
+# Tron
+npm install -g tronbox
+# Stellar
+pip install stellar-sdk
+# Cardano
+# (cardano-cli — build from source or download binary)
+# Cosmos
+# (wasmd — build from source)
+# Aptos
+curl -fsSL "https://aptos.dev/scripts/install_cli.py" | python3
+# Sui
+# (sui CLI — build from source or download)
+# NEAR
+npm install -g near-cli
+# TON
+# (toncli — pip install toncli)
+```

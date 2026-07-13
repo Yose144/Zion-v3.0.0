@@ -1459,6 +1459,10 @@ server {
 > **Předpoklad:** Každý chain potřebuje nativní token na gas fees.
 > **Adresy po deploy:** Vyplň v [`docs/3.0.5/CONTRACT_ADDRESSES.md`](./docs/3.0.5/CONTRACT_ADDRESSES.md)
 > **Po každém deploy:** `systemctl restart zion-warp` + `curl http://127.0.0.1:8453/health`
+>
+> **📋 Souhrnný deploy guide:** [`V3/L2/bridge/contracts/non-evm/DEPLOY.md`](./V3/L2/bridge/contracts/non-evm/DEPLOY.md) — per-chain instrukce, CLI tools, env vars, post-deploy checklist
+>
+> **Status (2026-07-13):** Všech 9 kontraktů vytvořeno + WARP adaptéry implementovány s TODO placeholders. Deploy pending — viz DEPLOY.md pro pořadí a cost estimate.
 
 #### B.1 — Bitcoin WARP HTLC (PRIORITY 1)
 
