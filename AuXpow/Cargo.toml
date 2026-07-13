@@ -26,6 +26,12 @@ tracing-subscriber = "0.3"
 chrono = { version = "0.4", features = ["serde"] }
 num-bigint = "0.4"
 ocl = { version = "0.19", optional = true }
+# NVIDIA CUDA GPU acceleration (requires CUDA toolkit)
+cudarc = { version = "0.12", optional = true, features = ["cuda-12040", "driver", "nvrtc"] }
+# Apple Metal GPU acceleration (macOS only)
+metal = { version = "0.33", optional = true }
+objc = { version = "0.2", optional = true }
+block = { version = "0.1", optional = true }
 # Real VerusHash v2.2 C++ (Haraka+CLHash from VerusCoin upstream)
 zion-native-ffi = { path = "../V3/L1/native-ffi", optional = true }
 
@@ -41,5 +47,11 @@ default = []
 native-hashers = []
 # Real VerusHash v2.2 via zion-native-ffi C++ (Haraka+CLHash pipeline)
 native-verushash = ["dep:zion-native-ffi", "zion-native-ffi/native-verushash"]
-# OpenCL GPU acceleration (requires OpenCL runtime)
+# OpenCL GPU acceleration (AMD + NVIDIA via OpenCL runtime)
 gpu-opencl = ["dep:ocl"]
+# NVIDIA CUDA GPU acceleration (native CUDA, best perf on RTX/Ampere)
+gpu-cuda = ["dep:cudarc"]
+# Apple Metal GPU acceleration (macOS Apple Silicon)
+gpu-metal = ["dep:metal", "dep:objc", "dep:block"]
+# All GPU backends
+gpu-all = ["gpu-opencl", "gpu-cuda", "gpu-metal"]

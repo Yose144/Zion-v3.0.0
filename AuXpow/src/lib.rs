@@ -13,8 +13,15 @@ pub mod auxpow_client;
 pub mod auxpow_scheduler;
 pub mod dual_stratum;
 pub mod external_hashers;
+pub mod gpu_backend;
 #[cfg(feature = "gpu-opencl")]
 pub mod gpu_miner;
+#[cfg(feature = "gpu-opencl")]
+pub mod gpu_opencl;
+#[cfg(feature = "gpu-cuda")]
+pub mod gpu_cuda;
+#[cfg(feature = "gpu-metal")]
+pub mod gpu_metal;
 #[cfg(feature = "native-hashers")]
 pub mod native_ffi;
 #[cfg(feature = "native-hashers")]
