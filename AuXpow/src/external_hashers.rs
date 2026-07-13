@@ -53,29 +53,42 @@ impl ExternalAlgorithm {
 
 // ── Blake3 ───────────────────────────────────────────────────────────
 
-/// Compute Blake3 hash of header || nonce (little-endian).
+/// DCR Blake3 nonce offset within the 180-byte block header.
+/// The nonce is a 4-byte little-endian value at offset 140.
+pub const DCR_NONCE_OFFSET: usize = 140;
+/// DCR full header size (180 bytes).
+pub const DCR_HEADER_SIZE: usize = 180;
+/// DCR nonce field size (4 bytes).
+pub const DCR_NONCE_SIZE: usize = 4;
+
+/// Compute Blake3 hash for DCR (DCP-0011).
 ///
-/// Decred (DCR) uses Blake3 for its PoW (DCP-0011, since Oct 2022).
-/// The header is 180 bytes for DCR, but the hash function itself
-/// is standard Blake3 over the header bytes with nonce embedded.
+/// Decred uses Blake3 over the **full 180-byte block header**.  The pool sends
+/// a 144-byte header template (header without the 36-byte extra-data suffix).
+/// The nonce is a 4-byte LE value at offset 140 within the header.
 ///
-/// For pool-side validation, we hash `header || nonce_le` and compare
-/// against the target. The exact header construction is pool-specific.
-///
-/// Alephium (ALPH) also uses Blake3, with a similar approach.
+/// This function:
+///   1. Copies the pool-provided header (≥144 bytes)
+///   2. Overwrites bytes [140..144] with the 4-byte LE nonce
+///   3. Pads to 180 bytes with zeros (extra data)
+///   4. Hashes the full 180-byte header with Blake3
 ///
 /// # Arguments
-/// * `header` — Block header bytes (coin-specific format)
-/// * `_timestamp` — Unused for Blake3 (kept for a uniform hash-fn signature)
-/// * `nonce`  — 64-bit nonce (appended as little-endian)
+/// * `header` — Pool-provided header template (≥140 bytes, typically 144)
+/// * `_timestamp` — Unused for Blake3
+/// * `nonce`  — Nonce value (only lower 32 bits used)
 ///
 /// # Returns
 /// 32-byte Blake3 digest.
 pub fn hash_blake3(header: &[u8], _timestamp: u64, nonce: u64) -> [u8; 32] {
-    let mut hasher = Blake3Hasher::new();
-    hasher.update(header);
-    hasher.update(&nonce.to_le_bytes());
-    *hasher.finalize().as_bytes()
+    let mut full_header = vec![0u8; DCR_HEADER_SIZE];
+    let copy_len = header.len().min(DCR_HEADER_SIZE);
+    full_header[..copy_len].copy_from_slice(&header[..copy_len]);
+    // Insert 4-byte LE nonce at offset 140
+    let nonce_bytes = (nonce as u32).to_le_bytes();
+    full_header[DCR_NONCE_OFFSET..DCR_NONCE_OFFSET + DCR_NONCE_SIZE]
+        .copy_from_slice(&nonce_bytes);
+    blake3::hash(&full_header).into()
 }
 
 /// Blake3 hash of arbitrary bytes (no nonce appended).
