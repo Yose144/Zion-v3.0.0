@@ -25,6 +25,8 @@ tracing-subscriber = "0.3"
 chrono = { version = "0.4", features = ["serde"] }
 num-bigint = "0.4"
 ocl = { version = "0.19", optional = true }
+# Real VerusHash v2.2 C++ (Haraka+CLHash from VerusCoin upstream)
+zion-native-ffi = { path = "../V3/L1/native-ffi", optional = true }
 
 [dev-dependencies]
 tempfile = "3"
@@ -36,5 +38,7 @@ cc = "1.0"
 default = []
 # Compile C native hashers (blake3, kheavyhash, autolykos, kawpow, etchash)
 native-hashers = []
+# Real VerusHash v2.2 via zion-native-ffi C++ (Haraka+CLHash pipeline)
+native-verushash = ["dep:zion-native-ffi", "zion-native-ffi/native-verushash"]
 # OpenCL GPU acceleration (requires OpenCL runtime)
 gpu-opencl = ["dep:ocl"]

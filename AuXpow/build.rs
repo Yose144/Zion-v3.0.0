@@ -11,14 +11,22 @@ fn main() {
     if std::env::var("CARGO_FEATURE_NATIVE_HASHERS").is_ok() {
         let mut build = cc::Build::new();
 
-        let sources = [
+        // When native-verushash is enabled, the real C++ VerusHash is provided
+        // by the zion-native-ffi crate.  Skip the portable stub to avoid
+        // duplicate symbol errors.
+        let has_native_verushash = std::env::var("CARGO_FEATURE_NATIVE_VERUSHASH").is_ok();
+
+        let mut sources = vec![
             "csrc/blake3_native.c",
             "csrc/kheavyhash_native.c",
             "csrc/autolykos_native.c",
             "csrc/kawpow_native.c",
             "csrc/etchash_native.c",
-            "csrc/verushash_portable.c",
         ];
+
+        if !has_native_verushash {
+            sources.push("csrc/verushash_portable.c");
+        }
 
         for src in &sources {
             build.file(src);

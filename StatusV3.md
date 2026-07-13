@@ -276,6 +276,7 @@ WARP_STELLAR_RPC=https://horizon.stellar.org
 | 07-13 | Stream Profit R1c — GPU kernel parametrizace | `74a353205`, `87bb2b2f0` |
 | 07-13 | EthStratum R6 — eth_getWork/eth_submitWork/eth_submitHashrate | `5baa76d60` |
 | 07-13 | R7: VRSC B2b revenue — ZcashStratum protocol, VerusHash v2.2, LuckPool | `bb7d5407b` |
+| 07-13 | VerusHash C++ native build — Haraka+CLHash pipeline, `native-verushash` feature | pending |
 | 07-13 | Non-EVM deploy: Solana + Stellar mainnet LIVE | `bffde9263`, `9d7ce1686` |
 | 07-12 | ZionDex L3 WARP integration + AMM routing + LND | `c54422094`, `dad8702db` |
 | 07-11 | AuxPow merge mining pool+dashboard integration | `44371aa10`, `f14500db3` |
@@ -306,7 +307,7 @@ WARP_STELLAR_RPC=https://horizon.stellar.org
 6. R3: ALPH + KAS E2E (2miners)
 7. R4: Stream telemetry revenue report (dashboard + API)
 8. R5: SMOS deploy + GPU mining (done — Vega rig `vega-smos` live on `zion-miner-v3.0.5-gpu-r6.zip`)
-9. R7: VRSC live E2E deploy (LuckPool, needs ZION_VRSC_WALLET + VerusHash C++ native build)
+9. R7: VRSC live E2E deploy (LuckPool, needs ZION_VRSC_WALLET — VerusHash C++ native build ✅ DONE)
 10. R8: True AuxPow consensus (future, 20-40h)
 
 ---
