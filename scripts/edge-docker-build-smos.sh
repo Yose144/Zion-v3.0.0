@@ -26,9 +26,21 @@ docker run --rm \
     cargo build --release -p zion-miner --features 'gpu-opencl native-hashers' --bin zion-miner
     cp target/release/zion-miner /out/zion-miner
     chmod +x /out/zion-miner
+    ls -la /out/zion-miner
   '
 
 BIN="/tmp/zion-docker-out/zion-miner"
+if [[ ! -f /root/check-glibc.py ]]; then
+    cat > /root/check-glibc.py <<'PY'
+import sys, re
+bin_path = sys.argv[1]
+d = open(bin_path, "rb").read()
+vs = sorted({int(x) for x in re.findall(rb"GLIBC_2\.(\d+)", d)})
+print("GLIBC max:", f"2.{max(vs)}" if vs else "unknown")
+if vs and max(vs) > 31:
+    print("WARNING: may break SMOS glibc 2.31")
+PY
+fi
 python3 /root/check-glibc.py "${BIN}"
 
 rm -rf "${WORK}"
