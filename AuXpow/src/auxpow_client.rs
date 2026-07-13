@@ -655,6 +655,13 @@ impl AuxPowClient {
     ///     branches, version, nbits, ntime, clean_jobs]
     ///   - Simplified: [job_id, header_hex, target_hex]
     async fn parse_notify_params(&self, params: &Value) -> Result<ExternalJob> {
+        // Debug: log raw notify params for DCR to diagnose format issues.
+        if self.profile.coin == ExternalCoin::DCR {
+            println!(
+                "auxpow: DCR raw notify params (truncated): {:.500}",
+                serde_json::to_string(params).unwrap_or_default()
+            );
+        }
         // Alephium (Blake3) sends notify params as [ {object} ], where the
         // object contains: jobId, headerBlob, targetBlob, height, fromGroup,
         // toGroup, txsBlob.
