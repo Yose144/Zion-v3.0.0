@@ -872,7 +872,7 @@ Fixed script: `V3/deploy/new-server/zion-watchdog.sh`. Report: [`POOL_WATCHDOG_F
 - **Env vars:** `ZION_AUXPOW_ENABLED`, `ZION_AUXPOW_WALLET`, `ZION_AUXPOW_ALLOCATION`, `ZION_AUXPOW_POOL_PREFERENCE`, `ZION_AUXPOW_HYSTERESIS_PCT`, `ZION_AUXPOW_CB_THRESHOLD`, `ZION_AUXPOW_CB_RESET_SECS` (10 total)
 - **Tests:** 290/290 pass (89 auxpow + 201 cosmic-harmony)
 - **Deployed:** Edge server `62.171.141.136` — pool binary + dashboard, **LIVE** (RVN E2E ✅ via `rvn.2miners.com:6060`, XMR pool-side ready via `gulf.moneroocean.stream:10001`)
-- **Live tested:** 2026-07-12 — RVN/KawPow fully operational with real BTC wallet, shares counted under `src_kawpow` and forwarded to 2miners. **2026-07-13 — XMR/RandomX** pool connected, authorized, and queuing external RandomX jobs; awaits SMOS rig with RandomX-capable custom miner.
+- **Live tested:** 2026-07-12 — RVN/KawPow fully operational with real BTC wallet, shares counted under `src_kawpow` and forwarded to 2miners. **2026-07-13 — XMR/RandomX** pool connected, authorized, and queuing external RandomX jobs; awaits SMOS rig with RandomX-capable custom miner. **2026-07-13 — VRSC/VerusHash v2.2** C++ native build integrated (`native-verushash` feature), ZcashStratum protocol support active for LuckPool.
 - **Critical design notes:**
   - Tokio runtime MUST be leaked via `std::mem::forget()` — if dropped, all spawned tasks are immediately cancelled
   - Pool server has no `tracing` subscriber — use `println!` not `info!/warn!` for scheduler logging
@@ -880,20 +880,20 @@ Fixed script: `V3/deploy/new-server/zion-watchdog.sh`. Report: [`POOL_WATCHDOG_F
 - **Plan:** [`AUXPOW_MERGE_MINING_PLAN.md`](./AUXPOW_MERGE_MINING_PLAN.md) — 3-phase approach (Phase 1 = stratum proxy ✅, Phase 2 = miner dual-stratum, Phase 3 = true AuxPow protocol hard fork)
 - **VRSC B2b revenue (2026-07-13):** [`AUXPOW_VRSC_B2B_PLAN.md`](./AUXPOW_VRSC_B2B_PLAN.md) — VRSC (Verus) added as 12th external coin. VerusHash v2.2 (Haraka+CLHash, CPU-only, ASIC/GPU resistant). ZcashStratum protocol (LuckPool `eu.luckpool.net:3956`). VerusHash C++ ported from 2.9.9 archive into `V3/L1/native-ffi/csrc/verushash/real/` (11744+ lines). Blake3 fallback active until native C++ build issues resolved. PBaaS v7+ nonceSpace embedding + MMR root restoration in submit. 1% LuckPool fee → `VerusHashExternal` revenue source.
 - **Reports:** [`docs/3.0.5/AUXPOW_INTEGRATION_REPORT_2026-07-11.md`](./docs/3.0.5/AUXPOW_INTEGRATION_REPORT_2026-07-11.md), [`RVN_AUXPOW_E2E_REPORT.md`](./RVN_AUXPOW_E2E_REPORT.md), [`XMR_AUXPOW_E2E_REPORT.md`](./XMR_AUXPOW_E2E_REPORT.md)
-- **Commits:** `44371aa10` (crate), `0a49a3f48` (pool + dashboard integration), `7eb9f89cb` (docs), `f14500db3` (3 bug fixes: runtime leak, pool addresses, println logging), `259e662be` (dashboard panel expansion — 8 new metrics), `8e616846e` (RVN pool fixes), `ac513d61f` (XMR/RandomX support), `bb7d5407b` (VRSC B2b revenue + ZcashStratum + VerusHash v2.2)
+- **Commits:** `44371aa10` (crate), `0a49a3f48` (pool + dashboard integration), `7eb9f89cb` (docs), `f14500db3` (3 bug fixes: runtime leak, pool addresses, println logging), `259e662be` (dashboard panel expansion — 8 new metrics), `8e616846e` (RVN pool fixes), `ac513d61f` (XMR/RandomX support), `bb7d5407b` (VRSC B2b revenue + ZcashStratum + VerusHash v2.2), `ea4e33bf4` (real VerusHash v2.2 C++ native build via zion-native-ffi), `d189712a7` (R4 stream telemetry revenue report)
 
 ## Current Status (2026-07-13 — Post Hard Reset + Chv3 + AuxPow RVN/XMR Live)
 
 **System Status (new server 62.171.141.136):**
 - ✅ Hard Genesis Reset: Complete (2026-07-07) — new genesis hash `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
-- ✅ zion-node: Running (P2P 8333, RPC 127.0.0.1:9443, WS 127.0.0.1:8445, metrics 127.0.0.1:9100) — **height 4036+** (synced from 3886→4035 via P2P + first pool-mined block 4036)
+- ✅ zion-node: Running (P2P 8333, RPC 127.0.0.1:9443, WS 127.0.0.1:8445, metrics 127.0.0.1:9100) — **height 4357+** (pool-mined blocks accepted)
 - ✅ zion-node2: Running (follower, P2P 8334, RPC 127.0.0.1:8448)
-- ✅ zion-pool: Running (Stratum 0.0.0.0:8444, metrics 127.0.0.1:8455, fee split 89/5/5/1) — 11+ mineri, ~365 KH/s, 100% accept rate
+- ✅ zion-pool: Running (Stratum 0.0.0.0:8444, metrics 127.0.0.1:8455, fee split 89/5/5/1) — 10+ mineri, ~336 KH/s, 146 blocks found, 100% accept rate
 - ✅ zion-bridge: Running (metrics 127.0.0.1:9101, EVM: OP, Base, ARB, AVAX)
 - ✅ zion-dao: Running (API 127.0.0.1:8450, scanner → 127.0.0.1:9443)
-- ✅ zion-warp: Running (0.0.0.0:8453, 499 tests, 13 chain adapters)
+- ✅ zion-warp: Running (0.0.0.0:8453, 499 tests, 13 chain adapters + Solana + Stellar)
 - ✅ zion-atomic-swap: Running (Base HTLC, scanner → 127.0.0.1:9443)
-- ✅ zion-dashboard: Running (127.0.0.1:8766, Basic Auth Yose/Issy)
+- ✅ zion-dashboard: Running (127.0.0.1:8766, Basic Auth Yose/Issy) — Revenue System + R4 per-source report live
 - ✅ zion-free-world: Running
 - ✅ zion-issobella: Running
 - ✅ zion-oasis: Running
@@ -905,7 +905,7 @@ Fixed script: `V3/deploy/new-server/zion-watchdog.sh`. Report: [`POOL_WATCHDOG_F
 - ✅ Dashboard: Running (`https://dashboard.zionterranova.com`, Basic Auth Yose/Issy)
 - ✅ AuxPow: **LIVE** — RVN/KawPow E2E ✅ via `rvn.2miners.com:6060`, XMR/RandomX pool-side ready via `gulf.moneroocean.stream:10001` (awaiting RandomX rig miner)
 - ✅ DeekshaChv3: Phase A deployed (alias, fork at H=4500) + Phase B deployed (stream telemetry)
-- ✅ Chain: Height 4036+ (post-hard-reset), premine 16.78B ZION, block reward 5400.067 ZION
+- ✅ Chain: Height 4357+ (post-hard-reset), premine 16.78B ZION, block reward 5400.067 ZION
 - ✅ OS: SSH keys-only, UFW (22/80/443), fail2ban, Docker 29.6.1
 - ✅ Monitoring: 3 cron jobs + systemd watchdog timer (2 min)
 - ✅ SSL: 3 Let's Encrypt certs (zionterranova.com, www, dashboard) — auto-renew

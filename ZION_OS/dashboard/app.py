@@ -4995,6 +4995,7 @@ def get_revenue_dashboard() -> dict:
         ("EVR",  "evrprogpow",  "evrprogpow.eu.mine.zpool.ca:1330"),
         ("MEWC", "meowpow",     "meowpow.eu.mine.zpool.ca:1327"),
         ("XMR",  "randomx",     "gulf.moneroocean.stream:10001"),
+        ("VRSC", "verushash",   "eu.luckpool.net:3956"),
     ]
     current_coin = auxpow.get("current_coin", "")
     coin_revenue = []
