@@ -1392,6 +1392,78 @@ impl DagManager {
     }
 }
 
+// ── GpuBackend trait implementation ──────────────────────────────────
+
+#[cfg(feature = "gpu-opencl")]
+impl crate::gpu_backend::GpuBackend for GpuMiner {
+    fn mine(
+        &mut self,
+        algorithm: &str,
+        header: &[u8],
+        extra: &[u8],
+        target: &[u8; 32],
+        base_nonce: u64,
+        batch_size: u64,
+    ) -> Result<Option<crate::gpu_backend::GpuFoundShare>> {
+        // Delegate to the existing mine() method, then convert.
+        let result = GpuMiner::mine(self, algorithm, header, extra, target, base_nonce, batch_size)?;
+        Ok(result.map(crate::gpu_backend::GpuFoundShare::from))
+    }
+
+    fn set_ethash_dag(&mut self, dag: &[u64], size_entries: u64, epoch: u32) -> Result<()> {
+        GpuMiner::set_ethash_dag(self, dag, size_entries, epoch)
+    }
+
+    fn set_kawpow_dag(&mut self, dag: &[u64], size_entries: u64, epoch: u32) -> Result<()> {
+        GpuMiner::set_kawpow_dag(self, dag, size_entries, epoch)
+    }
+
+    fn device_name(&self) -> &str {
+        &self.device_name
+    }
+
+    fn backend_name(&self) -> &str {
+        "opencl"
+    }
+
+    fn work_size(&self) -> usize {
+        self.work_size
+    }
+
+    fn set_work_size(&mut self, size: usize) {
+        self.work_size = size;
+    }
+}
+
+/// OpenCL backend module — re-exports for the gpu_backend abstraction.
+#[cfg(feature = "gpu-opencl")]
+pub mod opencl_backend {
+    use super::*;
+
+    /// Create a new OpenCL backend (wraps GpuMiner).
+    pub fn new(work_size: usize) -> Result<GpuMiner> {
+        let mut miner = GpuMiner::new()?;
+        miner.work_size = work_size;
+        Ok(miner)
+    }
+
+    /// List available OpenCL devices.
+    pub fn list_devices() -> Vec<String> {
+        // Simplified: just return a placeholder if kernels exist.
+        // Full device enumeration requires OpenCL runtime which may not be available.
+        match GpuMiner::list_kernels() {
+            Ok(kernels) => {
+                if kernels.is_empty() {
+                    Vec::new()
+                } else {
+                    vec!["opencl:default".to_string()]
+                }
+            }
+            Err(_) => Vec::new(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1432,6 +1504,40 @@ mod tests {
         assert!(source.contains("zelhash_mine"), "kernel must define zelhash_mine");
         assert!(source.contains("blake2b_compress"), "kernel must have blake2b");
         assert!(source.contains("ZelProof"), "kernel must use ZelProof personalization");
+    }
+
+    /// Verify all CUDA kernel files exist.
+    #[test]
+    fn cuda_kernel_files_exist() {
+        let cuda_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("csrc/cuda");
+        let kernels = ["blake3_kernel.cu", "kheavyhash_kernel.cu", "autolykos_kernel.cu",
+                       "ethash_kernel.cu", "kawpow_kernel.cu", "zelhash_kernel.cu"];
+        for k in &kernels {
+            let path = cuda_dir.join(k);
+            assert!(path.exists(), "CUDA kernel {k} must exist at csrc/cuda/");
+            let source = std::fs::read_to_string(&path).unwrap();
+            assert!(source.contains("__global__"), "{k} must have __global__ kernel");
+            assert!(source.contains("extern \"C\""), "{k} must have extern C for cudarc");
+            assert!(source.contains("__launch_bounds__"), "{k} must have launch bounds");
+        }
+    }
+
+    /// Verify all Metal kernel files exist.
+    #[test]
+    fn metal_kernel_files_exist() {
+        let metal_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("csrc/metal");
+        let kernels = ["blake3_kernel.metal", "kheavyhash_kernel.metal", "autolykos_kernel.metal",
+                       "ethash_kernel.metal", "kawpow_kernel.metal", "zelhash_kernel.metal"];
+        for k in &kernels {
+            let path = metal_dir.join(k);
+            assert!(path.exists(), "Metal kernel {k} must exist at csrc/metal/");
+            let source = std::fs::read_to_string(&path).unwrap();
+            assert!(source.contains("kernel void"), "{k} must have kernel void");
+            assert!(source.contains("metal_stdlib"), "{k} must include metal_stdlib");
+            assert!(source.contains("[[buffer"), "{k} must use Metal buffer syntax");
+        }
     }
 
     /// Verify kernel_info maps zelhash correctly.
