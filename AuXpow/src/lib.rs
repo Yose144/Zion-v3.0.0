@@ -31,8 +31,8 @@ pub use dual_stratum::{
     WorkPackage,
 };
 pub use external_hashers::{
-    hash_autolykos, hash_blake3, hash_ethash, hash_ethash_with_dag, hash_kawpow, hash_kheavyhash,
-    mine_ethash, ExternalAlgorithm,
+    hash_autolykos, hash_blake3, hash_blake3_alph, hash_ethash, hash_ethash_with_dag, hash_kawpow,
+    hash_kheavyhash, mine_ethash, ExternalAlgorithm,
 };
 pub use parent_chains::{
     AlphHeader, CoinbaseCommitment, DcrHeader, AUXPOW_COINBASE_MAGIC, AUXPOW_COMMITMENT_LEN,

@@ -100,6 +100,24 @@ pub trait GpuMiner: Send {
         batch_size: u64,
     ) -> Result<GpuBatchResult>;
 
+    /// Mine a batch using raw header bytes (for external algorithms with
+    /// headers longer than 80 bytes, e.g. DCR = 180 bytes).
+    /// Default: falls back to mine_batch with truncated header.
+    fn mine_batch_raw(
+        &mut self,
+        raw_header: &[u8],
+        target: DifficultyTarget,
+        nonce_start: u64,
+        batch_size: u64,
+    ) -> Result<GpuBatchResult> {
+        // Default: truncate to 80 bytes and use mine_batch
+        let mut bytes = [0u8; 80];
+        let len = raw_header.len().min(80);
+        bytes[..len].copy_from_slice(&raw_header[..len]);
+        let header = MiningHeader::from_bytes(bytes);
+        self.mine_batch(header, target, nonce_start, batch_size)
+    }
+
     /// Run a benchmark for the given duration.
     fn benchmark(&mut self, secs: f64) -> Result<(u64, f64, f64)>;
 }
@@ -354,7 +372,12 @@ pub struct GpuScanOutcome {
 /// - The solution always carries gpu_hash so the pool receives the same hash the
 ///   GPU kernel produced.  Pool re-computes the hash server-side (cpu path) and
 ///   compares — if GPU and CPU kernels are in sync this will agree.
-pub fn gpu_scan_job(gpu: &mut dyn GpuMiner, job: MiningJob, algorithm: &str) -> GpuScanOutcome {
+pub fn gpu_scan_job(
+    gpu: &mut dyn GpuMiner,
+    job: MiningJob,
+    algorithm: &str,
+    raw_header_bytes: &[u8],
+) -> GpuScanOutcome {
     // For external AuxPoW algorithms (kheavyhash, blake3, etc.), the pool
     // encodes the external block timestamp in job.height.  Inject it into
     // the MiningHeader.timestamp field so the GPU kernel receives it.
@@ -363,7 +386,20 @@ pub fn gpu_scan_job(gpu: &mut dyn GpuMiner, job: MiningJob, algorithm: &str) -> 
         effective_header.timestamp = job.height;
     }
 
-    match gpu.mine_batch(effective_header, job.target, job.start_nonce, job.nonce_count) {
+    // Use raw header bytes for external algorithms that need the full header
+    // (e.g. DCR blake3 with 180-byte headers).  Fall back to mine_batch for
+    // ZION algorithms and kheavyhash (which only uses first 32 bytes).
+    let use_raw = is_external_algorithm(algorithm)
+        && !algorithm.starts_with("kheavyhash")
+        && raw_header_bytes.len() > 80;
+
+    let result = if use_raw {
+        gpu.mine_batch_raw(raw_header_bytes, job.target, job.start_nonce, job.nonce_count)
+    } else {
+        gpu.mine_batch(effective_header, job.target, job.start_nonce, job.nonce_count)
+    };
+
+    match result {
         Ok(result) => {
             let nonces_tested = result.nonces_tested;
             if let Some((nonce, gpu_hash)) = result.solutions.first() {
@@ -3368,6 +3404,46 @@ pub mod opencl_external {
                 other => anyhow::bail!("unsupported external GPU algorithm: {other}"),
             }
             .map_err(|e| anyhow::anyhow!("auxpow_gpu_mine_failed algorithm={} err={}", self.algorithm, e))?;
+
+            if let Some(GpuFoundShare { nonce, hash }) = found {
+                Ok(GpuBatchResult {
+                    solutions: vec![(nonce, hash)],
+                    nonces_tested: actual_batch,
+                })
+            } else {
+                Ok(GpuBatchResult {
+                    solutions: Vec::new(),
+                    nonces_tested: actual_batch,
+                })
+            }
+        }
+
+        fn mine_batch_raw(
+            &mut self,
+            raw_header: &[u8],
+            target: DifficultyTarget,
+            nonce_start: u64,
+            batch_size: u64,
+        ) -> Result<GpuBatchResult> {
+            // Use raw header bytes directly (supports >80B headers for DCR etc.)
+            let actual_batch = batch_size.min(self.work_size as u64);
+            let found = self
+                .miner
+                .mine(
+                    &self.algorithm,
+                    raw_header,
+                    &[],
+                    &target.bytes,
+                    nonce_start,
+                    actual_batch,
+                )
+                .map_err(|e| {
+                    anyhow::anyhow!(
+                        "auxpow_gpu_mine_failed_raw algorithm={} err={}",
+                        self.algorithm,
+                        e
+                    )
+                })?;
 
             if let Some(GpuFoundShare { nonce, hash }) = found {
                 Ok(GpuBatchResult {

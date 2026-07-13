@@ -249,3 +249,102 @@ __kernel void blake3_alph_mine(
         }
     }
 }
+
+// ── DCR (Decred) Blake3 mining kernel ─────────────────────────────────
+//
+// Decred uses a single Blake3 hash of (header || nonce_le):
+//   hash = blake3(header_bytes || nonce_le_8bytes)
+//
+// Unlike ALPH (which prepends a 24-byte nonce and does double-Blake3),
+// DCR appends an 8-byte little-endian nonce at the end of the header.
+//
+// The header can be up to 180 bytes (DCR block header size).
+// We support up to 256 bytes of input (header + 8-byte nonce).
+
+__kernel void blake3_dcr_mine(
+    __global const uchar *header_blob,
+    const uint header_len,
+    __global const uchar *target,
+    ulong base_nonce,
+    __global ulong *output_nonce,
+    __global uchar *output_hash,
+    __global volatile uint *found
+)
+{
+    if (*found) return;
+
+    ulong nonce = base_nonce + (ulong)get_global_id(0);
+
+    // Build message: header || nonce_le (8 bytes)
+    // Max supported: 256 bytes total (180 header + 8 nonce = 188, fits)
+    uchar msg[256];
+    for (uint i = 0; i < header_len && i < 248; i++) msg[i] = header_blob[i];
+    // Append 8-byte little-endian nonce
+    uchar nonce_bytes[8];
+    nonce_bytes[0] = (uchar)(nonce);
+    nonce_bytes[1] = (uchar)(nonce >> 8);
+    nonce_bytes[2] = (uchar)(nonce >> 16);
+    nonce_bytes[3] = (uchar)(nonce >> 24);
+    nonce_bytes[4] = (uchar)(nonce >> 32);
+    nonce_bytes[5] = (uchar)(nonce >> 40);
+    nonce_bytes[6] = (uchar)(nonce >> 48);
+    nonce_bytes[7] = (uchar)(nonce >> 56);
+    uint actual_header_len = header_len < 248 ? header_len : 248;
+    for (int i = 0; i < 8; i++) msg[actual_header_len + i] = nonce_bytes[i];
+    uint total_len = actual_header_len + 8;
+
+    // Blake3 hash of msg[0..total_len]
+    uint chain[8];
+    for (int i = 0; i < 8; i++) chain[i] = BLAKE3_IV[i];
+
+    uint full_blocks = total_len / 64u;
+    uint tail_len = total_len % 64u;
+    if (tail_len == 0u && full_blocks > 0u) {
+        tail_len = 64u;
+        full_blocks -= 1u;
+    }
+
+    for (uint b = 0u; b < full_blocks; b++) {
+        uchar block[64];
+        int off = (int)(b * 64u);
+        for (int i = 0; i < 64; i++) block[i] = msg[off + i];
+        uint flags = (b == 0u) ? CHUNK_START : 0u;
+        blake3_compress8(chain, block, 0u, 64u, flags, chain);
+    }
+
+    // Last/tail block
+    {
+        uchar block[64];
+        int off = (int)(full_blocks * 64u);
+        for (int i = 0; i < 64; i++) {
+            int idx = off + i;
+            block[i] = (idx < (int)total_len) ? msg[idx] : 0;
+        }
+        uint flags = (full_blocks == 0u) ? (CHUNK_START | CHUNK_END) : CHUNK_END;
+        // Root compression: use compress16 to get full 16-word output
+        uint out16[16];
+        blake3_compress16(chain, block, 0u, tail_len, flags | ROOT, out16);
+
+        uchar hash[32];
+        for (int i = 0; i < 8; i++) {
+            hash[i * 4 + 0] = (uchar)(out16[i]);
+            hash[i * 4 + 1] = (uchar)(out16[i] >> 8);
+            hash[i * 4 + 2] = (uchar)(out16[i] >> 16);
+            hash[i * 4 + 3] = (uchar)(out16[i] >> 24);
+        }
+
+        int meets = 1;
+        for (int i = 0; i < 32; i++) {
+            if (hash[i] < target[i]) { meets = 1; break; }
+            if (hash[i] > target[i]) { meets = 0; break; }
+        }
+
+        if (meets) {
+            uint old = atomic_xchg(found, 1u);
+            if (old == 0u) {
+                *output_nonce = nonce;
+                for (int i = 0; i < 32; i++) output_hash[i] = hash[i];
+            }
+        }
+    }
+}

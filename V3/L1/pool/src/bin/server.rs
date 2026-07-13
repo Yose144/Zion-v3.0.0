@@ -1171,7 +1171,21 @@ impl WorkAssignment {
             // Both names map to the same hash function, so miners that only
             // know `deeksha_lite_v1` continue to work seamlessly.
             Self::Zion(j) => zion_pool::advertised_algorithm_for_height(j.height),
-            Self::External(j) => &j.algorithm,
+            Self::External(j) => {
+                // For Blake3 coins, append the coin ticker so the miner
+                // selects the correct kernel (DCR and ALPH use different
+                // Blake3 variants: DCR = single hash of header||nonce_le,
+                // ALPH = double hash of nonce||header).
+                if j.algorithm.eq_ignore_ascii_case("blake3") {
+                    match j.external_coin {
+                        zion_auxpow::ExternalCoin::DCR => "blake3_dcr",
+                        zion_auxpow::ExternalCoin::ALPH => "blake3_alph",
+                        _ => &j.algorithm,
+                    }
+                } else {
+                    &j.algorithm
+                }
+            }
         }
     }
 
