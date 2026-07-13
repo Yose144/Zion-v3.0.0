@@ -86,7 +86,7 @@ impl ExternalCoin {
     pub fn default_pool(self) -> &'static str {
         match self {
             Self::DCR => "pool.woolypooly.com:3152",
-            Self::ALPH => "alph.2miners.com:4545",
+            Self::ALPH => "pool.woolypooly.com:3106",
             Self::KAS => "kas.2miners.com:2020",
             Self::ERG => "erg.2miners.com:8888",
             Self::RVN => "rvn.2miners.com:6060",
@@ -174,6 +174,7 @@ pub struct CoinProfile {
     pub pool_host: String,
     pub pool_port: u16,
     pub worker_name: String,
+    pub password: String,
     pub enabled: bool,
 }
 
@@ -187,6 +188,7 @@ impl CoinProfile {
             pool_host: host,
             pool_port: port,
             worker_name: "zion_auxpow".to_string(),
+            password: String::new(),
             enabled: true,
         }
     }
@@ -510,6 +512,16 @@ mod tests {
         assert_eq!(p.algorithm, "blake3");
         assert_eq!(p.pool_host, "pool.woolypooly.com");
         assert_eq!(p.pool_port, 3152);
+        assert!(p.enabled);
+    }
+
+    #[test]
+    fn coin_profile_default_for_alph() {
+        let p = CoinProfile::default_for(ExternalCoin::ALPH);
+        assert_eq!(p.ticker, "ALPH");
+        assert_eq!(p.algorithm, "blake3");
+        assert_eq!(p.pool_host, "pool.woolypooly.com");
+        assert_eq!(p.pool_port, 3106);
         assert!(p.enabled);
     }
 

@@ -14,7 +14,10 @@
 //!   AUXPOW_E2E_WALLET=bc1q...      — payout wallet (default: design-doc wallet)
 //!   AUXPOW_E2E_POOL=host:port      — optional pool override
 //!   AUXPOW_E2E_WORKER=zion_e2e     — worker name (default: zion_e2e)
+//!   AUXPOW_E2E_PASSWORD=           — optional stratum password override
 //!   AUXPOW_E2E_MINE_SECS=0         — how many seconds to mine (default: 0)
+//!   AUXPOW_E2E_USE_BEST=0          — mine the best share in a fixed range
+//!   AUXPOW_E2E_BEST_RANGE=100000000 — nonce range for best-share mode
 //!   AUXPOW_E2E_SUBMIT=0            — set to 1 to actually submit shares
 //!   AUXPOW_E2E_JOB_TIMEOUT_MS=30000 — how long to wait for first job
 
@@ -37,12 +40,16 @@ async fn main() -> anyhow::Result<()> {
     let wallet = std::env::var("AUXPOW_E2E_WALLET")
         .unwrap_or_else(|_| "bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh".to_string());
     let worker = std::env::var("AUXPOW_E2E_WORKER").unwrap_or_else(|_| "zion_e2e".to_string());
+    let password = std::env::var("AUXPOW_E2E_PASSWORD").unwrap_or_default();
     let mine_secs = parse_u64("AUXPOW_E2E_MINE_SECS", 0);
+    let use_best = std::env::var("AUXPOW_E2E_USE_BEST").unwrap_or_default() == "1";
+    let best_range = parse_u64("AUXPOW_E2E_BEST_RANGE", 100_000_000);
     let submit_enabled = std::env::var("AUXPOW_E2E_SUBMIT").unwrap_or_default() == "1";
     let job_timeout_ms = parse_u64("AUXPOW_E2E_JOB_TIMEOUT_MS", 30_000);
 
     let mut profile = CoinProfile::default_for(coin);
     profile.worker_name = worker;
+    profile.password = password;
     if let Ok(override_addr) = std::env::var("AUXPOW_E2E_POOL") {
         if let Some(pos) = override_addr.rfind(':') {
             profile.pool_host = override_addr[..pos].to_string();
@@ -91,9 +98,13 @@ async fn main() -> anyhow::Result<()> {
     );
 
     // 3) Optionally mine
-    if mine_secs > 0 {
-        println!("[3/4] Mining for up to {} seconds...", mine_secs);
-        let found = mine_job(coin, client.clone(), share_target, mine_secs).await;
+    if mine_secs > 0 || use_best {
+        println!("[3/4] Mining (best={} range={})...", use_best, best_range);
+        let found = if use_best {
+            mine_best_job(coin, client.clone(), share_target, best_range).await
+        } else {
+            mine_job(coin, client.clone(), share_target, mine_secs).await
+        };
         match found {
             Some((job_id, nonce, hash)) => {
                 println!(
@@ -168,18 +179,7 @@ async fn mine_job(
     while Instant::now() < deadline {
         // Always mine on the most recent job so submissions are not stale.
         let job = client.current_job().await?;
-        let package = zion_auxpow::JobPackage {
-            external_coin: coin,
-            external_job_id: job.job_id.clone(),
-            algorithm: job.algorithm.clone(),
-            header_bytes: job.header_bytes.clone(),
-            target_bytes: share_target,
-            timestamp: job.timestamp.unwrap_or(0),
-            block_number: job.block_number,
-            extranonce1: job.extranonce1.clone(),
-            start_nonce: 0,
-            nonce_count: u64::MAX,
-        };
+        let package = build_package(coin, &job, share_target);
 
         let window_end = window_start + window_size;
         let result = tokio::task::spawn_blocking({
@@ -199,4 +199,53 @@ async fn mine_job(
     }
 
     None
+}
+
+async fn mine_best_job(
+    coin: ExternalCoin,
+    client: Arc<zion_auxpow::AuxPowClient>,
+    share_target: [u8; 32],
+    best_range: u64,
+) -> Option<(String, u64, [u8; 32])> {
+    let job = client.current_job().await?;
+    let package = build_package(coin, &job, share_target);
+
+    let result = tokio::task::spawn_blocking({
+        let package = package.clone();
+        move || zion_auxpow::mine_best(&package, 0..best_range)
+    })
+    .await
+    .ok()
+    .and_then(|r| r.ok())
+    .flatten();
+
+    if let Some(share) = result {
+        println!(
+            "[3/4] Best share in range: nonce={} hash_prefix={}",
+            share.nonce,
+            hex::encode(&share.hash[..8])
+        );
+        return Some((job.job_id, share.nonce, share.hash));
+    }
+
+    None
+}
+
+fn build_package(
+    coin: ExternalCoin,
+    job: &zion_auxpow::ExternalJob,
+    share_target: [u8; 32],
+) -> zion_auxpow::JobPackage {
+    zion_auxpow::JobPackage {
+        external_coin: coin,
+        external_job_id: job.job_id.clone(),
+        algorithm: job.algorithm.clone(),
+        header_bytes: job.header_bytes.clone(),
+        target_bytes: share_target,
+        timestamp: job.timestamp.unwrap_or(0),
+        block_number: job.block_number,
+        extranonce1: job.extranonce1.clone(),
+        start_nonce: 0,
+        nonce_count: u64::MAX,
+    }
 }

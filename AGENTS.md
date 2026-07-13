@@ -1494,3 +1494,53 @@ cp V3/target/release/zion-dao /usr/local/bin/zion-dao
 cp V3/target/release/zion-warp-server /usr/local/bin/zion-warp-server
 systemctl restart zion-node zion-pool zion-bridge zion-dao zion-warp
 ```
+
+## AuXpow E2E verification notes
+
+The `AuXpow/examples/e2e_pool_test.rs` example exercises real Stratum pools. Useful env vars:
+
+```
+AUXPOW_E2E_RUN=1
+AUXPOW_E2E_COIN=dcr|alph|kas|...
+AUXPOW_E2E_WALLET=<coin payout address>
+AUXPOW_E2E_POOL=<host:port override>
+AUXPOW_E2E_PASSWORD=<stratum password override, e.g. x,d=4>
+AUXPOW_E2E_USE_BEST=1          # scan a fixed range and submit the best share found
+AUXPOW_E2E_BEST_RANGE=...      # default 100_000_000
+AUXPOW_E2E_MINE_SECS=...       # timed windowed mining (default window 250k nonces)
+AUXPOW_E2E_SUBMIT=1
+```
+
+### Share-target maxima used by the client
+
+- DCR: Decred mainnet PoW limit `2^224 - 1` per `dcrpool`/`gominer`.
+- KAS: Kaspa stratum bridge convention `2^224 - 1`.
+- ALPH: Alephium pool convention (`diff1TargetNumZero=30`) gives `2^226 - 1`.
+- Other Blake3/ethash/kawpow/etc.: full `2^256 - 1`.
+
+### Low-difficulty pools for CPU E2E
+
+Real pool difficulty on the default ports is too high for CPU verification. Pools that accept a password-based difficulty override:
+
+- DCR: `decred.cedric-crispin.com:4494` with `AUXPOW_E2E_PASSWORD=x,d=4` (stable at diff 4; expected ~1.7e10 hashes for a share).
+- ALPH: `alephium.cedric-crispin.com:4084` with `AUXPOW_E2E_PASSWORD=x,d=1` (target `2^226 - 1`; expected ~1e9 hashes, but jobs expire quickly).
+- KAS: `kaspa.cedric-crispin.com:4114` with `AUXPOW_E2E_PASSWORD=x,d=4` (expected ~1.7e10 hashes; kHeavyHash CPU is much slower than Blake3).
+
+Example DCR run:
+
+```bash
+cd AuXpow
+AUXPOW_E2E_RUN=1 AUXPOW_E2E_COIN=dcr \
+  AUXPOW_E2E_WALLET=DsdVsPZpXTCtNFNnHN68L6ajYTabxDcEmMp \
+  AUXPOW_E2E_POOL=decred.cedric-crispin.com:4494 \
+  AUXPOW_E2E_PASSWORD="x,d=4" \
+  AUXPOW_E2E_USE_BEST=1 AUXPOW_E2E_BEST_RANGE=50000000000 \
+  AUXPOW_E2E_SUBMIT=1 \
+  cargo run --example e2e_pool_test --release
+```
+
+CPU hash-rate reference on a Ryzen 5 3600 (12 threads, release build):
+
+- DCR Blake3: ~6-7 MH/s.
+- ALPH Blake3: ~14 MH/s.
+- KAS kHeavyHash: ~0.35 MH/s.

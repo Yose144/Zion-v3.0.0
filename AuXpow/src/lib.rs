@@ -40,7 +40,7 @@ pub use parent_chains::{
     AlphHeader, CoinbaseCommitment, DcrHeader, AUXPOW_COINBASE_MAGIC, AUXPOW_COMMITMENT_LEN,
     DCR_HEADER_SIZE,
 };
-pub use miner_harness::{mine, FoundShare};
+pub use miner_harness::{mine, mine_best, FoundShare};
 pub use multiplexer::JobMultiplexer;
 pub use share_forwarder::ShareForwarder;
 #[cfg(all(feature = "gpu-opencl", feature = "native-hashers"))]

@@ -87,7 +87,7 @@ pub fn mine_best(job: &JobPackage, range: std::ops::Range<u64>) -> Result<Option
             } else if job.external_coin == ExternalCoin::DCR {
                 Ok(scan_dcr_best(job, start, end))
             } else {
-                Ok(scan_best(job, start, end, hash_blake3, meets_target))
+                Ok(scan_best(job, start, end, hash_blake3, false))
             }
         }
         "kheavyhash" => Ok(scan_kheavyhash_best(job, start, end)),
@@ -283,26 +283,101 @@ where
 }
 
 fn scan_dcr_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
-    scan_best(job, start, end, hash_blake3, true)
+    if start >= end {
+        return None;
+    }
+
+    let cpus = std::thread::available_parallelism()
+        .map(|n| n.get() as u64)
+        .unwrap_or(1);
+    let range = end - start;
+    let threads = cpus.min(range);
+    let chunk = (range + threads - 1) / threads;
+
+    let mut per_thread: Vec<Option<FoundShare>> = vec![None; threads as usize];
+
+    std::thread::scope(|s| {
+        for (idx, slot) in per_thread.iter_mut().enumerate() {
+            let idx = idx as u64;
+            let chunk_start = start + idx * chunk;
+            let chunk_end = chunk_start.saturating_add(chunk).min(end);
+            if chunk_start >= chunk_end {
+                continue;
+            }
+            let package = job.clone();
+            s.spawn(move || {
+                *slot = scan_best(&package, chunk_start, chunk_end, hash_blake3, true);
+            });
+        }
+    });
+
+    let mut best: Option<FoundShare> = None;
+    for candidate in per_thread.into_iter().flatten() {
+        if best
+            .as_ref()
+            .map(|b| is_hash_better(&candidate.hash, &b.hash, true))
+            .unwrap_or(true)
+        {
+            best = Some(candidate);
+        }
+    }
+    best
 }
 
 fn scan_blake3_alph_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
-    let header = &job.header_bytes;
-    let extranonce1 = &job.extranonce1;
+    if start >= end {
+        return None;
+    }
+
+    let cpus = std::thread::available_parallelism()
+        .map(|n| n.get() as u64)
+        .unwrap_or(1);
+    let range = end - start;
+    let threads = cpus.min(range);
+    let chunk = (range + threads - 1) / threads;
+
+    let mut per_thread: Vec<Option<FoundShare>> = vec![None; threads as usize];
+
+    std::thread::scope(|s| {
+        for (idx, slot) in per_thread.iter_mut().enumerate() {
+            let idx = idx as u64;
+            let chunk_start = start + idx * chunk;
+            let chunk_end = chunk_start.saturating_add(chunk).min(end);
+            if chunk_start >= chunk_end {
+                continue;
+            }
+            let package = job.clone();
+            s.spawn(move || {
+                let header = &package.header_bytes;
+                let extranonce1 = &package.extranonce1;
+                let mut best: Option<FoundShare> = None;
+                for nonce in chunk_start..chunk_end {
+                    let hash = hash_blake3_alph(header, extranonce1, nonce);
+                    if best
+                        .as_ref()
+                        .map(|b| is_hash_better(&hash, &b.hash, false))
+                        .unwrap_or(true)
+                    {
+                        best = Some(FoundShare {
+                            external_job_id: package.external_job_id.clone(),
+                            nonce,
+                            hash,
+                        });
+                    }
+                }
+                *slot = best;
+            });
+        }
+    });
 
     let mut best: Option<FoundShare> = None;
-    for nonce in start..end {
-        let hash = hash_blake3_alph(header, extranonce1, nonce);
+    for candidate in per_thread.into_iter().flatten() {
         if best
             .as_ref()
-            .map(|b| is_hash_better(&hash, &b.hash, false))
+            .map(|b| is_hash_better(&candidate.hash, &b.hash, false))
             .unwrap_or(true)
         {
-            best = Some(FoundShare {
-                external_job_id: job.external_job_id.clone(),
-                nonce,
-                hash,
-            });
+            best = Some(candidate);
         }
     }
     best
