@@ -23,7 +23,9 @@ use zion_auxpow::{
     AuxPowScheduler, AuxPowStats, ExternalCoin, JobMultiplexer, JobPackage, ShareForwardResult,
     ShareForwarder, SplitConfig,
 };
-use zion_cosmic_harmony::stream_profit::{StreamProfitConfig, StreamProfitSnapshot, StreamWeights};
+use zion_cosmic_harmony::stream_profit::{
+    fetch_profit_snapshot, StreamProfitConfig, StreamProfitSnapshot, StreamWeights,
+};
 use zion_core::MiningJob;
 
 // ---------------------------------------------------------------------------
@@ -736,6 +738,7 @@ fn main() -> Result<()> {
 
         if profit_cfg.enabled {
             let interval = profit_cfg.interval_secs;
+            let cfg_clone = profit_cfg.clone();
             println!(
                 "stream_profit_enabled provider={} interval={}s hysteresis={}%",
                 profit_cfg.api_provider, interval, profit_cfg.hysteresis_pct
@@ -743,12 +746,9 @@ fn main() -> Result<()> {
             thread::spawn(move || loop {
                 thread::sleep(Duration::from_secs(interval));
 
-                // Fetch profit snapshot.
-                // Currently uses fallback estimates.  Live API fetching
-                // (NiceHash/WhatToMine/CoinGecko) will be added in the
-                // next phase — the data structures and weight computation
-                // are already in place.
-                let snapshot = StreamProfitSnapshot::fallback();
+                // Fetch live profit snapshot from configured API provider.
+                // Falls back to static estimates on any error.
+                let snapshot = fetch_profit_snapshot(&cfg_clone);
 
                 {
                     let mut sched = scheduler_ref.lock().expect("revenue scheduler lock poisoned");

@@ -5233,9 +5233,11 @@ dependencies = [
  "libc",
  "log",
  "ort",
+ "reqwest",
  "serde",
  "serde_json",
  "sha3",
+ "tokio",
 ]
 
 [[package]]
@@ -5401,6 +5403,7 @@ dependencies = [
  "ctrlc",
  "ed25519-dalek",
  "hex",
+ "reqwest",
  "serde",
  "serde_json",
  "tokio",
