@@ -7,6 +7,8 @@
 
 **Status:** Mainnet Live · 3.0.5 "All Green" Complete · 11/11 Services Active · Chain Height 827+ · Web Image 377 MB (85% smaller) · Public Launch: 31 December 2026
 
+**DeekshaChv3 Parallel Streaming:** ZION Deeksha on GPU + external coins (VRSC, KAS, ALPH, DCR, ERG, ETC, RVN, FLUX) on CPU — all algorithms run **simultaneously**, not alternating. Deployed to Edge pool 2026-07-13.
+
 **Canonical documentation for 3.0.5:** [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md) — full Czech report.  
 **Runbook:** [`docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md`](docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md) — canonical 7-phase runbook.  
 **3.0.4 release overview:** [`3.0.4.md`](3.0.4.md) — DeFi deploy + TX unification.
@@ -82,6 +84,8 @@ cargo run --manifest-path V3/Cargo.toml -p zion-cli -- --help
 **Pool:** `62.171.141.136:8444` (Edge — public)  
 **RPC:** `62.171.141.136:8443` (localhost only on server)
 
+**DeekshaChv3 Parallel Streaming** — the pool sends ZION Deeksha jobs with embedded external coin jobs (VRSC, KAS, ALPH, etc.). The miner runs ZION on GPU and the external coin on CPU **simultaneously**. Both streams submit shares independently.
+
 ```powershell
 # Windows (PowerShell) — GPU miner connecting to Edge pool
 $env:ZION_POOL_ADDR='62.171.141.136:8444'
@@ -90,8 +94,25 @@ $env:ZION_MINER_ID='my-rig-01'
 $env:ZION_PAYOUT_ADDRESS='zion1<your-44-char-address>'   # REQUIRED
 $env:ZION_LOOP_COUNT='1000000'
 $env:ZION_GPU_BACKEND='opencl'
-cargo run --release --manifest-path V3/Cargo.toml -p zion-miner
+cargo run --release --manifest-path V3/Cargo.toml -p zion-miner --features full
 ```
+
+```bash
+# Linux — unified miner with all algorithms (GPU + CPU native)
+cargo run --release --manifest-path V3/Cargo.toml -p zion-miner --features full -- \
+  --pool 62.171.141.136:8444 \
+  --wallet zion1<your-address> \
+  --worker my-rig \
+  --gpu opencl \
+  --algorithm deeksha_lite_v1 \
+  --threads 4
+```
+
+**Supported algorithms:**
+- **ZION:** `deeksha_lite_v1`, `cosmic_harmony_ekam_deeksha_v2`, `deeksha_lite_fire`
+- **External GPU:** blake3 (ALPH/DCR), kheavyhash (KAS), autolykos (ERG), kawpow (RVN/CLORE), ethash (ETC), zelhash (FLUX)
+- **External CPU:** verushash (VRSC), randomx (XMR)
+- **Special:** `auto` (autotune — benchmark all and pick best)
 
 > **Note:** `ZION_PAYOUT_ADDRESS` is required — pool rejects connections with missing or invalid address. Must be a valid 44-char `zion1...` address.
 
@@ -150,4 +171,4 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-*Last updated: 2026-07-09 · Version: v3.0.5 "All Green" · Report: [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md)*
+*Last updated: 2026-07-13 · Version: v3.0.5 "All Green" + DeekshaChv3 Parallel Streaming · Report: [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md)*
