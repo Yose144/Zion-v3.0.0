@@ -1574,16 +1574,19 @@ impl AuxPowClient {
             //   - PBaaS v7+ nonceSpace embedded in last 15 bytes (bytes 1329-1343)
             //   - MMR roots restored from original job solution (bytes 8-72)
 
-            // Stale share detection: drop if job_id != latest_job_id.
+            // Stale share detection: warn but still forward to upstream pool.
+            // The upstream pool (LuckPool) will reject if truly stale — we
+            // don't need to pre-reject here because parallel streaming means
+            // the miner may find a share for a job that was superseded while
+            // it was scanning.  Forwarding gives the share a chance.
             {
                 let latest = self.latest_job_id.lock().await.clone();
                 if let Some(ref cur) = latest {
                     if !cur.is_empty() && job_id != *cur {
                         warn!(
-                            "auxpow: dropping stale VRSC share: job={} (latest={}) nonce={}",
+                            "auxpow: VRSC share for previous job={} (latest={}) nonce={} — forwarding anyway",
                             job_id, cur, nonce
                         );
-                        return Ok(ShareResult::Rejected("stale job".to_string()));
                     }
                 }
             }
