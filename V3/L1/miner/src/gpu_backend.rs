@@ -251,6 +251,13 @@ pub fn is_external_algorithm(algorithm: &str) -> bool {
     )
 }
 
+/// CPU-only algorithms that have no GPU kernel and must use CPU mining.
+/// VerusHash v2.2 is designed to be GPU-resistant (AES-NI + CLHash).
+/// RandomX is designed to be GPU/ASIC-resistant.
+pub fn is_cpu_only_algorithm(algorithm: &str) -> bool {
+    matches!(algorithm, "verushash" | "randomx")
+}
+
 /// Try to create the best available GPU backend.
 /// Selects the appropriate OpenCL miner based on the algorithm.
 pub fn create_gpu_backend(

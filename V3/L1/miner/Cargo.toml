@@ -39,7 +39,7 @@ native-autolykos      = ["dep:zion-native-ffi", "zion-native-ffi/native-autolyko
 native-kheavyhash     = ["dep:zion-native-ffi", "zion-native-ffi/native-kheavyhash"]
 native-blake3-algo    = ["dep:zion-native-ffi", "zion-native-ffi/native-blake3-algo"]
 native-cosmic-harmony = ["dep:zion-native-ffi", "zion-native-ffi/native-cosmic-harmony"]
-native-verushash      = ["dep:zion-native-ffi", "zion-native-ffi/native-verushash"]
+native-verushash      = ["dep:zion-native-ffi", "zion-native-ffi/native-verushash", "zion-auxpow/native-verushash"]
 native-randomx        = ["dep:zion-native-ffi", "zion-native-ffi/native-randomx"]
 native-all = [
     "native-etchash", "native-kawpow", "native-autolykos", "native-kheavyhash",
@@ -48,6 +48,17 @@ native-all = [
 
 # AuXpow native hashers (DAG generation for Ethash/KawPow via C FFI)
 native-hashers = ["zion-auxpow/native-hashers"]
+
+# Full build: every GPU backend + every native algorithm.
+# Produces a single unified miner binary that can mine any coin by just
+# changing --algorithm / --pool / --wallet parameters.
+# NOTE: does NOT include `native-hashers` (AuXpow's own C compilation) to
+# avoid duplicate symbols with zion-native-ffi.  AuXpow delegates VerusHash
+# to zion-native-ffi via its `native-verushash` feature.
+full = [
+    "gpu-opencl",
+    "native-all",
+]
 
 # Hard-fork rehearsal: same consensus gates as node/pool (`V3/docs/operational/AUDIT_CLOSEOUT_1_THROUGH_6.md`).
 testnet_fork_rehearsal = ["zion-core/testnet_fork_rehearsal", "zion-pool/testnet_fork_rehearsal"]
