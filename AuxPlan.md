@@ -565,7 +565,7 @@ ZION Miner (GPU rig)
 | **R1c** | **GPU kernel parametrizace** | **DONE ✅** | **Kernel aplikuje weights na work distribution** |
 | **R2** | DCR revenue live | 1-2h | 1st external revenue stream |
 | **R3** | ALPH + KAS E2E | 2-4h | 3 external coins live |
-| **R4** | Stream telemetry revenue report | 2-4h | Sjednocený revenue accounting |
+| **R4** | **Stream telemetry revenue report** | **DONE ✅** | **Per-source breakdown + stream telemetry dashboard** |
 | **R5** | SMOS deploy + GPU mining | 2-4h | Real GPU hashrate (blocked) |
 | **R6** | **EthStratum protocol** | **DONE ✅** | **Unblocks ERG/EVR/MEWC/CLORE** |
 | **R7** | True AuxPow consensus | 20-40h | Free chain security (future) |
@@ -790,14 +790,26 @@ ZION_STREAM_PROFIT_SOURCES=zion,keccak_bonus,sha3_bonus,ncl_ai
 - [ ] `ZION_STREAM_KHEAVYHASH_PCT=10` — KAS lane aktivní
 - [ ] Revenue stream breakdown: ZION 50% / DCR 15% / ALPH 10% / KAS 10% / NCL 15%
 
-### Fáze R4: Stream telemetry revenue report (2-4h)
+### Fáze R4: Stream telemetry revenue report (DONE ✅)
 
-- [ ] Pool: po každém ZION bloku volat `track_deeksha_streams()`
-- [ ] Pool: po každém accepted external share volat `track_event(Blake3External)`
-- [ ] Dashboard: sjednocený revenue report (ZION + external + NCL)
-- [ ] API endpoint: `GET /api/v1/revenue/stats` → `RevenueStats` JSON
-- [ ] API endpoint: `GET /api/v1/revenue/streams` → per-stream breakdown
-- [ ] Per-stream 24h/7d/30d grafy
+**Commit:** `d189712a7` — `feat(revenue): R4 — stream telemetry revenue report`
+
+**Co bylo implementováno:**
+- [x] Pool: `/api/v1/revenue/stats` — per-source breakdown (all 14 sources)
+- [x] Pool: `/api/v1/revenue/streams` — Deeksha Chv3 stream telemetry
+- [x] Pool: `/stats` routing.sources expanded from 3 to all 14 sources
+- [x] Dashboard: `/api/revenue/report` — comprehensive revenue report
+- [x] Dashboard: `/api/revenue/streams` — stream telemetry proxy
+- [x] Dashboard UI: Revenue Report panel — per-source table with bar visualization
+- [x] Dashboard UI: Stream Telemetry panel — per-stream work distribution
+- [x] All 14 sources: zion, keccak, sha3, profit, blake3, ncl, kheavyhash,
+      ethash, kawpow, autolykos, randomx, zelhash, deeksha_lite, thermal_bonus
+
+**Co ještě chybí (future enhancement):**
+- [ ] Per-stream 24h/7d/30d grafy (vyžaduje historical aggregation v RevenueJournal)
+- [ ] NCL task telemetry export (track_ncl_task_detailed data do API)
+- [ ] CSV/JSON export tlačítko v dashboard UI
+- [ ] Historical time-series storage (hourly snapshots)
 
 ### Fáze R5: SMOS deploy + GPU mining (2-4h, blocked)
 
