@@ -2813,8 +2813,107 @@ async function loadRevenueTab(){
 
     const updated = new Date().toLocaleTimeString();
     set('revenue-last-updated', 'Updated ' + updated);
+
+    // ── R4: Revenue Report — per-source breakdown + stream telemetry ─────
+    loadRevenueReport();
+    loadStreamTelemetry();
   } catch(e) {
     console.error('loadRevenueTab error:', e);
+  }
+}
+
+// ── R4: Revenue Report — per-source breakdown table ─────────────────
+async function loadRevenueReport(){
+  try {
+    const data = await apiFetch('/api/revenue/report');
+    if(!data || !data.ok) return;
+
+    const sources = data.sources || [];
+    const tbody = document.getElementById('rev-report-sources-tbody');
+    if(tbody){
+      if(sources.length === 0){
+        tbody.innerHTML = '<tr><td colspan="6" class="text-gray-500 text-center py-4">No source data — pool offline</td></tr>';
+      } else {
+        // Find max submits for bar scaling
+        const maxSubmits = Math.max(...sources.map(s => s.submits || 0), 1);
+        tbody.innerHTML = sources.map(s => {
+          const submits = s.submits || 0;
+          const accepted = s.accepted || 0;
+          const acceptPct = s.accept_rate_pct != null ? s.accept_rate_pct : 0;
+          const feePct = s.fee_pct != null ? s.fee_pct : 0;
+          const barWidth = submits > 0 ? (submits / maxSubmits * 100).toFixed(1) : 0;
+          const active = submits > 0;
+          const label = (s.source || '').replace(/_/g, ' ');
+          const acceptColor = acceptPct >= 90 ? 'text-emerald-400' : acceptPct >= 50 ? 'text-amber-400' : 'text-gray-500';
+          return `<tr class="border-b border-white/5 ${active ? '' : 'opacity-50'}">
+            <td class="py-2 px-2 font-bold ${active ? 'text-white' : 'text-gray-500'}">${escapeHtml(label)}</td>
+            <td class="py-2 px-2 text-right font-mono text-white">${submits.toLocaleString()}</td>
+            <td class="py-2 px-2 text-right font-mono text-cyan-400">${accepted.toLocaleString()}</td>
+            <td class="py-2 px-2 text-right font-mono ${acceptColor}">${acceptPct.toFixed(1)}%</td>
+            <td class="py-2 px-2 text-right font-mono text-gray-400">${feePct.toFixed(2)}%</td>
+            <td class="py-2 px-2"><div class="w-full bg-black/40 rounded-full h-1.5" style="max-width:120px"><div class="bg-zion-gold h-full rounded-full transition-all" style="width:${barWidth}%"></div></div></td>
+          </tr>`;
+        }).join('');
+      }
+    }
+  } catch(e) {
+    console.error('loadRevenueReport error:', e);
+  }
+}
+
+// ── R4: Stream Telemetry — per-stream work distribution ─────────────
+async function loadStreamTelemetry(){
+  try {
+    const data = await apiFetch('/api/revenue/streams');
+    if(!data || !data.ok) return;
+
+    // Provider / live / multistream status
+    set('rev-stream-tel-provider', data.provider || '—');
+    const liveEl = document.getElementById('rev-stream-tel-live');
+    if(liveEl){
+      liveEl.textContent = data.live ? '🟢 Yes' : '🔮 Fallback';
+      liveEl.className = 'font-mono ' + (data.live ? 'text-emerald-400' : 'text-amber-400');
+    }
+    const multiEl = document.getElementById('rev-stream-tel-multi');
+    if(multiEl){
+      multiEl.textContent = data.multistream_enabled ? '✅ On' : '⚪ Off';
+      multiEl.className = 'font-mono ' + (data.multistream_enabled ? 'text-emerald-400' : 'text-gray-500');
+    }
+
+    // Stream breakdown
+    const streamsEl = document.getElementById('rev-stream-tel-streams');
+    if(streamsEl){
+      const streams = data.streams || [];
+      if(streams.length === 0){
+        streamsEl.innerHTML = '<div class="text-xs text-gray-500">No stream data — pool offline or stream profit disabled</div>';
+      } else {
+        const colors = {
+          zion: 'bg-emerald-500',
+          keccak_bonus: 'bg-cyan-500',
+          sha3_bonus: 'bg-blue-500',
+          ncl_ai: 'bg-purple-500',
+          deeksha_lite: 'bg-amber-500',
+          thermal_bonus: 'bg-red-500',
+        };
+        streamsEl.innerHTML = streams.map(s => {
+          const pct = Number(s.weight_pct || 0).toFixed(1);
+          const color = colors[s.source] || 'bg-zion-gold';
+          const label = (s.source || '').replace(/_/g, ' ');
+          const submits = s.submits || 0;
+          const accepted = s.accepted || 0;
+          const feeRate = s.fee_rate_pct != null ? s.fee_rate_pct : 0;
+          return `<div class="space-y-1">
+            <div class="flex justify-between text-[10px]">
+              <span class="text-gray-400">${escapeHtml(label)} <span class="text-gray-600">(${feeRate.toFixed(1)}% fee)</span></span>
+              <span class="font-mono text-white">${pct}% <span class="text-gray-500">· ${submits.toLocaleString()} submits · ${accepted.toLocaleString()} accepted</span></span>
+            </div>
+            <div class="w-full bg-black/40 rounded-full h-2"><div class="${color} h-full rounded-full transition-all" style="width: ${pct}%"></div></div>
+          </div>`;
+        }).join('');
+      }
+    }
+  } catch(e) {
+    console.error('loadStreamTelemetry error:', e);
   }
 }
 

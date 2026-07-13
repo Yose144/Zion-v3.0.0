@@ -5105,6 +5105,71 @@ def get_revenue_dashboard() -> dict:
     return result
 
 
+def _fetch_pool_revenue_stats() -> dict:
+    """Fetch revenue stats from pool /api/v1/revenue/stats endpoint."""
+    host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
+    try:
+        import urllib.request
+        with urllib.request.urlopen(f"http://{host}:8455/api/v1/revenue/stats", timeout=3) as r:
+            return json.loads(r.read().decode())
+    except Exception:
+        return {}
+
+
+def _fetch_pool_revenue_streams() -> dict:
+    """Fetch stream telemetry from pool /api/v1/revenue/streams endpoint."""
+    host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
+    try:
+        import urllib.request
+        with urllib.request.urlopen(f"http://{host}:8455/api/v1/revenue/streams", timeout=3) as r:
+            return json.loads(r.read().decode())
+    except Exception:
+        return {}
+
+
+def get_revenue_report() -> dict:
+    """Comprehensive revenue report — per-source breakdown, stream telemetry, NCL metrics.
+
+    Fetches data from the pool's /api/v1/revenue/stats endpoint and enriches it
+    with ZION mining data and historical context from the existing revenue dashboard.
+    """
+    # Get the pool revenue stats
+    pool_rev = _fetch_pool_revenue_stats()
+
+    # Also get the existing revenue dashboard data for ZION mining context
+    dashboard = get_revenue_dashboard()
+
+    # Merge: pool revenue stats provide per-source breakdown, dashboard provides ZION mining data
+    result = {
+        "ok": True,
+        "timestamp": pool_rev.get("timestamp", 0),
+        "uptime_secs": pool_rev.get("uptime_secs", 0),
+        "totals": pool_rev.get("totals", {}),
+        "sources": pool_rev.get("sources", []),
+        "auxpow": pool_rev.get("auxpow", {}),
+        "stream_profit": pool_rev.get("stream_profit", {}),
+        "fee_split": pool_rev.get("fee_split", {}),
+        "pplns": pool_rev.get("pplns", {}),
+        # Enrich with ZION mining data from dashboard
+        "zion_mined_total": dashboard.get("revenue", {}).get("zion_mined_total", 0),
+        "zion_paid_total": dashboard.get("revenue", {}).get("zion_paid_total", 0),
+        "zion_pending": dashboard.get("revenue", {}).get("zion_pending", 0),
+        "zion_per_day": dashboard.get("revenue", {}).get("zion_per_day", 0),
+        "blocks_found": dashboard.get("revenue", {}).get("blocks_found", 0),
+        "blocks_per_day": dashboard.get("revenue", {}).get("blocks_per_day", 0),
+        "pool_hashrate": dashboard.get("revenue", {}).get("pool_hashrate", 0),
+        "coin_revenue": dashboard.get("revenue", {}).get("coin_revenue", []),
+        "active_coins": dashboard.get("revenue", {}).get("active_coins", []),
+        "distributions": dashboard.get("revenue", {}).get("distributions", []),
+    }
+    return result
+
+
+def get_revenue_streams() -> dict:
+    """Per-stream telemetry — Deeksha Chv3 pipeline weights and work distribution."""
+    return _fetch_pool_revenue_streams()
+
+
 # ── AuxPow / external-pool configuration helpers ─────────────────────────────
 
 # Path to the Edge shared environment file loaded by zion-pool.service.
@@ -10078,6 +10143,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(get_pool_miners_dashboard())
         elif route == "/api/revenue":
             self._json(get_revenue_dashboard())
+        elif route == "/api/revenue/report":
+            self._json(get_revenue_report())
+        elif route == "/api/revenue/streams":
+            self._json(get_revenue_streams())
         elif route == "/api/pool/auxpow":
             self._json(get_auxpow_config())
         elif route == "/api/servers-setup":

@@ -67,6 +67,37 @@ pub fn mine(job: &JobPackage, range: std::ops::Range<u64>) -> Result<Option<Foun
     }
 }
 
+/// Mine a range of nonces and return the share with the best (lowest) hash
+/// found, regardless of the job target.  Useful for E2E tests where the pool's
+/// effective difficulty is higher than the CPU-minable target and we want to
+/// submit the hardest share available in a short time window.
+pub fn mine_best(job: &JobPackage, range: std::ops::Range<u64>) -> Result<Option<FoundShare>> {
+    let algo = job.algorithm.as_str();
+    let start = job.start_nonce.max(range.start);
+    let end = (job.start_nonce + job.nonce_count).min(range.end);
+
+    if start >= end {
+        return Ok(None);
+    }
+
+    match algo {
+        "blake3" => {
+            if job.external_coin == ExternalCoin::ALPH {
+                Ok(scan_blake3_alph_best(job, start, end))
+            } else if job.external_coin == ExternalCoin::DCR {
+                Ok(scan_dcr_best(job, start, end))
+            } else {
+                Ok(scan_best(job, start, end, hash_blake3, meets_target))
+            }
+        }
+        "kheavyhash" => Ok(scan_kheavyhash_best(job, start, end)),
+        "autolykos" => Ok(scan_autolykos_best(job, start, end)),
+        "kawpow" => Ok(scan_kawpow_best(job, start, end)),
+        "ethash" | "etchash" => Ok(scan_ethash_best(job, start, end)),
+        other => Err(anyhow!("algorithm '{}' not supported by CPU harness", other)),
+    }
+}
+
 fn scan<F>(job: &JobPackage, start: u64, end: u64, hash_fn: F) -> Option<FoundShare>
 where
     F: Fn(&[u8], u64, u64) -> [u8; 32],
@@ -213,6 +244,163 @@ fn scan_ethash(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
         }
     }
     None
+}
+
+// ── Best-share scanners (return the share with the smallest hash) ─────
+
+fn is_hash_better(a: &[u8; 32], b: &[u8; 32], little_endian: bool) -> bool {
+    if little_endian {
+        // Smaller little-endian integer = smaller high-order bytes in reversed order.
+        a.iter().rev().cmp(b.iter().rev()).is_lt()
+    } else {
+        a.iter().cmp(b.iter()).is_lt()
+    }
+}
+
+fn scan_best<F>(job: &JobPackage, start: u64, end: u64, hash_fn: F, little_endian: bool) -> Option<FoundShare>
+where
+    F: Fn(&[u8], u64, u64) -> [u8; 32],
+{
+    let header = &job.header_bytes;
+    let timestamp = job.timestamp;
+
+    let mut best: Option<FoundShare> = None;
+    for nonce in start..end {
+        let hash = hash_fn(header, timestamp, nonce);
+        if best
+            .as_ref()
+            .map(|b| is_hash_better(&hash, &b.hash, little_endian))
+            .unwrap_or(true)
+        {
+            best = Some(FoundShare {
+                external_job_id: job.external_job_id.clone(),
+                nonce,
+                hash,
+            });
+        }
+    }
+    best
+}
+
+fn scan_dcr_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
+    scan_best(job, start, end, hash_blake3, true)
+}
+
+fn scan_blake3_alph_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
+    let header = &job.header_bytes;
+    let extranonce1 = &job.extranonce1;
+
+    let mut best: Option<FoundShare> = None;
+    for nonce in start..end {
+        let hash = hash_blake3_alph(header, extranonce1, nonce);
+        if best
+            .as_ref()
+            .map(|b| is_hash_better(&hash, &b.hash, false))
+            .unwrap_or(true)
+        {
+            best = Some(FoundShare {
+                external_job_id: job.external_job_id.clone(),
+                nonce,
+                hash,
+            });
+        }
+    }
+    best
+}
+
+fn scan_kheavyhash_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
+    let header = &job.header_bytes;
+    let timestamp = job.timestamp;
+    let extranonce1 = &job.extranonce1;
+
+    let mut best: Option<FoundShare> = None;
+    for nonce in start..end {
+        let hash = if !extranonce1.is_empty() && extranonce1.len() < 8 {
+            hash_kheavyhash_extranonce(header, timestamp, extranonce1, nonce)
+        } else {
+            hash_kheavyhash(header, timestamp, nonce)
+        };
+        if best
+            .as_ref()
+            .map(|b| is_hash_better(&hash, &b.hash, false))
+            .unwrap_or(true)
+        {
+            best = Some(FoundShare {
+                external_job_id: job.external_job_id.clone(),
+                nonce,
+                hash,
+            });
+        }
+    }
+    best
+}
+
+fn scan_autolykos_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
+    let header = &job.header_bytes;
+    let height = job.timestamp as u32;
+
+    let mut best: Option<FoundShare> = None;
+    for nonce in start..end {
+        let hash = hash_autolykos(header, nonce, height);
+        if best
+            .as_ref()
+            .map(|b| is_hash_better(&hash, &b.hash, false))
+            .unwrap_or(true)
+        {
+            best = Some(FoundShare {
+                external_job_id: job.external_job_id.clone(),
+                nonce,
+                hash,
+            });
+        }
+    }
+    best
+}
+
+fn scan_kawpow_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
+    let mut header = [0u8; 32];
+    let len = job.header_bytes.len().min(32);
+    header[..len].copy_from_slice(&job.header_bytes[..len]);
+    let height = job.timestamp as u32;
+
+    let mut best: Option<FoundShare> = None;
+    for nonce in start..end {
+        let (_mix, hash) = hash_kawpow(&header, nonce, height);
+        if best
+            .as_ref()
+            .map(|b| is_hash_better(&hash, &b.hash, false))
+            .unwrap_or(true)
+        {
+            best = Some(FoundShare {
+                external_job_id: job.external_job_id.clone(),
+                nonce,
+                hash,
+            });
+        }
+    }
+    best
+}
+
+fn scan_ethash_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
+    let header = &job.header_bytes;
+    let height = job.timestamp as u32;
+
+    let mut best: Option<FoundShare> = None;
+    for nonce in start..end {
+        let hash = hash_ethash(header, nonce, height);
+        if best
+            .as_ref()
+            .map(|b| is_hash_better(&hash, &b.hash, false))
+            .unwrap_or(true)
+        {
+            best = Some(FoundShare {
+                external_job_id: job.external_job_id.clone(),
+                nonce,
+                hash,
+            });
+        }
+    }
+    best
 }
 
 // ── Tests ────────────────────────────────────────────────────────────
