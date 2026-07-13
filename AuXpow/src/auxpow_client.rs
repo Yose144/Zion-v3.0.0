@@ -398,13 +398,18 @@ impl AuxPowClient {
     async fn authorize_inline(&self, payout_wallet: &str) -> Result<()> {
         let worker = format!("{}.{}", payout_wallet, self.profile.worker_name);
         let is_ethstratum = self.protocol == StratumProtocol::EthStratum;
-        let password = if is_ethstratum {
+        let password = if !self.profile.password.is_empty() {
+            self.profile.password.as_str()
+        } else if is_ethstratum {
             "x"
-        } else if self.profile.coin == ExternalCoin::DCR || self.profile.coin.is_cpu() {
-            // DCR (WoolyPooly) and CPU coins (XMR/RandomX) expect a plain
-            // password rather than a payout-currency override; the payout
-            // address is the wallet.
+        } else if self.profile.coin == ExternalCoin::DCR {
+            // DCR (WoolyPooly) expects the payout address as the username and a
+            // plain password.
             "x"
+        } else if self.profile.coin == ExternalCoin::XMR {
+            // MoneroOcean expects a wallet.worker username and a fixed/starting
+            // difficulty in the password.
+            "x,d=4"
         } else if self.profile.coin.supports_btc_payout() {
             "c=BTC"
         } else {
@@ -495,13 +500,18 @@ impl AuxPowClient {
     async fn authorize(&self, payout_wallet: &str) -> Result<()> {
         let worker = format!("{}.{}", payout_wallet, self.profile.worker_name);
         let is_ethstratum = self.protocol == StratumProtocol::EthStratum;
-        let password = if is_ethstratum {
+        let password = if !self.profile.password.is_empty() {
+            self.profile.password.as_str()
+        } else if is_ethstratum {
             "x"
-        } else if self.profile.coin == ExternalCoin::DCR || self.profile.coin.is_cpu() {
-            // DCR (WoolyPooly) and CPU coins (XMR/RandomX) expect a plain
-            // password rather than a payout-currency override; the payout
-            // address is the wallet.
+        } else if self.profile.coin == ExternalCoin::DCR {
+            // DCR (WoolyPooly) expects the payout address as the username and a
+            // plain password.
             "x"
+        } else if self.profile.coin == ExternalCoin::XMR {
+            // MoneroOcean expects a wallet.worker username and a fixed/starting
+            // difficulty in the password.
+            "x,d=4"
         } else if self.profile.coin.supports_btc_payout() {
             "c=BTC"
         } else {
@@ -1391,14 +1401,16 @@ impl AuxPowClient {
 
     /// Compute the share target implied by the current difficulty.
     ///
-    /// Uses the coin-specific max target: 224-bit for KAS (`0xFF..FF` followed
-    /// by 4 zero bytes) and 256-bit for Blake3 coins.  The result saturates at
-    /// max target, so difficulties below 1.0 produce the easiest possible target.
+    /// Uses the coin-specific max target:
+    ///   - 224-bit for KAS and DCR (`0x00 x4 || 0xFF x28`)
+    ///   - 226-bit for ALPH (`0x00 x3 || 0x03 || 0xFF x28`)
+    ///   - 256-bit for everything else.
+    /// The result saturates at max target, so difficulties below 1.0 produce
+    /// the easiest possible target.
     pub async fn share_target(&self) -> [u8; 32] {
         let difficulty = self.current_difficulty().await;
         // The Kaspa stratum bridge (rusty-kaspa/bridge) uses a 224-bit max target
-        // (2^224 - 1) for converting Stratum difficulty to share target.  Blake3
-        // coins (DCR/ALPH) use the full 256-bit max target.
+        // (2^224 - 1) for converting Stratum difficulty to share target.
         let max_target = if self.profile.algorithm.eq_ignore_ascii_case("kheavyhash") {
             // 2^224 - 1 as a 32-byte big-endian number: 4 leading zero bytes
             // followed by 28 0xFF bytes.  This matches the Kaspa stratum bridge.
@@ -1410,6 +1422,16 @@ impl AuxPowClient {
             // This matches gominer/dcrpool DiffToTarget(net.PowLimit, difficulty).
             let mut t = [0u8; 32];
             t[4..].fill(0xFF);
+            t
+        } else if self.profile.coin == ExternalCoin::ALPH {
+            // Alephium pools (e.g. alephium/mining-pool) define difficulty 1 as a
+            // target with 30 leading zero bits (diff1TargetNumZero=30), so the
+            // effective max target is 2^226 - 1.
+            let mut t = [0xFFu8; 32];
+            t[0] = 0x00;
+            t[1] = 0x00;
+            t[2] = 0x00;
+            t[3] = 0x03;
             t
         } else {
             [0xFFu8; 32]
@@ -2596,5 +2618,36 @@ mod tests {
     fn protocol_as_str() {
         assert_eq!(StratumProtocol::Stratum.as_str(), "stratum");
         assert_eq!(StratumProtocol::EthStratum.as_str(), "ethstratum");
+    }
+
+    #[test]
+    fn difficulty_to_target_dcr_uses_pow_limit() {
+        // Decred mainnet PoW limit is 2^224 - 1; at difficulty 4 the share
+        // target should be approximately 2^222.
+        let mut max = [0u8; 32];
+        max[4..].fill(0xFF);
+        let target = difficulty_to_target_with_max(4.0, &max);
+        assert_eq!(target[..4], [0, 0, 0, 0]);
+        assert_eq!(target[4], 0x3F);
+        // Remainder should be filled with 0xFF.
+        assert!(target[5..].iter().all(|&b| b == 0xFF));
+    }
+
+    #[test]
+    fn difficulty_to_target_alph_uses_226_bit_max() {
+        // Alephium pools use difficulty 1 == target with 30 leading zero bits,
+        // i.e. max target 2^226 - 1.
+        let mut max = [0xFFu8; 32];
+        max[0] = 0x00;
+        max[1] = 0x00;
+        max[2] = 0x00;
+        max[3] = 0x03;
+        let target = difficulty_to_target_with_max(1.0, &max);
+        assert_eq!(target[..4], [0x00, 0x00, 0x00, 0x03]);
+        assert!(target[4..].iter().all(|&b| b == 0xFF));
+
+        // At difficulty 2 the high byte should halve to 0x01.
+        let target2 = difficulty_to_target_with_max(2.0, &max);
+        assert_eq!(target2[3], 0x01);
     }
 }
