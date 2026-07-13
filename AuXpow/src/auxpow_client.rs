@@ -39,18 +39,32 @@ pub enum StratumProtocol {
 impl ExternalCoin {
     pub fn protocol(self) -> StratumProtocol {
         match self {
-            // 2miners ETC uses standard Stratum v1 (mining.subscribe +
+            // 2miners ETC and RVN use standard Stratum v1 (mining.subscribe +
             // mining.authorize + mining.notify), NOT EthStratum.
-            // The notify params carry [seed_hash, header_hash, target, clean].
+            // ETC notify: [seed_hash, header_hash, boundary, target, clean]
+            // RVN notify: [job_id, seed_hash, header_hash, target, clean, height, nbits]
             Self::DCR | Self::FLUX | Self::XMR | Self::KAS | Self::ALPH
-            | Self::ETC => {
+            | Self::ETC | Self::RVN => {
                 StratumProtocol::Stratum
             }
-            // ERG/RVN/CLORE/EVR/MEWC use EthStratum (eth_submitLogin +
+            // ERG/CLORE/EVR/MEWC use EthStratum (eth_submitLogin +
             // eth_getWork + eth_submitWork).
-            Self::ERG | Self::RVN | Self::EVR | Self::MEWC | Self::CLORE => {
+            Self::ERG | Self::EVR | Self::MEWC | Self::CLORE => {
                 StratumProtocol::EthStratum
             }
+        }
+    }
+
+    /// Epoch length for DAG-based coins.
+    /// Ethash/ETC: 30000 blocks per epoch.
+    /// KawPow/RVN: 7500 blocks per epoch.
+    pub fn epoch_length(self) -> u32 {
+        match self {
+            Self::RVN | Self::CLORE | Self::EVR | Self::MEWC => {
+                crate::external_hashers::KAWPOW_EPOCH_LENGTH
+            }
+            Self::ETC => crate::external_hashers::ETHASH_EPOCH_LENGTH,
+            _ => crate::external_hashers::ETHASH_EPOCH_LENGTH,
         }
     }
 }
@@ -308,6 +322,15 @@ impl AuxPowClient {
                 match method {
                     "mining.set_difficulty" => {
                         if let Some(diff) = parsed.get("params").and_then(|p| p.get(0)).and_then(|d| d.as_f64()) {
+                            *self.current_difficulty.lock().await = diff;
+                        }
+                    }
+                    "mining.set_target" => {
+                        if let Some(target_hex) = parsed.get("params").and_then(|p| p.get(0)).and_then(|d| d.as_str()) {
+                            let target_bytes = crate::external_hashers::parse_target_hex(
+                                target_hex.trim_start_matches("0x"),
+                            ).unwrap_or([0xFFu8; 32]);
+                            let diff = target_to_difficulty(&target_bytes);
                             *self.current_difficulty.lock().await = diff;
                         }
                     }
@@ -580,6 +603,26 @@ impl AuxPowClient {
                         }
                     }
                 }
+                "mining.set_target" => {
+                    // RVN/KawPow pools send mining.set_target with a 32-byte
+                    // hex target string instead of mining.set_difficulty.
+                    if let Some(params) = msg.get("params") {
+                        if let Some(target_hex) = params.get(0).and_then(|d| d.as_str()) {
+                            let target_bytes = crate::external_hashers::parse_target_hex(
+                                target_hex.trim_start_matches("0x"),
+                            ).unwrap_or([0xFFu8; 32]);
+                            // Convert target to difficulty: diff = 2^256 / target
+                            let diff = target_to_difficulty(&target_bytes);
+                            println!(
+                                "auxpow: {} set_target={} difficulty={:.2}",
+                                self.profile.coin,
+                                &target_hex[..16.min(target_hex.len())],
+                                diff
+                            );
+                            *self.current_difficulty.lock().await = diff;
+                        }
+                    }
+                }
                 "mining.set_extranonce" | "set_extranonce" => {
                     if let Some(params) = msg.get("params") {
                         if let Some(hex) = params.get(0).and_then(|p| p.as_str()) {
@@ -782,6 +825,67 @@ impl AuxPowClient {
             }
         }
 
+        // RVN / KawPow Stratum v1 hybrid (2miners):
+        // mining.notify params = [job_id, seed_hash, header_hash, target, clean_jobs, height, nbits]
+        // where job_id is a short string, seed_hash and header_hash are
+        // 32-byte hex strings (without 0x prefix), target is 32-byte hex,
+        // clean_jobs is a bool, height is the block number, nbits is hex.
+        // KawPow epoch = height / 7500.
+        if let Some(arr) = params.as_array() {
+            if arr.len() >= 6
+                && self.profile.coin == ExternalCoin::RVN
+                && arr[0].as_str().map(|s| !s.starts_with("0x") && s.len() <= 20).unwrap_or(false)
+                && arr[1].as_str().map(|s| s.len() == 64).unwrap_or(false)
+                && arr[2].as_str().map(|s| s.len() == 64).unwrap_or(false)
+            {
+                let job_id = arr[0].as_str().unwrap_or("").to_string();
+                let seed_hash = arr[1].as_str().unwrap_or("").to_string();
+                let header_hex = arr[2].as_str().unwrap_or("").to_string();
+                let target_hex = arr[3].as_str().unwrap_or("").to_string();
+                let height = arr.get(5).and_then(|v| v.as_u64());
+                let nbits = arr.get(6).and_then(|v| v.as_str()).map(String::from);
+
+                let header_bytes = hex::decode(header_hex.trim_start_matches("0x"))
+                    .unwrap_or_default();
+                let target_bytes = crate::external_hashers::parse_target_hex(
+                    target_hex.trim_start_matches("0x"),
+                )
+                .unwrap_or([0xFFu8; 32]);
+
+                // Derive epoch from block height (height / 7500 for KawPow).
+                let epoch_length = self.profile.coin.epoch_length() as u64;
+                let epoch = height.map(|h| (h / epoch_length) as u32);
+
+                println!(
+                    "auxpow: RVN notify — job={} seed={}.. header={}.. epoch={:?} height={:?}",
+                    job_id,
+                    &seed_hash[..16.min(seed_hash.len())],
+                    &header_hex[..16.min(header_hex.len())],
+                    epoch,
+                    height,
+                );
+
+                return Ok(ExternalJob {
+                    job_id,
+                    header_hex,
+                    target_hex,
+                    seed_hash: Some(seed_hash),
+                    block_number: height,
+                    algorithm: self.profile.algorithm.clone(),
+                    header_bytes,
+                    target_bytes,
+                    timestamp: None,
+                    nbits,
+                    external_coin: self.profile.coin,
+                    from_group: 0,
+                    to_group: 0,
+                    extranonce1: self.extranonce1.lock().await.clone(),
+                    extranonce2: String::new(),
+                    epoch,
+                });
+            }
+        }
+
         // ETC / Ethash Stratum v1 hybrid (2miners):
         // mining.notify params = [seed_hash, header_hash, boundary, target, clean_jobs]
         // where seed_hash and header_hash are 0x-prefixed 32-byte hex strings,
@@ -807,10 +911,11 @@ impl AuxPowClient {
                 )
                 .unwrap_or([0xFFu8; 32]);
 
-                // Derive epoch from block height (height / 30000 for Ethash/Etchash).
+                // Derive epoch from block height (height / epoch_length).
+                // ETC: 30000, RVN/KawPow: 7500.
                 // Fall back to seed hash search if height is not available.
                 let epoch = if let Some(height) = notify_height {
-                    let e = (height / crate::external_hashers::ETHASH_EPOCH_LENGTH as u64) as u32;
+                    let e = (height / self.profile.coin.epoch_length() as u64) as u32;
                     println!(
                         "auxpow: ETC epoch={} from height={}",
                         e, height
@@ -1071,6 +1176,21 @@ impl AuxPowClient {
             let full_nonce = u64::from_le_bytes(full);
             let hex = format!("{:016x}", full_nonce);
             ("mining.submit", json!([worker, job_id, hex]))
+        } else if self.profile.coin == ExternalCoin::RVN {
+            // RVN on 2miners uses Stratum v1 mining.submit with 4 params:
+            //   [worker, job_id, nonce_hex, mix_hash_hex]
+            // job_id = short job_id from notify, nonce = 0x-prefixed 8-byte hex,
+            // mix_hash = 0x-prefixed 32-byte PoW mix hash from KawPow GPU kernel.
+            let wallet = self.payout_wallet.lock().await.clone();
+            let worker = format!("{}.{}", wallet, self.profile.worker_name);
+            let nonce_hex = format!("0x{:016x}", nonce);
+            let mix_src = mix_hash_hex.unwrap_or(_hash_hex);
+            let mix_hex = if mix_src.starts_with("0x") {
+                mix_src.to_string()
+            } else {
+                format!("0x{}", mix_src)
+            };
+            ("mining.submit", json!([worker, job_id, nonce_hex, mix_hex]))
         } else if self.profile.coin == ExternalCoin::ETC {
             // ETC on 2miners uses Stratum v1 mining.submit with 4 params:
             //   [worker, job_id, nonce_hex, mix_hash_hex]
@@ -1210,6 +1330,29 @@ impl AuxPowClient {
 /// where `max_target` is the largest 256-bit value.  The result saturates
 /// at `max_target`, so difficulties `<= 1.0` produce the easiest possible
 /// target (all bytes `0xFF`).
+/// Convert a 32-byte big-endian target to a difficulty value.
+/// difficulty = 2^256 / (target + 1), approximated as 2^256 / target.
+pub fn target_to_difficulty(target: &[u8; 32]) -> f64 {
+    use num_bigint::BigUint;
+    let target_big: BigUint = BigUint::from_bytes_be(target);
+    if target_big == BigUint::from(0u32) {
+        return f64::INFINITY;
+    }
+    // 2^256 as BigUint
+    let two_256: BigUint = BigUint::from(1u32) << 256;
+    // diff = 2^256 / target
+    let diff_big: BigUint = two_256 / target_big;
+    // Convert to f64 (may lose precision for very large values, but that's OK
+    // for difficulty display purposes)
+    let bytes = diff_big.to_bytes_be();
+    // Convert big-endian bytes to f64
+    let mut result: f64 = 0.0;
+    for &b in &bytes {
+        result = result * 256.0 + b as f64;
+    }
+    result
+}
+
 pub fn difficulty_to_target(difficulty: f64) -> [u8; 32] {
     difficulty_to_target_with_max(difficulty, &[0xFFu8; 32])
 }
@@ -1716,7 +1859,8 @@ mod tests {
         assert_eq!(ExternalCoin::ALPH.protocol(), StratumProtocol::Stratum);
         assert_eq!(ExternalCoin::KAS.protocol(), StratumProtocol::Stratum);
         assert_eq!(ExternalCoin::ETC.protocol(), StratumProtocol::Stratum);
-        assert_eq!(ExternalCoin::RVN.protocol(), StratumProtocol::EthStratum);
+        assert_eq!(ExternalCoin::RVN.protocol(), StratumProtocol::Stratum);
+        assert_eq!(ExternalCoin::ERG.protocol(), StratumProtocol::EthStratum);
     }
 
     #[test]

@@ -426,6 +426,10 @@ pub struct JobPackage {
     pub target_bytes: [u8; 32],
     /// Block timestamp (Unix seconds) required by kHeavyHash/KAS PowHash.
     pub timestamp: u64,
+    /// Block number (height) from the external pool notify.  Used by
+    /// Ethash/KawPow miners for DAG epoch derivation (epoch = height / epoch_length).
+    /// None if the external pool does not provide a block height.
+    pub block_number: Option<u64>,
     /// Pool-provided extranonce1 required by Alephium's 24-byte nonce.
     pub extranonce1: Vec<u8>,
     pub start_nonce: u64,

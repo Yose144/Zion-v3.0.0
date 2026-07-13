@@ -68,6 +68,22 @@ pub struct GpuBatchResult {
     pub nonces_tested: u64,
 }
 
+/// Convert `StreamWeights` into the fixed 6-element float array consumed by
+/// the OpenCL Deeksha kernels.
+fn stream_weights_f32(
+    weights: &zion_cosmic_harmony::stream_profit::StreamWeights,
+) -> [f32; 6] {
+    use zion_cosmic_harmony::revenue::RevenueSource;
+    [
+        weights.weight_for(RevenueSource::Zion) as f32,
+        weights.weight_for(RevenueSource::KeccakBonus) as f32,
+        weights.weight_for(RevenueSource::Sha3Bonus) as f32,
+        weights.weight_for(RevenueSource::NclAi) as f32,
+        weights.weight_for(RevenueSource::DeekshaLite) as f32,
+        weights.weight_for(RevenueSource::ThermalBonus) as f32,
+    ]
+}
+
 /// Trait for GPU mining backends.
 pub trait GpuMiner: Send {
     /// Human-readable device name.
@@ -82,6 +98,16 @@ pub trait GpuMiner: Send {
     /// Update NPU weights for the given block height's epoch.
     /// No-op if the epoch hasn't changed since the last call.
     fn update_epoch(&mut self, _height: u64) -> Result<()> {
+        Ok(())
+    }
+
+    /// Update stream-profit weights for the current job.  Backends that support
+    /// stream-weight parametrisation use these to adjust work distribution in
+    /// the GPU kernel; others ignore them.
+    fn set_stream_weights(
+        &mut self,
+        _weights: &zion_cosmic_harmony::stream_profit::StreamWeights,
+    ) -> Result<()> {
         Ok(())
     }
 
@@ -1635,6 +1661,7 @@ pub mod opencl_deeksha_lite {
         header_state_buf: Buffer<u64>,
         scratchpad_buf: Buffer<u8>,
         output_hashes_buf: Buffer<u8>,
+        stream_weights_buf: Buffer<f32>,
         work_size: usize,
         local_work_size: usize,
         device_name_cached: String,
@@ -1807,6 +1834,12 @@ pub mod opencl_deeksha_lite {
                 .queue(q.clone())
                 .len(actual_work_size * 32)
                 .build()?;
+            let stream_weights_zero = [0.0f32; 6];
+            let stream_weights_buf = Buffer::<f32>::builder()
+                .queue(q.clone())
+                .len(6)
+                .copy_host_slice(&stream_weights_zero[..])
+                .build()?;
             let kernel = pro_que
                 .kernel_builder(kernel_name)
                 .arg(&header_state_buf)
@@ -1814,6 +1847,7 @@ pub mod opencl_deeksha_lite {
                 .arg(0u32)
                 .arg(&output_hashes_buf)
                 .arg(&scratchpad_buf)
+                .arg(&stream_weights_buf)
                 .build()
                 .map_err(|e| anyhow::anyhow!("kernel build failed: {e}"))?;
             println!(
@@ -1829,6 +1863,7 @@ pub mod opencl_deeksha_lite {
                 header_state_buf,
                 scratchpad_buf,
                 output_hashes_buf,
+                stream_weights_buf,
                 work_size: actual_work_size,
                 local_work_size: tuning.local_ws,
                 device_name_cached: device_name,
@@ -1855,6 +1890,17 @@ pub mod opencl_deeksha_lite {
 
         fn suppress_mismatch_warnings(&self) -> bool {
             false
+        }
+
+        fn set_stream_weights(
+            &mut self,
+            weights: &zion_cosmic_harmony::stream_profit::StreamWeights,
+        ) -> Result<()> {
+            let arr = stream_weights_f32(weights);
+            self.stream_weights_buf.write(&arr[..]).enq()?;
+            self.pro_que.queue().finish()?;
+            println!("gpu_opencl_lite_stream_weights {}", weights.describe());
+            Ok(())
         }
 
         fn mine_batch(
@@ -1999,6 +2045,7 @@ pub mod opencl_deeksha_lite_fire {
         header_state_buf: Buffer<u64>,
         scratchpad_buf: Buffer<u8>,
         output_hashes_buf: Buffer<u8>,
+        stream_weights_buf: Buffer<f32>,
         work_size: usize,
         local_work_size: usize,
         device_name_cached: String,
@@ -2151,6 +2198,12 @@ pub mod opencl_deeksha_lite_fire {
                 .queue(q.clone())
                 .len(actual_work_size * 32)
                 .build()?;
+            let stream_weights_zero = [0.0f32; 6];
+            let stream_weights_buf = Buffer::<f32>::builder()
+                .queue(q.clone())
+                .len(6)
+                .copy_host_slice(&stream_weights_zero[..])
+                .build()?;
             let kernel = pro_que
                 .kernel_builder(opencl_kernel::DEEKSHA_LITE_FIRE_KERNEL_NAME)
                 .arg(&header_state_buf)
@@ -2158,6 +2211,7 @@ pub mod opencl_deeksha_lite_fire {
                 .arg(0u32)
                 .arg(&output_hashes_buf)
                 .arg(&scratchpad_buf)
+                .arg(&stream_weights_buf)
                 .build()
                 .map_err(|e| anyhow::anyhow!("kernel build failed: {e}"))?;
             println!(
@@ -2173,6 +2227,7 @@ pub mod opencl_deeksha_lite_fire {
                 header_state_buf,
                 scratchpad_buf,
                 output_hashes_buf,
+                stream_weights_buf,
                 work_size: actual_work_size,
                 local_work_size: tuning.local_ws,
                 device_name_cached: device_name,
@@ -2199,6 +2254,17 @@ pub mod opencl_deeksha_lite_fire {
 
         fn suppress_mismatch_warnings(&self) -> bool {
             false
+        }
+
+        fn set_stream_weights(
+            &mut self,
+            weights: &zion_cosmic_harmony::stream_profit::StreamWeights,
+        ) -> Result<()> {
+            let arr = stream_weights_f32(weights);
+            self.stream_weights_buf.write(&arr[..]).enq()?;
+            self.pro_que.queue().finish()?;
+            println!("gpu_opencl_fire_stream_weights {}", weights.describe());
+            Ok(())
         }
 
         fn mine_batch(

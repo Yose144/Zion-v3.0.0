@@ -4,7 +4,7 @@
       "id": "edge-primary",
       "name": "Edge Primary Node",
       "host": "127.0.0.1",
-      "public_ip": "77.42.71.94",
+      "public_ip": "62.171.141.136",
       "rpc_port": 8443,
       "p2p_port": 8333,
       "platform": "linux",
@@ -58,7 +58,7 @@
       "name": "macOS Miner",
       "worker_name": "macos-miner",
       "miner_id": "zion1a59644y2a2z3p5p2f88308d2u536f0e2e3rd5a8",
-      "pool_addr": "100.76.16.108:8444",
+      "pool_addr": "62.171.141.136:8444",
       "platform": "macos",
       "role": "miner",
       "connection": "tailscale_vpn"

@@ -212,6 +212,7 @@ mod tests {
             header_bytes: b"harness_header".to_vec(),
             target_bytes: target,
             timestamp: 0,
+            block_number: None,
             extranonce1: Vec::new(),
             start_nonce: 0,
             nonce_count: 1_000_000,
@@ -226,6 +227,7 @@ mod tests {
             header_bytes: b"harness_header".to_vec(),
             target_bytes: [0x00u8; 32], // impossible
             timestamp: 0,
+            block_number: None,
             extranonce1: Vec::new(),
             start_nonce: 0,
             nonce_count: 100,
@@ -258,6 +260,7 @@ mod tests {
             header_bytes: vec![],
             target_bytes: [0xFFu8; 32],
             timestamp: 0,
+            block_number: None,
             extranonce1: Vec::new(),
             start_nonce: 0,
             nonce_count: 10,

@@ -341,6 +341,65 @@ void thermal_loop(__private uchar data[32] __attribute__((aligned(8))), ulong no
 }
 
 /* ========================================================================== */
+/* Stream-profit byproduct helpers                                             */
+/*                                                                             */
+/* These perform extra work proportional to stream weights AFTER the base      */
+/* PoW hash has been computed.  Results are written back to the scratchpad     */
+/* (which is then discarded) so the compiler cannot dead-code eliminate the    */
+/* extra work, while the PoW output hash remains unchanged.                    */
+/* ========================================================================== */
+
+#define STREAM_WEIGHT_COUNT 6
+#define SW_ZION          0
+#define SW_KECCAK_BONUS  1
+#define SW_SHA3_BONUS    2
+#define SW_NCL_AI        3
+#define SW_DEEKSHA_LITE  4
+#define SW_THERMAL       5
+
+#define STREAM_ITERS_SCALE 16.0f
+
+void stream_byproduct_keccak(__private const uchar in[32], int iters, __global uchar *pad)
+{
+    if (iters <= 0) return;
+    keccak_st_t s;
+    for (int i = 0; i < 25; i++) s.u[i] = 0;
+    for (int i = 0; i < 32; i++) s.b[i] ^= in[i];
+    s.b[32] ^= 0x01;
+    s.b[135] ^= 0x80;
+    for (int i = 0; i < iters; i++) {
+        keccak_f1600(s.u);
+    }
+    ulong4 h = vload4(0, (__private ulong*)s.b);
+    vstore4(h, 0, (__global ulong*)pad);
+}
+
+void stream_byproduct_sha3(__private const uchar in[32], int iters, __global uchar *pad)
+{
+    if (iters <= 0) return;
+    uchar tmp[64];
+    for (int i = 0; i < 32; i++) tmp[i] = in[i];
+    for (int i = 32; i < 64; i++) tmp[i] = 0;
+    for (int i = 0; i < iters; i++) {
+        sha3_512(tmp, 32, tmp);
+    }
+    ulong4 h = vload4(0, (__private ulong*)tmp);
+    vstore4(h, 0, (__global ulong*)pad);
+}
+
+void stream_byproduct_aes(__private const uchar in[32], ulong nonce, int iters, __global uchar *pad)
+{
+    if (iters <= 0) return;
+    uchar tmp[32];
+    for (int i = 0; i < 32; i++) tmp[i] = in[i];
+    for (int i = 0; i < iters; i++) {
+        aes128_mix(tmp, nonce + (ulong)i, tmp);
+    }
+    ulong4 h = vload4(0, (__private ulong*)tmp);
+    vstore4(h, 0, (__global ulong*)pad);
+}
+
+/* ========================================================================== */
 /* Main kernel                                                                  */
 /* ========================================================================== */
 
@@ -349,7 +408,8 @@ __kernel void deeksha_lite_fire_mine(
     ulong  nonce_base,
     uint   nonce_count,
     __global uchar *output_hashes,
-    __global uchar *scratchpad_pool)
+    __global uchar *scratchpad_pool,
+    __constant float *stream_weights)
 {
     uint tid = get_global_id(0);
     if (tid >= nonce_count) return;
@@ -387,4 +447,20 @@ __kernel void deeksha_lite_fire_mine(
     __global uchar *slot = output_hashes + (ulong)tid * 32;
     ulong4 hv = vload4(0, (__private ulong*)hash);
     vstore4(hv, 0, (__global ulong*)slot);
+
+    /* Stream-profit byproduct work (does not affect PoW hash) */
+    if (stream_weights) {
+        int keccak_iters = (int)(stream_weights[SW_KECCAK_BONUS] * STREAM_ITERS_SCALE);
+        stream_byproduct_keccak(hash, keccak_iters, pad);
+
+        int sha3_iters = (int)(stream_weights[SW_SHA3_BONUS] * STREAM_ITERS_SCALE);
+        stream_byproduct_sha3(hash, sha3_iters, pad);
+
+        float aes_weight = stream_weights[SW_NCL_AI] + stream_weights[SW_DEEKSHA_LITE] + stream_weights[SW_THERMAL];
+        int aes_iters = (int)(aes_weight * STREAM_ITERS_SCALE);
+        stream_byproduct_aes(hash, nonce, aes_iters, pad);
+
+        int zion_iters = (int)(stream_weights[SW_ZION] * STREAM_ITERS_SCALE);
+        stream_byproduct_keccak(hash, zion_iters, pad);
+    }
 }
