@@ -71,11 +71,31 @@ This report covers the implementation of two critical gaps for live AuxPow deplo
 
 ## Next Steps
 
-1. Deploy updated pool binary to Edge server
-2. Fix Edge config: `ZION_POOL_AUXPOW_COIN=ETC` → `DCR` or remove (use auto-switching)
-3. Set `ZION_POOL_AUXPOW_ENABLED=1` with valid wallet
+1. ~~Deploy updated pool binary to Edge server~~ — DONE
+2. ~~Fix Edge config: `ZION_POOL_AUXPOW_COIN=ETC` → `DCR` or remove (use auto-switching)~~ — Config already correct (RVN, BTC payout)
+3. ~~Set `ZION_POOL_AUXPOW_ENABLED=1` with valid wallet~~ — Already enabled
 4. Monitor `journalctl -u zion-pool.service -f | grep auxpow` for:
    - `auxpow_revenue_recorded` — confirms revenue tracking works
    - `profit_switch` — confirms auto coin switching works
 5. Implement CLI AuxPow commands (`zion auxpow status`, `zion auxpow config`)
-6. Integrate live API (`fetch_profit_snapshot`) into bridge loop for real-time profitability
+6. ~~Integrate live API (`fetch_profit_snapshot`) into bridge loop for real-time profitability~~ — DONE
+
+## Live Deployment Status (2026-07-13 20:09 CEST)
+
+**Edge Server (62.171.141.136):**
+- ✅ New pool binary deployed (5.8 MB release, commit `cbd488498`)
+- ✅ Pool service active (PID 410771, 2.4M memory)
+- ✅ AuxPow bridge connected to RVN pool: `auxpow: connected to RVN successfully`
+- ✅ BTC payout wallet authorized: `bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh`
+- ✅ External jobs issued to miner: `issued_external_job miner=vega-smos coin=RVN algo=kawpow`
+- ✅ Split 4:1 working: 4 ZION iterations + 1 RVN external iteration
+- ✅ Stream weights live: `zion:32.9,keccak_bonus:10.1,sha3_bonus:6.3,ncl_ai:18.2,deeksha_lite:26.6,thermal_bonus:5.8`
+- ⏳ Waiting for first external share acceptance to confirm `auxpow_revenue_recorded`
+- ⏳ Profit switch check runs every 60s (force_coin=RVN, so auto-switch disabled — RVN is pinned)
+
+**Config (Edge):**
+- `ZION_POOL_AUXPOW_ENABLED=1`
+- `ZION_POOL_AUXPOW_COIN=RVN` (pinned, no auto-switch)
+- `ZION_POOL_AUXPOW_SPLIT_ZION=4` / `ZION_POOL_AUXPOW_SPLIT_EXTERNAL=1`
+- `ZION_POOL_AUXPOW_WALLET=bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh` (BTC payout)
+- `ZION_POOL_AUXPOW_WORKER_NAME=zion-pool`
