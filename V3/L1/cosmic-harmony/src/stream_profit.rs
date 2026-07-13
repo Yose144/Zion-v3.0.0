@@ -486,7 +486,7 @@ impl StreamProfitConfig {
             .and_then(|v| v.parse().ok())
             .unwrap_or(DEFAULT_HYSTERESIS_PCT);
         let enabled_sources = std::env::var("ZION_STREAM_PROFIT_SOURCES")
-            .unwrap_or_else(|_| "zion,keccak_bonus,sha3_bonus,ncl_ai".to_string());
+            .unwrap_or_else(|_| "zion,keccak_bonus,sha3_bonus,ncl_ai,deeksha_lite,thermal_bonus".to_string());
         let api_key = std::env::var("ZION_STREAM_PROFIT_API_KEY").unwrap_or_default();
 
         Self {
