@@ -53,7 +53,7 @@ tracing = "0.1"
 tracing-subscriber = "0.3"
 zeroize = { version = "1", features = ["derive"] }
 bip39 = "2"
-hmac = "0.12"
+hmac = "0.13"
 pbkdf2 = "0.12"
 
 [profile.release]
