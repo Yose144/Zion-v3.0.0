@@ -276,7 +276,9 @@ WARP_STELLAR_RPC=https://horizon.stellar.org
 | 07-13 | Stream Profit R1c — GPU kernel parametrizace | `74a353205`, `87bb2b2f0` |
 | 07-13 | EthStratum R6 — eth_getWork/eth_submitWork/eth_submitHashrate | `5baa76d60` |
 | 07-13 | R7: VRSC B2b revenue — ZcashStratum protocol, VerusHash v2.2, LuckPool | `bb7d5407b` |
-| 07-13 | VerusHash C++ native build — Haraka+CLHash pipeline, `native-verushash` feature | pending |
+| 07-13 | VerusHash C++ native build — Haraka+CLHash pipeline, `native-verushash` feature | `ea4e33bf4` |
+| 07-13 | DCR Blake3 kernel ROTR/ROOT fix + SMOS env vars | `dfc9cf24d` |
+| 07-13 | SMOS GPU RVN live — `--no-tui`, `--algorithm kawpow`, non-interactive wrapper | `15a035290`, `09ba930da`, `d0a5bc807` |
 | 07-13 | Non-EVM deploy: Solana + Stellar mainnet LIVE | `bffde9263`, `9d7ce1686` |
 | 07-12 | ZionDex L3 WARP integration + AMM routing + LND | `c54422094`, `dad8702db` |
 | 07-11 | AuxPow merge mining pool+dashboard integration | `44371aa10`, `f14500db3` |
