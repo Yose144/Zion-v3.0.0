@@ -36,4 +36,4 @@ docker rm -f "${CONTAINER}" >/dev/null 2>&1 || true
 
 # Package using edge-package-smos.sh so the SMOS wrapper matches production.
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-"${SCRIPT_DIR}/edge-package-smos.sh" "${VERSION}" /tmp/zion-docker-out/zion-miner "${OUT_DIR}"
+bash "${SCRIPT_DIR}/edge-package-smos.sh" "${VERSION}" /tmp/zion-docker-out/zion-miner "${OUT_DIR}"
