@@ -132,7 +132,7 @@ systemctl restart zion-warp
 
 ---
 
-## 4. Non-EVM Chains — 🟡 1/9 DEPLOYED (Solana ✅)
+## 4. Non-EVM Chains — 🟡 2/9 DEPLOYED (Solana ✅, Stellar ✅)
 
 Kontrakty jsou v `V3/L2/bridge/contracts/non-evm/`. Po deploy doplň adresy níže.
 
@@ -173,19 +173,27 @@ Kontrakty jsou v `V3/L2/bridge/contracts/non-evm/`. Po deploy doplň adresy ní�
 
 ---
 
-### Stellar (Native Asset)
+### Stellar (Native Asset) — ✅ DEPLOYED
 
 | Položka | Env Var | Hodnota | Status |
 |---------|---------|---------|--------|
-| **ZION asset issuer** | `WARP_STELLAR_ZION_ISSUER` | `<G... public key>` | 🔴 Placeholder |
+| **ZION asset issuer** | `WARP_STELLAR_ZION_ISSUER` | `GDDXUOJ7ERSHHDMUKS6PBIDSXV2PB5J7GOFOKMHW6BRVAS46CFSPAYJT` | ✅ Live |
 | **ZION asset code** | `WARP_STELLAR_ZION_CODE` | `ZION` | ✅ Default |
-| **Bridge account** | `WARP_STELLAR_BRIDGE_ACCOUNT` | `<G... public key>` | 🔴 Placeholder |
+| **Bridge account** | `WARP_STELLAR_BRIDGE_ACCOUNT` | `GDDXUOJ7ERSHHDMUKS6PBIDSXV2PB5J7GOFOKMHW6BRVAS46CFSPAYJT` | ✅ Live |
 | **Stellar RPC** | `WARP_STELLAR_RPC` | `https://horizon.stellar.org` | ✅ Default |
 | **Relay-key** | `WARP_STELLAR_RELAY_KEY` | base64 Ed25519 seed | 🔴 Not set |
+| **Multi-sig** | — | 5/5 WARP validators | 🔴 Pending (currently single-sig) |
+
+**Deploy TX:** `5c1d2ba0834f815dae0e769df89e4fdc0392da2145e1df8848603db42386ec95`
+**Deploy date:** 2026-07-13
+**Ledger:** 63451614
+**Flags:** auth_required, auth_revocable, auth_immutable
+**Home domain:** zionterranova.com
+**Asset:** `ZION:GDDXUOJ7ERSHHDMUKS6PBIDSXV2PB5J7GOFOKMHW6BRVAS46CFSPAYJT`
+**Decimals:** 6 (1 ZION = 1,000,000 stroops)
 
 **Kontrakt:** `V3/L2/bridge/contracts/non-evm/stellar/zion_asset.toml` + `setup_zion_asset.py`
-**Deploy:** `python3 setup_zion_asset.py --network mainnet --issuer-seed <S...>`
-**Decimals:** 6 (Stellar používá integer amounts, 1 ZION = 1000000 units)
+**TODO:** Add 5 WARP validators as multi-sig signers (5/5 quorum), set relay key
 
 ---
 
@@ -372,7 +380,7 @@ Kontrakty jsou v `V3/L2/bridge/contracts/non-evm/`. Po deploy doplň adresy ní�
 6. **Solver daemon na Edge** — `cargo build --release` v `ZionDex/solver/`, provision solver key, systemd service na port 8455
 7. ~~**Solana** — `anchor deploy`, nastav `WARP_SOL_ZION_MINT` + `WARP_SOL_BRIDGE_PROGRAM` + `WARP_SOL_RELAY_KEY`~~ ✅ Done (standard SPL Token, mint `HgfQZpH2JAqPdR3PcP4dEE8WRhznXh1QhJBiiwcHfT8H`). TODO: deploy custom Anchor program pro bridge events + transfer mint authority to WARP multisig
 8. **Tron** — `tronbox migrate --network mainnet`, nastav `WARP_TRON_ZION_CONTRACT` + `WARP_TRON_RELAY_KEY`
-9. **Stellar** — `python3 setup_zion_asset.py --network mainnet`, nastav `WARP_STELLAR_ZION_ISSUER` + `WARP_STELLAR_BRIDGE_ACCOUNT` + `WARP_STELLAR_RELAY_KEY`
+9. ~~**Stellar** — `python3 setup_zion_asset.py --network mainnet`, nastav `WARP_STELLAR_ZION_ISSUER` + `WARP_STELLAR_BRIDGE_ACCOUNT` + `WARP_STELLAR_RELAY_KEY`~~ ✅ Done (ZION native asset, issuer `GDDXUOJ7ERSHHDMUKS6PBIDSXV2PB5J7GOFOKMHW6BRVAS46CFSPAYJT`). TODO: add 5/5 multi-sig + relay key
 10. **Cardano** — `cardano-cli transaction mint ...`, nastav `WARP_CARDANO_POLICY_ID` + `WARP_CARDANO_POLICY_SCRIPT` + `BLOCKFROST_PROJECT_ID` + payment/policy keys
 11. **Cosmos** — `wasmd store-code zion_cw20.wasm --from relay --chain-id cosmoshub-4`, nastav `WARP_COSMOS_ZION_CONTRACT` + `WARP_COSMOS_RELAY_KEY`
 12. **Aptos** — `aptos move publish --named-addresses zion_coin=<bridge_account> --profile mainnet`, nastav `WARP_APTOS_BRIDGE_ACCOUNT` + `WARP_APTOS_RELAY_KEY`

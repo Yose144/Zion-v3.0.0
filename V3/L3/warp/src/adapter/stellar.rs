@@ -22,11 +22,14 @@ use tracing::{debug, info, warn};
 fn zion_contract(network: &str) -> Option<&'static str> {
     match network {
         "mainnet" => {
-            // TODO: Replace with real mainnet ZION issuer account (G...).
-            // Run: python setup_zion_asset.py --network mainnet
-            // The bridge issuer public key will be printed by the script.
-            warn!("[WARP][stellar] mainnet ZION issuer is a placeholder — run setup_zion_asset.py from V3/L2/bridge/contracts/non-evm/stellar/ and update this address");
-            Some("CZIONXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+            // ✅ DEPLOYED 2026-07-13 — ZION native asset on Stellar mainnet
+            // Asset: ZION/GDDXUOJ7ERSHHDMUKS6PBIDSXV2PB5J7GOFOKMHW6BRVAS46CFSPAYJT
+            // TX: 5c1d2ba0834f815dae0e769df89e4fdc0392da2145e1df8848603db42386ec95
+            // Flags: auth_required, auth_revocable, auth_immutable
+            // Home domain: zionterranova.com
+            // TODO: Add 5 WARP validators as multi-sig signers (5/5 quorum)
+            // TODO: Set WARP_STELLAR_RELAY_KEY for relay signing
+            Some("GDDXUOJ7ERSHHDMUKS6PBIDSXV2PB5J7GOFOKMHW6BRVAS46CFSPAYJT")
         }
         "testnet" => {
             // TODO: Replace with real testnet ZION issuer account (G...).
