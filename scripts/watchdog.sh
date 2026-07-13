@@ -38,7 +38,7 @@ for svc in zion-ssh-tunnel zion-backup-node zion-dashboard; do
 done
 
 # ── Check SSH tunnel ports ──────────────────────────────────────────────────
-for port in 8443 8444 9333 9101; do
+for port in 8443 8453 9101; do
   if ! ss -tlnp 2>/dev/null | grep -q "127.0.0.1:${port}"; then
     log "WARN: SSH tunnel port ${port} not listening"
     restart_service "zion-ssh-tunnel" "port ${port} not forwarding"
