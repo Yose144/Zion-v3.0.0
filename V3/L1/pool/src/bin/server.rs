@@ -354,7 +354,21 @@ fn revenue_source_to_external_coin(source: RevenueSource) -> Option<ExternalCoin
     }
 }
 
-#[allow(dead_code)]
+/// Maps an `ExternalCoin` to the revenue source used for routing stats.
+fn external_coin_to_revenue_source(coin: ExternalCoin) -> RevenueSource {
+    match coin {
+        ExternalCoin::DCR | ExternalCoin::ALPH => RevenueSource::Blake3External,
+        ExternalCoin::KAS => RevenueSource::KHeavyHashExternal,
+        ExternalCoin::ETC => RevenueSource::EthashExternal,
+        ExternalCoin::RVN | ExternalCoin::CLORE | ExternalCoin::EVR | ExternalCoin::MEWC => {
+            RevenueSource::KawPowExternal
+        }
+        ExternalCoin::ERG => RevenueSource::AutolykosExternal,
+        ExternalCoin::XMR => RevenueSource::RandomXExternal,
+        ExternalCoin::FLUX => RevenueSource::ZelHashExternal,
+    }
+}
+
 /// Maps an external coin to the ZION-pool algorithm string that miners expect.
 fn external_coin_to_algorithm(coin: ExternalCoin) -> &'static str {
     match coin {
@@ -1600,9 +1614,23 @@ fn handle_client(
         .expect("pplns lock poisoned")
         .register_address(&miner_id, &payout_address);
 
+    // Choose a welcome algorithm hint.  For sessions that will receive
+    // external AuxPoW jobs, advertise the forced coin's algorithm so the
+    // miner can prepare the right hasher.  Otherwise echo the miner's native
+    // algorithm as before.
+    let welcome_algorithm = if session_group != SessionGroup::Zion {
+        config
+            .auxpow_config
+            .force_coin
+            .map(external_coin_to_algorithm)
+            .unwrap_or(&session_algorithm)
+            .to_string()
+    } else {
+        session_algorithm.clone()
+    };
     let welcome_message = PoolMessage::Welcome {
         protocol_version: zion_pool::protocol_version().to_string(),
-        algorithm: session_algorithm.clone(),
+        algorithm: welcome_algorithm,
         job_ttl_ms: config.job_ttl_ms,
     };
     let welcome_line = write_wire_message(&mut writer, &welcome_message)?;
@@ -1951,17 +1979,21 @@ fn handle_client(
                     ));
 
                     // Vardiff retarget after each valid share submission.
-                    if let Some(new_diff) = vardiff.record_submit() {
-                        log_ch.log(format!(
-                            "vardiff_retarget miner={} old_diff={} new_diff={}",
-                            worker_name, share_difficulty, new_diff
-                        ));
-                        let set_diff_msg = PoolMessage::SetDifficulty {
-                            difficulty: new_diff,
-                            target_hex: to_hex(&vardiff.share_target().bytes),
-                        };
-                        let diff_line = write_wire_message(&mut writer, &set_diff_msg)?;
-                        println!("wire_set_difficulty={diff_line}");
+                    // For external AuxPoW jobs the upstream pool sets the target,
+                    // so do not override it with local vardiff retargets.
+                    if !assignment.is_external() {
+                        if let Some(new_diff) = vardiff.record_submit() {
+                            log_ch.log(format!(
+                                "vardiff_retarget miner={} old_diff={} new_diff={}",
+                                worker_name, share_difficulty, new_diff
+                            ));
+                            let set_diff_msg = PoolMessage::SetDifficulty {
+                                difficulty: new_diff,
+                                target_hex: to_hex(&vardiff.share_target().bytes),
+                            };
+                            let diff_line = write_wire_message(&mut writer, &set_diff_msg)?;
+                            println!("wire_set_difficulty={diff_line}");
+                        }
                     }
 
                     // Check if hash also meets the (harder) network target → block found!
@@ -2126,9 +2158,17 @@ fn handle_client(
                         candidate,
                         hash: submitted_hash,
                     };
+                    // Record the routed source based on the actual work assignment, not
+                    // the scheduler lane.  This ensures external shares are counted under
+                    // the correct source (e.g. src_kawpow for RVN) even when the revenue
+                    // scheduler picked a different lane.
+                    let routed_source = match &assignment {
+                        WorkAssignment::External(j) => external_coin_to_revenue_source(j.external_coin),
+                        WorkAssignment::Zion(_) => revenue_source,
+                    };
                     JobCompletion::Submitted {
                         decision,
-                        routed_source: revenue_source,
+                        routed_source,
                         attempted_hashes: attempted_hashes.unwrap_or_else(|| {
                             solution.candidate.nonce.saturating_sub(assignment.start_nonce()) + 1
                         }),

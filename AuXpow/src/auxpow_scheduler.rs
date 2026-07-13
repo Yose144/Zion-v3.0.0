@@ -23,7 +23,7 @@ use tracing::{error, info, warn};
 use crate::auxpow_client::{AuxPowClient, ShareResult};
 use crate::external_hashers::{
     hash_blake3, hash_blake3_alph, hash_kheavyhash, hash_kheavyhash_extranonce, meets_target,
-    ExternalAlgorithm,
+    meets_target_little_endian, ExternalAlgorithm,
 };
 use crate::types::{
     select_best_coin, AuxPowConfig, AuxPowStats, CoinProfile, ExternalCoin,
@@ -377,7 +377,12 @@ impl AuxPowScheduler {
                 }
             };
 
-            if meets_target(&hash, target) {
+            let meets = if job.external_coin == ExternalCoin::DCR {
+                meets_target_little_endian(&hash, target)
+            } else {
+                meets_target(&hash, target)
+            };
+            if meets {
                 found_hash = Some(hash);
                 found_nonce = Some(nonce);
                 break;

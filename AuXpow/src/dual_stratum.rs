@@ -16,7 +16,7 @@
 
 use anyhow::{anyhow, Result};
 
-use crate::external_hashers::{hash_blake3, hash_kheavyhash, meets_target};
+use crate::external_hashers::{hash_blake3, hash_kheavyhash, meets_target, meets_target_little_endian};
 use crate::types::{ExternalCoin, JobPackage, SplitConfig};
 
 /// Generic PoW work package.
@@ -158,7 +158,12 @@ impl DualStratumMiner {
                         nonce,
                     )
                     .ok()?;
-                    if meets_target(&hash, &job.external.target_bytes) {
+                    let meets = if job.external.external_coin == ExternalCoin::DCR {
+                        meets_target_little_endian(&hash, &job.external.target_bytes)
+                    } else {
+                        meets_target(&hash, &job.external.target_bytes)
+                    };
+                    if meets {
                         return Some(ShareDisposition::ExternalShare(FoundExternalShare {
                             external_coin: job.external.external_coin,
                             external_job_id: job.external.external_job_id.clone(),

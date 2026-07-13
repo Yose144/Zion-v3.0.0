@@ -9,8 +9,8 @@ use anyhow::Result;
 use std::sync::Arc;
 
 use crate::auxpow_client::{AuxPowClient, ShareResult};
-use crate::external_hashers::{hash_blake3, hash_to_hex, meets_target};
-use crate::types::ShareForwardResult;
+use crate::external_hashers::{hash_blake3, hash_to_hex, meets_target, meets_target_little_endian};
+use crate::types::{ExternalCoin, ShareForwardResult};
 
 /// Forwards shares to the external pool currently selected by the multiplexer.
 pub struct ShareForwarder {
@@ -35,7 +35,12 @@ impl ShareForwarder {
         target: &[u8; 32],
         mix_hash: Option<&[u8; 32]>,
     ) -> Result<ShareForwardResult> {
-        if !meets_target(hash, target) {
+        let meets = if self.client.profile().coin == ExternalCoin::DCR {
+            meets_target_little_endian(hash, target)
+        } else {
+            meets_target(hash, target)
+        };
+        if !meets {
             return Ok(ShareForwardResult::BelowTarget);
         }
         let hash_hex = hash_to_hex(hash);
