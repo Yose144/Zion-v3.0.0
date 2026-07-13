@@ -3802,6 +3802,21 @@ fn serve_routing_metrics(
                     ),
                 }
             }
+            "/api/v1/revenue/stats" => {
+                let uptime_s = started_at.elapsed().as_secs();
+                let stats = routing_stats.lock().expect("routing stats lock poisoned");
+                let pplns = pplns_engine.lock().expect("pplns lock poisoned");
+                let auxpow_stats = auxpow_scheduler.stats_sync();
+                let rev_sched = revenue_scheduler.lock().expect("revenue scheduler lock poisoned");
+                let body = build_revenue_stats_payload(&stats, &pplns, &auxpow_stats, &rev_sched, uptime_s);
+                ("200 OK", "application/json", body)
+            }
+            "/api/v1/revenue/streams" => {
+                let stats = routing_stats.lock().expect("routing stats lock poisoned");
+                let rev_sched = revenue_scheduler.lock().expect("revenue scheduler lock poisoned");
+                let body = build_revenue_streams_payload(&stats, &rev_sched);
+                ("200 OK", "application/json", body)
+            }
             _ => (
                 "404 Not Found",
                 "application/json",
@@ -4001,20 +4016,13 @@ fn build_stats_payload(
                     "accepted": stats.group_accepted[group_index(SessionGroup::Auto)]
                 }
             },
-            "sources": {
-                "zion": {
-                    "submits": stats.source_submits[source_index(RevenueSource::Zion)],
-                    "accepted": stats.source_accepted[source_index(RevenueSource::Zion)]
-                },
-                "blake3": {
-                    "submits": stats.source_submits[source_index(RevenueSource::Blake3External)],
-                    "accepted": stats.source_accepted[source_index(RevenueSource::Blake3External)]
-                },
-                "ncl": {
-                    "submits": stats.source_submits[source_index(RevenueSource::NclAi)],
-                    "accepted": stats.source_accepted[source_index(RevenueSource::NclAi)]
-                }
-            }
+            "sources": ALL_REVENUE_SOURCES.iter().map(|&src| {
+                let idx = source_index(src);
+                (revenue_source_name(src).to_string(), serde_json::json!({
+                    "submits": stats.source_submits[idx],
+                    "accepted": stats.source_accepted[idx]
+                }))
+            }).collect::<serde_json::Map<String, serde_json::Value>>()
         },
         "pplns_window_size": pplns.window_size,
         "pplns": {
@@ -4035,7 +4043,9 @@ fn build_stats_payload(
             "miners": "/miners?limit=200",
             "miner_stats": "/api/v1/miner/:address/stats",
             "miner_payouts": "/api/v1/miner/:address/payouts",
-            "metrics": "/metrics"
+            "metrics": "/metrics",
+            "revenue_stats": "/api/v1/revenue/stats",
+            "revenue_streams": "/api/v1/revenue/streams"
         },
         "auxpow": {
             "enabled": auxpow.enabled,
@@ -4068,6 +4078,192 @@ fn build_stats_payload(
             "live": revenue_scheduler.stream_weights.live,
             "description": revenue_scheduler.stream_weights.describe(),
         }
+    });
+    json.to_string()
+}
+
+/// All 14 revenue sources in canonical order (matches `source_index`).
+const ALL_REVENUE_SOURCES: [RevenueSource; 14] = [
+    RevenueSource::Zion,
+    RevenueSource::KeccakBonus,
+    RevenueSource::Sha3Bonus,
+    RevenueSource::ProfitSwitch,
+    RevenueSource::Blake3External,
+    RevenueSource::NclAi,
+    RevenueSource::KHeavyHashExternal,
+    RevenueSource::EthashExternal,
+    RevenueSource::KawPowExternal,
+    RevenueSource::AutolykosExternal,
+    RevenueSource::RandomXExternal,
+    RevenueSource::ZelHashExternal,
+    RevenueSource::DeekshaLite,
+    RevenueSource::ThermalBonus,
+];
+
+/// Build the comprehensive revenue report payload for `/api/v1/revenue/stats`.
+///
+/// Aggregates routing stats (per-source submits/accepted), AuxPow revenue,
+/// stream profit weights, PPLNS payouts, and fee split into a unified
+/// per-source revenue breakdown.
+fn build_revenue_stats_payload(
+    stats: &RoutingStats,
+    pplns_engine: &PplnsEngine,
+    auxpow: &AuxPowStats,
+    revenue_scheduler: &RevenueScheduler,
+    uptime_s: u64,
+) -> String {
+    let pplns = pplns_engine.stats();
+    let fees = pplns_engine.fee_stats();
+
+    // Per-source breakdown — all 14 sources with submits, accepted, and
+    // derived revenue estimates.
+    let sources: Vec<_> = ALL_REVENUE_SOURCES
+        .iter()
+        .map(|&src| {
+            let idx = source_index(src);
+            let submits = stats.source_submits[idx];
+            let accepted = stats.source_accepted[idx];
+            let accept_rate = if submits == 0 {
+                0.0
+            } else {
+                accepted as f64 * 100.0 / submits as f64
+            };
+            serde_json::json!({
+                "source": revenue_source_name(src),
+                "submits": submits,
+                "accepted": accepted,
+                "accept_rate_pct": (accept_rate * 10.0).round() / 10.0,
+                "fee_pct": (src.fee_rate() * 100.0 * 100.0).round() / 100.0,
+            })
+        })
+        .collect();
+
+    // Stream weights breakdown
+    let stream_weights: Vec<_> = revenue_scheduler
+        .stream_weights
+        .weights
+        .iter()
+        .map(|w| {
+            serde_json::json!({
+                "source": w.source.as_str(),
+                "weight_pct": (w.weight * 100.0 * 10.0).round() / 10.0,
+            })
+        })
+        .collect();
+
+    // AuxPow per-coin revenue attribution
+    let aux_revenue_usd = auxpow.revenue_usd;
+    let aux_uptime = auxpow.uptime_secs;
+    let aux_rev_per_hour = if aux_uptime > 0 && aux_revenue_usd > 0.0 {
+        aux_revenue_usd / aux_uptime as f64 * 3600.0
+    } else {
+        0.0
+    };
+
+    let json = serde_json::json!({
+        "ok": true,
+        "timestamp": now_unix_seconds(),
+        "uptime_secs": uptime_s,
+        "totals": {
+            "auxpow_revenue_usd": (aux_revenue_usd * 1e6).round() / 1e6,
+            "auxpow_revenue_per_hour_usd": (aux_rev_per_hour * 1e6).round() / 1e6,
+            "auxpow_revenue_per_day_usd": (aux_rev_per_hour * 24.0 * 1e6).round() / 1e6,
+            "zion_blocks_found": pplns.total_paid_flowers / 5_400_067_000, // rough estimate
+            "total_submits": stats.total_submits,
+            "total_accepted": stats.total_accepted,
+            "total_stale": stats.total_stale,
+            "overall_accept_rate_pct": if stats.total_submits == 0 { 0.0 } else {
+                (stats.total_accepted as f64 * 100.0 / stats.total_submits as f64 * 10.0).round() / 10.0
+            },
+        },
+        "sources": sources,
+        "auxpow": {
+            "enabled": auxpow.enabled,
+            "current_coin": auxpow.current_coin,
+            "current_pool": auxpow.current_pool,
+            "current_algorithm": auxpow.current_algorithm,
+            "shares_submitted": auxpow.shares_submitted,
+            "shares_accepted": auxpow.shares_accepted,
+            "shares_rejected": auxpow.shares_rejected,
+            "revenue_usd": (auxpow.revenue_usd * 1e6).round() / 1e6,
+            "revenue_per_hour_usd": (aux_rev_per_hour * 1e6).round() / 1e6,
+            "revenue_per_day_usd": (aux_rev_per_hour * 24.0 * 1e6).round() / 1e6,
+            "consecutive_failures": auxpow.consecutive_failures,
+            "circuit_open": auxpow.circuit_open,
+            "uptime_secs": auxpow.uptime_secs,
+            "coin_switches": auxpow.coin_switches,
+            "last_switch_ts": auxpow.last_switch_ts,
+        },
+        "stream_profit": {
+            "enabled": revenue_scheduler.stream_profit_config.enabled,
+            "provider": revenue_scheduler.stream_profit_config.api_provider,
+            "live": revenue_scheduler.stream_weights.live,
+            "interval_secs": revenue_scheduler.stream_profit_config.interval_secs,
+            "hysteresis_pct": revenue_scheduler.stream_profit_config.hysteresis_pct,
+            "enabled_sources": revenue_scheduler.stream_profit_config.enabled_sources,
+            "weights": stream_weights,
+            "weights_string": revenue_scheduler.stream_weights_string(),
+            "description": revenue_scheduler.stream_weights.describe(),
+        },
+        "fee_split": {
+            "miner_pct": fees.miner_pct,
+            "humanitarian_pct": fees.humanitarian_pct,
+            "issobella_pct": fees.issobella_pct,
+            "pool_fee_pct": fees.pool_fee_pct,
+            "humanitarian_accumulated_flowers": fees.humanitarian_accumulated_flowers,
+            "issobella_accumulated_flowers": fees.issobella_accumulated_flowers,
+            "pool_fee_accumulated_flowers": fees.pool_fee_accumulated_flowers,
+        },
+        "pplns": {
+            "window_size": pplns.window_size,
+            "window_used": pplns.window_used,
+            "registered_miners": pplns.registered_miners,
+            "total_unpaid_flowers": pplns.total_unpaid_flowers,
+            "total_paid_flowers": pplns.total_paid_flowers,
+            "payout_rounds": pplns.payout_rounds,
+        },
+    });
+    json.to_string()
+}
+
+/// Build the per-stream telemetry payload for `/api/v1/revenue/streams`.
+///
+/// Shows the Deeksha Chv3 pipeline stream weights, work distribution, and
+/// per-stream revenue attribution.
+fn build_revenue_streams_payload(
+    stats: &RoutingStats,
+    revenue_scheduler: &RevenueScheduler,
+) -> String {
+    // Map stream weights to per-source work units (submits/accepted)
+    let streams: Vec<_> = revenue_scheduler
+        .stream_weights
+        .weights
+        .iter()
+        .map(|w| {
+            let src = w.source;
+            let idx = source_index(src);
+            let submits = stats.source_submits[idx];
+            let accepted = stats.source_accepted[idx];
+            serde_json::json!({
+                "source": src.as_str(),
+                "weight_pct": (w.weight * 100.0 * 10.0).round() / 10.0,
+                "submits": submits,
+                "accepted": accepted,
+                "fee_rate_pct": (src.fee_rate() * 100.0 * 100.0).round() / 100.0,
+            })
+        })
+        .collect();
+
+    let json = serde_json::json!({
+        "ok": true,
+        "timestamp": now_unix_seconds(),
+        "live": revenue_scheduler.stream_weights.live,
+        "provider": revenue_scheduler.stream_profit_config.api_provider,
+        "multistream_enabled": revenue_scheduler.multistream_enabled,
+        "streams": streams,
+        "weights_string": revenue_scheduler.stream_weights_string(),
+        "description": revenue_scheduler.stream_weights.describe(),
+        "enabled_sources": revenue_scheduler.stream_profit_config.enabled_sources,
     });
     json.to_string()
 }

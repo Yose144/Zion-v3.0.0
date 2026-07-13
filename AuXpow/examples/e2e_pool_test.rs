@@ -84,6 +84,11 @@ async fn main() -> anyhow::Result<()> {
         difficulty,
         hex::encode(&share_target[..8])
     );
+    println!(
+        "[2/4] job header_hex={} en1={}",
+        &job.header_hex,
+        hex::encode(&job.extranonce1)
+    );
 
     // 3) Optionally mine
     if mine_secs > 0 {
