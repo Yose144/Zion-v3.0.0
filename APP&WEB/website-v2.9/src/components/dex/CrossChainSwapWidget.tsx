@@ -11,7 +11,7 @@ import ChainSelector from './ChainSelector';
 import TokenSelector from './TokenSelector';
 import SwapPathVisual from './SwapPathVisual';
 
-const ROUTER_URL = process.env.NEXT_PUBLIC_ZIONDEX_ROUTER_URL || 'http://localhost:8454';
+const ROUTER_URL = process.env.NEXT_PUBLIC_ZIONDEX_ROUTER_URL || 'https://zionterranova.com/dex-api';
 
 type SwapPhase = 'idle' | 'quoting' | 'quoted' | 'executing' | 'success' | 'error';
 
