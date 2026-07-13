@@ -43,6 +43,7 @@ export ZION_NONCE_AUTOTUNE="${ZION_NONCE_AUTOTUNE:-true}"
 export ZION_METRICS_REPORT_SECS="${ZION_METRICS_REPORT_SECS:-30}"
 export ZION_OCL_BUILD_OPTS="${ZION_OCL_BUILD_OPTS:--cl-std=CL1.2 -cl-mad-enable}"
 export ZION_IGNORE_GPU_SELF_TEST_FAIL="${ZION_IGNORE_GPU_SELF_TEST_FAIL:-1}"
+export ZION_VERBOSE="${ZION_VERBOSE:-1}"
 
 # Allow overriding the miner binary path
 MINER_BIN="${MINER_BIN:-${SCRIPT_DIR}/zion-miner}"
