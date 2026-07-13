@@ -1,10 +1,35 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** **2026-07-12** (**ZIONDEX L3 WARP INTEGRATION + NON-EVM CONTRACTS + LIGHTNING LND + CROSS-CHAIN AMM ROUTING** — viz [`ZionDex.md`](./ZionDex.md) pro plný report).
+> **Datum:** **2026-07-13** (**NON-EVM DEPLOY: SOLANA + STELLAR MAINNET LIVE** — viz [`ZionDex.md`](./ZionDex.md) a [`docs/3.0.5/CONTRACT_ADDRESSES.md`](./docs/3.0.5/CONTRACT_ADDRESSES.md) pro plný report).
+> **Předchozí update:** 2026-07-12 (**ZIONDEX L3 WARP INTEGRATION + NON-EVM CONTRACTS + LIGHTNING LND + CROSS-CHAIN AMM ROUTING** — viz [`ZionDex.md`](./ZionDex.md) pro plný report).
 > **Předchozí update:** 2026-07-11 (**AUXPOW MERGE MINING — POOL SERVER + DASHBOARD INTEGRACE COMPLETE** — viz [`docs/3.0.5/AUXPOW_INTEGRATION_REPORT_2026-07-11.md`](./docs/3.0.5/AUXPOW_INTEGRATION_REPORT_2026-07-11.md) pro plný report).
 > **Předchozí update:** 2026-07-11 (**POOL WATCHDOG FIX + F1-F6 POOL SCALABILITY OPTIMIZATIONS — 1000+ MINER READY** — viz [`docs/3.0.5/POOL_PERF_REPORT_2026-07-11.md`](./docs/3.0.5/POOL_PERF_REPORT_2026-07-11.md) pro plný report).
 > **Předchozí update:** 2026-07-09 (3.0.5 "ALL GREEN" COMPLETE — 11/11 SLUŽEB ACTIVE + E2E MEMO TESTY POTVRZENY + PROTOCOL 3.0.5 + WEB DEPLOY OPTIMALIZACE — viz [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](./docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md)).
 > **Původní update:** 2026-07-07 (3.0.4 HARD GENESIS RESET — NOVÝ SERVER 62.171.141.136 — FULL STACK DEPLOYED — viz [`docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md`](./docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md) a [`HARDRESETOFFICIAL.md`](./docs/3.0.4/HARDRESETOFFICIAL.md) pro plný záznam).
+>
+> ### Non-EVM Deploy: Solana + Stellar Mainnet LIVE (2026-07-13)
+
+> **Co:** První dva non-EVM ZION tokeny nasazeny na mainnet — Solana SPL Token a Stellar native asset. WARP adaptéry aktualizovány, env vars nastaveny na Edge, WARP restartován a healthy.
+>
+> **1. Solana SPL Token — ✅ DEPLOYED:**
+> - Mint: `HgfQZpH2JAqPdR3PcP4dEE8WRhznXh1QhJBiiwcHfT8H` (mainnet-beta)
+> - Decimals: 6, Supply: 1B ZION
+> - Deploy pomocí `spl-token create-token` + `spl-token create-account` + `spl-token mint`
+> - WARP adapter `solana.rs` aktualizován, `WARP_SOL_ZION_MINT` + `WARP_SOL_RPC` nastaveny na Edge
+> - Commit: `bffde9263`
+>
+> **2. Stellar Native Asset — ✅ DEPLOYED:**
+> - Asset: `ZION:GDDXUOJ7ERSHHDMUKS6PBIDSXV2PB5J7GOFOKMHW6BRVAS46CFSPAYJT`
+> - TX: `5c1d2ba0834f815dae0e769df89e4fdc0392da2145e1df8848603db42386ec95` (ledger 63451614)
+> - Flags: auth_required, auth_revocable, auth_immutable
+> - Home domain: zionterranova.com
+> - Cost: ~0.00003 XLM (TX fee only)
+> - WARP adapter `stellar.rs` aktualizován, `WARP_STELLAR_ZION_ISSUER` + `WARP_STELLAR_ZION_CODE` + `WARP_STELLAR_BRIDGE_ACCOUNT` + `WARP_STELLAR_RPC` nastaveny na Edge
+> - Commit: `9d7ce1686`
+>
+> **Non-EVM deploy status: 2/9 ✅** (Solana, Stellar). 7 remaining: Tron (needs TRX), Cardano, Cosmos, Aptos, Sui, NEAR, TON.
+>
+> **TODO:** Multi-sig (5/5 WARP validators) pro Solana mint authority + Stellar issuer, relay keys, deploy zbylých 7 chainů.
 >
 > ### ZionDex L3 WARP Integration + Non-EVM Contracts + Lightning LND + Cross-Chain AMM Routing (2026-07-12)
 
