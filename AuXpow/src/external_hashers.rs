@@ -443,6 +443,82 @@ pub fn hash_kawpow(header: &[u8; 32], nonce: u64, height: u32) -> ([u8; 32], [u8
     }
 }
 
+/// Compute the real KawPow hash over a precomputed DAG (requires the
+/// `native-hashers` feature).
+///
+/// This is the full KawPow (ProgPoW-derived) algorithm:
+///   1. `seed = Keccak-512(header_hash || nonce_le)`  → 64 bytes
+///   2. `mix  = seed` (16 × u32, little-endian)
+///   3. 32 DAG accesses with FNV-1a mixing (`hash = (hash ^ elem) * 0x01000193`)
+///   4. FNV-fold each pair → 8 × u32 (32 bytes)
+///   5. `hash = Keccak-256(seed || compressed_mix)`   → 32 bytes
+///
+/// `header_hash` is the 32-byte block header hash, `dag` is the raw DAG buffer
+/// (128 bytes per entry), and `dag_size_entries` is the number of 128-byte
+/// entries.  Returns (mix_hash, final_hash), each 32 bytes.
+pub fn hash_kawpow_with_dag(
+    header_hash: &[u8; 32],
+    nonce: u64,
+    dag: &[u8],
+    dag_size_entries: u64,
+) -> ([u8; 32], [u8; 32]) {
+    #[cfg(feature = "native-hashers")]
+    {
+        return crate::native_ffi::hash_kawpow_native_with_dag(
+            header_hash,
+            nonce,
+            dag,
+            dag_size_entries,
+        );
+    }
+
+    // Pure-Rust fallback: NOT valid for real KawPow mining.
+    #[allow(unreachable_code)]
+    {
+        let _ = (dag, dag_size_entries);
+        let mut input = Vec::with_capacity(32 + 8);
+        input.extend_from_slice(header_hash);
+        input.extend_from_slice(&nonce.to_le_bytes());
+        let mix = *blake3::hash(&input).as_bytes();
+        let final_hash = *blake3::hash(&mix).as_bytes();
+        (mix, final_hash)
+    }
+}
+
+/// Mine a single KawPow nonce against a precomputed DAG (requires the
+/// `native-hashers` feature).
+///
+/// Returns `Some(hash)` if `hash <= target` (big-endian comparison), else
+/// `None`.  This is the real DAG-based KawPow used by RVN/CLORE.
+pub fn mine_kawpow(
+    header_hash: &[u8; 32],
+    nonce: u64,
+    dag: &[u8],
+    dag_size_entries: u64,
+    target: &[u8; 32],
+) -> Option<[u8; 32]> {
+    #[cfg(feature = "native-hashers")]
+    {
+        return crate::native_ffi::mine_kawpow_native(
+            header_hash,
+            nonce,
+            dag,
+            dag_size_entries,
+            target,
+        );
+    }
+
+    // Pure-Rust fallback: NOT valid for real KawPow mining.
+    #[allow(unreachable_code)]
+    {
+        let _ = (dag, dag_size_entries, target);
+        let (mix, _final) = hash_kawpow_with_dag(header_hash, nonce, dag, dag_size_entries);
+        // Without a real DAG this is not a valid KawPow hash; just return None.
+        let _ = mix;
+        None
+    }
+}
+
 // ── Ethash/EtcHash (ETC) ─────────────────────────────────────────────
 
 /// Compute Ethash/EtcHash mix hash for Ethereum Classic (ETC) mining.
@@ -467,8 +543,95 @@ pub fn hash_ethash(header: &[u8], nonce: u64, height: u32) -> [u8; 32] {
     }
 }
 
+/// Compute the real Ethash hash over a precomputed DAG (requires the
+/// `native-hashers` feature).
+///
+/// This is the full Dagger-Hashimoto algorithm:
+///   1. `seed   = Keccak-512(header_hash || nonce_le)`        → 64 bytes
+///   2. `mix    = seed || seed`                                → 128 bytes (32 × u32)
+///   3. 64 DAG accesses with FNV-1a mixing (`hash = (hash ^ elem) * 0x01000193`)
+///   4. FNV-fold each 4-word group                             → 32 bytes
+///   5. `hash   = Keccak-256(seed || compressed_mix)`          → 32 bytes
+///
+/// `header_hash` is the 32-byte block header hash, `dag` is the raw DAG buffer
+/// (128 bytes per entry), and `dag_size_entries` is the number of 128-byte
+/// entries.  Returns the 32-byte final Ethash hash.
+pub fn hash_ethash_with_dag(
+    header_hash: &[u8; 32],
+    nonce: u64,
+    dag: &[u8],
+    dag_size_entries: u64,
+) -> [u8; 32] {
+    #[cfg(feature = "native-hashers")]
+    {
+        return crate::native_ffi::hash_ethash_with_dag_native(
+            header_hash,
+            nonce,
+            dag,
+            dag_size_entries,
+        );
+    }
+
+    // Pure-Rust fallback: NOT valid for real Ethash mining.
+    #[allow(unreachable_code)]
+    {
+        let mut input = Vec::with_capacity(32 + 8);
+        input.extend_from_slice(header_hash);
+        input.extend_from_slice(&nonce.to_le_bytes());
+        *blake3::hash(&input).as_bytes()
+    }
+}
+
+/// Mine a single Ethash nonce against a precomputed DAG (requires the
+/// `native-hashers` feature).
+///
+/// Returns `Some(hash)` if `hash <= target` (big-endian comparison), else
+/// `None`.  This is the real DAG-based Ethash used by ETC/ETHW.
+pub fn mine_ethash(
+    header_hash: &[u8; 32],
+    nonce: u64,
+    dag: &[u8],
+    dag_size_entries: u64,
+    target: &[u8; 32],
+) -> Option<[u8; 32]> {
+    #[cfg(feature = "native-hashers")]
+    {
+        return crate::native_ffi::mine_ethash_native(
+            header_hash,
+            nonce,
+            dag,
+            dag_size_entries,
+            target,
+        );
+    }
+
+    // Pure-Rust fallback: NOT valid for real Ethash mining.
+    #[allow(unreachable_code)]
+    {
+        let hash = hash_ethash_with_dag(header_hash, nonce, dag, dag_size_entries);
+        if meets_target(&hash, target) {
+            Some(hash)
+        } else {
+            None
+        }
+    }
+}
+
+/// Register a precomputed DAG for use by the legacy `hash_ethash` path
+/// (requires the `native-hashers` feature).
+///
+/// `dag` is the raw DAG buffer (128 bytes per entry), `dag_size_entries` is the
+/// number of 128-byte entries.  The buffer is borrowed and must outlive
+/// subsequent `hash_ethash` calls.
+#[cfg(feature = "native-hashers")]
+pub fn set_ethash_dag(dag: &[u8], dag_size_entries: u64) {
+    crate::native_ffi::set_ethash_dag(dag, dag_size_entries);
+}
+
 /// Initialize Ethash epoch cache.  Call once before any `hash_ethash` calls
-/// when using the `native-hashers` feature.
+/// when using the `native-hashers` feature (only needed for the light-mode
+/// fallback; the DAG-based `hash_ethash_with_dag` / `mine_ethash` do not
+/// require it).
 #[cfg(feature = "native-hashers")]
 pub fn init_ethash() {
     crate::native_ffi::init_ethash();
