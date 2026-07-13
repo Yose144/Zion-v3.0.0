@@ -19,6 +19,7 @@ rpc_url_backup = "http://62.171.141.136:8443"
 bridge_address = "zion1s6y6h7k6l033f2n7e0y0r8t6a8h474t0x5398d0"
 finality_blocks     = 60
 poll_interval_secs  = 15
+start_block_height  = 4000  # Local/Edge L1 nodes retain ~1000 accepted blocks; scan from a height that exists after the 3.0.4 genesis reset
 
 # ── EVM Chains ──────────────────────────────────────────────
 
