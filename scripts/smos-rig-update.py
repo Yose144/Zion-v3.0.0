@@ -10,7 +10,8 @@ MINER_OPTS = (
     f"{MINER_URL} "
     f"--pool 62.171.141.136:8444 "
     f"--wallet zion1n0s6e756p7r360a0e47582n7r5t2e3t4e2wq5c8 "
-    f"--worker vega-smos"
+    f"--worker vega-smos "
+    f"--algorithm kawpow"
 )
 
 def token():
