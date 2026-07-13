@@ -2,7 +2,7 @@
 # Build zion-miner inside Ubuntu 20.04 for SMOS glibc compatibility
 set -euo pipefail
 VERSION="${1:-v3.0.32-gpu}"
-REPO="/root/zion-2.9.6-main"
+REPO="/root/zion/2.9.6"
 OUT="/var/www/zion-miner/zion-miner-${VERSION}.zip"
 WORK="/tmp/zion-miner-${VERSION}"
 
@@ -18,12 +18,12 @@ docker run --rm \
     curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     . "$HOME/.cargo/env"
     rustup default stable
-    cp -a /src /build
+    mkdir -p /build && cp -a /src/. /build/
     rm -rf /build/V3/target
     # Do not link bundled libOpenCL.so (needs glibc 2.34); use system ICD on SMOS
     rm -f /build/V3/L1/native-libs/libOpenCL.so /build/V3/L1/native-libs/libOpenCL.so.1
     cd /build/V3
-    cargo build --release -p zion-miner --features gpu-opencl --bin zion-miner
+    cargo build --release -p zion-miner --features 'gpu-opencl native-hashers' --bin zion-miner
     cp target/release/zion-miner /out/zion-miner
     chmod +x /out/zion-miner
   '
