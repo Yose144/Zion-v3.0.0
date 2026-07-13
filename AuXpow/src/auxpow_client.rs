@@ -155,6 +155,56 @@ impl AuxPowClient {
     /// Connect to the external pool and perform subscribe + authorize.
     pub async fn connect(&self, payout_wallet: &str) -> Result<()> {
         *self.payout_wallet.lock().await = payout_wallet.to_string();
+        self.connect_tcp().await?;
+
+        // Spawn the background reader with auto-reconnect
+        let client_clone = Arc::new(self.clone());
+        let profile_clone = self.profile.clone();
+        let payout_wallet_clone = payout_wallet.to_string();
+        tokio::spawn(async move {
+            let mut backoff_secs: u64 = 5;
+            loop {
+                match client_clone.poll_messages().await {
+                    Ok(()) => {}
+                    Err(e) => {
+                        println!(
+                            "auxpow_client: poll loop ended for {}: {} — reconnecting in {}s",
+                            client_clone.profile.coin, e, backoff_secs
+                        );
+                        *client_clone.connected.lock().await = false;
+                        tokio::time::sleep(std::time::Duration::from_secs(backoff_secs)).await;
+                        // Attempt reconnect (TCP + subscribe + authorize, no new task spawn)
+                        match client_clone.reconnect(&payout_wallet_clone).await {
+                            Ok(()) => {
+                                println!(
+                                    "auxpow_client: reconnected to {} successfully",
+                                    profile_clone.coin
+                                );
+                                backoff_secs = 5;
+                            }
+                            Err(re_err) => {
+                                println!(
+                                    "auxpow_client: reconnect to {} failed: {} — retry in {}s",
+                                    profile_clone.coin, re_err, backoff_secs
+                                );
+                                backoff_secs = (backoff_secs * 2).min(60);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Subscribe + Authorize
+        self.subscribe().await?;
+        self.authorize(payout_wallet).await?;
+
+        info!("AuxPow: connected and authorized for {}", self.profile.coin);
+        Ok(())
+    }
+
+    /// Establish TCP connection and set up stream/reader. No task spawn.
+    async fn connect_tcp(&self) -> Result<()> {
         let addr = self.profile.pool_address();
         info!(
             "AuxPow: connecting to {} ({}) for {}",
@@ -168,40 +218,21 @@ impl AuxPowClient {
             .map_err(|_| anyhow!("connect timeout to {}", addr))?
             .context("TCP connect failed")?;
 
-        // Split into reader and writer
         let (reader_half, writer_half) = stream.into_split();
         let buf_reader = BufReader::new(reader_half);
 
         *self.stream.lock().await = Some(writer_half);
         *self.reader.lock().await = Some(buf_reader);
         *self.connected.lock().await = true;
+        Ok(())
+    }
 
-        // Spawn the background reader before the subscribe/authorize handshake
-        // so that responses are routed to send_request and notifications are
-        // dispatched from a single reader.
-        let client_clone = Arc::new(self.clone());
-        tokio::spawn(async move {
-            loop {
-                match client_clone.poll_messages().await {
-                    Ok(()) => {}
-                    Err(e) => {
-                        println!(
-                            "auxpow_client: poll loop ended for {}: {}",
-                            client_clone.profile.coin, e
-                        );
-                        *client_clone.connected.lock().await = false;
-                        break;
-                    }
-                }
-            }
-        });
-
-        // Subscribe
+    /// Reconnect TCP + re-subscribe + re-authorize (called from poll loop, no new task).
+    async fn reconnect(&self, payout_wallet: &str) -> Result<()> {
+        self.connect_tcp().await?;
         self.subscribe().await?;
-        // Authorize
         self.authorize(payout_wallet).await?;
-
-        info!("AuxPow: connected and authorized for {}", self.profile.coin);
+        info!("AuxPow: reconnected and authorized for {}", self.profile.coin);
         Ok(())
     }
 
