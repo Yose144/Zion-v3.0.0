@@ -2126,7 +2126,15 @@ fn hex(bytes: &[u8]) -> String {
 }
 
 fn parse_header_hex(raw: &str) -> Result<MiningHeader> {
-    let bytes = parse_fixed_hex::<80>(raw, "job header")?;
+    let normalized = raw.trim().trim_start_matches("0x");
+    let decoded = hex::decode(normalized)
+        .with_context(|| "job header contains invalid hex")?;
+
+    // Pad to 80 bytes (external AuxPoW jobs may send shorter headers,
+    // e.g. KAS sends only a 32-byte pre_pow_hash).
+    let mut bytes = [0u8; 80];
+    let len = decoded.len().min(80);
+    bytes[..len].copy_from_slice(&decoded[..len]);
 
     let version = u32::from_le_bytes(bytes[0..4].try_into().context("header version slice")?);
     let previous_hash: [u8; 32] = bytes[4..36].try_into().context("previous hash slice")?;
