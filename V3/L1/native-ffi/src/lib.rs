@@ -1026,6 +1026,28 @@ pub mod blake3_algo {
         /// Same as [`blake3_hash`].
         pub fn blake3_mine(header: *const u8, header_len: usize, nonce: u64, output: *mut u8);
 
+        /// ALPH (Alephium) double-Blake3: `blake3(blake3(nonce_24B || header))`.
+        ///
+        /// # Safety
+        /// `header_blob` valid for `header_len` bytes; `extranonce1` valid
+        /// for `extranonce1_len` bytes; `output` valid for 32 bytes.
+        pub fn blake3_alph(
+            header_blob: *const u8,
+            header_len: usize,
+            extranonce1: *const u8,
+            extranonce1_len: usize,
+            nonce: u64,
+            output: *mut u8,
+        );
+
+        /// ALPH with direct 64-bit candidate (no extranonce1 base).
+        pub fn blake3_alph_simple(
+            header_blob: *const u8,
+            header_len: usize,
+            nonce: u64,
+            output: *mut u8,
+        );
+
         /// Verify mining hash against 32-byte target.
         ///
         /// # Safety
@@ -1037,6 +1059,19 @@ pub mod blake3_algo {
             nonce: u64,
             target: *const u8,
         ) -> i32;
+
+        /// Verify ALPH double-hash against 32-byte target.
+        pub fn blake3_alph_verify(
+            header_blob: *const u8,
+            header_len: usize,
+            extranonce1: *const u8,
+            extranonce1_len: usize,
+            nonce: u64,
+            target: *const u8,
+        ) -> i32;
+
+        /// Self-test: verifies blake3("") matches known vector. Returns 1/0.
+        pub fn blake3_selftest() -> i32;
 
         /// CPU microbenchmark; thread-safe.
         pub fn blake3_benchmark(iterations: i32) -> f64;
@@ -1067,6 +1102,44 @@ pub mod blake3_algo {
             blake3_mine(header.as_ptr(), header.len(), nonce, out.as_mut_ptr());
         }
         out
+    }
+
+    /// ALPH (Alephium) double-Blake3 mining hash:
+    /// `blake3(blake3(nonce_24B || header_blob))`.
+    ///
+    /// The 24-byte nonce is: 8-byte big-endian candidate + 16 zero bytes.
+    /// candidate = base + nonce, where base is derived from extranonce1.
+    pub fn mine_alph(header_blob: &[u8], extranonce1: &[u8], nonce: u64) -> [u8; 32] {
+        let mut out = [0u8; 32];
+        // SAFETY: same as `hash`; extranonce1 may be empty (ptr may be
+        // dangling but len=0 so no read occurs).
+        unsafe {
+            blake3_alph(
+                header_blob.as_ptr(),
+                header_blob.len(),
+                extranonce1.as_ptr(),
+                extranonce1.len(),
+                nonce,
+                out.as_mut_ptr(),
+            );
+        }
+        out
+    }
+
+    /// ALPH with a direct 64-bit candidate (no extranonce1 base).
+    pub fn mine_alph_simple(header_blob: &[u8], nonce: u64) -> [u8; 32] {
+        let mut out = [0u8; 32];
+        // SAFETY: same as `hash`.
+        unsafe {
+            blake3_alph_simple(header_blob.as_ptr(), header_blob.len(), nonce, out.as_mut_ptr());
+        }
+        out
+    }
+
+    /// Run the BLAKE3 self-test (verifies blake3("") matches known vector).
+    pub fn selftest() -> bool {
+        // SAFETY: thread-safe, no pointers.
+        unsafe { blake3_selftest() == 1 }
     }
 
     /// Fallible variant of [`mine`] that rejects empty / oversized inputs.
@@ -1754,6 +1827,24 @@ mod tests {
         let hash = blake3_algo::mine(&header, 5678);
         assert_ne!(hash, [0u8; 32], "blake3-algo must produce non-zero output");
         println!("blake3 smoke: {:02x?}", &hash[..8]);
+    }
+
+    #[cfg(feature = "native-blake3-algo")]
+    #[test]
+    fn blake3_algo_selftest() {
+        assert!(blake3_algo::selftest(), "blake3 self-test must pass");
+    }
+
+    #[cfg(feature = "native-blake3-algo")]
+    #[test]
+    fn blake3_algo_alph_smoke() {
+        let header = [0x05u8; 32];
+        let hash = blake3_algo::mine_alph_simple(&header, 5678);
+        assert_ne!(hash, [0u8; 32], "blake3-alph must produce non-zero output");
+        // Double hash should differ from single hash
+        let single = blake3_algo::mine(&header, 5678);
+        assert_ne!(hash, single, "ALPH double-hash must differ from DCR single hash");
+        println!("blake3 alph smoke: {:02x?}", &hash[..8]);
     }
 
     #[cfg(feature = "native-cosmic-harmony")]
