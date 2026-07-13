@@ -64,7 +64,7 @@ pbkdf2.workspace = true
 zion-cosmic-harmony = { path = "../cosmic-harmony" }
 zion-auxpow = { path = "../../../AuXpow" }
 tokio = { version = "1", features = ["full"] }
-tokio-tungstenite = "0.20"
+tokio-tungstenite = "0.30"
 futures-util = "0.3"
 chrono = "0.4"
 clap = { version = "4", features = ["derive", "color"] }
