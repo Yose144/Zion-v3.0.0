@@ -355,7 +355,15 @@ pub struct GpuScanOutcome {
 ///   GPU kernel produced.  Pool re-computes the hash server-side (cpu path) and
 ///   compares — if GPU and CPU kernels are in sync this will agree.
 pub fn gpu_scan_job(gpu: &mut dyn GpuMiner, job: MiningJob, algorithm: &str) -> GpuScanOutcome {
-    match gpu.mine_batch(job.header, job.target, job.start_nonce, job.nonce_count) {
+    // For external AuxPoW algorithms (kheavyhash, blake3, etc.), the pool
+    // encodes the external block timestamp in job.height.  Inject it into
+    // the MiningHeader.timestamp field so the GPU kernel receives it.
+    let mut effective_header = job.header;
+    if is_external_algorithm(algorithm) {
+        effective_header.timestamp = job.height;
+    }
+
+    match gpu.mine_batch(effective_header, job.target, job.start_nonce, job.nonce_count) {
         Ok(result) => {
             let nonces_tested = result.nonces_tested;
             if let Some((nonce, gpu_hash)) = result.solutions.first() {
@@ -3341,11 +3349,16 @@ pub mod opencl_external {
                     actual_batch,
                 ),
                 "kheavyhash" | "kheavyhash_kas" => {
-                    // Timestamp comes from header.timestamp (8 bytes LE)
+                    // KAS external jobs send a 32-byte pre_pow_hash in header_hex.
+                    // The pool pads it to 80 bytes (MiningHeader); the pre_pow_hash
+                    // is in the first 32 bytes (previous_hash field).
+                    // Timestamp comes from the job's height field (stored in
+                    // header.timestamp for external jobs).
+                    let pre_pow_hash = &header_bytes[..32];
                     let timestamp = header.timestamp.to_le_bytes().to_vec();
                     self.miner.mine(
                         &self.algorithm,
-                        &header_bytes,
+                        pre_pow_hash,
                         &timestamp,
                         &target.bytes,
                         nonce_start,
