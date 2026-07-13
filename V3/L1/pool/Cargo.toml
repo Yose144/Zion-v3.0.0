@@ -32,6 +32,7 @@ zion-cosmic-harmony = { path = "../cosmic-harmony" }
 zion-auxpow = { path = "../../../AuXpow" }
 
 [features]
-default = []
+default = ["native-verushash"]
 testnet = []
 testnet_fork_rehearsal = ["zion-core/testnet_fork_rehearsal"]
+native-verushash = ["zion-auxpow/native-verushash"]

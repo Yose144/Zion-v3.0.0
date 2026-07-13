@@ -1784,6 +1784,7 @@ fn handle_client(
     }
 
     let mut last_template_height: u64 = 0;
+    let mut consecutive_no_solution: u64 = 0;
 
     for iteration in 0..config.loop_count {
         let stale_job_ids = pool.lock().expect("pool lock poisoned").expire_stale_jobs();
@@ -2453,6 +2454,7 @@ fn handle_client(
                 attempted_hashes,
                 elapsed_ms,
             } => {
+                consecutive_no_solution = 0;
                 let accepted = matches!(decision.status, ShareStatus::Accepted);
                 let stale = matches!(decision.status, ShareStatus::StaleJob);
                 let job_height = assignment_height(&assignment);
@@ -2572,6 +2574,7 @@ fn handle_client(
                 attempted_hashes,
                 elapsed_ms,
             } => {
+                consecutive_no_solution += 1;
                 {
                     let mut telemetry = miner_telemetry
                         .lock()
@@ -2590,6 +2593,19 @@ fn handle_client(
                 let result_line = write_wire_message(&mut writer, &result_message)?;
                 log_ch.log_verbose("share_status=NoSolution".to_string());
                 log_ch.log_verbose(format!("wire_result={result_line}"));
+                if config.max_consecutive_no_solution > 0
+                    && consecutive_no_solution >= config.max_consecutive_no_solution
+                {
+                    println!(
+                        "no_solution_limit_exceeded miner={miner_id} worker={worker_name} count={consecutive_no_solution}; disconnecting"
+                    );
+                    return Err(anyhow!(
+                        "session terminated after {consecutive_no_solution} consecutive no-solution jobs"
+                    ));
+                }
+                if config.no_solution_throttle_ms > 0 {
+                    thread::sleep(Duration::from_millis(config.no_solution_throttle_ms));
+                }
             }
         }
     }
@@ -2780,6 +2796,13 @@ struct ServerConfig {
     /// TCP read timeout for miner sessions — prevents zombie threads on
     /// ungraceful disconnects (no FIN).  Default: 300s.
     session_read_timeout_secs: u64,
+    /// Minimum delay between consecutive NoSolution messages from a miner.
+    /// Prevents a misconfigured or CPU-only miner from pinning the pool thread
+    /// at 100% CPU by sending NoSolution in a tight loop.  0 disables throttling.
+    no_solution_throttle_ms: u64,
+    /// Maximum number of consecutive NoSolution messages before the session is
+    /// disconnected.  0 disables the limit.
+    max_consecutive_no_solution: u64,
     /// Pool wallet address for payout signing (ZION_POOL_WALLET).
     pool_wallet_address: Option<String>,
     /// Ed25519 signing key for pool payout transactions (ZION_POOL_PAYOUT_SK_HEX).
@@ -4804,6 +4827,8 @@ impl ServerConfig {
             routing_metrics_bind: parse_optional_env_string("ZION_ROUTING_METRICS_BIND"),
             max_sessions_per_ip: parse_env_u32("ZION_MAX_SESSIONS_PER_IP", 10)?,
             session_read_timeout_secs: parse_env_u64("ZION_SESSION_READ_TIMEOUT_SECS", 300)?,
+            no_solution_throttle_ms: parse_env_u64("ZION_POOL_NO_SOLUTION_THROTTLE_MS", 100)?,
+            max_consecutive_no_solution: parse_env_u64("ZION_POOL_MAX_CONSECUTIVE_NO_SOLUTION", 1000)?,
             pool_wallet_address: parse_optional_env_string("ZION_POOL_WALLET"),
             pool_signing_key: parse_pool_signing_key(),
             vardiff_start_difficulty: parse_env_u64("ZION_VARDIFF_START_DIFF", 1)?,
@@ -5162,6 +5187,8 @@ mod tests {
             pool_wallet_address: None,
             pool_signing_key: None,
             session_read_timeout_secs: 300,
+            no_solution_throttle_ms: 0,
+            max_consecutive_no_solution: 0,
             vardiff_start_difficulty: 1,
             vardiff_target_secs: 10,
             vardiff_retarget_shares: 6,
@@ -5356,6 +5383,8 @@ mod tests {
             pool_wallet_address: None,
             pool_signing_key: None,
             session_read_timeout_secs: 300,
+            no_solution_throttle_ms: 0,
+            max_consecutive_no_solution: 0,
             vardiff_start_difficulty: 1,
             vardiff_target_secs: 10,
             vardiff_retarget_shares: 6,
@@ -5652,6 +5681,8 @@ mod tests {
             pool_wallet_address: None,
             pool_signing_key: None,
             session_read_timeout_secs: 300,
+            no_solution_throttle_ms: 0,
+            max_consecutive_no_solution: 0,
             vardiff_start_difficulty: 1,
             vardiff_target_secs: 10,
             vardiff_retarget_shares: 6,
@@ -5893,6 +5924,8 @@ mod tests {
             pool_wallet_address: None,
             pool_signing_key: None,
             session_read_timeout_secs: 300,
+            no_solution_throttle_ms: 0,
+            max_consecutive_no_solution: 0,
             vardiff_start_difficulty: 1,
             vardiff_target_secs: 10,
             vardiff_retarget_shares: 6,
@@ -5935,6 +5968,8 @@ mod tests {
             pool_wallet_address: None,
             pool_signing_key: None,
             session_read_timeout_secs: 300,
+            no_solution_throttle_ms: 0,
+            max_consecutive_no_solution: 0,
             vardiff_start_difficulty: 1,
             vardiff_target_secs: 10,
             vardiff_retarget_shares: 6,
@@ -5977,6 +6012,8 @@ mod tests {
             pool_wallet_address: None,
             pool_signing_key: None,
             session_read_timeout_secs: 300,
+            no_solution_throttle_ms: 0,
+            max_consecutive_no_solution: 0,
             vardiff_start_difficulty: 1,
             vardiff_target_secs: 10,
             vardiff_retarget_shares: 6,
@@ -6192,6 +6229,8 @@ mod tests {
             pool_wallet_address: None,
             pool_signing_key: None,
             session_read_timeout_secs: 300,
+            no_solution_throttle_ms: 0,
+            max_consecutive_no_solution: 0,
             vardiff_start_difficulty: 1,
             vardiff_target_secs: 10,
             vardiff_retarget_shares: 6,

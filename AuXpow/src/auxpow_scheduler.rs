@@ -312,6 +312,16 @@ impl AuxPowScheduler {
             }
         };
 
+        let start = Instant::now();
+        let allocation_pct = {
+            let cfg = self.config.read().await;
+            cfg.allocation_pct.clamp(0.0, 1.0)
+        };
+        if allocation_pct <= 0.0 {
+            tokio::time::sleep(Duration::from_millis(sched_cfg.poll_interval_ms)).await;
+            return Ok(());
+        }
+
         // Determine algorithm
         let algo = ExternalAlgorithm::from_str_loose(&job.algorithm)
             .unwrap_or(ExternalAlgorithm::Blake3);
@@ -433,6 +443,15 @@ impl AuxPowScheduler {
                     warn!("AuxPow: submit error: {}", e);
                     return Err(e);
                 }
+            }
+        }
+
+        // Throttle to respect the configured compute allocation percentage.
+        let elapsed = start.elapsed();
+        if allocation_pct < 1.0 {
+            let sleep_ms = (elapsed.as_millis() as f64 * ((1.0 / allocation_pct) - 1.0)) as u64;
+            if sleep_ms > 0 {
+                tokio::time::sleep(Duration::from_millis(sleep_ms)).await;
             }
         }
 
