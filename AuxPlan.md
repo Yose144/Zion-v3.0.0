@@ -22,14 +22,48 @@ external poolu.
 Rozchodit **revenue system ze stream multi-algo GPU miningu** v Deeksha Chv3.
 To znamená:
 
-1. **CHv3 stream telemetry** jako backbone revenue accounting — `DeekshaStreamTelemetry`
+1. **Pool automaticky přepíná mezi externími pooly podle profitability** —
+   ne statický `force_coin`, ale dynamický profit-based switching s live API
+   daty (WhatToMine / CoinGecko / pool APIs).
+2. **CHv3 stream telemetry** jako backbone revenue accounting — `DeekshaStreamTelemetry`
    mapuje každý pipeline step na `RevenueSource` (KeccakBonus, Zion, NclAi, …).
-2. **AuxPow B2b** jako externí revenue stream — GPU minery těží DCR/KAS/ALPH,
+3. **AuxPow B2b** jako externí revenue stream — GPU minery těží DCR/KAS/ALPH,
    pool forwarduje shares, BTC revenue se trackuje v `RevenueCollector`.
-3. **RevenueScheduler** (50/25/25 model) dispatchuje minery do session groups
+4. **RevenueScheduler** (50/25/25 model) dispatchuje minery do session groups
    (Zion / Revenue / Ncl) podle váhových lane konfigurace.
-4. **Sjednocený revenue report** — ZION block rewards + external BTC revenue +
+5. **Sjednocený revenue report** — ZION block rewards + external BTC revenue +
    NCL AI revenue → jeden `RevenueStats` snapshot.
+
+### ⚠️ Klíčový gap: Automatické profit switching NENÍ implementováno
+
+**Aktuální stav (z git historie a kódu):**
+
+`run_auxpow_bridge()` v `server.rs:371` se připojí k `force_coin` (nebo KAS
+default) a **zůstane tam navždy**. Na konci funkce je komentář:
+
+```rust
+// Reconnect to a different coin if force_coin changed (not implemented).
+// Coin switching based on revenue scheduler will be added in a later phase.
+```
+
+**Co existuje ale není napojené:**
+- `AuXpow/src/auxpow_scheduler.rs` — `AuxPowScheduler::select_coin()` s
+  `select_best_coin()` + hysteresis. Ale tento scheduler **mines sám na serveru**
+  (CPU hashing), neposílá joby minerům přes B2b bridge.
+- `AuXpow/src/types.rs:226` — `fallback_estimates()` — **STATIC** odhady
+  (KAS $0.85, ETC $0.60, ALPH $0.55, …). Žádná live API data.
+- `V3/L1/cosmic-harmony/src/profit_router.rs:400` — stejné statické estimates.
+- `V3/L1/pool/src/bin/server.rs:3016` — `RevenueScheduler` dělá weighted
+  round-robin (50/25/25), **NE profit-based** selection.
+
+**Co chybí:**
+1. **Live profitability API** — žádné WhatToMine / CoinGecko / pool API volání.
+   `reqwest` není ani v dependencies (`AuXpow/Cargo.toml`, `V3/L1/pool/Cargo.toml`).
+2. **Profit-based coin switching v B2b bridge** — `run_auxpow_bridge()` nemá
+   žádnou logiku pro přepínání coinů. Potřebuje periodicky volat `select_best_coin()`
+   a reconnectovat k novému poolu.
+3. **Propojení RevenueScheduler ↔ profit data** — `RevenueScheduler` rotuje
+   přes statické váhy, ne podle aktuální profitability.
 
 ### ⚠️ Aktuální broken config na Edge (2026-07-13)
 
@@ -526,12 +560,12 @@ ZION Miner (GPU rig)
 | Priority | Fáze | Effort | Impact |
 |----------|------|--------|--------|
 | **R0** | Opravit broken Edge config (ETC→DCR) | 30min | Unblocks DCR revenue |
-| **R1** | DCR revenue live | 1-2h | 1st external revenue stream |
-| **R2** | ALPH + KAS E2E | 2-4h | 3 external coins live |
-| **R3** | Stream telemetry revenue report | 2-4h | Sjednocený revenue accounting |
-| **R4** | SMOS deploy + GPU mining | 2-4h | Real GPU hashrate (blocked) |
-| **R5** | EthStratum protocol | 4-6h | Unblocks ERG/RVN/ETC/EVR/MEWC/CLORE |
-| **R6** | Multi-coin profit switching | 8-12h | Profit optimization |
+| **R1** | **Automatický profit-based coin switching** | **4-8h** | **Pool přepíná coiny podle profitability** |
+| **R2** | DCR revenue live | 1-2h | 1st external revenue stream |
+| **R3** | ALPH + KAS E2E | 2-4h | 3 external coins live |
+| **R4** | Stream telemetry revenue report | 2-4h | Sjednocený revenue accounting |
+| **R5** | SMOS deploy + GPU mining | 2-4h | Real GPU hashrate (blocked) |
+| **R6** | EthStratum protocol | 4-6h | Unblocks ERG/RVN/ETC/EVR/MEWC/CLORE |
 | **R7** | True AuxPow consensus | 20-40h | Free chain security (future) |
 
 ### Original Phase Priority (multi-algo GPU mining completion)
@@ -634,7 +668,62 @@ auxpow: submitting share request {"id":100,"method":"mining.submit",
 - [ ] Restart pool, ověřit DCR jobs flow + share forwarding
 - [ ] Ověřit `RevenueCollector::track_event(Blake3External)` se volá při accepted share
 
-### Fáze R1: DCR revenue live (1-2h)
+### Fáze R1: Automatický profit-based coin switching (HLAVNÍ CÍL, 4-8h)
+
+**Cíl:** Pool B2b bridge automaticky přepíná mezi externími pooly podle
+aktuální profitability. Ne statický `force_coin`, ale dynamický switching.
+
+**Co implementovat:**
+
+1. **Live profitability API client** (`AuXpow/src/profit_api.rs` — NOVÝ):
+   - Přidat `reqwest` do `AuXpow/Cargo.toml`
+   - WhatToMine API: `https://whattomine.com/coins.json` — refresh každých 5 min
+   - Fallback: CoinGecko API pro ceny + pool difficulty APIs
+   - Fallback: static `fallback_estimates()` když API nedostupné
+   - Cache výsledky 5 min (zabraňuje API rate limit)
+   - `ProfitApiClient::fetch_estimates() -> Vec<ProfitEntry>`
+
+2. **Profit-based coin switching v B2b bridge** (`server.rs:run_auxpow_bridge`):
+   - Periodicky (každých 5 min) zavolat `profit_api.fetch_estimates()`
+   - `select_best_coin(entries, current, hysteresis_pct)` — s hysteresis 15%
+   - Pokud vybraný coin != current → `mux.disconnect()` + `mux.connect(new_coin)`
+   - Log: `auxpow_bridge: profit switch DCR→KAS (profit $0.85 vs $0.45, +88%)`
+   - Respektovat `force_coin` pokud je nastavený (override profit)
+   - Respektovat circuit breaker — nepřepínat pokud current coin je healthy
+
+3. **Profit config env vars:**
+   - `ZION_AUXPOW_PROFIT_SWITCH=1` — enable profit-based switching (default: false)
+   - `ZION_AUXPOW_PROFIT_API=whattomine` — API source (whattomine / coingecko / static)
+   - `ZION_AUXPOW_PROFIT_INTERVAL=300` — refresh interval sekundy (default 5 min)
+   - `ZION_AUXPOW_HYSTERESIS_PCT=15` — min improvement % pro switch (default 15)
+   - `ZION_AUXPOW_PROFIT_COINS=DCR,KAS,ALPH` — whitelist coinů pro profit switching
+
+4. **API endpoint pro profit status:**
+   - `GET /api/v1/profit/status` → current coin, profit estimates, last switch
+   - `GET /api/v1/profit/estimates` → live ProfitEntry[] z API
+
+**Soubory ke změně:**
+- `AuXpow/Cargo.toml` — přidat `reqwest = { version = "0.12", features = ["json"] }`
+- `AuXpow/src/profit_api.rs` — NOVÝ, live API client
+- `AuXpow/src/lib.rs` — `pub mod profit_api;`
+- `V3/L1/pool/src/bin/server.rs:run_auxpow_bridge()` — přidat profit switching loop
+- `V3/L1/pool/Cargo.toml` — pokud pool potřebuje reqwest přímo
+
+**Architecture:**
+```
+run_auxpow_bridge() loop:
+  ├── Every 5 min: profit_api.fetch_estimates()
+  ├── select_best_coin(entries, current, hysteresis=15%)
+  ├── If new_coin != current AND no force_coin:
+  │   ├── mux.disconnect()
+  │   ├── mux.set_wallet(select_wallet(new_coin))
+  │   ├── mux.connect(new_coin)
+  │   └── log: "profit switch {old}→{new} (profit {old}$ vs {new}$, {pct}%)"
+  ├── Continue: wait_for_job() → queue → share forwarding
+  └── Circuit breaker: nepřepínat pokud current coin healthy
+```
+
+### Fáze R2: DCR revenue live (1-2h, po R0)
 
 - [ ] Pool se připojí k WoolyPooly DCR pool (pool.woolypooly.com:3152)
 - [ ] Revenue minery dostávají DCR blake3 jobs
@@ -643,7 +732,7 @@ auxpow: submitting share request {"id":100,"method":"mining.submit",
 - [ ] `RevenueStats.by_source["blake3_external"]` > 0
 - [ ] Dashboard widget: external revenue per coin
 
-### Fáze R2: ALPH + KAS E2E (2-4h)
+### Fáze R3: ALPH + KAS E2E (2-4h)
 
 - [ ] ALPH E2E test s `AUXPOW_E2E_COIN=alph` na 2miners pool
 - [ ] KAS E2E test s `AUXPOW_E2E_COIN=kas` na 2miners pool
@@ -651,7 +740,7 @@ auxpow: submitting share request {"id":100,"method":"mining.submit",
 - [ ] `ZION_STREAM_KHEAVYHASH_PCT=10` — KAS lane aktivní
 - [ ] Revenue stream breakdown: ZION 50% / DCR 15% / ALPH 10% / KAS 10% / NCL 15%
 
-### Fáze R3: Stream telemetry revenue report (2-4h)
+### Fáze R4: Stream telemetry revenue report (2-4h)
 
 - [ ] Pool: po každém ZION bloku volat `track_deeksha_streams()`
 - [ ] Pool: po každém accepted external share volat `track_event(Blake3External)`
@@ -660,7 +749,7 @@ auxpow: submitting share request {"id":100,"method":"mining.submit",
 - [ ] API endpoint: `GET /api/v1/revenue/streams` → per-stream breakdown
 - [ ] Per-stream 24h/7d/30d grafy
 
-### Fáze R4: SMOS deploy + GPU mining (2-4h, blocked)
+### Fáze R5: SMOS deploy + GPU mining (2-4h, blocked)
 
 - [ ] Build new miner binary s all algorithm support
 - [ ] Package as SMOS custom miner zip
@@ -669,19 +758,12 @@ auxpow: submitting share request {"id":100,"method":"mining.submit",
 - [ ] Verify miner connects + mines blake3_dcr
 - [ ] Verify share accepted by WoolyPooly through pool
 
-### Fáze R5: EthStratum protocol (4-6h, unblocks 6 coins)
+### Fáze R6: EthStratum protocol (4-6h, unblocks 6 coins)
 
 - [ ] Implement `eth_getWork` notification handler v `auxpow_client.rs`
 - [ ] Implement `eth_submitWork` submit v `auxpow_client.rs`
 - [ ] Test s ERG pool (Autolykos, no mix hash needed)
 - [ ] Test s RVN pool (KawPow, mix hash from DAG)
-
-### Fáze R6: Multi-coin profit switching (8-12h, enhancement)
-
-- [ ] Connect to multiple external pools simultaneously
-- [ ] Real-time revenue estimation z pool APIs
-- [ ] Dynamic coin switching based on live profitability
-- [ ] Per-miner algorithm assignment
 
 ### Fáze R7: True AuxPow consensus (20-40h, future)
 
