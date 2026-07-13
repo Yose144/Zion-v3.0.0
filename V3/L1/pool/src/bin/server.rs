@@ -369,6 +369,62 @@ fn external_coin_to_revenue_source(coin: ExternalCoin) -> RevenueSource {
     }
 }
 
+/// Estimate the USD value of a single accepted external share.
+///
+/// This is a rough heuristic based on the coin's daily revenue estimate
+/// divided by an assumed daily share count at difficulty 1.  In production
+/// this would be replaced by actual payout data from the external pool.
+fn estimate_external_share_usd(coin: ExternalCoin) -> f64 {
+    // Use fallback_estimates to get the daily revenue per 100 MH/s.
+    let estimates = zion_cosmic_harmony::fallback_estimates();
+    let ch_coin = auxpow_to_ch_external_coin(coin);
+    let daily_revenue = estimates
+        .iter()
+        .find(|e| e.coin == ch_coin)
+        .map(|e| e.revenue_per_day_usd)
+        .unwrap_or(0.10);
+    // Assume ~10000 shares/day at reference hashrate (conservative).
+    // This gives a per-share value in the range $0.00001–$0.0001.
+    daily_revenue / 10_000.0
+}
+
+/// Convert `zion_auxpow::ExternalCoin` to `zion_cosmic_harmony::ExternalCoin`.
+///
+/// Both enums have identical variants but are distinct types because they
+/// are defined in separate crates.  This function bridges the gap.
+fn auxpow_to_ch_external_coin(coin: ExternalCoin) -> zion_cosmic_harmony::ExternalCoin {
+    match coin {
+        ExternalCoin::DCR => zion_cosmic_harmony::ExternalCoin::DCR,
+        ExternalCoin::ALPH => zion_cosmic_harmony::ExternalCoin::ALPH,
+        ExternalCoin::KAS => zion_cosmic_harmony::ExternalCoin::KAS,
+        ExternalCoin::ERG => zion_cosmic_harmony::ExternalCoin::ERG,
+        ExternalCoin::RVN => zion_cosmic_harmony::ExternalCoin::RVN,
+        ExternalCoin::ETC => zion_cosmic_harmony::ExternalCoin::ETC,
+        ExternalCoin::EVR => zion_cosmic_harmony::ExternalCoin::EVR,
+        ExternalCoin::MEWC => zion_cosmic_harmony::ExternalCoin::MEWC,
+        ExternalCoin::FLUX => zion_cosmic_harmony::ExternalCoin::FLUX,
+        ExternalCoin::CLORE => zion_cosmic_harmony::ExternalCoin::CLORE,
+        ExternalCoin::XMR => zion_cosmic_harmony::ExternalCoin::XMR,
+    }
+}
+
+/// Convert `zion_cosmic_harmony::ExternalCoin` to `zion_auxpow::ExternalCoin`.
+fn ch_to_auxpow_external_coin(coin: zion_cosmic_harmony::ExternalCoin) -> ExternalCoin {
+    match coin {
+        zion_cosmic_harmony::ExternalCoin::DCR => ExternalCoin::DCR,
+        zion_cosmic_harmony::ExternalCoin::ALPH => ExternalCoin::ALPH,
+        zion_cosmic_harmony::ExternalCoin::KAS => ExternalCoin::KAS,
+        zion_cosmic_harmony::ExternalCoin::ERG => ExternalCoin::ERG,
+        zion_cosmic_harmony::ExternalCoin::RVN => ExternalCoin::RVN,
+        zion_cosmic_harmony::ExternalCoin::ETC => ExternalCoin::ETC,
+        zion_cosmic_harmony::ExternalCoin::EVR => ExternalCoin::EVR,
+        zion_cosmic_harmony::ExternalCoin::MEWC => ExternalCoin::MEWC,
+        zion_cosmic_harmony::ExternalCoin::FLUX => ExternalCoin::FLUX,
+        zion_cosmic_harmony::ExternalCoin::CLORE => ExternalCoin::CLORE,
+        zion_cosmic_harmony::ExternalCoin::XMR => ExternalCoin::XMR,
+    }
+}
+
 /// Maps an external coin to the ZION-pool algorithm string that miners expect.
 fn external_coin_to_algorithm(coin: ExternalCoin) -> &'static str {
     match coin {
@@ -403,18 +459,34 @@ async fn run_auxpow_bridge(
             .unwrap_or_else(|| cfg.payout_wallet.clone())
     };
 
-    // Initial coin selection: force_coin wins, otherwise default to KAS.
-    let initial_coin = cfg.force_coin.unwrap_or(ExternalCoin::KAS);
+    // Initial coin selection: force_coin wins, otherwise use profit-based selection.
+    let initial_coin = cfg.force_coin.unwrap_or_else(|| {
+        let estimates = zion_cosmic_harmony::fallback_estimates();
+        ch_to_auxpow_external_coin(
+            zion_cosmic_harmony::select_best_coin(&estimates, None, cfg.hysteresis_pct)
+                .unwrap_or(zion_cosmic_harmony::ExternalCoin::KAS),
+        )
+    });
     mux.set_wallet(select_wallet(initial_coin));
     if let Err(e) = mux.connect(initial_coin).await {
         eprintln!("auxpow_bridge: initial connect to {} failed: {}", initial_coin, e);
     }
 
+    // Track when we last checked profitability for auto-switching.
+    let mut last_profit_check = Instant::now();
+    let profit_check_interval = Duration::from_secs(cfg.profit_check_interval_secs);
+
     loop {
         // If the multiplexer has no active client (e.g. after a disconnect or
         // failed initial connect), try to reconnect before waiting for jobs.
         if mux.active_coin().is_none() {
-            let coin = cfg.force_coin.unwrap_or(ExternalCoin::KAS);
+            let coin = cfg.force_coin.unwrap_or_else(|| {
+                let estimates = zion_cosmic_harmony::fallback_estimates();
+                ch_to_auxpow_external_coin(
+                    zion_cosmic_harmony::select_best_coin(&estimates, None, cfg.hysteresis_pct)
+                        .unwrap_or(zion_cosmic_harmony::ExternalCoin::KAS),
+                )
+            });
             mux.set_wallet(select_wallet(coin));
             eprintln!("auxpow_bridge: no active connection, reconnecting to {}…", coin);
             if let Err(e) = mux.connect(coin).await {
@@ -423,6 +495,43 @@ async fn run_auxpow_bridge(
                 continue;
             }
             println!("auxpow_bridge: reconnected to {}", coin);
+        }
+
+        // Auto coin switching: when force_coin is None, periodically check
+        // profitability and switch to the best coin if hysteresis allows.
+        if cfg.force_coin.is_none() && last_profit_check.elapsed() >= profit_check_interval {
+            last_profit_check = Instant::now();
+            let estimates = zion_cosmic_harmony::fallback_estimates();
+            let current = mux.active_coin().map(auxpow_to_ch_external_coin);
+            if let Some(best) =
+                zion_cosmic_harmony::select_best_coin(&estimates, current, cfg.hysteresis_pct)
+            {
+                if current != Some(best) {
+                    println!(
+                        "auxpow_bridge: profit_switch old={:?} new={} old_profit={:.4} new_profit={:.4}",
+                        current,
+                        best,
+                        estimates
+                            .iter()
+                            .find(|e| Some(e.coin) == current)
+                            .map(|e| e.profit_per_day_usd())
+                            .unwrap_or(0.0),
+                        estimates
+                            .iter()
+                            .find(|e| e.coin == best)
+                            .map(|e| e.profit_per_day_usd())
+                            .unwrap_or(0.0),
+                    );
+                    let new_coin = ch_to_auxpow_external_coin(best);
+                    mux.disconnect().await;
+                    mux.set_wallet(select_wallet(new_coin));
+                    if let Err(e) = mux.connect(new_coin).await {
+                        eprintln!("auxpow_bridge: profit_switch connect to {} failed: {}", new_coin, e);
+                    } else {
+                        println!("auxpow_bridge: profit_switch connected to {}", new_coin);
+                    }
+                }
+            }
         }
 
         // Pull new jobs from the multiplexer and push them to the queue.
@@ -480,9 +589,6 @@ async fn run_auxpow_bridge(
                 elapsed_ms: started.elapsed().as_millis() as u64,
             });
         }
-
-        // Reconnect to a different coin if force_coin changed (not implemented).
-        // Coin switching based on revenue scheduler will be added in a later phase.
     }
 }
 
@@ -2143,6 +2249,32 @@ fn handle_client(
                         }
                     }
 
+                    // Record external revenue when an external share is accepted
+                    // by the upstream pool.  This feeds the revenue collector and
+                    // dashboard with per-coin external mining income.
+                    if matches!(decision.status, ShareStatus::Accepted) {
+                        if let WorkAssignment::External(ref ext_job) = assignment {
+                            let ext_source =
+                                external_coin_to_revenue_source(ext_job.external_coin);
+                            // Estimate USD value per accepted share from fallback
+                            // estimates.  In production this would come from the
+                            // external pool's actual payout data.
+                            let est_usd = estimate_external_share_usd(ext_job.external_coin);
+                            pool.lock()
+                                .expect("pool lock poisoned")
+                                .runtime()
+                                .record_external_revenue(
+                                    ext_source,
+                                    est_usd,
+                                    Some(ext_job.external_coin.ticker()),
+                                );
+                            println!(
+                                "auxpow_revenue_recorded coin={} source={:?} est_usd={:.4}",
+                                ext_job.external_coin, ext_source, est_usd
+                            );
+                        }
+                    }
+
                     let solution = MiningSolution {
                         job_id,
                         candidate,
@@ -2588,6 +2720,13 @@ struct AuxPowIntegrationConfig {
     /// Per-coin wallet overrides (e.g. DCR requires a DCR address, not BTC).
     /// Key = coin ticker (uppercase), Value = wallet address.
     coin_wallets: std::collections::HashMap<String, String>,
+    /// How often (in seconds) to check profitability for auto coin switching.
+    /// Only applies when `force_coin` is `None`.  Default: 60 seconds.
+    profit_check_interval_secs: u64,
+    /// Hysteresis percentage for coin switching.  Only switch if the new coin
+    /// is `hysteresis_pct`% more profitable than the current coin.
+    /// Default: 15.0 (15%).
+    hysteresis_pct: f64,
 }
 
 impl Default for AuxPowIntegrationConfig {
@@ -2601,6 +2740,8 @@ impl Default for AuxPowIntegrationConfig {
             payout_wallet: zion_auxpow::types::DEFAULT_BTC_WALLET.to_string(),
             worker_name: "zion_auxpow".to_string(),
             coin_wallets: std::collections::HashMap::new(),
+            profit_check_interval_secs: 60,
+            hysteresis_pct: 15.0,
         }
     }
 }
@@ -2637,6 +2778,17 @@ impl AuxPowIntegrationConfig {
                     cfg.coin_wallets
                         .insert(coin.ticker().to_string(), v.trim().to_string());
                 }
+            }
+        }
+        // Auto coin switching configuration.
+        if let Ok(v) = std::env::var("ZION_POOL_AUXPOW_PROFIT_CHECK_INTERVAL") {
+            if let Ok(secs) = v.trim().parse::<u64>() {
+                cfg.profit_check_interval_secs = secs;
+            }
+        }
+        if let Ok(v) = std::env::var("ZION_POOL_AUXPOW_HYSTERESIS_PCT") {
+            if let Ok(pct) = v.trim().parse::<f64>() {
+                cfg.hysteresis_pct = pct;
             }
         }
         cfg
@@ -5108,6 +5260,8 @@ mod tests {
                 payout_wallet: "bc1qtest".to_string(),
                 worker_name: "zion_auxpow_test".to_string(),
                 coin_wallets: std::collections::HashMap::new(),
+                profit_check_interval_secs: 60,
+                hysteresis_pct: 15.0,
             },
         };
         let (pool_addr, auxpow_bridge, pool_handle) = spawn_pool_server(config.clone(), None)
@@ -5393,6 +5547,8 @@ mod tests {
                 payout_wallet: "bc1qtest".to_string(),
                 worker_name: "zion_auxpow_e2e".to_string(),
                 coin_wallets: std::collections::HashMap::new(),
+                profit_check_interval_secs: 60,
+                hysteresis_pct: 15.0,
             },
         };
         let (pool_addr, _bridge_for_server, pool_handle) = spawn_pool_server(config, Some(bridge))
@@ -6173,6 +6329,8 @@ mod tests {
             payout_wallet: "bc1qtest".to_string(),
             worker_name: "test".to_string(),
             coin_wallets: std::collections::HashMap::new(),
+            profit_check_interval_secs: 60,
+            hysteresis_pct: 15.0,
         };
         // With no split config, should default to ZION (false = not external)
         assert!(!should_issue_external_job(0, &cfg));
@@ -6191,6 +6349,8 @@ mod tests {
             payout_wallet: "bc1qtest".to_string(),
             worker_name: "test".to_string(),
             coin_wallets: std::collections::HashMap::new(),
+            profit_check_interval_secs: 60,
+            hysteresis_pct: 15.0,
         };
         // 4:1 split → 1 in 5 iterations is external (iteration % 5 < 1)
         assert!(should_issue_external_job(0, &cfg));  // 0 % 5 = 0 < 1 → external

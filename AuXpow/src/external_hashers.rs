@@ -963,4 +963,5 @@ mod tests {
         );
         assert_eq!(ExternalAlgorithm::from_str_loose("unknown"), None);
     }
+
 }
