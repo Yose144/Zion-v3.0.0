@@ -1754,6 +1754,7 @@ fn handle_client(
                 hash_hex,
                 attempted_hashes,
                 elapsed_ms,
+                mix_hash_hex: _,
             } => {
                 if submit_miner_id != miner_id || submit_worker_name != worker_name {
                     println!(
