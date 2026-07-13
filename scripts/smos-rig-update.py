@@ -5,7 +5,7 @@ import json, os, sys, time, urllib.request, base64, re
 API = "https://api.simplemining.net"
 RIG = 518837
 GROUP = 1773590
-MINER_URL = "https://zionterranova.com/zion-miner/zion-miner-v3.0.5-gpu-r7-native2.zip"
+MINER_URL = "https://zionterranova.com/zion-miner/zion-miner-v3.0.5-gpu-r7-native3.zip"
 MINER_OPTS = (
     f"{MINER_URL} "
     f"--pool 62.171.141.136:8444 "
@@ -73,7 +73,9 @@ if __name__ == "__main__":
         "commandOptions": (
             "rm -rf /root/miner/custom_zion-miner-* "
             "/root/miner/custom_zion-sm* "
-            "/var/tmp/miner/custom_* ; echo CACHE_CLEARED"
+            "/var/tmp/miner/custom_* "
+            "/var/tmp/miner/*.zip "
+            "/root/miner/*.zip ; echo CACHE_CLEARED"
         ),
     })
     time.sleep(5)
