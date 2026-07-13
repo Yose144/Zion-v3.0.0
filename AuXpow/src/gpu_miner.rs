@@ -571,18 +571,31 @@ impl GpuMiner {
 
     /// List available OpenCL kernel source files.
     pub fn list_kernels() -> Result<Vec<String>> {
-        let dir = Self::kernel_dir()?;
-        let mut kernels = Vec::new();
-        for entry in std::fs::read_dir(&dir)
-            .with_context(|| format!("reading kernel dir {:?}", dir))?
-        {
-            let entry = entry?;
-            let name = entry.file_name().to_string_lossy().to_string();
-            if name.ends_with(".cl") {
-                kernels.push(name);
+        match Self::kernel_dir() {
+            Ok(dir) => {
+                let mut kernels = Vec::new();
+                for entry in std::fs::read_dir(&dir)
+                    .with_context(|| format!("reading kernel dir {:?}", dir))?
+                {
+                    let entry = entry?;
+                    let name = entry.file_name().to_string_lossy().to_string();
+                    if name.ends_with(".cl") {
+                        kernels.push(name);
+                    }
+                }
+                Ok(kernels)
+            }
+            Err(_) => {
+                // Embedded kernels
+                Ok(vec![
+                    "kheavyhash_kernel.cl".to_string(),
+                    "blake3_kernel.cl".to_string(),
+                    "autolykos_kernel.cl".to_string(),
+                    "kawpow_kernel.cl".to_string(),
+                    "ethash_kernel.cl".to_string(),
+                ])
             }
         }
-        Ok(kernels)
     }
 
     fn pick_opencl_device() -> Result<(Platform, Device, String, String)> {
@@ -641,9 +654,27 @@ impl GpuMiner {
             return Ok(self.proques.get(kernel_file).unwrap());
         }
 
-        let path = Self::kernel_dir()?.join(kernel_file);
-        let src = std::fs::read_to_string(&path)
-            .with_context(|| format!("reading OpenCL kernel {:?}", path))?;
+        // Try disk first (dev mode), then fall back to embedded kernels (deployed binary)
+        let src = match Self::kernel_dir() {
+            Ok(dir) => {
+                let path = dir.join(kernel_file);
+                std::fs::read_to_string(&path)
+                    .with_context(|| format!("reading OpenCL kernel {:?}", path))?
+            }
+            Err(_) => {
+                // Embedded kernel sources (compiled into the binary)
+                let embedded = match kernel_file {
+                    "kheavyhash_kernel.cl" => include_str!("../csrc/opencl/kheavyhash_kernel.cl"),
+                    "blake3_kernel.cl" => include_str!("../csrc/opencl/blake3_kernel.cl"),
+                    "autolykos_kernel.cl" => include_str!("../csrc/opencl/autolykos_kernel.cl"),
+                    "kawpow_kernel.cl" => include_str!("../csrc/opencl/kawpow_kernel.cl"),
+                    "ethash_kernel.cl" => include_str!("../csrc/opencl/ethash_kernel.cl"),
+                    _ => bail!("Unknown kernel file: {kernel_file} (not on disk and not embedded)"),
+                };
+                println!("auxpow_gpu_opencl using embedded kernel={kernel_file}");
+                embedded.to_string()
+            }
+        };
 
         let mut prog_builder = ProgramBuilder::new();
         prog_builder.src(src);
