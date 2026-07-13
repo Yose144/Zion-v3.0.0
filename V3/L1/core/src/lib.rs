@@ -243,6 +243,13 @@ impl BlockCandidate {
             "verushash" | "randomx" => {
                 zion_cosmic_harmony::deeksha_lite::deeksha_lite(&header_bytes, self.nonce)
             }
+            // ZelHash (FLUX) — Equihash 125,4 with "ZelProof" personalization.
+            // Pool-side uses a simplified hash for target check; real validation
+            // is done by the upstream FLUX pool.
+            "zelhash" => {
+                let nonce_bytes = self.nonce.to_le_bytes();
+                zion_auxpow::hash_zelhash(&header_bytes, &nonce_bytes, &[])
+            }
             _ => cosmic_harmony_with_height(&header_bytes, self.nonce, self.height).data,
         }
     }

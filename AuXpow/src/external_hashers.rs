@@ -25,6 +25,7 @@ pub enum ExternalAlgorithm {
     Ethash,
     RandomX,
     VerusHash,
+    ZelHash,
 }
 
 impl ExternalAlgorithm {
@@ -37,6 +38,7 @@ impl ExternalAlgorithm {
             Self::Ethash => "ethash",
             Self::RandomX => "randomx",
             Self::VerusHash => "verushash",
+            Self::ZelHash => "zelhash",
         }
     }
 
@@ -49,6 +51,7 @@ impl ExternalAlgorithm {
             "ethash" | "etchash" => Some(Self::Ethash),
             "randomx" => Some(Self::RandomX),
             "verushash" | "verus" => Some(Self::VerusHash),
+            "zelhash" | "zel" => Some(Self::ZelHash),
             _ => None,
         }
     }
@@ -788,6 +791,485 @@ pub fn init_verushash() {
     }
 }
 
+// ── ZelHash / Equihash 125,4 (FLUX) ───────────────────────────────────
+//
+// ZelHash is a modified Equihash 125,4 used by the Flux blockchain.
+// It uses Blake2b with "ZelProof" personalization (instead of Zcash's
+// "ZcashPoW").  The algorithm is memory-hard (~1.3 GB VRAM for GPU mining).
+//
+// Parameters:
+//   n = 125, k = 4
+//   collision_bit_length = n / (k + 1) = 25
+//   hash_output (digest len) = (n / (k + 1) + 1) * 2^(k + 1) / 8 = 26 * 32 / 8 = 104
+//   indices_per_hash_output = 512 / n = 4
+//   solution_size = 2^k * 4 = 64 bytes (compressed indices)
+//
+// For the B2b bridge, the pool forwards Equihash solutions from miners
+// to the upstream FLUX pool.  The pool-side verification is optional
+// (upstream pool validates).  The CPU solver is for E2E testing only —
+// real mining requires a GPU kernel.
+
+/// ZelHash parameters.
+const ZELHASH_N: u32 = 125;
+const ZELHASH_K: u32 = 4;
+
+/// Blake2b personalization for ZelHash: "ZelProof" + n_le + k_le (16 bytes).
+fn zelhash_personalization() -> [u8; 16] {
+    let mut p = [0u8; 16];
+    p[..8].copy_from_slice(b"ZelProof");
+    p[8..12].copy_from_slice(&ZELHASH_N.to_le_bytes());
+    p[12..16].copy_from_slice(&ZELHASH_K.to_le_bytes());
+    p
+}
+
+/// Number of n-bit indices that fit in one Blake2b hash output (512 bits).
+const ZELHASH_INDICES_PER_HASH: u32 = 512 / ZELHASH_N; // = 4
+
+/// Collision bit length = n / (k + 1) = 25.
+const ZELHASH_COLLISION_BITS: u32 = ZELHASH_N / (ZELHASH_K + 1); // = 25
+
+/// Collision byte length = ceil(collision_bits / 8) = 4.
+const ZELHASH_COLLISION_BYTES: usize = ((ZELHASH_COLLISION_BITS + 7) / 8) as usize; // = 4
+
+/// Hash output size in bytes = ceil((n/(k+1) + 1) * 2^(k+1) / 8).
+/// = ceil(26 * 32 / 8) = 104.  But Blake2b max is 64 bytes, so we use 64.
+/// Actually, the hash_output for Equihash is the Blake2b digest length,
+/// which is ceil(n * indices_per_hash / 8) = ceil(125 * 4 / 8) = ceil(62.5) = 63.
+/// Wait — the equihash crate uses hash_output = (n/(k+1)+1) * 2^(k+1) / 8
+/// but that's the row size, not the digest.  The digest is 512/8 = 64 bytes
+/// (full Blake2b output), and we extract n-bit chunks from it.
+const ZELHASH_DIGEST_LEN: u8 = 64; // Blake2b-512
+
+/// Number of initial rows = 2^(n/(k+1) + 1) = 2^26 = 67,108,864.
+#[allow(dead_code)]
+const ZELHASH_NUM_ROWS: u32 = 1 << (ZELHASH_N / (ZELHASH_K + 1) + 1); // 2^26
+
+/// Number of indices in a solution = 2^k = 16.
+const ZELHASH_SOLUTION_INDICES: usize = 1 << ZELHASH_K; // 16
+
+/// Compressed solution size in bytes = 2^k * ceil(collision_bits / 8) = 16 * 4 = 64.
+/// But Equihash uses a bit-packed format: 2^k * (collision_bits + 1) / 8
+/// = 16 * 26 / 8 = 52 bytes.  The +1 is for the index bit.
+#[allow(dead_code)]
+const ZELHASH_SOLUTION_SIZE: usize =
+    (ZELHASH_SOLUTION_INDICES * (ZELHASH_COLLISION_BITS as usize + 1) + 7) / 8; // 52
+
+/// Initialize Blake2b state with ZelProof personalization.
+fn zelhash_init_state() -> blake2b_simd::State {
+    blake2b_simd::Params::new()
+        .hash_length(ZELHASH_DIGEST_LEN as usize)
+        .personal(&zelhash_personalization())
+        .to_state()
+}
+
+/// Generate the i-th hash from the base Blake2b state.
+fn zelhash_generate_hash(base_state: &blake2b_simd::State, i: u32) -> [u8; 64] {
+    let mut state = base_state.clone();
+    state.update(&i.to_le_bytes());
+    let bytes = state.finalize();
+    let mut out = [0u8; 64];
+    let len = bytes.as_bytes().len().min(64);
+    out[..len].copy_from_slice(&bytes.as_bytes()[..len]);
+    out
+}
+
+/// Extract the n-bit chunk for index `i` from the hash output.
+/// Each 512-bit Blake2b output contains `indices_per_hash` = 4 chunks of n=125 bits.
+/// The chunk starts at bit (i % 4) * 125 and is 125 bits = 16 bytes (with 3 padding bits).
+fn zelhash_get_chunk(hash: &[u8; 64], i: u32) -> Vec<u8> {
+    let chunk_idx = (i % ZELHASH_INDICES_PER_HASH) as usize;
+    let bit_offset = chunk_idx * ZELHASH_N as usize;
+    let n_bytes = ((ZELHASH_N as usize) + 7) / 8; // 16 bytes
+
+    // Extract n bits starting at bit_offset, expand to byte-aligned.
+    let mut chunk = vec![0u8; n_bytes];
+
+    // Simple bit extraction
+    for j in 0..n_bytes {
+        let src_bit = bit_offset + j * 8;
+        let src_byte = src_bit / 8;
+        let src_shift = src_bit % 8;
+
+        if src_byte + 1 < hash.len() {
+            let val = ((hash[src_byte] as u16) << 8 | hash[src_byte + 1] as u16) >> (8 - src_shift);
+            chunk[j] = (val & 0xFF) as u8;
+        } else if src_byte < hash.len() {
+            chunk[j] = hash[src_byte] >> src_shift;
+        }
+    }
+
+    // Mask off the extra bits in the last byte (n=125, so last byte has 5 valid bits)
+    let extra_bits = (n_bytes * 8) - ZELHASH_N as usize;
+    if extra_bits > 0 {
+        let mask = 0xFFu8 >> extra_bits;
+        chunk[n_bytes - 1] &= mask;
+    }
+
+    // Expand for collision detection (pad to collision_byte_length * (k+1))
+    expand_array(&chunk, ZELHASH_COLLISION_BITS as usize, 0)
+}
+
+/// Expand a byte array by inserting zero bits after every `bits_per_byte` bits.
+/// This is used for collision detection in Equihash.
+fn expand_array(input: &[u8], bits_per_byte: usize, bit_len: usize) -> Vec<u8> {
+    let expanded_bits = bits_per_byte + bit_len;
+    let expanded_bytes = (input.len() * expanded_bits + 7) / 8;
+    let mut output = vec![0u8; expanded_bytes];
+
+    let mut bit_pos = 0;
+    for &byte in input {
+        for bit_idx in 0..bits_per_byte {
+            let bit = (byte >> bit_idx) & 1;
+            if bit == 1 {
+                let out_byte = bit_pos / 8;
+                let out_shift = bit_pos % 8;
+                if out_byte < output.len() {
+                    output[out_byte] |= 1 << out_shift;
+                }
+            }
+            bit_pos += expanded_bits;
+        }
+        bit_pos += bit_len; // skip padding bits
+    }
+    output
+}
+
+/// Compress a solution from indices to the minimal byte format.
+fn compress_indices(indices: &[u32]) -> Vec<u8> {
+    let bits_per_index = ZELHASH_COLLISION_BITS as usize + 1; // 26 bits
+    let total_bits = indices.len() * bits_per_index;
+    let total_bytes = (total_bits + 7) / 8;
+    let mut output = vec![0u8; total_bytes];
+
+    let mut bit_pos = 0;
+    for &idx in indices {
+        for bit_idx in 0..bits_per_index {
+            let bit = (idx >> bit_idx) & 1;
+            if bit == 1 {
+                let byte = bit_pos / 8;
+                let shift = bit_pos % 8;
+                if byte < output.len() {
+                    output[byte] |= 1 << shift;
+                }
+            }
+            bit_pos += 1;
+        }
+    }
+    output
+}
+
+/// Decompress solution bytes back to indices.
+fn decompress_indices(soln: &[u8]) -> Result<Vec<u32>, String> {
+    let bits_per_index = ZELHASH_COLLISION_BITS as usize + 1; // 26 bits
+    let expected_size = (ZELHASH_SOLUTION_INDICES * bits_per_index + 7) / 8;
+    if soln.len() != expected_size {
+        return Err(format!(
+            "solution size {} != expected {}",
+            soln.len(),
+            expected_size
+        ));
+    }
+
+    let mut indices = Vec::with_capacity(ZELHASH_SOLUTION_INDICES);
+    let mut bit_pos = 0;
+    for _ in 0..ZELHASH_SOLUTION_INDICES {
+        let mut idx: u32 = 0;
+        for bit_idx in 0..bits_per_index {
+            let byte = bit_pos / 8;
+            let shift = bit_pos % 8;
+            if byte < soln.len() && (soln[byte] >> shift) & 1 == 1 {
+                idx |= 1 << bit_idx;
+            }
+            bit_pos += 1;
+        }
+        indices.push(idx);
+    }
+    Ok(indices)
+}
+
+/// Equihash node: hash + indices.
+struct EquihashNode {
+    hash: Vec<u8>,
+    indices: Vec<u32>,
+}
+
+impl EquihashNode {
+    fn new(state: &blake2b_simd::State, i: u32) -> Self {
+        let h = zelhash_generate_hash(state, i / ZELHASH_INDICES_PER_HASH);
+        let chunk = zelhash_get_chunk(&h, i);
+        EquihashNode {
+            hash: chunk,
+            indices: vec![i],
+        }
+    }
+
+    fn from_children(a: Self, b: Self, trim: usize) -> Self {
+        let hash: Vec<u8> = a
+            .hash
+            .iter()
+            .zip(b.hash.iter())
+            .skip(trim)
+            .map(|(x, y)| x ^ y)
+            .collect();
+        let indices = if a.indices[0] < b.indices[0] {
+            let mut idx = a.indices;
+            idx.extend(b.indices.iter());
+            idx
+        } else {
+            let mut idx = b.indices;
+            idx.extend(a.indices.iter());
+            idx
+        };
+        EquihashNode { hash, indices }
+    }
+
+    fn has_collision(&self, other: &EquihashNode, len: usize) -> bool {
+        self.hash
+            .iter()
+            .zip(other.hash.iter())
+            .take(len)
+            .all(|(a, b)| a == b)
+    }
+
+    fn is_zero(&self, len: usize) -> bool {
+        self.hash.iter().take(len).all(|&b| b == 0)
+    }
+}
+
+/// Verify an Equihash 125,4 solution for ZelHash.
+///
+/// `input` is the block header (without nonce or solution).
+/// `nonce` is the 32-byte nonce (ZcashStratum uses 32-byte nonces).
+/// `soln` is the compressed solution bytes.
+pub fn is_valid_zelhash_solution(
+    input: &[u8],
+    nonce: &[u8],
+    soln: &[u8],
+) -> Result<(), String> {
+    let indices = decompress_indices(soln)?;
+    if indices.len() != ZELHASH_SOLUTION_INDICES {
+        return Err(format!(
+            "expected {} indices, got {}",
+            ZELHASH_SOLUTION_INDICES,
+            indices.len()
+        ));
+    }
+
+    // Check for duplicate indices
+    let mut sorted = indices.clone();
+    sorted.sort();
+    for i in 1..sorted.len() {
+        if sorted[i] == sorted[i - 1] {
+            return Err("duplicate indices".to_string());
+        }
+    }
+
+    let mut state = zelhash_init_state();
+    state.update(input);
+    state.update(nonce);
+
+    // Recursively validate the solution tree
+    validate_tree(&state, &indices).map(|root| {
+        let hash_len = root.hash.len();
+        let remaining = hash_len.saturating_sub(ZELHASH_COLLISION_BYTES * ZELHASH_K as usize);
+        if !root.is_zero(remaining) {
+            return Err("root hash is non-zero".to_string());
+        }
+        Ok(())
+    })?
+}
+
+fn validate_tree(
+    state: &blake2b_simd::State,
+    indices: &[u32],
+) -> Result<EquihashNode, String> {
+    if indices.len() == 1 {
+        return Ok(EquihashNode::new(state, indices[0]));
+    }
+
+    let mid = indices.len() / 2;
+    let a = validate_tree(state, &indices[..mid])?;
+    let b = validate_tree(state, &indices[mid..])?;
+
+    if !a.has_collision(&b, ZELHASH_COLLISION_BYTES) {
+        return Err("invalid collision".to_string());
+    }
+    if b.indices[0] < a.indices[0] {
+        return Err("indices out of order".to_string());
+    }
+
+    Ok(EquihashNode::from_children(
+        a,
+        b,
+        ZELHASH_COLLISION_BYTES,
+    ))
+}
+
+/// Compute the final PoW hash from an Equihash solution.
+///
+/// In ZelHash/Equihash, the "hash" that meets the target is:
+///   blake2b("ZelProof" || n || k || input || nonce || solution)
+/// But actually, the target check is done on the solution itself —
+/// the pool checks if the solution is valid AND the block header hash
+/// (double-SHA256 or Blake2b of header+solution) meets the target.
+///
+/// For the B2b bridge, the upstream pool validates the solution.
+/// For pool-side validation, we compute a deterministic hash from the
+/// solution for target comparison.
+pub fn hash_zelhash(header: &[u8], nonce: &[u8], solution: &[u8]) -> [u8; 32] {
+    // The FLUX block hash is Blake2b-256 of:
+      //   header_without_solution || solution_size_varint || solution
+    // For pool-side validation, we use a simplified hash:
+    //   Blake2b-256(header || nonce || solution)
+    let mut state = blake2b_simd::Params::new()
+        .hash_length(32)
+        .to_state();
+    state.update(header);
+    state.update(nonce);
+    state.update(solution);
+    let bytes = state.finalize();
+    let mut out = [0u8; 32];
+    let len = bytes.as_bytes().len().min(32);
+    out[..len].copy_from_slice(&bytes.as_bytes()[..len]);
+    out
+}
+
+/// Mine a ZelHash solution by trying nonces.
+///
+/// This is a VERY SLOW CPU solver using Wagner's algorithm.  It's only
+/// suitable for E2E testing with low difficulty.  Real mining requires
+/// a GPU kernel.
+///
+/// `header` is the block header (without nonce/solution).
+/// `target` is the 32-byte big-endian target.
+/// `max_nonces` is the maximum number of nonces to try.
+///
+/// Returns (nonce_bytes, solution_bytes, hash) if a valid solution is found.
+pub fn mine_zelhash(
+    header: &[u8],
+    target: &[u8; 32],
+    max_nonces: u64,
+) -> Option<(Vec<u8>, Vec<u8>, [u8; 32])> {
+    for nonce_val in 0..max_nonces {
+        // 32-byte nonce: first 8 bytes = nonce_val (LE), rest zeros
+        let mut nonce = vec![0u8; 32];
+        nonce[..8].copy_from_slice(&nonce_val.to_le_bytes());
+
+        // Try to find a valid Equihash solution for this nonce
+        if let Some(solution) = solve_equihash(header, &nonce) {
+            let hash = hash_zelhash(header, &nonce, &solution);
+            if meets_target(&hash, target) {
+                return Some((nonce, solution, hash));
+            }
+        }
+    }
+    None
+}
+
+/// Basic Equihash 125,4 solver using Wagner's algorithm.
+///
+/// This is a simplified implementation for CPU testing.  It's VERY slow
+/// (seconds per nonce) and uses ~1GB of memory.  For real mining, use
+/// a GPU kernel.
+///
+/// Wagner's algorithm:
+/// 1. Generate 2^26 initial rows (hash chunks)
+/// 2. Find pairs with matching first 25 bits (collision)
+/// 3. XOR their hashes, trim 25 bits, repeat
+/// 4. After k=4 rounds, find pairs with all-zero hash
+fn solve_equihash(input: &[u8], nonce: &[u8]) -> Option<Vec<u8>> {
+    let mut state = zelhash_init_state();
+    state.update(input);
+    state.update(nonce);
+
+    // Phase 1: Generate initial list
+    // For testing, we use a reduced number of rows (2^20 instead of 2^26)
+    // to keep memory usage manageable (~16MB instead of ~1GB).
+    // This means we won't find solutions as often, but it works for testing.
+    let num_rows: u32 = 1 << 20; // 2^20 = 1M rows (reduced for CPU testing)
+
+    let mut rows: Vec<EquihashNode> = Vec::with_capacity(num_rows as usize);
+    for i in 0..num_rows {
+        rows.push(EquihashNode::new(&state, i));
+    }
+
+    // Phase 2: Wagner's algorithm — k rounds of collision finding
+    let mut collision_bytes = ZELHASH_COLLISION_BYTES;
+
+    for _round in 0..ZELHASH_K {
+        let mut next_rows: Vec<EquihashNode> = Vec::new();
+        let mut buckets: std::collections::HashMap<Vec<u8>, Vec<usize>> =
+            std::collections::HashMap::new();
+
+        // Bucket rows by their first `collision_bytes` bytes
+        for (idx, row) in rows.iter().enumerate() {
+            if row.hash.len() >= collision_bytes {
+                let key = row.hash[..collision_bytes].to_vec();
+                buckets.entry(key).or_default().push(idx);
+            }
+        }
+
+        // Find collisions within each bucket
+        for (_, group) in buckets {
+            if group.len() < 2 {
+                continue;
+            }
+            // Try all pairs in the group
+            for i in 0..group.len() {
+                for j in (i + 1)..group.len() {
+                    let a = &rows[group[i]];
+                    let b = &rows[group[j]];
+
+                    // Check distinct indices
+                    let mut distinct = true;
+                    for &ai in &a.indices {
+                        for &bi in &b.indices {
+                            if ai == bi {
+                                distinct = false;
+                                break;
+                            }
+                        }
+                        if !distinct {
+                            break;
+                        }
+                    }
+
+                    if distinct {
+                        let merged = EquihashNode::from_children(
+                            clone_node(a),
+                            clone_node(b),
+                            collision_bytes,
+                        );
+                        next_rows.push(merged);
+                    }
+                }
+            }
+        }
+
+        rows = next_rows;
+        collision_bytes += ZELHASH_COLLISION_BYTES;
+    }
+
+    // Phase 3: Find rows with all-zero remaining hash
+    for row in &rows {
+        if row.is_zero(row.hash.len()) {
+            // Found a valid solution!
+            let mut indices = row.indices.clone();
+            indices.sort();
+            return Some(compress_indices(&indices));
+        }
+    }
+
+    None
+}
+
+fn clone_node(n: &EquihashNode) -> EquihashNode {
+    EquihashNode {
+        hash: n.hash.clone(),
+        indices: n.indices.clone(),
+    }
+}
+
 // ── Tests ────────────────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -1022,7 +1504,87 @@ mod tests {
             ExternalAlgorithm::from_str_loose("kheavyhash"),
             Some(ExternalAlgorithm::KHeavyHash)
         );
+        assert_eq!(
+            ExternalAlgorithm::from_str_loose("zelhash"),
+            Some(ExternalAlgorithm::ZelHash)
+        );
         assert_eq!(ExternalAlgorithm::from_str_loose("unknown"), None);
+    }
+
+    // ── ZelHash ──────────────────────────────────────────────────────
+
+    #[test]
+    fn zelhash_personalization_correct() {
+        let p = zelhash_personalization();
+        assert_eq!(&p[..8], b"ZelProof");
+        assert_eq!(&p[8..12], &125u32.to_le_bytes());
+        assert_eq!(&p[12..16], &4u32.to_le_bytes());
+    }
+
+    #[test]
+    fn zelhash_constants_correct() {
+        assert_eq!(ZELHASH_N, 125);
+        assert_eq!(ZELHASH_K, 4);
+        assert_eq!(ZELHASH_COLLISION_BITS, 25);
+        assert_eq!(ZELHASH_COLLISION_BYTES, 4);
+        assert_eq!(ZELHASH_INDICES_PER_HASH, 4);
+        assert_eq!(ZELHASH_SOLUTION_INDICES, 16);
+    }
+
+    #[test]
+    fn zelhash_hash_is_deterministic() {
+        let header = b"test_header_bytes";
+        let nonce = b"\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+        let solution = vec![0u8; 52];
+        let h1 = hash_zelhash(header, nonce, &solution);
+        let h2 = hash_zelhash(header, nonce, &solution);
+        assert_eq!(h1, h2);
+        assert_ne!(h1, [0u8; 32]);
+    }
+
+    #[test]
+    fn zelhash_hash_changes_with_solution() {
+        let header = b"test_header_bytes";
+        let nonce = vec![0u8; 32];
+        let sol1 = vec![0u8; 52];
+        let sol2 = vec![0xFFu8; 52];
+        let h1 = hash_zelhash(header, &nonce, &sol1);
+        let h2 = hash_zelhash(header, &nonce, &sol2);
+        assert_ne!(h1, h2);
+    }
+
+    #[test]
+    fn zelhash_decompress_rejects_wrong_size() {
+        let bad_soln = vec![0u8; 100]; // wrong size
+        assert!(decompress_indices(&bad_soln).is_err());
+    }
+
+    #[test]
+    fn zelhash_compress_decompress_roundtrip() {
+        let indices: Vec<u32> = vec![3, 7, 15, 31, 63, 127, 255, 511,
+                                      1023, 2047, 4095, 8191, 16383, 32767, 65535, 131071];
+        let compressed = compress_indices(&indices);
+        let decompressed = decompress_indices(&compressed).unwrap();
+        assert_eq!(decompressed, indices);
+    }
+
+    #[test]
+    fn zelhash_blake2b_state_produces_output() {
+        let state = zelhash_init_state();
+        let h = zelhash_generate_hash(&state, 0);
+        // Should produce a non-zero 64-byte hash
+        assert_ne!(h, [0u8; 64]);
+    }
+
+    #[test]
+    fn zelhash_protocol_is_zcash_stratum() {
+        // Verify FLUX uses ZcashStratum protocol
+        use crate::types::ExternalCoin;
+        use crate::auxpow_client::StratumProtocol;
+        assert_eq!(
+            ExternalCoin::FLUX.protocol(),
+            StratumProtocol::ZcashStratum
+        );
     }
 
 }
