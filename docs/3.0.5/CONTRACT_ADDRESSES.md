@@ -132,22 +132,30 @@ systemctl restart zion-warp
 
 ---
 
-## 4. Non-EVM Chains — 🔴 CONTRACTS CREATED, NOT DEPLOYED
+## 4. Non-EVM Chains — 🟡 1/9 DEPLOYED (Solana ✅)
 
 Kontrakty jsou v `V3/L2/bridge/contracts/non-evm/`. Po deploy doplň adresy níže.
 
-### Solana (SPL Token)
+### Solana (SPL Token) — ✅ DEPLOYED
 
 | Položka | Env Var | Hodnota | Status |
 |---------|---------|---------|--------|
-| **ZION mint address** | `WARP_SOL_ZION_MINT` | `<base58 mint pubkey>` | 🔴 Placeholder |
-| **Bridge program ID** | `WARP_SOL_BRIDGE_PROGRAM` | `<base58 program id>` | 🔴 Placeholder |
+| **ZION mint address** | `WARP_SOL_ZION_MINT` | `HgfQZpH2JAqPdR3PcP4dEE8WRhznXh1QhJBiiwcHfT8H` | ✅ Live |
+| **SPL Token program** | — | `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA` | ✅ Standard SPL |
+| **Mint authority** | — | `CwUgTMF4kSydPUJYeQ6itRuq3iaXeJ9XTefBrBQbLWTe` (Exodus) | ✅ (TODO: transfer to WARP multisig) |
+| **Bridge program ID** | `WARP_SOL_BRIDGE_PROGRAM` | `<base58 program id>` | 🔴 Pending (custom Anchor program) |
 | **Solana RPC** | `WARP_SOL_RPC` | `https://api.mainnet-beta.solana.com` | ✅ Default |
 | **Relay key** | `WARP_SOL_RELAY_KEY` | base58 Ed25519 keypair | 🔴 Not set |
 
-**Kontrakt:** `V3/L2/bridge/contracts/non-evm/solana/zion_spl_token.rs`
-**Deploy:** `anchor deploy --provider.cluster mainnet`
+**Deploy TX:** `425qNNcDyWAGCMmEc7D5mJri2wxVxkJmmBGzqfVM7JRNC8PrZa81ASCe3NpqrRhmfzBVyHUYxZKANfvUE3xnTZKp`
+**Deploy date:** 2026-07-13
+**Supply:** 1,000,000,000 ZION (1B minted to deployer token account)
+**Token account:** `43RFgYnvmUPbaaQJtyoRpVs3tN9sgp4PxHGe3WkR4Rfb`
 **Decimals:** 6
+
+**Kontrakt:** `V3/L2/bridge/contracts/non-evm/solana/zion_spl_token.rs` (Anchor program — pending deploy)
+**Current:** Standard SPL Token (funguje pro transfers, ale nemá bridge mint/burn events)
+**TODO:** Deploy custom Anchor program pro WARP bridge integration (mint/burn events + validator quorum)
 
 ---
 
@@ -362,7 +370,7 @@ Kontrakty jsou v `V3/L2/bridge/contracts/non-evm/`. Po deploy doplň adresy ní�
 4. **BTC WARP HTLC** — vygeneruj 5-of-5 multisig P2WSH address, nastav `WARP_BTC_HTLC_ADDRESS` + `WARP_BTC_RELAY_KEY`
 5. **ZionDex Phase 3+4 contracts na Base** — `forge script DeployBase.s.sol --rpc-url base --broadcast` (needs ETH on deployer `0xA737B512...`)
 6. **Solver daemon na Edge** — `cargo build --release` v `ZionDex/solver/`, provision solver key, systemd service na port 8455
-7. **Solana** — `anchor deploy`, nastav `WARP_SOL_ZION_MINT` + `WARP_SOL_BRIDGE_PROGRAM` + `WARP_SOL_RELAY_KEY`
+7. ~~**Solana** — `anchor deploy`, nastav `WARP_SOL_ZION_MINT` + `WARP_SOL_BRIDGE_PROGRAM` + `WARP_SOL_RELAY_KEY`~~ ✅ Done (standard SPL Token, mint `HgfQZpH2JAqPdR3PcP4dEE8WRhznXh1QhJBiiwcHfT8H`). TODO: deploy custom Anchor program pro bridge events + transfer mint authority to WARP multisig
 8. **Tron** — `tronbox migrate --network mainnet`, nastav `WARP_TRON_ZION_CONTRACT` + `WARP_TRON_RELAY_KEY`
 9. **Stellar** — `python3 setup_zion_asset.py --network mainnet`, nastav `WARP_STELLAR_ZION_ISSUER` + `WARP_STELLAR_BRIDGE_ACCOUNT` + `WARP_STELLAR_RELAY_KEY`
 10. **Cardano** — `cardano-cli transaction mint ...`, nastav `WARP_CARDANO_POLICY_ID` + `WARP_CARDANO_POLICY_SCRIPT` + `BLOCKFROST_PROJECT_ID` + payment/policy keys

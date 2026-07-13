@@ -16,17 +16,17 @@ fn zion_mint(cluster: &str) -> Option<&'static str> {
     // Contract source: V3/L2/bridge/contracts/non-evm/solana/zion_spl_token.rs
     // Deployment steps: V3/L2/bridge/contracts/non-evm/solana/README.md
     //
-    // After deploying the Anchor program and calling `initialize`, replace
-    // the placeholder addresses below with the real ZION mint PDA address.
-    // The mint PDA is derived from seeds [b"zion_mint"].
+    // DEPLOYED 2026-07-13: Standard SPL Token (TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA)
+    // Mint authority: CwUgTMF4kSydPUJYeQ6itRuq3iaXeJ9XTefBrBQbLWTe (Exodus wallet)
+    // TODO: Transfer mint authority to WARP 5/5 multisig PDA after validator setup.
+    // TODO: Deploy custom Anchor program (zion_spl_token.rs) for bridge mint/burn
+    //       events + validator quorum. Standard SPL Token works for basic transfers
+    //       but doesn't emit BridgeBurnEvent for WARP relay tracking.
     match cluster {
         "mainnet-beta" => {
-            // TODO: Replace with real mainnet ZION mint after deployment.
-            // Deploy the Anchor program (zion_spl_token.rs) and call initialize
-            // with the 5 WARP validator public keys. The mint PDA address
-            // will be the output of `anchor keys list` for the zion_mint account.
-            warn!("[WARP][solana] mainnet-beta ZION mint is a placeholder — deploy contract from V3/L2/bridge/contracts/non-evm/solana/ and update this address");
-            Some("ZIONmintXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+            // ✅ DEPLOYED — ZION SPL Token on Solana mainnet
+            // TX: 425qNNcDyWAGCMmEc7D5mJri2wxVxkJmmBGzqfVM7JRNC8PrZa81ASCe3NpqrRhmfzBVyHUYxZKANfvUE3xnTZKp
+            Some("HgfQZpH2JAqPdR3PcP4dEE8WRhznXh1QhJBiiwcHfT8H")
         }
         "devnet" => {
             // TODO: Replace with real devnet ZION mint after test deployment.
