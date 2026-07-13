@@ -268,11 +268,9 @@ fn generate_autolykos_table(header: &[u8], height: u32, table_size: usize) -> Ve
     h.update(header);
     let seed: [u8; 32] = h.finalize().into();
 
-    let mut table = vec![0u64; table_size];
-    for i in 0..table_size {
-        table[i] = gen_autolykos_element(i as u64, &seed, height);
-    }
-    table
+    (0..table_size)
+        .map(|i| gen_autolykos_element(i as u64, &seed, height))
+        .collect()
 }
 
 /// Ensure the Autolykos v2 table for `(height, table_size)` is present in the
@@ -280,10 +278,9 @@ fn generate_autolykos_table(header: &[u8], height: u32, table_size: usize) -> Ve
 /// before building the kernel (and before borrowing `self` for the ProQue).
 fn ensure_autolykos_table(header: &[u8], height: u32, table_size: usize) {
     let mut cache = autolykos_table_cache().lock().unwrap();
-    if !cache.contains_key(&(height, table_size)) {
-        let table = generate_autolykos_table(header, height, table_size);
-        cache.insert((height, table_size), table);
-    }
+    cache
+        .entry((height, table_size))
+        .or_insert_with(|| generate_autolykos_table(header, height, table_size));
 }
 
 impl GpuMiner {
@@ -999,6 +996,56 @@ mod tests {
                 kernels.iter().any(|k| k.contains("kheavyhash")),
                 "kheavyhash kernel should exist"
             );
+            assert!(
+                kernels.iter().any(|k| k.contains("autolykos")),
+                "autolykos kernel should exist"
+            );
         }
+    }
+
+    /// Verify the host BLAKE2b-256 (used by Autolykos v2 table generation)
+    /// against the RFC 7693 test vector for "abc".
+    #[test]
+    fn autolykos_blake2b256_known_vector() {
+        use blake2::digest::{Update, VariableOutput};
+        let mut hasher = blake2::Blake2bVar::new(32).unwrap();
+        hasher.update(b"abc");
+        let mut out = [0u8; 32];
+        hasher.finalize_variable(&mut out).unwrap();
+        // BLAKE2b-256("abc") per RFC 7693 / official test vectors
+        // (cross-checked against Python hashlib.blake2b).
+        let expected: [u8; 32] = [
+            0xbd, 0xdd, 0x81, 0x3c, 0x63, 0x42, 0x39, 0x72, 0x31, 0x71, 0xef, 0x3f, 0xee, 0x98,
+            0x57, 0x9b, 0x94, 0x96, 0x4e, 0x3b, 0xb1, 0xcb, 0x3e, 0x42, 0x72, 0x62, 0xc8, 0xc0,
+            0x68, 0xd5, 0x23, 0x19,
+        ];
+        assert_eq!(out, expected, "BLAKE2b-256(abc) must match RFC 7693 vector");
+    }
+
+    /// Autolykos v2 table generation must be deterministic for a fixed
+    /// header + height, and elements must depend on the index.
+    #[test]
+    fn autolykos_table_deterministic() {
+        let header = [42u8; 32];
+        let t0 = generate_autolykos_table(&header, 1_000_000, 1024);
+        let t1 = generate_autolykos_table(&header, 1_000_000, 1024);
+        assert_eq!(t0, t1, "table must be deterministic");
+        // Different indices produce different elements (overwhelmingly likely).
+        assert_ne!(t0[0], t0[1], "neighbouring elements should differ");
+        // Different height produces a different table.
+        let t2 = generate_autolykos_table(&header, 1_000_001, 1024);
+        assert_ne!(t0, t2, "table must depend on height");
+    }
+
+    /// `gen_autolykos_element` returns a u64 derived from BLAKE2b-256.
+    #[test]
+    fn autolykos_element_is_u64() {
+        use sha2::Digest;
+        let mut h = sha2::Sha256::new();
+        h.update(&[1u8; 32]);
+        let seed: [u8; 32] = h.finalize().into();
+        let e = gen_autolykos_element(7, &seed, 417_792);
+        // Should be deterministic.
+        assert_eq!(e, gen_autolykos_element(7, &seed, 417_792));
     }
 }
