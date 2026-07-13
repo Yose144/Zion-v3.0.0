@@ -57,7 +57,10 @@ pub fn hash_candidate(candidate: &BlockCandidate, algorithm: &str) -> [u8; 32] {
 
         // ── External algorithms: kHeavyHash (KAS) ────────────────
         // For KAS jobs the pool sends the block timestamp in the `height` field.
+        // The pre_pow_hash is in the first 32 bytes of the header (the pool
+        // pads the 32-byte pre_pow_hash to 80 bytes for the MiningHeader).
         "kheavyhash" | "kheavy" => {
+            let pre_pow_hash = &header_bytes[..32];
             #[cfg(feature = "native-kheavyhash")]
             {
                 // Native FFI currently lacks a timestamp argument; fall back to
@@ -65,7 +68,7 @@ pub fn hash_candidate(candidate: &BlockCandidate, algorithm: &str) -> [u8; 32] {
             }
             #[allow(unreachable_code)]
             {
-                zion_auxpow::hash_kheavyhash(&header_bytes, height, nonce)
+                zion_auxpow::hash_kheavyhash(pre_pow_hash, height, nonce)
             }
         }
 
