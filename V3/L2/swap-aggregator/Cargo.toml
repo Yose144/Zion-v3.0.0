@@ -43,7 +43,7 @@ tower = "0.4"
 zion-bridge = { path = "../bridge" }
 
 # Unique IDs
-ulid = "1"
+ulid = "2"
 
 [dev-dependencies]
 tokio-test = "0.4"
