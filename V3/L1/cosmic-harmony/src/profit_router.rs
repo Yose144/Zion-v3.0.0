@@ -137,9 +137,9 @@ impl ExternalCoin {
     /// Uses 2miners where available (BTC payout), falls back to ZPool/WoolyPooly.
     pub fn default_pool(self) -> &'static str {
         match self {
-            Self::DCR => "dcr.2miners.com:3333",
-            Self::ALPH => "alph.2miners.com:4545",
-            Self::KAS => "kas.2miners.com:4444",
+            Self::DCR => "pool.woolypooly.com:3152",
+            Self::ALPH => "pool.woolypooly.com:3106",
+            Self::KAS => "kas.2miners.com:2020",
             Self::ERG => "erg.2miners.com:3056",
             Self::RVN => "rvn.2miners.com:6060",
             Self::ETC => "etc.2miners.com:1010",
@@ -527,7 +527,7 @@ mod tests {
     fn dcr_uses_blake3() {
         assert_eq!(ExternalCoin::DCR.algorithm(), "blake3");
         assert!(ExternalCoin::DCR.is_blake3());
-        assert_eq!(ExternalCoin::DCR.default_pool(), "dcr.2miners.com:3333");
+        assert_eq!(ExternalCoin::DCR.default_pool(), "pool.woolypooly.com:3152");
     }
 
     #[test]
@@ -577,8 +577,8 @@ mod tests {
         let profile = CoinProfile::default_for(ExternalCoin::DCR);
         assert_eq!(profile.ticker, "DCR");
         assert_eq!(profile.algorithm, "blake3");
-        assert_eq!(profile.pool_host, "dcr.2miners.com");
-        assert_eq!(profile.pool_port, 3333);
+        assert_eq!(profile.pool_host, "pool.woolypooly.com");
+        assert_eq!(profile.pool_port, 3152);
         assert_eq!(profile.protocol, StratumProtocol::Stratum);
         assert!(profile.enabled);
     }
@@ -680,7 +680,7 @@ mod tests {
     #[test]
     fn nicehash_blake3_coin_falls_back() {
         let pool = ExternalCoin::DCR.best_pool(PoolPreference::NiceHash, "eu");
-        assert_eq!(pool, "dcr.2miners.com:3333");
+        assert_eq!(pool, "pool.woolypooly.com:3152");
     }
 
     #[test]
