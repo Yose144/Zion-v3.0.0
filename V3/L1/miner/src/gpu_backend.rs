@@ -11,6 +11,7 @@
 #![allow(dead_code)]
 
 use anyhow::Result;
+use zion_auxpow::external_hashers::hash_blake3;
 use zion_core::{DifficultyTarget, MiningHeader, MiningJob, MiningSolution};
 
 #[cfg(feature = "gpu-opencl")]
@@ -474,7 +475,13 @@ pub fn gpu_scan_job(
                 };
 
                 // ── CPU audit hash (independent path, diagnostic only) ────
-                let cpu_hash = candidate.hash_with_algorithm(algorithm);
+                // For DCR the GPU scans the full 180-byte raw header; the CPU
+                // audit must hash the same bytes to be comparable.
+                let cpu_hash = if use_raw && algorithm == "blake3_dcr" {
+                    hash_blake3(raw_header_bytes, 0, *nonce)
+                } else {
+                    candidate.hash_with_algorithm(algorithm)
+                };
                 let is_mismatch = cpu_hash != *gpu_hash;
                 let cpu_above_target = !job.target.allows(&cpu_hash);
                 let gpu_above_target = !job.target.allows(gpu_hash);

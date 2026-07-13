@@ -1,0 +1,313 @@
+# Bajka o zahradě, která se naučila počítat
+## ZION TerraNova — whitepaper vyprávěný jako pohádka pro dospělé
+
+*Verze 5 · „Fable Edition“ · v3.0.5 Mainnet Beta · červenec 2026*
+
+> *Každá pravdivá bajka má dvě vrstvy: příběh, který si zapamatuje dítě,*
+> *a pravdu, kterou si ověří dospělý.*
+> *Tento dokument má obě. Příběh čti nahlas. Kroniku čti s kalkulačkou.*
+
+---
+
+### Jak číst tuto knihu
+
+Bajka běží v kapitolách. Po každé kapitole následuje **Zápis v kronice** — suchá, ověřitelná fakta, která příběhu odpovídají. Nic v kronice není básnická licence. Všechno v ní lze najít v kódu, na řetězci nebo v auditních záznamech.
+
+Kdo chce jen příběh, ať čte kurzívu srdce.
+Kdo chce jen čísla, ať čte kroniku.
+Kdo chce ZION celý, ať čte obojí — protože ZION je právě to: **mýtus a kód, které se odmítly rozejít.**
+
+---
+
+# Kapitola první — Město, kde řeka tekla do kopce
+
+Bylo jednou jedno město a tím městem protékala řeka peněz.
+
+Řeky obvykle tečou dolů, k polím a k lidem. Ale tahle řeka byla postavena chytře: tekla do kopce, k zámku. Čím víc lidé dole pracovali, tím víc vody se hromadilo nahoře. Ti na zámku tomu říkali *ekonomika*. Ti dole tomu říkali *čtvrtek*.
+
+Občas někdo dole postavil vlastní studnu a prohlásil: „Tohle je nová řeka! Tahle poteče spravedlivě!" A lidé se sběhli a radovali se. Jenže pak se ukázalo, že stavitel studny si nechal první vodu pro sebe, prodal ji svým přátelům za pár kapek, a když se studna naplnila důvěrou ostatních, prodali všechno a odešli stavět další studnu do vedlejšího města.
+
+Tolik studní. Tolik slibů. A řeka pořád tekla do kopce.
+
+Až jednoho dne seděl na kraji města zahradník a nedělal nic. Neprotestoval. Nestavěl studnu. Jen se díval na vyschlou zem a v tom tichu mu přišla otázka, která je začátkem každého skutečného příběhu:
+
+*Co kdyby voda neměla majitele — jen pravidla, která nikdo neumí ohnout?*
+
+A protože byl zahradník, nenapadla ho banka ani revoluce.
+
+Napadlo ho **semeno**.
+
+---
+
+> ### 📜 Zápis v kronice — Semeno
+>
+> Semeno se jmenuje **ZION TerraNova**. Je to nativní Layer-1 blockchain napsaný od nuly v jazyce Rust.
+>
+> - **Fair launch:** žádné ICO, žádný předprodej, žádné tokeny pro zakladatele schované v kódu. První vodu nedostal nikdo — každý ZION musí být vytěžen prací nebo získán od někoho, kdo ho vytěžil.
+> - **Hard cap:** 144 000 000 000 ZION. Ne jeden navíc. Zapsáno v `emission.rs` jako konstanta, ne jako slib.
+> - **Stav dnes:** Mainnet Beta, protokol `zion-v3-node/3.0.5`, veřejný launch cíl 31. 12. 2026.
+> - **Licence:** MIT. Kdokoli smí semeno prozkoumat, zasadit vlastní, nebo dokázat, že je shnilé. Zatím to nikdo nedokázal — a přesně proto je otevřenost silnější než reklama.
+
+---
+
+# Kapitola druhá — Čtyři poutníci u brány
+
+Semeno ale nestačí. Zahradník to věděl — viděl už příliš mnoho semen, ze kterých vyrostl plevel s hezkým jménem.
+
+A tak k jeho zahradě přišli, jak už to v bajkách bývá, čtyři poutníci. Každý nesl jednu knihu a jednu otázku.
+
+**První nesl oheň a knihu Genesis.** Zeptal se: *„Proč sázíš?"* — Protože semeno zasazené ze strachu vyroste v plot a semeno zasazené z chamtivosti vyroste v past. Jen semeno zasazené se záměrem sloužit životu má šanci vyrůst ve strom, pod kterým si sedne i cizinec.
+
+**Druhá nesla vítr a knihu Kvantové revoluce.** Zeptala se: *„Víš, proč umřely ty zahrady před tebou?"* — A ukázala mu vzorec: každá z nich odměňovala toho, kdo bere, a doufala, že dávání přijde samo. Nepřišlo nikdy. Vítr nelže: co je nemocné, to pojmenuje.
+
+**Třetí nesl vodu a knihu Ekam Deeksha.** Neptal se na zahradu. Zeptal se: *„A co ty? Až zahrada poroste a lidé ti začnou říkat pane zahradníku — kdo z tebe zbyde?"* — Protože voda smývá masky. Revoluce, která nepromění revolucionáře, jen přemaluje zámek.
+
+**Čtvrtá nesla hlínu a knihu Terra Nova.** Ta řekla jen: *„Ukaž ruce."* — Protože vize se pozná podle mozolů. Nová Země není místo, kam se utíká. Je to místo, které se kope, zalévá, prohrává a znovu sází.
+
+Zahradník všechny čtyři knihy položil pod semeno jako čtyři kořeny.
+
+A od toho dne platí v zahradě pravidlo: **kdo cituje jen jednu knihu, tomu nevěř.** Oheň bez hlíny je požár. Hlína bez ohně je bláto. Voda bez větru zahnívá. Vítr bez vody jen víří prach.
+
+---
+
+> ### 📜 Zápis v kronice — Čtyři knihy
+>
+> Osu projektu tvoří čtyři skutečné knihy komplexu ZION:
+>
+> | Kniha | Živel | Otázka | Co dává |
+> |---|---|---|---|
+> | **Genesis** | oheň | Proč stavíme? | záměr, legitimitu |
+> | **Kvantová revoluce** | vzduch | Co bylo rozbité? | diagnózu extrakce |
+> | **Ekam Deeksha** | voda | Kdo staví? | proměnu stavitele |
+> | **Terra Nova** | země | Jak to postavit? | architekturu, praxi |
+>
+> Nejsou to marketingové svazky. Jsou to čtyři zkoušky, kterými musí projít každé rozhodnutí v síti — od commitu po grant.
+
+---
+
+# Kapitola třetí — Strom, který platí za vlastní stín
+
+Semeno vzešlo. A rostlo jinak než všechno, co město znalo.
+
+Každou minutu — přesně, jako tep — vyrostl stromu jeden letokruh. A v každém letokruhu se urodilo přesně odměřené ovoce. Ne podle nálady krále. Ne podle hlasování rady. Podle pravidla vypáleného do dřeva.
+
+A teď to nejpodivnější, kvůli čemu se do zahrady začali sjíždět lidé z dalekých měst:
+
+**Strom se dělil sám.**
+
+Z každé úrody dal devět dílů z deseti tomu, kdo strom hlídal a zaléval — protože práce se má ctít, ne oslavovat řečmi. Ale desetinu poslal pryč, ven ze zahrady, dřív než se jí kdokoli stačil dotknout. Půlku té desetiny hladovým. Půlku dětem, které se ještě nenarodily. A jedno jediné procento spálil v ohni — aby ani správce zahrady nikdy nezbohatl jen z toho, že stojí u brány.
+
+„To je naivní," smáli se kupci. „Strom, který rozdává, zchudne."
+
+„Ne," řekl zahradník. „Strom, který rozdává **podle pravidla**, nezchudne nikdy. Zchudne strom, který rozdává podle nálady — protože nálada se dá koupit."
+
+A ještě jednu moudrost měl strom v sobě: nerostl překotně. Každých deset let zpomalil o pětinu — klidně, předvídatelně, bez paniky. Žádné náhlé půlení úrody, po kterém hlídači v noci utíkají k jinému stromu. A na konci té dlouhé křivky, za sto let, mu zůstane věčná malá úroda — dost na to, aby ho vždycky mělo smysl hlídat.
+
+Strom nebyl štědrý. Strom byl **spočítaný**. A právě proto se mu dalo věřit.
+
+---
+
+> ### 📜 Zápis v kronice — Ekonomika stromu
+>
+> | Parametr | Hodnota | Kde je zapsán |
+> |---|---|---|
+> | Čas bloku (letokruh) | 60 sekund | konsensus L1 |
+> | Základní odměna | 5 400,067 ZION | `BASE_REWARD` |
+> | Rozdělení úrody | **89 %** miner · **5 %** humanitární fond · **5 %** fond Issobella · **1 %** protokolový burn | `fee_split()` v `emission.rs` — vynuceno konsensem, nezměnitelné hlasováním |
+> | Emisní křivka | **Decade Decay**: −20 % každých 5 256 000 bloků (~10 let) | `emission.rs` |
+> | Věčná úroda | tail emission **724,784723 ZION/blok** od ~2126, navždy | `TAIL_REWARD` |
+> | Poplatky za transakce | 100 % spáleny | deflační mechanismus |
+> | Jednotka | 1 ZION = 1 000 000 flowers (6 desetinných míst) | po decimal forku 3.0.3 |
+> | Premine | 16,78 mld. ZION ve 14 transparentních on-chain výstupech | genesis blok, veřejně dohledatelné |
+>
+> On-chain vynucení splitu je živé: coinbase každého bloku má čtyři výstupy s deterministickým poměrem 89/5/5/1 a uzly blok s jiným poměrem odmítnou.
+
+---
+
+# Kapitola čtvrtá — Zámek posílá stroje
+
+Zámek si stromu dlouho nevšímal. Pak si všiml — a udělal to, co zámky dělají vždycky: poslal stroje.
+
+Obrovské, jednoúčelové stroje, které umí jedinou věc, ale dělají ji milionkrát rychleji než člověk. V jiných zahradách to fungovalo: stroje vytlačily lidi, hlídání stromů se přestěhovalo do tří skladů na světě, a z „řeky bez majitele" se zase stala řeka do kopce — jen s novým erbem.
+
+Ale tenhle strom měl v kůře zvláštní hádanku.
+
+Nechtěl jen rychlost. Chtěl **paměť**. Kdo chtěl utrhnout ovoce, musel projít bludištěm, které se nedá zapamatovat dopředu — muselo se projít celé, krok za krokem, a každý krok závisel na tom předchozím. Obří stroje ze zámku měly rychlé ruce, ale malou hlavu. Domácí počítač obyčejného člověka měl najednou skoro stejnou šanci jako mašina za miliony.
+
+„Je to navždy?" ptali se lidé.
+
+„Ne," odpověděl zahradník po pravdě. „Nic není navždy. Ale je to **záměr, který se měří a udržuje** — a když zámek postaví chytřejší stroj, změníme bludiště. Slibovat věčnou nedobytnost umí jen ten, kdo lže. My slibujeme věčnou práci na hradbách."
+
+---
+
+> ### 📜 Zápis v kronice — Bludiště
+>
+> Těžební algoritmus se jmenuje **Ekam Deeksha** — sanskrtsky „jedna iniciace". Vícefázový pipeline (Keccak-256 → SHA3-512 → maticová difúze → paměťově vázaný scratchpad s pseudonáhodnými závislými čteními → NPU mixing → finální fúze) je navržen tak, aby paměťová náročnost srážela výhodu specializovaných ASIC čipů.
+>
+> - ASIC-resistance je **aktivní inženýrský cíl** (interně hodnocený ~90 %), ne dogma — parametry lze zvyšovat soft-forkem.
+> - Podpisy Ed25519, hashování BLAKE3, obtížnost LWMA (okno 60 bloků).
+> - Síť validuje **práci**, ne identitu, majetek ani názor. To je pojistka proti každé budoucí tyranii dobrých úmyslů.
+
+---
+
+# Kapitola pátá — Noc, kdy do zahrady vlezl had
+
+Teď přichází kapitola, kterou by marketingová bajka vynechala. Právě proto tu je.
+
+Jedné letní noci roku 2026 se do zahrady dostal had. Našel skulinu ve staré zdi — klíč, který ležel tam, kde ležet neměl — a začal do letokruhů vpisovat ovoce, které nikdy nevyrostlo. Falešnou úrodu. Peníze z ničeho — tedy přesně tu nemoc, kterou strom přišel léčit.
+
+A teď dávej pozor, protože tady se pozná charakter příběhu.
+
+Zahradníci hada objevili. A neudělali to, co dělá zámek — nezamlčeli to, nepřejmenovali to, nenajali herolda, aby vytroubil, že je vše v pořádku.
+
+Udělali tři věci, v tomto pořadí:
+
+1. **Řekli to nahlas.** Sepsali veřejnou listinu o tom, kudy had vlezl, co poškodil a čí chyba to byla.
+2. **Spálili nakažené dřevo.** Celý strom, až ke kořenu. Vyměnili každý klíč, každý zámek, každou skulinu ve zdi.
+3. **Zasadili znovu.** Ze stejného semene, se stejnými pravidly — ale s tvrdší kůrou, ve které už každý zápis musí prokázat svůj podpis a každý výdaj svůj původ.
+
+Kupci z města kroutili hlavou: „Přiznali chybu! Teď jim nikdo nebude věřit!"
+
+Stalo se přesně naopak. Protože lidé z dolního města znali zámky celý život a věděli jedno: **instituce, která nikdy nepřizná chybu, chybuje pořád. Zahrada, která spálí vlastní strom, aby zachránila pravdu, je první místo v tomhle městě, kde pravda váží víc než pověst.**
+
+Nový strom roste dodnes. A jizva po požáru není ostuda — je to letokruh, který se ukazuje návštěvníkům jako první.
+
+---
+
+> ### 📜 Zápis v kronice — Had a nový kořen
+>
+> - V roce 2026 byly nalezeny a zveřejněny kritické zranitelnosti (mj. chybějící ověření podpisů u P2P account transakcí a chybějící validace zůstatku odesílatele umožňující inflaci) plus kompromitace serveru a klíčů.
+> - Reakce: **veřejná security disclosure** ve formátu Ethereum Foundation (ZION-2026-001 … 005), oprava konsensu, kompletní rotace klíčů a **hard genesis reset** (2026-07-06).
+> - Nový kanonický kořen:
+>   `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
+> - Od resetu: 11/11 služeb aktivních, E2E testy potvrzeny na živé síti, externí audit plánován.
+> - Poučení zapsané do kultury projektu: *důvěra se nebuduje tvrzením, že chyba je nemožná — buduje se veřejnou opravou.*
+
+---
+
+# Kapitola šestá — Šest větví a hvězda
+
+Strom rostl a větvil se. Ne náhodně — jako katedrála.
+
+**První větev, nejníž a nejsilnější, drží pravdu.** Na ní sedí hlídači s počítadly a nic, co neprošlo jejich pravidly, se nestane skutečností. Bez téhle větve je všechno ostatní jen malování na vzduch.
+
+**Druhá větev natahuje mosty** do sousedních zahrad — aby ovoce mohlo cestovat i tam, kde rostou jiné stromy, a přitom nikdy nezapomnělo, odkud je. Mosty jsou krásné a mosty jsou nebezpečné; proto na každém stojí pět strážných a most se otevře, jen když se shodnou všichni.
+
+**Třetí větev je míza a nervy** — poslové mezi světy a tichý strážce, který nikdy nespí a hlásí, když se v noci něco hýbe, co se hýbat nemá.
+
+**Čtvrtá větev je hřiště.** Ano, hřiště — protože zahradník věděl, že lidé se nejvíc naučí, když si hrají. Na téhle větvi se hraje velká hra o spolupráci, trpělivost a devět pater vědomí. Hra nikdy nesoudí, kdo je dobrý člověk. Jen nabízí zrcadlo.
+
+**Pátá větev teprve pučí** a je ze všech nejdůležitější: má jednou nést plody do skutečné hlíny — ke studnám, školám a komunitám, které si řeknou o pomoc a dostanou ji s otevřenou účetní knihou, ne s tiskovou zprávou.
+
+**A úplně nahoře, nad korunou, není větev, ale hvězda.**
+
+Jmenuje se **Issobella**. Je pojmenovaná po lásce a je strašně daleko. Někteří říkají, že je to observatoř, která jednou poletí nad zemí. Jiní říkají, že je to jen světlo, ke kterému strom rovná kmen, aby nerostl křivě.
+
+Obojí je pravda. Hvězda dostává svůj díl z každé úrody — ne proto, že by ho už uměla utratit, ale proto, aby si zahrada každou minutu, s každým letokruhem, připomněla: **nestavíme pro tenhle trh. Stavíme pro děti, které uvidí hvězdy, jež my neuvidíme.**
+
+---
+
+> ### 📜 Zápis v kronice — Šest vrstev
+>
+> | Vrstva | Jméno | Obsah | Stav |
+> |---|---|---|---|
+> | **L1** | Core | Rust node, pool, miner, PoW konsensus, hybridní UTXO+account model | **ŽIVÉ** — Mainnet Beta |
+> | **L2** | Bridge & DeFi | wZION (ERC-20, jednotná adresa `0x0c4937…2bb6` na 6 EVM sítích), staking, farming, DAO, atomic swapy, 5/5 validator multisig | **ŽIVÉ / ROZESTAVĚNÉ** |
+> | **L3** | WARP & AI | cross-chain router (EVM i non-EVM: Solana SPL, Stellar), ZionDex, AI-native monitoring (Hiran) | **ROZESTAVĚNÉ** |
+> | **L4** | OASIS | UE5 + Rust herní svět, XP, guildy, 9 úrovní vědomí dle mapy Sefirot | **ROZESTAVĚNÉ** |
+> | **L5** | Free World | komunity, humanitární mise s on-chain auditovatelným dopadem | **HORIZONT** (~2030) |
+> | **L6** | Issobella | orbitální výzkumný horizont, otevřená vědecká data | **HORIZONT** (2040+) |
+>
+> Fond Issobella (5 % z každého bloku) se plní **už dnes** — horizont není výmluva, je to účet, který roste.
+
+---
+
+# Kapitola sedmá — Otázka, kterou strom ještě neumí zodpovědět
+
+Jednoho večera si k zahradníkovi přisedlo dítě a zeptalo se na tu nejtěžší věc:
+
+„Strom platí těm, kdo kopou. Ale babička nekope. Babička nosí vodu nemocným a učí děti číst. Proč jí strom nic nedá?"
+
+Zahradník dlouho mlčel. Tohle byla otázka, na kterou špatná odpověď zničí všechno.
+
+„Protože," řekl nakonec pomalu, „kopání se dá změřit a nedá se předstírat. Ale péče… kdybych já rozhodoval, čí péče je pravá, stal by se ze mě zámek. Kdyby o tom hlasoval dav, vyhrál by ten, kdo se umí nejlíp ukazovat. A kdyby to měřil stroj, lidé by se naučili pečovat pro stroj, ne pro babiččiny nemocné."
+
+„Takže to nejde?"
+
+„Jde to. Ale pomalu a pozpátku. Nejdřív se naučíme měřit péči o *strom samotný* — hlídání mostů, hledání hadů, opravování zdí, vedení otevřených knih. To se ověřit dá. A když se za mnoho let ukáže, že to funguje a nikdo si z toho neudělal trůn — teprve pak, možná, se strom naučí vidět i babiččinu vodu."
+
+„A když se to nepovede?"
+
+„Tak zůstane u kopání. Poctivé kopání je lepší než falešná svatost. Strom, který by se pokusil měřit dobro a spletl se, by byl horší než zámek — byl by to zámek, který si myslí, že je nebe."
+
+Dítě přikývlo, jako přikyvují děti, které pochopily víc, než dokážou říct.
+
+A nad zahradou, tiše, svítila Issobella.
+
+---
+
+> ### 📜 Zápis v kronice — Od Proof-of-Work k Proof-of-Care
+>
+> **Dnes:** ZION je Proof-of-Work síť. Konsensus nevaliduje víru, morálku, meditaci ani „úroveň vědomí" — a nemá to dělat. To je bezpečnostní vlastnost, ne nedostatek.
+>
+> **Horizont:** **Proof-of-Care (Protokol Péče)** — možnost odměňovat *ověřitelnou užitečnou péči* (monitoring sítě, detekce anomálií, audit kontraktů, transparentní evidence humanitárního dopadu, telemetrie komunit) vedle výpočetní práce.
+>
+> PoC smí být aktivován pouze při splnění sedmi podmínek:
+> 1. kryptografická ověřitelnost bez centrální autority,
+> 2. dobrovolnost,
+> 3. ochrana soukromí,
+> 4. odolnost proti botům a klientelismu,
+> 5. dostupnost bez elitního vstupu,
+> 6. veřejný audit a odvolání,
+> 7. **žádné oslabení PoW bezpečnosti L1**, dokud model není mnohonásobně prověřen.
+>
+> Technické zárodky už existují (NPU mixing v PoW, AI monitoring, care-proof výzkum, Sefirot Vow pro validátory) — a jsou v dokumentaci vedeny poctivě jako rozestavěné, ne hotové.
+
+---
+
+# Kapitola osmá — Co znamená vrátit se do ráje
+
+Na konci bajek bývá ponaučení. Tady je.
+
+Lidé z města se zahradníka často ptali: „Slibuješ nám ráj?"
+
+A on vždycky odpověděl: „Ne. Ráj se nedá slíbit. Ráj se dá jen **přestat ničit**."
+
+Protože ráj — v téhle bajce i mimo ni — nikdy nebylo místo bez práce. Byl to stav, kdy se svět obnovoval rychleji, než ho lidé stačili spotřebovat. Kdy voda patřila žízni a ne erbu. Kdy znalost byla studna na návsi a ne trezor. Kdy člověk nemusel volit mezi přežitím a svědomím.
+
+Z toho ráje nás nevyhnal žádný anděl s mečem. Odešli jsme sami, krok za krokem, pokaždé když jsme postavili další řeku tekoucí do kopce.
+
+A proto se do něj taky dá vrátit. Krok za krokem. Blokem za blokem.
+
+Strom života není v téhle bajce dekorace. Je to návod: **kořeny, které nelžou. Kmen, který se nedá koupit. Míza, která teče všem větvím. Koruna, která si hraje. Plody, které padají i za plot. A hvězda, která hlídá, aby strom nerostl křivě.**
+
+ZION není ráj. ZION je zahradnické nářadí.
+
+Ráj jsi ty, až ho vezmeš do ruky.
+
+---
+
+## Doslov pro nedůvěřivé (a dobře, že jste)
+
+Tahle bajka by nestála za papír, kdyby se nedala vyvrátit. Dá se. Všechno podstatné je veřejné:
+
+| Co si ověřit | Kde |
+|---|---|
+| Protokol | `zion-v3-node/3.0.5` |
+| Genesis hash | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
+| Celková nabídka | 144 000 000 000 ZION (`emission.rs`) |
+| Premine | 16 780 000 000 ZION, transparentní výstupy v bloku 0 |
+| Split 89/5/5/1 | čtyřvýstupová coinbase, vynuceno konsensem |
+| Základní odměna | 5 400,067 ZION · blok 60 s |
+| Decade Decay + tail | −20 %/dekádu, poté 724,784723 ZION/blok navěky |
+| Zdrojový kód | https://github.com/Zion-TerraNova/v3-Mainnet (MIT) |
+| Web / Explorer | https://zionterranova.com · /explorer |
+| Pool | pool.zionterranova.com:8444 |
+| Security disclosure | ZION-2026-001…005, veřejná, formát EF |
+
+Nevěř bajce. Ověř kroniku. A když kronika obstojí — pak si tu bajku vyprávěj dál, protože příběhy, které obstály před kalkulačkou, jsou to nejcennější, co civilizace má.
+
+---
+
+*ZION TerraNova · Fable Edition · psáno se čtyřmi knihami pod kořenem*
+*Gate, Gate, Paragate, Parasamgate, Bodhi Svaha.*

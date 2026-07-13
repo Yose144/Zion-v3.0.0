@@ -1,3 +1,4 @@
+use zion_auxpow::auxpow_client::difficulty_to_target_with_max;
 use zion_auxpow::external_hashers::{hash_blake3, hash_blake3_alph, meets_target_little_endian};
 
 fn main() -> anyhow::Result<()> {
@@ -89,6 +90,30 @@ fn main() -> anyhow::Result<()> {
                 ok = false;
             }
         }
+        // Test with the share target the local pool sends at difficulty 4.
+        let max_target = [0xffu8; 32];
+        let share_target = difficulty_to_target_with_max(4.0, &max_target);
+        println!("\n--- share target diff=4 ---");
+        println!("target={}", hex::encode(&share_target));
+        let found = gpu
+            .mine_simple("blake3_dcr", &header, &share_target, 0, 1_000_000)
+            .expect("gpu mine diff4 failed");
+        if let Some(share) = found {
+            let cpu_hash = hash_blake3(&header, 0, share.nonce);
+            println!("diff4 gpu nonce={} hash={}", share.nonce, hex::encode(&share.hash));
+            println!("diff4 cpu hash={} match={}", hex::encode(&cpu_hash), cpu_hash == share.hash);
+            let meets_gpu = meets_target_little_endian(&share.hash, &share_target);
+            let meets_cpu = meets_target_little_endian(&cpu_hash, &share_target);
+            println!("diff4 meets_target gpu={} cpu={}", meets_gpu, meets_cpu);
+            if !meets_gpu || !meets_cpu || cpu_hash != share.hash {
+                eprintln!("ERROR: diff4 share does not meet target or hash mismatch");
+                ok = false;
+            }
+        } else {
+            eprintln!("ERROR: GPU found no nonce with diff=4 target in 1M");
+            ok = false;
+        }
+
         if ok {
             println!("\nOK: GPU DCR kernel matches CPU reference");
         } else {
