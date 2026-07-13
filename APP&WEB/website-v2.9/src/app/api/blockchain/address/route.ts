@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
       type: 'payout',
       sender: 'Pool',
       receiver: address,
-      amount: p.amount || 0,
+      amount: p.amount_zion ?? p.amount ?? 0,
       fee: 0,
       timestamp: p.timestamp || 0,
       status: p.status || 'confirmed',

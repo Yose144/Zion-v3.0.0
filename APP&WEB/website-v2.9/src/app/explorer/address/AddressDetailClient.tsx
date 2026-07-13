@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { useLang } from '@/contexts/LanguageContext';
+import { FLOWERS_PER_ZION } from '@/lib/constants';
 
 /* ── helpers ─────────────────────────────────────────────────── */
 
@@ -562,7 +563,7 @@ export default function AddressDetailClient() {
                 {cs ? 'UTXO seznam' : 'UTXO List'} ({data.utxos.length})
               </h2>
               <span className="text-[10px] text-white/30 uppercase tracking-wider">
-                {cs ? 'Celkem' : 'Total'} {data.utxos.reduce((s, u) => s + u.amount, 0).toFixed(4)} ZION
+                {cs ? 'Celkem' : 'Total'} {(data.utxos.reduce((s, u) => s + u.amount, 0) / FLOWERS_PER_ZION).toFixed(4)} ZION
               </span>
             </div>
 
@@ -596,7 +597,7 @@ export default function AddressDetailClient() {
                   <div className="flex items-center justify-end text-[12px] text-white/40 tabular-nums font-mono">{u.output_index}</div>
                   <div className="flex items-center justify-end text-[12px] text-white/40 tabular-nums font-mono">{u.height > 0 ? u.height.toLocaleString(locale) : '—'}</div>
                   <div className="flex items-center justify-end text-[13px] font-semibold tabular-nums text-emerald-400">
-                    {u.amount.toFixed(4)} ₿Z
+                    {(u.amount / FLOWERS_PER_ZION).toFixed(4)} ₿Z
                   </div>
                 </Link>
               ))

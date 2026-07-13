@@ -894,7 +894,7 @@ class ZionRpcClient {
       const totalPaidAtomic = chainPayouts.totalPaidAtomic || poolTotalPaidAtomic;
 
       const pending = pendingPayouts.map((payout: any) => ({
-        amount: payout.amount ?? payout.amount_atomic ?? 0,
+        amount: (payout.amount_zion ?? (payout.amount ?? payout.amount_atomic ?? 0) / 1e6),
         tx_id: payout.tx_id,
         timestamp: payout.created_ts ?? payout.updated_ts ?? 0,
         status: payout.status ?? 'pending',
