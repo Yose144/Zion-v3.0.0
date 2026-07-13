@@ -635,22 +635,21 @@ pub mod autolykos {
     //! # Safety / threading model
     //!
     //! - **Re-entrant / thread-safe.** No global mutable state; multiple
-    //!   threads may call [`hash`] / [`verify_u64`] concurrently with
-    //!   independent inputs.
-    //! - This module does not expose a `*_version()` C symbol.
+    //!   threads may call [`hash`] / [`verify_u64`] / [`mine`] / [`generate_table`]
+    //!   concurrently with independent inputs.
+    //! - [`hash`] generates a table internally on every call (malloc + free).
+    //!   For high-throughput mining, precompute the table once with
+    //!   [`generate_table`] and use [`mine`] per nonce.
+    //! - The `*_version()` pointer is `'static` read-only memory.
     use super::safety::{self, FfiError};
 
     unsafe extern "C" {
-        /// Compute Autolykos v2 hash.
+        /// Convenience: compute Autolykos v2 hash by generating the table
+        /// internally.  Returns the first 8 bytes of `output` as a LE u64.
         ///
         /// # Safety
         /// - `header` must be valid for `header_len` readable bytes.
-        /// - `output` must be valid for 32 writable bytes and may not alias
-        ///   `header`.
-        ///
-        /// # Returns
-        /// The first 8 bytes of `output` interpreted as a little-endian
-        /// `u64`, for caller convenience.
+        /// - `output` must be valid for 32 writable bytes, non-aliasing with header.
         pub fn autolykos_hash(
             header: *const u8,
             header_len: usize,
@@ -658,6 +657,39 @@ pub mod autolykos {
             height: u32,
             output: *mut u8,
         ) -> u64;
+
+        /// Generate the Autolykos v2 precomputed table.
+        ///
+        /// # Safety
+        /// - `header` must be valid for `header_len` readable bytes.
+        /// - `table` must be valid for `table_size * 8` writable bytes.
+        pub fn autolykos_generate_table(
+            header: *const u8,
+            header_len: usize,
+            height: u32,
+            table: *mut u64,
+            table_size: u64,
+        );
+
+        /// Mine a single nonce using a precomputed table.
+        ///
+        /// Returns 1 if hash <= `target` (big-endian), 0 otherwise.
+        /// If `table` is null, the table is generated internally.
+        ///
+        /// # Safety
+        /// - `header` valid for `header_len` bytes.
+        /// - `table` null or valid for `table_size * 8` readable bytes.
+        /// - `target` 32 readable bytes (or null to skip check).
+        /// - `output` 32 writable bytes, non-aliasing.
+        pub fn autolykos_mine(
+            header: *const u8,
+            header_len: usize,
+            nonce: u64,
+            table: *const u64,
+            table_size: u64,
+            target: *const u8,
+            output: *mut u8,
+        ) -> i32;
 
         /// Verify a share against a 64-bit difficulty target.
         ///
@@ -674,9 +706,16 @@ pub mod autolykos {
 
         /// CPU microbenchmark; thread-safe.
         pub fn autolykos_benchmark_cpu(iterations: i32) -> f64;
+
+        /// `'static` read-only version literal; must not be freed.
+        pub fn autolykos_version() -> *const std::ffi::c_char;
     }
 
     /// Compute Autolykos v2 hash.  Returns 32-byte output hash.
+    ///
+    /// This convenience function generates the table internally on every call.
+    /// For production mining, precompute the table once with [`generate_table`]
+    /// and use [`mine`] per nonce.
     pub fn hash(header: &[u8], nonce: u64, height: u32) -> [u8; 32] {
         let mut out = [0u8; 32];
         // SAFETY: `header` slice is valid for its length; `out` is a fresh
@@ -697,6 +736,82 @@ pub mod autolykos {
     pub fn try_hash(header: &[u8], nonce: u64, height: u32) -> Result<[u8; 32], FfiError> {
         safety::validate_input_len(header)?;
         Ok(hash(header, nonce, height))
+    }
+
+    /// Generate the Autolykos v2 precomputed table on the host.
+    ///
+    /// `table` must be pre-allocated with `table_size` entries (each 8 bytes).
+    /// The table is derived from `SHA256(header)` and `height`.
+    pub fn generate_table(header: &[u8], height: u32, table: &mut [u64]) {
+        // SAFETY: `header` slice is valid; `table` slice is valid for its
+        // length. Both are non-aliasing (different types).
+        unsafe {
+            autolykos_generate_table(
+                header.as_ptr(),
+                header.len(),
+                height,
+                table.as_mut_ptr(),
+                table.len() as u64,
+            );
+        }
+    }
+
+    /// Fallible variant of [`generate_table`].
+    pub fn try_generate_table(
+        header: &[u8],
+        height: u32,
+        table: &mut [u64],
+    ) -> Result<(), FfiError> {
+        safety::validate_input_len(header)?;
+        generate_table(header, height, table);
+        Ok(())
+    }
+
+    /// Mine a single nonce using a precomputed table.
+    ///
+    /// Returns `(hash, meets_target)`.  The 32-byte BLAKE2b-256 hash is
+    /// always computed; `meets_target` is `true` if `hash <= target`
+    /// (big-endian byte comparison).
+    ///
+    /// If `table` is empty, the table is generated internally (slower).
+    pub fn mine(
+        header: &[u8],
+        nonce: u64,
+        table: &[u64],
+        target: &[u8; 32],
+    ) -> ([u8; 32], bool) {
+        let mut out = [0u8; 32];
+        let table_ptr = if table.is_empty() {
+            std::ptr::null()
+        } else {
+            table.as_ptr()
+        };
+        // SAFETY: `header` valid for its length; `table_ptr` is null or valid
+        // for `table.len() * 8` bytes; `target` is 32 bytes; `out` is fresh
+        // stack memory, non-aliasing.
+        let meets = unsafe {
+            autolykos_mine(
+                header.as_ptr(),
+                header.len(),
+                nonce,
+                table_ptr,
+                table.len() as u64,
+                target.as_ptr(),
+                out.as_mut_ptr(),
+            )
+        };
+        (out, meets != 0)
+    }
+
+    /// Fallible variant of [`mine`].
+    pub fn try_mine(
+        header: &[u8],
+        nonce: u64,
+        table: &[u64],
+        target: &[u8; 32],
+    ) -> Result<([u8; 32], bool), FfiError> {
+        safety::validate_input_len(header)?;
+        Ok(mine(header, nonce, table, target))
     }
 
     /// Returns `true` if the hash value (first 8 bytes as LE u64) is below `target`.
@@ -722,6 +837,13 @@ pub mod autolykos {
     pub fn benchmark(iterations: i32) -> f64 {
         // SAFETY: thread-safe per module docs.
         unsafe { autolykos_benchmark_cpu(iterations) }
+    }
+
+    /// Return the C library's version string, or an [`FfiError`] if the
+    /// pointer is null / unterminated.
+    pub fn version() -> Result<String, FfiError> {
+        // SAFETY: `autolykos_version` returns a `'static` literal or null.
+        unsafe { safety::read_c_version_string(autolykos_version()) }
     }
 }
 
