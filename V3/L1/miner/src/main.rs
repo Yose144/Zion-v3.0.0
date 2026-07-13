@@ -2330,6 +2330,10 @@ impl MinerConfig {
                     std::env::set_var("ZION_PROFILE", &args[i + 1]);
                     i += 2;
                 }
+                "--no-tui" => {
+                    std::env::set_var("ZION_INTERACTIVE", "0");
+                    i += 1;
+                }
                 "--algorithm" if i + 1 < args.len() => {
                     std::env::set_var("ZION_MINER_ALGORITHM", &args[i + 1]);
                     i += 2;
@@ -2347,7 +2351,8 @@ impl MinerConfig {
                     println!("  --gpu BACKEND       GPU backend: auto, metal, opencl, cpu (default: auto)");
                     println!("  --loops N           Iteration count (default: 1)");
                     println!("  --profile NAME      Profile: pool, solo, benchmark, dual");
-                    println!("  --algorithm ALGO    Mining algorithm: deeksha_lite_v1, cosmic_harmony_ekam_deeksha_v2, deeksha_lite_fire");
+                    println!("  --algorithm ALGO    Mining algorithm: deeksha_lite_v1, cosmic_harmony_ekam_deeksha_v2, deeksha_lite_fire, kawpow");
+                println!("  --no-tui            Disable interactive TUI and log to stdout");
                     println!();
                     println!("Benchmarks:");
                     println!("  --ekam-bench          Ekam Deeksha GPU benchmark (single algo)");
