@@ -34,17 +34,17 @@ __constant const uint MSG_SCHEDULE[7][16] = {
     { 11, 15, 5, 0, 1, 9, 8, 6, 14, 10, 2, 12, 3, 4, 7, 13 }
 };
 
-#define ROTL32(x, n) (((x) << (n)) | ((x) >> (32 - (n))))
+#define ROTR32(x, n) (((x) >> (n)) | ((x) << (32 - (n))))
 
 #define G(m, a, b, c, d, x, y) \
     a = a + b + x; \
-    d = ROTL32(d ^ a, 16); \
+    d = ROTR32(d ^ a, 16); \
     c = c + d; \
-    b = ROTL32(b ^ c, 12); \
+    b = ROTR32(b ^ c, 12); \
     a = a + b + y; \
-    d = ROTL32(d ^ a, 8); \
+    d = ROTR32(d ^ a, 8); \
     c = c + d; \
-    b = ROTL32(b ^ c, 7);
+    b = ROTR32(b ^ c, 7);
 
 void blake3_round(uint state[16], const uint msg[16], int round) {
     __constant const uint *s = MSG_SCHEDULE[round];
@@ -64,7 +64,8 @@ void blake3_round(uint state[16], const uint msg[16], int round) {
 // Blake3 flags
 #define CHUNK_START 1u
 #define CHUNK_END   2u
-#define ROOT        4u
+#define PARENT      4u
+#define ROOT        8u
 
 // Compress a 64-byte block.  Writes the 8-word chaining value into `out8`.
 void blake3_compress8(
@@ -182,7 +183,13 @@ void blake3_inner(
             block[i] = (idx < 360) ? msg[idx] : 0;
         }
         uint flags = (full_blocks == 0u) ? (CHUNK_START | CHUNK_END) : CHUNK_END;
-        blake3_compress8(chain, block, 0u, tail_len, flags, inner_out);
+        // The inner hash is the root output of the inner message, not the
+        // chaining value. Use compress16 with ROOT and keep the first 8 words.
+        uint out16[16];
+        blake3_compress16(chain, block, 0u, tail_len, flags | ROOT, out16);
+        for (int i = 0; i < 8; i++) {
+            inner_out[i] = out16[i];
+        }
     }
 }
 
