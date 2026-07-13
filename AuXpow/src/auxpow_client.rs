@@ -794,9 +794,9 @@ impl AuxPowClient {
             (h.to_string(), t.to_string(), None, None)
         } else if self.profile.coin == ExternalCoin::DCR {
             // DCR (Blake3, DCP-0011) uses standard Stratum v1 format but
-            // the coinbase1 field (arr[2]) contains the full 180-byte block
-            // header, not a Bitcoin-style coinbase tx prefix.  coinbase2
-            // (arr[3]) is empty.  The share target is derived from nbits.
+            // the coinbase1 field (arr[2]) contains the full block header
+            // (without nonce, 144 bytes).  The share target is derived from
+            // the difficulty set by mining.set_difficulty, not from nbits.
             let full_header = arr.get(2).and_then(|v| v.as_str()).unwrap_or("");
             let nbits = arr.get(6).and_then(|v| v.as_str()).map(String::from);
             let ntime = arr.get(7).and_then(|v| {
@@ -806,7 +806,8 @@ impl AuxPowClient {
                     v.as_u64()
                 }
             });
-            let target = nbits.clone().unwrap_or_else(|| "ffffffff".to_string());
+            // Share target from difficulty (like KAS), not nbits.
+            let target = hex::encode(self.share_target().await);
             (full_header.to_string(), target, ntime, nbits)
         } else {
             // Standard format
