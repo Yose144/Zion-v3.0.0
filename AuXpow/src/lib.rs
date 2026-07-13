@@ -43,6 +43,8 @@ pub use parent_chains::{
 pub use miner_harness::{mine, FoundShare};
 pub use multiplexer::JobMultiplexer;
 pub use share_forwarder::ShareForwarder;
+#[cfg(all(feature = "gpu-opencl", feature = "native-hashers"))]
+pub use gpu_miner::DagManager;
 pub use true_auxpow::{
     validate_auxpow, validate_auxpow_full, AuxPowData, AuxPowFullValidation, AuxPowProofBuilder,
     AuxPowValidation, ParentAlgorithm, ParentHeader,

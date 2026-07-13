@@ -21,14 +21,20 @@ pub fn advertised_algorithm() -> &'static str {
 
 /// Height-aware advertised algorithm name.
 ///
-/// Phase D: For height ≥ CHV3_FORK_HEIGHT (4500), the pool advertises
-/// `deeksha_chv3` as the canonical algorithm name. Below 4500, it
-/// advertises `deeksha_lite_v1` (backward compat).
+/// Always advertise `deeksha_lite_v1` to miners and node.  Although
+/// `deeksha_chv3` is a bit-identical alias, the CHV3 fork at height 4500
+/// broke block production because:
+///   1. The Edge node binary was not rebuilt with CHV3 support, so it
+///      fell back to `cosmic_harmony_with_height` (wrong hash) for
+///      validation.
+///   2. External miners do not recognise `deeksha_chv3` and fall back
+///      to a wrong hash function, causing hash_mismatch in the pool.
 ///
-/// Miners that only know `deeksha_lite_v1` continue to work because
-/// `hash_with_algorithm` maps both names to the same function.
-pub fn advertised_algorithm_for_height(height: u64) -> &'static str {
-    consensus_profile_for_height(height)
+/// Reverting to `deeksha_lite_v1` is safe — both names map to the same
+/// `deeksha_lite` hash function.  The CHV3 name can be re-enabled once
+/// all nodes and miners are updated.
+pub fn advertised_algorithm_for_height(_height: u64) -> &'static str {
+    "deeksha_lite_v1"
 }
 
 pub fn protocol_version() -> &'static str {

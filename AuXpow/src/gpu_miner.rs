@@ -59,6 +59,17 @@ struct EthashDag {
     epoch: u32,
 }
 
+/// Cached KawPow DAG uploaded to the GPU device.
+/// Same structure as EthashDag but tracked separately because KawPow
+/// uses a different epoch length (7500 vs 30000) and may be loaded
+/// concurrently with an Ethash DAG.
+#[derive(Clone)]
+struct KawpowDag {
+    buf: Buffer<u64>,
+    size_entries: u64,
+    epoch: u32,
+}
+
 /// OpenCL GPU miner for external PoW algorithms.
 pub struct GpuMiner {
     platform: Platform,
@@ -73,6 +84,8 @@ pub struct GpuMiner {
     work_size: usize,
     /// Cached Ethash DAG buffer (set via `set_ethash_dag` before mining ETC).
     ethash_dag: Option<EthashDag>,
+    /// Cached KawPow DAG buffer (set via `set_kawpow_dag` before mining RVN).
+    kawpow_dag: Option<KawpowDag>,
 }
 
 /// Maps an algorithm name to its kernel file and entry function.
@@ -310,6 +323,7 @@ impl GpuMiner {
             proques: HashMap::new(),
             work_size,
             ethash_dag: None,
+            kawpow_dag: None,
         })
     }
 
@@ -335,10 +349,18 @@ impl GpuMiner {
         let (kernel_file, kernel_name) = kernel_info(algorithm)
             .with_context(|| format!("GPU kernel not available for algorithm {algorithm}"))?;
 
-        // Ethash needs the per-epoch DAG; clone the Arc-backed buffer handle
-        // before borrowing `self` for the ProQue below.
+        // Ethash/KawPow need the per-epoch DAG; clone the Arc-backed buffer
+        // handle before borrowing `self` for the ProQue below.
         let ethash_dag = if matches!(algorithm, "ethash" | "etchash" | "ethash_etc") {
             self.ethash_dag.clone()
+        } else {
+            None
+        };
+        let kawpow_dag = if matches!(
+            algorithm,
+            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
+        ) {
+            self.kawpow_dag.clone()
         } else {
             None
         };
@@ -444,14 +466,22 @@ impl GpuMiner {
                 )?
             }
             "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" => {
+                // KawPow requires the per-epoch DAG to be uploaded first.
+                let dag = kawpow_dag.ok_or_else(|| {
+                    anyhow!(
+                        "KawPow DAG not set; call GpuMiner::set_kawpow_dag() \
+                         before mining RVN/CLORE/EVR/MEWC"
+                    )
+                })?;
                 Self::build_kawpow_kernel(
                     pro_que,
                     kernel_name,
                     header,
-                    extra,
                     target,
                     base_nonce,
                     batch_size,
+                    &dag.buf,
+                    dag.size_entries,
                     &output_nonce_buf,
                     &output_hash_buf,
                     &output_mix_buf,
@@ -581,6 +611,49 @@ impl GpuMiner {
     /// Returns the epoch of the currently uploaded Ethash DAG, if any.
     pub fn ethash_dag_epoch(&self) -> Option<u32> {
         self.ethash_dag.as_ref().map(|d| d.epoch)
+    }
+
+    /// Upload the per-epoch KawPow DAG to the GPU device.
+    ///
+    /// Same semantics as `set_ethash_dag` but for KawPow (RVN/CLORE/EVR/MEWC).
+    /// The DAG is generated with `KAWPOW_EPOCH_LENGTH=7500` instead of 30000.
+    pub fn set_kawpow_dag(&mut self, dag: &[u64], size_entries: u64, epoch: u32) -> Result<()> {
+        let expected_len = (size_entries as usize)
+            .checked_mul(16)
+            .ok_or_else(|| anyhow!("dag_size_entries overflow"))?;
+        if dag.len() != expected_len {
+            return Err(anyhow!(
+                "KawPow DAG length mismatch: got {} u64 words, expected {} (16 * {} entries)",
+                dag.len(),
+                expected_len,
+                size_entries
+            ));
+        }
+
+        let q = {
+            let pro_que = self.ensure_proque("kawpow_kernel.cl")?;
+            pro_que.queue().clone()
+        };
+
+        let buf: Buffer<u64> = Buffer::builder()
+            .queue(q)
+            .len(dag.len())
+            .copy_host_slice(dag)
+            .build()
+            .map_err(|e| anyhow!("failed to allocate KawPow DAG buffer: {e}"))?;
+
+        self.kawpow_dag = Some(KawpowDag {
+            buf,
+            size_entries,
+            epoch,
+        });
+
+        Ok(())
+    }
+
+    /// Returns the epoch of the currently uploaded KawPow DAG, if any.
+    pub fn kawpow_dag_epoch(&self) -> Option<u32> {
+        self.kawpow_dag.as_ref().map(|d| d.epoch)
     }
 
     /// Get the path to the OpenCL kernel source files.
@@ -781,10 +854,11 @@ impl GpuMiner {
         pro_que: &ProQue,
         kernel_name: &str,
         header: &[u8],
-        extra: &[u8],
         target: &[u8; 32],
         base_nonce: u64,
         batch_size: u64,
+        dag_buf: &Buffer<u64>,
+        dag_entries: u64,
         output_nonce_buf: &Buffer<u64>,
         output_hash_buf: &Buffer<u8>,
         output_mix_buf: &Buffer<u8>,
@@ -808,34 +882,6 @@ impl GpuMiner {
             .copy_host_slice(target.as_slice())
             .build()?;
 
-        // Parse DAG from `extra`:
-        //   bytes 0..8   : dag_entries (u64 LE)
-        //   bytes 8..    : DAG data as u64 lanes (16 lanes per entry)
-        let (dag_entries, dag_data): (u64, &[u8]) = if extra.len() >= 8 {
-            let n = u64::from_le_bytes(extra[..8].try_into().unwrap());
-            let d = &extra[8..];
-            (n.max(1), d)
-        } else {
-            (1u64, &[][..])
-        };
-
-        // Number of u64 lanes needed = dag_entries * 16
-        let lanes_needed = (dag_entries as usize) * 16;
-        let mut dag_lanes = vec![0u64; lanes_needed];
-        let avail_bytes = dag_data.len();
-        for i in 0..lanes_needed {
-            let off = i * 8;
-            if off + 8 <= avail_bytes {
-                dag_lanes[i] = u64::from_le_bytes(dag_data[off..off + 8].try_into().unwrap());
-            }
-        }
-
-        let dag_buf: Buffer<u64> = Buffer::builder()
-            .queue(q.clone())
-            .len(lanes_needed)
-            .copy_host_slice(&dag_lanes)
-            .build()?;
-
         let kernel = Kernel::builder()
             .queue(q.clone())
             .program(pro_que.program())
@@ -843,7 +889,7 @@ impl GpuMiner {
             .arg(&header_buf)
             .arg(&target_buf)
             .arg(base_nonce)
-            .arg(&dag_buf)
+            .arg(dag_buf)
             .arg(dag_entries)
             .arg(output_nonce_buf)
             .arg(output_hash_buf)
@@ -1044,6 +1090,221 @@ impl GpuMiner {
             .map_err(|e| anyhow!("kernel build failed: {e}"))?;
 
         Ok(kernel)
+    }
+}
+
+// ── DagManager: auto-generates and caches per-epoch DAGs ────────────────
+//
+// DagManager tracks the current epoch for Ethash and KawPow and regenerates
+// the DAG (via FFI to the C implementation) whenever the epoch changes.
+// Generated DAGs are persisted to disk so subsequent startups load from
+// cache instead of regenerating (saves ~30s for 1GB epoch 0 DAG).
+//
+// Cache layout:
+//   $ZION_DAG_CACHE_DIR/ethash_epoch{N}.bin
+//   $ZION_DAG_CACHE_DIR/kawpow_epoch{N}.bin
+// Default: ~/.zion/dag-cache/
+//
+// Only available when both `gpu-opencl` and `native-hashers` features are
+// enabled (DAG generation requires the C FFI).
+
+#[cfg(feature = "native-hashers")]
+use std::path::Path;
+#[cfg(feature = "native-hashers")]
+use std::io::{Read, Write};
+#[cfg(feature = "native-hashers")]
+use crate::native_ffi::{generate_ethash_dag, generate_kawpow_dag};
+
+/// Manages DAG generation and GPU upload for Ethash and KawPow.
+#[cfg(feature = "native-hashers")]
+pub struct DagManager {
+    /// Currently loaded Ethash epoch (None = not loaded).
+    ethash_epoch: Option<u32>,
+    /// Currently loaded KawPow epoch (None = not loaded).
+    kawpow_epoch: Option<u32>,
+    /// Directory for DAG disk cache.
+    cache_dir: PathBuf,
+}
+
+#[cfg(feature = "native-hashers")]
+impl DagManager {
+    /// Create a new DagManager with the default cache directory.
+    pub fn new() -> Self {
+        let cache_dir = std::env::var("ZION_DAG_CACHE_DIR")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| {
+                let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+                PathBuf::from(home).join(".zion").join("dag-cache")
+            });
+        Self {
+            ethash_epoch: None,
+            kawpow_epoch: None,
+            cache_dir,
+        }
+    }
+
+    /// Ensure the GPU miner has the correct Ethash DAG loaded for `epoch`.
+    /// If the epoch changed (or no DAG is loaded), generates or loads from
+    /// cache, then uploads to the GPU via `set_ethash_dag`.
+    pub fn ensure_ethash_dag(
+        &mut self,
+        miner: &mut GpuMiner,
+        epoch: u32,
+    ) -> Result<()> {
+        if self.ethash_epoch == Some(epoch) && miner.ethash_dag_epoch() == Some(epoch) {
+            return Ok(()); // already loaded
+        }
+
+        eprintln!(
+            "dag_manager: loading Ethash DAG epoch={} (cache_dir={})",
+            epoch, self.cache_dir.display()
+        );
+
+        // Try disk cache first
+        let cache_path = self.cache_dir.join(format!("ethash_epoch{}.bin", epoch));
+        let (dag_u64, dag_entries) = if cache_path.exists() {
+            eprintln!("dag_manager: loading Ethash DAG from disk cache: {}", cache_path.display());
+            Self::load_dag_from_disk(&cache_path)?
+        } else {
+            eprintln!("dag_manager: generating Ethash DAG epoch={} via FFI...", epoch);
+            let dag = generate_ethash_dag(epoch)
+                .ok_or_else(|| anyhow!("ethash_generate_dag returned NULL for epoch {}", epoch))?;
+            let entries = dag.dag_size_entries;
+            let u64_slice = dag.as_u64_slice().to_vec();
+            // Persist to disk
+            self.save_dag_to_disk(&cache_path, &u64_slice, entries)?;
+            (u64_slice, entries)
+        };
+
+        eprintln!(
+            "dag_manager: uploading Ethash DAG to GPU ({} entries = {:.1} MB)",
+            dag_entries,
+            dag_entries as f64 * 128.0 / (1024.0 * 1024.0)
+        );
+        miner.set_ethash_dag(&dag_u64, dag_entries, epoch)?;
+        self.ethash_epoch = Some(epoch);
+        eprintln!("dag_manager: Ethash DAG epoch={} ready", epoch);
+        Ok(())
+    }
+
+    /// Ensure the GPU miner has the correct KawPow DAG loaded for `epoch`.
+    pub fn ensure_kawpow_dag(
+        &mut self,
+        miner: &mut GpuMiner,
+        epoch: u32,
+    ) -> Result<()> {
+        if self.kawpow_epoch == Some(epoch) && miner.kawpow_dag_epoch() == Some(epoch) {
+            return Ok(()); // already loaded
+        }
+
+        eprintln!(
+            "dag_manager: loading KawPow DAG epoch={} (cache_dir={})",
+            epoch, self.cache_dir.display()
+        );
+
+        let cache_path = self.cache_dir.join(format!("kawpow_epoch{}.bin", epoch));
+        let (dag_u64, dag_entries) = if cache_path.exists() {
+            eprintln!("dag_manager: loading KawPow DAG from disk cache: {}", cache_path.display());
+            Self::load_dag_from_disk(&cache_path)?
+        } else {
+            eprintln!("dag_manager: generating KawPow DAG epoch={} via FFI...", epoch);
+            let dag = generate_kawpow_dag(epoch)
+                .ok_or_else(|| anyhow!("kawpow_generate_dag returned NULL for epoch {}", epoch))?;
+            let entries = dag.dag_size_entries;
+            let u64_slice = dag.as_u64_slice().to_vec();
+            self.save_dag_to_disk(&cache_path, &u64_slice, entries)?;
+            (u64_slice, entries)
+        };
+
+        eprintln!(
+            "dag_manager: uploading KawPow DAG to GPU ({} entries = {:.1} MB)",
+            dag_entries,
+            dag_entries as f64 * 128.0 / (1024.0 * 1024.0)
+        );
+        miner.set_kawpow_dag(&dag_u64, dag_entries, epoch)?;
+        self.kawpow_epoch = Some(epoch);
+        eprintln!("dag_manager: KawPow DAG epoch={} ready", epoch);
+        Ok(())
+    }
+
+    /// Convenience: ensure the right DAG for the given algorithm.
+    /// `epoch` is the pre-computed epoch number (block_number / EPOCH_LENGTH).
+    pub fn ensure_dag(
+        &mut self,
+        miner: &mut GpuMiner,
+        algorithm: &str,
+        epoch: u32,
+    ) -> Result<()> {
+        match algorithm {
+            "ethash" | "etchash" | "ethash_etc" => self.ensure_ethash_dag(miner, epoch),
+            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" => {
+                self.ensure_kawpow_dag(miner, epoch)
+            }
+            _ => Ok(()), // non-DAG algorithms
+        }
+    }
+
+    /// Load a DAG from disk cache. Returns (u64 words, dag_size_entries).
+    fn load_dag_from_disk(path: &Path) -> Result<(Vec<u64>, u64)> {
+        let mut file = std::fs::File::open(path)
+            .map_err(|e| anyhow!("failed to open DAG cache {}: {e}", path.display()))?;
+        let metadata = file.metadata()
+            .map_err(|e| anyhow!("failed to stat DAG cache: {e}"))?;
+        let total_bytes = metadata.len() as usize;
+        // First 8 bytes = dag_size_entries (u64 LE), rest = DAG data
+        if total_bytes < 8 {
+            return Err(anyhow!("DAG cache file too small: {} bytes", total_bytes));
+        }
+        let mut entries_buf = [0u8; 8];
+        file.read_exact(&mut entries_buf)
+            .map_err(|e| anyhow!("failed to read DAG entries count: {e}"))?;
+        let dag_entries = u64::from_le_bytes(entries_buf);
+        let data_bytes = total_bytes - 8;
+        let mut data = vec![0u8; data_bytes];
+        file.read_exact(&mut data)
+            .map_err(|e| anyhow!("failed to read DAG data: {e}"))?;
+        // Convert bytes to u64 words (little-endian)
+        let u64_count = data_bytes / 8;
+        let mut u64_vec = vec![0u64; u64_count];
+        for i in 0..u64_count {
+            u64_vec[i] = u64::from_le_bytes(data[i*8..i*8+8].try_into().unwrap());
+        }
+        Ok((u64_vec, dag_entries))
+    }
+
+    /// Save a DAG to disk cache.
+    fn save_dag_to_disk(&self, path: &Path, dag_u64: &[u64], dag_entries: u64) -> Result<()> {
+        // Create cache directory if it doesn't exist
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)
+                .map_err(|e| anyhow!("failed to create DAG cache dir {}: {e}", parent.display()))?;
+        }
+        let mut file = std::fs::File::create(path)
+            .map_err(|e| anyhow!("failed to create DAG cache file {}: {e}", path.display()))?;
+        // Write dag_size_entries as 8-byte LE header
+        file.write_all(&dag_entries.to_le_bytes())
+            .map_err(|e| anyhow!("failed to write DAG entries: {e}"))?;
+        // Write DAG data as u64 LE words
+        for word in dag_u64 {
+            file.write_all(&word.to_le_bytes())
+                .map_err(|e| anyhow!("failed to write DAG data: {e}"))?;
+        }
+        eprintln!(
+            "dag_manager: saved DAG to disk cache ({} entries, {:.1} MB)",
+            dag_entries,
+            dag_u64.len() as f64 * 8.0 / (1024.0 * 1024.0)
+        );
+        Ok(())
+    }
+
+    /// Returns the currently loaded Ethash epoch, if any.
+    pub fn ethash_epoch(&self) -> Option<u32> {
+        self.ethash_epoch
+    }
+
+    /// Returns the currently loaded KawPow epoch, if any.
+    pub fn kawpow_epoch(&self) -> Option<u32> {
+        self.kawpow_epoch
     }
 }
 

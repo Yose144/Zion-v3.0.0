@@ -417,9 +417,10 @@ pub fn gpu_scan_job(
         // algos; the DAG is managed via update_epoch_from_job() which is
         // called from a separate path.
         // For now, we log the epoch for diagnostics.
-        if VERBOSE.load(std::sync::atomic::Ordering::Relaxed) {
-            println!("auxpow_dag_epoch_hint algorithm={} height={} epoch={}", algorithm, job.height, epoch);
-        }
+        eprintln!(
+            "auxpow_dag_epoch_hint algorithm={} height={} epoch={}",
+            algorithm, job.height, epoch
+        );
     }
 
     // Use raw header bytes for external algorithms that need the full header
@@ -3358,19 +3359,16 @@ pub mod opencl_external {
     use super::*;
     use std::time::Instant;
     use zion_auxpow::gpu_miner::{GpuFoundShare, GpuMiner as AuxPowGpuMiner};
+    #[cfg(feature = "native-hashers")]
+    use zion_auxpow::DagManager;
 
     pub struct OpenClExternalMiner {
         algorithm: String,
         miner: AuxPowGpuMiner,
         work_size: usize,
-        /// Cached Ethash DAG epoch (None = no DAG loaded).
-        ethash_dag_epoch: Option<u32>,
-        /// Cached KawPow DAG epoch (None = no DAG loaded).
-        kawpow_dag_epoch: Option<u32>,
-        /// Cached KawPow DAG data (stored as u64 lanes for GPU upload).
-        kawpow_dag_data: Option<Vec<u64>>,
-        /// Cached KawPow DAG entry count.
-        kawpow_dag_entries: Option<u64>,
+        /// DAG manager for Ethash/KawPow (only available with native-hashers).
+        #[cfg(feature = "native-hashers")]
+        dag_manager: DagManager,
         /// Current epoch hint from the job (set by update_epoch_from_job).
         current_epoch_hint: Option<u32>,
     }
@@ -3383,99 +3381,21 @@ pub mod opencl_external {
                 algorithm: algorithm.to_string(),
                 miner,
                 work_size,
-                ethash_dag_epoch: None,
-                kawpow_dag_epoch: None,
-                kawpow_dag_data: None,
-                kawpow_dag_entries: None,
+                #[cfg(feature = "native-hashers")]
+                dag_manager: DagManager::new(),
                 current_epoch_hint: None,
             })
         }
 
-        /// Ensure the Ethash DAG is loaded for the given epoch.
-        /// Generates and uploads the DAG if not already cached for this epoch.
-        #[cfg(feature = "native-hashers")]
-        fn ensure_ethash_dag(&mut self, epoch: u32) -> Result<()> {
-            if self.ethash_dag_epoch == Some(epoch) {
-                return Ok(());  // DAG already loaded for this epoch
-            }
-
-            println!(
-                "auxpow_ethash_dag_generating epoch={} algorithm={} (this may take several minutes)...",
-                epoch, self.algorithm
-            );
-
-            let dag = zion_auxpow::generate_ethash_dag(epoch)
-                .ok_or_else(|| anyhow::anyhow!("ethash_dag_generation_failed epoch={}", epoch))?;
-
-            let dag_u64 = dag.as_u64_slice().to_vec();
-            let dag_entries = dag.dag_size_entries;
-
-            println!(
-                "auxpow_ethash_dag_generated epoch={} entries={} size_mb={}",
-                epoch, dag_entries, dag_u64.len() * 8 / (1024 * 1024)
-            );
-
-            self.miner.set_ethash_dag(&dag_u64, dag_entries, epoch)?;
-            self.ethash_dag_epoch = Some(epoch);
-
-            // Keep the DAG alive — but we transferred the data to GPU already.
-            // The C-allocated buffer is freed when `dag` drops.
-            // We need to keep a reference to prevent Drop from freeing it
-            // before the GPU is done.  However, set_ethash_dag copies the data
-            // to a GPU buffer, so the host buffer can be freed.
-            // Actually, looking at gpu_miner.rs, set_ethash_dag creates a
-            // Buffer::copy_host_slice which copies to GPU memory.  So the
-            // host buffer (dag) can be safely dropped after this call.
-            Ok(())
-        }
-
-        /// Ensure the KawPow DAG is loaded for the given epoch.
-        #[cfg(feature = "native-hashers")]
-        fn ensure_kawpow_dag(&mut self, epoch: u32) -> Result<()> {
-            if self.kawpow_dag_epoch == Some(epoch) {
-                return Ok(());
-            }
-
-            println!(
-                "auxpow_kawpow_dag_generating epoch={} algorithm={} (this may take several minutes)...",
-                epoch, self.algorithm
-            );
-
-            let dag = zion_auxpow::generate_kawpow_dag(epoch)
-                .ok_or_else(|| anyhow::anyhow!("kawpow_dag_generation_failed epoch={}", epoch))?;
-
-            let dag_entries = dag.dag_size_entries;
-            let dag_u64 = dag.as_u64_slice().to_vec();
-
-            println!(
-                "auxpow_kawpow_dag_generated epoch={} entries={} size_mb={}",
-                epoch, dag_entries, dag_u64.len() * 8 / (1024 * 1024)
-            );
-
-            // For KawPow, the DAG is passed via the `extra` parameter in mine().
-            // We store it in a thread-local or static for the mine() call.
-            // Actually, the gpu_miner build_kawpow_kernel reads DAG from extra.
-            // We need to pass it as extra data.  Let's store it in the struct.
-            // But mine() takes &self, so we need to clone the data.
-            // We'll store the DAG as a Vec<u64> in the struct.
-            self.kawpow_dag_data = Some(dag_u64);
-            self.kawpow_dag_entries = Some(dag_entries);
-            self.kawpow_dag_epoch = Some(epoch);
-
-            Ok(())
-        }
-
         /// Update the epoch hint from the job (called before mine_batch).
-        /// If the epoch changed, triggers DAG regeneration.
+        /// If the epoch changed, triggers DAG regeneration via DagManager
+        /// (with disk caching for fast restarts).
         pub fn update_epoch_from_job(&mut self, epoch: Option<u32>) -> Result<()> {
             if let Some(ep) = epoch {
                 self.current_epoch_hint = Some(ep);
-                if matches!(self.algorithm.as_str(), "ethash" | "etchash" | "ethash_etc") {
-                    #[cfg(feature = "native-hashers")]
-                    self.ensure_ethash_dag(ep)?;
-                } else if matches!(self.algorithm.as_str(), "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc") {
-                    #[cfg(feature = "native-hashers")]
-                    self.ensure_kawpow_dag(ep)?;
+                #[cfg(feature = "native-hashers")]
+                {
+                    self.dag_manager.ensure_dag(&mut self.miner, &self.algorithm, ep)?;
                 }
             }
             Ok(())
@@ -3530,7 +3450,12 @@ pub mod opencl_external {
                 | "autolykos_erg"
                 | "ethash"
                 | "etchash"
-                | "ethash_etc" => self.miner.mine(
+                | "ethash_etc"
+                | "kawpow"
+                | "kawpow_rvn"
+                | "kawpow_clore"
+                | "kawpow_evr"
+                | "kawpow_mewc" => self.miner.mine(
                     &self.algorithm,
                     &header_bytes,
                     &[],
@@ -3538,36 +3463,6 @@ pub mod opencl_external {
                     nonce_start,
                     actual_batch,
                 ),
-                "kawpow"
-                | "kawpow_rvn"
-                | "kawpow_clore"
-                | "kawpow_evr"
-                | "kawpow_mewc" => {
-                    // KawPow needs the DAG passed via `extra`:
-                    //   bytes 0..8   : dag_entries (u64 LE)
-                    //   bytes 8..    : DAG data as u64 lanes (16 lanes per entry)
-                    if let (Some(dag_data), Some(dag_entries)) =
-                        (&self.kawpow_dag_data, self.kawpow_dag_entries)
-                    {
-                        let mut extra = Vec::with_capacity(8 + dag_data.len() * 8);
-                        extra.extend_from_slice(&dag_entries.to_le_bytes());
-                        for &lane in dag_data.iter() {
-                            extra.extend_from_slice(&lane.to_le_bytes());
-                        }
-                        self.miner.mine(
-                            &self.algorithm,
-                            &header_bytes,
-                            &extra,
-                            &target.bytes,
-                            nonce_start,
-                            actual_batch,
-                        )
-                    } else {
-                        anyhow::bail!(
-                            "kawpow_dag_not_loaded — call update_epoch_from_job() with epoch before mining"
-                        )
-                    }
-                }
                 "kheavyhash" | "kheavyhash_kas" => {
                     // KAS external jobs send a 32-byte pre_pow_hash in header_hex.
                     // The pool pads it to 80 bytes (MiningHeader); the pre_pow_hash

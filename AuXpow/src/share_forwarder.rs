@@ -33,12 +33,14 @@ impl ShareForwarder {
         nonce: u64,
         hash: &[u8; 32],
         target: &[u8; 32],
+        mix_hash: Option<&[u8; 32]>,
     ) -> Result<ShareForwardResult> {
         if !meets_target(hash, target) {
             return Ok(ShareForwardResult::BelowTarget);
         }
         let hash_hex = hash_to_hex(hash);
-        match self.client.submit_share(job_id, nonce, &hash_hex, None).await {
+        let mix_hash_hex = mix_hash.map(hash_to_hex);
+        match self.client.submit_share(job_id, nonce, &hash_hex, mix_hash_hex.as_deref()).await {
             Ok(ShareResult::Accepted) => Ok(ShareForwardResult::Accepted),
             Ok(ShareResult::Rejected(reason)) => Ok(ShareForwardResult::Rejected(reason)),
             Ok(ShareResult::Unknown) => Ok(ShareForwardResult::Unknown),
@@ -55,7 +57,7 @@ impl ShareForwarder {
         target: &[u8; 32],
     ) -> Result<ShareForwardResult> {
         let hash = hash_blake3(header, 0, nonce);
-        self.try_forward(job_id, nonce, &hash, target).await
+        self.try_forward(job_id, nonce, &hash, target, None).await
     }
 }
 
@@ -145,7 +147,7 @@ mod tests {
         let hash = [0xFFu8; 32]; // definitely above target
         let mut target = [0x00u8; 32];
         target[31] = 0x01; // very hard target
-        let result = forwarder.try_forward("job_forward", 0, &hash, &target).await.unwrap();
+        let result = forwarder.try_forward("job_forward", 0, &hash, &target, None).await.unwrap();
         assert_eq!(result, ShareForwardResult::BelowTarget);
     }
 
@@ -164,7 +166,7 @@ mod tests {
         let forwarder = ShareForwarder::new(client);
         let target = [0xFFu8; 32]; // trivial target
         let hash = hash_blake3(b"header", 0, 42);
-        let result = forwarder.try_forward("job_forward", 42, &hash, &target).await.unwrap();
+        let result = forwarder.try_forward("job_forward", 42, &hash, &target, None).await.unwrap();
         assert_eq!(result, ShareForwardResult::Accepted);
     }
 
@@ -181,7 +183,7 @@ mod tests {
         let forwarder = ShareForwarder::new(client);
         let target = [0xFFu8; 32];
         let hash = hash_blake3(b"header", 0, 7);
-        let result = forwarder.try_forward("job_forward", 7, &hash, &target).await.unwrap();
+        let result = forwarder.try_forward("job_forward", 7, &hash, &target, None).await.unwrap();
         assert_eq!(result, ShareForwardResult::Rejected("low diff".to_string()));
     }
 }
