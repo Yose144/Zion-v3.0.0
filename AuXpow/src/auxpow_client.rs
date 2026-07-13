@@ -233,12 +233,155 @@ impl AuxPowClient {
     }
 
     /// Reconnect TCP + re-subscribe + re-authorize (called from poll loop, no new task).
+    /// Uses inline reads because the poll loop is not running during reconnect.
     async fn reconnect(&self, payout_wallet: &str) -> Result<()> {
         self.connect_tcp().await?;
-        self.subscribe().await?;
-        self.authorize(payout_wallet).await?;
+        self.subscribe_inline().await?;
+        self.authorize_inline(payout_wallet).await?;
         info!("AuxPow: reconnected and authorized for {}", self.profile.coin);
         Ok(())
+    }
+
+    /// Send a JSON-RPC request and read the response **inline** (directly from
+    /// the TCP stream) without relying on the background poll loop.  Used
+    /// during reconnect when the poll loop is not running.
+    async fn send_request_inline(&self, req: &Value) -> Result<Value> {
+        let mut line = serde_json::to_string(req)?;
+        line.push('\n');
+
+        {
+            let mut stream_guard = self.stream.lock().await;
+            if let Some(ref mut stream) = *stream_guard {
+                stream.write_all(line.as_bytes()).await?;
+                stream.flush().await?;
+            } else {
+                bail!("not connected");
+            }
+        }
+
+        // Read lines until we get a response with matching id (skip notifications)
+        let req_id = req.get("id").and_then(|v| v.as_i64());
+        let deadline = Instant::now() + Duration::from_secs(60);
+        loop {
+            let remaining = deadline.saturating_duration_since(Instant::now());
+            if remaining.is_zero() {
+                bail!("send_request_inline: timeout waiting for response");
+            }
+            let mut buf = String::new();
+            let line_str: String = {
+                let mut reader_guard = self.reader.lock().await;
+                if let Some(ref mut reader) = *reader_guard {
+                    match timeout(remaining, reader.read_line(&mut buf)).await {
+                        Ok(Ok(_)) => {
+                            if buf.is_empty() {
+                                bail!("send_request_inline: connection closed by remote");
+                            }
+                            buf.trim().to_string()
+                        }
+                        Ok(Err(e)) => bail!("send_request_inline: read error: {e}"),
+                        Err(_) => bail!("send_request_inline: read timeout"),
+                    }
+                } else {
+                    bail!("send_request_inline: no reader available");
+                }
+            };
+            let parsed: Value = serde_json::from_str(&line_str)
+                .with_context(|| format!("send_request_inline: invalid JSON: {line_str}"))?;
+            // Check if this is a response (has "id" matching) or a notification
+            if let Some(id) = parsed.get("id").and_then(|v| v.as_i64()) {
+                if req_id.is_some() && id == req_id.unwrap() {
+                    return Ok(parsed);
+                }
+            }
+            // It's a notification or unrelated response — process it
+            // (e.g. mining.set_difficulty, mining.notify)
+            if let Some(method) = parsed.get("method").and_then(|m| m.as_str()) {
+                match method {
+                    "mining.set_difficulty" => {
+                        if let Some(diff) = parsed.get("params").and_then(|p| p.get(0)).and_then(|d| d.as_f64()) {
+                            *self.current_difficulty.lock().await = diff;
+                        }
+                    }
+                    "mining.notify" => {
+                        if let Some(params) = parsed.get("params") {
+                            if let Ok(job) = self.parse_notify_params(params).await {
+                                *self.current_job.lock().await = Some(job);
+                                self.job_notify.notify_waiters();
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+
+    /// Subscribe using inline read (for reconnect).
+    async fn subscribe_inline(&self) -> Result<()> {
+        let req = json!({
+            "id": 1,
+            "method": "mining.subscribe",
+            "params": ["zion-auxpow/0.1"]
+        });
+        let resp = self.send_request_inline(&req).await?;
+        if let Some(result) = resp.get("result") {
+            *self.subscribed.lock().await = true;
+            println!("auxpow: subscribed to {} — result={}", self.profile.coin, result);
+            let mut en1 = self.extranonce1.lock().await;
+            *en1 = if let Some(hex) = result.as_str() {
+                hex::decode(hex).unwrap_or_default()
+            } else if let Some(arr) = result.as_array() {
+                arr.get(1)
+                    .and_then(|v| v.as_str())
+                    .map(|hex| hex::decode(hex).unwrap_or_default())
+                    .unwrap_or_default()
+            } else {
+                Vec::new()
+            };
+            Ok(())
+        } else {
+            bail!("subscribe failed: {:?}", resp.get("error"));
+        }
+    }
+
+    /// Authorize using inline read (for reconnect).
+    async fn authorize_inline(&self, payout_wallet: &str) -> Result<()> {
+        let worker = format!("{}.{}", payout_wallet, self.profile.worker_name);
+        let is_ethstratum = self.protocol == StratumProtocol::EthStratum;
+        let password = if is_ethstratum { "x" } else { "c=BTC" };
+        println!(
+            "auxpow: authorizing worker={} password={} on {} (protocol={})",
+            worker, password, self.profile.coin, self.protocol.as_str()
+        );
+        let method = if is_ethstratum {
+            "eth_submitLogin"
+        } else {
+            "mining.authorize"
+        };
+        let req = json!({
+            "id": 2,
+            "method": method,
+            "params": [worker, password]
+        });
+        let resp = self.send_request_inline(&req).await?;
+        let ok = if is_ethstratum {
+            resp.get("result").and_then(|v| v.as_bool()).unwrap_or(false)
+                || resp.get("result").and_then(|v| v.as_str()).is_some()
+        } else {
+            resp.get("result").and_then(|v| v.as_bool()).unwrap_or(false)
+        };
+        if ok {
+            *self.authorized.lock().await = true;
+            println!("auxpow: authorized as {} on {}", worker, self.profile.coin);
+            Ok(())
+        } else {
+            let err = resp.get("error");
+            println!(
+                "auxpow: authorize FAILED for {} on {} — result={:?} error={:?}",
+                worker, self.profile.coin, resp.get("result"), err
+            );
+            bail!("authorize failed: {:?}", err);
+        }
     }
 
     /// Send `mining.subscribe` and wait for response.
