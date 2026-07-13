@@ -354,7 +354,7 @@ impl AuxPowClient {
             }
         }
 
-        let deadline = Instant::now() + Duration::from_secs(30);
+        let deadline = Instant::now() + Duration::from_secs(60);
         let remaining = deadline.saturating_duration_since(Instant::now());
         let resp = match timeout(remaining, rx).await {
             Ok(Ok(value)) => value,
@@ -369,10 +369,10 @@ impl AuxPowClient {
         let mut guard = self.reader.lock().await;
         if let Some(ref mut reader) = *guard {
             let mut buf = String::new();
-            // 90s read timeout — if no data arrives, the connection is likely
-            // stale (e.g. subscribe failed but TCP is still open).  This
-            // triggers a reconnect instead of hanging forever.
-            match timeout(Duration::from_secs(90), reader.read_line(&mut buf)).await {
+            // 300s read timeout — some coins (e.g. DCR) have ~5 minute block
+            // times, so the pool may not send data for several minutes.  A
+            // shorter timeout would trigger spurious reconnects.
+            match timeout(Duration::from_secs(300), reader.read_line(&mut buf)).await {
                 Ok(Ok(_)) => {
                     if buf.is_empty() {
                         bail!("connection closed by remote");
@@ -380,7 +380,7 @@ impl AuxPowClient {
                     Ok(buf.trim().to_string())
                 }
                 Ok(Err(e)) => bail!("read error: {e}"),
-                Err(_) => bail!("read timeout (90s, no data from pool)"),
+                Err(_) => bail!("read timeout (300s, no data from pool)"),
             }
         } else {
             bail!("no reader available");
