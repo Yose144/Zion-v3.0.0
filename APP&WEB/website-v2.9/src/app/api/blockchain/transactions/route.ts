@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
           type: 'payout',
           sender: 'Pool',
           receiver: address,
-          amount: payout.amount || 0,
+          amount: payout.amount_zion ?? payout.amount ?? 0,
           fee: 0,
           timestamp: payout.timestamp || 0,
           block_height: null,
