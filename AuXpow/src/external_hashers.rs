@@ -369,6 +369,18 @@ pub fn meets_target(hash: &[u8; 32], target: &[u8; 32]) -> bool {
     hash <= target
 }
 
+/// Check if a hash meets the target when the hash is interpreted as a
+/// little-endian 256-bit integer.
+///
+/// Decred BLAKE3 (DCP-0011) requires the PoW hash to be treated as a little
+/// endian unsigned integer when comparing against the target difficulty.  The
+/// target bytes themselves remain big-endian, as produced by
+/// `difficulty_to_target`.
+#[inline]
+pub fn meets_target_little_endian(hash: &[u8; 32], target: &[u8; 32]) -> bool {
+    hash.iter().rev().cmp(target.iter()).is_le()
+}
+
 /// Parse a hex target string (big-endian) into a 32-byte array.
 pub fn parse_target_hex(hex: &str) -> Option<[u8; 32]> {
     let hex = hex.trim_start_matches("0x");
@@ -832,6 +844,25 @@ mod tests {
         let target = [0x00u8; 32];
         let h = hash_blake3(b"target_test", 0, 0);
         assert!(!meets_target(&h, &target));
+    }
+
+    #[test]
+    fn meets_target_little_endian_reverses_byte_order() {
+        // Hash [0x01, 0x00, ...] (BE) is greater than target [0x00, ..., 0x01]
+        // in BE comparison, but when interpreted as LE it equals target.
+        let mut hash = [0u8; 32];
+        hash[0] = 0x01;
+        let mut target = [0u8; 32];
+        target[31] = 0x01;
+        assert!(!meets_target(&hash, &target));
+        assert!(meets_target_little_endian(&hash, &target));
+
+        // Hash [0x00, ..., 0x01] (BE) is below target in BE but greater when
+        // interpreted as LE.
+        let mut hash2 = [0u8; 32];
+        hash2[31] = 0x01;
+        assert!(meets_target(&hash2, &target));
+        assert!(!meets_target_little_endian(&hash2, &target));
     }
 
     #[test]

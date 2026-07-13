@@ -561,13 +561,13 @@ ZION Miner (GPU rig)
 |----------|------|--------|--------|
 | **R0** | Opravit broken Edge config (ETC→DCR) | 30min | Unblocks DCR revenue |
 | **R1** | **Stream profit system — weighted pipeline** | **DONE ✅** | **Stream weights v job messages, profit computation** |
-| **R1b** | **Live API fetching (NiceHash/WhatToMine)** | **2-4h** | **Reálná profit data místo fallback** |
-| **R1c** | **GPU kernel parametrizace** | **2-4h** | **Kernel aplikuje weights na work distribution** |
+| **R1b** | **Live API fetching (WhatToMine/CoinGecko)** | **DONE ✅** | **Reálná profit data místo fallback** |
+| **R1c** | **GPU kernel parametrizace** | **DONE ✅** | **Kernel aplikuje weights na work distribution** |
 | **R2** | DCR revenue live | 1-2h | 1st external revenue stream |
 | **R3** | ALPH + KAS E2E | 2-4h | 3 external coins live |
 | **R4** | Stream telemetry revenue report | 2-4h | Sjednocený revenue accounting |
 | **R5** | SMOS deploy + GPU mining | 2-4h | Real GPU hashrate (blocked) |
-| **R6** | EthStratum protocol | 4-6h | Unblocks ERG/RVN/ETC/EVR/MEWC/CLORE |
+| **R6** | **EthStratum protocol** | **DONE ✅** | **Unblocks ERG/EVR/MEWC/CLORE** |
 | **R7** | True AuxPow consensus | 20-40h | Free chain security (future) |
 
 ### Original Phase Priority (multi-algo GPU mining completion)
@@ -711,60 +711,67 @@ ZION_STREAM_HYSTERESIS_PCT=15.0          # min improvement % pro switch
 ZION_STREAM_PROFIT_SOURCES=zion,keccak_bonus,sha3_bonus,ncl_ai
 ```
 
-**Testy:** 8 nových stream_profit testů, 197 cosmic-harmony, 38 pool, workspace ✓
+**Testy:** 8 nových stream_profit testů, 201 cosmic-harmony, 38 pool, workspace ✓
 
 **Co chybí (další fáze):**
-- [ ] Live API fetching (NiceHash/WhatToMine) — datové struktury jsou připravené,
-      stačí doplnit HTTP client a naplnit `StreamProfitSnapshot` z reálných API dat
-- [ ] GPU kernel parametrizace — miner zatím weights jen loguje, kernel je ještě
-      neaplikuje na work distribution
-- [ ] Pipeline step multipliers v OpenCL kernelu — `to_step_multipliers()` je
-      připravené, ale kernel ještě nemá parametrizované počty kol
+- [x] ~~Live API fetching (WhatToMine/CoinGecko)~~ — DONE v R1b
+- [x] ~~GPU kernel parametrizace~~ — DONE v R1c
+- [x] ~~Pipeline step multipliers v OpenCL kernelu~~ — DONE v R1c
 
-### Fáze R1b: Live API fetching (NEXT, 2-4h)
+### Fáze R1b: Live API fetching (DONE ✅)
+
+**Commit:** `e1c28689b` — `feat(stream-profit): R1b — live API fetching for profit snapshots`
 
 **Cíl:** Naplnit `StreamProfitSnapshot` z reálných API dat místo fallback estimates.
 
-**Co implementovat:**
+**Co bylo implementováno:**
 
-1. **Přidat `reqwest` do `V3/L1/cosmic-harmony/Cargo.toml`** (nebo pool Cargo.toml)
+1. **`reqwest` + `tokio` deps** v `V3/L1/cosmic-harmony/Cargo.toml`
    - `reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }`
+   - `tokio = { version = "1", features = ["rt"] }`
 
-2. **API clients** (v `stream_profit.rs` nebo nový `profit_api.rs`):
-   - NiceHash API: hash-power marketplace prices pro Keccak/SHA3 algos
-   - WhatToMine API: `https://whattomine.com/coins.json` pro coin profitability
-   - CoinGecko API: token prices pro NCL/AI compute pricing
-   - Fallback: static `fallback_estimates()` když API nedostupné
-   - Cache výsledky (zabraňuje API rate limit)
+2. **API clients** v `stream_profit.rs`:
+   - `fetch_profit_snapshot()` — dispatcher podle `api_provider`
+   - `fetch_whattomine()` — WhatToMine coins.json, mapuje DCR/ALPH→KeccakBonus, KAS→Sha3Bonus
+   - `fetch_coingecko()` — CoinGecko spot ceny (DCR, ALPH, KAS)
+   - `fetch_url_blocking()` — HTTP client přes tokio runtime + reqwest async (10s timeout)
+   - `parse_whattomine_response()` / `parse_coingecko_response()` — JSON parsery
+   - Fallback: static estimates při API chybě (live=false)
 
 3. **Background fetcher** v `server.rs`:
-   - Nahradit `StreamProfitSnapshot::fallback()` v background threadu
-   - `profit_api.fetch_estimates() -> StreamProfitSnapshot`
-   - Error handling: API timeout → keep last snapshot, log warning
+   - `fetch_profit_snapshot(&cfg_clone)` nahradil `StreamProfitSnapshot::fallback()`
+   - Error handling: API timeout → fallback s live=false
 
-4. **API endpoint pro profit status:**
-   - `GET /api/v1/profit/status` → current weights, profit estimates, last update
-   - `GET /api/v1/profit/estimates` → live StreamProfitSnapshot JSON
+### Fáze R1c: GPU kernel parametrizace (DONE ✅)
 
-### Fáze R1c: GPU kernel parametrizace (2-4h, po R1b)
+**Commits:** `74a353205` + `87bb2b2f0`
 
 **Cíl:** GPU kernel aplikuje stream weights na work distribution.
 
-**Co implementovat:**
+**Co bylo implementováno:**
 
-1. **OpenCL kernel parametrizace** (`deeksha_lite.cl`):
-   - Přidat `__constant float stream_weights[6]` parameter
-   - Keccak step: `if (stream_weights[KECCAK_BONUS] > threshold) { extra rounds }`
-   - NPU step: `if (stream_weights[NCL_AI] > threshold) { extra NPU work }`
-   - Base hash se nemění — extra práce je AFTER base hash jako byproduct
+1. **OpenCL kernel parametrizace** (`deeksha_lite.cl`, `deeksha_chv3.cl`, `deeksha_lite_fire.cl`):
+   - Přidán `__constant float *stream_weights` 6. argument kernelu
+   - `stream_byproduct_keccak/sha3/aes` — extra byproduct práce AFTER base hash
+   - `SW_*` indexy (0-5): ZION, KECCAK_BONUS, SHA3_BONUS, NCL_AI, DEEKSHA_LITE, THERMAL
+   - `STREAM_ITERS_SCALE = 16.0f` — max 16 extra kol per stream
+   - Base PoW hash se nemění — výsledky byproductů se zapisují do scratchpadu (zahozeny)
 
 2. **Miner GPU backend** (`gpu_backend.rs`):
-   - `ensure_algorithm()` předá stream weights do kernelu
-   - Kernel argument: `stream_weights` buffer
+   - `stream_weights_f32()` — konverze `StreamWeights` → `[f32; 6]`
+   - `set_stream_weights()` — trait metoda pro `opencl_deeksha_lite` i `opencl_deeksha_lite_fire`
+   - `stream_weights_buf: Buffer<f32>` — inicializován na `[0.0; 6]`, aktualizován při novém jobu
+   - Kernel build předává `stream_weights_buf` jako 6. argument
 
-3. **Byproduct submission** (future):
+3. **Miner** (`main.rs`):
+   - Parsuje `stream_weights_str` z pool message přes `StreamWeights::parse()`
+   - Volá `g.set_stream_weights(&weights)` na GPU backendu
+
+4. **Byproduct submission** (future):
    - Extra Keccak hashe → NiceHash Keccak hash-power orders
    - Extra NPU work → NCL AI compute marketplace
+
+**Testy:** 201 cosmic-harmony + 38 pool = 239/239 prošlo ✅
 
 ### Fáze R2: DCR revenue live (1-2h, po R0)
 
@@ -801,12 +808,22 @@ ZION_STREAM_PROFIT_SOURCES=zion,keccak_bonus,sha3_bonus,ncl_ai
 - [ ] Verify miner connects + mines blake3_dcr
 - [ ] Verify share accepted by WoolyPooly through pool
 
-### Fáze R6: EthStratum protocol (4-6h, unblocks 6 coins)
+### Fáze R6: EthStratum protocol (DONE ✅)
 
-- [ ] Implement `eth_getWork` notification handler v `auxpow_client.rs`
-- [ ] Implement `eth_submitWork` submit v `auxpow_client.rs`
-- [ ] Test s ERG pool (Autolykos, no mix hash needed)
-- [ ] Test s RVN pool (KawPow, mix hash from DAG)
+**Commit:** `5baa76d60` — `feat(auxpow): R6 — EthStratum protocol support`
+
+**Co bylo implementováno:**
+- [x] `eth_getWork` polling — background task posílá `eth_getWork` request každé 3s
+- [x] `eth_getWork` response parsing — parsuje `[seed_hash, header_hash, target]` do `ExternalJob`
+- [x] `eth_getWork` notification handler — refaktorováno do sdíleného `parse_eth_getwork_params()`
+- [x] `eth_submitWork` submit — již existoval, nyní testováno
+- [x] `eth_submitHashrate` — nová metoda pro hashrate reporty
+- [x] Test s ERG mock server (Autolykos, no mix hash needed)
+- [x] Test eth_getWork push notification path
+- [x] Test eth_submitHashrate
+
+**Odblokováno:** 4 coiny — ERG (Autolykos), EVR, MEWC, CLORE (KawPow)
+**Testy:** 81/81 prošlo (3 nové EthStratum testy)
 
 ### Fáze R7: True AuxPow consensus (20-40h, future)
 

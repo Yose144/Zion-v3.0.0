@@ -71,9 +71,11 @@ async fn main() -> anyhow::Result<()> {
     println!("[2/4] Waiting for first job (timeout {} ms)...", job_timeout_ms);
     let job = wait_for_job(client.clone(), Duration::from_millis(job_timeout_ms)).await?;
     let difficulty = client.current_difficulty().await;
-    // Use the target from the job itself (targetBlob for ALPH, computed from
-    // difficulty for KAS) rather than the generic share_target().
-    let share_target = job.target_bytes;
+    // Use the share target derived from the pool's current difficulty.  For
+    // some coins (KAS) the job already carries this target, but for others
+    // (DCR/ALPH) job.target_bytes is the block target from nbits, which is
+    // much harder than the share target and would cause low-difficulty rejects.
+    let share_target = client.share_target().await;
     println!(
         "[2/4] Received job: id={} algorithm={} header_len={} difficulty={} share_target={}",
         job.job_id,

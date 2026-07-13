@@ -6,15 +6,15 @@
 > 1. **B2b — Pool-side job multiplexing** (krátkodobý revenue z minerů na ZION poolu).
 > 2. **C — True AuxPoW** (dlouhodobá bezpečnostní + revenue integrace).
 > **Default BTC payout wallet:** `bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh`
-> **Build status:** `cargo test -p zion-auxpow` — **78 testů PASS** (default i `--features native-hashers`), clippy čisté, release build OK.
+> **Build status:** `cargo test -p zion-auxpow` — **81 testů PASS** (default i `--features native-hashers`), clippy čisté, release build OK.
 
 ---
 
-## 0. Aktuální stav (2026-07-11)
+## 0. Aktuální stav (2026-07-13)
 
 | Komponenta | Stav | Poznámka |
 |------------|------|----------|
-| `AuxPowClient` (Stratum v1 + EthStratum) | ✅ Hotovo | Single background reader, response routing, KAS/ALPH/DCR/ERG/RVN/ETC notify parsing |
+| `AuxPowClient` (Stratum v1 + EthStratum) | ✅ Hotovo | Single background reader, response routing, KAS/ALPH/DCR/ERG/RVN/ETC notify parsing, **eth_getWork polling + eth_submitHashrate (R6)** |
 | `ExternalHashers` (Blake3, kHeavyHash, Autolykos, KawPow, Ethash) | ✅ Hotovo | Pure-Rust fallback + `native-hashers` C FFI; ověřeno proti rusty-kaspa a luminousmining |
 | `NativeFFI` (C hashers) | ✅ Hotovo | `csrc/` zkopírováno z V3/L1/native-ffi; `native-hashers` feature kompiluje C |
 | `GpuMiner` (OpenCL) | ✅ Skeleton | Kernel sources v `csrc/opencl/`; Rust API čeká na `opencl3`/`ocl` crate |
@@ -25,11 +25,13 @@
 | `TrueAuxPoW` (C) | ✅ Skeleton | AuxPoW Merkle root, validation, proof builder |
 | `ParentChains` (DCR/ALPH headers) | ✅ Skeleton | DcrHeader 180B, AlphHeader, CoinbaseCommitment |
 | `AuxPowScheduler` (profit switch) | ✅ Hotovo | Hysteresis, circuit breaker, env config |
+| **Stream Profit System (R1/R1b/R1c)** | ✅ Hotovo | Weighted pipeline, live API fetching, GPU kernel parametrizace |
 | KAS E2E (connect/auth/notify/mine) | ✅ Funguje | 2miners, Kryptex, HeroMiners |
 | KAS E2E (live submit accept) | ⚠️ Nelze ověřit CPU | Pool difficulty 2^-44 až 2^-52; potřebný ASIC |
 | ALPH E2E (connect/auth/notify/mine) | ✅ Funguje | HeroMiners, WoolyPooly |
 | ALPH E2E (live submit accept) | ⚠️ Nelze ověřit CPU | WoolyPooly ~2^-43, HeroMiners ~2^224 |
 | DCR E2E | ❌ Pooly nedostupné | threepool.tech, miningandco, suprnova — všechny offline |
+| **ERG/EVR/MEWC/CLORE E2E (EthStratum)** | ✅ Protocol hotový | eth_getWork polling + eth_submitWork + eth_submitHashrate; mock testy prošly |
 | Integrace do V3 | ❌ Zatím ne | Až bude AuXpow plně ověřen |
 
 ---
@@ -308,9 +310,12 @@ V `src/external_hashers.rs` jsou hotové:
 | KAS | kheavyhash | Stratum | ✅ (zpool) | connect/auth/notify ✅, submit ⚠️ |
 | ALPH | blake3 (double) | Stratum | ❌ (vlastní adresa) | connect/auth/notify ✅, submit ⚠️ |
 | DCR | blake3 | Stratum | ✅ (zpool) | pooly offline ❌ |
-| ERG | autolykos | EthStratum | TBD | TODO |
-| RVN | kawpow | EthStratum | TBD | TODO |
-| ETC | ethash | EthStratum | TBD | TODO |
+| ERG | autolykos | EthStratum | TBD | protocol ✅ (R6), live E2E TODO |
+| RVN | kawpow | Stratum | TBD | connect/auth/notify ✅, submit ⚠️ |
+| ETC | ethash | Stratum | TBD | connect/auth/notify ✅, submit ⚠️ |
+| EVR | autolykos | EthStratum | TBD | protocol ✅ (R6), live E2E TODO |
+| MEWC | kawpow | EthStratum | TBD | protocol ✅ (R6), live E2E TODO |
+| CLORE | kawpow | EthStratum | TBD | protocol ✅ (R6), live E2E TODO |
 | XMR | randomx | Stratum | TBD | TODO |
 | FLUX | zelhash | Stratum | TBD | TODO |
 

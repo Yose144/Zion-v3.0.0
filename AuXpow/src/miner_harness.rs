@@ -18,7 +18,7 @@ use anyhow::{anyhow, Result};
 
 use crate::external_hashers::{
     hash_autolykos, hash_blake3, hash_blake3_alph, hash_ethash, hash_kawpow, hash_kheavyhash,
-    hash_kheavyhash_extranonce, meets_target,
+    hash_kheavyhash_extranonce, meets_target, meets_target_little_endian,
 };
 use crate::types::{ExternalCoin, JobPackage};
 
@@ -51,6 +51,10 @@ pub fn mine(job: &JobPackage, range: std::ops::Range<u64>) -> Result<Option<Foun
         "blake3" => {
             if job.external_coin == ExternalCoin::ALPH {
                 Ok(scan_blake3_alph(job, start, end))
+            } else if job.external_coin == ExternalCoin::DCR {
+                // Decred BLAKE3 (DCP-0011) treats the PoW hash as a little-endian
+                // integer when comparing against the target.
+                Ok(scan_dcr(job, start, end))
             } else {
                 Ok(scan(job, start, end, hash_blake3))
             }
@@ -74,6 +78,23 @@ where
     for nonce in start..end {
         let hash = hash_fn(header, timestamp, nonce);
         if meets_target(&hash, target) {
+            return Some(FoundShare {
+                external_job_id: job.external_job_id.clone(),
+                nonce,
+                hash,
+            });
+        }
+    }
+    None
+}
+
+fn scan_dcr(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
+    let header = &job.header_bytes;
+    let target = &job.target_bytes;
+
+    for nonce in start..end {
+        let hash = hash_blake3(header, 0, nonce);
+        if meets_target_little_endian(&hash, target) {
             return Some(FoundShare {
                 external_job_id: job.external_job_id.clone(),
                 nonce,
@@ -241,7 +262,8 @@ mod tests {
         assert_eq!(share.external_job_id, "job_harness_dcr");
         let recomputed = hash_blake3(&job.header_bytes, job.timestamp, share.nonce);
         assert_eq!(share.hash, recomputed);
-        assert!(meets_target(&share.hash, &job.target_bytes));
+        // DCR uses little-endian hash comparison (DCP-0011).
+        assert!(meets_target_little_endian(&share.hash, &job.target_bytes));
     }
 
     #[test]

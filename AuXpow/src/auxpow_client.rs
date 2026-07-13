@@ -965,11 +965,16 @@ impl AuxPowClient {
             let t = arr[2].as_str().unwrap_or("ffffffff");
             (h.to_string(), t.to_string(), None, None)
         } else if self.profile.coin == ExternalCoin::DCR {
-            // DCR (Blake3, DCP-0011) uses standard Stratum v1 format but
-            // the coinbase1 field (arr[2]) contains the full block header
-            // (without nonce, 144 bytes).  The share target is derived from
-            // the difficulty set by mining.set_difficulty, not from nbits.
-            let full_header = arr.get(2).and_then(|v| v.as_str()).unwrap_or("");
+            // DCR (Blake3, DCP-0011) uses standard Stratum v1 format.  The pool
+            // provides the serialized partial header in coinbase1 (arr[2], 144
+            // bytes, standard offsets 36-179), the block version in arr[5], the
+            // previous block hash in arr[1], and ntime/nbits in arr[7]/arr[6].
+            // Assemble the full 180-byte block header template and insert the
+            // pool-provided extranonce1 at absolute offset 144 (just after the
+            // 4-byte nonce at offset 140), matching gominer/dcrpool semantics.
+            let version_hex = arr.get(5).and_then(|v| v.as_str()).unwrap_or("00000000");
+            let prevhash_hex = arr.get(1).and_then(|v| v.as_str()).unwrap_or("");
+            let partial_header_hex = arr.get(2).and_then(|v| v.as_str()).unwrap_or("");
             let nbits = arr.get(6).and_then(|v| v.as_str()).map(String::from);
             let ntime = arr.get(7).and_then(|v| {
                 if let Some(s) = v.as_str() {
@@ -978,9 +983,27 @@ impl AuxPowClient {
                     v.as_u64()
                 }
             });
-            // Share target from difficulty (like KAS), not nbits.
+
+            let mut full_header = Vec::with_capacity(180);
+            full_header.extend_from_slice(
+                &hex::decode(version_hex.trim_start_matches("0x")).unwrap_or_default(),
+            );
+            full_header.extend_from_slice(
+                &hex::decode(prevhash_hex.trim_start_matches("0x")).unwrap_or_default(),
+            );
+            full_header.extend_from_slice(
+                &hex::decode(partial_header_hex.trim_start_matches("0x")).unwrap_or_default(),
+            );
+            full_header.resize(180, 0);
+
+            let en1 = self.extranonce1.lock().await.clone();
+            let en1_len = en1.len().min(4);
+            if en1_len > 0 {
+                full_header[144..144 + en1_len].copy_from_slice(&en1[..en1_len]);
+            }
+
             let target = hex::encode(self.share_target().await);
-            (full_header.to_string(), target, ntime, nbits)
+            (hex::encode(&full_header), target, ntime, nbits)
         } else {
             // Standard format
             let header = arr.get(1).and_then(|v| v.as_str()).unwrap_or("");
