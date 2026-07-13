@@ -124,6 +124,7 @@ pub fn dispatch_hash(algorithm: &str, header: &[u8], timestamp: u64, nonce: u64)
             nonce,
             timestamp as u32,
         )),
+        "verushash" => Ok(crate::external_hashers::hash_verushash(header, nonce)),
         other => Err(anyhow!("dual-stratum: algorithm '{}' not supported by AuXpow hasher", other)),
     }
 }

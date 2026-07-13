@@ -17,6 +17,7 @@ fn main() {
             "csrc/autolykos_native.c",
             "csrc/kawpow_native.c",
             "csrc/etchash_native.c",
+            "csrc/verushash_portable.c",
         ];
 
         for src in &sources {

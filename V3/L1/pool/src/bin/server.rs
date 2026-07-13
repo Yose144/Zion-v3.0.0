@@ -353,6 +353,7 @@ fn revenue_source_to_external_coin(source: RevenueSource) -> Option<ExternalCoin
         RevenueSource::AutolykosExternal => Some(ExternalCoin::ERG),
         RevenueSource::RandomXExternal => Some(ExternalCoin::XMR),
         RevenueSource::ZelHashExternal => Some(ExternalCoin::FLUX),
+        RevenueSource::VerusHashExternal => Some(ExternalCoin::VRSC),
         _ => None,
     }
 }
@@ -369,6 +370,7 @@ fn external_coin_to_revenue_source(coin: ExternalCoin) -> RevenueSource {
         ExternalCoin::ERG => RevenueSource::AutolykosExternal,
         ExternalCoin::XMR => RevenueSource::RandomXExternal,
         ExternalCoin::FLUX => RevenueSource::ZelHashExternal,
+        ExternalCoin::VRSC => RevenueSource::VerusHashExternal,
     }
 }
 
@@ -404,6 +406,7 @@ fn auxpow_to_ch_external_coin(coin: ExternalCoin) -> ChExternalCoin {
         ExternalCoin::FLUX => ChExternalCoin::FLUX,
         ExternalCoin::CLORE => ChExternalCoin::CLORE,
         ExternalCoin::XMR => ChExternalCoin::XMR,
+        ExternalCoin::VRSC => ChExternalCoin::VRSC,
     }
 }
 
@@ -421,6 +424,7 @@ fn ch_to_auxpow_external_coin(coin: ChExternalCoin) -> ExternalCoin {
         ChExternalCoin::FLUX => ExternalCoin::FLUX,
         ChExternalCoin::CLORE => ExternalCoin::CLORE,
         ChExternalCoin::XMR => ExternalCoin::XMR,
+        ChExternalCoin::VRSC => ExternalCoin::VRSC,
     }
 }
 
@@ -435,6 +439,7 @@ fn external_coin_to_algorithm(coin: ExternalCoin) -> &'static str {
         ExternalCoin::XMR => "randomx",
         ExternalCoin::FLUX => "zelhash",
         ExternalCoin::EVR | ExternalCoin::MEWC => "kawpow",
+        ExternalCoin::VRSC => "verushash",
     }
 }
 
@@ -4607,6 +4612,7 @@ fn source_index(source: RevenueSource) -> usize {
         RevenueSource::ZelHashExternal => 11,
         RevenueSource::DeekshaLite => 12,
         RevenueSource::ThermalBonus => 13,
+        RevenueSource::VerusHashExternal => 14,
     }
 }
 
@@ -4626,6 +4632,7 @@ fn revenue_source_name(source: RevenueSource) -> &'static str {
         RevenueSource::ZelHashExternal => "zelhash",
         RevenueSource::DeekshaLite => "deeksha_lite",
         RevenueSource::ThermalBonus => "thermal_bonus",
+        RevenueSource::VerusHashExternal => "verushash",
     }
 }
 

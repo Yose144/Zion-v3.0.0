@@ -23,6 +23,7 @@ pub enum ExternalCoin {
     FLUX,
     CLORE,
     XMR,
+    VRSC,
 }
 
 impl ExternalCoin {
@@ -39,6 +40,7 @@ impl ExternalCoin {
             Self::FLUX => "FLUX",
             Self::CLORE => "CLORE",
             Self::XMR => "XMR",
+            Self::VRSC => "VRSC",
         }
     }
 
@@ -55,6 +57,7 @@ impl ExternalCoin {
             Self::FLUX => "zelhash",
             Self::CLORE => "kawpow",
             Self::XMR => "randomx",
+            Self::VRSC => "verushash",
         }
     }
 
@@ -63,7 +66,7 @@ impl ExternalCoin {
     }
 
     pub fn is_cpu(self) -> bool {
-        matches!(self, Self::XMR)
+        matches!(self, Self::XMR | Self::VRSC)
     }
 
     pub fn from_str_loose(s: &str) -> Option<Self> {
@@ -79,6 +82,7 @@ impl ExternalCoin {
             "flux" => Some(Self::FLUX),
             "clore" | "clore.ai" => Some(Self::CLORE),
             "xmr" | "monero" => Some(Self::XMR),
+            "vrsc" | "verus" | "veruscoin" => Some(Self::VRSC),
             _ => None,
         }
     }
@@ -96,6 +100,7 @@ impl ExternalCoin {
             Self::FLUX => "flux.woolypooly.com:3000",
             Self::CLORE => "clore.woolypooly.com:3090",
             Self::XMR => "gulf.moneroocean.stream:10001",
+            Self::VRSC => "eu.luckpool.net:3956",
         }
     }
 
@@ -127,6 +132,7 @@ impl ExternalCoin {
             Self::FLUX,
             Self::CLORE,
             Self::XMR,
+            Self::VRSC,
         ]
     }
 
@@ -188,7 +194,11 @@ impl CoinProfile {
             pool_host: host,
             pool_port: port,
             worker_name: "zion_auxpow".to_string(),
-            password: String::new(),
+            password: if coin == ExternalCoin::DCR {
+                "x,d=4".to_string()
+            } else {
+                String::new()
+            },
             enabled: true,
         }
     }
@@ -238,6 +248,7 @@ pub fn fallback_estimates() -> Vec<ProfitEntry> {
         ProfitEntry { coin: ExternalCoin::EVR, revenue_per_day_usd: 0.20, power_cost_usd: 0.08 },
         ProfitEntry { coin: ExternalCoin::MEWC, revenue_per_day_usd: 0.15, power_cost_usd: 0.06 },
         ProfitEntry { coin: ExternalCoin::XMR, revenue_per_day_usd: 0.12, power_cost_usd: 0.03 },
+        ProfitEntry { coin: ExternalCoin::VRSC, revenue_per_day_usd: 0.14, power_cost_usd: 0.03 },
     ]
 }
 

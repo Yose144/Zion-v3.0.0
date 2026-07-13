@@ -24,6 +24,7 @@ pub enum ExternalAlgorithm {
     KawPow,
     Ethash,
     RandomX,
+    VerusHash,
 }
 
 impl ExternalAlgorithm {
@@ -35,6 +36,7 @@ impl ExternalAlgorithm {
             Self::KawPow => "kawpow",
             Self::Ethash => "ethash",
             Self::RandomX => "randomx",
+            Self::VerusHash => "verushash",
         }
     }
 
@@ -46,6 +48,7 @@ impl ExternalAlgorithm {
             "kawpow" => Some(Self::KawPow),
             "ethash" | "etchash" => Some(Self::Ethash),
             "randomx" => Some(Self::RandomX),
+            "verushash" | "verus" => Some(Self::VerusHash),
             _ => None,
         }
     }
@@ -725,6 +728,50 @@ pub fn set_ethash_dag(dag: &[u8], dag_size_entries: u64) {
 #[cfg(feature = "native-hashers")]
 pub fn init_ethash() {
     crate::native_ffi::init_ethash();
+}
+
+// ── VerusHash v2.2 (VRSC) ────────────────────────────────────────────
+
+/// Compute VerusHash v2.2 for Verus (VRSC) mining.
+///
+/// VerusHash v2.2 is a CPU-optimized PoW algorithm combining Haraka-512,
+/// CLHash (carry-less multiplication hash), and BLAKE2b finalization.
+/// It is designed to be ASIC-resistant and GPU-resistant, favoring CPUs
+/// with AES-NI / ARM crypto extensions.
+///
+/// This function calls the native C++ implementation (Haraka+CLHash pipeline
+/// from VerusCoin upstream) when the `native-hashers` feature is enabled.
+/// The pure-Rust fallback uses Blake3 as a placeholder and is NOT valid for
+/// real VRSC mining.
+///
+/// # Arguments
+/// * `header` — Full block header bytes (or header prefix for PBaaS v7+)
+/// * `nonce` — 64-bit nonce value
+///
+/// # Returns
+/// 32-byte VerusHash v2.2 digest.
+pub fn hash_verushash(header: &[u8], nonce: u64) -> [u8; 32] {
+    #[cfg(feature = "native-hashers")]
+    {
+        return crate::native_ffi::hash_verushash_native(header, nonce);
+    }
+
+    // Pure-Rust fallback: NOT valid for real VerusHash mining.
+    // Uses Blake3 as a deterministic placeholder for testing the stratum pipeline.
+    #[allow(unreachable_code)]
+    {
+        let mut input = Vec::with_capacity(header.len() + 8);
+        input.extend_from_slice(header);
+        input.extend_from_slice(&nonce.to_le_bytes());
+        *blake3::hash(&input).as_bytes()
+    }
+}
+
+/// Initialize VerusHash lookup tables (Haraka round constants, CLHash keys).
+/// Must be called once before hashing when using the native implementation.
+#[cfg(feature = "native-hashers")]
+pub fn init_verushash() {
+    crate::native_ffi::init_verushash();
 }
 
 // ── Tests ────────────────────────────────────────────────────────────

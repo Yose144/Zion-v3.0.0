@@ -494,7 +494,7 @@ V3/L1/native-ffi už má **8 algoritmů** s plným FFI:
 | kHeavyHash | `csrc/kheavyhash/kheavyhash_native.c` (263 lines) | ✅ | ✅ Full |
 | Blake3 | `csrc/blake3/blake3_native.c` (426 lines) | ✅ | ✅ Full |
 | Cosmic Harmony v3 | `csrc/cosmic_harmony/...` (733 lines) | ✅ | ✅ Full |
-| VerusHash | `csrc/verushash/...` (131 lines) | ✅ | ⚠️ Stub |
+| VerusHash | `csrc/verushash/...` (131 lines) | ✅ | ⚠️ Stub → **IN PROGRESS**: port Haraka+CLHash z 2.9.9 archivu (viz `AUXPOW_VRSC_B2B_PLAN.md`) |
 | RandomX | `csrc/randomx/...` (129 lines) | ✅ | ⚠️ Stub |
 
 **Miner Cargo.toml** už má features: `native-etchash`, `native-kawpow`, `native-autolykos`, `native-kheavyhash`, `native-blake3-algo`, `native-cosmic-harmony`, `native-verushash`, `native-randomx`, `native-all`
