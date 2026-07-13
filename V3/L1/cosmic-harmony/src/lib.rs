@@ -14,6 +14,7 @@ pub mod revenue_journal;
 pub mod scratchpad_ekam;
 pub mod sha3_fast;
 pub mod stream_layers;
+pub mod stream_profit;
 
 pub use algorithms_npu::{
     epoch_from_height, epoch_seed, npu_mixing_step, npu_mixing_step_epoch, MlpTopology,
