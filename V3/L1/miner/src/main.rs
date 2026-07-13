@@ -13,7 +13,9 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 use zion_core::{CoreRuntime, DifficultyTarget, MiningHeader, MiningJob, RevenueSource};
-use zion_pool::{decode_message, encode_message, MiningPool, PoolMessage, ShareStatus};
+use zion_pool::{
+    decode_message, encode_message, ExternalStreamJob, MiningPool, PoolMessage, ShareStatus,
+};
 
 mod banner;
 mod gpu_backend;
@@ -967,8 +969,12 @@ fn run_local_session(
             );
         }
         // Ensure GPU backend matches current algorithm (lazy create / switch)
+        // Skip GPU for CPU-only algorithms (verushash, randomx) — they have no
+        // GPU kernel and must use CPU mining.
         let mut gpu_ref: Option<&mut dyn gpu_backend::GpuMiner> = None;
-        if config.gpu_backend != gpu_backend::GpuBackendKind::Cpu {
+        if config.gpu_backend != gpu_backend::GpuBackendKind::Cpu
+            && !gpu_backend::is_cpu_only_algorithm(&current_algorithm)
+        {
             match gpu_manager.ensure_algorithm(&current_algorithm) {
                 Ok(g) => gpu_ref = Some(g),
                 Err(e) => {
@@ -1387,20 +1393,24 @@ fn run_remote_session(
             VERBOSE.store(c.verbose, Ordering::Relaxed);
         }
 
-        let (job_line, mut job, algorithm, raw_header_bytes, stream_weights_str) = match read_next_job(&mut reader) {
-            Ok(result) => result,
-            Err(e) => {
-                let err_str = format!("{e:#}");
-                // Parse errors (bad header/target) → skip and continue
-                // Connection errors (EOF, broken pipe) → reconnect
-                if err_str.contains("invalid hex") || err_str.contains("must be exactly") || err_str.contains("slice") {
-                    println!("read_job_parse_error: {err_str} — skipping job");
-                    continue;
+        let (job_line, mut job, algorithm, raw_header_bytes, stream_weights_str, external_stream) =
+            match read_next_job(&mut reader) {
+                Ok(result) => result,
+                Err(e) => {
+                    let err_str = format!("{e:#}");
+                    // Parse errors (bad header/target) → skip and continue
+                    // Connection errors (EOF, broken pipe) → reconnect
+                    if err_str.contains("invalid hex")
+                        || err_str.contains("must be exactly")
+                        || err_str.contains("slice")
+                    {
+                        println!("read_job_parse_error: {err_str} — skipping job");
+                        continue;
+                    }
+                    println!("read_job_error: {err_str} — reconnecting");
+                    break;
                 }
-                println!("read_job_error: {err_str} — reconnecting");
-                break;
-            }
-        };
+            };
         println!(">> new job #{} height={} algo={}", job.job_id, job.height, algorithm);
         let current_diff = CURRENT_POOL_DIFFICULTY.load(Ordering::Relaxed);
         // Only override target for ZION jobs. External AuxPoW jobs carry
@@ -1447,8 +1457,12 @@ fn run_remote_session(
         };
 
         // Ensure GPU backend matches current algorithm (lazy create / switch)
+        // Skip GPU for CPU-only algorithms (verushash, randomx) — they have no
+        // GPU kernel and must use CPU mining.
         let mut gpu_ref: Option<&mut dyn gpu_backend::GpuMiner> = None;
-        if config.gpu_backend != gpu_backend::GpuBackendKind::Cpu && gpu_on {
+        if config.gpu_backend != gpu_backend::GpuBackendKind::Cpu && gpu_on
+            && !gpu_backend::is_cpu_only_algorithm(&current_algorithm)
+        {
             match gpu_manager.ensure_algorithm(&current_algorithm) {
                 Ok(g) => gpu_ref = Some(g),
                 Err(e) => {
@@ -1482,6 +1496,26 @@ fn run_remote_session(
         let mut gpu_nonces_tested = 0u64;
         let mut cpu_nonces_tested = 0u64;
         let mut gpu_mix_hash: Option<[u8; 32]> = None;
+
+        // ── DeekshaChv3 parallel streaming ──────────────────────────────
+        // When the pool sends an external_stream job embedded in the ZION
+        // job, spawn a CPU thread to mine the external coin IN PARALLEL with
+        // the GPU scanning the ZION Deeksha job.  Both streams submit shares
+        // independently.
+        let ext_handle = if let Some(ref ext) = external_stream {
+            if cpu_on {
+                let ext = ext.clone();
+                let ext_threads = threads.max(1);
+                Some(thread::spawn(move || {
+                    mine_external_stream_cpu(&ext, ext_threads)
+                }))
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
         let scan_result = if can_gpu {
             let g = gpu_ref.unwrap();
             if let Err(e) = g.update_epoch(job.height) {
@@ -1505,6 +1539,65 @@ fn run_remote_session(
             cpu_nonces_tested = 0;
             None
         };
+
+        // ── Join external stream thread and submit any found share ──────
+        if let Some(handle) = ext_handle {
+            let ext_result = handle.join().unwrap_or(None);
+            if let Some(share) = ext_result {
+                println!(
+                    "[{}] external_share_found  coin={}  algo={}  job_id={}  nonce={}  hash={}",
+                    log_timestamp(),
+                    share.coin,
+                    share.algorithm,
+                    share.external_job_id,
+                    share.nonce,
+                    hex::encode(share.hash),
+                );
+                let ext_submit = PoolMessage::ExternalSubmit {
+                    miner_id: config.miner_id.clone(),
+                    worker_name: config.worker_name.clone(),
+                    coin: share.coin.clone(),
+                    algorithm: share.algorithm.clone(),
+                    external_job_id: share.external_job_id.clone(),
+                    nonce: share.nonce,
+                    hash_hex: hex::encode(share.hash),
+                    mix_hash_hex: None,
+                    extranonce1_hex: share.extranonce1_hex.clone(),
+                };
+                if let Err(e) = write_wire_message(&mut writer, &ext_submit) {
+                    println!("external_submit_write_error: {e}");
+                } else {
+                    // Read the external result (non-blocking — pool may or may not respond)
+                    match read_next_result(&mut reader) {
+                        Ok((line, msg)) => {
+                            if VERBOSE.load(Ordering::Relaxed) {
+                                println!("wire_external_result={line}");
+                            }
+                            if let PoolMessage::ExternalResult { accepted, status, coin } = msg {
+                                if accepted {
+                                    hashrate.accepted_shares.fetch_add(1, Ordering::Relaxed);
+                                    println!("[{}] external_share_accepted coin={} status={}", log_timestamp(), coin, status);
+                                } else {
+                                    hashrate.rejected_shares.fetch_add(1, Ordering::Relaxed);
+                                    println!("[{}] external_share_rejected coin={} status={}", log_timestamp(), coin, status);
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            println!("external_result_read_error: {e}");
+                        }
+                    }
+                }
+            } else if let Some(ref ext) = external_stream {
+                println!(
+                    "[{}] external_no_share  coin={}  algo={}",
+                    log_timestamp(),
+                    ext.coin,
+                    ext.algorithm,
+                );
+            }
+        }
+
         hashrate.record_gpu_hashes(gpu_nonces_tested);
         hashrate.record_cpu_hashes(cpu_nonces_tested);
         let batch_ms = job_started_at.elapsed().as_millis() as u64;
@@ -2070,7 +2163,104 @@ impl SessionTelemetry {
     }
 }
 
-fn read_next_job(reader: &mut impl BufRead) -> Result<(String, MiningJob, String, Vec<u8>, String)> {
+/// Result of mining an external stream job in parallel.
+struct ExternalShareResult {
+    coin: String,
+    algorithm: String,
+    external_job_id: String,
+    nonce: u64,
+    hash: [u8; 32],
+    extranonce1_hex: String,
+}
+
+/// Mine an external stream job on CPU using the AuXpow miner harness.
+///
+/// This runs IN PARALLEL with the GPU scanning the ZION Deeksha job.
+/// Converts the `ExternalStreamJob` from the pool into a `JobPackage` and
+/// calls `zion_auxpow::miner_harness::mine()` with the given thread count.
+fn mine_external_stream_cpu(ext: &ExternalStreamJob, _threads: usize) -> Option<ExternalShareResult> {
+    // Parse external coin from ticker
+    let coin = match zion_auxpow::types::ExternalCoin::from_str_loose(&ext.coin) {
+        Some(c) => c,
+        None => {
+            println!("external_stream_unknown_coin: {}", ext.coin);
+            return None;
+        }
+    };
+
+    // Parse header bytes
+    let header_bytes = match hex::decode(ext.header_hex.trim_start_matches("0x")) {
+        Ok(b) => b,
+        Err(e) => {
+            println!("external_stream_header_decode_error: {e}");
+            return None;
+        }
+    };
+
+    // Parse target
+    let target_bytes = match zion_pool::parse_fixed_hex::<32>(&ext.target_hex, "external target") {
+        Ok(t) => t,
+        Err(e) => {
+            println!("external_stream_target_parse_error: {e}");
+            return None;
+        }
+    };
+
+    // Parse extranonce1
+    let extranonce1 = if ext.extranonce1_hex.is_empty() {
+        Vec::new()
+    } else {
+        match hex::decode(ext.extranonce1_hex.trim_start_matches("0x")) {
+            Ok(b) => b,
+            Err(_) => Vec::new(),
+        }
+    };
+
+    // For VerusHash, initialize the hasher
+    if ext.algorithm == "verushash" {
+        zion_auxpow::external_hashers::init_verushash();
+    }
+
+    let job_pkg = zion_auxpow::types::JobPackage {
+        external_coin: coin,
+        external_job_id: ext.job_id.clone(),
+        algorithm: ext.algorithm.clone(),
+        header_bytes,
+        target_bytes,
+        timestamp: ext.height, // reused for height in some algorithms
+        block_number: Some(ext.height),
+        extranonce1,
+        start_nonce: 0,
+        nonce_count: 5_000_000, // scan 5M nonces per iteration
+    };
+
+    match zion_auxpow::miner_harness::mine(&job_pkg, 0..5_000_000) {
+        Ok(Some(share)) => Some(ExternalShareResult {
+            coin: ext.coin.clone(),
+            algorithm: ext.algorithm.clone(),
+            external_job_id: share.external_job_id,
+            nonce: share.nonce,
+            hash: share.hash,
+            extranonce1_hex: ext.extranonce1_hex.clone(),
+        }),
+        Ok(None) => None,
+        Err(e) => {
+            println!("external_stream_mine_error: {e}");
+            None
+        }
+    }
+}
+
+fn read_next_job(
+    reader: &mut impl BufRead,
+) -> Result<(
+    String,
+    MiningJob,
+    String,
+    Vec<u8>,
+    String,
+    Option<zion_pool::ExternalStreamJob>,
+)> {
     loop {
         let (line, message) = read_wire_message(reader)?;
         match message {
@@ -2083,15 +2273,22 @@ fn read_next_job(reader: &mut impl BufRead) -> Result<(String, MiningJob, String
                 header_hex,
                 height,
                 stream_weights,
+                external_stream,
             } => {
                 // Log stream weights if present (Deeksha Chv3 pipeline parameterisation).
                 if !stream_weights.is_empty() {
                     println!("stream_weights job={} weights={}", job_id, stream_weights);
                 }
+                if let Some(ref ext) = external_stream {
+                    println!(
+                        "external_stream job={} coin={} algo={}",
+                        job_id, ext.coin, ext.algorithm
+                    );
+                }
                 // Keep raw header bytes for external algorithms that may
                 // use headers longer than 80 bytes (e.g. DCR = 180 bytes).
-                let raw_header_bytes = hex::decode(header_hex.trim_start_matches("0x"))
-                    .unwrap_or_default();
+                let raw_header_bytes =
+                    hex::decode(header_hex.trim_start_matches("0x")).unwrap_or_default();
                 return Ok((
                     line,
                     MiningJob {
@@ -2107,6 +2304,7 @@ fn read_next_job(reader: &mut impl BufRead) -> Result<(String, MiningJob, String
                     algorithm,
                     raw_header_bytes,
                     stream_weights,
+                    external_stream,
                 ))
             }
             PoolMessage::Stale { .. } => println!("wire_stale={line}"),
@@ -2351,7 +2549,13 @@ impl MinerConfig {
                     println!("  --gpu BACKEND       GPU backend: auto, metal, opencl, cpu (default: auto)");
                     println!("  --loops N           Iteration count (default: 1)");
                     println!("  --profile NAME      Profile: pool, solo, benchmark, dual");
-                    println!("  --algorithm ALGO    Mining algorithm: deeksha_lite_v1, cosmic_harmony_ekam_deeksha_v2, deeksha_lite_fire, kawpow");
+                    println!("  --algorithm ALGO    Mining algorithm (see list below)");
+                    println!();
+                    println!("  ZION algorithms:  deeksha_lite_v1, cosmic_harmony_ekam_deeksha_v2, deeksha_lite_fire");
+                    println!("  External GPU:      blake3 (ALPH/DCR), kheavyhash (KAS), autolykos (ERG),");
+                    println!("                     kawpow (RVN/CLORE/EVR/MEWC), ethash (ETC), zelhash (FLUX)");
+                    println!("  External CPU:      verushash (VRSC), randomx (XMR)");
+                    println!("  Special:           auto (autotune — benchmark all and pick best)");
                 println!("  --no-tui            Disable interactive TUI and log to stdout");
                     println!();
                     println!("Benchmarks:");

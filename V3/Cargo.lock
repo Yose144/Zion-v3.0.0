@@ -373,6 +373,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "blake2b_simd"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b79834656f71332577234b50bfc009996f7449e0c056884e6a02492ded0ca2f3"
+dependencies = [
+ "arrayref",
+ "arrayvec",
+ "constant_time_eq",
+]
+
+[[package]]
 name = "blake3"
 version = "1.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5121,6 +5132,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "blake2",
+ "blake2b_simd",
  "blake3",
  "cc",
  "chrono",
@@ -5134,6 +5146,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "zion-native-ffi",
 ]
 
 [[package]]

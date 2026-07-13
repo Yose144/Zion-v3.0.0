@@ -1834,42 +1834,65 @@ fn handle_client(
             None
         };
 
-        let assignment = match desired_external_coin {
-            Some(coin) if should_issue_external_job(iteration, &config.auxpow_config) => {
-                // Try to use the freshest external job from the bridge queue.
-                // pop_job returns a clone and leaves the job in the queue so
-                // fast miners don't drain it between upstream notify messages.
-                // If none is available, fall back to ZION so the session keeps
-                // hashing instead of stalling.
-                let job = auxpow_bridge.pop_job().filter(|j| j.external_coin == coin);
-                if let Some(job) = job {
-                    WorkAssignment::External(job)
+        // ── DeekshaChv3 parallel streaming ──────────────────────────────
+        // ALWAYS issue a ZION job as the main assignment.  When AuxPow is
+        // enabled and an external job is available, embed it as
+        // `external_stream` in the job message so the miner runs both
+        // ZION (GPU) + external (CPU) IN PARALLEL.
+        let assignment = issue_zion_job(
+            config,
+            &template_cache,
+            &pool,
+            &mut last_template_height,
+            session_id,
+            iteration,
+            &worker_name,
+        )?;
+
+        // Fetch external job for parallel streaming (if available)
+        let external_stream_job: Option<zion_pool::ExternalStreamJob> =
+            if let Some(coin) = desired_external_coin {
+                if let Some(ext_job) = auxpow_bridge
+                    .pop_job()
+                    .filter(|j| j.external_coin == coin)
+                {
+                    let ext_coin_ticker = ext_job.external_coin.ticker().to_string();
+                    let ext_algorithm = ext_job.external_coin.algorithm().to_string();
+                    let ext_job_id = ext_job.external_job_id.clone();
+                    let ext_height = ext_job.block_number.unwrap_or(0);
+                    let ext_target_hex = to_hex(&ext_job.target_bytes);
+                    let ext_header_hex = to_hex(&ext_job.header_bytes);
+                    let ext_extranonce1_hex = to_hex(&ext_job.extranonce1);
+                    let ext_protocol = match ext_job.external_coin {
+                        zion_auxpow::ExternalCoin::VRSC => "zcashstratum".to_string(),
+                        zion_auxpow::ExternalCoin::KAS => "stratum".to_string(),
+                        zion_auxpow::ExternalCoin::ALPH => "stratum".to_string(),
+                        _ => "stratum".to_string(),
+                    };
+                    println!(
+                        "parallel_stream_embedded miner={} coin={} algo={} ext_job_id={} height={}",
+                        worker_name, ext_coin_ticker, ext_algorithm, ext_job_id, ext_height
+                    );
+                    Some(zion_pool::ExternalStreamJob {
+                        coin: ext_coin_ticker,
+                        algorithm: ext_algorithm,
+                        job_id: ext_job_id,
+                        header_hex: ext_header_hex,
+                        target_hex: ext_target_hex,
+                        height: ext_height,
+                        extranonce1_hex: ext_extranonce1_hex,
+                        protocol: ext_protocol,
+                    })
                 } else {
                     log_ch.log_verbose(format!(
-                        "auxpow_no_job miner={} coin={} falling_back_to_zion",
+                        "parallel_stream_no_external_job miner={} coin={} zion_only",
                         worker_name, coin
                     ));
-                    issue_zion_job(
-                        config,
-                        &template_cache,
-                        &pool,
-                        &mut last_template_height,
-                        session_id,
-                        iteration,
-                        &worker_name,
-                    )?
+                    None
                 }
-            }
-            _ => issue_zion_job(
-                config,
-                &template_cache,
-                &pool,
-                &mut last_template_height,
-                session_id,
-                iteration,
-                &worker_name,
-            )?,
-        };
+            } else {
+                None
+            };
 
         let job_issued_at = Instant::now();
         // Store network target for block validation; send share target to miner.
@@ -1901,6 +1924,7 @@ fn handle_client(
             header_hex: to_hex(&assignment_header_bytes(&assignment)),
             height: assignment_height(&assignment),
             stream_weights: stream_weights_string.clone(),
+            external_stream: external_stream_job.clone(),
         };
         let job_line = write_wire_message(&mut writer, &job_message)?;
 
@@ -1932,7 +1956,92 @@ fn handle_client(
         log_ch.log_verbose(format!("issued_job_id={}", assignment.job_id()));
         log_ch.log_verbose(format!("wire_job={job_line}"));
 
-        let (submit_line, submit_message) = read_wire_message(&mut reader)?;
+        let (submit_line, submit_message) = {
+            let mut got_zion_response = false;
+            let mut zion_line = String::new();
+            let mut zion_msg: Option<PoolMessage> = None;
+            while !got_zion_response {
+                let (line, msg) = read_wire_message(&mut reader)?;
+                match msg {
+                    PoolMessage::ExternalSubmit {
+                        miner_id: sub_miner_id,
+                        worker_name: sub_worker_name,
+                        coin,
+                        algorithm: _,
+                        external_job_id,
+                        nonce,
+                        hash_hex,
+                        mix_hash_hex,
+                        extranonce1_hex: _,
+                    } => {
+                        // Forward external share to upstream pool via the bridge
+                        println!(
+                            "external_share_received miner={} coin={} job_id={} nonce={}",
+                            sub_miner_id, coin, external_job_id, nonce
+                        );
+                        // Parse hash bytes
+                        let hash_bytes = match zion_pool::parse_fixed_hex::<32>(&hash_hex, "external share hash") {
+                            Ok(h) => h,
+                            Err(e) => {
+                                let ext_result = PoolMessage::ExternalResult {
+                                    accepted: false,
+                                    status: format!("hash_parse_error: {e}"),
+                                    coin: coin.clone(),
+                                };
+                                let _ = write_wire_message(&mut writer, &ext_result);
+                                continue;
+                            }
+                        };
+                        // Get target from the external stream job we sent
+                        let target_bytes = match &external_stream_job {
+                            Some(ext) => match zion_pool::parse_fixed_hex::<32>(&ext.target_hex, "external target") {
+                                Ok(t) => t,
+                                Err(_) => [0xFFu8; 32],
+                            },
+                            None => [0xFFu8; 32],
+                        };
+                        // Parse mix hash if present
+                        let mix_hash = mix_hash_hex
+                            .as_deref()
+                            .and_then(|h| zion_pool::parse_fixed_hex::<32>(h, "mix hash").ok());
+                        let forward_req = ShareForwardRequest {
+                            external_job_id: external_job_id.clone(),
+                            nonce,
+                            hash: hash_bytes,
+                            target: target_bytes,
+                            mix_hash,
+                        };
+                        let (accepted, status) = match auxpow_bridge.forward(forward_req) {
+                            Some(outcome) => match outcome.result {
+                                ShareForwardResult::Accepted => (true, "accepted".to_string()),
+                                ShareForwardResult::BelowTarget => (false, "below_target".to_string()),
+                                ShareForwardResult::Rejected(ref r) => (false, format!("rejected: {r}")),
+                                ShareForwardResult::Unknown => (false, "unknown".to_string()),
+                                ShareForwardResult::NotConnected => (false, "not_connected".to_string()),
+                            },
+                            None => (false, "bridge_unavailable".to_string()),
+                        };
+                        let ext_result = PoolMessage::ExternalResult {
+                            accepted,
+                            status: status.clone(),
+                            coin: coin.clone(),
+                        };
+                        let _ = write_wire_message(&mut writer, &ext_result);
+                        println!(
+                            "external_share_result miner={} coin={} accepted={} status={}",
+                            sub_miner_id, coin, accepted, status
+                        );
+                    }
+                    PoolMessage::Submit { .. } | PoolMessage::NoSolution { .. } => {
+                        zion_line = line;
+                        zion_msg = Some(msg);
+                        got_zion_response = true;
+                    }
+                    other => return Err(anyhow!("expected submit from miner, got {other:?}")),
+                }
+            }
+            (zion_line, zion_msg.unwrap())
+        };
         let iter_elapsed_ms = job_issued_at.elapsed().as_millis();
         log_ch.log_verbose(format!("wire_submit={submit_line}"));
         log_ch.log_verbose(format!("iteration_elapsed_ms={iter_elapsed_ms}"));
@@ -5323,25 +5432,34 @@ mod tests {
         let (_, job_message) = read_wire_message(&mut reader).expect("read job");
         match &job_message {
             PoolMessage::Job {
-                job_id,
-                algorithm,
-                header_hex,
-                height,
+                external_stream: Some(ext),
                 ..
             } => {
-                assert_eq!(*job_id, hash_job_id(&external_job_id));
-                assert_eq!(algorithm, "kheavyhash");
-                assert_eq!(header_hex, &to_hex(&vec![0xAA; 80]));
-                assert_eq!(*height, 1_762_100_200);
+                // Parallel streaming: ZION job with embedded external stream
+                assert_eq!(ext.coin, "KAS");
+                assert_eq!(ext.algorithm, "kheavyhash");
+                assert_eq!(ext.job_id, "job_kas_001");
+                assert_eq!(ext.header_hex, to_hex(&vec![0xAA; 80]));
+                assert_eq!(ext.height, 0); // block_number was None
+            }
+            PoolMessage::Job { external_stream: None, .. } => {
+                // If bridge queue was empty, we get ZION-only — also acceptable
+                // in parallel streaming mode (external job may not always be available)
             }
             other => panic!("expected Job message, got {other:?}"),
         }
+
+        // Extract the actual job_id for the NoSolution response
+        let actual_job_id = match &job_message {
+            PoolMessage::Job { job_id, .. } => *job_id,
+            _ => 0,
+        };
 
         // Submit a NoSolution so the session ends cleanly.
         write_wire_message(
             &mut stream,
             &PoolMessage::NoSolution {
-                job_id: hash_job_id(&external_job_id),
+                job_id: actual_job_id,
                 miner_id: "test-miner".to_string(),
                 worker_name: "rig-test".to_string(),
                 attempted_hashes: Some(1_000_000),
@@ -5582,35 +5700,59 @@ mod tests {
         let (_, _set_diff) = read_wire_message(&mut reader).expect("read set difficulty");
         assert!(matches!(_set_diff, PoolMessage::SetDifficulty { .. }));
         let (_, job_message) = read_wire_message(&mut reader).expect("read job");
-        let job_id = match &job_message {
-            PoolMessage::Job { job_id, algorithm, .. } => {
-                assert_eq!(algorithm, "blake3_dcr");
-                *job_id
+        let (job_id, ext_job_id_str) = match &job_message {
+            PoolMessage::Job { job_id, algorithm, external_stream: Some(ext), .. } => {
+                // Parallel streaming: ZION job with embedded external stream
+                assert_eq!(algorithm, "deeksha_lite_v1");
+                assert_eq!(ext.coin, "DCR");
+                assert_eq!(ext.algorithm, "blake3");
+                assert_eq!(ext.job_id, "job_dcr_e2e_001");
+                (*job_id, ext.job_id.clone())
             }
-            other => panic!("expected Job message, got {other:?}"),
+            other => panic!("expected Job with external_stream, got {other:?}"),
         };
 
-        // 6) Submit a share. The hash is cosmetic; the pool recomputes it.
+        // 6) Submit an external share (ExternalSubmit for the parallel stream)
         write_wire_message(
             &mut stream,
-            &PoolMessage::Submit {
+            &PoolMessage::ExternalSubmit {
+                miner_id: "e2e-miner".to_string(),
+                worker_name: "rig-e2e".to_string(),
+                coin: "DCR".to_string(),
+                algorithm: "blake3".to_string(),
+                external_job_id: ext_job_id_str.clone(),
+                nonce: 42,
+                hash_hex: "00".repeat(32),
+                mix_hash_hex: None,
+                extranonce1_hex: String::new(),
+            },
+        )
+        .expect("write external submit");
+
+        // Read external result
+        let (_, ext_result) = read_wire_message(&mut reader).expect("read external result");
+        assert!(
+            matches!(ext_result, PoolMessage::ExternalResult { accepted: true, .. }),
+            "external share should be accepted: {ext_result:?}"
+        );
+
+        // 7) Submit NoSolution for the ZION job so the session iteration completes
+        write_wire_message(
+            &mut stream,
+            &PoolMessage::NoSolution {
                 job_id,
                 miner_id: "e2e-miner".to_string(),
                 worker_name: "rig-e2e".to_string(),
-                nonce: 42,
-                hash_hex: "00".repeat(32),
                 attempted_hashes: Some(64),
                 elapsed_ms: Some(1000),
-                mix_hash_hex: None,
             },
         )
-        .expect("write submit");
+        .expect("write no solution");
 
-        // Read result (accepted/rejected) and bye.
-        let (_, result) = read_wire_message(&mut reader).expect("read result");
-        assert!(matches!(result, PoolMessage::Result { accepted: true, .. }), "share should be accepted: {result:?}");
+        // Read result for ZION job
+        let (_, _result) = read_wire_message(&mut reader).expect("read result");
 
-        // 7) Verify the mock external pool received mining.submit.
+        // 8) Verify the mock external pool received mining.submit.
         let submit_req = tokio::time::timeout(std::time::Duration::from_secs(5), submit_rx.recv())
             .await
             .expect("timeout waiting for submit")

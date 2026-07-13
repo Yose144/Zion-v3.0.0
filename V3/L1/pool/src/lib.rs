@@ -41,6 +41,32 @@ pub fn protocol_version() -> &'static str {
     PROTOCOL_VERSION
 }
 
+/// Parallel external stream job — attached to ZION Job messages so the miner
+/// can run an external algorithm (VRSC, KAS, ALPH, etc.) IN PARALLEL with
+/// the main Deeksha Chv3 GPU pipeline.  This is the DeekshaChv3 parallel
+/// streaming architecture: ZION on GPU + external on CPU/GPU simultaneously.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExternalStreamJob {
+    /// External coin ticker (VRSC, KAS, ALPH, DCR, RVN, ERG, ETC, etc.)
+    pub coin: String,
+    /// Algorithm name (verushash, kheavyhash, blake3, kawpow, etc.)
+    pub algorithm: String,
+    /// External job ID (from upstream pool)
+    pub job_id: String,
+    /// Header/blob hex (algorithm-specific format)
+    pub header_hex: String,
+    /// Share target hex (32 bytes, big-endian)
+    pub target_hex: String,
+    /// Block height on external chain
+    pub height: u64,
+    /// Extranonce1 hex (for coins that use it)
+    #[serde(default)]
+    pub extranonce1_hex: String,
+    /// Pool protocol (stratum, ethstratum, zcashstratum)
+    #[serde(default)]
+    pub protocol: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum PoolMessage {
@@ -75,6 +101,14 @@ pub enum PoolMessage {
         /// Miners that don't recognise this field simply ignore it.
         #[serde(default)]
         stream_weights: String,
+        /// Parallel external stream job (DeekshaChv3 parallel streaming).
+        ///
+        /// When present, the miner should run this external algorithm IN PARALLEL
+        /// with the main ZION/Deeksha job — e.g. ZION on GPU + VerusHash on CPU.
+        /// Both streams submit shares independently.
+        /// None/absent = no external stream (ZION-only iteration).
+        #[serde(default)]
+        external_stream: Option<ExternalStreamJob>,
     },
     Submit {
         job_id: u64,
@@ -144,6 +178,34 @@ pub enum PoolMessage {
         difficulty: u64,
         /// Which relay pool forwarded this share (for audit / debugging).
         relay_origin: String,
+    },
+    /// Miner → pool: external stream share submission (DeekshaChv3 parallel
+    /// streaming).  The pool forwards this to the upstream external pool.
+    ExternalSubmit {
+        miner_id: String,
+        worker_name: String,
+        /// External coin ticker (VRSC, KAS, ALPH, etc.)
+        coin: String,
+        /// Algorithm name
+        algorithm: String,
+        /// External job ID (from upstream pool, string format)
+        external_job_id: String,
+        /// Nonce that produced the share
+        nonce: u64,
+        /// Hash hex (32 bytes, big-endian)
+        hash_hex: String,
+        /// Mix hash for Ethash/KawPow (None for other algorithms)
+        #[serde(default)]
+        mix_hash_hex: Option<String>,
+        /// Extranonce1 hex (for coins that use it)
+        #[serde(default)]
+        extranonce1_hex: String,
+    },
+    /// Pool → miner: external stream share result.
+    ExternalResult {
+        accepted: bool,
+        status: String,
+        coin: String,
     },
 }
 
@@ -374,6 +436,31 @@ impl MiningPool {
             header_hex: to_hex(&job.header.to_bytes()),
             height: job.height,
             stream_weights: stream_weights.to_string(),
+            external_stream: None,
+        }
+    }
+
+    /// Job message with an embedded external stream job for parallel mining.
+    /// The miner runs ZION Deeksha on GPU while simultaneously mining the
+    /// external coin on CPU/GPU.  This is the DeekshaChv3 parallel streaming
+    /// architecture.
+    pub fn job_message_with_external_stream(
+        &self,
+        job: MiningJob,
+        algorithm: &str,
+        stream_weights: &str,
+        external: ExternalStreamJob,
+    ) -> PoolMessage {
+        PoolMessage::Job {
+            job_id: job.job_id,
+            algorithm: algorithm.to_string(),
+            start_nonce: job.start_nonce,
+            nonce_count: job.nonce_count,
+            target_hex: to_hex(&job.target.bytes),
+            header_hex: to_hex(&job.header.to_bytes()),
+            height: job.height,
+            stream_weights: stream_weights.to_string(),
+            external_stream: Some(external),
         }
     }
 
@@ -1025,6 +1112,7 @@ mod tests {
                 header_hex: "aa".repeat(80),
                 height: 10,
                 stream_weights: String::new(),
+                external_stream: None,
             },
             PoolMessage::Submit {
                 job_id: 42,

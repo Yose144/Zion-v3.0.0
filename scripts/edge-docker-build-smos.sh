@@ -23,7 +23,7 @@ docker run --name "${CONTAINER}" \
     # Do not link bundled libOpenCL.so (needs glibc 2.34); use system ICD on SMOS
     rm -f /build/V3/L1/native-libs/libOpenCL.so /build/V3/L1/native-libs/libOpenCL.so.1
     cd /build/V3
-    cargo build --release -p zion-miner --features '"'"'gpu-opencl native-hashers'"'"' --bin zion-miner
+    cargo build --release -p zion-miner --features '"'"'full'"'"' --bin zion-miner
     mkdir -p /out
     cp target/release/zion-miner /out/zion-miner
     chmod +x /out/zion-miner
