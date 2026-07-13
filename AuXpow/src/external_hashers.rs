@@ -751,7 +751,14 @@ pub fn init_ethash() {
 /// # Returns
 /// 32-byte VerusHash v2.2 digest.
 pub fn hash_verushash(header: &[u8], nonce: u64) -> [u8; 32] {
-    #[cfg(feature = "native-hashers")]
+    // Real VerusHash v2.2 via zion-native-ffi C++ (Haraka+CLHash pipeline)
+    #[cfg(feature = "native-verushash")]
+    {
+        return zion_native_ffi::verushash::hash(header, nonce);
+    }
+
+    // Portable C stub via native-hashers feature (Keccak-256 fallback)
+    #[cfg(all(feature = "native-hashers", not(feature = "native-verushash")))]
     {
         return crate::native_ffi::hash_verushash_native(header, nonce);
     }
@@ -769,9 +776,16 @@ pub fn hash_verushash(header: &[u8], nonce: u64) -> [u8; 32] {
 
 /// Initialize VerusHash lookup tables (Haraka round constants, CLHash keys).
 /// Must be called once before hashing when using the native implementation.
-#[cfg(feature = "native-hashers")]
+#[cfg(any(feature = "native-hashers", feature = "native-verushash"))]
 pub fn init_verushash() {
-    crate::native_ffi::init_verushash();
+    #[cfg(feature = "native-verushash")]
+    {
+        zion_native_ffi::verushash::init();
+    }
+    #[cfg(all(feature = "native-hashers", not(feature = "native-verushash")))]
+    {
+        crate::native_ffi::init_verushash();
+    }
 }
 
 // ── Tests ────────────────────────────────────────────────────────────
