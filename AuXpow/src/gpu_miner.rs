@@ -669,7 +669,7 @@ impl GpuMiner {
                     "autolykos_kernel.cl" => include_str!("../csrc/opencl/autolykos_kernel.cl"),
                     "kawpow_kernel.cl" => include_str!("../csrc/opencl/kawpow_kernel.cl"),
                     "ethash_kernel.cl" => include_str!("../csrc/opencl/ethash_kernel.cl"),
-                    _ => bail!("Unknown kernel file: {kernel_file} (not on disk and not embedded)"),
+                    _ => return Err(anyhow!("Unknown kernel file: {kernel_file} (not on disk and not embedded)")),
                 };
                 println!("auxpow_gpu_opencl using embedded kernel={kernel_file}");
                 embedded.to_string()
