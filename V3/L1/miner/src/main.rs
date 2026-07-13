@@ -1378,7 +1378,14 @@ fn run_remote_session(
         let (job_line, mut job, algorithm) = match read_next_job(&mut reader) {
             Ok(result) => result,
             Err(e) => {
-                println!("read_job_error: {e:#} — reconnecting");
+                let err_str = format!("{e:#}");
+                // Parse errors (bad header/target) → skip and continue
+                // Connection errors (EOF, broken pipe) → reconnect
+                if err_str.contains("invalid hex") || err_str.contains("must be exactly") || err_str.contains("slice") {
+                    println!("read_job_parse_error: {err_str} — skipping job");
+                    continue;
+                }
+                println!("read_job_error: {err_str} — reconnecting");
                 break;
             }
         };
