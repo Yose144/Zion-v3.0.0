@@ -23,6 +23,7 @@ use zion_auxpow::{
     AuxPowScheduler, AuxPowStats, ExternalCoin, JobMultiplexer, JobPackage, ShareForwardResult,
     ShareForwarder, SplitConfig,
 };
+use zion_cosmic_harmony::stream_profit::{StreamProfitConfig, StreamProfitSnapshot, StreamWeights};
 use zion_core::MiningJob;
 
 // ---------------------------------------------------------------------------
@@ -718,6 +719,45 @@ fn main() -> Result<()> {
         });
     }
 
+    // ── Stream Profit Updater (Deeksha Chv3 pipeline weights) ────────
+    // When ZION_STREAM_PROFIT_SWITCH=true, periodically fetch profit data
+    // and update stream weights.  All streams live INSIDE the Deeksha Chv3
+    // pipeline — the weights tell the miner how to distribute extra work
+    // across pipeline steps (Keccak, SHA3, NPU, etc.).
+    {
+        let scheduler_ref = Arc::clone(&revenue_scheduler);
+        let profit_cfg = scheduler_ref
+            .lock()
+            .expect("revenue scheduler lock poisoned")
+            .stream_profit_config
+            .clone();
+
+        if profit_cfg.enabled {
+            let interval = profit_cfg.interval_secs;
+            println!(
+                "stream_profit_enabled provider={} interval={}s hysteresis={}%",
+                profit_cfg.api_provider, interval, profit_cfg.hysteresis_pct
+            );
+            thread::spawn(move || loop {
+                thread::sleep(Duration::from_secs(interval));
+
+                // Fetch profit snapshot.
+                // Currently uses fallback estimates.  Live API fetching
+                // (NiceHash/WhatToMine/CoinGecko) will be added in the
+                // next phase — the data structures and weight computation
+                // are already in place.
+                let snapshot = StreamProfitSnapshot::fallback();
+
+                {
+                    let mut sched = scheduler_ref.lock().expect("revenue scheduler lock poisoned");
+                    sched.update_stream_weights(snapshot);
+                }
+            });
+        } else {
+            println!("stream_profit_disabled (set ZION_STREAM_PROFIT_SWITCH=true to enable)");
+        }
+    }
+
     // ── NCL Gateway dispatcher ───────────────────────────────────────
     // When ZION_NCL_GATEWAY_URL is configured, spawn a tokio runtime in a
     // background thread and run the NCL dispatcher.  This wires the 25 %
@@ -1315,8 +1355,9 @@ fn assignment_header_bytes(assignment: &WorkAssignment) -> Vec<u8> {
 fn assignment_height(assignment: &WorkAssignment) -> u64 {
     match assignment {
         WorkAssignment::Zion(j) => j.height,
-        // External jobs don't have a ZION block height; use timestamp as a proxy.
-        WorkAssignment::External(j) => j.timestamp,
+        // External jobs: use block_number for epoch derivation (Ethash/KawPow).
+        // Fall back to timestamp for coins that don't provide block height (KAS).
+        WorkAssignment::External(j) => j.block_number.unwrap_or(j.timestamp),
     }
 }
 
@@ -1630,6 +1671,13 @@ fn handle_client(
             .expect("revenue scheduler lock poisoned")
             .next_lane_for_group(session_group);
 
+        // Stream weights string for Deeksha Chv3 pipeline parameterisation.
+        // Sent to miners in the job message so they can adjust work distribution.
+        let stream_weights_string = revenue_scheduler
+            .lock()
+            .expect("revenue scheduler lock poisoned")
+            .stream_weights_string();
+
         let desired_external_coin = if config.auxpow_config.enabled {
             // For sessions explicitly assigned to the Zion group, never
             // override with an external coin — the miner asked for ZION work.
@@ -1722,6 +1770,7 @@ fn handle_client(
             target_hex: to_hex(&share_target.bytes),
             header_hex: to_hex(&assignment_header_bytes(&assignment)),
             height: assignment_height(&assignment),
+            stream_weights: stream_weights_string.clone(),
         };
         let job_line = write_wire_message(&mut writer, &job_message)?;
 
@@ -3021,12 +3070,35 @@ struct RevenueScheduler {
     auto_assign_include_zion: bool,
     default_value_usd: f64,
     multistream_enabled: bool,
+    /// Stream profit system config (Deeksha Chv3 pipeline weights).
+    stream_profit_config: StreamProfitConfig,
+    /// Current stream weights derived from profit data.
+    stream_weights: StreamWeights,
+    /// Last profit snapshot (for logging / debugging).
+    last_profit_snapshot: Option<StreamProfitSnapshot>,
 }
 
 impl RevenueScheduler {
     fn from_env(default_source: RevenueSource, default_value_usd: f64) -> Result<Self> {
+        let stream_profit_config = StreamProfitConfig::from_env();
+
         let enabled = parse_env_bool("ZION_REVENUE_MULTISTREAM", false);
         if !enabled {
+            // Even with multistream disabled, if stream_profit is enabled,
+            // we compute profit-based weights for the Deeksha Chv3 pipeline.
+            let stream_weights = if stream_profit_config.enabled {
+                let snap = StreamProfitSnapshot::fallback();
+                let sources = stream_profit_config.parse_enabled_sources();
+                StreamWeights::from_profit(
+                    &snap,
+                    None,
+                    &sources,
+                    stream_profit_config.hysteresis_pct,
+                )
+            } else {
+                StreamWeights::default_split()
+            };
+
             return Ok(Self {
                 lanes: vec![RevenueLane {
                     source: default_source,
@@ -3039,6 +3111,9 @@ impl RevenueScheduler {
                 auto_assign_include_zion: parse_env_bool("ZION_BACKEND_AUTO_INCLUDE_ZION", false),
                 default_value_usd,
                 multistream_enabled: false,
+                stream_profit_config,
+                stream_weights,
+                last_profit_snapshot: None,
             });
         }
 
@@ -3125,6 +3200,20 @@ impl RevenueScheduler {
             ));
         }
 
+        // Compute initial stream weights from profit data.
+        let stream_weights = if stream_profit_config.enabled {
+            let snap = StreamProfitSnapshot::fallback();
+            let sources = stream_profit_config.parse_enabled_sources();
+            StreamWeights::from_profit(
+                &snap,
+                None,
+                &sources,
+                stream_profit_config.hysteresis_pct,
+            )
+        } else {
+            StreamWeights::default_split()
+        };
+
         Ok(Self {
             lanes,
             total_weight,
@@ -3133,6 +3222,9 @@ impl RevenueScheduler {
             auto_assign_include_zion: parse_env_bool("ZION_BACKEND_AUTO_INCLUDE_ZION", false),
             default_value_usd,
             multistream_enabled: true,
+            stream_profit_config,
+            stream_weights,
+            last_profit_snapshot: None,
         })
     }
 
@@ -3269,6 +3361,66 @@ impl RevenueScheduler {
             })
             .collect::<Vec<_>>()
             .join(",")
+    }
+
+    /// Return stream weights as a compact string for job messages.
+    ///
+    /// Format: "source_name:weight_pct,source_name:weight_pct,..."
+    /// Only includes lanes with non-zero weight.
+    fn stream_weights_string(&self) -> String {
+        // If stream profit system is enabled, use the profit-based weights.
+        if self.stream_profit_config.enabled && !self.stream_weights.weights.is_empty() {
+            return self
+                .stream_weights
+                .weights
+                .iter()
+                .map(|w| format!("{}:{:.1}", w.source.as_str(), w.weight * 100.0))
+                .collect::<Vec<_>>()
+                .join(",");
+        }
+
+        // Fallback: derive from lane weights.
+        let total: u32 = self.lanes.iter().map(|l| l.weight).sum();
+        if total == 0 {
+            return String::new();
+        }
+        self.lanes
+            .iter()
+            .filter(|l| l.weight > 0)
+            .map(|l| {
+                let pct = (l.weight as f64 / total as f64) * 100.0;
+                format!("{}:{:.1}", revenue_source_name(l.source), pct)
+            })
+            .collect::<Vec<_>>()
+            .join(",")
+    }
+
+    /// Update stream weights from a new profit snapshot.
+    ///
+    /// Called periodically by the background profit fetcher task.
+    /// Applies hysteresis to prevent rapid oscillation.
+    fn update_stream_weights(&mut self, snapshot: StreamProfitSnapshot) {
+        if !self.stream_profit_config.enabled {
+            return;
+        }
+
+        let sources = self.stream_profit_config.parse_enabled_sources();
+        let new_weights = StreamWeights::from_profit(
+            &snapshot,
+            Some(&self.stream_weights),
+            &sources,
+            self.stream_profit_config.hysteresis_pct,
+        );
+
+        // Log if weights changed significantly.
+        let old_desc = self.stream_weights.describe();
+        let new_desc = new_weights.describe();
+        if old_desc != new_desc {
+            println!("stream_weights_update old=[{}] new=[{}]", old_desc, new_desc);
+        }
+
+        self.stream_weights = new_weights;
+        self.last_profit_snapshot = Some(snapshot);
     }
 }
 
@@ -4721,6 +4873,7 @@ mod tests {
             header_bytes: vec![0xAA; 80],
             target_bytes: target,
             timestamp: 1_762_100_200,
+            block_number: None,
             extranonce1: vec![],
             start_nonce: 0,
             nonce_count: 1_000_000,
@@ -4902,6 +5055,7 @@ mod tests {
             header_bytes: external_job.header_bytes.clone(),
             target_bytes: external_job.target_bytes,
             timestamp: external_job.timestamp.unwrap_or(0),
+            block_number: external_job.block_number,
             extranonce1: external_job.extranonce1.clone(),
             start_nonce: 0,
             nonce_count: 1_000_000,
@@ -5308,6 +5462,9 @@ mod tests {
             auto_assign_include_zion: true,
             default_value_usd: 1.25,
             multistream_enabled: true,
+            stream_profit_config: StreamProfitConfig::default(),
+            stream_weights: StreamWeights::default_split(),
+            last_profit_snapshot: None,
         };
 
         let (source, usd) = scheduler.next_lane_for_group(SessionGroup::Revenue);
@@ -5376,6 +5533,9 @@ mod tests {
             auto_assign_include_zion: true,
             default_value_usd: 1.25,
             multistream_enabled: true,
+            stream_profit_config: StreamProfitConfig::default(),
+            stream_weights: StreamWeights::default_split(),
+            last_profit_snapshot: None,
         };
 
         // Session allocation follows 2:1:1
@@ -5417,6 +5577,9 @@ mod tests {
             auto_assign_include_zion: false,
             default_value_usd: 1.25,
             multistream_enabled: true,
+            stream_profit_config: StreamProfitConfig::default(),
+            stream_weights: StreamWeights::default_split(),
+            last_profit_snapshot: None,
         };
 
         assert_eq!(scheduler.assign_auto_group(), SessionGroup::Revenue);
@@ -5559,6 +5722,9 @@ mod tests {
             auto_assign_include_zion: false,
             default_value_usd: 1.5,
             multistream_enabled: false,
+            stream_profit_config: StreamProfitConfig::default(),
+            stream_weights: StreamWeights::default_split(),
+            last_profit_snapshot: None,
         };
 
         for _ in 0..10 {
@@ -5589,6 +5755,9 @@ mod tests {
             auto_assign_include_zion: true,
             default_value_usd: 1.0,
             multistream_enabled: true,
+            stream_profit_config: StreamProfitConfig::default(),
+            stream_weights: StreamWeights::default_split(),
+            last_profit_snapshot: None,
         };
 
         let (s1, _) = scheduler.next_lane();
@@ -5613,6 +5782,9 @@ mod tests {
             auto_assign_include_zion: false,
             default_value_usd: 1.0,
             multistream_enabled: false,
+            stream_profit_config: StreamProfitConfig::default(),
+            stream_weights: StreamWeights::default_split(),
+            last_profit_snapshot: None,
         };
 
         assert!(scheduler.value_for_source(RevenueSource::Zion).is_some());
@@ -5645,6 +5817,9 @@ mod tests {
             auto_assign_include_zion: false,
             default_value_usd: 1.0,
             multistream_enabled: true,
+            stream_profit_config: StreamProfitConfig::default(),
+            stream_weights: StreamWeights::default_split(),
+            last_profit_snapshot: None,
         };
 
         let plan = scheduler.describe_plan();

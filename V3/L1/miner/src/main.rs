@@ -1387,7 +1387,7 @@ fn run_remote_session(
             VERBOSE.store(c.verbose, Ordering::Relaxed);
         }
 
-        let (job_line, mut job, algorithm, raw_header_bytes) = match read_next_job(&mut reader) {
+        let (job_line, mut job, algorithm, raw_header_bytes, _stream_weights) = match read_next_job(&mut reader) {
             Ok(result) => result,
             Err(e) => {
                 let err_str = format!("{e:#}");
@@ -2052,7 +2052,7 @@ impl SessionTelemetry {
     }
 }
 
-fn read_next_job(reader: &mut impl BufRead) -> Result<(String, MiningJob, String, Vec<u8>)> {
+fn read_next_job(reader: &mut impl BufRead) -> Result<(String, MiningJob, String, Vec<u8>, String)> {
     loop {
         let (line, message) = read_wire_message(reader)?;
         match message {
@@ -2064,7 +2064,12 @@ fn read_next_job(reader: &mut impl BufRead) -> Result<(String, MiningJob, String
                 target_hex,
                 header_hex,
                 height,
+                stream_weights,
             } => {
+                // Log stream weights if present (Deeksha Chv3 pipeline parameterisation).
+                if !stream_weights.is_empty() {
+                    println!("stream_weights job={} weights={}", job_id, stream_weights);
+                }
                 // Keep raw header bytes for external algorithms that may
                 // use headers longer than 80 bytes (e.g. DCR = 180 bytes).
                 let raw_header_bytes = hex::decode(header_hex.trim_start_matches("0x"))
@@ -2083,6 +2088,7 @@ fn read_next_job(reader: &mut impl BufRead) -> Result<(String, MiningJob, String
                     },
                     algorithm,
                     raw_header_bytes,
+                    stream_weights,
                 ))
             }
             PoolMessage::Stale { .. } => println!("wire_stale={line}"),

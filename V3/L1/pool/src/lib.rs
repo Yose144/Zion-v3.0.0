@@ -68,6 +68,13 @@ pub enum PoolMessage {
         target_hex: String,
         header_hex: String,
         height: u64,
+        /// Stream weights for Deeksha Chv3 pipeline parameterisation.
+        ///
+        /// Each entry is "source_name:weight_pct" (e.g. "zion:50.0,keccak_bonus:15.0,ncl_ai:25.0").
+        /// Empty string = use default 50/25/25 split.
+        /// Miners that don't recognise this field simply ignore it.
+        #[serde(default)]
+        stream_weights: String,
     },
     Submit {
         job_id: u64,
@@ -345,6 +352,19 @@ impl MiningPool {
     }
 
     pub fn job_message(&self, job: MiningJob, algorithm: &str) -> PoolMessage {
+        self.job_message_with_weights(job, algorithm, "")
+    }
+
+    /// Job message with explicit stream weights string.
+    ///
+    /// Format: "source_name:weight_pct,source_name:weight_pct,..."
+    /// Empty string = default 50/25/25 split (miners ignore the field).
+    pub fn job_message_with_weights(
+        &self,
+        job: MiningJob,
+        algorithm: &str,
+        stream_weights: &str,
+    ) -> PoolMessage {
         PoolMessage::Job {
             job_id: job.job_id,
             algorithm: algorithm.to_string(),
@@ -353,6 +373,7 @@ impl MiningPool {
             target_hex: to_hex(&job.target.bytes),
             header_hex: to_hex(&job.header.to_bytes()),
             height: job.height,
+            stream_weights: stream_weights.to_string(),
         }
     }
 
@@ -1003,6 +1024,7 @@ mod tests {
                 target_hex: "ff".repeat(32),
                 header_hex: "aa".repeat(80),
                 height: 10,
+                stream_weights: String::new(),
             },
             PoolMessage::Submit {
                 job_id: 42,
