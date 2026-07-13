@@ -187,6 +187,11 @@ impl AuxPowClient {
                                     "auxpow_client: reconnect to {} failed: {} — retry in {}s",
                                     profile_clone.coin, re_err, backoff_secs
                                 );
+                                // Clean up stale reader/stream so poll_messages
+                                // doesn't hang on a dead connection.
+                                *client_clone.reader.lock().await = None;
+                                *client_clone.stream.lock().await = None;
+                                *client_clone.connected.lock().await = false;
                                 backoff_secs = (backoff_secs * 2).min(60);
                             }
                         }
@@ -364,11 +369,19 @@ impl AuxPowClient {
         let mut guard = self.reader.lock().await;
         if let Some(ref mut reader) = *guard {
             let mut buf = String::new();
-            reader.read_line(&mut buf).await?;
-            if buf.is_empty() {
-                bail!("connection closed by remote");
+            // 90s read timeout — if no data arrives, the connection is likely
+            // stale (e.g. subscribe failed but TCP is still open).  This
+            // triggers a reconnect instead of hanging forever.
+            match timeout(Duration::from_secs(90), reader.read_line(&mut buf)).await {
+                Ok(Ok(_)) => {
+                    if buf.is_empty() {
+                        bail!("connection closed by remote");
+                    }
+                    Ok(buf.trim().to_string())
+                }
+                Ok(Err(e)) => bail!("read error: {e}"),
+                Err(_) => bail!("read timeout (90s, no data from pool)"),
             }
-            Ok(buf.trim().to_string())
         } else {
             bail!("no reader available");
         }
