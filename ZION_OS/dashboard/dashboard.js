@@ -2543,8 +2543,8 @@ async function loadPoolMinersTab(){
     const auxSharesMin = auxUptime > 0 ? (auxSubmitted / auxUptime * 60) : 0;
     set('pm-auxpow-shares-min', auxSharesMin > 0 ? auxSharesMin.toFixed(1) : '—');
 
-    // Supported coins (static list — pool supports KAS, ALPH, DCR)
-    const auxCoins = auxEnabled ? (auxpow.supported_coins || ['KAS', 'ALPH', 'DCR']) : [];
+    // Supported coins (12 coins — KAS, ALPH, DCR, ERG, RVN, ETC, FLUX, CLORE, EVR, MEWC, XMR, VRSC)
+    const auxCoins = auxEnabled ? (auxpow.supported_coins || ['KAS', 'ALPH', 'DCR', 'ERG', 'RVN', 'ETC', 'FLUX', 'CLORE', 'EVR', 'MEWC', 'XMR', 'VRSC']) : [];
     set('pm-auxpow-coins', auxCoins.length > 0 ? auxCoins.join(' · ') : '—');
 
     // Bridge queue depth (from pool stats if available)

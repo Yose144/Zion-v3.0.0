@@ -5206,7 +5206,7 @@ AUXPOW_SERVICE_NAME = _resolve_auxpow_service_name()
 # Coins the pool can force-switch to. Keep in sync with AuXpow/src/types.rs.
 AUXPOW_SUPPORTED_COINS = [
     "DCR", "ALPH", "KAS", "ERG", "RVN", "ETC",
-    "EVR", "MEWC", "FLUX", "CLORE", "XMR",
+    "EVR", "MEWC", "FLUX", "CLORE", "XMR", "VRSC",
 ]
 
 AUXPOW_POOL_PREFERENCES = ["default", "nicehash", "herominers", "zpool"]
