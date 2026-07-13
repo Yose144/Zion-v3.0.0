@@ -172,7 +172,7 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | R2 | DCR revenue live (WoolyPooly) | ⏳ Pending | — |
 | R3 | ALPH + KAS E2E (2miners) | ⏳ Pending | — |
 | R4 | Stream telemetry revenue report | ⏳ Pending | — |
-| R5 | SMOS deploy + GPU mining | ⏳ Blocked | — |
+| R5 | SMOS deploy + GPU mining | ✅ DONE | `5e7c71363` |
 | R6 | EthStratum protocol (ERG/EVR/MEWC/CLORE) | ✅ DONE | `5baa76d60` |
 | R7 | True AuxPow consensus | 🔮 Future | — |
 
@@ -299,7 +299,7 @@ WARP_STELLAR_RPC=https://horizon.stellar.org
 5. R2: DCR revenue live (WoolyPooly)
 6. R3: ALPH + KAS E2E (2miners)
 7. R4: Stream telemetry revenue report (dashboard + API)
-8. R5: SMOS deploy + GPU mining (blocked — needs GPU rig)
+8. R5: SMOS deploy + GPU mining (done — Vega rig `vega-smos` live on `zion-miner-v3.0.5-gpu-r6.zip`)
 9. R7: True AuxPow consensus (future, 20-40h)
 
 ---

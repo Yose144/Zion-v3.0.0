@@ -5,9 +5,9 @@ import json, os, sys, time, urllib.request, base64, re
 API = "https://api.simplemining.net"
 RIG = 518837
 GROUP = 1773590
-MINER_URL = "https://zionterranova.com/zion-miner/zion-sm3042c.zip"
-CUSTOM_MINER = MINER_URL  # Use customMiner field instead of options string
+MINER_URL = "https://zionterranova.com/zion-miner/zion-miner-v3.0.5-gpu-r6.zip"
 MINER_OPTS = (
+    f"{MINER_URL} "
     f"--pool 62.171.141.136:8444 "
     f"--wallet zion1n0s6e756p7r360a0e47582n7r5t2e3t4e2wq5c8 "
     f"--worker vega-smos"
@@ -62,15 +62,15 @@ if __name__ == "__main__":
     with urllib.request.urlopen(req, timeout=30) as r:
         print(f"   HTTP {r.status} len={r.headers.get('Content-Length')}")
 
-    print(f">> update group {GROUP} with customMiner + minerOptions")
-    api("PUT", f"/rig-groups/{GROUP}", {"customMiner": CUSTOM_MINER, "minerOptions": MINER_OPTS})
+    print(f">> update group {GROUP} minerOptions (URL first arg)")
+    api("PUT", f"/rig-groups/{GROUP}", {"minerOptions": MINER_OPTS})
 
     print(">> clear cached miner on rig")
     api("PATCH", "/rigs/execute-command", {
         "rigIds": [RIG], "commandId": 7,
         "commandOptions": (
-            "rm -rf /root/miner/custom_zion-miner-v3.0.32-gpu "
-            "/root/miner/custom_zion-sm3031 "
+            "rm -rf /root/miner/custom_zion-miner-* "
+            "/root/miner/custom_zion-sm* "
             "/var/tmp/miner/custom_* ; echo CACHE_CLEARED"
         ),
     })
@@ -99,7 +99,8 @@ if __name__ == "__main__":
         l = ln.strip()
         if any(k in l for k in (
             "SELF_TEST", "gpu_opencl", "gcn_s4", "accepted", "Rejected",
-            "share_status", "MATCH", "wrapper", "v3.0.32"
+            "share_status", "MATCH", "wrapper", "v3.0.5", "auxpow_share",
+            "issued_external_job", "routing_snapshot"
         )):
             print(l)
     poll(120)

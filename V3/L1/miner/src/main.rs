@@ -2719,9 +2719,11 @@ mod tests {
     }
 
     #[test]
-    fn parse_header_hex_rejects_short_input() {
+    fn parse_header_hex_pads_short_input() {
+        // External AuxPoW jobs may send shorter headers (e.g. KAS 32-byte pre_pow_hash);
+        // the parser pads them to the 80-byte MiningHeader layout.
         let result = parse_header_hex("aabb");
-        assert!(result.is_err());
+        assert!(result.is_ok());
     }
 
     // ── parse_bool_env ──
