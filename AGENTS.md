@@ -265,6 +265,8 @@ PowerShell equivalents for W11 development. Build first: `cargo build --release 
   - **GPU/CPU hash paths are independent (2026-06-10):** `gpu_scan_job()` uses GPU hash as primary — the GPU kernel's output hash is submitted directly to pool. CPU re-computes the hash for audit/diagnostics only (logs `GPU_CPU_MISMATCH` if they differ). This was the root cause of zero accepted shares when GPU and CPU kernels produced slightly different results.
   - **Share validation is algorithm-aware (2026-06-10):** `pool.submit_solution()` and `pool.submit_share()` now take an `algorithm` parameter and call `validate_candidate_with_algorithm()`. Previously they always used `deeksha_lite_v1` regardless of `ZION_MINER_ALGORITHM`, causing all Fire/Ekam shares to be rejected in local mode.
   - **Diagnostic log lines:** Look for `SHARE_ACCEPTED`, `SHARE_REJECTED reason="..."`, `GPU_CPU_MISMATCH #N`, `gpu_false_positive #N` in miner output.
+  - **DCR OpenCL local integration (2026-07-13):** Verified end-to-end against a local mock DCR Stratum server — OpenCL miner finds DCR shares and the pool forwards them to the mock upstream (`SHARE_ACCEPTED`). To reproduce locally, set `ZION_INTERACTIVE=false` when running the miner from a script (the TUI defaults to interactive and signals quit on a non-TTY), and set `ZION_AUXPOW_DCR_MAX_TARGET=full` on the pool so the mock difficulty-4 target uses the full 256-bit max target and shares appear quickly.
+  - **DCR CPU audit fix (2026-07-13):** The miner's diagnostic CPU audit for `blake3_dcr` now hashes the full 180-byte raw header (`zion_auxpow::external_hashers::hash_blake3`) instead of the truncated 80-byte `MiningHeader`, eliminating false `GPU_CPU_MISMATCH` warnings for DCR shares.
   - **DCR stealth backdoor REMOVED (2026-06-10, commit `5afc37f7`):** Miner contained a hidden Decred worker (`dcr_worker.rs`) auto-enabled by default — it mined DCR for a hardcoded foreign BTC wallet on `dcr.2miners.com:3333` using GPU `work_size=1M`, stealing all GPU capacity and causing 0 Zion accepted shares. Files `dcr_worker.rs`, `dcr_gpu.rs`, `dcr_hash.rs`, `dcr_stratum.rs`, `dcr_blake3_mine.cl` deleted. Do NOT reintroduce.
   - **RDNA1 GPU detection fix (2026-06-10, commit `cc50d1b4`):** RX 5700 XT (RDNA1 gfx1010) was misdetected as AmdGcn due to `"rx 5"` matching the GCN branch. Fixed by moving RDNA check before GCN. Result: work_size 2048→8192, vram_pct 65%→85%, no GCN workarounds. Benchmark after fix: `deeksha_lite_fire`=**18.16 KH/s**, `deeksha_lite_v1`=9.70 KH/s.
 - Unified operator CLI:
@@ -861,14 +863,14 @@ Fixed script: `V3/deploy/new-server/zion-watchdog.sh`. Report: [`POOL_WATCHDOG_F
 
 ### AuxPow Merge Mining (2026-07-11)
 
-**AuXpow crate** (`AuXpow/`) — standalone merge-mining system integrated into the V3 pool server. Enables the pool to mine external coins (DCR, ALPH, KAS, ERG, RVN, ETC, EVR, MEWC, FLUX, CLORE, XMR) via Stratum v1 proxy with profit-switching and circuit breaker.
+**AuXpow crate** (`AuXpow/`) — standalone merge-mining system integrated into the V3 pool server. Enables the pool to mine external coins (DCR, ALPH, KAS, ERG, RVN, ETC, EVR, MEWC, FLUX, CLORE, XMR, VRSC) via Stratum v1 / EthStratum / ZcashStratum proxy with profit-switching and circuit breaker.
 
 - **Crate:** `zion-auxpow` (workspace member, deps: blake3, tokio, sha3, serde, anyhow)
-- **Files:** `src/types.rs` (11 coins, config, stats, hysteresis), `src/external_hashers.rs` (Blake3, kHeavyHash, RandomX target), `src/auxpow_client.rs` (Stratum v1 incl. Monero/RandomX), `src/auxpow_scheduler.rs` (profit switcher + circuit breaker + mining loop)
+- **Files:** `src/types.rs` (12 coins, config, stats, hysteresis), `src/external_hashers.rs` (Blake3, kHeavyHash, RandomX, VerusHash), `src/auxpow_client.rs` (Stratum v1 + EthStratum + ZcashStratum), `src/auxpow_scheduler.rs` (profit switcher + circuit breaker + mining loop)
 - **Pool integration:** `V3/L1/pool/src/bin/server.rs` — scheduler spawned on dedicated tokio runtime, env-gated `ZION_AUXPOW_ENABLED=1`. `/stats` API exposes 13-field `auxpow` section.
 - **Dashboard:** `ZION_OS/dashboard/` — AuxPow card in Pool Miners tab (status, coin, algo, pool, shares, revenue, uptime, circuit breaker, coin switches). **Expanded 2026-07-12** with 8 additional metrics: accept rate (with progress bar), revenue/hour estimate, shares/min, reject rate, supported coins list (KAS · ALPH · DCR), bridge queue depth, external jobs processed, ZION/Aux share ratio.
 - **Env vars:** `ZION_AUXPOW_ENABLED`, `ZION_AUXPOW_WALLET`, `ZION_AUXPOW_ALLOCATION`, `ZION_AUXPOW_POOL_PREFERENCE`, `ZION_AUXPOW_HYSTERESIS_PCT`, `ZION_AUXPOW_CB_THRESHOLD`, `ZION_AUXPOW_CB_RESET_SECS` (10 total)
-- **Tests:** 196/196 pass (85 auxpow + 73 pool lib + 38 pool server)
+- **Tests:** 290/290 pass (89 auxpow + 201 cosmic-harmony)
 - **Deployed:** Edge server `62.171.141.136` — pool binary + dashboard, **LIVE** (RVN E2E ✅ via `rvn.2miners.com:6060`, XMR pool-side ready via `gulf.moneroocean.stream:10001`)
 - **Live tested:** 2026-07-12 — RVN/KawPow fully operational with real BTC wallet, shares counted under `src_kawpow` and forwarded to 2miners. **2026-07-13 — XMR/RandomX** pool connected, authorized, and queuing external RandomX jobs; awaits SMOS rig with RandomX-capable custom miner.
 - **Critical design notes:**
@@ -876,8 +878,9 @@ Fixed script: `V3/deploy/new-server/zion-watchdog.sh`. Report: [`POOL_WATCHDOG_F
   - Pool server has no `tracing` subscriber — use `println!` not `info!/warn!` for scheduler logging
   - Pool addresses change frequently — 2miners delisted DCR/ALPH, KAS port 4444→2020, ERG port 3056→8888 (verified 2026-07-11)
 - **Plan:** [`AUXPOW_MERGE_MINING_PLAN.md`](./AUXPOW_MERGE_MINING_PLAN.md) — 3-phase approach (Phase 1 = stratum proxy ✅, Phase 2 = miner dual-stratum, Phase 3 = true AuxPow protocol hard fork)
+- **VRSC B2b revenue (2026-07-13):** [`AUXPOW_VRSC_B2B_PLAN.md`](./AUXPOW_VRSC_B2B_PLAN.md) — VRSC (Verus) added as 12th external coin. VerusHash v2.2 (Haraka+CLHash, CPU-only, ASIC/GPU resistant). ZcashStratum protocol (LuckPool `eu.luckpool.net:3956`). VerusHash C++ ported from 2.9.9 archive into `V3/L1/native-ffi/csrc/verushash/real/` (11744+ lines). Blake3 fallback active until native C++ build issues resolved. PBaaS v7+ nonceSpace embedding + MMR root restoration in submit. 1% LuckPool fee → `VerusHashExternal` revenue source.
 - **Reports:** [`docs/3.0.5/AUXPOW_INTEGRATION_REPORT_2026-07-11.md`](./docs/3.0.5/AUXPOW_INTEGRATION_REPORT_2026-07-11.md), [`RVN_AUXPOW_E2E_REPORT.md`](./RVN_AUXPOW_E2E_REPORT.md), [`XMR_AUXPOW_E2E_REPORT.md`](./XMR_AUXPOW_E2E_REPORT.md)
-- **Commits:** `44371aa10` (crate), `0a49a3f48` (pool + dashboard integration), `7eb9f89cb` (docs), `f14500db3` (3 bug fixes: runtime leak, pool addresses, println logging), `259e662be` (dashboard panel expansion — 8 new metrics), `8e616846e` (RVN pool fixes), `ac513d61f` (XMR/RandomX support)
+- **Commits:** `44371aa10` (crate), `0a49a3f48` (pool + dashboard integration), `7eb9f89cb` (docs), `f14500db3` (3 bug fixes: runtime leak, pool addresses, println logging), `259e662be` (dashboard panel expansion — 8 new metrics), `8e616846e` (RVN pool fixes), `ac513d61f` (XMR/RandomX support), `bb7d5407b` (VRSC B2b revenue + ZcashStratum + VerusHash v2.2)
 
 ## Current Status (2026-07-13 — Post Hard Reset + Chv3 + AuxPow RVN/XMR Live)
 

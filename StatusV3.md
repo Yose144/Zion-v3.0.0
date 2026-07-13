@@ -174,9 +174,10 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | R4 | Stream telemetry revenue report | ⏳ Pending | — |
 | R5 | SMOS deploy + GPU mining | ✅ DONE | `32e9d07ac` |
 | R6 | EthStratum protocol (ERG/EVR/MEWC/CLORE) | ✅ DONE | `5baa76d60` |
-| R7 | True AuxPow consensus | 🔮 Future | — |
+| R7 | B2b VRSC revenue (ZcashStratum, LuckPool) | ✅ DONE | `bb7d5407b` |
+| R8 | True AuxPow consensus | 🔮 Future | — |
 
-### Supported External Coins (11 total)
+### Supported External Coins (12 total)
 
 | Coin | Algorithm | Protocol | E2E Status |
 |------|-----------|----------|------------|
@@ -191,6 +192,7 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | CLORE | kawpow | EthStratum | protocol ✅ (R6), live E2E TODO |
 | XMR | randomx | Stratum | connect/auth/notify ✅, submit ⚠️ (needs RandomX rig miner) |
 | FLUX | zelhash | Stratum | TODO |
+| VRSC | verushash v2.2 | ZcashStratum | protocol ✅ (R7), live E2E TODO (LuckPool eu.luckpool.net:3956) |
 
 ### Stream Profit Env Vars
 ```bash
@@ -210,6 +212,9 @@ ZION_AUXPOW_POOL_PREFERENCE=2miners         # preferred pool
 ZION_AUXPOW_HYSTERESIS=0.15                 # profit-switch threshold
 ZION_AUXPOW_CIRCUIT_BREAKER_THRESHOLD=5     # failures before cooldown
 ZION_AUXPOW_CIRCUIT_BREAKER_COOLDOWN=300    # cooldown seconds
+# VRSC B2b revenue (LuckPool, VerusHash v2.2, CPU-only)
+ZION_VRSC_WALLET=<verus_wallet>             # VRSC payout wallet (required for VRSC)
+ZION_VRSC_POOL_URL=eu.luckpool.net:3956     # LuckPool EU endpoint (default)
 ```
 
 ---
@@ -270,6 +275,7 @@ WARP_STELLAR_RPC=https://horizon.stellar.org
 | 07-13 | Stream Profit R1b — live API fetching | `e1c28689b` |
 | 07-13 | Stream Profit R1c — GPU kernel parametrizace | `74a353205`, `87bb2b2f0` |
 | 07-13 | EthStratum R6 — eth_getWork/eth_submitWork/eth_submitHashrate | `5baa76d60` |
+| 07-13 | R7: VRSC B2b revenue — ZcashStratum protocol, VerusHash v2.2, LuckPool | `bb7d5407b` |
 | 07-13 | Non-EVM deploy: Solana + Stellar mainnet LIVE | `bffde9263`, `9d7ce1686` |
 | 07-12 | ZionDex L3 WARP integration + AMM routing + LND | `c54422094`, `dad8702db` |
 | 07-11 | AuxPow merge mining pool+dashboard integration | `44371aa10`, `f14500db3` |
@@ -300,7 +306,8 @@ WARP_STELLAR_RPC=https://horizon.stellar.org
 6. R3: ALPH + KAS E2E (2miners)
 7. R4: Stream telemetry revenue report (dashboard + API)
 8. R5: SMOS deploy + GPU mining (done — Vega rig `vega-smos` live on `zion-miner-v3.0.5-gpu-r6.zip`)
-9. R7: True AuxPow consensus (future, 20-40h)
+9. R7: VRSC live E2E deploy (LuckPool, needs ZION_VRSC_WALLET + VerusHash C++ native build)
+10. R8: True AuxPow consensus (future, 20-40h)
 
 ---
 
@@ -313,6 +320,7 @@ WARP_STELLAR_RPC=https://horizon.stellar.org
 | AGENTS.md | Root | Operating guidance for AI agents |
 | ROADMAP.md | Root | Forward roadmap |
 | AuxPlan.md | Root | AuxPow + Stream Profit development plan |
+| AUXPOW_VRSC_B2B_PLAN.md | Root | VRSC B2b revenue integration design doc |
 | ZionDex.md | Root | ZionDex DEX router documentation |
 | Genesis reset runbook | `docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md` | Hard reset procedure |
 | Security disclosures | `docs/security/SECURITY_DISCLOSURE_2026-07.md` | ZION-2026-001 through 005 |
