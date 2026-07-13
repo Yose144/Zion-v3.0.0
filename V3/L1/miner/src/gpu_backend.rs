@@ -182,7 +182,7 @@ impl GpuBackendManager {
 pub type GpuBackend = GpuBackendManager;
 
 /// Set of external AuxPoW algorithms that are handled by `zion_auxpow` GPU miner.
-fn is_external_algorithm(algorithm: &str) -> bool {
+pub fn is_external_algorithm(algorithm: &str) -> bool {
     matches!(
         algorithm,
         "blake3"
