@@ -395,6 +395,34 @@ pub fn parse_target_hex(hex: &str) -> Option<[u8; 32]> {
     Some(target)
 }
 
+/// Parse a Monero/RandomX 64-bit little-endian target (16 hex chars) into a
+/// 32-byte target array.
+///
+/// RandomX pools (xmrig-compatible Stratum) send the target as an 8-byte
+/// little-endian value.  Only the first 8 bytes of the returned array are
+/// populated; the remaining bytes are zero.  Use `meets_randomx_target`
+/// for the corresponding partial comparison.
+pub fn parse_randomx_target_hex(hex: &str) -> Option<[u8; 32]> {
+    let hex = hex.trim_start_matches("0x");
+    let bytes = hex::decode(hex).ok()?;
+    if bytes.len() != 8 {
+        return None;
+    }
+    let mut target = [0u8; 32];
+    target[..8].copy_from_slice(&bytes);
+    Some(target)
+}
+
+/// Check whether a RandomX hash meets the upstream pool target.
+///
+/// xmrig-compatible pools compare only the first 8 bytes of the hash
+/// (interpreted as little-endian) against the 8-byte little-endian target.
+pub fn meets_randomx_target(hash: &[u8; 32], target: &[u8; 32]) -> bool {
+    let hash_le = u64::from_le_bytes(hash[..8].try_into().unwrap());
+    let target_le = u64::from_le_bytes(target[..8].try_into().unwrap());
+    hash_le <= target_le
+}
+
 /// Convert a 32-byte hash to a hex string (big-endian display).
 pub fn hash_to_hex(hash: &[u8; 32]) -> String {
     hash.iter().map(|b| format!("{:02x}", b)).collect()
@@ -886,6 +914,30 @@ mod tests {
         let target = parse_target_hex("0xffff").unwrap();
         assert_eq!(target[31], 0xFF);
         assert_eq!(target[30], 0xFF);
+    }
+
+    #[test]
+    fn parse_randomx_target_hex_le() {
+        // 16-char LE target: value = 0x00000000ffffff00
+        let target = parse_randomx_target_hex("00ffffff00000000").unwrap();
+        // First 8 bytes are the LE value; remaining bytes are zero.
+        assert_eq!(target[..8], [0x00, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00]);
+        assert!(target[8..].iter().all(|b| *b == 0x00));
+
+        // A hash whose low 64 bits (LE) are below the target passes.
+        let mut hash = [0xFFu8; 32];
+        hash[..8].copy_from_slice(&[0x00, 0x00, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00]);
+        assert!(meets_randomx_target(&hash, &target));
+
+        // A hash whose low 64 bits are above the target fails.
+        hash[..8].copy_from_slice(&[0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00]);
+        assert!(!meets_randomx_target(&hash, &target));
+    }
+
+    #[test]
+    fn parse_randomx_target_hex_rejects_wrong_length() {
+        assert!(parse_randomx_target_hex("ffffff00").is_none()); // 4 bytes
+        assert!(parse_randomx_target_hex("00").is_none()); // 1 byte
     }
 
     #[test]
