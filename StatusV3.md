@@ -172,7 +172,7 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | R2 | DCR revenue live (WoolyPooly) | ⏳ Pending | — |
 | R3 | ALPH + KAS E2E (2miners) | ⏳ Pending | — |
 | R4 | Stream telemetry revenue report | ⏳ Pending | — |
-| R5 | SMOS deploy + GPU mining | ✅ DONE | `5e7c71363` |
+| R5 | SMOS deploy + GPU mining | ✅ DONE | `32e9d07ac` |
 | R6 | EthStratum protocol (ERG/EVR/MEWC/CLORE) | ✅ DONE | `5baa76d60` |
 | R7 | True AuxPow consensus | 🔮 Future | — |
 
