@@ -13,7 +13,7 @@ OUT="${OUT_DIR}/zion-miner-${VERSION}.zip"
 
 if [[ ! -f "${BIN}" ]]; then
     echo "ERROR: miner binary not found at ${BIN}"
-    echo "Build it first: cargo build --release -p zion-miner --features gpu-opencl"
+    echo "Build it first: cargo build --release -p zion-miner --features 'gpu-opencl native-hashers'"
     exit 1
 fi
 

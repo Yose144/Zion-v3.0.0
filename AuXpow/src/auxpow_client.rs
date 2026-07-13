@@ -1288,35 +1288,59 @@ impl AuxPowClient {
             let hex = format!("{:016x}", full_nonce);
             ("mining.submit", json!([worker, job_id, hex]))
         } else if self.profile.coin == ExternalCoin::RVN {
-            // RVN on 2miners uses Stratum v1 mining.submit with 4 params:
-            //   [worker, job_id, nonce_hex, mix_hash_hex]
+            // RVN on 2miners uses Stratum v1 mining.submit with 5 params:
+            //   [worker, job_id, nonce_hex, header_hash_hex, mix_hash_hex]
             // job_id = short job_id from notify, nonce = 0x-prefixed 8-byte hex,
+            // header_hash = 0x-prefixed 32-byte block header hash from notify,
             // mix_hash = 0x-prefixed 32-byte PoW mix hash from KawPow GPU kernel.
             let wallet = self.payout_wallet.lock().await.clone();
             let worker = format!("{}.{}", wallet, self.profile.worker_name);
             let nonce_hex = format!("0x{:016x}", nonce);
+            let current_job = self.current_job().await;
+            let header_hash_hex = current_job
+                .as_ref()
+                .map(|j| {
+                    if j.header_hex.starts_with("0x") {
+                        j.header_hex.clone()
+                    } else {
+                        format!("0x{}", j.header_hex)
+                    }
+                })
+                .unwrap_or_else(|| "0x0000000000000000000000000000000000000000000000000000000000000000".to_string());
             let mix_src = mix_hash_hex.unwrap_or(_hash_hex);
             let mix_hex = if mix_src.starts_with("0x") {
                 mix_src.to_string()
             } else {
                 format!("0x{}", mix_src)
             };
-            ("mining.submit", json!([worker, job_id, nonce_hex, mix_hex]))
+            ("mining.submit", json!([worker, job_id, nonce_hex, header_hash_hex, mix_hex]))
         } else if self.profile.coin == ExternalCoin::ETC {
-            // ETC on 2miners uses Stratum v1 mining.submit with 4 params:
-            //   [worker, job_id, nonce_hex, mix_hash_hex]
-            // job_id = header_hash from notify, nonce = 0x-prefixed hex,
+            // ETC on 2miners uses Stratum v1 mining.submit with 5 params:
+            //   [worker, job_id, nonce_hex, header_hash_hex, mix_hash_hex]
+            // job_id = short job_id from notify, nonce = 0x-prefixed hex,
+            // header_hash = 0x-prefixed 32-byte block header hash from notify,
             // mix_hash = 0x-prefixed 32-byte PoW mix hash from GPU kernel.
             let wallet = self.payout_wallet.lock().await.clone();
             let worker = format!("{}.{}", wallet, self.profile.worker_name);
             let nonce_hex = format!("0x{:016x}", nonce);
+            let current_job = self.current_job().await;
+            let header_hash_hex = current_job
+                .as_ref()
+                .map(|j| {
+                    if j.header_hex.starts_with("0x") {
+                        j.header_hex.clone()
+                    } else {
+                        format!("0x{}", j.header_hex)
+                    }
+                })
+                .unwrap_or_else(|| "0x0000000000000000000000000000000000000000000000000000000000000000".to_string());
             let mix_src = mix_hash_hex.unwrap_or(_hash_hex);
             let mix_hex = if mix_src.starts_with("0x") {
                 mix_src.to_string()
             } else {
                 format!("0x{}", mix_src)
             };
-            ("mining.submit", json!([worker, job_id, nonce_hex, mix_hex]))
+            ("mining.submit", json!([worker, job_id, nonce_hex, header_hash_hex, mix_hex]))
         } else if self.profile.coin == ExternalCoin::XMR {
             // Monero / RandomX (xmrig-compatible Stratum):
             // mining.submit params = [worker, job_id, nonce_hex]
