@@ -126,6 +126,10 @@ PAYOUT_HIGHWATER_FILE = DATA_DIR / "dashboard-payout-highwater.json"
 # Users are configured via the DASHBOARD_USERS env var (comma-separated
 # "user:sha256hex" pairs) or fall back to compiled defaults below.
 #
+# SECURITY NOTE: The compiled defaults are convenient for local-dev dashboards
+# (127.0.0.1). For the Edge/production dashboard exposed to the internet,
+# ALWAYS override via DASHBOARD_USERS env var with strong unique credentials.
+#
 # To generate a hash: python3 -c "import hashlib; print(hashlib.sha256(b'password').hexdigest())"
 import hashlib as _hashlib
 
@@ -133,6 +137,7 @@ def _sha256(s: str) -> str:
     return _hashlib.sha256(s.encode("utf-8")).hexdigest()
 
 # Default users (Yose + Issy) — hashed passwords
+# Intended for local-dev use only. Override via env for production.
 _DEFAULT_USERS = {
     "Yose":  _sha256("3nityOne13"),
     "Issy":  _sha256("3nityOne13"),
@@ -4914,6 +4919,10 @@ def get_revenue_dashboard() -> dict:
     auxpow = stats.get("auxpow", {}) if isinstance(stats.get("auxpow"), dict) else {}
     result["auxpow"] = auxpow
 
+    # ── Stream profit (Deeksha Chv3 pipeline weights) ──────────────────
+    stream_profit = stats.get("stream_profit", {}) if isinstance(stats.get("stream_profit"), dict) else {}
+    result["stream_profit"] = stream_profit
+
     # ── ZION mining revenue (from pool stats) ──────────────────────────
     blocks_found = 0
     pool_uptime = 0
@@ -5082,8 +5091,304 @@ def get_revenue_dashboard() -> dict:
         "active_coins": [c[0] for c in SUPPORTED_COINS],  # 11 supported coins
         "coin_revenue": coin_revenue,
         "distributions": distributions,
+        # Stream profit (Deeksha Chv3 pipeline weights)
+        "stream_profit_enabled": bool(stream_profit.get("enabled", False)),
+        "stream_profit_provider": stream_profit.get("provider", "fallback"),
+        "stream_profit_live": bool(stream_profit.get("live", False)),
+        "stream_profit_weights": stream_profit.get("weights", []),
+        "stream_profit_weights_string": stream_profit.get("weights_string", ""),
+        "stream_profit_description": stream_profit.get("description", ""),
+        "stream_profit_interval": stream_profit.get("interval_secs", 120),
+        "stream_profit_hysteresis": stream_profit.get("hysteresis_pct", 15.0),
+        "stream_profit_sources": stream_profit.get("enabled_sources", ""),
     }
     return result
+
+
+# ── AuxPow / external-pool configuration helpers ─────────────────────────────
+
+# Path to the Edge shared environment file loaded by zion-pool.service.
+# AuxPow env vars are persisted here so they survive a pool restart.
+# We try production locations first, then the local dev repo path.
+_EDGE_ENV_CANDIDATES = [
+    Path("/etc/zion/edge-environment.sh"),
+    Path("/root/zion/edge-environment.sh"),
+    Path("/root/zion-2.9.6-main/edge-deploy/config/edge-environment.sh"),
+    REPO_ROOT / "edge-deploy" / "config" / "edge-environment.sh",
+]
+EDGE_ENV_FILE = next((p for p in _EDGE_ENV_CANDIDATES if p.exists()), _EDGE_ENV_CANDIDATES[-1])
+
+# Pool service name: zion-pool on current Edge deployment, zion-edge-pool in repo docs.
+_AUXPOW_SERVICE_CANDIDATES = ["zion-pool", "zion-edge-pool"]
+
+def _resolve_auxpow_service_name() -> str:
+    """Pick the pool systemd service name present on this machine (or default)."""
+    try:
+        for name in _AUXPOW_SERVICE_CANDIDATES:
+            out = subprocess.run(
+                ["systemctl", "is-active", "--quiet", name],
+                capture_output=True, timeout=3
+            )
+            if out.returncode in (0, 3):  # active or inactive but known
+                return name
+    except Exception:
+        pass
+    return _AUXPOW_SERVICE_CANDIDATES[0]
+
+AUXPOW_SERVICE_NAME = _resolve_auxpow_service_name()
+
+# Coins the pool can force-switch to. Keep in sync with AuXpow/src/types.rs.
+AUXPOW_SUPPORTED_COINS = [
+    "DCR", "ALPH", "KAS", "ERG", "RVN", "ETC",
+    "EVR", "MEWC", "FLUX", "CLORE", "XMR",
+]
+
+AUXPOW_POOL_PREFERENCES = ["default", "nicehash", "herominers", "zpool"]
+
+
+def _read_edge_env_var(key: str, default: str = "") -> str:
+    """Read a single KEY=value from the Edge environment file if it exists."""
+    try:
+        if not EDGE_ENV_FILE.exists():
+            return default
+        text = EDGE_ENV_FILE.read_text(encoding="utf-8")
+        for line in text.splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if "=" not in line:
+                continue
+            k, v = line.split("=", 1)
+            if k.strip() == key:
+                return v.strip().strip('"').strip("'")
+    except Exception:
+        pass
+    return default
+
+
+def _write_edge_env_vars(updates: dict) -> dict:
+    """Update or append KEY=value pairs in the Edge environment file.
+
+    Creates a timestamped backup before writing. Empty values are still written
+    because the Rust parser ignores empty env vars.
+    """
+    try:
+        backup = None
+        if not EDGE_ENV_FILE.exists():
+            EDGE_ENV_FILE.parent.mkdir(parents=True, exist_ok=True)
+            existing_lines = ["# ZION Edge Server — shared environment\n"]
+        else:
+            existing_lines = EDGE_ENV_FILE.read_text(encoding="utf-8").splitlines(keepends=True)
+            backup = EDGE_ENV_FILE.with_suffix(
+                EDGE_ENV_FILE.suffix + f".bak-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+            )
+            shutil.copy2(str(EDGE_ENV_FILE), str(backup))
+
+        parsed = {}
+        for idx, line in enumerate(existing_lines):
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#") or "=" not in stripped:
+                parsed[idx] = None
+                continue
+            k, v = stripped.split("=", 1)
+            parsed[idx] = (k.strip(), v.strip().strip('"').strip("'"))
+
+        updated_keys = set()
+        out_lines = list(existing_lines)
+
+        for key, value in updates.items():
+            found = False
+            for idx, item in parsed.items():
+                if item is None:
+                    continue
+                k, _ = item
+                if k == key:
+                    original = out_lines[idx]
+                    ending = original[len(original.rstrip("\r\n")):]
+                    out_lines[idx] = f'{key}="{value}"{ending}'
+                    found = True
+                    updated_keys.add(key)
+                    break
+            if not found:
+                out_lines.append(f'{key}="{value}"\n')
+                updated_keys.add(key)
+
+        EDGE_ENV_FILE.write_text("".join(out_lines), encoding="utf-8")
+        return {
+            "ok": True,
+            "updated_keys": sorted(updated_keys),
+            "backup": str(backup) if backup else None,
+        }
+    except Exception as e:
+        return {"ok": False, "error": f"Failed to write env file: {e}"}
+
+
+def get_auxpow_config() -> dict:
+    """Return current AuxPow configuration from the Edge environment file."""
+    enabled = _read_edge_env_var("ZION_POOL_AUXPOW_ENABLED", "0").lower() in ("1", "true", "yes")
+    coin = _read_edge_env_var("ZION_POOL_AUXPOW_COIN", "")
+    pool_preference = _read_edge_env_var("ZION_POOL_AUXPOW_POOL_PREFERENCE", "default")
+    region = _read_edge_env_var("ZION_POOL_AUXPOW_REGION", "eu")
+    split_zion = _read_edge_env_var("ZION_POOL_AUXPOW_SPLIT_ZION", "")
+    split_external = _read_edge_env_var("ZION_POOL_AUXPOW_SPLIT_EXTERNAL", "")
+    wallet = _read_edge_env_var(
+        "ZION_POOL_AUXPOW_WALLET",
+        "bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh",
+    )
+    worker = _read_edge_env_var("ZION_POOL_AUXPOW_WORKER_NAME", "zion_auxpow")
+
+    coin_wallets = {}
+    for ticker in AUXPOW_SUPPORTED_COINS:
+        v = _read_edge_env_var(f"ZION_POOL_AUXPOW_WALLET_{ticker}", "")
+        if v:
+            coin_wallets[ticker] = v
+
+    if not enabled:
+        mode = "zion"
+    elif coin:
+        mode = "force"
+    else:
+        mode = "auto"
+
+    try:
+        sz = int(split_zion) if split_zion.isdigit() else 50
+    except Exception:
+        sz = 50
+    try:
+        se = int(split_external) if split_external.isdigit() else 50
+    except Exception:
+        se = 50
+
+    # ── Stream profit config (Deeksha Chv3 pipeline weights) ──────────
+    sp_enabled = _read_edge_env_var("ZION_STREAM_PROFIT_SWITCH", "false").lower() in ("1", "true", "yes")
+    sp_provider = _read_edge_env_var("ZION_STREAM_PROFIT_API_PROVIDER", "fallback")
+    sp_interval = _read_edge_env_var("ZION_STREAM_PROFIT_INTERVAL", "120")
+    sp_hysteresis = _read_edge_env_var("ZION_STREAM_HYSTERESIS_PCT", "15.0")
+    sp_sources = _read_edge_env_var("ZION_STREAM_PROFIT_SOURCES", "zion,keccak_bonus,sha3_bonus,ncl_ai")
+
+    return {
+        "ok": True,
+        "config": {
+            "mode": mode,
+            "enabled": enabled,
+            "coin": coin,
+            "pool_preference": pool_preference,
+            "region": region,
+            "split_zion": sz,
+            "split_external": se,
+            "wallet": wallet,
+            "worker_name": worker,
+            "coin_wallets": coin_wallets,
+            # Stream profit config
+            "stream_profit_enabled": sp_enabled,
+            "stream_profit_provider": sp_provider,
+            "stream_profit_interval": sp_interval,
+            "stream_profit_hysteresis": sp_hysteresis,
+            "stream_profit_sources": sp_sources,
+        },
+        "supported_coins": AUXPOW_SUPPORTED_COINS,
+        "supported_preferences": AUXPOW_POOL_PREFERENCES,
+        "supported_stream_sources": ["zion", "keccak_bonus", "sha3_bonus", "ncl_ai", "deeksha_lite", "thermal_bonus"],
+        "supported_stream_providers": ["fallback", "nicehash", "whattomine", "coingecko"],
+        "env_file": str(EDGE_ENV_FILE),
+        "env_file_exists": EDGE_ENV_FILE.exists(),
+    }
+
+
+def update_auxpow_config(payload: dict) -> dict:
+    """Validate and persist AuxPow configuration to the Edge environment file."""
+    mode = payload.get("mode", "zion")
+    if mode not in ("zion", "auto", "force"):
+        return {"ok": False, "error": f"Invalid mode: {mode}. Use zion, auto or force."}
+
+    enabled = mode != "zion"
+    coin = (payload.get("coin") or "").upper().strip() if mode == "force" else ""
+    if mode == "force" and coin not in AUXPOW_SUPPORTED_COINS:
+        return {
+            "ok": False,
+            "error": f"Unsupported coin: {coin}. Supported: {', '.join(AUXPOW_SUPPORTED_COINS)}",
+        }
+
+    pool_preference = (payload.get("pool_preference") or "default").lower().strip()
+    if pool_preference not in AUXPOW_POOL_PREFERENCES:
+        return {
+            "ok": False,
+            "error": f"Unsupported pool preference: {pool_preference}",
+        }
+
+    region = (payload.get("region") or "eu").strip()
+    try:
+        split_zion = max(0, min(100, int(payload.get("split_zion", 50))))
+    except Exception:
+        split_zion = 50
+    try:
+        split_external = max(0, min(100, int(payload.get("split_external", 50))))
+    except Exception:
+        split_external = 50
+
+    wallet = (payload.get("wallet") or "").strip()
+    worker = (payload.get("worker_name") or "zion_auxpow").strip()
+    coin_wallets = payload.get("coin_wallets") or {}
+
+    updates = {
+        "ZION_POOL_AUXPOW_ENABLED": "1" if enabled else "0",
+        "ZION_POOL_AUXPOW_COIN": coin,
+        "ZION_POOL_AUXPOW_POOL_PREFERENCE": pool_preference,
+        "ZION_POOL_AUXPOW_REGION": region,
+        "ZION_POOL_AUXPOW_SPLIT_ZION": str(split_zion),
+        "ZION_POOL_AUXPOW_SPLIT_EXTERNAL": str(split_external),
+        "ZION_POOL_AUXPOW_WALLET": wallet,
+        "ZION_POOL_AUXPOW_WORKER_NAME": worker,
+    }
+
+    # ── Stream profit config (Deeksha Chv3 pipeline weights) ──────────
+    sp_enabled = payload.get("stream_profit_enabled")
+    if sp_enabled is not None:
+        updates["ZION_STREAM_PROFIT_SWITCH"] = "true" if sp_enabled else "false"
+    sp_provider = payload.get("stream_profit_provider")
+    if sp_provider:
+        updates["ZION_STREAM_PROFIT_API_PROVIDER"] = sp_provider
+    sp_interval = payload.get("stream_profit_interval")
+    if sp_interval:
+        updates["ZION_STREAM_PROFIT_INTERVAL"] = str(sp_interval)
+    sp_hysteresis = payload.get("stream_profit_hysteresis")
+    if sp_hysteresis:
+        updates["ZION_STREAM_HYSTERESIS_PCT"] = str(sp_hysteresis)
+    sp_sources = payload.get("stream_profit_sources")
+    if sp_sources:
+        updates["ZION_STREAM_PROFIT_SOURCES"] = str(sp_sources)
+    for ticker in AUXPOW_SUPPORTED_COINS:
+        updates[f"ZION_POOL_AUXPOW_WALLET_{ticker}"] = str(coin_wallets.get(ticker, "")).strip()
+
+    write_result = _write_edge_env_vars(updates)
+    if not write_result.get("ok"):
+        return write_result
+
+    return {
+        "ok": True,
+        "message": "AuxPow configuration saved to Edge environment file.",
+        "restarted": False,
+        "config": get_auxpow_config()["config"],
+        "env_file": str(EDGE_ENV_FILE),
+    }
+
+
+def restart_auxpow_pool_service() -> dict:
+    """Reload systemd and restart the Edge pool so new AuxPow env vars take effect."""
+    try:
+        cmd = f"systemctl daemon-reload && systemctl restart {AUXPOW_SERVICE_NAME}"
+        out = _run_edge_cmd(cmd, timeout=30)
+        if out.returncode != 0:
+            return {
+                "ok": False,
+                "error": out.stderr.strip() or f"systemctl restart {AUXPOW_SERVICE_NAME} failed",
+            }
+        return {
+            "ok": True,
+            "message": f"{AUXPOW_SERVICE_NAME} restarted successfully.",
+        }
+    except Exception as e:
+        return {"ok": False, "error": f"Restart failed: {e}"}
 
 
 def get_servers_setup() -> dict:
@@ -9773,6 +10078,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(get_pool_miners_dashboard())
         elif route == "/api/revenue":
             self._json(get_revenue_dashboard())
+        elif route == "/api/pool/auxpow":
+            self._json(get_auxpow_config())
         elif route == "/api/servers-setup":
             self._json(get_servers_setup())
         elif route.startswith("/api/pool/miner-detail/"):
@@ -11531,6 +11838,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(run_control("stop-pool"))
         elif route == "/api/pool/restart":
             self._json(run_control("restart-pool"))
+        elif route == "/api/pool/auxpow":
+            self._json(update_auxpow_config(payload))
+        elif route == "/api/pool/auxpow/restart":
+            self._json(restart_auxpow_pool_service())
         # ── Miner ────────────────────────────────────────────────────────────
         elif route == "/api/miner/start":
             self._json(run_control("start-miner"))
@@ -12270,6 +12581,8 @@ if __name__ == "__main__":
     print(f"  Log directory : {LOG_DIR.absolute()}")
     print(f"  URL           : http://{HOST}:{PORT}")
     print(f"  Auth          : {len(DASHBOARD_USERS)} user(s) — {', '.join(DASHBOARD_USERS.keys())}")
+    if not DASHBOARD_USERS_ENV and not (_legacy_user and _legacy_pass):
+        print("  Auth source   : compiled defaults (set DASHBOARD_USERS env var for production)")
     print("  Press Ctrl+C to stop")
     print("=" * 60)
     # Background sampler — re-enabled on Linux (was disabled for Windows deadlock).
