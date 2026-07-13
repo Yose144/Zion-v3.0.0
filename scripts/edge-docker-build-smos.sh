@@ -2,7 +2,7 @@
 # Build zion-miner inside Ubuntu 20.04 for SMOS glibc compatibility
 set -euo pipefail
 VERSION="${1:-v3.0.32-gpu}"
-REPO="/root/zion/2.9.6"
+REPO="/home/zionserver/2.9.6-main"
 OUT_DIR="/var/www/zion-miner"
 CONTAINER="zion-miner-build-${VERSION}"
 

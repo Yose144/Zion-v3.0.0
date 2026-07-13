@@ -685,6 +685,156 @@ impl GpuMiner {
         self.kawpow_dag.as_ref().map(|d| d.epoch)
     }
 
+    /// Generate the KawPow DAG **on the GPU** from a light cache.
+    ///
+    /// This is the standard approach used by professional miners (kawpowminer,
+    /// ethminer): the light cache (~16–100 MB) is generated on the CPU and
+    /// uploaded, then the full DAG (~1–6 GB) is computed in parallel on the
+    /// GPU using a `GenerateDAG` OpenCL kernel.  The DAG stays on the GPU —
+    /// no multi-GB readback is needed.
+    ///
+    /// The generated DAG buffer is stored in `self.kawpow_dag` and can be
+    /// used immediately for mining.
+    ///
+    /// **Requires** the `native-hashers` feature (for light cache generation).
+    #[cfg(feature = "native-hashers")]
+    pub fn generate_kawpow_dag_on_gpu(&mut self, epoch: u32) -> Result<()> {
+        use crate::native_ffi::generate_kawpow_light_cache;
+
+        eprintln!(
+            "dag_manager: generating KawPow light cache epoch={} on CPU...",
+            epoch
+        );
+        let light_cache = generate_kawpow_light_cache(epoch)
+            .ok_or_else(|| anyhow!("kawpow_generate_light_cache returned NULL for epoch {}", epoch))?;
+
+        let cache_items = light_cache.cache_items;
+        let dag_size_entries = light_cache.dag_size_entries;
+        let dag_nodes = dag_size_entries * 2; // each 128-byte entry = 2 nodes
+        let dag_ulongs = dag_nodes * 8;       // each 64-byte node = 8 ulongs
+
+        eprintln!(
+            "dag_manager: light cache ready ({} items = {:.1} MB), DAG will be {} nodes = {:.1} GB",
+            cache_items,
+            light_cache.cache_size as f64 / (1024.0 * 1024.0),
+            dag_nodes,
+            (dag_nodes as f64 * 64.0) / (1024.0 * 1024.0 * 1024.0)
+        );
+
+        // Get the ProQue for kawpow_kernel.cl (which now has both kawpow_mine
+        // and kawpow_generate_dag kernels).
+        // Copy work_size before borrowing self for ensure_proque.
+        let batch_size = self.work_size;
+        let pro_que = self.ensure_proque("kawpow_kernel.cl")?;
+        let q = pro_que.queue().clone();
+
+        // Upload the light cache to the GPU.
+        // The cache is stored as bytes; we need it as u64 words for the kernel.
+        let cache_bytes = light_cache.as_slice();
+        let cache_u64_count = cache_bytes.len() / 8;
+        let cache_u64: Vec<u64> = (0..cache_u64_count)
+            .map(|i| {
+                u64::from_le_bytes(cache_bytes[i*8..i*8+8].try_into().unwrap())
+            })
+            .collect();
+
+        eprintln!(
+            "dag_manager: uploading light cache to GPU ({} ulongs = {:.1} MB)...",
+            cache_u64.len(),
+            (cache_u64.len() * 8) as f64 / (1024.0 * 1024.0)
+        );
+
+        let cache_buf: Buffer<u64> = Buffer::builder()
+            .queue(q.clone())
+            .len(cache_u64.len())
+            .copy_host_slice(&cache_u64)
+            .build()
+            .map_err(|e| anyhow!("failed to allocate light cache buffer: {e}"))?;
+
+        // Allocate the DAG buffer on the GPU (no host data — will be filled by kernel).
+        eprintln!(
+            "dag_manager: allocating DAG buffer on GPU ({} ulongs = {:.1} GB)...",
+            dag_ulongs,
+            (dag_ulongs * 8) as f64 / (1024.0 * 1024.0 * 1024.0)
+        );
+
+        let dag_buf: Buffer<u64> = Buffer::builder()
+            .queue(q.clone())
+            .len(dag_ulongs as usize)
+            .build()
+            .map_err(|e| anyhow!("failed to allocate GPU DAG buffer: {e}"))?;
+
+        // Run the GenerateDAG kernel in batches.
+        // Each work-item generates one 64-byte node.
+        // Batch size = work_size (typically 4M+ for Vega).
+        let total_nodes = dag_nodes as usize;
+        let num_batches = (total_nodes + batch_size - 1) / batch_size;
+
+        eprintln!(
+            "dag_manager: generating DAG on GPU ({} batches of {} nodes)...",
+            num_batches, batch_size
+        );
+
+        let start_time = std::time::Instant::now();
+
+        for batch in 0..num_batches {
+            let start_node = (batch * batch_size) as u64;
+            let nodes_this_batch = std::cmp::min(batch_size, total_nodes - batch * batch_size);
+
+            let dag_kernel = Kernel::builder()
+                .queue(q.clone())
+                .program(pro_que.program())
+                .name("kawpow_generate_dag")
+                .arg(&cache_buf)
+                .arg(cache_items)
+                .arg(&dag_buf)
+                .arg(dag_nodes)
+                .arg(start_node)
+                .build()
+                .map_err(|e| anyhow!("DAG kernel build failed (batch {}): {e}", batch))?;
+
+            unsafe {
+                dag_kernel
+                    .cmd()
+                    .global_work_size(nodes_this_batch)
+                    .enq()
+                    .map_err(|e| anyhow!("DAG kernel enqueue failed (batch {}): {e}", batch))?;
+            }
+            q.finish()
+                .map_err(|e| anyhow!("DAG kernel finish failed (batch {}): {e}", batch))?;
+
+            // Progress report every 10% or on the last batch
+            let pct = ((batch + 1) * 100) / num_batches;
+            if pct % 10 == 0 || batch + 1 == num_batches {
+                let elapsed = start_time.elapsed().as_secs_f64();
+                let eta = if batch > 0 {
+                    (elapsed / (batch + 1) as f64) * (num_batches - batch - 1) as f64
+                } else {
+                    0.0
+                };
+                eprintln!(
+                    "dag_manager: DAG generation {}% (batch {}/{}, {:.1}s elapsed, ~{:.0}s ETA)",
+                    pct, batch + 1, num_batches, elapsed, eta
+                );
+            }
+        }
+
+        // The DAG is now on the GPU. Store it.
+        self.kawpow_dag = Some(KawpowDag {
+            buf: dag_buf,
+            size_entries: dag_size_entries,
+            epoch,
+        });
+
+        eprintln!(
+            "dag_manager: KawPow DAG epoch={} ready on GPU ({:.1}s total)",
+            epoch,
+            start_time.elapsed().as_secs_f64()
+        );
+
+        Ok(())
+    }
+
     /// Get the path to the OpenCL kernel source files.
     fn kernel_dir() -> Result<PathBuf> {
         let manifest_dir = std::env::var("CARGO_MANIFEST_DIR")
@@ -1197,7 +1347,7 @@ use std::path::Path;
 #[cfg(feature = "native-hashers")]
 use std::io::{Read, Write};
 #[cfg(feature = "native-hashers")]
-use crate::native_ffi::{generate_ethash_dag, generate_kawpow_dag};
+use crate::native_ffi::generate_ethash_dag;
 
 /// Manages DAG generation and GPU upload for Ethash and KawPow.
 #[cfg(feature = "native-hashers")]
@@ -1272,6 +1422,11 @@ impl DagManager {
     }
 
     /// Ensure the GPU miner has the correct KawPow DAG loaded for `epoch`.
+    ///
+    /// Uses on-GPU DAG generation (the standard approach used by kawpowminer/
+    /// ethminer): the light cache is generated on CPU and uploaded, then the
+    /// full DAG is computed in parallel on the GPU.  This avoids the
+    /// multi-minute CPU DAG generation that was the previous bottleneck.
     pub fn ensure_kawpow_dag(
         &mut self,
         miner: &mut GpuMiner,
@@ -1286,26 +1441,45 @@ impl DagManager {
             epoch, self.cache_dir.display()
         );
 
+        // Try disk cache first (for subsequent startups).
+        // The first time, we generate on GPU and optionally save to disk.
         let cache_path = self.cache_dir.join(format!("kawpow_epoch{}.bin", epoch));
-        let (dag_u64, dag_entries) = if cache_path.exists() {
+        if cache_path.exists() {
             eprintln!("dag_manager: loading KawPow DAG from disk cache: {}", cache_path.display());
-            Self::load_dag_from_disk(&cache_path)?
+            let (dag_u64, dag_entries) = Self::load_dag_from_disk(&cache_path)?;
+            eprintln!(
+                "dag_manager: uploading KawPow DAG to GPU ({} entries = {:.1} MB)",
+                dag_entries,
+                dag_entries as f64 * 128.0 / (1024.0 * 1024.0)
+            );
+            miner.set_kawpow_dag(&dag_u64, dag_entries, epoch)?;
         } else {
-            eprintln!("dag_manager: generating KawPow DAG epoch={} via FFI...", epoch);
-            let dag = generate_kawpow_dag(epoch)
-                .ok_or_else(|| anyhow!("kawpow_generate_dag returned NULL for epoch {}", epoch))?;
-            let entries = dag.dag_size_entries;
-            let u64_slice = dag.as_u64_slice().to_vec();
-            self.save_dag_to_disk(&cache_path, &u64_slice, entries)?;
-            (u64_slice, entries)
-        };
+            // Generate the DAG on the GPU (no CPU generation, no readback).
+            miner.generate_kawpow_dag_on_gpu(epoch)?;
 
-        eprintln!(
-            "dag_manager: uploading KawPow DAG to GPU ({} entries = {:.1} MB)",
-            dag_entries,
-            dag_entries as f64 * 128.0 / (1024.0 * 1024.0)
-        );
-        miner.set_kawpow_dag(&dag_u64, dag_entries, epoch)?;
+            // Optionally save the DAG to disk for future startups.
+            // This requires reading the DAG back from the GPU, which is slow
+            // (~5.7 GB readback), so we skip it by default.  Set
+            // ZION_DAG_DISK_CACHE=1 to enable.
+            if std::env::var("ZION_DAG_DISK_CACHE").is_ok() {
+                eprintln!("dag_manager: ZION_DAG_DISK_CACHE=1, reading DAG back from GPU for disk cache...");
+                // Clone the buffer handle and size out first to avoid borrowing conflict
+                let (dag_size_entries, dag_buf) = miner.kawpow_dag.as_ref()
+                    .map(|d| (d.size_entries, d.buf.clone()))
+                    .ok_or_else(|| anyhow!("kawpow_dag not set after GPU generation"))?;
+                let q = {
+                    let pro_que = miner.ensure_proque("kawpow_kernel.cl")?;
+                    pro_que.queue().clone()
+                };
+                let total_ulongs = (dag_size_entries * 16) as usize;
+                let mut dag_u64 = vec![0u64; total_ulongs];
+                dag_buf.read(&mut dag_u64).enq()
+                    .map_err(|e| anyhow!("failed to read DAG from GPU: {e}"))?;
+                q.finish().map_err(|e| anyhow!("GPU read finish failed: {e}"))?;
+                self.save_dag_to_disk(&cache_path, &dag_u64, dag_size_entries)?;
+            }
+        }
+
         self.kawpow_epoch = Some(epoch);
         eprintln!("dag_manager: KawPow DAG epoch={} ready", epoch);
         Ok(())

@@ -84,6 +84,12 @@ inline uint fnv1a(uint a, uint b) {
     return (a ^ b) * FNV_PRIME;
 }
 
+// FNV-1 (used for DAG generation; NOT the same as FNV-1a).
+// Reference: kawpowminer CLMiner_kernel.cl: fnv(x,y) = x * FNV_PRIME ^ y
+inline uint fnv1(uint x, uint y) {
+    return (x * FNV_PRIME) ^ y;
+}
+
 // ── Keccak-512 (SHA3-512) ─────────────────────────────────────────────
 //
 // Rate = 576 bits = 72 bytes = 9 lanes.  Output = 512 bits = 64 bytes = 8 lanes.
@@ -280,6 +286,116 @@ __kernel void kawpow_mine(
             for (int i = 0; i < 32; i++) output_hash[i] = hash[i];
             // Write the compressed mix hash for eth_submitWork.
             for (int i = 0; i < 32; i++) output_mix[i] = mix_bytes[i];
+        }
+    }
+}
+
+// ── DAG generation kernel ────────────────────────────────────────────
+//
+// Generates DAG nodes in parallel on the GPU from the light cache.
+// Based on kawpowminer/ethminer's ethash_calculate_dag_item kernel.
+//
+// Each work-item computes one 64-byte DAG node.  A 128-byte DAG entry
+// = 2 nodes, so node_index 2*e and 2*e+1 form entry e.
+//
+// Algorithm (matches kawpowminer reference):
+//   1. init = cache[node_index % cache_items]  (64 bytes = 16 uint32)
+//   2. init.words[0] ^= node_index             (32-bit LE XOR)
+//   3. mix = keccak512(init)
+//   4. For p in 0..511:
+//        parent = fnv1(node_index ^ p, mix_word[0]) % cache_items
+//        mix = fnv1_per_word(mix, cache[parent])
+//   5. output = keccak512(mix)
+//
+// FNV-1 (NOT FNV-1a): fnv1(x, y) = (x * FNV_PRIME) ^ y
+// FNV-1a is only used in the mining mix loop above.
+//
+// Uses uint[16] for the mix (not ulong[8]) to avoid 64-bit masking
+// issues on the AMD OpenCL compiler.
+//
+// Kernel arguments:
+//   light_cache   — __global ulong buffer, cache_items * 8 ulongs (64 bytes each)
+//   cache_items   — number of 64-byte cache items
+//   dag           — __global ulong output buffer, dag_nodes * 8 ulongs
+//   dag_nodes     — total number of 64-byte DAG nodes
+//   start_node    — first node index for this batch
+__kernel void kawpow_generate_dag(
+    __global const ulong *light_cache,  // light cache (8 ulongs per item)
+    const ulong cache_items,             // number of 64-byte cache items
+    __global ulong *dag,                 // output DAG (8 ulongs per node)
+    const ulong dag_nodes,               // total DAG nodes
+    const ulong start_node               // first node index this batch
+)
+{
+    ulong node_index = start_node + (ulong)get_global_id(0);
+    if (node_index >= dag_nodes) return;
+
+    // Step 1: init = cache[node_index % cache_items] — load as 16 uint32 words
+    ulong cache_idx = node_index % cache_items;
+    uint mix[16];
+    for (int i = 0; i < 8; i++) {
+        ulong val = light_cache[cache_idx * 8 + i];
+        mix[i * 2]     = (uint)(val & 0xFFFFFFFFu);
+        mix[i * 2 + 1] = (uint)(val >> 32);
+    }
+
+    // Step 2: XOR node_index into first 32-bit word (LE)
+    mix[0] ^= (uint)(node_index & 0xFFFFFFFFu);
+
+    // Step 3: keccak512(init) -> mix
+    {
+        uchar mix_bytes[64];
+        for (int i = 0; i < 16; i++) {
+            mix_bytes[i * 4]     = (uchar)(mix[i] & 0xFF);
+            mix_bytes[i * 4 + 1] = (uchar)((mix[i] >> 8) & 0xFF);
+            mix_bytes[i * 4 + 2] = (uchar)((mix[i] >> 16) & 0xFF);
+            mix_bytes[i * 4 + 3] = (uchar)((mix[i] >> 24) & 0xFF);
+        }
+        uchar hash_out[64];
+        keccak512(mix_bytes, 64, hash_out);
+        for (int i = 0; i < 16; i++) {
+            mix[i] = (uint)hash_out[i * 4]
+                   | ((uint)hash_out[i * 4 + 1] << 8)
+                   | ((uint)hash_out[i * 4 + 2] << 16)
+                   | ((uint)hash_out[i * 4 + 3] << 24);
+        }
+    }
+
+    // Step 4: mix with 512 parents using FNV-1
+    for (int p = 0; p < 512; p++) {
+        uint parent_idx = fnv1((uint)(node_index ^ (ulong)p), mix[0]) % (uint)cache_items;
+        for (int j = 0; j < 16; j++) {
+            ulong parent_val = light_cache[(ulong)parent_idx * 8 + j / 2];
+            uint parent_w = (j % 2 == 0)
+                ? (uint)(parent_val & 0xFFFFFFFFu)
+                : (uint)(parent_val >> 32);
+            mix[j] = fnv1(mix[j], parent_w);
+        }
+    }
+
+    // Step 5: keccak512(mix) -> output
+    {
+        uchar mix_bytes[64];
+        for (int i = 0; i < 16; i++) {
+            mix_bytes[i * 4]     = (uchar)(mix[i] & 0xFF);
+            mix_bytes[i * 4 + 1] = (uchar)((mix[i] >> 8) & 0xFF);
+            mix_bytes[i * 4 + 2] = (uchar)((mix[i] >> 16) & 0xFF);
+            mix_bytes[i * 4 + 3] = (uchar)((mix[i] >> 24) & 0xFF);
+        }
+        uchar hash_out[64];
+        keccak512(mix_bytes, 64, hash_out);
+
+        // Write to DAG as ulong words (8 ulongs = 64 bytes per node)
+        for (int i = 0; i < 8; i++) {
+            ulong val = (ulong)hash_out[i * 8]
+                      | ((ulong)hash_out[i * 8 + 1] << 8)
+                      | ((ulong)hash_out[i * 8 + 2] << 16)
+                      | ((ulong)hash_out[i * 8 + 3] << 24)
+                      | ((ulong)hash_out[i * 8 + 4] << 32)
+                      | ((ulong)hash_out[i * 8 + 5] << 40)
+                      | ((ulong)hash_out[i * 8 + 6] << 48)
+                      | ((ulong)hash_out[i * 8 + 7] << 56);
+            dag[node_index * 8 + i] = val;
         }
     }
 }

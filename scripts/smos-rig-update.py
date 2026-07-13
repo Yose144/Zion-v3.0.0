@@ -5,11 +5,11 @@ import json, os, sys, time, urllib.request, base64, re
 API = "https://api.simplemining.net"
 RIG = 518837
 GROUP = 1773590
-MINER_URL = "https://zionterranova.com/zion-miner/zion-miner-v3.0.5-gpu-r7-native3.zip"
+MINER_URL = "https://zionterranova.com/zion-miner/zion-miner-v3.0.5-gpu-r7-native5.zip"
 MINER_OPTS = (
     f"{MINER_URL} "
     f"--pool 62.171.141.136:8444 "
-    f"--wallet zion1n0s6e756p7r360a0e47582n7r5t2e3t4e2wq5c8 "
+    f"--wallet zion1l5q4q4s3s5r6p3f6a568z5f75787d8d7c5kq0g4 "
     f"--worker vega-smos "
     f"--algorithm kawpow "
     f"--no-tui"
@@ -50,6 +50,7 @@ def poll(secs=120):
         hits = [l for l in lines if any(k in l for k in (
             "SELF_TEST", "accepted", "Rejected", "gpu_opencl", "gcn_s4",
             "MATCH", "FAIL", "hashrate", "share_status",
+            "dag_manager", "DAG generation", "light cache", "kawpow_generate",
         ))]
         if hits:
             print("KEY:", hits[-3:])
@@ -104,7 +105,9 @@ if __name__ == "__main__":
         if any(k in l for k in (
             "SELF_TEST", "gpu_opencl", "gcn_s4", "accepted", "Rejected",
             "share_status", "MATCH", "wrapper", "v3.0.5", "auxpow_share",
-            "issued_external_job", "routing_snapshot"
+            "issued_external_job", "routing_snapshot",
+            "dag_manager", "DAG generation", "light cache", "kawpow_generate",
+            "DAG ready", "epoch=", "GPU DAG",
         )):
             print(l)
     poll(120)

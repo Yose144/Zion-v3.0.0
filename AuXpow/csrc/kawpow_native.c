@@ -336,9 +336,16 @@ EXPORT uint32_t kawpow_get_epoch(uint32_t height) {
  * ============================================================================ */
 
 #define KAWPOW_CACHE_ROUNDS    3
-#define KAWPOW_DATASET_PARENTS 256
+#define KAWPOW_DATASET_PARENTS 512   /* matches kawpowminer/ethminer reference */
 #define KAWPOW_HASH_BYTES      64
 #define KAWPOW_MIX_BYTES       128
+
+/* FNV-1 (used for DAG generation, NOT FNV-1a).
+ * Reference: kawpowminer CLMiner_kernel.cl: fnv(x,y) = x * FNV_PRIME ^ y
+ * FNV-1a is only used in the mining mix loop. */
+static inline uint32_t fnv1(uint32_t x, uint32_t y) {
+    return (x * FNV_PRIME) ^ y;
+}
 
 /* Get cache size for epoch (KawPow/ProgPoW sizing) */
 static uint64_t kawpow_get_cache_size(uint32_t epoch) {
@@ -364,8 +371,14 @@ static void kawpow_get_seedhash(uint32_t epoch, uint8_t seed[32]) {
 }
 
 /* Calculate a single 64-byte DAG node from the light cache.
- * Same algorithm as Ethash: init from cache, mix 256 parents with FNV-1a,
- * then keccak-512. */
+ * Matches kawpowminer/ethminer reference:
+ *   1. init = cache[node_index % cache_items]
+ *   2. init.words[0] ^= node_index
+ *   3. mix = keccak512(init)
+ *   4. For p in 0..511: parent = fnv1(node_index ^ p, mix[p%16]) % cache_items
+ *                      mix = fnv1_per_word(mix, cache[parent])
+ *   5. output = keccak512(mix)
+ */
 static void kawpow_calc_dag_node(
     uint64_t node_index,
     const uint8_t *cache,
@@ -376,25 +389,95 @@ static void kawpow_calc_dag_node(
     uint8_t mix[64];
     memcpy(mix, cache + (node_index % cache_items) * 64, 64);
 
-    /* Step 2: mix with 256 parents */
+    /* Step 2: XOR node_index into first 32-bit word (LE) */
+    uint32_t first_word = (uint32_t)(node_index & 0xFFFFFFFFu);
+    mix[0] ^= (uint8_t)(first_word & 0xFF);
+    mix[1] ^= (uint8_t)((first_word >> 8) & 0xFF);
+    mix[2] ^= (uint8_t)((first_word >> 16) & 0xFF);
+    mix[3] ^= (uint8_t)((first_word >> 24) & 0xFF);
+
+    /* Step 3: keccak512(init) -> mix */
+    uint8_t hash[64];
+    keccak512(mix, 64, hash);
+    memcpy(mix, hash, 64);
+
+    /* Step 4: mix with 512 parents using FNV-1 */
     for (uint32_t p = 0; p < KAWPOW_DATASET_PARENTS; p++) {
         uint32_t mix_first = *(const uint32_t *)(const void *)mix;
-        uint32_t parent_idx = fnv1a((uint32_t)(node_index ^ p), mix_first) % (uint32_t)cache_items;
+        uint32_t parent_idx = fnv1((uint32_t)(node_index ^ p), mix_first) % (uint32_t)cache_items;
         const uint8_t *parent = cache + (uint64_t)parent_idx * 64;
 
-        /* FNV-1a per 32-bit word (16 words in 64 bytes) */
+        /* FNV-1 per 32-bit word (16 words in 64 bytes) */
         for (int j = 0; j < 16; j++) {
             uint32_t *mix_w = (uint32_t *)(void *)(mix + j * 4);
             uint32_t parent_w = *(const uint32_t *)(const void *)(parent + j * 4);
-            *mix_w = fnv1a(*mix_w, parent_w);
+            *mix_w = fnv1(*mix_w, parent_w);
         }
     }
 
-    /* Step 3: keccak-512(mix) -> output (64 bytes) */
+    /* Step 5: keccak512(mix) -> output (64 bytes) */
     keccak512(mix, 64, out64);
 }
 
 typedef void (*kawpow_dag_progress_cb)(uint32_t percent);
+
+/* Generate only the light cache for a given epoch.
+ * The light cache is small (~16MB + epoch*128KB) and fast to generate on CPU.
+ * It is used as input for on-GPU DAG generation.
+ *
+ *   epoch             — epoch number
+ *   cache_size_bytes  — output: size of cache in bytes
+ *   cache_items       — output: cache_size / 64
+ *   dag_size_entries  — output: dataset size / 128 (number of 128-byte DAG entries)
+ *   returns           — malloc'd cache buffer, or NULL on error. Caller must free().
+ */
+EXPORT uint8_t *kawpow_generate_light_cache(
+    uint32_t epoch,
+    uint64_t *cache_size_bytes,
+    uint64_t *cache_items,
+    uint64_t *dag_size_entries)
+{
+    if (!cache_size_bytes || !cache_items || !dag_size_entries) return NULL;
+
+    /* Build the seed hash for this epoch */
+    uint8_t seed[32];
+    kawpow_get_seedhash(epoch, seed);
+
+    uint64_t c_size = kawpow_get_cache_size(epoch);
+    uint64_t c_items = c_size / 64;
+
+    uint8_t *cache = (uint8_t *)malloc(c_size);
+    if (!cache) return NULL;
+
+    /* Generate cache: seed first item, chain with keccak-512 */
+    keccak512(seed, 32, cache);
+    for (uint64_t i = 1; i < c_items; i++) {
+        keccak512(cache + (i - 1) * 64, 64, cache + i * 64);
+    }
+
+    /* RANDMEMOHASH mixing rounds (3 rounds) */
+    for (int r = 0; r < KAWPOW_CACHE_ROUNDS; r++) {
+        for (uint64_t i = 0; i < c_items; i++) {
+            uint32_t v = *(uint32_t *)(void *)&cache[i * 64] % (uint32_t)c_items;
+            uint64_t prev = (i + c_items - 1) % c_items;
+            uint8_t tmp[64];
+            for (int j = 0; j < 64; j++)
+                tmp[j] = cache[prev * 64 + j] ^ cache[v * 64 + j];
+            keccak512(tmp, 64, cache + i * 64);
+        }
+    }
+
+    *cache_size_bytes = c_size;
+    *cache_items = c_items;
+    *dag_size_entries = kawpow_get_dataset_size(epoch) / KAWPOW_DAG_NODE;
+
+    return cache;
+}
+
+/* Free a light cache buffer generated by kawpow_generate_light_cache. */
+EXPORT void kawpow_free_light_cache(uint8_t *cache) {
+    free(cache);
+}
 
 /* Generate the full KawPow DAG for a given epoch.
  * The caller owns the returned buffer and must free() it.
