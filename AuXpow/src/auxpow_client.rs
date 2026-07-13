@@ -982,6 +982,13 @@ impl AuxPowClient {
             let full_nonce = u64::from_le_bytes(full);
             let hex = format!("{:016x}", full_nonce);
             ("mining.submit", json!([worker, job_id, hex]))
+        } else if self.profile.coin == ExternalCoin::DCR {
+            // DCR Blake3: nonce is 4 bytes, submitted as 8-char hex (no 0x prefix).
+            // WoolyPooly expects the nonce as a hex string of the 4-byte LE nonce.
+            let wallet = self.payout_wallet.lock().await.clone();
+            let worker = format!("{}.{}", wallet, self.profile.worker_name);
+            let nonce_hex = format!("{:08x}", nonce as u32);
+            ("mining.submit", json!([worker, job_id, nonce_hex]))
         } else {
             let hex = format!("0x{:016x}", nonce);
             let wallet = self.payout_wallet.lock().await.clone();
