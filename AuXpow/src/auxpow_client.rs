@@ -398,7 +398,18 @@ impl AuxPowClient {
     async fn authorize_inline(&self, payout_wallet: &str) -> Result<()> {
         let worker = format!("{}.{}", payout_wallet, self.profile.worker_name);
         let is_ethstratum = self.protocol == StratumProtocol::EthStratum;
-        let password = if is_ethstratum { "x" } else { "c=BTC" };
+        let password = if is_ethstratum {
+            "x"
+        } else if self.profile.coin == ExternalCoin::DCR || self.profile.coin.is_cpu() {
+            // DCR (WoolyPooly) and CPU coins (XMR/RandomX) expect a plain
+            // password rather than a payout-currency override; the payout
+            // address is the wallet.
+            "x"
+        } else if self.profile.coin.supports_btc_payout() {
+            "c=BTC"
+        } else {
+            "x"
+        };
         println!(
             "auxpow: authorizing worker={} password={} on {} (protocol={})",
             worker, password, self.profile.coin, self.protocol.as_str()
@@ -484,7 +495,18 @@ impl AuxPowClient {
     async fn authorize(&self, payout_wallet: &str) -> Result<()> {
         let worker = format!("{}.{}", payout_wallet, self.profile.worker_name);
         let is_ethstratum = self.protocol == StratumProtocol::EthStratum;
-        let password = if is_ethstratum { "x" } else { "c=BTC" };
+        let password = if is_ethstratum {
+            "x"
+        } else if self.profile.coin == ExternalCoin::DCR || self.profile.coin.is_cpu() {
+            // DCR (WoolyPooly) and CPU coins (XMR/RandomX) expect a plain
+            // password rather than a payout-currency override; the payout
+            // address is the wallet.
+            "x"
+        } else if self.profile.coin.supports_btc_payout() {
+            "c=BTC"
+        } else {
+            "x"
+        };
         println!(
             "auxpow: authorizing worker={} password={} on {} (protocol={})",
             worker, password, self.profile.coin, self.protocol.as_str()
@@ -944,6 +966,84 @@ impl AuxPowClient {
             }
         }
 
+        // Monero / RandomX (xmrig-compatible Stratum):
+        // mining.notify params = [job_id, seed_hash, next_seed_hash, blob, height, target, clean_jobs]
+        //   - blob: RandomX hashing blob (hex string, typically 152 hex / 76 bytes)
+        //   - target: 8-byte little-endian hex (16 hex chars) or a JSON number
+        //   - seed_hash / next_seed_hash: 32-byte hex (64 chars)
+        //   - height: block height
+        if self.profile.coin == ExternalCoin::XMR {
+            if let Some(arr) = params.as_array() {
+                if arr.len() >= 5 {
+                    let job_id = arr[0].as_str().unwrap_or("unknown").to_string();
+
+                    // Locate the blob (longest hex string) and the first 32-byte seed hash.
+                    let mut blob_hex = "";
+                    let mut seed_hash = None;
+                    let mut height = None;
+                    for v in arr.iter().skip(1) {
+                        if let Some(s) = v.as_str() {
+                            let clean = s.trim_start_matches("0x");
+                            if clean.len() > 64 && blob_hex.is_empty() {
+                                blob_hex = s;
+                            } else if clean.len() == 64 && seed_hash.is_none() {
+                                seed_hash = Some(s.to_string());
+                            }
+                        } else if v.is_u64() && height.is_none() {
+                            height = v.as_u64();
+                        }
+                    }
+
+                    // Target is usually the last parameter or the last string before clean_jobs.
+                    let mut target_hex = "ffffffff";
+                    for v in arr.iter().rev().take(3) {
+                        if let Some(s) = v.as_str() {
+                            let clean = s.trim_start_matches("0x");
+                            if clean.len() == 16 {
+                                target_hex = s;
+                                break;
+                            }
+                        }
+                    }
+
+                    if !blob_hex.is_empty() {
+                        let header_bytes = hex::decode(blob_hex.trim_start_matches("0x"))
+                            .unwrap_or_default();
+                        let target_bytes = crate::external_hashers::parse_randomx_target_hex(target_hex)
+                            .or_else(|| crate::external_hashers::parse_target_hex(target_hex))
+                            .unwrap_or([0xFFu8; 32]);
+
+                        println!(
+                            "auxpow: XMR notify — job={} blob_len={} height={:?} target={}",
+                            job_id,
+                            header_bytes.len(),
+                            height,
+                            &target_hex,
+                        );
+
+                        return Ok(ExternalJob {
+                            job_id,
+                            header_hex: blob_hex.to_string(),
+                            target_hex: target_hex.to_string(),
+                            seed_hash,
+                            block_number: height,
+                            algorithm: self.profile.algorithm.clone(),
+                            header_bytes,
+                            target_bytes,
+                            timestamp: None,
+                            nbits: None,
+                            external_coin: self.profile.coin,
+                            from_group: 0,
+                            to_group: 0,
+                            extranonce1: self.extranonce1.lock().await.clone(),
+                            extranonce2: String::new(),
+                            epoch: None,
+                        });
+                    }
+                }
+            }
+        }
+
         let arr = params
             .as_array()
             .ok_or_else(|| anyhow!("notify params not array or object"))?;
@@ -1207,6 +1307,15 @@ impl AuxPowClient {
                 format!("0x{}", mix_src)
             };
             ("mining.submit", json!([worker, job_id, nonce_hex, mix_hex]))
+        } else if self.profile.coin == ExternalCoin::XMR {
+            // Monero / RandomX (xmrig-compatible Stratum):
+            // mining.submit params = [worker, job_id, nonce_hex]
+            // The nonce is a 32-bit value represented as an 8-character hex
+            // string (no 0x prefix), matching xmrig's submit format.
+            let wallet = self.payout_wallet.lock().await.clone();
+            let worker = format!("{}.{}", wallet, self.profile.worker_name);
+            let nonce_hex = format!("{:08x}", (nonce & 0xFFFFFFFF) as u32);
+            ("mining.submit", json!([worker, job_id, nonce_hex]))
         } else if self.profile.coin == ExternalCoin::DCR {
             // DCR Blake3: standard Stratum v1 submit with 5 params:
             //   [worker, job_id, extranonce2, ntime, nonce]
@@ -1293,6 +1402,12 @@ impl AuxPowClient {
         let max_target = if self.profile.algorithm.eq_ignore_ascii_case("kheavyhash") {
             // 2^224 - 1 as a 32-byte big-endian number: 4 leading zero bytes
             // followed by 28 0xFF bytes.  This matches the Kaspa stratum bridge.
+            let mut t = [0u8; 32];
+            t[4..].fill(0xFF);
+            t
+        } else if self.profile.coin == ExternalCoin::DCR {
+            // Decred mainnet PoW limit is 2^224 - 1 (same byte pattern as KAS).
+            // This matches gominer/dcrpool DiffToTarget(net.PowLimit, difficulty).
             let mut t = [0u8; 32];
             t[4..].fill(0xFF);
             t
@@ -2332,6 +2447,131 @@ mod tests {
         // Submit hashrate.
         let ok = client.submit_hashrate(50_000_000).await.unwrap();
         assert!(ok);
+
+        client.disconnect().await.unwrap();
+        server_task.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn xmr_randomx_notify_and_submit() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap().to_string();
+        let (host, port) = addr.rsplit_once(':').unwrap();
+        let port: u16 = port.parse().unwrap();
+
+        let blob_hex = "0d00".to_string() + &"00".repeat(74); // 152 hex chars / 76 bytes
+        let seed_hash = "11".repeat(32);
+        let next_seed_hash = "22".repeat(32);
+        let target_hex = "00ffffff00000000"; // 8-byte LE target
+        let height: u64 = 3334445;
+        let job_id = "xmr_job_001";
+
+        let server_blob_hex = blob_hex.clone();
+        let server_seed_hash = seed_hash.clone();
+
+        let server_task = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let (mut reader, mut writer) = socket.split();
+            let mut buf = vec![0u8; 8192];
+
+            async fn read_json(
+                reader: &mut tokio::net::tcp::ReadHalf<'_>,
+                buf: &mut [u8],
+            ) -> Value {
+                let n = reader.read(buf).await.unwrap();
+                serde_json::from_slice::<Value>(&buf[..n]).unwrap()
+            }
+
+            async fn write_json(writer: &mut tokio::net::tcp::WriteHalf<'_>, v: Value) {
+                writer
+                    .write_all((serde_json::to_string(&v).unwrap() + "\n").as_bytes())
+                    .await
+                    .unwrap();
+                writer.flush().await.unwrap();
+            }
+
+            // mining.subscribe
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "mining.subscribe");
+            write_json(
+                &mut writer,
+                json!({"id": 1, "result": [true, "00123456"], "error": null}),
+            )
+            .await;
+
+            // mining.authorize
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "mining.authorize");
+            // MoneroOcean expects wallet.worker format; verify the XMR wallet is used.
+            let auth = req["params"][0].as_str().unwrap();
+            assert!(auth.starts_with("45zTKY3zei7ACSWrQAXeU7AsTwccCfN52Kt7odqWq9icYfB9zGTmfmd5fi28oFsktNHiguc2oHizZhfvhVqauXf6Q4CcUED"));
+            // XMR does not support BTC payout, so password must be "x,d=4" not "c=BTC".
+            assert_eq!(req["params"][1].as_str().unwrap(), "x,d=4");
+            write_json(&mut writer, json!({"id": 2, "result": true, "error": null})).await;
+
+            // mining.notify (xmrig RandomX format)
+            write_json(
+                &mut writer,
+                json!({
+                    "id": null,
+                    "method": "mining.notify",
+                    "params": [
+                        job_id,
+                        server_seed_hash,
+                        next_seed_hash,
+                        server_blob_hex,
+                        height,
+                        target_hex,
+                        true
+                    ]
+                }),
+            )
+            .await;
+
+            // mining.submit
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "mining.submit");
+            let params = req["params"].as_array().unwrap();
+            assert_eq!(params.len(), 3);
+            assert!(params[0].as_str().unwrap().starts_with("45zTKY3zei7ACSWrQAXeU7AsTwccCfN52Kt7odqWq9icYfB9zGTmfmd5fi28oFsktNHiguc2oHizZhfvhVqauXf6Q4CcUED"));
+            assert_eq!(params[1].as_str().unwrap(), job_id);
+            let nonce_hex = params[2].as_str().unwrap();
+            assert_eq!(nonce_hex.len(), 8, "XMR nonce must be 8 hex chars");
+            assert!(!nonce_hex.starts_with("0x"), "XMR nonce must not have 0x prefix");
+            // Nonce 0x1234abcd should be submitted as "1234abcd".
+            assert_eq!(nonce_hex, "1234abcd");
+
+            write_json(
+                &mut writer,
+                json!({"id": req["id"].as_i64().unwrap(), "result": true, "error": null}),
+            )
+            .await;
+
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        });
+
+        let mut profile = CoinProfile::default_for(ExternalCoin::XMR);
+        profile.pool_host = host.to_string();
+        profile.pool_port = port;
+
+        let client = Arc::new(AuxPowClient::new(profile));
+        client.connect("45zTKY3zei7ACSWrQAXeU7AsTwccCfN52Kt7odqWq9icYfB9zGTmfmd5fi28oFsktNHiguc2oHizZhfvhVqauXf6Q4CcUED").await.unwrap();
+
+        let job = client.wait_for_job(5000).await.unwrap().unwrap();
+        assert_eq!(job.job_id, job_id);
+        assert_eq!(job.external_coin, ExternalCoin::XMR);
+        assert_eq!(job.algorithm, "randomx");
+        assert_eq!(job.header_hex, blob_hex);
+        assert_eq!(job.header_bytes.len(), 76);
+        assert_eq!(job.seed_hash.as_deref(), Some(seed_hash.as_str()));
+        assert_eq!(job.block_number, Some(height));
+        assert_eq!(job.target_hex, target_hex);
+        // Target should be the 8-byte LE value.
+        assert_eq!(job.target_bytes[..8], hex::decode(target_hex).unwrap());
+
+        // Submit a share with nonce 0x1234abcd (305441741).
+        let result = client.submit_share(job_id, 0x1234abcd, "deadbeef", None).await.unwrap();
+        assert_eq!(result, ShareResult::Accepted);
 
         client.disconnect().await.unwrap();
         server_task.await.unwrap();
