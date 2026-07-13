@@ -275,6 +275,45 @@ pub mod etchash {
         /// Return a `'static` pointer to the linked C library's version
         /// literal (read-only, must not be freed). May be null on stub builds.
         pub fn ethash_version() -> *const std::ffi::c_char;
+
+        // ── Primary DAG-based API (real Ethash) ───────────────────────
+        /// Compute the full Ethash hash over a precomputed DAG.
+        ///
+        /// # Safety
+        /// - `header_hash` must point to 32 readable bytes.
+        /// - `dag` must point to `dag_size_entries * 128` readable bytes.
+        /// - `output` must point to 32 writable bytes, non-aliasing.
+        pub fn ethash_hash_dag(
+            header_hash: *const u8,
+            nonce: u64,
+            dag: *const u8,
+            dag_size_entries: u64,
+            output: *mut u8,
+        );
+
+        /// Compute the full Ethash hash over a precomputed DAG and return 1
+        /// if it meets `target` (big-endian comparison), else 0.
+        ///
+        /// # Safety
+        /// Same as [`ethash_hash_dag`], plus `target` must point to 32
+        /// readable bytes.
+        pub fn ethash_mine(
+            header_hash: *const u8,
+            nonce: u64,
+            dag: *const u8,
+            dag_size_entries: u64,
+            target: *const u8,
+            output: *mut u8,
+        ) -> i32;
+
+        /// Register a precomputed DAG for the legacy `ethash_hash`/`
+        /// ethash_verify` path.  The DAG memory is owned by the caller and
+        /// must remain valid until the next `ethash_set_dag` or `ethash_cleanup`.
+        ///
+        /// # Safety
+        /// - `dag` must point to `dag_size_entries * 128` readable bytes that
+        ///   remain valid until the next call invalidates the reference.
+        pub fn ethash_set_dag(dag: *const u8, dag_size_entries: u64);
     }
 
     /// Compute the Ethash/EtcHash of a block header.
@@ -370,6 +409,79 @@ pub mod etchash {
         // SAFETY: `ethash_version` returns a pointer into static read-only
         // memory or null. `read_c_version_string` bounds the strlen scan.
         unsafe { safety::read_c_version_string(ethash_version()) }
+    }
+
+    // ── Primary DAG-based API (real Ethash) ───────────────────────────
+
+    /// Compute the real Ethash hash over a precomputed DAG.
+    ///
+    /// `header_hash` is the 32-byte block header hash, `dag` is the raw DAG
+    /// buffer (128 bytes per entry), and `dag_size_entries` is the number of
+    /// 128-byte entries.  Returns the 32-byte final Ethash hash.
+    pub fn hash_with_dag(
+        header_hash: &[u8; 32],
+        nonce: u64,
+        dag: &[u8],
+        dag_size_entries: u64,
+    ) -> [u8; 32] {
+        let mut out = [0u8; 32];
+        // SAFETY: `header_hash` is a 32-byte array reference (non-null, valid);
+        // `dag.as_ptr()` is valid for `dag.len()` bytes; `out` is fresh stack
+        // memory and cannot alias either input. The C side only reads
+        // `dag_size_entries * 128` bytes from `dag`, so the caller must ensure
+        // `dag.len() >= dag_size_entries * 128`.
+        unsafe {
+            ethash_hash_dag(
+                header_hash.as_ptr(),
+                nonce,
+                dag.as_ptr(),
+                dag_size_entries,
+                out.as_mut_ptr(),
+            );
+        }
+        out
+    }
+
+    /// Compute the real Ethash hash over a precomputed DAG and check it
+    /// against `target`.  Returns `Some(hash)` if `hash <= target`
+    /// (big-endian comparison), else `None`.
+    pub fn mine(
+        header_hash: &[u8; 32],
+        nonce: u64,
+        dag: &[u8],
+        dag_size_entries: u64,
+        target: &[u8; 32],
+    ) -> Option<[u8; 32]> {
+        let mut out = [0u8; 32];
+        // SAFETY: same invariants as `hash_with_dag`; `target` is a 32-byte
+        // array reference (non-null, valid for 32 readable bytes).
+        let met = unsafe {
+            ethash_mine(
+                header_hash.as_ptr(),
+                nonce,
+                dag.as_ptr(),
+                dag_size_entries,
+                target.as_ptr(),
+                out.as_mut_ptr(),
+            )
+        };
+        if met == 1 {
+            Some(out)
+        } else {
+            None
+        }
+    }
+
+    /// Register a precomputed DAG for use by the legacy [`hash`] / [`verify`]
+    /// path.  The DAG buffer is borrowed (not copied) and must outlive
+    /// subsequent calls.
+    pub fn set_dag(dag: &[u8], dag_size_entries: u64) {
+        // SAFETY: `dag.as_ptr()` is valid for `dag.len()` bytes; the caller
+        // guarantees the buffer remains valid until the next `set_dag` /
+        // `cleanup` call. The C side stores only the pointer + length.
+        unsafe {
+            ethash_set_dag(dag.as_ptr(), dag_size_entries);
+        }
     }
 }
 

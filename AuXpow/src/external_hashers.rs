@@ -575,6 +575,7 @@ pub fn hash_ethash_with_dag(
     // Pure-Rust fallback: NOT valid for real Ethash mining.
     #[allow(unreachable_code)]
     {
+        let _ = (dag, dag_size_entries);
         let mut input = Vec::with_capacity(32 + 8);
         input.extend_from_slice(header_hash);
         input.extend_from_slice(&nonce.to_le_bytes());

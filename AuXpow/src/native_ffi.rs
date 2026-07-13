@@ -172,7 +172,12 @@ pub fn mine_kheavyhash_native(pre_pow_hash: &[u8], timestamp: u64, nonce: u64) -
 // ── Autolykos v2 (ERG) ───────────────────────────────────────────────
 
 unsafe extern "C" {
-    /// Returns the hit value as a u64 (first 8 LE bytes of the hash).
+    /// Convenience: compute Autolykos v2 hash by generating the table
+    /// internally.  Returns the first 8 bytes of the hash as a LE u64.
+    ///
+    /// # Safety
+    /// - `header` must be valid for `header_len` readable bytes.
+    /// - `output` must be valid for 32 writable bytes, non-aliasing with header.
     pub fn autolykos_hash(
         header: *const u8,
         header_len: usize,
@@ -180,20 +185,116 @@ unsafe extern "C" {
         height: u32,
         output: *mut u8,
     ) -> u64;
+
+    /// Generate the Autolykos v2 precomputed table.
+    ///
+    /// `table` must point to `table_size * 8` bytes of writable memory.
+    /// Each entry is a u64 derived from BLAKE2b-256(SHA256(header) || be64(i) || be32(height)).
+    ///
+    /// # Safety
+    /// - `header` must be valid for `header_len` readable bytes.
+    /// - `table` must be valid for `table_size * 8` writable bytes.
+    pub fn autolykos_generate_table(
+        header: *const u8,
+        header_len: usize,
+        height: u32,
+        table: *mut u64,
+        table_size: u64,
+    );
+
+    /// Mine a single nonce using a precomputed table.
+    ///
+    /// Returns 1 if the resulting hash is <= `target` (big-endian comparison),
+    /// 0 otherwise.  The 32-byte hash is written to `output`.
+    ///
+    /// If `table` is null, the table is generated internally (slower).
+    ///
+    /// # Safety
+    /// - `header` must be valid for `header_len` readable bytes.
+    /// - `table` must either be null or point to `table_size * 8` readable bytes.
+    /// - `target` must point to 32 readable bytes (or be null to skip target check).
+    /// - `output` must be valid for 32 writable bytes, non-aliasing with header.
+    pub fn autolykos_mine(
+        header: *const u8,
+        header_len: usize,
+        nonce: u64,
+        table: *const u64,
+        table_size: u64,
+        target: *const u8,
+        output: *mut u8,
+    ) -> i32;
+
     pub fn autolykos_version() -> *const c_char;
 }
 
 /// Compute Autolykos v2 hash for ERG mining.
 ///
 /// `header` is the block header (without nonce), `height` is the block
-/// height (needed for the N parameter), and `nonce` is the 64-bit nonce.
+/// height (needed for table generation), and `nonce` is the 64-bit nonce.
 /// Returns the 32-byte hash output.
+///
+/// This convenience function generates the table internally on every call.
+/// For production mining, precompute the table once with
+/// [`generate_autolykos_table_native`] and use [`mine_autolykos_native`].
 pub fn hash_autolykos_native(header: &[u8], nonce: u64, height: u32) -> [u8; 32] {
     let mut out = [0u8; 32];
     unsafe {
         autolykos_hash(header.as_ptr(), header.len(), nonce, height, out.as_mut_ptr());
     }
     out
+}
+
+/// Generate the Autolykos v2 precomputed table on the host.
+///
+/// `table` must be pre-allocated with `table_size` entries (each 8 bytes).
+/// The table is derived from `SHA256(header)` and `height`.
+pub fn generate_autolykos_table_native(
+    header: &[u8],
+    height: u32,
+    table: &mut [u64],
+) {
+    unsafe {
+        autolykos_generate_table(
+            header.as_ptr(),
+            header.len(),
+            height,
+            table.as_mut_ptr(),
+            table.len() as u64,
+        );
+    }
+}
+
+/// Mine a single nonce using a precomputed table.
+///
+/// Returns `Some(hash)` if the hash meets the target (hash <= target in
+/// big-endian comparison), or `None` if it does not.  In both cases the
+/// 32-byte hash is written to the returned array.
+///
+/// If `table` is empty (length 0), the table is generated internally.
+pub fn mine_autolykos_native(
+    header: &[u8],
+    nonce: u64,
+    table: &[u64],
+    target: &[u8; 32],
+) -> ([u8; 32], bool) {
+    let mut out = [0u8; 32];
+    let table_ptr = if table.is_empty() {
+        std::ptr::null()
+    } else {
+        table.as_ptr()
+    };
+    let meets = unsafe {
+        autolykos_mine(
+            header.as_ptr(),
+            header.len(),
+            nonce,
+            table_ptr,
+            table.len() as u64,
+            target.as_ptr(),
+            out.as_mut_ptr(),
+        )
+    };
+    (out, meets != 0)
 }
 
 // ── KawPow (RVN, CLORE) ──────────────────────────────────────────────
