@@ -724,6 +724,7 @@ impl GpuMiner {
             .build()?;
 
         let kernel = Kernel::builder()
+            .queue(q.clone())
             .program(pro_que.program())
             .name(kernel_name)
             .arg(&header_buf)
@@ -808,6 +809,7 @@ impl GpuMiner {
             .build()?;
 
         let kernel = Kernel::builder()
+            .queue(q.clone())
             .program(pro_que.program())
             .name(kernel_name)
             .arg(&header_buf)
@@ -873,6 +875,7 @@ impl GpuMiner {
             .build()?;
 
         let kernel = Kernel::builder()
+            .queue(q.clone())
             .program(pro_que.program())
             .name(kernel_name)
             .arg(&pre_pow_buf)
@@ -932,6 +935,7 @@ impl GpuMiner {
             .build()?;
 
         let kernel = Kernel::builder()
+            .queue(q.clone())
             .program(pro_que.program())
             .name(kernel_name)
             .arg(&header_buf)
@@ -993,6 +997,7 @@ impl GpuMiner {
         let stride: u64 = 1;
 
         let kernel = Kernel::builder()
+            .queue(q.clone())
             .program(pro_que.program())
             .name(kernel_name)
             .arg(&header_buf)
