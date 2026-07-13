@@ -1502,16 +1502,16 @@ fn run_remote_session(
         // job, spawn a CPU thread to mine the external coin IN PARALLEL with
         // the GPU scanning the ZION Deeksha job.  Both streams submit shares
         // independently.
+        //
+        // NOTE: The external stream always runs on CPU regardless of the
+        // interactive cpu_on/gpu_on toggle — it's a separate parallel stream
+        // that doesn't compete with the ZION GPU scan.
         let ext_handle = if let Some(ref ext) = external_stream {
-            if cpu_on {
-                let ext = ext.clone();
-                let ext_threads = threads.max(1);
-                Some(thread::spawn(move || {
-                    mine_external_stream_cpu(&ext, ext_threads)
-                }))
-            } else {
-                None
-            }
+            let ext = ext.clone();
+            let ext_threads = threads.max(1);
+            Some(thread::spawn(move || {
+                mine_external_stream_cpu(&ext, ext_threads)
+            }))
         } else {
             None
         };
