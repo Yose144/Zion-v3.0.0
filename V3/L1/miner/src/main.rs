@@ -1375,7 +1375,13 @@ fn run_remote_session(
             VERBOSE.store(c.verbose, Ordering::Relaxed);
         }
 
-        let (job_line, mut job, algorithm) = read_next_job(&mut reader)?;
+        let (job_line, mut job, algorithm) = match read_next_job(&mut reader) {
+            Ok(result) => result,
+            Err(e) => {
+                println!("read_job_error: {e:#} — reconnecting");
+                break;
+            }
+        };
         println!(">> new job #{} height={} algo={}", job.job_id, job.height, algorithm);
         let current_diff = CURRENT_POOL_DIFFICULTY.load(Ordering::Relaxed);
         // Only override target for ZION jobs. External AuxPoW jobs carry
