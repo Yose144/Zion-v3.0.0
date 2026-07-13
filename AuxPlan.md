@@ -1,7 +1,8 @@
 # AuxPow Multi-Algorithm GPU Mining — Complete Report & Plan
 
-> **Status:** 2026-07-13 | DCR Blake3 E2E verified (share accepted by WoolyPooly)
+> **Status:** 2026-07-13 (rev2 — CHv3 stream integration) | DCR Blake3 E2E verified (share accepted by WoolyPooly)
 > **Author:** Devin + Yose | **Repo:** `Zion-v3.0.0`
+> **Main goal:** Rozchodit revenue system ze stream multi-algo GPU miningu v Deeksha Chv3
 
 ---
 
@@ -15,6 +16,177 @@ external poolu.
 
 **DCR Blake3 je plně funkční E2E** — share accepted WoolyPooly
 (2026-07-13, nonce=388, hash=001f350a9fd731c9).
+
+### Hlavní cíl (rev2)
+
+Rozchodit **revenue system ze stream multi-algo GPU miningu** v Deeksha Chv3.
+To znamená:
+
+1. **CHv3 stream telemetry** jako backbone revenue accounting — `DeekshaStreamTelemetry`
+   mapuje každý pipeline step na `RevenueSource` (KeccakBonus, Zion, NclAi, …).
+2. **AuxPow B2b** jako externí revenue stream — GPU minery těží DCR/KAS/ALPH,
+   pool forwarduje shares, BTC revenue se trackuje v `RevenueCollector`.
+3. **RevenueScheduler** (50/25/25 model) dispatchuje minery do session groups
+   (Zion / Revenue / Ncl) podle váhových lane konfigurace.
+4. **Sjednocený revenue report** — ZION block rewards + external BTC revenue +
+   NCL AI revenue → jeden `RevenueStats` snapshot.
+
+### ⚠️ Aktuální broken config na Edge (2026-07-13)
+
+Edge pool běží s `ZION_POOL_AUXPOW_COIN=ETC`, ale **ETC vyžaduje EthStratum
+protokol** (`eth_getWork` / `eth_submitWork`), který **není implementován**
+(viz Phase 8 TODO). DCR wallet je nakonfigurovaný (`ZION_POOL_AUXPOW_WALLET_DCR`),
+ale coin je nastaven na ETC. **Akce:** Přepnout na `ZION_POOL_AUXPOW_COIN=DCR`
+(Blake3, Stratum v1, E2E verified).
+
+---
+
+## 1A. CHv3 Stream Architecture — Kontext pro AuxPow integraci
+
+### 1A.1 Cosmic Harmony v3 — Historický původ
+
+CHv3 (Cosmic Harmony v3) byl od začátku (2.5–2.9.5) **revenue systém**, ne jen
+algoritmus. Původní vize (z `docs/ChV3.md`, `docs/docs2.9/2.9.4/reports/COSMIC_HARMONY_V3_REVENUE_PLAN.md`):
+
+```
+50/25/25 Model — 5 revenue streams z 3 compute costs:
+
+Stream 1: ZION (50% compute) → CHv3 pipeline → ZION block rewards
+Stream 2: ETC/Keccak (FREE byproduct) → Keccak-256 intermediate z Phase 1
+Stream 3: NXS/SHA3 (FREE byproduct) → SHA3-512 intermediate z Phase 2
+Stream 4: Multi-Algo (25% compute) → profit-switch ERG/RVN/KAS/ALPH → BTC
+Stream 5: NCL AI (25% compute) → AI inference tasks → NCL rewards
+```
+
+**Lekce z historie:** "FREE byproduct" streamy (ETC/NXS) **selhaly**, protože
+Keccak/SHA3 intermediates z CHv3 pipeline NEJSOU validní Ethash/SHA3 work pro
+cílové blockchainy. True merge mining vyžaduje stejný PoW algoritmus na obou
+řetězcích. → Viz `AUXPOW_TRUE_MERGE_MINING_PLAN.md` §4.4.
+
+### 1A.2 CHv3 Pipeline (aktuální mainnet — deeksha_lite_v1 / deeksha_chv3)
+
+```
+Input: block_header[0..80] || nonce_le[0..8]
+  │
+  ├─ Step 1: Keccak-256          → RevenueSource::KeccakBonus  (5 work units)
+  ├─ Step 2: MemoryHard (256KiB) → RevenueSource::Zion         (55 work units)
+  ├─ Step 3: AesMix (3 rounds)   → RevenueSource::DeekshaLite  (5 work units)
+  ├─ Step 4: ThermalLoop         → RevenueSource::DeekshaLite  (3 work units)
+  ├─ Step 5: KeccakFinal         → RevenueSource::Zion         (2 work units)
+  │
+  └─ Output: Hash32 (deeksha_chv3 = deeksha_lite bit-identical)
+```
+
+**Total work units: 70** (deeksha_lite_v1 pipeline).
+Pro v2 pipeline (cosmic_harmony_ekam_deeksha_v2): **100 work units**
+(Keccak256=5, Sha3_512=5, GoldenMatrix=10, MemoryHard=55, NpuMix=15, CosmicFusion=10).
+
+### 1A.3 DeekshaStreamTelemetry — Consensus-safe revenue accounting
+
+`stream_layers.rs` poskytuje **consensus-safe** telemetrii — nemění hash output,
+jen zaznamenává které pipeline kroky byly provedeny a mapuje je na `RevenueSource`:
+
+```rust
+pub struct DeekshaStreamTelemetry {
+    pub steps: Vec<(DeekshaStep, u64)>,        // (step, work_units)
+    pub total_work: u64,                       // sum of all work units
+    pub stream_breakdown: HashMap<String, u64>, // per-RevenueSource aggregation
+}
+```
+
+Pool volá `revenue_collector.track_deeksha_streams(telemetry, value_usd, height)`
+po každém accepted ZION bloku → granular per-stream revenue accounting.
+
+### 1A.4 RevenueSource enum — 14 revenue streamů
+
+Z `revenue.rs`:
+
+| RevenueSource | Fee | Algo | Popis |
+|---------------|-----|------|-------|
+| `Zion` | 5% | deeksha_chv3 | Canonical ZION mining (50% allocation) |
+| `KeccakBonus` | 5% | — | FREE byproduct (historický, ne aktivní) |
+| `Sha3Bonus` | 5% | — | FREE byproduct (historický, ne aktivní) |
+| `Blake3External` | 2% | Blake3 | **DCR, ALPH** — AuxPow B2b |
+| `KHeavyHashExternal` | 2% | kHeavyHash | **KAS** — AuxPow B2b |
+| `EthashExternal` | 2% | Ethash | ETC, EVR, MEWC — vyžaduje EthStratum |
+| `KawPowExternal` | 2% | KawPow | RVN, CLORE — vyžaduje EthStratum + DAG |
+| `AutolykosExternal` | 2% | Autolykos v2 | ERG — vyžaduje EthStratum |
+| `RandomXExternal` | 2% | RandomX | XMR — CPU-only |
+| `ZelHashExternal` | 2% | ZelHash | FLUX — TODO |
+| `DeekshaLite` | 5% | deeksha_lite_v1 | Lite v1 mining |
+| `ThermalBonus` | 5% | deeksha_lite_fire | Fire thermal mining |
+| `NclAi` | 10% | NCL | AI/NCL compute (25% allocation) |
+| `ProfitSwitch` | 2% | — | Legacy profit-switch (deprecated) |
+
+### 1A.5 RevenueScheduler — Pool-side 50/25/25 dispatch
+
+`V3/L1/pool/src/bin/server.rs:3016` — weighted round-robin lane dispatch:
+
+```
+SessionGroup::Zion     → RevenueSource::Zion lane (50% default)
+SessionGroup::Revenue  → rotate through external lanes (25% default)
+SessionGroup::Ncl      → RevenueSource::NclAi lane (25% default)
+SessionGroup::Auto     → weighted round-robin across all lanes
+```
+
+**Env vars:**
+- `ZION_REVENUE_MULTISTREAM=1` — enable multistream dispatch
+- `ZION_STREAM_ZION_PCT=50` — ZION lane weight
+- `ZION_STREAM_BLAKE3_PCT=25` — Blake3 external (DCR/ALPH) lane weight
+- `ZION_STREAM_NCL_PCT=25` — NCL AI lane weight
+- `ZION_STREAM_KHEAVYHASH_PCT=0` — KAS lane (default 0, enable explicit)
+- `ZION_STREAM_ETHASH_PCT=0` — ETC lane (default 0)
+- `ZION_STREAM_KAWPOW_PCT=0` — RVN lane (default 0)
+- `ZION_STREAM_AUTOLYKOS_PCT=0` — ERG lane (default 0)
+- `ZION_STREAM_RANDOMX_PCT=0` — XMR lane (default 0)
+- `ZION_BACKEND_AUTO_INCLUDE_ZION=1` — auto-assign includes ZION lane
+
+### 1A.6 Jak AuxPow B2b napojuje na CHv3 streamy
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    ZION POOL (server.rs)                            │
+│                                                                     │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │  RevenueScheduler (50/25/25)                                 │   │
+│  │  ├── Zion lane (50%) → deeksha_chv3 jobs → ZION blocks      │   │
+│  │  ├── Blake3External lane (25%) → AuxPow B2b DCR/ALPH jobs  │   │
+│  │  └── NclAi lane (25%) → NCL AI tasks                        │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+│                              │                                      │
+│  ┌───────────────────────────▼──────────────────────────────────┐   │
+│  │  AuxPowBridge (B2b)                                          │   │
+│  │  ├── AuxPowClient → Stratum v1 → external pool (WoolyPooly) │   │
+│  │  ├── JobMultiplexer → queue external jobs                   │   │
+│  │  ├── Session thread → issue external_job to Revenue miners  │   │
+│  │  └── ShareForwarder → validate + forward to external pool   │   │
+│  └───────────────────────────┬──────────────────────────────────┘   │
+│                              │                                      │
+│  ┌───────────────────────────▼──────────────────────────────────┐   │
+│  │  RevenueCollector                                            │   │
+│  │  ├── track_zion_block(height, subsidy, fee_pct, tx_hash)    │   │
+│  │  ├── track_deeksha_streams(telemetry, value_usd, height)    │   │
+│  │  ├── track_event(RevenueEvent { source, value_usd, ... })   │   │
+│  │  ├── track_ncl_task(value_usd)                              │   │
+│  │  └── get_stats() → RevenueStats snapshot                    │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+          │                    │                    │
+          ▼                    ▼                    ▼
+   ZION Blockchain      External Pool         NCL Gateway
+   (deeksha_chv3)       (DCR/KAS/ALPH)       (AI tasks)
+        │                    │                    │
+        ▼                    ▼                    ▼
+   ZION block reward    BTC revenue           NCL rewards
+   + stream telemetry   (2% fee)             (10% fee)
+```
+
+**Klíčový integrace bod:** AuxPow B2b revenue se trackuje přes
+`RevenueCollector::track_event()` s `RevenueSource::Blake3External` (nebo
+`KHeavyHashExternal` pro KAS). ZION block revenue se trackuje přes
+`track_zion_block()` + `track_deeksha_streams()`. Oboje končí v jednom
+`RevenueStats` snapshotu → sjednocený revenue report.
 
 ---
 
@@ -349,6 +521,21 @@ ZION Miner (GPU rig)
 
 ## 5. Priority Order
 
+### Revenue System Priority (rev2 — CHv3 stream integrace)
+
+| Priority | Fáze | Effort | Impact |
+|----------|------|--------|--------|
+| **R0** | Opravit broken Edge config (ETC→DCR) | 30min | Unblocks DCR revenue |
+| **R1** | DCR revenue live | 1-2h | 1st external revenue stream |
+| **R2** | ALPH + KAS E2E | 2-4h | 3 external coins live |
+| **R3** | Stream telemetry revenue report | 2-4h | Sjednocený revenue accounting |
+| **R4** | SMOS deploy + GPU mining | 2-4h | Real GPU hashrate (blocked) |
+| **R5** | EthStratum protocol | 4-6h | Unblocks ERG/RVN/ETC/EVR/MEWC/CLORE |
+| **R6** | Multi-coin profit switching | 8-12h | Profit optimization |
+| **R7** | True AuxPow consensus | 20-40h | Free chain security (future) |
+
+### Original Phase Priority (multi-algo GPU mining completion)
+
 | Priority | Phase | Effort | Impact |
 |----------|-------|--------|--------|
 | **P0** | Phase 9: SMOS deploy | 2-4h | Unblocks real GPU mining |
@@ -435,14 +622,218 @@ auxpow: submitting share request {"id":100,"method":"mining.submit",
 
 ---
 
-## 9. Next Actions
+## 9. Next Actions — Revenue System Priority (rev2)
 
-1. **SMOS deploy** (P0) — get new miner binary on rig
-2. **ALPH E2E test** (P1) — verify 2nd coin
-3. **KAS E2E test** (P1) — verify 3rd coin
-4. **EthStratum protocol** (P2) — unblocks ERG/RVN/ETC/EVR/MEWC/CLORE
-5. **KawPow DAG + E2E** (P3) — 4 more coins live
-6. **FLUX ZelHash** (P4) — new algorithm
-7. **XMR RandomX** (P4) — CPU-only
-8. **Multi-coin profit switching** (P5) — optimization
-9. **True AuxPow consensus** (P6) — Phase 3 merge mining
+### Fáze R0: Opravit broken Edge config (IHned)
+
+**Problém:** `ZION_POOL_AUXPOW_COIN=ETC` ale ETC vyžaduje EthStratum (neimplementováno).
+
+- [ ] Přepnout `ZION_POOL_AUXPOW_COIN=DCR` (Blake3, Stratum v1, E2E verified)
+- [ ] Zapnout `ZION_REVENUE_MULTISTREAM=1` pro multistream dispatch
+- [ ] Nastavit `ZION_STREAM_ZION_PCT=50`, `ZION_STREAM_BLAKE3_PCT=25`, `ZION_STREAM_NCL_PCT=25`
+- [ ] Restart pool, ověřit DCR jobs flow + share forwarding
+- [ ] Ověřit `RevenueCollector::track_event(Blake3External)` se volá při accepted share
+
+### Fáze R1: DCR revenue live (1-2h)
+
+- [ ] Pool se připojí k WoolyPooly DCR pool (pool.woolypooly.com:3152)
+- [ ] Revenue minery dostávají DCR blake3 jobs
+- [ ] Shares forwardovány a acceptovány WoolyPooly
+- [ ] BTC revenue se objeví na WoolyPooly dashboardu
+- [ ] `RevenueStats.by_source["blake3_external"]` > 0
+- [ ] Dashboard widget: external revenue per coin
+
+### Fáze R2: ALPH + KAS E2E (2-4h)
+
+- [ ] ALPH E2E test s `AUXPOW_E2E_COIN=alph` na 2miners pool
+- [ ] KAS E2E test s `AUXPOW_E2E_COIN=kas` na 2miners pool
+- [ ] Pool config: podpora multi-coin (nebo force_coin switch)
+- [ ] `ZION_STREAM_KHEAVYHASH_PCT=10` — KAS lane aktivní
+- [ ] Revenue stream breakdown: ZION 50% / DCR 15% / ALPH 10% / KAS 10% / NCL 15%
+
+### Fáze R3: Stream telemetry revenue report (2-4h)
+
+- [ ] Pool: po každém ZION bloku volat `track_deeksha_streams()`
+- [ ] Pool: po každém accepted external share volat `track_event(Blake3External)`
+- [ ] Dashboard: sjednocený revenue report (ZION + external + NCL)
+- [ ] API endpoint: `GET /api/v1/revenue/stats` → `RevenueStats` JSON
+- [ ] API endpoint: `GET /api/v1/revenue/streams` → per-stream breakdown
+- [ ] Per-stream 24h/7d/30d grafy
+
+### Fáze R4: SMOS deploy + GPU mining (2-4h, blocked)
+
+- [ ] Build new miner binary s all algorithm support
+- [ ] Package as SMOS custom miner zip
+- [ ] Upload to `zionterranova.com/zion-miner/`
+- [ ] Update SMOS group config via API
+- [ ] Verify miner connects + mines blake3_dcr
+- [ ] Verify share accepted by WoolyPooly through pool
+
+### Fáze R5: EthStratum protocol (4-6h, unblocks 6 coins)
+
+- [ ] Implement `eth_getWork` notification handler v `auxpow_client.rs`
+- [ ] Implement `eth_submitWork` submit v `auxpow_client.rs`
+- [ ] Test s ERG pool (Autolykos, no mix hash needed)
+- [ ] Test s RVN pool (KawPow, mix hash from DAG)
+
+### Fáze R6: Multi-coin profit switching (8-12h, enhancement)
+
+- [ ] Connect to multiple external pools simultaneously
+- [ ] Real-time revenue estimation z pool APIs
+- [ ] Dynamic coin switching based on live profitability
+- [ ] Per-miner algorithm assignment
+
+### Fáze R7: True AuxPow consensus (20-40h, future)
+
+- [ ] DCR header parsing + coinbase commitment
+- [ ] Integrate `true_auxpow.rs` into `V3/L1/core` consensus
+- [ ] Height-gated fork logic pro AuxPoW blocks
+- [ ] New ZION header fields pro AuxPoW data
+- [ ] Aux Merkle tree validation
+- [ ] Viz `AUXPOW_TRUE_MERGE_MINING_PLAN.md` pro detaily
+
+---
+
+## 10. CHv3 Stream Integration — Detailní plán
+
+### 10.1 RevenueCollector wiring (co už funguje vs co chybí)
+
+**Funguje:**
+- `RevenueCollector::track_zion_block()` — voláno po každém accepted ZION bloku
+- `RevenueCollector::track_deeksha_streams()` — voláno po bloku s telemetry
+- `RevenueCollector::track_ncl_task()` — voláno po NCL task completion
+- `RevenueCollector::get_stats()` → `RevenueStats` snapshot
+- `RevenueJournal` persistence (optional, via env)
+
+**Chybí (R3):**
+- `RevenueCollector::track_event(Blake3External)` — **není voláno** při accepted
+  external share. Pool forwarduje share do WoolyPooly, ale nezaznamená revenue
+  do collectoru. → **Akce:** Přidat `track_event()` call v `auxpow_bridge`
+  share forward callbacku.
+- API endpointy pro revenue stats — `/api/v1/revenue/stats` neexistuje
+- Dashboard widget pro external revenue
+
+### 10.2 Stream telemetry → RevenueSource mapping
+
+| Pipeline (deeksha_chv3) | DeekshaStep | RevenueSource | Work units |
+|--------------------------|-------------|---------------|------------|
+| Step 1 Keccak-256 | Keccak256 | KeccakBonus | 5 |
+| Step 2 MemoryHard | MemoryHard | Zion | 55 |
+| Step 3 AesMix | AesMix | DeekshaLite | 5 |
+| Step 4 ThermalLoop | ThermalLoop | DeekshaLite | 3 |
+| Step 5 KeccakFinal | KeccakFinal | Zion | 2 |
+
+| AuxPow B2b (external) | RevenueSource | Fee |
+|------------------------|---------------|-----|
+| DCR (Blake3) | Blake3External | 2% |
+| ALPH (Blake3 double) | Blake3External | 2% |
+| KAS (kHeavyHash) | KHeavyHashExternal | 2% |
+| ERG (Autolykos) | AutolykosExternal | 2% |
+| RVN (KawPow) | KawPowExternal | 2% |
+| ETC (Ethash) | EthashExternal | 2% |
+| XMR (RandomX) | RandomXExternal | 2% |
+| FLUX (ZelHash) | ZelHashExternal | 2% |
+
+### 10.3 Revenue flow — end to end
+
+```
+1. Miner se připojí k poolu (stratum :8444)
+   ├── password "g=zion" → SessionGroup::Zion
+   ├── password "g=revenue" → SessionGroup::Revenue
+   └── no hint → SessionGroup::Auto (weighted round-robin)
+
+2. RevenueScheduler dispatch:
+   ├── Zion group → deeksha_chv3 job (z node template)
+   ├── Revenue group → external job (z AuxPowBridge queue)
+   └── Ncl group → NCL AI task
+
+3. Miner hasheje:
+   ├── Zion: deeksha_chv3 GPU/CPU kernel → ZION share
+   ├── Revenue: blake3_dcr / kheavyhash GPU kernel → external share
+   └── Ncl: AI inference → NCL result
+
+4. Pool zpracuje share:
+   ├── Zion share → submit to node → block? → track_zion_block() + track_deeksha_streams()
+   ├── External share → AuxPowBridge.forward() → WoolyPooly → track_event(Blake3External) [CHYBÍ]
+   └── NCL result → track_ncl_task()
+
+5. RevenueCollector agreguje:
+   ├── RevenueStats.total_earnings_usd += all sources
+   ├── RevenueStats.by_source["zion"] += ZION block value
+   ├── RevenueStats.by_source["blake3_external"] += DCR/ALPH share value [CHYBÍ]
+   └── RevenueStats.by_source["ncl_ai"] += NCL task value
+
+6. Payout:
+   ├── ZION: PPLNS engine → miner payout (89% / 5% humanitarian / 5% issobella / 1% pool)
+   ├── External: BTC na WoolyPooly wallet → auto-buyback ZION (TODO)
+   └── NCL: NCL token rewards (TODO)
+```
+
+### 10.4 Co implementovat pro R3 (stream telemetry revenue report)
+
+**Soubor:** `V3/L1/pool/src/bin/server.rs`
+
+1. V `auxpow_bridge` share forward callbacku (line ~448):
+   ```rust
+   // Po ShareForwardOutcome::Accepted:
+   let value_usd = estimate_share_value_usd(coin, difficulty);
+   revenue_collector.track_event(RevenueEvent {
+       source: RevenueSource::Blake3External, // nebo coin.algorithm() → RevenueSource
+       value_usd,
+       qualifies: true,
+       timestamp: Some(Utc::now().to_rfc3339()),
+   });
+   ```
+
+2. Nový API endpoint:
+   ```rust
+   // GET /api/v1/revenue/stats
+   async fn revenue_stats_handler(collector: Arc<RevenueCollector>) -> impl Reply {
+       let stats = collector.get_stats();
+       warp::reply::json(&stats)
+   }
+   ```
+
+3. Dashboard widget (app.py):
+   - External revenue per coin (24h graf)
+   - Stream breakdown pie chart (ZION / Blake3 / NCL / ...)
+   - Total earnings USD counter
+
+### 10.5 Historical context — co se naučili z 2.9.x
+
+Z archivních dokumentů (`docs/ChV3.md`, `docs/docs2.9/2.9.5/WORK_REPORT_07_FEB_2026_CH3_STREAM_SCHEDULER.md`):
+
+1. **StreamScheduler v1 (2.9.5)** — deficit-based time-splitting, 50/25/25 model.
+   Fungoval, ale jen pro CPU minery (VRSC/XMR). GPU streamy nebyly implementovány.
+
+2. **"FREE byproduct" streams selhaly** — Keccak/SHA3 intermediates nejsou validní
+   pro ETC/NXS pools. Lekce: true merge mining vyžaduje stejný PoW algoritmus.
+
+3. **Per-miner groups (2.9.5)** — `g=zion|revenue|ncl` password hint. Paralelní
+   multi-mining bez TimeSplit cycling. → V3 používá `SessionGroup` enum.
+
+4. **Revenue Lock (2.9.5)** — miner drží ext-* job po dobu 120s (zabraňuje
+   flapping mezi ZION a external). → V3 má `should_issue_external_job()` s
+   split config.
+
+5. **Profit Switcher (2.9.5)** — WhatToMine API, hysteresis 30 min. → V3 má
+   `AuxPowScheduler` s circuit breaker + hysteresis.
+
+6. **BTC Buyback Engine (2.9.5)** — monitor MoneroOcean balance, auto-convert
+   XMR→BTC→ZION. → V3: TODO (manual conversion zatím).
+
+### 10.6 Související plány (reference)
+
+| Plán | Velikost | Focus | Status |
+|------|----------|-------|--------|
+| `AuxPlan.md` (tento) | 18KB→rev2 | B2b multi-algo GPU mining + CHv3 stream integrace | **AKTIVNÍ** |
+| `AUXPOW_TRUE_MERGE_MINING_PLAN.md` | 90KB | True AuxPoW consensus (DCR primary, ALPH secondary) | Referenční |
+| `AUXPOW_TRUE_MERGE_MINING_PLAN_CS.md` | 93KB | Czech translation of true merge mining plan | Referenční |
+| `AUXPOW_MERGE_MINING_PLAN.md` | 26KB | Starší merge mining plan | Historický |
+| `AuXpow/REVENUE_B2B_AND_TRUE_AUXPOW_DESIGN.md` | — | B2b + true AuxPoW design doc | Referenční |
+| `docs/3.0.5/DEEKSHA_CHV3_UNIFIED_ALGO_PLAN.md` | 15KB | CHv3 unified algorithm (Phase A-D) | ✅ DEPLOYED |
+| `docs/ChV3.md` | 909 lines | CHv3 master plan (2.9.5→3.0) | Historický kontext |
+| `docs/CHv3/CH3_MULTICHAIN_NATIVE_IMPLEMENTATION.md` | 790 lines | Native multi-chain mining (Python era) | Historický |
+| `docs/docs2.9/2.9.5/WORK_REPORT_07_FEB_2026_CH3_STREAM_SCHEDULER.md` | 227 lines | StreamScheduler v1 deploy report | Historický |
+| `docs/docs2.9/2.9.4/reports/COSMIC_HARMONY_V3_REVENUE_PLAN.md` | 35 lines | Revenue rebalancing (50/25/25) | Historický |
+| `docs/docs2.9/INTEGRATION_PLAN_CH3_EXTERNAL_MINING.md` | 372 lines | CH3 external mining integration (Python era) | Historický |
