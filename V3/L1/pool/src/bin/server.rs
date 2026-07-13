@@ -1228,8 +1228,8 @@ impl WorkAssignment {
 }
 
 /// Determine whether this iteration should issue an external job based on
-/// the configured split.  If no split is configured, every eligible
-/// iteration is external (subject to revenue lane selection above).
+/// the configured split.  If no split is configured, default to ZION-only
+/// (safe default — prevents accidental external-only mining).
 fn should_issue_external_job(iteration: u32, cfg: &AuxPowIntegrationConfig) -> bool {
     match cfg.split {
         Some(SplitConfig {
@@ -1242,7 +1242,11 @@ fn should_issue_external_job(iteration: u32, cfg: &AuxPowIntegrationConfig) -> b
             }
             (iteration as u64 % u64::from(total)) < u64::from(external_weight)
         }
-        None => true,
+        // When no split config is provided, default to ZION-only.
+        // Previously this returned `true` (always external), which caused
+        // the chain stall at block 4502 when ZION_POOL_AUXPOW_SPLIT_EXTERNAL
+        // was missing from the environment.
+        None => false,
     }
 }
 
@@ -4691,7 +4695,7 @@ mod tests {
             upstream_pool_addr: None,
             auxpow_config: AuxPowIntegrationConfig {
                 enabled: true,
-                split: None,
+                split: Some(SplitConfig { zion_weight: 0, external_weight: 1 }),
                 force_coin: Some(ExternalCoin::KAS),
                 pool_preference: zion_auxpow::PoolPreference::Default,
                 region: "eu".to_string(),
@@ -4974,7 +4978,7 @@ mod tests {
             upstream_pool_addr: None,
             auxpow_config: AuxPowIntegrationConfig {
                 enabled: true,
-                split: None,
+                split: Some(SplitConfig { zion_weight: 0, external_weight: 1 }),
                 force_coin: Some(zion_auxpow::ExternalCoin::DCR),
                 pool_preference: zion_auxpow::PoolPreference::Default,
                 region: "eu".to_string(),
@@ -5010,7 +5014,7 @@ mod tests {
         let (_, job_message) = read_wire_message(&mut reader).expect("read job");
         let job_id = match &job_message {
             PoolMessage::Job { job_id, algorithm, .. } => {
-                assert_eq!(algorithm, "blake3");
+                assert_eq!(algorithm, "blake3_dcr");
                 *job_id
             }
             other => panic!("expected Job message, got {other:?}"),
