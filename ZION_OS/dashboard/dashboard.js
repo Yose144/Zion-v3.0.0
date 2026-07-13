@@ -2829,10 +2829,31 @@ async function loadRevenueReport(){
     if(!data || !data.ok) return;
 
     const sources = data.sources || [];
+    const totals = data.totals || {};
+    const auxpow = data.auxpow || {};
+
+    // ── KPI Summary cards ───────────────────────────────────────────
+    const totalSubmits = totals.total_submits || 0;
+    const totalAccepted = totals.total_accepted || 0;
+    const acceptRate = totals.overall_accept_rate_pct || 0;
+    const activeCount = sources.filter(s => (s.submits || 0) > 0).length;
+    const revHour = auxpow.revenue_per_hour_usd || totals.auxpow_revenue_per_hour_usd || 0;
+    const revDay = auxpow.revenue_per_day_usd || totals.auxpow_revenue_per_day_usd || 0;
+
+    set('rev-rpt-total-submits', totalSubmits > 0 ? totalSubmits.toLocaleString() : '—');
+    set('rev-rpt-total-accepted', totalAccepted > 0 ? totalAccepted.toLocaleString() : '—');
+    set('rev-rpt-accept-rate', totalSubmits > 0 ? acceptRate.toFixed(1) + '%' : '—');
+    set('rev-rpt-active-sources', sources.length > 0 ? activeCount + ' / ' + sources.length : '—');
+    set('rev-rpt-rev-hour', revHour > 0 ? '$' + revHour.toFixed(4) : '—');
+    set('rev-rpt-rev-day', revDay > 0 ? '$' + revDay.toFixed(4) : '—');
+
+    // ── Per-source table ────────────────────────────────────────────
     const tbody = document.getElementById('rev-report-sources-tbody');
+    const tfoot = document.getElementById('rev-report-sources-tfoot');
     if(tbody){
       if(sources.length === 0){
         tbody.innerHTML = '<tr><td colspan="6" class="text-gray-500 text-center py-4">No source data — pool offline</td></tr>';
+        if(tfoot) tfoot.classList.add('hidden');
       } else {
         // Find max submits for bar scaling
         const maxSubmits = Math.max(...sources.map(s => s.submits || 0), 1);
@@ -2854,8 +2875,52 @@ async function loadRevenueReport(){
             <td class="py-2 px-2"><div class="w-full bg-black/40 rounded-full h-1.5" style="max-width:120px"><div class="bg-zion-gold h-full rounded-full transition-all" style="width:${barWidth}%"></div></div></td>
           </tr>`;
         }).join('');
+
+        // Show totals footer
+        if(tfoot){
+          tfoot.classList.remove('hidden');
+          set('rev-rpt-foot-submits', totalSubmits.toLocaleString());
+          set('rev-rpt-foot-accepted', totalAccepted.toLocaleString());
+          set('rev-rpt-foot-rate', totalSubmits > 0 ? acceptRate.toFixed(1) + '%' : '—');
+        }
       }
     }
+
+    // ── Top Active Sources cards ────────────────────────────────────
+    const topEl = document.getElementById('rev-rpt-top-sources');
+    if(topEl){
+      const active = sources.filter(s => (s.submits || 0) > 0).sort((a,b) => (b.accepted||0) - (a.accepted||0));
+      if(active.length === 0){
+        topEl.innerHTML = '<div class="text-xs text-gray-500">No active sources</div>';
+      } else {
+        const cardColors = {
+          zion: 'border-emerald-500/30 bg-emerald-500/5',
+          keccak: 'border-cyan-500/30 bg-cyan-500/5',
+          sha3: 'border-blue-500/30 bg-blue-500/5',
+          ncl: 'border-purple-500/30 bg-purple-500/5',
+          blake3: 'border-amber-500/30 bg-amber-500/5',
+          kheavyhash: 'border-red-500/30 bg-red-500/5',
+        };
+        topEl.innerHTML = active.slice(0, 8).map(s => {
+          const label = (s.source || '').replace(/_/g, ' ');
+          const submits = s.submits || 0;
+          const accepted = s.accepted || 0;
+          const rate = s.accept_rate_pct || 0;
+          const colorKey = (s.source || '').replace(/_external|_bonus|_ai/g, '');
+          const cardColor = cardColors[colorKey] || 'border-zion-gold/30 bg-zion-gold/5';
+          return `<div class="border ${cardColor} rounded-lg p-3 space-y-1">
+            <div class="font-bold text-sm text-white">${escapeHtml(label)}</div>
+            <div class="text-[10px] text-gray-400 flex justify-between"><span>Submits</span><span class="font-mono text-white">${submits.toLocaleString()}</span></div>
+            <div class="text-[10px] text-gray-400 flex justify-between"><span>Accepted</span><span class="font-mono text-emerald-400">${accepted.toLocaleString()}</span></div>
+            <div class="text-[10px] text-gray-400 flex justify-between"><span>Rate</span><span class="font-mono text-cyan-400">${rate.toFixed(1)}%</span></div>
+          </div>`;
+        }).join('');
+      }
+    }
+
+    // Timestamp
+    const ts = data.timestamp || 0;
+    set('rev-rpt-last-updated', ts > 0 ? 'Report updated ' + new Date(ts * 1000).toLocaleTimeString() : '');
   } catch(e) {
     console.error('loadRevenueReport error:', e);
   }
@@ -2879,6 +2944,7 @@ async function loadStreamTelemetry(){
       multiEl.textContent = data.multistream_enabled ? '✅ On' : '⚪ Off';
       multiEl.className = 'font-mono ' + (data.multistream_enabled ? 'text-emerald-400' : 'text-gray-500');
     }
+    set('rev-stream-tel-sources', data.enabled_sources || '—');
 
     // Stream breakdown
     const streamsEl = document.getElementById('rev-stream-tel-streams');

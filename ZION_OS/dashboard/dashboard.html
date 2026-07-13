@@ -2627,6 +2627,36 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     </div>
 
     <!-- ═════════ R4: Revenue Report (per-source breakdown + stream telemetry) ═════════ -->
+
+    <!-- Revenue Report KPI Summary -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div class="zion-panel p-3 text-center">
+        <div class="text-lg font-bold text-white" id="rev-rpt-total-submits">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Total Submits</div>
+      </div>
+      <div class="zion-panel p-3 text-center">
+        <div class="text-lg font-bold text-emerald-400" id="rev-rpt-total-accepted">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Total Accepted</div>
+      </div>
+      <div class="zion-panel p-3 text-center">
+        <div class="text-lg font-bold text-cyan-400" id="rev-rpt-accept-rate">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Accept Rate</div>
+      </div>
+      <div class="zion-panel p-3 text-center">
+        <div class="text-lg font-bold text-amber-400" id="rev-rpt-active-sources">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Active Sources</div>
+      </div>
+      <div class="zion-panel p-3 text-center">
+        <div class="text-lg font-bold text-zion-gold" id="rev-rpt-rev-hour">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Revenue / Hour</div>
+      </div>
+      <div class="zion-panel p-3 text-center">
+        <div class="text-lg font-bold text-purple-400" id="rev-rpt-rev-day">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Revenue / Day</div>
+      </div>
+    </div>
+
+    <!-- Per-Source Breakdown Table -->
     <div class="zion-panel p-4">
       <h3 class="text-sm font-bold mb-3 flex items-center gap-2">📊 Revenue Report — Per-Source Breakdown</h3>
       <div class="text-xs text-gray-400 mb-3">All 14 revenue sources tracked by the pool. Shows submits, accepted shares, accept rate, and fee rate per source.</div>
@@ -2645,7 +2675,25 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           <tbody id="rev-report-sources-tbody">
             <tr><td colspan="6" class="text-gray-500 text-center py-4">Loading…</td></tr>
           </tbody>
+          <tfoot id="rev-report-sources-tfoot" class="border-t border-white/10 hidden">
+            <tr class="font-bold">
+              <td class="py-2 px-2 text-gray-300">TOTAL</td>
+              <td class="py-2 px-2 text-right font-mono text-white" id="rev-rpt-foot-submits">—</td>
+              <td class="py-2 px-2 text-right font-mono text-emerald-400" id="rev-rpt-foot-accepted">—</td>
+              <td class="py-2 px-2 text-right font-mono text-cyan-400" id="rev-rpt-foot-rate">—</td>
+              <td colspan="2"></td>
+            </tr>
+          </tfoot>
         </table>
+      </div>
+    </div>
+
+    <!-- Top Active Sources (visual cards) -->
+    <div class="zion-panel p-4">
+      <h3 class="text-sm font-bold mb-3 flex items-center gap-2">🔥 Top Active Sources</h3>
+      <div class="text-xs text-gray-400 mb-3">Sources with the most accepted shares in real-time.</div>
+      <div id="rev-rpt-top-sources" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div class="text-xs text-gray-500">No active sources</div>
       </div>
     </div>
 
@@ -2653,17 +2701,24 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     <div class="zion-panel p-4">
       <h3 class="text-sm font-bold mb-3 flex items-center gap-2">🌊 Stream Telemetry — Work Distribution</h3>
       <div class="text-xs text-gray-400 mb-3">Deeksha Chv3 pipeline stream weights with per-source work units (submits/accepted).</div>
-      <div class="flex items-center gap-3 mb-3 text-xs">
+      <div class="flex items-center gap-3 mb-3 text-xs flex-wrap">
         <span class="text-gray-400">Provider:</span>
         <span id="rev-stream-tel-provider" class="font-mono text-cyan-400">—</span>
         <span class="text-gray-400 ml-4">Live:</span>
         <span id="rev-stream-tel-live" class="font-mono text-gray-500">—</span>
         <span class="text-gray-400 ml-4">Multistream:</span>
         <span id="rev-stream-tel-multi" class="font-mono text-gray-500">—</span>
+        <span class="text-gray-400 ml-4">Sources:</span>
+        <span id="rev-stream-tel-sources" class="font-mono text-gray-300 text-[10px]">—</span>
       </div>
       <div id="rev-stream-tel-streams" class="space-y-2">
         <div class="text-xs text-gray-500">No data — pool offline or stream profit disabled</div>
       </div>
+    </div>
+
+    <!-- Revenue Report Timestamp -->
+    <div class="flex justify-end">
+      <span id="rev-rpt-last-updated" class="text-[10px] text-gray-500"></span>
     </div>
   </div>
 
