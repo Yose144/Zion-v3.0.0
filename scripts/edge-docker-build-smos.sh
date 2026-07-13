@@ -3,11 +3,10 @@
 set -euo pipefail
 VERSION="${1:-v3.0.32-gpu}"
 REPO="/root/zion/2.9.6"
-OUT="/var/www/zion-miner/zion-miner-${VERSION}.zip"
-WORK="/tmp/zion-miner-${VERSION}"
+OUT_DIR="/var/www/zion-miner"
+CONTAINER="zion-miner-build-${VERSION}"
 
 echo "=== Docker SMOS build ${VERSION} ==="
-CONTAINER="zion-miner-build-${VERSION}"
 docker rm -f "${CONTAINER}" >/dev/null 2>&1 || true
 docker run --name "${CONTAINER}" \
   -v "${REPO}:/src:ro" \
@@ -35,38 +34,6 @@ mkdir -p /tmp/zion-docker-out
 docker cp "${CONTAINER}:/out/zion-miner" /tmp/zion-docker-out/zion-miner
 docker rm -f "${CONTAINER}" >/dev/null 2>&1 || true
 
-BIN="/tmp/zion-docker-out/zion-miner"
-if [[ ! -f /root/check-glibc.py ]]; then
-    cat > /root/check-glibc.py <<'PY'
-import sys, re
-bin_path = sys.argv[1]
-d = open(bin_path, "rb").read()
-vs = sorted({int(x) for x in re.findall(rb"GLIBC_2\.(\d+)", d)})
-print("GLIBC max:", f"2.{max(vs)}" if vs else "unknown")
-if vs and max(vs) > 31:
-    print("WARNING: may break SMOS glibc 2.31")
-PY
-fi
-python3 /root/check-glibc.py "${BIN}"
-
-rm -rf "${WORK}"
-mkdir -p "${WORK}"
-cp "${BIN}" "${WORK}/miner.real"
-cat > "${WORK}/miner" <<'EOF'
-#!/bin/bash
+# Package using edge-package-smos.sh so the SMOS wrapper matches production.
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-export ZION_GPU_BACKEND=opencl
-export ZION_LOOP_COUNT=1000000
-export ZION_OCL_BUILD_OPTS="-cl-std=CL1.2 -cl-mad-enable"
-export ZION_IGNORE_GPU_SELF_TEST_FAIL=1
-unset ZION_GCN_S4_MODE
-exec "${SCRIPT_DIR}/miner.real" "$@"
-EOF
-chmod +x "${WORK}/miner" "${WORK}/miner.real"
-cd /tmp
-rm -f "${OUT}"
-zip -r "${OUT}" "$(basename "${WORK}")"
-chmod 644 "${OUT}"
-python3 /root/check-glibc.py "${OUT}"
-ls -la "${OUT}"
-echo "URL=https://zionterranova.com/zion-miner/zion-miner-${VERSION}.zip"
+"${SCRIPT_DIR}/edge-package-smos.sh" "${VERSION}" /tmp/zion-docker-out/zion-miner "${OUT_DIR}"
