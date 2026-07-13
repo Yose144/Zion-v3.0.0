@@ -409,6 +409,7 @@ pub fn hash_candidate(candidate: &BlockCandidate, algorithm: &str) -> [u8; 32] {
 | KawPow | RVN, CLORE | ⚠️ Placeholder | ✅ Complete | ❌ | ❌ | ❌ TODO | Fáze 4 |
 | Ethash | ETC | ⚠️ Placeholder | ✅ Complete | ❌ | ❌ | ❌ TODO | Fáze 4 |
 | RandomX | XMR | ❌ | ⚠️ Stub | ❌ | ❌ | ❌ TODO | Fáze 4 |
+| VerusHash | VRSC | ✅ Complete (ZcashStratum) | ⚠️ Blake3 fallback | ❌ | ❌ | ❌ TODO | Fáze 4 |
 | ZelHash | FLUX | ❌ | ❌ | ❌ | ❌ | ❌ TODO | Fáze 4 |
 | Deeksha Lite | ZION | ✅ (cosmic-harmony) | ✅ Complete | ✅ (ocl) | ✅ (cudarc) | ✅ Produkce | — |
 
@@ -424,6 +425,7 @@ pub fn hash_candidate(candidate: &BlockCandidate, algorithm: &str) -> [u8; 32] {
 | Ethereum Classic | ETC | ethash | EthStratum | TBD | 2miners, Ethermine | ❌ TODO |
 | Clore.ai | CLORE | kawpow | EthStratum | TBD | WoolyPooly | ❌ TODO |
 | Monero | XMR | randomx | Stratum | TBD | 2miners, MoneroOcean | ❌ TODO |
+| Verus | VRSC | verushash v2.2 | ZcashStratum | ❌ (vlastní) | LuckPool | protocol ✅, live E2E TODO |
 | Flux | FLUX | zelhash | Stratum | TBD | 2miners, MinerPool | ❌ TODO |
 
 ## 4. V3 Pool Integration body
@@ -494,7 +496,7 @@ V3/L1/native-ffi už má **8 algoritmů** s plným FFI:
 | kHeavyHash | `csrc/kheavyhash/kheavyhash_native.c` (263 lines) | ✅ | ✅ Full |
 | Blake3 | `csrc/blake3/blake3_native.c` (426 lines) | ✅ | ✅ Full |
 | Cosmic Harmony v3 | `csrc/cosmic_harmony/...` (733 lines) | ✅ | ✅ Full |
-| VerusHash | `csrc/verushash/...` (131 lines) | ✅ | ⚠️ Stub → **IN PROGRESS**: port Haraka+CLHash z 2.9.9 archivu (viz `AUXPOW_VRSC_B2B_PLAN.md`) |
+| VerusHash | `csrc/verushash/...` (131 lines) + `V3/L1/native-ffi/csrc/verushash/real/` (11744+ lines) | ✅ | ⚠️ **C++ ported** (Haraka+CLHash z 2.9.9), Blake3 fallback aktivní dokud se nevyřeší build issues (compat.h thread_specific_ptr konflikt) |
 | RandomX | `csrc/randomx/...` (129 lines) | ✅ | ⚠️ Stub |
 
 **Miner Cargo.toml** už má features: `native-etchash`, `native-kawpow`, `native-autolykos`, `native-kheavyhash`, `native-blake3-algo`, `native-cosmic-harmony`, `native-verushash`, `native-randomx`, `native-all`
