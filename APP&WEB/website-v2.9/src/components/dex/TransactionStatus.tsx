@@ -8,7 +8,7 @@
 import { useState, useEffect } from 'react';
 import { Loader2, CheckCircle2, XCircle, Clock, ArrowRight, Globe, Repeat } from 'lucide-react';
 
-const ROUTER_URL = process.env.NEXT_PUBLIC_ZIONDEX_ROUTER_URL || 'http://localhost:8454';
+const ROUTER_URL = process.env.NEXT_PUBLIC_ZIONDEX_ROUTER_URL || 'https://zionterranova.com/dex-api';
 
 interface StepStatus {
   step_index: number;

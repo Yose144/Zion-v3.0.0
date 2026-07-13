@@ -18,7 +18,7 @@ import RecentSwaps from './RecentSwaps';
 import PriceChart from './PriceChart';
 import Link from 'next/link';
 
-const ROUTER_URL = process.env.NEXT_PUBLIC_ZIONDEX_ROUTER_URL || 'http://localhost:8454';
+const ROUTER_URL = process.env.NEXT_PUBLIC_ZIONDEX_ROUTER_URL || 'https://zionterranova.com/dex-api';
 
 type DexTab = 'swap' | 'liquidity' | 'portfolio' | 'bridge' | 'atomic';
 
