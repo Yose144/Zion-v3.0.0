@@ -74,8 +74,11 @@ pub struct GpuMiner {
 /// Maps an algorithm name to its kernel file and entry function.
 fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
     match algorithm {
-        "blake3" | "blake3_alph" | "blake3_dcr" => {
+        "blake3" | "blake3_alph" => {
             Some(("blake3_kernel.cl", "blake3_alph_mine"))
+        }
+        "blake3_dcr" => {
+            Some(("blake3_kernel.cl", "blake3_dcr_mine"))
         }
         "kheavyhash" | "kheavyhash_kas" => {
             Some(("kheavyhash_kernel.cl", "kheavyhash_mine"))
@@ -707,9 +710,9 @@ impl GpuMiner {
     ) -> Result<Kernel> {
         let q = pro_que.queue().clone();
 
-        // Limit header length to what the kernel can handle (128 bytes).
-        let header_len = header.len().min(128);
-        let mut header_padded = vec![0u8; 128];
+        // Limit header length to what the kernel can handle (248 bytes for DCR).
+        let header_len = header.len().min(248);
+        let mut header_padded = vec![0u8; 248];
         header_padded[..header_len].copy_from_slice(&header[..header_len]);
 
         let header_buf: Buffer<u8> = Buffer::builder()

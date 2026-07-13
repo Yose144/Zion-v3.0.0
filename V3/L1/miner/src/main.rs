@@ -954,6 +954,7 @@ fn run_local_session(
         }
 
         let header = session_header(config, iteration);
+        let raw_header_bytes = header.to_bytes().to_vec();
         let start_nonce = config
             .start_nonce
             .wrapping_add((iteration as u64).wrapping_mul(config.nonce_stride));
@@ -992,7 +993,7 @@ fn run_local_session(
                 cpu_nonces_tested = job.nonce_count;
                 parallel::parallel_scan_nonce_range(job, threads, &current_algorithm)
             } else {
-                let result = gpu_backend::gpu_scan_job(g, job, &current_algorithm);
+                let result = gpu_backend::gpu_scan_job(g, job, &current_algorithm, &raw_header_bytes);
                 gpu_nonces_tested = result.nonces_tested;
                 result.solution
             }
@@ -1375,7 +1376,7 @@ fn run_remote_session(
             VERBOSE.store(c.verbose, Ordering::Relaxed);
         }
 
-        let (job_line, mut job, algorithm) = match read_next_job(&mut reader) {
+        let (job_line, mut job, algorithm, raw_header_bytes) = match read_next_job(&mut reader) {
             Ok(result) => result,
             Err(e) => {
                 let err_str = format!("{e:#}");
@@ -1461,7 +1462,7 @@ fn run_remote_session(
                 cpu_nonces_tested = job.nonce_count;
                 parallel::parallel_scan_nonce_range(job, threads, &current_algorithm)
             } else {
-                let result = gpu_backend::gpu_scan_job(g, job, &current_algorithm);
+                let result = gpu_backend::gpu_scan_job(g, job, &current_algorithm, &raw_header_bytes);
                 gpu_nonces_tested = result.nonces_tested;
                 result.solution
             }
@@ -2034,7 +2035,7 @@ impl SessionTelemetry {
     }
 }
 
-fn read_next_job(reader: &mut impl BufRead) -> Result<(String, MiningJob, String)> {
+fn read_next_job(reader: &mut impl BufRead) -> Result<(String, MiningJob, String, Vec<u8>)> {
     loop {
         let (line, message) = read_wire_message(reader)?;
         match message {
@@ -2047,6 +2048,10 @@ fn read_next_job(reader: &mut impl BufRead) -> Result<(String, MiningJob, String
                 header_hex,
                 height,
             } => {
+                // Keep raw header bytes for external algorithms that may
+                // use headers longer than 80 bytes (e.g. DCR = 180 bytes).
+                let raw_header_bytes = hex::decode(header_hex.trim_start_matches("0x"))
+                    .unwrap_or_default();
                 return Ok((
                     line,
                     MiningJob {
@@ -2060,6 +2065,7 @@ fn read_next_job(reader: &mut impl BufRead) -> Result<(String, MiningJob, String
                         height,
                     },
                     algorithm,
+                    raw_header_bytes,
                 ))
             }
             PoolMessage::Stale { .. } => println!("wire_stale={line}"),

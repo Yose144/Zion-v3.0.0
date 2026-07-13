@@ -213,7 +213,15 @@ impl BlockCandidate {
                 cosmic_harmony_with_height(&header_bytes, self.nonce, self.height).data
             }
             // ── External algorithms (pure-Rust via zion-auxpow) ──
-            "blake3" => zion_auxpow::hash_blake3(&header_bytes, 0, self.nonce),
+            "blake3" | "blake3_dcr" => {
+                zion_auxpow::hash_blake3(&header_bytes, 0, self.nonce)
+            }
+            "blake3_alph" => {
+                // ALPH double-Blake3: blake3(blake3(nonce || header))
+                // For pool-side validation we use the same hash_blake3_alph
+                // with empty extranonce1.
+                zion_auxpow::hash_blake3_alph(&header_bytes, &[], self.nonce)
+            }
             // For KAS jobs the pool sends the block timestamp in the `height` field.
             "kheavyhash" | "kheavy" => {
                 zion_auxpow::hash_kheavyhash(&header_bytes, self.height, self.nonce)
