@@ -583,6 +583,13 @@ fn format_hashrate(hps: f64) -> String {
 }
 
 fn main() -> Result<()> {
+    // Enable verbose logging via env var or --verbose flag
+    if std::env::var("ZION_MINER_VERBOSE").map(|v| v == "1" || v == "true").unwrap_or(false)
+        || std::env::args().any(|a| a == "--verbose")
+    {
+        VERBOSE.store(true, Ordering::Relaxed);
+    }
+
     // ── Ekam Deeksha GPU benchmark: `zion-miner --ekam-bench` ──
     if std::env::args().any(|a| a == "--ekam-bench") {
         let work_size: usize = std::env::var("ZION_GPU_WORK_SIZE")
@@ -1369,6 +1376,7 @@ fn run_remote_session(
         }
 
         let (job_line, mut job, algorithm) = read_next_job(&mut reader)?;
+        println!(">> new job #{} height={} algo={}", job.job_id, job.height, algorithm);
         let current_diff = CURRENT_POOL_DIFFICULTY.load(Ordering::Relaxed);
         // Only override target for ZION jobs. External AuxPoW jobs carry
         // their own share target from the external pool (e.g. KAS).
