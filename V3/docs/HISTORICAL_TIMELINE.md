@@ -171,8 +171,9 @@
 | `docs/2.9.8/*` | Mar 2026 | Deeksha/Ekam stabilization |
 | `StatusV3.md` | Apr–May 2026 | Operational status (current truth) |
 | `V3/ROADMAP.md` | Apr–May 2026 | Engineering roadmap (current truth) |
-| `ZION_Mainnet_Whitepaper_v3.0_Canonical.md` | May 2026 | **Canonical mainnet whitepaper** |
+| `ZION_Mainnet_Whitepaper_v3.0_Canonical.md` | May 2026 | Canonical mainnet whitepaper (v3.0) |
+| `ZION_Mainnet_Whitepaper_v3.0.5_Canonical.md` | Jul 2026 | **Current canonical mainnet whitepaper (v3.0.5)** |
 
 ---
 
-*Timeline compiled 2026-05-19 from repository-wide document analysis.*
+*Timeline compiled 2026-07-13 from repository-wide document analysis.*
