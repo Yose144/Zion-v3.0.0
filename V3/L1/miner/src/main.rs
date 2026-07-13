@@ -1370,7 +1370,11 @@ fn run_remote_session(
 
         let (job_line, mut job, algorithm) = read_next_job(&mut reader)?;
         let current_diff = CURRENT_POOL_DIFFICULTY.load(Ordering::Relaxed);
-        job.target = zion_core::difficulty::difficulty_to_target(current_diff);
+        // Only override target for ZION jobs. External AuxPoW jobs carry
+        // their own share target from the external pool (e.g. KAS).
+        if !gpu_backend::is_external_algorithm(&algorithm) {
+            job.target = zion_core::difficulty::difficulty_to_target(current_diff);
+        }
         current_algorithm = algorithm.clone();
         remote_nonce_window = job.nonce_count;
         let job_started_at = Instant::now();
