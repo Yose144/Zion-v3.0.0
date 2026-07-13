@@ -254,11 +254,6 @@ impl GpuMiner {
             | "blake3_dcr"
             | "autolykos"
             | "autolykos_erg"
-            | "kawpow"
-            | "kawpow_rvn"
-            | "kawpow_clore"
-            | "kawpow_evr"
-            | "kawpow_mewc"
             | "ethash"
             | "etchash"
             | "ethash_etc" => Self::build_header_nonce_kernel(
@@ -272,6 +267,20 @@ impl GpuMiner {
                 &output_hash_buf,
                 &found_flag_buf,
             )?,
+            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" => {
+                Self::build_kawpow_kernel(
+                    pro_que,
+                    kernel_name,
+                    header,
+                    extra,
+                    target,
+                    base_nonce,
+                    batch_size,
+                    &output_nonce_buf,
+                    &output_hash_buf,
+                    &found_flag_buf,
+                )?
+            }
             "kheavyhash" | "kheavyhash_kas" => Self::build_kheavyhash_kernel(
                 pro_que,
                 kernel_name,
@@ -480,6 +489,91 @@ impl GpuMiner {
             .arg(header_len as u32)
             .arg(&target_buf)
             .arg(base_nonce)
+            .arg(output_nonce_buf)
+            .arg(output_hash_buf)
+            .arg(found_flag_buf)
+            .build()
+            .map_err(|e| anyhow!("kernel build failed: {e}"))?;
+
+        let _ = batch_size;
+
+        Ok(kernel)
+    }
+
+    /// Build the KawPow kernel with a DAG buffer.
+    ///
+    /// The `header` is the 32-byte header hash.  The `extra` buffer carries
+    /// the DAG data: the first 8 bytes are the number of DAG entries
+    /// (little-endian u64), followed by the DAG itself as an array of
+    /// `u64` lanes (16 lanes = 128 bytes per entry).  If `extra` is empty
+    /// or too small, a minimal 1-entry DAG is used (for testing only).
+    #[allow(clippy::too_many_arguments)]
+    fn build_kawpow_kernel(
+        pro_que: &ProQue,
+        kernel_name: &str,
+        header: &[u8],
+        extra: &[u8],
+        target: &[u8; 32],
+        base_nonce: u64,
+        batch_size: u64,
+        output_nonce_buf: &Buffer<u64>,
+        output_hash_buf: &Buffer<u8>,
+        found_flag_buf: &Buffer<u32>,
+    ) -> Result<Kernel> {
+        let q = pro_que.queue().clone();
+
+        // 32-byte header hash
+        let mut header_hash = [0u8; 32];
+        let copy_len = header.len().min(32);
+        header_hash[..copy_len].copy_from_slice(&header[..copy_len]);
+
+        let header_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .copy_host_slice(&header_hash)
+            .build()?;
+        let target_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .copy_host_slice(target.as_slice())
+            .build()?;
+
+        // Parse DAG from `extra`:
+        //   bytes 0..8   : dag_entries (u64 LE)
+        //   bytes 8..    : DAG data as u64 lanes (16 lanes per entry)
+        let (dag_entries, dag_data): (u64, &[u8]) = if extra.len() >= 8 {
+            let n = u64::from_le_bytes(extra[..8].try_into().unwrap());
+            let d = &extra[8..];
+            (n.max(1), d)
+        } else {
+            (1u64, &[][..])
+        };
+
+        // Number of u64 lanes needed = dag_entries * 16
+        let lanes_needed = (dag_entries as usize) * 16;
+        let mut dag_lanes = vec![0u64; lanes_needed];
+        let avail_bytes = dag_data.len();
+        for i in 0..lanes_needed {
+            let off = i * 8;
+            if off + 8 <= avail_bytes {
+                dag_lanes[i] = u64::from_le_bytes(dag_data[off..off + 8].try_into().unwrap());
+            }
+        }
+
+        let dag_buf: Buffer<u64> = Buffer::builder()
+            .queue(q.clone())
+            .len(lanes_needed)
+            .copy_host_slice(&dag_lanes)
+            .build()?;
+
+        let kernel = Kernel::builder()
+            .program(pro_que.program())
+            .name(kernel_name)
+            .arg(&header_buf)
+            .arg(&target_buf)
+            .arg(base_nonce)
+            .arg(&dag_buf)
+            .arg(dag_entries)
             .arg(output_nonce_buf)
             .arg(output_hash_buf)
             .arg(found_flag_buf)
