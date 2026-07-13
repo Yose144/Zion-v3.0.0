@@ -49,9 +49,14 @@ impl ExternalCoin {
             // mining.authorize + mining.notify), NOT EthStratum.
             // ETC notify: [seed_hash, header_hash, boundary, target, clean]
             // RVN notify: [job_id, seed_hash, header_hash, target, clean, height, nbits]
-            Self::DCR | Self::FLUX | Self::XMR | Self::KAS | Self::ALPH
+            Self::DCR | Self::XMR | Self::KAS | Self::ALPH
             | Self::ETC | Self::RVN => {
                 StratumProtocol::Stratum
+            }
+            // FLUX uses ZcashStratum (Equihash 125,4 / ZelHash) with solution
+            // field in mining.notify and 5-param mining.submit.
+            Self::FLUX => {
+                StratumProtocol::ZcashStratum
             }
             // ERG/CLORE/EVR/MEWC use EthStratum (eth_submitLogin +
             // eth_getWork + eth_submitWork).
@@ -1232,7 +1237,8 @@ impl AuxPowClient {
                     let timestamp = u64::from_str_radix(&ntime, 16).ok();
 
                     println!(
-                        "auxpow: VRSC notify — job={} blob_len={} sol_len={} ntime={} clean={}",
+                        "auxpow: {} notify — job={} blob_len={} sol_len={} ntime={} clean={}",
+                        self.profile.coin,
                         job_id,
                         header_bytes.len(),
                         effective_solution.len() / 2,
@@ -1665,14 +1671,19 @@ impl AuxPowClient {
                 // Prepend varint: fd4005 = 1344 in ZCash compact varint.
                 format!("fd4005{}", sol)
             } else {
-                // Non-VerusHash ZcashStratum: use mix_hash or hash as solution.
-                let s = mix_hash_hex.unwrap_or(_hash_hex);
-                s.trim_start_matches("0x").to_string()
+                // Non-VerusHash ZcashStratum (FLUX / ZelHash / Equihash 125,4):
+                // The miner sends the Equihash solution in mix_hash_hex.
+                // Solution size for Equihash 125,4 = 52 bytes = 104 hex chars.
+                // Varint for 52 = 0x34 (single byte, since 52 < 253).
+                let sol_hex = mix_hash_hex.unwrap_or(_hash_hex);
+                let sol_hex = sol_hex.trim_start_matches("0x");
+                // Prepend varint for solution size (0x34 = 52 bytes)
+                format!("34{}", sol_hex)
             };
 
             println!(
-                "auxpow: VRSC submit — job={} ntime={} nonce2_len={} sol_len={} (expected 2694)",
-                job_id, ntime, nonce2_str.len(), solution_with_varint.len()
+                "auxpow: {} submit — job={} ntime={} nonce2_len={} sol_len={}",
+                self.profile.coin, job_id, ntime, nonce2_str.len(), solution_with_varint.len()
             );
 
             ("mining.submit", json!([worker, job_id, ntime, nonce2_str, solution_with_varint]))
@@ -3089,6 +3100,132 @@ mod tests {
         server_task.await.unwrap();
     }
 
+    #[tokio::test]
+    async fn flux_zcashstratum_notify_and_submit() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap().to_string();
+        let (host, port) = addr.rsplit_once(':').unwrap();
+        let port: u16 = port.parse().unwrap();
+
+        // FLUX ZcashStratum notify params (Equihash 125,4 / ZelHash):
+        // [job_id, version, prevhash, merkle, reserved, ntime, nbits, clean_jobs, solution]
+        let job_id = "flux_job_001";
+        let version = "20000000";
+        let prevhash = "ab".repeat(32);
+        let merkle = "cd".repeat(32);
+        let reserved = "00".repeat(32);
+        let ntime = "65a3f1c0";
+        let nbits = "1d00ffff";
+        // FLUX Equihash 125,4 solution: 52 bytes = 104 hex chars
+        let solution_hex = "ee".repeat(52);
+
+        let server_task = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let (mut reader, mut writer) = socket.split();
+            let mut buf = vec![0u8; 65536];
+
+            async fn read_json(
+                reader: &mut tokio::net::tcp::ReadHalf<'_>,
+                buf: &mut [u8],
+            ) -> Value {
+                let n = reader.read(buf).await.unwrap();
+                serde_json::from_slice::<Value>(&buf[..n]).unwrap()
+            }
+
+            async fn write_json(writer: &mut tokio::net::tcp::WriteHalf<'_>, v: Value) {
+                writer
+                    .write_all((serde_json::to_string(&v).unwrap() + "\n").as_bytes())
+                    .await
+                    .unwrap();
+                writer.flush().await.unwrap();
+            }
+
+            // mining.subscribe (ZcashStratum: 4 params with host/port)
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "mining.subscribe");
+            assert_eq!(req["params"].as_array().unwrap().len(), 4);
+            write_json(
+                &mut writer,
+                json!({"id": 1, "result": [["mining.notify", "session"], "a1b2c3d4"], "error": null}),
+            )
+            .await;
+
+            // mining.authorize (password should be d=0.01 for ZcashStratum)
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "mining.authorize");
+            assert_eq!(req["params"][1].as_str().unwrap(), "d=0.01");
+            write_json(&mut writer, json!({"id": 2, "result": true, "error": null})).await;
+
+            // mining.extranonce.subscribe (ZcashStratum post-authorize)
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "mining.extranonce.subscribe");
+            write_json(&mut writer, json!({"id": 3, "result": true, "error": null})).await;
+
+            // mining.set_difficulty
+            write_json(
+                &mut writer,
+                json!({"id": null, "method": "mining.set_difficulty", "params": [0.01]}),
+            )
+            .await;
+
+            // mining.notify (ZcashStratum format with 9 params)
+            write_json(
+                &mut writer,
+                json!({
+                    "id": null,
+                    "method": "mining.notify",
+                    "params": [
+                        job_id, version, prevhash, merkle, reserved,
+                        ntime, nbits, true, solution_hex
+                    ]
+                }),
+            )
+            .await;
+
+            // mining.submit (5 params: worker, job_id, ntime, nonce2, solution)
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "mining.submit");
+            let params = req["params"].as_array().unwrap();
+            assert_eq!(params.len(), 5, "FLUX submit must have 5 params");
+            assert_eq!(params[1].as_str().unwrap(), job_id);
+            assert_eq!(params[2].as_str().unwrap(), ntime);
+            // nonce2 = 32 bytes total - extranonce1(4 bytes) = 28 bytes = 56 hex chars
+            let nonce2 = params[3].as_str().unwrap();
+            assert_eq!(nonce2.len(), 56, "nonce2 must be 28 bytes (56 hex chars) with 4-byte extranonce1");
+            // solution_with_varint should start with "34" (varint for 52 bytes)
+            let solution = params[4].as_str().unwrap();
+            assert!(solution.starts_with("34"), "FLUX solution must start with varint 34 (52 bytes)");
+
+            write_json(
+                &mut writer,
+                json!({"id": req["id"].as_i64().unwrap(), "result": true, "error": null}),
+            )
+            .await;
+
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        });
+
+        let mut profile = CoinProfile::default_for(ExternalCoin::FLUX);
+        profile.pool_host = host.to_string();
+        profile.pool_port = port;
+
+        let client = Arc::new(AuxPowClient::new(profile));
+        client.connect("t1FLUXtestWallet123").await.unwrap();
+
+        let job = client.wait_for_job(5000).await.unwrap().unwrap();
+        assert_eq!(job.job_id, job_id);
+        assert_eq!(job.external_coin, ExternalCoin::FLUX);
+        assert_eq!(job.algorithm, "zelhash");
+
+        // Submit a share with a mock Equihash solution in mix_hash_hex
+        let mock_solution = "ee".repeat(52); // 52-byte solution
+        let result = client.submit_share(job_id, 0x1234abcd, "deadbeef", Some(&mock_solution)).await.unwrap();
+        assert_eq!(result, ShareResult::Accepted);
+
+        client.disconnect().await.unwrap();
+        server_task.await.unwrap();
+    }
+
     #[test]
     fn protocol_mapping() {
         assert_eq!(ExternalCoin::DCR.protocol(), StratumProtocol::Stratum);
@@ -3096,7 +3233,7 @@ mod tests {
         assert_eq!(ExternalCoin::KAS.protocol(), StratumProtocol::Stratum);
         assert_eq!(ExternalCoin::ETC.protocol(), StratumProtocol::Stratum);
         assert_eq!(ExternalCoin::RVN.protocol(), StratumProtocol::Stratum);
-        assert_eq!(ExternalCoin::FLUX.protocol(), StratumProtocol::Stratum);
+        assert_eq!(ExternalCoin::FLUX.protocol(), StratumProtocol::ZcashStratum);
         assert_eq!(ExternalCoin::XMR.protocol(), StratumProtocol::Stratum);
         assert_eq!(ExternalCoin::ERG.protocol(), StratumProtocol::EthStratum);
         assert_eq!(ExternalCoin::EVR.protocol(), StratumProtocol::EthStratum);

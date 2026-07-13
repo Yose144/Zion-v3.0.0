@@ -378,6 +378,12 @@ impl AuxPowScheduler {
                 ExternalAlgorithm::VerusHash => {
                     crate::external_hashers::hash_verushash(header, nonce)
                 }
+                ExternalAlgorithm::ZelHash => {
+                    // ZelHash (Equihash 125,4) — CPU solver is too slow for
+                    // the scheduler hot loop.  Use a blake3 placeholder;
+                    // real ZelHash mining requires a GPU kernel.
+                    hash_blake3(header, 0, nonce)
+                }
             };
 
             let meets = if job.external_coin == ExternalCoin::DCR {
