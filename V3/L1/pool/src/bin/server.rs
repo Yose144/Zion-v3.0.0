@@ -5732,6 +5732,56 @@ mod tests {
         );
         assert_eq!(revenue_source_name(RevenueSource::NclAi), "ncl");
     }
+
+    #[test]
+    fn should_issue_external_job_defaults_to_zion_when_no_split() {
+        let cfg = AuxPowIntegrationConfig {
+            enabled: true,
+            split: None,
+            force_coin: None,
+            pool_preference: zion_auxpow::PoolPreference::Default,
+            region: "eu".to_string(),
+            payout_wallet: "bc1qtest".to_string(),
+            worker_name: "test".to_string(),
+            coin_wallets: std::collections::HashMap::new(),
+        };
+        // With no split config, should default to ZION (false = not external)
+        assert!(!should_issue_external_job(0, &cfg));
+        assert!(!should_issue_external_job(1, &cfg));
+        assert!(!should_issue_external_job(100, &cfg));
+    }
+
+    #[test]
+    fn should_issue_external_job_respects_split() {
+        let cfg = AuxPowIntegrationConfig {
+            enabled: true,
+            split: Some(SplitConfig { zion_weight: 4, external_weight: 1 }),
+            force_coin: None,
+            pool_preference: zion_auxpow::PoolPreference::Default,
+            region: "eu".to_string(),
+            payout_wallet: "bc1qtest".to_string(),
+            worker_name: "test".to_string(),
+            coin_wallets: std::collections::HashMap::new(),
+        };
+        // 4:1 split → 1 in 5 iterations is external (iteration % 5 < 1)
+        assert!(should_issue_external_job(0, &cfg));  // 0 % 5 = 0 < 1 → external
+        assert!(!should_issue_external_job(1, &cfg)); // 1 % 5 = 1 < 1? no → zion
+        assert!(!should_issue_external_job(2, &cfg)); // 2 % 5 = 2 < 1? no → zion
+        assert!(!should_issue_external_job(3, &cfg)); // 3 % 5 = 3 < 1? no → zion
+        assert!(!should_issue_external_job(4, &cfg)); // 4 % 5 = 4 < 1? no → zion
+        assert!(should_issue_external_job(5, &cfg));  // 5 % 5 = 0 < 1 → external
+    }
+
+    #[test]
+    fn advertised_algorithm_is_deeksha_lite_v1() {
+        // Verify that the pool always advertises deeksha_lite_v1,
+        // not deeksha_chv3 (which broke the chain at block 4502).
+        assert_eq!(zion_pool::advertised_algorithm_for_height(0), "deeksha_lite_v1");
+        assert_eq!(zion_pool::advertised_algorithm_for_height(4499), "deeksha_lite_v1");
+        assert_eq!(zion_pool::advertised_algorithm_for_height(4500), "deeksha_lite_v1");
+        assert_eq!(zion_pool::advertised_algorithm_for_height(5000), "deeksha_lite_v1");
+        assert_eq!(zion_pool::advertised_algorithm_for_height(99999), "deeksha_lite_v1");
+    }
 }
 
 fn parse_optional_env_u32(key: &str) -> Result<Option<u32>> {
