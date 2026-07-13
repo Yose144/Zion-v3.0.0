@@ -21,9 +21,9 @@ docker run --name "${CONTAINER}" \
     mkdir -p /build && cp -a /src/. /build/
     rm -rf /build/V3/target
     cd /build/V3
-    cargo build --release -p zion-pool --bin zion-pool-server
+    cargo build --release -p zion-pool --bin server
     mkdir -p /out
-    cp target/release/zion-pool-server /out/zion-pool-server
+    cp target/release/server /out/zion-pool-server
     chmod +x /out/zion-pool-server
     ls -la /out/zion-pool-server
   '
