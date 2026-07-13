@@ -1,6 +1,6 @@
 # AuxPow Multi-Algorithm GPU Mining — Complete Report & Plan
 
-> **Status:** 2026-07-13 (rev2.2 — stream profit system implemented) | DCR Blake3 E2E verified (share accepted by WoolyPooly)
+> **Status:** 2026-07-13 (rev2.3 — DCR/ALPH share targets fixed, external GPU verification next) | DCR E2E re-verification in progress
 > **Author:** Devin + Yose | **Repo:** `Zion-v3.0.0`
 > **Main goal:** Rozchodit revenue system ze stream multi-algo GPU miningu v Deeksha Chv3 — všechny streamy uvnitř Deeksha Chv3 pipeline
 
@@ -72,6 +72,15 @@ protokol** (`eth_getWork` / `eth_submitWork`), který **není implementován**
 (viz Phase 8 TODO). DCR wallet je nakonfigurovaný (`ZION_POOL_AUXPOW_WALLET_DCR`),
 ale coin je nastaven na ETC. **Akce:** Přepnout na `ZION_POOL_AUXPOW_COIN=DCR`
 (Blake3, Stratum v1, E2E verified).
+
+---
+
+## 1B. Current Status Update (2026-07-13 session)
+
+- **DCR share target fixed**: switched from full `2^256-1` to Decred mainnet PoW limit `2^224-1`, matching `dcrpool`/`gominer` (`DiffToTarget(net.PowLimit, difficulty)`). A long CPU E2E run against `decred.cedric-crispin.com:4494` (`x,d=4`, diff 4) is in progress to confirm acceptance.
+- **ALPH updates**: default pool corrected to live WoolyPooly endpoint `pool.woolypooly.com:3106`; share target corrected to Alephium pool convention `2^226-1` (`diff1TargetNumZero=30`). Low-diff pool `alephium.cedric-crispin.com:4084` (`x,d=1`) works, but job expiry (~10s) makes CPU verification difficult.
+- **KAS**: low-diff endpoint `kaspa.cedric-crispin.com:4114` (`x,d=4`) works, but kHeavyHash CPU is ~0.35 MH/s — too slow for quick verification.
+- **Next critical goal**: verify end-to-end revenue flow with **external GPU miners** connected through the ZION pool. CPU E2E is only a code sanity check; real revenue requires a GPU rig submitting shares that the pool forwards and the external pool accepts.
 
 ---
 
