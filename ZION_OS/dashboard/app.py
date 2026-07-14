@@ -167,7 +167,6 @@ AUTH_EXEMPT_ROUTES = {"/api/health", "/health", "/favicon.ico", "/api/poc/html",
 # Edge server addresses (Hetzner VPS — always-on)
 EDGE_HOST = "127.0.0.1"   # Dashboard runs on same server (v3.0.4)
 EDGE_PUBLIC_IP = "62.171.141.136"  # Public IP (Edge server)
-EDGE_PUBLIC_URL = "https://zionterranova.com"  # Public website / Next.js API
 
 # ── Edge-local detection ─────────────────────────────────────────────────
 # When the dashboard runs ON the Edge server, we can execute commands locally
@@ -1036,8 +1035,8 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "ports": {},
      "log": "miner.log", "start": "start-miner", "stop": None,
      "health_method": "log", "severity": "warning", "autoheal": True,
-     "health_endpoint": "http://127.0.0.1:8455/miners",
-     "purpose": "Performs Deeksha PoW hashing to find new blocks. Connects to pool 8444. Remote miners via Stratum.",
+     "health_endpoint": "http://127.0.0.1:8444",
+     "purpose": "Performs Deeksha PoW hashing to find new blocks. Connects to pool 8444.",
      "child_says": "⛏️ The miner digs for new gold (ZION coins)!",
      "depends_on": ["pool-edge"]},
 
@@ -1113,11 +1112,11 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "child_says": "🔒 The gatekeeper that protects our websites!",
      "depends_on": []},
     {"id": "web-next", "name": "Next.js Website", "icon": "🌐", "level": "Infra", "kind": "web",
-     "ports": {"http": 3000},
+     "ports": {"http": 3001},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
      "health_method": "tcp", "severity": "warning", "autoheal": False,
-     "purpose": "Next.js 16.2.9 website — 73+ routes, Docker container zion-web. Port 3000.",
+     "purpose": "Next.js 16.2.9 website — 73+ routes, Docker container zion-web:nextjs. Port 3001.",
      "child_says": "🌐 The public face of ZION — our website!",
      "depends_on": ["nginx"]},
 ]
@@ -1307,28 +1306,6 @@ def rpc_probe(host: str, port: int, timeout: float = 1.0) -> tuple[bool, str]:
             return False, "no result"
     except Exception as e:
         return False, str(e)[:60]
-
-
-def proxy_edge_get(path: str, timeout: float = 8.0) -> dict:
-    """Proxy a GET request to the public ZION Edge website API.
-
-    Only paths under /api/ are allowed; everything else is rejected.
-    """
-    try:
-        if not path.startswith("/api/"):
-            return {"error": "invalid path"}
-        if ".." in path or "//" in path or path.count("?") > 1:
-            return {"error": "invalid path"}
-        url = f"{EDGE_PUBLIC_URL}{path}"
-        req = _urlreq.Request(url, headers={"Accept": "application/json"})
-        with _urlreq.urlopen(req, timeout=timeout) as r:
-            content_type = r.headers.get("Content-Type", "")
-            body = r.read()
-            if "application/json" in content_type:
-                return json.loads(body.decode("utf-8", errors="replace"))
-            return {"ok": True, "body": body.decode("utf-8", errors="replace")}
-    except Exception as e:
-        return {"error": str(e)[:120]}
 
 
 def check_service_health(svc: dict) -> dict:
@@ -4116,7 +4093,7 @@ def run_edge_action(action: str) -> dict:
         "restart-hiran":          "systemctl restart zion-hiran-inference 2>/dev/null || echo 'hiran not deployed'",
         "restart-hiranyagarbha":  "systemctl restart zion-hiranyagarbha 2>/dev/null || echo 'hiranyagarbha not deployed'",
         "restart-bridge":         "systemctl restart zion-bridge",
-        "restart-website":        "systemctl restart zion-web-next 2>/dev/null || docker restart zion-web 2>/dev/null || echo 'web in maintenance mode'",
+        "restart-website":        "systemctl restart zion-web-next 2>/dev/null || docker restart zion-web-next 2>/dev/null || echo 'web in maintenance mode'",
         "clean-docker":           "docker builder prune -af 2>&1; docker image prune -af 2>&1; docker container prune -f 2>&1",
         "security-audit":         "echo 'Security audit placeholder — run manually'",
         "full-health":            "systemctl is-active zion-node zion-pool zion-dao zion-warp zion-bridge nginx 2>&1",
@@ -4256,13 +4233,11 @@ def get_pool_miners() -> dict:
             miners_tracked = int(float(line.split()[-1]))
         elif line.startswith("zion_pool_miner_hashrate_hps{"):
             # Parse labels: miner_id="...",worker_name="..."
-            # Use composite key "miner_id/worker_name" since multiple workers
-            # can share the same miner_id (e.g. local-miner).
             m_id = re.search(r'miner_id="([^"]+)"', line)
             w_name = re.search(r'worker_name="([^"]+)"', line)
             val = float(line.split()[-1])
             if m_id and w_name:
-                key = f"{m_id.group(1)}/{w_name.group(1)}"
+                key = m_id.group(1)
                 miners[key] = {
                     "miner_id": m_id.group(1),
                     "worker_name": w_name.group(1),
@@ -4277,57 +4252,46 @@ def get_pool_miners() -> dict:
                 total_hashrate_hps += val
         elif line.startswith("zion_pool_miner_valid_shares_total{"):
             m_id = re.search(r'miner_id="([^"]+)"', line)
-            w_name = re.search(r'worker_name="([^"]+)"', line)
             val = int(float(line.split()[-1]))
-            if m_id:
-                key = f"{m_id.group(1)}/{w_name.group(1)}" if w_name else m_id.group(1)
-                if key in miners:
-                    miners[key]["valid_shares"] = val
+            if m_id and m_id.group(1) in miners:
+                miners[m_id.group(1)]["valid_shares"] = val
         elif line.startswith("zion_pool_miner_invalid_shares_total{"):
             m_id = re.search(r'miner_id="([^"]+)"', line)
-            w_name = re.search(r'worker_name="([^"]+)"', line)
             val = int(float(line.split()[-1]))
-            if m_id:
-                key = f"{m_id.group(1)}/{w_name.group(1)}" if w_name else m_id.group(1)
-                if key in miners:
-                    miners[key]["invalid_shares"] = val
+            if m_id and m_id.group(1) in miners:
+                miners[m_id.group(1)]["invalid_shares"] = val
         elif line.startswith("zion_pool_miner_paid_total_atomic{"):
             m_id = re.search(r'miner_id="([^"]+)"', line)
-            w_name = re.search(r'worker_name="([^"]+)"', line)
             val = int(line.split()[-1])
-            if m_id:
-                key = f"{m_id.group(1)}/{w_name.group(1)}" if w_name else m_id.group(1)
-                if key in miners:
-                    miners[key]["paid_total_atomic"] = val
-                    miners[key]["paid_total"] = flowers_to_zion(val)
+            if m_id and m_id.group(1) in miners:
+                miners[m_id.group(1)]["paid_total_atomic"] = val
+                miners[m_id.group(1)]["paid_total"] = flowers_to_zion(val)  # convert atomic flowers to ZION
         elif line.startswith("zion_pool_miner_last_seen_seconds{"):
             m_id = re.search(r'miner_id="([^"]+)"', line)
-            w_name = re.search(r'worker_name="([^"]+)"', line)
             val = int(float(line.split()[-1]))
-            if m_id:
-                key = f"{m_id.group(1)}/{w_name.group(1)}" if w_name else m_id.group(1)
-                if key in miners:
-                    miners[key]["last_seen"] = val
+            if m_id and m_id.group(1) in miners:
+                miners[m_id.group(1)]["last_seen"] = val
 
     miner_list = list(miners.values())
 
     # Merge with the sanitized payout view so UI consumers don't inherit stale
     # per-miner counters from older pool binaries.
-    # Use composite key "address/worker_name" for matching.
     try:
         payout_miners = fetch_pool_miners()
         payout_by_key = {}
         for payout_miner in payout_miners:
-            addr = payout_miner.get("address") or payout_miner.get("miner_id") or ""
-            worker = payout_miner.get("worker_name") or ""
-            composite = f"{addr}/{worker}" if worker else addr
-            if composite:
-                payout_by_key[composite] = payout_miner
+            for key in (
+                payout_miner.get("worker_name"),
+                payout_miner.get("address"),
+                payout_miner.get("miner_id"),
+            ):
+                if key:
+                    payout_by_key[key] = payout_miner
         for miner in miner_list:
-            m_addr = miner.get("miner_id") or ""
-            m_worker = miner.get("worker_name") or ""
-            m_composite = f"{m_addr}/{m_worker}" if m_worker else m_addr
-            payout_miner = payout_by_key.get(m_composite)
+            payout_miner = (
+                payout_by_key.get(miner.get("worker_name"))
+                or payout_by_key.get(miner.get("miner_id"))
+            )
             if not payout_miner:
                 continue
             payout_atomic = int(payout_miner.get("paid_total_atomic") or 0)
@@ -4504,21 +4468,10 @@ def _fetch_pplns_state() -> dict:
 
 
 def _get_pool_active_miner_map() -> dict:
-    """Return a map composite_key -> active miner data from the pool /miners endpoint.
-
-    Uses composite key "address/worker_name" to match PPLNS state keys, since
-    multiple workers can share the same miner_id (e.g. local-miner).
-    """
+    """Return a map miner_id -> active miner data from the pool /miners endpoint."""
     try:
         miners = fetch_pool_miners()
-        result = {}
-        for m in miners:
-            addr = m.get("address") or m.get("miner_id") or ""
-            worker = m.get("worker_name") or ""
-            key = f"{addr}/{worker}" if worker else addr
-            if key:
-                result[key] = m
-        return result
+        return {m.get("address") or m.get("miner_id"): m for m in miners if m.get("address") or m.get("miner_id")}
     except Exception:
         return {}
 
@@ -4537,14 +4490,7 @@ def get_pool_registered_miners() -> dict:
     with _REGISTERED_MINERS_LOCK:
         cached = _REGISTERED_MINERS_CACHE.get("data")
         if cached and (now - _REGISTERED_MINERS_CACHE.get("ts", 0)) < _REGISTERED_MINERS_TTL:
-            return {
-                "ok": True,
-                "miners": cached,
-                "totals": _REGISTERED_MINERS_CACHE.get("totals", {}),
-                "cached": True,
-                "registered_count": _REGISTERED_MINERS_CACHE.get("registered_count", len(cached)),
-                "active_count": _REGISTERED_MINERS_CACHE.get("active_count", 0),
-            }
+            return {"ok": True, "miners": cached, "cached": True}
 
     # 1. Load PPLNS state and active telemetry in parallel-ish
     pplns_state = _fetch_pplns_state()
@@ -4561,9 +4507,6 @@ def get_pool_registered_miners() -> dict:
         with _REGISTERED_MINERS_LOCK:
             _REGISTERED_MINERS_CACHE["data"] = miners
             _REGISTERED_MINERS_CACHE["ts"] = now
-            _REGISTERED_MINERS_CACHE["totals"] = {"pending_zion": 0, "paid_zion": 0, "on_chain_zion": 0}
-            _REGISTERED_MINERS_CACHE["registered_count"] = len(miners)
-            _REGISTERED_MINERS_CACHE["active_count"] = sum(1 for m in miners if m.get("active"))
         return {"ok": True, "miners": miners, "cached": False, "fallback": True}
 
     # 2. Build unique list of payout addresses and lookup balances once per address
@@ -4582,20 +4525,14 @@ def get_pool_registered_miners() -> dict:
         except Exception:
             pass
 
-    # 3. Build per-miner records, preserving individual miner IDs even if they share an address.
-    # PPLNS state keys are composite "miner_id/worker_name"; split for display.
+    # 3. Build per-miner records, preserving individual miner IDs even if they share an address
     miners = []
     pplns_stats = (stats.get("pplns") or {}) if isinstance(stats, dict) else {}
     total_paid_flowers = pplns_stats.get("total_paid_flowers", 0)
-    for pplns_key, payout_address in addresses.items():
-        active = active_map.get(pplns_key)
+    for miner_id, payout_address in addresses.items():
+        active = active_map.get(miner_id)
         on_chain = balance_map.get(payout_address, 0.0)
-        pending_atomic = int(unpaid.get(pplns_key, 0)) if isinstance(unpaid, dict) else 0
-        # Split composite key for display
-        if "/" in pplns_key:
-            display_miner_id, display_worker = pplns_key.split("/", 1)
-        else:
-            display_miner_id, display_worker = pplns_key, ""
+        pending_atomic = int(unpaid.get(miner_id, 0)) if isinstance(unpaid, dict) else 0
         # If active, use live telemetry; otherwise zero hashrate/shares
         hashrate = active.get("hashrate") or active.get("hashrate_hps") or 0.0 if active else 0.0
         hashrate_1h = active.get("hashrate_1h") or 0.0 if active else 0.0
@@ -4605,11 +4542,10 @@ def get_pool_registered_miners() -> dict:
         blocks_found = active.get("blocks_found", 0) if active else 0
         last_seen = active.get("last_seen", 0) if active else 0
         last_share = active.get("last_share", 0) if active else 0
-        worker_name = display_worker or (active.get("worker_name", "") if active else "")
+        worker_name = active.get("worker_name", "") if active else ""
         m = {
-            "miner_id": display_miner_id,
+            "miner_id": miner_id,
             "worker_name": worker_name,
-            "pplns_key": pplns_key,
             "payout_address": payout_address,
             "hashrate_hps": hashrate,
             "hashrate_1h": hashrate_1h,
@@ -4618,8 +4554,8 @@ def get_pool_registered_miners() -> dict:
             "invalid_shares": invalid_shares,
             "pending_balance": pending_atomic,
             "pending_balance_zion": flowers_to_zion(pending_atomic),
-            "paid_total": float(active.get("paid_total", 0.0) or 0.0) if active else 0.0,
-            "paid_total_atomic": int(active.get("paid_total_atomic", 0) or 0) if active else 0,
+            "paid_total": 0.0,  # per-miner lifetime not tracked in PPLNS state; use pool stats total
+            "paid_total_atomic": 0,
             "blocks_found": blocks_found,
             "last_seen": last_seen,
             "last_share": last_share,
@@ -4628,9 +4564,16 @@ def get_pool_registered_miners() -> dict:
         }
         miners.append(m)
 
-    # 4. Total paid from PPLNS state (authoritative pool lifetime total) while
-    # per-miner paid_total is already set from active telemetry above.
+    # 4. Aggregate paid total by address for display
+    # The pool /api/v1/miner/:address/payouts can give per-address paid total, but
+    # PPLNS state is authoritative for lifetime. We attach the global total_paid to
+    # each active miner for ranking; registered-only miners show 0 paid.
+    # Use pool stats as authoritative total paid for the whole PPLNS set.
     total_paid_zion = flowers_to_zion(total_paid_flowers)
+    for m in miners:
+        if m["active"]:
+            m["paid_total"] = total_paid_zion
+            m["paid_total_atomic"] = total_paid_flowers
 
     # Sort by hashrate desc, active first
     miners.sort(key=lambda m: (not m["active"], -(m.get("hashrate_hps") or 0)))
@@ -4645,9 +4588,6 @@ def get_pool_registered_miners() -> dict:
             unique_balances[addr] = float(m.get("on_chain_balance_zion", 0) or 0)
         total_pending += float(m.get("pending_balance_zion", 0) or 0)
         total_paid += float(m.get("paid_total", 0) or 0)
-    # Use PPLNS authoritative total if available; otherwise sum of per-miner paid totals.
-    if total_paid_zion > 0:
-        total_paid = total_paid_zion
     totals = {
         "pending_zion": total_pending,
         "paid_zion": total_paid,
@@ -4657,9 +4597,6 @@ def get_pool_registered_miners() -> dict:
     with _REGISTERED_MINERS_LOCK:
         _REGISTERED_MINERS_CACHE["data"] = miners
         _REGISTERED_MINERS_CACHE["ts"] = now
-        _REGISTERED_MINERS_CACHE["totals"] = totals
-        _REGISTERED_MINERS_CACHE["registered_count"] = len(miners)
-        _REGISTERED_MINERS_CACHE["active_count"] = sum(1 for m in miners if m["active"])
     return {"ok": True, "miners": miners, "totals": totals, "cached": False, "registered_count": len(miners), "active_count": sum(1 for m in miners if m["active"])}
 
 
@@ -5059,8 +4996,6 @@ def get_revenue_dashboard() -> dict:
         ("MEWC", "meowpow",     "meowpow.eu.mine.zpool.ca:1327"),
         ("XMR",  "randomx",     "gulf.moneroocean.stream:10001"),
         ("VRSC", "verushash",   "eu.luckpool.net:3956"),
-        ("PRL",  "pearlhash",   "us2.alphapool.tech:5566"),
-        ("EPIC", "progpow",     "de.epicmine.io:3334"),
     ]
     current_coin = auxpow.get("current_coin", "")
     coin_revenue = []
@@ -5154,7 +5089,7 @@ def get_revenue_dashboard() -> dict:
         "next_distribution_ts": None,  # no scheduled next — PPLNS pays per block
         "distribution_cycle": "Per-block (PPLNS)",
         "accumulated_usd": round(total_usd, 6),
-        "active_coins": [c[0] for c in SUPPORTED_COINS],  # 13 supported coins
+        "active_coins": [c[0] for c in SUPPORTED_COINS],  # 11 supported coins
         "coin_revenue": coin_revenue,
         "distributions": distributions,
         # Stream profit (Deeksha Chv3 pipeline weights)
@@ -5271,7 +5206,7 @@ AUXPOW_SERVICE_NAME = _resolve_auxpow_service_name()
 # Coins the pool can force-switch to. Keep in sync with AuXpow/src/types.rs.
 AUXPOW_SUPPORTED_COINS = [
     "DCR", "ALPH", "KAS", "ERG", "RVN", "ETC",
-    "EVR", "MEWC", "FLUX", "CLORE", "XMR", "VRSC", "PRL",
+    "EVR", "MEWC", "FLUX", "CLORE", "XMR", "VRSC",
 ]
 
 AUXPOW_POOL_PREFERENCES = ["default", "nicehash", "herominers", "zpool"]
@@ -5419,7 +5354,7 @@ def get_auxpow_config() -> dict:
         },
         "supported_coins": AUXPOW_SUPPORTED_COINS,
         "supported_preferences": AUXPOW_POOL_PREFERENCES,
-        "supported_stream_sources": ["zion", "keccak_bonus", "sha3_bonus", "ncl_ai", "deeksha_lite", "thermal_bonus", "pearl_external"],
+        "supported_stream_sources": ["zion", "keccak_bonus", "sha3_bonus", "ncl_ai", "deeksha_lite", "thermal_bonus"],
         "supported_stream_providers": ["fallback", "nicehash", "whattomine", "coingecko"],
         "env_file": str(EDGE_ENV_FILE),
         "env_file_exists": EDGE_ENV_FILE.exists(),
@@ -6094,27 +6029,21 @@ def fetch_pool_miners() -> list:
             miners = data.get("miners", [])
     except Exception:
         pass
-    # Enrich with paid_total from Prometheus metrics.
-    # Use composite key "miner_id/worker_name" since multiple workers can share
-    # the same miner_id (e.g. local-miner) but have separate payout addresses.
+    # Enrich with paid_total from Prometheus metrics
     paid_map = {}
     try:
         import urllib.request
         with urllib.request.urlopen(f"http://{host}:8455/metrics", timeout=5) as r:
             for line in r.read().decode("utf-8", errors="ignore").splitlines():
                 if line.startswith("zion_pool_miner_paid_total_atomic{"):
-                    m_id = re.search(r'miner_id="([^"]+)"', line)
-                    w_name = re.search(r'worker_name="([^"]+)"', line)
-                    if m_id:
-                        key = f"{m_id.group(1)}/{w_name.group(1)}" if w_name else m_id.group(1)
-                        paid_map[key] = int(line.split()[-1])
+                    m = re.search(r'miner_id="([^"]+)"', line)
+                    if m:
+                        paid_map[m.group(1)] = int(line.split()[-1])
     except Exception:
         pass
     for m in miners:
         addr = m.get("address") or m.get("miner_id") or ""
-        worker = m.get("worker_name") or ""
-        composite = f"{addr}/{worker}" if worker else addr
-        paid_total_atomic = paid_map.get(composite, 0)
+        paid_total_atomic = paid_map.get(addr, 0)
         m["paid_total_atomic"] = paid_total_atomic
         m["paid_total"] = flowers_to_zion(paid_total_atomic)
     return miners
@@ -7555,46 +7484,6 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
       </div>
     </div>
 
-    <!-- Triple Stream Mining (Claymore-style 3-stream parallel) -->
-    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 flex items-center gap-2">⚡ Triple Stream Mining <span class="text-xs px-2 py-0.5 rounded bg-amber-600/30 text-amber-300">v3.0.6</span></h2>
-        <span class="text-xs text-gray-500" id="triple-stream-summary">—</span>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <!-- Stream 1: ZION Deeksha -->
-        <div class="bg-zion-900 rounded-lg p-3 border border-cyan-900/50">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-bold text-cyan-400">Stream 1 — ZION</span>
-            <span class="text-[10px] text-gray-500">Deeksha Lite v1</span>
-          </div>
-          <div class="text-2xl font-bold text-cyan-300" id="stream-zion-shares">—</div>
-          <div class="text-xs text-gray-400 mb-1">Shares (acc/rej)</div>
-          <div class="text-xs text-gray-500" id="stream-zion-pct">—</div>
-        </div>
-        <!-- Stream 2: Pearl PoUW -->
-        <div class="bg-zion-900 rounded-lg p-3 border border-fuchsia-900/50">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-bold text-fuchsia-400">Stream 2 — PRL</span>
-            <span class="text-[10px] text-gray-500">Pearl PoUW</span>
-          </div>
-          <div class="text-2xl font-bold text-fuchsia-300" id="stream-prl-shares">—</div>
-          <div class="text-xs text-gray-400 mb-1">Proofs (acc/rej)</div>
-          <div class="text-xs text-gray-500" id="stream-prl-pct">—</div>
-        </div>
-        <!-- Stream 3: External AuxPow -->
-        <div class="bg-zion-900 rounded-lg p-3 border border-amber-900/50">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-bold text-amber-400">Stream 3 — EXT</span>
-            <span class="text-[10px] text-gray-500" id="stream-ext-coin">AuxPow</span>
-          </div>
-          <div class="text-2xl font-bold text-amber-300" id="stream-ext-shares">—</div>
-          <div class="text-xs text-gray-400 mb-1">Shares (acc/rej)</div>
-          <div class="text-xs text-gray-500" id="stream-ext-pct">—</div>
-        </div>
-      </div>
-    </div>
-
     <!-- Mainnet Readiness Status -->
     <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
       <div class="flex items-center justify-between mb-3">
@@ -8968,7 +8857,6 @@ async function refreshAll(){
     updateAlerts(al.alerts);
     updateChecklist(cl.checks);
     updatePayouts(s.pool);
-    updateTripleStream(s);
     updateMiniHashrate();
     loadMainnetStatus();
     if(currentTab==='charts')renderCharts();
@@ -9041,49 +8929,6 @@ function updateServiceCards(s){
   document.getElementById('val-miner-gpu').textContent=(m.gpu_backend?m.gpu_backend+': ':'')+(m.gpu_device??'—');
   document.getElementById('val-miner-height').textContent=m.current_height??'—';
   document.getElementById('val-miner-diff').textContent=m.current_diff??'—';
-}
-
-// ── Triple Stream Mining panel (Claymore-style 3-stream) ──
-function updateTripleStream(data){
-  if(!data||!data.routing||!data.routing.sources){
-    document.getElementById('triple-stream-summary').textContent='No routing data';
-    return;
-  }
-  const src=data.routing.sources||{};
-  // Map routing sources to 3 streams
-  // src_zion → Stream 1, src_pearl → Stream 2, everything else → Stream 3
-  const zion=src.src_zion||{accepted:0,rejected:0};
-  const pearl=src.src_pearl||{accepted:0,rejected:0};
-  // Aggregate all external sources into Stream 3
-  let extAcc=0,extRej=0,extCoin='AuxPow';
-  for(const[key,val]of Object.entries(src)){
-    if(key==='src_zion'||key==='src_pearl')continue;
-    if(val&&typeof val==='object'){
-      extAcc+=val.accepted||0;
-      extRej+=val.rejected||0;
-      // Track which coin is active
-      if(val.accepted>0||val.rejected>0){
-        extCoin=key.replace('src_','').toUpperCase();
-      }
-    }
-  }
-  // Stream 1: ZION
-  document.getElementById('stream-zion-shares').textContent=(zion.accepted||0)+' / '+(zion.rejected||0);
-  const zTotal=(zion.accepted||0)+(zion.rejected||0);
-  document.getElementById('stream-zion-pct').textContent=zTotal>0?(100*zion.accepted/zTotal).toFixed(1)+'% accepted':'—';
-  // Stream 2: PRL
-  document.getElementById('stream-prl-shares').textContent=(pearl.accepted||0)+' / '+(pearl.rejected||0);
-  const pTotal=(pearl.accepted||0)+(pearl.rejected||0);
-  document.getElementById('stream-prl-pct').textContent=pTotal>0?(100*pearl.accepted/pTotal).toFixed(1)+'% accepted':'—';
-  // Stream 3: EXT
-  document.getElementById('stream-ext-shares').textContent=extAcc+' / '+extRej;
-  document.getElementById('stream-ext-coin').textContent=extCoin;
-  const eTotal=extAcc+extRej;
-  document.getElementById('stream-ext-pct').textContent=eTotal>0?(100*extAcc/eTotal).toFixed(1)+'% accepted':'—';
-  // Summary
-  const totalAcc=(zion.accepted||0)+(pearl.accepted||0)+extAcc;
-  const totalRej=(zion.rejected||0)+(pearl.rejected||0)+extRej;
-  document.getElementById('triple-stream-summary').textContent=totalAcc+' acc / '+totalRej+' rej total';
 }
 
 function updatePayouts(p){
@@ -9725,7 +9570,7 @@ def _build_health_map() -> dict:
         health[sid] = "up" if alive else "down"
     # Nginx + web-next: check via SSH on Edge server (not tunneled locally)
     for sid, cmd in [("nginx", "systemctl is-active nginx 2>/dev/null"),
-                     ("web-next", "systemctl is-active zion-web-next 2>/dev/null || docker inspect -f '{{.State.Running}}' zion-web 2>/dev/null")]:
+                     ("web-next", "systemctl is-active zion-web-next 2>/dev/null || docker inspect -f '{{.State.Running}}' zion-web-next 2>/dev/null")]:
         try:
             result = _run_edge_cmd(cmd, timeout=3)
             alive = result.returncode == 0 and "active" in (result.stdout or "").strip() or "true" in (result.stdout or "").strip()
@@ -10010,7 +9855,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Access-Control-Allow-Origin", cors_origin)
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-            self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
@@ -10027,7 +9872,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Access-Control-Allow-Origin", cors_origin)
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-            self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
@@ -10297,9 +10142,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(get_pool_leaderboard(limit=limit))
         elif route == "/api/pool/miners-dashboard":
             self._json(get_pool_miners_dashboard())
-        elif route == "/api/proxy/edge":
-            path = params.get("path", ["/"])[0]
-            self._json(proxy_edge_get(path))
         elif route == "/api/revenue":
             self._json(get_revenue_dashboard())
         elif route == "/api/revenue/report":
@@ -11981,7 +11823,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self.send_response(204)
         self.send_header("Access-Control-Allow-Origin", cors_origin)
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
 
     def do_POST(self):
