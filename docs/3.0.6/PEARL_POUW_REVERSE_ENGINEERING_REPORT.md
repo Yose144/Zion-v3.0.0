@@ -297,33 +297,44 @@ Standardní konfigurace: m=512, n=512, k=4096, noise_rank=256
 
 ---
 
-## 11. Files
+## 11. Soubory
 
-### Modified (committed)
-- `AuXpow/src/auxpow_client.rs` — Pearl handshake, challenge parsing, mining params handler
-- `AuXpow/src/pearl_real_pouw.rs` — Proof format
+### Modifikované (commity)
+- `AuXpow/src/auxpow_client.rs` — Pearl handshake (port 5571), authorize s object params, mining.submit
+- `AuXpow/src/external_hashers.rs` — Test: default_pool 5571
+- `AuXpow/src/types.rs` — `default_pool()` pro PRL → port 5571
+- `AuXpow/src/pearl_real_pouw.rs` — Proof formát (flat binary), Merkle tree, noisy GEMM
+- `AuXpow/examples/pearl_e2e_rust_5571.rs` — Live E2E test (Rust)
 - `V3/L1/miner/src/main.rs` — Pearl mining stream
 - `AuXpow/Cargo.toml` — Dependencies
 - `AuXpow/src/lib.rs` — Module exports
 
-### Test scripts (in /tmp, not committed)
-- `/tmp/blake3_test.c` — Multi-format Blake3 solver (confirmed nonce_le32+seed format)
-- `/tmp/blake3_keyed.c` — Keyed Blake3 test
-- `/tmp/pearl_e2e_solve.py` — Python E2E test with Python solver
-- `/tmp/pearl_e2e_solve2.py` — Python E2E test with C solver
+### Test skripty (v /tmp, ne commitnuto)
+- `/tmp/blake3_test.c` — Multi-format Blake3 solver (potvrzen nonce_le32+seed)
+- `/tmp/pearl_e2e_plain_stratum.py` — Python E2E test pro port 5571
+- `/tmp/pearl_submit_test.py` — Python mining.submit format test
+- `/tmp/pearl_e2e_solve.py` — Python E2E s Python solverem
 - `/tmp/pearl_e2e_formats.py` — Multi-format submission test
 
-### Official binary
+### Oficiální binárka
 - `/home/zionserver/alpha-miner-official/extracted/alpha-miner-amd-rdna2-rdna3-rdna35-rdna4-mi300-v1.7.5-comgr-portable/bin/alpha-miner`
+
+### Specifikace
+- https://prl.suprnova.cc/stratum-spec.html — Pearl stratum protokol specifikace
 
 ---
 
-## 12. Conclusion
+## 12. Závěr
 
-The Pearl PoUW protocol has been substantially reverse-engineered:
-- **Handshake**: fully implemented and verified
-- **Challenge format**: `Blake3(nonce_le32 || seed)` — confirmed by solving real challenges
-- **Submission method**: `pearl.challenge_response` with `{"seed":"<hex>","nonce":"<str>"}`
-- **Mining params**: not yet received — pool behavior suggests additional requirements (registered wallet, faster solving, or different connection sequence)
+Pearl PoUW protokol byl kompletně reverse-engineered a **funkčně ověřen naživo**:
 
-The Blake3 challenge hash format was the critical discovery: the nonce comes **before** the seed in the hash input, which is non-obvious and contradicts the typical convention of seed-first hashing.
+- **Port 5571 (plain stratum):** ✅ FUNKČNÍ — autorizace, job notifikace, i mining.submit ověřeny proti AlphaPool
+- **Port 5566 (custom pearl):** ❌ Nefunkční — chicken-and-egg problém s `pearl.set_mining_params`
+- **Blake3 challenge:** `Blake3(nonce_le32 || seed)` — nonce první, potvrzeno solvingem
+- **Autorizace:** `mining.authorize` s objektovými params `{wallet, worker, pass, agent}`
+- **Submit:** `mining.submit` s `{job_id, plain_proof}` (base64 PlainProof)
+- **Specifikace:** suprnova stratum spec (JSON-RPC 2.0, objektové parametry)
+
+Klíčový objev: AlphaPool nabízí **dva porty** — 5566 (custom, nefunkční) a 5571 (plain stratum, funkční). Port 5571 byl nalezen na AlphaPool webu jako "New — plain stratum, no shim". Tento port používá standardní Pearl stratum bez custom `pearl.*` metod, což eliminuje všechny problémy s handshake a chicken-and-egg situací.
+
+Další krok: GPU PoUW mining (OpenCL noisy GEMM kernel) pro produkční rychlost generování PlainProof.

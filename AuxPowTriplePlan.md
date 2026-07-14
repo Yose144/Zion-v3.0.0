@@ -1,6 +1,6 @@
 # AuxPow Triple Implementation Plan — v3.0.6 "Triple Parallel"
 
-> **Status:** IN PROGRESS — Implementation DONE, Phase 7 (Deploy/Verify) active
+> **Status:** Pearl stratum protokol FUNGUJE (port 5571) — Phase 7 (Deploy/Verify) aktivní
 > **Goal:** Complete the 3-stream parallel mining architecture (ZION Deeksha + Pearl PoUW + External GPU) so all 7 phases of `FullRevenueAuxPow.md` are fully DONE.
 > **Predecessor:** `FullRevenueAuxPow.md` (design doc, Phases 1-7)
 > **Companion:** `3.0.6.md` (patch summary for 3-stream split + version bumps)
