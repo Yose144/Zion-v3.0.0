@@ -628,7 +628,7 @@ pub fn le_compare(a: &[u8; 32], b: &[u8; 32]) -> bool {
 
 // ─── Matrix helpers ─────────────────────────────────────────────────────────
 
-fn flatten_matrix(matrix: &[Vec<i8>]) -> Vec<u8> {
+pub fn flatten_matrix(matrix: &[Vec<i8>]) -> Vec<u8> {
     matrix.iter().flatten().map(|&x| x as u8).collect()
 }
 
@@ -682,7 +682,7 @@ fn build_matrix_proof(
 }
 
 /// Compute job_key = blake3(header_bytes || mining_config_bytes)
-fn compute_job_key(header: &IncompleteBlockHeader, config: &MiningConfiguration) -> [u8; 32] {
+pub fn compute_job_key(header: &IncompleteBlockHeader, config: &MiningConfiguration) -> [u8; 32] {
     let mut data = Vec::with_capacity(128);
     data.extend_from_slice(&header.to_bytes());
     data.extend_from_slice(&config.to_bytes());
@@ -690,7 +690,7 @@ fn compute_job_key(header: &IncompleteBlockHeader, config: &MiningConfiguration)
 }
 
 /// Compute commitment hash: (b_noise_seed, a_noise_seed)
-fn compute_commitment_hash(
+pub fn compute_commitment_hash(
     job_key: &[u8; 32],
     a_row_major: &[u8],
     b_col_major: &[u8],
@@ -832,12 +832,12 @@ pub fn mine(
 
 // ─── Simple deterministic RNG ───────────────────────────────────────────────
 
-struct SimpleRng {
+pub struct SimpleRng {
     state: u64,
 }
 
 impl SimpleRng {
-    fn new(seed: u64) -> Self {
+    pub fn new(seed: u64) -> Self {
         Self { state: seed.wrapping_add(0x9E3779B97F4A7C15) }
     }
 
@@ -849,7 +849,7 @@ impl SimpleRng {
         self.state.wrapping_mul(0x2545F4914F6CDD1D)
     }
 
-    fn range(&mut self, min: i8, max: i8) -> i8 {
+    pub fn range(&mut self, min: i8, max: i8) -> i8 {
         let range = (max as i32 - min as i32 + 1) as u64;
         let val = self.next_u64() % range;
         (min as i32 + val as i32) as i8

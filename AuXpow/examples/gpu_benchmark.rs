@@ -89,6 +89,12 @@ fn main() {
 
     println!("\n=== Benchmark Complete ===\n");
 
+    // ─── Pearl PoUW benchmark (Metal-only) ──────────────────────────────
+    #[cfg(feature = "gpu-metal")]
+    {
+        pearl_pouw_benchmark();
+    }
+
     // Print summary table
     println!("Summary:");
     println!("  Device:  {device_name}");
@@ -147,4 +153,126 @@ fn benchmark_algorithm(
     eprintln!("  {algorithm}: {bench_hashes} hashes in {elapsed_secs:.2}s = {hashrate:.0} H/s");
 
     Ok((bench_hashes, hashrate))
+}
+
+#[cfg(feature = "gpu-metal")]
+fn pearl_pouw_benchmark() {
+    use std::time::{Duration, Instant};
+    use zion_auxpow::gpu_metal::{MetalBackend, PearlPouwGpuInput};
+    use zion_auxpow::pearl_pouw::{
+        compute_commitment_hash, compute_noise_for_indices, compute_job_key,
+        flatten_matrix, pad_to_chunk_boundary, IncompleteBlockHeader,
+        MiningConfiguration, SimpleRng, SIGNAL_MIN, SIGNAL_MAX,
+    };
+
+    println!("=== Pearl PoUW MatMul Benchmark ===\n");
+
+    let mut backend = match MetalBackend::new(256) {
+        Ok(b) => b,
+        Err(e) => {
+            eprintln!("ERROR: Metal backend not available: {e}");
+            return;
+        }
+    };
+
+    let m = 256usize;
+    let n = 512usize;
+    let k = 1024usize;
+    let rank = 32usize;
+
+    // Generate deterministic test data
+    let header = IncompleteBlockHeader {
+        version: 1,
+        prev_block: [0xAA; 32],
+        merkle_root: [0xBB; 32],
+        timestamp: 1234567890,
+        nbits: 0x1E01FFFF,
+    };
+    let config = MiningConfiguration::default_mainnet();
+
+    // Pre-generate one nonce's data
+    let nonce = 0u64;
+    let mut rng = SimpleRng::new(nonce);
+    let a_matrix: Vec<Vec<i8>> = (0..m)
+        .map(|_| (0..k).map(|_| rng.range(SIGNAL_MIN, SIGNAL_MAX)).collect())
+        .collect();
+    let b_matrix: Vec<Vec<i8>> = (0..k)
+        .map(|_| (0..n).map(|_| rng.range(SIGNAL_MIN, SIGNAL_MAX)).collect())
+        .collect();
+    let b_transposed: Vec<Vec<i8>> = (0..n)
+        .map(|i| (0..k).map(|j| b_matrix[j][i]).collect())
+        .collect();
+
+    let job_key = compute_job_key(&header, &config);
+    let a_row_major = pad_to_chunk_boundary(&flatten_matrix(&a_matrix));
+    let b_col_major = pad_to_chunk_boundary(&flatten_matrix(&b_transposed));
+    let (b_noise_seed, a_noise_seed) = compute_commitment_hash(&job_key, &a_row_major, &b_col_major);
+
+    let a_all_rows: Vec<usize> = (0..m).collect();
+    let b_all_cols: Vec<usize> = (0..n).collect();
+    let noise = compute_noise_for_indices(k, rank, (b_noise_seed, a_noise_seed), &a_all_rows, &b_all_cols);
+
+    let a_noised: Vec<Vec<i32>> = a_matrix
+        .iter()
+        .zip(&noise.a)
+        .map(|(a_row, n_row)| a_row.iter().zip(n_row).map(|(&a, &n)| a as i32 + n as i32).collect())
+        .collect();
+    let b_noised_t: Vec<Vec<i32>> = b_transposed
+        .iter()
+        .zip(&noise.b)
+        .map(|(bt_row, n_row)| bt_row.iter().zip(n_row).map(|(&b, &n)| b as i32 + n as i32).collect())
+        .collect();
+
+    let a_flat: Vec<i32> = a_noised.iter().flat_map(|r| r.iter().copied()).collect();
+    let b_flat: Vec<i32> = b_noised_t.iter().flat_map(|r| r.iter().copied()).collect();
+
+    let row_offsets: Vec<u32> = (0..m as u32)
+        .filter(|&i| config.rows_pattern.offset_is_valid(i))
+        .collect();
+    let col_offsets: Vec<u32> = (0..n as u32)
+        .filter(|&i| config.cols_pattern.offset_is_valid(i))
+        .collect();
+    let rows_base: Vec<u32> = config.rows_pattern.to_list();
+    let cols_base: Vec<u32> = config.cols_pattern.to_list();
+
+    // Easy target (accept everything)
+    let target = [0xFFu8; 32];
+
+    let input = PearlPouwGpuInput {
+        noised_a: &a_flat,
+        noised_b: &b_flat,
+        a_noise_seed,
+        target,
+        row_offsets: &row_offsets,
+        col_offsets: &col_offsets,
+        rows_base: &rows_base,
+        cols_base: &cols_base,
+    };
+
+    // Warmup (includes kernel compilation)
+    print!("  Warmup (kernel compile + first dispatch)... ");
+    let warmup_start = Instant::now();
+    let _ = backend.pearl_pouw_mine(&input).expect("warmup GPU mine");
+    let warmup_ms = warmup_start.elapsed().as_millis();
+    println!("done in {warmup_ms}ms");
+
+    // Benchmark: measure tiles/sec (each dispatch = 4096 tiles)
+    let duration = Duration::from_secs(5);
+    let deadline = Instant::now() + duration;
+    let bench_start = Instant::now();
+    let mut dispatches: u64 = 0;
+
+    while Instant::now() < deadline {
+        let _ = backend.pearl_pouw_mine(&input).expect("GPU mine");
+        dispatches += 1;
+    }
+
+    let elapsed = bench_start.elapsed().as_secs_f64();
+    let total_tiles = dispatches * 4096;
+    let tiles_per_sec = total_tiles as f64 / elapsed;
+
+    println!("  Pearl PoUW: {dispatches} dispatches × 4096 tiles = {total_tiles} tiles in {elapsed:.2}s");
+    println!("  Throughput: {tiles_per_sec:.0} tiles/s");
+    println!("  Per-dispatch: {:.2}ms", elapsed * 1000.0 / dispatches as f64);
+    println!();
 }
