@@ -5,10 +5,24 @@
 //! Tento crate nově obsahuje [`HiranTaskExecutor`], který obaluje [`DummyExecutor`]
 //! a po každém `execute()` volání uloží [`HiranVerdict`] pro audit trail.
 
+pub mod data_sources;
+pub mod executors;
+
 use blake3::Hasher;
 use poc_core::{CareProof, CareTask, Hash, HiranVerdict, NpuAttestation, ValidatorId};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+// Re-export klíčových typů z executors modulu pro pohodlné použití.
+pub use executors::{
+    CompositeExecutor, ConstitutionalAuditExecutor, ExecutorError, L1AnomalyDetectionExecutor,
+    LiquidityHealthExecutor, TaskExecutor, WarpBridgeAuditExecutor,
+};
+
+// Re-export data source types (Fáze 2).
+pub use data_sources::{DataSource, DataSourceError, DataSourceSnapshot, MockDataSource};
+#[cfg(feature = "live-data")]
+pub use data_sources::{L1RpcSource, WarpApiSource};
 
 /// Vstupní data pro care task.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -79,6 +93,7 @@ impl TaskAssigner {
 
 /// Prototypový executor care tasků — prozatím generuje dummy výstupy.
 /// V budoucnu nahradí reálnou inference / audit logikou.
+#[derive(Debug, Clone, Default)]
 pub struct DummyExecutor;
 
 impl DummyExecutor {

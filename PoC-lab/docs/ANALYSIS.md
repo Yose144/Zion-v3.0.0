@@ -175,33 +175,51 @@ Pro důkaz, že inference proběhlo na reálném NPU, máme možnosti:
   care poolu) a eskalující slashing model (`poc-economics`).
 - ✅ End-to-end network simulátor spojující všechny vrstvy, s CLI demem
   (`poc-sim`, `cargo run -p poc-sim`).
-- ✅ 43 unit/integration testů, vše deterministické a reprodukovatelné.
+- ✅ Hiran AI verdict engine — stub + live mode (`poc-hiran`).
+- ✅ 277 unit/integration testů (default), vše deterministické a reprodukovatelné.
+
+### Fáze 1 — Soft layer (PoC-lab) — ✅ HOTOVO
+- ✅ OpenCL GPU backend pro INT8 VM (AMD RX 5600 XT / ROCm, bit-exact s CPU)
+  (`poc-npu::opencl`, feature `opencl`).
+- ✅ `ProgramConfig` presets (CI ~4K MAC, BENCH ~100-200K, PRODUCTION ~2M MAC).
+- ✅ Batch inference s program reuse (`NpuBackend::infer_batch`).
+- ✅ Real care task executors — Warp, Anomaly, Liquidity, Constitutional
+  + `CompositeExecutor` router (`poc-tasks::executors`).
+- ✅ P2P multi-process simulátor — TCP transport, gossip protokol,
+  `P2pNode`, cross-validation across nodes (`poc-p2p`).
+- ✅ 325 testů se všemi features (opencl + live-data + crypto).
+
+### Fáze 2 — Hardening (PoC-lab) — ✅ HOTOVO
+- ✅ Real data sources — `DataSource` trait + `L1RpcSource` + `WarpApiSource`
+  s automatickým fallback na mock (`poc-tasks::data_sources`, feature `live-data`).
+- ✅ P2P hardening — `NodeIdentity` (Ed25519), `EncryptedTransport` (X25519 ECDH
+  + AES-256-GCM), `PeerDiscovery` s exponential backoff (`poc-p2p::crypto`,
+  feature `crypto`).
+- ✅ Adversarial economics — `AdversarialSimulator` s 6 strategiemi (Honest, Lazy,
+  ScoreGamer, BridgeSpoofer, Colluding, Intermittent), gaming detection, slashing
+  enforcement, Gini coefficient, survival rate (`poc-sim::adversarial`).
+- ✅ Persistent storage — `FileProofStore` (content-addressed bincode), `EpochHistory`
+  (chain hash, replay), `AuditTrail` (tamper-evident hash chain) (`poc-storage`).
 
 **Co v laboratoři zatím chybí / je zjednodušené:**
-- VM scale je prototypová (~1-10K MAC/hash), ne cílová ~2M MAC/hash z teorie doc.
 - `NpuAttestation` je hash-based stub, ne reálný vendor quote / TEE attestation.
-- Care task "výstup" je deterministický compute, ale sémanticky nejde o
-  reálnou anomaly detection / bridge audit logiku.
-- Sybil resistance je jen stake-based (žádná identity/hardware attestation).
-- Žádná síťová/P2P vrstva — simulace běží v jednom procesu.
+- Sybil resistance je stake-based + gaming detection, ale bez identity/hardware attestation.
+- Live data sources jsou read-only (žádná zpětná integrace do L1).
+- P2P crypto je laboratorní (bez produkční key management / PKI).
+- Žádná L1 konsensus integrace — PoC-lab zůstává izolovaný od `V3/`.
 
-### Fáze 1 — Soft layer (bez hard-forku)
+### Fáze 3 — Hybrid PoW+PoC (hard fork, produkce)
 - Side-car v `V3/` který sbírá care proofs z mempoolu / P2P.
 - Napojit `poc-registry` reputation model na reálné validátory (read-only).
 - Dashboard vizualizace care score (mohlo by navázat na Zohar tree-health API).
-- Zvětšit VM scale a přidat reálné care-task logiky (WARP bridge audit na
-  reálných datech, anomaly detection nad L1 mempoolem) — stále jen observační,
-  bez vlivu na block production.
-
-### Fáze 2 — Hybrid PoW+PoC (hard fork)
-- Portovat `poc-npu::vm::RandomNpuProgram` (nebo jeho rozšířenou verzi) do
+- Portovat `poc-npu::vm::RandomNpuProgram` do
   `V3/L1/cosmic-harmony` jako alternativu/rozšíření `algorithms_npu.rs`.
 - INT8 VM CPU reference integrovaný do L1 pro verifikaci.
 - Block production vážená care scorem (`effective_difficulty` model, viz §2 Cesta B).
 - Portovat `poc-registry` Sefirot Vow lifecycle na on-chain kontrakty
   (navazuje na již existující `SefirotVowToken`/`SefirotVowRegistry` v `V3/L2`).
 
-### Fáze 3 — Full PoC (hard fork)
+### Fáze 4 — Full PoC (hard fork)
 - Care score nahrazuje hashrate.
 - Portovat `poc-economics` reward/slashing model do L1 s plnou ekonomickou
   a game-theoretic analýzou.

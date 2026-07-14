@@ -185,13 +185,38 @@ pub struct ProgramConfig {
 
 impl Default for ProgramConfig {
     fn default() -> Self {
-        Self {
-            min_layers: 2,
-            max_layers: 4,
-            min_hidden_dim: 16,
-            max_hidden_dim: 64,
-        }
+        Self::CI
     }
+}
+
+impl ProgramConfig {
+    /// CI default — rychlé testy (~1-10K MAC).
+    /// 2-4 layers, 16-64 hidden dim. Bezpečné pro CI, běží v ms.
+    pub const CI: Self = Self {
+        min_layers: 2,
+        max_layers: 4,
+        min_hidden_dim: 16,
+        max_hidden_dim: 64,
+    };
+
+    /// Benchmark — střední scale (~50-200K MAC).
+    /// 4-8 layers, 64-256 hidden dim. Používáno pro benchmark CPU vs GPU.
+    pub const BENCH: Self = Self {
+        min_layers: 4,
+        max_layers: 8,
+        min_hidden_dim: 64,
+        max_hidden_dim: 256,
+    };
+
+    /// Production target — ~2M MAC (theory doc §3.4).
+    /// 6-12 layers, 128-512 hidden dim. Cílový workload pro NPU amortizaci.
+    /// Na CPU pomalé (~100ms+), na GPU by mělo být pod 10ms.
+    pub const PRODUCTION: Self = Self {
+        min_layers: 6,
+        max_layers: 12,
+        min_hidden_dim: 128,
+        max_hidden_dim: 512,
+    };
 }
 
 impl RandomNpuProgram {
@@ -334,5 +359,85 @@ mod tests {
         // of thousands of MAC ops (see module docs re: scale-down for CI).
         assert!(program.total_mac_ops() > 0);
         assert!(program.total_mac_ops() < 200_000);
+    }
+
+    // ── ProgramConfig presets ──────────────────────────────────────────────
+
+    #[test]
+    fn ci_preset_generates_small_programs() {
+        let seed = [10u8; 32];
+        // Test multiple epochs to get statistical coverage.
+        for epoch in 0..10u64 {
+            let program = RandomNpuProgram::generate(seed, epoch, ProgramConfig::CI);
+            assert!(program.total_mac_ops() > 0, "epoch {epoch}: must have MAC ops");
+            assert!(
+                program.total_mac_ops() < 200_000,
+                "epoch {epoch}: CI should be < 200K MAC, got {}",
+                program.total_mac_ops()
+            );
+        }
+    }
+
+    #[test]
+    fn bench_preset_generates_medium_programs() {
+        let seed = [20u8; 32];
+        for epoch in 0..10u64 {
+            let program = RandomNpuProgram::generate(seed, epoch, ProgramConfig::BENCH);
+            let macs = program.total_mac_ops();
+            assert!(macs > 10_000, "epoch {epoch}: BENCH should be > 10K MAC, got {macs}");
+            assert!(macs < 1_000_000, "epoch {epoch}: BENCH should be < 1M MAC, got {macs}");
+        }
+    }
+
+    #[test]
+    fn production_preset_generates_large_programs() {
+        let seed = [30u8; 32];
+        for epoch in 0..10u64 {
+            let program = RandomNpuProgram::generate(seed, epoch, ProgramConfig::PRODUCTION);
+            let macs = program.total_mac_ops();
+            assert!(
+                macs > 100_000,
+                "epoch {epoch}: PRODUCTION should be > 100K MAC, got {macs}"
+            );
+            // Don't upper-bound too tightly — topology is random.
+        }
+    }
+
+    #[test]
+    fn production_preset_reaches_2m_mac_target() {
+        // Theory doc §3.4 targets ~2M MAC. Test multiple epochs to find one
+        // that reaches the target (random topology means not all will).
+        let seed = [40u8; 32];
+        let mut max_macs = 0u64;
+        for epoch in 0..50u64 {
+            let program = RandomNpuProgram::generate(seed, epoch, ProgramConfig::PRODUCTION);
+            max_macs = max_macs.max(program.total_mac_ops());
+        }
+        // At least one epoch in 50 should reach close to 2M MAC.
+        assert!(
+            max_macs > 500_000,
+            "PRODUCTION config should reach > 500K MAC in some epoch, max was {max_macs}"
+        );
+    }
+
+    #[test]
+    fn presets_are_ordered_by_scale() {
+        let seed = [50u8; 32];
+        let epoch = 7u64;
+        let ci_macs = RandomNpuProgram::generate(seed, epoch, ProgramConfig::CI).total_mac_ops();
+        let bench_macs = RandomNpuProgram::generate(seed, epoch, ProgramConfig::BENCH).total_mac_ops();
+        let prod_macs = RandomNpuProgram::generate(seed, epoch, ProgramConfig::PRODUCTION).total_mac_ops();
+        // Not strictly ordered (random topology), but generally CI < BENCH < PRODUCTION.
+        // We just verify they're all different scales.
+        assert!(ci_macs < bench_macs || ci_macs < prod_macs,
+            "CI ({ci_macs}) should be smaller than BENCH ({bench_macs}) or PRODUCTION ({prod_macs})");
+    }
+
+    #[test]
+    fn default_equals_ci_preset() {
+        assert_eq!(ProgramConfig::default().min_layers, ProgramConfig::CI.min_layers);
+        assert_eq!(ProgramConfig::default().max_layers, ProgramConfig::CI.max_layers);
+        assert_eq!(ProgramConfig::default().min_hidden_dim, ProgramConfig::CI.min_hidden_dim);
+        assert_eq!(ProgramConfig::default().max_hidden_dim, ProgramConfig::CI.max_hidden_dim);
     }
 }

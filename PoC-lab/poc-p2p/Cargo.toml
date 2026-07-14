@@ -1,0 +1,42 @@
+[package]
+name = "poc-p2p"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[features]
+default = []
+## Enable P2P hardening: Ed25519 node identity, X25519+AES-GCM encrypted transport,
+## peer discovery with backoff, and reconnection logic.
+crypto = [
+    "dep:ed25519-dalek",
+    "dep:curve25519-dalek",
+    "dep:aes-gcm",
+    "dep:sha2",
+    "dep:getrandom",
+    "dep:hex",
+]
+
+[dependencies]
+poc-core     = { path = "../poc-core" }
+poc-sim      = { path = "../poc-sim" }
+poc-verifier = { path = "../poc-verifier" }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+thiserror    = { workspace = true }
+blake3       = { workspace = true }
+
+# Crypto dependencies (optional, feature-gated)
+ed25519-dalek      = { version = "2.2", optional = true, features = ["rand_core"] }
+curve25519-dalek   = { version = "4.1", optional = true, features = ["rand_core"] }
+aes-gcm            = { version = "0.10", optional = true }
+sha2               = { version = "0.10", optional = true }
+getrandom          = { version = "0.2", optional = true }
+hex                = { workspace = true, optional = true }
+
+[dev-dependencies]
+poc-core = { path = "../poc-core" }
+poc-sim  = { path = "../poc-sim" }

@@ -13,6 +13,9 @@
 
 pub mod vm;
 
+#[cfg(feature = "opencl")]
+pub mod opencl;
+
 use poc_core::{Hash, HiranVerdict, NpuAttestation, ValidationVerdict};
 use poc_hiran::{HiranClient, HiranRequest, LiveHiranClient, StubHiranClient};
 use thiserror::Error;
@@ -36,6 +39,24 @@ pub trait NpuBackend {
 
     /// Provede inference a vrátí output + attestation.
     fn infer(&self, model_hash: Hash, input: &[u8]) -> Result<(Vec<u8>, NpuAttestation), NpuError>;
+
+    /// Batch inference — zpracuje více vstupů přes stejný program.
+    ///
+    /// Default impl deleguje na `infer()` v smyčce. HW backendy (OpenCL, ONNX)
+    /// override pro paralelní zpracování — klíčové pro NPU amortizaci
+    /// (theory doc §2.2: "batch inference, tisíce vstupů paralelně").
+    ///
+    /// Vrací výsledky ve stejném pořadí jako vstupy.
+    fn infer_batch(
+        &self,
+        model_hash: Hash,
+        inputs: &[Vec<u8>],
+    ) -> Result<Vec<(Vec<u8>, NpuAttestation)>, NpuError> {
+        inputs
+            .iter()
+            .map(|input| self.infer(model_hash, input))
+            .collect()
+    }
 }
 
 /// CPU reference backend — vždy deterministický, pomalý, ale spolehlivý.
@@ -378,5 +399,61 @@ mod tests {
         let (hiran_out, _) = hiran.infer(model, input).unwrap();
         let (cpu_out, _) = cpu.infer(model, input).unwrap();
         assert_eq!(hiran_out, cpu_out, "stub must be byte-for-byte identical to CPU reference");
+    }
+
+    // ── Batch inference tests ──────────────────────────────────────────────
+
+    #[test]
+    fn cpu_batch_inference_matches_individual() {
+        let backend = CpuReferenceBackend::new();
+        let model = [60u8; 32];
+        let inputs: Vec<Vec<u8>> = (0..10).map(|i| format!("batch-input-{i}").into_bytes()).collect();
+
+        // Batch
+        let batch_results = backend.infer_batch(model, &inputs).unwrap();
+        assert_eq!(batch_results.len(), 10);
+
+        // Individual
+        for (i, input) in inputs.iter().enumerate() {
+            let (individual_out, _) = backend.infer(model, input).unwrap();
+            let (batch_out, _) = &batch_results[i];
+            assert_eq!(
+                batch_out, &individual_out,
+                "batch[{i}] must match individual inference"
+            );
+        }
+    }
+
+    #[test]
+    fn cpu_batch_inference_empty_inputs() {
+        let backend = CpuReferenceBackend::new();
+        let results = backend.infer_batch([61u8; 32], &[]).unwrap();
+        assert!(results.is_empty(), "empty batch should return empty results");
+    }
+
+    #[test]
+    fn cpu_batch_inference_deterministic() {
+        let backend = CpuReferenceBackend::new();
+        let model = [62u8; 32];
+        let inputs: Vec<Vec<u8>> = (0..5).map(|i| format!("det-batch-{i}").into_bytes()).collect();
+
+        let results1 = backend.infer_batch(model, &inputs).unwrap();
+        let results2 = backend.infer_batch(model, &inputs).unwrap();
+
+        for (i, ((o1, _), (o2, _))) in results1.iter().zip(results2.iter()).enumerate() {
+            assert_eq!(o1, o2, "batch[{i}] must be deterministic across runs");
+        }
+    }
+
+    #[test]
+    fn cpu_batch_inference_all_outputs_are_io_dim() {
+        let backend = CpuReferenceBackend::new();
+        let model = [63u8; 32];
+        let inputs: Vec<Vec<u8>> = (0..20).map(|i| format!("dim-batch-{i}").into_bytes()).collect();
+
+        let results = backend.infer_batch(model, &inputs).unwrap();
+        for (i, (out, _)) in results.iter().enumerate() {
+            assert_eq!(out.len(), crate::vm::IO_DIM, "batch[{i}] output must be IO_DIM bytes");
+        }
     }
 }
