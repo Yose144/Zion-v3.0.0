@@ -97,35 +97,53 @@ body.light-theme .warp-starfield{opacity:0.06;}
   .warp-starfield{display:none;}
 }
 .zion-panel{
+  position:relative;overflow:hidden;
   border-radius:clamp(1rem,2.5vw,1.5rem);
   border:1px solid rgba(255,255,255,0.12);
-  background:rgba(15,20,35,0.92);
-  backdrop-filter:blur(10px);
+  background:linear-gradient(145deg,rgba(15,20,35,0.88),rgba(10,14,26,0.94));
+  backdrop-filter:blur(14px) saturate(120%);
   box-shadow:0 16px 50px rgba(0,0,0,0.35);
-  transition:border-color 220ms ease,box-shadow 220ms ease;
+  transition:border-color 220ms ease,box-shadow 220ms ease,transform 220ms ease;
+}
+.zion-panel:hover{transform:translateY(-1px);}
+/* Top accent line */
+.zion-panel::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,rgba(255,215,0,0.5),rgba(147,51,234,0.25),transparent 70%);
+  border-radius:clamp(1rem,2.5vw,1.5rem) clamp(1rem,2.5vw,1.5rem) 0 0;
+  pointer-events:none;z-index:1;
+}
+/* Corner glow */
+.zion-panel::after{
+  content:"";position:absolute;top:-4rem;right:-4rem;width:10rem;height:10rem;
+  background:radial-gradient(circle,rgba(255,215,0,0.07),transparent 70%);
+  filter:blur(40px);pointer-events:none;z-index:0;opacity:0.6;
 }
 /* Accent-aware: when inside a pane-accent, panels get the pane's color */
 .pane-accent .zion-panel{
   border-color:rgba(var(--rc,255 215 0),0.15);
+  background:linear-gradient(145deg,rgba(var(--rc,255 215 0),0.06),rgba(15,20,35,0.92));
 }
 .pane-accent .zion-panel:hover{
-  border-color:rgba(var(--rc,255 215 0),0.3);
-  box-shadow:0 20px 60px rgba(0,0,0,0.4),0 0 30px rgba(var(--rc,255 215 0),0.08);
+  border-color:rgba(var(--rc,255 215 0),0.35);
+  box-shadow:0 20px 60px rgba(0,0,0,0.4),0 0 36px rgba(var(--rc,255 215 0),0.12);
 }
-/* Top accent line on panels inside themed panes */
 .pane-accent .zion-panel::before{
-  content:"";position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,rgb(var(--rc,255 215 0) / 0.6),rgb(var(--rc,255 215 0) / 0.15),transparent);
-  border-radius:clamp(1rem,2.5vw,1.5rem) clamp(1rem,2.5vw,1.5rem) 0 0;
+  background:linear-gradient(90deg,rgb(var(--rc,255 215 0) / 0.55),rgb(var(--rc,255 215 0) / 0.18),transparent 70%);
+}
+.pane-accent .zion-panel::after{
+  background:radial-gradient(circle,rgba(var(--rc,255 215 0),0.10),transparent 70%);
 }
 .zion-panel-soft{
+  position:relative;overflow:hidden;
   border-radius:1.65rem;
   border:1px solid rgba(255,255,255,0.1);
-  background:rgba(255,255,255,0.06);
-  backdrop-filter:blur(8px);
+  background:rgba(255,255,255,0.04);
+  backdrop-filter:blur(10px) saturate(120%);
 }
 .pane-accent .zion-panel-soft{
   border-color:rgba(var(--rc,255 215 0),0.12);
+  background:rgba(var(--rc,255 215 0),0.03);
 }
 .zion-panel-hover{transition:border-color 180ms ease,background-color 180ms ease,transform 180ms ease,box-shadow 180ms ease;}
 .zion-panel-hover:hover{transform:translateY(-2px);border-color:var(--zion-border-strong);background-color:var(--zion-surface-hover);box-shadow:var(--zion-shadow-panel),var(--zion-shadow-glow);}
@@ -544,7 +562,8 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 .zion-hero-card{
   position:relative;border-radius:clamp(1rem,2vw,1.5rem);
   border:1px solid rgba(var(--rc,255 215 0),0.18);
-  background:rgba(15,20,35,0.92);backdrop-filter:blur(10px);
+  background:linear-gradient(145deg,rgba(var(--rc,255 215 0),0.09),rgba(15,20,35,0.92));
+  backdrop-filter:blur(14px) saturate(120%);
   box-shadow:0 16px 50px rgba(0,0,0,0.3);
   overflow:hidden;transition:border-color 220ms,box-shadow 220ms,transform 220ms;
   padding:1.25rem;
@@ -553,9 +572,14 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   content:"";position:absolute;top:0;left:0;right:0;height:3px;
   background:linear-gradient(90deg,rgb(var(--rc,255 215 0)/0.85),rgb(var(--rc,255 215 0)/0.25),transparent);
 }
+.zion-hero-card::after{
+  content:"";position:absolute;top:-3.5rem;right:-3.5rem;width:8rem;height:8rem;
+  background:radial-gradient(circle,rgba(var(--rc,255 215 0),0.12),transparent 70%);
+  filter:blur(36px);pointer-events:none;opacity:0.7;
+}
 .zion-hero-card:hover{
-  border-color:rgba(var(--rc,255 215 0),0.38);
-  box-shadow:0 24px 70px rgba(0,0,0,0.4),0 0 35px rgba(var(--rc,255 215 0),0.12);
+  border-color:rgba(var(--rc,255 215 0),0.42);
+  box-shadow:0 24px 70px rgba(0,0,0,0.4),0 0 40px rgba(var(--rc,255 215 0),0.14);
   transform:translateY(-2px);
 }
 .zion-hero-card .zhc-icon{
@@ -567,6 +591,87 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 .zion-hero-card .zhc-title{font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#9ca3af;margin-bottom:0.35rem;}
 .zion-hero-card .zhc-value{font-size:1.65rem;font-weight:800;color:#fff;font-family:'JetBrains Mono',monospace;margin-bottom:0.25rem;}
 .zion-hero-card .zhc-sub{font-size:0.75rem;color:#9ca3af;}
+
+/* ═══ ZION Website-style components (pool page) ═══ */
+.zion-rainbow-card{
+  --rc:16,185,129;
+  position:relative;overflow:hidden;
+  border-radius:clamp(1.25rem,3vw,1.75rem);
+  border:1px solid rgba(var(--rc),0.2);
+  background:linear-gradient(135deg,rgba(var(--rc),0.10),rgba(var(--rc),0.04) 50%,rgba(15,20,35,0.92));
+  backdrop-filter:blur(16px) saturate(130%);
+  box-shadow:0 20px 60px rgba(0,0,0,0.32);
+  transition:border-color 250ms ease,box-shadow 250ms ease,transform 250ms ease;
+  padding:clamp(1.25rem,3vw,2rem);
+}
+.zion-rainbow-card::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,rgba(var(--rc),0.6),rgba(var(--rc),0.2),transparent);
+  pointer-events:none;z-index:1;
+}
+.zion-rainbow-card::after{
+  content:"";position:absolute;top:-4rem;right:-4rem;width:10rem;height:10rem;
+  background:radial-gradient(circle,rgba(var(--rc),0.08),transparent 70%);
+  filter:blur(50px);pointer-events:none;z-index:0;opacity:0.7;
+}
+.zion-rainbow-card:hover{
+  border-color:rgba(var(--rc),0.42);
+  box-shadow:0 28px 80px rgba(0,0,0,0.4),0 0 40px rgba(var(--rc),0.14);
+  transform:translateY(-2px);
+}
+.zion-rainbow-sub{
+  --rc:255,215,0;
+  position:relative;overflow:hidden;
+  border-radius:1rem;
+  border:1px solid rgba(var(--rc),0.15);
+  background:linear-gradient(135deg,rgba(var(--rc),0.06),rgba(var(--rc),0.02));
+  transition:border-color 200ms ease,box-shadow 200ms ease,transform 200ms ease;
+  padding:1rem;
+}
+.zion-rainbow-sub::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(var(--rc),0.35),transparent);
+  pointer-events:none;
+}
+.zion-rainbow-sub:hover{
+  border-color:rgba(var(--rc),0.35);
+  box-shadow:0 10px 35px rgba(var(--rc),0.1);
+  transform:translateY(-2px);
+}
+.zion-section{
+  border-radius:clamp(1.25rem,3vw,1.75rem);
+  border:1px solid rgba(255,255,255,0.1);
+  background:rgba(0,0,0,0.42);
+  padding:clamp(1.25rem,3vw,2rem);
+  backdrop-filter:blur(20px) saturate(135%);
+}
+.zion-tile{
+  border-radius:var(--zion-radius-lg);
+  border:1px solid rgba(255,255,255,0.08);
+  background:rgba(255,255,255,0.05);
+  padding:1.25rem;
+  backdrop-filter:blur(14px);
+  transition:border-color 180ms ease,background-color 180ms ease;
+}
+.zion-tile:hover{
+  border-color:rgba(255,255,255,0.16);
+  background:rgba(255,255,255,0.075);
+}
+.zion-glass{
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.08);
+  backdrop-filter:blur(18px) saturate(140%);
+}
+.zion-section-title{
+  font-size:clamp(1.4rem,3vw,2rem);font-weight:700;color:#fff;letter-spacing:-0.02em;line-height:1.15;
+}
+.zion-section-sub{
+  margin-top:0.5rem;font-size:clamp(0.85rem,1.5vw,1rem);color:#9ca3af;line-height:1.6;max-width:65ch;
+}
+.zion-subsection-grid{
+  display:grid;gap:1rem;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,16rem),1fr));
+}
 
 /* ═══ ZION Overview Layout ═══ */
 .zion-overview-grid{
