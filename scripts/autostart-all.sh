@@ -9,9 +9,10 @@ mkdir -p "$LOG_DIR"
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] ZION autostart — launching full stack..." >> "$LOG_DIR/autostart.log"
 
-# 1. Core stack (Edge-primary: local backup node + miners pointing to Edge pool)
-bash "$REPO_ROOT/scripts/launch-local-backup.sh" >> "$LOG_DIR/autostart.log" 2>&1
-sleep 5
+# 1. SSH tunnel to Edge (must be up before L2/L3 services start)
+#    Note: backup node is started by systemd zion-backup-node.service.
+bash "$REPO_ROOT/scripts/start-ssh-tunnel.sh" >> "$LOG_DIR/autostart.log" 2>&1
+sleep 3
 
 # 2. L2 services (best-effort)
 bash "$REPO_ROOT/scripts/start-bridge.sh" >> "$LOG_DIR/autostart.log" 2>&1 &
