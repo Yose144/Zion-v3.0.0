@@ -722,7 +722,12 @@ export interface LogFileInfo {
   modified: string;
 }
 
-export async function fetchLogFiles(): Promise<{ files: LogFileInfo[]; log_dir: string } | null> {
+export interface LogFilesResponse {
+  files: LogFileInfo[];
+  log_dir: string;
+}
+
+export async function fetchLogFiles(): Promise<LogFilesResponse | null> {
   return apiFetch<{ files: LogFileInfo[]; log_dir: string }>('/api/log-files');
 }
 
@@ -800,8 +805,27 @@ export interface LayerStatus {
   summary: { up: number; down: number; degraded: number; total: number };
 }
 
+export interface LayerStatusResponse {
+  layer: string;
+  ok: boolean;
+  services: Record<string, boolean>;
+  block_height?: number;
+  peers?: number;
+  hashrate?: number;
+  shares_accepted?: number;
+  pool_alive?: boolean;
+  miner_alive?: boolean;
+  node2_alive?: boolean;
+  edge_alive?: boolean;
+  error?: string;
+}
+
 export async function fetchLayerStatus(): Promise<LayerStatus | null> {
   return apiFetch<LayerStatus>('/api/layer-status');
+}
+
+export async function fetchLayerStatusLayer(layer = 'l1'): Promise<LayerStatusResponse | null> {
+  return apiFetch<LayerStatusResponse>(`/api/layer-status?layer=${layer}`);
 }
 
 // ── Security status ───────────────────────────────────────────────────
@@ -859,4 +883,34 @@ export async function fetchMempool(): Promise<MempoolResponse | null> {
 
 export async function fetchMainnetStatus(): Promise<Record<string, unknown> | null> {
   return apiFetch<Record<string, unknown>>('/api/mainnet-status');
+}
+
+// ── Topology ────────────────────────────────────────────────────────────
+
+export interface TopologyNode {
+  label: string;
+  host: string;
+  rpc_port: number;
+  alive: boolean;
+  latency_ms: number | null;
+  height: number | null;
+  tip_hash: string | null;
+  node_id: string | null;
+  p2p_bind: string | null;
+  known_peers: number;
+}
+
+export interface TopologyResponse {
+  edge_node1: TopologyNode;
+  edge_node2: TopologyNode;
+  local_backup: TopologyNode;
+  max_height: number;
+  min_height: number;
+  sync_gap: number;
+  all_in_sync: boolean;
+  ports: Record<string, boolean>;
+}
+
+export async function fetchTopology(): Promise<TopologyResponse | null> {
+  return apiFetch<TopologyResponse>('/api/topology');
 }

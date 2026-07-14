@@ -309,3 +309,314 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.22); }
+
+/* ── Live-dashboard theme overrides ─────────────────────────────────── */
+body.light-theme {
+  --zion-border-subtle: rgba(0, 0, 0, 0.12);
+  --zion-border-strong: rgba(0, 0, 0, 0.2);
+  --zion-surface: rgba(245, 247, 252, 0.92);
+  --zion-surface-soft: rgba(0, 0, 0, 0.04);
+  --zion-surface-hover: rgba(0, 0, 0, 0.07);
+  --zion-shadow-panel: 0 12px 40px rgba(0, 0, 0, 0.12);
+  --zion-shadow-glow: 0 0 30px rgba(147, 51, 234, 0.12);
+  color: #1a1a2e;
+  background:
+    radial-gradient(circle at 18% -8%, rgba(var(--color-zion-purple), 0.12), transparent 34rem),
+    radial-gradient(circle at 86% 8%, rgba(var(--color-zion-cyan), 0.10), transparent 30rem),
+    radial-gradient(circle at 50% 110%, rgba(var(--color-zion-gold), 0.08), transparent 40rem),
+    linear-gradient(180deg, rgba(240, 242, 248, 0.94), rgba(225, 228, 238, 0.94));
+}
+body.light-theme .zion-panel {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.92);
+}
+body.light-theme .zion-panel-soft { background: rgba(0, 0, 0, 0.03); border-color: rgba(0, 0, 0, 0.06); }
+body.light-theme .text-gray-400 { color: rgba(60, 60, 80, 0.85) !important; }
+body.light-theme .text-gray-500 { color: rgba(60, 60, 80, 0.7) !important; }
+body.light-theme .text-white { color: #1a1a2e !important; }
+body.light-theme .bg-black\/30 { background: rgba(0, 0, 0, 0.05) !important; }
+body.light-theme .bg-black\/40 { background: rgba(0, 0, 0, 0.04) !important; }
+body.light-theme .bg-white\/5 { background: rgba(0, 0, 0, 0.05) !important; }
+body.light-theme .bg-white\/10 { background: rgba(0, 0, 0, 0.08) !important; }
+body.light-theme .border-white\/10 { border-color: rgba(0, 0, 0, 0.1) !important; }
+body.light-theme .border-white\/5 { border-color: rgba(0, 0, 0, 0.06) !important; }
+body.light-theme .zion-shell::before {
+  background: linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 0, 0, 0.015) 1px, transparent 1px);
+}
+
+body {
+  background:
+    radial-gradient(circle at 18% -8%, rgba(var(--color-zion-purple), 0.22), transparent 34rem),
+    radial-gradient(circle at 86% 8%, rgba(var(--color-zion-cyan), 0.16), transparent 30rem),
+    radial-gradient(circle at 50% 110%, rgba(var(--color-zion-gold), 0.12), transparent 40rem),
+    linear-gradient(180deg, rgba(2, 4, 12, 0.82), rgba(0, 0, 0, 0.88));
+}
+
+@keyframes pulse-gold {
+  0%, 100% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(255, 215, 0, 0.6); }
+}
+.pulse-gold { animation: pulse-gold 3s infinite; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Header action bar ──────────────────────────────────────────────── */
+.zion-action-bar {
+  display: inline-flex;
+  gap: 0.4rem;
+  padding: 0.35rem;
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+}
+.zion-action-btn {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.65rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.75);
+  transition: all 0.18s ease;
+  cursor: pointer;
+}
+.zion-action-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+/* ── Navigation ─────────────────────────────────────────────────────── */
+.zion-nav-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.75rem;
+  border-radius: var(--zion-radius-lg);
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px) saturate(130%);
+}
+.zion-nav-floor {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.zion-nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+}
+.zion-nav-brand .logo-mark {
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgb(255 215 0), rgb(147 51 234) 50%, rgb(6 182 212));
+  color: #000;
+  font-size: 0.75rem;
+}
+.zion-nav-group {
+  position: relative;
+}
+.zion-nav-group > button {
+  padding: 0.55rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #9ca3af;
+  border-radius: 0.75rem;
+  background: transparent;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  transition: all 0.18s;
+  cursor: pointer;
+}
+.zion-nav-group:hover > button {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+.zion-nav-dropdown {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 0;
+  z-index: 50;
+  display: none;
+  min-width: 12rem;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  border-radius: var(--zion-radius-md);
+  background: rgba(8, 10, 18, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+.zion-nav-group:hover .zion-nav-dropdown { display: flex; }
+.zion-nav-dropdown button {
+  width: 100%;
+  justify-content: flex-start;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.6rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+  background: transparent;
+  border: 1px solid transparent;
+}
+.zion-nav-dropdown button:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+/* ── Tabs ───────────────────────────────────────────────────────────── */
+.tab-btn {
+  position: relative;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #9ca3af;
+  border-radius: 0.75rem;
+  transition: all 0.18s;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.tab-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+.tab-active {
+  color: #fff !important;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.10), rgba(147, 51, 234, 0.10)) !important;
+  border-color: rgba(255, 215, 0, 0.35) !important;
+  box-shadow: 0 4px 20px rgba(147, 51, 234, 0.20);
+}
+
+/* ── Quick links ─────────────────────────────────────────────────────── */
+.zion-quick-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.18s;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.zion-quick-link:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
+  transform: translateY(-1px);
+}
+.zql-active {
+  color: rgb(var(--color-zion-gold));
+  background: rgba(255, 215, 0, 0.08);
+  border-color: rgba(255, 215, 0, 0.35);
+  box-shadow: 0 0 14px rgba(255, 215, 0, 0.12);
+}
+
+/* ── Hero grid ──────────────────────────────────────────────────────── */
+.zion-hero-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+@media (max-width: 1024px) { .zion-hero-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .zion-hero-grid { grid-template-columns: minmax(0, 1fr); } }
+
+.zion-hero-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--zion-radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(145deg, rgba(15, 20, 35, 0.88), rgba(10, 14, 26, 0.94));
+  padding: 1.25rem;
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.35);
+  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+}
+body.light-theme .zion-hero-card {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+.zion-hero-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.12;
+  background: radial-gradient(circle at 80% 20%, rgb(var(--rc, 255 215 0)), transparent 60%);
+}
+.zion-hero-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(var(--rc, 255 215 0), 0.45);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), 0 0 36px rgba(var(--rc, 255 215 0), 0.12);
+}
+.zhc-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+.zhc-title { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255, 255, 255, 0.55); }
+body.light-theme .zhc-title { color: rgba(60, 60, 80, 0.75); }
+.zhc-value { font-size: 1.75rem; font-weight: 800; margin-top: 0.25rem; color: rgb(var(--rc, 255 215 0)); font-variant-numeric: tabular-nums; }
+.zhc-sub { font-size: 0.75rem; color: rgba(255, 255, 255, 0.45); margin-top: 0.15rem; }
+body.light-theme .zhc-sub { color: rgba(60, 60, 80, 0.65); }
+
+/* ── Main dashboard area ────────────────────────────────────────────── */
+.dashboard-main {
+  min-height: 0;
+}
+
+/* ── Pane header ──────────────────────────────────────────────────────── */
+.zion-pane-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.zion-pane-header .pane-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--rc, 255 215 0), 0.12);
+  color: rgb(var(--rc, 255 215 0));
+  font-size: 1.1rem;
+}
+.zion-pane-header h2 { font-size: 1rem; font-weight: 800; }
+.zion-pane-header .pane-sub { font-size: 0.75rem; color: rgba(255, 255, 255, 0.45); }
+body.light-theme .zion-pane-header .pane-sub { color: rgba(60, 60, 80, 0.65); }
+
+/* ── WARP starfield ─────────────────────────────────────────────────── */
+.warp-starfield {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -2;
+  pointer-events: none;
+  will-change: transform;
+  background: transparent;
+}
+body.light-theme .warp-starfield { opacity: 0.06; }
+@media (prefers-reduced-motion: reduce) { .warp-starfield { display: none; } }
