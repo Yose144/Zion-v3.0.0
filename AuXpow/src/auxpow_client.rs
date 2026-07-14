@@ -214,6 +214,10 @@ pub struct AuxPowClient {
     job_header_prefix: Arc<Mutex<HashMap<String, String>>>,
     /// ZcashStratum (VRSC): latest job_id from upstream (for stale share detection).
     latest_job_id: Arc<Mutex<Option<String>>>,
+    /// GPU backend for PoUW mining (Metal on Apple Silicon).
+    /// None = CPU-only mining.
+    #[cfg(feature = "gpu-metal")]
+    gpu_backend: Arc<Mutex<Option<crate::gpu_metal::MetalBackend>>>,
 }
 
 impl AuxPowClient {
@@ -242,7 +246,31 @@ impl AuxPowClient {
             job_ntime: Arc::new(Mutex::new(HashMap::new())),
             job_header_prefix: Arc::new(Mutex::new(HashMap::new())),
             latest_job_id: Arc::new(Mutex::new(None)),
+            #[cfg(feature = "gpu-metal")]
+            gpu_backend: Arc::new(Mutex::new(None)),
         }
+    }
+
+    /// Enable GPU mining (Metal on Apple Silicon).
+    /// Call this before connect() for Pearl PoUW GPU acceleration.
+    #[cfg(feature = "gpu-metal")]
+    pub async fn with_gpu(self) -> Self {
+        match crate::gpu_metal::MetalBackend::new(256) {
+            Ok(backend) => {
+                println!("auxpow: GPU backend enabled — {}", backend.device_name_pub());
+                *self.gpu_backend.lock().await = Some(backend);
+            }
+            Err(e) => {
+                eprintln!("auxpow: GPU backend unavailable, falling back to CPU: {e}");
+            }
+        }
+        self
+    }
+
+    /// Check if GPU backend is available.
+    #[cfg(feature = "gpu-metal")]
+    pub async fn has_gpu(&self) -> bool {
+        self.gpu_backend.lock().await.is_some()
     }
 
     /// Connect to the external pool and perform subscribe + authorize.
@@ -2077,11 +2105,45 @@ impl AuxPowClient {
                 .and_then(|s| s.parse::<u64>().ok())
                 .unwrap_or(1000);
 
+            // Use GPU if available, otherwise CPU
+            #[cfg(feature = "gpu-metal")]
+            let use_gpu = {
+                let gpu = self.gpu_backend.lock().await;
+                gpu.is_some()
+            };
+
+            #[cfg(not(feature = "gpu-metal"))]
+            let use_gpu = false;
+
             println!(
-                "auxpow: PRL mining — m={} n={} k={} rank={} attempts={} header_len={}",
-                m, n, k, rank, max_attempts, header_bytes.len()
+                "auxpow: PRL mining — m={} n={} k={} rank={} attempts={} header_len={} mode={}",
+                m, n, k, rank, max_attempts, header_bytes.len(),
+                if use_gpu { "GPU" } else { "CPU" }
             );
 
+            #[cfg(feature = "gpu-metal")]
+            let mined = if use_gpu {
+                let mut gpu = self.gpu_backend.lock().await;
+                let gpu_backend = gpu.as_mut().unwrap();
+                crate::pearl_pouw::mine_gpu(
+                    m, n, k, rank,
+                    &header,
+                    &config,
+                    &difficulty_bound,
+                    max_attempts,
+                    gpu_backend,
+                )
+            } else {
+                crate::pearl_pouw::mine(
+                    m, n, k, rank,
+                    &header,
+                    &config,
+                    &difficulty_bound,
+                    max_attempts,
+                )
+            };
+
+            #[cfg(not(feature = "gpu-metal"))]
             let mined = crate::pearl_pouw::mine(
                 m, n, k, rank,
                 &header,

@@ -65,9 +65,36 @@ async fn main() -> anyhow::Result<()> {
     println!("worker:    {}", profile.worker_name);
     println!("mine_secs: {}", mine_secs);
     println!("submit:    {}", submit_enabled);
+
+    // Check if GPU is enabled via env var
+    #[cfg(feature = "gpu-metal")]
+    let use_gpu = std::env::var("AUXPOW_E2E_GPU")
+        .map(|v| v == "1" || v == "true")
+        .unwrap_or(false);
+    #[cfg(not(feature = "gpu-metal"))]
+    let use_gpu = false;
+
+    #[cfg(feature = "gpu-metal")]
+    {
+        if use_gpu {
+            println!("gpu:       enabled (Metal)");
+        } else {
+            println!("gpu:       disabled (set AUXPOW_E2E_GPU=1 to enable)");
+        }
+    }
     println!();
 
-    let client = Arc::new(AuxPowClient::new(profile));
+    // Create client — with GPU if enabled
+    #[cfg(feature = "gpu-metal")]
+    let client_inner = if use_gpu {
+        AuxPowClient::new(profile).with_gpu().await
+    } else {
+        AuxPowClient::new(profile)
+    };
+    #[cfg(not(feature = "gpu-metal"))]
+    let client_inner = AuxPowClient::new(profile);
+
+    let client = Arc::new(client_inner);
 
     // 1) Connect + subscribe + authorize (poll loop is spawned internally)
     println!("[1/4] Connecting...");
