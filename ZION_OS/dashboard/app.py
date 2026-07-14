@@ -4256,11 +4256,13 @@ def get_pool_miners() -> dict:
             miners_tracked = int(float(line.split()[-1]))
         elif line.startswith("zion_pool_miner_hashrate_hps{"):
             # Parse labels: miner_id="...",worker_name="..."
+            # Use composite key "miner_id/worker_name" since multiple workers
+            # can share the same miner_id (e.g. local-miner).
             m_id = re.search(r'miner_id="([^"]+)"', line)
             w_name = re.search(r'worker_name="([^"]+)"', line)
             val = float(line.split()[-1])
             if m_id and w_name:
-                key = m_id.group(1)
+                key = f"{m_id.group(1)}/{w_name.group(1)}"
                 miners[key] = {
                     "miner_id": m_id.group(1),
                     "worker_name": w_name.group(1),
@@ -4275,46 +4277,57 @@ def get_pool_miners() -> dict:
                 total_hashrate_hps += val
         elif line.startswith("zion_pool_miner_valid_shares_total{"):
             m_id = re.search(r'miner_id="([^"]+)"', line)
+            w_name = re.search(r'worker_name="([^"]+)"', line)
             val = int(float(line.split()[-1]))
-            if m_id and m_id.group(1) in miners:
-                miners[m_id.group(1)]["valid_shares"] = val
+            if m_id:
+                key = f"{m_id.group(1)}/{w_name.group(1)}" if w_name else m_id.group(1)
+                if key in miners:
+                    miners[key]["valid_shares"] = val
         elif line.startswith("zion_pool_miner_invalid_shares_total{"):
             m_id = re.search(r'miner_id="([^"]+)"', line)
+            w_name = re.search(r'worker_name="([^"]+)"', line)
             val = int(float(line.split()[-1]))
-            if m_id and m_id.group(1) in miners:
-                miners[m_id.group(1)]["invalid_shares"] = val
+            if m_id:
+                key = f"{m_id.group(1)}/{w_name.group(1)}" if w_name else m_id.group(1)
+                if key in miners:
+                    miners[key]["invalid_shares"] = val
         elif line.startswith("zion_pool_miner_paid_total_atomic{"):
             m_id = re.search(r'miner_id="([^"]+)"', line)
+            w_name = re.search(r'worker_name="([^"]+)"', line)
             val = int(line.split()[-1])
-            if m_id and m_id.group(1) in miners:
-                miners[m_id.group(1)]["paid_total_atomic"] = val
-                miners[m_id.group(1)]["paid_total"] = flowers_to_zion(val)  # convert atomic flowers to ZION
+            if m_id:
+                key = f"{m_id.group(1)}/{w_name.group(1)}" if w_name else m_id.group(1)
+                if key in miners:
+                    miners[key]["paid_total_atomic"] = val
+                    miners[key]["paid_total"] = flowers_to_zion(val)
         elif line.startswith("zion_pool_miner_last_seen_seconds{"):
             m_id = re.search(r'miner_id="([^"]+)"', line)
+            w_name = re.search(r'worker_name="([^"]+)"', line)
             val = int(float(line.split()[-1]))
-            if m_id and m_id.group(1) in miners:
-                miners[m_id.group(1)]["last_seen"] = val
+            if m_id:
+                key = f"{m_id.group(1)}/{w_name.group(1)}" if w_name else m_id.group(1)
+                if key in miners:
+                    miners[key]["last_seen"] = val
 
     miner_list = list(miners.values())
 
     # Merge with the sanitized payout view so UI consumers don't inherit stale
     # per-miner counters from older pool binaries.
+    # Use composite key "address/worker_name" for matching.
     try:
         payout_miners = fetch_pool_miners()
         payout_by_key = {}
         for payout_miner in payout_miners:
-            for key in (
-                payout_miner.get("worker_name"),
-                payout_miner.get("address"),
-                payout_miner.get("miner_id"),
-            ):
-                if key:
-                    payout_by_key[key] = payout_miner
+            addr = payout_miner.get("address") or payout_miner.get("miner_id") or ""
+            worker = payout_miner.get("worker_name") or ""
+            composite = f"{addr}/{worker}" if worker else addr
+            if composite:
+                payout_by_key[composite] = payout_miner
         for miner in miner_list:
-            payout_miner = (
-                payout_by_key.get(miner.get("worker_name"))
-                or payout_by_key.get(miner.get("miner_id"))
-            )
+            m_addr = miner.get("miner_id") or ""
+            m_worker = miner.get("worker_name") or ""
+            m_composite = f"{m_addr}/{m_worker}" if m_worker else m_addr
+            payout_miner = payout_by_key.get(m_composite)
             if not payout_miner:
                 continue
             payout_atomic = int(payout_miner.get("paid_total_atomic") or 0)
@@ -4491,10 +4504,21 @@ def _fetch_pplns_state() -> dict:
 
 
 def _get_pool_active_miner_map() -> dict:
-    """Return a map miner_id -> active miner data from the pool /miners endpoint."""
+    """Return a map composite_key -> active miner data from the pool /miners endpoint.
+
+    Uses composite key "address/worker_name" to match PPLNS state keys, since
+    multiple workers can share the same miner_id (e.g. local-miner).
+    """
     try:
         miners = fetch_pool_miners()
-        return {m.get("address") or m.get("miner_id"): m for m in miners if m.get("address") or m.get("miner_id")}
+        result = {}
+        for m in miners:
+            addr = m.get("address") or m.get("miner_id") or ""
+            worker = m.get("worker_name") or ""
+            key = f"{addr}/{worker}" if worker else addr
+            if key:
+                result[key] = m
+        return result
     except Exception:
         return {}
 
@@ -4558,14 +4582,20 @@ def get_pool_registered_miners() -> dict:
         except Exception:
             pass
 
-    # 3. Build per-miner records, preserving individual miner IDs even if they share an address
+    # 3. Build per-miner records, preserving individual miner IDs even if they share an address.
+    # PPLNS state keys are composite "miner_id/worker_name"; split for display.
     miners = []
     pplns_stats = (stats.get("pplns") or {}) if isinstance(stats, dict) else {}
     total_paid_flowers = pplns_stats.get("total_paid_flowers", 0)
-    for miner_id, payout_address in addresses.items():
-        active = active_map.get(miner_id)
+    for pplns_key, payout_address in addresses.items():
+        active = active_map.get(pplns_key)
         on_chain = balance_map.get(payout_address, 0.0)
-        pending_atomic = int(unpaid.get(miner_id, 0)) if isinstance(unpaid, dict) else 0
+        pending_atomic = int(unpaid.get(pplns_key, 0)) if isinstance(unpaid, dict) else 0
+        # Split composite key for display
+        if "/" in pplns_key:
+            display_miner_id, display_worker = pplns_key.split("/", 1)
+        else:
+            display_miner_id, display_worker = pplns_key, ""
         # If active, use live telemetry; otherwise zero hashrate/shares
         hashrate = active.get("hashrate") or active.get("hashrate_hps") or 0.0 if active else 0.0
         hashrate_1h = active.get("hashrate_1h") or 0.0 if active else 0.0
@@ -4575,10 +4605,11 @@ def get_pool_registered_miners() -> dict:
         blocks_found = active.get("blocks_found", 0) if active else 0
         last_seen = active.get("last_seen", 0) if active else 0
         last_share = active.get("last_share", 0) if active else 0
-        worker_name = active.get("worker_name", "") if active else ""
+        worker_name = display_worker or (active.get("worker_name", "") if active else "")
         m = {
-            "miner_id": miner_id,
+            "miner_id": display_miner_id,
             "worker_name": worker_name,
+            "pplns_key": pplns_key,
             "payout_address": payout_address,
             "hashrate_hps": hashrate,
             "hashrate_1h": hashrate_1h,
@@ -5029,6 +5060,7 @@ def get_revenue_dashboard() -> dict:
         ("XMR",  "randomx",     "gulf.moneroocean.stream:10001"),
         ("VRSC", "verushash",   "eu.luckpool.net:3956"),
         ("PRL",  "pearlhash",   "us2.alphapool.tech:5566"),
+        ("EPIC", "progpow",     "de.epicmine.io:3334"),
     ]
     current_coin = auxpow.get("current_coin", "")
     coin_revenue = []
@@ -6062,21 +6094,27 @@ def fetch_pool_miners() -> list:
             miners = data.get("miners", [])
     except Exception:
         pass
-    # Enrich with paid_total from Prometheus metrics
+    # Enrich with paid_total from Prometheus metrics.
+    # Use composite key "miner_id/worker_name" since multiple workers can share
+    # the same miner_id (e.g. local-miner) but have separate payout addresses.
     paid_map = {}
     try:
         import urllib.request
         with urllib.request.urlopen(f"http://{host}:8455/metrics", timeout=5) as r:
             for line in r.read().decode("utf-8", errors="ignore").splitlines():
                 if line.startswith("zion_pool_miner_paid_total_atomic{"):
-                    m = re.search(r'miner_id="([^"]+)"', line)
-                    if m:
-                        paid_map[m.group(1)] = int(line.split()[-1])
+                    m_id = re.search(r'miner_id="([^"]+)"', line)
+                    w_name = re.search(r'worker_name="([^"]+)"', line)
+                    if m_id:
+                        key = f"{m_id.group(1)}/{w_name.group(1)}" if w_name else m_id.group(1)
+                        paid_map[key] = int(line.split()[-1])
     except Exception:
         pass
     for m in miners:
         addr = m.get("address") or m.get("miner_id") or ""
-        paid_total_atomic = paid_map.get(addr, 0)
+        worker = m.get("worker_name") or ""
+        composite = f"{addr}/{worker}" if worker else addr
+        paid_total_atomic = paid_map.get(composite, 0)
         m["paid_total_atomic"] = paid_total_atomic
         m["paid_total"] = flowers_to_zion(paid_total_atomic)
     return miners

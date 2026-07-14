@@ -2199,13 +2199,18 @@ async function updateConnectedMiners(){
 
     const payoutByKey = new Map();
     payoutMiners.forEach(m => {
-      [m.worker_name, m.address, m.miner_id].forEach(key => {
-        if(key) payoutByKey.set(key, m);
-      });
+      const addr = m.address || m.miner_id || '';
+      const worker = m.worker_name || '';
+      const composite = worker ? `${addr}/${worker}` : addr;
+      if(composite) payoutByKey.set(composite, m);
+      if(worker) payoutByKey.set(worker, m); // fallback by worker_name (unique per worker)
     });
 
     tbody.innerHTML = sorted.map(m => {
-      const payoutMiner = payoutByKey.get(m.worker_name) || payoutByKey.get(m.miner_id) || null;
+      const mAddr = m.miner_id || '';
+      const mWorker = m.worker_name || '';
+      const mComposite = mWorker ? `${mAddr}/${mWorker}` : mAddr;
+      const payoutMiner = payoutByKey.get(mComposite) || payoutByKey.get(mWorker) || null;
       const isActive = m.hashrate_hps > 0;
       const nowSec = Math.floor(Date.now() / 1000);
       const lastSeenAgo = (m.last_seen > 0) ? (nowSec - m.last_seen) : null;
