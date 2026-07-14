@@ -6,6 +6,17 @@
   "permissions": [
     "core:default",
     "shell:allow-open",
-    "shell:allow-execute"
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        { "name": "bash", "cmd": "bash", "args": true },
+        { "name": "ls", "cmd": "ls", "args": true },
+        { "name": "tail", "cmd": "tail", "args": true },
+        { "name": "find", "cmd": "find", "args": true },
+        { "name": "stat", "cmd": "stat", "args": true },
+        { "name": "du", "cmd": "du", "args": true },
+        { "name": "systemctl", "cmd": "systemctl", "args": true }
+      ]
+    }
   ]
 }
