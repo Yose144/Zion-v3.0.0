@@ -9,6 +9,10 @@ mkdir -p "$LOG_DIR"
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] ZION autostart — launching full stack..." >> "$LOG_DIR/autostart.log"
 
+# 0. Stop any existing ZION processes first to avoid duplicates
+bash "$REPO_ROOT/scripts/stop-stack.sh" >> "$LOG_DIR/autostart.log" 2>&1 || true
+sleep 1
+
 # 1. SSH tunnel to Edge (must be up before L2/L3 services start)
 #    Note: backup node is started by systemd zion-backup-node.service.
 bash "$REPO_ROOT/scripts/start-ssh-tunnel.sh" >> "$LOG_DIR/autostart.log" 2>&1
