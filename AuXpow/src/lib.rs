@@ -29,6 +29,7 @@ pub use native_ffi::{generate_ethash_dag, generate_kawpow_dag, EthashDag, Kawpow
 pub mod miner_harness;
 pub mod multiplexer;
 pub mod parent_chains;
+pub mod pearl_pouw;
 pub mod share_forwarder;
 pub mod true_auxpow;
 pub mod types;
