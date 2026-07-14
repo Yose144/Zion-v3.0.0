@@ -25,13 +25,16 @@ npm install
 ## Development
 
 ```bash
+# Copy the example env file and fill in the Basic Auth credentials
+cp .env.local.example .env.local
+
 # Terminal 1: start Python dashboard backend
 cd ../dashboard
 python app.py
 
 # Terminal 2: start Tauri dev mode
 cd ZION_OS/desktop
-cargo tauri dev
+npm run tauri:dev
 ```
 
 ## Build

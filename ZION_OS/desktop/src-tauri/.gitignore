@@ -1,0 +1,3 @@
+# Local Cargo home used by Tauri build tooling; do not commit
+.cargo-home/
+/target/

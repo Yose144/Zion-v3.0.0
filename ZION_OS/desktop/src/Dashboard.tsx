@@ -5,12 +5,8 @@ import {
   CheckCircle,
   Globe,
   History,
-  LayoutGrid,
   ListChecks,
-  Network,
-  Pickaxe,
   Settings,
-  Terminal,
   TrendingUp,
   Wallet as WalletIcon,
   XCircle,
@@ -39,6 +35,7 @@ import LayerStatusPanel from './components/LayerStatusPanel';
 import BackupPanel from './components/BackupPanel';
 import MempoolPanel from './components/MempoolPanel';
 import ControlsPanel from './components/ControlsPanel';
+import Dock from './components/Dock';
 
 import {
   fetchFullStatus,
@@ -150,16 +147,8 @@ export default function Dashboard() {
     if (!res?.ok) throw new Error(res?.error || 'Action failed');
   };
 
-  const tabs = [
-    { id: 'overview', label: 'Overview', icon: LayoutGrid },
-    { id: 'mining', label: 'Mining', icon: Pickaxe },
-    { id: 'network', label: 'Network', icon: Network },
-    { id: 'ecosystem', label: 'Ecosystem', icon: Globe },
-    { id: 'operations', label: 'Operations', icon: Terminal },
-  ] as const;
-
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col">
       <TopBar
         status={status}
         autoRefresh={autoRefresh}
@@ -168,35 +157,15 @@ export default function Dashboard() {
         lastError={lastError}
       />
 
-      <main className="max-w-[1600px] mx-auto px-4 py-5 space-y-5">
+      <main className="max-w-[1600px] w-full mx-auto px-4 py-4 flex-1 min-h-0">
         {lastError && (
           <div className="px-3 py-2 rounded bg-amber-900/30 border border-amber-500/20 text-amber-200 text-xs">
             {lastError} — Spust Python dashboard: <code>python ZION_OS/dashboard/app.py</code>
           </div>
         )}
 
-        <div className="flex flex-wrap gap-2 border-b border-white/10 pb-3">
-          {tabs.map((t) => {
-            const Icon = t.icon;
-            const active = activeTab === t.id;
-            return (
-              <button
-                key={t.id}
-                onClick={() => setActiveTab(t.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition border ${
-                  active
-                    ? 'bg-zion-purple/20 text-zion-purple border-zion-purple/40'
-                    : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                <Icon size={14} />
-                {t.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {activeTab === 'overview' && (
+        <div className="zion-shell space-y-5">
+          {activeTab === 'overview' && (
           <div className="space-y-5">
             <ReadinessBar readiness={readiness} />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -279,9 +248,12 @@ export default function Dashboard() {
             <LogViewer />
           </div>
         )}
+        </div>
       </main>
 
-      <footer className="border-t border-white/10 mt-6 py-3">
+      <Dock active={activeTab} onChange={setActiveTab} />
+
+      <footer className="border-t border-white/10 py-2 mt-auto">
         <div className="max-w-[1600px] mx-auto px-4 flex items-center justify-between text-[10px] text-gray-500">
           <span>ZION V3 Dashboard v3.1.0</span>
           <span className="font-mono">{status ? new Date(status.timestamp).toLocaleTimeString() : '—'}</span>
