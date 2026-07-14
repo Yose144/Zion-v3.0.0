@@ -1,6 +1,6 @@
 # ZION V3 — Canonical Status (Mainnet Beta)
 
-> **Datum poslední aktualizace:** 2026-07-13
+> **Datum poslední aktualizace:** 2026-07-15
 > **Protokol:** `zion-v3-node/3.0.5`
 > **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
 > **Status:** Mainnet Beta — oficiální public launch **2026-12-31**
@@ -97,10 +97,10 @@
 | zion-miner | 59 | ✅ |
 | zion-native-ffi | 13/28 | ✅ |
 | zion-oasis | 124 | ✅ |
-| AuXpow | 105+ (GPU: 16) | ✅ |
+| AuXpow | 111+ (GPU: 16, ProgPow: 6) | ✅ |
 | ZionDex Router | 28 | ✅ |
 | ZionDex Contracts | 7 (Solidity) | ✅ |
-| **Total** | **~2,060+** | **0 failures** |
+| **Total** | **~2,066+** | **0 failures** |
 
 ---
 
@@ -177,7 +177,7 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | R7 | B2b VRSC revenue (ZcashStratum, LuckPool) | ✅ DONE | `bb7d5407b` |
 | R8 | True AuxPow consensus | 🔮 Future | — |
 
-### Supported External Coins (12 total)
+### Supported External Coins (13 total)
 
 | Coin | Algorithm | Protocol | E2E Status |
 |------|-----------|----------|------------|
@@ -193,8 +193,9 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | XMR | randomx | Stratum | connect/auth/notify ✅, submit ⚠️ (needs RandomX rig miner) |
 | FLUX | zelhash | Stratum | TODO |
 | VRSC | verushash v2.2 | ZcashStratum | protocol ✅ (R7), live E2E TODO (LuckPool eu.luckpool.net:3956) |
+| EPIC | progpow | Stratum (custom HTTP) | kernel ✅, CPU hasher ✅, E2E TODO |
 
-### AuXpow GPU Backend (2026-07-14)
+### AuXpow GPU Backend (2026-07-15)
 
 **Crate:** `zion-auxpow` — cross-platform GPU mining (OpenCL + Metal + CUDA)
 
@@ -207,10 +208,12 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | ethash | ETC | — | — (needs DAG) | ⚠️ kernel only |
 | kawpow | RVN | — | — (needs DAG) | ⚠️ kernel only |
 | zelhash | FLUX | 495M | **19.5B** | ⚠️ kernel only |
+| progpow | EPIC | — | — (needs DAG) | ❌ TODO |
 
 **Features:** `gpu-opencl`, `gpu-metal`, `gpu-cuda`, `gpu-all`
 **Benchmark:** `cargo run --example gpu_benchmark -p zion-auxpow --features gpu-metal`
 **Auto-detect:** CUDA > Metal > OpenCL (via `GpuBackend::detect_backend()`)
+**ProgPow (EPIC):** CPU hasher (keccak_f800 + KISS99 + FNV1a) ✅, OpenCL + Metal kernel ✅, 6 unit testů ✅
 
 ### Stream Profit Env Vars
 ```bash

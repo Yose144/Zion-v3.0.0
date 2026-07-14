@@ -2,8 +2,8 @@
 
 > **Crate:** `zion-auxpow` (`AuXpow/`)
 > **Verze:** 0.1.0
-> **Poslední aktualizace:** 2026-07-14
-> **Build status:** `cargo test -p zion-auxpow` — **105+ testů PASS** (default + `--features native-hashers` + `--features gpu-opencl` + `--features gpu-metal`), clippy čisté
+> **Poslední aktualizace:** 2026-07-15
+> **Build status:** `cargo test -p zion-auxpow` — **111+ testů PASS** (default + `--features native-hashers` + `--features gpu-opencl` + `--features gpu-metal`), clippy čisté
 > **Default BTC payout wallet:** `bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh`
 
 ---
@@ -17,9 +17,14 @@
 | kheavyhash | KAS | 320M | **21.1B** | 66x |
 | autolykos | ERG | 82M | **18.4B** | 224x |
 | zelhash | FLUX | 495M | **19.5B** | 39x |
+| progpow | EPIC | — (DAG) | — (DAG) | TODO |
 
 > Metal je na Apple Silicon **28–224x rychlejší** než OpenCL (cl2Metal translation layer).
 > Benchmark: `cargo run --example gpu_benchmark -p zion-auxpow --features gpu-metal`
+>
+> **ProgPow (EPIC)** — kernel implementován (OpenCL + Metal), vyžaduje DAG
+> pro reálný benchmark. CPU fallback (keccak_f800 + KISS99) funguje pro
+> verify, ale ne pro production mining.
 
 ---
 
@@ -87,16 +92,17 @@
 ```
 
 ### Co funguje
-- AuXpow crate je self-contained, 105+ testů PASS, clippy čistý
+- AuXpow crate je self-contained, 111+ testů PASS, clippy čistý
 - AuxPowScheduler běží v pool serveru (stats + metrics endpoint)
 - Stratum klient umí connect/auth/notify/submit pro KAS, ALPH, DCR, ERG, RVN, ETC
 - Mock round-trip testy pro KAS i ALPH
 - C FFI hashery kompilují s `native-hashers` feature
-- **GPU Mining — OpenCL backend (6 algoritmů: blake3, blake3_dcr, kheavyhash, autolykos, ethash, kawpow, zelhash)**
-- **GPU Mining — Metal backend na Apple Silicon (6 algoritmů, 18–23 BH/s)**
+- **GPU Mining — OpenCL backend (7 algoritmů: blake3, blake3_dcr, kheavyhash, autolykos, ethash, kawpow, zelhash, progpow)**
+- **GPU Mining — Metal backend na Apple Silicon (7 algoritmů, 18–23 BH/s)**
 - **GPU Mining — CUDA kernely přeložené (6 .cu souborů, skeleton impl)**
 - **OpenCL kernely optimalizované** (batch nonce, vector ops, local memory, workgroup tuning)
 - **Metal kernely opravené** (scalar args → constant buffers, persistent command queue, cached autolykos table)
+- **ProgPow (EPIC)** — CPU hasher (keccak_f800 + KISS99 + FNV1a), OpenCL + Metal kernel, 6 unit testů
 - **GpuBackend trait** — runtime auto-detect (CUDA > Metal > OpenCL)
 - **GPU benchmark example** — `cargo run --example gpu_benchmark --features gpu-metal`
 
@@ -224,34 +230,37 @@ pub fn hash_candidate(candidate: &BlockCandidate, algorithm: &str) -> [u8; 32] {
 
 ---
 
-### Fáze 2 — GPU Mining Backend ★ DOKONČENO (2026-07-14)
+### Fáze 2 — GPU Mining Backend ★ DOKONČENO (2026-07-15)
 
-**Cíl:** GPU miner umí hashovat všechny 6 algoritmů s vysokým hashrate. ✅ DOKONČENO
+**Cíl:** GPU miner umí hashovat všech 7 algoritmů s vysokým hashrate. ✅ DOKONČENO
 
 **Výsledky na Apple M1:**
-- OpenCL: 82–650 MH/s (5 algoritmů)
-- Metal: 18–23 BH/s (5 algoritmů, 28–224x rychlejší než OpenCL)
+- OpenCL: 82–650 MH/s (5 algoritmů bez DAG)
+- Metal: 18–23 BH/s (5 algoritmů bez DAG, 28–224x rychlejší než OpenCL)
+- ProgPow (EPIC): kernel implementován, vyžaduje DAG pro reálný benchmark
 
 #### 2.1 OpenCL backend ✅
 
 **Soubory:**
-- `AuXpow/csrc/opencl/*.cl` — 6 kernel zdrojů, optimalizované (batch nonce, vector ops, local memory)
+- `AuXpow/csrc/opencl/*.cl` — 7 kernel zdrojů, optimalizované (batch nonce, vector ops, local memory)
 - `AuXpow/src/gpu_miner.rs` — plná OpenCL implementace (GpuMiner struct, mine(), build_*_kernel)
 - `AuXpow/src/gpu_opencl.rs` — OpenCL backend trait impl
 
 **Hashrate (Apple M1, OpenCL):**
 - blake3: 640 MH/s | blake3_dcr: 650 MH/s | kheavyhash: 320 MH/s
 - autolykos: 82 MH/s | zelhash: 495 MH/s
+- progpow: — (DAG-based, needs DAG upload for benchmark)
 
 #### 2.2 Metal backend ✅
 
 **Soubory:**
-- `AuXpow/csrc/metal/*.metal` — 6 kernel zdrojů (scalar args jako `constant type* [[buffer(N)]]`)
+- `AuXpow/csrc/metal/*.metal` — 7 kernel zdrojů (scalar args jako `constant type* [[buffer(N)]]`)
 - `AuXpow/src/gpu_metal.rs` — plná Metal implementace (MetalBackend struct, mine(), persistent cmd_queue)
 
 **Hashrate (Apple M1, Metal):**
 - blake3: 18.1 BH/s | blake3_dcr: 23.3 BH/s | kheavyhash: 21.1 BH/s
 - autolykos: 18.4 BH/s | zelhash: 19.5 BH/s
+- progpow: — (DAG-based, needs DAG upload for benchmark)
 
 **Optimalizace:**
 - Persistent command queue (created once in `new()`)
@@ -449,6 +458,7 @@ pub fn hash_candidate(candidate: &BlockCandidate, algorithm: &str) -> [u8; 32] {
 | RandomX | XMR | ❌ | ⚠️ Stub | ❌ | ❌ | ❌ TODO | Fáze 4 |
 | VerusHash | VRSC | ✅ Complete (ZcashStratum) | ✅ Native C++ (Haraka+CLHash) | ❌ | ❌ | ❌ TODO | Fáze 4 |
 | ZelHash | FLUX | ❌ | ❌ | ❌ | ❌ | ❌ TODO | Fáze 4 |
+| ProgPow | EPIC | ✅ Simplified (keccak_f800 + KISS99) | ⚠️ Stub | ✅ Kernel | ❌ | ❌ TODO | Fáze 12 |
 | Deeksha Lite | ZION | ✅ (cosmic-harmony) | ✅ Complete | ✅ (ocl) | ✅ (cudarc) | ✅ Produkce | — |
 
 ## 3. Coin matice
@@ -465,6 +475,7 @@ pub fn hash_candidate(candidate: &BlockCandidate, algorithm: &str) -> [u8; 32] {
 | Monero | XMR | randomx | Stratum | TBD | 2miners, MoneroOcean | ❌ TODO |
 | Verus | VRSC | verushash v2.2 | ZcashStratum | ❌ (vlastní) | LuckPool | protocol ✅, live E2E TODO |
 | Flux | FLUX | zelhash | Stratum | TBD | 2miners, MinerPool | ❌ TODO |
+| Epic Cash | EPIC | progpow | Stratum (custom HTTP) | TBD | epicmine.io | ❌ TODO |
 
 ## 4. V3 Pool Integration body
 
