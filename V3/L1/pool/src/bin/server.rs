@@ -2293,6 +2293,27 @@ fn handle_client(
                             "external_share_result miner={} coin={} accepted={} status={}",
                             sub_miner_id, coin, accepted, status
                         );
+                        // Record in routing stats under the correct external source
+                        let ext_source = match coin.to_ascii_uppercase().as_str() {
+                            "DCR" | "ALPH" => RevenueSource::Blake3External,
+                            "KAS" => RevenueSource::KHeavyHashExternal,
+                            "ETC" => RevenueSource::EthashExternal,
+                            "RVN" | "CLORE" | "EVR" | "MEWC" => RevenueSource::KawPowExternal,
+                            "ERG" => RevenueSource::AutolykosExternal,
+                            "XMR" => RevenueSource::RandomXExternal,
+                            "FLUX" => RevenueSource::ZelHashExternal,
+                            "VRSC" => RevenueSource::VerusHashExternal,
+                            "EPIC" | "EPICCASH" => RevenueSource::ProgPowExternal,
+                            "PRL" | "PEARL" => RevenueSource::PearlExternal,
+                            _ => RevenueSource::Blake3External,
+                        };
+                        {
+                            let mut stats = routing_stats.lock().expect("routing stats lock poisoned");
+                            let should_log = stats.record(session_group, ext_source, accepted);
+                            if should_log {
+                                println!("routing_snapshot {}", stats.snapshot_line());
+                            }
+                        }
                     }
                     PoolMessage::PearlSubmit {
                         miner_id: sub_miner_id,
@@ -2723,9 +2744,14 @@ fn handle_client(
                     // the scheduler lane.  This ensures external shares are counted under
                     // the correct source (e.g. src_kawpow for RVN) even when the revenue
                     // scheduler picked a different lane.
+                    //
+                    // For ZION jobs (deeksha_lite_v1 etc.) always classify as
+                    // RevenueSource::Zion — the scheduler may have picked an external
+                    // lane (e.g. VerusHashExternal) but if no external job was available
+                    // the miner actually did ZION work, not Verus work.
                     let routed_source = match &assignment {
                         WorkAssignment::External(j) => external_coin_to_revenue_source(j.external_coin),
-                        WorkAssignment::Zion(_) => revenue_source,
+                        WorkAssignment::Zion(_) => RevenueSource::Zion,
                     };
                     JobCompletion::Submitted {
                         decision,
