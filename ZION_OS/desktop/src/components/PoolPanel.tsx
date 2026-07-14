@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Globe, Wallet, Blocks, Users, Pickaxe } from 'lucide-react';
-import type { V3Status, PoolMiner, PoolMinersDashboard } from '../lib/api';
-import { fetchPoolMinersDashboard } from '../lib/api';
+import { Globe, Wallet, Blocks, Users, Pickaxe, DollarSign } from 'lucide-react';
+import type { V3Status, PoolMiner, PoolMinersDashboard, PayoutStatus } from '../lib/api';
+import { fetchPoolMinersDashboard, fetchPayoutStatus } from '../lib/api';
 
 interface Props {
   pool: V3Status['pool'] | undefined;
@@ -16,18 +16,23 @@ export default function PoolPanel({ pool, poolEdge }: Props) {
   const running = p.running || pe.running || false;
 
   const [dashboard, setDashboard] = useState<PoolMinersDashboard | null>(null);
+  const [payout, setPayout] = useState<PayoutStatus | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     try {
-      const data = await fetchPoolMinersDashboard();
+      const [data, po] = await Promise.all([
+        fetchPoolMinersDashboard(),
+        fetchPayoutStatus(),
+      ]);
       if (data?.ok) {
         setDashboard(data);
         setLastError(null);
       } else {
         setLastError('Pool miners unavailable');
       }
-    } catch (e) {
+      if (po) setPayout(po);
+    } catch {
       setLastError('Pool miners unreachable');
     }
   }, []);
@@ -40,6 +45,8 @@ export default function PoolPanel({ pool, poolEdge }: Props) {
 
   const miners = dashboard?.miners ?? [];
   const summary = dashboard?.summary;
+  const pw = dashboard?.pool_wallet || payout;
+  const sessionStats = payout?.session_stats;
 
   return (
     <section className="zion-card">
@@ -59,18 +66,36 @@ export default function PoolPanel({ pool, poolEdge }: Props) {
           <div className="text-[10px] text-gray-400 mt-1">Active Miners</div>
         </div>
         <div className="bg-white/5 rounded-xl p-3 text-center">
-          <div className="text-3xl font-bold text-zion-gold">{fmt(summary?.total_paid_zion ?? pe.blocks_found ?? p.blocks_found ?? 0)}</div>
-          <div className="text-[10px] text-gray-400 mt-1">{summary?.total_paid_zion ? 'Total Paid Z' : 'Blocks Found'}</div>
+          <div className="text-3xl font-bold text-zion-gold">{fmt(payout?.blocks_found ?? pe.blocks_found ?? p.blocks_found ?? 0)}</div>
+          <div className="text-[10px] text-gray-400 mt-1">Blocks Found</div>
         </div>
         <div className="bg-white/5 rounded-xl p-3">
           <div className="text-[10px] text-gray-400">Fee Split</div>
-          <div className="text-xs font-mono text-amber-400">{p.fee_split ?? '—'}</div>
+          <div className="text-xs font-mono text-amber-400">{payout?.fee_split ?? p.fee_split ?? '—'}</div>
         </div>
         <div className="bg-white/5 rounded-xl p-3">
           <div className="text-[10px] text-gray-400">Payout Wallet</div>
-          <div className="text-xs font-mono text-white truncate">{p.pool_wallet ? p.pool_wallet.slice(0, 20) + '…' : '—'}</div>
+          <div className="text-xs font-mono text-white truncate">{payout?.pool_wallet ? payout.pool_wallet.slice(0, 20) + '…' : '—'}</div>
         </div>
       </div>
+
+      {/* Pool wallet balance + payout info */}
+      {payout && (
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          <div className="bg-white/5 rounded-xl p-2 text-center">
+            <div className="text-xs font-bold text-white">{fmtZ(payout.pool_wallet_balance ? payout.pool_wallet_balance / 1e6 : null)}</div>
+            <div className="text-[9px] text-gray-400">Wallet Balance</div>
+          </div>
+          <div className="bg-white/5 rounded-xl p-2 text-center">
+            <div className="text-xs font-bold text-emerald-400">{payout.payout_enabled ? 'ENABLED' : 'DISABLED'}</div>
+            <div className="text-[9px] text-gray-400">Payouts</div>
+          </div>
+          <div className="bg-white/5 rounded-xl p-2 text-center">
+            <div className="text-xs font-bold text-cyan-400">{fmt(sessionStats?.active_sessions)}</div>
+            <div className="text-[9px] text-gray-400">Sessions</div>
+          </div>
+        </div>
+      )}
 
       {/* Pool-wide totals */}
       {summary && (
@@ -86,6 +111,24 @@ export default function PoolPanel({ pool, poolEdge }: Props) {
           <div className="bg-white/5 rounded-xl p-2 text-center">
             <div className="text-xs font-bold text-emerald-400">{fmtZ(summary.total_on_chain_zion ?? 0)}</div>
             <div className="text-[9px] text-gray-400">On-chain Z</div>
+          </div>
+        </div>
+      )}
+
+      {/* Session stats */}
+      {sessionStats && (
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          <div className="bg-white/5 rounded-xl p-2 text-center">
+            <div className="text-xs font-bold text-white">{fmt(sessionStats.total_shares_1h)}</div>
+            <div className="text-[9px] text-gray-400">Shares 1h</div>
+          </div>
+          <div className="bg-white/5 rounded-xl p-2 text-center">
+            <div className="text-xs font-bold text-white">{fmt(sessionStats.blocks_24h)}</div>
+            <div className="text-[9px] text-gray-400">Blocks 24h</div>
+          </div>
+          <div className="bg-white/5 rounded-xl p-2 text-center">
+            <div className="text-xs font-bold text-emerald-400">{sessionStats.accept_rate_pct?.toFixed(1) ?? '—'}%</div>
+            <div className="text-[9px] text-gray-400">Accept Rate</div>
           </div>
         </div>
       )}
@@ -114,7 +157,7 @@ export default function PoolPanel({ pool, poolEdge }: Props) {
               </tr>
             </thead>
             <tbody>
-              {miners.map((m, i) => (
+              {miners.map((m) => (
                 <tr key={m.miner_id} className="border-b border-white/5 hover:bg-white/5">
                   <td className="py-1.5 px-1">
                     <div className="flex items-center gap-1">
@@ -136,14 +179,23 @@ export default function PoolPanel({ pool, poolEdge }: Props) {
         </div>
       )}
 
-      <div className="flex gap-2 mt-3">
-        <button onClick={() => window.open('http://127.0.0.1:8766/#payout', '_self')} className="flex-1 py-2 rounded-lg bg-purple-700/40 hover:bg-purple-700/60 border border-purple-500/30 text-xs font-semibold transition">
-          💰 Payouts
-        </button>
-        <button onClick={() => window.open('http://127.0.0.1:8766/#explorer', '_self')} className="flex-1 py-2 rounded-lg bg-blue-700/40 hover:bg-blue-700/60 border border-blue-500/30 text-xs font-semibold transition">
-          🔍 Explorer
-        </button>
-      </div>
+      {/* Payout validation */}
+      {payout?.payout_validation && (
+        <div className="mt-3 pt-3 border-t border-white/10">
+          <div className="text-[10px] text-gray-400 mb-1 flex items-center gap-1">
+            <DollarSign size={10} /> Payout Validation
+          </div>
+          <div className="grid grid-cols-4 gap-2 text-[10px]">
+            <div className="text-gray-400">Valid: <span className="text-emerald-400 font-mono">{payout.payout_validation.valid_addresses}</span></div>
+            <div className="text-gray-400">Invalid: <span className="text-red-400 font-mono">{payout.payout_validation.invalid_addresses}</span></div>
+            <div className="text-gray-400">Missing: <span className="text-amber-400 font-mono">{payout.payout_validation.missing_addresses}</span></div>
+            <div className="text-gray-400">Safe: <span className={payout.payout_validation.safe_to_payout ? 'text-emerald-400' : 'text-red-400'}>{payout.payout_validation.safe_to_payout ? '✓' : '✗'}</span></div>
+          </div>
+          {payout.payout_validation.last_error && (
+            <div className="text-[9px] text-red-400 mt-1">{payout.payout_validation.last_error}</div>
+          )}
+        </div>
+      )}
     </section>
   );
 }

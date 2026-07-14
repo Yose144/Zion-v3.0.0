@@ -5,7 +5,7 @@ import json, os, sys, time, urllib.request, base64, re
 API = "https://api.simplemining.net"
 RIG = 518837
 GROUP = 1773590
-MINER_URL = "https://zionterranova.com/zion-miner/zion-miner-v3.0.34-gpu-dcr-v3.zip"
+MINER_URL = "https://zionterranova.com/zion-miner/zion-miner-v3.0.35-pearl-pool-routed.zip"
 MINER_OPTS = (
     f"{MINER_URL} "
     f"--pool 62.171.141.136:8444 "

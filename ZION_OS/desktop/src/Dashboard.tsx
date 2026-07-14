@@ -28,6 +28,7 @@ import ReadinessBar from './components/ReadinessBar';
 import PerformanceCharts from './components/PerformanceCharts';
 import MonitoringPanel from './components/MonitoringPanel';
 import LogViewer from './components/LogViewer';
+import AuxPowPanel from './components/AuxPowPanel';
 
 import {
   fetchFullStatus,
@@ -189,6 +190,13 @@ export default function Dashboard() {
 
         <RevenueSection revenue={revenue} poolDashboard={poolDashboard} />
 
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <AuxPowPanel />
+          <div className="lg:col-span-2">
+            <LogViewer />
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <WalletsSection wallets={wallets} />
           <ExplorerSection blocks={blocks} overview={edgeOverview} />
@@ -209,8 +217,6 @@ export default function Dashboard() {
             <DaoPanel />
           </div>
         </section>
-
-        <LogViewer />
       </main>
 
       <footer className="border-t border-white/10 mt-6 py-3">
