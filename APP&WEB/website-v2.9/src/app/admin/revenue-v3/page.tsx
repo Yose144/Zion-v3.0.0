@@ -19,6 +19,7 @@ interface RevenueConfig {
     nxs: { enabled: boolean; target_share: number; pool: PoolConfig };
     dynamic_gpu: { enabled: boolean; target_share: number; pools: Record<string, PoolConfig & { coin: string }> };
     ncl: { enabled: boolean; npu_allocation: number; target_share: number };
+    pearl: { enabled: boolean; target_share: number; pool: PoolConfig };
   };
 }
 
@@ -275,6 +276,61 @@ export default function RevenueSettings() {
                             className="w-full bg-black/40 border border-white/10 rounded p-2 font-mono text-sm text-white"
                         />
                      </div>
+                </div>
+            </div>
+        </section>
+
+        {/* Pearl (PRL) Stream */}
+        <section className="zion-rainbow-card p-6" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
+             <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-teal-300">🐚 {lang === 'cs' ? 'Pearl PRL (PoUW GPU)' : 'Pearl PRL (PoUW GPU)'}</h2>
+                <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-400">{lang === 'cs' ? 'Aktivní' : 'Enabled'}</span>
+                    <input
+                        type="checkbox"
+                        checked={config.streams.pearl?.enabled ?? false}
+                        onChange={(e) => updateStream('pearl', 'enabled', e.target.checked)}
+                        className="w-5 h-5 rounded border-gray-600"
+                    />
+                </div>
+            </div>
+            <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+                        <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Pool Stratum URL' : 'Pool Stratum URL'}</label>
+                        <input
+                            type="text"
+                            value={config.streams.pearl?.pool?.stratum ?? ''}
+                            onChange={(e) => updatePool('pearl', 'stratum', e.target.value)}
+                            className="w-full bg-black/40 border border-white/10 rounded p-2 font-mono text-sm text-white"
+                            placeholder="stratum+tcp://us2.alphapool.tech:5566"
+                        />
+                     </div>
+                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+                        <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Adresa peněženky' : 'Wallet Address'}</label>
+                        <input
+                            type="text"
+                            value={config.streams.pearl?.pool?.wallet ?? ''}
+                            onChange={(e) => updatePool('pearl', 'wallet', e.target.value)}
+                            className="w-full bg-black/40 border border-white/10 rounded p-2 font-mono text-sm text-white"
+                            placeholder="bc1q..."
+                        />
+                     </div>
+                </div>
+                <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+                    <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Cílový podíl příjmů' : 'Revenue Target Share'}</label>
+                    <input
+                        type="number"
+                        step="0.01"
+                        value={config.streams.pearl?.target_share ?? 0.05}
+                        onChange={(e) => updateStream('pearl', 'target_share', parseFloat(e.target.value))}
+                        className="w-full bg-black/40 border border-white/10 rounded p-2 text-white"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">
+                        {lang === 'cs'
+                            ? 'PearlHash PoUW — INT8 MatMul + BLAKE3 + Plonky2 ZK. GPU-nativní OpenCL těžba (~657 nonces/s na RX 5700 XT, 14x vs CPU).'
+                            : 'PearlHash PoUW — INT8 MatMul + BLAKE3 + Plonky2 ZK. GPU-native OpenCL mining (~657 nonces/s on RX 5700 XT, 14x vs CPU).'}
+                    </p>
                 </div>
             </div>
         </section>

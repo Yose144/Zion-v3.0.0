@@ -63,16 +63,31 @@
       "configurable": true,
       "npu_allocation": 0.3,
       "mining_allocation": 0.7
+    },
+    "pearl": {
+      "stream": 6,
+      "name": "Pearl (PRL)",
+      "description": "PearlHash PoUW GPU mining (INT8 MatMul + BLAKE3 + ZK)",
+      "enabled": true,
+      "target_share": 0.05,
+      "configurable": true,
+      "algorithm": "pearlhash",
+      "pool": {
+        "stratum": "stratum+tcp://us2.alphapool.tech:5566",
+        "wallet": "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw",
+        "worker": "zion_pearl"
+      }
     }
   },
   "summary": {
-    "enabled_streams": 5,
+    "enabled_streams": 6,
     "stream_names": [
       "ZION",
       "ETC",
       "NXS",
       "Dynamic GPU",
-      "NCL AI"
+      "NCL AI",
+      "Pearl"
     ],
     "total_target_share": 1.0
   }

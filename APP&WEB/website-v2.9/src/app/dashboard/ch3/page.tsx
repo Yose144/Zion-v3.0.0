@@ -33,6 +33,7 @@ interface CH3Settings {
     nxs: StreamConfig;
     dynamic_gpu: StreamConfig;
     ncl: StreamConfig;
+    pearl: StreamConfig;
   };
   summary: {
     enabled_streams: number;
@@ -47,6 +48,7 @@ const STREAM_COLORS: Record<string, string> = {
   nxs: "from-blue-500 to-cyan-600",
   dynamic_gpu: "from-purple-500 to-violet-600",
   ncl: "from-pink-500 to-rose-600",
+  pearl: "from-teal-400 to-cyan-500",
 };
 
 const STREAM_ICONS: Record<string, string> = {
@@ -55,6 +57,7 @@ const STREAM_ICONS: Record<string, string> = {
   nxs: "🔷",
   dynamic_gpu: "🎮",
   ncl: "🧠",
+  pearl: "🐚",
 };
 
 const GPU_COINS = [
@@ -126,10 +129,24 @@ const DEFAULT_SETTINGS: CH3Settings = {
       npu_allocation: 0.3,
       mining_allocation: 0.7,
     },
+    pearl: {
+      stream: 6,
+      name: "Pearl (PRL)",
+      description: "PearlHash PoUW GPU mining (INT8 MatMul + BLAKE3 + ZK)",
+      enabled: true,
+      target_share: 0.05,
+      configurable: true,
+      algorithm: "pearlhash",
+      pool: {
+        stratum: "stratum+tcp://us2.alphapool.tech:5566",
+        wallet: "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw",
+        worker: "zion_pearl",
+      },
+    },
   },
   summary: {
-    enabled_streams: 5,
-    stream_names: ["ZION", "ETC", "NXS", "Dynamic GPU", "NCL AI"],
+    enabled_streams: 6,
+    stream_names: ["ZION", "ETC", "NXS", "Dynamic GPU", "NCL AI", "Pearl"],
     total_target_share: 1.0,
   },
 };
@@ -300,7 +317,7 @@ export default function CH3SettingsPage() {
 
       {/* Tab Navigation */}
       <div className="flex gap-2 mb-6 border-b border-white/10 pb-4">
-        {["overview", "merged", "dynamic", "ncl"].map((tab) => (
+        {["overview", "merged", "dynamic", "ncl", "pearl"].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -315,6 +332,7 @@ export default function CH3SettingsPage() {
             {tab === "merged" && (lang === 'cs' ? '💎 Merged Mining' : '💎 Merged Mining')}
             {tab === "dynamic" && (lang === 'cs' ? '🎮 Dynamic GPU' : '🎮 Dynamic GPU')}
             {tab === "ncl" && (lang === 'cs' ? '🧠 NCL AI' : '🧠 NCL AI')}
+            {tab === "pearl" && (lang === 'cs' ? '🐚 Pearl (PRL)' : '🐚 Pearl (PRL)')}
           </button>
         ))}
       </div>
@@ -659,6 +677,96 @@ export default function CH3SettingsPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Pearl Tab */}
+        {activeTab === "pearl" && (
+          <div>
+            <h2 className="text-2xl font-bold mb-6">{lang === 'cs' ? 'Pearl (PRL) PoUW Mining' : 'Pearl (PRL) PoUW Mining'}</h2>
+            <p className="text-gray-400 mb-6">
+              {lang === 'cs'
+                ? 'Pearl coin (PRL) využívá Proof-of-Useful-Work: INT8 MatMul + BLAKE3 + Plonky2 ZK. GPU-nativní OpenCL těžba na AMD RX 5700 XT (~657 nonces/s, 14x rychlejší než CPU). Pool: AlphaPool/suprnova, custom Stratum dialect.'
+                : 'Pearl coin (PRL) uses Proof-of-Useful-Work: INT8 MatMul + BLAKE3 + Plonky2 ZK. GPU-native OpenCL mining on AMD RX 5700 XT (~657 nonces/s, 14x faster than CPU). Pool: AlphaPool/suprnova, custom Stratum dialect.'}
+            </p>
+
+            <div className="zion-rainbow-card p-6 mb-6" style={zionStyle("245, 158, 11")}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">🐚</span>
+                  <div>
+                    <div className="font-bold text-xl">Pearl (PRL)</div>
+                    <div className="text-gray-400">PearlHash — PoUW (INT8 MatMul + BLAKE3 + ZK)</div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => toggleStream("pearl")}
+                  className={`px-4 py-2 font-bold ${
+                    settings.streams.pearl.enabled
+                      ? "zion-rainbow-sub text-white"
+                      : "rounded-lg bg-black/40 text-gray-400"
+                  }`}
+                  style={settings.streams.pearl.enabled ? zionStyle("251, 191, 36") : undefined}
+                >
+                  {settings.streams.pearl.enabled ? (lang === 'cs' ? 'Zapnuto' : 'Enabled') : (lang === 'cs' ? 'Vypnuto' : 'Disabled')}
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-gray-400 text-sm">{lang === 'cs' ? 'Pool Stratum' : 'Pool Stratum'}</label>
+                  <input
+                    type="text"
+                    defaultValue={settings.streams.pearl.pool?.stratum}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 mt-1"
+                    placeholder="stratum+tcp://us2.alphapool.tech:5566"
+                  />
+                </div>
+                <div>
+                  <label className="text-gray-400 text-sm">{lang === 'cs' ? 'Pool Wallet' : 'Pool Wallet'}</label>
+                  <input
+                    type="text"
+                    defaultValue={settings.streams.pearl.pool?.wallet}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 mt-1"
+                    placeholder="bc1q..."
+                  />
+                </div>
+                <div>
+                  <label className="text-gray-400 text-sm">{lang === 'cs' ? 'Cílový podíl' : 'Target Share'}</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="1"
+                    defaultValue={settings.streams.pearl.target_share}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 mt-1"
+                  />
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-400">
+                  <input type="checkbox" defaultChecked className="w-4 h-4" />
+                  {lang === 'cs' ? 'Auto-convert do ZION' : 'Auto-convert to ZION'}
+                </div>
+              </div>
+            </div>
+
+            {/* GPU Performance Info */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="zion-rainbow-sub p-4" style={zionStyle("245, 158, 11")}>
+                <div className="text-gray-400 text-sm">{lang === 'cs' ? 'GPU rychlost' : 'GPU Speed'}</div>
+                <div className="font-bold text-2xl text-teal-400">657.6</div>
+                <div className="text-gray-500 text-xs">nonces/s (batch=16)</div>
+              </div>
+              <div className="zion-rainbow-sub p-4" style={zionStyle("245, 158, 11")}>
+                <div className="text-gray-400 text-sm">{lang === 'cs' ? 'vs CPU' : 'vs CPU'}</div>
+                <div className="font-bold text-2xl text-teal-400">14.2x</div>
+                <div className="text-gray-500 text-xs">{lang === 'cs' ? 'zrychlení' : 'speedup'}</div>
+              </div>
+              <div className="zion-rainbow-sub p-4" style={zionStyle("245, 158, 11")}>
+                <div className="text-gray-400 text-sm">{lang === 'cs' ? 'Algoritmus' : 'Algorithm'}</div>
+                <div className="font-bold text-lg text-teal-400">PearlHash</div>
+                <div className="text-gray-500 text-xs">PoUW — INT8 MatMul + ZK</div>
               </div>
             </div>
           </div>

@@ -267,6 +267,30 @@
       "gateway_url": "http://localhost:8002",
       "target_share": 0.25,
       "configurable": true
+    },
+    "pearl": {
+      "stream": 6,
+      "name": "Pearl (PRL)",
+      "description": "PearlHash PoUW GPU mining — INT8 MatMul + BLAKE3 + Plonky2 ZK. GPU-native OpenCL on AMD RX 5700 XT (~657 nonces/s, 14x vs CPU). AlphaPool/suprnova, custom Stratum dialect.",
+      "enabled": true,
+      "algorithm": "pearlhash",
+      "pool": {
+        "stratum": "stratum+tcp://us2.alphapool.tech:5566",
+        "wallet": "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw",
+        "worker": "zion_pearl",
+        "enabled": true
+      },
+      "auto_convert_to_zion": true,
+      "target_share": 0.05,
+      "configurable": true,
+      "gpu": {
+        "device": "AMD RX 5700 XT",
+        "platform": "AMD Accelerated Parallel Processing",
+        "opencl_std": "CL1.2",
+        "batch_size": 16,
+        "nonces_per_sec": 657.6,
+        "speedup_vs_cpu": 14.2
+      }
     }
   },
   "profit_switching": {
