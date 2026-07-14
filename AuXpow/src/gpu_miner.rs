@@ -1408,13 +1408,15 @@ use std::io::{Read, Write};
 #[cfg(feature = "native-hashers")]
 use crate::native_ffi::generate_ethash_dag;
 
-/// Manages DAG generation and GPU upload for Ethash and KawPow.
+/// Manages DAG generation and GPU upload for Ethash, KawPow, and ProgPow.
 #[cfg(feature = "native-hashers")]
 pub struct DagManager {
     /// Currently loaded Ethash epoch (None = not loaded).
     ethash_epoch: Option<u32>,
     /// Currently loaded KawPow epoch (None = not loaded).
     kawpow_epoch: Option<u32>,
+    /// Currently loaded ProgPow epoch (None = not loaded).
+    progpow_epoch: Option<u32>,
     /// Directory for DAG disk cache.
     cache_dir: PathBuf,
 }
@@ -1432,6 +1434,7 @@ impl DagManager {
         Self {
             ethash_epoch: None,
             kawpow_epoch: None,
+            progpow_epoch: None,
             cache_dir,
         }
     }
@@ -1544,6 +1547,53 @@ impl DagManager {
         Ok(())
     }
 
+    /// Ensure the GPU miner has the correct ProgPow DAG loaded for `epoch`.
+    ///
+    /// ProgPow uses the same DAG format as Ethash (128-byte entries, 16 u64
+    /// words per entry, epoch length 30000).  The DAG is generated via the
+    /// same C FFI (`ethash_generate_dag`) and cached on disk under
+    /// `progpow_epoch{N}.bin` (separate from the Ethash cache so that
+    /// switching coins doesn't invalidate each other's cache).
+    pub fn ensure_progpow_dag(
+        &mut self,
+        miner: &mut GpuMiner,
+        epoch: u32,
+    ) -> Result<()> {
+        if self.progpow_epoch == Some(epoch) && miner.progpow_dag_epoch() == Some(epoch) {
+            return Ok(()); // already loaded
+        }
+
+        eprintln!(
+            "dag_manager: loading ProgPow DAG epoch={} (cache_dir={})",
+            epoch, self.cache_dir.display()
+        );
+
+        // Try disk cache first (separate file from Ethash)
+        let cache_path = self.cache_dir.join(format!("progpow_epoch{}.bin", epoch));
+        let (dag_u64, dag_entries) = if cache_path.exists() {
+            eprintln!("dag_manager: loading ProgPow DAG from disk cache: {}", cache_path.display());
+            Self::load_dag_from_disk(&cache_path)?
+        } else {
+            eprintln!("dag_manager: generating ProgPow DAG epoch={} via FFI...", epoch);
+            let dag = generate_ethash_dag(epoch)
+                .ok_or_else(|| anyhow!("ethash_generate_dag returned NULL for epoch {}", epoch))?;
+            let entries = dag.dag_size_entries;
+            let u64_slice = dag.as_u64_slice().to_vec();
+            self.save_dag_to_disk(&cache_path, &u64_slice, entries)?;
+            (u64_slice, entries)
+        };
+
+        eprintln!(
+            "dag_manager: uploading ProgPow DAG to GPU ({} entries = {:.1} MB)",
+            dag_entries,
+            dag_entries as f64 * 128.0 / (1024.0 * 1024.0)
+        );
+        miner.set_progpow_dag(&dag_u64, dag_entries, epoch)?;
+        self.progpow_epoch = Some(epoch);
+        eprintln!("dag_manager: ProgPow DAG epoch={} ready", epoch);
+        Ok(())
+    }
+
     /// Convenience: ensure the right DAG for the given algorithm.
     /// `epoch` is the pre-computed epoch number (block_number / EPOCH_LENGTH).
     pub fn ensure_dag(
@@ -1558,10 +1608,10 @@ impl DagManager {
                 self.ensure_kawpow_dag(miner, epoch)
             }
             "progpow" | "progpow_epic" => {
-                // ProgPow uses the same DAG format as Ethash (epoch 30000).
-                // Reuse ensure_ethash_dag for now — a dedicated ensure_progpow_dag
-                // can be added if separate DAG caching is needed.
-                self.ensure_ethash_dag(miner, epoch)
+                // ProgPow uses the same DAG format as Ethash (epoch 30000),
+                // but uploads to a separate GPU buffer (progpow_dag, not
+                // ethash_dag) so both algorithms can mine simultaneously.
+                self.ensure_progpow_dag(miner, epoch)
             }
             _ => Ok(()), // non-DAG algorithms
         }
@@ -1628,6 +1678,11 @@ impl DagManager {
     /// Returns the currently loaded KawPow epoch, if any.
     pub fn kawpow_epoch(&self) -> Option<u32> {
         self.kawpow_epoch
+    }
+
+    /// Returns the currently loaded ProgPow epoch, if any.
+    pub fn progpow_epoch(&self) -> Option<u32> {
+        self.progpow_epoch
     }
 }
 

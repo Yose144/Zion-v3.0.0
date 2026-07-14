@@ -179,6 +179,7 @@ docker-data/
 
 # Editor backups
 *.bak
+*.bak-*
 *.backup
 *.orig
 

@@ -1,6 +1,6 @@
 # ZION V3 — Canonical Status (Mainnet Beta)
 
-> **Datum poslední aktualizace:** 2026-07-14
+> **Datum poslední aktualizace:** 2026-07-15
 > **Protokol:** `zion-v3-node/3.0.5`
 > **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
 > **Status:** Mainnet Beta — oficiální public launch **2026-12-31**
@@ -194,7 +194,7 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | XMR | randomx | Stratum | connect/auth/notify ✅, submit ⚠️ (needs RandomX rig miner) |
 | FLUX | zelhash | Stratum | TODO |
 | VRSC | verushash v2.2 | ZcashStratum | ✅ LIVE (LuckPool eu.luckpool.net:3956, pool mining VRSC) |
-| EPIC | progpow | Stratum (custom HTTP) | kernel ✅, CPU hasher ✅, E2E TODO |
+| EPIC | progpow | Stratum (custom HTTP) | ✅ LIVE (GPU ProgPow kernel, epoch 120 DAG, triple parallel with ZION+VRSC) |
 | PRL | pearlhash (PoUW MatMul) | PearlStratum (custom) | ★★★ PearlStratum ✅ + CPU hasher ✅ + GPU GEMM dispatch ✅ (`0bafbfe83`) + Merkle proof ✅ (`705bff572`) + pool-routed ✅ (`f524b7117`), full PoUW ZK TODO |
 
 ### AuXpow GPU Backend (2026-07-15)
@@ -210,13 +210,13 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | ethash | ETC | — | — (needs DAG) | ⚠️ kernel only |
 | kawpow | RVN | — | — (needs DAG) | ⚠️ kernel only |
 | zelhash | FLUX | 495M | **19.5B** | ⚠️ kernel only |
-| progpow | EPIC | — | — (needs DAG) | ❌ TODO |
+| progpow | EPIC | DAG ✅ (OpenMP) | — (needs DAG) | ⚠️ kernel only |
 | pearlhash | PRL | Placeholder | Placeholder | ❌ TODO (full PoUW) ★★★ |
 
 **Features:** `gpu-opencl`, `gpu-metal`, `gpu-cuda`, `gpu-all`
 **Benchmark:** `cargo run --example gpu_benchmark -p zion-auxpow --features gpu-metal`
 **Auto-detect:** CUDA > Metal > OpenCL (via `GpuBackend::detect_backend()`)
-**ProgPow (EPIC):** CPU hasher (keccak_f800 + KISS99 + FNV1a) ✅, OpenCL + Metal kernel ✅, 6 unit testů ✅
+**ProgPow (EPIC):** CPU hasher (keccak_f800 + KISS99 + FNV1a) ✅, OpenCL + Metal kernel ✅, 6 unit testů ✅, DAG generation ✅ (OpenMP parallel, epoch 120 ~2 GB in ~4 min on 12 cores), GPU mining ✅ (RX 5600, 15000+ batches, 0 errors), `ensure_progpow_dag()` with separate disk cache (`progpow_epoch{N}.bin`)
 **Pearl (PRL):** ★★★ HIGHEST PRIORITY — PoUW MatMul + BLAKE3, 22x profitabilnější než KAS.
 **Status:** PearlStratum protocol ✅ (custom dialect: object params, no subscribe, plain_proof),
 CPU hasher ✅ (BLAKE3), GPU GEMM dispatch ✅ (`0bafbfe83`, 50x speedup), Merkle proof reconstruction ✅ (`705bff572`),
@@ -247,6 +247,11 @@ ZION_AUXPOW_CIRCUIT_BREAKER_COOLDOWN=300    # cooldown seconds
 # VRSC B2b revenue (LuckPool, VerusHash v2.2, CPU-only)
 ZION_VRSC_WALLET=<verus_wallet>             # VRSC payout wallet (required for VRSC)
 ZION_VRSC_POOL_URL=eu.luckpool.net:3956     # LuckPool EU endpoint (default)
+# Triple Parallel CPU bridge (Claymore-style: ZION GPU + EPIC GPU + VRSC CPU)
+ZION_POOL_AUXPOW_CPU_COIN="VRSC"            # CPU-stream coin (default: VRSC)
+ZION_POOL_AUXPOW_CPU_WALLET=<verus_wallet>  # CPU bridge payout wallet
+ZION_POOL_AUXPOW_CPU_WORKER_NAME="zion_triple" # CPU bridge worker name
+ZION_POOL_AUXPOW_CPU_REGION="eu"            # CPU bridge pool region
 ```
 
 ---
@@ -307,6 +312,7 @@ WARP_STELLAR_RPC=https://horizon.stellar.org
 
 | Date | Milestone | Key Commits |
 |------|-----------|-------------|
+| 07-15 | **Triple Parallel AuxPoW LIVE** — Claymore-style 3-stream parallel mining: ZION (GPU DeekshaChv3) + EPIC (GPU ProgPow) + VRSC (CPU VerusHash) simultaneously. Second AuxPow bridge (`cpu_auxpow_bridge`) for CPU-only coins. `external_stream_cpu` field in `PoolMessage::Job`. OpenMP-parallel DAG generation (19 threads, epoch 120 ~2GB in ~4 min). All 3 streams verified live on Edge (rx5600-test miner, 99.7% ZION accept rate, EPIC ProgPow kernel 7169+ batches, VRSC CPU thread hashing) | (this commit) |
 | 07-14 | **PPLNS payout bug fix** — composite `miner_id/worker_name` keys (all workers sharing same miner_id had payouts sent to last-registered address) + telemetry registry composite keys | `bd6f1dfb3`, `85250086d` |
 | 07-14 | NoSolution reconnect cooldown — ban IP for 300s on rate-limit exceed | `49f8bfb57` |
 | 07-14 | Dashboard fix: web-next port 3001→3000, miner health endpoint 8444→8455 — 14/14 UP | `0c17d445c` |

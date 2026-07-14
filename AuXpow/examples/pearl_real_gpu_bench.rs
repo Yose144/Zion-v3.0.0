@@ -7,10 +7,21 @@
 //! Usage:
 //!   cargo run --release --features gpu-opencl --example pearl_real_gpu_bench
 
+#![cfg_attr(not(feature = "gpu-opencl"), allow(dead_code))]
+
+#[cfg(feature = "gpu-opencl")]
 use std::time::Instant;
+#[cfg(feature = "gpu-opencl")]
 use zion_auxpow::gpu_miner::GpuMiner;
+#[cfg(feature = "gpu-opencl")]
 use zion_auxpow::pearl_real_pouw;
 
+#[cfg(not(feature = "gpu-opencl"))]
+fn main() {
+    eprintln!("This benchmark requires --features gpu-opencl");
+}
+
+#[cfg(feature = "gpu-opencl")]
 fn main() {
     let m = pearl_real_pouw::DEFAULT_M;
     let n = pearl_real_pouw::DEFAULT_N;
@@ -38,6 +49,7 @@ fn main() {
             &header_hex, &target_hex,
             m, n, k, noise_rank, noise_range,
             hash_tile_h, hash_tile_w,
+            i as u64,
         ).expect("CPU mining failed");
         let ms = t0.elapsed().as_secs_f64() * 1000.0;
         let found = result.is_some();
@@ -69,6 +81,7 @@ fn main() {
         &header_hex, &target_hex,
         m, n, k, noise_rank, noise_range,
         hash_tile_h, hash_tile_w,
+        0,
         &mut gpu_miner,
     );
 
@@ -79,6 +92,7 @@ fn main() {
             &header_hex, &target_hex,
             m, n, k, noise_rank, noise_range,
             hash_tile_h, hash_tile_w,
+            i as u64,
             &mut gpu_miner,
         ).expect("GPU mining failed");
         let ms = t0.elapsed().as_secs_f64() * 1000.0;
@@ -106,6 +120,7 @@ fn main() {
             &header_hex, &target_hex,
             m, n, k, noise_rank, noise_range,
             hash_tile_h, hash_tile_w,
+            i as u64,
         ).expect("prep failed");
         let ms = t0.elapsed().as_secs_f64() * 1000.0;
         if i == 0 { println!("  CPU-prep run {}: {:.2} ms", i, ms); }

@@ -9817,6 +9817,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
         # Skip auth for health checks and static assets
         if route in AUTH_EXEMPT_ROUTES:
             return True
+        # Desktop bundle mode: the Tauri app runs the server itself on
+        # localhost, so requiring manual credentials would just be friction.
+        if os.environ.get("ZION_DESKTOP_EMBEDDED") == "1" and self.client_address[0] in (
+            "127.0.0.1", "::1", "localhost"
+        ):
+            return True
         # Check Authorization header
         auth_header = self.headers.get("Authorization", "")
         if auth_header.startswith("Basic "):

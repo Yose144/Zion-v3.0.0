@@ -837,11 +837,13 @@ fn xor_reduction(tile: &[i32]) -> u32 {
 /// Check if a transcript hash meets the PoW target.
 /// hash = blake3(transcript_bytes, key=pow_key)
 /// Returns true if hash (as little-endian U256) <= target (as little-endian U256).
+/// Per the Pearl stratum spec, both hash and target are interpreted as LE U256:
+/// byte 0 = LSB, byte 31 = MSB. Comparison goes from MSB (byte 31) to LSB (byte 0).
 fn check_pow_target(transcript: &Transcript, pow_key: &[u8; 32], target: &[u8; 32]) -> bool {
     let transcript_bytes = transcript.to_bytes();
     let hash = blake3::keyed_hash(pow_key, &transcript_bytes);
     let hash_bytes = hash.as_bytes();
-    // Compare as little-endian U256: byte 0 is least significant
+    // Compare as little-endian U256: byte 31 is most significant
     // hash <= target iff for the first differing byte (from MSB), hash byte < target byte
     for i in (0..32).rev() {
         if hash_bytes[i] != target[i] {
@@ -1084,6 +1086,7 @@ pub fn mine_pearl_share(
     noise_range: usize,
     hash_tile_h: usize,
     hash_tile_w: usize,
+    nonce: u64,
 ) -> Result<Option<PlainProof>> {
     // Parse header and target
     let header = IncompleteBlockHeader::from_hex(header_hex)?;
@@ -1123,8 +1126,10 @@ pub fn mine_pearl_share(
     let max_data = min_data + (data_range as i8) - 1;
     let range_size = (max_data - min_data + 1) as u8;
 
-    // Use a simple BLAKE3-based PRNG
-    let mut rng_state = job_key;
+    // Use a simple BLAKE3-based PRNG, seeded with job_key mixed with nonce
+    let mut nonce_input = job_key.to_vec();
+    nonce_input.extend_from_slice(&nonce.to_le_bytes());
+    let mut rng_state = blake3_digest(&nonce_input, None);
     let mut next_rand = || {
         let hash = blake3_digest(&rng_state, None);
         rng_state = hash;
@@ -1412,6 +1417,7 @@ pub fn prepare_pearl_gpu_input(
     noise_range: usize,
     hash_tile_h: usize,
     hash_tile_w: usize,
+    nonce: u64,
 ) -> Result<PearlGpuPrep> {
     // Parse header
     let header = IncompleteBlockHeader::from_hex(header_hex)?;
@@ -1436,6 +1442,7 @@ pub fn prepare_pearl_gpu_input(
 
     // Generate random A and B matrices (int8) — optimized: use all 32 bytes
     // of each BLAKE3 hash instead of just byte 0 (32x fewer hash calls)
+    // Nonce is mixed into the PRNG seed so each attempt tries different matrices.
     let data_range = 256 - noise_range;
     let min_data = -(data_range as i16 / 2) as i8;
     let range_size = (256 - noise_range) as u8;
@@ -1444,7 +1451,10 @@ pub fn prepare_pearl_gpu_input(
     let mut a = vec![0i8; m * k];
     let mut b = vec![0i8; k * n];
 
-    let mut rng_state = job_key;
+    // Mix nonce into PRNG seed: blake3(job_key || nonce_le64)
+    let mut nonce_input = job_key.to_vec();
+    nonce_input.extend_from_slice(&nonce.to_le_bytes());
+    let mut rng_state = blake3_digest(&nonce_input, None);
     let mut offset = 0usize;
     while offset < total_elements {
         let hash = blake3_digest(&rng_state, None);
@@ -1559,13 +1569,15 @@ pub fn mine_pearl_share_gpu(
     noise_range: usize,
     hash_tile_h: usize,
     hash_tile_w: usize,
+    nonce: u64,
     gpu_miner: &mut crate::gpu_miner::GpuMiner,
 ) -> Result<Option<PlainProof>> {
-    // Step 1: CPU prep
+    // Step 1: CPU prep (with nonce for matrix variation)
     let prep = prepare_pearl_gpu_input(
         header_hex, target_hex,
         m, n, k, noise_rank, noise_range,
         hash_tile_h, hash_tile_w,
+        nonce,
     )?;
 
     // Parse target

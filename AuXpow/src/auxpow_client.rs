@@ -185,6 +185,8 @@ pub enum ShareResult {
     Accepted,
     Rejected(String),
     Unknown,
+    /// No share met the target after mining attempts — no submission made.
+    NoShare,
 }
 
 /// Stratum v1 client for an external mining pool.
@@ -2716,121 +2718,92 @@ impl AuxPowClient {
                 m, n, k, noise_rank, has_gpu, &header_hex[..header_hex.len().min(20)], &target_hex
             );
 
-            // Run the real PoUW mining pipeline
-            #[cfg(feature = "gpu-opencl")]
-            let mined_result = if has_gpu {
-                let mut gpu_backend = self.gpu_opencl_backend.lock().await;
-                if let Some(ref mut miner) = *gpu_backend {
-                    crate::pearl_real_pouw::mine_pearl_share_gpu(
-                        &header_hex,
-                        &target_hex,
-                        m, n, k, noise_rank, noise_range,
-                        hash_tile_h, hash_tile_w,
-                        miner,
-                    )
+            // Run the real PoUW mining pipeline in an internal loop.
+            // Each attempt uses a different nonce → different matrices → different hashes.
+            // Only submit to the pool when a share meeting the target is found.
+            // This avoids spamming the pool with invalid dummy proofs.
+            use std::sync::atomic::{AtomicU64, Ordering};
+            static NONCE_COUNTER: AtomicU64 = AtomicU64::new(0);
+            const MAX_ATTEMPTS_PER_CALL: u64 = 50;
+
+            let mut plain_proof: Option<String> = None;
+            let mut attempts_this_call = 0u64;
+            let mine_start = std::time::Instant::now();
+
+            for _ in 0..MAX_ATTEMPTS_PER_CALL {
+                let nonce = NONCE_COUNTER.fetch_add(1, Ordering::Relaxed);
+                attempts_this_call += 1;
+
+                #[cfg(feature = "gpu-opencl")]
+                let mined_result = if has_gpu {
+                    let mut gpu_backend = self.gpu_opencl_backend.lock().await;
+                    if let Some(ref mut miner) = *gpu_backend {
+                        crate::pearl_real_pouw::mine_pearl_share_gpu(
+                            &header_hex,
+                            &target_hex,
+                            m, n, k, noise_rank, noise_range,
+                            hash_tile_h, hash_tile_w,
+                            nonce,
+                            miner,
+                        )
+                    } else {
+                        crate::pearl_real_pouw::mine_pearl_share(
+                            &header_hex,
+                            &target_hex,
+                            m, n, k, noise_rank, noise_range,
+                            hash_tile_h, hash_tile_w,
+                            nonce,
+                        )
+                    }
                 } else {
                     crate::pearl_real_pouw::mine_pearl_share(
                         &header_hex,
                         &target_hex,
                         m, n, k, noise_rank, noise_range,
                         hash_tile_h, hash_tile_w,
+                        nonce,
                     )
-                }
-            } else {
-                crate::pearl_real_pouw::mine_pearl_share(
+                };
+
+                #[cfg(not(feature = "gpu-opencl"))]
+                let mined_result = crate::pearl_real_pouw::mine_pearl_share(
                     &header_hex,
                     &target_hex,
                     m, n, k, noise_rank, noise_range,
                     hash_tile_h, hash_tile_w,
-                )
-            };
+                    nonce,
+                );
 
-            #[cfg(not(feature = "gpu-opencl"))]
-            let mined_result = crate::pearl_real_pouw::mine_pearl_share(
-                &header_hex,
-                &target_hex,
-                m, n, k, noise_rank, noise_range,
-                hash_tile_h, hash_tile_w,
-            );
+                match mined_result {
+                    Ok(Some(proof)) => {
+                        let b64 = proof.to_base64().unwrap_or_default();
+                        let elapsed_ms = mine_start.elapsed().as_secs_f64() * 1000.0;
+                        println!(
+                            "auxpow: PRL share found! nonce={} attempts={} time={:.1}ms b64_len={}",
+                            nonce, attempts_this_call, elapsed_ms, b64.len()
+                        );
+                        plain_proof = Some(b64);
+                        break;
+                    }
+                    Ok(None) => {
+                        // No share this attempt — try next nonce
+                    }
+                    Err(e) => {
+                        println!("auxpow: PRL mining error: {} — retrying", e);
+                    }
+                }
+            }
 
-            let plain_proof = match mined_result {
-                Ok(Some(proof)) => {
-                    let b64 = proof.to_base64().unwrap_or_default();
+            let plain_proof = match plain_proof {
+                Some(p) => p,
+                None => {
+                    let elapsed_ms = mine_start.elapsed().as_secs_f64() * 1000.0;
+                    let total_nonce = NONCE_COUNTER.load(Ordering::Relaxed);
                     println!(
-                        "auxpow: PRL mined proof — b64_len={}",
-                        b64.len()
+                        "auxpow: PRL no share after {} attempts ({:.1}ms, total nonces={}) — not submitting",
+                        attempts_this_call, elapsed_ms, total_nonce
                     );
-                    b64
-                }
-                Ok(None) => {
-                    // No share found — construct a dummy proof that will be
-                    // rejected by the pool (expected for high difficulty)
-                    println!("auxpow: PRL no share found — submitting dummy proof");
-                    let dummy = crate::pearl_real_pouw::PlainProof {
-                        m, n, k, noise_rank,
-                        a: crate::pearl_real_pouw::MatrixMerkleProof {
-                            proof: crate::pearl_real_pouw::MerkleProof {
-                                leaf_data: vec![],
-                                leaf_indices: vec![],
-                                total_leaves: 0,
-                                root: [0u8; 32],
-                                siblings: vec![],
-                                leaf_hash: [0u8; 32],
-                                side_flags: vec![],
-                            },
-                            row_indices: vec![],
-                        },
-                        bt: crate::pearl_real_pouw::MatrixMerkleProof {
-                            proof: crate::pearl_real_pouw::MerkleProof {
-                                leaf_data: vec![],
-                                leaf_indices: vec![],
-                                total_leaves: 0,
-                                root: [0u8; 32],
-                                siblings: vec![],
-                                leaf_hash: [0u8; 32],
-                                side_flags: vec![],
-                            },
-                            row_indices: vec![],
-                        },
-                        moe: None,
-                        noised_a_fragment: vec![],
-                        noised_b_fragment: vec![],
-                    };
-                    dummy.to_base64().unwrap_or_default()
-                }
-                Err(e) => {
-                    println!("auxpow: PRL mining error: {} — submitting dummy proof", e);
-                    let dummy = crate::pearl_real_pouw::PlainProof {
-                        m, n, k, noise_rank,
-                        a: crate::pearl_real_pouw::MatrixMerkleProof {
-                            proof: crate::pearl_real_pouw::MerkleProof {
-                                leaf_data: vec![],
-                                leaf_indices: vec![],
-                                total_leaves: 0,
-                                root: [0u8; 32],
-                                siblings: vec![],
-                                leaf_hash: [0u8; 32],
-                                side_flags: vec![],
-                            },
-                            row_indices: vec![],
-                        },
-                        bt: crate::pearl_real_pouw::MatrixMerkleProof {
-                            proof: crate::pearl_real_pouw::MerkleProof {
-                                leaf_data: vec![],
-                                leaf_indices: vec![],
-                                total_leaves: 0,
-                                root: [0u8; 32],
-                                siblings: vec![],
-                                leaf_hash: [0u8; 32],
-                                side_flags: vec![],
-                            },
-                            row_indices: vec![],
-                        },
-                        moe: None,
-                        noised_a_fragment: vec![],
-                        noised_b_fragment: vec![],
-                    };
-                    dummy.to_base64().unwrap_or_default()
+                    return Ok(ShareResult::NoShare);
                 }
             };
 

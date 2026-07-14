@@ -1,6 +1,6 @@
-//! Live E2E: AlphaPool port 5571 + GPU PoUW mining + mining.submit.
+//! Live E2E: 2miners PRL pool + GPU PoUW mining + mining.submit.
 //!
-//! Connects to AlphaPool, receives mining.notify, runs GPU PoUW pipeline
+//! Connects to 2miners (prl.2miners.com:1818), receives mining.notify, runs GPU PoUW pipeline
 //! via submit_share (which mines internally with GPU), submits via mining.submit.
 //!
 //! Usage:
@@ -20,7 +20,7 @@ async fn main() {
     let client = client.with_gpu_opencl().await;
 
     let wallet = "prl1pk5t3amreqnqlp0q0l5zcauy2nyszlalux3rlcw93spwtr9mrlywsdesmmp";
-    println!("Connecting to AlphaPool port 5571...");
+    println!("Connecting to 2miners PRL pool...");
     client.connect(wallet).await.expect("connect failed");
     println!("Connected and authorized!");
 
@@ -80,6 +80,17 @@ async fn main() {
                     total, attempts, reason, accepted, rejected
                 );
             }
+            Ok(zion_auxpow::auxpow_client::ShareResult::NoShare) => {
+                let total = start.elapsed().as_secs();
+                if attempts % 5 == 0 || total > 0 {
+                    println!(
+                        "[{}s] call={} no share found (mining... accepted={} rejected={})",
+                        total, attempts, accepted, rejected
+                    );
+                }
+                // Brief cooldown to prevent GPU thermal issues
+                sleep(Duration::from_millis(500)).await;
+            }
             Ok(zion_auxpow::auxpow_client::ShareResult::Unknown) => {
                 let total = start.elapsed().as_secs();
                 if attempts % 5 == 0 {
@@ -97,7 +108,7 @@ async fn main() {
         }
 
         let total = start.elapsed().as_secs();
-        if total > 120 || accepted >= 5 {
+        if total > 300 || accepted >= 5 {
             break;
         }
     }

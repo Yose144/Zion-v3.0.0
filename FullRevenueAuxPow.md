@@ -688,7 +688,8 @@ coin at a time per miner).
 - ✅ GPU backend: `update_epoch()` calculates progpow epoch (height / 30000)
 - ✅ GPU miner: `build_progpow_kernel()` + `set_progpow_dag()` in `gpu_miner.rs`
 - ✅ GPU miner: mix_hash reading for progpow shares
-- ✅ DagManager: `ensure_dag()` handles progpow (reuses ethash DAG)
+- ✅ DagManager: `ensure_progpow_dag()` — dedicated ProgPow DAG path (separate GPU buffer + disk cache)
+- ✅ OpenMP parallel DAG generation in `etchash_native.c` (12-core speedup, epoch 120 ~2 GB in ~4 min)
 - ✅ Miner main.rs: persistent `progpow_gpu_thread` with DAG management
 - ✅ Miner main.rs: progpow dispatch routing in external stream
 - ✅ Miner main.rs: `ExternalShareResult` includes `mix_hash` field
@@ -714,7 +715,9 @@ coin at a time per miner).
 ### Build & Deploy Status
 
 - Pool server: Built on Edge (62.171.141.136), binary at `/usr/local/bin/zion-pool-server`
-- Miner: Built locally with `--features gpu-opencl`, compiles clean (warnings only)
+- Miner: Built locally with `--features gpu-opencl,native-hashers`, compiles clean (warnings only)
+- Miner: ProgPow DAG loaded from disk cache, GPU mining active (15000+ batches, 0 errors)
+- Miner: Deployed to Edge server (`/usr/local/bin/zion-miner`, libgomp linked)
 - Docker SMOS package: `zion-miner-v3.0.35-pearl-pool-routed.zip` on Edge
 - Git commit: `c935a7c0f` (routing stats fix) + pending ProgPow commit
 

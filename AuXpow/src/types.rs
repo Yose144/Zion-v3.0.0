@@ -110,7 +110,7 @@ impl ExternalCoin {
             Self::XMR => "gulf.moneroocean.stream:10001",
             Self::VRSC => "eu.luckpool.net:3956",
             Self::EPIC => "de.epicmine.io:3334",
-            Self::PRL => "us2.alphapool.tech:5571",
+            Self::PRL => "prl.2miners.com:1818",
         }
     }
 
