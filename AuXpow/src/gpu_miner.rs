@@ -101,6 +101,45 @@ pub struct GpuMiner {
     kawpow_dag: Option<KawpowDag>,
     /// Cached ProgPow DAG buffer (set via `set_progpow_dag` before mining EPIC).
     progpow_dag: Option<ProgpowDag>,
+    /// Cached Pearl PoUW buffers (reused across nonces to avoid allocation overhead).
+    #[cfg(feature = "gpu-opencl")]
+    pearl_buffers: Option<PearlPouwBufferCache>,
+}
+
+/// Cached OpenCL buffers for Pearl PoUW pipeline, reused across nonces.
+/// Keyed by (m, n, k, rank) — if parameters change, a new cache is created.
+#[cfg(feature = "gpu-opencl")]
+struct PearlPouwBufferCache {
+    m: usize,
+    n: usize,
+    k: usize,
+    rank: usize,
+    num_row_offsets: usize,
+    num_col_offsets: usize,
+    matrix_a_buf: Buffer<i8>,
+    matrix_bt_buf: Buffer<i8>,
+    chunk_hashes_buf: Buffer<u8>,
+    merkle_buf: Buffer<u8>,
+    root_a_buf: Buffer<u8>,
+    root_b_buf: Buffer<u8>,
+    b_noise_seed_buf: Buffer<u8>,
+    a_noise_seed_buf: Buffer<u8>,
+    e_al_buf: Buffer<i8>,
+    e_br_buf: Buffer<i8>,
+    e_ar_perm_buf: Buffer<u32>,
+    e_bl_perm_buf: Buffer<u32>,
+    noised_a_buf: Buffer<i32>,
+    noised_b_buf: Buffer<i32>,
+    iv_buf: Buffer<u8>,
+    seed_label_a_buf: Buffer<u8>,
+    seed_label_b_buf: Buffer<u8>,
+    row_off_buf: Buffer<u32>,
+    col_off_buf: Buffer<u32>,
+    rows_base_buf: Buffer<u32>,
+    cols_base_buf: Buffer<u32>,
+    output_tile_buf: Buffer<u32>,
+    output_jackpot_buf: Buffer<u8>,
+    found_buf: Buffer<u32>,
 }
 
 /// Maps an algorithm name to its kernel file and entry function.
@@ -175,6 +214,8 @@ impl GpuMiner {
             ethash_dag: None,
             kawpow_dag: None,
             progpow_dag: None,
+            #[cfg(feature = "gpu-opencl")]
+            pearl_buffers: None,
         })
     }
 
@@ -251,16 +292,17 @@ impl GpuMiner {
         let kernel = match algorithm {
             "blake3" | "blake3_alph" | "blake3_dcr" | "pearlhash" | "pearlhash_prl" => {
                 Self::build_header_nonce_kernel(
-                pro_que,
-                kernel_name,
-                header,
-                target,
-                base_nonce,
-                batch_size,
-                &output_nonce_buf,
-                &output_hash_buf,
-                &found_flag_buf,
-            )?,
+                    pro_que,
+                    kernel_name,
+                    header,
+                    target,
+                    base_nonce,
+                    batch_size,
+                    &output_nonce_buf,
+                    &output_hash_buf,
+                    &found_flag_buf,
+                )?
+            },
             "autolykos" | "autolykos_erg" => {
                 // Prepare (and cache) the Autolykos v2 precomputed table.
                 // `extra` carries the block height as a little-endian u32 in
@@ -890,6 +932,7 @@ impl GpuMiner {
                     "kawpow_kernel.cl" => include_str!("../csrc/opencl/kawpow_kernel.cl"),
                     "ethash_kernel.cl" => include_str!("../csrc/opencl/ethash_kernel.cl"),
                     "pearl_kernel.cl" => include_str!("../csrc/opencl/pearl_kernel.cl"),
+                    "pearl_pouw_native.cl" => include_str!("../csrc/opencl/pearl_pouw_native.cl"),
                     _ => return Err(anyhow!("Unknown kernel file: {kernel_file} (not on disk and not embedded)")),
                 };
                 println!("auxpow_gpu_opencl using embedded kernel={kernel_file}");
@@ -1576,6 +1619,427 @@ impl DagManager {
     /// Returns the currently loaded KawPow epoch, if any.
     pub fn kawpow_epoch(&self) -> Option<u32> {
         self.kawpow_epoch
+    }
+}
+
+// ─── Pearl PoUW GPU-Native Pipeline (OpenCL) ─────────────────────────────
+
+/// Input for GPU-native Pearl PoUW mining (no CPU data prep needed).
+/// Mirrors `gpu_metal::PearlPouwNativeInput` for the OpenCL backend.
+pub struct PearlPouwNativeInput<'a> {
+    pub nonce: u64,
+    pub m: usize,
+    pub n: usize,
+    pub k: usize,
+    pub rank: usize,
+    pub job_key: [u8; 32],
+    pub target: [u8; 32],
+    pub row_offsets: &'a [u32],
+    pub col_offsets: &'a [u32],
+    pub rows_base: &'a [u32],
+    pub cols_base: &'a [u32],
+    pub seed_label_a: [u8; 32],
+    pub seed_label_b: [u8; 32],
+}
+
+/// Result of GPU-native Pearl PoUW mining (includes matrices for Merkle proof).
+/// Mirrors `gpu_metal::PearlPouwNativeResult` for the OpenCL backend.
+pub struct PearlPouwNativeResult {
+    pub tile_index: u32,
+    pub jackpot_hash: [u8; 32],
+    pub matrix_a: Vec<i8>,
+    pub matrix_bt: Vec<i8>,
+}
+
+/// Compute a safe (power-of-2) local work size that divides the global work size.
+/// OpenCL requires `global_work_size % local_work_size == 0` and `local_work_size <= global_work_size`.
+#[cfg(feature = "gpu-opencl")]
+fn safe_lws(global: usize, max_lws: usize) -> usize {
+    let mut lws = max_lws.min(global);
+    while lws > 1 && global % lws != 0 {
+        lws /= 2;
+    }
+    lws.max(1)
+}
+
+/// Round global work size up to a multiple of local work size.
+#[cfg(feature = "gpu-opencl")]
+fn round_up_gws(global: usize, lws: usize) -> usize {
+    ((global + lws - 1) / lws) * lws
+}
+
+impl GpuMiner {
+    /// Fully GPU-native Pearl PoUW mining pipeline (OpenCL).
+    ///
+    /// All 7 steps run on GPU:
+    /// 1. Matrix generation (PCG32 PRNG from nonce)
+    /// 2. BLAKE3 chunk hashing (keyed with job_key)
+    /// 3. BLAKE3 Merkle tree reduction → root hashes
+    /// 4. Noise seed derivation
+    /// 5. Noise generation (E_AL, E_AR, E_BL, E_BR)
+    /// 6. Noised matrix computation
+    /// 7. MatMul + jackpot + target check
+    ///
+    /// CPU only provides job_key, nonce, and mining config.
+    /// Returns winning tile index + jackpot hash + matrices (for Merkle proof).
+    pub fn pearl_pouw_mine_native(
+        &mut self,
+        input: &PearlPouwNativeInput<'_>,
+    ) -> Result<Option<PearlPouwNativeResult>> {
+        let kernel_file = "pearl_pouw_native.cl";
+        let m = input.m;
+        let n = input.n;
+        let k = input.k;
+        let rank = input.rank;
+        let mk = m * k;
+        let nk = n * k;
+
+        let pro_que = self.ensure_proque(kernel_file)?;
+        let q = pro_que.queue().clone();
+        let program = pro_que.program().clone();
+        drop(pro_que); // release mutable borrow of self before accessing self.pearl_buffers
+
+        let profile = std::env::var("PEARL_PROFILE").is_ok();
+        let mut prof_timings: Vec<(&str, f64)> = Vec::new();
+        let prof_t0 = std::time::Instant::now();
+        let mut prof_last = prof_t0;
+
+        // ── Buffer management: reuse cached buffers across nonces ─────────
+        let num_chunks_a = mk.div_ceil(1024);
+        let num_chunks_b = nk.div_ceil(1024);
+        let max_chunks = num_chunks_a.max(num_chunks_b);
+
+        let cache_match = self.pearl_buffers.as_ref().map_or(false, |c| {
+            c.m == m && c.n == n && c.k == k && c.rank == rank &&
+            c.num_row_offsets == input.row_offsets.len() &&
+            c.num_col_offsets == input.col_offsets.len()
+        });
+
+        // Take cache out of self (will put it back before returning)
+        let mut cache = if cache_match {
+            self.pearl_buffers.take().unwrap()
+        } else {
+            // Create all new buffers
+            let matrix_a_buf: Buffer<i8> = Buffer::builder().queue(q.clone()).len(mk).build()?;
+            let matrix_bt_buf: Buffer<i8> = Buffer::builder().queue(q.clone()).len(nk).build()?;
+            let chunk_hashes_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(max_chunks * 32).build()?;
+            let merkle_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(max_chunks * 32).build()?;
+            let root_a_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).build()?;
+            let root_b_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).build()?;
+            let b_noise_seed_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).build()?;
+            let a_noise_seed_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).build()?;
+            let e_al_buf: Buffer<i8> = Buffer::builder().queue(q.clone()).len(m * rank).build()?;
+            let e_br_buf: Buffer<i8> = Buffer::builder().queue(q.clone()).len(n * rank).build()?;
+            let e_ar_perm_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(k * 2).build()?;
+            let e_bl_perm_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(k * 2).build()?;
+            let noised_a_buf: Buffer<i32> = Buffer::builder().queue(q.clone()).len(mk).build()?;
+            let noised_b_buf: Buffer<i32> = Buffer::builder().queue(q.clone()).len(nk).build()?;
+            let iv_bytes: [u8; 32] = [
+                0x67, 0xE6, 0x09, 0x6A, 0x85, 0xAE, 0x67, 0xBB,
+                0x72, 0xF3, 0x6E, 0x3C, 0x3A, 0xF5, 0x4F, 0xA5,
+                0x7F, 0x52, 0x0E, 0x51, 0x8C, 0x68, 0x05, 0x9B,
+                0xAB, 0xD9, 0x83, 0x1F, 0x19, 0xCD, 0xE0, 0x5B,
+            ];
+            let iv_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).copy_host_slice(&iv_bytes).build()?;
+            let seed_label_a_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).copy_host_slice(&input.seed_label_a).build()?;
+            let seed_label_b_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).copy_host_slice(&input.seed_label_b).build()?;
+            let row_off_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(input.row_offsets.len()).copy_host_slice(input.row_offsets).build()?;
+            let col_off_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(input.col_offsets.len()).copy_host_slice(input.col_offsets).build()?;
+            let rows_base_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(input.rows_base.len()).copy_host_slice(input.rows_base).build()?;
+            let cols_base_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(input.cols_base.len()).copy_host_slice(input.cols_base).build()?;
+            let output_tile_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(1).build()?;
+            let output_jackpot_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).build()?;
+            let found_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(1).build()?;
+            PearlPouwBufferCache {
+                m, n, k, rank,
+                num_row_offsets: input.row_offsets.len(),
+                num_col_offsets: input.col_offsets.len(),
+                matrix_a_buf, matrix_bt_buf, chunk_hashes_buf, merkle_buf,
+                root_a_buf, root_b_buf, b_noise_seed_buf, a_noise_seed_buf,
+                e_al_buf, e_br_buf, e_ar_perm_buf, e_bl_perm_buf,
+                noised_a_buf, noised_b_buf, iv_buf, seed_label_a_buf, seed_label_b_buf,
+                row_off_buf, col_off_buf, rows_base_buf, cols_base_buf,
+                output_tile_buf, output_jackpot_buf, found_buf,
+            }
+        };
+
+        // Per-nonce: upload job_key, target, and reset found/output_tile
+        let job_key_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone()).len(32).copy_host_slice(&input.job_key).build()?;
+        let target_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone()).len(32).copy_host_slice(&input.target).build()?;
+        let zero: [u32; 1] = [0u32];
+        cache.found_buf.write(&zero[..]).enq()?;
+        cache.output_tile_buf.write(&zero[..]).enq()?;
+
+        // Reference cached buffers for kernel args (use &cache.field directly to avoid &&Buffer)
+        let matrix_a_buf = &cache.matrix_a_buf;
+        let matrix_bt_buf = &cache.matrix_bt_buf;
+        let chunk_hashes_buf = &cache.chunk_hashes_buf;
+        let merkle_buf = &cache.merkle_buf;
+        let root_a_buf = &cache.root_a_buf;
+        let root_b_buf = &cache.root_b_buf;
+        let b_noise_seed_buf = &cache.b_noise_seed_buf;
+        let a_noise_seed_buf = &cache.a_noise_seed_buf;
+        let e_al_buf = &cache.e_al_buf;
+        let e_br_buf = &cache.e_br_buf;
+        let e_ar_perm_buf = &cache.e_ar_perm_buf;
+        let e_bl_perm_buf = &cache.e_bl_perm_buf;
+        let noised_a_buf = &cache.noised_a_buf;
+        let noised_b_buf = &cache.noised_b_buf;
+        let iv_buf = &cache.iv_buf;
+        let seed_label_a_buf = &cache.seed_label_a_buf;
+        let seed_label_b_buf = &cache.seed_label_b_buf;
+        let output_tile_buf = &cache.output_tile_buf;
+        let output_jackpot_buf = &cache.output_jackpot_buf;
+        let found_buf = &cache.found_buf;
+        let row_off_buf = &cache.row_off_buf;
+        let col_off_buf = &cache.col_off_buf;
+        let rows_base_buf = &cache.rows_base_buf;
+        let cols_base_buf = &cache.cols_base_buf;
+
+        // ── Step 1: Generate matrices A and B^T ────────────────────────
+        {
+            let kern_gen_a = Kernel::builder()
+                .queue(q.clone()).program(&program).name("pearl_gen_matrix")
+                .arg(matrix_a_buf).arg(input.nonce)
+                .arg(m as u32).arg(k as u32).arg(0u32)
+                .build()?;
+            unsafe { kern_gen_a.cmd().global_work_size(mk as usize).local_work_size(256).enq()?; }
+
+            let kern_gen_bt = Kernel::builder()
+                .queue(q.clone()).program(&program).name("pearl_gen_matrix")
+                .arg(matrix_bt_buf).arg(input.nonce)
+                .arg(n as u32).arg(k as u32).arg(1u32)
+                .build()?;
+            unsafe { kern_gen_bt.cmd().global_work_size(nk as usize).local_work_size(256).enq()?; }
+        }
+        if profile { q.finish()?; prof_timings.push(("step1_gen_matrix", prof_last.elapsed().as_secs_f64() * 1000.0)); prof_last = std::time::Instant::now(); }
+
+        // ── Step 2: BLAKE3 chunk hashing ────────────────────────────────
+        {
+            let kern_chunk_a = Kernel::builder()
+                .queue(q.clone()).program(&program).name("pearl_blake3_chunk_hash")
+                .arg(matrix_a_buf).arg(&job_key_buf).arg(chunk_hashes_buf)
+                .arg(num_chunks_a as u32)
+                .build()?;
+            unsafe { kern_chunk_a.cmd().global_work_size(num_chunks_a).local_work_size(64).enq()?; }
+
+            let kern_chunk_b = Kernel::builder()
+                .queue(q.clone()).program(&program).name("pearl_blake3_chunk_hash")
+                .arg(matrix_bt_buf).arg(&job_key_buf).arg(merkle_buf)
+                .arg(num_chunks_b as u32)
+                .build()?;
+            unsafe { kern_chunk_b.cmd().global_work_size(num_chunks_b).local_work_size(64).enq()?; }
+        }
+        if profile { q.finish()?; prof_timings.push(("step2_blake3_chunk", prof_last.elapsed().as_secs_f64() * 1000.0)); prof_last = std::time::Instant::now(); }
+
+        // ── Step 3: Merkle tree reduction ──────────────────────────────
+        // Reduce A: chunk_hashes_buf → root_a_buf
+        // Reduce B: merkle_buf → root_b_buf
+        {
+            // Reduce A
+            let mut num_nodes = num_chunks_a;
+            let mut src_a: &Buffer<u8> = chunk_hashes_buf;
+            let mut dst_a: &Buffer<u8> = merkle_buf;
+            let mut level = 0u32;
+            while num_nodes > 1 {
+                let num_parents = num_nodes / 2;
+                let is_root = num_parents == 1;
+                let dst = if is_root { root_a_buf } else { dst_a };
+
+                let kern_merge = Kernel::builder()
+                    .queue(q.clone()).program(&program).name("pearl_blake3_merge")
+                    .arg(src_a).arg(dst)
+                    .arg(num_parents as u32).arg(if is_root { 1u32 } else { 0u32 })
+                    .build()?;
+                let lws = safe_lws(num_parents, 64);
+                let gws = round_up_gws(num_parents, lws);
+                unsafe { kern_merge.cmd().global_work_size(gws).local_work_size(lws).enq()?; }
+
+                std::mem::swap(&mut src_a, &mut dst_a);
+                num_nodes = num_parents;
+                level += 1;
+            }
+
+            // Reduce B
+            let mut num_nodes = num_chunks_b;
+            let mut src_b: &Buffer<u8> = merkle_buf;
+            let mut dst_b: &Buffer<u8> = chunk_hashes_buf;
+            let mut level = 0u32;
+            while num_nodes > 1 {
+                let num_parents = num_nodes / 2;
+                let is_root = num_parents == 1;
+                let dst = if is_root { root_b_buf } else { dst_b };
+
+                let kern_merge = Kernel::builder()
+                    .queue(q.clone()).program(&program).name("pearl_blake3_merge")
+                    .arg(src_b).arg(dst)
+                    .arg(num_parents as u32).arg(if is_root { 1u32 } else { 0u32 })
+                    .build()?;
+                let lws = safe_lws(num_parents, 64);
+                let gws = round_up_gws(num_parents, lws);
+                unsafe { kern_merge.cmd().global_work_size(gws).local_work_size(lws).enq()?; }
+
+                std::mem::swap(&mut src_b, &mut dst_b);
+                num_nodes = num_parents;
+                level += 1;
+            }
+        }
+        if profile { q.finish()?; prof_timings.push(("step3_merkle", prof_last.elapsed().as_secs_f64() * 1000.0)); prof_last = std::time::Instant::now(); }
+
+        // ── Step 4: Derive noise seeds ─────────────────────────────────
+        // b_noise_seed = blake3(job_key || hash_b)  — unkeyed, 64-byte input
+        // a_noise_seed = blake3(b_noise_seed || hash_a)  — unkeyed, 64-byte input
+        // We need to assemble seed_msg = job_key || hash_b on the CPU, then upload.
+        {
+            // Read root_b from GPU
+            let mut root_b = [0u8; 32];
+            root_b_buf.read(&mut root_b[..]).enq()?;
+            // Read root_a from GPU
+            let mut root_a = [0u8; 32];
+            root_a_buf.read(&mut root_a[..]).enq()?;
+
+            // seed_msg = job_key || hash_b
+            let mut seed_msg = [0u8; 64];
+            seed_msg[..32].copy_from_slice(&input.job_key);
+            seed_msg[32..].copy_from_slice(&root_b);
+            let seed_msg_buf_tmp: Buffer<u8> = Buffer::builder()
+                .queue(q.clone()).len(64).copy_host_slice(&seed_msg).build()?;
+
+            let kern_seed_b = Kernel::builder()
+                .queue(q.clone()).program(&program).name("pearl_blake3_small_hash")
+                .arg(&seed_msg_buf_tmp).arg(64u32).arg(iv_buf).arg(0u32).arg(b_noise_seed_buf)
+                .build()?;
+            unsafe { kern_seed_b.cmd().global_work_size(1).local_work_size(1).enq()?; }
+
+            // Read b_noise_seed
+            let mut b_seed = [0u8; 32];
+            b_noise_seed_buf.read(&mut b_seed[..]).enq()?;
+
+            // seed_msg = b_noise_seed || hash_a
+            seed_msg[..32].copy_from_slice(&b_seed);
+            seed_msg[32..].copy_from_slice(&root_a);
+            let seed_msg_buf2: Buffer<u8> = Buffer::builder()
+                .queue(q.clone()).len(64).copy_host_slice(&seed_msg).build()?;
+
+            let kern_seed_a = Kernel::builder()
+                .queue(q.clone()).program(&program).name("pearl_blake3_small_hash")
+                .arg(&seed_msg_buf2).arg(64u32).arg(iv_buf).arg(0u32).arg(a_noise_seed_buf)
+                .build()?;
+            unsafe { kern_seed_a.cmd().global_work_size(1).local_work_size(1).enq()?; }
+        }
+        if profile { q.finish()?; prof_timings.push(("step4_seed_derive", prof_last.elapsed().as_secs_f64() * 1000.0)); prof_last = std::time::Instant::now(); }
+
+        // ── Step 5: Generate noise ─────────────────────────────────────
+        {
+            // E_AL: m×rank uniform random int8 (key=seed_label_a, seed=a_noise_seed)
+            let kern_eal = Kernel::builder()
+                .queue(q.clone()).program(&program).name("pearl_gen_uniform_noise")
+                .arg(e_al_buf).arg(a_noise_seed_buf).arg(seed_label_a_buf)
+                .arg(m as u32).arg(rank as u32)
+                .build()?;
+            unsafe { kern_eal.cmd().global_work_size(m * rank).local_work_size(256).enq()?; }
+
+            // E_BR: n×rank uniform random int8 (key=seed_label_b, seed=b_noise_seed)
+            let kern_ebr = Kernel::builder()
+                .queue(q.clone()).program(&program).name("pearl_gen_uniform_noise")
+                .arg(e_br_buf).arg(b_noise_seed_buf).arg(seed_label_b_buf)
+                .arg(n as u32).arg(rank as u32)
+                .build()?;
+            unsafe { kern_ebr.cmd().global_work_size(n * rank).local_work_size(256).enq()?; }
+
+            // E_AR: k×2 permutation pairs (key=seed_label_a, seed=a_noise_seed)
+            let kern_ear = Kernel::builder()
+                .queue(q.clone()).program(&program).name("pearl_gen_permutation")
+                .arg(e_ar_perm_buf).arg(a_noise_seed_buf).arg(seed_label_a_buf)
+                .arg(k as u32).arg(rank as u32)
+                .build()?;
+            unsafe { kern_ear.cmd().global_work_size(k).local_work_size(64).enq()?; }
+
+            // E_BL: k×2 permutation pairs (key=seed_label_b, seed=b_noise_seed)
+            let kern_ebl = Kernel::builder()
+                .queue(q.clone()).program(&program).name("pearl_gen_permutation")
+                .arg(e_bl_perm_buf).arg(b_noise_seed_buf).arg(seed_label_b_buf)
+                .arg(k as u32).arg(rank as u32)
+                .build()?;
+            unsafe { kern_ebl.cmd().global_work_size(k).local_work_size(64).enq()?; }
+        }
+        if profile { q.finish()?; prof_timings.push(("step5_noise_gen", prof_last.elapsed().as_secs_f64() * 1000.0)); prof_last = std::time::Instant::now(); }
+
+        // ── Step 6: Apply noise to matrices ────────────────────────────
+        {
+            let kern_na = Kernel::builder()
+                .queue(q.clone()).program(&program).name("pearl_apply_noise_a")
+                .arg(noised_a_buf).arg(matrix_a_buf).arg(e_al_buf).arg(e_ar_perm_buf)
+                .arg(m as u32).arg(k as u32).arg(rank as u32)
+                .build()?;
+            unsafe { kern_na.cmd().global_work_size(mk).local_work_size(256).enq()?; }
+
+            let kern_nb = Kernel::builder()
+                .queue(q.clone()).program(&program).name("pearl_apply_noise_b")
+                .arg(noised_b_buf).arg(matrix_bt_buf).arg(e_br_buf).arg(e_bl_perm_buf)
+                .arg(n as u32).arg(k as u32).arg(rank as u32)
+                .build()?;
+            unsafe { kern_nb.cmd().global_work_size(nk).local_work_size(256).enq()?; }
+        }
+        if profile { q.finish()?; prof_timings.push(("step6_apply_noise", prof_last.elapsed().as_secs_f64() * 1000.0)); prof_last = std::time::Instant::now(); }
+
+        // ── Step 7: MatMul + jackpot + target check ────────────────────
+        {
+            let total_tiles = input.row_offsets.len() * input.col_offsets.len();
+            let kern_mine = Kernel::builder()
+                .queue(q.clone()).program(&program).name("pearl_pouw_mine_native_v3")
+                .arg(noised_a_buf).arg(noised_b_buf).arg(a_noise_seed_buf).arg(&target_buf)
+                .arg(row_off_buf).arg(col_off_buf).arg(rows_base_buf).arg(cols_base_buf)
+                .arg(output_tile_buf).arg(output_jackpot_buf).arg(found_buf)
+                .arg(input.row_offsets.len() as u32)
+                .arg(input.col_offsets.len() as u32)
+                .arg(k as u32).arg(rank as u32)
+                .build()?;
+            // v2: one work-group per tile, TILE_H*TILE_W=32 work-items per group
+            let lws = 32usize; // TILE_H * TILE_W
+            let gws = total_tiles * lws;
+            unsafe { kern_mine.cmd().global_work_size(gws).local_work_size(lws).enq()?; }
+        }
+        if profile { q.finish()?; prof_timings.push(("step7_mine", prof_last.elapsed().as_secs_f64() * 1000.0)); prof_last = std::time::Instant::now(); }
+
+        // ── Read results ───────────────────────────────────────────────
+        let mut found = [0u32; 1];
+        found_buf.read(&mut found[..]).enq()?;
+        if found[0] == 0 {
+            if profile {
+                q.finish()?;
+                prof_timings.push(("readback", prof_last.elapsed().as_secs_f64() * 1000.0));
+                let total = prof_t0.elapsed().as_secs_f64() * 1000.0;
+                eprint!("PEARL_PROFILE nonce={:>3} |", input.nonce);
+                for (name, ms) in &prof_timings {
+                    eprint!(" {}={:.2}ms", name, ms);
+                }
+                eprintln!(" | TOTAL={:.2}ms", total);
+            }
+            self.pearl_buffers = Some(cache);
+            return Ok(None);
+        }
+
+        let mut tile = [0u32; 1];
+        output_tile_buf.read(&mut tile[..]).enq()?;
+        let mut jackpot_hash = [0u8; 32];
+        output_jackpot_buf.read(&mut jackpot_hash[..]).enq()?;
+
+        // Read back matrices for Merkle proof construction
+        let mut matrix_a = vec![0i8; mk];
+        matrix_a_buf.read(&mut matrix_a).enq()?;
+        let mut matrix_bt = vec![0i8; nk];
+        matrix_bt_buf.read(&mut matrix_bt).enq()?;
+
+        self.pearl_buffers = Some(cache);
+        Ok(Some(PearlPouwNativeResult {
+            tile_index: tile[0],
+            jackpot_hash,
+            matrix_a,
+            matrix_bt,
+        }))
     }
 }
 
