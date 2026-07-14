@@ -291,6 +291,52 @@ export interface PoolMiner {
   active: boolean;
 }
 
+export interface PoolWalletStatus {
+  pool_wallet: string;
+  payout_enabled: boolean;
+  utxo_count: number | null;
+  balance_zion: number;
+  blocks_found: number;
+  pending_payouts: number;
+  last_payout_time: string | null;
+  last_payout_error: string | null;
+  fee_split: string;
+  shares_accepted: number;
+  shares_rejected: number;
+}
+
+export interface PoolAuxpow {
+  circuit_open: boolean;
+  coin_switches: number;
+  consecutive_failures: number;
+  current_algorithm: string;
+  current_coin: string;
+  current_pool: string;
+  enabled: boolean;
+  last_switch_ts: string;
+  revenue_usd: number;
+  shares_accepted: number;
+  shares_rejected: number;
+  shares_submitted: number;
+  uptime_secs: number;
+}
+
+export interface PoolRevenue {
+  enabled: boolean;
+  status: string;
+  strategy: string;
+  total_usd: number;
+  daily_estimate_usd: number;
+  miner_share_pct: number;
+  dao_share_pct: number;
+  humanitarian_share_pct: number;
+  pool_fee_pct: number;
+  last_distribution_ts: string | null;
+  next_distribution_ts: string | null;
+  active_coins: string[];
+  circuit_open: boolean;
+}
+
 export interface PoolMinersDashboard {
   ok: boolean;
   miners: PoolMiner[];
@@ -307,8 +353,258 @@ export interface PoolMinersDashboard {
     total_on_chain_zion?: number;
     blocks_found?: number;
   };
+  pool_wallet?: PoolWalletStatus;
+  auxpow?: PoolAuxpow;
+  revenue?: PoolRevenue;
+  pplns?: {
+    payout_rounds?: number;
+    registered_miners?: number;
+    total_paid_zion?: number;
+    total_pending_zion?: number;
+    window_size?: number;
+    window_used?: number;
+    window_utilization_pct?: number;
+  };
+  fee_split?: {
+    miner_pct?: number;
+    humanitarian_pct?: number;
+    issobella_pct?: number;
+    pool_fee_pct?: number;
+    humanitarian_accumulated_zion?: number;
+    issobella_accumulated_zion?: number;
+    pool_fee_accumulated_zion?: number;
+    humanitarian_wallet?: string;
+    issobella_wallet?: string;
+    pool_fee_wallet?: string;
+  };
+  routing?: {
+    submits?: number;
+    accepted?: number;
+    rejected?: number;
+    stale?: number;
+    accept_rate_pct?: number;
+    groups?: Record<string, { submits?: number; accepted?: number }>;
+    sources?: Record<string, { submits?: number; accepted?: number }>;
+  };
+  connection_history?: { ts: number; time?: string; session_id?: string; active_sessions?: number; peer_addr?: string; miner_id?: string | null; worker_name?: string | null; duration_secs?: number | null; bye?: string | null }[];
+  totals?: { pending_zion?: number; paid_zion?: number; on_chain_zion?: number };
 }
 
 export async function fetchPoolMinersDashboard(): Promise<PoolMinersDashboard | null> {
   return apiFetch<PoolMinersDashboard>('/api/pool/miners-dashboard');
+}
+
+// ── Revenue Dashboard ───────────────────────────────────────────────
+
+export interface RevenueStream {
+  source: string;
+  weight_pct: number;
+  fee_rate_pct: number;
+  submits: number;
+  accepted: number;
+}
+
+export interface RevenueDetail {
+  enabled: boolean;
+  status: string;
+  strategy: string;
+  total_usd: number;
+  daily_estimate_usd: number;
+  revenue_usd: number;
+  revenue_per_hour_usd: number;
+  zion_mined_total: number;
+  zion_paid_total: number;
+  zion_pending: number;
+  zion_per_day: number;
+  blocks_found: number;
+  blocks_per_day: number;
+  pool_hashrate: number;
+  current_algorithm?: string;
+  current_pool?: string;
+  current_coin?: string;
+  shares_submitted: number;
+  shares_accepted: number;
+  shares_rejected: number;
+  uptime_secs: number;
+  coin_switches: number;
+  last_switch_ts?: string;
+  consecutive_failures: number;
+  circuit_open: boolean;
+  miner_share_pct: number;
+  dao_share_pct: number;
+  humanitarian_share_pct: number;
+  pool_fee_pct: number;
+  humanitarian_accumulated_zion: number;
+  issobella_accumulated_zion: number;
+  pool_fee_accumulated_zion: number;
+  payout_rounds: number;
+  pplns_window_size: number;
+  pplns_window_used: number;
+  registered_miners: number;
+  last_distribution_ts?: string;
+  distribution_cycle: string;
+  accumulated_usd: number;
+  active_coins: string[];
+  coin_revenue: { coin: string; algorithm: string; pool: string; shares: number; revenue_usd: number; active: boolean }[];
+  distributions: { ts: string; amount_zion: number; amount_usd: number; recipient: string; type: string }[];
+  stream_profit_enabled: boolean;
+  stream_profit_provider: string;
+  stream_profit_live: boolean;
+  stream_profit_weights: { source: string; weight_pct: number }[];
+  stream_profit_weights_string: string;
+  stream_profit_description: string;
+  stream_profit_interval: number;
+  stream_profit_hysteresis: number;
+  stream_profit_sources: string;
+}
+
+export interface RevenueDashboard {
+  ok: boolean;
+  auxpow?: PoolAuxpow;
+  stream_profit?: {
+    description: string;
+    enabled: boolean;
+    enabled_sources: string;
+    live: boolean;
+    provider: string;
+    weights: { source: string; weight_pct: number }[];
+    weights_string?: string;
+    interval_secs?: number;
+    hysteresis_pct?: number;
+  };
+  revenue?: RevenueDetail;
+}
+
+export async function fetchRevenueDashboard(): Promise<RevenueDashboard | null> {
+  return apiFetch<RevenueDashboard>('/api/revenue');
+}
+
+export async function fetchRevenueStreams(): Promise<Record<string, unknown> | null> {
+  return apiFetch<Record<string, unknown>>('/api/revenue/streams');
+}
+
+// ── Checklist ───────────────────────────────────────────────
+
+export interface ChecklistItem {
+  id: string;
+  label: string;
+  ok: boolean;
+}
+
+export interface Checklist {
+  checks: ChecklistItem[];
+  total: number;
+  passed: number;
+  pct: number;
+}
+
+export async function fetchChecklist(): Promise<Checklist | null> {
+  return apiFetch<Checklist>('/api/checklist');
+}
+
+// ── Wallets ───────────────────────────────────────────────
+
+export interface Wallet {
+  address: string;
+  label: string;
+  source: string;
+  category: 'premine' | 'operational';
+  amount_zion?: number;
+  balance_zion: number | null;
+  balance_atomic: number | null;
+  rpc_ok: boolean;
+}
+
+export interface WalletSummary {
+  total_wallets: number;
+  premine_wallets: number;
+  operational_wallets: number;
+  with_live_balance: number;
+  total_premine_zion: number;
+  total_operational_zion: number;
+}
+
+export interface WalletsResponse {
+  wallets: Wallet[];
+  summary: WalletSummary;
+  category_summary: Record<string, { count: number; total_zion: number; labels: string[] }>;
+  rpc: { host: string; port: number; reachable: boolean };
+}
+
+export async function fetchWallets(): Promise<WalletsResponse | null> {
+  return apiFetch<WalletsResponse>('/api/wallets');
+}
+
+// ── Explorer / Blocks ───────────────────────────────────────────────
+
+export interface BlockSummary {
+  height: number;
+  hash: string;
+  ts: number;
+  txns: number;
+  size: number;
+  difficulty: number;
+}
+
+export async function fetchBlocks(limit = 20): Promise<BlockSummary[] | null> {
+  return apiFetch<BlockSummary[]>(`/api/blocks?limit=${limit}`);
+}
+
+// ── Edge Overview ───────────────────────────────────────────────
+
+export interface EdgeOverview {
+  reachable: boolean;
+  edge_host: string;
+  topology: string;
+  chain_height: number;
+  pool_running: boolean;
+  active_miners: number;
+  hashrate: number;
+  shares_accepted: number;
+  blocks_found: number;
+  services: Record<string, string>;
+  local_backup: {
+    running: boolean;
+    chain_height: number;
+    tip_hash: string;
+    known_peers: number;
+    mempool_size: number;
+    network: string;
+    protocol_version: string;
+    consensus_profile: string;
+    accepted_blocks: number;
+    node_id: string;
+    p2p_bind: string;
+    rpc_bind: string;
+    host: string;
+    port: number;
+  };
+}
+
+export async function fetchEdgeOverview(): Promise<EdgeOverview | null> {
+  return apiFetch<EdgeOverview>('/api/edge/overview');
+}
+
+// ── Events & Alerts ───────────────────────────────────────────────
+
+export interface BlockEvent {
+  ts: number;
+  height: number;
+  hash: string;
+  type: string;
+  detail: string;
+}
+
+export async function fetchEvents(): Promise<{ events: BlockEvent[] } | null> {
+  return apiFetch<{ events: BlockEvent[] }>('/api/events');
+}
+
+export async function fetchAlertsHistory(): Promise<{ alerts: AlertItem[] } | null> {
+  return apiFetch<{ alerts: AlertItem[] }>('/api/alerts/history');
+}
+
+// ── Control Actions ───────────────────────────────────────────────
+
+export async function fetchControls(): Promise<{ actions: string[]; topology: string } | null> {
+  return apiFetch<{ actions: string[]; topology: string }>('/api/controls');
 }
