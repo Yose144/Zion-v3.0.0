@@ -177,7 +177,7 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | R7 | B2b VRSC revenue (ZcashStratum, LuckPool) | ✅ DONE | `bb7d5407b` |
 | R8 | True AuxPow consensus | 🔮 Future | — |
 
-### Supported External Coins (13 total)
+### Supported External Coins (14 total)
 
 | Coin | Algorithm | Protocol | E2E Status |
 |------|-----------|----------|------------|
@@ -194,6 +194,7 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | FLUX | zelhash | Stratum | TODO |
 | VRSC | verushash v2.2 | ZcashStratum | protocol ✅ (R7), live E2E TODO (LuckPool eu.luckpool.net:3956) |
 | EPIC | progpow | Stratum (custom HTTP) | kernel ✅, CPU hasher ✅, E2E TODO |
+| PRL | pearlhash (PoUW MatMul) | Stratum v1 (TCP) | ★★★ HIGHEST PRIORITY — 22x KAS profit, TODO |
 
 ### AuXpow GPU Backend (2026-07-15)
 
@@ -209,11 +210,13 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | kawpow | RVN | — | — (needs DAG) | ⚠️ kernel only |
 | zelhash | FLUX | 495M | **19.5B** | ⚠️ kernel only |
 | progpow | EPIC | — | — (needs DAG) | ❌ TODO |
+| pearlhash | PRL | — | — | ❌ TODO ★★★ |
 
 **Features:** `gpu-opencl`, `gpu-metal`, `gpu-cuda`, `gpu-all`
 **Benchmark:** `cargo run --example gpu_benchmark -p zion-auxpow --features gpu-metal`
 **Auto-detect:** CUDA > Metal > OpenCL (via `GpuBackend::detect_backend()`)
 **ProgPow (EPIC):** CPU hasher (keccak_f800 + KISS99 + FNV1a) ✅, OpenCL + Metal kernel ✅, 6 unit testů ✅
+**Pearl (PRL):** ★★★ HIGHEST PRIORITY — PoUW MatMul + BLAKE3, 22x profitabilnější než KAS, standard Stratum v1, TODO
 
 ### Stream Profit Env Vars
 ```bash
