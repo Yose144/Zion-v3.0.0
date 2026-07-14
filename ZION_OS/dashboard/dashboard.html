@@ -695,7 +695,19 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 .zql-settings{--qrc:156 163 175;}
 
 /* ═══ Responsive layout consistency ═══ */
+html{overflow-x:hidden;}
 img, svg, video, canvas {max-width:100%;height:auto;}
+.max-w-7xl{max-width:80rem!important;margin-left:auto;margin-right:auto;}
+.max-w-7xl > section,
+.max-w-7xl > div,
+[id^="pane-"]{width:100%;max-width:100%;box-sizing:border-box;min-width:0;}
+[id^="pane-"] > .grid,
+[id^="pane-"] > .flex,
+[id^="pane-"] .grid,
+[id^="pane-"] .flex{min-width:0;}
+table{width:100%;max-width:100%;display:block;overflow-x:auto;white-space:nowrap;}
+pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
+.truncate{max-width:100%;}
 .zion-panel, .zion-panel-soft {max-width:100%;}
 .zion-panel > .overflow-x-auto,
 .zion-panel-soft > .overflow-x-auto {max-width:100%;}
