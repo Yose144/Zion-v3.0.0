@@ -289,25 +289,36 @@ impl PeerManager {
             actions.push(PeerAction::Ban { peer_id, reason });
         }
 
-        // Suggest outbound connections if below minimum
+        // Suggest outbound connections if below minimum.
+        // Cap deficit to the number of unique seeds so we don't generate
+        // duplicate ConnectOutbound actions for the same address when the
+        // seed pool is smaller than MIN_OUTBOUND (common in small networks).
         if self.outbound_count() < MIN_OUTBOUND && !self.seeds.is_empty() {
-            let deficit = MIN_OUTBOUND - self.outbound_count();
-            for _ in 0..deficit {
-                if self.seeds.is_empty() {
-                    break;
-                }
-                let idx = self.seed_index % self.seeds.len();
-                let (addr, port) = self.seeds[idx];
-                self.seed_index += 1;
-
-                // Skip if already connected to this address
-                let already = self
+            // Collect unique seed addresses not already connected.
+            let mut unique_targets: Vec<(IpAddr, u16)> = Vec::new();
+            for (addr, port) in &self.seeds {
+                let already_connected = self
                     .peers
                     .values()
-                    .any(|p| p.addr == addr && p.port == port);
-                if !already {
-                    actions.push(PeerAction::ConnectOutbound { addr, port });
+                    .any(|p| p.addr == *addr && p.port == *port);
+                let already_targeted = unique_targets.contains(&(*addr, *port));
+                if !already_connected && !already_targeted {
+                    unique_targets.push((*addr, *port));
                 }
+            }
+
+            // Round-robin starting from seed_index, but only emit one
+            // ConnectOutbound per unique address per heartbeat cycle.
+            let deficit = MIN_OUTBOUND.saturating_sub(self.outbound_count());
+            let to_connect = deficit.min(unique_targets.len());
+            for _ in 0..to_connect {
+                if unique_targets.is_empty() {
+                    break;
+                }
+                let idx = self.seed_index % unique_targets.len();
+                self.seed_index = self.seed_index.wrapping_add(1);
+                let (addr, port) = unique_targets[idx];
+                actions.push(PeerAction::ConnectOutbound { addr, port });
             }
         }
 

@@ -340,7 +340,8 @@ fn main() -> Result<()> {
                 }
             }
 
-            println!("p2p_peer_addr={peer_addr}");
+            // Note: p2p_peer_addr is logged inside handle_p2p_stream only
+            // after a valid handshake, to avoid log spam from port scanners.
             let runtime = Arc::clone(&p2p_runtime);
             let seen = Arc::clone(&p2p_seen);
             let seen_txs = Arc::clone(&p2p_seen_txs);
@@ -443,14 +444,23 @@ fn handle_p2p_stream(
     peer_sec: &Arc<Mutex<PeerSecurity>>,
     source_ip: IpAddr,
 ) -> Result<()> {
-    // Set read timeout so idle connections are cleaned up
-    stream.set_read_timeout(Some(Duration::from_secs(330))).ok();
+    // Use a short initial read timeout for the handshake.  Port scanners
+    // and probes connect without sending data; we don't want to hold the
+    // connection open for 330s or log a noisy disconnect for each one.
+    // After a valid first message, we relax to the long idle timeout.
+    const HANDSHAKE_TIMEOUT_SECS: u64 = 10;
+    const IDLE_TIMEOUT_SECS: u64 = 330;
+    stream.set_read_timeout(Some(Duration::from_secs(HANDSHAKE_TIMEOUT_SECS))).ok();
     let reader_stream = stream.try_clone().context("failed to clone P2P stream")?;
     let mut reader = BufReader::new(reader_stream);
     let mut writer = stream;
 
     // Peer ID assigned after Hello handshake
     let mut peer_id: Option<String> = None;
+    // Track whether we received at least one valid message — used to
+    // suppress log noise for connections that never complete a handshake
+    // (port scanners, probes).
+    let mut got_handshake = false;
 
     // Transport-layer block-import allowlist (SEC-2026-07-02 F1 hardening).
     //
@@ -502,6 +512,17 @@ fn handle_p2p_stream(
                 break;
             }
         };
+
+        // First valid P2P message decoded — relax to the long idle timeout
+        // and mark that a handshake started (suppresses noisy disconnect log
+        // for port scanners that send garbage data).
+        if !got_handshake {
+            writer.set_read_timeout(Some(Duration::from_secs(IDLE_TIMEOUT_SECS))).ok();
+            got_handshake = true;
+            // Log peer address only after a valid handshake starts, not
+            // for every TCP connect (avoids log spam from port scanners).
+            println!("p2p_peer_addr={source_addr}");
+        }
 
         // Register peer in PeerManager on Hello
         if let P2pMessage::Hello {
@@ -621,7 +642,12 @@ fn handle_p2p_stream(
     if let Some(ref pid) = peer_id {
         lock_peer_mgr(peer_mgr).unregister_peer(pid);
     }
-    println!("p2p_disconnected source={source_addr}");
+    // Only log disconnect for peers that completed a handshake.  Port
+    // scanners and probes that connect without sending data would
+    // otherwise flood the log with p2p_peer_addr/p2p_disconnected pairs.
+    if got_handshake {
+        println!("p2p_disconnected source={source_addr}");
+    }
 
     Ok(())
 }
@@ -1381,6 +1407,14 @@ fn outbound_peer_loop(
     let mut sync_fail_count: u32 = 0;
     let mut sync_fail_height: u64 = 0;
 
+    // Track recent sync targets to prevent multiple one-shot connections
+    // to the same peer within a single outbound cycle. Key = peer address
+    // string, value = epoch seconds of last sync attempt.
+    let mut recent_syncs: std::collections::HashMap<String, u64> =
+        std::collections::HashMap::new();
+    /// Minimum seconds between sync attempts to the same peer.
+    const SYNC_COOLDOWN_SECS: u64 = 25;
+
     // ── Discovery engine setup ─────────────────────────────────────────
     let network_name = {
         let rt = runtime.lock().expect("lock");
@@ -1472,6 +1506,13 @@ fn outbound_peer_loop(
                     }
                 }
                 PeerAction::ConnectOutbound { addr, port } => {
+                    let peer_key = format!("{addr}:{port}");
+                    let now_epoch = epoch_secs();
+                    if let Some(&last) = recent_syncs.get(&peer_key) {
+                        if now_epoch.saturating_sub(last) < SYNC_COOLDOWN_SECS {
+                            continue; // Already synced recently — skip
+                        }
+                    }
                     println!("peer_action_connect_outbound addr={addr}:{port}");
                     let endpoint = match PeerEndpoint::parse(&format!("{addr}:{port}")) {
                         Ok(e) => e,
@@ -1479,7 +1520,10 @@ fn outbound_peer_loop(
                     };
                     // Try sync from this new peer
                     match sync_from_peer(runtime, &endpoint, batch_limit.max(1)) {
-                        Ok(_) => println!("outbound_sync_ok peer={addr}:{port}"),
+                        Ok(_) => {
+                            println!("outbound_sync_ok peer={addr}:{port}");
+                            recent_syncs.insert(peer_key, now_epoch);
+                        }
                         Err(e) => eprintln!("outbound_sync_err peer={addr}:{port} err={e}"),
                     }
                 }
@@ -1511,6 +1555,15 @@ fn outbound_peer_loop(
                         // Feed height into IBD engine
                         ibd.update_peer(&peer.address(), status.chain_height);
                         if status.chain_height > our_height {
+                            // Rate-limit sync: skip if we already synced from
+                            // this peer within the cooldown window.
+                            let peer_key = peer.address();
+                            let now_epoch = epoch_secs();
+                            if let Some(&last) = recent_syncs.get(&peer_key) {
+                                if now_epoch.saturating_sub(last) < SYNC_COOLDOWN_SECS {
+                                    continue;
+                                }
+                            }
                             println!(
                                 "outbound_sync peer={} remote_height={} our_height={}",
                                 peer.address(),
@@ -1521,6 +1574,7 @@ fn outbound_peer_loop(
                                 Ok(_) => {
                                     // Sync succeeded — reset failure counter
                                     sync_fail_count = 0;
+                                    recent_syncs.insert(peer_key, now_epoch);
                                 }
                                 Err(e) => {
                                     eprintln!("outbound_sync_err peer={} err={e}", peer.address());
@@ -1713,9 +1767,19 @@ fn outbound_peer_loop(
                         }
                     }
                     DiscoveryCommand::TryConnect { addr, port } => {
+                        let peer_key = format!("{addr}:{port}");
+                        let now_epoch = epoch_secs();
+                        if let Some(&last) = recent_syncs.get(&peer_key) {
+                            if now_epoch.saturating_sub(last) < SYNC_COOLDOWN_SECS {
+                                continue; // Already synced recently — skip
+                            }
+                        }
                         let ep = PeerEndpoint::new(addr.to_string(), port);
                         match sync_from_peer(runtime, &ep, batch_limit.max(1)) {
-                            Ok(_) => println!("discovery_connect_ok peer={addr}:{port}"),
+                            Ok(_) => {
+                                println!("discovery_connect_ok peer={addr}:{port}");
+                                recent_syncs.insert(peer_key, now_epoch);
+                            }
                             Err(e) => eprintln!("discovery_connect_err peer={addr}:{port} err={e}"),
                         }
                     }
