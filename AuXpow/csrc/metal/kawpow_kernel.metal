@@ -194,9 +194,9 @@ void keccak256(thread const uchar *input, const uint len, thread uchar *output) 
 kernel void kawpow_mine(
     device const uchar* header_hash [[buffer(0)]],  // 32 bytes
     device const uchar* target [[buffer(1)]],       // 32 bytes
-    ulong base_nonce,
+    constant ulong* base_nonce [[buffer(7)]],
     device const ulong* dag [[buffer(2)]],          // DAG buffer (128-byte entries)
-    ulong dag_entries,                               // number of 128-byte entries
+    constant ulong* dag_entries [[buffer(8)]],       // number of 128-byte entries
     device ulong* output_nonce [[buffer(3)]],
     device uchar* output_hash [[buffer(4)]],
     device uchar* output_mix [[buffer(5)]],         // 32-byte compressed mix hash
@@ -206,7 +206,10 @@ kernel void kawpow_mine(
 {
     if (atomic_load_explicit((device atomic_uint*)found, memory_order_relaxed)) return;
 
-    ulong nonce = base_nonce + (ulong)gid;
+    ulong bnonce = *base_nonce;
+    ulong dag_ent = *dag_entries;
+
+    ulong nonce = bnonce + (ulong)gid;
 
     // -- Step 1: seed = keccak512(header_hash || nonce) -> 64 bytes --
     uchar seed_input[40];
@@ -231,7 +234,7 @@ kernel void kawpow_mine(
     for (int i = 0; i < 32; i++) {
         // index = fnv(i ^ mix[0], mix[0]) % dag_entries
         uint idx_seed = fnv1a((uint)i ^ mix[0], mix[0]);
-        ulong index = (ulong)idx_seed % dag_entries;
+        ulong index = (ulong)idx_seed % dag_ent;
 
         // Load first 64 bytes of 128-byte DAG node = 16 uint32 (8 ulong lanes).
         // KawPow uses a 16-uint32 mix; only the first half of each 128-byte
