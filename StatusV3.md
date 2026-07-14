@@ -194,7 +194,7 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | FLUX | zelhash | Stratum | TODO |
 | VRSC | verushash v2.2 | ZcashStratum | protocol ✅ (R7), live E2E TODO (LuckPool eu.luckpool.net:3956) |
 | EPIC | progpow | Stratum (custom HTTP) | kernel ✅, CPU hasher ✅, E2E TODO |
-| PRL | pearlhash (PoUW MatMul) | Stratum v1 (TCP) | ★★★ HIGHEST PRIORITY — 22x KAS profit, TODO |
+| PRL | pearlhash (PoUW MatMul) | PearlStratum (custom) | ★★★ PearlStratum ✅ + CPU hasher ✅ + dispatch ✅ + GPU placeholder ✅, full PoUW TODO |
 
 ### AuXpow GPU Backend (2026-07-15)
 
@@ -210,13 +210,17 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | kawpow | RVN | — | — (needs DAG) | ⚠️ kernel only |
 | zelhash | FLUX | 495M | **19.5B** | ⚠️ kernel only |
 | progpow | EPIC | — | — (needs DAG) | ❌ TODO |
-| pearlhash | PRL | — | — | ❌ TODO ★★★ |
+| pearlhash | PRL | Placeholder | Placeholder | ❌ TODO (full PoUW) ★★★ |
 
 **Features:** `gpu-opencl`, `gpu-metal`, `gpu-cuda`, `gpu-all`
 **Benchmark:** `cargo run --example gpu_benchmark -p zion-auxpow --features gpu-metal`
 **Auto-detect:** CUDA > Metal > OpenCL (via `GpuBackend::detect_backend()`)
 **ProgPow (EPIC):** CPU hasher (keccak_f800 + KISS99 + FNV1a) ✅, OpenCL + Metal kernel ✅, 6 unit testů ✅
-**Pearl (PRL):** ★★★ HIGHEST PRIORITY — PoUW MatMul + BLAKE3, 22x profitabilnější než KAS, standard Stratum v1, TODO
+**Pearl (PRL):** ★★★ HIGHEST PRIORITY — PoUW MatMul + BLAKE3, 22x profitabilnější než KAS.
+**Status:** PearlStratum protocol ✅ (custom dialect: object params, no subscribe, plain_proof),
+CPU hasher ✅ (BLAKE3 placeholder), dispatch/harness ✅, GPU kernels ✅ (BLAKE3 placeholder),
+cosmic-harmony + server.rs integration ✅. 8/8 Pearl tests pass. **Remaining:** full PoUW MatMul
+kernels (INT8 tiled MatMul + noise + Plonky2 ZK), E2E test s AlphaPool, merge mining PRL+MDL.
 
 ### Stream Profit Env Vars
 ```bash

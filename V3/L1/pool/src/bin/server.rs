@@ -354,6 +354,8 @@ fn revenue_source_to_external_coin(source: RevenueSource) -> Option<ExternalCoin
         RevenueSource::RandomXExternal => Some(ExternalCoin::XMR),
         RevenueSource::ZelHashExternal => Some(ExternalCoin::FLUX),
         RevenueSource::VerusHashExternal => Some(ExternalCoin::VRSC),
+        RevenueSource::ProgPowExternal => Some(ExternalCoin::EPIC),
+        RevenueSource::PearlExternal => Some(ExternalCoin::PRL),
         _ => None,
     }
 }
@@ -372,6 +374,7 @@ fn external_coin_to_revenue_source(coin: ExternalCoin) -> RevenueSource {
         ExternalCoin::FLUX => RevenueSource::ZelHashExternal,
         ExternalCoin::VRSC => RevenueSource::VerusHashExternal,
         ExternalCoin::EPIC => RevenueSource::ProgPowExternal,
+        ExternalCoin::PRL => RevenueSource::PearlExternal,
     }
 }
 
@@ -409,6 +412,7 @@ fn auxpow_to_ch_external_coin(coin: ExternalCoin) -> ChExternalCoin {
         ExternalCoin::XMR => ChExternalCoin::XMR,
         ExternalCoin::VRSC => ChExternalCoin::VRSC,
         ExternalCoin::EPIC => ChExternalCoin::VRSC, // placeholder — EPIC not in CH enum
+        ExternalCoin::PRL => ChExternalCoin::PRL,
     }
 }
 
@@ -427,6 +431,7 @@ fn ch_to_auxpow_external_coin(coin: ChExternalCoin) -> ExternalCoin {
         ChExternalCoin::CLORE => ExternalCoin::CLORE,
         ChExternalCoin::XMR => ExternalCoin::XMR,
         ChExternalCoin::VRSC => ExternalCoin::VRSC,
+        ChExternalCoin::PRL => ExternalCoin::PRL,
     }
 }
 
@@ -443,6 +448,7 @@ fn external_coin_to_algorithm(coin: ExternalCoin) -> &'static str {
         ExternalCoin::EVR | ExternalCoin::MEWC => "kawpow",
         ExternalCoin::VRSC => "verushash",
         ExternalCoin::EPIC => "progpow",
+        ExternalCoin::PRL => "pearlhash",
     }
 }
 
@@ -1869,6 +1875,7 @@ fn handle_client(
                     let ext_extranonce1_hex = to_hex(&ext_job.extranonce1);
                     let ext_protocol = match ext_job.external_coin {
                         zion_auxpow::ExternalCoin::VRSC => "zcashstratum".to_string(),
+                        zion_auxpow::ExternalCoin::PRL => "pearlstratum".to_string(),
                         zion_auxpow::ExternalCoin::KAS => "stratum".to_string(),
                         zion_auxpow::ExternalCoin::ALPH => "stratum".to_string(),
                         _ => "stratum".to_string(),
@@ -4749,6 +4756,7 @@ fn source_index(source: RevenueSource) -> usize {
         RevenueSource::ThermalBonus => 13,
         RevenueSource::VerusHashExternal => 14,
         RevenueSource::ProgPowExternal => 15,
+        RevenueSource::PearlExternal => 16,
     }
 }
 
@@ -4770,6 +4778,7 @@ fn revenue_source_name(source: RevenueSource) -> &'static str {
         RevenueSource::ThermalBonus => "thermal_bonus",
         RevenueSource::VerusHashExternal => "verushash",
         RevenueSource::ProgPowExternal => "progpow",
+        RevenueSource::PearlExternal => "pearlhash",
     }
 }
 
@@ -5007,6 +5016,7 @@ fn parse_revenue_source(value: &str) -> Result<RevenueSource> {
         "zelhash" | "flux" => Ok(RevenueSource::ZelHashExternal),
         "verushash" | "vrsc" | "verus" => Ok(RevenueSource::VerusHashExternal),
         "progpow" | "epic" | "epiccash" => Ok(RevenueSource::ProgPowExternal),
+        "pearlhash" | "pearl" | "prl" => Ok(RevenueSource::PearlExternal),
         "ncl" | "ncl_ai" => Ok(RevenueSource::NclAi),
         "deeksha_lite" | "dl" => Ok(RevenueSource::DeekshaLite),
         "thermal_bonus" | "fire" | "thermal" => Ok(RevenueSource::ThermalBonus),

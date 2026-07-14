@@ -459,7 +459,7 @@ pub fn hash_candidate(candidate: &BlockCandidate, algorithm: &str) -> [u8; 32] {
 | VerusHash | VRSC | ✅ Complete (ZcashStratum) | ✅ Native C++ (Haraka+CLHash) | ❌ | ❌ | ❌ TODO | Fáze 4 |
 | ZelHash | FLUX | ❌ | ❌ | ❌ | ❌ | ❌ TODO | Fáze 4 |
 | ProgPow | EPIC | ✅ Simplified (keccak_f800 + KISS99) | ⚠️ Stub | ✅ Kernel | ❌ | ❌ TODO | Fáze 12 |
-| PearlHash | PRL | ❌ TODO (BLAKE3 + MatMul) | ❌ TODO | ❌ TODO | ❌ TODO | ❌ TODO | Fáze 13 ★★★ |
+| PearlHash | PRL | ✅ BLAKE3 placeholder | ✅ Stub (Err→Rust) | ✅ Placeholder | ✅ Placeholder | ✅ PearlStratum protocol | Fáze 13 ★★★ IN PROGRESS |
 | Deeksha Lite | ZION | ✅ (cosmic-harmony) | ✅ Complete | ✅ (ocl) | ✅ (cudarc) | ✅ Produkce | — |
 
 ## 3. Coin matice
@@ -477,7 +477,7 @@ pub fn hash_candidate(candidate: &BlockCandidate, algorithm: &str) -> [u8; 32] {
 | Verus | VRSC | verushash v2.2 | ZcashStratum | ❌ (vlastní) | LuckPool | protocol ✅, live E2E TODO |
 | Flux | FLUX | zelhash | Stratum | TBD | 2miners, MinerPool | ❌ TODO |
 | Epic Cash | EPIC | progpow | Stratum (custom HTTP) | TBD | epicmine.io | ❌ TODO |
-| Pearl | PRL | pearlhash (PoUW MatMul) | Stratum v1 (TCP) | TBD | AlphaPool, PearlHash | ❌ TODO ★★★ |
+| Pearl | PRL | pearlhash (PoUW MatMul) | PearlStratum (custom) | TBD | AlphaPool, PearlHash | ✅ Protocol + dispatch, E2E TODO ★★★ |
 
 ## 4. V3 Pool Integration body
 

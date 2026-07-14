@@ -1,6 +1,6 @@
 # AuxPow Multi-Algorithm GPU Mining — Complete Report & Plan
 
-> **Status:** 2026-07-15 (rev2.6 — Pearl/PRL added as Phase 13: HIGHEST PRIORITY, 22x KAS profitability, PoUW MatMul + BLAKE3, 14 coins, 8 algorithms) | DCR E2E re-verification in progress
+> **Status:** 2026-07-15 (rev2.7 — Pearl/PRL Phase 13 IN PROGRESS: PearlStratum protocol ✅, CPU hasher ✅, dispatch/harness ✅, GPU kernels placeholder, 14 coins, 8 algorithms) | DCR E2E re-verification in progress
 > **Author:** Devin + Yose | **Repo:** `Zion-v3.0.0`
 > **Main goal:** Rozchodit revenue system ze stream multi-algo GPU miningu v Deeksha Chv3 — všechny streamy uvnitř Deeksha Chv3 pipeline
 
@@ -254,7 +254,7 @@ SessionGroup::Auto     → weighted round-robin across all lanes
 | **XMR** | RandomX | **MISSING** | **STUB** | Stratum v1 | — | **TODO** (CPU-only) |
 | **VRSC** | VerusHash v2.2 | **TODO** | **STUB** (Keccak placeholder) | ZcashStratum | — | **IN PROGRESS** — viz `AUXPOW_VRSC_B2B_PLAN.md` |
 | **EPIC** | ProgPow | **DONE** (OpenCL + Metal) | **DONE** (keccak_f800 + KISS99) | Stratum (custom HTTP TODO) | — | **IN PROGRESS** — viz Phase 12 |
-| **PRL** | PearlHash (PoUW MatMul) | **TODO** | **TODO** | Stratum v1 (TCP) | — | **TODO** — viz Phase 13 ★★★ HIGHEST PRIORITY |
+| **PRL** | PearlHash (PoUW MatMul) | **PLACEHOLDER** (BLAKE3) | **DONE** (BLAKE3 placeholder) | **PearlStratum** (custom) | — | **IN PROGRESS** — viz Phase 13 ★★★ |
 
 ### 2.2 Infrastructure Status
 
@@ -358,7 +358,7 @@ ZION Miner (GPU rig)
 | Monero | XMR | randomx | moneroocean.stream:10001 | Stratum v1 | XMR wallet |
 | **Verus** | **VRSC** | **verushash** | **eu.luckpool.net:3956** | **ZcashStratum** | **VRSC wallet** |
 | **Epic Cash** | **EPIC** | **progpow** | **de.epicmine.io:3334** | **Epic JSON-RPC** (TLS) | **EPIC wallet** |
-| **Pearl** | **PRL** | **pearlhash** (PoUW) | **us2.alphapool.tech:5566** | **Stratum v1** (TCP) | **prl1p...** (Taproot) |
+| **Pearl** | **PRL** | **pearlhash** (PoUW) | **us2.alphapool.tech:5566** | **PearlStratum** (custom dialect) | **prl1p...** (Taproot) |
 
 ### 3.5 Pool Environment Variables
 
@@ -753,14 +753,26 @@ ZION Miner (GPU rig)
 6. Submit proof: zkSNARK (Plonky2) < 60KB, post-quantum, transparent setup
 ```
 
-**Pearl Stratum protokol (standard Stratum v1 over TCP):**
-- **Transport:** TCP (standard stratum, ne HTTP jako EPIC!)
-- `mining.subscribe` → `[["mining.notify","session"], extranonce1]`
-- `mining.authorize` → `[worker, password]` (password: `x` nebo `x;d=N` pro static diff)
-- `mining.set_difficulty` → `[difficulty]`
-- `mining.notify` → `[job_id, pre_hash, height, target, clean_jobs]`
-- `mining.submit` → `[worker, job_id, nonce, pow]` (pow = block opening proof)
+**Pearl Stratum protokol (custom PearlStratum dialect over TCP):**
+- **Transport:** TCP (ne HTTP jako EPIC!)
+- **NOT standard Stratum v1!** Pearl uses a custom JSON-RPC dialect:
+- **No `mining.subscribe`!** Client goes straight to `mining.authorize`
+- `mining.authorize` → **object params**: `{wallet, worker, pass, agent}`
+  - (NOT array `[worker, password]` like standard Stratum v1)
+  - password: `x` nebo `x;d=N` pro static diff
+- **No `mining.set_difficulty`!** Difficulty comes via notify target
+- `mining.notify` → **object params**: `{header, height, job_id, target}`
+  - header = 76-byte incomplete Pearl block header (hex)
+  - target = 256-bit big-endian hex (share threshold)
+  - Pool pushes notify **BEFORE** authorize ack!
+- `mining.submit` → **object params**: `{job_id, plain_proof}`
+  - (NOT array `[worker, job_id, nonce, pow]`!)
+  - **No nonce field!** Randomness lives inside PlainProof
+  - plain_proof = base64-encoded binary (MatMul + noise + BLAKE3 proof)
+- **Error codes:** 20-27 (method not supported, stale job, duplicate share,
+  low difficulty, wallet missing, invalid proof, unauthorized)
 - **No DAG!** Matrices generated from seed per job — no epoch, no DAG upload
+- **No extranonce!** Pearl has no mining.subscribe → no extranonce1/2
 
 **Pools (sorted by hashrate share):**
 
@@ -799,58 +811,73 @@ ZION Miner (GPU rig)
 
 **Úkoly:**
 
-#### 13.1 Pearl Stratum client (standard Stratum v1)
+#### 13.1 Pearl Stratum client (custom PearlStratum dialect) ✅ DONE
 
-- [ ] Přidat `ExternalCoin::PRL` do `types.rs` (ticker, algorithm "pearlhash", pool, wallet format)
-- [ ] Přidat `PearlHash` do `ExternalAlgorithm` enum v `external_hashers.rs`
-- [ ] Stratum client — standard `stratum+tcp` (mining.subscribe/authorize/notify/submit)
-  - **No custom protocol!** Standard Stratum v1 over TCP
-  - Password: `x;d=N` pro static difficulty (nebo `x` pro vardiff)
-  - Notify parsing: job_id, pre_hash, height, target
-  - Submit: worker, job_id, nonce, pow (block opening proof bytes)
-- [ ] `ExternalJob` mapping z Pearl notify (pre_hash → header_bytes, target → target_bytes)
+- [x] Přidat `ExternalCoin::PRL` do `types.rs` (ticker, algorithm "pearlhash", pool, wallet format)
+- [x] Přidat `PearlHash` do `ExternalAlgorithm` enum v `external_hashers.rs`
+- [x] Přidat `StratumProtocol::PearlStratum` variant do `auxpow_client.rs`
+- [x] Stratum client — custom PearlStratum dialect (NOT standard Stratum v1!)
+  - **No `mining.subscribe`!** Client goes straight to authorize
+  - `mining.authorize` → object params `{wallet, worker, pass, agent}`
+  - `mining.notify` → object params `{header, height, job_id, target}`
+  - Pool pushes notify BEFORE authorize ack
+  - `mining.submit` → object params `{job_id, plain_proof}` (base64)
+  - No nonce field — randomness inside PlainProof
+- [x] `ExternalJob` mapping z Pearl notify (header → header_bytes, target → target_bytes)
+- [x] `dual_stratum.rs` — pearlhash match arm v `dispatch_hash()`
+- [x] `miner_harness.rs` — pearlhash match arm + `scan_pearl()`/`scan_pearl_best()`
+- [x] `revenue.rs` — `PearlExternal` revenue source + fee rate
+- [x] `cosmic-harmony` — PRL v ExternalCoin, StratumProtocol, revenue_source
+- [x] `server.rs` — PRL mapping v revenue_source_to/from_external_coin, auxpow_to_ch, protocol
+- [x] Unit testy: `pearl_protocol_is_pearl_stratum`, `pearl_stratum_round_trip_notify_and_submit`
 - [ ] Merge mining support: `prl1PRL+mdl1MDL` address format
-- [ ] Test s AlphaPool (`us2.alphapool.tech:5566`, 0% fee)
+- [ ] E2E test s AlphaPool (`us2.alphapool.tech:5566`, 0% fee)
 
-#### 13.2 Pearl CPU hasher (PoUW verify)
+#### 13.2 Pearl CPU hasher (PoUW verify) — BLAKE3 placeholder ✅ / full PoUW TODO
 
-- [ ] Implementovat `hash_pearl()` v `external_hashers.rs`
+- [x] Implementovat `hash_pearl()` v `external_hashers.rs` — **BLAKE3 placeholder**
   - BLAKE3 keyed hash (commitment hash) — **již máme BLAKE3!**
-  - Noise generation (low-rank E=EL·ER, F=FL·FR, INT8)
-  - Tiled MatMul (INT8 matrices, INT32 accumulator)
-  - XOR-reduce + rotate-and-XOR state update (M[16] array)
-  - BLAKE3 final hash check (M, key=sA) < target
-  - Noise peeling: A·B = C' − (A·FL)·FR − EL·(ER·B')
-- [ ] Implementovat `hash_pearl_native()` v `native_ffi.rs` (C FFI)
-  - Port Pearl GEMM CUDA kernel → CPU fallback
+  - Noise generation (low-rank E=EL·ER, F=FL·FR, INT8) — **TODO (full PoUW)**
+  - Tiled MatMul (INT8 matrices, INT32 accumulator) — **TODO (full PoUW)**
+  - XOR-reduce + rotate-and-XOR state update (M[16] array) — **TODO (full PoUW)**
+  - BLAKE3 final hash check (M, key=sA) < target — **TODO (full PoUW)**
+  - Noise peeling: A·B = C' − (A·FL)·FR − EL·(ER·B') — **TODO (full PoUW)**
+- [x] Implementovat `hash_pearl_native()` v `native_ffi.rs` (C FFI) — stub vrací Err (fallback to Rust)
+- [x] Unit testy: deterministic, nonce-sensitive, header-sensitive, mine-finds-solution
+- [ ] **Full PoUW implementation** — Port Pearl GEMM CUDA kernel → CPU fallback
   - Nebo použít BLAS (OpenBLAS/iBLAS) pro MatMul
-- [ ] Unit testy: known vectors z Pearl testnet
+- [ ] Known vectors z Pearl testnet
 - [ ] **Note:** CPU verify je pomalý (MatMul je GPU operace). Pro production mining
   se používá GPU kernel. CPU hasher je jen pro share verify + test.
 
-#### 13.3 Pearl OpenCL kernel (PoUW MatMul)
+#### 13.3 Pearl OpenCL kernel (PoUW MatMul) — placeholder ✅ / full PoUW TODO
 
-- [ ] Napsat `pearl_kernel.cl` v `csrc/opencl/`
-  - `pearl_mine` entry point
-  - BLAKE3 (OpenCL, již máme blake3_kernel.cl — reuse!)
-  - Tiled MatMul (INT8 × INT8 → INT32, tiled for cache locality)
-  - Noise generation (BLAKE3 PRNG → EL, ER, FL, FR matrices)
-  - XOR-reduce + rotate-and-XOR state update
-  - BLAKE3 final hash check + atomic found flag
+- [x] Napsat `pearl_kernel.cl` v `csrc/opencl/` — **BLAKE3 placeholder kernel**
+  - `pearl_mine` entry point — **placeholder (BLAKE3 only)**
+  - BLAKE3 (OpenCL, již máme blake3_kernel.cl — reuse!) ✅
+  - Tiled MatMul (INT8 × INT8 → INT32, tiled for cache locality) — **TODO**
+  - Noise generation (BLAKE3 PRNG → EL, ER, FL, FR matrices) — **TODO**
+  - XOR-reduce + rotate-and-XOR state update — **TODO**
+  - BLAKE3 final hash check + atomic found flag — **TODO**
   - **No DAG!** Matrices generated from seed per job
-- [ ] Přidat kernel_info mapping v `gpu_miner.rs`
-- [ ] `build_pearl_kernel()` — matrix buffers + seed + target
+- [x] Přidat kernel_info mapping v `gpu_miner.rs` → `pearl_kernel.cl`
+- [x] `build_header_nonce_kernel` match arm v `gpu_miner.rs` (similar to blake3)
+- [x] `pearlhash` v `gpu_benchmark.rs` examples
+- [ ] `build_pearl_kernel()` — matrix buffers + seed + target (full PoUW)
 - [ ] **Note:** Pearl GEMM kernel používá NVIDIA CUTLASS na CUDA.
   OpenCL port bude pomalejší ale funkční. Metal port využije Apple
   Metal Performance Shaders (MPS) pro MatMul.
 
-#### 13.4 Pearl Metal kernel (PoUW MatMul)
+#### 13.4 Pearl Metal kernel (PoUW MatMul) — placeholder ✅ / full PoUW TODO
 
-- [ ] Napsat `pearl_kernel.metal` v `csrc/metal/`
-  - Stejný algoritmus jako OpenCL, Metal syntax
-  - INT8 MatMul via Metal compute kernel (nebo MPS MatMul)
-  - BLAKE3 reuse z blake3_kernel.metal
-- [ ] Buffer layout pro Metal (matrix A, B, noise, seed, target, output)
+- [x] Napsat `pearl_kernel.metal` v `csrc/metal/` — **BLAKE3 placeholder kernel**
+  - Stejný algoritmus jako OpenCL, Metal syntax — **placeholder (BLAKE3 only)**
+  - INT8 MatMul via Metal compute kernel (nebo MPS MatMul) — **TODO**
+  - BLAKE3 reuse z blake3_kernel.metal ✅
+- [x] kernel_info mapping v `gpu_metal.rs` → `pearl_kernel.metal`
+- [x] Header padding logic v `mine()` (similar to blake3)
+- [x] Buffer setup v `mine()` (similar to blake3)
+- [ ] Buffer layout pro Metal (matrix A, B, noise, seed, target, output) — full PoUW
 - [ ] Test na Apple M1 — **Apple Silicon confirmed working** (arxiv study)
 - [ ] **Note:** Apple M1 má unified memory — MatMul efektivní díky shared L2
 
@@ -863,9 +890,12 @@ ZION Miner (GPU rig)
 - [ ] **Note:** Toto bude **nejrychlejší** backend (CUTLASS optimalizovaný pro NVIDIA)
 - [ ] Target: RTX 4090 = 125 Th/s, RTX 5090 = 305 Th/s
 
-#### 13.6 Integration + E2E + Merge Mining
+#### 13.6 Integration + E2E + Merge Mining — partial ✅
 
-- [ ] Přidat `PearlExternal` do `RevenueSource` (revenue.rs, fee 1%)
+- [x] Přidat `PearlExternal` do `RevenueSource` (revenue.rs, fee 1%) ✅
+- [x] `cosmic-harmony` — PRL v ExternalCoin, StratumProtocol::PearlStratum, revenue_source
+- [x] `server.rs` — PRL mapping v revenue_source_to/from_external_coin, auxpow_to_ch, protocol
+- [x] `dual_stratum.rs` + `miner_harness.rs` — pearlhash dispatch + scan
 - [ ] `ZION_STREAM_PEARL_PCT` env var
 - [ ] Merge mining: PRL + MDL (ModelOS) — `prl1PRL+mdl1MDL` address
 - [ ] E2E test s `AUXPOW_E2E_COIN=prl` na AlphaPool (`us2.alphapool.tech:5566`)
@@ -873,13 +903,14 @@ ZION Miner (GPU rig)
 - [ ] Benchmark: změřit hashrate na Apple M1 (Metal) + GPU rig (OpenCL/CUDA)
 - [ ] Profitability report: porovnat PRL vs KAS vs ERG vs RVN na stejném GPU
 
-**Estimated effort:** 20-32h
-- Pearl Stratum client (standard v1): 2-4h (no custom protocol!)
-- Pearl CPU hasher (BLAKE3 + MatMul + noise): 6-8h
-- Pearl OpenCL kernel (MatMul + BLAKE3): 6-8h
-- Pearl Metal kernel: 4-6h
+**Estimated effort:** 20-32h (remaining: ~10-16h for full PoUW kernels)
+- ~~Pearl Stratum client (custom PearlStratum dialect): 2-4h~~ ✅ DONE
+- ~~Pearl CPU hasher (BLAKE3 placeholder): 2h~~ ✅ DONE (full PoUW: 6-8h TODO)
+- ~~Pearl OpenCL kernel (BLAKE3 placeholder): 2h~~ ✅ DONE (full PoUW MatMul: 6-8h TODO)
+- ~~Pearl Metal kernel (BLAKE3 placeholder): 2h~~ ✅ DONE (full PoUW MatMul: 4-6h TODO)
 - Pearl CUDA kernel (CUTLASS port): 4-6h (optional, can use alpha-miner)
-- Integration + E2E + merge mining: 2-4h
+- ~~Integration + dispatch + harness~~ ✅ DONE
+- E2E + merge mining: 2-4h TODO
 
 **Profitability estimate (RTX 4090, $0.10/kWh):**
 - PRL: $4.33/day profit (125 Th/s × $0.04/Th/s/day − $0.67 electricity)
@@ -890,8 +921,11 @@ ZION Miner (GPU rig)
 dělá useful work (AI MatMul). Pokud Pearl uspěje, stane se dominantním GPU coinem.
 ZION pool by měl PRL přidat jako **#1 revenue stream** s highest weight.
 
-**Blocker:** Žádný! Pearl používá standard Stratum v1 over TCP. BLAKE3 již máme.
-MatMul je GPU-native operace. Apple Silicon confirmed working.
+**Status (2026-07-15):** PearlStratum protocol ✅, CPU hasher (BLAKE3 placeholder) ✅,
+dispatch/harness ✅, cosmic-harmony + server.rs integration ✅, GPU kernels (BLAKE3 placeholder) ✅.
+**Remaining:** Full PoUW MatMul kernels (OpenCL/Metal/CUDA), E2E test, merge mining.
+**Blocker:** Full PoUW implementation (MatMul + noise + Plonky2 ZK proof) — needed for
+production mining. BLAKE3 placeholder allows protocol testing but won't produce valid shares.
 
 ---
 
