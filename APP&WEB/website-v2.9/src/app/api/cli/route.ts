@@ -61,6 +61,14 @@ interface CliResponse {
 
 export async function POST(req: NextRequest) {
   try {
+    // Resolve internal base URL from the request origin for server-side fetch
+    if (!process.env.INTERNAL_API_BASE) {
+      try {
+        const u = new URL(req.url);
+        INTERNAL_BASE = `${u.protocol}//${u.host}`;
+      } catch { /* keep default */ }
+    }
+
     const { command } = await req.json();
     if (!command || typeof command !== 'string') {
       return NextResponse.json<CliResponse>(
@@ -155,7 +163,7 @@ async function executeCommand(input: string): Promise<CliResponse> {
 // ─── Fetch helpers ──────────────────────────────────────────────────────────
 
 /** Base URL for internal API calls (server-side fetch needs absolute URLs). */
-const INTERNAL_BASE = process.env.INTERNAL_API_BASE || `http://127.0.0.1:${process.env.PORT || 3000}`;
+let INTERNAL_BASE = `http://127.0.0.1:${process.env.PORT || 3000}`;
 
 async function fetchJson<T = any>(url: string, init?: RequestInit, timeoutMs = FETCH_TIMEOUT): Promise<{ ok: boolean; status: number; data: T | null }> {
   try {
