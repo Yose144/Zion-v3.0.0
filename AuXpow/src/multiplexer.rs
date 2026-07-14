@@ -78,6 +78,13 @@ impl JobMultiplexer {
         if let Ok(password) = std::env::var("ZION_POOL_AUXPOW_POOL_PASSWORD") {
             profile.password = password;
         }
+        // Per-coin password override (e.g. ZION_POOL_AUXPOW_PASSWORD_EPIC).
+        let coin_pass_key = format!("ZION_POOL_AUXPOW_PASSWORD_{}", coin.ticker());
+        if let Ok(password) = std::env::var(&coin_pass_key) {
+            if !password.trim().is_empty() {
+                profile.password = password.trim().to_string();
+            }
+        }
         // TODO: apply preference/region mapping when multiple pools per coin exist
         let _ = (self.preference, &self.region);
 
