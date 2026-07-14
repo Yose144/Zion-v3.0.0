@@ -1829,8 +1829,7 @@ fn run_remote_session(
                 let latency_ms = submit_started_at.elapsed().as_millis();
                 if accepted {
                     accepted_iterations += 1;
-                    hashrate.record_share(true);
-                    hashrate.zion_accepted.fetch_add(1, Ordering::Relaxed);
+                    hashrate.record_zion_share(true);
                     ui::log_accepted(
                         job.job_id,
                         job.height,
@@ -1848,8 +1847,7 @@ fn run_remote_session(
                     );
                 } else {
                     rejected_iterations += 1;
-                    hashrate.record_share(false);
-                    hashrate.zion_rejected.fetch_add(1, Ordering::Relaxed);
+                    hashrate.record_zion_share(false);
                     ui::log_rejected(
                         job.job_id,
                         job.height,
@@ -2304,12 +2302,10 @@ fn submit_external_share(
                 }
                 if let PoolMessage::ExternalResult { accepted, status, coin } = msg {
                     if accepted {
-                        hashrate.accepted_shares.fetch_add(1, Ordering::Relaxed);
-                        hashrate.ext_accepted.fetch_add(1, Ordering::Relaxed);
+                        hashrate.record_ext_share(true);
                         println!("[{}] external_share_accepted coin={} status={}", log_timestamp(), coin, status);
                     } else {
-                        hashrate.rejected_shares.fetch_add(1, Ordering::Relaxed);
-                        hashrate.ext_rejected.fetch_add(1, Ordering::Relaxed);
+                        hashrate.record_ext_share(false);
                         println!("[{}] external_share_rejected coin={} status={}", log_timestamp(), coin, status);
                     }
                 }
@@ -2352,8 +2348,7 @@ fn submit_pearl_proof(
                 }
                 if let PoolMessage::ExternalResult { accepted, status, coin } = msg {
                     if accepted {
-                        hashrate.accepted_shares.fetch_add(1, Ordering::Relaxed);
-                        hashrate.pearl_accepted.fetch_add(1, Ordering::Relaxed);
+                        hashrate.record_pearl_share(true);
                         println!(
                             "[{}] pearl_proof_accepted coin={} status={}",
                             log_timestamp(),
@@ -2361,8 +2356,7 @@ fn submit_pearl_proof(
                             status
                         );
                     } else {
-                        hashrate.rejected_shares.fetch_add(1, Ordering::Relaxed);
-                        hashrate.pearl_rejected.fetch_add(1, Ordering::Relaxed);
+                        hashrate.record_pearl_share(false);
                         println!(
                             "[{}] pearl_proof_rejected coin={} status={}",
                             log_timestamp(),
