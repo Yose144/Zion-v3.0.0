@@ -22,10 +22,11 @@ use std::str::FromStr;
 use std::sync::Arc;
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
+use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
 use tokio::sync::{Mutex, Notify, oneshot};
+// TLS support for EPIC stratum — rustls types are re-exported via tokio_rustls
+use tokio_rustls::rustls::RootCertStore;
 use tokio::time::timeout;
 use tracing::{debug, info, warn};
 
@@ -58,6 +59,19 @@ pub enum StratumProtocol {
     ///     25 (invalid proof/wallet malformed), 26 (invalid proof),
     ///     27 (unauthorized)
     PearlStratum,
+    /// EPIC Stratum — JSON-RPC 2.0 over TLS for Epic Cash (EPIC) ProgPow mining.
+    ///
+    /// Protocol used by de.epicmine.io:3334:
+    ///   - TLS connection (not plain TCP)
+    ///   - `login` with {login, pass, agent} → returns {id, job}
+    ///   - `getjobtemplate` with {algorithm: "progpow"} → returns job
+    ///   - Server pushes `job` notifications with {pre_pow, height, job_id,
+    ///     difficulty, epochs, algorithm}
+    ///   - `submit` with {height, job_id, nonce, pow: {ProgPow: [mixHash]}}
+    ///   - `keepalive` for connection maintenance
+    ///   - Error codes: -32000 (syncing), -32500 (login first),
+    ///     -32501 (low diff), -32502 (failed validate), -32503 (too late)
+    EpicStratum,
 }
 
 impl ExternalCoin {
@@ -87,12 +101,10 @@ impl ExternalCoin {
             Self::VRSC => {
                 StratumProtocol::ZcashStratum
             }
-            // EPIC (Epic Cash) uses a custom JSON-RPC 2.0 protocol over HTTP POST
-            // (getjobtemplate / job / submit / keepalive / login). For now, we
-            // treat it as Stratum v1 — a dedicated EpicStratumClient may be needed
-            // for the HTTP POST transport + TLS differences.
+            // EPIC (Epic Cash) uses a custom JSON-RPC 2.0 protocol over TLS.
+            // See StratumProtocol::EpicStratum docs for full protocol details.
             Self::EPIC => {
-                StratumProtocol::Stratum
+                StratumProtocol::EpicStratum
             }
             // Pearl (PRL) uses a custom JSON-RPC dialect over TCP.
             // Object params (not arrays), no mining.subscribe, plain_proof submit.
@@ -180,8 +192,8 @@ pub enum ShareResult {
 pub struct AuxPowClient {
     profile: CoinProfile,
     protocol: StratumProtocol,
-    stream: Arc<Mutex<Option<OwnedWriteHalf>>>,
-    reader: Arc<Mutex<Option<BufReader<OwnedReadHalf>>>>,
+    stream: Arc<Mutex<Option<Box<dyn AsyncWrite + Unpin + Send>>>>,
+    reader: Arc<Mutex<Option<BufReader<Box<dyn AsyncRead + Unpin + Send>>>>>,
     current_job: Arc<Mutex<Option<ExternalJob>>>,
     subscribed: Arc<Mutex<bool>>,
     authorized: Arc<Mutex<bool>>,
@@ -223,6 +235,20 @@ pub struct AuxPowClient {
     /// None = CPU-only mining.
     #[cfg(feature = "gpu-opencl")]
     gpu_opencl_backend: Arc<Mutex<Option<crate::gpu_miner::GpuMiner>>>,
+    /// Pearl mining parameters received from pool via `pearl.set_mining_params`.
+    /// None = use defaults (m=512, n=512, k=4096, rank=256).
+    pearl_mining_params: Arc<Mutex<Option<PearlMiningParams>>>,
+}
+
+/// Pearl mining parameters received from the pool via `pearl.set_mining_params`.
+#[derive(Clone, Debug)]
+pub struct PearlMiningParams {
+    pub m: usize,
+    pub n: usize,
+    pub k: usize,
+    pub rank: usize,
+    pub rows_pattern: Vec<u32>,
+    pub cols_pattern: Vec<u32>,
 }
 
 impl AuxPowClient {
@@ -255,6 +281,7 @@ impl AuxPowClient {
             gpu_backend: Arc::new(Mutex::new(None)),
             #[cfg(feature = "gpu-opencl")]
             gpu_opencl_backend: Arc::new(Mutex::new(None)),
+            pearl_mining_params: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -352,10 +379,18 @@ impl AuxPowClient {
 
         // Subscribe + Authorize
         // PearlStratum: no mining.subscribe — go straight to authorize.
-        if self.protocol != StratumProtocol::PearlStratum {
-            self.subscribe().await?;
+        // EpicStratum: uses login + getjobtemplate instead of subscribe/authorize.
+        if self.protocol == StratumProtocol::EpicStratum {
+            self.epic_login(payout_wallet).await?;
+            self.epic_getjobtemplate().await?;
+            // Start keepalive timer for EPIC
+            self.start_epic_keepalive().await;
+        } else {
+            if self.protocol != StratumProtocol::PearlStratum {
+                self.subscribe().await?;
+            }
+            self.authorize(payout_wallet).await?;
         }
-        self.authorize(payout_wallet).await?;
 
         // For EthStratum pools, start periodic eth_getWork polling.
         // Some pools push eth_getWork as a notification; others require
@@ -369,7 +404,8 @@ impl AuxPowClient {
         Ok(())
     }
 
-    /// Establish TCP connection and set up stream/reader. No task spawn.
+    /// Establish TCP (or TLS for EPIC) connection and set up stream/reader.
+    /// No task spawn.
     async fn connect_tcp(&self) -> Result<()> {
         let addr = self.profile.pool_address();
         info!(
@@ -379,16 +415,37 @@ impl AuxPowClient {
             self.profile.coin
         );
 
-        let stream = timeout(Duration::from_secs(15), TcpStream::connect(&addr))
+        let tcp_stream = timeout(Duration::from_secs(15), TcpStream::connect(&addr))
             .await
             .map_err(|_| anyhow!("connect timeout to {}", addr))?
             .context("TCP connect failed")?;
 
-        let (reader_half, writer_half) = stream.into_split();
-        let buf_reader = BufReader::new(reader_half);
+        if self.protocol == StratumProtocol::EpicStratum {
+            // EPIC pools (de.epicmine.io:3334) require TLS.
+            let roots = RootCertStore {
+                roots: webpki_roots::TLS_SERVER_ROOTS.iter().cloned().collect(),
+            };
+            let config = tokio_rustls::rustls::ClientConfig::builder()
+                .with_root_certificates(roots)
+                .with_no_client_auth();
+            let connector = tokio_rustls::TlsConnector::from(std::sync::Arc::new(config));
+            let domain = rustls_pki_types::ServerName::try_from(self.profile.pool_host.clone())
+                .map_err(|e| anyhow!("invalid TLS server name '{}': {}", self.profile.pool_host, e))?;
+            let tls_stream = connector.connect(domain, tcp_stream).await
+                .context("TLS handshake failed")?;
+            let (reader_half, writer_half) = tokio::io::split(tls_stream);
+            let buf_reader: BufReader<Box<dyn AsyncRead + Unpin + Send>> =
+                BufReader::new(Box::new(reader_half));
+            *self.stream.lock().await = Some(Box::new(writer_half));
+            *self.reader.lock().await = Some(buf_reader);
+        } else {
+            let (reader_half, writer_half) = tcp_stream.into_split();
+            let buf_reader: BufReader<Box<dyn AsyncRead + Unpin + Send>> =
+                BufReader::new(Box::new(reader_half));
+            *self.stream.lock().await = Some(Box::new(writer_half));
+            *self.reader.lock().await = Some(buf_reader);
+        }
 
-        *self.stream.lock().await = Some(writer_half);
-        *self.reader.lock().await = Some(buf_reader);
         *self.connected.lock().await = true;
         Ok(())
     }
@@ -397,11 +454,17 @@ impl AuxPowClient {
     /// Uses inline reads because the poll loop is not running during reconnect.
     async fn reconnect(&self, payout_wallet: &str) -> Result<()> {
         self.connect_tcp().await?;
-        // PearlStratum: no mining.subscribe — go straight to authorize.
-        if self.protocol != StratumProtocol::PearlStratum {
-            self.subscribe_inline().await?;
+        // EpicStratum: uses login + getjobtemplate instead of subscribe/authorize.
+        if self.protocol == StratumProtocol::EpicStratum {
+            self.epic_login(payout_wallet).await?;
+            self.epic_getjobtemplate().await?;
+        } else {
+            // PearlStratum: no mining.subscribe — go straight to authorize.
+            if self.protocol != StratumProtocol::PearlStratum {
+                self.subscribe_inline().await?;
+            }
+            self.authorize_inline(payout_wallet).await?;
         }
-        self.authorize_inline(payout_wallet).await?;
         info!("AuxPow: reconnected and authorized for {}", self.profile.coin);
         Ok(())
     }
@@ -497,6 +560,13 @@ impl AuxPowClient {
                                 *self.current_job.lock().await = Some(job);
                                 self.job_notify.notify_waiters();
                             }
+                        }
+                    }
+                    "pearl.set_mining_params" => {
+                        // AlphaPool sends mining parameters (m, n, k, rank,
+                        // rows_pattern, cols_pattern) via this notification.
+                        if let Some(params) = parsed.get("params") {
+                            self.handle_pearl_set_mining_params(params).await;
                         }
                     }
                     _ => {}
@@ -646,6 +716,205 @@ impl AuxPowClient {
             );
             bail!("authorize failed: {:?}", err);
         }
+    }
+
+    // ── EPIC Stratum protocol methods ──────────────────────────────────
+    //
+    // EPIC uses JSON-RPC 2.0 over TLS with the following methods:
+    //   login, getjobtemplate, submit, keepalive
+    // Server pushes `job` notifications with pre_pow, height, job_id,
+    // difficulty, epochs, algorithm.
+
+    /// EPIC login: authenticate with the pool and receive initial job.
+    ///
+    /// The `payout_wallet` is used as the login username.  EPIC requires
+    /// username ≥ 5 chars and password ≥ 8 chars.
+    async fn epic_login(&self, payout_wallet: &str) -> Result<()> {
+        let login = format!("{}.{}", payout_wallet, self.profile.worker_name);
+        let password = if self.profile.password.len() >= 8 {
+            self.profile.password.clone()
+        } else {
+            "zion1234567".to_string() // min 8 chars
+        };
+        let agent = "zion-auxpow/0.1";
+        let req = json!({
+            "id": 1,
+            "method": "login",
+            "params": {
+                "login": login,
+                "pass": password,
+                "agent": agent,
+            }
+        });
+        println!(
+            "auxpow: EPIC login as {} on {} (protocol={})",
+            login, self.profile.coin, self.protocol.as_str()
+        );
+        let resp = self.send_request_inline(&req).await?;
+        if let Some(err) = resp.get("error") {
+            if !err.is_null() {
+                bail!("EPIC login failed: {:?}", err);
+            }
+        }
+        *self.authorized.lock().await = true;
+        *self.subscribed.lock().await = true;
+        println!("auxpow: EPIC login successful for {}", self.profile.coin);
+
+        // The login response may include an initial job in "result.job".
+        if let Some(job_obj) = resp.get("result").and_then(|r| r.get("job")) {
+            if let Ok(job) = self.parse_epic_job(job_obj).await {
+                *self.current_job.lock().await = Some(job);
+                self.job_notify.notify_waiters();
+            }
+        }
+        Ok(())
+    }
+
+    /// Request a job template from the EPIC pool.
+    async fn epic_getjobtemplate(&self) -> Result<()> {
+        let req = json!({
+            "id": 10,
+            "method": "getjobtemplate",
+            "params": {
+                "algorithm": "progpow"
+            }
+        });
+        let resp = self.send_request_inline(&req).await?;
+        if let Some(err) = resp.get("error") {
+            if !err.is_null() {
+                // -32000 = node syncing, not fatal — we'll get pushed jobs later
+                let code = err.get("code").and_then(|c| c.as_i64()).unwrap_or(0);
+                if code == -32000 {
+                    println!("auxpow: EPIC pool is syncing, will wait for pushed jobs");
+                    return Ok(());
+                }
+                bail!("EPIC getjobtemplate failed: {:?}", err);
+            }
+        }
+        // The job template may be in "result" directly or in "result.job"
+        let job_val = resp.get("result").unwrap_or(&resp);
+        if let Ok(job) = self.parse_epic_job(job_val).await {
+            *self.current_job.lock().await = Some(job);
+            self.job_notify.notify_waiters();
+        }
+        Ok(())
+    }
+
+    /// Start a background keepalive timer for the EPIC connection.
+    async fn start_epic_keepalive(&self) {
+        let client = Arc::new(self.clone());
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(Duration::from_secs(30));
+            interval.tick().await; // skip first immediate tick
+            loop {
+                interval.tick().await;
+                if !*client.connected.lock().await {
+                    break;
+                }
+                let req = json!({
+                    "id": 0,
+                    "method": "keepalive",
+                    "params": {}
+                });
+                let req_line = format!("{}\n", serde_json::to_string(&req).unwrap());
+                let mut stream = client.stream.lock().await;
+                if let Some(w) = stream.as_mut() {
+                    if w.write_all(req_line.as_bytes()).await.is_err() {
+                        // Connection is dead — the poll loop will handle reconnect
+                        break;
+                    }
+                    debug!("auxpow: EPIC keepalive sent for {}", client.profile.coin);
+                }
+            }
+        });
+    }
+
+    /// Parse an EPIC job JSON object into an `ExternalJob`.
+    ///
+    /// EPIC job fields:
+    ///   - pre_pow: 548-byte hex string (the header preimage without nonce)
+    ///   - height: block height (u64)
+    ///   - job_id: job identifier (u64)
+    ///   - difficulty: [share_diff, block_diff, ...] (array of 3)
+    ///   - epochs: [[start_height, end_height, [32-byte seed_hex]], ...]
+    ///   - algorithm: "progpow"
+    async fn parse_epic_job(&self, job: &Value) -> Result<ExternalJob> {
+        let pre_pow_hex = job.get("pre_pow")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| anyhow!("EPIC job missing pre_pow"))?;
+        let height = job.get("height")
+            .and_then(|v| v.as_u64())
+            .or_else(|| job.get("height").and_then(|v| v.as_i64()).map(|i| i as u64))
+            .unwrap_or(0);
+        let job_id = job.get("job_id")
+            .and_then(|v| v.as_u64())
+            .or_else(|| job.get("job_id").and_then(|v| v.as_i64()).map(|i| i as u64))
+            .unwrap_or(0);
+        let algorithm = job.get("algorithm")
+            .and_then(|v| v.as_str())
+            .unwrap_or("progpow")
+            .to_string();
+
+        // Difficulty: array of 3 values [share_diff, block_diff, ?]
+        // The share difficulty is used to derive the target.
+        let share_difficulty = job.get("difficulty")
+            .and_then(|d| d.as_array())
+            .and_then(|arr| arr.first())
+            .and_then(|v| v.as_f64())
+            .or_else(|| job.get("difficulty").and_then(|d| d.as_f64()))
+            .unwrap_or(2_500_000_000.0); // EPIC default share diff
+
+        // Derive target from difficulty: target = 2^256 / difficulty
+        // For ProgPow, the target is a 32-byte big-endian value.
+        let target_bytes = difficulty_to_target(share_difficulty);
+
+        // Extract seed hash from epochs for DAG management
+        let seed_hash = job.get("epochs")
+            .and_then(|e| e.as_array())
+            .and_then(|arr| arr.first())
+            .and_then(|epoch| epoch.as_array())
+            .and_then(|ep| ep.get(2))
+            .and_then(|s| s.as_str())
+            .map(|s| {
+                // The seed may be a hex string with or without 0x prefix
+                s.trim_start_matches("0x").to_string()
+            });
+
+        // Epoch from height: EPIC ProgPow epoch = height / 30000
+        let epoch = if height > 0 {
+            Some((height / 30000) as u32)
+        } else {
+            None
+        };
+
+        let header_bytes = hex::decode(pre_pow_hex.trim_start_matches("0x"))
+            .unwrap_or_default();
+
+        let job = ExternalJob {
+            job_id: job_id.to_string(),
+            header_hex: pre_pow_hex.to_string(),
+            target_hex: hex::encode(target_bytes),
+            seed_hash,
+            block_number: Some(height),
+            algorithm,
+            header_bytes,
+            target_bytes,
+            timestamp: None,
+            nbits: None,
+            external_coin: ExternalCoin::EPIC,
+            from_group: 0,
+            to_group: 0,
+            extranonce1: Vec::new(),
+            extranonce2: String::new(),
+            epoch,
+        };
+
+        println!(
+            "auxpow: EPIC job parsed height={} job_id={} pre_pow_len={} epoch={:?} share_diff={:.0}",
+            height, job_id, job.header_hex.len(), job.epoch, share_difficulty
+        );
+
+        Ok(job)
     }
 
     /// Send `mining.subscribe` and wait for response.
@@ -923,6 +1192,13 @@ impl AuxPowClient {
                         }
                     }
                 }
+                "pearl.set_mining_params" => {
+                    // AlphaPool sends mining parameters (m, n, k, rank,
+                    // rows_pattern, cols_pattern) via this notification.
+                    if let Some(params) = msg.get("params") {
+                        self.handle_pearl_set_mining_params(params).await;
+                    }
+                }
                 "mining.set_difficulty" => {
                     if let Some(params) = msg.get("params") {
                         if let Some(diff) = params.get(0).and_then(|d| d.as_f64()) {
@@ -987,6 +1263,25 @@ impl AuxPowClient {
                     // a reconnection.  Break the poll loop to trigger reconnect.
                     warn!("AuxPow: {} requested client.reconnect", self.profile.coin);
                     bail!("client.reconnect requested by pool");
+                }
+                "job" => {
+                    // EPIC Stratum: server pushes `job` notifications with
+                    // pre_pow, height, job_id, difficulty, epochs, algorithm.
+                    // The job data may be in "params" or at the top level.
+                    let job_val = msg.get("params").unwrap_or(&msg);
+                    match self.parse_epic_job(job_val).await {
+                        Ok(job) => {
+                            debug!(
+                                "AuxPow: received EPIC job {} height={} for {}",
+                                job.job_id, job.block_number.unwrap_or(0), self.profile.coin
+                            );
+                            *self.current_job.lock().await = Some(job);
+                            self.job_notify.notify_waiters();
+                        }
+                        Err(e) => {
+                            warn!("AuxPow: EPIC job parse error for {}: {}", self.profile.coin, e);
+                        }
+                    }
                 }
                 _ => {
                     debug!("AuxPow: unknown method '{}' from {}", method, self.profile.coin);
@@ -1813,6 +2108,63 @@ impl AuxPowClient {
         let is_kas = self.profile.algorithm.eq_ignore_ascii_case("kheavyhash")
             && self.profile.coin == ExternalCoin::KAS;
         let is_ethstratum = self.protocol == StratumProtocol::EthStratum;
+        let is_epic = self.protocol == StratumProtocol::EpicStratum;
+
+        // EPIC submit format:
+        //   {"id": N, "method": "submit", "params": {
+        //     "height": N, "job_id": N, "nonce": N,
+        //     "pow": {"ProgPow": [32 bytes mixHash as array of ints]}
+        //   }}
+        // The mix_hash is the ProgPow mix hash (32 bytes).
+        if is_epic {
+            let job = self.current_job().await;
+            let height = job
+                .as_ref()
+                .and_then(|j| j.block_number)
+                .unwrap_or(0);
+            let job_id_num: u64 = job_id.parse().unwrap_or(0);
+
+            // Convert mix_hash_hex to array of 32 bytes for ProgPow pow field.
+            // EPIC expects the mix hash as a JSON array of integers [0, 255, ...].
+            let mix_hex = mix_hash_hex.unwrap_or(_hash_hex);
+            let mix_bytes = hex::decode(mix_hex.trim_start_matches("0x"))
+                .unwrap_or_else(|_| vec![0u8; 32]);
+            // Pad/truncate to 32 bytes
+            let mut mix_arr = [0u8; 32];
+            let len = mix_bytes.len().min(32);
+            mix_arr[..len].copy_from_slice(&mix_bytes[..len]);
+            let mix_json: Vec<i64> = mix_arr.iter().map(|&b| b as i64).collect();
+
+            let req = json!({
+                "id": 20,
+                "method": "submit",
+                "params": {
+                    "height": height,
+                    "job_id": job_id_num,
+                    "nonce": nonce,
+                    "pow": {
+                        "ProgPow": mix_json
+                    }
+                }
+            });
+            let resp = self.send_request(&req).await?;
+            if let Some(err) = resp.get("error") {
+                if !err.is_null() {
+                    let msg = err.get("message")
+                        .and_then(|m| m.as_str())
+                        .unwrap_or("unknown error");
+                    return Ok(ShareResult::Rejected(msg.to_string()));
+                }
+            }
+            let ok = resp.get("result")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(true);
+            if ok {
+                return Ok(ShareResult::Accepted);
+            } else {
+                return Ok(ShareResult::Rejected("submit rejected".to_string()));
+            }
+        }
 
         let (method, params) = if is_ethstratum {
             // EthStratum submit: eth_submitWork(nonce_hex, header_hash, mix_hash)
@@ -2166,14 +2518,34 @@ impl AuxPowClient {
                 .map(|j| j.target_hex.clone())
                 .unwrap_or_else(|| "ff".repeat(32));
 
-            // Standard Pearl PoUW dimensions
-            let m = crate::pearl_real_pouw::DEFAULT_M;
-            let n = crate::pearl_real_pouw::DEFAULT_N;
-            let k = crate::pearl_real_pouw::DEFAULT_K;
-            let noise_rank = crate::pearl_real_pouw::DEFAULT_NOISE_RANK;
+            // Pearl PoUW dimensions — use params from `pearl.set_mining_params`
+            // if the pool has sent them, otherwise fall back to defaults.
+            let pmp = self.pearl_mining_params.lock().await.clone();
+            let (m, n, k, noise_rank, hash_tile_h, hash_tile_w) = match &pmp {
+                Some(p) => {
+                    // hash_tile dimensions come from rows_pattern / cols_pattern
+                    let hth = if p.rows_pattern.is_empty() {
+                        crate::pearl_real_pouw::DEFAULT_HASH_TILE_H
+                    } else {
+                        p.rows_pattern.len()
+                    };
+                    let htw = if p.cols_pattern.is_empty() {
+                        crate::pearl_real_pouw::DEFAULT_HASH_TILE_W
+                    } else {
+                        p.cols_pattern.len()
+                    };
+                    (p.m, p.n, p.k, p.rank, hth, htw)
+                }
+                None => (
+                    crate::pearl_real_pouw::DEFAULT_M,
+                    crate::pearl_real_pouw::DEFAULT_N,
+                    crate::pearl_real_pouw::DEFAULT_K,
+                    crate::pearl_real_pouw::DEFAULT_NOISE_RANK,
+                    crate::pearl_real_pouw::DEFAULT_HASH_TILE_H,
+                    crate::pearl_real_pouw::DEFAULT_HASH_TILE_W,
+                ),
+            };
             let noise_range = crate::pearl_real_pouw::DEFAULT_NOISE_RANGE;
-            let hash_tile_h = crate::pearl_real_pouw::DEFAULT_HASH_TILE_H;
-            let hash_tile_w = crate::pearl_real_pouw::DEFAULT_HASH_TILE_W;
 
             // Check if GPU OpenCL backend is available
             #[cfg(feature = "gpu-opencl")]
@@ -2615,6 +2987,64 @@ impl AuxPowClient {
         Ok(())
     }
 
+    /// Handle `pearl.set_mining_params` notification from AlphaPool.
+    ///
+    /// AlphaPool sends: `{"m": <int>, "n": <int>, "k": <int>, "rank": <int>,
+    ///   "rows_pattern": [<int>, ...], "cols_pattern": [<int>, ...]}`
+    ///
+    /// These parameters define the matrix dimensions and hash tile patterns
+    /// for PoUW mining. The miner must use these values instead of defaults.
+    async fn handle_pearl_set_mining_params(&self, params: &Value) {
+        let obj = match params.as_object() {
+            Some(o) => o,
+            None => {
+                eprintln!("auxpow: PRL pearl.set_mining_params — invalid params (not object)");
+                return;
+            }
+        };
+
+        let m = obj.get("m").and_then(|v| v.as_u64()).unwrap_or(512) as usize;
+        let n = obj.get("n").and_then(|v| v.as_u64()).unwrap_or(512) as usize;
+        let k = obj.get("k").and_then(|v| v.as_u64()).unwrap_or(4096) as usize;
+        let rank = obj.get("rank").and_then(|v| v.as_u64()).unwrap_or(256) as usize;
+
+        let rows_pattern: Vec<u32> = obj
+            .get("rows_pattern")
+            .and_then(|v| v.as_array())
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|v| v.as_u64().map(|x| x as u32))
+                    .collect()
+            })
+            .unwrap_or_default();
+
+        let cols_pattern: Vec<u32> = obj
+            .get("cols_pattern")
+            .and_then(|v| v.as_array())
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|v| v.as_u64().map(|x| x as u32))
+                    .collect()
+            })
+            .unwrap_or_default();
+
+        let params = PearlMiningParams {
+            m,
+            n,
+            k,
+            rank,
+            rows_pattern: rows_pattern.clone(),
+            cols_pattern: cols_pattern.clone(),
+        };
+
+        println!(
+            "auxpow: PRL pearl.set_mining_params — m={} n={} k={} rank={} rows_pattern={:?} cols_pattern={:?}",
+            m, n, k, rank, rows_pattern, cols_pattern
+        );
+
+        *self.pearl_mining_params.lock().await = Some(params);
+    }
+
     /// Parse `pearl.challenge` params (AlphaPool protocol) into an `ExternalJob`.
     ///
     /// AlphaPool sends: `{"seed": "<hex>", "difficulty": <int>}`
@@ -2883,6 +3313,7 @@ impl StratumProtocol {
             Self::EthStratum => "ethstratum",
             Self::ZcashStratum => "zcashstratum",
             Self::PearlStratum => "pearlstratum",
+            Self::EpicStratum => "epicstratum",
         }
     }
 }
