@@ -17,7 +17,6 @@ use anyhow::{anyhow, Context, Result};
 use metal::{Device, MTLResourceOptions, MTLSize};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::time::Instant;
 
 use crate::gpu_backend::{GpuBackend, GpuFoundShare};
 
@@ -43,6 +42,8 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
 pub struct MetalBackend {
     device: Device,
     device_name: String,
+    /// Persistent command queue (created once, reused for all mining calls).
+    cmd_queue: metal::CommandQueue,
     /// Pre-compiled Metal libraries, keyed by kernel file name.
     libraries: HashMap<String, metal::Library>,
     /// Default work size.
@@ -55,6 +56,10 @@ pub struct MetalBackend {
     kawpow_dag: Option<metal::Buffer>,
     kawpow_dag_entries: u64,
     kawpow_epoch: u32,
+    /// Cached Autolykos table buffer + metadata.
+    autolykos_table: Option<metal::Buffer>,
+    autolykos_table_size: u32,
+    autolykos_height: u32,
 }
 
 impl MetalBackend {
@@ -64,10 +69,12 @@ impl MetalBackend {
             .ok_or_else(|| anyhow!("no Metal GPU device available"))?;
 
         let device_name = device.name().to_string();
+        let cmd_queue = device.new_command_queue();
 
         Ok(Self {
             device,
             device_name,
+            cmd_queue,
             libraries: HashMap::new(),
             work_size,
             ethash_dag: None,
@@ -76,6 +83,9 @@ impl MetalBackend {
             kawpow_dag: None,
             kawpow_dag_entries: 0,
             kawpow_epoch: 0,
+            autolykos_table: None,
+            autolykos_table_size: 0,
+            autolykos_height: u32::MAX,
         })
     }
 
@@ -92,12 +102,12 @@ impl MetalBackend {
         let source = std::fs::read_to_string(&kernel_path)
             .with_context(|| format!("failed to read Metal kernel: {kernel_path:?}"))?;
 
-        let options = metal::CompileOptions::new(&self.device);
+        let options = metal::CompileOptions::new();
         let library = self
             .device
             .new_library_with_source(&source, &options)
             .map_err(|e| {
-                anyhow!("Metal compile failed for {kernel_file}: {}", e.localizedDescription())
+                anyhow!("Metal compile failed for {kernel_file}: {e}")
             })?;
 
         self.libraries.insert(kernel_file.to_string(), library);
@@ -121,7 +131,13 @@ impl GpuBackend for MetalBackend {
         let library = self.ensure_library(kernel_file)?;
         let function = library
             .get_function(kernel_name, None)
-            .map_err(|e| anyhow!("Metal function not found: {kernel_name}: {}", e.localizedDescription()))?;
+            .map_err(|e| anyhow!("Metal function not found: {kernel_name}: {e}"))?;
+
+        // Create compute pipeline state from function
+        let pipeline_state = self
+            .device
+            .new_compute_pipeline_state_with_function(&function)
+            .map_err(|e| anyhow!("Metal pipeline state failed for {kernel_name}: {e}"))?;
 
         // Build header buffer
         let header_len = header.len();
@@ -159,46 +175,217 @@ impl GpuBackend for MetalBackend {
             MTLResourceOptions::CPUCacheModeDefaultCache,
         );
 
-        let output_nonce_buf = self.device.new_buffer(
+        let nonce_init: u64 = 0;
+        let output_nonce_buf = self.device.new_buffer_with_data(
+            &nonce_init as *const u64 as *const _,
             std::mem::size_of::<u64>() as u64,
             MTLResourceOptions::CPUCacheModeDefaultCache,
         );
 
-        let output_hash_buf = self.device.new_buffer(
+        let hash_init = [0u8; 32];
+        let output_hash_buf = self.device.new_buffer_with_data(
+            hash_init.as_ptr() as *const _,
             32,
             MTLResourceOptions::CPUCacheModeDefaultCache,
         );
 
-        let found_flag_buf = self.device.new_buffer(
+        let found_init: u32 = 0;
+        let found_flag_buf = self.device.new_buffer_with_data(
+            &found_init as *const u32 as *const _,
             4,
             MTLResourceOptions::CPUCacheModeDefaultCache,
         );
 
-        // Create command queue and command buffer
-        let cmd_queue = self.device.new_command_queue();
-        let cmd_buffer = cmd_queue.new_command_buffer();
+        // Scalar arguments must be passed as Metal buffers (not set_bytes)
+        // because the kernels use `constant type* name [[buffer(N)]]`.
+        let header_len_u32 = header_len as u32;
+        let header_len_buf = self.device.new_buffer_with_data(
+            &header_len_u32 as *const u32 as *const _,
+            std::mem::size_of::<u32>() as u64,
+            MTLResourceOptions::CPUCacheModeDefaultCache,
+        );
+
+        let base_nonce_buf = self.device.new_buffer_with_data(
+            &base_nonce as *const u64 as *const _,
+            std::mem::size_of::<u64>() as u64,
+            MTLResourceOptions::CPUCacheModeDefaultCache,
+        );
+
+        // Create command buffer from persistent queue
+        let cmd_buffer = self.cmd_queue.new_command_buffer();
         let encoder = cmd_buffer.new_compute_command_encoder();
 
-        encoder.set_compute_pipeline_state(&function);
+        encoder.set_compute_pipeline_state(&pipeline_state);
 
-        // Set buffer arguments (Metal uses [[buffer(N)]] indexing)
-        encoder.set_buffer(0, Some(&header_buf), 0);
-        encoder.set_buffer(1, Some(&target_buf), 0);
-        encoder.set_buffer(2, Some(&output_nonce_buf), 0);
-        encoder.set_buffer(3, Some(&output_hash_buf), 0);
-        encoder.set_buffer(4, Some(&found_flag_buf), 0);
+        // Set buffer arguments — each kernel has a different buffer layout.
+        // Buffer indices are determined by the [[buffer(N)]] attributes in the
+        // Metal kernel source files.
+        match algorithm {
+            // blake3: 0=header, 1=target, 2=nonce, 3=hash, 4=found, 5=hlen, 6=base_nonce
+            "blake3" | "blake3_alph" | "blake3_dcr" => {
+                encoder.set_buffer(0, Some(&header_buf), 0);
+                encoder.set_buffer(1, Some(&target_buf), 0);
+                encoder.set_buffer(2, Some(&output_nonce_buf), 0);
+                encoder.set_buffer(3, Some(&output_hash_buf), 0);
+                encoder.set_buffer(4, Some(&found_flag_buf), 0);
+                encoder.set_buffer(5, Some(&header_len_buf), 0);
+                encoder.set_buffer(6, Some(&base_nonce_buf), 0);
+            }
+            // kheavyhash: 0=pre_pow, 1=target, 2=matrix, 3=nonce, 4=hash, 5=found, 6=timestamp, 7=base_nonce
+            "kheavyhash" | "kheavyhash_kas" => {
+                let timestamp: u64 = if extra.len() >= 8 {
+                    u64::from_le_bytes(extra[..8].try_into().unwrap())
+                } else {
+                    0
+                };
+                let matrix = crate::gpu_backend::generate_kheavy_matrix();
+                let matrix_buf = self.device.new_buffer_with_data(
+                    matrix.as_ptr() as *const _,
+                    (4096 * std::mem::size_of::<u16>()) as u64,
+                    MTLResourceOptions::CPUCacheModeDefaultCache,
+                );
+                let timestamp_buf = self.device.new_buffer_with_data(
+                    &timestamp as *const u64 as *const _,
+                    std::mem::size_of::<u64>() as u64,
+                    MTLResourceOptions::CPUCacheModeDefaultCache,
+                );
+                encoder.set_buffer(0, Some(&header_buf), 0);
+                encoder.set_buffer(1, Some(&target_buf), 0);
+                encoder.set_buffer(2, Some(&matrix_buf), 0);
+                encoder.set_buffer(3, Some(&output_nonce_buf), 0);
+                encoder.set_buffer(4, Some(&output_hash_buf), 0);
+                encoder.set_buffer(5, Some(&found_flag_buf), 0);
+                encoder.set_buffer(6, Some(&timestamp_buf), 0);
+                encoder.set_buffer(7, Some(&base_nonce_buf), 0);
+            }
+            // autolykos: 0=header, 1=target, 2=table, 3=nonce, 4=hash, 5=found, 6=hlen, 7=base_nonce, 8=table_size
+            "autolykos" | "autolykos_erg" => {
+                let height: u32 = if extra.len() >= 4 {
+                    u32::from_le_bytes(extra[..4].try_into().unwrap())
+                } else { 0 };
+                let table_size = if extra.len() >= 8 {
+                    u32::from_le_bytes(extra[4..8].try_into().unwrap()) as usize
+                } else {
+                    crate::gpu_backend::autolykos_table_size()
+                };
+                let table_size = table_size.next_power_of_two().max(1);
+                let table_size_u32 = table_size as u32;
 
-        // Set inline arguments (header_len, base_nonce)
-        encoder.set_bytes(5, std::mem::size_of::<u32>() as u64, &header_len as *const _ as *const _);
-        encoder.set_bytes(6, std::mem::size_of::<u64>() as u64, &base_nonce as *const _ as *const _);
+                // Cache table buffer — regenerate only when height or size changes.
+                if self.autolykos_height != height || self.autolykos_table_size != table_size_u32 || self.autolykos_table.is_none() {
+                    let table = crate::gpu_backend::generate_autolykos_table(header, height, table_size);
+                    let table_buf = self.device.new_buffer_with_data(
+                        table.as_ptr() as *const _,
+                        (table.len() * std::mem::size_of::<u64>()) as u64,
+                        MTLResourceOptions::CPUCacheModeDefaultCache,
+                    );
+                    self.autolykos_table = Some(table_buf);
+                    self.autolykos_table_size = table_size_u32;
+                    self.autolykos_height = height;
+                }
+                let table_buf = self.autolykos_table.as_ref().unwrap();
+
+                let table_size_buf = self.device.new_buffer_with_data(
+                    &table_size_u32 as *const u32 as *const _,
+                    std::mem::size_of::<u32>() as u64,
+                    MTLResourceOptions::CPUCacheModeDefaultCache,
+                );
+                encoder.set_buffer(0, Some(&header_buf), 0);
+                encoder.set_buffer(1, Some(&target_buf), 0);
+                encoder.set_buffer(2, Some(table_buf), 0);
+                encoder.set_buffer(3, Some(&output_nonce_buf), 0);
+                encoder.set_buffer(4, Some(&output_hash_buf), 0);
+                encoder.set_buffer(5, Some(&found_flag_buf), 0);
+                encoder.set_buffer(6, Some(&header_len_buf), 0);
+                encoder.set_buffer(7, Some(&base_nonce_buf), 0);
+                encoder.set_buffer(8, Some(&table_size_buf), 0);
+            }
+            // ethash: 0=header, 1=target, 2=dag, 3=nonce, 4=hash, 5=mix, 6=found, 7=nonce_base, 8=stride, 9=dag_size
+            "ethash" | "etchash" | "ethash_etc" => {
+                let dag = self.ethash_dag.as_ref()
+                    .ok_or_else(|| anyhow!("Ethash DAG not set; call set_ethash_dag() before mining"))?;
+                let mix_init = [0u8; 32];
+                let mix_buf = self.device.new_buffer_with_data(
+                    mix_init.as_ptr() as *const _,
+                    32,
+                    MTLResourceOptions::CPUCacheModeDefaultCache,
+                );
+                let stride = batch_size;
+                let stride_buf = self.device.new_buffer_with_data(
+                    &stride as *const u64 as *const _,
+                    std::mem::size_of::<u64>() as u64,
+                    MTLResourceOptions::CPUCacheModeDefaultCache,
+                );
+                let dag_sz = self.ethash_dag_entries;
+                let dag_size_buf = self.device.new_buffer_with_data(
+                    &dag_sz as *const u64 as *const _,
+                    std::mem::size_of::<u64>() as u64,
+                    MTLResourceOptions::CPUCacheModeDefaultCache,
+                );
+                encoder.set_buffer(0, Some(&header_buf), 0);
+                encoder.set_buffer(1, Some(&target_buf), 0);
+                encoder.set_buffer(2, Some(dag), 0);
+                encoder.set_buffer(3, Some(&output_nonce_buf), 0);
+                encoder.set_buffer(4, Some(&output_hash_buf), 0);
+                encoder.set_buffer(5, Some(&mix_buf), 0);
+                encoder.set_buffer(6, Some(&found_flag_buf), 0);
+                encoder.set_buffer(7, Some(&base_nonce_buf), 0);
+                encoder.set_buffer(8, Some(&stride_buf), 0);
+                encoder.set_buffer(9, Some(&dag_size_buf), 0);
+            }
+            // kawpow: 0=header, 1=target, 2=dag, 3=nonce, 4=hash, 5=mix, 6=found, 7=base_nonce, 8=dag_entries
+            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" => {
+                let dag = self.kawpow_dag.as_ref()
+                    .ok_or_else(|| anyhow!("KawPow DAG not set; call set_kawpow_dag() before mining"))?;
+                let mix_init = [0u8; 32];
+                let mix_buf = self.device.new_buffer_with_data(
+                    mix_init.as_ptr() as *const _,
+                    32,
+                    MTLResourceOptions::CPUCacheModeDefaultCache,
+                );
+                let dag_ent = self.kawpow_dag_entries;
+                let dag_entries_buf = self.device.new_buffer_with_data(
+                    &dag_ent as *const u64 as *const _,
+                    std::mem::size_of::<u64>() as u64,
+                    MTLResourceOptions::CPUCacheModeDefaultCache,
+                );
+                encoder.set_buffer(0, Some(&header_buf), 0);
+                encoder.set_buffer(1, Some(&target_buf), 0);
+                encoder.set_buffer(2, Some(dag), 0);
+                encoder.set_buffer(3, Some(&output_nonce_buf), 0);
+                encoder.set_buffer(4, Some(&output_hash_buf), 0);
+                encoder.set_buffer(5, Some(&mix_buf), 0);
+                encoder.set_buffer(6, Some(&found_flag_buf), 0);
+                encoder.set_buffer(7, Some(&base_nonce_buf), 0);
+                encoder.set_buffer(8, Some(&dag_entries_buf), 0);
+            }
+            // zelhash: 0=header, 1=target, 2=nonce, 3=hash, 4=solution, 5=found, 6=hlen, 7=base_nonce
+            "zelhash" | "zelhash_flux" => {
+                let sol_init = [0u8; 52];
+                let solution_buf = self.device.new_buffer_with_data(
+                    sol_init.as_ptr() as *const _,
+                    52,
+                    MTLResourceOptions::CPUCacheModeDefaultCache,
+                );
+                encoder.set_buffer(0, Some(&header_buf), 0);
+                encoder.set_buffer(1, Some(&target_buf), 0);
+                encoder.set_buffer(2, Some(&output_nonce_buf), 0);
+                encoder.set_buffer(3, Some(&output_hash_buf), 0);
+                encoder.set_buffer(4, Some(&solution_buf), 0);
+                encoder.set_buffer(5, Some(&found_flag_buf), 0);
+                encoder.set_buffer(6, Some(&header_len_buf), 0);
+                encoder.set_buffer(7, Some(&base_nonce_buf), 0);
+            }
+            _ => anyhow::bail!("unsupported algorithm for Metal: {algorithm}"),
+        }
 
         // Dispatch threads
-        let threads_per_group = self.device.max_threadgroup_width();
-        let global_work_size = batch_size.max(1) as u64;
-        let thread_groups = ((global_work_size + threads_per_group as u64 - 1) / threads_per_group as u64) as u64;
+        let max_tg = self.device.max_threads_per_threadgroup();
+        let threads_per_group = max_tg.width.max(256);
+        let global_work_size = batch_size.max(1);
 
         let grid_size = MTLSize {
-            width: global_work_size as usize,
+            width: global_work_size,
             height: 1,
             depth: 1,
         };
@@ -211,7 +398,7 @@ impl GpuBackend for MetalBackend {
         encoder.dispatch_threads(grid_size, group_size);
         encoder.end_encoding();
 
-        let start = Instant::now();
+        let start = std::time::Instant::now();
         cmd_buffer.commit();
         cmd_buffer.wait_until_completed();
 

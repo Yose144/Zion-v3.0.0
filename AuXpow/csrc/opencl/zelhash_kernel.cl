@@ -45,12 +45,10 @@ __constant const uint BLAKE2B_IV[8] = {
 // Precomputed ZelProof-personalized IV values.
 //   IV[0] ^= "ZelProof" (LE ulong 0x666F6F72506C655A) ^= digest_length(64)
 //   IV[1] ^= 125 (0x7D) LE + 4 (0x04) LE  => 0x000000040000007D
-// These are constant for every hash, so they are folded once at compile time
-// and stored in __constant memory.
-__constant const ulong ZELPROOF_IV0 =
-    (ulong)BLAKE2B_IV[0] ^ 0x666F6F72506C655AULL ^ 64UL;
-__constant const ulong ZELPROOF_IV1 =
-    (ulong)BLAKE2B_IV[1] ^ 0x000000040000007DULL;
+// These are constant for every hash, so they are folded once at compile time.
+// Using #define instead of __constant for Apple M1 OpenCL compatibility.
+#define ZELPROOF_IV0 (0x6A09E667F3BCC908UL ^ 0x666F6F72506C655AULL ^ 64UL)
+#define ZELPROOF_IV1 (0xBB67AE8584CAA73BUL ^ 0x000000040000007DULL)
 
 __constant const uchar BLAKE2B_SIGMA[12][16] = {
     {  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15 },

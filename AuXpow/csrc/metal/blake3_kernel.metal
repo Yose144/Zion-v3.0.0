@@ -200,9 +200,9 @@ void blake3_inner(
 
 kernel void blake3_alph_mine(
     device const uchar* header_blob [[buffer(0)]],
-    uint header_len,
+    constant uint* header_len [[buffer(5)]],
     device const uchar* target [[buffer(1)]],
-    ulong base_nonce,
+    constant ulong* base_nonce [[buffer(6)]],
     device ulong* output_nonce [[buffer(2)]],
     device uchar* output_hash [[buffer(3)]],
     device uint* found [[buffer(4)]],
@@ -211,7 +211,10 @@ kernel void blake3_alph_mine(
 {
     if (atomic_load_explicit((device atomic_uint*)found, memory_order_relaxed)) return;
 
-    ulong candidate = base_nonce + (ulong)gid;
+    uint hlen = *header_len;
+    ulong bnonce = *base_nonce;
+
+    ulong candidate = bnonce + (ulong)gid;
 
     uchar nonce[24];
     nonce[0] = (uchar)(candidate >> 56);
@@ -225,7 +228,7 @@ kernel void blake3_alph_mine(
     for (int i = 8; i < 24; i++) nonce[i] = 0;
 
     uint inner[8];
-    blake3_inner(nonce, header_blob, header_len, inner);
+    blake3_inner(nonce, header_blob, hlen, inner);
 
     // Outer blake3(inner_hash) with ROOT flag.
     uchar block[64];
@@ -276,9 +279,9 @@ kernel void blake3_alph_mine(
 
 kernel void blake3_dcr_mine(
     device const uchar* header_blob [[buffer(0)]],
-    uint header_len,
+    constant uint* header_len [[buffer(5)]],
     device const uchar* target [[buffer(1)]],
-    ulong base_nonce,
+    constant ulong* base_nonce [[buffer(6)]],
     device ulong* output_nonce [[buffer(2)]],
     device uchar* output_hash [[buffer(3)]],
     device uint* found [[buffer(4)]],
@@ -287,12 +290,15 @@ kernel void blake3_dcr_mine(
 {
     if (atomic_load_explicit((device atomic_uint*)found, memory_order_relaxed)) return;
 
-    ulong nonce = base_nonce + (ulong)gid;
+    uint hlen = *header_len;
+    ulong bnonce = *base_nonce;
+
+    ulong nonce = bnonce + (ulong)gid;
 
     // Build the full 180-byte DCR block header.
     uchar full_header[180];
     for (int i = 0; i < 180; i++) full_header[i] = 0;
-    uint copy_len = header_len < 180u ? header_len : 180u;
+    uint copy_len = hlen < 180u ? hlen : 180u;
     for (uint i = 0u; i < copy_len; i++) full_header[i] = header_blob[i];
 
     // Insert the 4-byte little-endian nonce at offset 140.

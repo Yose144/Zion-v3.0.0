@@ -115,148 +115,10 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
 
 // ── kHeavyHash matrix generation (host side) ─────────────────────────
 //
-// Generates the fixed 64×64 matrix of 4-bit values used by the Kaspa
-// kHeavyHash algorithm.  Matches rusty-kaspa's `Matrix::generate`:
-//   1. seed = SHA3-256("KHeavyHash")
-//   2. XoShiRo256++ PRNG seeded with `seed`
-//   3. Generate a 64×64 matrix where each entry is 4 bits (0–15)
-//   4. Retry until the matrix has full rank (64) over the reals
+// Re-exports from gpu_backend for backward compatibility.
+pub(crate) use crate::gpu_backend::{generate_kheavy_matrix, autolykos_table_size, generate_autolykos_table};
 
-struct XoShiRo256PlusPlus {
-    s: [u64; 4],
-}
-
-impl XoShiRo256PlusPlus {
-    fn new(seed: [u8; 32]) -> Self {
-        let mut s = [0u64; 4];
-        for i in 0..4 {
-            s[i] = u64::from_le_bytes(seed[i * 8..(i + 1) * 8].try_into().unwrap());
-        }
-        Self { s }
-    }
-
-    #[inline(always)]
-    fn next(&mut self) -> u64 {
-        let res = self.s[0].wrapping_add(self.s[0].wrapping_add(self.s[3]).rotate_left(23));
-        let t = self.s[1] << 17;
-        self.s[2] ^= self.s[0];
-        self.s[3] ^= self.s[1];
-        self.s[1] ^= self.s[2];
-        self.s[0] ^= self.s[3];
-        self.s[2] ^= t;
-        self.s[3] = self.s[3].rotate_left(45);
-        res
-    }
-}
-
-/// Generate the 64×64 kHeavyHash matrix as a flat array of 4096 u16 values
-/// (each in range 0–15).  The matrix is generated once and cached.
-fn generate_kheavy_matrix() -> [u16; 4096] {
-    use std::sync::OnceLock;
-    static MATRIX: OnceLock<[u16; 4096]> = OnceLock::new();
-    *MATRIX.get_or_init(|| {
-        use sha3::{Digest, Sha3_256};
-        let seed = Sha3_256::digest(b"KHeavyHash");
-        let mut rng = XoShiRo256PlusPlus::new(seed.into());
-
-        loop {
-            // Generate a 64×64 matrix of 4-bit values
-            let mut mat = [[0u16; 64]; 64];
-            for row in &mut mat {
-                let mut val = 0u64;
-                for (j, elem) in row.iter_mut().enumerate() {
-                    let shift = j % 16;
-                    if shift == 0 {
-                        val = rng.next();
-                    }
-                    *elem = ((val >> (4 * shift)) & 0x0F) as u16;
-                }
-            }
-
-            // Check rank == 64 (Gaussian elimination over the reals)
-            if compute_rank_64(&mat) == 64 {
-                // Flatten to [u16; 4096] (row-major: matrix[row*64 + col])
-                let mut flat = [0u16; 4096];
-                for i in 0..64 {
-                    for j in 0..64 {
-                        flat[i * 64 + j] = mat[i][j];
-                    }
-                }
-                return flat;
-            }
-        }
-    })
-}
-
-/// Compute the rank of a 64×64 matrix over the reals using Gaussian
-/// elimination.  Matches rusty-kaspa's `compute_rank`.
-fn compute_rank_64(mat: &[[u16; 64]; 64]) -> usize {
-    const EPS: f64 = 1e-9;
-    let mut m = [[0.0f64; 64]; 64];
-    for i in 0..64 {
-        for j in 0..64 {
-            m[i][j] = mat[i][j] as f64;
-        }
-    }
-    let mut rank = 0;
-    let mut row_selected = [false; 64];
-    for i in 0..64 {
-        let mut j = 0;
-        while j < 64 {
-            if !row_selected[j] && m[j][i].abs() > EPS {
-                break;
-            }
-            j += 1;
-        }
-        if j != 64 {
-            rank += 1;
-            row_selected[j] = true;
-            for p in (i + 1)..64 {
-                m[j][p] /= m[j][i];
-            }
-            for k in 0..64 {
-                if k != j && m[k][i].abs() > EPS {
-                    for p in (i + 1)..64 {
-                        m[k][p] -= m[j][p] * m[k][i];
-                    }
-                }
-            }
-        }
-    }
-    rank
-}
-
-// ── Autolykos v2 table generation (host side) ────────────────────────
-//
-// Generates the precomputed table of M u64 elements used by the Ergo
-// Autolykos v2 PoW.  The table is derived from the block header and height:
-//   seed = SHA-256(header)                       (32 bytes)
-//   table[i] = gen_element(i, seed, height)      for i in 0..M
-//
-// `gen_element` produces a deterministic 64-bit element via BLAKE2b-256:
-//   elem = BLAKE2b256(seed || be64(i) || be32(height))
-//   table[i] = u64::from_be_bytes(elem[0..8])
-//
-// The table is expensive to generate (O(M) BLAKE2b hashes), so it is cached
-// keyed by (height, table_size) in a process-wide static map and regenerated
-// only when the height (or table size) changes.  Ergo mainnet uses M = 2^26
-// (67M entries / 512 MB); the default here is 2^23 (8M entries / 64 MB) for
-// practicality, overridable via the `ZION_AUTOLYKOS_TABLE_SIZE` env var.
-//
-// References:
-//   - Ergo Autolykos v2 whitepaper (ErgoPow.tex)
-//   - https://docs.ergoplatform.com/mining/algo-technical/
-
-/// Default Autolykos v2 table size (number of u64 entries).  A power of two
-/// is required by the kernel (which uses `& (M - 1)` for the modulo).  The
-/// Ergo mainnet value is `1 << 26` (512 MB); override with the
-/// `ZION_AUTOLYKOS_TABLE_SIZE` environment variable.
-fn autolykos_table_size() -> usize {
-    std::env::var("ZION_AUTOLYKOS_TABLE_SIZE")
-        .ok()
-        .and_then(|v| v.trim().parse::<usize>().ok())
-        .unwrap_or(1 << 23)
-}
+// ── Autolykos v2 table cache (process-wide) ──────────────────────────
 
 /// Process-wide cache of Autolykos v2 tables, keyed by `(height, table_size)`.
 type AutolykosTableCache = std::collections::HashMap<(u32, usize), Vec<u64>>;
@@ -265,36 +127,6 @@ fn autolykos_table_cache() -> &'static std::sync::Mutex<AutolykosTableCache> {
     use std::sync::OnceLock;
     static CACHE: OnceLock<std::sync::Mutex<AutolykosTableCache>> = OnceLock::new();
     CACHE.get_or_init(|| std::sync::Mutex::new(AutolykosTableCache::new()))
-}
-
-/// Generate a single Autolykos v2 table element.
-///
-/// `elem = BLAKE2b256(seed || be64(i) || be32(height))`, returning the first
-/// 8 bytes as a big-endian u64.
-fn gen_autolykos_element(i: u64, seed: &[u8; 32], height: u32) -> u64 {
-    use blake2::digest::{Update, VariableOutput};
-    let mut hasher = blake2::Blake2bVar::new(32).expect("blake2b256");
-    hasher.update(seed);
-    hasher.update(&i.to_be_bytes());
-    hasher.update(&height.to_be_bytes());
-    let mut out = [0u8; 32];
-    hasher
-        .finalize_variable(&mut out)
-        .expect("blake2b256 finalize");
-    u64::from_be_bytes(out[0..8].try_into().unwrap())
-}
-
-/// Generate the full Autolykos v2 table (M u64 entries) from the header and
-/// height.  `seed = SHA-256(header)`.
-fn generate_autolykos_table(header: &[u8], height: u32, table_size: usize) -> Vec<u64> {
-    use sha2::Digest;
-    let mut h = sha2::Sha256::new();
-    h.update(header);
-    let seed: [u8; 32] = h.finalize().into();
-
-    (0..table_size)
-        .map(|i| gen_autolykos_element(i as u64, &seed, height))
-        .collect()
 }
 
 /// Ensure the Autolykos v2 table for `(height, table_size)` is present in the
@@ -547,6 +379,7 @@ impl GpuMiner {
             kernel
                 .cmd()
                 .global_work_size(global_work_size)
+                .local_work_size(wg_size)
                 .enq()
                 .map_err(|e| anyhow!("OpenCL enqueue failed: {e}"))?;
         }

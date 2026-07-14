@@ -182,11 +182,11 @@ inline void blake2b256_single(
 // global_work_size = batch_size).
 kernel void autolykos_mine(
     device const uchar* header [[buffer(0)]],
-    uint header_len,
+    constant uint* header_len [[buffer(6)]],
     device const uchar* target [[buffer(1)]],
-    ulong base_nonce,
+    constant ulong* base_nonce [[buffer(7)]],
     device const ulong* table [[buffer(2)]],
-    uint table_size,
+    constant uint* table_size [[buffer(8)]],
     device ulong* output_nonce [[buffer(3)]],
     device uchar* output_hash [[buffer(4)]],
     device uint* found [[buffer(5)]],
@@ -195,10 +195,14 @@ kernel void autolykos_mine(
 {
     if (atomic_load_explicit((device atomic_uint*)found, memory_order_relaxed)) return;
 
-    const ulong nonce = base_nonce + (ulong)gid;
+    uint hlen_arg = *header_len;
+    ulong bnonce = *base_nonce;
+    uint tbl_size = *table_size;
+
+    const ulong nonce = bnonce + (ulong)gid;
 
     // M is a power of two, so mod M == & (M - 1).
-    const ulong mask = (ulong)table_size - 1UL;
+    const ulong mask = (ulong)tbl_size - 1UL;
 
     // Step 1: r = nonce mod M.
     ulong r = nonce & mask;
@@ -214,7 +218,7 @@ kernel void autolykos_mine(
     // Step 3: hash = BLAKE2b-256(header || r_BE8 || nonce_BE8).
     // r and nonce are written big-endian (Ergo convention, matching the CPU
     // reference which uses nonce.to_be_bytes()).
-    uint hlen = header_len;
+    uint hlen = hlen_arg;
     if (hlen > 112) hlen = 112;
 
     uchar input[128];

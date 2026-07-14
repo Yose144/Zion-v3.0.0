@@ -196,10 +196,10 @@ inline uint fnv1a(uint a, uint b) {
 kernel void ethash_mine(
     device const uchar* header_hash [[buffer(0)]],   // 32 bytes
     device const uchar* target [[buffer(1)]],         // 32 bytes
-    ulong nonce_base,
-    ulong stride,
+    constant ulong* nonce_base [[buffer(7)]],
+    constant ulong* stride [[buffer(8)]],
     device const ulong* dag [[buffer(2)]],            // DAG buffer (16 u64 per entry)
-    ulong dag_size,                                    // number of 128-byte entries
+    constant ulong* dag_size [[buffer(9)]],            // number of 128-byte entries
     device ulong* output_nonce [[buffer(3)]],
     device uchar* output_hash [[buffer(4)]],
     device uchar* output_mix [[buffer(5)]],           // 32-byte compressed mix hash
@@ -209,7 +209,11 @@ kernel void ethash_mine(
 {
     if (atomic_load_explicit((device atomic_uint*)found, memory_order_relaxed)) return;
 
-    ulong nonce = nonce_base + (ulong)gid * stride;
+    ulong nbase = *nonce_base;
+    ulong stride_val = *stride;
+    ulong dag_sz = *dag_size;
+
+    ulong nonce = nbase + (ulong)gid * stride_val;
 
     // -- Step 1: seed = Keccak-512(header_hash || nonce_le) -> 64 bytes --
     uchar seed_input[40];
@@ -232,7 +236,7 @@ kernel void ethash_mine(
 
     // -- Step 3: 64 DAG accesses with FNV-1a mixing --
     for (int i = 0; i < 64; i++) {
-        uint index = fnv1a((uint)i ^ mix[0], mix[0]) % (uint)dag_size;
+        uint index = fnv1a((uint)i ^ mix[0], mix[0]) % (uint)dag_sz;
 
         // Load 128-byte DAG node = 16 x u64, split into 32 x u32 (little-endian).
         device const ulong *node = dag + (ulong)index * 16UL;

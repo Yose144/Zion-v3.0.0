@@ -271,9 +271,9 @@ void compress_solution(
 
 kernel void zelhash_mine(
     device const uchar* header_blob [[buffer(0)]],   // header prefix (without nonce)
-    uint header_len,                                  // length of header prefix
+    constant uint* header_len [[buffer(6)]],          // length of header prefix
     device const uchar* target [[buffer(1)]],         // 32-byte big-endian target
-    ulong base_nonce,                                 // base nonce for this batch
+    constant ulong* base_nonce [[buffer(7)]],          // base nonce for this batch
     device ulong* output_nonce [[buffer(2)]],         // found nonce
     device uchar* output_hash [[buffer(3)]],          // 32-byte found hash
     device uchar* output_solution [[buffer(4)]],      // 52-byte found solution
@@ -282,12 +282,15 @@ kernel void zelhash_mine(
 ) {
     if (atomic_load_explicit((device atomic_uint*)found, memory_order_relaxed)) return;
 
-    ulong nonce = base_nonce + (ulong)gid;
+    uint hlen = *header_len;
+    ulong bnonce = *base_nonce;
+
+    ulong nonce = bnonce + (ulong)gid;
 
     // Build input: header_prefix + nonce (32 bytes LE)
     uchar input[243];  // max header_prefix (211) + 32 nonce
     for (int i = 0; i < 243; i++) input[i] = 0;
-    uint copy_len = min(header_len, 211u);
+    uint copy_len = min(hlen, 211u);
     for (uint i = 0; i < copy_len; i++) input[i] = header_blob[i];
 
     // Append 32-byte nonce (LE)

@@ -215,9 +215,9 @@ constant const uint CUSTOM_HEAVY_HASH_LEN = 9;
 //   found         -- atomic flag: 0 = not found, 1 = found
 kernel void kheavyhash_mine(
     device const uchar* pre_pow_hash [[buffer(0)]],    // 32 bytes
-    ulong timestamp,
+    constant ulong* timestamp [[buffer(6)]],
     device const uchar* target [[buffer(1)]],           // 32 bytes
-    ulong base_nonce,
+    constant ulong* base_nonce [[buffer(7)]],
     device const ushort* matrix [[buffer(2)]],          // 64x64 = 4096 u16 values
     device ulong* output_nonce [[buffer(3)]],
     device uchar* output_hash [[buffer(4)]],
@@ -227,14 +227,17 @@ kernel void kheavyhash_mine(
 {
     if (atomic_load_explicit((device atomic_uint*)found, memory_order_relaxed)) return;
 
-    ulong nonce = base_nonce + (ulong)gid;
+    ulong ts = *timestamp;
+    ulong bnonce = *base_nonce;
+
+    ulong nonce = bnonce + (ulong)gid;
 
     // -- Step 1: PowHash = cSHAKE256("ProofOfWorkHash")(pre_pow_hash || timestamp_le || 32 zero bytes || nonce_le)
     // Input is 32 + 8 + 32 + 8 = 80 bytes.
     // We build it in a private buffer, then call cshake256_custom.
     uchar pow_input[80];
     for (int i = 0; i < 32; i++) pow_input[i] = pre_pow_hash[i];
-    for (int i = 0; i < 8; i++) pow_input[32 + i] = (uchar)(timestamp >> (i*8));
+    for (int i = 0; i < 8; i++) pow_input[32 + i] = (uchar)(ts >> (i*8));
     for (int i = 0; i < 32; i++) pow_input[40 + i] = 0;
     for (int i = 0; i < 8; i++) pow_input[72 + i] = (uchar)(nonce >> (i*8));
 
