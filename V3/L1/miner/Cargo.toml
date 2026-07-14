@@ -29,7 +29,7 @@ default = []
 gpu         = ["gpu-opencl"]                           # alias → OpenCL
 gpu-opencl  = ["dep:ocl", "zion-auxpow/gpu-opencl"]    # Ekam Deeksha + external Blake3/kHeavyHash
 gpu-cuda    = ["dep:cudarc"]                            # NVIDIA CUDA via cudarc
-gpu-metal   = ["dep:metal", "dep:block", "dep:objc"]                  # Apple Silicon Metal GPU (macOS only)
+gpu-metal   = ["dep:metal", "dep:block", "dep:objc", "zion-auxpow/gpu-metal"]  # Apple Silicon Metal GPU (macOS only)
 gpu-all     = ["gpu-opencl", "gpu-cuda", "gpu-metal"]
 
 # Native algorithm acceleration (optional, requires C toolchain)
@@ -71,6 +71,7 @@ rayon = "1"
 hex = "0.4"
 ocl = { version = "0.19", optional = true }
 serde_json.workspace = true
+tokio = { version = "1", features = ["rt-multi-thread", "time", "sync"] }
 zion-core = { path = "../core" }
 zion-pool = { path = "../pool" }
 zion-cosmic-harmony = { path = "../cosmic-harmony" }

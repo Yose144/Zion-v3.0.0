@@ -1251,6 +1251,28 @@ fn run_remote_session(
     control: &Arc<Mutex<MinerControl>>,
     hashrate: &Arc<HashrateTracker>,
 ) -> Result<SessionOutcome> {
+    // ── Pearl PoUW stratum stream (parallel, independent) ──────────────
+    // If --pearl H:P:W was given, spawn a dedicated thread that runs
+    // AuxPowClient with PearlStratum protocol. This streams PoUW shares
+    // to a Pearl pool IN PARALLEL with ZION mining, completely independent
+    // of the ZION pool connection state.
+    let _pearl_handle = if let Ok(pearl_cfg) = std::env::var("ZION_PEARL_STREAM") {
+        let parts: Vec<&str> = pearl_cfg.splitn(3, ':').collect();
+        if parts.len() == 3 {
+            let host = parts[0].to_string();
+            let port: u16 = parts[1].parse().unwrap_or(3373);
+            let wallet = parts[2].to_string();
+            Some(thread::spawn(move || {
+                pearl_pouw_stream(&host, port, &wallet);
+            }))
+        } else {
+            eprintln!("pearl_stream: invalid format, expected HOST:PORT:WALLET");
+            None
+        }
+    } else {
+        None
+    };
+
     let started_at = Instant::now();
     let mut attempted_hashes = 0u64;
     let mut accepted_iterations = 0u64;
@@ -1512,6 +1534,8 @@ fn run_remote_session(
         //   - CPU: external stream (VRSC/DCR/ALPH/etc.) in parallel
         // The external pool sets the difficulty/target; CPU mining is slower
         // but sufficient for pool-share targets (shares, not blocks).
+        // ── Pearl stream already spawned at session start ──
+
         let ext_handle = if let Some(ref ext) = external_stream {
             let ext = ext.clone();
             let ext_threads = threads.max(1);
@@ -2542,6 +2566,12 @@ impl MinerConfig {
                     std::env::set_var("ZION_MINER_ALGORITHM", &args[i + 1]);
                     i += 2;
                 }
+                "--pearl" if i + 1 < args.len() => {
+                    // Pearl PoUW stratum stream: --pearl POOL_HOST:PORT:WALLET
+                    // Spawns AuxPowClient with PearlStratum protocol in parallel.
+                    std::env::set_var("ZION_PEARL_STREAM", &args[i + 1]);
+                    i += 2;
+                }
                 "--help" | "-h" => {
                     println!("Usage: zion-miner [OPTIONS]");
                     println!();
@@ -2556,6 +2586,7 @@ impl MinerConfig {
                     println!("  --loops N           Iteration count (default: 1)");
                     println!("  --profile NAME      Profile: pool, solo, benchmark, dual");
                     println!("  --algorithm ALGO    Mining algorithm (see list below)");
+                    println!("  --pearl H:P:W       Pearl PoUW stratum stream (host:port:wallet)");
                     println!();
                     println!("  ZION algorithms:  deeksha_lite_v1, cosmic_harmony_ekam_deeksha_v2, deeksha_lite_fire");
                     println!("  External GPU:      blake3 (ALPH/DCR), kheavyhash (KAS), autolykos (ERG),");
@@ -3177,4 +3208,108 @@ mod tests {
             std::env::remove_var(k);
         }
     }
+}
+
+// ─── Pearl PoUW stratum stream ──────────────────────────────────────────────
+//
+// Spawns a tokio runtime in a dedicated thread and runs AuxPowClient with
+// PearlStratum protocol. Connects directly to a Pearl pool (e.g. suprnova),
+// mines PoUW proofs (CPU or GPU), and submits shares.
+//
+// This runs IN PARALLEL with the main ZION mining loop. The Pearl stream
+// is independent — it has its own pool connection, job queue, and submit path.
+
+fn pearl_pouw_stream(host: &str, port: u16, wallet: &str) {
+    use zion_auxpow::{AuxPowClient, CoinProfile, ExternalCoin};
+
+    println!(
+        "[{}] pearl_stream: connecting to {}:{} wallet={}",
+        log_timestamp(),
+        host,
+        port,
+        wallet
+    );
+
+    // Create a dedicated tokio runtime for the Pearl stream
+    let runtime = match std::thread::Builder::new()
+        .name("pearl-stratum".to_string())
+        .spawn(|| {
+            let rt = tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .build()
+                .expect("pearl tokio runtime");
+            rt
+        }) {
+        Ok(h) => h.join().expect("pearl runtime thread"),
+        Err(e) => {
+            eprintln!("pearl_stream: failed to spawn runtime: {e}");
+            return;
+        }
+    };
+
+    runtime.block_on(async move {
+        let mut profile = CoinProfile::default_for(ExternalCoin::PRL);
+        profile.pool_host = host.to_string();
+        profile.pool_port = port;
+        profile.worker_name = "zion_pearl".to_string();
+        profile.password = "x".to_string();
+
+        // Create client — with GPU if available
+        #[cfg(feature = "gpu-metal")]
+        let client = AuxPowClient::new(profile).with_gpu().await;
+        #[cfg(not(feature = "gpu-metal"))]
+        let client = AuxPowClient::new(profile);
+
+        let client = std::sync::Arc::new(client);
+
+        // Connect + authorize
+        if let Err(e) = client.connect(wallet).await {
+            eprintln!("pearl_stream: connect error: {e}");
+            return;
+        }
+
+        println!("[{}] pearl_stream: connected and authorized", log_timestamp());
+
+        // Main Pearl mining loop — wait for jobs, mine, submit
+        loop {
+            // Wait for a new job (timeout 120s)
+            match client.wait_for_job(120_000).await {
+                Ok(Some(job)) => {
+                    println!(
+                        "[{}] pearl_stream: job={} header_len={}",
+                        log_timestamp(),
+                        job.job_id,
+                        job.header_bytes.len()
+                    );
+
+                    // Mine + submit (submit_share handles PoUW mining internally)
+                    match client.submit_share(&job.job_id, 0, "", None).await {
+                        Ok(result) => {
+                            println!(
+                                "[{}] pearl_stream: submit result = {:?}",
+                                log_timestamp(),
+                                result
+                            );
+                        }
+                        Err(e) => {
+                            eprintln!(
+                                "[{}] pearl_stream: submit error: {e}",
+                                log_timestamp()
+                            );
+                        }
+                    }
+                }
+                Ok(None) => {
+                    // No job within timeout — loop and retry
+                }
+                Err(e) => {
+                    eprintln!(
+                        "[{}] pearl_stream: wait_for_job error: {e}",
+                        log_timestamp()
+                    );
+                    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                }
+            }
+        }
+    });
 }
