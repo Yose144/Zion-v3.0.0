@@ -6,7 +6,14 @@
 import { sha256 } from '@noble/hashes/sha2.js';
 
 // Use Node.js crypto when available, otherwise Web Crypto API
-const nodeCrypto = typeof require !== 'undefined' ? require('crypto') : null;
+let nodeCrypto: any = null;
+try {
+  if (typeof require !== 'undefined') {
+    nodeCrypto = require('crypto');
+  }
+} catch {
+  // Browser environment — use Web Crypto API fallback
+}
 
 /** Legacy PBKDF2 iteration count (v1.0.0 wallets). */
 export const LEGACY_PBKDF2_ITERATIONS = 100_000;

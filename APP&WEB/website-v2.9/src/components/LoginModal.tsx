@@ -10,7 +10,8 @@
  *   4. Server verifies signature and issues JWT cookie
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Lock, Wallet, Loader2, AlertCircle, CheckCircle2, ArrowRight, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -31,6 +32,11 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
   const [error, setError] = useState<string | null>(null);
   const [selectedWalletId, setSelectedWalletId] = useState<string | null>(null);
   const [showWalletList, setShowWalletList] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const activeWallet = zionWallet.wallets.find((w) => w.id === selectedWalletId) || zionWallet.activeWallet;
 
@@ -66,14 +72,16 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
     onClose();
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
           onClick={handleClose}
         >
           <motion.div
@@ -248,6 +256,7 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }
