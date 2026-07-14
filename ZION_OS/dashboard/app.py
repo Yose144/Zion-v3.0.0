@@ -4996,6 +4996,7 @@ def get_revenue_dashboard() -> dict:
         ("MEWC", "meowpow",     "meowpow.eu.mine.zpool.ca:1327"),
         ("XMR",  "randomx",     "gulf.moneroocean.stream:10001"),
         ("VRSC", "verushash",   "eu.luckpool.net:3956"),
+        ("PRL",  "pearlhash",   "us2.alphapool.tech:5566"),
     ]
     current_coin = auxpow.get("current_coin", "")
     coin_revenue = []
@@ -5089,7 +5090,7 @@ def get_revenue_dashboard() -> dict:
         "next_distribution_ts": None,  # no scheduled next — PPLNS pays per block
         "distribution_cycle": "Per-block (PPLNS)",
         "accumulated_usd": round(total_usd, 6),
-        "active_coins": [c[0] for c in SUPPORTED_COINS],  # 11 supported coins
+        "active_coins": [c[0] for c in SUPPORTED_COINS],  # 13 supported coins
         "coin_revenue": coin_revenue,
         "distributions": distributions,
         # Stream profit (Deeksha Chv3 pipeline weights)
@@ -5206,7 +5207,7 @@ AUXPOW_SERVICE_NAME = _resolve_auxpow_service_name()
 # Coins the pool can force-switch to. Keep in sync with AuXpow/src/types.rs.
 AUXPOW_SUPPORTED_COINS = [
     "DCR", "ALPH", "KAS", "ERG", "RVN", "ETC",
-    "EVR", "MEWC", "FLUX", "CLORE", "XMR", "VRSC",
+    "EVR", "MEWC", "FLUX", "CLORE", "XMR", "VRSC", "PRL",
 ]
 
 AUXPOW_POOL_PREFERENCES = ["default", "nicehash", "herominers", "zpool"]
@@ -5354,7 +5355,7 @@ def get_auxpow_config() -> dict:
         },
         "supported_coins": AUXPOW_SUPPORTED_COINS,
         "supported_preferences": AUXPOW_POOL_PREFERENCES,
-        "supported_stream_sources": ["zion", "keccak_bonus", "sha3_bonus", "ncl_ai", "deeksha_lite", "thermal_bonus"],
+        "supported_stream_sources": ["zion", "keccak_bonus", "sha3_bonus", "ncl_ai", "deeksha_lite", "thermal_bonus", "pearl_external"],
         "supported_stream_providers": ["fallback", "nicehash", "whattomine", "coingecko"],
         "env_file": str(EDGE_ENV_FILE),
         "env_file_exists": EDGE_ENV_FILE.exists(),
