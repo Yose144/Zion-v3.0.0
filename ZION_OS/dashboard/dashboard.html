@@ -701,17 +701,22 @@ img, svg, video, canvas {max-width:100%;height:auto;}
 .max-w-7xl > section,
 .max-w-7xl > div,
 [id^="pane-"]{width:100%;max-width:100%;box-sizing:border-box;min-width:0;}
-[id^="pane-"] > .grid,
-[id^="pane-"] > .flex,
 [id^="pane-"] .grid,
 [id^="pane-"] .flex{min-width:0;}
-table{width:100%;max-width:100%;display:block;overflow-x:auto;white-space:nowrap;}
+[id^="pane-"] .grid > *,
+[id^="pane-"] .flex > *{min-width:0;}
+/* Tables never break the page */
+table{width:100%;max-width:100%;border-collapse:collapse;table-layout:auto;}
+th, td{word-break:break-word;overflow-wrap:anywhere;white-space:normal;}
 pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
-.truncate{max-width:100%;}
+.log-tail{overflow-wrap:anywhere;word-break:break-word;}
+.truncate{max-width:100%;min-width:0!important;}
 .zion-panel, .zion-panel-soft {max-width:100%;}
 .zion-panel > .overflow-x-auto,
 .zion-panel-soft > .overflow-x-auto {max-width:100%;}
 @media(max-width:768px){
+  [id^="pane-"] .flex{flex-wrap:wrap;}
+
   .zion-nav-floor{gap:0.35rem;padding:0.4rem 0.55rem;}
   .zion-nav-group > button{font-size:0.7rem;padding:0.35rem 0.55rem;}
   .zion-nav-dropdown{left:0;right:auto;min-width:180px;}
@@ -720,12 +725,14 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
   h1{font-size:1.5rem!important;}
   .zion-kicker{font-size:0.55rem;}
   .zion-quick-link{font-size:0.65rem;padding:0.3rem 0.45rem;}
+  .zion-panel{padding:1rem;}
 }
 @media(max-width:480px){
   .zion-nav-floor{gap:0.25rem;padding:0.35rem 0.45rem;}
   .zion-nav-group > button{font-size:0.65rem;padding:0.3rem 0.45rem;}
   .zion-quick-link{font-size:0.6rem;padding:0.25rem 0.4rem;}
   .zion-nav-brand{display:none;}
+  .zion-panel{padding:0.75rem;}
 }
 </style>
 </head>
@@ -5319,7 +5326,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
     <div class="zion-panel p-4">
       <div class="flex gap-2 flex-wrap">
         <input id="log-search-input" type="text" placeholder="Search across all log files…"
-          class="flex-1 min-w-[200px] bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-zion-gold/50 font-mono"
+          class="flex-1 min-w-0 sm:min-w-[200px] bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-zion-gold/50 font-mono"
           onkeydown="if(event.key==='Enter')logSearchAll()">
         <select id="log-level-filter" class="bg-black/40 border border-white/10 rounded-lg px-2 py-2 text-xs text-white focus:outline-none">
           <option value="all">All levels</option>
@@ -7110,6 +7117,35 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
     }
   });
   window.addEventListener('resize', () => { resize(); seed(); });
+})();
+
+// Responsive safety net: wrap tables for horizontal scroll, make SVGs scale, contain canvas charts
+(function responsiveFixes(){
+  // Wrap bare tables in a scrollable container
+  document.querySelectorAll('table').forEach(table => {
+    if (table.closest('.overflow-x-auto')) return;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'overflow-x-auto max-w-full';
+    wrapper.style.maxWidth = '100%';
+    table.parentNode.insertBefore(wrapper, table);
+    wrapper.appendChild(table);
+  });
+  // Remove fixed width/height from SVGs that have a viewBox so CSS can scale them
+  document.querySelectorAll('svg[viewBox][width], svg[viewBox][height]').forEach(svg => {
+    if (svg.classList.contains('no-resize')) return;
+    svg.removeAttribute('width');
+    svg.removeAttribute('height');
+    if (!svg.classList.contains('max-w-full')) svg.classList.add('max-w-full');
+    svg.style.height = 'auto';
+  });
+  // Ensure chart canvases never overflow their container
+  document.querySelectorAll('canvas[id^="chart-"]').forEach(canvas => {
+    const parent = canvas.parentElement;
+    if (parent) {
+      parent.style.maxWidth = '100%';
+      parent.style.position = parent.style.position || 'relative';
+    }
+  });
 })();
 </script>
 </body>
