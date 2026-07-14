@@ -714,3 +714,508 @@ pub fn list_metal_devices() -> Vec<String> {
     }
     devices
 }
+
+// ─── Pearl PoUW GPU-Native Pipeline ─────────────────────────────────────────
+
+/// Input for GPU-native Pearl PoUW mining (no CPU data prep needed).
+pub struct PearlPouwNativeInput<'a> {
+    pub nonce: u64,
+    pub m: usize,
+    pub n: usize,
+    pub k: usize,
+    pub rank: usize,
+    pub job_key: [u8; 32],
+    pub target: [u8; 32],
+    pub row_offsets: &'a [u32],
+    pub col_offsets: &'a [u32],
+    pub rows_base: &'a [u32],
+    pub cols_base: &'a [u32],
+    pub seed_label_a: [u8; 32],
+    pub seed_label_b: [u8; 32],
+}
+
+impl MetalBackend {
+    /// Fully GPU-native Pearl PoUW mining pipeline.
+    ///
+    /// All steps run on GPU:
+    /// 1. Matrix generation (PCG32 PRNG from nonce)
+    /// 2. BLAKE3 chunk hashing (keyed with job_key)
+    /// 3. BLAKE3 Merkle tree reduction → root hashes
+    /// 4. Noise seed derivation
+    /// 5. Noise generation (E_AL, E_AR, E_BL, E_BR)
+    /// 6. Noised matrix computation
+    /// 7. MatMul + jackpot + target check
+    ///
+    /// CPU only needs to provide job_key, nonce, and mining config.
+    /// Returns winning tile index + jackpot hash if a share is found.
+    pub fn pearl_pouw_mine_native(
+        &mut self,
+        input: &PearlPouwNativeInput<'_>,
+    ) -> Result<Option<PearlPouwGpuResult>> {
+        let kernel_file = "pearl_pouw_native.metal";
+        let m = input.m;
+        let n = input.n;
+        let k = input.k;
+        let rank = input.rank;
+        let mk = m * k;
+        let nk = n * k;
+
+        // Load library and get all pipeline states
+        // Clone the library to release the mutable borrow on self
+        let library = self.ensure_library(kernel_file)?.clone();
+
+        // Get pipeline states
+        let make_pipeline = |name: &str| -> Result<metal::ComputePipelineState> {
+            let func = library
+                .get_function(name, None)
+                .map_err(|e| anyhow!("Metal function not found: {name}: {e}"))?;
+            self.device
+                .new_compute_pipeline_state_with_function(&func)
+                .map_err(|e| anyhow!("Metal pipeline state failed for {name}: {e}"))
+        };
+
+        let pipe_gen = make_pipeline("pearl_gen_matrix")?;
+        let pipe_chunk = make_pipeline("pearl_blake3_chunk_hash")?;
+        let pipe_merge = make_pipeline("pearl_blake3_merge")?;
+        let pipe_small = make_pipeline("pearl_blake3_small_hash")?;
+        let pipe_perm = make_pipeline("pearl_gen_permutation")?;
+        let pipe_unoise = make_pipeline("pearl_gen_uniform_noise")?;
+        let pipe_noise_a = make_pipeline("pearl_apply_noise_a")?;
+        let pipe_noise_b = make_pipeline("pearl_apply_noise_b")?;
+        let pipe_mine = make_pipeline("pearl_pouw_mine_native")?;
+
+        // Create all buffers
+        let shared = MTLResourceOptions::CPUCacheModeDefaultCache;
+        let storage = MTLResourceOptions::StorageModePrivate;
+
+        // Matrix buffers (int8, stored as bytes)
+        let matrix_a_buf = self.device.new_buffer((mk) as u64, storage);     // m×k int8
+        let matrix_bt_buf = self.device.new_buffer((nk) as u64, storage);    // n×k int8 (B^T)
+
+        // Chunk hash buffers
+        let num_chunks_a = mk.div_ceil(1024);  // 256
+        let num_chunks_b = nk.div_ceil(1024);  // 512
+        let max_chunks = num_chunks_a.max(num_chunks_b);
+        let chunk_hashes_buf = self.device.new_buffer((max_chunks * 32) as u64, storage);
+        let merkle_buf = self.device.new_buffer((max_chunks * 32) as u64, storage);
+
+        // Root hash buffers
+        let root_a_buf = self.device.new_buffer(32, shared);
+        let root_b_buf = self.device.new_buffer(32, shared);
+
+        // Seed derivation buffers
+        let seed_msg_buf = self.device.new_buffer(64, shared);  // job_key||hash_b or b_noise_seed||hash_a
+        let b_noise_seed_buf = self.device.new_buffer(32, shared);
+        let a_noise_seed_buf = self.device.new_buffer(32, shared);
+
+        // Noise buffers
+        let e_al_buf = self.device.new_buffer((m * rank) as u64, storage);     // m×rank int8
+        let e_br_buf = self.device.new_buffer((n * rank) as u64, storage);     // n×rank int8
+        let e_ar_perm_buf = self.device.new_buffer((k * 2 * 4) as u64, storage); // k×2 uint32
+        let e_bl_perm_buf = self.device.new_buffer((k * 2 * 4) as u64, storage); // k×2 uint32
+
+        // Noised matrices (int32)
+        let noised_a_buf = self.device.new_buffer((mk * 4) as u64, storage);   // m×k int32
+        let noised_b_buf = self.device.new_buffer((nk * 4) as u64, storage);   // n×k int32
+
+        // Key/seed buffers
+        let job_key_buf = self.device.new_buffer_with_data(
+            input.job_key.as_ptr() as *const _,
+            32, shared,
+        );
+        let iv_buf = self.device.new_buffer_with_data(
+            [0x6A09E667u32, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
+             0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19].as_ptr() as *const _,
+            32, shared,
+        );
+        let seed_label_a_buf = self.device.new_buffer_with_data(
+            input.seed_label_a.as_ptr() as *const _,
+            32, shared,
+        );
+        let seed_label_b_buf = self.device.new_buffer_with_data(
+            input.seed_label_b.as_ptr() as *const _,
+            32, shared,
+        );
+
+        // Mining config buffers
+        let target_buf = self.device.new_buffer_with_data(
+            input.target.as_ptr() as *const _,
+            32, shared,
+        );
+        let row_off_buf = self.device.new_buffer_with_data(
+            input.row_offsets.as_ptr() as *const _,
+            (input.row_offsets.len() * 4) as u64, shared,
+        );
+        let col_off_buf = self.device.new_buffer_with_data(
+            input.col_offsets.as_ptr() as *const _,
+            (input.col_offsets.len() * 4) as u64, shared,
+        );
+        let rows_base_buf = self.device.new_buffer_with_data(
+            input.rows_base.as_ptr() as *const _,
+            (input.rows_base.len() * 4) as u64, shared,
+        );
+        let cols_base_buf = self.device.new_buffer_with_data(
+            input.cols_base.as_ptr() as *const _,
+            (input.cols_base.len() * 4) as u64, shared,
+        );
+
+        // Output buffers
+        let tile_init: u32 = 0;
+        let output_tile_buf = self.device.new_buffer_with_data(
+            &tile_init as *const u32 as *const _,
+            4, shared,
+        );
+        let jackpot_init = [0u8; 32];
+        let output_jackpot_buf = self.device.new_buffer_with_data(
+            jackpot_init.as_ptr() as *const _,
+            32, shared,
+        );
+        let found_init: u32 = 0;
+        let found_buf = self.device.new_buffer_with_data(
+            &found_init as *const u32 as *const _,
+            4, shared,
+        );
+
+        // Constant data buffers (small values passed as constant buffers)
+        let nonce_val = input.nonce;
+        let nonce_buf = self.device.new_buffer_with_data(
+            &nonce_val as *const u64 as *const _,
+            8, shared,
+        );
+
+        // Create one command buffer for the entire pipeline
+        let cmd_buffer = self.cmd_queue.new_command_buffer();
+
+        // ─── Step 1: Generate matrices A and B^T ────────────────────────────
+        {
+            let enc = cmd_buffer.new_compute_command_encoder();
+            enc.set_compute_pipeline_state(&pipe_gen);
+
+            // Generate A (m×k, is_b_transpose=0)
+            enc.set_buffer(0, Some(&matrix_a_buf), 0);
+            enc.set_buffer(1, Some(&nonce_buf), 0);
+            { let v: u32 = m as u32; enc.set_bytes(2, 4, &v as *const u32 as *const _); };  // rows
+            { let v: u32 = k as u32; enc.set_bytes(3, 4, &v as *const u32 as *const _); };  // cols
+            { let v: u32 = 0; enc.set_bytes(4, 4, &v as *const u32 as *const _); };         // is_b_transpose = 0 (A)
+            let grid = MTLSize { width: mk as u64, height: 1, depth: 1 };
+            let tg = MTLSize { width: 256, height: 1, depth: 1 };
+            enc.dispatch_threads(grid, tg);
+
+            // Generate B^T (n×k, is_b_transpose=1)
+            enc.set_buffer(0, Some(&matrix_bt_buf), 0);
+            { let v: u32 = n as u32; enc.set_bytes(2, 4, &v as *const u32 as *const _); };  // rows = n
+            { let v: u32 = k as u32; enc.set_bytes(3, 4, &v as *const u32 as *const _); };  // cols = k
+            { let v: u32 = 1; enc.set_bytes(4, 4, &v as *const u32 as *const _); };         // is_b_transpose = 1 (B^T)
+            let grid_bt = MTLSize { width: nk as u64, height: 1, depth: 1 };
+            enc.dispatch_threads(grid_bt, tg);
+
+            enc.end_encoding();
+        }
+
+        // ─── Step 2: BLAKE3 chunk hashing ────────────────────────────────────
+        {
+            let enc = cmd_buffer.new_compute_command_encoder();
+            enc.set_compute_pipeline_state(&pipe_chunk);
+
+            // Hash A chunks (keyed with job_key)
+            enc.set_buffer(0, Some(&matrix_a_buf), 0);
+            enc.set_buffer(1, Some(&job_key_buf), 0);
+            enc.set_buffer(2, Some(&chunk_hashes_buf), 0);
+            { let v: u32 = num_chunks_a as u32; enc.set_bytes(3, 4, &v as *const u32 as *const _); };
+            let grid = MTLSize { width: num_chunks_a as u64, height: 1, depth: 1 };
+            enc.dispatch_threads(grid, MTLSize { width: 64, height: 1, depth: 1 });
+
+            // Hash B^T chunks (keyed with job_key) — write to merkle_buf
+            enc.set_buffer(0, Some(&matrix_bt_buf), 0);
+            enc.set_buffer(1, Some(&job_key_buf), 0);
+            enc.set_buffer(2, Some(&merkle_buf), 0);
+            { let v: u32 = num_chunks_b as u32; enc.set_bytes(3, 4, &v as *const u32 as *const _); };
+            let grid_b = MTLSize { width: num_chunks_b as u64, height: 1, depth: 1 };
+            enc.dispatch_threads(grid_b, MTLSize { width: 64, height: 1, depth: 1 });
+
+            enc.end_encoding();
+        }
+
+        // ─── Step 3: Merkle tree reduction ──────────────────────────────────
+        // Reduce A: 256 → 128 → 64 → 32 → 16 → 8 → 4 → 2 → 1
+        // Reduce B: 512 → 256 → 128 → 64 → 32 → 16 → 8 → 4 → 2 → 1
+        let reduce_tree = |enc: &metal::ComputeCommandEncoderRef,
+                          src: &metal::Buffer,
+                          dst: &metal::Buffer,
+                          num_leaves: usize,
+                          root_buf: &metal::Buffer| {
+            let mut num_nodes = num_leaves;
+            let mut src_buf = src;
+            let mut dst_buf = dst;
+            let mut level = 0u32;
+
+            while num_nodes > 1 {
+                let num_parents = num_nodes / 2;
+                let is_root = num_parents == 1;
+
+                enc.set_compute_pipeline_state(&pipe_merge);
+                enc.set_buffer(0, Some(src_buf), 0);
+                if is_root {
+                    enc.set_buffer(1, Some(root_buf), 0);
+                } else {
+                    enc.set_buffer(1, Some(dst_buf), 0);
+                }
+                { let v: u32 = num_parents as u32; enc.set_bytes(2, 4, &v as *const u32 as *const _); };
+                { let v: u32 = if is_root { 1u32 } else { 0u32 }; enc.set_bytes(3, 4, &v as *const u32 as *const _); };
+
+                let grid = MTLSize { width: num_parents as u64, height: 1, depth: 1 };
+                enc.dispatch_threads(grid, MTLSize { width: 64, height: 1, depth: 1 });
+
+                // Swap src and dst for next level
+                std::mem::swap(&mut src_buf, &mut dst_buf);
+                num_nodes = num_parents;
+                level += 1;
+            }
+
+            // If num_leaves was 1 (single chunk), the root is already in src
+            if num_leaves == 1 {
+                // Copy src[0..32] to root_buf — but this is a GPU buffer, so we need a blit
+                // For our use case, num_leaves is always > 1, so this shouldn't happen
+            }
+        };
+
+        {
+            let enc = cmd_buffer.new_compute_command_encoder();
+
+            // Reduce A: chunk_hashes_buf → root_a_buf
+            // After chunk hashing, A's chunk hashes are in chunk_hashes_buf
+            reduce_tree(&enc, &chunk_hashes_buf, &merkle_buf, num_chunks_a, &root_a_buf);
+
+            // Reduce B: merkle_buf → root_b_buf
+            // After chunk hashing, B's chunk hashes are in merkle_buf
+            // We need a separate temp buffer for B's reduction since chunk_hashes_buf is being used
+            // Actually, we can reuse chunk_hashes_buf as the dst for B's reduction
+            reduce_tree(&enc, &merkle_buf, &chunk_hashes_buf, num_chunks_b, &root_b_buf);
+
+            enc.end_encoding();
+        }
+
+        // ─── Step 4: Derive noise seeds ─────────────────────────────────────
+        // b_noise_seed = blake3(job_key || hash_b)  — unkeyed, 64-byte input
+        // a_noise_seed = blake3(b_noise_seed || hash_a)  — unkeyed, 64-byte input
+        {
+            let enc = cmd_buffer.new_compute_command_encoder();
+            enc.set_compute_pipeline_state(&pipe_small);
+
+            // Build message: job_key (32 bytes) || hash_b (32 bytes) → seed_msg_buf
+            // We need to copy job_key and root_b into seed_msg_buf
+            // Use a blit encoder for the copy, or do it on CPU before dispatch
+            // Actually, we can't easily do GPU→GPU copies within a compute encoder.
+            // Let's use a blit command encoder for the copies.
+
+            enc.end_encoding();
+        }
+
+        // Use blit encoder to assemble seed messages
+        {
+            let blit = cmd_buffer.new_blit_command_encoder();
+            // seed_msg = job_key || hash_b
+            blit.copy_from_buffer(&job_key_buf, 0, &seed_msg_buf, 0, 32);
+            blit.copy_from_buffer(&root_b_buf, 0, &seed_msg_buf, 32, 32);
+            blit.end_encoding();
+        }
+
+        // Hash seed_msg → b_noise_seed
+        {
+            let enc = cmd_buffer.new_compute_command_encoder();
+            enc.set_compute_pipeline_state(&pipe_small);
+            enc.set_buffer(0, Some(&seed_msg_buf), 0);
+            { let v: u32 = 64; enc.set_bytes(1, 4, &v as *const u32 as *const _); };  // msg_len
+            enc.set_buffer(2, Some(&iv_buf), 0);  // key = IV (unkeyed)
+            { let v: u32 = 0; enc.set_bytes(3, 4, &v as *const u32 as *const _); };   // use_keyed = 0
+            enc.set_buffer(4, Some(&b_noise_seed_buf), 0);
+            enc.dispatch_threads(MTLSize { width: 1, height: 1, depth: 1 }, MTLSize { width: 1, height: 1, depth: 1 });
+            enc.end_encoding();
+        }
+
+        // Build second seed message: b_noise_seed || hash_a → a_noise_seed
+        {
+            let blit = cmd_buffer.new_blit_command_encoder();
+            blit.copy_from_buffer(&b_noise_seed_buf, 0, &seed_msg_buf, 0, 32);
+            blit.copy_from_buffer(&root_a_buf, 0, &seed_msg_buf, 32, 32);
+            blit.end_encoding();
+        }
+
+        {
+            let enc = cmd_buffer.new_compute_command_encoder();
+            enc.set_compute_pipeline_state(&pipe_small);
+            enc.set_buffer(0, Some(&seed_msg_buf), 0);
+            { let v: u32 = 64; enc.set_bytes(1, 4, &v as *const u32 as *const _); };
+            enc.set_buffer(2, Some(&iv_buf), 0);
+            { let v: u32 = 0; enc.set_bytes(3, 4, &v as *const u32 as *const _); };
+            enc.set_buffer(4, Some(&a_noise_seed_buf), 0);
+            enc.dispatch_threads(MTLSize { width: 1, height: 1, depth: 1 }, MTLSize { width: 1, height: 1, depth: 1 });
+            enc.end_encoding();
+        }
+
+        // ─── Step 5: Generate noise ─────────────────────────────────────────
+        {
+            let enc = cmd_buffer.new_compute_command_encoder();
+
+            // E_AL: m×rank uniform random int8 (key=seed_label_a, seed=a_noise_seed)
+            enc.set_compute_pipeline_state(&pipe_unoise);
+            enc.set_buffer(0, Some(&e_al_buf), 0);
+            enc.set_buffer(1, Some(&a_noise_seed_buf), 0);
+            enc.set_buffer(2, Some(&seed_label_a_buf), 0);
+            { let v: u32 = m as u32; enc.set_bytes(3, 4, &v as *const u32 as *const _); };
+            { let v: u32 = rank as u32; enc.set_bytes(4, 4, &v as *const u32 as *const _); };
+            let eal_grid = MTLSize { width: (m * rank) as u64, height: 1, depth: 1 };
+            enc.dispatch_threads(eal_grid, MTLSize { width: 256, height: 1, depth: 1 });
+
+            // E_BR: n×rank uniform random int8 (key=seed_label_b, seed=b_noise_seed)
+            enc.set_buffer(0, Some(&e_br_buf), 0);
+            enc.set_buffer(1, Some(&b_noise_seed_buf), 0);
+            enc.set_buffer(2, Some(&seed_label_b_buf), 0);
+            { let v: u32 = n as u32; enc.set_bytes(3, 4, &v as *const u32 as *const _); };
+            { let v: u32 = rank as u32; enc.set_bytes(4, 4, &v as *const u32 as *const _); };
+            let ebr_grid = MTLSize { width: (n * rank) as u64, height: 1, depth: 1 };
+            enc.dispatch_threads(ebr_grid, MTLSize { width: 256, height: 1, depth: 1 });
+
+            // E_AR: k×2 permutation pairs (key=seed_label_a, seed=a_noise_seed)
+            enc.set_compute_pipeline_state(&pipe_perm);
+            enc.set_buffer(0, Some(&e_ar_perm_buf), 0);
+            enc.set_buffer(1, Some(&a_noise_seed_buf), 0);
+            enc.set_buffer(2, Some(&seed_label_a_buf), 0);
+            { let v: u32 = k as u32; enc.set_bytes(3, 4, &v as *const u32 as *const _); };
+            { let v: u32 = rank as u32; enc.set_bytes(4, 4, &v as *const u32 as *const _); };
+            let ear_grid = MTLSize { width: k as u64, height: 1, depth: 1 };
+            enc.dispatch_threads(ear_grid, MTLSize { width: 64, height: 1, depth: 1 });
+
+            // E_BL: k×2 permutation pairs (key=seed_label_b, seed=b_noise_seed)
+            enc.set_buffer(0, Some(&e_bl_perm_buf), 0);
+            enc.set_buffer(1, Some(&b_noise_seed_buf), 0);
+            enc.set_buffer(2, Some(&seed_label_b_buf), 0);
+            { let v: u32 = k as u32; enc.set_bytes(3, 4, &v as *const u32 as *const _); };
+            { let v: u32 = rank as u32; enc.set_bytes(4, 4, &v as *const u32 as *const _); };
+            enc.dispatch_threads(ear_grid, MTLSize { width: 64, height: 1, depth: 1 });
+
+            enc.end_encoding();
+        }
+
+        // ─── Step 6: Apply noise to matrices ────────────────────────────────
+        {
+            let enc = cmd_buffer.new_compute_command_encoder();
+
+            // noised_a[i][l] = A[i][l] + (E_AL[i][E_AR[l].first] - E_AL[i][E_AR[l].second])
+            enc.set_compute_pipeline_state(&pipe_noise_a);
+            enc.set_buffer(0, Some(&noised_a_buf), 0);
+            enc.set_buffer(1, Some(&matrix_a_buf), 0);
+            enc.set_buffer(2, Some(&e_al_buf), 0);
+            enc.set_buffer(3, Some(&e_ar_perm_buf), 0);
+            { let v: u32 = m as u32; enc.set_bytes(4, 4, &v as *const u32 as *const _); };
+            { let v: u32 = k as u32; enc.set_bytes(5, 4, &v as *const u32 as *const _); };
+            { let v: u32 = rank as u32; enc.set_bytes(6, 4, &v as *const u32 as *const _); };
+            let na_grid = MTLSize { width: mk as u64, height: 1, depth: 1 };
+            enc.dispatch_threads(na_grid, MTLSize { width: 256, height: 1, depth: 1 });
+
+            // noised_b_t[j][l] = B^T[j][l] + (E_BR[j][E_BL[l].first] - E_BR[j][E_BL[l].second])
+            enc.set_compute_pipeline_state(&pipe_noise_b);
+            enc.set_buffer(0, Some(&noised_b_buf), 0);
+            enc.set_buffer(1, Some(&matrix_bt_buf), 0);
+            enc.set_buffer(2, Some(&e_br_buf), 0);
+            enc.set_buffer(3, Some(&e_bl_perm_buf), 0);
+            { let v: u32 = n as u32; enc.set_bytes(4, 4, &v as *const u32 as *const _); };
+            { let v: u32 = k as u32; enc.set_bytes(5, 4, &v as *const u32 as *const _); };
+            { let v: u32 = rank as u32; enc.set_bytes(6, 4, &v as *const u32 as *const _); };
+            let nb_grid = MTLSize { width: nk as u64, height: 1, depth: 1 };
+            enc.dispatch_threads(nb_grid, MTLSize { width: 256, height: 1, depth: 1 });
+
+            enc.end_encoding();
+        }
+
+        // ─── Step 7: MatMul + jackpot + target check ────────────────────────
+        {
+            let enc = cmd_buffer.new_compute_command_encoder();
+            enc.set_compute_pipeline_state(&pipe_mine);
+
+            enc.set_buffer(0, Some(&noised_a_buf), 0);
+            enc.set_buffer(1, Some(&noised_b_buf), 0);
+            enc.set_buffer(2, Some(&a_noise_seed_buf), 0);
+            enc.set_buffer(3, Some(&target_buf), 0);
+            enc.set_buffer(4, Some(&row_off_buf), 0);
+            enc.set_buffer(5, Some(&col_off_buf), 0);
+            enc.set_buffer(6, Some(&rows_base_buf), 0);
+            enc.set_buffer(7, Some(&cols_base_buf), 0);
+            enc.set_buffer(8, Some(&output_tile_buf), 0);
+            enc.set_buffer(9, Some(&output_jackpot_buf), 0);
+            enc.set_buffer(10, Some(&found_buf), 0);
+            { let v: u32 = input.row_offsets.len() as u32; enc.set_bytes(11, 4, &v as *const u32 as *const _); }
+            { let v: u32 = input.col_offsets.len() as u32; enc.set_bytes(12, 4, &v as *const u32 as *const _); }
+            { let v: u32 = k as u32; enc.set_bytes(13, 4, &v as *const u32 as *const _); };
+            { let v: u32 = rank as u32; enc.set_bytes(14, 4, &v as *const u32 as *const _); };
+
+            let total_tiles = (input.row_offsets.len() * input.col_offsets.len()) as u64;
+            let grid = MTLSize { width: total_tiles, height: 1, depth: 1 };
+            let max_tg = self.device.max_threads_per_threadgroup();
+            enc.dispatch_threads(grid, MTLSize { width: max_tg.width.min(256), height: 1, depth: 1 });
+
+            enc.end_encoding();
+        }
+
+        // Submit and wait
+        cmd_buffer.commit();
+        cmd_buffer.wait_until_completed();
+
+        // Read results
+        let found_ptr = found_buf.contents() as *const u32;
+        let found = unsafe { *found_ptr };
+        if found == 0 {
+            return Ok(None);
+        }
+
+        let tile_ptr = output_tile_buf.contents() as *const u32;
+        let tile_index = unsafe { *tile_ptr };
+
+        let jackpot_ptr = output_jackpot_buf.contents() as *const u8;
+        let mut jackpot_hash = [0u8; 32];
+        unsafe {
+            std::ptr::copy_nonoverlapping(jackpot_ptr, jackpot_hash.as_mut_ptr(), 32);
+        }
+
+        Ok(Some(PearlPouwGpuResult {
+            tile_index,
+            jackpot_hash,
+        }))
+    }
+}
+
+// ─── Test methods for GPU-native BLAKE3 verification ────────────────────────
+
+impl MetalBackend {
+    /// Test: hash a single 1024-byte chunk on GPU. For BLAKE3 correctness verification.
+    pub fn test_blake3_chunk_hash(&mut self, data: &[u8; 1024], key: &[u8; 32]) -> Result<[u8; 32]> {
+        let kernel_file = "pearl_pouw_native.metal";
+        let library = self.ensure_library(kernel_file)?.clone();
+        let func = library.get_function("pearl_blake3_chunk_hash", None)
+            .map_err(|e| anyhow!("function: {e}"))?;
+        let pipeline = self.device.new_compute_pipeline_state_with_function(&func)
+            .map_err(|e| anyhow!("pipeline: {e}"))?;
+
+        let shared = MTLResourceOptions::CPUCacheModeDefaultCache;
+        let data_buf = self.device.new_buffer_with_data(data.as_ptr() as *const _, 1024, shared);
+        let key_buf = self.device.new_buffer_with_data(key.as_ptr() as *const _, 32, shared);
+        let out_buf = self.device.new_buffer(32, shared);
+
+        let cmd = self.cmd_queue.new_command_buffer();
+        let enc = cmd.new_compute_command_encoder();
+        enc.set_compute_pipeline_state(&pipeline);
+        enc.set_buffer(0, Some(&data_buf), 0);
+        enc.set_buffer(1, Some(&key_buf), 0);
+        enc.set_buffer(2, Some(&out_buf), 0);
+        { let v: u32 = 1u32; enc.set_bytes(3, 4, &v as *const u32 as *const _); }
+        enc.dispatch_threads(MTLSize { width: 1, height: 1, depth: 1 }, MTLSize { width: 1, height: 1, depth: 1 });
+        enc.end_encoding();
+        cmd.commit();
+        cmd.wait_until_completed();
+
+        let ptr = out_buf.contents() as *const u8;
+        let mut result = [0u8; 32];
+        unsafe { std::ptr::copy_nonoverlapping(ptr, result.as_mut_ptr(), 32); }
+        Ok(result)
+    }
+}
