@@ -1180,3 +1180,283 @@ mod tests {
         assert_eq!(t.data[0], expected);
     }
 }
+
+// ─── GPU Mining Support (CPU-prep + GPU GEMM dispatch) ──────────────────────
+
+/// Pre-computed data for GPU-accelerated Pearl PoUW mining.
+/// CPU computes everything except the noisy GEMM + jackpot check,
+/// which runs on the GPU.
+pub struct PearlGpuPrep {
+    /// Noised matrix A' = A + E_AL·E_AR, wrapped to int8 (m×k row-major)
+    pub noised_a: Vec<i8>,
+    /// Noised matrix B'^T, transposed from B' = B + E_BL·E_BR (n×k row-major)
+    pub noised_bt: Vec<i8>,
+    /// PoW key (noise_seed_a) for BLAKE3 keyed jackpot hash
+    pub pow_key: [u8; 32],
+    /// Original matrix A (m×k, for Merkle proof construction)
+    pub matrix_a: Vec<i8>,
+    /// Original matrix B (k×n, for Merkle proof construction)
+    pub matrix_b: Vec<i8>,
+    /// Job key (for Merkle tree construction)
+    pub job_key: Digest,
+    /// Matrix dimensions
+    pub m: usize,
+    pub n: usize,
+    pub k: usize,
+    pub noise_rank: usize,
+    pub hash_tile_h: usize,
+    pub hash_tile_w: usize,
+}
+
+/// Extract permutation indices from a permutation matrix.
+/// For assign_columns=true (E_AR: rank×k), each column has one +1 and one -1.
+/// Returns (first_idx[k], second_idx[k]) where first_idx is the row with +1.
+/// For assign_columns=false (E_BL: k×rank), each row has one +1 and one -1.
+/// Returns (first_idx[k], second_idx[k]) where first_idx is the col with +1.
+fn extract_permutation_indices(
+    matrix: &[i8],
+    rows: usize,
+    cols: usize,
+    assign_columns: bool,
+) -> (Vec<usize>, Vec<usize>) {
+    if assign_columns {
+        // E_AR: rank×k, each column has +1 at first_idx and -1 at second_idx
+        let mut first = vec![0usize; cols];
+        let mut second = vec![0usize; cols];
+        for col in 0..cols {
+            for row in 0..rows {
+                let val = matrix[row * cols + col];
+                if val == 1 { first[col] = row; }
+                else if val == -1 { second[col] = row; }
+            }
+        }
+        (first, second)
+    } else {
+        // E_BL: k×rank, each row has +1 at first_idx and -1 at second_idx
+        let mut first = vec![0usize; rows];
+        let mut second = vec![0usize; rows];
+        for row in 0..rows {
+            for col in 0..cols {
+                let val = matrix[row * cols + col];
+                if val == 1 { first[row] = col; }
+                else if val == -1 { second[row] = col; }
+            }
+        }
+        (first, second)
+    }
+}
+
+/// Prepare the GPU mining input: compute all CPU-side data (matrices, noise,
+/// noised matrices, Merkle roots, noise seeds) and return them for the GPU
+/// to run the GEMM + jackpot check.
+///
+/// This is the CPU-prep half of the CPU-prep + GPU GEMM dispatch pipeline.
+/// After the GPU finds a winning tile, call `create_plain_proof` with the
+/// original matrices and the decoded tile indices.
+///
+/// Optimized: uses all 32 bytes per BLAKE3 hash for matrix generation (32x
+/// fewer hashes) and permutation index lookup for noise application (O(m×k)
+/// instead of O(m×k×rank)).
+pub fn prepare_pearl_gpu_input(
+    header_hex: &str,
+    _target_hex: &str,
+    m: usize,
+    n: usize,
+    k: usize,
+    noise_rank: usize,
+    noise_range: usize,
+    hash_tile_h: usize,
+    hash_tile_w: usize,
+) -> Result<PearlGpuPrep> {
+    // Parse header
+    let header = IncompleteBlockHeader::from_hex(header_hex)?;
+
+    // Create mining configuration
+    let row_indices: Vec<u32> = (0..hash_tile_h as u32).collect();
+    let col_indices: Vec<u32> = (0..hash_tile_w as u32).collect();
+    let rows_pattern = PeriodicPattern::from_list(&row_indices)?;
+    let cols_pattern = PeriodicPattern::from_list(&col_indices)?;
+
+    let config = MiningConfiguration {
+        common_dim: k as u32,
+        rank: noise_rank as u16,
+        mma_type: MMAType::Int7xInt7ToInt32,
+        rows_pattern,
+        cols_pattern,
+        moe: None,
+    };
+
+    // Compute job_key
+    let job_key = compute_job_key(&header, &config);
+
+    // Generate random A and B matrices (int8) — optimized: use all 32 bytes
+    // of each BLAKE3 hash instead of just byte 0 (32x fewer hash calls)
+    let data_range = 256 - noise_range;
+    let min_data = -(data_range as i16 / 2) as i8;
+    let range_size = (256 - noise_range) as u8;
+
+    let total_elements = m * k + k * n;
+    let mut a = vec![0i8; m * k];
+    let mut b = vec![0i8; k * n];
+
+    let mut rng_state = job_key;
+    let mut offset = 0usize;
+    while offset < total_elements {
+        let hash = blake3_digest(&rng_state, None);
+        rng_state = hash;
+        for &byte in &hash[..] {
+            if offset >= total_elements { break; }
+            let val = byte % range_size;
+            let v = min_data.wrapping_add(val as i8);
+            if offset < m * k {
+                a[offset] = v;
+            } else {
+                b[offset - m * k] = v;
+            }
+            offset += 1;
+        }
+    }
+
+    // Build Merkle trees and compute roots
+    let a_bytes = pad_to_chunk_boundary(bytemuck::cast_slice(&a));
+    let a_tree = MerkleTree::new(&a_bytes, job_key);
+    let hash_a = a_tree.root();
+
+    let mut bt = vec![0i8; n * k];
+    for row in 0..n {
+        for col in 0..k {
+            bt[row * k + col] = b[col * n + row];
+        }
+    }
+    let bt_bytes = pad_to_chunk_boundary(bytemuck::cast_slice(&bt));
+    let bt_tree = MerkleTree::new(&bt_bytes, job_key);
+    let hash_b = bt_tree.root();
+
+    // Compute commitment hash (noise seeds)
+    let commitment = compute_commitment_hash(&job_key, &hash_a, &hash_b);
+
+    // Generate noise matrices
+    let noise = generate_noise(
+        &commitment.noise_seed_a,
+        &commitment.noise_seed_b,
+        m, k, n, noise_rank, noise_range,
+    )?;
+
+    // Extract permutation indices for O(1) noise application
+    // E_AR: rank×k, assign_columns=true → (first_idx[k], second_idx[k])
+    let (e_ar_first, e_ar_second) = extract_permutation_indices(
+        &noise.e_ar, noise_rank, k, true,
+    );
+    // E_BL: k×rank, assign_columns=false → (first_idx[k], second_idx[k])
+    let (e_bl_first, e_bl_second) = extract_permutation_indices(
+        &noise.e_bl, k, noise_rank, false,
+    );
+
+    // Compute noised A' = A + E_AL·E_AR (int8, wrapped)
+    // Optimized: E_A[row, col] = E_AL[row, e_ar_first[col]] - E_AL[row, e_ar_second[col]]
+    let a_prime: Vec<i8> = (0..m * k)
+        .map(|idx| {
+            let row = idx / k;
+            let col = idx % k;
+            let noise_val = noise.e_al[row * noise_rank + e_ar_first[col]] as i32
+                - noise.e_al[row * noise_rank + e_ar_second[col]] as i32;
+            a[idx].wrapping_add(noise_val as i8)
+        })
+        .collect();
+
+    // Compute noised B' = B + E_BL·E_BR (int8, wrapped)
+    // Optimized: E_B[row, col] = E_BR[e_bl_first[row], col] - E_BR[e_bl_second[row], col]
+    let b_prime: Vec<i8> = (0..k * n)
+        .map(|idx| {
+            let row = idx / n;
+            let col = idx % n;
+            let noise_val = noise.e_br[e_bl_first[row] * n + col] as i32
+                - noise.e_br[e_bl_second[row] * n + col] as i32;
+            b[idx].wrapping_add(noise_val as i8)
+        })
+        .collect();
+
+    // Transpose B' to B'^T (n×k) for GPU coalesced access
+    let mut noised_bt = vec![0i8; n * k];
+    for row in 0..n {
+        for col in 0..k {
+            noised_bt[row * k + col] = b_prime[col * n + row];
+        }
+    }
+
+    Ok(PearlGpuPrep {
+        noised_a: a_prime,
+        noised_bt,
+        pow_key: commitment.noise_seed_a,
+        matrix_a: a,
+        matrix_b: b,
+        job_key,
+        m, n, k, noise_rank, hash_tile_h, hash_tile_w,
+    })
+}
+
+/// Full GPU-accelerated mining pipeline: CPU-prep + GPU GEMM + Merkle proof.
+///
+/// This function:
+/// 1. CPU: prepares noised matrices (A', B'^T) and noise seeds
+/// 2. GPU: runs noisy GEMM + jackpot hash + target check
+/// 3. CPU: if found, builds PlainProof from original matrices + tile indices
+///
+/// Returns `Ok(Some(PlainProof))` if a winning tile was found, `Ok(None)` otherwise.
+#[cfg(feature = "gpu-opencl")]
+pub fn mine_pearl_share_gpu(
+    header_hex: &str,
+    target_hex: &str,
+    m: usize,
+    n: usize,
+    k: usize,
+    noise_rank: usize,
+    noise_range: usize,
+    hash_tile_h: usize,
+    hash_tile_w: usize,
+    gpu_miner: &mut crate::gpu_miner::GpuMiner,
+) -> Result<Option<PlainProof>> {
+    // Step 1: CPU prep
+    let prep = prepare_pearl_gpu_input(
+        header_hex, target_hex,
+        m, n, k, noise_rank, noise_range,
+        hash_tile_h, hash_tile_w,
+    )?;
+
+    // Parse target
+    let target_bytes = {
+        let bytes = hex::decode(target_hex)?;
+        ensure!(bytes.len() == 32, "Target must be 32 bytes");
+        let mut arr = [0u8; 32];
+        arr.copy_from_slice(&bytes);
+        arr
+    };
+
+    // Step 2: GPU GEMM + jackpot check
+    let gpu_result = gpu_miner.pearl_pouw_gpu_mine_real(
+        &prep.noised_a,
+        &prep.noised_bt,
+        &prep.pow_key,
+        &target_bytes,
+        prep.m, prep.n, prep.k,
+        prep.noise_rank,
+        prep.hash_tile_h,
+        prep.hash_tile_w,
+    )?;
+
+    // Step 3: Build PlainProof if found
+    if let Some(result) = gpu_result {
+        let (a_row_indices, b_col_indices) = result.decode_tile_indices();
+        let proof = create_plain_proof(
+            &prep.matrix_a,
+            &prep.matrix_b,
+            prep.m, prep.n, prep.k, prep.noise_rank,
+            &a_row_indices,
+            &b_col_indices,
+            &prep.job_key,
+        )?;
+        Ok(Some(proof))
+    } else {
+        Ok(None)
+    }
+}

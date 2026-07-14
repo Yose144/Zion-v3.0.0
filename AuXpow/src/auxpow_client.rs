@@ -2151,6 +2151,10 @@ impl AuxPowClient {
             //   7. Serialize via bincode → base64
             //
             // Standard config: m=512, n=512, k=4096, noise_rank=256
+            //
+            // When GPU OpenCL backend is available, the noisy GEMM (step 5)
+            // runs on the GPU for ~10x speedup. CPU still handles matrix
+            // generation, Merkle trees, noise, and proof construction.
             let job = self.current_job().await;
             let header_hex = job
                 .as_ref()
@@ -2170,12 +2174,47 @@ impl AuxPowClient {
             let hash_tile_h = crate::pearl_real_pouw::DEFAULT_HASH_TILE_H;
             let hash_tile_w = crate::pearl_real_pouw::DEFAULT_HASH_TILE_W;
 
+            // Check if GPU OpenCL backend is available
+            #[cfg(feature = "gpu-opencl")]
+            let has_gpu = self.has_gpu_opencl().await;
+            #[cfg(not(feature = "gpu-opencl"))]
+            let has_gpu = false;
+
             println!(
-                "auxpow: PRL real PoUW mining — m={} n={} k={} rank={} header_hex={}... target_hex={}",
-                m, n, k, noise_rank, &header_hex[..header_hex.len().min(20)], &target_hex
+                "auxpow: PRL real PoUW mining — m={} n={} k={} rank={} gpu={} header_hex={}... target_hex={}",
+                m, n, k, noise_rank, has_gpu, &header_hex[..header_hex.len().min(20)], &target_hex
             );
 
             // Run the real PoUW mining pipeline
+            #[cfg(feature = "gpu-opencl")]
+            let mined_result = if has_gpu {
+                let mut gpu_backend = self.gpu_opencl_backend.lock().await;
+                if let Some(ref mut miner) = *gpu_backend {
+                    crate::pearl_real_pouw::mine_pearl_share_gpu(
+                        &header_hex,
+                        &target_hex,
+                        m, n, k, noise_rank, noise_range,
+                        hash_tile_h, hash_tile_w,
+                        miner,
+                    )
+                } else {
+                    crate::pearl_real_pouw::mine_pearl_share(
+                        &header_hex,
+                        &target_hex,
+                        m, n, k, noise_rank, noise_range,
+                        hash_tile_h, hash_tile_w,
+                    )
+                }
+            } else {
+                crate::pearl_real_pouw::mine_pearl_share(
+                    &header_hex,
+                    &target_hex,
+                    m, n, k, noise_rank, noise_range,
+                    hash_tile_h, hash_tile_w,
+                )
+            };
+
+            #[cfg(not(feature = "gpu-opencl"))]
             let mined_result = crate::pearl_real_pouw::mine_pearl_share(
                 &header_hex,
                 &target_hex,
