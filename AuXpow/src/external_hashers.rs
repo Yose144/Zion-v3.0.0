@@ -87,7 +87,7 @@ pub const DCR_NONCE_SIZE: usize = 4;
 /// # Returns
 /// 32-byte Blake3 digest.
 pub fn hash_blake3(header: &[u8], _timestamp: u64, nonce: u64) -> [u8; 32] {
-    let mut full_header = vec![0u8; DCR_HEADER_SIZE];
+    let mut full_header = [0u8; DCR_HEADER_SIZE];
     let copy_len = header.len().min(DCR_HEADER_SIZE);
     full_header[..copy_len].copy_from_slice(&header[..copy_len]);
     // Insert 4-byte LE nonce at offset 140
