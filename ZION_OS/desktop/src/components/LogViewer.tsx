@@ -20,14 +20,13 @@ export default function LogViewer({ className = '' }: Props) {
 
   const loadLogFiles = useCallback(async () => {
     const data = await fetchLogFiles();
-    if (data?.files) {
+    if (data?.files?.length) {
       setLogFiles(data.files);
-      // auto-select pool if available
-      const pool = data.files.find((f) => f.svc_id === 'pool');
-      if (pool) {
-        setSelectedSvc(pool.svc_id);
-        setSelectedFile(pool.name);
-      }
+      // auto-select first file with content, or first file
+      const withContent = data.files.find((f) => f.size_kb > 0);
+      const first = withContent || data.files[0];
+      setSelectedSvc(first.svc_id);
+      setSelectedFile(first.name);
     }
   }, []);
 
