@@ -589,13 +589,34 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 .zql-ai{--qrc:217 70 239;}
 .zql-settings{--qrc:156 163 175;}
 
+/* ═══ Responsive layout consistency ═══ */
+img, svg, video, canvas {max-width:100%;height:auto;}
+.zion-panel, .zion-panel-soft {max-width:100%;}
+.zion-panel > .overflow-x-auto,
+.zion-panel-soft > .overflow-x-auto {max-width:100%;}
+@media(max-width:768px){
+  .zion-nav-floor{gap:0.35rem;padding:0.4rem 0.55rem;}
+  .zion-nav-group > button{font-size:0.7rem;padding:0.35rem 0.55rem;}
+  .zion-nav-dropdown{left:0;right:auto;min-width:180px;}
+  .zion-hero-card{padding:1rem;}
+  .zion-hero-card .zhc-value{font-size:1.35rem;}
+  h1{font-size:1.5rem!important;}
+  .zion-kicker{font-size:0.55rem;}
+  .zion-quick-link{font-size:0.65rem;padding:0.3rem 0.45rem;}
+}
+@media(max-width:480px){
+  .zion-nav-floor{gap:0.25rem;padding:0.35rem 0.45rem;}
+  .zion-nav-group > button{font-size:0.65rem;padding:0.3rem 0.45rem;}
+  .zion-quick-link{font-size:0.6rem;padding:0.25rem 0.4rem;}
+  .zion-nav-brand{display:none;}
+}
 </style>
 </head>
 <body class="zion-shell">
 
 <canvas id="warp-starfield" class="warp-starfield"></canvas>
 
-<div class="max-w-[1680px] mx-auto px-6 py-6 relative">
+<div class="max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-6 relative">
 
   <!-- ZION Command Header -->
   <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 relative z-10">
