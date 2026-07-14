@@ -1,7 +1,7 @@
 const API_BASE = 'http://127.0.0.1:8766';
-const EDGE_HOST = '100.76.16.108';
 const LOCAL_HOST = '127.0.0.1';
 export const EDGE_WEB = 'https://zionterranova.com';
+// Legacy/decommissioned IP removed — current Edge server is configured server-side in dashboard/app.py.
 
 // Optional Basic Auth for local Python dashboard (set VITE_DASHBOARD_USER / VITE_DASHBOARD_PASS)
 const DASHBOARD_USER = import.meta.env.VITE_DASHBOARD_USER as string | undefined;
@@ -200,19 +200,8 @@ export async function tailLog(path: string, lines = 100): Promise<string[]> {
 // ── Control Actions ───────────────────────────────────────
 
 export async function controlAction(action: string, env?: Record<string, string>): Promise<{ ok: boolean; error?: string }> {
-  let path = '/api/control';
-  let body: unknown = { action, env };
-  if (action === 'start-miner') {
-    path = '/api/miner/start';
-    body = {};
-  } else if (action === 'stop-miner') {
-    path = '/api/miner/stop';
-    body = {};
-  } else if (action === 'restart-miner') {
-    path = '/api/miner/restart';
-    body = env?.ZION_MINER_ALGORITHM ? { algorithm: env.ZION_MINER_ALGORITHM } : {};
-  }
-  const res = await apiPost<{ ok: boolean; error?: string }>(path, body);
+  // dashboard/app.py exposes a single /api/control endpoint for all actions.
+  const res = await apiPost<{ ok: boolean; error?: string }>('/api/control', { action, env });
   return res ?? { ok: false, error: 'Network error' };
 }
 
@@ -762,4 +751,112 @@ export async function orchestratorControl(action: 'start' | 'stop' | 'restart', 
 
 export async function fetchMinerLive(): Promise<Record<string, unknown> | null> {
   return apiFetch<Record<string, unknown>>('/api/miner/live');
+}
+
+// ── Agent telemetry ───────────────────────────────────────────────────
+
+export interface AgentStatus {
+  online: boolean;
+  version?: string;
+  uptime_seconds?: number;
+  rigs_total?: number;
+  rigs_online?: number;
+}
+
+export async function fetchAgentStatus(): Promise<AgentStatus | null> {
+  return apiFetch<AgentStatus>('/api/agent/status');
+}
+
+export async function fetchAgentTelemetry(): Promise<Record<string, unknown> | null> {
+  return apiFetch<Record<string, unknown>>('/api/agent/telemetry');
+}
+
+export async function fetchAgentNodes(): Promise<{ nodes?: unknown[] } | null> {
+  return apiFetch<{ nodes?: unknown[] }>('/api/agent/nodes');
+}
+
+export async function fetchAgentRewards(): Promise<Record<string, unknown> | null> {
+  return apiFetch<Record<string, unknown>>('/api/agent/rewards');
+}
+
+export async function fetchAgentGpu(): Promise<Record<string, unknown> | null> {
+  return apiFetch<Record<string, unknown>>('/api/agent/gpu');
+}
+
+// ── Edge infrastructure ─────────────────────────────────────────────
+
+export async function fetchEdgeInfra(): Promise<Record<string, unknown> | null> {
+  return apiFetch<Record<string, unknown>>('/api/edge/infra');
+}
+
+export async function fetchEdgeAgentStatus(): Promise<Record<string, unknown> | null> {
+  return apiFetch<Record<string, unknown>>('/api/edge-agent/status');
+}
+
+// ── Layer status (L1-L6) ──────────────────────────────────────────────
+
+export interface LayerStatus {
+  layers: { id: string; name: string; status: 'up' | 'down' | 'degraded'; detail?: string }[];
+  summary: { up: number; down: number; degraded: number; total: number };
+}
+
+export async function fetchLayerStatus(): Promise<LayerStatus | null> {
+  return apiFetch<LayerStatus>('/api/layer-status');
+}
+
+// ── Security status ───────────────────────────────────────────────────
+
+export interface SecurityStatus {
+  summary: { open_blockers: number; warnings: number; ok: number };
+  checks: { id: string; ok: boolean; severity: 'critical' | 'warning' | 'info'; detail: string }[];
+}
+
+export async function fetchSecurityStatus(): Promise<SecurityStatus | null> {
+  return apiFetch<SecurityStatus>('/api/security');
+}
+
+// ── Backup status ─────────────────────────────────────────────────────
+
+export interface BackupStatus {
+  ok: boolean;
+  last_backup?: string;
+  backups?: { name: string; size: number; age_seconds: number }[];
+  error?: string;
+}
+
+export async function fetchBackupStatus(): Promise<BackupStatus | null> {
+  return apiFetch<BackupStatus>('/api/backup/status');
+}
+
+// ── History & mempool ─────────────────────────────────────────────────
+
+export interface HistorySample {
+  ts: number;
+  hashrate?: number;
+  blocks?: number;
+  difficulty?: number;
+}
+
+export interface HistoryResponse {
+  samples: HistorySample[];
+}
+
+export async function fetchHistory(): Promise<HistoryResponse | null> {
+  return apiFetch<HistoryResponse>('/api/history');
+}
+
+export interface MempoolResponse {
+  size: number;
+  bytes?: number;
+  fee_estimates?: Record<string, number>;
+}
+
+export async function fetchMempool(): Promise<MempoolResponse | null> {
+  return apiFetch<MempoolResponse>('/api/mempool');
+}
+
+// ── Mainnet status ────────────────────────────────────────────────────
+
+export async function fetchMainnetStatus(): Promise<Record<string, unknown> | null> {
+  return apiFetch<Record<string, unknown>>('/api/mainnet-status');
 }

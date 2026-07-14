@@ -75,18 +75,14 @@ export default function CexPanel() {
   const isLive = dex?.source === 'dexscreener';
 
   return (
-    <div className="rounded-xl border border-white/10 bg-gray-900/40 p-4">
+    <div className="zion-panel p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Building2 className="h-4 w-4 text-amber-400" />
           <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-400">CEX + DEX</h3>
         </div>
         <div className="flex items-center gap-2">
-          <span className={`text-[9px] px-2 py-0.5 rounded-full border ${
-            isLive
-              ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
-              : 'text-amber-400 bg-amber-500/10 border-amber-500/20'
-          }`}>
+          <span className={`zion-badge ${isLive ? 'zion-badge-green' : 'zion-badge-amber'}`}>
             {dex?.source ?? '—'}
           </span>
           <button onClick={refresh} className="text-gray-500 hover:text-white">

@@ -50,10 +50,10 @@ export default function WarpPanel() {
   const plannedCount = CORRIDORS.filter(c => c.status === 'planned').length;
 
   return (
-    <div className="rounded-xl border border-white/10 bg-gray-900/40 p-4">
+    <div className="zion-panel p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Zap className="h-4 w-4 text-purple-400" />
+          <Zap className="h-4 w-4 text-zion-purple" />
           <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-400">WARP Corridors</h3>
         </div>
         <span className="text-[9px] text-gray-500">

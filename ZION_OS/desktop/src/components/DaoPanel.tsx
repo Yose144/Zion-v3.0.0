@@ -56,17 +56,13 @@ export default function DaoPanel() {
   const activeCount = proposals.length;
 
   return (
-    <div className="rounded-xl border border-white/10 bg-gray-900/40 p-4">
+    <div className="zion-panel p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Vote className="h-4 w-4 text-purple-400" />
+          <Vote className="h-4 w-4 text-zion-purple" />
           <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-400">DAO Proposals</h3>
         </div>
-        <span className={`text-[9px] px-2 py-0.5 rounded-full border ${
-          offline
-            ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'
-            : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
-        }`}>
+        <span className={`zion-badge ${offline ? 'zion-badge-amber' : 'zion-badge-green'}`}>
           {offline ? 'offline' : `${activeCount} active`}
         </span>
       </div>

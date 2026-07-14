@@ -7,10 +7,10 @@ interface Props {
 }
 
 const severityConfig = {
-  critical: { icon: AlertTriangle, className: 'bg-red-900/20 border-red-500/30 text-red-300' },
-  warning: { icon: AlertCircle, className: 'bg-amber-900/20 border-amber-500/30 text-amber-300' },
-  info: { icon: Info, className: 'bg-blue-900/20 border-blue-500/30 text-blue-300' },
-  success: { icon: CheckCircle2, className: 'bg-emerald-900/20 border-emerald-500/30 text-emerald-300' },
+  critical: { icon: AlertTriangle, badge: 'zion-badge-red', border: 'border-red-500/30', bg: 'bg-red-900/10', text: 'text-red-200' },
+  warning: { icon: AlertCircle, badge: 'zion-badge-amber', border: 'border-amber-500/30', bg: 'bg-amber-900/10', text: 'text-amber-200' },
+  info: { icon: Info, badge: 'zion-badge-cyan', border: 'border-cyan-500/30', bg: 'bg-cyan-900/10', text: 'text-cyan-200' },
+  success: { icon: CheckCircle2, badge: 'zion-badge-green', border: 'border-emerald-500/30', bg: 'bg-emerald-900/10', text: 'text-emerald-200' },
 };
 
 export default function AlertsPanel({ alerts }: Props) {
@@ -24,7 +24,7 @@ export default function AlertsPanel({ alerts }: Props) {
           <h2 className="text-sm font-bold">Alerts</h2>
         </div>
         {critical.length > 0 && (
-          <span className="px-2 py-0.5 rounded-full bg-red-600/30 text-red-300 text-[10px] font-bold">
+          <span className="zion-badge zion-badge-red">
             {critical.length}
           </span>
         )}
@@ -38,7 +38,7 @@ export default function AlertsPanel({ alerts }: Props) {
             const cfg = severityConfig[a.severity] || severityConfig.info;
             const Icon = cfg.icon;
             return (
-              <div key={i} className={`flex items-start gap-2 p-2.5 rounded-lg border text-xs ${cfg.className}`}>
+              <div key={i} className={`flex items-start gap-2 p-2.5 rounded-lg border text-xs ${cfg.border} ${cfg.bg} ${cfg.text}`}>
                 <Icon size={14} className="flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold truncate">{a.title}</div>

@@ -679,7 +679,7 @@ coin at a time per miner).
 | PRL (Pearl PoUW) | pearlhash | CPU fallback | ✅ Live | Proofs submitted via pool → AlphaPool |
 | DCR (Blake3) | blake3 | GPU (OpenCL) | ✅ Live | Shares accepted via pool → Woolypooly |
 
-### ProgPow/EPIC: Miner-Side COMPLETE, Pool-Side BLOCKED
+### ProgPow/EPIC: COMPLETE (Pool-Side + Miner-Side)
 
 **Miner-side (fully implemented, compiles clean):**
 - ✅ CPU harness: `scan_progpow` + `scan_progpow_best` in `miner_harness.rs`
@@ -697,16 +697,19 @@ coin at a time per miner).
 - ✅ Pool server: share routing stats for EPIC (`src_progpow`)
 - ✅ GPU kernel: `progpow_kernel.cl` exists and is compiled
 
-**Pool-side BLOCKED — EPIC stratum protocol incompatibility:**
-- ❌ `de.epicmine.io:3334` uses custom JSON-RPC 2.0 protocol (not Stratum v1)
-- ❌ TLS required (connection reset without TLS)
-- ❌ Algorithm at port 3334 is `randomepic` (RandomAR), not ProgPow
-- ❌ `AuxPowClient` treats EPIC as Stratum v1 — needs dedicated `EpicStratumClient`
+**Pool-side COMPLETE — EpicStratum TLS protocol implemented (2026-07-14):**
+- ✅ `de.epicmine.io:3334` JSON-RPC 2.0 over TLS — implemented in `AuxPowClient`
+- ✅ TLS via `tokio-rustls` + `webpki-roots` (aws-lc-rs CryptoProvider)
+- ✅ EPIC methods: `login`, `getjobtemplate` (fire-and-forget), `submit`, `keepalive`
+- ✅ String ID handling (EPIC sends `"0"`, `"1"`, `"epicmine_stratum"`)
+- ✅ Nested difficulty array parsing: `[["cuckoo",3],["randomx",N],["progpow",N]]`
+- ✅ Seed hash as integer array → hex string conversion
+- ✅ Algorithm forced to "progpow" (EPIC job covers all 3 algos)
+- ✅ Username length handling (5-20 chars, wallet truncation)
+- ✅ E2E verified on Edge: login → job received → queued → forwarded to miners
 
-**To enable EPIC/ProgPow E2E:**
-1. Implement `EpicStratumClient` with JSON-RPC 2.0 over TLS
-2. Or: find a ProgPow coin that supports standard Stratum v1 (e.g., EVR on zpool.ca uses "evrprogpow" — needs algorithm name mapping)
-3. Or: run a local EPIC node with stratum server enabled (`enable_stratum_server = true` in `epic-server.toml`)
+**Commits:** `54514c3fc` (EpicStratum TLS), `41c350b97` (protocol fixes)
+**Full report:** [`docs/3.0.6/EPIC_STRATUM_TLS_REPORT.md`](./docs/3.0.6/EPIC_STRATUM_TLS_REPORT.md)
 
 ### Build & Deploy Status
 

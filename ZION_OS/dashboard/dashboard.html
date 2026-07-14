@@ -422,208 +422,300 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 .zion-table tr:hover td{
   background:rgba(var(--rc,255 215 0),0.03);
 }
+
+/* ═══ ZION 2-Floor Navigation ═══ */
+.zion-nav-shell{
+  position:sticky;top:0;z-index:50;
+  margin-bottom:1.25rem;
+}
+.zion-nav-floor{
+  display:flex;align-items:center;gap:0.5rem;
+  padding:0.5rem 0.75rem;
+  border:1px solid rgba(255,255,255,0.1);
+  background:rgba(15,20,35,0.9);
+  backdrop-filter:blur(12px);
+}
+.zion-nav-floor:first-child{
+  border-radius:1rem 1rem 0 0;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.zion-nav-floor:last-child{
+  border-radius:0 0 1rem 1rem;
+  border-top:none;
+}
+.zion-nav-brand{
+  display:flex;align-items:center;gap:0.6rem;
+  font-weight:800;font-size:0.95rem;
+  background-clip:text;-webkit-background-clip:text;color:transparent;
+  background-image:linear-gradient(to right,#ffd700,#9333ea,#06b6d4);
+  margin-right:auto;
+}
+.zion-nav-brand .logo-mark{
+  width:1.9rem;height:1.9rem;border-radius:0.55rem;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,rgb(255 215 0),rgb(147 51 234) 50%,rgb(6 182 212));
+  color:#000;font-weight:900;font-size:1rem;
+}
+.zion-nav-group{position:relative;}
+.zion-nav-group > button{
+  padding:0.4rem 0.75rem;font-size:0.78rem;font-weight:600;
+  color:#9ca3af;background:transparent;border:1px solid transparent;
+  border-radius:0.55rem;cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.zion-nav-group > button:hover{color:#fff;background:rgba(255,255,255,0.05);}
+.zion-nav-group > button.tab-active{
+  color:#fff;
+  background:linear-gradient(135deg,rgba(255,215,0,0.12),rgba(147,51,234,0.12));
+  border-color:rgba(255,215,0,0.35);
+  box-shadow:0 4px 20px rgba(147,51,234,0.2);
+}
+.zion-nav-dropdown{
+  display:none;position:absolute;top:100%;left:0;min-width:200px;
+  background:rgba(7,10,20,0.98);border:1px solid rgba(255,255,255,0.12);
+  border-radius:0.75rem;padding:0.5rem;z-index:100;
+  box-shadow:0 24px 60px rgba(0,0,0,0.5);
+}
+.zion-nav-group:hover .zion-nav-dropdown{display:block;}
+.zion-nav-dropdown button{
+  display:block;width:100%;text-align:left;
+  padding:0.4rem 0.7rem;font-size:0.75rem;font-weight:500;
+  color:#9ca3af;background:transparent;border:1px solid transparent;
+  border-radius:0.4rem;cursor:pointer;transition:all .1s;white-space:nowrap;
+}
+.zion-nav-dropdown button:hover{color:#fff;background:rgba(255,255,255,0.05);}
+.zion-nav-dropdown button.tab-active{
+  color:#fff;
+  background:linear-gradient(135deg,rgba(255,215,0,0.08),rgba(147,51,234,0.08));
+}
+.zion-quick-link{
+  display:flex;align-items:center;gap:0.35rem;
+  padding:0.35rem 0.55rem;font-size:0.7rem;font-weight:600;
+  color:#9ca3af;background:transparent;border:1px solid transparent;
+  border-radius:0.55rem;cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.zion-quick-link:hover{color:#fff;background:rgba(255,255,255,0.05);}
+.zion-quick-link .zql-dot{
+  width:0.45rem;height:0.45rem;border-radius:50%;
+  background:rgb(var(--qrc,255 215 0));
+  box-shadow:0 0 8px rgb(var(--qrc,255 215 0)/0.6);
+}
+.zion-quick-link.tab-active{
+  color:rgb(var(--qrc,255 215 0));
+  background:rgba(var(--qrc,255 215 0),0.08);
+  border-color:rgba(var(--qrc,255 215 0),0.3);
+}
+.zion-action-bar{display:flex;align-items:center;gap:0.4rem;margin-left:auto;}
+.zion-action-btn{
+  width:2rem;height:2rem;border-radius:0.55rem;
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.85rem;color:#d1d5db;background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.1);cursor:pointer;transition:all .15s;
+}
+.zion-action-btn:hover{background:rgba(255,255,255,0.1);color:#fff;transform:translateY(-1px);}
+
+/* ═══ ZION Hero Rainbow Grid ═══ */
+.zion-hero-grid{
+  display:grid;grid-template-columns:repeat(1,minmax(0,1fr));gap:1rem;
+}
+@media(min-width:640px){.zion-hero-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(min-width:1024px){.zion-hero-grid{grid-template-columns:repeat(4,minmax(0,1fr));}}
+.zion-hero-card{
+  position:relative;border-radius:clamp(1rem,2vw,1.5rem);
+  border:1px solid rgba(var(--rc,255 215 0),0.18);
+  background:rgba(15,20,35,0.92);backdrop-filter:blur(10px);
+  box-shadow:0 16px 50px rgba(0,0,0,0.3);
+  overflow:hidden;transition:border-color 220ms,box-shadow 220ms,transform 220ms;
+  padding:1.25rem;
+}
+.zion-hero-card::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,rgb(var(--rc,255 215 0)/0.85),rgb(var(--rc,255 215 0)/0.25),transparent);
+}
+.zion-hero-card:hover{
+  border-color:rgba(var(--rc,255 215 0),0.38);
+  box-shadow:0 24px 70px rgba(0,0,0,0.4),0 0 35px rgba(var(--rc,255 215 0),0.12);
+  transform:translateY(-2px);
+}
+.zion-hero-card .zhc-icon{
+  width:2.25rem;height:2.25rem;border-radius:0.65rem;
+  display:flex;align-items:center;justify-content:center;font-size:1.1rem;
+  background:rgba(var(--rc,255 215 0),0.12);border:1px solid rgba(var(--rc,255 215 0),0.2);
+  margin-bottom:0.75rem;
+}
+.zion-hero-card .zhc-title{font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#9ca3af;margin-bottom:0.35rem;}
+.zion-hero-card .zhc-value{font-size:1.65rem;font-weight:800;color:#fff;font-family:'JetBrains Mono',monospace;margin-bottom:0.25rem;}
+.zion-hero-card .zhc-sub{font-size:0.75rem;color:#9ca3af;}
+
+/* ═══ ZION Overview Layout ═══ */
+.zion-overview-grid{
+  display:grid;grid-template-columns:minmax(0,1fr);gap:1rem;
+}
+@media(min-width:1024px){.zion-overview-grid{grid-template-columns:repeat(12,minmax(0,1fr));}}
+.zion-overview-col-8{grid-column:span 8 / span 8;}
+.zion-overview-col-4{grid-column:span 4 / span 4;}
+@media(max-width:1023px){.zion-overview-col-8,.zion-overview-col-4{grid-column:span 1 / span 1;}}
+
+/* Quick-link active colors */
+.zql-network{--qrc:6 182 212;}
+.zql-pool{--qrc:147 51 234;}
+.zql-explorer{--qrc:251 191 36;}
+.zql-services{--qrc:16 185 129;}
+.zql-dao{--qrc:236 72 153;}
+.zql-bridge{--qrc:59 130 246;}
+.zql-ops{--qrc:245 158 11;}
+.zql-layers{--qrc:139 92 246;}
+.zql-ai{--qrc:217 70 239;}
+.zql-settings{--qrc:156 163 175;}
+
 </style>
 </head>
 <body class="zion-shell">
 
 <div class="max-w-[1680px] mx-auto px-6 py-6 relative">
 
-  <!-- Header -->
-  <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 relative z-10">
+  <!-- ZION Command Header -->
+  <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 relative z-10">
     <div class="flex items-center gap-4">
-      <div class="w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-2xl pulse-gold relative"
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-xl pulse-gold relative"
            style="background:linear-gradient(135deg,rgb(255 215 0),rgb(147 51 234) 50%,rgb(6 182 212));">
         Z
       </div>
       <div>
-        <div class="zion-kicker mb-1.5">🌟 Mainnet Launch · Command Center</div>
-        <h1 class="text-3xl md:text-4xl font-bold tracking-tight leading-none">
+        <div class="zion-kicker mb-1">🌟 Mainnet Launch · Command Center</div>
+        <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight leading-none">
           <span class="text-gradient">ZION TerraNova</span>
         </h1>
-        <p class="text-xs text-gray-400 mt-1" id="timestamp">Initializing…</p>
       </div>
     </div>
     <div class="flex flex-wrap gap-2 items-center">
       <span id="topology-badge" class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-purple-700/50 text-purple-300">🌍 Edge-Primary</span>
       <span id="connection-badge" class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-700/50 text-emerald-300">● Connected</span>
       <span id="alertCount" class="hidden px-3 py-1.5 bg-red-600 rounded-full text-xs font-bold animate-pulse">0 alerts</span>
-      <button onclick="toggleFriendly()" id="friendlyBtn" class="zion-button-secondary text-xs">🧒 Kid Mode</button>
-      <button onclick="toggleTheme()" id="themeBtn" class="zion-button-secondary text-xs" title="Toggle theme">🌙</button>
-      <button onclick="refreshAll()" class="zion-button-secondary text-xs">🔄 Refresh</button>
-      <button onclick="toggleAuto()" id="autoBtn" class="zion-button-secondary text-xs">⚡ Auto</button>
-      <button onclick="openSettingsModal()" class="zion-button-secondary text-xs" title="Settings (S)">⚙️</button>
+      <div class="zion-action-bar">
+        <button onclick="toggleFriendly()" id="friendlyBtn" class="zion-action-btn" title="Kid Mode">🧒</button>
+        <button onclick="toggleTheme()" id="themeBtn" class="zion-action-btn" title="Toggle theme">🌙</button>
+        <button onclick="refreshAll()" class="zion-action-btn" title="Refresh">🔄</button>
+        <button onclick="toggleAuto()" id="autoBtn" class="zion-action-btn" title="Auto refresh">⚡</button>
+        <button onclick="openSettingsModal()" class="zion-action-btn" title="Settings (S)">⚙️</button>
+      </div>
     </div>
   </header>
 
-  <!-- Hero — Launch Status -->
-  <section class="zion-panel p-6 md:p-8 mb-6 relative overflow-hidden">
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center relative z-10">
-      <div class="lg:col-span-2">
-        <div class="zion-kicker mb-3" id="hero-status-kicker">🟢 Mainnet Live · v3.0.4</div>
-        <h2 class="text-2xl md:text-4xl font-bold mb-3 leading-tight">
-          <span class="text-gradient-soft">Mainnet Live</span><br>
-          <span class="text-white">— ZION v3.0.4 Command Center</span>
-        </h2>
-        <p class="text-sm md:text-base text-gray-400 mb-5 max-w-2xl">
-          <strong class="text-zion-gold">Local Backup Node</strong> syncs from Edge primary via P2P,
-          connects to <strong class="text-zion-purple">Edge Pool</strong> (89/5/5/1 burn model),
-          <strong class="text-zion-cyan">GPU Miner</strong> active, plus <strong class="text-amber-300">Pool Metrics</strong> monitoring on :8455.
-          Edge (Hetzner) runs the primary 24/7 node + pool.
-        </p>
-        <div class="flex flex-wrap gap-3">
-          <button onclick="switchTab('services')" class="zion-button-primary">
-            🧩 Services
-          </button>
-          <button onclick="switchTab('wizard')" class="zion-button-secondary">
-            🧙 Launch Wizard
-          </button>
+  <!-- ZION 2-Floor Navigation -->
+  <nav class="zion-nav-shell">
+    <!-- Floor 1: Categories -->
+    <div class="zion-nav-floor">
+      <div class="zion-nav-brand hidden md:flex"><span class="logo-mark">Z</span> Command Center</div>
+      <div class="zion-nav-group">
+        <button onclick="switchTab('overview')" id="tab-overview" class="tab-active">📊 Overview</button>
+      </div>
+      <div class="zion-nav-group">
+        <button>🌐 Network ▾</button>
+        <div class="zion-nav-dropdown">
+          <button onclick="switchTab('nodes')" id="tab-nodes">Nodes</button>
+          <button onclick="switchTab('topology')" id="tab-topology">Topology</button>
+          <button onclick="switchTab('orchestrator')" id="tab-orchestrator">Orchestrator</button>
         </div>
       </div>
-
-      <!-- Readiness Card -->
-      <div class="zion-panel-soft p-5">
-        <div class="flex items-center justify-between mb-3">
-          <span class="zion-kicker">Launch Readiness</span>
-          <span class="text-3xl font-bold text-gradient" id="progressText">—</span>
-        </div>
-        <div class="w-full h-2 bg-white/5 rounded-full overflow-hidden mb-3">
-          <div id="progressBar" class="h-full rounded-full transition-all duration-700"
-               style="width:0%;background:linear-gradient(90deg,rgb(255 215 0),rgb(147 51 234),rgb(6 182 212));"></div>
-        </div>
-        <div class="grid grid-cols-3 gap-2 mt-4 text-center">
-          <div class="zion-panel-soft py-2 px-1">
-            <div class="text-lg font-bold text-emerald-400" id="hero-services-up">—</div>
-            <div class="text-[10px] uppercase tracking-wider text-gray-500">Live</div>
-          </div>
-          <div class="zion-panel-soft py-2 px-1">
-            <div class="text-lg font-bold text-amber-400" id="hero-blockers-open">—</div>
-            <div class="text-[10px] uppercase tracking-wider text-gray-500">P0 Open</div>
-          </div>
-          <div class="zion-panel-soft py-2 px-1">
-            <div class="text-lg font-bold text-zion-cyan" id="hero-chain-height">—</div>
-            <div class="text-[10px] uppercase tracking-wider text-gray-500">Height</div>
-          </div>
-        </div>
-        <!-- Resource Monitoring Mini Widgets -->
-        <div class="grid grid-cols-2 gap-2 mt-3">
-          <div class="zion-panel-soft p-2">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-[10px] text-gray-400 uppercase">RAM</span>
-              <span class="text-[10px] font-mono text-gray-300" id="res-ram-text">—</span>
-            </div>
-            <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-              <div id="res-ram-bar" class="h-full rounded-full bg-emerald-500 transition-all" style="width:0%"></div>
-            </div>
-          </div>
-          <div class="zion-panel-soft p-2">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-[10px] text-gray-400 uppercase">Disk</span>
-              <span class="text-[10px] font-mono text-gray-300" id="res-disk-text">—</span>
-            </div>
-            <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-              <div id="res-disk-bar" class="h-full rounded-full bg-emerald-500 transition-all" style="width:0%"></div>
-            </div>
-          </div>
-        </div>
-        <!-- Ops Buttons -->
-        <div class="flex gap-2 mt-3">
-          <button id="watchdog-toggle-btn" onclick="toggleWatchdog()" class="flex-1 text-[10px] px-2 py-1.5 bg-zion-700/50 hover:bg-zion-600 rounded-md font-semibold transition">🛡️ Watchdog ON</button>
-          <button onclick="rotateLogsNow()" class="flex-1 text-[10px] px-2 py-1.5 bg-zion-700/50 hover:bg-zion-600 rounded-md font-semibold transition">📜 Rotate Logs</button>
+      <div class="zion-nav-group">
+        <button>⛏ Pool ▾</button>
+        <div class="zion-nav-dropdown">
+          <button onclick="switchTab('pool-miners')" id="tab-pool-miners">Miners</button>
+          <button onclick="switchTab('payout')" id="tab-payout">Payouts</button>
+          <button onclick="switchTab('revenue')" id="tab-revenue">Revenue</button>
+          <button onclick="switchTab('miner-live')" id="tab-miner-live">Live Miner</button>
         </div>
       </div>
-    </div>
-  </section>
-
-  <!-- Top Navbar -->
-  <nav class="top-nav">
-    <div class="nav-group">
-      <button onclick="switchTab('overview')" id="tab-overview" class="tab-active">📊 Overview</button>
-    </div>
-    <div class="nav-group">
-      <button>🖥️ Nodes ▾</button>
-      <div class="nav-dropdown">
-        <button onclick="switchTab('nodes')" id="tab-nodes">Nodes</button>
-        <button onclick="switchTab('orchestrator')" id="tab-orchestrator">Orchestrator</button>
-        <button onclick="switchTab('topology')" id="tab-topology">Topology</button>
-        <button onclick="switchTab('services')" id="tab-services">Services</button>
+      <div class="zion-nav-group">
+        <button>🔗 Layers ▾</button>
+        <div class="zion-nav-dropdown">
+          <button onclick="switchTab('l1')" id="tab-l1">L1 Consensus</button>
+          <button onclick="switchTab('l2')" id="tab-l2">L2 Bridge / DAO</button>
+          <button onclick="switchTab('l3')" id="tab-l3">L3 Advanced</button>
+          <button onclick="switchTab('warp')" id="tab-warp">WARP Bridge</button>
+          <button onclick="switchTab('l4')" id="tab-l4">L4 OASIS</button>
+          <button onclick="switchTab('l5')" id="tab-l5">L5 Humanitarian</button>
+          <button onclick="switchTab('l6')" id="tab-l6">L6 Space</button>
+        </div>
+      </div>
+      <div class="zion-nav-group">
+        <button>🧠 AI ▾</button>
+        <div class="zion-nav-dropdown">
+          <button onclick="switchTab('hiran')" id="tab-hiran">Hiran AI</button>
+          <button onclick="switchTab('ai-agents')" id="tab-ai-agents">AI Agents</button>
+          <button onclick="switchTab('ncl-jobs')" id="tab-ncl-jobs">NCL Jobs</button>
+          <button onclick="switchTab('poc-lab')" id="tab-poc-lab">PoC Lab</button>
+        </div>
+      </div>
+      <div class="zion-nav-group">
+        <button>🔧 Ops ▾</button>
+        <div class="zion-nav-dropdown">
+          <button onclick="switchTab('services')" id="tab-services">Services Health</button>
+          <button onclick="switchTab('alerts')" id="tab-alerts">Alerts</button>
+          <button onclick="switchTab('logs')" id="tab-logs">Logs</button>
+          <button onclick="switchTab('backups')" id="tab-backups">Backups</button>
+          <button onclick="switchTab('fleet')" id="tab-fleet">Fleet</button>
+          <button onclick="switchTab('settings')" id="tab-settings">Settings</button>
+        </div>
+      </div>
+      <div class="zion-action-bar md:hidden">
+        <button onclick="refreshAll()" class="zion-action-btn">🔄</button>
+        <button onclick="openSettingsModal()" class="zion-action-btn">⚙️</button>
       </div>
     </div>
-    <div class="nav-group">
-      <button>🗳️ Governance ▾</button>
-      <div class="nav-dropdown">
-        <button onclick="switchTab('dao')" id="tab-dao">DAO Governance</button>
-        <button onclick="switchTab('cex')" id="tab-cex">📊 CEX + DEX</button>
-        <button onclick="switchTab('payout')" id="tab-payout">💰 Payouts</button>
-        <button onclick="switchTab('pool-miners')" id="tab-pool-miners">⛏️ Pool Miners</button>
-        <button onclick="switchTab('revenue')" id="tab-revenue">📈 Revenue System</button>
-        <button onclick="switchTab('wallets')" id="tab-wallets">💼 Wallets</button>
-        <button onclick="switchTab('explorer')" id="tab-explorer">🔍 Explorer</button>
-      </div>
-    </div>
-    <div class="nav-group">
-      <button>🔷 Layers ▾</button>
-      <div class="nav-dropdown">
-        <button onclick="switchTab('l1')" id="tab-l1">L1 Consensus</button>
-        <button onclick="switchTab('l2')" id="tab-l2">L2 Bridge / DAO</button>
-        <button onclick="switchTab('l3')" id="tab-l3">L3 Advanced</button>
-        <button onclick="switchTab('warp')" id="tab-warp">WARP Bridge</button>
-        <button onclick="switchTab('l4')" id="tab-l4">L4 OASIS</button>
-        <button onclick="switchTab('l5')" id="tab-l5">L5 Humanitarian</button>
-        <button onclick="switchTab('l6')" id="tab-l6">L6 Space</button>
-      </div>
-    </div>
-    <div class="nav-group">
-      <button>🧠 AI ▾</button>
-      <div class="nav-dropdown">
-        <button onclick="switchTab('ai-agents')" id="tab-ai-agents">AI Agents</button>
-        <button onclick="switchTab('hiran')" id="tab-hiran">Hiran AI</button>
-        <button onclick="switchTab('ncl-jobs')" id="tab-ncl-jobs">NCL Jobs</button>
-        <button onclick="switchTab('poc-lab')" id="tab-poc-lab">🧬 PoC Lab</button>
-      </div>
-    </div>
-    <div class="nav-group">
-      <button>🌉 Bridge ▾</button>
-      <div class="nav-dropdown">
-        <button onclick="switchTab('bridge')" id="tab-bridge">Bridge Status</button>
-        <button onclick="switchTab('bridge-validators')" id="tab-bridge-validators">Validators</button>
-        <button onclick="switchTab('warp-swap')" id="tab-warp-swap">🔄 Cross-Chain Swap</button>
-      </div>
-    </div>
-    <div class="nav-group">
-      <button>🔧 Ops ▾</button>
-      <div class="nav-dropdown">
-        <button onclick="switchTab('ops')" id="tab-ops">Ops / Backup / CLI</button>
-        <button onclick="switchTab('servers-setup')" id="tab-servers-setup">🖥️ Servers Setup</button>
-        <button onclick="switchTab('agent')" id="tab-agent">ZION Agent</button>
-        <button onclick="switchTab('launch-day')" id="tab-launch-day">Launch Day</button>
-        <button onclick="switchTab('wizard')" id="tab-wizard">Wizard</button>
-        <button onclick="switchTab('genesis')" id="tab-genesis">Genesis</button>
-        <button onclick="switchTab('blockers')" id="tab-blockers">Blockers</button>
-      </div>
-    </div>
-    <div class="nav-group">
-      <button>📊 Diagnostics ▾</button>
-      <div class="nav-dropdown">
-        <button onclick="switchTab('alerts')" id="tab-alerts">Alerts</button>
-        <button onclick="switchTab('charts')" id="tab-charts">Charts</button>
-        <button onclick="switchTab('events')" id="tab-events">Events</button>
-        <button onclick="switchTab('metrics')" id="tab-metrics">Metrics</button>
-        <button onclick="switchTab('miner-live')" id="tab-miner-live">Miner Live</button>
-        <button onclick="switchTab('logs')" id="tab-logs">Logs</button>
-        <button onclick="switchTab('database')" id="tab-database">Database</button>
-        <button onclick="switchTab('env')" id="tab-env">Environment</button>
-      </div>
-    </div>
-    <div class="nav-group">
-      <button>💾 Tools ▾</button>
-      <div class="nav-dropdown">
-        <button onclick="switchTab('backups')" id="tab-backups">Backups</button>
-        <button onclick="switchTab('fleet')" id="tab-fleet">Fleet</button>
-        <button onclick="switchTab('settings')" id="tab-settings">Settings</button>
-      </div>
+    <!-- Floor 2: Icon quick links -->
+    <div class="zion-nav-floor">
+      <button onclick="switchTab('explorer')" id="tab-explorer" class="zion-quick-link zql-explorer"><span class="zql-dot"></span> Explorer</button>
+      <button onclick="switchTab('wallets')" id="tab-wallets" class="zion-quick-link zql-pool"><span class="zql-dot"></span> Wallets</button>
+      <button onclick="switchTab('dao')" id="tab-dao" class="zion-quick-link zql-dao"><span class="zql-dot"></span> DAO</button>
+      <button onclick="switchTab('bridge')" id="tab-bridge" class="zion-quick-link zql-bridge"><span class="zql-dot"></span> Bridge</button>
+      <button onclick="switchTab('bridge-validators')" id="tab-bridge-validators" class="zion-quick-link zql-bridge"><span class="zql-dot"></span> Validators</button>
+      <button onclick="switchTab('warp-swap')" id="tab-warp-swap" class="zion-quick-link zql-bridge"><span class="zql-dot"></span> Swap</button>
+      <button onclick="switchTab('cex')" id="tab-cex" class="zion-quick-link zql-ops"><span class="zql-dot"></span> CEX</button>
+      <button onclick="switchTab('charts')" id="tab-charts" class="zion-quick-link zql-ops"><span class="zql-dot"></span> Charts</button>
+      <button onclick="switchTab('events')" id="tab-events" class="zion-quick-link zql-network"><span class="zql-dot"></span> Events</button>
+      <button onclick="switchTab('metrics')" id="tab-metrics" class="zion-quick-link zql-network"><span class="zql-dot"></span> Metrics</button>
+      <button onclick="switchTab('database')" id="tab-database" class="zion-quick-link zql-settings"><span class="zql-dot"></span> DB</button>
+      <button onclick="switchTab('env')" id="tab-env" class="zion-quick-link zql-settings"><span class="zql-dot"></span> Env</button>
+      <button onclick="switchTab('genesis')" id="tab-genesis" class="zion-quick-link zql-layers"><span class="zql-dot"></span> Genesis</button>
+      <button onclick="switchTab('blockers')" id="tab-blockers" class="zion-quick-link zql-layers"><span class="zql-dot"></span> Blockers</button>
+      <button onclick="switchTab('ops')" id="tab-ops" class="zion-quick-link zql-ops"><span class="zql-dot"></span> Ops</button>
+      <button onclick="switchTab('servers-setup')" id="tab-servers-setup" class="zion-quick-link zql-ops"><span class="zql-dot"></span> Servers</button>
+      <button onclick="switchTab('launch-day')" id="tab-launch-day" class="zion-quick-link zql-ai"><span class="zql-dot"></span> Launch</button>
+      <button onclick="switchTab('wizard')" id="tab-wizard" class="zion-quick-link zql-ai"><span class="zql-dot"></span> Wizard</button>
+      <button onclick="switchTab('agent')" id="tab-agent" class="zion-quick-link zql-ai"><span class="zql-dot"></span> Agent</button>
     </div>
   </nav>
 
+  <!-- ZION Hero — Rainbow Status Cards -->
+  <section class="zion-hero-grid mb-6" id="zion-hero">
+    <div class="zion-hero-card" style="--rc:6 182 212;">
+      <div class="zhc-icon">🌐</div>
+      <div class="zhc-title">Network Status</div>
+      <div class="zhc-value" id="hero-network-status">Live</div>
+      <div class="zhc-sub" id="hero-network-sub">v3.0.4 · 3 nodes</div>
+    </div>
+    <div class="zion-hero-card" style="--rc:147 51 234;">
+      <div class="zhc-icon">⛏</div>
+      <div class="zhc-title">Pool</div>
+      <div class="zhc-value" id="hero-pool-sessions">—</div>
+      <div class="zhc-sub" id="hero-pool-sub">active sessions</div>
+    </div>
+    <div class="zion-hero-card" style="--rc:251 191 36;">
+      <div class="zhc-icon">🔗</div>
+      <div class="zhc-title">Latest Block</div>
+      <div class="zhc-value" id="hero-chain-height">—</div>
+      <div class="zhc-sub" id="hero-block-sub">chain height</div>
+    </div>
+    <div class="zion-hero-card" style="--rc:16 185 129;">
+      <div class="zhc-icon">⚡</div>
+      <div class="zhc-title">Active Miners</div>
+      <div class="zhc-value" id="hero-active-miners">—</div>
+      <div class="zhc-sub" id="hero-miner-sub">connected workers</div>
+    </div>
+  </section>
+
+  <!-- Main Content -->
   <!-- Main Content -->
   <main class="dashboard-main">
 

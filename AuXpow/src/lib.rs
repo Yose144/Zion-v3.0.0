@@ -63,3 +63,17 @@ pub use types::{
     AuxPowConfig, AuxPowStats, CoinProfile, ExternalCoin, JobPackage, PoolPreference, ProfitEntry,
     ShareForwardResult, SplitConfig,
 };
+
+/// Install the ring CryptoProvider as the process-level default for rustls.
+///
+/// Must be called BEFORE any rustls usage (reqwest, tokio-rustls, etc.).
+/// This is needed because both aws-lc-rs and ring may be present
+/// (ring via reqwest), and rustls can't auto-select.
+///
+/// Call this at the very start of `main()` in binaries that use AuxPow
+/// with EpicStratum (TLS) protocol.
+pub fn install_rustls_crypto_provider() {
+    let result = tokio_rustls::rustls::crypto::ring::default_provider()
+        .install_default();
+    eprintln!("install_rustls_crypto_provider: result={:?}", result);
+}

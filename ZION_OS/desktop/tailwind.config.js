@@ -7,15 +7,13 @@ export default {
   theme: {
     extend: {
       colors: {
+        'zion-gold': 'rgb(var(--color-zion-gold) / <alpha-value>)',
+        'zion-purple': 'rgb(var(--color-zion-purple) / <alpha-value>)',
+        'zion-cyan': 'rgb(var(--color-zion-cyan) / <alpha-value>)',
+        'zion-blue': 'rgb(var(--color-zion-blue) / <alpha-value>)',
         zion: {
-          900: '#0a0f1e',
-          800: '#131a2e',
-          700: '#1f2942',
-          600: '#2d3756',
-          500: '#3d4a6b',
-          gold: '#ffd700',
-          purple: '#9333ea',
-          cyan: '#06b6d4',
+          900: 'rgb(var(--color-bg) / 1)',
+          950: '#05070f',
         },
       },
       fontFamily: {
@@ -23,7 +21,18 @@ export default {
         mono: ['JetBrains Mono', 'monospace'],
       },
       borderRadius: {
-        '3xl': '1.5rem',
+        'zion': '1.2rem',
+        'zion-lg': '1.65rem',
+      },
+      animation: {
+        'float': 'float 6s ease-in-out infinite',
+        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+      },
+      keyframes: {
+        float: {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-6px)' },
+        },
       },
     },
   },

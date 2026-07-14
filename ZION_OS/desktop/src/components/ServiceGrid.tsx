@@ -20,11 +20,11 @@ function statusText(s: ServiceHealth): string {
   return 'DOWN';
 }
 
-function statusColor(s: ServiceHealth): string {
+function statusBadgeClass(s: ServiceHealth): string {
   const st = s.status || (s.alive ? 'running' : 'down');
-  if (st === 'running' || st === 'online') return 'text-emerald-400';
-  if (s.derived === 'degraded') return 'text-amber-400';
-  return 'text-red-400';
+  if (st === 'running' || st === 'online') return 'zion-badge-green';
+  if (s.derived === 'degraded') return 'zion-badge-amber';
+  return 'zion-badge-red';
 }
 
 function detailLine(s: ServiceHealth): string {
@@ -40,13 +40,13 @@ export default function ServiceGrid({ services }: Props) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         {[1, 2, 3, 4].map(i => (
-          <div key={i} className="zion-card animate-pulse h-28 bg-white/5" />
+          <div key={i} className="zion-card animate-pulse h-28" />
         ))}
       </div>
     );
   }
 
-  const order: Record<string, number> = { L1: 1, L2: 2, L3: 3 };
+  const order: Record<string, number> = { L1: 1, L2: 2, L3: 3, L4: 4, L5: 5, L6: 6, Infra: 7 };
   const sorted = [...services].sort((a, b) => (order[a.level] || 9) - (order[b.level] || 9));
 
   return (
@@ -54,22 +54,23 @@ export default function ServiceGrid({ services }: Props) {
       {sorted.map(s => {
         const sc = statusClass(s);
         const st = statusText(s);
-        const stColor = statusColor(s);
+        const badgeClass = statusBadgeClass(s);
         const isLive = sc === 'status-live';
+        const icon = s.icon || '⚙️';
 
         return (
           <div key={s.id} className={`zion-card zion-card-hover ${sc} relative overflow-hidden`}>
             <div className="flex items-start justify-between mb-2 relative z-10">
-              <div className="flex items-center gap-2">
-                <span className="text-base">{s.icon || '⚙️'}</span>
-                <div>
-                  <div className="text-xs font-semibold text-white">{s.name}</div>
-                  <div className="text-[10px] text-gray-400">{s.level || ''}</div>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-base shrink-0">{icon}</span>
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-white truncate">{s.name}</div>
+                  <div className="text-[10px] text-gray-400 truncate">{s.level || ''}{s.kind ? ` · ${s.kind}` : ''}</div>
                 </div>
               </div>
-              <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${stColor} bg-black/30`}>{st}</span>
+              <span className={`zion-badge ${badgeClass}`}>{st}</span>
             </div>
-            <div className="text-[10px] text-gray-300 font-mono mb-2 relative z-10">{detailLine(s)}</div>
+            <div className="text-[10px] text-gray-300 font-mono mb-3 relative z-10">{detailLine(s)}</div>
             <div className="flex gap-1.5 relative z-10 flex-wrap">
               {s.actions?.map(a => (
                 <button

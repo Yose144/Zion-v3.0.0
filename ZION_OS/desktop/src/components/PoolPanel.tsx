@@ -55,25 +55,25 @@ export default function PoolPanel({ pool, poolEdge }: Props) {
           <Globe size={18} className="text-cyan-400" />
           <h2 className="text-sm font-bold">Pool</h2>
         </div>
-        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${running ? 'bg-emerald-700/40 text-emerald-300' : 'bg-red-700/40 text-red-300'}`}>
+        <span className={`zion-badge ${running ? 'zion-badge-green' : 'zion-badge-red'}`}>
           {running ? 'LIVE' : 'DOWN'}
         </span>
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="bg-white/5 rounded-xl p-3 text-center">
+        <div className="zion-panel-soft p-3 text-center">
           <div className="text-3xl font-bold text-cyan-400">{fmt(summary?.active_miners ?? pe.active_miners ?? p.active_sessions ?? 0)}</div>
           <div className="text-[10px] text-gray-400 mt-1">Active Miners</div>
         </div>
-        <div className="bg-white/5 rounded-xl p-3 text-center">
+        <div className="zion-panel-soft p-3 text-center">
           <div className="text-3xl font-bold text-zion-gold">{fmt(payout?.blocks_found ?? pe.blocks_found ?? p.blocks_found ?? 0)}</div>
           <div className="text-[10px] text-gray-400 mt-1">Blocks Found</div>
         </div>
-        <div className="bg-white/5 rounded-xl p-3">
+        <div className="zion-panel-soft p-3">
           <div className="text-[10px] text-gray-400">Fee Split</div>
           <div className="text-xs font-mono text-amber-400">{payout?.fee_split ?? p.fee_split ?? '—'}</div>
         </div>
-        <div className="bg-white/5 rounded-xl p-3">
+        <div className="zion-panel-soft p-3">
           <div className="text-[10px] text-gray-400">Payout Wallet</div>
           <div className="text-xs font-mono text-white truncate">{payout?.pool_wallet ? payout.pool_wallet.slice(0, 20) + '…' : '—'}</div>
         </div>
@@ -82,15 +82,15 @@ export default function PoolPanel({ pool, poolEdge }: Props) {
       {/* Pool wallet balance + payout info */}
       {payout && (
         <div className="grid grid-cols-3 gap-2 mb-4">
-          <div className="bg-white/5 rounded-xl p-2 text-center">
+          <div className="zion-panel-soft p-2 text-center">
             <div className="text-xs font-bold text-white">{fmtZ(payout.pool_wallet_balance ? payout.pool_wallet_balance / 1e6 : null)}</div>
             <div className="text-[9px] text-gray-400">Wallet Balance</div>
           </div>
-          <div className="bg-white/5 rounded-xl p-2 text-center">
+          <div className="zion-panel-soft p-2 text-center">
             <div className="text-xs font-bold text-emerald-400">{payout.payout_enabled ? 'ENABLED' : 'DISABLED'}</div>
             <div className="text-[9px] text-gray-400">Payouts</div>
           </div>
-          <div className="bg-white/5 rounded-xl p-2 text-center">
+          <div className="zion-panel-soft p-2 text-center">
             <div className="text-xs font-bold text-cyan-400">{fmt(sessionStats?.active_sessions)}</div>
             <div className="text-[9px] text-gray-400">Sessions</div>
           </div>
@@ -100,15 +100,15 @@ export default function PoolPanel({ pool, poolEdge }: Props) {
       {/* Pool-wide totals */}
       {summary && (
         <div className="grid grid-cols-3 gap-2 mb-4">
-          <div className="bg-white/5 rounded-xl p-2 text-center">
+          <div className="zion-panel-soft p-2 text-center">
             <div className="text-xs font-bold text-amber-400">{fmtZ(summary.total_pending_zion ?? 0)}</div>
             <div className="text-[9px] text-gray-400">Pending Z</div>
           </div>
-          <div className="bg-white/5 rounded-xl p-2 text-center">
+          <div className="zion-panel-soft p-2 text-center">
             <div className="text-xs font-bold text-cyan-400">{fmtZ(summary.total_paid_zion ?? 0)}</div>
             <div className="text-[9px] text-gray-400">Paid Z</div>
           </div>
-          <div className="bg-white/5 rounded-xl p-2 text-center">
+          <div className="zion-panel-soft p-2 text-center">
             <div className="text-xs font-bold text-emerald-400">{fmtZ(summary.total_on_chain_zion ?? 0)}</div>
             <div className="text-[9px] text-gray-400">On-chain Z</div>
           </div>
@@ -118,15 +118,15 @@ export default function PoolPanel({ pool, poolEdge }: Props) {
       {/* Session stats */}
       {sessionStats && (
         <div className="grid grid-cols-3 gap-2 mb-4">
-          <div className="bg-white/5 rounded-xl p-2 text-center">
+          <div className="zion-panel-soft p-2 text-center">
             <div className="text-xs font-bold text-white">{fmt(sessionStats.total_shares_1h)}</div>
             <div className="text-[9px] text-gray-400">Shares 1h</div>
           </div>
-          <div className="bg-white/5 rounded-xl p-2 text-center">
+          <div className="zion-panel-soft p-2 text-center">
             <div className="text-xs font-bold text-white">{fmt(sessionStats.blocks_24h)}</div>
             <div className="text-[9px] text-gray-400">Blocks 24h</div>
           </div>
-          <div className="bg-white/5 rounded-xl p-2 text-center">
+          <div className="zion-panel-soft p-2 text-center">
             <div className="text-xs font-bold text-emerald-400">{sessionStats.accept_rate_pct?.toFixed(1) ?? '—'}%</div>
             <div className="text-[9px] text-gray-400">Accept Rate</div>
           </div>

@@ -18,12 +18,12 @@ export default function MonitoringPanel({ monitoring }: Props) {
           <h2 className="text-sm font-bold">Edge Monitoring</h2>
         </div>
         <span
-          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+          className={`zion-badge ${
             allOk
-              ? 'bg-emerald-700/40 text-emerald-300'
+              ? 'zion-badge-green'
               : prom?.alive || graf?.alive
-                ? 'bg-amber-700/40 text-amber-300'
-                : 'bg-red-700/40 text-red-300'
+                ? 'zion-badge-amber'
+                : 'zion-badge-red'
           }`}
         >
           {allOk ? 'ONLINE' : prom?.alive || graf?.alive ? 'PARTIAL' : 'OFFLINE'}
@@ -31,7 +31,7 @@ export default function MonitoringPanel({ monitoring }: Props) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div className="bg-black/30 border border-white/5 rounded-lg p-3">
+        <div className="zion-panel-soft p-3">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-bold text-orange-400">Prometheus</span>
             <span
@@ -51,18 +51,20 @@ export default function MonitoringPanel({ monitoring }: Props) {
           <div className="text-xs text-gray-400 mb-2">
             Version: <span className="text-white font-mono">{prom?.version || '—'}</span>
           </div>
-          <a
-            href="http://100.76.16.108:9090"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-[10px] px-2 py-1 bg-orange-500/10 text-orange-300 border border-orange-500/20 rounded hover:bg-orange-500/20 transition"
-          >
-            <ExternalLink size={10} />
-            Open Prometheus
-          </a>
+          {prom?.url && (
+            <a
+              href={prom.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[10px] px-2 py-1 bg-orange-500/10 text-orange-300 border border-orange-500/20 rounded hover:bg-orange-500/20 transition"
+            >
+              <ExternalLink size={10} />
+              Open Prometheus
+            </a>
+          )}
         </div>
 
-        <div className="bg-black/30 border border-white/5 rounded-lg p-3">
+        <div className="zion-panel-soft p-3">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-bold text-cyan-400">Grafana</span>
             <span
@@ -81,15 +83,17 @@ export default function MonitoringPanel({ monitoring }: Props) {
             Database:{' '}
             <span className="text-white font-mono">{graf?.database || '—'}</span>
           </div>
-          <a
-            href="http://100.76.16.108:3100"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-[10px] px-2 py-1 bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 rounded hover:bg-cyan-500/20 transition"
-          >
-            <ExternalLink size={10} />
-            Open Grafana
-          </a>
+          {graf?.url && (
+            <a
+              href={graf.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[10px] px-2 py-1 bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 rounded hover:bg-cyan-500/20 transition"
+            >
+              <ExternalLink size={10} />
+              Open Grafana
+            </a>
+          )}
         </div>
       </div>
     </section>

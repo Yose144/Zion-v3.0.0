@@ -404,6 +404,19 @@ impl TriGpuManager {
         &self.primary_algo
     }
 
+    /// Primary backend kind string (for hello message / telemetry).
+    pub fn primary_backend_kind(&self) -> GpuBackendKind {
+        self.kind
+    }
+
+    /// Primary GPU device name (for logging).
+    pub fn primary_device_name(&self) -> String {
+        match self.primary.as_ref() {
+            Some(g) => g.device_name(),
+            None => "unknown".to_string(),
+        }
+    }
+
     /// Whether the Pearl backend is currently loaded.
     pub fn pearl_active(&self) -> bool {
         self.pearl.is_some()
