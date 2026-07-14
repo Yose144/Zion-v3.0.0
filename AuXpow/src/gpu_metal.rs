@@ -34,6 +34,7 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
         }
         "ethash" | "etchash" | "ethash_etc" => Some(("ethash_kernel.metal", "ethash_mine")),
         "zelhash" | "zelhash_flux" => Some(("zelhash_kernel.metal", "zelhash_mine")),
+        "progpow" | "progpow_epic" => Some(("progpow_kernel.metal", "progpow_mine")),
         _ => None,
     }
 }
@@ -56,6 +57,10 @@ pub struct MetalBackend {
     kawpow_dag: Option<metal::Buffer>,
     kawpow_dag_entries: u64,
     kawpow_epoch: u32,
+    /// Cached ProgPow DAG buffer (EPIC — same format as Ethash).
+    progpow_dag: Option<metal::Buffer>,
+    progpow_dag_entries: u64,
+    progpow_epoch: u32,
     /// Cached Autolykos table buffer + metadata.
     autolykos_table: Option<metal::Buffer>,
     autolykos_table_size: u32,
@@ -83,6 +88,9 @@ impl MetalBackend {
             kawpow_dag: None,
             kawpow_dag_entries: 0,
             kawpow_epoch: 0,
+            progpow_dag: None,
+            progpow_dag_entries: 0,
+            progpow_epoch: 0,
             autolykos_table: None,
             autolykos_table_size: 0,
             autolykos_height: u32::MAX,
@@ -376,6 +384,47 @@ impl GpuBackend for MetalBackend {
                 encoder.set_buffer(6, Some(&header_len_buf), 0);
                 encoder.set_buffer(7, Some(&base_nonce_buf), 0);
             }
+            // progpow: 0=header, 1=target, 2=dag, 3=nonce, 4=hash, 5=mix,
+            //          6=found, 7=base_nonce, 8=batch_size, 9=dag_entries, 10=prog_seed
+            "progpow" | "progpow_epic" => {
+                let dag = self.progpow_dag.as_ref()
+                    .ok_or_else(|| anyhow!("ProgPow DAG not set; call set_progpow_dag() before mining"))?;
+                let mix_init = [0u8; 32];
+                let mix_buf = self.device.new_buffer_with_data(
+                    mix_init.as_ptr() as *const _,
+                    32,
+                    MTLResourceOptions::CPUCacheModeDefaultCache,
+                );
+                let dag_ent = self.progpow_dag_entries;
+                let dag_entries_buf = self.device.new_buffer_with_data(
+                    &dag_ent as *const u64 as *const _,
+                    std::mem::size_of::<u64>() as u64,
+                    MTLResourceOptions::CPUCacheModeDefaultCache,
+                );
+                let batch_sz = batch_size;
+                let batch_size_buf = self.device.new_buffer_with_data(
+                    &batch_sz as *const u64 as *const _,
+                    std::mem::size_of::<u64>() as u64,
+                    MTLResourceOptions::CPUCacheModeDefaultCache,
+                );
+                let prog_seed: u32 = 0; // simplified — no random math sequence
+                let prog_seed_buf = self.device.new_buffer_with_data(
+                    &prog_seed as *const u32 as *const _,
+                    std::mem::size_of::<u32>() as u64,
+                    MTLResourceOptions::CPUCacheModeDefaultCache,
+                );
+                encoder.set_buffer(0, Some(&header_buf), 0);
+                encoder.set_buffer(1, Some(&target_buf), 0);
+                encoder.set_buffer(2, Some(dag), 0);
+                encoder.set_buffer(3, Some(&output_nonce_buf), 0);
+                encoder.set_buffer(4, Some(&output_hash_buf), 0);
+                encoder.set_buffer(5, Some(&mix_buf), 0);
+                encoder.set_buffer(6, Some(&found_flag_buf), 0);
+                encoder.set_buffer(7, Some(&base_nonce_buf), 0);
+                encoder.set_buffer(8, Some(&batch_size_buf), 0);
+                encoder.set_buffer(9, Some(&dag_entries_buf), 0);
+                encoder.set_buffer(10, Some(&prog_seed_buf), 0);
+            }
             _ => anyhow::bail!("unsupported algorithm for Metal: {algorithm}"),
         }
 
@@ -462,6 +511,18 @@ impl GpuBackend for MetalBackend {
         self.kawpow_dag = Some(buf);
         self.kawpow_dag_entries = size_entries;
         self.kawpow_epoch = epoch;
+        Ok(())
+    }
+
+    fn set_progpow_dag(&mut self, dag: &[u64], size_entries: u64, epoch: u32) -> Result<()> {
+        let buf = self.device.new_buffer_with_data(
+            dag.as_ptr() as *const _,
+            (dag.len() * std::mem::size_of::<u64>()) as u64,
+            MTLResourceOptions::CPUCacheModeDefaultCache,
+        );
+        self.progpow_dag = Some(buf);
+        self.progpow_dag_entries = size_entries;
+        self.progpow_epoch = epoch;
         Ok(())
     }
 

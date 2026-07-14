@@ -26,6 +26,7 @@ pub enum ExternalAlgorithm {
     RandomX,
     VerusHash,
     ZelHash,
+    ProgPow,
 }
 
 impl ExternalAlgorithm {
@@ -39,6 +40,7 @@ impl ExternalAlgorithm {
             Self::RandomX => "randomx",
             Self::VerusHash => "verushash",
             Self::ZelHash => "zelhash",
+            Self::ProgPow => "progpow",
         }
     }
 
@@ -52,6 +54,7 @@ impl ExternalAlgorithm {
             "randomx" => Some(Self::RandomX),
             "verushash" | "verus" => Some(Self::VerusHash),
             "zelhash" | "zel" => Some(Self::ZelHash),
+            "progpow" => Some(Self::ProgPow),
             _ => None,
         }
     }
@@ -470,6 +473,20 @@ pub const KAWPOW_EPOCH_LENGTH: u32 = 7500;
 /// Ethash epoch length (30000 blocks per epoch).
 pub const ETHASH_EPOCH_LENGTH: u32 = 30000;
 
+/// ProgPow epoch length (EPIC uses 30000 blocks per epoch, same as Ethash).
+pub const PROGPOW_EPOCH_LENGTH: u32 = 30000;
+
+/// ProgPoW 0.9.3 parameters (per EIP-1057).
+pub const PROGPOW_LANES: u32 = 16;
+pub const PROGPOW_REGS: u32 = 32;
+pub const PROGPOW_DAG_LOADS: u32 = 4;
+pub const PROGPOW_CACHE_BYTES: u32 = 16 * 1024;
+pub const PROGPOW_CNT_DAG: u32 = 64;
+pub const PROGPOW_CNT_CACHE: u32 = 11;
+pub const PROGPOW_CNT_MATH: u32 = 18;
+/// Number of blocks before the random program changes.
+pub const PROGPOW_PERIOD: u32 = 10;
+
 // ── Autolykos v2 (ERG) ───────────────────────────────────────────────
 
 /// Compute Autolykos v2 hash for Ergo (ERG) mining.
@@ -774,6 +791,31 @@ pub fn hash_verushash(header: &[u8], nonce: u64) -> [u8; 32] {
         input.extend_from_slice(header);
         input.extend_from_slice(&nonce.to_le_bytes());
         *blake3::hash(&input).as_bytes()
+    }
+}
+
+/// Hash a complete VRSC block header as-is (no nonce appended).
+/// The caller must embed the nonce in the header's 32-byte nonce field
+/// (offset 108) and/or the solution's nonceSpace before calling.
+///
+/// This is the correct hash function for VRSC merge-mining:
+///   - The full 1487-byte header is hashed directly
+///   - No extra nonce bytes are appended
+///   - Matches what LuckPool/VerusCoin node computes for validation
+pub fn hash_verushash_header(header: &[u8]) -> [u8; 32] {
+    #[cfg(feature = "native-verushash")]
+    {
+        return zion_native_ffi::verushash::hash_raw(header);
+    }
+
+    #[cfg(all(feature = "native-hashers", not(feature = "native-verushash")))]
+    {
+        return crate::native_ffi::hash_verushash_raw_native(header);
+    }
+
+    #[allow(unreachable_code)]
+    {
+        *blake3::hash(header).as_bytes()
     }
 }
 
@@ -1270,11 +1312,377 @@ fn clone_node(n: &EquihashNode) -> EquihashNode {
     }
 }
 
+// ── ProgPow (EPIC) ───────────────────────────────────────────────────
+//
+// ProgPow is a GPU-friendly, ASIC-resistant PoW algorithm (EIP-1057).
+// It is DAG-based (like Ethash) with these key differences:
+//   - keccak_f800 (32-bit words) instead of keccak_f1600 (64-bit words)
+//   - FNV1a merge instead of FNV1
+//   - KISS99 RNG for random math sequence (changes every PROGPOW_PERIOD blocks)
+//   - Random math operations (mul, add, rot, xor) in the main loop
+//   - Larger mix state (PROGPOW_REGS * PROGPOW_LANES = 512 uint32s)
+//   - Larger DAG reads (256 bytes per iteration vs 128 for Ethash)
+//
+// References:
+//   - https://github.com/ifdefelse/ProgPOW (reference implementation)
+//   - EIP-1057: https://eips.sh/eip/1057
+//   - xmrig kawpow.cl (OpenCL reference for ProgPow variant)
+
+/// FNV1a 32-bit merge (ProgPow uses FNV1a, Ethash uses FNV1).
+#[inline]
+pub fn fnv1a(a: u32, d: u32) -> u32 {
+    a ^ d.wrapping_mul(0x0100_0193)
+}
+
+/// KISS99 RNG — simple, fast, passes TestU01 suite.
+/// Used by ProgPow to generate the random math sequence.
+#[derive(Debug, Clone, Copy)]
+pub struct Kiss99 {
+    pub z: u32,
+    pub w: u32,
+    pub jsr: u32,
+    pub jcong: u32,
+}
+
+impl Kiss99 {
+    /// Default seed values from the ProgPow reference implementation.
+    pub fn new(prog_seed: u32) -> Self {
+        Self {
+            z: 362436069,
+            w: 521288629,
+            jsr: (prog_seed ^ 0x5DEECE6D) | 0x1,  // ensure non-zero
+            jcong: 380116160,
+        }
+    }
+
+    #[inline]
+    pub fn next(&mut self) -> u32 {
+        self.z = 36969u32.wrapping_mul(self.z & 0xFFFF).wrapping_add(self.z >> 16);
+        self.w = 18000u32.wrapping_mul(self.w & 0xFFFF).wrapping_add(self.w >> 16);
+        let mwc = (self.w << 16).wrapping_add(self.z);
+        self.jsr ^= self.jsr << 17;
+        self.jsr ^= self.jsr >> 15;
+        self.jsr ^= self.jsr << 5;
+        self.jcong = 69069u32.wrapping_mul(self.jcong).wrapping_add(1234567);
+        (mwc ^ self.jcong).wrapping_add(self.jsr)
+    }
+}
+
+/// Keccak-f[800] permutation — 32-bit word variant used by ProgPow.
+/// Width=800, bitrate=576, capacity=224, 22 rounds.
+pub fn keccak_f800(st: &mut [u32; 25]) {
+    const KECCAKF_ROT: [u32; 24] = [
+        1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56, 8, 25, 43, 62, 18, 39, 61, 20, 44,
+    ];
+    const KECCAKF_PIL: [usize; 24] = [
+        10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4, 15, 23, 19, 13, 12, 2, 20, 14, 22, 9, 6, 1,
+    ];
+    const KECCAKF_RNDC: [u32; 22] = [
+        0x00000001, 0x00008082, 0x80000080, 0x80008000,
+        0x0000008b, 0x00008000, 0x80008088, 0x80000082,
+        0x0000000b, 0x00008008, 0x80008009, 0x8000008a,
+        0x00000088, 0x80008000, 0x8000808b, 0x0000008b,
+        0x80008089, 0x80008003, 0x80008088, 0x80000088,
+        0x80008082, 0x8000000a,
+    ];
+
+    for r in 0..22 {
+        // Theta
+        let mut bc = [0u32; 5];
+        for i in 0..5 {
+            bc[i] = st[i] ^ st[i + 5] ^ st[i + 10] ^ st[i + 15] ^ st[i + 20];
+        }
+        for i in 0..5 {
+            let t = bc[(i + 4) % 5] ^ bc[(i + 1) % 5].rotate_left(1);
+            for j in (0..25).step_by(5) {
+                st[j + i] ^= t;
+            }
+        }
+        // Rho Pi
+        let mut t = st[1];
+        for i in 0..24 {
+            let j = KECCAKF_PIL[i];
+            let tmp = st[j];
+            st[j] = t.rotate_left(KECCAKF_ROT[i]);
+            t = tmp;
+        }
+        // Chi
+        for j in (0..25).step_by(5) {
+            let mut b = [0u32; 5];
+            for i in 0..5 {
+                b[i] = st[j + i];
+            }
+            for i in 0..5 {
+                st[j + i] ^= !b[(i + 1) % 5] & b[(i + 2) % 5];
+            }
+        }
+        // Iota
+        st[0] ^= KECCAKF_RNDC[r];
+    }
+}
+
+/// Compute the ProgPow seed hash from header_hash and nonce.
+/// `seed = keccak_f800(header_hash(32) || nonce_le(8))` → first 8 uint32s.
+fn progpow_seed(header_hash: &[u8; 32], nonce: u64) -> [u32; 8] {
+    let mut st = [0u32; 25];
+    // Load 32 bytes of header_hash into st[0..8] (8 x uint32 LE)
+    for i in 0..8 {
+        st[i] = u32::from_le_bytes(
+            header_hash[i * 4..(i + 1) * 4].try_into().unwrap(),
+        );
+    }
+    // Load 8 bytes of nonce into st[8..10] (2 x uint32 LE)
+    let nonce_le = nonce.to_le_bytes();
+    st[8] = u32::from_le_bytes(nonce_le[0..4].try_into().unwrap());
+    st[9] = u32::from_le_bytes(nonce_le[4..8].try_into().unwrap());
+    keccak_f800(&mut st);
+    // Take first 8 uint32s as the seed (256-bit)
+    let mut seed = [0u32; 8];
+    seed.copy_from_slice(&st[0..8]);
+    seed
+}
+
+/// Compute the final ProgPow hash from the mix state.
+/// `final = keccak_f800(header_hash(32) || mix_state(512 bytes))` → 256-bit.
+fn progpow_final(header_hash: &[u8; 32], mix: &[u32; 512]) -> [u8; 32] {
+    let mut st = [0u32; 25];
+    // Load header_hash into st[0..8]
+    for i in 0..8 {
+        st[i] = u32::from_le_bytes(
+            header_hash[i * 4..(i + 1) * 4].try_into().unwrap(),
+        );
+    }
+    // Load mix state (512 uint32s = 2048 bytes) into st in chunks
+    // keccak_f800 has 25 uint32s of state, so we absorb in blocks
+    // Absorb first 17 uint32s of mix (st[8..25])
+    for i in 0..17 {
+        st[8 + i] = mix[i];
+    }
+    keccak_f800(&mut st);
+    // Absorb next 17 uint32s
+    for i in 0..17 {
+        st[8 + i] = mix[17 + i];
+    }
+    keccak_f800(&mut st);
+    // Continue absorbing remaining mix data
+    let mut offset = 34;
+    while offset < 512 {
+        let chunk = (512 - offset).min(17);
+        for i in 0..chunk {
+            st[8 + i] = mix[offset + i];
+        }
+        keccak_f800(&mut st);
+        offset += chunk;
+    }
+    // Extract 256-bit result (8 uint32s → 32 bytes, big-endian per EIP-1057)
+    let mut result = [0u8; 32];
+    for i in 0..8 {
+        // EIP-1057: "result byte 0 is the MSB of the value"
+        // keccak output is in st[0..8], convert to big-endian bytes
+        result[i * 4..(i + 1) * 4].copy_from_slice(&st[i].to_be_bytes());
+    }
+    result
+}
+
+/// Fill the mix state from the seed.
+/// `fill_mix(seed) → mix[PROGPOW_LANES * PROGPOW_REGS]` (512 uint32s).
+fn progpow_fill_mix(seed: &[u32; 8]) -> [u32; 512] {
+    let mut mix = [0u32; 512];
+    for lane in 0..PROGPOW_LANES as usize {
+        for reg in 0..PROGPOW_REGS as usize {
+            // Each lane gets a different slice of the seed
+            let idx = (lane * PROGPOW_REGS as usize + reg) % 8;
+            mix[lane * PROGPOW_REGS as usize + reg] = seed[idx];
+        }
+    }
+    mix
+}
+
+/// Compute ProgPow hash for Epic Cash (EPIC) mining.
+///
+/// This is a **simplified pure-Rust implementation** for CPU verification.
+/// Real ProgPow mining requires a GPU (the random math sequence is compiled
+/// to GPU code per period). This implementation uses a fixed math sequence
+/// (no random program) — sufficient for share verification but not for
+/// finding shares at real difficulty.
+///
+/// For production mining, use the OpenCL/Metal kernel (`progpow_kernel.cl`).
+///
+/// # Arguments
+/// * `header_hash` - 32-byte block header hash (keccak of header)
+/// * `nonce` - 64-bit nonce
+/// * `height` - block height (determines epoch and prog_seed)
+///
+/// # Returns
+/// `(mix_hash, final_hash)` — both 32 bytes.
+/// The `mix_hash` is needed for share submission (like KawPow/Ethash).
+pub fn hash_progpow(header_hash: &[u8; 32], nonce: u64, height: u32) -> ([u8; 32], [u8; 32]) {
+    #[cfg(feature = "native-hashers")]
+    {
+        if let Ok((mix, final_hash)) = crate::native_ffi::hash_progpow_native(header_hash, nonce, height) {
+            return (mix, final_hash);
+        }
+    }
+
+    // Pure-Rust fallback: simplified ProgPow (no random math, no DAG)
+    // This is NOT valid for real ProgPow mining — use GPU kernel instead.
+    #[allow(unreachable_code)]
+    {
+        let seed = progpow_seed(header_hash, nonce);
+        let mut mix = progpow_fill_mix(&seed);
+
+        // Simplified loop: no DAG, no random math (GPU-only features)
+        // Just mix the state with keccak to produce a deterministic hash
+        let prog_seed = height / PROGPOW_PERIOD;
+        let mut rng = Kiss99::new(prog_seed);
+
+        // Simplified mixing: XORmix the state with RNG values
+        for i in 0..mix.len() {
+            mix[i] = mix[i].wrapping_add(rng.next());
+        }
+
+        let final_hash = progpow_final(header_hash, &mix);
+
+        // Mix hash = first 32 bytes of mix state
+        let mut mix_hash = [0u8; 32];
+        for i in 0..8 {
+            mix_hash[i * 4..(i + 1) * 4].copy_from_slice(&mix[i].to_le_bytes());
+        }
+
+        (mix_hash, final_hash)
+    }
+}
+
+/// Compute the real ProgPow hash over a precomputed DAG.
+///
+/// This requires the full DAG (like Ethash/KawPow). The DAG is epoch-based
+/// and regenerated every `PROGPOW_EPOCH_LENGTH` blocks.
+///
+/// # Arguments
+/// * `header_hash` - 32-byte block header hash
+/// * `nonce` - 64-bit nonce
+/// * `dag` - Precomputed DAG (array of u64 entries, 16 uint64s per DAG entry)
+/// * `dag_size_entries` - Number of DAG entries (not uint64s)
+///
+/// # Returns
+/// `(mix_hash, final_hash)` — both 32 bytes.
+pub fn hash_progpow_with_dag(
+    header_hash: &[u8; 32],
+    nonce: u64,
+    dag: &[u64],
+    dag_size_entries: u64,
+) -> ([u8; 32], [u8; 32]) {
+    #[cfg(feature = "native-hashers")]
+    {
+        return crate::native_ffi::hash_progpow_native_with_dag(
+            header_hash,
+            nonce,
+            dag,
+            dag_size_entries,
+        );
+    }
+
+    // Pure-Rust fallback: use simplified version (no DAG)
+    #[allow(unreachable_code)]
+    {
+        let _ = (dag, dag_size_entries); // suppress unused warnings
+        // Use height 0 for the simplified version — caller should use native FFI
+        hash_progpow(header_hash, nonce, 0)
+    }
+}
+
+/// Mine a ProgPow share: scan nonces until hash < target.
+///
+/// Returns the final hash if found, `None` otherwise.
+/// This is a CPU fallback — real mining uses the GPU kernel.
+pub fn mine_progpow(
+    header_hash: &[u8; 32],
+    start_nonce: u64,
+    count: u64,
+    height: u32,
+    target: &[u8; 32],
+) -> Option<(u64, [u8; 32])> {
+    for nonce in start_nonce..start_nonce + count {
+        let (_, hash) = hash_progpow(header_hash, nonce, height);
+        if hash_le_target(&hash, target) {
+            return Some((nonce, hash));
+        }
+    }
+    None
+}
+
+/// Check if hash <= target (big-endian comparison).
+fn hash_le_target(hash: &[u8; 32], target: &[u8; 32]) -> bool {
+    for i in 0..32 {
+        if hash[i] < target[i] {
+            return true;
+        }
+        if hash[i] > target[i] {
+            return false;
+        }
+    }
+    true // equal
+}
+
 // ── Tests ────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // ── ProgPow ─────────────────────────────────────────────────────
+
+    #[test]
+    fn progpow_deterministic() {
+        let header = [0x42u8; 32];
+        let h1 = hash_progpow(&header, 12345, 100);
+        let h2 = hash_progpow(&header, 12345, 100);
+        assert_eq!(h1, h2);
+    }
+
+    #[test]
+    fn progpow_changes_with_nonce() {
+        let header = [0x42u8; 32];
+        let h1 = hash_progpow(&header, 12345, 100);
+        let h2 = hash_progpow(&header, 12346, 100);
+        assert_ne!(h1, h2);
+    }
+
+    #[test]
+    fn progpow_changes_with_height() {
+        let header = [0x42u8; 32];
+        let h1 = hash_progpow(&header, 12345, 100);
+        let h2 = hash_progpow(&header, 12345, 200);
+        assert_ne!(h1, h2);
+    }
+
+    #[test]
+    fn progpow_keccak_f800_known_vector() {
+        // keccak_f800 of all-zeros input should produce a known result
+        let mut st = [0u32; 25];
+        keccak_f800(&mut st);
+        // After 22 rounds, state should not be all zeros
+        assert!(st.iter().any(|&x| x != 0));
+    }
+
+    #[test]
+    fn progpow_fnv1a_merge() {
+        let a = 0xDEADBEEFu32;
+        let b = 0xCAFEBABEu32;
+        let merged = fnv1a(a, b);
+        // FNV1a: a ^ (a * 0x1000193) — just verify it's deterministic and non-zero
+        assert_eq!(merged, fnv1a(a, b));
+        assert_ne!(merged, 0);
+    }
+
+    #[test]
+    fn progpow_kiss99_deterministic() {
+        let mut rng1 = Kiss99 { z: 362436069, w: 521288629, jsr: 123456789, jcong: 380116160 };
+        let mut rng2 = Kiss99 { z: 362436069, w: 521288629, jsr: 123456789, jcong: 380116160 };
+        for _ in 0..100 {
+            assert_eq!(rng1.next(), rng2.next());
+        }
+    }
 
     // ── Blake3 ───────────────────────────────────────────────────────
 

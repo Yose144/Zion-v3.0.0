@@ -83,6 +83,9 @@ pub trait GpuBackend: Send {
     /// Upload the per-epoch KawPow DAG.
     fn set_kawpow_dag(&mut self, dag: &[u64], size_entries: u64, epoch: u32) -> Result<()>;
 
+    /// Upload the per-epoch ProgPow DAG (EPIC — same format as Ethash).
+    fn set_progpow_dag(&mut self, dag: &[u64], size_entries: u64, epoch: u32) -> Result<()>;
+
     /// Get the device name.
     fn device_name(&self) -> &str;
 

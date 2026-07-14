@@ -782,6 +782,7 @@ unsafe extern "C" {
         nonce: u64,
         output: *mut u8,
     );
+    fn verushash_hash_raw(header: *const u8, header_len: usize, output: *mut u8);
 }
 
 /// Initialize VerusHash lookup tables (Haraka round constants, CLHash keys).
@@ -802,4 +803,46 @@ pub fn hash_verushash_native(header: &[u8], nonce: u64) -> [u8; 32] {
         verushash_hash(header.as_ptr(), header.len(), nonce, out.as_mut_ptr());
     }
     out
+}
+
+/// Compute VerusHash v2.2 of a complete header (no nonce appended).
+pub fn hash_verushash_raw_native(header: &[u8]) -> [u8; 32] {
+    let mut out = [0u8; 32];
+    unsafe {
+        verushash_hash_raw(header.as_ptr(), header.len(), out.as_mut_ptr());
+    }
+    out
+}
+
+// ── ProgPow (EPIC) ───────────────────────────────────────────────────
+//
+// ProgPow native FFI stubs. The full C implementation (keccak_f800 + DAG +
+// KISS99 random math) is not yet linked. These stubs return errors so the
+// pure-Rust fallback in external_hashers.rs is used instead.
+//
+// To enable native ProgPow, port the C implementation from:
+//   https://github.com/ifdefelse/ProgPOW (libprogpow/ProgPow.h)
+// and link it via build.rs with the `native-hashers` feature.
+
+/// Compute ProgPow hash using native C FFI (stub — not yet implemented).
+///
+/// Returns `Err` to signal the caller to use the pure-Rust fallback.
+pub fn hash_progpow_native(
+    _header: &[u8; 32],
+    _nonce: u64,
+    _height: u32,
+) -> Result<([u8; 32], [u8; 32]), &'static str> {
+    Err("native ProgPow FFI not yet implemented — using pure-Rust fallback")
+}
+
+/// Compute ProgPow hash with a precomputed DAG using native C FFI (stub).
+///
+/// Returns `Err` to signal the caller to use the pure-Rust fallback.
+pub fn hash_progpow_native_with_dag(
+    _header_hash: &[u8; 32],
+    _nonce: u64,
+    _dag: &[u64],
+    _dag_size_entries: u64,
+) -> Result<([u8; 32], [u8; 32]), &'static str> {
+    Err("native ProgPow FFI with DAG not yet implemented — using pure-Rust fallback")
 }

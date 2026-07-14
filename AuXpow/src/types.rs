@@ -24,6 +24,7 @@ pub enum ExternalCoin {
     CLORE,
     XMR,
     VRSC,
+    EPIC,
 }
 
 impl ExternalCoin {
@@ -41,6 +42,7 @@ impl ExternalCoin {
             Self::CLORE => "CLORE",
             Self::XMR => "XMR",
             Self::VRSC => "VRSC",
+            Self::EPIC => "EPIC",
         }
     }
 
@@ -58,6 +60,7 @@ impl ExternalCoin {
             Self::CLORE => "kawpow",
             Self::XMR => "randomx",
             Self::VRSC => "verushash",
+            Self::EPIC => "progpow",
         }
     }
 
@@ -83,6 +86,7 @@ impl ExternalCoin {
             "clore" | "clore.ai" => Some(Self::CLORE),
             "xmr" | "monero" => Some(Self::XMR),
             "vrsc" | "verus" | "veruscoin" => Some(Self::VRSC),
+            "epic" | "epiccash" => Some(Self::EPIC),
             _ => None,
         }
     }
@@ -101,6 +105,7 @@ impl ExternalCoin {
             Self::CLORE => "clore.woolypooly.com:3090",
             Self::XMR => "gulf.moneroocean.stream:10001",
             Self::VRSC => "eu.luckpool.net:3956",
+            Self::EPIC => "de.epicmine.io:3334",
         }
     }
 
@@ -133,6 +138,7 @@ impl ExternalCoin {
             Self::CLORE,
             Self::XMR,
             Self::VRSC,
+            Self::EPIC,
         ]
     }
 
@@ -249,6 +255,7 @@ pub fn fallback_estimates() -> Vec<ProfitEntry> {
         ProfitEntry { coin: ExternalCoin::MEWC, revenue_per_day_usd: 0.15, power_cost_usd: 0.06 },
         ProfitEntry { coin: ExternalCoin::XMR, revenue_per_day_usd: 0.12, power_cost_usd: 0.03 },
         ProfitEntry { coin: ExternalCoin::VRSC, revenue_per_day_usd: 0.14, power_cost_usd: 0.03 },
+        ProfitEntry { coin: ExternalCoin::EPIC, revenue_per_day_usd: 0.35, power_cost_usd: 0.10 },
     ]
 }
 
