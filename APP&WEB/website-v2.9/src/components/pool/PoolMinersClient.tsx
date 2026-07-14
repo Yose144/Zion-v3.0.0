@@ -49,7 +49,19 @@ interface PoolServer {
 
 interface Miner {
   address: string;
+  worker_name?: string;
+  algorithm?: string;
+  backend?: string;
+  payout_address?: string;
   last_share: number;
+  last_seen?: number;
+  hashrate?: number;
+  hashrate_1h?: number;
+  hashrate_24h?: number;
+  blocks_found?: number;
+  valid_shares?: number;
+  invalid_shares?: number;
+  pending_balance?: number;
   server: string;
 }
 
@@ -165,6 +177,8 @@ function CopyButton({ text }: { text: string }) {
 /* ═══════════════════════ MINER ROW MODEL ═══════════════════════ */
 interface MinerRow {
   address: string;
+  worker_name: string;
+  payout_address: string;
   last_share: number;
   server: string;
   serverObj?: PoolServer;
@@ -328,7 +342,10 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
     // Active miners (last share < 10 min) get the bulk of pool hashrate.
     // We distribute pool hashrate proportionally using a weight derived from
     // recency of last share. Inactive miners get a small residual weight.
+    // When the pool API provides real per-worker hashrate, we use that directly.
     const ACTIVE_THRESHOLD = 600;
+    const hasRealHashrate = miners.some((m) => (m.hashrate ?? 0) > 0);
+
     const weighted = miners.map((m) => {
       const ageSec = Math.max(0, now - m.last_share);
       const isActive = ageSec < ACTIVE_THRESHOLD;
@@ -344,22 +361,37 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
 
     return weighted
       .map((w) => {
-        const sharePct = totalWeight > 0 ? (w.weight / totalWeight) * 100 : 0;
-        const hashrate = poolHashrate > 0 ? (w.weight / totalWeight) * poolHashrate : 0;
+        const realHashrate = w.hashrate ?? 0;
+        // Use real hashrate if available; otherwise estimate from weight.
+        const hashrate = hasRealHashrate
+          ? realHashrate
+          : (poolHashrate > 0 ? (w.weight / totalWeight) * poolHashrate : 0);
+        const totalRealHashrate = hasRealHashrate
+          ? weighted.reduce((s, x) => s + (x.hashrate ?? 0), 0)
+          : poolHashrate;
+        const sharePct = totalRealHashrate > 0
+          ? (hashrate / totalRealHashrate) * 100
+          : (totalWeight > 0 ? (w.weight / totalWeight) * 100 : 0);
         const estDailyZion =
-          poolHashrate > 0
-            ? (hashrate / poolHashrate) * blocksPerDay * rewardPerBlock * (minerSharePct / 100)
+          totalRealHashrate > 0
+            ? (hashrate / totalRealHashrate) * blocksPerDay * rewardPerBlock * (minerSharePct / 100)
             : 0;
-        // Estimated shares: scale by weight relative to pool valid shares.
-        const validShares = data?.aggregate.valid_shares
-          ? Math.round((w.weight / totalWeight) * data.aggregate.valid_shares)
-          : Math.round(hashrate / 10);
-        const totalShares = data?.aggregate.submits_total
-          ? Math.round((w.weight / totalWeight) * data.aggregate.submits_total)
-          : Math.round(validShares * 1.05);
+        // Use real valid_shares if available; otherwise estimate.
+        const validShares = (w.valid_shares ?? 0) > 0
+          ? w.valid_shares!
+          : (data?.aggregate.valid_shares
+            ? Math.round((w.weight / totalWeight) * data.aggregate.valid_shares)
+            : Math.round(hashrate / 10));
+        const totalShares = (w.invalid_shares ?? 0) > 0
+          ? (w.valid_shares ?? 0) + (w.invalid_shares ?? 0)
+          : (data?.aggregate.submits_total
+            ? Math.round((w.weight / totalWeight) * data.aggregate.submits_total)
+            : Math.round(validShares * 1.05));
         const serverObj = data?.servers.find((s) => s.id === w.server);
         return {
           address: w.address,
+          worker_name: w.worker_name ?? "",
+          payout_address: w.payout_address ?? "",
           last_share: w.last_share,
           server: w.server,
           serverObj,
@@ -422,7 +454,7 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
     const top = [...minerRows].sort((a, b) => b.sharePct - a.sharePct).slice(0, 10);
     const restPct = 100 - top.reduce((s, m) => s + m.sharePct, 0);
     const slices = top.map((m, i) => ({
-      label: `${cs ? "Miner" : "Miner"} #${m.rank} ${shortAddr(m.address)}`,
+      label: `${cs ? "Miner" : "Miner"} #${m.rank} ${shortAddr(m.address)}${m.worker_name ? ` · ${m.worker_name}` : ""}`,
       value: m.sharePct,
       color: purplePalette[i % purplePalette.length],
     }));
@@ -598,9 +630,10 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                 <div className="grid gap-5 md:grid-cols-3">
                   {top3.map((m, i) => {
                     const ps = podiumStyles[i];
+                    const minerLink = m.payout_address || m.address;
                     return (
                       <motion.div
-                        key={m.address}
+                        key={`${m.address}/${m.worker_name}`}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.08 + i * 0.06 }}
@@ -626,10 +659,16 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                             #{m.rank} · {ps.label}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1 mb-4">
+                        <div className="flex items-center gap-1 mb-1">
                           <code className="text-sm text-white font-mono truncate">{shortAddr(m.address)}</code>
                           <CopyButton text={m.address} />
                         </div>
+                        {m.worker_name && (
+                          <p className="text-[11px] text-gray-500 font-mono mb-1">{cs ? "Worker" : "Worker"}: {m.worker_name}</p>
+                        )}
+                        {m.payout_address && (
+                          <p className="text-[11px] text-gray-600 font-mono mb-3">{cs ? "Payout" : "Payout"}: {shortAddr(m.payout_address)}</p>
+                        )}
                         <div className="grid grid-cols-2 gap-3 text-sm">
                           <div>
                             <p className="text-[11px] text-gray-500 uppercase tracking-wider">{cs ? "Hashrate" : "Hashrate"}</p>
@@ -687,17 +726,27 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                       </tr>
                     </thead>
                     <tbody>
-                      {sortedRows.map((m) => (
-                        <tr key={m.address} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
+                      {sortedRows.map((m) => {
+                        const minerLink = m.payout_address || m.address;
+                        return (
+                        <tr key={`${m.address}/${m.worker_name}`} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
                           <td className="px-4 py-3.5">
                             <span className={`font-mono font-bold ${m.rank <= 3 ? "text-zion-gold" : "text-gray-500"}`}>
                               {m.rank}
                             </span>
                           </td>
                           <td className="px-4 py-3.5">
-                            <Link href={`/pool/miner/${m.address}`} className="flex items-center gap-1 group">
-                              <code className="text-sm text-white font-mono group-hover:text-zion-cyan transition-colors">{shortAddr(m.address)}</code>
-                              <CopyButton text={m.address} />
+                            <Link href={`/pool/miner/${minerLink}`} className="flex flex-col gap-0.5 group">
+                              <div className="flex items-center gap-1">
+                                <code className="text-sm text-white font-mono group-hover:text-zion-cyan transition-colors">{shortAddr(m.address)}</code>
+                                <CopyButton text={m.address} />
+                              </div>
+                              {m.worker_name && (
+                                <span className="text-[11px] text-gray-500 font-mono">{m.worker_name}</span>
+                              )}
+                              {m.payout_address && (
+                                <span className="text-[10px] text-gray-600 font-mono">{cs ? "Payout" : "Payout"}: {shortAddr(m.payout_address)}</span>
+                              )}
                             </Link>
                           </td>
                           <td className="px-4 py-3.5 text-gray-400 text-sm whitespace-nowrap">
@@ -728,7 +777,8 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                             </span>
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                       {sortedRows.length === 0 && (
                         <tr>
                           <td colSpan={9} className="px-5 py-10 text-center text-gray-500">
@@ -795,8 +845,8 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                 <Info className="h-3.5 w-3.5 shrink-0" />
                 <span>
                   {cs
-                    ? "Hashrate minerů je odhadován proporcionálně z pool hashrate na základě aktivity odesílání share."
-                    : "Miner hashrate is estimated proportionally from pool hashrate based on share submission activity."}
+                    ? "Hashrate a shares pocházejí z telemetrie pool serveru (per-worker). Pokud telemetrie nedodává reálná data, hashrate je odhadován proporcionálně z pool hashrate."
+                    : "Hashrate and shares come from pool server telemetry (per-worker). When telemetry doesn't provide real data, hashrate is estimated proportionally from pool hashrate."}
                 </span>
               </div>
             </motion.section>

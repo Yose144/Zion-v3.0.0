@@ -113,7 +113,24 @@ export async function GET() {
     info = await rpc.getInfo();
   } catch { /* chain unreachable */ }
 
-  const minersPayload = await fetchPoolApiJson<{ miners?: Array<{ address: string; last_share: number }> }>('/miners?limit=200');
+  const minersPayload = await fetchPoolApiJson<{
+    miners?: Array<{
+      address: string;
+      worker_name?: string;
+      algorithm?: string;
+      backend?: string;
+      payout_address?: string;
+      last_share: number;
+      last_seen?: number;
+      hashrate?: number;
+      hashrate_1h?: number;
+      hashrate_24h?: number;
+      blocks_found?: number;
+      valid_shares?: number;
+      invalid_shares?: number;
+      pending_balance?: number;
+    }>;
+  }>('/miners?limit=200');
 
   const promQueries = [
     'zion_chain_height',
@@ -366,7 +383,19 @@ export async function GET() {
     miners: Array.isArray(minersPayload?.miners)
       ? minersPayload.miners.map((miner) => ({
           address: miner.address,
+          worker_name: miner.worker_name ?? '',
+          algorithm: miner.algorithm ?? '',
+          backend: miner.backend ?? '',
+          payout_address: miner.payout_address ?? '',
           last_share: miner.last_share,
+          last_seen: miner.last_seen ?? 0,
+          hashrate: miner.hashrate ?? 0,
+          hashrate_1h: miner.hashrate_1h ?? 0,
+          hashrate_24h: miner.hashrate_24h ?? 0,
+          blocks_found: miner.blocks_found ?? 0,
+          valid_shares: miner.valid_shares ?? 0,
+          invalid_shares: miner.invalid_shares ?? 0,
+          pending_balance: miner.pending_balance ?? 0,
           server: 'primary',
         }))
       : [],
