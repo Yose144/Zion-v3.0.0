@@ -5146,6 +5146,7 @@ dependencies = [
  "blake2b_simd",
  "blake3",
  "block",
+ "bytemuck",
  "cc",
  "chrono",
  "hex",

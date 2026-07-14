@@ -35,7 +35,7 @@ pub mod share_forwarder;
 pub mod true_auxpow;
 pub mod types;
 
-pub use auxpow_client::{AuxPowClient, ExternalJob, StratumProtocol};
+pub use auxpow_client::{AuxPowClient, ExternalJob, ShareResult, StratumProtocol};
 pub use auxpow_scheduler::{AuxPowScheduler, SchedulerConfig};
 pub use dual_stratum::{
     AssignmentCounts, DualStratumJob, DualStratumMiner, FoundExternalShare, ShareDisposition,
