@@ -77,7 +77,19 @@ interface PoolServer {
 
 interface Miner {
   address: string;
+  worker_name?: string;
+  algorithm?: string;
+  backend?: string;
+  payout_address?: string;
   last_share: number;
+  last_seen?: number;
+  hashrate?: number;
+  hashrate_1h?: number;
+  hashrate_24h?: number;
+  blocks_found?: number;
+  valid_shares?: number;
+  invalid_shares?: number;
+  pending_balance?: number;
   server: string;
 }
 
@@ -209,6 +221,15 @@ function fmtPct(value?: number | string | null, digits = 2): string {
 function shortAddr(addr: string): string {
   if (addr.length <= 20) return addr;
   return `${addr.slice(0, 12)}…${addr.slice(-8)}`;
+}
+
+function formatHashrate(h: number): string {
+  if (!h || h <= 0) return '0 H/s';
+  const units = ['H/s', 'KH/s', 'MH/s', 'GH/s', 'TH/s', 'PH/s'];
+  let i = 0;
+  let v = h;
+  while (v >= 1000 && i < units.length - 1) { v /= 1000; i++; }
+  return `${v.toFixed(1)} ${units[i]}`;
 }
 
 function atomicToZion(atomic: number): string {
@@ -906,7 +927,10 @@ export default function PoolDashboard() {
                 <thead>
                   <tr className="border-b border-white/[0.08]">
                     <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">#</th>
-                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{cs ? 'Adresa' : 'Address'}</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{cs ? 'Miner / Worker' : 'Miner / Worker'}</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{cs ? 'Payout adresa' : 'Payout Address'}</th>
+                    <th className="text-right px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{cs ? 'Hashrate' : 'Hashrate'}</th>
+                    <th className="text-right px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{cs ? 'Shares' : 'Shares'}</th>
                     <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{cs ? 'Server' : 'Server'}</th>
                     <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{cs ? 'Poslední share' : 'Last Share'}</th>
                     <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{cs ? 'Stav' : 'Status'}</th>
@@ -916,15 +940,33 @@ export default function PoolDashboard() {
                   {visibleMiners.map((m, i) => {
                     const isActive = now - m.last_share < 600;
                     const serverObj = data?.servers.find(s => s.id === m.server);
+                    const rowKey = `${m.address}/${m.worker_name || ''}`;
                     return (
-                      <tr key={m.address} className="border-b border-white/[0.04] transition-colors">
+                      <tr key={rowKey} className="border-b border-white/[0.04] transition-colors">
                         <td className="px-5 py-3.5 text-gray-500 font-mono">{i + 1}</td>
                         <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-2">
-                            <code className="text-sm text-white font-mono">{shortAddr(m.address)}</code>
-                            <CopyButton text={m.address} />
+                          <div className="flex flex-col gap-0.5">
+                            <div className="flex items-center gap-2">
+                              <code className="text-sm text-white font-mono">{shortAddr(m.address)}</code>
+                              <CopyButton text={m.address} />
+                            </div>
+                            {m.worker_name && (
+                              <span className="text-[11px] text-gray-500 font-mono">{m.worker_name}</span>
+                            )}
                           </div>
                         </td>
+                        <td className="px-5 py-3.5">
+                          {m.payout_address ? (
+                            <div className="flex items-center gap-2">
+                              <code className="text-xs text-gray-400 font-mono">{shortAddr(m.payout_address)}</code>
+                              <CopyButton text={m.payout_address} />
+                            </div>
+                          ) : (
+                            <span className="text-gray-600 text-xs">—</span>
+                          )}
+                        </td>
+                        <td className="px-5 py-3.5 text-right text-gray-300 font-mono text-xs">{formatHashrate(m.hashrate ?? 0)}</td>
+                        <td className="px-5 py-3.5 text-right text-gray-400 font-mono text-xs">{m.valid_shares ?? 0}</td>
                         <td className="px-5 py-3.5 text-gray-400 text-sm">{serverObj?.flag} {serverObj?.name ?? m.server}</td>
                         <td className="px-5 py-3.5 text-gray-400 font-mono text-xs">{timeAgo(m.last_share, cs)}</td>
                         <td className="px-5 py-3.5">
@@ -941,7 +983,7 @@ export default function PoolDashboard() {
                     );
                   })}
                   {visibleMiners.length === 0 && (
-                    <tr><td colSpan={5} className="px-5 py-10 text-center text-gray-500">{cs ? 'Živý backend zatím nezveřejňuje poslední řádky minerů. Pro individuální statistiky vyhledejte adresu výše.' : 'Live backend is not exposing recent miner rows yet. Search by address above for individual stats.'}</td></tr>
+                    <tr><td colSpan={8} className="px-5 py-10 text-center text-gray-500">{cs ? 'Živý backend zatím nezveřejňuje poslední řádky minerů. Pro individuální statistiky vyhledejte adresu výše.' : 'Live backend is not exposing recent miner rows yet. Search by address above for individual stats.'}</td></tr>
                   )}
                 </tbody>
               </table>
