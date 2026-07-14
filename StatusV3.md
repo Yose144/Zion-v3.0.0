@@ -268,7 +268,10 @@ ZION_PPLNS_WINDOW_SIZE=500000   # for 10k miners
 ZION_VARDIFF_TARGET_SECS=15
 ZION_NONCE_COUNT=4096
 ZION_MAX_SESSIONS_PER_IP=100
+ZION_POOL_NO_SOLUTION_RECONNECT_COOLDOWN_SECS=300  # ban IP on NoSolution rate-limit
 ```
+
+> **PPLNS composite keys (2026-07-14):** PPLNS and telemetry registry now key on `miner_id/worker_name` instead of `miner_id` alone. Previously, all workers sharing the same `miner_id` (e.g. `local-miner`) had their payout address overwritten by whichever worker connected last — all payouts went to one worker. Each worker now gets its own PPLNS entry, telemetry entry, and payout address. Verified on-chain: 5070Ti, barker, and vega-smos receive payouts to their respective addresses.
 
 ### WARP (Non-EVM)
 ```bash
@@ -304,6 +307,8 @@ WARP_STELLAR_RPC=https://horizon.stellar.org
 
 | Date | Milestone | Key Commits |
 |------|-----------|-------------|
+| 07-14 | **PPLNS payout bug fix** — composite `miner_id/worker_name` keys (all workers sharing same miner_id had payouts sent to last-registered address) + telemetry registry composite keys | `bd6f1dfb3`, `85250086d` |
+| 07-14 | NoSolution reconnect cooldown — ban IP for 300s on rate-limit exceed | `49f8bfb57` |
 | 07-14 | Dashboard fix: web-next port 3001→3000, miner health endpoint 8444→8455 — 14/14 UP | `0c17d445c` |
 | 07-14 | AuXpow Metal backend — all 6 algorithms on Apple M1 (18–23 BH/s, 28–224x vs OpenCL) | `a3cbc790b` |
 | 07-13 | Stream Profit R1b — live API fetching | `e1c28689b` |

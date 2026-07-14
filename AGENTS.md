@@ -867,6 +867,23 @@ The deployed watchdog script (`/usr/local/bin/zion-watchdog.sh`) had two bugs ca
 
 Fixed script: `V3/deploy/new-server/zion-watchdog.sh`. Report: [`POOL_WATCHDOG_FIX_REPORT_2026-07-11.md`](./POOL_WATCHDOG_FIX_REPORT_2026-07-11.md)
 
+### PPLNS Composite Key Fix (2026-07-14) — CRITICAL PAYOUT BUG
+
+**Problem:** All workers sharing the same `miner_id` (e.g. `local-miner`) had their payout address overwritten by whichever worker connected last. PPLNS keyed on `miner_id` only, so `register_address` was called with just `miner_id` — the last worker to connect won. All payouts went to one worker's address regardless of who actually found shares.
+
+**Fix — PPLNS keys (`bd6f1dfb3`):** Changed PPLNS keys from `miner_id` to `format!("{miner_id}/{worker_name}")` in 4 locations:
+1. `register_address` (session hello) — line ~1958
+2. `record_share_with_diff` (ShareRelay) — line ~1893
+3. `record_share_with_diff` (valid share submission) — line ~2511
+4. `record_block_found` (block found) — line ~2833
+5. Dashboard API `address_for` — composite key with fallback to plain `miner_id` for legacy entries
+
+**Fix — Telemetry registry (`85250086d`):** `MinerTelemetryRegistry` was also keyed by `miner_id` only, causing all workers to overwrite each other's share counts, hashrate, and blocks_found. Changed `touch_session`, `record_job_result`, `record_block_found`, `record_no_solution` to key by composite `miner_id/worker_name`. Updated `build_miners_payload` and Prometheus metrics to split composite key for display.
+
+**Verified on-chain:** 5070Ti (`zion1z8h2z...`), barker (`zion1g5u0m3j5...`), and vega-smos (`zion1s6m2...`) now receive payouts to their respective addresses. Pre-fix, all payouts went to barker's address (last to connect).
+
+**NoSolution reconnect cooldown (`49f8bfb57`):** Also added `no_solution_reconnect_cooldown_secs` config (env `ZION_POOL_NO_SOLUTION_RECONNECT_COOLDOWN_SECS`, default 30, Edge set to 300). IPs that exceed the NoSolution rate limit are banned from reconnecting until the cooldown expires.
+
 ### AuxPow Merge Mining (2026-07-11)
 
 **AuXpow crate** (`AuXpow/`) — standalone merge-mining system integrated into the V3 pool server. Enables the pool to mine external coins (DCR, ALPH, KAS, ERG, RVN, ETC, EVR, MEWC, FLUX, CLORE, XMR, VRSC) via Stratum v1 / EthStratum / ZcashStratum proxy with profit-switching and circuit breaker.
