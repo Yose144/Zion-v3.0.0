@@ -9145,6 +9145,10 @@ refreshAll = async function() {
   _refreshInFlight = true;
   try {
     await _origRefreshAll.apply(this, arguments);
+    // Triple Stream panel data comes from miners-dashboard endpoint (has routing.sources)
+    apiFetch('/api/pool/miners-dashboard', {}, 8000).then(d => {
+      if (d && d.routing && typeof updateTripleStream === 'function') updateTripleStream(d);
+    }).catch(() => {});
     // Run secondary refreshes in parallel (non-blocking, fire-and-forget)
     refreshReadiness().catch(() => {});
     refreshServiceHealth().catch(() => {});
