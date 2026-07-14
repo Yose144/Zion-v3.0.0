@@ -10,6 +10,7 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
 <script>
 tailwind.config={theme:{extend:{colors:{
   'zion-gold':'rgb(255 215 0 / <alpha-value>)',
@@ -502,6 +503,12 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   color:#fff;
   background:linear-gradient(135deg,rgba(255,215,0,0.08),rgba(147,51,234,0.08));
 }
+.zion-nav-group > button i,
+.zion-nav-dropdown button i,
+.zion-quick-link i{
+  display:inline-block;width:1em;text-align:center;opacity:0.85;
+}
+.zion-quick-link i{margin-right:0.25rem;}
 .zion-quick-link{
   display:flex;align-items:center;gap:0.35rem;
   padding:0.35rem 0.55rem;font-size:0.7rem;font-weight:600;
@@ -624,83 +631,83 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     <div class="zion-nav-floor">
       <div class="zion-nav-brand hidden md:flex"><span class="logo-mark">Z</span> Command Center</div>
       <div class="zion-nav-group">
-        <button onclick="switchTab('overview')" id="tab-overview" class="tab-active">📊 Overview</button>
+        <button onclick="switchTab('overview')" id="tab-overview" class="tab-active"><i class="fas fa-gauge-high"></i> Overview</button>
       </div>
       <div class="zion-nav-group">
-        <button>🌐 Network ▾</button>
+        <button><i class="fas fa-globe"></i> Network ▾</button>
         <div class="zion-nav-dropdown">
-          <button onclick="switchTab('nodes')" id="tab-nodes">Nodes</button>
-          <button onclick="switchTab('topology')" id="tab-topology">Topology</button>
-          <button onclick="switchTab('orchestrator')" id="tab-orchestrator">Orchestrator</button>
+          <button onclick="switchTab('nodes')" id="tab-nodes"><i class="fas fa-circle-nodes"></i> Nodes</button>
+          <button onclick="switchTab('topology')" id="tab-topology"><i class="fas fa-sitemap"></i> Topology</button>
+          <button onclick="switchTab('orchestrator')" id="tab-orchestrator"><i class="fas fa-server"></i> Orchestrator</button>
         </div>
       </div>
       <div class="zion-nav-group">
-        <button>⛏ Pool ▾</button>
+        <button><i class="fas fa-users"></i> Pool ▾</button>
         <div class="zion-nav-dropdown">
-          <button onclick="switchTab('pool-miners')" id="tab-pool-miners">Miners</button>
-          <button onclick="switchTab('payout')" id="tab-payout">Payouts</button>
-          <button onclick="switchTab('revenue')" id="tab-revenue">Revenue</button>
-          <button onclick="switchTab('miner-live')" id="tab-miner-live">Live Miner</button>
+          <button onclick="switchTab('pool-miners')" id="tab-pool-miners"><i class="fas fa-users"></i> Miners</button>
+          <button onclick="switchTab('payout')" id="tab-payout"><i class="fas fa-money-bill"></i> Payouts</button>
+          <button onclick="switchTab('revenue')" id="tab-revenue"><i class="fas fa-chart-line"></i> Revenue</button>
+          <button onclick="switchTab('miner-live')" id="tab-miner-live"><i class="fas fa-tower-broadcast"></i> Live Miner</button>
         </div>
       </div>
       <div class="zion-nav-group">
-        <button>🔗 Layers ▾</button>
+        <button><i class="fas fa-layer-group"></i> Layers ▾</button>
         <div class="zion-nav-dropdown">
-          <button onclick="switchTab('l1')" id="tab-l1">L1 Consensus</button>
-          <button onclick="switchTab('l2')" id="tab-l2">L2 Bridge / DAO</button>
-          <button onclick="switchTab('l3')" id="tab-l3">L3 Advanced</button>
-          <button onclick="switchTab('warp')" id="tab-warp">WARP Bridge</button>
-          <button onclick="switchTab('l4')" id="tab-l4">L4 OASIS</button>
-          <button onclick="switchTab('l5')" id="tab-l5">L5 Humanitarian</button>
-          <button onclick="switchTab('l6')" id="tab-l6">L6 Space</button>
+          <button onclick="switchTab('l1')" id="tab-l1"><i class="fas fa-cubes"></i> L1 Consensus</button>
+          <button onclick="switchTab('l2')" id="tab-l2"><i class="fas fa-bridge"></i> L2 Bridge / DAO</button>
+          <button onclick="switchTab('l3')" id="tab-l3"><i class="fas fa-cube"></i> L3 Advanced</button>
+          <button onclick="switchTab('warp')" id="tab-warp"><i class="fas fa-bolt"></i> WARP Bridge</button>
+          <button onclick="switchTab('l4')" id="tab-l4"><i class="fas fa-leaf"></i> L4 OASIS</button>
+          <button onclick="switchTab('l5')" id="tab-l5"><i class="fas fa-heart"></i> L5 Humanitarian</button>
+          <button onclick="switchTab('l6')" id="tab-l6"><i class="fas fa-rocket"></i> L6 Space</button>
         </div>
       </div>
       <div class="zion-nav-group">
-        <button>🧠 AI ▾</button>
+        <button><i class="fas fa-brain"></i> AI ▾</button>
         <div class="zion-nav-dropdown">
-          <button onclick="switchTab('hiran')" id="tab-hiran">Hiran AI</button>
-          <button onclick="switchTab('ai-agents')" id="tab-ai-agents">AI Agents</button>
-          <button onclick="switchTab('ncl-jobs')" id="tab-ncl-jobs">NCL Jobs</button>
-          <button onclick="switchTab('poc-lab')" id="tab-poc-lab">PoC Lab</button>
+          <button onclick="switchTab('hiran')" id="tab-hiran"><i class="fas fa-brain"></i> Hiran AI</button>
+          <button onclick="switchTab('ai-agents')" id="tab-ai-agents"><i class="fas fa-robot"></i> AI Agents</button>
+          <button onclick="switchTab('ncl-jobs')" id="tab-ncl-jobs"><i class="fas fa-briefcase"></i> NCL Jobs</button>
+          <button onclick="switchTab('poc-lab')" id="tab-poc-lab"><i class="fas fa-flask"></i> PoC Lab</button>
         </div>
       </div>
       <div class="zion-nav-group">
-        <button>🔧 Ops ▾</button>
+        <button><i class="fas fa-gears"></i> Ops ▾</button>
         <div class="zion-nav-dropdown">
-          <button onclick="switchTab('services')" id="tab-services">Services Health</button>
-          <button onclick="switchTab('alerts')" id="tab-alerts">Alerts</button>
-          <button onclick="switchTab('logs')" id="tab-logs">Logs</button>
-          <button onclick="switchTab('backups')" id="tab-backups">Backups</button>
-          <button onclick="switchTab('fleet')" id="tab-fleet">Fleet</button>
-          <button onclick="switchTab('settings')" id="tab-settings">Settings</button>
+          <button onclick="switchTab('services')" id="tab-services"><i class="fas fa-heart-pulse"></i> Services Health</button>
+          <button onclick="switchTab('alerts')" id="tab-alerts"><i class="fas fa-bell"></i> Alerts</button>
+          <button onclick="switchTab('logs')" id="tab-logs"><i class="fas fa-file-lines"></i> Logs</button>
+          <button onclick="switchTab('backups')" id="tab-backups"><i class="fas fa-database"></i> Backups</button>
+          <button onclick="switchTab('fleet')" id="tab-fleet"><i class="fas fa-network-wired"></i> Fleet</button>
+          <button onclick="switchTab('settings')" id="tab-settings"><i class="fas fa-gear"></i> Settings</button>
         </div>
       </div>
       <div class="zion-action-bar md:hidden">
-        <button onclick="refreshAll()" class="zion-action-btn">🔄</button>
-        <button onclick="openSettingsModal()" class="zion-action-btn">⚙️</button>
+        <button onclick="refreshAll()" class="zion-action-btn"><i class="fas fa-rotate"></i></button>
+        <button onclick="openSettingsModal()" class="zion-action-btn"><i class="fas fa-gear"></i></button>
       </div>
     </div>
     <!-- Floor 2: Icon quick links -->
     <div class="zion-nav-floor">
-      <button onclick="switchTab('explorer')" id="tab-explorer" class="zion-quick-link zql-explorer"><span class="zql-dot"></span> Explorer</button>
-      <button onclick="switchTab('wallets')" id="tab-wallets" class="zion-quick-link zql-pool"><span class="zql-dot"></span> Wallets</button>
-      <button onclick="switchTab('dao')" id="tab-dao" class="zion-quick-link zql-dao"><span class="zql-dot"></span> DAO</button>
-      <button onclick="switchTab('bridge')" id="tab-bridge" class="zion-quick-link zql-bridge"><span class="zql-dot"></span> Bridge</button>
-      <button onclick="switchTab('bridge-validators')" id="tab-bridge-validators" class="zion-quick-link zql-bridge"><span class="zql-dot"></span> Validators</button>
-      <button onclick="switchTab('warp-swap')" id="tab-warp-swap" class="zion-quick-link zql-bridge"><span class="zql-dot"></span> Swap</button>
-      <button onclick="switchTab('cex')" id="tab-cex" class="zion-quick-link zql-ops"><span class="zql-dot"></span> CEX</button>
-      <button onclick="switchTab('charts')" id="tab-charts" class="zion-quick-link zql-ops"><span class="zql-dot"></span> Charts</button>
-      <button onclick="switchTab('events')" id="tab-events" class="zion-quick-link zql-network"><span class="zql-dot"></span> Events</button>
-      <button onclick="switchTab('metrics')" id="tab-metrics" class="zion-quick-link zql-network"><span class="zql-dot"></span> Metrics</button>
-      <button onclick="switchTab('database')" id="tab-database" class="zion-quick-link zql-settings"><span class="zql-dot"></span> DB</button>
-      <button onclick="switchTab('env')" id="tab-env" class="zion-quick-link zql-settings"><span class="zql-dot"></span> Env</button>
-      <button onclick="switchTab('genesis')" id="tab-genesis" class="zion-quick-link zql-layers"><span class="zql-dot"></span> Genesis</button>
-      <button onclick="switchTab('blockers')" id="tab-blockers" class="zion-quick-link zql-layers"><span class="zql-dot"></span> Blockers</button>
-      <button onclick="switchTab('ops')" id="tab-ops" class="zion-quick-link zql-ops"><span class="zql-dot"></span> Ops</button>
-      <button onclick="switchTab('servers-setup')" id="tab-servers-setup" class="zion-quick-link zql-ops"><span class="zql-dot"></span> Servers</button>
-      <button onclick="switchTab('launch-day')" id="tab-launch-day" class="zion-quick-link zql-ai"><span class="zql-dot"></span> Launch</button>
-      <button onclick="switchTab('wizard')" id="tab-wizard" class="zion-quick-link zql-ai"><span class="zql-dot"></span> Wizard</button>
-      <button onclick="switchTab('agent')" id="tab-agent" class="zion-quick-link zql-ai"><span class="zql-dot"></span> Agent</button>
+      <button onclick="switchTab('explorer')" id="tab-explorer" class="zion-quick-link zql-explorer"><i class="fas fa-magnifying-glass"></i> Explorer</button>
+      <button onclick="switchTab('wallets')" id="tab-wallets" class="zion-quick-link zql-pool"><i class="fas fa-wallet"></i> Wallets</button>
+      <button onclick="switchTab('dao')" id="tab-dao" class="zion-quick-link zql-dao"><i class="fas fa-landmark"></i> DAO</button>
+      <button onclick="switchTab('bridge')" id="tab-bridge" class="zion-quick-link zql-bridge"><i class="fas fa-bridge"></i> Bridge</button>
+      <button onclick="switchTab('bridge-validators')" id="tab-bridge-validators" class="zion-quick-link zql-bridge"><i class="fas fa-user-shield"></i> Validators</button>
+      <button onclick="switchTab('warp-swap')" id="tab-warp-swap" class="zion-quick-link zql-bridge"><i class="fas fa-arrow-right-arrow-left"></i> Swap</button>
+      <button onclick="switchTab('cex')" id="tab-cex" class="zion-quick-link zql-ops"><i class="fas fa-building-columns"></i> CEX</button>
+      <button onclick="switchTab('charts')" id="tab-charts" class="zion-quick-link zql-ops"><i class="fas fa-chart-line"></i> Charts</button>
+      <button onclick="switchTab('events')" id="tab-events" class="zion-quick-link zql-network"><i class="fas fa-calendar"></i> Events</button>
+      <button onclick="switchTab('metrics')" id="tab-metrics" class="zion-quick-link zql-network"><i class="fas fa-chart-bar"></i> Metrics</button>
+      <button onclick="switchTab('database')" id="tab-database" class="zion-quick-link zql-settings"><i class="fas fa-database"></i> DB</button>
+      <button onclick="switchTab('env')" id="tab-env" class="zion-quick-link zql-settings"><i class="fas fa-file-code"></i> Env</button>
+      <button onclick="switchTab('genesis')" id="tab-genesis" class="zion-quick-link zql-layers"><i class="fas fa-bolt"></i> Genesis</button>
+      <button onclick="switchTab('blockers')" id="tab-blockers" class="zion-quick-link zql-layers"><i class="fas fa-triangle-exclamation"></i> Blockers</button>
+      <button onclick="switchTab('ops')" id="tab-ops" class="zion-quick-link zql-ops"><i class="fas fa-wrench"></i> Ops</button>
+      <button onclick="switchTab('servers-setup')" id="tab-servers-setup" class="zion-quick-link zql-ops"><i class="fas fa-server"></i> Servers</button>
+      <button onclick="switchTab('launch-day')" id="tab-launch-day" class="zion-quick-link zql-ai"><i class="fas fa-rocket"></i> Launch</button>
+      <button onclick="switchTab('wizard')" id="tab-wizard" class="zion-quick-link zql-ai"><i class="fas fa-wand-magic-sparkles"></i> Wizard</button>
+      <button onclick="switchTab('agent')" id="tab-agent" class="zion-quick-link zql-ai"><i class="fas fa-user-astronaut"></i> Agent</button>
     </div>
   </nav>
 
