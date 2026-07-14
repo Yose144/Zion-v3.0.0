@@ -37,14 +37,14 @@ export default function LoginPage() {
   }, [zionWallet.initialized, zionWallet.wallets.length, showModal, authenticated]);
 
   return (
-    <div className="relative min-h-[80vh] flex items-center justify-center px-4 py-16">
+    <div className="relative min-h-screen flex items-center justify-center px-4 pt-32 pb-20">
       {/* Background glow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 h-64 w-64 rounded-full bg-zion-cyan/10 blur-3xl" />
         <div className="absolute bottom-1/4 right-1/4 h-64 w-64 rounded-full bg-zion-purple/10 blur-3xl" />
       </div>
 
-      <div className="relative w-full max-w-lg">
+      <div className="relative w-full max-w-lg z-10">
         {/* Logo + title */}
         <div className="text-center mb-8">
           <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl border border-zion-cyan/30 bg-gradient-to-br from-zion-cyan/20 to-zion-purple/20 mb-4">

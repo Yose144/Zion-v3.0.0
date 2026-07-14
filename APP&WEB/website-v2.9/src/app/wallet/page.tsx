@@ -7,7 +7,7 @@ import { useZionWallet } from '@/contexts/ZionWalletContext';
 import {
   Wallet, Plus, Import, Send, RefreshCw, Trash2, Copy, Eye, EyeOff,
   Shield, KeyRound, Download, BookOpen, Lock, Fingerprint,
-  Zap, Globe2, Usb, AlertTriangle, Activity,
+  Zap, Globe2, Usb, AlertTriangle, Activity, ArrowRight,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
@@ -113,6 +113,8 @@ export default function WalletPage() {
   const [exportedSecret, setExportedSecret] = useState('');
   const [showSecret, setShowSecret] = useState(false);
   const [txResult, setTxResult] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+  const [localError, setLocalError] = useState('');
 
   if (!initialized) {
     return (
@@ -131,15 +133,18 @@ export default function WalletPage() {
 
   const handleCreate = async () => {
     if (!password || password.length < 8) {
-      alert(cs ? 'Heslo musí mít alespoň 8 znaků' : 'Password must be at least 8 characters');
+      setSuccessMsg('');
+      setLocalError(cs ? 'Heslo musí mít alespoň 8 znaků' : 'Password must be at least 8 characters');
       return;
     }
     try {
       await createWallet(walletName, password);
       setPassword('');
-      alert(cs ? 'Peněženka vytvořena!' : 'Wallet created successfully!');
+      setSuccessMsg(cs ? 'Peněženka vytvořena! Nyní se můžete přihlásit.' : 'Wallet created! You can now sign in.');
+      setLocalError('');
     } catch (e: any) {
-      alert(e.message);
+      setSuccessMsg('');
+      setLocalError(e.message);
     }
   };
 
@@ -420,9 +425,18 @@ export default function WalletPage() {
         {/* ── WALLET UI ── */}
         <section className="relative z-10 max-w-4xl mx-auto">
           <div className="space-y-8">
-            {error && (
+            {(error || localError) && (
               <div className="zion-rainbow-sub p-4 text-red-300" style={{ '--rc': '239, 68, 68' } as CSSProperties}>
-                {error}
+                {localError || error}
+              </div>
+            )}
+            {successMsg && (
+              <div className="zion-rainbow-sub p-4 text-emerald-300" style={{ '--rc': '16, 185, 129' } as CSSProperties}>
+                <p>{successMsg}</p>
+                <Link href="/login" className="inline-flex items-center gap-2 text-emerald-200 hover:text-emerald-100 font-medium mt-2">
+                  <ArrowRight className="w-4 h-4" />
+                  {cs ? 'Přejít na přihlášení' : 'Go to Login'}
+                </Link>
               </div>
             )}
 
@@ -566,10 +580,24 @@ export default function WalletPage() {
                       <input
                         type="password"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) => { setPassword(e.target.value); setLocalError(''); setSuccessMsg(''); }}
                         className="w-full bg-black/60 border border-white/10 rounded-2xl px-4 py-2 text-white focus:border-zion-cyan focus:outline-none"
                       />
                     </div>
+                    {localError && (
+                      <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-400">
+                        {localError}
+                      </div>
+                    )}
+                    {successMsg && (
+                      <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm text-emerald-400">
+                        <p className="mb-2">{successMsg}</p>
+                        <Link href="/login" className="inline-flex items-center gap-2 text-emerald-300 hover:text-emerald-200 font-medium">
+                          <ArrowRight className="w-4 h-4" />
+                          {cs ? 'Přejít na přihlášení' : 'Go to Login'}
+                        </Link>
+                      </div>
+                    )}
                     <button
                       onClick={handleCreate}
                       disabled={loading}
