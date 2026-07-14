@@ -44,8 +44,8 @@
 #include <asm/hwcap.h>
 #endif
 #else
-#include <cpuid.h>
-#include <x86intrin.h>
+/* <cpuid.h> and <x86intrin.h> are already included by compat.h;
+   re-including <cpuid.h> causes __get_cpuid_max redefinition on GCC 9. */
 #endif // !WIN32
 
 /* boost stubbed by compat.h */
