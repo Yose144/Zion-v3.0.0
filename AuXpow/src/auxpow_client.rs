@@ -1663,9 +1663,10 @@ impl AuxPowClient {
             };
 
             // Build nonce2: miner_nonce(LE 4B) + zero padding.
-            // For VRSC (VerusHash/PBaaS v7+): nonceSpace = 15 bytes total.
-            //   nonce2 = nonceSpace - len(extranonce1) = 15 - en_bytes
-            //   The pool reconstructs nonceSpace = extranonce1 + nonce2 (15 bytes).
+            // For VRSC (VerusHash/PBaaS v7+): nonce field = 32 bytes total.
+            //   nonce2 = 32 - len(extranonce1) = 28 bytes (for en1=4)
+            //   The pool reconstructs nonce_field = extranonce1 + nonce2 (32 bytes).
+            //   nonce2 layout: [miner_nonce(4B)][padding(24B)] (miner_nonce at START)
             // For standard Zcash (FLUX/Equihash): nonce field = 32 bytes total.
             //   nonce2 = 32 - en_bytes
             let en1_hex = hex::encode(self.extranonce1.lock().await.clone());
@@ -1679,32 +1680,15 @@ impl AuxPowClient {
             };
             let nonce2_str = {
                 let en_bytes = en1_hex.len() / 2;
-                // VRSC: 15-byte nonceSpace; standard Zcash: 32-byte nonce field
-                let nonce_space_total = if self.profile.algorithm.eq_ignore_ascii_case("verushash") {
-                    15usize
-                } else {
-                    32usize
-                };
-                let nonce2_bytes = nonce_space_total.saturating_sub(en_bytes);
+                // All Zcash/Verushash: 32-byte nonce field
+                let nonce_field_total = 32usize;
+                let nonce2_bytes = nonce_field_total.saturating_sub(en_bytes);
                 let nonce2_hex_len = nonce2_bytes * 2;
-                // VRSC nonceSpace layout: [en1][padding][miner_nonce]
-                //   → nonce2 = [padding][miner_nonce] (miner_nonce at END)
-                // Standard Zcash nonce: [en1][miner_nonce][padding]
-                //   → nonce2 = [miner_nonce][padding] (miner_nonce at START)
-                let is_verushash = self.profile.algorithm.eq_ignore_ascii_case("verushash");
-                let mut out = String::new();
-                if is_verushash {
-                    let pad_len = nonce2_hex_len.saturating_sub(nonce2_4b.len());
-                    if pad_len > 0 {
-                        out.push_str(&"0".repeat(pad_len));
-                    }
-                    out.push_str(&nonce2_4b);
-                } else {
-                    out.push_str(&nonce2_4b);
-                    let pad_len = nonce2_hex_len.saturating_sub(out.len());
-                    if pad_len > 0 {
-                        out.push_str(&"0".repeat(pad_len));
-                    }
+                // nonce2 = [miner_nonce][padding] (miner_nonce at START)
+                let mut out = nonce2_4b.clone();
+                let pad_len = nonce2_hex_len.saturating_sub(out.len());
+                if pad_len > 0 {
+                    out.push_str(&"0".repeat(pad_len));
                 }
                 if out.len() > nonce2_hex_len {
                     out.truncate(nonce2_hex_len);

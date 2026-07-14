@@ -66,6 +66,27 @@ void verushash_hash(
     free(buf);
 }
 
+/*
+ * Compute VerusHash v2.2 of a complete block header (no nonce appended).
+ * The caller is responsible for embedding the nonce in the header's nonce
+ * field (offset 108, 32 bytes) and/or the solution's nonceSpace before
+ * calling this function.  Writes exactly 32 bytes to output.
+ *
+ * This is the correct entry point for VRSC merge-mining where the full
+ * 1487-byte block header (including the 32-byte nonce field and the
+ * 1344-byte solution with embedded nonceSpace) is hashed as-is.
+ */
+void verushash_hash_raw(
+    const uint8_t* header,
+    size_t         header_len,
+    uint8_t*       output)
+{
+    CVerusHashV2 hasher(SOLUTION_VERUSHHASH_V2_2);
+    hasher.Reset();
+    hasher.Write(header, header_len);
+    hasher.Finalize2b(output);
+}
+
 /* Return 1 if hash <= target (big-endian comparison), 0 otherwise. */
 int32_t verushash_verify(
     const uint8_t* header,
