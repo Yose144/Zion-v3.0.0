@@ -547,6 +547,13 @@ impl GpuBackend for MetalBackend {
 
 // ─── Pearl PoUW GPU mining ──────────────────────────────────────────────────
 
+impl MetalBackend {
+    /// Public accessor for device name (used by AuxPowClient::with_gpu).
+    pub fn device_name_pub(&self) -> &str {
+        &self.device_name
+    }
+}
+
 /// Input data for Pearl PoUW GPU mining.
 pub struct PearlPouwGpuInput<'a> {
     pub noised_a: &'a [i32],    // m×k, row-major
