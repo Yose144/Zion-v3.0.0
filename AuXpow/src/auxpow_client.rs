@@ -30,59 +30,6 @@ use tracing::{debug, info, warn};
 
 use crate::types::{CoinProfile, ExternalCoin};
 
-// ─── Pearl PlainProof bincode structures ───────────────────────────────────
-// These mirror the Pearl zk-pow PlainProof struct for bincode serialization.
-// See: https://github.com/pearl-research-labs/pearl/zk-pow/src/ffi/plain_proof.rs
-// The pool deserializes plain_proof via PlainProof::deserialize_compat which
-// uses bincode::deserialize. We replicate the exact struct layout so our
-// placeholder proof passes deserialization (but not Merkle/jackpot verification).
-
-/// BLAKE3 chunk length (1024 bytes) — used in MerkleProof leaf_data.
-const BLAKE3_CHUNK_LEN: usize = 1024;
-/// BLAKE3 digest size (32 bytes).
-const BLAKE3_DIGEST_SIZE: usize = 32;
-
-/// Wrapper for [u8; 1024] with manual Serialize (serde doesn't support large arrays).
-#[derive(Clone)]
-struct Blake3Chunk([u8; BLAKE3_CHUNK_LEN]);
-
-impl serde::Serialize for Blake3Chunk {
-    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        use serde::ser::SerializeTuple;
-        let mut seq = serializer.serialize_tuple(BLAKE3_CHUNK_LEN)?;
-        for b in &self.0 {
-            seq.serialize_element(b)?;
-        }
-        seq.end()
-    }
-}
-
-#[derive(Serialize)]
-struct PearlMerkleProof {
-    leaf_data: Vec<Blake3Chunk>,
-    leaf_indices: Vec<usize>,
-    total_leaves: usize,
-    root: [u8; BLAKE3_DIGEST_SIZE],
-    siblings: Vec<[u8; BLAKE3_DIGEST_SIZE]>,
-}
-
-#[derive(Serialize)]
-struct PearlMatrixMerkleProof {
-    proof: PearlMerkleProof,
-    row_indices: Vec<usize>,
-}
-
-#[derive(Serialize)]
-struct PearlPlainProof {
-    m: usize,
-    n: usize,
-    k: usize,
-    noise_rank: usize,
-    a: PearlMatrixMerkleProof,
-    bt: PearlMatrixMerkleProof,
-    moe: Option<()>, // None for dense (non-MoE) proofs
-}
-
 /// Stratum protocol variant.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StratumProtocol {
@@ -2089,49 +2036,113 @@ impl AuxPowClient {
             //   {job_id, plain_proof (base64)}
             //
             // plain_proof is a bincode-serialized PearlPlainProof, base64-encoded.
-            // The pool deserializes it via PlainProof::deserialize_compat (bincode).
+            // The pool deserializes it via PlainProof::deserialize_compat (bincode),
+            // then verifies Merkle proofs and jackpot hash.
             //
-            // With the BLAKE3 placeholder hasher, we construct a proof with empty
-            // Merkle proofs (no leaf_data, no siblings). This passes bincode
-            // deserialization but will fail Merkle/jackpot verification.
-            // The real proof requires the full PoUW MatMul kernel.
-            let proof = PearlPlainProof {
-                m: 512,
-                n: 512,
-                k: 4096,
-                noise_rank: 256,
-                a: PearlMatrixMerkleProof {
-                    proof: PearlMerkleProof {
-                        leaf_data: Vec::new(),
-                        leaf_indices: Vec::new(),
-                        total_leaves: 512,
-                        root: [0u8; BLAKE3_DIGEST_SIZE],
-                        siblings: Vec::new(),
-                    },
-                    row_indices: Vec::new(),
-                },
-                bt: PearlMatrixMerkleProof {
-                    proof: PearlMerkleProof {
-                        leaf_data: Vec::new(),
-                        leaf_indices: Vec::new(),
-                        total_leaves: 512,
-                        root: [0u8; BLAKE3_DIGEST_SIZE],
-                        siblings: Vec::new(),
-                    },
-                    row_indices: Vec::new(),
-                },
-                moe: None, // dense (non-MoE) proof
-            };
+            // We use the full PoUW MatMul kernel (pearl_pouw module) to:
+            //   1. Generate random matrices A, B
+            //   2. Compute noise (EL·ER, FL·FR)
+            //   3. Tiled MatMul with jackpot hash
+            //   4. Build Merkle proofs for sampled rows
+            //   5. Serialize via bincode → base64
+            //
+            // Mining config: default mainnet (m=256, n=512, k=1024, rank=32)
+            // Difficulty: from job target (share difficulty, not block nbits)
+            let job = self.current_job().await;
+            let header_bytes = job
+                .as_ref()
+                .map(|j| j.header_bytes.clone())
+                .unwrap_or_default();
 
-            let proof_bytes = bincode::serialize(&proof).unwrap_or_default();
-            let plain_proof = base64::Engine::encode(
-                &base64::engine::general_purpose::STANDARD,
-                &proof_bytes,
-            );
+            // Parse IncompleteBlockHeader from 76-byte job header
+            let header = crate::pearl_pouw::IncompleteBlockHeader::from_bytes(&header_bytes);
+            let config = crate::pearl_pouw::MiningConfiguration::default_mainnet();
+
+            // Difficulty bound from job target (share difficulty)
+            // The pool sends target in notify — use it directly as difficulty bound.
+            let difficulty_bound = job
+                .as_ref()
+                .map(|j| j.target_bytes)
+                .unwrap_or([0xFFu8; 32]);
+
+            // Mine a proof (scan nonces until found or max_attempts reached)
+            // For unit tests, use 0 attempts (submit dummy proof).
+            // For E2E, use 1000 attempts.
+            let m = 256usize;
+            let n = 512usize;
+            let k = config.common_dim as usize;
+            let rank = config.rank as usize;
+            let max_attempts = std::env::var("AUXPOW_PRL_MAX_ATTEMPTS")
+                .ok()
+                .and_then(|s| s.parse::<u64>().ok())
+                .unwrap_or(1000);
 
             println!(
-                "auxpow: PRL submit — job={} nonce={} proof_b64_len={} raw_len={}",
-                job_id, nonce, plain_proof.len(), proof_bytes.len()
+                "auxpow: PRL mining — m={} n={} k={} rank={} attempts={} header_len={}",
+                m, n, k, rank, max_attempts, header_bytes.len()
+            );
+
+            let mined = crate::pearl_pouw::mine(
+                m, n, k, rank,
+                &header,
+                &config,
+                &difficulty_bound,
+                max_attempts,
+            );
+
+            let plain_proof = match mined {
+                Some(proof) => {
+                    println!(
+                        "auxpow: PRL mined proof — b64_len={} jackpot={}",
+                        proof.plain_proof_b64.len(),
+                        hex::encode(proof.jackpot_hash)
+                    );
+                    proof.plain_proof_b64
+                }
+                None => {
+                    // No share found in max_attempts — construct a dummy proof
+                    // that will be rejected by the pool (expected for high difficulty)
+                    println!(
+                        "auxpow: PRL no share found in {} attempts — submitting dummy",
+                        max_attempts
+                    );
+                    // Build a minimal proof with empty Merkle data
+                    let dummy = crate::pearl_pouw::PearlPlainProof {
+                        m, n, k,
+                        noise_rank: rank,
+                        a: crate::pearl_pouw::PearlMatrixMerkleProof {
+                            proof: crate::pearl_pouw::MerkleProof {
+                                leaf_data: vec![],
+                                leaf_indices: vec![],
+                                total_leaves: m,
+                                root: [0u8; 32],
+                                siblings: vec![],
+                            },
+                            row_indices: vec![],
+                        },
+                        bt: crate::pearl_pouw::PearlMatrixMerkleProof {
+                            proof: crate::pearl_pouw::MerkleProof {
+                                leaf_data: vec![],
+                                leaf_indices: vec![],
+                                total_leaves: n,
+                                root: [0u8; 32],
+                                siblings: vec![],
+                            },
+                            row_indices: vec![],
+                        },
+                        moe: None,
+                    };
+                    let bytes = bincode::serialize(&dummy).unwrap_or_default();
+                    base64::Engine::encode(
+                        &base64::engine::general_purpose::STANDARD,
+                        &bytes,
+                    )
+                }
+            };
+
+            println!(
+                "auxpow: PRL submit — job={} nonce={} proof_b64_len={}",
+                job_id, nonce, plain_proof.len()
             );
 
             ("mining.submit", json!({
