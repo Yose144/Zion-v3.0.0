@@ -1,4 +1,5 @@
-import { Pickaxe, Power, RotateCw, Square, Flame } from 'lucide-react';
+import { useState } from 'react';
+import { Pickaxe, Power, RotateCw, Square, Flame, Cpu, Zap } from 'lucide-react';
 import type { V3Status } from '../lib/api';
 import { controlAction } from '../lib/api';
 
@@ -23,10 +24,29 @@ export default function MinerPanel({ miner }: Props) {
   const running = m.running;
   const algo = m.current_algorithm ?? 'deeksha_lite_fire';
   const algoLabel = ALGO_LABELS[algo] ?? algo;
+  const [busy, setBusy] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const doAction = async (action: string, env?: Record<string, string>) => {
+    setBusy(action);
+    setMsg(`Running ${action}…`);
+    try {
+      const res = await controlAction(action, env);
+      if (res?.ok) {
+        setMsg(`✓ ${action}`);
+      } else {
+        setMsg(`✗ ${action}: ${res?.error || 'failed'}`);
+      }
+    } catch (e: any) {
+      setMsg(`✗ ${action}: ${e.message || 'error'}`);
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const switchAlgo = (newAlgo: string) => {
     if (newAlgo === algo) return;
-    controlAction('restart-miner', { ZION_MINER_ALGORITHM: newAlgo });
+    doAction('restart-miner', { ZION_MINER_ALGORITHM: newAlgo });
   };
 
   return (
@@ -67,8 +87,9 @@ export default function MinerPanel({ miner }: Props) {
               <button
                 key={a.key}
                 onClick={() => switchAlgo(a.key)}
+                disabled={!!busy}
                 title={a.label}
-                className={`flex-1 py-1 rounded text-[10px] font-semibold border transition ${algo === a.key ? a.class : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'}`}
+                className={`flex-1 py-1 rounded text-[10px] font-semibold border transition disabled:opacity-40 ${algo === a.key ? a.class : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'}`}
               >
                 {a.key === 'deeksha_lite_fire' && <Flame size={10} className="inline mr-0.5" />}
                 {a.label}
@@ -78,17 +99,48 @@ export default function MinerPanel({ miner }: Props) {
         </div>
       </div>
 
-      <div className="flex gap-2">
-        <button onClick={() => controlAction('start-miner')} className="flex-1 py-2 rounded-lg bg-emerald-700/40 hover:bg-emerald-700/60 border border-emerald-500/30 text-xs font-semibold transition flex items-center justify-center gap-1.5">
-          <Power size={12} /> Start
+      <div className="grid grid-cols-2 gap-2 mb-2">
+        <button
+          onClick={() => doAction('start-miner-gpu')}
+          disabled={!!busy}
+          className="py-2 rounded-lg bg-purple-700/40 hover:bg-purple-700/60 border border-purple-500/30 text-xs font-semibold transition flex items-center justify-center gap-1.5 disabled:opacity-40"
+        >
+          <Zap size={12} /> GPU
         </button>
-        <button onClick={() => controlAction('stop-miner')} className="flex-1 py-2 rounded-lg bg-red-700/40 hover:bg-red-700/60 border border-red-500/30 text-xs font-semibold transition flex items-center justify-center gap-1.5">
-          <Square size={12} /> Stop
-        </button>
-        <button onClick={() => controlAction('restart-miner')} className="flex-1 py-2 rounded-lg bg-amber-700/40 hover:bg-amber-700/60 border border-amber-500/30 text-xs font-semibold transition flex items-center justify-center gap-1.5">
-          <RotateCw size={12} /> Restart
+        <button
+          onClick={() => doAction('start-miner-cpu')}
+          disabled={!!busy}
+          className="py-2 rounded-lg bg-blue-700/40 hover:bg-blue-700/60 border border-blue-500/30 text-xs font-semibold transition flex items-center justify-center gap-1.5 disabled:opacity-40"
+        >
+          <Cpu size={12} /> CPU
         </button>
       </div>
+
+      <div className="flex gap-2">
+        <button
+          onClick={() => doAction('start-miner')}
+          disabled={!!busy}
+          className="flex-1 py-2 rounded-lg bg-emerald-700/40 hover:bg-emerald-700/60 border border-emerald-500/30 text-xs font-semibold transition flex items-center justify-center gap-1.5 disabled:opacity-40"
+        >
+          <Power size={12} /> Start
+        </button>
+        <button
+          onClick={() => doAction('stop-miner')}
+          disabled={!!busy}
+          className="flex-1 py-2 rounded-lg bg-red-700/40 hover:bg-red-700/60 border border-red-500/30 text-xs font-semibold transition flex items-center justify-center gap-1.5 disabled:opacity-40"
+        >
+          <Square size={12} /> Stop
+        </button>
+        <button
+          onClick={() => doAction('restart-miner')}
+          disabled={!!busy}
+          className="flex-1 py-2 rounded-lg bg-amber-700/40 hover:bg-amber-700/60 border border-amber-500/30 text-xs font-semibold transition flex items-center justify-center gap-1.5 disabled:opacity-40"
+        >
+          <RotateCw size={12} className={busy === 'restart-miner' ? 'animate-spin' : ''} /> Restart
+        </button>
+      </div>
+
+      {msg && <div className="mt-2 text-[10px] font-mono text-gray-400 truncate">{msg}</div>}
     </section>
   );
 }

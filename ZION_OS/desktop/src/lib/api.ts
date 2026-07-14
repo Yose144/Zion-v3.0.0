@@ -608,3 +608,158 @@ export async function fetchAlertsHistory(): Promise<{ alerts: AlertItem[] } | nu
 export async function fetchControls(): Promise<{ actions: string[]; topology: string } | null> {
   return apiFetch<{ actions: string[]; topology: string }>('/api/controls');
 }
+
+// ── AuxPow Config ───────────────────────────────────────────────────
+
+export interface AuxPowConfig {
+  mode: 'zion' | 'auto' | 'force';
+  enabled: boolean;
+  coin: string;
+  pool_preference: string;
+  region: string;
+  split_zion: number;
+  split_external: number;
+  wallet: string;
+  worker_name: string;
+  coin_wallets: Record<string, string>;
+  stream_profit_enabled: boolean;
+  stream_profit_provider: string;
+  stream_profit_interval: string;
+  stream_profit_hysteresis: string;
+  stream_profit_sources: string;
+}
+
+export interface AuxPowConfigResponse {
+  ok: boolean;
+  config: AuxPowConfig;
+  supported_coins: string[];
+  supported_preferences: string[];
+  supported_stream_sources: string[];
+  supported_stream_providers: string[];
+  env_file: string;
+  env_file_exists: boolean;
+}
+
+export async function fetchAuxPowConfig(): Promise<AuxPowConfigResponse | null> {
+  return apiFetch<AuxPowConfigResponse>('/api/pool/auxpow');
+}
+
+export async function updateAuxPowConfig(payload: Partial<AuxPowConfig> & Record<string, unknown>): Promise<{ ok: boolean; error?: string; message?: string; config?: AuxPowConfig } | null> {
+  return apiPost<{ ok: boolean; error?: string; message?: string; config?: AuxPowConfig }>('/api/pool/auxpow', payload);
+}
+
+export async function restartAuxPowPool(): Promise<{ ok: boolean; error?: string; message?: string } | null> {
+  return apiPost<{ ok: boolean; error?: string; message?: string }>('/api/pool/auxpow/restart', {});
+}
+
+// ── Payout Status ───────────────────────────────────────────────────
+
+export interface PayoutMiner {
+  address: string;
+  worker_name?: string;
+  algorithm?: string;
+  backend?: string;
+  blocks_found: number;
+  hashrate: number;
+  hashrate_1h?: number;
+  hashrate_24h?: number;
+  invalid_shares: number;
+  last_seen: number;
+  last_share?: number;
+  payout_address: string;
+  pending_balance: number;
+  valid_shares: number;
+  paid_total_atomic: number;
+  paid_total: number;
+  on_chain_balance_zion: number;
+}
+
+export interface PayoutStatus {
+  pool_wallet: string | null;
+  pool_wallet_balance: number | null;
+  payout_enabled: boolean;
+  fee_split: string | null;
+  blocks_found: number;
+  last_block_height: number | null;
+  last_payout_time: string | null;
+  last_payout_tx: string | null;
+  miner_wallet: string | null;
+  humanitarian_wallet: string | null;
+  issobella_wallet: string | null;
+  pool_fee_wallet: string | null;
+  miner_payouts: unknown[];
+  fee_payouts: unknown[];
+  errors: string[];
+  payouts: unknown[];
+  pending_payouts: number;
+  miner_perf: Record<string, unknown>;
+  pool_stats: Record<string, unknown>;
+  miners: PayoutMiner[];
+  topology: string;
+  pool_health: {
+    local_rpc_ok: boolean;
+    edge_rpc_ok: boolean;
+    edge_stats_ok: boolean;
+    tailscale_ok: boolean;
+    last_update: string;
+    error_msg: string | null;
+  };
+  recent_payouts: unknown[];
+  session_stats: {
+    active_sessions?: number;
+    total_shares_1h?: number;
+    blocks_24h?: number;
+    accept_rate_pct?: number;
+  };
+  payout_validation: {
+    valid_addresses: number;
+    invalid_addresses: number;
+    missing_addresses: number;
+    last_error: string | null;
+    safe_to_payout: boolean;
+  };
+}
+
+export async function fetchPayoutStatus(): Promise<PayoutStatus | null> {
+  return apiFetch<PayoutStatus>('/api/payout');
+}
+
+// ── Log Files ───────────────────────────────────────────────────────
+
+export interface LogFileInfo {
+  name: string;
+  svc_id: string;
+  size_kb: number;
+  modified: string;
+}
+
+export async function fetchLogFiles(): Promise<{ files: LogFileInfo[]; log_dir: string } | null> {
+  return apiFetch<{ files: LogFileInfo[]; log_dir: string }>('/api/log-files');
+}
+
+// SSE log stream — returns an EventSource-like callback
+export function streamLog(svcId: string, lines: number, onLine: (line: string) => void, onError?: (e: Event) => void): () => void {
+  const url = `${API_BASE}/api/logs/stream?svc=${encodeURIComponent(svcId)}&lines=${lines}`;
+  const es = new EventSource(url);
+  es.onmessage = (e) => onLine(e.data);
+  if (onError) es.onerror = onError;
+  return () => es.close();
+}
+
+// ── Watchdog ────────────────────────────────────────────────────────
+
+export async function toggleWatchdog(): Promise<{ enabled: boolean } | null> {
+  return apiPost<{ enabled: boolean }>('/api/watchdog/toggle', {});
+}
+
+// ── Orchestrator ────────────────────────────────────────────────────
+
+export async function orchestratorControl(action: 'start' | 'stop' | 'restart', service: string): Promise<{ ok: boolean; error?: string } | null> {
+  return apiPost<{ ok: boolean; error?: string }>(`/api/orchestrator/${action}`, { service });
+}
+
+// ── Miner live stats ────────────────────────────────────────────────
+
+export async function fetchMinerLive(): Promise<Record<string, unknown> | null> {
+  return apiFetch<Record<string, unknown>>('/api/miner/live');
+}
