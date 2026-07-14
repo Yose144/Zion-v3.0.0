@@ -1,25 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Activity, Cpu } from 'lucide-react';
+import { apiFetch } from '../lib/api';
+import type { PoolMinersDashboard } from '../lib/api';
 
-const EDGE_WEB = 'https://zion.cz';
 const STORAGE_KEY = 'zion-dashboard-pool-hashrate';
 const MAX_POINTS = 60; // 5 min @ 5s interval
-
-interface PoolStats {
-  ok: boolean;
-  aggregate?: {
-    hashrate: number;
-    hashrate_24h: number;
-    active_miners: number;
-    blocks_found: number;
-  };
-  runtime?: {
-    network_hashrate: number;
-    difficulty: number;
-    chain_height: number;
-  };
-}
 
 interface HistoryPoint {
   time: string;
@@ -45,6 +31,7 @@ function saveHistory(h: HistoryPoint[]) {
 }
 
 function formatHr(h: number): string {
+  if (!h || h <= 0) return '—';
   if (h >= 1e9) return `${(h / 1e9).toFixed(2)} GH/s`;
   if (h >= 1e6) return `${(h / 1e6).toFixed(2)} MH/s`;
   if (h >= 1e3) return `${(h / 1e3).toFixed(2)} KH/s`;
@@ -63,18 +50,15 @@ export default function HashrateChart() {
 
   const refresh = useCallback(async () => {
     try {
-      const r = await fetch(`${EDGE_WEB}/api/pool/stats`, {
-        signal: AbortSignal.timeout(8000),
-      });
-      if (!r.ok) return;
-      const d: PoolStats = await r.json();
-      const hr = d.aggregate?.hashrate ?? 0;
-      const nhr = d.runtime?.network_hashrate ?? 0;
+      const d = await apiFetch<PoolMinersDashboard>('/api/pool/miners-dashboard', { timeout: 8000 });
+      if (!d || !d.pool_info) return;
+      const hr = d.pool_info.hashrate_live ?? 0;
+      const nhr = d.pool_info.network_hashrate ?? 0;
       setPoolHr(hr);
-      setPoolHr24h(d.aggregate?.hashrate_24h ?? 0);
+      setPoolHr24h(d.pool_info.hashrate_24h ?? 0);
       setNetHr(nhr);
-      setMiners(d.aggregate?.active_miners ?? 0);
-      setBlocks(d.aggregate?.blocks_found ?? 0);
+      setMiners(d.summary?.active_miners ?? 0);
+      setBlocks(d.summary?.blocks_found ?? 0);
 
       const now = new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       const point: HistoryPoint = { time: now, hashrate: hr, network_hashrate: nhr, ts: Date.now() };
@@ -85,6 +69,8 @@ export default function HashrateChart() {
     } catch { /* offline */ }
     finally { setLoading(false); }
   }, []);
+
+  const showNetwork = netHr > 0 || history.some(h => h.network_hashrate > 0);
 
   useEffect(() => {
     refresh();
@@ -124,10 +110,12 @@ export default function HashrateChart() {
           <p className="text-gray-500 text-[9px] uppercase">Pool 24h</p>
           <p className="text-sm font-bold text-white font-mono">{formatHr(poolHr24h)}</p>
         </div>
-        <div>
-          <p className="text-gray-500 text-[9px] uppercase">Network</p>
-          <p className="text-sm font-bold text-cyan-400 font-mono">{formatHr(netHr)}</p>
-        </div>
+        {showNetwork && (
+          <div>
+            <p className="text-gray-500 text-[9px] uppercase">Network</p>
+            <p className="text-sm font-bold text-cyan-400 font-mono">{formatHr(netHr)}</p>
+          </div>
+        )}
       </div>
 
       {/* Chart */}
@@ -153,7 +141,7 @@ export default function HashrateChart() {
                 labelStyle={{ color: '#9ca3af' }}
                 formatter={(v: number) => formatHr(v)}
               />
-              <Area type="monotone" dataKey="network" stroke="#06b6d4" fill="url(#netHrGrad)" strokeWidth={1.5} dot={false} name="Network" />
+              {showNetwork && <Area type="monotone" dataKey="network" stroke="#06b6d4" fill="url(#netHrGrad)" strokeWidth={1.5} dot={false} name="Network" />}
               <Area type="monotone" dataKey="pool" stroke="#10b981" fill="url(#poolHrGrad)" strokeWidth={2} dot={false} name="Pool" />
             </AreaChart>
           </ResponsiveContainer>
@@ -166,7 +154,7 @@ export default function HashrateChart() {
 
       <div className="mt-2 flex items-center gap-3 text-[9px] text-gray-500">
         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-400" />Pool</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-cyan-400" />Network</span>
+        {showNetwork && <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-cyan-400" />Network</span>}
         <span className="ml-auto">{chartData.length} pts · 5s interval</span>
       </div>
     </div>

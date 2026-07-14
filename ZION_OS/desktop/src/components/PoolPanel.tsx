@@ -1,15 +1,45 @@
-import { Globe, Wallet, Blocks, Users } from 'lucide-react';
-import type { V3Status } from '../lib/api';
+import { useEffect, useState, useCallback } from 'react';
+import { Globe, Wallet, Blocks, Users, Pickaxe } from 'lucide-react';
+import type { V3Status, PoolMiner, PoolMinersDashboard } from '../lib/api';
+import { fetchPoolMinersDashboard } from '../lib/api';
 
 interface Props {
   pool: V3Status['pool'] | undefined;
   poolEdge: V3Status['pool_edge'] | undefined;
 }
 
+const REFRESH_MS = 5000;
+
 export default function PoolPanel({ pool, poolEdge }: Props) {
   const p = pool || { running: false, active_sessions: undefined, blocks_found: undefined, fee_split: undefined, pool_wallet: undefined };
   const pe = poolEdge || { running: false, active_miners: undefined, blocks_found: undefined };
   const running = p.running || pe.running || false;
+
+  const [dashboard, setDashboard] = useState<PoolMinersDashboard | null>(null);
+  const [lastError, setLastError] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    try {
+      const data = await fetchPoolMinersDashboard();
+      if (data?.ok) {
+        setDashboard(data);
+        setLastError(null);
+      } else {
+        setLastError('Pool miners unavailable');
+      }
+    } catch (e) {
+      setLastError('Pool miners unreachable');
+    }
+  }, []);
+
+  useEffect(() => {
+    refresh();
+    const id = setInterval(refresh, REFRESH_MS);
+    return () => clearInterval(id);
+  }, [refresh]);
+
+  const miners = dashboard?.miners ?? [];
+  const summary = dashboard?.summary;
 
   return (
     <section className="zion-card">
@@ -25,12 +55,12 @@ export default function PoolPanel({ pool, poolEdge }: Props) {
 
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div className="bg-white/5 rounded-xl p-3 text-center">
-          <div className="text-3xl font-bold text-cyan-400">{fmt(pe.active_miners ?? p.active_sessions ?? 0)}</div>
+          <div className="text-3xl font-bold text-cyan-400">{fmt(summary?.active_miners ?? pe.active_miners ?? p.active_sessions ?? 0)}</div>
           <div className="text-[10px] text-gray-400 mt-1">Active Miners</div>
         </div>
         <div className="bg-white/5 rounded-xl p-3 text-center">
-          <div className="text-3xl font-bold text-zion-gold">{fmt(pe.blocks_found ?? p.blocks_found ?? 0)}</div>
-          <div className="text-[10px] text-gray-400 mt-1">Blocks Found</div>
+          <div className="text-3xl font-bold text-zion-gold">{fmt(summary?.total_paid_zion ?? pe.blocks_found ?? p.blocks_found ?? 0)}</div>
+          <div className="text-[10px] text-gray-400 mt-1">{summary?.total_paid_zion ? 'Total Paid Z' : 'Blocks Found'}</div>
         </div>
         <div className="bg-white/5 rounded-xl p-3">
           <div className="text-[10px] text-gray-400">Fee Split</div>
@@ -42,24 +72,67 @@ export default function PoolPanel({ pool, poolEdge }: Props) {
         </div>
       </div>
 
-      {/* Miner balances */}
-      {p.miner_balances && p.miner_balances.length > 0 && (
-        <div className="mt-3 space-y-1">
-          <div className="text-[10px] text-gray-400 font-semibold">Miner Balances</div>
-          {p.miner_balances.map((mb) => (
-            <div key={mb.miner_id} className="flex items-center justify-between bg-white/5 rounded-lg px-2 py-1.5">
-              <div className="flex flex-col min-w-0">
-                <span className="text-[10px] font-mono text-white truncate">{mb.miner_id.slice(0, 18)}…</span>
-                <span className="text-[9px] text-gray-500">{mb.worker_name}</span>
-              </div>
-              <div className="flex flex-col items-end">
-                <span className="text-[10px] text-gray-400">Pending: <span className="text-amber-400">{mb.balance_zion.toFixed(4)} Z</span></span>
-                {mb.on_chain_balance_zion != null && (
-                  <span className="text-[10px] text-gray-400">On-chain: <span className="text-emerald-400">{mb.on_chain_balance_zion.toFixed(4)} Z</span></span>
-                )}
-              </div>
-            </div>
-          ))}
+      {/* Pool-wide totals */}
+      {summary && (
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          <div className="bg-white/5 rounded-xl p-2 text-center">
+            <div className="text-xs font-bold text-amber-400">{fmtZ(summary.total_pending_zion ?? 0)}</div>
+            <div className="text-[9px] text-gray-400">Pending Z</div>
+          </div>
+          <div className="bg-white/5 rounded-xl p-2 text-center">
+            <div className="text-xs font-bold text-cyan-400">{fmtZ(summary.total_paid_zion ?? 0)}</div>
+            <div className="text-[9px] text-gray-400">Paid Z</div>
+          </div>
+          <div className="bg-white/5 rounded-xl p-2 text-center">
+            <div className="text-xs font-bold text-emerald-400">{fmtZ(summary.total_on_chain_zion ?? 0)}</div>
+            <div className="text-[9px] text-gray-400">On-chain Z</div>
+          </div>
+        </div>
+      )}
+
+      {lastError && (
+        <div className="text-[10px] text-red-400 mb-2">{lastError}</div>
+      )}
+
+      {/* Miner table */}
+      {miners.length > 0 && (
+        <div className="mt-3 overflow-x-auto">
+          <div className="text-[10px] text-gray-400 font-semibold mb-1 flex items-center gap-1">
+            <Pickaxe size={10} /> Miner Details
+          </div>
+          <table className="w-full text-[10px]">
+            <thead>
+              <tr className="text-gray-500 border-b border-white/5">
+                <th className="text-left py-1 px-1">Worker</th>
+                <th className="text-right px-1">Hashrate</th>
+                <th className="text-right px-1">Valid</th>
+                <th className="text-right px-1">Blocks</th>
+                <th className="text-right px-1">Pending</th>
+                <th className="text-right px-1">Paid</th>
+                <th className="text-right px-1">On-chain</th>
+                <th className="text-right px-1">Last</th>
+              </tr>
+            </thead>
+            <tbody>
+              {miners.map((m, i) => (
+                <tr key={m.miner_id} className="border-b border-white/5 hover:bg-white/5">
+                  <td className="py-1.5 px-1">
+                    <div className="flex items-center gap-1">
+                      <span className={`w-1.5 h-1.5 rounded-full ${m.active ? 'bg-emerald-400 animate-pulse' : 'bg-gray-600'}`} />
+                      <span className="text-white truncate max-w-[80px]" title={m.miner_id}>{m.worker_name || m.miner_id}</span>
+                    </div>
+                  </td>
+                  <td className="text-right px-1 font-mono text-cyan-400">{fmtH(m.hashrate_hps)}</td>
+                  <td className="text-right px-1 font-mono text-emerald-400">{fmt(m.valid_shares)}</td>
+                  <td className="text-right px-1 font-mono text-zion-gold">{fmt(m.blocks_found)}</td>
+                  <td className="text-right px-1 font-mono text-amber-400">{fmtZ(m.pending_balance_zion)}</td>
+                  <td className="text-right px-1 font-mono text-cyan-400">{fmtZ(m.paid_total)}</td>
+                  <td className="text-right px-1 font-mono text-emerald-400">{fmtZ(m.on_chain_balance_zion)}</td>
+                  <td className="text-right px-1 text-gray-400">{ago(m.last_seen)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
@@ -78,4 +151,25 @@ export default function PoolPanel({ pool, poolEdge }: Props) {
 function fmt(n: number | null | undefined): string {
   if (n == null) return '—';
   return n.toLocaleString();
+}
+
+function fmtZ(n: number | null | undefined): string {
+  if (n == null || n === 0) return '—';
+  return n.toFixed(4) + ' Z';
+}
+
+function fmtH(hps: number | null | undefined): string {
+  if (!hps || hps <= 0) return '—';
+  if (hps >= 1_000_000) return (hps / 1_000_000).toFixed(2) + ' MH/s';
+  if (hps >= 1_000) return (hps / 1_000).toFixed(2) + ' KH/s';
+  return hps.toFixed(2) + ' H/s';
+}
+
+function ago(ts: number | null | undefined): string {
+  if (!ts) return '—';
+  const s = Math.floor(Date.now() / 1000) - ts;
+  if (s < 0) return 'now';
+  if (s < 60) return s + 's';
+  if (s < 3600) return Math.floor(s / 60) + 'm';
+  return Math.floor(s / 3600) + 'h';
 }

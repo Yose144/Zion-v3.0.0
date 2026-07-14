@@ -120,11 +120,16 @@ export interface MonitoringStatus {
 
 // ── HTTP Helpers ──────────────────────────────────────────
 
-export async function apiFetch<T>(path: string): Promise<T | null> {
+export async function apiFetch<T>(path: string, opts?: { timeout?: number }): Promise<T | null> {
   try {
+    const timeout = opts?.timeout;
+    const controller = timeout ? new AbortController() : undefined;
+    const timer = controller ? setTimeout(() => controller.abort(), timeout) : undefined;
     const r = await fetch(`${API_BASE}${path}`, {
+      signal: controller ? controller.signal : undefined,
       headers: { Accept: 'application/json', ...(AUTH_HEADER ? { Authorization: AUTH_HEADER } : {}) },
     });
+    if (timer) clearTimeout(timer);
     if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
     return (await r.json()) as T;
   } catch (e) {
@@ -262,4 +267,43 @@ export async function fetchFullStatus(): Promise<{
     readiness: rd,
     monitoring: mon,
   };
+}
+
+// ── Pool Miners Dashboard ───────────────────────────────────────────────
+
+export interface PoolMiner {
+  miner_id: string;
+  worker_name?: string;
+  payout_address?: string;
+  hashrate_hps: number;
+  valid_shares: number;
+  invalid_shares: number;
+  pending_balance_zion: number;
+  paid_total: number;
+  on_chain_balance_zion: number;
+  blocks_found: number;
+  last_seen: number;
+  active: boolean;
+}
+
+export interface PoolMinersDashboard {
+  ok: boolean;
+  miners: PoolMiner[];
+  pool_info?: {
+    hashrate_live?: number;
+    hashrate_24h?: number;
+    network_hashrate?: number;
+  };
+  summary?: {
+    active_miners?: number;
+    registered_miners?: number;
+    total_paid_zion?: number;
+    total_pending_zion?: number;
+    total_on_chain_zion?: number;
+    blocks_found?: number;
+  };
+}
+
+export async function fetchPoolMinersDashboard(): Promise<PoolMinersDashboard | null> {
+  return apiFetch<PoolMinersDashboard>('/api/pool/miners-dashboard');
 }

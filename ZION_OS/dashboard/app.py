@@ -4490,7 +4490,14 @@ def get_pool_registered_miners() -> dict:
     with _REGISTERED_MINERS_LOCK:
         cached = _REGISTERED_MINERS_CACHE.get("data")
         if cached and (now - _REGISTERED_MINERS_CACHE.get("ts", 0)) < _REGISTERED_MINERS_TTL:
-            return {"ok": True, "miners": cached, "cached": True}
+            return {
+                "ok": True,
+                "miners": cached,
+                "totals": _REGISTERED_MINERS_CACHE.get("totals", {}),
+                "cached": True,
+                "registered_count": _REGISTERED_MINERS_CACHE.get("registered_count", len(cached)),
+                "active_count": _REGISTERED_MINERS_CACHE.get("active_count", 0),
+            }
 
     # 1. Load PPLNS state and active telemetry in parallel-ish
     pplns_state = _fetch_pplns_state()
@@ -4507,6 +4514,9 @@ def get_pool_registered_miners() -> dict:
         with _REGISTERED_MINERS_LOCK:
             _REGISTERED_MINERS_CACHE["data"] = miners
             _REGISTERED_MINERS_CACHE["ts"] = now
+            _REGISTERED_MINERS_CACHE["totals"] = {"pending_zion": 0, "paid_zion": 0, "on_chain_zion": 0}
+            _REGISTERED_MINERS_CACHE["registered_count"] = len(miners)
+            _REGISTERED_MINERS_CACHE["active_count"] = sum(1 for m in miners if m.get("active"))
         return {"ok": True, "miners": miners, "cached": False, "fallback": True}
 
     # 2. Build unique list of payout addresses and lookup balances once per address
@@ -4593,6 +4603,9 @@ def get_pool_registered_miners() -> dict:
     with _REGISTERED_MINERS_LOCK:
         _REGISTERED_MINERS_CACHE["data"] = miners
         _REGISTERED_MINERS_CACHE["ts"] = now
+        _REGISTERED_MINERS_CACHE["totals"] = totals
+        _REGISTERED_MINERS_CACHE["registered_count"] = len(miners)
+        _REGISTERED_MINERS_CACHE["active_count"] = sum(1 for m in miners if m["active"])
     return {"ok": True, "miners": miners, "totals": totals, "cached": False, "registered_count": len(miners), "active_count": sum(1 for m in miners if m["active"])}
 
 
