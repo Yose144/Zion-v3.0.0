@@ -246,6 +246,8 @@ pub fn is_external_algorithm(algorithm: &str) -> bool {
             | "ethash"
             | "etchash"
             | "ethash_etc"
+            | "progpow"
+            | "progpow_epic"
             | "verushash"
             | "randomx"
     )
@@ -424,18 +426,19 @@ pub fn gpu_scan_job(
         effective_header.timestamp = job.height;
     }
 
-    // For Ethash/KawPow, derive the epoch from the block height and ensure
+    // For Ethash/KawPow/ProgPow, derive the epoch from the block height and ensure
     // the DAG is loaded.  The pool sends the external block number as
-    // job.height for EthStratum coins (ETC/RVN/CLORE).
+    // job.height for EthStratum coins (ETC/RVN/CLORE/EPIC).
     if is_external_algorithm(algorithm)
         && matches!(
             algorithm,
             "ethash" | "etchash" | "ethash_etc"
                 | "kawpow" | "kawpow_rvn" | "kawpow_clore"
                 | "kawpow_evr" | "kawpow_mewc"
+                | "progpow" | "progpow_epic"
         )
     {
-        let epoch = if matches!(algorithm, "ethash" | "etchash" | "ethash_etc") {
+        let epoch = if matches!(algorithm, "ethash" | "etchash" | "ethash_etc" | "progpow" | "progpow_epic") {
             (job.height / 30000) as u32
         } else {
             (job.height / 7500) as u32
@@ -3496,9 +3499,9 @@ pub mod opencl_external {
         }
 
         fn update_epoch(&mut self, height: u64) -> Result<()> {
-            // For Ethash/KawPow, derive epoch from block height and ensure DAG.
+            // For Ethash/KawPow/ProgPow, derive epoch from block height and ensure DAG.
             // The pool sends the external block number as `height` for
-            // EthStratum coins (ETC/RVN/CLORE).
+            // EthStratum coins (ETC/RVN/CLORE/EPIC).
             let epoch = if matches!(self.algorithm.as_str(), "ethash" | "etchash" | "ethash_etc") {
                 Some((height / 30000) as u32)
             } else if matches!(
@@ -3506,6 +3509,8 @@ pub mod opencl_external {
                 "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
             ) {
                 Some((height / 7500) as u32)
+            } else if matches!(self.algorithm.as_str(), "progpow" | "progpow_epic") {
+                Some((height / 30000) as u32)
             } else {
                 None
             };
@@ -3535,7 +3540,9 @@ pub mod opencl_external {
                 | "kawpow_rvn"
                 | "kawpow_clore"
                 | "kawpow_evr"
-                | "kawpow_mewc" => self.miner.mine(
+                | "kawpow_mewc"
+                | "progpow"
+                | "progpow_epic" => self.miner.mine(
                     &self.algorithm,
                     &header_bytes,
                     &[],
