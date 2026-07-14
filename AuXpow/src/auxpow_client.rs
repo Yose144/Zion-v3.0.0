@@ -2115,24 +2115,43 @@ impl AuxPowClient {
             #[cfg(not(feature = "gpu-metal"))]
             let use_gpu = false;
 
+            #[cfg(feature = "gpu-metal")]
+            let gpu_mode = if use_gpu {
+                if std::env::var("AUXPOW_PRL_GPU_NATIVE").is_ok() { "GPU-native" } else { "GPU" }
+            } else { "CPU" };
+            #[cfg(not(feature = "gpu-metal"))]
+            let gpu_mode = "CPU";
+
             println!(
                 "auxpow: PRL mining — m={} n={} k={} rank={} attempts={} header_len={} mode={}",
-                m, n, k, rank, max_attempts, header_bytes.len(),
-                if use_gpu { "GPU" } else { "CPU" }
+                m, n, k, rank, max_attempts, header_bytes.len(), gpu_mode
             );
 
             #[cfg(feature = "gpu-metal")]
             let mined = if use_gpu {
                 let mut gpu = self.gpu_backend.lock().await;
                 let gpu_backend = gpu.as_mut().unwrap();
-                crate::pearl_pouw::mine_gpu(
-                    m, n, k, rank,
-                    &header,
-                    &config,
-                    &difficulty_bound,
-                    max_attempts,
-                    gpu_backend,
-                )
+                // Use GPU-native pipeline (all steps on GPU) if env var is set
+                let use_native = std::env::var("AUXPOW_PRL_GPU_NATIVE").is_ok();
+                if use_native {
+                    crate::pearl_pouw::mine_gpu_native(
+                        m, n, k, rank,
+                        &header,
+                        &config,
+                        &difficulty_bound,
+                        max_attempts,
+                        gpu_backend,
+                    )
+                } else {
+                    crate::pearl_pouw::mine_gpu(
+                        m, n, k, rank,
+                        &header,
+                        &config,
+                        &difficulty_bound,
+                        max_attempts,
+                        gpu_backend,
+                    )
+                }
             } else {
                 crate::pearl_pouw::mine(
                     m, n, k, rank,

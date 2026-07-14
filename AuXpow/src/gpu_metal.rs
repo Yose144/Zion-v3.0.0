@@ -572,6 +572,16 @@ pub struct PearlPouwGpuResult {
     pub jackpot_hash: [u8; 32],
 }
 
+/// Result of GPU-native Pearl PoUW mining (includes matrices for Merkle proof).
+pub struct PearlPouwNativeResult {
+    pub tile_index: u32,
+    pub jackpot_hash: [u8; 32],
+    /// Matrix A (m×k, row-major, int8 reinterpreted as bytes)
+    pub matrix_a: Vec<i8>,
+    /// Matrix B^T (n×k, row-major, int8 reinterpreted as bytes)
+    pub matrix_bt: Vec<i8>,
+}
+
 impl MetalBackend {
     /// Mine Pearl PoUW on GPU. Launches 4096 work-items (64×64 tiles).
     /// Returns the winning tile index and jackpot hash if a valid share is found.
@@ -751,7 +761,7 @@ impl MetalBackend {
     pub fn pearl_pouw_mine_native(
         &mut self,
         input: &PearlPouwNativeInput<'_>,
-    ) -> Result<Option<PearlPouwGpuResult>> {
+    ) -> Result<Option<PearlPouwNativeResult>> {
         let kernel_file = "pearl_pouw_native.metal";
         let m = input.m;
         let n = input.n;
@@ -788,9 +798,10 @@ impl MetalBackend {
         let shared = MTLResourceOptions::CPUCacheModeDefaultCache;
         let storage = MTLResourceOptions::StorageModePrivate;
 
-        // Matrix buffers (int8, stored as bytes)
-        let matrix_a_buf = self.device.new_buffer((mk) as u64, storage);     // m×k int8
-        let matrix_bt_buf = self.device.new_buffer((nk) as u64, storage);    // n×k int8 (B^T)
+        // Matrix buffers (int8) — use shared storage so CPU can read back for Merkle proof
+        // On Apple Silicon unified memory, this has no performance penalty
+        let matrix_a_buf = self.device.new_buffer((mk) as u64, shared);     // m×k int8
+        let matrix_bt_buf = self.device.new_buffer((nk) as u64, shared);    // n×k int8 (B^T)
 
         // Chunk hash buffers
         let num_chunks_a = mk.div_ceil(1024);  // 256
@@ -1177,9 +1188,24 @@ impl MetalBackend {
             std::ptr::copy_nonoverlapping(jackpot_ptr, jackpot_hash.as_mut_ptr(), 32);
         }
 
-        Ok(Some(PearlPouwGpuResult {
+        // Read back matrices for Merkle proof construction
+        let matrix_a_ptr = matrix_a_buf.contents() as *const i8;
+        let mut matrix_a = vec![0i8; mk];
+        unsafe {
+            std::ptr::copy_nonoverlapping(matrix_a_ptr, matrix_a.as_mut_ptr(), mk);
+        }
+
+        let matrix_bt_ptr = matrix_bt_buf.contents() as *const i8;
+        let mut matrix_bt = vec![0i8; nk];
+        unsafe {
+            std::ptr::copy_nonoverlapping(matrix_bt_ptr, matrix_bt.as_mut_ptr(), nk);
+        }
+
+        Ok(Some(PearlPouwNativeResult {
             tile_index,
             jackpot_hash,
+            matrix_a,
+            matrix_bt,
         }))
     }
 }
