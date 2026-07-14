@@ -836,18 +836,30 @@ fn xor_reduction(tile: &[i32]) -> u32 {
 
 /// Check if a transcript hash meets the PoW target.
 /// hash = blake3(transcript_bytes, key=pow_key)
-/// Returns true if hash (as little-endian U256) <= target (as little-endian U256).
-/// Per the Pearl stratum spec, both hash and target are interpreted as LE U256:
-/// byte 0 = LSB, byte 31 = MSB. Comparison goes from MSB (byte 31) to LSB (byte 0).
+/// Returns true if hash (as little-endian U256) <= target (as big-endian U256).
+///
+/// Per the Pearl reference implementation (zk-pow/src/v1/api/sanity_checks.rs):
+///   U256::from_little_endian(&hash_jackpot) <= jackpot_hash_bound
+///
+/// The hash from blake3 is interpreted as little-endian (byte 0 = LSB).
+/// The target from the pool (stratum mining.notify) is a big-endian hex string
+/// (byte 0 = MSB), which represents `jackpot_hash_bound` as a U256.
+///
+/// To compare: reverse hash bytes (to big-endian), then compare with target
+/// from byte 0 (MSB) to byte 31 (LSB).
 fn check_pow_target(transcript: &Transcript, pow_key: &[u8; 32], target: &[u8; 32]) -> bool {
     let transcript_bytes = transcript.to_bytes();
     let hash = blake3::keyed_hash(pow_key, &transcript_bytes);
     let hash_bytes = hash.as_bytes();
-    // Compare as little-endian U256: byte 31 is most significant
-    // hash <= target iff for the first differing byte (from MSB), hash byte < target byte
-    for i in (0..32).rev() {
-        if hash_bytes[i] != target[i] {
-            return hash_bytes[i] < target[i];
+    // hash is little-endian: byte 0 = LSB, byte 31 = MSB
+    // target is big-endian: byte 0 = MSB, byte 31 = LSB
+    // Compare as U256: hash_le <= target_be
+    // Equivalent: reverse hash to big-endian, then compare from byte 0 (MSB)
+    for i in 0..32 {
+        let h = hash_bytes[31 - i]; // hash MSB-first (reversed)
+        let t = target[i];          // target MSB-first (already big-endian)
+        if h != t {
+            return h < t;
         }
     }
     true // equal

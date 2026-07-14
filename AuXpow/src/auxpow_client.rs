@@ -82,7 +82,7 @@ impl ExternalCoin {
             // ETC notify: [seed_hash, header_hash, boundary, target, clean]
             // RVN notify: [job_id, seed_hash, header_hash, target, clean, height, nbits]
             Self::DCR | Self::XMR | Self::KAS | Self::ALPH
-            | Self::ETC | Self::RVN => {
+            | Self::ETC | Self::RVN | Self::QUAI => {
                 StratumProtocol::Stratum
             }
             // FLUX uses ZcashStratum (Equihash 125,4 / ZelHash) with solution

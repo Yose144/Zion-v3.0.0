@@ -31,6 +31,7 @@ pub mod multiplexer;
 pub mod parent_chains;
 pub mod pearl_pouw;
 pub mod pearl_real_pouw;
+pub mod progpow_codegen;
 pub mod share_forwarder;
 pub mod true_auxpow;
 pub mod types;
