@@ -2248,6 +2248,50 @@ async function updateConnectedMiners(){
   }
 }
 
+// ── Triple Stream Mining panel (Claymore-style 3-stream) ──
+function updateTripleStream(data){
+  if(!data||!data.routing||!data.routing.sources){
+    const summary = document.getElementById('triple-stream-summary');
+    if(summary) summary.textContent='No routing data';
+    return;
+  }
+  const src=data.routing.sources||{};
+  // Map routing sources to 3 streams
+  // src_zion → Stream 1, src_pearl → Stream 2, everything else → Stream 3
+  const zion=src.src_zion||src.zion||{accepted:0,rejected:0};
+  const pearl=src.src_pearl||src.pearlhash||{accepted:0,rejected:0};
+  // Aggregate all external sources into Stream 3
+  let extAcc=0,extRej=0,extCoin='AuxPow';
+  for(const[key,val]of Object.entries(src)){
+    if(key==='src_zion'||key==='src_pearl'||key==='zion'||key==='pearlhash')continue;
+    if(val&&typeof val==='object'){
+      extAcc+=val.accepted||0;
+      extRej+=val.rejected||0;
+      if((val.accepted>0||val.rejected>0)&&extCoin==='AuxPow'){
+        extCoin=key.replace('src_','').toUpperCase();
+      }
+    }
+  }
+  const setText=(id,txt)=>{const el=document.getElementById(id);if(el)el.textContent=txt;};
+  // Stream 1: ZION
+  setText('stream-zion-shares',(zion.accepted||0)+' / '+(zion.rejected||0));
+  const zTotal=(zion.accepted||0)+(zion.rejected||0);
+  setText('stream-zion-pct',zTotal>0?(100*zion.accepted/zTotal).toFixed(1)+'% accepted':'—');
+  // Stream 2: PRL
+  setText('stream-prl-shares',(pearl.accepted||0)+' / '+(pearl.rejected||0));
+  const pTotal=(pearl.accepted||0)+(pearl.rejected||0);
+  setText('stream-prl-pct',pTotal>0?(100*pearl.accepted/pTotal).toFixed(1)+'% accepted':'—');
+  // Stream 3: EXT
+  setText('stream-ext-shares',extAcc+' / '+extRej);
+  setText('stream-ext-coin',extCoin);
+  const eTotal=extAcc+extRej;
+  setText('stream-ext-pct',eTotal>0?(100*extAcc/eTotal).toFixed(1)+'% accepted':'—');
+  // Summary
+  const totalAcc=(zion.accepted||0)+(pearl.accepted||0)+extAcc;
+  const totalRej=(zion.rejected||0)+(pearl.rejected||0)+extRej;
+  setText('triple-stream-summary',totalAcc+' acc / '+totalRej+' rej total');
+}
+
 async function updatePoolConnectionHistory(){
   const tbody = document.getElementById('pool-connection-history-tbody');
   const badge = document.getElementById('pool-connection-history-badge');

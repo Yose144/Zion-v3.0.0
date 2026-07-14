@@ -891,6 +891,46 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
     </div>
 
+    <!-- Triple Stream Mining (Claymore-style 3-stream parallel) -->
+    <div class="zion-panel p-5 mb-4 border border-zion-700">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold flex items-center gap-2">⚡ Triple Stream Mining <span class="text-xs px-2 py-0.5 rounded bg-amber-600/30 text-amber-300">v3.0.6</span></h2>
+        <span class="text-xs text-gray-500" id="triple-stream-summary">—</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <!-- Stream 1: ZION Deeksha -->
+        <div class="bg-zion-900 rounded-lg p-3 border border-cyan-900/50">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-cyan-400">Stream 1 — ZION</span>
+            <span class="text-[10px] text-gray-500">Deeksha Lite v1</span>
+          </div>
+          <div class="text-2xl font-bold text-cyan-300" id="stream-zion-shares">—</div>
+          <div class="text-xs text-gray-400 mb-1">Shares (acc/rej)</div>
+          <div class="text-xs text-gray-500" id="stream-zion-pct">—</div>
+        </div>
+        <!-- Stream 2: Pearl PoUW -->
+        <div class="bg-zion-900 rounded-lg p-3 border border-fuchsia-900/50">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-fuchsia-400">Stream 2 — PRL</span>
+            <span class="text-[10px] text-gray-500">Pearl PoUW</span>
+          </div>
+          <div class="text-2xl font-bold text-fuchsia-300" id="stream-prl-shares">—</div>
+          <div class="text-xs text-gray-400 mb-1">Proofs (acc/rej)</div>
+          <div class="text-xs text-gray-500" id="stream-prl-pct">—</div>
+        </div>
+        <!-- Stream 3: External AuxPow -->
+        <div class="bg-zion-900 rounded-lg p-3 border border-amber-900/50">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-amber-400">Stream 3 — EXT</span>
+            <span class="text-[10px] text-gray-500" id="stream-ext-coin">AuxPow</span>
+          </div>
+          <div class="text-2xl font-bold text-amber-300" id="stream-ext-shares">—</div>
+          <div class="text-xs text-gray-400 mb-1">Shares (acc/rej)</div>
+          <div class="text-xs text-gray-500" id="stream-ext-pct">—</div>
+        </div>
+      </div>
+    </div>
+
     <!-- CLI Node Status (zion-cli data source) -->
     <div class="zion-panel p-5 mb-4" id="cli-status-widget">
       <div class="flex items-center justify-between mb-3">
