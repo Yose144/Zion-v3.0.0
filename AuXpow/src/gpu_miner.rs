@@ -122,6 +122,7 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
         "ethash" | "etchash" | "ethash_etc" => Some(("ethash_kernel.cl", "ethash_mine")),
         "zelhash" | "zelhash_flux" => Some(("zelhash_kernel.cl", "zelhash_mine")),
         "progpow" | "progpow_epic" => Some(("progpow_kernel.cl", "progpow_mine")),
+        "pearlhash" | "pearlhash_prl" => Some(("pearl_kernel.cl", "pearl_mine")),
         _ => None,
     }
 }
@@ -248,7 +249,8 @@ impl GpuMiner {
 
         // Build a kernel for this call.
         let kernel = match algorithm {
-            "blake3" | "blake3_alph" | "blake3_dcr" => Self::build_header_nonce_kernel(
+            "blake3" | "blake3_alph" | "blake3_dcr" | "pearlhash" | "pearlhash_prl" => {
+                Self::build_header_nonce_kernel(
                 pro_que,
                 kernel_name,
                 header,
@@ -887,6 +889,7 @@ impl GpuMiner {
                     "autolykos_kernel.cl" => include_str!("../csrc/opencl/autolykos_kernel.cl"),
                     "kawpow_kernel.cl" => include_str!("../csrc/opencl/kawpow_kernel.cl"),
                     "ethash_kernel.cl" => include_str!("../csrc/opencl/ethash_kernel.cl"),
+                    "pearl_kernel.cl" => include_str!("../csrc/opencl/pearl_kernel.cl"),
                     _ => return Err(anyhow!("Unknown kernel file: {kernel_file} (not on disk and not embedded)")),
                 };
                 println!("auxpow_gpu_opencl using embedded kernel={kernel_file}");

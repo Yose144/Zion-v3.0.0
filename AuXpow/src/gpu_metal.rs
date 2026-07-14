@@ -35,6 +35,7 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
         "ethash" | "etchash" | "ethash_etc" => Some(("ethash_kernel.metal", "ethash_mine")),
         "zelhash" | "zelhash_flux" => Some(("zelhash_kernel.metal", "zelhash_mine")),
         "progpow" | "progpow_epic" => Some(("progpow_kernel.metal", "progpow_mine")),
+        "pearlhash" | "pearlhash_prl" => Some(("pearl_kernel.metal", "pearl_mine")),
         _ => None,
     }
 }
@@ -156,7 +157,7 @@ impl GpuBackend for MetalBackend {
                 p[..len].copy_from_slice(&header[..len]);
                 p
             }
-            "blake3" | "blake3_alph" | "blake3_dcr" => {
+            "blake3" | "blake3_alph" | "blake3_dcr" | "pearlhash" | "pearlhash_prl" => {
                 let mut p = vec![0u8; 248];
                 let len = header_len.min(248);
                 p[..len].copy_from_slice(&header[..len]);
@@ -229,8 +230,8 @@ impl GpuBackend for MetalBackend {
         // Buffer indices are determined by the [[buffer(N)]] attributes in the
         // Metal kernel source files.
         match algorithm {
-            // blake3: 0=header, 1=target, 2=nonce, 3=hash, 4=found, 5=hlen, 6=base_nonce
-            "blake3" | "blake3_alph" | "blake3_dcr" => {
+            // blake3 / pearlhash: 0=header, 1=target, 2=nonce, 3=hash, 4=found, 5=hlen, 6=base_nonce
+            "blake3" | "blake3_alph" | "blake3_dcr" | "pearlhash" | "pearlhash_prl" => {
                 encoder.set_buffer(0, Some(&header_buf), 0);
                 encoder.set_buffer(1, Some(&target_buf), 0);
                 encoder.set_buffer(2, Some(&output_nonce_buf), 0);

@@ -71,6 +71,10 @@ pub enum RevenueSource {
     /// Revenue from ProgPow external coins (EPIC — Epic Cash).
     /// GPU-friendly, ASIC-resistant, DAG-based (like Ethash).
     ProgPowExternal,
+    /// Revenue from PearlHash / PoUW external coins (PRL — Pearl).
+    /// Proof-of-Useful-Work: INT8 MatMul + BLAKE3. No DAG.
+    /// 22x more profitable than KAS. Merge mining: PRL + MDL.
+    PearlExternal,
     /// Revenue from DeekshaLite v1 simplified mining (GCN-friendly).
     DeekshaLite,
     /// Revenue from DeekshaLite Fire thermal-intensive mining (winter heating).
@@ -95,6 +99,7 @@ impl RevenueSource {
             Self::ZelHashExternal => "zelhash_external",
             Self::VerusHashExternal => "verushash_external",
             Self::ProgPowExternal => "progpow_external",
+            Self::PearlExternal => "pearl_external",
             Self::DeekshaLite => "deeksha_lite",
             Self::ThermalBonus => "thermal_bonus",
             Self::NclAi => "ncl_ai",
@@ -113,7 +118,8 @@ impl RevenueSource {
             | Self::RandomXExternal
             | Self::ZelHashExternal
             | Self::VerusHashExternal
-            | Self::ProgPowExternal => BLAKE3_EXTERNAL_FEE,
+            | Self::ProgPowExternal
+            | Self::PearlExternal => BLAKE3_EXTERNAL_FEE,
             Self::DeekshaLite | Self::ThermalBonus => MERGED_MINING_FEE,
             Self::NclAi => NCL_FEE,
         }

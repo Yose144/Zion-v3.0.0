@@ -27,6 +27,7 @@ pub enum ExternalAlgorithm {
     VerusHash,
     ZelHash,
     ProgPow,
+    PearlHash,
 }
 
 impl ExternalAlgorithm {
@@ -41,6 +42,7 @@ impl ExternalAlgorithm {
             Self::VerusHash => "verushash",
             Self::ZelHash => "zelhash",
             Self::ProgPow => "progpow",
+            Self::PearlHash => "pearlhash",
         }
     }
 
@@ -55,6 +57,7 @@ impl ExternalAlgorithm {
             "verushash" | "verus" => Some(Self::VerusHash),
             "zelhash" | "zel" => Some(Self::ZelHash),
             "progpow" => Some(Self::ProgPow),
+            "pearlhash" | "pearl" => Some(Self::PearlHash),
             _ => None,
         }
     }
@@ -1624,6 +1627,74 @@ fn hash_le_target(hash: &[u8; 32], target: &[u8; 32]) -> bool {
     true // equal
 }
 
+// ── PearlHash (Pearl / PRL) ──────────────────────────────────────────
+
+/// Pearl PoUW parameters.
+///
+/// Pearl uses Proof-of-Useful-Work: mining = INT8 matrix multiplication
+/// + BLAKE3 proof. The full algorithm involves:
+///   1. CommitmentHash(A, B, sigma, mu) → (sA, sB) via BLAKE3 keyed hash
+///   2. NoiseGeneration(sA, sB) → low-rank noise E=EL·ER, F=FL·FR
+///   3. NoisedMatMul(A'=A+E, B'=B+F) → C' + block-opening proof
+///   4. XOR-reduce + rotate-and-XOR state update (M[16] array)
+///   5. BLAKE3(M, key=sA) < target check
+///   6. Noise peeling: A·B = C' − (A·FL)·FR − EL·(ER·B')
+///
+/// For now we implement a **simplified** version that uses BLAKE3 over
+/// the header+nonce as a placeholder. The full PoUW MatMul requires GPU
+/// kernels (see pearl_kernel.cl / pearl_kernel.metal) and is the subject
+/// of Phase 13.3-13.5.
+pub const PEARL_BLOCK_TIME_SECS: u32 = 194;
+/// Pearl has no DAG — matrices are generated per-job from a seed.
+pub const PEARL_EPOCH_LENGTH: u32 = 0;
+
+/// Simplified Pearl hash (BLAKE3-based placeholder).
+///
+/// In the full implementation, this would compute the PoUW proof:
+///   1. Generate matrices A, B from the header seed
+///   2. Add noise (BLAKE3 PRNG → low-rank E, F)
+///   3. Compute C' = (A+E)·(B+F) via tiled INT8 MatMul
+///   4. Extract block-opening proof (XOR-reduce + rotate-and-XOR)
+///   5. BLAKE3(proof, key=sA) → final hash
+///
+/// For now, we use BLAKE3(header || nonce_le) as a deterministic
+/// placeholder. This allows Stratum v1 protocol testing and share
+/// verification while the full PoUW kernel is developed.
+pub fn hash_pearl(header_hash: &[u8; 32], nonce: u64) -> [u8; 32] {
+    #[cfg(feature = "native-hashers")]
+    {
+        if let Ok(hash) = crate::native_ffi::hash_pearl_native(header_hash, nonce) {
+            return hash;
+        }
+    }
+
+    // Pure-Rust fallback: BLAKE3(header_hash || nonce_le) as placeholder.
+    // The real Pearl hash involves MatMul + noise + BLAKE3 proof extraction.
+    use blake3::Hasher;
+    let mut h = Hasher::new();
+    h.update(header_hash);
+    h.update(&nonce.to_le_bytes());
+    let mut out = [0u8; 32];
+    h.finalize_xof().fill(&mut out);
+    out
+}
+
+/// Mine Pearl hashes (CPU scan — slow, for testing only).
+pub fn mine_pearl(
+    header_hash: &[u8; 32],
+    start_nonce: u64,
+    count: u64,
+    target: &[u8; 32],
+) -> Option<(u64, [u8; 32])> {
+    for nonce in start_nonce..start_nonce + count {
+        let hash = hash_pearl(header_hash, nonce);
+        if hash_le_target(&hash, target) {
+            return Some((nonce, hash));
+        }
+    }
+    None
+}
+
 // ── Tests ────────────────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -1993,6 +2064,71 @@ mod tests {
             ExternalCoin::FLUX.protocol(),
             StratumProtocol::ZcashStratum
         );
+    }
+
+    // ── PearlHash (PRL) ─────────────────────────────────────────────
+
+    #[test]
+    fn pearl_hash_deterministic() {
+        let header = [0x42u8; 32];
+        let h1 = hash_pearl(&header, 12345);
+        let h2 = hash_pearl(&header, 12345);
+        assert_eq!(h1, h2, "Pearl hash must be deterministic");
+    }
+
+    #[test]
+    fn pearl_hash_nonce_sensitive() {
+        let header = [0x42u8; 32];
+        let h1 = hash_pearl(&header, 1);
+        let h2 = hash_pearl(&header, 2);
+        assert_ne!(h1, h2, "Different nonces must produce different hashes");
+    }
+
+    #[test]
+    fn pearl_hash_header_sensitive() {
+        let h1 = hash_pearl(&[0x01u8; 32], 42);
+        let h2 = hash_pearl(&[0x02u8; 32], 42);
+        assert_ne!(h1, h2, "Different headers must produce different hashes");
+    }
+
+    #[test]
+    fn pearl_mine_finds_solution() {
+        // Very easy target — first byte must be 0x00
+        let target = [0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                       0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                       0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                       0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
+        let header = [0x99u8; 32];
+        let result = mine_pearl(&header, 0, 1_000_000, &target);
+        assert!(result.is_some(), "mine_pearl should find a solution within 1M nonces");
+        let (nonce, hash) = result.unwrap();
+        assert!(hash_le_target(&hash, &target));
+        // Verify nonce is within range
+        assert!(nonce < 1_000_000);
+    }
+
+    #[test]
+    fn pearl_algorithm_str() {
+        assert_eq!(ExternalAlgorithm::PearlHash.as_str(), "pearlhash");
+        assert_eq!(
+            ExternalAlgorithm::from_str_loose("pearlhash"),
+            Some(ExternalAlgorithm::PearlHash)
+        );
+        assert_eq!(
+            ExternalAlgorithm::from_str_loose("pearl"),
+            Some(ExternalAlgorithm::PearlHash)
+        );
+    }
+
+    #[test]
+    fn pearl_coin_metadata() {
+        use crate::types::ExternalCoin;
+        assert_eq!(ExternalCoin::PRL.ticker(), "PRL");
+        assert_eq!(ExternalCoin::PRL.algorithm(), "pearlhash");
+        assert_eq!(ExternalCoin::PRL.default_pool(), "us2.alphapool.tech:5566");
+        assert_eq!(ExternalCoin::from_str_loose("prl"), Some(ExternalCoin::PRL));
+        assert_eq!(ExternalCoin::from_str_loose("pearl"), Some(ExternalCoin::PRL));
+        assert!(ExternalCoin::all().contains(&ExternalCoin::PRL));
     }
 
 }

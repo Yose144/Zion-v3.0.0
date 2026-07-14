@@ -408,6 +408,15 @@ impl AuxPowScheduler {
                     );
                     final_hash
                 }
+                ExternalAlgorithm::PearlHash => {
+                    // PearlHash (PRL) — PoUW MatMul + BLAKE3.
+                    // CPU fallback uses simplified BLAKE3 placeholder.
+                    // Real mining requires the OpenCL/Metal kernel.
+                    let mut h32 = [0u8; 32];
+                    let len = header.len().min(32);
+                    h32[..len].copy_from_slice(&header[..len]);
+                    crate::external_hashers::hash_pearl(&h32, nonce)
+                }
             };
 
             let meets = if job.external_coin == ExternalCoin::DCR {

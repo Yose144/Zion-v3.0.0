@@ -63,6 +63,7 @@ fn main() {
         // ("ethash", "Ethereum Classic (ETC)"),
         // ("kawpow", "Ravencoin (RVN)"),
         // ("progpow", "Epic Cash (EPIC)"),
+        ("pearlhash", "Pearl (PRL) — PoUW"),  // No DAG — BLAKE3 placeholder
     ];
 
     println!("{:<20} {:<25} {:>15} {:>15}", "Algorithm", "Coin", "Hashrate (H/s)", "Total Hashes");
