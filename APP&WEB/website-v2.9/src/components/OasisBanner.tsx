@@ -14,7 +14,8 @@ export default function OasisBanner() {
     >
       <Link
         href="/l4-oasis"
-        className="group relative flex flex-col sm:flex-row items-center gap-4 sm:gap-6 rounded-3xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/8 via-teal-500/5 to-transparent p-6 sm:p-8 backdrop-blur-sm transition-all duration-500 hover:border-emerald-400/35 hover:shadow-[0_0_60px_rgba(16,185,129,0.12)]"
+        className="zion-rainbow-card group relative flex flex-col sm:flex-row items-center gap-4 sm:gap-6 p-6 sm:p-8 transition-all duration-500"
+        style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
       >
         {/* animated glow orb */}
         <div className="absolute top-1/2 left-8 -translate-y-1/2 w-24 h-24 rounded-full bg-emerald-500/10 blur-2xl opacity-60 group-hover:opacity-100 group-hover:scale-125 transition-all duration-700" />
