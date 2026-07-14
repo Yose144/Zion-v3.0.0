@@ -488,6 +488,16 @@ impl AuxPowClient {
                             }
                         }
                     }
+                    "pearl.challenge" => {
+                        // AlphaPool protocol: sends {seed, difficulty} on connect
+                        // and whenever a new challenge is issued.
+                        if let Some(params) = parsed.get("params") {
+                            if let Some(job) = self.parse_pearl_challenge_params(params).await {
+                                *self.current_job.lock().await = Some(job);
+                                self.job_notify.notify_waiters();
+                            }
+                        }
+                    }
                     _ => {}
                 }
             }
@@ -590,6 +600,19 @@ impl AuxPowClient {
                 "params": [worker, password]
             })
         };
+
+        // PearlStratum: AlphaPool doesn't respond to mining.authorize.
+        // Send fire-and-forget and assume success.
+        if is_pearl {
+            let req_line = format!("{}\n", serde_json::to_string(&req)?);
+            let mut stream = self.stream.lock().await;
+            if let Some(w) = stream.as_mut() {
+                w.write_all(req_line.as_bytes()).await?;
+                println!("auxpow: PRL authorize sent (fire-and-forget for AlphaPool)");
+            }
+            *self.authorized.lock().await = true;
+            return Ok(());
+        }
 
         let resp = self.send_request_inline(&req).await?;
         let ok = if is_ethstratum {
@@ -745,10 +768,21 @@ impl AuxPowClient {
             })
         };
 
-        // PearlStratum: the pool pushes mining.notify BEFORE the authorize ack.
-        // The send_request() function already handles skipping notifications
-        // while waiting for the response with matching id, so the notify will
-        // be processed by the poll loop's notification handler.
+        // PearlStratum: AlphaPool doesn't respond to mining.authorize with a
+        // matching id — it just sends another pearl.challenge. So we send the
+        // authorize and don't wait for a response. We assume success and let
+        // the poll loop handle incoming challenges/notifies.
+        if is_pearl {
+            let req_line = format!("{}\n", serde_json::to_string(&req)?);
+            let mut stream = self.stream.lock().await;
+            if let Some(w) = stream.as_mut() {
+                w.write_all(req_line.as_bytes()).await?;
+                println!("auxpow: PRL authorize sent (fire-and-forget for AlphaPool)");
+            }
+            *self.authorized.lock().await = true;
+            return Ok(());
+        }
+
         let resp = self.send_request(&req).await?;
         let ok = if is_ethstratum {
             // EthStratum may return result=true or result="0x..." for success.
@@ -873,6 +907,19 @@ impl AuxPowClient {
                         );
                         *self.current_job.lock().await = Some(job);
                         self.job_notify.notify_waiters();
+                    }
+                }
+                "pearl.challenge" => {
+                    // AlphaPool protocol: sends {seed, difficulty} as challenge
+                    if let Some(params) = msg.get("params") {
+                        if let Some(job) = self.parse_pearl_challenge_params(params).await {
+                            debug!(
+                                "AuxPow: received pearl.challenge for {}",
+                                self.profile.coin
+                            );
+                            *self.current_job.lock().await = Some(job);
+                            self.job_notify.notify_waiters();
+                        }
                     }
                 }
                 "mining.set_difficulty" => {
@@ -2091,185 +2138,81 @@ impl AuxPowClient {
             // Pearl (PRL) PearlStratum submit: object params, no nonce.
             //   {job_id, plain_proof (base64)}
             //
-            // plain_proof is a bincode-serialized PearlPlainProof, base64-encoded.
-            // The pool deserializes it via PlainProof::deserialize_compat (bincode),
-            // then verifies Merkle proofs and jackpot hash.
+            // plain_proof is a bincode-serialized PlainProof, base64-encoded.
+            // The pool deserializes it, verifies Merkle proofs and jackpot hash.
             //
-            // We use the full PoUW MatMul kernel (pearl_pouw module) to:
-            //   1. Generate random matrices A, B
-            //   2. Compute noise (EL·ER, FL·FR)
-            //   3. Tiled MatMul with jackpot hash
-            //   4. Build Merkle proofs for sampled rows
-            //   5. Serialize via bincode → base64
+            // We use the real Pearl PoUW pipeline (pearl_real_pouw module):
+            //   1. Derive job_key from block header + mining config
+            //   2. Generate random matrices A, B (int8)
+            //   3. Build BLAKE3 Merkle trees, compute noise seeds
+            //   4. Generate noise matrices (E=EL·ER, F=FL·FR)
+            //   5. Noisy GEMM with jackpot hash check
+            //   6. Build PlainProof with sampled rows/cols + Merkle proofs
+            //   7. Serialize via bincode → base64
             //
-            // Mining config: default mainnet (m=256, n=512, k=1024, rank=32)
-            // Difficulty: from job target (share difficulty, not block nbits)
+            // Standard config: m=512, n=512, k=4096, noise_rank=256
             let job = self.current_job().await;
-            let header_bytes = job
+            let header_hex = job
                 .as_ref()
-                .map(|j| j.header_bytes.clone())
+                .map(|j| j.header_hex.clone())
                 .unwrap_or_default();
-
-            // Parse IncompleteBlockHeader from 76-byte job header
-            let header = crate::pearl_pouw::IncompleteBlockHeader::from_bytes(&header_bytes);
-            let config = crate::pearl_pouw::MiningConfiguration::default_mainnet();
-
-            // Difficulty bound from job target (share difficulty)
-            // The pool sends target in notify — use it directly as difficulty bound.
-            let difficulty_bound = job
+            let target_hex = job
                 .as_ref()
-                .map(|j| j.target_bytes)
-                .unwrap_or([0xFFu8; 32]);
+                .map(|j| j.target_hex.clone())
+                .unwrap_or_else(|| "ff".repeat(32));
 
-            // Mine a proof (scan nonces until found or max_attempts reached)
-            // For unit tests, use 0 attempts (submit dummy proof).
-            // For E2E, use 1000 attempts.
-            let m = 256usize;
-            let n = 512usize;
-            let k = config.common_dim as usize;
-            let rank = config.rank as usize;
-            let max_attempts = std::env::var("AUXPOW_PRL_MAX_ATTEMPTS")
-                .ok()
-                .and_then(|s| s.parse::<u64>().ok())
-                .unwrap_or(1000);
-
-            // Use GPU if available, otherwise CPU
-            #[cfg(feature = "gpu-metal")]
-            let use_gpu = {
-                let gpu = self.gpu_backend.lock().await;
-                gpu.is_some()
-            };
-
-            #[cfg(feature = "gpu-opencl")]
-            let use_gpu_opencl = {
-                let gpu = self.gpu_opencl_backend.lock().await;
-                gpu.is_some()
-            };
-
-            #[cfg(not(any(feature = "gpu-metal", feature = "gpu-opencl")))]
-            let use_gpu = false;
-            #[cfg(not(feature = "gpu-opencl"))]
-            let use_gpu_opencl = false;
-
-            #[cfg(feature = "gpu-metal")]
-            let gpu_mode = if use_gpu {
-                if std::env::var("AUXPOW_PRL_GPU_NATIVE").is_ok() { "GPU-native" } else { "GPU" }
-            } else { "CPU" };
-            #[cfg(not(feature = "gpu-metal"))]
-            let gpu_mode = if use_gpu_opencl { "GPU-OpenCL-batched" } else { "CPU" };
+            // Standard Pearl PoUW dimensions
+            let m = crate::pearl_real_pouw::DEFAULT_M;
+            let n = crate::pearl_real_pouw::DEFAULT_N;
+            let k = crate::pearl_real_pouw::DEFAULT_K;
+            let noise_rank = crate::pearl_real_pouw::DEFAULT_NOISE_RANK;
+            let noise_range = crate::pearl_real_pouw::DEFAULT_NOISE_RANGE;
+            let hash_tile_h = crate::pearl_real_pouw::DEFAULT_HASH_TILE_H;
+            let hash_tile_w = crate::pearl_real_pouw::DEFAULT_HASH_TILE_W;
 
             println!(
-                "auxpow: PRL mining — m={} n={} k={} rank={} attempts={} header_len={} mode={}",
-                m, n, k, rank, max_attempts, header_bytes.len(), gpu_mode
+                "auxpow: PRL real PoUW mining — m={} n={} k={} rank={} header_hex={}... target_hex={}",
+                m, n, k, noise_rank, &header_hex[..header_hex.len().min(20)], &target_hex
             );
 
-            #[cfg(feature = "gpu-metal")]
-            let mined = if use_gpu {
-                let mut gpu = self.gpu_backend.lock().await;
-                let gpu_backend = gpu.as_mut().unwrap();
-                // Use GPU-native pipeline (all steps on GPU) if env var is set
-                let use_native = std::env::var("AUXPOW_PRL_GPU_NATIVE").is_ok();
-                if use_native {
-                    crate::pearl_pouw::mine_gpu_native(
-                        m, n, k, rank,
-                        &header,
-                        &config,
-                        &difficulty_bound,
-                        max_attempts,
-                        gpu_backend,
-                    )
-                } else {
-                    crate::pearl_pouw::mine_gpu(
-                        m, n, k, rank,
-                        &header,
-                        &config,
-                        &difficulty_bound,
-                        max_attempts,
-                        gpu_backend,
-                    )
-                }
-            } else {
-                crate::pearl_pouw::mine(
-                    m, n, k, rank,
-                    &header,
-                    &config,
-                    &difficulty_bound,
-                    max_attempts,
-                )
-            };
-
-            // OpenCL path: batched persistent mining on AMD/ROCm GPUs
-            #[cfg(feature = "gpu-opencl")]
-            let mined = if use_gpu_opencl {
-                let mut gpu = self.gpu_opencl_backend.lock().await;
-                let gpu_backend = gpu.as_mut().unwrap();
-                let batch_size: u32 = std::env::var("AUXPOW_PRL_BATCH_SIZE")
-                    .ok()
-                    .and_then(|s| s.parse::<u32>().ok())
-                    .unwrap_or(8);
-                crate::pearl_pouw::mine_gpu_native_opencl_batched(
-                    m, n, k, rank,
-                    &header,
-                    &config,
-                    &difficulty_bound,
-                    max_attempts,
-                    gpu_backend,
-                    batch_size,
-                )
-            } else {
-                crate::pearl_pouw::mine(
-                    m, n, k, rank,
-                    &header,
-                    &config,
-                    &difficulty_bound,
-                    max_attempts,
-                )
-            };
-
-            #[cfg(not(any(feature = "gpu-metal", feature = "gpu-opencl")))]
-            let mined = crate::pearl_pouw::mine(
-                m, n, k, rank,
-                &header,
-                &config,
-                &difficulty_bound,
-                max_attempts,
+            // Run the real PoUW mining pipeline
+            let mined_result = crate::pearl_real_pouw::mine_pearl_share(
+                &header_hex,
+                &target_hex,
+                m, n, k, noise_rank, noise_range,
+                hash_tile_h, hash_tile_w,
             );
 
-            let plain_proof = match mined {
-                Some(proof) => {
+            let plain_proof = match mined_result {
+                Ok(Some(proof)) => {
+                    let b64 = proof.to_base64().unwrap_or_default();
                     println!(
-                        "auxpow: PRL mined proof — b64_len={} jackpot={}",
-                        proof.plain_proof_b64.len(),
-                        hex::encode(proof.jackpot_hash)
+                        "auxpow: PRL mined proof — b64_len={}",
+                        b64.len()
                     );
-                    proof.plain_proof_b64
+                    b64
                 }
-                None => {
-                    // No share found in max_attempts — construct a dummy proof
-                    // that will be rejected by the pool (expected for high difficulty)
-                    println!(
-                        "auxpow: PRL no share found in {} attempts — submitting dummy",
-                        max_attempts
-                    );
-                    // Build a minimal proof with empty Merkle data
-                    let dummy = crate::pearl_pouw::PearlPlainProof {
-                        m, n, k,
-                        noise_rank: rank,
-                        a: crate::pearl_pouw::PearlMatrixMerkleProof {
-                            proof: crate::pearl_pouw::MerkleProof {
+                Ok(None) => {
+                    // No share found — construct a dummy proof that will be
+                    // rejected by the pool (expected for high difficulty)
+                    println!("auxpow: PRL no share found — submitting dummy proof");
+                    let dummy = crate::pearl_real_pouw::PlainProof {
+                        m, n, k, noise_rank,
+                        a: crate::pearl_real_pouw::MatrixMerkleProof {
+                            proof: crate::pearl_real_pouw::MerkleProof {
                                 leaf_data: vec![],
                                 leaf_indices: vec![],
-                                total_leaves: m,
+                                total_leaves: 0,
                                 root: [0u8; 32],
                                 siblings: vec![],
                             },
                             row_indices: vec![],
                         },
-                        bt: crate::pearl_pouw::PearlMatrixMerkleProof {
-                            proof: crate::pearl_pouw::MerkleProof {
+                        bt: crate::pearl_real_pouw::MatrixMerkleProof {
+                            proof: crate::pearl_real_pouw::MerkleProof {
                                 leaf_data: vec![],
                                 leaf_indices: vec![],
-                                total_leaves: n,
+                                total_leaves: 0,
                                 root: [0u8; 32],
                                 siblings: vec![],
                             },
@@ -2277,22 +2220,72 @@ impl AuxPowClient {
                         },
                         moe: None,
                     };
-                    let bytes = bincode::serialize(&dummy).unwrap_or_default();
-                    base64::Engine::encode(
-                        &base64::engine::general_purpose::STANDARD,
-                        &bytes,
-                    )
+                    dummy.to_base64().unwrap_or_default()
+                }
+                Err(e) => {
+                    println!("auxpow: PRL mining error: {} — submitting dummy proof", e);
+                    let dummy = crate::pearl_real_pouw::PlainProof {
+                        m, n, k, noise_rank,
+                        a: crate::pearl_real_pouw::MatrixMerkleProof {
+                            proof: crate::pearl_real_pouw::MerkleProof {
+                                leaf_data: vec![],
+                                leaf_indices: vec![],
+                                total_leaves: 0,
+                                root: [0u8; 32],
+                                siblings: vec![],
+                            },
+                            row_indices: vec![],
+                        },
+                        bt: crate::pearl_real_pouw::MatrixMerkleProof {
+                            proof: crate::pearl_real_pouw::MerkleProof {
+                                leaf_data: vec![],
+                                leaf_indices: vec![],
+                                total_leaves: 0,
+                                root: [0u8; 32],
+                                siblings: vec![],
+                            },
+                            row_indices: vec![],
+                        },
+                        moe: None,
+                    };
+                    dummy.to_base64().unwrap_or_default()
                 }
             };
 
             println!(
-                "auxpow: PRL submit — job={} nonce={} proof_b64_len={}",
-                job_id, nonce, plain_proof.len()
+                "auxpow: PRL submit — job={} proof_b64_len={}",
+                job_id, plain_proof.len()
             );
 
-            ("mining.submit", json!({
-                "job_id": job_id,
-                "plain_proof": plain_proof
+            // AlphaPool uses submitPlainProof with JSON-RPC 2.0 format:
+            //   {"jsonrpc":"2.0","method":"submitPlainProof","id":N,
+            //    "params":{"plain_proof":"<base64>","mining_job":{
+            //      "incomplete_header_bytes":"<base64>","target":<int>
+            //    }}}
+            // The incomplete_header_bytes is the 76-byte block header (base64).
+            // The target is the share target as an integer.
+            let header_b64 = base64::Engine::encode(
+                &base64::engine::general_purpose::STANDARD,
+                &job.as_ref().map(|j| j.header_bytes.clone()).unwrap_or_default(),
+            );
+            let target_int = job.as_ref().map(|j| {
+                // Convert 32-byte big-endian target to integer
+                let mut target = 0u128;
+                // Use first 16 bytes (most significant) for u128 approximation
+                for &b in j.target_bytes.iter() {
+                    target = (target << 8) | (b as u128);
+                    if target == 0 && b == 0 { continue; }
+                }
+                target as u64
+            }).unwrap_or(u64::MAX);
+
+            ("submitPlainProof", json!({
+                "plain_proof": plain_proof,
+                "mining_job": {
+                    "incomplete_header_bytes": header_b64,
+                    "target": target_int,
+                    "cert_version": 0
+                }
             }))
         } else {
             let hex = format!("0x{:016x}", nonce);
@@ -2499,6 +2492,78 @@ impl AuxPowClient {
         }
         // If result is null/missing, just skip — we'll retry on next poll.
         Ok(())
+    }
+
+    /// Parse `pearl.challenge` params (AlphaPool protocol) into an `ExternalJob`.
+    ///
+    /// AlphaPool sends: `{"seed": "<hex>", "difficulty": <int>}`
+    /// - `seed` is a hex-encoded challenge seed (used as the PoUW preimage)
+    /// - `difficulty` is the number of leading zero bits required in the jackpot hash
+    ///
+    /// We convert the difficulty (leading zero bits) to a 32-byte target:
+    /// target = 2^(256 - difficulty) - 1, stored as big-endian hex.
+    /// The seed is used as the header_hex for PoUW mining.
+    async fn parse_pearl_challenge_params(&self, params: &Value) -> Option<ExternalJob> {
+        let obj = params.as_object()?;
+        let seed = obj.get("seed").and_then(|v| v.as_str()).unwrap_or("");
+        let difficulty = obj.get("difficulty").and_then(|v| v.as_u64()).unwrap_or(32);
+
+        // Convert difficulty (leading zero bits) to a 32-byte target (big-endian).
+        // target = 2^(256 - difficulty) - 1
+        // For difficulty=32, target = 0x00000000FFFFFFFF... (32 leading zero bits)
+        let target_bytes = {
+            let mut t = [0xFFu8; 32];
+            let full_zero_bytes = (difficulty / 8) as usize;
+            let partial_bits = (difficulty % 8) as u8;
+            for i in 0..32 {
+                if i < full_zero_bytes {
+                    t[i] = 0;
+                } else if i == full_zero_bytes && partial_bits > 0 {
+                    t[i] = 0xFF >> partial_bits;
+                }
+            }
+            t
+        };
+        let target_hex = hex::encode_upper(&target_bytes);
+
+        // The seed is the challenge preimage. Pad/truncate to 76 bytes for
+        // the Pearl block header format (or use as-is if shorter).
+        let seed_bytes = hex::decode(seed.trim_start_matches("0x")).unwrap_or_default();
+        let header_hex = if seed_bytes.len() >= 76 {
+            hex::encode(&seed_bytes[..76])
+        } else {
+            // Pad to 76 bytes with zeros
+            let mut padded = seed_bytes.clone();
+            padded.resize(76, 0);
+            hex::encode(&padded)
+        };
+        let header_bytes = hex::decode(&header_hex).unwrap_or_default();
+
+        let job_id = format!("pearl_{}", &seed[..seed.len().min(16)]);
+
+        println!(
+            "auxpow: PRL pearl.challenge — job={} seed_len={} difficulty={} target={:.16}...",
+            job_id, seed_bytes.len(), difficulty, target_hex,
+        );
+
+        Some(ExternalJob {
+            job_id,
+            header_hex,
+            target_hex,
+            seed_hash: Some(seed.to_string()),
+            block_number: None,
+            algorithm: self.profile.algorithm.clone(),
+            header_bytes,
+            target_bytes,
+            timestamp: None,
+            nbits: None,
+            external_coin: self.profile.coin,
+            from_group: 0,
+            to_group: 0,
+            extranonce1: Vec::new(),
+            extranonce2: String::new(),
+            epoch: None,
+        })
     }
 
     /// Parse eth_getWork params (seed_hash, header_hex, target_hex) into

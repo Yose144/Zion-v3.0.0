@@ -9,7 +9,12 @@
     "start": "next start",
     "lint": "eslint",
     "deploy": "bash scripts/deploy.sh",
-    "docs:i18n": "node scripts/docs-i18n-report.mjs"
+    "docs:i18n": "node scripts/docs-i18n-report.mjs",
+    "test:e2e:api": "bash scripts/e2e-miner-stats.sh",
+    "test:e2e:api:local": "bash scripts/e2e-miner-stats.sh http://localhost:3000",
+    "test:e2e:ui": "playwright test",
+    "test:e2e:ui:prod": "E2E_BASE_URL=https://zionterranova.com playwright test",
+    "test:e2e": "npm run test:e2e:api && npm run test:e2e:ui:prod"
   },
   "dependencies": {
     "@lifi/sdk": "^4.0.1",
@@ -38,6 +43,7 @@
     "zion-wallet-sdk": "file:../zion-wallet-sdk"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4",
     "@types/leaflet": "^1.9.21",
     "@types/node": "^20",

@@ -30,6 +30,7 @@ pub mod miner_harness;
 pub mod multiplexer;
 pub mod parent_chains;
 pub mod pearl_pouw;
+pub mod pearl_real_pouw;
 pub mod share_forwarder;
 pub mod true_auxpow;
 pub mod types;
