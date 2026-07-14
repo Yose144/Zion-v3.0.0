@@ -40,6 +40,11 @@ interface MinerData {
   ok: boolean;
   address: string;
   active: boolean;
+  recently_active?: boolean;
+  ever_active?: boolean;
+  worker_name?: string | null;
+  algorithm?: string;
+  backend?: string;
   stats: {
     hashrate_1h: number;
     hashrate_24h: number;
@@ -65,6 +70,15 @@ interface MinerData {
     timestamp: number;
     server?: string;
   }>;
+  pool_stats?: {
+    pool_hashrate: number;
+    pool_hashrate_1h: number;
+    pool_hashrate_24h: number;
+    active_miners: number;
+    total_miners: number;
+    blocks_found: number;
+    total_paid_atomic: number;
+  } | null;
   servers: Array<{ id: string; connected: boolean }>;
 }
 
@@ -73,15 +87,24 @@ interface PrometheusMinerData {
   has_metrics: boolean;
   scrape_ts: number;
   source?: string;
+  worker_name?: string | null;
   metrics: {
     hashrate: number;
+    hashrate_24h?: number;
     shares_valid: number;
     shares_invalid: number;
     blocks_found: number;
     pending_balance_atomic: number;
     paid_total_atomic: number;
     connections_active: number;
+    last_share_time?: number;
   };
+  pool_context?: {
+    pool_hashrate: number;
+    pool_hashrate_24h: number;
+    active_miners: number;
+    total_blocks_found: number;
+  } | null;
   servers: Array<{
     server: string;
     connected: boolean;
@@ -296,6 +319,20 @@ export default function MinerDashboard({ address }: { address: string }) {
 
   const s = data.stats;
 
+  // Determine display status
+  const isActive = data.active;
+  const isRecentlyActive = !isActive && (data.recently_active || (s.last_share_time > 0 && Math.floor(Date.now() / 1000) - s.last_share_time < 86400));
+  const hasHistory = (s.total_paid > 0 || s.valid_shares > 0 || data.payouts.length > 0 || data.blocks.length > 0);
+  const statusColor = isActive ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]' : isRecentlyActive ? 'bg-amber-400' : hasHistory ? 'bg-blue-400' : 'bg-red-400';
+  const statusText = isActive ? 'text-emerald-400' : isRecentlyActive ? 'text-amber-400' : hasHistory ? 'text-blue-400' : 'text-red-400';
+  const statusLabel = isActive
+    ? (cs ? 'Aktivní' : 'Active')
+    : isRecentlyActive
+      ? (cs ? 'Nedávno aktivní' : 'Recently Active')
+      : hasHistory
+        ? (cs ? 'Historický' : 'Historical')
+        : (cs ? 'Neaktivní' : 'Inactive');
+
   return (
     <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 overflow-x-hidden">
 
@@ -319,25 +356,34 @@ export default function MinerDashboard({ address }: { address: string }) {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <div className={`h-3 w-3 rounded-full ${data.active ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]' : s.pending_balance > 0 ? 'bg-amber-400' : 'bg-red-400'}`} />
-                <span className={`text-xs font-semibold uppercase tracking-wider ${data.active ? 'text-emerald-400' : s.pending_balance > 0 ? 'text-amber-400' : 'text-red-400'}`}>
-                  {data.active
-                    ? (cs ? 'Aktivní' : 'Active')
-                    : s.pending_balance > 0
-                      ? (cs ? 'Čeká na payout' : 'Pending payout')
-                      : (cs ? 'Neaktivní' : 'Inactive')}
+                <div className={`h-3 w-3 rounded-full ${statusColor}`} />
+                <span className={`text-xs font-semibold uppercase tracking-wider ${statusText}`}>
+                  {statusLabel}
                 </span>
                 {s.last_share_time > 0 && (
                   <span className="text-xs text-gray-500">· {cs ? 'poslední share' : 'last share'} {timeAgo(s.last_share_time, cs)}</span>
                 )}
+                {data.worker_name && (
+                  <span className="text-xs text-gray-500">· worker: <span className="text-zion-cyan font-mono">{data.worker_name}</span></span>
+                )}
               </div>
-              {!data.active && s.pending_balance > 0 && (
+              {!isActive && hasHistory && (
+                <div className="flex items-start gap-2 text-xs text-blue-300/90 bg-blue-500/10 border border-blue-500/20 rounded-lg px-3 py-2 mt-2 max-w-2xl">
+                  <Activity className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                  <span>
+                    {cs
+                      ? `Tento miner má těžební historii (${data.payouts.length} payoutů, ${fmtZion(s.total_paid)} ZION celkem vyplaceno), ale aktuálně není aktivní v poolu.`
+                      : `This miner has mining history (${data.payouts.length} payouts, ${fmtZion(s.total_paid)} ZION total paid) but is not currently active in the pool.`}
+                  </span>
+                </div>
+              )}
+              {isActive && s.pending_balance > 0 && (
                 <div className="flex items-start gap-2 text-xs text-amber-300/90 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 mt-2 max-w-2xl">
                   <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
                   <span>
                     {cs
-                      ? `Adresa je v poolu evidovaná, ale aktuálně nemá aktivního workera. Čekající zůstatek: ${fmtZion(s.pending_balance)} ZION.`
-                      : `This payout address is registered with the pool but has no active worker right now. Pending balance: ${fmtZion(s.pending_balance)} ZION.`}
+                      ? `Čekající zůstatek: ${fmtZion(s.pending_balance)} ZION. Payout bude odeslán při dosažení minima.`
+                      : `Pending balance: ${fmtZion(s.pending_balance)} ZION. Payout will be sent when minimum is reached.`}
                   </span>
                 </div>
               )}
@@ -351,6 +397,11 @@ export default function MinerDashboard({ address }: { address: string }) {
                     <Server className="h-3 w-3 text-zion-cyan" /> {sv.id}
                   </span>
                 ))}
+                {data.pool_stats && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-gray-300">
+                    <Pickaxe className="h-3 w-3 text-zion-gold" /> {cs ? 'Pool' : 'Pool'}: {fmtHash(data.pool_stats.pool_hashrate)} · {data.pool_stats.active_miners} {cs ? 'aktivních' : 'active'}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -359,10 +410,18 @@ export default function MinerDashboard({ address }: { address: string }) {
               <div className="text-right">
                 <p className="text-xs text-gray-500 uppercase tracking-wider">Hashrate</p>
                 <p className="text-2xl font-semibold text-zion-cyan">{fmtHash(s.hashrate_1h)}</p>
+                {s.hashrate_24h > 0 && (
+                  <p className="text-xs text-gray-500">24h: {fmtHash(s.hashrate_24h)}</p>
+                )}
               </div>
               <div className="text-right">
                 <p className="text-xs text-gray-500 uppercase tracking-wider">{cs ? 'Bloky' : 'Blocks'}</p>
                 <p className="text-2xl font-semibold text-zion-gold">{fmtNum(s.blocks_found)}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-gray-500 uppercase tracking-wider">{cs ? 'Vyplaceno' : 'Paid'}</p>
+                <p className="text-2xl font-semibold text-emerald-400">{fmtZion(s.total_paid)}</p>
+                <p className="text-xs text-gray-500">ZION</p>
               </div>
             </div>
           </div>
@@ -561,6 +620,13 @@ export default function MinerDashboard({ address }: { address: string }) {
                     <p className="text-lg font-semibold text-white">{fmtHash(promMetrics.metrics.hashrate)}</p>
                     <p className="text-xs text-gray-400">{cs ? 'Aktualni hashrate (Gauge)' : 'Current hashrate (Gauge)'}</p>
                   </div>
+                  {promMetrics.metrics.hashrate_24h !== undefined && (
+                    <div className="zion-rainbow-sub p-4 space-y-1" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+                      <p className="text-xs text-zion-cyan font-mono break-all">miner_hashrate_24h{`{address="..."}`}</p>
+                      <p className="text-lg font-semibold text-white">{fmtHash(promMetrics.metrics.hashrate_24h ?? 0)}</p>
+                      <p className="text-xs text-gray-400">{cs ? '24h průměrný hashrate' : '24h average hashrate'}</p>
+                    </div>
+                  )}
                   <div className="zion-rainbow-sub p-4 space-y-1" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                     <p className="text-xs text-zion-cyan font-mono break-all">miner_shares_total{`{status="valid|invalid"}`}</p>
                     <p className="text-lg font-semibold text-white">{fmtNum(promMetrics.metrics.shares_valid)} / {fmtNum(promMetrics.metrics.shares_invalid)}</p>
@@ -588,12 +654,45 @@ export default function MinerDashboard({ address }: { address: string }) {
                   </div>
                 </div>
 
+                {/* Pool context comparison */}
+                {promMetrics.pool_context && (
+                  <div className="mt-6 pt-6 border-t border-white/10">
+                    <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2">
+                      <Pickaxe className="h-4 w-4 text-zion-gold" /> {cs ? 'Kontext poolu' : 'Pool Context'}
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="text-center p-3 rounded-xl bg-white/5">
+                        <p className="text-xs text-gray-500 uppercase">{cs ? 'Pool hashrate' : 'Pool Hashrate'}</p>
+                        <p className="text-lg font-semibold text-zion-cyan">{fmtHash(promMetrics.pool_context.pool_hashrate)}</p>
+                      </div>
+                      <div className="text-center p-3 rounded-xl bg-white/5">
+                        <p className="text-xs text-gray-500 uppercase">{cs ? 'Pool 24h' : 'Pool 24h'}</p>
+                        <p className="text-lg font-semibold text-zion-purple">{fmtHash(promMetrics.pool_context.pool_hashrate_24h)}</p>
+                      </div>
+                      <div className="text-center p-3 rounded-xl bg-white/5">
+                        <p className="text-xs text-gray-500 uppercase">{cs ? 'Aktivních' : 'Active Miners'}</p>
+                        <p className="text-lg font-semibold text-emerald-400">{promMetrics.pool_context.active_miners}</p>
+                      </div>
+                      <div className="text-center p-3 rounded-xl bg-white/5">
+                        <p className="text-xs text-gray-500 uppercase">{cs ? 'Pool bloky' : 'Pool Blocks'}</p>
+                        <p className="text-lg font-semibold text-amber-400">{fmtNum(promMetrics.pool_context.total_blocks_found)}</p>
+                      </div>
+                    </div>
+                    {promMetrics.metrics.hashrate > 0 && promMetrics.pool_context.pool_hashrate > 0 && (
+                      <p className="mt-3 text-xs text-gray-500 text-center">
+                        {cs ? 'Podíl na poolu' : 'Pool share'}: {((promMetrics.metrics.hashrate / promMetrics.pool_context.pool_hashrate) * 100).toFixed(2)}%
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <div className="mt-4 text-xs text-gray-500 space-y-1">
                   <p>
                     {cs ? 'Posledni scrape' : 'Last scrape'}: {promMetrics.scrape_ts > 0 ? timeAgo(promMetrics.scrape_ts, cs) : '—'} · {cs ? 'aktualizace kazdych 15 s' : 'Updated every 15s'}
                   </p>
                   <p>
                     {cs ? 'Zdroj' : 'Source'}: {promMetrics.source ?? (cs ? 'runtime fallback' : 'runtime fallback')}
+                    {promMetrics.worker_name && ` · worker: ${promMetrics.worker_name}`}
                   </p>
                   <p>
                     {cs ? 'Endpointy' : 'Endpoints'}: {promMetrics.servers.map((sv) => `${sv.server}:${sv.connected ? (cs ? 'ok' : 'ok') : (cs ? 'down' : 'down')}`).join(' · ')}
