@@ -2305,7 +2305,12 @@ fn blake3_gpu_thread(
     let mut current_job: Option<zion_pool::ExternalStreamJob> = None;
     let mut nonce_base: u64 = 0;
     let mut nonce_offset: u64 = 0;
-    let batch_size = work_size as u64;
+    // Use a large batch_size — mine_batch_raw caps it at the GPU's actual
+    // work_size internally, so this is safe.  Using config.gpu_work_size
+    // (16384 for Deeksha) would limit Blake3 to ~6 MH/s instead of ~1.7 GH/s.
+    let batch_size = 4_186_112u64;
+    let mut batch_count: u64 = 0;
+    let mut last_heartbeat = std::time::Instant::now();
 
     loop {
         // Check for new job (non-blocking)
@@ -2318,12 +2323,31 @@ fn blake3_gpu_thread(
                 std::process::id().hash(&mut h);
                 nonce_base = (h.finish() as u32) as u64;
                 nonce_offset = 0;
+                println!(
+                    "[{}] dual_gpu_blake3_job_received coin={} algo={} job_id={}",
+                    log_timestamp(),
+                    job.coin,
+                    job.algorithm,
+                    job.job_id,
+                );
             }
             Err(std::sync::mpsc::TryRecvError::Empty) => {}
             Err(std::sync::mpsc::TryRecvError::Disconnected) => {
                 println!("[{}] dual_gpu_blake3_channel_closed — exiting", log_timestamp());
                 return;
             }
+        }
+
+        // Heartbeat every 15s so we can see the thread is alive
+        if last_heartbeat.elapsed().as_secs() >= 15 {
+            println!(
+                "[{}] dual_gpu_blake3_heartbeat batches={} nonce_offset={} has_job={}",
+                log_timestamp(),
+                batch_count,
+                nonce_offset,
+                current_job.is_some(),
+            );
+            last_heartbeat = std::time::Instant::now();
         }
 
         let job = match &current_job {
@@ -2398,6 +2422,7 @@ fn blake3_gpu_thread(
 
         // Advance nonce for next batch
         nonce_offset = nonce_offset.wrapping_add(batch_size);
+        batch_count += 1;
     }
 }
 
