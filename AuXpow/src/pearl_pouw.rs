@@ -1468,7 +1468,7 @@ pub fn try_mine_one_gpu_native(
     difficulty_bound: &[u8; 32],
     gpu_backend: &mut crate::gpu_metal::MetalBackend,
 ) -> Option<MinedProof> {
-    use crate::gpu_metal::{PearlPouwNativeInput, PearlPouwGpuResult};
+    use crate::gpu_metal::PearlPouwNativeInput;
 
     let job_key = compute_job_key(header, config);
 
@@ -1497,39 +1497,35 @@ pub fn try_mine_one_gpu_native(
 
     let gpu_result = gpu_backend.pearl_pouw_mine_native(&native_input).ok()??;
 
-    // GPU found a valid tile — need to reconstruct matrices for Merkle proof
-    // Since matrices were generated on GPU, we need to regenerate them on CPU
-    // using the same PRNG to build the Merkle proof.
-    //
-    // NOTE: The GPU uses PCG32 PRNG which is different from the CPU's SimpleRng.
-    // For the Merkle proof, we need the EXACT same matrices that were hashed on GPU.
-    // We regenerate them on CPU using the same PCG32 PRNG.
-    //
-    // For now, this is a placeholder — the Merkle proof construction needs
-    // the actual matrix data. In production, we'd read back the matrices from GPU
-    // or regenerate them with the same PRNG on CPU.
-    //
-    // TODO: Implement PCG32-based matrix regeneration on CPU for Merkle proof.
+    // GPU found a valid tile — reconstruct Merkle proof from read-back matrices.
+    // The matrices were read back from GPU memory (shared storage on Apple Silicon).
+    let tile_idx = gpu_result.tile_index as usize;
+    let num_col_off = col_offsets.len();
+    let row_off_idx = tile_idx / num_col_off;
+    let col_off_idx = tile_idx % num_col_off;
 
-    // For now, return a dummy proof (the pool will reject it, but the GPU mining works)
-    let dummy_proof = MerkleProof {
-        leaf_data: vec![],
-        leaf_indices: vec![],
-        total_leaves: 0,
-        root: [0u8; 32],
-        siblings: vec![],
-    };
+    let row_off = row_offsets[row_off_idx] as usize;
+    let col_off = col_offsets[col_off_idx] as usize;
+
+    let a_rows: Vec<usize> = rows_base.iter().map(|&d| row_off + d as usize).collect();
+    let b_cols: Vec<usize> = cols_base.iter().map(|&d| col_off + d as usize).collect();
+
+    // Convert flat matrices to Vec<Vec<i8>> for build_matrix_proof
+    let a_matrix: Vec<Vec<i8>> = (0..m)
+        .map(|i| gpu_result.matrix_a[i * k..(i + 1) * k].to_vec())
+        .collect();
+    let b_transposed: Vec<Vec<i8>> = (0..n)
+        .map(|j| gpu_result.matrix_bt[j * k..(j + 1) * k].to_vec())
+        .collect();
+
+    let a_proof = build_matrix_proof(&a_matrix, &job_key, &a_rows, k);
+    let bt_proof = build_matrix_proof(&b_transposed, &job_key, &b_cols, k);
+
     let proof = PearlPlainProof {
         m, n, k,
         noise_rank: rank,
-        a: PearlMatrixMerkleProof {
-            proof: dummy_proof.clone(),
-            row_indices: vec![],
-        },
-        bt: PearlMatrixMerkleProof {
-            proof: dummy_proof,
-            row_indices: vec![],
-        },
+        a: a_proof,
+        bt: bt_proof,
         moe: None,
     };
 
