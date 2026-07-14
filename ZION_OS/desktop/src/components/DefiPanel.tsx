@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Droplets, TrendingUp, Activity, ExternalLink } from 'lucide-react';
+import { apiFetchExternal, EDGE_WEB } from '../lib/api';
 
 interface DefiPrice {
   ok: boolean;
@@ -20,21 +21,14 @@ interface DefiPrice {
   fetchedAt: number;
 }
 
-const EDGE_WEB = 'https://zion.cz';
-
 export default function DefiPanel() {
   const [data, setData] = useState<DefiPrice | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     try {
-      const r = await fetch(`${EDGE_WEB}/api/defi/price`, {
-        signal: AbortSignal.timeout(5000),
-      });
-      if (r.ok) {
-        const d = await r.json();
-        setData(d);
-      }
+      const d = await apiFetchExternal<DefiPrice>('/api/defi/price', { timeout: 5000 });
+      if (d) setData(d);
     } catch {
       /* offline */
     } finally {

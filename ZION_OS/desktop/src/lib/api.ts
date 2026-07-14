@@ -1,6 +1,7 @@
 const API_BASE = 'http://127.0.0.1:8766';
 const EDGE_HOST = '100.76.16.108';
 const LOCAL_HOST = '127.0.0.1';
+export const EDGE_WEB = 'https://zionterranova.com';
 
 // Optional Basic Auth for local Python dashboard (set VITE_DASHBOARD_USER / VITE_DASHBOARD_PASS)
 const DASHBOARD_USER = import.meta.env.VITE_DASHBOARD_USER as string | undefined;
@@ -119,6 +120,10 @@ export interface MonitoringStatus {
 }
 
 // ── HTTP Helpers ──────────────────────────────────────────
+
+export async function apiFetchExternal<T>(path: string, opts?: { timeout?: number }): Promise<T | null> {
+  return apiFetch<T>(`/api/proxy/edge?path=${encodeURIComponent(path)}`, opts);
+}
 
 export async function apiFetch<T>(path: string, opts?: { timeout?: number }): Promise<T | null> {
   try {

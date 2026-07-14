@@ -167,6 +167,7 @@ AUTH_EXEMPT_ROUTES = {"/api/health", "/health", "/favicon.ico", "/api/poc/html",
 # Edge server addresses (Hetzner VPS — always-on)
 EDGE_HOST = "127.0.0.1"   # Dashboard runs on same server (v3.0.4)
 EDGE_PUBLIC_IP = "62.171.141.136"  # Public IP (Edge server)
+EDGE_PUBLIC_URL = "https://zionterranova.com"  # Public website / Next.js API
 
 # ── Edge-local detection ─────────────────────────────────────────────────
 # When the dashboard runs ON the Edge server, we can execute commands locally
@@ -1306,6 +1307,28 @@ def rpc_probe(host: str, port: int, timeout: float = 1.0) -> tuple[bool, str]:
             return False, "no result"
     except Exception as e:
         return False, str(e)[:60]
+
+
+def proxy_edge_get(path: str, timeout: float = 8.0) -> dict:
+    """Proxy a GET request to the public ZION Edge website API.
+
+    Only paths under /api/ are allowed; everything else is rejected.
+    """
+    try:
+        if not path.startswith("/api/"):
+            return {"error": "invalid path"}
+        if ".." in path or "//" in path or path.count("?") > 1:
+            return {"error": "invalid path"}
+        url = f"{EDGE_PUBLIC_URL}{path}"
+        req = _urlreq.Request(url, headers={"Accept": "application/json"})
+        with _urlreq.urlopen(req, timeout=timeout) as r:
+            content_type = r.headers.get("Content-Type", "")
+            body = r.read()
+            if "application/json" in content_type:
+                return json.loads(body.decode("utf-8", errors="replace"))
+            return {"ok": True, "body": body.decode("utf-8", errors="replace")}
+    except Exception as e:
+        return {"error": str(e)[:120]}
 
 
 def check_service_health(svc: dict) -> dict:
@@ -10152,6 +10175,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(get_pool_leaderboard(limit=limit))
         elif route == "/api/pool/miners-dashboard":
             self._json(get_pool_miners_dashboard())
+        elif route == "/api/proxy/edge":
+            path = params.get("path", ["/"])[0]
+            self._json(proxy_edge_get(path))
         elif route == "/api/revenue":
             self._json(get_revenue_dashboard())
         elif route == "/api/revenue/report":
