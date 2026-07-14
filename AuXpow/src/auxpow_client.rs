@@ -1203,10 +1203,27 @@ impl AuxPowClient {
                     };
 
                     // Clean jobs: invalidate old job state.
+                    // NOTE: We do NOT clear job_ntime / job_solution / job_header_prefix
+                    // on clean_jobs=true.  VRSC (LuckPool) sends clean=true on every
+                    // notify (~30s), but shares for the previous job may still be in
+                    // the forward queue.  If we wipe job_ntime here, the submit
+                    // reconstruction falls back to the current timestamp, which
+                    // doesn't match the block header → LuckPool rejects "unknown".
+                    // Instead, we keep a rolling window of recent jobs and let old
+                    // entries age out naturally.
                     if clean_jobs {
-                        self.job_solution.lock().await.clear();
-                        self.job_ntime.lock().await.clear();
-                        self.job_header_prefix.lock().await.clear();
+                        // Keep only the last 16 jobs to bound memory.
+                        let mut sol = self.job_solution.lock().await;
+                        let mut nt = self.job_ntime.lock().await;
+                        let mut hp = self.job_header_prefix.lock().await;
+                        if sol.len() > 16 {
+                            let keys: Vec<String> = sol.keys().cloned().collect();
+                            for k in &keys[..keys.len() - 16] {
+                                sol.remove(k);
+                                nt.remove(k);
+                                hp.remove(k);
+                            }
+                        }
                     }
 
                     // Store per-job data for submit reconstruction.
@@ -1689,13 +1706,12 @@ impl AuxPowClient {
                 self.profile.coin, job_id, ntime, nonce2_str.len(), solution_with_varint.len()
             );
 
-            // VerusHash / Zcash stratum submit format: 4 params
-            //   [worker, job_id, nonce2, solution]
-            // ntime is NOT a separate parameter — it's embedded in the
-            // block header blob that LuckPool already has from the notify.
-            // Including ntime as a 5th param shifts nonce2/solution and
-            // causes LuckPool to reject with "unknown".
-            ("mining.submit", json!([worker, job_id, nonce2_str, solution_with_varint]))
+            // Zcash Stratum Protocol (ZIP 301) — 5 params:
+            //   [worker, job_id, time, nonce2, equihash_solution]
+            // LuckPool VRSC follows this format. The "unknown" rejections
+            // were NOT caused by the parameter count — they were caused by
+            // the solution/nonce2 content being wrong.
+            ("mining.submit", json!([worker, job_id, ntime, nonce2_str, solution_with_varint]))
         } else if self.profile.coin == ExternalCoin::DCR {
             // DCR Blake3: standard Stratum v1 submit with 5 params:
             //   [worker, job_id, extranonce2, ntime, nonce]
