@@ -6,6 +6,8 @@ import { HIRANYAGARBHA, HIRAN_INFERENCE, endpointUrl, type ServiceEndpoint } fro
 export interface HiranHealth {
   status?: string;
   ok?: boolean;
+  version?: string;
+  uptime_seconds?: number;
   backend?: string;
   model?: string;
   agents?: number;
@@ -67,4 +69,60 @@ export async function fetchNclJobs(ep: ServiceEndpoint = HIRANYAGARBHA): Promise
 
 export async function chatWithHiran(message: string, ep: ServiceEndpoint = HIRAN_INFERENCE): Promise<{ response?: string; error?: string } | null> {
   return httpPost<{ response?: string; error?: string }>(hiranUrl('/chat', ep), { message }, 10000);
+}
+
+// ── Dashboard-style agent telemetry wrappers ────────────────────────────────
+
+export interface AgentStatus {
+  online: boolean;
+  version?: string;
+  uptime_seconds?: number;
+  rigs_total?: number;
+  rigs_online?: number;
+  orchestrator_alive?: boolean;
+  inference_alive?: boolean;
+  backend?: string;
+  model?: string;
+  agents?: number;
+  tasks?: number;
+}
+
+export async function fetchAgentStatus(): Promise<AgentStatus | null> {
+  const [orch, hiran] = await Promise.all([
+    checkOrchestratorHealth().catch(() => false),
+    checkHiranInferenceHealth().catch(() => false),
+  ]);
+  const status = await fetchOrchestratorStatus().catch(() => null);
+  return {
+    online: orch || hiran,
+    orchestrator_alive: orch,
+    inference_alive: hiran,
+    version: status?.version ?? '—',
+    uptime_seconds: status?.uptime_seconds,
+    backend: status?.backend ?? '—',
+    model: status?.model ?? '—',
+    agents: status?.agents ?? 0,
+    tasks: status?.tasks ?? 0,
+    rigs_total: 0,
+    rigs_online: 0,
+  };
+}
+
+export async function fetchAgentTelemetry(): Promise<Record<string, unknown> | null> {
+  const s = await fetchOrchestratorStatus().catch(() => null);
+  return s ? (s as unknown as Record<string, unknown>) : null;
+}
+
+export async function fetchAgentNodes(): Promise<{ nodes?: unknown[] } | null> {
+  const agents = await fetchAgents().catch(() => null);
+  if (!agents) return null;
+  return { nodes: agents.map((a) => ({ ...a, online: a.status === 'online' })) };
+}
+
+export async function fetchAgentRewards(): Promise<Record<string, unknown> | null> {
+  return null;
+}
+
+export async function fetchAgentGpu(): Promise<Record<string, unknown> | null> {
+  return null;
 }

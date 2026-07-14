@@ -9,6 +9,8 @@ import {
   restartStack,
   restartService,
 } from '../api/controls';
+import { fetchWallets } from '../api/wallets';
+import { fetchBackupStatus } from '../api/backup';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ║  Types (kept for UI compatibility)
@@ -520,14 +522,6 @@ export interface TopologyResponse {
   ports: Record<string, boolean>;
 }
 
-export interface AgentStatus {
-  online: boolean;
-  version?: string;
-  uptime_seconds?: number;
-  rigs_total?: number;
-  rigs_online?: number;
-}
-
 export interface LayerStatus {
   layers: { id: string; name: string; status: 'up' | 'down' | 'degraded'; detail?: string }[];
   summary: { up: number; down: number; degraded: number; total: number };
@@ -553,12 +547,7 @@ export interface SecurityStatus {
   checks: { id: string; ok: boolean; severity: 'critical' | 'warning' | 'info'; detail: string }[];
 }
 
-export interface BackupStatus {
-  ok: boolean;
-  last_backup?: string;
-  backups?: { name: string; size: number; age_seconds: number }[];
-  error?: string;
-}
+export type { BackupStatus, BackupItem } from '../api/backup';
 
 export interface HistorySample {
   ts: number;
@@ -1115,29 +1104,16 @@ export async function fetchSecurityStatus(): Promise<SecurityStatus | null> {
   };
 }
 
-export async function fetchBackupStatus(): Promise<BackupStatus | null> {
-  return { ok: true };
-}
+export { fetchBackupStatus } from '../api/backup';
 
-export async function fetchAgentStatus(): Promise<AgentStatus | null> {
-  return { online: false };
-}
-
-export async function fetchAgentTelemetry(): Promise<Record<string, unknown> | null> {
-  return null;
-}
-
-export async function fetchAgentNodes(): Promise<{ nodes?: unknown[] } | null> {
-  return { nodes: [] };
-}
-
-export async function fetchAgentRewards(): Promise<Record<string, unknown> | null> {
-  return null;
-}
-
-export async function fetchAgentGpu(): Promise<Record<string, unknown> | null> {
-  return null;
-}
+export {
+  type AgentStatus,
+  fetchAgentStatus,
+  fetchAgentTelemetry,
+  fetchAgentNodes,
+  fetchAgentRewards,
+  fetchAgentGpu,
+} from '../api/hiran';
 
 export async function fetchLayerStatus(): Promise<LayerStatus | null> {
   const { services } = await fetchFullStatus();
@@ -1220,22 +1196,7 @@ export function streamLog(svcId: string, lines: number, onLine: (line: string) =
 // ║  Wallets / genesis / mainnet / env / settings (stubs or direct RPC)
 // ╚═══════════════════════════════════════════════════════════════════════════════
 
-export async function fetchWallets(): Promise<WalletsResponse | null> {
-  // Wallet addresses are environment/config dependent; return empty set until a wallet source is configured.
-  return {
-    wallets: [],
-    summary: {
-      total_wallets: 0,
-      premine_wallets: 0,
-      operational_wallets: 0,
-      with_live_balance: 0,
-      total_premine_zion: 0,
-      total_operational_zion: 0,
-    },
-    category_summary: {},
-    rpc: { host: '127.0.0.1', port: 8446, reachable: true },
-  };
-}
+export { fetchWallets } from '../api/wallets';
 
 export async function fetchMainnetStatus(): Promise<Record<string, unknown> | null> {
   const info = await getChainInfo(LOCAL_BACKUP_NODE).catch(() => null);
