@@ -1248,6 +1248,11 @@ fn main() -> Result<()> {
     let mut handles = Vec::new();
     let mut accepted = 0u32;
     let ip_sessions: Arc<Mutex<HashMap<IpAddr, u32>>> = Arc::new(Mutex::new(HashMap::new()));
+    // IPs temporarily banned after NoSolution limit exceeded, mapped to the
+    // Instant they were banned.  The accept loop checks this before allowing a
+    // new connection from the same IP.
+    let no_solution_banned_ips: Arc<Mutex<HashMap<IpAddr, Instant>>> =
+        Arc::new(Mutex::new(HashMap::new()));
     loop {
         // Reap finished session threads to prevent unbounded `handles` Vec
         // growth when miners connect/disconnect over time.  Without this, a
@@ -1295,6 +1300,23 @@ fn main() -> Result<()> {
             .context("failed to set client stream read timeout")?;
 
         let peer_ip = peer_addr.ip();
+        // Check NoSolution reconnect ban
+        if config.no_solution_reconnect_cooldown_secs > 0 {
+            let mut bans = no_solution_banned_ips.lock().expect("banned_ips lock");
+            if let Some(banned_at) = bans.get(&peer_ip) {
+                let elapsed = banned_at.elapsed().as_secs();
+                if elapsed < config.no_solution_reconnect_cooldown_secs {
+                    println!(
+                        "no_solution_banned_reject ip={peer_ip} elapsed={elapsed}s cooldown={}s",
+                        config.no_solution_reconnect_cooldown_secs
+                    );
+                    drop(stream);
+                    continue;
+                } else {
+                    bans.remove(&peer_ip);
+                }
+            }
+        }
         {
             let mut sessions = ip_sessions.lock().expect("ip_sessions lock");
             let ip_count = sessions.entry(peer_ip).or_insert(0);
@@ -1319,6 +1341,7 @@ fn main() -> Result<()> {
         let log_ch = Arc::clone(&log_channel);
         let deferred_ref = Arc::clone(&deferred_payouts);
         let auxpow_bridge = auxpow_bridge.clone();
+        let banned_ips_ref = Arc::clone(&no_solution_banned_ips);
         let config = config.clone();
         handles.push(thread::spawn(move || {
             let _ip_guard = ip_guard;
@@ -1336,6 +1359,8 @@ fn main() -> Result<()> {
                 auxpow_bridge,
                 &config,
                 &log_ch,
+                peer_ip,
+                banned_ips_ref,
             )
         }));
         accepted = accepted.saturating_add(1);
@@ -1778,6 +1803,8 @@ fn handle_client(
     auxpow_bridge: AuxPowBridge,
     config: &ServerConfig,
     log_ch: &LogChannel,
+    peer_ip: IpAddr,
+    no_solution_banned_ips: Arc<Mutex<HashMap<IpAddr, Instant>>>,
 ) -> Result<()> {
     let session_started = Instant::now();
     let session_id = session_id_counter.fetch_add(1, Ordering::Relaxed);
@@ -2787,6 +2814,16 @@ fn handle_client(
                     println!(
                         "no_solution_limit_exceeded miner={miner_id} worker={worker_name} count={consecutive_no_solution}; disconnecting"
                     );
+                    if config.no_solution_reconnect_cooldown_secs > 0 {
+                        let mut bans = no_solution_banned_ips
+                            .lock()
+                            .expect("banned_ips lock poisoned");
+                        bans.insert(peer_ip, Instant::now());
+                        println!(
+                            "no_solution_ban ip={peer_ip} cooldown={}s",
+                            config.no_solution_reconnect_cooldown_secs
+                        );
+                    }
                     return Err(anyhow!(
                         "session terminated after {consecutive_no_solution} consecutive no-solution jobs"
                     ));
@@ -2991,6 +3028,10 @@ struct ServerConfig {
     /// Maximum number of consecutive NoSolution messages before the session is
     /// disconnected.  0 disables the limit.
     max_consecutive_no_solution: u64,
+    /// Cooldown (seconds) before a miner disconnected for NoSolution limit
+    /// exceeded can reconnect.  0 disables the cooldown (immediate reconnect
+    /// allowed).  Prevents misconfigured miners from reconnect-looping.
+    no_solution_reconnect_cooldown_secs: u64,
     /// Pool wallet address for payout signing (ZION_POOL_WALLET).
     pool_wallet_address: Option<String>,
     /// Ed25519 signing key for pool payout transactions (ZION_POOL_PAYOUT_SK_HEX).
@@ -5075,6 +5116,7 @@ impl ServerConfig {
             session_read_timeout_secs: parse_env_u64("ZION_SESSION_READ_TIMEOUT_SECS", 300)?,
             no_solution_throttle_ms: parse_env_u64("ZION_POOL_NO_SOLUTION_THROTTLE_MS", 100)?,
             max_consecutive_no_solution: parse_env_u64("ZION_POOL_MAX_CONSECUTIVE_NO_SOLUTION", 1000)?,
+            no_solution_reconnect_cooldown_secs: parse_env_u64("ZION_POOL_NO_SOLUTION_RECONNECT_COOLDOWN_SECS", 30)?,
             pool_wallet_address: parse_optional_env_string("ZION_POOL_WALLET"),
             pool_signing_key: parse_pool_signing_key(),
             vardiff_start_difficulty: parse_env_u64("ZION_VARDIFF_START_DIFF", 1)?,
@@ -5403,6 +5445,8 @@ mod tests {
                 auxpow_bridge_for_session,
                 &config,
                 &log_ch,
+                "127.0.0.1".parse().unwrap(),
+                Arc::new(Mutex::new(HashMap::new())),
             )
         });
 
@@ -5438,6 +5482,7 @@ mod tests {
             session_read_timeout_secs: 300,
             no_solution_throttle_ms: 0,
             max_consecutive_no_solution: 0,
+            no_solution_reconnect_cooldown_secs: 0,
             vardiff_start_difficulty: 1,
             vardiff_target_secs: 10,
             vardiff_retarget_shares: 6,
@@ -5634,6 +5679,7 @@ mod tests {
             session_read_timeout_secs: 300,
             no_solution_throttle_ms: 0,
             max_consecutive_no_solution: 0,
+            no_solution_reconnect_cooldown_secs: 0,
             vardiff_start_difficulty: 1,
             vardiff_target_secs: 10,
             vardiff_retarget_shares: 6,
@@ -5932,6 +5978,7 @@ mod tests {
             session_read_timeout_secs: 300,
             no_solution_throttle_ms: 0,
             max_consecutive_no_solution: 0,
+            no_solution_reconnect_cooldown_secs: 0,
             vardiff_start_difficulty: 1,
             vardiff_target_secs: 10,
             vardiff_retarget_shares: 6,
@@ -6175,6 +6222,7 @@ mod tests {
             session_read_timeout_secs: 300,
             no_solution_throttle_ms: 0,
             max_consecutive_no_solution: 0,
+            no_solution_reconnect_cooldown_secs: 0,
             vardiff_start_difficulty: 1,
             vardiff_target_secs: 10,
             vardiff_retarget_shares: 6,
@@ -6219,6 +6267,7 @@ mod tests {
             session_read_timeout_secs: 300,
             no_solution_throttle_ms: 0,
             max_consecutive_no_solution: 0,
+            no_solution_reconnect_cooldown_secs: 0,
             vardiff_start_difficulty: 1,
             vardiff_target_secs: 10,
             vardiff_retarget_shares: 6,
@@ -6263,6 +6312,7 @@ mod tests {
             session_read_timeout_secs: 300,
             no_solution_throttle_ms: 0,
             max_consecutive_no_solution: 0,
+            no_solution_reconnect_cooldown_secs: 0,
             vardiff_start_difficulty: 1,
             vardiff_target_secs: 10,
             vardiff_retarget_shares: 6,
@@ -6480,6 +6530,7 @@ mod tests {
             session_read_timeout_secs: 300,
             no_solution_throttle_ms: 0,
             max_consecutive_no_solution: 0,
+            no_solution_reconnect_cooldown_secs: 0,
             vardiff_start_difficulty: 1,
             vardiff_target_secs: 10,
             vardiff_retarget_shares: 6,
